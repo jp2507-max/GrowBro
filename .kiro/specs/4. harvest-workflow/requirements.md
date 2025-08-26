@@ -28,8 +28,9 @@ The Harvest Workflow feature enables home cannabis growers to systematically tra
 2. WHEN a user advances to the next stage THEN the system SHALL record the stage transition with completion timestamp and allow optional notes
 3. WHEN a stage is active THEN the system SHALL display target duration guidance and elapsed time
 4. WHEN the Curing stage is completed THEN the system SHALL automatically create an inventory record
-5. IF a user attempts to skip stages THEN the system SHALL prevent the action and display appropriate guidance
+5. IF a user attempts to skip stages THEN the system SHALL prevent the action and display appropriate guidance; skipping shall be prevented by default except via an authorized override (see Requirement 9 for override controls and audit requirements)
 6. WHEN a user views stage history THEN the system SHALL display all stage transitions with timestamps and notes
+7. WHEN override attempts occur (whether allowed or blocked) THEN the system SHALL log the attempt with full audit details (user identity, mandatory reason, server-authoritative timestamp, and linkage to an audit entry) and surface those entries in the stage history UI
 
 ### Requirement 3
 
@@ -111,11 +112,12 @@ The Harvest Workflow feature enables home cannabis growers to systematically tra
 #### Acceptance Criteria
 
 1. WHEN the harvest workflow is initiated THEN the system SHALL implement a finite state machine: Harvest → Drying → Curing → Inventory
-2. WHEN a user attempts to skip a stage THEN the system SHALL require an Override & Skip action with mandatory reason
+2. WHEN a user attempts to skip a stage THEN the system SHALL require an Override & Skip action that is allowed only via an authorized override; the override action MUST capture the acting user's identity, a mandatory reason provided by the user, a server-authoritative UTC timestamp, and must create/link to an auditable entry recording the decision
 3. WHEN a stage is entered THEN the system SHALL record stage_started_at with server-authoritative UTC timestamp
 4. WHEN a stage is completed THEN the system SHALL record stage_completed_at and display timestamps in user locale
 5. WHEN a user makes a stage change THEN the system SHALL support Undo within 15 seconds
 6. IF more than 15 seconds have passed THEN the system SHALL require a Revert Stage flow with audit note
+7. WHEN any override attempt occurs (whether the override is permitted or blocked) THEN the system SHALL record a full audit entry including: user identity (if available), whether the action was permitted or blocked, the mandatory reason (if provided), server-authoritative UTC timestamp, and a linkable audit ID; these audit entries SHALL be visible from the harvest's stage history UI
 
 ### Requirement 10
 
@@ -224,7 +226,11 @@ The Harvest Workflow feature enables home cannabis growers to systematically tra
 2. WHEN RLS is applied THEN the system SHALL allow owners to select/insert/update/delete only their own rows
 3. WHEN photos are stored THEN the system SHALL keep them private by default with no public reads
 4. WHEN sharing flows are used THEN the system SHALL redact private data appropriately
-5. IF Supabase Storage is used THEN the system SHALL restrict object access to owner with explicit SELECT/UPDATE permissions
+5. IF Supabase Storage is used THEN the system SHALL enforce bucket-level access policies (private buckets by default) and NOT rely on database RLS for Storage object protection — Supabase Row Level Security applies to database rows and does not control Storage object reads/writes.
+6. WHEN serving stored photos/objects THEN the system SHALL require expiring signed URLs (presigned URLs) for all reads; permanent public object URLs are not allowed.
+7. WHEN writing or updating Storage objects THEN the system SHALL ensure operations are scoped to the owning user by one of the following approaches:
+   - Perform writes/updates through an authenticated backend/service role which enforces authorization server-side (recommended), or
+   - Enforce per-object owner metadata and Storage policies that restrict write/update operations to the owner.
 
 ### Requirement 19
 

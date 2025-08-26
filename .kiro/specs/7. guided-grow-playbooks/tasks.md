@@ -73,7 +73,12 @@
   - Create shift preview showing affected task count, first/last new dates, and collision warnings
   - Default to shifting future, non-completed tasks with toggles for including completed/manually edited tasks
   - Implement atomic schedule shifting updating due dates, RRULEs, and notifications together
-  - Add exactly 30-second undo functionality restoring all dates, RRULEs, and notifications atomically
+  - Add exactly 30-second undo functionality with persistent undo ledger surviving app restarts:
+    - Write undo descriptor (affected task IDs, prior field values including due dates/RRULEs/notifications, timestamp and expiry) to DB in same transaction as shift
+    - Expose APIs to read/consume/expire undo descriptors with atomic state restoration
+    - Implement cleanup/expiry logic via background job or DB TTL for reliable descriptor lifecycle
+    - Add comprehensive tests for crash-and-restart scenarios, expiry conditions, and race conditions
+    - Ensure undo remains atomic and survives process deaths
   - Build manual edit protection flagging tasks to exclude from bulk shifts unless user opts in
   - Show before/after diff in shift preview modal with conflict warnings for manually edited tasks
   - Emit shift_preview, shift_apply, and shift_undo analytics events with timing metrics

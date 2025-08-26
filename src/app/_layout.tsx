@@ -14,23 +14,40 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { APIProvider } from '@/api';
 import { hydrateAuth, loadSelectedTheme } from '@/lib';
+import { Env } from '@/lib/env';
+import { initializePrivacyConsent } from '@/lib/privacy-consent';
+import { beforeSendHook } from '@/lib/sentry-utils';
 import { useThemeConfig } from '@/lib/use-theme-config';
 
-Sentry.init({
-  dsn: 'https://9e02ffa466d9e89e71f25cbd3737f712@o4509747259375616.ingest.de.sentry.io/4509909008449616',
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
-  // Configure Session Replay
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1,
-  integrations: [
-    Sentry.mobileReplayIntegration(),
-    Sentry.feedbackIntegration(),
-  ],
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: __DEV__,
-});
+// Only initialize Sentry if DSN is provided
+if (Env.SENTRY_DSN) {
+  const integrations: any[] = [];
+
+  // Only add replay and feedback integrations if replay is enabled
+  if (Env.SENTRY_ENABLE_REPLAY) {
+    integrations.push(Sentry.mobileReplayIntegration());
+    integrations.push(Sentry.feedbackIntegration());
+  }
+
+  Sentry.init({
+    dsn: Env.SENTRY_DSN,
+    // Privacy-focused: only send PII if explicitly enabled via environment
+    sendDefaultPii: Env.SENTRY_SEND_DEFAULT_PII ?? false,
+    // Privacy-focused: default to 0 for replay sampling, only enable via environment
+    replaysSessionSampleRate: Env.SENTRY_REPLAYS_SESSION_SAMPLE_RATE ?? 0,
+    replaysOnErrorSampleRate: Env.SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE ?? 0,
+    integrations,
+    // Scrub sensitive data before sending to Sentry
+    beforeSend: beforeSendHook,
+    // Explicitly set environment and release so Sentry groups events by deployment and app version.
+    // Prefer CI-provided env vars, fall back to the runtime Env values.
+    // Use Env.VERSION (set from app.config) as the app version/release.
+    environment: process.env.SENTRY_ENV || Env.APP_ENV || process.env.NODE_ENV,
+    release: process.env.SENTRY_RELEASE || String(Env.VERSION),
+    // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+    // spotlight: __DEV__,
+  });
+}
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -40,6 +57,7 @@ export const unstable_settings = {
 
 hydrateAuth();
 loadSelectedTheme();
+initializePrivacyConsent();
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 // Set the animation options. This is optional.

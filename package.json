@@ -26,6 +26,8 @@
     "build:staging:ios": "cross-env APP_ENV=staging EXPO_NO_DOTENV=1 eas build --profile staging --platform ios",
     "build:staging:android": "cross-env APP_ENV=staging EXPO_NO_DOTENV=1 eas build --profile staging --platform android ",
     "build:production:ios": "cross-env APP_ENV=production EXPO_NO_DOTENV=1 eas build --profile production --platform ios",
+    "build:production:android:sentry": "cross-env APP_ENV=production EXPO_NO_DOTENV=1 SENTRY_ENV=production SENTRY_RELEASE=$npm_package_version eas build --profile production --platform android",
+    "build:production:ios:sentry": "cross-env APP_ENV=production EXPO_NO_DOTENV=1 SENTRY_ENV=production SENTRY_RELEASE=$npm_package_version eas build --profile production --platform ios",
     "build:production:android": "cross-env APP_ENV=production EXPO_NO_DOTENV=1 eas build --profile production --platform android ",
     "prepare": "husky",
     "app-release": "cross-env SKIP_BRANCH_PROTECTION=true np --no-publish --no-cleanup --no-release-draft",
@@ -39,6 +41,9 @@
     "test:watch": "pnpm run test --watch",
     "install-maestro": "curl -Ls 'https://get.maestro.mobile.dev' | bash",
     "e2e-test": "maestro test .maestro/ -e APP_ID=com.obytes.development"
+  },
+  "sentry": {
+    "notes": "Set SENTRY_ENV and SENTRY_RELEASE in your CI before building. For EAS builds you can set SENTRY_RELEASE to the package.json version. Ensure source maps/dSYMs are uploaded from the build step or use the Expo Sentry plugin to handle this."
   },
   "dependencies": {
     "@expo/metro-runtime": "^5.0.4",

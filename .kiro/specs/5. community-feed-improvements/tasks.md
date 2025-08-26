@@ -6,6 +6,29 @@
   - Create database migration for post_comments table with hidden_at and undo_expires_at TIMESTAMPTZ columns
   - Create database migration for post_likes table with UNIQUE(post_id, user_id) constraint
   - Create database migration for reports and moderation_audit tables
+  - Create idempotency_keys table for request deduplication:
+
+    ```sql
+    CREATE TABLE idempotency_keys (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      idempotency_key TEXT NOT NULL,
+      client_tx_id TEXT NOT NULL,
+      user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+      endpoint TEXT NOT NULL,
+      payload_hash TEXT NOT NULL,
+      response_payload JSONB NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('completed', 'processing', 'failed')),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '24 hours'),
+      UNIQUE(idempotency_key, user_id, endpoint)
+    );
+
+    -- Indexes for performance and cleanup
+    CREATE INDEX idx_idempotency_keys_lookup ON idempotency_keys (idempotency_key, user_id, endpoint);
+    CREATE INDEX idx_idempotency_keys_cleanup ON idempotency_keys (expires_at) WHERE status = 'completed';
+    CREATE INDEX idx_idempotency_keys_user_recent ON idempotency_keys (user_id, created_at DESC);
+    ```
+
   - Add partial indexes that match default reads for performance:
     ```sql
     CREATE INDEX IF NOT EXISTS idx_posts_visible ON posts (created_at DESC)
@@ -31,6 +54,20 @@
   - Create RLS policies for posts table (public read, owner write/delete)
   - Create RLS policies for post_comments table with same pattern
   - Create RLS policies for post_likes table (users manage own likes only)
+  - Create RLS policies for idempotency_keys table (users can only access their own keys):
+
+    ```sql
+    ALTER TABLE idempotency_keys ENABLE ROW LEVEL SECURITY;
+
+    -- Users can only see/manage their own idempotency keys
+    CREATE POLICY "Users can manage own idempotency keys" ON idempotency_keys
+      FOR ALL USING (auth.uid() = user_id);
+
+    -- Service role can manage all keys for cleanup
+    CREATE POLICY "Service role can manage all idempotency keys" ON idempotency_keys
+      FOR ALL USING (auth.role() = 'service_role');
+    ```
+
   - Add moderation policies for admin/moderator roles via JWT claims
   - Document policies inline in migration files for maintainability
   - Test RLS policies with different user roles and scenarios (verify 403 on foreign edits)
@@ -42,18 +79,115 @@
 
     - Create CommunityAPI class with all CRUD operations
     - All mutating endpoints accept Idempotency-Key + client_tx_id headers
-    - Return prior result for duplicate idempotency keys (server-side deduplication)
-    - Add client transaction ID support for self-echo detection
-    - Implement proper error handling and retry logic
-    - Add rate limiting and validation on client side
+    - Implement UPSERT pattern for idempotency key handling:
+      ```sql
+      -- Atomic insert-or-return pattern in transaction
+      INSERT INTO idempotency_keys (idempotency_key, client_tx_id, user_id, endpoint, payload_hash, response_payload, status)
+      VALUES ($1, $2, $3, $4, $5, $6, 'processing')
+      ON CONFLICT (idempotency_key, user_id, endpoint) DO NOTHING
+      RETURNING *;
+      ```
+    - Validate payload hash on duplicate keys to detect conflicting requests (return 422 on mismatch)
+    - Return stored response for duplicate keys within TTL (replay window)
+    - Implement header validation: reject requests with missing/invalid Idempotency-Key or client_tx_id (400 Bad Request)
+    - Add exponential backoff retry logic for 5xx errors, linear backoff for 429 rate limits
+    - Document retry semantics: clients should retry with same idempotency key for network/server errors
     - _Requirements: 1.5, 1.6, 2.5, 2.6, 9.4, 10.4_
 
   - [ ] 3.2 Implement server-side undo functionality
+
     - DELETE /posts/:id returns `{ undo_expires_at }` (now() + 15s)
     - POST /posts/:id/undo restores only if now() < undo_expires_at (409 if expired)
     - Add soft delete logic with proper tombstone handling
     - Create cleanup job for expired undo operations
     - _Requirements: 4.5, 4.6, 4.7_
+
+  - [ ] 3.3 Implement idempotency key cleanup and monitoring
+    - Create periodic cleanup job (Edge Function with cron trigger) to remove expired idempotency keys:
+      ```sql
+      DELETE FROM idempotency_keys
+      WHERE expires_at < now() AND status = 'completed';
+      ```
+    - Schedule cleanup to run every 6 hours to prevent table bloat
+    - Add monitoring for idempotency key usage patterns and cleanup effectiveness
+    - Implement rate limiting per user: max 1000 idempotency keys per user per hour
+    - Add alerting when cleanup job fails or idempotency table grows beyond expected size
+    - Document TTL policy: completed keys expire after 24 hours, failed keys kept for 7 days for debugging
+    - _Requirements: 9.4, 10.4, 10.5_
+
+- [ ] 3.4 Create idempotency service implementation
+
+  - Build IdempotencyService class with atomic UPSERT operations:
+
+    ```typescript
+    class IdempotencyService {
+      async processWithIdempotency<T>(
+        key: string,
+        clientTxId: string,
+        userId: string,
+        endpoint: string,
+        payload: any,
+        operation: () => Promise<T>
+      ): Promise<T> {
+        const payloadHash = await this.computeHash(payload);
+
+        // Try to insert new idempotency key
+        const existing = await this.upsertIdempotencyKey({
+          idempotencyKey: key,
+          clientTxId,
+          userId,
+          endpoint,
+          payloadHash,
+          status: 'processing',
+        });
+
+        if (existing.wasExisting) {
+          // Validate payload hash matches
+          if (existing.payloadHash !== payloadHash) {
+            throw new ConflictingPayloadError(
+              'Payload mismatch for idempotency key'
+            );
+          }
+
+          // Return cached response if completed
+          if (existing.status === 'completed') {
+            return existing.responsePayload;
+          }
+
+          // Wait and retry if still processing
+          if (existing.status === 'processing') {
+            await this.waitForCompletion(key, userId, endpoint);
+            return this.getCachedResponse(key, userId, endpoint);
+          }
+        }
+
+        try {
+          // Execute the operation
+          const result = await operation();
+
+          // Store successful result
+          await this.updateIdempotencyKey(key, userId, endpoint, {
+            responsePayload: result,
+            status: 'completed',
+          });
+
+          return result;
+        } catch (error) {
+          // Mark as failed for debugging
+          await this.updateIdempotencyKey(key, userId, endpoint, {
+            status: 'failed',
+            errorDetails: error.message,
+          });
+          throw error;
+        }
+      }
+    }
+    ```
+
+  - Implement payload hash computation using SHA-256 for deterministic comparison
+  - Add proper error handling for database conflicts and timeout scenarios
+  - Create middleware for automatic idempotency key validation and processing
+  - _Requirements: 9.4, 10.4_
 
 - [ ] 4. Implement WatermelonDB schema and models
 
@@ -117,8 +251,24 @@
     - Create OutboxProcessor class with FIFO queue management
     - Enforce backoff 1→32s, max 5 retries, mark as failed with manual retry UI
     - Add outbox entry status tracking (pending, failed, confirmed)
+    - Generate idempotency keys using UUID v4 + timestamp for uniqueness
+    - Store idempotency key and client_tx_id with each outbox entry for retry consistency
     - When Realtime event arrives with matching client_tx_id, mark outbox entry confirmed
     - On reconnect, drain outbox before bulk refetch to avoid flicker
+    - Implement retry logic that preserves original idempotency key across attempts:
+      ```typescript
+      class OutboxEntry {
+        id: string;
+        idempotencyKey: string; // Generated once, never changes
+        clientTxId: string; // Generated once, never changes
+        operation: 'create_post' | 'like_post' | 'create_comment';
+        payload: any;
+        status: 'pending' | 'failed' | 'confirmed';
+        retryCount: number;
+        nextRetryAt: Date;
+        createdAt: Date;
+      }
+      ```
     - _Requirements: 6.6, 6.7, 6.8_
 
   - [ ] 6.2 Build optimistic UI update system
@@ -251,7 +401,16 @@
     - Test outbox processor with various failure scenarios
     - Create tests for realtime event handling and deduplication
     - Test optimistic UI updates with rollback scenarios
+    - Add comprehensive idempotency tests:
+      - Same idempotency key with same payload returns cached result
+      - Same idempotency key with different payload returns 422 Conflict
+      - Missing Idempotency-Key header returns 400 Bad Request
+      - Invalid client_tx_id format returns 400 Bad Request
+      - Expired idempotency key allows new operation
+      - Concurrent requests with same key handle race conditions properly
+      - Cleanup job removes expired keys without affecting active ones
     - Add test: two devices like same post simultaneously → server UNIQUE constraint prevents double insert, client reconciles count without flicker
+    - Test idempotency across network failures and retries
     - _Requirements: All requirements validation_
 
   - [ ] 12.2 Build integration tests for offline scenarios

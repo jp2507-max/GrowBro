@@ -2,13 +2,23 @@
 
 ## Overview
 
-The iOS Store Compliance feature implements a comprehensive compliance system that ensures GrowBro meets all Apple App Store requirements as of August 2025. The design focuses on privacy manifests with required-reason API declarations, accurate App Privacy questionnaire completion, 17+ age-rating with mandatory 18+ in-app age-gating, UGC content moderation, AI assessment disclaimers, and proper permission handling.
+**Implementation Details / Responsibility split**:
 
-The system is designed to be maintainable, auditable, and easily updatable as Apple's guidelines evolve. All compliance measures are implemented with clear documentation and automated validation where possible.
+- TypeScript responsibility (JS/TS pipeline):
 
-## Architecture
+  - Produce machine-readable manifest inputs: `privacy-manifests/privacy-manifest-inputs.json` and a human-readable `privacy-manifests/PrivacyInfo.xcprivacy` that list declared APIs, purpose strings, and SDK mapping metadata.
+  - Maintain the mapping of source-level API usage to purpose strings and suggested Required‑Reason categories for audit and developer review.
+  - Provide auxiliary files used by native validation (e.g. `privacy-manifests/rrapi-symbols.txt` and `privacy-manifests/rrapi-exclusions.txt`).
 
-### Core Components
+- Native responsibility (Xcode / prebuild):
+
+  - Detect Required‑Reason API usage from compiled/native symbols and linked frameworks. Detection must run against the binary and frameworks (using `nm`/`otool` or equivalent) rather than source-only heuristics.
+  - Validate that `PrivacyInfo.xcprivacy` (and Info.plist entries) include matching declarations and justifications for detected RRAPI symbols.
+  - Emit a machine-readable validation report (`ios/privacy-validation/privacy-validation.json`) that CI can consume and that makes the prebuild/pass/fail decision.
+
+- Audit & build behavior:
+  - Maintain human-readable mapping documentation generated from TS inputs for reviewers and App Store submission notes.
+  - Native validation failures are surfaced during prebuild/build and must fail the build (non‑zero exit) when required-reason declarations are missing or SDK manifests are invalid.
 
 ```
 iOS Compliance System
@@ -195,7 +205,7 @@ interface ReportSystem {
 
 - Real-time content filtering with keyword detection
 - Image analysis integration for inappropriate visual content
-- Report flow with visible 24-hour SLA commitment
+- Report flow with visible timely review commitment (avoid hard SLA language)
 - Block/mute functionality with persistent user preferences
 - In-app support contact with external Support URL
 
@@ -464,9 +474,83 @@ interface ComplianceAuditEntry {
 
 ### Build Integration
 
-- Privacy manifest generation integrated into Expo build process
-- Required Reason API scanning during TypeScript compilation
-- SDK manifest validation in pre-build hooks
+- Privacy manifest generation remains integrated into the JS/TS (Expo) pipeline: TypeScript generates manifest inputs and human-readable artifacts under `privacy-manifests/`.
+- Required‑Reason API scanning and validation are performed during native prebuild (Xcode run‑script or Expo config plugin that hooks `prebuild`) so detection is performed against compiled symbols and Info.plist / `PrivacyInfo.xcprivacy` metadata.
+
+### Native Build Validation (RRAPI)
+
+Purpose: ensure Required‑Reason APIs are detected from the compiled/native assets and that the final `PrivacyInfo.xcprivacy` and Info.plist entries include required declarations and justifications.
+
+Recommended approaches (pick based on project type):
+
+1. Xcode Run Script (native projects / CI)
+
+- Hook: add a Run Script phase in the app target executed during prebuild (before packaging/archiving). For CI, run the script before `xcodebuild archive`.
+- Tools: `xcrun nm` (or `nm`), `otool -L`, `jq`.
+- Files produced/consumed:
+  - Consumed: `privacy-manifests/privacy-manifest-inputs.json`, `privacy-manifests/rrapi-symbols.txt`, `privacy-manifests/rrapi-exclusions.txt`.
+  - Produced: `ios/privacy-validation/privacy-validation.json`, console logs.
+
+Minimal script flow:
+
+1. Resolve `BIN_PATH` (the built executable) from `${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}` or accept a `--binary` CLI arg for local runs.
+2. Use `xcrun nm -gU "$BIN_PATH"` to list exported symbols and filter against `rrapi-symbols.txt` to build `detectedSymbols`.
+3. Use `xcrun otool -L "$BIN_PATH"` to enumerate linked frameworks and inspect their `Info.plist`/`PrivacyInfo.xcprivacy` if present.
+4. Load `privacy-manifest-inputs.json` and assert that each `detectedSymbol` has a corresponding declaration (or an SDK manifest that covers it).
+5. Create `ios/privacy-validation/privacy-validation.json` with structure:
+
+```
+{
+  "detectedSymbols": ["symbolA","symbolB"],
+  "declarations": [{"api":"symbolA","declared":true}],
+  "missingDeclarations": ["symbolB"],
+  "invalidSDKManifests": [],
+  "result":"pass|fail",
+  "errorMessages": []
+}
+```
+
+6. If `result == fail`, exit non‑zero (recommended code 2) so Xcode/CI surfaces the build failure.
+
+Example local CLI wrapper (POSIX):
+
+```
+./scripts/ios-rrapi-validate.sh \
+  --binary "build/Release-iphoneos/GrowBro.app/GrowBro" \
+  --inputs privacy-manifests/privacy-manifest-inputs.json \
+  --symbols privacy-manifests/rrapi-symbols.txt \
+  --out ios/privacy-validation/privacy-validation.json
+```
+
+2. Expo Config Plugin (Expo managed or prebuild flows)
+
+- Hook: a config plugin that runs during `expo prebuild` and either injects an Xcode Run Script phase or runs a node-based validator against the generated native project in `ios/`.
+- Behavior: copy TS-generated `privacy-manifests/*` into `ios/privacy-manifests/`, run validator, write `ios/privacy-validation/privacy-validation.json`, and throw a plugin error to fail `prebuild` when validation fails.
+
+Surface & CI behavior:
+
+- Fail early: validation errors should fail prebuild/CI with a clear, human-friendly message and a pointer to the JSON artifact.
+- Machine-readable output: `ios/privacy-validation/privacy-validation.json` is required for CI automation and debugging.
+- Console summary: print top missing declarations and suggested fixes, e.g. "Missing declarations: Camera.FileTimestamp - add to PrivacyInfo.xcprivacy or provide justification in SDK manifest".
+
+Failure modes and how to handle them:
+
+- Missing declaration (hard fail): detected symbol with no matching PrivacyInfo entry. Action: exit 2, list missingDeclarations in JSON, print summary.
+- Invalid SDK manifest (hard fail): SDK-provided manifest missing required fields or failing signature validation. Action: exit 2, include details under `invalidSDKManifests`.
+- Tooling missing (soft/hard fail depending on CI): missing `xcrun`/`nm`/`otool` → exit 3 with clear message instructing to install Xcode CLT.
+- False positives: allow `privacy-manifests/rrapi-exclusions.txt` to list symbol patterns to ignore. Excluded matches should be logged at warning level and not cause hard failure unless configured.
+- Parsing errors: unparsable `PrivacyInfo.xcprivacy` or `privacy-manifest-inputs.json` should cause fail with parsing errors reported in `errorMessages`.
+
+Exit codes:
+
+- 0: pass
+- 2: validation fail (missing/invalid declarations)
+- 3: environment/tooling error
+
+Developer ergonomics:
+
+- Provide a local CLI wrapper (`scripts/ios-rrapi-validate.sh` or node script) for devs to run quickly against a built binary or an app in the simulator.
+- Document how to generate the build artifact path on macOS Xcode so the script can be run locally: e.g. `xcodebuild -workspace GrowBro.xcworkspace -scheme GrowBro -configuration Release -sdk iphoneos build` then use the binary at derived data path.
 
 ### Monitoring & Alerting
 

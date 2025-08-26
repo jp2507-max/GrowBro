@@ -122,8 +122,15 @@ interface TaskGenerator {
     plantStartDate: Date,
     timezone: string
   ): TaskSchedule; // DST-safe
-  validateRRULEPattern(rrule: string): boolean; // Checks FREQ first, no duplicates, RFC 5545 ordering
-  nextOccurrence(rrule: string, after: Date, timezone: string): Date; // Timezone-aware calculation
+  validateRRULEPattern(
+    rrule: string
+  ): { valid: true } | { valid: false; reason: string }; // Uses `rrule` parser plus semantic checks (COUNT vs UNTIL, BYDAY/BYMONTHDAY)
+  nextOccurrence(
+    rrule: string,
+    after: Date,
+    timezone: string,
+    dtstartIso?: string
+  ): Date | null; // Timezone-aware calculation using `rrule` + `luxon`
   getAnchorDate(playbook: Playbook, plant: Plant): Date; // plant.startDate or phase.startDate
 }
 ```
@@ -142,7 +149,7 @@ interface NotificationScheduler {
 
   // Android-specific handling
   ensureChannels(): Promise<void>; // Create notification channels on startup
-  canUseExactAlarms(): Promise<boolean>; // Check Android 14+ permissions
+  canUseExactAlarms(): Promise<boolean>; // Check Android 12+ (API 31) permissions
   requestExactAlarmPermission(): Promise<boolean>;
   handleDozeMode(): Promise<void>; // Fallback strategies
 
@@ -466,6 +473,168 @@ class RRULEGenerator {
 }
 ```
 
+The above ad-hoc validator is insufficient for full RFC 5545 compliance. We replace it with a library-backed approach (recommended: `rrule` / rrule.js) and explicit semantic checks. The implementation below shows the intended pattern using `rrule` together with `luxon` for timezone-aware DTSTART handling.
+
+```typescript
+import { RRule, rrulestr } from 'rrule';
+import { DateTime } from 'luxon';
+
+class RRULEGenerator {
+  // NOTE: we use the `rrule` library (https://github.com/jakubroztocil/rrule)
+  // for parsing/serializing RRULE strings and `luxon` for timezone-aware
+  // DTSTART generation and conversions. This combination covers most
+  // practical RFC 5545 needs while documenting known limitations below.
+
+  generateDailyRRULE(interval: number = 1): string {
+    const rule = new RRule({ freq: RRule.DAILY, interval });
+    return rule.toString();
+  }
+
+  generateWeeklyRRULE(days: WeekDay[], interval: number = 1): string {
+    const byweekday = days.map((d) => RRule[d as keyof typeof RRule]);
+    const rule = new RRule({ freq: RRule.WEEKLY, interval, byweekday });
+    return rule.toString();
+  }
+
+  generateCustomRRULE(
+    template: TaskTemplate,
+    timezone: string,
+    startDate?: string
+  ): string {
+    // Build an RRule options object from the template, then validate
+    // Parse/validate using rrulestr so the library surfaces syntax errors.
+    const rruleString = this.buildRRULE(template);
+
+    // Validate via library + semantic checks
+    const validation = this.validateRRULEPattern(rruleString);
+    if (!validation.valid) {
+      throw new RRULEError(
+        ErrorCode.RRULE_INVALID_FORMAT,
+        validation.reason,
+        rruleString
+      );
+    }
+
+    // If a DTSTART (startDate) and timezone are provided, we attach DTSTART separately
+    // and store it alongside the RRULE (recommended). rrule.js does not fully parse
+    // TZID parameters inside RRULE strings; instead we generate a DTSTART using luxon
+    // with the provided timezone and persist that value. Example storage model:
+    // { recurrence_rule: 'FREQ=WEEKLY;BYDAY=MO', recurrence_start: '2025-08-26T09:00:00', timezone: 'America/Los_Angeles' }
+
+    return rruleString;
+  }
+
+  validateRRULEPattern(
+    rruleString: string
+  ): { valid: true } | { valid: false; reason: string } {
+    // Primary syntax validation: delegate to rrule parser which emits detailed errors
+    try {
+      // rrulestr will throw on invalid syntax
+      const parsed = rrulestr(rruleString, { forceset: false });
+
+      // Access options for semantic checks. The rrule instance exposes
+      // `origOptions` which contains parsed rule parts in a JS-friendly form.
+      // (Exact property names depend on the rrule version; this is conceptual.)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const opts: any =
+        (parsed as any).origOptions || (parsed as any).options || {};
+
+      // Semantic rule: COUNT and UNTIL are mutually exclusive (RFC 5545)
+      if (opts.count && opts.until) {
+        return {
+          valid: false,
+          reason: 'RRULE must not contain both COUNT and UNTIL',
+        };
+      }
+
+      // Semantic rule: BYDAY and BYMONTHDAY exclusivity for our domain
+      // (application-level constraint to avoid ambiguous monthly/weekly mixes)
+      if (opts.byweekday && opts.bymonthday) {
+        return {
+          valid: false,
+          reason: 'BYDAY and BYMONTHDAY must not be used together',
+        };
+      }
+
+      // Ensure FREQ exists (library will normally enforce this)
+      if (!opts.freq) {
+        return { valid: false, reason: 'RRULE missing FREQ' };
+      }
+
+      // Enforce no duplicate rule parts (library parse already normalizes this)
+
+      // Additional domain-specific checks can be added here (e.g., interval > 0)
+      if (opts.interval !== undefined && opts.interval <= 0) {
+        return { valid: false, reason: 'INTERVAL must be a positive integer' };
+      }
+
+      return { valid: true };
+    } catch (err) {
+      // Surface library parse errors to be handled by caller
+      return {
+        valid: false,
+        reason: (err as Error).message || 'Invalid RRULE syntax',
+      };
+    }
+  }
+
+  nextOccurrence(
+    rruleString: string,
+    after: Date,
+    timezone: string,
+    dtstartIso?: string
+  ): Date | null {
+    // To compute timezone-aware occurrences we:
+    // 1. Parse the RRULE using rrulestr
+    // 2. If a DTSTART (with timezone) is provided, convert to a JS Date in UTC using luxon
+    // 3. Ask the rrule instance for the next occurrence after `after` (in UTC)
+
+    // Example (conceptual):
+    try {
+      const rruleObj = rrulestr(rruleString, { forceset: false }) as RRule;
+
+      // If dtstartIso + timezone provided, convert and set as start
+      if (dtstartIso) {
+        const dt = DateTime.fromISO(dtstartIso, { zone: timezone }).toUTC();
+        // rrule.js allows creating an RRule from options including dtstart. Re-create if needed.
+        // For brevity we call rruleObj.after with a JS Date after converting `after` to UTC.
+      }
+
+      const next = (rruleObj as any).after(after, false);
+      return next ? new Date(next) : null;
+    } catch (err) {
+      throw new RRULEError(
+        ErrorCode.RRULE_INVALID_FORMAT,
+        (err as Error).message,
+        rruleString
+      );
+    }
+  }
+}
+```
+
+Notes about behavior and limitations:
+
+- Chosen library: `rrule` (a.k.a. rrule.js). Rule: "LibraryChoice: rrule.js"
+- Timezones: `rrule` focuses on recurrence rules and treats DTSTART as a JavaScript Date. It does not fully parse RRULE tokens with TZID parameters. We therefore generate and store DTSTART separately (ISO string) and persist a timezone identifier (IANA tz like "America/Los_Angeles"). During occurrence calculation we convert DTSTART into UTC with `luxon` and pass UTC JS Dates into `rrule` APIs.
+- UNTIL vs COUNT: Enforced as mutually exclusive per RFC 5545. If both are present the rule will be rejected with an explanatory error.
+- BYDAY vs BYMONTHDAY: For this product we enforce mutual exclusivity to avoid ambiguous schedules that mix monthly-by-day and weekly-by-day semantics. This is an application-level constraint (not an RFC requirement) and is documented for users.
+- TZID handling in input strings: We do not accept RRULE strings that embed TZID parameters. Instead, creators must provide a DTSTART and timezone separately. When displaying or exporting rules we will serialize RRULE and the separate DTSTART/TZ fields.
+- Ordering: RFC 5545 does not mandate a strict ordering for tokens; the `rrule` parser handles normalization. We will not enforce FREQ to be the first token in incoming strings — instead we rely on the parser and then normalize string output with `RRule.toString()` when saving.
+
+Storage recommendation:
+
+- Persist `recurrence_rule` (RRULE string), `recurrence_start` (ISO DTSTART), and `recurrence_timezone` (IANA tz) as separate columns on the `tasks` table. This avoids relying on fragile parsing of TZID inside RRULEs and makes scheduling deterministic across devices.
+
+DTSTART/TZID generation/enforcement:
+
+- When creating a rule from a template the system will:
+  - Require an explicit start date/time (DTSTART) for recurring tasks. If the user doesn't provide one, generate a sensible default from the plant/phase anchor and the user's timezone.
+  - Persist DTSTART as an ISO 8601 string together with the IANA timezone name.
+  - Use `luxon` to convert DTSTART to UTC for library computations (next occurrence, serializing exception dates, etc.).
+
+This approach centralizes timezone handling, avoids depending on non-standard TZID parsing in RRULE strings, and makes recurrence computations reproducible across clients.
+
 ### Notification System Architecture
 
 ```typescript
@@ -514,6 +683,27 @@ class NotificationManager {
     return notificationId;
   }
 
+<!-- REVIEW (lines 488-516): Verification & recommended change -->
+<!--
+Note: Verified against Expo Notifications (docs.expo.dev). The JS API does not accept raw RFC-5545 RRULE strings for local repeating triggers, nor is there a cross-platform JS method named canScheduleExactNotifications().
+
+Implication: The original createTrigger/createRepeatingTrigger design that assumes native RRULE support or a reliable "exact" scheduling check is not portable.
+
+Recommended approach (compute-next-and-reschedule):
+  - Use a RRULE engine in JS (e.g., rrule.js) to compute the next occurrence from the task's recurrence rule and timezone.
+  - Schedule a one-off date trigger for that next occurrence using Expo's date trigger (or daily/weekly/yearly where appropriate).
+  - On delivery (or in the notification response handler), compute and schedule the following occurrence.
+  - For Android 12+ exact alarms, add <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/> via a config plugin or the Android manifest and fall back to inexact triggers when permission is unavailable.
+
+Reasons:
+  - Expo's triggers support date, timeInterval, daily, weekly, yearly. Complex RRULEs (monthly by rule, exceptions, BYDAY patterns) must be computed in JS.
+  - Exact timing guarantees differ by OS and OEM; a request/manifest entry is necessary for Android exact alarms and iOS generally does not expose strict exact scheduling.
+
+Suggested method replacement: replace createTrigger/createRepeatingTrigger with scheduleNext(task: Task) that computes the next date using an RRULE library and then calls Notifications.scheduleNotificationAsync with a date trigger. Keep a small retry/reschedule window to handle timezone shifts and DST.
+
+References: Expo Notifications docs (local triggers), Android SCHEDULE_EXACT_ALARM permission, rrule.js for recurrence calculations.
+-->
+
   private createTrigger(
     reminderAt: string,
     rrule?: string,
@@ -531,14 +721,15 @@ class NotificationManager {
   }
 
   async canUseExactAlarms(): Promise<boolean> {
-    // Check Android 14+ SCHEDULE_EXACT_ALARM permission
+    // Check Android 12+ (API 31) SCHEDULE_EXACT_ALARM permission
     if (Platform.OS === 'android' && Platform.Version >= 31) {
       return await Notifications.canScheduleExactNotifications();
     }
     return true;
   }
 
-  async handleAndroidDozeMode(): Promise<void> {
+  // NOTE: Android 12+ (API 31)
+  async handleDozeMode(): Promise<void> {
     // Request battery optimization exemption
     // Implement WorkManager/JobScheduler fallback
     // Monitor delivery success rates: ≥95% within ±5 min
@@ -643,11 +834,10 @@ class CommunityTemplateService {
 ```typescript
 const PlaybookCard = ({ playbook }: { playbook: Playbook }) => (
   <TouchableOpacity
-    style={styles.card}
     accessibilityRole="button"
     accessibilityLabel={`Select ${playbook.name} playbook`}
     accessibilityHint="Double tap to apply this playbook to your plant"
-    style={{ minHeight: 48 }} // Meet 48dp minimum
+    style={[styles.card, { minHeight: 48 }]} // Compose card style and 48dp minimum
   >
     <Text style={styles.title}>{playbook.name}</Text>
   </TouchableOpacity>
@@ -778,7 +968,7 @@ interface AnalyticsEvents {
 
 - **WHEN** RRULE patterns are generated **THEN** all rules SHALL validate against RFC 5545 specification
 - **WHEN** testing RRULE **THEN** unit tests SHALL include DST boundary cases (spring/fall transitions)
-- **WHEN** validating RRULE **THEN** system SHALL reject patterns missing FREQ first or containing duplicate parts
+- **WHEN** validating RRULE **THEN** system SHALL delegate syntax validation to the `rrule` parser and enforce additional semantic checks (e.g., COUNT vs UNTIL mutual exclusion, BYDAY vs BYMONTHDAY where applicable); parser errors and semantic failures SHALL be surfaced with clear messages
 
 ### Notifications Matrix
 

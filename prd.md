@@ -11,7 +11,7 @@ CanaBro helps home growers plan, track, and optimize cultivation. This launch fo
 - **A. Calendar 2.0** (recurring tasks, reminders, agenda UX)
 - **B. Harvest Workflow** (staged drying/curing → inventory)
 - **C. Community Feed Improvements** (engagement + moderation)
-- **D. AI Photo Diagnosis (v1)** (leaf/plant issue detection → next-best-action)
+- **D. AI Photo Assessment (v1)** (leaf/plant issue detection → next-best-action)
 - **E. Guided Grow Playbooks** (dynamic, step‑by‑step schedules by setup/strain)
 
 ## 2) Goals (What and Why)
@@ -19,7 +19,7 @@ CanaBro helps home growers plan, track, and optimize cultivation. This launch fo
 - Increase daily active usage via reliable reminders and a clearer agenda.
 - Reduce harvest logging friction and improve post‑harvest data quality.
 - Boost community engagement with likes/comments and near‑real‑time updates.
-- **New:** Reduce time‑to‑fix for common plant issues via on‑device/in‑cloud AI diagnosis and actionable guidance.
+- **New:** Reduce time‑to‑fix for common plant issues via on‑device/in‑cloud AI assessment and actionable guidance.
 - **New:** Improve new‑grower outcomes with guided, editable playbooks that adapt to real‑world progress.
 
 ## 3) Non‑Goals (Launch v1)
@@ -41,7 +41,7 @@ CanaBro helps home growers plan, track, and optimize cultivation. This launch fo
 - As a grower, I see a **clean agenda** for today and can drag‑to‑reschedule tasks.
 - As a grower, I can **record harvest weights** and track **drying/curing** stages until inventory.
 - As a user, I can **like and comment** on posts and see updates in near real‑time.
-- **AI:** As a grower, I can **scan a leaf/plant photo** and get a likely diagnosis with **confidence** and **next steps**.
+- **AI:** As a grower, I can **scan a leaf/plant photo** and get a likely assessment with **confidence** and **next steps**.
 - **Guided:** As a new grower, I can pick a **playbook** (Auto/Photo; Indoor/Outdoor) that **creates my schedule** and **adapts** when the plan slips or the AI flags an issue.
 
 ## 6) Scope & Features
@@ -89,7 +89,7 @@ CanaBro helps home growers plan, track, and optimize cultivation. This launch fo
 - New comments surface within \~1–3s; no duplicate events.
 - Delete action reversible for 15s; content restored on undo.
 
-### EPIC D — AI Photo Diagnosis (v1)
+### EPIC D — AI Photo Assessment (v1)
 
 **Scope:** Focused classifier for the top 8–12 grow issues. Initial classes:
 
@@ -154,13 +154,13 @@ CanaBro helps home growers plan, track, and optimize cultivation. This launch fo
   2. **Plants & Grow data** (strain/setup, stages, notes)
   3. **Harvest workflow** (stages, weights, inventory handoff)
   4. **Playbooks/Templates** (applied schedules & bulk shift)
-  5. **AI Diagnoses queue** (photos, pending requests/results; retries when online)
+  5. **AI Assessments queue** (photos, pending requests/results; retries when online)
 
 - **Should (read‑only cache + outbox):**
   6\) **Community feed** (last \~50 posts/comments cached); likes/comments queued offline and sent later.
 - **Not stored as blobs in DB:**
 
-  - **Images/Videos** are saved to the **file system**; the DB stores only URIs/metadata. Keep originals + a resized variant (\~1280px). Background cleanup (LRU) and per‑plant/diagnosis folders.
+  - **Images/Videos** are saved to the **file system**; the DB stores only URIs/metadata. Keep originals + a resized variant (\~1280px). Background cleanup (LRU) and per‑plant/assessment folders.
 
 **Notifications:** Local scheduled notifications for tasks; rehydrate on app start; independent of network.
 
@@ -168,9 +168,9 @@ CanaBro helps home growers plan, track, and optimize cultivation. This launch fo
 
 **Telemetry:** Sync duration, checkpoint age, queued mutations, failure rates per table.
 
-**Testing matrix:** Flight‑mode end‑to‑end (tasks/harvest/diagnosis queue), multi‑device conflict tests, large data sets (1k+ tasks), power‑saving modes.
+**Testing matrix:** Flight‑mode end‑to‑end (tasks/harvest/assessment queue), multi‑device conflict tests, large data sets (1k+ tasks), power‑saving modes.
 
-**Security/Privacy:** Minimal PII in sync; per‑user RLS; diagnoses private by default; explicit opt‑in for sharing photos; user‑initiated deletion cascades local + remote.
+**Security/Privacy:** Minimal PII in sync; per‑user RLS; assessments private by default; explicit opt‑in for sharing photos; user‑initiated deletion cascades local + remote.
 
 ### 7B) Image storage (implementation)
 
@@ -186,7 +186,7 @@ CanaBro helps home growers plan, track, and optimize cultivation. This launch fo
 
 - **Auth:** Bearer JWT from Supabase Auth. Edge Functions **must not** use the service key for user-scoped reads/writes; keep **RLS enforced**. Extract `user_id` via `auth.getUser()`.
 - **Clock:** Server uses `now()` (ms) as the authoritative `server_timestamp` to avoid clock skew.
-- **Tables in scope:** `plants`, `tasks`, `harvests`, `inventory`, `playbooks`, `diagnoses`, `posts`, `post_likes`, `post_comments` (read-only for some in pull). All tables have `id UUID`, `user_id UUID`, `updated_at timestamptz DEFAULT now()`, `deleted_at timestamptz NULL` (soft delete).
+- **Tables in scope:** `plants`, `tasks`, `harvests`, `inventory`, `playbooks`, `assessments`, `posts`, `post_likes`, `post_comments` (read-only for some in pull). All tables have `id UUID`, `user_id UUID`, `updated_at timestamptz DEFAULT now()`, `deleted_at timestamptz NULL` (soft delete).
 - **Order of operations (push):** `created → updated → deleted`. Idempotency via header `Idempotency-Key` (UUID). Max payload \~2MB; chunk if larger.
 - **Pagination:** For large pulls, return `has_more: true` with `next_cursor` (opaque). Client retries with same body + `cursor`.
 
@@ -205,7 +205,7 @@ _Request body_
     "harvests",
     "inventory",
     "playbooks",
-    "diagnoses",
+    "assessments",
     "posts",
     "post_comments"
   ],
@@ -239,7 +239,7 @@ _Response_
     "harvests": { "created": [], "updated": [], "deleted": [] },
     "inventory": { "created": [], "updated": [], "deleted": [] },
     "playbooks": { "created": [], "updated": [], "deleted": [] },
-    "diagnoses": { "created": [], "updated": [], "deleted": [] },
+    "assessments": { "created": [], "updated": [], "deleted": [] },
     "posts": { "created": [], "updated": [], "deleted": [] },
     "post_comments": { "created": [], "updated": [], "deleted": [] }
   },
@@ -254,6 +254,8 @@ _Query logic (per table)_
 - **created/updated:** rows where `updated_at > last_pulled_at` (or all if null), filtered by `user_id = auth.uid()` for private tables; community tables are public‑read but still filtered to recent changes.
 - **deleted:** rows where `deleted_at IS NOT NULL AND deleted_at > last_pulled_at` returned as `{id, deleted_at}`.
 - Use `cursor` to paginate by `(updated_at, id)`.
+
+Note on public vs. private tables: the server should apply per‑user scoping for private tables (e.g., `tasks`, `plants`, `assessments`) by adding a `user_id = auth.uid()` filter to pull and delete queries. Community tables (e.g., `posts`, `post_comments`) are public‑read and must remain globally visible; the server should therefore skip the per‑user filter for those tables. A simple allowlist/denylist (as shown in the TypeScript sketch) is the recommended approach and keeps the logic explicit and auditable.
 
 ---
 
@@ -287,7 +289,7 @@ _Request body_
     "harvests": { "created": [], "updated": [], "deleted": [] },
     "inventory": { "created": [], "updated": [], "deleted": [] },
     "playbooks": { "created": [], "updated": [], "deleted": [] },
-    "diagnoses": { "created": [], "updated": [], "deleted": [] }
+    "assessments": { "created": [], "updated": [], "deleted": [] }
   }
 }
 ```
@@ -320,22 +322,50 @@ export default async function pull(req: Request) {
   const { last_pulled_at, tables, cursor } = await req.json();
   const supa = createClientWithAuth(req); // uses user JWT
   const since = last_pulled_at ? new Date(last_pulled_at) : new Date(0);
+
+  // Allowlist / denylist for public‑read tables. These tables are globally visible
+  // on pull and should NOT be scoped by user_id. Add any other public tables here.
+  const publicReadTables = new Set(['posts', 'post_comments']);
+
+  // Extract the authenticated user id once and reuse. See "General" above: use
+  // auth.getUser() (or equivalent) to obtain the user's id from the request/JWT.
+  // This is pseudo code for the sketch.
+  const { user } = await supa.auth.getUser?.();
+  const uid = user?.id ?? null;
+
   const out = { changes: {}, has_more: false, next_cursor: null } as any;
   for (const t of tables) {
     out.changes[t] = { created: [], updated: [], deleted: [] };
+
     // created/updated
-    const up = await supa
+    // Build the base query then apply per‑user RLS scoping for private tables.
+    let upQuery = supa
       .from(t)
       .select('*')
       .gt('updated_at', since.toISOString())
       .order('updated_at', { ascending: true })
       .order('id', { ascending: true });
+
+    // Apply user filter for non‑public tables so RLS scoping matches expectations.
+    if (!publicReadTables.has(t) && uid) {
+      upQuery = upQuery.eq('user_id', uid);
+    }
+
+    const up = await upQuery;
+
     // deleted
-    const del = await supa
+    let delQuery = supa
       .from(t)
       .select('id, deleted_at')
       .not('deleted_at', 'is', null)
       .gt('deleted_at', since.toISOString());
+
+    if (!publicReadTables.has(t) && uid) {
+      delQuery = delQuery.eq('user_id', uid);
+    }
+
+    const del = await delQuery;
+
     out.changes[t].created =
       up.data?.filter((r) => r.created_at === r.updated_at) ?? [];
     out.changes[t].updated =
@@ -352,28 +382,65 @@ export default async function push(req: Request) {
   const applied = {};
   const rejected = {};
   const conflicts = {};
+
+  // Extract authenticated user id once and reuse. Do NOT trust client-supplied user_id.
+  const { user } = await supa.auth.getUser?.();
+  const uid = user?.id ?? null;
+
   for (const [t, diff] of Object.entries(changes)) {
     applied[t] = { created: 0, updated: 0, deleted: 0 };
-    // created/updated
+
+    // created/updated: treat client user_id as untrusted; inject server-side
     for (const row of [...diff.created, ...diff.updated]) {
-      const { id, user_id, ...rest } = row;
+      const { id, ...rest } = row; // ignore any user_id from client
+
+      // Quick existence check to count created vs updated correctly.
+      const exists = await supa.from(t).select('id').eq('id', id).maybeSingle();
+      if (exists.error) {
+        // If the existence check fails, treat as a rejected row and continue.
+        (rejected[t] ??= []).push({ id, reason: exists.error.message });
+        continue;
+      }
+
       const up = await supa
         .from(t)
-        .upsert({ id, user_id, ...rest, updated_at: new Date().toISOString() });
-      if (up.error) (rejected[t] ??= []).push({ id, reason: up.error.message });
-      else applied[t].updated++;
+        .upsert({
+          id,
+          user_id: uid,
+          ...rest,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (up.error) {
+        // Keep existing error handling: push rejected entries on up.error
+        (rejected[t] ??= []).push({ id, reason: up.error.message });
+      } else {
+        // Increment created if the row didn't exist, otherwise updated
+        if (!exists.data) applied[t].created++;
+        else applied[t].updated++;
+      }
     }
+
     // deleted
     for (const row of diff.deleted) {
       const up = await supa
         .from(t)
         .update({ deleted_at: new Date().toISOString() })
-        .eq('id', row.id);
-      if (up.error)
+        .eq('id', row.id)
+        // scope to the authenticated user's rows (server-side uid)
+        .eq('user_id', uid)
+        // only update rows that are not already soft-deleted (idempotent)
+        .is('deleted_at', null);
+
+      if (up.error) {
         (rejected[t] ??= []).push({ id: row.id, reason: up.error.message });
-      else applied[t].deleted++;
+      } else if (up.data && up.data.length > 0) {
+        // Only count as deleted if the update actually affected rows
+        applied[t].deleted++;
+      }
     }
   }
+
   return json({ server_timestamp: Date.now(), applied, rejected, conflicts });
 }
 ```
@@ -397,11 +464,11 @@ export default async function push(req: Request) {
 - `task_templates`: id, name, json_schema, created_at
 - `harvests`: id, plant_id, wet_weight, dry_weight, notes, stage, stage_started_at, stage_completed_at, created_at
 - `inventory`: id, plant_id, harvest_id, final_weight, created_at
-- **New `diagnoses`:** id, plant_id, images\[], predicted_class, confidence, actions_json, created_at, resolved_at, helpful_vote
+- **New `assessments`:** id, plant_id, images\[], predicted_class, confidence, actions_json, created_at, resolved_at, helpful_vote
 - **New `playbooks`:** id, name, setup (auto/photo × indoor/outdoor), locale, steps_json, created_at
 - `posts`, `post_likes`, `post_comments` (unchanged)
 
-**RLS:** Per‑user isolation where applicable; community content is public‑read, owner‑write. AI `diagnoses` are private by default; sharing creates a redacted community post.
+**RLS:** Per‑user isolation where applicable; community content is public‑read, owner‑write. AI `assessments` are private by default; sharing creates a redacted community post.
 
 ## 9) Analytics & Success Metrics
 
@@ -422,7 +489,7 @@ export default async function push(req: Request) {
 **AI & Guidance**
 
 - Top‑1 accuracy ≥75% across v1 classes on a held‑out dataset.
-- ≥40% of AI diagnoses result in a task or playbook adjustment within 48h.
+- ≥40% of AI assessments result in a task or playbook adjustment within 48h.
 - “Helpful” rate ≥60% on AI result cards.
 
 ## 10) Accessibility & Localization
@@ -443,9 +510,9 @@ export default async function push(req: Request) {
 
 - **M1 (W2):** Recurring tasks + reminders MVP behind a flag.
 - **M2 (W4):** Harvest modal + stages end‑to‑end; charts basic.
-- **M2.5 (W5):** **Offline‑first baseline** — WatermelonDB integrated; schema migrated; image file storage; `pullChanges`/`pushChanges` endpoints live; LWW conflicts; flight‑mode QA (tasks/harvest/diagnosis queue) passes.
+- **M2.5 (W5):** **Offline‑first baseline** — WatermelonDB integrated; schema migrated; image file storage; `pullChanges`/`pushChanges` endpoints live; LWW conflicts; flight‑mode QA (tasks/harvest/assessment queue) passes.
 - **M3 (W6):** Community likes/comments + realtime baseline.
-- **M4 (W7):** AI Diagnosis (v1) behind a flag; internal eval ≥75% top‑1.
+- **M4 (W7):** AI Assessment (v1) behind a flag; internal eval ≥75% top‑1.
 - **M5 (W8):** Playbooks → Calendar integration; polish, a11y, localization, QA → RC.
 
 ## 13) Risks & Mitigations
@@ -453,7 +520,7 @@ export default async function push(req: Request) {
 - **Android notification reliability** → device‑matrix testing; fallback local alarms; analytics on delivery rate.
 - **Realtime duplication** → client de‑dup; idempotent server updates.
 - **Offline conflicts** → last‑write‑wins with user‑visible conflict notes.
-- **AI misdiagnosis** → confidence thresholds, safe baseline actions, community CTA.
+- **AI misassessment** → confidence thresholds, safe baseline actions, community CTA.
 - **App store policy changes** → internal checklist; copy review before release.
 
 ## 14) Out of Scope (explicit)
@@ -476,7 +543,7 @@ export default async function push(req: Request) {
 - Calendar 2.0 (recurrence, reminders, drag‑drop, templates)
 - Harvest Workflow (stages → inventory, charts)
 - Community (likes/comments, realtime, author moderation)
-- **AI Photo Diagnosis v1** (focused classes, confidence, action plan, community CTA)
+- **AI Photo Assessment v1** (focused classes, confidence, action plan, community CTA)
 - **Guided Grow Playbooks** (Auto/Photo × Indoor/Outdoor baselines → calendar)
 - Age‑gate, disclaimers, privacy options; EN/DE localization
 

@@ -66,6 +66,34 @@ The harvest workflow implements a finite state machine with the following rules:
 - `stage_completed_at`: Set on stage exit (server UTC timestamp)
 - All timestamps displayed in user locale
 
+> NOTE (coderabbitai): Standardize timestamp semantics and types across DB, API, and client to avoid serialization/ordering/LWW bugs.
+>
+> - Persist timestamps as server UTC (ISO-8601 strings) or Unix epoch milliseconds consistently.
+> - Name the units explicitly in API/SDK types (for example: `server_timestamp_ms`).
+>
+> Suggested self-documenting interface diffs (apply to DB/API/clients):
+>
+> ```ts
+> interface Harvest {
+>   stage_started_at: string; // ISO-8601 UTC
+>   stage_completed_at: string | null; // ISO-8601 UTC
+>   created_at: string; // ISO-8601 UTC
+>   updated_at: string; // ISO-8601 UTC
+>   deleted_at: string | null; // ISO-8601 UTC
+> }
+>
+> interface Inventory {
+>   harvest_date: string; // ISO-8601 date
+>   created_at: string; // ISO-8601 UTC
+>   updated_at: string; // ISO-8601 UTC
+>   deleted_at: string | null; // ISO-8601 UTC
+> }
+>
+> interface HarvestAPIResponseExtras {
+>   server_timestamp_ms: number; // Unix epoch milliseconds (server authoritative)
+> }
+> ```
+
 **Undo/Revert Rules**:
 
 - **Soft Undo**: 15-second window for immediate undo without audit trail
@@ -149,6 +177,18 @@ All list components MUST use FlashList v2 defaults:
 - **Purpose**: Atomic inventory record creation and management
 - **Props**: `harvestId: string, finalWeight: number, idempotencyKey: string`
 - **Features**: Single transactional API call (completeCuringAndCreateInventory), idempotency via UUID key, server timestamp return for checkpointing
+
+<!--
+Idempotency clarification (operational requirements):
+
+- Scope: idempotencyKey is scoped to the API endpoint and the authenticated user. The server SHOULD treat the key as unique per (user_id, endpoint) pair — i.e., the same key used by the same user for the same endpoint must be considered a replay and return the original result.
+- Uniqueness & constraints: enforce a unique constraint in the idempotency table (user_id, endpoint, idempotency_key) and link it to the resulting transaction (harvest_id / inventory_id). Also enforce UNIQUE(inventory.harvest_id) at the business table level to prevent duplicate inventory rows even if idempotency metadata is lost.
+- TTL & retention: persist idempotency records for a configurable TTL (suggest 7 days by default, configurable to 30 days for longer offline windows). After TTL expiry, keys may be garbage-collected and re-use allowed.
+- Replay behavior: on replay (same user + endpoint + key), return the original successful response with HTTP 200 and the original response body. If the original request previously failed with a deterministic error (validation), return the original error code (e.g., 422). If the original request is still in-flight or ambiguous, return 409 (Conflict) with a helpful message describing current status.
+- Concurrency handling: implement the idempotency insert + transactional operation in two phases: 1) attempt to INSERT idempotency record with a status lock (e.g., PENDING) using a DB unique constraint; 2) if insert succeeds, perform the transactional work (completeCuringAndCreateInventory) and then UPDATE the idempotency record to SUCCESS/FAILED with the response payload and server_timestamp_ms. If the INSERT fails due to unique constraint, read the existing idempotency record and return its stored response (or 409 if it is PENDING). This prevents double writes under concurrent retries.
+- Audit & observability: log idempotency events (created, replayed, expired) and surface metrics for replays and conflicts to detect problematic clients.
+
+-->
 
 ### Data Models
 
@@ -299,7 +339,11 @@ interface HarvestAPI {
   ): Promise<{
     harvest: Harvest;
     inventory: Inventory;
-    server_timestamp: number;
+    // server_timestamp is server-authoritative. Prefer explicit units in API:
+    // - `server_timestamp_ms` => Unix epoch milliseconds
+    // - or `server_timestamp_iso` => ISO-8601 UTC string
+    // Use the `_ms` suffix for millisecond epoch numbers to avoid ambiguity.
+    server_timestamp_ms: number;
   }>;
   getHarvestHistory(plantId: string): Promise<Harvest[]>;
   getHarvestChartData(
@@ -333,17 +377,23 @@ interface SyncAPI {
 }
 
 interface SyncPullResponse {
-  server_timestamp: number;
+  // server_timestamp (server-authoritative). Use explicit units in the shape:
+  // `server_timestamp_ms: number` for Unix epoch milliseconds or
+  // `server_timestamp_iso: string` for ISO-8601 UTC. Clients should prefer ms for
+  // numeric operations and ISO strings for readability.
+  server_timestamp_ms: number;
   changes: {
     harvests: {
       created: Harvest[];
       updated: Harvest[];
-      deleted: { id: string; deleted_at: Date }[];
+      // Deleted records include server UTC timestamps as ISO strings in the API
+      // model to avoid Date deserialization pitfalls.
+      deleted: { id: string; deleted_at: string }[];
     };
     inventory: {
       created: Inventory[];
       updated: Inventory[];
-      deleted: { id: string; deleted_at: Date }[];
+      deleted: { id: string; deleted_at: string }[];
     };
   };
   has_more: boolean;
@@ -351,23 +401,26 @@ interface SyncPullResponse {
 }
 
 interface SyncPushRequest {
-  last_pulled_at: number;
+  // `last_pulled_at` should be explicit about units. Use ms suffix for clarity.
+  last_pulled_at_ms: number;
   changes: {
     harvests: {
       created: Harvest[];
       updated: Harvest[];
-      deleted: { id: string; deleted_at_client: Date }[];
+      // deleted_at_client: client-provided timestamp; prefer ISO-8601 string
+      deleted: { id: string; deleted_at_client: string }[];
     };
     inventory: {
       created: Inventory[];
       updated: Inventory[];
-      deleted: { id: string; deleted_at_client: Date }[];
+      deleted: { id: string; deleted_at_client: string }[];
     };
   };
 }
 
 interface SyncPushResponse {
-  server_timestamp: number;
+  // server_timestamp is server-authoritative. Use explicit units:
+  server_timestamp_ms: number;
   applied: {
     harvests: { created: number; updated: number; deleted: number };
     inventory: { created: number; updated: number; deleted: number };
@@ -418,7 +471,7 @@ CREATE TABLE harvests (
   notes TEXT DEFAULT '',
   stage_started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   stage_completed_at TIMESTAMPTZ,
-  photos JSONB DEFAULT '[]',
+  photos JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   deleted_at TIMESTAMPTZ,
@@ -434,6 +487,27 @@ CREATE TABLE harvests (
 CREATE INDEX idx_harvests_user_updated ON harvests(user_id, updated_at);
 CREATE INDEX idx_harvests_plant ON harvests(plant_id);
 CREATE INDEX idx_harvests_stage ON harvests(stage) WHERE deleted_at IS NULL;
+
+-- Trigger to keep updated_at current on every UPDATE (server-side)
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS trigger AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_set_updated_at
+BEFORE UPDATE ON harvests
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+-- Optional: prevent multiple "open" harvests per plant (only allow one row
+-- per plant with stage = 'harvest' and not soft-deleted). Adjust the stage
+-- name to match your chosen "open" stage if different.
+CREATE UNIQUE INDEX IF NOT EXISTS ux_harvests_plant_open_harvest
+  ON harvests(plant_id)
+  WHERE deleted_at IS NULL AND stage = 'harvest';
 ```
 
 #### Inventory Table

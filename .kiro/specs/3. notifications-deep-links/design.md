@@ -208,8 +208,6 @@ interface DeepLinkService {
 ```typescript
 class NotificationModel extends Model {
   static table = 'notifications';
-
-  @field('id') id!: string;
   @field('type') type!: NotificationType;
   @field('title') title!: string;
   @field('body') body!: string;
@@ -352,7 +350,6 @@ const IOS_CATEGORIES = {
 const notificationsSchema = tableSchema({
   name: 'notifications',
   columns: [
-    { name: 'id', type: 'string', isIndexed: true },
     { name: 'type', type: 'string', isIndexed: true },
     { name: 'title', type: 'string' },
     { name: 'body', type: 'string' },
@@ -1194,7 +1191,7 @@ serve(async (req) => {
       );
     }
 
-    // Send notifications to all user's devices
+    // Send notifications to all user's devices and collect per-device send results
     const results = await Promise.all(
       tokens.map((token) =>
         sendToDevice(
@@ -1210,14 +1207,24 @@ serve(async (req) => {
       )
     );
 
-    // Track delivery attempt
-    await supabase.from('notification_queue').insert({
+    // Persist one row per device/send result so delivery tracking reflects actual sends.
+    // Rationale: the send operation yields a provider-specific messageId and per-device
+    // success/failure information. Storing one row per device (instead of a single
+    // aggregate row) enables precise retry, error analysis, and per-device analytics.
+    // Each result contains the provider messageId and success status; include device token and platform
+    const rows = results.map((res, i) => ({
       user_id: userId,
-      message_id: data.message_id,
+      message_id: res.messageId,
       type,
-      payload: { title, body, data },
-      status: 'sent',
-    });
+      payload: { title, body, data, sendPayload: res.payload },
+      status: res.success ? 'sent' : 'failed',
+      device_token: tokens[i]?.token,
+      platform: res.platform,
+      error_message: res.error || null,
+    }));
+
+    // Insert multiple rows (one per device). This gives per-device status and the real message IDs
+    await supabase.from('notification_queue').insert(rows);
 
     return new Response(JSON.stringify({ success: true, results }), {
       headers: { 'Content-Type': 'application/json' },
@@ -1241,7 +1248,14 @@ async function sendToDevice(
   collapseKey?: string,
   threadId?: string
 ) {
-  const fcmServerKey = Deno.env.get('FCM_SERVER_KEY');
+  // FCM HTTP v1 requires an OAuth2 access token minted from a Google service account.
+  // Do NOT use the legacy server key with the v1 endpoint.
+  const GOOGLE_SA = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON') ?? '';
+  const GCP_PROJECT_ID = Deno.env.get('GCP_PROJECT_ID') ?? '';
+  const accessToken = await getGoogleAccessToken(
+    GOOGLE_SA,
+    'https://www.googleapis.com/auth/firebase.messaging'
+  );
   const messageId = `msg_${crypto.randomUUID()}`;
 
   let payload;
@@ -1295,23 +1309,132 @@ async function sendToDevice(
     };
   }
 
-  const response = await fetch(
-    'https://fcm.googleapis.com/v1/projects/YOUR_PROJECT_ID/messages:send',
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${fcmServerKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
+  try {
+    const response = await fetch(
+      `https://fcm.googleapis.com/v1/projects/${GCP_PROJECT_ID}/messages:send`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    let responseBody = null;
+    try {
+      responseBody = await response.json();
+    } catch {
+      // non-JSON response
+      responseBody = null;
     }
+
+    return {
+      success: response.ok,
+      messageId,
+      platform: tokenData.platform,
+      payload,
+      response: responseBody,
+      error: response.ok ? null : `HTTP ${response.status}`,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      messageId,
+      platform: tokenData.platform,
+      payload,
+      response: null,
+      error: err?.message || String(err),
+    };
+  }
+}
+
+/**
+ * Mint an OAuth2 access token for FCM HTTP v1 using a Google Service Account JSON.
+ * This runs on Deno (Supabase Edge Functions) using WebCrypto for RS256 signing.
+ *
+ * Required env: GOOGLE_SERVICE_ACCOUNT_JSON (full JSON content of the service account)
+ */
+async function getGoogleAccessToken(
+  serviceAccountJSON: string,
+  scope: string
+): Promise<string> {
+  if (!serviceAccountJSON) {
+    throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON is not set');
+  }
+
+  const sa = JSON.parse(serviceAccountJSON);
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const claims = {
+    iss: sa.client_email,
+    scope,
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + 3600,
+    iat: now,
+  };
+
+  const encoder = new TextEncoder();
+  const base64url = (input: string | Uint8Array) =>
+    btoa(
+      typeof input === 'string'
+        ? input
+        : String.fromCharCode(...new Uint8Array(input))
+    )
+      .replace(/=/g, '')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_');
+
+  const pemToArrayBuffer = (pem: string): ArrayBuffer => {
+    const b64 = pem
+      .replace('-----BEGIN PRIVATE KEY-----', '')
+      .replace('-----END PRIVATE KEY-----', '')
+      .replace(/\s+/g, '');
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes.buffer;
+  };
+
+  const headerB64 = base64url(JSON.stringify(header));
+  const claimsB64 = base64url(JSON.stringify(claims));
+  const signingInput = `${headerB64}.${claimsB64}`;
+
+  const keyData = pemToArrayBuffer(sa.private_key);
+  const key = await crypto.subtle.importKey(
+    'pkcs8',
+    keyData,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign']
   );
 
-  return {
-    success: response.ok,
-    messageId,
-    platform: tokenData.platform,
-  };
+  const signature = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    key,
+    encoder.encode(signingInput)
+  );
+  const jwt = `${signingInput}.${base64url(new Uint8Array(signature))}`;
+
+  const tokenResp = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt,
+    }).toString(),
+  });
+
+  if (!tokenResp.ok) {
+    const text = await tokenResp.text();
+    throw new Error(
+      `Failed to obtain Google access token: ${tokenResp.status} ${text}`
+    );
+  }
+
+  const tokenJson = await tokenResp.json();
+  return tokenJson.access_token as string;
 }
 
 function getChannelId(type: string): string {
@@ -1390,3 +1513,8 @@ CREATE TRIGGER post_reply_notification
 ```
 
 This updated design addresses all the critical platform constraints and provides concrete implementation patterns using Supabase Edge Functions that will prevent common pitfalls during development.
+
+## Changelog
+
+- 2025-08-26: Updated push send flow to persist per-device send results into `notification_queue`.
+  - Replaced single aggregate insert with one row per device containing provider messageId, status, device token, platform, payload and error details. This enables accurate delivery tracking and retries.
