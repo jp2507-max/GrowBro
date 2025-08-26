@@ -492,7 +492,7 @@ const adapter = new SQLiteAdapter({
 
 const database = new Database({
   adapter,
-  modelClasses: [Task, TaskException, NotificationQueue],
+  modelClasses: [Task, OccurrenceOverride, NotificationQueue],
 });
 ```
 

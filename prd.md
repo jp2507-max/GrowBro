@@ -272,7 +272,6 @@ _Request body_
           "id": "…",
           "title": "Water",
           "due_date": "2025-08-24",
-          "user_id": "…",
           "updated_at_client": "2025-08-23T18:20:11Z"
         }
       ],
@@ -293,6 +292,8 @@ _Request body_
   }
 }
 ```
+
+Note: “user_id is ignored server-side and not required in requests.” The server derives the authenticated user's id from the request (e.g., via `auth.getUser()`/JWT) and injects it server-side.
 
 _Response_
 
@@ -402,14 +403,12 @@ export default async function push(req: Request) {
         continue;
       }
 
-      const up = await supa
-        .from(t)
-        .upsert({
-          id,
-          user_id: uid,
-          ...rest,
-          updated_at: new Date().toISOString(),
-        });
+      const up = await supa.from(t).upsert({
+        id,
+        user_id: uid,
+        ...rest,
+        updated_at: new Date().toISOString(),
+      });
 
       if (up.error) {
         // Keep existing error handling: push rejected entries on up.error

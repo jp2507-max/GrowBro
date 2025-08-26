@@ -112,12 +112,18 @@ The Harvest Workflow feature enables home cannabis growers to systematically tra
 #### Acceptance Criteria
 
 1. WHEN the harvest workflow is initiated THEN the system SHALL implement a finite state machine: Harvest → Drying → Curing → Inventory
-2. WHEN a user attempts to skip a stage THEN the system SHALL require an Override & Skip action that is allowed only via an authorized override; the override action MUST capture the acting user's identity, a mandatory reason provided by the user, a server-authoritative UTC timestamp, and must create/link to an auditable entry recording the decision
-3. WHEN a stage is entered THEN the system SHALL record stage_started_at with server-authoritative UTC timestamp
-4. WHEN a stage is completed THEN the system SHALL record stage_completed_at and display timestamps in user locale
-5. WHEN a user makes a stage change THEN the system SHALL support Undo within 15 seconds
-6. IF more than 15 seconds have passed THEN the system SHALL require a Revert Stage flow with audit note
-7. WHEN any override attempt occurs (whether the override is permitted or blocked) THEN the system SHALL record a full audit entry including: user identity (if available), whether the action was permitted or blocked, the mandatory reason (if provided), server-authoritative UTC timestamp, and a linkable audit ID; these audit entries SHALL be visible from the harvest's stage history UI
+
+2. WHEN a user attempts to skip a stage THEN the system SHALL require an authorized Override & Skip action. The override action MUST capture: the acting user's identity, a mandatory reason provided by the user, a server-authoritative UTC timestamp, and MUST create/link to a persistent auditable entry recording the decision.
+
+3. WHEN a stage is entered THEN the system SHALL record `stage_started_at` using a server-authoritative UTC timestamp (ISO 8601 / RFC 3339). Clients may display this time in the user's locale, but the stored value MUST be the UTC instant produced by the server.
+
+4. WHEN a stage is completed THEN the system SHALL record `stage_completed_at` using a server-authoritative UTC timestamp (ISO 8601 / RFC 3339). The UI may render this timestamp in the user's local timezone for display purposes only; the canonical stored value MUST be UTC.
+
+5. WHEN a user makes a stage change THEN the system SHALL support an Undo operation that is valid only within a configurable server-enforced timeout window (default 15 seconds). The Undo eligibility is evaluated against server-authoritative time: the server MUST accept Undo requests only if the difference between the server's current time and the relevant `stage_completed_at` is less than or equal to the configured timeout. The Undo timeout value MUST be configurable via system settings (e.g., admin console, feature flag) and MUST be enforced by the server for all clients.
+
+6. IF the Undo timeout has elapsed THEN the system SHALL require a Revert Stage flow that performs the necessary validation and records a permanent audit note for the revert action.
+
+7. WHEN any override, skip, Undo, or revert attempt occurs (whether permitted or blocked) THEN the system SHALL record a full audit entry including: user identity (if available), whether the action was permitted or blocked, the mandatory reason (if provided), the server-authoritative UTC timestamp for the event, and a linkable audit ID. These audit entries SHALL be visible in the harvest's stage history UI and referenced consistently in any server logs or exportable audit reports.
 
 ### Requirement 10
 

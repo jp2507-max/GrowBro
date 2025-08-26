@@ -54,30 +54,96 @@ function scrubSensitiveData(text: string): string {
 /**
  * Recursively scrubs sensitive data from objects
  */
-function scrubObjectData(obj: any): any {
-  if (typeof obj === 'string') {
-    return scrubSensitiveData(obj);
+function scrubObjectData(
+  obj: any,
+  options?: {
+    currentDepth?: number;
+    visited?: WeakSet<object>;
+    maxDepth?: number;
   }
+): any {
+  const DEFAULT_MAX_DEPTH = 6;
+  const currentDepth = options?.currentDepth ?? 0;
+  const visited = options?.visited ?? new WeakSet<object>();
+  const maxDepth = options?.maxDepth ?? DEFAULT_MAX_DEPTH;
+
+  return _scrubObjectData(obj, { currentDepth, visited, maxDepth });
+}
+
+function _scrubObjectData(
+  obj: any,
+  ctx: { currentDepth: number; visited: WeakSet<object>; maxDepth: number }
+): any {
+  const { currentDepth, visited, maxDepth } = ctx;
+  if (typeof obj === 'string') return scrubSensitiveData(obj);
+  if (
+    obj === null ||
+    obj === undefined ||
+    typeof obj === 'number' ||
+    typeof obj === 'boolean' ||
+    typeof obj === 'bigint' ||
+    typeof obj === 'symbol' ||
+    typeof obj === 'function'
+  )
+    return obj;
+  if (currentDepth >= maxDepth) return '[MaxDepth]';
+  if (visited.has(obj)) return '[Circular]';
+  visited.add(obj);
 
   if (Array.isArray(obj)) {
-    return obj.map(scrubObjectData);
+    return obj.map((item) =>
+      _scrubObjectData(item, {
+        currentDepth: currentDepth + 1,
+        visited,
+        maxDepth,
+      })
+    );
   }
+  if (obj instanceof Date) return obj.toISOString();
+  if (obj instanceof RegExp) return obj.toString();
 
+  if (obj instanceof Map) {
+    const result: any = {};
+    for (const [k, v] of obj.entries()) {
+      try {
+        result[String(k)] = _scrubObjectData(v, {
+          currentDepth: currentDepth + 1,
+          visited,
+          maxDepth,
+        });
+      } catch {
+        result[String(k)] = '[Unserializable]';
+      }
+    }
+    return result;
+  }
+  if (obj instanceof Set) {
+    return Array.from(obj).map((v) =>
+      _scrubObjectData(v, {
+        currentDepth: currentDepth + 1,
+        visited,
+        maxDepth,
+      })
+    );
+  }
   if (obj && typeof obj === 'object') {
     const scrubbed: any = {};
     for (const [key, value] of Object.entries(obj)) {
-      scrubbed[key] = scrubObjectData(value);
+      scrubbed[key] = _scrubObjectData(value, {
+        currentDepth: currentDepth + 1,
+        visited,
+        maxDepth,
+      });
     }
     return scrubbed;
   }
-
   return obj;
 }
 
 /**
  * Sentry beforeSend hook to scrub sensitive information and respect user consent
  */
-export const beforeSendHook = (event: any, _hint?: any): any => {
+export const beforeSendHook = (event: any, _hint?: any): any | null => {
   try {
     // Check user consent
     const consent = getPrivacyConsent();
@@ -135,8 +201,9 @@ export const beforeSendHook = (event: any, _hint?: any): any => {
 
     return event;
   } catch (error) {
-    // If scrubbing fails, log the error but still send the event
+    // If scrubbing fails, log the error and drop the event to avoid leaking PII
+    // We return null to signal Sentry to discard the event.
     console.warn('Failed to scrub sensitive data from Sentry event:', error);
-    return event;
+    return null;
   }
 };

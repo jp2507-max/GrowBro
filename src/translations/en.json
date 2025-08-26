@@ -1,6 +1,19 @@
 {
+  "common": {
+    "ok": "OK"
+  },
   "onboarding": {
     "message": "Welcome to obytes app site"
+  },
+  "privacy": {
+    "personalized": {
+      "body": "This includes IP addresses, user IDs, and other identifying information that helps us provide better error reports and analytics. This data is handled according to our privacy policy.",
+      "title": "Personalized Data"
+    },
+    "sessionReplay": {
+      "body": "Session replay records your app interactions to help us debug issues. Sensitive data is filtered or redacted where possible; see Privacy Policy for details.",
+      "title": "Session Replay"
+    }
   },
   "settings": {
     "about": "About",

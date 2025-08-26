@@ -50,7 +50,10 @@ graph TB
 - **Sync Manager**: Orchestrates push/pull operations following WatermelonDB protocol
 - **Edge Functions**: Server-side sync endpoints with RLS enforcement and transactional push
 - **Image Upload Queue**: Separate queue for image uploads (not part of DB sync)
-- **expo-background-task**: Handles opportunistic background sync with manual fallback
+- **expo-task-manager + expo-background-fetch**: Define background tasks with
+  `expo-task-manager` and schedule opportunistic periodic fetches with
+  `expo-background-fetch` (SDK 53-compatible workflow); keep a manual
+  fallback for immediate syncs.
 
 ## Components and Interfaces
 
@@ -182,7 +185,52 @@ type ResolutionStrategy = 'server-lww' | 'needs-review' | 'field-level';
 
 ### 5. Background Sync Service (`src/lib/sync/background-sync.ts`)
 
-Implement background tasks with expo-background-task (SDK 53+). Background execution is opportunistic (OS-scheduled); provide a manual 'Sync now' button. Configure constraints (Wi-Fi/charging) via app settings.
+Implement background sync using the SDK-53 supported pattern: define the
+task handler with `expo-task-manager` (TaskManager.defineTask) and schedule
+periodic fetches with `expo-background-fetch` (BackgroundFetch.registerTaskAsync).
+Background execution is opportunistic (OS-scheduled); provide a manual
+"Sync now" button for immediate syncs and UI to configure Wi‑Fi/charging
+constraints.
+
+Example implementation notes:
+
+- Define the background handler with TaskManager:
+
+```ts
+import * as TaskManager from 'expo-task-manager';
+
+TaskManager.defineTask('BACKGROUND_SYNC', async ({ data, error }) => {
+  // run the same sync routine used by manual sync button
+  try {
+    await performSync();
+  } catch (e) {
+    // log and surface errors to Sync monitoring
+  }
+});
+```
+
+- Register/schedule periodic fetches with BackgroundFetch:
+
+```ts
+import * as BackgroundFetch from 'expo-background-fetch';
+
+await BackgroundFetch.registerTaskAsync('BACKGROUND_SYNC', {
+  minimumInterval: 15 * 60, // seconds (15 minutes) — OS may coalesce
+  stopOnTerminate: false, // resume after app is terminated
+  startOnBoot: true, // start after device reboot
+});
+```
+
+- Keep the in-app "Sync now" button which invokes `performSync()` and
+  enforce Wi‑Fi/charging constraints by checking connectivity/battery state
+  before performing work in the task handler.
+
+Notes:
+
+- `minimumInterval` is a hint; OS may defer or coalesce actual runs.
+- iOS background fetch is limited by the system; rely on manual syncs for
+  immediate consistency when needed.
+- Test background behavior on physical devices and with SDK 53 tooling.
 
 ```typescript
 interface BackgroundSyncService {
@@ -423,7 +471,12 @@ interface SyncTestUtils {
 - **Platform limitations:** Background execution is opportunistic (OS-scheduled) with iOS/Android constraints
 - **Manual fallback:** Always provide "Sync now" button since background timing isn't guaranteed
 - **Constraint configuration:** Wi-Fi/charging requirements configurable via app settings
-- **API migration:** Use expo-background-task (expo-background-fetch being deprecated)
+- **API guidance:** Use `expo-task-manager` to define and register the task
+  handler and `expo-background-fetch` to schedule periodic fetches. `expo-`
+  background-fetch is not deprecated. When calling
+  `BackgroundFetch.registerTaskAsync` configure options such as
+  `minimumInterval`, `stopOnTerminate`, and `startOnBoot` to match app
+  requirements.
 
 ### Storage Policies
 

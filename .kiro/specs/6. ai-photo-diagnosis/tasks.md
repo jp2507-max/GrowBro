@@ -9,8 +9,8 @@
   - Add image integrity and filename key columns:
     - `integrity_sha256`: raw SHA-256 of the image bytes (unsalted) used for integrity/verification and local deduplication when appropriate
     - `filename_key`: per-install/user keyed filename key used for content-addressable filenames
-      - Compute `filename_key` as HMAC-SHA256(secret, imageBytes) (preferred) or SHA256(secret || imageBytes) where `secret` is a per-install or per-user secret stored securely on-device
-      - Use `filename_key` for on-disk blob/object filenames (e.g. `images/{filename_key}.jpg`) to avoid cross-user correlation
+  - Compute `filename_key` as HMAC-SHA256(secret, imageBytes) where `secret` is a per-install or per-user secret stored securely on-device
+    - Use `filename_key` for on-disk blob/object filenames (e.g. `images/{filename_key}.jpg`) to avoid cross-user correlation
     - Update database migration scripts to add both columns and backfill `integrity_sha256` from existing data; backfilling `filename_key` requires access to image bytes and the device secret (see migration notes below)
   - Write database migration scripts for new tables and indexes
   - Ensure WatermelonDB Expo plugin is configured in app.json for dev build compatibility
@@ -40,8 +40,8 @@
   - [ ] 2.3 Implement EXIF data stripping and secure image storage
     - Use expo-camera for managed workflow compatibility and validate supported params on target devices
     - Add explicit EXIF stripping step after capture using expo-image-manipulator with automated test validation
-      - Create content-addressable file naming using per-install/user salted keys (HMAC-SHA256(secret, imageBytes) or SHA256(secret || imageBytes)) computed with a secure crypto provider (expo-crypto or native binding)
-      - Continue to compute and store the unsalted `integrity_sha256`(imageBytes) for verification and optional local deduplication
+  - Create content-addressable file naming using per-install/user salted keys computed with HMAC-SHA256(secret, imageBytes) using a secure crypto provider (expo-crypto or native binding)
+    - Continue to compute and store the unsalted `integrity_sha256`(imageBytes) for verification and optional local deduplication
     - Implement thumbnail generation pipeline with efficient compression
     - Build LRU cache management for local images with configurable storage limits
     - _Requirements: 1.5, 8.1, 8.5_
@@ -135,8 +135,7 @@
 
   2. Compute filename keys at time-of-capture/upload:
 
-  - Preferred: filename_key = HMAC-SHA256(secret, imageBytes)
-  - Alternative: filename_key = SHA256(secret || imageBytes) if HMAC API is unavailable.
+  - filename_key MUST be computed as HMAC-SHA256(secret, imageBytes).
   - Use `filename_key` for all filenames and object keys (e.g. `images/{filename_key}.jpg`). This prevents the same image from being linkable across installs/users.
 
   3. Continue storing raw SHA-256(imageBytes) in `integrity_sha256`:
@@ -178,8 +177,12 @@ db.diagnoses.create({ filename_key: filenameKey, integrity_sha256: integrity, ..
 
 Notes:
 
-- When implementing the HMAC, use a secure, well-tested implementation (expo-crypto HMAC APIs or native bindings). Treat the secret with the same sensitivity as other credentials on the device.
-- Rotation: if you implement secret rotation, provide a strategy to rekey existing files (on-access rekeying or background rekey job that reads blobs and rewrites them under the new key while maintaining `integrity_sha256`).
+When implementing the HMAC, note that Expo Crypto does not provide a built-in HMAC API (expo-crypto offers digest/digestStringAsync and random utilities but no hmac\* methods). For HMAC-SHA256 you should either:
+
+- Use a well-tested JS library such as `crypto-js` (HmacSHA256) or `asmcrypto.js` which accept binary input (Uint8Array) and produce a hex or base64 signature, or
+- Implement a thin native/JSI module (native bindings) that calls platform crypto (CommonCrypto on iOS, BoringSSL/OpenSSL on Android) if you need native performance or to integrate with secure key storage.
+
+Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output to be a stable hex string (lowercase) or base64 string; pick one format (hex is recommended) and document it across clients. Treat the HMAC secret as a credential (store it in secure storage / Keychain / Android Keystore / SecureStore) and, if you support secret rotation, provide an explicit rekey strategy (on-access rekeying or a background re-encryption job that rewrites blobs under the new key while preserving `integrity_sha256`).
 
 - [ ] 6. Implement user feedback and telemetry system
 
