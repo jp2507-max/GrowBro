@@ -83,8 +83,8 @@ function createExpoConfig(config: any): ExpoConfig {
         '@sentry/react-native/expo',
         {
           url: 'https://sentry.io/',
-          project: 'growbro',
-          organization: 'canabro',
+          project: process.env.SENTRY_PROJECT || 'growbro',
+          organization: process.env.SENTRY_ORG || 'canabro',
         },
       ],
     ],

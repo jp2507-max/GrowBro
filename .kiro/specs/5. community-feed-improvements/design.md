@@ -193,23 +193,32 @@ interface RealtimeEvent<T> {
 interface CommunityAPI {
   // Posts
   getPosts(cursor?: string, limit?: number): Promise<PaginatedResponse<Post>>;
-  createPost(data: CreatePostData): Promise<Post>;
+  createPost(
+    data: CreatePostData,
+    idempotencyKey?: string,
+    clientTxId?: string
+  ): Promise<Post>;
   deletePost(
     postId: string,
-    idempotencyKey: string
+    idempotencyKey?: string,
+    clientTxId?: string
   ): Promise<{ undo_expires_at: string }>;
-  undoDeletePost(postId: string): Promise<Post>; // 409 if expired
+  undoDeletePost(
+    postId: string,
+    idempotencyKey?: string,
+    clientTxId?: string
+  ): Promise<Post>; // 409 if expired
 
   // Likes
   likePost(
     postId: string,
-    idempotencyKey: string,
-    clientTxId: string
+    idempotencyKey?: string,
+    clientTxId?: string
   ): Promise<void>;
   unlikePost(
     postId: string,
-    idempotencyKey: string,
-    clientTxId: string
+    idempotencyKey?: string,
+    clientTxId?: string
   ): Promise<void>;
 
   // Comments
@@ -217,8 +226,16 @@ interface CommunityAPI {
     postId: string,
     cursor?: string
   ): Promise<PaginatedResponse<PostComment>>;
-  createComment(data: CreateCommentData): Promise<PostComment>;
-  deleteComment(commentId: string, idempotencyKey: string): Promise<void>;
+  createComment(
+    data: CreateCommentData,
+    idempotencyKey?: string,
+    clientTxId?: string
+  ): Promise<PostComment>;
+  deleteComment(
+    commentId: string,
+    idempotencyKey?: string,
+    clientTxId?: string
+  ): Promise<void>;
 
   // Profiles
   getUserProfile(userId: string): Promise<UserProfile>;
@@ -512,6 +529,36 @@ describe('Community Feed', () => {
 });
 ```
 
+```typescript
+// Type-level checks: ensure all mutating CommunityAPI methods accept
+// optional idempotencyKey and clientTxId parameters. These snippets are
+// intended to be type-checked by TypeScript in editors or CI; they do not
+// execute at runtime in this document.
+function _typeChecks(mockAPI: CommunityAPI) {
+  // Should accept calls without idempotency params
+  mockAPI.likePost('post-1');
+  mockAPI.unlikePost('post-1');
+  mockAPI.createComment({ postId: 'post-1', body: 'hi' });
+  mockAPI.createPost({ body: 'hello' } as any);
+
+  // Should also accept optional idempotencyKey and clientTxId
+  mockAPI.likePost('post-1', 'idem-key-1', 'client-tx-1');
+  mockAPI.unlikePost('post-1', 'idem-key-2', 'client-tx-2');
+  mockAPI.createComment(
+    { postId: 'post-1', body: 'hi' },
+    'idem-key-3',
+    'client-tx-3'
+  );
+  mockAPI.createPost({ body: 'hello' } as any, 'idem-key-4', 'client-tx-4');
+
+  // delete variants
+  mockAPI.deletePost('post-1');
+  mockAPI.deletePost('post-1', 'idem-key-5');
+  mockAPI.deleteComment('comment-1');
+  mockAPI.deleteComment('comment-1', 'idem-key-6', 'client-tx-6');
+}
+```
+
 ### Performance Testing
 
 ```typescript
@@ -757,8 +804,25 @@ CREATE POLICY "Users can manage their own likes" ON post_likes
 CREATE POLICY "Moderators can hide content" ON posts
   FOR UPDATE TO authenticated
   USING (
+    -- Ensure the caller is an admin or moderator. We check both the top-level
+    -- JWT 'role' claim and the app_metadata.roles array for flexible role membership.
     auth.jwt() ->> 'role' IN ('admin', 'moderator')
-    AND (hidden_at IS NOT NULL OR moderation_reason IS NOT NULL)
+    OR (auth.jwt() -> 'app_metadata' -> 'roles')::text LIKE '%moderator%'
+    OR (auth.jwt() -> 'app_metadata' -> 'roles')::text LIKE '%admin%'
+  )
+  WITH CHECK (
+    -- Enforce that after the UPDATE the row is actually marked as hidden or
+    -- has a moderation reason. This checks the row *after* the change and
+    -- prevents regular updates from making posts hidden without moderator role.
+    (
+      hidden_at IS NOT NULL OR moderation_reason IS NOT NULL
+    )
+    -- Redundantly validate the actor's role in WITH CHECK as well (optional).
+    AND (
+      auth.jwt() ->> 'role' IN ('admin', 'moderator')
+      OR (auth.jwt() -> 'app_metadata' -> 'roles')::text LIKE '%moderator%'
+      OR (auth.jwt() -> 'app_metadata' -> 'roles')::text LIKE '%admin%'
+    )
   );
 ```
 

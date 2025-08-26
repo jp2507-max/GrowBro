@@ -62,15 +62,20 @@
   - _Requirements: 3.1, 3.2, 3.3, 10.1, 10.2, 10.3, 10.4_
 
 - [ ] 6. Implement photo storage and management system
+- [ ] 6.  Implement photo storage and management system
 
-  - Create PhotoCapture component with camera integration
-  - Generate original + ~1280px + thumbnail variants with content-addressable storage
-  - Store only URIs + EXIF metadata in database, files in Expo filesystem
-  - Run LRU janitor on app start and when storage thresholds are hit
-  - Implement orphan detection for files without corresponding database records
-  - Create "Free up space" user action for manual cleanup
-  - Write tests for photo capture, variant generation, and cleanup lifecycle
-  - _Requirements: 8.1, 8.2, 8.3, 13.1, 13.2, 13.3, 13.4_
+- Create PhotoCapture component with camera integration
+- Generate original + ~1280px + thumbnail variants with content-addressable storage
+- Store only URIs + EXIF metadata in database, files in Expo filesystem
+- Strip GPS and sensitive EXIF by default; preserve orientation safely.
+- Encrypt photos at rest using OS keystore-backed keys; decrypt only for display/upload.
+- Set disk budget: target ≤300MB total; trigger LRU when ≥250MB.
+- Run LRU janitor on app start and when storage thresholds are hit
+- Janitor respects battery saver and charging state.
+- Implement orphan detection for files without corresponding database records
+- Create "Free up space" user action for manual cleanup
+- Write tests for photo capture, variant generation, and cleanup lifecycle
+- _Requirements: 8.1, 8.2, 8.3, 13.1, 13.2, 13.3, 13.4_
 
 - [ ] 7. Create offline-first sync engine
 

@@ -340,6 +340,318 @@ interface QualitySummary {
 - CI artifact storage for report hosting
 - CODEOWNERS for automatic issue assignment
 
+## PII and Secret Scrubbing
+
+**Purpose**: Ensures all generated artifacts, screenshots, logs, and metadata are sanitized to prevent exposure of sensitive information.
+
+### Sensitive Data Types to Redact
+
+The system must identify and redact the following sensitive data types:
+
+1. **Personally Identifiable Information (PII)**:
+
+   - Email addresses, phone numbers, names
+   - Physical addresses, postal codes
+   - Date of birth, social security numbers
+   - Profile photos, avatars with identifiable faces
+
+2. **Authentication & Security**:
+
+   - API keys, access tokens, refresh tokens
+   - Session IDs, JWT tokens, OAuth credentials
+   - Passwords, PINs, biometric data
+   - Device identifiers (UDID, IMEI)
+
+3. **Financial Information**:
+
+   - Credit card numbers, bank account details
+   - Payment processor tokens, transaction IDs
+   - Billing addresses, payment methods
+
+4. **Application-Specific Sensitive Data**:
+   - User-generated content (grow logs, photos)
+   - Location data, GPS coordinates
+   - Device-specific identifiers
+   - Internal system identifiers
+
+### Artifact Preprocessing Pipeline
+
+**Screenshot Sanitization**:
+
+```typescript
+interface ScreenshotSanitizer {
+  maskSensitiveRegions(screenshot: Buffer, maskingRules: MaskingRule[]): Buffer;
+  blurIdentifiableContent(screenshot: Buffer, confidence: number): Buffer;
+  redactTextFields(
+    screenshot: Buffer,
+    fieldTypes: SensitiveFieldType[]
+  ): Buffer;
+}
+
+interface MaskingRule {
+  selector: string;
+  maskType: 'blur' | 'solid' | 'pattern';
+  color?: string;
+  intensity?: number;
+}
+```
+
+**Metadata Scrubbing**:
+
+```typescript
+interface MetadataScrubber {
+  stripExifData(imageBuffer: Buffer): Buffer;
+  sanitizeDeviceInfo(metadata: DeviceMetadata): SanitizedDeviceMetadata;
+  redactUserIdentifiers(metadata: TestMetadata): SanitizedTestMetadata;
+}
+
+interface SanitizedDeviceMetadata {
+  platform: string;
+  osVersion: string;
+  screenResolution: string;
+  // Removed: deviceId, serialNumber, advertisingId
+}
+```
+
+### Log Sanitization Middleware
+
+**Implementation**:
+
+```typescript
+class LogSanitizer {
+  private sensitivePatterns: RegExp[];
+  private replacementTokens: Map<string, string>;
+
+  constructor(config: SanitizationConfig) {
+    this.sensitivePatterns = [
+      /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, // Email
+      /\b\d{3}-\d{2}-\d{4}\b/g, // SSN
+      /\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b/g, // Credit card
+      /Bearer\s+[A-Za-z0-9\-._~+/]+=*/g, // Bearer tokens
+      /api[_-]?key['":\s]*[A-Za-z0-9]{20,}/gi, // API keys
+      // Custom patterns from config
+      ...config.customPatterns,
+    ];
+  }
+
+  sanitizeLog(logEntry: string): string {
+    let sanitized = logEntry;
+
+    this.sensitivePatterns.forEach((pattern) => {
+      sanitized = sanitized.replace(pattern, '[REDACTED]');
+    });
+
+    return sanitized;
+  }
+
+  sanitizeObject(obj: any): any {
+    const sanitized = JSON.parse(JSON.stringify(obj));
+    return this.recursiveSanitize(sanitized);
+  }
+
+  private recursiveSanitize(obj: any): any {
+    if (typeof obj === 'string') {
+      return this.sanitizeLog(obj);
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map((item) => this.recursiveSanitize(item));
+    }
+
+    if (obj && typeof obj === 'object') {
+      const result: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        // Skip sensitive keys entirely
+        if (this.isSensitiveKey(key)) {
+          result[key] = '[REDACTED]';
+        } else {
+          result[key] = this.recursiveSanitize(value);
+        }
+      }
+      return result;
+    }
+
+    return obj;
+  }
+
+  private isSensitiveKey(key: string): boolean {
+    const sensitiveKeys = [
+      'password',
+      'token',
+      'secret',
+      'key',
+      'auth',
+      'email',
+      'phone',
+      'ssn',
+      'credit',
+      'payment',
+      'session',
+      'cookie',
+      'bearer',
+      'oauth',
+    ];
+
+    return sensitiveKeys.some((sensitive) =>
+      key.toLowerCase().includes(sensitive)
+    );
+  }
+}
+```
+
+### Configuration and Retention Rules
+
+**Configuration Flags**:
+
+```typescript
+interface PIIScrubingConfig {
+  enabled: boolean;
+  strictMode: boolean; // Fail builds if PII detected
+
+  // Opt-in toggles
+  enableScreenshotMasking: boolean;
+  enableLogSanitization: boolean;
+  enableMetadataStripping: boolean;
+
+  // Access controls
+  rawArtifactAccess: {
+    allowedRoles: string[];
+    requiresApproval: boolean;
+    auditLog: boolean;
+  };
+
+  // Retention policies
+  retention: {
+    sanitizedArtifacts: number; // days
+    rawArtifacts: number; // days (shorter)
+    auditLogs: number; // days
+  };
+
+  // Custom patterns and rules
+  customSensitivePatterns: string[];
+  maskingRules: MaskingRule[];
+  exemptedComponents: string[];
+}
+```
+
+**Environment-Specific Configuration**:
+
+```typescript
+// .env.development
+PII_SCRUBBING_ENABLED = false;
+PII_SCRUBBING_STRICT_MODE = false;
+
+// .env.staging
+PII_SCRUBBING_ENABLED = true;
+PII_SCRUBBING_STRICT_MODE = false;
+
+// .env.production
+PII_SCRUBBING_ENABLED = true;
+PII_SCRUBBING_STRICT_MODE = true;
+```
+
+### CI/QA Checklist
+
+**Pre-Artifact Generation**:
+
+- [ ] PII scrubbing middleware is enabled and configured
+- [ ] Screenshot masking rules are applied for sensitive components
+- [ ] Log sanitization patterns are up-to-date
+- [ ] Test data uses only synthetic/anonymized information
+
+**Artifact Validation**:
+
+- [ ] All screenshots have been processed through sanitization pipeline
+- [ ] Metadata has been stripped of device-specific identifiers
+- [ ] Logs contain no sensitive patterns (automated scan)
+- [ ] Raw artifacts are stored with restricted access controls
+
+**Monitoring and Compliance**:
+
+- [ ] PII detection alerts are configured and tested
+- [ ] Retention policies are enforced automatically
+- [ ] Access to raw artifacts is logged and auditable
+- [ ] Regular audits of sanitization effectiveness
+
+### Sentry and Session Replay Configuration
+
+**Sentry Configuration for PII Protection**:
+
+```typescript
+// sentry.config.ts
+Sentry.init({
+  // Disable PII capture
+  sendDefaultPii: false,
+
+  // Custom data scrubbing
+  beforeSend(event) {
+    // Remove sensitive data from event
+    if (event.user) {
+      delete event.user.email;
+      delete event.user.ip_address;
+    }
+
+    // Sanitize breadcrumbs
+    if (event.breadcrumbs) {
+      event.breadcrumbs = event.breadcrumbs.map((breadcrumb) => ({
+        ...breadcrumb,
+        data: sanitizeObject(breadcrumb.data),
+      }));
+    }
+
+    return event;
+  },
+
+  // Configure session replay with PII protection
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+
+  integrations: [
+    new Sentry.Replay({
+      // Mask all text content by default
+      maskAllText: true,
+
+      // Block specific selectors
+      blockSelector: [
+        '[data-sensitive]',
+        '.user-content',
+        '.grow-log-entry',
+        'input[type="password"]',
+        'input[type="email"]',
+      ],
+
+      // Mask additional selectors
+      maskSelector: ['.user-avatar', '.profile-info', '.location-data'],
+    }),
+  ],
+});
+```
+
+**Session Replay Sanitization**:
+
+```typescript
+interface SessionReplayConfig {
+  maskAllText: boolean;
+  maskAllInputs: boolean;
+  blockSelector: string[];
+  maskSelector: string[];
+
+  // Custom sanitization
+  beforeAddRecordingEvent?: (event: RecordingEvent) => RecordingEvent | null;
+}
+```
+
+### Integration Points
+
+- **CI Pipeline**: Automated PII scanning before artifact storage
+- **Storybook**: Component-level masking rules and sanitization
+- **Detox/Maestro**: Screenshot preprocessing with sensitive region masking
+- **Sentry**: PII-safe error reporting and session replay configuration
+- **GitHub**: Sanitized artifacts in PR comments and checks
+- **Storage**: Encrypted storage with access controls and retention policies
+
+This comprehensive PII and secret scrubbing system ensures that all generated artifacts maintain user privacy and security compliance while providing valuable QA insights to the development team.
+
 ## Data Models
 
 ### Configuration Models

@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-. "$(dirname "$0")/_/husky.sh"
 
+# Husky v10+ no longer requires sourcing _/husky.sh
 # Run lint-staged using pnpm exec so the locally installed binary is used.
 pnpm -s exec lint-staged

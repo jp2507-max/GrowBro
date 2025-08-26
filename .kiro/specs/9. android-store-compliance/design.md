@@ -85,11 +85,27 @@ interface ComplianceValidator {
 
 #### Implementation Strategy
 
-- **Gradle Plugin**: Custom plugin to enforce targetSdk=35 across all modules and library manifests during merge
-- **Hard Gate**: Gradle task fails if any merged manifest targets <35 for release builds
-- **Manifest Merger**: Validation during manifest merge process with deadline policy links
-- **Build Failure**: Hard-stop on compliance violations with actionable remediation
-- **Reporting**: Detailed compliance reports with Play policy references
+- Use the Android Gradle Plugin (AGP) Variant API / DSL rather than parsing merged manifest outputs. Manifest-merge is an implementation detail and can be influenced by plugin order, library manifests, or late build-time transforms; the Variant API gives deterministic access to the resolved configuration for each variant.
+
+- Provide a Gradle plugin that registers a verification task (for example, `verifyTargetSdkCompliance`) which iterates all application variants via the AGP Variant API. The task should:
+
+  - Read the effective targetSdk for each variant from the Variant API (prefer `variant.mergedFlavor` when available for your AGP version). When `mergedFlavor` is not available, compute the effective value by applying overlay precedence: `productFlavors` and `buildTypes` override `defaultConfig`.
+  - Only enforce the rule for release-like variants (configurable; default to `release`/`production`) — skip debug/dev variants unless explicitly enabled.
+  - Fail the task (and therefore the build/CI) when any enforced variant's effective targetSdk != 35.
+  - Emit per-variant, machine-readable compliance reports at `build/reports/target-sdk-compliance/<variant>.json` containing: variant name, effectiveTargetSdk, expectedTargetSdk (35), status (pass/fail), source (which config contributed the value), remediation link, and enforcement deadline.
+  - Emit a human-friendly text/HTML report in the same folder and print a concise summary path to the console when failures occur.
+
+- Hook the verification task into the Android build lifecycle so CI and local builds fail fast on non-compliance. Examples:
+
+  - Make `preBuild` or `check` depend on `verifyTargetSdkCompliance` for release variants.
+  - Ensure `./gradlew assembleRelease` and `./gradlew check` execute the verification task so pipelines that run standard Gradle lifecycle tasks will fail on policy violations.
+
+- AGP compatibility and fallbacks:
+
+  - Detect AGP features at runtime. If `variant.mergedFlavor` is present, prefer it. If not, reconstruct the effective targetSdk from `defaultConfig`, `productFlavors`, and `buildTypes` using the same overlay rules AGP applies.
+  - For older AGP versions that can't expose sufficient Variant API data, emit a clear warning and a best-effort check (do not silently pass). Recommend upgrading AGP and document the minimum supported AGP version.
+
+- Rationale: reading the Variant API makes checks deterministic and aligned with Gradle’s configuration model. It enables per-variant enforcement and reporting and prevents relying on manifest-merge outputs which vary depending on tooling and plugin ordering.
 
 ### 2. Runtime Permission Management
 
@@ -255,6 +271,23 @@ interface PolicyValidator {
   scanForCommerceLanguage(text: string): CommerceViolation[];
   validateExternalLinks(): LinkComplianceReport;
 }
+
+// NOTE (CI integration):
+// - Implement a build/CI scanner that runs before publishing and inspects
+//   resource strings, store-listing JSON, and localized copy for commerce
+//   verbs (e.g., "buy", "order", "delivery", "pickup") using a
+//   configurable regex denylist and per-domain allowlist. Fail-fast on
+//   violations and emit a machine-readable report (JSON) under
+//   build/reports/compliance/ with: file, key, matchedText, ruleId,
+//   suggestedRemediation. Produce a human-friendly HTML/markdown
+//   summary alongside the JSON artifact for reviewers.
+// - Block external links to vendor domains at CI unless the domain is
+//   explicitly whitelisted; include a whitelist management workflow and
+//   an override reviewer approval step (audit trail required).
+// - Make the scanner deterministic and language-aware: run against all
+//   localized resources and store listing variants; keep rules per-locale
+//   so phrasing differences are covered. Provide a quick CLI to run
+//   locally (e.g., `yarn compliance:scan`) that mirrors CI behavior.
 ```
 
 #### Policy Implementation

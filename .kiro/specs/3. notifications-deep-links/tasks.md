@@ -98,8 +98,84 @@
   - Create URL parser with host and path allowlist validation
   - Implement parameter sanitization to prevent injection attacks
   - Add validation for HTTPS and custom scheme URLs
-  - Write comprehensive tests for URL validation and security edge cases
+  - Explicitly reject any "redirect" (or equivalent) query parameter that points to an external http(s) host. Only allow redirect targets that are:
+    - a relative path (e.g. "/profile") or
+    - a same-origin absolute URL (same origin as the app's configured allowed host(s)).
+      If a redirect query parameter is present and its target is an external host (different origin) the URL MUST be treated as invalid and rejected.
+  - Explicitly fail validation for URLs that use the following unsafe schemes: `javascript:`, `intent:`, and `data:`. Any deep link containing a URL with these schemes (either as the primary URL or nested inside a parameter) MUST be considered invalid.
+  - Update sanitizer & validator behavior (implementation notes):
+    - Canonicalize and normalize incoming URLs before validation (percent-decode where appropriate, normalize case for host, remove default ports, collapse "./" and "../" path segments).
+    - Percent-decode query parameter values when validating nested URLs (e.g. ?redirect=%2Fpath or ?redirect=https%3A%2F%2Fevil.com).
+    - When a query parameter is intended to carry a URL (common names: `redirect`, `next`, `url`, `continue`), parse that value as a URL and validate it using the same allowlist rules.
+    - Treat presence of an unknown or unrecognized query parameter carrying an absolute external URL as a validation failure when the key implies navigation.
+    - Maintain an allowlist of trusted origins (configurable) and treat only those origins as same-origin for redirect checks.
+    - Log/telemetry: on validation failure record a non-sensitive reason code (e.g. `blocked-redirect-external`, `forbidden-scheme-javascript`) to aid debugging; do NOT log full redirect targets or other sensitive tokens.
+  - Add sanitizer protections for nested encoded payloads and repeated-encoding attacks (e.g. double percent-encoding). Normalize repeatedly until a stable representation is reached, but cap iteration depth to avoid DoS.
+  - Write comprehensive tests for URL validation and security edge cases, including but not limited to:
+    - Blocked redirect params pointing to external http(s) hosts (absolute external URLs encoded/unencoded).
+    - Allowed redirect params that are same-origin absolute URLs and relative paths.
+    - Rejection of `javascript:` scheme in the main URL and in query params (plain and percent-encoded).
+    - Rejection of `intent:` scheme (Android intent: URIs) in the main URL and in query params.
+    - Rejection of `data:` scheme in the main URL and in query params.
+    - Nested/encoded variants (e.g. redirect parameter value is itself percent-encoded URL that contains forbidden scheme or external host).
+    - Path traversal normalization edge cases (../, //, mixed-encoding) to ensure origin/path checks are robust.
+    - Performance guardrails (ensure sanitizer stops after N iterations on repeated-decoding).
   - _Requirements: 4.5, 8.3, 11.2_
+
+  - Example unit test matrix (to be implemented in test suite):
+
+    - Test: reject external redirect param
+
+      - Input: app://open?redirect=https://evil.com/path
+      - Expect: validation failure, reason `blocked-redirect-external`
+
+    - Test: accept same-origin absolute redirect
+
+      - Input: app://open?redirect=https://app.example.com/profile
+      - Expect: validation success
+
+    - Test: accept relative redirect path
+
+      - Input: app://open?redirect=%2Fprofile%2Fedit
+      - Expect: validation success (normalized to `/profile/edit`)
+
+    - Test: reject javascript: scheme in main URL
+
+      - Input: javascript:alert(1)
+      - Expect: validation failure, reason `forbidden-scheme-javascript`
+
+    - Test: reject javascript: inside parameter
+
+      - Input: app://open?url=javascript:alert(1)
+      - Expect: validation failure, reason `forbidden-scheme-javascript`
+
+    - Test: reject intent: scheme
+
+      - Input: intent://scan/#Intent;scheme=zxing;package=com.google.zxing.client.android;end
+      - Expect: validation failure, reason `forbidden-scheme-intent`
+
+    - Test: reject data: scheme
+
+      - Input: data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==
+      - Expect: validation failure, reason `forbidden-scheme-data`
+
+    - Test: nested encoded forbidden scheme
+
+      - Input: app://open?redirect=https%3Aj%2F%2Fexample.com%2F%3Fq%3Djavascript%253Aalert(1)
+      - Expect: validation failure if nested URL contains forbidden scheme or external host after decoding
+
+    - Test: repeated-encoding defense
+
+      - Input: app://open?redirect=%2525252Fetc (many layers)
+      - Expect: sanitizer caps iteration, then validates final value or fails with `sanitizer-iteration-limit`
+
+    - Test: path traversal normalization
+      - Input: app://open?redirect=/profiles/../admin
+      - Expect: validation follows normalization rules and applies allowlist checks
+
+  - Test implementation notes:
+    - Tests should include encoded and unencoded variants, and verify that telemetry reason codes are emitted for failures without exposing sensitive values.
+    - Add unit tests in the URL parser/validator module (example file: `src/lib/url-validator.test.ts`) covering the matrix above.
 
 - [ ] 4.2 Create navigation handler with authentication gate
 

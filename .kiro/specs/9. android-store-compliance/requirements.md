@@ -94,6 +94,43 @@ This feature ensures GrowBro meets all Android Play Store compliance requirement
 3. WHEN exact-alarm permission is denied THEN the app SHALL run normally with inexact scheduling
 4. WHEN CI runs THEN it SHALL block any manifest adding exact-alarm permissions without linked declaration doc
 
+#### Notes / Review comments (lines +91 to +96)
+
+- Rationale: prefer WorkManager (or AlarmManager with inexact APIs) to avoid requiring SCHEDULE_EXACT_ALARM. Exact alarms should be the exception because Google treats them as high-impact battery/UX behavior and they require Play Console declaration for policy transparency.
+
+- Implementation guidance (AC 1):
+
+  - Use AndroidX WorkManager for scheduled reminders where sub-minute precision is not required. Configure constraints and use setFlex/periodic work for inexact timing. Avoid calling setExact or setExactAndAllowWhileIdle unless AC2 applies.
+
+- When to request exact alarms (AC 2):
+
+  - Define a documented acceptance criteria for "exact timing required" (for example: user-configured alarm that must fire within X seconds/minutes, safety-critical reminders, or legal/time-zone-critical flows).
+  - If exact timing is justified, limit the permission request surface: prefer USE_EXACT_ALARM (newer API) and only request SCHEDULE_EXACT_ALARM when necessary on older APIs.
+  - Require a Play Console permission declaration artifact to be committed to the repo before any manifest change that adds these permissions. Suggested artifact path: `compliance/play-exact-alarm-declaration.md` (or similar) and include at minimum: justification, UX flow, screenshots, and owner approval.
+
+- Fallback behavior (AC 3):
+
+  - Implement a graceful degradation path: fall back to WorkManager/inexact alarms and surface an in-app notice if the user explicitly configured a reminder that now has lower precision. Do not crash or disable unrelated features when permission is denied.
+  - Tests: add automated tests that simulate exact-alarm denied path to confirm reminders still run (with looser timing) and the UI indicates degraded precision where appropriate.
+
+- CI enforcement and manifest gating (AC 4):
+
+  - CI should scan merged AndroidManifest (post-merge manifest-merge result) and library manifests for the presence of `SCHEDULE_EXACT_ALARM` or `USE_EXACT_ALARM` permission entries.
+  - If such permissions are detected, CI must verify a linked declaration doc exists in the repo and is referenced in the PR (for example a file under `compliance/` or a checklist item that references `compliance/play-exact-alarm-declaration.md`).
+  - If no linked declaration is present, CI MUST fail the build with a clear message instructing the contributor to add the declaration and get approval before re-running the CI.
+  - Example CI checks (implementation notes):
+    - Step 1: produce merged manifest (Gradle can output merge result) and grep for the permission strings.
+    - Step 2: if found, search the PR diff / repo for `compliance/play-exact-alarm-declaration` (or configured path) or for a PR label/approval metadata. If missing -> fail.
+
+- Edge cases & notes:
+
+  - Libraries may add these permissions transitively. CI must examine merged manifests (not only app/manifest) and flag library additions so PR authors can either remove, document, or opt-out via manifest tools.
+  - Be explicit about the naming and location of the declaration artifact to avoid false negatives; document this requirement in `README` or in the repository's compliance playbook.
+  - Keep the UX respectful: if asking for an exact alarm permission, show in-app explanation before the system permission flow and provide a fallback option to accept degraded precision.
+
+- Recommended tests / automation:
+  - Device-matrix test that asserts behavior when exact-alarm is granted vs denied (already referenced in Requirement 6.3). Add a unit/integration test for the CI manifest scanner itself to catch regressions.
+
 ### Requirement 9
 
 **User Story:** As a user, I want account and data deletion capabilities, so that I can remove my account and associated data when needed.

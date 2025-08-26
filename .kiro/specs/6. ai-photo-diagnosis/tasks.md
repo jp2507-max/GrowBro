@@ -6,7 +6,12 @@
   - Implement DiagnosisRecord model with proper relationships to plants table
   - Add database indexes for (user_id, created_at) and (status) for efficient querying
   - Create DiagnosisClassRecord model including "healthy" and "unknown/OOD" classes with explicit OOD flag
-  - Add sha256 column for images and implement content-addressable naming with expo-crypto
+  - Add image integrity and filename key columns:
+    - `integrity_sha256`: raw SHA-256 of the image bytes (unsalted) used for integrity/verification and local deduplication when appropriate
+    - `filename_key`: per-install/user keyed filename key used for content-addressable filenames
+      - Compute `filename_key` as HMAC-SHA256(secret, imageBytes) (preferred) or SHA256(secret || imageBytes) where `secret` is a per-install or per-user secret stored securely on-device
+      - Use `filename_key` for on-disk blob/object filenames (e.g. `images/{filename_key}.jpg`) to avoid cross-user correlation
+    - Update database migration scripts to add both columns and backfill `integrity_sha256` from existing data; backfilling `filename_key` requires access to image bytes and the device secret (see migration notes below)
   - Write database migration scripts for new tables and indexes
   - Ensure WatermelonDB Expo plugin is configured in app.json for dev build compatibility
   - Create dev-client smoke test to validate WatermelonDB integration
@@ -35,7 +40,8 @@
   - [ ] 2.3 Implement EXIF data stripping and secure image storage
     - Use expo-camera for managed workflow compatibility and validate supported params on target devices
     - Add explicit EXIF stripping step after capture using expo-image-manipulator with automated test validation
-    - Create content-addressable file naming using sha256 hashes computed with expo-crypto
+      - Create content-addressable file naming using per-install/user salted keys (HMAC-SHA256(secret, imageBytes) or SHA256(secret || imageBytes)) computed with a secure crypto provider (expo-crypto or native binding)
+      - Continue to compute and store the unsalted `integrity_sha256`(imageBytes) for verification and optional local deduplication
     - Implement thumbnail generation pipeline with efficient compression
     - Build LRU cache management for local images with configurable storage limits
     - _Requirements: 1.5, 8.1, 8.5_
@@ -102,7 +108,9 @@
     - Implement DiagnosisRequest model with job state machine (pending → processing → succeeded/failed)
     - Build request queuing system that stores photos, plant context, and timestamps locally
     - Create queue status tracking with user-visible indicators and manual retry options
-    - Use image sha256 as duplicate key for request detection and deduplication
+
+  - Use per-install/user salted `filename_key` for on-disk/object filenames and for cross-session deduplication where appropriate. Use `integrity_sha256` for intra-device deduplication and integrity verification when you need raw-image equivalence (note: using raw sha256 as an identifier across users is disallowed because it enables cross-user correlation).
+
     - Add queue size limits and cleanup policies for storage management
     - _Requirements: 7.1, 7.3, 7.4_
 
@@ -113,6 +121,65 @@
     - Add network state monitoring and automatic queue processing on connectivity restore
     - Create persistent failure handling with user notification and manual retry options
     - _Requirements: 7.2, 7.5, 10.4_
+
+## Migration notes: salted filename keys and integrity column
+
+- Rationale: using raw SHA-256(imageBytes) as a filename/key enables cross-user correlation when images are uploaded or synced. To protect privacy, compute on-disk/object filenames using a per-install or per-user secret salt (keyed HMAC). Keep an unsalted `integrity_sha256` column if you need to detect exact duplicate images on a single device or verify integrity.
+
+- Steps to implement and migrate:
+
+  1. Generate and persist a per-install or per-user secret:
+
+  - Generate a 32-byte (or longer) random secret on first run/first use of the diagnosis feature.
+  - Persist the secret using a secure on-device keystore: prefer platform secure storage (iOS Keychain, Android Keystore) or a managed secure store (Expo SecureStore, react-native-keychain, or MMKV with encryption). Document storage choice and threat model.
+
+  2. Compute filename keys at time-of-capture/upload:
+
+  - Preferred: filename_key = HMAC-SHA256(secret, imageBytes)
+  - Alternative: filename_key = SHA256(secret || imageBytes) if HMAC API is unavailable.
+  - Use `filename_key` for all filenames and object keys (e.g. `images/{filename_key}.jpg`). This prevents the same image from being linkable across installs/users.
+
+  3. Continue storing raw SHA-256(imageBytes) in `integrity_sha256`:
+
+  - Compute `integrity_sha256 = SHA256(imageBytes)` and store it in the record for integrity checks and local deduplication only.
+  - Do NOT expose `integrity_sha256` in any cross-user or server-side index unless explicitly required and privacy-reviewed.
+
+  4. Migration strategy for existing data:
+
+  - Add new columns (`filename_key`, `integrity_sha256`) via a migration script.
+  - Backfill `integrity_sha256` from existing blobs where possible by reading the image bytes and hashing them.
+  - Backfilling `filename_key` requires the device secret; if the secret cannot be recovered (e.g., reinstall), you cannot reliably compute prior filename keys. In that case:
+  - Keep existing raw filenames in a temporary mapping table and reingest blobs under new keys when they are next accessed/uploaded.
+  - Or mark old records as needing rekeying; when user next opens/edits the image, compute the new `filename_key` and store it.
+
+  5. Tests and examples to update:
+
+  - Update unit tests that assert filenames equal raw SHA256(image) to instead expect the HMAC-derived `filename_key` and verify `integrity_sha256` separately.
+  - Add tests for secret generation, persistence, and migration edge cases (missing secret, secret rotation, rekeying on reinstall).
+  - Update any example upload code or Supabase/Edge Function examples to use `filename_key` for object keys and to send `integrity_sha256` as metadata if the server needs to verify payload integrity.
+
+### Example pseudocode (capture → store)
+
+```
+// 1. ensure secret exists
+secret = await getOrCreateDeviceSecret()
+
+// 2. capture and strip exif
+imageBytes = await captureImageAndStripExif()
+
+// 3. compute hashes
+integrity = SHA256(imageBytes) // store this in DB for verification
+filenameKey = HMAC_SHA256(secret, imageBytes) // use this for filename
+
+// 4. write file and DB record
+writeFile(`images/${filenameKey}.jpg`, imageBytes)
+db.diagnoses.create({ filename_key: filenameKey, integrity_sha256: integrity, ... })
+```
+
+Notes:
+
+- When implementing the HMAC, use a secure, well-tested implementation (expo-crypto HMAC APIs or native bindings). Treat the secret with the same sensitivity as other credentials on the device.
+- Rotation: if you implement secret rotation, provide a strategy to rekey existing files (on-access rekeying or background rekey job that reads blobs and rewrites them under the new key while maintaining `integrity_sha256`).
 
 - [ ] 6. Implement user feedback and telemetry system
 

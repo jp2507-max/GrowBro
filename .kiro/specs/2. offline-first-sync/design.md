@@ -209,7 +209,12 @@ interface SyncConstraints {
 
 ### Push/Pull Protocol
 
-**Pull endpoint:** Filters rows with updated_at > lastPulledAt; deleted list contains { id, deleted_at } where deleted_at > lastPulledAt. Response includes timestamp.
+**Pull endpoint:** To avoid missing rows when updates share the same timestamp boundary, the server MUST read and bind a stable `server_timestamp` at the start of the pull transaction and use that bound value for the query window. Filter rows (and deleted entries) using a closed upper bound:
+
+- Include rows where `(updated_at > lastPulledAt) AND (updated_at <= server_timestamp)`.
+- Include deleted entries where `(deleted_at > lastPulledAt) AND (deleted_at <= server_timestamp)`.
+
+Return the `server_timestamp` in the response and the client MUST use that value as the next `lastPulledAt` for subsequent pulls. Additionally, the server should expose a stable tie-breaker ordering (for example `(updated_at, id)`) when paginating results so ordering is deterministic across requests and clients. This combination prevents dropped rows at timestamp boundaries and ensures deterministic pagination.
 
 **Push endpoint:** Applies created → updated → deleted in a single transaction; on any mid-air change, abort and return an error; include Idempotency-Key support.
 

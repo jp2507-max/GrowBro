@@ -2,7 +2,7 @@
 
 ## Core Technologies
 
-- **React Native 0.79** with **Expo 53** (managed workflow)
+- **React Native 0.79.5** with **Expo ~53.0.22** (managed workflow)
 - **TypeScript** (strict mode enabled)
 - **Expo Router 5** for file-based navigation
 - **NativeWind 4** for styling (Tailwind CSS for React Native)

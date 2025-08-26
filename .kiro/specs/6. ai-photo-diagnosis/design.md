@@ -2,9 +2,9 @@
 
 ## Overview
 
-The AI Photo Diagnosis feature provides an end-to-end solution for automated plant health analysis in the CanaBro mobile app. The system combines guided photo capture, automated quality assessment, on-device/cloud ML inference, and actionable guidance delivery. The architecture prioritizes offline-first functionality, user privacy, and seamless integration with existing calendar and community features.
+The AI Photo Diagnosis feature provides an end-to-end solution for automated plant health analysis in the GrowBro mobile app. The system combines guided photo capture, automated quality assessment, on-device/cloud ML inference, and actionable guidance delivery. The architecture prioritizes offline-first functionality, user privacy, and seamless integration with existing calendar and community features.
 
-The solution supports 8-12 common cannabis cultivation issues including nutrient deficiencies (N, P, K, Mg, Ca), environmental stress conditions, and basic pest/pathogen detection. The system maintains high accuracy through confidence thresholding, quality gating, and graceful fallbacks to community consultation.
+The solution supports 12 common cannabis cultivation issues including nutrient deficiencies (N, P, K, Mg, Ca), environmental stress conditions, and basic pest/pathogen detection. The system maintains high accuracy through confidence thresholding, quality gating, and graceful fallbacks to community consultation.
 
 ## Architecture
 

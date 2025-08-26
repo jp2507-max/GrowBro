@@ -79,9 +79,16 @@ interface Task {
   id: string;
   title: string;
   description?: string;
-  dueDate: Date;
-  reminderAt?: Date;
-  recurrenceRule?: RRuleString;
+  // Time fields use DST-safe dual-field representation.
+  // Local times are stored as ISO strings with timezone info (e.g. 2025-03-29T02:30:00+02:00).
+  // UTC times are stored as ISO UTC strings (e.g. 2025-03-29T00:30:00Z).
+  // These match the WatermelonDB schema naming: due_at_local / due_at_utc, reminder_at_local / reminder_at_utc
+  dueAtLocal?: string; // ISO with timezone
+  dueAtUtc?: string; // ISO UTC
+  reminderAtLocal?: string; // ISO with timezone
+  reminderAtUtc?: string; // ISO UTC
+  timezone?: string; // IANA timezone name (e.g. Europe/Berlin)
+  // Recurrence is represented at the Series level (RFC-5545 RRULE + dtstart). Tasks materialized from a series reference the series via seriesId.
   plantId?: string;
   status: 'pending' | 'completed' | 'skipped';
   createdAt: Date;
@@ -246,9 +253,12 @@ class Task extends Model {
   @text('series_id') seriesId?: string; // null for one-off tasks
   @text('title') title!: string;
   @text('description') description?: string;
+  // DST-safe dual-field timezone representation for scheduling and notifications.
+  // Local fields: ISO strings including timezone offset (e.g. 2025-03-29T02:30:00+02:00)
+  // UTC fields: ISO UTC strings (e.g. 2025-03-29T00:30:00Z)
   @text('due_at_local') dueAtLocal!: string; // ISO with timezone
   @text('due_at_utc') dueAtUtc!: string; // ISO UTC
-  @text('timezone') timezone!: string; // Olson timezone
+  @text('timezone') timezone!: string; // IANA timezone (e.g. Europe/Berlin)
   @text('reminder_at_local') reminderAtLocal?: string; // ISO with timezone
   @text('reminder_at_utc') reminderAtUtc?: string; // ISO UTC
   @text('plant_id') plantId?: string;
@@ -602,7 +612,12 @@ const rehydrateNotifications = async (changedTaskIds?: string[]) => {
       await Notifications.cancelScheduledNotificationAsync(
         existing.notificationId
       );
-      await existing.markAsDeleted();
+      // WatermelonDB mutations must run inside a write transaction.
+      // Wrap the markAsDeleted call in database.write and await it so the
+      // deletion executes inside a proper write transaction.
+      await database.write(async () => {
+        await existing.markAsDeleted();
+      });
     }
 
     if (

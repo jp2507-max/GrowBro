@@ -88,7 +88,12 @@ const client = z.object({
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string().min(1),
 
-  // Sentry Configuration (Client) - handled by wizard init; no client vars required here
+  // Sentry Configuration (Client)
+  SENTRY_DSN: z.string().optional(),
+  SENTRY_SEND_DEFAULT_PII: z.boolean().optional(),
+  SENTRY_REPLAYS_SESSION_SAMPLE_RATE: z.number().min(0).max(1).optional(),
+  SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE: z.number().min(0).max(1).optional(),
+  SENTRY_ENABLE_REPLAY: z.boolean().optional(),
 });
 
 const buildTime = z.object({
@@ -96,6 +101,10 @@ const buildTime = z.object({
   EAS_PROJECT_ID: z.string(),
   // ADD YOUR BUILD TIME ENV VARS HERE
   SECRET_KEY: z.string(),
+
+  // Sentry Configuration (Build-time)
+  SENTRY_PROJECT: z.string().optional(),
+  SENTRY_ORG: z.string().optional(),
 });
 
 /**
@@ -119,6 +128,17 @@ const _clientEnv = {
   SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
 
   // Sentry Configuration (Client)
+  SENTRY_DSN: process.env.SENTRY_DSN,
+  SENTRY_SEND_DEFAULT_PII: process.env.SENTRY_SEND_DEFAULT_PII === 'true',
+  SENTRY_REPLAYS_SESSION_SAMPLE_RATE: process.env
+    .SENTRY_REPLAYS_SESSION_SAMPLE_RATE
+    ? Number(process.env.SENTRY_REPLAYS_SESSION_SAMPLE_RATE)
+    : undefined,
+  SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE: process.env
+    .SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE
+    ? Number(process.env.SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE)
+    : undefined,
+  SENTRY_ENABLE_REPLAY: process.env.SENTRY_ENABLE_REPLAY === 'true',
 };
 
 /**
@@ -131,6 +151,8 @@ const _buildTimeEnv = {
   SECRET_KEY: process.env.SECRET_KEY,
 
   // Sentry Configuration (Build-time)
+  SENTRY_PROJECT: process.env.SENTRY_PROJECT,
+  SENTRY_ORG: process.env.SENTRY_ORG,
 };
 
 /**
