@@ -18,8 +18,7 @@ import colors from '@/components/ui/colors';
 import { CaretDown } from '@/components/ui/icons';
 
 import type { InputControllerType } from './input';
-import { useModal } from './modal';
-import { Modal } from './modal';
+import { Modal, useModal } from './modal';
 import { Text } from './text';
 
 const selectTv = tv({

@@ -164,6 +164,11 @@ This feature ensures GrowBro meets all Android Play Store compliance requirement
 3. WHEN internal checklist runs THEN it SHALL be confirmed before submission
 4. IF App Access is missing THEN rejected builds SHALL block release
 
+<!-- NOTE (security & process): Do NOT commit reviewer/test credentials to the repository. -->
+<!-- Suggested policy: reviewer/test credentials SHALL live only in Play Console "App access" (or equivalent reviewer-only flows) and any ephemeral tokens/links needed for CI/testing SHALL be injected via CI secrets. -->
+<!-- Rationale: prevents secret leakage in source control, aligns with Play Console reviewer access model, and enables rotation/ephemeral access via CI. -->
+<!-- Applied rules: "Use functional and declarative patterns" (style), "Privacy-focused" (product), and "Do not store secrets in repo" (project rules). -->
+
 ### Requirement 12
 
 **User Story:** As a privacy officer, I want a public privacy policy, so that users understand data practices and the policy aligns with Play Store disclosures.

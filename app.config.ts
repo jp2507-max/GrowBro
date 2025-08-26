@@ -21,7 +21,7 @@ const appIconBadgeConfig: AppIconBadgeConfig = {
 };
 
 // eslint-disable-next-line max-lines-per-function
-function createExpoConfig(config: any): ExpoConfig {
+function createExpoConfig(config: Partial<ExpoConfig>): ExpoConfig {
   return {
     ...config,
     name: Env.NAME,
@@ -30,6 +30,10 @@ function createExpoConfig(config: any): ExpoConfig {
     scheme: Env.SCHEME,
     slug: 'growbro',
     version: Env.VERSION.toString(),
+    // Ensure runtimeVersion is set to a stable policy to prevent mismatched
+    // JS/native bundles when performing OTA updates. Using the 'sdkVersion'
+    // policy ties runtimeVersion to the Expo SDK and is a safe default.
+    runtimeVersion: { policy: 'sdkVersion' },
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',

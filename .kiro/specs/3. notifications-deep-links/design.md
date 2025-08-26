@@ -413,7 +413,13 @@ CREATE TABLE notification_queue (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   message_id TEXT UNIQUE NOT NULL,
   type TEXT NOT NULL,
-  payload JSONB NOT NULL,
+  -- Minimal, non-PII payload summary for analytics and routing. Do NOT store
+  -- full provider send payloads here. Move full payloads to a separate
+  -- audit table with restricted access and tighter retention if you must keep them.
+  payload_summary JSONB NOT NULL,
+  -- Provider's canonical message name (e.g. FCM v1 response.name). Store
+  -- this separately to enable reconciliation with provider logs/BigQuery.
+  provider_message_name TEXT,
   scheduled_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   sent_at TIMESTAMP WITH TIME ZONE,
   delivered_at TIMESTAMP WITH TIME ZONE,
@@ -1212,11 +1218,38 @@ serve(async (req) => {
     // success/failure information. Storing one row per device (instead of a single
     // aggregate row) enables precise retry, error analysis, and per-device analytics.
     // Each result contains the provider messageId and success status; include device token and platform
+    // NOTE (schema alignment & privacy): The `notification_queue` SQL schema in the "Supabase Backend Schema"
+    // section currently does NOT define `device_token` or `platform`, nor does it persist the
+    // provider's canonical message identifier (e.g. FCM response.name). To keep the implementation
+    // consistent and enable provider-level reconciliation, update the SQL schema to include:
+    //   - provider_message_name TEXT    -- e.g. FCM v1 response.name (store separately)
+    //   - device_token TEXT             -- per-device tracking
+    //   - platform TEXT CHECK (platform IN ('ios','android'))
+    // and add operational indexes (user_id/status, message_id, provider_message_name).
+    // IMPORTANT: avoid persisting the full provider send payload in `notification_queue`.
+    // Store only a minimal, non-PII `payload_summary` (platform, keys, flags). If you must
+    // retain full payloads for audit/debugging, move them to a separate `notification_payload_audit`
+    // table with restricted access and tighter retention controls. Also ensure the Edge
+    // Function pipes the provider_message_name returned by FCM/APNs into this table for
+    // reliable reconciliation with provider logs/BigQuery exports.
+    // Persist minimal, non-PII fields per-device. Store the provider's canonical
+    // message name separately (provider_message_name) for reconciliation with
+    // provider logs (e.g. FCM v1 response.name). Avoid persisting the full
+    // send payload in this table; if you need to keep full payloads for audit,
+    // move them to a dedicated audit table with tighter retention and access
+    // controls.
     const rows = results.map((res, i) => ({
       user_id: userId,
       message_id: res.messageId,
       type,
-      payload: { title, body, data, sendPayload: res.payload },
+      // Keep only a minimal summary of the payload (non-PII): platform, keys, flags
+      payload_summary: {
+        platform: res.platform,
+        // include only top-level keys useful for analytics/routing (avoid PII)
+        keys: Object.keys(data || {}),
+        has_deeplink: Boolean(deepLink),
+      },
+      provider_message_name: res.response?.name || null,
       status: res.success ? 'sent' : 'failed',
       device_token: tokens[i]?.token,
       platform: res.platform,
@@ -1336,6 +1369,9 @@ async function sendToDevice(
       platform: tokenData.platform,
       payload,
       response: responseBody,
+      // Provider's canonical message name (FCM v1 response.name) — expose to
+      // caller so it can be persisted separately as provider_message_name.
+      providerMessageName: responseBody?.name || null,
       error: response.ok ? null : `HTTP ${response.status}`,
     };
   } catch (err) {
@@ -1345,6 +1381,7 @@ async function sendToDevice(
       platform: tokenData.platform,
       payload,
       response: null,
+      providerMessageName: null,
       error: err?.message || String(err),
     };
   }

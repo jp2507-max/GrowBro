@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Switch, Text, View } from 'react-native';
 
+import { translate } from '@/lib';
 import {
   getPrivacyConsent,
   type PrivacyConsent,
@@ -47,17 +48,17 @@ function ToggleRow({
 
 function showPersonalizedDataInfo(): void {
   Alert.alert(
-    'Personalized Data',
-    'This includes IP addresses, user IDs, and other identifying information that helps us provide better error reports and analytics. This data is handled according to our privacy policy.',
-    [{ text: 'OK' }]
+    translate('privacy.personalized.title'),
+    translate('privacy.personalized.body'),
+    [{ text: translate('common.ok') }]
   );
 }
 
 function showSessionReplayInfo(): void {
   Alert.alert(
-    'Session Replay',
-    'Session replay records your app interactions to help us debug issues. Personal information is automatically filtered out, but you can disable this feature entirely.',
-    [{ text: 'OK' }]
+    translate('privacy.sessionReplay.title'),
+    translate('privacy.sessionReplay.body'),
+    [{ text: translate('common.ok') }]
   );
 }
 
@@ -72,9 +73,13 @@ export function PrivacySettings({ onConsentChange }: PrivacySettingsProps) {
   function updateConsent(key: keyof PrivacyConsent, value: boolean): void {
     if (key === 'lastUpdated') return; // Don't allow manual update of timestamp
 
-    const newConsent = { ...consent, [key]: value };
+    const now = Date.now();
+    const newConsent = { ...consent, [key]: value, lastUpdated: now };
+    // Update local state immediately so the UI reflects the new timestamp
     setConsentState(newConsent);
-    setPrivacyConsent({ [key]: value });
+    // Persist the full consent object so reads are canonical; pass the same
+    // object to onConsentChange so consumers get the updated timestamp too.
+    setPrivacyConsent(newConsent);
     onConsentChange?.(newConsent);
   }
 

@@ -1,0 +1,46 @@
+{
+  "common": {
+    "ok": "OK"
+  },
+  "onboarding": {
+    "message": "Willkommen bei der obytes App"
+  },
+  "privacy": {
+    "personalized": {
+      "body": "Dies umfasst IP-Adressen, Benutzer-IDs und andere identifizierende Informationen, die uns helfen, Fehlerberichte und Analysen zu verbessern. Diese Daten werden gemäß unserer Datenschutzerklärung verarbeitet.",
+      "title": "Personalisierte Daten"
+    },
+    "sessionReplay": {
+      "body": "Sitzungswiedergaben protokollieren Ihre Interaktionen mit der App, um Probleme zu debuggen. Sensible Daten werden nach Möglichkeit gefiltert oder unkenntlich gemacht; siehe Datenschutzerklärung für Details.",
+      "title": "Sitzungswiedergabe"
+    }
+  },
+  "settings": {
+    "about": "Über",
+    "app_name": "App-Name",
+    "arabic": "Arabisch",
+    "english": "Englisch",
+    "generale": "Allgemein",
+    "github": "Github",
+    "language": "Sprache",
+    "links": "Links",
+    "logout": "Abmelden",
+    "more": "Mehr",
+    "privacy": "Datenschutzrichtlinie",
+    "rate": "Bewerten",
+    "share": "Teilen",
+    "support": "Support",
+    "support_us": "Unterstütze uns",
+    "terms": "Nutzungsbedingungen",
+    "theme": {
+      "dark": "Dunkel",
+      "light": "Hell",
+      "system": "System",
+      "title": "Thema"
+    },
+    "title": "Einstellungen",
+    "version": "Version",
+    "website": "Website"
+  },
+  "welcome": "Willkommen bei der obytes App"
+}

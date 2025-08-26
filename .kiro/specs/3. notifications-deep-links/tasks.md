@@ -1,4 +1,106 @@
-# Implementation Plan
+### Security edge-case tests (explicit additions)
+
+Add the following unit test cases to the deep-link test matrix to ensure rigorous validation and sanitizer behavior. Each row includes: input URL, expected result (pass/fail), failure reason, and expected validation error code.
+
+1. Scheme: `file:` (forbidden)
+
+- input: `file:///etc/passwd`
+- expected: fail
+- reason: local file scheme should never be allowed for notifications deep-links
+- error: `forbidden-scheme-file`
+
+2. Insecure HTTP redirect (blocked for sensitive redirects)
+
+- input: `http://insecure.example.com/welcome`
+- expected: fail (unless explicitly allowlisted in origin policy)
+- reason: insecure transport for redirect targets may leak tokens or user data
+- error: `blocked-redirect-insecure-http`
+
+3. Userinfo present in host (forbidden)
+
+- input: `https://admin:password@evil.example.com/dashboard`
+- expected: fail
+- reason: userinfo in URL authority can leak credentials and should be rejected
+- error: `forbidden-userinfo`
+
+4. Non-default ports (blocked unless allowlisted)
+
+- input: `https://example.com:8080/app`
+- expected: fail (unless the origin + port is allowlisted)
+- reason: non-default ports can bypass origin-based allowlists and may indicate internal services
+- error: `blocked-nondefault-port`
+
+5. IDN / Unicode host handling (blocked by default)
+
+- input: `https://xn--pple-43d.com/` # punycode for an IDN; include literal unicode form when possible: `https://раss.example/`
+- expected: fail (unless IDN is explicitly allowed by policy)
+- reason: Unicode/IDN hostnames can be used for homograph attacks
+- error: `blocked-idn`
+
+6. Nested / repeated percent-encoding + path traversal normalization
+
+- input: `https://example.com/%252e%252e/%2e%2e/etc/secret`
+- expected: fail
+- reason: repeated encoding and traversal sequences must be normalized and then rejected if they escape allowed paths
+- error: `blocked-path-traversal`
+
+7. Combined edge cases (multiple issues should report the primary blocking code)
+
+- input: `http://admin:bad@xn--pple-43d.com:8080/%252e%252e/%2e%2e/secret`
+- expected: fail
+- reason: should fail for the highest-priority policy violation (scheme and userinfo/insecure transport); test asserts consistent error prioritization
+- error: `blocked-redirect-insecure-http` (or `forbidden-userinfo` depending on policy priority — assert the configured canonical precedence)
+
+8. Sanitizer iteration limit enforcement
+
+- input: extremely nested encoding: `https://example.com/` + repeated `%25` layers, e.g. `%25` repeated 200 times followed by `2e2e` sequences to attempt to bypass normalization
+- expected: fail
+- reason: sanitizer must enforce a maximum number of decoding iterations to prevent DoS or ambiguous results
+- error: `sanitizer-iteration-limit`
+
+9. Allowlist / host-origin checks (positive case)
+
+- input: `https://trusted.example.com/dashboard`
+- precondition: `trusted.example.com` is present in the app allowlist with the default port and secure scheme
+- expected: pass
+- reason: valid origin allowlisted for redirect targets
+- error: none
+
+10. Allowlist with non-default port (explicit allowlist entry)
+
+- input: `https://internal.example.com:8443/service`
+- precondition: `https://internal.example.com:8443` is explicitly allowlisted
+- expected: pass
+- reason: explicit allowlist for origin + port is supported
+- error: none
+
+Test implementation notes:
+
+- Each unit test should assert the canonical validation error code returned by the deep-link sanitizer/validator.
+- When multiple violations exist, tests should assert the canonical precedence ordering of errors. Document the precedence used by the validator in the test helper (for example: scheme -> userinfo -> insecure -> nondefault-port -> idn -> path-traversal -> sanitizer-iteration-limit).
+- Tests for path traversal must validate path normalization semantics: normalize percent-encodings iteratively up to the sanitizer iteration limit, then perform path resolution and check whether the resulting path escapes an allowed base. Ensure repeated encoding cases are handled deterministically.
+- Sanitizer iteration limit tests should construct inputs that would require many decoding passes and assert that the validator halts with `sanitizer-iteration-limit` rather than looping indefinitely.
+- Include both unit tests (fast fuzz-like table-driven tests) and a small integration test exercising the allowlist configuration and showing that allowlist entries for host+port and IDN flags are respected.
+
+Documented validation error codes (add to spec):
+
+- forbidden-scheme-file: The URL uses a local file scheme which is disallowed for deep-links.
+- blocked-redirect-insecure-http: The URL uses the insecure HTTP scheme and is blocked unless explicitly allowlisted.
+- forbidden-userinfo: The URL contains userinfo (username[:password]@host) which is disallowed.
+- blocked-nondefault-port: The URL uses a non-default port and is blocked unless the exact origin (including port) is allowlisted.
+- blocked-idn: The URL uses an IDN (Unicode) hostname which is blocked unless explicitly allowed.
+- blocked-path-traversal: The normalized path escapes allowed directories after iterative decoding and normalization.
+- sanitizer-iteration-limit: The URL required more decoding iterations than permitted by the sanitizer; parsing was aborted.
+  .kiro/specs/3. notifications-deep-links/tasks.md lines 125-176: the deep-link
+  test matrix omits explicit security edge-case tests for file:, http (insecure),
+  userinfo in host, non-default ports, and IDN/Unicode host handling; add unit
+  tests covering each case (input examples and expected failure or success
+  reasons), include combinations with nested/repeated encoding and path-traversal
+  normalization, ensure tests assert sanitizer iteration limits and
+  allowlist/host-origin checks, and document expected validation error codes
+  (e.g., forbidden-scheme-file, blocked-redirect-insecure-http,
+  forbidden-userinfo, blocked-nondefault-port, blocked-idn) so the test suite
+  enforces these new controls.# Implementation Plan
 
 - [ ] 1. Set up core notification infrastructure and platform-specific foundations
 
@@ -102,14 +204,19 @@
     - a relative path (e.g. "/profile") or
     - a same-origin absolute URL (same origin as the app's configured allowed host(s)).
       If a redirect query parameter is present and its target is an external host (different origin) the URL MUST be treated as invalid and rejected.
-  - Explicitly fail validation for URLs that use the following unsafe schemes: `javascript:`, `intent:`, and `data:`. Any deep link containing a URL with these schemes (either as the primary URL or nested inside a parameter) MUST be considered invalid.
+  - Explicitly fail validation for URLs that use the following unsafe schemes: `javascript:`, `intent:`, `data:`, and `file:`. Any deep link containing a URL with these schemes (either as the primary URL or nested inside a parameter) MUST be considered invalid.
+  - For web URLs, require HTTPS (and WSS for websocket endpoints). Disallow HTTP except in explicitly configured development hosts.
+  - Reject authorities containing userinfo (user:pass@host) to avoid credential leakage and parser ambiguities.
+  - Reject absolute URLs with non-default ports unless the port is on an explicit allowlist per trusted origin.
   - Update sanitizer & validator behavior (implementation notes):
     - Canonicalize and normalize incoming URLs before validation (percent-decode where appropriate, normalize case for host, remove default ports, collapse "./" and "../" path segments).
-    - Percent-decode query parameter values when validating nested URLs (e.g. ?redirect=%2Fpath or ?redirect=https%3A%2F%2Fevil.com).
+    - Convert internationalized domain names (IDN) to punycode prior to allowlist checks; reject mixed/invalid representations.
+    - Reject URLs with userinfo components and those specifying non-allowlisted ports.
+    - Percent-decode query parameter values when validating nested URLs (e.g. ?redirect=%2Fpath or ?redirect=https%3A%2F%2Fevil.com). Perform decoding on a bounded loop (e.g., max 3 iterations) to defend against repeated-encoding attacks.
     - When a query parameter is intended to carry a URL (common names: `redirect`, `next`, `url`, `continue`), parse that value as a URL and validate it using the same allowlist rules.
     - Treat presence of an unknown or unrecognized query parameter carrying an absolute external URL as a validation failure when the key implies navigation.
-    - Maintain an allowlist of trusted origins (configurable) and treat only those origins as same-origin for redirect checks.
-    - Log/telemetry: on validation failure record a non-sensitive reason code (e.g. `blocked-redirect-external`, `forbidden-scheme-javascript`) to aid debugging; do NOT log full redirect targets or other sensitive tokens.
+    - Maintain an allowlist of trusted origins (configurable), including an optional allowlist of non-default ports per origin, and treat only those origins as same-origin for redirect checks.
+    - Log/telemetry: on validation failure record a non-sensitive reason code (e.g. `blocked-redirect-external`, `forbidden-scheme-javascript`, `forbidden-scheme-file`, `blocked-authority-userinfo`) to aid debugging; do NOT log full redirect targets or other sensitive tokens.
   - Add sanitizer protections for nested encoded payloads and repeated-encoding attacks (e.g. double percent-encoding). Normalize repeatedly until a stable representation is reached, but cap iteration depth to avoid DoS.
   - Write comprehensive tests for URL validation and security edge cases, including but not limited to:
     - Blocked redirect params pointing to external http(s) hosts (absolute external URLs encoded/unencoded).
@@ -124,54 +231,91 @@
 
   - Example unit test matrix (to be implemented in test suite):
 
-    - Test: reject external redirect param
+    - Test matrix (explicit security edge-cases)
 
-      - Input: app://open?redirect=https://evil.com/path
-      - Expect: validation failure, reason `blocked-redirect-external`
+      Note: each test includes an "Input" (raw incoming deep link), an "Expectation" (pass/fail), and when failing the canonical non-sensitive reason code expected from telemetry/validation. Tests should be implemented in the URL parser/validator unit test file (example: `src/lib/url-validator.test.ts`) and must assert sanitizer iteration limits, allowlist/host-origin checks, punycode/IDN normalization, and that userinfo/non-default ports are rejected unless explicitly allowlisted.
 
-    - Test: accept same-origin absolute redirect
+      - Test: reject `file:` scheme (forbidden primary scheme)
 
-      - Input: app://open?redirect=https://app.example.com/profile
-      - Expect: validation success
+        - Input: file:///etc/passwd
+        - Expect: validation failure, reason `forbidden-scheme-file`
 
-    - Test: accept relative redirect path
+      - Test: reject nested `file:` inside parameter (percent-encoded)
 
-      - Input: app://open?redirect=%2Fprofile%2Fedit
-      - Expect: validation success (normalized to `/profile/edit`)
+        - Input: app://open?url=file%3A%2F%2F%2Fetc%2Fpasswd
+        - Expect: validation failure, reason `forbidden-scheme-file`
 
-    - Test: reject javascript: scheme in main URL
+      - Test: reject insecure `http:` external redirect when not allowlisted
 
-      - Input: javascript:alert(1)
-      - Expect: validation failure, reason `forbidden-scheme-javascript`
+        - Input: app://open?redirect=http://evil.example.com/path
+        - Expect: validation failure, reason `blocked-redirect-insecure-http`
 
-    - Test: reject javascript: inside parameter
+      - Test: allow explicit development host over HTTP if configured (positive control)
 
-      - Input: app://open?url=javascript:alert(1)
-      - Expect: validation failure, reason `forbidden-scheme-javascript`
+        - Input: app://open?redirect=http://dev.local:8080/dashboard
+        - Expect: validation success if `dev.local:8080` is present in allowlist; otherwise `blocked-redirect-insecure-http`
 
-    - Test: reject intent: scheme
+      - Test: reject authority containing userinfo (user:pass@host)
 
-      - Input: intent://scan/#Intent;scheme=zxing;package=com.google.zxing.client.android;end
-      - Expect: validation failure, reason `forbidden-scheme-intent`
+        - Input: app://open?redirect=https://user:pass@evil.com/
+        - Expect: validation failure, reason `forbidden-userinfo`
 
-    - Test: reject data: scheme
+      - Test: reject main URL that includes userinfo in host
 
-      - Input: data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==
-      - Expect: validation failure, reason `forbidden-scheme-data`
+        - Input: https://alice:secret@trusted.example.com/welcome
+        - Expect: validation failure, reason `forbidden-userinfo`
 
-    - Test: nested encoded forbidden scheme
+      - Test: reject absolute URL with non-default (disallowed) port
 
-      - Input: app://open?redirect=https%3Aj%2F%2Fexample.com%2F%3Fq%3Djavascript%253Aalert(1)
-      - Expect: validation failure if nested URL contains forbidden scheme or external host after decoding
+        - Input: app://open?redirect=https://app.example.com:4443/profile
+        - Expect: validation failure, reason `blocked-nondefault-port` unless `app.example.com:4443` is explicitly allowlisted
 
-    - Test: repeated-encoding defense
+      - Test: accept same-origin absolute redirect when origin and port match allowlist
 
-      - Input: app://open?redirect=%2525252Fetc (many layers)
-      - Expect: sanitizer caps iteration, then validates final value or fails with `sanitizer-iteration-limit`
+        - Input: app://open?redirect=https://app.example.com:443/profile
+        - Expect: validation success (default HTTPS port considered canonical)
 
-    - Test: path traversal normalization
-      - Input: app://open?redirect=/profiles/../admin
-      - Expect: validation follows normalization rules and applies allowlist checks
+      - Test: IDN/Unicode host handling — reject mixed/invalid representations
+
+        - Input: app://open?redirect=https://éxample.com/profile
+        - Expect: validation failure, reason `blocked-idn` (must be converted to punycode then matched against allowlist)
+
+      - Test: IDN punycode accepted when allowlisted
+
+        - Input: app://open?redirect=https://xn--xample-9ua.com/profile
+        - Expect: validation success if `xn--xample-9ua.com` is in allowlist; otherwise `blocked-idn`
+
+      - Test: nested/repeated encoding combined with path-traversal normalization
+
+        - Input: app://open?redirect=%252Fadmin%252F..%252Fuser%252Fprofile (double-encoded path traversal)
+        - Expect: sanitizer performs bounded decoding (e.g., max 3 iterations), normalizes to `/user/profile` and then applies allowlist/origin checks. If normalization results in a relative path allowed by policy — success; otherwise failure with `blocked-redirect-external` or `sanitizer-iteration-limit` if iterations cap reached without stabilization.
+
+      - Test: repeated-encoding DoS defense (iteration cap)
+
+        - Input: app://open?redirect=%25%25%25%25%25%252Fsecret (crafted many layers)
+        - Expect: sanitizer stops after configured max iterations and returns validation failure with reason `sanitizer-iteration-limit`
+
+      - Test: unknown query parameter containing an absolute external URL (fail when key implies navigation)
+
+        - Input: app://open?next=https://evil.com/win
+        - Expect: validation failure, reason `blocked-redirect-external` (or `blocked-unknown-external-param` depending on validator naming; tests should assert the agreed code)
+
+      - Test: complex nested case — percent-encoded URL containing a punycode host and a forbidden scheme
+
+        - Input: app://open?redirect=https%3A%2F%2Fxn--evil-abc.com%2F%3Fq%3Djavascript%253Aalert(1)
+        - Expect: validation failure, reason `forbidden-scheme-javascript` (detected after decoding nested param)
+
+      - Test: allow relative redirect that normalizes out path-traversal
+
+        - Input: app://open?redirect=%2Fprofile%2F..%2Fsettings%2F (encoded `/profile/../settings/`)
+        - Expect: validation success if `/settings/` is allowed; otherwise `blocked-redirect-external` or `blocked-path`
+
+      - Implementation notes for tests:
+        - Cover both encoded and unencoded variants for each test case.
+        - Assert that telemetry/validation returns one of the documented non-sensitive reason codes on failure: `forbidden-scheme-file`, `blocked-redirect-insecure-http`, `forbidden-userinfo`, `blocked-nondefault-port`, `blocked-idn`, `sanitizer-iteration-limit`, `blocked-redirect-external`, `forbidden-scheme-javascript`, `forbidden-scheme-intent`, `forbidden-scheme-data`, `blocked-unknown-external-param`.
+        - Ensure tests exercise allowlist behavior (both positive and negative cases) and that non-default ports are only allowed when explicitly configured per-origin.
+        - Verify that IDN names are converted to punycode for allowlist matching and that mixed Unicode/ASCII host representations are rejected.
+        - Tests must also verify that nested URL decoding is bounded (e.g., max 3 iterations) and that when the bound is reached the validator returns `sanitizer-iteration-limit`.
 
   - Test implementation notes:
     - Tests should include encoded and unencoded variants, and verify that telemetry reason codes are emitted for failures without exposing sensitive values.

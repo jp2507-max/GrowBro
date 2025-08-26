@@ -423,13 +423,14 @@ class LogSanitizer {
   private replacementTokens: Map<string, string>;
 
   constructor(config: SanitizationConfig) {
+    // Use explicit flags rather than inline mixes. Make email case-insensitive.
     this.sensitivePatterns = [
-      /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, // Email
+      /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/gi, // Email (global + case-insensitive)
       /\b\d{3}-\d{2}-\d{4}\b/g, // SSN
       /\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b/g, // Credit card
-      /Bearer\s+[A-Za-z0-9\-._~+/]+=*/g, // Bearer tokens
+      /Bearer\s+[A-Za-z0-9\-._~+/]+=*/gi, // Bearer tokens (case-insensitive)
       /api[_-]?key['":\s]*[A-Za-z0-9]{20,}/gi, // API keys
-      // Custom patterns from config
+      // Custom patterns from config (assumed to be RegExp)
       ...config.customPatterns,
     ];
   }
@@ -445,37 +446,108 @@ class LogSanitizer {
   }
 
   sanitizeObject(obj: any): any {
-    const sanitized = JSON.parse(JSON.stringify(obj));
-    return this.recursiveSanitize(sanitized);
-  }
+    // Iterative recursive traversal that preserves Dates, BigInts, Maps, Sets
+    // and avoids circular references using a WeakSet of visited objects.
+    const visited = new WeakSet();
 
-  private recursiveSanitize(obj: any): any {
-    if (typeof obj === 'string') {
-      return this.sanitizeLog(obj);
-    }
+    const sanitize = (value: any): any => {
+      // Primitives
+      if (value == null) return value;
+      const t = typeof value;
 
-    if (Array.isArray(obj)) {
-      return obj.map((item) => this.recursiveSanitize(item));
-    }
+      if (t === 'string') return this.sanitizeLog(value);
+      if (t === 'number' || t === 'boolean' || t === 'bigint') return value;
 
-    if (obj && typeof obj === 'object') {
-      const result: any = {};
-      for (const [key, value] of Object.entries(obj)) {
-        // Skip sensitive keys entirely
-        if (this.isSensitiveKey(key)) {
-          result[key] = '[REDACTED]';
-        } else {
-          result[key] = this.recursiveSanitize(value);
+      // Preserve Dates
+      if (value instanceof Date) return new Date(value.getTime());
+
+      // Avoid revisiting same object (circular)
+      if (t === 'object' || Array.isArray(value)) {
+        if (visited.has(value)) return '[Circular]';
+        visited.add(value);
+      }
+
+      // Arrays
+      if (Array.isArray(value)) return value.map((v) => sanitize(v));
+
+      // Maps
+      if (value instanceof Map) {
+        const m = new Map();
+        for (const [k, v] of value.entries()) m.set(k, sanitize(v));
+        return m;
+      }
+
+      // Sets
+      if (value instanceof Set) {
+        const s = new Set();
+        for (const v of value.values()) s.add(sanitize(v));
+        return s;
+      }
+
+      // Plain objects
+      if (value && typeof value === 'object') {
+        const out: any = {};
+        for (const [k, v] of Object.entries(value)) {
+          if (this.isSensitiveKey(k)) out[k] = '[REDACTED]';
+          else out[k] = sanitize(v);
+        }
+        return out;
+      }
+
+      // Fallback
+      return value;
+    };
+
+    try {
+      return sanitize(obj);
+    } catch (e) {
+      // As a safe fallback, when structuredClone exists we try it and then post-process
+      if (typeof structuredClone === 'function') {
+        try {
+          const cloned = structuredClone(obj);
+          return sanitize(cloned);
+        } catch (_) {
+          // last-resort stringify safe fallback (won't preserve special types)
+          try {
+            return this.recursiveSanitizeFallback(obj);
+          } catch (__) {
+            return '[UNSANITIZABLE]';
+          }
         }
       }
-      return result;
-    }
 
-    return obj;
+      return '[UNSANITIZABLE]';
+    }
+  }
+
+  // Small fallback used only if traversal throws for unexpected hosts
+  private recursiveSanitizeFallback(obj: any): any {
+    try {
+      const sanitized = JSON.parse(JSON.stringify(obj));
+      // Best-effort pass to sanitize strings
+      const walk = (o: any): any => {
+        if (o == null) return o;
+        if (typeof o === 'string') return this.sanitizeLog(o);
+        if (Array.isArray(o)) return o.map(walk);
+        if (o && typeof o === 'object') {
+          const r: any = {};
+          for (const [k, v] of Object.entries(o)) {
+            r[k] = this.isSensitiveKey(k) ? '[REDACTED]' : walk(v);
+          }
+          return r;
+        }
+        return o;
+      };
+
+      return walk(sanitized);
+    } catch (e) {
+      throw e;
+    }
   }
 
   private isSensitiveKey(key: string): boolean {
-    const sensitiveKeys = [
+    // Match whole tokens only to avoid substring over-redaction (e.g. 'monkey')
+    const sensitiveKeys = new Set([
       'password',
       'token',
       'secret',
@@ -490,11 +562,11 @@ class LogSanitizer {
       'cookie',
       'bearer',
       'oauth',
-    ];
+    ]);
 
-    return sensitiveKeys.some((sensitive) =>
-      key.toLowerCase().includes(sensitive)
-    );
+    const normalized = (key || '').toLowerCase();
+    const tokens = normalized.split(/[^a-z0-9]+/g).filter(Boolean);
+    return tokens.some((t) => sensitiveKeys.has(t));
   }
 }
 ```

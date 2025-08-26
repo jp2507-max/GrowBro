@@ -86,9 +86,10 @@
   - Write tests for image upload queue and backfill operations
   - _Requirements: 3.2, 3.3, 5.1, 7.3_
 
-- [ ] 8. Implement background sync with expo-background-task
+- [ ] 8. Implement background sync with expo-task-manager + expo-background-fetch
 
-  - Create BackgroundSyncService using expo-background-task (SDK 53+)
+  - Create BackgroundSyncService using `expo-task-manager` and
+    `expo-background-fetch` (SDK 53 workflow)
   - Add background task registration and constraint configuration
   - Document that execution is opportunistic (OS-scheduled) and add manual "Sync now" fallback
   - Implement opportunistic background sync with platform limitations handling

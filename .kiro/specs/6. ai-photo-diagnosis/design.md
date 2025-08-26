@@ -4,7 +4,24 @@
 
 The AI Photo Diagnosis feature provides an end-to-end solution for automated plant health analysis in the GrowBro mobile app. The system combines guided photo capture, automated quality assessment, on-device/cloud ML inference, and actionable guidance delivery. The architecture prioritizes offline-first functionality, user privacy, and seamless integration with existing calendar and community features.
 
-The solution supports 12 common cannabis cultivation issues including nutrient deficiencies (N, P, K, Mg, Ca), environmental stress conditions, and basic pest/pathogen detection. The system maintains high accuracy through confidence thresholding, quality gating, and graceful fallbacks to community consultation.
+The solution supports a predefined set of diagnosis classes used across the system (see the canonical "Diagnosis Classes" list below). The system maintains high accuracy through confidence thresholding, quality gating, and graceful fallbacks to community consultation.
+
+## Diagnosis Classes (canonical)
+
+This canonical list is the single source of truth for all references to diagnosis categories used by the ML models, UI, and action plan generation.
+
+1. Healthy
+2. Unknown / Out-of-Distribution (OOD)
+3. Nitrogen deficiency
+4. Phosphorus deficiency
+5. Potassium deficiency
+6. Magnesium deficiency
+7. Calcium deficiency
+8. Overwatering (water stress)
+9. Underwatering (drought stress)
+10. Light burn (excess light / heat stress)
+11. Spider mites (pest)
+12. Powdery mildew (pathogen)
 
 ## Architecture
 
@@ -126,7 +143,21 @@ interface QualityIssue {
 
 - **On-Device**: EfficientNet-Lite0/1 or MobileNetV3-Small/Large INT8 quantized (<20MB)
 - **Cloud**: EfficientNet-B4/ResNet-50 full-precision for complex cases
-- **Classes**: 12 total including Healthy, Unknown/OOD, and 10 specific issues
+- **Classes (Diagnosis Classes — canonical list):**
+
+  1.  Healthy
+  2.  Unknown / Out-of-Distribution (OOD)
+  3.  Nitrogen deficiency
+  4.  Phosphorus deficiency
+  5.  Potassium deficiency
+  6.  Magnesium deficiency
+  7.  Calcium deficiency
+  8.  Overwatering (water stress)
+  9.  Underwatering (drought stress)
+  10. Light burn (excess light / heat stress)
+  11. Spider mites (pest)
+  12. Powdery mildew (pathogen)
+
 - **Delegates**: NNAPI/GPU acceleration where available with CPU fallback
 - **SLOs**: p95 ≤ 3.5s (device) / ≤ 5s (cloud) on Pixel 6a & Galaxy A54
 
@@ -179,6 +210,49 @@ interface DiagnosisClass {
 **Interface**:
 
 ```typescript
+// PlantContext: basic plant identifier and optional metadata for contextual decisions
+interface PlantContext {
+  id: string;
+  metadata?: Record<string, any>;
+}
+
+// Task: a minimal task shape useful for creating and tracking follow-up actions
+interface Task {
+  id: string;
+  title: string;
+  assignee?: string;
+  status: 'todo' | 'in-progress' | 'done' | 'cancelled';
+}
+
+// TaskTemplate: template used to prefill tasks created from action plans
+interface TaskTemplate {
+  name: string;
+  fields: Record<string, string>;
+  description?: string;
+}
+
+// DiagnosticCheck: a single diagnostic check with instructions for the user
+interface DiagnosticCheck {
+  id: string;
+  name: string;
+  instructions: string;
+  estimatedTimeMinutes?: number;
+}
+
+// Playbook: scheduled playbook with ordered steps for plant care
+interface Playbook {
+  id: string;
+  name: string;
+  steps: ActionStep[];
+}
+
+// PlaybookAdjustment: suggestion to modify a playbook and its expected impact
+interface PlaybookAdjustment {
+  description: string;
+  impact: 'schedule' | 'resource' | 'instructions' | 'priority' | string;
+  reason?: string;
+}
+
 interface ActionPlanGenerator {
   generatePlan(diagnosis: DiagnosisResult, context: PlantContext): ActionPlan;
   createTasks(plan: ActionPlan, plantId: string): Task[];

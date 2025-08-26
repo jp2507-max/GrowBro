@@ -10,6 +10,9 @@ export interface PrivacyConsent {
   lastUpdated: number;
 }
 
+// Only consent feature keys (exclude metadata like lastUpdated)
+export type ConsentFeature = Exclude<keyof PrivacyConsent, 'lastUpdated'>;
+
 const DEFAULT_CONSENT: PrivacyConsent = {
   analytics: false,
   crashReporting: true, // Basic crash reporting is usually acceptable
@@ -80,7 +83,7 @@ function updateSentryConsent(consent: PrivacyConsent): void {
 /**
  * Check if user has given consent for a specific privacy feature
  */
-export function hasConsent(feature: keyof PrivacyConsent): boolean {
+export function hasConsent(feature: ConsentFeature): boolean {
   const consent = getPrivacyConsent();
   return consent[feature] === true;
 }

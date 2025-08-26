@@ -60,12 +60,16 @@
     ALTER TABLE idempotency_keys ENABLE ROW LEVEL SECURITY;
 
     -- Users can only see/manage their own idempotency keys
+    -- Ensure INSERT/UPDATE are validated against auth.uid() by adding WITH CHECK
     CREATE POLICY "Users can manage own idempotency keys" ON idempotency_keys
-      FOR ALL USING (auth.uid() = user_id);
+      FOR ALL USING (auth.uid() = user_id)
+      WITH CHECK (auth.uid() = user_id);
 
     -- Service role can manage all keys for cleanup
+    -- If present, make this policy permissive for writes by allowing any WITH CHECK (true)
     CREATE POLICY "Service role can manage all idempotency keys" ON idempotency_keys
-      FOR ALL USING (auth.role() = 'service_role');
+      FOR ALL USING (auth.role() = 'service_role')
+      WITH CHECK (true);
     ```
 
   - Add moderation policies for admin/moderator roles via JWT claims
@@ -79,16 +83,33 @@
 
     - Create CommunityAPI class with all CRUD operations
     - All mutating endpoints accept Idempotency-Key + client_tx_id headers
-    - Implement UPSERT pattern for idempotency key handling:
+    - Implement UPSERT pattern for idempotency key handling. Use an INSERT with an "ON CONFLICT DO UPDATE" no-op
+      so the statement always RETURNS a row. Include a computed flag so callers can deterministically tell
+      whether the row was just inserted or already existed.
+
       ```sql
       -- Atomic insert-or-return pattern in transaction
-      INSERT INTO idempotency_keys (idempotency_key, client_tx_id, user_id, endpoint, payload_hash, response_payload, status)
-      VALUES ($1, $2, $3, $4, $5, $6, 'processing')
-      ON CONFLICT (idempotency_key, user_id, endpoint) DO NOTHING
-      RETURNING *;
+      INSERT INTO idempotency_keys (
+        idempotency_key, client_tx_id, user_id, endpoint, payload_hash, response_payload, status, expires_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, 'processing', now() + INTERVAL '24 hours')
+      ON CONFLICT (idempotency_key, user_id, endpoint) DO UPDATE
+        -- no-op update: set a column to itself (or set idempotency_key = EXCLUDED.idempotency_key).
+        SET payload_hash = idempotency_keys.payload_hash
+      RETURNING *, (xmax = 0) AS just_inserted;
       ```
-    - Validate payload hash on duplicate keys to detect conflicting requests (return 422 on mismatch)
-    - Return stored response for duplicate keys within TTL (replay window)
+
+    - Rationale and behavior:
+      - Using `DO NOTHING RETURNING` returns no row on conflict which makes it ambiguous whether the
+        request created the key; returning the row plus `(xmax = 0) AS just_inserted` makes the outcome
+        deterministic (Postgres sets `xmax = 0` for newly inserted rows in the current transaction).
+      - After this statement returns, compute the payload hash of the attempted payload and compare it
+        against the returned `payload_hash`. If they differ, respond with HTTP 422 (Unprocessable Entity)
+        because the same idempotency key was used with a different payload.
+      - If the returned row's `status = 'completed'` and the stored `expires_at` is still within the replay
+        TTL, return the stored `response_payload` immediately instead of re-running the operation.
+      - If the returned row indicates another in-progress operation (`status = 'processing'`), either
+        wait/poll for completion (with a short backoff) or return a 409/202 depending on desired client behavior.
     - Implement header validation: reject requests with missing/invalid Idempotency-Key or client_tx_id (400 Bad Request)
     - Add exponential backoff retry logic for 5xx errors, linear backoff for 429 rate limits
     - Document retry semantics: clients should retry with same idempotency key for network/server errors

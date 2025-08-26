@@ -415,6 +415,7 @@ interface PipelineState {
 - **Log Scrubbing**: Implement log-scrub check to ensure no secret values appear in build logs (masked)
 - **Git History Scanning**: Automated scanning to ensure no secrets exist in git history
 - **Credential Management**: Use EAS credentials manager for signing credentials with no repo storage
+- **CI Secret Conventions & Rotation**: Store any ephemeral test tokens or demo-only secrets in CI/EAS secret stores and inject them at runtime. Follow a clear naming convention (e.g., GHA: "GB*<SERVICE>\_TOKEN", EAS: "EAS*<SERVICE>\_SECRET", or EXPO_SECRET-like prefixes) so pipelines can discover and document required secrets. Always mark reviewer/demo credentials as non-repository and provide demo account credentials via Google Play Console App access for reviewer use. Regularly rotate CI secrets, audit access (who/when), and ensure secrets are scoped to the minimum required permissions.
 
 ### Environment Configuration
 

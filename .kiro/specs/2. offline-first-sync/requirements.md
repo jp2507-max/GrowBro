@@ -129,7 +129,9 @@ The Offline-first & Sync feature enables GrowBro users to continue using the app
 - **Sync triggers:** App start; app foreground; manual; background (subject to platform limits)
 - **Platform constraints:** iOS background fetch only while app is backgrounded; min ~15 min intervals; not guaranteed timing
 - **Fallback:** Provide manual sync button since background timing isn't guaranteed
-- **Preferred approach:** Use expo-background-task (expo-background-fetch being replaced)
+- **Preferred approach:** Use `expo-task-manager` to define background tasks and
+  `expo-background-fetch` to schedule opportunistic periodic fetches (SDK 53
+  workflow). `expo-background-fetch` is supported and not deprecated.
 - **Android constraints:** Use WorkManager-style constraints (Wi-Fi, charging)
 
 ### Connectivity & Storage

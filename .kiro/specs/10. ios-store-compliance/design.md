@@ -123,10 +123,10 @@ interface SDKComplianceCheck {
 
 **Implementation Details**:
 
-- Automatically scans project for Required Reason API usage
-- Generates PrivacyInfo.xcprivacy with proper XML structure
-- Validates third-party SDK manifests during build
-- Maintains mapping documentation for audit purposes
+- TypeScript system generates PrivacyInfo.xcprivacy inputs with proper XML structure
+- TypeScript system maintains SDK mapping documentation for audit purposes
+- Native prebuild system scans project for Required Reason API usage
+- Native prebuild system validates third-party SDK manifests during build
 
 ### Age Verification System
 
@@ -155,7 +155,7 @@ interface AgeGateComponent {
 
 interface EnhancedAgeRating {
   computedRating: number;
-  setMinimumAge: number;
+  minimumAge: number;
   cannabisContentDisclaimer: string;
   consumptionPreventionMeasures: string[];
 }
