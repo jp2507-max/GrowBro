@@ -83,6 +83,12 @@ const client = z.object({
   API_URL: z.string(),
   VAR_NUMBER: z.number(),
   VAR_BOOL: z.boolean(),
+
+  // Supabase Configuration
+  SUPABASE_URL: z.string().url(),
+  SUPABASE_ANON_KEY: z.string().min(1),
+
+  // Sentry Configuration (Client) - handled by wizard init; no client vars required here
 });
 
 const buildTime = z.object({
@@ -107,6 +113,12 @@ const _clientEnv = {
   API_URL: process.env.API_URL,
   VAR_NUMBER: Number(process.env.VAR_NUMBER),
   VAR_BOOL: process.env.VAR_BOOL === 'true',
+
+  // Supabase Configuration
+  SUPABASE_URL: process.env.SUPABASE_URL,
+  SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+
+  // Sentry Configuration (Client)
 };
 
 /**
@@ -117,6 +129,8 @@ const _buildTimeEnv = {
   EAS_PROJECT_ID,
   // ADD YOUR ENV VARS HERE TOO
   SECRET_KEY: process.env.SECRET_KEY,
+
+  // Sentry Configuration (Build-time)
 };
 
 /**
