@@ -4,7 +4,7 @@
 
 The Offline-first & Sync feature enables GrowBro users to continue using the app seamlessly without internet connectivity while ensuring data consistency when connectivity is restored. This feature is essential for cannabis growers who may work in areas with poor connectivity (basements, grow rooms, outdoor locations) but still need to log tasks, track progress, and access their cultivation data. The system will use WatermelonDB for local storage and implement a robust sync mechanism with Supabase following WatermelonDB's push/pull protocol to maintain data integrity across devices.
 
-**Offline availability (MVP):** Tasks, Plants, Harvests, Playbooks, Diagnosis queue = full R/W offline. Community feed = read-through cache (~50 items) with outbox for likes/comments.
+**Offline availability (MVP):** Tasks, Plants, Harvests, Playbooks, Assessments queue (AI Photo Assessments) = full R/W offline. Community feed = read-through cache (~50 items) with outbox for likes/comments.
 
 **Technical Requirements:** Requires Expo development build with WatermelonDB config plugin (JSI adapter) - not compatible with Expo Go. All per-user tables must enable Supabase RLS with Edge Functions using Authorization header for auth context.
 
@@ -92,7 +92,7 @@ The Offline-first & Sync feature enables GrowBro users to continue using the app
 
 1. WHEN performing incremental pulls THEN server SHALL filter updated_at > lastPulledAt with cursor/pagination support
 2. WHEN push fails mid-batch THEN client SHALL replay from last confirmed item using idempotent operations
-3. WHEN bandwidth is limited THEN the system SHALL prioritize tasks due ≤ 24h and diagnosis queue before community cache
+3. WHEN bandwidth is limited THEN the system SHALL prioritize tasks due ≤ 24h and assessments queue (AI Photo Assessments) before community cache
 4. WHEN multiple sync attempts fail THEN the system SHALL implement exponential backoff with Wi-Fi-only and charging constraints via WorkManager/BGTask
 5. WHEN sync finally succeeds THEN the system SHALL process all queued operations maintaining chronological order
 

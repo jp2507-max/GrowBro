@@ -6,6 +6,16 @@
     "message": "Willkommen bei der obytes App"
   },
   "privacy": {
+    "analytics": {
+      "body": "Hilf uns, die App mit Nutzungsanalysen zu verbessern.",
+      "subtitle": "Hilf uns, die App mit Nutzungsanalysen zu verbessern",
+      "title": "Analytik"
+    },
+    "crashReporting": {
+      "body": "Hilf uns, Fehler zu beheben, indem du Absturzberichte sendest.",
+      "subtitle": "Hilf uns, Fehler zu beheben, indem du Absturzberichte sendest",
+      "title": "Absturzberichte"
+    },
     "personalized": {
       "body": "Dies umfasst IP-Adressen, Benutzer-IDs und andere identifizierende Informationen, die uns helfen, Fehlerberichte und Analysen zu verbessern. Diese Daten werden gemäß unserer Datenschutzerklärung verarbeitet.",
       "title": "Personalisierte Daten"
@@ -21,6 +31,7 @@
     "arabic": "Arabisch",
     "english": "Englisch",
     "generale": "Allgemein",
+    "german": "Deutsch",
     "github": "Github",
     "language": "Sprache",
     "links": "Links",

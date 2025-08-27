@@ -366,6 +366,194 @@ interface DiagnosisClassRecord {
 }
 ```
 
+### WatermelonDB Schema Implementation
+
+**Model Classes with JSON Decorators**:
+
+```typescript
+import { Model, Q } from '@nozbe/watermelondb';
+import {
+  field,
+  date,
+  json,
+  relation,
+  readonly,
+} from '@nozbe/watermelondb/decorators';
+
+// Main diagnosis model with JSON-serialized complex fields
+class Diagnosis extends Model {
+  static table = 'diagnoses';
+  static associations = {
+    plants: { type: 'belongs_to', key: 'plant_id' },
+    users: { type: 'belongs_to', key: 'user_id' },
+    diagnosis_classes: { type: 'belongs_to', key: 'predicted_class' },
+  };
+
+  // Relational columns (normalized)
+  @field('plant_id') plantId!: string;
+  @field('user_id') userId!: string;
+  @field('predicted_class') predictedClass?: string;
+  @field('status') status!: string;
+  @field('inference_mode') inferenceMode!: string;
+  @field('model_version') modelVersion!: string;
+
+  // Simple scalar fields
+  @field('raw_confidence') rawConfidence?: number;
+  @field('calibrated_confidence') calibratedConfidence?: number;
+  @field('aggregation_rule') aggregationRule?: string;
+  @field('latency_ms') latencyMs?: number;
+  @field('helpful_vote') helpfulVote?: boolean;
+  @field('issue_resolved') issueResolved?: boolean;
+  @field('feedback_notes') feedbackNotes?: string;
+
+  // JSON-serialized complex fields (marked with @json decorator)
+  @json('images', sanitizeImages) images!: string[];
+  @json('plant_context', sanitizePlantContext) plantContext!: PlantContext;
+  @json('quality_scores', sanitizeQualityScores)
+  qualityScores!: QualityResult[];
+  @json('action_plan', sanitizeActionPlan) actionPlan?: ActionPlan;
+
+  // Timestamps
+  @readonly @date('created_at') createdAt!: Date;
+  @date('updated_at') updatedAt!: Date;
+  @date('processing_started_at') processingStartedAt?: Date;
+  @date('processing_completed_at') processingCompletedAt?: Date;
+  @date('resolved_at') resolvedAt?: Date;
+
+  // Relations
+  @relation('plants', 'plant_id') plant!: Plant;
+  @relation('users', 'user_id') user!: User;
+  @relation('diagnosis_classes', 'predicted_class')
+  diagnosisClass?: DiagnosisClass;
+}
+
+// Normalized diagnosis classes table
+class DiagnosisClass extends Model {
+  static table = 'diagnosis_classes';
+
+  @field('name') name!: string;
+  @field('category') category!: string;
+  @field('description') description!: string;
+
+  // JSON fields for complex data
+  @json('visual_cues', sanitizeStringArray) visualCues!: string[];
+  @json('action_template', sanitizeActionPlan) actionTemplate!: ActionPlan;
+
+  @readonly @date('created_at') createdAt!: Date;
+}
+
+// Schema definition
+const diagnosisSchema = {
+  name: 'diagnoses',
+  columns: [
+    { name: 'plant_id', type: 'string', isIndexed: true },
+    { name: 'user_id', type: 'string', isIndexed: true },
+    {
+      name: 'predicted_class',
+      type: 'string',
+      isOptional: true,
+      isIndexed: true,
+    },
+    { name: 'status', type: 'string', isIndexed: true },
+    { name: 'inference_mode', type: 'string' },
+    { name: 'model_version', type: 'string' },
+    { name: 'raw_confidence', type: 'number', isOptional: true },
+    { name: 'calibrated_confidence', type: 'number', isOptional: true },
+    { name: 'aggregation_rule', type: 'string', isOptional: true },
+    { name: 'latency_ms', type: 'number', isOptional: true },
+    { name: 'helpful_vote', type: 'boolean', isOptional: true },
+    { name: 'issue_resolved', type: 'boolean', isOptional: true },
+    { name: 'feedback_notes', type: 'string', isOptional: true },
+    // JSON columns for complex nested data
+    { name: 'images', type: 'string' }, // JSON array of image URIs
+    { name: 'plant_context', type: 'string' }, // JSON PlantContext object
+    { name: 'quality_scores', type: 'string' }, // JSON array of QualityResult
+    { name: 'action_plan', type: 'string', isOptional: true }, // JSON ActionPlan object
+    // Timestamps
+    { name: 'created_at', type: 'number' },
+    { name: 'updated_at', type: 'number' },
+    { name: 'processing_started_at', type: 'number', isOptional: true },
+    { name: 'processing_completed_at', type: 'number', isOptional: true },
+    { name: 'resolved_at', type: 'number', isOptional: true },
+  ],
+};
+
+const diagnosisClassSchema = {
+  name: 'diagnosis_classes',
+  columns: [
+    { name: 'name', type: 'string' },
+    { name: 'category', type: 'string', isIndexed: true },
+    { name: 'description', type: 'string' },
+    { name: 'visual_cues', type: 'string' }, // JSON string array
+    { name: 'action_template', type: 'string' }, // JSON ActionPlan object
+    { name: 'created_at', type: 'number' },
+  ],
+};
+```
+
+**Data Sanitization Functions**:
+
+```typescript
+// Sanitization functions to keep JSON fields lean and PII-free
+function sanitizeImages(images: string[]): string[] {
+  // Keep only local file URIs, limit to 10 images max
+  return images.filter((uri) => uri.startsWith('file://')).slice(0, 10);
+}
+
+function sanitizePlantContext(context: PlantContext): PlantContext {
+  return {
+    id: context.id,
+    // Strip PII from metadata, keep only essential plant data
+    metadata: context.metadata
+      ? {
+          strain: context.metadata.strain,
+          stage: context.metadata.stage,
+          setup_type: context.metadata.setup_type,
+          // Exclude user-identifiable fields like location, personal notes
+        }
+      : undefined,
+  };
+}
+
+function sanitizeQualityScores(scores: QualityResult[]): QualityResult[] {
+  // Limit to 10 quality results, trim large issue descriptions
+  return scores.slice(0, 10).map((score) => ({
+    score: score.score,
+    acceptable: score.acceptable,
+    issues: score.issues.map((issue) => ({
+      type: issue.type,
+      severity: issue.severity,
+      // Trim suggestion text to 200 chars to keep rows lean
+      suggestion: issue.suggestion.substring(0, 200),
+    })),
+  }));
+}
+
+function sanitizeActionPlan(plan: ActionPlan): ActionPlan {
+  return {
+    // Limit arrays to prevent bloated rows
+    immediateSteps: plan.immediateSteps.slice(0, 5),
+    shortTermActions: plan.shortTermActions.slice(0, 5),
+    diagnosticChecks: plan.diagnosticChecks.slice(0, 3),
+    warnings: plan.warnings.slice(0, 3),
+    disclaimers: plan.disclaimers.slice(0, 2),
+  };
+}
+
+function sanitizeStringArray(arr: string[]): string[] {
+  // Limit array size and trim individual strings
+  return arr.slice(0, 10).map((str) => str.substring(0, 100));
+}
+```
+
+**Model Usage Guidelines**:
+
+- **JSON Fields**: Use `@json` decorator for complex nested objects (plant_context, quality_scores, action_plan, images array)
+- **Relational Fields**: Use foreign keys with `@relation` for normalized data (user_id, plant_id, predicted_class)
+- **Indexing**: Index frequently queried fields (user_id, plant_id, status, category)
+- **Data Integrity**: Always sanitize JSON data before persistence to prevent PII leaks and keep row sizes manageable
+- **Performance**: Query by indexed fields first, then filter JSON content in memory for complex searches
+
 ### File System Organization
 
 ```

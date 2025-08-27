@@ -279,7 +279,34 @@ All synced tables include these fields:
 created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 deleted_at TIMESTAMPTZ NULL
--- (_status, _changed are CLIENT-ONLY; server ignores if present on push)
+-- IMPORTANT (server contract): Timestamps MUST be authoritative on the server.
+-- The server MUST enforce the following guarantees for all synced tables:
+-- 1) updated_at MUST be set to NOW() on every UPDATE via a database trigger or
+--    an equivalent server-side mechanism. Do NOT rely on client-provided
+--    updated_at values; the server's timestamp is the canonical last-write time.
+--    Example (Postgres / PLpgSQL):
+--      CREATE OR REPLACE FUNCTION set_updated_at()
+--      RETURNS trigger AS $$
+--      BEGIN
+--        NEW.updated_at = now();
+--        RETURN NEW;
+--      END;
+--      $$ LANGUAGE plpgsql;
+--      CREATE TRIGGER set_updated_at_trigger
+--      BEFORE UPDATE ON your_table
+--      FOR EACH ROW
+--      EXECUTE FUNCTION set_updated_at();
+-- 2) DELETE operations for synced rows MUST be implemented as soft-deletes.
+--    The server (or edge-function layer) MUST translate client delete intents
+--    into an UPDATE that sets `deleted_at = NOW()` and preserve the row.
+--    The server MUST NOT perform hard deletes for rows that participate in
+--    sync (i.e., never execute SQL DELETE on synced rows).
+-- 3) The server MUST ignore client-supplied client-only fields such as
+--    `_status` and `_changed` on push requests. These fields are local-only
+--    WatermelonDB metadata and must not influence server-side timestamps or
+--    deletion semantics. The server SHOULD also ignore client-supplied
+--    `created_at`/`updated_at` values and always maintain its own authoritative
+--    timestamps.
 ```
 
 ### Sync Log Schema

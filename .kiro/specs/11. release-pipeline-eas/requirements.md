@@ -55,7 +55,7 @@ The Release Pipeline (EAS) feature will establish an automated, reliable, and ef
 
 #### Acceptance Criteria
 
-1. WHEN managing versions THEN the system SHALL use EAS remote versions with autoIncrement for dev-facing versionCode/buildNumber
+1. WHEN managing versions THEN the system SHALL use EAS remote versions with autoIncrement for dev-facing version identifiers (androidVersionCode for Android, iosBuildNumber for iOS)
 2. WHEN managing user-facing versions THEN the system SHALL use git tags for semver and sync to EAS with eas build:version:set/sync
 3. WHEN a production build is triggered THEN the system SHALL auto-increment native versions and tag the commit
 4. WHEN a staging build is triggered THEN the system SHALL use prerelease identifiers
@@ -201,7 +201,7 @@ The Release Pipeline (EAS) feature will establish an automated, reliable, and ef
 #### Acceptance Criteria
 
 1. WHEN integrating Sentry THEN the system SHALL upload native sourcemaps on build and update sourcemaps on publish
-2. WHEN creating releases THEN the system SHALL use release names <os>-<buildNumber>-<sha>
+2. WHEN creating releases THEN the system SHALL use release names that include platform-specific build identifiers, e.g. `<os>-<iosBuildNumber>-<sha>` for iOS and `<os>-<androidVersionCode>-<sha>` for Android
 3. WHEN crashes occur THEN the system SHALL provide symbolicated crashes within 5 minutes of first error
 4. WHEN sourcemap uploads fail THEN the system SHALL fail the pipeline
 5. WHEN errors are tracked THEN the system SHALL maintain full traceability from crashes to source code

@@ -40,7 +40,7 @@
   - [ ] 2.3 Implement EXIF data stripping and secure image storage
     - Use expo-camera for managed workflow compatibility and validate supported params on target devices
     - Add explicit EXIF stripping step after capture using expo-image-manipulator with automated test validation
-  - Create content-addressable file naming using per-install/user salted keys computed with HMAC-SHA256(secret, imageBytes) using a secure crypto provider (expo-crypto or native binding)
+  - Create content-addressable file naming using per-install/user salted keys computed with HMAC-SHA256(secret, imageBytes) using an implementation of HMAC-SHA256 (for example, crypto-js or a native binding) — expo-crypto does not provide an HMAC API and therefore cannot be used for this purpose.
     - Continue to compute and store the unsalted `integrity_sha256`(imageBytes) for verification and optional local deduplication
     - Implement thumbnail generation pipeline with efficient compression
     - Build LRU cache management for local images with configurable storage limits
@@ -177,10 +177,7 @@ db.diagnoses.create({ filename_key: filenameKey, integrity_sha256: integrity, ..
 
 Notes:
 
-When implementing the HMAC, note that Expo Crypto does not provide a built-in HMAC API (expo-crypto offers digest/digestStringAsync and random utilities but no hmac\* methods). For HMAC-SHA256 you should either:
-
-- Use a well-tested JS library such as `crypto-js` (HmacSHA256) or `asmcrypto.js` which accept binary input (Uint8Array) and produce a hex or base64 signature, or
-- Implement a thin native/JSI module (native bindings) that calls platform crypto (CommonCrypto on iOS, BoringSSL/OpenSSL on Android) if you need native performance or to integrate with secure key storage.
+When implementing the HMAC, be aware that expo-crypto does not provide a built-in HMAC API (it offers digest/digestStringAsync and random utilities but no hmac\* methods) and therefore cannot be used for HMAC-SHA256. For HMAC-SHA256 you should use a well-tested JS library such as `crypto-js` (HmacSHA256) or `asmcrypto.js` which accept binary input (Uint8Array) and produce a hex or base64 signature, or implement a thin native/JSI module (native bindings) that calls platform crypto (CommonCrypto on iOS, BoringSSL/OpenSSL on Android) if you need native performance or integration with secure key storage.
 
 Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output to be a stable hex string (lowercase) or base64 string; pick one format (hex is recommended) and document it across clients. Treat the HMAC secret as a credential (store it in secure storage / Keychain / Android Keystore / SecureStore) and, if you support secret rotation, provide an explicit rekey strategy (on-access rekeying or a background re-encryption job that rewrites blobs under the new key while preserving `integrity_sha256`).
 
@@ -246,8 +243,10 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
   - [ ] 9.1 Build community CTA and post creation system
 
     - Implement automatic community CTA triggering for confidence <70% or Unknown class
-    - Create prefilled community post generation with diagnosis images and context
-    - Build redacted post creation that removes sensitive metadata while preserving helpful context
+
+  - Create prefilled community post generation with diagnosis images and context
+  - Build redacted post creation that removes sensitive metadata and writes a re-encoded copy under a random, non-linkable filename (never reuse filename_key)
+
     - Add deep-linking from diagnosis results to community post creation flow
     - Implement community post tracking for diagnosis follow-up and resolution
     - _Requirements: 4.1, 4.2, 4.3, 8.3_

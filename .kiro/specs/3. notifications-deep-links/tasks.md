@@ -82,25 +82,29 @@ Test implementation notes:
 - Sanitizer iteration limit tests should construct inputs that would require many decoding passes and assert that the validator halts with `sanitizer-iteration-limit` rather than looping indefinitely.
 - Include both unit tests (fast fuzz-like table-driven tests) and a small integration test exercising the allowlist configuration and showing that allowlist entries for host+port and IDN flags are respected.
 
-Documented validation error codes (add to spec):
+Documented validation error codes (canonical list):
 
 - forbidden-scheme-file: The URL uses a local file scheme which is disallowed for deep-links.
-- blocked-redirect-insecure-http: The URL uses the insecure HTTP scheme and is blocked unless explicitly allowlisted.
+- forbidden-scheme-javascript: The URL (or a nested URL parameter) uses the `javascript:` scheme which is disallowed.
+- forbidden-scheme-intent: The URL (or a nested URL parameter) uses the Android `intent:` scheme which is disallowed.
+- forbidden-scheme-data: The URL (or a nested URL parameter) uses the `data:` scheme which is disallowed.
+- blocked-redirect-insecure-http: The URL (or a nested redirect parameter) uses the insecure HTTP scheme and is blocked unless explicitly allowlisted.
+- blocked-redirect-external: A redirect-like parameter points to an external absolute URL (different origin) which is not allowlisted and therefore blocked.
+- blocked-unknown-external-param: An unrecognized query parameter carries an absolute external URL (implying navigation) and is therefore blocked.
 - forbidden-userinfo: The URL contains userinfo (username[:password]@host) which is disallowed.
+  - Alias: `blocked-authority-userinfo` may be emitted by some validators; treat it as equivalent to `forbidden-userinfo`.
 - blocked-nondefault-port: The URL uses a non-default port and is blocked unless the exact origin (including port) is allowlisted.
-- blocked-idn: The URL uses an IDN (Unicode) hostname which is blocked unless explicitly allowed.
+- blocked-idn: The URL uses an IDN (Unicode) hostname which is blocked unless explicitly allowed (punycode must be used for allowlist matching).
 - blocked-path-traversal: The normalized path escapes allowed directories after iterative decoding and normalization.
+  - Alias: `blocked-path` may appear in older tests or telemetry; treat it as equivalent to `blocked-path-traversal`.
 - sanitizer-iteration-limit: The URL required more decoding iterations than permitted by the sanitizer; parsing was aborted.
-  .kiro/specs/3. notifications-deep-links/tasks.md lines 125-176: the deep-link
-  test matrix omits explicit security edge-case tests for file:, http (insecure),
-  userinfo in host, non-default ports, and IDN/Unicode host handling; add unit
-  tests covering each case (input examples and expected failure or success
-  reasons), include combinations with nested/repeated encoding and path-traversal
-  normalization, ensure tests assert sanitizer iteration limits and
-  allowlist/host-origin checks, and document expected validation error codes
-  (e.g., forbidden-scheme-file, blocked-redirect-insecure-http,
-  forbidden-userinfo, blocked-nondefault-port, blocked-idn) so the test suite
-  enforces these new controls.# Implementation Plan
+
+Notes:
+
+- The above set is the canonical list of non-sensitive reason codes the validator should return on failure. Tests and telemetry should assert one of these identifiers.
+- To preserve backward compatibility with existing tests, `blocked-path` and `blocked-authority-userinfo` are documented as accepted aliases for `blocked-path-traversal` and `forbidden-userinfo`, respectively. New tests should use the canonical identifiers.
+
+# Implementation Plan
 
 - [ ] 1. Set up core notification infrastructure and platform-specific foundations
 
@@ -308,14 +312,15 @@ Documented validation error codes (add to spec):
       - Test: allow relative redirect that normalizes out path-traversal
 
         - Input: app://open?redirect=%2Fprofile%2F..%2Fsettings%2F (encoded `/profile/../settings/`)
-        - Expect: validation success if `/settings/` is allowed; otherwise `blocked-redirect-external` or `blocked-path`
 
-      - Implementation notes for tests:
-        - Cover both encoded and unencoded variants for each test case.
-        - Assert that telemetry/validation returns one of the documented non-sensitive reason codes on failure: `forbidden-scheme-file`, `blocked-redirect-insecure-http`, `forbidden-userinfo`, `blocked-nondefault-port`, `blocked-idn`, `sanitizer-iteration-limit`, `blocked-redirect-external`, `forbidden-scheme-javascript`, `forbidden-scheme-intent`, `forbidden-scheme-data`, `blocked-unknown-external-param`.
-        - Ensure tests exercise allowlist behavior (both positive and negative cases) and that non-default ports are only allowed when explicitly configured per-origin.
-        - Verify that IDN names are converted to punycode for allowlist matching and that mixed Unicode/ASCII host representations are rejected.
-        - Tests must also verify that nested URL decoding is bounded (e.g., max 3 iterations) and that when the bound is reached the validator returns `sanitizer-iteration-limit`.
+  - Expect: validation success if `/settings/` is allowed; otherwise `blocked-redirect-external` or `blocked-path-traversal`
+
+    - Implementation notes for tests:
+      - Cover both encoded and unencoded variants for each test case.
+      - Assert that telemetry/validation returns one of the documented non-sensitive reason codes on failure: `forbidden-scheme-file`, `blocked-redirect-insecure-http`, `forbidden-userinfo`, `blocked-nondefault-port`, `blocked-idn`, `sanitizer-iteration-limit`, `blocked-redirect-external`, `forbidden-scheme-javascript`, `forbidden-scheme-intent`, `forbidden-scheme-data`, `blocked-unknown-external-param`.
+      - Ensure tests exercise allowlist behavior (both positive and negative cases) and that non-default ports are only allowed when explicitly configured per-origin.
+      - Verify that IDN names are converted to punycode for allowlist matching and that mixed Unicode/ASCII host representations are rejected.
+      - Tests must also verify that nested URL decoding is bounded (e.g., max 3 iterations) and that when the bound is reached the validator returns `sanitizer-iteration-limit`.
 
   - Test implementation notes:
     - Tests should include encoded and unencoded variants, and verify that telemetry reason codes are emitted for failures without exposing sensitive values.

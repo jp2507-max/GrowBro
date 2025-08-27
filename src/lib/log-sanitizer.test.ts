@@ -12,7 +12,10 @@ describe('LogSanitizer', () => {
   test("doesn't over-redact keys like 'monkey' but redacts 'api-key'", () => {
     const obj = {
       monkey: 'value',
-      'api-key': 'ABCDEF1234567890',
+      // test-only fake value so secret scanners don't flag this file.
+      // This is intentionally NOT a real key: "TEST_API_KEY_FAKE_DO_NOT_USE"
+      // gitleaks:allow (test) or scanner-ignore: reason=test-only
+      'api-key': 'TEST_API_KEY_FAKE_DO_NOT_USE',
       nested: { myKey: 'keep' },
     } as any;
 

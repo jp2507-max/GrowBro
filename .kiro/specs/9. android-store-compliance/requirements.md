@@ -13,7 +13,7 @@ This feature ensures GrowBro meets all Android Play Store compliance requirement
 #### Acceptance Criteria
 
 1. WHEN the app is built THEN targetSdkVersion MUST be 35 for all release builds
-2. WHEN CI runs THEN it SHALL fail if targetSdk < 35 or if any module's manifest merges to lower than 35
+2. WHEN CI runs THEN it SHALL fail if any release variant's effective targetSdk < 35. The CI check MUST use the AGP Variant API (or reconstruct overlay precedence when Variant API fields are unavailable) to determine the effective per-variant targetSdk; do not rely on parsing merged manifest outputs for targetSdk enforcement.
 3. WHEN releasing after Aug 31, 2025 THEN the app MUST target API 35 (mobile)
 4. IF an extension is needed THEN the request and approval SHALL be tracked with hard-stop deploy after Nov 1, 2025 without extension
 

@@ -194,7 +194,8 @@ interface ContentFilter {
 }
 
 interface ReportSystem {
-  reviewPromise: 'timely review'; // Avoid binding SLA commitment
+  // Avoid binding SLA commitment here - this is just our expectation of how quickly we can review
+  reviewPromise: string; // e.g., 'timely review' — avoid hard SLA language
   categories: ReportCategory[];
   escalationRules: EscalationRule[];
   publishedContactMethod: ContactInfo;
@@ -276,14 +277,18 @@ interface AccountManager {
 
 interface PHPickerIntegration {
   selectPhotos(maxCount: number): Promise<PhotoResult[]>;
-  requiresPhotoLibraryPermission: false; // PHPicker doesn't need full permission
+  requiresPhotoLibraryPermission: boolean;
 }
 ```
 
 **Implementation Details**:
 
 - Clear, specific purpose strings for all permissions with localization
+  **Implementation Details**:
+
+- Clear, specific purpose strings for all permissions with localization
 - PHPicker preferred over full Photo Library access to reduce permission friction
+- Default behavior: PHPicker integration should default to not requiring full Photo Library permission (i.e., requiresPhotoLibraryPermission defaults to false). Only request full photo library access when the app explicitly needs it.
 - Sign in with Apple as first-class authentication option
 - In-app account deletion with data removal confirmation (≤2 taps from settings)
 - ATT prompt only shown if actually tracking users across apps/websites

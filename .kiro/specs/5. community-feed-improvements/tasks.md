@@ -16,11 +16,17 @@
       user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
       endpoint TEXT NOT NULL,
       payload_hash TEXT NOT NULL,
-      response_payload JSONB NOT NULL,
+      response_payload JSONB NULL,
+      error_details JSONB NULL,
       status TEXT NOT NULL CHECK (status IN ('completed', 'processing', 'failed')),
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '24 hours'),
-      UNIQUE(idempotency_key, user_id, endpoint)
+      UNIQUE(idempotency_key, user_id, endpoint),
+      -- Enforce status/response invariant
+      CHECK (
+        (status = 'completed' AND response_payload IS NOT NULL) OR
+        (status IN ('processing', 'failed') AND response_payload IS NULL)
+      )
     );
 
     -- Indexes for performance and cleanup
@@ -153,30 +159,37 @@
         const payloadHash = await this.computeHash(payload);
 
         // Try to insert new idempotency key
-        const existing = await this.upsertIdempotencyKey({
-          idempotencyKey: key,
-          clientTxId,
-          userId,
+        const dbRow = await this.upsertIdempotencyKey({
+          idempotency_key: key,
+          client_tx_id: clientTxId,
+          user_id: userId,
           endpoint,
-          payloadHash,
+          payload_hash: payloadHash,
           status: 'processing',
         });
 
-        if (existing.wasExisting) {
+        // Guard: ensure we got a row back from the DB. If not, abort to avoid proceeding blindly.
+        if (!dbRow) {
+          throw new Error('Failed to create or fetch idempotency key record');
+        }
+
+        const wasJustInserted = dbRow.just_inserted === true;
+
+        if (!wasJustInserted) {
           // Validate payload hash matches
-          if (existing.payloadHash !== payloadHash) {
+          if (dbRow.payload_hash !== payloadHash) {
             throw new ConflictingPayloadError(
               'Payload mismatch for idempotency key'
             );
           }
 
           // Return cached response if completed
-          if (existing.status === 'completed') {
-            return existing.responsePayload;
+          if (dbRow.status === 'completed') {
+            return dbRow.response_payload;
           }
 
           // Wait and retry if still processing
-          if (existing.status === 'processing') {
+          if (dbRow.status === 'processing') {
             await this.waitForCompletion(key, userId, endpoint);
             return this.getCachedResponse(key, userId, endpoint);
           }
@@ -186,18 +199,18 @@
           // Execute the operation
           const result = await operation();
 
-          // Store successful result
+          // Store successful result (use snake_case column names expected by DB)
           await this.updateIdempotencyKey(key, userId, endpoint, {
-            responsePayload: result,
+            response_payload: result,
             status: 'completed',
           });
 
           return result;
         } catch (error) {
-          // Mark as failed for debugging
+          // Mark as failed for debugging; set `error_details` (snake_case) to match DB column
           await this.updateIdempotencyKey(key, userId, endpoint, {
             status: 'failed',
-            errorDetails: error.message,
+            error_details: error?.message ?? String(error),
           });
           throw error;
         }

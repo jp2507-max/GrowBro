@@ -46,13 +46,17 @@
 
 - [ ] 4. Build Supabase Edge Functions for sync endpoints
 
-  - Create pull endpoint: filter updated_at > lastPulledAt; include deleted by deleted_at > lastPulledAt; support pagination/cursor for large deltas; return timestamp
+  - Create pull endpoint: start a database transaction and capture a transaction-bound `server_timestamp` at TX start (for example `SELECT clock_timestamp()` / `NOW()` in Postgres). Use a stable window when selecting rows so the server does not miss rows that equal `lastPulledAt`: filter rows with `updated_at > lastPulledAt AND updated_at <= server_timestamp` (and likewise `deleted_at > lastPulledAt AND deleted_at <= server_timestamp` for soft-deletes). Support pagination/cursor for large deltas, but ensure pagination operates within the captured `server_timestamp` window (i.e., cursors/page tokens are valid only for that server_timestamp). Return the `server_timestamp` to the client in the response so the client can safely set its new `lastPulledAt` to that value.
   - Implement push endpoint: single transaction, apply created → updated → deleted; if server changed since lastPulledAt, abort & error → client must pull then re-push
   - Add RLS enforcement using Authorization header for auth context (create Supabase client from request header)
   - Implement Idempotency-Key support for reliable push operations (return previous result on duplicates)
   - Add soft delete handling with deleted_at timestamps
   - Write integration tests for Edge Functions with various sync scenarios
   - _Requirements: 2.3, 2.4, 6.1, 6.2, 6.4_
+
+  - Note: Add server-side updated_at maintenance (trigger)
+
+    - coderabbitai suggestion: Create set_updated_at() triggers for each synced table to ensure updated_at correctness and avoid drift in pull windows. Add as a subtask here or as a separate task; include tests to validate timestamp updates on INSERT/UPDATE and compatibility with lastPulledAt logic.
 
 - [ ] 5. Implement error handling and retry logic
 

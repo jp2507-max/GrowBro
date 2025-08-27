@@ -91,15 +91,15 @@ export function PrivacySettings({ onConsentChange }: PrivacySettingsProps) {
 
       <View className="space-y-4">
         <ToggleRow
-          title="Crash Reporting"
-          subtitle="Help us fix bugs by sending crash reports"
+          title={translate('privacy.crashReporting.title')}
+          subtitle={translate('privacy.crashReporting.subtitle')}
           value={consent.crashReporting}
           onChange={(value) => updateConsent('crashReporting', value)}
         />
 
         <ToggleRow
-          title="Analytics"
-          subtitle="Help us improve the app with usage analytics"
+          title={translate('privacy.analytics.title')}
+          subtitle={translate('privacy.analytics.subtitle')}
           value={consent.analytics}
           onChange={(value) => updateConsent('analytics', value)}
         />
