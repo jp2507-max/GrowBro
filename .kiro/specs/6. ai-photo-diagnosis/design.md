@@ -562,7 +562,6 @@ function sanitizeActionPlan(plan: ActionPlan): ActionPlan {
     // Limit arrays to prevent bloated rows
     immediateSteps: plan.immediateSteps.slice(0, 5),
     shortTermActions: plan.shortTermActions.slice(0, 5),
-    - **Request Queuing**: Store assessment requests with photos and context
     warnings: plan.warnings.slice(0, 3),
     disclaimers: plan.disclaimers.slice(0, 2),
   };

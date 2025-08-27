@@ -251,6 +251,31 @@ The Guided Grow Playbooks feature provides new and experienced cannabis growers 
 
 ### Generated Task Schema (Client DB)
 
+> Reviewer note (lines +254–+271):
+>
+> The current "Generated Task Schema" uses a single local date/time field (`due_date` / `reminder_at`) and a `status` value of `done`. This is vulnerable to ambiguity across timezones and DST transitions and is out of sync with the earlier dual-field guidance in the discussion. I recommend switching to a timezone-aware dual-field model and aligning the status values for consistency.
+>
+> Suggested changes (high level):
+>
+> - Store both a canonical UTC timestamp and a user-local timestamp: `due_at_utc` (Z) + `due_at_local` (with offset) and include `timezone` (IANA) for round-trips and DST handling.
+> - Mirror the same approach for reminders: `reminder_at_utc` and `reminder_at_local` (nullable when no reminder).
+> - Keep `recurrence_rule` (RRULE) unchanged but validate it together with the timezone when generating occurrences.
+> - Rename `status` values to `pending|completed|skipped` to remove ambiguity between `done` and `completed` and align with other product events.
+>
+> Rationale:
+>
+> - Dual-field timestamps make it easy to show local times in the UI while keeping a canonical UTC representation for sync, server logic, and cross-device consistency.
+> - Storing the IANA timezone is required to correctly re-calculate local occurrences across DST boundaries.
+> - Explicit `completed` status reads clearer in analytics and matches standard naming in other parts of the system.
+>
+> Acceptance criteria for this change:
+>
+> 1. Database schema includes `due_at_local`, `due_at_utc`, `timezone`, `reminder_at_local|null`, `reminder_at_utc|null` in addition to `recurrence_rule`.
+> 2. `status` enum uses `pending|completed|skipped` and existing code paths that check `done` are updated.
+> 3. Migration strategy documented: old `due_date`/`reminder_at` values are converted to `due_at_local` (with no offset) and `due_at_utc` (calculating using the plant or user timezone) when possible.
+> 4. RRULE generation/validation runs with timezone-aware occurrence calculation (RFC 5545 + IANA tz).
+> 5. Unit tests updated for recurrence, DST shifts, reminder scheduling, and status checks.
+
 ```json
 {
   "id": "uuid",
@@ -259,10 +284,13 @@ The Guided Grow Playbooks feature provides new and experienced cannabis growers 
   "origin_step_id": "string",
   "title": "string",
   "description": "string",
-  "due_date": "YYYY-MM-DD",
+  "due_at_local": "YYYY-MM-DDTHH:mm±HH:mm",
+  "due_at_utc": "YYYY-MM-DDTHH:mmZ",
+  "timezone": "IANA tz (e.g., Europe/Berlin)",
   "recurrence_rule": "RRULE string or null",
-  "reminder_at": "YYYY-MM-DDTHH:mm",
-  "status": "pending|done|skipped",
+  "reminder_at_local": "YYYY-MM-DDTHH:mm±HH:mm|null",
+  "reminder_at_utc": "YYYY-MM-DDTHH:mmZ|null",
+  "status": "pending|completed|skipped",
   "flags": {
     "manualEdited": true,
     "excludeFromBulkShift": false

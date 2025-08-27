@@ -1,4 +1,4 @@
-import DeepLinkValidator from './deep-link-validator';
+import { DeepLinkValidator } from './deep-link-validator';
 
 describe('DeepLinkValidator', () => {
   const v = new DeepLinkValidator();

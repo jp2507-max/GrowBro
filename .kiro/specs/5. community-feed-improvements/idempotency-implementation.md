@@ -16,7 +16,9 @@ CREATE TABLE idempotency_keys (
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   endpoint TEXT NOT NULL,
   payload_hash TEXT NOT NULL,
-  response_payload JSONB NOT NULL,
+  -- response_payload is nullable while a request is 'processing'.
+  -- Initial INSERTs may set this to NULL and a later UPDATE will fill the final payload.
+  response_payload JSONB,
   status TEXT NOT NULL CHECK (status IN ('completed', 'processing', 'failed')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '24 hours'),
@@ -46,7 +48,7 @@ CREATE INDEX idx_idempotency_keys_user_recent ON idempotency_keys (user_id, crea
 
 ### Core Service Pattern
 
-```typescript
+````typescript
 class IdempotencyService {
   async processWithIdempotency<T>(
     key: string,
@@ -63,7 +65,7 @@ class IdempotencyService {
       // Try to insert new idempotency key
       const inserted = await tx.query(
         `
-  INSERT INTO idempotency_keys 
+  INSERT INTO idempotency_keys
   (idempotency_key, client_tx_id, user_id, endpoint, payload_hash, response_payload, status)
   VALUES ($1, $2, $3, $4, $5, NULL, 'processing')
         ON CONFLICT (idempotency_key, user_id, endpoint) DO NOTHING
@@ -76,7 +78,7 @@ class IdempotencyService {
         // Key already exists - fetch existing record
         const existing = await tx.query(
           `
-          SELECT * FROM idempotency_keys 
+          SELECT * FROM idempotency_keys
           WHERE idempotency_key = $1 AND user_id = $2 AND endpoint = $3
         `,
           [key, userId, endpoint]
@@ -108,7 +110,7 @@ class IdempotencyService {
       // Store successful result
       await tx.query(
         `
-        UPDATE idempotency_keys 
+        UPDATE idempotency_keys
         SET response_payload = $1, status = 'completed'
         WHERE idempotency_key = $2 AND user_id = $3 AND endpoint = $4
       `,
@@ -122,7 +124,60 @@ class IdempotencyService {
   }
 
   private async computeHash(payload: any): Promise<string> {
-    const normalized = JSON.stringify(payload, Object.keys(payload).sort());
+    // Deterministic serializer: recursively stringify with sorted object keys.
+    function deterministicStringify(value: any): string {
+      if (value === null) return 'null';
+      const t = typeof value;
+      if (t === 'number' || t === 'boolean') return String(value);
+      if (t === 'string') return JSON.stringify(value);
+
+      if (Array.isArray(value)) {
+        // Arrays are order-sensitive; serialize each item in order
+        return (
+          '[' + value.map((v) => deterministicStringify(v)).join(',') + ']'
+        );
+      }
+
+      if (t === 'object') {
+        const keys = Object.keys(value).sort();
+        return (
+          '{' +
+          keys
+            .map(
+              (k) => JSON.stringify(k) + ':' + deterministicStringify(value[k])
+            )
+            .join(',') +
+        );
+      }
+
+          DO $$
+          DECLARE
+            deleted_count integer := 0;
+          BEGIN
+            -- perform the delete
+            DELETE FROM posts
+            WHERE created_at < now() - interval '30 days';
+
+            -- capture number of rows deleted
+            GET DIAGNOSTICS deleted_count = ROW_COUNT;
+
+            -- ensure the cleanup_logs table exists to avoid runtime errors
+            CREATE TABLE IF NOT EXISTS cleanup_logs (
+              table_name text,
+              deleted_count integer,
+              cleanup_time timestamp with time zone
+            );
+
+            -- insert a log record using the captured deleted_count
+            INSERT INTO cleanup_logs (table_name, deleted_count, cleanup_time)
+            VALUES ('posts', deleted_count, now());
+          END$$;
+          ```
+      // Fallback for other types (undefined, functions, symbols) - treat as null
+      return 'null';
+    }
+
+    const normalized = deterministicStringify(payload);
     const encoder = new TextEncoder();
     const data = encoder.encode(normalized);
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
@@ -131,7 +186,7 @@ class IdempotencyService {
       .join('');
   }
 }
-```
+````
 
 ### Header Validation
 
@@ -264,14 +319,26 @@ class OutboxProcessor {
 -- Edge Function scheduled every 6 hours
 CREATE OR REPLACE FUNCTION cleanup_expired_idempotency_keys()
 RETURNS void AS $$
+DECLARE
+  deleted_count integer := 0;
 BEGIN
   DELETE FROM idempotency_keys
   WHERE expires_at < now()
     AND status IN ('completed', 'failed');
 
-  -- Log cleanup stats
+  -- capture number of rows deleted
+  GET DIAGNOSTICS deleted_count = ROW_COUNT;
+
+  -- ensure the cleanup_logs table exists to avoid runtime errors
+  CREATE TABLE IF NOT EXISTS cleanup_logs (
+    table_name text,
+    deleted_count integer,
+    cleanup_time timestamp with time zone
+  );
+
+  -- Log cleanup stats using captured deleted_count
   INSERT INTO cleanup_logs (table_name, deleted_count, cleanup_time)
-  VALUES ('idempotency_keys', ROW_COUNT, now());
+  VALUES ('idempotency_keys', deleted_count, now());
 END;
 $$ LANGUAGE plpgsql;
 ```

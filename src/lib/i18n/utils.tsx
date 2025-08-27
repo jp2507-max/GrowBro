@@ -1,4 +1,4 @@
-import type TranslateOptions from 'i18next';
+import type { TOptions } from 'i18next';
 import i18n, { dir } from 'i18next';
 import memoize from 'lodash.memoize';
 import { useCallback } from 'react';
@@ -7,8 +7,12 @@ import { useMMKVString } from 'react-native-mmkv';
 import RNRestart from 'react-native-restart';
 
 import { storage } from '../storage';
-import type { Language, resources } from './resources';
+import type { Language } from './resources';
+import { resources } from './resources';
 import type { RecursiveKeyOf } from './types';
+
+// runtime reference so `resources` is treated as a value import (needed for `typeof resources` in types)
+export const AVAILABLE_LANGUAGES = Object.keys(resources) as Language[];
 
 type DefaultLocale = typeof resources.en.translation;
 export type TxKeyPath = RecursiveKeyOf<DefaultLocale>;
@@ -21,9 +25,9 @@ export const translate = memoize(
   (key: TxKeyPath, options = undefined) =>
     // eslint-disable-next-line import/no-named-as-default-member
     i18n.t(key, options) as unknown as string,
-  (key: TxKeyPath, options: typeof TranslateOptions) => {
+  (key: TxKeyPath, options: TOptions) => {
     // include current language so cached values are invalidated when language changes
-    const lang = (i18n && (i18n as any).language) || '';
+    const lang = i18n.language || '';
     const base = options ? key + JSON.stringify(options) : key;
     return `${lang}:${base}`;
   }

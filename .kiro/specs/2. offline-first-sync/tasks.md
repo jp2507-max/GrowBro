@@ -46,7 +46,35 @@
 
 - [ ] 4. Build Supabase Edge Functions for sync endpoints
 
-  - Create pull endpoint: start a database transaction and capture a transaction-bound `server_timestamp` at TX start (for example `SELECT clock_timestamp()` / `NOW()` in Postgres). Use a stable window when selecting rows so the server does not miss rows that equal `lastPulledAt`: filter rows with `updated_at > lastPulledAt AND updated_at <= server_timestamp` (and likewise `deleted_at > lastPulledAt AND deleted_at <= server_timestamp` for soft-deletes). Support pagination/cursor for large deltas, but ensure pagination operates within the captured `server_timestamp` window (i.e., cursors/page tokens are valid only for that server_timestamp). Return the `server_timestamp` to the client in the response so the client can safely set its new `lastPulledAt` to that value.
+  - Create pull endpoint: start a database transaction and capture a single, stable transaction-bound `server_timestamp` at TX start. Use `transaction_timestamp()` (aka `now()` inside the transaction) to capture that value rather than `clock_timestamp()` so all reads within the transaction see the same timestamp. Example (inside your transaction):
+
+    ```sql
+    -- inside a transaction
+    SELECT transaction_timestamp() AS server_timestamp;
+    ```
+
+    Use a stable window when selecting rows so the server does not miss rows that equal `lastPulledAt`: filter rows with
+
+    ```sql
+    WHERE updated_at > lastPulledAt
+      AND updated_at <= server_timestamp
+    ```
+
+    (and likewise for soft-deletes using `deleted_at > lastPulledAt AND deleted_at <= server_timestamp`).
+
+    For pagination and stable ordering: order rows by the tuple `(updated_at, id)` and use that same tuple as the cursor. This ensures a deterministic, stable ordering even when multiple rows share the same `updated_at` value. Cursor tokens must include both the last-seen `(updated_at, id)` and the captured `server_timestamp`; tokens are only valid for that captured `server_timestamp` and must not be reused across different transactions/timestamps.
+
+    Pseudocode for a paginated pull (within the same transaction and using the captured `server_timestamp`):
+
+    1. Capture server_timestamp := transaction_timestamp()
+    2. SELECT ... FROM table
+       WHERE (updated_at > lastPulledAt AND updated_at <= server_timestamp)
+       AND ((updated_at, id) > (cursor_updated_at, cursor_id) OR cursor is null)
+       ORDER BY updated_at, id
+       LIMIT <page_size>;
+
+    3. If returned rows == page_size, return the last row's `(updated_at, id)` as the next cursor (together with the same server_timestamp). If fewer rows are returned, the pull is complete for that server_timestamp. Return the captured `server_timestamp` in the API response so the client can set its new `lastPulledAt` safely to that value.
+
   - Implement push endpoint: single transaction, apply created → updated → deleted; if server changed since lastPulledAt, abort & error → client must pull then re-push
   - Add RLS enforcement using Authorization header for auth context (create Supabase client from request header)
   - Implement Idempotency-Key support for reliable push operations (return previous result on duplicates). Add the following server-side implementation details to guarantee correctness and atomicity:
@@ -65,6 +93,118 @@
 
       CREATE UNIQUE INDEX IF NOT EXISTS sync_idempotency_user_key_idx
         ON sync_idempotency (user_id, idempotency_key);
+
+      -- SECURITY: enable Row-Level Security (RLS) so idempotency records are
+      -- only visible / mutable by the owning user or by a trusted DB role.
+      -- Replace '<app_db_role>' with the name of your application DB role (for
+      -- example a role that your Edge Functions or trusted services switch to).
+      -- The policy below allows actions when the authenticated jwt user matches
+      -- the row's user_id OR when the request context indicates a trusted role.
+
+      -- Enable RLS on the table
+      ALTER TABLE public.sync_idempotency ENABLE ROW LEVEL SECURITY;
+
+      -- Allow SELECT only for the owning user or trusted roles
+      CREATE POLICY IF NOT EXISTS sync_idempotency_select_policy
+        ON public.sync_idempotency
+        FOR SELECT
+        USING (
+          (auth.uid() IS NOT NULL AND auth.uid()::uuid = user_id)
+          OR current_setting('jwt.claims.role', true) = 'service_role'
+          OR current_user = '<app_db_role>'
+        );
+
+      -- Allow INSERT only when the incoming user_id matches auth.uid() or
+      -- when performed by a trusted DB role. Use WITH CHECK to validate data on
+      -- insertion.
+      CREATE POLICY IF NOT EXISTS sync_idempotency_insert_policy
+        ON public.sync_idempotency
+        FOR INSERT
+        WITH CHECK (
+          (auth.uid() IS NOT NULL AND auth.uid()::uuid = user_id)
+          OR current_setting('jwt.claims.role', true) = 'service_role'
+          OR current_user = '<app_db_role>'
+        );
+
+      -- Allow UPDATE only for owners or trusted roles. WITH CHECK ensures the
+      -- new row (after UPDATE) still satisfies policy (e.g., user_id not
+      -- changed to another user).
+      CREATE POLICY IF NOT EXISTS sync_idempotency_update_policy
+        ON public.sync_idempotency
+        FOR UPDATE
+        USING (
+          (auth.uid() IS NOT NULL AND auth.uid()::uuid = user_id)
+          OR current_setting('jwt.claims.role', true) = 'service_role'
+          OR current_user = '<app_db_role>'
+        )
+        WITH CHECK (
+          (auth.uid() IS NOT NULL AND auth.uid()::uuid = user_id)
+          OR current_setting('jwt.claims.role', true) = 'service_role'
+          OR current_user = '<app_db_role>'
+        );
+
+      -- Allow DELETE only for owners or trusted roles
+      CREATE POLICY IF NOT EXISTS sync_idempotency_delete_policy
+        ON public.sync_idempotency
+        FOR DELETE
+        USING (
+          (auth.uid() IS NOT NULL AND auth.uid()::uuid = user_id)
+          OR current_setting('jwt.claims.role', true) = 'service_role'
+          OR current_user = '<app_db_role>'
+        );
+
+      -- GRANTs: ensure your application service role has the minimal privileges
+      -- needed. Replace '<app_db_role>' with the role your Edge Functions
+      -- switch to (or that you use in server-side connections).
+      GRANT SELECT, INSERT, UPDATE, DELETE ON public.sync_idempotency TO "<app_db_role>";
+      -- If using the sequence directly, grant USAGE on the sequence too
+      GRANT USAGE ON SEQUENCE public.sync_idempotency_id_seq TO "<app_db_role>";
+
+      -- NOTE: Supabase-hosted Postgres exposes helper functions like auth.uid()
+      -- and stores JWT claims in current_setting('jwt.claims.*', true). The
+      -- example above relies on those helpers. If you're not on Supabase, use
+      -- the equivalent mechanism your auth layer provides or validate in your
+      -- Edge Function before calling DB operations.
+
+      -- RETENTION / TTL: idempotency records are useful for preventing
+      -- duplicate application of requests but can grow unbounded. Two common
+      -- approaches to retention:
+      --  1) Scheduled DB job (pg_cron) that deletes old rows periodically
+      --  2) An external scheduler (serverless cron or Supabase scheduled
+      --     function) that runs a DELETE statement on a cadence
+
+      -- Example: pg_cron (run daily at 03:00) to remove records older than
+      -- 90 days. Requires the pg_cron extension and appropriate privileges.
+      -- Adjust the interval to your needs (e.g., 7, 30, 90 days).
+      -- NOTE: installing extensions and pg_cron scheduling may require a
+      -- superuser or managed platform support (Supabase offers scheduled
+      -- functions as an alternative).
+
+      -- Create extension (may require superuser; hosted providers vary)
+      CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+      -- Schedule a daily job at 03:00 to delete old idempotency rows
+      SELECT cron.schedule(
+        'daily_cleanup_sync_idempotency',
+        '0 3 * * *',
+        $$DELETE FROM public.sync_idempotency WHERE updated_at < now() - interval '90 days'$$
+      );
+
+      -- Alternative (recommended for hosted DBs without pg_cron): create a
+      -- small server-side scheduled job (for example an Edge Function or a
+      -- managed "scheduled function" in Supabase) that runs the same DELETE
+      -- statement on a configurable cadence. Example SQL to run from that job:
+
+      -- DELETE FROM public.sync_idempotency
+      -- WHERE updated_at < now() - interval '90 days';
+
+      -- Considerations:
+      --  - Pick an appropriate retention window; 30-90 days is common.
+      --  - Make sure response_payload size is bounded. If you store large
+      --    payloads, consider keeping only a pointer to a storage object and
+      --    GCing both the DB row and the storage object together.
+      --  - Use the trusted DB role (e.g., '<app_db_role>') or a maintenance
+      --    service account to run the cleanup if RLS would otherwise block it.
       ```
 
     - Push endpoint flow (transactional, server-side): perform the insert-and-apply-or-return flow inside the same DB transaction that applies the client's mutations to guarantee atomicity. Example high-level algorithm:
@@ -127,10 +267,8 @@
     AS $$
     BEGIN
       IF TG_OP = 'INSERT' THEN
-        -- If the client provided an explicit updated_at, keep it; otherwise set to now()
-        IF NEW.updated_at IS NULL THEN
-          NEW.updated_at := now();
-        END IF;
+        -- Server always sets updated_at on INSERT to ensure server-authoritative timestamps
+        NEW.updated_at := now();
         RETURN NEW;
       ELSIF TG_OP = 'UPDATE' THEN
         -- Always update the timestamp on UPDATE so server is authoritative
@@ -247,9 +385,10 @@
       END IF;
 
       -- Now set lastPulledAt after the row's updated_at and expect it to be excluded
-      lastPulledAt := now() + interval '1 second';
+      -- Use the previously captured server_ts so the window upper-bound is deterministic
+      lastPulledAt := server_ts + interval '1 second';
       SELECT count(*) INTO excluded_count FROM public.sync_test_items
-        WHERE updated_at > lastPulledAt AND updated_at <= now() AND id = r.id;
+        WHERE updated_at > lastPulledAt AND updated_at <= server_ts AND id = r.id;
       IF excluded_count <> 0 THEN
         RAISE EXCEPTION 'PULL-WINDOW: expected row to be excluded when lastPulledAt > updated_at (count=%)', excluded_count;
       END IF;

@@ -242,9 +242,21 @@ class Task extends Model {
   @field('phase_index') phaseIndex!: number; // Speed up progress queries
   @field('title') title!: string;
   @field('description') description!: string;
-  @field('due_date') dueDate!: string; // YYYY-MM-DD
+  // Timezone-safe due date/time representation (replaces legacy `due_date`)
+  // - dueAtLocal: local date (YYYY-MM-DD) or local datetime string (e.g. 2025-08-27 or 2025-08-27T09:00)
+  // - dueAtUtc: UTC ISO datetime string (e.g. 2025-08-27T16:00:00Z) suitable for cross-device comparisons
+  // - timezone: IANA timezone identifier (e.g. 'America/Los_Angeles') used to interpret local values
+  @field('due_at_local') dueAtLocal?: string; // YYYY-MM-DD or local datetime (optional)
+  @field('due_at_utc') dueAtUtc?: string; // UTC ISO datetime string (optional)
+  @field('timezone') timezone?: string; // IANA zone name (optional)
+
   @field('recurrence_rule') recurrenceRule?: string; // RFC 5545 RRULE
-  @field('reminder_at') reminderAt!: string; // ISO datetime
+
+  // Notification reminder times (replaces legacy `reminder_at`):
+  // - reminderAtLocal: local datetime or local time string used for display/scheduling defaults
+  // - reminderAtUtc: UTC ISO datetime used for deterministic scheduling across devices
+  @field('reminder_at_local') reminderAtLocal?: string; // local datetime or time string (optional)
+  @field('reminder_at_utc') reminderAtUtc?: string; // UTC ISO datetime string (optional)
   @field('status') status!: TaskStatus;
   @json('flags', sanitizeFlags) flags!: TaskFlags; // manualEdited, excludeFromBulkShift
   @field('notification_id') notificationId?: string; // For reliable cancel/reschedule
