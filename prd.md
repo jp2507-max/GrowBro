@@ -1,4 +1,4 @@
-# CanaBro Mobile App — Q3 2025 PRD (Launch v1.1)
+# GrowBro Mobile App — Q3 2025 PRD (Launch v1.1)
 
 Date: 2025-08-23
 Owner: Product + Mobile Team
@@ -6,7 +6,7 @@ Version: 1.1 (translated + extended for launch)
 
 ## 1) Summary
 
-CanaBro helps home growers plan, track, and optimize cultivation. This launch focuses on five epics:
+GrowBro helps home growers plan, track, and optimize cultivation. This launch focuses on five epics:
 
 - **A. Calendar 2.0** (recurring tasks, reminders, agenda UX)
 - **B. Harvest Workflow** (staged drying/curing → inventory)

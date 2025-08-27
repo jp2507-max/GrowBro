@@ -74,8 +74,13 @@ interface GradleComplianceConfig {
 }
 
 interface ComplianceValidator {
+  // NOTE: Manifest-related validators only. Target SDK enforcement MUST use
+  // the Android Gradle Plugin (AGP) Variant API rather than parsing the
+  // merged manifest output. Implementations of `validateTargetSdk` should
+  // read per-variant effective targetSdk values from the Variant API
+  // (e.g., `variant.mergedFlavor` when available) and not rely on
+  // manifest-merge artifacts which are an implementation detail.
   validateTargetSdk(): ComplianceResult;
-  validateMergedManifestsForTargetSdk(min: number): ComplianceResult;
   checkPermissions(): PermissionReport;
   validateManifest(): ManifestReport;
   scanForRestrictedPermissions(): RestrictedPermissionReport;

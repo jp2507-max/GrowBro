@@ -112,6 +112,11 @@ graph TB
 - Creates production build with version auto-increment
 - Auto-submits to stores with staged rollout using submission profiles
 - Requires manual approval for OTA updates to production
+- Requires manual approval for OTA updates to production. Implementation detail: run the production OTA publish job in a protected GitHub Environment named "production" and set the job's environment to that name (use the workflow keyword `environment: production`). Protect the `production` environment in the repository settings with required reviewers (individuals or teams). This will cause GitHub Actions to pause the job and require approval from a designated reviewer or team before the job proceeds.
+
+  Alternative (optional): if you prefer an explicit in-workflow gate instead of environment protection, add a dedicated `manual-approval` job that uses a wait-for-approval action (for example, `peter-evans/wait-for-approval@v2`) or a small workflow that requires a human to re-dispatch. Make the production publish job depend on this approval job (e.g., `needs: manual-approval`). In this pattern include the keywords `needs: manual-approval` on the production publish job so its execution is gated until an authorized approver continues the run.
+
+  Recommended (chosen) option: use GitHub Environments with required reviewers. This is the preferred, built-in protection mechanism — set `environment: production` on the job and configure required reviewers in GitHub so approvals are enforced at the environment level.
 
 #### 2. EAS Configuration
 
@@ -268,7 +273,11 @@ interface BuildDecision {
 ```typescript
 interface VersionInfo {
   semver: string;
-  buildNumber: number;
+  // Platform-specific build identifiers
+  // iOS uses a string build number (CFBundleVersion)
+  iosBuildNumber: string;
+  // Android uses an integer version code
+  androidVersionCode: number;
   runtimeVersion: string;
   gitTag: string;
   environment: 'development' | 'staging' | 'production';
@@ -344,7 +353,7 @@ interface DistributionConfig {
 
 - **EAS Webhooks** → Slack notifications for build/submit completion (include build URL + last 100 lines on failure)
 - **Sentry Integration** → Error tracking with automatic native sourcemap upload on EAS Build and update sourcemaps on EAS Update
-- **Sentry Release Naming** → `<os>-<buildNumber>-<shortSHA>` format
+  - **Sentry Release Naming** → use platform-specific build identifiers: for iOS use `<os>-<iosBuildNumber>-<shortSHA>` and for Android use `<os>-<androidVersionCode>-<shortSHA>` format
 - **Build Dashboard** → Status and metrics visualization
 - **Performance Monitoring** → Build time and queue tracking
 - **Pipeline fails if sourcemap upload fails**
@@ -363,12 +372,14 @@ interface BuildMetadata {
   runtimeVersion: string;
   gitCommit: string;
   gitBranch: string;
-  buildTime: Date;
+  buildTime: string; // ISO 8601 timestamp, e.g. "2025-08-27T14:23:00Z"
   status: 'pending' | 'building' | 'completed' | 'failed';
   artifacts: {
     url: string;
     checksum: string;
-  };
+    checksumAlgorithm: string;
+    size?: number;
+  }[];
   message: string;
   releaseNotes?: string;
 }
@@ -384,10 +395,33 @@ interface UpdateMetadata {
   platform: 'ios' | 'android';
   gitCommit: string;
   gitBranch: string;
-  publishTime: Date;
+  // All timestamps MUST be serialized as ISO 8601 strings (UTC) e.g. "2025-08-27T14:23:00Z".
+  // Use `string` to represent ISO 8601 timestamp values to avoid ambiguity across
+  // runtimes and serialization boundaries.
+  publishTime: string;
   rolloutPercentage: number;
   message: string;
   assets: AssetInfo[];
+}
+```
+
+// Asset metadata for files included in an OTA update. Define explicit fields to
+// avoid ambiguous/undefined types. All timestamp fields are ISO 8601 strings.
+
+```typescript
+interface AssetInfo {
+  // Name of the file as it appears in the update (e.g. "index.android.bundle", "image.png")
+  filename: string;
+  // MIME content type (e.g. "application/javascript", "image/png")
+  contentType: string;
+  // Size in bytes
+  size: number;
+  // Hash of the content (e.g. sha256 hex string)
+  hash: string;
+  // Publicly-accessible or signed URL where the asset can be fetched
+  url: string;
+  // Upload time serialized as ISO 8601 string (UTC)
+  uploadTime: string;
 }
 ```
 
@@ -460,7 +494,7 @@ interface PipelineState {
 
 - End-to-end workflow testing in staging environment
 - EAS service integration testing
-- Store submission testing (dry-run mode)
+- Submission to non-production tracks (TestFlight/Play Internal) in staging
 
 ### Performance Testing
 

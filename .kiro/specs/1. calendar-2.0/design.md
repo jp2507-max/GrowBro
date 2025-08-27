@@ -564,6 +564,16 @@ const requestNotificationPermissions = async () => {
 #### 2. Notification Scheduling
 
 ```typescript
+// REVIEW (lines ~567-591): Recommendation — Android channelId and dedupe
+// - Android: include an explicit `android.channelId` when calling
+//   `Notifications.scheduleNotificationAsync` so reminders land on the
+//   intended notification channel (importance, grouping, settings).
+// - Dedupe: avoid scheduling duplicate notifications by deriving a
+//   deterministic identifier (e.g. `${task.id}:${task.reminderAtUtc}`) or
+//   checking the `notification_queue` for an existing pending entry before
+//   scheduling. This helps when rehydrating notifications after sync.
+// Suggested minimal change when scheduling:
+//   Notifications.scheduleNotificationAsync({ ..., android: { channelId: 'cultivation.reminders.v1' } })
 const scheduleTaskReminder = async (task: Task) => {
   if (!task.reminderAtLocal || !task.reminderAtUtc) return;
 

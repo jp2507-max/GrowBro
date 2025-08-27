@@ -296,49 +296,77 @@ const CHANNEL_MIGRATION = {
 };
 ```
 
-#### iOS Category Configuration
+#### iOS / Expo Notification Category Configuration
+
+Use Expo's `NotificationAction` and `NotificationCategoryOptions` shapes and register them with
+`Notifications.setNotificationCategoryAsync` instead of using native `UNNotificationActionOptions` /
+`UNNotificationCategoryOptions` constants. The example below defines each category as an Expo-friendly
+object (identifier, actions array, and options) and registers them via `setNotificationCategoryAsync`.
 
 ```typescript
-const IOS_CATEGORIES = {
+import * as Notifications from 'expo-notifications';
+
+const EXPO_NOTIFICATION_CATEGORIES = {
   COMMUNITY_INTERACTIONS: {
     identifier: 'COMMUNITY_INTERACTIONS',
     actions: [
       {
         identifier: 'REPLY_ACTION',
-        title: 'Reply',
-        options: [UNNotificationActionOptions.Foreground],
+        buttonTitle: 'Reply',
+        // opensAppToForeground: true maps to iOS UNNotificationActionOptionsForeground
+        options: { opensAppToForeground: true },
         textInput: {
-          buttonTitle: 'Send',
           placeholder: 'Type your reply...',
+          submitButtonTitle: 'Send',
         },
       },
       {
         identifier: 'VIEW_PROFILE_ACTION',
-        title: 'View Profile',
-        options: [UNNotificationActionOptions.Foreground],
+        buttonTitle: 'View Profile',
+        options: { opensAppToForeground: true },
       },
     ],
-    intentIdentifiers: [],
-    options: [UNNotificationCategoryOptions.CustomDismissAction],
+    // customDismissAction: true maps to UNNotificationCategoryOptions.CustomDismissAction
+    options: { customDismissAction: true },
   },
+
   CULTIVATION_REMINDERS: {
     identifier: 'CULTIVATION_REMINDERS',
     actions: [
       {
         identifier: 'MARK_COMPLETE_ACTION',
-        title: 'Mark Complete',
-        options: [],
+        buttonTitle: 'Mark Complete',
+        // Keep this background-capable if you want to handle the action without opening the app,
+        // otherwise set opensAppToForeground: true to bring the app to foreground.
+        options: { opensAppToForeground: false },
       },
       {
         identifier: 'SNOOZE_ACTION',
-        title: 'Snooze 1h',
-        options: [],
+        buttonTitle: 'Snooze 1h',
+        options: { opensAppToForeground: false },
       },
     ],
-    intentIdentifiers: [],
-    options: [],
+    options: {},
   },
 };
+
+// Register categories at app startup (async context)
+async function registerNotificationCategories() {
+  await Notifications.setNotificationCategoryAsync(
+    EXPO_NOTIFICATION_CATEGORIES.COMMUNITY_INTERACTIONS.identifier,
+    EXPO_NOTIFICATION_CATEGORIES.COMMUNITY_INTERACTIONS.actions,
+    EXPO_NOTIFICATION_CATEGORIES.COMMUNITY_INTERACTIONS.options
+  );
+
+  await Notifications.setNotificationCategoryAsync(
+    EXPO_NOTIFICATION_CATEGORIES.CULTIVATION_REMINDERS.identifier,
+    EXPO_NOTIFICATION_CATEGORIES.CULTIVATION_REMINDERS.actions,
+    EXPO_NOTIFICATION_CATEGORIES.CULTIVATION_REMINDERS.options
+  );
+}
+
+// Example: call registerNotificationCategories() during your app initialization sequence
+// e.g. in NotificationManager.initialize()
 ```
 
 ## Data Models
@@ -1521,7 +1549,10 @@ BEGIN
       url := 'https://your-project.supabase.co/functions/v1/send-push-notification',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' || current_setting('app.service_role_key')
+        -- Use an internal, rotated function secret instead of the service role key.
+        -- This avoids leaking high-privilege credentials. The Edge Function
+        -- must validate the header 'X-Function-Secret' against its env var.
+        'X-Function-Secret', current_setting('app.edge_function_secret', true)
       ),
       body := jsonb_build_object(
         'userId', (SELECT user_id FROM posts WHERE id = NEW.post_id),

@@ -19,11 +19,14 @@ export const LanguageItem = () => {
   );
 
   const langs = React.useMemo(
-    () => [
-      { label: translate('settings.english'), value: 'en' },
-      { label: translate('settings.arabic'), value: 'ar' },
-    ],
-    []
+    () => (
+      void language,
+      [
+        { label: translate('settings.english'), value: 'en' },
+        { label: translate('settings.german'), value: 'de' },
+      ]
+    ),
+    [language]
   );
 
   const selectedLanguage = React.useMemo(

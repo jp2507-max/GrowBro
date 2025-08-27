@@ -10,7 +10,7 @@
 - [ ] 1.1 Create Gradle compliance plugin
 
   - Write custom Gradle plugin to enforce targetSdk=35 across all modules
-  - Implement validateMergedManifestsForTargetSdk() method with library manifest checking
+  - Use the AGP Variant API to validate per-variant effective targetSdk (do not rely on parsing merged manifest outputs). Implement targetSdk enforcement in the Gradle plugin using Variant API access (e.g., `variant.mergedFlavor` when available) and emit per-variant reports.
   - Add static check that refuses releases if targetSdk < 35 with Aug 31, 2025 cutoff and Nov 1, 2025 extension flag path
   - Add build failure logic with Play policy deadline references
   - Create unit tests for Gradle plugin functionality
