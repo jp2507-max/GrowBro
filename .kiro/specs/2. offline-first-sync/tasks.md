@@ -398,8 +398,8 @@
 
     Expected behavior:
 
-    - On INSERT: if client omits `updated_at`, the trigger sets it to `now()`; if client supplies `updated_at` (rare), the server keeps it on INSERT (but migrating systems should avoid clients setting server timestamps).
-    - On UPDATE: `updated_at` is always set to the server `now()` (server-authoritative).
+    - On INSERT: the trigger always sets `updated_at := now()` (server-authoritative).
+    - On UPDATE: the trigger always sets `updated_at := now()` (server-authoritative).
     - Pull window selection using `updated_at > lastPulledAt AND updated_at <= server_timestamp` reliably includes rows modified in the window and excludes rows outside it.
 
     Testing guidance:

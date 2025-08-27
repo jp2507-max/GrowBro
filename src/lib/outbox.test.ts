@@ -1,28 +1,44 @@
 import { processOutboxOnce } from './outbox';
 import { supabase } from './supabase';
 
-jest.mock('./supabase', () => ({
-  supabase: {
-    from: jest.fn().mockReturnThis(),
-    insert: jest.fn(),
-    select: jest.fn(),
-    eq: jest.fn().mockReturnThis(),
-    or: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    order: jest.fn().mockReturnThis(),
-    update: jest.fn().mockReturnThis(),
-    delete: jest.fn().mockReturnThis(),
-  },
-}));
+jest.mock('./supabase', () => {
+  const createMockBuilder = (terminalMethod?: string, terminalResult?: any) => {
+    const builder: any = {};
+
+    const methods = [
+      'from',
+      'insert',
+      'select',
+      'eq',
+      'or',
+      'limit',
+      'order',
+      'update',
+      'delete',
+    ];
+
+    methods.forEach((method) => {
+      builder[method] = jest.fn((_args?: any) => {
+        if (method === terminalMethod) {
+          return Promise.resolve(terminalResult);
+        }
+        return createMockBuilder(terminalMethod, terminalResult);
+      });
+    });
+
+    return builder;
+  };
+
+  return {
+    supabase: createMockBuilder(),
+  };
+});
 
 const mockedSupabase: any = supabase as any;
 
 function setupMocks() {
-  mockedSupabase.from.mockReturnThis();
-  mockedSupabase.update.mockResolvedValue({
-    data: [{ id: '1' }],
-    error: null,
-  });
+  // All methods are already set to return 'this' for chaining
+  // In each test, we'll override the terminal method to return a resolved value
 }
 
 function createMockEntry(overrides: Record<string, any> = {}) {
@@ -58,7 +74,18 @@ describe('outbox worker', () => {
 async function testSuccessfulScheduleAction() {
   const entry = createMockEntry();
   setupMocks();
-  mockedSupabase.select.mockResolvedValue({ data: [entry], error: null });
+  // fetchPendingEntries ends with .order() - mock order to return data
+  mockedSupabase.order.mockResolvedValue({ data: [entry], error: null });
+  // claimEntry ends with .select() - mock select to return claimed entry
+  mockedSupabase.select.mockResolvedValue({
+    data: [{ id: entry.id }],
+    error: null,
+  });
+  // markProcessed ends with .eq() - mock eq to return success
+  mockedSupabase.eq.mockResolvedValue({
+    data: [{ id: entry.id }],
+    error: null,
+  });
 
   const scheduler = {
     scheduleNotification: jest.fn().mockResolvedValue(undefined),
@@ -71,8 +98,15 @@ async function testSuccessfulScheduleAction() {
     now: new Date(),
   });
 
-  expect(result.processed).toBeGreaterThanOrEqual(0);
+  expect(result.processed).toBe(1);
+  expect(scheduler.scheduleNotification).toHaveBeenCalledTimes(1);
   expect(scheduler.scheduleNotification).toHaveBeenCalledWith(entry.payload);
+  expect(mockedSupabase.update).toHaveBeenCalledWith(
+    expect.objectContaining({
+      status: 'processed',
+      processed_at: expect.any(String),
+    })
+  );
 }
 
 async function testFailureRetry() {
@@ -82,8 +116,10 @@ async function testFailureRetry() {
   });
 
   setupMocks();
-  mockedSupabase.select.mockResolvedValue({ data: [entry], error: null });
-  mockedSupabase.update.mockResolvedValue({
+  // fetchPendingEntries ends with .order() - mock order to return data
+  mockedSupabase.order.mockResolvedValue({ data: [entry], error: null });
+  // claimEntry ends with .select() - mock select to return data
+  mockedSupabase.select.mockResolvedValue({
     data: [{ id: '2' }],
     error: null,
   });
@@ -112,8 +148,10 @@ async function testExpiredEntries() {
   });
 
   setupMocks();
-  mockedSupabase.select.mockResolvedValue({ data: [entry], error: null });
-  mockedSupabase.update.mockResolvedValue({
+  // fetchPendingEntries ends with .order() - mock order to return data
+  mockedSupabase.order.mockResolvedValue({ data: [entry], error: null });
+  // markExpired ends with .eq() - mock eq to return data
+  mockedSupabase.eq.mockResolvedValue({
     data: [{ id: '3' }],
     error: null,
   });

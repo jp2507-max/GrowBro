@@ -135,7 +135,7 @@ type PhotoMetadata = {
 
 **Interface**:
 
-```typescript
+````typescript
 interface QualityAssessment {
   assessPhoto(uri: string): Promise<QualityResult>;
   validateBatch(photos: CapturedPhoto[]): Promise<BatchQualityResult>;
@@ -152,7 +152,19 @@ interface QualityIssue {
   severity: 'low' | 'medium' | 'high';
   suggestion: string;
 }
-```
+
+interface BatchQualityResult {
+  overallScore: number; // 0-100
+  acceptable: boolean;
+  issuesSummary: Record<string, number>; // counts by issue/severity
+  unacceptableCount: number;
+  averageScore: number;
+  photos: Array<{
+    photoId: string;
+    uri: string;
+    qualityResult: QualityResult;
+  }>;
+}
 
 ### 3. ML Inference Engine
 
@@ -217,11 +229,11 @@ interface AssessmentResult {
 interface AssessmentClass {
   id: string;
   name: string;
-  category: 'nutrient' | 'stress' | 'pathogen' | 'healthy' | 'unknown';
+  category: 'nutrient' | 'stress' | 'pathogen' | 'pest' | 'healthy' | 'unknown';
   description: string;
   visualCues: string[];
 }
-```
+````
 
 ### 4. Action Plan Generator
 
@@ -334,6 +346,23 @@ interface AssessmentRequest {
   timestamp: number;
   retryCount: number;
   status: 'pending' | 'processing' | 'completed' | 'failed';
+}
+
+interface ProcessingResult {
+  requestId: string;
+  success: boolean;
+  error?: string;
+  processedAt: number;
+  details?: any;
+}
+
+interface QueueStatus {
+  pending: number;
+  processing: number;
+  completed: number;
+  failed: number;
+  stalled?: number;
+  lastUpdated?: number;
 }
 ```
 
@@ -562,6 +591,7 @@ function sanitizeActionPlan(plan: ActionPlan): ActionPlan {
     // Limit arrays to prevent bloated rows
     immediateSteps: plan.immediateSteps.slice(0, 5),
     shortTermActions: plan.shortTermActions.slice(0, 5),
+    diagnosticChecks: plan.diagnosticChecks.slice(0, 5),
     warnings: plan.warnings.slice(0, 3),
     disclaimers: plan.disclaimers.slice(0, 2),
   };
@@ -654,6 +684,40 @@ interface TypedError {
   retryable: boolean;
   timeoutMs?: number;
   fallbackMode?: 'cloud' | 'queue' | 'community';
+}
+
+// Specific error types extending TypedError
+interface CaptureError extends TypedError {
+  category: 'capture';
+  source: 'camera' | 'storage' | 'permission';
+  code?: string;
+  details?: {
+    permissionType?: string;
+    storageAvailable?: number;
+    cameraError?: string;
+  };
+}
+
+interface InferenceError extends TypedError {
+  category: 'inference';
+  source: 'model' | 'memory' | 'network';
+  code?: string;
+  details?: {
+    modelVersion?: string;
+    memoryUsage?: number;
+    networkTimeout?: number;
+  };
+}
+
+interface SyncError extends TypedError {
+  category: 'network' | 'auth';
+  source: 'network' | 'server' | 'auth';
+  code?: string;
+  details?: {
+    httpStatus?: number;
+    retryCount?: number;
+    authError?: string;
+  };
 }
 ```
 

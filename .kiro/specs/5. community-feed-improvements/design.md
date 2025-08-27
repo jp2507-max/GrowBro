@@ -641,22 +641,45 @@ const setupRealtimeSubscriptions = (postId?: string) => {
 // Deduplication gate with pluggable key extractor and timestamp field
 type KeyExtractor<T> = (row: T) => string;
 
+// Timestamp store for tracking last-applied commit_timestamp per composite key
+// Used for post_likes to ensure proper ordering of events
+const lastAppliedTimestamps = new Map<string, string>();
+
 /**
  * Decide whether an incoming realtime row should be applied on top of a
  * local row. By default this uses an `id` key and the `updated_at` field for
  * Last-Write-Wins ordering, but callers may provide a custom key extractor
  * and/or a different timestamp field (for example `commit_timestamp`).
+ *
+ * For post_likes, uses a persistent timestamp store instead of row-based timestamps.
  */
 function shouldApply<T>(
   incoming: T,
   local?: T,
   getKey: KeyExtractor<T> = (r: any) => (r as any).id,
-  timestampField: string = 'updated_at'
+  timestampField: string = 'updated_at',
+  eventTimestamp?: string,
+  usePersistentTimestamps: boolean = false
 ): boolean {
   if (!local) return true;
 
-  const incomingTs = new Date((incoming as any)[timestampField]);
-  const localTs = new Date((local as any)[timestampField]);
+  const key = getKey(incoming);
+
+  let incomingTs: Date;
+  let localTs: Date;
+
+  if (usePersistentTimestamps && eventTimestamp) {
+    // For post_likes: use persistent timestamp store
+    incomingTs = new Date(eventTimestamp);
+    const storedTimestamp = lastAppliedTimestamps.get(key);
+    localTs = storedTimestamp ? new Date(storedTimestamp) : new Date(0);
+  } else {
+    // Default behavior: use eventTimestamp if provided, otherwise extract from incoming object
+    incomingTs = eventTimestamp
+      ? new Date(eventTimestamp)
+      : new Date((incoming as any)[timestampField]);
+    localTs = new Date((local as any)[timestampField]);
+  }
 
   // If either timestamp is missing or unparsable, conservatively allow apply
   if (isNaN(incomingTs.getTime()) || isNaN(localTs.getTime())) return true;
@@ -695,7 +718,9 @@ function handleRealtimeEvent<T>(
       newRow as any,
       local as any,
       getKey as any,
-      'commit_timestamp'
+      'commit_timestamp',
+      event.commit_timestamp,
+      true // usePersistentTimestamps
     );
     if (!should) {
       console.log('Dropping stale event (post_likes):', key);
@@ -722,6 +747,9 @@ function handleRealtimeEvent<T>(
         if (local) cache.remove(key);
         break;
     }
+
+    // Store the last applied timestamp for this composite key
+    lastAppliedTimestamps.set(key, event.commit_timestamp);
 
     queryClient.invalidateQueries(['posts']);
     return;
