@@ -192,6 +192,7 @@ interface RealtimeEvent<T> {
 // Community API Service
 interface CommunityAPI {
   // Posts
+  getPost(postId: string): Promise<Post>;
   getPosts(cursor?: string, limit?: number): Promise<PaginatedResponse<Post>>;
   createPost(
     data: CreatePostData,
@@ -637,25 +638,101 @@ const setupRealtimeSubscriptions = (postId?: string) => {
 #### Deduplication and LWW Logic
 
 ```typescript
-// Last-Write-Wins deduplication gate
-function shouldApply<T extends { id: string; updated_at: string }>(
+// Deduplication gate with pluggable key extractor and timestamp field
+type KeyExtractor<T> = (row: T) => string;
+
+/**
+ * Decide whether an incoming realtime row should be applied on top of a
+ * local row. By default this uses an `id` key and the `updated_at` field for
+ * Last-Write-Wins ordering, but callers may provide a custom key extractor
+ * and/or a different timestamp field (for example `commit_timestamp`).
+ */
+function shouldApply<T>(
   incoming: T,
-  local?: T
+  local?: T,
+  getKey: KeyExtractor<T> = (r: any) => (r as any).id,
+  timestampField: string = 'updated_at'
 ): boolean {
   if (!local) return true;
-  return new Date(incoming.updated_at) > new Date(local.updated_at);
+
+  const incomingTs = new Date((incoming as any)[timestampField]);
+  const localTs = new Date((local as any)[timestampField]);
+
+  // If either timestamp is missing or unparsable, conservatively allow apply
+  if (isNaN(incomingTs.getTime()) || isNaN(localTs.getTime())) return true;
+
+  return incomingTs > localTs;
 }
 
-// Realtime event handler with deduplication
-function handleRealtimeEvent<T>(event: RealtimeEvent<T>) {
+// Realtime event handler with deduplication and table-specific handling
+function handleRealtimeEvent<T>(
+  event: RealtimeEvent<T>,
+  options?: {
+    getKey?: KeyExtractor<T>;
+    timestampField?: string;
+    table?: string;
+  }
+) {
   const { eventType, new: newRow, old: oldRow, client_tx_id } = event;
 
   if (!newRow) return;
 
-  // Check if we should apply this change
-  const localRow = cache.get(newRow.id);
-  if (!shouldApply(newRow, localRow)) {
-    console.log('Dropping stale event:', newRow.id);
+  const getKey = options?.getKey ?? ((r: any) => (r as any).id);
+  const timestampField = options?.timestampField ?? 'updated_at';
+  const table = options?.table;
+
+  const key = getKey(newRow);
+
+  // Special-case: post_likes uses a composite key and commit_timestamp.
+  // INSERT/DELETE on post_likes should be treated as toggle operations
+  // (apply/remove) instead of relying on an `id` + `updated_at` LWW check.
+  if (table === 'post_likes') {
+    // Composite key expected to be `${post_id}:${user_id}` provided by caller
+    const local = cache.get(key);
+
+    // Use commit_timestamp for ordering when available
+    const should = shouldApply(
+      newRow as any,
+      local as any,
+      getKey as any,
+      'commit_timestamp'
+    );
+    if (!should) {
+      console.log('Dropping stale event (post_likes):', key);
+      return;
+    }
+
+    // Handle self-echo confirmation
+    if (client_tx_id && outbox.has(client_tx_id)) {
+      outbox.confirm(client_tx_id);
+      console.log('Confirmed outbox entry:', client_tx_id);
+      return;
+    }
+
+    // Treat INSERT as a "like" (add) and DELETE as an "unlike" (remove).
+    // If an INSERT arrives but the local cache already has the like, ignore it.
+    switch (eventType) {
+      case 'INSERT':
+        if (!local) {
+          // Ensure the stored row has a stable id equal to the composite key
+          cache.upsert({ ...(newRow as any), id: key });
+        }
+        break;
+      case 'DELETE':
+        if (local) cache.remove(key);
+        break;
+    }
+
+    queryClient.invalidateQueries(['posts']);
+    return;
+  }
+
+  // Default behavior for rows that have an `id` + `updated_at` style schema
+  const localRow = cache.get(key);
+  if (
+    !shouldApply(newRow as any, localRow as any, getKey as any, timestampField)
+  ) {
+    console.log('Dropping stale event:', key);
     return;
   }
 
@@ -673,7 +750,7 @@ function handleRealtimeEvent<T>(event: RealtimeEvent<T>) {
       cache.upsert(newRow);
       break;
     case 'DELETE':
-      cache.remove(newRow.id);
+      cache.remove(key);
       break;
   }
 

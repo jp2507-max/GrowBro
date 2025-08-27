@@ -83,6 +83,25 @@ interface Task {
   id: string;
   title: string;
   description?: string;
+  <!-- NOTE: Interface/DB mismatch
+  The WatermelonDB `Task` model (see Database Schema below) marks `due_at_local`,
+  `due_at_utc`, and `timezone` as required fields (non-nullable). However the
+  TypeScript `Task` interface above currently makes `dueAtLocal`, `dueAtUtc`,
+  and `timezone` optional. This creates a shape mismatch between runtime DB
+  rows and the in-memory TypeScript type which can lead to unchecked null/undefined
+  errors at runtime and additional guards throughout the codebase.
+
+  Recommendation: Choose a single canonical shape and make it explicit in code.
+  - Preferred: make `dueAtLocal: string`, `dueAtUtc: string`, and `timezone: string`
+    required on the TypeScript `Task` interface to match the WatermelonDB model.
+  - Alternative: make the DB columns nullable if you truly need to support tasks
+    without scheduling metadata (but this has wider implications for scheduling
+    and notification logic).
+
+  Also consider keeping `reminderAtLocal`/`reminderAtUtc` optional if reminders
+  are genuinely optional. Ensure unit tests and database-to-model mappers validate
+  this invariant.
+  -->
   // Time fields use DST-safe dual-field representation.
   // Local times are stored as ISO strings with timezone info (e.g. 2025-03-29T02:30:00+02:00).
   // UTC times are stored as ISO UTC strings (e.g. 2025-03-29T00:30:00Z).

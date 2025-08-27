@@ -126,8 +126,13 @@ export class DeepLinkValidator {
         return { ok: false, reason: 'protocol-relative-not-allowed' };
       }
 
+      // Allow relative paths starting with '/' without validation
+      // SECURITY NOTE: This currently accepts any relative path, which could lead to
+      // open navigation to unintended routes. Consider normalizing and validating
+      // against ALLOWED_PATHS to prevent potential security issues.
       if (v.startsWith('/')) continue;
 
+      // Block insecure HTTP redirects (case-insensitive)
       if (/^http:/i.test(v)) {
         return { ok: false, reason: 'insecure-redirect' };
       }
