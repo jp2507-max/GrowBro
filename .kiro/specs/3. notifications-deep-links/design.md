@@ -1035,14 +1035,35 @@ class DeepLinkValidator {
     />
     <meta name="google-play-app" content="app-id=com.growbro.app" />
     <script>
-      // Attempt app launch, fallback to store
-      setTimeout(() => {
-        if (navigator.userAgent.includes('iPhone')) {
-          window.location = 'https://apps.apple.com/app/growbro/idAPPLE_APP_ID';
+      // Utility to open the appropriate store page. Accepts an Event when used as
+      // an onclick handler; if no event is provided it will read window.event.
+      function openStore(e) {
+        try {
+          // Support callers that don't pass the event
+          const event = e || window.event;
+          if (event && typeof event.preventDefault === 'function') {
+            event.preventDefault();
+          }
+        } catch (err) {
+          // ignore
+        }
+
+        var ua = (navigator && navigator.userAgent) || '';
+        // Detect iOS devices (covers iPhone/iPad/iPod)
+        var isIOS = /iPhone|iPad|iPod/i.test(ua);
+
+        if (isIOS) {
+          window.location.href =
+            'https://apps.apple.com/app/growbro/idAPPLE_APP_ID';
         } else {
-          window.location =
+          window.location.href =
             'https://play.google.com/store/apps/details?id=com.growbro.app';
         }
+      }
+
+      // Attempt app launch, fallback to store after a short delay
+      setTimeout(function () {
+        openStore();
       }, 2000);
     </script>
   </head>
@@ -1050,7 +1071,7 @@ class DeepLinkValidator {
     <h1>Opening GrowBro...</h1>
     <p>
       If the app doesn't open automatically,
-      <a href="#" onclick="openStore()">download it here</a>.
+      <a href="#" onclick="openStore(event)">download it here</a>.
     </p>
   </body>
 </html>
@@ -1184,6 +1205,27 @@ interface NotificationRequest {
 
 serve(async (req) => {
   try {
+    // Guard: ensure the Edge Function has the configured secret in its environment.
+    const configuredSecret = Deno.env.get('EDGE_FUNCTION_SECRET') ?? null;
+    if (!configuredSecret) {
+      // Fail fast: refuse to run without a configured secret to avoid accepting
+      // unauthenticated requests. This makes deployments with a missing env var
+      // immediately obvious in logs.
+      throw new Error('EDGE_FUNCTION_SECRET is not configured');
+    }
+
+    // Validate incoming request header 'X-Function-Secret' matches configured secret
+    const incomingSecret = req.headers.get('x-function-secret') ?? null;
+    if (!incomingSecret || incomingSecret !== configuredSecret) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+          status: 401,
+        }
+      );
+    }
+
     const {
       userId,
       type,
@@ -1277,7 +1319,11 @@ serve(async (req) => {
         keys: Object.keys(data || {}),
         has_deeplink: Boolean(deepLink),
       },
-      provider_message_name: res.response?.name || null,
+      // Use the providerMessageName surface (already extracted) instead of
+      // returning the raw provider response. Full provider responses must not
+      // be returned to the caller; keep them only in secure, internal audit
+      // logs/storage with proper redaction and access controls.
+      provider_message_name: res.providerMessageName || null,
       status: res.success ? 'sent' : 'failed',
       device_token: tokens[i]?.token,
       platform: res.platform,
@@ -1287,10 +1333,28 @@ serve(async (req) => {
     // Insert multiple rows (one per device). This gives per-device status and the real message IDs
     await supabase.from('notification_queue').insert(rows);
 
-    return new Response(JSON.stringify({ success: true, results }), {
-      headers: { 'Content-Type': 'application/json' },
-      status: 200,
-    });
+    // Sanitize results returned to the HTTP caller: exclude raw provider
+    // payloads, device tokens, and any response body. Return only a minimal
+    // safe summary per-device so callers cannot accidentally leak tokens or
+    // provider secrets. Full provider responses should remain in secure
+    // internal logs/audit storage and never be sent in HTTP responses.
+    const safeResults = results.map((r) => ({
+      success: r.success,
+      messageId: r.messageId,
+      platform: r.platform,
+      providerMessageName: r.providerMessageName || null,
+      // Map to a simple status and keep an optionally sanitized error string
+      status: r.success ? 'sent' : 'failed',
+      error: r.error ? String(r.error) : null,
+    }));
+
+    return new Response(
+      JSON.stringify({ success: true, results: safeResults }),
+      {
+        headers: { 'Content-Type': 'application/json' },
+        status: 200,
+      }
+    );
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { 'Content-Type': 'application/json' },
@@ -1391,14 +1455,14 @@ async function sendToDevice(
       responseBody = null;
     }
 
+    // Do NOT return `payload` or the raw `responseBody` to the HTTP caller.
+    // Returning those fields risks leaking device tokens and provider data.
+    // Keep full payloads/response bodies only in secure internal logs/audit
+    // storage with strict access controls and redaction.
     return {
       success: response.ok,
       messageId,
       platform: tokenData.platform,
-      payload,
-      response: responseBody,
-      // Provider's canonical message name (FCM v1 response.name) — expose to
-      // caller so it can be persisted separately as provider_message_name.
       providerMessageName: responseBody?.name || null,
       error: response.ok ? null : `HTTP ${response.status}`,
     };
@@ -1407,8 +1471,6 @@ async function sendToDevice(
       success: false,
       messageId,
       platform: tokenData.platform,
-      payload,
-      response: null,
       providerMessageName: null,
       error: err?.message || String(err),
     };
@@ -1542,17 +1604,25 @@ function isNotificationAllowed(type: string, preferences: any): boolean {
 -- Trigger function for community replies
 CREATE OR REPLACE FUNCTION notify_post_reply()
 RETURNS TRIGGER AS $$
+DECLARE
+  ef_secret text;
 BEGIN
-  -- Call Edge Function to send notification
+  -- Read the configured edge function secret. Use missing_ok = false so that
+  -- current_setting will RAISE if the setting does not exist; however, when
+  -- the setting exists but is NULL we still check and raise an explicit
+  -- exception to fail fast and avoid sending a request with a blank header.
+  ef_secret := current_setting('app.edge_function_secret', false);
+  IF ef_secret IS NULL THEN
+    RAISE EXCEPTION 'app.edge_function_secret is not configured; refusing to send notification';
+  END IF;
+
+  -- Call Edge Function to send notification (using the validated secret)
   PERFORM
     net.http_post(
       url := 'https://your-project.supabase.co/functions/v1/send-push-notification',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
-        -- Use an internal, rotated function secret instead of the service role key.
-        -- This avoids leaking high-privilege credentials. The Edge Function
-        -- must validate the header 'X-Function-Secret' against its env var.
-        'X-Function-Secret', current_setting('app.edge_function_secret', true)
+        'X-Function-Secret', ef_secret
       ),
       body := jsonb_build_object(
         'userId', (SELECT user_id FROM posts WHERE id = NEW.post_id),

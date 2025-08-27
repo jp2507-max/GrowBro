@@ -322,6 +322,13 @@ _Apply rules_
 export default async function pull(req: Request) {
   const { last_pulled_at, tables, cursor } = await req.json();
   const supa = createClientWithAuth(req); // uses user JWT
+  // Bind a single server timestamp at the start of the transaction. Use
+  // this fixed upper bound for all queries and for cursor validation so
+  // rows modified during the pull aren't missed by pagination.
+  const serverTimestamp = new Date();
+  const serverTimestampMs = serverTimestamp.getTime();
+  const serverTimestampIso = serverTimestamp.toISOString();
+
   const since = last_pulled_at ? new Date(last_pulled_at) : new Date(0);
 
   // Allowlist / denylist for public‑read tables. These tables are globally visible
@@ -343,7 +350,11 @@ export default async function pull(req: Request) {
     let upQuery = supa
       .from(t)
       .select('*')
+      // Only return rows updated after `since` and up to the fixed
+      // `serverTimestamp` bound captured above. This prevents a race
+      // where a row updated during pagination would be missed.
       .gt('updated_at', since.toISOString())
+      .lte('updated_at', serverTimestampIso)
       .order('updated_at', { ascending: true })
       .order('id', { ascending: true });
 
@@ -359,7 +370,10 @@ export default async function pull(req: Request) {
       .from(t)
       .select('id, deleted_at')
       .not('deleted_at', 'is', null)
-      .gt('deleted_at', since.toISOString());
+      // Same bound for deleted tombstones: only include deletions that
+      // happened after `since` and at or before `serverTimestamp`.
+      .gt('deleted_at', since.toISOString())
+      .lte('deleted_at', serverTimestampIso);
 
     if (!publicReadTables.has(t) && uid) {
       delQuery = delQuery.eq('user_id', uid);
@@ -373,7 +387,11 @@ export default async function pull(req: Request) {
       up.data?.filter((r) => r.created_at !== r.updated_at) ?? [];
     out.changes[t].deleted = del.data ?? [];
   }
-  return json({ server_timestamp: Date.now(), ...out });
+  // Include the bound server timestamp in the response. Clients should
+  // persist and reuse this same server_timestamp when following up with
+  // pagination requests (cursor) so the server can validate the cursor
+  // against the same fixed upper bound used for the original pull.
+  return json({ server_timestamp: serverTimestampMs, ...out });
 }
 
 // push
@@ -443,6 +461,36 @@ export default async function push(req: Request) {
   return json({ server_timestamp: Date.now(), applied, rejected, conflicts });
 }
 ```
+
+> REVIEW: pull handler — stable snapshot (lines ~321-377)
+
+The suggested change to capture a single `server_timestamp` at the start of a pull and apply it as an upper bound (<=) for both `updated_at` and `deleted_at` is a good defensive measure. It prevents a classic pagination race where a row updated during pagination could be missed by later pages.
+
+Why this helps
+
+- Provides a consistent snapshot window for all per-table queries so the client can safely page results without missing records.
+- Makes cursor validation deterministic: the server can reject/ignore cursors outside the original `server_timestamp` bound.
+
+Important caveats & recommendations
+
+- Clock source: prefer the database's notion of `now()` when possible (Postgres `now()` / `transaction_timestamp()`), or at least ensure the Edge Function host clock is tightly synchronized with the DB clock. Small clock skew can otherwise move rows just outside the snapshot bound.
+- Inclusive/exclusive bounds: using `.gt(last_pulled_at)` and `.lte(server_timestamp)` is the right pattern to avoid duplicate rows while not missing anything. Keep this exact convention documented and stable.
+- Indexing: queries that add `.lte('updated_at', ...)` should use an index on `(updated_at, id)` for efficient pagination and ordering. Add a composite index in Postgres if you expect many rows.
+- Cursor design: use a stable cursor like `(updated_at, id)` and serialize both values plus the `server_timestamp` so the server can validate that the cursor belongs to the same snapshot window.
+- RLS & scoping: make sure the same user scoping (or public table exceptions) is applied to both the up and del queries — the sketch does this, which is correct.
+
+Suggested tests (minimal set)
+
+- Concurrent update test: start a pull, while paginating update a row; verify the updated row is either included (if updated <= snapshot) or excluded (if updated > snapshot) but never silently missed.
+- Pagination round‑trip: force a multi‑page pull and verify the union of pages (using the provided cursor values) equals a single pull with a very large limit up to `server_timestamp`.
+- Clock skew test: simulate small clock drift between Edge host and DB and observe boundary behavior; confirm no missed rows.
+- Large table perf test: verify query plans and timing with `.lte` added; ensure indexes are used and latency is acceptable.
+
+Small implementation note
+
+- Return both `server_timestamp` (ms since epoch) and an ISO string (e.g., `server_timestamp_iso`) to avoid ambiguity for clients that prefer one format. Prefer using ISO for comparison in SQL when translating to `lte('updated_at', server_timestamp_iso)`. Example response keys: `{ server_timestamp: 17559..., server_timestamp_iso: '2025-08-27T12:34:56.789Z' }`.
+
+TL;DR: Approve the change — it's a correct and common approach to make pull pagination safe. Add DB time checks, index the sort keys, and add the suggested tests before rolling into production.
 
 **Errors & codes**
 

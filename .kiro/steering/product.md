@@ -7,7 +7,7 @@
 - **Calendar & Task Management**: Recurring tasks, reminders, and agenda-based scheduling
 - **Harvest Workflow**: Track drying/curing stages and inventory management
 - **Community Feed**: Share updates, engage with other growers through likes/comments
-- **AI Photo Diagnosis**: Plant issue detection with actionable guidance
+- **AI Photo Assessment**: Plant issue detection with actionable guidance
 - **Guided Grow Playbooks**: Step-by-step cultivation schedules by setup type and strain
 
 ## Target Users
@@ -28,4 +28,4 @@
 - 30-day retention improvement through Calendar 2.0
 - 30% increase in complete harvest logs
 - 25% boost in community engagement
-- 75%+ AI diagnosis accuracy with 60%+ helpfulness rating
+- 75%+ AI assessment accuracy with 60%+ helpfulness rating

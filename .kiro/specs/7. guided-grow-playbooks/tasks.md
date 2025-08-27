@@ -111,7 +111,7 @@
 
 - [ ] 9. Build AI-driven schedule adjustment system
 
-  - Gate suggestions behind remote feature flags with thresholds: ≥2 skipped tasks in 7 days or diagnosis confidence <70%
+  - Gate suggestions behind remote feature flags with thresholds: ≥2 skipped tasks in 7 days or assessment confidence <70%
   - Implement explainable adjustment proposals showing which tasks move and why
   - Allow partial acceptance of suggestions (per phase or per task) with user control
   - Add 7-day cool-down per root cause plus "Never suggest for this plant" user setting

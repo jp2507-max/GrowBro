@@ -476,7 +476,7 @@ interface PipelineState {
 ### Recovery Procedures
 
 - **Manual Override**: Ability to bypass certain checks with approval
-- **OTA Rollback**: Use `eas update --rollout-percentage=10` to start; `eas update:edit` to increase or rollback to previous update
+- **OTA Rollback**: Start a rollout: `eas update --rollout-percentage <value>`; Adjust the rollout percentage: `eas update:edit`; Revert to the previous update group: `eas update:revert-update-rollout`
 - **Binary Rollback**: Use Phased Release (App Store) or Staged Rollout (Play) to pause/expand/stop distribution
 - **Emergency Rollback**: Fast rollback procedures documented in runbooks (executable in <5 minutes)
 - **Credential Recovery**: Backup credential management procedures

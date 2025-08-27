@@ -160,7 +160,7 @@ This feature ensures GrowBro meets all Android Play Store compliance requirement
 #### Acceptance Criteria
 
 1. WHEN submitting to Play Console THEN supply test credentials or demo flow in App content → App access
-2. WHEN providing access THEN include clear steps to reach gated features (diagnosis, community, reminders)
+2. WHEN providing access THEN include clear steps to reach gated features (assessment, community, reminders)
 3. WHEN internal checklist runs THEN it SHALL be confirmed before submission
 4. IF App Access is missing THEN rejected builds SHALL block release
 

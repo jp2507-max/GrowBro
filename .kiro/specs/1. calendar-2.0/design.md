@@ -59,6 +59,10 @@ sequenceDiagram
 
 ## Components and Interfaces
 
+```typescript
+export type TaskStatus = 'pending' | 'completed' | 'skipped';
+```
+
 ### Core Components
 
 #### 1. Task Management System

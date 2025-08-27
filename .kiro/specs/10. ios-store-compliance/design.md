@@ -212,7 +212,7 @@ interface ReportSystem {
 
 ### AI Assessment Compliance
 
-**Purpose**: Ensures AI Photo Diagnosis feature complies with medical guidance restrictions.
+**Purpose**: Ensures AI Photo Assessment feature complies with medical guidance restrictions.
 
 **Interface**:
 
