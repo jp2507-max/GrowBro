@@ -6,19 +6,21 @@
 
 BEGIN;
 
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 CREATE TABLE IF NOT EXISTS outbox_notification_actions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at timestamptz NOT NULL DEFAULT now(),
   processed_at timestamptz NULL,
-  attempted_count int NOT NULL DEFAULT 0,
+  attempted_count int NOT NULL DEFAULT 0 CHECK (attempted_count >= 0),
   next_attempt_at timestamptz NULL,
   expires_at timestamptz NULL,
   -- type: 'schedule' | 'cancel' etc
-  action_type text NOT NULL,
+  action_type text NOT NULL CHECK (action_type IN ('schedule','cancel','update','delete')),
   -- JSON payload contains all context needed for the worker to perform action
   payload jsonb NOT NULL,
   -- status: 'pending' | 'in_progress' | 'processed' | 'failed' | 'expired'
-  status text NOT NULL DEFAULT 'pending',
+  status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','in_progress','processed','failed','expired')),
   -- optional business key to enforce idempotency at insertion time (e.g. task_id + notification_id)
   business_key text NULL
 );

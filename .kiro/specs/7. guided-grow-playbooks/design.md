@@ -737,11 +737,8 @@ References: Expo Notifications docs (local triggers), Android SCHEDULE_EXACT_ALA
   }
 
   async canUseExactAlarms(): Promise<boolean> {
-    // Check Android 12+ (API 31) SCHEDULE_EXACT_ALARM permission
-    if (Platform.OS === 'android' && Platform.Version >= 31) {
-      return await Notifications.canScheduleExactNotifications();
-    }
-    return true;
+    // Android 12+ (API 31): gated by manifest permission; no cross-platform JS probe
+    return Platform.OS === 'android' && Platform.Version >= 31;
   }
 
   // NOTE: Android 12+ (API 31)

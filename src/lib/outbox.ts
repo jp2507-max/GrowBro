@@ -53,15 +53,19 @@ export async function enqueueOutboxEntry(params: {
         expires_at,
         next_attempt_at,
       },
-    ]);
+    ])
+    // Return inserted row (representation)
+    .select('*')
+    .single();
 
   if (error) {
-    // If unique violation on business_key happens, it's fine - entry already exists.
-    // Supabase/PG returns error details; we bubble up for the caller to decide.
+    // 23505 = unique_violation
+    if ((error as any).code === '23505') {
+      return undefined; // already enqueued
+    }
     throw error;
   }
-
-  return data?.[0] as OutboxEntry | undefined;
+  return data as OutboxEntry | undefined;
 }
 
 // Worker: process pending entries. This implementation is idempotent: the worker first
@@ -98,14 +102,36 @@ async function fetchPendingEntries(maxBatch: number, now: Date) {
   const { data: entries, error: fetchError } = await supabase
     .from('outbox_notification_actions')
     .select('*')
-    .eq('status', 'pending')
-    .or(`next_attempt_at.is.null,next_attempt_at.lte.${now.toISOString()}`)
-    .or(`expires_at.is.null,expires_at.gte.${now.toISOString()}`)
-    .limit(maxBatch)
-    .order('created_at', { ascending: true });
+    .eq('status', 'pending');
 
   if (fetchError) throw fetchError;
-  return entries as OutboxEntry[] | null;
+  if (!entries) return null;
+
+  // Perform time-window checks in-memory
+  const filteredEntries = entries.filter((entry) => {
+    const nextAttemptAt = entry.next_attempt_at
+      ? new Date(entry.next_attempt_at)
+      : null;
+    const expiresAt = entry.expires_at ? new Date(entry.expires_at) : null;
+
+    // Keep entries where next_attempt_at is null OR next_attempt_at <= now
+    const nextAttemptValid = !nextAttemptAt || nextAttemptAt <= now;
+
+    // Keep entries where expires_at is null OR expires_at >= now
+    const expiresValid = !expiresAt || expiresAt >= now;
+
+    return nextAttemptValid && expiresValid;
+  });
+
+  // Sort by created_at ascending and slice to maxBatch
+  const sortedEntries = filteredEntries
+    .sort(
+      (a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    )
+    .slice(0, maxBatch);
+
+  return sortedEntries as OutboxEntry[] | null;
 }
 
 async function processEntry(

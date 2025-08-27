@@ -48,7 +48,7 @@ CREATE INDEX idx_idempotency_keys_user_recent ON idempotency_keys (user_id, crea
 
 ### Core Service Pattern
 
-````typescript
+```typescript
 class IdempotencyService {
   async processWithIdempotency<T>(
     key: string,
@@ -147,32 +147,10 @@ class IdempotencyService {
               (k) => JSON.stringify(k) + ':' + deterministicStringify(value[k])
             )
             .join(',') +
+          '}'
         );
       }
 
-          DO $$
-          DECLARE
-            deleted_count integer := 0;
-          BEGIN
-            -- perform the delete
-            DELETE FROM posts
-            WHERE created_at < now() - interval '30 days';
-
-            -- capture number of rows deleted
-            GET DIAGNOSTICS deleted_count = ROW_COUNT;
-
-            -- ensure the cleanup_logs table exists to avoid runtime errors
-            CREATE TABLE IF NOT EXISTS cleanup_logs (
-              table_name text,
-              deleted_count integer,
-              cleanup_time timestamp with time zone
-            );
-
-            -- insert a log record using the captured deleted_count
-            INSERT INTO cleanup_logs (table_name, deleted_count, cleanup_time)
-            VALUES ('posts', deleted_count, now());
-          END$$;
-          ```
       // Fallback for other types (undefined, functions, symbols) - treat as null
       return 'null';
     }
@@ -186,7 +164,7 @@ class IdempotencyService {
       .join('');
   }
 }
-````
+```
 
 ### Header Validation
 
