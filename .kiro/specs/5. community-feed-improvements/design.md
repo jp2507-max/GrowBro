@@ -359,6 +359,7 @@ export const postsSchema = tableSchema({
     { name: 'updated_at', type: 'number' },
     { name: 'deleted_at', type: 'number', isOptional: true },
     { name: 'hidden_at', type: 'number', isOptional: true },
+    { name: 'moderation_reason', type: 'string', isOptional: true },
     { name: 'undo_expires_at', type: 'number', isOptional: true }, // NEW
     // Note: like_count, comment_count, user_has_liked are derived client fields
     // They are computed from relationships, not stored in DB

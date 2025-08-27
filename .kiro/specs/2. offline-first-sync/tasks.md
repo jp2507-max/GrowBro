@@ -49,14 +49,225 @@
   - Create pull endpoint: start a database transaction and capture a transaction-bound `server_timestamp` at TX start (for example `SELECT clock_timestamp()` / `NOW()` in Postgres). Use a stable window when selecting rows so the server does not miss rows that equal `lastPulledAt`: filter rows with `updated_at > lastPulledAt AND updated_at <= server_timestamp` (and likewise `deleted_at > lastPulledAt AND deleted_at <= server_timestamp` for soft-deletes). Support pagination/cursor for large deltas, but ensure pagination operates within the captured `server_timestamp` window (i.e., cursors/page tokens are valid only for that server_timestamp). Return the `server_timestamp` to the client in the response so the client can safely set its new `lastPulledAt` to that value.
   - Implement push endpoint: single transaction, apply created → updated → deleted; if server changed since lastPulledAt, abort & error → client must pull then re-push
   - Add RLS enforcement using Authorization header for auth context (create Supabase client from request header)
-  - Implement Idempotency-Key support for reliable push operations (return previous result on duplicates)
+  - Implement Idempotency-Key support for reliable push operations (return previous result on duplicates). Add the following server-side implementation details to guarantee correctness and atomicity:
+
+    - Persistent table: create a dedicated table to persist idempotency records. Example Postgres schema:
+
+      ```sql
+      CREATE TABLE IF NOT EXISTS sync_idempotency (
+        id BIGSERIAL PRIMARY KEY,
+        user_id uuid NOT NULL,
+        idempotency_key text NOT NULL,
+        response_payload jsonb,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now()
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS sync_idempotency_user_key_idx
+        ON sync_idempotency (user_id, idempotency_key);
+      ```
+
+    - Push endpoint flow (transactional, server-side): perform the insert-and-apply-or-return flow inside the same DB transaction that applies the client's mutations to guarantee atomicity. Example high-level algorithm:
+
+      1. Begin transaction
+      2. Attempt to insert a new row for (user_id, idempotency_key) with NULL response_payload (or a placeholder). Use a plain INSERT that will fail on unique constraint if a record already exists.
+
+         - If the INSERT succeeds (no conflict): proceed to apply the client's create/update/delete mutations within the same transaction. After applying mutations and computing the server response (changes, timestamp, etc.), UPDATE the inserted `sync_idempotency` row to set `response_payload` to the JSON result, and commit the transaction. Return the computed response to the client.
+
+         - If the INSERT fails due to unique constraint (conflict): SELECT the existing `response_payload` for (user_id, idempotency_key) and return it immediately (optionally after validating user ownership). Rollback/commit as appropriate (no further mutations should be applied).
+
+      3. Ensure the insert-then-apply-then-update or select-on-conflict code path is executed within the same DB transaction so that concurrent retries from the client never re-apply mutations and always receive the first successful response.
+
+    - Implementation notes and SQL patterns:
+
+      - A safe pattern uses an initial INSERT ... ON CONFLICT DO NOTHING RETURNING id to detect whether the insert happened, then a conditional SELECT when no rows were returned. Pseudocode:
+
+        ```sql
+        -- inside TX
+        INSERT INTO sync_idempotency (user_id, idempotency_key)
+        VALUES ($1, $2)
+        ON CONFLICT DO NOTHING
+        RETURNING id;
+
+        -- if insert returned id: apply mutations, compute response, then
+        UPDATE sync_idempotency
+        SET response_payload = $response::jsonb, updated_at = now()
+        WHERE id = $inserted_id;
+
+        -- if insert returned no rows: the key already exists - fetch stored response
+        SELECT response_payload FROM sync_idempotency
+        WHERE user_id = $1 AND idempotency_key = $2;
+        ```
+
+      - Alternatively, use INSERT ... ON CONFLICT (user_id, idempotency_key) DO UPDATE SET response_payload = EXCLUDED.response_payload RETURNING response_payload when you can atomically write the final payload in one statement, but note you still need to coordinate applying mutations in the same transaction so that the stored payload reflects the applied changes.
+
+      - Always validate that the `user_id` in the idempotency record matches the authenticated user (RLS or explicit checks) to avoid cross-user key reuse.
+
+      - Keep `response_payload` small and bounded; if responses are large, consider storing a pointer to a storage object (e.g., storage bucket path) instead of inlining large blobs in the row.
+
+    - Tests: add integration tests exercising concurrent retries, conflict paths (insert conflict -> return stored payload), and verifying that mutations are applied exactly once for a given idempotency key.
+
   - Add soft delete handling with deleted_at timestamps
   - Write integration tests for Edge Functions with various sync scenarios
   - _Requirements: 2.3, 2.4, 6.1, 6.2, 6.4_
 
-  - Note: Add server-side updated_at maintenance (trigger)
+  - [ ] 4a. Create set_updated_at() trigger for each synced table
 
-    - coderabbitai suggestion: Create set_updated_at() triggers for each synced table to ensure updated_at correctness and avoid drift in pull windows. Add as a subtask here or as a separate task; include tests to validate timestamp updates on INSERT/UPDATE and compatibility with lastPulledAt logic.
+    Rationale: server-authoritative updated_at values are critical for correct Last-Write-Wins conflict resolution and for robust pull windows (rows selected with `updated_at > lastPulledAt AND updated_at <= server_timestamp`). A small, idempotent PL/pgSQL helper and per-table trigger ensures timestamps are set/maintained consistently regardless of client inputs or partial updates.
+
+    Requirements satisfied: ensure server timestamp monotonicity, avoid drift in pull windows, make trigger deployment idempotent and testable.
+
+    Example PL/pgSQL function (idempotent):
+
+    ```sql
+    -- Create or replace the helper function that sets updated_at on INSERT/UPDATE
+    CREATE OR REPLACE FUNCTION public.set_updated_at()
+    RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+      IF TG_OP = 'INSERT' THEN
+        -- If the client provided an explicit updated_at, keep it; otherwise set to now()
+        IF NEW.updated_at IS NULL THEN
+          NEW.updated_at := now();
+        END IF;
+        RETURN NEW;
+      ELSIF TG_OP = 'UPDATE' THEN
+        -- Always update the timestamp on UPDATE so server is authoritative
+        NEW.updated_at := now();
+        RETURN NEW;
+      END IF;
+      RETURN NEW;
+    END;
+    $$;
+    ```
+
+    Example trigger creation (idempotent pattern, run for each synced table):
+
+    ```sql
+    -- Replace <schema> and <table> with your target schema/table name, e.g. public.posts
+    DO $$
+    BEGIN
+      -- Drop existing trigger if present (safe/idempotent)
+      IF EXISTS (
+        SELECT 1 FROM pg_trigger t
+        JOIN pg_class c ON t.tgrelid = c.oid
+        JOIN pg_namespace n ON c.relnamespace = n.oid
+        WHERE t.tgname = 'trg_<table>_updated_at' AND n.nspname = '<schema>'
+      ) THEN
+        EXECUTE format('DROP TRIGGER IF EXISTS trg_%I_updated_at ON %I.%I;', '<table>', '<schema>', '<table>');
+      END IF;
+
+      -- Create the trigger
+      EXECUTE format(
+        'CREATE TRIGGER trg_%1$I_updated_at
+           BEFORE INSERT OR UPDATE ON %2$I.%1$I
+           FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();',
+        '<table>', '<schema>'
+      );
+    END;
+    $$;
+    ```
+
+    Notes on idempotency and deployment:
+
+    - `CREATE OR REPLACE FUNCTION` makes the function deployment idempotent.
+    - `DROP TRIGGER IF EXISTS` (or the DO block pattern above) ensures the trigger can be re-created safely.
+    - Run the function + trigger creation as part of your schema migration pipeline or a one-off deployment script for each synced table.
+
+    Example test cases (plain SQL - fails with RAISE EXCEPTION on assertion failure):
+
+    ```sql
+    -- Example test script for public.sync_test_items
+    -- 1) Create a test table (idempotent)
+    CREATE TABLE IF NOT EXISTS public.sync_test_items (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      data text,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz
+    );
+
+    -- 2) Ensure function & trigger exist for this table (use the same idempotent pattern above)
+    -- (Assume set_updated_at() created already via migration)
+    DROP TRIGGER IF EXISTS trg_sync_test_items_updated_at ON public.sync_test_items;
+    CREATE TRIGGER trg_sync_test_items_updated_at
+      BEFORE INSERT OR UPDATE ON public.sync_test_items
+      FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+    -- 3) Tests: INSERT sets updated_at within reasonable bounds; UPDATE advances updated_at
+    DO $$
+    DECLARE
+      t_before timestamptz := now();
+      insert_row record;
+      after_insert timestamptz;
+      after_update timestamptz;
+    BEGIN
+      -- Insert a row (client does not set updated_at)
+      INSERT INTO public.sync_test_items (data) VALUES ('first') RETURNING id, updated_at INTO insert_row;
+      after_insert := now();
+
+      -- Assert updated_at within bounds [t_before, after_insert]
+      IF NOT (insert_row.updated_at >= t_before AND insert_row.updated_at <= after_insert) THEN
+        RAISE EXCEPTION 'INSERT: updated_at out of expected bounds: % not in [% , %]', insert_row.updated_at, t_before, after_insert;
+      END IF;
+
+      -- Short sleep to ensure timestamp delta on update (optional)
+      PERFORM pg_sleep(0.01);
+
+      -- Update the row and verify updated_at increased
+      UPDATE public.sync_test_items SET data = 'second' WHERE id = insert_row.id RETURNING updated_at INTO insert_row;
+      after_update := now();
+
+      IF NOT (insert_row.updated_at >= after_insert) THEN
+        RAISE EXCEPTION 'UPDATE: updated_at did not advance: % < %', insert_row.updated_at, after_insert;
+      END IF;
+    END;
+    $$;
+
+    -- 4) Pull-window behavior test: ensure rows fall into/out of the pull window defined as
+    --    updated_at > lastPulledAt AND updated_at <= server_timestamp
+    DO $$
+    DECLARE
+      lastPulledAt timestamptz;
+      server_ts timestamptz;
+      included_count int;
+      excluded_count int;
+      r record;
+    BEGIN
+      -- Make a fresh row and capture a deterministic window
+      lastPulledAt := now() - interval '1 minute';
+      server_ts := now();
+      INSERT INTO public.sync_test_items (data) VALUES ('window-test') RETURNING id, updated_at INTO r;
+
+      -- Row should be included when lastPulledAt is before updated_at and server_ts after it
+      SELECT count(*) INTO included_count FROM public.sync_test_items
+        WHERE updated_at > lastPulledAt AND updated_at <= server_ts AND id = r.id;
+      IF included_count <> 1 THEN
+        RAISE EXCEPTION 'PULL-WINDOW: expected row to be included (count=%)', included_count;
+      END IF;
+
+      -- Now set lastPulledAt after the row's updated_at and expect it to be excluded
+      lastPulledAt := now() + interval '1 second';
+      SELECT count(*) INTO excluded_count FROM public.sync_test_items
+        WHERE updated_at > lastPulledAt AND updated_at <= now() AND id = r.id;
+      IF excluded_count <> 0 THEN
+        RAISE EXCEPTION 'PULL-WINDOW: expected row to be excluded when lastPulledAt > updated_at (count=%)', excluded_count;
+      END IF;
+    END;
+    $$;
+    ```
+
+    Expected behavior:
+
+    - On INSERT: if client omits `updated_at`, the trigger sets it to `now()`; if client supplies `updated_at` (rare), the server keeps it on INSERT (but migrating systems should avoid clients setting server timestamps).
+    - On UPDATE: `updated_at` is always set to the server `now()` (server-authoritative).
+    - Pull window selection using `updated_at > lastPulledAt AND updated_at <= server_timestamp` reliably includes rows modified in the window and excludes rows outside it.
+
+    Testing guidance:
+
+    - Run the SQL test blocks against a disposable test database or inside CI job with a clean schema.
+    - The DO-blocks raise exceptions on assertion failures so CI will fail on regressions.
+    - Integrate the function/trigger creation into your regular migrations (use `CREATE OR REPLACE FUNCTION` + `DROP TRIGGER IF EXISTS`/`CREATE TRIGGER`) to make deployments idempotent.
 
 - [ ] 5. Implement error handling and retry logic
 
@@ -147,7 +358,7 @@
 - [ ] 13. Optimize sync performance and implement incremental strategies
 
   - Add incremental sync with cursor/pagination support for large datasets (server supports cursor/pagination)
-  - Implement data prioritization (tasks due ≤ 24h, diagnosis queue ahead of community cache)
+  - Implement data prioritization (tasks due ≤ 24h, assessment queue ahead of community cache)
   - Create sync batching and chunking for efficient network usage
   - Add sync resume capability for interrupted operations (client resumable pushes with idempotent batches)
   - Implement sync performance monitoring and optimization

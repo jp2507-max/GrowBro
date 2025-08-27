@@ -230,7 +230,7 @@
 
   - Create provideTestCredentials() method with demo account access
   - Build generateDemoFlow() with step-by-step instructions
-  - Add test account with access to diagnosis, community, reminders features
+  - Add test account with access to assessment, community, reminders features
   - Write validateAccessToGatedFeatures() verification method
   - Create unit tests for test credential generation and validation
   - _Requirements: 11.1, 11.2_
@@ -238,7 +238,7 @@
 - [ ] 6.2 Build reviewer instruction system
 
   - Implement createReviewerInstructions() with comprehensive feature access guide
-  - Add clear steps to reach diagnosis, community, and reminders features
+  - Add clear steps to reach assessment, community, and reminders features
   - Create deep link entry points for scripted crawler navigation
   - Write instructions for navigating past age-gate and login flows
   - Add integration tests for reviewer instruction completeness
@@ -246,7 +246,7 @@
 
 - [ ] 6.3 Create App Access release gates
 
-  - Validate test account credentials and steps to reach reminders/community/diagnosis features
+  - Validate test account credentials and steps to reach reminders/community/assessment features
   - Validate deep links for crawler paths that navigate past age-gate to feature screens
   - Add build blocking logic if Play Console App Access contains incomplete test credentials, steps, or deep links
   - Create internal checklist confirmation before submission

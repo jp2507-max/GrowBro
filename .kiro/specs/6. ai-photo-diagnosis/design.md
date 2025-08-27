@@ -2,13 +2,13 @@
 
 ## Overview
 
-The AI Photo Diagnosis feature provides an end-to-end solution for automated plant health analysis in the GrowBro mobile app. The system combines guided photo capture, automated quality assessment, on-device/cloud ML inference, and actionable guidance delivery. The architecture prioritizes offline-first functionality, user privacy, and seamless integration with existing calendar and community features.
+The AI Photo Assessment feature provides an end-to-end solution for automated plant health analysis in the GrowBro mobile app. The system combines guided photo capture, automated quality assessment, on-device/cloud ML inference, and actionable guidance delivery. The architecture prioritizes offline-first functionality, user privacy, and seamless integration with existing calendar and community features.
 
-The solution supports a predefined set of diagnosis classes used across the system (see the canonical "Diagnosis Classes" list below). The system maintains high accuracy through confidence thresholding, quality gating, and graceful fallbacks to community consultation.
+The solution supports a predefined set of assessment classes used across the system (see the canonical "Assessment Classes" list below). The system maintains high accuracy through confidence thresholding, quality gating, and graceful fallbacks to community consultation.
 
-## Diagnosis Classes (canonical)
+## Assessment Classes (canonical)
 
-This canonical list is the single source of truth for all references to diagnosis categories used by the ML models, UI, and action plan generation.
+This canonical list is the single source of truth for all references to assessment categories used by the ML models, UI, and action plan generation.
 
 1. Healthy
 2. Unknown / Out-of-Distribution (OOD)
@@ -81,8 +81,8 @@ graph TB
 **Key Features**:
 
 - Guided prompts for leaf positioning (top/bottom views)
-- Real-time quality feedback (lighting, focus, framing)
-- Support for up to 3 photos per diagnosis case
+  - Real-time quality feedback (lighting, focus, framing)
+  - Support for up to 3 photos per assessment case
 - EXIF data stripping for privacy
 
 **Interface**:
@@ -97,9 +97,28 @@ interface CaptureComponent {
 interface CapturedPhoto {
   uri: string;
   timestamp: number;
-  qualityScore: QualityMetrics;
+  qualityScore: QualityResult;
   metadata: PhotoMetadata;
 }
+
+// Minimal type stubs so references resolve during compilation / type checks.
+// PhotoMetadata: common EXIF-like fields kept minimal and privacy-conscious.
+type PhotoMetadata = {
+  width: number;
+  height: number;
+  cameraModel?: string;
+  iso?: number;
+  exposureTimeMs?: number;
+  aperture?: number;
+  // Optional geolocation should be stripped for privacy in production; kept optional here
+  gps?: { lat: number; lon: number } | null;
+  // Any additional raw EXIF fields may be included as an optional record
+  extras?: Record<string, any>;
+};
+
+// Note: QualityResult (defined in the Quality Assessment Engine section) is used
+// as the canonical type for per-photo quality information. It includes a
+// numeric score, a list of issues, and an 'acceptable' boolean.
 ```
 
 ### 2. Quality Assessment Engine
@@ -143,7 +162,7 @@ interface QualityIssue {
 
 - **On-Device**: EfficientNet-Lite0/1 or MobileNetV3-Small/Large INT8 quantized (<20MB)
 - **Cloud**: EfficientNet-B4/ResNet-50 full-precision for complex cases
-- **Classes (Diagnosis Classes — canonical list):**
+- **Classes (Assessment Classes — canonical list):**
 
   1.  Healthy
   2.  Unknown / Out-of-Distribution (OOD)
@@ -164,15 +183,23 @@ interface QualityIssue {
 **Interface**:
 
 ```typescript
+// ModelInfo: compact shape describing the currently loaded model and delegates
+type ModelInfo = {
+  version: string; // semantic version or build id
+  delegates: string[]; // e.g. ['nnapi','gpu','cpu'] - available acceleration delegates
+  lastUpdated?: string; // optional ISO timestamp for when the model was published
+  description?: string; // short human-readable description
+};
+
 interface MLInferenceEngine {
   initialize(): Promise<void>;
-  predict(photos: CapturedPhoto[]): Promise<DiagnosisResult>;
+  predict(photos: CapturedPhoto[]): Promise<AssessmentResult>;
   getModelInfo(): ModelInfo;
   updateModel(version: string): Promise<void>;
 }
 
-interface DiagnosisResult {
-  topClass: DiagnosisClass;
+interface AssessmentResult {
+  topClass: AssessmentClass;
   rawConfidence: number;
   calibratedConfidence: number;
   perImage: Array<{
@@ -187,7 +214,7 @@ interface DiagnosisResult {
   modelVersion: string;
 }
 
-interface DiagnosisClass {
+interface AssessmentClass {
   id: string;
   name: string;
   category: 'nutrient' | 'stress' | 'pathogen' | 'healthy' | 'unknown';
@@ -198,7 +225,7 @@ interface DiagnosisClass {
 
 ### 4. Action Plan Generator
 
-**Purpose**: Generate contextual, actionable guidance based on diagnosis results
+**Purpose**: Generate contextual, actionable guidance based on assessment results
 
 **Action Plan Structure**:
 
@@ -254,7 +281,7 @@ interface PlaybookAdjustment {
 }
 
 interface ActionPlanGenerator {
-  generatePlan(diagnosis: DiagnosisResult, context: PlantContext): ActionPlan;
+  generatePlan(assessment: AssessmentResult, context: PlantContext): ActionPlan;
   createTasks(plan: ActionPlan, plantId: string): Task[];
   suggestPlaybookAdjustments(
     plan: ActionPlan,
@@ -281,11 +308,11 @@ interface ActionStep {
 
 ### 5. Offline Queue Manager
 
-**Purpose**: Handle offline diagnosis requests with intelligent retry and sync
+**Purpose**: Handle offline assessment requests with intelligent retry and sync
 
 **Queue Features**:
 
-- **Request Queuing**: Store diagnosis requests with photos and context
+- **Request Queuing**: Store assessment requests with photos and context
 - **Intelligent Retry**: Exponential backoff with jitter
 - **Batch Processing**: Optimize network usage with batch uploads
 - **Conflict Resolution**: Handle duplicate requests and stale data
@@ -294,13 +321,13 @@ interface ActionStep {
 
 ```typescript
 interface OfflineQueueManager {
-  enqueue(request: DiagnosisRequest): Promise<string>;
+  enqueue(request: AssessmentRequest): Promise<string>;
   processQueue(): Promise<ProcessingResult[]>;
   getQueueStatus(): QueueStatus;
   retryFailed(): Promise<void>;
 }
 
-interface DiagnosisRequest {
+interface AssessmentRequest {
   id: string;
   photos: CapturedPhoto[];
   plantContext: PlantContext;
@@ -316,7 +343,8 @@ interface DiagnosisRequest {
 
 ```typescript
 // Diagnoses table
-interface DiagnosisRecord {
+// Assessments table
+interface AssessmentRecord {
   id: string;
   plant_id: string;
   user_id: string;
@@ -334,7 +362,7 @@ interface DiagnosisRecord {
   predicted_class?: string;
   raw_confidence?: number;
   calibrated_confidence?: number;
-  quality_scores: QualityMetrics[];
+  quality_scores: QualityResult[];
   aggregation_rule?: string;
   action_plan?: ActionPlan;
 
@@ -354,8 +382,8 @@ interface DiagnosisRecord {
   resolved_at?: Date;
 }
 
-// Diagnosis classes reference
-interface DiagnosisClassRecord {
+// Assessment classes reference
+interface AssessmentClassRecord {
   id: string;
   name: string;
   category: string;
@@ -380,13 +408,13 @@ import {
   readonly,
 } from '@nozbe/watermelondb/decorators';
 
-// Main diagnosis model with JSON-serialized complex fields
-class Diagnosis extends Model {
-  static table = 'diagnoses';
+// Main assessment model with JSON-serialized complex fields
+class Assessment extends Model {
+  static table = 'assessments';
   static associations = {
     plants: { type: 'belongs_to', key: 'plant_id' },
     users: { type: 'belongs_to', key: 'user_id' },
-    diagnosis_classes: { type: 'belongs_to', key: 'predicted_class' },
+    assessment_classes: { type: 'belongs_to', key: 'predicted_class' },
   };
 
   // Relational columns (normalized)
@@ -423,13 +451,13 @@ class Diagnosis extends Model {
   // Relations
   @relation('plants', 'plant_id') plant!: Plant;
   @relation('users', 'user_id') user!: User;
-  @relation('diagnosis_classes', 'predicted_class')
-  diagnosisClass?: DiagnosisClass;
+  @relation('assessment_classes', 'predicted_class')
+  assessmentClass?: AssessmentClass;
 }
 
-// Normalized diagnosis classes table
-class DiagnosisClass extends Model {
-  static table = 'diagnosis_classes';
+// Normalized assessment classes table
+class AssessmentClass extends Model {
+  static table = 'assessment_classes';
 
   @field('name') name!: string;
   @field('category') category!: string;
@@ -443,8 +471,8 @@ class DiagnosisClass extends Model {
 }
 
 // Schema definition
-const diagnosisSchema = {
-  name: 'diagnoses',
+const assessmentSchema = {
+  name: 'assessments',
   columns: [
     { name: 'plant_id', type: 'string', isIndexed: true },
     { name: 'user_id', type: 'string', isIndexed: true },
@@ -478,8 +506,8 @@ const diagnosisSchema = {
   ],
 };
 
-const diagnosisClassSchema = {
-  name: 'diagnosis_classes',
+const assessmentClassSchema = {
+  name: 'assessment_classes',
   columns: [
     { name: 'name', type: 'string' },
     { name: 'category', type: 'string', isIndexed: true },
@@ -534,7 +562,7 @@ function sanitizeActionPlan(plan: ActionPlan): ActionPlan {
     // Limit arrays to prevent bloated rows
     immediateSteps: plan.immediateSteps.slice(0, 5),
     shortTermActions: plan.shortTermActions.slice(0, 5),
-    diagnosticChecks: plan.diagnosticChecks.slice(0, 3),
+    - **Request Queuing**: Store assessment requests with photos and context
     warnings: plan.warnings.slice(0, 3),
     disclaimers: plan.disclaimers.slice(0, 2),
   };
@@ -558,8 +586,8 @@ function sanitizeStringArray(arr: string[]): string[] {
 
 ```
 app_documents/
-├── diagnoses/
-│   ├── {diagnosis_id}/
+├── assessments/
+│   ├── {assessment_id}/
 │   │   ├── original_1.jpg
 │   │   ├── original_2.jpg
 │   │   ├── thumbnail_1.jpg
@@ -616,7 +644,7 @@ interface ErrorResponse {
   retryable: boolean;
   fallbackAction?: () => void;
   telemetryData: Record<string, any>;
-  diagnosisId?: string; // For Sentry breadcrumbs (no PII)
+  assessmentId?: string; // For Sentry breadcrumbs (no PII)
 }
 
 // Typed error classification
@@ -647,22 +675,24 @@ interface TypedError {
    - Validate confidence thresholding and fallback logic
 
 3. **Action Plan Generator**
-   - Test plan generation for each diagnosis class
-   - Validate task creation and playbook integration
-   - Test safety guardrails and disclaimer inclusion
+
+- Test plan generation for each assessment class
+- Validate task creation and playbook integration
+- Test safety guardrails and disclaimer inclusion
 
 ### Integration Testing
 
-1. **End-to-End Diagnosis Flow**
+1. **End-to-End Assessment Flow**
 
-   - Capture → Quality → Inference → Results → Actions
-   - Test both device and cloud inference paths
-   - Validate offline queue and sync behavior
+- Capture → Quality → Inference → Results → Actions
+- Test both device and cloud inference paths
+- Validate offline queue and sync behavior
 
 2. **Cross-Feature Integration**
-   - Task creation from diagnosis results
-   - Playbook adjustment suggestions
-   - Community post creation for uncertain diagnoses
+
+- Task creation from assessment results
+- Playbook adjustment suggestions
+- Community post creation for uncertain assessments
 
 ### Performance Testing
 
@@ -706,7 +736,8 @@ interface TypedError {
 
    - High contrast mode support for camera UI
    - Large touch targets (≥44pt) for all interactive elements
-   - Alternative text for diagnosis result images
+
+- Alternative text for assessment result images
 
 3. **Motor Accessibility**
    - Voice-over support for camera capture
@@ -717,9 +748,9 @@ interface TypedError {
 
 1. **Content Structure**
 
-   - Diagnosis class names and descriptions in JSON/YAML
-   - Action plan templates with parameterized steps
-   - Error messages and guidance text externalized
+- Assessment class names and descriptions in JSON/YAML
+- Action plan templates with parameterized steps
+- Error messages and guidance text externalized
 
 2. **Dynamic Content**
 
@@ -785,9 +816,10 @@ interface TypedError {
    - Automatic rollback on error rate increases
 
 3. **Edge Function Authentication**
-   - All diagnosis CRUD via Edge Functions with JWT-based user context
-   - RLS enforced on every table, never use service key for user-scoped operations
-   - Derive user_id from JWT token in Edge Functions
+
+- All assessment CRUD via Edge Functions with JWT-based user context
+- RLS enforced on every table, never use service key for user-scoped operations
+- Derive user_id from JWT token in Edge Functions
 
 ## Performance Optimization
 
@@ -826,6 +858,7 @@ interface TypedError {
    - Intelligent retry with circuit breaker pattern
 
 2. **Sync Optimization**
-   - Delta sync for diagnosis updates
-   - Compression for large payloads
-   - Background sync scheduling
+
+- Delta sync for assessment updates
+- Compression for large payloads
+- Background sync scheduling

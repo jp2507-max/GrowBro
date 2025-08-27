@@ -71,7 +71,7 @@ The Guided Grow Playbooks feature provides new and experienced cannabis growers 
 
 #### Acceptance Criteria
 
-1. WHEN AI diagnosis detects a plant issue THEN the system SHALL evaluate if schedule adjustments are recommended based on remote feature flags
+1. WHEN AI assessment detects a plant issue THEN the system SHALL evaluate if schedule adjustments are recommended based on remote feature flags
 2. WHEN ≥2 tasks are skipped within 7 days OR AI classifier confidence <70% THEN the system SHALL trigger adjustment suggestions
 3. WHEN suggesting adjustments THEN the system SHALL present explainable proposals showing which tasks move and why
 4. WHEN presenting suggestions THEN the system SHALL allow partial acceptance of proposed changes

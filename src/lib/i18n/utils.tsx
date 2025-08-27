@@ -1,5 +1,5 @@
 import type TranslateOptions from 'i18next';
-import i18n from 'i18next';
+import i18n, { dir } from 'i18next';
 import memoize from 'lodash.memoize';
 import { useCallback } from 'react';
 import { I18nManager, NativeModules, Platform } from 'react-native';
@@ -19,15 +19,26 @@ export const getLanguage = () => storage.getString(LOCAL); // 'Marc' getItem<Lan
 
 export const translate = memoize(
   (key: TxKeyPath, options = undefined) =>
+    // eslint-disable-next-line import/no-named-as-default-member
     i18n.t(key, options) as unknown as string,
-  (key: TxKeyPath, options: typeof TranslateOptions) =>
-    options ? key + JSON.stringify(options) : key
+  (key: TxKeyPath, options: typeof TranslateOptions) => {
+    // include current language so cached values are invalidated when language changes
+    const lang = (i18n && (i18n as any).language) || '';
+    const base = options ? key + JSON.stringify(options) : key;
+    return `${lang}:${base}`;
+  }
 );
 
 export const changeLanguage = (lang: Language) => {
+  // eslint-disable-next-line import/no-named-as-default-member
   i18n.changeLanguage(lang);
   // determine direction from i18next for the selected language
-  const isRtl = i18n.dir(lang) === 'rtl';
+  // use the named `dir` export to avoid `import/no-named-as-default-member` lint warning
+  const isRtl = dir(lang) === 'rtl';
+  // Ensure the app is allowed to change layout direction at runtime on platforms
+  // that require permission before forcing RTL. Call allowRTL before forceRTL
+  // so the runtime will accept the change without requiring a restart.
+  I18nManager.allowRTL(isRtl);
   I18nManager.forceRTL(isRtl);
   if (Platform.OS === 'ios' || Platform.OS === 'android') {
     if (__DEV__) NativeModules.DevSettings.reload();

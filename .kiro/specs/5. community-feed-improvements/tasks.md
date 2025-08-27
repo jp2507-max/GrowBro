@@ -2,7 +2,7 @@
 
 - [ ] 1. Set up database schema and migrations
 
-  - Create database migration for posts table with undo_expires_at TIMESTAMPTZ column
+  - Create database migration for posts table to add moderation columns: deleted_at TIMESTAMPTZ, hidden_at TIMESTAMPTZ, moderation_reason TEXT, and undo_expires_at TIMESTAMPTZ
   - Create database migration for post_comments table with hidden_at and undo_expires_at TIMESTAMPTZ columns
   - Create database migration for post_likes table with UNIQUE(post_id, user_id) constraint
   - Create database migration for reports and moderation_audit tables
@@ -20,7 +20,10 @@
       error_details JSONB NULL,
       status TEXT NOT NULL CHECK (status IN ('completed', 'processing', 'failed')),
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-      expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '24 hours'),
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '24 hours'),
+    -- TTL note: default is 24 hours for completed keys. When a key transitions to
+    -- 'completed' set/extend expires_at = now() + INTERVAL '24 hours'. When a key
+    -- transitions to 'failed' set/extend expires_at = now() + INTERVAL '7 days'
       UNIQUE(idempotency_key, user_id, endpoint),
       -- Enforce status/response invariant
       CHECK (
@@ -30,12 +33,16 @@
     );
 
     -- Indexes for performance and cleanup
-    CREATE INDEX idx_idempotency_keys_lookup ON idempotency_keys (idempotency_key, user_id, endpoint);
-    CREATE INDEX idx_idempotency_keys_cleanup ON idempotency_keys (expires_at) WHERE status = 'completed';
+    -- The UNIQUE constraint on (idempotency_key, user_id, endpoint) provides an index for lookups;
+    -- avoid creating a redundant non-unique index which wastes space and write overhead.
+    -- Cleanup/index: include both completed and failed so the cleanup job can efficiently
+    -- find expired rows regardless of whether they succeeded or failed.
+    CREATE INDEX idx_idempotency_keys_cleanup ON idempotency_keys (expires_at)
+      WHERE status IN ('completed', 'failed');
     CREATE INDEX idx_idempotency_keys_user_recent ON idempotency_keys (user_id, created_at DESC);
     ```
 
-  - Add partial indexes that match default reads for performance:
+  - Add partial indexes that match default reads for performance (run AFTER the posts migration that adds deleted_at/hidden_at/moderation_reason):
     ```sql
     CREATE INDEX IF NOT EXISTS idx_posts_visible ON posts (created_at DESC)
       WHERE deleted_at IS NULL AND hidden_at IS NULL;
@@ -60,6 +67,7 @@
   - Create RLS policies for posts table (public read, owner write/delete)
   - Create RLS policies for post_comments table with same pattern
   - Create RLS policies for post_likes table (users manage own likes only)
+  - NOTE: Ensure the migration that adds `deleted_at`, `hidden_at`, and `moderation_reason` to `posts` is applied before creating any RLS policies or indexes that reference those columns. Policies and indexes referencing non-existent columns will fail.
   - Create RLS policies for idempotency_keys table (users can only access their own keys):
 
     ```sql
@@ -93,16 +101,20 @@
       so the statement always RETURNS a row. Include a computed flag so callers can deterministically tell
       whether the row was just inserted or already existed.
 
-      ```sql
-      -- Atomic insert-or-return pattern in transaction
-      INSERT INTO idempotency_keys (
-        idempotency_key, client_tx_id, user_id, endpoint, payload_hash, response_payload, status, expires_at
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, 'processing', now() + INTERVAL '24 hours')
+          ```sql
+          -- Atomic insert-or-return pattern in transaction
+          INSERT INTO idempotency_keys (
+            idempotency_key, client_tx_id, user_id, endpoint, payload_hash, response_payload, status, expires_at
+          )
+
+      VALUES ($1, $2, $3, $4, $5, NULL, 'processing', now() + INTERVAL '24 hours')
       ON CONFLICT (idempotency_key, user_id, endpoint) DO UPDATE
-        -- no-op update: set a column to itself (or set idempotency_key = EXCLUDED.idempotency_key).
-        SET payload_hash = idempotency_keys.payload_hash
-      RETURNING *, (xmax = 0) AS just_inserted;
+      -- no-op update: set a column to itself (or set idempotency_key = EXCLUDED.idempotency_key).
+      SET payload_hash = idempotency_keys.payload_hash
+      RETURNING \*, (xmax = 0) AS just_inserted;
+
+      ```
+
       ```
 
     - Rationale and behavior:
@@ -130,16 +142,21 @@
     - _Requirements: 4.5, 4.6, 4.7_
 
   - [ ] 3.3 Implement idempotency key cleanup and monitoring
-    - Create periodic cleanup job (Edge Function with cron trigger) to remove expired idempotency keys:
+    - Create periodic cleanup job (Edge Function with cron trigger) to remove expired idempotency keys. The cleanup must delete rows where the TTL has elapsed for both successful and failed operations:
       ```sql
+      -- Remove expired idempotency records for completed or failed operations
       DELETE FROM idempotency_keys
-      WHERE expires_at < now() AND status = 'completed';
+      WHERE expires_at < now() AND status IN ('completed', 'failed');
       ```
-    - Schedule cleanup to run every 6 hours to prevent table bloat
-    - Add monitoring for idempotency key usage patterns and cleanup effectiveness
-    - Implement rate limiting per user: max 1000 idempotency keys per user per hour
-    - Add alerting when cleanup job fails or idempotency table grows beyond expected size
-    - Document TTL policy: completed keys expire after 24 hours, failed keys kept for 7 days for debugging
+    - Schedule cleanup to run every 6 hours to prevent table bloat. Keep the cron schedule and TTL values aligned: completed = 24h, failed = 7d.
+    - Add monitoring for idempotency key usage patterns and cleanup effectiveness.
+    - Implement rate limiting per user: max 1000 idempotency keys per user per hour.
+    - Add alerting when cleanup job fails or idempotency table grows beyond expected size.
+    - Document TTL enforcement flow (important):
+      - When inserting a new key the default `expires_at` is set to now() + INTERVAL '24 hours'.
+      - When a key transitions to `completed`, update/set `expires_at = now() + INTERVAL '24 hours'`.
+      - When a key transitions to `failed`, update/set `expires_at = now() + INTERVAL '7 days'` so failed rows are retained for debugging but are still cleanable by the cron job.
+      - The cleanup job deletes rows based on `expires_at < now()` AND status IN ('completed','failed').
     - _Requirements: 9.4, 10.4, 10.5_
 
 - [ ] 3.4 Create idempotency service implementation
@@ -271,7 +288,10 @@
           const local = cache.get(row.id);
           if (local && new Date(row.updated_at) <= new Date(local.updated_at))
             return; // drop stale
-          if ((e as any).client_tx_id) outbox.confirm((e as any).client_tx_id);
+          // Supabase places columns on e.new (the row). Prefer reading client_tx_id from the row
+          // rather than the event wrapper. Null-check and confirm the outbox entry when present.
+          const clientTxId = (row as any).client_tx_id ?? null;
+          if (clientTxId) outbox.confirm(clientTxId);
           cache.upsert(row);
         }
       );
@@ -436,8 +456,8 @@
     - Create tests for realtime event handling and deduplication
     - Test optimistic UI updates with rollback scenarios
     - Add comprehensive idempotency tests:
-      - Same idempotency key with same payload returns cached result
-      - Same idempotency key with different payload returns 422 Conflict
+    - Same idempotency key with same payload returns cached result
+    - Same idempotency key with different payload returns 422 Unprocessable Entity
       - Missing Idempotency-Key header returns 400 Bad Request
       - Invalid client_tx_id format returns 400 Bad Request
       - Expired idempotency key allows new operation

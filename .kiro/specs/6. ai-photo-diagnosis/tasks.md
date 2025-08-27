@@ -2,10 +2,10 @@
 
 - [ ] 1. Set up core data models and database schema
 
-  - Create WatermelonDB schema for diagnoses table with all required fields (status, inference_mode, model_version, raw_confidence, calibrated_confidence, quality_scores, etc.)
-  - Implement DiagnosisRecord model with proper relationships to plants table
+  - Create WatermelonDB schema for assessments table with all required fields (status, inference_mode, model_version, raw_confidence, calibrated_confidence, quality_scores, etc.)
+  - Implement AssessmentRecord model with proper relationships to plants table
   - Add database indexes for (user_id, created_at) and (status) for efficient querying
-  - Create DiagnosisClassRecord model including "healthy" and "unknown/OOD" classes with explicit OOD flag
+  - Create AssessmentClassRecord model including "healthy" and "unknown/OOD" classes with explicit OOD flag
   - Add image integrity and filename key columns:
     - `integrity_sha256`: raw SHA-256 of the image bytes (unsalted) used for integrity/verification and local deduplication when appropriate
     - `filename_key`: per-install/user keyed filename key used for content-addressable filenames
@@ -23,7 +23,9 @@
 
     - Build CaptureComponent with guided prompts for leaf positioning (top/bottom views)
     - Implement real-time quality feedback UI for lighting, focus, and framing guidance
-    - Add support for capturing up to 3 photos per diagnosis case with progress indicators
+
+  - Add support for capturing up to 3 photos per assessment case with progress indicators
+
     - Integrate with react-native-camera or expo-camera for cross-platform compatibility
     - _Requirements: 1.1, 1.2, 1.3_
 
@@ -86,16 +88,19 @@
 
   - [ ] 4.1 Build action plan generator with safety guardrails
 
-    - Create ActionPlanGenerator that maps diagnosis classes to specific action templates
+  - Create ActionPlanGenerator that maps assessment classes to specific action templates
+
     - Implement immediate steps (0-24h) and short-term actions (24-48h) generation
-    - Enforce "measure-before-change" preconditions (pH/EC, light PPFD) as blocking steps for corrective actions
-    - Add safety rails that block potentially harmful actions unless preceded by diagnostics with unit tests per class
+
+  - Enforce "measure-before-change" preconditions (pH/EC, light PPFD) as blocking steps for corrective actions
+  - Add safety rails that block potentially harmful actions unless preceded by assessments with unit tests per class
+
     - Build generic, product-agnostic guidance with JSON templates and placeholders (no hardcoded dosages)
     - _Requirements: 3.1, 3.2, 3.3, 3.5_
 
   - [ ] 4.2 Implement task creation and playbook integration
-    - Build one-tap task creation from diagnosis results with prefilled details
-    - Create task templates for common diagnosis-driven actions (pH measurement, light adjustment)
+  - Build one-tap task creation from assessment results with prefilled details
+  - Create task templates for common assessment-driven actions (pH measurement, light adjustment)
     - Implement playbook shift suggestions based on AI findings and user acceptance
     - Add tracking for task creation and playbook adjustment rates for analytics
     - Integrate with existing calendar system for seamless task scheduling
@@ -103,9 +108,10 @@
 
 - [ ] 5. Build offline queue management and sync system
 
-  - [ ] 5.1 Create offline diagnosis request queue
+  - [ ] 5.1 Create offline assessment request queue
 
-    - Implement DiagnosisRequest model with job state machine (pending → processing → succeeded/failed)
+  - Implement AssessmentRequest model with job state machine (pending → processing → succeeded/failed)
+
     - Build request queuing system that stores photos, plant context, and timestamps locally
     - Create queue status tracking with user-visible indicators and manual retry options
 
@@ -130,7 +136,7 @@
 
   1. Generate and persist a per-install or per-user secret:
 
-  - Generate a 32-byte (or longer) random secret on first run/first use of the diagnosis feature.
+  - Generate a 32-byte (or longer) random secret on first run/first use of the assessment feature.
   - Persist the secret using a secure on-device keystore: prefer platform secure storage (iOS Keychain, Android Keystore) or a managed secure store (Expo SecureStore, react-native-keychain, or MMKV with encryption). Document storage choice and threat model.
 
   2. Compute filename keys at time-of-capture/upload:
@@ -172,7 +178,7 @@ filenameKey = HMAC_SHA256(secret, imageBytes) // use this for filename
 
 // 4. write file and DB record
 writeFile(`images/${filenameKey}.jpg`, imageBytes)
-db.diagnoses.create({ filename_key: filenameKey, integrity_sha256: integrity, ... })
+db.assessments.create({ filename_key: filenameKey, integrity_sha256: integrity, ... })
 ```
 
 Notes:
@@ -188,14 +194,16 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - Build feedback UI for "Was this helpful?" and "Issue resolved?" collection
     - Implement optional feedback notes collection with character limits
     - Create feedback submission system that respects user privacy preferences
-    - Add feedback tracking to diagnosis records for model improvement analytics
+
+  - Add feedback tracking to assessment records for model improvement analytics
+
     - Implement feedback aggregation for per-class accuracy and helpfulness metrics
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
   - [ ] 6.2 Build comprehensive telemetry and analytics system
     - Implement privacy-safe telemetry logging (device vs cloud mode, latency, model version, confidence)
     - Create user action tracking (task creation, playbook shifts, community CTA usage)
-    - Add Sentry integration with diagnosis_id breadcrumbs (no PII) for error debugging
+  - Add Sentry integration with assessment_id breadcrumbs (no PII) for error debugging
     - Build performance metrics collection (p95 latency tracking per device and mode)
     - Implement model performance monitoring with per-class accuracy tracking
     - _Requirements: 9.1, 9.3, 9.4, 9.5_
@@ -215,7 +223,7 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - Implement non-plant image detection with educational prompts and retake guidance
     - Create extreme close-up and heavy LED color cast detection with specific feedback
     - Add low memory handling with graceful degradation (skip device → cloud inference)
-    - Implement duplicate photo detection within diagnosis cases with user prompts
+  - Implement duplicate photo detection within assessment cases with user prompts
     - Build timeout handling with user-visible countdown and cancellation options
     - _Requirements: 10.3, 10.4_
 
@@ -232,7 +240,7 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
 
   - [ ] 8.2 Build data deletion and GDPR compliance system
     - Implement comprehensive deletion that purges local files, remote blobs, and telemetry
-    - Create delete cascade system keyed by diagnosis_id across all storage systems
+  - Create delete cascade system keyed by assessment_id across all storage systems
     - Add deletion confirmation system with 30-day completion guarantee
     - Build audit trail for deletion requests and completion status
     - Implement "right to be forgotten" compliance with proper data removal verification
@@ -244,17 +252,18 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
 
     - Implement automatic community CTA triggering for confidence <70% or Unknown class
 
-  - Create prefilled community post generation with diagnosis images and context
+  - Create prefilled community post generation with assessment images and context
   - Build redacted post creation that removes sensitive metadata and writes a re-encoded copy under a random, non-linkable filename (never reuse filename_key)
 
-    - Add deep-linking from diagnosis results to community post creation flow
-    - Implement community post tracking for diagnosis follow-up and resolution
+  - Add deep-linking from assessment results to community post creation flow
+  - Implement community post tracking for assessment follow-up and resolution
+
     - _Requirements: 4.1, 4.2, 4.3, 8.3_
 
   - [ ] 9.2 Create uncertainty and "not confident" result handling
     - Build neutral result card UI for low confidence or Unknown classifications
     - Implement retake guidance with specific tips for improving photo quality
-    - Create generic diagnostic checklist (pH, EC, light height) for uncertain cases
+  - Create generic assessment checklist (pH, EC, light height) for uncertain cases
     - Add educational content about when to seek community help or expert advice
     - Implement result card that balances uncertainty communication with actionable next steps
     - _Requirements: 4.4, 2.3_
@@ -265,7 +274,9 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
 
     - Write tests for quality assessment engine with synthetic blur, exposure, and white balance samples
     - Create ML inference engine tests with mock model responses and aggregation logic validation
-    - Build action plan generator tests for each diagnosis class and safety guardrail validation
+
+  - Build action plan generator tests for each assessment class and safety guardrail validation
+
     - Add golden-set test that validates temperature scaling improves ECE without accuracy loss
     - Add model download integrity tests that verify checksums and signatures before loading
     - Create delegate/execution provider coverage tests that assert NNAPI/Metal vs CPU fallback works and logs correctly
@@ -273,7 +284,7 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - _Requirements: 6.4, 2.1, 3.1, 10.1_
 
   - [ ] 10.2 Implement integration and end-to-end testing
-    - Create end-to-end diagnosis flow tests (capture → quality → inference → results → actions)
+  - Create end-to-end assessment flow tests (capture → quality → inference → results → actions)
     - Build offline queue and sync testing with flight-mode simulation
     - Implement cross-feature integration tests (task creation, playbook adjustments, community posts)
     - Add performance testing for p95 latency SLOs on target devices (Pixel 6a, Galaxy A54)
@@ -291,8 +302,8 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - Build voice-over support for camera capture and alternative gesture controls
     - _Requirements: All requirements (accessibility compliance)_
 
-  - [ ] 11.2 Create localization infrastructure for diagnosis content
-    - Externalize all diagnosis class names, descriptions, and action plan templates to JSON/YAML
+  - [ ] 11.2 Create localization infrastructure for assessment content
+    - Externalize all assessment class names, descriptions, and action plan templates to JSON/YAML
     - Implement server-delivered action plans with locale support (EN/DE)
     - Create legal disclaimer management per jurisdiction with proper legal review
     - Build confidence level descriptions adapted to cultural context
@@ -301,12 +312,12 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
 
 - [ ] 12. Final integration and polish
 
-  - [ ] 12.1 Integrate AI diagnosis with existing app features
+  - [ ] 12.1 Integrate AI assessment with existing app features
 
-    - Connect diagnosis results to plant records in existing database schema
+    - Connect assessment results to plant records in existing database schema
     - Integrate with existing calendar system for seamless task creation and scheduling
-    - Link diagnosis history to plant profiles with timeline and progress tracking
-    - Connect to existing community feed for diagnosis-driven post creation
+    - Link assessment history to plant profiles with timeline and progress tracking
+    - Connect to existing community feed for assessment-driven post creation
     - Ensure consistent UI/UX with existing app design system and navigation patterns
     - _Requirements: 3.4, 4.3, 9.1_
 

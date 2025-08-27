@@ -56,15 +56,15 @@ This feature ensures GrowBro meets all iOS App Store compliance requirements bas
 
 ### Requirement 5
 
-**User Story:** As a product manager, I want to implement AI assessment disclaimers and confidence thresholds, so that the AI Photo Diagnosis feature complies with medical guidance restrictions.
+**User Story:** As a product manager, I want to implement AI assessment disclaimers and confidence thresholds, so that the AI Photo Assessment feature complies with medical guidance restrictions.
 
 #### Acceptance Criteria
 
-1. WHEN AI analysis is presented THEN the system SHALL label outputs as "AI assessment" (not "diagnosis")
-2. WHEN AI results are displayed THEN the system SHALL show confidence scores and educational disclaimers
-3. WHEN confidence is below 70% THEN the system SHALL route users to "Ask Community / Get second opinion"
-4. WHEN AI guidance is provided THEN the system SHALL include "educational guidance; not professional advice" disclaimer
-5. IF medical-style claims are detected THEN the system SHALL prevent them to avoid Guideline 1.4 violations
+5. WHEN AI analysis is presented THEN the system SHALL label outputs as "AI assessment" (not "diagnosis")
+6. WHEN AI results are displayed THEN the system SHALL show confidence scores and educational disclaimers
+7. WHEN confidence is below 70% THEN the system SHALL route users to "Ask Community / Get second opinion"
+8. WHEN AI guidance is provided THEN the system SHALL include "educational guidance; not professional advice" disclaimer
+9. IF medical-style claims are detected THEN the system SHALL prevent them to avoid Guideline 1.4 violations
 
 ### Requirement 6
 

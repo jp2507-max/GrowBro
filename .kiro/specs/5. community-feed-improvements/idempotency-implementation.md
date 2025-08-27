@@ -20,12 +20,18 @@ CREATE TABLE idempotency_keys (
   status TEXT NOT NULL CHECK (status IN ('completed', 'processing', 'failed')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '24 hours'),
+  -- TTL behavior: default expiry is 24 hours. On transition to 'completed' set/extend
+  -- expires_at = now() + INTERVAL '24 hours'. On transition to 'failed' set/extend
+  -- expires_at = now() + INTERVAL '7 days' so failed records are retained for debugging but
+  -- still removable by the scheduled cleanup job.
   UNIQUE(idempotency_key, user_id, endpoint)
 );
 
 -- Performance indexes
 CREATE INDEX idx_idempotency_keys_lookup ON idempotency_keys (idempotency_key, user_id, endpoint);
-CREATE INDEX idx_idempotency_keys_cleanup ON idempotency_keys (expires_at) WHERE status = 'completed';
+-- Include both completed and failed so the cleanup job can efficiently find expired rows
+CREATE INDEX idx_idempotency_keys_cleanup ON idempotency_keys (expires_at)
+  WHERE status IN ('completed', 'failed');
 CREATE INDEX idx_idempotency_keys_user_recent ON idempotency_keys (user_id, created_at DESC);
 ```
 
@@ -57,9 +63,9 @@ class IdempotencyService {
       // Try to insert new idempotency key
       const inserted = await tx.query(
         `
-        INSERT INTO idempotency_keys 
-        (idempotency_key, client_tx_id, user_id, endpoint, payload_hash, response_payload, status)
-        VALUES ($1, $2, $3, $4, $5, '{}', 'processing')
+  INSERT INTO idempotency_keys 
+  (idempotency_key, client_tx_id, user_id, endpoint, payload_hash, response_payload, status)
+  VALUES ($1, $2, $3, $4, $5, NULL, 'processing')
         ON CONFLICT (idempotency_key, user_id, endpoint) DO NOTHING
         RETURNING *
       `,
@@ -277,7 +283,7 @@ Track these key metrics:
 - **Idempotency hit rate**: % of requests that return cached responses
 - **Cleanup effectiveness**: Keys deleted per cleanup run
 - **Table growth rate**: New keys created per hour
-- **Error rates**: 422 conflicts, 409 processing conflicts
+- **Error rates**: 422 Unprocessable Entity responses, 409 processing conflicts
 - **TTL violations**: Keys accessed after expiration
 
 ### Rate Limiting

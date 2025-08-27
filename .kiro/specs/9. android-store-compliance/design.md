@@ -243,7 +243,7 @@ interface AppAccessManager {
 
 interface ReviewerGuide {
   testCredentials: TestCredentials;
-  stepsToReachDiagnosis: string[];
+  stepsToReachAssessment: string[];
   stepsToReachCommunity: string[];
   stepsToReachReminders: string[];
   deepLinkEntryPoints: string[];
@@ -253,7 +253,7 @@ interface ReviewerGuide {
 #### App Access Implementation
 
 - **Test Credentials**: Demo account with access to all gated features. IMPORTANT: Reviewer/demo account credentials or any demo API tokens must never be committed to source control or included in build artifacts. For Play Console reviewer access use the Play Console → App content → App access form to provide demo account credentials or instructions; do not store these credentials in the repository. Any ephemeral test tokens or secrets required for automated CI tests must be injected at runtime via CI/EAS secrets or environment variables (see the Release Pipeline secrets guidance). Do not bake ephemeral tokens into artifacts or checked-in config files.
-- **Clear Instructions**: Step-by-step guide to reach diagnosis, community, reminders
+- **Clear Instructions**: Step-by-step guide to reach assessment, community, reminders
 - **Deep Links**: Scripted crawler entry points for automated testing
 - **Release Gate**: Rejected builds block release if App Access missing
 
