@@ -160,7 +160,7 @@
   -- For other synced tables, follow the same pattern:
   -- CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_<table>_updated_at_id_active
   -- CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_<table>_deleted_at_id_tombstones
-  --   ON <schema>.<table> (updated_at, id)
+  --   ON <schema>.<table> (deleted_at, id)
   --   WHERE <soft_delete_condition>;
   ```
 
@@ -213,175 +213,179 @@
 
       -- Enable RLS on the table
       ALTER TABLE public.sync_idempotency ENABLE ROW LEVEL SECURITY;
-
-      -- Allow SELECT only for the owning user or trusted roles
-      <!-- NOTE: PostgreSQL does NOT support `CREATE POLICY IF NOT EXISTS`.
-           Using `CREATE POLICY IF NOT EXISTS` in migrations will fail.
-           Recommended pattern for idempotent migrations is to first
-           DROP POLICY IF EXISTS <policy_name> ON <schema>.<table>;
-           then CREATE POLICY <policy_name> ...;
-           Example replacement shown later in this document. -->
-      DROP POLICY IF EXISTS sync_idempotency_select_policy ON public.sync_idempotency;
-      CREATE POLICY sync_idempotency_select_policy
-        ON public.sync_idempotency
-        FOR SELECT
-        USING (
-          (auth.uid() IS NOT NULL AND auth.uid()::uuid = user_id)
-          OR current_setting('jwt.claims.role', true) = 'service_role'
-          OR current_user = '<app_db_role>'
-        );
-
-      -- Allow INSERT only when the incoming user_id matches auth.uid() or
-      -- when performed by a trusted DB role. Use WITH CHECK to validate data on
-      -- insertion.
-      DROP POLICY IF EXISTS sync_idempotency_insert_policy ON public.sync_idempotency;
-      CREATE POLICY sync_idempotency_insert_policy
-        ON public.sync_idempotency
-        FOR INSERT
-        WITH CHECK (
-          (auth.uid() IS NOT NULL AND auth.uid()::uuid = user_id)
-          OR current_setting('jwt.claims.role', true) = 'service_role'
-          OR current_user = '<app_db_role>'
-        );
-
-      -- Allow UPDATE only for owners or trusted roles. WITH CHECK ensures the
-      -- new row (after UPDATE) still satisfies policy (e.g., user_id not
-      -- changed to another user).
-      DROP POLICY IF EXISTS sync_idempotency_update_policy ON public.sync_idempotency;
-      CREATE POLICY sync_idempotency_update_policy
-        ON public.sync_idempotency
-        FOR UPDATE
-        USING (
-          (auth.uid() IS NOT NULL AND auth.uid()::uuid = user_id)
-          OR current_setting('jwt.claims.role', true) = 'service_role'
-          OR current_user = '<app_db_role>'
-        )
-        WITH CHECK (
-          (auth.uid() IS NOT NULL AND auth.uid()::uuid = user_id)
-          OR current_setting('jwt.claims.role', true) = 'service_role'
-          OR current_user = '<app_db_role>'
-        );
-
-      -- Allow DELETE only for owners or trusted roles
-      DROP POLICY IF EXISTS sync_idempotency_delete_policy ON public.sync_idempotency;
-      CREATE POLICY sync_idempotency_delete_policy
-        ON public.sync_idempotency
-        FOR DELETE
-        USING (
-          (auth.uid() IS NOT NULL AND auth.uid()::uuid = user_id)
-          OR current_setting('jwt.claims.role', true) = 'service_role'
-          OR current_user = '<app_db_role>'
-        );
-
-      -- GRANTs: ensure your application service role has the minimal privileges
-      -- needed. Replace '<app_db_role>' with the role your Edge Functions
-      -- switch to (or that you use in server-side connections).
-      GRANT SELECT, INSERT, UPDATE, DELETE ON public.sync_idempotency TO "<app_db_role>";
-      -- If using the sequence directly, grant USAGE on the sequence too
-      GRANT USAGE ON SEQUENCE public.sync_idempotency_id_seq TO "<app_db_role>";
-
-      -- NOTE: Supabase-hosted Postgres exposes helper functions like auth.uid()
-      -- and stores JWT claims in current_setting('jwt.claims.*', true). The
-      -- example above relies on those helpers. If you're not on Supabase, use
-      -- the equivalent mechanism your auth layer provides or validate in your
-      -- Edge Function before calling DB operations.
-
-      -- RETENTION / TTL: idempotency records are useful for preventing
-      -- duplicate application of requests but can grow unbounded. Two common
-      -- approaches to retention:
-      --  1) Scheduled DB job (pg_cron) that deletes old rows periodically
-      --  2) An external scheduler (serverless cron or Supabase scheduled
-      --     function) that runs a DELETE statement on a cadence
-
-      -- Example: pg_cron (run daily at 03:00) to remove records older than
-      -- 90 days. Requires the pg_cron extension and appropriate privileges.
-      -- Adjust the interval to your needs (e.g., 7, 30, 90 days).
-      -- NOTE: installing extensions and pg_cron scheduling may require a
-      -- superuser or managed platform support (Supabase offers scheduled
-      -- functions as an alternative).
-
-      -- Create extension (may require superuser; hosted providers vary)
-      CREATE EXTENSION IF NOT EXISTS pg_cron;
-
-      -- Schedule a daily job at 03:00 to delete old idempotency rows
-      SELECT cron.schedule(
-        'daily_cleanup_sync_idempotency',
-        '0 3 * * *',
-        $$DELETE FROM public.sync_idempotency WHERE updated_at < now() - interval '90 days'$$
-      );
-
-      -- Alternative (recommended for hosted DBs without pg_cron): create a
-      -- small server-side scheduled job (for example an Edge Function or a
-      -- managed "scheduled function" in Supabase) that runs the same DELETE
-      -- statement on a configurable cadence. Example SQL to run from that job:
-
-      -- DELETE FROM public.sync_idempotency
-      -- WHERE updated_at < now() - interval '90 days';
-
-      -- Considerations:
-      --  - Pick an appropriate retention window; 30-90 days is common.
-      --  - Make sure response_payload size is bounded. If you store large
-      --    payloads, consider keeping only a pointer to a storage object and
-      --    GCing both the DB row and the storage object together.
-      --  - Use the trusted DB role (e.g., '<app_db_role>') or a maintenance
-      --    service account to run the cleanup if RLS would otherwise block it.
       ```
+
+    -- Allow SELECT only for the owning user or trusted roles
+    /_ NOTE: PostgreSQL does NOT support `CREATE POLICY IF NOT EXISTS`.
+    Using `CREATE POLICY IF NOT EXISTS` in migrations will fail.
+    Recommended pattern for idempotent migrations is to first
+    DROP POLICY IF EXISTS <policy_name> ON <schema>.<table>;
+    then CREATE POLICY <policy_name> ...;
+    Example replacement shown later in this document. _/
+    DROP POLICY IF EXISTS sync_idempotency_select_policy ON public.sync_idempotency;
+    CREATE POLICY sync_idempotency_select_policy
+    ON public.sync_idempotency
+    FOR SELECT
+    USING (
+    (auth.uid() IS NOT NULL AND auth.uid()::uuid = user_id)
+    OR current_setting('jwt.claims.role', true) = 'service_role'
+    OR current_user = '<app_db_role>'
+    );
+
+    -- Allow INSERT only when the incoming user_id matches auth.uid() or
+    -- when performed by a trusted DB role. Use WITH CHECK to validate data on
+    -- insertion.
+    DROP POLICY IF EXISTS sync_idempotency_insert_policy ON public.sync_idempotency;
+    CREATE POLICY sync_idempotency_insert_policy
+    ON public.sync_idempotency
+    FOR INSERT
+    WITH CHECK (
+    (auth.uid() IS NOT NULL AND auth.uid()::uuid = user_id)
+    OR current_setting('jwt.claims.role', true) = 'service_role'
+    OR current_user = '<app_db_role>'
+    );
+
+    -- Allow UPDATE only for owners or trusted roles. WITH CHECK ensures the
+    -- new row (after UPDATE) still satisfies policy (e.g., user_id not
+    -- changed to another user).
+    DROP POLICY IF EXISTS sync_idempotency_update_policy ON public.sync_idempotency;
+    CREATE POLICY sync_idempotency_update_policy
+    ON public.sync_idempotency
+    FOR UPDATE
+    USING (
+    (auth.uid() IS NOT NULL AND auth.uid()::uuid = user_id)
+    OR current_setting('jwt.claims.role', true) = 'service_role'
+    OR current_user = '<app_db_role>'
+    )
+    WITH CHECK (
+    (auth.uid() IS NOT NULL AND auth.uid()::uuid = user_id)
+    OR current_setting('jwt.claims.role', true) = 'service_role'
+    OR current_user = '<app_db_role>'
+    );
+
+    -- Allow DELETE only for owners or trusted roles
+    DROP POLICY IF EXISTS sync_idempotency_delete_policy ON public.sync_idempotency;
+    CREATE POLICY sync_idempotency_delete_policy
+    ON public.sync_idempotency
+    FOR DELETE
+    USING (
+    (auth.uid() IS NOT NULL AND auth.uid()::uuid = user_id)
+    OR current_setting('jwt.claims.role', true) = 'service_role'
+    OR current_user = '<app_db_role>'
+    );
+
+    -- GRANTs: ensure your application service role has the minimal privileges
+    -- needed. Replace '<app_db_role>' with the role your Edge Functions
+    -- switch to (or that you use in server-side connections).
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.sync_idempotency TO "<app_db_role>";
+    -- If using the sequence directly, grant USAGE on the sequence too
+    GRANT USAGE ON SEQUENCE public.sync_idempotency_id_seq TO "<app_db_role>";
+
+    -- NOTE: Supabase-hosted Postgres exposes helper functions like auth.uid()
+    -- and stores JWT claims in current_setting('jwt.claims.\*', true). The
+    -- example above relies on those helpers. If you're not on Supabase, use
+    -- the equivalent mechanism your auth layer provides or validate in your
+    -- Edge Function before calling DB operations.
+
+    -- RETENTION / TTL: idempotency records are useful for preventing
+    -- duplicate application of requests but can grow unbounded. Two common
+    -- approaches to retention:
+    -- 1) Scheduled DB job (pg_cron) that deletes old rows periodically
+    -- 2) An external scheduler (serverless cron or Supabase scheduled
+    -- function) that runs a DELETE statement on a cadence
+
+    -- Example: pg_cron (run daily at 03:00) to remove records older than
+    -- 90 days. Requires the pg_cron extension and appropriate privileges.
+    -- Adjust the interval to your needs (e.g., 7, 30, 90 days).
+    -- NOTE: installing extensions and pg_cron scheduling may require a
+    -- superuser or managed platform support (Supabase offers scheduled
+    -- functions as an alternative).
+
+    -- Create extension (may require superuser; hosted providers vary)
+    CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+    -- Schedule a daily job at 03:00 to delete old idempotency rows
+    SELECT cron.schedule(
+    'daily_cleanup_sync_idempotency',
+    '0 3 \* \* \*',
+    $$DELETE FROM public.sync_idempotency WHERE updated_at < now() - interval '90 days'$$
+    );
+
+    -- Alternative (recommended for hosted DBs without pg_cron): create a
+    -- small server-side scheduled job (for example an Edge Function or a
+    -- managed "scheduled function" in Supabase) that runs the same DELETE
+    -- statement on a configurable cadence. Example SQL to run from that job:
+
+    -- DELETE FROM public.sync_idempotency
+    -- WHERE updated_at < now() - interval '90 days';
+
+    -- Considerations:
+    -- - Pick an appropriate retention window; 30-90 days is common.
+    -- - Make sure response_payload size is bounded. If you store large
+    -- payloads, consider keeping only a pointer to a storage object and
+    -- GCing both the DB row and the storage object together.
+    -- - Use the trusted DB role (e.g., '<app_db_role>') or a maintenance
+    -- service account to run the cleanup if RLS would otherwise block it.
+
+    ````
 
     - Push endpoint flow (transactional, server-side): perform the insert-and-apply-or-return flow inside the same DB transaction that applies the client's mutations to guarantee atomicity. Example high-level algorithm:
 
-      1. Begin transaction
-      2. Attempt to insert a new row for (user_id, idempotency_key) with NULL response_payload (or a placeholder). Use a plain INSERT that will fail on unique constraint if a record already exists.
+    1. Begin transaction
+    2. Attempt to insert a new row for (user_id, idempotency_key) with NULL response_payload (or a placeholder). Use a plain INSERT that will fail on unique constraint if a record already exists.
 
-         - If the INSERT succeeds (no conflict): proceed to apply the client's create/update/delete mutations within the same transaction. After applying mutations and computing the server response (changes, timestamp, etc.), UPDATE the inserted `sync_idempotency` row to set `response_payload` to the JSON result, and commit the transaction. Return the computed response to the client.
+       - If the INSERT succeeds (no conflict): proceed to apply the client's create/update/delete mutations within the same transaction. After applying mutations and computing the server response (changes, timestamp, etc.), UPDATE the inserted `sync_idempotency` row to set `response_payload` to the JSON result, and commit the transaction. Return the computed response to the client.
 
-         - If the INSERT fails due to unique constraint (conflict): SELECT the existing `response_payload` for (user_id, idempotency_key) and return it immediately (optionally after validating user ownership). Rollback/commit as appropriate (no further mutations should be applied).
+       - If the INSERT fails due to unique constraint (conflict): SELECT the existing `response_payload` for (user_id, idempotency_key) and return it immediately (optionally after validating user ownership). Rollback/commit as appropriate (no further mutations should be applied).
 
-      3. Ensure the insert-then-apply-then-update or select-on-conflict code path is executed within the same DB transaction so that concurrent retries from the client never re-apply mutations and always receive the first successful response.
+    3. Ensure the insert-then-apply-then-update or select-on-conflict code path is executed within the same DB transaction so that concurrent retries from the client never re-apply mutations and always receive the first successful response.
 
     - Implementation notes and SQL patterns:
 
-      - A safe pattern uses an initial INSERT ... ON CONFLICT DO NOTHING RETURNING id to detect whether the insert happened, then a conditional SELECT when no rows were returned. Pseudocode:
+    - A safe pattern uses an initial INSERT ... ON CONFLICT DO NOTHING RETURNING id to detect whether the insert happened, then a conditional SELECT when no rows were returned. Pseudocode:
 
-        ```sql
-        -- inside TX
-        INSERT INTO sync_idempotency (user_id, idempotency_key)
-        VALUES ($1, $2)
-        ON CONFLICT DO NOTHING
-        RETURNING id;
+      ```sql
+      -- inside TX
+      INSERT INTO sync_idempotency (user_id, idempotency_key)
+      VALUES ($1, $2)
+      ON CONFLICT DO NOTHING
+      RETURNING id;
 
-        -- if insert returned id: apply mutations, compute response, then
-        UPDATE sync_idempotency
-        SET response_payload = $response::jsonb, updated_at = now()
-        WHERE id = $inserted_id;
+      -- if insert returned id: apply mutations, compute response, then
+      UPDATE sync_idempotency
+      SET response_payload = $response::jsonb, updated_at = now()
+      WHERE id = $inserted_id;
 
-        -- if insert returned no rows: the key already exists - fetch stored response
-        SELECT response_payload FROM sync_idempotency
-        WHERE user_id = $1 AND idempotency_key = $2;
-        ```
+      -- if insert returned no rows: the key already exists - fetch stored response
+      SELECT response_payload FROM sync_idempotency
+      WHERE user_id = $1 AND idempotency_key = $2;
+      ```
 
-      <!-- NOTE: Optional stricter variant -->
-      <!--
-        To guarantee deduplication only for identical requests, include a
-        request_hash on insert and, when the key already exists, lock the
-        row with FOR UPDATE and compare the stored request_hash to the
-        incoming one. If they differ, return 409 (conflict) rather than
-        reusing the stored response. This avoids silently returning a
-        previous response for a different payload.
+    -- NOTE: Optional stricter variant
+    /*
+      To guarantee deduplication only for identical requests, include a
+      request_hash on insert and, when the key already exists, lock the
+      row with FOR UPDATE and compare the stored request_hash to the
+      incoming one. If they differ, return 409 (conflict) rather than
+      reusing the stored response. This avoids silently returning a
+      previous response for a different payload.
 
-        Caveats:
-        - Use FOR UPDATE to prevent concurrent races where two different
-          payloads try to claim the same idempotency key.
-        - Choose an error handling strategy (409 vs explicit error code)
-          that your client understands and will retry appropriately.
-      -->
+      Caveats:
+      - Use FOR UPDATE to prevent concurrent races where two different
+        payloads try to claim the same idempotency key.
+      - Choose an error handling strategy (409 vs explicit error code)
+        that your client understands and will retry appropriately.
+    */
 
-      - Alternatively, use INSERT ... ON CONFLICT (user_id, idempotency_key) DO UPDATE SET response_payload = EXCLUDED.response_payload RETURNING response_payload when you can atomically write the final payload in one statement, but note you still need to coordinate applying mutations in the same transaction so that the stored payload reflects the applied changes.
+    - Alternatively, use INSERT ... ON CONFLICT (user_id, idempotency_key) DO UPDATE SET response_payload = EXCLUDED.response_payload RETURNING response_payload when you can atomically write the final payload in one statement, but note you still need to coordinate applying mutations in the same transaction so that the stored payload reflects the applied changes.
 
-      - Always validate that the `user_id` in the idempotency record matches the authenticated user (RLS or explicit checks) to avoid cross-user key reuse.
+    - Always validate that the `user_id` in the idempotency record matches the authenticated user (RLS or explicit checks) to avoid cross-user key reuse.
 
-      - Keep `response_payload` small and bounded; if responses are large, consider storing a pointer to a storage object (e.g., storage bucket path) instead of inlining large blobs in the row.
+    - Keep `response_payload` small and bounded; if responses are large, consider storing a pointer to a storage object (e.g., storage bucket path) instead of inlining large blobs in the row.
 
     - Tests: add integration tests exercising concurrent retries, conflict paths (insert conflict -> return stored payload), and verifying that mutations are applied exactly once for a given idempotency key.
+
+    ````
 
   - Add soft delete handling with deleted_at timestamps
   - Write integration tests for Edge Functions with various sync scenarios
