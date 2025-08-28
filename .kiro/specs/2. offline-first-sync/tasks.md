@@ -110,15 +110,15 @@
     ```jsonc
     {
       "changes": {
-        "created": [...],  // New records from active query
-        "updated": [...],  // Modified records from active query
-        "deleted": [...]   // Record IDs from tombstones query
+        "created": [], // New records from active query
+        "updated": [], // Modified records from active query
+        "deleted": [], // Record IDs from tombstones query
       },
-      "timestamp": 1704110400000,  // server_timestamp (epoch ms)
+      "timestamp": 1704110400000, // server_timestamp (epoch ms)
       "cursors": {
-        "active_cursor": "(1704106740000, uuid-123)",  // null if active pagination complete
-        "tombstone_cursor": "(1704106680000, uuid-456)"  // null if tombstone pagination complete
-      }
+        "active_cursor": "(1704106740000, uuid-123)", // null if active pagination complete
+        "tombstone_cursor": "(1704106680000, uuid-456)", // null if tombstone pagination complete
+      },
     }
     ```
 
@@ -218,7 +218,7 @@
 
     -- Allow SELECT only for the owning user or trusted roles
 
-    ````sql
+  ````sql
     /*
     NOTE: PostgreSQL does NOT support `CREATE POLICY IF NOT EXISTS`.
     Using `CREATE POLICY IF NOT EXISTS` in migrations will fail.
@@ -310,11 +310,11 @@
     CREATE EXTENSION IF NOT EXISTS pg_cron;
 
     -- Schedule a daily job at 03:00 to delete old idempotency rows
-    SELECT cron.schedule(
-    'daily_cleanup_sync_idempotency',
-    '0 3 \* \* \*',
-    $$DELETE FROM public.sync_idempotency WHERE updated_at < now() - interval '90 days'$$
-    );
+  SELECT cron.schedule(
+  'daily_cleanup_sync_idempotency',
+  '0 3 * * *',
+  $$DELETE FROM public.sync_idempotency WHERE updated_at < now() - interval '90 days'$$
+  );
 
     -- Alternative (recommended for hosted DBs without pg_cron): create a
     -- small server-side scheduled job (for example an Edge Function or a
@@ -362,9 +362,9 @@
       -- if insert returned no rows: the key already exists - fetch stored response
       SELECT response_payload FROM sync_idempotency
       WHERE user_id = $1 AND idempotency_key = $2;
-    ````
+    ```sql
 
-    -- NOTE: Optional stricter variant
+  -- NOTE: Optional stricter variant
     /\*
     To guarantee deduplication only for identical requests, include a
     request_hash on insert and, when the key already exists, lock the
@@ -420,7 +420,7 @@
       RETURN NEW;
     END;
     $$;
-    ```
+  ```sql
 
     Example trigger creation (idempotent pattern, run for each synced table):
 
@@ -443,111 +443,111 @@
       );
     END;
     $$;
-    ```
+  ````
 
-    Notes on idempotency and deployment:
+  Notes on idempotency and deployment:
 
-    - `CREATE OR REPLACE FUNCTION` makes the function deployment idempotent.
-    - `DROP TRIGGER IF EXISTS` (or the DO block pattern above) ensures the trigger can be re-created safely.
-    - Run the function + trigger creation as part of your schema migration pipeline or a one-off deployment script for each synced table.
+  - `CREATE OR REPLACE FUNCTION` makes the function deployment idempotent.
+  - `DROP TRIGGER IF EXISTS` (or the DO block pattern above) ensures the trigger can be re-created safely.
+  - Run the function + trigger creation as part of your schema migration pipeline or a one-off deployment script for each synced table.
 
-    Example test cases (plain SQL - fails with RAISE EXCEPTION on assertion failure):
+  Example test cases (plain SQL - fails with RAISE EXCEPTION on assertion failure):
 
-    ```sql
-    -- Example test script for public.sync_test_items
-    -- 0) Enable pgcrypto extension for gen_random_uuid() function
-    CREATE EXTENSION IF NOT EXISTS pgcrypto;
+  ```sql
+  -- Example test script for public.sync_test_items
+  -- 0) Enable pgcrypto extension for gen_random_uuid() function
+  CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-    -- 1) Create a test table (idempotent)
-    CREATE TABLE IF NOT EXISTS public.sync_test_items (
-      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-      data text,
-      created_at timestamptz NOT NULL DEFAULT now(),
-      updated_at timestamptz
-    );
+  -- 1) Create a test table (idempotent)
+  CREATE TABLE IF NOT EXISTS public.sync_test_items (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    data text,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz
+  );
 
-    -- 2) Ensure function & trigger exist for this table (use the same idempotent pattern above)
-    -- (Assume set_updated_at() created already via migration)
-    DROP TRIGGER IF EXISTS trg_sync_test_items_updated_at ON public.sync_test_items;
-    CREATE TRIGGER trg_sync_test_items_updated_at
-      BEFORE INSERT OR UPDATE ON public.sync_test_items
-      FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+  -- 2) Ensure function & trigger exist for this table (use the same idempotent pattern above)
+  -- (Assume set_updated_at() created already via migration)
+  DROP TRIGGER IF EXISTS trg_sync_test_items_updated_at ON public.sync_test_items;
+  CREATE TRIGGER trg_sync_test_items_updated_at
+    BEFORE INSERT OR UPDATE ON public.sync_test_items
+    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
-    -- 3) Tests: INSERT sets updated_at within reasonable bounds; UPDATE advances updated_at
-    DO $$
-    DECLARE
-      t_before timestamptz := now();
-      insert_row record;
-      after_insert timestamptz;
-      after_update timestamptz;
-    BEGIN
-      -- Insert a row (client does not set updated_at)
-      INSERT INTO public.sync_test_items (data) VALUES ('first') RETURNING id, updated_at INTO insert_row;
-      after_insert := now();
+  -- 3) Tests: INSERT sets updated_at within reasonable bounds; UPDATE advances updated_at
+  DO $$
+  DECLARE
+    t_before timestamptz := now();
+    insert_row record;
+    after_insert timestamptz;
+    after_update timestamptz;
+  BEGIN
+    -- Insert a row (client does not set updated_at)
+    INSERT INTO public.sync_test_items (data) VALUES ('first') RETURNING id, updated_at INTO insert_row;
+    after_insert := now();
 
-      -- Assert updated_at within bounds [t_before, after_insert]
-      IF NOT (insert_row.updated_at >= t_before AND insert_row.updated_at <= after_insert) THEN
-        RAISE EXCEPTION 'INSERT: updated_at out of expected bounds: % not in [% , %]', insert_row.updated_at, t_before, after_insert;
-      END IF;
+    -- Assert updated_at within bounds [t_before, after_insert]
+    IF NOT (insert_row.updated_at >= t_before AND insert_row.updated_at <= after_insert) THEN
+      RAISE EXCEPTION 'INSERT: updated_at out of expected bounds: % not in [% , %]', insert_row.updated_at, t_before, after_insert;
+    END IF;
 
-      -- Short sleep to ensure timestamp delta on update (optional)
-      PERFORM pg_sleep(0.01);
+    -- Short sleep to ensure timestamp delta on update (optional)
+    PERFORM pg_sleep(0.01);
 
-      -- Update the row and verify updated_at increased
-      UPDATE public.sync_test_items SET data = 'second' WHERE id = insert_row.id RETURNING updated_at INTO insert_row;
-      after_update := now();
+    -- Update the row and verify updated_at increased
+    UPDATE public.sync_test_items SET data = 'second' WHERE id = insert_row.id RETURNING updated_at INTO insert_row;
+    after_update := now();
 
-      IF NOT (insert_row.updated_at >= after_insert) THEN
-        RAISE EXCEPTION 'UPDATE: updated_at did not advance: % < %', insert_row.updated_at, after_insert;
-      END IF;
-    END;
-    $$;
+    IF NOT (insert_row.updated_at >= after_insert) THEN
+      RAISE EXCEPTION 'UPDATE: updated_at did not advance: % < %', insert_row.updated_at, after_insert;
+    END IF;
+  END;
+  $$;
 
-    -- 4) Pull-window behavior test: ensure rows fall into/out of the pull window defined as
-    --    updated_at > lastPulledAt AND updated_at <= server_timestamp
-    DO $$
-    DECLARE
-      lastPulledAt timestamptz;
-      server_ts timestamptz;
-      included_count int;
-      excluded_count int;
-      r record;
-    BEGIN
-      -- Make a fresh row and capture a deterministic window
-      lastPulledAt := now() - interval '1 minute';
-      server_ts := now();
-      INSERT INTO public.sync_test_items (data) VALUES ('window-test') RETURNING id, updated_at INTO r;
+  -- 4) Pull-window behavior test: ensure rows fall into/out of the pull window defined as
+  --    updated_at > lastPulledAt AND updated_at <= server_timestamp
+  DO $$
+  DECLARE
+    lastPulledAt timestamptz;
+    server_ts timestamptz;
+    included_count int;
+    excluded_count int;
+    r record;
+  BEGIN
+    -- Make a fresh row and capture a deterministic window
+    lastPulledAt := now() - interval '1 minute';
+    server_ts := now();
+    INSERT INTO public.sync_test_items (data) VALUES ('window-test') RETURNING id, updated_at INTO r;
 
-      -- Row should be included when lastPulledAt is before updated_at and server_ts after it
-      SELECT count(*) INTO included_count FROM public.sync_test_items
-        WHERE updated_at > lastPulledAt AND updated_at <= server_ts AND id = r.id;
-      IF included_count <> 1 THEN
-        RAISE EXCEPTION 'PULL-WINDOW: expected row to be included (count=%)', included_count;
-      END IF;
+    -- Row should be included when lastPulledAt is before updated_at and server_ts after it
+    SELECT count(*) INTO included_count FROM public.sync_test_items
+      WHERE updated_at > lastPulledAt AND updated_at <= server_ts AND id = r.id;
+    IF included_count <> 1 THEN
+      RAISE EXCEPTION 'PULL-WINDOW: expected row to be included (count=%)', included_count;
+    END IF;
 
-      -- Now set lastPulledAt after the row's updated_at and expect it to be excluded
-      -- Use the previously captured server_ts so the window upper-bound is deterministic
-      lastPulledAt := server_ts + interval '1 second';
-      SELECT count(*) INTO excluded_count FROM public.sync_test_items
-        WHERE updated_at > lastPulledAt AND updated_at <= server_ts AND id = r.id;
-      IF excluded_count <> 0 THEN
-        RAISE EXCEPTION 'PULL-WINDOW: expected row to be excluded when lastPulledAt > updated_at (count=%)', excluded_count;
-      END IF;
-    END;
-    $$;
-    ```
+    -- Now set lastPulledAt after the row's updated_at and expect it to be excluded
+    -- Use the previously captured server_ts so the window upper-bound is deterministic
+    lastPulledAt := server_ts + interval '1 second';
+    SELECT count(*) INTO excluded_count FROM public.sync_test_items
+      WHERE updated_at > lastPulledAt AND updated_at <= server_ts AND id = r.id;
+    IF excluded_count <> 0 THEN
+      RAISE EXCEPTION 'PULL-WINDOW: expected row to be excluded when lastPulledAt > updated_at (count=%)', excluded_count;
+    END IF;
+  END;
+  $$;
+  ```
 
-    Expected behavior:
+  Expected behavior:
 
-    - On INSERT: the trigger always sets `updated_at := now()` (server-authoritative).
-    - On UPDATE: the trigger always sets `updated_at := now()` (server-authoritative).
-    - Pull window selection using `updated_at > lastPulledAt AND updated_at <= server_timestamp` reliably includes rows modified in the window and excludes rows outside it.
+  - On INSERT: the trigger always sets `updated_at := now()` (server-authoritative).
+  - On UPDATE: the trigger always sets `updated_at := now()` (server-authoritative).
+  - Pull window selection using `updated_at > lastPulledAt AND updated_at <= server_timestamp` reliably includes rows modified in the window and excludes rows outside it.
 
-    Testing guidance:
+  Testing guidance:
 
-    - Run the SQL test blocks against a disposable test database or inside CI job with a clean schema.
-    - The DO-blocks raise exceptions on assertion failures so CI will fail on regressions.
-    - Integrate the function/trigger creation into your regular migrations (use `CREATE OR REPLACE FUNCTION` + `DROP TRIGGER IF EXISTS`/`CREATE TRIGGER`) to make deployments idempotent.
+  - Run the SQL test blocks against a disposable test database or inside CI job with a clean schema.
+  - The DO-blocks raise exceptions on assertion failures so CI will fail on regressions.
+  - Integrate the function/trigger creation into your regular migrations (use `CREATE OR REPLACE FUNCTION` + `DROP TRIGGER IF EXISTS`/`CREATE TRIGGER`) to make deployments idempotent.
 
 - [ ] 5. Implement error handling and retry logic
 
