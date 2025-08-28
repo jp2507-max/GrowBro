@@ -1694,6 +1694,7 @@ interface AnalyticsEvents {
   notif_scheduled: { taskId: string; exact: boolean };
   notif_delivered: { taskId: string; deliveryLatencyMs: number };
   notif_missed: { taskId: string; reason: string };
+  notif_cancelled: { notificationId: string };
 
   // Sync performance
   sync_latency_ms: { operation: 'pull' | 'push'; durationMs: number };
