@@ -206,31 +206,67 @@ class IdempotencyService {
     function deterministicStringify(value: any): string {
       if (value === null) return 'null';
       const t = typeof value;
-      if (t === 'number' || t === 'boolean') return String(value);
+
+      // Numbers: mirror JSON.stringify semantics
+      if (t === 'number') {
+        if (!Number.isFinite(value) || Number.isNaN(value)) return 'null';
+        const normalized = Object.is(value, -0) ? 0 : value; // normalize -0 to 0
+        return String(normalized);
+      }
+
+      // BigInt: JSON.stringify throws
+      if (t === 'bigint') {
+        throw new TypeError('Do not know how to serialize a BigInt');
+      }
+
+      if (t === 'boolean') return String(value);
       if (t === 'string') return JSON.stringify(value);
 
       if (Array.isArray(value)) {
-        // Arrays are order-sensitive; serialize each item in order
+        // Arrays are order-sensitive; JSON serializes undefined/function/symbol as null
         return (
-          '[' + value.map((v) => deterministicStringify(v)).join(',') + ']'
+          '[' +
+          value
+            .map((v) => {
+              const vt = typeof v;
+              if (v === undefined || vt === 'function' || vt === 'symbol') {
+                return 'null';
+              }
+              return deterministicStringify(v);
+            })
+            .join(',') +
+          ']'
         );
       }
 
       if (t === 'object') {
+        // Honor toJSON if present, like JSON.stringify
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const anyVal: any = value;
+        if (anyVal && typeof anyVal.toJSON === 'function') {
+          return deterministicStringify(anyVal.toJSON());
+        }
+
         const keys = Object.keys(value).sort();
-        return (
-          '{' +
-          keys
-            .map(
-              (k) => JSON.stringify(k) + ':' + deterministicStringify(value[k])
-            )
-            .join(',') +
-          '}'
-        );
+        const parts: string[] = [];
+        for (const k of keys) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const v = (value as any)[k];
+          const vt = typeof v;
+          // Omit properties with undefined/function/symbol values
+          if (v === undefined || vt === 'function' || vt === 'symbol') continue;
+          parts.push(JSON.stringify(k) + ':' + deterministicStringify(v));
+        }
+        return '{' + parts.join(',') + '}';
       }
 
-      // Fallback for other types (undefined, functions, symbols) - treat as null
-      return 'null';
+      // Top-level undefined/function/symbol -> align with JSON behavior (undefined)
+      if (t === 'undefined' || t === 'function' || t === 'symbol') {
+        return 'undefined';
+      }
+
+      // Fallback: defer to JSON.stringify to avoid collisions
+      return JSON.stringify(value);
     }
 
     const normalized = deterministicStringify(payload);
@@ -287,7 +323,7 @@ class OperationFailedError extends Error {
 | Missing Idempotency-Key | 400         | `{"error": "Missing Idempotency-Key header"}`                       | Fix request, retry  |
 | Invalid key format      | 400         | `{"error": "Invalid Idempotency-Key format"}`                       | Fix request, retry  |
 | Conflicting payload     | 422         | `{"error": "Idempotency key reused with different payload"}`        | Generate new key    |
-| Still processing        | 409         | `{"error": "Request already being processed", "retry_after": 1000}` | Wait and retry      |
+| Still processing        | 409         | `{"error": "Request already being processed"}` + Retry-After header | Wait and retry      |
 | Previously failed       | 422         | `{"error": "Operation previously failed", "details": {...}}`        | Generate new key    |
 | Server error            | 5xx         | Standard error response                                             | Retry with same key |
 
@@ -327,6 +363,35 @@ class IdempotencyKeyGenerator {
 }
 ```
 
+### HTTP utilities
+
+```typescript
+/**
+ * parseRetryAfter parses a Retry-After header value and returns milliseconds.
+ * Accepts either a number of seconds (as string or number) or an HTTP-date string.
+ * - If the header is a string containing only digits, interpret as seconds.
+ * - Otherwise, attempt to parse as an HTTP-date and return the delta from now in ms.
+ * - Returns NaN if parsing fails.
+ */
+function parseRetryAfter(header?: string | number | null): number {
+  if (header == null) return NaN;
+  // If numeric (e.g. "60"), treat as seconds
+  const str = String(header).trim();
+  if (/^\d+$/.test(str)) {
+    return parseInt(str, 10) * 1000;
+  }
+
+  // Try to parse as HTTP-date
+  const parsed = Date.parse(str);
+  if (!isNaN(parsed)) {
+    const delta = parsed - Date.now();
+    return Math.max(0, delta);
+  }
+
+  return NaN;
+}
+```
+
 ### Retry Logic
 
 ```typescript
@@ -353,9 +418,11 @@ class OutboxProcessor {
       }
 
       if (error.status === 409) {
-        // Still processing - wait and retry
-        const retryAfter = error.headers['retry-after'] || 1000;
-        await this.scheduleRetry(entry.id, retryAfter);
+        // Still processing - server sets standard Retry-After header (seconds or HTTP-date)
+        // parseRetryAfter converts header string (or numeric string) to milliseconds.
+        const headerValue = error.headers['retry-after'];
+        const retryAfterMs = parseRetryAfter(headerValue) || 1000;
+        await this.scheduleRetry(entry.id, retryAfterMs);
         return;
       }
 
@@ -469,6 +536,11 @@ Limit: 1000 idempotency keys per user per hour.
 ### Row Level Security
 
 ```sql
+-- Enable RLS on idempotency_keys
+ALTER TABLE idempotency_keys ENABLE ROW LEVEL SECURITY;
+-- Enforce RLS for all roles (optional but recommended)
+ALTER TABLE idempotency_keys FORCE ROW LEVEL SECURITY;
+
 -- Users can only access their own idempotency keys
 CREATE POLICY "Users can manage own idempotency keys" ON idempotency_keys
   FOR ALL USING (auth.uid() = user_id);
