@@ -158,10 +158,10 @@ class IdempotencyService {
           SET response_payload = $1,
               status = 'completed',
               expires_at = now() + INTERVAL '${this.COMPLETED_TTL}',
-              error_details = NULL
+              error_details = null
           WHERE idempotency_key = $2 AND user_id = $3 AND endpoint = $4
         `,
-          [JSON.stringify(operationResult), key, userId, endpoint]
+          [operationResult, key, userId, endpoint]
         );
 
         return operationResult;
@@ -193,7 +193,7 @@ class IdempotencyService {
               expires_at = now() + INTERVAL '${this.FAILED_TTL}'
           WHERE idempotency_key = $2 AND user_id = $3 AND endpoint = $4
         `,
-          [JSON.stringify(errorDetails), key, userId, endpoint]
+          [errorDetails, key, userId, endpoint]
         );
       }
 

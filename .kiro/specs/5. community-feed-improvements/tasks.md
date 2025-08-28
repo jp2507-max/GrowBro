@@ -218,6 +218,9 @@
           await this.updateIdempotencyKey(key, userId, endpoint, {
             response_payload: result,
             status: 'completed',
+            // Extend TTL on completion to 24 hours from now to preserve replay window
+            // (aligns with migration/spec guidance)
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
           });
 
           return result;
@@ -226,6 +229,8 @@
           await this.updateIdempotencyKey(key, userId, endpoint, {
             status: 'failed',
             error_details: error?.message ?? String(error),
+            // Extend TTL on failure to 7 days for post-mortem/debugging before cleanup
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           });
           throw error;
         }

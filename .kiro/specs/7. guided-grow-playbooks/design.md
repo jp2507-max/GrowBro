@@ -271,6 +271,13 @@ class Task extends Model {
   @field('timezone') timezone?: string; // IANA zone name (optional)
 
   @field('recurrence_rule') recurrenceRule?: string; // RFC 5545 RRULE
+  // Canonical DTSTART for recurrence processing stored separately from RRULE.
+  // We persist both local and UTC representations for deterministic, cross-device
+  // calculations and display, plus the IANA timezone used to interpret local times.
+  // These fields are the authoritative DTSTART when evaluating `recurrenceRule`.
+  @field('recurrence_start_local') recurrenceStartLocal?: string; // local datetime string (e.g., 2025-08-27T09:00)
+  @field('recurrence_start_utc') recurrenceStartUtc?: string; // UTC ISO datetime string (e.g., 2025-08-27T16:00:00Z)
+  @field('recurrence_timezone') recurrenceTimezone?: string; // IANA timezone identifier
 
   // Notification reminder times (replaces legacy `reminder_at`):
   // - reminderAtLocal: local datetime or local time string used for display/scheduling defaults
@@ -324,6 +331,13 @@ class NotificationError extends Error {
     public taskId?: string
   ) {
     super(message);
+  }
+}
+
+class InvalidTaskTimestampError extends Error {
+  constructor(taskId: string, message: string) {
+    super(`Invalid timestamp for task ${taskId}: ${message}`);
+    this.name = 'InvalidTaskTimestampError';
   }
 }
 
@@ -651,14 +665,14 @@ Notes about behavior and limitations:
 
 Storage recommendation:
 
-- Persist `recurrence_rule` (RRULE string), `recurrence_start` (ISO DTSTART), and `recurrence_timezone` (IANA tz) as separate columns on the `tasks` table. This avoids relying on fragile parsing of TZID inside RRULEs and makes scheduling deterministic across devices.
+- Persist `recurrence_rule` (RRULE string), `recurrence_start_local` (local DTSTART), `recurrence_start_utc` (UTC DTSTART), and `recurrence_timezone` (IANA tz) as separate columns on the `tasks` table. This avoids relying on fragile parsing of TZID inside RRULEs and makes scheduling deterministic across devices.
 
 DTSTART/TZID generation/enforcement:
 
 - When creating a rule from a template the system will:
   - Require an explicit start date/time (DTSTART) for recurring tasks. If the user doesn't provide one, generate a sensible default from the plant/phase anchor and the user's timezone.
-  - Persist DTSTART as an ISO 8601 string together with the IANA timezone name.
-  - Use `luxon` to convert DTSTART to UTC for library computations (next occurrence, serializing exception dates, etc.).
+  - Persist DTSTART as both a local datetime (`recurrence_start_local`) and UTC ISO datetime (`recurrence_start_utc`) together with the IANA timezone name (`recurrence_timezone`).
+  - Use `luxon` to convert the canonical DTSTART to UTC for library computations (next occurrence, serializing exception dates, etc.).
 
 This approach centralizes timezone handling, avoids depending on non-standard TZID parsing in RRULE strings, and makes recurrence computations reproducible across clients.
 
@@ -749,20 +763,37 @@ class NotificationManager implements NotificationScheduler {
 
     const canUseExact = await this.canUseExactAlarms();
 
-    // Choose which timestamp to use when creating the trigger.
-    // Some notification systems / native APIs expect UTC-based timestamps, others expect local
-    // timestamps. The Task model stores both representations to make this explicit.
-    // - Use `task.reminderAtUtc` when the notification API expects UTC moments
-    // - Use `task.reminderAtLocal` when it expects local-time instants
-  // Implementations should replace `this.notificationExpectsUtc` with the real probe
-  // or config flag that reflects the platform/bridge behavior. Resolve it robustly
-  // so boolean, sync function, or async function probes are supported and don't
-  // cause runtime ReferenceErrors.
-  const expectsUtc = await this.resolveNotificationExpectsUtc();
-  const reminderTimestamp = expectsUtc ? task.reminderAtUtc : task.reminderAtLocal;
+    // 1. Resolve expectsUtc as now
+    const expectsUtc = await this.resolveNotificationExpectsUtc();
+
+    // 2. Pick reminderTimestamp = expectsUtc ? task.reminderAtUtc : task.reminderAtLocal
+    let reminderTimestamp = expectsUtc ? task.reminderAtUtc : task.reminderAtLocal;
+
+    // 3. If that value is missing, deterministically fall back to the corresponding dueAtUtc/dueAtLocal
+    if (!reminderTimestamp) {
+      reminderTimestamp = expectsUtc ? task.dueAtUtc : task.dueAtLocal;
+    }
+
+    // 4. If both reminder and due timestamps are missing, throw a typed, descriptive error
+    if (!reminderTimestamp) {
+      throw new InvalidTaskTimestampError(
+        task.id,
+        `Both reminder timestamp (${expectsUtc ? 'reminderAtUtc' : 'reminderAtLocal'}) and fallback due timestamp (${expectsUtc ? 'dueAtUtc' : 'dueAtLocal'}) are missing or null`
+      );
+    }
+
+    // Convert to Date if it's a string and validate
+    const timestamp = reminderTimestamp instanceof Date ? reminderTimestamp : new Date(reminderTimestamp);
+
+    if (isNaN(timestamp.getTime())) {
+      throw new InvalidTaskTimestampError(
+        task.id,
+        `Invalid date format: ${reminderTimestamp}`
+      );
+    }
 
     const trigger = this.createTrigger(
-      reminderTimestamp,
+      timestamp,
       task.recurrenceRule,
       canUseExact
     );
@@ -961,16 +992,6 @@ References: Expo Notifications docs (local triggers), rrule.js for recurrence ca
   }
 
   // NOTE: Android 12+ (API 31)
-  async handleDozeMode(): Promise<void> {
-    // Request battery optimization exemption
-    // Implement WorkManager/JobScheduler fallback
-    // Monitor delivery success rates: ≥95% within ±5 min
-    const stats = await this.getDeliveryStats();
-    if (stats.deliveryRate < 0.95) {
-      await this.implementFallbackStrategy();
-    }
-  }
-
   async rehydrateNotifications(): Promise<void> {
     // Called on app start to reschedule future notifications
     const pendingTasks = await this.database.collections
@@ -980,7 +1001,18 @@ References: Expo Notifications docs (local triggers), rrule.js for recurrence ca
 
     for (const task of pendingTasks) {
       if (task.notificationId) {
+        // Existing scheduled reminder: reschedule to ensure freshness
         await this.rescheduleTaskReminder(task);
+      } else {
+        // First-run pending task without a notification — schedule now
+        const scheduledId = await this.scheduleTaskReminder(task);
+        // Guard against race conditions (concurrent runs may have set it)
+        if (!task.notificationId) {
+          await task.update({ notificationId: scheduledId });
+        } else {
+          // If another runner set it meanwhile, avoid double-scheduling
+          await this.cancelTaskReminder(scheduledId);
+        }
       }
     }
   }

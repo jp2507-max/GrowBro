@@ -219,6 +219,7 @@ interface AssessmentResult {
   rawConfidence: number;
   calibratedConfidence: number;
   perImage: Array<{
+    id: string; // identity matching CapturedPhoto.id
     uri: string;
     classId: string;
     conf: number;
@@ -229,6 +230,28 @@ interface AssessmentResult {
   mode: 'device' | 'cloud';
   modelVersion: string;
 }
+
+// NOTE: Serializers/deserializers MUST emit and consume `perImage.id`.
+// `perImage.id` is the canonical photo identity and MUST match the
+// `CapturedPhoto.id` provided by the capture component. Downstream systems
+// (joins, audit logs, analytics) should use `perImage.id` to correlate
+// inference results with stored photos. Do NOT rely on `uri` for identity
+// matching because URIs may be transformed, signed, or proxied during upload.
+
+// Example serialized AssessmentResult (JSON)
+// {
+//   "topClass": { "id": "healthy", "name": "Healthy", ... },
+//   "rawConfidence": 0.92,
+//   "calibratedConfidence": 0.89,
+//   "perImage": [
+//     { "id": "photo-1", "uri": "file://.../img1.jpg", "classId": "healthy", "conf": 0.91, "quality": { "score": 88, "issues": [], "acceptable": true } },
+//     { "id": "photo-2", "uri": "file://.../img2.jpg", "classId": "healthy", "conf": 0.93, "quality": { "score": 90, "issues": [], "acceptable": true } }
+//   ],
+//   "aggregationMethod": "majority-vote",
+//   "processingTimeMs": 412,
+//   "mode": "device",
+//   "modelVersion": "v1.2.0"
+// }
 
 interface AssessmentClass {
   id: string;
