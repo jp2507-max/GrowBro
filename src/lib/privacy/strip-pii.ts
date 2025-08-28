@@ -118,8 +118,11 @@ export function stripPII(playbook: any) {
           typeof step.description === 'string'
             ? sanitizeText(step.description)
             : step.description;
-      if ('schedule' in step)
-        allowed.schedule = stripPIIFromObject(step.schedule);
+      // Preserve recurrence information using model-aligned field `rrule`.
+      // Prefer `step.rrule` when present, otherwise fall back to legacy `step.schedule`.
+      if ('rrule' in step || 'schedule' in step) {
+        allowed.rrule = stripPIIFromObject(step.rrule ?? step.schedule);
+      }
       if (Array.isArray(step.attachments)) {
         allowed.attachments = step.attachments.map((att: any) => {
           const a: AnyObject = {};
