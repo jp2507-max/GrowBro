@@ -1,4 +1,3 @@
-/* eslint-disable react/react-in-jsx-scope */
 import { Env } from '@env';
 import { useColorScheme } from 'nativewind';
 
@@ -30,7 +29,7 @@ export default function Settings() {
           <Text className="text-xl font-bold">
             {translate('settings.title')}
           </Text>
-          <ItemsContainer title="settings.generale">
+          <ItemsContainer title="settings.general">
             <LanguageItem />
             <ThemeItem />
           </ItemsContainer>

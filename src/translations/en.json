@@ -1,13 +1,37 @@
 {
+  "common": {
+    "ok": "OK"
+  },
   "onboarding": {
     "message": "Welcome to obytes app site"
+  },
+  "privacy": {
+    "analytics": {
+      "body": "Help us improve the app with usage analytics.",
+      "subtitle": "Help us improve the app with usage analytics",
+      "title": "Analytics"
+    },
+    "crashReporting": {
+      "body": "Help us fix bugs by sending crash reports.",
+      "subtitle": "Help us fix bugs by sending crash reports",
+      "title": "Crash Reporting"
+    },
+    "personalized": {
+      "body": "This includes IP addresses, user IDs, and other identifying information that helps us provide better error reports and analytics. This data is handled according to our privacy policy.",
+      "title": "Personalized Data"
+    },
+    "sessionReplay": {
+      "body": "Session replay records your app interactions to help us debug issues. Sensitive data is filtered or redacted where possible; see Privacy Policy for details.",
+      "title": "Session Replay"
+    }
   },
   "settings": {
     "about": "About",
     "app_name": "App Name",
     "arabic": "Arabic",
     "english": "English",
-    "generale": "General",
+    "general": "General",
+    "german": "German",
     "github": "Github",
     "language": "Language",
     "links": "Links",

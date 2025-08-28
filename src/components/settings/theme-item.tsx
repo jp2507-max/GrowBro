@@ -3,13 +3,14 @@ import React from 'react';
 import type { OptionType } from '@/components/ui';
 import { Options, useModal } from '@/components/ui';
 import type { ColorSchemeType } from '@/lib';
-import { translate, useSelectedTheme } from '@/lib';
+import { translate, useSelectedLanguage, useSelectedTheme } from '@/lib';
 
 import { Item } from './item';
 
 export const ThemeItem = () => {
   const { selectedTheme, setSelectedTheme } = useSelectedTheme();
   const modal = useModal();
+  const { language } = useSelectedLanguage();
 
   const onSelect = React.useCallback(
     (option: OptionType) => {
@@ -20,12 +21,15 @@ export const ThemeItem = () => {
   );
 
   const themes = React.useMemo(
-    () => [
-      { label: `${translate('settings.theme.dark')} 🌙`, value: 'dark' },
-      { label: `${translate('settings.theme.light')} 🌞`, value: 'light' },
-      { label: `${translate('settings.theme.system')} ⚙️`, value: 'system' },
-    ],
-    []
+    () => (
+      void language,
+      [
+        { label: `${translate('settings.theme.dark')} 🌙`, value: 'dark' },
+        { label: `${translate('settings.theme.light')} 🌞`, value: 'light' },
+        { label: `${translate('settings.theme.system')} ⚙️`, value: 'system' },
+      ]
+    ),
+    [language]
   );
 
   const theme = React.useMemo(

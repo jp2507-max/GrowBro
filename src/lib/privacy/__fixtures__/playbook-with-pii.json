@@ -1,0 +1,34 @@
+{
+  "id": "pb_1",
+  "userId": "user-123",
+  "accountId": "acct-456",
+  "title": "John Doe's Grow Plan",
+  "description": "Contact me at john.doe@example.com or +1 555-123-4567. Device SN: SN-ABC-1234. My IP is 192.168.0.1",
+  "steps": [
+    {
+      "id": "s1",
+      "title": "Water the plants - call jane.smith@example.com",
+      "description": "Use the hose. Phone: 555-987-6543",
+      "schedule": { "cron": "0 9 * * *" },
+      "attachments": [
+        {
+          "filename": "plant.jpg",
+          "mimeType": "image/jpeg",
+          "width": 1024,
+          "height": 768,
+          "exif": {
+            "GPSLatitude": 40.7128,
+            "GPSLongitude": -74.006,
+            "CameraSerialNumber": "CAM12345",
+            "DateTimeOriginal": "2025:08:01 10:00:00"
+          },
+          "hash": "abc123"
+        }
+      ],
+      "metadata": {
+        "macAddress": "AA:BB:CC:DD:EE:FF",
+        "notes": "Called supplier at supplier@example.com"
+      }
+    }
+  ]
+}

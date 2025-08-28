@@ -42,6 +42,14 @@ src
 - React Native Keyboard Controller
 - React Native SVG
 - React Native MMKV
+- Supabase (Backend & Database)
+
+## Supabase Integration
+
+- Use MCP tools for database migrations, schema changes, and backend management
+- Supabase client is configured in `src/lib/supabase.ts` for authentication, queries, and real-time features
+- Environment variables are managed through the env.js system (SUPABASE_URL, SUPABASE_ANON_KEY)
+- AsyncStorage is used for session persistence in React Native
 
 ## Naming Conventions
 
