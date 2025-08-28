@@ -114,13 +114,15 @@
         "updated": [...],  // Modified records from active query
         "deleted": [...]   // Record IDs from tombstones query
       },
-      "timestamp": "2024-01-01T12:00:00Z",  // server_timestamp
+      "timestamp": 1704110400000,  // server_timestamp (epoch ms)
       "cursors": {
-        "active_cursor": "(2024-01-01T11:59:00Z, uuid-123)",  // null if active pagination complete
-        "tombstone_cursor": "(2024-01-01T11:58:00Z, uuid-456)"  // null if tombstone pagination complete
+        "active_cursor": "(1704106740000, uuid-123)",  // null if active pagination complete
+        "tombstone_cursor": "(1704106680000, uuid-456)"  // null if tombstone pagination complete
       }
     }
     ```
+
+    Note: the returned `timestamp` (server_timestamp) is a numeric epoch milliseconds value (Unix ms), not an ISO string. For example, 2024-01-01T12:00:00Z => 1704110400000. Clients must parse and persist this numeric value as `lastPulledAt`. Cursor tokens may include the same epoch-ms timestamps so clients can consistently compare and resume pagination.
 
   **Performance Optimization - Composite Index Requirements:**
 
@@ -141,7 +143,7 @@
   -- Tombstones (soft-deleted rows) for posts
   -- Keep the partial predicate aligned with tombstone scans (deleted_at IS NOT NULL)
   CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_posts_updated_at_id_tombstones
-    ON public.posts (updated_at, id)
+    ON public.posts (deleted_at, id)
     WHERE deleted_at IS NOT NULL;
 
   -- For post_comments table
@@ -152,7 +154,7 @@
   -- Tombstones (soft-deleted rows) for post_comments
   -- Keep the partial predicate aligned with tombstone scans (deleted_at IS NOT NULL)
   CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_post_comments_updated_at_id_tombstones
-    ON public.post_comments (updated_at, id)
+    ON public.post_comments (deleted_at, id)
     WHERE deleted_at IS NOT NULL;
 
   -- For other synced tables, follow the same pattern:

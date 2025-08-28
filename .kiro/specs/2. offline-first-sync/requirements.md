@@ -90,7 +90,7 @@ The Offline-first & Sync feature enables GrowBro users to continue using the app
 
 #### Acceptance Criteria
 
-1. WHEN performing incremental pulls THEN server SHALL filter updated_at > lastPulledAt with cursor/pagination support
+1. WHEN performing incremental pulls THEN server SHALL filter updated_at > lastPulledAt AND updated_at ≤ server_timestamp with cursor/pagination support AND exclude soft-deleted records (deleted_at IS NULL or status != 'deleted')
 2. WHEN push fails mid-batch THEN client SHALL replay from last confirmed item using idempotent operations
 3. WHEN bandwidth is limited THEN the system SHALL prioritize tasks due ≤ 24h and assessments queue (AI Photo Assessments) before community cache
 4. WHEN multiple sync attempts fail THEN the system SHALL implement exponential backoff with Wi-Fi-only and charging constraints via WorkManager/BGTask
@@ -121,7 +121,7 @@ The Offline-first & Sync feature enables GrowBro users to continue using the app
 
 - **Pull request params:** `{ lastPulledAt, schemaVersion, migration }` → response `{ changes: { created: [], updated: [], deleted: [] }, timestamp, cursors: { active_cursor?, tombstone_cursor? } }`
 - **Push request:** `{ changes, lastPulledAt }` → transactional apply, error on mid-air conflicts (forces pull-then-push)
-- **Conflict policy:** LWW by server updated_at; tombstones via deleted_at; pulls use separate queries: active records filter `updated_at > lastPulledAt AND deleted_at IS NULL`, tombstones filter `deleted_at > lastPulledAt AND deleted_at IS NOT NULL`
+- **Conflict policy:** LWW by server updated_at; tombstones via deleted_at; pulls use separate queries: active records filter `updated_at > lastPulledAt AND updated_at ≤ server_timestamp AND deleted_at IS NULL`, tombstones filter `deleted_at > lastPulledAt AND deleted_at ≤ server_timestamp AND deleted_at IS NOT NULL`
 - **UI integration:** Use hasUnsyncedChanges() for UI badges
 
 ### Background Sync Details

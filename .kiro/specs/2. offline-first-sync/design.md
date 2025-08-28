@@ -116,6 +116,8 @@ Notes:
   - iOS: `details.isConnectionExpensive` may be undefined on many iOS versions; use Wi-Fi vs Cellular detection and treat `true` as metered when present.
 
 ```typescript
+type ConnectionType = 'wifi' | 'cellular' | 'ethernet' | 'unknown';
+
 interface NetworkManager {
   // Connectivity state
   isOnline(): boolean;
