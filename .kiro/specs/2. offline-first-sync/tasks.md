@@ -427,24 +427,20 @@
     ```sql
     -- Replace <schema> and <table> with your target schema/table name, e.g. public.posts
     DO $$
+    DECLARE
+      table_name text := 'posts';
+      schema_name text := 'public';
     BEGIN
-      -- Declare identifier variables once and assign the intended schema/table names
-      -- Replace the values below with your target schema and table (for example: schema_name := 'public'; table_name := 'posts')
-      DECLARE
-        table_name text := 'posts';
-        schema_name text := 'public';
-      BEGIN
-        -- Drop existing trigger if present (safe/idempotent)
-        EXECUTE format('DROP TRIGGER IF EXISTS trg_%I_updated_at ON %I.%I;', table_name, schema_name, table_name);
+      -- Drop existing trigger if present (safe/idempotent)
+      EXECUTE format('DROP TRIGGER IF EXISTS trg_%I_updated_at ON %I.%I;', table_name, schema_name, table_name);
 
-        -- Create the trigger using positional %I placeholders. Arguments: (table_name, schema_name)
-        EXECUTE format(
-          'CREATE TRIGGER trg_%1$I_updated_at
-             BEFORE INSERT OR UPDATE ON %2$I.%1$I
-             FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();',
-          table_name, schema_name
-        );
-      END;
+      -- Create the trigger using positional %I placeholders. Arguments: (table_name, schema_name)
+      EXECUTE format(
+        'CREATE TRIGGER trg_%1$I_updated_at
+           BEFORE INSERT OR UPDATE ON %2$I.%1$I
+           FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();',
+        table_name, schema_name
+      );
     END;
     $$;
     ```
@@ -588,8 +584,8 @@
 - [ ] 8. Implement background sync with expo-background-task + expo-task-manager
 
   - Create BackgroundSyncService using `expo-background-task` to schedule opportunistic periodic work and use `expo-task-manager` (TaskManager.defineTask / TaskManager.registerTask) to define the task handlers. Expo SDK 53+ maps scheduling to platform-native schedulers: BGTaskScheduler on iOS and WorkManager on Android.
-  - Replace prior references to `expo-background-fetch` with guidance to use the combination of `expo-background-task` (scheduling) and `expo-task-manager` (task handlers). On iOS, scheduled work is subject to BGTaskScheduler policies and system budget; on Android, WorkManager handles reliable scheduling with battery and network constraints.
-  - Add background task registration and constraint configuration (network type, requiresCharging, isDeviceIdle where available via WorkManager constraints). Scheduling intervals are hints only — the OS decides actual runtime. Provide a user-invokable "Sync now" manual fallback for immediate sync.
+  - Replace prior references to `expo-background-fetch` with guidance to use the combination of `expo-background-task` (scheduling) and `expo-task-manager` (task handlers). On iOS, scheduled work is subject to BGTaskScheduler policies and system budget; on Android, WorkManager underpins scheduling but the Expo JS API exposes limited configuration.
+  - Add background task registration and scheduling. On Android, `expo-background-task`'s JS API only exposes `minimumInterval`; additional WorkManager constraints like `requiresCharging`, `networkType`, or `isDeviceIdle` are not available from JS. If stricter constraints are required, consider a platform-specific native WorkManager implementation or a custom config plugin. Scheduling intervals are hints only — the OS decides actual runtime. Provide a user-invokable "Sync now" manual fallback for immediate sync.
   - Document that execution is opportunistic (OS-scheduled) and add manual "Sync now" fallback for immediate sync when users invoke it in-app.
   - Implement opportunistic background sync with platform limitations handling and graceful no-op when the OS defers execution.
   - Log outcomes for QA (ran/didn't run, duration, reason for deferral) and expose those diagnostics in a developer-only screen.

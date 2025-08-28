@@ -470,7 +470,7 @@ The system uses RFC 5545 compliant RRULE patterns with strict validation and tim
 The above ad-hoc validator is insufficient for full RFC 5545 compliance. We replace it with a library-backed approach (recommended: `rrule` / rrule.js) and explicit semantic checks. The implementation below shows the intended pattern using `rrule` together with `luxon` for timezone-aware DTSTART handling.
 
 ```typescript
-import { RRule, rrulestr } from 'rrule';
+import { RRule, RRuleSet, rrulestr } from 'rrule';
 import { DateTime } from 'luxon';
 
 class RRULEGenerator {
@@ -632,16 +632,37 @@ class RRULEGenerator {
 
     // Example (conceptual):
     try {
-      const rruleObj = rrulestr(rruleString, { forceset: false }) as RRule;
+      // Parse with forceset so EXDATE/RDATE produce an RRuleSet
+      const parsed = rrulestr(rruleString, { forceset: true });
 
-      // If dtstartIso + timezone provided, convert and set as start
-      if (dtstartIso) {
-        const dt = DateTime.fromISO(dtstartIso, { zone: timezone }).toUTC();
-        // rrule.js allows creating an RRule from options including dtstart. Re-create if needed.
-        // For brevity we call rruleObj.after with a JS Date after converting `after` to UTC.
+      // Convert the reference "after" to UTC for consistent comparisons
+      const afterUtc = DateTime.fromJSDate(after).toUTC().toJSDate();
+
+      // If dtstartIso + timezone provided and we got a plain RRule,
+      // re-create the rule with an explicit dtstart so calculations align.
+      if (parsed instanceof RRule) {
+        let rule: RRule = parsed;
+        if (dtstartIso) {
+          const dtstart = DateTime.fromISO(dtstartIso, { zone: timezone })
+            .toUTC()
+            .toJSDate();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const opts: any =
+            (parsed as any).origOptions || (parsed as any).options || {};
+          rule = new RRule({ ...opts, dtstart });
+        }
+        const next = rule.after(afterUtc, false);
+        return next ? new Date(next) : null;
       }
 
-      const next = (rruleObj as any).after(after, false);
+      // If we got a set (due to EXDATE/RDATE), use the set directly so exceptions are respected
+      if (parsed instanceof RRuleSet) {
+        const next = parsed.after(afterUtc, false);
+        return next ? new Date(next) : null;
+      }
+
+      // Fallback: attempt generic .after if type guards fail
+      const next = (parsed as any).after?.(afterUtc, false);
       return next ? new Date(next) : null;
     } catch (err) {
       throw new RRULEError(
@@ -1383,7 +1404,7 @@ class CommunityTemplateService {
   //    matches an email, phone, ip, mac, or serial pattern anywhere in the
   //    object tree, replace it with the corresponding placeholder above.
   // 6) Preserve normalized step schema: each step should keep only these
-  //    fields: `id`, `title`, `description` (sanitized), `schedule`,
+  //    fields: `id`, `title`, `description` (sanitized), `rrule`,
   //    `attachments` (sanitized per rule 3), and `metadata` (with PII
   //    removed). Remove any other non-schema keys from steps.
   // 7) Determinism: Hashing must be deterministic and stable across
@@ -1496,7 +1517,7 @@ class CommunityTemplateService {
           id: s.id,
           title: redactText(s.title),
           description: redactText(s.description ?? s.descriptionIcu),
-          schedule: s.schedule ?? s.rrule ?? undefined,
+          rrule: s.rrule ?? s.schedule ?? undefined,
           attachments: Array.isArray(s.attachments)
             ? s.attachments.map(sanitizeAttachment)
             : undefined,
