@@ -217,12 +217,16 @@
       ```
 
     -- Allow SELECT only for the owning user or trusted roles
-    /_ NOTE: PostgreSQL does NOT support `CREATE POLICY IF NOT EXISTS`.
+
+    ````sql
+    /*
+    NOTE: PostgreSQL does NOT support `CREATE POLICY IF NOT EXISTS`.
     Using `CREATE POLICY IF NOT EXISTS` in migrations will fail.
     Recommended pattern for idempotent migrations is to first
     DROP POLICY IF EXISTS <policy_name> ON <schema>.<table>;
     then CREATE POLICY <policy_name> ...;
-    Example replacement shown later in this document. _/
+    Example replacement shown later in this document.
+    */
     DROP POLICY IF EXISTS sync_idempotency_select_policy ON public.sync_idempotency;
     CREATE POLICY sync_idempotency_select_policy
     ON public.sync_idempotency
@@ -328,8 +332,6 @@
     -- - Use the trusted DB role (e.g., '<app_db_role>') or a maintenance
     -- service account to run the cleanup if RLS would otherwise block it.
 
-    ````
-
     - Push endpoint flow (transactional, server-side): perform the insert-and-apply-or-return flow inside the same DB transaction that applies the client's mutations to guarantee atomicity. Example high-level algorithm:
 
     1. Begin transaction
@@ -371,21 +373,21 @@
     reusing the stored response. This avoids silently returning a
     previous response for a different payload.
 
-    Caveats:
+  Caveats:
 
-    - Use FOR UPDATE to prevent concurrent races where two different
-      payloads try to claim the same idempotency key.
-    - Choose an error handling strategy (409 vs explicit error code)
-      that your client understands and will retry appropriately.
-      \*/
+  - Use FOR UPDATE to prevent concurrent races where two different
+    payloads try to claim the same idempotency key.
+  - Choose an error handling strategy (409 vs explicit error code)
+    that your client understands and will retry appropriately.
+    \*/
 
-    - Alternatively, use INSERT ... ON CONFLICT (user_id, idempotency_key) DO UPDATE SET response_payload = EXCLUDED.response_payload RETURNING response_payload when you can atomically write the final payload in one statement, but note you still need to coordinate applying mutations in the same transaction so that the stored payload reflects the applied changes.
+  - Alternatively, use INSERT ... ON CONFLICT (user_id, idempotency_key) DO UPDATE SET response_payload = EXCLUDED.response_payload RETURNING response_payload when you can atomically write the final payload in one statement, but note you still need to coordinate applying mutations in the same transaction so that the stored payload reflects the applied changes.
 
-    - Always validate that the `user_id` in the idempotency record matches the authenticated user (RLS or explicit checks) to avoid cross-user key reuse.
+  - Always validate that the `user_id` in the idempotency record matches the authenticated user (RLS or explicit checks) to avoid cross-user key reuse.
 
-    - Keep `response_payload` small and bounded; if responses are large, consider storing a pointer to a storage object (e.g., storage bucket path) instead of inlining large blobs in the row.
+  - Keep `response_payload` small and bounded; if responses are large, consider storing a pointer to a storage object (e.g., storage bucket path) instead of inlining large blobs in the row.
 
-    - Tests: add integration tests exercising concurrent retries, conflict paths (insert conflict -> return stored payload), and verifying that mutations are applied exactly once for a given idempotency key.
+  - Tests: add integration tests exercising concurrent retries, conflict paths (insert conflict -> return stored payload), and verifying that mutations are applied exactly once for a given idempotency key.
 
   - Add soft delete handling with deleted_at timestamps
   - Write integration tests for Edge Functions with various sync scenarios
@@ -426,16 +428,23 @@
     -- Replace <schema> and <table> with your target schema/table name, e.g. public.posts
     DO $$
     BEGIN
-      -- Drop existing trigger if present (safe/idempotent)
-      EXECUTE format('DROP TRIGGER IF EXISTS trg_%I_updated_at ON %I.%I;', '<table>', '<schema>', '<table>');
+      -- Declare identifier variables once and assign the intended schema/table names
+      -- Replace the values below with your target schema and table (for example: schema_name := 'public'; table_name := 'posts')
+      DECLARE
+        table_name text := 'posts';
+        schema_name text := 'public';
+      BEGIN
+        -- Drop existing trigger if present (safe/idempotent)
+        EXECUTE format('DROP TRIGGER IF EXISTS trg_%I_updated_at ON %I.%I;', table_name, schema_name, table_name);
 
-      -- Create the trigger
-      EXECUTE format(
-        'CREATE TRIGGER trg_%1$I_updated_at
-           BEFORE INSERT OR UPDATE ON %2$I.%1$I
-           FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();',
-        '<table>', '<schema>'
-      );
+        -- Create the trigger using positional %I placeholders. Arguments: (table_name, schema_name)
+        EXECUTE format(
+          'CREATE TRIGGER trg_%1$I_updated_at
+             BEFORE INSERT OR UPDATE ON %2$I.%1$I
+             FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();',
+          table_name, schema_name
+        );
+      END;
     END;
     $$;
     ```

@@ -1044,7 +1044,6 @@ class NotificationManager implements NotificationScheduler {
       totalFailed: 4,
     };
   }
-}
 
 <!-- IMPLEMENTATION NOTE: One-shot notification strategy -->
 <!--
@@ -1087,6 +1086,8 @@ References: Expo Notifications docs (local triggers), rrule.js for recurrence ca
     // - Native fallbacks (e.g., WorkManager) can be added in a real impl.
     return Promise.resolve();
   }
+
+}
 
 ```
 
