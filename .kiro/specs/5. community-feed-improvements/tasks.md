@@ -36,7 +36,7 @@
     -- The UNIQUE constraint on (idempotency_key, user_id, endpoint) provides an index for lookups;
     -- avoid creating a redundant non-unique index which wastes space and write overhead.
     -- Cleanup/index: include both completed and failed so the cleanup job can efficiently
-    -- find expired rows regardless of whether they succeeded or failed.
+    -- find expired rows regardless of whether they completed or failed.
     CREATE INDEX idx_idempotency_keys_cleanup ON idempotency_keys (expires_at)
       WHERE status IN ('completed', 'failed');
     CREATE INDEX idx_idempotency_keys_user_recent ON idempotency_keys (user_id, created_at DESC);
@@ -96,7 +96,7 @@
   - [ ] 3.1 Implement community API service with idempotency
 
     - Create CommunityAPI class with all CRUD operations
-    - All mutating endpoints accept Idempotency-Key + client_tx_id headers
+    - All mutating endpoints accept Idempotency-Key + X-Client-Tx-Id headers
     - Implement UPSERT pattern for idempotency key handling. Use an INSERT with an "ON CONFLICT DO UPDATE" no-op
       so the statement always RETURNS a row. Include a computed flag so callers can deterministically tell
       whether the row was just inserted or already existed.
@@ -128,7 +128,7 @@
         TTL, return the stored `response_payload` immediately instead of re-running the operation.
       - If the returned row indicates another in-progress operation (`status = 'processing'`), either
         wait/poll for completion (with a short backoff) or return a 409/202 depending on desired client behavior.
-    - Implement header validation: reject requests with missing/invalid Idempotency-Key or client_tx_id (400 Bad Request)
+    - Implement header validation: reject requests with missing/invalid Idempotency-Key or X-Client-Tx-Id (400 Bad Request)
     - Add exponential backoff retry logic for 5xx errors, linear backoff for 429 rate limits
     - Document retry semantics: clients should retry with same idempotency key for network/server errors
     - _Requirements: 1.5, 1.6, 2.5, 2.6, 9.4, 10.4_
@@ -459,7 +459,7 @@
     - Same idempotency key with same payload returns cached result
     - Same idempotency key with different payload returns 422 Unprocessable Entity
       - Missing Idempotency-Key header returns 400 Bad Request
-      - Invalid client_tx_id format returns 400 Bad Request
+      - Invalid X-Client-Tx-Id format returns 400 Bad Request
       - Expired idempotency key allows new operation
       - Concurrent requests with same key handle race conditions properly
       - Cleanup job removes expired keys without affecting active ones

@@ -95,6 +95,7 @@ interface CaptureComponent {
 }
 
 interface CapturedPhoto {
+  id: string;
   uri: string;
   timestamp: number;
   qualityScore: QualityResult;
@@ -135,7 +136,7 @@ type PhotoMetadata = {
 
 **Interface**:
 
-````typescript
+```typescript
 interface QualityAssessment {
   assessPhoto(uri: string): Promise<QualityResult>;
   validateBatch(photos: CapturedPhoto[]): Promise<BatchQualityResult>;
@@ -160,11 +161,12 @@ interface BatchQualityResult {
   unacceptableCount: number;
   averageScore: number;
   photos: Array<{
-    photoId: string;
+    id: string;
     uri: string;
     qualityResult: QualityResult;
   }>;
 }
+```
 
 ### 3. ML Inference Engine
 
@@ -233,7 +235,7 @@ interface AssessmentClass {
   description: string;
   visualCues: string[];
 }
-````
+```
 
 ### 4. Action Plan Generator
 
@@ -383,7 +385,7 @@ interface AssessmentRecord {
   plant_context: PlantContext;
 
   // Processing data
-  status: 'pending' | 'processing' | 'succeeded' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed';
   inference_mode: 'device' | 'cloud';
   model_version: string;
 

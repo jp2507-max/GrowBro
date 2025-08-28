@@ -161,7 +161,7 @@ interface PostLike {
   created_at: string;
 }
 
-// Outbox Queue Entry
+// Outbox Queue Entry - Canonical Definition
 interface OutboxEntry {
   id: string;
   op: 'LIKE' | 'UNLIKE' | 'COMMENT' | 'DELETE_POST' | 'DELETE_COMMENT';
@@ -170,6 +170,7 @@ interface OutboxEntry {
   idempotency_key: string;
   created_at: string;
   retries: number;
+  next_retry_at?: string;
   status: 'pending' | 'failed' | 'confirmed';
 }
 
@@ -390,6 +391,7 @@ export const outboxSchema = tableSchema({
     { name: 'idempotency_key', type: 'string' },
     { name: 'created_at', type: 'number' },
     { name: 'retries', type: 'number' },
+    { name: 'next_retry_at', type: 'number', isOptional: true },
     { name: 'status', type: 'string' },
   ],
 });
@@ -729,6 +731,14 @@ function handleRealtimeEvent<T>(
 
     // Handle self-echo confirmation
     if (client_tx_id && outbox.has(client_tx_id)) {
+      // Preserve timestamp bookkeeping for this composite key before
+      // confirming our own outbox entry. Use the event commit timestamp
+      // (or the row's commit timestamp if present) so later stale events
+      // won't be applied out of order.
+      const commitTs =
+        event.commit_timestamp || (newRow as any).commit_timestamp;
+      if (commitTs) lastAppliedTimestamps.set(key, commitTs);
+
       outbox.confirm(client_tx_id);
       console.log('Confirmed outbox entry:', client_tx_id);
       return;
@@ -766,6 +776,12 @@ function handleRealtimeEvent<T>(
 
   // Handle self-echo confirmation
   if (client_tx_id && outbox.has(client_tx_id)) {
+    // Ensure we record the commit timestamp for this key before confirming
+    // the outbox entry. This prevents later, older events from overwriting
+    // our just-applied state due to missing timestamp bookkeeping.
+    const commitTs = event.commit_timestamp || (newRow as any).commit_timestamp;
+    if (commitTs) lastAppliedTimestamps.set(key, commitTs);
+
     outbox.confirm(client_tx_id);
     console.log('Confirmed outbox entry:', client_tx_id);
     return; // Don't re-apply our own change
@@ -791,17 +807,7 @@ function handleRealtimeEvent<T>(
 
 ```typescript
 // Enhanced outbox entry processing
-interface OutboxEntry {
-  id: string;
-  op: 'LIKE' | 'UNLIKE' | 'COMMENT' | 'DELETE_POST' | 'DELETE_COMMENT';
-  payload: any;
-  client_tx_id: string;
-  idempotency_key: string; // Unique per operation
-  created_at: string;
-  retries: number;
-  status: 'pending' | 'failed' | 'confirmed';
-  next_retry_at?: string;
-}
+// Note: OutboxEntry interface is defined in the Interface Definitions section above
 
 // Outbox processor with exponential backoff
 class OutboxProcessor {
@@ -814,7 +820,7 @@ class OutboxProcessor {
       // Always include idempotency key and client transaction ID
       const headers = {
         'Idempotency-Key': entry.idempotency_key,
-        'Client-Tx-Id': entry.client_tx_id,
+        'X-Client-Tx-Id': entry.client_tx_id,
       };
 
       await this.executeOperation(entry.op, entry.payload, headers);
@@ -842,19 +848,19 @@ class OutboxProcessor {
         return api.likePost(
           payload.postId,
           headers['Idempotency-Key'],
-          headers['Client-Tx-Id']
+          headers['X-Client-Tx-Id']
         );
       case 'UNLIKE':
         return api.unlikePost(
           payload.postId,
           headers['Idempotency-Key'],
-          headers['Client-Tx-Id']
+          headers['X-Client-Tx-Id']
         );
       case 'COMMENT':
         return api.createComment(
           payload,
           headers['Idempotency-Key'],
-          headers['Client-Tx-Id']
+          headers['X-Client-Tx-Id']
         );
       // ... other operations
     }

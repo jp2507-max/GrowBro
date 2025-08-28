@@ -50,6 +50,8 @@ CREATE INDEX idx_idempotency_keys_user_recent ON idempotency_keys (user_id, crea
 
 ```typescript
 class IdempotencyService {
+  // TTL used for completed idempotency records. Keep in sync with DB schema default.
+  private readonly COMPLETED_TTL = '24 hours';
   async processWithIdempotency<T>(
     key: string,
     clientTxId: string,
@@ -95,6 +97,18 @@ class IdempotencyService {
 
         // Return cached response if completed
         if (record.status === 'completed') {
+          // Refresh TTL for completed records on cache hit to keep them around
+          // for the configured period. Use the same transaction/client (tx)
+          // to avoid races between readers and writers.
+          await tx.query(
+            `
+            UPDATE idempotency_keys
+            SET expires_at = now() + INTERVAL '${this.COMPLETED_TTL}'
+            WHERE idempotency_key = $1 AND user_id = $2 AND endpoint = $3
+          `,
+            [key, userId, endpoint]
+          );
+
           return record.response_payload;
         }
 
@@ -111,7 +125,9 @@ class IdempotencyService {
       await tx.query(
         `
         UPDATE idempotency_keys
-        SET response_payload = $1, status = 'completed'
+        SET response_payload = $1,
+            status = 'completed',
+            expires_at = now() + INTERVAL '${this.COMPLETED_TTL}'
         WHERE idempotency_key = $2 AND user_id = $3 AND endpoint = $4
       `,
         [JSON.stringify(operationResult), key, userId, endpoint]
