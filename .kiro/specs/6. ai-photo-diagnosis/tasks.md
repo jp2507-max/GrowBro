@@ -110,7 +110,7 @@
 
   - [ ] 5.1 Create offline assessment request queue
 
-  - Implement AssessmentRequest model with job state machine (pending → processing → succeeded/failed)
+  - Implement AssessmentRequest model with job state machine (pending → processing → completed/failed)
 
     - Build request queuing system that stores photos, plant context, and timestamps locally
     - Create queue status tracking with user-visible indicators and manual retry options

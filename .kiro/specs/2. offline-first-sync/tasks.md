@@ -75,6 +75,49 @@
 
     3. If returned rows == page_size, return the last row's `(updated_at, id)` as the next cursor (together with the same server_timestamp). If fewer rows are returned, the pull is complete for that server_timestamp. Return the captured `server_timestamp` in the API response so the client can set its new `lastPulledAt` safely to that value.
 
+  **Performance Optimization - Composite Index Requirement:**
+
+  The `ORDER BY updated_at, id` clause in the pagination query requires a composite index on `(updated_at, id)` to avoid full-table scans on large datasets. Without this index, queries will perform sequential scans which can cause significant performance degradation and increased database load during large pulls.
+
+  Create a concurrent composite index for each synced table using the following migration pattern:
+
+  ```sql
+  -- Migration: add composite index for efficient pagination on (updated_at, id)
+  -- This index optimizes the ORDER BY (updated_at, id) clause used in sync pagination
+  -- Run this migration during low-traffic periods to minimize impact
+
+  -- For posts table
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_posts_updated_at_id
+    ON public.posts (updated_at, id)
+    WHERE deleted_at IS NULL;  -- Only index non-deleted records for better performance
+
+  -- For post_comments table
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_post_comments_updated_at_id
+    ON public.post_comments (updated_at, id)
+    WHERE deleted_at IS NULL;  -- Only index non-deleted records for better performance
+
+  -- For other synced tables, follow the same pattern:
+  -- CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_<table>_updated_at_id
+  --   ON <schema>.<table> (updated_at, id)
+  --   WHERE <soft_delete_condition>;
+  ```
+
+  **Migration Deployment Notes:**
+
+  - Use `CONCURRENTLY` to avoid blocking writes during index creation (requires PostgreSQL 8.2+)
+  - Include `IF NOT EXISTS` for idempotent deployments
+  - Add `WHERE deleted_at IS NULL` clause to index only active records, reducing index size and improving query performance
+  - Specify the full `schema.table` name for clarity and to avoid search_path issues
+  - Test index creation in staging before production deployment
+  - Monitor query performance before/after index creation using `EXPLAIN ANALYZE`
+  - Include rollback plan: `DROP INDEX CONCURRENTLY IF EXISTS idx_<table>_updated_at_id;`
+
+  **Index Maintenance:**
+
+  - Monitor index usage with `SELECT * FROM pg_stat_user_indexes WHERE schemaname = 'public';`
+  - Rebuild index if bloat becomes an issue: `REINDEX CONCURRENTLY idx_<table>_updated_at_id;`
+  - Consider index storage parameters for large tables: `WITH (fillfactor = 90)`
+
   - Implement push endpoint: single transaction, apply created → updated → deleted; if server changed since lastPulledAt, abort & error → client must pull then re-push
   - Add RLS enforcement using Authorization header for auth context (create Supabase client from request header)
   - Implement Idempotency-Key support for reliable push operations (return previous result on duplicates). Add the following server-side implementation details to guarantee correctness and atomicity:
@@ -105,7 +148,14 @@
       ALTER TABLE public.sync_idempotency ENABLE ROW LEVEL SECURITY;
 
       -- Allow SELECT only for the owning user or trusted roles
-      CREATE POLICY IF NOT EXISTS sync_idempotency_select_policy
+      <!-- NOTE: PostgreSQL does NOT support `CREATE POLICY IF NOT EXISTS`.
+           Using `CREATE POLICY IF NOT EXISTS` in migrations will fail.
+           Recommended pattern for idempotent migrations is to first
+           DROP POLICY IF EXISTS <policy_name> ON <schema>.<table>;
+           then CREATE POLICY <policy_name> ...;
+           Example replacement shown later in this document. -->
+      DROP POLICY IF EXISTS sync_idempotency_select_policy ON public.sync_idempotency;
+      CREATE POLICY sync_idempotency_select_policy
         ON public.sync_idempotency
         FOR SELECT
         USING (
@@ -117,7 +167,8 @@
       -- Allow INSERT only when the incoming user_id matches auth.uid() or
       -- when performed by a trusted DB role. Use WITH CHECK to validate data on
       -- insertion.
-      CREATE POLICY IF NOT EXISTS sync_idempotency_insert_policy
+      DROP POLICY IF EXISTS sync_idempotency_insert_policy ON public.sync_idempotency;
+      CREATE POLICY sync_idempotency_insert_policy
         ON public.sync_idempotency
         FOR INSERT
         WITH CHECK (
@@ -129,7 +180,8 @@
       -- Allow UPDATE only for owners or trusted roles. WITH CHECK ensures the
       -- new row (after UPDATE) still satisfies policy (e.g., user_id not
       -- changed to another user).
-      CREATE POLICY IF NOT EXISTS sync_idempotency_update_policy
+      DROP POLICY IF EXISTS sync_idempotency_update_policy ON public.sync_idempotency;
+      CREATE POLICY sync_idempotency_update_policy
         ON public.sync_idempotency
         FOR UPDATE
         USING (
@@ -144,7 +196,8 @@
         );
 
       -- Allow DELETE only for owners or trusted roles
-      CREATE POLICY IF NOT EXISTS sync_idempotency_delete_policy
+      DROP POLICY IF EXISTS sync_idempotency_delete_policy ON public.sync_idempotency;
+      CREATE POLICY sync_idempotency_delete_policy
         ON public.sync_idempotency
         FOR DELETE
         USING (
@@ -287,14 +340,7 @@
     DO $$
     BEGIN
       -- Drop existing trigger if present (safe/idempotent)
-      IF EXISTS (
-        SELECT 1 FROM pg_trigger t
-        JOIN pg_class c ON t.tgrelid = c.oid
-        JOIN pg_namespace n ON c.relnamespace = n.oid
-        WHERE t.tgname = 'trg_<table>_updated_at' AND n.nspname = '<schema>'
-      ) THEN
-        EXECUTE format('DROP TRIGGER IF EXISTS trg_%I_updated_at ON %I.%I;', '<table>', '<schema>', '<table>');
-      END IF;
+      EXECUTE format('DROP TRIGGER IF EXISTS trg_%I_updated_at ON %I.%I;', '<table>', '<schema>', '<table>');
 
       -- Create the trigger
       EXECUTE format(
@@ -317,6 +363,9 @@
 
     ```sql
     -- Example test script for public.sync_test_items
+    -- 0) Enable pgcrypto extension for gen_random_uuid() function
+    CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
     -- 1) Create a test table (idempotent)
     CREATE TABLE IF NOT EXISTS public.sync_test_items (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
