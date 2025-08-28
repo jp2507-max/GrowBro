@@ -2,10 +2,19 @@
 
 ## Protocol Requirements
 
-**WatermelonDB Sync Shapes:**
+**WatermelonDB Sync Shapes (WatermelonDB v0.27.1+):**
 
-- pullChanges: `{ lastPulledAt, schemaVersion, migration }` → `{ changes, timestamp }`
-- pushChanges: `{ changes, lastPulledAt }` → transactional apply
+- synchronize() contract (adapter expectations):
+  - pullChanges: required. Signature: `async function pullChanges({ lastPulledAt, schemaVersion, migration }): Promise<{ changes, timestamp }>`
+    - MUST return an object with `changes` (the delta payload) and a server `timestamp` that the client will persist as the new `lastPulledAt` once the pull completes.
+  - pushChanges: optional. Signature: `async function pushChanges({ changes, lastPulledAt }): Promise<void | { applied?: boolean }>`
+    - If provided, the server SHOULD apply client changes transactionally and may return an acknowledgement. Clients MUST handle push failures by performing a pull and retry cycle.
+  - synchronize() now supports an options object passed to the sync adapter with additional optional fields:
+    - `conflictResolver?: (localRecord, remoteRecord) => Record` — client-side resolver used for advanced conflict handling (note: default LWW on server remains recommended)
+    - `migrationsEnabledAtVersion?: number` — flag used to coordinate client-side migration behavior during sync windows
+  - Server-authoritative timestamps using `updated_at` for conflict resolution
+  - RLS enforcement via Authorization header in Edge Functions
+  - Idempotency-Key support for reliable push operations
 - Server-authoritative timestamps using `updated_at` for conflict resolution
 - RLS enforcement via Authorization header in Edge Functions
 - Idempotency-Key support for reliable push operations
@@ -39,6 +48,10 @@
   - Implement NetworkManager using @react-native-community/netinfo
   - Add connectivity state detection (isOnline, isInternetReachable, isMetered)
   - Prefer isInternetReachable + type + details over custom "strength" metrics
+    - Note: import NetInfo from `@react-native-community/netinfo` (keep this import even in Expo-managed apps where NetInfo is available via the community package). When using the `NetInfoState` object, prefer `isInternetReachable` for reliable internet reachability checks (this value may be undefined on some older platforms/implementations; treat undefined as unknown and fall back to `type !== 'none' && type !== 'unknown'`).
+    - Use `details?.isConnectionExpensive` to detect metered connections. Availability notes:
+      - Android: `details.isConnectionExpensive` is generally available and reliable for cellular/064 metering detection (exposed by underlying Android APIs / WorkManager constraints).
+      - iOS: `details.isConnectionExpensive` is only available in recent OS versions and may be undefined; prefer user-facing Wi-Fi vs Cellular checks and treat `isConnectionExpensive === true` as metered, otherwise use conservative defaults.
   - Implement network change event listeners and state management
   - Add network-aware sync policies (block large uploads on metered unless user overrides)
   - Write unit tests for network state transitions and policies
@@ -53,31 +66,65 @@
     SELECT transaction_timestamp() AS server_timestamp;
     ```
 
-    Use a stable window when selecting rows so the server does not miss rows that equal `lastPulledAt`: filter rows with
+    Use a stable window when selecting rows so the server does not miss rows that equal `lastPulledAt`. Implement **two separate queries** to avoid double-counting deleted records:
+
+    **Active Records Query:**
 
     ```sql
     WHERE updated_at > lastPulledAt
       AND updated_at <= server_timestamp
+      AND deleted_at IS NULL  -- Exclude soft-deleted records
     ```
 
-    (and likewise for soft-deletes using `deleted_at > lastPulledAt AND deleted_at <= server_timestamp`).
+    **Tombstones Query (separate pagination):**
+
+    ```sql
+    WHERE deleted_at > lastPulledAt
+      AND deleted_at <= server_timestamp
+      AND deleted_at IS NOT NULL  -- Only soft-deleted records
+    ```
 
     For pagination and stable ordering: order rows by the tuple `(updated_at, id)` and use that same tuple as the cursor. This ensures a deterministic, stable ordering even when multiple rows share the same `updated_at` value. Cursor tokens must include both the last-seen `(updated_at, id)` and the captured `server_timestamp`; tokens are only valid for that captured `server_timestamp` and must not be reused across different transactions/timestamps.
 
     Pseudocode for a paginated pull (within the same transaction and using the captured `server_timestamp`):
 
     1. Capture server_timestamp := transaction_timestamp()
-    2. SELECT ... FROM table
+    2. **Active Records Query** - SELECT ... FROM table
        WHERE (updated_at > lastPulledAt AND updated_at <= server_timestamp)
+       AND deleted_at IS NULL -- Only non-deleted records
        AND ((updated_at, id) > (cursor_updated_at, cursor_id) OR cursor is null)
        ORDER BY updated_at, id
        LIMIT <page_size>;
 
-    3. If returned rows == page_size, return the last row's `(updated_at, id)` as the next cursor (together with the same server_timestamp). If fewer rows are returned, the pull is complete for that server_timestamp. Return the captured `server_timestamp` in the API response so the client can set its new `lastPulledAt` safely to that value.
+    3. **Tombstones Query** (separate pagination) - SELECT id, deleted_at FROM table
+       WHERE (deleted_at > lastPulledAt AND deleted_at <= server_timestamp)
+       AND deleted_at IS NOT NULL -- Only soft-deleted records
+       AND ((deleted_at, id) > (tombstone_cursor_deleted_at, tombstone_cursor_id) OR tombstone_cursor is null)
+       ORDER BY deleted_at, id
+       LIMIT <tombstone_page_size>;
 
-  **Performance Optimization - Composite Index Requirement:**
+    4. Return both result sets with their respective cursors and the same captured `server_timestamp`. If either query returns fewer rows than its page size, that portion of the pull is complete. The client can set its new `lastPulledAt` to the returned `server_timestamp` only when both active records and tombstones are fully paginated.
 
-  The `ORDER BY updated_at, id` clause in the pagination query requires a composite index on `(updated_at, id)` to avoid full-table scans on large datasets. Without this index, queries will perform sequential scans which can cause significant performance degradation and increased database load during large pulls.
+    **API Response Format:**
+
+    ```json
+    {
+      "changes": {
+        "created": [...],  // New records from active query
+        "updated": [...],  // Modified records from active query
+        "deleted": [...]   // Record IDs from tombstones query
+      },
+      "timestamp": "2024-01-01T12:00:00Z",  // server_timestamp
+      "cursors": {
+        "active_cursor": "(2024-01-01T11:59:00Z, uuid-123)",  // null if active pagination complete
+        "tombstone_cursor": "(2024-01-01T11:58:00Z, uuid-456)"  // null if tombstone pagination complete
+      }
+    }
+    ```
+
+  **Performance Optimization - Composite Index Requirements:**
+
+  The separate active records and tombstones queries require different composite indexes to avoid full-table scans on large datasets. Without these indexes, queries will perform sequential scans which can cause significant performance degradation and increased database load during large pulls.
 
   Create a concurrent composite index for each synced table using the following migration pattern:
 
@@ -91,13 +138,26 @@
     ON public.posts (updated_at, id)
     WHERE deleted_at IS NULL;  -- Only index non-deleted records for better performance
 
+  -- Tombstones (soft-deleted rows) for posts
+  -- Keep the partial predicate aligned with tombstone scans (deleted_at IS NOT NULL)
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_posts_updated_at_id_tombstones
+    ON public.posts (updated_at, id)
+    WHERE deleted_at IS NOT NULL;
+
   -- For post_comments table
   CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_post_comments_updated_at_id
     ON public.post_comments (updated_at, id)
     WHERE deleted_at IS NULL;  -- Only index non-deleted records for better performance
 
+  -- Tombstones (soft-deleted rows) for post_comments
+  -- Keep the partial predicate aligned with tombstone scans (deleted_at IS NOT NULL)
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_post_comments_updated_at_id_tombstones
+    ON public.post_comments (updated_at, id)
+    WHERE deleted_at IS NOT NULL;
+
   -- For other synced tables, follow the same pattern:
-  -- CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_<table>_updated_at_id
+  -- CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_<table>_updated_at_id_active
+  -- CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_<table>_deleted_at_id_tombstones
   --   ON <schema>.<table> (updated_at, id)
   --   WHERE <soft_delete_condition>;
   ```
@@ -107,10 +167,15 @@
   - Use `CONCURRENTLY` to avoid blocking writes during index creation (requires PostgreSQL 8.2+)
   - Include `IF NOT EXISTS` for idempotent deployments
   - Add `WHERE deleted_at IS NULL` clause to index only active records, reducing index size and improving query performance
+  - Keep partial predicates exactly aligned with your query predicates so the planner can use the indexes:
+    - Updated-rows scans use `deleted_at IS NULL` (matches `idx_*_updated_at_id`)
+    - Tombstone scans use `deleted_at IS NOT NULL` (matches `idx_*_updated_at_id_tombstones`)
   - Specify the full `schema.table` name for clarity and to avoid search_path issues
   - Test index creation in staging before production deployment
   - Monitor query performance before/after index creation using `EXPLAIN ANALYZE`
-  - Include rollback plan: `DROP INDEX CONCURRENTLY IF EXISTS idx_<table>_updated_at_id;`
+  - Include rollback plan:
+    - `DROP INDEX CONCURRENTLY IF EXISTS idx_<table>_updated_at_id;`
+    - `DROP INDEX CONCURRENTLY IF EXISTS idx_<table>_updated_at_id_tombstones;`
 
   **Index Maintenance:**
 
@@ -291,6 +356,22 @@
         SELECT response_payload FROM sync_idempotency
         WHERE user_id = $1 AND idempotency_key = $2;
         ```
+
+      <!-- NOTE: Optional stricter variant -->
+      <!--
+        To guarantee deduplication only for identical requests, include a
+        request_hash on insert and, when the key already exists, lock the
+        row with FOR UPDATE and compare the stored request_hash to the
+        incoming one. If they differ, return 409 (conflict) rather than
+        reusing the stored response. This avoids silently returning a
+        previous response for a different payload.
+
+        Caveats:
+        - Use FOR UPDATE to prevent concurrent races where two different
+          payloads try to claim the same idempotency key.
+        - Choose an error handling strategy (409 vs explicit error code)
+          that your client understands and will retry appropriately.
+      -->
 
       - Alternatively, use INSERT ... ON CONFLICT (user_id, idempotency_key) DO UPDATE SET response_payload = EXCLUDED.response_payload RETURNING response_payload when you can atomically write the final payload in one statement, but note you still need to coordinate applying mutations in the same transaction so that the stored payload reflects the applied changes.
 
@@ -489,16 +570,17 @@
   - Write tests for image upload queue and backfill operations
   - _Requirements: 3.2, 3.3, 5.1, 7.3_
 
-- [ ] 8. Implement background sync with expo-task-manager + expo-background-fetch
+- [ ] 8. Implement background sync with expo-task-manager + expo-background-task
 
   - Create BackgroundSyncService using `expo-task-manager` and
-    `expo-background-fetch` (SDK 53 workflow)
-  - Add background task registration and constraint configuration
-  - Document that execution is opportunistic (OS-scheduled) and add manual "Sync now" fallback
-  - Implement opportunistic background sync with platform limitations handling
-  - Log outcomes for QA (ran/didn't run, duration)
+    `expo-background-task` (Expo SDK 53+). NOTE: Expo SDK 53+ background scheduling maps to platform-native schedulers: BGTaskScheduler on iOS and WorkManager on Android.
+  - Replace prior references to `expo-background-fetch` with `expo-background-task` which integrates with the OS schedulers. On iOS, tasks are scheduled via BGTaskScheduler and subject to the OS background execution budget; on Android, WorkManager is used for reliable scheduling with battery/network constraints.
+  - Add background task registration and constraint configuration (network type, requiresCharging, isDeviceIdle where available via WorkManager constraints).
+  - Document that execution is opportunistic (OS-scheduled) and add manual "Sync now" fallback for immediate sync when users invoke it in-app.
+  - Implement opportunistic background sync with platform limitations handling and graceful no-op when the OS defers execution.
+  - Log outcomes for QA (ran/didn't run, duration, reason for deferral) and expose those diagnostics in a developer-only screen.
   - Add background sync monitoring and execution logging
-  - Write tests for background sync behavior and constraint enforcement
+  - Write tests for background sync behavior and constraint enforcement (mock BGTaskScheduler/WorkManager behaviors where possible)
   - _Requirements: 2.1, 2.6, 7.4_
 
 - [ ] 9. Create conflict resolution system

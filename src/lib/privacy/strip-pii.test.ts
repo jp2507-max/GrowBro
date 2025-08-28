@@ -1,5 +1,5 @@
 import fixture from './__fixtures__/playbook-with-pii.json';
-import stripPII from './strip-pii';
+import { stripPII } from './strip-pii';
 
 describe('stripPII', () => {
   it('removes top-level ids and PII from text and attachments', () => {

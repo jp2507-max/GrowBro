@@ -107,15 +107,13 @@
             idempotency_key, client_tx_id, user_id, endpoint, payload_hash, response_payload, status, expires_at
           )
 
-      VALUES ($1, $2, $3, $4, $5, NULL, 'processing', now() + INTERVAL '24 hours')
-      ON CONFLICT (idempotency_key, user_id, endpoint) DO UPDATE
-      -- no-op update: set a column to itself (or set idempotency_key = EXCLUDED.idempotency_key).
-      SET payload_hash = idempotency_keys.payload_hash
-      RETURNING \*, (xmax = 0) AS just_inserted;
+          VALUES ($1, $2, $3, $4, $5, NULL, 'processing', now() + INTERVAL '24 hours')
+          ON CONFLICT (idempotency_key, user_id, endpoint) DO UPDATE
+          -- no-op update: set a column to itself (or set idempotency_key = EXCLUDED.idempotency_key).
+          SET payload_hash = idempotency_keys.payload_hash
+          RETURNING *, (xmax = 0) AS just_inserted;
 
-      ```
-
-      ```
+          ```
 
     - Rationale and behavior:
       - Using `DO NOTHING RETURNING` returns no row on conflict which makes it ambiguous whether the

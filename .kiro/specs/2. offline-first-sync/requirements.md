@@ -119,9 +119,9 @@ The Offline-first & Sync feature enables GrowBro users to continue using the app
 
 ### WatermelonDB Sync Protocol
 
-- **Pull request params:** `{ lastPulledAt, schemaVersion, migration }` → response `{ changes, timestamp }`
+- **Pull request params:** `{ lastPulledAt, schemaVersion, migration }` → response `{ changes: { created: [], updated: [], deleted: [] }, timestamp, cursors: { active_cursor?, tombstone_cursor? } }`
 - **Push request:** `{ changes, lastPulledAt }` → transactional apply, error on mid-air conflicts (forces pull-then-push)
-- **Conflict policy:** LWW by server updated_at; tombstones via deleted_at; pulls filter updated_at > lastPulledAt / deleted_at > lastPulledAt
+- **Conflict policy:** LWW by server updated_at; tombstones via deleted_at; pulls use separate queries: active records filter `updated_at > lastPulledAt AND deleted_at IS NULL`, tombstones filter `deleted_at > lastPulledAt AND deleted_at IS NOT NULL`
 - **UI integration:** Use hasUnsyncedChanges() for UI badges
 
 ### Background Sync Details
@@ -129,14 +129,17 @@ The Offline-first & Sync feature enables GrowBro users to continue using the app
 - **Sync triggers:** App start; app foreground; manual; background (subject to platform limits)
 - **Platform constraints:** iOS background fetch only while app is backgrounded; min ~15 min intervals; not guaranteed timing
 - **Fallback:** Provide manual sync button since background timing isn't guaranteed
-- **Preferred approach:** Use `expo-task-manager` to define background tasks and
-  `expo-background-fetch` to schedule opportunistic periodic fetches (SDK 53
-  workflow). `expo-background-fetch` is supported and not deprecated.
+  **Preferred approach:** Use `expo-task-manager` to define background tasks and
+  `expo-background-task` to schedule opportunistic periodic work (Expo SDK 53+
+  integrates with BGTaskScheduler on iOS and WorkManager on Android). Treat
+  scheduling intervals as hints and always provide a manual "Sync now" fallback.
 - **Android constraints:** Use WorkManager-style constraints (Wi-Fi, charging)
 
-### Connectivity & Storage
-
 - **Connectivity detection:** Use @react-native-community/netinfo (Expo NetInfo) as source of truth for online/offline and metered networks
+
+- Notes:
+- Import NetInfo from `@react-native-community/netinfo` (explicit). Prefer `NetInfoState.isInternetReachable` when available to detect real internet access; if `isInternetReachable` is `undefined`, treat as unknown and fall back to `type !== 'none' && type !== 'unknown'`.
+- Use `details?.isConnectionExpensive` to detect metered connections. Availability: Android commonly exposes this reliably; iOS may not on older OS versions — treat `true` as metered when present and use conservative defaults otherwise.
 - **Image storage:** Originals in documentDirectory; thumbnails in cacheDirectory with LRU cap
 - **Storage caps:** cacheDirectory max size (400 MB); never evict documentDirectory without user consent
 

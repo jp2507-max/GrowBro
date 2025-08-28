@@ -19,6 +19,9 @@ CREATE TABLE idempotency_keys (
   -- response_payload is nullable while a request is 'processing'.
   -- Initial INSERTs may set this to NULL and a later UPDATE will fill the final payload.
   response_payload JSONB,
+  -- error_details stores failure information as JSONB when status = 'failed'
+  -- Contains error message, stack trace, and debugging context
+  error_details JSONB,
   status TEXT NOT NULL CHECK (status IN ('completed', 'processing', 'failed')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '24 hours'),
@@ -30,7 +33,9 @@ CREATE TABLE idempotency_keys (
 );
 
 -- Performance indexes
-CREATE INDEX idx_idempotency_keys_lookup ON idempotency_keys (idempotency_key, user_id, endpoint);
+-- NOTE: No separate non-unique lookup index is needed on (idempotency_key, user_id, endpoint)
+-- because the composite UNIQUE constraint above already creates a unique index
+-- covering these columns, which the planner will use for lookups.
 -- Include both completed and failed so the cleanup job can efficiently find expired rows
 CREATE INDEX idx_idempotency_keys_cleanup ON idempotency_keys (expires_at)
   WHERE status IN ('completed', 'failed');
@@ -43,6 +48,30 @@ CREATE INDEX idx_idempotency_keys_user_recent ON idempotency_keys (user_id, crea
 - **TTL Management**: `expires_at` column with automatic cleanup prevents table bloat
 - **Status Tracking**: Handles concurrent processing and provides debugging visibility
 - **Payload Hash**: SHA-256 hash detects conflicting payloads for same idempotency key
+- **Error Details**: JSONB column stores failure information for debugging and monitoring
+- **Extended TTL for Failures**: Failed records retained for 7 days vs 24 hours for completed records
+
+### Error Details Structure
+
+When an operation fails, the `error_details` JSONB column stores structured failure information:
+
+```json
+{
+  "message": "Database connection timeout",
+  "name": "DatabaseTimeoutError",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "stack": "DatabaseTimeoutError: Connection timeout\n    at Database.query...",
+  "endpoint": "/api/posts",
+  "clientTxId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+This enables:
+
+- **Debugging**: Full error context including stack traces
+- **Monitoring**: Error pattern analysis and alerting
+- **Client Support**: Detailed failure information for troubleshooting
+- **Retention**: Extended 7-day TTL for failed records vs 24 hours for completed
 
 ## Server-Side Implementation
 
@@ -52,6 +81,9 @@ CREATE INDEX idx_idempotency_keys_user_recent ON idempotency_keys (user_id, crea
 class IdempotencyService {
   // TTL used for completed idempotency records. Keep in sync with DB schema default.
   private readonly COMPLETED_TTL = '24 hours';
+  // TTL used for failed idempotency records - extended for debugging
+  private readonly FAILED_TTL = '7 days';
+
   async processWithIdempotency<T>(
     key: string,
     clientTxId: string,
@@ -62,81 +94,111 @@ class IdempotencyService {
   ): Promise<T> {
     const payloadHash = await this.computeHash(payload);
 
-    // Atomic UPSERT - single writer semantics
-    const result = await this.db.transaction(async (tx) => {
-      // Try to insert new idempotency key
-      const inserted = await tx.query(
-        `
-  INSERT INTO idempotency_keys
-  (idempotency_key, client_tx_id, user_id, endpoint, payload_hash, response_payload, status)
-  VALUES ($1, $2, $3, $4, $5, NULL, 'processing')
-        ON CONFLICT (idempotency_key, user_id, endpoint) DO NOTHING
-        RETURNING *
-      `,
-        [key, clientTxId, userId, endpoint, payloadHash]
-      );
-
-      if (inserted.length === 0) {
-        // Key already exists - fetch existing record
-        const existing = await tx.query(
+    try {
+      // Atomic UPSERT - single writer semantics
+      const result = await this.db.transaction(async (tx) => {
+        // Try to insert new idempotency key
+        const rows = await tx.query(
           `
-          SELECT * FROM idempotency_keys
-          WHERE idempotency_key = $1 AND user_id = $2 AND endpoint = $3
+    INSERT INTO idempotency_keys
+    (idempotency_key, client_tx_id, user_id, endpoint, payload_hash, response_payload, error_details, status)
+    VALUES ($1, $2, $3, $4, $5, NULL, NULL, 'processing')
+    ON CONFLICT (idempotency_key, user_id, endpoint)
+    DO UPDATE SET
+      -- no-op update to avoid extra roundtrip; prevents race between INSERT and SELECT
+      idempotency_key = idempotency_keys.idempotency_key
+    RETURNING idempotency_keys.*, (xmax = 0) AS was_inserted
         `,
-          [key, userId, endpoint]
+          [key, clientTxId, userId, endpoint, payloadHash]
         );
 
-        const record = existing[0];
+        const record = rows[0];
 
-        // Validate payload hash
-        if (record.payload_hash !== payloadHash) {
-          throw new ConflictingPayloadError(
-            'Idempotency key reused with different payload'
-          );
+        // If existing row, validate and handle cached/failed/processing states
+        if (!record.was_inserted) {
+          if (record.payload_hash !== payloadHash) {
+            throw new ConflictingPayloadError(
+              'Idempotency key reused with different payload'
+            );
+          }
+
+          if (record.status === 'completed') {
+            // Refresh TTL for completed records on cache hit
+            await tx.query(
+              `
+              UPDATE idempotency_keys
+              SET expires_at = now() + INTERVAL '${this.COMPLETED_TTL}'
+              WHERE idempotency_key = $1 AND user_id = $2 AND endpoint = $3
+            `,
+              [key, userId, endpoint]
+            );
+
+            return record.response_payload;
+          }
+
+          if (record.status === 'failed') {
+            throw new OperationFailedError(
+              'Operation previously failed',
+              record.error_details
+            );
+          }
+
+          if (record.status === 'processing') {
+            throw new ProcessingError('Request already being processed');
+          }
         }
 
-        // Return cached response if completed
-        if (record.status === 'completed') {
-          // Refresh TTL for completed records on cache hit to keep them around
-          // for the configured period. Use the same transaction/client (tx)
-          // to avoid races between readers and writers.
-          await tx.query(
-            `
-            UPDATE idempotency_keys
-            SET expires_at = now() + INTERVAL '${this.COMPLETED_TTL}'
-            WHERE idempotency_key = $1 AND user_id = $2 AND endpoint = $3
-          `,
-            [key, userId, endpoint]
-          );
+        // Execute the operation
+        const operationResult = await operation();
 
-          return record.response_payload;
-        }
+        // Store successful result
+        await tx.query(
+          `
+          UPDATE idempotency_keys
+          SET response_payload = $1,
+              status = 'completed',
+              expires_at = now() + INTERVAL '${this.COMPLETED_TTL}',
+              error_details = NULL
+          WHERE idempotency_key = $2 AND user_id = $3 AND endpoint = $4
+        `,
+          [JSON.stringify(operationResult), key, userId, endpoint]
+        );
 
-        // Handle processing state (wait or retry)
-        if (record.status === 'processing') {
-          throw new ProcessingError('Request already being processed');
-        }
+        return operationResult;
+      });
+
+      return result;
+    } catch (error) {
+      // Handle operation failures by storing error details
+      if (
+        !(error instanceof ConflictingPayloadError) &&
+        !(error instanceof ProcessingError) &&
+        !(error instanceof OperationFailedError)
+      ) {
+        const errorDetails = {
+          message: error.message,
+          name: error.constructor.name,
+          timestamp: new Date().toISOString(),
+          stack: error.stack,
+          endpoint,
+          clientTxId,
+        };
+
+        // Store failure details and extend TTL for debugging
+        await this.db.query(
+          `
+          UPDATE idempotency_keys
+          SET status = 'failed',
+              error_details = $1,
+              expires_at = now() + INTERVAL '${this.FAILED_TTL}'
+          WHERE idempotency_key = $2 AND user_id = $3 AND endpoint = $4
+        `,
+          [JSON.stringify(errorDetails), key, userId, endpoint]
+        );
       }
 
-      // Execute the operation
-      const operationResult = await operation();
-
-      // Store successful result
-      await tx.query(
-        `
-        UPDATE idempotency_keys
-        SET response_payload = $1,
-            status = 'completed',
-            expires_at = now() + INTERVAL '${this.COMPLETED_TTL}'
-        WHERE idempotency_key = $2 AND user_id = $3 AND endpoint = $4
-      `,
-        [JSON.stringify(operationResult), key, userId, endpoint]
-      );
-
-      return operationResult;
-    });
-
-    return result;
+      throw error;
+    }
   }
 
   private async computeHash(payload: any): Promise<string> {
@@ -208,12 +270,25 @@ function validateIdempotencyHeaders(req: Request): {
 
 ### Error Handling
 
+```typescript
+class OperationFailedError extends Error {
+  constructor(
+    message: string,
+    public errorDetails?: any
+  ) {
+    super(message);
+    this.name = 'OperationFailedError';
+  }
+}
+```
+
 | Scenario                | HTTP Status | Response                                                            | Client Action       |
 | ----------------------- | ----------- | ------------------------------------------------------------------- | ------------------- |
 | Missing Idempotency-Key | 400         | `{"error": "Missing Idempotency-Key header"}`                       | Fix request, retry  |
 | Invalid key format      | 400         | `{"error": "Invalid Idempotency-Key format"}`                       | Fix request, retry  |
 | Conflicting payload     | 422         | `{"error": "Idempotency key reused with different payload"}`        | Generate new key    |
 | Still processing        | 409         | `{"error": "Request already being processed", "retry_after": 1000}` | Wait and retry      |
+| Previously failed       | 422         | `{"error": "Operation previously failed", "details": {...}}`        | Generate new key    |
 | Server error            | 5xx         | Standard error response                                             | Retry with same key |
 
 ## Client-Side Implementation
@@ -315,7 +390,15 @@ CREATE OR REPLACE FUNCTION cleanup_expired_idempotency_keys()
 RETURNS void AS $$
 DECLARE
   deleted_count integer := 0;
+  failed_count integer := 0;
 BEGIN
+  -- Count failed records before deletion for monitoring
+  SELECT COUNT(*) INTO failed_count
+  FROM idempotency_keys
+  WHERE expires_at < now()
+    AND status = 'failed'
+    AND error_details IS NOT NULL;
+
   DELETE FROM idempotency_keys
   WHERE expires_at < now()
     AND status IN ('completed', 'failed');
@@ -327,12 +410,13 @@ BEGIN
   CREATE TABLE IF NOT EXISTS cleanup_logs (
     table_name text,
     deleted_count integer,
+    failed_records_cleaned integer,
     cleanup_time timestamp with time zone
   );
 
-  -- Log cleanup stats using captured deleted_count
-  INSERT INTO cleanup_logs (table_name, deleted_count, cleanup_time)
-  VALUES ('idempotency_keys', deleted_count, now());
+  -- Log cleanup stats including failed record count for debugging insights
+  INSERT INTO cleanup_logs (table_name, deleted_count, failed_records_cleaned, cleanup_time)
+  VALUES ('idempotency_keys', deleted_count, failed_count, now());
 END;
 $$ LANGUAGE plpgsql;
 ```
@@ -370,6 +454,9 @@ Limit: 1000 idempotency keys per user per hour.
 4. **TTL expiration**: Expired keys allow new operations
 5. **Header validation**: Missing/invalid headers return 400
 6. **Cleanup job**: Removes expired keys without affecting active ones
+7. **Error details storage**: Failed operations store structured error information
+8. **Failed record TTL**: Failed records use extended 7-day retention period
+9. **Error details retrieval**: Previously failed operations return stored error context
 
 ### Integration Tests
 
@@ -415,7 +502,8 @@ CREATE POLICY "Service role can manage all idempotency keys" ON idempotency_keys
 
 ### Database Indexes
 
-- **Lookup index**: Fast key resolution for duplicate detection
+- **Composite unique index (lookup)**: The UNIQUE(idempotency_key, user_id, endpoint) serves
+  all lookup needs; avoid adding a separate non-unique index to prevent extra write overhead
 - **Cleanup index**: Efficient expired key removal
 - **User index**: Rate limiting and user-specific queries
 
