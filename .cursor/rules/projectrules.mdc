@@ -47,6 +47,7 @@ src
 - React Native SVG
 - React Native MMKV
 - Supabase (Backend & Database)
+- WatermelonDB (local database)
 
 ## Supabase Integration
 

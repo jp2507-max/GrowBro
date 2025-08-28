@@ -148,3 +148,10 @@
   - Implement release gates: no P1 issues, all metrics meet targets
   - Conduct final end-to-end testing across complete feature set
   - _Requirements: All requirements integrated and production-ready_
+- [ ] 17. Calendar data export and import (ICS)
+
+  - Implement ICS export for tasks and series
+  - Add ICS import with duplicate detection and user confirmation
+  - Ensure timezone and recurrence rules convert accurately
+  - Write end-to-end tests for export and import flows
+  - _Requirements: TBD_
