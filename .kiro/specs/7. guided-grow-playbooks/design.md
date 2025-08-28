@@ -810,15 +810,10 @@ class NotificationManager implements NotificationScheduler {
       exact: canUseExact,
     });
 
-    // For recurring tasks, schedule the next occurrence after this one
-    if (task.recurrenceRule) {
-      // Schedule asynchronously to avoid blocking the current notification
-      setTimeout(() => {
-        this.computeNextAndReschedule(task).catch(error => {
-          console.error('Failed to schedule next occurrence:', error);
-        });
-      }, 0);
-    }
+    // Do NOT pre-schedule the next occurrence here.
+    // We rely solely on handleNotificationDelivered() to
+    // computeNextAndReschedule() after delivery to avoid
+    // double-scheduling and overwriting notificationId.
 
     return notificationId;
   }
@@ -879,11 +874,37 @@ class NotificationManager implements NotificationScheduler {
     try {
       // Use RRULE library to compute next occurrence
       const now = new Date();
+
+      // Canonical DTSTART for recurrence calculations is the persisted
+      // recurrence start. Prefer the UTC representation if available.
+      // If only a local representation exists, convert it to UTC using
+      // the stored recurrence timezone (or task.timezone as a fallback).
+      let dtstartIso: string | undefined;
+
+      if (task.recurrenceStartUtc) {
+        dtstartIso = task.recurrenceStartUtc;
+      } else if (task.recurrenceStartLocal) {
+        const zone = task.recurrenceTimezone || task.timezone || 'UTC';
+        try {
+          dtstartIso = DateTime.fromISO(task.recurrenceStartLocal, { zone })
+            .toUTC()
+            .toISO();
+        } catch (e) {
+          console.warn('Failed to convert recurrenceStartLocal to UTC, falling back', e);
+        }
+      }
+
+      // Sensible fallbacks: use the existing reminder timestamp if present,
+      // otherwise use 'now' so the RRULE generator always receives a valid DTSTART.
+      if (!dtstartIso) {
+        dtstartIso = task.reminderAtUtc || now.toISOString();
+      }
+
       const nextOccurrence = this.taskGenerator.nextOccurrence(
         task.recurrenceRule,
         now,
-        task.timezone || 'UTC',
-        task.reminderAtUtc
+        task.recurrenceTimezone || task.timezone || 'UTC',
+        dtstartIso
       );
 
       return nextOccurrence;

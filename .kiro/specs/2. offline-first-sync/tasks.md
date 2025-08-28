@@ -142,7 +142,7 @@
 
   -- Tombstones (soft-deleted rows) for posts
   -- Keep the partial predicate aligned with tombstone scans (deleted_at IS NOT NULL)
-  CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_posts_updated_at_id_tombstones
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_posts_deleted_at_id_tombstones
     ON public.posts (deleted_at, id)
     WHERE deleted_at IS NOT NULL;
 
@@ -153,7 +153,7 @@
 
   -- Tombstones (soft-deleted rows) for post_comments
   -- Keep the partial predicate aligned with tombstone scans (deleted_at IS NOT NULL)
-  CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_post_comments_updated_at_id_tombstones
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_post_comments_deleted_at_id_tombstones
     ON public.post_comments (deleted_at, id)
     WHERE deleted_at IS NOT NULL;
 
@@ -171,13 +171,13 @@
   - Add `WHERE deleted_at IS NULL` clause to index only active records, reducing index size and improving query performance
   - Keep partial predicates exactly aligned with your query predicates so the planner can use the indexes:
     - Updated-rows scans use `deleted_at IS NULL` (matches `idx_*_updated_at_id`)
-    - Tombstone scans use `deleted_at IS NOT NULL` (matches `idx_*_updated_at_id_tombstones`)
+  - Tombstone scans use `deleted_at IS NOT NULL` (matches `idx_*_deleted_at_id_tombstones`)
   - Specify the full `schema.table` name for clarity and to avoid search_path issues
   - Test index creation in staging before production deployment
   - Monitor query performance before/after index creation using `EXPLAIN ANALYZE`
   - Include rollback plan:
     - `DROP INDEX CONCURRENTLY IF EXISTS idx_<table>_updated_at_id;`
-    - `DROP INDEX CONCURRENTLY IF EXISTS idx_<table>_updated_at_id_tombstones;`
+  - `DROP INDEX CONCURRENTLY IF EXISTS idx_<table>_deleted_at_id_tombstones;`
 
   **Index Maintenance:**
 
@@ -359,23 +359,24 @@
       -- if insert returned no rows: the key already exists - fetch stored response
       SELECT response_payload FROM sync_idempotency
       WHERE user_id = $1 AND idempotency_key = $2;
-      ```
+    ````
 
     -- NOTE: Optional stricter variant
-    /*
-      To guarantee deduplication only for identical requests, include a
-      request_hash on insert and, when the key already exists, lock the
-      row with FOR UPDATE and compare the stored request_hash to the
-      incoming one. If they differ, return 409 (conflict) rather than
-      reusing the stored response. This avoids silently returning a
-      previous response for a different payload.
+    /\*
+    To guarantee deduplication only for identical requests, include a
+    request_hash on insert and, when the key already exists, lock the
+    row with FOR UPDATE and compare the stored request_hash to the
+    incoming one. If they differ, return 409 (conflict) rather than
+    reusing the stored response. This avoids silently returning a
+    previous response for a different payload.
 
-      Caveats:
-      - Use FOR UPDATE to prevent concurrent races where two different
-        payloads try to claim the same idempotency key.
-      - Choose an error handling strategy (409 vs explicit error code)
-        that your client understands and will retry appropriately.
-    */
+    Caveats:
+
+    - Use FOR UPDATE to prevent concurrent races where two different
+      payloads try to claim the same idempotency key.
+    - Choose an error handling strategy (409 vs explicit error code)
+      that your client understands and will retry appropriately.
+      \*/
 
     - Alternatively, use INSERT ... ON CONFLICT (user_id, idempotency_key) DO UPDATE SET response_payload = EXCLUDED.response_payload RETURNING response_payload when you can atomically write the final payload in one statement, but note you still need to coordinate applying mutations in the same transaction so that the stored payload reflects the applied changes.
 
@@ -385,7 +386,9 @@
 
     - Tests: add integration tests exercising concurrent retries, conflict paths (insert conflict -> return stored payload), and verifying that mutations are applied exactly once for a given idempotency key.
 
-    ````
+    ```
+
+    ```
 
   - Add soft delete handling with deleted_at timestamps
   - Write integration tests for Edge Functions with various sync scenarios

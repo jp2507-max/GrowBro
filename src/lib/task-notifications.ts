@@ -23,6 +23,12 @@ interface Task {
 }
 
 export class TaskNotificationService {
+  constructor() {
+    // Ensure any platform-specific power-management handlers are at least
+    // present (no-op for now). Call without await to avoid changing
+    // synchronous initialization behavior in callers/tests.
+    void this.handleDozeMode();
+  }
   /**
    * Resolves whether the notification system expects UTC timestamps
    * This should be implemented based on your platform/bridge behavior
@@ -135,5 +141,23 @@ export class TaskNotificationService {
     // TODO: Emit analytics (call kept exactly as specified)
 
     return notificationId;
+  }
+
+  /**
+   * Stub for handling Android Doze / power-save modes.
+   *
+   * The design interface requires handleDozeMode(): Promise<void>.
+   * Provide a no-op async implementation that logs a TODO so callers
+   * can safely call this method and compilation/types pass.
+   */
+  async handleDozeMode(): Promise<void> {
+    // TODO: Implement real Doze handling (acquire wakelocks, schedule
+    // work via WorkManager, use exact alarms, etc.). Left as a no-op
+    // for now to preserve cross-platform behavior.
+    // Use console.trace for easier debugging during development.
+    console.trace(
+      '[TaskNotificationService] handleDozeMode: TODO - no-op stub'
+    );
+    return Promise.resolve();
   }
 }
