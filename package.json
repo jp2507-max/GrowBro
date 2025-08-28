@@ -90,6 +90,7 @@
     "react-native-screens": "^4.11.1",
     "react-native-svg": "~15.11.2",
     "react-native-url-polyfill": "^2.0.0",
+    "luxon": "^3.5.0",
     "react-native-web": "~0.20.0",
     "react-query-kit": "^3.3.0",
     "tailwind-variants": "^0.2.1",

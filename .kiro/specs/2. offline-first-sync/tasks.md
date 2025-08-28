@@ -362,192 +362,200 @@
       -- if insert returned no rows: the key already exists - fetch stored response
       SELECT response_payload FROM sync_idempotency
       WHERE user_id = $1 AND idempotency_key = $2;
-    ```sql
-
-  -- NOTE: Optional stricter variant
-    /\*
-    To guarantee deduplication only for identical requests, include a
-    request_hash on insert and, when the key already exists, lock the
-    row with FOR UPDATE and compare the stored request_hash to the
-    incoming one. If they differ, return 409 (conflict) rather than
-    reusing the stored response. This avoids silently returning a
-    previous response for a different payload.
-
-  Caveats:
-
-  - Use FOR UPDATE to prevent concurrent races where two different
-    payloads try to claim the same idempotency key.
-  - Choose an error handling strategy (409 vs explicit error code)
-    that your client understands and will retry appropriately.
-    \*/
-
-  - Alternatively, use INSERT ... ON CONFLICT (user_id, idempotency_key) DO UPDATE SET response_payload = EXCLUDED.response_payload RETURNING response_payload when you can atomically write the final payload in one statement, but note you still need to coordinate applying mutations in the same transaction so that the stored payload reflects the applied changes.
-
-  - Always validate that the `user_id` in the idempotency record matches the authenticated user (RLS or explicit checks) to avoid cross-user key reuse.
-
-  - Keep `response_payload` small and bounded; if responses are large, consider storing a pointer to a storage object (e.g., storage bucket path) instead of inlining large blobs in the row.
-
-  - Tests: add integration tests exercising concurrent retries, conflict paths (insert conflict -> return stored payload), and verifying that mutations are applied exactly once for a given idempotency key.
-
-  - Add soft delete handling with deleted_at timestamps
-  - Write integration tests for Edge Functions with various sync scenarios
-  - _Requirements: 2.3, 2.4, 6.1, 6.2, 6.4_
-
-  - [ ] 4a. Create set_updated_at() trigger for each synced table
-
-    Rationale: server-authoritative updated_at values are critical for correct Last-Write-Wins conflict resolution and for robust pull windows (rows selected with `updated_at > lastPulledAt AND updated_at <= server_timestamp`). A small, idempotent PL/pgSQL helper and per-table trigger ensures timestamps are set/maintained consistently regardless of client inputs or partial updates.
-
-    Requirements satisfied: ensure server timestamp monotonicity, avoid drift in pull windows, make trigger deployment idempotent and testable.
-
-    Example PL/pgSQL function (idempotent):
-
-    ```sql
-    -- Create or replace the helper function that sets updated_at on INSERT/UPDATE
-    CREATE OR REPLACE FUNCTION public.set_updated_at()
-    RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-    BEGIN
-      IF TG_OP = 'INSERT' THEN
-        -- Server always sets updated_at on INSERT to ensure server-authoritative timestamps
-        NEW.updated_at := now();
-        RETURN NEW;
-      ELSIF TG_OP = 'UPDATE' THEN
-        -- Always update the timestamp on UPDATE so server is authoritative
-        NEW.updated_at := now();
-        RETURN NEW;
-      END IF;
-      RETURN NEW;
-    END;
-    $$;
-  ```sql
-
-    Example trigger creation (idempotent pattern, run for each synced table):
-
-    ```sql
-    -- Replace <schema> and <table> with your target schema/table name, e.g. public.posts
-    DO $$
-    DECLARE
-      table_name text := 'posts';
-      schema_name text := 'public';
-    BEGIN
-      -- Drop existing trigger if present (safe/idempotent)
-      EXECUTE format('DROP TRIGGER IF EXISTS trg_%I_updated_at ON %I.%I;', table_name, schema_name, table_name);
-
-      -- Create the trigger using positional %I placeholders. Arguments: (table_name, schema_name)
-      EXECUTE format(
-        'CREATE TRIGGER trg_%1$I_updated_at
-           BEFORE INSERT OR UPDATE ON %2$I.%1$I
-           FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();',
-        table_name, schema_name
-      );
-    END;
-    $$;
   ````
 
-  Notes on idempotency and deployment:
+````
 
-  - `CREATE OR REPLACE FUNCTION` makes the function deployment idempotent.
-  - `DROP TRIGGER IF EXISTS` (or the DO block pattern above) ensures the trigger can be re-created safely.
-  - Run the function + trigger creation as part of your schema migration pipeline or a one-off deployment script for each synced table.
+```sql
+-- NOTE: Optional stricter variant
+/*
+To guarantee deduplication only for identical requests, include a
+request_hash on insert and, when the key already exists, lock the
+row with FOR UPDATE and compare the stored request_hash to the
+incoming one. If they differ, return 409 (conflict) rather than
+reusing the stored response. This avoids silently returning a
+previous response for a different payload.
 
-  Example test cases (plain SQL - fails with RAISE EXCEPTION on assertion failure):
+Caveats:
+
+- Use FOR UPDATE to prevent concurrent races where two different
+  payloads try to claim the same idempotency key.
+- Choose an error handling strategy (409 vs explicit error code)
+  that your client understands and will retry appropriately.
+*/
+````
+
+- Alternatively, use INSERT ... ON CONFLICT (user_id, idempotency_key) DO UPDATE SET response_payload = EXCLUDED.response_payload RETURNING response_payload when you can atomically write the final payload in one statement, but note you still need to coordinate applying mutations in the same transaction so that the stored payload reflects the applied changes.
+
+- Always validate that the `user_id` in the idempotency record matches the authenticated user (RLS or explicit checks) to avoid cross-user key reuse.
+
+- Keep `response_payload` small and bounded; if responses are large, consider storing a pointer to a storage object (e.g., storage bucket path) instead of inlining large blobs in the row.
+
+- Tests: add integration tests exercising concurrent retries, conflict paths (insert conflict -> return stored payload), and verifying that mutations are applied exactly once for a given idempotency key.
+
+{{ ... }}
+
+- Add soft delete handling with deleted_at timestamps
+- Write integration tests for Edge Functions with various sync scenarios
+- _Requirements: 2.3, 2.4, 6.1, 6.2, 6.4_
+
+- [ ] 4a. Create set_updated_at() trigger for each synced table
+
+  Rationale: server-authoritative updated_at values are critical for correct Last-Write-Wins conflict resolution and for robust pull windows (rows selected with `updated_at > lastPulledAt AND updated_at <= server_timestamp`). A small, idempotent PL/pgSQL helper and per-table trigger ensures timestamps are set/maintained consistently regardless of client inputs or partial updates.
+
+  Requirements satisfied: ensure server timestamp monotonicity, avoid drift in pull windows, make trigger deployment idempotent and testable.
+
+  Example PL/pgSQL function (idempotent):
 
   ```sql
-  -- Example test script for public.sync_test_items
-  -- 0) Enable pgcrypto extension for gen_random_uuid() function
-  CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
-  -- 1) Create a test table (idempotent)
-  CREATE TABLE IF NOT EXISTS public.sync_test_items (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    data text,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz
-  );
-
-  -- 2) Ensure function & trigger exist for this table (use the same idempotent pattern above)
-  -- (Assume set_updated_at() created already via migration)
-  DROP TRIGGER IF EXISTS trg_sync_test_items_updated_at ON public.sync_test_items;
-  CREATE TRIGGER trg_sync_test_items_updated_at
-    BEFORE INSERT OR UPDATE ON public.sync_test_items
-    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
-
-  -- 3) Tests: INSERT sets updated_at within reasonable bounds; UPDATE advances updated_at
-  DO $$
-  DECLARE
-    t_before timestamptz := now();
-    insert_row record;
-    after_insert timestamptz;
-    after_update timestamptz;
+  -- Create or replace the helper function that sets updated_at on INSERT/UPDATE
+  CREATE OR REPLACE FUNCTION public.set_updated_at()
+  RETURNS trigger
+  LANGUAGE plpgsql
+  AS $$
   BEGIN
-    -- Insert a row (client does not set updated_at)
-    INSERT INTO public.sync_test_items (data) VALUES ('first') RETURNING id, updated_at INTO insert_row;
-    after_insert := now();
-
-    -- Assert updated_at within bounds [t_before, after_insert]
-    IF NOT (insert_row.updated_at >= t_before AND insert_row.updated_at <= after_insert) THEN
-      RAISE EXCEPTION 'INSERT: updated_at out of expected bounds: % not in [% , %]', insert_row.updated_at, t_before, after_insert;
+    IF TG_OP = 'INSERT' THEN
+      -- Server always sets updated_at on INSERT to ensure server-authoritative timestamps
+      NEW.updated_at := now();
+      RETURN NEW;
+    ELSIF TG_OP = 'UPDATE' THEN
+      -- Always update the timestamp on UPDATE so server is authoritative
+      NEW.updated_at := now();
+      RETURN NEW;
     END IF;
-
-    -- Short sleep to ensure timestamp delta on update (optional)
-    PERFORM pg_sleep(0.01);
-
-    -- Update the row and verify updated_at increased
-    UPDATE public.sync_test_items SET data = 'second' WHERE id = insert_row.id RETURNING updated_at INTO insert_row;
-    after_update := now();
-
-    IF NOT (insert_row.updated_at >= after_insert) THEN
-      RAISE EXCEPTION 'UPDATE: updated_at did not advance: % < %', insert_row.updated_at, after_insert;
-    END IF;
-  END;
-  $$;
-
-  -- 4) Pull-window behavior test: ensure rows fall into/out of the pull window defined as
-  --    updated_at > lastPulledAt AND updated_at <= server_timestamp
-  DO $$
-  DECLARE
-    lastPulledAt timestamptz;
-    server_ts timestamptz;
-    included_count int;
-    excluded_count int;
-    r record;
-  BEGIN
-    -- Make a fresh row and capture a deterministic window
-    lastPulledAt := now() - interval '1 minute';
-    server_ts := now();
-    INSERT INTO public.sync_test_items (data) VALUES ('window-test') RETURNING id, updated_at INTO r;
-
-    -- Row should be included when lastPulledAt is before updated_at and server_ts after it
-    SELECT count(*) INTO included_count FROM public.sync_test_items
-      WHERE updated_at > lastPulledAt AND updated_at <= server_ts AND id = r.id;
-    IF included_count <> 1 THEN
-      RAISE EXCEPTION 'PULL-WINDOW: expected row to be included (count=%)', included_count;
-    END IF;
-
-    -- Now set lastPulledAt after the row's updated_at and expect it to be excluded
-    -- Use the previously captured server_ts so the window upper-bound is deterministic
-    lastPulledAt := server_ts + interval '1 second';
-    SELECT count(*) INTO excluded_count FROM public.sync_test_items
-      WHERE updated_at > lastPulledAt AND updated_at <= server_ts AND id = r.id;
-    IF excluded_count <> 0 THEN
-      RAISE EXCEPTION 'PULL-WINDOW: expected row to be excluded when lastPulledAt > updated_at (count=%)', excluded_count;
-    END IF;
+    RETURN NEW;
   END;
   $$;
   ```
 
-  Expected behavior:
+````
 
-  - On INSERT: the trigger always sets `updated_at := now()` (server-authoritative).
-  - On UPDATE: the trigger always sets `updated_at := now()` (server-authoritative).
-  - Pull window selection using `updated_at > lastPulledAt AND updated_at <= server_timestamp` reliably includes rows modified in the window and excludes rows outside it.
+  Example trigger creation (idempotent pattern, run for each synced table):
 
-  Testing guidance:
+  ```sql
+  -- Replace <schema> and <table> with your target schema/table name, e.g. public.posts
+  DO $$
+  DECLARE
+    table_name text := 'posts';
+    schema_name text := 'public';
+  BEGIN
+    -- Drop existing trigger if present (safe/idempotent)
+    EXECUTE format('DROP TRIGGER IF EXISTS trg_%I_updated_at ON %I.%I;', table_name, schema_name, table_name);
 
-  - Run the SQL test blocks against a disposable test database or inside CI job with a clean schema.
-  - The DO-blocks raise exceptions on assertion failures so CI will fail on regressions.
-  - Integrate the function/trigger creation into your regular migrations (use `CREATE OR REPLACE FUNCTION` + `DROP TRIGGER IF EXISTS`/`CREATE TRIGGER`) to make deployments idempotent.
+    -- Create the trigger using positional %I placeholders. Arguments: (table_name, schema_name)
+    EXECUTE format(
+      'CREATE TRIGGER trg_%1$I_updated_at
+         BEFORE INSERT OR UPDATE ON %2$I.%1$I
+         FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();',
+      table_name, schema_name
+    );
+  END;
+  $$;
+````
+
+Notes on idempotency and deployment:
+
+- `CREATE OR REPLACE FUNCTION` makes the function deployment idempotent.
+- `DROP TRIGGER IF EXISTS` (or the DO block pattern above) ensures the trigger can be re-created safely.
+- Run the function + trigger creation as part of your schema migration pipeline or a one-off deployment script for each synced table.
+
+Example test cases (plain SQL - fails with RAISE EXCEPTION on assertion failure):
+
+```sql
+-- Example test script for public.sync_test_items
+-- 0) Enable pgcrypto extension for gen_random_uuid() function
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- 1) Create a test table (idempotent)
+CREATE TABLE IF NOT EXISTS public.sync_test_items (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  data text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz
+);
+
+-- 2) Ensure function & trigger exist for this table (use the same idempotent pattern above)
+-- (Assume set_updated_at() created already via migration)
+DROP TRIGGER IF EXISTS trg_sync_test_items_updated_at ON public.sync_test_items;
+CREATE TRIGGER trg_sync_test_items_updated_at
+  BEFORE INSERT OR UPDATE ON public.sync_test_items
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+-- 3) Tests: INSERT sets updated_at within reasonable bounds; UPDATE advances updated_at
+DO $$
+DECLARE
+  t_before timestamptz := now();
+  insert_row record;
+  after_insert timestamptz;
+  after_update timestamptz;
+BEGIN
+  -- Insert a row (client does not set updated_at)
+  INSERT INTO public.sync_test_items (data) VALUES ('first') RETURNING id, updated_at INTO insert_row;
+  after_insert := now();
+
+  -- Assert updated_at within bounds [t_before, after_insert]
+  IF NOT (insert_row.updated_at >= t_before AND insert_row.updated_at <= after_insert) THEN
+    RAISE EXCEPTION 'INSERT: updated_at out of expected bounds: % not in [% , %]', insert_row.updated_at, t_before, after_insert;
+  END IF;
+
+  -- Short sleep to ensure timestamp delta on update (optional)
+  PERFORM pg_sleep(0.01);
+
+  -- Update the row and verify updated_at increased
+  UPDATE public.sync_test_items SET data = 'second' WHERE id = insert_row.id RETURNING updated_at INTO insert_row;
+  after_update := now();
+
+  IF NOT (insert_row.updated_at >= after_insert) THEN
+    RAISE EXCEPTION 'UPDATE: updated_at did not advance: % < %', insert_row.updated_at, after_insert;
+  END IF;
+END;
+$$;
+
+-- 4) Pull-window behavior test: ensure rows fall into/out of the pull window defined as
+--    updated_at > lastPulledAt AND updated_at <= server_timestamp
+DO $$
+DECLARE
+  lastPulledAt timestamptz;
+  server_ts timestamptz;
+  included_count int;
+  excluded_count int;
+  r record;
+BEGIN
+  -- Make a fresh row and capture a deterministic window
+  lastPulledAt := now() - interval '1 minute';
+  server_ts := now();
+  INSERT INTO public.sync_test_items (data) VALUES ('window-test') RETURNING id, updated_at INTO r;
+
+  -- Row should be included when lastPulledAt is before updated_at and server_ts after it
+  SELECT count(*) INTO included_count FROM public.sync_test_items
+    WHERE updated_at > lastPulledAt AND updated_at <= server_ts AND id = r.id;
+  IF included_count <> 1 THEN
+    RAISE EXCEPTION 'PULL-WINDOW: expected row to be included (count=%)', included_count;
+  END IF;
+
+  -- Now set lastPulledAt after the row's updated_at and expect it to be excluded
+  -- Use the previously captured server_ts so the window upper-bound is deterministic
+  lastPulledAt := server_ts + interval '1 second';
+  SELECT count(*) INTO excluded_count FROM public.sync_test_items
+    WHERE updated_at > lastPulledAt AND updated_at <= server_ts AND id = r.id;
+  IF excluded_count <> 0 THEN
+    RAISE EXCEPTION 'PULL-WINDOW: expected row to be excluded when lastPulledAt > updated_at (count=%)', excluded_count;
+  END IF;
+END;
+$$;
+```
+
+Expected behavior:
+
+- On INSERT: the trigger always sets `updated_at := now()` (server-authoritative).
+- On UPDATE: the trigger always sets `updated_at := now()` (server-authoritative).
+- Pull window selection using `updated_at > lastPulledAt AND updated_at <= server_timestamp` reliably includes rows modified in the window and excludes rows outside it.
+
+Testing guidance:
+
+- Run the SQL test blocks against a disposable test database or inside CI job with a clean schema.
+- The DO-blocks raise exceptions on assertion failures so CI will fail on regressions.
+- Integrate the function/trigger creation into your regular migrations (use `CREATE OR REPLACE FUNCTION` + `DROP TRIGGER IF EXISTS`/`CREATE TRIGGER`) to make deployments idempotent.
 
 - [ ] 5. Implement error handling and retry logic
 
