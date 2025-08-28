@@ -50,10 +50,10 @@ graph TB
 - **Sync Manager**: Orchestrates push/pull operations following WatermelonDB protocol
 - **Edge Functions**: Server-side sync endpoints with RLS enforcement and transactional push
 - **Image Upload Queue**: Separate queue for image uploads (not part of DB sync)
-- **expo-task-manager + expo-background-fetch**: Define background tasks with
-  `expo-task-manager` and schedule opportunistic periodic fetches with
-  `expo-background-fetch` (SDK 53-compatible workflow); keep a manual
-  fallback for immediate syncs.
+- **expo-task-manager + expo-background-task**: Define background tasks with
+  `expo-task-manager` and schedule opportunistic periodic work with
+  `expo-background-task` (Expo SDK 53+). This maps to BGTaskScheduler on iOS
+  and WorkManager on Android; keep a manual fallback for immediate syncs.
 
 ## Components and Interfaces
 
@@ -107,6 +107,13 @@ interface SyncOptions {
 ### 2. Network Manager (`src/lib/sync/network-manager.ts`)
 
 Handles connectivity detection and network-aware operations. Use @react-native-community/netinfo for isConnected/isInternetReachable/type and throttle large payloads on metered networks.
+
+Notes:
+
+- Import NetInfo from `@react-native-community/netinfo` (preferred). When reading `NetInfoState`, prefer `isInternetReachable` to determine actual internet access (it may be `undefined` on older platforms; treat `undefined` as unknown and fall back to `type !== 'none' && type !== 'unknown'`).
+- Use `details?.isConnectionExpensive` to detect metered connections. Availability:
+  - Android: `details.isConnectionExpensive` is commonly available and reliable.
+  - iOS: `details.isConnectionExpensive` may be undefined on many iOS versions; use Wi-Fi vs Cellular detection and treat `true` as metered when present.
 
 ```typescript
 interface NetworkManager {
@@ -185,9 +192,10 @@ type ResolutionStrategy = 'server-lww' | 'needs-review' | 'field-level';
 
 ### 5. Background Sync Service (`src/lib/sync/background-sync.ts`)
 
-Implement background sync using the SDK-53 supported pattern: define the
+Implement background sync using the SDK-53+ supported pattern: define the
 task handler with `expo-task-manager` (TaskManager.defineTask) and schedule
-periodic fetches with `expo-background-fetch` (BackgroundFetch.registerTaskAsync).
+periodic work with `expo-background-task` which integrates with the
+platform schedulers (BGTaskScheduler on iOS; WorkManager on Android).
 Background execution is opportunistic (OS-scheduled); provide a manual
 "Sync now" button for immediate syncs and UI to configure Wi‑Fi/charging
 constraints.
@@ -209,17 +217,12 @@ TaskManager.defineTask('BACKGROUND_SYNC', async ({ data, error }) => {
 });
 ```
 
-- Register/schedule periodic fetches with BackgroundFetch:
-
-```ts
-import * as BackgroundFetch from 'expo-background-fetch';
-
-await BackgroundFetch.registerTaskAsync('BACKGROUND_SYNC', {
-  minimumInterval: 15 * 60, // seconds (15 minutes) — OS may coalesce
-  stopOnTerminate: false, // resume after app is terminated
-  startOnBoot: true, // start after device reboot
-});
-```
+- Schedule/register periodic background work using `expo-background-task` APIs.
+  Use conservative interval hints (e.g., 15min) but treat them as best-effort
+  hints: the OS may defer or coalesce executions. On Android prefer
+  WorkManager-style constraints (networkType, requiresCharging). On iOS use
+  BGTaskScheduler-compatible identifiers and be prepared for the scheduler to
+  limit execution time and frequency.
 
 - Keep the in-app "Sync now" button which invokes `performSync()` and
   enforce Wi‑Fi/charging constraints by checking connectivity/battery state
@@ -257,10 +260,15 @@ interface SyncConstraints {
 
 ### Push/Pull Protocol
 
-**Pull endpoint:** To avoid missing rows when updates share the same timestamp boundary, the server MUST read and bind a stable `server_timestamp` at the start of the pull transaction and use that bound value for the query window. Filter rows (and deleted entries) using a closed upper bound:
+**Pull endpoint:** To avoid missing rows when updates share the same timestamp boundary, the server MUST read and bind a stable `server_timestamp` at the start of the pull transaction and use that bound value for the query window. Use **separate queries** to prevent double-counting deleted records:
 
-- Include rows where `(updated_at > lastPulledAt) AND (updated_at <= server_timestamp)`.
-- Include deleted entries where `(deleted_at > lastPulledAt) AND (deleted_at <= server_timestamp)`.
+**Active Records Query:**
+
+- Include rows where `(updated_at > lastPulledAt) AND (updated_at <= server_timestamp) AND (deleted_at IS NULL)`.
+
+**Tombstones Query (independent pagination):**
+
+- Include deleted entries where `(deleted_at > lastPulledAt) AND (deleted_at <= server_timestamp) AND (deleted_at IS NOT NULL)`.
 
 Return the `server_timestamp` in the response and the client MUST use that value as the next `lastPulledAt` for subsequent pulls. Additionally, the server should expose a stable tie-breaker ordering (for example `(updated_at, id)`) when paginating results so ordering is deterministic across requests and clients. This combination prevents dropped rows at timestamp boundaries and ensures deterministic pagination.
 
@@ -498,12 +506,13 @@ interface SyncTestUtils {
 - **Platform limitations:** Background execution is opportunistic (OS-scheduled) with iOS/Android constraints
 - **Manual fallback:** Always provide "Sync now" button since background timing isn't guaranteed
 - **Constraint configuration:** Wi-Fi/charging requirements configurable via app settings
-- **API guidance:** Use `expo-task-manager` to define and register the task
-  handler and `expo-background-fetch` to schedule periodic fetches. `expo-`
-  background-fetch is not deprecated. When calling
-  `BackgroundFetch.registerTaskAsync` configure options such as
-  `minimumInterval`, `stopOnTerminate`, and `startOnBoot` to match app
-  requirements.
+  **API guidance:** Use `expo-task-manager` to define and register the task
+  handler and `expo-background-task` to schedule opportunistic periodic work
+  (Expo SDK 53+ integration with BGTaskScheduler on iOS and WorkManager on
+  Android). Treat scheduling intervals as hints and always provide a manual
+  "Sync now" fallback; on Android prefer WorkManager-style constraints where
+  available (networkType, requiresCharging) and on iOS be prepared for the
+  scheduler to limit execution frequency and duration.
 
 ### Storage Policies
 

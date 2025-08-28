@@ -159,6 +159,10 @@ interface NotificationScheduler {
   rescheduleTaskReminder(task: Task): Promise<void>;
   rehydrateNotifications(): Promise<void>; // Called on app start
 
+  // Recurring notification management
+  computeNextAndReschedule(task: Task): Promise<void>;
+  handleNotificationDelivered(taskId: string): Promise<void>;
+
   // Android-specific handling
   ensureChannels(): Promise<void>; // Create notification channels on startup
   canUseExactAlarms(): Promise<boolean>; // Check Android 12+ (API 31) permissions
@@ -242,6 +246,14 @@ interface PlaybookStep {
 #### Task Model (WatermelonDB)
 
 ```typescript
+// Sanitizer function for TaskFlags to ensure proper structure
+function sanitizeFlags(raw: any): TaskFlags {
+  return {
+    manualEdited: Boolean(raw?.manualEdited),
+    excludeFromBulkShift: Boolean(raw?.excludeFromBulkShift),
+  };
+}
+
 @model('tasks')
 class Task extends Model {
   @field('plant_id') plantId!: string;
@@ -459,7 +471,54 @@ class RRULEGenerator {
   }
 
   generateWeeklyRRULE(days: WeekDay[], interval: number = 1): string {
-    const byweekday = days.map((d) => RRule[d as keyof typeof RRule]);
+    // Explicit mapping from our WeekDay string values to rrule.js weekday objects.
+    // Avoid indexing RRule with arbitrary strings which may return undefined.
+    const WEEKDAY_MAP: Record<string, any> = {
+      monday: RRule.MO,
+      tuesday: RRule.TU,
+      wednesday: RRule.WE,
+      thursday: RRule.TH,
+      friday: RRule.FR,
+      saturday: RRule.SA,
+      sunday: RRule.SU,
+
+      mon: RRule.MO,
+      tue: RRule.TU,
+      wed: RRule.WE,
+      thu: RRule.TH,
+      fri: RRule.FR,
+      sat: RRule.SA,
+      sun: RRule.SU,
+
+      MO: RRule.MO,
+      TU: RRule.TU,
+      WE: RRule.WE,
+      TH: RRule.TH,
+      FR: RRule.FR,
+      SA: RRule.SA,
+      SU: RRule.SU,
+    };
+
+    const byweekday = days.map((d) => {
+      const key = String(d || '');
+      // try several normalizations to be permissive of input formats
+      const normalized = key.toLowerCase();
+      const short = normalized.slice(0, 3);
+      const candidate =
+        WEEKDAY_MAP[key] ||
+        WEEKDAY_MAP[normalized] ||
+        WEEKDAY_MAP[short] ||
+        WEEKDAY_MAP[key.toUpperCase()];
+      if (!candidate) {
+        // Throw a typed error so callers can handle invalid inputs explicitly
+        throw new RRULEError(
+          ErrorCode.RRULE_INVALID_FORMAT,
+          `Invalid weekday value provided to generateWeeklyRRULE: ${key}`
+        );
+      }
+      return candidate;
+    });
+
     const rule = new RRule({ freq: RRule.WEEKLY, interval, byweekday });
     return rule.toString();
   }
@@ -605,8 +664,51 @@ This approach centralizes timezone handling, avoids depending on non-standard TZ
 
 ### Notification System Architecture
 
+The notification system uses a **one-shot scheduling strategy** with compute-next-and-reschedule flow to handle recurring reminders:
+
+#### Notification Flow
+
+1. **Initial Scheduling**: When `scheduleTaskReminder()` is called, it schedules a single notification for the next occurrence
+2. **Delivery Handling**: When the notification is delivered (user taps or app receives), `handleNotificationDelivered()` is triggered
+3. **Next Occurrence**: The system computes the next reminder date using the task's RRULE and timezone
+4. **Reschedule**: A new one-shot notification is scheduled for the next occurrence
+5. **Repeat**: This cycle continues for each occurrence
+
+#### Key Benefits
+
+- **Expo Compatible**: Uses only date triggers supported by Expo Notifications
+- **Timezone Aware**: Proper handling of DST and timezone changes
+- **Battery Efficient**: No background processing, only schedules when needed
+- **Reliable**: Each notification is a simple one-shot trigger
+
 ```typescript
 class NotificationManager implements NotificationScheduler {
+  constructor(
+    private database: Database,
+    private taskGenerator: TaskGenerator,
+    private analytics: Analytics
+  ) {
+    this.setupNotificationHandlers();
+  }
+
+  private setupNotificationHandlers(): void {
+    // Handle notification responses (when user taps notification)
+    Notifications.addNotificationResponseReceivedListener(response => {
+      const { taskId } = response.notification.request.content.data;
+      if (taskId) {
+        this.handleNotificationDelivered(taskId);
+      }
+    });
+
+    // Handle notifications received while app is in foreground
+    Notifications.addNotificationReceivedListener(notification => {
+      const { taskId } = notification.request.content.data;
+      if (taskId) {
+        this.handleNotificationDelivered(taskId);
+      }
+    });
+  }
+
   async ensureChannels(): Promise<void> {
     // Create notification channels on Android 8+
     await Notifications.setNotificationChannelAsync('tasks.reminders', {
@@ -622,6 +724,25 @@ class NotificationManager implements NotificationScheduler {
     });
   }
 
+  private async resolveNotificationExpectsUtc(): Promise<boolean> {
+    // Robust resolver for optional probe/config. Supports:
+    // - undefined -> fallback true (preserve historical default)
+    // - boolean -> returned directly
+    // - function -> supports sync or Promise-returning probe
+    const probe = (this as any).notificationExpectsUtc;
+    if (probe === undefined) return true;
+    if (typeof probe === 'boolean') return probe;
+    if (typeof probe === 'function') {
+      try {
+        const res = probe();
+        return res instanceof Promise ? await res : Boolean(res);
+      } catch {
+        return true;
+      }
+    }
+    return true;
+  }
+
   async scheduleTaskReminder(task: Task): Promise<string> {
     // Ensure channels exist first
     await this.ensureChannels();
@@ -633,10 +754,12 @@ class NotificationManager implements NotificationScheduler {
     // timestamps. The Task model stores both representations to make this explicit.
     // - Use `task.reminderAtUtc` when the notification API expects UTC moments
     // - Use `task.reminderAtLocal` when it expects local-time instants
-    // Implementations should replace `this.notificationExpectsUtc()` with the real probe
-    // or config flag that reflects the platform/bridge behavior.
-    const expectsUtc = this.notificationExpectsUtc ? this.notificationExpectsUtc() : true;
-    const reminderTimestamp = expectsUtc ? task.reminderAtUtc : task.reminderAtLocal;
+  // Implementations should replace `this.notificationExpectsUtc` with the real probe
+  // or config flag that reflects the platform/bridge behavior. Resolve it robustly
+  // so boolean, sync function, or async function probes are supported and don't
+  // cause runtime ReferenceErrors.
+  const expectsUtc = await this.resolveNotificationExpectsUtc();
+  const reminderTimestamp = expectsUtc ? task.reminderAtUtc : task.reminderAtLocal;
 
     const trigger = this.createTrigger(
       reminderTimestamp,
@@ -659,6 +782,16 @@ class NotificationManager implements NotificationScheduler {
       taskId: task.id,
       exact: canUseExact,
     });
+
+    // For recurring tasks, schedule the next occurrence after this one
+    if (task.recurrenceRule) {
+      // Schedule asynchronously to avoid blocking the current notification
+      setTimeout(() => {
+        this.computeNextAndReschedule(task).catch(error => {
+          console.error('Failed to schedule next occurrence:', error);
+        });
+      }, 0);
+    }
 
     return notificationId;
   }
@@ -685,6 +818,91 @@ class NotificationManager implements NotificationScheduler {
     await task.update({ notificationId: newNotificationId });
   }
 
+  async computeNextAndReschedule(task: Task): Promise<void> {
+    // Compute next reminder datetime based on RRULE
+    const nextReminderDate = this.computeNextReminderDate(task);
+
+    if (!nextReminderDate) {
+      // No more occurrences, don't reschedule
+      return;
+    }
+
+    // Update task with next reminder time
+    const updatedTask = await task.update({
+      reminderAtUtc: nextReminderDate.toISOString(),
+      reminderAtLocal: this.formatLocalDateTime(nextReminderDate, task.timezone),
+    });
+
+    // Schedule the next one-shot notification
+    const newNotificationId = await this.scheduleTaskReminder(updatedTask);
+
+    // Update task with new notification ID
+    await updatedTask.update({ notificationId: newNotificationId });
+  }
+
+  private computeNextReminderDate(task: Task): Date | null {
+    if (!task.recurrenceRule) {
+      return null; // One-time task, no repetition
+    }
+
+    try {
+      // Use RRULE library to compute next occurrence
+      const now = new Date();
+      const nextOccurrence = this.taskGenerator.nextOccurrence(
+        task.recurrenceRule,
+        now,
+        task.timezone || 'UTC',
+        task.reminderAtUtc
+      );
+
+      return nextOccurrence;
+    } catch (error) {
+      console.error('Failed to compute next reminder date:', error);
+      return null;
+    }
+  }
+
+  private formatLocalDateTime(date: Date, timezone?: string): string {
+    if (!timezone) {
+      return date.toISOString();
+    }
+
+    try {
+      // Use luxon to format in local timezone
+      const dt = DateTime.fromJSDate(date).setZone(timezone);
+      return dt.toISO({ includeOffset: false }) || date.toISOString();
+    } catch (error) {
+      console.error('Failed to format local datetime:', error);
+      return date.toISOString();
+    }
+  }
+
+  async handleNotificationDelivered(taskId: string): Promise<void> {
+    try {
+      // Find the task that was just delivered
+      const task = await this.database.get('tasks').find(taskId);
+
+      if (!task) {
+        console.warn(`Task ${taskId} not found for notification delivery handling`);
+        return;
+      }
+
+      // Track delivery analytics
+      this.analytics.track('notif_delivered', {
+        taskId: task.id,
+        hasRecurrence: Boolean(task.recurrenceRule),
+      });
+
+      // If this is a recurring task, schedule the next occurrence
+      if (task.recurrenceRule) {
+        await this.computeNextAndReschedule(task);
+      }
+    } catch (error) {
+      console.error('Failed to handle notification delivery:', error);
+      // Don't throw - this is a background operation
+    }
+  }
+
   async requestExactAlarmPermission(): Promise<boolean> {
     if (Platform.OS !== 'android' || Platform.Version < 31) {
       return true; // Not needed on iOS or older Android
@@ -708,25 +926,20 @@ class NotificationManager implements NotificationScheduler {
     }
   }
 
-<!-- REVIEW (lines 488-516): Verification & recommended change -->
+<!-- IMPLEMENTATION NOTE: One-shot notification strategy -->
 <!--
-Note: Verified against Expo Notifications (docs.expo.dev). The JS API does not accept raw RFC-5545 RRULE strings for local repeating triggers, nor is there a cross-platform JS method named canScheduleExactNotifications().
+Implementation: The notification system now uses a compute-next-and-reschedule approach instead of RRULE-based repeating triggers.
 
-Implication: The original createTrigger/createRepeatingTrigger design that assumes native RRULE support or a reliable "exact" scheduling check is not portable.
+Key changes implemented:
+  - createTrigger() always returns a one-shot date trigger (no RRULE handling)
+  - computeNextAndReschedule() method computes the next occurrence using rrule.js and schedules a new one-shot notification
+  - handleNotificationDelivered() is called when notifications are delivered to schedule the next occurrence
+  - Notification response handlers are set up in setupNotificationHandlers() to trigger rescheduling
+  - All repetition is handled by computing the next occurrence and scheduling a single future trigger
 
-Recommended approach (compute-next-and-reschedule):
-  - Use a RRULE engine in JS (e.g., rrule.js) to compute the next occurrence from the task's recurrence rule and timezone.
-  - Schedule a one-off date trigger for that next occurrence using Expo's date trigger (or daily/weekly/yearly where appropriate).
-  - On delivery (or in the notification response handler), compute and schedule the following occurrence.
-  - For Android 12+ exact alarms, add <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/> via a config plugin or the Android manifest and fall back to inexact triggers when permission is unavailable.
+This approach is compatible with Expo Notifications which supports date, timeInterval, daily, weekly, yearly triggers but not complex RRULE patterns directly.
 
-Reasons:
-  - Expo's triggers support date, timeInterval, daily, weekly, yearly. Complex RRULEs (monthly by rule, exceptions, BYDAY patterns) must be computed in JS.
-  - Exact timing guarantees differ by OS and OEM; a request/manifest entry is necessary for Android exact alarms and iOS generally does not expose strict exact scheduling.
-
-Suggested method replacement: replace createTrigger/createRepeatingTrigger with scheduleNext(task: Task) that computes the next date using an RRULE library and then calls Notifications.scheduleNotificationAsync with a date trigger. Keep a small retry/reschedule window to handle timezone shifts and DST.
-
-References: Expo Notifications docs (local triggers), Android SCHEDULE_EXACT_ALARM permission, rrule.js for recurrence calculations.
+References: Expo Notifications docs (local triggers), rrule.js for recurrence calculations.
 -->
 
   private createTrigger(
@@ -734,11 +947,8 @@ References: Expo Notifications docs (local triggers), Android SCHEDULE_EXACT_ALA
     rrule?: string,
     useExact: boolean = false
   ): NotificationTrigger {
-    if (rrule) {
-      return this.createRepeatingTrigger(reminderAt, rrule, useExact);
-    }
-
-    // Use inexact alarms by default for better battery life
+    // Always return a one-shot notification trigger
+    // Repetition is handled by compute-next-and-reschedule flow
     return {
       date: new Date(reminderAt),
       channelId: 'tasks.reminders',
@@ -811,27 +1021,149 @@ References: Expo Notifications docs (local triggers), Android SCHEDULE_EXACT_ALA
 ```typescript
 class PlaybookSyncEngine {
   async pullChanges(lastPulledAt: number): Promise<Changes> {
-    const response = await this.supabaseClient.rpc('sync_pull', {
+    const { data, error, status } = await this.supabaseClient.rpc('sync_pull', {
       last_pulled_at: lastPulledAt,
       tables: ['playbooks', 'tasks', 'plants'],
     });
 
-    return this.transformServerResponse(response.data);
+    // Treat Supabase errors and non-2xx statuses as failures
+    if (error || (typeof status === 'number' && status >= 400)) {
+      const supaCode = (error as any)?.code;
+      const message = (error as any)?.message || 'Unknown Supabase error';
+      const isNetwork = status === undefined || status === 0; // network/timeouts often lack a status
+      const retryable =
+        isNetwork || (typeof status === 'number' && status >= 500);
+
+      // Include original message and status/code in the error for caller decisioning
+      throw new SyncError(
+        ErrorCode.SYNC_NETWORK_ERROR,
+        `pullChanges RPC failed (status=${status ?? 'n/a'} code=${supaCode ?? 'n/a'}): ${message}`,
+        retryable
+      );
+    }
+
+    return this.transformServerResponse(data);
   }
 
   async pushChanges(changes: Changes): Promise<PushResult> {
-    const response = await this.supabaseClient.rpc('sync_push', {
+    const { data, error, status } = await this.supabaseClient.rpc('sync_push', {
       changes,
       idempotency_key: generateUUID(),
     });
 
-    return this.handlePushResponse(response.data);
+    if (error || (typeof status === 'number' && status >= 400)) {
+      const supaCode = (error as any)?.code;
+      const message = (error as any)?.message || 'Unknown Supabase error';
+      const isNetwork = status === undefined || status === 0;
+      const retryable =
+        isNetwork || (typeof status === 'number' && status >= 500);
+
+      throw new SyncError(
+        ErrorCode.SYNC_NETWORK_ERROR,
+        `pushChanges RPC failed (status=${status ?? 'n/a'} code=${supaCode ?? 'n/a'}): ${message}`,
+        retryable
+      );
+    }
+
+    return this.handlePushResponse(data);
   }
 
-  public handleConflicts(conflicts: Conflict[]): Promise<Resolution[]> {
-    // Implement Last-Write-Wins
-    // Show user notifications for important conflicts
-    // Provide comparison UI for manual resolution
+  public async handleConflicts(conflicts: Conflict[]): Promise<Resolution[]> {
+    // Minimal Last-Write-Wins (LWW) strategy implementation.
+    // For each conflict pick the entry with the latest timestamp as the winner,
+    // construct a Resolution object and return the array of resolutions.
+    // Also notify the user for any "important" conflicts so they see a visible
+    // indicator that a resolution occurred.
+
+    const resolutions: Resolution[] = [];
+
+    for (const conflict of conflicts) {
+      // Prefer common field names but be permissive to cover different shapes
+      const local =
+        (conflict as any).local ??
+        (conflict as any).localData ??
+        (conflict as any).left;
+      const remote =
+        (conflict as any).remote ??
+        (conflict as any).remoteData ??
+        (conflict as any).right;
+
+      const localTs =
+        Number(local?.updatedAt ?? local?.updated_at ?? local?.updated ?? 0) ||
+        0;
+      const remoteTs =
+        Number(
+          remote?.updatedAt ?? remote?.updated_at ?? remote?.updated ?? 0
+        ) || 0;
+
+      const acceptRemote = remoteTs > localTs;
+
+      const resolution: Resolution = {
+        // Keep a stable id if available, else synthesize one
+        conflictId:
+          (conflict as any).id ??
+          `${(conflict as any).table ?? 'unknown'}:${(conflict as any).key ?? (conflict as any).primaryKey ?? 'unknown'}`,
+        table: (conflict as any).table,
+        action: acceptRemote ? 'accept_remote' : 'keep_local',
+        // Provide the chosen row for callers to apply
+        chosen: acceptRemote ? remote : local,
+        // Add a small explanation for audit/troubleshooting
+        reason: 'last_write_wins',
+      } as unknown as Resolution;
+
+      resolutions.push(resolution);
+
+      // Decide whether this conflict is "important" and should surface a notification.
+      // Heuristics:
+      // - explicit `important` flag on the conflict
+      // - conflicts affecting `tasks` table are considered important by product rules
+      // - large time delta between versions (e.g. > 5 minutes)
+      const timeDeltaMs = Math.abs(remoteTs - localTs);
+      const isImportant =
+        Boolean((conflict as any).important) ||
+        (conflict as any).table === 'tasks' ||
+        timeDeltaMs > 1000 * 60 * 5;
+
+      // Try to call a notifier in a permissive way. The design doc references
+      // `notifier.notify` as an example; implementations may attach a notifier
+      // to `this.notifier` or provide a global `notifier` helper. Call whichever
+      // is available without throwing.
+      if (isImportant) {
+        try {
+          const notifyPayload = {
+            title: 'Sync conflict resolved',
+            message:
+              resolution.action === 'accept_remote'
+                ? `Accepted remote changes for ${resolution.table}`
+                : `Kept local changes for ${resolution.table}`,
+            data: {
+              conflictId: resolution.conflictId,
+              table: resolution.table,
+            },
+          };
+
+          // Prefer an instance notifier if present
+          if (typeof (this as any).notifier?.notify === 'function') {
+            await (this as any).notifier.notify(notifyPayload);
+          } else if (
+            typeof (globalThis as any).notifier?.notify === 'function'
+          ) {
+            // Fallback to a global notifier helper
+            await (globalThis as any).notifier.notify(notifyPayload);
+          } else if (typeof (globalThis as any).notifier === 'function') {
+            // Some platforms expose a simple function
+            await (globalThis as any).notifier(notifyPayload);
+          }
+        } catch (err) {
+          // Don't let notifier failures break sync flow; log for debugging
+          // (In a real implementation this would go to the analytics/logger.)
+          // eslint-disable-next-line no-console
+          console.warn('Failed to send conflict notification:', err);
+        }
+      }
+    }
+
+    return resolutions;
   }
 }
 ```
@@ -886,9 +1218,129 @@ class CommunityTemplateService {
   //    `<name:abcd1234>`, `<ip:abcd1234>`, `<mac:abcd1234>`, `<serial:abcd1234>`.
   // Implementation note: the canonical implementation lives in
   // `src/lib/privacy/strip-pii.ts` and must be covered by unit tests.
-  stripPII(playbook: Playbook) {
-    // See `src/lib/privacy/strip-pii.ts` for the canonical implementation.
-    return playbook;
+  async stripPII(playbook: Playbook): Promise<Playbook> {
+    // Deterministic and idempotent sanitizer implementing rules above.
+    const TOP_LEVEL_REMOVE = new Set([
+      'userId',
+      'accountId',
+      'deviceId',
+      'sessionId',
+      'authToken',
+    ]);
+
+    const NETWORK_KEYS = new Set([
+      'mac',
+      'macAddress',
+      'serial',
+      'serialNumber',
+      'imei',
+      'imsi',
+      'ip',
+      'ipAddress',
+    ]);
+
+    const EMAIL_RE = /([a-zA-Z0-9_.+%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+    const PHONE_RE = /(\+?\d[\d\s().-]{7,}\d)/g;
+    const NAME_RE = /\b([A-Z][a-z]+\s+(?:[A-Z]\.?\s+)?[A-Z][a-z]+)\b/g;
+    const IP_RE = /\b((?:\d{1,3}\.){3}\d{1,3})\b/g;
+    const MAC_RE = /\b([0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5})\b/g;
+    const SERIAL_RE = /\b([A-Z0-9]{8,})\b/g;
+
+    const hashDet = (s: string): string => {
+      let h = 0x811c9dc5;
+      for (let i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, 0x01000193);
+      }
+      return (h >>> 0).toString(16).padStart(8, '0').slice(0, 8);
+    };
+
+    const already = (t: string) =>
+      /<(?:email|phone|name|ip|mac|serial):[a-f0-9]{8}>/i.test(t);
+    const redactText = (t?: string): string | undefined => {
+      if (typeof t !== 'string' || !t) return t;
+      if (already(t)) return t;
+      let out = t;
+      out = out.replace(EMAIL_RE, (_m, v) => `<email:${hashDet(v)}>`);
+      out = out.replace(
+        PHONE_RE,
+        (_m, v) => `<phone:${hashDet(String(v).replace(/\D/g, ''))}>`
+      );
+      out = out.replace(NAME_RE, (_m, v) => `<name:${hashDet(v)}>`);
+      out = out.replace(IP_RE, (_m, v) => `<ip:${hashDet(v)}>`);
+      out = out.replace(MAC_RE, (_m, v) => `<mac:${hashDet(v.toLowerCase())}>`);
+      out = out.replace(SERIAL_RE, (m) => `<serial:${hashDet(m)}>`);
+      return out;
+    };
+
+    const sanitizeAttachment = (att: any) => {
+      if (!att || typeof att !== 'object') return att;
+      const { exif, ...rest } = att;
+      const safe: any = { ...rest };
+      delete safe.gps;
+      delete safe.location;
+      delete safe.cameraSerial;
+      delete safe.originalTimestamp;
+      return safe;
+    };
+
+    const deepSanitize = (val: any): any => {
+      if (val == null) return val;
+      if (typeof val === 'string') return redactText(val);
+      if (Array.isArray(val)) return val.map(deepSanitize);
+      if (typeof val === 'object') {
+        const out: any = {};
+        for (const [k, v] of Object.entries(val)) {
+          if (NETWORK_KEYS.has(k)) {
+            const t = k.toLowerCase().includes('mac')
+              ? 'mac'
+              : k.toLowerCase().includes('ip')
+                ? 'ip'
+                : 'serial';
+            out[k] = `<${t}:${hashDet(String(v))}>`;
+            continue;
+          }
+          if (k === 'attachments' && Array.isArray(v)) {
+            out[k] = v.map(sanitizeAttachment);
+            continue;
+          }
+          out[k] = deepSanitize(v);
+        }
+        return out;
+      }
+      return val;
+    };
+
+    const base: any = JSON.parse(JSON.stringify(playbook));
+    for (const k of TOP_LEVEL_REMOVE) delete base[k];
+
+    if (Array.isArray(base.steps)) {
+      base.steps = base.steps.map((s: any) => {
+        const normalized: any = {
+          id: s.id,
+          title: redactText(s.title),
+          description: redactText(s.description ?? s.descriptionIcu),
+          schedule: s.schedule ?? s.rrule ?? undefined,
+          attachments: Array.isArray(s.attachments)
+            ? s.attachments.map(sanitizeAttachment)
+            : undefined,
+          metadata: s.metadata ? deepSanitize(s.metadata) : undefined,
+        };
+        Object.keys(normalized).forEach(
+          (k) => normalized[k] === undefined && delete normalized[k]
+        );
+        return normalized;
+      });
+    }
+
+    // Sanitize any remaining nested metadata outside steps
+    if (base.metadata) base.metadata = deepSanitize(base.metadata);
+
+    return base as Playbook;
+  }
+
+  async share(playbook: Playbook): Promise<void> {
+    const sanitizedTemplate = await this.stripPII(playbook);
     const communityTemplate = {
       ...sanitizedTemplate,
       authorHandle: await this.getCurrentUserHandle(),
@@ -901,11 +1353,7 @@ class CommunityTemplateService {
       .insert(communityTemplate);
   }
 
-  private stripPII(playbook: Playbook): Playbook {
-    // Remove personal plant data
-    // Remove identifying information
-    // Keep only normalized steps schema
-  }
+  // (moved) stripPII is implemented above as a single async method.
 }
 ```
 

@@ -23,6 +23,8 @@ This canonical list is the single source of truth for all references to assessme
 11. Spider mites (pest)
 12. Powdery mildew (pathogen)
 
+Note: For filtering/UI/rollout logic, use the boolean flag `is_ood` on assessment classes to represent out-of-distribution cases. By default `is_ood = false`. Classes previously labeled "Unknown / Out-of-Distribution (OOD)" should set `is_ood = true`.
+
 ## Architecture
 
 ### High-Level System Architecture
@@ -132,7 +134,7 @@ type PhotoMetadata = {
 - **Exposure Assessment**: Histogram analysis for over/under-exposure detection
 - **White Balance**: Color temperature estimation and deviation check from neutral
 - **Composition**: Plant matter detection and framing validation
-- **Batch Rule**: Multiple photos → per-image predictions → majority vote; ties → highest calibrated confidence; all <0.70 → Unknown + CTA
+- **Batch Rule**: Multiple photos → per-image predictions → majority vote; ties → highest calibrated confidence; all <0.70 → set `is_ood = true` and show CTA
 
 **Interface**:
 
@@ -234,6 +236,7 @@ interface AssessmentClass {
   category: 'nutrient' | 'stress' | 'pathogen' | 'pest' | 'healthy' | 'unknown';
   description: string;
   visualCues: string[];
+  isOod: boolean; // Indicates out-of-distribution; defaults to false
 }
 ```
 
@@ -420,6 +423,7 @@ interface AssessmentClassRecord {
   category: string;
   description: string;
   visual_cues: string[];
+  is_ood: boolean; // Indicates out-of-distribution; defaults to false
   action_template: ActionPlan;
   created_at: Date;
 }
@@ -494,6 +498,9 @@ class AssessmentClass extends Model {
   @field('category') category!: string;
   @field('description') description!: string;
 
+  // Out-of-distribution flag used for filtering/UI/rollout logic (defaults to false)
+  @field('is_ood') isOod!: boolean;
+
   // JSON fields for complex data
   @json('visual_cues', sanitizeStringArray) visualCues!: string[];
   @json('action_template', sanitizeActionPlan) actionTemplate!: ActionPlan;
@@ -543,6 +550,7 @@ const assessmentClassSchema = {
     { name: 'name', type: 'string' },
     { name: 'category', type: 'string', isIndexed: true },
     { name: 'description', type: 'string' },
+    { name: 'is_ood', type: 'boolean' },
     { name: 'visual_cues', type: 'string' }, // JSON string array
     { name: 'action_template', type: 'string' }, // JSON ActionPlan object
     { name: 'created_at', type: 'number' },
@@ -555,8 +563,10 @@ const assessmentClassSchema = {
 ```typescript
 // Sanitization functions to keep JSON fields lean and PII-free
 function sanitizeImages(images: string[]): string[] {
-  // Keep only local file URIs, limit to 10 images max
-  return images.filter((uri) => uri.startsWith('file://')).slice(0, 10);
+  // Keep only local URIs, limit to 10 images max
+  return images
+    .filter((uri) => uri.startsWith('file://') || uri.startsWith('content://'))
+    .slice(0, 10);
 }
 
 function sanitizePlantContext(context: PlantContext): PlantContext {
@@ -579,11 +589,11 @@ function sanitizeQualityScores(scores: QualityResult[]): QualityResult[] {
   return scores.slice(0, 10).map((score) => ({
     score: score.score,
     acceptable: score.acceptable,
-    issues: score.issues.map((issue) => ({
+    issues: (score.issues ?? []).map((issue) => ({
       type: issue.type,
       severity: issue.severity,
       // Trim suggestion text to 200 chars to keep rows lean
-      suggestion: issue.suggestion.substring(0, 200),
+      suggestion: (issue.suggestion ?? '').substring(0, 200),
     })),
   }));
 }
@@ -591,11 +601,11 @@ function sanitizeQualityScores(scores: QualityResult[]): QualityResult[] {
 function sanitizeActionPlan(plan: ActionPlan): ActionPlan {
   return {
     // Limit arrays to prevent bloated rows
-    immediateSteps: plan.immediateSteps.slice(0, 5),
-    shortTermActions: plan.shortTermActions.slice(0, 5),
-    diagnosticChecks: plan.diagnosticChecks.slice(0, 5),
-    warnings: plan.warnings.slice(0, 3),
-    disclaimers: plan.disclaimers.slice(0, 2),
+    immediateSteps: (plan.immediateSteps ?? []).slice(0, 5),
+    shortTermActions: (plan.shortTermActions ?? []).slice(0, 5),
+    diagnosticChecks: (plan.diagnosticChecks ?? []).slice(0, 5),
+    warnings: (plan.warnings ?? []).slice(0, 3),
+    disclaimers: (plan.disclaimers ?? []).slice(0, 2),
   };
 }
 

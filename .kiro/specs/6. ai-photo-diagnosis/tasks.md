@@ -26,7 +26,11 @@
 
   - Add support for capturing up to 3 photos per assessment case with progress indicators
 
-    - Integrate with react-native-camera or expo-camera for cross-platform compatibility
+    - Integrate camera support using the Expo Camera module (`expo-camera`) for
+      cross-platform photo capture, ensuring permission handling and camera
+      lifecycle management. Use of `expo-camera` satisfies requirements 1.1–1.3.
+      Prefer the Expo-managed workflow for smoother compatibility, while
+      still validating behavior in a bare/native workflow where required.
     - _Requirements: 1.1, 1.2, 1.3_
 
   - [ ] 2.2 Build automated image quality assessment engine
