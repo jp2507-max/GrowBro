@@ -939,10 +939,21 @@ class NotificationManager implements NotificationScheduler {
         return;
       }
 
-      // Track delivery analytics
+      // Track delivery analytics with numeric latency
+      const nowMs = Date.now();
+      const sentAt =
+        (task as any).reminderAtUtc ??
+        (task as any).reminderAtLocal ??
+        (task as any).dueAtUtc ??
+        (task as any).dueAtLocal;
+      let deliveryLatencyMs = 0;
+      if (sentAt) {
+        const sentMs = typeof sentAt === 'number' ? sentAt : new Date(sentAt).getTime();
+        deliveryLatencyMs = Number.isFinite(sentMs) ? Math.max(0, nowMs - sentMs) : 0;
+      }
       this.analytics.track('notif_delivered', {
         taskId: task.id,
-        hasRecurrence: Boolean(task.recurrenceRule),
+        deliveryLatencyMs,
       });
 
       // If this is a recurring task, schedule the next occurrence
@@ -1066,6 +1077,15 @@ References: Expo Notifications docs (local triggers), rrule.js for recurrence ca
   async canUseExactAlarms(): Promise<boolean> {
     // Android 12+ (API 31): gated by manifest permission; no cross-platform JS probe
     return Platform.OS === 'android' && Platform.Version >= 31;
+  }
+
+  async handleDozeMode(): Promise<void> {
+    // Android Doze/App Standby may defer alarms/notifications.
+    // Minimal, safe no-op strategy for design compliance:
+    // - We rely on OS delivery; when the app resumes or a delivery callback fires,
+    //   computeNextAndReschedule() continues the one-shot chain.
+    // - Native fallbacks (e.g., WorkManager) can be added in a real impl.
+    return Promise.resolve();
   }
 
 ```
@@ -1221,6 +1241,104 @@ class PlaybookSyncEngine {
     }
 
     return resolutions;
+  }
+
+  // --- Missing SyncEngine methods (stubs) ---
+  // These methods are declared on the SyncEngine interface in this doc
+  // but the concrete PlaybookSyncEngine previously only implemented
+  // pull/push/handleConflicts. Provide minimal, documented stubs here
+  // so the implementation matches the interface signatures.
+
+  async synchronize(): Promise<SyncResult> {
+    // Single entry point for full sync cycle (pull -> resolve -> push)
+    // This is a design-time stub; concrete implementations should
+    // wire in backoff/retry, network detection, and progress reporting.
+    try {
+      const lastPulledAt = 0; // placeholder: concrete impl reads persisted cursor
+      const changes = await this.pullChanges(lastPulledAt);
+
+      // Handle conflicts if any exist on pull (design-time: check shape)
+      if (
+        Array.isArray((changes as any)?.conflicts) &&
+        (changes as any).conflicts.length
+      ) {
+        await this.handleConflicts((changes as any).conflicts as Conflict[]);
+      }
+
+      // Push local queued changes (idempotency key should be provided by caller)
+      // For a stub we generate a lightweight key.
+      const pushResult = await this.pushChanges(
+        (changes as any).local ?? {},
+        (changes as any).idempotencyKey ?? generateUUID()
+      );
+
+      // Compose a SyncResult object (shape is design-time only)
+      return {
+        pulled: changes,
+        pushed: pushResult,
+        success: true,
+      } as unknown as SyncResult;
+    } catch (err) {
+      // Surface a typed SyncError in real implementation
+      throw err;
+    }
+  }
+
+  async queueOfflineChanges(changes: Changes): Promise<void> {
+    // Add changes to a durable offline queue for later push.
+    // Stub: persist to an in-memory array or delegate to a queue manager.
+    try {
+      if (!(this as any)._offlineQueue) (this as any)._offlineQueue = [];
+      (this as any)._offlineQueue.push(changes);
+      // In a real implementation persist to DB and emit metric
+      return Promise.resolve();
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
+  async showConflictDiff(localData: any, remoteData: any): Promise<void> {
+    // Non-blocking UI affordance: present diff to user. In this design doc
+    // we surface a simple console output as a placeholder.
+    try {
+      // In production this would trigger a UI overlay / modal with a
+      // structured diff viewer and actions (accept remote / keep local).
+      // Keep this permissive so implementations can hook into app notifier.
+      // eslint-disable-next-line no-console
+      console.info('Conflict diff (local vs remote):', {
+        local: localData,
+        remote: remoteData,
+      });
+      return Promise.resolve();
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
+  async restoreLocalVersion(conflictId: string): Promise<void> {
+    // One-tap restore: re-apply the local version for a given conflict id.
+    // Stub: in a real impl this would lookup the conflict audit log and
+    // perform a DB transaction to re-write the remote row locally and
+    // re-queue a push if necessary.
+    try {
+      // noop placeholder
+      return Promise.resolve();
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
+  async getSyncStats(): Promise<SyncStats> {
+    // Return lightweight health metrics for sync subsystem.
+    // Stub returns mock values; concrete implementations should collect
+    // latency, success/fail rates, queue size etc.
+    return Promise.resolve({
+      lastSuccessfulSyncAt: Date.now(),
+      averagePushLatencyMs: 120,
+      averagePullLatencyMs: 95,
+      failureRate: 0.02,
+      queuedChanges: ((this as any)._offlineQueue || []).length || 0,
+    } as unknown as SyncStats);
   }
 }
 ```

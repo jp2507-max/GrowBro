@@ -107,7 +107,7 @@
 
     **API Response Format:**
 
-    ```json
+    ```jsonc
     {
       "changes": {
         "created": [...],  // New records from active query
@@ -167,13 +167,14 @@
   **Migration Deployment Notes:**
 
   - Use `CONCURRENTLY` to avoid blocking writes during index creation (requires PostgreSQL 8.2+)
+  - IMPORTANT: `CREATE INDEX CONCURRENTLY` cannot run inside a transaction. Ensure your migration runner does not wrap these statements in a transaction. Run them outside transactional migration tooling or use your framework's flag to disable transaction wrapping (e.g., Rails `disable_ddl_transaction!`).
   - Include `IF NOT EXISTS` for idempotent deployments
   - Add `WHERE deleted_at IS NULL` clause to index only active records, reducing index size and improving query performance
   - Keep partial predicates exactly aligned with your query predicates so the planner can use the indexes:
     - Updated-rows scans use `deleted_at IS NULL` (matches `idx_*_updated_at_id`)
   - Tombstone scans use `deleted_at IS NOT NULL` (matches `idx_*_deleted_at_id_tombstones`)
   - Specify the full `schema.table` name for clarity and to avoid search_path issues
-  - Test index creation in staging before production deployment
+  - Test index creation in staging using the same non-transactional mode before production deployment
   - Monitor query performance before/after index creation using `EXPLAIN ANALYZE`
   - Include rollback plan:
     - `DROP INDEX CONCURRENTLY IF EXISTS idx_<table>_updated_at_id;`
@@ -385,10 +386,6 @@
     - Keep `response_payload` small and bounded; if responses are large, consider storing a pointer to a storage object (e.g., storage bucket path) instead of inlining large blobs in the row.
 
     - Tests: add integration tests exercising concurrent retries, conflict paths (insert conflict -> return stored payload), and verifying that mutations are applied exactly once for a given idempotency key.
-
-    ```
-
-    ```
 
   - Add soft delete handling with deleted_at timestamps
   - Write integration tests for Edge Functions with various sync scenarios
