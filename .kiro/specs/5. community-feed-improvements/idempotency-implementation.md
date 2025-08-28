@@ -256,11 +256,11 @@ function validateIdempotencyHeaders(req: Request): {
   const key = req.headers.get('Idempotency-Key');
   const clientTxId = req.headers.get('X-Client-Tx-Id');
 
-  if (!key || !key.match(/^[a-zA-Z0-9-_]{1,255}$/)) {
+  if (!key || !key.match(/^[A-Za-z0-9_-]{1,255}$/)) {
     throw new BadRequestError('Missing or invalid Idempotency-Key header');
   }
 
-  if (!clientTxId || !clientTxId.match(/^[a-zA-Z0-9-_]{1,255}$/)) {
+  if (!clientTxId || !clientTxId.match(/^[A-Za-z0-9_-]{1,255}$/)) {
     throw new BadRequestError('Missing or invalid X-Client-Tx-Id header');
   }
 
@@ -406,14 +406,6 @@ BEGIN
   -- capture number of rows deleted
   GET DIAGNOSTICS deleted_count = ROW_COUNT;
 
-  -- ensure the cleanup_logs table exists to avoid runtime errors
-  CREATE TABLE IF NOT EXISTS cleanup_logs (
-    table_name text,
-    deleted_count integer,
-    failed_records_cleaned integer,
-    cleanup_time timestamp with time zone
-  );
-
   -- Log cleanup stats including failed record count for debugging insights
   INSERT INTO cleanup_logs (table_name, deleted_count, failed_records_cleaned, cleanup_time)
   VALUES ('idempotency_keys', deleted_count, failed_count, now());
@@ -488,9 +480,11 @@ CREATE POLICY "Service role can manage all idempotency keys" ON idempotency_keys
 
 ### Key Format Validation
 
-- Idempotency keys: `^[a-zA-Z0-9-_]{1,255}$`
-- Client transaction IDs: `^[a-zA-Z0-9-_]{1,255}$`
-- Reject keys with special characters to prevent injection attacks
+- Idempotency keys: `^[A-Za-z0-9_-]{1,255}$`
+- Client transaction IDs: `^[A-Za-z0-9_-]{1,255}$`
+- Validator: use `^[A-Za-z0-9_-]{1,255}$` (only ASCII letters A-Z / a-z, digits 0-9, underscore (\_) and hyphen (-)).
+
+This tightens the validator to explicitly allow only letters, digits, underscore and hyphen and avoids the accidental range created by an unescaped hyphen in the original character class. Keep the same length limit (1-255).
 
 ### Payload Hash Security
 

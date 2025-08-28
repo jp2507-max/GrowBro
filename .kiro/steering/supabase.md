@@ -51,3 +51,12 @@ GrowBro uses Supabase as the backend service for authentication, database operat
 - Handle offline scenarios gracefully
 - Use proper TypeScript types (generate with MCP tools)
 - Follow the offline-first architecture with WatermelonDB sync
+
+## Migrations and Scheduled Jobs
+
+- Ensure migrations run before enabling any scheduled jobs that depend on schema.
+- For idempotency cleanup: the `cleanup_logs` table is created via migration (see `supabase/migrations/20250828_create_cleanup_logs_table.sql`). The scheduled function must not perform DDL; it only inserts into `cleanup_logs`.
+- Deployment order:
+  1. Apply migrations.
+  2. Deploy the function `cleanup_expired_idempotency_keys`.
+  3. Enable/schedule the job.

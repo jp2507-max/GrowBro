@@ -129,10 +129,8 @@ The Offline-first & Sync feature enables GrowBro users to continue using the app
 - **Sync triggers:** App start; app foreground; manual; background (subject to platform limits)
 - **Platform constraints:** iOS background fetch only while app is backgrounded; min ~15 min intervals; not guaranteed timing
 - **Fallback:** Provide manual sync button since background timing isn't guaranteed
-  **Preferred approach:** Use `expo-task-manager` to define background tasks and
-  `expo-background-task` to schedule opportunistic periodic work (Expo SDK 53+
-  integrates with BGTaskScheduler on iOS and WorkManager on Android). Treat
-  scheduling intervals as hints and always provide a manual "Sync now" fallback.
+  **Preferred approach:** Use `expo-background-task` to schedule opportunistic periodic work and `expo-task-manager` (TaskManager.defineTask/registerTask) from `expo-task-manager` to define the task handlers. Expo SDK 53+ maps scheduling to the native OS schedulers (BGTaskScheduler on iOS and WorkManager on Android). Treat scheduling intervals as hints and always provide a manual "Sync now" fallback.
+  **Android constraints:** Describe constraints using WorkManager-style semantics (e.g., network type, requiresCharging, isDeviceIdle). The system should map these constraint semantics to platform APIs where available and gracefully degrade when a specific constraint isn't supported by the OS.
 - **Android constraints:** Use WorkManager-style constraints (Wi-Fi, charging)
 
 - **Connectivity detection:** Use @react-native-community/netinfo (Expo NetInfo) as source of truth for online/offline and metered networks

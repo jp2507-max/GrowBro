@@ -572,12 +572,11 @@
   - Write tests for image upload queue and backfill operations
   - _Requirements: 3.2, 3.3, 5.1, 7.3_
 
-- [ ] 8. Implement background sync with expo-task-manager + expo-background-task
+- [ ] 8. Implement background sync with expo-background-task + expo-task-manager
 
-  - Create BackgroundSyncService using `expo-task-manager` and
-    `expo-background-task` (Expo SDK 53+). NOTE: Expo SDK 53+ background scheduling maps to platform-native schedulers: BGTaskScheduler on iOS and WorkManager on Android.
-  - Replace prior references to `expo-background-fetch` with `expo-background-task` which integrates with the OS schedulers. On iOS, tasks are scheduled via BGTaskScheduler and subject to the OS background execution budget; on Android, WorkManager is used for reliable scheduling with battery/network constraints.
-  - Add background task registration and constraint configuration (network type, requiresCharging, isDeviceIdle where available via WorkManager constraints).
+  - Create BackgroundSyncService using `expo-background-task` to schedule opportunistic periodic work and use `expo-task-manager` (TaskManager.defineTask / TaskManager.registerTask) to define the task handlers. Expo SDK 53+ maps scheduling to platform-native schedulers: BGTaskScheduler on iOS and WorkManager on Android.
+  - Replace prior references to `expo-background-fetch` with guidance to use the combination of `expo-background-task` (scheduling) and `expo-task-manager` (task handlers). On iOS, scheduled work is subject to BGTaskScheduler policies and system budget; on Android, WorkManager handles reliable scheduling with battery and network constraints.
+  - Add background task registration and constraint configuration (network type, requiresCharging, isDeviceIdle where available via WorkManager constraints). Scheduling intervals are hints only — the OS decides actual runtime. Provide a user-invokable "Sync now" manual fallback for immediate sync.
   - Document that execution is opportunistic (OS-scheduled) and add manual "Sync now" fallback for immediate sync when users invoke it in-app.
   - Implement opportunistic background sync with platform limitations handling and graceful no-op when the OS defers execution.
   - Log outcomes for QA (ran/didn't run, duration, reason for deferral) and expose those diagnostics in a developer-only screen.
