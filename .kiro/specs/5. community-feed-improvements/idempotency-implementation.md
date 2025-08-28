@@ -421,7 +421,8 @@ class OutboxProcessor {
         // Still processing - server sets standard Retry-After header (seconds or HTTP-date)
         // parseRetryAfter converts header string (or numeric string) to milliseconds.
         const headerValue = error.headers['retry-after'];
-        const retryAfterMs = parseRetryAfter(headerValue) || 1000;
+        const parsedMs = parseRetryAfter(headerValue);
+        const retryAfterMs = Number.isFinite(parsedMs) ? parsedMs : 1000;
         await this.scheduleRetry(entry.id, retryAfterMs);
         return;
       }
