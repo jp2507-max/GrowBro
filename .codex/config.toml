@@ -1,0 +1,31 @@
+# Codex CLI configuration (TOML)
+#
+# This repo provides a project-scoped Codex config with only the requested MCP servers.
+# You can:
+#  - set CODEX_HOME to this folder to use it directly, or
+#  - copy this file to %USERPROFILE%\.codex\config.toml
+#
+# Windows PowerShell examples:
+#   # Use this project-scoped config for the current shell
+#   $env:CODEX_HOME = "$PWD/.codex"
+#   codex
+#
+#   # Or copy to your user profile
+#   New-Item -ItemType Directory -Path "$env:USERPROFILE/.codex" -Force | Out-Null
+#   Copy-Item ".codex/config.toml" "$env:USERPROFILE/.codex/config.toml"
+
+# Prefer ChatGPT auth by default (you can switch to "apikey" if desired)
+preferred_auth_method = "chatgpt"
+
+# IMPORTANT: top-level key is `mcp_servers` (TOML), not `mcpServers`.
+[mcp_servers.brave-search]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-brave-search@latest"]
+# Set BRAVE_API_KEY directly here as requested. Be mindful of committing secrets.
+env = { "BRAVE_API_KEY" = "BSAtU49fY4OS8HWZjz6zbGxRtCHJLqH" }
+
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp@latest"]
+# If Context7 requires credentials, set them as environment variables as per its docs.
+# You can also pass an API key via CLI flag `--api-key <key>` if needed, but prefer OS env.

@@ -1,29 +1,41 @@
-# Tech Stack & Build System
+# Technology Stack
 
-## Core Technologies
+## Core Framework
 
-- **React Native 0.79.5** with **Expo ~53.0.22** (managed workflow)
+- **React Native 0.79** with **Expo 53** (managed workflow)
 - **TypeScript** (strict mode enabled)
-- **Expo Router 5** for file-based navigation
-- **NativeWind 4** for styling (Tailwind CSS for React Native)
-- **React Query 5** (@tanstack/react-query) for data fetching
-- **WatermelonDB** for offline-first local storage
+- **Expo Router** for file-based navigation with typed routes
+- **New Architecture** enabled for performance
+
+## UI & Styling
+
+- **NativeWind 4** (Tailwind CSS for React Native)
+- **Reanimated 3.17+** for animations and gestures
+- **React Native Gesture Handler** for touch interactions
+- **Bottom Sheet** (@gorhom/bottom-sheet) for modal interfaces
+- **FlashList** for performant lists (replace FlatList)
+
+## State Management & Data
+
+- **React Query 5** (@tanstack/react-query) for server state
+- **Zustand** for client state management
+- **WatermelonDB** for offline-first local database (SQLite)
 - **Supabase** for backend services and real-time features
-- **Zustand** for state management
-- **React Hook Form** with Zod validation
+- **React Hook Form** with Zod validation for forms
 
-## Key Libraries
+## Development Tools
 
-- **UI/Animation**: Reanimated 3, Moti, @gorhom/bottom-sheet, @shopify/flash-list v2
-- **Forms**: react-hook-form, @hookform/resolvers, zod
-- **Internationalization**: i18next, react-i18next, expo-localization
-- **Storage**: react-native-mmkv, WatermelonDB
-- **Testing**: Jest, @testing-library/react-native
+- **pnpm** as package manager (required - enforced via preinstall)
+- **ESLint** with TypeScript, Prettier, Tailwind, and custom rules
+- **Jest** with React Native Testing Library for unit tests
+- **Maestro** for E2E testing
+- **Husky** for git hooks with lint-staged
 
-## Package Manager
+## Build & Deployment
 
-- **pnpm** (required) - enforced via preinstall script
-- Use `pnpm` for all dependency management
+- **EAS Build** for native builds across environments (dev/staging/production)
+- **Sentry** for error tracking and performance monitoring
+- **Environment-based configuration** with strict validation
 
 ## Common Commands
 
@@ -38,15 +50,15 @@ pnpm ios
 pnpm android
 pnpm web
 
-# Environment-specific builds
+# Environment-specific development
 pnpm start:staging
 pnpm start:production
 ```
 
-### Building & Deployment
+### Building
 
 ```bash
-# Prebuild for native platforms
+# Prebuild for native development
 pnpm prebuild
 pnpm prebuild:staging
 pnpm prebuild:production
@@ -54,24 +66,25 @@ pnpm prebuild:production
 # EAS builds
 pnpm build:development:ios
 pnpm build:staging:android
-pnpm build:production:ios
+pnpm build:production:ios:sentry
 ```
 
-### Code Quality
+### Quality Assurance
 
 ```bash
-# Linting and type checking
+# Run all checks
+pnpm check-all
+
+# Individual checks
 pnpm lint
 pnpm type-check
+pnpm test
 pnpm lint:translations
 
 # Testing
-pnpm test
 pnpm test:watch
 pnpm test:ci
-
-# Run all checks
-pnpm check-all
+pnpm e2e-test
 ```
 
 ### Utilities
@@ -80,24 +93,39 @@ pnpm check-all
 # Expo doctor for health checks
 pnpm doctor
 
-# E2E testing with Maestro
-pnpm e2e-test
+# Open native projects
+pnpm xcode  # iOS project in Xcode
 
 # Release management
 pnpm app-release
 ```
 
-## Environment Configuration
+## Architecture Patterns
 
-- **Multi-environment setup**: development, staging, production
-- Environment files: `.env.development`, `.env.staging`, `.env.production`
-- Use `APP_ENV` variable to switch environments
-- Client vs build-time environment variables are strictly separated
+### Offline-First Design
 
-## Build System Notes
+- WatermelonDB for local SQLite storage with background sync
+- Supabase sync via pull/push changes protocol
+- Image storage in filesystem with DB metadata references
+- Local notifications independent of network
 
-- **Expo development build required** for WatermelonDB
-- **Not compatible with Expo Go** due to native dependencies
-- Uses **Metro bundler** with NativeWind integration
-- **New Architecture enabled** (React Native's new architecture)
-- **Typed routes** enabled for Expo Router
+### Performance Requirements
+
+- 60fps on mid-tier Android devices
+- FlashList for all large datasets (>50 items)
+- Reanimated worklets for smooth animations
+- Background thread operations for database
+
+### Code Organization
+
+- Absolute imports via `@/*` aliases
+- Strict TypeScript with consistent imports
+- Component co-location pattern
+- API layer separation with React Query
+
+## Environment Management
+
+- Multi-environment support (development/staging/production)
+- Strict environment variable validation with Zod
+- Bundle ID and package name suffixing per environment
+- Separate Supabase projects per environment
