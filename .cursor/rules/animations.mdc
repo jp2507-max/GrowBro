@@ -1,0 +1,230 @@
+---
+description: Adding Animations
+alwaysApply: false
+---
+
+# 🎬 React Native Reanimated Production Cheatsheet (**3.17.5**, Expo SDK 53)
+
+_Last updated Aug 2025 • ≈250 lines_
+
+---
+
+## 🚀 Worklets in 3.17.5 — What actually runs on the UI thread
+
+- **Auto‑workletization is ON**: Callbacks passed to Reanimated APIs (e.g. `useAnimatedStyle`, `useDerivedValue`, animation finish callbacks, gesture callbacks) run on the **UI thread** without adding `'worklet'`.
+- **Add `'worklet'` manually if…**
+
+  1. you **use imported/external functions** as worklets,
+  2. the function is the **result of an expression** (e.g. conditional/ternary),
+  3. you define worklet callbacks **inside custom hooks** (the plugin doesn’t know your hook),
+  4. you want to **workletize top‑level utilities** (optionally mark the whole file at the top with `'worklet'`).
+
+- **`runOnUI`**: Inline functions passed to `runOnUI` are workletized automatically; external references still need `'worklet'`.
+- ✔ **Checklist**
+
+  - [ ] No `.value` access in React render (derive styles/values inside worklets)
+  - [ ] `cancelAnimation` on unmount for long/looping animations
+
+```ts
+// Auto‑workletized (hook callback ⇒ UI thread)
+const animatedStyle = useAnimatedStyle(() => ({
+  transform: [{ scale: scale.value }],
+}));
+
+// Manual — imported function used as a worklet
+export function importedWorklet() {
+  'worklet';
+  return { width: 100 };
+}
+const s = useAnimatedStyle(importedWorklet);
+
+// Conditional/expression — add 'worklet' in both branches
+const makeStyle = someCond
+  ? () => {
+      'worklet';
+      return { opacity: 1 };
+    }
+  : () => {
+      'worklet';
+      return { opacity: 0.5 };
+    };
+const st = useAnimatedStyle(makeStyle);
+
+// Whole‑file worklet (optional utility file)
+('worklet');
+export function cardShadow() {
+  return { shadowOpacity: 0.15 };
+}
+```
+
+---
+
+## 📦 Minimum Imports (3.17.5)
+
+```ts
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnUI,
+  interpolateColor as rInterpolateColor,
+  cancelAnimation,
+} from 'react-native-reanimated';
+
+import { Gesture, GestureDetector } from 'react-native-gesture-handler'; // RNGH v2
+```
+
+> Use RNGH’s **Gesture API** (`Gesture.*`) with **`GestureDetector`** instead of the old handler components.
+
+---
+
+## 🎯 Core Patterns
+
+### Shared Values
+
+```ts
+const width = useSharedValue(100);
+width.value = withSpring(200);
+```
+
+### `useAnimatedStyle`
+
+```ts
+const st = useAnimatedStyle(() => ({
+  transform: [{ translateX: offset.value }],
+  opacity: isVisible.value ? 1 : 0,
+}));
+// Don’t mutate shared values inside this callback (read/assign only).
+```
+
+### Color Interpolation
+
+```ts
+const bg = useAnimatedStyle(() => ({
+  backgroundColor: rInterpolateColor(progress.value, [0, 1], ['#F00', '#0F0']),
+}));
+```
+
+### NativeWind
+
+- **Static**: `className="bg-blue-500 p-4 rounded-lg"`
+- **Dynamic**: `style={animatedStyle}`
+
+---
+
+## 👆 Modern Gesture API (RNGH v2)
+
+```tsx
+const x = useSharedValue(0);
+const y = useSharedValue(0);
+const ctx = useSharedValue({ x: 0, y: 0 });
+
+const pan = Gesture.Pan()
+  .onStart(() => {
+    ctx.value = { x: x.value, y: y.value };
+  })
+  .onUpdate((e) => {
+    x.value = ctx.value.x + e.translationX;
+    y.value = ctx.value.y + e.translationY;
+  })
+  .onEnd(() => {
+    x.value = withSpring(0);
+    y.value = withSpring(0);
+  });
+
+const style = useAnimatedStyle(() => ({
+  transform: [{ translateX: x.value }, { translateY: y.value }],
+}));
+
+return (
+  <GestureDetector gesture={pan}>
+    <Animated.View style={style} />
+  </GestureDetector>
+);
+```
+
+### Migration Map
+
+Replace ➜ With
+• `useAnimatedGestureHandler` ➜ `Gesture.*()` (+ `GestureDetector`)
+• `PanGestureHandler` ➜ `GestureDetector`
+• `onActive` ➜ `onUpdate`
+• `ctx` param ➜ external `useSharedValue`
+
+> `useAnimatedGestureHandler` is **deprecated in 3.x** and slated for removal in the next major.
+
+---
+
+## ♻️ Cleanup & Chaining
+
+```ts
+useEffect(() => () => cancelAnimation(offset), []); // cleanup on unmount
+```
+
+```ts
+offset.value = withSpring(100, {}, (finished) => {
+  // finish callbacks are treated as worklets in this context
+  if (finished) {
+    scale.value = withSpring(1.2);
+  }
+});
+```
+
+---
+
+## 🔧 Hooks vs. Direct Utilities
+
+- **Direct usage** in components is smallest & fastest.
+- **Custom hooks** in `@/lib/animations` are great for reuse (cards, buttons, modals), **but**: mark internal callbacks with `'worklet'` (the plugin can’t auto‑register your hook).
+- Avoid over‑abstraction for simple one‑offs.
+
+---
+
+## 🧵 Crossing Threads
+
+- **`runOnUI`**: start UI‑thread work from JS (inline callback is auto‑workletized).
+- **`runOnJS`**: call JS/React state from a worklet (e.g., gesture/timing finish callbacks). Never set React state directly inside a UI worklet.
+
+```ts
+const tap = Gesture.Tap().onEnd(() => {
+  runOnJS(setOpen)(true);
+});
+```
+
+---
+
+## 🚨 Pitfalls (3.17.5)
+
+1. Don’t compute with `.value` during React render (derive inside worklets).
+2. Don’t **mutate** inside `useAnimatedStyle` (just read/assign SVs).
+3. Alias `interpolateColor` to avoid naming collisions.
+4. **Cancel** long/looping animations on unmount.
+5. Keep NativeWind sizing units consistent.
+6. For **imports/expressions/custom hooks**, add `'worklet'` explicitly.
+
+---
+
+## ⚙️ Expo SDK 53 Specifics
+
+- **Bundled Reanimated**: `~3.17.4` (compatible with 3.17.5).
+- **Babel**: `react-native-reanimated/plugin` is auto‑configured via `babel-preset-expo` — no manual setup in most Expo apps.
+
+> Install with `npx expo install react-native-reanimated` to match the SDK.
+
+---
+
+## 🔄 If you ever target < 3.x
+
+Older versions often required explicit `'worklet'` in hook callbacks:
+
+```ts
+const oldStyle = useAnimatedStyle(() => {
+  'worklet';
+  return { scale: sv.value };
+});
+```
+
+---
+
+**Status:** Reanimated 3.17.5 is production‑ready in Expo SDK 53 — auto‑workletization, modern Gesture API, and clear migration paths.
