@@ -71,6 +71,7 @@
     "expo-updates": "~0.28.17",
     "i18next": "^23.14.0",
     "lodash.memoize": "^4.1.2",
+    "luxon": "^3.5.0",
     "moti": "^0.29.0",
     "nativewind": "^4.1.21",
     "react": "19.0.0",
@@ -90,7 +91,6 @@
     "react-native-screens": "^4.11.1",
     "react-native-svg": "~15.11.2",
     "react-native-url-polyfill": "^2.0.0",
-    "luxon": "^3.5.0",
     "react-native-web": "~0.20.0",
     "react-query-kit": "^3.3.0",
     "tailwind-variants": "^0.2.1",
@@ -104,7 +104,7 @@
     "@dev-plugins/react-query": "^0.0.7",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.28.0",
-    "@expo/config": "~11.0.10",
+    "@expo/config": "~11.0.13",
     "@testing-library/jest-dom": "^6.5.0",
     "@testing-library/react-native": "^12.7.2",
     "@types/i18n-js": "^3.8.9",
@@ -148,7 +148,7 @@
     "type": "git",
     "url": "git+https://github.com/user/repo-name.git"
   },
-  "packageManager": "pnpm@10.12.3",
+  "packageManager": "pnpm@10.15.0",
   "expo": {
     "doctor": {
       "reactNativeDirectoryCheck": {
