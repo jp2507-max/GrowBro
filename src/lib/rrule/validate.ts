@@ -1,4 +1,4 @@
-import type { RRuleConfig, ValidationResult } from './types';
+import type { RRuleConfig, ValidationResult } from '@/lib/rrule/types';
 
 export function validate(config: RRuleConfig): ValidationResult {
   const errors: string[] = [];

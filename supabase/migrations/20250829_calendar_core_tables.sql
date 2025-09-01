@@ -15,8 +15,9 @@ CREATE TABLE IF NOT EXISTS series (
   timezone text NOT NULL,
   rrule text NOT NULL,
   until_utc timestamptz NULL,
-  count int NULL CHECK (count IS NULL OR count >= 0),
+  count int NULL CHECK (count IS NULL OR count > 0),
   CONSTRAINT chk_rrule_count_until_mutual_exclusive CHECK (count IS NULL OR until_utc IS NULL),
+  CONSTRAINT chk_until_after_dtstart CHECK (until_utc IS NULL OR until_utc > dtstart_utc),
   plant_id uuid NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
@@ -51,6 +52,10 @@ CREATE TABLE IF NOT EXISTS tasks (
   plant_id uuid NULL,
   status text NOT NULL CHECK (status IN ('pending','completed','skipped')),
   completed_at timestamptz NULL,
+  CONSTRAINT chk_completed_at_consistency CHECK (
+    (status = 'completed' AND completed_at IS NOT NULL) OR
+    (status <> 'completed' AND completed_at IS NULL)
+  ),
   metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
@@ -76,25 +81,31 @@ DO $$
 DECLARE
     duplicate_count INTEGER;
 BEGIN
-    -- Count duplicates
+    -- Count duplicates using window function for consistency
     SELECT COUNT(*) INTO duplicate_count
     FROM (
-        SELECT series_id, occurrence_local_date, COUNT(*) as cnt
+        SELECT id, ROW_NUMBER() OVER (
+            PARTITION BY series_id, occurrence_local_date
+            ORDER BY created_at DESC, id DESC
+        ) as rn
         FROM occurrence_overrides
-        GROUP BY series_id, occurrence_local_date
-        HAVING COUNT(*) > 1
-    ) duplicates;
+    ) duplicates
+    WHERE rn > 1;
 
     IF duplicate_count > 0 THEN
-        RAISE NOTICE 'Found % duplicate combinations in occurrence_overrides. Removing duplicates...', duplicate_count;
+        RAISE NOTICE 'Found % duplicate rows in occurrence_overrides. Removing duplicates...', duplicate_count;
 
-        -- Delete duplicates, keeping the most recently created row for each (series_id, occurrence_local_date)
+        -- Delete duplicates using window function, keeping the most recently created row
+        -- (and breaking ties by highest id) for each (series_id, occurrence_local_date)
         DELETE FROM occurrence_overrides
-        WHERE id NOT IN (
-            SELECT DISTINCT ON (series_id, occurrence_local_date) id
+        USING (
+            SELECT id, ROW_NUMBER() OVER (
+                PARTITION BY series_id, occurrence_local_date
+                ORDER BY created_at DESC, id DESC
+            ) as rn
             FROM occurrence_overrides
-            ORDER BY series_id, occurrence_local_date, created_at DESC
-        );
+        ) AS sub
+        WHERE occurrence_overrides.id = sub.id AND sub.rn > 1;
 
         RAISE NOTICE 'Duplicates removed successfully.';
     ELSE
@@ -118,6 +129,10 @@ CREATE INDEX IF NOT EXISTS idx_occ_overrides_series_date ON occurrence_overrides
 -- Unique dedupe for queue entries to prevent duplicates for same task/time
 CREATE UNIQUE INDEX IF NOT EXISTS ux_notification_queue_task_at_utc
   ON notification_queue(task_id, scheduled_for_utc);
+
+-- Non-unique index optimized for time-window queries on scheduled_for_utc
+CREATE INDEX IF NOT EXISTS idx_notification_queue_scheduled_for_utc
+  ON notification_queue(scheduled_for_utc);
 
 -- Audit trigger to maintain updated_at
 CREATE OR REPLACE FUNCTION set_updated_at()
