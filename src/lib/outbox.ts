@@ -104,20 +104,26 @@ export async function processOutboxOnce(opts: {
 }
 
 async function fetchPendingEntries(maxBatch: number, now: Date) {
+  const nowIso = now.toISOString();
+
+  // Add pre-filter limit to avoid large in-memory scans
+  const preFilterLimit = maxBatch * 3;
+
   const { data: entries, error: fetchError } = await typedSupabase
-    .from('outbox_notification_actions')
+    .from<OutboxEntry>('outbox_notification_actions')
     .select('*')
     .eq('status', 'pending')
-    .order('created_at', { ascending: true });
+    // Move time-window predicates into SQL query to reduce payload
+    .or(`next_attempt_at.is.null,next_attempt_at.lte.${nowIso}`)
+    .or(`expires_at.is.null,expires_at.gte.${nowIso}`)
+    .order('created_at', { ascending: true })
+    .limit(preFilterLimit);
 
   if (fetchError) throw fetchError;
   if (!entries) return null;
 
-  // Cast entries to properly typed array
-  const typedEntries = entries as OutboxEntry[];
-
-  // Perform time-window checks in-memory
-  const filteredEntries = typedEntries.filter((entry: OutboxEntry) => {
+  // Perform final client-side validation for edge cases (dates might need parsing)
+  const validatedEntries = entries.filter((entry: OutboxEntry) => {
     const nextAttemptAt = entry.next_attempt_at
       ? new Date(entry.next_attempt_at)
       : null;
@@ -132,10 +138,10 @@ async function fetchPendingEntries(maxBatch: number, now: Date) {
     return nextAttemptValid && expiresValid;
   });
 
-  // Slice to maxBatch (ordering handled via SQL order above)
-  const sortedEntries = filteredEntries.slice(0, maxBatch);
+  // Slice to maxBatch (SQL ordering already applied)
+  const batchEntries = validatedEntries.slice(0, maxBatch);
 
-  return sortedEntries as OutboxEntry[] | null;
+  return batchEntries;
 }
 
 async function processEntry(
@@ -185,17 +191,19 @@ async function executeAction(entry: OutboxEntry, scheduler: Scheduler) {
 }
 
 async function markExpired(entryId: string) {
-  await typedSupabase
+  const { error } = await supabase
     .from('outbox_notification_actions')
     .update({ status: 'expired', processed_at: new Date().toISOString() })
     .eq('id', entryId);
+  if (error) throw error;
 }
 
 async function markProcessed(entryId: string) {
-  await typedSupabase
+  const { error } = await supabase
     .from('outbox_notification_actions')
     .update({ status: 'processed', processed_at: new Date().toISOString() })
     .eq('id', entryId);
+  if (error) throw error;
 }
 
 async function handleFailure(entry: OutboxEntry, now: Date) {
@@ -208,7 +216,7 @@ async function handleFailure(entry: OutboxEntry, now: Date) {
     now.getTime() + backoffSeconds * 1000
   ).toISOString();
 
-  await typedSupabase
+  const { error } = await supabase
     .from('outbox_notification_actions')
     .update({
       attempted_count: attempted,
@@ -216,6 +224,7 @@ async function handleFailure(entry: OutboxEntry, now: Date) {
       status: 'pending',
     })
     .eq('id', entry.id);
+  if (error) throw error;
 }
 
 export async function cleanupOutbox(opts: { olderThanSeconds?: number } = {}) {

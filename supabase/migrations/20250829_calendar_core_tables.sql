@@ -34,6 +34,22 @@ CREATE TABLE IF NOT EXISTS occurrence_overrides (
   reminder_at_local timestamp without time zone NULL,
   reminder_at_utc timestamptz NULL,
   status text NULL CHECK (status IN ('skip','reschedule','complete')),
+  -- Status-driven constraints for reschedule: require timestamps
+  CONSTRAINT chk_reschedule_requires_due_at_local CHECK (
+    status <> 'reschedule' OR due_at_local IS NOT NULL
+  ),
+  CONSTRAINT chk_reschedule_requires_due_at_utc CHECK (
+    status <> 'reschedule' OR due_at_utc IS NOT NULL
+  ),
+  -- Status-driven constraints for skip: disallow any timestamps
+  CONSTRAINT chk_skip_disallows_timestamps CHECK (
+    status <> 'skip' OR (
+      due_at_local IS NULL AND
+      due_at_utc IS NULL AND
+      reminder_at_local IS NULL AND
+      reminder_at_utc IS NULL
+    )
+  ),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -55,6 +71,13 @@ CREATE TABLE IF NOT EXISTS tasks (
   CONSTRAINT chk_completed_at_consistency CHECK (
     (status = 'completed' AND completed_at IS NOT NULL) OR
     (status <> 'completed' AND completed_at IS NULL)
+  ),
+  -- Ensure reminders are not scheduled after due time
+  CONSTRAINT chk_reminder_before_due_utc CHECK (
+    reminder_at_utc IS NULL OR reminder_at_utc <= due_at_utc
+  ),
+  CONSTRAINT chk_reminder_before_due_local CHECK (
+    reminder_at_local IS NULL OR reminder_at_local <= due_at_local
   ),
   metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -122,9 +145,8 @@ UNIQUE (series_id, occurrence_local_date);
 CREATE INDEX IF NOT EXISTS idx_tasks_series_id ON tasks(series_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_updated_at ON tasks(updated_at);
 CREATE INDEX IF NOT EXISTS idx_series_updated_at ON series(updated_at);
--- Note: idx_occ_overrides_series_date index is now redundant with the unique constraint above,
--- but keeping it for explicit performance optimization
-CREATE INDEX IF NOT EXISTS idx_occ_overrides_series_date ON occurrence_overrides(series_id, occurrence_local_date);
+-- Note: The unique constraint ux_occurrence_overrides_series_date above automatically creates
+-- the necessary btree index on (series_id, occurrence_local_date) for optimal query performance
 
 -- Unique dedupe for queue entries to prevent duplicates for same task/time
 CREATE UNIQUE INDEX IF NOT EXISTS ux_notification_queue_task_at_utc
@@ -133,6 +155,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_notification_queue_task_at_utc
 -- Non-unique index optimized for time-window queries on scheduled_for_utc
 CREATE INDEX IF NOT EXISTS idx_notification_queue_scheduled_for_utc
   ON notification_queue(scheduled_for_utc);
+
+-- Pragmatic indexes for common query patterns
+-- Index for filtering by plant/status and upcoming due tasks
+CREATE INDEX IF NOT EXISTS idx_tasks_plant_status_due_utc ON tasks(plant_id, status, due_at_utc);
+-- Index for efficient reminder lookups (pending reminders)
+CREATE INDEX IF NOT EXISTS idx_tasks_reminder_at_utc ON tasks(reminder_at_utc) WHERE reminder_at_utc IS NOT NULL;
 
 -- Audit trigger to maintain updated_at
 CREATE OR REPLACE FUNCTION set_updated_at()
@@ -160,4 +188,7 @@ FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 COMMIT;
 
+-- Clean up redundant index (separate migration for existing databases)
+-- This should be applied as a separate migration to remove the redundant index from existing DBs
+-- DROP INDEX IF EXISTS idx_occ_overrides_series_date;
 

@@ -369,7 +369,14 @@ async function upsertBatch(
           for (const [k, v] of Object.entries(p)) {
             (rec as any)[k] = _normalizeIncomingValue(k, v);
           }
-          (rec as any).updatedAt = new Date();
+          // Preserve server's updatedAt if provided, otherwise keep existing record timestamp
+          if (p.updatedAt != null) {
+            (rec as any).updatedAt = _normalizeIncomingValue(
+              'updatedAt',
+              p.updatedAt
+            );
+          }
+          // If p.updatedAt is null/undefined, rec.updatedAt remains unchanged
         });
       }
       applied++;
