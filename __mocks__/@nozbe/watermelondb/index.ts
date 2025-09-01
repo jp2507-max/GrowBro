@@ -1,11 +1,6 @@
 // Main WatermelonDB mock for Jest
 import SQLiteAdapterMock from './adapters/sqlite';
 
-type _MockDatabaseAction = {
-  type: string;
-  [key: string]: any;
-};
-
 // Mock Database class
 class DatabaseMock {
   collections: Map<string, any> = new Map();
