@@ -238,11 +238,19 @@ function applyTaskUpdates(task: TaskModel, updates: UpdateTaskInput): void {
   const r = task as any;
   if (updates.title !== undefined) r.title = updates.title;
   if (updates.description !== undefined) r.description = updates.description;
+  // BUG: This condition will always be false after line 242 executes!
+  // Once r.timezone is set to updates.timezone, the subsequent checks
+  // (updates.timezone !== undefined && updates.timezone !== r.timezone)
+  // will never be true because r.timezone now equals updates.timezone.
+  // This prevents timestamp recalculations when only timezone changes.
+  // FIX: Capture original timezone before updating: const originalTimezone = r.timezone;
+  // Then use: (updates.timezone !== undefined && updates.timezone !== originalTimezone)
   if (updates.timezone !== undefined && updates.timezone !== r.timezone) {
     r.timezone = updates.timezone;
   }
 
   // Always recalculate dual timestamps when timezone changes, even if due/reminder fields aren't explicitly provided
+  // BUG: Same issue - this condition will never be true after timezone update above
   if (
     (updates.timezone !== undefined && updates.timezone !== r.timezone) ||
     updates.dueAtLocal ||
@@ -256,6 +264,7 @@ function applyTaskUpdates(task: TaskModel, updates: UpdateTaskInput): void {
     r.dueAtLocal = dual.dueAtLocal;
     r.dueAtUtc = dual.dueAtUtc;
   }
+  // BUG: Same issue - this condition will never be true after timezone update above
   if (
     (updates.timezone !== undefined && updates.timezone !== r.timezone) ||
     updates.reminderAtLocal ||
