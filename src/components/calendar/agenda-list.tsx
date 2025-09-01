@@ -24,11 +24,11 @@ export function AgendaList({
   );
 
   return (
-    <List
+    <List<AgendaItem>
       data={data}
       renderItem={renderItem}
       keyExtractor={_keyExtractor}
-      getItemType={getItemType as unknown as (item: any) => string}
+      getItemType={getItemType}
       removeClippedSubviews
       ListEmptyComponent={<EmptyList isLoading={isLoading} />}
       showsVerticalScrollIndicator={false}

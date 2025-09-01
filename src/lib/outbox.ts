@@ -1,9 +1,9 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 import { supabase } from './supabase';
 
-function qb(table: string): any {
-  const client: any = supabase as any;
-  return client.from(table);
-}
+// Type the supabase client properly to preserve chaining methods
+const typedSupabase = supabase as SupabaseClient;
 
 export type OutboxActionType = 'schedule' | 'cancel';
 
@@ -48,7 +48,8 @@ export async function enqueueOutboxEntry(params: {
     : null;
 
   // Insert into outbox. If business_key provided, rely on unique index to avoid duplicates.
-  const { data, error } = await qb('outbox_notification_actions')
+  const { data, error } = await typedSupabase
+    .from('outbox_notification_actions')
     .insert([
       {
         action_type,
@@ -103,9 +104,8 @@ export async function processOutboxOnce(opts: {
 }
 
 async function fetchPendingEntries(maxBatch: number, now: Date) {
-  const { data: entries, error: fetchError } = await qb(
-    'outbox_notification_actions'
-  )
+  const { data: entries, error: fetchError } = await typedSupabase
+    .from('outbox_notification_actions')
     .select('*')
     .eq('status', 'pending')
     .order('created_at', { ascending: true });
@@ -113,8 +113,11 @@ async function fetchPendingEntries(maxBatch: number, now: Date) {
   if (fetchError) throw fetchError;
   if (!entries) return null;
 
+  // Cast entries to properly typed array
+  const typedEntries = entries as OutboxEntry[];
+
   // Perform time-window checks in-memory
-  const filteredEntries = entries.filter((entry) => {
+  const filteredEntries = typedEntries.filter((entry: OutboxEntry) => {
     const nextAttemptAt = entry.next_attempt_at
       ? new Date(entry.next_attempt_at)
       : null;
@@ -160,9 +163,8 @@ async function processEntry(
 }
 
 async function claimEntry(entryId: string): Promise<boolean> {
-  const { data: claimed, error: claimError } = await qb(
-    'outbox_notification_actions'
-  )
+  const { data: claimed, error: claimError } = await typedSupabase
+    .from('outbox_notification_actions')
     .update({ status: 'in_progress' })
     .eq('id', entryId)
     .eq('status', 'pending')
@@ -183,13 +185,15 @@ async function executeAction(entry: OutboxEntry, scheduler: Scheduler) {
 }
 
 async function markExpired(entryId: string) {
-  await qb('outbox_notification_actions')
+  await typedSupabase
+    .from('outbox_notification_actions')
     .update({ status: 'expired', processed_at: new Date().toISOString() })
     .eq('id', entryId);
 }
 
 async function markProcessed(entryId: string) {
-  await qb('outbox_notification_actions')
+  await typedSupabase
+    .from('outbox_notification_actions')
     .update({ status: 'processed', processed_at: new Date().toISOString() })
     .eq('id', entryId);
 }
@@ -204,7 +208,8 @@ async function handleFailure(entry: OutboxEntry, now: Date) {
     now.getTime() + backoffSeconds * 1000
   ).toISOString();
 
-  await qb('outbox_notification_actions')
+  await typedSupabase
+    .from('outbox_notification_actions')
     .update({
       attempted_count: attempted,
       next_attempt_at: nextAttempt,
@@ -218,7 +223,8 @@ export async function cleanupOutbox(opts: { olderThanSeconds?: number } = {}) {
   const cutoff = new Date(Date.now() - olderThanSeconds * 1000).toISOString();
 
   // delete processed or expired entries older than cutoff
-  const { error } = await qb('outbox_notification_actions')
+  const { error } = await typedSupabase
+    .from('outbox_notification_actions')
     .delete()
     .or(
       `(and(status.eq.processed,processed_at.lte.${cutoff}),(and(status.eq.expired,processed_at.lte.${cutoff})))`

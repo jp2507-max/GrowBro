@@ -6,14 +6,26 @@
 
 export type RRuleFrequency = 'DAILY' | 'WEEKLY';
 
-export type RRuleConfig = {
+export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7; // ISO weekday numbers: 1=Mon .. 7=Sun
+
+export type RRuleConfigBase = {
   freq: RRuleFrequency;
   interval: number; // 1..365
-  byweekday?: number[]; // ISO weekday numbers: 1=Mon .. 7=Sun
-  until?: Date; // UTC, inclusive
-  count?: number; // mutually exclusive with until
+  byweekday?: Weekday[]; // ISO weekday numbers: 1=Mon .. 7=Sun
   dtstart: Date; // UTC reference instant
 };
+
+export type RRuleConfigUntil = RRuleConfigBase & {
+  until: Date; // UTC, inclusive
+  count?: never;
+};
+
+export type RRuleConfigCount = RRuleConfigBase & {
+  count: number;
+  until?: never;
+};
+
+export type RRuleConfig = RRuleConfigUntil | RRuleConfigCount;
 
 export type ValidationResult = {
   ok: boolean;

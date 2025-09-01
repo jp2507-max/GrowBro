@@ -82,7 +82,7 @@ export default function CalendarScreen(): React.ReactElement {
       );
     }
     if (item.type === 'task' && item.task) {
-      return <AgendaItemRow task={item.task as any} />;
+      return <AgendaItemRow task={item.task} />;
     }
     return null;
   }, []);

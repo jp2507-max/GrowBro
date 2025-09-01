@@ -157,7 +157,6 @@ function toSeriesFromModel(model: SeriesModel): Series {
     timezone: m.timezone,
     rrule: m.rrule,
     untilUtc: m.untilUtc,
-    count: m.count,
     plantId: m.plantId,
     createdAt: m.createdAt.toISOString(),
     updatedAt: m.updatedAt.toISOString(),
@@ -235,59 +234,71 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
   return toTaskFromModel(created);
 }
 
-export async function updateTask(
-  id: string,
-  updates: UpdateTaskInput
-): Promise<Task> {
-  const repos = getRepos();
-  const task = (await (repos.tasks as any).find(id)) as TaskModel;
-  await database.write(async () => {
-    await (task as any).update((rec: TaskModel) => {
-      const r = rec as any;
-      if (updates.title !== undefined) r.title = updates.title;
-      if (updates.description !== undefined)
-        r.description = updates.description;
-      if (updates.timezone) r.timezone = updates.timezone;
+function applyTaskUpdates(task: TaskModel, updates: UpdateTaskInput): void {
+  const r = task as any;
+  if (updates.title !== undefined) r.title = updates.title;
+  if (updates.description !== undefined) r.description = updates.description;
+  if (updates.timezone !== undefined && updates.timezone !== r.timezone) {
+    r.timezone = updates.timezone;
+  }
 
-      if (updates.dueAtLocal || updates.dueAtUtc) {
-        const dual = ensureDualTimestamps({
-          dueAtLocal: updates.dueAtLocal,
-          dueAtUtc: updates.dueAtUtc,
-          timezone: updates.timezone ?? (task as any).timezone,
-        });
-        r.dueAtLocal = dual.dueAtLocal;
-        r.dueAtUtc = dual.dueAtUtc;
-      }
-      if (updates.reminderAtLocal || updates.reminderAtUtc) {
-        const dual = maybeDualReminder({
-          reminderAtLocal: updates.reminderAtLocal,
-          reminderAtUtc: updates.reminderAtUtc,
-          timezone: updates.timezone ?? (task as any).timezone,
-        });
-        r.reminderAtLocal = dual.reminderAtLocal as any;
-        r.reminderAtUtc = dual.reminderAtUtc as any;
-      }
-
-      if (updates.status) r.status = updates.status as Task['status'];
-      if (updates.completedAt !== undefined) {
-        r.completedAt = updates.completedAt
-          ? new Date(updates.completedAt)
-          : undefined;
-      }
-
-      r.updatedAt = new Date();
+  // Always recalculate dual timestamps when timezone changes, even if due/reminder fields aren't explicitly provided
+  if (
+    (updates.timezone !== undefined && updates.timezone !== r.timezone) ||
+    updates.dueAtLocal ||
+    updates.dueAtUtc
+  ) {
+    const dual = ensureDualTimestamps({
+      dueAtLocal: updates.dueAtLocal ?? r.dueAtLocal,
+      dueAtUtc: updates.dueAtUtc ?? r.dueAtUtc,
+      timezone: updates.timezone ?? r.timezone,
     });
-  });
-  // If task reminder/due fields changed or status changed to completed, replan notifications
+    r.dueAtLocal = dual.dueAtLocal;
+    r.dueAtUtc = dual.dueAtUtc;
+  }
+  if (
+    (updates.timezone !== undefined && updates.timezone !== r.timezone) ||
+    updates.reminderAtLocal ||
+    updates.reminderAtUtc
+  ) {
+    const dual = maybeDualReminder({
+      reminderAtLocal: updates.reminderAtLocal ?? r.reminderAtLocal,
+      reminderAtUtc: updates.reminderAtUtc ?? r.reminderAtUtc,
+      timezone: updates.timezone ?? r.timezone,
+    });
+    r.reminderAtLocal = dual.reminderAtLocal as any;
+    r.reminderAtUtc = dual.reminderAtUtc as any;
+  }
+
+  if (updates.status) r.status = updates.status as Task['status'];
+  if (updates.completedAt !== undefined) {
+    r.completedAt = updates.completedAt
+      ? new Date(updates.completedAt)
+      : undefined;
+  }
+
+  r.updatedAt = new Date();
+}
+
+async function handleNotificationUpdates(
+  taskId: string,
+  task: TaskModel,
+  updates: UpdateTaskInput
+): Promise<void> {
+  const currentTimezone = (task as any).timezone;
+  const timezoneChanged =
+    updates.timezone !== undefined && updates.timezone !== currentTimezone;
+
   if (
     updates.reminderAtLocal !== undefined ||
     updates.reminderAtUtc !== undefined ||
     updates.dueAtLocal !== undefined ||
     updates.dueAtUtc !== undefined ||
+    timezoneChanged ||
     updates.status === 'completed'
   ) {
     if (process.env.JEST_WORKER_ID === undefined) {
-      await TaskNotificationService.cancelForTask(id);
+      await TaskNotificationService.cancelForTask(taskId);
       const updatedTask = toTaskFromModel(task);
       if (
         updatedTask.status === 'pending' &&
@@ -298,6 +309,20 @@ export async function updateTask(
       }
     }
   }
+}
+
+export async function updateTask(
+  id: string,
+  updates: UpdateTaskInput
+): Promise<Task> {
+  const repos = getRepos();
+  const task = (await (repos.tasks as any).find(id)) as TaskModel;
+
+  await database.write(async () => {
+    await (task as any).update(applyTaskUpdates.bind(null, task, updates));
+  });
+
+  await handleNotificationUpdates(id, task, updates);
   return toTaskFromModel(task);
 }
 
@@ -321,16 +346,19 @@ export async function getTasksByDateRange(
   end: Date
 ): Promise<Task[]> {
   const repos = getRepos();
-  const allTasks = await (repos.tasks as any).query().fetch();
+  const allTasks = await (repos.tasks as any)
+    .query(Q.where('status', 'pending'), Q.where('deleted_at', null))
+    .fetch();
   const pendingInRange = allTasks
-    .filter((t: any) => t.status === ('pending' as any))
     .filter((t: any) => {
       const due = DateTime.fromISO((t as any).dueAtLocal);
       return due.toJSDate() >= start && due.toJSDate() <= end;
     })
     .map(toTaskFromModel);
 
-  const allSeries = await (repos.series as any).query().fetch();
+  const allSeries = await (repos.series as any)
+    .query(Q.where('deleted_at', null))
+    .fetch();
   const visible: Task[] = [...pendingInRange];
 
   for (const s of allSeries as SeriesModel[]) {
@@ -431,15 +459,10 @@ export async function skipRecurringInstance(
   });
 }
 
-export async function completeRecurringInstance(
-  seriesId: string,
+function calculateOccurrenceTimestamps(
+  series: Series,
   occurrenceDate: Date
-): Promise<void> {
-  const repos = getRepos();
-  const seriesModel = (await (repos.series as any).find(
-    seriesId
-  )) as SeriesModel;
-  const series = toSeriesFromModel(seriesModel as any);
+): { occurrenceLocal: DateTime; occurrenceUtc: DateTime; day: string } {
   const zone = series.timezone;
   const day = toOccurrenceLocalDate(occurrenceDate, zone);
 
@@ -451,39 +474,123 @@ export async function completeRecurringInstance(
   );
   const occurrenceUtc = occurrenceLocal.toUTC();
 
-  // 1) Create a completed materialized task to preserve precise completion timestamp
-  // 2) Create a skip override to suppress this occurrence in iterator output
-  await database.write(async () => {
-    await (repos.tasks as any).create((rec: TaskModel) => {
+  return { occurrenceLocal, occurrenceUtc, day };
+}
+
+async function findExistingTaskForOccurrence(
+  repos: any,
+  seriesId: string,
+  occurrenceLocalIso: string
+): Promise<TaskModel | null> {
+  const existingTasks = await repos.tasks
+    .query(
+      Q.where('series_id', seriesId),
+      Q.where('status', 'pending'),
+      Q.where('deleted_at', null)
+    )
+    .fetch();
+
+  // Find task that matches the occurrence local date
+  for (const task of existingTasks) {
+    if (sameLocalDay(task.dueAtLocal, occurrenceLocalIso)) {
+      return task;
+    }
+  }
+
+  return null;
+}
+
+async function updateOrCreateCompletedTask(params: {
+  repos: any;
+  series: Series;
+  existingTask: TaskModel | null;
+  timestamps: { localIso: string; utcIso: string; zone: string };
+}): Promise<void> {
+  if (params.existingTask) {
+    // Update existing pending task to completed
+    await params.existingTask.update((rec: TaskModel) => {
       const r = rec as any;
-      r.seriesId = series.id;
-      r.title = series.title;
-      r.description = series.description;
-      r.dueAtLocal = occurrenceLocal.toISO();
-      r.dueAtUtc = occurrenceUtc.toISO();
-      r.timezone = zone;
+      r.status = 'completed' as Task['status'];
+      r.completedAt = new Date();
+      r.updatedAt = new Date();
+    });
+  } else {
+    // Create new completed materialized task
+    await params.repos.tasks.create((rec: TaskModel) => {
+      const r = rec as any;
+      r.seriesId = params.series.id;
+      r.title = params.series.title;
+      r.description = params.series.description;
+      r.dueAtLocal = params.timestamps.localIso;
+      r.dueAtUtc = params.timestamps.utcIso;
+      r.timezone = params.timestamps.zone;
       r.status = 'completed' as Task['status'];
       r.completedAt = new Date();
       r.metadata = {};
       r.createdAt = new Date();
       r.updatedAt = new Date();
     });
+  }
+}
 
-    await (repos.overrides as any).create((rec: OccurrenceOverrideModel) => {
-      const r = rec as any;
-      r.seriesId = seriesId;
-      r.occurrenceLocalDate = day;
-      r.status = 'skip' as any;
-      r.createdAt = new Date();
-      r.updatedAt = new Date();
+async function createSkipOverride(
+  repos: any,
+  seriesId: string,
+  day: string
+): Promise<void> {
+  await repos.overrides.create((rec: OccurrenceOverrideModel) => {
+    const r = rec as any;
+    r.seriesId = seriesId;
+    r.occurrenceLocalDate = day;
+    r.status = 'skip' as any;
+    r.createdAt = new Date();
+    r.updatedAt = new Date();
+  });
+}
+
+export async function completeRecurringInstance(
+  seriesId: string,
+  occurrenceDate: Date
+): Promise<void> {
+  const repos = getRepos();
+  const seriesModel = (await repos.series.find(seriesId)) as SeriesModel;
+  const series = toSeriesFromModel(seriesModel as any);
+
+  const { occurrenceLocal, occurrenceUtc, day } = calculateOccurrenceTimestamps(
+    series,
+    occurrenceDate
+  );
+  const zone = series.timezone;
+  const occurrenceLocalIso = occurrenceLocal.toISO()!;
+  const occurrenceUtcIso = occurrenceUtc.toISO()!;
+
+  await database.write(async () => {
+    const existingTask = await findExistingTaskForOccurrence(
+      repos,
+      seriesId,
+      occurrenceLocalIso
+    );
+
+    await updateOrCreateCompletedTask({
+      repos,
+      series,
+      existingTask,
+      timestamps: {
+        localIso: occurrenceLocalIso,
+        utcIso: occurrenceUtcIso,
+        zone,
+      },
     });
+
+    // Always create the skip override to suppress this occurrence
+    await createSkipOverride(repos, seriesId, day);
   });
 
   // Then materialize next occurrence
-  const nextOccurrenceIso = occurrenceLocal.toISO();
-  if (!nextOccurrenceIso)
+  if (!occurrenceLocalIso) {
     throw new Error('Failed to generate ISO for next occurrence');
-  await materializeNextOccurrence(series, nextOccurrenceIso);
+  }
+  await materializeNextOccurrence(series, occurrenceLocalIso);
 }
 
 // Series CRUD
@@ -511,7 +618,6 @@ export async function createSeries(input: CreateSeriesInput): Promise<Series> {
       r.dtstartUtc = input.dtstartUtc;
       r.timezone = input.timezone;
       r.rrule = input.rrule;
-      r.count = input.count as any;
       r.untilUtc = input.untilUtc as any;
       r.plantId = input.plantId as any;
       r.createdAt = new Date();
@@ -540,7 +646,6 @@ export async function updateSeries(
       if (updates.timezone !== undefined) r.timezone = updates.timezone;
       if (updates.rrule !== undefined) r.rrule = updates.rrule;
       if (updates.untilUtc !== undefined) r.untilUtc = updates.untilUtc as any;
-      if (updates.count !== undefined) r.count = updates.count as any;
       if (updates.plantId !== undefined) r.plantId = updates.plantId as any;
       r.updatedAt = new Date();
     });

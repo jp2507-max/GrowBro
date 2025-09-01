@@ -204,25 +204,21 @@ export class TaskNotificationService {
    */
   private async persistNotificationMapping(
     task: Task,
-    notificationId: string,
-    expectsUtc: boolean
+    notificationId: string
   ): Promise<void> {
     const { database } = await import('@/lib/watermelon');
     const queue = database.collections.get('notification_queue' as any) as any;
 
-    const scheduledForLocal =
-      (expectsUtc ? task.reminderAtLocal : task.reminderAtLocal) ?? null;
-    const scheduledForUtc =
-      (expectsUtc ? task.reminderAtUtc : task.reminderAtUtc) ?? null;
+    const scheduledForLocal = task.reminderAtLocal ?? task.dueAtLocal ?? null;
+    const scheduledForUtc = task.reminderAtUtc ?? task.dueAtUtc ?? null;
 
     await database.write(async () => {
       await (queue as any).create((rec: any) => {
         const r = rec as any;
         r.taskId = task.id;
         r.notificationId = notificationId;
-        r.scheduledForLocal =
-          (scheduledForLocal as any) ?? (task.dueAtLocal as any);
-        r.scheduledForUtc = (scheduledForUtc as any) ?? (task.dueAtUtc as any);
+        r.scheduledForLocal = scheduledForLocal;
+        r.scheduledForUtc = scheduledForUtc;
         r.timezone = (task as any).timezone ?? 'UTC';
         r.status = 'pending';
         r.createdAt = new Date();
@@ -256,7 +252,7 @@ export class TaskNotificationService {
     });
 
     if (process.env.JEST_WORKER_ID === undefined) {
-      await this.persistNotificationMapping(task, notificationId, expectsUtc);
+      await this.persistNotificationMapping(task, notificationId);
     }
 
     return notificationId;
@@ -310,12 +306,17 @@ export class TaskNotificationService {
   /**
    * Compute diff between current queue state and desired notifications derived from tasks.
    * Pure helper to facilitate unit testing of the rehydration logic.
+   *
+   * Uses the same fallback logic as resolveReminderTimestamp:
+   * - Uses reminderAtUtc if present
+   * - Falls back to dueAtUtc if reminderAtUtc is null
    */
   static computeNotificationDiff(
     tasks: {
       id: string;
       status?: string | null;
       reminderAtUtc?: string | Date | null;
+      dueAtUtc?: string | Date | null;
     }[],
     existingQueue: {
       taskId: string;
@@ -334,18 +335,27 @@ export class TaskNotificationService {
 
     for (const t of tasks) {
       const existing = byTaskExisting.get(t.id);
-      const reminderUtc =
-        t.reminderAtUtc instanceof Date
-          ? t.reminderAtUtc.toISOString()
-          : (t.reminderAtUtc ?? null);
+
+      // Resolve timestamp using same fallback logic as resolveReminderTimestamp
+      // First try reminderAtUtc, then fall back to dueAtUtc
+      let resolvedTimestamp: string | null = null;
+      if (t.reminderAtUtc) {
+        resolvedTimestamp =
+          t.reminderAtUtc instanceof Date
+            ? t.reminderAtUtc.toISOString()
+            : t.reminderAtUtc;
+      } else if (t.dueAtUtc) {
+        resolvedTimestamp =
+          t.dueAtUtc instanceof Date ? t.dueAtUtc.toISOString() : t.dueAtUtc;
+      }
 
       const shouldSchedule = Boolean(
-        reminderUtc && (t.status === undefined || t.status === 'pending')
+        resolvedTimestamp && (t.status === undefined || t.status === 'pending')
       );
 
       if (existing) {
         const unchanged =
-          shouldSchedule && existing.scheduledForUtc === reminderUtc;
+          shouldSchedule && existing.scheduledForUtc === resolvedTimestamp;
         if (!unchanged) {
           toCancel.push({
             notificationId: existing.notificationId,
@@ -355,7 +365,7 @@ export class TaskNotificationService {
       }
 
       if (shouldSchedule) {
-        if (!existing || existing.scheduledForUtc !== reminderUtc) {
+        if (!existing || existing.scheduledForUtc !== resolvedTimestamp) {
           toSchedule.push({ taskId: t.id });
         }
       }
@@ -460,6 +470,7 @@ export class TaskNotificationService {
         id: t.id,
         status: t.status,
         reminderAtUtc: t.reminderAtUtc,
+        dueAtUtc: t.dueAtUtc,
       })),
       existing.map((e: any) => ({
         taskId: e.taskId,

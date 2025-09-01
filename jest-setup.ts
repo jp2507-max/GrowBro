@@ -34,4 +34,13 @@ jest.mock('expo-notifications', () => ({
     .mockResolvedValue({ status: 'granted', canAskAgain: false }),
 }));
 
-// (no Watermelon mocks) — rely on real setup used by existing tests
+// mock: @nozbe/watermelondb (for database operations in tests)
+jest.mock('@nozbe/watermelondb', () => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('__mocks__/@nozbe/watermelondb');
+  } catch {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('@nozbe/watermelondb');
+  }
+});
