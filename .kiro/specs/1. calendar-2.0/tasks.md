@@ -78,7 +78,7 @@
   - Write component tests for rendering, interactions, and state management
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 7.1, 7.2, 7.3, 7.4_
 
-- [ ] 9. Drag and drop system (Reanimated + Gesture Handler)
+- [x] 9. Drag and drop system (Reanimated + Gesture Handler)
 
   - Implement completeDrop(targetDate, scope: 'occurrence'|'series') with worklet optimization
   - Add auto-scroll at viewport edges, haptic feedback, and visual drop zone indicators
