@@ -43,17 +43,17 @@ function* processDaily(
   context: { range: Range; zone: string; dtstartLocal: any }
 ) {
   const { range, zone } = context;
-  let generated = 0;
+  let produced = 0;
   let cursorLocal = context.dtstartLocal;
 
   while (true) {
-    if (shouldStopIteration(config, { cursorLocal, range, generated })) break;
+    if (shouldStopIteration(config, { cursorLocal, range, produced })) break;
 
     const local = cursorLocal.toJSDate();
+    produced++;
     if (isWithinRange(local, range)) {
       const overridden = applyOverrides(local, overrides, zone);
       if (overridden) yield overridden;
-      generated++;
     }
     cursorLocal = DateTime.fromJSDate(nextDaily(local, config.interval, zone), {
       zone,
@@ -67,11 +67,11 @@ function* processWeekly(
   context: { range: Range; zone: string; dtstartLocal: any }
 ) {
   const { range, zone } = context;
-  let generated = 0;
+  let produced = 0;
   let cursorLocal = context.dtstartLocal;
 
   while (true) {
-    if (shouldStopIteration(config, { cursorLocal, range, generated })) break;
+    if (shouldStopIteration(config, { cursorLocal, range, produced })) break;
 
     const weekDates =
       config.byweekday && config.byweekday.length
@@ -87,12 +87,15 @@ function* processWeekly(
       });
       const localJS = localDT.toJSDate();
 
-      if (config.until && localDT.toUTC().toJSDate() > config.until) continue;
-      if (config.count !== undefined && generated >= config.count) break;
+      if (config.until && localDT.toUTC().toJSDate() > config.until) {
+        produced++;
+        continue;
+      }
+      produced++;
+      if (config.count !== undefined && produced > config.count) break;
       if (isWithinRange(localJS, range)) {
         const overridden = applyOverrides(localJS, overrides, zone);
         if (overridden) yield overridden;
-        generated++;
       }
     }
 
@@ -103,17 +106,28 @@ function* processWeekly(
   }
 }
 
+/**
+ * Determines whether the iteration should stop based on the RRule configuration and current context.
+ * Checks for range end, count limit, and until date conditions.
+ */
 function shouldStopIteration(
   config: RRuleConfig,
-  context: { cursorLocal: any; range: Range; generated: number }
+  context: { cursorLocal: any; range: Range; produced: number }
 ): boolean {
-  const { cursorLocal, range, generated } = context;
+  const { cursorLocal, range, produced } = context;
+
+  // If no count or until specified, stop when cursor exceeds range end
   if (!config.count && !config.until) {
     if (cursorLocal.toJSDate() > range.end) return true;
   }
-  if (config.count !== undefined && generated >= config.count) return true;
+
+  // Stop if the produced count reaches or exceeds the specified count
+  if (config.count !== undefined && produced >= config.count) return true;
+
+  // Stop if the cursor has passed the until date
   if (config.until && cursorLocal.toUTC().toJSDate() > config.until)
     return true;
+
   return false;
 }
 
@@ -148,8 +162,8 @@ function applyOverrides(
 
   if (ov?.status === 'reschedule' && ov.dueAtLocal && ov.dueAtUtc) {
     return {
-      local: DateTime.fromISO(ov.dueAtLocal, { zone }).toJSDate(),
-      utc: DateTime.fromISO(ov.dueAtUtc, { zone: 'utc' }).toJSDate(),
+      local: DateTime.fromISO(ov.dueAtLocal as string, { zone }).toJSDate(),
+      utc: DateTime.fromISO(ov.dueAtUtc as string, { zone: 'utc' }).toJSDate(),
     };
   }
 

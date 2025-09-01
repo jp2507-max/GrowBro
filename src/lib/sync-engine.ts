@@ -337,6 +337,8 @@ async function upsertBatch(
       }
       if (!existing) {
         await coll.create((rec: any) => {
+          // Set the server ID first to ensure WatermelonDB uses it instead of auto-generating
+          (rec as any).id = p.id;
           for (const [k, v] of Object.entries(p)) {
             (rec as any)[k] = _normalizeIncomingValue(k, v);
           }
@@ -421,20 +423,18 @@ async function pullChangesOnce(req: SyncRequest): Promise<SyncResponse> {
   return data;
 }
 
-export async function synchronize(): Promise<SyncResult> {
-  const lastPulledAt = getItem<number>(CHECKPOINT_KEY);
-
-  // 1) Push local changes first (handle 409 conflicts)
-  let pushed = 0;
+async function pushWithConflictResolution(
+  lastPulledAt: number | null
+): Promise<number> {
   try {
-    pushed = await pushChanges(lastPulledAt ?? null);
+    return await pushChanges(lastPulledAt);
   } catch (err) {
     if (err instanceof PushConflictError) {
       // Pull once to resolve conflicts
       let cursor: string | undefined = undefined;
       do {
         const req: SyncRequest = {
-          lastPulledAt: lastPulledAt ?? null,
+          lastPulledAt,
           schemaVersion: '2025-08-23.v1',
           tables: SYNC_TABLES,
           cursor,
@@ -445,39 +445,60 @@ export async function synchronize(): Promise<SyncResult> {
         if (!resp.hasMore) break;
       } while (true);
       // Retry once
-      pushed = await pushChanges(lastPulledAt ?? null);
-    } else {
-      throw err;
+      return await pushChanges(lastPulledAt);
     }
+    throw err;
   }
+}
 
-  // 2) Pull remote changes (paginate if needed)
+async function pullAllChanges(lastPulledAt: number | null): Promise<{
+  serverTimestamp: number;
+  applied: number;
+  changedTaskIds: string[];
+}> {
   let cursor: string | undefined = undefined;
-  let serverTimestamp: number | null = null;
+  let serverTimestamp: number = 0;
   let applied = 0;
   let changedTaskIds: string[] = [];
 
-  do {
+  // Initial pull
+  const initialReq: SyncRequest = {
+    lastPulledAt,
+    schemaVersion: '2025-08-23.v1',
+    tables: SYNC_TABLES,
+    cursor,
+  };
+  let resp = await pullChangesOnce(initialReq);
+  serverTimestamp = resp.serverTimestamp;
+  const { appliedCount, changedTaskIds: changed } =
+    await applyServerChanges(resp);
+  applied += appliedCount;
+  changedTaskIds.push(...changed);
+  cursor = resp.hasMore ? resp.nextCursor : undefined;
+
+  // Continue pulling while hasMore
+  while (resp.hasMore) {
     const req: SyncRequest = {
-      lastPulledAt: lastPulledAt ?? null,
+      lastPulledAt,
       schemaVersion: '2025-08-23.v1',
       tables: SYNC_TABLES,
       cursor,
     };
-    const resp = await pullChangesOnce(req);
+    resp = await pullChangesOnce(req);
     serverTimestamp = resp.serverTimestamp;
-    const { appliedCount, changedTaskIds: changed } =
+    const { appliedCount: newApplied, changedTaskIds: newChanged } =
       await applyServerChanges(resp);
-    applied += appliedCount;
-    changedTaskIds.push(...changed);
+    applied += newApplied;
+    changedTaskIds.push(...newChanged);
     cursor = resp.hasMore ? resp.nextCursor : undefined;
-    if (!resp.hasMore) break;
-  } while (true);
+  }
 
-  // 3) Update checkpoint atomically after successful apply
-  if (serverTimestamp !== null) await setItem(CHECKPOINT_KEY, serverTimestamp);
+  return { serverTimestamp, applied, changedTaskIds };
+}
 
-  // 4) Differentially re-plan notifications if tasks changed
+async function updateNotificationsForChangedTasks(
+  changedTaskIds: string[]
+): Promise<void> {
   if (changedTaskIds.length > 0) {
     try {
       const notifier = new TaskNotificationService();
@@ -488,6 +509,24 @@ export async function synchronize(): Promise<SyncResult> {
       // Non-fatal
     }
   }
+}
+
+export async function synchronize(): Promise<SyncResult> {
+  const lastPulledAt = getItem<number>(CHECKPOINT_KEY);
+
+  // 1) Push local changes first (handle 409 conflicts)
+  const pushed = await pushWithConflictResolution(lastPulledAt ?? null);
+
+  // 2) Pull remote changes (paginate if needed)
+  const { serverTimestamp, applied, changedTaskIds } = await pullAllChanges(
+    lastPulledAt ?? null
+  );
+
+  // 3) Update checkpoint atomically after successful apply
+  if (serverTimestamp !== null) await setItem(CHECKPOINT_KEY, serverTimestamp);
+
+  // 4) Differentially re-plan notifications if tasks changed
+  await updateNotificationsForChangedTasks(changedTaskIds);
 
   return { pushed, applied, serverTimestamp };
 }

@@ -21,8 +21,17 @@ export function parseRule(rule: string, dtstartUtc?: string): RRuleConfig {
     if (k && v) kv[k.toUpperCase()] = v;
   }
 
-  const freq = (kv['FREQ'] as RRuleConfig['freq']) ?? 'DAILY';
-  const interval = kv['INTERVAL'] ? Number.parseInt(kv['INTERVAL'], 10) : 1;
+  // Validate FREQ against allowed values, default to 'DAILY' if invalid
+  const allowedFreqs: RRuleConfig['freq'][] = ['DAILY', 'WEEKLY'];
+  const freq = allowedFreqs.includes(kv['FREQ'] as RRuleConfig['freq'])
+    ? (kv['FREQ'] as RRuleConfig['freq'])
+    : 'DAILY';
+
+  // Parse INTERVAL with validation: ensure integer between 1-365, fallback to 1
+  const parsedInterval = Number.parseInt(kv['INTERVAL'], 10);
+  const interval = Number.isNaN(parsedInterval)
+    ? 1
+    : Math.max(1, Math.min(365, parsedInterval));
 
   let byweekday: number[] | undefined;
   if (kv['BYDAY']) {

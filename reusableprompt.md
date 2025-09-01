@@ -13,8 +13,8 @@ READ FIRST — STRICT SCOPE
    - Extract the requirement IDs (e.g., 1.5, 6.7). Read ONLY those items from the requirements source.
    - If the task inlines bullets instead of IDs, treat ONLY those bullets as requirements.
 3. Open the design spec and read ONLY the section(s) relevant to Task {TASK_ID}/{task title}. If unclear, ask a single blocking question, then proceed.
-4. Check task file for additional infos for implementation or so
-5. If you are working with any packages like reanimated, rrule or any other always get fresh context and up to date infos with brave search and context 7
+4. Check task file for additional information for implementation or design details
+5. If you depend on external packages (e.g., reanimated, rrule), consult their official docs or up-to-date resources for implementation details
 
 OUTPUT — REQUIREMENTS & DESIGN
 

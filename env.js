@@ -25,6 +25,12 @@ require('dotenv').config({
   path: envPath,
 });
 
+// Optionally load local overrides (never committed). This can override values
+// from .env.{APP_ENV} to keep secrets out of VCS while preserving dev defaults.
+// eslint-disable-next-line no-undef
+const localEnvPath = path.resolve(__dirname, `.env.local`);
+require('dotenv').config({ path: localEnvPath, override: true });
+
 /**
  * 2nd part: Define some static variables for the app
  * Such as: bundle id, package name, app name.
