@@ -10,6 +10,17 @@ export type AnalyticsEvents = {
     notificationId: string;
   };
 
+  // Emitted when rehydration cancels an outdated scheduled notification
+  notif_rehydrate_cancelled: {
+    notificationId: string;
+    taskId: string;
+  };
+
+  // Emitted when rehydration schedules a new/updated notification
+  notif_rehydrate_scheduled: {
+    taskId: string;
+  };
+
   // Add future events below
   // example_event: { foo: string; bar?: number };
 };
