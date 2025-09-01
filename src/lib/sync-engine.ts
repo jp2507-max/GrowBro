@@ -49,6 +49,8 @@ export type SyncResult = {
 const SYNC_TABLES: TableName[] = ['series', 'tasks', 'occurrence_overrides'];
 const MAX_PUSH_CHUNK_PER_TABLE = 1000; // per-batch limit (Req 6.2)
 const CHECKPOINT_KEY = 'sync.lastPulledAt';
+const API_BASE = process.env.API_URL || '';
+const REQUEST_TIMEOUT_MS = 30000; // 30 second timeout
 
 function nowMs(): number {
   return Date.now();
@@ -169,18 +171,35 @@ async function sendPushBatch(
   batch: PushRequest,
   token: string | null
 ): Promise<void> {
-  const res = await fetch(`/sync/push`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      'Idempotency-Key': generateIdempotencyKey(),
-    },
-    body: JSON.stringify(batch),
-  });
-  if (!res.ok) {
-    if (res.status === 409) throw new PushConflictError();
-    throw new Error(`push failed: ${res.status}`);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const res = await fetch(`${API_BASE}/sync/push`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        'Idempotency-Key': generateIdempotencyKey(),
+      },
+      body: JSON.stringify(batch),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      if (res.status === 409) throw new PushConflictError();
+      throw new Error(`push failed: ${res.status}`);
+    }
+  } catch (error) {
+    clearTimeout(timeoutId);
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timeout: push operation exceeded 30 seconds');
+    }
+
+    throw error;
   }
 }
 
@@ -410,17 +429,34 @@ async function pushChanges(lastPulledAt: number | null): Promise<number> {
 
 async function pullChangesOnce(req: SyncRequest): Promise<SyncResponse> {
   const token = await getBearerToken();
-  const res = await fetch(`/sync/pull`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(req),
-  });
-  if (!res.ok) throw new Error(`pull failed: ${res.status}`);
-  const data = (await res.json()) as SyncResponse;
-  return data;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const res = await fetch(`${API_BASE}/sync/pull`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(req),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) throw new Error(`pull failed: ${res.status}`);
+    const data = (await res.json()) as SyncResponse;
+    return data;
+  } catch (error) {
+    clearTimeout(timeoutId);
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timeout: pull operation exceeded 30 seconds');
+    }
+
+    throw error;
+  }
 }
 
 async function pushWithConflictResolution(

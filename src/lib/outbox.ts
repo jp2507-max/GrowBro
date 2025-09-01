@@ -226,9 +226,8 @@ export async function cleanupOutbox(opts: { olderThanSeconds?: number } = {}) {
   const { error } = await typedSupabase
     .from('outbox_notification_actions')
     .delete()
-    .or(
-      `(and(status.eq.processed,processed_at.lte.${cutoff}),(and(status.eq.expired,processed_at.lte.${cutoff})))`
-    );
+    .in('status', ['processed', 'expired'])
+    .lte('processed_at', cutoff);
 
   if (error) throw error;
 }

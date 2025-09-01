@@ -505,8 +505,12 @@ async function updateOrCreateCompletedTask(params: {
   series: Series;
   existingTask: TaskModel | null;
   timestamps: { localIso: string; utcIso: string; zone: string };
-}): Promise<void> {
+}): Promise<string[]> {
   if (params.existingTask) {
+    // Check if the existing task was pending before updating
+    const wasPending = params.existingTask.status === 'pending';
+    const taskId = params.existingTask.id;
+
     // Update existing pending task to completed
     await params.existingTask.update((rec: TaskModel) => {
       const r = rec as any;
@@ -514,6 +518,9 @@ async function updateOrCreateCompletedTask(params: {
       r.completedAt = new Date();
       r.updatedAt = new Date();
     });
+
+    // Return the task ID if it was previously pending (needs notification cancellation)
+    return wasPending ? [taskId] : [];
   } else {
     // Create new completed materialized task
     await params.repos.tasks.create((rec: TaskModel) => {
@@ -530,6 +537,9 @@ async function updateOrCreateCompletedTask(params: {
       r.createdAt = new Date();
       r.updatedAt = new Date();
     });
+
+    // Return empty array for new completed tasks (no notifications to cancel)
+    return [];
   }
 }
 
@@ -564,6 +574,7 @@ export async function completeRecurringInstance(
   const occurrenceLocalIso = occurrenceLocal.toISO()!;
   const occurrenceUtcIso = occurrenceUtc.toISO()!;
 
+  let taskIdsToCancel: string[] = [];
   await database.write(async () => {
     const existingTask = await findExistingTaskForOccurrence(
       repos,
@@ -571,7 +582,7 @@ export async function completeRecurringInstance(
       occurrenceLocalIso
     );
 
-    await updateOrCreateCompletedTask({
+    taskIdsToCancel = await updateOrCreateCompletedTask({
       repos,
       series,
       existingTask,
@@ -585,6 +596,20 @@ export async function completeRecurringInstance(
     // Always create the skip override to suppress this occurrence
     await createSkipOverride(repos, seriesId, day);
   });
+
+  // Cancel pending notifications for the task(s) we just completed
+  if (taskIdsToCancel.length > 0) {
+    try {
+      for (const taskId of taskIdsToCancel) {
+        await TaskNotificationService.cancelForTask(taskId);
+      }
+    } catch (error) {
+      console.warn(
+        '[TaskManager] Failed to cancel notifications for completed tasks',
+        error
+      );
+    }
+  }
 
   // Then materialize next occurrence
   if (!occurrenceLocalIso) {

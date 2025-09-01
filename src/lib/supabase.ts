@@ -12,7 +12,9 @@ import { Env as ClientEnv } from '@/lib/env';
 
 // Determine if we're running in a test environment
 const isTestEnvironment =
-  process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined;
+  typeof process !== 'undefined' &&
+  process.env &&
+  (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined);
 
 // Validate environment variables and set up Supabase configuration
 let supabaseUrl: string;
