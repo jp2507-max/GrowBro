@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS series (
   deleted_at timestamptz NULL
 );
 
--- Per-occurrence overrides for a given series occurrence (skip/reschedule/complete)
+-- Per-occurrence overrides for a given series occurrence (skip/reschedule/completed)
 CREATE TABLE IF NOT EXISTS occurrence_overrides (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   series_id uuid NOT NULL REFERENCES series(id) ON DELETE CASCADE,
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS occurrence_overrides (
   due_at_utc timestamptz NULL,
   reminder_at_local timestamp without time zone NULL,
   reminder_at_utc timestamptz NULL,
-  status text NULL CHECK (status IN ('skip','reschedule','complete')),
+  status text NULL CHECK (status IN ('skip','reschedule','completed')),
   -- Status-driven constraints for reschedule: require timestamps
   CONSTRAINT chk_reschedule_requires_due_at_local CHECK (
     status <> 'reschedule' OR due_at_local IS NOT NULL
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS occurrence_overrides (
   CONSTRAINT chk_reschedule_requires_due_at_utc CHECK (
     status <> 'reschedule' OR due_at_utc IS NOT NULL
   ),
-  -- Status-driven constraints for skip: disallow any timestamps
+  -- Status-driven constraints for skip: disallow any timestamps and prevent late reminders
   CONSTRAINT chk_skip_disallows_timestamps CHECK (
     status <> 'skip' OR (
       due_at_local IS NULL AND
@@ -49,6 +49,13 @@ CREATE TABLE IF NOT EXISTS occurrence_overrides (
       reminder_at_local IS NULL AND
       reminder_at_utc IS NULL
     )
+  ),
+  -- Prevent reminders from being scheduled after due times (for overrides)
+  CONSTRAINT chk_reminder_before_due_utc CHECK (
+    reminder_at_utc IS NULL OR (due_at_utc IS NOT NULL AND reminder_at_utc <= due_at_utc)
+  ),
+  CONSTRAINT chk_reminder_before_due_local CHECK (
+    reminder_at_local IS NULL OR (due_at_local IS NOT NULL AND reminder_at_local <= due_at_local)
   ),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()

@@ -31,7 +31,7 @@ export async function enqueueOutboxEntry(params: {
   ttlSeconds?: number;
   // optional next attempt delay in seconds (defaults to immediate)
   initialDelaySeconds?: number;
-}) {
+}): Promise<OutboxEntry | undefined> {
   const {
     action_type,
     payload,
@@ -88,7 +88,7 @@ export async function processOutboxOnce(opts: {
   scheduler: Scheduler;
   maxBatch?: number;
   now?: Date;
-}) {
+}): Promise<{ processed: number }> {
   const { scheduler, maxBatch = 10, now = new Date() } = opts;
 
   const entries = await fetchPendingEntries(maxBatch, now);
@@ -103,19 +103,29 @@ export async function processOutboxOnce(opts: {
   return { processed };
 }
 
-async function fetchPendingEntries(maxBatch: number, now: Date) {
+async function fetchPendingEntries(
+  maxBatch: number,
+  now: Date
+): Promise<OutboxEntry[] | null> {
   const nowIso = now.toISOString();
 
   // Add pre-filter limit to avoid large in-memory scans
   const preFilterLimit = maxBatch * 3;
 
   const { data: entries, error: fetchError } = await typedSupabase
-    .from<OutboxEntry>('outbox_notification_actions')
-    .select('*')
+    .from('outbox_notification_actions')
+    .select<OutboxEntry>('*')
     .eq('status', 'pending')
-    // Move time-window predicates into SQL query to reduce payload
-    .or(`next_attempt_at.is.null,next_attempt_at.lte.${nowIso}`)
-    .or(`expires_at.is.null,expires_at.gte.${nowIso}`)
+    // Combine time-window predicates into single OR with AND groups to avoid override
+    // This ensures we fetch entries that are:
+    // - Ready to attempt (next_attempt_at is null OR next_attempt_at <= now)
+    // - AND not expired (expires_at is null OR expires_at >= now)
+    .or(
+      `and(next_attempt_at.is.null,expires_at.is.null),` +
+        `and(next_attempt_at.is.null,expires_at.gte.${nowIso}),` +
+        `and(next_attempt_at.lte.${nowIso},expires_at.is.null),` +
+        `and(next_attempt_at.lte.${nowIso},expires_at.gte.${nowIso})`
+    )
     .order('created_at', { ascending: true })
     .limit(preFilterLimit);
 
@@ -180,7 +190,10 @@ async function claimEntry(entryId: string): Promise<boolean> {
   return claimed && claimed.length > 0;
 }
 
-async function executeAction(entry: OutboxEntry, scheduler: Scheduler) {
+async function executeAction(
+  entry: OutboxEntry,
+  scheduler: Scheduler
+): Promise<void> {
   if (entry.action_type === 'schedule') {
     await scheduler.scheduleNotification(entry.payload);
   } else if (entry.action_type === 'cancel') {
@@ -190,7 +203,7 @@ async function executeAction(entry: OutboxEntry, scheduler: Scheduler) {
   }
 }
 
-async function markExpired(entryId: string) {
+async function markExpired(entryId: string): Promise<void> {
   const { error } = await supabase
     .from('outbox_notification_actions')
     .update({ status: 'expired', processed_at: new Date().toISOString() })
@@ -198,7 +211,7 @@ async function markExpired(entryId: string) {
   if (error) throw error;
 }
 
-async function markProcessed(entryId: string) {
+async function markProcessed(entryId: string): Promise<void> {
   const { error } = await supabase
     .from('outbox_notification_actions')
     .update({ status: 'processed', processed_at: new Date().toISOString() })
@@ -206,7 +219,7 @@ async function markProcessed(entryId: string) {
   if (error) throw error;
 }
 
-async function handleFailure(entry: OutboxEntry, now: Date) {
+async function handleFailure(entry: OutboxEntry, now: Date): Promise<void> {
   const attempted = (entry.attempted_count || 0) + 1;
   const backoffSeconds = Math.min(
     60 * Math.pow(2, attempted - 1),
@@ -227,7 +240,9 @@ async function handleFailure(entry: OutboxEntry, now: Date) {
   if (error) throw error;
 }
 
-export async function cleanupOutbox(opts: { olderThanSeconds?: number } = {}) {
+export async function cleanupOutbox(
+  opts: { olderThanSeconds?: number } = {}
+): Promise<void> {
   const { olderThanSeconds = 60 * 60 * 24 * 7 } = opts; // default 7 days
   const cutoff = new Date(Date.now() - olderThanSeconds * 1000).toISOString();
 

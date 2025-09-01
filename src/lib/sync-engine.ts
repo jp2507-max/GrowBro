@@ -49,7 +49,11 @@ export type SyncResult = {
 const SYNC_TABLES: TableName[] = ['series', 'tasks', 'occurrence_overrides'];
 const MAX_PUSH_CHUNK_PER_TABLE = 1000; // per-batch limit (Req 6.2)
 const CHECKPOINT_KEY = 'sync.lastPulledAt';
-const API_BASE = process.env.API_URL || '';
+const API_BASE =
+  process.env.EXPO_PUBLIC_API_BASE_URL ??
+  process.env.API_BASE_URL ??
+  process.env.API_URL ??
+  '';
 const REQUEST_TIMEOUT_MS = 30000; // 30 second timeout
 
 function nowMs(): number {
