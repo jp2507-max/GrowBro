@@ -2,6 +2,7 @@ import React from 'react';
 
 import { EmptyList, List } from '@/components/ui';
 import type { AgendaItem } from '@/types/agenda';
+import { useRegisterScrollHandlers } from '@/components/calendar/drag-drop-provider';
 
 type Props = {
   data: AgendaItem[];
@@ -23,13 +24,18 @@ export function AgendaList({
     [keyExtractor]
   );
 
+  const { listRef, onScroll, onLayout } = useRegisterScrollHandlers();
+
   return (
     <List<AgendaItem>
+      ref={listRef as any}
       data={data}
       renderItem={renderItem}
       keyExtractor={_keyExtractor}
       getItemType={getItemType}
       removeClippedSubviews
+      onScroll={onScroll}
+      onLayout={onLayout}
       ListEmptyComponent={<EmptyList isLoading={isLoading} />}
       showsVerticalScrollIndicator={false}
     />
