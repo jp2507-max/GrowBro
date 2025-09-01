@@ -2,7 +2,7 @@
 
 **Note**: For each task implementation, use Brave Search and Context7 to get up-to-date documentation, best practices, and current API information for all libraries and frameworks involved.
 
-- [ ] 1. Database schema and models (Series/Task/Overrides/Queue)
+- [x] 1. Database schema and models (Series/Task/Overrides/Queue)
 
   - Create Series, Task, OccurrenceOverride, NotificationQueue tables with WatermelonDB
   - Implement dual timezone storage: _\_local and _\_utc fields plus timezone (IANA format)
@@ -13,7 +13,7 @@
   - Set up migrations and indices on series_id, updated_at for performance
   - _Requirements: 1.5, 1.6, 6.1, 6.7, 7.1, 8.1_
 
-- [ ] 2. RRULE engine foundation (RFC-5545 compliant)
+- [x] 2. RRULE engine foundation (RFC-5545 compliant)
 
   - Create parseRule, validate, buildIterator({ series, overrides, range }) interface
   - Implement v1.1 scope: FREQ=DAILY|WEEKLY, INTERVAL 1-365, BYDAY only for WEEKLY
@@ -22,7 +22,7 @@
   - Write tests for parsing, BYDAY combinations, COUNT vs UNTIL, DST transitions (Europe/Berlin)
   - _Requirements: 1.1, 1.2, 1.5, 1.7, 1.8_
 
-- [ ] 3. Task management system (series-aware)
+- [x] 3. Task management system (series-aware)
 
   - Implement CRUD operations for one-off tasks and recurring series
   - Add lazy materialization: only render visible instances, no full pre-generation
@@ -31,7 +31,7 @@
   - Write unit tests for create/edit/delete, complete/skip flows, visible window materialization
   - _Requirements: 1.1, 1.2, 7.1, 7.2, 7.5, 7.6, 7.7_
 
-- [ ] 4. Local notifications with Android 13+ permission handling
+- [x] 4. Local notifications with Android 13+ permission handling
 
   - Integrate expo-notifications with scheduling from local time semantics to concrete UTC trigger dates
   - Add runtime POST_NOTIFICATIONS permission request for Android 13+ (API 33)
@@ -41,14 +41,14 @@
   - Write tests for permission flows, foreground/background delivery, scheduling accuracy
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.6, 2.7, 2.8, 8.1, 8.2, 8.4, 8.6_
 
-- [ ] 5. Differential notification rehydration system
+- [x] 5. Differential notification rehydration system
   - Implement rehydrateNotifications(changedTaskIds?) with taskId → notificationId mapping comparison
   - Add rehydration triggers: app start, post-sync, timezone/DST changes
   - Create queue status management with outdated entry cancellation
   - Implement differential re-planning: only changed triggers get rescheduled
   - Write tests for rehydration after sync operations and timezone transitions
   - _Requirements: 2.5, 2.7, 6.6, 8.6_
-- [ ] 6. Offline-first sync engine (WatermelonDB + Supabase)
+- [x] 6. Offline-first sync engine (WatermelonDB + Supabase)
 
   - Implement synchronize() with pullChanges/pushChanges using Bearer JWT in Authorization header
   - Maintain RLS active with server-side user context, implement LWW via server updated_at timestamps
@@ -57,7 +57,7 @@
   - Write tests for flight-mode operations, sync conflicts, data integrity, tombstone handling
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
-- [ ] 7. High-performance agenda UI (FlashList v2)
+- [x] 7. High-performance agenda UI (FlashList v2)
 
   - Implement FlashList v2 with default configuration and consistent item heights
   - Add getItemType function for efficient item recycling, remove deprecated estimatedItemSize tweaks
@@ -66,7 +66,7 @@
   - Write performance tests measuring frame times and rendering consistency on mid-tier Android
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-- [ ] 8. Calendar screen UI components and layout
+- [x] 8. Calendar screen UI components and layout
 
   - Create main CalendarScreen component with header, date navigation, and agenda view
   - Implement date picker/navigation controls with month/week/day view options

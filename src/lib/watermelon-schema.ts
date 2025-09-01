@@ -1,0 +1,71 @@
+import { appSchema, tableSchema } from '@nozbe/watermelondb';
+
+export const schema = appSchema({
+  version: 1,
+  tables: [
+    tableSchema({
+      name: 'series',
+      columns: [
+        { name: 'title', type: 'string' },
+        { name: 'description', type: 'string', isOptional: true },
+        { name: 'dtstart_local', type: 'string' },
+        { name: 'dtstart_utc', type: 'string' },
+        { name: 'timezone', type: 'string' },
+        { name: 'rrule', type: 'string' },
+        { name: 'until_utc', type: 'string', isOptional: true },
+        { name: 'count', type: 'number', isOptional: true },
+        { name: 'plant_id', type: 'string', isOptional: true },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'deleted_at', type: 'number', isOptional: true },
+      ],
+    }),
+    tableSchema({
+      name: 'occurrence_overrides',
+      columns: [
+        { name: 'series_id', type: 'string' },
+        { name: 'occurrence_local_date', type: 'string' },
+        { name: 'due_at_local', type: 'string', isOptional: true },
+        { name: 'due_at_utc', type: 'string', isOptional: true },
+        { name: 'reminder_at_local', type: 'string', isOptional: true },
+        { name: 'reminder_at_utc', type: 'string', isOptional: true },
+        { name: 'status', type: 'string', isOptional: true },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'tasks',
+      columns: [
+        { name: 'series_id', type: 'string', isOptional: true },
+        { name: 'title', type: 'string' },
+        { name: 'description', type: 'string', isOptional: true },
+        { name: 'due_at_local', type: 'string' },
+        { name: 'due_at_utc', type: 'string' },
+        { name: 'timezone', type: 'string' },
+        { name: 'reminder_at_local', type: 'string', isOptional: true },
+        { name: 'reminder_at_utc', type: 'string', isOptional: true },
+        { name: 'plant_id', type: 'string', isOptional: true },
+        { name: 'status', type: 'string' },
+        { name: 'completed_at', type: 'number', isOptional: true },
+        { name: 'metadata', type: 'string' },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'deleted_at', type: 'number', isOptional: true },
+      ],
+    }),
+    tableSchema({
+      name: 'notification_queue',
+      columns: [
+        { name: 'task_id', type: 'string' },
+        { name: 'notification_id', type: 'string' },
+        { name: 'scheduled_for_local', type: 'string' },
+        { name: 'scheduled_for_utc', type: 'string' },
+        { name: 'timezone', type: 'string' },
+        { name: 'status', type: 'string' },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+      ],
+    }),
+  ],
+});

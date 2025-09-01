@@ -10,15 +10,16 @@ import { createClient } from '@supabase/supabase-js';
 // your bundler alias for `@env` resolves to the client-only export.
 import { Env as ClientEnv } from '@/lib/env';
 
-// Validate environment variables
-if (!ClientEnv.SUPABASE_URL || !ClientEnv.SUPABASE_ANON_KEY) {
+// Validate environment variables (avoid throwing during tests)
+const missingEnv = !ClientEnv.SUPABASE_URL || !ClientEnv.SUPABASE_ANON_KEY;
+if (missingEnv && process.env.JEST_WORKER_ID === undefined) {
   throw new Error('Missing Supabase environment variables');
 }
 
 // Create Supabase client with latest best practices
 export const supabase = createClient(
-  ClientEnv.SUPABASE_URL,
-  ClientEnv.SUPABASE_ANON_KEY,
+  ClientEnv.SUPABASE_URL || 'http://localhost',
+  ClientEnv.SUPABASE_ANON_KEY || 'test-key',
   {
     auth: {
       storage: AsyncStorage,

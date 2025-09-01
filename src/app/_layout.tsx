@@ -4,6 +4,7 @@ import '../../global.css';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
+import * as Localization from 'expo-localization';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import React from 'react';
@@ -17,6 +18,7 @@ import { hydrateAuth, loadSelectedTheme } from '@/lib';
 import { Env } from '@/lib/env';
 import { initializePrivacyConsent } from '@/lib/privacy-consent';
 import { beforeSendHook } from '@/lib/sentry-utils';
+import { TaskNotificationService } from '@/lib/task-notifications';
 import { useThemeConfig } from '@/lib/use-theme-config';
 
 // Only initialize Sentry if DSN is provided
@@ -66,7 +68,41 @@ SplashScreen.setOptions({
   fade: true,
 });
 
+function getCurrentTimeZone(): string {
+  try {
+    const calendars = (Localization as any).getCalendars?.();
+    if (calendars && calendars[0]?.timeZone)
+      return calendars[0].timeZone as string;
+  } catch {}
+  try {
+    const locales = (Localization as any).getLocales?.();
+    if (locales && locales[0]?.timeZone)
+      return (locales[0] as any).timeZone as string;
+  } catch {}
+  return (Localization as any).timezone || 'UTC';
+}
+
 function RootLayout() {
+  React.useEffect(() => {
+    // Request notification permissions on app start (Android 13+ runtime)
+    const svc = new TaskNotificationService();
+    void svc.requestPermissions();
+    // Differentially re-plan notifications on app start
+    void svc.rehydrateNotifications();
+
+    // Watch timezone offset changes (DST/zone change). Polling approach to avoid new deps.
+    let lastTz = getCurrentTimeZone();
+    const interval = setInterval(() => {
+      const currentTz = getCurrentTimeZone();
+      if (currentTz !== lastTz) {
+        lastTz = currentTz;
+        void svc.rehydrateNotifications();
+      }
+    }, 60 * 1000); // check every minute
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <Providers>
       <Stack>

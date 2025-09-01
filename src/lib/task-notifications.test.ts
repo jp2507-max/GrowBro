@@ -100,4 +100,59 @@ describe('TaskNotificationService', () => {
       expect(notificationId).toBe('mock-notification-id');
     });
   });
+
+  describe('computeNotificationDiff', () => {
+    it('schedules when missing; cancels when outdated; no-ops when unchanged', () => {
+      const tasks = [
+        { id: 'a', status: 'pending', reminderAtUtc: '2024-01-01T10:00:00Z' },
+        { id: 'b', status: 'pending', reminderAtUtc: '2024-02-01T10:00:00Z' },
+        { id: 'c', status: 'completed', reminderAtUtc: '2024-03-01T10:00:00Z' },
+        { id: 'd', status: 'pending', reminderAtUtc: null },
+      ];
+      const existing = [
+        {
+          taskId: 'a',
+          notificationId: 'n1',
+          scheduledForUtc: '2024-01-01T10:00:00Z',
+          status: 'pending',
+        },
+        {
+          taskId: 'b',
+          notificationId: 'n2',
+          scheduledForUtc: '2024-02-01T09:00:00Z', // outdated
+          status: 'pending',
+        },
+        {
+          taskId: 'c',
+          notificationId: 'n3',
+          scheduledForUtc: '2024-03-01T10:00:00Z', // but task completed
+          status: 'pending',
+        },
+        {
+          taskId: 'x',
+          notificationId: 'nX',
+          scheduledForUtc: '2024-04-01T10:00:00Z',
+          status: 'pending',
+        },
+      ];
+
+      const diff = TaskNotificationService.computeNotificationDiff(
+        tasks as any,
+        existing as any
+      );
+
+      // a unchanged; b needs cancel+reschedule; c needs cancel; d no schedule
+      expect(diff.toCancel).toEqual(
+        expect.arrayContaining([
+          { notificationId: 'n2', taskId: 'b' },
+          { notificationId: 'n3', taskId: 'c' },
+        ])
+      );
+      expect(diff.toSchedule).toEqual(
+        expect.arrayContaining([{ taskId: 'b' }])
+      );
+      // Ensure we did not suggest rescheduling for 'a' (already matching)
+      expect(diff.toSchedule.find((x) => x.taskId === 'a')).toBeUndefined();
+    });
+  });
 });
