@@ -5,7 +5,9 @@ import { supabase } from './supabase';
 // Type the supabase client properly to preserve chaining methods
 const typedSupabase = supabase as SupabaseClient;
 
-export type OutboxActionType = 'schedule' | 'cancel';
+// Database schema allows: 'schedule', 'cancel', 'update', 'delete'
+// Currently only 'schedule' and 'cancel' are implemented
+export type OutboxActionType = 'schedule' | 'cancel' | 'update' | 'delete';
 
 export type OutboxEntry = {
   id: string;
@@ -114,7 +116,7 @@ async function fetchPendingEntries(
 
   const { data: entries, error: fetchError } = await typedSupabase
     .from('outbox_notification_actions')
-    .select<OutboxEntry>('*')
+    .select('*')
     .eq('status', 'pending')
     // Combine time-window predicates into single OR with AND groups to avoid override
     // This ensures we fetch entries that are:
@@ -133,7 +135,7 @@ async function fetchPendingEntries(
   if (!entries) return null;
 
   // Perform final client-side validation for edge cases (dates might need parsing)
-  const validatedEntries = entries.filter((entry: OutboxEntry) => {
+  const validatedEntries = (entries as OutboxEntry[]).filter((entry) => {
     const nextAttemptAt = entry.next_attempt_at
       ? new Date(entry.next_attempt_at)
       : null;
@@ -198,6 +200,10 @@ async function executeAction(
     await scheduler.scheduleNotification(entry.payload);
   } else if (entry.action_type === 'cancel') {
     await scheduler.cancelNotification(entry.payload);
+  } else if (entry.action_type === 'update') {
+    throw new Error(`Action type 'update' not yet implemented`);
+  } else if (entry.action_type === 'delete') {
+    throw new Error(`Action type 'delete' not yet implemented`);
   } else {
     throw new Error(`Unknown action_type: ${entry.action_type}`);
   }
