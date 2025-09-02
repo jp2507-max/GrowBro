@@ -3,6 +3,7 @@ import { Vibration } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 
 import { updateTask } from '@/lib/task-manager';
+import { combineTargetDateWithTime } from '@/lib/utils/date';
 import type { Task } from '@/types/calendar';
 
 type DragScope = 'occurrence' | 'series';
@@ -13,7 +14,7 @@ type DragContextValue = {
   startDrag: (task: Task) => void;
   cancelDrag: () => void;
   completeDrop: (targetDate: Date, scope: DragScope) => Promise<void>;
-  onDragUpdate: (y: number) => void;
+  onDragUpdate: (y: number) => number | undefined;
   registerListRef: (ref: React.RefObject<any>) => void;
   registerViewportHeight: (height: number) => void;
   computeTargetDate: (originalDate: Date, translationY: number) => Date;
@@ -49,8 +50,9 @@ export function shouldAutoScroll(
 }
 
 // Constants
-const DAY_PX = 80;
-const UNDO_TIMEOUT_MS = 5000;
+// Calendar layout constants
+const DAY_PX = 80; // Height of each day row in pixels for drag calculations
+const UNDO_TIMEOUT_MS = 5000; // 5 seconds window for undo operations
 const AUTO_SCROLL_EDGE_THRESHOLD = 60;
 const AUTO_SCROLL_STEP = 24;
 
@@ -133,18 +135,6 @@ function useScrolling(
   currentScrollOffsetRef: React.RefObject<number>,
   viewportHeightRef: React.RefObject<number>
 ) {
-  const scrollBy = React.useCallback(
-    (delta: number) => {
-      const ref = listRef.current as any;
-      if (!ref || typeof (ref as any).scrollToOffset !== 'function') return;
-      const current = currentScrollOffsetRef.current;
-      const next = Math.max(0, current + delta);
-      (ref as any).scrollToOffset({ offset: next, animated: false });
-      currentScrollOffsetRef.current = next;
-    },
-    [listRef, currentScrollOffsetRef]
-  );
-
   const onDragUpdate = React.useCallback(
     (y: number) => {
       const dir = shouldAutoScroll(
@@ -152,132 +142,228 @@ function useScrolling(
         viewportHeightRef.current,
         AUTO_SCROLL_EDGE_THRESHOLD
       );
-      if (dir === 0) return;
-      scrollBy(dir * AUTO_SCROLL_STEP);
+      if (dir === 0) return undefined;
+
+      const ref = listRef.current as any;
+      if (!ref || typeof (ref as any).scrollToOffset !== 'function')
+        return undefined;
+
+      // Get current offset directly from the ref to avoid dependency mutation
+      const currentOffset = currentScrollOffsetRef.current;
+      const next = Math.max(0, currentOffset + dir * AUTO_SCROLL_STEP);
+      (ref as any).scrollToOffset({ offset: next, animated: false });
+
+      // Return the new offset for the caller to update the ref
+      // This avoids direct mutation inside the callback
+      return next;
     },
-    [scrollBy, viewportHeightRef]
+    [listRef, viewportHeightRef, currentScrollOffsetRef]
   );
 
   return {
-    scrollBy,
     onDragUpdate,
   };
 }
 
-function useDropCompletion(
-  draggedTaskRef: React.RefObject<Task | undefined>,
-  undoRef: React.RefObject<UndoState>,
-  performUndo: () => Promise<void>,
-  setIsDragging: (isDragging: boolean) => void
-) {
-  const computeTargetDate = React.useCallback(
-    (originalDate: Date, translationY: number) => {
-      const dayDelta = Math.round(translationY / DAY_PX);
-      return new Date(
-        originalDate.getFullYear(),
-        originalDate.getMonth(),
-        originalDate.getDate() + dayDelta
-      );
-    },
+/**
+ * Hook that provides date calculation logic for drag operations.
+ * Converts vertical translation into date changes by calculating how many days
+ * the user has dragged the task item.
+ *
+ * @returns Function that computes target date based on original date and vertical translation
+ */
+function useComputeTargetDate() {
+  return React.useCallback((originalDate: Date, translationY: number) => {
+    // Calculate how many days to shift based on drag distance
+    // DAY_PX represents pixels per day in the calendar view
+    const dayDelta = Math.round(translationY / DAY_PX);
+
+    // Create new date by adding the day delta to the original date
+    // Preserves year, month, and adjusts date by the calculated delta
+    return new Date(
+      originalDate.getFullYear(),
+      originalDate.getMonth(),
+      originalDate.getDate() + dayDelta
+    );
+  }, []);
+}
+
+/**
+ * Hook that creates undo state objects for task operations.
+ * Stores the previous state of a task before modification to enable undo functionality.
+ *
+ * @returns Function that creates an undo state object with task's previous values
+ */
+function useCreateUndoState() {
+  return React.useCallback(
+    (task: Task, timeoutId: any) => ({
+      type: 'task' as const,
+      id: task.id,
+      // Store the original due date and timezone for undo purposes
+      previousDueAtLocal: task.dueAtLocal,
+      previousTimezone: task.timezone,
+      // Store timeout ID to clear the undo window when needed
+      timeoutId,
+    }),
     []
   );
+}
 
-  const completeDrop = React.useCallback(
-    async (targetDate: Date, scope: DragScope) => {
-      const task = draggedTaskRef.current;
-      if (!task) return;
+/**
+ * Hook that handles the core task update logic during drag operations.
+ * Combines the target date (where user dragged to) with the original task's time
+ * to create a new due date, then updates the task in the database.
+ *
+ * @returns Function that updates a task's due date based on drag target
+ */
+function useTaskUpdate() {
+  return React.useCallback(
+    async (task: Task, targetDate: Date, scope: DragScope) => {
+      // Parse the original task's due date to extract time components
+      const prev = new Date(task.dueAtLocal);
 
-      const previousDue = task.dueAtLocal;
-      const previousTz = task.timezone;
-      const prev = new Date(previousDue);
-      const next = new Date(
-        targetDate.getFullYear(),
-        targetDate.getMonth(),
-        targetDate.getDate(),
-        prev.getHours(),
-        prev.getMinutes(),
-        prev.getSeconds(),
-        prev.getMilliseconds()
-      );
+      // Create new date by combining target date with original time
+      // This preserves the time of day while changing the date
+      const next = combineTargetDateWithTime(targetDate, prev);
 
+      // TODO: Implement series-wide shifting with overrides
+      // Currently falls back to occurrence-level updates only
       if (scope === 'series' && task.seriesId) {
         // Series-wide shifting to be implemented with overrides; fallback to occurrence-level.
       }
 
+      // Update the task in the database with new due date
       await updateTask(task.id, {
         dueAtLocal: next.toISOString(),
-        timezone: task.timezone,
+        timezone: task.timezone, // Preserve original timezone
       });
 
-      const timeoutId = setTimeout(() => {
-        undoRef.current = undefined;
-      }, UNDO_TIMEOUT_MS);
-      undoRef.current = {
-        type: 'task',
-        id: task.id,
-        previousDueAtLocal: previousDue,
-        previousTimezone: previousTz,
-        timeoutId,
-      };
-
-      showMessage({
-        message: 'Task moved',
-        description: 'Tap to undo within 5 seconds',
-        type: 'info',
-        duration: UNDO_TIMEOUT_MS,
-        onPress: () => {
-          void performUndo();
-        },
-      });
-
-      setIsDragging(false);
-      draggedTaskRef.current = undefined;
+      // Return updated task and new date for undo functionality
+      return { task, next };
     },
-    [draggedTaskRef, undoRef, performUndo, setIsDragging]
+    []
   );
-
-  return {
-    computeTargetDate,
-    completeDrop,
-  };
 }
 
-function useDragDropContextValue(): DragContextValue {
-  const { isDragging, draggedTask, draggedTaskRef, startDrag, cancelDrag } =
-    useDragState();
-  const {
-    listRef,
-    currentScrollOffsetRef,
-    viewportHeightRef,
-    registerListRef,
-    registerViewportHeight,
-    updateCurrentOffset,
-  } = useListRefs();
-  const { undoRef, performUndo } = useUndoState();
-  const { scrollBy, onDragUpdate } = useScrolling(
-    listRef,
-    currentScrollOffsetRef,
-    viewportHeightRef
-  );
-  const { computeTargetDate, completeDrop } = useDropCompletion(
-    draggedTaskRef,
-    undoRef,
-    performUndo,
-    (isDragging: boolean) => {
-      if (!isDragging) {
-        draggedTaskRef.current = undefined;
-      }
-    }
+/**
+ * Hook that orchestrates the complete drop operation for dragged tasks.
+ * Handles updating the task, creating undo state, showing feedback messages,
+ * and managing the undo timeout window.
+ *
+ * @param options - Configuration object containing required dependencies
+ * @returns Object containing the drop completion handler
+ */
+// Helper function to show undo message
+function showUndoMessage(performUndo: () => Promise<void>) {
+  showMessage({
+    message: 'Task moved',
+    description: 'Tap to undo within 5 seconds',
+    type: 'info',
+    duration: UNDO_TIMEOUT_MS,
+    onPress: () => {
+      void performUndo(); // Execute undo if user taps the message
+    },
+  });
+}
+
+// Helper function to setup undo state
+function setupUndoState(
+  undoRef: React.RefObject<UndoState>,
+  updatedTask: Task,
+  createUndoState: (task: Task, timeoutId: any) => UndoState
+) {
+  // Set up automatic cleanup of undo state after timeout
+  const cleanupUndoState = () => {
+    undoRef.current = undefined;
+  };
+  const timeoutId = setTimeout(cleanupUndoState, UNDO_TIMEOUT_MS);
+
+  // Create and store undo state for potential rollback
+  const undoState = createUndoState(updatedTask, timeoutId);
+  undoRef.current = undoState;
+
+  return timeoutId;
+}
+
+function useDropCompletion(options: {
+  draggedTaskRef: React.RefObject<Task | undefined>;
+  undoRef: React.RefObject<UndoState>;
+  performUndo: () => Promise<void>;
+  onDropComplete: () => void;
+}) {
+  const { draggedTaskRef, undoRef, performUndo, onDropComplete } = options;
+  const createUndoState = useCreateUndoState();
+  const updateTaskData = useTaskUpdate();
+
+  const performDropCompletion = React.useCallback(
+    async (dropOptions: { targetDate: Date; scope: DragScope }) => {
+      const task = draggedTaskRef.current;
+      if (!task) return false;
+
+      const { task: updatedTask } = await updateTaskData(
+        task,
+        dropOptions.targetDate,
+        dropOptions.scope
+      );
+
+      setupUndoState(undoRef, updatedTask, createUndoState);
+      showUndoMessage(performUndo);
+      onDropComplete();
+
+      return false;
+    },
+    [
+      draggedTaskRef,
+      performUndo,
+      createUndoState,
+      updateTaskData,
+      undoRef,
+      onDropComplete,
+    ]
   );
 
+  return { performDropCompletion };
+}
+
+// Hook to manage undo cleanup effect
+function useUndoCleanup(undoRef: React.RefObject<UndoState>) {
   React.useEffect(() => {
+    const currentUndoRef = undoRef.current;
     return () => {
-      const snapshot = undoRef.current;
-      if (snapshot) clearTimeout((snapshot as any).timeoutId);
+      if (currentUndoRef) clearTimeout((currentUndoRef as any).timeoutId);
     };
   }, [undoRef]);
+}
 
-  const value: DragContextValue = React.useMemo(
+// Hook to create the context value object
+function useContextValue(options: {
+  isDragging: boolean;
+  draggedTask: Task | undefined;
+  startDrag: (task: Task) => void;
+  cancelDrag: () => void;
+  completeDrop: (targetDate: Date, scope: DragScope) => Promise<void>;
+  onDragUpdate: (y: number) => number | undefined;
+  registerListRef: (ref: React.RefObject<any>) => void;
+  registerViewportHeight: (height: number) => void;
+  computeTargetDate: (originalDate: Date, translationY: number) => Date;
+  updateCurrentOffset: (y: number) => void;
+  performUndo: () => Promise<void>;
+}): DragContextValue {
+  const {
+    isDragging,
+    draggedTask,
+    startDrag,
+    cancelDrag,
+    completeDrop,
+    onDragUpdate,
+    registerListRef,
+    registerViewportHeight,
+    computeTargetDate,
+    updateCurrentOffset,
+    performUndo,
+  } = options;
+
+  return React.useMemo(
     () => ({
       isDragging,
       draggedTask,
@@ -305,8 +391,56 @@ function useDragDropContextValue(): DragContextValue {
       performUndo,
     ]
   );
+}
 
-  return value;
+function useDragDropContextValue(): DragContextValue {
+  const { isDragging, draggedTask, draggedTaskRef, startDrag, cancelDrag } =
+    useDragState();
+  const {
+    listRef,
+    currentScrollOffsetRef,
+    viewportHeightRef,
+    registerListRef,
+    registerViewportHeight,
+    updateCurrentOffset,
+  } = useListRefs();
+  const { undoRef, performUndo } = useUndoState();
+  const { onDragUpdate } = useScrolling(
+    listRef,
+    currentScrollOffsetRef,
+    viewportHeightRef
+  );
+  const computeTargetDate = useComputeTargetDate();
+
+  const { performDropCompletion } = useDropCompletion({
+    draggedTaskRef,
+    undoRef,
+    performUndo,
+    onDropComplete: cancelDrag,
+  });
+
+  const completeDrop = React.useCallback(
+    async (targetDate: Date, scope: DragScope) => {
+      await performDropCompletion({ targetDate, scope });
+    },
+    [performDropCompletion]
+  );
+
+  useUndoCleanup(undoRef);
+
+  return useContextValue({
+    isDragging,
+    draggedTask,
+    startDrag,
+    cancelDrag,
+    completeDrop,
+    onDragUpdate,
+    registerListRef,
+    registerViewportHeight,
+    computeTargetDate,
+    updateCurrentOffset,
+    performUndo,
+  });
 }
 
 export function DragDropProvider({ children }: Props): React.ReactElement {

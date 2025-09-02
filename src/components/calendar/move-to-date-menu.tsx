@@ -34,11 +34,11 @@ export function MoveToDateMenu({
           variant="outline"
           onPress={() =>
             setSelected(
-              new Date(
-                anchorDate.getFullYear(),
-                anchorDate.getMonth(),
-                anchorDate.getDate() - 1
-              )
+              (() => {
+                const newDate = new Date(anchorDate);
+                newDate.setDate(newDate.getDate() - 1);
+                return newDate;
+              })()
             )
           }
         />
@@ -47,11 +47,11 @@ export function MoveToDateMenu({
           variant="outline"
           onPress={() =>
             setSelected(
-              new Date(
-                anchorDate.getFullYear(),
-                anchorDate.getMonth(),
-                anchorDate.getDate() + 1
-              )
+              (() => {
+                const newDate = new Date(anchorDate);
+                newDate.setDate(newDate.getDate() + 1);
+                return newDate;
+              })()
             )
           }
         />

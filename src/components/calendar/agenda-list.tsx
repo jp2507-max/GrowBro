@@ -1,8 +1,8 @@
 import React from 'react';
 
+import { useRegisterScrollHandlers } from '@/components/calendar/drag-drop-provider';
 import { EmptyList, List } from '@/components/ui';
 import type { AgendaItem } from '@/types/agenda';
-import { useRegisterScrollHandlers } from '@/components/calendar/drag-drop-provider';
 
 type Props = {
   data: AgendaItem[];
