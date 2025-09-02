@@ -16,7 +16,7 @@
   "onboarding": {
     "allow_button": "Allow notifications",
     "continue_button": "Continue",
-    "message": "Welcome to obytes app site",
+    "message": "Welcome to GrowBro app site",
     "notifications_body": "Allow notifications to get timely task reminders.",
     "notifications_title": "Task reminders"
   },
@@ -68,5 +68,5 @@
     "version": "Version",
     "website": "Website"
   },
-  "welcome": "Welcome to obytes app site"
+  "welcome": "Welcome to GrowBro app site"
 }

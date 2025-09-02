@@ -1,5 +1,8 @@
 import React from 'react';
+import type { AccessibilityActionEvent, ViewStyle } from 'react-native';
+import type { GestureType } from 'react-native-gesture-handler';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import type { AnimatedStyleProp } from 'react-native-reanimated';
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -22,12 +25,12 @@ type Props = {
 };
 
 type AgendaItemBodyProps = {
-  gesture: any;
-  animatedStyle: any;
+  gesture: GestureType;
+  animatedStyle: AnimatedStyleProp<ViewStyle>;
   task: Task;
   isOpen: boolean;
   onClose: () => void;
-  onAction: (event: any) => void;
+  onAction: (event: AccessibilityActionEvent) => void;
 };
 
 function AgendaItemBody({
@@ -169,6 +172,11 @@ function useDragGesture(options: {
   const ty = useSharedValue(0);
   const originDate = React.useRef<Date>(new Date(task.dueAtLocal));
 
+  // Keep originDate in sync with task prop changes
+  React.useEffect(() => {
+    originDate.current = new Date(task.dueAtLocal);
+  }, [task.dueAtLocal]);
+
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: tx.value }, { translateY: ty.value }],
   }));
@@ -212,7 +220,7 @@ export function DraggableAgendaItem({ task }: Props): React.ReactElement {
   const [isMoveMenuOpen, setIsMoveMenuOpen] = React.useState<boolean>(false);
 
   const onAccessibilityAction = React.useCallback(
-    async (event: any) => {
+    async (event: AccessibilityActionEvent) => {
       const action = event?.nativeEvent?.actionName as
         | 'activate'
         | 'increment'

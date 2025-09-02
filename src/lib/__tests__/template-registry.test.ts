@@ -1,15 +1,9 @@
-import type {
-  getTemplate as GetTemplateFn,
-  listTemplates as ListTemplatesFn,
-  registerTemplate as RegisterTemplateFn,
-} from '@/lib/template-registry';
 import type { TemplateDefinition } from '@/types/templates';
 
-let registerTemplate: RegisterTemplateFn;
-let getTemplate: GetTemplateFn;
-let listTemplates: ListTemplatesFn;
-
 describe('TemplateRegistry', () => {
+  declare let registerTemplate: typeof import('@/lib/template-registry').registerTemplate;
+  declare let getTemplate: typeof import('@/lib/template-registry').getTemplate;
+  declare let listTemplates: typeof import('@/lib/template-registry').listTemplates;
   const testTemplate: TemplateDefinition = {
     id: 'test-template',
     name: 'Test Template',

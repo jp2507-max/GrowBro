@@ -5,8 +5,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
 import * as Localization from 'expo-localization';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
+import { SplashScreen, Stack } from 'expo-router';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import FlashMessage from 'react-native-flash-message';
@@ -22,6 +21,32 @@ import { initializePrivacyConsent } from '@/lib/privacy-consent';
 import { beforeSendHook } from '@/lib/sentry-utils';
 import { TaskNotificationService } from '@/lib/task-notifications';
 import { useThemeConfig } from '@/lib/use-theme-config';
+
+// Type definitions for Localization API
+type Calendar = {
+  timeZone?: string;
+  [key: string]: unknown;
+};
+
+type Locale = {
+  timeZone?: string;
+  [key: string]: unknown;
+};
+
+// Type guards for validation
+function isValidCalendarArray(calendars: unknown): calendars is Calendar[] {
+  return Array.isArray(calendars) && calendars.length > 0;
+}
+
+function isValidLocaleArray(locales: unknown): locales is Locale[] {
+  return Array.isArray(locales) && locales.length > 0;
+}
+
+function hasValidTimeZone(
+  obj: Calendar | Locale
+): obj is Calendar & { timeZone: string } {
+  return typeof obj.timeZone === 'string' && obj.timeZone.length > 0;
+}
 
 // Only initialize Sentry if DSN is provided
 if (Env.SENTRY_DSN) {
@@ -72,16 +97,25 @@ SplashScreen.setOptions({
 
 function getCurrentTimeZone(): string {
   try {
-    const calendars = (Localization as any).getCalendars?.();
-    if (calendars && calendars[0]?.timeZone)
-      return calendars[0].timeZone as string;
-  } catch {}
+    const calendars = Localization.getCalendars?.();
+    if (isValidCalendarArray(calendars) && hasValidTimeZone(calendars[0])) {
+      return calendars[0].timeZone;
+    }
+  } catch (error) {
+    console.warn('Failed to get timezone from calendars:', error);
+  }
+
   try {
-    const locales = (Localization as any).getLocales?.();
-    if (locales && locales[0]?.timeZone)
-      return (locales[0] as any).timeZone as string;
-  } catch {}
-  return (Localization as any).timezone || 'UTC';
+    const locales = Localization.getLocales?.();
+    if (isValidLocaleArray(locales) && hasValidTimeZone(locales[0])) {
+      return locales[0].timeZone;
+    }
+  } catch (error) {
+    console.warn('Failed to get timezone from locales:', error);
+  }
+
+  // Fallback to 'UTC' if nothing else available
+  return 'UTC';
 }
 
 function RootLayout() {

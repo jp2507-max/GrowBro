@@ -6,6 +6,7 @@ import { computeBackoffMs } from '@/lib/sync-engine';
 
 export const client = axios.create({
   baseURL: Env.API_URL,
+  timeout: 30000,
 });
 
 // Lightweight retry/backoff without extra deps
@@ -18,7 +19,10 @@ client.interceptors.response.use(
     const maxRetries = cfg.__maxRetries ?? 3;
 
     const { isRetryable } = categorizeError(error);
-    if (!isRetryable || cfg.__retryCount >= maxRetries) {
+    const method = String(cfg?.method ?? 'get').toUpperCase();
+    const isIdempotent =
+      method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
+    if (!isRetryable || !isIdempotent || cfg.__retryCount >= maxRetries) {
       return Promise.reject(error);
     }
 

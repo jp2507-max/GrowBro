@@ -388,12 +388,30 @@ function applyTaskUpdates(
   r.updatedAt = new Date();
 }
 
-async function handleNotificationUpdates(
-  taskId: string,
-  task: TaskModel,
-  updates: UpdateTaskInput
-): Promise<void> {
-  const timezoneChanged = false; // timezone-only changes are handled inside recalc helpers
+// P1: FIXED - Notifications now properly rescheduled on timezone changes only
+//
+// Issue: When updateTask is called with only a timezone change, the due/reminder
+// timestamps are correctly recomputed inside applyTaskUpdates, but handleNotificationUpdates
+// never ran because timezoneChanged was hardcoded to false. This left previously
+// scheduled notifications at the original timezone, causing reminders to fire at wrong local times.
+//
+// Root cause: timezoneChanged should be computed by comparing updates.timezone with
+// the originalTimezone captured in updateTask(), but was hardcoded to false.
+//
+// Impact: Timezone-only updates broke notification scheduling, causing user confusion
+// when reminders fired at incorrect times after timezone changes.
+//
+// Fix applied: Added originalTimezone parameter to handleNotificationUpdates() and
+// compute timezoneChanged = updates.timezone !== undefined && updates.timezone !== originalTimezone
+async function handleNotificationUpdates(params: {
+  taskId: string;
+  task: TaskModel;
+  updates: UpdateTaskInput;
+  originalTimezone: string;
+}): Promise<void> {
+  const { taskId, task, updates, originalTimezone } = params;
+  const timezoneChanged =
+    updates.timezone !== undefined && updates.timezone !== originalTimezone;
 
   if (
     updates.reminderAtLocal !== undefined ||
@@ -433,7 +451,12 @@ export async function updateTask(
     );
   });
 
-  await handleNotificationUpdates(id, task, updates);
+  await handleNotificationUpdates({
+    taskId: id,
+    task,
+    updates,
+    originalTimezone,
+  });
   return toTaskFromModel(task);
 }
 
