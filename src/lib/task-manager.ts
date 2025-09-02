@@ -7,7 +7,12 @@ import { database } from '@/lib/watermelon';
 import type { OccurrenceOverrideModel } from '@/lib/watermelon-models/occurrence-override';
 import type { SeriesModel } from '@/lib/watermelon-models/series';
 import type { TaskModel } from '@/lib/watermelon-models/task';
-import type { OccurrenceOverride, Series, Task } from '@/types/calendar';
+import type {
+  OccurrenceOverride,
+  Series,
+  Task,
+  TaskMetadata,
+} from '@/types/calendar';
 
 export type CreateTaskInput = {
   title: string;
@@ -19,6 +24,7 @@ export type CreateTaskInput = {
   reminderAtUtc?: string; // ISO UTC
   plantId?: string;
   seriesId?: string; // optional link to a series occurrence
+  metadata?: TaskMetadata;
 };
 
 export type UpdateTaskInput = Partial<Omit<CreateTaskInput, 'seriesId'>> & {
@@ -203,6 +209,15 @@ async function materializeNextOccurrence(
       r.updatedAt = new Date();
     });
   });
+
+  // Schedule notifications for newly materialized tasks
+  // This ensures users get reminders for recurring tasks immediately
+  if (created && (created as any).dueAtUtc) {
+    const task = toTaskFromModel(created);
+    const notifier = new TaskNotificationService();
+    await notifier.scheduleTaskReminder(task as any);
+  }
+
   return created ? toTaskFromModel(created) : null;
 }
 
@@ -225,12 +240,21 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
       r.reminderAtUtc = reminderAtUtc as any;
       r.plantId = input.plantId;
       r.status = 'pending' as Task['status'];
-      r.metadata = {};
+      r.metadata = input.metadata ?? {};
       r.createdAt = new Date();
       r.updatedAt = new Date();
     });
   });
   if (!created) throw new Error('Failed to create task');
+
+  // Schedule notifications for newly created tasks
+  // This ensures users get reminders immediately without waiting for global rehydrate
+  if ((created as any).reminderAtUtc || (created as any).dueAtUtc) {
+    const task = toTaskFromModel(created);
+    const notifier = new TaskNotificationService();
+    await notifier.scheduleTaskReminder(task as any);
+  }
+
   return toTaskFromModel(created);
 }
 
@@ -453,14 +477,33 @@ export async function skipRecurringInstance(
   const zone = (series as any).timezone as string;
   const day = toOccurrenceLocalDate(occurrenceDate, zone);
   await database.write(async () => {
-    await (repos.overrides as any).create((rec: OccurrenceOverrideModel) => {
-      const r = rec as any;
-      r.seriesId = seriesId;
-      r.occurrenceLocalDate = day;
-      r.status = 'skip' as any;
-      r.createdAt = new Date();
-      r.updatedAt = new Date();
-    });
+    // Upsert: ensure single override per (seriesId, day)
+    const existing = await (repos.overrides as any)
+      .query(
+        Q.where('series_id', seriesId),
+        Q.where('occurrence_local_date', day)
+      )
+      .fetch();
+    if (existing.length > 0) {
+      await (existing[0] as any).update((rec: OccurrenceOverrideModel) => {
+        const r = rec as any;
+        r.status = 'skip' as any;
+        r.dueAtLocal = null as any;
+        r.dueAtUtc = null as any;
+        r.reminderAtLocal = null as any;
+        r.reminderAtUtc = null as any;
+        r.updatedAt = new Date();
+      });
+    } else {
+      await (repos.overrides as any).create((rec: OccurrenceOverrideModel) => {
+        const r = rec as any;
+        r.seriesId = seriesId;
+        r.occurrenceLocalDate = day;
+        r.status = 'skip' as any;
+        r.createdAt = new Date();
+        r.updatedAt = new Date();
+      });
+    }
   });
 }
 
@@ -548,21 +591,49 @@ async function updateOrCreateCompletedTask(params: {
   }
 }
 
-async function createSkipOverride(
-  repos: any,
+// NOTE: createSkipOverride was unused; removed to satisfy linter
+
+export async function rescheduleRecurringInstance(
   seriesId: string,
-  day: string
+  occurrenceDate: Date,
+  newLocalIso: string
 ): Promise<void> {
-  await repos.overrides.create((rec: OccurrenceOverrideModel) => {
-    const r = rec as any;
-    r.seriesId = seriesId;
-    r.occurrenceLocalDate = day;
-    r.status = 'skip' as any;
-    r.createdAt = new Date();
-    r.updatedAt = new Date();
+  const repos = getRepos();
+  const series = (await (repos.series as any).find(seriesId)) as SeriesModel;
+  const zone = (series as any).timezone as string;
+  const day = toOccurrenceLocalDate(occurrenceDate, zone);
+  const newUtcIso = toUtcIso(newLocalIso);
+  await database.write(async () => {
+    const existing = await (repos.overrides as any)
+      .query(
+        Q.where('series_id', seriesId),
+        Q.where('occurrence_local_date', day)
+      )
+      .fetch();
+    if (existing.length > 0) {
+      await (existing[0] as any).update((rec: OccurrenceOverrideModel) => {
+        const r = rec as any;
+        r.status = 'reschedule' as any;
+        r.dueAtLocal = newLocalIso;
+        r.dueAtUtc = newUtcIso;
+        r.updatedAt = new Date();
+      });
+    } else {
+      await (repos.overrides as any).create((rec: OccurrenceOverrideModel) => {
+        const r = rec as any;
+        r.seriesId = seriesId;
+        r.occurrenceLocalDate = day;
+        r.status = 'reschedule' as any;
+        r.dueAtLocal = newLocalIso;
+        r.dueAtUtc = newUtcIso;
+        r.createdAt = new Date();
+        r.updatedAt = new Date();
+      });
+    }
   });
 }
 
+/* eslint-disable-next-line max-lines-per-function */
 export async function completeRecurringInstance(
   seriesId: string,
   occurrenceDate: Date
@@ -598,8 +669,29 @@ export async function completeRecurringInstance(
       },
     });
 
-    // Always create the skip override to suppress this occurrence
-    await createSkipOverride(repos, seriesId, day);
+    // Record override as completed to suppress this occurrence
+    const existing = await repos.overrides
+      .query(
+        Q.where('series_id', seriesId),
+        Q.where('occurrence_local_date', day)
+      )
+      .fetch();
+    if (existing.length > 0) {
+      await (existing[0] as any).update((rec: OccurrenceOverrideModel) => {
+        const r = rec as any;
+        r.status = 'completed' as any;
+        r.updatedAt = new Date();
+      });
+    } else {
+      await repos.overrides.create((rec: OccurrenceOverrideModel) => {
+        const r = rec as any;
+        r.seriesId = seriesId;
+        r.occurrenceLocalDate = day;
+        r.status = 'completed' as any;
+        r.createdAt = new Date();
+        r.updatedAt = new Date();
+      });
+    }
   });
 
   // Cancel pending notifications for the task(s) we just completed

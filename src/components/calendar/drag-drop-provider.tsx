@@ -2,11 +2,14 @@ import React from 'react';
 import { Vibration } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 
-import { updateTask } from '@/lib/task-manager';
-import { combineTargetDateWithTime } from '@/lib/utils/date';
+import { rescheduleRecurringInstance, updateTask } from '@/lib/task-manager';
+import {
+  combineTargetDateWithTime,
+  type DateCombinationResult,
+} from '@/lib/utils/date';
 import type { Task } from '@/types/calendar';
 
-type DragScope = 'occurrence' | 'series';
+export type DragScope = 'occurrence' | 'series';
 
 type DragContextValue = {
   isDragging: boolean;
@@ -218,28 +221,36 @@ function useCreateUndoState() {
  */
 function useTaskUpdate() {
   return React.useCallback(
-    async (task: Task, targetDate: Date, scope: DragScope) => {
+    async (task: Task, targetDate: Date, _scope: DragScope) => {
       // Parse the original task's due date to extract time components
       const prev = new Date(task.dueAtLocal);
 
-      // Create new date by combining target date with original time
-      // This preserves the time of day while changing the date
-      const next = combineTargetDateWithTime(targetDate, prev);
+      // Create new date by combining target date with original time in the task's timezone
+      // This preserves the time of day while changing the date, handling DST safely
+      const result: DateCombinationResult = combineTargetDateWithTime(
+        targetDate,
+        prev,
+        task.timezone
+      );
 
-      // TODO: Implement series-wide shifting with overrides
-      // Currently falls back to occurrence-level updates only
-      if (scope === 'series' && task.seriesId) {
-        // Series-wide shifting to be implemented with overrides; fallback to occurrence-level.
+      // If the task is part of a series, record an occurrence-level reschedule override
+      if (task.seriesId) {
+        await rescheduleRecurringInstance(
+          task.seriesId,
+          new Date(task.dueAtLocal),
+          result.localDateTime.toISO()!
+        );
       }
 
-      // Update the task in the database with new due date
+      // Update the task in the database with new due dates (both local and UTC)
       await updateTask(task.id, {
-        dueAtLocal: next.toISOString(),
+        dueAtLocal: result.localDateTime.toISO()!,
+        dueAtUtc: result.utcDateTime.toISO()!,
         timezone: task.timezone, // Preserve original timezone
       });
 
-      // Return updated task and new date for undo functionality
-      return { task, next };
+      // Return updated task and new local datetime for undo functionality
+      return { task, next: result.localDateTime.toJSDate() };
     },
     []
   );
@@ -328,9 +339,9 @@ function useDropCompletion(options: {
 // Hook to manage undo cleanup effect
 function useUndoCleanup(undoRef: React.RefObject<UndoState>) {
   React.useEffect(() => {
-    const currentUndoRef = undoRef.current;
+    const currentUndoState = undoRef.current;
     return () => {
-      if (currentUndoRef) clearTimeout((currentUndoRef as any).timeoutId);
+      if (currentUndoState) clearTimeout(currentUndoState.timeoutId);
     };
   }, [undoRef]);
 }

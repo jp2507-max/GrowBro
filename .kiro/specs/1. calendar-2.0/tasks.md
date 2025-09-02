@@ -87,7 +87,7 @@
   - Write tests for drag operations, auto-scroll behavior, undo functionality, and accessibility compliance
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
 
-- [ ] 10. Occurrence override system (RRULE exceptions)
+- [x] 10. Occurrence override system (RRULE exceptions)
 
   - Create models and flows for skip, reschedule, complete actions on occurrence level
   - Integrate overrides with RRuleEngine iterator to apply ExDates/exceptions during occurrence generation
@@ -96,7 +96,7 @@
   - Write tests for various override scenarios, edge cases, and iterator integration
   - _Requirements: 1.7, 1.8, 7.5, 7.6_
 
-- [ ] 11. Template system with idempotency and bulk operations
+- [x] 11. Template system with idempotency and bulk operations
 
   - Implement applyTemplate(templateId, plantId, anchorDate, idempotencyKey?) with rollback on partial failure
   - Create template preview functionality showing task diff before application
@@ -142,14 +142,15 @@
   - _Requirements: All requirements need comprehensive testing and monitoring_
 
 - [ ] 16. Final integration and production polish
+
   - Integrate all components into cohesive calendar system with end-to-end flows
   - Add memory leak prevention and production performance optimizations
   - Create user onboarding flow for permissions setup and initial reminder configuration
   - Implement release gates: no P1 issues, all metrics meet targets
   - Conduct final end-to-end testing across complete feature set
   - _Requirements: All requirements integrated and production-ready_
-- [ ] 17. Calendar data export and import (ICS)
 
+- [ ] 17. Calendar data export and import (ICS)
   - Implement ICS export for tasks and series
   - Add ICS import with duplicate detection and user confirmation
   - Ensure timezone and recurrence rules convert accurately

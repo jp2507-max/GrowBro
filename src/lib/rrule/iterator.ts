@@ -158,7 +158,7 @@ function applyOverrides(
     'yyyy-LL-dd'
   );
   const ov = overrides.find((o) => o.occurrenceLocalDate === localDay);
-  if (ov?.status === 'skip') return null;
+  if (ov?.status === 'skip' || ov?.status === 'completed') return null;
 
   if (ov?.status === 'reschedule' && ov.dueAtLocal && ov.dueAtUtc) {
     return {

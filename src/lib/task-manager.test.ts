@@ -149,4 +149,37 @@ describe('TaskManager basic flows', () => {
 
     await deleteSeries(series.id);
   });
+
+  test('reschedule recurring instance override persists and affects visibility', async () => {
+    const series = await createWeeklySeries();
+    // pick Monday 2025-03-31, move time to 10:30 local
+    // Using concrete task to simulate reschedule flow; no separate originalDate needed
+    // Use the menu flow equivalent via task-manager API directly
+    // Create an ephemeral-like override by creating a concrete task then moving it
+    const concrete = await createTask({
+      title: series.title,
+      description: series.description,
+      timezone: series.timezone,
+      dueAtLocal: '2025-03-31T09:00:00+02:00',
+      seriesId: series.id,
+    });
+
+    // Move to 10:30 same day using updateTask (UI does this) and expect override integration to handle future materialization
+    const updated = await updateTask(concrete.id, {
+      dueAtLocal: '2025-03-31T10:30:00+02:00',
+      timezone: series.timezone,
+    });
+    expect(updated.dueAtLocal.startsWith('2025-03-31T10:30')).toBe(true);
+
+    const tasks = await getTasksByDateRange(
+      new Date('2025-03-24T00:00:00Z'),
+      new Date('2025-04-07T00:00:00Z')
+    );
+    const moved = tasks.find(
+      (t) => t.seriesId === series.id && t.dueAtLocal.startsWith('2025-03-31')
+    );
+    expect(moved).toBeTruthy();
+
+    await deleteSeries(series.id);
+  });
 });

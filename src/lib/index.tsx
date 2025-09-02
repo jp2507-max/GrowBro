@@ -8,4 +8,5 @@ export * from './sentry-utils';
 export * from './supabase';
 export * from './sync-engine';
 export * from './task-manager';
+export * from './template-manager';
 export * from './utils';
