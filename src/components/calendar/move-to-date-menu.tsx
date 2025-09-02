@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 
 import { useDragDrop } from '@/components/calendar/drag-drop-provider';
 import { Button, View } from '@/components/ui';
+import { translate } from '@/lib/i18n';
 
 type Props = {
   open: boolean;
@@ -30,7 +31,7 @@ export function MoveToDateMenu({
     <View className="p-4">
       <View className="flex-row justify-between py-2">
         <Button
-          label="Yesterday"
+          label={translate('calendar.yesterday')}
           variant="outline"
           onPress={() =>
             setSelected(
@@ -43,7 +44,7 @@ export function MoveToDateMenu({
           }
         />
         <Button
-          label="Tomorrow"
+          label={translate('calendar.tomorrow')}
           variant="outline"
           onPress={() =>
             setSelected(
@@ -57,7 +58,12 @@ export function MoveToDateMenu({
         />
       </View>
       <Button
-        label={Platform.select({ ios: 'Move', android: 'Move' }) as string}
+        label={
+          Platform.select({
+            ios: translate('calendar.move'),
+            android: translate('calendar.move'),
+          }) as string
+        }
         onPress={onConfirm}
       />
     </View>

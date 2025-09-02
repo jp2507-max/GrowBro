@@ -12,11 +12,62 @@ import {
   type DragScope,
   useDragDrop,
 } from '@/components/calendar/drag-drop-provider';
+import { MoveToDateMenu } from '@/components/calendar/move-to-date-menu';
+import { View } from '@/components/ui';
+import { translate } from '@/lib/i18n';
 import type { Task } from '@/types/calendar';
 
 type Props = {
   task: Task;
 };
+
+type AgendaItemBodyProps = {
+  gesture: any;
+  animatedStyle: any;
+  task: Task;
+  isOpen: boolean;
+  onClose: () => void;
+  onAction: (event: any) => void;
+};
+
+function AgendaItemBody({
+  gesture,
+  animatedStyle,
+  task,
+  isOpen,
+  onClose,
+  onAction,
+}: AgendaItemBodyProps): React.ReactElement {
+  return (
+    <GestureDetector gesture={gesture}>
+      <View>
+        <Animated.View
+          style={[animatedStyle, { minHeight: 44 }]}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={translate('calendar.drag_item_label', {
+            title: task.title,
+          })}
+          accessibilityHint={translate('calendar.drag_item_hint')}
+          accessibilityActions={[
+            { name: 'activate', label: translate('calendar.move_to_date') },
+            { name: 'increment', label: translate('calendar.tomorrow') },
+            { name: 'decrement', label: translate('calendar.yesterday') },
+          ]}
+          onAccessibilityAction={onAction}
+        >
+          <AgendaItemRow task={task} />
+        </Animated.View>
+
+        <MoveToDateMenu
+          open={isOpen}
+          onClose={onClose}
+          anchorDate={new Date(task.dueAtLocal)}
+        />
+      </View>
+    </GestureDetector>
+  );
+}
 
 // Custom hook to create pan gesture
 // eslint-disable-next-line max-lines-per-function
@@ -158,16 +209,41 @@ export function DraggableAgendaItem({ task }: Props): React.ReactElement {
     updateCurrentOffset,
   });
 
+  const [isMoveMenuOpen, setIsMoveMenuOpen] = React.useState<boolean>(false);
+
+  const onAccessibilityAction = React.useCallback(
+    async (event: any) => {
+      const action = event?.nativeEvent?.actionName as
+        | 'activate'
+        | 'increment'
+        | 'decrement'
+        | string;
+      if (action === 'activate') {
+        setIsMoveMenuOpen(true);
+        return;
+      }
+      if (action === 'increment' || action === 'decrement') {
+        const anchor = new Date(task.dueAtLocal);
+        const delta = action === 'increment' ? 1 : -1;
+        const target = new Date(
+          anchor.getFullYear(),
+          anchor.getMonth(),
+          anchor.getDate() + delta
+        );
+        await completeDrop(target, 'occurrence' as DragScope);
+      }
+    },
+    [completeDrop, task.dueAtLocal]
+  );
+
   return (
-    <GestureDetector gesture={pan}>
-      <Animated.View
-        style={animatedStyle}
-        accessible
-        accessibilityRole="button"
-        accessibilityLabel={`Drag ${task.title}`}
-      >
-        <AgendaItemRow task={task} />
-      </Animated.View>
-    </GestureDetector>
+    <AgendaItemBody
+      gesture={pan}
+      animatedStyle={animatedStyle}
+      task={task}
+      isOpen={isMoveMenuOpen}
+      onClose={() => setIsMoveMenuOpen(false)}
+      onAction={onAccessibilityAction}
+    />
   );
 }

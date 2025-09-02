@@ -1,6 +1,10 @@
 import { Q } from '@nozbe/watermelondb';
 import { DateTime } from 'luxon';
 
+import {
+  onSeriesOccurrenceCompleted,
+  onTaskCompleted,
+} from '@/lib/plant-telemetry';
 import * as rrule from '@/lib/rrule';
 import { TaskNotificationService } from '@/lib/task-notifications';
 import { database } from '@/lib/watermelon';
@@ -198,6 +202,7 @@ async function materializeNextOccurrence(
       r.seriesId = series.id;
       r.title = series.title;
       r.description = series.description;
+      r.plantId = series.plantId;
       r.dueAtLocal = DateTime.fromJSDate(local, {
         zone: series.timezone,
       }).toISO();
@@ -233,6 +238,7 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
       r.seriesId = input.seriesId;
       r.title = input.title;
       r.description = input.description;
+      // Ensure plantId is set either from input or inherited via series on UI side
       r.dueAtLocal = dueAtLocal;
       r.dueAtUtc = dueAtUtc;
       r.timezone = input.timezone;
@@ -356,15 +362,16 @@ function recalcReminderTimestamps(
   r.reminderAtUtc = dual.reminderAtUtc as any;
 }
 
-function applyTaskUpdates(task: TaskModel, updates: UpdateTaskInput): void {
+function applyTaskUpdates(
+  task: TaskModel,
+  updates: UpdateTaskInput,
+  originalTimezone: string
+): void {
   const r = task as any;
   if (updates.title !== undefined) r.title = updates.title;
   if (updates.description !== undefined) r.description = updates.description;
 
-  // Capture original timezone before any updates to detect timezone-only changes
-  const originalTimezone = r.timezone;
-
-  if (updates.timezone !== undefined && updates.timezone !== r.timezone) {
+  if (updates.timezone !== undefined && updates.timezone !== originalTimezone) {
     r.timezone = updates.timezone;
   }
 
@@ -386,9 +393,7 @@ async function handleNotificationUpdates(
   task: TaskModel,
   updates: UpdateTaskInput
 ): Promise<void> {
-  const currentTimezone = (task as any).timezone;
-  const timezoneChanged =
-    updates.timezone !== undefined && updates.timezone !== currentTimezone;
+  const timezoneChanged = false; // timezone-only changes are handled inside recalc helpers
 
   if (
     updates.reminderAtLocal !== undefined ||
@@ -419,8 +424,13 @@ export async function updateTask(
   const repos = getRepos();
   const task = (await (repos.tasks as any).find(id)) as TaskModel;
 
+  // Capture original timezone before applying updates to detect timezone-only changes
+  const originalTimezone = (task as any).timezone;
+
   await database.write(async () => {
-    await (task as any).update(applyTaskUpdates.bind(null, task, updates));
+    await (task as any).update(
+      applyTaskUpdates.bind(null, task, updates, originalTimezone)
+    );
   });
 
   await handleNotificationUpdates(id, task, updates);
@@ -525,6 +535,13 @@ export async function completeTask(id: string): Promise<Task> {
 
   // Cancel associated notifications on completion
   await TaskNotificationService.cancelForTask(id);
+
+  // Non-blocking plant telemetry update (watering/feeding)
+  try {
+    await onTaskCompleted(toTaskFromModel((updated as any) ?? task));
+  } catch (error) {
+    console.warn('[TaskManager] plant telemetry failed on completeTask', error);
+  }
 
   // Materialize the next occurrence for recurring tasks
   if (seriesId) {
@@ -785,6 +802,16 @@ export async function completeRecurringInstance(
     throw new Error('Failed to generate ISO for next occurrence');
   }
   await materializeNextOccurrence(series, occurrenceLocalIso);
+
+  // Non-blocking plant telemetry based on series metadata/title
+  try {
+    await onSeriesOccurrenceCompleted(series);
+  } catch (error) {
+    console.warn(
+      '[TaskManager] plant telemetry failed on completeRecurringInstance',
+      error
+    );
+  }
 }
 
 // Series CRUD

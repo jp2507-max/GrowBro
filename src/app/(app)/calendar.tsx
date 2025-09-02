@@ -80,7 +80,10 @@ export default function CalendarScreen(): React.ReactElement {
     if (item.type === 'date-header') {
       return (
         <View className="px-4 py-2">
-          <Text className="text-xs uppercase text-neutral-500">Today</Text>
+          <Text
+            className="text-xs uppercase text-neutral-500"
+            tx="calendar.today"
+          />
         </View>
       );
     }

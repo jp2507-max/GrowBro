@@ -1,3 +1,4 @@
+import { NoopAnalytics } from '@/lib/analytics';
 import { getItem, setItem } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { TaskNotificationService } from '@/lib/task-notifications';
@@ -194,15 +195,30 @@ async function sendPushBatch(
 
     if (!res.ok) {
       if (res.status === 409) throw new PushConflictError();
+      try {
+        await NoopAnalytics.track('sync_error', {
+          stage: 'push',
+          code: res.status,
+        });
+      } catch {}
       throw new Error(`push failed: ${res.status}`);
     }
   } catch (error) {
     clearTimeout(timeoutId);
 
     if (error instanceof Error && error.name === 'AbortError') {
+      try {
+        await NoopAnalytics.track('sync_error', {
+          stage: 'push',
+          code: 'timeout',
+        });
+      } catch {}
       throw new Error('Request timeout: push operation exceeded 30 seconds');
     }
 
+    try {
+      await NoopAnalytics.track('sync_error', { stage: 'push' });
+    } catch {}
     throw error;
   }
 }
@@ -332,6 +348,72 @@ async function applyServerChanges(
   return { appliedCount, changedTaskIds: changedIds };
 }
 
+function getCollectionByTable(
+  table: TableName,
+  repos: {
+    tasks: any;
+    series: any;
+    overrides: any;
+  }
+): any {
+  return (
+    table === 'tasks'
+      ? repos.tasks
+      : table === 'series'
+        ? repos.series
+        : repos.overrides
+  ) as any;
+}
+
+function applyPayloadToRecord(target: any, payload: any): void {
+  for (const [key, value] of Object.entries(payload)) {
+    (target as any)[key] = _normalizeIncomingValue(key, value);
+  }
+}
+
+function maybeMarkNeedsReview(table: TableName, rec: any, payload: any): void {
+  if (table !== 'tasks') return;
+  const localUpdated = toMillis((rec as any).updatedAt);
+  const serverUpdated = toMillis(payload.updatedAt);
+  if (
+    localUpdated !== null &&
+    serverUpdated !== null &&
+    serverUpdated > localUpdated
+  ) {
+    const currentMeta = ((rec as any).metadata ?? {}) as Record<
+      string,
+      unknown
+    >;
+    (rec as any).metadata = { ...currentMeta, needsReview: true };
+  }
+}
+
+async function handleCreate(coll: any, payload: any): Promise<void> {
+  await coll.create((rec: any) => {
+    (rec as any).id = payload.id;
+    applyPayloadToRecord(rec, payload);
+    (rec as any).updatedAt = (rec as any).updatedAt ?? new Date();
+    (rec as any).createdAt = (rec as any).createdAt ?? new Date();
+  });
+}
+
+async function handleUpdate(
+  table: TableName,
+  existing: any,
+  payload: any
+): Promise<void> {
+  await existing.update((rec: any) => {
+    applyPayloadToRecord(rec, payload);
+    if (payload.updatedAt != null) {
+      (rec as any).updatedAt = _normalizeIncomingValue(
+        'updatedAt',
+        payload.updatedAt
+      );
+    }
+    maybeMarkNeedsReview(table, rec, payload);
+  });
+}
+
 async function upsertBatch(
   table: TableName,
   payloads: any[]
@@ -341,52 +423,23 @@ async function upsertBatch(
     series: database.collections.get('series' as any),
     overrides: database.collections.get('occurrence_overrides' as any),
   } as const;
+  const coll = getCollectionByTable(table, repos);
   let applied = 0;
   const changedTaskIds: string[] = [];
-  for (const p of payloads) {
+  for (const payload of payloads) {
     try {
-      const coll = (
-        table === 'tasks'
-          ? repos.tasks
-          : table === 'series'
-            ? repos.series
-            : repos.overrides
-      ) as any;
       let existing: any | null = null;
       try {
-        existing = await coll.find(p.id);
+        existing = await coll.find(payload.id);
       } catch {
         existing = null;
       }
-      if (!existing) {
-        await coll.create((rec: any) => {
-          // Set the server ID first to ensure WatermelonDB uses it instead of auto-generating
-          (rec as any).id = p.id;
-          for (const [k, v] of Object.entries(p)) {
-            (rec as any)[k] = _normalizeIncomingValue(k, v);
-          }
-          (rec as any).updatedAt = (rec as any).updatedAt ?? new Date();
-          (rec as any).createdAt = (rec as any).createdAt ?? new Date();
-        });
-      } else {
-        await existing.update((rec: any) => {
-          for (const [k, v] of Object.entries(p)) {
-            (rec as any)[k] = _normalizeIncomingValue(k, v);
-          }
-          // Preserve server's updatedAt if provided, otherwise keep existing record timestamp
-          if (p.updatedAt != null) {
-            (rec as any).updatedAt = _normalizeIncomingValue(
-              'updatedAt',
-              p.updatedAt
-            );
-          }
-          // If p.updatedAt is null/undefined, rec.updatedAt remains unchanged
-        });
-      }
+      if (!existing) await handleCreate(coll, payload);
+      else await handleUpdate(table, existing, payload);
       applied++;
-      if (table === 'tasks') changedTaskIds.push(p.id);
+      if (table === 'tasks') changedTaskIds.push(payload.id);
     } catch {
-      // Ignore individual row failures to keep sync resilient
+      // ignore row failure
     }
   }
   return { applied, changedTaskIds };
@@ -435,6 +488,12 @@ async function pushChanges(lastPulledAt: number | null): Promise<number> {
     await sendPushBatch(batch, token);
     pushedCount += countChanges(batch.changes);
   }
+  try {
+    await NoopAnalytics.track('sync_push', {
+      pushed: pushedCount,
+      queue_length: total,
+    });
+  } catch {}
   return pushedCount;
 }
 
@@ -456,16 +515,33 @@ async function pullChangesOnce(req: SyncRequest): Promise<SyncResponse> {
 
     clearTimeout(timeoutId);
 
-    if (!res.ok) throw new Error(`pull failed: ${res.status}`);
+    if (!res.ok) {
+      try {
+        await NoopAnalytics.track('sync_error', {
+          stage: 'pull',
+          code: res.status,
+        });
+      } catch {}
+      throw new Error(`pull failed: ${res.status}`);
+    }
     const data = (await res.json()) as SyncResponse;
     return data;
   } catch (error) {
     clearTimeout(timeoutId);
 
     if (error instanceof Error && error.name === 'AbortError') {
+      try {
+        await NoopAnalytics.track('sync_error', {
+          stage: 'pull',
+          code: 'timeout',
+        });
+      } catch {}
       throw new Error('Request timeout: pull operation exceeded 30 seconds');
     }
 
+    try {
+      await NoopAnalytics.track('sync_error', { stage: 'pull' });
+    } catch {}
     throw error;
   }
 }
@@ -520,6 +596,12 @@ async function pullAllChanges(lastPulledAt: number | null): Promise<{
   const { appliedCount, changedTaskIds: changed } =
     await applyServerChanges(resp);
   applied += appliedCount;
+  try {
+    await NoopAnalytics.track('sync_pull_applied', {
+      applied: appliedCount,
+      has_more: resp.hasMore,
+    });
+  } catch {}
   changedTaskIds.push(...changed);
   cursor = resp.hasMore ? resp.nextCursor : undefined;
 
@@ -536,6 +618,12 @@ async function pullAllChanges(lastPulledAt: number | null): Promise<{
     const { appliedCount: newApplied, changedTaskIds: newChanged } =
       await applyServerChanges(resp);
     applied += newApplied;
+    try {
+      await NoopAnalytics.track('sync_pull_applied', {
+        applied: newApplied,
+        has_more: resp.hasMore,
+      });
+    } catch {}
     changedTaskIds.push(...newChanged);
     cursor = resp.hasMore ? resp.nextCursor : undefined;
   }
@@ -571,6 +659,13 @@ export async function synchronize(): Promise<SyncResult> {
 
   // 3) Update checkpoint atomically after successful apply
   if (serverTimestamp !== null) await setItem(CHECKPOINT_KEY, serverTimestamp);
+  try {
+    if (typeof lastPulledAt === 'number') {
+      await NoopAnalytics.track('sync_checkpoint_age_ms', {
+        ms: Math.max(0, Date.now() - lastPulledAt),
+      });
+    }
+  } catch {}
 
   // 4) Differentially re-plan notifications if tasks changed
   await updateNotificationsForChangedTasks(changedTaskIds);

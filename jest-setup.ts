@@ -9,6 +9,7 @@ global.window = global;
 // mock: async-storage
 jest.mock('@react-native-async-storage/async-storage', () => {
   try {
+    // Defer import to avoid ESM resolution at top-level in Jest env
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require('__mocks__/@react-native-async-storage/async-storage');
   } catch {
@@ -18,21 +19,26 @@ jest.mock('@react-native-async-storage/async-storage', () => {
 });
 
 // mock: expo-notifications (avoid recursive require by returning plain object)
-jest.mock('expo-notifications', () => ({
-  AndroidImportance: { DEFAULT: 3, HIGH: 4, LOW: 2, MIN: 1, NONE: 0 },
-  AndroidNotificationVisibility: { PRIVATE: 0, PUBLIC: 1, SECRET: -1 },
-  scheduleNotificationAsync: jest
-    .fn()
-    .mockResolvedValue('mock-notification-id'),
-  cancelScheduledNotificationAsync: jest.fn().mockResolvedValue(undefined),
-  setNotificationChannelAsync: jest.fn().mockResolvedValue(undefined),
-  requestPermissionsAsync: jest
-    .fn()
-    .mockResolvedValue({ status: 'granted', canAskAgain: false }),
-  getPermissionsAsync: jest
-    .fn()
-    .mockResolvedValue({ status: 'granted', canAskAgain: false }),
-}));
+jest.mock('expo-notifications', () => {
+  const addListener = jest.fn((_cb: any) => ({ remove: jest.fn() }));
+  return {
+    AndroidImportance: { DEFAULT: 3, HIGH: 4, LOW: 2, MIN: 1, NONE: 0 },
+    AndroidNotificationVisibility: { PRIVATE: 0, PUBLIC: 1, SECRET: -1 },
+    scheduleNotificationAsync: jest
+      .fn()
+      .mockResolvedValue('mock-notification-id'),
+    cancelScheduledNotificationAsync: jest.fn().mockResolvedValue(undefined),
+    setNotificationChannelAsync: jest.fn().mockResolvedValue(undefined),
+    requestPermissionsAsync: jest
+      .fn()
+      .mockResolvedValue({ status: 'granted', canAskAgain: false }),
+    getPermissionsAsync: jest
+      .fn()
+      .mockResolvedValue({ status: 'granted', canAskAgain: false }),
+    addNotificationReceivedListener: addListener,
+    addNotificationResponseReceivedListener: addListener,
+  };
+});
 
 // mock: @nozbe/watermelondb (for database operations in tests)
 jest.mock('@nozbe/watermelondb', () => {

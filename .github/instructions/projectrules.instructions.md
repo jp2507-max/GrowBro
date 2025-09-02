@@ -82,6 +82,10 @@ src
 - Use declarative JSX
 - Implement proper TypeScript discriminated unions for message types
 
+## Internationalization (I18n)
+
+- make sure all the parts where you see writings in the app are internationalized in german and englisch
+
 ## UI and Styling
 
 - Use Nativewind for styling and components

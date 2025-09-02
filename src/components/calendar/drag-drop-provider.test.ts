@@ -17,5 +17,3 @@ describe('shouldAutoScroll', () => {
     expect(shouldAutoScroll(300, 600, 60)).toBe(0);
   });
 });
-
-

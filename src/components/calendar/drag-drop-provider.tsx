@@ -52,6 +52,14 @@ export function shouldAutoScroll(
   return 0;
 }
 
+// Helper to detect tasks that are synthesized occurrences without a DB row
+function isEphemeralTask(task: Task): boolean {
+  const hasSeriesLikeId =
+    typeof task.id === 'string' && task.id.startsWith('series:');
+  const flaggedEphemeral = Boolean((task as any)?.metadata?.ephemeral);
+  return hasSeriesLikeId || flaggedEphemeral;
+}
+
 // Constants
 // Calendar layout constants
 const DAY_PX = 80; // Height of each day row in pixels for drag calculations
@@ -242,6 +250,12 @@ function useTaskUpdate() {
         );
       }
 
+      // If this is an ephemeral synthesized occurrence, do not attempt to
+      // update a non-existent DB row. Rely on the override above and return.
+      if (isEphemeralTask(task)) {
+        return { task, next: result.localDateTime.toJSDate() };
+      }
+
       // Update the task in the database with new due dates (both local and UTC)
       await updateTask(task.id, {
         dueAtLocal: result.localDateTime.toISO()!,
@@ -317,8 +331,11 @@ function useDropCompletion(options: {
         dropOptions.scope
       );
 
-      setupUndoState(undoRef, updatedTask, createUndoState);
-      showUndoMessage(performUndo);
+      // Skip undo and toast for ephemeral synthesized occurrences
+      if (!isEphemeralTask(updatedTask)) {
+        setupUndoState(undoRef, updatedTask, createUndoState);
+        showUndoMessage(performUndo);
+      }
       onDropComplete();
 
       return false;
