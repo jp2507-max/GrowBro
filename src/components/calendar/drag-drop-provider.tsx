@@ -2,6 +2,7 @@ import React from 'react';
 import { Vibration } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 
+import { showErrorMessage } from '@/components/ui/utils';
 import { rescheduleRecurringInstance, updateTask } from '@/lib/task-manager';
 import {
   combineTargetDateWithTime,
@@ -325,20 +326,25 @@ function useDropCompletion(options: {
       const task = draggedTaskRef.current;
       if (!task) return false;
 
-      const { task: updatedTask } = await updateTaskData(
-        task,
-        dropOptions.targetDate,
-        dropOptions.scope
-      );
+      try {
+        const { task: updatedTask } = await updateTaskData(
+          task,
+          dropOptions.targetDate,
+          dropOptions.scope
+        );
 
-      // Skip undo and toast for ephemeral synthesized occurrences
-      if (!isEphemeralTask(updatedTask)) {
-        setupUndoState(undoRef, updatedTask, createUndoState);
-        showUndoMessage(performUndo);
+        // Skip undo and toast for ephemeral synthesized occurrences
+        if (!isEphemeralTask(updatedTask)) {
+          setupUndoState(undoRef, updatedTask, createUndoState);
+          showUndoMessage(performUndo);
+        }
+      } catch (error) {
+        console.error('Failed to update task during drop completion:', error);
+        showErrorMessage('Failed to move task. Please try again.');
+      } finally {
+        onDropComplete();
+        return false;
       }
-      onDropComplete();
-
-      return false;
     },
     [
       draggedTaskRef,

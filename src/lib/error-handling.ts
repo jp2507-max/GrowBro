@@ -5,6 +5,7 @@ export type ErrorCategory =
   | 'permission'
   | 'performance'
   | 'conflict'
+  | 'rate_limit'
   | 'unknown';
 
 export type CategorizedError = {
@@ -45,6 +46,14 @@ export function categorizeError(error: unknown): CategorizedError {
         category: 'conflict',
         isRetryable: false,
         message: 'Conflict detected',
+        statusCode: status,
+      };
+    }
+    if (status === 429) {
+      return {
+        category: 'rate_limit',
+        isRetryable: true,
+        message: 'Rate limit exceeded',
         statusCode: status,
       };
     }

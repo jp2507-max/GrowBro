@@ -1,5 +1,12 @@
 import type { TemplateDefinition } from '@/types/templates';
 
+// Function type definitions for testing
+export type RegisterTemplateFn = (def: TemplateDefinition) => void;
+export type GetTemplateFn = (
+  templateId: string
+) => TemplateDefinition | undefined;
+export type ListTemplatesFn = () => TemplateDefinition[];
+
 // Minimal in-memory registry for v1; could be backed by Supabase later
 const templates = new Map<string, TemplateDefinition>();
 

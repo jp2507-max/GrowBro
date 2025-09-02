@@ -4,6 +4,14 @@ import type { Series, Task } from '@/types/calendar';
 
 type TelemetryCategory = 'water' | 'feed' | null;
 
+// Input type for series-based task completion (contains only fields needed for telemetry)
+export type SeriesTaskInput = {
+  title: string;
+  description?: string;
+  plantId?: string;
+  metadata?: Record<string, unknown>;
+};
+
 function isTestEnvironment(): boolean {
   return (
     typeof process !== 'undefined' &&
@@ -60,29 +68,53 @@ async function updatePlantField(
   }
 }
 
-export async function onTaskCompleted(task: Task): Promise<void> {
-  const category = classifyTaskCategory(task);
+export async function onTaskCompleted(
+  input: Task | SeriesTaskInput
+): Promise<void> {
+  // Extract the fields we need for telemetry, with proper defaults
+  const taskData = {
+    title: input.title,
+    description: input.description,
+    plantId: input.plantId,
+    metadata: input.metadata ?? {},
+  };
+
+  // Validate required fields
+  if (!taskData.title || typeof taskData.title !== 'string') {
+    console.warn('[PlantTelemetry] Invalid task title for telemetry');
+    return;
+  }
+
+  const category = classifyTaskCategory(taskData);
   if (!category) return;
 
-  if (!isValidPlantId(task.plantId)) return;
+  if (!isValidPlantId(taskData.plantId)) return;
+
+  // Extract task ID if available (for analytics tracking)
+  const taskId = 'id' in input ? input.id : undefined;
 
   if (category === 'water') {
-    NoopAnalytics.track('notif_rehydrate_scheduled', { taskId: task.id });
-    await updatePlantField(task.plantId!, 'last_watered_at');
+    NoopAnalytics.track('plant_watered', {
+      taskId: taskId || 'series-occurrence',
+    });
+    await updatePlantField(taskData.plantId!, 'last_watered_at');
   } else if (category === 'feed') {
-    NoopAnalytics.track('notif_rehydrate_scheduled', { taskId: task.id });
-    await updatePlantField(task.plantId!, 'last_fed_at');
+    NoopAnalytics.track('plant_fed', {
+      taskId: taskId || 'series-occurrence',
+    });
+    await updatePlantField(taskData.plantId!, 'last_fed_at');
   }
 }
 
 export async function onSeriesOccurrenceCompleted(
   series: Series
 ): Promise<void> {
-  const pseudoTask = {
+  const seriesTaskInput: SeriesTaskInput = {
     title: series.title,
     description: series.description,
-    metadata: {},
     plantId: series.plantId,
-  } as unknown as Task;
-  await onTaskCompleted(pseudoTask);
+    metadata: {},
+  };
+
+  await onTaskCompleted(seriesTaskInput);
 }

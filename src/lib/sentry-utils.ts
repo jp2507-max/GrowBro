@@ -4,7 +4,7 @@ import { getPrivacyConsent } from './privacy-consent';
  * Regex patterns for detecting sensitive information
  */
 const SENSITIVE_PATTERNS = {
-  email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
+  email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/gi,
   phone: /(\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/g,
   // Common address patterns - street numbers and names
   address:
@@ -200,22 +200,46 @@ export const beforeSendHook = (event: any, _hint?: any): any | null => {
     }
 
     return event;
-  } catch (error) {
+  } catch {
     // If scrubbing fails, log the error and drop the event to avoid leaking PII
     // We return null to signal Sentry to discard the event.
-    console.warn('Failed to scrub sensitive data from Sentry event:', error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Sentry scrubber failed; dropping event.');
+    }
     return null;
   }
 };
 
-export function captureCategorizedError(error: unknown): void {
+/**
+ * Captures an error to Sentry with categorization metadata.
+ *
+ * This function provides enhanced error reporting by:
+ * 1. Categorizing errors using the error-handling utility
+ * 2. Adding structured tags for better filtering and analysis
+ * 3. Including categorized error messages as extra context
+ *
+ * Uses dynamic imports to avoid loading Sentry modules unless needed,
+ * preventing unnecessary bundle bloat and initialization overhead.
+ *
+ * @param error - The error to capture (can be any type)
+ *
+ * Note: This function is intentionally async to handle dynamic imports gracefully.
+ * If synchronous behavior is needed, consider using a fire-and-forget approach
+ * with privacy consent checking as suggested by CodeRabbit AI.
+ */
+export async function captureCategorizedError(error: unknown): Promise<void> {
   try {
-    // Lazy import inside try-catch to avoid requiring at module eval
+    // Dynamic imports to avoid requiring modules at bundle time
+    // This prevents Sentry from being initialized unless actually used
+    const [{ default: Sentry }, { categorizeError }] = await Promise.all([
+      import('@sentry/react-native'),
+      import('@/lib/error-handling'),
+    ]);
 
-    const Sentry = require('@sentry/react-native');
-
-    const { categorizeError } = require('@/lib/error-handling');
+    // Categorize the error for better context and filtering
     const cat = categorizeError(error);
+
+    // Capture with enhanced metadata for better debugging
     Sentry.captureException(error, {
       tags: {
         category: cat.category,
@@ -225,6 +249,50 @@ export function captureCategorizedError(error: unknown): void {
       extra: { categorizedMessage: cat.message },
     });
   } catch {
-    // no-op
+    // Silently fail if imports or categorization fails
+    // This prevents error reporting failures from breaking the app
   }
+}
+
+/**
+ * Alternative synchronous version with privacy consent checking.
+ *
+ * This version addresses CodeRabbit AI's suggestion by:
+ * 1. Making the function synchronous (fire-and-forget)
+ * 2. Adding privacy consent validation before sending data
+ * 3. Using dynamic imports to avoid bundle bloat
+ * 4. Providing better error handling with development warnings
+ *
+ * @param error - The error to capture (can be any type)
+ */
+export function captureCategorizedErrorSync(error: unknown): void {
+  // Respect user consent before doing any work
+  const { hasConsent } = require('@/lib/privacy-consent');
+  if (!hasConsent('crashReporting')) {
+    return;
+  }
+
+  // Lazy-load modules; do not block the caller
+  void Promise.all([
+    import('@sentry/react-native'),
+    import('@/lib/error-handling'),
+  ])
+    .then(([{ default: Sentry }, { categorizeError }]) => {
+      const cat = categorizeError(error);
+      Sentry.captureException(error, {
+        tags: {
+          category: cat.category,
+          retryable: String(cat.isRetryable),
+          status: cat.statusCode ? String(cat.statusCode) : undefined,
+        },
+        extra: { categorizedMessage: cat.message },
+      });
+    })
+    .catch(() => {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(
+          'captureCategorizedErrorSync suppressed (module load failed).'
+        );
+      }
+    });
 }

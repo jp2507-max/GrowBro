@@ -44,6 +44,14 @@ export type AnalyticsEvents = {
     ms: number;
   };
 
+  // Plant telemetry events
+  plant_watered: {
+    taskId: string;
+  };
+  plant_fed: {
+    taskId: string;
+  };
+
   // Sync KPIs
   sync_push: {
     pushed: number;

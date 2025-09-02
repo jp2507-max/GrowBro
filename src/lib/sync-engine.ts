@@ -55,6 +55,11 @@ const API_BASE =
   process.env.API_BASE_URL ??
   process.env.API_URL ??
   '';
+
+if (!API_BASE) {
+  console.warn('SYNC: API_BASE is empty; network calls will fail on device');
+}
+
 const REQUEST_TIMEOUT_MS = 30000; // 30 second timeout
 
 function nowMs(): number {
@@ -367,6 +372,7 @@ function getCollectionByTable(
 
 function applyPayloadToRecord(target: any, payload: any): void {
   for (const [key, value] of Object.entries(payload)) {
+    if (key === 'id' || key === 'updatedAt') continue;
     (target as any)[key] = _normalizeIncomingValue(key, value);
   }
 }

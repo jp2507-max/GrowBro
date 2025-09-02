@@ -20,6 +20,7 @@ export default defineConfig([
   globalIgnores([
     'dist/*',
     'node_modules',
+    '__mocks__/',
     '__tests__/',
     'coverage',
     '.expo',
@@ -98,6 +99,17 @@ export default defineConfig([
           disallowTypeAnnotations: true,
         },
       ],
+    },
+  },
+  // Loosen typed linting for mocks to avoid requiring TS project inclusion
+  {
+    files: ['__mocks__/**/*.{ts,tsx}'],
+    languageOptions: {
+      parser: parser,
+      parserOptions: {
+        project: undefined,
+        sourceType: 'module',
+      },
     },
   },
   {

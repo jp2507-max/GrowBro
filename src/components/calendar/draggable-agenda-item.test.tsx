@@ -3,6 +3,16 @@ import React from 'react';
 
 import { DraggableAgendaItem } from '@/components/calendar/draggable-agenda-item';
 
+// Mock the translate function to return a deterministic string containing the title
+jest.mock('@/lib/i18n', () => ({
+  translate: jest.fn((key: string, options?: { title?: string }) => {
+    if (options?.title) {
+      return `Drag item ${options.title}`;
+    }
+    return key;
+  }),
+}));
+
 const task = {
   id: 't1',
   title: 'Water plants',

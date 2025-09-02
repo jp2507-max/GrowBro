@@ -104,7 +104,7 @@ src
 
 ## Internationalization (I18n)
 
-- make sure all the parts where you see writings in the app are internationalized in german and englisch
+- make sure all user-visible strings (UI labels, buttons, error messages, placeholders, notifications, email templates, tooltips, and any text rendered to users) are internationalized in German and English
 
 ## UI and Styling
 

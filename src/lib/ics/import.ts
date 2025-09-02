@@ -18,29 +18,62 @@ type ParsedEvent = {
   valarm?: { triggerUtc?: string };
 };
 
+type ParseResult<T> = { ok: true; value: T } | { ok: false; error: string };
+
 function parseIcsDate(
   value: string,
   tz?: string
-): { localIso?: string; utcIso?: string } {
+): ParseResult<{ localIso?: string; utcIso?: string }> {
   if (value.endsWith('Z')) {
     const dt = DateTime.fromFormat(value, "yyyyLLdd'T'HHmmss'Z'", {
       zone: 'utc',
     });
-    const utcIso = dt.toISO();
-    if (!utcIso) return {};
-    if (tz) {
-      const localIso = dt.setZone(tz).toISO();
-      return { localIso: localIso ?? undefined, utcIso };
+    if (!dt.isValid) {
+      return { ok: false, error: `Invalid UTC datetime format: "${value}"` };
     }
-    return { utcIso };
+    const utcIso = dt.toISO();
+    if (!utcIso) {
+      return {
+        ok: false,
+        error: `Failed to convert UTC datetime to ISO: "${value}"`,
+      };
+    }
+    if (tz) {
+      const localDt = dt.setZone(tz);
+      if (!localDt.isValid) {
+        return {
+          ok: false,
+          error: `Invalid timezone "${tz}" for UTC datetime: "${value}"`,
+        };
+      }
+      const localIso = localDt.toISO();
+      return { ok: true, value: { localIso: localIso ?? undefined, utcIso } };
+    }
+    return { ok: true, value: { utcIso } };
   }
   // Floating or TZID local time
   const dt = DateTime.fromFormat(value, "yyyyLLdd'T'HHmmss", {
     zone: tz ?? 'utc',
   });
+  if (!dt.isValid) {
+    return {
+      ok: false,
+      error: `Invalid datetime format: "${value}" with timezone "${tz ?? 'utc'}"`,
+    };
+  }
   const localIso = dt.toISO();
-  const utcIso = dt.toUTC().toISO();
-  return { localIso: localIso ?? undefined, utcIso: utcIso ?? undefined };
+  const utcDt = dt.toUTC();
+  if (!utcDt.isValid) {
+    return {
+      ok: false,
+      error: `Failed to convert to UTC: "${value}" with timezone "${tz ?? 'utc'}"`,
+    };
+  }
+  const utcIso = utcDt.toISO();
+  return {
+    ok: true,
+    value: { localIso: localIso ?? undefined, utcIso: utcIso ?? undefined },
+  };
 }
 
 function parseVevent(block: string): ParsedEvent | null {
@@ -157,6 +190,19 @@ function pushSingle(
   });
 }
 
+// Unfold folded lines in ICS format (lines that continue with space/tab after CRLF/LF)
+function unfoldIcsLines(icsText: string): string {
+  return icsText.replace(/\r?\n[ \t]/g, '');
+}
+
+// Extract VEVENT blocks using robust regex that handles multiline content
+function extractVeventBlocks(icsText: string): string[] {
+  const unfolded = unfoldIcsLines(icsText);
+  const veventRegex = /BEGIN:VEVENT[\s\S]*?END:VEVENT/g;
+  const matches = unfolded.match(veventRegex);
+  return matches || [];
+}
+
 export function importIcs(
   icsText: string,
   opts: {
@@ -165,10 +211,7 @@ export function importIcs(
     existingSeries?: Pick<Series, 'id' | 'dtstartLocal' | 'title'>[];
   }
 ): IcsImportResult {
-  const vevents = icsText
-    .split('BEGIN:VEVENT')
-    .slice(1)
-    .map((chunk) => `BEGIN:VEVENT${chunk.split('END:VEVENT')[0]}END:VEVENT`);
+  const vevents = extractVeventBlocks(icsText);
 
   const tasks: CreateTaskInput[] = [];
   const series: (Omit<CreateSeriesInput, 'dtstartUtc'> & {
@@ -181,8 +224,20 @@ export function importIcs(
     if (!ev || !ev.dtstart || !ev.summary) continue;
 
     const tz = ev.dtstart.tz ?? opts.timezoneFallback;
-    const { localIso, utcIso } = parseIcsDate(ev.dtstart.value, tz);
-    if (!localIso || !utcIso) continue;
+    const parseResult = parseIcsDate(ev.dtstart.value, tz);
+    if (!parseResult.ok) {
+      console.error(
+        `Failed to parse ICS date "${ev.dtstart.value}" with timezone "${tz}": ${(parseResult as { ok: false; error: string }).error}`
+      );
+      continue;
+    }
+    const { localIso, utcIso } = parseResult.value;
+    if (!localIso || !utcIso) {
+      console.error(
+        `Parsed ICS date resulted in empty values for "${ev.dtstart.value}" with timezone "${tz}"`
+      );
+      continue;
+    }
 
     const title = ev.summary;
     const description = ev.description;
