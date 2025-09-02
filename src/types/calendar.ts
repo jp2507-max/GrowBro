@@ -1,6 +1,6 @@
 export type TaskStatus = 'pending' | 'completed' | 'skipped';
 
-export type OccurrenceOverrideStatus = 'skip' | 'reschedule' | 'complete';
+export type OccurrenceOverrideStatus = 'skip' | 'reschedule' | 'completed';
 
 export type TaskMetadata = Record<string, unknown>;
 

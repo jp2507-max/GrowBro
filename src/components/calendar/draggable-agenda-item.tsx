@@ -8,7 +8,10 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { AgendaItemRow } from '@/components/calendar/agenda-item';
-import { useDragDrop } from '@/components/calendar/drag-drop-provider';
+import {
+  type DragScope,
+  useDragDrop,
+} from '@/components/calendar/drag-drop-provider';
 import type { Task } from '@/types/calendar';
 
 type Props = {
@@ -24,7 +27,7 @@ function useCreatePanGesture(options: {
   task: Task;
   startDrag: (task: Task) => void;
   cancelDrag: () => void;
-  completeDrop: (targetDate: Date, scope: string) => Promise<void>;
+  completeDrop: (targetDate: Date, scope: DragScope) => Promise<void>;
   onDragUpdate: (y: number) => number | undefined;
   computeTargetDate: (originalDate: Date, translationY: number) => Date;
   updateCurrentOffset: (y: number) => void;
@@ -66,11 +69,11 @@ function useCreatePanGesture(options: {
           })();
         })
         .onEnd(() => {
-          const target = computeTargetDate(originDate.current!, ty.value);
-          runOnJS(completeDrop)(target, 'occurrence');
-
+          runOnJS((origin: Date, dy: number) => {
+            const target = computeTargetDate(origin, dy);
+            void completeDrop(target, 'occurrence' as DragScope);
+          })(originDate.current!, ty.value);
           tx.value = withSpring(0);
-
           ty.value = withSpring(0);
         })
         .onFinalize(() => {
@@ -96,7 +99,7 @@ function useDragGesture(options: {
   task: Task;
   startDrag: (task: Task) => void;
   cancelDrag: () => void;
-  completeDrop: (targetDate: Date, scope: string) => Promise<void>;
+  completeDrop: (targetDate: Date, scope: DragScope) => Promise<void>;
   onDragUpdate: (y: number) => number | undefined;
   computeTargetDate: (originalDate: Date, translationY: number) => Date;
   updateCurrentOffset: (y: number) => void;

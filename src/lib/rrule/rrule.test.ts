@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import { DateTime } from 'luxon';
 
 import { buildIterator } from './iterator';
@@ -197,5 +198,67 @@ describe('RRULE overrides', () => {
         DateTime.fromISO(i.local, { zone: BERLIN }).toFormat('yyyy-LL-dd')
       );
     expect(days).not.toContain('2025-03-29');
+  });
+
+  it('applies completed override (suppression)', () => {
+    const cfg = parseRule('FREQ=DAILY;INTERVAL=1', '2025-03-28T07:00:00Z');
+    const range = {
+      start: DateTime.fromISO('2025-03-28T00:00:00', {
+        zone: BERLIN,
+      }).toJSDate(),
+      end: DateTime.fromISO('2025-03-30T23:59:59', {
+        zone: BERLIN,
+      }).toJSDate(),
+      timezone: BERLIN,
+    };
+    const overrides = [
+      {
+        id: 'o1',
+        seriesId: 's',
+        occurrenceLocalDate: '2025-03-29',
+        status: 'completed',
+      } as any,
+    ];
+    const items = collect(buildIterator({ config: cfg, overrides, range }));
+    const days = items
+      .filter((i): i is typeof i & { local: string } => i.local !== null)
+      .map((i) =>
+        DateTime.fromISO(i.local, { zone: BERLIN }).toFormat('yyyy-LL-dd')
+      );
+    expect(days).not.toContain('2025-03-29');
+  });
+
+  it('applies reschedule override', () => {
+    const cfg = parseRule('FREQ=DAILY;INTERVAL=1', '2025-03-28T07:00:00Z');
+    const range = {
+      start: DateTime.fromISO('2025-03-28T00:00:00', {
+        zone: BERLIN,
+      }).toJSDate(),
+      end: DateTime.fromISO('2025-03-30T23:59:59', {
+        zone: BERLIN,
+      }).toJSDate(),
+      timezone: BERLIN,
+    };
+    const overrides = [
+      {
+        id: 'o1',
+        seriesId: 's',
+        occurrenceLocalDate: '2025-03-29',
+        status: 'reschedule',
+        dueAtLocal: '2025-03-29T10:00:00+01:00',
+        dueAtUtc: '2025-03-29T09:00:00Z',
+      } as any,
+    ];
+    const items = collect(buildIterator({ config: cfg, overrides, range }));
+    const targetLocal = items.find(
+      (i) =>
+        DateTime.fromISO(i.local, { zone: BERLIN }).toFormat('yyyy-LL-dd') ===
+        '2025-03-29'
+    );
+    expect(targetLocal).toBeTruthy();
+    if (targetLocal) {
+      const dt = DateTime.fromISO(targetLocal.local, { zone: BERLIN });
+      expect(dt.hour).toBe(10);
+    }
   });
 });
