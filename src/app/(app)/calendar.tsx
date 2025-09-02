@@ -1,25 +1,26 @@
 import React from 'react';
 
-import { AgendaItemRow } from '@/components/calendar/agenda-item';
 import { AgendaList } from '@/components/calendar/agenda-list';
-import { DraggableAgendaItem } from '@/components/calendar/draggable-agenda-item';
 import { DragDropProvider } from '@/components/calendar/drag-drop-provider';
+import { DraggableAgendaItem } from '@/components/calendar/draggable-agenda-item';
 import { Button, FocusAwareStatusBar, Text, View } from '@/components/ui';
 import type { AgendaItem } from '@/types/agenda';
 
-function useTodayAgenda(): { items: AgendaItem[]; isLoading: boolean } {
-  const now = React.useMemo(() => new Date(), []);
-  const todayId = now.toISOString().slice(0, 10);
+function useTodayAgenda(currentDate: Date): {
+  items: AgendaItem[];
+  isLoading: boolean;
+} {
+  const todayId = currentDate.toISOString().slice(0, 10);
   const items = React.useMemo<AgendaItem[]>(
     () => [
       {
         id: `header-${todayId}`,
         type: 'date-header',
-        date: now,
+        date: currentDate,
         height: 32,
       },
     ],
-    [now, todayId]
+    [currentDate, todayId]
   );
   return { items, isLoading: false };
 }
@@ -62,7 +63,7 @@ function Header({
 
 export default function CalendarScreen(): React.ReactElement {
   const [currentDate, setCurrentDate] = React.useState<Date>(new Date());
-  const { items, isLoading } = useTodayAgenda();
+  const { items, isLoading } = useTodayAgenda(currentDate);
 
   const onPrev = React.useCallback(() => {
     setCurrentDate(
@@ -94,7 +95,11 @@ export default function CalendarScreen(): React.ReactElement {
       <View className="flex-1">
         <FocusAwareStatusBar />
         <Header date={currentDate} onPrev={onPrev} onNext={onNext} />
-        <AgendaList data={items} isLoading={isLoading} renderItem={renderItem} />
+        <AgendaList
+          data={items}
+          isLoading={isLoading}
+          renderItem={renderItem}
+        />
       </View>
     </DragDropProvider>
   );

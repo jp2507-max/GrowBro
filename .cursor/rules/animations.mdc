@@ -207,7 +207,8 @@ const tap = Gesture.Tap().onEnd(() => {
 
 ## ⚙️ Expo SDK 53 Specifics
 
-- **Bundled Reanimated**: `~3.17.4` (compatible with 3.17.5).
+- **Bundled Reanimated**: `~3.17.5` (compatible with 3.17.5).
+- **Gesture Handler**: `~2.24.0`.
 - **Babel**: `react-native-reanimated/plugin` is auto‑configured via `babel-preset-expo` — no manual setup in most Expo apps.
 
 > Install with `npx expo install react-native-reanimated` to match the SDK.
