@@ -258,6 +258,104 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
   return toTaskFromModel(created);
 }
 
+function shouldUpdateDue(
+  updates: UpdateTaskInput,
+  originalTimezone: string
+): boolean {
+  return (
+    (updates.timezone !== undefined && updates.timezone !== originalTimezone) ||
+    updates.dueAtLocal !== undefined ||
+    updates.dueAtUtc !== undefined
+  );
+}
+
+function recalcDueTimestamps(
+  r: any,
+  updates: UpdateTaskInput,
+  originalTimezone: string
+): void {
+  if (!shouldUpdateDue(updates, originalTimezone)) return;
+
+  let dueAtLocalInput = updates.dueAtLocal ?? r.dueAtLocal;
+  let dueAtUtcInput = updates.dueAtUtc ?? r.dueAtUtc;
+
+  const isTimezoneOnlyUpdate =
+    updates.timezone !== undefined &&
+    updates.timezone !== originalTimezone &&
+    updates.dueAtLocal === undefined &&
+    updates.dueAtUtc === undefined;
+
+  if (isTimezoneOnlyUpdate && r.dueAtLocal && originalTimezone) {
+    const dt = DateTime.fromISO(r.dueAtLocal, {
+      zone: originalTimezone,
+    }).setZone(updates.timezone);
+    dueAtLocalInput = dt.toISO();
+    if (!dueAtLocalInput) {
+      throw new Error(
+        `Failed to convert timezone from ${originalTimezone} to ${updates.timezone} for: ${r.dueAtLocal}`
+      );
+    }
+    dueAtUtcInput = undefined;
+  }
+
+  const dual = ensureDualTimestamps({
+    dueAtLocal: dueAtLocalInput,
+    dueAtUtc: dueAtUtcInput,
+    timezone: updates.timezone ?? r.timezone,
+  });
+  r.dueAtLocal = dual.dueAtLocal;
+  r.dueAtUtc = dual.dueAtUtc;
+}
+
+function shouldUpdateReminder(
+  updates: UpdateTaskInput,
+  originalTimezone: string
+): boolean {
+  return (
+    (updates.timezone !== undefined && updates.timezone !== originalTimezone) ||
+    updates.reminderAtLocal !== undefined ||
+    updates.reminderAtUtc !== undefined
+  );
+}
+
+function recalcReminderTimestamps(
+  r: any,
+  updates: UpdateTaskInput,
+  originalTimezone: string
+): void {
+  if (!shouldUpdateReminder(updates, originalTimezone)) return;
+
+  let reminderAtLocalInput = updates.reminderAtLocal ?? r.reminderAtLocal;
+  let reminderAtUtcInput = updates.reminderAtUtc ?? r.reminderAtUtc;
+
+  const isTimezoneOnlyUpdate =
+    updates.timezone !== undefined &&
+    updates.timezone !== originalTimezone &&
+    updates.reminderAtLocal === undefined &&
+    updates.reminderAtUtc === undefined;
+
+  if (isTimezoneOnlyUpdate && r.reminderAtLocal && originalTimezone) {
+    const dt = DateTime.fromISO(r.reminderAtLocal, {
+      zone: originalTimezone,
+    }).setZone(updates.timezone);
+    reminderAtLocalInput = dt.toISO();
+    if (!reminderAtLocalInput) {
+      throw new Error(
+        `Failed to convert timezone from ${originalTimezone} to ${updates.timezone} for reminder: ${r.reminderAtLocal}`
+      );
+    }
+    reminderAtUtcInput = undefined;
+  }
+
+  const dual = maybeDualReminder({
+    reminderAtLocal: reminderAtLocalInput,
+    reminderAtUtc: reminderAtUtcInput,
+    timezone: updates.timezone ?? r.timezone,
+  });
+  r.reminderAtLocal = dual.reminderAtLocal as any;
+  r.reminderAtUtc = dual.reminderAtUtc as any;
+}
+
 function applyTaskUpdates(task: TaskModel, updates: UpdateTaskInput): void {
   const r = task as any;
   if (updates.title !== undefined) r.title = updates.title;
@@ -270,34 +368,8 @@ function applyTaskUpdates(task: TaskModel, updates: UpdateTaskInput): void {
     r.timezone = updates.timezone;
   }
 
-  // Always recalculate dual timestamps when timezone changes, even if due/reminder fields aren't explicitly provided
-  if (
-    (updates.timezone !== undefined && updates.timezone !== originalTimezone) ||
-    updates.dueAtLocal ||
-    updates.dueAtUtc
-  ) {
-    const dual = ensureDualTimestamps({
-      dueAtLocal: updates.dueAtLocal ?? r.dueAtLocal,
-      dueAtUtc: updates.dueAtUtc ?? r.dueAtUtc,
-      timezone: updates.timezone ?? r.timezone,
-    });
-    r.dueAtLocal = dual.dueAtLocal;
-    r.dueAtUtc = dual.dueAtUtc;
-  }
-  // Recalculate reminder timestamps when timezone changes
-  if (
-    (updates.timezone !== undefined && updates.timezone !== originalTimezone) ||
-    updates.reminderAtLocal ||
-    updates.reminderAtUtc
-  ) {
-    const dual = maybeDualReminder({
-      reminderAtLocal: updates.reminderAtLocal ?? r.reminderAtLocal,
-      reminderAtUtc: updates.reminderAtUtc ?? r.reminderAtUtc,
-      timezone: updates.timezone ?? r.timezone,
-    });
-    r.reminderAtLocal = dual.reminderAtLocal as any;
-    r.reminderAtUtc = dual.reminderAtUtc as any;
-  }
+  recalcDueTimestamps(r, updates, originalTimezone);
+  recalcReminderTimestamps(r, updates, originalTimezone);
 
   if (updates.status) r.status = updates.status as Task['status'];
   if (updates.completedAt !== undefined) {
