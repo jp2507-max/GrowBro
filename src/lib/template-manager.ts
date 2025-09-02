@@ -24,9 +24,37 @@ type BuildLocalIsoParams = {
 };
 
 function buildLocalIso(params: BuildLocalIsoParams): string {
-  const [hour, minute] = params.timeOfDay
-    .split(':')
-    .map((v) => Number.parseInt(v, 10));
+  // Validate timeOfDay format and values
+  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  if (!timeRegex.test(params.timeOfDay)) {
+    throw new Error(
+      `Invalid timeOfDay format: '${params.timeOfDay}'. Expected HH:mm format where HH is 00-23 and mm is 00-59.`
+    );
+  }
+
+  const [hourStr, minuteStr] = params.timeOfDay.split(':');
+  const hour = Number.parseInt(hourStr, 10);
+  const minute = Number.parseInt(minuteStr, 10);
+
+  // Additional validation for parsed values
+  if (!Number.isInteger(hour) || !Number.isInteger(minute)) {
+    throw new Error(
+      `Invalid timeOfDay values: '${params.timeOfDay}'. Parsed values must be integers.`
+    );
+  }
+
+  if (hour < 0 || hour > 23) {
+    throw new Error(
+      `Invalid hour in timeOfDay: '${params.timeOfDay}'. Hour must be between 0 and 23.`
+    );
+  }
+
+  if (minute < 0 || minute > 59) {
+    throw new Error(
+      `Invalid minute in timeOfDay: '${params.timeOfDay}'. Minute must be between 0 and 59.`
+    );
+  }
+
   const base = DateTime.fromJSDate(params.anchorDate, {
     zone: params.timezone,
   }).startOf('day');

@@ -4,6 +4,11 @@ import type { TemplateDefinition } from '@/types/templates';
 const templates = new Map<string, TemplateDefinition>();
 
 export function registerTemplate(def: TemplateDefinition): void {
+  if (templates.has(def.id)) {
+    throw new Error(
+      `Template with ID '${def.id}' already exists. Cannot register duplicate template.`
+    );
+  }
   templates.set(def.id, def);
 }
 

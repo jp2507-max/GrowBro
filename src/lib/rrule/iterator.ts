@@ -70,15 +70,21 @@ function* processWeekly(
   let produced = 0;
   let cursorLocal = context.dtstartLocal;
 
+  // Main iteration loop for weekly recurrence
+  // FIXED: Process entire week before checking stop conditions to avoid premature exit
+  // when UNTIL falls midweek. Ensures all valid occurrences within the week are yielded.
   while (true) {
-    if (shouldStopIteration(config, { cursorLocal, range, produced })) break;
-
+    // Generate all dates for the current week
+    // If byweekday is specified, enumerate all matching weekdays in this week
+    // Otherwise, use the cursor date itself (DTSTART weekday)
     const weekDates =
       config.byweekday && config.byweekday.length
         ? enumerateWeeklyByDays(cursorLocal.toJSDate(), config.byweekday, zone)
         : [cursorLocal.toJSDate()];
 
+    // Process each date within the current week
     for (const local of weekDates) {
+      // Apply the original DTSTART time-of-day to each generated date
       const localDT = DateTime.fromJSDate(local, { zone }).set({
         hour: context.dtstartLocal.hour,
         minute: context.dtstartLocal.minute,
@@ -87,18 +93,33 @@ function* processWeekly(
       });
       const localJS = localDT.toJSDate();
 
+      // Skip dates that exceed the UNTIL date
+      // FIXED: Since we now check stop conditions after processing the entire week,
+      // this valid date will be reached even if UNTIL falls midweek
       if (config.until && localDT.toUTC().toJSDate() > config.until) {
         produced++;
         continue;
       }
+
+      // Increment counter for valid dates (including those past UNTIL that we skipped)
       produced++;
+
+      // Stop if we've reached the COUNT limit
       if (config.count !== undefined && produced > config.count) break;
+
+      // Yield the date if it's within the requested range
       if (isWithinRange(localJS, range)) {
         const overridden = applyOverrides(localJS, overrides, zone);
         if (overridden) yield overridden;
       }
     }
 
+    // Check stop conditions AFTER processing the entire current week
+    // This ensures we don't exit prematurely when UNTIL falls midweek
+    // The check now happens after all valid dates in the week have been yielded
+    if (shouldStopIteration(config, { cursorLocal, range, produced })) break;
+
+    // Advance to the next week based on interval
     cursorLocal = DateTime.fromJSDate(
       nextWeekly(cursorLocal.toJSDate(), config.interval, zone),
       { zone }

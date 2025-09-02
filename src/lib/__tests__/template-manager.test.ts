@@ -14,12 +14,12 @@ describe('TemplateManager', () => {
   test('previewTemplateApplication produces correct count and range', () => {
     const anchor = new Date('2025-03-24T00:00:00Z');
     const tz = 'Europe/Berlin';
-    const preview = previewTemplateApplication(
-      'basic-watering-v1',
-      anchor,
-      tz,
-      'plant-1'
-    );
+    const preview = previewTemplateApplication({
+      templateId: 'basic-watering-v1',
+      anchorDate: anchor,
+      timezone: tz,
+      plantId: 'plant-1',
+    });
     expect(preview.totalCount).toBeGreaterThan(0);
 
     const start = DateTime.fromJSDate(preview.dateRange.start);
@@ -63,14 +63,20 @@ describe('TemplateManager', () => {
     });
 
     const tasks = database.collections.get('tasks' as any) as any;
-    const rows = (await tasks.query().fetch()) as any[];
+    const rows = (await tasks
+      .query()
+      .where('plantId', 'plant-3')
+      .fetch()) as any[];
     const ids = rows.slice(0, 2).map((r) => r.id);
     const before = rows.slice(0, 2).map((r) => r.dueAtLocal);
 
     const preview = await previewBulkShift(ids, 2);
     expect(preview.length).toBe(ids.length);
     const { operationId } = await applyBulkShiftWithUndo(ids, 2, 2000);
-    const afterRows = (await tasks.query().fetch()) as any[];
+    const afterRows = (await tasks
+      .query()
+      .where('plantId', 'plant-3')
+      .fetch()) as any[];
     const after = afterRows
       .filter((r) => ids.includes(r.id))
       .map((r) => r.dueAtLocal);

@@ -15,6 +15,8 @@ jest.mock('./supabase', () => {
     'delete',
   ];
 
+  // Create chainable mock methods that return the chain object for fluent API support
+  // This allows method chaining like: supabase.from('table').select('*').eq('id', 1)
   methods.forEach((method) => {
     chain[method] = jest.fn().mockReturnValue(chain);
   });
@@ -25,8 +27,15 @@ jest.mock('./supabase', () => {
 const mockedSupabase: any = supabase as any;
 
 function setupMocks() {
-  // All methods are already set to return 'this' for chaining
-  // In each test, we'll override the terminal method to return a resolved value
+  // Rebind the default chainable behavior after jest.resetAllMocks()
+  // This ensures chain methods continue to return the chain object for method chaining
+  for (const key of Object.keys(mockedSupabase)) {
+    const fn = (mockedSupabase as any)[key];
+    if (typeof fn === 'function') {
+      fn.mockReset?.();
+      fn.mockReturnValue?.(mockedSupabase);
+    }
+  }
 }
 
 function createMockEntry(overrides: Record<string, any> = {}) {
@@ -44,6 +53,7 @@ function createMockEntry(overrides: Record<string, any> = {}) {
 describe('outbox worker', () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    setupMocks(); // Rebind chainable behavior after mock reset
   });
 
   test('processes schedule action successfully', async () => {
@@ -61,7 +71,7 @@ describe('outbox worker', () => {
 
 async function testSuccessfulScheduleAction() {
   const entry = createMockEntry();
-  setupMocks();
+  // setupMocks() is now called in beforeEach
   // fetchPendingEntries ends with .limit() - mock limit to return data
   mockedSupabase.limit.mockResolvedValue({ data: [entry], error: null });
   // claimEntry ends with .select('id') - return claimed entry only for that shape
@@ -100,7 +110,7 @@ async function testFailureRetry() {
     payload: { notificationId: 'n2' },
   });
 
-  setupMocks();
+  // setupMocks() is now called in beforeEach
   // fetchPendingEntries ends with .limit() - mock limit to return data
   mockedSupabase.limit.mockResolvedValue({ data: [entry], error: null });
   // claimEntry ends with .select('id') - return claimed entry
@@ -134,7 +144,7 @@ async function testExpiredEntries() {
     expires_at: past,
   });
 
-  setupMocks();
+  // setupMocks() is now called in beforeEach
   // fetchPendingEntries ends with .limit() - mock limit to return data
   mockedSupabase.limit.mockResolvedValue({ data: [entry], error: null });
 
