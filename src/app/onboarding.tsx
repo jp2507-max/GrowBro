@@ -10,9 +10,21 @@ import {
   View,
 } from '@/components/ui';
 import { useIsFirstTime } from '@/lib/hooks';
+import { translate } from '@/lib/i18n';
+import { TaskNotificationService } from '@/lib/task-notifications';
 export default function Onboarding() {
-  const [_, setIsFirstTime] = useIsFirstTime();
+  const [, setIsFirstTime] = useIsFirstTime();
   const router = useRouter();
+  const [isRequesting, setIsRequesting] = React.useState(false);
+  const requestNotifications = React.useCallback(async () => {
+    setIsRequesting(true);
+    try {
+      const svc = new TaskNotificationService();
+      await svc.requestPermissions();
+    } finally {
+      setIsRequesting(false);
+    }
+  }, []);
   return (
     <View className="flex h-full items-center  justify-center">
       <FocusAwareStatusBar />
@@ -21,10 +33,10 @@ export default function Onboarding() {
       </View>
       <View className="justify-end ">
         <Text className="my-3 text-center text-5xl font-bold">
-          Obytes Starter
+          {translate('onboarding.notifications_title')}
         </Text>
         <Text className="mb-2 text-center text-lg text-gray-600">
-          The right way to build your mobile app
+          {translate('onboarding.notifications_body')}
         </Text>
 
         <Text className="my-1 pt-6 text-left text-lg">
@@ -40,14 +52,28 @@ export default function Onboarding() {
           💪 well maintained third-party libraries
         </Text>
       </View>
-      <SafeAreaView className="mt-6">
-        <Button
-          label="Let's Get Started "
-          onPress={() => {
-            setIsFirstTime(false);
-            router.replace('/login');
-          }}
-        />
+      <SafeAreaView className="mt-6 w-full px-6">
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Button
+              label={translate('onboarding.allow_button')}
+              onPress={requestNotifications}
+              loading={isRequesting}
+              testID="onboarding-allow-notifications"
+            />
+          </View>
+          <View className="flex-1">
+            <Button
+              variant="outline"
+              label={translate('onboarding.continue_button')}
+              onPress={() => {
+                setIsFirstTime(false);
+                router.replace('/login');
+              }}
+              testID="onboarding-continue"
+            />
+          </View>
+        </View>
       </SafeAreaView>
     </View>
   );

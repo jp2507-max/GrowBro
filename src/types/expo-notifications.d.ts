@@ -1,3 +1,4 @@
+declare module 'react-native-keyboard-controller/jest';
 declare module 'expo-notifications' {
   export type NotificationTriggerInput = {
     type: 'date';

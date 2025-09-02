@@ -105,7 +105,7 @@
   - Write tests for idempotency, preview accuracy, bulk shift operations, and error recovery
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
 
-- [ ] 12. Plant telemetry integration hooks
+- [x] 12. Plant telemetry integration hooks
 
   - Add non-blocking plant data updates for watering/feeding task completions
   - Implement last_watered_at and last_fed_at field updates with error logging only
@@ -114,7 +114,7 @@
   - Write tests for plant data updates, relationship integrity, and error handling
   - _Requirements: 7.6, 7.7_
 
-- [ ] 13. Comprehensive error handling and recovery
+- [x] 13. Comprehensive error handling and recovery
 
   - Create error categorization: Network/Permission/Performance/Conflict with appropriate UI guidance
   - Implement retry mechanisms with exponential backoff + jitter for network operations
@@ -123,7 +123,7 @@
   - Write tests for various error scenarios, recovery flows, and user guidance
   - _Requirements: 6.4, 6.5, 8.3, 8.5, 8.6_
 
-- [ ] 14. Accessibility and localization support
+- [x] 14. Accessibility and localization support
 
   - Implement proper labels, roles, 44pt touch targets, and screen reader hints for drag handles
   - Add large text scaling and high contrast mode compatibility
@@ -132,7 +132,7 @@
   - Write accessibility tests and German localization verification
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-- [ ] 15. Comprehensive test suite and analytics
+- [x] 15. Comprehensive test suite and analytics
 
   - Implement DST Europe/Berlin scenarios testing before/after transitions
   - Add notification KPIs: scheduled/fired/interacted rates, average delivery delay
@@ -141,7 +141,7 @@
   - Set up comprehensive testing matrix for device power states, offline scenarios, and large datasets
   - _Requirements: All requirements need comprehensive testing and monitoring_
 
-- [ ] 16. Final integration and production polish
+- [x] 16. Final integration and production polish
 
   - Integrate all components into cohesive calendar system with end-to-end flows
   - Add memory leak prevention and production performance optimizations
@@ -150,7 +150,7 @@
   - Conduct final end-to-end testing across complete feature set
   - _Requirements: All requirements integrated and production-ready_
 
-- [ ] 17. Calendar data export and import (ICS)
+- [x] 17. Calendar data export and import (ICS)
   - Implement ICS export for tasks and series
   - Add ICS import with duplicate detection and user confirmation
   - Ensure timezone and recurrence rules convert accurately

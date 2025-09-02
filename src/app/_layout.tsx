@@ -14,8 +14,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { APIProvider } from '@/api';
-import { hydrateAuth, loadSelectedTheme } from '@/lib';
+import { hydrateAuth, loadSelectedTheme, useIsFirstTime } from '@/lib';
+import { NoopAnalytics } from '@/lib/analytics';
 import { Env } from '@/lib/env';
+import { registerNotificationMetrics } from '@/lib/notification-metrics';
 import { initializePrivacyConsent } from '@/lib/privacy-consent';
 import { beforeSendHook } from '@/lib/sentry-utils';
 import { TaskNotificationService } from '@/lib/task-notifications';
@@ -83,10 +85,14 @@ function getCurrentTimeZone(): string {
 }
 
 function RootLayout() {
+  const [isFirstTime] = useIsFirstTime();
   React.useEffect(() => {
-    // Request notification permissions on app start (Android 13+ runtime)
+    // Guard: avoid interrupting first-time onboarding flow
     const svc = new TaskNotificationService();
-    void svc.requestPermissions();
+    if (!isFirstTime) {
+      // Request notification permissions on app start (Android 13+ runtime)
+      void svc.requestPermissions();
+    }
     // Differentially re-plan notifications on app start
     void svc.rehydrateNotifications();
 
@@ -101,6 +107,28 @@ function RootLayout() {
     }, 60 * 1000); // check every minute
 
     return () => clearInterval(interval);
+  }, [isFirstTime]);
+
+  React.useEffect(() => {
+    const start = Date.now();
+    requestAnimationFrame(() => {
+      const firstPaintMs = Date.now() - start;
+      void NoopAnalytics.track('perf_first_paint_ms', { ms: firstPaintMs });
+    });
+  }, []);
+
+  React.useEffect(() => {
+    const start = Date.now();
+    const cleanup = registerNotificationMetrics();
+    const coldStartTimer = setTimeout(() => {
+      void NoopAnalytics.track('perf_cold_start_ms', {
+        ms: Date.now() - start,
+      });
+    }, 0);
+    return () => {
+      clearTimeout(coldStartTimer);
+      cleanup();
+    };
   }, []);
 
   return (

@@ -226,5 +226,47 @@ describe('combineTargetDateWithTime', () => {
       expect(result.utcDate.getTime()).toBe(result.utcDateTime.toMillis());
       expect(result.utcDate.toISOString()).toBe(result.utcDateTime.toISO());
     });
+
+    describe('Europe/Berlin DST scenarios', () => {
+      it('preserves local time across spring forward (CET → CEST)', () => {
+        // Before DST: 2024-03-29 08:15 CET
+        const originalDate = new Date('2024-03-29T07:15:00.000Z');
+        // After DST switch: 2024-04-02
+        const targetDate = new Date('2024-04-02');
+        const timezone = 'Europe/Berlin';
+
+        const result = combineTargetDateWithTime(
+          targetDate,
+          originalDate,
+          timezone
+        );
+
+        // 08:15 local should be preserved
+        expect(result.localDateTime.hour).toBe(8);
+        expect(result.localDateTime.minute).toBe(15);
+        // After DST, offset should be +120 minutes
+        expect(result.localDateTime.offset).toBe(120);
+      });
+
+      it('preserves local time across fall back (CEST → CET)', () => {
+        // After DST: 2024-10-25 08:45 CEST
+        const originalDate = new Date('2024-10-25T06:45:00.000Z');
+        // Before switch back: 2024-10-20
+        const targetDate = new Date('2024-10-20');
+        const timezone = 'Europe/Berlin';
+
+        const result = combineTargetDateWithTime(
+          targetDate,
+          originalDate,
+          timezone
+        );
+
+        // 08:45 local should be preserved
+        expect(result.localDateTime.hour).toBe(8);
+        expect(result.localDateTime.minute).toBe(45);
+        // Before fall back in October 20, still CEST (+120)
+        expect(result.localDateTime.offset).toBe(120);
+      });
+    });
   });
 });

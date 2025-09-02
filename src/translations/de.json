@@ -1,9 +1,24 @@
 {
+  "calendar": {
+    "drag_item_hint": "Lange drücken und ziehen, um neu zu planen. Doppeltippen für Menü.",
+    "drag_item_label": "{{title}} ziehen",
+    "move": "Verschieben",
+    "move_to_date": "Auf Datum verschieben",
+    "needs_review_label": "Überprüfung erforderlich wegen Konflikt",
+    "review": "prüfen",
+    "today": "Heute",
+    "tomorrow": "Morgen",
+    "yesterday": "Gestern"
+  },
   "common": {
     "ok": "OK"
   },
   "onboarding": {
-    "message": "Willkommen bei der obytes App"
+    "allow_button": "Benachrichtigungen erlauben",
+    "continue_button": "Weiter",
+    "message": "Willkommen bei der obytes App",
+    "notifications_body": "Erlaube Benachrichtigungen, um rechtzeitig an Aufgaben erinnert zu werden.",
+    "notifications_title": "Aufgaben-Erinnerungen"
   },
   "privacy": {
     "analytics": {

@@ -6,6 +6,7 @@ import { Linking, PermissionsAndroid, Platform } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 
 import { NoopAnalytics } from '@/lib/analytics';
+import { translate } from '@/lib/i18n';
 
 import { InvalidTaskTimestampError } from './notification-errors';
 
@@ -90,8 +91,8 @@ export class TaskNotificationService {
         const granted = status === PermissionsAndroid.RESULTS.GRANTED;
         if (!granted) {
           showMessage({
-            message: 'Enable notifications to receive task reminders',
-            description: 'Open Settings to allow notifications for GrowBro',
+            message: translate('onboarding.notifications_title'),
+            description: translate('onboarding.notifications_body'),
             type: 'warning',
             duration: 0,
             onPress: () => Linking.openSettings(),
@@ -112,7 +113,7 @@ export class TaskNotificationService {
     const granted = status === 'granted';
     if (!granted && canAskAgain) {
       showMessage({
-        message: 'Enable notifications to receive task reminders',
+        message: translate('onboarding.notifications_body'),
         type: 'warning',
         duration: 4000,
       });
@@ -254,6 +255,10 @@ export class TaskNotificationService {
     if (process.env.JEST_WORKER_ID === undefined) {
       await this.persistNotificationMapping(task, notificationId);
     }
+
+    try {
+      await NoopAnalytics.track('notif_scheduled', { taskId: task.id });
+    } catch {}
 
     return notificationId;
   }
@@ -482,5 +487,18 @@ export class TaskNotificationService {
 
     await this.cancelOutdatedNotifications(diff, existing, database);
     await this.scheduleMissingNotifications(diff, tasksToUpdate);
+    try {
+      for (const c of diff.toCancel) {
+        await NoopAnalytics.track('notif_rehydrate_cancelled', {
+          notificationId: c.notificationId,
+          taskId: c.taskId,
+        });
+      }
+      for (const s of diff.toSchedule) {
+        await NoopAnalytics.track('notif_rehydrate_scheduled', {
+          taskId: s.taskId,
+        });
+      }
+    } catch {}
   }
 }

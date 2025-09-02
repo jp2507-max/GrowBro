@@ -1,9 +1,13 @@
-import {
-  getTemplate,
-  listTemplates,
-  registerTemplate,
+import type {
+  getTemplate as GetTemplateFn,
+  listTemplates as ListTemplatesFn,
+  registerTemplate as RegisterTemplateFn,
 } from '@/lib/template-registry';
 import type { TemplateDefinition } from '@/types/templates';
+
+let registerTemplate: RegisterTemplateFn;
+let getTemplate: GetTemplateFn;
+let listTemplates: ListTemplatesFn;
 
 describe('TemplateRegistry', () => {
   const testTemplate: TemplateDefinition = {
@@ -22,9 +26,12 @@ describe('TemplateRegistry', () => {
     ],
   };
 
-  beforeEach(() => {
-    // Clear any existing templates for clean test state
-    // Note: This is a simple approach; in a real app you might want to expose a clear method
+  beforeEach(async () => {
+    jest.resetModules();
+    const mod = await import('@/lib/template-registry');
+    registerTemplate = mod.registerTemplate;
+    getTemplate = mod.getTemplate;
+    listTemplates = mod.listTemplates;
   });
 
   test('registerTemplate adds a new template successfully', () => {

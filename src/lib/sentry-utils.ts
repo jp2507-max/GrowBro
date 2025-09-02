@@ -207,3 +207,24 @@ export const beforeSendHook = (event: any, _hint?: any): any | null => {
     return null;
   }
 };
+
+export function captureCategorizedError(error: unknown): void {
+  try {
+    // Lazy import inside try-catch to avoid requiring at module eval
+
+    const Sentry = require('@sentry/react-native');
+
+    const { categorizeError } = require('@/lib/error-handling');
+    const cat = categorizeError(error);
+    Sentry.captureException(error, {
+      tags: {
+        category: cat.category,
+        retryable: String(cat.isRetryable),
+        status: cat.statusCode ? String(cat.statusCode) : undefined,
+      },
+      extra: { categorizedMessage: cat.message },
+    });
+  } catch {
+    // no-op
+  }
+}
