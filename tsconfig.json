@@ -3,6 +3,7 @@
   "compilerOptions": {
     "strict": true,
     "baseUrl": ".",
+    "experimentalDecorators": true,
     "paths": {
       "@/*": ["./src/*"],
       "@env": ["./src/lib/env.js"]
