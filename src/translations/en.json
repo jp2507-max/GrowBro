@@ -1,9 +1,24 @@
 {
+  "calendar": {
+    "drag_item_hint": "Long-press then drag to reschedule. Double-tap to open move menu.",
+    "drag_item_label": "Drag {{title}}",
+    "move": "Move",
+    "move_to_date": "Move to date",
+    "needs_review_label": "Needs review due to conflict",
+    "review": "review",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "yesterday": "Yesterday"
+  },
   "common": {
     "ok": "OK"
   },
   "onboarding": {
-    "message": "Welcome to obytes app site"
+    "allow_button": "Allow notifications",
+    "continue_button": "Continue",
+    "message": "Welcome to GrowBro app site",
+    "notifications_body": "Allow notifications to get timely task reminders.",
+    "notifications_title": "Task reminders"
   },
   "privacy": {
     "analytics": {
@@ -53,5 +68,5 @@
     "version": "Version",
     "website": "Website"
   },
-  "welcome": "Welcome to obytes app site"
+  "welcome": "Welcome to GrowBro app site"
 }

@@ -4,7 +4,14 @@ export const storage = new MMKV();
 
 export function getItem<T>(key: string): T | null {
   const value = storage.getString(key);
-  return value ? JSON.parse(value) || null : null;
+  if (value === null || value === undefined) {
+    return null;
+  }
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return null;
+  }
 }
 
 export async function setItem<T>(key: string, value: T) {

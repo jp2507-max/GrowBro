@@ -100,6 +100,17 @@ export default defineConfig([
       ],
     },
   },
+  // Loosen typed linting for mocks to avoid requiring TS project inclusion
+  {
+    files: ['__mocks__/**/*.{ts,tsx}'],
+    languageOptions: {
+      parser: parser,
+      parserOptions: {
+        project: undefined,
+        sourceType: 'module',
+      },
+    },
+  },
   {
     files: ['src/translations/*.json'],
     plugins: { 'i18n-json': i18nJsonPlugin },

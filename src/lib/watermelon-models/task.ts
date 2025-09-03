@@ -1,0 +1,25 @@
+import { Model } from '@nozbe/watermelondb';
+import { date, json, text } from '@nozbe/watermelondb/decorators';
+
+import type { TaskMetadata, TaskStatus } from '@/types';
+
+export class TaskModel extends Model {
+  static table = 'tasks';
+
+  @text('series_id') seriesId?: string;
+  @text('title') title!: string;
+  @text('description') description?: string;
+  @text('due_at_local') dueAtLocal!: string;
+  @text('due_at_utc') dueAtUtc!: string;
+  @text('timezone') timezone!: string;
+  @text('reminder_at_local') reminderAtLocal?: string;
+  @text('reminder_at_utc') reminderAtUtc?: string;
+  @text('plant_id') plantId?: string;
+  @text('status') status!: TaskStatus;
+  @date('completed_at') completedAt?: Date;
+  @json('metadata', (raw) => raw as TaskMetadata)
+  metadata!: TaskMetadata;
+  @date('created_at') createdAt!: Date;
+  @date('updated_at') updatedAt!: Date;
+  @date('deleted_at') deletedAt?: Date;
+}
