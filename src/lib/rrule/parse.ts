@@ -45,7 +45,23 @@ export function parseRule(rule: string, dtstartUtc?: string): RRuleConfig {
   if (kv['UNTIL']) {
     // UNTIL must be UTC; accept ISO or basic format.
     const iso = kv['UNTIL'];
-    const dt = DateTime.fromISO(iso, { zone: 'utc' });
+    let dt = DateTime.fromISO(iso, { zone: 'utc' });
+    if (!dt.isValid) {
+      // Fallback for basic format like 20250101T000000Z
+      // RFC5545 basic format uses compact date-time with literal 'T' and 'Z'
+      const candidates = [
+        "yyyyLLdd'T'HHmmss'Z'",
+        "yyyyLLdd'T'HHmm'Z'",
+        "yyyyLLdd'T'HH'Z'",
+      ];
+      for (const fmt of candidates) {
+        const parsed = DateTime.fromFormat(iso, fmt, { zone: 'utc' });
+        if (parsed.isValid) {
+          dt = parsed;
+          break;
+        }
+      }
+    }
     until = dt.isValid ? dt.toJSDate() : undefined;
   }
 

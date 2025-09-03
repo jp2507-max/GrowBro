@@ -607,12 +607,10 @@ async function findAndSoftDeleteTaskForOccurrence(
       zone: taskZone,
     }).toISO()!;
     if (sameLocalDay((task as any).dueAtLocal, dayStartIso)) {
-      // Soft-delete the task and clear its timestamps
+      // Soft-delete the task and clear nullable reminder fields
       await task.update((rec: TaskModel) => {
         const r = rec as any;
         r.deletedAt = new Date();
-        r.dueAtLocal = null as any;
-        r.dueAtUtc = null as any;
         r.reminderAtLocal = null as any;
         r.reminderAtUtc = null as any;
         r.updatedAt = new Date();
