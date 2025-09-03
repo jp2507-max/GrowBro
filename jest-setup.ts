@@ -2,8 +2,6 @@ import '@testing-library/react-native/extend-expect';
 
 import React from 'react';
 import * as GestureHandler from 'react-native-gesture-handler/src/mocks';
-// @ts-ignore - react-native-reanimated mock has no type definitions
-import * as Reanimated from 'react-native-reanimated/mock';
 
 // react-hook form setup for testing
 // @ts-ignore
@@ -59,8 +57,10 @@ jest.mock('@nozbe/watermelondb', () => {
 // mock: react-native-reanimated to avoid native timers/threads in tests
 jest.mock('react-native-reanimated', () => {
   // Silence the useNativeDriver warning
-  Reanimated.default.call = () => {};
-  return Reanimated;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mockReanimated = require('react-native-reanimated/mock');
+  mockReanimated.default.call = () => {};
+  return mockReanimated;
 });
 
 // mock: react-native-gesture-handler to jest mocks

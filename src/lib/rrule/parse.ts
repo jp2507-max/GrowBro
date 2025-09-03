@@ -103,11 +103,23 @@ export function parseRule(rule: string, dtstartUtc?: string): RRuleConfig {
     } satisfies RRuleConfigCount;
   }
 
+  // If count is not defined but until is valid, return UNTIL variant
+  if (until !== undefined) {
+    return {
+      freq,
+      interval,
+      byweekday,
+      dtstart,
+      until,
+    } satisfies RRuleConfigUntil;
+  }
+
+  // If neither count nor until is valid, return COUNT variant with safe default
   return {
     freq,
     interval,
     byweekday,
     dtstart,
-    until: until!,
-  } satisfies RRuleConfigUntil;
+    count: 1,
+  } satisfies RRuleConfigCount;
 }
