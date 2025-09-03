@@ -338,12 +338,14 @@ function useDropCompletion(options: {
           setupUndoState(undoRef, updatedTask, createUndoState);
           showUndoMessage(performUndo);
         }
+
+        return true;
       } catch (error) {
         console.error('Failed to update task during drop completion:', error);
         showErrorMessage('Failed to move task. Please try again.');
+        return false;
       } finally {
         onDropComplete();
-        return false;
       }
     },
     [

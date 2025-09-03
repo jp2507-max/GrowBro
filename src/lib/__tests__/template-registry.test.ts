@@ -1,9 +1,16 @@
+import * as templateRegistry from '@/lib/template-registry';
 import type { TemplateDefinition } from '@/types/templates';
 
+jest.mock('@/lib/template-registry', () =>
+  jest.requireActual('@/lib/template-registry')
+);
+
+let clearTemplates: typeof templateRegistry.clearTemplates;
+let registerTemplate: typeof templateRegistry.registerTemplate;
+let getTemplate: typeof templateRegistry.getTemplate;
+let listTemplates: typeof templateRegistry.listTemplates;
+
 describe('TemplateRegistry', () => {
-  declare let registerTemplate: typeof import('@/lib/template-registry').registerTemplate;
-  declare let getTemplate: typeof import('@/lib/template-registry').getTemplate;
-  declare let listTemplates: typeof import('@/lib/template-registry').listTemplates;
   const testTemplate: TemplateDefinition = {
     id: 'test-template',
     name: 'Test Template',
@@ -20,12 +27,14 @@ describe('TemplateRegistry', () => {
     ],
   };
 
-  beforeEach(async () => {
-    jest.resetModules();
-    const mod = await import('@/lib/template-registry');
-    registerTemplate = mod.registerTemplate;
-    getTemplate = mod.getTemplate;
-    listTemplates = mod.listTemplates;
+  beforeEach(() => {
+    registerTemplate = templateRegistry.registerTemplate;
+    getTemplate = templateRegistry.getTemplate;
+    listTemplates = templateRegistry.listTemplates;
+    clearTemplates = templateRegistry.clearTemplates;
+
+    // Clear the registry before each test
+    clearTemplates();
   });
 
   test('registerTemplate adds a new template successfully', () => {

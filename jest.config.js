@@ -36,5 +36,7 @@ module.exports = {
   coverageDirectory: '<rootDir>/coverage/',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@gorhom/bottom-sheet(.*)$':
+      '<rootDir>/__mocks__/@gorhom/bottom-sheet.tsx',
   },
 };

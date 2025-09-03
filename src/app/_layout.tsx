@@ -5,7 +5,8 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
 import * as Localization from 'expo-localization';
-import { SplashScreen, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import FlashMessage from 'react-native-flash-message';
@@ -89,11 +90,6 @@ loadSelectedTheme();
 initializePrivacyConsent();
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
-// Set the animation options. This is optional.
-SplashScreen.setOptions({
-  duration: 500,
-  fade: true,
-});
 
 function getCurrentTimeZone(): string {
   try {

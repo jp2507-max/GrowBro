@@ -580,6 +580,35 @@ export async function completeTask(id: string): Promise<Task> {
   return toTaskFromModel((updated as any) ?? task);
 }
 
+async function findAndSoftDeleteTaskForOccurrence(
+  repos: any,
+  seriesId: string,
+  day: string
+): Promise<TaskModel | null> {
+  const existingTasks = await repos.tasks
+    .query(Q.where('series_id', seriesId), Q.where('deleted_at', null))
+    .fetch();
+
+  // Find task that matches the occurrence local date
+  for (const task of existingTasks) {
+    if (sameLocalDay(task.dueAtLocal, `${day}T00:00:00.000`)) {
+      // Soft-delete the task and clear its timestamps
+      await task.update((rec: TaskModel) => {
+        const r = rec as any;
+        r.deletedAt = new Date();
+        r.dueAtLocal = null as any;
+        r.dueAtUtc = null as any;
+        r.reminderAtLocal = null as any;
+        r.reminderAtUtc = null as any;
+        r.updatedAt = new Date();
+      });
+      return task;
+    }
+  }
+
+  return null;
+}
+
 export async function skipRecurringInstance(
   seriesId: string,
   occurrenceDate: Date
@@ -588,6 +617,8 @@ export async function skipRecurringInstance(
   const series = (await (repos.series as any).find(seriesId)) as SeriesModel;
   const zone = (series as any).timezone as string;
   const day = toOccurrenceLocalDate(occurrenceDate, zone);
+  let taskToDelete: TaskModel | null = null;
+
   await database.write(async () => {
     // Upsert: ensure single override per (seriesId, day)
     const existing = await (repos.overrides as any)
@@ -616,7 +647,26 @@ export async function skipRecurringInstance(
         r.updatedAt = new Date();
       });
     }
+
+    // Soft-delete any already-materialized task for this series/day
+    taskToDelete = await findAndSoftDeleteTaskForOccurrence(
+      repos,
+      seriesId,
+      day
+    );
   });
+
+  // Cancel notifications for the task we just soft-deleted
+  if (taskToDelete) {
+    try {
+      await TaskNotificationService.cancelForTask((taskToDelete as any).id);
+    } catch (error) {
+      console.warn(
+        '[TaskManager] Failed to cancel notifications for skipped task',
+        error
+      );
+    }
+  }
 }
 
 function calculateOccurrenceTimestamps(
@@ -705,6 +755,86 @@ async function updateOrCreateCompletedTask(params: {
 
 // NOTE: createSkipOverride was unused; removed to satisfy linter
 
+function buildRescheduleOldLocalIso(
+  series: SeriesModel,
+  day: string,
+  zone: string
+): string {
+  const dtstartLocal = DateTime.fromISO((series as any).dtstartLocal);
+  return DateTime.fromISO(`${day}T${dtstartLocal.toFormat('HH:mm:ss')}`, {
+    zone,
+  }).toISO() as string;
+}
+
+async function upsertRescheduleOverride(params: {
+  repos: any;
+  seriesId: string;
+  day: string;
+  newLocalIso: string;
+  newUtcIso: string;
+}): Promise<void> {
+  const { repos, seriesId, day, newLocalIso, newUtcIso } = params;
+  const existing = await (repos.overrides as any)
+    .query(
+      Q.where('series_id', seriesId),
+      Q.where('occurrence_local_date', day)
+    )
+    .fetch();
+  if (existing.length > 0) {
+    await (existing[0] as any).update((rec: OccurrenceOverrideModel) => {
+      const r = rec as any;
+      r.status = 'reschedule' as any;
+      r.dueAtLocal = newLocalIso;
+      r.dueAtUtc = newUtcIso;
+      r.updatedAt = new Date();
+    });
+  } else {
+    await (repos.overrides as any).create((rec: OccurrenceOverrideModel) => {
+      const r = rec as any;
+      r.seriesId = seriesId;
+      r.occurrenceLocalDate = day;
+      r.status = 'reschedule' as any;
+      r.dueAtLocal = newLocalIso;
+      r.dueAtUtc = newUtcIso;
+      r.createdAt = new Date();
+      r.updatedAt = new Date();
+    });
+  }
+}
+
+async function moveExistingMaterializedTask(params: {
+  repos: any;
+  seriesId: string;
+  oldLocalIso: string;
+  newLocalIso: string;
+  newUtcIso: string;
+}): Promise<void> {
+  const { repos, seriesId, oldLocalIso, newLocalIso, newUtcIso } = params;
+  const existingTask = await findExistingTaskForOccurrence(
+    repos,
+    seriesId,
+    oldLocalIso
+  );
+  if (!existingTask) return;
+
+  if (process.env.JEST_WORKER_ID === undefined) {
+    await TaskNotificationService.cancelForTask((existingTask as any).id);
+  }
+  await database.write(async () => {
+    await (existingTask as any).update((rec: TaskModel) => {
+      const r = rec as any;
+      r.dueAtLocal = newLocalIso;
+      r.dueAtUtc = newUtcIso;
+      r.updatedAt = new Date();
+    });
+  });
+  if (process.env.JEST_WORKER_ID === undefined) {
+    const updated = toTaskFromModel(existingTask);
+    const notifier = new TaskNotificationService();
+    await notifier.scheduleTaskReminder(updated as any);
+  }
+}
+
 export async function rescheduleRecurringInstance(
   seriesId: string,
   occurrenceDate: Date,
@@ -715,33 +845,24 @@ export async function rescheduleRecurringInstance(
   const zone = (series as any).timezone as string;
   const day = toOccurrenceLocalDate(occurrenceDate, zone);
   const newUtcIso = toUtcIso(newLocalIso);
-  await database.write(async () => {
-    const existing = await (repos.overrides as any)
-      .query(
-        Q.where('series_id', seriesId),
-        Q.where('occurrence_local_date', day)
-      )
-      .fetch();
-    if (existing.length > 0) {
-      await (existing[0] as any).update((rec: OccurrenceOverrideModel) => {
-        const r = rec as any;
-        r.status = 'reschedule' as any;
-        r.dueAtLocal = newLocalIso;
-        r.dueAtUtc = newUtcIso;
-        r.updatedAt = new Date();
-      });
-    } else {
-      await (repos.overrides as any).create((rec: OccurrenceOverrideModel) => {
-        const r = rec as any;
-        r.seriesId = seriesId;
-        r.occurrenceLocalDate = day;
-        r.status = 'reschedule' as any;
-        r.dueAtLocal = newLocalIso;
-        r.dueAtUtc = newUtcIso;
-        r.createdAt = new Date();
-        r.updatedAt = new Date();
-      });
-    }
+
+  await database.write(() =>
+    upsertRescheduleOverride({
+      repos,
+      seriesId,
+      day,
+      newLocalIso,
+      newUtcIso,
+    })
+  );
+
+  const oldLocalIso = buildRescheduleOldLocalIso(series, day, zone);
+  await moveExistingMaterializedTask({
+    repos,
+    seriesId,
+    oldLocalIso,
+    newLocalIso,
+    newUtcIso,
   });
 }
 

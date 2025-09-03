@@ -20,7 +20,6 @@ export default defineConfig([
   globalIgnores([
     'dist/*',
     'node_modules',
-    '__mocks__/',
     '__tests__/',
     'coverage',
     '.expo',
