@@ -1,12 +1,29 @@
 import React from 'react';
-import { View, ScrollView, TextInput, FlatList, SectionList, VirtualizedList, TouchableOpacity, TouchableHighlight, TouchableWithoutFeedback } from 'react-native';
+import type {
+  FlatListProps,
+  ScrollViewProps,
+  SectionListProps,
+  TextInputProps,
+  ViewProps,
+  VirtualizedListProps,
+} from 'react-native';
+import {
+  FlatList,
+  ScrollView,
+  SectionList,
+  TextInput,
+  TouchableHighlight,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+  VirtualizedList,
+} from 'react-native';
 
 // Types
 export type BottomSheetScrollViewProps = {
   children?: React.ReactNode;
-  style?: any;
-  contentContainerStyle?: any;
-  [key: string]: any;
+  style?: ScrollViewProps['style'];
+  contentContainerStyle?: ScrollViewProps['contentContainerStyle'];
 };
 
 export type BottomSheetBackdropProps = {
@@ -15,7 +32,6 @@ export type BottomSheetBackdropProps = {
   pressBehavior?: 'none' | 'close' | 'collapse';
   onPress?: () => void;
   children?: React.ReactNode;
-  [key: string]: any;
 };
 
 export type BottomSheetModalProps = {
@@ -24,7 +40,6 @@ export type BottomSheetModalProps = {
   index?: number;
   onChange?: (index: number) => void;
   enablePanDownToClose?: boolean;
-  [key: string]: any;
 };
 
 export type BottomSheetProps = {
@@ -33,29 +48,67 @@ export type BottomSheetProps = {
   index?: number;
   onChange?: (index: number) => void;
   enablePanDownToClose?: boolean;
-  [key: string]: any;
 };
 
 // Mock components
-export const BottomSheetModalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => <>{children}</>;
+export function BottomSheetModalProvider(props: {
+  children: React.ReactNode;
+}): React.ReactElement {
+  return <>{props.children}</>;
+}
 
-export const BottomSheetBackdrop: React.FC<BottomSheetBackdropProps> = ({ children }) => <>{children}</>;
+export function BottomSheetBackdrop(
+  props: BottomSheetBackdropProps
+): React.ReactElement {
+  return <>{props.children}</>;
+}
 
-export const BottomSheetView: React.FC<{ children?: React.ReactNode; style?: any }> = ({ children, style }) => (
-  <View style={style}>{children}</View>
-);
+type BottomSheetViewProps = {
+  children?: React.ReactNode;
+  style?: ViewProps['style'];
+};
 
-export const BottomSheetTextInput: React.FC<any> = (props) => <TextInput {...props} />;
+export function BottomSheetView(
+  props: BottomSheetViewProps
+): React.ReactElement {
+  return <View style={props.style}>{props.children}</View>;
+}
 
-export const BottomSheetScrollView: React.FC<BottomSheetScrollViewProps> = (props) => <ScrollView {...props} />;
+export function BottomSheetTextInput(
+  props: TextInputProps
+): React.ReactElement {
+  return <TextInput {...props} />;
+}
 
-export const BottomSheetFlatList: React.FC<any> = (props) => <FlatList {...props} />;
+export function BottomSheetScrollView(
+  props: BottomSheetScrollViewProps
+): React.ReactElement {
+  return <ScrollView {...props} />;
+}
 
-export const BottomSheetSectionList: React.FC<any> = (props) => <SectionList {...props} />;
+export function BottomSheetFlatList<T>(
+  props: FlatListProps<T>
+): React.ReactElement {
+  return <FlatList {...props} />;
+}
 
-export const BottomSheetFlashList: React.FC<any> = (props) => <FlatList {...props} />;
+export function BottomSheetSectionList<T>(
+  props: SectionListProps<T>
+): React.ReactElement {
+  return <SectionList {...props} />;
+}
 
-export const BottomSheetVirtualizedList: React.FC<any> = (props) => <VirtualizedList {...props} />;
+export function BottomSheetFlashList<T>(
+  props: FlatListProps<T>
+): React.ReactElement {
+  return <FlatList {...props} />;
+}
+
+export function BottomSheetVirtualizedList<T>(
+  props: VirtualizedListProps<T>
+): React.ReactElement {
+  return <VirtualizedList {...props} />;
+}
 
 // Mock classes
 export class BottomSheetModal extends React.Component<BottomSheetModalProps> {
@@ -74,20 +127,41 @@ export class BottomSheetModal extends React.Component<BottomSheetModalProps> {
 }
 
 export class BottomSheet extends React.Component<BottomSheetProps> {
-  snapToIndex = () => {};
-  snapToPosition = () => {};
-  expand = () => {};
-  collapse = () => {};
-  close = () => {};
-  forceClose = () => {};
+  snapToIndex = (_index: number): void => {};
+  snapToPosition = (_position: number): void => {};
+  expand = (): void => {};
+  collapse = (): void => {};
+  close = (): void => {};
+  forceClose = (): void => {};
 
-  render() {
+  render(): React.ReactNode {
     return <>{this.props.children}</>;
   }
 }
 
+// Types for animated values
+type AnimatedValue<T = number> = {
+  value: T;
+};
+
+type BottomSheetMethods = {
+  snapToIndex: (index: number) => void;
+  snapToPosition: (position: number | string) => void;
+  expand: () => void;
+  collapse: () => void;
+  close: () => void;
+  forceClose: () => void;
+};
+
+type BottomSheetAnimatedValues = {
+  animatedIndex: AnimatedValue<number>;
+  animatedPosition: AnimatedValue<number>;
+};
+
+type BottomSheetHookReturn = BottomSheetMethods & BottomSheetAnimatedValues;
+
 // Mock hooks
-export const useBottomSheet = () => ({
+export const useBottomSheet = (): BottomSheetHookReturn => ({
   snapToIndex: () => {},
   snapToPosition: () => {},
   expand: () => {},
@@ -98,36 +172,83 @@ export const useBottomSheet = () => ({
   animatedPosition: { value: 0 },
 });
 
-export const useBottomSheetModal = () => ({
+type BottomSheetModalMethods = {
+  present: (data?: any) => void;
+  dismiss: () => void;
+  dismissAll: () => void;
+};
+
+export const useBottomSheetModal = (): BottomSheetModalMethods => ({
+  present: () => {},
   dismiss: () => {},
   dismissAll: () => {},
 });
 
-export const useBottomSheetSpringConfigs = (configs: any) => configs;
-export const useBottomSheetTimingConfigs = (configs: any) => configs;
+type SpringConfig = {
+  damping?: number;
+  mass?: number;
+  stiffness?: number;
+  overshootClamping?: boolean;
+  restDisplacementThreshold?: number;
+  restSpeedThreshold?: number;
+};
 
-export const useBottomSheetInternal = () => ({
+type TimingConfig = {
+  duration?: number;
+  easing?: (value: number) => number;
+};
+
+export const useBottomSheetSpringConfigs = (
+  configs: SpringConfig
+): SpringConfig => configs;
+export const useBottomSheetTimingConfigs = (
+  configs: TimingConfig
+): TimingConfig => configs;
+
+type BottomSheetInternalMethods = {
+  stopAnimation: () => void;
+  animateToPosition: (position: number | string) => void;
+  setScrollableRef: (ref: any) => void;
+  removeScrollableRef: (ref: any) => void;
+};
+
+export const useBottomSheetInternal = (): BottomSheetInternalMethods => ({
   stopAnimation: () => {},
   animateToPosition: () => {},
   setScrollableRef: () => {},
   removeScrollableRef: () => {},
 });
 
-export const useBottomSheetModalInternal = () => ({
-  mountSheet: () => {},
-  unmountSheet: () => {},
-  willUnmountSheet: () => {},
-});
+type BottomSheetModalInternalMethods = {
+  mountSheet: () => void;
+  unmountSheet: () => void;
+  willUnmountSheet: () => void;
+};
 
-export const useBottomSheetDynamicSnapPoints = () => ({
-  animatedSnapPoints: { value: [] },
-  animatedHandleHeight: { value: 0 },
-  animatedContentHeight: { value: 0 },
-  handleContentLayout: () => {},
-});
+export const useBottomSheetModalInternal =
+  (): BottomSheetModalInternalMethods => ({
+    mountSheet: () => {},
+    unmountSheet: () => {},
+    willUnmountSheet: () => {},
+  });
+
+type BottomSheetDynamicSnapPointsMethods = {
+  animatedSnapPoints: AnimatedValue<(number | string)[]>;
+  animatedHandleHeight: AnimatedValue<number>;
+  animatedContentHeight: AnimatedValue<number>;
+  handleContentLayout: (event: any) => void;
+};
+
+export const useBottomSheetDynamicSnapPoints =
+  (): BottomSheetDynamicSnapPointsMethods => ({
+    animatedSnapPoints: { value: [] },
+    animatedHandleHeight: { value: 0 },
+    animatedContentHeight: { value: 0 },
+    handleContentLayout: () => {},
+  });
 
 // Re-export React Native touchable components
-export { TouchableOpacity, TouchableHighlight, TouchableWithoutFeedback };
+export { TouchableHighlight, TouchableOpacity, TouchableWithoutFeedback };
 
 // Default export
 export default BottomSheet;

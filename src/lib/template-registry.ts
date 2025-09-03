@@ -10,6 +10,11 @@ export type ListTemplatesFn = () => TemplateDefinition[];
 // Minimal in-memory registry for v1; could be backed by Supabase later
 const templates = new Map<string, TemplateDefinition>();
 
+// Function to clear registry (mainly for testing)
+export function clearTemplates(): void {
+  templates.clear();
+}
+
 export function registerTemplate(def: TemplateDefinition): void {
   if (templates.has(def.id)) {
     throw new Error(

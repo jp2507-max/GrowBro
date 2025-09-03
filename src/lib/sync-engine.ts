@@ -398,8 +398,23 @@ async function handleCreate(coll: any, payload: any): Promise<void> {
   await coll.create((rec: any) => {
     (rec as any).id = payload.id;
     applyPayloadToRecord(rec, payload);
-    (rec as any).updatedAt = (rec as any).updatedAt ?? new Date();
-    (rec as any).createdAt = (rec as any).createdAt ?? new Date();
+    // Preserve server timestamps if provided, otherwise use current time
+    if (payload.createdAt != null) {
+      (rec as any).createdAt = _normalizeIncomingValue(
+        'createdAt',
+        payload.createdAt
+      );
+    } else {
+      (rec as any).createdAt = new Date();
+    }
+    if (payload.updatedAt != null) {
+      (rec as any).updatedAt = _normalizeIncomingValue(
+        'updatedAt',
+        payload.updatedAt
+      );
+    } else {
+      (rec as any).updatedAt = new Date();
+    }
   });
 }
 
@@ -561,7 +576,9 @@ async function pushWithConflictResolution(
     if (err instanceof PushConflictError) {
       // Pull once to resolve conflicts
       let cursor: string | undefined = undefined;
-      do {
+      let hasMore = true;
+
+      while (hasMore) {
         const req: SyncRequest = {
           lastPulledAt,
           schemaVersion: '2025-08-23.v1',
@@ -571,8 +588,8 @@ async function pushWithConflictResolution(
         const resp = await pullChangesOnce(req);
         await applyServerChanges(resp);
         cursor = resp.hasMore ? resp.nextCursor : undefined;
-        if (!resp.hasMore) break;
-      } while (true);
+        hasMore = resp.hasMore;
+      }
       // Retry once
       return await pushChanges(lastPulledAt);
     }

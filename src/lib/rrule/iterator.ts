@@ -46,9 +46,7 @@ function* processDaily(
   let produced = 0;
   let cursorLocal = context.dtstartLocal;
 
-  while (true) {
-    if (shouldStopIteration(config, { cursorLocal, range, produced })) break;
-
+  while (!shouldStopIteration(config, { cursorLocal, range, produced })) {
     const local = cursorLocal.toJSDate();
     produced++;
     if (isWithinRange(local, range)) {
@@ -73,7 +71,7 @@ function* processWeekly(
   // Main iteration loop for weekly recurrence
   // FIXED: Process entire week before checking stop conditions to avoid premature exit
   // when UNTIL falls midweek. Ensures all valid occurrences within the week are yielded.
-  while (true) {
+  while (!shouldStopIteration(config, { cursorLocal, range, produced })) {
     // Generate all dates for the current week
     // If byweekday is specified, enumerate all matching weekdays in this week
     // Otherwise, use the cursor date itself (DTSTART weekday)
@@ -117,7 +115,7 @@ function* processWeekly(
     // Check stop conditions AFTER processing the entire current week
     // This ensures we don't exit prematurely when UNTIL falls midweek
     // The check now happens after all valid dates in the week have been yielded
-    if (shouldStopIteration(config, { cursorLocal, range, produced })) break;
+    // Note: Loop condition now handles the stop logic
 
     // Advance to the next week based on interval
     cursorLocal = DateTime.fromJSDate(

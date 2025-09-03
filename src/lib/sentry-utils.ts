@@ -231,16 +231,20 @@ export async function captureCategorizedError(error: unknown): Promise<void> {
   try {
     // Dynamic imports to avoid requiring modules at bundle time
     // This prevents Sentry from being initialized unless actually used
-    const [{ default: Sentry }, { categorizeError }] = await Promise.all([
+    const [sentryMod, errorMod] = await Promise.all([
       import('@sentry/react-native'),
       import('@/lib/error-handling'),
     ]);
+
+    // Normalize exports to handle both default and namespace shapes
+    const SentryClient = sentryMod.default ?? sentryMod;
+    const { categorizeError } = errorMod;
 
     // Categorize the error for better context and filtering
     const cat = categorizeError(error);
 
     // Capture with enhanced metadata for better debugging
-    Sentry.captureException(error, {
+    SentryClient.captureException(error, {
       tags: {
         category: cat.category,
         retryable: String(cat.isRetryable),
@@ -267,8 +271,8 @@ export async function captureCategorizedError(error: unknown): Promise<void> {
  */
 export function captureCategorizedErrorSync(error: unknown): void {
   // Respect user consent before doing any work
-  const { hasConsent } = require('@/lib/privacy-consent');
-  if (!hasConsent('crashReporting')) {
+  const consent = getPrivacyConsent();
+  if (!consent.crashReporting) {
     return;
   }
 
@@ -277,9 +281,12 @@ export function captureCategorizedErrorSync(error: unknown): void {
     import('@sentry/react-native'),
     import('@/lib/error-handling'),
   ])
-    .then(([{ default: Sentry }, { categorizeError }]) => {
+    .then(([sentryMod, errorMod]) => {
+      // Normalize exports to handle both default and namespace shapes
+      const SentryClient = sentryMod.default ?? sentryMod;
+      const { categorizeError } = errorMod;
       const cat = categorizeError(error);
-      Sentry.captureException(error, {
+      SentryClient.captureException(error, {
         tags: {
           category: cat.category,
           retryable: String(cat.isRetryable),
