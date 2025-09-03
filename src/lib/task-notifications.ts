@@ -485,16 +485,45 @@ export class TaskNotificationService {
       }))
     );
 
-    await this.cancelOutdatedNotifications(diff, existing, database);
-    await this.scheduleMissingNotifications(diff, tasksToUpdate);
+    // If we were given a subset of changed task IDs, explicitly cancel
+    // any queued notifications for tasks that no longer exist locally.
+    let mergedDiff = diff;
+    if (changedTaskIds && changedTaskIds.length > 0) {
+      const presentIds = new Set<string>(tasksToUpdate.map((t: any) => t.id));
+      const deletedIds = changedTaskIds.filter((id) => !presentIds.has(id));
+      if (deletedIds.length > 0) {
+        const orphanRows = existing.filter((e: any) =>
+          deletedIds.includes(e.taskId)
+        );
+        if (orphanRows.length > 0) {
+          const orphanCancels = orphanRows.map((e: any) => ({
+            notificationId: e.notificationId,
+            taskId: e.taskId,
+          }));
+          const seen = new Set<string>();
+          const mergedCancels = [...diff.toCancel, ...orphanCancels].filter(
+            (c) => {
+              const key = `${c.taskId}:${c.notificationId}`;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            }
+          );
+          mergedDiff = { toCancel: mergedCancels, toSchedule: diff.toSchedule };
+        }
+      }
+    }
+
+    await this.cancelOutdatedNotifications(mergedDiff, existing, database);
+    await this.scheduleMissingNotifications(mergedDiff, tasksToUpdate);
     try {
-      for (const c of diff.toCancel) {
+      for (const c of mergedDiff.toCancel) {
         await NoopAnalytics.track('notif_rehydrate_cancelled', {
           notificationId: c.notificationId,
           taskId: c.taskId,
         });
       }
-      for (const s of diff.toSchedule) {
+      for (const s of mergedDiff.toSchedule) {
         await NoopAnalytics.track('notif_rehydrate_scheduled', {
           taskId: s.taskId,
         });

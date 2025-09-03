@@ -71,8 +71,6 @@ function createExpoConfig(config: Partial<ExpoConfig>): ExpoConfig {
           backgroundColor: '#2E3C4B',
           image: './assets/splash-icon.png',
           imageWidth: 150,
-          duration: 500,
-          fade: true,
         },
       ],
       [
