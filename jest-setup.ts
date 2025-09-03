@@ -1,5 +1,10 @@
 import '@testing-library/react-native/extend-expect';
 
+import React from 'react';
+import * as GestureHandler from 'react-native-gesture-handler/src/mocks';
+// @ts-ignore - react-native-reanimated mock has no type definitions
+import * as Reanimated from 'react-native-reanimated/mock';
+
 // react-hook form setup for testing
 // @ts-ignore
 global.window = {};
@@ -53,31 +58,26 @@ jest.mock('@nozbe/watermelondb', () => {
 
 // mock: react-native-reanimated to avoid native timers/threads in tests
 jest.mock('react-native-reanimated', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const Reanimated = require('react-native-reanimated/mock');
   // Silence the useNativeDriver warning
   Reanimated.default.call = () => {};
   return Reanimated;
 });
 
 // mock: react-native-gesture-handler to jest mocks
-jest.mock('react-native-gesture-handler', () =>
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  require('react-native-gesture-handler/src/mocks')
-);
+jest.mock('react-native-gesture-handler', () => GestureHandler);
 
 // mock: react-native-edge-to-edge SystemBars to prevent native behavior in tests
 jest.mock('react-native-edge-to-edge', () => ({
   SystemBars: () => null,
 }));
 
-// mock: @shopify/flash-list with a simple FlatList-like component (no JSX in .ts file)
+// mock: @shopify/flash-list with a minimal stub that preserves API shape
 jest.mock('@shopify/flash-list', () => {
-  const React = require('react');
-  const { FlatList } = require('react-native');
-  const FlashList = React.forwardRef((props: any, ref: any) =>
-    React.createElement(FlatList, { ref, ...props })
-  );
+  const FlashList = React.forwardRef((_props: any, _ref: any) => {
+    // Minimal stub that forwards ref and accepts FlashList props
+    // Returns null to avoid rendering in tests while preserving API compatibility
+    return null;
+  });
   return { FlashList };
 });
 

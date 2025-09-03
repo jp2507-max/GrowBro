@@ -298,6 +298,11 @@ function setupUndoState(
   updatedTask: Task,
   createUndoState: (task: Task, timeoutId: any) => UndoState
 ) {
+  // Clear any existing timeout to prevent premature cleanup
+  if (undoRef.current?.timeoutId) {
+    clearTimeout(undoRef.current.timeoutId);
+  }
+
   // Set up automatic cleanup of undo state after timeout
   const cleanupUndoState = () => {
     undoRef.current = undefined;

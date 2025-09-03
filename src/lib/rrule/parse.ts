@@ -1,6 +1,11 @@
 import { DateTime } from 'luxon';
 
-import type { RRuleConfig } from './types';
+import type {
+  RRuleConfig,
+  RRuleConfigCount,
+  RRuleConfigUntil,
+  Weekday,
+} from './types';
 
 const WEEKDAY_MAP: Record<string, number> = {
   MO: 1,
@@ -12,69 +17,97 @@ const WEEKDAY_MAP: Record<string, number> = {
   SU: 7,
 };
 
-export function parseRule(rule: string, dtstartUtc?: string): RRuleConfig {
-  // Expect format: FREQ=DAILY|WEEKLY;INTERVAL=...;BYDAY=...;UNTIL=...;COUNT=...
-  const parts = rule.split(';').filter(Boolean);
-  const kv: Record<string, string> = {};
-  for (const part of parts) {
-    const [k, v] = part.split('=');
-    if (k && v) kv[k.toUpperCase()] = v;
+function parseKeyValuePairs(rule: string): Record<string, string> {
+  const pairs = rule.split(';').filter(Boolean);
+  const map: Record<string, string> = {};
+  for (const pair of pairs) {
+    const [key, value] = pair.split('=');
+    if (key && value) map[key.toUpperCase()] = value;
   }
+  return map;
+}
 
-  // Validate FREQ against allowed values, default to 'DAILY' if invalid
-  const allowedFreqs: RRuleConfig['freq'][] = ['DAILY', 'WEEKLY'];
-  const freq = allowedFreqs.includes(kv['FREQ'] as RRuleConfig['freq'])
-    ? (kv['FREQ'] as RRuleConfig['freq'])
-    : 'DAILY';
+function parseFrequency(kv: Record<string, string>): RRuleConfig['freq'] {
+  const allowed: RRuleConfig['freq'][] = ['DAILY', 'WEEKLY'];
+  const token = kv['FREQ'] as RRuleConfig['freq'];
+  return allowed.includes(token) ? token : 'DAILY';
+}
 
-  // Parse INTERVAL with validation: ensure integer between 1-365, fallback to 1
-  const parsedInterval = Number.parseInt(kv['INTERVAL'], 10);
-  const interval = Number.isNaN(parsedInterval)
-    ? 1
-    : Math.max(1, Math.min(365, parsedInterval));
+function parseIntervalValue(kv: Record<string, string>): number {
+  const parsed = Number.parseInt(kv['INTERVAL'], 10);
+  if (Number.isNaN(parsed)) return 1;
+  const clamped = Math.max(1, Math.min(365, parsed));
+  return clamped;
+}
 
-  let byweekday: number[] | undefined;
-  if (kv['BYDAY']) {
-    byweekday = kv['BYDAY']
-      .split(',')
-      .map((token) => WEEKDAY_MAP[token.trim().toUpperCase()])
-      .filter((n) => Number.isInteger(n));
-  }
+function parseByWeekdayValue(
+  kv: Record<string, string>
+): Weekday[] | undefined {
+  if (!kv['BYDAY']) return undefined;
+  const values = kv['BYDAY']
+    .split(',')
+    .map((token) => WEEKDAY_MAP[token.trim().toUpperCase()])
+    .filter((n) => Number.isInteger(n));
+  return values as Weekday[];
+}
 
-  let until: Date | undefined;
-  if (kv['UNTIL']) {
-    // UNTIL must be UTC; accept ISO or basic format.
-    const iso = kv['UNTIL'];
-    let dt = DateTime.fromISO(iso, { zone: 'utc' });
-    if (!dt.isValid) {
-      // Fallback for basic format like 20250101T000000Z
-      // RFC5545 basic format uses compact date-time with literal 'T' and 'Z'
-      const candidates = [
-        "yyyyLLdd'T'HHmmss'Z'",
-        "yyyyLLdd'T'HHmm'Z'",
-        "yyyyLLdd'T'HH'Z'",
-      ];
-      for (const fmt of candidates) {
-        const parsed = DateTime.fromFormat(iso, fmt, { zone: 'utc' });
-        if (parsed.isValid) {
-          dt = parsed;
-          break;
-        }
+function parseUntilDate(kv: Record<string, string>): Date | undefined {
+  if (!kv['UNTIL']) return undefined;
+  const iso = kv['UNTIL'];
+  let dt = DateTime.fromISO(iso, { zone: 'utc' });
+  if (!dt.isValid) {
+    const candidates = [
+      "yyyyLLdd'T'HHmmss'Z'",
+      "yyyyLLdd'T'HHmm'Z'",
+      "yyyyLLdd'T'HH'Z'",
+    ];
+    for (const fmt of candidates) {
+      const parsed = DateTime.fromFormat(iso, fmt, { zone: 'utc' });
+      if (parsed.isValid) {
+        dt = parsed;
+        break;
       }
     }
-    until = dt.isValid ? dt.toJSDate() : undefined;
   }
+  return dt.isValid ? dt.toJSDate() : undefined;
+}
 
-  let count: number | undefined;
-  if (kv['COUNT']) {
-    const c = Number.parseInt(kv['COUNT'], 10);
-    if (Number.isFinite(c)) count = c;
-  }
+function parseCountValue(kv: Record<string, string>): number | undefined {
+  if (!kv['COUNT']) return undefined;
+  const count = Number.parseInt(kv['COUNT'], 10);
+  return Number.isFinite(count) ? count : undefined;
+}
 
-  // DTSTART: use provided UTC string when given, else now (UTC)
-  const dtstart = dtstartUtc
+function parseDtstartDate(dtstartUtc?: string): Date {
+  return dtstartUtc
     ? DateTime.fromISO(dtstartUtc, { zone: 'utc' }).toJSDate()
     : DateTime.utc().toJSDate();
+}
 
-  return { freq, interval, byweekday, until, count, dtstart } as RRuleConfig;
+export function parseRule(rule: string, dtstartUtc?: string): RRuleConfig {
+  const kv = parseKeyValuePairs(rule);
+  const freq = parseFrequency(kv);
+  const interval = parseIntervalValue(kv);
+  const byweekday = parseByWeekdayValue(kv);
+  const until = parseUntilDate(kv);
+  const count = parseCountValue(kv);
+  const dtstart = parseDtstartDate(dtstartUtc);
+
+  if (count !== undefined) {
+    return {
+      freq,
+      interval,
+      byweekday,
+      dtstart,
+      count,
+    } satisfies RRuleConfigCount;
+  }
+
+  return {
+    freq,
+    interval,
+    byweekday,
+    dtstart,
+    until: until!,
+  } satisfies RRuleConfigUntil;
 }
