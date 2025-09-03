@@ -292,16 +292,21 @@ function recalcDueTimestamps(
     updates.dueAtUtc === undefined;
 
   if (isTimezoneOnlyUpdate && r.dueAtLocal && originalTimezone) {
-    const dt = DateTime.fromISO(r.dueAtLocal, {
-      zone: originalTimezone,
-    }).setZone(updates.timezone);
+    if (!r.dueAtUtc) {
+      throw new Error(
+        `Cannot perform timezone-only update: missing stored UTC timestamp for dueAt`
+      );
+    }
+    const dt = DateTime.fromISO(r.dueAtUtc, { zone: 'utc' }).setZone(
+      updates.timezone
+    );
     dueAtLocalInput = dt.toISO();
     if (!dueAtLocalInput) {
       throw new Error(
-        `Failed to convert timezone from ${originalTimezone} to ${updates.timezone} for: ${r.dueAtLocal}`
+        `Failed to convert timezone from ${originalTimezone} to ${updates.timezone} for: ${r.dueAtUtc}`
       );
     }
-    dueAtUtcInput = undefined;
+    dueAtUtcInput = r.dueAtUtc; // Preserve the original UTC timestamp
   }
 
   const dual = ensureDualTimestamps({
@@ -341,16 +346,21 @@ function recalcReminderTimestamps(
     updates.reminderAtUtc === undefined;
 
   if (isTimezoneOnlyUpdate && r.reminderAtLocal && originalTimezone) {
-    const dt = DateTime.fromISO(r.reminderAtLocal, {
-      zone: originalTimezone,
-    }).setZone(updates.timezone);
+    if (!r.reminderAtUtc) {
+      throw new Error(
+        `Cannot perform timezone-only update: missing stored UTC timestamp for reminderAt`
+      );
+    }
+    const dt = DateTime.fromISO(r.reminderAtUtc, { zone: 'utc' }).setZone(
+      updates.timezone
+    );
     reminderAtLocalInput = dt.toISO();
     if (!reminderAtLocalInput) {
       throw new Error(
-        `Failed to convert timezone from ${originalTimezone} to ${updates.timezone} for reminder: ${r.reminderAtLocal}`
+        `Failed to convert timezone from ${originalTimezone} to ${updates.timezone} for reminder: ${r.reminderAtUtc}`
       );
     }
-    reminderAtUtcInput = undefined;
+    reminderAtUtcInput = r.reminderAtUtc; // Preserve the original UTC timestamp
   }
 
   const dual = maybeDualReminder({
@@ -591,7 +601,12 @@ async function findAndSoftDeleteTaskForOccurrence(
 
   // Find task that matches the occurrence local date
   for (const task of existingTasks) {
-    if (sameLocalDay(task.dueAtLocal, `${day}T00:00:00.000`)) {
+    // Use the task's own timezone when computing the start-of-day ISO
+    const taskZone = (task as any).timezone as string;
+    const dayStartIso = DateTime.fromISO(`${day}T00:00:00`, {
+      zone: taskZone,
+    }).toISO()!;
+    if (sameLocalDay((task as any).dueAtLocal, dayStartIso)) {
       // Soft-delete the task and clear its timestamps
       await task.update((rec: TaskModel) => {
         const r = rec as any;

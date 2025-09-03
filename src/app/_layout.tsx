@@ -90,6 +90,8 @@ loadSelectedTheme();
 initializePrivacyConsent();
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+// Set splash screen animation options at runtime
+SplashScreen.setOptions({ duration: 500, fade: true });
 
 function getCurrentTimeZone(): string {
   try {
@@ -110,11 +112,36 @@ function getCurrentTimeZone(): string {
     console.warn('Failed to get timezone from locales:', error);
   }
 
+  // Try to read Localization.timezone as additional fallback
+  try {
+    const timezone = (Localization as any).timezone;
+    if (typeof timezone === 'string' && timezone.length > 0) {
+      // Optional: Basic validation for plausible timezone format
+      // Common formats: 'America/New_York', 'UTC', 'GMT+1', 'Europe/London', etc.
+      const timezonePattern = /^[A-Za-z][A-Za-z0-9/_+-]+$/;
+      if (timezonePattern.test(timezone)) {
+        return timezone;
+      } else {
+        console.warn(
+          'Invalid timezone format from Localization.timezone:',
+          timezone
+        );
+      }
+    } else {
+      console.warn(
+        'Localization.timezone is not a valid non-empty string:',
+        timezone
+      );
+    }
+  } catch (error) {
+    console.warn('Failed to read Localization.timezone:', error);
+  }
+
   // Fallback to 'UTC' if nothing else available
   return 'UTC';
 }
 
-function RootLayout() {
+function RootLayout(): React.JSX.Element {
   const [isFirstTime] = useIsFirstTime();
   React.useEffect(() => {
     // Guard: avoid interrupting first-time onboarding flow
@@ -174,7 +201,11 @@ function RootLayout() {
 
 export default Sentry.wrap(RootLayout);
 
-function Providers({ children }: { children: React.ReactNode }) {
+interface ProvidersProps {
+  children: React.ReactNode;
+}
+
+function Providers({ children }: ProvidersProps): React.JSX.Element {
   const theme = useThemeConfig();
   return (
     <GestureHandlerRootView
