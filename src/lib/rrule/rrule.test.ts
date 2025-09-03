@@ -142,6 +142,38 @@ describe('RRULE until validation', () => {
     expect(equalUntilRes.ok).toBe(false);
     expect(equalUntilRes.errors).toContain('until must be after dtstart');
   });
+
+  it('parses basic-format UNTIL (RFC5545) and respects termination', () => {
+    // Basic format: 20250101T000000Z
+    const cfg = parseRule(
+      'FREQ=DAILY;INTERVAL=1;UNTIL=20250101T000000Z',
+      '2024-12-30T07:00:00Z'
+    );
+    const res = validate(cfg);
+    expect(res.ok).toBe(true);
+
+    const range = {
+      start: DateTime.fromISO('2024-12-29T00:00:00', {
+        zone: BERLIN,
+      }).toJSDate(),
+      end: DateTime.fromISO('2025-01-03T23:59:59', {
+        zone: BERLIN,
+      }).toJSDate(),
+      timezone: BERLIN,
+    };
+    const items = collect(buildIterator({ config: cfg, overrides: [], range }));
+
+    // Ensure last occurrence is not after UNTIL (inclusive semantics may vary; here we ensure no overflow)
+    const lastUtc = items[items.length - 1]?.utc;
+    expect(lastUtc).toBeDefined();
+    if (lastUtc) {
+      // UNTIL=2025-01-01T00:00:00Z -> last UTC occurrence should be <= this
+      expect(
+        DateTime.fromISO(lastUtc).toUTC() <=
+          DateTime.fromISO('2025-01-01T00:00:00Z')
+      ).toBe(true);
+    }
+  });
 });
 
 describe('RRULE DST and timezone handling', () => {

@@ -50,3 +50,43 @@ jest.mock('@nozbe/watermelondb', () => {
     return require('@nozbe/watermelondb');
   }
 });
+
+// mock: react-native-reanimated to avoid native timers/threads in tests
+jest.mock('react-native-reanimated', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Reanimated = require('react-native-reanimated/mock');
+  // Silence the useNativeDriver warning
+  Reanimated.default.call = () => {};
+  return Reanimated;
+});
+
+// mock: react-native-gesture-handler to jest mocks
+jest.mock('react-native-gesture-handler', () =>
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('react-native-gesture-handler/src/mocks')
+);
+
+// mock: react-native-edge-to-edge SystemBars to prevent native behavior in tests
+jest.mock('react-native-edge-to-edge', () => ({
+  SystemBars: () => null,
+}));
+
+// mock: @shopify/flash-list with a simple FlatList-like component (no JSX in .ts file)
+jest.mock('@shopify/flash-list', () => {
+  const React = require('react');
+  const { FlatList } = require('react-native');
+  const FlashList = React.forwardRef((props: any, ref: any) =>
+    React.createElement(FlatList, { ref, ...props })
+  );
+  return { FlashList };
+});
+
+// mock: react-navigation useIsFocused to return true in tests (no actual reference)
+jest.mock('@react-navigation/native', () => ({
+  useIsFocused: () => true,
+}));
+
+// mock: react-native-flash-message showMessage as no-op
+jest.mock('react-native-flash-message', () => ({
+  showMessage: () => {},
+}));
