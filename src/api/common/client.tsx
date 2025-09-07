@@ -2,7 +2,7 @@ import { Env } from '@env';
 import axios from 'axios';
 
 import { categorizeError } from '@/lib/error-handling';
-import { computeBackoffMs } from '@/lib/sync-engine';
+import { computeBackoffMs } from '@/lib/sync/backoff';
 
 export const client = axios.create({
   baseURL: Env.API_URL,
