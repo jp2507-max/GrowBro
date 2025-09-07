@@ -91,6 +91,10 @@ function createExpoConfig(config: Partial<ExpoConfig>): ExpoConfig {
           organization: process.env.SENTRY_ORG || 'canabro',
         },
       ],
+      // Background tasks (BGTaskScheduler on iOS, WorkManager on Android)
+      'expo-background-task',
+      // WatermelonDB config plugin to enable JSI adapter in Expo managed workflow
+      '@morrowdigital/watermelondb-expo-plugin',
     ],
     extra: {
       ...ClientEnv,

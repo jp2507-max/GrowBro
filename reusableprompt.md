@@ -1,10 +1,11 @@
-TASK_ID: {17}
+TASK_ID: {15}
 
 CONTEXT
 
-- Feature: calendar-2.0
-- Tasks index: .kiro/specs/1. calendar-2.0/tasks.md
-- Design spec: .kiro/specs/1. calendar-2.0/design.md
+- Feature: offline-first-sync
+- Tasks index: C:\Users\Peter\GrowBro\.kiro\specs\2. offline-first-sync\tasks.md
+- Design spec: C:\Users\Peter\GrowBro\.kiro\specs\2. offline-first-sync\design.md
+- Requirements spec: C:\Users\Peter\GrowBro\.kiro\specs\2. offline-first-sync\requirements.md
 
 READ FIRST — STRICT SCOPE
 
@@ -14,7 +15,7 @@ READ FIRST — STRICT SCOPE
    - If the task inlines bullets instead of IDs, treat ONLY those bullets as requirements.
 3. Open the design spec and read ONLY the section(s) relevant to Task {TASK_ID}/{task title}. If unclear, ask a single blocking question, then proceed.
 4. Check task file for additional information for implementation or design details
-5. If you depend on external packages (e.g., reanimated, rrule), consult their official docs or up-to-date resources for implementation details
+5. If you depend on external packages (e.g., reanimated, watermelondb, rrule), consult their official docs or up-to-date resources for implementation details
 
 OUTPUT — REQUIREMENTS & DESIGN
 
@@ -30,7 +31,7 @@ OUTPUT — PLAN (SCOPED AND COMPLETE)
 AUTO-CONTINUE — IMPLEMENT NOW
 
 - Do NOT wait for approval. If there are no blocking questions, start implementing immediately after the plan.
-- Keep diffs small and reviewable; match existing style; ask before adding new dependencies/config.
+- Keep diffs small and reviewable; match existing style;
 - After each logical edit: report changed files, risks, and exact local verification commands:
   - Lint
   - Type-check

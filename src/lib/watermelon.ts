@@ -2,6 +2,7 @@ import { Database } from '@nozbe/watermelondb';
 import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
 
 import { migrations } from './watermelon-migrations';
+import { ImageUploadQueueModel } from './watermelon-models/image-upload-queue';
 import { NotificationQueueModel } from './watermelon-models/notification-queue';
 import { OccurrenceOverrideModel } from './watermelon-models/occurrence-override';
 import { SeriesModel } from './watermelon-models/series';
@@ -25,5 +26,6 @@ export const database = new Database({
     TaskModel,
     OccurrenceOverrideModel,
     NotificationQueueModel,
+    ImageUploadQueueModel,
   ],
 });

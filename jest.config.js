@@ -38,5 +38,7 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@gorhom/bottom-sheet(.*)$':
       '<rootDir>/__mocks__/@gorhom/bottom-sheet.tsx',
+    '^@nozbe/watermelondb/adapters/sqlite$':
+      '<rootDir>/__mocks__/@nozbe/watermelondb/adapters/sqlite',
   },
 };

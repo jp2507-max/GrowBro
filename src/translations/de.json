@@ -13,6 +13,17 @@
   "common": {
     "ok": "OK"
   },
+  "diagnostics": {
+    "checkpoint_age_ms": "Checkpoint-Alter (ms)",
+    "clear_logs": "Protokolle löschen",
+    "last_checkpoint_at": "Letzter Checkpoint",
+    "last_success_at": "Letzter Erfolg",
+    "logs": "Protokolle",
+    "metrics": "Metriken",
+    "subtitle": "Metriken und aktuelle Sync-Logs",
+    "sync_now": "Jetzt synchronisieren",
+    "title": "Sync-Diagnostik"
+  },
   "onboarding": {
     "allow_button": "Benachrichtigungen erlauben",
     "continue_button": "Weiter",
@@ -57,6 +68,17 @@
     "share": "Teilen",
     "support": "Support",
     "support_us": "Unterstütze uns",
+    "sync": {
+      "auto_sync": "Auto-Sync (Vordergrund/Verbindung)",
+      "background": "Hintergrund-Sync",
+      "charging_only": "Nur beim Laden",
+      "reset_local": "Lokalen Cache zurücksetzen",
+      "reset_local_body": "Dies löscht die lokale Datenbank dauerhaft. Deine Cloud-Daten bleiben erhalten.",
+      "reset_local_title": "Lokalen Cache zurücksetzen?",
+      "staleness_hours": "Veraltet ab (Stunden)",
+      "title": "Sync",
+      "wifi_only": "Nur Wi‑Fi"
+    },
     "terms": "Nutzungsbedingungen",
     "theme": {
       "dark": "Dunkel",
@@ -67,6 +89,10 @@
     "title": "Einstellungen",
     "version": "Version",
     "website": "Website"
+  },
+  "sync": {
+    "last_sync_and_pending": "Letzte Sync: {{time}}, {{count}} ausstehend",
+    "offline_banner": "Du bist offline. Änderungen werden später synchronisiert."
   },
   "welcome": "Willkommen bei der GrowBro App"
 }
