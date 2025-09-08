@@ -2,34 +2,25 @@ import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 
 import { getSyncPrefs, useSyncPrefs } from '@/lib/sync/preferences';
 
-const mockStorage = (() => {
-  const map = new Map<string, string>();
-  return {
-    storage: {
-      getString: (k: string) => map.get(k),
-      set: (k: string, v: string) => map.set(k, v),
-      delete: (k: string) => map.delete(k),
-    },
-    getItem: <T>(k: string): T | null => {
-      const v = map.get(k);
-      return v ? (JSON.parse(v) as T) : null;
-    },
-    setItem: async <T>(k: string, v: T) => {
-      map.set(k, JSON.stringify(v));
-    },
-    removeItem: async (k: string) => {
-      map.delete(k);
-    },
-    clear: () => map.clear(),
-  };
-})();
+const mockStorageMap = new Map<string, string>();
 
-jest.mock('@/lib/storage', () => mockStorage);
+jest.mock('@/lib/storage', () => ({
+  getItem: <T>(k: string): T | null => {
+    const v = mockStorageMap.get(k);
+    return v ? (JSON.parse(v) as T) : null;
+  },
+  setItem: async <T>(k: string, v: T) => {
+    mockStorageMap.set(k, JSON.stringify(v));
+  },
+  removeItem: async (k: string) => {
+    mockStorageMap.delete(k);
+  },
+}));
 
 describe('sync preferences store', () => {
   beforeEach(() => {
     // Clear mock storage state between tests
-    mockStorage.clear();
+    mockStorageMap.clear();
 
     // Reset Zustand store to defaults
     const prefs = getSyncPrefs();
@@ -38,7 +29,7 @@ describe('sync preferences store', () => {
 
   afterEach(() => {
     // Additional cleanup if needed
-    mockStorage.clear();
+    mockStorageMap.clear();
   });
   it('hydrates defaults and updates', () => {
     const prefs = getSyncPrefs();

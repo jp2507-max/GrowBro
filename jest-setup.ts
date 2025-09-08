@@ -6,6 +6,12 @@ global.window = {};
 // @ts-ignore
 global.window = global;
 
+// Type definitions for MMKV mock
+type StoredValue = {
+  type: 'string' | 'number' | 'boolean';
+  value: string | number | boolean;
+};
+
 // mock: async-storage
 jest.mock('@react-native-async-storage/async-storage', () => {
   try {
@@ -91,11 +97,6 @@ jest.mock('react-native-flash-message', () => ({
 
 // mock: react-native-mmkv to avoid native bindings in Jest
 jest.mock('react-native-mmkv', () => {
-  type StoredValue = {
-    type: 'string' | 'number' | 'boolean';
-    value: string | number | boolean;
-  };
-
   class MMKVMock {
     private store: Map<string, StoredValue> = new Map();
 
