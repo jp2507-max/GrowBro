@@ -1,7 +1,7 @@
 import { Q } from '@nozbe/watermelondb';
 
-import { computeBackoffMs } from '@/lib/sync/backoff';
 import { canSyncLargeFiles } from '@/lib/sync/network-manager';
+import { computeBackoffMs } from '@/lib/sync-engine';
 import { uploadImageWithProgress } from '@/lib/uploads/image-upload';
 import { database } from '@/lib/watermelon';
 
@@ -94,8 +94,8 @@ export async function enqueueImage(params: {
       rec.mimeType = params.mimeType ?? 'image/jpeg';
       rec.status = 'pending';
       rec.lastError = null;
-      rec.createdAt = Date.now();
-      rec.updatedAt = Date.now();
+      rec.createdAt = new Date();
+      rec.updatedAt = new Date();
     })
   );
   return finalFilename;
@@ -129,7 +129,7 @@ async function markUploading(id: string): Promise<void> {
   await database.write(async () =>
     row.update((rec: any) => {
       rec.status = 'uploading';
-      rec.updatedAt = Date.now();
+      rec.updatedAt = new Date();
     })
   );
 }
@@ -141,7 +141,7 @@ async function markCompleted(id: string, remotePath: string): Promise<void> {
     row.update((rec: any) => {
       rec.status = 'completed';
       rec.remotePath = remotePath;
-      rec.updatedAt = Date.now();
+      rec.updatedAt = new Date();
     })
   );
 }
@@ -161,7 +161,7 @@ async function markFailure(
       rec.retryCount = attempt;
       rec.lastError = err instanceof Error ? err.message : String(err);
       rec.nextAttemptAt = nextAt;
-      rec.updatedAt = Date.now();
+      rec.updatedAt = new Date();
     })
   );
 }
@@ -173,7 +173,7 @@ async function markFailed(id: string, reason: string): Promise<void> {
     row.update((rec: any) => {
       rec.status = 'failed';
       rec.lastError = reason;
-      rec.updatedAt = Date.now();
+      rec.updatedAt = new Date();
     })
   );
 }
@@ -234,7 +234,7 @@ export async function backfillTaskRemotePath(
       row.update((rec: any) => {
         const meta = (rec.metadata ?? {}) as Record<string, unknown>;
         rec.metadata = { ...meta, imagePath: remotePath } as any;
-        rec.updatedAt = Date.now();
+        rec.updatedAt = new Date();
       })
     );
   } catch {

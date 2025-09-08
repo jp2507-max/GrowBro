@@ -1,0 +1,169 @@
+[1mdiff --git a/src/lib/uploads/queue.ts b/src/lib/uploads/queue.ts[m
+[1mnew file mode 100644[m
+[1mindex 0000000..b56b3e5[m
+[1m--- /dev/null[m
+[1m+++ b/src/lib/uploads/queue.ts[m
+[36m@@ -0,0 +1,248 @@[m
+[32m+[m[32mimport { Q } from '@nozbe/watermelondb';[m
+[32m+[m
+[32m+[m[32mimport { computeBackoffMs } from '@/lib/sync/backoff';[m
+[32m+[m[32mimport { canSyncLargeFiles } from '@/lib/sync/network-manager';[m
+[32m+[m[32mimport { uploadImageWithProgress } from '@/lib/uploads/image-upload';[m
+[32m+[m[32mimport { database } from '@/lib/watermelon';[m
+[32m+[m
+[32m+[m[32mtype QueueItemRaw = {[m
+[32m+[m[32m  id: string;[m
+[32m+[m[32m  local_uri: string;[m
+[32m+[m[32m  remote_path?: string | null;[m
+[32m+[m[32m  task_id?: string | null;[m
+[32m+[m[32m  plant_id?: string | null;[m
+[32m+[m[32m  filename?: string | null;[m
+[32m+[m[32m  mime_type?: string | null;[m
+[32m+[m[32m  status: 'pending' | 'uploading' | 'completed' | 'failed';[m
+[32m+[m[32m  retry_count?: number | null;[m
+[32m+[m[32m  last_error?: string | null;[m
+[32m+[m[32m  next_attempt_at?: number | null; // epoch ms[m
+[32m+[m[32m  created_at: number;[m
+[32m+[m[32m  updated_at: number;[m
+[32m+[m[32m};[m
+[32m+[m
+[32m+[m[32mfunction generateDeterministicFilename(params: {[m
+[32m+[m[32m  localUri: string;[m
+[32m+[m[32m  plantId: string;[m
+[32m+[m[32m  taskId?: string;[m
+[32m+[m[32m  mimeType?: string;[m
+[32m+[m[32m}): string {[m
+[32m+[m[32m  // Create a simple hash of the localUri for stability[m
+[32m+[m[32m  let hash = 0;[m
+[32m+[m[32m  for (let i = 0; i < params.localUri.length; i++) {[m
+[32m+[m[32m    const char = params.localUri.charCodeAt(i);[m
+[32m+[m[32m    hash = (hash << 5) - hash + char;[m
+[32m+[m[32m    hash |= 0; // Convert to 32-bit integer[m
+[32m+[m[32m  }[m
+[32m+[m[32m  const uriHash = Math.abs(hash).toString(16).slice(0, 8);[m
+[32m+[m
+[32m+[m[32m  // Use taskId or a fixed token[m
+[32m+[m[32m  const taskToken = params.taskId ?? 'notask';[m
+[32m+[m
+[32m+[m[32m  // Determine extension from mimeType or localUri[m
+[32m+[m[32m  let extension = 'jpg'; // default[m
+[32m+[m[32m  if (params.mimeType) {[m
+[32m+[m[32m    const mimeToExt: Record<string, string> = {[m
+[32m+[m[32m      'image/jpeg': 'jpg',[m
+[32m+[m[32m      'image/jpg': 'jpg',[m
+[32m+[m[32m      'image/png': 'png',[m
+[32m+[m[32m      'image/gif': 'gif',[m
+[32m+[m[32m      'image/webp': 'webp',[m
+[32m+[m[32m      'image/heic': 'heic',[m
+[32m+[m[32m      'image/heif': 'heif',[m
+[32m+[m[32m    };[m
+[32m+[m[32m    extension = mimeToExt[params.mimeType] ?? 'jpg';[m
+[32m+[m[32m  } else if (params.localUri.includes('.')) {[m
+[32m+[m[32m    // Extract extension from localUri as fallback[m
+[32m+[m[32m    const uriParts = params.localUri.split('.');[m
+[32m+[m[32m    if (uriParts.length > 1) {[m
+[32m+[m[32m      extension = uriParts[uriParts.length - 1].toLowerCase();[m
+[32m+[m[32m      // Remove query parameters if present[m
+[32m+[m[32m      extension = extension.split('?')[0];[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  // Construct deterministic filename[m
+[32m+[m[32m  return `${params.plantId}_${taskToken}_${uriHash}.${extension}`;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mexport async function enqueueImage(params: {[m
+[32m+[m[32m  localUri: string;[m
+[32m+[m[32m  plantId: string;[m
+[32m+[m[32m  taskId?: string;[m
+[32m+[m[32m  filename?: string;[m
+[32m+[m[32m  mimeType?: string;[m
+[32m+[m[32m}): Promise<string> {[m
+[32m+[m[32m  // Generate deterministic filename if not provided[m
+[32m+[m[32m  const finalFilename =[m
+[32m+[m[32m    params.filename ??[m
+[32m+[m[32m    generateDeterministicFilename({[m
+[32m+[m[32m      localUri: params.localUri,[m
+[32m+[m[32m      plantId: params.plantId,[m
+[32m+[m[32m      taskId: params.taskId,[m
+[32m+[m[32m      mimeType: params.mimeType,[m
+[32m+[m[32m    });[m
+[32m+[m
+[32m+[m[32m  const coll = database.collections.get('image_upload_queue' as any);[m
+[32m+[m[32m  await database.write(async () =>[m
+[32m+[m[32m    (coll as any).create((rec: any) => {[m
+[32m+[m[32m      rec.localUri = params.localUri;[m
+[32m+[m[32m      rec.remotePath = null;[m
+[32m+[m[32m      rec.taskId = params.taskId ?? null;[m
+[32m+[m[32m      rec.plantId = params.plantId;[m
+[32m+[m[32m      rec.filename = finalFilename;[m
+[32m+[m[32m      rec.mimeType = params.mimeType ?? 'image/jpeg';[m
+[32m+[m[32m      rec.status = 'pending';[m
+[32m+[m[32m      rec.lastError = null;[m
+[32m+[m[32m      rec.createdAt = new Date();[m
+[32m+[m[32m      rec.updatedAt = new Date();[m
+[32m+[m[32m    })[m
+[32m+[m[32m  );[m
+[32m+[m[32m  return finalFilename;[m
+[32m+[m[32m}[m
+[32m+[m[32m// Fetch a batch of pending upload queue items that are due for processing[m
+[32m+[m[32m// This function retrieves items with status 'pending' and either no next_attempt_at[m
+[32m+[m[32m// or next_attempt_at <= current time, limited to the specified batch size[m
+[32m+[m[32m//[m
+[32m+[m[32m// TODO: Optimize by filtering at database level instead of fetching all rows[m
+[32m+[m[32m// Suggested improvement: Use WatermelonDB Q.where() queries to filter status='pending'[m
+[32m+[m[32m// and apply time-based conditions directly in the query before fetching[m
+[32m+[m[32masync function fetchDueBatch(limit = 5): Promise<QueueItemRaw[]> {[m
+[32m+[m[32m  const coll = database.collections.get('image_upload_queue' as any);[m
+[32m+[m[32m  const rows = await (coll as any)[m
+[32m+[m[32m    .query([m
+[32m+[m[32m      Q.where('status', 'pending'),[m
+[32m+[m[32m      Q.sortBy('next_attempt_at', 'asc'),[m
+[32m+[m[32m      Q.take(limit)[m
+[32m+[m[32m    )[m
+[32m+[m[32m    .fetch();[m
+[32m+[m[32m  const now = Date.now();[m
+[32m+[m[32m  const due: QueueItemRaw[] = (rows as any[])[m
+[32m+[m[32m    .map((r) => r._raw as QueueItemRaw)[m
+[32m+[m[32m    .filter((r) => !r.next_attempt_at || r.next_attempt_at <= now);[m
+[32m+[m[32m  return due;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32masync function markUploading(id: string): Promise<void> {[m
+[32m+[m[32m  const coll = database.collections.get('image_upload_queue' as any);[m
+[32m+[m[32m  const row = await (coll as any).find(id);[m
+[32m+[m[32m  await database.write(async () =>[m
+[32m+[m[32m    row.update((rec: any) => {[m
+[32m+[m[32m      rec.status = 'uploading';[m
+[32m+[m[32m      rec.updatedAt = new Date();[m
+[32m+[m[32m    })[m
+[32m+[m[32m  );[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32masync function markCompleted(id: string, remotePath: string): Promise<void> {[m
+[32m+[m[32m  const coll = database.collections.get('image_upload_queue' as any);[m
+[32m+[m[32m  const row = await (coll as any).find(id);[m
+[32m+[m[32m  await database.write(async () =>[m
+[32m+[m[32m    row.update((rec: any) => {[m
+[32m+[m[32m      rec.status = 'completed';[m
+[32m+[m[32m      rec.remotePath = remotePath;[m
+[32m+[m[32m      rec.updatedAt = new Date();[m
+[32m+[m[32m    })[m
+[32m+[m[32m  );[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32masync function markFailure([m
+[32m+[m[32m  id: string,[m
+[32m+[m[32m  attempt: number,[m
+[32m+[m[32m  err: unknown[m
+[32m+[m[32m): Promise<void> {[m
+[32m+[m[32m  const coll = database.collections.get('image_upload_queue' as any);[m
+[32m+[m[32m  const row = await (coll as any).find(id);[m
+[32m+[m[32m  const nextDelay = computeBackoffMs(attempt, 1000, 15 * 60 * 1000);[m
+[32m+[m[32m  const nextAt = Date.now() + nextDelay;[m
+[32m+[m[32m  await database.write(async () =>[m
+[32m+[m[32m    row.update((rec: any) => {[m
+[32m+[m[32m      rec.status = 'pending';[m
+[32m+[m[32m      rec.retryCount = attempt;[m
+[32m+[m[32m      rec.lastError = err instanceof Error ? err.message : String(err);[m
+[32m+[m[32m      rec.nextAttemptAt = nextAt;[m
