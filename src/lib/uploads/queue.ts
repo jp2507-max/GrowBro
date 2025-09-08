@@ -1,24 +1,24 @@
 import { Q } from '@nozbe/watermelondb';
 
+import { computeBackoffMs } from '@/lib/sync/backoff';
 import { canSyncLargeFiles } from '@/lib/sync/network-manager';
-import { computeBackoffMs } from '@/lib/sync-engine';
 import { uploadImageWithProgress } from '@/lib/uploads/image-upload';
 import { database } from '@/lib/watermelon';
 
 type QueueItemRaw = {
   id: string;
-  local_uri: string;
-  remote_path?: string | null;
-  task_id?: string | null;
-  plant_id?: string | null;
+  localUri: string;
+  remotePath?: string | null;
+  taskId?: string | null;
+  plantId?: string | null;
   filename?: string | null;
-  mime_type?: string | null;
+  mimeType?: string | null;
   status: 'pending' | 'uploading' | 'completed' | 'failed';
-  retry_count?: number | null;
-  last_error?: string | null;
-  next_attempt_at?: number | null; // epoch ms
-  created_at: number;
-  updated_at: number;
+  retryCount?: number | null;
+  lastError?: string | null;
+  nextAttemptAt?: number | null; // epoch ms
+  createdAt: number;
+  updatedAt: number;
 };
 
 function generateDeterministicFilename(params: {
@@ -119,7 +119,7 @@ async function fetchDueBatch(limit = 5): Promise<QueueItemRaw[]> {
   const now = Date.now();
   const due: QueueItemRaw[] = (rows as any[])
     .map((r) => r._raw as QueueItemRaw)
-    .filter((r) => !r.next_attempt_at || r.next_attempt_at <= now);
+    .filter((r) => !r.nextAttemptAt || r.nextAttemptAt <= now);
   return due;
 }
 
@@ -189,34 +189,34 @@ export async function processImageQueueOnce(
   for (const item of due) {
     try {
       // Check for missing or falsy plant_id before attempting upload
-      if (!item.plant_id) {
+      if (!item.plantId) {
         await markFailed(item.id, 'Missing or invalid plant_id');
         continue;
       }
 
       await markUploading(item.id);
       const { bucket, path } = await uploadImageWithProgress({
-        plantId: item.plant_id,
+        plantId: item.plantId,
         filename:
           item.filename ??
           generateDeterministicFilename({
-            localUri: item.local_uri,
-            plantId: item.plant_id,
-            taskId: item.task_id ?? undefined,
-            mimeType: item.mime_type ?? undefined,
+            localUri: item.localUri,
+            plantId: item.plantId,
+            taskId: item.taskId ?? undefined,
+            mimeType: item.mimeType ?? undefined,
           }),
-        localUri: item.local_uri,
-        mimeType: item.mime_type ?? 'image/jpeg',
+        localUri: item.localUri,
+        mimeType: item.mimeType ?? 'image/jpeg',
         onProgress: () => {},
       });
       // Backfill to task metadata if task present
-      if (item.task_id) {
-        await backfillTaskRemotePath(item.task_id, `${bucket}/${path}`);
+      if (item.taskId) {
+        await backfillTaskRemotePath(item.taskId, `${bucket}/${path}`);
       }
       await markCompleted(item.id, path);
       processed++;
     } catch (err) {
-      const attempt = (item.retry_count ?? 0) + 1;
+      const attempt = (item.retryCount ?? 0) + 1;
       await markFailure(item.id, attempt, err);
     }
   }
