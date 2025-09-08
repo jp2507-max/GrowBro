@@ -91,14 +91,40 @@ jest.mock('react-native-flash-message', () => ({
 
 // mock: react-native-mmkv to avoid native bindings in Jest
 jest.mock('react-native-mmkv', () => {
+  type StoredValue = {
+    type: 'string' | 'number' | 'boolean';
+    value: string | number | boolean;
+  };
+
   class MMKVMock {
-    private store: Map<string, string> = new Map();
+    private store: Map<string, StoredValue> = new Map();
+
     getString(key: string): string | null {
-      return this.store.has(key) ? (this.store.get(key) as string) : null;
+      const stored = this.store.get(key);
+      return stored && stored.type === 'string'
+        ? (stored.value as string)
+        : null;
     }
-    set(key: string, value: string): void {
-      this.store.set(key, value);
+
+    getNumber(key: string): number | null {
+      const stored = this.store.get(key);
+      return stored && stored.type === 'number'
+        ? (stored.value as number)
+        : null;
     }
+
+    getBoolean(key: string): boolean | null {
+      const stored = this.store.get(key);
+      return stored && stored.type === 'boolean'
+        ? (stored.value as boolean)
+        : null;
+    }
+
+    set(key: string, value: string | number | boolean): void {
+      const type = typeof value as 'string' | 'number' | 'boolean';
+      this.store.set(key, { type, value });
+    }
+
     delete(key: string): void {
       this.store.delete(key);
     }

@@ -93,14 +93,22 @@ export async function enqueueImage(params: {
       rec.mimeType = params.mimeType ?? 'image/jpeg';
       rec.status = 'pending';
       rec.lastError = null;
-      rec.createdAt = new Date();
-      rec.updatedAt = new Date();
+      rec.createdAt = Date.now();
+      rec.updatedAt = Date.now();
     })
   );
   return finalFilename;
 }
+// Fetch a batch of pending upload queue items that are due for processing
+// This function retrieves items with status 'pending' and either no next_attempt_at
+// or next_attempt_at <= current time, limited to the specified batch size
+//
+// TODO: Optimize by filtering at database level instead of fetching all rows
+// Suggested improvement: Use WatermelonDB Q.where() queries to filter status='pending'
+// and apply time-based conditions directly in the query before fetching
 async function fetchDueBatch(limit = 5): Promise<QueueItemRaw[]> {
   const coll = database.collections.get('image_upload_queue' as any);
+  // NOTE: Currently fetches all rows and filters in JS - inefficient for large queues
   const rows = await (coll as any).query().fetch();
   const now = Date.now();
   const due: QueueItemRaw[] = (rows as any[])
@@ -120,7 +128,7 @@ async function markUploading(id: string): Promise<void> {
   await database.write(async () =>
     row.update((rec: any) => {
       rec.status = 'uploading';
-      rec.updatedAt = new Date();
+      rec.updatedAt = Date.now();
     })
   );
 }
@@ -132,7 +140,7 @@ async function markCompleted(id: string, remotePath: string): Promise<void> {
     row.update((rec: any) => {
       rec.status = 'completed';
       rec.remotePath = remotePath;
-      rec.updatedAt = new Date();
+      rec.updatedAt = Date.now();
     })
   );
 }
@@ -152,7 +160,19 @@ async function markFailure(
       rec.retryCount = attempt;
       rec.lastError = err instanceof Error ? err.message : String(err);
       rec.nextAttemptAt = nextAt;
-      rec.updatedAt = new Date();
+      rec.updatedAt = Date.now();
+    })
+  );
+}
+
+async function markFailed(id: string, reason: string): Promise<void> {
+  const coll = database.collections.get('image_upload_queue' as any);
+  const row = await (coll as any).find(id);
+  await database.write(async () =>
+    row.update((rec: any) => {
+      rec.status = 'failed';
+      rec.lastError = reason;
+      rec.updatedAt = Date.now();
     })
   );
 }
@@ -167,9 +187,15 @@ export async function processImageQueueOnce(
   let processed = 0;
   for (const item of due) {
     try {
+      // Check for missing or falsy plant_id before attempting upload
+      if (!item.plant_id) {
+        await markFailed(item.id, 'Missing or invalid plant_id');
+        continue;
+      }
+
       await markUploading(item.id);
       const { bucket, path } = await uploadImageWithProgress({
-        plantId: item.plant_id ?? '',
+        plantId: item.plant_id,
         filename: item.filename ?? `img-${DateTime.now().toMillis()}.jpg`,
         localUri: item.local_uri,
         mimeType: item.mime_type ?? 'image/jpeg',
@@ -200,7 +226,7 @@ export async function backfillTaskRemotePath(
       row.update((rec: any) => {
         const meta = (rec.metadata ?? {}) as Record<string, unknown>;
         rec.metadata = { ...meta, imagePath: remotePath } as any;
-        rec.updatedAt = new Date();
+        rec.updatedAt = Date.now();
       })
     );
   } catch {

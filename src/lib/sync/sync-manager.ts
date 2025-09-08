@@ -34,6 +34,7 @@ let currentStatus: SyncStatus = 'idle';
 let lastSyncTime: number | null = getItem<number>(CHECKPOINT_KEY);
 let configured: SyncOptions | null = null;
 let inFlight = false;
+let pendingCheckpoint: number | null = null; // Stores timestamp from successful pull before local application
 
 export function configureSync(options: SyncOptions): void {
   configured = options;
@@ -49,6 +50,10 @@ export function getLastSyncTime(): Date | null {
 
 export async function hasPendingLocalChanges(): Promise<boolean> {
   return hasUnsyncedChanges({ database });
+}
+
+export function hasPendingCheckpoint(): boolean {
+  return pendingCheckpoint !== null;
 }
 
 function setStatus(status: SyncStatus): void {
@@ -87,9 +92,9 @@ async function pullChanges({
       changes: any;
       timestamp: number;
     };
-    // Persist checkpoint for UI/metrics immediately
-    await setItem(CHECKPOINT_KEY, timestamp);
-    lastSyncTime = timestamp;
+    // Store timestamp for checkpoint persistence after wmelonSynchronize succeeds
+    // This prevents race condition where checkpoint advances before local changes are applied
+    pendingCheckpoint = timestamp;
     return { changes, timestamp };
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
@@ -148,13 +153,20 @@ export async function synchronize(): Promise<SyncResult> {
       migrationsEnabledAtVersion: configured.migrationsEnabledAtVersion,
     } as any);
 
-    // Watermelon returns void; we persist checkpoint from database adapter via local storage
-    const newCheckpoint = getItem<number>(CHECKPOINT_KEY);
-    if (typeof newCheckpoint === 'number') lastSyncTime = newCheckpoint;
+    // Only persist checkpoint AFTER wmelonSynchronize succeeds to prevent race condition
+    // This ensures atomicity: either entire sync succeeds or checkpoint remains unchanged
+    if (pendingCheckpoint !== null) {
+      await setItem(CHECKPOINT_KEY, pendingCheckpoint);
+      lastSyncTime = pendingCheckpoint;
+      pendingCheckpoint = null; // Clear pending checkpoint
+    }
+
     setStatus('idle');
     inFlight = false;
     return { pushed: 0, applied: 0, serverTimestamp: lastSyncTime ?? null };
   } catch (err) {
+    // Clear pending checkpoint on failure to prevent stale data
+    pendingCheckpoint = null;
     setStatus('error');
     inFlight = false;
     throw err;
@@ -165,4 +177,5 @@ export async function synchronize(): Promise<SyncResult> {
 export async function setLastPulledAt(timestampMs: number): Promise<void> {
   await setItem(CHECKPOINT_KEY, timestampMs);
   lastSyncTime = timestampMs;
+  pendingCheckpoint = null; // Clear any pending checkpoint
 }
