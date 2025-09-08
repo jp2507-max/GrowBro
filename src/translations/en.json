@@ -11,15 +11,19 @@
     "yesterday": "Yesterday"
   },
   "common": {
+    "cancel": "Cancel",
     "ok": "OK"
   },
   "diagnostics": {
+    "avg_payload": "Avg payload — {{operation}}: {{bytes}} B",
     "checkpoint_age_ms": "Checkpoint age (ms)",
     "clear_logs": "Clear logs",
     "last_checkpoint_at": "Last checkpoint",
     "last_success_at": "Last success",
     "logs": "Logs",
     "metrics": "Metrics",
+    "p50_ms": "p50 (ms) — push: {{push}}, pull: {{pull}}, apply: {{apply}}",
+    "p95_ms": "p95 (ms) — push: {{push}}, pull: {{pull}}, apply: {{apply}}",
     "subtitle": "Metrics and recent sync logs",
     "sync_now": "Sync now",
     "title": "Sync Diagnostics"

@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const schema = appSchema({
-  version: 3,
+  version: 4,
   tables: [
     tableSchema({
       name: 'series',
@@ -77,10 +77,15 @@ export const schema = appSchema({
         { name: 'plant_id', type: 'string', isOptional: true },
         { name: 'filename', type: 'string', isOptional: true },
         { name: 'mime_type', type: 'string', isOptional: true },
-        { name: 'status', type: 'string' }, // pending | uploading | completed | failed
+        { name: 'status', type: 'string', isIndexed: true }, // pending | uploading | completed | failed
         { name: 'retry_count', type: 'number', isOptional: true },
         { name: 'last_error', type: 'string', isOptional: true },
-        { name: 'next_attempt_at', type: 'number', isOptional: true },
+        {
+          name: 'next_attempt_at',
+          type: 'number',
+          isOptional: true,
+          isIndexed: true,
+        },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
       ],

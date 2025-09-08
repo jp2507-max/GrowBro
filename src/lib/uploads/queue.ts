@@ -1,6 +1,5 @@
 import { DateTime } from 'luxon';
 
-import { supabase } from '@/lib/supabase';
 import { computeBackoffMs } from '@/lib/sync/backoff';
 import { canSyncLargeFiles } from '@/lib/sync/network-manager';
 import { uploadImageWithProgress } from '@/lib/uploads/image-upload';
@@ -22,31 +21,83 @@ type QueueItemRaw = {
   updated_at: number;
 };
 
+function generateDeterministicFilename(params: {
+  localUri: string;
+  plantId: string;
+  taskId?: string;
+  mimeType?: string;
+}): string {
+  // Create a simple hash of the localUri for stability
+  let hash = 0;
+  for (let i = 0; i < params.localUri.length; i++) {
+    const char = params.localUri.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  const uriHash = Math.abs(hash).toString(16).slice(0, 8);
+
+  // Use taskId or a fixed token
+  const taskToken = params.taskId ?? 'notask';
+
+  // Determine extension from mimeType or localUri
+  let extension = 'jpg'; // default
+  if (params.mimeType) {
+    const mimeToExt: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/gif': 'gif',
+      'image/webp': 'webp',
+      'image/heic': 'heic',
+      'image/heif': 'heif',
+    };
+    extension = mimeToExt[params.mimeType] ?? 'jpg';
+  } else if (params.localUri.includes('.')) {
+    // Extract extension from localUri as fallback
+    const uriParts = params.localUri.split('.');
+    if (uriParts.length > 1) {
+      extension = uriParts[uriParts.length - 1].toLowerCase();
+      // Remove query parameters if present
+      extension = extension.split('?')[0];
+    }
+  }
+
+  // Construct deterministic filename
+  return `${params.plantId}_${taskToken}_${uriHash}.${extension}`;
+}
+
 export async function enqueueImage(params: {
   localUri: string;
   plantId: string;
   taskId?: string;
-  filename: string;
+  filename?: string;
   mimeType?: string;
 }): Promise<string> {
+  // Generate deterministic filename if not provided
+  const finalFilename =
+    params.filename ??
+    generateDeterministicFilename({
+      localUri: params.localUri,
+      plantId: params.plantId,
+      taskId: params.taskId,
+      mimeType: params.mimeType,
+    });
+
   const coll = database.collections.get('image_upload_queue' as any);
-  const created = await database.write(async () =>
+  await database.write(async () =>
     (coll as any).create((rec: any) => {
       rec.localUri = params.localUri;
       rec.remotePath = null;
       rec.taskId = params.taskId ?? null;
       rec.plantId = params.plantId;
-      rec.filename = params.filename;
+      rec.filename = finalFilename;
       rec.mimeType = params.mimeType ?? 'image/jpeg';
       rec.status = 'pending';
-      rec.retryCount = 0;
       rec.lastError = null;
-      rec.nextAttemptAt = null;
       rec.createdAt = new Date();
       rec.updatedAt = new Date();
     })
   );
-  return created.id as string;
+  return finalFilename;
 }
 async function fetchDueBatch(limit = 5): Promise<QueueItemRaw[]> {
   const coll = database.collections.get('image_upload_queue' as any);
@@ -155,11 +206,9 @@ export async function backfillTaskRemotePath(
   } catch {
     // swallow if local task missing
   }
-  // Optionally also persist to server immediately (non-blocking)
-  try {
-    await supabase
-      .from('tasks')
-      .update({ metadata: { imagePath: remotePath } as any })
-      .eq('id', taskId);
-  } catch {}
+  // Note: Removed direct remote write to avoid clobbering existing metadata.
+  // The local metadata update above will be persisted via the existing sync/flush mechanism.
+  // If direct remote update is absolutely required in the future, implement a server-side
+  // JSONB merge operation (e.g., SQL UPDATE with jsonb_set or an RPC function) instead
+  // of replacing the entire metadata object.
 }

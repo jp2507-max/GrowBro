@@ -12,7 +12,9 @@ type Props = {
   className?: string;
 };
 
-export function ConnectivityBanner({ className }: Props): JSX.Element | null {
+export function ConnectivityBanner({
+  className,
+}: Props): React.ReactElement | null {
   const [state, setState] = React.useState<NetworkState | null>(null);
 
   React.useEffect(() => {

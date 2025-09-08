@@ -45,17 +45,20 @@ function deriveIsMetered(
   details?: NetInfoLikeDetails
 ): boolean {
   if (details?.isConnectionExpensive === true) return true;
-  return type === 'cellular';
+  if (type === 'cellular') return true;
+  if (type === 'unknown') return true; // Conservative default for unknown networks
+  return false;
 }
 
 function updateFromNetInfo(state: NetInfoLikeState): void {
   const type = deriveConnectionType(state?.type);
-  const isConnected = Boolean(state?.isConnected ?? type !== 'unknown');
+  const isConnected =
+    Boolean(state?.isConnected ?? false) && type !== 'unknown';
   const isInternetReachableRaw = state?.isInternetReachable;
   const isInternetReachable =
     isInternetReachableRaw === undefined || isInternetReachableRaw === null
-      ? type !== 'unknown'
-      : Boolean(isInternetReachableRaw);
+      ? false
+      : Boolean(isInternetReachableRaw) && type !== 'unknown';
   const isMetered = deriveIsMetered(state?.type, state?.details);
   cachedState = { isConnected, isInternetReachable, isMetered, type };
 }

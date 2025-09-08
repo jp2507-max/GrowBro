@@ -3,14 +3,20 @@ import { Alert } from 'react-native';
 
 import { ItemsContainer } from '@/components/settings/items-container';
 import { Button, Checkbox, Input, Text, View } from '@/components/ui';
-import { translate } from '@/lib';
+import { translate, type TxKeyPath } from '@/lib';
 import { setConstraints } from '@/lib/sync/background-sync';
 import { useSyncPrefs } from '@/lib/sync/preferences';
 import { database } from '@/lib/watermelon';
 
-export function SyncPreferences(): JSX.Element {
+export function SyncPreferences(): React.ReactElement {
+  const { hydrate, stalenessHours, setStalenessHours } = useSyncPrefs();
+
+  // Hydrate persisted preferences from MMKV storage on mount
+  React.useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
   useBindSyncConstraints();
-  const { stalenessHours, setStalenessHours } = useSyncPrefs();
   const onResetLocal = useResetLocal();
 
   return (
@@ -22,7 +28,15 @@ export function SyncPreferences(): JSX.Element {
             label={translate('settings.sync.staleness_hours')}
             keyboardType="number-pad"
             value={String(stalenessHours)}
-            onChangeText={(t) => setStalenessHours(Number(t))}
+            onChangeText={(t) => {
+              if (t.trim() === '') return;
+
+              const n = parseInt(t, 10);
+              if (Number.isNaN(n)) return;
+
+              const clamped = Math.max(0, Math.min(Math.floor(n), 168)); // 0-168 hours (1 week)
+              setStalenessHours(clamped);
+            }}
             testID="sync-staleness"
           />
         </View>
@@ -37,7 +51,7 @@ export function SyncPreferences(): JSX.Element {
   );
 }
 
-function PreferencesToggles(): JSX.Element {
+function PreferencesToggles(): React.ReactElement {
   const {
     autoSyncEnabled,
     backgroundSyncEnabled,
@@ -55,6 +69,7 @@ function PreferencesToggles(): JSX.Element {
           checked={autoSyncEnabled}
           onChange={(v) => setAutoSyncEnabled(v)}
           testID="sync-auto"
+          accessibilityLabel={translate('settings.sync.auto_sync')}
         />
       </PrefRow>
       <PrefRow labelTx="settings.sync.background">
@@ -62,6 +77,7 @@ function PreferencesToggles(): JSX.Element {
           checked={backgroundSyncEnabled}
           onChange={(v) => setBackgroundSyncEnabled(v)}
           testID="sync-bg"
+          accessibilityLabel={translate('settings.sync.background')}
         />
       </PrefRow>
       <PrefRow labelTx="settings.sync.wifi_only">
@@ -69,6 +85,7 @@ function PreferencesToggles(): JSX.Element {
           checked={requiresWifi}
           onChange={(v) => setRequiresWifi(v)}
           testID="sync-wifi"
+          accessibilityLabel={translate('settings.sync.wifi_only')}
         />
       </PrefRow>
       <PrefRow labelTx="settings.sync.charging_only">
@@ -76,6 +93,7 @@ function PreferencesToggles(): JSX.Element {
           checked={requiresCharging}
           onChange={(v) => setRequiresCharging(v)}
           testID="sync-charging"
+          accessibilityLabel={translate('settings.sync.charging_only')}
         />
       </PrefRow>
     </>
@@ -96,8 +114,8 @@ function useBindSyncConstraints(): void {
 function useResetLocal(): () => void {
   return React.useCallback(() => {
     Alert.alert(
-      translate('settings.reset_local_title'),
-      translate('settings.reset_local_body'),
+      translate('settings.sync.reset_local_title'),
+      translate('settings.sync.reset_local_body'),
       [
         {
           text: translate('common.ok'),
@@ -105,7 +123,6 @@ function useResetLocal(): () => void {
           onPress: async () => {
             try {
               await database.write(async () => {
-                // @ts-expect-error: Watermelon provides unsafeResetDatabase
                 await database.unsafeResetDatabase();
               });
             } catch (e) {
@@ -123,9 +140,9 @@ function PrefRow({
   labelTx,
   children,
 }: {
-  labelTx: string;
+  labelTx: TxKeyPath;
   children: React.ReactNode;
-}): JSX.Element {
+}): React.ReactElement {
   return (
     <View className="flex-row items-center justify-between py-1">
       <Text tx={labelTx} />
