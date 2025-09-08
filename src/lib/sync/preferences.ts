@@ -53,13 +53,13 @@ function sanitizeBoolean(value: any, defaultValue: boolean): boolean {
 
 function sanitizeStalenessHours(value: any, defaultValue: number): number {
   if (typeof value === 'number' && Number.isFinite(value)) {
-    // Clamp to reasonable bounds (1 hour to 1 week/168 hours) and round to integer
-    return Math.max(1, Math.min(168, Math.round(value)));
+    // Clamp to reasonable bounds (0 hours to 1 week/168 hours) and round to integer
+    return Math.max(0, Math.min(168, Math.round(value)));
   }
   if (typeof value === 'string') {
     const parsed = parseFloat(value);
     if (Number.isFinite(parsed)) {
-      return Math.max(1, Math.min(168, Math.round(parsed)));
+      return Math.max(0, Math.min(168, Math.round(parsed)));
     }
   }
   return defaultValue;
