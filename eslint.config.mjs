@@ -159,4 +159,11 @@ export default defineConfig([
       ...testingLibrary.configs.react.rules,
     },
   },
+  // Deno Edge Functions use jsr:/npm: specifiers that Node import resolver can't resolve
+  {
+    files: ['supabase/functions/**/*.{ts,tsx}'],
+    rules: {
+      'import/no-unresolved': 'off',
+    },
+  },
 ]);

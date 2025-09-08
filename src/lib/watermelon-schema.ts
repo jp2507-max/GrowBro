@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const schema = appSchema({
-  version: 1,
+  version: 4,
   tables: [
     tableSchema({
       name: 'series',
@@ -32,6 +32,7 @@ export const schema = appSchema({
         { name: 'status', type: 'string', isOptional: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
+        { name: 'deleted_at', type: 'number', isOptional: true },
       ],
     }),
     tableSchema({
@@ -63,6 +64,28 @@ export const schema = appSchema({
         { name: 'scheduled_for_utc', type: 'string' },
         { name: 'timezone', type: 'string' },
         { name: 'status', type: 'string' },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'image_upload_queue',
+      columns: [
+        { name: 'local_uri', type: 'string' },
+        { name: 'remote_path', type: 'string', isOptional: true },
+        { name: 'task_id', type: 'string', isOptional: true },
+        { name: 'plant_id', type: 'string', isOptional: true },
+        { name: 'filename', type: 'string', isOptional: true },
+        { name: 'mime_type', type: 'string', isOptional: true },
+        { name: 'status', type: 'string', isIndexed: true }, // pending | uploading | completed | failed
+        { name: 'retry_count', type: 'number', isOptional: true },
+        { name: 'last_error', type: 'string', isOptional: true },
+        {
+          name: 'next_attempt_at',
+          type: 'number',
+          isOptional: true,
+          isIndexed: true,
+        },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
       ],

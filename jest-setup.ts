@@ -1,13 +1,16 @@
 import '@testing-library/react-native/extend-expect';
 
-import React from 'react';
-import * as GestureHandler from 'react-native-gesture-handler/src/mocks';
-
 // react-hook form setup for testing
 // @ts-ignore
 global.window = {};
 // @ts-ignore
 global.window = global;
+
+// Type definitions for MMKV mock
+type StoredValue = {
+  type: 'string' | 'number' | 'boolean';
+  value: string | number | boolean;
+};
 
 // mock: async-storage
 jest.mock('@react-native-async-storage/async-storage', () => {
@@ -50,7 +53,7 @@ jest.mock('@nozbe/watermelondb', () => {
     return require('__mocks__/@nozbe/watermelondb');
   } catch {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require('@nozbe/watermelondb');
+    return require('__mocks__/@nozbe/watermelondb');
   }
 });
 
@@ -64,7 +67,10 @@ jest.mock('react-native-reanimated', () => {
 });
 
 // mock: react-native-gesture-handler to jest mocks
-jest.mock('react-native-gesture-handler', () => GestureHandler);
+jest.mock('react-native-gesture-handler', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('react-native-gesture-handler/src/mocks');
+});
 
 // mock: react-native-edge-to-edge SystemBars to prevent native behavior in tests
 jest.mock('react-native-edge-to-edge', () => ({
@@ -73,11 +79,9 @@ jest.mock('react-native-edge-to-edge', () => ({
 
 // mock: @shopify/flash-list with a minimal stub that preserves API shape
 jest.mock('@shopify/flash-list', () => {
-  const FlashList = React.forwardRef((_props: any, _ref: any) => {
-    // Minimal stub that forwards ref and accepts FlashList props
-    // Returns null to avoid rendering in tests while preserving API compatibility
-    return null;
-  });
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const React = require('react');
+  const FlashList = React.forwardRef((_props: any, _ref: any) => null);
   return { FlashList };
 });
 
@@ -89,4 +93,92 @@ jest.mock('@react-navigation/native', () => ({
 // mock: react-native-flash-message showMessage as no-op
 jest.mock('react-native-flash-message', () => ({
   showMessage: () => {},
+}));
+
+// mock: react-native-mmkv to avoid native bindings in Jest
+jest.mock('react-native-mmkv', () => {
+  class MMKVMock {
+    private store: Map<string, StoredValue> = new Map();
+
+    getString(key: string): string | null {
+      const stored = this.store.get(key);
+      return stored && stored.type === 'string'
+        ? (stored.value as string)
+        : null;
+    }
+
+    getNumber(key: string): number | null {
+      const stored = this.store.get(key);
+      return stored && stored.type === 'number'
+        ? (stored.value as number)
+        : null;
+    }
+
+    getBoolean(key: string): boolean | null {
+      const stored = this.store.get(key);
+      return stored && stored.type === 'boolean'
+        ? (stored.value as boolean)
+        : null;
+    }
+
+    set(key: string, value: string | number | boolean): void {
+      const type = typeof value as 'string' | 'number' | 'boolean';
+      this.store.set(key, { type, value });
+    }
+
+    delete(key: string): void {
+      this.store.delete(key);
+    }
+  }
+  return { MMKV: MMKVMock };
+});
+
+// Prefer the dedicated manual mock file for Watermelon sync (automock)
+jest.mock('@nozbe/watermelondb/sync');
+
+// mock: WatermelonDB decorators as no-op to avoid runtime decoration side effects
+jest.mock('@nozbe/watermelondb/decorators', () => {
+  const make = () => {
+    return (..._args: any[]) => undefined;
+  };
+  return { text: make, date: make, json: make };
+});
+
+// mock: @dev-plugins/react-query (ES module issue in Jest)
+jest.mock('@dev-plugins/react-query', () => ({
+  useReactQueryDevTools: () => null,
+}));
+
+// mock: expo background task & task manager (native modules not available in Jest)
+jest.mock('expo-task-manager', () => ({
+  defineTask: jest.fn(),
+  isTaskRegisteredAsync: jest.fn(async () => false),
+}));
+
+jest.mock('expo-background-task', () => ({
+  registerTaskAsync: jest.fn(async () => undefined),
+  unregisterTaskAsync: jest.fn(async () => undefined),
+  getStatusAsync: jest.fn(async () => 0), // BackgroundTaskStatus.Available
+  triggerTaskWorkerForTestingAsync: jest.fn(async () => undefined),
+  BackgroundTaskStatus: { Available: 0, Restricted: 1, Unavailable: 2 },
+  BackgroundTaskResult: { Success: 0, Failed: 1, Canceled: 2 },
+}));
+
+// mock: NetInfo to prevent internal native reachability errors in tests
+jest.mock('@react-native-community/netinfo', () => ({
+  fetch: jest.fn(async () => ({
+    type: 'wifi',
+    isConnected: true,
+    isInternetReachable: true,
+    details: { isConnectionExpensive: false },
+  })),
+  addEventListener: jest.fn((cb: any) => {
+    cb({
+      type: 'wifi',
+      isConnected: true,
+      isInternetReachable: true,
+      details: { isConnectionExpensive: false },
+    });
+    return () => {};
+  }),
 }));

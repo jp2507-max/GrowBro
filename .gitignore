@@ -22,6 +22,7 @@ expo-env.d.ts
 # Environment variables
 .env
 .env.development
+.env.production
 .env.local
 .env.staging.local
 .env.production.local

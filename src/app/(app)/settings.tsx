@@ -1,9 +1,12 @@
 import { Env } from '@env';
 import { useColorScheme } from 'nativewind';
+import React, { type ReactElement } from 'react';
 
+import { DevDiagnosticsItem } from '@/components/settings/dev-diagnostics-item';
 import { Item } from '@/components/settings/item';
 import { ItemsContainer } from '@/components/settings/items-container';
 import { LanguageItem } from '@/components/settings/language-item';
+import { SyncPreferences } from '@/components/settings/sync-preferences';
 import { ThemeItem } from '@/components/settings/theme-item';
 import {
   colors,
@@ -14,6 +17,28 @@ import {
 } from '@/components/ui';
 import { Github, Rate, Share, Support, Website } from '@/components/ui/icons';
 import { translate, useAuth } from '@/lib';
+
+function SupportLinks({ iconColor }: { iconColor: string }): ReactElement {
+  return (
+    <ItemsContainer title="settings.support_us">
+      <Item
+        text="settings.share"
+        icon={<Share color={iconColor} />}
+        onPress={() => {}}
+      />
+      <Item
+        text="settings.rate"
+        icon={<Rate color={iconColor} />}
+        onPress={() => {}}
+      />
+      <Item
+        text="settings.support"
+        icon={<Support color={iconColor} />}
+        onPress={() => {}}
+      />
+    </ItemsContainer>
+  );
+}
 
 export default function Settings() {
   const signOut = useAuth.use.signOut();
@@ -34,28 +59,14 @@ export default function Settings() {
             <ThemeItem />
           </ItemsContainer>
 
+          <SyncPreferences />
+
           <ItemsContainer title="settings.about">
             <Item text="settings.app_name" value={Env.NAME} />
             <Item text="settings.version" value={Env.VERSION} />
           </ItemsContainer>
 
-          <ItemsContainer title="settings.support_us">
-            <Item
-              text="settings.share"
-              icon={<Share color={iconColor} />}
-              onPress={() => {}}
-            />
-            <Item
-              text="settings.rate"
-              icon={<Rate color={iconColor} />}
-              onPress={() => {}}
-            />
-            <Item
-              text="settings.support"
-              icon={<Support color={iconColor} />}
-              onPress={() => {}}
-            />
-          </ItemsContainer>
+          <SupportLinks iconColor={iconColor} />
 
           <ItemsContainer title="settings.links">
             <Item text="settings.privacy" onPress={() => {}} />
@@ -77,6 +88,8 @@ export default function Settings() {
               <Item text="settings.logout" onPress={signOut} />
             </ItemsContainer>
           </View>
+
+          <DevDiagnosticsItem />
         </View>
       </ScrollView>
     </>

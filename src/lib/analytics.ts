@@ -65,6 +65,10 @@ export type AnalyticsEvents = {
     stage: 'push' | 'pull' | 'apply' | 'unknown';
     code?: string | number;
   };
+  sync_conflict: {
+    table: 'series' | 'tasks' | 'occurrence_overrides';
+    count: number;
+  };
   sync_checkpoint_age_ms: {
     ms: number;
   };
