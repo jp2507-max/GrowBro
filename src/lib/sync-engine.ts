@@ -1,6 +1,23 @@
+import { queryClient } from '@/api/common/api-provider';
 import { NoopAnalytics } from '@/lib/analytics';
 import { getItem, setItem } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
+import { computeBackoffMs } from '@/lib/sync/backoff';
+import {
+  buildConflict,
+  type Conflict,
+  createConflictResolver,
+} from '@/lib/sync/conflict-resolver';
+import {
+  logEvent,
+  recordDuration,
+  recordPayloadSize,
+} from '@/lib/sync/monitor';
+import {
+  categorizeSyncError,
+  SyncSchemaMismatchError,
+} from '@/lib/sync/sync-errors';
+import { getSyncState } from '@/lib/sync/sync-state';
 import { TaskNotificationService } from '@/lib/task-notifications';
 import { database } from '@/lib/watermelon';
 
@@ -66,6 +83,11 @@ function nowMs(): number {
   return Date.now();
 }
 
+// Exposed UI flags - backed by Zustand store
+export function isSyncInFlight(): boolean {
+  return getSyncState().syncInFlight;
+}
+
 function generateIdempotencyKey(): string {
   // Simple RFC4122-ish random; sufficient for client idempotency header
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -115,6 +137,9 @@ function _normalizeIncomingValue(_key: string, value: any): any {
     const d = new Date(value);
     if (!isNaN(d.getTime())) return d;
   }
+  // normalize server snake_case timestamps to camel where needed
+  if (_key === 'createdAt' && typeof value === 'number') return new Date(value);
+  if (_key === 'updatedAt' && typeof value === 'number') return new Date(value);
   return value;
 }
 
@@ -181,10 +206,12 @@ async function sendPushBatch(
   batch: PushRequest,
   token: string | null
 ): Promise<void> {
+  const _started = nowMs();
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
+    const body = JSON.stringify(batch);
     const res = await fetch(`${API_BASE}/sync/push`, {
       method: 'POST',
       headers: {
@@ -192,7 +219,7 @@ async function sendPushBatch(
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         'Idempotency-Key': generateIdempotencyKey(),
       },
-      body: JSON.stringify(batch),
+      body,
       signal: controller.signal,
     });
 
@@ -208,6 +235,11 @@ async function sendPushBatch(
       } catch {}
       throw new Error(`push failed: ${res.status}`);
     }
+    recordDuration('push', nowMs() - _started);
+    try {
+      recordPayloadSize('push', body.length);
+    } catch {}
+    logEvent({ stage: 'push', message: 'push batch ok' });
   } catch (error) {
     clearTimeout(timeoutId);
 
@@ -224,6 +256,12 @@ async function sendPushBatch(
     try {
       await NoopAnalytics.track('sync_error', { stage: 'push' });
     } catch {}
+    logEvent({
+      level: 'error',
+      stage: 'push',
+      message: 'push failed',
+      data: { error: String(error) },
+    });
     throw error;
   }
 }
@@ -283,6 +321,16 @@ async function collectLocalChanges(
   return changes;
 }
 
+/**
+ * Returns a count of locally pending changes (created+updated+deleted across all tables)
+ * since the last successful checkpoint. Used for UI badges and summaries.
+ */
+export async function getPendingChangesCount(): Promise<number> {
+  const lastPulledAt = getItem<number>(CHECKPOINT_KEY);
+  const changes = await collectLocalChanges(lastPulledAt ?? null);
+  return countChanges(changes);
+}
+
 class PushConflictError extends Error {
   constructor() {
     super('push conflict');
@@ -293,6 +341,7 @@ class PushConflictError extends Error {
 async function applyServerChanges(
   resp: SyncResponse
 ): Promise<{ appliedCount: number; changedTaskIds: string[] }> {
+  const _started = nowMs();
   const { changes } = resp;
   let appliedCount = 0;
   const changedIds: string[] = [];
@@ -350,6 +399,12 @@ async function applyServerChanges(
     );
   });
 
+  recordDuration('apply', nowMs() - _started);
+  logEvent({
+    stage: 'apply',
+    message: 'apply ok',
+    data: { applied: appliedCount },
+  });
   return { appliedCount, changedTaskIds: changedIds };
 }
 
@@ -423,7 +478,10 @@ async function handleUpdate(
   existing: any,
   payload: any
 ): Promise<void> {
+  const resolver = createConflictResolver();
   await existing.update((rec: any) => {
+    // Detect conflicts: if local is newer but server sends different values
+    const localSnapshot: Record<string, unknown> = { ...(rec as any) };
     applyPayloadToRecord(rec, payload);
     if (payload.updatedAt != null) {
       (rec as any).updatedAt = _normalizeIncomingValue(
@@ -431,7 +489,20 @@ async function handleUpdate(
         payload.updatedAt
       );
     }
+    // Needs review marking when server is newer (LWW on server)
     maybeMarkNeedsReview(table, rec, payload);
+
+    try {
+      const conflict: Conflict = buildConflict({
+        tableName: table,
+        recordId: (rec as any).id,
+        localRecord: localSnapshot,
+        remoteRecord: payload,
+      });
+      if (conflict.conflictFields.length > 0) {
+        resolver.logConflict(conflict);
+      }
+    } catch {}
   });
 }
 
@@ -519,18 +590,20 @@ async function pushChanges(lastPulledAt: number | null): Promise<number> {
 }
 
 async function pullChangesOnce(req: SyncRequest): Promise<SyncResponse> {
+  const _started = nowMs();
   const token = await getBearerToken();
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
+    const body = JSON.stringify(req);
     const res = await fetch(`${API_BASE}/sync/pull`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify(req),
+      body,
       signal: controller.signal,
     });
 
@@ -546,6 +619,15 @@ async function pullChangesOnce(req: SyncRequest): Promise<SyncResponse> {
       throw new Error(`pull failed: ${res.status}`);
     }
     const data = (await res.json()) as SyncResponse;
+    recordDuration('pull', nowMs() - _started);
+    try {
+      recordPayloadSize('pull', body.length);
+    } catch {}
+    logEvent({
+      stage: 'pull',
+      message: 'pull ok',
+      data: { hasMore: data.hasMore },
+    });
     return data;
   } catch (error) {
     clearTimeout(timeoutId);
@@ -563,6 +645,12 @@ async function pullChangesOnce(req: SyncRequest): Promise<SyncResponse> {
     try {
       await NoopAnalytics.track('sync_error', { stage: 'pull' });
     } catch {}
+    logEvent({
+      level: 'error',
+      stage: 'pull',
+      message: 'pull failed',
+      data: { error: String(error) },
+    });
     throw error;
   }
 }
@@ -615,6 +703,9 @@ async function pullAllChanges(lastPulledAt: number | null): Promise<{
     cursor,
   };
   let resp = await pullChangesOnce(initialReq);
+  if (resp.migrationRequired) {
+    throw new SyncSchemaMismatchError();
+  }
   serverTimestamp = resp.serverTimestamp;
   const { appliedCount, changedTaskIds: changed } =
     await applyServerChanges(resp);
@@ -637,6 +728,9 @@ async function pullAllChanges(lastPulledAt: number | null): Promise<{
       cursor,
     };
     resp = await pullChangesOnce(req);
+    if (resp.migrationRequired) {
+      throw new SyncSchemaMismatchError();
+    }
     serverTimestamp = resp.serverTimestamp;
     const { appliedCount: newApplied, changedTaskIds: newChanged } =
       await applyServerChanges(resp);
@@ -696,33 +790,50 @@ export async function synchronize(): Promise<SyncResult> {
   return { pushed, applied, serverTimestamp };
 }
 
-export function computeBackoffMs(
-  attempt: number,
-  baseMs: number = 1000,
-  maxMs: number = 60_000
-): number {
-  const expo = Math.min(maxMs, baseMs * Math.pow(2, Math.max(0, attempt)));
-  const jitter = Math.floor(Math.random() * Math.min(expo, 1000));
-  return expo + jitter;
-}
-
 export async function runSyncWithRetry(
   maxAttempts: number = 5
 ): Promise<SyncResult> {
-  let lastError: unknown = null;
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    try {
-      const result = await synchronize();
-      await setItem('sync.lastSuccessAt', nowMs());
-      return result;
-    } catch (err) {
-      lastError = err;
-      const delay = computeBackoffMs(attempt);
-      await setItem('sync.nextAttemptAt', nowMs() + delay);
-      await new Promise((r) => setTimeout(r, delay));
-    }
+  // Guard: return early if sync already in flight
+  if (isSyncInFlight()) {
+    throw new Error('sync already in flight');
   }
-  throw lastError instanceof Error ? lastError : new Error('sync failed');
+
+  let lastError: unknown = null;
+  getSyncState().setSyncInFlight(true);
+  try {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const result = await synchronize();
+        // Invalidate only relevant keys to avoid unnecessary refetches
+        try {
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+            queryClient.invalidateQueries({ queryKey: ['series'] }),
+            queryClient.invalidateQueries({
+              queryKey: ['occurrence_overrides'],
+            }),
+          ]);
+        } catch {}
+        await setItem('sync.lastSuccessAt', nowMs());
+        return result;
+      } catch (err) {
+        lastError = err;
+        const categorized = categorizeSyncError(err);
+
+        // Non-retryable errors: bail out immediately
+        if (!categorized.retryable) {
+          throw err;
+        }
+
+        const delay = computeBackoffMs(attempt);
+        await setItem('sync.nextAttemptAt', nowMs() + delay);
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error('sync failed');
+  } finally {
+    getSyncState().setSyncInFlight(false);
+  }
 }
 
 // Pure helper for tests

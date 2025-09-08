@@ -54,6 +54,19 @@ class DatabaseMock {
         fetch: jest.fn().mockResolvedValue([]),
       }),
     });
+
+    // Image upload queue collection mock
+    this.collections.set('image_upload_queue', {
+      create: jest.fn().mockResolvedValue({ id: 'mock-upload-id', _raw: {} }),
+      query: jest.fn().mockReturnValue({
+        fetch: jest.fn().mockResolvedValue([]),
+      }),
+      find: jest.fn().mockResolvedValue({
+        id: 'mock-upload-id',
+        _raw: {},
+        update: jest.fn().mockResolvedValue({}),
+      }),
+    });
   }
 
   write = jest
@@ -76,6 +89,9 @@ class DatabaseMock {
   });
 }
 
+// Minimal Model base class so modelClasses can extend it without side effects
+export class Model {}
+
 // Mock Q (Query) builder
 const Q = {
   where: jest.fn().mockReturnThis(),
@@ -94,6 +110,12 @@ const Q = {
   sanitizeLikeString: jest.fn().mockReturnValue(''),
 };
 
+// Schema/migrations helpers minimal mocks
+export const schemaMigrations = (_cfg: any) => ({ migrations: [] });
+export const addColumns = (_cfg: any) => ({ type: 'addColumns' });
+export const appSchema = (cfg: any) => cfg;
+export const tableSchema = (cfg: any) => cfg;
+
 // Mock SQLiteAdapter export
 export { default as SQLiteAdapter } from './adapters/sqlite';
 
@@ -108,4 +130,5 @@ export default {
   Database: DatabaseMock,
   Q,
   SQLiteAdapter: SQLiteAdapterMock,
+  Model,
 };

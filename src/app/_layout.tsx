@@ -14,12 +14,19 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { APIProvider } from '@/api';
-import { hydrateAuth, loadSelectedTheme, useIsFirstTime } from '@/lib';
+import {
+  hydrateAuth,
+  loadSelectedTheme,
+  useIsFirstTime,
+  useSyncPrefs,
+} from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
 import { Env } from '@/lib/env';
 import { registerNotificationMetrics } from '@/lib/notification-metrics';
 import { initializePrivacyConsent } from '@/lib/privacy-consent';
 import { beforeSendHook } from '@/lib/sentry-utils';
+import { registerBackgroundTask } from '@/lib/sync/background-sync';
+import { setupSyncTriggers } from '@/lib/sync/sync-triggers';
 import { TaskNotificationService } from '@/lib/task-notifications';
 import { useThemeConfig } from '@/lib/use-theme-config';
 
@@ -141,9 +148,15 @@ function getCurrentTimeZone(): string {
   return 'UTC';
 }
 
-function RootLayout(): React.JSX.Element {
+function RootLayout(): React.ReactElement {
   const [isFirstTime] = useIsFirstTime();
+  // Hydrate sync preferences once
+  const hydratePrefs = useSyncPrefs.use.hydrate();
   React.useEffect(() => {
+    // hydrate prefs at app start
+    try {
+      hydratePrefs?.();
+    } catch {}
     // Guard: avoid interrupting first-time onboarding flow
     const svc = new TaskNotificationService();
     if (!isFirstTime) {
@@ -164,7 +177,7 @@ function RootLayout(): React.JSX.Element {
     }, 60 * 1000); // check every minute
 
     return () => clearInterval(interval);
-  }, [isFirstTime]);
+  }, [isFirstTime, hydratePrefs]);
 
   React.useEffect(() => {
     const start = Date.now();
@@ -175,6 +188,11 @@ function RootLayout(): React.JSX.Element {
   }, []);
 
   React.useEffect(() => {
+    // Register background sync task (best-effort; OS schedules execution)
+    void registerBackgroundTask();
+    // Set up foreground/connectivity sync triggers
+    const dispose = setupSyncTriggers();
+
     const start = Date.now();
     const cleanup = registerNotificationMetrics();
     const coldStartTimer = setTimeout(() => {
@@ -185,6 +203,7 @@ function RootLayout(): React.JSX.Element {
     return () => {
       clearTimeout(coldStartTimer);
       cleanup();
+      dispose();
     };
   }, []);
 
@@ -205,7 +224,7 @@ interface ProvidersProps {
   children: React.ReactNode;
 }
 
-function Providers({ children }: ProvidersProps): React.JSX.Element {
+function Providers({ children }: ProvidersProps): React.ReactElement {
   const theme = useThemeConfig();
   return (
     <GestureHandlerRootView

@@ -11,7 +11,22 @@
     "yesterday": "Yesterday"
   },
   "common": {
+    "cancel": "Cancel",
     "ok": "OK"
+  },
+  "diagnostics": {
+    "avg_payload": "Avg payload — {{operation}}: {{bytes}} B",
+    "checkpoint_age_ms": "Checkpoint age (ms)",
+    "clear_logs": "Clear logs",
+    "last_checkpoint_at": "Last checkpoint",
+    "last_success_at": "Last success",
+    "logs": "Logs",
+    "metrics": "Metrics",
+    "p50_ms": "p50 (ms) — push: {{push}}, pull: {{pull}}, apply: {{apply}}",
+    "p95_ms": "p95 (ms) — push: {{push}}, pull: {{pull}}, apply: {{apply}}",
+    "subtitle": "Metrics and recent sync logs",
+    "sync_now": "Sync now",
+    "title": "Sync Diagnostics"
   },
   "onboarding": {
     "allow_button": "Allow notifications",
@@ -57,6 +72,17 @@
     "share": "Share",
     "support": "Support",
     "support_us": "Support Us",
+    "sync": {
+      "auto_sync": "Auto-sync (foreground/connectivity)",
+      "background": "Background sync",
+      "charging_only": "Charging only",
+      "reset_local": "Reset local cache",
+      "reset_local_body": "This permanently clears local database. Your cloud data remains intact.",
+      "reset_local_title": "Reset local cache?",
+      "staleness_hours": "Staleness threshold (hours)",
+      "title": "Sync",
+      "wifi_only": "Wi‑Fi only"
+    },
     "terms": "Terms of Service",
     "theme": {
       "dark": "Dark",
@@ -67,6 +93,10 @@
     "title": "Settings",
     "version": "Version",
     "website": "Website"
+  },
+  "sync": {
+    "last_sync_and_pending": "Last sync: {{time}}, {{count}} pending",
+    "offline_banner": "You're offline. Changes will sync when back online."
   },
   "welcome": "Welcome to GrowBro app site"
 }

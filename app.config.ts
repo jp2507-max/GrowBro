@@ -1,8 +1,13 @@
+// Load environment variables before any Env usage (Option A)
+// This ensures process.env is populated for zod validation in ./env during prebuild
+import 'dotenv/config';
+
+import { Env as ClientEnv } from '@env';
 import type { ConfigContext, ExpoConfig } from '@expo/config';
 import type { AppIconBadgeConfig } from 'app-icon-badge/types';
 
 import applePrivacyManifest from './apple-privacy-manifest.json';
-import { ClientEnv, Env } from './env';
+import { Env } from './env';
 
 const appIconBadgeConfig: AppIconBadgeConfig = {
   enabled: Env.APP_ENV !== 'production',
@@ -91,6 +96,10 @@ function createExpoConfig(config: Partial<ExpoConfig>): ExpoConfig {
           organization: process.env.SENTRY_ORG || 'canabro',
         },
       ],
+      // Background tasks (BGTaskScheduler on iOS, WorkManager on Android)
+      'expo-background-task',
+      // WatermelonDB config plugin to enable JSI adapter in Expo managed workflow
+      '@morrowdigital/watermelondb-expo-plugin',
     ],
     extra: {
       ...ClientEnv,

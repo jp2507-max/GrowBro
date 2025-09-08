@@ -6,6 +6,8 @@ export * from './privacy-consent';
 export * as rrule from './rrule';
 export * from './sentry-utils';
 export * from './supabase';
+export * from './sync/preferences';
+export * from './sync/storage-manager';
 export * from './sync-engine';
 export * from './task-manager';
 export * from './template-manager';

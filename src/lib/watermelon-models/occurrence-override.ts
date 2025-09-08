@@ -15,4 +15,5 @@ export class OccurrenceOverrideModel extends Model {
   @text('status') status?: OccurrenceOverrideStatus;
   @date('created_at') createdAt!: Date;
   @date('updated_at') updatedAt!: Date;
+  @date('deleted_at') deletedAt?: Date;
 }

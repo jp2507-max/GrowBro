@@ -21,7 +21,7 @@
 
 **Recommended Execution Order:** 1 → 4 → 2 → 3 → 11 → 8 → 6 → 7 → 5 → 13 → 10 → 12 → 14 → 15 → 9
 
-- [ ] 1. Set up WatermelonDB infrastructure and sync schema
+- [x] 1. Set up WatermelonDB infrastructure and sync schema
 
   - Create WatermelonDB database configuration with sync-enabled schema
   - Implement database models with sync metadata fields (created_at, updated_at, deleted_at)
@@ -31,7 +31,7 @@
   - Unit test: cold start + migration path
   - _Requirements: 1.1, 1.2, 8.1_
 
-- [ ] 2. Implement core sync manager with WatermelonDB protocol
+- [x] 2. Implement core sync manager with WatermelonDB protocol
 
   - Create SyncManager class implementing WatermelonDB's synchronize() interface
   - Implement pullChanges function with { lastPulledAt, schemaVersion, migration } → { changes, timestamp } contract
@@ -43,7 +43,7 @@
   - Simulate mid-air change (server newer) in tests → expect push abort
   - _Requirements: 2.1, 2.2, 3.1, 3.4_
 
-- [ ] 3. Create network connectivity manager
+- [x] 3. Create network connectivity manager
 
   - Implement NetworkManager using @react-native-community/netinfo
   - Add connectivity state detection (isOnline, isInternetReachable, isMetered)
@@ -57,7 +57,7 @@
   - Write unit tests for network state transitions and policies
   - _Requirements: 2.1, 4.1, 7.3_
 
-- [ ] 4. Build Supabase Edge Functions for sync endpoints
+- [x] 4. Build Supabase Edge Functions for sync endpoints
 
   - Create pull endpoint: start a database transaction and capture a single, stable transaction-bound `server_timestamp` at TX start. Use `transaction_timestamp()` (aka `now()` inside the transaction) to capture that value rather than `clock_timestamp()` so all reads within the transaction see the same timestamp. Example (inside your transaction):
 
@@ -557,7 +557,7 @@ Testing guidance:
 - The DO-blocks raise exceptions on assertion failures so CI will fail on regressions.
 - Integrate the function/trigger creation into your regular migrations (use `CREATE OR REPLACE FUNCTION` + `DROP TRIGGER IF EXISTS`/`CREATE TRIGGER`) to make deployments idempotent.
 
-- [ ] 5. Implement error handling and retry logic
+- [x] 5. Implement error handling and retry logic
 
   - Create SyncError classification system with retryable error types
   - Implement exponential backoff with jitter for network failures (default backoff cap ~15 min)
@@ -567,7 +567,7 @@ Testing guidance:
   - Write comprehensive error handling tests with various failure scenarios
   - _Requirements: 2.5, 7.1, 7.2, 7.4_
 
-- [ ] 6. Create storage manager for local data optimization
+- [x] 6. Create storage manager for local data optimization
 
   - Implement StorageManager with documentDirectory/cacheDirectory separation
   - Add LRU cache management with configurable size limits (400 MB default) - size caps and LRU for cache only
@@ -579,7 +579,7 @@ Testing guidance:
   - Write tests for storage policies and cleanup algorithms
   - _Requirements: 5.1, 5.2, 5.4, 5.5_
 
-- [ ] 7. Build image upload queue system
+- [x] 7. Build image upload queue system
 
   - Create separate image upload queue (not part of WatermelonDB sync)
   - Implement image upload with retry logic and progress tracking
@@ -589,7 +589,7 @@ Testing guidance:
   - Write tests for image upload queue and backfill operations
   - _Requirements: 3.2, 3.3, 5.1, 7.3_
 
-- [ ] 8. Implement background sync with expo-background-task + expo-task-manager
+- [x] 8. Implement background sync with expo-background-task + expo-task-manager
 
   - Create BackgroundSyncService using `expo-background-task` to schedule opportunistic periodic work and use `expo-task-manager` (TaskManager.defineTask / TaskManager.registerTask) to define the task handlers. Expo SDK 53+ maps scheduling to platform-native schedulers: BGTaskScheduler on iOS and WorkManager on Android.
   - Replace prior references to `expo-background-fetch` with guidance to use the combination of `expo-background-task` (scheduling) and `expo-task-manager` (task handlers). On iOS, scheduled work is subject to BGTaskScheduler policies and system budget; on Android, WorkManager underpins scheduling but the Expo JS API exposes limited configuration.
@@ -601,7 +601,7 @@ Testing guidance:
   - Write tests for background sync behavior and constraint enforcement (mock BGTaskScheduler/WorkManager behaviors where possible)
   - _Requirements: 2.1, 2.6, 7.4_
 
-- [ ] 9. Create conflict resolution system
+- [x] 9. Create conflict resolution system
 
   - Keep LWW on server (by updated_at) as default; client only flags needs_review and re-tries after pull
   - Add client-side conflict detection and needs_review flagging
@@ -611,7 +611,7 @@ Testing guidance:
   - Add conflict resolution testing with multi-device scenarios
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [ ] 10. Build sync monitoring and debugging tools
+- [x] 10. Build sync monitoring and debugging tools
 
   - Use WatermelonDB's SyncLogger for comprehensive sync logging
   - Create in-app "Sync Diagnostics" screen (hidden behind dev flag)
@@ -622,7 +622,7 @@ Testing guidance:
   - Write monitoring tests and performance benchmarks
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-- [ ] 11. Implement sync UI indicators and user feedback
+- [x] 11. Implement sync UI indicators and user feedback
 
   - Create connectivity status indicators using NetInfo state
   - Add sync progress indicators with "Last sync: hh:mm, N pending" display from hasUnsyncedChanges()
@@ -632,7 +632,7 @@ Testing guidance:
   - Write UI component tests for sync indicators and user feedback
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 12. Create comprehensive sync testing suite
+- [x] 12. Create comprehensive sync testing suite
 
   - Write end-to-end sync tests with real data scenarios
   - Add airplane-mode E2E and multi-device conflict tests
@@ -643,7 +643,7 @@ Testing guidance:
   - Write automated CI/CD integration tests for sync functionality
   - _Requirements: 1.5, 2.2, 6.1, 7.5, 8.5_
 
-- [ ] 13. Optimize sync performance and implement incremental strategies
+- [x] 13. Optimize sync performance and implement incremental strategies
 
   - Add incremental sync with cursor/pagination support for large datasets (server supports cursor/pagination)
   - Implement data prioritization (tasks due ≤ 24h, assessment queue ahead of community cache)
@@ -653,7 +653,7 @@ Testing guidance:
   - Write performance tests and optimization validation
   - _Requirements: 7.1, 7.2, 7.5, 8.3_
 
-- [ ] 14. Integrate sync system with existing app architecture
+- [x] 14. Integrate sync system with existing app architecture
 
   - Make WatermelonDB the source of truth for reads; React Query drives from local DB and invalidates after sync
   - Integrate WatermelonDB with existing data models and API layer
@@ -663,7 +663,7 @@ Testing guidance:
   - Write integration tests for sync system with existing app features
   - _Requirements: 1.1, 1.3, 2.1, 3.1, 3.4_
 
-- [ ] 15. Implement sync configuration and user preferences
+- [x] 15. Implement sync configuration and user preferences
   - Create sync settings UI for user-configurable options
   - Add "Wi-Fi only", "Charging only", "Background sync on/off" preferences
   - Implement data staleness threshold configuration
