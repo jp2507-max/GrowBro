@@ -1,3 +1,5 @@
+import { Q } from '@nozbe/watermelondb';
+
 import { computeBackoffMs } from '@/lib/sync/backoff';
 import { canSyncLargeFiles } from '@/lib/sync/network-manager';
 import { uploadImageWithProgress } from '@/lib/uploads/image-upload';
@@ -107,17 +109,17 @@ export async function enqueueImage(params: {
 // and apply time-based conditions directly in the query before fetching
 async function fetchDueBatch(limit = 5): Promise<QueueItemRaw[]> {
   const coll = database.collections.get('image_upload_queue' as any);
-  // NOTE: Currently fetches all rows and filters in JS - inefficient for large queues
-  const rows = await (coll as any).query().fetch();
+  const rows = await (coll as any)
+    .query(
+      Q.where('status', 'pending'),
+      Q.sortBy('next_attempt_at', 'asc'),
+      Q.take(limit)
+    )
+    .fetch();
   const now = Date.now();
   const due: QueueItemRaw[] = (rows as any[])
     .map((r) => r._raw as QueueItemRaw)
-    .filter(
-      (r) =>
-        r.status === 'pending' &&
-        (!r.next_attempt_at || r.next_attempt_at <= now)
-    )
-    .slice(0, limit);
+    .filter((r) => !r.next_attempt_at || r.next_attempt_at <= now);
   return due;
 }
 
