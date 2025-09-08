@@ -1,5 +1,3 @@
-import { DateTime } from 'luxon';
-
 import { computeBackoffMs } from '@/lib/sync/backoff';
 import { canSyncLargeFiles } from '@/lib/sync/network-manager';
 import { uploadImageWithProgress } from '@/lib/uploads/image-upload';
@@ -32,7 +30,7 @@ function generateDeterministicFilename(params: {
   for (let i = 0; i < params.localUri.length; i++) {
     const char = params.localUri.charCodeAt(i);
     hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32-bit integer
+    hash |= 0; // Convert to 32-bit integer
   }
   const uriHash = Math.abs(hash).toString(16).slice(0, 8);
 
@@ -44,6 +42,7 @@ function generateDeterministicFilename(params: {
   if (params.mimeType) {
     const mimeToExt: Record<string, string> = {
       'image/jpeg': 'jpg',
+      'image/jpg': 'jpg',
       'image/png': 'png',
       'image/gif': 'gif',
       'image/webp': 'webp',
@@ -196,7 +195,14 @@ export async function processImageQueueOnce(
       await markUploading(item.id);
       const { bucket, path } = await uploadImageWithProgress({
         plantId: item.plant_id,
-        filename: item.filename ?? `img-${DateTime.now().toMillis()}.jpg`,
+        filename:
+          item.filename ??
+          generateDeterministicFilename({
+            localUri: item.local_uri,
+            plantId: item.plant_id,
+            taskId: item.task_id ?? undefined,
+            mimeType: item.mime_type ?? undefined,
+          }),
         localUri: item.local_uri,
         mimeType: item.mime_type ?? 'image/jpeg',
         onProgress: () => {},

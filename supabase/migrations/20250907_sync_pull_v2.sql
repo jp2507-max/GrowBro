@@ -97,23 +97,24 @@ BEGIN
   )
   SELECT
     COALESCE(jsonb_agg(jsonb_build_object(
-      'id', id,
-      'series_id', series_id,
-      'title', title,
-      'description', description,
-      'due_at_local', to_char(due_at_local, 'YYYY-MM-DD"T"HH24:MI:SS'),
-      'due_at_utc', to_char(due_at_utc AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
-      'timezone', timezone,
-      'reminder_at_local', CASE WHEN reminder_at_local IS NULL THEN NULL ELSE to_char(reminder_at_local, 'YYYY-MM-DD"T"HH24:MI:SS') END,
-      'reminder_at_utc', CASE WHEN reminder_at_utc IS NULL THEN NULL ELSE to_char(reminder_at_utc AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') END,
-      'plant_id', plant_id,
-      'status', status,
-      'completed_at', CASE WHEN completed_at IS NULL THEN NULL ELSE to_char(completed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') END,
-      'metadata', COALESCE(metadata, '{}'::jsonb),
-      'createdAt', floor(extract(epoch FROM created_at) * 1000),
-      'updatedAt', floor(extract(epoch FROM updated_at) * 1000)
-    )), '[]'::jsonb) AS rows,
-    EXISTS(SELECT 1 FROM task_candidates OFFSET _limit) AS more,
+      'id', task_page.id,
+      'series_id', task_page.series_id,
+      'title', task_page.title,
+      'description', task_page.description,
+      'due_at_local', to_char(task_page.due_at_local, 'YYYY-MM-DD"T"HH24:MI:SS'),
+      'due_at_utc', to_char(task_page.due_at_utc AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+      'timezone', task_page.timezone,
+      'reminder_at_local', CASE WHEN task_page.reminder_at_local IS NULL THEN NULL ELSE to_char(task_page.reminder_at_local, 'YYYY-MM-DD"T"HH24:MI:SS') END,
+      'reminder_at_utc', CASE WHEN task_page.reminder_at_utc IS NULL THEN NULL ELSE to_char(task_page.reminder_at_utc AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') END,
+      'plant_id', task_page.plant_id,
+      'status', task_page.status,
+      'completed_at', CASE WHEN task_page.completed_at IS NULL THEN NULL ELSE to_char(task_page.completed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') END,
+      'metadata', COALESCE(task_page.metadata, '{}'::jsonb),
+      'createdAt', floor(extract(epoch FROM task_page.created_at) * 1000),
+      'updatedAt', floor(extract(epoch FROM task_page.updated_at) * 1000)
+    ) ORDER BY task_page.updated_at DESC, task_page.id DESC), '[]'::jsonb) AS rows,
+    EXISTS(SELECT 1 FROM task_candidates OFFSET _limit) AS more
+  FROM task_page
     (SELECT updated_at FROM task_page ORDER BY updated_at, id DESC LIMIT 1) AS last_ts,
     (SELECT id FROM task_page ORDER BY updated_at, id DESC LIMIT 1) AS last_id
   INTO tasks_active_rows, has_more_active, tasks_active_cursor_ts, tasks_active_cursor_id;
@@ -133,16 +134,17 @@ BEGIN
     ORDER BY t.deleted_at, t.id
     LIMIT _limit + 1
   ), tomb_page AS (
-    SELECT * FROM tomb_candidates ORDER BY deleted_at, id LIMIT _limit
+    SELECT * FROM tomb_candidates ORDER BY deleted_at DESC, id DESC LIMIT _limit
   )
   SELECT
     COALESCE(jsonb_agg(jsonb_build_object(
       'id', id,
-      'deleted_at', floor(extract(epoch FROM deleted_at) * 1000)
-    )), '[]'::jsonb) AS rows,
-    EXISTS(SELECT 1 FROM tomb_candidates OFFSET _limit) AS more,
-    (SELECT deleted_at FROM tomb_page ORDER BY deleted_at, id DESC LIMIT 1) AS last_ts,
-    (SELECT id FROM tomb_page ORDER BY deleted_at, id DESC LIMIT 1) AS last_id
+      'deleted_at', (floor(extract(epoch FROM deleted_at) * 1000))::bigint
+    ) ORDER BY deleted_at DESC, id DESC), '[]'::jsonb) AS rows,
+    EXISTS(SELECT 1 FROM tomb_page OFFSET _limit) AS more,
+    (SELECT (floor(extract(epoch FROM deleted_at) * 1000))::bigint FROM tomb_page ORDER BY deleted_at DESC, id DESC LIMIT 1) AS last_ts,
+    (SELECT id FROM tomb_page ORDER BY deleted_at DESC, id DESC LIMIT 1) AS last_id
+  FROM tomb_page
   INTO tasks_deleted_rows, has_more_tomb, tasks_tomb_cursor_ts, tasks_tomb_cursor_id;
 
   has_more := has_more_active OR has_more_tomb;
