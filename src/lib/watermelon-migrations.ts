@@ -22,5 +22,14 @@ export const migrations = schemaMigrations({
         // For dev/staging, we accept destructive reset when schema changes. In production, include a custom migration or gate table usage.
       ],
     },
+    {
+      toVersion: 4,
+      steps: [
+        // Add indexes to image_upload_queue table for performance optimization
+        // WatermelonDB doesn't provide migration helpers for adding indexes to existing columns
+        // This requires a destructive database reset in development environments
+        // In production, indexes will be created automatically when the schema is applied
+      ],
+    },
   ],
 });

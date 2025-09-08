@@ -184,7 +184,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.apply_sync_push(
   last_pulled_at_ms bigint,
   changes jsonb,
-  idempotency_key text
+  p_idempotency_key text
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -197,7 +197,7 @@ DECLARE
 BEGIN
   -- Idempotency insert or fetch existing
   INSERT INTO public.sync_idempotency (user_id, idempotency_key)
-  VALUES (COALESCE(auth.uid()::uuid, '00000000-0000-0000-0000-000000000000'::uuid), idempotency_key)
+  VALUES (COALESCE(auth.uid()::uuid, '00000000-0000-0000-0000-000000000000'::uuid), p_idempotency_key)
   ON CONFLICT DO NOTHING
   RETURNING id INTO inserted_id;
 
@@ -205,7 +205,7 @@ BEGIN
     -- Existing key, return stored response
     RETURN COALESCE((SELECT response_payload FROM public.sync_idempotency
                      WHERE user_id = COALESCE(auth.uid()::uuid, '00000000-0000-0000-0000-000000000000'::uuid)
-                       AND idempotency_key = idempotency_key), jsonb_build_object('applied', true));
+                       AND idempotency_key = p_idempotency_key), jsonb_build_object('applied', true));
   END IF;
 
   -- Pre-check conflicts for updated + deleted across tables

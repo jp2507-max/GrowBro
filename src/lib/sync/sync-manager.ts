@@ -19,6 +19,7 @@ export type SyncOptions = {
   syncOnAppStart: boolean;
   syncOnForeground: boolean;
   migrationsEnabledAtVersion?: number;
+  timeoutMs?: number;
 };
 
 export type SyncResult = {
@@ -54,11 +55,83 @@ function setStatus(status: SyncStatus): void {
   currentStatus = status;
 }
 
-// Reserved for future use when exposing schema-aware UI; intentionally unused here
-// function _getSchemaVersion(): number {
-//   const v = getItem<number>('sync.schemaVersion');
-//   return typeof v === 'number' ? v : 0;
-// }
+async function pullChanges({
+  lastPulledAt,
+  schemaVersion,
+  migration,
+}: {
+  lastPulledAt: number | null;
+  schemaVersion: number;
+  migration: any;
+}) {
+  if (!configured) throw new Error('Sync not configured');
+
+  const url = `${configured.pullEndpoint}`;
+  const controller = new AbortController();
+  const timeoutMs = configured.timeoutMs ?? 30000; // Default 30s timeout
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lastPulledAt,
+        schemaVersion,
+        migration,
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`pull failed: ${res.status}`);
+    const { changes, timestamp } = (await res.json()) as {
+      changes: any;
+      timestamp: number;
+    };
+    // Persist checkpoint for UI/metrics immediately
+    await setItem(CHECKPOINT_KEY, timestamp);
+    lastSyncTime = timestamp;
+    return { changes, timestamp };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Pull request timed out after ${timeoutMs}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function pushChanges({
+  changes,
+  lastPulledAt,
+}: {
+  changes: any;
+  lastPulledAt: number | null;
+}) {
+  if (!configured) throw new Error('Sync not configured');
+
+  const url = `${configured.pushEndpoint}`;
+  const controller = new AbortController();
+  const timeoutMs = configured.timeoutMs ?? 30000; // Default 30s timeout
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ changes, lastPulledAt }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`push failed: ${res.status}`);
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Push request timed out after ${timeoutMs}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 export async function synchronize(): Promise<SyncResult> {
   if (!configured) throw new Error('Sync not configured');
@@ -70,51 +143,8 @@ export async function synchronize(): Promise<SyncResult> {
   try {
     await wmelonSynchronize({
       database,
-      pullChanges: async ({
-        lastPulledAt,
-        schemaVersion,
-        migration,
-      }: {
-        lastPulledAt: number | null;
-        schemaVersion: number;
-        migration: any;
-      }) => {
-        // The app server must implement the windowing contract described in specs
-        const url = `${configured!.pullEndpoint}`;
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lastPulledAt,
-            schemaVersion,
-            migration,
-          }),
-        });
-        if (!res.ok) throw new Error(`pull failed: ${res.status}`);
-        const { changes, timestamp } = (await res.json()) as {
-          changes: any;
-          timestamp: number;
-        };
-        // Persist checkpoint for UI/metrics immediately
-        await setItem(CHECKPOINT_KEY, timestamp);
-        lastSyncTime = timestamp;
-        return { changes, timestamp };
-      },
-      pushChanges: async ({
-        changes,
-        lastPulledAt,
-      }: {
-        changes: any;
-        lastPulledAt: number | null;
-      }) => {
-        const url = `${configured!.pushEndpoint}`;
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ changes, lastPulledAt }),
-        });
-        if (!res.ok) throw new Error(`push failed: ${res.status}`);
-      },
+      pullChanges,
+      pushChanges,
       migrationsEnabledAtVersion: configured.migrationsEnabledAtVersion,
     } as any);
 

@@ -5,7 +5,7 @@ import { ItemsContainer } from '@/components/settings/items-container';
 import { Text } from '@/components/ui';
 import { translate } from '@/lib';
 
-export function DevDiagnosticsItem(): JSX.Element | null {
+export function DevDiagnosticsItem(): React.ReactElement | null {
   if (!__DEV__) return null;
   return (
     <ItemsContainer title="settings.more">

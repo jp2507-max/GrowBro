@@ -17,7 +17,7 @@ function formatTime(ts: number | null): string {
   return `${hh}:${mm}`;
 }
 
-export function SyncStatus({ className }: Props): JSX.Element | null {
+export function SyncStatus({ className }: Props): React.ReactElement | null {
   const [pendingCount, setPendingCount] = React.useState<number>(0);
   const [inFlight, setInFlight] = React.useState<boolean>(false);
   const [lastSyncMs, setLastSyncMs] = React.useState<number | null>(

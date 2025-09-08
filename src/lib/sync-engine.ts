@@ -17,6 +17,7 @@ import {
   categorizeSyncError,
   SyncSchemaMismatchError,
 } from '@/lib/sync/sync-errors';
+import { getSyncState } from '@/lib/sync/sync-state';
 import { TaskNotificationService } from '@/lib/task-notifications';
 import { database } from '@/lib/watermelon';
 
@@ -82,11 +83,9 @@ function nowMs(): number {
   return Date.now();
 }
 
-// Exposed UI flags
-let _syncInFlight = false;
-
+// Exposed UI flags - backed by Zustand store
 export function isSyncInFlight(): boolean {
-  return _syncInFlight;
+  return getSyncState().syncInFlight;
 }
 
 function generateIdempotencyKey(): string {
@@ -791,13 +790,16 @@ export async function synchronize(): Promise<SyncResult> {
   return { pushed, applied, serverTimestamp };
 }
 
-// computeBackoffMs moved to '@/lib/sync/backoff'
-
 export async function runSyncWithRetry(
   maxAttempts: number = 5
 ): Promise<SyncResult> {
+  // Guard: return early if sync already in flight
+  if (isSyncInFlight()) {
+    throw new Error('sync already in flight');
+  }
+
   let lastError: unknown = null;
-  _syncInFlight = true;
+  getSyncState().setSyncInFlight(true);
   try {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
@@ -830,7 +832,7 @@ export async function runSyncWithRetry(
     }
     throw lastError instanceof Error ? lastError : new Error('sync failed');
   } finally {
-    _syncInFlight = false;
+    getSyncState().setSyncInFlight(false);
   }
 }
 

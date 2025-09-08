@@ -148,7 +148,7 @@ function getCurrentTimeZone(): string {
   return 'UTC';
 }
 
-function RootLayout(): React.JSX.Element {
+function RootLayout(): React.ReactElement {
   const [isFirstTime] = useIsFirstTime();
   // Hydrate sync preferences once
   const hydratePrefs = useSyncPrefs.use.hydrate();
@@ -177,7 +177,7 @@ function RootLayout(): React.JSX.Element {
     }, 60 * 1000); // check every minute
 
     return () => clearInterval(interval);
-  }, [isFirstTime]);
+  }, [isFirstTime, hydratePrefs]);
 
   React.useEffect(() => {
     const start = Date.now();
@@ -224,7 +224,7 @@ interface ProvidersProps {
   children: React.ReactNode;
 }
 
-function Providers({ children }: ProvidersProps): React.JSX.Element {
+function Providers({ children }: ProvidersProps): React.ReactElement {
   const theme = useThemeConfig();
   return (
     <GestureHandlerRootView

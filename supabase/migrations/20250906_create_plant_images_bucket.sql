@@ -6,12 +6,12 @@ values ('plant-images', 'plant-images', false)
 on conflict (id) do nothing;
 
 -- 2) Policies: drop if exist then recreate to keep migration idempotent
-drop policy if exists "Allow authenticated users to read own images" on storage.objects;
-drop policy if exists "Allow authenticated users to upload to their folder" on storage.objects;
-drop policy if exists "Allow authenticated users to delete own images" on storage.objects;
+drop policy if exists "plant-images: read own images" on storage.objects;
+drop policy if exists "plant-images: upload to own folder" on storage.objects;
+drop policy if exists "plant-images: delete own images" on storage.objects;
 
 -- Read: only objects in plant-images bucket where first folder equals auth.uid()
-create policy "Allow authenticated users to read own images"
+create policy "plant-images: read own images"
   on storage.objects for select
   using (
     bucket_id = 'plant-images'
@@ -20,7 +20,7 @@ create policy "Allow authenticated users to read own images"
   );
 
 -- Insert: allow only into own folder
-create policy "Allow authenticated users to upload to their folder"
+create policy "plant-images: upload to own folder"
   on storage.objects for insert
   with check (
     bucket_id = 'plant-images'
@@ -29,7 +29,7 @@ create policy "Allow authenticated users to upload to their folder"
   );
 
 -- Delete: allow only own objects
-create policy "Allow authenticated users to delete own images"
+create policy "plant-images: delete own images"
   on storage.objects for delete
   using (
     bucket_id = 'plant-images'

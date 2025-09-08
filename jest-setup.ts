@@ -117,6 +117,11 @@ jest.mock('@nozbe/watermelondb/decorators', () => {
   return { text: make, date: make, json: make };
 });
 
+// mock: @dev-plugins/react-query (ES module issue in Jest)
+jest.mock('@dev-plugins/react-query', () => ({
+  useReactQueryDevTools: () => null,
+}));
+
 // mock: expo background task & task manager (native modules not available in Jest)
 jest.mock('expo-task-manager', () => ({
   defineTask: jest.fn(),

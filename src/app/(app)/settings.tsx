@@ -1,5 +1,6 @@
 import { Env } from '@env';
 import { useColorScheme } from 'nativewind';
+import React, { type ReactElement } from 'react';
 
 import { DevDiagnosticsItem } from '@/components/settings/dev-diagnostics-item';
 import { Item } from '@/components/settings/item';
@@ -17,7 +18,7 @@ import {
 import { Github, Rate, Share, Support, Website } from '@/components/ui/icons';
 import { translate, useAuth } from '@/lib';
 
-function SupportLinks({ iconColor }: { iconColor: string }): JSX.Element {
+function SupportLinks({ iconColor }: { iconColor: string }): ReactElement {
   return (
     <ItemsContainer title="settings.support_us">
       <Item

@@ -33,7 +33,7 @@ DECLARE
   has_more_tomb boolean := false;
   has_more boolean := false;
 
-  _limit integer := GREATEST(1, LEAST(page_size, 5000));
+  _limit integer := GREATEST(1, LEAST(COALESCE(page_size, 1), 5000));
 BEGIN
   -- Determine server_ts: reuse from cursor if provided, else bind to TX start
   IF cursor IS NULL OR NOT (cursor ? 'server_ts_ms') THEN
@@ -41,7 +41,7 @@ BEGIN
   ELSE
     server_ts := to_timestamp((cursor->>'server_ts_ms')::bigint / 1000.0);
   END IF;
-  server_ms := floor(extract(epoch FROM server_ts) * 1000);
+  server_ms := (floor(extract(epoch FROM server_ts) * 1000))::bigint;
 
   -- Parse task cursors when provided
   IF cursor ? 'tasks' THEN

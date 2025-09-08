@@ -38,8 +38,8 @@ async function shouldExecuteNow(): Promise<boolean> {
   return true;
 }
 
-// Define the background task handler in module scope (skip in Jest)
-if (process.env.JEST_WORKER_ID === undefined) {
+// Define the background task handler in module scope (skip in test environment)
+if (process.env.NODE_ENV !== 'test') {
   TaskManager.defineTask(TASK_NAME, async () => {
     try {
       const canRun = await shouldExecuteNow();

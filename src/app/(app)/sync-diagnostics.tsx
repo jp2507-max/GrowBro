@@ -9,7 +9,7 @@ type Metrics = ReturnType<typeof getMetrics>;
 
 type LogItem = ReturnType<typeof getLogs>[number];
 
-function DiagnosticsHeader(): JSX.Element {
+function DiagnosticsHeader(): React.ReactElement {
   return (
     <View className="mb-4">
       <Text className="text-xl font-bold">
@@ -22,7 +22,11 @@ function DiagnosticsHeader(): JSX.Element {
   );
 }
 
-function DiagnosticsMetrics({ metrics }: { metrics: Metrics }): JSX.Element {
+function DiagnosticsMetrics({
+  metrics,
+}: {
+  metrics: Metrics;
+}): React.ReactElement {
   return (
     <View className="mb-4">
       <Text className="text-lg font-semibold">
@@ -45,16 +49,29 @@ function DiagnosticsMetrics({ metrics }: { metrics: Metrics }): JSX.Element {
         {metrics.checkpointAgeMs ?? '-'}
       </Text>
       <Text>
-        p50 (ms) — push: {metrics.p50.push ?? '-'}, pull:{' '}
-        {metrics.p50.pull ?? '-'}, apply: {metrics.p50.apply ?? '-'}
+        {translate('diagnostics.p50_ms', {
+          push: metrics.p50.push ?? '-',
+          pull: metrics.p50.pull ?? '-',
+          apply: metrics.p50.apply ?? '-',
+        })}
       </Text>
       <Text>
-        p95 (ms) — push: {metrics.p95.push ?? '-'}, pull:{' '}
-        {metrics.p95.pull ?? '-'}, apply: {metrics.p95.apply ?? '-'}
+        {translate('diagnostics.p95_ms', {
+          push: metrics.p95.push ?? '-',
+          pull: metrics.p95.pull ?? '-',
+          apply: metrics.p95.apply ?? '-',
+        })}
       </Text>
       <Text>
-        Avg payload — push: {metrics.payload.pushAvgBytes ?? '-'} B, pull:{' '}
-        {metrics.payload.pullAvgBytes ?? '-'} B
+        {translate('diagnostics.avg_payload', {
+          operation: 'push',
+          bytes: metrics.payload.pushAvgBytes ?? '-',
+        })}
+        ,{' '}
+        {translate('diagnostics.avg_payload', {
+          operation: 'pull',
+          bytes: metrics.payload.pullAvgBytes ?? '-',
+        })}
       </Text>
     </View>
   );
@@ -66,7 +83,7 @@ function DiagnosticsActions({
 }: {
   onSyncNow: () => void;
   onClear: () => void;
-}): JSX.Element {
+}): React.ReactElement {
   return (
     <View className="mb-4 flex-row gap-4">
       <Button
@@ -84,7 +101,7 @@ function DiagnosticsActions({
   );
 }
 
-function DiagnosticsLogs({ logs }: { logs: LogItem[] }): JSX.Element {
+function DiagnosticsLogs({ logs }: { logs: LogItem[] }): React.ReactElement {
   return (
     <>
       <View className="mb-2">
@@ -109,7 +126,7 @@ function DiagnosticsLogs({ logs }: { logs: LogItem[] }): JSX.Element {
   );
 }
 
-export default function SyncDiagnostics(): JSX.Element {
+export default function SyncDiagnostics(): React.ReactElement {
   const [, setRefreshTick] = React.useState(0);
   const metrics = getMetrics();
   const logs = getLogs();

@@ -20,10 +20,49 @@ export type SyncPreferencesState = {
   setStalenessHours: (value: number) => void;
 };
 
-function loadStored(): Partial<SyncPreferencesState> {
-  const raw = getItem<Partial<SyncPreferencesState>>(STORAGE_KEY);
+// Only the persisted shape (no methods)
+export type SyncPrefsSnapshot = Pick<
+  SyncPreferencesState,
+  | 'autoSyncEnabled'
+  | 'backgroundSyncEnabled'
+  | 'requiresWifi'
+  | 'requiresCharging'
+  | 'stalenessHours'
+>;
+
+function loadStored(): Partial<SyncPrefsSnapshot> {
+  const raw = getItem<Partial<SyncPrefsSnapshot>>(STORAGE_KEY);
   if (!raw || typeof raw !== 'object') return {};
   return raw;
+}
+
+// Sanitization helpers
+function sanitizeBoolean(value: any, defaultValue: boolean): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const lower = value.toLowerCase();
+    if (lower === 'true' || lower === '1') return true;
+    if (lower === 'false' || lower === '0') return false;
+  }
+  if (typeof value === 'number') {
+    if (value === 1) return true;
+    if (value === 0) return false;
+  }
+  return defaultValue;
+}
+
+function sanitizeStalenessHours(value: any, defaultValue: number): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    // Clamp to reasonable bounds (1 hour to 1 week/168 hours) and round to integer
+    return Math.max(1, Math.min(168, Math.round(value)));
+  }
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    if (Number.isFinite(parsed)) {
+      return Math.max(1, Math.min(168, Math.round(parsed)));
+    }
+  }
+  return defaultValue;
 }
 
 function persist(next: SyncPreferencesState): void {
@@ -36,15 +75,8 @@ function persist(next: SyncPreferencesState): void {
   });
 }
 
-const DEFAULTS: Omit<
-  SyncPreferencesState,
-  | 'hydrate'
-  | 'setAutoSyncEnabled'
-  | 'setBackgroundSyncEnabled'
-  | 'setRequiresWifi'
-  | 'setRequiresCharging'
-  | 'setStalenessHours'
-> = {
+// TODO: Refactored to use SyncPrefsSnapshot for better maintainability and type safety
+const DEFAULTS: SyncPrefsSnapshot = {
   autoSyncEnabled: true,
   backgroundSyncEnabled: true,
   requiresWifi: false,
@@ -58,12 +90,26 @@ const _useSyncPrefs = create<SyncPreferencesState>((set, get) => ({
     const stored = loadStored();
     if (stored) {
       set({
-        autoSyncEnabled: stored.autoSyncEnabled ?? DEFAULTS.autoSyncEnabled,
-        backgroundSyncEnabled:
-          stored.backgroundSyncEnabled ?? DEFAULTS.backgroundSyncEnabled,
-        requiresWifi: stored.requiresWifi ?? DEFAULTS.requiresWifi,
-        requiresCharging: stored.requiresCharging ?? DEFAULTS.requiresCharging,
-        stalenessHours: stored.stalenessHours ?? DEFAULTS.stalenessHours,
+        autoSyncEnabled: sanitizeBoolean(
+          stored.autoSyncEnabled,
+          DEFAULTS.autoSyncEnabled
+        ),
+        backgroundSyncEnabled: sanitizeBoolean(
+          stored.backgroundSyncEnabled,
+          DEFAULTS.backgroundSyncEnabled
+        ),
+        requiresWifi: sanitizeBoolean(
+          stored.requiresWifi,
+          DEFAULTS.requiresWifi
+        ),
+        requiresCharging: sanitizeBoolean(
+          stored.requiresCharging,
+          DEFAULTS.requiresCharging
+        ),
+        stalenessHours: sanitizeStalenessHours(
+          stored.stalenessHours,
+          DEFAULTS.stalenessHours
+        ),
       });
     }
   },
@@ -84,8 +130,11 @@ const _useSyncPrefs = create<SyncPreferencesState>((set, get) => ({
     persist(get());
   },
   setStalenessHours: (value) => {
-    const hours = Number.isFinite(value) ? Math.max(0, Math.round(value)) : 24;
-    set({ stalenessHours: hours });
+    const sanitizedHours = sanitizeStalenessHours(
+      value,
+      DEFAULTS.stalenessHours
+    );
+    set({ stalenessHours: sanitizedHours });
     persist(get());
   },
 }));

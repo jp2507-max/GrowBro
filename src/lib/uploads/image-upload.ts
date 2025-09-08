@@ -46,13 +46,33 @@ export async function manipulateImage({
   maxEdge = 2048,
   quality = 0.8,
 }: ManipulateParams): Promise<ManipulatedImage> {
-  // Resize longest edge to <= maxEdge and compress to JPEG
-  // We pass width=maxEdge and allow library to maintain aspect ratio
-  const actions: ImageManipulator.Action[] = [{ resize: { width: maxEdge } }];
+  // Get original image dimensions by manipulating with empty actions
+  const originalInfo = await ImageManipulator.manipulateAsync(localUri, [], {
+    compress: 1.0, // No compression for info retrieval
+    format: ImageManipulator.SaveFormat.JPEG,
+  });
+
+  // Calculate scale factor to ensure longest edge <= maxEdge, prevent upscaling
+  const maxOriginalDimension = Math.max(
+    originalInfo.width,
+    originalInfo.height
+  );
+  const scaleFactor = Math.min(1, maxEdge / maxOriginalDimension);
+
+  // Only resize if scaling down is needed
+  const actions: ImageManipulator.Action[] = [];
+  if (scaleFactor < 1) {
+    // Use width-based resize to let library maintain aspect ratio
+    actions.push({
+      resize: { width: Math.round(originalInfo.width * scaleFactor) },
+    });
+  }
+
   const result = await ImageManipulator.manipulateAsync(localUri, actions, {
     compress: quality,
     format: ImageManipulator.SaveFormat.JPEG,
   });
+
   return {
     uri: result.uri,
     mimeType: 'image/jpeg',
@@ -123,15 +143,19 @@ export async function uploadImageWithProgress(params: {
   if (sigErr || !signed) throw sigErr ?? new Error('signed_url_failed');
 
   // Note: uploadToSignedUrl lacks progress; we stream directly to signed.signedUrl
-  // Headers must include Content-Type. Upsert behavior is controlled at URL creation; we avoid x-upsert here.
+  // Headers must include Content-Type. Add x-upsert header when upsert is requested.
+  const headers: Record<string, string> = {
+    'Content-Type': params.mimeType ?? 'image/jpeg',
+  };
+  if (params.upsert) {
+    headers['x-upsert'] = 'true';
+  }
   const uploadTask = FileSystem.createUploadTask(
     signed.signedUrl,
     params.localUri,
     {
       uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-      headers: {
-        'Content-Type': params.mimeType ?? 'image/jpeg',
-      },
+      headers,
     },
     (progress) => {
       params.onProgress?.({

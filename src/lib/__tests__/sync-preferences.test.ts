@@ -1,8 +1,8 @@
-import { describe, expect, it } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 
 import { getSyncPrefs, useSyncPrefs } from '@/lib/sync/preferences';
 
-jest.mock('@/lib/storage', () => {
+const mockStorage = (() => {
   const map = new Map<string, string>();
   return {
     storage: {
@@ -20,13 +20,28 @@ jest.mock('@/lib/storage', () => {
     removeItem: async (k: string) => {
       map.delete(k);
     },
+    clear: () => map.clear(),
   };
-});
+})();
+
+jest.mock('@/lib/storage', () => mockStorage);
 
 describe('sync preferences store', () => {
-  it('hydrates defaults and updates', () => {
+  beforeEach(() => {
+    // Clear mock storage state between tests
+    mockStorage.clear();
+
+    // Reset Zustand store to defaults
     const prefs = getSyncPrefs();
     prefs.hydrate();
+  });
+
+  afterEach(() => {
+    // Additional cleanup if needed
+    mockStorage.clear();
+  });
+  it('hydrates defaults and updates', () => {
+    const prefs = getSyncPrefs();
     expect(useSyncPrefs.getState().autoSyncEnabled).toBe(true);
     prefs.setRequiresWifi(true);
     expect(useSyncPrefs.getState().requiresWifi).toBe(true);
@@ -34,7 +49,6 @@ describe('sync preferences store', () => {
 
   it('stores staleness hours as integer >= 0', () => {
     const prefs = getSyncPrefs();
-    prefs.hydrate();
     prefs.setStalenessHours(12.4);
     expect(useSyncPrefs.getState().stalenessHours).toBe(12);
     prefs.setStalenessHours(-5);

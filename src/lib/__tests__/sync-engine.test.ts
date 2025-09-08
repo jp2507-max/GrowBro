@@ -7,7 +7,6 @@ import {
   runSyncWithRetry,
   type SyncResponse,
 } from '@/lib/sync-engine';
-import { diffServerChangedTaskIds } from '@/lib/sync-engine';
 
 describe('sync-engine', () => {
   afterEach(() => {
@@ -35,6 +34,8 @@ describe('sync-engine', () => {
   });
 
   test('runSyncWithRetry retries with exponential backoff on retryable errors', async () => {
+    // Mock backoff to 1ms to speed up test execution and avoid flaky timing dependencies
+    // This tests retry logic without waiting for actual exponential backoff delays
     jest
       .spyOn(Backoff, 'computeBackoffMs')
       .mockImplementation((_attempt, _base, _max) => 1); // minimize delays
@@ -136,10 +137,16 @@ describe('sync-engine helpers', () => {
   });
 
   test('computeBackoffMs grows exponentially with jitter', () => {
+    // Mock Math.random to make test deterministic and avoid flakiness from jitter
+    const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5);
+
     const v0 = computeBackoffMs(0, 100, 1000);
     const v1 = computeBackoffMs(1, 100, 1000);
     const v2 = computeBackoffMs(2, 100, 1000);
+
     expect(v1).toBeGreaterThanOrEqual(v0);
     expect(v2).toBeGreaterThanOrEqual(v1);
+
+    randomSpy.mockRestore();
   });
 });

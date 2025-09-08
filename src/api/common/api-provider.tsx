@@ -11,23 +11,17 @@ import { AppState, Platform } from 'react-native';
 
 export const queryClient = new QueryClient();
 
+// Wire online status so queries auto-refetch on reconnect
+onlineManager.setEventListener((setOnline) =>
+  NetInfo.addEventListener((state) => {
+    // treat unknown reachability as connected to let Query handle retries
+    const isConnected = state.isConnected ?? true;
+    setOnline(isConnected);
+  })
+);
+
 export function APIProvider({ children }: { children: React.ReactNode }) {
   useReactQueryDevTools(queryClient);
-  // Wire online status so queries auto-refetch on reconnect
-  React.useEffect(() => {
-    const remove = onlineManager.setEventListener((setOnline) =>
-      NetInfo.addEventListener((state) => {
-        // treat unknown reachability as connected to let Query handle retries
-        const isConnected = !!state.isConnected;
-        setOnline(isConnected);
-      })
-    );
-    return () => {
-      try {
-        (remove as any)?.();
-      } catch {}
-    };
-  }, []);
 
   // Wire focus so queries refetch when app returns to foreground
   React.useEffect(() => {

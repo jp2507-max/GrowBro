@@ -11,15 +11,19 @@
     "yesterday": "Gestern"
   },
   "common": {
+    "cancel": "Abbrechen",
     "ok": "OK"
   },
   "diagnostics": {
+    "avg_payload": "Durchschn. Payload — {{operation}}: {{bytes}} B",
     "checkpoint_age_ms": "Checkpoint-Alter (ms)",
     "clear_logs": "Protokolle löschen",
     "last_checkpoint_at": "Letzter Checkpoint",
     "last_success_at": "Letzter Erfolg",
     "logs": "Protokolle",
     "metrics": "Metriken",
+    "p50_ms": "p50 (ms) — push: {{push}}, pull: {{pull}}, apply: {{apply}}",
+    "p95_ms": "p95 (ms) — push: {{push}}, pull: {{pull}}, apply: {{apply}}",
     "subtitle": "Metriken und aktuelle Sync-Logs",
     "sync_now": "Jetzt synchronisieren",
     "title": "Sync-Diagnostik"
