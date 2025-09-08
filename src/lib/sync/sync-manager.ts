@@ -3,6 +3,7 @@ import {
   synchronize as wmelonSynchronize,
 } from '@nozbe/watermelondb/sync';
 
+import { getToken } from '@/lib/auth/utils';
 import { getItem, setItem } from '@/lib/storage';
 import { database } from '@/lib/watermelon';
 
@@ -77,9 +78,15 @@ async function pullChanges({
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    const token = getToken();
+    if (!token) throw new Error('No auth token available for sync');
+
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token.access}`,
+      },
       body: JSON.stringify({
         lastPulledAt,
         schemaVersion,
@@ -121,9 +128,15 @@ async function pushChanges({
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    const token = getToken();
+    if (!token) throw new Error('No auth token available for sync');
+
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token.access}`,
+      },
       body: JSON.stringify({ changes, lastPulledAt }),
       signal: controller.signal,
     });
