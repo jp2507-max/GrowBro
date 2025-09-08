@@ -4,6 +4,32 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 /**
+ * Recursively canonicalizes a value for consistent JSON serialization.
+ * Sorts object keys recursively and preserves array structure.
+ */
+function canonicalizeValue(value: unknown): unknown {
+  if (value === null || typeof value !== 'object') {
+    // Return primitives as-is
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    // Recurse into array elements
+    return value.map(canonicalizeValue);
+  }
+
+  // Handle objects: sort keys recursively
+  const sortedEntries = Object.keys(value as Record<string, unknown>)
+    .sort()
+    .map((key) => [
+      key,
+      canonicalizeValue((value as Record<string, unknown>)[key]),
+    ]);
+
+  return Object.fromEntries(sortedEntries);
+}
+
+/**
  * Generates a deterministic idempotency key from the request body.
  * Uses SHA-256 hash of canonicalized JSON/text body for consistency.
  */
@@ -22,8 +48,9 @@ async function generateIdempotencyKey(req: Request): Promise<string> {
     let canonicalBody: string;
     try {
       const parsed = JSON.parse(bodyText);
-      // Canonicalize by sorting keys and pretty-printing consistently
-      canonicalBody = JSON.stringify(parsed, Object.keys(parsed).sort(), 2);
+      // Use recursive canonicalizer for consistent nested structure
+      const canonicalized = canonicalizeValue(parsed);
+      canonicalBody = JSON.stringify(canonicalized, null, 2);
     } catch {
       // Not valid JSON, use as plain text
       canonicalBody = bodyText;
@@ -51,6 +78,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers':
     'Content-Type, Authorization, Idempotency-Key',
+  'Access-Control-Expose-Headers': 'Idempotency-Key',
 };
 
 function jsonResponse(
@@ -74,7 +102,24 @@ async function parseAndValidatePayload(
 ): Promise<
   { lastPulledAt: number | null; changes: Record<string, unknown> } | Response
 > {
-  const { lastPulledAt, changes } = (await request.json()) as {
+  let parsedBody: unknown;
+
+  try {
+    parsedBody = await request.json();
+  } catch (error) {
+    // Handle JSON parsing errors specifically
+    if (error instanceof SyntaxError) {
+      return jsonResponse(
+        { error: 'Invalid JSON in request body' },
+        400,
+        idemKey
+      );
+    }
+    // Re-throw non-JSON parsing errors to be handled by top-level catch
+    throw error;
+  }
+
+  const { lastPulledAt, changes } = parsedBody as {
     lastPulledAt: number | null;
     changes: Record<string, unknown>;
   };
@@ -119,9 +164,12 @@ async function applySyncPush(
   });
 
   if (error) {
-    const isConflict = (error.message || '').includes(
-      'changed since lastPulledAt'
-    );
+    // Check for conflict using structured error properties or error code
+    const isConflict =
+      error.code === 'CR001' ||
+      error.shape?.conflict === true ||
+      (error.message || '').includes('changed since lastPulledAt'); // Fallback for backward compatibility
+
     return jsonResponse(
       { error: error.message },
       isConflict ? 409 : 500,

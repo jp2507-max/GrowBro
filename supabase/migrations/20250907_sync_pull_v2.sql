@@ -87,7 +87,8 @@ BEGIN
       AND t.deleted_at IS NULL
       AND (
         tasks_active_cursor_ts IS NULL
-        OR (t.updated_at, t.id) > (tasks_active_cursor_ts, tasks_active_cursor_id)
+        OR t.updated_at > tasks_active_cursor_ts
+        OR (t.updated_at = tasks_active_cursor_ts AND (tasks_active_cursor_id IS NULL OR t.id > tasks_active_cursor_id))
       )
     ORDER BY t.updated_at, t.id
     LIMIT _limit + 1
@@ -126,7 +127,8 @@ BEGIN
       AND t.deleted_at <= server_ts
       AND (
         tasks_tomb_cursor_ts IS NULL
-        OR (t.deleted_at, t.id) > (tasks_tomb_cursor_ts, tasks_tomb_cursor_id)
+        OR (t.deleted_at > tasks_tomb_cursor_ts)
+        OR (t.deleted_at = tasks_tomb_cursor_ts AND t.id > tasks_tomb_cursor_id)
       )
     ORDER BY t.deleted_at, t.id
     LIMIT _limit + 1
