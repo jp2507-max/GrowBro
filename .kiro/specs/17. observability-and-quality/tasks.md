@@ -58,6 +58,9 @@
   - Implement aggressive masking for all text inputs and images by default
   - Create explicit blocklist for auth, payments, and profile screens
   - Configure sendDefaultPii=false and validate masking before production deployment
+  - **Add CI checks that fail builds unless replaysSessionSampleRate and replaysOnErrorSampleRate are set to safe values** (see `scripts/ci/validate-sentry-config.js`)
+  - **Implement runtime guards requiring explicit user opt-in plus region-scoped feature flag** (`ENABLE_SESSION_REPLAY` + `SESSION_REPLAY_REGION_EU`) to actually enable replays
+  - **Add documented rollback switch** (`ROLLBACK_SESSION_REPLAY`) that immediately disables replays if masking regressions are detected
   - _Requirements: 4.1, 4.2, 8.4_
 
 - [ ] 4.2 Set up privacy compliance and data residency

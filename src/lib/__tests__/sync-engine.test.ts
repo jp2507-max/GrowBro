@@ -88,7 +88,13 @@ describe('sync-engine pagination', () => {
         tasks: { active: { ts_ms: now, id: 'a' } },
       },
       changes: {
-        tasks: { created: [], updated: [{ id: 't1' }], deleted: [] },
+        tasks: {
+          created: [],
+          updated: [
+            { id: 't1', server_revision: 2, server_updated_at_ms: now },
+          ],
+          deleted: [],
+        },
         series: { created: [], updated: [], deleted: [] },
         occurrence_overrides: { created: [], updated: [], deleted: [] },
       },
@@ -98,7 +104,13 @@ describe('sync-engine pagination', () => {
       hasMore: false,
       migrationRequired: false,
       changes: {
-        tasks: { created: [], updated: [{ id: 't2' }], deleted: [] },
+        tasks: {
+          created: [],
+          updated: [
+            { id: 't2', server_revision: 3, server_updated_at_ms: now },
+          ],
+          deleted: [],
+        },
         series: { created: [], updated: [], deleted: [] },
         occurrence_overrides: { created: [], updated: [], deleted: [] },
       },

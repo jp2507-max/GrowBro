@@ -9,6 +9,16 @@
 - **Chunk Size**: 64KB for streaming operations
 - **Hash Algorithm**: SHA-256 with BLAKE3 option
 
+<!-- Crypto defaults: align identifiers and document nonce sizes
+
+Match cipher/KDF identifiers to the design doc ("aes-256-gcm", "xchacha20-poly1305") and document nonce sizes and IV generation strategy to prevent reuse across chunks/files.
+
+- Cipher identifiers: "aes-256-gcm", "xchacha20-poly1305"
+- AES-256-GCM: 96-bit nonce (12 bytes), unique per file/chunk
+- XChaCha20-Poly1305: 192-bit nonce (24 bytes), unique per file/chunk
+- IV/Nonce generation: HKDF-SHA256 from master key + unique file identifier
+-->
+
 ## Phase 1: Risk Spikes (Must Pass to Proceed)
 
 - [ ] 1. Crypto spike - Prove encryption performance and compatibility
@@ -48,17 +58,17 @@
 
   - [ ] 5.1 Create key derivation with Argon2id/scrypt
 
-    - Implement Argon2id (m=64MB, t=3, p=1) as primary KDF with scrypt fallback
-    - Create secure salt generation and parameter storage in manifest
-    - Add constant-time MAC verification and secure buffer zeroing
+    - Implement Argon2id (m=64MB, t=3, p=1) as primary KDF using react-native-libsodium's crypto_pwhash only - prohibit scrypt fallback
+    - Create secure salt generation using randombytes_buf and parameter storage in manifest
+    - Add constant-time MAC verification using crypto_auth_verify and secure buffer zeroing with sodium_memzero - prohibit any JS implementations
     - **Exit Criteria**: KDF consistency across platforms, secure memory handling
     - _Requirements: R2 AC1, R2 AC6_
 
   - [ ] 5.2 Build streaming encryption with AES-GCM/XChaCha20
 
-    - Implement streaming API (init → push(chunk) → finalize) for large files
-    - Create AES-256-GCM as primary cipher with XChaCha20-Poly1305 fallback
-    - Add per-file checksum generation (SHA-256 primary, BLAKE3 option)
+    - Implement streaming API (init → push(chunk) → finalize) for large files using react-native-libsodium's crypto*aead*\*\_encrypt/decrypt primitives only
+    - Create AES-256-GCM as primary cipher with XChaCha20-Poly1305 fallback using native libsodium APIs - prohibit JS implementations
+    - Add per-file checksum generation (SHA-256 primary, BLAKE3 option) with constant-time comparison using sodium_memcmp
     - **Exit Criteria**: Stream 100MB+ files without memory spikes, AEAD verification passes
     - _Requirements: R2 AC1, R5 AC1, R5 AC3_
 

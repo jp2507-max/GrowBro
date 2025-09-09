@@ -21,12 +21,18 @@ Note: Each task amends an existing epic; update corresponding spec folders to re
 - [ ] A4. Community: DSA Notice-and-Action + appeals
 
   - Report→inbox processing→decision→appeal; role checks via JWT claims
-  - Tests: flows, RLS, appeal time windows
+  - SLA: initial review within 24h, final decision within 72h, appeal window 7 days
+  - Log retention: 7 years, anonymize PII after 30 days, auto-delete after retention expiry
+  - Role mappings: 'mod_role'=['admin','moderator'] → RLS: `auth.jwt()->>'mod_role' IN ('admin','moderator')`
+  - Tests: flows, RLS, appeal time windows, SLA assertions, retention cleanup
 
 - [ ] A5. Community: Transparency Log (aggregated)
 
   - Periodic job emits counts (reports, actions, turnaround); no PII
-  - Tests: aggregation correctness, privacy filtering
+  - SLA: daily aggregation within 24h of previous day, publish within 48h
+  - Log retention: 2 years, aggregate-only (no raw logs), auto-delete after retention expiry
+  - Role mappings: 'transparency_role'=['viewer','admin'] → RLS: `auth.jwt()->>'transparency_role' IN ('viewer','admin')`
+  - Tests: aggregation correctness, privacy filtering, SLA timing, retention cleanup
 
 - [ ] A6. Community: age gate & geo-visibility enforcement
 
@@ -65,8 +71,11 @@ Note: Each task amends an existing epic; update corresponding spec folders to re
 
 - [ ] A13. Release pipeline: Sentry gates
 
+  - Block release if crash-free users < 98% OR crash-free sessions < 99.5% OR ANR rate > 1%
+  - Auto-pause mechanism: POST /api/releases/{id}/pause with scope releases:write or org-admin role
+  - On-call owner: Release Engineering team (mobile-oncall rotation)
   - Fail builds on missing/failed sourcemaps; enforce crash-free threshold
-  - Tests: pipeline unit tests; dry-run sourcemap failure
+  - Tests: pipeline unit tests; dry-run sourcemap failure; threshold validation
 
 - [ ] A14. Release pipeline: synthetic flows (Maestro)
   - Add CI jobs running Offline Sync, AI Assessment, Data Export flows

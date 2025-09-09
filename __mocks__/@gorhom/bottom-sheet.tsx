@@ -8,7 +8,6 @@ import type {
   VirtualizedListProps,
 } from 'react-native';
 import {
-  FlatList,
   ScrollView,
   SectionList,
   TextInput,
@@ -89,7 +88,9 @@ export function BottomSheetScrollView(
 export function BottomSheetFlatList<T>(
   props: FlatListProps<T>
 ): React.ReactElement {
-  return <FlatList {...props} />;
+  // In the test/mock environment we don't need a real FlatList.
+  // Render a simple View wrapper to avoid pulling in React Native list implementations.
+  return (<View>{props.children}</View>) as any;
 }
 
 export function BottomSheetSectionList<T>(
@@ -101,7 +102,7 @@ export function BottomSheetSectionList<T>(
 export function BottomSheetFlashList<T>(
   props: FlatListProps<T>
 ): React.ReactElement {
-  return <FlatList {...props} />;
+  return (<View>{props.children}</View>) as any;
 }
 
 export function BottomSheetVirtualizedList<T>(

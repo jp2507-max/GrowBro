@@ -10,7 +10,7 @@ The App Store Policy Guardrails system provides comprehensive compliance automat
 
 2. **Conservative Mode Over Lockouts:** Prefer Conservative Mode (read-only community, neutral copy, stronger disclaimers) over hard app lockouts except where law/store policy forces geofencing for legal cannabis features.
 
-3. **2025 Compliance:** Align with Apple's new age rating tiers (13+/16+/18+), Google Play's Photos/Videos permission declarations, and updated UGC moderation requirements.
+3. **2025 Compliance:** Align with Apple's new age rating tiers (4+/9+/13+/16+/18+ via App Store Connect questionnaire; developer response deadline Jan 31 2026), Google Play's Photos/Videos permission declarations, and updated UGC moderation requirements.
 
 The design follows a multi-layered approach with client-side enforcement, server-side validation, build-time checks, and runtime monitoring to create a robust compliance framework that adapts to different jurisdictions and policy requirements.
 
@@ -97,13 +97,16 @@ interface GeoDetectionService {
 }
 
 interface RegionInfo {
+  // Server-generated region token (MANDATORY - no raw IP/ASN allowed)
+  regionToken: string; // Format: region:{continent}:{country}:{coarse_area}:{timestamp}:{signature}
   countryCode: string;
   region?: string;
-  source: 'store' | 'sim' | 'ip' | 'manual';
+  source: 'server_token' | 'manual'; // Removed 'store', 'sim', 'ip' - only server token or manual allowed
   confidence: number;
   timestamp: Date;
-  ttlMs: number;
-  reason?: 'foreground' | 'region_change' | 'manual';
+  ttlMs: number; // Token TTL (max 24 hours, recommend 6-12 hours)
+  tokenExpiresAt: Date; // When this token expires
+  reason?: 'foreground' | 'token_refresh' | 'manual'; // Updated reasons
 }
 
 interface PolicyFeatures {
@@ -117,12 +120,50 @@ interface PolicyFeatures {
 
 **Implementation Strategy:**
 
-- MUST NOT depend on GPS; implement source priority: store → sim → ip → manual
-- Re-evaluate region on app foreground and OS "significant region change" events
+- **MANDATE SERVER-SIDE IP→REGION RESOLUTION**: Call Region Service on server, produce coarse region token (no raw IP/ASN), return to clients
+- **EXPLICITLY FORBID CLIENT IP CAPTURE**: Clients MUST NOT capture/store IP/ASN for geolocation; accept only region tokens
+- **REGION TOKEN SPECIFICATIONS**:
+  - Format: `region:{continent}:{country}:{coarse_area}:{timestamp}:{signature}`
+  - TTL: 24 hours maximum, recommend 6-12 hours for security
+  - Granularity: Continent + country + coarse geographic area (e.g., EU:DE:central, NA:US:west)
+  - No raw IP/ASN data ever exposed to clients
+- Re-evaluate region on app foreground and server token refresh events
 - Apply policy toggles within 5 minutes (not 24 hours)
 - If no signals available, default to Conservative Mode
 - Emit region_mode_changed telemetry events for audit trail
 - Background location requires special Play declaration - avoid unless core functionality
+
+### Client-Side Restrictions
+
+**MANDATORY REQUIREMENTS:**
+
+- **NO IP CAPTURE**: Clients MUST NOT capture, store, or transmit raw IP addresses or ASN data for geolocation purposes
+- **TOKEN-ONLY ACCEPTANCE**: Clients MUST accept and use only server-provided region tokens for geolocation decisions
+- **FORBIDDEN IP LOOKUPS**: Clients MUST NOT perform any IP-based geolocation lookups (GeoIP services, IP databases, etc.)
+- **SERVER VALIDATION**: All region-based decisions MUST be validated server-side with audit logging
+
+### Implementation Tasks
+
+**Phase 1: Client Cleanup**
+
+- [ ] Remove all client-side IP capture code paths in geolocation services
+- [ ] Remove any IP-based geolocation libraries or dependencies
+- [ ] Update client geolocation logic to accept only region tokens
+- [ ] Add client-side validation to reject non-token region sources
+
+**Phase 2: Server Region Service**
+
+- [ ] Implement server-side Region Service with IP→region resolution
+- [ ] Add region token generation with specified format and TTL
+- [ ] Implement token signing/verification for security
+- [ ] Add server-side caching for region lookups (with appropriate TTL)
+
+**Phase 3: Server-Side Validation & Telemetry**
+
+- [ ] Add server-side validation for all region-based policy decisions
+- [ ] Implement audit logging for region token issuance and usage
+- [ ] Add telemetry tracking for region token lifecycle (issuance, expiration, refresh)
+- [ ] Implement server-side monitoring for token validation failures
 
 ### 2. Content Policy Scanner
 
@@ -196,7 +237,7 @@ interface EntityValidationResult {
   hasDUNS: boolean; // Apple requirement for highly regulated apps
   playConsoleComplete: boolean; // App Content declarations
   geoRestrictionStatement: boolean; // Required for cannabis features
-  targetApiLevel: number; // Must be Android 15 (API 35) for new updates
+  targetApiLevel: number; // Must be Android 14 (API 34) for new updates from Aug 31, 2024
   photosVideosDeclaration: boolean; // Google Play 2025 requirement
   violations: string[];
 }
@@ -311,7 +352,7 @@ interface PolicyLintResult {
 **Validation Gates:**
 
 - **Policy Linter (CI):** Fails builds on flagged terms in app strings, store listing, and push templates
-- **Target API Level:** Block release if target < Android 15 (API 35) for new updates from Aug 31, 2025
+- **Target API Level:** Block release if target < Android 14 (API 34) for new updates from Aug 31, 2024
 - **Permission Declarations:** Enforce Play Photos/Videos and Background Location declarations
 - **Apple Age Rating:** Validate new age categories are used and match in-app gating
 - **Legal Entity Check:** Ensure seller is organization with required documentation
@@ -424,38 +465,54 @@ interface ComplianceReport {
 
 ### Client-Side Error Handling
 
-1. **Geo-Detection Failures:**
+1. **Region Token Failures:**
 
    - Fallback to manual country selection with alternatives per Apple 5.1.1(iv)
-   - Default to Conservative Mode for unknown regions
-   - Cache last known good region with TTL expiration
+   - Default to Conservative Mode for unknown regions or token validation failures
+   - Cache last known good region token with TTL expiration
+   - Log all token validation failures server-side for audit trail
 
-2. **Content Scanning Failures:**
+2. **Server Region Service Failures:**
+
+   - Implement circuit breaker pattern for Region Service calls
+   - Fallback to cached region mappings with extended TTL during outages
+   - Alert monitoring systems for service degradation
+   - Provide manual region override capability for critical scenarios
+
+3. **Content Scanning Failures:**
 
    - Fail-safe to block content on scanner errors
    - Provide manual override for authorized users with audit trail
    - Log all scanner failures for investigation
 
-3. **Network Connectivity Issues:**
+4. **Network Connectivity Issues:**
 
    - Cache policy configurations locally with versioning
    - Implement offline-first compliance checks
    - Queue compliance events for sync when connectivity restored
 
-4. **Graceful Feature Restrictions:**
+5. **Graceful Feature Restrictions:**
    - Show clear explainers when features are disabled by region/policy
    - Keep calendar and educational content accessible (avoid "dead app" UX)
    - Apply region changes within minutes on foreground, not 24 hours
 
 ### Server-Side Error Handling
 
-1. **Policy Engine Failures:**
+1. **Region Service Failures:**
 
-   - Implement circuit breaker pattern
-   - Fallback to cached policy configurations
-   - Alert monitoring systems immediately
+   - Implement circuit breaker pattern for IP→region resolution
+   - Fallback to cached region mappings during service outages
+   - Alert monitoring systems immediately for service degradation
+   - Maintain audit trail of all region resolution attempts and failures
 
-2. **Legal Entity Validation Errors:**
+2. **Token Generation Failures:**
+
+   - Fallback to conservative region defaults during token generation errors
+   - Log all token generation failures with IP metadata (server-side only)
+   - Implement token regeneration retry logic with exponential backoff
+   - Alert security team for potential token signing key issues
+
+3. **Legal Entity Validation Errors:**
    - Block builds on validation failures
    - Provide detailed error messages with remediation steps
    - Maintain audit trail of all validation attempts
@@ -507,19 +564,28 @@ interface PrivacyAlignment {
 
 ### Unit Testing
 
-1. **Geo-Detection Service Tests:**
+1. **Region Service Tests:**
 
-   - Mock different region detection methods
-   - Test policy mode transitions
-   - Validate fallback mechanisms
+   - Mock server-side IP→region resolution with various IP ranges
+   - Test region token generation, signing, and validation
+   - Validate token TTL enforcement and expiration handling
+   - Test coarse granularity mapping (continent:country:area)
+   - Verify no raw IP/ASN data leakage in tokens
 
-2. **Content Scanner Tests:**
+2. **Client Token Acceptance Tests:**
+
+   - Test client rejection of non-token region sources
+   - Validate client-side token parsing and validation
+   - Test token refresh logic and expiration handling
+   - Verify clients never perform IP lookups for geolocation
+
+3. **Content Scanner Tests:**
 
    - Test against known violation patterns
    - Validate false positive handling
    - Test ruleset updates and versioning
 
-3. **Disclaimer Manager Tests:**
+4. **Disclaimer Manager Tests:**
    - Test contextual disclaimer injection
    - Validate age gate configurations
    - Test acknowledgment tracking
@@ -566,13 +632,22 @@ interface PrivacyAlignment {
 
 ### Performance Testing
 
-1. **Geo-Detection Performance:**
+1. **Region Service Performance:**
 
-   - Test region detection speed and accuracy
-   - Validate caching effectiveness
-   - Test battery impact of location services
+   - Test IP→region resolution speed and accuracy across global IP ranges
+   - Validate token generation and signing performance
+   - Test server-side caching effectiveness for region lookups
+   - Measure token validation overhead on client and server
+   - Benchmark coarse granularity mapping performance
 
-2. **Content Scanning Performance:**
+2. **Token Lifecycle Performance:**
+
+   - Test token refresh timing and network overhead
+   - Validate TTL enforcement and expiration handling
+   - Measure impact of token-based approach vs. client-side IP lookups
+   - Test concurrent token validation under load
+
+3. **Content Scanning Performance:**
    - Test scanning speed for large content volumes
    - Validate memory usage during scanning
    - Test concurrent scanning operations
@@ -581,13 +656,23 @@ interface PrivacyAlignment {
 
 ### Data Privacy
 
-1. **Location Data Handling:**
+1. **Region Token Security:**
 
-   - Minimize location data collection
-   - Use coarse location detection when possible
-   - Implement data retention policies
+   - Implement secure token signing with rotation
+   - Enforce token TTL limits (max 24 hours)
+   - Use coarse geographic granularity to minimize privacy risks
+   - Never expose raw IP addresses or ASN data to clients
+   - Implement server-side audit logging for all token operations
 
-2. **User Content Protection:**
+2. **IP Data Handling (Server-Only):**
+
+   - Minimize IP data collection and retention on server
+   - Use IP→region resolution only for policy compliance
+   - Implement data retention policies for IP logs
+   - Encrypt IP data at rest and in transit
+   - Regular security audits of IP handling procedures
+
+3. **User Content Protection:**
    - Encrypt sensitive compliance data
    - Implement secure content scanning
    - Protect user privacy during moderation

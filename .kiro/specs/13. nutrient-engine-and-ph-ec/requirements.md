@@ -99,6 +99,12 @@ The Nutrient Engine and pH/EC feature provides GrowBro users with comprehensive 
 5. WHEN critical alerts are triggered offline THEN the system SHALL display locally and mirror to server at next sync with "delivered_at_local" stamp
 6. WHEN images are captured THEN the system SHALL store on filesystem (URI in DB) and include in outbox without blocking text data sync
 
+<!-- Review (Req6 lines 96–101): For 6.2 de-duplication, add a tolerance bucket and a server-side unique guard to avoid near-duplicate collisions. Suggested approach:
+  - Use a server UNIQUE index on (plant_id, meter_id, date_trunc('second', measured_at_utc)) and accept an optional client-sent idempotency_key to make retries safe.
+  - Offline uploader should bucket candidate duplicates within ±1s before enqueueing; on conflict at insert, apply LWW with server timestamps authoritative.
+  - Keep delivered_at_local (6.5) as a separate field; queue media separately so text sync is never blocked (6.6).
+-->
+
 ### Requirement 7
 
 **User Story:** As a grower, I want feeding data integration with harvest tracking, so that I can correlate nutrition management with final yield and quality outcomes.

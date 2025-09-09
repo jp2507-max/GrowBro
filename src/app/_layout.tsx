@@ -56,7 +56,16 @@ function hasValidTimeZone(
   return typeof obj.timeZone === 'string' && obj.timeZone.length > 0;
 }
 
-// Only initialize Sentry if DSN is provided
+export { ErrorBoundary } from 'expo-router';
+
+export const unstable_settings = {
+  initialRouteName: '(app)',
+};
+
+// Initialize privacy consent cache before Sentry
+initializePrivacyConsent();
+
+// Only initialize Sentry if DSN is provided (after consent cache is populated)
 if (Env.SENTRY_DSN) {
   const integrations: any[] = [];
 
@@ -86,15 +95,8 @@ if (Env.SENTRY_DSN) {
   });
 }
 
-export { ErrorBoundary } from 'expo-router';
-
-export const unstable_settings = {
-  initialRouteName: '(app)',
-};
-
 hydrateAuth();
 loadSelectedTheme();
-initializePrivacyConsent();
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 // Set splash screen animation options at runtime

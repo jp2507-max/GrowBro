@@ -327,6 +327,8 @@ interface NutrientEngineState {
 
 ### WatermelonDB Schema
 
+**Sync Architecture Note**: WatermelonDB handles synchronization at the table level through its built-in sync engine. Per-row `synced` flags are not needed as the framework manages sync state internally using timestamps and change detection. This stateless approach ensures clean separation between local data management and sync operations.
+
 ```typescript
 // Schema definition
 const schema = appSchema({
@@ -430,7 +432,6 @@ const schema = appSchema({
         { name: 'acknowledged_at', type: 'number', isOptional: true },
         { name: 'resolved_at', type: 'number', isOptional: true },
         { name: 'delivered_at_local', type: 'number', isOptional: true },
-        { name: 'synced', type: 'boolean' },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
       ],
@@ -491,9 +492,23 @@ erDiagram
 
 1. **Invalid Readings**:
 
-   - Range validation (pH 0-14, EC reasonable limits)
-   - Temperature compensation bounds checking
-   - Calibration staleness warnings
+   - **Range validation with explicit bounds**:
+     - pH: 0.00–14.00 (reject readings outside this range)
+     - EC: 0.00–10.00 mS/cm (reject readings outside this range for both raw and temperature-compensated values)
+     - Temperature: 5.00–40.00°C (reject readings outside this range)
+   - **Temperature compensation bounds**:
+     - Compensation factor: 0.00–0.05 mS/cm per °C deviation from 25°C
+     - Reject compensation calculations that result in EC values outside 0.00–10.00 mS/cm
+   - **Calibration staleness thresholds**:
+     - Warning threshold: 30 days since last calibration
+     - Error threshold: 90 days since last calibration
+     - Reject measurements from meters exceeding 90 days since calibration
+   - **Validation error messages**:
+     - pH out of range: "pH reading {value} is outside valid range 0.00–14.00"
+     - EC out of range: "EC reading {value} mS/cm is outside valid range 0.00–10.00 mS/cm"
+     - Temperature out of range: "Temperature reading {value}°C is outside valid range 5.00–40.00°C"
+     - Calibration stale: "Meter calibration is {days} days old (max allowed: 90 days)"
+     - Compensation out of bounds: "Temperature compensation resulted in invalid EC value"
 
 2. **Meter Communication**:
    - Bluetooth connection timeouts
@@ -729,7 +744,6 @@ export function calculateConfidenceScore(
 - Keep all pH/EC advice generic and educational
 - Include disclaimers for all dosing/diagnosis content
 - Encourage community second opinions for low confidence classifications
-- Document that high alkalinity water tends to raise media pH over time; mitigation is buffering/acidification (educational only)
 
 ## Migration Strategy
 
@@ -749,7 +763,31 @@ const migrations = schemaMigrations({
             { name: 'quality_flags_json', type: 'string', isOptional: true },
           ],
         }),
-        // Remove synced columns - WatermelonDB sync doesn't need per-row flags
+        // Remove synced column from deviation_alerts table - WatermelonDB sync doesn't need per-row flags
+        dropTable('deviation_alerts_temp', true), // Drop temp table if exists from previous migration
+        createTable({
+          name: 'deviation_alerts_temp',
+          columns: [
+            { name: 'id', type: 'string' },
+            { name: 'reading_id', type: 'string' },
+            { name: 'type', type: 'string' },
+            { name: 'severity', type: 'string' },
+            { name: 'message', type: 'string' },
+            { name: 'recommendations_json', type: 'string' },
+            { name: 'triggered_at', type: 'number' },
+            { name: 'acknowledged_at', type: 'number', isOptional: true },
+            { name: 'resolved_at', type: 'number', isOptional: true },
+            { name: 'delivered_at_local', type: 'number', isOptional: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+          ],
+        }),
+        // Migrate data from old table to new table (excluding synced column)
+        sql`INSERT INTO deviation_alerts_temp (id, reading_id, type, severity, message, recommendations_json, triggered_at, acknowledged_at, resolved_at, delivered_at_local, created_at, updated_at)
+            SELECT id, reading_id, type, severity, message, recommendations_json, triggered_at, acknowledged_at, resolved_at, delivered_at_local, created_at, updated_at FROM deviation_alerts`,
+        // Drop old table and rename temp table
+        dropTable('deviation_alerts'),
+        renameTable({ from: 'deviation_alerts_temp', to: 'deviation_alerts' }),
       ],
     },
   ],
@@ -784,3 +822,7 @@ const migrations = schemaMigrations({
 
 - Bump schema version; verify no data loss via WatermelonDB migrations
 - Test upgrade paths from v1 to v2+ schemas
+
+```
+
+```

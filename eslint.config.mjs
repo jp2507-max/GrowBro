@@ -14,6 +14,9 @@ import eslintPluginUnicorn from 'eslint-plugin-unicorn';
 import unusedImports from 'eslint-plugin-unused-imports';
 import { configs, parser } from 'typescript-eslint';
 
+// Import custom FlatList rule
+import noFlatlistRule from './eslint-rules/no-flatlist.js';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig([
@@ -40,6 +43,7 @@ export default defineConfig([
       'simple-import-sort': simpleImportSort,
       unicorn: eslintPluginUnicorn,
       'unused-imports': unusedImports,
+      'no-flatlist': noFlatlistRule,
     },
     rules: {
       'max-params': ['error', 3],
@@ -76,6 +80,8 @@ export default defineConfig([
       'import/prefer-default-export': 'off',
       'import/no-cycle': ['error', { maxDepth: '∞' }],
       'prettier/prettier': ['error', { ignores: ['expo-env.d.ts'] }],
+      // Custom rule to enforce no FlatList in production
+      'no-flatlist/no-flatlist': 'error',
     },
   },
   {
@@ -109,6 +115,18 @@ export default defineConfig([
         project: undefined,
         sourceType: 'module',
       },
+    },
+  },
+  // Disable no-flatlist rule for test and storybook files
+  {
+    files: [
+      '**/__tests__/**/*.{ts,tsx}',
+      '**/*.test.{ts,tsx}',
+      '**/*.stories.{ts,tsx}',
+      '**/*.spec.{ts,tsx}',
+    ],
+    rules: {
+      'no-flatlist/no-flatlist': 'off',
     },
   },
   {

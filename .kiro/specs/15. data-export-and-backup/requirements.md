@@ -27,6 +27,9 @@ The Data Export and Backup feature enables GrowBro users to export their cultiva
 #### Acceptance Criteria
 
 1. WHEN creating backups THEN the system SHALL use encrypt-then-zip: generate NDJSON per table (one record/line), manifest.json, checksums.json; encrypt archive payload with AES-GCM-256 using user passphrase, then zip as transport container
+   1. WHEN implementing encryption THEN the system SHALL use Argon2id as primary KDF (fallback to scrypt) with minimum 16-byte salt, 64MB memory cost, 2 iterations, and 1-second time cost; store KDF parameters in backup file header for restoration compatibility
+   2. WHEN generating backup files THEN the system SHALL use portable header format: 8-byte magic ("CANA_BKP"), 4-byte version, 1-byte KDF identifier (0x01=Argon2id, 0x02=scrypt), 16-byte salt, 12-byte AES-GCM nonce, 8-byte payload length, 16-byte auth tag; header versioning allows future cryptographic upgrades
+   3. WHEN encrypting payload THEN the system SHALL generate unique random 12-byte nonce per backup, use AES-GCM-256 with 256-bit key derived from user passphrase via specified KDF, and store complete header (52 bytes total) before encrypted payload for self-contained restoration
 2. WHEN offering backup options THEN the system SHALL provide Compact (no media) and Full (include resized ≤1280px media + media-index.json)
 3. WHEN handling media files THEN the system SHALL use content-addressed filenames (<sha256>.<ext>) and store sha256 in index for deduplication
 4. WHEN uploading to cloud THEN the system SHALL use Supabase resumable (TUS) with progress and auto-retry (exponential backoff, 3 attempts)

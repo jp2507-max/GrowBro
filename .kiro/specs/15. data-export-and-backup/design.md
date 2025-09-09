@@ -67,6 +67,13 @@ graph TB
 
 ### Core Services
 
+```typescript
+enum Cipher {
+  XCHACHA20_POLY1305 = 'xchacha20-poly1305',
+  AES_256_GCM = 'aes-256-gcm',
+}
+```
+
 #### BackupManager
 
 ```typescript
@@ -87,7 +94,7 @@ interface BackupOptions {
   passphrase: string;
   chunkBytes: number;
   kdf: 'argon2id' | 'scrypt';
-  cipher: 'xchacha20' | 'aes-gcm';
+  cipher: Cipher;
   compressionLevel: number;
   maxConcurrentUploads: number;
   selectiveRestore?: {
@@ -122,37 +129,44 @@ interface ExportFormat {
 ```typescript
 interface CryptoService {
   encrypt(
-    data: Buffer,
+    data: Uint8Array,
     passphrase: string,
     options: CryptoOptions
   ): Promise<EncryptedData>;
-  decrypt(encryptedData: EncryptedData, passphrase: string): Promise<Buffer>;
-  generateChecksum(data: Buffer, algorithm: 'sha256' | 'blake3'): string;
-  verifyChecksum(data: Buffer, checksum: string, algorithm: string): boolean;
+  decrypt(
+    encryptedData: EncryptedData,
+    passphrase: string
+  ): Promise<Uint8Array>;
+  generateChecksum(data: Uint8Array, algorithm: 'sha256' | 'blake3'): string;
+  verifyChecksum(
+    data: Uint8Array,
+    checksum: string,
+    algorithm: string
+  ): boolean;
   deriveKey(
     passphrase: string,
-    salt: Buffer,
+    salt: Uint8Array,
     kdf: 'argon2id' | 'scrypt'
-  ): Promise<Buffer>;
-  generateManifestSignature(manifest: any, key: Buffer): string;
+  ): Promise<Uint8Array>;
+  generateManifestSignature(manifest: any, key: Uint8Array): string;
   verifyManifestSignature(
     manifest: any,
     signature: string,
-    key: Buffer
+    key: Uint8Array
   ): boolean;
 }
 
 interface CryptoOptions {
   kdf: 'argon2id' | 'scrypt';
-  cipher: 'xchacha20' | 'aes-gcm';
+  cipher: Cipher;
   chunkSize: number;
 }
 
 interface EncryptedData {
-  ciphertext: Buffer;
-  iv: Buffer;
-  authTag: Buffer;
-  salt: Buffer;
+  ciphertext: Uint8Array;
+  iv: Uint8Array;
+  authTag: Uint8Array;
+  salt: Uint8Array;
 }
 ```
 
@@ -196,7 +210,7 @@ interface BackupMetadata {
   integrity: 'verified' | 'corrupted' | 'unknown';
   kdf: 'argon2id' | 'scrypt';
   kdfParams: KDFParams;
-  cipher: 'xchacha20' | 'aes-gcm';
+  cipher: Cipher;
   chunkBytes: number;
   hashAlgo: 'sha256' | 'blake3';
   manifestSignature: string;
@@ -309,17 +323,422 @@ class WatermelonSyncManager {
 
   async createPreRestoreSnapshot(): Promise<string> {
     // Create local point-in-time backup before restore for rollback capability
-    return await this.backupManager.createBackup({
+    // Generate cryptographically secure ephemeral key for this snapshot
+    const ephemeralKey = await this.generateEphemeralKey();
+
+    // Wrap the key securely - either with user passphrase or device keystore
+    const wrappedKey = await this.wrapEncryptionKey(ephemeralKey);
+
+    // Create backup with ephemeral encryption
+    const snapshotId = await this.backupManager.createBackup({
       type: 'full',
       includeMedia: false,
       destination: 'local',
-      passphrase: 'pre-restore-snapshot',
+      encryptionKey: ephemeralKey, // Use ephemeral key instead of passphrase
+      wrappedKey: wrappedKey, // Store wrapped key for later unwrapping
+      ttl: 3600000, // 1 hour TTL for security
+      metadata: {
+        encrypted: true,
+        keyWrapped: true,
+        purpose: 'pre-restore-snapshot',
+        createdAt: new Date().toISOString(),
+      },
+    });
+
+    // Schedule cleanup of wrapped key after TTL
+    this.scheduleKeyCleanup(snapshotId, wrappedKey, 3600000);
+
+    return snapshotId;
+  }
+
+  private async generateEphemeralKey(): Promise<string> {
+    // Generate cryptographically secure 256-bit key
+    const keyBytes = await this.cryptoService.generateSecureRandomBytes(32);
+    return this.cryptoService.bytesToBase64(keyBytes);
+  }
+
+  private async wrapEncryptionKey(ephemeralKey: string): Promise<WrappedKey> {
+    try {
+      // Try device keystore first (more secure)
+      return await this.deviceKeyStore.wrapKey(ephemeralKey, {
+        purpose: 'snapshot-encryption',
+        ttl: 3600000, // 1 hour
+      });
+    } catch (error) {
+      // Fallback to user passphrase wrapping if keystore unavailable
+      const userPassphrase = await this.getUserBackupPassphrase();
+      if (userPassphrase) {
+        return await this.cryptoService.wrapKeyWithPassphrase(
+          ephemeralKey,
+          userPassphrase,
+          { kdf: 'argon2id', iterations: 4 }
+        );
+      }
+      // Final fallback: OS-level data protection without encryption
+      return {
+        wrapped: false,
+        protectionLevel: 'os-data-protection',
+        key: ephemeralKey,
+      };
+    }
+  }
+
+  private async scheduleKeyCleanup(
+    snapshotId: string,
+    wrappedKey: WrappedKey,
+    ttlMs: number
+  ): Promise<void> {
+    // Schedule cleanup in background task
+    await this.backgroundTaskScheduler.schedule({
+      id: `cleanup-${snapshotId}`,
+      type: 'key-cleanup',
+      executeAt: Date.now() + ttlMs,
+      data: { snapshotId, wrappedKeyId: wrappedKey.id },
+      retryPolicy: { maxAttempts: 3 },
     });
   }
 }
 ```
 
-#### Delta Backup Query Strategy
+#### Secure Key Management Interfaces
+
+```typescript
+interface WrappedKey {
+  id: string;
+  wrapped: boolean;
+  protectionLevel:
+    | 'device-keystore'
+    | 'passphrase-wrapped'
+    | 'os-data-protection';
+  wrappedData?: string; // Encrypted key data
+  salt?: string; // For passphrase-wrapped keys
+  iv?: string; // Initialization vector
+  ttl?: number; // Time to live in milliseconds
+  createdAt: string;
+  purpose: string;
+}
+
+interface EphemeralKeyOptions {
+  keySize?: number; // Default: 256 bits
+  purpose: string;
+  ttl?: number; // Default: 1 hour
+}
+
+interface KeyCleanupTask {
+  snapshotId: string;
+  wrappedKeyId: string;
+  executeAt: number;
+  retryCount: number;
+}
+```
+
+#### Device KeyStore Service
+
+```typescript
+class DeviceKeyStore {
+  async wrapKey(
+    key: string,
+    options: EphemeralKeyOptions
+  ): Promise<WrappedKey> {
+    const keyId = `snapshot-key-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    try {
+      // Use Expo SecureStore or React Native Keychain for device-protected storage
+      await SecureStore.setItemAsync(keyId, key, {
+        keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+        requireAuthentication: false, // For automated snapshots
+      });
+
+      return {
+        id: keyId,
+        wrapped: true,
+        protectionLevel: 'device-keystore',
+        ttl: options.ttl || 3600000,
+        createdAt: new Date().toISOString(),
+        purpose: options.purpose,
+      };
+    } catch (error) {
+      throw new Error(
+        `Failed to store key in device keystore: ${error.message}`
+      );
+    }
+  }
+
+  async unwrapKey(wrappedKey: WrappedKey): Promise<string> {
+    if (wrappedKey.protectionLevel !== 'device-keystore') {
+      throw new Error('Key is not stored in device keystore');
+    }
+
+    try {
+      const key = await SecureStore.getItemAsync(wrappedKey.id);
+      if (!key) {
+        throw new Error('Key not found or expired');
+      }
+      return key;
+    } catch (error) {
+      throw new Error(`Failed to retrieve key from keystore: ${error.message}`);
+    }
+  }
+
+  async deleteKey(wrappedKey: WrappedKey): Promise<void> {
+    if (wrappedKey.protectionLevel === 'device-keystore') {
+      await SecureStore.deleteItemAsync(wrappedKey.id);
+    }
+  }
+}
+```
+
+#### Crypto Service Extensions
+
+```typescript
+class CryptoService {
+  async generateSecureRandomBytes(length: number): Promise<Uint8Array> {
+    // Use react-native-libsodium or Expo Crypto for secure random generation
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const array = new Uint8Array(length);
+      crypto.getRandomValues(array);
+      return array;
+    }
+    // Fallback for React Native environments
+    return await this.nativeSecureRandom(length);
+  }
+
+  async bytesToBase64(bytes: Uint8Array): Promise<string> {
+    // Convert bytes to base64 for storage/transmission
+    return Buffer.from(bytes).toString('base64');
+  }
+
+  async wrapKeyWithPassphrase(
+    key: string,
+    passphrase: string,
+    options: { kdf: 'argon2id' | 'scrypt'; iterations: number }
+  ): Promise<WrappedKey> {
+    const salt = await this.generateSecureRandomBytes(32);
+    const iv = await this.generateSecureRandomBytes(16);
+
+    // Derive wrapping key using PBKDF2/Argon2
+    const wrappingKey = await this.deriveKey(passphrase, {
+      ...options,
+      salt: salt,
+    });
+
+    // Encrypt the ephemeral key with the derived wrapping key
+    const encryptedKey = await this.encrypt(key, wrappingKey, iv);
+
+    return {
+      id: `wrapped-${Date.now()}`,
+      wrapped: true,
+      protectionLevel: 'passphrase-wrapped',
+      wrappedData: encryptedKey,
+      salt: this.bytesToBase64(salt),
+      iv: this.bytesToBase64(iv),
+      ttl: 3600000, // 1 hour default
+      createdAt: new Date().toISOString(),
+      purpose: 'snapshot-encryption',
+    };
+  }
+
+  async unwrapKeyWithPassphrase(
+    wrappedKey: WrappedKey,
+    passphrase: string
+  ): Promise<string> {
+    if (wrappedKey.protectionLevel !== 'passphrase-wrapped') {
+      throw new Error('Key is not passphrase-wrapped');
+    }
+
+    // Re-derive wrapping key
+    const salt = Buffer.from(wrappedKey.salt!, 'base64');
+    const wrappingKey = await this.deriveKey(passphrase, {
+      kdf: 'argon2id',
+      salt: salt,
+      iterations: 4,
+    });
+
+    // Decrypt the ephemeral key
+    const iv = Buffer.from(wrappedKey.iv!, 'base64');
+    return await this.decrypt(wrappedKey.wrappedData!, wrappingKey, iv);
+  }
+}
+```
+
+#### Background Task Scheduler
+
+```typescript
+class BackgroundTaskScheduler {
+  async schedule(task: KeyCleanupTask): Promise<void> {
+    // Use expo-background-task or react-native-background-task
+    // Schedule cleanup task to run after TTL expires
+    await BackgroundTask.scheduleTaskAsync({
+      taskName: task.id,
+      taskType: BackgroundTask.TaskType.BACKGROUND_PROCESSING,
+      delay: task.executeAt - Date.now(),
+      data: task,
+    });
+  }
+
+  async executeCleanup(task: KeyCleanupTask): Promise<void> {
+    try {
+      // Attempt to delete the wrapped key
+      const wrappedKey = await this.getWrappedKey(task.wrappedKeyId);
+      await this.deviceKeyStore.deleteKey(wrappedKey);
+
+      // Mark snapshot as expired if it exists
+      await this.markSnapshotExpired(task.snapshotId);
+    } catch (error) {
+      // Retry logic for cleanup failures
+      if (task.retryCount < 3) {
+        task.retryCount++;
+        await this.rescheduleCleanup(task);
+      } else {
+        // Log permanent failure
+        await this.logCleanupFailure(task, error);
+      }
+    }
+  }
+}
+```
+
+#### Backup Manager Interface Updates
+
+```typescript
+interface BackupOptions {
+  type: 'full' | 'delta';
+  includeMedia: boolean;
+  destination: 'local' | 'cloud';
+  encryptionKey?: string; // Ephemeral key instead of passphrase
+  wrappedKey?: WrappedKey; // Wrapped key for later retrieval
+  ttl?: number; // Time to live for the backup
+  metadata?: {
+    encrypted: boolean;
+    keyWrapped: boolean;
+    purpose: string;
+    createdAt: string;
+    protectionLevel?:
+      | 'device-keystore'
+      | 'passphrase-wrapped'
+      | 'os-data-protection';
+  };
+}
+
+class BackupManager {
+  async createBackup(options: BackupOptions): Promise<string> {
+    const snapshotId = `snapshot-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Create backup with appropriate encryption
+    if (options.encryptionKey) {
+      await this.createEncryptedBackup(snapshotId, options);
+    } else {
+      await this.createUnencryptedBackup(snapshotId, options);
+    }
+
+    // Store metadata with encryption flags
+    await this.storeBackupMetadata(snapshotId, options.metadata);
+
+    return snapshotId;
+  }
+
+  private async createEncryptedBackup(
+    snapshotId: string,
+    options: BackupOptions
+  ): Promise<void> {
+    // Use ephemeral key for encryption
+    const encryptedStream = await this.cryptoService.encryptStream(
+      await this.getDatabaseStream(),
+      options.encryptionKey!,
+      { algorithm: 'aes-256-gcm' }
+    );
+
+    await this.writeEncryptedBackup(snapshotId, encryptedStream, options);
+  }
+
+  private async createUnencryptedBackup(
+    snapshotId: string,
+    options: BackupOptions
+  ): Promise<void> {
+    // Create unencrypted backup with OS-level data protection
+    const dataStream = await this.getDatabaseStream();
+
+    // Apply OS-level data protection (iOS NSFileProtectionComplete, Android scoped storage)
+    await this.applyOSDataProtection(snapshotId);
+
+    await this.writeUnencryptedBackup(snapshotId, dataStream, options);
+  }
+
+  private async applyOSDataProtection(snapshotId: string): Promise<void> {
+    // iOS: Set NSFileProtectionComplete
+    if (Platform.OS === 'ios') {
+      await FileSystem.setProtectionLevelAsync(
+        `${FileSystem.documentDirectory}backups/${snapshotId}`,
+        FileSystem.ProtectionLevel.Complete
+      );
+    }
+    // Android: Use scoped storage with appropriate flags
+    // Implementation depends on react-native-scoped-storage or similar
+  }
+
+  private async storeBackupMetadata(
+    snapshotId: string,
+    metadata?: BackupOptions['metadata']
+  ): Promise<void> {
+    const backupMetadata = {
+      id: snapshotId,
+      ...metadata,
+      protectionLevel: metadata?.protectionLevel || 'os-data-protection',
+      encrypted: metadata?.encrypted || false,
+      createdAt: new Date().toISOString(),
+      expiresAt: metadata?.ttl
+        ? new Date(Date.now() + metadata.ttl).toISOString()
+        : null,
+    };
+
+    await this.metadataStore.save(snapshotId, backupMetadata);
+  }
+}
+```
+
+#### User Passphrase Management
+
+```typescript
+class UserPassphraseManager {
+  async getUserBackupPassphrase(): Promise<string | null> {
+    // Check if user has previously set a backup passphrase
+    const storedHint = await SecureStore.getItemAsync('backup-passphrase-hint');
+    if (!storedHint) {
+      return null; // No passphrase set
+    }
+
+    // Prompt user for passphrase (would be handled by UI component)
+    // This is a placeholder - actual implementation would show a modal/form
+    return await this.promptUserForPassphrase(storedHint);
+  }
+
+  async setUserBackupPassphrase(
+    passphrase: string,
+    hint?: string
+  ): Promise<void> {
+    // Store only a hint, never the actual passphrase
+    if (hint) {
+      await SecureStore.setItemAsync('backup-passphrase-hint', hint);
+    }
+
+    // Validate passphrase strength
+    await this.validatePassphraseStrength(passphrase);
+
+    // Store a hash for verification (not the passphrase itself)
+    const hash = await this.cryptoService.hashPassphrase(passphrase);
+    await SecureStore.setItemAsync('backup-passphrase-hash', hash);
+  }
+
+  private async validatePassphraseStrength(passphrase: string): Promise<void> {
+    if (passphrase.length < 12) {
+      throw new Error('Passphrase must be at least 12 characters long');
+    }
+    // Additional strength checks...
+  }
+}
+```
+
+### Delta Backup Query Strategy
 
 ```typescript
 class DeltaBackupQuery {
@@ -364,21 +783,172 @@ class StreamingCryptoService {
 }
 ```
 
-#### Progressive ZIP Creation
+#### File-Based ZIP Creation Service
+
+**Updated Design**: Due to `react-native-zip-archive` library limitations, we cannot return JavaScript ReadableStreams. The library only supports file-path based zipping operations and cannot produce JS-level streams for on-the-fly processing.
 
 ```typescript
-class StreamingZipService {
-  async createZipStream(files: FileEntry[]): Promise<ReadableStream> {
-    // Use react-native-zip-archive to write entries incrementally
-    // Avoid JS-only zippers that buffer fully in memory
-    return new ReadableStream({
-      async pull(controller) {
-        // Add files to zip one by one, streaming content
-      },
-    });
+interface ZipCreationOptions {
+  compressionLevel?: number; // 0-9, default: 6
+  password?: string; // For encrypted ZIPs
+  destinationPath: string; // Target ZIP file path
+}
+
+interface FileEntry {
+  sourcePath: string; // File system path to source file
+  archivePath: string; // Path within ZIP archive
+  compressionMethod?: 'deflate' | 'store';
+}
+
+class FileBasedZipService {
+  async createZipArchive(
+    files: FileEntry[],
+    options: ZipCreationOptions
+  ): Promise<string> {
+    const { destinationPath, compressionLevel = 6, password } = options;
+
+    try {
+      // Ensure destination directory exists
+      await this.ensureDirectoryExists(path.dirname(destinationPath));
+
+      // Use react-native-zip-archive's file-based API
+      const zipResult = await ZipArchive.zipFiles(
+        files.map((f) => f.sourcePath),
+        destinationPath,
+        {
+          level: compressionLevel,
+          password: password,
+          // Map source paths to archive paths
+          filesMapping: files.reduce(
+            (acc, file) => {
+              acc[file.sourcePath] = file.archivePath;
+              return acc;
+            },
+            {} as Record<string, string>
+          ),
+        }
+      );
+
+      // Verify ZIP integrity
+      await this.verifyZipIntegrity(destinationPath);
+
+      return destinationPath;
+    } catch (error) {
+      await this.cleanupPartialZip(destinationPath);
+      throw new Error(`ZIP creation failed: ${error.message}`);
+    }
+  }
+
+  private async ensureDirectoryExists(dirPath: string): Promise<void> {
+    try {
+      await FileSystem.makeDirectoryAsync(dirPath, { intermediates: true });
+    } catch (error) {
+      // Directory might already exist, ignore
+      if (!error.message.includes('already exists')) {
+        throw error;
+      }
+    }
+  }
+
+  private async verifyZipIntegrity(zipPath: string): Promise<void> {
+    // Use react-native-zip-archive to verify ZIP structure
+    const isValid = (await ZipArchive.isPasswordProtected(zipPath)) !== null;
+    if (!isValid) {
+      throw new Error('Created ZIP archive appears to be corrupted');
+    }
+  }
+
+  private async cleanupPartialZip(zipPath: string): Promise<void> {
+    try {
+      await FileSystem.deleteAsync(zipPath, { idempotent: true });
+    } catch (error) {
+      // Log cleanup failure but don't throw
+      console.warn('Failed to cleanup partial ZIP file:', error);
+    }
   }
 }
 ```
+
+#### Platform-Specific Responsibilities
+
+**iOS Platform Layer**:
+
+- Handle NSFileProtectionComplete for created ZIP files
+- Manage temporary file cleanup in app sandbox
+- Coordinate with background task scheduler for large ZIP operations
+- Handle iOS-specific file system permissions and security scoping
+
+**Android Platform Layer**:
+
+- Integrate with Storage Access Framework (SAF) for external storage
+- Handle scoped storage permissions for Android 11+
+- Manage content URI resolution for ZIP file access
+- Coordinate with Android's WorkManager for background ZIP creation
+
+#### Error Handling
+
+```typescript
+class ZipErrorHandler {
+  async handleZipCreationError(
+    error: ZipCreationError,
+    context: ZipCreationContext
+  ): Promise<RecoveryAction> {
+    switch (error.type) {
+      case 'insufficient_space':
+        return {
+          action: 'cleanup_and_retry',
+          userMessage:
+            'Not enough space for ZIP creation. Clearing temporary files...',
+          cleanupStrategy: 'aggressive',
+        };
+      case 'file_not_found':
+        return {
+          action: 'retry_missing_files',
+          userMessage:
+            'Some files are missing. Retrying with available files...',
+          missingFiles: error.missingFiles,
+        };
+      case 'permission_denied':
+        return {
+          action: 'request_permissions',
+          userMessage: 'Storage permission required to create backup.',
+          requiredPermissions: ['storage_write'],
+        };
+      case 'corruption_detected':
+        return {
+          action: 'recreate_archive',
+          userMessage: 'ZIP corruption detected. Recreating archive...',
+          retryCount: context.retryCount,
+        };
+      default:
+        return {
+          action: 'fail',
+          userMessage: 'ZIP creation failed. Please try again.',
+        };
+    }
+  }
+}
+```
+
+#### Migration Note: ReadableStream Infeasibility
+
+**Why ReadableStream is not viable with react-native-zip-archive**:
+
+1. **Library Architecture**: `react-native-zip-archive` is built around native platform ZIP APIs that operate on complete file paths, not streaming interfaces
+2. **Memory Constraints**: Mobile devices have limited memory; streaming large ZIPs could cause OOM errors
+3. **Platform Differences**: iOS and Android ZIP APIs don't expose streaming interfaces to JavaScript
+4. **Performance Trade-offs**: File-based ZIP creation allows for better native optimization and background processing
+5. **Error Recovery**: File-based approach enables better error recovery and partial upload resumption
+
+**Alternative Considered**: Custom native module with InputStream/OutputStream semantics would require:
+
+- Complex native code for both iOS (NSInputStream/NSOutputStream) and Android (FileInputStream/FileOutputStream)
+- Custom JNI/Kotlin bridging for Android
+- Objective-C/Swift native module for iOS
+- Extensive testing across iOS/Android versions
+- Maintenance overhead for native code
+
+**Chosen Approach**: File-based API with proper error handling and platform integration provides better reliability and maintainability for backup use cases.
 
 ### Background Task Management
 
@@ -662,7 +1232,7 @@ interface CBKFormat {
   encryption: {
     kdf: 'argon2id' | 'scrypt';
     kdfParams: KDFParams;
-    cipher: 'xchacha20-poly1305' | 'aes-256-gcm';
+    cipher: Cipher;
     chunkSize: number; // Default: 64KB
   };
   integrity: {

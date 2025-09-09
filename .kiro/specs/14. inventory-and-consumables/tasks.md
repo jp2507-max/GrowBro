@@ -74,8 +74,13 @@
   - Create reorder point calculation with lead time and forecasting (8-week SMA default)
   - Implement low stock detection with days-to-zero forecasting and 80% prediction intervals
   - Add Simple Exponential Smoothing for items with ≥12 weeks of data
-  - Create Android 13+ exact alarm permission flow with SCHEDULE_EXACT_ALARM request
-  - Implement fallback to inexact alarms + in-app banners when permission denied
+  - **Android 13+/14+ Exact Alarm Implementation:**
+    - **Manifest Configuration:** Add SCHEDULE_EXACT_ALARM for API 31+ with maxSdkVersion split, USE_EXACT_ALARM only for core alarms with proper maxSdkVersion handling
+    - **Eligibility Guards:** Implement canScheduleExactAlarms() pre-checks and handle ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED broadcasts
+    - **Fallback-First Behavior:** Default to inexact schedulers when permission unavailable, with explicit upgrade prompts only after user interaction
+    - **User-Visible Rationale:** Display clear permission rationale before ACTION_REQUEST_SCHEDULE_EXACT_ALARM, provide Settings guidance as secondary option (no hidden/background flows)
+    - **Play Policy Compliance:** Document exact alarm usage justification in reviewer docs with specific use cases and fallback behavior
+    - **Telemetry Integration:** Add telemetry points for pre-check results, grant/deny decisions, auto-downgrade events, and permission state changes
   - Add device-matrix QA testing (Pixel + Samsung) for notification delivery variance
   - _Requirements: 4.1, 4.2, 4.3, 4.5, 6.3_
 

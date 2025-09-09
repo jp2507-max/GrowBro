@@ -72,7 +72,7 @@
 - [ ] 4.2 Create Google Play Store validation checks
 
   - Implement Play Console "App Content" declarations completeness check
-  - Target API 35 enforcement + extension dates (Aug 31, 2025 with Nov 1, 2025 extension)
+  - Target API 35 enforcement + extension dates (API_35_ENFORCEMENT_DATE_UTC with API_35_EXTENSION_DATE_UTC extension)
   - Photo/Video permissions declaration check for 2025 requirements
   - Add background location permission declaration enforcement
   - _Requirements: 2.1, 2.5, 5.1, 5.4_
@@ -88,11 +88,16 @@
 - [ ] 5. Create disclaimer management system with versioning
 - [ ] 5.1 Implement age gate with Apple's 2025 requirements
 
-  - Use 13+/16+/18+ age tiers; gate cannabis content <18 with neutral copy
-  - Create neutral age verification screen without nudging per Apple 5.1.1(iv)
-  - Build regional age requirement mapping (18+ or regional majority)
-  - Add age gate bypass for educational content access
-  - _Requirements: 4.1, 4.4, 4.5_
+  - Map content to Apple's global age-rating tiers: 4+ (general), 9+ (mild content), 13+ (mild violence/sexual themes), 16+ (intense violence/sexual themes), 18+ (adult content)
+  - Map cannabis and adult-only content to 18+ rating or regional-majority rules (whichever is higher)
+  - Create neutral age-verification screen with adult-task gate (randomized Q&A or instruction-following) for purchases, external links, and adult sections per Apple 5.1.1(iv)
+  - Implement age-gate bypass rules for educational content access with clear disclaimers
+  - Add tasks to localize gating copy and declare age-related capabilities in App Store Connect for each region
+  - Build regional age requirement mapping with support for jurisdiction-specific minimum ages
+  - Create age verification persistence with configurable TTL and re-verification triggers
+  - Implement parental gate mechanisms for under-18 users accessing restricted content
+  - Add telemetry tracking for age gate interactions, pass/fail rates, and bypass usage
+  - _Requirements: 4.1, 4.4, 4.5, 5.1.1(iv)_
 
 - [ ] 5.2 Build contextual disclaimer injection system
 
@@ -140,7 +145,7 @@
 - [ ] 7.1 Create automated policy compliance validator
 
   - Build comprehensive build-time policy compliance checker
-  - Target API gate: hard-fail builds if target < API 35 after Aug 31, 2025; show deadline + extension info
+  - Target API gate: hard-fail builds if target < API 35 after API_35_ENFORCEMENT_DATE_UTC; show deadline + extension info
   - Apple age rating gate: verify the new age rating matches the in-app gate
   - Account deletion gate (Apple 5.1.1(v)): fail builds if account can be created but not deleted in-app
   - Photos & Videos policy (Play 2025): require declaration or migrate to Photo Picker; block release if missing
@@ -191,13 +196,19 @@
   - _Requirements: 6.1, 6.2, 6.4_
 
 - [ ] 10. Create reviewer mode and kill switches for app store review
-- [ ] 10.1 Implement single remote flag for feature disabling
+- [ ] 10.1 Implement secure remote flag system with cryptographic verification
 
   - Create master kill switch to disable Community + AI Diagnosis + sharing simultaneously
   - Build Reviewer Notes screen with app purpose, compliance measures, and contact info
   - Implement Conservative Mode demonstration for app store reviewers
+  - **Require signed remote configs**: Verify cryptographic signature (ECDSA P-256) before applying any remote policy changes
+  - **Enforce TLS certificate pinning**: Pin server certificates for config endpoints to prevent MITM attacks
+  - **Implement encrypted local storage**: Store last-known-good policy in encrypted local storage (AES-256-GCM) with atomic fallback mechanism
+  - **Default to Conservative Mode**: Automatically enter Conservative Mode on first-run or when no valid cached policy exists
+  - **Create immutable audit log**: Append every toggle/remote-policy-apply to secure audit log with timestamp, actor/service ID, action, policy version, and verification result
   - Add feature flag system with remote config for instant policy changes without app updates
-  - _Requirements: 7.1, 7.3, 7.5_
+  - Implement secure key rotation for signing keys with automated certificate renewal
+  - _Requirements: 7.1, 7.3, 7.5, Security hardening_
 
 - [ ] 10.2 Build reviewer documentation and compliance demonstration
 

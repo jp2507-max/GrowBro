@@ -21,6 +21,30 @@ The system uses FEFO (First-Expire-First-Out) for availability and consumption o
 5. WHEN adding an item with initial stock THEN the system SHALL create both the item and first batch in one atomic write operation
 6. IF an inventory item reaches or falls below minimum stock threshold THEN the system SHALL display a low stock warning with validation rules enforced for units and precision
 
+<!--
+**CodeRabbit AI Review Comment:**
+
+**Refactor suggestion: Tighten immutability requirements**
+
+**Issue:** The current requirements don't explicitly state that `inventory_movements` are append-only with no UPDATE/DELETE operations. This could lead to inconsistent implementations where movements might be modified or deleted, breaking audit trails and reconciliation capabilities.
+
+**Recommendation:** Add explicit requirements for append-only behavior:
+
+**Additional Requirements:**
+7. WHEN correcting inventory errors THEN the system SHALL create a new adjustment movement with negative quantity_delta to reverse the original movement, followed by a new adjustment movement with correct values, rather than updating or deleting existing movements
+8. WHEN inventory_movements are created THEN the system SHALL ensure they are immutable with no UPDATE or DELETE operations allowed at the database level
+9. WHEN audit trails are required THEN the system SHALL maintain 100% of all inventory changes as immutable movements for reconciliation and compliance purposes
+
+**Database Alignment:**
+- Remove `movements_delete` RLS policy (currently on line ~371 in design.md)
+- Ensure no UPDATE policy exists for `inventory_movements` table
+- All corrections must occur via new adjustment movements with proper reasoning
+
+**Also applies to:** Lines 120-127 (RLS policies), lines 134 (data model description), and lines 260+ (table creation in design.md)
+
+This ensures true immutability for audit trails while maintaining data integrity and reconciliation capabilities.
+-->
+
 ### Requirement 2
 
 **User Story:** As a grower, I want to organize my inventory into batches with expiration dates and lot numbers, so that I can use older stock first and track product quality.
