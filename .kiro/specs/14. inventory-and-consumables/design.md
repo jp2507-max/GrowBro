@@ -57,9 +57,7 @@ The system implements a robust offline-first architecture with Expo-specific con
 - **Batch Operations**: Chunked sync payloads ≤2MB for large datasets
 - **Caching**: Offline search index for instant results without network
 
-## Compo
-
-nents and Interfaces
+## Components and Interfaces
 
 ### Core Data Models
 
@@ -300,10 +298,6 @@ CREATE TRIGGER trg_items_updated_at
 CREATE TRIGGER trg_batches_updated_at
   BEFORE UPDATE ON inventory_batches
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
-CREATE TRIGGER trg_movements_updated_at
-  BEFORE UPDATE ON inventory_movements
-  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 ```
 
 #### Indexes for Performance
@@ -372,12 +366,6 @@ CREATE POLICY "movements_select" ON inventory_movements
   );
 CREATE POLICY "movements_insert" ON inventory_movements
   FOR INSERT WITH CHECK (
-    item_id IN (SELECT id FROM inventory_items WHERE user_id = auth.uid())
-  );
-CREATE POLICY "movements_update" ON inventory_movements
-  FOR UPDATE USING (
-    item_id IN (SELECT id FROM inventory_items WHERE user_id = auth.uid())
-  ) WITH CHECK (
     item_id IN (SELECT id FROM inventory_items WHERE user_id = auth.uid())
   );
 CREATE POLICY "movements_delete" ON inventory_movements

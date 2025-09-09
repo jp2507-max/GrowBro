@@ -4,6 +4,37 @@
 
 import { DateTime } from 'luxon';
 
+/**
+ * Parses an ISO-8601 UTC date string and returns a UTC DateTime
+ * @param utcDateString - ISO-8601 UTC date string (e.g., '2025-08-31T00:00:00Z')
+ * @returns Luxon DateTime in UTC timezone
+ */
+export function parseUtcDateString(utcDateString: string): DateTime {
+  return DateTime.fromISO(utcDateString, { zone: 'utc' });
+}
+
+/**
+ * Checks if the current UTC time is after the specified UTC date
+ * @param utcDateString - ISO-8601 UTC date string to compare against
+ * @returns true if current time is after the specified date
+ */
+export function isUtcTimeAfter(utcDateString: string): boolean {
+  const targetDate = parseUtcDateString(utcDateString);
+  const now = DateTime.utc();
+  return now > targetDate;
+}
+
+/**
+ * Checks if the current UTC time is before the specified UTC date
+ * @param utcDateString - ISO-8601 UTC date string to compare against
+ * @returns true if current time is before the specified date
+ */
+export function isUtcTimeBefore(utcDateString: string): boolean {
+  const targetDate = parseUtcDateString(utcDateString);
+  const now = DateTime.utc();
+  return now < targetDate;
+}
+
 export type DateCombinationResult = {
   localDateTime: DateTime;
   utcDate: Date;

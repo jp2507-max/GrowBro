@@ -98,6 +98,9 @@ interface ConsentService {
   isConsentRequired(): boolean;
   getConsentVersion(): string;
 
+  // SDK permission facade (delegates to SDKGate)
+  isSDKAllowed(sdkName: string): boolean;
+
   // Compliance helpers
   exportConsentHistory(): Promise<ConsentAuditLog[]>;
   validateConsents(): Promise<ValidationResult>;

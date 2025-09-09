@@ -127,14 +127,13 @@ graph TB
 
 ```typescript
 interface ReportingService {
-  submitReport(report: ContentReport): Promise<ReportSubmissionResult>;
+  submitReport(report: ContentReportInput): Promise<ReportSubmissionResult>;
   getReportStatus(reportId: string): Promise<ReportStatus>;
-  validateReportData(report: ContentReport): ValidationResult;
+  validateReportData(report: ContentReportInput): ValidationResult;
   captureContentSnapshot(contentId: string): Promise<ContentSnapshot>;
 }
 
-interface ContentReport {
-  id: string;
+interface ContentReportInput {
   contentId: string;
   reportType: 'illegal' | 'policy_violation';
   legalReference?: string; // e.g., DE StGB §..., EU regulation...
@@ -145,7 +144,25 @@ interface ContentReport {
   goodFaithDeclaration: boolean;
   evidenceUrls?: string[];
   contentHash: string; // cryptographic hash of content at report time
-  // logging (minimised)
+}
+
+interface ContentReport {
+  id: string;
+  contentId: string;
+  reporterId: string; // normalized from reporterContact or pseudonymous ID
+  reportType: 'illegal' | 'policy_violation';
+  legalReference?: string; // e.g., DE StGB §..., EU regulation...
+  jurisdiction?: string; // required if illegal
+  contentLocator: string; // permalink/ID at time of report
+  explanation: string; // "sufficiently substantiated"
+  reporterContact: ContactInfo; // may be pseudonymous per policy
+  goodFaithDeclaration: boolean;
+  evidenceUrls?: string[];
+  contentHash: string; // cryptographic hash of content at report time
+  contentSnapshot?: ContentSnapshot;
+  status: ReportStatus;
+  priority: number;
+  trustedFlagger: boolean; // Art. 22 priority lane
   createdAt: Date;
   updatedAt: Date;
   slaDeadline: Date;
@@ -299,6 +316,7 @@ interface AgeVerificationService {
     hasConsent: boolean
   ): Promise<void>;
   issueVerificationToken(userId: string): Promise<ReusableToken>;
+  validateToken(userId: string, tokenId: string): Promise<boolean>;
 }
 ```
 
@@ -343,32 +361,6 @@ interface GeoLocationService {
 ## Data Models
 
 ### Core Entities
-
-**Content Report**
-
-```typescript
-interface ContentReport {
-  id: string;
-  contentId: string;
-  reporterId: string;
-  reportType: 'illegal' | 'policy_violation';
-  legalReference?: string; // e.g., DE StGB §..., EU regulation...
-  jurisdiction?: string; // required if illegal
-  contentLocator: string; // permalink/ID at time of report
-  explanation: string; // "sufficiently substantiated"
-  reporterContact: ContactInfo; // may be pseudonymous per policy
-  goodFaithDeclaration: boolean;
-  evidenceUrls?: string[];
-  contentHash: string; // cryptographic hash of content at report time
-  contentSnapshot: ContentSnapshot;
-  status: ReportStatus;
-  priority: number;
-  trustedFlagger: boolean; // Art. 22 priority lane
-  createdAt: Date;
-  updatedAt: Date;
-  slaDeadline: Date;
-}
-```
 
 **Moderation Decision**
 
@@ -542,6 +534,53 @@ class DSASubmissionCircuitBreaker {
   private failureCount = 0;
   private lastFailureTime?: Date;
   private state: 'closed' | 'open' | 'half-open' = 'closed';
+  private retryableOperation: RetryableOperation;
+
+  constructor(retryableOperation: RetryableOperation) {
+    this.retryableOperation = retryableOperation;
+  }
+
+  private async addToExportQueue(statement: StatementOfReasons): Promise<void> {
+    // Add statement to export queue for processing
+    await this.db.insert('sor_export_queue', {
+      statement_id: statement.id,
+      status: 'pending',
+      attempts: 0,
+      created_at: new Date(),
+    });
+  }
+
+  private async markForRetry(statementId: string): Promise<void> {
+    // Mark statement for retry by updating queue status
+    await this.updateQueueItem(statementId, {
+      status: 'retry',
+      last_attempt: new Date(),
+    });
+  }
+
+  private async moveToDeadLetterQueue(
+    statementId: string,
+    errorMessage: string
+  ): Promise<void> {
+    // Move statement to dead letter queue
+    await this.updateQueueItem(statementId, {
+      status: 'dlq',
+      error_message: errorMessage,
+      last_attempt: new Date(),
+    });
+  }
+
+  private async updateTransparencyDbId(
+    statementId: string,
+    transparencyDbId: string
+  ): Promise<void> {
+    // Store the Commission DB response ID
+    await this.db.update(
+      'statements_of_reasons',
+      { transparency_db_id: transparencyDbId },
+      { id: statementId }
+    );
+  }
 
   async submitToTransparencyDB(statement: StatementOfReasons): Promise<void> {
     // Add to export queue first (idempotent)
@@ -557,17 +596,43 @@ class DSASubmissionCircuitBreaker {
       }
     }
 
+    // Get current attempt count from queue
+    const currentAttempts = await this.getAttemptCount(statement.id);
+    const maxAttempts = this.getMaxAttempts();
+
+    if (currentAttempts >= maxAttempts) {
+      // Exceeded max attempts, move to DLQ
+      await this.moveToDeadLetterQueue(
+        statement.id,
+        'Max retry attempts exceeded'
+      );
+      return;
+    }
+
     try {
       // PII scrubbing before submission (Art. 24(5))
       const redactedSoR = await this.scrubPII(statement);
-      const response = await this.dsaClient.submit(redactedSoR);
+      const response = await this.retryableOperation.executeWithRetry(
+        () => this.dsaClient.submit(redactedSoR),
+        maxAttempts - currentAttempts - 1, // Remaining attempts
+        this.getBaseDelay()
+      );
 
       // Store Commission DB response ID
       await this.updateTransparencyDbId(statement.id, response.id);
+      await this.resetAttemptCount(statement.id); // Reset on success
       this.reset();
     } catch (error) {
-      this.recordFailure();
-      await this.moveToDeadLetterQueue(statement.id, error.message);
+      await this.incrementAttemptCount(statement.id);
+
+      if (this.isPermanentError(error)) {
+        // Permanent error, move to DLQ immediately
+        await this.moveToDeadLetterQueue(statement.id, error.message);
+      } else {
+        // Transient error, mark for retry
+        await this.markForRetry(statement.id);
+        this.recordFailure();
+      }
       throw error;
     }
   }
@@ -581,6 +646,130 @@ class DSASubmissionCircuitBreaker {
       // Keep only aggregated/anonymized data
     };
   }
+
+  private async getAttemptCount(statementId: string): Promise<number> {
+    const queueItem = await this.getQueueItem(statementId);
+    return queueItem?.attempts || 0;
+  }
+
+  private async incrementAttemptCount(statementId: string): Promise<void> {
+    const currentAttempts = await this.getAttemptCount(statementId);
+    await this.updateQueueItem(statementId, { attempts: currentAttempts + 1 });
+  }
+
+  private async resetAttemptCount(statementId: string): Promise<void> {
+    await this.updateQueueItem(statementId, { attempts: 0 });
+  }
+
+  private getMaxAttempts(): number {
+    return 3; // Configurable threshold for max retry attempts
+  }
+
+  private getBaseDelay(): number {
+    return 1000; // Base delay in milliseconds for exponential backoff
+  }
+
+  private isPermanentError(error: any): boolean {
+    // Classify errors as permanent vs transient
+    // Permanent errors that should not be retried
+    const permanentErrorCodes = [
+      400, // Bad Request
+      401, // Unauthorized
+      403, // Forbidden
+      404, // Not Found
+      422, // Unprocessable Entity
+    ];
+
+    const permanentErrorMessages = [
+      'invalid_data',
+      'authentication_failed',
+      'insufficient_permissions',
+      'resource_not_found',
+      'validation_error',
+    ];
+
+    // Check HTTP status code
+    if (error.status && permanentErrorCodes.includes(error.status)) {
+      return true;
+    }
+
+    // Check error message/code
+    if (error.code && permanentErrorMessages.includes(error.code)) {
+      return true;
+    }
+
+    if (
+      error.message &&
+      permanentErrorMessages.some((msg) =>
+        error.message.toLowerCase().includes(msg.toLowerCase())
+      )
+    ) {
+      return true;
+    }
+
+    // Default to transient for network errors, timeouts, server errors
+    return false;
+  }
+
+  private async getQueueItem(
+    statementId: string
+  ): Promise<SoRExportQueue | null> {
+    // Implementation to retrieve queue item from database
+    return await this.db.query(
+      'SELECT * FROM sor_export_queue WHERE statement_id = ?',
+      [statementId]
+    );
+  }
+
+  private async updateQueueItem(
+    statementId: string,
+    updates: Partial<SoRExportQueue>
+  ): Promise<void> {
+    // Implementation to update queue item in database
+    await this.db.update('sor_export_queue', updates, {
+      statement_id: statementId,
+    });
+  }
+
+  // Circuit breaker state management methods
+  recordFailure(): void {
+    this.failureCount++;
+    this.lastFailureTime = new Date();
+
+    // Open circuit breaker if failure threshold exceeded
+    if (this.failureCount >= this.getFailureThreshold()) {
+      this.state = 'open';
+    }
+  }
+
+  reset(): void {
+    this.failureCount = 0;
+    this.lastFailureTime = undefined;
+    this.state = 'closed';
+  }
+
+  shouldAttemptReset(): boolean {
+    if (this.state !== 'open') {
+      return false;
+    }
+
+    // Check if enough time has passed to attempt reset
+    const resetTimeout = this.getResetTimeout();
+    if (!this.lastFailureTime) {
+      return true;
+    }
+
+    const timeSinceLastFailure = Date.now() - this.lastFailureTime.getTime();
+    return timeSinceLastFailure >= resetTimeout;
+  }
+
+  private getFailureThreshold(): number {
+    return 5; // Configurable failure threshold
+  }
+
+  private getResetTimeout(): number {
+    return 60000; // 60 seconds reset timeout
+  }
 }
 ```
 
@@ -588,6 +777,12 @@ class DSASubmissionCircuitBreaker {
 
 ```typescript
 class RetryableOperation {
+  private circuitBreaker: DSASubmissionCircuitBreaker;
+
+  constructor(circuitBreaker: DSASubmissionCircuitBreaker) {
+    this.circuitBreaker = circuitBreaker;
+  }
+
   async executeWithRetry<T>(
     operation: () => Promise<T>,
     maxRetries: number = 3,
@@ -595,16 +790,37 @@ class RetryableOperation {
   ): Promise<T> {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        return await operation();
+        const result = await operation();
+
+        // Reset circuit breaker on successful operation
+        if (this.circuitBreaker.state === 'half-open') {
+          this.circuitBreaker.reset();
+        }
+
+        return result;
       } catch (error) {
-        if (attempt === maxRetries || !this.isRetryable(error)) {
+        // Check if error is retryable (transient)
+        if (!this.isRetryable(error) || attempt === maxRetries) {
           throw error;
         }
 
+        // Record failure in circuit breaker for transient errors
+        this.circuitBreaker.recordFailure();
+
+        // Calculate exponential backoff delay
         const delay = baseDelay * Math.pow(2, attempt);
         await this.sleep(delay);
       }
     }
+  }
+
+  private isRetryable(error: any): boolean {
+    // Use the circuit breaker's error classification
+    return !this.circuitBreaker.isPermanentError(error);
+  }
+
+  private async sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 ```
@@ -673,12 +889,9 @@ describe('ModerationService', () => {
 
     expect(statement).toMatchObject({
       factsAndCircumstances: expect.any(String),
-      legalGround: expect.any(String),
-      automationUsed: expect.any(Boolean),
-      redressOptions: expect.arrayContaining([
-        'internal_appeal',
-        'ods_escalation',
-      ]),
+      decisionGround: expect.any(String),
+      automatedDetection: expect.any(Boolean),
+      redress: expect.arrayContaining(['internal_appeal', 'ods']),
     });
   });
 });
@@ -687,15 +900,20 @@ describe('ModerationService', () => {
 **Data Model Validation**
 
 ```typescript
-describe('ContentReport validation', () => {
+describe('ContentReportInput validation', () => {
   it('should require jurisdiction for illegal content reports', () => {
-    const report: ContentReport = {
+    const reportInput: ContentReportInput = {
+      contentId: 'content-123',
       reportType: 'illegal',
       explanation: 'Contains illegal content',
-      // Missing jurisdiction
+      contentLocator: 'https://example.com/content/123',
+      reporterContact: { email: 'reporter@example.com' },
+      goodFaithDeclaration: true,
+      contentHash: 'abc123',
+      // Missing jurisdiction - should fail validation
     };
 
-    const validation = validateContentReport(report);
+    const validation = validateContentReport(reportInput);
     expect(validation.isValid).toBe(false);
     expect(validation.errors).toContain(
       'jurisdiction_required_for_illegal_content'
@@ -872,7 +1090,6 @@ describe('Misuse Controls (Art. 23)', () => {
     for (let i = 0; i < 5; i++) {
       const report = await reportingService.submitReport({
         ...mockReport,
-        reporterId,
         explanation: 'False claim',
       });
       await moderationService.makeDecision({

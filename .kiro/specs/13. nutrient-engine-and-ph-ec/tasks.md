@@ -3,12 +3,47 @@
 - [ ] 1. Set up core infrastructure and database schema
 
   - Create WatermelonDB schema with proper indexing for nutrient engine tables
-  - Mark frequently filtered columns with isIndexed: true: ph_ec_readings.plant_id, reservoir_id, measured_at, created_at; deviation_alerts.triggered_at, type; reservoirs.medium
+  - Add composite indexes for optimal query performance: ph_ec_readings(reservoir_id, measured_at DESC), ph_ec_readings(plant_id, measured_at DESC), deviation_alerts(reservoir_id, triggered_at DESC)
+  - Avoid over-indexing low-cardinality enum-like columns (alert_type, severity, medium) unless frequently filtered with high selectivity
+  - Single-column indexes only on high-cardinality, frequently queried columns: ph_ec_readings.meter_id, deviation_alerts.measurement_id
   - Create migrations.ts and bump appSchema.version on every change; write forward-only steps
   - Use a dev build (not Expo Go) and configure the WatermelonDB config plugin
   - Set up database models with relationships and validation
   - Write unit tests for database schema and model validation
   - _Requirements: 8.1, 8.4_
+
+## Database Indexing Strategy
+
+### Composite Indexes for Optimal Query Performance
+
+The nutrient engine implements strategic composite indexing to optimize common query patterns:
+
+**ph_ec_readings table:**
+
+- `(reservoir_id, measured_at DESC)` - For reservoir-specific measurement history queries
+- `(plant_id, measured_at DESC)` - For plant-specific measurement history queries
+- Single-column index on `meter_id` - For deduplication queries
+- Single-column index on `measured_at` - For time-based range queries
+
+**deviation_alerts table:**
+
+- `(reservoir_id, triggered_at DESC)` - For reservoir-specific alert history
+- Single-column index on `measurement_id` - For alert-to-measurement lookups
+
+### Indexing Guidelines
+
+- **Use composite indexes** for multi-column WHERE clauses with high selectivity
+- **Avoid over-indexing** low-cardinality columns (enums like `alert_type`, `severity`, `medium`, `type`)
+- **Single-column indexes** only for high-cardinality, frequently filtered columns
+- **Time-based sorting** uses DESC order for recent-first queries
+- **Foreign key relationships** indexed for JOIN performance
+
+### Migration Strategy
+
+- Schema version bumped to 5 with forward-only migration steps
+- All nutrient engine tables created in single migration for atomic deployment
+- Indexes applied at table creation for optimal initial performance
+- Migration includes both schema definition and column array for WatermelonDB compatibility
 
 - [ ] 2. Implement core utility functions and type definitions
 
@@ -53,7 +88,12 @@
     - Implement synchronize() with retry/backoff + events; wire to your pull/push endpoints
     - Create SyncWorker with exponential backoff and retry mechanisms
     - Add sync event handling (onSyncStart, onSyncSuccess, onSyncError)
-    - Implement conflict resolution using Last-Write-Wins with server timestamps
+    - Implement conflict resolution using server-assigned authoritative revisions or server timestamps.
+      - Server MUST assign and return a per-record monotonically-increasing revision (e.g., integer `server_revision`) or an authoritative `server_updated_at_ms` timestamp on every write.
+      - Client SHALL use server-provided `server_revision` when present to resolve conflicts (higher revision wins). If `server_revision` is not available, the client SHALL only use server-provided timestamps (`server_updated_at_ms`) for LWW comparisons — client system clocks MUST NOT be relied on for conflict resolution.
+      - The sync pull endpoint SHALL return a snapshot `serverTimestamp` (ms) for the pull window and include per-record `server_revision`/`server_updated_at_ms` fields in the individual record payloads.
+      - Client-side sync worker SHALL use the server-provided `serverTimestamp` (or per-record `server_updated_at_ms`) as the authoritative checkpoint (`last_pulled_at`) and SHALL avoid using local Date.now() values for comparisons when server-side revisions/timestamps are available.
+      - Update reconcile logic to prefer larger `server_revision` when present; fall back to `server_updated_at_ms` only if `server_revision` is absent. Document schema/endpoint changes and ensure pushes do not depend on client clocks for correctness.
     - Build sync queue management for offline operations
     - _Requirements: 6.2, 6.5_
 

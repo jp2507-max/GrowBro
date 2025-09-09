@@ -101,6 +101,9 @@ interface SentryPerformanceConfig {
   enableStallTracking: boolean;
 }
 
+// CodeRabbit AI suggestion: Specify time units and prefer branded types to prevent ms/seconds mixups
+// TODO: Consider renaming startTimestamp/endTimestamp to startTimestampMs/endTimestampMs
+// and adding branded types (e.g., Milliseconds) to avoid unit bugs across platforms and tests
 interface PerformanceTransaction {
   name: string;
   operation: string;

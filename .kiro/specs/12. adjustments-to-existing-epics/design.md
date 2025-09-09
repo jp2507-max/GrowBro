@@ -61,9 +61,11 @@ Design Changes by Epic
 
 8. Release Pipeline (EAS)
 
-- Sentry release health as a hard gate: block if crash-free sessions fall below target.
-- CI must verify sourcemap upload; fail builds on missing/failed uploads.
+- Sentry release health as a hard gate: block deployment if crash-free sessions < 99.5%, crash-free users < 99.0%, or ANR > 0.5%.
+- CI must verify sourcemap upload via Sentry CLI (`sentry-cli releases files upload-sourcemaps`); fail builds on missing/failed uploads; failures owned by DevOps team.
 - Add synthetic flows (Maestro) for Offline Sync, AI Assessment, and Data Export.
+- Pause rollout via EAS Deploy API (`eas build:cancel`) / CI toggle; action owner: Release Engineer / On-call SRE.
+- Rollback process: invoked by Release Engineer via EAS Deploy API (`eas build:rollback`); target SLA: < 15 minutes from alert; post-rollback validation via Maestro synthetic tests.
 
 Non-Goals
 

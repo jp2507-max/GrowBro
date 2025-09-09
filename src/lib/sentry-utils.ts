@@ -1,4 +1,4 @@
-import { getPrivacyConsent } from './privacy-consent';
+import { getPrivacyConsentSync } from './privacy-consent';
 
 /**
  * Regex patterns for detecting sensitive information
@@ -143,18 +143,29 @@ function _scrubObjectData(
 /**
  * Sentry beforeSend hook to scrub sensitive information and respect user consent
  */
+/* eslint-disable max-lines-per-function -- function intentionally contains a series of small
+  scrubbers and data transformations; splitting reduces readability for this hook. */
 export const beforeSendHook = (event: any, _hint?: any): any | null => {
   try {
-    // Check user consent
-    const consent = getPrivacyConsent();
+    // Check user consent using synchronous cache
+    const consent = getPrivacyConsentSync();
+
+    // If cache is not populated yet, fall back to default consent (crash reporting enabled)
+    const effectiveConsent = consent || {
+      analytics: false,
+      crashReporting: true, // Default to enabled for crash reporting
+      personalizedData: false,
+      sessionReplay: false,
+      lastUpdated: Date.now(),
+    };
 
     // If user hasn't consented to crash reporting, don't send the event
-    if (!consent.crashReporting) {
+    if (!effectiveConsent.crashReporting) {
       return null;
     }
 
     // If user hasn't consented to personalized data, remove user info
-    if (!consent.personalizedData && event.user) {
+    if (!effectiveConsent.personalizedData && event.user) {
       event.user = {
         id: event.user.id ? '[USER_ID_REDACTED]' : undefined,
       };
@@ -270,9 +281,19 @@ export async function captureCategorizedError(error: unknown): Promise<void> {
  * @param error - The error to capture (can be any type)
  */
 export function captureCategorizedErrorSync(error: unknown): void {
-  // Respect user consent before doing any work
-  const consent = getPrivacyConsent();
-  if (!consent.crashReporting) {
+  // Respect user consent before doing any work using synchronous cache
+  const consent = getPrivacyConsentSync();
+
+  // If cache is not populated yet, fall back to default consent (crash reporting enabled)
+  const effectiveConsent = consent || {
+    analytics: false,
+    crashReporting: true, // Default to enabled for crash reporting
+    personalizedData: false,
+    sessionReplay: false,
+    lastUpdated: Date.now(),
+  };
+
+  if (!effectiveConsent.crashReporting) {
     return;
   }
 

@@ -96,3 +96,18 @@ The Privacy Consent and Telemetry feature provides comprehensive privacy managem
 4. WHEN logging compliance events THEN the system SHALL record consent lifecycle (grants/withdrawals), deletion job receipts, and data export job IDs without personal content
 5. WHEN managing processors THEN the system SHALL maintain signed DPAs for Supabase and Sentry with EU region configuration and TIA documentation
 6. WHEN auditing THEN the system SHALL generate Article-30 records for each purpose/SDK from code annotations
+
+### Requirement 8
+
+**User Story:** As a compliance officer, I want to implement explicit lawful-basis policy for crash diagnostics, so that mobile crash telemetry complies with EU privacy regulations and provides clear legal justification paths.
+
+#### Acceptance Criteria
+
+1. WHEN collecting crash diagnostics THEN the system SHALL default to obtaining explicit user consent for mobile crash telemetry in EU regions per ePrivacy requirements
+2. WHEN implementing legitimate interest for crash diagnostics THEN the system SHALL require documented justification, completed DPIA, risk assessment, minimal data scope, and legal sign-off before using LI basis
+3. WHEN determining lawful basis THEN the system SHALL implement region detection to automatically apply EU consent requirements vs non-EU legitimate interest defaults
+4. WHEN presenting crash telemetry consent THEN the system SHALL provide clear opt-in UI flow with granular consent recording including lawful basis used, timestamp, and policy version
+5. WHEN configuring crash telemetry THEN the system SHALL implement configurable feature-flag to disable crash telemetry per-region with audit logging of configuration changes
+6. WHEN uploading crash diagnostics THEN the system SHALL record audit logs capturing consent decisions, lawful basis justification, and data minimization scope for each upload
+7. WHEN handling consent withdrawal THEN the system SHALL update retention and deletion workflows to reference lawful basis used and implement immediate cessation of crash telemetry collection
+8. WHEN processing crash data under legitimate interest THEN the system SHALL enforce essential-only collection with documented necessity assessment and regular LI justification reviews

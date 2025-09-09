@@ -21,6 +21,17 @@ const DEFAULT_CONSENT: PrivacyConsent = {
   lastUpdated: Date.now(),
 };
 
+// Cached consent state for synchronous access
+let cachedConsent: PrivacyConsent | null = null;
+
+/**
+ * Get current privacy consent settings synchronously from cache
+ * Returns null if cache hasn't been populated yet
+ */
+export function getPrivacyConsentSync(): PrivacyConsent | null {
+  return cachedConsent;
+}
+
 /**
  * Get current privacy consent settings
  */
@@ -28,11 +39,16 @@ export function getPrivacyConsent(): PrivacyConsent {
   try {
     const stored = getItem<PrivacyConsent>('privacy-consent');
     if (stored) {
-      return { ...DEFAULT_CONSENT, ...stored };
+      const consent = { ...DEFAULT_CONSENT, ...stored };
+      // Populate cache with the loaded consent
+      cachedConsent = consent;
+      return consent;
     }
   } catch (error) {
     console.warn('Failed to load privacy consent settings:', error);
   }
+  // Populate cache with default consent
+  cachedConsent = DEFAULT_CONSENT;
   return DEFAULT_CONSENT;
 }
 
@@ -49,6 +65,9 @@ export function setPrivacyConsent(consent: Partial<PrivacyConsent>): void {
     };
 
     setItem('privacy-consent', updated);
+
+    // Update cache with the new consent
+    cachedConsent = updated;
 
     // Update Sentry configuration based on consent
     updateSentryConsent(updated);
@@ -90,6 +109,7 @@ export function hasConsent(feature: ConsentFeature): boolean {
 
 /**
  * Initialize privacy consent on app start
+ * This ensures the cache is populated for synchronous access
  */
 export function initializePrivacyConsent(): void {
   const consent = getPrivacyConsent();

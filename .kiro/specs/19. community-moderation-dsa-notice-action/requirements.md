@@ -60,7 +60,7 @@ This system implements the following DSA articles:
 
 1. WHEN reviewing reported content THEN the system SHALL present graduated action options (no action, quarantine/limited reach, geo-block, rate-limit, time-boxed shadow-ban, suspension, removal)
 2. WHEN making a decision THEN the system SHALL require selection of specific policy violation categories from the prohibited content catalog with policy links
-3. WHEN taking action THEN the system SHALL generate an Art. 17 Statement of Reasons including facts/circumstances, legal or T&Cs ground, whether automation was used, and redress options
+3. WHEN taking action THEN the system SHALL generate an Art. 17 Statement of Reasons (pursuant to DSA Art.17(3)(c)) including facts/circumstances, legal or T&Cs ground, details about use of automated means (including whether the decision relied on content detected/identified by automated systems), and redress options
 4. WHEN issuing decisions THEN the system SHALL send Statement of Reasons to the user and submit redacted SoR to the Commission's DSA Transparency Database without undue delay
 5. WHEN decisions affect user accounts THEN the system SHALL automatically generate user notifications within 15 minutes
 6. WHEN decisions are made THEN the system SHALL create immutable audit trail entries with moderator ID, timestamp, reasoning, evidence links, and reason codes
@@ -220,3 +220,28 @@ This system implements the following DSA articles:
 5. WHEN retention periods expire THEN the system SHALL automatically delete or anonymize data according to legal requirements
 6. IF data breaches occur THEN the system SHALL implement incident response procedures with regulatory notification timelines
 7. WHEN users request data access THEN the system SHALL provide comprehensive data exports within GDPR timeframes
+
+### Platform Onboarding and Transparency Database Submission
+
+The platform is onboarded via its Member State Digital Service Coordinator and holds EU Login credentials (sandbox→production) for submission of Statements of Reasons to the Commission's Transparency Database. SoRs will be submitted using the API for high-volume submissions or the webform where appropriate.
+
+#### Onboarding Steps
+
+1. **Member State Coordination**: Register with designated Digital Service Coordinator for the platform's primary market
+2. **EU Login Setup**: Obtain EU Login credentials through the Commission's authentication system
+3. **Sandbox Testing**: Complete sandbox environment testing and validation of submission workflows
+4. **Production Access**: Transition to production credentials upon successful sandbox validation
+5. **API/Webform Selection**: Configure submission method based on expected volume (API for >100 monthly SoRs, webform for lower volumes)
+
+#### Credential Requirements
+
+- EU Login username/password for authentication
+- Platform-specific API keys (if using API submission)
+- Sandbox environment credentials for testing
+- Production credentials with appropriate access levels
+
+#### API vs Webform Submission Criteria
+
+- **Use API when**: Expected monthly SoR volume exceeds 100 submissions, automated workflows required, real-time submission needed
+- **Use Webform when**: Monthly volume under 100 submissions, manual review preferred, lower complexity submissions
+- **Hybrid approach**: API for bulk submissions, webform for exceptional cases requiring manual handling

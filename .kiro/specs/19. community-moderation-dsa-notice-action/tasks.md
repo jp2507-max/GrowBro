@@ -18,6 +18,11 @@
   - Implement partitioned tables for SoR exports, audit events, and reports by month
   - Set up separate audit database with WORM storage configuration
   - Create indexes for common query patterns (user lookups, SLA monitoring, trusted flagger queries)
+  - **Implement append-only enforcement at DB level via triggers and RLS policies that prevent UPDATE/DELETE for audit and sor tables**
+  - **Add per-row content hashing and digital signing with a documented signer key rotation procedure and stored signatures**
+  - **Implement monthly partitioning plus a checksum manifest per partition (signed) to detect tampering**
+  - **Set up periodic offsite immutable snapshots (object storage with immutability/versioning) and a retention/expiry policy**
+  - **Document operational tooling for rehydration, verification, and compliance auditing so engineers can implement and test these mechanisms**
   - _Requirements: 1.5, 2.7, 6.1, 6.6, 14.2_
 
 - [ ] 2. Implement core data models and validation (Art. 16 & 17 exactness)
@@ -70,7 +75,8 @@
 
 - [ ] 7. Implement DSA Transparency Database integration (Art. 24(5))
 
-  - Use batch API (1–100 SoRs per call) for spikes; fall back to single-submit
+  - Use batch API (1–100 SoRs per call) with idempotency by decision_id; fall back to single-submit.
+    Enforce deterministic PII scrub with golden tests before enqueue.
   - Implement DLQ, exponential backoff, circuit breaker; track p95 time-to-submit as SLI
   - Enforce no personal data in payloads; run deterministic PII scrub before send
   - Create SoR export queue with circuit breaker pattern

@@ -105,6 +105,7 @@ Sentry.init({
   // Navigation & TTI/TTFD
   integrations: [
     reactNavigationIntegration({ enableTimeToInitialDisplay: true }),
+    Sentry.mobileReplayIntegration(), // Enable mobile session replay
   ],
 
   // Privacy

@@ -53,6 +53,12 @@ export type SyncResponse = {
   migrationRequired: boolean;
 };
 
+// Per-record shape additions: server_revision is an optional monotonically
+// increasing integer assigned by the server on each write. server_updated_at_ms
+// is an authoritative server timestamp in epoch milliseconds. Clients MUST
+// prefer server_revision for conflict resolution when present; otherwise use
+// server_updated_at_ms. Do NOT rely on client clocks for LWW comparisons.
+
 export type PushRequest = {
   lastPulledAt: number | 0;
   changes: ChangesByTable;
@@ -427,20 +433,44 @@ function getCollectionByTable(
 
 function applyPayloadToRecord(target: any, payload: any): void {
   for (const [key, value] of Object.entries(payload)) {
-    if (key === 'id' || key === 'updatedAt') continue;
+    // Preserve id and updatedAt handling outside; but copy server revision
+    // and server timestamps as authoritative fields onto the local record
+    if (key === 'id') continue;
+    // Map server fields to local properties where appropriate
+    if (key === 'server_revision') {
+      (target as any).serverRevision = Number(value ?? null);
+      continue;
+    }
+    if (key === 'server_updated_at_ms') {
+      (target as any).serverUpdatedAt =
+        typeof value === 'number' ? value : toMillis(value as any);
+      continue;
+    }
+    if (key === 'updatedAt') continue;
     (target as any)[key] = _normalizeIncomingValue(key, value);
   }
 }
 
 function maybeMarkNeedsReview(table: TableName, rec: any, payload: any): void {
   if (table !== 'tasks') return;
-  const localUpdated = toMillis((rec as any).updatedAt);
-  const serverUpdated = toMillis(payload.updatedAt);
-  if (
-    localUpdated !== null &&
-    serverUpdated !== null &&
-    serverUpdated > localUpdated
-  ) {
+  // Prefer server_revision if present, otherwise compare server_updated_at_ms
+  const localRev = (rec as any).serverRevision ?? null;
+  const serverRev = payload.server_revision ?? null;
+  const localServerTs =
+    (rec as any).serverUpdatedAt ?? toMillis((rec as any).updatedAt as any);
+  const serverServerTs =
+    payload.server_updated_at_ms ?? toMillis(payload.updatedAt as any);
+
+  let serverIsNewer = false;
+  if (serverRev != null && localRev != null) {
+    serverIsNewer = Number(serverRev) > Number(localRev);
+  } else if (serverServerTs != null && localServerTs != null) {
+    serverIsNewer = Number(serverServerTs) > Number(localServerTs);
+  } else if (serverServerTs != null && localServerTs == null) {
+    serverIsNewer = true;
+  }
+
+  if (serverIsNewer) {
     const currentMeta = ((rec as any).metadata ?? {}) as Record<
       string,
       unknown
@@ -452,23 +482,26 @@ function maybeMarkNeedsReview(table: TableName, rec: any, payload: any): void {
 async function handleCreate(coll: any, payload: any): Promise<void> {
   await coll.create((rec: any) => {
     (rec as any).id = payload.id;
+    // Apply payload and authoritative server metadata. For createdAt/updatedAt
+    // prefer server-provided values if present; do not synthesize from client
     applyPayloadToRecord(rec, payload);
-    // Preserve server timestamps if provided, otherwise use current time
     if (payload.createdAt != null) {
       (rec as any).createdAt = _normalizeIncomingValue(
         'createdAt',
         payload.createdAt
       );
-    } else {
-      (rec as any).createdAt = new Date();
     }
     if (payload.updatedAt != null) {
       (rec as any).updatedAt = _normalizeIncomingValue(
         'updatedAt',
         payload.updatedAt
       );
-    } else {
-      (rec as any).updatedAt = new Date();
+    }
+    if (payload.server_revision != null) {
+      (rec as any).serverRevision = Number(payload.server_revision);
+    }
+    if (payload.server_updated_at_ms != null) {
+      (rec as any).serverUpdatedAt = Number(payload.server_updated_at_ms);
     }
   });
 }
@@ -482,14 +515,44 @@ async function handleUpdate(
   await existing.update((rec: any) => {
     // Detect conflicts: if local is newer but server sends different values
     const localSnapshot: Record<string, unknown> = { ...(rec as any) };
-    applyPayloadToRecord(rec, payload);
-    if (payload.updatedAt != null) {
-      (rec as any).updatedAt = _normalizeIncomingValue(
-        'updatedAt',
-        payload.updatedAt
-      );
+    // Conflict resolution: prefer higher server_revision when present. We still
+    // apply payload to the record, but only overwrite local fields if the
+    // server revision/timestamp indicates the server change is newer.
+    const localRev = (rec as any).serverRevision ?? null;
+    const serverRev = payload.server_revision ?? null;
+    const localServerTs =
+      (rec as any).serverUpdatedAt ?? toMillis((rec as any).updatedAt as any);
+    const serverServerTs =
+      payload.server_updated_at_ms ?? toMillis(payload.updatedAt as any);
+
+    let serverIsAuthoritative = false;
+    if (serverRev != null && localRev != null) {
+      serverIsAuthoritative = Number(serverRev) >= Number(localRev);
+    } else if (serverServerTs != null && localServerTs != null) {
+      serverIsAuthoritative = Number(serverServerTs) >= Number(localServerTs);
+    } else if (serverServerTs != null && localServerTs == null) {
+      serverIsAuthoritative = true;
     }
-    // Needs review marking when server is newer (LWW on server)
+
+    // Apply fields from payload always, but only set updatedAt/serverRevision if
+    // server is authoritative. This ensures comparisons later rely on server values.
+    applyPayloadToRecord(rec, payload);
+    if (serverIsAuthoritative) {
+      if (payload.updatedAt != null) {
+        (rec as any).updatedAt = _normalizeIncomingValue(
+          'updatedAt',
+          payload.updatedAt
+        );
+      }
+      if (payload.server_revision != null) {
+        (rec as any).serverRevision = Number(payload.server_revision);
+      }
+      if (payload.server_updated_at_ms != null) {
+        (rec as any).serverUpdatedAt = Number(payload.server_updated_at_ms);
+      }
+    }
+
+    // Needs review marking when server is newer (server-lww)
     maybeMarkNeedsReview(table, rec, payload);
 
     try {

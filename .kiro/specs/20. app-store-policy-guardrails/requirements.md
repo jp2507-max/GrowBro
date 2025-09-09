@@ -61,7 +61,7 @@ This feature implements comprehensive app store policy compliance guardrails for
 
 #### Acceptance Criteria
 
-1. WHEN a build is initiated THEN the system SHALL validate Apple age rating ≥ app minimum, App Privacy answers, Play Data Safety + Photos/Videos permissions declaration completeness
+1. WHEN a build is initiated THEN the system SHALL validate App Store Connect age-rating tiers (4+, 9+, 13+, 16+, 18+) with deadline to complete updated age-rating questionnaire by January 31, 2026; Google Play READ_MEDIA_IMAGES/READ_MEDIA_VIDEO declarations by January 22, 2025 (extendable to May 28, 2025) or implement system photo picker to remove broad media permissions; App Privacy answers and Play Data Safety declarations completeness
 2. WHEN policy violations are detected THEN the build SHALL fail with store-policy citations (section + link) for each violation (e.g., 'Play > Marijuana', 'Apple 1.4.3')
 3. WHEN keyword linter runs THEN it SHALL scan notification templates and store listing for policy violations
 4. IF all policy checks pass THEN the build SHALL proceed with compliance certification and submission checklist

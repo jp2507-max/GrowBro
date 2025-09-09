@@ -9,7 +9,9 @@
 - [ ] 1.1 Create ConsentService core interface and storage
 
   - Write ConsentService class with getConsents(), hasConsent(), setConsent(), withdrawConsent() methods
-  - Implement secure consent storage using AsyncStorage/MMKV with encryption
+  - Implement secure consent storage using OS keystore-backed storage (iOS Keychain / Android Keystore) via expo-secure-store for Expo apps or react-native-keychain for non-sensitive consent toggles; use AsyncStorage/MMKV only for non-sensitive, non-secret data
+  - Handle key rotation and backup edge cases with migration logic and fallback mechanisms
+  - Document chosen keystore approach in implementation tasks with security considerations and compliance rationale
   - Create ConsentState interface with telemetry, experiments, aiTraining, crashDiagnostics toggles
   - _Requirements: 1.1, 1.3, 7.4_
 
@@ -43,9 +45,16 @@
 
 - [ ] 2.1 Create SDKGate core functionality with strict pre-consent blocking
 
-  - Write SDKGate class with initializeSDK() as no-op until consent true, blockSDK(), isSDKAllowed() methods
-  - Implement startup SDK audit that asserts "0 initialised without consent" for CNIL compliance
-  - Create SDK status tracking and lifecycle management with consent-based gating
+  - Write SDKGate class with initializeSDK() that is a no-op until consent is true, plus blockSDK() and isSDKAllowed() methods and status/lifecycle tracking
+  - Implement startup SDK audit that asserts "0 initialised without consent" to satisfy CNIL compliance
+  - Ensure all auto-start hooks, background retry schedulers, and any init-time background tasks are disabled/guarded by isSDKAllowed()
+  - Intercept and no-op any queued beacons and block cached delivery of pending crash/analytics envelopes until consent flips true
+  - Create SDKGate singleton with consent-aware initialization state machine (UNINITIALIZED → BLOCKED → ALLOWED)
+  - Implement SDK registry tracking all registered SDKs with their initialization status and consent requirements
+  - Add consent change listener to automatically enable/disable SDKs when consent status changes
+  - Create beacon interceptor that queues all telemetry/crash events when consent=false and flushes on consent=true
+  - Implement network request blocking layer as safety net for any SDKs that bypass initialization gating
+  - Add SDK initialization audit log with timestamps and consent status for compliance evidence
   - _Requirements: 1.4, 7.3_
 
 - [ ] 2.2 Build SDK inventory and transparency system
