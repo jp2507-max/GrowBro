@@ -565,7 +565,7 @@ class DSASubmissionCircuitBreaker {
     // Move statement to dead letter queue
     await this.updateQueueItem(statementId, {
       status: 'dlq',
-      error_message: errorMessage,
+      errorMessage: errorMessage,
       lastAttempt: new Date(),
     });
   }

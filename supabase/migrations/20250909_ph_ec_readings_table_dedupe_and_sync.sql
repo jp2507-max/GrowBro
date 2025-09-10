@@ -47,15 +47,19 @@ BEFORE INSERT OR UPDATE ON public.ph_ec_readings
 FOR EACH ROW EXECUTE FUNCTION public.ph_ec_readings_set_helpers();
 
 -- 4) Unique dedupe guard: (plant_id, meter_fallback, measured_at second bucket)
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'ux_ph_ec_readings_dedupe_cols'
-  ) THEN
-    ALTER TABLE public.ph_ec_readings
-      ADD CONSTRAINT ux_ph_ec_readings_dedupe_cols UNIQUE (plant_id, meter_id_fallback, measured_at_sec);
-  END IF;
-END $$;
+-- DO $$ BEGIN
+--   IF NOT EXISTS (
+--     SELECT 1 FROM pg_constraint
+--     WHERE conname = 'ux_ph_ec_readings_dedupe_cols'
+--   ) THEN
+--     ALTER TABLE public.ph_ec_readings
+--       ADD CONSTRAINT ux_ph_ec_readings_dedupe_cols UNIQUE (plant_id, meter_id_fallback, measured_at_sec);
+--   END IF;
+-- END $$;
+
+-- Fixed unique index to handle NULL plant_id values properly
+CREATE UNIQUE INDEX IF NOT EXISTS ux_ph_ec_readings_dedupe_cols_expr
+  ON public.ph_ec_readings ((COALESCE(plant_id, '00000000-0000-0000-0000-000000000000'::uuid)), meter_id_fallback, measured_at_sec);
 
 -- 5) Helpful indexes
 CREATE INDEX IF NOT EXISTS idx_ph_ec_readings_measured_at ON public.ph_ec_readings (measured_at);
@@ -372,7 +376,7 @@ BEGIN
     NULLIF(rec->>'note','')::text,
     COALESCE((rec->>'quality_flags')::jsonb, NULL)
   FROM jsonb_array_elements(COALESCE(changes->'ph_ec_readings'->'created','[]'::jsonb)) rec
-  ON CONFLICT ON CONSTRAINT ux_ph_ec_readings_dedupe_cols DO UPDATE SET
+  ON CONFLICT ((COALESCE(plant_id, '00000000-0000-0000-0000-000000000000'::uuid)), meter_id_fallback, measured_at_sec) DO UPDATE SET
     ph = EXCLUDED.ph,
     ec_raw = EXCLUDED.ec_raw,
     ec_25c = EXCLUDED.ec_25c,

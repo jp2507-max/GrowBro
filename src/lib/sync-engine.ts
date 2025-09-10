@@ -534,10 +534,10 @@ async function handleUpdate(
       serverIsAuthoritative = true;
     }
 
-    // Apply fields from payload always, but only set updatedAt/serverRevision if
-    // server is authoritative. This ensures comparisons later rely on server values.
-    applyPayloadToRecord(rec, payload);
+    // Only apply payload fields when server is authoritative to preserve local changes
+    // when client has newer data. This ensures conflict resolution works correctly.
     if (serverIsAuthoritative) {
+      applyPayloadToRecord(rec, payload);
       if (payload.updatedAt != null) {
         (rec as any).updatedAt = _normalizeIncomingValue(
           'updatedAt',

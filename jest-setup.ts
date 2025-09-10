@@ -1,5 +1,15 @@
 import '@testing-library/react-native/extend-expect';
 
+// Print an immediate snapshot of active Node handles (one-time) to help
+// debug CI hangs. This is intentionally lightweight and only logs constructors
+// names to avoid leaking sensitive details.
+try {
+  const handles = (process as any)._getActiveHandles?.() ?? [];
+  const names = handles.map((h: any) => h?.constructor?.name || String(h));
+
+  console.warn('[open-handles-initial]', names.slice(0, 20));
+} catch {}
+
 // react-hook form setup for testing
 // @ts-ignore
 global.window = {};
@@ -182,3 +192,40 @@ jest.mock('@react-native-community/netinfo', () => ({
     return () => {};
   }),
 }));
+
+// Global cleanup to reduce risk of hanging Jest due to stray timers or intervals
+afterEach(() => {
+  jest.clearAllTimers();
+});
+
+afterAll(() => {
+  jest.clearAllTimers();
+});
+
+// Optional: when running locally or in CI you can enable DEBUG_OPEN_HANDLES=1
+// to periodically print active Node handles. This helps debug what is keeping
+// the process alive (sockets, intervals, native bindings, etc.). Disabled by
+// default to avoid noisy logs.
+if (process.env.DEBUG_OPEN_HANDLES) {
+  try {
+    const interval = setInterval(() => {
+      try {
+        // process._getActiveHandles is undocumented but useful for debugging
+        // in a controlled environment.
+
+        const handles = (process as any)._getActiveHandles?.() ?? [];
+        const summary = handles.map(
+          (h: any) => h?.constructor?.name || String(h)
+        );
+        // Keep output concise
+        console.warn('[open-handles]', summary.slice(0, 10));
+      } catch {
+        // ignore
+      }
+    }, 2000);
+
+    afterAll(() => clearInterval(interval));
+  } catch {
+    // ignore if not available
+  }
+}

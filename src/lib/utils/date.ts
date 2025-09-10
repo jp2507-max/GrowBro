@@ -33,7 +33,7 @@ export function parseUtcDateString(utcDateString: UtcIsoString): DateTime {
 export function isUtcTimeAfter(utcDateString: UtcIsoString): boolean {
   const targetDate = parseUtcDateString(utcDateString);
   const now = DateTime.utc();
-  return now > targetDate;
+  return now.toMillis() > targetDate.toMillis();
 }
 
 /**
@@ -44,7 +44,7 @@ export function isUtcTimeAfter(utcDateString: UtcIsoString): boolean {
 export function isUtcTimeBefore(utcDateString: UtcIsoString): boolean {
   const targetDate = parseUtcDateString(utcDateString);
   const now = DateTime.utc();
-  return now < targetDate;
+  return now.toMillis() < targetDate.toMillis();
 }
 
 export type DateCombinationResult = {

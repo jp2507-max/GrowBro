@@ -112,7 +112,7 @@ interface RegionInfo {
 interface PolicyFeatures {
   cannabis: boolean;
   communityReadOnly: boolean;
-  aiDiagnosis: boolean;
+  aiInference: boolean;
   sharing: boolean;
   strongerDisclaimers: boolean;
 }
@@ -377,7 +377,7 @@ interface RegionPolicyMap {
     features: {
       cannabis: boolean;
       community: boolean;
-      aiDiagnosis: boolean;
+      aiInference: boolean;
       sharing: boolean;
     };
     disclaimers: string[];

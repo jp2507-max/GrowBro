@@ -1,6 +1,5 @@
 ---
-globs: .ts
-alwaysApply: false
+alwaysApply: true
 ---
 
 You are an expert in TypeScript, React Native, Expo, Testing with Jest and React Native testing library.

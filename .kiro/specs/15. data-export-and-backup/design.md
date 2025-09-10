@@ -22,7 +22,7 @@ graph TB
     UI --> ExportManager[ExportManager]
 
     Manager --> Scheduler[BackupScheduler]
-    Manager --> Crypto[CryptoService]
+    Manager --> Crypto[FileBasedCryptoService]
     Manager --> Storage[StorageService]
 
     ExportManager --> Formatter[DataFormatter]
@@ -31,7 +31,9 @@ graph TB
     Storage --> Local[LocalStorage]
     Storage --> Cloud[CloudStorage]
 
-    Crypto --> AES[AES-GCM Encryption]
+    Crypto --> Native[Native Streaming Encryption]
+    Native --> Libsodium[libsodium secretstream]
+    Native --> AESGCM[Chunked AES-GCM]
 
     Manager --> WDB[WatermelonDB]
     ExportManager --> WDB
@@ -52,16 +54,19 @@ graph TB
 **Backup Flow:**
 
 1. BackupScheduler triggers on app foreground/charging/Wi-Fi
-2. BackupManager queries changed records since last backup
-3. CryptoService encrypts data using AES-GCM-256
-4. StorageService uploads via Supabase TUS with resumability
+2. BackupManager exports WatermelonDB to temporary file
+3. FileBasedCryptoService encrypts file using native streaming (libsodium/AES-GCM)
+4. StorageService uploads encrypted file via Supabase TUS with resumability
+5. Temporary files cleaned up with proper error handling
 
 **Restore Flow:**
 
-1. User selects backup file → CryptoService decrypts and validates
-2. BackupManager pauses WatermelonDB sync
-3. Data imported in batched transactions
-4. Sync checkpoints reset and sync re-enabled
+1. User selects backup file → FileBasedCryptoService decrypts file using native streaming
+2. BackupManager validates decrypted file integrity and format
+3. BackupManager pauses WatermelonDB sync
+4. Decrypted database file imported in batched transactions
+5. Sync checkpoints reset and sync re-enabled
+6. Temporary decrypted files cleaned up securely
 
 ## Components and Interfaces
 
@@ -91,12 +96,36 @@ interface BackupOptions {
   type: 'full' | 'delta';
   includeMedia: boolean;
   destination: 'local' | 'cloud';
-  passphrase: string;
-  chunkBytes: number;
-  kdf: 'argon2id' | 'scrypt';
-  cipher: Cipher;
-  compressionLevel: number;
-  maxConcurrentUploads: number;
+
+  // Encryption options - mutually exclusive: use either passphrase OR encryptionKey/wrappedKey
+  // For passphrase-based encryption (traditional approach)
+  passphrase?: string;
+
+  // For key-based encryption (ephemeral/session keys)
+  encryptionKey?: string; // Ephemeral key instead of passphrase
+  wrappedKey?: WrappedKey; // Wrapped key for later retrieval
+
+  // Crypto parameters (applicable to both encryption methods)
+  chunkBytes?: number;
+  kdf?: 'argon2id' | 'scrypt';
+  cipher?: Cipher;
+  compressionLevel?: number;
+  maxConcurrentUploads?: number;
+
+  // Backup lifecycle and metadata
+  ttl?: number; // Time to live for the backup
+  metadata?: {
+    encrypted: boolean;
+    keyWrapped: boolean;
+    purpose: string;
+    createdAt: string;
+    protectionLevel?:
+      | 'device-keystore'
+      | 'passphrase-wrapped'
+      | 'os-data-protection';
+  };
+
+  // Selective restore options
   selectiveRestore?: {
     entities: string[];
     dateRange?: { start: Date; end: Date };
@@ -421,9 +450,8 @@ interface WrappedKey {
     | 'device-keystore'
     | 'passphrase-wrapped'
     | 'os-data-protection';
-  wrappedData?: string; // Encrypted key data
+  wrappedData?: string; // Serialized JSON containing encrypted key data and IV {data: base64, iv: base64}
   salt?: string; // For passphrase-wrapped keys
-  iv?: string; // Initialization vector
   ttl?: number; // Time to live in milliseconds
   createdAt: string;
   purpose: string;
@@ -558,13 +586,18 @@ class CryptoService {
     const keyBytes = new TextEncoder().encode(key);
     const encryptedKey = await this.encryptWithKey(keyBytes, wrappingKey, iv);
 
+    // Serialize encrypted data and IV as JSON in wrappedData
+    const encryptedData = {
+      data: this.bytesToBase64(encryptedKey),
+      iv: this.bytesToBase64(iv),
+    };
+
     return {
       id: `wrapped-${Date.now()}`,
       wrapped: true,
       protectionLevel: 'passphrase-wrapped',
-      wrappedData: encryptedKey,
+      wrappedData: JSON.stringify(encryptedData),
       salt: this.bytesToBase64(salt),
-      iv: this.bytesToBase64(iv),
       ttl: 3600000, // 1 hour default
       createdAt: new Date().toISOString(),
       purpose: 'snapshot-encryption',
@@ -579,6 +612,11 @@ class CryptoService {
       throw new Error('Key is not passphrase-wrapped');
     }
 
+    // Parse the serialized encrypted data to extract ciphertext and IV
+    const encryptedData = JSON.parse(wrappedKey.wrappedData!);
+    const ciphertext = await this.base64ToBytes(encryptedData.data);
+    const iv = await this.base64ToBytes(encryptedData.iv);
+
     // Re-derive wrapping key
     const salt = await this.base64ToBytes(wrappedKey.salt!);
     const wrappingKey = await this.deriveKey(passphrase, salt, {
@@ -588,7 +626,7 @@ class CryptoService {
 
     // Decrypt the ephemeral key using the derived wrapping key
     const decryptedBytes = await this.decryptWithKey(
-      wrappedKey.wrappedData!,
+      ciphertext,
       wrappingKey,
       iv
     );
@@ -600,16 +638,89 @@ class CryptoService {
 #### Background Task Scheduler
 
 ```typescript
+import { TaskManager, TaskManagerTaskBody } from 'expo-task-manager';
+import { BackgroundFetch } from 'expo-background-fetch';
+
 class BackgroundTaskScheduler {
+  private static readonly CLEANUP_TASK_NAME = 'key-cleanup-task';
+
+  constructor() {
+    // Define the task handler
+    TaskManager.defineTask(
+      BackgroundTaskScheduler.CLEANUP_TASK_NAME,
+      async (taskData: TaskManagerTaskBody) => {
+        try {
+          // Check for and execute any pending cleanup tasks
+          await this.processPendingTasks();
+        } catch (error) {
+          console.error('Background cleanup task failed:', error);
+          throw error; // Re-throw to mark task as failed
+        }
+      }
+    );
+  }
+
   async schedule(task: KeyCleanupTask): Promise<void> {
-    // Use expo-background-task or react-native-background-task
-    // Schedule cleanup task to run after TTL expires
-    await BackgroundTask.scheduleTaskAsync({
-      taskName: task.id,
-      taskType: BackgroundTask.TaskType.BACKGROUND_PROCESSING,
-      delay: task.executeAt - Date.now(),
-      data: task,
-    });
+    // Store the task for later execution by the background task handler
+    await this.storePendingTask(task);
+
+    // Register the task if not already registered
+    await BackgroundFetch.registerTaskAsync(
+      BackgroundTaskScheduler.CLEANUP_TASK_NAME,
+      {
+        minimumInterval: 15 * 60, // 15 minutes minimum interval
+        stopOnTerminate: false,
+        startOnBoot: true,
+      }
+    );
+  }
+
+  private async storePendingTask(task: KeyCleanupTask): Promise<void> {
+    // Store task in persistent storage for retrieval by the handler
+    // This creates a queue of pending tasks that the handler will process
+    const taskId = `${task.snapshotId}-${task.wrappedKeyId}`;
+    const taskData = {
+      id: taskId,
+      task,
+      storedAt: Date.now(),
+    };
+
+    // Implementation would depend on the storage solution used
+    // For example: await AsyncStorage.setItem(`pending-cleanup-${taskId}`, JSON.stringify(taskData));
+  }
+
+  private async processPendingTasks(): Promise<void> {
+    // Retrieve and process all pending cleanup tasks that are ready for execution
+    const pendingTasks = await this.getPendingTasks();
+
+    for (const task of pendingTasks) {
+      if (Date.now() >= task.executeAt) {
+        try {
+          await this.executeCleanup(task);
+          await this.removePendingTask(task);
+        } catch (error) {
+          console.error(
+            `Failed to execute cleanup for task ${task.snapshotId}:`,
+            error
+          );
+          // Continue processing other tasks even if one fails
+        }
+      }
+    }
+  }
+
+  private async getPendingTasks(): Promise<KeyCleanupTask[]> {
+    // Retrieve all pending tasks from storage
+    // Implementation would depend on the storage solution used
+    // This would typically scan for all keys matching a pattern
+    return [];
+  }
+
+  private async removePendingTask(task: KeyCleanupTask): Promise<void> {
+    // Remove the completed task from storage
+    const taskId = `${task.snapshotId}-${task.wrappedKeyId}`;
+    // Implementation would depend on the storage solution used
+    // For example: await AsyncStorage.removeItem(`pending-cleanup-${taskId}`);
   }
 
   async executeCleanup(task: KeyCleanupTask): Promise<void> {
@@ -631,37 +742,80 @@ class BackgroundTaskScheduler {
       }
     }
   }
+
+  private async getWrappedKey(wrappedKeyId: string): Promise<WrappedKey> {
+    // Retrieve wrapped key from storage
+    // Implementation would depend on the storage solution used
+    throw new Error('Method not implemented');
+  }
+
+  private async markSnapshotExpired(snapshotId: string): Promise<void> {
+    // Mark snapshot as expired in the database
+    // Implementation would depend on the database solution used
+    throw new Error('Method not implemented');
+  }
+
+  private async rescheduleCleanup(task: KeyCleanupTask): Promise<void> {
+    // Reschedule the cleanup task with exponential backoff
+    const delay = Math.min(3600000, task.retryCount * 300000); // Max 1 hour, 5 min increments
+    task.executeAt = Date.now() + delay;
+    await this.schedule(task);
+  }
+
+  private async logCleanupFailure(
+    task: KeyCleanupTask,
+    error: any
+  ): Promise<void> {
+    // Log the permanent cleanup failure
+    console.error(
+      `Cleanup task failed permanently for snapshot ${task.snapshotId}:`,
+      error
+    );
+    // Implementation could include sending to error reporting service
+  }
+
+  // Reference to device key store (would be injected or instantiated)
+  private deviceKeyStore: any; // Replace with actual DeviceKeyStore type
 }
 ```
 
 #### Backup Manager Interface Updates
 
 ```typescript
-interface BackupOptions {
-  type: 'full' | 'delta';
-  includeMedia: boolean;
-  destination: 'local' | 'cloud';
-  encryptionKey?: string; // Ephemeral key instead of passphrase
-  wrappedKey?: WrappedKey; // Wrapped key for later retrieval
-  ttl?: number; // Time to live for the backup
-  metadata?: {
-    encrypted: boolean;
-    keyWrapped: boolean;
-    purpose: string;
-    createdAt: string;
-    protectionLevel?:
-      | 'device-keystore'
-      | 'passphrase-wrapped'
-      | 'os-data-protection';
-  };
+// Required imports for BackupManager
+import * as FileSystem from 'expo-file-system';
+import {
+  FileBasedCryptoService,
+  FileEncryptionResult,
+} from './FileBasedCryptoService';
+
+interface BackupManagerDependencies {
+  cryptoService: FileBasedCryptoService;
+  database: any; // WatermelonDB instance
+  metadataStore: any; // Metadata storage interface
 }
 
+// Uses the unified BackupOptions interface defined above
+
 class BackupManager {
+  constructor(private deps: BackupManagerDependencies) {}
+
+  private get cryptoService(): FileBasedCryptoService {
+    return this.deps.cryptoService;
+  }
+
+  private get database(): any {
+    return this.deps.database;
+  }
+
+  private get metadataStore(): any {
+    return this.deps.metadataStore;
+  }
   async createBackup(options: BackupOptions): Promise<string> {
     const snapshotId = `snapshot-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // Create backup with appropriate encryption
-    if (options.encryptionKey) {
+    if (options.passphrase) {
       await this.createEncryptedBackup(snapshotId, options);
     } else {
       await this.createUnencryptedBackup(snapshotId, options);
@@ -677,39 +831,184 @@ class BackupManager {
     snapshotId: string,
     options: BackupOptions
   ): Promise<void> {
-    // Use ephemeral key for encryption
-    const encryptedStream = await this.cryptoService.encryptStream(
-      await this.getDatabaseStream(),
-      options.encryptionKey!,
-      { algorithm: 'aes-256-gcm' }
-    );
+    let tempDatabasePath: string | null = null;
+    let encryptedPath: string | null = null;
 
-    await this.writeEncryptedBackup(snapshotId, encryptedStream, options);
+    try {
+      // Export database to temporary file
+      tempDatabasePath = await this.exportDatabaseToFile(snapshotId);
+
+      // Generate output path for encrypted backup
+      const backupDir = await this.getBackupDirectory();
+      encryptedPath = `${backupDir}/${snapshotId}.gbenc`;
+
+      // Encrypt the database file using file-based encryption
+      const encryptionResult = await this.cryptoService.encryptFile(
+        tempDatabasePath,
+        encryptedPath,
+        {
+          passphrase: options.passphrase!, // Assume passphrase is provided for encryption
+          kdf: 'argon2id',
+          kdfIterations: 4,
+          cipher: Cipher.AES_256_GCM,
+          chunkSize: 64 * 1024, // 64KB chunks
+        }
+      );
+
+      // Clean up temporary database file on success
+      if (tempDatabasePath) {
+        await this.safeDeleteFile(tempDatabasePath);
+        tempDatabasePath = null;
+      }
+
+      // Store encryption metadata
+      await this.storeEncryptionMetadata(snapshotId, encryptionResult);
+    } catch (error) {
+      // Clean up temporary files on error
+      if (tempDatabasePath) {
+        await this.safeDeleteFile(tempDatabasePath).catch(() => {});
+      }
+      if (encryptedPath) {
+        await this.safeDeleteFile(encryptedPath).catch(() => {});
+      }
+
+      // Propagate original error with context
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`Encrypted backup creation failed: ${errorMessage}`);
+    }
   }
 
   private async createUnencryptedBackup(
     snapshotId: string,
     options: BackupOptions
   ): Promise<void> {
-    // Create unencrypted backup with OS-level data protection
-    const dataStream = await this.getDatabaseStream();
+    let tempDatabasePath: string | null = null;
+    let backupPath: string | null = null;
 
-    // Apply OS-level data protection (iOS NSFileProtectionComplete, Android scoped storage)
-    await this.applyOSDataProtection(snapshotId);
+    try {
+      // Export database to temporary file
+      tempDatabasePath = await this.exportDatabaseToFile(snapshotId);
 
-    await this.writeUnencryptedBackup(snapshotId, dataStream, options);
+      // Generate output path for unencrypted backup
+      const backupDir = await this.getBackupDirectory();
+      backupPath = `${backupDir}/${snapshotId}.db`;
+
+      // Copy database file to backup location
+      await this.atomicCopyFile(tempDatabasePath, backupPath);
+
+      // Apply OS-level data protection
+      await this.applyOSDataProtection(snapshotId);
+
+      // Clean up temporary database file on success
+      if (tempDatabasePath) {
+        await this.safeDeleteFile(tempDatabasePath);
+        tempDatabasePath = null;
+      }
+    } catch (error) {
+      // Clean up temporary files on error
+      if (tempDatabasePath) {
+        await this.safeDeleteFile(tempDatabasePath).catch(() => {});
+      }
+      if (backupPath) {
+        await this.safeDeleteFile(backupPath).catch(() => {});
+      }
+
+      // Propagate original error with context
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`Unencrypted backup creation failed: ${errorMessage}`);
+    }
   }
 
   private async applyOSDataProtection(snapshotId: string): Promise<void> {
-    // iOS: Set NSFileProtectionComplete
-    if (Platform.OS === 'ios') {
-      await FileSystem.setProtectionLevelAsync(
-        `${FileSystem.documentDirectory}backups/${snapshotId}`,
-        FileSystem.ProtectionLevel.Complete
-      );
-    }
+    // Configure iOS data protection via native means:
+    // - Set NSFileProtection attributes in Xcode project (Info.plist/entitlements)
+    // - Apply protection when writing files in native code
+    // - Reference Apple docs: https://developer.apple.com/documentation/uikit/protecting_app_data
+    // - Consider React Native native modules for NSFileProtection support
+    //
     // Android: Use scoped storage with appropriate flags
     // Implementation depends on react-native-scoped-storage or similar
+  }
+
+  private async exportDatabaseToFile(snapshotId: string): Promise<string> {
+    // Export WatermelonDB to a temporary file
+    const tempDir = await this.getTempDirectory();
+    const tempPath = `${tempDir}/db-export-${snapshotId}.db`;
+
+    try {
+      // Use WatermelonDB's export functionality
+      await this.database.exportToFile(tempPath);
+      return tempPath;
+    } catch (error) {
+      await this.safeDeleteFile(tempPath).catch(() => {});
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`Database export failed: ${errorMessage}`);
+    }
+  }
+
+  private async getBackupDirectory(): Promise<string> {
+    const backupDir = `${FileSystem.documentDirectory}backups/`;
+    await this.ensureDirectoryExists(backupDir);
+    return backupDir;
+  }
+
+  private async getTempDirectory(): Promise<string> {
+    const tempDir = `${FileSystem.cacheDirectory}backup-temp/`;
+    await this.ensureDirectoryExists(tempDir);
+    return tempDir;
+  }
+
+  private async atomicCopyFile(
+    sourcePath: string,
+    targetPath: string
+  ): Promise<void> {
+    // Use OS-level atomic move operation for copying
+    const tempTarget = `${targetPath}.tmp`;
+    await FileSystem.copyAsync({ from: sourcePath, to: tempTarget });
+    await FileSystem.moveAsync({ from: tempTarget, to: targetPath });
+  }
+
+  private async safeDeleteFile(filePath: string): Promise<void> {
+    try {
+      const fileInfo = await FileSystem.getInfoAsync(filePath);
+      if (fileInfo.exists) {
+        await FileSystem.deleteAsync(filePath);
+      }
+    } catch {
+      // Ignore deletion errors
+    }
+  }
+
+  private async storeEncryptionMetadata(
+    snapshotId: string,
+    encryptionResult: FileEncryptionResult
+  ): Promise<void> {
+    const encryptionMetadata = {
+      snapshotId,
+      salt: Array.from(encryptionResult.salt),
+      algorithm: encryptionResult.algorithm,
+      checksum: encryptionResult.checksum,
+      encryptedAt: new Date().toISOString(),
+    };
+
+    await this.metadataStore.save(
+      `${snapshotId}-encryption`,
+      encryptionMetadata
+    );
+  }
+
+  private async ensureDirectoryExists(dirPath: string): Promise<void> {
+    try {
+      await FileSystem.makeDirectoryAsync(dirPath, { intermediates: true });
+    } catch (error) {
+      // Directory might already exist, ignore
+      if (!error.message.includes('already exists')) {
+        throw error;
+      }
+    }
   }
 
   private async storeBackupMetadata(
@@ -796,36 +1095,232 @@ class DeltaBackupQuery {
 
 ### Streaming and Large File Handling
 
-#### Streaming Encryption Service
+#### File-Based Encryption Service
 
 ```typescript
-class StreamingCryptoService {
-  async encryptStream(
-    inputStream: ReadableStream,
-    passphrase: string,
-    options: CryptoOptions
-  ): Promise<ReadableStream> {
-    // Use libsodium secretstream or chunked AES-GCM for large files
-    const salt = await this.generateSecureRandomBytes(32);
-    const key = await this.deriveKey(passphrase, salt, {
-      kdf: options.kdf,
-      iterations: 4,
+interface FileEncryptionOptions {
+  passphrase: string;
+  salt?: Uint8Array;
+  kdf?: 'argon2id' | 'scrypt';
+  kdfIterations?: number;
+  cipher?: Cipher;
+  chunkSize?: number;
+  tempDirectory?: string;
+}
+
+interface FileEncryptionResult {
+  outputPath: string;
+  salt: Uint8Array;
+  algorithm: string;
+  checksum: string;
+}
+
+class FileBasedCryptoService {
+  async encryptFile(
+    inputPath: string,
+    outputPath: string,
+    options: FileEncryptionOptions
+  ): Promise<FileEncryptionResult> {
+    let tempOutputPath: string | null = null;
+
+    try {
+      // Generate secure random salt if not provided
+      const salt = options.salt || (await this.generateSecureRandomBytes(32));
+
+      // Derive encryption key from passphrase
+      const key = await this.deriveKey(options.passphrase, salt, {
+        kdf: options.kdf || 'argon2id',
+        iterations: options.kdfIterations || 4,
+      });
+
+      // Create temporary output file to ensure atomic operation
+      const tempDir = options.tempDirectory || (await this.getTempDirectory());
+      tempOutputPath = await this.createTempFile(tempDir, 'backup-encrypted');
+
+      // Initialize encryption header with metadata
+      const header = await this.createEncryptionHeader(salt, options);
+      await this.writeEncryptionHeader(tempOutputPath, header);
+
+      // Stream encryption using native-level piping or libsodium secretstream
+      await this.streamEncryptFile(
+        inputPath,
+        tempOutputPath,
+        key,
+        options.chunkSize || 64 * 1024, // 64KB chunks
+        options.cipher || Cipher.AES_256_GCM
+      );
+
+      // Generate checksum of encrypted data
+      const checksum = await this.generateFileChecksum(
+        tempOutputPath,
+        'sha256'
+      );
+
+      // Atomically move temp file to final location
+      await this.atomicMoveFile(tempOutputPath, outputPath);
+      tempOutputPath = null;
+
+      return {
+        outputPath,
+        salt,
+        algorithm: options.cipher || Cipher.AES_256_GCM,
+        checksum,
+      };
+    } catch (error) {
+      // Clean up temporary file on error
+      if (tempOutputPath) {
+        await this.safeDeleteFile(tempOutputPath).catch(() => {});
+      }
+
+      // Clean up partial output file
+      await this.safeDeleteFile(outputPath).catch(() => {});
+
+      // Propagate original error with context
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`File encryption failed: ${errorMessage}`);
+    }
+  }
+
+  private async streamEncryptFile(
+    inputPath: string,
+    outputPath: string,
+    key: Uint8Array,
+    chunkSize: number,
+    cipher: Cipher
+  ): Promise<void> {
+    // Use native-level file streaming with libsodium secretstream or chunked encryption
+    // Implementation would use React Native native modules for efficient file I/O
+
+    if (cipher === Cipher.XCHACHA20_POLY1305) {
+      // Use libsodium secretstream for authenticated encryption
+      await this.nativeSecretStreamEncrypt(
+        inputPath,
+        outputPath,
+        key,
+        chunkSize
+      );
+    } else {
+      // Use chunked AES-GCM encryption
+      await this.nativeChunkedEncrypt(inputPath, outputPath, key, chunkSize);
+    }
+  }
+
+  private async nativeSecretStreamEncrypt(
+    inputPath: string,
+    outputPath: string,
+    key: Uint8Array,
+    chunkSize: number
+  ): Promise<void> {
+    // Native implementation using libsodium secretstream
+    // - Initialize secretstream with key
+    // - Read input file in chunks
+    // - Encrypt each chunk with authentication
+    // - Write encrypted chunks to output file
+    // - Handle final chunk with TAG_FINAL
+    throw new Error('Native libsodium secretstream implementation required');
+  }
+
+  private async nativeChunkedEncrypt(
+    inputPath: string,
+    outputPath: string,
+    key: Uint8Array,
+    chunkSize: number
+  ): Promise<void> {
+    // Native implementation using chunked AES-GCM
+    // - Generate unique IV for each chunk
+    // - Read input file in chunks
+    // - Encrypt each chunk with AES-GCM
+    // - Write IV + encrypted chunk to output file
+    // - Maintain chunk index for IV derivation
+    throw new Error('Native chunked AES-GCM implementation required');
+  }
+
+  private async createEncryptionHeader(
+    salt: Uint8Array,
+    options: FileEncryptionOptions
+  ): Promise<Uint8Array> {
+    // Create header with format:
+    // [MAGIC(4)][VERSION(1)][CIPHER(1)][KDF(1)][SALT_LEN(1)][SALT(N)]
+    const magic = new Uint8Array([0x47, 0x42, 0x45, 0x4e]); // 'GBEN' for GrowBro Encrypted
+    const version = new Uint8Array([0x01]); // Version 1
+    const cipher = new Uint8Array([
+      options.cipher === Cipher.XCHACHA20_POLY1305 ? 0x01 : 0x02,
+    ]);
+    const kdf = new Uint8Array([options.kdf === 'scrypt' ? 0x01 : 0x02]);
+    const saltLen = new Uint8Array([salt.length]);
+
+    const header = new Uint8Array(4 + 1 + 1 + 1 + 1 + salt.length);
+    let offset = 0;
+
+    header.set(magic, offset);
+    offset += 4;
+    header.set(version, offset);
+    offset += 1;
+    header.set(cipher, offset);
+    offset += 1;
+    header.set(kdf, offset);
+    offset += 1;
+    header.set(saltLen, offset);
+    offset += 1;
+    header.set(salt, offset);
+
+    return header;
+  }
+
+  private async writeEncryptionHeader(
+    filePath: string,
+    header: Uint8Array
+  ): Promise<void> {
+    // Write header to beginning of file
+    await FileSystem.writeAsStringAsync(filePath, '', {
+      encoding: FileSystem.EncodingType.Base64,
     });
-    return new ReadableStream({
-      start(controller) {
-        // Initialize encryption state
-      },
-      async pull(controller) {
-        // Process chunks without loading entire file into memory
-      },
-    });
+    // Native implementation would append header bytes to file
+  }
+
+  private async atomicMoveFile(
+    sourcePath: string,
+    targetPath: string
+  ): Promise<void> {
+    // Use OS-level atomic move operation
+    await FileSystem.moveAsync({ from: sourcePath, to: targetPath });
+  }
+
+  private async safeDeleteFile(filePath: string): Promise<void> {
+    try {
+      const fileInfo = await FileSystem.getInfoAsync(filePath);
+      if (fileInfo.exists) {
+        await FileSystem.deleteAsync(filePath);
+      }
+    } catch {
+      // Ignore deletion errors
+    }
+  }
+
+  private async generateFileChecksum(
+    filePath: string,
+    algorithm: string
+  ): Promise<string> {
+    // Generate checksum of file contents
+    // Implementation would use native crypto APIs
+    return 'checksum-placeholder';
   }
 }
 ```
 
 #### File-Based ZIP Creation Service
 
-**Updated Design**: Due to `react-native-zip-archive` library limitations, we cannot return JavaScript ReadableStreams. The library only supports file-path based zipping operations and cannot produce JS-level streams for on-the-fly processing.
+**File Path-Based Design**: The encryption system now uses file paths instead of WHATWG ReadableStreams, which are not reliably supported in React Native. The new design implements streaming via native-level piping using libsodium secretstream or chunked AES-GCM encryption, providing better performance and reliability for mobile platforms.
+
+**Key Benefits of File Path-Based Design**:
+
+- **Native Performance**: Uses native-level file I/O for optimal performance
+- **Memory Efficiency**: Processes files in chunks without loading entire files into memory
+- **React Native Compatibility**: Avoids unreliable WHATWG ReadableStream support
+- **Atomic Operations**: Uses temporary files and atomic moves for data integrity
+- **Robust Error Handling**: Comprehensive cleanup on failure with proper error propagation
+- **Platform Optimization**: Leverages platform-specific file system optimizations
 
 ```typescript
 interface ZipCreationOptions {
@@ -842,8 +1337,31 @@ interface FileEntry {
 
 // Required imports for ZIP service
 import * as FileSystem from 'expo-file-system';
-import { ZipArchive } from 'react-native-zip-archive';
-import * as path from 'path';
+import { zip } from 'react-native-zip-archive';
+
+// URL-safe path helper for Expo/RN compatibility (works with forward-slash paths)
+const PathHelper = {
+  join: (...segments: string[]): string => {
+    // Normalize all segments and join with forward slashes
+    return segments
+      .map((segment) => segment.replace(/^[\/\\]+|[\/\\]+$/g, '')) // Remove leading/trailing slashes
+      .filter((segment) => segment.length > 0) // Remove empty segments
+      .join('/');
+  },
+
+  dirname: (path: string): string => {
+    // Remove trailing slashes and find last forward slash
+    const normalizedPath = path.replace(/[\/\\]+$/, '');
+    const lastSlashIndex = normalizedPath.lastIndexOf('/');
+
+    if (lastSlashIndex === -1) {
+      return '.'; // No directory component
+    }
+
+    const dirname = normalizedPath.substring(0, lastSlashIndex);
+    return dirname || '/'; // Return root if empty
+  },
+};
 
 class FileBasedZipService {
   async createZipArchive(
@@ -855,7 +1373,7 @@ class FileBasedZipService {
 
     try {
       // Ensure destination directory exists
-      await this.ensureDirectoryExists(path.dirname(destinationPath));
+      await this.ensureDirectoryExists(PathHelper.dirname(destinationPath));
 
       // Create temporary directory to mirror archive structure
       tempDirectory = await this.createTempDirectory();
@@ -863,8 +1381,8 @@ class FileBasedZipService {
       // Copy files to temporary directory with correct archive paths
       await this.prepareFilesForArchiving(files, tempDirectory);
 
-      // Use react-native-zip-archive's supported zipFolder API
-      const zipResult = await ZipArchive.zipFolder(
+      // Use react-native-zip-archive's supported zip API
+      const zipResult = await zip(
         tempDirectory,
         destinationPath,
         password ? { password } : undefined
@@ -960,10 +1478,10 @@ class FileBasedZipService {
     tempDirectory: string
   ): Promise<void> {
     for (const file of files) {
-      const tempFilePath = path.join(tempDirectory, file.archivePath);
+      const tempFilePath = PathHelper.join(tempDirectory, file.archivePath);
 
       // Ensure parent directories exist in temp directory
-      await this.ensureDirectoryExists(path.dirname(tempFilePath));
+      await this.ensureDirectoryExists(PathHelper.dirname(tempFilePath));
 
       // Copy file to temporary location with archive path structure
       await FileSystem.copyAsync({
@@ -1047,25 +1565,33 @@ class ZipErrorHandler {
 }
 ````
 
-#### Migration Note: ReadableStream Infeasibility
+#### Migration Note: File Path-Based Design Implementation
 
-**Why ReadableStream is not viable with react-native-zip-archive**:
+**Why File Paths instead of ReadableStream**:
 
-1. **Library Architecture**: `react-native-zip-archive` is built around native platform ZIP APIs that operate on complete file paths, not streaming interfaces
-2. **Memory Constraints**: Mobile devices have limited memory; streaming large ZIPs could cause OOM errors
-3. **Platform Differences**: iOS and Android ZIP APIs don't expose streaming interfaces to JavaScript
-4. **Performance Trade-offs**: File-based ZIP creation allows for better native optimization and background processing
-5. **Error Recovery**: File-based approach enables better error recovery and partial upload resumption
+1. **React Native Compatibility**: WHATWG ReadableStream is not reliably supported across React Native versions and platforms
+2. **Native Performance**: Direct file path operations leverage platform-optimized file I/O APIs
+3. **Memory Efficiency**: Chunked file processing prevents memory issues with large database files
+4. **Atomic Operations**: File-based approach enables atomic writes and better error recovery
+5. **Platform Integration**: Native modules can implement streaming at the OS level using platform APIs
+6. **Simplified Architecture**: Reduces complexity by working with established file system patterns
 
-**Alternative Considered**: Custom native module with InputStream/OutputStream semantics would require:
+**Native Streaming Implementation**:
 
-- Complex native code for both iOS (NSInputStream/NSOutputStream) and Android (FileInputStream/FileOutputStream)
-- Custom JNI/Kotlin bridging for Android
-- Objective-C/Swift native module for iOS
-- Extensive testing across iOS/Android versions
-- Maintenance overhead for native code
+The new design implements streaming at the native level using:
 
-**Chosen Approach**: File-based API with proper error handling and platform integration provides better reliability and maintainability for backup use cases.
+- **libsodium secretstream**: For authenticated encryption with chunked processing
+- **Chunked AES-GCM**: For high-performance encryption with unique IVs per chunk
+- **Native File I/O**: Platform-optimized file reading/writing operations
+- **Memory-Mapped Files**: Where supported for efficient large file handling
+
+**Benefits of File Path-Based API**:
+
+- **Reliability**: No dependency on JavaScript streaming APIs that may not work consistently
+- **Performance**: Native-level streaming provides better throughput than JS-level processing
+- **Resource Management**: Proper cleanup of temporary files and error recovery
+- **Platform Optimization**: Leverages iOS/Android file system optimizations
+- **Future-Proof**: Works consistently across React Native versions and platform updates
 
 ### Background Task Management
 

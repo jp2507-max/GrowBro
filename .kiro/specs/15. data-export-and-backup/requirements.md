@@ -49,6 +49,11 @@ The Data Export and Backup feature enables GrowBro users to export their cultiva
 4. WHEN performing restore THEN the system SHALL disable WatermelonDB sync, import in batched transactions, then reset checkpoints (last_pulled_at) and re-enable sync
 5. IF restore fails THEN the system SHALL maintain the current data state and provide detailed error information
 6. IF media files are missing THEN the system SHALL restore data anyway and mark entries with "missing media" flag
+7. WHEN restoring THEN the system SHALL enforce unzip safety:
+   - Max total uncompressed size (configurable, e.g., ≤5 GB)
+   - Max file count (e.g., ≤50 000), max directory depth
+   - Reject absolute/relative path escapes (../, leading "/" or drive letters)
+   - Validate MIME/types and refuse symlinks or special files
 
 ### Requirement 4
 
@@ -112,7 +117,7 @@ The Data Export and Backup feature enables GrowBro users to export their cultiva
 
 - Use Expo FileSystem + SAF for Android destinations and Sharing.shareAsync for iOS exports
 - Avoid assumptions about raw paths under Android 11+ scoped storage
-- Prefer encrypt-then-zip (AES-GCM) because ZIP AES support is inconsistent in RN/Expo (especially iOS)
+- Use zip-then-encrypt: first package NDJSON, manifest.json, checksums.json into a ZIP, then encrypt the entire ZIP payload with AES-GCM-256 using Argon2id (fallback scrypt) KDF to produce a single `.cbk` file with portable envelope header
 - During restore, pause WatermelonDB synchronize(), import in background thread, then reset sync state before re-enabling
 
 ### Mobile Platform Realities
