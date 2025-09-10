@@ -129,7 +129,14 @@ export function onConnectivityChange(
 
 export async function canSyncLargeFiles(): Promise<boolean> {
   const s = await getNetworkState();
-  // Allow only on wifi/ethernet by policy
-  if (s.type === 'wifi' || s.type === 'ethernet') return true;
+  // Allow only on wifi/ethernet by policy AND verify actual connectivity
+  // NetInfo may report wifi/ethernet types even when offline (e.g., airplane mode)
+  if (
+    (s.type === 'wifi' || s.type === 'ethernet') &&
+    s.isConnected &&
+    (s.isInternetReachable ?? true)
+  ) {
+    return true;
+  }
   return false;
 }

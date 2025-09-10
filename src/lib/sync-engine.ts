@@ -441,7 +441,7 @@ function applyPayloadToRecord(target: any, payload: any): void {
       if (value != null) {
         const numericValue = Number(value);
         if (Number.isFinite(numericValue)) {
-          (target as any).serverRevision = numericValue;
+          (target as any).server_revision = numericValue;
         }
       }
       continue;
@@ -451,7 +451,7 @@ function applyPayloadToRecord(target: any, payload: any): void {
         const numericValue =
           typeof value === 'number' ? value : toMillis(value as any);
         if (numericValue != null && Number.isFinite(numericValue)) {
-          (target as any).serverUpdatedAt = numericValue;
+          (target as any).server_updated_at_ms = numericValue;
         }
       }
       continue;
@@ -464,10 +464,11 @@ function applyPayloadToRecord(target: any, payload: any): void {
 function maybeMarkNeedsReview(table: TableName, rec: any, payload: any): void {
   if (table !== 'tasks') return;
   // Prefer server_revision if present, otherwise compare server_updated_at_ms
-  const localRev = (rec as any).serverRevision ?? null;
+  const localRev = (rec as any)._raw?.server_revision ?? null;
   const serverRev = payload.server_revision ?? null;
   const localServerTs =
-    (rec as any).serverUpdatedAt ?? toMillis((rec as any).updatedAt as any);
+    (rec as any)._raw?.server_updated_at_ms ??
+    toMillis((rec as any).updatedAt as any);
   const serverServerTs =
     payload.server_updated_at_ms ?? toMillis(payload.updatedAt as any);
 
@@ -533,14 +534,7 @@ function determineServerAuthority(
   return false;
 }
 
-function applyServerPayloadToRecord(
-  rec: any,
-  payload: any,
-  table: TableName
-): void {
-  // Needs review marking when server is newer (server-lww)
-  maybeMarkNeedsReview(table, rec, payload);
-
+function applyServerPayloadToRecord(rec: any, payload: any): void {
   applyPayloadToRecord(rec, payload);
   if (payload.updatedAt != null) {
     (rec as any).updatedAt = _normalizeIncomingValue(
@@ -549,10 +543,10 @@ function applyServerPayloadToRecord(
     );
   }
   if (payload.server_revision != null) {
-    (rec as any).serverRevision = Number(payload.server_revision);
+    (rec as any).server_revision = Number(payload.server_revision);
   }
   if (payload.server_updated_at_ms != null) {
-    (rec as any).serverUpdatedAt = Number(payload.server_updated_at_ms);
+    (rec as any).server_updated_at_ms = Number(payload.server_updated_at_ms);
   }
 }
 
@@ -566,6 +560,14 @@ async function handleUpdate(
   // Pre-compute all values outside the synchronous update callback
 
   // Determine if server is authoritative
+  // NOTE: P1 BUG - Server revision metadata not persisted in WatermelonDB schema
+  // The WatermelonDB schema for tasks (and other tables) currently only defines
+  // created_at/updated_at/deleted_at columns without server_revision or
+  // server_updated_at_ms fields. This means these values are never persisted
+  // and _raw will always return undefined after record reload, causing conflict
+  // resolution to fall back to client timestamps and lose server-authoritative ordering.
+  // TODO: Add server_revision and server_updated_at_ms fields to WatermelonDB schema
+  // TODO: Update migration to persist these fields properly
   const localRev = existing._raw.server_revision ?? null;
   const serverRev = payload.server_revision ?? null;
   const localServerTs =
@@ -613,7 +615,7 @@ async function handleUpdate(
 
     // Only apply server fields when server is authoritative
     if (serverIsAuthoritative) {
-      applyServerPayloadToRecord(rec, payload, table);
+      applyServerPayloadToRecord(rec, payload);
     }
   });
 }

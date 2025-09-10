@@ -1,5 +1,5 @@
 import { Model } from '@nozbe/watermelondb';
-import { date, json, text } from '@nozbe/watermelondb/decorators';
+import { date, json, readonly, text } from '@nozbe/watermelondb/decorators';
 
 import type { TaskMetadata, TaskStatus } from '@/types';
 
@@ -19,6 +19,8 @@ export class TaskModel extends Model {
   @date('completed_at') completedAt?: Date;
   @json('metadata', (raw) => raw as TaskMetadata)
   metadata!: TaskMetadata;
+  @text('server_revision') serverRevision?: string;
+  @readonly @date('server_updated_at_ms') serverUpdatedAtMs?: Date;
   @date('created_at') createdAt!: Date;
   @date('updated_at') updatedAt!: Date;
   @date('deleted_at') deletedAt?: Date;

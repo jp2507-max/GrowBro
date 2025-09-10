@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const schema = appSchema({
-  version: 5,
+  version: 6,
   tables: [
     tableSchema({
       name: 'series',
@@ -15,6 +15,8 @@ export const schema = appSchema({
         { name: 'until_utc', type: 'string', isOptional: true },
         { name: 'count', type: 'number', isOptional: true },
         { name: 'plant_id', type: 'string', isOptional: true },
+        { name: 'server_revision', type: 'string', isOptional: true },
+        { name: 'server_updated_at_ms', type: 'number', isOptional: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
         { name: 'deleted_at', type: 'number', isOptional: true },
@@ -30,6 +32,8 @@ export const schema = appSchema({
         { name: 'reminder_at_local', type: 'string', isOptional: true },
         { name: 'reminder_at_utc', type: 'string', isOptional: true },
         { name: 'status', type: 'string', isOptional: true },
+        { name: 'server_revision', type: 'string', isOptional: true },
+        { name: 'server_updated_at_ms', type: 'number', isOptional: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
         { name: 'deleted_at', type: 'number', isOptional: true },
@@ -50,6 +54,8 @@ export const schema = appSchema({
         { name: 'status', type: 'string' },
         { name: 'completed_at', type: 'number', isOptional: true },
         { name: 'metadata', type: 'string' },
+        { name: 'server_revision', type: 'string', isOptional: true },
+        { name: 'server_updated_at_ms', type: 'number', isOptional: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
         { name: 'deleted_at', type: 'number', isOptional: true },
