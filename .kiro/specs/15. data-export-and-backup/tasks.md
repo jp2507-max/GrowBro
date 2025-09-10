@@ -81,41 +81,13 @@ Match cipher/KDF identifiers to the design doc ("aes-256-gcm", "xchacha20-poly13
     - **Exit Criteria**: KDF consistency across platforms, secure memory handling
     - _Requirements: R2 AC1, R2 AC6_
 
-  - [ ] 5.2 Build streaming encryption with AES-GCM/XChaCha20
+  - [ ] 5.2 Build streaming encryption with secretstream
 
-    @coderabbitai coderabbitai bot 15 hours ago
-    💡 Verification agent
-
-    ❓ Verification inconclusive
-    Use secretstream_xchacha20poly1305 for streaming encryption
-
-    In .kiro/specs/15.data-export-and-backup/tasks.md, replace:
-
-    - - Implement streaming API (init → push(chunk) → finalize) for large files using react-native-libsodium's crypto*aead*\_encrypt/decrypt primitives only
-    - - Create AES-256-GCM as primary cipher with XChaCha20-Poly1305 fallback using native libsodium APIs - prohibit JS implementations
-
-    * - Implement streaming API (init → push → finalize) using libsodium secretstream_xchacha20poly1305 for large files
-    * - Prefer XChaCha20-Poly1305 (secretstream) for cross-platform streaming. If AES-GCM is required, use file-level AEAD with a single nonce per file and include manifest in AAD
-        Also confirm whether crypto*aead_aes256gcm*\* is available in your RN libsodium build (requires CPU AES support).
-
-    📝 Committable suggestion
-    ‼️ IMPORTANT
-    Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.
-
-    Suggested change
-
-    - [ ] 5.2 Build streaming encryption with AES-GCM/XChaCha20
-      - Implement streaming API (init → push(chunk) → finalize) for large files using react-native-libsodium's crypto*aead*\*\_encrypt/decrypt primitives only
-      - Create AES-256-GCM as primary cipher with XChaCha20-Poly1305 fallback using native libsodium APIs - prohibit JS implementations
-      - Add per-file checksum generation (SHA-256 primary, BLAKE3 option) with constant-time comparison using sodium_memcmp
-      - **Exit Criteria**: Stream 100MB+ files without memory spikes, AEAD verification passes
-      - _Requirements: R2 AC1, R5 AC1, R5 AC3_
-    - [ ] 5.2 Build streaming encryption with AES-GCM/XChaCha20
-      - Implement streaming API (init → push → finalize) using libsodium secretstream_xchacha20poly1305 for large files
-      - Prefer XChaCha20-Poly1305 (secretstream) for cross-platform streaming. If AES-GCM is required, use file-level AEAD with a single nonce per file and include manifest in AAD
-      - Add per-file checksum generation (SHA-256 primary, BLAKE3 option) with constant-time comparison using sodium_memcmp
-      - **Exit Criteria**: Stream 100MB+ files without memory spikes, AEAD verification passes
-      - _Requirements: R2 AC1, R5 AC1, R5 AC3_
+    - Implement streaming API (init → push → finalize) using libsodium secretstream_xchacha20poly1305 for large files
+    - Use XChaCha20-Poly1305 (secretstream) for cross-platform streaming encryption - prohibit JS implementations
+    - Add per-file checksum generation (SHA-256 primary, BLAKE3 option) with constant-time comparison using sodium_memcmp
+    - **Exit Criteria**: Stream 100MB+ files without memory spikes, AEAD verification passes
+    - _Requirements: R2 AC1, R5 AC1, R5 AC3_
 
   - [ ] 5.3 Add manifest signature with HMAC
     - Derive HMAC key from passphrase using HKDF/Argon2id subkey

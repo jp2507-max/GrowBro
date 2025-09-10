@@ -36,7 +36,7 @@
     "type-check": "tsc  --noemit",
     "lint:translations": "eslint ./src/translations/ --fix --ext .json  ",
     "i18n:validate": "node scripts/i18next-syntax-validation.js",
-    "test": "jest",
+    "test": "jest --runInBand --forceExit",
     "check-all": "pnpm run lint && pnpm run type-check && pnpm run lint:translations && pnpm run i18n:validate && pnpm run test",
     "test:ci": "pnpm run test --coverage",
     "test:watch": "pnpm run test --watch",

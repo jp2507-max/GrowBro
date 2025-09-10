@@ -296,7 +296,7 @@ const DEFAULT_RETENTION: RetentionPolicy[] = [
   },
   {
     dataType: DataType.INFERENCE_IMAGES,
-    purpose: 'aiDiagnosis',
+    purpose: 'aiInference',
     retentionPeriod: 1,
     deletionMethod: 'hard-delete',
     cascadeRules: ['fs', 'bucket'],
