@@ -10,7 +10,7 @@ The App Store Policy Guardrails system provides comprehensive compliance automat
 
 2. **Conservative Mode Over Lockouts:** Prefer Conservative Mode (read-only community, neutral copy, stronger disclaimers) over hard app lockouts except where law/store policy forces geofencing for legal cannabis features.
 
-3. **2025 Compliance:** Align with Apple's new age rating tiers (4+/9+/13+/16+/18+ via App Store Connect questionnaire; developer response deadline Jan 31 2026), Google Play's Photos/Videos permission declarations, and updated UGC moderation requirements.
+3. **2025 Compliance:** Apple's App Store age tiers are 4+/9+/13+/16+/18+ with App Store Connect questionnaire deadline Jan 31, 2026. Google Play target API requirements mandate Android 15 / API 35 for new/updated apps by Aug 31, 2025 with extension to Nov 1, 2025; existing apps must target at least API 34. Google Play Photos/Videos permission guidance states READ_MEDIA_IMAGES/READ_MEDIA_VIDEO must be limited to core features and declared via Play Console with full compliance by late May 2025.
 
 The design follows a multi-layered approach with client-side enforcement, server-side validation, build-time checks, and runtime monitoring to create a robust compliance framework that adapts to different jurisdictions and policy requirements.
 
@@ -106,7 +106,7 @@ interface RegionInfo {
 
 // PASETO v4.public Token Claims Structure
 interface RegionTokenClaims {
-  sub: string; // App install hash (SHA-256 of device ID + install timestamp)
+  sub: string; // Install-scoped ID: random UUID v4 generated on first run, stored in secure storage; optionally hashed with an app-specific salt. Never derive from hardware/device IDs.
   cnt: string; // Continent code (EU, NA, AS, AF, SA, OC, AN)
   cty: string; // Country code (ISO 3166-1 alpha-2)
   area: string; // Coarse geographic area (central, west, east, north, south)
@@ -193,7 +193,7 @@ The replacement of colon-delimited tokens with signed tokens provides several se
 **MANDATORY REQUIREMENTS:**
 
 - **NO IP CAPTURE**: Clients MUST NOT capture, store, or transmit raw IP addresses or ASN data for geolocation purposes
-- **SIGNED TOKEN VALIDATION**: Clients MUST validate token signatures, expiration, issuer, and JTI replay protection using standard PASETO/JWT libraries
+- **SIGNED TOKEN VALIDATION**: Clients MUST validate token signatures, expiration, issuer, and token-binding checks using standard PASETO/JWT libraries
 - **TOKEN-ONLY ACCEPTANCE**: Clients MUST accept and use only server-provided signed region tokens for geolocation decisions
 - **FORBIDDEN IP LOOKUPS**: Clients MUST NOT perform any IP-based geolocation lookups (GeoIP services, IP databases, etc.)
 - **SERVER VALIDATION**: All region-based decisions MUST be validated server-side with audit logging
@@ -225,7 +225,23 @@ The replacement of colon-delimited tokens with signed tokens provides several se
 **Phase 3: Server-Side Validation & Telemetry**
 
 - [ ] Add server-side validation for all region-based policy decisions
-- [ ] Implement server-side token validation (signature, expiration, JTI replay protection)
+- [ ] Implement server-side token validation (signature, expiration, issuer, token-binding)
+- [ ] **MANDATORY SERVER-SIDE JTI PROTECTION**: Server MUST persist JTIs with TTL, reject reused JTI values, log validation attempts for audit, and expose clear error codes for replay attempts so clients only perform signature/exp/issuer/token-binding checks while the server handles replay prevention and auditing
+  - **JTI Store Implementation:**
+    - Deploy authoritative JTI store using Redis or database with atomic operations
+    - Use atomic check-and-set operations to record JTIs on successful validation
+    - Reject tokens with existing JTIs to prevent replay attacks
+    - Set JTI TTL to match token expiration with ±5 minute tolerance for clock skew
+    - Implement distributed locking to prevent race conditions during concurrent validations
+  - **Audit & Monitoring:**
+    - Log all JTI validation events (accept/reject) with timestamps, client IP, user agent, and validation context
+    - Implement metrics dashboard for JTI collision rates, validation success/failure ratios, and anomaly detection
+    - Alert on unusual patterns like high collision rates or geographic anomalies
+  - **Revocation Pathway:**
+    - Support immediate JTI revocation by marking entries as revoked or deleting them entirely
+    - Implement bulk revocation capabilities for security incidents (key compromise, breach response)
+    - Maintain detailed revocation audit trail with justification, approver identity, and timestamp
+    - Ensure revoked JTIs fail validation even within their TTL window
 - [ ] Add audit logging for region token issuance, validation, and usage
 - [ ] Implement token revocation mechanism for security incidents
 - [ ] Add monitoring for token validation failures and anomalies

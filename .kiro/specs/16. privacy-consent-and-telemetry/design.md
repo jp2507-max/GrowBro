@@ -520,6 +520,87 @@ describe('GDPR Compliance', () => {
 
 ### Vendor Integration
 
+---
+
+## Appendix: Client-Side Restrictions & PII Redaction (Merged)
+
+The following mandatory requirements were consolidated from a duplicate draft and are now normative. (Rules applied: Security, Data Minimization, Compliance)
+
+### A. Client-Side Restrictions (MANDATORY – NO EXCEPTIONS)
+
+1. Analytics & crash SDKs MUST strip or disable IP collection before transmission.
+2. Server infrastructure MUST hash or remove `X-Forwarded-For`, `X-Real-IP`, `CF-Connecting-IP` prior to log persistence (SHA-256 + per-request salt if hashing).
+3. Derived location tokens/logs retained ≤30 days with automatic, auditable deletion.
+4. All stripping/hashing operations produce audit entries (timestamp, operation, sample hash lengths). Audit logs themselves may NOT contain raw IPs.
+
+### B. Non-Essential Telemetry Gating
+
+| Category                                                               | Requires Explicit Consent | Initialization                |
+| ---------------------------------------------------------------------- | ------------------------- | ----------------------------- |
+| diagnosis / aiInference                                                | No (contract performance) | Immediate                     |
+| analytics, crashReporting, personalizedData, sessionReplay, aiTraining | Yes                       | Deferred (lazy after consent) |
+
+Rules:
+
+1. No network transmission for non-essential telemetry pre-consent.
+2. Local buffering (max 24h, ≤10MB) optional; expired or overflow events are dropped silently.
+3. Buffer flush only after explicit user action granting consent during that same app run (no auto replay across reinstalls without consent refresh).
+
+### C. Pre-Consent Event Buffering
+
+```typescript
+interface TelemetryBufferConfig {
+  maxBytes: number; // 10 * 1024 * 1024
+  maxAgeMs: number; // 24h
+  purgeOnConsentChange: boolean; // true
+}
+```
+
+Behavior: When consent denied → buffer purged. When granted → flush sequentially with backpressure (avoid burst > 5 events/sec).
+
+### D. PII Redaction Requirements (Crash & Telemetry)
+
+Always redact or hash (salted SHA-256) before enqueue/transmission:
+
+- User IDs, emails, phone numbers, IP addresses, device identifiers, auth tokens, API keys, location coordinates, file system paths containing usernames.
+
+Redaction Strategy:
+
+1. Identifiers → salted hash or full removal.
+2. Free text → pattern-based masking; if confidence < 0.8, replace token with `[REDACTED]`.
+3. Stack traces → strip absolute paths & usernames.
+4. Metadata → truncate timestamps to day granularity in crash diagnostics.
+
+Validation:
+
+```typescript
+expect(sanitizeCrashEvent(raw).containsPII).toBe(false);
+```
+
+Transmission ABORTS if sanitizer flags uncertain PII (fails safe). Attempt count metric increments `crash_sanitization_blocked`.
+
+### E. Session Replay Safeguards
+
+- Disabled by default in production unless (user consent && ENABLE_SESSION_REPLAY flag).
+- Mask all text & inputs; exclude auth, settings, media upload screens.
+- Provide in-app pause control.
+
+### F. Test Additions
+
+1. Zero network calls before telemetry consent (`fetch` spy pattern).
+2. Buffer overflow purges oldest events, not newest (FIFO drop).
+3. Redaction unit tests for each PII category.
+4. Replay activation test ensures both flag + consent required.
+
+### G. Exit Criteria (Supplemental)
+
+- 100% of crash events pass sanitizer without PII.
+- Pre-consent startup produces zero third-party telemetry requests.
+- Buffer purge & flush behaviors covered by unit + integration tests.
+- Audit log entries generated for IP stripping & retention job runs.
+
+---
+
 #### Supabase Configuration
 
 ```typescript

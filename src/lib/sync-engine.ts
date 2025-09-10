@@ -439,14 +439,20 @@ function applyPayloadToRecord(target: any, payload: any): void {
     // Map server fields to local properties where appropriate
     if (key === 'server_revision') {
       if (value != null) {
-        (target as any).serverRevision = Number(value);
+        const numericValue = Number(value);
+        if (Number.isFinite(numericValue)) {
+          (target as any).serverRevision = numericValue;
+        }
       }
       continue;
     }
     if (key === 'server_updated_at_ms') {
       if (value != null) {
-        (target as any).serverUpdatedAt =
+        const numericValue =
           typeof value === 'number' ? value : toMillis(value as any);
+        if (numericValue != null && Number.isFinite(numericValue)) {
+          (target as any).serverUpdatedAt = numericValue;
+        }
       }
       continue;
     }
@@ -558,14 +564,12 @@ async function handleUpdate(
   const resolver = createConflictResolver();
 
   // Pre-compute all values outside the synchronous update callback
-  const existingRecord = await existing.find(existing.id);
 
   // Determine if server is authoritative
-  const localRev = (existingRecord as any).serverRevision ?? null;
+  const localRev = existing._raw.server_revision ?? null;
   const serverRev = payload.server_revision ?? null;
   const localServerTs =
-    (existingRecord as any).serverUpdatedAt ??
-    toMillis((existingRecord as any).updatedAt as any);
+    existing._raw.server_updated_at_ms ?? toMillis(existing.updatedAt);
   const serverServerTs =
     payload.server_updated_at_ms ?? toMillis(payload.updatedAt as any);
 
@@ -581,19 +585,19 @@ async function handleUpdate(
   );
 
   // Replace DB-wide hasUnsyncedChanges() with record-level check
-  const hasUnsyncedRecord = (existingRecord as any)._raw._status !== 'synced';
+  const hasUnsyncedRecord = existing._raw._status !== 'synced';
   if (serverIsAuthoritative && hasUnsyncedRecord) {
     serverIsAuthoritative = false;
   }
 
   // Create local snapshot for conflict detection
-  const localSnapshot: Record<string, unknown> = { ...(existingRecord as any) };
+  const localSnapshot: Record<string, unknown> = { ...existing };
 
   // Detect conflicts outside the update callback
   try {
     const conflict: Conflict = buildConflict({
       tableName: table,
-      recordId: (existingRecord as any).id,
+      recordId: existing.id,
       localRecord: localSnapshot,
       remoteRecord: payload,
     });

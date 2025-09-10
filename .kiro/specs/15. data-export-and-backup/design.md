@@ -2293,3 +2293,109 @@ interface BackupTelemetry {
 ```
 
 Send to Sentry with user opt-in for improving backup reliability without exposing user data.
+
+---
+
+## Appendix: Key Separation, Manifest Integrity & Path Utilities (Merged)
+
+The following normative requirements were consolidated from a duplicate spec draft. They are now authoritative and MUST be implemented in addition to the core design above. (Rules applied: Code Style, Separation of Concerns, Security)
+
+### A. Key Derivation & Separation
+
+Implement distinct subkeys for encryption and MAC operations. Keys MUST be 32 bytes and derived via a labeled KDF (Argon2id master → HKDF expand or libsodium crypto_kdf) to prevent reuse.
+
+```typescript
+interface KeyDerivationResult {
+  encryptionKey: Uint8Array; // 32 bytes
+  macKey: Uint8Array; // 32 bytes
+  salt: Uint8Array; // ≥16 bytes
+}
+
+function deriveKeysHKDF(
+  passphrase: string,
+  salt: Uint8Array
+): KeyDerivationResult {
+  const master = HKDF.extract(passphrase, salt);
+  return {
+    encryptionKey: HKDF.expand(master, 'ENCRYPTION', 32),
+    macKey: HKDF.expand(master, 'MANIFEST_HMAC', 32),
+    salt,
+  };
+}
+```
+
+Constraints:
+
+1. Never reuse one subkey for both encryption and authentication.
+2. Labels MUST be exactly: `ENCRYPTION`, `MANIFEST_HMAC`.
+3. Reject key length ≠ 32 bytes.
+
+### B. Export Manifest Fields
+
+Augment manifest schema to explicitly enumerate subkey labels used for the export to support auditability.
+
+```typescript
+interface ExportManifest {
+  version: string;
+  createdAt: string;
+  kdf: 'HKDF-SHA256' | 'argon2id+HKDF' | 'crypto_kdf';
+  salt: string; // base64
+  subkeys: { name: 'enc' | 'mac'; label: string; len: number }[];
+  signature: { algorithm: 'HMAC-SHA256'; subkeyLabel: string; value: string };
+  // existing fields ...
+}
+```
+
+### C. Manifest Integrity Verification
+
+Create canonical JSON (stable key order, exclude `signature`) and HMAC with `macKey`.
+
+```typescript
+function verifyManifestIntegrity(
+  manifest: ExportManifest,
+  macKey: Uint8Array
+): boolean {
+  const canonical = createCanonicalManifest(manifest); // excludes signature
+  const h = hmacSha256(macKey, canonical);
+  return timingSafeEqual(h, base64.decode(manifest.signature.value));
+}
+```
+
+### D. Tamper & Key Reuse Tests
+
+Add tests:
+
+1. Distinct encryption vs MAC keys.
+2. Tampering with any manifest field invalidates HMAC.
+3. Attempting to call MAC with encryptionKey throws `Key separation violation`.
+
+### E. PathHelper URI Scheme Preservation
+
+The previous draft introduced a defect note: standard path helpers stripped leading slashes in `file:///` URIs. Implement safe join/dirname that preserve URI schemes.
+
+Regex: `/^([a-zA-Z]+:(?:\/\/?))(.*)$/`
+
+Required behaviors:
+
+1. Preserve triple slash for `file:///` roots.
+2. Preserve authority form `file://server/share`.
+3. Treat plain relative paths unchanged.
+
+Illustrative tests:
+
+```typescript
+expect(joinPath('file:///', 'foo', 'bar')).toBe('file:///foo/bar');
+expect(dirname('file:///foo/bar/file.txt')).toBe('file:///foo/bar');
+expect(joinPath('/usr', 'local')).toBe('/usr/local');
+```
+
+### F. Exit Criteria (Supplemental)
+
+- Key separation enforced & unit tests pass.
+- Manifest includes explicit subkey metadata.
+- HMAC verification rejects any field tampering.
+- PathHelper test matrix passes for `file:///`, `file://`, absolute & relative paths.
+
+---
+
+End of merged appendix.
