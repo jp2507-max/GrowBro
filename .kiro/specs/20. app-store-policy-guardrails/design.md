@@ -113,13 +113,12 @@ interface RegionTokenClaims {
   iat: number; // Issued at timestamp (Unix timestamp)
   exp: number; // Expiration timestamp (Unix timestamp, max 24h from iat)
   jti: string; // Unique token ID (UUID v4) for replay protection
-  kid: string; // Key ID for key rotation (e.g., "v1", "v2")
 }
 
 // Example RegionInfo for logging/auditing (raw tokens never logged):
 // {
 //   "code": "us-west-1",
-//   "tokenIdHash": "a1b2c3d4e5f6",
+//   "tokenIdHash": "<PLACEHOLDER_TOKEN_ID_HASH>",
 //   "source": "server_token",
 //   "confidence": 0.95,
 //   "issuedAtMs": 1699123456000,
@@ -174,7 +173,9 @@ The replacement of colon-delimited tokens with signed tokens provides several se
     - `iat`: Issued at timestamp (Unix timestamp)
     - `exp`: Expiration timestamp (TTL max 24h, recommend 6-12h)
     - `jti`: Unique token ID for replay protection
-    - `kid`: Key ID for key rotation support
+  - **Key Identification**:
+    - **JWT**: "kid" (Key ID) field in JWT header for key rotation support
+    - **PASETO**: Key identification handled via footer or server-managed key resolution (no JWT-style headers)
   - **Security Features**:
     - Cryptographic signature using server private key
     - Token binding to app install hash prevents replay attacks
@@ -319,7 +320,7 @@ interface EntityValidationResult {
   hasDUNS: boolean; // Apple requirement for highly regulated apps
   playConsoleComplete: boolean; // App Content declarations
   geoRestrictionStatement: boolean; // Required for cannabis features
-  targetApiLevel: number; // Must be Android 14 (API 34) for new updates from Aug 31, 2024
+  targetApiLevel: number; // Must be Android 14 (API 35) for new updates from Aug 31, 2025
   photosVideosDeclaration: boolean; // Google Play 2025 requirement
   violations: string[];
 }
@@ -434,7 +435,7 @@ interface PolicyLintResult {
 **Validation Gates:**
 
 - **Policy Linter (CI):** Fails builds on flagged terms in app strings, store listing, and push templates
-- **Target API Level:** Block release if target < Android 14 (API 34) for new updates from Aug 31, 2024
+- **Target API Level:** Block release if target < Android 14 (API 35) for new updates from Aug 31, 2025
 - **Permission Declarations:** Enforce Play Photos/Videos and Background Location declarations
 - **Apple Age Rating:** Validate new age categories are used and match in-app gating
 - **Legal Entity Check:** Ensure seller is organization with required documentation

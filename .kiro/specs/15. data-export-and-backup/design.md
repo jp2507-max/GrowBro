@@ -132,6 +132,14 @@ interface BackupOptions {
     includeMedia: boolean;
   };
 }
+
+interface BackupResult {
+  id: string; // The snapshot ID
+  createdAt: Date; // When the backup was created
+  size?: number; // Size of the backup in bytes (optional)
+  type: 'full' | 'delta'; // Type of backup
+  encrypted: boolean; // Whether the backup is encrypted
+}
 ```
 
 #### ExportManager
@@ -201,6 +209,8 @@ interface CryptoService {
     signature: string,
     key: Uint8Array
   ): boolean;
+  // Hash a user passphrase for secure storage/verification
+  hashPassphrase(passphrase: string): Promise<string>; // e.g., Argon2id PHC string or PBKDF2-HMAC-SHA256
 }
 
 interface CryptoOptions {
@@ -319,7 +329,7 @@ interface MediaFile {
 
 #### Export Package Structure
 
-```
+```text
 canabro-export_2025-01-15T10:30:00Z_v1.zip
 ├── manifest.json                 # Export metadata
 ├── plants.csv                    # Plant records
@@ -334,7 +344,7 @@ canabro-export_2025-01-15T10:30:00Z_v1.zip
 
 #### Backup Package Structure
 
-```
+```text
 backup_2025-01-15T10:30:00Z_full.cbk
 ├── manifest.json                 # Backup metadata
 ├── checksums.json               # File integrity checksums
@@ -384,7 +394,7 @@ class WatermelonSyncManager {
     const wrappedKey = await this.wrapEncryptionKey(ephemeralKey);
 
     // Create backup with ephemeral encryption
-    const snapshotId = await this.backupManager.createBackup({
+    const { id: snapshotId } = await this.backupManager.createBackup({
       type: 'full',
       includeMedia: false,
       destination: 'local',
@@ -430,9 +440,13 @@ class WatermelonSyncManager {
       }
       // Final fallback: OS-level data protection without encryption
       return {
+        id: `os-protected-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         wrapped: false,
         protectionLevel: 'os-data-protection',
-        key: ephemeralKey,
+        plaintextKey: ephemeralKey,
+        ttl: 3600000, // 1 hour default
+        createdAt: new Date().toISOString(),
+        purpose: 'snapshot-encryption',
       };
     }
   }
@@ -465,6 +479,7 @@ interface WrappedKey {
     | 'passphrase-wrapped'
     | 'os-data-protection';
   wrappedData?: string; // Serialized JSON containing encrypted key data and IV {data: base64, iv: base64}
+  plaintextKey?: string; // Used when wrapped === false
   salt?: string; // For passphrase-wrapped keys
   ttl?: number; // Time to live in milliseconds
   createdAt: string;
@@ -615,18 +630,23 @@ class CryptoService {
     options: { kdf: 'argon2id' | 'scrypt'; iterations: number }
   ): Promise<WrappedKey> {
     const salt = await this.generateSecureRandomBytes(32);
-    const iv = await this.generateSecureRandomBytes(16);
+    const iv = await this.generateSecureRandomBytes(12); // 12 bytes for AES-GCM
 
     // Derive wrapping key using PBKDF2/Argon2
     const wrappingKey = await this.deriveKey(passphrase, salt, options);
 
     // Convert string key to bytes and encrypt with the derived wrapping key
     const keyBytes = new TextEncoder().encode(key);
-    const encryptedKey = await this.encryptWithKey(keyBytes, wrappingKey, iv);
+    const encryptedKey = await this.encryptWithKey(keyBytes, wrappingKey, iv, {
+      cipher: Cipher.AES_256_GCM,
+      kdfOptions: options,
+      chunkSize: 64 * 1024, // 64KB chunks
+    });
 
-    // Serialize encrypted data and IV as JSON in wrappedData
+    // Serialize encrypted data components separately as base64
     const encryptedData = {
-      data: this.bytesToBase64(encryptedKey),
+      ciphertext: this.bytesToBase64(encryptedKey.ciphertext),
+      authTag: this.bytesToBase64(encryptedKey.authTag),
       iv: this.bytesToBase64(iv),
     };
 
@@ -650,9 +670,10 @@ class CryptoService {
       throw new Error('Key is not passphrase-wrapped');
     }
 
-    // Parse the serialized encrypted data to extract ciphertext and IV
+    // Parse the serialized encrypted data to extract components
     const encryptedData = JSON.parse(wrappedKey.wrappedData!);
-    const ciphertext = await this.base64ToBytes(encryptedData.data);
+    const ciphertext = await this.base64ToBytes(encryptedData.ciphertext);
+    const authTag = await this.base64ToBytes(encryptedData.authTag);
     const iv = await this.base64ToBytes(encryptedData.iv);
 
     // Re-derive wrapping key
@@ -662,11 +683,18 @@ class CryptoService {
       iterations: 4,
     });
 
+    // Reconstruct the encrypted data object for decryption
+    const encryptedKeyData: EncryptedData = {
+      ciphertext,
+      authTag,
+      iv,
+      salt: await this.base64ToBytes(wrappedKey.salt!),
+    };
+
     // Decrypt the ephemeral key using the derived wrapping key
     const decryptedBytes = await this.decryptWithKey(
-      ciphertext,
-      wrappingKey,
-      iv
+      encryptedKeyData,
+      wrappingKey
     );
     return new TextDecoder().decode(decryptedBytes);
   }
@@ -850,7 +878,7 @@ class BackupManager {
   private get metadataStore(): any {
     return this.deps.metadataStore;
   }
-  async createBackup(options: BackupOptions): Promise<string> {
+  async createBackup(options: BackupOptions): Promise<BackupResult> {
     const snapshotId = `snapshot-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // Create backup with appropriate encryption
@@ -865,7 +893,19 @@ class BackupManager {
     // Store metadata with encryption flags
     await this.storeBackupMetadata(snapshotId, options.metadata, options.ttl);
 
-    return snapshotId;
+    // Determine if backup is encrypted
+    const encrypted = !!(
+      options.encryptionKey ||
+      options.wrappedKey ||
+      options.passphrase
+    );
+
+    return {
+      id: snapshotId,
+      createdAt: new Date(),
+      type: options.type,
+      encrypted,
+    };
   }
 
   private async createEncryptedBackup(
@@ -952,8 +992,14 @@ class BackupManager {
           );
         } else {
           // For OS-data-protection or other cases, use the key directly
-          encryptionKey =
-            options.wrappedKey.wrappedData || options.encryptionKey!;
+          if (options.wrappedKey.wrapped === false) {
+            // Use plaintext key directly when not wrapped
+            encryptionKey = options.wrappedKey.plaintextKey!;
+          } else {
+            // For wrapped keys with other protection levels, use wrappedData if available
+            encryptionKey =
+              options.wrappedKey.wrappedData || options.encryptionKey!;
+          }
         }
       } else if (options.encryptionKey) {
         encryptionKey = options.encryptionKey;

@@ -12,7 +12,7 @@ import {
 } from '@/lib/sync/network-manager';
 
 // Mock implementation for NetInfo
-function createNetInfoMock() {
+jest.mock('@react-native-community/netinfo', () => {
   const listeners: ((s: any) => void)[] = [];
   let state: any = {
     type: 'unknown',
@@ -44,9 +44,7 @@ function createNetInfoMock() {
       shouldThrow = throwError;
     },
   };
-}
-
-jest.mock('@react-native-community/netinfo', () => createNetInfoMock);
+});
 
 const setNetInfo = (next: any) => (NetInfo as any).__setState(next);
 const setNetInfoThrow = (shouldThrow: boolean) =>
@@ -120,6 +118,47 @@ describe('NetworkManager - Sync Policies', () => {
       isInternetReachable: true,
     });
     expect(await canSyncLargeFiles()).toBe(false);
+  });
+
+  it('canSyncLargeFiles requires actual connectivity, not just connection type', async () => {
+    // Wifi type but not connected (e.g., airplane mode with remembered network)
+    setNetInfo({
+      type: 'wifi',
+      isConnected: false,
+      isInternetReachable: false,
+    });
+    expect(await canSyncLargeFiles()).toBe(false);
+
+    // Wifi type but no internet reachability
+    setNetInfo({ type: 'wifi', isConnected: true, isInternetReachable: false });
+    expect(await canSyncLargeFiles()).toBe(false);
+
+    // Ethernet type but not connected
+    setNetInfo({
+      type: 'ethernet',
+      isConnected: false,
+      isInternetReachable: false,
+    });
+    expect(await canSyncLargeFiles()).toBe(false);
+
+    // Ethernet type but no internet reachability
+    setNetInfo({
+      type: 'ethernet',
+      isConnected: true,
+      isInternetReachable: false,
+    });
+    expect(await canSyncLargeFiles()).toBe(false);
+
+    // Only allow when both connection type is wifi/ethernet AND device is connected with internet
+    setNetInfo({ type: 'wifi', isConnected: true, isInternetReachable: true });
+    expect(await canSyncLargeFiles()).toBe(true);
+
+    setNetInfo({
+      type: 'ethernet',
+      isConnected: true,
+      isInternetReachable: true,
+    });
+    expect(await canSyncLargeFiles()).toBe(true);
   });
 
   it('getConnectionType returns normalized type', async () => {
