@@ -223,9 +223,9 @@ export const CUSTOM_RETENTION_POLICIES: RetentionPolicy[] = [
 
 ### Data Collection
 
-1. **Essential Data**: Diagnosis and AI diagnosis data is collected automatically as part of core functionality without requiring user consent, as these are critical for app stability and user experience optimization.
+1. **Essential Data**: Diagnosis and aiInference data is collected automatically as part of core functionality without requiring user consent, as these are critical for app stability and user experience optimization.
 
-2. **Non-Essential Telemetry Gating**: All non-essential telemetry (analytics, usage tracking, performance monitoring, etc.) must be gated until explicit user consent is granted. SDK initialization for non-essential telemetry services must be deferred until consent is obtained.
+2. **Non-Essential Telemetry Gating**: All non-essential telemetry (analytics, usage tracking, performance monitoring, crash reporting, aiTraining, and other consented processing purposes) must be gated until explicit user consent is granted. SDK initialization for crash reporting and other consented processing purposes must be deferred until explicit user consent is obtained.
 
 3. **Pre-Consent Event Handling**:
 
@@ -236,7 +236,7 @@ export const CUSTOM_RETENTION_POLICIES: RetentionPolicy[] = [
 
 4. **SDK Initialization Requirements**:
 
-   - **Essential SDKs**: May initialize immediately as part of core app functionality (crash reporting, diagnosis)
+   - **Essential SDKs**: May initialize immediately as part of core app functionality (diagnosis)
    - **Non-Essential SDKs**: Must not initialize or transmit any data until explicit user consent is granted
    - **Deferred Initialization**: Non-essential SDKs should implement lazy initialization patterns triggered only after consent
    - **No Pre-Consent Transmission**: Under no circumstances should non-essential telemetry be transmitted before consent, even if buffered

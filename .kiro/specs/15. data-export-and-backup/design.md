@@ -169,9 +169,9 @@ interface CryptoService {
     options?: CryptoOptions
   ): Promise<EncryptedData>;
   decryptWithKey(
-    encryptedData: EncryptedData,
+    encryptedBytes: Uint8Array | EncryptedData,
     key: CryptoKey | Uint8Array,
-    iv: Uint8Array
+    iv?: Uint8Array
   ): Promise<Uint8Array>;
   decrypt(
     encryptedData: EncryptedData,
@@ -560,11 +560,41 @@ class CryptoService {
     return bytes;
   }
 
+  /**
+   * Decrypts encrypted data using the provided key.
+   *
+   * This method supports two usage patterns:
+   * 1. Raw bytes + IV: decryptWithKey(encryptedBytes, key, iv)
+   * 2. EncryptedData object: decryptWithKey(encryptedDataObject, key) - extracts data/iv internally
+   *
+   * @param encryptedBytes - Either raw encrypted bytes (Uint8Array) or an EncryptedData object
+   * @param key - The decryption key (CryptoKey or Uint8Array)
+   * @param iv - Optional initialization vector (required when passing raw bytes)
+   * @returns Promise resolving to decrypted bytes
+   * @throws Error if decryption fails or parameters are invalid
+   */
   async decryptWithKey(
-    encryptedData: EncryptedData,
+    encryptedBytes: Uint8Array | EncryptedData,
     key: CryptoKey | Uint8Array,
-    iv: Uint8Array
+    iv?: Uint8Array
   ): Promise<Uint8Array> {
+    let data: Uint8Array;
+    let actualIv: Uint8Array;
+
+    // Handle dual input types
+    if (encryptedBytes instanceof Uint8Array) {
+      // Raw bytes + iv pattern
+      if (!iv) {
+        throw new Error('IV is required when passing raw encrypted bytes');
+      }
+      data = encryptedBytes;
+      actualIv = iv;
+    } else {
+      // EncryptedData object pattern - extract data and iv
+      data = encryptedBytes.ciphertext;
+      actualIv = encryptedBytes.iv;
+    }
+
     // Decrypt using the provided key and IV
     // Implementation would use Web Crypto API or react-native-libsodium
     // This is a placeholder - actual implementation depends on crypto library used

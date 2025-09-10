@@ -34,9 +34,27 @@ export async function getNetworkState(): Promise<NetworkState> {
   if (currentState && listeners.length > 0) return currentState;
 
   // Always fetch fresh data when no listeners are active to avoid stale cache
-  const raw = await NetInfo.fetch();
-  currentState = normalize(raw);
-  return currentState;
+  try {
+    const raw = await NetInfo.fetch();
+    currentState = normalize(raw);
+    return currentState;
+  } catch (error) {
+    // NetInfo.fetch() frequently fails on startup, in simulators, or test environments
+    // Return a safe fallback state instead of propagating the error
+    console.warn(
+      'Failed to fetch network state, using offline fallback:',
+      error
+    );
+    const fallbackState: NetworkState = {
+      type: 'unknown',
+      isConnected: false,
+      isInternetReachable: false,
+      details: null,
+      isMetered: false,
+    };
+    currentState = fallbackState;
+    return fallbackState;
+  }
 }
 
 export async function getConnectionType(): Promise<string> {

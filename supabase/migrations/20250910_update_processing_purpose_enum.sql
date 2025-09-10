@@ -2,8 +2,23 @@
 -- Safe to apply since no existing records use aiDiagnosis
 
 -- Add new enum values
-ALTER TYPE processing_purpose_enum ADD VALUE 'aiInference';
-ALTER TYPE processing_purpose_enum ADD VALUE 'aiTraining';
+DO $$
+BEGIN
+    ALTER TYPE processing_purpose_enum ADD VALUE 'aiInference';
+EXCEPTION
+    WHEN duplicate_object THEN
+        -- Value already exists, do nothing
+        NULL;
+END $$;
+
+DO $$
+BEGIN
+    ALTER TYPE processing_purpose_enum ADD VALUE 'aiTraining';
+EXCEPTION
+    WHEN duplicate_object THEN
+        -- Value already exists, do nothing
+        NULL;
+END $$;
 
 -- Note: In PostgreSQL, we cannot directly remove enum values that might be used,
 -- but since we verified no records exist with aiDiagnosis, we could remove it.

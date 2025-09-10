@@ -88,9 +88,6 @@ sequenceDiagram
 ```typescript
 interface GeoDetectionService {
   getCurrentRegion(): Promise<RegionInfo>;
-  getRegionFromIP(): Promise<RegionInfo>;
-  getRegionFromSIM(): Promise<RegionInfo>;
-  getRegionFromStore(): Promise<RegionInfo>;
   validateRegionCompliance(region: RegionInfo): PolicyFeatures;
   onRegionChange(callback: (old: RegionInfo, new: RegionInfo, reason: string) => void): void;
   emitRegionModeChanged(old: RegionInfo, new: RegionInfo, reason: string): void;

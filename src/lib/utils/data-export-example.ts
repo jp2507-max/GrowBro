@@ -3,7 +3,7 @@
  * This shows the BEFORE and AFTER patterns for fixing Expo/RN compatibility
  */
 
-import { dirname, joinPath } from '@/lib/utils/path-utils';
+import { dirname, normalizePath } from '@/lib/utils/path-utils';
 
 // BEFORE (Node.js path - doesn't work in Expo/RN):
 // import path from 'path';
@@ -15,9 +15,12 @@ import { dirname, joinPath } from '@/lib/utils/path-utils';
 // }
 
 // AFTER (URL-safe path utility - works in Expo/RN):
-export function exampleWithUrlSafePath() {
-  // Replace path.join with joinPath
-  const tempFilePath = joinPath('/some/base/path', 'temp', 'data.json');
+export function exampleWithUrlSafePath(): {
+  tempFilePath: string;
+  parentDir: string;
+} {
+  // Replace path.join with normalizePath for proper path normalization
+  const tempFilePath = normalizePath('/some/base/path/temp/data.json');
 
   // Replace path.dirname with dirname
   const parentDir = dirname(tempFilePath);
@@ -44,9 +47,14 @@ export function exampleWithUrlSafePath() {
 
 // Additional examples of common path operations:
 
-export function pathOperationsExample() {
+export function pathOperationsExample(): {
+  fullPath: string;
+  dir: string;
+  fileName: string;
+  normalized: string;
+} {
   // Joining multiple path segments
-  const fullPath = joinPath('exports', '2024', 'data.json');
+  const fullPath = normalizePath('exports/2024/data.json');
   // Result: 'exports/2024/data.json'
 
   // Getting directory from a path
@@ -58,30 +66,34 @@ export function pathOperationsExample() {
   // Result: 'data.json'
 
   // Normalizing paths (resolving .. and .)
-  const normalized = joinPath('a', 'b', '..', 'c');
+  const normalized = normalizePath('a/b/../c');
   // Result: 'a/c'
 
   return { fullPath, dir, fileName, normalized };
 }
 
 // Example of how to structure data export functionality
-export interface ExportOptions {
+export type ExportOptions = {
   basePath: string;
   filename: string;
   format: 'json' | 'csv' | 'xml';
-}
+};
 
-export function buildExportPaths(options: ExportOptions) {
+export function buildExportPaths(options: ExportOptions): {
+  tempFilePath: string;
+  parentDir: string;
+  exportPath: string;
+} {
   const { basePath, filename, format } = options;
 
   // Build temp file path
-  const tempFilePath = joinPath(basePath, 'temp', `${filename}.${format}`);
+  const tempFilePath = normalizePath(`${basePath}/temp/${filename}.${format}`);
 
   // Get parent directory for ensuring it exists
   const parentDir = dirname(tempFilePath);
 
   // Build final export path
-  const exportPath = joinPath(basePath, 'exports', `${filename}.${format}`);
+  const exportPath = normalizePath(`${basePath}/exports/${filename}.${format}`);
 
   return {
     tempFilePath,

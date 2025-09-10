@@ -1,3 +1,5 @@
+import { hasUnsyncedChanges } from '@nozbe/watermelondb/sync';
+
 import { queryClient } from '@/api/common/api-provider';
 import { NoopAnalytics } from '@/lib/analytics';
 import { getItem, setItem } from '@/lib/storage';
@@ -438,12 +440,16 @@ function applyPayloadToRecord(target: any, payload: any): void {
     if (key === 'id') continue;
     // Map server fields to local properties where appropriate
     if (key === 'server_revision') {
-      (target as any).serverRevision = Number(value ?? null);
+      if (value != null) {
+        (target as any).serverRevision = Number(value);
+      }
       continue;
     }
     if (key === 'server_updated_at_ms') {
-      (target as any).serverUpdatedAt =
-        typeof value === 'number' ? value : toMillis(value as any);
+      if (value != null) {
+        (target as any).serverUpdatedAt =
+          typeof value === 'number' ? value : toMillis(value as any);
+      }
       continue;
     }
     if (key === 'updatedAt') continue;
@@ -506,18 +512,57 @@ async function handleCreate(coll: any, payload: any): Promise<void> {
   });
 }
 
+function determineServerAuthority(
+  localData: { rev: number | null; serverTs: number | null },
+  serverData: { rev: any; serverTs: any }
+): boolean {
+  const { rev: localRev, serverTs: localServerTs } = localData;
+  const { rev: serverRev, serverTs: serverServerTs } = serverData;
+
+  if (serverRev != null && localRev != null) {
+    return Number(serverRev) > Number(localRev);
+  } else if (serverServerTs != null && localServerTs != null) {
+    return Number(serverServerTs) > Number(localServerTs);
+  } else if (serverServerTs != null && localServerTs == null) {
+    return true;
+  }
+  return false;
+}
+
+function applyServerPayloadToRecord(
+  rec: any,
+  payload: any,
+  table: TableName
+): void {
+  // Needs review marking when server is newer (server-lww)
+  maybeMarkNeedsReview(table, rec, payload);
+
+  applyPayloadToRecord(rec, payload);
+  if (payload.updatedAt != null) {
+    (rec as any).updatedAt = _normalizeIncomingValue(
+      'updatedAt',
+      payload.updatedAt
+    );
+  }
+  if (payload.server_revision != null) {
+    (rec as any).serverRevision = Number(payload.server_revision);
+  }
+  if (payload.server_updated_at_ms != null) {
+    (rec as any).serverUpdatedAt = Number(payload.server_updated_at_ms);
+  }
+}
+
 async function handleUpdate(
   table: TableName,
   existing: any,
   payload: any
 ): Promise<void> {
   const resolver = createConflictResolver();
-  await existing.update((rec: any) => {
+  await existing.update(async (rec: any) => {
     // Detect conflicts: if local is newer but server sends different values
     const localSnapshot: Record<string, unknown> = { ...(rec as any) };
-    // Conflict resolution: prefer higher server_revision when present. We still
-    // apply payload to the record, but only overwrite local fields if the
-    // server revision/timestamp indicates the server change is newer.
+
+    // Determine if server is authoritative
     const localRev = (rec as any).serverRevision ?? null;
     const serverRev = payload.server_revision ?? null;
     const localServerTs =
@@ -525,35 +570,34 @@ async function handleUpdate(
     const serverServerTs =
       payload.server_updated_at_ms ?? toMillis(payload.updatedAt as any);
 
-    let serverIsAuthoritative = false;
-    if (serverRev != null && localRev != null) {
-      serverIsAuthoritative = Number(serverRev) >= Number(localRev);
-    } else if (serverServerTs != null && localServerTs != null) {
-      serverIsAuthoritative = Number(serverServerTs) >= Number(localServerTs);
-    } else if (serverServerTs != null && localServerTs == null) {
-      serverIsAuthoritative = true;
-    }
+    let serverIsAuthoritative = determineServerAuthority(
+      {
+        rev: localRev,
+        serverTs: localServerTs,
+      },
+      {
+        rev: serverRev,
+        serverTs: serverServerTs,
+      }
+    );
 
-    // Only apply payload fields when server is authoritative to preserve local changes
-    // when client has newer data. This ensures conflict resolution works correctly.
+    // If local changes are unsynced, don't accept server as authoritative
     if (serverIsAuthoritative) {
-      applyPayloadToRecord(rec, payload);
-      if (payload.updatedAt != null) {
-        (rec as any).updatedAt = _normalizeIncomingValue(
-          'updatedAt',
-          payload.updatedAt
-        );
-      }
-      if (payload.server_revision != null) {
-        (rec as any).serverRevision = Number(payload.server_revision);
-      }
-      if (payload.server_updated_at_ms != null) {
-        (rec as any).serverUpdatedAt = Number(payload.server_updated_at_ms);
+      try {
+        const hasUnsynced = await hasUnsyncedChanges({ database });
+        if (hasUnsynced) {
+          serverIsAuthoritative = false;
+        }
+      } catch {
+        // If we can't check unsynced status, err on the side of caution
+        serverIsAuthoritative = false;
       }
     }
 
-    // Needs review marking when server is newer (server-lww)
-    maybeMarkNeedsReview(table, rec, payload);
+    // Only apply payload fields when server is authoritative
+    if (serverIsAuthoritative) {
+      applyServerPayloadToRecord(rec, payload, table);
+    }
 
     try {
       const conflict: Conflict = buildConflict({
