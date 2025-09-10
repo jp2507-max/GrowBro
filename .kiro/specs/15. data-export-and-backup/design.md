@@ -645,9 +645,9 @@ class CryptoService {
 
     // Serialize encrypted data components separately as base64
     const encryptedData = {
-      ciphertext: this.bytesToBase64(encryptedKey.ciphertext),
-      authTag: this.bytesToBase64(encryptedKey.authTag),
-      iv: this.bytesToBase64(iv),
+      ciphertext: await this.bytesToBase64(encryptedKey.ciphertext),
+      authTag: await this.bytesToBase64(encryptedKey.authTag),
+      iv: await this.bytesToBase64(iv),
     };
 
     return {
@@ -655,7 +655,7 @@ class CryptoService {
       wrapped: true,
       protectionLevel: 'passphrase-wrapped',
       wrappedData: JSON.stringify(encryptedData),
-      salt: this.bytesToBase64(salt),
+      salt: await this.bytesToBase64(salt),
       ttl: 3600000, // 1 hour default
       createdAt: new Date().toISOString(),
       purpose: 'snapshot-encryption',
@@ -1243,7 +1243,17 @@ class BackupManager {
 #### User Passphrase Management
 
 ```typescript
+interface CryptoService {
+  hashPassphrase(passphrase: string): Promise<string>;
+}
+
 class UserPassphraseManager {
+  private cryptoService: CryptoService;
+
+  constructor(cryptoService: CryptoService) {
+    this.cryptoService = cryptoService;
+  }
+
   async getUserBackupPassphrase(): Promise<string | null> {
     // Check if user has previously set a backup passphrase
     const storedHint = await SecureStore.getItemAsync('backup-passphrase-hint');
@@ -1280,6 +1290,17 @@ class UserPassphraseManager {
     // Additional strength checks...
   }
 }
+
+// Example instantiation with crypto service dependency
+const cryptoService: CryptoService = {
+  async hashPassphrase(passphrase: string): Promise<string> {
+    // Implementation would use Argon2id or similar KDF
+    // This is a placeholder - actual implementation would hash the passphrase
+    return 'hashed-passphrase-placeholder';
+  },
+};
+
+const passphraseManager = new UserPassphraseManager(cryptoService);
 ```
 
 ### Delta Backup Query Strategy
