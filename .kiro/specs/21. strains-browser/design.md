@@ -80,7 +80,8 @@ const StrainsList: React.FC<StrainsListProps> = ({
     hasNextPage,
     isFetchingNextPage,
     isLoading,
-    error
+    error,
+    refetch
   } = useStrainsInfinite({ searchQuery, filters });
 
   const flatData = useMemo(() =>

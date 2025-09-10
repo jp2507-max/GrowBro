@@ -482,11 +482,15 @@ function maybeMarkNeedsReview(table: TableName, rec: any, payload: any): void {
   }
 
   if (serverIsNewer) {
-    const currentMeta = ((rec as any).metadata ?? {}) as Record<
-      string,
-      unknown
-    >;
-    (rec as any).metadata = { ...currentMeta, needsReview: true };
+    const currentMetaRaw = (rec as any).metadata;
+    const currentMeta =
+      typeof currentMetaRaw === 'string' && currentMetaRaw.trim().length
+        ? JSON.parse(currentMetaRaw)
+        : {};
+    (rec as any).metadata = JSON.stringify({
+      ...currentMeta,
+      needsReview: true,
+    });
   }
 }
 
@@ -509,10 +513,10 @@ async function handleCreate(coll: any, payload: any): Promise<void> {
       );
     }
     if (payload.server_revision != null) {
-      (rec as any).serverRevision = Number(payload.server_revision);
+      (rec as any).server_revision = Number(payload.server_revision);
     }
     if (payload.server_updated_at_ms != null) {
-      (rec as any).serverUpdatedAt = Number(payload.server_updated_at_ms);
+      (rec as any).server_updated_at_ms = Number(payload.server_updated_at_ms);
     }
   });
 }

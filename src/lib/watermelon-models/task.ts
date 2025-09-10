@@ -19,8 +19,8 @@ export class TaskModel extends Model {
   @date('completed_at') completedAt?: Date;
   @json('metadata', (raw) => raw as TaskMetadata)
   metadata!: TaskMetadata;
-  @text('server_revision') serverRevision?: string;
-  @readonly @date('server_updated_at_ms') serverUpdatedAtMs?: Date;
+  @readonly serverRevision?: number;
+  @readonly serverUpdatedAtMs?: number;
   @date('created_at') createdAt!: Date;
   @date('updated_at') updatedAt!: Date;
   @date('deleted_at') deletedAt?: Date;

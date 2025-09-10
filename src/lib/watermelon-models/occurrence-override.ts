@@ -13,8 +13,8 @@ export class OccurrenceOverrideModel extends Model {
   @text('reminder_at_local') reminderAtLocal?: string;
   @text('reminder_at_utc') reminderAtUtc?: string;
   @text('status') status?: OccurrenceOverrideStatus;
-  @text('server_revision') serverRevision?: string;
-  @readonly @date('server_updated_at_ms') serverUpdatedAtMs?: Date;
+  @readonly serverRevision?: number;
+  @readonly serverUpdatedAtMs?: number;
   @date('created_at') createdAt!: Date;
   @date('updated_at') updatedAt!: Date;
   @date('deleted_at') deletedAt?: Date;

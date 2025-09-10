@@ -318,7 +318,7 @@ export const migrations = schemaMigrations({
               },
               last_tested_at: {
                 name: 'last_tested_at',
-                type: 'number',
+                type: 'string',
                 isOptional: true,
               },
               created_at: { name: 'created_at', type: 'number' },
@@ -338,7 +338,7 @@ export const migrations = schemaMigrations({
                 isOptional: true,
               },
               { name: 'hardness_mg_per_l', type: 'number', isOptional: true },
-              { name: 'last_tested_at', type: 'number', isOptional: true },
+              { name: 'last_tested_at', type: 'string', isOptional: true },
               { name: 'created_at', type: 'number' },
               { name: 'updated_at', type: 'number' },
               { name: 'deleted_at', type: 'number', isOptional: true },
@@ -601,6 +601,33 @@ export const migrations = schemaMigrations({
             ],
           },
         },
+      ],
+    },
+    {
+      toVersion: 6,
+      steps: [
+        // Add server sync columns for conflict resolution and offline-first sync
+        addColumns({
+          table: 'series',
+          columns: [
+            { name: 'server_revision', type: 'string', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+          ],
+        }),
+        addColumns({
+          table: 'occurrence_overrides',
+          columns: [
+            { name: 'server_revision', type: 'string', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+          ],
+        }),
+        addColumns({
+          table: 'tasks',
+          columns: [
+            { name: 'server_revision', type: 'string', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+          ],
+        }),
       ],
     },
   ],
