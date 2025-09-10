@@ -23,12 +23,14 @@ export function joinPath(...segments: string[]): string {
   // Join with forward slashes
   const path = filteredSegments.join('/');
 
-  // Ensure single leading slash if any segment had one
+  // Ensure single leading slash if any segment had one and path doesn't already start with one
   const hasLeadingSlash = segments.some(
     (segment) => segment.startsWith('/') || segment.startsWith('\\')
   );
 
-  return hasLeadingSlash ? '/' + path : path;
+  return hasLeadingSlash && !path.startsWith('/') && !path.startsWith('\\')
+    ? '/' + path
+    : path;
 }
 
 /**
@@ -161,7 +163,7 @@ export function normalizePath(path: string): string {
   const normalized = path.replace(/\\/g, '/');
 
   // Split into segments
-  const parts = normalized.split('/').filter((p) => p || p === '');
+  const parts = normalized.split('/').filter(Boolean);
 
   // Handle leading slash
   const hasLeadingSlash = normalized.startsWith('/');

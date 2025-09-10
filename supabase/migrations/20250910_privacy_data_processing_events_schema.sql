@@ -73,8 +73,9 @@ SELECT cron.schedule(
 
 -- Grant necessary permissions
 GRANT USAGE ON SCHEMA privacy TO authenticated;
-GRANT ALL ON privacy.data_processing_events TO authenticated;
-GRANT EXECUTE ON FUNCTION privacy.cleanup_expired_data() TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON privacy.data_processing_events TO authenticated;
+REVOKE EXECUTE ON FUNCTION privacy.cleanup_expired_data() FROM authenticated;
+GRANT EXECUTE ON FUNCTION privacy.cleanup_expired_data() TO service_role;
 
 -- Add helpful comments
 COMMENT ON TABLE privacy.data_processing_events IS 'Tracks data processing activities with consent and retention management';

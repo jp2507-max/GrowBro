@@ -12,7 +12,7 @@ This feature implements comprehensive app store policy compliance guardrails for
 
 #### Acceptance Criteria
 
-1. WHEN the app launches or comes to foreground THEN the system SHALL determine the user's country via store region/SIM/MCC or backend IP lookup without requiring device GPS
+1. WHEN the app launches or comes to foreground THEN the system SHALL request region token from server using device signals (store region/SIM/MCC sent to backend) without requiring device GPS or exposing raw IP data to client
 2. WHEN the country cannot be determined THEN the system SHALL present a manual country picker and proceed in Conservative Mode
 3. WHEN the country is restricted THEN the system SHALL enable Conservative Mode (community read-only, no commerce-adjacent copy, stronger disclaimers) instead of blocking the app entirely
 4. WHEN precise location is requested THEN it SHALL be foreground-only and justified; background location is avoided unless core functionality requires it

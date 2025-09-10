@@ -10,12 +10,12 @@
   - _Requirements: 1.1, 1.6, 2.1, 10.1, 10.2_
 
 - [ ] 2. Implement geo-detection service without GPS dependency
-- [ ] 2.1 Create region detection utilities with source priority
+- [ ] 2.1 Create region detection utilities with server-side resolution
 
-  - Implement App Store region detection using device locale and store settings
-  - Create SIM/MCC country code detection for mobile networks
-  - Build backend IP geolocation service integration
-  - Write manual country picker component with neutral UI
+  - Implement server-side App Store region detection using device locale and store settings sent from client
+  - Create server-side SIM/MCC country code detection for mobile networks
+  - Build backend IP geolocation service integration with token generation
+  - Write manual country picker component with neutral UI for fallback
   - _Requirements: 1.1, 1.2, 1.6_
 
 - [ ] 2.2 Implement policy feature mapping and Conservative Mode

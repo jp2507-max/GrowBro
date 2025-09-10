@@ -75,8 +75,8 @@ if (Env.SENTRY_DSN && hasConsent('crashReporting') && !sentryInitialized) {
 
   const integrations: any[] = [];
 
-  // Only add replay and feedback integrations if replay is enabled
-  if (Env.SENTRY_ENABLE_REPLAY) {
+  // Only add replay/feedback if enabled AND user consented to session replay
+  if (Env.SENTRY_ENABLE_REPLAY && hasConsent('sessionReplay')) {
     integrations.push(Sentry.mobileReplayIntegration());
     integrations.push(Sentry.feedbackIntegration());
   }
