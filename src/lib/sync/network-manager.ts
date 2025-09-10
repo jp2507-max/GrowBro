@@ -30,7 +30,10 @@ function normalize(raw: any): NetworkState {
 }
 
 export async function getNetworkState(): Promise<NetworkState> {
-  if (currentState) return currentState;
+  // Only use cached state if we have active listeners that keep it updated
+  if (currentState && listeners.length > 0) return currentState;
+
+  // Always fetch fresh data when no listeners are active to avoid stale cache
   const raw = await NetInfo.fetch();
   currentState = normalize(raw);
   return currentState;
@@ -94,6 +97,15 @@ export function onConnectivityChange(
   return () => {
     const idx = listeners.indexOf(cb);
     if (idx >= 0) listeners.splice(idx, 1);
+
+    // Clean up NetInfo listener if no more listeners remain
+    if (listeners.length === 0 && netInfoUnsub) {
+      try {
+        netInfoUnsub();
+      } catch {}
+      netInfoUnsub = null;
+      currentState = null; // Optional: reset current state when no listeners
+    }
   };
 }
 

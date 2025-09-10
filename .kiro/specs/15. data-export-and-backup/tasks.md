@@ -9,6 +9,21 @@
 - **Chunk Size**: 64KB for streaming operations
 - **Hash Algorithm**: SHA-256 with BLAKE3 option
 
+@coderabbitai coderabbitai bot 15 hours ago
+💡 Verification agent
+
+🧩 Analysis chain
+Align KDF policy (fallback vs prohibit) and document parameters
+Default KDF ("Argon2id with fallback to scrypt" at lines 5-11) conflicts with Task 5.1's prohibition (lines 59-63). Choose one:
+
+Option A (allow fallback; recommended):
+
+- - Implement Argon2id (m=64MB, t=3, p=1) as primary KDF using react-native-libsodium's crypto_pwhash only - prohibit scrypt fallback
+
+* - Implement Argon2id (m=64MB, t=3, p=1) as primary KDF via libsodium crypto_pwhash.
+* - Provide scrypt fallback only if Argon2id is unavailable, with params:
+*      N=2^15 (32768), r=8, p=1, salt ≥16 bytes. Persist chosen KDF+params in manifest.
+
 <!-- Crypto defaults: align identifiers and document nonce sizes
 
 Match cipher/KDF identifiers to the design doc ("aes-256-gcm", "xchacha20-poly1305") and document nonce sizes and IV generation strategy to prevent reuse across chunks/files.
@@ -58,7 +73,9 @@ Match cipher/KDF identifiers to the design doc ("aes-256-gcm", "xchacha20-poly13
 
   - [ ] 5.1 Create key derivation with Argon2id/scrypt
 
-    - Implement Argon2id (m=64MB, t=3, p=1) as primary KDF using react-native-libsodium's crypto_pwhash only - prohibit scrypt fallback
+    - Implement Argon2id (m=64MB, t=3, p=1) as primary KDF via libsodium crypto_pwhash.
+    - Provide scrypt fallback only if Argon2id is unavailable, with params:
+      N=2^15 (32768), r=8, p=1, salt ≥16 bytes. Persist chosen KDF+params in manifest.
     - Create secure salt generation using randombytes_buf and parameter storage in manifest
     - Add constant-time MAC verification using crypto_auth_verify and secure buffer zeroing with sodium_memzero - prohibit any JS implementations
     - **Exit Criteria**: KDF consistency across platforms, secure memory handling
@@ -66,11 +83,39 @@ Match cipher/KDF identifiers to the design doc ("aes-256-gcm", "xchacha20-poly13
 
   - [ ] 5.2 Build streaming encryption with AES-GCM/XChaCha20
 
-    - Implement streaming API (init → push(chunk) → finalize) for large files using react-native-libsodium's crypto*aead*\*\_encrypt/decrypt primitives only
-    - Create AES-256-GCM as primary cipher with XChaCha20-Poly1305 fallback using native libsodium APIs - prohibit JS implementations
-    - Add per-file checksum generation (SHA-256 primary, BLAKE3 option) with constant-time comparison using sodium_memcmp
-    - **Exit Criteria**: Stream 100MB+ files without memory spikes, AEAD verification passes
-    - _Requirements: R2 AC1, R5 AC1, R5 AC3_
+    @coderabbitai coderabbitai bot 15 hours ago
+    💡 Verification agent
+
+    ❓ Verification inconclusive
+    Use secretstream_xchacha20poly1305 for streaming encryption
+
+    In .kiro/specs/15.data-export-and-backup/tasks.md, replace:
+
+    - - Implement streaming API (init → push(chunk) → finalize) for large files using react-native-libsodium's crypto*aead*\_encrypt/decrypt primitives only
+    - - Create AES-256-GCM as primary cipher with XChaCha20-Poly1305 fallback using native libsodium APIs - prohibit JS implementations
+
+    * - Implement streaming API (init → push → finalize) using libsodium secretstream_xchacha20poly1305 for large files
+    * - Prefer XChaCha20-Poly1305 (secretstream) for cross-platform streaming. If AES-GCM is required, use file-level AEAD with a single nonce per file and include manifest in AAD
+        Also confirm whether crypto*aead_aes256gcm*\* is available in your RN libsodium build (requires CPU AES support).
+
+    📝 Committable suggestion
+    ‼️ IMPORTANT
+    Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.
+
+    Suggested change
+
+    - [ ] 5.2 Build streaming encryption with AES-GCM/XChaCha20
+      - Implement streaming API (init → push(chunk) → finalize) for large files using react-native-libsodium's crypto*aead*\*\_encrypt/decrypt primitives only
+      - Create AES-256-GCM as primary cipher with XChaCha20-Poly1305 fallback using native libsodium APIs - prohibit JS implementations
+      - Add per-file checksum generation (SHA-256 primary, BLAKE3 option) with constant-time comparison using sodium_memcmp
+      - **Exit Criteria**: Stream 100MB+ files without memory spikes, AEAD verification passes
+      - _Requirements: R2 AC1, R5 AC1, R5 AC3_
+    - [ ] 5.2 Build streaming encryption with AES-GCM/XChaCha20
+      - Implement streaming API (init → push → finalize) using libsodium secretstream_xchacha20poly1305 for large files
+      - Prefer XChaCha20-Poly1305 (secretstream) for cross-platform streaming. If AES-GCM is required, use file-level AEAD with a single nonce per file and include manifest in AAD
+      - Add per-file checksum generation (SHA-256 primary, BLAKE3 option) with constant-time comparison using sodium_memcmp
+      - **Exit Criteria**: Stream 100MB+ files without memory spikes, AEAD verification passes
+      - _Requirements: R2 AC1, R5 AC1, R5 AC3_
 
   - [ ] 5.3 Add manifest signature with HMAC
     - Derive HMAC key from passphrase using HKDF/Argon2id subkey

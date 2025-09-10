@@ -316,7 +316,7 @@ interface AgeVerificationService {
     hasConsent: boolean
   ): Promise<void>;
   issueVerificationToken(userId: string): Promise<ReusableToken>;
-  validateToken(userId: string, tokenId: string): Promise<boolean>;
+  validateToken(tokenId: string): Promise<{ isValid: boolean; error?: string }>;
 }
 ```
 
@@ -464,7 +464,7 @@ interface RepeatOffenderRecord {
 interface SoRExportQueue {
   id: string;
   statementOfReasonsId: string;
-  status: 'pending' | 'submitted' | 'failed' | 'dlq';
+  status: 'pending' | 'retry' | 'submitted' | 'failed' | 'dlq';
   attempts: number;
   lastAttempt?: Date;
   transparencyDbResponse?: string;
@@ -554,7 +554,7 @@ class DSASubmissionCircuitBreaker {
     // Mark statement for retry by updating queue status
     await this.updateQueueItem(statementId, {
       status: 'retry',
-      last_attempt: new Date(),
+      lastAttempt: new Date(),
     });
   }
 
@@ -566,7 +566,7 @@ class DSASubmissionCircuitBreaker {
     await this.updateQueueItem(statementId, {
       status: 'dlq',
       error_message: errorMessage,
-      last_attempt: new Date(),
+      lastAttempt: new Date(),
     });
   }
 
@@ -633,7 +633,7 @@ class DSASubmissionCircuitBreaker {
         await this.markForRetry(statement.id);
         this.recordFailure();
       }
-      throw error;
+      // Allow graceful degradation - continue flow without bubbling exception
     }
   }
 
@@ -669,7 +669,13 @@ class DSASubmissionCircuitBreaker {
     return 1000; // Base delay in milliseconds for exponential backoff
   }
 
-  private isPermanentError(error: any): boolean {
+  // Public accessor for circuit breaker state
+  getState(): 'closed' | 'open' | 'half-open' {
+    return this.state;
+  }
+
+  // Public method to check if error is permanent (was previously private)
+  isPermanentError(error: any): boolean {
     // Classify errors as permanent vs transient
     // Permanent errors that should not be retried
     const permanentErrorCodes = [
@@ -793,7 +799,7 @@ class RetryableOperation {
         const result = await operation();
 
         // Reset circuit breaker on successful operation
-        if (this.circuitBreaker.state === 'half-open') {
+        if (this.circuitBreaker.getState() === 'half-open') {
           this.circuitBreaker.reset();
         }
 
