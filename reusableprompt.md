@@ -3,9 +3,9 @@ TASK_ID: {15}
 CONTEXT
 
 - Feature: offline-first-sync
-- Tasks index: C:\Users\Peter\GrowBro\.kiro\specs\2. offline-first-sync\tasks.md
-- Design spec: C:\Users\Peter\GrowBro\.kiro\specs\2. offline-first-sync\design.md
-- Requirements spec: C:\Users\Peter\GrowBro\.kiro\specs\2. offline-first-sync\requirements.md
+- Tasks index: .kiro/specs/2-offline-first-sync/tasks.md
+- Design spec: .kiro/specs/2-offline-first-sync/design.md
+- Requirements spec: .kiro/specs/2-offline-first-sync/requirements.md
 
 READ FIRST — STRICT, STEPWISE
 

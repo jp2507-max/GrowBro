@@ -130,6 +130,42 @@ export const CUSTOM_RETENTION_POLICIES: RetentionPolicy[] = [
 ];
 ```
 
+## Client-Side Restrictions
+
+### IP Address and Location Data Protection
+
+**MANDATORY REQUIREMENTS - NO EXCEPTIONS:**
+
+1. **Client IP Stripping in Analytics/Crash SDKs:**
+
+   - All analytics SDKs (Sentry, Firebase Analytics, etc.) MUST be configured to disable or strip client IP addresses before any data transmission
+   - Crash reporting SDKs MUST NOT capture or transmit client IP addresses
+   - IP collection MUST be explicitly disabled in SDK initialization code
+
+2. **Server-Side Header Processing:**
+
+   - Servers MUST strip or hash `X-Forwarded-For` and similar headers (`X-Real-IP`, `CF-Connecting-IP`, etc.) before recording any logs
+   - Header processing MUST occur before any log storage or analytics processing
+   - Hashing MUST use cryptographically secure algorithms (SHA-256 minimum) with per-request salts
+
+3. **Data Retention for Location Tokens:**
+   - Any derived location tokens or logs containing location data MUST be retained for ≤30 days maximum
+   - Automatic deletion MUST be implemented with no manual override capability
+   - Retention policies MUST be auditable and enforced at the database level
+
+**Auditability Requirements:**
+
+- All IP stripping and header hashing operations MUST be logged in separate audit trails
+- Audit logs MUST include timestamps, operation types, and original vs processed data samples
+- Audit logs MUST be retained for compliance verification purposes
+- Regular automated audits MUST verify compliance with these restrictions
+
+**Implementation Verification:**
+
+- Code reviews MUST include explicit verification of IP stripping configuration
+- Deployment checklists MUST include IP protection verification steps
+- Third-party SDK configurations MUST be documented and reviewed for compliance
+
 ## Data Processing Categories
 
 ### Essential Processing (Not Consent-Controlled)

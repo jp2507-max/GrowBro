@@ -12,7 +12,7 @@ import {
 } from '@/lib/sync/network-manager';
 
 // Mock implementation for NetInfo
-const createNetInfoMock = () => {
+function createNetInfoMock() {
   const listeners: ((s: any) => void)[] = [];
   let state: any = {
     type: 'unknown',
@@ -44,11 +44,9 @@ const createNetInfoMock = () => {
       shouldThrow = throwError;
     },
   };
-};
+}
 
-jest.mock('@react-native-community/netinfo', () => createNetInfoMock(), {
-  virtual: true,
-});
+jest.mock('@react-native-community/netinfo', () => createNetInfoMock);
 
 const setNetInfo = (next: any) => (NetInfo as any).__setState(next);
 const setNetInfoThrow = (shouldThrow: boolean) =>

@@ -5,7 +5,7 @@
 - **Format Version**: 1.0
 - **Manifest Schema**: JSON with type, version, encryption (kdf, cipher, chunkSize), integrity (hashAlgorithm, manifestSignature)
 - **Default KDF**: Argon2id (m=64MB, t=3, p=1) with fallback to scrypt
-- **Default Cipher**: AES-256-GCM with XChaCha20-Poly1305 fallback
+- **Default Cipher**: XChaCha20-Poly1305 (secretstream) for streaming operations, AES-256-GCM as non-streaming/file-level fallback
 - **Chunk Size**: 64KB for streaming operations
 - **Hash Algorithm**: SHA-256 with BLAKE3 option
 
@@ -61,7 +61,8 @@
     - Implement streaming API (init → push → finalize) using libsodium secretstream_xchacha20poly1305 for large files
     - Use XChaCha20-Poly1305 (secretstream) for cross-platform streaming encryption - prohibit JS implementations
     - Add per-file checksum generation (SHA-256 primary, BLAKE3 option) with constant-time comparison using sodium_memcmp
-    - **Exit Criteria**: Stream 100MB+ files without memory spikes, AEAD verification passes
+    - **AES-GCM AEAD Fallback Requirement**: When using AES-256-GCM as non-streaming/file-level fallback, implementation MUST bind ciphertext to a stable manifest hash passed as AAD; canonicalize the file manifest deterministically (JSON canonicalization or stable field ordering), hash with SHA-256 to produce fixed 32-byte AAD, require encrypt operations to pass that hash as AES-GCM AAD and decrypt operations to verify it with failure on AAD mismatch
+    - **Exit Criteria**: Stream 100MB+ files with XChaCha20-Poly1305 secretstream without memory spikes, AEAD verification passes, AES-256-GCM fallback works for non-streaming scenarios with AAD binding and rejection of mix-and-match manifests (include unit tests and interop vectors demonstrating AAD binding)
     - _Requirements: R2 AC1, R5 AC1, R5 AC3_
 
   - [ ] 5.3 Add manifest signature with HMAC
@@ -138,7 +139,8 @@
   - [ ] 10.1 Implement sync management with LWW semantics
 
     - Pause WatermelonDB sync during restore operations
-    - Run full pull using server timestamps (LWW) instead of zeroing last_pulled_at
+    - Run full pull using server-authoritative updated_at (monotonic, UTC) and an opaque server cursor
+      to avoid client clock skew; operations must be idempotent and retry-safe.
     - Create pre-restore snapshot for rollback capability
     - **Exit Criteria**: No sync conflicts, successful rollback capability
     - _Requirements: R3 AC4, R3 AC6_

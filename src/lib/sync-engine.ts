@@ -1,5 +1,3 @@
-import { hasUnsyncedChanges } from '@nozbe/watermelondb/sync';
-
 import { queryClient } from '@/api/common/api-provider';
 import { NoopAnalytics } from '@/lib/analytics';
 import { getItem, setItem } from '@/lib/storage';
@@ -558,58 +556,61 @@ async function handleUpdate(
   payload: any
 ): Promise<void> {
   const resolver = createConflictResolver();
-  await existing.update(async (rec: any) => {
-    // Detect conflicts: if local is newer but server sends different values
-    const localSnapshot: Record<string, unknown> = { ...(rec as any) };
 
-    // Determine if server is authoritative
-    const localRev = (rec as any).serverRevision ?? null;
-    const serverRev = payload.server_revision ?? null;
-    const localServerTs =
-      (rec as any).serverUpdatedAt ?? toMillis((rec as any).updatedAt as any);
-    const serverServerTs =
-      payload.server_updated_at_ms ?? toMillis(payload.updatedAt as any);
+  // Pre-compute all values outside the synchronous update callback
+  const existingRecord = await existing.find(existing.id);
 
-    let serverIsAuthoritative = determineServerAuthority(
-      {
-        rev: localRev,
-        serverTs: localServerTs,
-      },
-      {
-        rev: serverRev,
-        serverTs: serverServerTs,
-      }
-    );
+  // Determine if server is authoritative
+  const localRev = (existingRecord as any).serverRevision ?? null;
+  const serverRev = payload.server_revision ?? null;
+  const localServerTs =
+    (existingRecord as any).serverUpdatedAt ??
+    toMillis((existingRecord as any).updatedAt as any);
+  const serverServerTs =
+    payload.server_updated_at_ms ?? toMillis(payload.updatedAt as any);
 
-    // If local changes are unsynced, don't accept server as authoritative
-    if (serverIsAuthoritative) {
-      try {
-        const hasUnsynced = await hasUnsyncedChanges({ database });
-        if (hasUnsynced) {
-          serverIsAuthoritative = false;
-        }
-      } catch {
-        // If we can't check unsynced status, err on the side of caution
-        serverIsAuthoritative = false;
-      }
+  let serverIsAuthoritative = determineServerAuthority(
+    {
+      rev: localRev,
+      serverTs: localServerTs,
+    },
+    {
+      rev: serverRev,
+      serverTs: serverServerTs,
     }
+  );
 
-    // Only apply payload fields when server is authoritative
+  // Replace DB-wide hasUnsyncedChanges() with record-level check
+  const hasUnsyncedRecord = (existingRecord as any)._raw._status !== 'synced';
+  if (serverIsAuthoritative && hasUnsyncedRecord) {
+    serverIsAuthoritative = false;
+  }
+
+  // Create local snapshot for conflict detection
+  const localSnapshot: Record<string, unknown> = { ...(existingRecord as any) };
+
+  // Detect conflicts outside the update callback
+  try {
+    const conflict: Conflict = buildConflict({
+      tableName: table,
+      recordId: (existingRecord as any).id,
+      localRecord: localSnapshot,
+      remoteRecord: payload,
+    });
+    if (conflict.conflictFields.length > 0) {
+      resolver.logConflict(conflict);
+    }
+  } catch {}
+
+  // Perform synchronous update
+  await existing.update((rec: any) => {
+    // Always call maybeMarkNeedsReview to flag conflicts
+    maybeMarkNeedsReview(table, rec, payload);
+
+    // Only apply server fields when server is authoritative
     if (serverIsAuthoritative) {
       applyServerPayloadToRecord(rec, payload, table);
     }
-
-    try {
-      const conflict: Conflict = buildConflict({
-        tableName: table,
-        recordId: (rec as any).id,
-        localRecord: localSnapshot,
-        remoteRecord: payload,
-      });
-      if (conflict.conflictFields.length > 0) {
-        resolver.logConflict(conflict);
-      }
-    } catch {}
   });
 }
 

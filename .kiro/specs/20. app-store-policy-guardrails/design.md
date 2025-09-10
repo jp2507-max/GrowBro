@@ -94,17 +94,41 @@ interface GeoDetectionService {
 }
 
 interface RegionInfo {
-  // Server-generated region token (MANDATORY - no raw IP/ASN allowed)
-  regionToken: string; // Format: region:{continent}:{country}:{coarse_area}:{timestamp}:{signature}
-  countryCode: string;
-  region?: string;
-  source: 'server_token' | 'manual'; // Removed 'store', 'sim', 'ip' - only server token or manual allowed
-  confidence: number;
-  timestamp: Date;
-  ttlMs: number; // Token TTL (max 24 hours, recommend 6-12 hours)
-  tokenExpiresAt: Date; // When this token expires
-  reason?: 'foreground' | 'token_refresh' | 'manual'; // Updated reasons
+  // Minimal region information for logging/auditing (no raw tokens)
+  code: string;              // Region code (e.g., "us-west-1", "eu-central")
+  tokenIdHash: string;       // SHA-256 hash of token's jti (first 12 hex chars)
+  source: 'server_token' | 'manual_reviewer';
+  confidence: number;        // 0..1
+  issuedAtMs: number;
+  expiresAtMs: number;       // <= 24h; recommend 6–12h
+  reason?: 'foreground' | 'token_refresh' | 'manual_reviewer';
 }
+
+// PASETO v4.public Token Claims Structure
+interface RegionTokenClaims {
+  sub: string; // App install hash (SHA-256 of device ID + install timestamp)
+  cnt: string; // Continent code (EU, NA, AS, AF, SA, OC, AN)
+  cty: string; // Country code (ISO 3166-1 alpha-2)
+  area: string; // Coarse geographic area (central, west, east, north, south)
+  iat: number; // Issued at timestamp (Unix timestamp)
+  exp: number; // Expiration timestamp (Unix timestamp, max 24h from iat)
+  jti: string; // Unique token ID (UUID v4) for replay protection
+  kid: string; // Key ID for key rotation (e.g., "v1", "v2")
+}
+
+// Example RegionInfo for logging/auditing (raw tokens never logged):
+// {
+//   "code": "us-west-1",
+//   "tokenIdHash": "a1b2c3d4e5f6",
+//   "source": "server_token",
+//   "confidence": 0.95,
+//   "issuedAtMs": 1699123456000,
+//   "expiresAtMs": 1699209856000,
+//   "reason": "token_refresh"
+// }
+//
+// NOTE: Raw region tokens must NEVER be emitted to logs, telemetry, or audit trails.
+// Only the truncated SHA-256 hash of the token's jti claim should be recorded for auditing.
 
 interface PolicyFeatures {
   cannabis: boolean;
@@ -115,15 +139,49 @@ interface PolicyFeatures {
 }
 ```
 
+### Security Benefits of Signed Tokens
+
+The replacement of colon-delimited tokens with signed tokens provides several security improvements:
+
+- **Cryptographic Integrity**: Tokens are cryptographically signed, preventing tampering
+- **Authentication**: Server-only token issuance ensures authenticity
+- **Replay Protection**: JTI claims prevent token reuse attacks
+- **Token Binding**: App install hash binding prevents cross-device token reuse
+- **Expiration Control**: Proper expiration handling with configurable TTL
+- **Key Rotation**: KID support enables secure key rotation without service disruption
+- **No IP Exposure**: Raw IP/ASN data never leaves the server
+- **Standard Libraries**: Uses battle-tested PASETO/JWT libraries with known security properties
+
+**Migration Path:**
+
+- Phase 1: Deploy server-side signed token generation alongside existing format
+- Phase 2: Update clients to accept and validate signed tokens
+- Phase 3: Deprecate colon-delimited format after client rollout
+- Phase 4: Remove legacy token support
+
 **Implementation Strategy:**
 
 - **MANDATE SERVER-SIDE IP→REGION RESOLUTION**: Call Region Service on server, produce coarse region token (no raw IP/ASN), return to clients
 - **EXPLICITLY FORBID CLIENT IP CAPTURE**: Clients MUST NOT capture/store IP/ASN for geolocation; accept only region tokens
 - **REGION TOKEN SPECIFICATIONS**:
-  - Format: `region:{continent}:{country}:{coarse_area}:{timestamp}:{signature}`
-  - TTL: 24 hours maximum, recommend 6-12 hours for security
-  - Granularity: Continent + country + coarse geographic area (e.g., EU:DE:central, NA:US:west)
-  - No raw IP/ASN data ever exposed to clients
+  - **Format**: PASETO v4.public signed token (fallback to JWT with ES256/EdDSA)
+  - **Server-side only issuance**: Tokens generated exclusively by server with server key
+  - **Required Claims**:
+    - `sub`: App install hash (binds token to specific app installation)
+    - `cnt`: Continent code (e.g., "EU", "NA", "AS")
+    - `cty`: Country code (e.g., "DE", "US", "GB")
+    - `area`: Coarse geographic area (e.g., "central", "west", "east")
+    - `iat`: Issued at timestamp (Unix timestamp)
+    - `exp`: Expiration timestamp (TTL max 24h, recommend 6-12h)
+    - `jti`: Unique token ID for replay protection
+    - `kid`: Key ID for key rotation support
+  - **Security Features**:
+    - Cryptographic signature using server private key
+    - Token binding to app install hash prevents replay attacks
+    - JTI-based replay protection with server-side tracking
+    - No raw IP/ASN data ever exposed in token payload
+  - **TTL**: 24 hours maximum, recommend 6-12 hours for security
+  - **Granularity**: Continent + country + coarse geographic area (e.g., EU:DE:central, NA:US:west)
 - Re-evaluate region on app foreground and server token refresh events
 - Apply policy toggles within 5 minutes (not 24 hours)
 - If no signals available, default to Conservative Mode
@@ -135,9 +193,11 @@ interface PolicyFeatures {
 **MANDATORY REQUIREMENTS:**
 
 - **NO IP CAPTURE**: Clients MUST NOT capture, store, or transmit raw IP addresses or ASN data for geolocation purposes
-- **TOKEN-ONLY ACCEPTANCE**: Clients MUST accept and use only server-provided region tokens for geolocation decisions
+- **SIGNED TOKEN VALIDATION**: Clients MUST validate token signatures, expiration, issuer, and JTI replay protection using standard PASETO/JWT libraries
+- **TOKEN-ONLY ACCEPTANCE**: Clients MUST accept and use only server-provided signed region tokens for geolocation decisions
 - **FORBIDDEN IP LOOKUPS**: Clients MUST NOT perform any IP-based geolocation lookups (GeoIP services, IP databases, etc.)
 - **SERVER VALIDATION**: All region-based decisions MUST be validated server-side with audit logging
+- **TOKEN BINDING VERIFICATION**: Clients MUST verify token is bound to their app install hash
 
 ### Implementation Tasks
 
@@ -145,22 +205,31 @@ interface PolicyFeatures {
 
 - [ ] Remove all client-side IP capture code paths in geolocation services
 - [ ] Remove any IP-based geolocation libraries or dependencies
-- [ ] Update client geolocation logic to accept only region tokens
-- [ ] Add client-side validation to reject non-token region sources
+- [ ] Install and configure PASETO library (paseto.js) or JWT library (jose) for token validation
+- [ ] Update client geolocation logic to accept only signed region tokens
+- [ ] Add client-side validation for token signatures, expiration, and JTI replay protection
+- [ ] Add client-side validation to reject non-signed-token region sources
+- [ ] Implement app install hash generation and token binding verification
 
 **Phase 2: Server Region Service**
 
 - [ ] Implement server-side Region Service with IP→region resolution
-- [ ] Add region token generation with specified format and TTL
-- [ ] Implement token signing/verification for security
+- [ ] Install and configure PASETO library (paseto) for token generation
+- [ ] Add signed region token generation with required claims (sub, cnt, cty, area, iat, exp, jti, kid)
+- [ ] Implement server-side key management for token signing
+- [ ] Add JTI generation and replay protection database/storage
+- [ ] Add app install hash validation and token binding
+- [ ] Implement token TTL management (max 24h, recommend 6-12h)
 - [ ] Add server-side caching for region lookups (with appropriate TTL)
 
 **Phase 3: Server-Side Validation & Telemetry**
 
 - [ ] Add server-side validation for all region-based policy decisions
-- [ ] Implement audit logging for region token issuance and usage
+- [ ] Implement server-side token validation (signature, expiration, JTI replay protection)
+- [ ] Add audit logging for region token issuance, validation, and usage
+- [ ] Implement token revocation mechanism for security incidents
+- [ ] Add monitoring for token validation failures and anomalies
 - [ ] Add telemetry tracking for region token lifecycle (issuance, expiration, refresh)
-- [ ] Implement server-side monitoring for token validation failures
 
 ### 2. Content Policy Scanner
 
@@ -655,8 +724,14 @@ interface PrivacyAlignment {
 
 1. **Region Token Security:**
 
-   - Implement secure token signing with rotation
-   - Enforce token TTL limits (max 24 hours)
+   - **Signing Algorithm:** Use PASETO v4.public for token signing, providing modern cryptographic security with forward secrecy and resistance to common JWT vulnerabilities
+   - **Token Headers:** Require "kid" (Key ID) field in all token headers to identify the specific key used for signing/verification
+   - **Key Rotation:** Implement automatic key rotation every 90 days with cryptographic key generation using secure entropy sources
+   - **Key Overlap:** Maintain previous signing keys for a 24-hour grace period during rotation to validate tokens issued before the rotation event
+   - **Public Key Exposure:** Expose current and previous public keys via a dedicated PASETO public-key endpoint for client-side verification
+   - **Token TTL Enforcement:** Enforce maximum token Time-To-Live of 24 hours at issuance to limit exposure window
+   - **Clock-Skew Tolerance:** Implement validation with ±5 minutes tolerance when checking nbf (not before), exp (expiration), and iat (issued at) claims
+   - **Audit Logging:** Implement comprehensive audit logging of all key operations including generation, rotation events, and verification attempts
    - Use coarse geographic granularity to minimize privacy risks
    - Never expose raw IP addresses or ASN data to clients
    - Implement server-side audit logging for all token operations

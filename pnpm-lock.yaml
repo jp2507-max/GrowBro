@@ -146,6 +146,9 @@ importers:
       react-native-mmkv:
         specifier: ~3.1.0
         version: 3.1.0(react-native@0.79.5(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
+      react-native-quick-base64:
+        specifier: ^2.2.2
+        version: 2.2.2(react-native@0.79.5(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
       react-native-reanimated:
         specifier: ~3.17.5
         version: 3.17.5(@babel/core@7.26.0)(react-native@0.79.5(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
@@ -6250,6 +6253,12 @@ packages:
 
   react-native-mmkv@3.1.0:
     resolution: {integrity: sha512-HDh89nYVSufHMweZ3TVNUHQp2lsEh1ApaoV08bUOU1nrlmGgC3I7tGUn1Uy40Hs7yRMPKx5NWKE5Dh86jTVrwg==}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
+
+  react-native-quick-base64@2.2.2:
+    resolution: {integrity: sha512-WLHSifHLoamr2kF00Gov0W9ud6CfPshe1rmqWTquVIi9c62qxOaJCFVDrXFZhEBU8B8PvGLVuOlVKH78yhY0Fg==}
     peerDependencies:
       react: '*'
       react-native: '*'
@@ -15104,6 +15113,11 @@ snapshots:
       react-native-reanimated: 3.17.5(@babel/core@7.26.0)(react-native@0.79.5(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
 
   react-native-mmkv@3.1.0(react-native@0.79.5(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0):
+    dependencies:
+      react: 19.0.0
+      react-native: 0.79.5(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0)
+
+  react-native-quick-base64@2.2.2(react-native@0.79.5(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0):
     dependencies:
       react: 19.0.0
       react-native: 0.79.5(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0)

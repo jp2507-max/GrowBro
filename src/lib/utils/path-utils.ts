@@ -11,19 +11,61 @@
  * @returns Normalized forward-slash path
  */
 export function joinPath(...segments: string[]): string {
-  // Filter out empty segments and normalize slashes
-  const filteredSegments = segments
+  // Filter out empty segments and normalize slashes, preserving URI schemes
+  const processedSegments = segments
     .filter((segment) => segment && segment.trim() !== '')
-    .map((segment) => segment.replace(/^[\/\\]+|[\/\\]+$/g, ''));
+    .map((segment) => {
+      // Parse URI scheme prefix (e.g., file://, http://, https://)
+      const schemeMatch = segment.match(/^([a-zA-Z]+:(?:\/\/?))(.*)$/);
+      if (schemeMatch) {
+        const [, scheme, pathPart] = schemeMatch;
+        // Only trim slashes from the path portion, preserve scheme
+        const trimmedPath = pathPart.replace(/^[\/\\]+|[\/\\]+$/g, '');
+        return scheme + trimmedPath;
+      }
+      // No scheme, apply normal trimming
+      return segment.replace(/^[\/\\]+|[\/\\]+$/g, '');
+    });
 
-  if (filteredSegments.length === 0) {
+  if (processedSegments.length === 0) {
     return '';
   }
 
   // Join with forward slashes
-  const path = filteredSegments.join('/');
+  const path = processedSegments.join('/');
 
-  // Ensure single leading slash if any segment had one and path doesn't already start with one
+  // Check if we need to add a leading slash, but preserve URI schemes
+  const firstSegment = segments.find(
+    (segment) => segment && segment.trim() !== ''
+  );
+  if (!firstSegment) {
+    return path;
+  }
+
+  // Parse scheme from first segment
+  const schemeMatch = firstSegment.match(/^([a-zA-Z]+:(?:\/\/?))(.*)$/);
+  if (schemeMatch) {
+    const [, scheme, pathPart] = schemeMatch;
+    // For URI schemes, preserve the exact scheme structure
+    // If the scheme already has the correct number of slashes, use it as-is
+    // Otherwise, reconstruct based on whether the path part has a leading slash
+    const schemeEndsWithSlash = scheme.endsWith('/');
+    const pathPartHasLeadingSlash = pathPart.startsWith('/');
+
+    if (schemeEndsWithSlash) {
+      // Scheme already has slash (e.g., "file:///"), just append the path
+      return scheme + path.replace(scheme, '').replace(/^\//, '');
+    } else if (pathPartHasLeadingSlash) {
+      // Scheme doesn't have slash but path part does (e.g., "file://" + "/server")
+      // Add one slash between scheme and path
+      return scheme + '/' + path.replace(scheme, '').replace(/^\//, '');
+    } else {
+      // Neither has slash (e.g., "file://" + "server"), just concatenate
+      return scheme + path.replace(scheme, '');
+    }
+  }
+
+  // No scheme, apply original logic
   const hasLeadingSlash = segments.some(
     (segment) => segment.startsWith('/') || segment.startsWith('\\')
   );
@@ -43,18 +85,48 @@ export function dirname(path: string): string {
     return '/';
   }
 
-  // Normalize path separators to forward slashes
-  const normalizedPath = path.replace(/\\/g, '/');
+  // Parse URI scheme prefix
+  const schemeMatch = path.match(/^([a-zA-Z]+:(?:\/\/?))(.*)$/);
+  if (schemeMatch) {
+    const [, scheme, pathPart] = schemeMatch;
 
-  // Remove trailing slashes except for root
+    // Handle edge cases for URI paths
+    if (!pathPart || pathPart === '/') {
+      return scheme + '/';
+    }
+
+    // Normalize path separators to forward slashes
+    const normalizedPath = pathPart.replace(/\\/g, '/');
+
+    // For dirname, we need to handle trailing slashes specially
+    // If the path ends with a slash, we want to get the parent of that directory
+    const endsWithSlash = normalizedPath.endsWith('/');
+    const pathToProcess = endsWithSlash
+      ? normalizedPath.slice(0, -1)
+      : normalizedPath;
+
+    // If no slashes remain after processing, return scheme with appropriate suffix
+    if (!pathToProcess.includes('/')) {
+      return scheme + (pathPart.startsWith('/') ? '/' : '');
+    }
+
+    // Get everything before the last slash
+    const lastSlashIndex = pathToProcess.lastIndexOf('/');
+    if (lastSlashIndex === 0) {
+      return scheme + '/';
+    }
+
+    return scheme + pathToProcess.substring(0, lastSlashIndex);
+  }
+
+  // Standard path handling for non-URI paths
+  const normalizedPath = path.replace(/\\/g, '/');
   const trimmedPath = normalizedPath.replace(/\/+$/, '');
 
-  // If no slashes remain, return current directory
   if (!trimmedPath.includes('/')) {
     return '.';
   }
 
-  // Get everything before the last slash
   const lastSlashIndex = trimmedPath.lastIndexOf('/');
   if (lastSlashIndex === 0) {
     return '/';
@@ -123,7 +195,13 @@ export function extname(path: string): string {
  */
 export function resolvePath(basePath: string, relativePath: string): string {
   if (!relativePath) {
-    return basePath;
+    // When relativePath is empty, normalize basePath to an absolute path
+    const normalizedBase = normalizePath(basePath);
+    if (isAbsolute(normalizedBase)) {
+      return normalizedBase;
+    }
+    // If basePath is relative, resolve it relative to root
+    return resolvePath('/', basePath);
   }
 
   if (relativePath.startsWith('/')) {
