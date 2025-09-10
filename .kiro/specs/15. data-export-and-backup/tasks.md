@@ -9,31 +9,6 @@
 - **Chunk Size**: 64KB for streaming operations
 - **Hash Algorithm**: SHA-256 with BLAKE3 option
 
-@coderabbitai coderabbitai bot 15 hours ago
-💡 Verification agent
-
-🧩 Analysis chain
-Align KDF policy (fallback vs prohibit) and document parameters
-Default KDF ("Argon2id with fallback to scrypt" at lines 5-11) conflicts with Task 5.1's prohibition (lines 59-63). Choose one:
-
-Option A (allow fallback; recommended):
-
-- - Implement Argon2id (m=64MB, t=3, p=1) as primary KDF using react-native-libsodium's crypto_pwhash only - prohibit scrypt fallback
-
-* - Implement Argon2id (m=64MB, t=3, p=1) as primary KDF via libsodium crypto_pwhash.
-* - Provide scrypt fallback only if Argon2id is unavailable, with params:
-*      N=2^15 (32768), r=8, p=1, salt ≥16 bytes. Persist chosen KDF+params in manifest.
-
-<!-- Crypto defaults: align identifiers and document nonce sizes
-
-Match cipher/KDF identifiers to the design doc ("aes-256-gcm", "xchacha20-poly1305") and document nonce sizes and IV generation strategy to prevent reuse across chunks/files.
-
-- Cipher identifiers: "aes-256-gcm", "xchacha20-poly1305"
-- AES-256-GCM: 96-bit nonce (12 bytes), unique per file/chunk
-- XChaCha20-Poly1305: 192-bit nonce (24 bytes), unique per file/chunk
-- IV/Nonce generation: HKDF-SHA256 from master key + unique file identifier
--->
-
 ## Phase 1: Risk Spikes (Must Pass to Proceed)
 
 - [ ] 1. Crypto spike - Prove encryption performance and compatibility
