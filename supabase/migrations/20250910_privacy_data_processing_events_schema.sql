@@ -51,6 +51,7 @@ CREATE OR REPLACE FUNCTION privacy.cleanup_expired_data()
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = privacy, pg_catalog
 AS $$
 BEGIN
   DELETE FROM privacy.data_processing_events
