@@ -56,11 +56,9 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - Add tests for both ATC on/off paths and conversion accuracy
     - _Requirements: 2.2, 2.7_
 
-  - [ ] 2.2 Define TypeScript interfaces and enums
-    - Create FeedingTemplate, FeedingPhase, PhEcReading interfaces
-    - Define DeviationAlert, DiagnosticResult, Calibration interfaces
-    - Implement SourceWaterProfile and ReservoirEvent types
-    - Add PpmScale, AlertType, IssueType enums
+  - [ ] 2.2 Define TypeScript type aliases and const objects
+    - Create type aliases: FeedingTemplate, FeedingPhase, PhEcReading, DeviationAlert, DiagnosticResult, Calibration, SourceWaterProfile, ReservoirEvent
+    - Produce const-object maps with literal union types for PpmScale, AlertType, IssueType (e.g., const PpmScale = { ... } as const; type PpmScale = typeof PpmScale[keyof typeof PpmScale])
     - _Requirements: 1.6, 2.2, 3.1_
 
 - [ ] 3. Build WatermelonDB models and database layer

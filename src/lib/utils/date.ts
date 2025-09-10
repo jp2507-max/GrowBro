@@ -5,12 +5,24 @@
 import { DateTime } from 'luxon';
 
 /**
+ * Branded type for UTC ISO strings to ensure type safety
+ */
+export type UtcIsoString = string & { readonly __utc: unique symbol };
+
+/**
  * Parses an ISO-8601 UTC date string and returns a UTC DateTime
  * @param utcDateString - ISO-8601 UTC date string (e.g., '2025-08-31T00:00:00Z')
  * @returns Luxon DateTime in UTC timezone
  */
-export function parseUtcDateString(utcDateString: string): DateTime {
-  return DateTime.fromISO(utcDateString, { zone: 'utc' });
+export function parseUtcDateString(utcDateString: UtcIsoString): DateTime {
+  const dt = DateTime.fromISO(utcDateString, { setZone: true });
+  if (!dt.isValid) {
+    throw new Error('Invalid ISO-8601 date string');
+  }
+  if (dt.offset !== 0) {
+    throw new Error('Date string must be UTC (Z/+00:00)');
+  }
+  return dt.toUTC();
 }
 
 /**
@@ -18,7 +30,7 @@ export function parseUtcDateString(utcDateString: string): DateTime {
  * @param utcDateString - ISO-8601 UTC date string to compare against
  * @returns true if current time is after the specified date
  */
-export function isUtcTimeAfter(utcDateString: string): boolean {
+export function isUtcTimeAfter(utcDateString: UtcIsoString): boolean {
   const targetDate = parseUtcDateString(utcDateString);
   const now = DateTime.utc();
   return now > targetDate;
@@ -29,7 +41,7 @@ export function isUtcTimeAfter(utcDateString: string): boolean {
  * @param utcDateString - ISO-8601 UTC date string to compare against
  * @returns true if current time is before the specified date
  */
-export function isUtcTimeBefore(utcDateString: string): boolean {
+export function isUtcTimeBefore(utcDateString: UtcIsoString): boolean {
   const targetDate = parseUtcDateString(utcDateString);
   const now = DateTime.utc();
   return now < targetDate;

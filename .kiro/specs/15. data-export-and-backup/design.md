@@ -128,11 +128,22 @@ interface ExportFormat {
 
 ```typescript
 interface CryptoService {
-  encrypt(
+  encryptWithKey(
+    data: Uint8Array,
+    key: CryptoKey | Uint8Array,
+    iv?: Uint8Array,
+    options?: CryptoOptions
+  ): Promise<EncryptedData>;
+  encryptWithPassphrase(
     data: Uint8Array,
     passphrase: string,
-    options: CryptoOptions
+    options?: CryptoOptions
   ): Promise<EncryptedData>;
+  decryptWithKey(
+    encryptedData: EncryptedData,
+    key: CryptoKey | Uint8Array,
+    iv: Uint8Array
+  ): Promise<Uint8Array>;
   decrypt(
     encryptedData: EncryptedData,
     passphrase: string
@@ -146,7 +157,7 @@ interface CryptoService {
   deriveKey(
     passphrase: string,
     salt: Uint8Array,
-    kdf: 'argon2id' | 'scrypt'
+    kdfOptions?: { kdf: 'argon2id' | 'scrypt'; iterations?: number }
   ): Promise<Uint8Array>;
   generateManifestSignature(manifest: any, key: Uint8Array): string;
   verifyManifestSignature(
@@ -504,8 +515,32 @@ class CryptoService {
   }
 
   async bytesToBase64(bytes: Uint8Array): Promise<string> {
-    // Convert bytes to base64 for storage/transmission
-    return Buffer.from(bytes).toString('base64');
+    // React-Native safe base64 conversion using global btoa
+    const binaryString = Array.from(bytes, (byte) =>
+      String.fromCharCode(byte)
+    ).join('');
+    return global.btoa(binaryString);
+  }
+
+  async base64ToBytes(base64: string): Promise<Uint8Array> {
+    // React-Native safe base64 to bytes conversion using global atob
+    const binaryString = global.atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
+  }
+
+  async decryptWithKey(
+    encryptedData: EncryptedData,
+    key: CryptoKey | Uint8Array,
+    iv: Uint8Array
+  ): Promise<Uint8Array> {
+    // Decrypt using the provided key and IV
+    // Implementation would use Web Crypto API or react-native-libsodium
+    // This is a placeholder - actual implementation depends on crypto library used
+    throw new Error('decryptWithKey not implemented');
   }
 
   async wrapKeyWithPassphrase(
@@ -517,13 +552,11 @@ class CryptoService {
     const iv = await this.generateSecureRandomBytes(16);
 
     // Derive wrapping key using PBKDF2/Argon2
-    const wrappingKey = await this.deriveKey(passphrase, {
-      ...options,
-      salt: salt,
-    });
+    const wrappingKey = await this.deriveKey(passphrase, salt, options);
 
-    // Encrypt the ephemeral key with the derived wrapping key
-    const encryptedKey = await this.encrypt(key, wrappingKey, iv);
+    // Convert string key to bytes and encrypt with the derived wrapping key
+    const keyBytes = new TextEncoder().encode(key);
+    const encryptedKey = await this.encryptWithKey(keyBytes, wrappingKey, iv);
 
     return {
       id: `wrapped-${Date.now()}`,
@@ -547,16 +580,19 @@ class CryptoService {
     }
 
     // Re-derive wrapping key
-    const salt = Buffer.from(wrappedKey.salt!, 'base64');
-    const wrappingKey = await this.deriveKey(passphrase, {
+    const salt = await this.base64ToBytes(wrappedKey.salt!);
+    const wrappingKey = await this.deriveKey(passphrase, salt, {
       kdf: 'argon2id',
-      salt: salt,
       iterations: 4,
     });
 
-    // Decrypt the ephemeral key
-    const iv = Buffer.from(wrappedKey.iv!, 'base64');
-    return await this.decrypt(wrappedKey.wrappedData!, wrappingKey, iv);
+    // Decrypt the ephemeral key using the derived wrapping key
+    const decryptedBytes = await this.decryptWithKey(
+      wrappedKey.wrappedData!,
+      wrappingKey,
+      iv
+    );
+    return new TextDecoder().decode(decryptedBytes);
   }
 }
 ```
@@ -770,7 +806,11 @@ class StreamingCryptoService {
     options: CryptoOptions
   ): Promise<ReadableStream> {
     // Use libsodium secretstream or chunked AES-GCM for large files
-    const key = await this.deriveKey(passphrase, options.kdf);
+    const salt = await this.generateSecureRandomBytes(32);
+    const key = await this.deriveKey(passphrase, salt, {
+      kdf: options.kdf,
+      iterations: 4,
+    });
     return new ReadableStream({
       start(controller) {
         // Initialize encryption state
@@ -800,42 +840,58 @@ interface FileEntry {
   compressionMethod?: 'deflate' | 'store';
 }
 
+// Required imports for ZIP service
+import * as FileSystem from 'expo-file-system';
+import { ZipArchive } from 'react-native-zip-archive';
+import * as path from 'path';
+
 class FileBasedZipService {
   async createZipArchive(
     files: FileEntry[],
     options: ZipCreationOptions
   ): Promise<string> {
     const { destinationPath, compressionLevel = 6, password } = options;
+    let tempDirectory: string | null = null;
 
     try {
       // Ensure destination directory exists
       await this.ensureDirectoryExists(path.dirname(destinationPath));
 
-      // Use react-native-zip-archive's file-based API
-      const zipResult = await ZipArchive.zipFiles(
-        files.map((f) => f.sourcePath),
+      // Create temporary directory to mirror archive structure
+      tempDirectory = await this.createTempDirectory();
+
+      // Copy files to temporary directory with correct archive paths
+      await this.prepareFilesForArchiving(files, tempDirectory);
+
+      // Use react-native-zip-archive's supported zipFolder API
+      const zipResult = await ZipArchive.zipFolder(
+        tempDirectory,
         destinationPath,
-        {
-          level: compressionLevel,
-          password: password,
-          // Map source paths to archive paths
-          filesMapping: files.reduce(
-            (acc, file) => {
-              acc[file.sourcePath] = file.archivePath;
-              return acc;
-            },
-            {} as Record<string, string>
-          ),
-        }
+        password ? { password } : undefined
       );
 
       // Verify ZIP integrity
       await this.verifyZipIntegrity(destinationPath);
 
+      // Clean up temporary directory on success
+      await this.cleanupTempDirectory(tempDirectory);
+      tempDirectory = null;
+
       return destinationPath;
     } catch (error) {
+      // Clean up temporary directory on error
+      if (tempDirectory) {
+        await this.cleanupTempDirectory(tempDirectory);
+        tempDirectory = null;
+      }
+
+      // Clean up any partial ZIP file
       await this.cleanupPartialZip(destinationPath);
-      throw new Error(`ZIP creation failed: ${error.message}`);
+
+      // Propagate original error message safely
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`ZIP creation failed: ${errorMessage}`);
     }
   }
 
@@ -851,10 +907,36 @@ class FileBasedZipService {
   }
 
   private async verifyZipIntegrity(zipPath: string): Promise<void> {
-    // Use react-native-zip-archive to verify ZIP structure
-    const isValid = (await ZipArchive.isPasswordProtected(zipPath)) !== null;
-    if (!isValid) {
-      throw new Error('Created ZIP archive appears to be corrupted');
+    let tempTestDirectory: string | null = null;
+
+    try {
+      // Create a temporary directory for test extraction
+      tempTestDirectory = await this.createTempDirectory();
+
+      // Attempt to unzip to the temporary directory to verify integrity
+      // This will throw an error if the ZIP is corrupted or invalid
+      await ZipArchive.unzip(zipPath, tempTestDirectory);
+
+      // If we reach here, the ZIP is valid - clean up the test directory
+      await this.cleanupTempDirectory(tempTestDirectory);
+      tempTestDirectory = null;
+    } catch (error) {
+      // Clean up the test directory if it was created
+      if (tempTestDirectory) {
+        await this.cleanupTempDirectory(tempTestDirectory);
+        tempTestDirectory = null;
+      }
+
+      // Clean up any partial/corrupted ZIP file
+      await this.cleanupPartialZip(zipPath);
+
+      // Throw a descriptive error
+      const errorMessage =
+        error instanceof Error
+          ? `ZIP integrity check failed: ${error.message}`
+          : 'ZIP integrity check failed: Unknown error occurred during verification';
+
+      throw new Error(errorMessage);
     }
   }
 
@@ -866,8 +948,43 @@ class FileBasedZipService {
       console.warn('Failed to cleanup partial ZIP file:', error);
     }
   }
+
+  private async createTempDirectory(): Promise<string> {
+    const tempDir = `${FileSystem.cacheDirectory}zip_temp_${Date.now()}`;
+    await this.ensureDirectoryExists(tempDir);
+    return tempDir;
+  }
+
+  private async prepareFilesForArchiving(
+    files: FileEntry[],
+    tempDirectory: string
+  ): Promise<void> {
+    for (const file of files) {
+      const tempFilePath = path.join(tempDirectory, file.archivePath);
+
+      // Ensure parent directories exist in temp directory
+      await this.ensureDirectoryExists(path.dirname(tempFilePath));
+
+      // Copy file to temporary location with archive path structure
+      await FileSystem.copyAsync({
+        from: file.sourcePath,
+        to: tempFilePath,
+      });
+    }
+  }
+
+  private async cleanupTempDirectory(tempDirectory: string): Promise<void> {
+    try {
+      await FileSystem.deleteAsync(tempDirectory, { idempotent: true });
+    } catch (error) {
+      // Log cleanup failure but don't throw
+      console.warn('Failed to cleanup temporary directory:', error);
+    }
+  }
 }
 ```
+
+````
 
 #### Platform-Specific Responsibilities
 
@@ -928,7 +1045,7 @@ class ZipErrorHandler {
     }
   }
 }
-```
+````
 
 #### Migration Note: ReadableStream Infeasibility
 

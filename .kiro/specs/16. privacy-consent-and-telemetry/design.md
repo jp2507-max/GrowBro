@@ -116,10 +116,26 @@ interface ConsentState {
   locale: string;
 }
 
+// GDPR Lawful Basis enum (Article 6)
+enum LawfulBasis {
+  CONSENT = 'consent-6.1.a', // Article 6(1)(a) - Consent
+  CONTRACT = 'contract-6.1.b', // Article 6(1)(b) - Contract performance
+  LEGAL_OBLIGATION = 'legal-obligation-6.1.c', // Article 6(1)(c) - Legal obligation
+  VITAL_INTERESTS = 'vital-interests-6.1.d', // Article 6(1)(d) - Vital interests
+  PUBLIC_TASK = 'public-task-6.1.e', // Article 6(1)(e) - Public task
+  LEGITIMATE_INTERESTS = 'legitimate-interests-6.1.f', // Article 6(1)(f) - Legitimate interests
+}
+
 interface ConsentMetadata {
   uiSurface: 'first-run' | 'settings' | 'feature-prompt';
   policyVersion: string; // linkable to current privacy text
   controllerIdentity: string; // e.g., company legal name
+
+  // GDPR compliance audit fields
+  lawfulBasis: LawfulBasis; // GDPR Article 6 lawful basis for processing
+  justificationId: string; // Unique ID of the justification/policy clause (e.g., "POL-2024-001")
+  region: string; // ISO 3166-1 alpha-2 region code (e.g., "DE", "FR", "GB", "US")
+
   // ipAddress: never store here (data minimisation)
 }
 ```
@@ -238,7 +254,7 @@ interface ConsentAuditLog {
   action: 'grant' | 'withdraw' | 'update';
   purpose: ConsentPurpose;
   timestamp: Date;
-  metadata: ConsentMetadata;
+  metadata: ConsentMetadata; // Includes GDPR compliance audit fields (lawfulBasis, justificationId, region)
 }
 ```
 

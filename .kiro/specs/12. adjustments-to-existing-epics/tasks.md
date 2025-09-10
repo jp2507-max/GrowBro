@@ -15,8 +15,13 @@ Note: Each task amends an existing epic; update corresponding spec folders to re
 
 - [ ] A3. Harvest: curing quality checklist & atomic inventory handoff
 
-  - Add checklist gating; finalize-curing→create/update inventory in one TX with audit
-  - Tests: gating, audit note, transaction rollback
+  - Add checklist gating; finalize-curing→create/update inventory in one DB transaction
+  - DB isolation: SERIALIZABLE (or minimum REPEATABLE READ) for inventory handoff transaction
+  - Idempotency: unique constraint on handoff_id (or composite external_handoff_id + target_inventory_id)
+  - API must accept/persist idempotency key to prevent double-creation
+  - Retry policy: idempotent retries only, exponential backoff (max 3 attempts), safe retry on transient errors
+  - Audit schema: performed_by, performed_at, operation_id/idempotency_key, operation_type, status/result, before_snapshot, after_snapshot, error_message
+  - Tests: gating enforcement, audit record creation/verification, full transaction rollback on failure
 
 - [ ] A4. Community: DSA Notice-and-Action + appeals
 
@@ -28,15 +33,21 @@ Note: Each task amends an existing epic; update corresponding spec folders to re
 
 - [ ] A5. Community: Transparency Log (aggregated)
 
-  - Periodic job emits counts (reports, actions, turnaround); no PII
+  - Periodic job emits aggregate-only outputs with anti-re-identification safeguards
+  - Privacy controls: minimum-count suppression (threshold: N=5) and binning (0, 1-5, 6-20, 21-100, 100+)
+  - Suppression applied at source: counts < 5 suppressed before emitting; never returns raw logs or PII
   - SLA: daily aggregation within 24h of previous day, publish within 48h
-  - Log retention: 2 years, aggregate-only (no raw logs), auto-delete after retention expiry
+  - Log retention: 2 years, aggregate-only with privacy controls, auto-delete after retention expiry
   - Role mappings: 'transparency_role'=['viewer','admin'] → RLS: `auth.jwt()->>'transparency_role' IN ('viewer','admin')`
-  - Tests: aggregation correctness, privacy filtering, SLA timing, retention cleanup
+  - Tests: aggregation correctness, privacy filtering, suppression/binning edge cases, SLA timing, retention cleanup
 
 - [ ] A6. Community: age gate & geo-visibility enforcement
 
   - Gate UGC behind 18+ and region flags; config-driven
+  - Age source: OS parental controls or verified DOB; deny if unknown
+  - Geo source: server-side IP + device region; if mismatch → most restrictive
+  - Evasion: cache TTL 1h; re-check on app start; block when VPN detected (config flag)
+  - Appeals for false positives; audit trail
   - Tests: gating toggles, region overrides
 
 - [ ] A7. AI: quantization + latency budget
@@ -83,4 +94,7 @@ Note: Each task amends an existing epic; update corresponding spec folders to re
 
 Cross-cutting
 
-- i18n (EN/DE), a11y (44pt/48dp), performance budgets (60 FPS lists), privacy consent honoring.
+- a11y: WCAG 2.2 AA; min touch target 44x44pt; contrast ≥ 4.5:1
+- Perf: lists p95 < 16ms/frame on mid-tier device; cold start < 1200ms
+- Privacy: all telemetry/AI/cloud calls behind consent gate; revoke → hard stop + data deletion request flow
+- CI: lighthouse/a11y/perf checks must pass budgets; fail pipeline on regressions

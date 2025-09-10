@@ -88,8 +88,20 @@ export function BottomSheetScrollView(
 export function BottomSheetFlatList<T>(
   props: FlatListProps<T>
 ): React.ReactElement {
-  // In the test/mock environment we don't need a real FlatList.
-  // Render a simple View wrapper to avoid pulling in React Native list implementations.
+  // In test environment, render list items from data/renderItem props
+  if (props.data && props.renderItem) {
+    const dataArray = (props.data as T[]) || [];
+    const items = dataArray.map((item: T, index: number) => {
+      const key = props.keyExtractor ? props.keyExtractor(item, index) : index;
+      return (
+        <React.Fragment key={String(key)}>
+          {props.renderItem!({ item, index, separators: {} as any })}
+        </React.Fragment>
+      );
+    });
+    return <View {...props}>{items}</View>;
+  }
+  // Fallback for components that pass children directly
   return (<View>{props.children}</View>) as any;
 }
 
@@ -102,6 +114,20 @@ export function BottomSheetSectionList<T>(
 export function BottomSheetFlashList<T>(
   props: FlatListProps<T>
 ): React.ReactElement {
+  // In test environment, render list items from data/renderItem props
+  if (props.data && props.renderItem) {
+    const dataArray = (props.data as T[]) || [];
+    const items = dataArray.map((item: T, index: number) => {
+      const key = props.keyExtractor ? props.keyExtractor(item, index) : index;
+      return (
+        <React.Fragment key={String(key)}>
+          {props.renderItem!({ item, index, separators: {} as any })}
+        </React.Fragment>
+      );
+    });
+    return <View {...props}>{items}</View>;
+  }
+  // Fallback for components that pass children directly
   return (<View>{props.children}</View>) as any;
 }
 
