@@ -1,8 +1,7 @@
 import React from 'react';
-import type { AccessibilityActionEvent, ViewStyle } from 'react-native';
+import type { AccessibilityActionEvent } from 'react-native';
 import type { GestureType } from 'react-native-gesture-handler';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import type { AnimatedStyleProp } from 'react-native-reanimated';
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -26,7 +25,8 @@ type Props = {
 
 type AgendaItemBodyProps = {
   gesture: GestureType;
-  animatedStyle: AnimatedStyleProp<ViewStyle>;
+  // Using loose typing for animated style to accommodate Reanimated's internal types
+  animatedStyle: any;
   task: Task;
   isOpen: boolean;
   onClose: () => void;
@@ -75,8 +75,8 @@ function AgendaItemBody({
 // Custom hook to create pan gesture
 // eslint-disable-next-line max-lines-per-function
 function useCreatePanGesture(options: {
-  tx: Animated.SharedValue<number>;
-  ty: Animated.SharedValue<number>;
+  tx: { value: number };
+  ty: { value: number };
   originDate: React.RefObject<Date>;
   task: Task;
   startDrag: (task: Task) => void;

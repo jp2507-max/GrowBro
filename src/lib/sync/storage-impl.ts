@@ -93,11 +93,11 @@ async function ensureDir(uri: string): Promise<void> {
 }
 
 function getAppDocumentRoot(): string {
-  return joinUri(FileSystem.documentDirectory, APP_DIR_NAME) + '/';
+  return joinUri((FileSystem as any).documentDirectory, APP_DIR_NAME) + '/';
 }
 
 function getAppCacheRoot(): string {
-  return joinUri(FileSystem.cacheDirectory, APP_DIR_NAME) + '/';
+  return joinUri((FileSystem as any).cacheDirectory, APP_DIR_NAME) + '/';
 }
 
 function getImagesDocRoot(): string {
@@ -208,7 +208,7 @@ function normalizeModificationTime(value: unknown): number {
 async function computeSha256OfFile(uri: string): Promise<string> {
   // Read file as base64 to produce deterministic string input
   const base64 = await FileSystem.readAsStringAsync(uri, {
-    encoding: FileSystem.EncodingType.Base64 as unknown as 'base64',
+    encoding: (FileSystem as any).EncodingType?.Base64 as 'base64',
   } as any);
   const digest = await Crypto.digestStringAsync(
     Crypto.CryptoDigestAlgorithm.SHA256,
