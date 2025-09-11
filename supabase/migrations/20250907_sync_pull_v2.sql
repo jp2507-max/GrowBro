@@ -117,10 +117,10 @@ BEGIN
       'createdAt', floor(extract(epoch FROM task_page.created_at) * 1000),
       'updatedAt', floor(extract(epoch FROM task_page.updated_at) * 1000)
     ) ORDER BY task_page.updated_at DESC, task_page.id DESC), '[]'::jsonb) AS rows,
-    EXISTS(SELECT 1 FROM task_candidates OFFSET _limit) AS more
-  FROM task_page
+    EXISTS(SELECT 1 FROM task_candidates OFFSET _limit) AS more,
     (SELECT updated_at FROM task_page ORDER BY updated_at, id DESC LIMIT 1) AS last_ts,
     (SELECT id FROM task_page ORDER BY updated_at, id DESC LIMIT 1) AS last_id
+  FROM task_page
   INTO tasks_active_rows, has_more_active, tasks_active_cursor_ts, tasks_active_cursor_id;
 
   -- Task tombstones page (deleted_at window)
