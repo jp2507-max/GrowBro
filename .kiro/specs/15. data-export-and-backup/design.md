@@ -931,6 +931,11 @@ class BackupManager {
   private get metadataStore(): any {
     return this.deps.metadataStore;
   }
+
+  private get deviceKeyStore(): any {
+    return this.deps.deviceKeyStore;
+  }
+
   async createBackup(options: BackupOptions): Promise<BackupResult> {
     const snapshotId = `snapshot-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 

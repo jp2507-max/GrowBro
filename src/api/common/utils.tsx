@@ -69,19 +69,14 @@ export const getNextPageParamLegacy: GetPreviousPageParamFunction<
 > = (page) => getUrlParameters(page.next)?.offset ?? null;
 
 // a function that accept a url and return params as an object
-function getUrlParameters(url: string | null): { [k: string]: string } | null {
-  if (url === null) {
-    return null;
-  }
-  let regex = /[?&]([^=#]+)=([^&#]*)/g,
-    params = {},
-    match;
-  while ((match = regex.exec(url))) {
-    if (match[1] !== null) {
-      //@ts-ignore
-      params[match[1]] = match[2];
-    }
-  }
+function getUrlParameters(url: string | null): Record<string, string> | null {
+  if (!url) return null;
+  const query = url.includes('?') ? url.slice(url.indexOf('?') + 1) : url;
+  const usp = new URLSearchParams(query);
+  const params: Record<string, string> = {};
+  usp.forEach((value, key) => {
+    params[key] = value;
+  });
   return params;
 }
 

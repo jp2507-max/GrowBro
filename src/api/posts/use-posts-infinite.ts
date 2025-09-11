@@ -1,12 +1,13 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 
-import { client } from '../common';
+import { client, DEFAULT_LIMIT, getQueryKey } from '@/api/common';
 import {
   getNextPageParam,
   getPreviousPageParam,
   keepPreviousData,
-} from '../common/utils';
-import type { Post } from './types';
+} from '@/api/common/utils';
+import type { Post } from '@/api/posts';
+import type { PaginateQuery } from '@/api/types';
 
 type Variables = {
   limit?: number;
@@ -15,21 +16,17 @@ type Variables = {
 
 export const usePostsInfinite = (params: Variables = {}) => {
   return useInfiniteQuery({
-    queryKey: ['posts-infinite', params],
-    queryFn: async ({ pageParam }) => {
+    queryKey: getQueryKey('posts-infinite', params),
+    queryFn: async ({ pageParam, signal }) => {
       const response = await client.get('posts', {
         params: {
           cursor: pageParam,
-          limit: params.limit || 10,
+          limit: params.limit || DEFAULT_LIMIT,
           category: params.category,
         },
+        signal,
       });
-      return response.data as {
-        results: Post[];
-        count: number;
-        next: string | null;
-        previous: string | null;
-      };
+      return response.data as PaginateQuery<Post>;
     },
     getNextPageParam,
     getPreviousPageParam,
