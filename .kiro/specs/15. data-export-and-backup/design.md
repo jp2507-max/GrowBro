@@ -775,14 +775,14 @@ class CryptoService {
           const authTag = data.slice(data.length - authTagLength);
           const keyBytes = key instanceof Uint8Array ? key : new Uint8Array();
 
-          // Use libsodium's AES-GCM implementation
-          const decrypted = sodium.crypto_aead_aes256gcm_decrypt(
-            null, // no additional data
-            ciphertext,
-            authTag,
-            null, // no additional data
-            iv,
-            keyBytes
+          // Use DETACHED API with separate tag
+          const decrypted = sodium.crypto_aead_aes256gcm_decrypt_detached(
+            null,              // nsec
+            ciphertext,        // c (without tag)
+            authTag,           // mac (tag)
+            null,              // ad
+            iv,                // npub (12 bytes)
+            keyBytes           // key (32 bytes)
           );
 
           return new Uint8Array(decrypted);

@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  expo-dev-menu: 7.0.10
+
 importers:
 
   .:
@@ -30,7 +33,7 @@ importers:
         specifier: 11.4.1
         version: 11.4.1(react-native@0.81.4(@babel/core@7.26.0)(@types/react@19.1.12)(react@19.1.0))
       '@react-navigation/native':
-        specifier: 7.1.17
+        specifier: ^7.1.8
         version: 7.1.17(react-native@0.81.4(@babel/core@7.26.0)(@types/react@19.1.12)(react@19.1.0))(react@19.1.0)
       '@sentry/react-native':
         specifier: ^6.20.0
@@ -4047,11 +4050,6 @@ packages:
 
   expo-dev-menu@7.0.10:
     resolution: {integrity: sha512-Antq+TrWU2N91VM1TCrTuLPKMVNbDokv3jyc7RH5SzqgcjCeKZl7gFgWtVQZJn7RT2C62v11ABAeSilotv5PjQ==}
-    peerDependencies:
-      expo: '*'
-
-  expo-dev-menu@7.0.9:
-    resolution: {integrity: sha512-zM2wQSyGE7/NATuNRXW16XGtgIW5/iXFN5+oiyIjxXr35BdYD3AC80d0Ncn70E6K4XIfw+tojJ23nlv4Di2ZIQ==}
     peerDependencies:
       expo: '*'
 
@@ -12856,7 +12854,7 @@ snapshots:
   expo-dev-launcher@6.0.10(expo@54.0.1):
     dependencies:
       expo: 54.0.1(@babel/core@7.26.0)(@expo/metro-runtime@6.1.1)(expo-router@6.0.0)(react-native@0.81.4(@babel/core@7.26.0)(@types/react@19.1.12)(react@19.1.0))(react@19.1.0)
-      expo-dev-menu: 7.0.9(expo@54.0.1)
+      expo-dev-menu: 7.0.10(expo@54.0.1)
       expo-manifests: 1.0.7(expo@54.0.1)
     transitivePeerDependencies:
       - supports-color
@@ -12866,11 +12864,6 @@ snapshots:
       expo: 54.0.1(@babel/core@7.26.0)(@expo/metro-runtime@6.1.1)(expo-router@6.0.0)(react-native@0.81.4(@babel/core@7.26.0)(@types/react@19.1.12)(react@19.1.0))(react@19.1.0)
 
   expo-dev-menu@7.0.10(expo@54.0.1):
-    dependencies:
-      expo: 54.0.1(@babel/core@7.26.0)(@expo/metro-runtime@6.1.1)(expo-router@6.0.0)(react-native@0.81.4(@babel/core@7.26.0)(@types/react@19.1.12)(react@19.1.0))(react@19.1.0)
-      expo-dev-menu-interface: 2.0.0(expo@54.0.1)
-
-  expo-dev-menu@7.0.9(expo@54.0.1):
     dependencies:
       expo: 54.0.1(@babel/core@7.26.0)(@expo/metro-runtime@6.1.1)(expo-router@6.0.0)(react-native@0.81.4(@babel/core@7.26.0)(@types/react@19.1.12)(react@19.1.0))(react@19.1.0)
       expo-dev-menu-interface: 2.0.0(expo@54.0.1)

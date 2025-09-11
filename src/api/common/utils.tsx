@@ -50,23 +50,23 @@ export function normalizePagesWithCursors<T>(pages?: PaginateQuery<T>[]): {
 export const getNextPageParam: GetNextPageParamFunction<
   unknown,
   PaginateQuery<unknown>
-> = (lastPage) => lastPage.next;
+> = (lastPage) => lastPage.next ?? undefined;
 
 export const getPreviousPageParam: GetPreviousPageParamFunction<
   unknown,
   PaginateQuery<unknown>
-> = (lastPage) => lastPage.previous;
+> = (firstPage) => firstPage.previous ?? undefined;
 
 // Legacy offset-based pagination (deprecated - use cursor-based above)
 export const getPreviousPageParamLegacy: GetNextPageParamFunction<
   unknown,
   PaginateQuery<unknown>
-> = (page) => getUrlParameters(page.previous)?.offset ?? null;
+> = (page) => getUrlParameters(page.previous)?.offset ?? undefined;
 
 export const getNextPageParamLegacy: GetPreviousPageParamFunction<
   unknown,
   PaginateQuery<unknown>
-> = (page) => getUrlParameters(page.next)?.offset ?? null;
+> = (page) => getUrlParameters(page.next)?.offset ?? undefined;
 
 // a function that accept a url and return params as an object
 function getUrlParameters(url: string | null): Record<string, string> | null {
