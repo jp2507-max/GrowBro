@@ -7,132 +7,103 @@ applyTo: '**'
 ## Root Directory Structure
 
 ```
-├── src/                    # Source code
+├── src/                    # Main source code
 ├── assets/                 # Static assets (images, fonts, icons)
-├── .expo/                  # Expo configuration and cache
-├── .husky/                 # Git hooks configuration
-├── .maestro/               # E2E test flows
-├── prompts/                # AI assistant prompts
-├── scripts/                # Build and utility scripts
-├── __mocks__/              # Jest mocks for testing
-└── node_modules/           # Dependencies
+├── supabase/              # Supabase functions and migrations
+├── .expo/                 # Expo configuration and cache
+├── .kiro/                 # Kiro AI assistant configuration
+├── .maestro/              # E2E test configurations
+├── __mocks__/             # Jest mocks for testing
+├── scripts/               # Build and utility scripts
+├── docs/                  # Project documentation
+└── prompts/               # AI assistant prompts
 ```
 
 ## Source Code Organization (`src/`)
 
-```
-src/
-├── api/                    # API layer and data fetching
-│   ├── common/            # Shared API utilities
-│   ├── posts/             # Post-related API calls
-│   ├── index.tsx          # API exports
-│   └── types.ts           # API type definitions
-├── app/                    # Expo Router pages (file-based routing)
-│   ├── (app)/             # Authenticated app routes
-│   ├── feed/              # Community feed screens
-│   ├── _layout.tsx        # Root layout
-│   ├── login.tsx          # Authentication screen
-│   └── onboarding.tsx     # User onboarding
-├── components/            # Reusable UI components
-│   ├── ui/                # Base UI components
-│   ├── settings/          # Settings-specific components
-│   └── *.tsx              # Feature components
-├── lib/                   # Utilities and configuration
-│   ├── auth/              # Authentication logic
-│   ├── hooks/             # Custom React hooks
-│   ├── i18n/              # Internationalization setup
-│   ├── env.js             # Environment configuration
-│   └── utils.ts           # Utility functions
-├── translations/          # i18n translation files
-│   ├── en.json            # English translations
-│   └── ar.json            # Arabic translations
-└── types/                 # TypeScript type definitions
-    └── index.ts           # Global type exports
-```
+### Core Directories
 
-## Key Conventions
+- **`src/app/`** - Expo Router pages and layouts (file-based routing)
+- **`src/components/`** - Reusable UI components
+- **`src/lib/`** - Business logic, utilities, and services
+- **`src/api/`** - API layer and data fetching logic
+- **`src/types/`** - TypeScript type definitions
+- **`src/translations/`** - Internationalization files
 
-### File Naming
+### Component Structure (`src/components/`)
 
-- **kebab-case** for all files (enforced by ESLint)
-- Component files: `component-name.tsx`
-- Hook files: `use-hook-name.ts`
-- Utility files: `utility-name.ts`
-- Test files: `component-name.test.tsx`
+- **`ui/`** - Base UI components (buttons, inputs, typography)
+- **Feature-specific folders** - Components grouped by feature (calendar, settings, sync)
+- **Root level** - Shared components used across features
 
-### Import Aliases
+### Library Structure (`src/lib/`)
 
-- `@/*` → `./src/*` (all source code)
-- `@env` → `./src/lib/env.js` (environment variables)
+- **`auth/`** - Authentication logic and utilities
+- **`hooks/`** - Custom React hooks
+- **`i18n/`** - Internationalization configuration
+- **`utils/`** - General utility functions
+- **`watermelon-models/`** - Database models and schema
+- **Feature-specific folders** - Business logic grouped by feature
 
-### Component Structure
+## File Naming Conventions
 
-- UI components in `src/components/ui/`
-- Feature-specific components in `src/components/`
-- Page components in `src/app/` (Expo Router)
+- **kebab-case** for all files and directories (enforced by ESLint)
+- **PascalCase** for React components
+- **camelCase** for functions and variables
+- **SCREAMING_SNAKE_CASE** for constants
 
-### API Organization
+## Import Path Aliases
 
-- Feature-based API modules in `src/api/`
-- Shared utilities in `src/api/common/`
-- Type definitions in `src/api/types.ts`
+- `@/*` maps to `./src/*` for clean imports
+- `@env` maps to environment variables via `./src/lib/env.js`
 
-### Styling Approach
+## Architecture Patterns
 
-- **NativeWind** (Tailwind CSS) for styling
-- Color system defined in `src/components/ui/colors.js`
-- Global styles in `global.css`
-- Component-specific styles using Tailwind classes
+### Component Organization
 
-### State Management
+- Components are organized by feature and reusability
+- UI components use Tailwind variants for consistent styling
+- Each component should have a single responsibility
 
-- **Zustand** for global state
-- **React Query** for server state
-- **WatermelonDB** for local/offline data
-- Local component state with `useState`
+### Data Layer
 
-### Testing Structure
+- **WatermelonDB** for offline-first local storage
+- **Supabase** for backend services and real-time sync
+- **React Query** for server state management and caching
+- **Zustand** for client-side state management
 
-- Test files alongside source files
-- Mocks in `__mocks__/` directory
-- Test utilities in `src/lib/test-utils.tsx`
-- Jest configuration in `jest.config.js`
+### Navigation Structure
 
-## Configuration Files
+- File-based routing with Expo Router
+- Typed routes enabled for type safety
+- Layout components for shared UI structure
 
-### Environment & Build
+### Environment Configuration
 
-- `env.js` - Environment variable validation and configuration
-- `app.config.ts` - Expo configuration
-- `eas.json` - EAS Build configuration
-- `.env.*` files - Environment-specific variables
+- Environment variables managed through `env.js` with Zod validation
+- Separate client and build-time variable schemas
+- Environment-specific `.env` files for different deployment targets
 
-### Code Quality
+## Code Quality Standards
 
-- `eslint.config.mjs` - ESLint configuration (flat config)
-- `.prettierrc.js` - Prettier formatting rules
-- `tsconfig.json` - TypeScript configuration
-- `commitlint.config.js` - Commit message linting
+- **TypeScript strict mode** enabled
+- **ESLint** with comprehensive rule set including:
+  - Import sorting and unused import removal
+  - Tailwind class ordering
+  - Maximum function length (70 lines) and parameters (3)
+  - Filename case enforcement
+- **Prettier** for code formatting
+- **Husky** git hooks for pre-commit quality checks
 
-### Build Tools
+## Testing Structure
 
-- `babel.config.js` - Babel transpilation
-- `metro.config.js` - Metro bundler configuration
-- `tailwind.config.js` - Tailwind CSS configuration
+- **Unit tests** co-located with source files (`*.test.ts`)
+- **Mocks** in `__mocks__/` directory for external dependencies
+- **E2E tests** in `.maestro/` directory
+- **Test utilities** in `src/lib/test-utils.tsx`
 
-## Development Workflow
+## Asset Organization
 
-1. **Feature Development**: Create components in appropriate directories
-2. **Routing**: Add pages to `src/app/` for automatic routing
-3. **API Integration**: Add API calls to `src/api/` modules
-4. **Styling**: Use NativeWind classes, extend colors in theme
-5. **Testing**: Write tests alongside components
-6. **Internationalization**: Add strings to translation files
-
-## Offline-First Architecture
-
-- **WatermelonDB** for local SQLite storage
-- **Sync engine** with pull/push changes
-- **Image storage** in app cache directories
-- **Queue system** for offline operations
-- **Conflict resolution** using last-write-wins
+- **Icons and images** in `assets/` directory
+- **Fonts** in `assets/fonts/`
+- **App icons** with environment-specific badges for non-production builds

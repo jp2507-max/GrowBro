@@ -572,6 +572,51 @@ class CryptoService {
     return await this.nativeSecureRandom(length);
   }
 
+  /**
+   * Private method to generate secure random bytes using native libraries.
+   * Attempts to use react-native-libsodium first, then falls back to expo-crypto.
+   * Throws a clear error if neither provider is available.
+   *
+   * @param length - The number of random bytes to generate
+   * @returns Promise resolving to a Uint8Array of the requested length
+   * @throws Error if no secure random provider is available
+   */
+  private async nativeSecureRandom(length: number): Promise<Uint8Array> {
+    try {
+      // First attempt: react-native-libsodium (preferred)
+      const libsodium = await import('react-native-libsodium');
+      if (libsodium && libsodium.sodium) {
+        const randomBytes = libsodium.sodium.randombytes_buf(length);
+        return new Uint8Array(randomBytes);
+      }
+    } catch (error) {
+      // Log the error but continue to fallback
+      console.warn('react-native-libsodium not available for secure random generation:', error);
+    }
+
+    try {
+      // Second attempt: expo-crypto fallback
+      const { getRandomBytesAsync } = await import('expo-crypto');
+      if (getRandomBytesAsync) {
+        const randomBytes = await getRandomBytesAsync(length);
+        // Convert to Uint8Array if not already
+        return randomBytes instanceof Uint8Array ? randomBytes : new Uint8Array(randomBytes);
+      }
+    } catch (error) {
+      // Log the error but continue to error handling
+      console.warn('expo-crypto not available for secure random generation:', error);
+    }
+
+    // If we reach here, neither provider was available
+    throw new Error(
+      'Secure random generation requires a native crypto provider.\n' +
+        'Install and configure one of: react-native-libsodium (preferred) or expo-crypto.\n' +
+        'For Expo managed workflow: `npx expo install react-native-libsodium expo-crypto`\n' +
+        'For bare React Native: `npm install react-native-libsodium expo-crypto && cd ios && pod install`\n' +
+        'For EAS Build ensure native modules are included in your build configuration.'
+    );
+  }
+
   async bytesToBase64(bytes: Uint8Array): Promise<string> {
     // Cross-platform base64 conversion using react-native-quick-base64
     const { encode } = await import('react-native-quick-base64');
@@ -636,8 +681,8 @@ class CryptoService {
           data.set(encryptedBytes.ciphertext);
           data.set(encryptedBytes.authTag, encryptedBytes.ciphertext.length);
         } else if (encryptedBytes.cipher === Cipher.XCHACHA20_POLY1305) {
-          // Libsodium format: ciphertext already includes authTag, use as-is
-          data = encryptedBytes.ciphertext;
+          // Use libsodium-based XChaCha20-Poly1305 decryption
+          return await this.decryptXChaCha20Poly1305(encryptedBytes.ciphertext, key, actualIv);
         } else {
           throw new Error(`Unsupported cipher: ${encryptedBytes.cipher}`);
         }
@@ -664,6 +709,62 @@ class CryptoService {
       }
       throw new Error(
         `Decryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Decrypt XChaCha20-Poly1305 ciphertext with a given key and IV using libsodium.
+   *
+   * This method uses react-native-libsodium to perform XChaCha20-Poly1305 authenticated
+   * decryption. The key is normalized to a Uint8Array if necessary, and the method
+   * uses sodium.crypto_aead_xchacha20poly1305_ietf_decrypt with null additional data.
+   *
+   * @param data - Uint8Array containing the ciphertext (authTag is included in ciphertext)
+   * @param key - The decryption key (CryptoKey or Uint8Array)
+   * @param iv - Uint8Array nonce/initialization vector
+   * @returns Promise resolving to decrypted plaintext bytes
+   * @throws Error if libsodium is not available or decryption fails
+   * @private
+   */
+  private async decryptXChaCha20Poly1305(
+    data: Uint8Array,
+    key: CryptoKey | Uint8Array,
+    iv: Uint8Array
+  ): Promise<Uint8Array> {
+    try {
+      // Normalize key to Uint8Array
+      let keyBytes: Uint8Array;
+      if (key instanceof Uint8Array) {
+        keyBytes = key;
+      } else {
+        // Extract raw bytes from CryptoKey if needed
+        throw new Error('CryptoKey not supported for XChaCha20-Poly1305 - use Uint8Array key');
+      }
+
+      // Ensure libsodium is available
+      if (!sodium) {
+        throw new Error('react-native-libsodium is required for XChaCha20-Poly1305 decryption');
+      }
+
+      // Perform authenticated decryption
+      const plaintext = sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(
+        null, // additional data (null for no AD)
+        data, // ciphertext
+        null, // auth tag (included in ciphertext for libsodium)
+        iv, // nonce
+        keyBytes // key
+      );
+
+      return plaintext;
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message.includes('libsodium') || error.message.includes('sodium')) {
+          throw new Error('react-native-libsodium is required for XChaCha20-Poly1305 decryption');
+        }
+      }
+      throw new Error(
+        `XChaCha20-Poly1305 decryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -897,6 +998,7 @@ class CryptoService {
         authTag,
         iv,
         salt: await this.base64ToBytes(wrappedKey.salt!),
+        cipher: Cipher.AES_256_GCM,
       };
 
       // Decrypt the ephemeral key using the derived wrapping key
@@ -2048,6 +2150,8 @@ interface FileEntry {
 // Required imports for ZIP service
 import * as FileSystem from 'expo-file-system';
 import { zip, unzip } from 'react-native-zip-archive';
+// Required import for XChaCha20-Poly1305 decryption
+import { sodium } from 'react-native-libsodium';
 
 // URL-safe path helper for Expo/RN compatibility (works with forward-slash paths)
 const PathHelper = {

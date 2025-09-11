@@ -2,157 +2,108 @@
 alwaysApply: true
 ---
 
-# Project Structure
+# Project Structure & Organization
 
-## Root Directory Organization
+## Root Directory Structure
 
 ```
 ├── src/                    # Main source code
 ├── assets/                 # Static assets (images, fonts, icons)
-├── supabase/              # Database migrations and schema
-├── .expo/                 # Expo build artifacts
-├── .maestro/              # E2E test flows
-├── .husky/                # Git hooks configuration
+├── supabase/              # Supabase functions and migrations
+├── .expo/                 # Expo configuration and cache
+├── .kiro/                 # Kiro AI assistant configuration
+├── .maestro/              # E2E test configurations
 ├── __mocks__/             # Jest mocks for testing
 ├── scripts/               # Build and utility scripts
 ├── docs/                  # Project documentation
-├── prompts/               # AI assistant prompts
-└── coverage/              # Test coverage reports
+└── prompts/               # AI assistant prompts
 ```
 
-## Source Code Structure (`src/`)
+## Source Code Organization (`src/`)
 
 ### Core Directories
 
-- **`src/app/`** - Expo Router file-based routing
-
-  - `_layout.tsx` - Root layout with providers
-  - `(app)/` - Main authenticated app routes
-  - `login.tsx`, `onboarding.tsx` - Auth flows
-
+- **`src/app/`** - Expo Router pages and layouts (file-based routing)
 - **`src/components/`** - Reusable UI components
-
-  - `ui/` - Base design system components
-  - `settings/` - Settings-specific components
-  - Individual component files (buttons, inputs, etc.)
-
-- **`src/lib/`** - Core utilities and configurations
-
-  - `auth/` - Authentication logic
-  - `hooks/` - Custom React hooks
-  - `i18n/` - Internationalization setup
-  - `privacy/` - Privacy and consent management
-  - Core utilities (storage, supabase, notifications, etc.)
-
-- **`src/api/`** - API layer and data fetching
-
-  - `common/` - Shared API utilities
-  - Feature-specific API modules (posts/, etc.)
-  - `types.ts` - API type definitions
-
+- **`src/lib/`** - Business logic, utilities, and services
+- **`src/api/`** - API layer and data fetching logic
 - **`src/types/`** - TypeScript type definitions
-- **`src/translations/`** - i18n JSON files (en.json, de.json)
+- **`src/translations/`** - Internationalization files
 
-## Key Configuration Files
+### Component Structure (`src/components/`)
 
-### Environment & Build
+- **`ui/`** - Base UI components (buttons, inputs, typography)
+- **Feature-specific folders** - Components grouped by feature (calendar, settings, sync)
+- **Root level** - Shared components used across features
 
-- `env.js` - Environment variable validation and configuration
-- `app.config.ts` - Expo configuration with environment-specific settings
-- `eas.json` - EAS Build profiles for different environments
+### Library Structure (`src/lib/`)
 
-### Code Quality
-
-- `eslint.config.mjs` - ESLint configuration with TypeScript, Prettier, Tailwind rules
-- `tsconfig.json` - TypeScript configuration with strict mode and path aliases
-- `jest.config.js` - Jest testing configuration
-- `tailwind.config.js` - Tailwind CSS configuration with custom colors
-
-### Package Management
-
-- `package.json` - Dependencies and scripts
-- `pnpm-lock.yaml` - Lock file for pnpm
-- `.npmrc` - npm configuration
-
-## Import Conventions
-
-### Path Aliases
-
-- `@/*` - Maps to `src/*` for absolute imports
-- `@env` - Maps to `src/lib/env.js` for environment variables
-
-### Import Patterns
-
-```typescript
-// External libraries first
-import React from 'react';
-import { View } from 'react-native';
-
-// Internal imports with @ alias
-import { Button } from '@/components/ui';
-import { useAuth } from '@/lib/auth';
-import { Env } from '@env';
-```
+- **`auth/`** - Authentication logic and utilities
+- **`hooks/`** - Custom React hooks
+- **`i18n/`** - Internationalization configuration
+- **`utils/`** - General utility functions
+- **`watermelon-models/`** - Database models and schema
+- **Feature-specific folders** - Business logic grouped by feature
 
 ## File Naming Conventions
 
-- **Components**: PascalCase for React components (`LoginForm.tsx`)
-- **Utilities**: kebab-case for utility files (`task-notifications.ts`)
-- **Hooks**: camelCase starting with 'use' (`useThemeConfig.tsx`)
-- **Types**: kebab-case with `.d.ts` extension (`expo-notifications.d.ts`)
-- **Tests**: Same name as file with `.test.ts` suffix
+- **kebab-case** for all files and directories (enforced by ESLint)
+- **PascalCase** for React components
+- **camelCase** for functions and variables
+- **SCREAMING_SNAKE_CASE** for constants
 
-## Asset Organization
+## Import Path Aliases
 
-### Images & Icons
+- `@/*` maps to `./src/*` for clean imports
+- `@env` maps to environment variables via `./src/lib/env.js`
 
-- `assets/icon.png` - App icon
-- `assets/adaptive-icon.png` - Android adaptive icon
-- `assets/splash-icon.png` - Splash screen icon
-- `assets/fonts/` - Custom fonts (Inter.ttf)
+## Architecture Patterns
 
-### Generated Assets
+### Component Organization
 
-- `.expo/` - Expo build artifacts (auto-generated)
-- `coverage/` - Test coverage reports
-- `node_modules/` - Dependencies
+- Components are organized by feature and reusability
+- UI components use Tailwind variants for consistent styling
+- Each component should have a single responsibility
 
-## Database & Backend
+### Data Layer
 
-### Supabase Integration
+- **WatermelonDB** for offline-first local storage
+- **Supabase** for backend services and real-time sync
+- **React Query** for server state management and caching
+- **Zustand** for client-side state management
 
-- `src/lib/supabase.ts` - Supabase client configuration
-- `supabase/migrations/` - Database schema migrations
-- Environment-specific Supabase projects
+### Navigation Structure
 
-### Offline-First Architecture
+- File-based routing with Expo Router
+- Typed routes enabled for type safety
+- Layout components for shared UI structure
 
-- WatermelonDB models and schemas (to be implemented)
-- Local SQLite database with sync capabilities
-- Image storage in device filesystem with DB metadata
+### Environment Configuration
+
+- Environment variables managed through `env.js` with Zod validation
+- Separate client and build-time variable schemas
+- Environment-specific `.env` files for different deployment targets
+
+## Code Quality Standards
+
+- **TypeScript strict mode** enabled
+- **ESLint** with comprehensive rule set including:
+  - Import sorting and unused import removal
+  - Tailwind class ordering
+  - Maximum function length (70 lines) and parameters (3)
+  - Filename case enforcement
+- **Prettier** for code formatting
+- **Husky** git hooks for pre-commit quality checks
 
 ## Testing Structure
 
-### Unit Tests
+- **Unit tests** co-located with source files (`*.test.ts`)
+- **Mocks** in `__mocks__/` directory for external dependencies
+- **E2E tests** in `.maestro/` directory
+- **Test utilities** in `src/lib/test-utils.tsx`
 
-- Co-located with source files (`.test.ts` suffix)
-- `__mocks__/` - Jest mocks for React Native modules
-- `jest-setup.ts` - Global test configuration
+## Asset Organization
 
-### E2E Tests
-
-- `.maestro/` - Maestro test flows
-- `app/`, `auth/`, `utils/` - Organized by feature area
-
-## Development Workflow
-
-### Git Hooks
-
-- `.husky/pre-commit` - Runs linting and type checking
-- `.husky/commit-msg` - Validates commit message format
-- `lint-staged.config.js` - Staged file linting configuration
-
-### Scripts Organization
-
-- `scripts/` - Build utilities and custom scripts
-- Package.json scripts for common development tasks
+- **Icons and images** in `assets/` directory
+- **Fonts** in `assets/fonts/`
+- **App icons** with environment-specific badges for non-production builds
