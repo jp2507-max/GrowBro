@@ -461,15 +461,43 @@ function applyPayloadToRecord(target: any, payload: any): void {
   }
 }
 
-function maybeMarkNeedsReview(table: TableName, rec: any, payload: any): void {
-  if (table !== 'tasks') return;
+function safeParseNumber(value: any): number | null {
+  if (value == null) return null;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
 
-  // Helper function to safely parse numeric values
-  const safeParseNumber = (value: any): number | null => {
-    if (value == null) return null;
-    const num = Number(value);
-    return Number.isFinite(num) ? num : null;
-  };
+function parseMetadataSafe(currentMetaRaw: any): Record<string, any> {
+  let currentMeta: Record<string, any> = {};
+  if (typeof currentMetaRaw === 'string' && currentMetaRaw.trim().length) {
+    try {
+      const parsed = JSON.parse(currentMetaRaw);
+      if (
+        typeof parsed === 'object' &&
+        parsed !== null &&
+        !Array.isArray(parsed)
+      ) {
+        currentMeta = parsed;
+      }
+    } catch {
+      currentMeta = {};
+    }
+  } else if (
+    typeof currentMetaRaw === 'object' &&
+    currentMetaRaw !== null &&
+    !Array.isArray(currentMetaRaw)
+  ) {
+    currentMeta = currentMetaRaw;
+  }
+  return currentMeta;
+}
+
+export function maybeMarkNeedsReview(
+  table: TableName,
+  rec: any,
+  payload: any
+): void {
+  if (table !== 'tasks') return;
 
   // Prefer server_revision if present, otherwise compare server_updated_at_ms
   const localRevRaw = (rec as any)._raw?.server_revision ?? null;
@@ -480,7 +508,6 @@ function maybeMarkNeedsReview(table: TableName, rec: any, payload: any): void {
   const serverServerTsRaw =
     payload.server_updated_at_ms ?? toMillis(payload.updatedAt as any);
 
-  // Coerce to finite numbers only, treat non-finite as null
   const localRev = safeParseNumber(localRevRaw);
   const serverRev = safeParseNumber(serverRevRaw);
   const localServerTs = safeParseNumber(localServerTsRaw);
@@ -497,37 +524,11 @@ function maybeMarkNeedsReview(table: TableName, rec: any, payload: any): void {
 
   if (serverIsNewer) {
     const currentMetaRaw = (rec as any).metadata;
-    let currentMeta: Record<string, any> = {};
-
-    // Safely parse metadata with try/catch, treat invalid JSON as empty object
-    if (typeof currentMetaRaw === 'string' && currentMetaRaw.trim().length) {
-      try {
-        const parsed = JSON.parse(currentMetaRaw);
-        // Preserve non-string metadata safely
-        if (
-          typeof parsed === 'object' &&
-          parsed !== null &&
-          !Array.isArray(parsed)
-        ) {
-          currentMeta = parsed;
-        }
-      } catch {
-        // Invalid JSON, use empty object
-        currentMeta = {};
-      }
-    } else if (
-      typeof currentMetaRaw === 'object' &&
-      currentMetaRaw !== null &&
-      !Array.isArray(currentMetaRaw)
-    ) {
-      // Already an object, preserve it safely
-      currentMeta = currentMetaRaw;
-    }
-
-    (rec as any).metadata = JSON.stringify({
+    const currentMeta = parseMetadataSafe(currentMetaRaw);
+    (rec as any).metadata = {
       ...currentMeta,
       needsReview: true,
-    });
+    };
   }
 }
 

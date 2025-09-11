@@ -231,6 +231,7 @@ interface EncryptedData {
   iv: Uint8Array;
   authTag: Uint8Array;
   salt: Uint8Array;
+  cipher: Cipher; // Encryption algorithm used
 }
 ```
 
@@ -618,29 +619,35 @@ class CryptoService {
         actualIv = iv;
       } else {
         // EncryptedData object pattern - extract data and iv
-        data = encryptedBytes.ciphertext;
+        if (!encryptedBytes.iv) {
+          throw new Error('IV is required in EncryptedData object');
+        }
         actualIv = encryptedBytes.iv;
+
+        // Handle different encryption formats
+        if (encryptedBytes.cipher === Cipher.AES_256_GCM) {
+          // WebCrypto AES-GCM format: concatenate ciphertext with authTag
+          if (!encryptedBytes.authTag) {
+            throw new Error('authTag is required for AES-GCM decryption');
+          }
+          data = new Uint8Array(
+            encryptedBytes.ciphertext.length + encryptedBytes.authTag.length
+          );
+          data.set(encryptedBytes.ciphertext);
+          data.set(encryptedBytes.authTag, encryptedBytes.ciphertext.length);
+        } else if (encryptedBytes.cipher === Cipher.XCHACHA20_POLY1305) {
+          // Libsodium format: ciphertext already includes authTag, use as-is
+          data = encryptedBytes.ciphertext;
+        } else {
+          throw new Error(`Unsupported cipher: ${encryptedBytes.cipher}`);
+        }
       }
 
-      // Ensure we have a CryptoKey (import if needed)
-      const cryptoKey =
-        key instanceof Uint8Array
-          ? await crypto.subtle.importKey('raw', key, 'AES-GCM', false, [
-              'decrypt',
-            ])
-          : key;
-
-      // Decrypt using AES-GCM (provides confidentiality + integrity)
-      const decrypted = await crypto.subtle.decrypt(
-        {
-          name: 'AES-GCM',
-          iv: actualIv,
-        },
-        cryptoKey,
-        data
-      );
-
-      return new Uint8Array(decrypted);
+      // Decrypt using AES-GCM via platform-capable abstraction. This
+      // encapsulates WebCrypto usage and a native/bridge fallback for
+      // React Native / Expo environments where crypto.subtle may be
+      // missing or incomplete.
+      return await this.decryptAesGcm(data, key, actualIv);
     } catch (error) {
       // Provide specific error messages for different failure modes
       if (error instanceof Error) {
@@ -659,6 +666,169 @@ class CryptoService {
         `Decryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
+  }
+
+  /**
+   * Decrypt AES-GCM ciphertext with a given key and IV.
+   *
+   * This method first checks for WebCrypto (crypto.subtle). If available
+   * and complete (importKey + decrypt), it will use WebCrypto. Otherwise
+   * it attempts to route to a native fallback (a bridging module or
+   * a community native crypto library). If no supported fallback is
+   * available it throws a clear error describing the required dependency
+   * for React Native / Expo.
+   *
+   * Inputs/Outputs contract:
+   * - data: Uint8Array containing ciphertext (and authTag concatenated for WebCrypto)
+   * - key: either a CryptoKey (WebCrypto) or raw Uint8Array of key bytes
+   * - iv: Uint8Array initialization vector
+   * - returns: Promise resolving to decrypted plaintext Uint8Array
+   */
+  async decryptAesGcm(
+    data: Uint8Array,
+    key: CryptoKey | Uint8Array,
+    iv: Uint8Array
+  ): Promise<Uint8Array> {
+    // Prefer WebCrypto when available and complete
+    const hasWebCrypto =
+      typeof crypto !== 'undefined' &&
+      !!crypto.subtle &&
+      typeof crypto.subtle.importKey === 'function' &&
+      typeof crypto.subtle.decrypt === 'function';
+
+    if (hasWebCrypto) {
+      // If caller passed raw key bytes, import to CryptoKey for WebCrypto
+      let cryptoKey: CryptoKey;
+      if (key instanceof Uint8Array) {
+        cryptoKey = await crypto.subtle.importKey('raw', key, 'AES-GCM', false, [
+          'decrypt',
+        ]);
+      } else {
+        cryptoKey = key;
+      }
+
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv },
+        cryptoKey,
+        data
+      );
+
+      return new Uint8Array(decrypted);
+    }
+
+    // WebCrypto not available - attempt to use a native fallback.
+    // The implementation below is intentionally permissive: projects may
+    // provide any of the common native crypto libraries exposed to JS.
+    // Try a few well-known candidates dynamically and call a consistent API.
+    try {
+      // Prefer an injected/native bridge if available on this service
+      // (e.g., when CryptoService is extended or constructed with a native shim)
+      // @ts-ignore - optional runtime property
+      if (this.nativeCrypto && typeof this.nativeCrypto.decryptAesGcm === 'function') {
+        // nativeCrypto.decryptAesGcm expects (dataBase64, keyBase64, ivBase64)
+        const { decryptAesGcm } = this.nativeCrypto;
+        const toBase64 = async (b: Uint8Array) => {
+          const { encode } = await import('react-native-quick-base64');
+          return encode(b);
+        };
+        const plaintextBase64 = await decryptAesGcm(
+          await toBase64(data),
+          await toBase64(key instanceof Uint8Array ? key : new Uint8Array()),
+          await toBase64(iv)
+        );
+        const { decode } = await import('react-native-quick-base64');
+        return decode(plaintextBase64);
+      }
+
+      // Try react-native-quick-crypto (or similar). These libraries differ in API;
+      // projects should adapt this block to call their chosen native implementation.
+      // We attempt to import commonly used packages and call a reasonable API shape.
+      try {
+        // Example: react-native-quick-crypto exposes a 'crypto' with 'aesGcmDecrypt'
+        // This is a best-effort probe; adjust as needed for your chosen lib.
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        // @ts-ignore
+        const quickCrypto = await import('react-native-quick-crypto');
+        if (quickCrypto && typeof quickCrypto.aesGcmDecrypt === 'function') {
+          const plaintext = await quickCrypto.aesGcmDecrypt(data, key, iv);
+          return plaintext instanceof Uint8Array ? plaintext : new Uint8Array(plaintext);
+        }
+      } catch (e) {
+        // ignore and try next option
+      }
+
+      try {
+        // react-native-libsodium - preferred native implementation
+        // @ts-ignore
+        const libsodium = await import('react-native-libsodium');
+        if (libsodium && libsodium.sodium) {
+          const { sodium } = libsodium;
+
+          // Extract ciphertext and authTag from concatenated data
+          // AES-GCM authTag is typically 16 bytes at the end
+          const authTagLength = 16;
+          if (data.length < authTagLength) {
+            throw new Error('Invalid encrypted data: too short for AES-GCM');
+          }
+
+          const ciphertext = data.slice(0, data.length - authTagLength);
+          const authTag = data.slice(data.length - authTagLength);
+          const keyBytes = key instanceof Uint8Array ? key : new Uint8Array();
+
+          // Use libsodium's AES-GCM implementation
+          const decrypted = sodium.crypto_aead_aes256gcm_decrypt(
+            null, // no additional data
+            ciphertext,
+            authTag,
+            null, // no additional data
+            iv,
+            keyBytes
+          );
+
+          return new Uint8Array(decrypted);
+        }
+      } catch (e) {
+        // ignore and try next option
+      }
+
+      try {
+        // react-native-simple-crypto
+        // @ts-ignore
+        const simpleCrypto = await import('react-native-simple-crypto');
+        if (
+          simpleCrypto &&
+          simpleCrypto.RNCrypto &&
+          typeof simpleCrypto.RNCrypto.decrypt === 'function'
+        ) {
+          // simple-crypto usually expects objects; adapt as required by the lib you pick
+          // Placeholder example - real usage will depend on the library
+          // @ts-ignore
+          const plaintextBytes = await simpleCrypto.RNCrypto.decrypt(
+            /* algorithm */ 'AES-GCM',
+            /* key */ key instanceof Uint8Array ? key : new Uint8Array(),
+            /* iv */ iv,
+            /* ciphertext */ data
+          );
+          return plaintextBytes instanceof Uint8Array
+            ? plaintextBytes
+            : new Uint8Array(plaintextBytes);
+        }
+      } catch (e) {
+        // ignore
+      }
+    } catch (error) {
+      // Fall through to throwing a descriptive error below
+    }
+
+    // If we reach here, no suitable crypto implementation was available.
+    throw new Error(
+      'AES-GCM decryption requires WebCrypto (crypto.subtle) or a native crypto fallback.\n' +
+        'On React Native / Expo install and configure one of: react-native-libsodium (preferred), react-native-quick-crypto, react-native-simple-crypto,\n' +
+        'or provide a native shim exposing decryptAesGcm(dataBase64, keyBase64, ivBase64).\n' +
+        'For Expo managed workflow consider using a dev-client with the native module or use EAS build.\n' +
+        'Example: `npm install react-native-libsodium && cd ios && pod install` and follow its setup docs.\n' +
+        'For EAS Build ensure the native module is included in your build configuration.'
+    );
   }
 
   async wrapKeyWithPassphrase(
@@ -752,6 +922,25 @@ class CryptoService {
     }
   }
 }
+
+### Platform support & testing notes
+
+- Supported platforms:
+  - **Web**: Full WebCrypto (crypto.subtle) is required and preferred. The implementation uses WebCrypto for AES-GCM import/decrypt when available and complete.
+  - **React Native / Expo**: WebCrypto is not guaranteed. Projects must provide a native fallback. The implementation prioritizes `react-native-libsodium` for its comprehensive crypto support, but also supports `react-native-quick-crypto`, `react-native-simple-crypto`, or a custom bridging module exposing `decryptAesGcm(dataBase64, keyBase64, ivBase64)`.
+
+- Testing steps:
+  1. **Web**: Run the app in a browser environment; verify exports/restores work end-to-end using browser devtools network and console logs. Unit test `decryptAesGcm` by stubbing `crypto.subtle` to ensure the WebCrypto path is exercised and handles failures gracefully.
+  2. **React Native (managed Expo)**: Build a dev client or EAS build that includes the native crypto module; install and configure `react-native-libsodium` (preferred) or alternative; run on device/emulator and verify backup creation and restore flow. If running in Expo Go without native modules, tests should expect the clear, descriptive error advising to install a native fallback.
+  3. **CI**: For RN-specific tests, use a device farm or emulator image that includes the native module (or mock the native shim in Jest). Add unit tests covering both WebCrypto and fallback branches by mocking `crypto.subtle` and the native module. Test libsodium integration specifically for AES-GCM auth tag handling.
+
+- **Platform-specific considerations**:
+  - **Expo Go**: Limited to WebCrypto when available; will show clear error for native crypto requirements
+  - **Expo Development Client**: Supports native modules; use for testing libsodium integration
+  - **EAS Build**: Ensure native crypto modules are included in build configuration
+  - **Bare React Native**: Full native module support; libsodium recommended for best performance
+
+Ensure the app documents the required dependency and provides guidance in the README or installation docs for installing and configuring the native crypto module when targeting React Native / Expo.
 ```
 
 #### Background Task Scheduler
@@ -2329,7 +2518,7 @@ class ErrorRecoveryService {
 - **iOS File Protection**: Verify NSFileProtectionComplete enforcement on created files
 - **Android Scoped Storage**: Test proper SAF usage with persistable URI permissions
 - **Memory Security**: Ensure sensitive data is cleared from memory after use
-- **Crypto Library Integration**: Test react-native-libsodium or AES-GCM implementation
+- **Crypto Library Integration**: Test react-native-libsodium AES-GCM implementation including auth tag validation, WebCrypto fallback, and native bridge error handling
 
 ### Compatibility Testing
 
@@ -2431,7 +2620,7 @@ npx @growbro/backup-verify backup.cbk --extract data/plants.ndjson
 
 #### Recommended Expo-Compatible Libraries
 
-- **Encryption**: `react-native-libsodium` with EAS config plugin
+- **Encryption**: `react-native-libsodium` (preferred) with EAS config plugin for AES-GCM/XChaCha20 support
 - **File System**: `expo-file-system` with StorageAccessFramework
 - **Resumable Uploads**: `tus-js-client` for Supabase Storage
 - **ZIP Creation**: `react-native-zip-archive` for streaming
