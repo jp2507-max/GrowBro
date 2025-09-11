@@ -1,5 +1,5 @@
 import { Model } from '@nozbe/watermelondb';
-import { date, readonly, text } from '@nozbe/watermelondb/decorators';
+import { date, field, readonly, text } from '@nozbe/watermelondb/decorators';
 
 export class SeriesModel extends Model {
   static table = 'series';
@@ -13,8 +13,8 @@ export class SeriesModel extends Model {
   @text('until_utc') untilUtc?: string;
   @readonly count?: number;
   @text('plant_id') plantId?: string;
-  @readonly serverRevision?: number;
-  @readonly serverUpdatedAtMs?: number;
+  @readonly @field('server_revision') serverRevision?: number;
+  @readonly @field('server_updated_at_ms') serverUpdatedAtMs?: number;
   @date('created_at') createdAt!: Date;
   @date('updated_at') updatedAt!: Date;
   @date('deleted_at') deletedAt?: Date;

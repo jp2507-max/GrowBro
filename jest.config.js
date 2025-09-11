@@ -36,6 +36,7 @@ module.exports = {
   coverageDirectory: '<rootDir>/coverage/',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@env$': '<rootDir>/src/lib/env.js',
     '^@gorhom/bottom-sheet(.*)$':
       '<rootDir>/__mocks__/@gorhom/bottom-sheet.tsx',
     '^@nozbe/watermelondb/adapters/sqlite$':
