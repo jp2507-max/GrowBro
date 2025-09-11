@@ -827,6 +827,11 @@ class CryptoService {
       // @ts-ignore - optional runtime property
       if (this.nativeCrypto && typeof this.nativeCrypto.decryptAesGcm === 'function') {
         // nativeCrypto.decryptAesGcm expects (dataBase64, keyBase64, ivBase64)
+        // Require raw Uint8Array key bytes - fail fast if CryptoKey is provided
+        if (!(key instanceof Uint8Array) || key instanceof CryptoKey) {
+          throw new Error('Native AES-GCM fallback requires raw Uint8Array key bytes, not CryptoKey');
+        }
+
         const { decryptAesGcm } = this.nativeCrypto;
         const toBase64 = async (b: Uint8Array) => {
           const { encode } = await import('react-native-quick-base64');
@@ -834,7 +839,7 @@ class CryptoService {
         };
         const plaintextBase64 = await decryptAesGcm(
           await toBase64(data),
-          await toBase64(key instanceof Uint8Array ? key : new Uint8Array()),
+          await toBase64(key),
           await toBase64(iv)
         );
         const { decode } = await import('react-native-quick-base64');
@@ -874,7 +879,12 @@ class CryptoService {
 
           const ciphertext = data.slice(0, data.length - authTagLength);
           const authTag = data.slice(data.length - authTagLength);
-          const keyBytes = key instanceof Uint8Array ? key : new Uint8Array();
+
+          // Require raw Uint8Array key bytes - fail fast if CryptoKey is provided
+          if (!(key instanceof Uint8Array) || key instanceof CryptoKey) {
+            throw new Error('Native AES-GCM fallback requires raw Uint8Array key bytes, not CryptoKey');
+          }
+          const keyBytes = key;
 
           // Use DETACHED API with separate tag
           const decrypted = sodium.crypto_aead_aes256gcm_decrypt_detached(
@@ -1624,7 +1634,7 @@ class BackupManager {
     // Generic unwrapping for other protection levels
     // This handles cases where the protection level doesn't have specific unwrap logic
 
-    if (!encryptedData.ciphertext || !encryptedData.algorithm) {
+    if (!encryptedData.cipher || !encryptedData.algorithm) {
       throw new Error('Invalid EncryptedData format: missing required fields');
     }
 
