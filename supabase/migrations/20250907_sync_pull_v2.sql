@@ -80,7 +80,9 @@ BEGIN
       t.completed_at,
       t.metadata,
       t.created_at,
-      t.updated_at
+      t.updated_at,
+      t.server_revision,
+      t.server_updated_at_ms
     FROM public.tasks t
     WHERE t.updated_at > last_ts
       AND t.updated_at <= server_ts
@@ -110,6 +112,8 @@ BEGIN
       'status', task_page.status,
       'completed_at', CASE WHEN task_page.completed_at IS NULL THEN NULL ELSE to_char(task_page.completed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') END,
       'metadata', COALESCE(task_page.metadata, '{}'::jsonb),
+      'server_revision', task_page.server_revision,
+      'server_updated_at_ms', task_page.server_updated_at_ms,
       'createdAt', floor(extract(epoch FROM task_page.created_at) * 1000),
       'updatedAt', floor(extract(epoch FROM task_page.updated_at) * 1000)
     ) ORDER BY task_page.updated_at DESC, task_page.id DESC), '[]'::jsonb) AS rows,

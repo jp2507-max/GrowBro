@@ -463,30 +463,67 @@ function applyPayloadToRecord(target: any, payload: any): void {
 
 function maybeMarkNeedsReview(table: TableName, rec: any, payload: any): void {
   if (table !== 'tasks') return;
+
+  // Helper function to safely parse numeric values
+  const safeParseNumber = (value: any): number | null => {
+    if (value == null) return null;
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+  };
+
   // Prefer server_revision if present, otherwise compare server_updated_at_ms
-  const localRev = (rec as any)._raw?.server_revision ?? null;
-  const serverRev = payload.server_revision ?? null;
-  const localServerTs =
+  const localRevRaw = (rec as any)._raw?.server_revision ?? null;
+  const serverRevRaw = payload.server_revision ?? null;
+  const localServerTsRaw =
     (rec as any)._raw?.server_updated_at_ms ??
     toMillis((rec as any).updatedAt as any);
-  const serverServerTs =
+  const serverServerTsRaw =
     payload.server_updated_at_ms ?? toMillis(payload.updatedAt as any);
+
+  // Coerce to finite numbers only, treat non-finite as null
+  const localRev = safeParseNumber(localRevRaw);
+  const serverRev = safeParseNumber(serverRevRaw);
+  const localServerTs = safeParseNumber(localServerTsRaw);
+  const serverServerTs = safeParseNumber(serverServerTsRaw);
 
   let serverIsNewer = false;
   if (serverRev != null && localRev != null) {
-    serverIsNewer = Number(serverRev) > Number(localRev);
+    serverIsNewer = serverRev > localRev;
   } else if (serverServerTs != null && localServerTs != null) {
-    serverIsNewer = Number(serverServerTs) > Number(localServerTs);
+    serverIsNewer = serverServerTs > localServerTs;
   } else if (serverServerTs != null && localServerTs == null) {
     serverIsNewer = true;
   }
 
   if (serverIsNewer) {
     const currentMetaRaw = (rec as any).metadata;
-    const currentMeta =
-      typeof currentMetaRaw === 'string' && currentMetaRaw.trim().length
-        ? JSON.parse(currentMetaRaw)
-        : {};
+    let currentMeta: Record<string, any> = {};
+
+    // Safely parse metadata with try/catch, treat invalid JSON as empty object
+    if (typeof currentMetaRaw === 'string' && currentMetaRaw.trim().length) {
+      try {
+        const parsed = JSON.parse(currentMetaRaw);
+        // Preserve non-string metadata safely
+        if (
+          typeof parsed === 'object' &&
+          parsed !== null &&
+          !Array.isArray(parsed)
+        ) {
+          currentMeta = parsed;
+        }
+      } catch {
+        // Invalid JSON, use empty object
+        currentMeta = {};
+      }
+    } else if (
+      typeof currentMetaRaw === 'object' &&
+      currentMetaRaw !== null &&
+      !Array.isArray(currentMetaRaw)
+    ) {
+      // Already an object, preserve it safely
+      currentMeta = currentMetaRaw;
+    }
+
     (rec as any).metadata = JSON.stringify({
       ...currentMeta,
       needsReview: true,

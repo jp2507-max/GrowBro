@@ -590,6 +590,9 @@ class CryptoService {
    * 1. Raw bytes + IV: decryptWithKey(encryptedBytes, key, iv)
    * 2. EncryptedData object: decryptWithKey(encryptedDataObject, key) - extracts data/iv internally
    *
+   * Uses AES-256-GCM for authenticated encryption (confidentiality + integrity).
+   * Supports both CryptoKey and Uint8Array key formats for flexibility.
+   *
    * @param encryptedBytes - Either raw encrypted bytes (Uint8Array) or an EncryptedData object
    * @param key - The decryption key (CryptoKey or Uint8Array)
    * @param iv - Optional initialization vector (required when passing raw bytes)
@@ -601,27 +604,61 @@ class CryptoService {
     key: CryptoKey | Uint8Array,
     iv?: Uint8Array
   ): Promise<Uint8Array> {
-    let data: Uint8Array;
-    let actualIv: Uint8Array;
+    try {
+      let data: Uint8Array;
+      let actualIv: Uint8Array;
 
-    // Handle dual input types
-    if (encryptedBytes instanceof Uint8Array) {
-      // Raw bytes + iv pattern
-      if (!iv) {
-        throw new Error('IV is required when passing raw encrypted bytes');
+      // Handle dual input types
+      if (encryptedBytes instanceof Uint8Array) {
+        // Raw bytes + iv pattern
+        if (!iv) {
+          throw new Error('IV is required when passing raw encrypted bytes');
+        }
+        data = encryptedBytes;
+        actualIv = iv;
+      } else {
+        // EncryptedData object pattern - extract data and iv
+        data = encryptedBytes.ciphertext;
+        actualIv = encryptedBytes.iv;
       }
-      data = encryptedBytes;
-      actualIv = iv;
-    } else {
-      // EncryptedData object pattern - extract data and iv
-      data = encryptedBytes.ciphertext;
-      actualIv = encryptedBytes.iv;
-    }
 
-    // Decrypt using the provided key and IV
-    // Implementation would use Web Crypto API or react-native-libsodium
-    // This is a placeholder - actual implementation depends on crypto library used
-    throw new Error('decryptWithKey not implemented');
+      // Ensure we have a CryptoKey (import if needed)
+      const cryptoKey =
+        key instanceof Uint8Array
+          ? await crypto.subtle.importKey('raw', key, 'AES-GCM', false, [
+              'decrypt',
+            ])
+          : key;
+
+      // Decrypt using AES-GCM (provides confidentiality + integrity)
+      const decrypted = await crypto.subtle.decrypt(
+        {
+          name: 'AES-GCM',
+          iv: actualIv,
+        },
+        cryptoKey,
+        data
+      );
+
+      return new Uint8Array(decrypted);
+    } catch (error) {
+      // Provide specific error messages for different failure modes
+      if (error instanceof Error) {
+        if (error.name === 'OperationError') {
+          throw new Error(
+            'Decryption failed: Invalid key, IV, or corrupted data'
+          );
+        }
+        if (error.name === 'InvalidAccessError') {
+          throw new Error(
+            'Decryption failed: Key is not suitable for AES-GCM decryption'
+          );
+        }
+      }
+      throw new Error(
+        `Decryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
   }
 
   async wrapKeyWithPassphrase(
@@ -670,33 +707,49 @@ class CryptoService {
       throw new Error('Key is not passphrase-wrapped');
     }
 
-    // Parse the serialized encrypted data to extract components
-    const encryptedData = JSON.parse(wrappedKey.wrappedData!);
-    const ciphertext = await this.base64ToBytes(encryptedData.ciphertext);
-    const authTag = await this.base64ToBytes(encryptedData.authTag);
-    const iv = await this.base64ToBytes(encryptedData.iv);
+    try {
+      // Parse the serialized encrypted data to extract components
+      const encryptedData = JSON.parse(wrappedKey.wrappedData!);
+      const ciphertext = await this.base64ToBytes(encryptedData.ciphertext);
+      const authTag = await this.base64ToBytes(encryptedData.authTag);
+      const iv = await this.base64ToBytes(encryptedData.iv);
 
-    // Re-derive wrapping key
-    const salt = await this.base64ToBytes(wrappedKey.salt!);
-    const wrappingKey = await this.deriveKey(passphrase, salt, {
-      kdf: 'argon2id',
-      iterations: 4,
-    });
+      // Re-derive wrapping key from passphrase
+      const salt = await this.base64ToBytes(wrappedKey.salt!);
+      const wrappingKey = await this.deriveKey(passphrase, salt, {
+        kdf: 'argon2id',
+        iterations: 4,
+      });
 
-    // Reconstruct the encrypted data object for decryption
-    const encryptedKeyData: EncryptedData = {
-      ciphertext,
-      authTag,
-      iv,
-      salt: await this.base64ToBytes(wrappedKey.salt!),
-    };
+      // Reconstruct the encrypted data object for decryption
+      const encryptedKeyData: EncryptedData = {
+        ciphertext,
+        authTag,
+        iv,
+        salt: await this.base64ToBytes(wrappedKey.salt!),
+      };
 
-    // Decrypt the ephemeral key using the derived wrapping key
-    const decryptedBytes = await this.decryptWithKey(
-      encryptedKeyData,
-      wrappingKey
-    );
-    return new TextDecoder().decode(decryptedBytes);
+      // Decrypt the ephemeral key using the derived wrapping key
+      const decryptedBytes = await this.decryptWithKey(
+        encryptedKeyData,
+        wrappingKey
+      );
+
+      return new TextDecoder().decode(decryptedBytes);
+    } catch (error) {
+      // Provide specific error context for key unwrapping failures
+      if (
+        error instanceof Error &&
+        error.message.includes('Decryption failed')
+      ) {
+        throw new Error(
+          `Key unwrapping failed: Invalid passphrase or corrupted key data`
+        );
+      }
+      throw new Error(
+        `Key unwrapping failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
   }
 }
 ```
@@ -704,17 +757,17 @@ class CryptoService {
 #### Background Task Scheduler
 
 ```typescript
-import { TaskManager, TaskManagerTaskBody } from 'expo-task-manager';
-import { BackgroundFetch } from 'expo-background-fetch';
+import * as TaskManager from 'expo-task-manager';
+import * as BackgroundFetch from 'expo-background-fetch';
 
 class BackgroundTaskScheduler {
   private static readonly CLEANUP_TASK_NAME = 'key-cleanup-task';
 
-  constructor() {
+  constructor(private deviceKeyStore: DeviceKeyStore) {
     // Define the task handler
     TaskManager.defineTask(
       BackgroundTaskScheduler.CLEANUP_TASK_NAME,
-      async (taskData: TaskManagerTaskBody) => {
+      async (taskData: TaskManager.TaskManagerTaskBody) => {
         try {
           // Check for and execute any pending cleanup tasks
           await this.processPendingTasks();
@@ -840,8 +893,8 @@ class BackgroundTaskScheduler {
     // Implementation could include sending to error reporting service
   }
 
-  // Reference to device key store (would be injected or instantiated)
-  private deviceKeyStore: any; // Replace with actual DeviceKeyStore type
+  // Reference to device key store (injected via constructor)
+  private deviceKeyStore: DeviceKeyStore;
 }
 ```
 
@@ -859,7 +912,7 @@ interface BackupManagerDependencies {
   cryptoService: FileBasedCryptoService;
   database: any; // WatermelonDB instance
   metadataStore: any; // Metadata storage interface
-  deviceKeyStore: any; // Device key store for key management
+  deviceKeyStore: DeviceKeyStore; // Device key store for key management
 }
 
 // Uses the unified BackupOptions interface defined above
@@ -991,14 +1044,29 @@ class BackupManager {
             'Passphrase-wrapped key requires passphrase for unwrapping'
           );
         } else {
-          // For OS-data-protection or other cases, use the key directly
+          // For OS-data-protection or other cases
           if (options.wrappedKey.wrapped === false) {
             // Use plaintext key directly when not wrapped
             encryptionKey = options.wrappedKey.plaintextKey!;
           } else {
-            // For wrapped keys with other protection levels, use wrappedData if available
-            encryptionKey =
-              options.wrappedKey.wrappedData || options.encryptionKey!;
+            // For wrapped keys, deserialize and decrypt the EncryptedData
+            if (options.wrappedKey.wrappedData) {
+              // Deserialize the EncryptedData from wrappedData
+              const encryptedData = JSON.parse(options.wrappedKey.wrappedData);
+
+              // Use appropriate unwrap routine based on protection level
+              if (options.wrappedKey.protectionLevel === 'os-data-protection') {
+                // For OS-protected keys, unwrap using OS decryption
+                encryptionKey = await this.unwrapOSProtectedKey(encryptedData);
+              } else {
+                // For other protection levels, attempt generic unwrap
+                encryptionKey = await this.unwrapEncryptedData(encryptedData);
+              }
+            } else {
+              throw new Error(
+                'Wrapped key provided but no wrappedData available for unwrapping'
+              );
+            }
           }
         }
       } else if (options.encryptionKey) {
@@ -1236,6 +1304,40 @@ class BackupManager {
     };
 
     await this.metadataStore.save(snapshotId, backupMetadata);
+  }
+
+  private async unwrapOSProtectedKey(encryptedData: any): Promise<string> {
+    // Deserialize the OS-protected EncryptedData and unwrap using platform-specific decryption
+    // This would use platform APIs to decrypt data protected by OS data protection
+    // Implementation depends on react-native-keychain or platform-specific secure enclave access
+
+    if (encryptedData.protectionLevel !== 'os-data-protection') {
+      throw new Error(
+        `Invalid protection level for OS unwrap: ${encryptedData.protectionLevel}`
+      );
+    }
+
+    // Platform-specific unwrapping logic would go here
+    // For iOS: Use Keychain Services or NSFileProtection
+    // For Android: Use Android Keystore or scoped storage decryption
+
+    throw new Error('OS-protected key unwrapping not yet implemented');
+  }
+
+  private async unwrapEncryptedData(encryptedData: any): Promise<string> {
+    // Generic unwrapping for other protection levels
+    // This handles cases where the protection level doesn't have specific unwrap logic
+
+    if (!encryptedData.ciphertext || !encryptedData.algorithm) {
+      throw new Error('Invalid EncryptedData format: missing required fields');
+    }
+
+    // Attempt to decrypt using available decryption methods
+    // This is a fallback for protection levels that don't have dedicated unwrap routines
+
+    throw new Error(
+      `No unwrap routine available for protection level: ${encryptedData.protectionLevel || 'unknown'}`
+    );
   }
 }
 ```
@@ -1675,15 +1777,22 @@ class FileBasedCryptoService {
     return header;
   }
 
+  private async toBase64(bytes: Uint8Array): Promise<string> {
+    // Use react-native-quick-base64 for fast, cross-platform base64 encoding
+    const { encode } = await import('react-native-quick-base64');
+    return encode(bytes);
+  }
+
   private async writeEncryptionHeader(
     filePath: string,
     header: Uint8Array
   ): Promise<void> {
-    // Write header to beginning of file
-    await FileSystem.writeAsStringAsync(filePath, '', {
+    // Convert header bytes to a Base64 string and write them to the file
+    // so they are actually persisted at the start of the file.
+    const base64Header = await this.toBase64(header);
+    await FileSystem.writeAsStringAsync(filePath, base64Header, {
       encoding: FileSystem.EncodingType.Base64,
     });
-    // Native implementation would append header bytes to file
   }
 
   private async atomicMoveFile(

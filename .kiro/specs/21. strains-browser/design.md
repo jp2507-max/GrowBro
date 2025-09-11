@@ -290,7 +290,7 @@ class StrainsApiClient {
 
   constructor() {
     this.baseURL = __DEV__
-      ? 'https://rapidapi.com/api/the-weed-db'
+      ? 'https://the-weed-db.p.rapidapi.com'
       : 'https://your-proxy.supabase.co/functions/v1/strains-proxy';
 
     this.headers = {
@@ -303,20 +303,21 @@ class StrainsApiClient {
   }
 
   async getStrains(params: GetStrainsParams): Promise<StrainsResponse> {
-    const url = new URL(this.baseURL);
-
     // Map filters to appropriate endpoints with proper URL encoding
+    let endpointPath: string;
     if (params.search) {
-      url.pathname = `/strains/search/name/${encodeURIComponent(params.search)}`;
+      endpointPath = `/strains/search/name/${encodeURIComponent(params.search)}`;
     } else if (params.effect) {
-      url.pathname = `/strains/search/effect/${encodeURIComponent(params.effect)}`;
+      endpointPath = `/strains/search/effect/${encodeURIComponent(params.effect)}`;
     } else if (params.flavor) {
-      url.pathname = `/strains/search/flavor/${encodeURIComponent(params.flavor)}`;
+      endpointPath = `/strains/search/flavor/${encodeURIComponent(params.flavor)}`;
     } else if (params.race) {
-      url.pathname = `/strains/search/race/${encodeURIComponent(params.race)}`;
+      endpointPath = `/strains/search/race/${encodeURIComponent(params.race)}`;
     } else {
-      url.pathname = '/strains';
+      endpointPath = '/strains';
     }
+
+    const url = new URL(endpointPath, this.baseURL);
 
     // Add pagination as query params (handled by proxy)
     url.searchParams.set('page', String(params.page));

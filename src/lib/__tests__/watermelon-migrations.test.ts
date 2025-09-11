@@ -80,7 +80,7 @@ const testDataTypeConsistency = () => {
         table.columns,
         'server_revision'
       );
-      expect(serverRevisionColumn.type).toBe('string');
+      expect(serverRevisionColumn.type).toBe('number');
     });
   });
 };
@@ -101,7 +101,12 @@ const testVersion6Migration = () => {
     expect(version6Migration).toBeTruthy();
 
     const steps = version6Migration.steps;
-    const addColumnSteps = steps.filter((s: any) => s.type === undefined);
+    // Detect addColumns steps by shape: they include a `table` string and a
+    // `columns` array. Relying on `type === undefined` is brittle because
+    // different migration builders may set or omit `type` differently.
+    const addColumnSteps = steps.filter(
+      (s: any) => Array.isArray(s.columns) && typeof s.table === 'string'
+    );
 
     const targetTables = ['series', 'tasks', 'occurrence_overrides'];
     const affectedTables = addColumnSteps.map((s: any) => s.table);
@@ -116,12 +121,24 @@ const testVersion6Migration = () => {
       expect(columnNames).toContain('server_revision');
       expect(columnNames).toContain('server_updated_at_ms');
 
-      // Verify server_revision is string type
+      // Verify server_revision column exists and represents a numeric type.
+      // Migration column definitions typically include a `type: 'number'` but
+      // be defensive: if `type` is present assert it's the string 'number',
+      // otherwise if a default value exists ensure it's a number.
       const serverRevisionCol = getColumnByName(
         step.columns,
         'server_revision'
       );
-      expect(serverRevisionCol.type).toBe('string');
+      expect(serverRevisionCol).toBeTruthy();
+      if (serverRevisionCol.type !== undefined) {
+        expect(serverRevisionCol.type).toBe('number');
+      } else {
+        // Fallback: assert any provided default is numeric
+        expect(
+          Number.isInteger(serverRevisionCol.default) ||
+            typeof serverRevisionCol.default === 'number'
+        ).toBe(true);
+      }
     });
   });
 };
