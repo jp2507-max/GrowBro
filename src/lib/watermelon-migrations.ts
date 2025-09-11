@@ -610,21 +610,21 @@ export const migrations = schemaMigrations({
         addColumns({
           table: 'series',
           columns: [
-            { name: 'server_revision', type: 'string', isOptional: true },
+            { name: 'server_revision', type: 'number', isOptional: true },
             { name: 'server_updated_at_ms', type: 'number', isOptional: true },
           ],
         }),
         addColumns({
           table: 'occurrence_overrides',
           columns: [
-            { name: 'server_revision', type: 'string', isOptional: true },
+            { name: 'server_revision', type: 'number', isOptional: true },
             { name: 'server_updated_at_ms', type: 'number', isOptional: true },
           ],
         }),
         addColumns({
           table: 'tasks',
           columns: [
-            { name: 'server_revision', type: 'string', isOptional: true },
+            { name: 'server_revision', type: 'number', isOptional: true },
             { name: 'server_updated_at_ms', type: 'number', isOptional: true },
           ],
         }),
