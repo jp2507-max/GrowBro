@@ -2,12 +2,14 @@
 // This ensures process.env is populated for zod validation in ./env during prebuild
 import 'dotenv/config';
 
-import { Env as ClientEnv } from '@env';
 import type { ConfigContext, ExpoConfig } from '@expo/config';
 import type { AppIconBadgeConfig } from 'app-icon-badge/types';
 
 import applePrivacyManifest from './apple-privacy-manifest.json';
-import { Env } from './env';
+// IMPORTANT: Do not import from '@env' here because the Expo config is evaluated
+// directly by Node (no Babel module resolver / TS path mapping). Use the root
+// env.js exports instead which are plain Node modules.
+import { ClientEnv, Env } from './env';
 
 const appIconBadgeConfig: AppIconBadgeConfig = {
   enabled: Env.APP_ENV !== 'production',
