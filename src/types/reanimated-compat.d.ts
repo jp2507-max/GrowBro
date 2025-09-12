@@ -26,6 +26,10 @@ declare module 'react-native-reanimated' {
     exp: (...args: any[]) => any;
   };
 
+  // Minimal type aliases used by the codebase
+  export type SharedValue<T> = { value: T };
+  export type AnimatedStyle = any;
+
   export function createAnimatedComponent<P>(
     component: React.ComponentType<P>
   ): React.ComponentType<P> & any;

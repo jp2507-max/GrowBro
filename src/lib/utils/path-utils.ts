@@ -11,6 +11,12 @@
  * @returns Normalized forward-slash path
  */
 export function joinPath(...segments: string[]): string {
+  return _joinPathImpl(segments);
+}
+
+// Internal implementation for joinPath (kept unexported so exported
+// `joinPath` stays small for linting rules).
+function _joinPathImpl(segments: string[]): string {
   // Filter out empty segments and normalize slashes, preserving URI schemes
   const processedSegments = segments
     .filter((segment) => segment && segment.trim() !== '')
@@ -32,47 +38,50 @@ export function joinPath(...segments: string[]): string {
   }
 
   // Join with forward slashes
-  const path = processedSegments.join('/');
+  const joined = processedSegments.join('/');
 
-  // Check if we need to add a leading slash, but preserve URI schemes
-  const firstSegment = segments.find(
-    (segment) => segment && segment.trim() !== ''
-  );
-  if (!firstSegment) {
-    return path;
+  // Preserve original triple-slash URI forms (e.g. "file:///")
+  const firstSegment = segments.find((s) => s && s.trim() !== '');
+  if (firstSegment) {
+    const tripleMatch = firstSegment.match(/^([a-zA-Z]+:)(\/\/{3,})(.*)$/);
+    if (tripleMatch) {
+      const [, schemeBase, slashes] = tripleMatch;
+      const rest = joined.replace(new RegExp('^' + schemeBase + '\\/+'), '');
+      return schemeBase + slashes + (rest ? rest : '');
+    }
   }
 
-  // Parse scheme from first segment
-  const schemeMatch = firstSegment.match(/^([a-zA-Z]+:(?:\/\/?))(.*)$/);
-  if (schemeMatch) {
-    const [, scheme, pathPart] = schemeMatch;
-    // For URI schemes, preserve the exact scheme structure
-    // If the scheme already has the correct number of slashes, use it as-is
-    // Otherwise, reconstruct based on whether the path part has a leading slash
+  // Parse scheme from first segment and handle scheme/leading-slash combinations
+  const firstSchemeMatch = firstSegment
+    ? firstSegment.match(/^([a-zA-Z]+:(?:\/\/?))(.*)$/)
+    : null;
+  if (firstSchemeMatch) {
+    const [, scheme, pathPart] = firstSchemeMatch;
     const schemeEndsWithSlash = scheme.endsWith('/');
     const pathPartHasLeadingSlash = pathPart.startsWith('/');
 
     if (schemeEndsWithSlash) {
-      // Scheme already has slash (e.g., "file:///"), just append the path
-      return scheme + path.replace(scheme, '').replace(/^\//, '');
+      return (
+        scheme + joined.replace(new RegExp('^' + scheme), '').replace(/^\//, '')
+      );
     } else if (pathPartHasLeadingSlash) {
-      // Scheme doesn't have slash but path part does (e.g., "file://" + "/server")
-      // Add one slash between scheme and path
-      return scheme + '/' + path.replace(scheme, '').replace(/^\//, '');
+      return (
+        scheme +
+        '/' +
+        joined.replace(new RegExp('^' + scheme), '').replace(/^\//, '')
+      );
     } else {
-      // Neither has slash (e.g., "file://" + "server"), just concatenate
-      return scheme + path.replace(scheme, '');
+      return scheme + joined.replace(new RegExp('^' + scheme), '');
     }
   }
 
-  // No scheme, apply original logic
   const hasLeadingSlash = segments.some(
     (segment) => segment.startsWith('/') || segment.startsWith('\\')
   );
 
-  return hasLeadingSlash && !path.startsWith('/') && !path.startsWith('\\')
-    ? '/' + path
-    : path;
+  return hasLeadingSlash && !joined.startsWith('/') && !joined.startsWith('\\')
+    ? '/' + joined
+    : joined;
 }
 
 /**
@@ -81,58 +90,38 @@ export function joinPath(...segments: string[]): string {
  * @returns The directory portion of the path
  */
 export function dirname(path: string): string {
-  if (!path || path === '/') {
-    return '/';
-  }
+  if (!path || path === '/') return '/';
 
-  // Parse URI scheme prefix
   const schemeMatch = path.match(/^([a-zA-Z]+:(?:\/\/?))(.*)$/);
-  if (schemeMatch) {
-    const [, scheme, pathPart] = schemeMatch;
+  if (schemeMatch) return _dirnameUriImpl(schemeMatch[1], schemeMatch[2]);
 
-    // Handle edge cases for URI paths
-    if (!pathPart || pathPart === '/') {
-      return scheme + '/';
-    }
-
-    // Normalize path separators to forward slashes
-    const normalizedPath = pathPart.replace(/\\/g, '/');
-
-    // For dirname, we need to handle trailing slashes specially
-    // If the path ends with a slash, we want to get the parent of that directory
-    const endsWithSlash = normalizedPath.endsWith('/');
-    const pathToProcess = endsWithSlash
-      ? normalizedPath.slice(0, -1)
-      : normalizedPath;
-
-    // If no slashes remain after processing, return scheme with appropriate suffix
-    if (!pathToProcess.includes('/')) {
-      return scheme + (pathPart.startsWith('/') ? '/' : '');
-    }
-
-    // Get everything before the last slash
-    const lastSlashIndex = pathToProcess.lastIndexOf('/');
-    if (lastSlashIndex === 0) {
-      return scheme + '/';
-    }
-
-    return scheme + pathToProcess.substring(0, lastSlashIndex);
-  }
-
-  // Standard path handling for non-URI paths
+  // Standard path handling for non-URI paths (kept concise)
   const normalizedPath = path.replace(/\\/g, '/');
-  const trimmedPath = normalizedPath.replace(/\/+$/, '');
-
-  if (!trimmedPath.includes('/')) {
-    return '.';
-  }
-
+  const trimmedPath = normalizedPath.replace(/\/\/+$/, '');
+  if (!trimmedPath.includes('/')) return '.';
   const lastSlashIndex = trimmedPath.lastIndexOf('/');
-  if (lastSlashIndex === 0) {
-    return '/';
-  }
-
+  if (lastSlashIndex === 0) return '/';
   return trimmedPath.substring(0, lastSlashIndex);
+}
+
+// Internal helper for URI dirname logic
+function _dirnameUriImpl(scheme: string, pathPart: string): string {
+  if (!pathPart || pathPart === '/') return scheme + '/';
+
+  const normalizedPath = pathPart.replace(/\\/g, '/');
+  const endsWithSlash = normalizedPath.endsWith('/');
+  const pathToProcess = endsWithSlash
+    ? normalizedPath.slice(0, -1)
+    : normalizedPath;
+
+  if (!pathToProcess.includes('/')) {
+    return scheme + (pathPart.startsWith('/') ? '/' : '');
+  }
+  const lastSlashIndex = pathToProcess.lastIndexOf('/');
+  if (lastSlashIndex === 0) return scheme + '/';
+  const parent = pathToProcess.substring(0, lastSlashIndex);
+  if (!parent.includes('/')) return scheme + parent + '/';
+  return scheme + parent;
 }
 
 /**
