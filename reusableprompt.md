@@ -1,47 +1,56 @@
 TASK_ID: {15}
+AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the plan
 
 CONTEXT
 
 - Feature: offline-first-sync
-- Tasks index: C:\Users\Peter\GrowBro\.kiro\specs\2. offline-first-sync\tasks.md
-- Design spec: C:\Users\Peter\GrowBro\.kiro\specs\2. offline-first-sync\design.md
-- Requirements spec: C:\Users\Peter\GrowBro\.kiro\specs\2. offline-first-sync\requirements.md
+- Task index: .kiro/specs/2-offline-first-sync/tasks.md
+- Design spec: .kiro/specs/2-offline-first-sync/design.md
+- Requirements spec: .kiro/specs/2-offline-first-sync/requirements.md
 
-READ FIRST — STRICT SCOPE
+CONTRACT (outputs)
 
-1. Open the tasks index and navigate to Task {TASK_ID}. Read ONLY that task’s section.
-2. From that task’s “_Requirements: ..._” line:
-   - Extract the requirement IDs (e.g., 1.5, 6.7). Read ONLY those items from the requirements source.
-   - If the task inlines bullets instead of IDs, treat ONLY those bullets as requirements.
-3. Open the design spec and read ONLY the section(s) relevant to Task {TASK_ID}/{task title}. If unclear, ask a single blocking question, then proceed.
-4. Check task file for additional information for implementation or design details
-5. If you depend on external packages (e.g., reanimated, watermelondb, rrule), consult their official docs or up-to-date resources for implementation details
+- Requirements (verbatim lines from requirements.md)
+- Design summary (≤8 bullets)
+- Traceable implementation plan mapping steps → requirement IDs → repo file paths
+- Optional small commits + verification when AUTO_CONTINUE=auto
 
-OUTPUT — REQUIREMENTS & DESIGN
+STRICT PROCEDURE
 
-- Requirements (verbatim, one per line): ONLY the items/IDs referenced by Task {TASK_ID}.
-- ≤8 bullets: scope, must-haves, acceptance criteria, constraints, edge cases, risks.
+1. Read only Task {TASK_ID} in the tasks index.
+2. Extract requirement IDs or inline bullets. If IDs, read ONLY those lines from `requirements.md`. If inline bullets, treat those bullets as the requirements.
+3. If Task {TASK_ID} does NOT explicitly reference design sections, SEARCH the design spec for phrases matching the task title (e.g., "background sync", "image upload") and read any matching sections. The design file is mandatory context for implementation details.
+4. Inspect the task file for implementation hints/file paths.
+5. Consult external package docs when required.
 
-OUTPUT — PLAN (SCOPED AND COMPLETE)
+OUTPUT FORMAT
 
-- Provide a complete, scoped implementation plan that covers ALL referenced requirements and the relevant design details.
-- Map each plan step to requirement IDs to avoid gaps.
-- List exact repo-relative files you will touch (existing first, then new). Keep components <80 LOC and reuse existing utils/components.
+- REQUIREMENTS (VERBATIM): one per line
+- DESIGN SUMMARY (concise — up to 8 bullets): scope, must-haves, constraints, acceptance criteria, edge cases, risks. If more detail is required, add an 'Expanded design notes' subsection (unbounded) after the concise summary or place extra detail in the appendix.
+- IMPLEMENTATION PLAN: step-by-step; for each step list requirement IDs satisfied and repo-relative files to modify/create
 
-AUTO-CONTINUE — IMPLEMENT NOW
+AUTO-CONTINUE
 
-- Do NOT wait for approval. If there are no blocking questions, start implementing immediately after the plan.
-- Keep diffs small and reviewable; match existing style;
-- After each logical edit: report changed files, risks, and exact local verification commands:
-  - Lint
-  - Type-check
-  - Tests (for non-trivial logic)
-  - Run app
-- If verification fails, fix and re-run until green or blocked.
+- If AUTO_CONTINUE=auto and no blocking questions, implement minimal, low-risk edits after the plan. Create small commits and run typecheck/lint/tests. If failures occur, attempt up to 2 quick fixes and then report a blocker.
 
-GUARDRAILS
+VERIFICATION (local)
 
-- Follow project rules (TypeScript, Expo Router, Nativewind, Zustand, React Query, @/\* imports).
-- Do not invent paths/APIs/versions—use only what’s in the repo and the referenced requirement items and design.
-- Pause ONLY for true blockers (missing paths/ambiguous requirement IDs).
-- after you REALLY completed the Full task mark the checkbox as done
+- pnpm -s tsc --noEmit
+- pnpm -s lint
+- pnpm -s test
+
+GUARDRAILS (must follow)
+
+- TypeScript + Expo Router + Nativewind + React Query + Zustand
+- Use @/\* imports and kebab-case filenames
+- Keep UI components <80 LOC
+- Ask only ONE short blocking question when essential
+- Do not invent repo paths, public APIs, or dependency versions
+
+APPENDIX: full protocol & quality gates → see `reusableprompt-appendix.md`
+
+END
+
+```
+
+```

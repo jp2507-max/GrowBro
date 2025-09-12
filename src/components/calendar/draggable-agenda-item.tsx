@@ -1,8 +1,8 @@
 import React from 'react';
-import type { AccessibilityActionEvent, ViewStyle } from 'react-native';
+import type { AccessibilityActionEvent } from 'react-native';
 import type { GestureType } from 'react-native-gesture-handler';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import type { AnimatedStyleProp } from 'react-native-reanimated';
+import type { AnimatedStyle, SharedValue } from 'react-native-reanimated';
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -26,7 +26,8 @@ type Props = {
 
 type AgendaItemBodyProps = {
   gesture: GestureType;
-  animatedStyle: AnimatedStyleProp<ViewStyle>;
+  // Using loose typing for animated style to accommodate Reanimated's internal types
+  animatedStyle: AnimatedStyle;
   task: Task;
   isOpen: boolean;
   onClose: () => void;
@@ -75,8 +76,9 @@ function AgendaItemBody({
 // Custom hook to create pan gesture
 // eslint-disable-next-line max-lines-per-function
 function useCreatePanGesture(options: {
-  tx: Animated.SharedValue<number>;
-  ty: Animated.SharedValue<number>;
+  tx: SharedValue<number>;
+  ty: SharedValue<number>;
+  originTime: SharedValue<number>;
   originDate: React.RefObject<Date>;
   task: Task;
   startDrag: (task: Task) => void;
@@ -85,10 +87,11 @@ function useCreatePanGesture(options: {
   onDragUpdate: (y: number) => number | undefined;
   computeTargetDate: (originalDate: Date, translationY: number) => Date;
   updateCurrentOffset: (y: number) => void;
-}) {
+}): GestureType {
   const {
     tx,
     ty,
+    originTime,
     originDate,
     task,
     startDrag,
@@ -98,6 +101,26 @@ function useCreatePanGesture(options: {
     computeTargetDate,
     updateCurrentOffset,
   } = options;
+
+  // JS-thread handlers for runOnJS
+  const onDragUpdateJS = React.useCallback(
+    (y: number): void => {
+      const newOffset = onDragUpdate(y);
+      if (newOffset !== undefined) {
+        updateCurrentOffset(newOffset);
+      }
+    },
+    [onDragUpdate, updateCurrentOffset]
+  );
+
+  const onDropJS = React.useCallback(
+    (originMs: number, dy: number): void => {
+      const origin = new Date(originMs);
+      const target = computeTargetDate(origin, dy);
+      void completeDrop(target, 'occurrence' as DragScope);
+    },
+    [completeDrop, computeTargetDate]
+  );
 
   return React.useMemo(
     () =>
@@ -109,24 +132,17 @@ function useCreatePanGesture(options: {
           tx.value = 0;
 
           ty.value = 0;
+          originTime.value = originDate.current!.getTime();
           runOnJS(startDrag)(task);
         })
         .onUpdate((e) => {
           tx.value = e.translationX;
 
           ty.value = e.translationY;
-          runOnJS(() => {
-            const newOffset = onDragUpdate(e.absoluteY);
-            if (newOffset !== undefined) {
-              updateCurrentOffset(newOffset);
-            }
-          })();
+          runOnJS(onDragUpdateJS)(e.absoluteY);
         })
         .onEnd(() => {
-          runOnJS((origin: Date, dy: number) => {
-            const target = computeTargetDate(origin, dy);
-            void completeDrop(target, 'occurrence' as DragScope);
-          })(originDate.current!, ty.value);
+          runOnJS(onDropJS)(originTime.value, ty.value);
           tx.value = withSpring(0);
           ty.value = withSpring(0);
         })
@@ -135,14 +151,13 @@ function useCreatePanGesture(options: {
         }),
     [
       cancelDrag,
-      completeDrop,
-      computeTargetDate,
-      onDragUpdate,
+      onDragUpdateJS,
+      onDropJS,
       startDrag,
       task,
       tx,
       ty,
-      updateCurrentOffset,
+      originTime,
       originDate,
     ]
   );
@@ -170,6 +185,7 @@ function useDragGesture(options: {
 
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
+  const originTime = useSharedValue(0);
   const originDate = React.useRef<Date>(new Date(task.dueAtLocal));
 
   // Keep originDate in sync with task prop changes
@@ -184,6 +200,7 @@ function useDragGesture(options: {
   const pan = useCreatePanGesture({
     tx,
     ty,
+    originTime,
     originDate,
     task,
     startDrag,

@@ -8,7 +8,6 @@ import type {
   VirtualizedListProps,
 } from 'react-native';
 import {
-  FlatList,
   ScrollView,
   SectionList,
   TextInput,
@@ -89,7 +88,21 @@ export function BottomSheetScrollView(
 export function BottomSheetFlatList<T>(
   props: FlatListProps<T>
 ): React.ReactElement {
-  return <FlatList {...props} />;
+  // In test environment, render list items from data/renderItem props
+  if (props.data && props.renderItem) {
+    const dataArray = (props.data as T[]) || [];
+    const items = dataArray.map((item: T, index: number) => {
+      const key = props.keyExtractor ? props.keyExtractor(item, index) : index;
+      return (
+        <React.Fragment key={String(key)}>
+          {props.renderItem!({ item, index, separators: {} as any })}
+        </React.Fragment>
+      );
+    });
+    return <View {...props}>{items}</View>;
+  }
+  // Fallback for components that pass children directly
+  return (<View>{props.children}</View>) as any;
 }
 
 export function BottomSheetSectionList<T>(
@@ -101,7 +114,21 @@ export function BottomSheetSectionList<T>(
 export function BottomSheetFlashList<T>(
   props: FlatListProps<T>
 ): React.ReactElement {
-  return <FlatList {...props} />;
+  // In test environment, render list items from data/renderItem props
+  if (props.data && props.renderItem) {
+    const dataArray = (props.data as T[]) || [];
+    const items = dataArray.map((item: T, index: number) => {
+      const key = props.keyExtractor ? props.keyExtractor(item, index) : index;
+      return (
+        <React.Fragment key={String(key)}>
+          {props.renderItem!({ item, index, separators: {} as any })}
+        </React.Fragment>
+      );
+    });
+    return <View {...props}>{items}</View>;
+  }
+  // Fallback for components that pass children directly
+  return (<View>{props.children}</View>) as any;
 }
 
 export function BottomSheetVirtualizedList<T>(

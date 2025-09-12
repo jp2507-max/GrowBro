@@ -80,7 +80,9 @@ BEGIN
       t.completed_at,
       t.metadata,
       t.created_at,
-      t.updated_at
+      t.updated_at,
+      t.server_revision,
+      t.server_updated_at_ms
     FROM public.tasks t
     WHERE t.updated_at > last_ts
       AND t.updated_at <= server_ts
@@ -110,13 +112,15 @@ BEGIN
       'status', task_page.status,
       'completed_at', CASE WHEN task_page.completed_at IS NULL THEN NULL ELSE to_char(task_page.completed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') END,
       'metadata', COALESCE(task_page.metadata, '{}'::jsonb),
+      'server_revision', task_page.server_revision,
+      'server_updated_at_ms', task_page.server_updated_at_ms,
       'createdAt', floor(extract(epoch FROM task_page.created_at) * 1000),
       'updatedAt', floor(extract(epoch FROM task_page.updated_at) * 1000)
     ) ORDER BY task_page.updated_at DESC, task_page.id DESC), '[]'::jsonb) AS rows,
-    EXISTS(SELECT 1 FROM task_candidates OFFSET _limit) AS more
-  FROM task_page
+    EXISTS(SELECT 1 FROM task_candidates OFFSET _limit) AS more,
     (SELECT updated_at FROM task_page ORDER BY updated_at, id DESC LIMIT 1) AS last_ts,
     (SELECT id FROM task_page ORDER BY updated_at, id DESC LIMIT 1) AS last_id
+  FROM task_page
   INTO tasks_active_rows, has_more_active, tasks_active_cursor_ts, tasks_active_cursor_id;
 
   -- Task tombstones page (deleted_at window)

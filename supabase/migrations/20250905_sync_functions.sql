@@ -27,6 +27,8 @@ BEGIN
       'until_utc', CASE WHEN until_utc IS NULL THEN NULL ELSE to_char(until_utc AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') END,
       'count', count,
       'plant_id', plant_id,
+      'server_revision', server_revision,
+      'server_updated_at_ms', server_updated_at_ms,
       'created_at', floor(extract(epoch FROM created_at) * 1000),
       'updated_at', floor(extract(epoch FROM updated_at) * 1000)
     )) AS arr
@@ -46,6 +48,8 @@ BEGIN
       'until_utc', CASE WHEN until_utc IS NULL THEN NULL ELSE to_char(until_utc AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') END,
       'count', count,
       'plant_id', plant_id,
+      'server_revision', server_revision,
+      'server_updated_at_ms', server_updated_at_ms,
       'created_at', floor(extract(epoch FROM created_at) * 1000),
       'updated_at', floor(extract(epoch FROM updated_at) * 1000)
     )) AS arr
@@ -76,6 +80,8 @@ BEGIN
       'status', status,
       'completed_at', CASE WHEN completed_at IS NULL THEN NULL ELSE to_char(completed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') END,
       'metadata', COALESCE(metadata, '{}'::jsonb),
+      'server_revision', server_revision,
+      'server_updated_at_ms', server_updated_at_ms,
       'created_at', floor(extract(epoch FROM created_at) * 1000),
       'updated_at', floor(extract(epoch FROM updated_at) * 1000)
     )) AS arr
@@ -98,6 +104,8 @@ BEGIN
       'status', status,
       'completed_at', CASE WHEN completed_at IS NULL THEN NULL ELSE to_char(completed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') END,
       'metadata', COALESCE(metadata, '{}'::jsonb),
+      'server_revision', server_revision,
+      'server_updated_at_ms', server_updated_at_ms,
       'created_at', floor(extract(epoch FROM created_at) * 1000),
       'updated_at', floor(extract(epoch FROM updated_at) * 1000)
     )) AS arr
@@ -123,6 +131,8 @@ BEGIN
       'reminder_at_local', CASE WHEN reminder_at_local IS NULL THEN NULL ELSE to_char(reminder_at_local, 'YYYY-MM-DD"T"HH24:MI:SS') END,
       'reminder_at_utc', CASE WHEN reminder_at_utc IS NULL THEN NULL ELSE to_char(reminder_at_utc AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') END,
       'status', status,
+      'server_revision', server_revision,
+      'server_updated_at_ms', server_updated_at_ms,
       'created_at', floor(extract(epoch FROM created_at) * 1000),
       'updated_at', floor(extract(epoch FROM updated_at) * 1000)
     )) AS arr
@@ -140,6 +150,8 @@ BEGIN
       'reminder_at_local', CASE WHEN reminder_at_local IS NULL THEN NULL ELSE to_char(reminder_at_local, 'YYYY-MM-DD"T"HH24:MI:SS') END,
       'reminder_at_utc', CASE WHEN reminder_at_utc IS NULL THEN NULL ELSE to_char(reminder_at_utc AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') END,
       'status', status,
+      'server_revision', server_revision,
+      'server_updated_at_ms', server_updated_at_ms,
       'created_at', floor(extract(epoch FROM created_at) * 1000),
       'updated_at', floor(extract(epoch FROM updated_at) * 1000)
     )) AS arr

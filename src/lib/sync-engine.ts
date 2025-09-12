@@ -53,6 +53,12 @@ export type SyncResponse = {
   migrationRequired: boolean;
 };
 
+// Per-record shape additions: server_revision is an optional monotonically
+// increasing integer assigned by the server on each write. server_updated_at_ms
+// is an authoritative server timestamp in epoch milliseconds. Clients MUST
+// prefer server_revision for conflict resolution when present; otherwise use
+// server_updated_at_ms. Do NOT rely on client clocks for LWW comparisons.
+
 export type PushRequest = {
   lastPulledAt: number | 0;
   changes: ChangesByTable;
@@ -427,50 +433,163 @@ function getCollectionByTable(
 
 function applyPayloadToRecord(target: any, payload: any): void {
   for (const [key, value] of Object.entries(payload)) {
-    if (key === 'id' || key === 'updatedAt') continue;
+    // Preserve id and updatedAt handling outside; but copy server revision
+    // and server timestamps as authoritative fields onto the local record
+    if (key === 'id') continue;
+    // Map server fields to local properties where appropriate
+    if (key === 'server_revision') {
+      if (value != null) {
+        const numericValue = Number(value);
+        if (Number.isFinite(numericValue)) {
+          (target as any).serverRevision = numericValue;
+        }
+      }
+      continue;
+    }
+    if (key === 'server_updated_at_ms') {
+      if (value != null) {
+        const numericValue =
+          typeof value === 'number' ? value : toMillis(value as any);
+        if (numericValue != null && Number.isFinite(numericValue)) {
+          (target as any).serverUpdatedAtMs = numericValue;
+        }
+      }
+      continue;
+    }
+    if (key === 'updatedAt') continue;
     (target as any)[key] = _normalizeIncomingValue(key, value);
   }
 }
 
-function maybeMarkNeedsReview(table: TableName, rec: any, payload: any): void {
-  if (table !== 'tasks') return;
-  const localUpdated = toMillis((rec as any).updatedAt);
-  const serverUpdated = toMillis(payload.updatedAt);
-  if (
-    localUpdated !== null &&
-    serverUpdated !== null &&
-    serverUpdated > localUpdated
+function safeParseNumber(value: any): number | null {
+  if (value == null) return null;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
+function parseMetadataSafe(currentMetaRaw: any): Record<string, any> {
+  let currentMeta: Record<string, any> = {};
+  if (typeof currentMetaRaw === 'string' && currentMetaRaw.trim().length) {
+    try {
+      const parsed = JSON.parse(currentMetaRaw);
+      if (
+        typeof parsed === 'object' &&
+        parsed !== null &&
+        !Array.isArray(parsed)
+      ) {
+        currentMeta = parsed;
+      }
+    } catch {
+      currentMeta = {};
+    }
+  } else if (
+    typeof currentMetaRaw === 'object' &&
+    currentMetaRaw !== null &&
+    !Array.isArray(currentMetaRaw)
   ) {
-    const currentMeta = ((rec as any).metadata ?? {}) as Record<
-      string,
-      unknown
-    >;
-    (rec as any).metadata = { ...currentMeta, needsReview: true };
+    currentMeta = currentMetaRaw;
+  }
+  return currentMeta;
+}
+
+export function maybeMarkNeedsReview(
+  table: TableName,
+  rec: any,
+  payload: any
+): void {
+  if (table !== 'tasks') return;
+
+  // Prefer server_revision if present, otherwise compare server_updated_at_ms
+  const localRevRaw = (rec as any)._raw?.server_revision ?? null;
+  const serverRevRaw = payload.server_revision ?? null;
+  const localServerTsRaw =
+    (rec as any)._raw?.server_updated_at_ms ??
+    toMillis((rec as any).updatedAt as any);
+  const serverServerTsRaw =
+    payload.server_updated_at_ms ?? toMillis(payload.updatedAt as any);
+
+  const localRev = safeParseNumber(localRevRaw);
+  const serverRev = safeParseNumber(serverRevRaw);
+  const localServerTs = safeParseNumber(localServerTsRaw);
+  const serverServerTs = safeParseNumber(serverServerTsRaw);
+
+  let serverIsNewer = false;
+  if (serverRev != null && localRev != null) {
+    serverIsNewer = serverRev > localRev;
+  } else if (serverServerTs != null && localServerTs != null) {
+    serverIsNewer = serverServerTs > localServerTs;
+  } else if (serverServerTs != null && localServerTs == null) {
+    serverIsNewer = true;
+  }
+
+  if (serverIsNewer) {
+    const currentMetaRaw = (rec as any).metadata;
+    const currentMeta = parseMetadataSafe(currentMetaRaw);
+    (rec as any).metadata = {
+      ...currentMeta,
+      needsReview: true,
+    };
   }
 }
 
 async function handleCreate(coll: any, payload: any): Promise<void> {
   await coll.create((rec: any) => {
     (rec as any).id = payload.id;
+    // Apply payload and authoritative server metadata. For createdAt/updatedAt
+    // prefer server-provided values if present; do not synthesize from client
     applyPayloadToRecord(rec, payload);
-    // Preserve server timestamps if provided, otherwise use current time
     if (payload.createdAt != null) {
       (rec as any).createdAt = _normalizeIncomingValue(
         'createdAt',
         payload.createdAt
       );
-    } else {
-      (rec as any).createdAt = new Date();
     }
     if (payload.updatedAt != null) {
       (rec as any).updatedAt = _normalizeIncomingValue(
         'updatedAt',
         payload.updatedAt
       );
-    } else {
-      (rec as any).updatedAt = new Date();
+    }
+    if (payload.server_revision != null) {
+      (rec as any).serverRevision = Number(payload.server_revision);
+    }
+    if (payload.server_updated_at_ms != null) {
+      (rec as any).serverUpdatedAtMs = Number(payload.server_updated_at_ms);
     }
   });
+}
+
+function determineServerAuthority(
+  localData: { rev: number | null; serverTs: number | null },
+  serverData: { rev: any; serverTs: any }
+): boolean {
+  const { rev: localRev, serverTs: localServerTs } = localData;
+  const { rev: serverRev, serverTs: serverServerTs } = serverData;
+
+  if (serverRev != null && localRev != null) {
+    return Number(serverRev) > Number(localRev);
+  } else if (serverServerTs != null && localServerTs != null) {
+    return Number(serverServerTs) > Number(localServerTs);
+  } else if (serverServerTs != null && localServerTs == null) {
+    return true;
+  }
+  return false;
+}
+
+function applyServerPayloadToRecord(rec: any, payload: any): void {
+  applyPayloadToRecord(rec, payload);
+  if (payload.updatedAt != null) {
+    (rec as any).updatedAt = _normalizeIncomingValue(
+      'updatedAt',
+      payload.updatedAt
+    );
+  }
+  if (payload.server_revision != null) {
+    (rec as any).serverRevision = Number(payload.server_revision);
+  }
+  if (payload.server_updated_at_ms != null) {
+    (rec as any).serverUpdatedAtMs = Number(payload.server_updated_at_ms);
+  }
 }
 
 async function handleUpdate(
@@ -479,30 +598,67 @@ async function handleUpdate(
   payload: any
 ): Promise<void> {
   const resolver = createConflictResolver();
-  await existing.update((rec: any) => {
-    // Detect conflicts: if local is newer but server sends different values
-    const localSnapshot: Record<string, unknown> = { ...(rec as any) };
-    applyPayloadToRecord(rec, payload);
-    if (payload.updatedAt != null) {
-      (rec as any).updatedAt = _normalizeIncomingValue(
-        'updatedAt',
-        payload.updatedAt
-      );
+
+  // Pre-compute all values outside the synchronous update callback
+
+  // Determine if server is authoritative
+  // NOTE: P1 BUG - Server revision metadata not persisted in WatermelonDB schema
+  // The WatermelonDB schema for tasks (and other tables) currently only defines
+  // created_at/updated_at/deleted_at columns without server_revision or
+  // server_updated_at_ms fields. This means these values are never persisted
+  // and _raw will always return undefined after record reload, causing conflict
+  // resolution to fall back to client timestamps and lose server-authoritative ordering.
+  // TODO: Add server_revision and server_updated_at_ms fields to WatermelonDB schema
+  // TODO: Update migration to persist these fields properly
+  const localRev = existing._raw.server_revision ?? null;
+  const serverRev = payload.server_revision ?? null;
+  const localServerTs =
+    existing._raw.server_updated_at_ms ?? toMillis(existing.updatedAt);
+  const serverServerTs =
+    payload.server_updated_at_ms ?? toMillis(payload.updatedAt as any);
+
+  let serverIsAuthoritative = determineServerAuthority(
+    {
+      rev: localRev,
+      serverTs: localServerTs,
+    },
+    {
+      rev: serverRev,
+      serverTs: serverServerTs,
     }
-    // Needs review marking when server is newer (LWW on server)
+  );
+
+  // Replace DB-wide hasUnsyncedChanges() with record-level check
+  const hasUnsyncedRecord = existing._raw._status !== 'synced';
+  if (serverIsAuthoritative && hasUnsyncedRecord) {
+    serverIsAuthoritative = false;
+  }
+
+  // Create local snapshot for conflict detection
+  const localSnapshot: Record<string, unknown> = { ...existing };
+
+  // Detect conflicts outside the update callback
+  try {
+    const conflict: Conflict = buildConflict({
+      tableName: table,
+      recordId: existing.id,
+      localRecord: localSnapshot,
+      remoteRecord: payload,
+    });
+    if (conflict.conflictFields.length > 0) {
+      resolver.logConflict(conflict);
+    }
+  } catch {}
+
+  // Perform synchronous update
+  await existing.update((rec: any) => {
+    // Always call maybeMarkNeedsReview to flag conflicts
     maybeMarkNeedsReview(table, rec, payload);
 
-    try {
-      const conflict: Conflict = buildConflict({
-        tableName: table,
-        recordId: (rec as any).id,
-        localRecord: localSnapshot,
-        remoteRecord: payload,
-      });
-      if (conflict.conflictFields.length > 0) {
-        resolver.logConflict(conflict);
-      }
-    } catch {}
+    // Only apply server fields when server is authoritative
+    if (serverIsAuthoritative) {
+      applyServerPayloadToRecord(rec, payload);
+    }
   });
 }
 

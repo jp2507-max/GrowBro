@@ -2,11 +2,12 @@
 // This ensures process.env is populated for zod validation in ./env during prebuild
 import 'dotenv/config';
 
-import { Env as ClientEnv } from '@env';
-import type { ConfigContext, ExpoConfig } from '@expo/config';
 import type { AppIconBadgeConfig } from 'app-icon-badge/types';
 
 import applePrivacyManifest from './apple-privacy-manifest.json';
+// IMPORTANT: Do not import from '@env' here because the Expo config is evaluated
+// directly by Node (no Babel module resolver / TS path mapping). Use the root
+// env.js exports instead which are plain Node modules.
 import { Env } from './env';
 
 const appIconBadgeConfig: AppIconBadgeConfig = {
@@ -26,7 +27,12 @@ const appIconBadgeConfig: AppIconBadgeConfig = {
 };
 
 // eslint-disable-next-line max-lines-per-function
-function createExpoConfig(config: Partial<ExpoConfig>): ExpoConfig {
+function createExpoConfig(config: any): any {
+  const publicExtra = Object.fromEntries(
+    Object.entries(process.env ?? {}).filter(
+      ([key, value]) => key.startsWith('EXPO_PUBLIC_') && value != null
+    )
+  );
   return {
     ...config,
     name: Env.NAME,
@@ -102,7 +108,8 @@ function createExpoConfig(config: Partial<ExpoConfig>): ExpoConfig {
       '@morrowdigital/watermelondb-expo-plugin',
     ],
     extra: {
-      ...ClientEnv,
+      // Expose only public vars; keep secrets out of the bundle.
+      ...publicExtra,
       eas: {
         projectId: Env.EAS_PROJECT_ID,
       },
@@ -110,5 +117,4 @@ function createExpoConfig(config: Partial<ExpoConfig>): ExpoConfig {
   };
 }
 
-export default ({ config }: ConfigContext): ExpoConfig =>
-  createExpoConfig(config);
+export default ({ config }: any): any => createExpoConfig(config);

@@ -76,6 +76,7 @@ export default defineConfig([
       'import/prefer-default-export': 'off',
       'import/no-cycle': ['error', { maxDepth: '∞' }],
       'prettier/prettier': ['error', { ignores: ['expo-env.d.ts'] }],
+      // (removed custom no-flatlist rule)
     },
   },
   {
@@ -109,6 +110,18 @@ export default defineConfig([
         project: undefined,
         sourceType: 'module',
       },
+    },
+  },
+  // Disable no-flatlist rule for test and storybook files
+  {
+    files: [
+      '**/__tests__/**/*.{ts,tsx}',
+      '**/*.test.{ts,tsx}',
+      '**/*.stories.{ts,tsx}',
+      '**/*.spec.{ts,tsx}',
+    ],
+    rules: {
+      'no-flatlist/no-flatlist': 'off',
     },
   },
   {

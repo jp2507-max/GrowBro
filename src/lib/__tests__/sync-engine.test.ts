@@ -1,9 +1,11 @@
+/* eslint-disable max-lines-per-function */
 import { jest } from '@jest/globals';
 
 import * as Backoff from '@/lib/sync/backoff';
 import { computeBackoffMs } from '@/lib/sync/backoff';
 import {
   diffServerChangedTaskIds,
+  maybeMarkNeedsReview,
   runSyncWithRetry,
   type SyncResponse,
 } from '@/lib/sync-engine';
@@ -34,36 +36,29 @@ describe('sync-engine', () => {
   });
 
   test('runSyncWithRetry retries with exponential backoff on retryable errors', async () => {
-    // Mock backoff to 1ms to speed up test execution and avoid flaky timing dependencies
-    // This tests retry logic without waiting for actual exponential backoff delays
-    jest
-      .spyOn(Backoff, 'computeBackoffMs')
-      .mockImplementation((_attempt, _base, _max) => 1); // minimize delays
+    // reduce delays for deterministic test
+    jest.spyOn(Backoff, 'computeBackoffMs').mockImplementation(() => 1);
 
     const originalFetch = global.fetch as any;
-    // First 2 attempts fail pull with 500, third succeeds
+
+    const makeSuccess = (): SyncResponse => ({
+      serverTimestamp: Date.now(),
+      hasMore: false,
+      migrationRequired: false,
+      changes: {
+        tasks: { created: [], updated: [], deleted: [] },
+        series: { created: [], updated: [], deleted: [] },
+        occurrence_overrides: { created: [], updated: [], deleted: [] },
+      },
+    });
+
     let call = 0;
     (global as any).fetch = jest.fn(async () => {
       call++;
-      // Pull endpoint is called after push in our pipeline, so any call is fine here
       if (call < 3) {
         return { ok: false, status: 500, json: async () => ({}) } as any;
       }
-      return {
-        ok: true,
-        json: async () =>
-          ({
-            serverTimestamp: Date.now(),
-            hasMore: false,
-            migrationRequired: false,
-            changes: {
-              tasks: { created: [], updated: [], deleted: [] },
-              series: { created: [], updated: [], deleted: [] },
-              occurrence_overrides: { created: [], updated: [], deleted: [] },
-            },
-          }) as SyncResponse,
-        status: 200,
-      } as any;
+      return { ok: true, status: 200, json: async () => makeSuccess() } as any;
     });
 
     const result = await runSyncWithRetry(3);
@@ -88,7 +83,13 @@ describe('sync-engine pagination', () => {
         tasks: { active: { ts_ms: now, id: 'a' } },
       },
       changes: {
-        tasks: { created: [], updated: [{ id: 't1' }], deleted: [] },
+        tasks: {
+          created: [],
+          updated: [
+            { id: 't1', server_revision: 2, server_updated_at_ms: now },
+          ],
+          deleted: [],
+        },
         series: { created: [], updated: [], deleted: [] },
         occurrence_overrides: { created: [], updated: [], deleted: [] },
       },
@@ -98,7 +99,13 @@ describe('sync-engine pagination', () => {
       hasMore: false,
       migrationRequired: false,
       changes: {
-        tasks: { created: [], updated: [{ id: 't2' }], deleted: [] },
+        tasks: {
+          created: [],
+          updated: [
+            { id: 't2', server_revision: 3, server_updated_at_ms: now },
+          ],
+          deleted: [],
+        },
         series: { created: [], updated: [], deleted: [] },
         occurrence_overrides: { created: [], updated: [], deleted: [] },
       },
@@ -148,5 +155,119 @@ describe('sync-engine helpers', () => {
     expect(v2).toBeGreaterThanOrEqual(v1);
 
     randomSpy.mockRestore();
+  });
+
+  describe('maybeMarkNeedsReview', () => {
+    test('sets metadata as object when server data is newer', () => {
+      const rec = {
+        metadata: { existingProp: 'value' },
+        _rev: 1,
+        server_updated_at_ms: 1000,
+      };
+      const payload = {
+        _rev: 2,
+        server_updated_at_ms: 2000,
+      };
+
+      maybeMarkNeedsReview('tasks', rec, payload);
+
+      expect(typeof rec.metadata).toBe('object');
+      expect(rec.metadata).toEqual({
+        existingProp: 'value',
+        needsReview: true,
+      });
+    });
+
+    test('parses string metadata and preserves it as object', () => {
+      const rec = {
+        metadata: JSON.stringify({ existingProp: 'value' }),
+        _rev: 1,
+        server_updated_at_ms: 1000,
+      };
+      const payload = {
+        _rev: 2,
+        server_updated_at_ms: 2000,
+      };
+
+      maybeMarkNeedsReview('tasks', rec, payload);
+
+      expect(typeof rec.metadata).toBe('object');
+      expect(rec.metadata).toEqual({
+        existingProp: 'value',
+        needsReview: true,
+      });
+    });
+
+    test('handles empty metadata gracefully', () => {
+      const rec = {
+        metadata: null,
+        _rev: 1,
+        server_updated_at_ms: 1000,
+      };
+      const payload = {
+        _rev: 2,
+        server_updated_at_ms: 2000,
+      };
+
+      maybeMarkNeedsReview('tasks', rec, payload);
+
+      expect(typeof rec.metadata).toBe('object');
+      expect(rec.metadata).toEqual({
+        needsReview: true,
+      });
+    });
+
+    test('ignores non-tasks tables', () => {
+      const rec = {
+        metadata: { existingProp: 'value' },
+        _rev: 1,
+        server_updated_at_ms: 1000,
+      };
+      const payload = {
+        _rev: 2,
+        server_updated_at_ms: 2000,
+      };
+
+      maybeMarkNeedsReview('series', rec, payload);
+
+      // Should not modify metadata for non-tasks
+      expect(rec.metadata).toEqual({ existingProp: 'value' });
+    });
+
+    test('does not mark as needsReview when local data is newer', () => {
+      const rec = {
+        metadata: { existingProp: 'value' },
+        _rev: 2,
+        server_updated_at_ms: 2000,
+      };
+      const payload = {
+        _rev: 1,
+        server_updated_at_ms: 1000,
+      };
+
+      maybeMarkNeedsReview('tasks', rec, payload);
+
+      // Should not modify metadata when local is newer
+      expect(rec.metadata).toEqual({ existingProp: 'value' });
+    });
+
+    test('handles invalid JSON metadata gracefully', () => {
+      const rec = {
+        metadata: '{invalid json}',
+        _rev: 1,
+        server_updated_at_ms: 1000,
+      };
+      const payload = {
+        _rev: 2,
+        server_updated_at_ms: 2000,
+      };
+
+      maybeMarkNeedsReview('tasks', rec, payload);
+
+      expect(typeof rec.metadata).toBe('object');
+      expect(rec.metadata).toEqual({
+        needsReview: true,
+      });
+    });
   });
 });

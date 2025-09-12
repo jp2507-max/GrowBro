@@ -1,41 +1,45 @@
-# Technology Stack
+# Technology Stack & Build System
 
-## Core Framework
+## Core Technologies
 
-- **React Native 0.79** with **Expo 53** (managed workflow)
-- **TypeScript** (strict mode enabled)
-- **Expo Router** for file-based navigation with typed routes
-- **New Architecture** enabled for performance
-
-## UI & Styling
-
-- **NativeWind 4** (Tailwind CSS for React Native)
-- **Reanimated 3.17+** for animations and gestures
-- **React Native Gesture Handler** for touch interactions
-- **Bottom Sheet** (@gorhom/bottom-sheet) for modal interfaces
-- **FlashList** for performant lists (replace FlatList)
-
-## State Management & Data
-
-- **React Query 5** (@tanstack/react-query) for server state
-- **Zustand** for client state management
-- **WatermelonDB** for offline-first local database (SQLite)
-- **Supabase** for backend services and real-time features
-- **React Hook Form** with Zod validation for forms
+- **Framework**: React Native with Expo SDK 54
+- **Language**: TypeScript with strict mode enabled
+- **Package Manager**: pnpm (required, enforced via preinstall hook)
+- **Navigation**: Expo Router with typed routes
+- **Styling**: NativeWind (Tailwind CSS for React Native)
+- **State Management**: Zustand
+- **Data Fetching**: TanStack React Query with react-query-kit
+- **Database**: WatermelonDB (offline-first local database)
+- **Backend**: Supabase (PostgreSQL, Auth, Storage)
+- **Forms**: React Hook Form with Zod validation
+- **Internationalization**: i18next with react-i18next
+- **Animations**: Moti and React Native Reanimated
+- **Error Tracking**: Sentry
 
 ## Development Tools
 
-- **pnpm** as package manager (required - enforced via preinstall)
-- **ESLint** with TypeScript, Prettier, Tailwind, and custom rules
-- **Jest** with React Native Testing Library for unit tests
-- **Maestro** for E2E testing
-- **Husky** for git hooks with lint-staged
+- **Linting**: ESLint with TypeScript, Prettier, Tailwind, and custom rules
+- **Testing**: Jest with React Native Testing Library
+- **E2E Testing**: Maestro
+- **Git Hooks**: Husky with commitlint (conventional commits)
+- **Code Quality**: Lint-staged for pre-commit checks
 
-## Build & Deployment
+## Environment Management
 
-- **EAS Build** for native builds across environments (dev/staging/production)
-- **Sentry** for error tracking and performance monitoring
-- **Environment-based configuration** with strict validation
+### Security Guidelines
+
+- **Never expose secrets to client bundles**: Do not use `NEXT_PUBLIC` or equivalent prefixes for sensitive values
+- **Store secrets securely**: Use EAS/CI secret store or server-only environment variables (never in repo or client .env files)
+- **Validate at correct times**: Client-side values validated at build-time only; server-only envs validated at both build-time and runtime startup
+
+### Environment Configuration
+
+- Environment-specific configs via `.env.{APP_ENV}` files (e.g., `.env.development`, `.env.staging`, `.env.production`)
+- **Client-safe files**: `.env.development`, `.env.staging` (can contain non-sensitive values)
+- **Server-only files**: `.env.production` (should contain only secrets, validated at runtime)
+- Zod validation for environment variables in `env.js`
+- Three environments: development, staging, production
+- Environment variables split into client-side and build-time variables
 
 ## Common Commands
 
@@ -58,8 +62,8 @@ pnpm start:production
 ### Building
 
 ```bash
-# Prebuild for native development
-pnpm prebuild
+# Prebuild for different environments
+pnpm prebuild:development
 pnpm prebuild:staging
 pnpm prebuild:production
 
@@ -79,53 +83,34 @@ pnpm check-all
 pnpm lint
 pnpm type-check
 pnpm test
+pnpm i18n:validate
 pnpm lint:translations
+```
 
-# Testing
+### Testing
+
+```bash
+# Unit tests
+pnpm test
 pnpm test:watch
 pnpm test:ci
+
+# E2E tests
 pnpm e2e-test
 ```
 
-### Utilities
+## Build Configuration
 
-```bash
-# Expo doctor for health checks
-pnpm doctor
+- **Metro**: Custom config for React Native bundling
+- **EAS Build**: Configured for multiple environments with different distribution channels
+- **Babel**: Module resolver for path aliases (`@/*` → `./src/*`); WatermelonDB requires legacy decorator semantics - add plugins in this order: `@babel/plugin-proposal-decorators` with `{ legacy: true }` before `@babel/plugin-proposal-class-properties` with `{ loose: true }` (plugin ordering is critical to avoid breakage)
+- **TypeScript**: Strict mode with path mapping and experimental decorators; WatermelonDB requires `experimentalDecorators: true` and `useDefineForClassFields: false` in tsconfig for consistent decorator and class field compilation
 
-# Open native projects
-pnpm xcode  # iOS project in Xcode
+## Key Dependencies
 
-# Release management
-pnpm app-release
-```
-
-## Architecture Patterns
-
-### Offline-First Design
-
-- WatermelonDB for local SQLite storage with background sync
-- Supabase sync via pull/push changes protocol
-- Image storage in filesystem with DB metadata references
-- Local notifications independent of network
-
-### Performance Requirements
-
-- 60fps on mid-tier Android devices
-- FlashList for all large datasets (>50 items)
-- Reanimated worklets for smooth animations
-- Background thread operations for database
-
-### Code Organization
-
-- Absolute imports via `@/*` aliases
-- Strict TypeScript with consistent imports
-- Component co-location pattern
-- API layer separation with React Query
-
-## Environment Management
-
-- Multi-environment support (development/staging/production)
-- Strict environment variable validation with Zod
-- Bundle ID and package name suffixing per environment
-- Separate Supabase projects per environment
+- **UI Components**: Custom component library with Tailwind variants
+- **Database**: WatermelonDB with SQLite adapter and Expo plugin
+- **Networking**: Axios with React Query for API calls
+- **Storage**: MMKV for fast key-value storage, AsyncStorage as fallback
+- **Notifications**: Expo Notifications with background task support
+- **Image Handling**: Expo Image with manipulation capabilities

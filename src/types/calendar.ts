@@ -15,6 +15,8 @@ export type Series = {
   untilUtc?: string; // ISO UTC
   count?: number;
   plantId?: string;
+  serverRevision?: number; // Monotonic int for conflict resolution
+  serverUpdatedAtMs?: number; // Epoch ms (number) - server last updated timestamp
   createdAt: string; // ISO timestamptz
   updatedAt: string; // ISO timestamptz
   deletedAt?: string; // ISO timestamptz
@@ -29,6 +31,8 @@ export type OccurrenceOverride = {
   reminderAtLocal?: string; // ISO with timezone
   reminderAtUtc?: string; // ISO UTC
   status?: OccurrenceOverrideStatus;
+  serverRevision?: number; // Monotonic int for conflict resolution
+  serverUpdatedAtMs?: number; // Epoch ms (number) - server last updated timestamp
   createdAt: string;
   updatedAt: string;
 };
@@ -48,6 +52,8 @@ export type Task = {
   status: TaskStatus;
   completedAt?: string; // ISO timestamptz
   metadata: TaskMetadata;
+  serverRevision?: number; // Monotonic int for conflict resolution
+  serverUpdatedAtMs?: number; // Epoch ms (number) - server last updated timestamp
   createdAt: string; // ISO timestamptz
   updatedAt: string; // ISO timestamptz
   deletedAt?: string; // ISO timestamptz
