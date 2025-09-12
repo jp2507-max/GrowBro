@@ -6,7 +6,7 @@
     "production": {
       "channel": "production",
       "distribution": "store",
-      "pnpm": "9.12.3",
+      "pnpm": "10.15.0",
       "ios": {
         "image": "latest"
       },
@@ -24,7 +24,7 @@
     "staging": {
       "channel": "staging",
       "distribution": "internal",
-      "pnpm": "9.12.3",
+      "pnpm": "10.15.0",
       "ios": {
         "image": "latest"
       },
@@ -42,7 +42,7 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "pnpm": "9.12.3",
+      "pnpm": "10.15.0",
       "ios": {
         "image": "latest"
       },
@@ -56,7 +56,7 @@
       }
     },
     "simulator": {
-      "pnpm": "9.12.3",
+      "pnpm": "10.15.0",
       "ios": {
         "simulator": true,
         "image": "latest"
