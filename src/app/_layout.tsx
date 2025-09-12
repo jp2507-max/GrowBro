@@ -23,12 +23,15 @@ import {
 import { NoopAnalytics } from '@/lib/analytics';
 import { Env } from '@/lib/env';
 import { registerNotificationMetrics } from '@/lib/notification-metrics';
-import { initializePrivacyConsent } from '@/lib/privacy-consent';
+import { hasConsent, initializePrivacyConsent } from '@/lib/privacy-consent';
 import { beforeSendHook } from '@/lib/sentry-utils';
 import { registerBackgroundTask } from '@/lib/sync/background-sync';
 import { setupSyncTriggers } from '@/lib/sync/sync-triggers';
 import { TaskNotificationService } from '@/lib/task-notifications';
 import { useThemeConfig } from '@/lib/use-theme-config';
+
+// Module-scoped flag to prevent multiple Sentry initializations
+let sentryInitialized = false;
 
 // Type definitions for Localization API
 type Calendar = {
@@ -56,12 +59,24 @@ function hasValidTimeZone(
   return typeof obj.timeZone === 'string' && obj.timeZone.length > 0;
 }
 
-// Only initialize Sentry if DSN is provided
-if (Env.SENTRY_DSN) {
+export { ErrorBoundary } from 'expo-router';
+
+export const unstable_settings = {
+  initialRouteName: '(app)',
+};
+
+// Initialize privacy consent cache before Sentry
+initializePrivacyConsent();
+
+// Only initialize Sentry if DSN is provided and user has consented to crash reporting
+// Also guard against multiple initializations
+if (Env.SENTRY_DSN && hasConsent('crashReporting') && !sentryInitialized) {
+  sentryInitialized = true; // Set flag to prevent re-initialization
+
   const integrations: any[] = [];
 
-  // Only add replay and feedback integrations if replay is enabled
-  if (Env.SENTRY_ENABLE_REPLAY) {
+  // Only add replay/feedback if enabled AND user consented to session replay
+  if (Env.SENTRY_ENABLE_REPLAY && hasConsent('sessionReplay')) {
     integrations.push(Sentry.mobileReplayIntegration());
     integrations.push(Sentry.feedbackIntegration());
   }
@@ -86,15 +101,8 @@ if (Env.SENTRY_DSN) {
   });
 }
 
-export { ErrorBoundary } from 'expo-router';
-
-export const unstable_settings = {
-  initialRouteName: '(app)',
-};
-
 hydrateAuth();
 loadSelectedTheme();
-initializePrivacyConsent();
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 // Set splash screen animation options at runtime

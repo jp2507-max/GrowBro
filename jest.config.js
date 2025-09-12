@@ -36,9 +36,17 @@ module.exports = {
   coverageDirectory: '<rootDir>/coverage/',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@env$': '<rootDir>/src/lib/env.js',
     '^@gorhom/bottom-sheet(.*)$':
       '<rootDir>/__mocks__/@gorhom/bottom-sheet.tsx',
     '^@nozbe/watermelondb/adapters/sqlite$':
       '<rootDir>/__mocks__/@nozbe/watermelondb/adapters/sqlite',
+    // Map the entire WatermelonDB package to our lightweight Jest mock to avoid
+    // native module initialization that keeps the Jest process open (hanging tests)
+    '^@nozbe/watermelondb$': '<rootDir>/__mocks__/@nozbe/watermelondb',
+    '^@nozbe/watermelondb/Schema/migrations$':
+      '<rootDir>/__mocks__/@nozbe/watermelondb',
+    '^react-native-gesture-handler$':
+      '<rootDir>/__mocks__/react-native-gesture-handler.ts',
   },
 };

@@ -54,3 +54,12 @@ export async function uploadImageWithProgress(params: {
     throw error;
   }
 }
+
+export function makeObjectPath(opts: {
+  userId: string;
+  plantId: string;
+  filename: string;
+}): string {
+  const sanitize = (s: string) => s.replace(/^\/+|\/+$/g, '');
+  return [opts.userId, opts.plantId, opts.filename].map(sanitize).join('/');
+}

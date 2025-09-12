@@ -1,25 +1,14 @@
 # Product Overview
 
-GrowBro is a mobile application designed to help home growers plan, track, and optimize their cultivation activities. The app focuses on providing a comprehensive solution for hobby and semi-professional growers.
+GrowBro is a React Native mobile application built with Expo, designed as a plant growth tracking and management app. The app supports multiple environments (development, staging, production) and includes features for:
 
-## Core Features
+- Plant telemetry and monitoring
+- Calendar and scheduling functionality
+- Sync capabilities with offline support
+- Multi-language support (English, German)
+- Privacy settings and consent management
+- Template management system
+- Background task processing
+- Push notifications
 
-- **Calendar & Task Management**: Recurring tasks, reminders, and agenda management for cultivation schedules
-- **Harvest Workflow**: Complete tracking from harvest through drying, curing, and inventory management
-- **Community Feed**: Social features for sharing updates, engaging with other growers
-- **AI Photo Assessment**: Plant health analysis and issue detection with actionable guidance
-- **Guided Grow Playbooks**: Step-by-step cultivation guides adapted to different setups and strains
-
-## Target Users
-
-- **Hobby Growers**: Want simple schedules, reminders, and clear guidance when issues arise
-- **Semi-Pro Growers**: Need templated tasks, accurate harvest tracking, and inventory summaries
-- **Community Enthusiasts**: Share updates, engage with others, value performance and real-time interactions
-
-## Key Principles
-
-- **Educational Focus**: All content is educational; no commerce or product sales
-- **Privacy-First**: User data protection with explicit opt-ins for sharing
-- **Offline-First**: Core functionality works without internet connection
-- **Age-Gated**: 18+ only with appropriate legal disclaimers
-- **Compliance**: Adheres to app store policies and regional regulations
+The app uses Supabase as the backend service and includes comprehensive error tracking with Sentry. It's designed to work across iOS, Android, and web platforms with a focus on offline-first architecture using WatermelonDB for local data persistence.
