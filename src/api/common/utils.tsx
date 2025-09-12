@@ -1,9 +1,3 @@
-import {
-  type GetNextPageParamFunction,
-  type GetPreviousPageParamFunction,
-  keepPreviousData,
-} from '@tanstack/react-query';
-
 import type { PaginateQuery } from '../types';
 
 type KeyParams = {
@@ -47,26 +41,39 @@ export function normalizePagesWithCursors<T>(pages?: PaginateQuery<T>[]): {
 }
 
 // Cursor-based pagination functions for TanStack Query v5
-export const getNextPageParam: GetNextPageParamFunction<
-  unknown,
-  PaginateQuery<unknown>
-> = (lastPage) => lastPage.next ?? undefined;
+// These helpers extract cursor tokens from full pagination URLs
+export const getNextPageParam = (
+  lastPage: PaginateQuery<unknown>
+): string | undefined => {
+  if (!lastPage.next) return undefined;
+  try {
+    return new URL(lastPage.next).searchParams.get('cursor') ?? undefined;
+  } catch {
+    // If URL parsing fails, try to extract cursor from query string directly
+    const params = getUrlParameters(lastPage.next);
+    return params?.cursor ?? undefined;
+  }
+};
 
-export const getPreviousPageParam: GetPreviousPageParamFunction<
-  unknown,
-  PaginateQuery<unknown>
-> = (firstPage) => firstPage.previous ?? undefined;
+export const getPreviousPageParam = (
+  firstPage: PaginateQuery<unknown>
+): string | undefined => {
+  if (!firstPage.previous) return undefined;
+  try {
+    return new URL(firstPage.previous).searchParams.get('cursor') ?? undefined;
+  } catch {
+    // If URL parsing fails, try to extract cursor from query string directly
+    const params = getUrlParameters(firstPage.previous);
+    return params?.cursor ?? undefined;
+  }
+};
 
 // Legacy offset-based pagination (deprecated - use cursor-based above)
-export const getPreviousPageParamLegacy: GetNextPageParamFunction<
-  unknown,
-  PaginateQuery<unknown>
-> = (page) => getUrlParameters(page.previous)?.offset ?? undefined;
+export const getPreviousPageParamLegacy = (page: PaginateQuery<unknown>) =>
+  getUrlParameters(page.previous)?.offset ?? undefined;
 
-export const getNextPageParamLegacy: GetPreviousPageParamFunction<
-  unknown,
-  PaginateQuery<unknown>
-> = (page) => getUrlParameters(page.next)?.offset ?? undefined;
+export const getNextPageParamLegacy = (page: PaginateQuery<unknown>) =>
+  getUrlParameters(page.next)?.offset ?? undefined;
 
 // a function that accept a url and return params as an object
 function getUrlParameters(url: string | null): Record<string, string> | null {
@@ -119,23 +126,3 @@ function getUrlParameters(url: string | null): Record<string, string> | null {
     return params;
   }
 }
-
-// Re-export keepPreviousData for convenience
-export { keepPreviousData };
-
-// Example usage for infinite queries with TanStack Query v5:
-// import { useInfiniteQuery } from '@tanstack/react-query';
-// import { getNextPageParam, getPreviousPageParam, keepPreviousData } from '@/api/common/utils';
-//
-// const useInfinitePosts = (params?: { limit?: number }) => {
-//   return useInfiniteQuery({
-//     queryKey: ['posts', params],
-//     queryFn: ({ pageParam }) => fetchPosts({ cursor: pageParam, ...params }),
-//     getNextPageParam,
-//     getPreviousPageParam,
-//     placeholderData: keepPreviousData,
-//     initialPageParam: null,
-//     // Remove maxPages until getPreviousPageParam is fully implemented
-//     // maxPages: 10,
-//   });
-// };

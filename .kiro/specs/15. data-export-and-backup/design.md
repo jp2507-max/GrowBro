@@ -738,29 +738,59 @@ class CryptoService {
       if (key instanceof Uint8Array) {
         keyBytes = key;
       } else {
-        // Extract raw bytes from CryptoKey if needed
+        // Explicitly disallow CryptoKey for this cipher in this implementation
         throw new Error('CryptoKey not supported for XChaCha20-Poly1305 - use Uint8Array key');
       }
 
-      // Ensure libsodium is available
-      if (!sodium) {
-        throw new Error('react-native-libsodium is required for XChaCha20-Poly1305 decryption');
+      // Prefer an injected, already-initialized libsodium instance (e.g. this.sodium)
+      // This avoids requiring top-level async initialization in modules that can't await on load.
+      // If not injected, fall back to dynamically importing 'libsodium-wrappers' and awaiting ready.
+      // Caller responsibility: ensure sodium.ready has been awaited before calling in performance-sensitive paths.
+      let sodiumInstance: any = (this as any).sodium;
+
+      if (!sodiumInstance) {
+        try {
+          // Dynamic import - will work in most JS runtimes. Await ready before use.
+          const libsodium = await import('libsodium-wrappers');
+          // libsodium exports a promise-like ready property; make sure it's initialized
+          await libsodium.ready;
+          sodiumInstance = libsodium;
+        } catch (importErr) {
+          throw new Error(
+            'libsodium-wrappers is required for XChaCha20-Poly1305 decryption. ' +
+              'Provide an initialized libsodium instance as `cryptoService.sodium` or install `libsodium-wrappers`.'
+          );
+        }
       }
 
-      // Perform authenticated decryption
-      const plaintext = sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(
-        null, // additional data (null for no AD)
-        data, // ciphertext
-        null, // auth tag (included in ciphertext for libsodium)
+      // Validate sodium constants if available
+      const KEY_BYTES = sodiumInstance.crypto_aead_xchacha20poly1305_ietf_KEYBYTES || 32;
+      const NONCE_BYTES = sodiumInstance.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES || 24;
+
+      if (!(keyBytes instanceof Uint8Array) || keyBytes.length !== KEY_BYTES) {
+        throw new Error(`Invalid key: expected ${KEY_BYTES} bytes Uint8Array for XChaCha20-Poly1305`);
+      }
+
+      if (!(iv instanceof Uint8Array) || iv.length !== NONCE_BYTES) {
+        throw new Error(`Invalid nonce/iv: expected ${NONCE_BYTES} bytes Uint8Array for XChaCha20-Poly1305`);
+      }
+
+      // libsodium-wrappers API: crypto_aead_xchacha20poly1305_ietf_decrypt(ciphertext, ad, nonce, key)
+      // We pass `null` for additional data (no AD). The ciphertext must include the MAC/tag as libsodium expects.
+      const plaintext = sodiumInstance.crypto_aead_xchacha20poly1305_ietf_decrypt(
+        data, // ciphertext (includes auth tag)
+        null, // additional data
         iv, // nonce
         keyBytes // key
       );
 
-      return plaintext;
+      // Ensure returned value is Uint8Array
+      return plaintext instanceof Uint8Array ? plaintext : new Uint8Array(plaintext);
     } catch (error) {
       if (error instanceof Error) {
-        if (error.message.includes('libsodium') || error.message.includes('sodium')) {
-          throw new Error('react-native-libsodium is required for XChaCha20-Poly1305 decryption');
+        const msg = error.message || String(error);
+        if (msg.includes('libsodium') || msg.includes('sodium') || msg.includes('crypto_aead')) {
+          throw new Error('libsodium-wrappers is required for XChaCha20-Poly1305 decryption or an initialized instance was not provided');
         }
       }
       throw new Error(

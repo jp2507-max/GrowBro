@@ -20,6 +20,16 @@ function createChain(): Chain {
 
 export const Gesture = {
   Pan: () => createChain(),
+  Tap: () => createChain(),
+  LongPress: () => createChain(),
+  Fling: () => createChain(),
+  Native: () => createChain(),
+  Pinch: () => createChain(),
+  Rotation: () => createChain(),
+  Hover: () => createChain(),
+  ForceTouch: () => createChain(),
+  Manual: () => createChain(),
+  Simultaneous: (..._args: any[]) => createChain(),
 };
 
 export type GestureType = ReturnType<typeof Gesture.Pan>;

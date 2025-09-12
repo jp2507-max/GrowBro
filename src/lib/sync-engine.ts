@@ -441,7 +441,7 @@ function applyPayloadToRecord(target: any, payload: any): void {
       if (value != null) {
         const numericValue = Number(value);
         if (Number.isFinite(numericValue)) {
-          (target as any).server_revision = numericValue;
+          (target as any).serverRevision = numericValue;
         }
       }
       continue;
@@ -451,7 +451,7 @@ function applyPayloadToRecord(target: any, payload: any): void {
         const numericValue =
           typeof value === 'number' ? value : toMillis(value as any);
         if (numericValue != null && Number.isFinite(numericValue)) {
-          (target as any).server_updated_at_ms = numericValue;
+          (target as any).serverUpdatedAtMs = numericValue;
         }
       }
       continue;
@@ -551,10 +551,10 @@ async function handleCreate(coll: any, payload: any): Promise<void> {
       );
     }
     if (payload.server_revision != null) {
-      (rec as any).server_revision = Number(payload.server_revision);
+      (rec as any).serverRevision = Number(payload.server_revision);
     }
     if (payload.server_updated_at_ms != null) {
-      (rec as any).server_updated_at_ms = Number(payload.server_updated_at_ms);
+      (rec as any).serverUpdatedAtMs = Number(payload.server_updated_at_ms);
     }
   });
 }
@@ -585,10 +585,10 @@ function applyServerPayloadToRecord(rec: any, payload: any): void {
     );
   }
   if (payload.server_revision != null) {
-    (rec as any).server_revision = Number(payload.server_revision);
+    (rec as any).serverRevision = Number(payload.server_revision);
   }
   if (payload.server_updated_at_ms != null) {
-    (rec as any).server_updated_at_ms = Number(payload.server_updated_at_ms);
+    (rec as any).serverUpdatedAtMs = Number(payload.server_updated_at_ms);
   }
 }
 
