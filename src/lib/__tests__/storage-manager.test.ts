@@ -2,6 +2,7 @@ import * as FileSystem from 'expo-file-system';
 
 import { createStorageManager } from '@/lib/sync/storage-manager';
 
+// Mock FileSystem module
 const mockFileSystem = (() => {
   const files = new Map<
     string,
@@ -11,6 +12,131 @@ const mockFileSystem = (() => {
 
   function ensurePath(uri: string) {
     if (!dirChildren.has(uri)) dirChildren.set(uri, new Set());
+  }
+
+  // Named implementation for moveAsync to keep function sizes reasonable
+  async function moveAsyncImpl({ from, to }: { from: string; to: string }) {
+    const fromNormalized = from.endsWith('/') ? from : from;
+    const toNormalized = to.endsWith('/') ? to : to;
+
+    const isDirectoryMove = fromNormalized.endsWith('/');
+
+    if (isDirectoryMove) {
+      const sourcePrefix = fromNormalized;
+      const destPrefix = toNormalized.endsWith('/')
+        ? toNormalized
+        : `${toNormalized}/`;
+
+      const operations = _collectMoveOperations(sourcePrefix, destPrefix);
+      _applyMoveOperations(operations, destPrefix);
+    } else {
+      const fromFile = files.get(fromNormalized);
+      if (fromFile) {
+        files.set(toNormalized, fromFile);
+        files.delete(fromNormalized);
+      }
+
+      for (const [dir, children] of dirChildren) {
+        const name = fromNormalized.replace(dir, '');
+        if (children.has(name)) {
+          children.delete(name);
+          const toParent = toNormalized.split('/').slice(0, -1).join('/') + '/';
+          ensurePath(toParent);
+          const toName = toNormalized.replace(toParent, '');
+          dirChildren.get(toParent)!.add(toName);
+          break;
+        }
+      }
+    }
+  }
+
+  function _collectMoveOperations(sourcePrefix: string, destPrefix: string) {
+    const operations = {
+      filesToAdd: new Map<
+        string,
+        { isDirectory: boolean; size: number; modificationTime: number }
+      >(),
+      filesToDelete: new Set<string>(),
+      dirsToAdd: new Map<string, Set<string>>(),
+      dirsToDelete: new Set<string>(),
+      parentUpdates: [] as {
+        parent: string;
+        removeChild?: string;
+        addChild?: string;
+      }[],
+    };
+
+    for (const [key, file] of files) {
+      if (key.startsWith(sourcePrefix)) {
+        const newKey = key.replace(sourcePrefix, destPrefix);
+        operations.filesToAdd.set(newKey, file);
+        operations.filesToDelete.add(key);
+      }
+    }
+
+    for (const [dir, children] of dirChildren) {
+      if (dir.startsWith(sourcePrefix)) {
+        const newDir = dir.replace(sourcePrefix, destPrefix);
+        operations.dirsToAdd.set(newDir, new Set(children));
+        operations.dirsToDelete.add(dir);
+      }
+    }
+
+    const sourceParts = sourcePrefix.split('/').filter(Boolean);
+    if (sourceParts.length > 1) {
+      const sourceParent = sourceParts.slice(0, -1).join('/') + '/';
+      const sourceChildName = sourceParts[sourceParts.length - 1];
+      operations.parentUpdates.push({
+        parent: sourceParent,
+        removeChild: sourceChildName,
+      });
+    }
+
+    const destParts = destPrefix.split('/').filter(Boolean);
+    if (destParts.length > 1) {
+      const destParent = destParts.slice(0, -1).join('/') + '/';
+      const destChildName = destParts[destParts.length - 1];
+      operations.parentUpdates.push({
+        parent: destParent,
+        addChild: destChildName,
+      });
+    }
+
+    return operations;
+  }
+
+  function _applyMoveOperations(
+    operations: ReturnType<typeof _collectMoveOperations>,
+    destPrefix: string
+  ) {
+    for (const key of operations.filesToDelete) files.delete(key);
+    for (const dir of operations.dirsToDelete) dirChildren.delete(dir);
+    for (const [key, file] of operations.filesToAdd) files.set(key, file);
+
+    for (const [dir, children] of operations.dirsToAdd) {
+      dirChildren.set(dir, children);
+      let parentPath = '';
+      const parts = dir.split('/').filter(Boolean);
+      for (let i = 0; i < parts.length - 1; i++) {
+        parentPath += parts[i] + '/';
+        ensurePath(parentPath);
+      }
+    }
+
+    for (const update of operations.parentUpdates) {
+      ensurePath(update.parent);
+      const parentChildren = dirChildren.get(update.parent)!;
+      if (update.removeChild) parentChildren.delete(update.removeChild);
+      if (update.addChild) parentChildren.add(update.addChild);
+    }
+
+    if (!files.has(destPrefix)) {
+      files.set(destPrefix, {
+        isDirectory: true,
+        size: 0,
+        modificationTime: Date.now(),
+      });
+    }
   }
 
   return {
@@ -33,7 +159,17 @@ const mockFileSystem = (() => {
     readDirectoryAsync: jest.fn(async (uri: string) =>
       Array.from(dirChildren.get(uri) ?? [])
     ),
-    writeAsStringAsync: jest.fn(async (_uri: string, _content: string) => {}),
+    writeAsStringAsync: jest.fn(async (uri: string, content: string) => {
+      const parent = uri.split('/').slice(0, -1).join('/') + '/';
+      ensurePath(parent);
+      const parentSet = dirChildren.get(parent)!;
+      parentSet.add(uri.replace(parent, ''));
+      files.set(uri, {
+        isDirectory: false,
+        size: content.length,
+        modificationTime: Date.now(),
+      });
+    }),
     readAsStringAsync: jest.fn(async (uri: string) => {
       const f = files.get(uri);
       if (!f) throw new Error('ENOENT');
@@ -63,33 +199,15 @@ const mockFileSystem = (() => {
         }
       }
     }),
-    moveAsync: jest.fn(async ({ from, to }: { from: string; to: string }) => {
-      // Simple move implementation for test
-      const fromFile = files.get(from);
-      if (fromFile) {
-        files.set(to, fromFile);
-        files.delete(from);
-      }
-      // Update directory structure
-      for (const [dir, children] of dirChildren) {
-        const name = from.replace(dir, '');
-        if (children.has(name)) {
-          children.delete(name);
-          const toParent = to.split('/').slice(0, -1).join('/') + '/';
-          const toName = to.replace(toParent, '');
-          if (!dirChildren.has(toParent)) {
-            dirChildren.set(toParent, new Set());
-          }
-          dirChildren.get(toParent)!.add(toName);
-          break;
-        }
-      }
-    }),
+    moveAsync: jest.fn(moveAsyncImpl),
     getFreeDiskStorageAsync: jest.fn(async () => 10 * 1024 * 1024),
   };
 })();
 
-jest.mock('expo-file-system', () => mockFileSystem);
+// Apply mock before any module that uses FileSystem
+Object.keys(mockFileSystem).forEach((key) => {
+  (FileSystem as any)[key] = (mockFileSystem as any)[key];
+});
 
 describe('StorageManager', () => {
   const manager = createStorageManager({ cacheLimitBytes: 1 * 1024 });

@@ -14,8 +14,8 @@ type Variables = {
 type PostPage = PaginateQuery<Post>;
 
 // Helper function to extract cursor token from full URLs
-const extractCursorToken = (cursor: string | null): string | null => {
-  if (!cursor) return null;
+const extractCursorToken = (cursor: string | undefined): string | undefined => {
+  if (!cursor) return undefined;
 
   // If it's already a simple token (no URL structure), return as-is
   if (!cursor.includes('://') && !cursor.includes('?')) {
@@ -37,18 +37,26 @@ export const usePostsInfinite = createInfiniteQuery<
   PostPage,
   Variables,
   Error,
-  string | null
+  string | undefined
 >({
   queryKey: ['posts-infinite'],
   fetcher: async (vars: Variables, { pageParam, signal }) => {
     const cursor = extractCursorToken(pageParam);
 
+    const params: Record<string, any> = {
+      limit: vars?.limit ?? DEFAULT_LIMIT,
+    };
+
+    if (cursor) {
+      params.cursor = cursor;
+    }
+
+    if (vars?.category) {
+      params.category = vars.category;
+    }
+
     const response = await client.get('posts', {
-      params: {
-        cursor,
-        limit: vars?.limit ?? DEFAULT_LIMIT,
-        category: vars?.category,
-      },
+      params,
       signal,
     });
     return response.data as PostPage;
@@ -56,7 +64,7 @@ export const usePostsInfinite = createInfiniteQuery<
   getNextPageParam,
   getPreviousPageParam,
   placeholderData: keepPreviousData,
-  initialPageParam: null,
+  initialPageParam: undefined,
   // Remove maxPages until getPreviousPageParam is fully implemented
   // maxPages: 10,
 });

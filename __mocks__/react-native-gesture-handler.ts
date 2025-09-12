@@ -37,5 +37,11 @@ export type GestureType = ReturnType<typeof Gesture.Pan>;
 export const GestureDetector = ({ children }: { children: React.ReactNode }) =>
   children as any;
 
+export const GestureHandlerRootView = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => children as any;
+
 export const State = {};
-export default { Gesture, GestureDetector };
+export default { Gesture, GestureDetector, GestureHandlerRootView };

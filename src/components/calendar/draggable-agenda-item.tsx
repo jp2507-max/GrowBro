@@ -2,6 +2,7 @@ import React from 'react';
 import type { AccessibilityActionEvent } from 'react-native';
 import type { GestureType } from 'react-native-gesture-handler';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import type { AnimatedStyle, SharedValue } from 'react-native-reanimated';
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -26,7 +27,7 @@ type Props = {
 type AgendaItemBodyProps = {
   gesture: GestureType;
   // Using loose typing for animated style to accommodate Reanimated's internal types
-  animatedStyle: any;
+  animatedStyle: AnimatedStyle;
   task: Task;
   isOpen: boolean;
   onClose: () => void;
@@ -75,8 +76,9 @@ function AgendaItemBody({
 // Custom hook to create pan gesture
 // eslint-disable-next-line max-lines-per-function
 function useCreatePanGesture(options: {
-  tx: { value: number };
-  ty: { value: number };
+  tx: SharedValue<number>;
+  ty: SharedValue<number>;
+  originTime: SharedValue<number>;
   originDate: React.RefObject<Date>;
   task: Task;
   startDrag: (task: Task) => void;
@@ -85,10 +87,11 @@ function useCreatePanGesture(options: {
   onDragUpdate: (y: number) => number | undefined;
   computeTargetDate: (originalDate: Date, translationY: number) => Date;
   updateCurrentOffset: (y: number) => void;
-}) {
+}): GestureType {
   const {
     tx,
     ty,
+    originTime,
     originDate,
     task,
     startDrag,
@@ -129,6 +132,7 @@ function useCreatePanGesture(options: {
           tx.value = 0;
 
           ty.value = 0;
+          originTime.value = originDate.current!.getTime();
           runOnJS(startDrag)(task);
         })
         .onUpdate((e) => {
@@ -138,14 +142,24 @@ function useCreatePanGesture(options: {
           runOnJS(onDragUpdateJS)(e.absoluteY);
         })
         .onEnd(() => {
-          runOnJS(onDropJS)(originDate.current!.getTime(), ty.value);
+          runOnJS(onDropJS)(originTime.value, ty.value);
           tx.value = withSpring(0);
           ty.value = withSpring(0);
         })
         .onFinalize(() => {
           runOnJS(cancelDrag)();
         }),
-    [cancelDrag, onDragUpdateJS, onDropJS, startDrag, task, tx, ty, originDate]
+    [
+      cancelDrag,
+      onDragUpdateJS,
+      onDropJS,
+      startDrag,
+      task,
+      tx,
+      ty,
+      originTime,
+      originDate,
+    ]
   );
 }
 
@@ -171,6 +185,7 @@ function useDragGesture(options: {
 
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
+  const originTime = useSharedValue(0);
   const originDate = React.useRef<Date>(new Date(task.dueAtLocal));
 
   // Keep originDate in sync with task prop changes
@@ -185,6 +200,7 @@ function useDragGesture(options: {
   const pan = useCreatePanGesture({
     tx,
     ty,
+    originTime,
     originDate,
     task,
     startDrag,
