@@ -2,7 +2,7 @@ import * as FileSystem from 'expo-file-system';
 
 import { createStorageManager } from '@/lib/sync/storage-manager';
 
-jest.mock('expo-file-system', () => {
+const mockFileSystem = (() => {
   const files = new Map<
     string,
     { isDirectory: boolean; size: number; modificationTime: number }
@@ -63,9 +63,33 @@ jest.mock('expo-file-system', () => {
         }
       }
     }),
+    moveAsync: jest.fn(async ({ from, to }: { from: string; to: string }) => {
+      // Simple move implementation for test
+      const fromFile = files.get(from);
+      if (fromFile) {
+        files.set(to, fromFile);
+        files.delete(from);
+      }
+      // Update directory structure
+      for (const [dir, children] of dirChildren) {
+        const name = from.replace(dir, '');
+        if (children.has(name)) {
+          children.delete(name);
+          const toParent = to.split('/').slice(0, -1).join('/') + '/';
+          const toName = to.replace(toParent, '');
+          if (!dirChildren.has(toParent)) {
+            dirChildren.set(toParent, new Set());
+          }
+          dirChildren.get(toParent)!.add(toName);
+          break;
+        }
+      }
+    }),
     getFreeDiskStorageAsync: jest.fn(async () => 10 * 1024 * 1024),
   };
-});
+})();
+
+jest.mock('expo-file-system', () => mockFileSystem);
 
 describe('StorageManager', () => {
   const manager = createStorageManager({ cacheLimitBytes: 1 * 1024 });

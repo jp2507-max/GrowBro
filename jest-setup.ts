@@ -76,11 +76,7 @@ jest.mock('react-native-reanimated', () => {
   return mockReanimated;
 });
 
-// mock: react-native-gesture-handler to jest mocks
-jest.mock('react-native-gesture-handler', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require('react-native-gesture-handler/src/mocks');
-});
+// mock: react-native-gesture-handler is now handled by moduleNameMapper in jest.config.js
 
 // mock: react-native-edge-to-edge SystemBars to prevent native behavior in tests
 jest.mock('react-native-edge-to-edge', () => ({

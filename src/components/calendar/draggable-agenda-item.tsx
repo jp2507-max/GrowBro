@@ -99,6 +99,26 @@ function useCreatePanGesture(options: {
     updateCurrentOffset,
   } = options;
 
+  // JS-thread handlers for runOnJS
+  const onDragUpdateJS = React.useCallback(
+    (y: number): void => {
+      const newOffset = onDragUpdate(y);
+      if (newOffset !== undefined) {
+        updateCurrentOffset(newOffset);
+      }
+    },
+    [onDragUpdate, updateCurrentOffset]
+  );
+
+  const onDropJS = React.useCallback(
+    (originMs: number, dy: number): void => {
+      const origin = new Date(originMs);
+      const target = computeTargetDate(origin, dy);
+      void completeDrop(target, 'occurrence' as DragScope);
+    },
+    [completeDrop, computeTargetDate]
+  );
+
   return React.useMemo(
     () =>
       Gesture.Pan()
@@ -115,36 +135,17 @@ function useCreatePanGesture(options: {
           tx.value = e.translationX;
 
           ty.value = e.translationY;
-          runOnJS(() => {
-            const newOffset = onDragUpdate(e.absoluteY);
-            if (newOffset !== undefined) {
-              updateCurrentOffset(newOffset);
-            }
-          })();
+          runOnJS(onDragUpdateJS)(e.absoluteY);
         })
         .onEnd(() => {
-          runOnJS((origin: Date, dy: number) => {
-            const target = computeTargetDate(origin, dy);
-            void completeDrop(target, 'occurrence' as DragScope);
-          })(originDate.current!, ty.value);
+          runOnJS(onDropJS)(originDate.current!.getTime(), ty.value);
           tx.value = withSpring(0);
           ty.value = withSpring(0);
         })
         .onFinalize(() => {
           runOnJS(cancelDrag)();
         }),
-    [
-      cancelDrag,
-      completeDrop,
-      computeTargetDate,
-      onDragUpdate,
-      startDrag,
-      task,
-      tx,
-      ty,
-      updateCurrentOffset,
-      originDate,
-    ]
+    [cancelDrag, onDragUpdateJS, onDropJS, startDrag, task, tx, ty, originDate]
   );
 }
 
