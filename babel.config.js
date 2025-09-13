@@ -35,9 +35,16 @@ module.exports = function (api) {
     overrides: [
       {
         // Ensure TS is transformed for TS sources shipped in Expo modules
-        test: /node_modules[\\\/]expo-file-system[\\\/].*\.ts$/,
+        test: /node_modules[\\/\/]expo-file-system[\\/\/].*\.ts$/,
         plugins: [
           ['@babel/plugin-transform-typescript', { allowDeclareFields: true }],
+        ],
+      },
+      {
+        // Ensure JSX in expo-router build output is transformed
+        test: /node_modules[\\/\/]expo-router[\\/\/]build[\\/\/].*\.js$/,
+        plugins: [
+          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }],
         ],
       },
     ],
