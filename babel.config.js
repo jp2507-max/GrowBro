@@ -32,5 +32,14 @@ module.exports = function (api) {
       ],
       'react-native-worklets/plugin',
     ],
+    overrides: [
+      {
+        // Ensure TS is transformed for TS sources shipped in Expo modules
+        test: /node_modules[\\\/]expo-file-system[\\\/].*\.ts$/,
+        plugins: [
+          ['@babel/plugin-transform-typescript', { allowDeclareFields: true }],
+        ],
+      },
+    ],
   };
 };
