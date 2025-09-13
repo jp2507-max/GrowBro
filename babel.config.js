@@ -6,6 +6,7 @@ module.exports = function (api) {
       'nativewind/babel',
     ],
     plugins: [
+      ['@babel/plugin-transform-typescript', { allowDeclareFields: true }],
       ['@babel/plugin-proposal-decorators', { legacy: true }],
       ['@babel/plugin-transform-class-properties', { loose: true }],
       [
