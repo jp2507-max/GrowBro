@@ -1,6 +1,6 @@
 # Product Overview
 
-GrowBro is a React Native mobile application built with Expo, designed as a plant growth tracking and management app. The app supports multiple environments (development, staging, production) and includes features for:
+GrowBro is a React Native mobile application built with Expo, designed as a cannabis plant growth tracking and management app. The app supports multiple environments (development, staging, production) and includes features for:
 
 - Plant telemetry and monitoring
 - Calendar and scheduling functionality

@@ -5,7 +5,7 @@
 - **Framework**: React Native with Expo SDK 54
 - **Language**: TypeScript with strict mode enabled
 - **Package Manager**: pnpm (required, enforced via preinstall hook)
-- **Navigation**: Expo Router with typed routes
+- **Navigation**: Expo Router v6 with typed routes
 - **Styling**: NativeWind (Tailwind CSS for React Native)
 - **State Management**: Zustand
 - **Data Fetching**: TanStack React Query with react-query-kit
