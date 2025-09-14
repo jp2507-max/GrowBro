@@ -110,6 +110,9 @@ function createExpoConfig(config: any): any {
     extra: {
       // Expose only public vars; keep secrets out of the bundle.
       ...publicExtra,
+      // Ensure client env is available at runtime (normalize in src/lib/env.js)
+      EXPO_PUBLIC_SUPABASE_URL: Env.SUPABASE_URL,
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: Env.SUPABASE_ANON_KEY,
       eas: {
         projectId: Env.EAS_PROJECT_ID,
       },
