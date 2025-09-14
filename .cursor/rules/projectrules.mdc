@@ -36,11 +36,11 @@ src
 
 ## Tech Stack
 
-- Expo
+- Expo 54
 - React Native
 - TypeScript
 - Nativewind ( Tailwind CSS for React Native )
-- Expo Router
+- Expo Router v6
 - React Query with React Query Kit
 - Zustand
 - React Native Keyboard Controller

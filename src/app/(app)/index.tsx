@@ -12,6 +12,7 @@ export default function Feed() {
     ({ item }: { item: Post }) => <Card {...item} />,
     []
   );
+  const listData = data ?? [];
 
   if (isError) {
     return (
@@ -21,12 +22,13 @@ export default function Feed() {
     );
   }
   return (
-    <View className="flex-1 ">
+    <View className="flex-1 " testID="feed-screen">
       <FocusAwareStatusBar />
       <FlashList
-        data={data}
+        data={listData}
         renderItem={renderItem}
         keyExtractor={(_, index) => `item-${index}`}
+        contentContainerStyle={{ flexGrow: 1 }}
         ListEmptyComponent={<EmptyList isLoading={isPending} />}
       />
     </View>

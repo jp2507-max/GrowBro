@@ -1,9 +1,7 @@
 import { Link, Redirect, SplashScreen, Tabs } from 'expo-router';
 import React, { useCallback, useEffect } from 'react';
 
-import { ConnectivityBanner } from '@/components/sync/connectivity-banner';
-import { SyncStatus } from '@/components/sync/sync-status';
-import { Pressable, Text, View } from '@/components/ui';
+import { Pressable, Text } from '@/components/ui';
 import {
   Feed as FeedIcon,
   Home as HomeIcon,
@@ -33,49 +31,50 @@ export default function TabLayout() {
     return <Redirect href="/login" />;
   }
   return (
-    <View>
-      <ConnectivityBanner />
-      <SyncStatus />
-      <Tabs>
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: 'Feed',
-            tabBarIcon: ({ color }) => <FeedIcon color={color} />,
-            headerRight: () => <CreateNewPostLink />,
-            tabBarButtonTestID: 'feed-tab',
-          }}
-        />
+    <Tabs
+      initialRouteName="index"
+      screenOptions={{
+        tabBarHideOnKeyboard: true,
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Feed',
+          tabBarIcon: ({ color }) => <FeedIcon color={color} />,
+          headerRight: () => <CreateNewPostLink />,
+          tabBarButtonTestID: 'feed-tab',
+        }}
+      />
 
-        <Tabs.Screen
-          name="calendar"
-          options={{
-            title: 'Calendar',
-            tabBarIcon: ({ color }) => <HomeIcon color={color} />,
-            tabBarButtonTestID: 'calendar-tab',
-          }}
-        />
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          title: 'Calendar',
+          tabBarIcon: ({ color }) => <HomeIcon color={color} />,
+          tabBarButtonTestID: 'calendar-tab',
+        }}
+      />
 
-        <Tabs.Screen
-          name="style"
-          options={{
-            title: 'Style',
-            headerShown: false,
-            tabBarIcon: ({ color }) => <StyleIcon color={color} />,
-            tabBarButtonTestID: 'style-tab',
-          }}
-        />
-        <Tabs.Screen
-          name="settings"
-          options={{
-            title: 'Settings',
-            headerShown: false,
-            tabBarIcon: ({ color }) => <SettingsIcon color={color} />,
-            tabBarButtonTestID: 'settings-tab',
-          }}
-        />
-      </Tabs>
-    </View>
+      <Tabs.Screen
+        name="style"
+        options={{
+          title: 'Style',
+          headerShown: false,
+          tabBarIcon: ({ color }) => <StyleIcon color={color} />,
+          tabBarButtonTestID: 'style-tab',
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          headerShown: false,
+          tabBarIcon: ({ color }) => <SettingsIcon color={color} />,
+          tabBarButtonTestID: 'settings-tab',
+        }}
+      />
+    </Tabs>
   );
 }
 
