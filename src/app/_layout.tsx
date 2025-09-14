@@ -226,7 +226,8 @@ function RootLayout(): React.ReactElement {
   );
 }
 
-export default Sentry.wrap(RootLayout);
+// Avoid wrapping with Sentry when Sentry is not initialized to prevent warnings
+export default sentryInitialized ? Sentry.wrap(RootLayout) : RootLayout;
 
 interface ProvidersProps {
   children: React.ReactNode;
