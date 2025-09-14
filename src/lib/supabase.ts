@@ -26,6 +26,21 @@ if (isTestEnvironment) {
   supabaseAnonKey = 'test-key';
 } else {
   // In production/staging/development, require real environment variables
+  if (!ClientEnv.SUPABASE_URL && (ClientEnv as any).EXPO_PUBLIC_SUPABASE_URL) {
+    // Fallback to public-prefixed keys if only those are present in extra
+    (ClientEnv as any).SUPABASE_URL = (
+      ClientEnv as any
+    ).EXPO_PUBLIC_SUPABASE_URL;
+  }
+  if (
+    !ClientEnv.SUPABASE_ANON_KEY &&
+    (ClientEnv as any).EXPO_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    (ClientEnv as any).SUPABASE_ANON_KEY = (
+      ClientEnv as any
+    ).EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  }
+
   if (!ClientEnv.SUPABASE_URL) {
     throw new Error('Missing required environment variable: SUPABASE_URL');
   }
