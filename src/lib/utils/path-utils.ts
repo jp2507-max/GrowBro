@@ -63,7 +63,7 @@ function _joinPathImpl(segments: string[]): string {
   const hasLeadingSlash = segments.some(
     (s) => s.startsWith('/') || s.startsWith('\\')
   );
-  return hasLeadingSlash ? '/' + joined : joined;
+  return hasLeadingSlash && !joined.startsWith('/') ? '/' + joined : joined;
 }
 
 /**
@@ -74,9 +74,21 @@ function _joinPathImpl(segments: string[]): string {
 export function dirname(path: string): string {
   if (!path || path === '/') return '/';
 
-  const schemeMatch = path.match(/^([A-Za-z][A-Za-z0-9+.-]*:)(\/+)(.*)$/);
+  let schemeMatch = path.match(/^([A-Za-z][A-Za-z0-9+.-]*:)(\/*)(.*)$/);
+  // Don't treat single-letter schemes like "C:" as URIs (Windows drive letters)
+  if (
+    schemeMatch &&
+    schemeMatch[1].length === 2 &&
+    /^[A-Za-z]:$/.test(schemeMatch[1])
+  ) {
+    schemeMatch = null;
+  }
   if (schemeMatch)
-    return _dirnameUriImpl(schemeMatch[1], schemeMatch[2], schemeMatch[3]);
+    return _dirnameUriImpl(
+      schemeMatch[1],
+      schemeMatch[2] || '',
+      schemeMatch[3]
+    );
 
   // Standard path handling for non-URI paths (kept concise)
   const normalizedPath = path.replace(/\\/g, '/');
@@ -124,15 +136,17 @@ function _dirnameUriImpl(
     if (trimmedEnd === '') return schemePrefix + '///';
     if (!trimmedEnd.includes('/')) {
       // Only authority present
-      return endsWithSlash
-        ? schemePrefix + '//' + trimmedEnd + '/'
-        : schemePrefix + '//';
+      return schemePrefix + '//' + trimmedEnd + '/';
     }
     const lastSlash = trimmedEnd.lastIndexOf('/');
     const parent = trimmedEnd.substring(0, lastSlash);
+    if (endsWithSlash) {
+      // Directory path ending with slash → dirname is the directory itself
+      return schemePrefix + '//' + trimmedEnd;
+    }
     if (!parent.includes('/')) {
-      // host/path → directory is host/
-      return schemePrefix + '//' + parent + '/';
+      // host/path → directory is host
+      return schemePrefix + '//' + parent;
     }
     return schemePrefix + '//' + parent;
   }

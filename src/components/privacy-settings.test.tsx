@@ -1,5 +1,7 @@
 import React from 'react';
+import { Alert } from 'react-native';
 
+import * as privacyConsent from '@/lib/privacy-consent';
 import { cleanup, fireEvent, screen, setup } from '@/lib/test-utils';
 
 import { PrivacySettings } from './privacy-settings';
@@ -15,25 +17,34 @@ jest.mock('@/lib', () => {
 jest.mock('@/lib/privacy-consent', () => {
   const actual = jest.requireActual('@/lib/privacy-consent');
   // Provide stable initial state and spyable setters
-  let consent = {
+  const initialConsent = {
     analytics: false,
     crashReporting: true,
     personalizedData: false,
     sessionReplay: false,
     lastUpdated: 1700000000000,
   };
+  let consent = { ...initialConsent };
+
+  const resetConsent = () => {
+    consent = { ...initialConsent };
+  };
+
   return {
     ...actual,
     getPrivacyConsent: jest.fn(() => consent),
     setPrivacyConsent: jest.fn((next: any) => {
       consent = typeof next === 'object' ? next : consent;
     }),
+    __resetConsent: resetConsent,
   };
 });
 
 afterEach(() => {
   jest.clearAllMocks();
   cleanup();
+  // Reset mocked consent state between tests to prevent order dependency
+  (privacyConsent as any).__resetConsent?.();
 });
 
 describe('PrivacySettings', () => {
@@ -66,8 +77,7 @@ describe('PrivacySettings', () => {
 
   test('updates last updated text on change', async () => {
     setup(<PrivacySettings />);
-    const _beforeText = screen.getByTestId('privacy-settings-last-updated')
-      .props.children[1] as string;
+    // capture before value (not asserted directly to avoid flakiness)
     fireEvent(
       screen.getByTestId('toggle-sessionReplay-switch'),
       'valueChange',
@@ -82,7 +92,7 @@ describe('PrivacySettings', () => {
 
   test('info title press triggers alert via onInfoPress', async () => {
     const { user } = setup(<PrivacySettings />);
-    const alertSpy = jest.spyOn(require('react-native').Alert, 'alert');
+    const alertSpy = jest.spyOn(Alert, 'alert');
     await user.press(screen.getByTestId('toggle-personalizedData-title'));
     expect(alertSpy).toHaveBeenCalled();
   });

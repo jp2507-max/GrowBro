@@ -64,8 +64,8 @@ describe('dirname URI Scheme Preservation', () => {
 
   test('preserves file:// URIs', () => {
     expect(dirname('file://server/share/file.txt')).toBe('file://server/share');
-    expect(dirname('file://server/share')).toBe('file://server/');
-    expect(dirname('file://server')).toBe('file://');
+    expect(dirname('file://server/share')).toBe('file://server');
+    expect(dirname('file://server')).toBe('file://server/');
   });
 
   test('handles plain paths normally', () => {
@@ -81,7 +81,7 @@ describe('dirname URI Scheme Preservation', () => {
       'https://example.com/path/to'
     );
     expect(dirname('s3://bucket/path/file.txt')).toBe('s3://bucket/path');
-    expect(dirname('ftp://host/path')).toBe('ftp://host/');
+    expect(dirname('ftp://host/path')).toBe('ftp://host');
   });
 });
 
@@ -93,7 +93,7 @@ describe('URI Scheme Edge Cases', () => {
   });
 
   test('handles URIs with single slash after scheme', () => {
-    expect(dirname('file://server')).toBe('file://');
+    expect(dirname('file://server')).toBe('file://server/');
     expect(dirname('file://server/')).toBe('file://server/');
     expect(joinPath('file://', 'server')).toBe('file://server');
   });

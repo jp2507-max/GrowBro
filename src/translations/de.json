@@ -52,14 +52,18 @@
       "subtitle": "Hilf uns, Fehler zu beheben, indem du Absturzberichte sendest",
       "title": "Absturzberichte"
     },
+    "lastUpdated": "Zuletzt aktualisiert: {{date}}",
     "personalized": {
       "body": "Dies umfasst IP-Adressen, Benutzer-IDs und andere identifizierende Informationen, die uns helfen, Fehlerberichte und Analysen zu verbessern. Diese Daten werden gemäß unserer Datenschutzerklärung verarbeitet.",
+      "subtitle": "Identifizierende Informationen in Berichten einschließen",
       "title": "Personalisierte Daten"
     },
     "sessionReplay": {
       "body": "Sitzungswiedergaben protokollieren Ihre Interaktionen mit der App, um Probleme zu debuggen. Sensible Daten werden nach Möglichkeit gefiltert oder unkenntlich gemacht; siehe Datenschutzerklärung für Details.",
+      "subtitle": "App-Interaktionen für Debugging aufzeichnen",
       "title": "Sitzungswiedergabe"
-    }
+    },
+    "title": "Datenschutzeinstellungen"
   },
   "settings": {
     "about": "Über",

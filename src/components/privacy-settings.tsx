@@ -12,6 +12,8 @@ interface PrivacySettingsProps {
   onConsentChange?: (consent: PrivacyConsent) => void;
 }
 
+type AllowedConsentKey = Exclude<keyof PrivacyConsent, 'lastUpdated'>;
+
 // Small, reusable toggle row to keep components modular (Project rule: Component Modularity)
 type ToggleRowProps = {
   title: string;
@@ -77,12 +79,12 @@ function PrivacySettingsContent({
   updateConsent,
 }: {
   consent: PrivacyConsent;
-  updateConsent: (key: keyof PrivacyConsent, value: boolean) => void;
+  updateConsent: (key: AllowedConsentKey, value: boolean) => void;
 }) {
   return (
     <View className="space-y-4 p-4" testID="privacy-settings">
       <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-        Privacy Settings
+        {translate('privacy.title')}
       </Text>
 
       <View className="space-y-4">
@@ -103,8 +105,8 @@ function PrivacySettingsContent({
         />
 
         <ToggleRow
-          title="Personalized Data ℹ️"
-          subtitle="Include identifying information in reports"
+          title={translate('privacy.personalized.title')}
+          subtitle={translate('privacy.personalized.subtitle')}
           value={consent.personalizedData}
           onChange={(value) => updateConsent('personalizedData', value)}
           onInfoPress={showPersonalizedDataInfo}
@@ -112,8 +114,8 @@ function PrivacySettingsContent({
         />
 
         <ToggleRow
-          title="Session Replay ℹ️"
-          subtitle="Record app interactions for debugging"
+          title={translate('privacy.sessionReplay.title')}
+          subtitle={translate('privacy.sessionReplay.subtitle')}
           value={consent.sessionReplay}
           onChange={(value) => updateConsent('sessionReplay', value)}
           onInfoPress={showSessionReplayInfo}
@@ -125,7 +127,9 @@ function PrivacySettingsContent({
         className="mt-4 text-xs text-gray-500 dark:text-gray-400"
         testID="privacy-settings-last-updated"
       >
-        Last updated: {new Date(consent.lastUpdated).toLocaleDateString()}
+        {translate('privacy.lastUpdated', {
+          date: new Date(consent.lastUpdated).toLocaleDateString(),
+        })}
       </Text>
     </View>
   );
@@ -139,17 +143,16 @@ export function PrivacySettings({ onConsentChange }: PrivacySettingsProps) {
     setConsentState(getPrivacyConsent());
   }, []);
 
-  function updateConsent(key: keyof PrivacyConsent, value: boolean): void {
-    if (key === 'lastUpdated') return; // Don't allow manual update of timestamp
-
-    const now = Date.now();
-    const newConsent = { ...consent, [key]: value, lastUpdated: now };
-    // Update local state immediately so the UI reflects the new timestamp
-    setConsentState(newConsent);
-    // Persist the full consent object so reads are canonical; pass the same
-    // object to onConsentChange so consumers get the updated timestamp too.
-    setPrivacyConsent(newConsent);
-    onConsentChange?.(newConsent);
+  function updateConsent(key: AllowedConsentKey, value: boolean): void {
+    // Create updater object without lastUpdated (it will be set by setPrivacyConsent)
+    const updates = { [key]: value };
+    // Persist the consent changes - setPrivacyConsent will handle lastUpdated
+    setPrivacyConsent(updates);
+    // Get the persisted object (which now includes the updated lastUpdated)
+    const persistedConsent = getPrivacyConsent();
+    // Use persisted object as single source of truth for UI state
+    setConsentState(persistedConsent);
+    onConsentChange?.(persistedConsent);
   }
 
   return (
