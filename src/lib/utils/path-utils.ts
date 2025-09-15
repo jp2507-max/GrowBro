@@ -23,7 +23,15 @@ function _joinPathImpl(segments: string[]): string {
   const firstSegment = segments[firstIndex];
 
   // URI-aware handling (robust against odd slash grouping)
-  const schemeOnlyMatch = firstSegment.match(/^([A-Za-z][A-Za-z0-9+.-]*:)/);
+  let schemeOnlyMatch = firstSegment.match(/^([A-Za-z][A-Za-z0-9+.-]*:)/);
+  // Don't treat single-letter schemes like "C:" as URIs (Windows drive letters)
+  if (
+    schemeOnlyMatch &&
+    schemeOnlyMatch[1].length === 2 &&
+    /^[A-Za-z]:$/.test(schemeOnlyMatch[1])
+  ) {
+    schemeOnlyMatch = null;
+  }
   if (schemeOnlyMatch) {
     const scheme = schemeOnlyMatch[1];
     const afterScheme = firstSegment.slice(scheme.length);

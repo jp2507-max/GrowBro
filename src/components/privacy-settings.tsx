@@ -145,7 +145,7 @@ export function PrivacySettings({ onConsentChange }: PrivacySettingsProps) {
 
   function updateConsent(key: AllowedConsentKey, value: boolean): void {
     // Create updater object without lastUpdated (it will be set by setPrivacyConsent)
-    const updates = { [key]: value };
+    const updates: Partial<PrivacyConsent> = { [key]: value };
     // Persist the consent changes - setPrivacyConsent will handle lastUpdated
     setPrivacyConsent(updates);
     // Get the persisted object (which now includes the updated lastUpdated)

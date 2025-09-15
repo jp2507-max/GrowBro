@@ -25,6 +25,7 @@
 #          VERSION: ${{ github.event.release.tag_name }}
 #          IOS: false
 
+---
 name: 'Setup EAS Build + Trigger Build'
 description: 'Setup EAS Build + Trigger Build'
 inputs:
@@ -68,7 +69,7 @@ runs:
     - name: 📦 Setup Expo and EAS
       uses: expo/expo-github-action@v8
       with:
-        eas-version: 7.x
+        eas-version: 12.x
         token: ${{ inputs.EXPO_TOKEN }}
 
     - name: 🔒 Validate channel mapping
@@ -93,13 +94,16 @@ runs:
         CHANNELS_OUTPUT="$(eas channel:list --json 2>&1)"
         EAS_EXIT_CODE=$?
         if [ $EAS_EXIT_CODE -ne 0 ]; then
-          echo "❌ Failed to list EAS channels (eas channel:list returned exit code $EAS_EXIT_CODE)."
+          echo "❌ Failed to list EAS channels (eas channel:list returned exit code" \
+            "$EAS_EXIT_CODE)."
           echo "$CHANNELS_OUTPUT"
           exit 1
         fi
 
         # Parse JSON and extract channel names. The CLI typically returns an array of channel objects.
-        printf '%s' "$CHANNELS_OUTPUT" | node -e '
+        # Pipe the JSON into node via a bash heredoc to avoid YAML parsing issues with
+        # single-quoted inline scripts and to keep lines short for yamllint.
+        printf '%s' "$CHANNELS_OUTPUT" | node <<'NODE_SCRIPT'
 const fs = require("fs");
 const input = fs.readFileSync(0, "utf8");
 let arr;
@@ -109,7 +113,11 @@ try {
   console.error("❌ Invalid JSON returned by eas channel:list:", e.message);
   process.exit(2);
 }
-const names = Array.isArray(arr) ? arr.map(c => c && c.name).filter(Boolean) : (arr && arr.channels ? arr.channels.map(c => c && c.name).filter(Boolean) : []);
+const names = Array.isArray(arr)
+  ? arr.map(c => c && c.name).filter(Boolean)
+  : (arr && arr.channels
+    ? arr.channels.map(c => c && c.name).filter(Boolean)
+    : []);
 const required = process.env.REQUIRED_CHANNEL;
 if (!required) {
   console.error("❌ REQUIRED channel not set in environment.");
@@ -119,10 +127,10 @@ if (names.includes(required)) {
   console.log("✅ Found required EAS channel:", required);
   process.exit(0);
 } else {
-  console.error("❌ Required EAS channel '" + required + "' not found. Available channels:", names.join(", "));
+  console.error("❌ Required EAS channel '" + required + "' not found. Available channels: " + names.join(", "));
   process.exit(3);
 }
-'
+NODE_SCRIPT
       shell: bash
 
     - name: ⚙️ Run Prebuild

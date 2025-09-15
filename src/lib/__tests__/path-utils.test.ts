@@ -104,6 +104,42 @@ describe('URI Scheme Edge Cases', () => {
   });
 });
 
+describe('Windows Drive Letter Handling', () => {
+  test('handles Windows drive letters correctly', () => {
+    expect(joinPath('C:', 'Users', 'Documents')).toBe('C:/Users/Documents');
+    expect(joinPath('C:\\', 'Users', 'Documents')).toBe('C:/Users/Documents');
+    expect(joinPath('C:/', 'Users', 'Documents')).toBe('C:/Users/Documents');
+    expect(joinPath('D:', 'Program Files')).toBe('D:/Program Files');
+    expect(joinPath('Z:', 'folder')).toBe('Z:/folder');
+  });
+
+  test('preserves Windows drive letter case', () => {
+    expect(joinPath('c:', 'users')).toBe('c:/users');
+    expect(joinPath('C:', 'users')).toBe('C:/users');
+    expect(joinPath('c:', 'Users')).toBe('c:/Users');
+  });
+
+  test('handles Windows drive letters with empty segments', () => {
+    expect(joinPath('C:', '', 'Users')).toBe('C:/Users');
+    expect(joinPath('C:', 'Users', '')).toBe('C:/Users');
+    expect(joinPath('C:', '', '', 'Users')).toBe('C:/Users');
+  });
+
+  test('distinguishes drive letters from URI schemes', () => {
+    // Drive letters should be treated as paths
+    expect(joinPath('C:', 'file.txt')).toBe('C:/file.txt');
+    // URI schemes should still work (note: schemes without // are handled as-is)
+    expect(joinPath('http:', 'example.com')).toBe('http:example.com');
+    expect(joinPath('ftp:', 'host.com')).toBe('ftp:host.com');
+  });
+
+  test('handles UNC-style paths as regular paths', () => {
+    // These should be treated as regular paths, not URI schemes
+    expect(joinPath('\\\\server', 'share')).toBe('/server/share');
+    expect(joinPath('//server', 'share')).toBe('/server/share');
+  });
+});
+
 // Additional tests for other path utilities to ensure no regressions
 describe('Path Utilities Regression Tests', () => {
   describe('basename', () => {
