@@ -2,7 +2,8 @@ import { DateTime } from 'luxon';
 
 import type { OccurrenceOverride } from '@/types/calendar';
 
-import type { RRuleConfig } from './types';
+import type { RRuleConfig, RRuleParse } from './types';
+import { validate } from './validate';
 
 type Range = { start: Date; end: Date; timezone: string };
 
@@ -151,11 +152,16 @@ function shouldStopIteration(
 }
 
 export function* buildIterator(params: {
-  config: RRuleConfig;
+  config: RRuleParse;
   overrides: OccurrenceOverride[];
   range: Range;
 }): Iterable<{ local: Date; utc: Date }> {
-  const { config, overrides, range } = params;
+  const { config: parsed, overrides, range } = params;
+  const validated = validate(parsed);
+  if (!validated.ok) {
+    throw new Error(`Invalid RRULE config: ${validated.errors?.join(', ')}`);
+  }
+  const config = parsed as unknown as RRuleConfig;
   const zone = range.timezone;
   const dtstartLocal = DateTime.fromJSDate(config.dtstart, { zone });
 
