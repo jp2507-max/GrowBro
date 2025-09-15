@@ -1,11 +1,23 @@
+import { render, screen } from '@testing-library/react-native';
 import React from 'react';
 
-import { cleanup, render, screen } from '@/lib/test-utils';
 import type { Task } from '@/types/calendar';
 
 import { AgendaItemRow } from './agenda-item';
-
-afterEach(cleanup);
+jest.mock('@/lib/i18n', () => ({
+  translate: (k: string) => {
+    switch (k) {
+      case 'calendar.out_of_range':
+      case 'calendar.out_of_range_label':
+        return 'Out of range';
+      case 'calendar.needs_review_label':
+      case 'calendar.review':
+        return 'Needs review';
+      default:
+        return k;
+    }
+  },
+}));
 
 function makeTask(overrides: Partial<Task> = {}): Task {
   return {

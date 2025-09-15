@@ -1,8 +1,9 @@
 import React from 'react';
+import { View } from 'react-native';
 
 import type { EventType } from '@/components/calendar/event-type-icon';
 import { EventTypeIcon } from '@/components/calendar/event-type-icon';
-import { Text, View } from '@/components/ui';
+import { Text } from '@/components/ui/text';
 import { translate } from '@/lib/i18n';
 import type { Task } from '@/types/calendar';
 

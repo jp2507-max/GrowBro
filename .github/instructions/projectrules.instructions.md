@@ -36,17 +36,32 @@ src
 
 ## Tech Stack
 
-- Expo
+- Expo 54
 - React Native
 - TypeScript
 - Nativewind ( Tailwind CSS for React Native )
-- Expo Router
+- Expo Router v6
 - React Query with React Query Kit
 - Zustand
 - React Native Keyboard Controller
 - React Native SVG
 - React Native MMKV
 - Supabase (Backend & Database)
+- WatermelonDB (local database)
+- Axios (HTTP client)
+- React Hook Form + Zod (forms and validation)
+- i18next + react-i18next (internationalization)
+- @gorhom/bottom-sheet (bottom sheets)
+- @shopify/flash-list (high-performance lists)
+- react-native-flash-message (toast notifications)
+- react-native-gesture-handler and react-native-reanimated (gestures and animations)
+- react-native-screens and react-native-safe-area-context (navigation primitives)
+- react-native-edge-to-edge (layout)
+- react-native-url-polyfill (URL APIs)
+- Luxon (date/time utilities)
+- tailwind-variants (variant utilities for Nativewind)
+- Expo modules: Image, Font, Constants, System UI, Updates, Linking, Localization, Notifications
+- Sentry (@sentry/react-native) for error and performance monitoring
 
 ## Supabase Integration
 
@@ -54,6 +69,11 @@ src
 - Supabase client is configured in `src/lib/supabase.ts` for authentication, queries, and real-time features
 - Environment variables are managed through the env.js system (SUPABASE_URL, SUPABASE_ANON_KEY)
 - AsyncStorage is used for session persistence in React Native
+
+## Sentry
+
+- We use `@sentry/react-native` for crash reporting and performance monitoring.
+- We leverage the Sentry MCP server for issue insights, traces, and docs lookups during development. Ensure it is configured in `.cursor/mcp.json`.
 
 ## Naming Conventions
 

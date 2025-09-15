@@ -26,10 +26,10 @@ type StoredValue = {
 jest.mock('@react-native-async-storage/async-storage', () => {
   try {
     // Defer import to avoid ESM resolution at top-level in Jest env
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- intentional conditional require for test environment
     return require('__mocks__/@react-native-async-storage/async-storage');
   } catch {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- fallback require for test environment
     return require('@react-native-async-storage/async-storage/jest/async-storage-mock');
   }
 });
@@ -56,24 +56,54 @@ jest.mock('expo-notifications', () => {
   };
 });
 
-// mock: @nozbe/watermelondb (for database operations in tests)
-jest.mock('@nozbe/watermelondb', () => {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require('__mocks__/@nozbe/watermelondb');
-  } catch {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require('__mocks__/@nozbe/watermelondb');
-  }
-});
+// Note: WatermelonDB is mocked via moduleNameMapper and __mocks__ folder.
 
 // mock: react-native-reanimated to avoid native timers/threads in tests
 jest.mock('react-native-reanimated', () => {
   // Silence the useNativeDriver warning
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- intentional require to load jest mock
   const mockReanimated = require('react-native-reanimated/mock');
   mockReanimated.default.call = () => {};
   return mockReanimated;
+});
+
+// mock: nativewind cssInterop as a no-op in tests to avoid react-native-css-interop side effects
+jest.mock('nativewind', () => ({
+  cssInterop: (_component: any, _config: any) => {
+    // no-op
+  },
+}));
+
+// mock: react-native-css-interop runtime to avoid installing wrappers and timers
+jest.mock('react-native-css-interop', () => {
+  const styled = (c: any) => c;
+  const cssInterop = (_c: any, _cfg: any) => {};
+  return {
+    __esModule: true,
+    styled,
+    cssInterop,
+  };
+});
+
+// mock: react-native-svg with lightweight React host components
+jest.mock('react-native-svg', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- intentional require for lightweight SVG mocks
+  const mockReact = require('react');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- intentional require for lightweight SVG mocks
+  const mockRN = require('react-native');
+  const View = mockRN.View;
+  const Svg = (props: any) => mockReact.createElement(View, props);
+  const Path = (props: any) => mockReact.createElement(View, props);
+  const Circle = (props: any) => mockReact.createElement(View, props);
+  const G = (props: any) => mockReact.createElement(View, props);
+  return {
+    __esModule: true,
+    default: Svg,
+    Svg,
+    Path,
+    Circle,
+    G,
+  };
 });
 
 // mock: react-native-gesture-handler is now handled by moduleNameMapper in jest.config.js
@@ -85,21 +115,47 @@ jest.mock('react-native-edge-to-edge', () => ({
 
 // mock: @shopify/flash-list with a minimal stub that preserves API shape
 jest.mock('@shopify/flash-list', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- intentional require for test stub
   const React = require('react');
   const FlashList = React.forwardRef((_props: any, _ref: any) => null);
   return { FlashList };
 });
 
-// mock: react-navigation useIsFocused to return true in tests (no actual reference)
-jest.mock('@react-navigation/native', () => ({
-  useIsFocused: () => true,
-}));
+// mock: react-navigation to provide a minimal NavigationContainer and hooks
+jest.mock('@react-navigation/native', () => {
+  const NavigationContainer = ({ children }: any) => children ?? null;
+  (NavigationContainer as any).displayName = 'NavigationContainer';
+  return {
+    NavigationContainer,
+    useIsFocused: () => true,
+    // Provide identity ThemeProvider/value to satisfy consumers if used
+    ThemeProvider: ({ children, _value }: any) => children ?? null,
+    DefaultTheme: {},
+    DarkTheme: {},
+  };
+});
 
 // mock: react-native-flash-message showMessage as no-op
 jest.mock('react-native-flash-message', () => ({
   showMessage: () => {},
 }));
+
+// mock: react-native-safe-area-context to avoid dependency on native context/provider
+jest.mock('react-native-safe-area-context', () => {
+  const SafeAreaProvider = ({ children }: any) => children ?? null;
+  const SafeAreaView = ({ children }: any) => children ?? null;
+  (SafeAreaProvider as any).displayName = 'SafeAreaProvider';
+  (SafeAreaView as any).displayName = 'SafeAreaView';
+  return {
+    SafeAreaProvider,
+    SafeAreaView,
+    useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+    initialWindowMetrics: {
+      frame: { x: 0, y: 0, width: 0, height: 0 },
+      insets: { top: 0, right: 0, bottom: 0, left: 0 },
+    },
+  };
+});
 
 // mock: react-native-mmkv to avoid native bindings in Jest
 jest.mock('react-native-mmkv', () => {
@@ -138,6 +194,25 @@ jest.mock('react-native-mmkv', () => {
   }
   return { MMKV: MMKVMock };
 });
+
+// mock: @sentry/react-native to avoid native module side effects that can keep
+// the Jest process alive on some environments (e.g. Windows)
+jest.mock('@sentry/react-native', () => {
+  const sentry = {
+    init: jest.fn(),
+    wrap: (comp: any) => comp,
+    withTouchEventBoundary: (comp: any) => comp,
+    captureException: jest.fn(),
+    captureMessage: jest.fn(),
+    setContext: jest.fn(),
+    mobileReplayIntegration: jest.fn(() => ({})),
+    feedbackIntegration: jest.fn(() => ({})),
+  };
+  return sentry;
+});
+
+// mock: react-native-restart to avoid trying to reload the app during tests
+jest.mock('react-native-restart', () => ({ restart: jest.fn() }));
 
 // Prefer the dedicated manual mock file for Watermelon sync (automock)
 jest.mock('@nozbe/watermelondb/sync');
@@ -196,6 +271,18 @@ afterEach(() => {
 
 afterAll(() => {
   jest.clearAllTimers();
+});
+
+// Ensure i18next shuts down any internal resources after the test run to
+// reduce the chance of open handles in Node (especially on Windows)
+afterAll(async () => {
+  try {
+    const mod = await import('./src/lib/i18n');
+    const i18n = (mod as any).default;
+    i18n?.stop?.();
+  } catch {
+    // ignore if i18n cannot be imported
+  }
 });
 
 // Optional: when running locally or in CI you can enable DEBUG_OPEN_HANDLES=1
