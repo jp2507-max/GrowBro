@@ -19,6 +19,7 @@ type ToggleRowProps = {
   value: boolean;
   onChange: (value: boolean) => void;
   onInfoPress?: () => void;
+  testID?: string;
 };
 
 function ToggleRow({
@@ -27,13 +28,18 @@ function ToggleRow({
   value,
   onChange,
   onInfoPress,
+  testID,
 }: ToggleRowProps) {
   return (
-    <View className="flex-row items-center justify-between py-2">
+    <View
+      className="flex-row items-center justify-between py-2"
+      testID={testID}
+    >
       <View className="flex-1 pr-4">
         <Text
           className="text-base font-medium text-gray-900 dark:text-gray-100"
           onPress={onInfoPress}
+          testID={testID ? `${testID}-title` : undefined}
         >
           {title}
         </Text>
@@ -41,7 +47,11 @@ function ToggleRow({
           {subtitle}
         </Text>
       </View>
-      <Switch value={value} onValueChange={onChange} />
+      <Switch
+        value={value}
+        onValueChange={onChange}
+        testID={testID ? `${testID}-switch` : undefined}
+      />
     </View>
   );
 }
@@ -59,6 +69,65 @@ function showSessionReplayInfo(): void {
     translate('privacy.sessionReplay.title'),
     translate('privacy.sessionReplay.body'),
     [{ text: translate('common.ok') }]
+  );
+}
+
+function PrivacySettingsContent({
+  consent,
+  updateConsent,
+}: {
+  consent: PrivacyConsent;
+  updateConsent: (key: keyof PrivacyConsent, value: boolean) => void;
+}) {
+  return (
+    <View className="space-y-4 p-4" testID="privacy-settings">
+      <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        Privacy Settings
+      </Text>
+
+      <View className="space-y-4">
+        <ToggleRow
+          title={translate('privacy.crashReporting.title')}
+          subtitle={translate('privacy.crashReporting.subtitle')}
+          value={consent.crashReporting}
+          onChange={(value) => updateConsent('crashReporting', value)}
+          testID="toggle-crashReporting"
+        />
+
+        <ToggleRow
+          title={translate('privacy.analytics.title')}
+          subtitle={translate('privacy.analytics.subtitle')}
+          value={consent.analytics}
+          onChange={(value) => updateConsent('analytics', value)}
+          testID="toggle-analytics"
+        />
+
+        <ToggleRow
+          title="Personalized Data ℹ️"
+          subtitle="Include identifying information in reports"
+          value={consent.personalizedData}
+          onChange={(value) => updateConsent('personalizedData', value)}
+          onInfoPress={showPersonalizedDataInfo}
+          testID="toggle-personalizedData"
+        />
+
+        <ToggleRow
+          title="Session Replay ℹ️"
+          subtitle="Record app interactions for debugging"
+          value={consent.sessionReplay}
+          onChange={(value) => updateConsent('sessionReplay', value)}
+          onInfoPress={showSessionReplayInfo}
+          testID="toggle-sessionReplay"
+        />
+      </View>
+
+      <Text
+        className="mt-4 text-xs text-gray-500 dark:text-gray-400"
+        testID="privacy-settings-last-updated"
+      >
+        Last updated: {new Date(consent.lastUpdated).toLocaleDateString()}
+      </Text>
+    </View>
   );
 }
 
@@ -84,46 +153,6 @@ export function PrivacySettings({ onConsentChange }: PrivacySettingsProps) {
   }
 
   return (
-    <View className="space-y-4 p-4">
-      <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-        Privacy Settings
-      </Text>
-
-      <View className="space-y-4">
-        <ToggleRow
-          title={translate('privacy.crashReporting.title')}
-          subtitle={translate('privacy.crashReporting.subtitle')}
-          value={consent.crashReporting}
-          onChange={(value) => updateConsent('crashReporting', value)}
-        />
-
-        <ToggleRow
-          title={translate('privacy.analytics.title')}
-          subtitle={translate('privacy.analytics.subtitle')}
-          value={consent.analytics}
-          onChange={(value) => updateConsent('analytics', value)}
-        />
-
-        <ToggleRow
-          title="Personalized Data ℹ️"
-          subtitle="Include identifying information in reports"
-          value={consent.personalizedData}
-          onChange={(value) => updateConsent('personalizedData', value)}
-          onInfoPress={showPersonalizedDataInfo}
-        />
-
-        <ToggleRow
-          title="Session Replay ℹ️"
-          subtitle="Record app interactions for debugging"
-          value={consent.sessionReplay}
-          onChange={(value) => updateConsent('sessionReplay', value)}
-          onInfoPress={showSessionReplayInfo}
-        />
-      </View>
-
-      <Text className="mt-4 text-xs text-gray-500 dark:text-gray-400">
-        Last updated: {new Date(consent.lastUpdated).toLocaleDateString()}
-      </Text>
-    </View>
+    <PrivacySettingsContent consent={consent} updateConsent={updateConsent} />
   );
 }

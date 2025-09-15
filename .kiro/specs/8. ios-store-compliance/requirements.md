@@ -42,6 +42,15 @@ This feature ensures GrowBro meets all iOS App Store compliance requirements bas
 4. WHEN age verification is completed THEN the system SHALL store the verification status securely using MMKV
 5. IF a user indicates they are under 18 THEN the system SHALL deny access with appropriate messaging and exit options
 
+### Requirement 9: Geo-Fence + 18+ Lint (Adjustments A12)
+
+**User Story:** As a release manager, I want pre-submit checks for geo-fence configuration and 18+ parity so that our store rating and in-app gate remain aligned.
+
+#### Acceptance Criteria
+
+1. WHEN preparing for submission THEN the system SHALL check for required geo-fence configuration for restricted regions and fail the submission checklist if missing
+2. WHEN validating rating THEN the system SHALL ensure the App Store rating (17+/18+) matches the in-app 18+ age gate and block release when mismatched
+
 ### Requirement 4
 
 **User Story:** As a product manager, I want to implement required UGC safeguards per Guideline 1.2, so that the community features comply with Apple's content moderation requirements.

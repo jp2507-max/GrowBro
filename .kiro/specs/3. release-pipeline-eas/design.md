@@ -114,6 +114,12 @@ graph TB
 - Requires manual approval for OTA updates to production
 - Requires manual approval for OTA updates to production. Implementation detail: run the production OTA publish job in a protected GitHub Environment named "production" and set the job's environment to that name (use the workflow keyword `environment: production`). Protect the `production` environment in the repository settings with required reviewers (individuals or teams). This will cause GitHub Actions to pause the job and require approval from a designated reviewer or team before the job proceeds.
 
+  Release health gates (Adjustments A13)
+
+  - Before promotion, query Sentry Release Health metrics; block if crash-free users < 98% OR crash-free sessions < 99.5% OR ANR rate > 1%
+  - On violation, auto-pause via Releases API (`POST /api/releases/{id}/pause`) with `releases:write` scope or org-admin role; annotate the run with on-call owner (Release Engineering rotation)
+  - Sourcemap upload is a hard gate: fail pipeline if upload missing/fails
+
   Alternative (optional): if you prefer an explicit in-workflow gate instead of environment protection, add a dedicated `manual-approval` job that uses a wait-for-approval action (for example, `peter-evans/wait-for-approval@v2`) or a small workflow that requires a human to re-dispatch. Make the production publish job depend on this approval job (e.g., `needs: manual-approval`). In this pattern include the keywords `needs: manual-approval` on the production publish job so its execution is gated until an authorized approver continues the run.
 
   Recommended (chosen) option: use GitHub Environments with required reviewers. This is the preferred, built-in protection mechanism — set `environment: production` on the job and configure required reviewers in GitHub so approvals are enforced at the environment level.

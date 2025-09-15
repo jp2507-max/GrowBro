@@ -67,8 +67,29 @@ runs:
     - name: 📦 Setup Expo and EAS
       uses: expo/expo-github-action@v8
       with:
-        eas-version: latest
+        eas-version: 7.x
         token: ${{ inputs.EXPO_TOKEN }}
+
+    - name: 🔒 Validate channel mapping
+      run: |
+        case "${{ inputs.APP_ENV }}" in
+          production)
+            REQUIRED_CHANNEL=production
+            ;;
+          staging)
+            REQUIRED_CHANNEL=staging
+            ;;
+          *)
+            REQUIRED_CHANNEL=preview
+            ;;
+        esac
+        echo "Required EAS channel: $REQUIRED_CHANNEL"
+        eas channel:view | tee channels.txt
+        if ! grep -q "$REQUIRED_CHANNEL" channels.txt; then
+          echo "❌ Required EAS channel '$REQUIRED_CHANNEL' not found. Create it or fix mapping."
+          exit 1
+        fi
+      shell: bash
 
     - name: ⚙️ Run Prebuild
       run: pnpm prebuild:${{ inputs.APP_ENV }}

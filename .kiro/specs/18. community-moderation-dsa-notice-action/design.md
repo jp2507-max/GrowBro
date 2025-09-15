@@ -317,6 +317,7 @@ interface AgeVerificationService {
   ): Promise<void>;
   issueVerificationToken(userId: string): Promise<ReusableToken>;
   validateToken(tokenId: string): Promise<{ isValid: boolean; error?: string }>;
+  getAppealWindowDays(): number; // Configurable, default ≥ 7
 }
 ```
 
@@ -355,6 +356,8 @@ interface GeoLocationService {
     contentId: string,
     regions: string[]
   ): Promise<void>;
+  setVpnBlocking(enabled: boolean): Promise<void>; // Config-driven VPN/proxy block
+  getDecisionTtlMs(): number; // Cache TTL (default 1h)
 }
 ```
 

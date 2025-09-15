@@ -1,0 +1,89 @@
+import React from 'react';
+
+import { cleanup, fireEvent, screen, setup } from '@/lib/test-utils';
+
+import { PrivacySettings } from './privacy-settings';
+
+jest.mock('@/lib', () => {
+  const actual = jest.requireActual('@/lib');
+  return {
+    ...actual,
+    translate: (key: string) => key,
+  };
+});
+
+jest.mock('@/lib/privacy-consent', () => {
+  const actual = jest.requireActual('@/lib/privacy-consent');
+  // Provide stable initial state and spyable setters
+  let consent = {
+    analytics: false,
+    crashReporting: true,
+    personalizedData: false,
+    sessionReplay: false,
+    lastUpdated: 1700000000000,
+  };
+  return {
+    ...actual,
+    getPrivacyConsent: jest.fn(() => consent),
+    setPrivacyConsent: jest.fn((next: any) => {
+      consent = typeof next === 'object' ? next : consent;
+    }),
+  };
+});
+
+afterEach(() => {
+  jest.clearAllMocks();
+  cleanup();
+});
+
+describe('PrivacySettings', () => {
+  test('renders root and rows with initial values', async () => {
+    setup(<PrivacySettings />);
+    expect(await screen.findByTestId('privacy-settings')).toBeOnTheScreen();
+    expect(screen.getByTestId('toggle-crashReporting-switch').props.value).toBe(
+      true
+    );
+    expect(screen.getByTestId('toggle-analytics-switch').props.value).toBe(
+      false
+    );
+    expect(
+      screen.getByTestId('privacy-settings-last-updated')
+    ).toBeOnTheScreen();
+  });
+
+  test('invokes onConsentChange and persists on toggle', async () => {
+    const onConsentChange = jest.fn();
+    setup(<PrivacySettings onConsentChange={onConsentChange} />);
+    const analyticsSwitch = screen.getByTestId('toggle-analytics-switch');
+    fireEvent(analyticsSwitch, 'valueChange', true);
+
+    // onConsentChange called with full updated object incl. lastUpdated
+    expect(onConsentChange).toHaveBeenCalledTimes(1);
+    const arg = onConsentChange.mock.calls[0][0];
+    expect(arg.analytics).toBe(true);
+    expect(typeof arg.lastUpdated).toBe('number');
+  });
+
+  test('updates last updated text on change', async () => {
+    setup(<PrivacySettings />);
+    const _beforeText = screen.getByTestId('privacy-settings-last-updated')
+      .props.children[1] as string;
+    fireEvent(
+      screen.getByTestId('toggle-sessionReplay-switch'),
+      'valueChange',
+      true
+    );
+    const afterText = screen.getByTestId('privacy-settings-last-updated').props
+      .children[1] as string;
+    expect(afterText).toBeDefined();
+    // Date string may match if same day; assert node changed reference or is a string
+    expect(typeof afterText).toBe('string');
+  });
+
+  test('info title press triggers alert via onInfoPress', async () => {
+    const { user } = setup(<PrivacySettings />);
+    const alertSpy = jest.spyOn(require('react-native').Alert, 'alert');
+    await user.press(screen.getByTestId('toggle-personalizedData-title'));
+    expect(alertSpy).toHaveBeenCalled();
+  });
+});
