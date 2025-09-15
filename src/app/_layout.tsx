@@ -68,6 +68,18 @@ export const unstable_settings = {
 // Initialize privacy consent cache before Sentry
 initializePrivacyConsent();
 
+// Initialize i18n early so persisted language is applied before first render
+// (do not await at module import time; call here during bootstrap)
+void (async () => {
+  try {
+    const { initI18n } = await import('@/lib/i18n');
+    await initI18n();
+  } catch (err) {
+    // non-fatal: continue startup even if i18n init fails
+    console.warn('i18n init failed', err);
+  }
+})();
+
 // Only initialize Sentry if DSN is provided and user has consented to crash reporting
 // Also guard against multiple initializations
 if (Env.SENTRY_DSN && hasConsent('crashReporting') && !sentryInitialized) {

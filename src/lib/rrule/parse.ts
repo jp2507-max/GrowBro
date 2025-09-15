@@ -2,8 +2,9 @@ import { DateTime } from 'luxon';
 
 import type {
   RRuleConfig,
-  RRuleConfigCount,
-  RRuleConfigUntil,
+  RRuleConfigOpen,
+  RRuleParse,
+  RRuleParseResult,
   Weekday,
 } from './types';
 
@@ -84,7 +85,7 @@ function parseDtstartDate(dtstartUtc?: string): Date {
     : DateTime.utc().toJSDate();
 }
 
-export function parseRule(rule: string, dtstartUtc?: string): RRuleConfig {
+export function parseRule(rule: string, dtstartUtc?: string): RRuleParseResult {
   const kv = parseKeyValuePairs(rule);
   const freq = parseFrequency(kv);
   const interval = parseIntervalValue(kv);
@@ -93,19 +94,22 @@ export function parseRule(rule: string, dtstartUtc?: string): RRuleConfig {
   const count = parseCountValue(kv);
   const dtstart = parseDtstartDate(dtstartUtc);
 
-  // Construct config preserving both count and until when both are present
-  // so that downstream validate() can flag the mutual exclusion correctly.
+  // Construct permissive parse result. The parser intentionally preserves
+  // both COUNT and UNTIL (if present); callers should validate the result
+  // to enforce mutual exclusion.
   const base = { freq, interval, byweekday, dtstart } as const;
   if (count !== undefined && until !== undefined) {
-    // Use loose typing cast here to preserve both; validate will reject.
-    return { ...base, count, until } as unknown as RRuleConfig;
+    return { ...base, count, until };
   }
   if (count !== undefined) {
-    return { ...base, count } satisfies RRuleConfigCount;
+    return { ...base, count } as RRuleParse;
   }
   if (until !== undefined) {
-    return { ...base, until } satisfies RRuleConfigUntil;
+    return { ...base, until } as RRuleParse;
   }
-  // Default: neither COUNT nor UNTIL -> open recurrence; iterator will stop at range
-  return { ...base } as unknown as RRuleConfig;
+  // Default: neither COUNT nor UNTIL -> open recurrence
+  // Return the explicit open config type so callers can distinguish this
+  // case without unsafe casts. Callers may still accept `RRuleParse` or
+  // `RRuleConfig` variants via the widened `RRuleParseResult` union.
+  return { ...base } satisfies RRuleConfigOpen;
 }
