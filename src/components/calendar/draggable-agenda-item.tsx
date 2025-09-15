@@ -42,6 +42,8 @@ function AgendaItemBody({
   onClose,
   onAction,
 }: AgendaItemBodyProps): React.ReactElement {
+  const targets = extractTargets(task);
+  // Pass handler directly; no need to wrap with useCallback
   return (
     <GestureDetector gesture={gesture}>
       <View>
@@ -67,10 +69,49 @@ function AgendaItemBody({
           open={isOpen}
           onClose={onClose}
           anchorDate={new Date(task.dueAtLocal)}
+          targets={targets}
+          onLogPress={handleLogPress}
         />
       </View>
     </GestureDetector>
   );
+}
+
+function extractTargets(
+  task: Task
+):
+  | { phMin: number; phMax: number; ecMin25c: number; ecMax25c: number }
+  | undefined {
+  const meta = (task as any)?.metadata ?? {};
+  const t = meta?.targets as
+    | {
+        phMin?: number;
+        phMax?: number;
+        ecMin25c?: number;
+        ecMax25c?: number;
+      }
+    | undefined;
+  if (
+    t &&
+    typeof t.phMin === 'number' &&
+    typeof t.phMax === 'number' &&
+    typeof t.ecMin25c === 'number' &&
+    typeof t.ecMax25c === 'number'
+  ) {
+    return {
+      phMin: t.phMin,
+      phMax: t.phMax,
+      ecMin25c: t.ecMin25c,
+      ecMax25c: t.ecMax25c,
+    };
+  }
+  return undefined;
+}
+
+function handleLogPress(): void {
+  // Placeholder: navigate when logging screen exists
+
+  console.log('log ph/ec pressed');
 }
 
 // Custom hook to create pan gesture

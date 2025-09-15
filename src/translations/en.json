@@ -2,10 +2,16 @@
   "calendar": {
     "drag_item_hint": "Long-press then drag to reschedule. Double-tap to open move menu.",
     "drag_item_label": "Drag {{title}}",
+    "ec_range": "EC@25°C target: {{min}}–{{max}} mS/cm",
+    "log_ph_ec": "Log pH/EC",
     "move": "Move",
     "move_to_date": "Move to date",
     "needs_review_label": "Needs review due to conflict",
+    "out_of_range": "out of range",
+    "out_of_range_label": "Latest pH/EC out of target range",
+    "ph_range": "pH target: {{min}}–{{max}}",
     "review": "review",
+    "targets_title": "Targets",
     "today": "Today",
     "tomorrow": "Tomorrow",
     "yesterday": "Yesterday"

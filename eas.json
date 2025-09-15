@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 3.8.1"
+    "version": ">= 3.8.1",
+    "appVersionSource": "remote"
   },
   "build": {
     "production": {
@@ -40,6 +41,7 @@
       }
     },
     "development": {
+      "channel": "preview",
       "developmentClient": true,
       "distribution": "internal",
       "pnpm": "10.15.0",
@@ -56,6 +58,7 @@
       }
     },
     "simulator": {
+      "channel": "preview",
       "pnpm": "10.15.0",
       "ios": {
         "simulator": true,
@@ -69,6 +72,11 @@
         "EXPO_NO_DOTENV": "1",
         "HUSKY": "0"
       }
+    }
+  },
+  "update": {
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   },
   "submit": {
