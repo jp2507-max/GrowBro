@@ -93,33 +93,19 @@ export function parseRule(rule: string, dtstartUtc?: string): RRuleConfig {
   const count = parseCountValue(kv);
   const dtstart = parseDtstartDate(dtstartUtc);
 
+  // Construct config preserving both count and until when both are present
+  // so that downstream validate() can flag the mutual exclusion correctly.
+  const base = { freq, interval, byweekday, dtstart } as const;
+  if (count !== undefined && until !== undefined) {
+    // Use loose typing cast here to preserve both; validate will reject.
+    return { ...base, count, until } as unknown as RRuleConfig;
+  }
   if (count !== undefined) {
-    return {
-      freq,
-      interval,
-      byweekday,
-      dtstart,
-      count,
-    } satisfies RRuleConfigCount;
+    return { ...base, count } satisfies RRuleConfigCount;
   }
-
-  // If count is not defined but until is valid, return UNTIL variant
   if (until !== undefined) {
-    return {
-      freq,
-      interval,
-      byweekday,
-      dtstart,
-      until,
-    } satisfies RRuleConfigUntil;
+    return { ...base, until } satisfies RRuleConfigUntil;
   }
-
-  // If neither count nor until is valid, return COUNT variant with safe default
-  return {
-    freq,
-    interval,
-    byweekday,
-    dtstart,
-    count: 1,
-  } satisfies RRuleConfigCount;
+  // Default: neither COUNT nor UNTIL -> open recurrence; iterator will stop at range
+  return { ...base } as unknown as RRuleConfig;
 }

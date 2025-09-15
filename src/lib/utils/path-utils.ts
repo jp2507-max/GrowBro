@@ -118,45 +118,46 @@ function _dirnameUriImpl(
 
   // Triple-slash-or-more → absolute path with empty authority (e.g., file:///path)
   if (slashCount >= 3) {
-    if (!normalizedRest || normalizedRest === '/') return schemePrefix + '///';
-    const endsWithSlash = normalizedRest.endsWith('/');
-    const trimmedEnd = endsWithSlash
-      ? normalizedRest.slice(0, -1)
-      : normalizedRest;
-    if (trimmedEnd === '' || trimmedEnd === '/') return schemePrefix + '///';
-    if (endsWithSlash) {
-      // Directory path ending with slash → dirname is the directory itself
-      return schemePrefix + '///' + trimmedEnd.replace(/^\/+/, '');
-    }
-    const cleaned = trimmedEnd.replace(/^\/+|\/+$/g, '');
-    if (!cleaned.includes('/')) return schemePrefix + '///';
-    const parent = cleaned.substring(0, cleaned.lastIndexOf('/'));
-    return schemePrefix + '///' + parent;
+    return _dirnameTriple(schemePrefix, normalizedRest);
   }
 
   // Double-slash → authority-based URI (e.g., https://host/path, file://server/share)
   if (slashCount === 2) {
     if (!normalizedRest) return schemePrefix + '///';
+    const hasSlash = normalizedRest.includes('/');
+    if (!hasSlash) {
+      // Authority only
+      return schemePrefix + '//' + normalizedRest + '/';
+    }
+    const firstSlash = normalizedRest.indexOf('/');
+    const authority = normalizedRest.slice(0, firstSlash);
+    const pathRest = normalizedRest.slice(firstSlash + 1); // may be ''
     const endsWithSlash = normalizedRest.endsWith('/');
-    const trimmedEnd = endsWithSlash
-      ? normalizedRest.slice(0, -1)
-      : normalizedRest;
-    if (trimmedEnd === '') return schemePrefix + '///';
-    if (!trimmedEnd.includes('/')) {
-      // Only authority present
-      return schemePrefix + '//' + trimmedEnd + '/';
+
+    // Root at authority level (e.g., https://host/)
+    if (pathRest === '') return schemePrefix + '//' + authority + '/';
+
+    const trimmedPath = endsWithSlash ? pathRest.slice(0, -1) : pathRest;
+    if (trimmedPath === '') return schemePrefix + '//' + authority + '/';
+
+    // Single segment under host
+    if (!trimmedPath.includes('/')) {
+      // If original ended with slash, it's the directory itself
+      if (endsWithSlash) {
+        return schemePrefix + '//' + authority + '/' + trimmedPath;
+      }
+      // Otherwise, parent is the host
+      return schemePrefix + '//' + authority;
     }
-    const lastSlash = trimmedEnd.lastIndexOf('/');
-    const parent = trimmedEnd.substring(0, lastSlash);
+
+    // Multi-segment path: if original ended with slash, keep directory itself
     if (endsWithSlash) {
-      // Directory path ending with slash → dirname is the directory itself
-      return schemePrefix + '//' + trimmedEnd;
+      return schemePrefix + '//' + authority + '/' + trimmedPath;
     }
-    if (!parent.includes('/')) {
-      // host/path → directory is host
-      return schemePrefix + '//' + parent;
-    }
-    return schemePrefix + '//' + parent;
+
+    // Otherwise drop the last segment
+    const parent = trimmedPath.substring(0, trimmedPath.lastIndexOf('/'));
+    return schemePrefix + '//' + authority + '/' + parent;
   }
 
   // Single-slash after scheme (rare, e.g., file:/path)
@@ -170,6 +171,23 @@ function _dirnameUriImpl(
 
   // No slashes after scheme
   return schemePrefix + '/';
+}
+
+function _dirnameTriple(schemePrefix: string, normalizedRest: string): string {
+  if (!normalizedRest || normalizedRest === '/') return schemePrefix + '///';
+  const endsWithSlash = normalizedRest.endsWith('/');
+  const trimmedEnd = endsWithSlash
+    ? normalizedRest.slice(0, -1)
+    : normalizedRest;
+  if (trimmedEnd === '' || trimmedEnd === '/') return schemePrefix + '///';
+  if (endsWithSlash) {
+    // Directory path ending with slash → dirname is the directory itself
+    return schemePrefix + '///' + trimmedEnd.replace(/^\/+/, '');
+  }
+  const cleaned = trimmedEnd.replace(/^\/+|\/+$/g, '');
+  if (!cleaned.includes('/')) return schemePrefix + '///';
+  const parent = cleaned.substring(0, cleaned.lastIndexOf('/'));
+  return schemePrefix + '///' + parent;
 }
 
 /**

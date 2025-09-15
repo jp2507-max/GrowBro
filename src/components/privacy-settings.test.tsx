@@ -6,13 +6,12 @@ import { cleanup, fireEvent, screen, setup } from '@/lib/test-utils';
 
 import { PrivacySettings } from './privacy-settings';
 
-jest.mock('@/lib', () => {
-  const actual = jest.requireActual('@/lib');
-  return {
-    ...actual,
-    translate: (key: string) => key,
-  };
-});
+// IMPORTANT: Mock only what we need from '@/lib' to avoid importing the entire
+// library index which initializes heavy modules (e.g., supabase client) and can
+// keep Jest alive or cause hangs on Windows. We only need `translate` here.
+jest.mock('@/lib', () => ({
+  translate: (key: string) => key,
+}));
 
 jest.mock('@/lib/privacy-consent', () => {
   const actual = jest.requireActual('@/lib/privacy-consent');
@@ -34,7 +33,12 @@ jest.mock('@/lib/privacy-consent', () => {
     ...actual,
     getPrivacyConsent: jest.fn(() => consent),
     setPrivacyConsent: jest.fn((next: any) => {
-      consent = typeof next === 'object' ? next : consent;
+      const patch = typeof next === 'object' ? next : {};
+      consent = {
+        ...consent,
+        ...patch,
+        lastUpdated: Date.now(),
+      };
     }),
     __resetConsent: resetConsent,
   };

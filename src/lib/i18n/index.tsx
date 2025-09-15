@@ -4,26 +4,29 @@ import { initReactI18next } from 'react-i18next';
 import { I18nManager } from 'react-native';
 
 import { resources } from './resources';
-import { getLanguage } from './utils';
 export * from './utils';
 
+// Initialize i18n with a safe default language at module load time to avoid
+// touching storage or other IO in test environments. Language can later be
+// changed via the exposed `changeLanguage` util/hook.
 // eslint-disable-next-line import/no-named-as-default-member
 i18n.use(initReactI18next).init({
   resources,
-  lng: getLanguage() || 'en', // TODO: if you are not supporting multiple languages or languages with multiple directions you can set the default value to `en`
+  lng: 'en',
   fallbackLng: 'en',
   compatibilityJSON: 'v3', // By default React Native projects does not support Intl
-
-  // allows integrating dynamic values into translations.
-  interpolation: {
-    escapeValue: false, // escape passed in values to avoid XSS injections
-  },
+  interpolation: { escapeValue: false },
 });
 
 // Is it a RTL language?
 export const isRTL: boolean = dir() === 'rtl';
 
-I18nManager.allowRTL(isRTL);
-I18nManager.forceRTL(isRTL);
+// Avoid forcing RTL/LTR in Jest to prevent unexpected global side-effects that
+// could interfere with tests or keep processes alive in some environments.
+const isTestEnv = typeof (globalThis as any).jest !== 'undefined';
+if (!isTestEnv) {
+  I18nManager.allowRTL(isRTL);
+  I18nManager.forceRTL(isRTL);
+}
 
 export default i18n;
