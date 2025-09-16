@@ -159,7 +159,12 @@ export function* buildIterator(params: {
   const { config: parsed, overrides, range } = params;
   const validated = validate(parsed);
   if (!validated.ok) {
-    throw new Error(`Invalid RRULE config: ${validated.errors?.join(', ')}`);
+    // Mirror TaskManager behaviour: warn and skip invalid series instead of throwing
+    // No series id is available in this context, so include validation errors only.
+    console.warn(
+      `[RRule] Skipping invalid RRULE config: ${validated.errors?.join(', ')}`
+    );
+    return;
   }
   const config = parsed as unknown as RRuleConfig;
   const zone = range.timezone;
