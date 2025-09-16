@@ -515,10 +515,22 @@ export async function getTasksByDateRange(
     .fetch();
   const visible: Task[] = [...pendingInRange];
 
+  // P1: Filter pending tasks per-series before deduping ephemerals
+  //
+  // `pendingInRange` contains materialized (stored) tasks across all
+  // series. Passing the global array into `buildVisibleForSeries` causes
+  // a materialized task from one series to suppress an ephemeral
+  // occurrence from a different series when they fall on the same local
+  // date. To fix, only forward the materialized tasks that belong to the
+  // current series so deduplication happens per-series.
   for (const s of allSeries as SeriesModel[]) {
+    const seriesId = (s as any).id as string;
+    const materializedForThisSeries = pendingInRange.filter(
+      (t: Task) => t.seriesId === seriesId
+    );
     const items = await buildVisibleForSeries({
       s: s as any,
-      materializedForSeries: pendingInRange,
+      materializedForSeries: materializedForThisSeries,
       start,
       end,
     });
