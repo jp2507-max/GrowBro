@@ -80,6 +80,16 @@ The Guided Grow Playbooks feature provides new and experienced cannabis growers 
 7. WHEN users consistently decline THEN the system SHALL provide "Never suggest for this plant" setting
 8. WHEN suggestions are made THEN the system SHALL collect "helpful" votes to improve suggestion quality
 
+### Requirement 11: Nutrient Corrections & pH Guides (Adjustments A10)
+
+**User Story:** As a grower, I want medium/phase-specific nutrient corrections and pH guides so that corrective steps are accurate and safe.
+
+#### Acceptance Criteria
+
+1. WHEN playbooks are generated THEN the system SHALL include medium/phase-specific pH targets and nutrient correction guidance
+2. WHEN corrective steps are shown THEN the system SHALL require preconditions (recent pH/EC measurement, light checks) before enabling changes
+3. WHEN rendering guidance THEN the system SHALL keep content educational and non-commercial (no product dosages/links)
+
 ### Requirement 5
 
 **User Story:** As a grower approaching harvest, I want access to a trichome check helper so that I can determine the optimal harvest timing based on trichome development.

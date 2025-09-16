@@ -24,7 +24,7 @@ The AI Photo Assessment feature enables home cannabis growers to quickly identif
 
 #### Acceptance Criteria
 
-1. WHEN photos are submitted for analysis THEN the system SHALL return results with p95 latency ≤ 5s (cloud) / ≤ 3.5s (device) on Pixel 6a & Galaxy A54 with hard timeout 8s and graceful fallback
+1. WHEN photos are submitted for analysis THEN the system SHALL return results with p95 latency ≤ 5s (cloud) / ≤ 3.5s (device) on Pixel 6a & Galaxy A54 with hard timeout 8s and graceful fallback; device-first policy SHALL be preferred and cloud used only on OOM/timeout/quality fallback
 2. WHEN inference is complete THEN the system SHALL return the top-1 predicted class with confidence percentage, including "Healthy/No Issue" and "Unknown/Out-of-Distribution" classes
 3. WHEN confidence is below 70% OR class is Unknown/OOD THEN the system SHALL show "Not confident enough" UX with community CTA and retake tips
 4. WHEN multiple photos are captured THEN the system SHALL use majority vote aggregation; if tie then highest confidence; if all <70% then return Unknown with community CTA
@@ -42,6 +42,26 @@ The AI Photo Assessment feature enables home cannabis growers to quickly identif
 3. WHEN displaying recommendations THEN the system SHALL avoid product promotion, keep guidance generic and safe, and block potentially harmful actions unless preceded by diagnostic checks
 4. WHEN result card is shown THEN the user SHALL be able to create prefilled tasks and optionally shift the active playbook; these actions are tracked
 5. WHEN actions are complex THEN the system SHALL break them into numbered, sequential steps with measure-before-change approach (pH/EC, light PPFD)
+
+### Requirement 11: Device-First Decision Policy UI (Adjustments A8)
+
+**User Story:** As a user, I want to see why the AI ran on device vs cloud so that I trust the system and understand fallbacks.
+
+#### Acceptance Criteria
+
+1. WHEN an assessment result is shown THEN the system SHALL disclose whether inference ran on device or cloud and the rationale (e.g., memory constraints, timeout, low-quality triggers)
+2. WHEN fallback occurs THEN the system SHALL include a brief explanation and link to learn-more; the UI copy SHALL be localized (EN/DE)
+3. WHEN device is capable and within latency budget THEN the system SHALL prefer device mode; otherwise, cloud fallback SHALL be used with idempotent request handling
+
+### Requirement 12: Calibrated Confidence + Taxonomy UI (Adjustments A9)
+
+**User Story:** As a user, I want calibrated confidence and taxonomy tooltips so that I can better interpret AI results.
+
+#### Acceptance Criteria
+
+1. WHEN results are displayed THEN the system SHALL show calibrated confidence (not raw) with a tooltip explaining what confidence means
+2. WHEN taxonomy info is available THEN the system SHALL provide a quick info tooltip/modal that explains the class and common visual cues
+3. WHEN accessibility features are enabled THEN tooltips SHALL be accessible with screen readers
 
 ### Requirement 4
 

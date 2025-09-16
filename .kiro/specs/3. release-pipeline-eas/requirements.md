@@ -97,6 +97,25 @@ The Release Pipeline (EAS) feature will establish an automated, reliable, and ef
 9. WHEN builds pass compliance THEN the system SHALL generate store-ready metadata and assets
 10. IF critical compliance issues are found THEN the system SHALL block the build and require manual review
 
+### Requirement 7: Sentry Release Health Gates (Adjustments A13)
+
+**User Story:** As a release engineering team, we want hard gates based on crash-free metrics so that we protect users from bad releases.
+
+#### Acceptance Criteria
+
+1. WHEN evaluating release health THEN the system SHALL block release if crash-free users < 98% OR crash-free sessions < 99.5% OR ANR rate > 1%
+2. WHEN thresholds are violated THEN the system SHALL trigger an auto-pause via an authenticated API (scope: releases:write or org-admin), record on-call owner, and annotate the run
+3. WHEN sourcemap upload fails or is missing THEN the pipeline SHALL fail the build
+
+### Requirement 8: Synthetic Flows (Maestro) (Adjustments A14)
+
+**User Story:** As a QA engineer, I want automated synthetic flows so that critical user journeys remain healthy.
+
+#### Acceptance Criteria
+
+1. WHEN the CI runs THEN it SHALL execute Maestro flows for Offline Sync, AI Assessment, and Data Export and require green status before promotion
+2. WHEN synthetic flows complete THEN logs and artifacts SHALL be uploaded for review
+
 ### Requirement 7
 
 **User Story:** As a developer, I want build monitoring and alerting, so that I can quickly respond to pipeline issues.

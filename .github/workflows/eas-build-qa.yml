@@ -18,10 +18,17 @@ on:
   release:
     types: [published]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   Build:
     name: EAS QA Build (Android & IOS) (EAS)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Check for EXPO_TOKEN
         run: |

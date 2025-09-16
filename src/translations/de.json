@@ -2,10 +2,16 @@
   "calendar": {
     "drag_item_hint": "Lange drücken und ziehen, um neu zu planen. Doppeltippen für Menü.",
     "drag_item_label": "{{title}} ziehen",
+    "ec_range": "EC@25°C‑Ziel: {{min}}–{{max}} mS/cm",
+    "log_ph_ec": "pH/EC protokollieren",
     "move": "Verschieben",
     "move_to_date": "Auf Datum verschieben",
     "needs_review_label": "Überprüfung erforderlich wegen Konflikt",
+    "out_of_range": "außerhalb des Bereichs",
+    "out_of_range_label": "Letzter pH/EC außerhalb des Zielbereichs",
+    "ph_range": "pH‑Ziel: {{min}}–{{max}}",
     "review": "prüfen",
+    "targets_title": "Zielbereiche",
     "today": "Heute",
     "tomorrow": "Morgen",
     "yesterday": "Gestern"
@@ -46,14 +52,18 @@
       "subtitle": "Hilf uns, Fehler zu beheben, indem du Absturzberichte sendest",
       "title": "Absturzberichte"
     },
+    "lastUpdated": "Zuletzt aktualisiert: {{date}}",
     "personalized": {
       "body": "Dies umfasst IP-Adressen, Benutzer-IDs und andere identifizierende Informationen, die uns helfen, Fehlerberichte und Analysen zu verbessern. Diese Daten werden gemäß unserer Datenschutzerklärung verarbeitet.",
+      "subtitle": "Identifizierende Informationen in Berichten einschließen",
       "title": "Personalisierte Daten"
     },
     "sessionReplay": {
       "body": "Sitzungswiedergaben protokollieren Ihre Interaktionen mit der App, um Probleme zu debuggen. Sensible Daten werden nach Möglichkeit gefiltert oder unkenntlich gemacht; siehe Datenschutzerklärung für Details.",
+      "subtitle": "App-Interaktionen für Debugging aufzeichnen",
       "title": "Sitzungswiedergabe"
-    }
+    },
+    "title": "Datenschutzeinstellungen"
   },
   "settings": {
     "about": "Über",

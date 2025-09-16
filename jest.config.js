@@ -41,6 +41,8 @@ module.exports = {
       '<rootDir>/__mocks__/@gorhom/bottom-sheet.tsx',
     '^@nozbe/watermelondb/adapters/sqlite$':
       '<rootDir>/__mocks__/@nozbe/watermelondb/adapters/sqlite',
+    '^@nozbe/watermelondb/decorators(.*)$':
+      '<rootDir>/__mocks__/@nozbe/watermelondb/decorators$1',
     // Map the entire WatermelonDB package to our lightweight Jest mock to avoid
     // native module initialization that keeps the Jest process open (hanging tests)
     '^@nozbe/watermelondb$': '<rootDir>/__mocks__/@nozbe/watermelondb',

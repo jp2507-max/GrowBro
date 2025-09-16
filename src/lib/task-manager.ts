@@ -5,6 +5,7 @@ import {
   onSeriesOccurrenceCompleted,
   onTaskCompleted,
 } from '@/lib/plant-telemetry';
+import type { RRuleConfig } from '@/lib/rrule';
 import * as rrule from '@/lib/rrule';
 import { TaskNotificationService } from '@/lib/task-notifications';
 import { database } from '@/lib/watermelon';
@@ -182,7 +183,15 @@ async function materializeNextOccurrence(
   const start = DateTime.fromISO(afterLocalIso).plus({ second: 1 }).toJSDate();
   const end = DateTime.fromJSDate(start).plus({ years: 1 }).toJSDate();
 
-  const config = rrule.parseRule(series.rrule, series.dtstartUtc);
+  const parsed = rrule.parseRule(series.rrule, series.dtstartUtc);
+  const validated = rrule.validate(parsed as any);
+  if (!validated.ok) {
+    console.warn(
+      `[TaskManager] Skipping series ${series.id} due to invalid RRULE: ${validated.errors?.join(', ')}`
+    );
+    return null;
+  }
+  const config = parsed as unknown as RRuleConfig;
   const iter = rrule
     .buildIterator({
       config,
@@ -505,48 +514,26 @@ export async function getTasksByDateRange(
     .fetch();
   const visible: Task[] = [...pendingInRange];
 
+  // P1: Filter pending tasks per-series before deduping ephemerals
+  //
+  // `pendingInRange` contains materialized (stored) tasks across all
+  // series. Passing the global array into `buildVisibleForSeries` causes
+  // a materialized task from one series to suppress an ephemeral
+  // occurrence from a different series when they fall on the same local
+  // date. To fix, only forward the materialized tasks that belong to the
+  // current series so deduplication happens per-series.
   for (const s of allSeries as SeriesModel[]) {
-    const series = toSeriesFromModel(s as any);
-    const overrides = await getSeriesOverrides(series.id);
-    const config = rrule.parseRule(series.rrule, series.dtstartUtc);
-    const range = { start, end, timezone: series.timezone };
-
-    // Avoid duplicate materialized occurrences already stored in tasks
-    const materializedForSeries = pendingInRange.filter(
-      (t: Task) => t.seriesId === series.id
+    const seriesId = (s as any).id as string;
+    const materializedForThisSeries = pendingInRange.filter(
+      (t: Task) => t.seriesId === seriesId
     );
-
-    for (const { local, utc } of rrule.buildIterator({
-      config,
-      overrides,
-      range,
-    })) {
-      const localIso = DateTime.fromJSDate(local, {
-        zone: series.timezone,
-      }).toISO();
-      const already = materializedForSeries.find((t: Task) =>
-        sameLocalDay(t.dueAtLocal!, localIso!)
-      );
-      if (already) continue;
-
-      const ephemeralId = `series:${series.id}:${toOccurrenceLocalDate(
-        local,
-        series.timezone
-      )}`;
-      visible.push({
-        id: ephemeralId,
-        seriesId: series.id,
-        title: series.title,
-        description: series.description,
-        dueAtLocal: localIso,
-        dueAtUtc: DateTime.fromJSDate(utc, { zone: 'utc' }).toISO(),
-        timezone: series.timezone,
-        status: 'pending',
-        metadata: { ephemeral: true },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      } as unknown as Task);
-    }
+    const items = await buildVisibleForSeries({
+      s: s as any,
+      materializedForSeries: materializedForThisSeries,
+      start,
+      end,
+    });
+    visible.push(...items);
   }
 
   return visible.sort((a, b) => (a.dueAtLocal < b.dueAtLocal ? -1 : 1));
@@ -777,6 +764,63 @@ function buildRescheduleOldLocalIso(
   return DateTime.fromISO(`${day}T${dtstartLocal.toFormat('HH:mm:ss')}`, {
     zone,
   }).toISO() as string;
+}
+
+// Small helper to build visible ephemeral tasks for a series within a range.
+export async function buildVisibleForSeries(params: {
+  s: SeriesModel;
+  materializedForSeries: Task[];
+  start: Date;
+  end: Date;
+}): Promise<Task[]> {
+  const { s, materializedForSeries, start, end } = params;
+  const series = toSeriesFromModel(s as any);
+  const overrides = await getSeriesOverrides(series.id);
+  const parsed = rrule.parseRule(series.rrule, series.dtstartUtc);
+  const validated = rrule.validate(parsed as any);
+  if (!validated.ok) {
+    console.warn(
+      `[TaskManager] Skipping series ${series.id} due to invalid RRULE: ${validated.errors?.join(', ')}`
+    );
+    return [];
+  }
+  const config = parsed as unknown as RRuleConfig;
+  const range = { start, end, timezone: series.timezone };
+
+  const out: Task[] = [];
+  for (const { local, utc } of rrule.buildIterator({
+    config,
+    overrides,
+    range,
+  })) {
+    const localIso = DateTime.fromJSDate(local, {
+      zone: series.timezone,
+    }).toISO();
+    const already = materializedForSeries.find((t: Task) =>
+      sameLocalDay(t.dueAtLocal!, localIso!)
+    );
+    if (already) continue;
+
+    const ephemeralId = `series:${series.id}:${toOccurrenceLocalDate(
+      local,
+      series.timezone
+    )}`;
+    out.push({
+      id: ephemeralId,
+      seriesId: series.id,
+      title: series.title,
+      description: series.description,
+      dueAtLocal: localIso,
+      dueAtUtc: DateTime.fromJSDate(utc, { zone: 'utc' }).toISO(),
+      timezone: series.timezone,
+      status: 'pending',
+      metadata: { ephemeral: true },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as unknown as Task);
+  }
+
+  return out;
 }
 
 async function upsertRescheduleOverride(params: {

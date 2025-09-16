@@ -2,10 +2,16 @@
   "calendar": {
     "drag_item_hint": "Long-press then drag to reschedule. Double-tap to open move menu.",
     "drag_item_label": "Drag {{title}}",
+    "ec_range": "EC@25°C target: {{min}}–{{max}} mS/cm",
+    "log_ph_ec": "Log pH/EC",
     "move": "Move",
     "move_to_date": "Move to date",
     "needs_review_label": "Needs review due to conflict",
+    "out_of_range": "out of range",
+    "out_of_range_label": "Latest pH/EC out of target range",
+    "ph_range": "pH target: {{min}}–{{max}}",
     "review": "review",
+    "targets_title": "Targets",
     "today": "Today",
     "tomorrow": "Tomorrow",
     "yesterday": "Yesterday"
@@ -46,14 +52,18 @@
       "subtitle": "Help us fix bugs by sending crash reports",
       "title": "Crash Reporting"
     },
+    "lastUpdated": "Last updated: {{date}}",
     "personalized": {
       "body": "This includes IP addresses, user IDs, and other identifying information that helps us provide better error reports and analytics. This data is handled according to our privacy policy.",
+      "subtitle": "Include identifying information in reports",
       "title": "Personalized Data"
     },
     "sessionReplay": {
       "body": "Session replay records your app interactions to help us debug issues. Sensitive data is filtered or redacted where possible; see Privacy Policy for details.",
+      "subtitle": "Record app interactions for debugging",
       "title": "Session Replay"
-    }
+    },
+    "title": "Privacy Settings"
   },
   "settings": {
     "about": "About",

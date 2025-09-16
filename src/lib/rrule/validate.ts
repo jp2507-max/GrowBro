@@ -1,6 +1,6 @@
-import type { RRuleConfig, ValidationResult } from '@/lib/rrule/types';
+import type { RRuleParse, ValidationResult } from '@/lib/rrule/types';
 
-export function validate(config: RRuleConfig): ValidationResult {
+export function validate(config: RRuleParse): ValidationResult {
   const errors: string[] = [];
 
   // Validate dtstart is a valid Date

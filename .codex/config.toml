@@ -16,6 +16,8 @@
 
 # Prefer ChatGPT auth by default (you can switch to "apikey" if desired)
 preferred_auth_method = "chatgpt"
+model = "gpt-5-codex"
+model_reasoning_effort = "medium"
 
 # IMPORTANT: top-level key is `mcp_servers` (TOML), not `mcpServers`.
 [mcp_servers.brave-search]

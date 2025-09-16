@@ -17,71 +17,61 @@ export function joinPath(...segments: string[]): string {
 // Internal implementation for joinPath (kept unexported so exported
 // `joinPath` stays small for linting rules).
 function _joinPathImpl(segments: string[]): string {
-  // Filter out empty segments and normalize slashes, preserving URI schemes
-  const processedSegments = segments
-    .filter((segment) => segment && segment.trim() !== '')
-    .map((segment) => {
-      // Parse URI scheme prefix (e.g., file://, http://, https://)
-      const schemeMatch = segment.match(/^([a-zA-Z]+:(?:\/\/?))(.*)$/);
-      if (schemeMatch) {
-        const [, scheme, pathPart] = schemeMatch;
-        // Only trim slashes from the path portion, preserve scheme
-        const trimmedPath = pathPart.replace(/^[\/\\]+|[\/\\]+$/g, '');
-        return scheme + trimmedPath;
+  // Find first non-empty segment
+  const firstIndex = segments.findIndex((s) => s && s.trim() !== '');
+  if (firstIndex === -1) return '';
+  const firstSegment = segments[firstIndex];
+
+  // URI-aware handling (robust against odd slash grouping)
+  let schemeOnlyMatch = firstSegment.match(/^([A-Za-z][A-Za-z0-9+.-]*:)/);
+  // Don't treat single-letter schemes like "C:" as URIs (Windows drive letters)
+  if (
+    schemeOnlyMatch &&
+    schemeOnlyMatch[1].length === 2 &&
+    /^[A-Za-z]:$/.test(schemeOnlyMatch[1])
+  ) {
+    schemeOnlyMatch = null;
+  }
+  if (schemeOnlyMatch) {
+    const scheme = schemeOnlyMatch[1];
+    const afterScheme = firstSegment.slice(scheme.length);
+    const slashPrefix = afterScheme.match(/^\/+/)?.[0] ?? '';
+    const slashCount = slashPrefix.length;
+    const restFirst = afterScheme.slice(slashCount);
+
+    const remaining = segments.slice(firstIndex + 1);
+    const parts: string[] = [];
+    if (restFirst) parts.push(restFirst);
+    for (const seg of remaining) {
+      if (!seg || seg.trim() === '') continue;
+      parts.push(seg);
+    }
+    const normalizedParts = parts
+      .map((p) => p.replace(/^[\/\\]+|[\/\\]+$/g, ''))
+      .filter((p) => p.length > 0);
+
+    // Preserve exact number of slashes after scheme
+    if (normalizedParts.length === 0) return scheme + slashPrefix;
+    // Special-case: file:// style authorities (e.g., file://server/share)
+    if (scheme.toLowerCase().startsWith('file:') && slashPrefix.length === 2) {
+      const [host, ...restParts] = normalizedParts;
+      if (host && restParts.length > 0) {
+        return scheme + '//' + host + '/' + restParts.join('/');
       }
-      // No scheme, apply normal trimming
-      return segment.replace(/^[\/\\]+|[\/\\]+$/g, '');
-    });
-
-  if (processedSegments.length === 0) {
-    return '';
-  }
-
-  // Join with forward slashes
-  const joined = processedSegments.join('/');
-
-  // Preserve original triple-slash URI forms (e.g. "file:///")
-  const firstSegment = segments.find((s) => s && s.trim() !== '');
-  if (firstSegment) {
-    const tripleMatch = firstSegment.match(/^([a-zA-Z]+:)(\/\/{3,})(.*)$/);
-    if (tripleMatch) {
-      const [, schemeBase, slashes] = tripleMatch;
-      const rest = joined.replace(new RegExp('^' + schemeBase + '\\/+'), '');
-      return schemeBase + slashes + (rest ? rest : '');
     }
+    return scheme + slashPrefix + normalizedParts.join('/');
   }
 
-  // Parse scheme from first segment and handle scheme/leading-slash combinations
-  const firstSchemeMatch = firstSegment
-    ? firstSegment.match(/^([a-zA-Z]+:(?:\/\/?))(.*)$/)
-    : null;
-  if (firstSchemeMatch) {
-    const [, scheme, pathPart] = firstSchemeMatch;
-    const schemeEndsWithSlash = scheme.endsWith('/');
-    const pathPartHasLeadingSlash = pathPart.startsWith('/');
-
-    if (schemeEndsWithSlash) {
-      return (
-        scheme + joined.replace(new RegExp('^' + scheme), '').replace(/^\//, '')
-      );
-    } else if (pathPartHasLeadingSlash) {
-      return (
-        scheme +
-        '/' +
-        joined.replace(new RegExp('^' + scheme), '').replace(/^\//, '')
-      );
-    } else {
-      return scheme + joined.replace(new RegExp('^' + scheme), '');
-    }
-  }
-
+  // Non-URI: normalize and join, keeping absolute leading slash
+  const cleaned = segments
+    .filter((s) => s && s.trim() !== '')
+    .map((s) => s.replace(/^[\/\\]+|[\/\\]+$/g, ''));
+  if (cleaned.length === 0) return '';
+  const joined = cleaned.join('/');
   const hasLeadingSlash = segments.some(
-    (segment) => segment.startsWith('/') || segment.startsWith('\\')
+    (s) => s.startsWith('/') || s.startsWith('\\')
   );
-
-  return hasLeadingSlash && !joined.startsWith('/') && !joined.startsWith('\\')
-    ? '/' + joined
-    : joined;
+  return hasLeadingSlash && !joined.startsWith('/') ? '/' + joined : joined;
 }
 
 /**
@@ -92,8 +82,21 @@ function _joinPathImpl(segments: string[]): string {
 export function dirname(path: string): string {
   if (!path || path === '/') return '/';
 
-  const schemeMatch = path.match(/^([a-zA-Z]+:(?:\/\/?))(.*)$/);
-  if (schemeMatch) return _dirnameUriImpl(schemeMatch[1], schemeMatch[2]);
+  let schemeMatch = path.match(/^([A-Za-z][A-Za-z0-9+.-]*:)(\/*)(.*)$/);
+  // Don't treat single-letter schemes like "C:" as URIs (Windows drive letters)
+  if (
+    schemeMatch &&
+    schemeMatch[1].length === 2 &&
+    /^[A-Za-z]:$/.test(schemeMatch[1])
+  ) {
+    schemeMatch = null;
+  }
+  if (schemeMatch)
+    return _dirnameUriImpl(
+      schemeMatch[1],
+      schemeMatch[2] || '',
+      schemeMatch[3]
+    );
 
   // Standard path handling for non-URI paths (kept concise)
   const normalizedPath = path.replace(/\\/g, '/');
@@ -105,23 +108,86 @@ export function dirname(path: string): string {
 }
 
 // Internal helper for URI dirname logic
-function _dirnameUriImpl(scheme: string, pathPart: string): string {
-  if (!pathPart || pathPart === '/') return scheme + '/';
+function _dirnameUriImpl(
+  schemePrefix: string,
+  slashes: string,
+  rest: string
+): string {
+  const slashCount = slashes.length;
+  const normalizedRest = (rest || '').replace(/\\/g, '/');
 
-  const normalizedPath = pathPart.replace(/\\/g, '/');
-  const endsWithSlash = normalizedPath.endsWith('/');
-  const pathToProcess = endsWithSlash
-    ? normalizedPath.slice(0, -1)
-    : normalizedPath;
-
-  if (!pathToProcess.includes('/')) {
-    return scheme + (pathPart.startsWith('/') ? '/' : '');
+  // Triple-slash-or-more → absolute path with empty authority (e.g., file:///path)
+  if (slashCount >= 3) {
+    return _dirnameTriple(schemePrefix, normalizedRest);
   }
-  const lastSlashIndex = pathToProcess.lastIndexOf('/');
-  if (lastSlashIndex === 0) return scheme + '/';
-  const parent = pathToProcess.substring(0, lastSlashIndex);
-  if (!parent.includes('/')) return scheme + parent + '/';
-  return scheme + parent;
+
+  // Double-slash → authority-based URI (e.g., https://host/path, file://server/share)
+  if (slashCount === 2) {
+    if (!normalizedRest) return schemePrefix + '///';
+    const hasSlash = normalizedRest.includes('/');
+    if (!hasSlash) {
+      // Authority only
+      return schemePrefix + '//' + normalizedRest + '/';
+    }
+    const firstSlash = normalizedRest.indexOf('/');
+    const authority = normalizedRest.slice(0, firstSlash);
+    const pathRest = normalizedRest.slice(firstSlash + 1); // may be ''
+    const endsWithSlash = normalizedRest.endsWith('/');
+
+    // Root at authority level (e.g., https://host/)
+    if (pathRest === '') return schemePrefix + '//' + authority + '/';
+
+    const trimmedPath = endsWithSlash ? pathRest.slice(0, -1) : pathRest;
+    if (trimmedPath === '') return schemePrefix + '//' + authority + '/';
+
+    // Single segment under host
+    if (!trimmedPath.includes('/')) {
+      // If original ended with slash, it's the directory itself
+      if (endsWithSlash) {
+        return schemePrefix + '//' + authority + '/' + trimmedPath;
+      }
+      // Otherwise, parent is the host
+      return schemePrefix + '//' + authority;
+    }
+
+    // Multi-segment path: if original ended with slash, keep directory itself
+    if (endsWithSlash) {
+      return schemePrefix + '//' + authority + '/' + trimmedPath;
+    }
+
+    // Otherwise drop the last segment
+    const parent = trimmedPath.substring(0, trimmedPath.lastIndexOf('/'));
+    return schemePrefix + '//' + authority + '/' + parent;
+  }
+
+  // Single-slash after scheme (rare, e.g., file:/path)
+  if (slashCount === 1) {
+    const normalized = normalizedRest.replace(/^\/+|\/+$/g, '');
+    if (!normalized) return schemePrefix + '/';
+    if (!normalized.includes('/')) return schemePrefix + '/';
+    const parent = normalized.substring(0, normalized.lastIndexOf('/'));
+    return schemePrefix + '/' + parent;
+  }
+
+  // No slashes after scheme
+  return schemePrefix + '/';
+}
+
+function _dirnameTriple(schemePrefix: string, normalizedRest: string): string {
+  if (!normalizedRest || normalizedRest === '/') return schemePrefix + '///';
+  const endsWithSlash = normalizedRest.endsWith('/');
+  const trimmedEnd = endsWithSlash
+    ? normalizedRest.slice(0, -1)
+    : normalizedRest;
+  if (trimmedEnd === '' || trimmedEnd === '/') return schemePrefix + '///';
+  if (endsWithSlash) {
+    // Directory path ending with slash → dirname is the directory itself
+    return schemePrefix + '///' + trimmedEnd.replace(/^\/+/, '');
+  }
+  const cleaned = trimmedEnd.replace(/^\/+|\/+$/g, '');
+  if (!cleaned.includes('/')) return schemePrefix + '///';
+  const parent = cleaned.substring(0, cleaned.lastIndexOf('/'));
+  return schemePrefix + '///' + parent;
 }
 
 /**

@@ -64,8 +64,8 @@ describe('dirname URI Scheme Preservation', () => {
 
   test('preserves file:// URIs', () => {
     expect(dirname('file://server/share/file.txt')).toBe('file://server/share');
-    expect(dirname('file://server/share')).toBe('file://server/');
-    expect(dirname('file://server')).toBe('file://');
+    expect(dirname('file://server/share')).toBe('file://server');
+    expect(dirname('file://server')).toBe('file://server/');
   });
 
   test('handles plain paths normally', () => {
@@ -81,7 +81,7 @@ describe('dirname URI Scheme Preservation', () => {
       'https://example.com/path/to'
     );
     expect(dirname('s3://bucket/path/file.txt')).toBe('s3://bucket/path');
-    expect(dirname('ftp://host/path')).toBe('ftp://host/');
+    expect(dirname('ftp://host/path')).toBe('ftp://host');
   });
 });
 
@@ -93,7 +93,7 @@ describe('URI Scheme Edge Cases', () => {
   });
 
   test('handles URIs with single slash after scheme', () => {
-    expect(dirname('file://server')).toBe('file://');
+    expect(dirname('file://server')).toBe('file://server/');
     expect(dirname('file://server/')).toBe('file://server/');
     expect(joinPath('file://', 'server')).toBe('file://server');
   });
@@ -101,6 +101,42 @@ describe('URI Scheme Edge Cases', () => {
   test('preserves multiple slashes in URI schemes', () => {
     expect(joinPath('file:///', 'path')).toBe('file:///path');
     expect(joinPath('file:////', 'path')).toBe('file:////path');
+  });
+});
+
+describe('Windows Drive Letter Handling', () => {
+  test('handles Windows drive letters correctly', () => {
+    expect(joinPath('C:', 'Users', 'Documents')).toBe('C:/Users/Documents');
+    expect(joinPath('C:\\', 'Users', 'Documents')).toBe('C:/Users/Documents');
+    expect(joinPath('C:/', 'Users', 'Documents')).toBe('C:/Users/Documents');
+    expect(joinPath('D:', 'Program Files')).toBe('D:/Program Files');
+    expect(joinPath('Z:', 'folder')).toBe('Z:/folder');
+  });
+
+  test('preserves Windows drive letter case', () => {
+    expect(joinPath('c:', 'users')).toBe('c:/users');
+    expect(joinPath('C:', 'users')).toBe('C:/users');
+    expect(joinPath('c:', 'Users')).toBe('c:/Users');
+  });
+
+  test('handles Windows drive letters with empty segments', () => {
+    expect(joinPath('C:', '', 'Users')).toBe('C:/Users');
+    expect(joinPath('C:', 'Users', '')).toBe('C:/Users');
+    expect(joinPath('C:', '', '', 'Users')).toBe('C:/Users');
+  });
+
+  test('distinguishes drive letters from URI schemes', () => {
+    // Drive letters should be treated as paths
+    expect(joinPath('C:', 'file.txt')).toBe('C:/file.txt');
+    // URI schemes should still work (note: schemes without // are handled as-is)
+    expect(joinPath('http:', 'example.com')).toBe('http:example.com');
+    expect(joinPath('ftp:', 'host.com')).toBe('ftp:host.com');
+  });
+
+  test('handles UNC-style paths as regular paths', () => {
+    // These should be treated as regular paths, not URI schemes
+    expect(joinPath('\\\\server', 'share')).toBe('/server/share');
+    expect(joinPath('//server', 'share')).toBe('/server/share');
   });
 });
 
