@@ -94,14 +94,12 @@ function startRootInitialization(
       refreshIsRTL = i18nModule.refreshIsRTL;
     } catch {
       // non-fatal
+    } finally {
+      if (!isMounted) return;
+      refreshIsRTL?.();
+      applyRTLIfNeeded?.();
+      setIsI18nReady(true);
     }
-
-    if (!isMounted) return;
-    refreshIsRTL?.();
-    applyRTLIfNeeded?.();
-    setIsI18nReady(true);
-
-    if (!isMounted) return;
 
     // NOTE: There's a race between i18n initialization and showing the
     // permission prompt. Only call requestPermissions when i18n init
