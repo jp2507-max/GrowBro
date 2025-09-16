@@ -15,7 +15,7 @@ export type ConsentFeature = Exclude<keyof PrivacyConsent, 'lastUpdated'>;
 
 const DEFAULT_CONSENT: PrivacyConsent = {
   analytics: false,
-  crashReporting: true, // Basic crash reporting is usually acceptable
+  crashReporting: false,
   personalizedData: false,
   sessionReplay: false,
   lastUpdated: Date.now(),
@@ -71,6 +71,13 @@ export function setPrivacyConsent(consent: Partial<PrivacyConsent>): void {
 
     // Update Sentry configuration based on consent
     updateSentryConsent(updated);
+
+    // Notify listeners
+    for (const cb of consentListeners) {
+      try {
+        cb(updated);
+      } catch {}
+    }
   } catch (error) {
     console.error('Failed to save privacy consent settings:', error);
   }
@@ -114,4 +121,13 @@ export function hasConsent(feature: ConsentFeature): boolean {
 export function initializePrivacyConsent(): void {
   const consent = getPrivacyConsent();
   updateSentryConsent(consent);
+}
+
+// Lightweight subscription so SDKGate can react immediately to UI-driven consent changes
+type ConsentListener = (consent: PrivacyConsent) => void;
+const consentListeners = new Set<ConsentListener>();
+
+export function onPrivacyConsentChange(cb: ConsentListener): () => void {
+  consentListeners.add(cb);
+  return () => consentListeners.delete(cb);
 }

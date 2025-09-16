@@ -20,6 +20,33 @@
     "cancel": "Abbrechen",
     "ok": "OK"
   },
+  "consent": {
+    "accept_all": "Alle akzeptieren",
+    "aiTraining": {
+      "impact": "Aus: Diagnose funktioniert weiterhin; keine Bilder im Trainingspool. Rechtsgrundlage: Einwilligung; Aufbewahrung: 365T",
+      "subtitle": "Erlaube die Nutzung deiner Bilder zur Modellverbesserung",
+      "title": "KI-Trainingsbilder"
+    },
+    "crashDiagnostics": {
+      "impact": "Aus: keine Absturzberichte werden gesendet. Rechtsgrundlage: Einwilligung; Aufbewahrung: 180T",
+      "subtitle": "Minimierte Absturzberichte senden",
+      "title": "Absturzdiagnostik"
+    },
+    "experiments": {
+      "impact": "Aus: keine A/B-Tests; Feature-Rollouts für dich deaktiviert. Rechtsgrundlage: Einwilligung",
+      "subtitle": "A/B-Tests und Flags nach Einwilligung aktivieren",
+      "title": "Experimente / Feature-Flags"
+    },
+    "first_run_title": "Deine Datenschutzwahl",
+    "reject_all": "Alle ablehnen",
+    "save": "Speichern",
+    "telemetry": {
+      "impact": "Aus: keine Nutzungsanalysen; Leistungsmetriken bleiben lokal. Rechtsgrundlage: Einwilligung; Aufbewahrung: 90T aggregiert",
+      "subtitle": "Nutzungsanalysen nach Einwilligung erlauben",
+      "title": "Telemetrie / Analytik"
+    },
+    "title": "Datenschutzoptionen"
+  },
   "diagnostics": {
     "avg_payload": "Durchschn. Payload — {{operation}}: {{bytes}} B",
     "checkpoint_age_ms": "Checkpoint-Alter (ms)",
@@ -52,6 +79,8 @@
       "subtitle": "Hilf uns, Fehler zu beheben, indem du Absturzberichte sendest",
       "title": "Absturzberichte"
     },
+    "deleteAccount": "Mein Konto löschen",
+    "exportData": "Meine Daten exportieren",
     "lastUpdated": "Zuletzt aktualisiert: {{date}}",
     "personalized": {
       "body": "Dies umfasst IP-Adressen, Benutzer-IDs und andere identifizierende Informationen, die uns helfen, Fehlerberichte und Analysen zu verbessern. Diese Daten werden gemäß unserer Datenschutzerklärung verarbeitet.",
