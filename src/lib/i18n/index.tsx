@@ -31,9 +31,9 @@ export async function initI18n(): Promise<void> {
   });
 
   // Apply RTL settings based on resolved language
-  const isRtl = dir((persisted as string) || i18n.language) === 'rtl';
-  I18nManager.allowRTL(isRtl);
-  I18nManager.forceRTL(isRtl);
+  // RTL application moved to applyRTLIfNeeded so callers can apply it after
+  // i18n initialization (and after persisted language is loaded).
+  // Consumers should call `applyRTLIfNeeded()` after `initI18n()` completes.
 }
 
 // Initialize i18n with a safe default language at module load time to avoid
@@ -60,15 +60,22 @@ void initReactI18next;
 /* istanbul ignore next */
 void resources;
 
-// Is it a RTL language?
-export const isRTL: boolean = dir() === 'rtl';
+// Is it a RTL language? export as a function so it's evaluated dynamically
+// after any persisted language has been restored.
+export function isRTL(): boolean {
+  return dir() === 'rtl';
+}
 
-// Avoid forcing RTL/LTR in Jest to prevent unexpected global side-effects that
-// could interfere with tests or keep processes alive in some environments.
-const isTestEnv = typeof (globalThis as any).jest !== 'undefined';
-if (!isTestEnv) {
-  I18nManager.allowRTL(isRTL);
-  I18nManager.forceRTL(isRTL);
+/**
+ * Apply RTL settings to React Native I18nManager if not running inside Jest.
+ * Call this after i18n initialization or whenever the app language changes.
+ */
+export function applyRTLIfNeeded(): void {
+  const isTestEnv = typeof (globalThis as any).jest !== 'undefined';
+  if (isTestEnv) return;
+  const rtl = isRTL();
+  I18nManager.allowRTL(rtl);
+  I18nManager.forceRTL(rtl);
 }
 
 export default i18n;
