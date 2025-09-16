@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Switch, Text, View } from 'react-native';
 
+import { Button } from '@/components/ui';
 import { translate } from '@/lib';
 import {
   getPrivacyConsent,
@@ -10,6 +11,8 @@ import {
 
 interface PrivacySettingsProps {
   onConsentChange?: (consent: PrivacyConsent) => void;
+  onDataExport?: () => void;
+  onAccountDeletion?: () => void;
 }
 
 type AllowedConsentKey = Exclude<keyof PrivacyConsent, 'lastUpdated'>;
@@ -74,12 +77,141 @@ function showSessionReplayInfo(): void {
   );
 }
 
-function PrivacySettingsContent({
+function showAnalyticsInfo(): void {
+  Alert.alert(
+    translate('privacy.analytics.title'),
+    translate('privacy.analytics.body'),
+    [{ text: translate('common.ok') }]
+  );
+}
+
+function showCrashReportingInfo(): void {
+  Alert.alert(
+    translate('privacy.crashReporting.title'),
+    translate('privacy.crashReporting.body'),
+    [{ text: translate('common.ok') }]
+  );
+}
+
+function PrivacyToggles({
   consent,
   updateConsent,
 }: {
   consent: PrivacyConsent;
   updateConsent: (key: AllowedConsentKey, value: boolean) => void;
+}): React.ReactElement {
+  return (
+    <View className="space-y-4">
+      <ToggleRow
+        title={translate('privacy.crashReporting.title')}
+        subtitle={translate('privacy.crashReporting.subtitle')}
+        value={consent.crashReporting}
+        onChange={(value) => updateConsent('crashReporting', value)}
+        onInfoPress={showCrashReportingInfo}
+        testID="toggle-crashReporting"
+      />
+
+      <ToggleRow
+        title={translate('privacy.analytics.title')}
+        subtitle={translate('privacy.analytics.subtitle')}
+        value={consent.analytics}
+        onChange={(value) => updateConsent('analytics', value)}
+        onInfoPress={showAnalyticsInfo}
+        testID="toggle-analytics"
+      />
+
+      <ToggleRow
+        title={translate('privacy.personalized.title')}
+        subtitle={translate('privacy.personalized.subtitle')}
+        value={consent.personalizedData}
+        onChange={(value) => updateConsent('personalizedData', value)}
+        onInfoPress={showPersonalizedDataInfo}
+        testID="toggle-personalizedData"
+      />
+
+      <ToggleRow
+        title={translate('privacy.sessionReplay.title')}
+        subtitle={translate('privacy.sessionReplay.subtitle')}
+        value={consent.sessionReplay}
+        onChange={(value) => updateConsent('sessionReplay', value)}
+        onInfoPress={showSessionReplayInfo}
+        testID="toggle-sessionReplay"
+      />
+    </View>
+  );
+}
+
+function PrivacyActions({
+  updateConsent,
+  onDataExport,
+  onAccountDeletion,
+}: {
+  updateConsent: (key: AllowedConsentKey, value: boolean) => void;
+  onDataExport?: () => void;
+  onAccountDeletion?: () => void;
+}): React.ReactElement {
+  return (
+    <View className="mt-4 gap-2">
+      <Button
+        label={translate('consent.reject_all')}
+        onPress={() => {
+          updateConsent('crashReporting', false);
+          updateConsent('analytics', false);
+          updateConsent('personalizedData', false);
+          updateConsent('sessionReplay', false);
+        }}
+        testID="privacy-reject-all-btn"
+      />
+      <Button
+        label={translate('consent.accept_all')}
+        onPress={() => {
+          updateConsent('crashReporting', true);
+          updateConsent('analytics', true);
+          updateConsent('personalizedData', true);
+          updateConsent('sessionReplay', true);
+        }}
+        testID="privacy-accept-all-btn"
+      />
+      <Button
+        label={translate('privacy.exportData')}
+        onPress={() => {
+          if (onDataExport) onDataExport();
+          else
+            Alert.alert(
+              translate('privacy.exportData'),
+              translate('privacy.exportData'),
+              [{ text: translate('common.ok') }]
+            );
+        }}
+        testID="privacy-export-btn"
+      />
+      <Button
+        label={translate('privacy.deleteAccount')}
+        onPress={() => {
+          if (onAccountDeletion) onAccountDeletion();
+          else
+            Alert.alert(
+              translate('privacy.deleteAccount'),
+              translate('privacy.deleteAccount'),
+              [{ text: translate('common.ok') }]
+            );
+        }}
+        testID="privacy-delete-btn"
+      />
+    </View>
+  );
+}
+
+function PrivacySettingsContent({
+  consent,
+  updateConsent,
+  onDataExport,
+  onAccountDeletion,
+}: {
+  consent: PrivacyConsent;
+  updateConsent: (key: AllowedConsentKey, value: boolean) => void;
+  onDataExport?: () => void;
+  onAccountDeletion?: () => void;
 }) {
   return (
     <View className="space-y-4 p-4" testID="privacy-settings">
@@ -87,41 +219,7 @@ function PrivacySettingsContent({
         {translate('privacy.title')}
       </Text>
 
-      <View className="space-y-4">
-        <ToggleRow
-          title={translate('privacy.crashReporting.title')}
-          subtitle={translate('privacy.crashReporting.subtitle')}
-          value={consent.crashReporting}
-          onChange={(value) => updateConsent('crashReporting', value)}
-          testID="toggle-crashReporting"
-        />
-
-        <ToggleRow
-          title={translate('privacy.analytics.title')}
-          subtitle={translate('privacy.analytics.subtitle')}
-          value={consent.analytics}
-          onChange={(value) => updateConsent('analytics', value)}
-          testID="toggle-analytics"
-        />
-
-        <ToggleRow
-          title={translate('privacy.personalized.title')}
-          subtitle={translate('privacy.personalized.subtitle')}
-          value={consent.personalizedData}
-          onChange={(value) => updateConsent('personalizedData', value)}
-          onInfoPress={showPersonalizedDataInfo}
-          testID="toggle-personalizedData"
-        />
-
-        <ToggleRow
-          title={translate('privacy.sessionReplay.title')}
-          subtitle={translate('privacy.sessionReplay.subtitle')}
-          value={consent.sessionReplay}
-          onChange={(value) => updateConsent('sessionReplay', value)}
-          onInfoPress={showSessionReplayInfo}
-          testID="toggle-sessionReplay"
-        />
-      </View>
+      <PrivacyToggles consent={consent} updateConsent={updateConsent} />
 
       <Text
         className="mt-4 text-xs text-gray-500 dark:text-gray-400"
@@ -131,11 +229,21 @@ function PrivacySettingsContent({
           date: new Date(consent.lastUpdated).toLocaleDateString(),
         })}
       </Text>
+
+      <PrivacyActions
+        updateConsent={updateConsent}
+        onDataExport={onDataExport}
+        onAccountDeletion={onAccountDeletion}
+      />
     </View>
   );
 }
 
-export function PrivacySettings({ onConsentChange }: PrivacySettingsProps) {
+export function PrivacySettings({
+  onConsentChange,
+  onDataExport,
+  onAccountDeletion,
+}: PrivacySettingsProps) {
   const [consent, setConsentState] =
     useState<PrivacyConsent>(getPrivacyConsent());
 
@@ -156,6 +264,11 @@ export function PrivacySettings({ onConsentChange }: PrivacySettingsProps) {
   }
 
   return (
-    <PrivacySettingsContent consent={consent} updateConsent={updateConsent} />
+    <PrivacySettingsContent
+      consent={consent}
+      updateConsent={updateConsent}
+      onDataExport={onDataExport}
+      onAccountDeletion={onAccountDeletion}
+    />
   );
 }

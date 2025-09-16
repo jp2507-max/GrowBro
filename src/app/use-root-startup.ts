@@ -1,9 +1,11 @@
 import * as Localization from 'expo-localization';
 import React from 'react';
 
-import { useSyncPrefs } from '@/lib';
+import { retentionWorker, useSyncPrefs } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
 import { registerNotificationMetrics } from '@/lib/notification-metrics';
+import { setDeletionAdapter } from '@/lib/privacy/deletion-adapter';
+import { createSupabaseDeletionAdapter } from '@/lib/privacy/deletion-adapter-supabase';
 import { registerBackgroundTask } from '@/lib/sync/background-sync';
 import { setupSyncTriggers } from '@/lib/sync/sync-triggers';
 import { TaskNotificationService } from '@/lib/task-notifications';
@@ -161,4 +163,22 @@ export function useRootStartup(
   }, []);
 
   useSyncAndMetrics();
+
+  // Fire-and-forget: run retention daily (simple 24h interval)
+  React.useEffect(() => {
+    // Wire deletion adapter to Supabase buckets for cascades
+    try {
+      setDeletionAdapter(createSupabaseDeletionAdapter());
+    } catch {}
+    const run = () => {
+      try {
+        retentionWorker.runNow();
+      } catch {}
+    };
+    // initial run at app start
+    run();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const id = setInterval(run, dayMs);
+    return () => clearInterval(id);
+  }, []);
 }

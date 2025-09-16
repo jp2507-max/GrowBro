@@ -20,6 +20,33 @@
     "cancel": "Cancel",
     "ok": "OK"
   },
+  "consent": {
+    "accept_all": "Accept all",
+    "aiTraining": {
+      "impact": "Off: diagnosis still works; no images added to training pool. Basis: consent; Retention: 365d",
+      "subtitle": "Allow using your images to improve models",
+      "title": "AI training images"
+    },
+    "crashDiagnostics": {
+      "impact": "Off: no crash reports are sent. Basis: consent; Retention: 180d",
+      "subtitle": "Send minimized crash reports",
+      "title": "Crash diagnostics"
+    },
+    "experiments": {
+      "impact": "Off: no A/B tests; feature rollouts disabled for you. Basis: consent",
+      "subtitle": "Enable A/B tests and flags after consent",
+      "title": "Experiments / feature flags"
+    },
+    "first_run_title": "Your privacy choices",
+    "reject_all": "Reject all",
+    "save": "Save",
+    "telemetry": {
+      "impact": "Off: no usage analytics; performance metrics remain local. Basis: consent; Retention: 90d aggregated",
+      "subtitle": "Allow usage analytics after consent",
+      "title": "Telemetry / analytics"
+    },
+    "title": "Privacy choices"
+  },
   "diagnostics": {
     "avg_payload": "Avg payload — {{operation}}: {{bytes}} B",
     "checkpoint_age_ms": "Checkpoint age (ms)",
@@ -52,6 +79,8 @@
       "subtitle": "Help us fix bugs by sending crash reports",
       "title": "Crash Reporting"
     },
+    "deleteAccount": "Delete my account",
+    "exportData": "Export my data",
     "lastUpdated": "Last updated: {{date}}",
     "personalized": {
       "body": "This includes IP addresses, user IDs, and other identifying information that helps us provide better error reports and analytics. This data is handled according to our privacy policy.",
