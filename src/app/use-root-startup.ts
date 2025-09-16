@@ -48,7 +48,7 @@ export function getCurrentTimeZone(): string {
   return 'UTC';
 }
 
-function useSyncAndMetrics() {
+function useSyncAndMetrics(): void {
   React.useEffect(() => {
     void registerBackgroundTask();
     const dispose = setupSyncTriggers();
@@ -73,7 +73,7 @@ function startRootInitialization(
   setIsI18nReady: (v: boolean) => void,
   isFirstTime: boolean,
   hydratePrefs?: (() => void) | undefined
-) {
+): () => void {
   // This function contains the implementation that was previously an
   // inline effect in `useRootStartup`. Extracting it reduces the size of
   // `useRootStartup` to satisfy the repository lint rule about function
@@ -82,7 +82,7 @@ function startRootInitialization(
   let svc: TaskNotificationService | undefined;
   let interval: ReturnType<typeof setInterval> | undefined;
 
-  const initialize = async () => {
+  const initialize = async (): Promise<void> => {
     let applyRTLIfNeeded: (() => void) | undefined;
     let refreshIsRTL: (() => void) | undefined;
     let i18nInitSucceeded = false;
@@ -94,12 +94,12 @@ function startRootInitialization(
       refreshIsRTL = i18nModule.refreshIsRTL;
     } catch {
       // non-fatal
-    } finally {
-      if (!isMounted) return;
-      refreshIsRTL?.();
-      applyRTLIfNeeded?.();
-      setIsI18nReady(true);
     }
+
+    if (!isMounted) return;
+    refreshIsRTL?.();
+    applyRTLIfNeeded?.();
+    setIsI18nReady(true);
 
     if (!isMounted) return;
 
@@ -139,7 +139,7 @@ function startRootInitialization(
 export function useRootStartup(
   setIsI18nReady: (v: boolean) => void,
   isFirstTime: boolean
-) {
+): void {
   const hydratePrefs = useSyncPrefs.use.hydrate();
 
   React.useEffect(() => {

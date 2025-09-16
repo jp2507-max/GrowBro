@@ -67,12 +67,24 @@ jest.mock('react-native-reanimated', () => {
   return mockReanimated;
 });
 
-// mock: nativewind cssInterop as a no-op in tests to avoid react-native-css-interop side effects
-jest.mock('nativewind', () => ({
-  cssInterop: (_component: any, _config: any) => {
-    // no-op
-  },
-}));
+// mock: nativewind exports used by components. Provide cssInterop no-op plus
+// stubs for useColorScheme, colorScheme and setColorScheme so components that
+// call these hooks in tests won't throw TypeError.
+jest.mock('nativewind', () => {
+  const setColorScheme = jest.fn();
+
+  return {
+    __esModule: true,
+    cssInterop: (_component: any, _config: any) => {
+      // no-op
+    },
+    // Hook used by several components. Return a stable shape used in the app.
+    useColorScheme: () => ({ colorScheme: 'light', setColorScheme }),
+    // Some components import `colorScheme` directly — export a simple value.
+    colorScheme: 'light',
+    setColorScheme,
+  };
+});
 
 // mock: react-native-css-interop runtime to avoid installing wrappers and timers
 jest.mock('react-native-css-interop', () => {
@@ -219,10 +231,29 @@ jest.mock('@nozbe/watermelondb/sync');
 
 // mock: WatermelonDB decorators as no-op to avoid runtime decoration side effects
 jest.mock('@nozbe/watermelondb/decorators', () => {
-  const make = () => {
-    return (..._args: any[]) => undefined;
+  // For decorators that are used as factories like @text('col'), return a
+  // function that accepts the column name and returns an actual decorator
+  // function. For plain decorators like @readonly, return a decorator
+  // function directly. The decorator functions simply return the descriptor
+  // unchanged which is sufficient for tests that only need to import the
+  // models without runtime DB wiring.
+  const makeFactory = () => {
+    return (_name?: any) => {
+      return (_target: any, _propertyKey: any, descriptor?: any) => descriptor;
+    };
   };
-  return { text: make, date: make, json: make };
+
+  const makeDecorator = () => {
+    return (_target: any, _propertyKey: any, descriptor?: any) => descriptor;
+  };
+
+  return {
+    text: makeFactory(),
+    date: makeFactory(),
+    json: makeFactory(),
+    field: makeFactory(),
+    readonly: makeDecorator(),
+  };
 });
 
 // mock: @dev-plugins/react-query (ES module issue in Jest)
