@@ -249,3 +249,19 @@ The Harvest Workflow feature enables home cannabis growers to systematically tra
 3. WHEN weights are missing THEN the system SHALL allow wet-only at start but require dry weight to finalize
 4. WHEN device clock skew exists THEN the system SHALL use server timestamps as authoritative for ordering and conflicts
 5. IF unusual data states occur THEN the system SHALL provide clear guidance for resolution
+
+### Requirement 20
+
+**User Story:** As a grower, I want curing completion to be gated by a quality checklist and the inventory handoff to be atomic and auditable, so that final inventory is reliable and compliant even under retries.
+
+#### Acceptance Criteria
+
+1. WHEN a user attempts to finalize the Curing stage THEN the system SHALL require a curing quality checklist (at minimum: aroma, stem snap, jar humidity) to be completed before allowing finalization
+2. WHEN Curing is finalized THEN the system SHALL execute an atomic handoff that updates Harvest and creates/updates Inventory in a single server transaction
+3. WHEN the handoff transaction runs THEN the system SHALL use SERIALIZABLE isolation level (or at minimum REPEATABLE READ if SERIALIZABLE is not available) to prevent write skew and double-creation
+4. WHEN the handoff API is called THEN the system SHALL accept an Idempotency-Key (UUID) and enforce at-most-once effects with a unique constraint (e.g., UNIQUE(user_id, endpoint, idempotency_key))
+5. WHEN idempotent replays occur with the same key and same payload hash THEN the system SHALL return the prior successful response body with HTTP 200; if the original request failed with a deterministic validation error, return the same error code
+6. WHEN retries occur THEN the system SHALL limit to exponential backoff with a maximum of 3 attempts for transient errors only
+7. WHEN the handoff completes (success or failure) THEN the system SHALL create an audit record capturing: performed_by, performed_at (server UTC), operation_id/idempotency_key, operation_type, status/result, before_snapshot, after_snapshot, error_message (nullable)
+8. WHEN the checklist blocks finalization THEN the system SHALL show actionable guidance and a one-tap CTA to open the checklist; upon completion, the finalize action SHALL be enabled
+9. WHEN conflicting concurrent requests attempt to finalize the same harvest THEN the system SHALL enforce the business invariant UNIQUE(inventory.harvest_id) and surface a clear 409 response including canonical server state

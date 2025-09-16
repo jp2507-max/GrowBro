@@ -25,6 +25,7 @@
 #          VERSION: ${{ github.event.release.tag_name }}
 #          IOS: false
 
+---
 name: 'Setup EAS Build + Trigger Build'
 description: 'Setup EAS Build + Trigger Build'
 inputs:
@@ -58,7 +59,8 @@ runs:
   steps:
     - name: 💯 Check for EXPO_TOKEN
       run: |
-        if [ -z "${{ inputs.EXPO_TOKEN }}" ]; then
+        # Treat empty string or the literal 'false' as missing token (GitHub Actions may pass the default string 'false')
+        if [ -z "${{ inputs.EXPO_TOKEN }}" ] || [ "${{ inputs.EXPO_TOKEN }}" = "false" ]; then
           echo "You must provide an EXPO_TOKEN secret linked to this project's Expo account in this repo's secrets. Learn more: https://docs.expo.dev/eas-update/github-actions"
           exit 1
         fi
@@ -67,8 +69,69 @@ runs:
     - name: 📦 Setup Expo and EAS
       uses: expo/expo-github-action@v8
       with:
-        eas-version: latest
+        eas-version: 12.x
         token: ${{ inputs.EXPO_TOKEN }}
+
+    - name: 🔒 Validate channel mapping
+      run: |
+        case "${{ inputs.APP_ENV }}" in
+          production)
+            REQUIRED_CHANNEL=production
+            ;;
+          staging)
+            REQUIRED_CHANNEL=staging
+            ;;
+          *)
+            REQUIRED_CHANNEL=preview
+            ;;
+        esac
+        echo "Required EAS channel: $REQUIRED_CHANNEL"
+        # Export so subprocesses (node) can read it from environment
+        export REQUIRED_CHANNEL
+
+        # Use the JSON output from EAS CLI and parse with node to perform an exact-match check.
+        # Capture both stdout and stderr so we can report CLI failures reliably.
+        CHANNELS_OUTPUT="$(eas channel:list --json 2>&1)"
+        EAS_EXIT_CODE=$?
+        if [ $EAS_EXIT_CODE -ne 0 ]; then
+          echo "❌ Failed to list EAS channels (eas channel:list returned exit code" \
+            "$EAS_EXIT_CODE)."
+          echo "$CHANNELS_OUTPUT"
+          exit 1
+        fi
+
+        # Parse JSON and extract channel names. The CLI typically returns an array of channel objects.
+        # Pipe the JSON into node via a bash heredoc to avoid YAML parsing issues with
+        # single-quoted inline scripts and to keep lines short for yamllint.
+        printf '%s' "$CHANNELS_OUTPUT" | node <<'NODE_SCRIPT'
+const fs = require("fs");
+const input = fs.readFileSync(0, "utf8");
+let arr;
+try {
+  arr = JSON.parse(input);
+} catch (e) {
+  console.error("❌ Invalid JSON returned by eas channel:list:", e.message);
+  process.exit(2);
+}
+const names = Array.isArray(arr)
+  ? arr.map(c => c && c.name).filter(Boolean)
+  : (arr && arr.channels
+    ? arr.channels.map(c => c && c.name).filter(Boolean)
+    : []);
+const required = process.env.REQUIRED_CHANNEL;
+if (!required) {
+  console.error("❌ REQUIRED channel not set in environment.");
+  process.exit(4);
+}
+if (names.includes(required)) {
+  console.log("✅ Found required EAS channel:", required);
+  process.exit(0);
+} else {
+  console.error("❌ Required EAS channel '" + required + "' not found. Available channels: " + names.join(", "));
+  process.exit(3);
+}
+NODE_SCRIPT
+      shell: bash
 
     - name: ⚙️ Run Prebuild
       run: pnpm prebuild:${{ inputs.APP_ENV }}

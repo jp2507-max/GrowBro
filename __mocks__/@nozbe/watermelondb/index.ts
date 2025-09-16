@@ -110,9 +110,11 @@ const Q = {
   sanitizeLikeString: jest.fn().mockReturnValue(''),
 };
 
-// Schema/migrations helpers minimal mocks
-export const schemaMigrations = (_cfg: any) => ({ migrations: [] });
-export const addColumns = (_cfg: any) => ({ type: 'addColumns' });
+// Schema/migrations helpers minimal mocks (preserve input shape for tests)
+export const schemaMigrations = (cfg: any) => ({
+  migrations: cfg?.migrations ?? [],
+});
+export const addColumns = (cfg: any) => ({ type: 'addColumns', ...cfg });
 export const appSchema = (cfg: any) => cfg;
 export const tableSchema = (cfg: any) => cfg;
 
@@ -131,4 +133,9 @@ export default {
   Q,
   SQLiteAdapter: SQLiteAdapterMock,
   Model,
+  // also expose helpers on default for interop robustness
+  appSchema,
+  tableSchema,
+  schemaMigrations,
+  addColumns,
 };

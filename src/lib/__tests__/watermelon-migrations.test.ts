@@ -1,5 +1,11 @@
+// Minimal per-file mock to ensure helpers are callable without relying on module interop
 import { migrations } from '@/lib/watermelon-migrations';
 import { schema } from '@/lib/watermelon-schema';
+
+jest.mock('@nozbe/watermelondb', () => ({
+  appSchema: (cfg: any) => cfg,
+  tableSchema: (cfg: any) => cfg,
+}));
 
 // Make slow hangs explicit in CI logs and fail faster than the default.
 jest.setTimeout(10000);

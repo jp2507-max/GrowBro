@@ -1,12 +1,12 @@
-TASK_ID: {15}
+TASK_ID: {3 - 14}
 AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the plan
 
 CONTEXT
 
-- Feature: offline-first-sync
-- Task index: .kiro/specs/2-offline-first-sync/tasks.md
-- Design spec: .kiro/specs/2-offline-first-sync/design.md
-- Requirements spec: .kiro/specs/2-offline-first-sync/requirements.md
+- Feature: Adjustments to Existing Epics
+- Task index: .kiro\specs\22. adjustments-to-existing-epics\tasks.md
+- Design spec: .kiro\specs\22. adjustments-to-existing-epics\design.md
+- Requirements spec: .kiro\specs\22. adjustments-to-existing-epics\requirements.md
 
 CONTRACT (outputs)
 
@@ -45,12 +45,4 @@ GUARDRAILS (must follow)
 - Use @/\* imports and kebab-case filenames
 - Keep UI components <80 LOC
 - Ask only ONE short blocking question when essential
-- Do not invent repo paths, public APIs, or dependency versions
-
-APPENDIX: full protocol & quality gates → see `reusableprompt-appendix.md`
-
-END
-
-```
-
-```
+- Do not invent repo paths, public APIs, or dependency version

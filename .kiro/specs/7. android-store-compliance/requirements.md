@@ -94,6 +94,16 @@ This feature ensures GrowBro meets all Android Play Store compliance requirement
 3. WHEN exact-alarm permission is denied THEN the app SHALL run normally with inexact scheduling
 4. WHEN CI runs THEN it SHALL block any manifest adding exact-alarm permissions without linked declaration doc
 
+### Requirement 7: No-Sale-Facilitation Checks (Adjustments A11)
+
+**User Story:** As a release manager, I want CI guardrails that prevent sale/commerce language so that we comply with Play policies for cannabis content.
+
+#### Acceptance Criteria
+
+1. WHEN CI runs THEN the pipeline SHALL scan resource strings and store listing copy for sale/commerce language (e.g., buy/order/pickup/delivery) with a configurable denylist
+2. WHEN violations are detected THEN the build SHALL fail with a machine-readable report and remediation hints
+3. WHEN false positives are suspected THEN the system SHALL support per-locale allowlist exceptions reviewed via PR
+
 #### Notes / Review comments (lines +91 to +96)
 
 - Rationale: prefer WorkManager (or AlarmManager with inexact APIs) to avoid requiring SCHEDULE_EXACT_ALARM. Exact alarms should be the exception because Google treats them as high-impact battery/UX behavior and they require Play Console declaration for policy transparency.

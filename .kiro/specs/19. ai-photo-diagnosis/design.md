@@ -227,7 +227,7 @@ interface AssessmentResult {
   }>;
   aggregationMethod: 'majority-vote' | 'highest-confidence';
   processingTimeMs: number;
-  mode: 'device' | 'cloud';
+  mode: 'device' | 'cloud'; // expose for policy UI
   modelVersion: string;
 }
 

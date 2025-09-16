@@ -276,6 +276,39 @@ interface NotificationService {
 }
 ```
 
+### Curing Checklist & Atomic Inventory Handoff (A3)
+
+Checklist gating
+
+- Add a curing quality checklist surface prior to finalization containing, at minimum: aroma, stem snap, and jar humidity confirmations
+- Finalize button remains disabled until all required checklist items are completed; provide inline links to open the checklist from the finalize flow
+
+Atomic handoff API
+
+- Single endpoint `completeCuringAndCreateInventory(id, input)` already defined above will:
+  - Validate curing checklist completion
+  - Compute server-authoritative timestamps and total duration
+  - Perform a single database transaction that updates the Harvest row to `INVENTORY` state and creates/updates the corresponding Inventory row
+  - Run at SERIALIZABLE isolation level (preferred) or REPEATABLE READ minimum
+  - Enforce business invariant `UNIQUE(inventory.harvest_id)` to prevent duplicates
+
+Idempotency & retry policy
+
+- Accept `idempotencyKey: string` (UUID) and persist it in an idempotency table keyed by `(user_id, endpoint, idempotency_key)`
+- Store `payload_hash` and response payload to guarantee same-key/same-payload replay returns cached result (HTTP 200)
+- On conflicting payload for same key, return 422 Unprocessable Entity
+- Implement exponential backoff (e.g., 1s/2s/4s) with max 3 attempts for transient errors only
+
+Audit trail schema (logical)
+
+- Fields: `performed_by`, `performed_at (server UTC)`, `operation_id/idempotency_key`, `operation_type`, `status/result`, `before_snapshot`, `after_snapshot`, `error_message?`
+- Persist audit entry for both success and failure; link audit row IDs to the return payload for traceability
+
+Client UX
+
+- If checklist incomplete: show disabled finalize CTA with hint; provide one-tap to open checklist
+- On 409 due to concurrent finalize: reconcile to server state and show non-blocking toast; keep UI consistent with canonical inventory presence
+
 ### Photo Storage & File System
 
 **Storage Architecture**:

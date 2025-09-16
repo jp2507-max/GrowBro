@@ -80,6 +80,7 @@ This system implements the following DSA articles:
 6. WHEN appeal decisions are made THEN the system SHALL provide detailed explanations and final determination status
 7. IF appeals are upheld THEN the system SHALL automatically reverse original actions and restore content/account status
 8. WHEN internal appeals are exhausted THEN the system SHALL provide optional escalation to Art. 21 certified ODS bodies with ≤90 day target resolution
+9. WHEN appeals are offered THEN the appeal window SHALL be at least 7 days for any decision type (longer windows such as 14/30 days are permitted as product policy so long as ≥7 days is guaranteed)
 
 ### Requirement 5: SLA Compliance and Monitoring
 
@@ -107,7 +108,7 @@ This system implements the following DSA articles:
 4. WHEN SoR submissions occur THEN the system SHALL maintain SoR export queue to DSA Transparency Database with "no personal data" verification
 5. WHEN authorities request data THEN the system SHALL support structured export formats with legal compliance metadata
 6. IF audit data is modified THEN the system SHALL prevent tampering through cryptographic signatures and version control
-7. WHEN retention periods expire THEN the system SHALL apply GDPR data minimization with 12-month default retention unless lawful need documented
+7. WHEN retention periods expire THEN the system SHALL apply GDPR data minimization with 12-month default retention unless lawful need documented; moderation action/audit records SHALL retain aggregate, non-PII transparency metrics for 7 years with PII anonymized after 30 days and automatic deletion after retention expiry
 
 ### Requirement 7: Prohibited Content Catalog
 
@@ -136,6 +137,43 @@ This system implements the following DSA articles:
 5. WHEN content contains age-sensitive material THEN the system SHALL require explicit age-restriction tagging by authors
 6. IF users attempt to circumvent age controls THEN the system SHALL provide fallback verification on suspicious signals while avoiding device fingerprinting without ePrivacy-compliant consent
 7. WHEN age-restricted content appears in feeds THEN the system SHALL filter based on verified user age status with no profiling ads to minors
+
+### Requirement 9: Geo-Visibility Controls (Adjustments A6)
+
+**User Story:** As a compliance manager, I want geographic content filtering so that we respect regional laws and cultural sensitivities while maintaining global access.
+
+#### Acceptance Criteria
+
+1. WHEN users access content THEN the system SHALL default to server-side IP-based geolocation; device region MAY be used as auxiliary signal
+2. WHEN signals mismatch (IP region vs device region) THEN the system SHALL apply the most restrictive setting
+3. WHEN geo-restrictions are applied THEN the system SHALL keep content available in permitted regions and provide a “why can’t I see this?” explainer
+4. WHEN legal requirements change THEN the system SHALL support rule updates within 4 hours with lawful basis documentation
+5. WHEN VPN/proxy is detected THEN the system MAY block access when a configuration flag is enabled; cache decisions with TTL = 1 hour and re-check on app start
+6. WHEN false positives occur THEN the system SHALL support appeal flow with audit trail entries
+7. WHEN applying geo restrictions THEN the system SHALL provide author notifications indicating affected regions
+
+### Requirement 10: Role Mappings & RLS Enforcement (Adjustments A4)
+
+**User Story:** As a platform administrator, I want robust moderator authorization so that only authorized roles can access moderation queues and actions.
+
+#### Acceptance Criteria
+
+1. WHEN evaluating moderator permissions THEN the system SHALL map roles from JWT claim `mod_role` and consider a user authorized if `auth.jwt()->>'mod_role' IN ('admin','moderator')`
+2. WHEN accessing moderation inbox or actions THEN RLS and service policies SHALL enforce the `mod_role` mapping consistently
+3. WHEN auditing access THEN the system SHALL include the caller's `mod_role` in audit metadata where available
+
+### Requirement 11: Transparency Log (Aggregated, Privacy-Safe) (Adjustments A5)
+
+**User Story:** As a compliance officer, I want an aggregated transparency log so that we publish moderation statistics without risking re-identification.
+
+#### Acceptance Criteria
+
+1. WHEN generating transparency logs THEN the system SHALL emit only aggregated counts with minimum-count suppression at threshold N=5 and binning buckets: 0, 1–5, 6–20, 21–100, 100+
+2. WHEN applying suppression THEN counts < 5 SHALL be suppressed at source before emitting; raw logs or PII MUST NOT be returned
+3. WHEN publishing transparency logs THEN the system SHALL run daily aggregation within 24h of the previous day and publish within 48h
+4. WHEN storing transparency aggregates THEN the system SHALL retain for 2 years and auto-delete after retention expiry
+5. WHEN accessing transparency logs THEN the system SHALL enforce role mapping `transparency_role` ∈ {'viewer','admin'} via `auth.jwt()->>'transparency_role' IN ('viewer','admin')`
+6. WHEN validating the pipeline THEN tests SHALL cover aggregation correctness, suppression/binning edge cases, SLA timing, and retention cleanup
 
 ### Requirement 9: Geo-Visibility Controls
 
