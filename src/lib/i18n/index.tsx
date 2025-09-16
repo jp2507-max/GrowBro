@@ -23,8 +23,12 @@ export async function initI18n(): Promise<void> {
   if (!isTestEnv) {
     // Handle both Promise and direct return from getLanguage
     const languageResult = utils.getLanguage?.();
-    persisted =
-      languageResult instanceof Promise ? await languageResult : languageResult;
+    if (languageResult && typeof (languageResult as any).then === 'function') {
+      // promise-like
+      persisted = await languageResult;
+    } else {
+      persisted = languageResult;
+    }
   }
 
   // initialize i18next with resources and either persisted or fallback
@@ -67,10 +71,17 @@ void initReactI18next;
 /* istanbul ignore next */
 void resources;
 
-// Is it a RTL language? export as a function so it's evaluated dynamically
-// after any persisted language has been restored.
-export function isRTL(): boolean {
-  return dir() === 'rtl';
+// Is it a RTL language? Keep exporting a boolean for backwards-compatibility
+// with existing call sites that import `isRTL` and treat it as a boolean.
+// Provide a helper to refresh the value after language initialization.
+export let isRTL: boolean = dir() === 'rtl';
+
+/**
+ * Re-evaluate and update the exported `isRTL` boolean. Call this after
+ * i18n initialization or whenever the app language changes.
+ */
+export function refreshIsRTL(): void {
+  isRTL = dir() === 'rtl';
 }
 
 /**
@@ -80,7 +91,7 @@ export function isRTL(): boolean {
 export function applyRTLIfNeeded(): void {
   const isTestEnv = typeof (globalThis as any).jest !== 'undefined';
   if (isTestEnv) return;
-  const rtl = isRTL();
+  const rtl = isRTL;
   I18nManager.allowRTL(rtl);
   I18nManager.forceRTL(rtl);
 }
