@@ -186,11 +186,10 @@ async function materializeNextOccurrence(
   const parsed = rrule.parseRule(series.rrule, series.dtstartUtc);
   const validated = rrule.validate(parsed as any);
   if (!validated.ok) {
-    // Parsing succeeded but validation failed — surface a clear error
-    // so callers know this series has an invalid RRULE config.
-    throw new Error(
-      `Invalid RRULE for series ${series.id}: ${validated.errors?.join(', ')}`
+    console.warn(
+      `[TaskManager] Skipping series ${series.id} due to invalid RRULE: ${validated.errors?.join(', ')}`
     );
+    return null;
   }
   const config = parsed as unknown as RRuleConfig;
   const iter = rrule

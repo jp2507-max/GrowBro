@@ -14,17 +14,24 @@ export * from './utils';
 export async function initI18n(): Promise<void> {
   // Avoid touching storage in test environments
   const isTestEnv = typeof (globalThis as any).jest !== 'undefined';
-  if (isTestEnv) return;
 
   // Lazy import utils to avoid module-load IO
   const utils = await import('./utils');
-  const persisted = utils.getLanguage?.();
+
+  // Conditionally compute persisted language - skip storage access in test env
+  let persisted: string | undefined;
+  if (!isTestEnv) {
+    // Handle both Promise and direct return from getLanguage
+    const languageResult = utils.getLanguage?.();
+    persisted =
+      languageResult instanceof Promise ? await languageResult : languageResult;
+  }
 
   // initialize i18next with resources and either persisted or fallback
   // eslint-disable-next-line import/no-named-as-default-member
-  i18n.use(initReactI18next).init({
+  await i18n.use(initReactI18next).init({
     resources,
-    lng: (persisted as string) || 'en',
+    lng: persisted || 'en',
     fallbackLng: 'en',
     compatibilityJSON: 'v3',
     interpolation: { escapeValue: false },
