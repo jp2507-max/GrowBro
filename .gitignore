@@ -30,5 +30,6 @@ expo-env.d.ts
 
 .codex/
 
-# Ignore MCP config stored by VS Code
+# Ignore MCP config stored by VS Code and Cursor
 .vscode/mcp.json
+.cursor/
