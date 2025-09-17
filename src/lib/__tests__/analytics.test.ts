@@ -239,9 +239,9 @@ describe('ConsentGatedAnalytics', () => {
       expect(events).toHaveLength(1);
 
       const sanitizedPayload = events[0].payload as any;
-      // Template name should be sanitized
+      // Template name should be sanitized and truncated to 50 chars
       expect(sanitizedPayload.templateName).toBe(
-        'My Super Complex Template Name with  Characters and a very long description that exceeds fifty characters'
+        'My Super Complex Template Name with  Characters an'
       );
       expect(sanitizedPayload.templateName.length).toBeLessThanOrEqual(50);
     });

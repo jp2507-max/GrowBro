@@ -29,7 +29,7 @@ jobs:
 
     steps:
       - name: 📦 Download EAS APK
-        run: wget ${{ github.event.inputs.apk-url }} -O ./app-release.apk
+        run: wget "${{ github.event.inputs.apk-url }}" -O ./app-release.apk
 
       - name: Upload Test APK
         uses: actions/upload-artifact@v3

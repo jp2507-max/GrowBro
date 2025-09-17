@@ -337,8 +337,10 @@ function useOptOut(
         personalizedData: false,
         sessionReplay: false,
       };
-      setPrivacyConsent(updates as PrivacyConsent);
-      setPrivacyConsentState((p) => ({ ...p, ...updates }) as PrivacyConsent);
+      // Persist the partial updates (the helper accepts Partial and will merge)
+      setPrivacyConsent(updates);
+      // Merge the partial updates into local React state safely
+      setPrivacyConsentState((p) => ({ ...p, ...updates }));
       for (const k of RUNTIME_KEYS) {
         await ConsentService.setConsent(k as any, false);
       }
@@ -353,7 +355,17 @@ function useOptOut(
         translate('consent.optOutSuccess.message'),
         [{ text: translate('common.ok') }]
       );
-      onComplete?.(updates as PrivacyConsent);
+      // Construct a complete PrivacyConsent object by merging persisted
+      // consent with the partial updates and a fresh timestamp. This
+      // ensures callers always receive a fully-formed PrivacyConsent
+      // instead of a Partial which would require unsafe assertions.
+      const persisted = getPrivacyConsent();
+      const fullConsent: PrivacyConsent = {
+        ...persisted,
+        ...updates,
+        lastUpdated: Date.now(),
+      };
+      onComplete?.(fullConsent);
     } catch {
       Alert.alert(
         translate('consent.optOutError.title'),

@@ -26,7 +26,7 @@ The AI Photo Diagnosis feature enables home cannabis growers to quickly identify
 
 1. WHEN photos are submitted for analysis THEN the system SHALL display explicit pre-upload consent prompt explaining cloud processing, data usage, and privacy implications before any cloud upload occurs
 2. WHEN user consent is required THEN the system SHALL show per-request override controls (allow/deny) with clear privacy notices and disable cloud fallback by default until consent is granted
-3. WHEN consent is granted THEN the system SHALL persist consent flags with timestamps, request metadata, and device identifiers for audit trail and revocation tracking
+3. WHEN consent is granted THEN the system SHALL persist timestamped consent flags and request metadata along with privacy-preserving identifiers: the authenticated `user_id` and an app-scoped pseudonymous ID. The system SHALL NOT store raw device identifiers. If device linkage is operationally required, the system MAY persist only a salted, rotating hash of the device identifier — the raw identifier must never be stored or logged — and that hashed value must be subject to a defined salt rotation schedule and strict retention/expiry rules for audit and revocation tracking (see note below).
 4. WHEN on-device inference is available THEN the system SHALL use local processing as primary method with cloud fallback only after explicit consent is granted and stored
 5. WHEN cloud processing is initiated THEN the system SHALL return results with p95 latency ≤ 5s on Pixel 6a & Galaxy A54 with hard timeout 8s and graceful local-only fallback if consent is denied mid-process
 6. WHEN inference is complete THEN the system SHALL return the top-1 predicted class with confidence percentage, including "Healthy/No Issue" and "Unknown/Out-of-Distribution" classes
@@ -34,6 +34,8 @@ The AI Photo Diagnosis feature enables home cannabis growers to quickly identify
 8. WHEN multiple photos are captured THEN the system SHALL use majority vote aggregation; if tie then highest confidence; if all <70% then return Unknown with community CTA
 9. WHEN consent is revoked THEN the system SHALL immediately disable cloud processing and require re-consent for future uploads while maintaining local processing capability
 10. WHEN analysis completes THEN the system SHALL log results for model improvement only with user opt-in consent and include consent metadata in telemetry
+
+> Note: Salt rotation & retention policy — For any salted, hashed device linkage values persisted for operational needs, document the salt rotation schedule (e.g., rotate salts every 30 days or on key compromise) and retention/expiry rules (e.g., hashed values expire and are purged after 90 days unless retained for active audit requests). This schedule and retention policy SHALL be recorded in system audit logs and made available for privacy reviews and revocation workflows.
 
 ### Requirement 3
 

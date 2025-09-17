@@ -4,7 +4,10 @@ import { jest } from '@jest/globals';
 import { ConsentService } from '@/lib/privacy/consent-service';
 import { SDKGate } from '@/lib/privacy/sdk-gate';
 import { TelemetryClient } from '@/lib/privacy/telemetry-client';
-import { setPrivacyConsent } from '@/lib/privacy-consent';
+import {
+  getPrivacyConsentSync,
+  setPrivacyConsent,
+} from '@/lib/privacy-consent';
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -101,7 +104,9 @@ describe('TelemetryClient: Analytics Consent Gating', () => {
 
       // Ensure telemetry consent is granted but analytics is denied
       await ConsentService.setConsent('telemetry', true);
-      expect(setPrivacyConsent({ analytics: false }));
+      // setPrivacyConsent returns void; assert its side-effect on cached consent
+      setPrivacyConsent({ analytics: false });
+      expect(getPrivacyConsentSync()).toMatchObject({ analytics: false });
 
       // Try to track playbook events
       await client.track({

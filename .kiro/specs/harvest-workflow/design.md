@@ -409,8 +409,8 @@ const onSyncComplete = () => {
 ```sql
 CREATE TABLE harvests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  plant_id UUID NOT NULL REFERENCES plants(id),
-  user_id UUID NOT NULL REFERENCES auth.users(id),
+  plant_id UUID NOT NULL REFERENCES plants(id) ON DELETE NO ACTION,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE NO ACTION,
   stage VARCHAR(20) NOT NULL CHECK (stage IN ('harvest', 'drying', 'curing', 'inventory')),
   wet_weight_g INTEGER CHECK (wet_weight_g >= 0 AND wet_weight_g <= 100000),
   dry_weight_g INTEGER CHECK (dry_weight_g >= 0 AND dry_weight_g <= 100000),
@@ -436,14 +436,46 @@ CREATE INDEX idx_harvests_plant ON harvests(plant_id);
 CREATE INDEX idx_harvests_stage ON harvests(stage) WHERE deleted_at IS NULL;
 ```
 
+-- Enforce same-owner ownership at the database level for harvests
+-- (prevents creating a harvest that references a plant owned by a different user)
+
+```sql
+-- Function: public.check_harvest_owner()
+CREATE OR REPLACE FUNCTION public.check_harvest_owner()
+RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE
+  plant_owner uuid;
+BEGIN
+  -- Only check when plant_id or user_id is being changed (INSERT or meaningful UPDATE)
+  IF (TG_OP = 'INSERT') OR (TG_OP = 'UPDATE' AND (NEW.plant_id IS DISTINCT FROM OLD.plant_id OR NEW.user_id IS DISTINCT FROM OLD.user_id)) THEN
+    SELECT user_id INTO plant_owner FROM public.plants WHERE id = NEW.plant_id;
+    IF NOT FOUND OR plant_owner IS NULL OR plant_owner <> NEW.user_id THEN
+      RAISE EXCEPTION 'harvests must reference a plant owned by the same user (plant_id=% / plant_owner=% / new_user=%)', NEW.plant_id, plant_owner, NEW.user_id;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+-- Trigger: trg_check_harvest_owner
+DO $$
+BEGIN
+  EXECUTE 'DROP TRIGGER IF EXISTS trg_check_harvest_owner ON public.harvests;';
+  EXECUTE 'CREATE TRIGGER trg_check_harvest_owner BEFORE INSERT OR UPDATE ON public.harvests FOR EACH ROW EXECUTE FUNCTION public.check_harvest_owner();';
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'Skipping creation of trg_check_harvest_owner: %', SQLERRM;
+END$$;
+```
+
 #### Inventory Table
 
 ```sql
 CREATE TABLE inventory (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  plant_id UUID NOT NULL REFERENCES plants(id),
-  harvest_id UUID NOT NULL REFERENCES harvests(id),
-  user_id UUID NOT NULL REFERENCES auth.users(id),
+  plant_id UUID NOT NULL REFERENCES plants(id) ON DELETE NO ACTION,
+  harvest_id UUID NOT NULL REFERENCES harvests(id) ON DELETE NO ACTION,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE NO ACTION,
   final_weight_g INTEGER NOT NULL CHECK (final_weight_g >= 0),
   harvest_date DATE NOT NULL,
   total_duration_days INTEGER NOT NULL CHECK (total_duration_days >= 0),
@@ -457,6 +489,48 @@ CREATE TABLE inventory (
 -- Indexes
 CREATE INDEX idx_inventory_user_updated ON inventory(user_id, updated_at);
 CREATE INDEX idx_inventory_plant ON inventory(plant_id);
+```
+
+-- Enforce same-owner ownership at the database level for inventory
+-- (prevents creating inventory that references a harvest or plant owned by a different user)
+
+```sql
+-- Function: public.check_inventory_owner()
+CREATE OR REPLACE FUNCTION public.check_inventory_owner()
+RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE
+  harvest_owner uuid;
+  plant_owner uuid;
+BEGIN
+  -- Only check when harvest_id, plant_id or user_id is being changed
+  IF (TG_OP = 'INSERT') OR (TG_OP = 'UPDATE' AND (NEW.harvest_id IS DISTINCT FROM OLD.harvest_id OR NEW.user_id IS DISTINCT FROM OLD.user_id OR NEW.plant_id IS DISTINCT FROM OLD.plant_id)) THEN
+    -- verify harvest exists and is owned by same user
+    SELECT user_id INTO harvest_owner FROM public.harvests WHERE id = NEW.harvest_id;
+    IF NOT FOUND OR harvest_owner IS NULL OR harvest_owner <> NEW.user_id THEN
+      RAISE EXCEPTION 'inventory must reference a harvest owned by the same user (harvest_id=% / harvest_owner=% / new_user=%)', NEW.harvest_id, harvest_owner, NEW.user_id;
+    END IF;
+
+    -- If inventory references a plant_id, also ensure plant is owned by same user
+    IF NEW.plant_id IS NOT NULL THEN
+      SELECT user_id INTO plant_owner FROM public.plants WHERE id = NEW.plant_id;
+      IF NOT FOUND OR plant_owner IS NULL OR plant_owner <> NEW.user_id THEN
+        RAISE EXCEPTION 'inventory must reference a plant owned by the same user (plant_id=% / plant_owner=% / new_user=%)', NEW.plant_id, plant_owner, NEW.user_id;
+      END IF;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+-- Trigger: trg_check_inventory_owner
+DO $$
+BEGIN
+  EXECUTE 'DROP TRIGGER IF EXISTS trg_check_inventory_owner ON public.inventory;';
+  EXECUTE 'CREATE TRIGGER trg_check_inventory_owner BEFORE INSERT OR UPDATE ON public.inventory FOR EACH ROW EXECUTE FUNCTION public.check_inventory_owner();';
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'Skipping creation of trg_check_inventory_owner: %', SQLERRM;
+END$$;
 ```
 
 ### Row Level Security (RLS)

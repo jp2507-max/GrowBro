@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Switch } from 'react-native';
 
 import { Button, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
 import type { TxKeyPath } from '@/lib/i18n/utils';
+import { ConsentService } from '@/lib/privacy/consent-service';
 
 type ConsentDecisions = {
   telemetry: boolean;
@@ -58,6 +59,40 @@ function ToggleRow({
 }
 
 function useConsentState() {
+  /*
+   NOTE: Bug & recommended fix
+   ----------------------------
+   Problem observed (P1): when the consent modal is shown for existing users
+   (for example because ConsentService.isConsentRequired() detects a version
+   change), every toggle is currently initialised to `false` and no stored
+   consent state is loaded before rendering. That means a previously consenting
+   user who opens the modal and taps "Save" without changing anything will
+   have their stored consents overwritten with all `false` values, effectively
+   withdrawing telemetry/crash diagnostics unintentionally.
+
+   Recommendation:
+   - Seed the toggle state from the stored consent when the modal becomes
+     visible (e.g. call `ConsentService.getPrivacyConsent()` from the parent
+     or in an effect when `isVisible` flips true) so the UI reflects prior
+     choices instead of forcing an implicit opt-out.
+   - Two safe implementation approaches:
+     1) Move the data-loading responsibility to the parent `ConsentModal` and
+        pass initial values into `useConsentState` (preferred: single source
+        of truth, easier to test). For example: `useConsentState(initialConsents)`.
+     2) Give `useConsentState` an initializer that accepts a function which
+        lazily reads stored consents (so it won't run on every render). If
+        using this approach, ensure the hook can be re-seeded when
+        `isVisible` changes or when a refresh is required.
+
+   Edge cases to watch:
+   - Loading state: render a skeleton or keep modal hidden until stored
+     consents are loaded to avoid flashing default values.
+   - Race conditions: ensure writes (persistConsents) do not run before the
+     stored values are loaded/merged.
+   - Backwards compatibility: if stored data schema changes, provide safe
+     defaults and migration logic in ConsentService.
+  */
+
   const [telemetry, setTelemetry] = useState(false);
   const [experiments, setExperiments] = useState(false);
   const [aiTraining, setAiTraining] = useState(false);
@@ -72,6 +107,97 @@ function useConsentState() {
     crashDiagnostics,
     setCrashDiagnostics,
   } as const;
+}
+
+// Helper hook: loads stored consents when `isVisible` becomes true and uses
+// the provided setters to seed local state. Returns `true` when loaded.
+function useLoadConsents(
+  isVisible: boolean,
+  setters: {
+    setTelemetry: (v: boolean) => void;
+    setExperiments: (v: boolean) => void;
+    setAiTraining: (v: boolean) => void;
+    setCrashDiagnostics: (v: boolean) => void;
+  }
+): boolean {
+  const [loaded, setLoaded] = useState(false);
+
+  React.useEffect(() => {
+    let mounted = true;
+    if (!isVisible) return undefined;
+    setLoaded(false);
+    ConsentService.getConsents()
+      .then((c) => {
+        if (!mounted) return;
+        setters.setTelemetry(!!c.telemetry);
+        setters.setExperiments(!!c.experiments);
+        setters.setAiTraining(!!c.aiTraining);
+        setters.setCrashDiagnostics(!!c.crashDiagnostics);
+      })
+      .finally(() => {
+        if (mounted) setLoaded(true);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [
+    isVisible,
+    setters,
+    setters.setTelemetry,
+    setters.setExperiments,
+    setters.setAiTraining,
+    setters.setCrashDiagnostics,
+  ]);
+
+  return loaded;
+}
+
+function makeAcceptAll(setters: {
+  setTelemetry: (v: boolean) => void;
+  setExperiments: (v: boolean) => void;
+  setAiTraining: (v: boolean) => void;
+  setCrashDiagnostics: (v: boolean) => void;
+}) {
+  return () => {
+    setters.setTelemetry(true);
+    setters.setExperiments(true);
+    setters.setAiTraining(true);
+    setters.setCrashDiagnostics(true);
+  };
+}
+
+function makeRejectAll(setters: {
+  setTelemetry: (v: boolean) => void;
+  setExperiments: (v: boolean) => void;
+  setAiTraining: (v: boolean) => void;
+  setCrashDiagnostics: (v: boolean) => void;
+}) {
+  return () => {
+    setters.setTelemetry(false);
+    setters.setExperiments(false);
+    setters.setAiTraining(false);
+    setters.setCrashDiagnostics(false);
+  };
+}
+
+function makeComplete(
+  onComplete: (consents: any) => void,
+  consents: {
+    telemetry: boolean;
+    experiments: boolean;
+    aiTraining: boolean;
+    crashDiagnostics: boolean;
+  }
+) {
+  return () => {
+    onComplete({
+      telemetry: consents.telemetry,
+      experiments: consents.experiments,
+      aiTraining: consents.aiTraining,
+      crashDiagnostics: consents.crashDiagnostics,
+      acceptedAt: new Date(),
+    });
+  };
 }
 
 function Actions({
@@ -123,40 +249,43 @@ export function ConsentModal({ isVisible, onComplete, mode }: Props) {
     crashDiagnostics,
     setCrashDiagnostics,
   } = useConsentState();
-
-  const titleKey = useMemo<TxKeyPath>(
-    () =>
-      (mode === 'first-run'
-        ? 'consent.first_run_title'
-        : 'consent.title') as TxKeyPath,
-    [mode]
+  const setters = React.useMemo(
+    () => ({
+      setTelemetry,
+      setExperiments,
+      setAiTraining,
+      setCrashDiagnostics,
+    }),
+    [setTelemetry, setExperiments, setAiTraining, setCrashDiagnostics]
   );
+  const loaded = useLoadConsents(isVisible, setters);
 
-  if (!isVisible) return null;
+  const titleKey = (
+    mode === 'first-run' ? 'consent.first_run_title' : 'consent.title'
+  ) as TxKeyPath;
 
-  const acceptAll = () => {
-    setTelemetry(true);
-    setExperiments(true);
-    setAiTraining(true);
-    setCrashDiagnostics(true);
-  };
+  if (!isVisible || !loaded) return null;
 
-  const rejectAll = () => {
-    setTelemetry(false);
-    setExperiments(false);
-    setAiTraining(false);
-    setCrashDiagnostics(false);
-  };
+  const acceptAll = makeAcceptAll({
+    setTelemetry,
+    setExperiments,
+    setAiTraining,
+    setCrashDiagnostics,
+  });
 
-  const complete = () => {
-    onComplete({
-      telemetry,
-      experiments,
-      aiTraining,
-      crashDiagnostics,
-      acceptedAt: new Date(),
-    });
-  };
+  const rejectAll = makeRejectAll({
+    setTelemetry,
+    setExperiments,
+    setAiTraining,
+    setCrashDiagnostics,
+  });
+
+  const complete = makeComplete(onComplete, {
+    telemetry,
+    experiments,
+    aiTraining,
+    crashDiagnostics,
+  });
 
   return (
     <View className="p-4" testID="consent-modal">
