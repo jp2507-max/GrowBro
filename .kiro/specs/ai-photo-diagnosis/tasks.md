@@ -60,13 +60,22 @@
 
   - [ ] 3.2 Create cloud-based ML inference fallback system
 
-    - Build Supabase Edge Function for cloud inference using EfficientNet-B4/ResNet-50 via ONNX Runtime
+    - Build Supabase Edge Function for cloud inference using EfficientNet-B4/ResNet-50 via ONNX Runtime with MANDATORY zero-retention-by-default policy for all uploaded images and inference artifacts
     - Always use getUser() from JWT bearer token and enforce RLS on all tables (never service key)
+    - IMPLEMENT default TTL=0 (immediate ephemeral storage) for all uploaded images and inference artifacts - NO data shall persist by default
+    - REQUIRE explicit user opt-in parameter to trigger persistent storage with recorded consent tracking and timestamped audit trail
+    - STRICTLY AVOID writing inference inputs/outputs to permanent tables or object storage unless opt-in flag is present and validated
+    - Configure Supabase Storage with automatic deletion policies and TTL=0 enforcement for temporary data - temporary storage must be immediately ephemeral
+    - Add RLS policies that PREVENT accidental persistence and enforce zero-retention boundaries by default
+    - Create secure opt-in parameter validation with consent timestamp recording, audit trail, and cryptographic verification
+    - Implement automatic deletion jobs that purge temporary inference data immediately after processing completion or within <30s TTL
+    - Add comprehensive tests verifying zero-retention default behavior, correct opt-in persistence flow, and immediate cleanup of temporary data
     - Add request batching and deduplication for network optimization
     - Create idempotency handling with exponential backoff retry logic
     - Implement end-to-end timeout <5s p95 on Pixel 6a/Galaxy A54 including upload with proper error handling
     - Add auth failure test to validate JWT handling and RLS enforcement
-    - _Requirements: 2.2, 2.4, 10.4_
+    - Add data retention compliance tests ensuring no artifacts persist without explicit opt-in
+    - _Requirements: 2.2, 2.4, 8.1, 8.2, 8.4, 8.5, 10.4_
 
   - [ ] 3.3 Implement confidence calibration and result aggregation
     - Build temperature scaling system for confidence calibration (offline training)
@@ -173,13 +182,17 @@
 
 - [ ] 9. Create community integration and uncertainty handling
 
-  - [ ] 9.1 Build community CTA and post creation system
+  - [x] 9.1 Build community CTA and post creation system
 
-    - Implement automatic community CTA triggering for confidence <70% or Unknown class
-    - Create prefilled community post generation with diagnosis images and context
-    - Build redacted post creation that removes sensitive metadata while preserving helpful context
-    - Add deep-linking from diagnosis results to community post creation flow
-    - Implement community post tracking for diagnosis follow-up and resolution
+    - ✅ Implement automatic community CTA triggering for confidence <70% or Unknown class
+    - ✅ Create prefilled community post generation with diagnosis images and context
+    - ✅ Build redacted post creation that removes sensitive metadata while preserving helpful context
+    - ✅ Add deep-linking from diagnosis results to community post creation flow
+    - ✅ Implement community post tracking for diagnosis follow-up and resolution
+    - ✅ Add explicit preflight checks, default-safe behavior (no automatic sharing)
+    - ✅ Implement robust redaction step that strips EXIF and other sensitive metadata while keeping clinically relevant context
+    - ✅ Require explicit user confirmation/consent action before any post is sent or deep-linked
+    - ✅ Add tracking hooks to log post creation, submission, and follow-up resolution events for diagnosis follow-up metrics
     - _Requirements: 4.1, 4.2, 4.3, 8.3_
 
   - [ ] 9.2 Create uncertainty and "not confident" result handling

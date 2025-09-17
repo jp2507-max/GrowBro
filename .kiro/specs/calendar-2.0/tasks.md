@@ -15,11 +15,14 @@
 
 - [ ] 2. RRULE engine foundation (RFC-5545 compliant)
 
-  - Create parseRule, validate, buildIterator({ series, overrides, range }) interface
+  - Create parseRule, validate, buildIterator({ series, overrides, range, mode: "floating" | "zone-aware" }) interface
   - Implement v1.1 scope: FREQ=DAILY|WEEKLY, INTERVAL 1-365, BYDAY only for WEEKLY
-  - Support UNTIL (UTC) or COUNT (mutually exclusive), persist DTSTART properly
-  - Build timezone-safe iterator that generates occurrences with local semantics and applies overrides/skips
-  - Write tests for parsing, BYDAY combinations, COUNT vs UNTIL, DST transitions (Europe/Berlin)
+  - Support UNTIL (UTC) or COUNT (mutually exclusive), persist DTSTART properly with timezone semantics indicator
+  - Add explicit DST handling: "floating" preserves local wall-clock time across DST shifts (advance local date/time in event timezone), "zone-aware" preserves absolute instant (advance UTC instants, convert to local for output)
+  - Apply chosen mode consistently: UNTIL compares in UTC for zone-aware/local for floating, COUNT applies same logic
+  - Build timezone-safe iterator that generates occurrences with proper semantics and applies overrides/skips
+  - Use timezone-aware library (Luxon) for all conversions and DST boundary handling
+  - Write tests for parsing, BYDAY combinations, COUNT vs UNTIL, Europe/Berlin DST transitions for both modes and overrides
   - _Requirements: 1.1, 1.2, 1.5, 1.7, 1.8_
 
 - [ ] 3. Task management system (series-aware)
@@ -146,5 +149,6 @@
   - Add memory leak prevention and production performance optimizations
   - Create user onboarding flow for permissions setup and initial reminder configuration
   - Implement release gates: no P1 issues, all metrics meet targets
+  - Privacy/Telemetry gate: consent toggle enforced across analytics, images never retained without opt-in, deletion SLA verified end-to-end (incl. backups)
   - Conduct final end-to-end testing across complete feature set
   - _Requirements: All requirements integrated and production-ready_

@@ -80,7 +80,9 @@ interface Task {
   title: string;
   description?: string;
   dueDate: Date;
-  reminderAt?: Date;
+  reminderAtLocal?: string; // ISO string with timezone
+  reminderAtUtc?: string; // ISO UTC string
+  timezone?: string; // Olson timezone identifier
   recurrenceRule?: RRuleString;
   plantId?: string;
   status: 'pending' | 'completed' | 'skipped';

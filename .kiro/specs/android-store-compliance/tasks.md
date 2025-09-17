@@ -11,7 +11,7 @@
 
   - Write custom Gradle plugin to enforce targetSdk=35 across all modules
   - Implement validateMergedManifestsForTargetSdk() method with library manifest checking
-  - Add static check that refuses releases if targetSdk < 35 with Aug 31, 2025 cutoff and Nov 1, 2025 extension flag path
+  - Add check that refuses releases if targetSdk < 35 with cutoff read from a config source validated against Play policy in CI
   - Add build failure logic with Play policy deadline references
   - Create unit tests for Gradle plugin functionality
   - _Requirements: 1.1, 1.2_

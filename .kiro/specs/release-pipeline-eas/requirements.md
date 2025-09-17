@@ -201,7 +201,7 @@ The Release Pipeline (EAS) feature will establish an automated, reliable, and ef
 #### Acceptance Criteria
 
 1. WHEN integrating Sentry THEN the system SHALL upload native sourcemaps on build and update sourcemaps on publish
-2. WHEN creating releases THEN the system SHALL use release names <os>-<buildNumber>-<sha>
+2. WHEN creating releases THEN the system SHALL use release names app@<semver>+<buildNumber>-<shortSHA>
 3. WHEN crashes occur THEN the system SHALL provide symbolicated crashes within 5 minutes of first error
 4. WHEN sourcemap uploads fail THEN the system SHALL fail the pipeline
 5. WHEN errors are tracked THEN the system SHALL maintain full traceability from crashes to source code

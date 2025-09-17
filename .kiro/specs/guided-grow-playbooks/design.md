@@ -704,69 +704,202 @@ This design provides a comprehensive foundation for implementing the Guided Grow
 
 ## Analytics and Observability
 
+### Privacy and Consent Gating
+
+**ALL analytics events containing user-identifying information (plantId, playbookId, taskId, etc.) SHALL only be emitted when explicit user consent for analytics/telemetry has been recorded.** The event pipeline SHALL perform consent checks before emission:
+
+- **Consent Check Behavior**: Events with identifiers SHALL be dropped silently if consent is absent or withdrawn
+- **Raw ID Prohibition**: Raw database identifiers (UUIDs, auto-increment IDs) SHALL NEVER be sent without consent
+- **Pseudonymization Requirements**: When consent is present, identifiers SHALL be transformed using:
+  - Salted/versioned hashing (SHA-256 with per-user salt + version prefix), OR
+  - Server-side ID mapping service returning opaque tokens, OR
+  - Non-identifying counters (e.g., "playbook_count": 3, "task_index": 5)
+- **Fallback Strategy**: Events SHALL use non-identifying aggregations when consent is absent (e.g., "playbook_applied" without IDs, "customizations_made": 2)
+- **Consent State Tracking**: The analytics pipeline SHALL monitor consent state changes and immediately cease identifier emission upon withdrawal
+
+**Implementation Note**: Update instrumentation tests and telemetry ingestion documentation to validate consent gating logic and pseudonymization correctness.
+
 ### Health Metrics
 
-The system SHALL emit the following structured analytics events:
+The system SHALL emit the following structured analytics events (with consent-gated identifier handling):
 
 ```typescript
 interface AnalyticsEvents {
-  // Core playbook operations
-  playbook_apply: {
-    playbookId: string;
-    plantId: string;
-    durationMs: number;
-    taskCount: number;
-  };
-  playbook_shift_preview: {
-    plantId: string;
-    daysDelta: number;
-    affectedTasks: number;
-  };
-  playbook_shift_apply: {
-    plantId: string;
-    daysDelta: number;
-    durationMs: number;
-  };
-  playbook_shift_undo: { plantId: string; restoredTasks: number };
+  // Core playbook operations (consent-gated with pseudonymized IDs)
+  playbook_apply:
+    | {
+        playbookId: string; // Pseudonymized: hashed/salted or opaque token when consented
+        plantId: string; // Pseudonymized: hashed/salted or opaque token when consented
+        durationMs: number;
+        taskCount: number;
+      }
+    | {
+        // Fallback when consent absent: non-identifying counters only
+        playbook_applied: true;
+        durationMs: number;
+        taskCount: number;
+      };
 
-  // Task customization
-  playbook_task_customized: {
-    taskId: string;
-    field: string;
-    playbookId: string;
-  };
-  playbook_saved_as_template: {
-    originalPlaybookId: string;
-    customizations: number;
-  };
+  playbook_shift_preview:
+    | {
+        plantId: string; // Pseudonymized when consented
+        daysDelta: number;
+        affectedTasks: number;
+      }
+    | {
+        // Fallback when consent absent
+        shift_previewed: true;
+        daysDelta: number;
+        affectedTasks: number;
+      };
 
-  // AI integration
-  ai_adjustment_suggested: {
-    plantId: string;
-    reason: string;
-    confidence: number;
-  };
-  ai_adjustment_applied: { plantId: string; suggestionId: string };
-  ai_adjustment_declined: { plantId: string; suggestionId: string };
+  playbook_shift_apply:
+    | {
+        plantId: string; // Pseudonymized when consented
+        daysDelta: number;
+        durationMs: number;
+      }
+    | {
+        // Fallback when consent absent
+        shift_applied: true;
+        daysDelta: number;
+        durationMs: number;
+      };
 
-  // Trichome helper
-  trichome_helper_open: { plantId: string; phase: string };
-  trichome_helper_logged: {
-    plantId: string;
-    assessment: string;
-    photoCount: number;
-  };
+  playbook_shift_undo:
+    | {
+        plantId: string; // Pseudonymized when consented
+        restoredTasks: number;
+      }
+    | {
+        // Fallback when consent absent
+        shift_undone: true;
+        restoredTasks: number;
+      };
 
-  // Notifications
-  notif_scheduled: { taskId: string; exact: boolean };
-  notif_delivered: { taskId: string; deliveryLatencyMs: number };
-  notif_missed: { taskId: string; reason: string };
+  // Task customization (consent-gated with pseudonymized IDs)
+  playbook_task_customized:
+    | {
+        taskId: string; // Pseudonymized when consented
+        field: string;
+        playbookId: string; // Pseudonymized when consented
+      }
+    | {
+        // Fallback when consent absent
+        task_customized: true;
+        field: string;
+        customizations_count: number;
+      };
 
-  // Sync performance
+  playbook_saved_as_template:
+    | {
+        originalPlaybookId: string; // Pseudonymized when consented
+        customizations: number;
+      }
+    | {
+        // Fallback when consent absent
+        template_saved: true;
+        customizations: number;
+      };
+
+  // AI integration (consent-gated with pseudonymized IDs)
+  ai_adjustment_suggested:
+    | {
+        plantId: string; // Pseudonymized when consented
+        reason: string;
+        confidence: number;
+      }
+    | {
+        // Fallback when consent absent
+        ai_suggestion_made: true;
+        reason: string;
+        confidence: number;
+      };
+
+  ai_adjustment_applied:
+    | {
+        plantId: string; // Pseudonymized when consented
+        suggestionId: string; // Pseudonymized when consented
+      }
+    | {
+        // Fallback when consent absent
+        ai_adjustment_accepted: true;
+      };
+
+  ai_adjustment_declined:
+    | {
+        plantId: string; // Pseudonymized when consented
+        suggestionId: string; // Pseudonymized when consented
+      }
+    | {
+        // Fallback when consent absent
+        ai_adjustment_rejected: true;
+      };
+
+  // Trichome helper (consent-gated with pseudonymized IDs)
+  trichome_helper_open:
+    | {
+        plantId: string; // Pseudonymized when consented
+        phase: string;
+      }
+    | {
+        // Fallback when consent absent
+        trichome_helper_opened: true;
+        phase: string;
+      };
+
+  trichome_helper_logged:
+    | {
+        plantId: string; // Pseudonymized when consented
+        assessment: string;
+        photoCount: number;
+      }
+    | {
+        // Fallback when consent absent
+        trichome_assessment_logged: true;
+        assessment: string;
+        photoCount: number;
+      };
+
+  // Notifications (consent-gated with pseudonymized IDs)
+  notif_scheduled:
+    | {
+        taskId: string; // Pseudonymized when consented
+        exact: boolean;
+      }
+    | {
+        // Fallback when consent absent
+        notification_scheduled: true;
+        exact: boolean;
+      };
+
+  notif_delivered:
+    | {
+        taskId: string; // Pseudonymized when consented
+        deliveryLatencyMs: number;
+      }
+    | {
+        // Fallback when consent absent
+        notification_delivered: true;
+        deliveryLatencyMs: number;
+      };
+
+  notif_missed:
+    | {
+        taskId: string; // Pseudonymized when consented
+        reason: string;
+      }
+    | {
+        // Fallback when consent absent
+        notification_missed: true;
+        reason: string;
+      };
+
+  // Sync performance (non-identifying - no consent gating needed)
   sync_latency_ms: { operation: 'pull' | 'push'; durationMs: number };
   sync_fail_rate: { operation: 'pull' | 'push'; errorCode: string };
 
-  // Conflicts
+  // Conflicts (non-identifying - no consent gating needed)
   conflict_seen: { table: string; conflictType: string };
   restore_clicked: { conflictId: string; table: string };
 }

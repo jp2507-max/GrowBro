@@ -2,7 +2,7 @@
 
 ## Overview
 
-The iOS Store Compliance feature implements a comprehensive compliance system that ensures GrowBro meets all Apple App Store requirements as of August 2025. The design focuses on privacy manifests with required-reason API declarations, accurate App Privacy questionnaire completion, 17+ age-rating with mandatory 18+ in-app age-gating, UGC content moderation, AI assessment disclaimers, and proper permission handling.
+The iOS Store Compliance feature implements a comprehensive compliance system that ensures GrowBro meets all Apple App Store requirements as of August 2025. The design focuses on privacy manifests with required-reason API declarations, accurate App Privacy questionnaire completion, 18+ age-rating with 18+ in-app age-gating, UGC content moderation, AI assessment disclaimers, and proper permission handling.
 
 The system is designed to be maintainable, auditable, and easily updatable as Apple's guidelines evolve. All compliance measures are implemented with clear documentation and automated validation where possible.
 
@@ -19,7 +19,7 @@ iOS Compliance System
 │   └── App Privacy Sync Validator
 ├── Age Verification System
 │   ├── Age Gate Component
-│   ├── Verification Storage (MMKV)
+│   ├── Secure Verification Storage (Keychain + Encrypted MMKV)
 │   ├── App Rating Configuration
 │   └── Enhanced Age Rating Handler
 ├── UGC Moderation Framework
@@ -120,7 +120,7 @@ interface SDKComplianceCheck {
 
 ### Age Verification System
 
-**Purpose**: Implements mandatory 18+ age-gating with secure storage and App Store 17+ rating compliance.
+**Purpose**: Implements mandatory 18+ age-gating with secure storage and App Store 18+ rating compliance.
 
 **Interface**:
 
@@ -128,10 +128,12 @@ interface SDKComplianceCheck {
 interface AgeVerificationSystem {
   showAgeGate(): Promise<boolean>;
   verifyAge(birthDate: Date): boolean;
-  storeVerificationStatus(verified: boolean): void;
-  checkVerificationStatus(): boolean;
-  resetVerification(): void;
+  storeVerificationStatus(verified: boolean): Promise<void>;
+  checkVerificationStatus(): Promise<boolean>;
+  resetVerification(): Promise<void>;
   handleEnhancedAgeRating(): void;
+  initializeSecureStorage(): Promise<void>;
+  migrateExistingVerification(): Promise<void>;
 }
 
 interface AgeGateComponent {
@@ -154,9 +156,33 @@ interface EnhancedAgeRating {
 **Implementation Details**:
 
 - Modal overlay that blocks all app functionality until verified
-- Secure storage using react-native-mmkv for verification status
+- Secure age verification storage using iOS Keychain + encrypted MMKV:
+  - (1) Verification flag stored in encrypted MMKV with Keychain-protected encryption key
+  - (2) Encryption key generated and stored in iOS Keychain on first app launch
+  - (3) Migration of existing unencrypted MMKV flags to encrypted storage on app launch
+  - (4) Keychain access restrictions with fallback behavior for access failures
 - Clear messaging for users under 18 with app exit options
-- Integration with App Store Connect 17+ rating configuration
+- Integration with App Store Connect 18+ rating configuration
+
+**Secure Storage Implementation**:
+
+The age verification status is stored using a hybrid approach combining iOS Keychain and encrypted MMKV storage for maximum security and compliance:
+
+1. **Key Generation & Storage**: On first app launch, generate a 256-bit encryption key using `SecRandomCopyBytes` and store it in iOS Keychain with service identifier `"growbro.age.encryption"` and accessibility `kSecAttrAccessibleAfterFirstUnlock`.
+
+2. **Encrypted MMKV Storage**: Initialize MMKV instance with the Keychain-retrieved encryption key using `MMKVConfiguration` with encryption enabled. Store verification status as boolean value under key `"age_verified"`.
+
+3. **Migration Strategy**: On app launch, check for existing unencrypted MMKV verification data. If found, migrate to encrypted storage and delete unencrypted data. Log migration success/failure for audit purposes.
+
+4. **Key Lifecycle Management**:
+
+   - **Rotation**: Generate new encryption key annually or on major app updates
+   - **Deletion**: Remove encryption key from Keychain on account deletion or app uninstall
+   - **Recovery**: No key recovery mechanism - users must re-verify age if Keychain access fails
+
+5. **Fallback Behavior**: If Keychain access fails (device lock state, biometrics disabled), fall back to session-only verification requiring re-verification on next app launch. Log security events for monitoring.
+
+6. **Access Restrictions**: Keychain item configured with `kSecAttrAccessibleAfterFirstUnlock` ensuring key is only accessible after device unlock, protecting against unauthorized access when device is locked.
 
 ### UGC Moderation Framework
 
@@ -406,7 +432,9 @@ interface ComplianceAuditEntry {
 
 ### Age Verification Errors
 
-- **Storage Failure**: Fallback to session-only verification
+- **Keychain Access Failure**: Fallback to session-only verification with security event logging
+- **Encryption Key Generation Failure**: Log critical error, maintain age gate with session-only verification
+- **Migration Failure**: Log warning, retain unencrypted data temporarily, retry migration on next launch
 - **Invalid Birth Date**: Clear error messaging, retry option
 - **Verification Bypass Attempt**: Log security event, maintain gate
 
@@ -428,12 +456,19 @@ interface ComplianceAuditEntry {
 
 - Privacy manifest generation with various SDK configurations
 - Age verification logic with edge cases (leap years, timezone issues)
+- Secure storage initialization and key management
+- Encrypted MMKV storage with Keychain integration
+- Migration of existing unencrypted verification data
+- Keychain access failure fallback behavior
 - Content filtering with known problematic content samples
 - AI assessment compliance with medical terminology detection
 
 ### Integration Testing
 
-- End-to-end age verification flow
+- End-to-end age verification flow with secure storage
+- Keychain encryption key lifecycle (generation, rotation, deletion)
+- Migration flow from unencrypted to encrypted storage
+- Keychain access failure scenarios and fallback behavior
 - UGC moderation pipeline from report to resolution
 - Account deletion with data verification
 - Permission request flows with various system states
@@ -495,7 +530,7 @@ interface ComplianceAuditEntry {
 
 **Age Rating & Content**:
 
-- [ ] Age rating questionnaire answered with 17+ rating
+- [ ] Age rating questionnaire answered with 18+ rating
 - [ ] Minimum age set to 18+ in App Store Connect
 - [ ] In-app age gate screenshot attached
 - [ ] Cannabis content compliance verified (no consumption encouragement)
@@ -529,4 +564,8 @@ interface ComplianceAuditEntry {
 - Quarterly compliance requirement reviews
 - SDK update impact assessment process
 - Privacy manifest update procedures
-- Age verification storage migration planning
+- Age verification secure storage maintenance:
+  - Annual encryption key rotation
+  - Keychain access monitoring and fallback testing
+  - Migration verification for existing installations
+  - Security audit of encryption implementation

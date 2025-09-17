@@ -16,7 +16,7 @@ This feature ensures GrowBro meets all iOS App Store compliance requirements bas
 2. WHEN third-party SDKs are inventoried THEN the system SHALL ensure each SDK from Apple's "commonly used SDKs" list includes its own privacy manifest
 3. WHEN Required Reason APIs are used THEN the system SHALL declare approved reasons for file timestamps, boot time, disk space, UserDefaults, and keyboard state APIs
 4. WHEN SDK signatures are validated THEN the system SHALL ensure all SDKs have valid signatures per Apple's requirements
-5. IF any Required Reason API is used without declaration THEN the system SHALL prevent submission rejection by documenting the specific use case
+5. IF any Required Reason API is used without declaration THEN the system SHALL implement automated validation in the build/CI pipeline that parses the app bundle for PrivacyInfo.xcprivacy, verifies approved reasons for file timestamps, boot time, disk space, UserDefaults, and keyboard state APIs, checks third-party SDK manifests/signatures where applicable, and emits a hard error with a clear message and reference to Apple's RR-API documentation if any declaration is missing or invalid so uploads cannot proceed
 
 ### Requirement 2
 

@@ -126,7 +126,7 @@
 
   - [ ] 6.2 Integrate Sentry error tracking
 
-    - Upload sourcemaps for both Build and Update to Sentry with consistent release naming (app@<version>+<buildNumber>/commitSha)
+    - Upload sourcemaps for both Build and Update to Sentry with consistent release naming (app@<semver>+<buildNumber>-<shortSHA>)
     - Break pipeline if sourcemap upload fails
     - Implement Sentry release creation with commit SHA and build IDs
     - _Requirements: 7.2, 7.6, 14.1, 14.2, 14.4_

@@ -1241,71 +1241,41 @@ async function sendToDevice(
   collapseKey?: string,
   threadId?: string
 ) {
-  const fcmServerKey = Deno.env.get('FCM_SERVER_KEY');
   const messageId = `msg_${crypto.randomUUID()}`;
 
-  let payload;
+  // For Expo apps, use Expo Push Service instead of direct FCM
+  const payload = {
+    to: tokenData.token,
+    title,
+    body,
+    data: {
+      ...data,
+      deeplink: deepLink,
+      type,
+      message_id: messageId,
+    },
+    // Platform-specific configuration
+    ...(tokenData.platform === 'android'
+      ? {
+          channelId: getChannelId(type),
+          collapseKey,
+          ttl: 21600, // 6 hours
+        }
+      : {
+          categoryId: getCategoryId(type),
+          threadId,
+          sound: 'default',
+          priority: 'default',
+        }),
+  };
 
-  if (tokenData.platform === 'android') {
-    payload = {
-      message: {
-        token: tokenData.token,
-        android: {
-          collapse_key: collapseKey,
-          notification: {
-            title,
-            body,
-            channel_id: getChannelId(type),
-          },
-          ttl: '21600s',
-        },
-        data: {
-          ...data,
-          deeplink: deepLink,
-          type,
-          message_id: messageId,
-        },
-      },
-    };
-  } else {
-    payload = {
-      message: {
-        token: tokenData.token,
-        apns: {
-          headers: {
-            'apns-collapse-id': collapseKey,
-            'apns-priority': '10',
-          },
-          payload: {
-            aps: {
-              alert: { title, body },
-              'thread-id': threadId,
-              category: getCategoryId(type),
-              sound: 'default',
-            },
-          },
-        },
-        data: {
-          ...data,
-          deeplink: deepLink,
-          type,
-          message_id: messageId,
-        },
-      },
-    };
-  }
-
-  const response = await fetch(
-    'https://fcm.googleapis.com/v1/projects/YOUR_PROJECT_ID/messages:send',
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${fcmServerKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    }
-  );
+  const response = await fetch('https://exp.host/--/api/v2/push/send', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
 
   return {
     success: response.ok,
@@ -1361,6 +1331,12 @@ BEGIN
       url := 'https://your-project.supabase.co/functions/v1/send-push-notification',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
+        -- ⚠️ SECURITY WARNING: Avoid using current_setting('app.service_role_key')
+        -- This pattern exposes service credentials in SQL and encourages insecure practices.
+        -- RECOMMENDED ALTERNATIVES:
+        -- 1. Queue notifications in a table under RLS, then process via Edge Function/Cron
+        --    with service credentials stored in function environment variables
+        -- 2. Call an internal webhook secured by signed JWTs instead of direct HTTP calls
         'Authorization', 'Bearer ' || current_setting('app.service_role_key')
       ),
       body := jsonb_build_object(

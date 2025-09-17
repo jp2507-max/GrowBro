@@ -24,12 +24,16 @@ The AI Photo Diagnosis feature enables home cannabis growers to quickly identify
 
 #### Acceptance Criteria
 
-1. WHEN photos are submitted for analysis THEN the system SHALL return results with p95 latency ≤ 5s (cloud) / ≤ 3.5s (device) on Pixel 6a & Galaxy A54 with hard timeout 8s and graceful fallback
-2. WHEN inference is complete THEN the system SHALL return the top-1 predicted class with confidence percentage, including "Healthy/No Issue" and "Unknown/Out-of-Distribution" classes
-3. WHEN confidence is below 70% OR class is Unknown/OOD THEN the system SHALL show "Not confident enough" UX with community CTA and retake tips
-4. WHEN multiple photos are captured THEN the system SHALL use majority vote aggregation; if tie then highest confidence; if all <70% then return Unknown with community CTA
-5. WHEN on-device inference is available THEN the system SHALL use local processing as primary method with cloud fallback
-6. WHEN analysis completes THEN the system SHALL log results for model improvement only with user opt-in consent
+1. WHEN photos are submitted for analysis THEN the system SHALL display explicit pre-upload consent prompt explaining cloud processing, data usage, and privacy implications before any cloud upload occurs
+2. WHEN user consent is required THEN the system SHALL show per-request override controls (allow/deny) with clear privacy notices and disable cloud fallback by default until consent is granted
+3. WHEN consent is granted THEN the system SHALL persist consent flags with timestamps, request metadata, and device identifiers for audit trail and revocation tracking
+4. WHEN on-device inference is available THEN the system SHALL use local processing as primary method with cloud fallback only after explicit consent is granted and stored
+5. WHEN cloud processing is initiated THEN the system SHALL return results with p95 latency ≤ 5s on Pixel 6a & Galaxy A54 with hard timeout 8s and graceful local-only fallback if consent is denied mid-process
+6. WHEN inference is complete THEN the system SHALL return the top-1 predicted class with confidence percentage, including "Healthy/No Issue" and "Unknown/Out-of-Distribution" classes
+7. WHEN confidence is below 70% OR class is Unknown/OOD THEN the system SHALL show "Not confident enough" UX with community CTA and retake tips
+8. WHEN multiple photos are captured THEN the system SHALL use majority vote aggregation; if tie then highest confidence; if all <70% then return Unknown with community CTA
+9. WHEN consent is revoked THEN the system SHALL immediately disable cloud processing and require re-consent for future uploads while maintaining local processing capability
+10. WHEN analysis completes THEN the system SHALL log results for model improvement only with user opt-in consent and include consent metadata in telemetry
 
 ### Requirement 3
 

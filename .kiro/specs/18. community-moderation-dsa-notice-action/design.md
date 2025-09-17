@@ -226,6 +226,59 @@ interface StatementOfReasons {
   transparencyDbId?: string; // returned by EC DB
   createdAt: Date;
 }
+
+/**
+ * Redacted Statement of Reasons for DSA Transparency Database submission (Art. 24(5))
+ *
+ * This interface represents a Statement of Reasons that has been processed through
+ * comprehensive PII scrubbing while preserving aggregated/anonymized data required
+ * for transparency reporting. The original SoR is retained internally under Row-Level
+ * Security (RLS) while only this redacted variant crosses system boundaries.
+ */
+interface RedactedSoR {
+  // Preserved non-PII fields
+  decisionId: string;
+  decisionGround: 'illegal' | 'terms';
+  legalReference?: string;
+  contentType: 'post' | 'comment' | 'image' | 'profile' | string;
+  automatedDetection: boolean;
+  automatedDecision: boolean;
+  territorialScope?: string[]; // e.g., ['DE','AT']
+  redress: Array<'internal_appeal' | 'ods' | 'court'>;
+  transparencyDbId?: string; // returned by EC DB
+  createdAt: Date;
+
+  // Explicitly redacted fields (undefined to indicate removal)
+  factsAndCircumstances: undefined;
+  reporterContact: undefined;
+  personalIdentifiers: undefined;
+  moderatorId: undefined;
+  contentLocator: undefined;
+  evidence: undefined;
+  supportingEvidence: undefined;
+
+  // Preserved aggregated/anonymized summaries
+  aggregatedData: {
+    reportCount: number; // Count of related reports (anonymized)
+    evidenceType: 'text' | 'image' | 'video' | 'mixed'; // Categorized evidence type
+    contentAge: 'new' | 'recent' | 'archived'; // Age categorization
+    jurisdictionCount: number; // Number of affected jurisdictions
+    hasTrustedFlagger: boolean; // Whether trusted flagger was involved
+  };
+
+  // Pseudonymized actor identifiers (deterministic hashing with environment-specific salt)
+  pseudonymizedReporterId: string;
+  pseudonymizedModeratorId: string;
+  pseudonymizedDecisionId: string; // For correlation without exposing original IDs
+
+  // Audit trail for scrubbing process
+  scrubbingMetadata: {
+    scrubbedAt: Date;
+    scrubbingVersion: string; // Version of scrubbing algorithm used
+    redactedFields: string[]; // List of all redacted fields for auditability
+    environmentSaltVersion: string; // Version of salt used for pseudonymization
+  };
+}
 ```
 
 ### 3. Appeals Service
@@ -467,6 +520,7 @@ interface RepeatOffenderRecord {
 interface SoRExportQueue {
   id: string;
   statementOfReasonsId: string;
+  idempotencyKey: string; // Unique key for idempotent operations
   status: 'pending' | 'retry' | 'submitted' | 'failed' | 'dlq';
   attempts: number;
   lastAttempt?: Date;
@@ -474,6 +528,53 @@ interface SoRExportQueue {
   errorMessage?: string;
   createdAt: Date;
 }
+```
+
+**Database Migration: SoR Export Queue Table**
+
+```sql
+-- Create SoR export queue table for DSA transparency database submissions
+-- Implements idempotent queue operations with atomic upsert support
+
+CREATE TABLE IF NOT EXISTS sor_export_queue (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  statement_id UUID NOT NULL,
+  idempotency_key TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('pending', 'retry', 'submitted', 'failed', 'dlq')),
+  attempts INTEGER NOT NULL DEFAULT 0,
+  last_attempt TIMESTAMPTZ,
+  transparency_db_response TEXT,
+  error_message TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Enforce uniqueness on statement_id to prevent duplicate queue entries
+-- This ensures idempotency at the database level
+ALTER TABLE sor_export_queue ADD CONSTRAINT sor_export_queue_statement_id_unique UNIQUE (statement_id);
+
+-- Index for efficient retry/visibility queries
+-- Supports queries filtering by status with ordering by attempts and last_attempt
+CREATE INDEX IF NOT EXISTS idx_sor_export_queue_status_attempts_last_attempt
+ON sor_export_queue (status, attempts, last_attempt);
+
+-- Index for idempotency key lookups (used in conflict resolution)
+CREATE INDEX IF NOT EXISTS idx_sor_export_queue_idempotency_key
+ON sor_export_queue (idempotency_key);
+
+-- Updated at trigger
+CREATE OR REPLACE FUNCTION update_sor_export_queue_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_sor_export_queue_updated_at
+  BEFORE UPDATE ON sor_export_queue
+  FOR EACH ROW
+  EXECUTE FUNCTION update_sor_export_queue_updated_at();
 ```
 
 ### Database Schema Design
@@ -494,6 +595,49 @@ interface SoRExportQueue {
 - Automated backup and archival processes
 - Restricted access with comprehensive logging
 - PII scrubbing pipeline before SoR exports (Art. 24(5) compliance)
+
+### PII Scrubbing Process (Art. 24(5) Compliance)
+
+**Overview**: The PII scrubbing pipeline implements comprehensive data minimization for DSA transparency reporting while preserving analytical value through aggregated/anonymized data. Original Statement of Reasons (SoR) are retained internally under Row-Level Security (RLS) while only redacted variants cross system boundaries.
+
+**Redaction Map**:
+
+- **Free-text fields**: `factsAndCircumstances`, `explanation`, `reasoning`, `counterArguments`, `description`, `metadata`
+- **Direct PII fields**: `reporterContact`, `personalIdentifiers`, `contactInfo`
+- **Actor identifiers**: `reporterId`, `moderatorId`, `userId` (replaced with pseudonyms)
+- **Content locators**: `contentLocator`, `evidenceUrls`
+- **Evidence data**: `evidence`, `supportingEvidence`
+- **Location/IP data**: `ipAddress`, `locationData`
+
+**Pseudonymization Algorithm**:
+
+- **Method**: HMAC-SHA256 with environment-specific salt
+- **Deterministic**: Same input always produces same pseudonym within environment
+- **Environment isolation**: Different environments use different salts, ensuring cross-environment unlinkability
+- **Salt composition**: `${NODE_ENV}-${context}-${PII_SCRUBBING_SALT}`
+- **Output format**: 16-character hexadecimal string
+- **Salt versioning**: Tracked via `PII_SALT_VERSION` environment variable
+
+**Aggregation Strategy**:
+
+- **Report counts**: Anonymized total count of related reports
+- **Evidence categorization**: Categorized as 'text', 'image', 'video', or 'mixed'
+- **Content age**: Categorized as 'new' (<24h), 'recent' (<7d), or 'archived' (≥7d)
+- **Jurisdiction scope**: Count of affected territories
+- **Trusted flagger involvement**: Boolean indicator
+
+**Audit Trail**:
+
+- **Scrubbing timestamp**: Exact time of redaction
+- **Algorithm version**: Version of scrubbing implementation
+- **Redacted fields list**: Complete enumeration of removed fields
+- **Salt version**: Version of pseudonymization salt used
+
+**Data Retention**:
+
+- **Original SoR**: Retained indefinitely under RLS in primary database
+- **Redacted SoR**: Exported to Commission Transparency Database
+- **Boundary principle**: Redacted variants only cross system boundaries
 
 **File Storage (S3-Compatible)**
 
@@ -533,6 +677,8 @@ interface SoRExportQueue {
 **Circuit Breaker Pattern with SoR Exporter**
 
 ```typescript
+import { createHmac } from 'crypto';
+
 class DSASubmissionCircuitBreaker {
   private failureCount = 0;
   private lastFailureTime?: Date;
@@ -543,14 +689,44 @@ class DSASubmissionCircuitBreaker {
     this.retryableOperation = retryableOperation;
   }
 
-  private async addToExportQueue(statement: StatementOfReasons): Promise<void> {
-    // Add statement to export queue for processing
-    await this.db.insert('sor_export_queue', {
-      statement_id: statement.id,
-      status: 'pending',
-      attempts: 0,
-      created_at: new Date(),
-    });
+  /**
+   * Idempotently adds a Statement of Reasons to the export queue.
+   *
+   * This method ensures that repeated calls with the same statement_id and idempotency_key
+   * do not create duplicate queue entries. If a queue item already exists for the given
+   * statement_id, it returns the existing item without modification.
+   *
+   * The upsert operation is atomic and uses database-native conflict handling to prevent
+   * race conditions in concurrent environments.
+   *
+   * @param statement - The Statement of Reasons to queue for export
+   * @param idempotencyKey - Unique key to ensure idempotent operations
+   * @returns Promise<SoRExportQueue> - The existing or newly created queue item
+   */
+  private async addToExportQueue(
+    statement: StatementOfReasons,
+    idempotencyKey: string
+  ): Promise<SoRExportQueue> {
+    // Atomic upsert: insert new row or return existing if conflict on statement_id
+    const result = await this.db.query(
+      `
+      INSERT INTO sor_export_queue (
+        statement_id,
+        idempotency_key,
+        status,
+        attempts,
+        created_at
+      ) VALUES (?, ?, 'pending', 0, ?)
+      ON CONFLICT (statement_id)
+      DO UPDATE SET
+        -- No-op update to return existing row without modification
+        statement_id = EXCLUDED.statement_id
+      RETURNING *
+    `,
+      [statement.id, idempotencyKey, new Date()]
+    );
+
+    return result[0]; // Return the queue item (existing or new)
   }
 
   private async markForRetry(statementId: string): Promise<void> {
@@ -587,7 +763,8 @@ class DSASubmissionCircuitBreaker {
 
   async submitToTransparencyDB(statement: StatementOfReasons): Promise<void> {
     // Add to export queue first (idempotent)
-    await this.addToExportQueue(statement);
+    const idempotencyKey = `dsa-submission-${statement.id}`;
+    await this.addToExportQueue(statement, idempotencyKey);
 
     if (this.state === 'open') {
       if (this.shouldAttemptReset()) {
@@ -641,13 +818,229 @@ class DSASubmissionCircuitBreaker {
   }
 
   private async scrubPII(statement: StatementOfReasons): Promise<RedactedSoR> {
-    // Remove personal data per Art. 24(5) requirements
-    return {
-      ...statement,
+    // Comprehensive PII scrubbing per Art. 24(5) requirements
+    // Original SoR retained under RLS; only redacted variant crosses boundaries
+
+    // Get related data for aggregation (anonymized counts and categories)
+    const relatedReports = await this.getRelatedReports(statement.decisionId);
+    const aggregatedData = await this.computeAggregatedData(
+      statement,
+      relatedReports
+    );
+
+    // Pseudonymize actor identifiers deterministically
+    const pseudonymizedReporterId = this.pseudonymizeIdentifier(
+      statement.reporterId || 'unknown',
+      'reporter'
+    );
+    const pseudonymizedModeratorId = this.pseudonymizeIdentifier(
+      statement.moderatorId || 'system',
+      'moderator'
+    );
+    const pseudonymizedDecisionId = this.pseudonymizeIdentifier(
+      statement.decisionId,
+      'decision'
+    );
+
+    // Define comprehensive redaction map
+    const redactionMap = {
+      // Free-text fields containing potential PII
+      factsAndCircumstances: undefined,
+      explanation: undefined,
+      reasoning: undefined,
+
+      // Direct PII fields
       reporterContact: undefined,
       personalIdentifiers: undefined,
-      // Keep only aggregated/anonymized data
+      contactInfo: undefined,
+
+      // Actor identifiers (replaced with pseudonyms)
+      reporterId: undefined,
+      moderatorId: undefined,
+      userId: undefined,
+
+      // Content locators and evidence (contain potential PII)
+      contentLocator: undefined,
+      evidence: undefined,
+      supportingEvidence: undefined,
+      evidenceUrls: undefined,
+
+      // IP addresses and location data
+      ipAddress: undefined,
+      locationData: undefined,
+
+      // All other free-text fields that might contain PII
+      counterArguments: undefined,
+      description: undefined,
+      metadata: undefined,
     };
+
+    // Apply redaction map to all nested objects recursively
+    const redactedStatement = this.applyRedactionMap(statement, redactionMap);
+
+    const redactedSoR: RedactedSoR = {
+      // Preserve non-PII fields
+      decisionId: statement.decisionId,
+      decisionGround: statement.decisionGround,
+      legalReference: statement.legalReference,
+      contentType: statement.contentType,
+      automatedDetection: statement.automatedDetection,
+      automatedDecision: statement.automatedDecision,
+      territorialScope: statement.territorialScope,
+      redress: statement.redress,
+      transparencyDbId: statement.transparencyDbId,
+      createdAt: statement.createdAt,
+
+      // Explicitly redacted fields
+      factsAndCircumstances: undefined,
+      reporterContact: undefined,
+      personalIdentifiers: undefined,
+      moderatorId: undefined,
+      contentLocator: undefined,
+      evidence: undefined,
+      supportingEvidence: undefined,
+
+      // Aggregated/anonymized data
+      aggregatedData,
+
+      // Pseudonymized identifiers
+      pseudonymizedReporterId,
+      pseudonymizedModeratorId,
+      pseudonymizedDecisionId,
+
+      // Scrubbing audit trail
+      scrubbingMetadata: {
+        scrubbedAt: new Date(),
+        scrubbingVersion: '1.0.0',
+        redactedFields: Object.keys(redactionMap),
+        environmentSaltVersion: this.getEnvironmentSaltVersion(),
+      },
+    };
+
+    return redactedSoR;
+  }
+
+  /**
+   * Deterministic pseudonymization using HMAC-SHA256 with environment-specific salt
+   * Same input always produces same pseudonym within environment, different across environments
+   */
+  private pseudonymizeIdentifier(identifier: string, context: string): string {
+    const salt = this.getEnvironmentSpecificSalt(context);
+    const hmac = createHmac('sha256', salt);
+    hmac.update(identifier);
+    return hmac.digest('hex').substring(0, 16); // 16-character pseudonym
+  }
+
+  /**
+   * Environment-specific salt for pseudonymization
+   * Ensures same actor maps consistently within environment but differently across environments
+   */
+  private getEnvironmentSpecificSalt(context: string): string {
+    const env = process.env.NODE_ENV || 'development';
+    const baseSalt =
+      process.env.PII_SCRUBBING_SALT || 'default-scrubbing-salt-v1';
+
+    // Combine environment, context, and base salt for uniqueness
+    return `${env}-${context}-${baseSalt}`;
+  }
+
+  /**
+   * Get current salt version for auditability
+   */
+  private getEnvironmentSaltVersion(): string {
+    return process.env.PII_SALT_VERSION || 'v1.0';
+  }
+
+  /**
+   * Recursively apply redaction map to remove PII from nested objects
+   */
+  private applyRedactionMap(
+    obj: any,
+    redactionMap: Record<string, undefined>
+  ): any {
+    if (!obj || typeof obj !== 'object') {
+      return obj;
+    }
+
+    const result = Array.isArray(obj) ? [] : {};
+
+    for (const [key, value] of Object.entries(obj)) {
+      if (redactionMap[key] === undefined) {
+        // Field is marked for redaction
+        result[key] = undefined;
+      } else if (typeof value === 'object' && value !== null) {
+        // Recursively redact nested objects
+        result[key] = this.applyRedactionMap(value, redactionMap);
+      } else {
+        // Preserve non-redacted values
+        result[key] = value;
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Compute aggregated/anonymized data for transparency reporting
+   */
+  private async computeAggregatedData(
+    statement: StatementOfReasons,
+    relatedReports: any[]
+  ): Promise<RedactedSoR['aggregatedData']> {
+    return {
+      reportCount: relatedReports.length,
+      evidenceType: this.categorizeEvidenceType(relatedReports),
+      contentAge: this.categorizeContentAge(statement.createdAt),
+      jurisdictionCount: statement.territorialScope?.length || 1,
+      hasTrustedFlagger: relatedReports.some((r) => r.trustedFlagger),
+    };
+  }
+
+  /**
+   * Categorize evidence types for aggregated reporting
+   */
+  private categorizeEvidenceType(
+    reports: any[]
+  ): 'text' | 'image' | 'video' | 'mixed' {
+    const types = reports.flatMap((r) => r.evidenceTypes || []);
+    const hasText = types.includes('text');
+    const hasImage = types.includes('image');
+    const hasVideo = types.includes('video');
+
+    if (hasText && !hasImage && !hasVideo) return 'text';
+    if (!hasText && hasImage && !hasVideo) return 'image';
+    if (!hasText && !hasImage && hasVideo) return 'video';
+    return 'mixed';
+  }
+
+  /**
+   * Categorize content age for aggregated reporting
+   */
+  private categorizeContentAge(createdAt: Date): 'new' | 'recent' | 'archived' {
+    const ageInHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+
+    if (ageInHours < 24) return 'new';
+    if (ageInHours < 168) return 'recent'; // 7 days
+    return 'archived';
+  }
+
+  /**
+   * Get related reports for aggregation (without exposing PII)
+   */
+  private async getRelatedReports(decisionId: string): Promise<any[]> {
+    // Query reports related to this decision, excluding PII fields
+    return await this.db.query(
+      `
+      SELECT
+        id,
+        report_type,
+        trusted_flagger,
+        created_at
+      FROM reports
+      WHERE decision_id = ?
+    `,
+      [decisionId]
+    );
   }
 
   private async getAttemptCount(statementId: string): Promise<number> {

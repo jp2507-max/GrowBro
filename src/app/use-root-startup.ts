@@ -4,6 +4,7 @@ import React from 'react';
 import { retentionWorker, useSyncPrefs } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
 import { registerNotificationMetrics } from '@/lib/notification-metrics';
+import { consentManager } from '@/lib/privacy/consent-manager';
 import { setDeletionAdapter } from '@/lib/privacy/deletion-adapter';
 import { createSupabaseDeletionAdapter } from '@/lib/privacy/deletion-adapter-supabase';
 import { registerBackgroundTask } from '@/lib/sync/background-sync';
@@ -57,14 +58,24 @@ function useSyncAndMetrics(): void {
 
     const start = Date.now();
     const cleanup = registerNotificationMetrics();
-    const coldStartTimer = setTimeout(() => {
-      void NoopAnalytics.track('perf_cold_start_ms', {
-        ms: Date.now() - start,
-      });
-    }, 0);
 
+    // Only initialize analytics if user has consented
+    if (consentManager.hasConsented('analytics')) {
+      const coldStartTimer = setTimeout(() => {
+        void NoopAnalytics.track('perf_cold_start_ms', {
+          ms: Date.now() - start,
+        });
+      }, 0);
+
+      return () => {
+        clearTimeout(coldStartTimer);
+        cleanup();
+        dispose();
+      };
+    }
+
+    // If no consent, just return cleanup functions
     return () => {
-      clearTimeout(coldStartTimer);
       cleanup();
       dispose();
     };
@@ -97,10 +108,11 @@ function startRootInitialization(
     } catch {
       // non-fatal
     } finally {
-      if (!isMounted) return;
-      refreshIsRTL?.();
-      applyRTLIfNeeded?.();
-      setIsI18nReady(true);
+      if (isMounted) {
+        refreshIsRTL?.();
+        applyRTLIfNeeded?.();
+        setIsI18nReady(true);
+      }
     }
     // Additional safety: ensure component still mounted before creating service
     if (!isMounted) return;
@@ -159,7 +171,10 @@ export function useRootStartup(
     const start = Date.now();
     requestAnimationFrame(() => {
       const firstPaintMs = Date.now() - start;
-      void NoopAnalytics.track('perf_first_paint_ms', { ms: firstPaintMs });
+      // Only track performance metrics if user has consented to analytics
+      if (consentManager.hasConsented('analytics')) {
+        void NoopAnalytics.track('perf_first_paint_ms', { ms: firstPaintMs });
+      }
     });
   }, []);
 

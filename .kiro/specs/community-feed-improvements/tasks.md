@@ -2,9 +2,9 @@
 
 - [ ] 1. Set up database schema and migrations
 
-  - Create database migration for posts table with undo_expires_at TIMESTAMPTZ column
-  - Create database migration for post_comments table with hidden_at and undo_expires_at TIMESTAMPTZ columns
-  - Create database migration for post_likes table with UNIQUE(post_id, user_id) constraint
+  - Create database migration for posts table with undo_expires_at TIMESTAMPTZ column and client_tx_id UUID column
+  - Create database migration for post_comments table with hidden_at and undo_expires_at TIMESTAMPTZ columns and client_tx_id UUID column
+  - Create database migration for post_likes table with UNIQUE(post_id, user_id) constraint and client_tx_id UUID column
   - Create database migration for reports and moderation_audit tables
   - Add partial indexes that match default reads for performance:
     ```sql
@@ -13,6 +13,12 @@
     CREATE INDEX IF NOT EXISTS idx_comments_post_visible ON post_comments (post_id, created_at)
       WHERE deleted_at IS NULL AND hidden_at IS NULL;
     CREATE INDEX IF NOT EXISTS idx_likes_post ON post_likes (post_id);
+    ```
+  - Add client_tx_id indexes for realtime self-echo detection:
+    ```sql
+    CREATE INDEX IF NOT EXISTS idx_posts_client_tx ON posts (client_tx_id);
+    CREATE INDEX IF NOT EXISTS idx_comments_client_tx ON post_comments (client_tx_id);
+    CREATE INDEX IF NOT EXISTS idx_likes_client_tx ON post_likes (client_tx_id);
     ```
   - Create moddatetime triggers for reliable LWW:
     ```sql

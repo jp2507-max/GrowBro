@@ -476,7 +476,36 @@ interface TypedError {
 
 1. **Image Privacy**
 
-   - EXIF stripping including GPS coordinates
+   **EXIF Metadata Sanitization Policy**
+
+   _Sensitive Fields (Forbidden - Must be Stripped):_
+
+   - GPS coordinates and location data (latitude, longitude, altitude)
+   - Device identifiers (IMEI, MAC addresses, serial numbers)
+   - Unique device information (hardware IDs, UUIDs, installation IDs)
+   - Network information (WiFi SSID, IP addresses, carrier data)
+   - Personal information (owner name, copyright notices)
+   - Camera serial numbers and unique hardware identifiers
+   - Software metadata that could identify device or user
+
+   _Allowed Fields (Sanitized Subset):_
+
+   - Timestamp (capture time only, no timezone metadata)
+   - Camera model (generic model name only, no firmware versions)
+   - Image orientation and rotation data
+   - Basic image properties (dimensions, resolution)
+   - Color space and compression information
+
+   **Sanitization Requirements:**
+
+   - EXIF stripping performed immediately at capture time
+   - Additional sanitization verification before any storage operation
+   - Pre-upload sanitization validation for cloud storage
+   - Pre-sharing sanitization for community features
+   - Automated sanitization tests in CI/CD pipeline
+   - Verifiable audit logging of all strip operations
+   - Thumbnails inherit identical sanitized metadata policy
+
    - Local-first storage with opt-in cloud backup
    - Automatic cleanup with configurable retention
 

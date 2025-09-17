@@ -465,15 +465,59 @@ CREATE INDEX idx_inventory_plant ON inventory(plant_id);
 -- Harvests RLS
 ALTER TABLE harvests ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can manage their own harvests" ON harvests
-  FOR ALL USING (auth.uid() = user_id);
+-- Read operations (SELECT, DELETE)
+CREATE POLICY "Users can read their own harvests" ON harvests
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own harvests" ON harvests
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Write operations (INSERT, UPDATE) with ownership enforcement
+CREATE POLICY "Users can insert their own harvests" ON harvests
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own harvests" ON harvests
+  FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- Inventory RLS
 ALTER TABLE inventory ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can manage their own inventory" ON inventory
-  FOR ALL USING (auth.uid() = user_id);
+-- Read operations (SELECT, DELETE)
+CREATE POLICY "Users can read their own inventory" ON inventory
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own inventory" ON inventory
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Write operations (INSERT, UPDATE) with ownership enforcement
+CREATE POLICY "Users can insert their own inventory" ON inventory
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own inventory" ON inventory
+  FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+-- Plants RLS (required for referential integrity)
+ALTER TABLE plants ENABLE ROW LEVEL SECURITY;
+
+-- Read operations (SELECT, DELETE)
+CREATE POLICY "Users can read their own plants" ON plants
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own plants" ON plants
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Write operations (INSERT, UPDATE) with ownership enforcement
+CREATE POLICY "Users can insert their own plants" ON plants
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own plants" ON plants
+  FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 ```
+
+-- Performance indexes for RLS
+CREATE INDEX idx_plants_user_updated ON plants(user_id, updated_at);
+
+````
 
 ## Error Handling
 
@@ -539,7 +583,7 @@ class HarvestErrorHandler {
     AlertService.show(message, actions);
   }
 }
-```
+````
 
 ### Server Error Mapping
 

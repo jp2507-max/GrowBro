@@ -344,7 +344,7 @@ interface DistributionConfig {
 
 - **EAS Webhooks** → Slack notifications for build/submit completion (include build URL + last 100 lines on failure)
 - **Sentry Integration** → Error tracking with automatic native sourcemap upload on EAS Build and update sourcemaps on EAS Update
-- **Sentry Release Naming** → `<os>-<buildNumber>-<shortSHA>` format
+- **Sentry Release Naming** → `app@<semver>+<buildNumber>-<shortSHA>` format
 - **Build Dashboard** → Status and metrics visualization
 - **Performance Monitoring** → Build time and queue tracking
 - **Pipeline fails if sourcemap upload fails**

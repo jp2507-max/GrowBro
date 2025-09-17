@@ -155,13 +155,13 @@ class IdempotencyService {
         await tx.query(
           `
           UPDATE idempotency_keys
-          SET response_payload = $1,
+          SET response_payload = $1::jsonb,
               status = 'completed',
               expires_at = now() + INTERVAL '${this.COMPLETED_TTL}',
-              error_details = null
+              error_details = null::jsonb
           WHERE idempotency_key = $2 AND user_id = $3 AND endpoint = $4
         `,
-          [operationResult, key, userId, endpoint]
+          [JSON.stringify(operationResult), key, userId, endpoint]
         );
 
         return operationResult;
@@ -189,11 +189,11 @@ class IdempotencyService {
           `
           UPDATE idempotency_keys
           SET status = 'failed',
-              error_details = $1,
+              error_details = $1::jsonb,
               expires_at = now() + INTERVAL '${this.FAILED_TTL}'
           WHERE idempotency_key = $2 AND user_id = $3 AND endpoint = $4
         `,
-          [errorDetails, key, userId, endpoint]
+          [JSON.stringify(errorDetails), key, userId, endpoint]
         );
       }
 
@@ -544,11 +544,13 @@ ALTER TABLE idempotency_keys FORCE ROW LEVEL SECURITY;
 
 -- Users can only access their own idempotency keys
 CREATE POLICY "Users can manage own idempotency keys" ON idempotency_keys
-  FOR ALL USING (auth.uid() = user_id);
+  FOR ALL USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
 -- Service role can manage all keys for cleanup
 CREATE POLICY "Service role can manage all idempotency keys" ON idempotency_keys
-  FOR ALL USING (auth.role() = 'service_role');
+  FOR ALL USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');
 ```
 
 ### Key Format Validation

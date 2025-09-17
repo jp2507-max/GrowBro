@@ -142,13 +142,8 @@ class SDKGateImpl {
         for (const item of self.registry.values()) {
           if (!hasConsentForPurpose(item.purpose)) {
             if (item.hosts.some((h) => (h && url.includes(h)) === true)) {
-              // Return a minimal Response-like object to avoid throwing in SDKs
-              return Promise.resolve({
-                ok: true,
-                status: 204,
-                text: async () => '',
-                json: async () => ({}),
-              } as any);
+              // Return a proper Response object to satisfy SDK expectations
+              return Promise.resolve(new Response('', { status: 204 }));
             }
           }
         }

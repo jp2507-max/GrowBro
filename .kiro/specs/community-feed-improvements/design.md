@@ -266,6 +266,7 @@ CREATE TABLE post_likes (
   post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id),
   created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
   PRIMARY KEY (post_id, user_id)
 );
 
@@ -308,7 +309,7 @@ CREATE INDEX idx_posts_user_created ON posts (user_id, created_at DESC)
 -- Realtime subscription indexes
 CREATE INDEX idx_posts_updated_at ON posts (updated_at);
 CREATE INDEX idx_post_comments_updated_at ON post_comments (updated_at);
-CREATE INDEX idx_post_likes_updated_at ON post_likes (created_at);
+CREATE INDEX idx_post_likes_created_at ON post_likes (created_at);
 
 -- Counter optimization indexes
 CREATE INDEX IF NOT EXISTS idx_post_likes_post ON post_likes (post_id);
@@ -322,6 +323,9 @@ CREATE TRIGGER handle_updated_at BEFORE UPDATE ON posts
   FOR EACH ROW EXECUTE PROCEDURE extensions.moddatetime(updated_at);
 
 CREATE TRIGGER handle_updated_at BEFORE UPDATE ON post_comments
+  FOR EACH ROW EXECUTE PROCEDURE extensions.moddatetime(updated_at);
+
+CREATE TRIGGER handle_updated_at BEFORE UPDATE ON post_likes
   FOR EACH ROW EXECUTE PROCEDURE extensions.moddatetime(updated_at);
 
 -- Enable realtime replication for tables
@@ -792,9 +796,19 @@ class CommunityHealthMonitor {
     const latency = Date.now() - new Date(eventTimestamp).getTime();
     this.updateLatencyMetrics(latency);
 
-    // Alert if P95 > 3000ms
+    // Alert if P95 > 3000ms - check user consent before sending telemetry
     if (this.metrics.realtime_latency_p95 > 3000) {
-      Sentry.captureMessage('High realtime latency detected', 'warning');
+      // Check user consent for analytics/telemetry before capturing message
+      const consent = getPrivacyConsentSync();
+      if (consent?.analytics !== false) {
+        Sentry.captureMessage('High realtime latency detected', 'warning', {
+          extra: {
+            latency_p95: this.metrics.realtime_latency_p95,
+            latency_p50: this.metrics.realtime_latency_p50,
+            websocket_reconnects: this.metrics.websocket_reconnects_per_hour,
+          },
+        });
+      }
     }
   }
 
@@ -802,11 +816,15 @@ class CommunityHealthMonitor {
     const depth = outbox.getPendingCount();
     this.metrics.outbox_depth_current = depth;
 
-    // Alert if outbox is backing up
+    // Alert if outbox is backing up - check user consent before sending telemetry
     if (depth > 50) {
-      Sentry.captureMessage('Outbox depth high', 'warning', {
-        extra: { outbox_depth: depth },
-      });
+      // Check user consent for analytics/telemetry before capturing message
+      const consent = getPrivacyConsentSync();
+      if (consent?.analytics !== false) {
+        Sentry.captureMessage('Outbox depth high', 'warning', {
+          extra: { outbox_depth: depth },
+        });
+      }
     }
   }
 

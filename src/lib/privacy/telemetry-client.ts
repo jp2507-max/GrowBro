@@ -3,10 +3,13 @@ import { z } from 'zod';
 import { ConsentService } from '@/lib/privacy/consent-service';
 import type { ConsentState } from '@/lib/privacy/consent-types';
 import { SDKGate } from '@/lib/privacy/sdk-gate';
+import { hasConsent } from '@/lib/privacy-consent';
 
 export type TelemetryEvent = {
   name: string;
-  properties: Record<string, number | boolean | Date>;
+  // Allow limited strings (IDs / categorical labels) in addition to primitive metrics.
+  // Strings should be non-PII identifiers or small categorical values only.
+  properties: Record<string, number | boolean | Date | string>;
   timestamp: Date;
   sessionId: string;
   userId?: string;
@@ -14,7 +17,14 @@ export type TelemetryEvent = {
 
 const TelemetryEventSchema = z.object({
   name: z.string().min(1).max(64),
-  properties: z.record(z.union([z.number(), z.boolean(), z.date()])),
+  properties: z.record(
+    z.union([
+      z.number(),
+      z.boolean(),
+      z.date(),
+      z.string().min(1).max(128), // bounded strings only
+    ])
+  ),
   timestamp: z.date(),
   sessionId: z.string().min(1).max(64),
   userId: z.string().min(1).max(128).optional(),
@@ -77,7 +87,13 @@ export class TelemetryClient {
     SDKGate.installNetworkSafetyNet();
 
     // Prime consent state and subscribe to changes
-    void ConsentService.getConsents().then((c) => (this.consent = c));
+    void ConsentService.getConsents().then((c) => {
+      this.consent = c;
+      // Flush queued events if telemetry consent was already granted
+      if (c.telemetry && this.buffer.length > 0) {
+        void this.flush();
+      }
+    });
     ConsentService.onChange((c) => {
       this.consent = c;
       if (this.config.purgeOnConsentChange && !c.telemetry) {
@@ -94,8 +110,9 @@ export class TelemetryClient {
     const validated = TelemetryEventSchema.safeParse(event);
     if (!validated.success) return; // drop silently per minimization
 
-    // Gate on consent
-    if (!this.hasTelemetryConsent()) {
+    // Check consent based on event type
+    const requiredConsent = this.getRequiredConsentForEvent(event.name);
+    if (!this.hasRequiredConsent(requiredConsent)) {
       this.enqueue(event);
       return;
     }
@@ -115,22 +132,29 @@ export class TelemetryClient {
 
   async flush(): Promise<void> {
     if (this.flushing) return;
-    if (!this.hasTelemetryConsent()) return;
 
     this.flushing = true;
     try {
       // Simulate sequential delivery with rate limiting (max 5 events/sec)
       const throttleMs = 200;
-      while (this.buffer.length > 0 && this.hasTelemetryConsent()) {
+      while (this.buffer.length > 0) {
         const next = this.buffer.shift() as Buffered;
-        this.bufferBytes -= next.size;
-        // Use SDKGate.isSDKAllowed as additional check
-        if (!SDKGate.isSDKAllowed(this.sdkName)) {
+        const requiredConsent = this.getRequiredConsentForEvent(
+          next.event.name
+        );
+
+        // Check both required consent and SDK gate
+        if (
+          !this.hasRequiredConsent(requiredConsent) ||
+          !SDKGate.isSDKAllowed(this.sdkName)
+        ) {
           // Put back to head and abort
           this.buffer.unshift(next);
           this.bufferBytes += next.size;
           break;
         }
+
+        this.bufferBytes -= next.size;
         // No real network send in minimal skeleton
         await new Promise((r) => setTimeout(r, throttleMs));
       }
@@ -158,6 +182,34 @@ export class TelemetryClient {
       return this.consent?.telemetry === true;
     } catch {
       return false;
+    }
+  }
+
+  private getRequiredConsentForEvent(
+    eventName: string
+  ): 'telemetry' | 'analytics' {
+    // Guided grow playbook events require analytics consent
+    if (
+      eventName.startsWith('playbook_') ||
+      eventName.startsWith('ai_adjustment_') ||
+      eventName.startsWith('trichome_')
+    ) {
+      return 'analytics';
+    }
+
+    // All other events use telemetry consent
+    return 'telemetry';
+  }
+
+  private hasRequiredConsent(
+    requiredConsent: 'telemetry' | 'analytics'
+  ): boolean {
+    if (requiredConsent === 'analytics') {
+      // Check analytics consent from privacy-consent
+      return hasConsent('analytics');
+    } else {
+      // Check telemetry consent from consent service
+      return this.hasTelemetryConsent();
     }
   }
 

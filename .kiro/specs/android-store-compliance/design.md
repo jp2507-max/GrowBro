@@ -441,7 +441,26 @@ interface ComplianceTestSuite {
 ### Privacy Compliance
 
 - **Data Minimization**: Collect only necessary compliance data
-- **User Consent**: Proper consent flows for analytics and diagnostics
+- **User Consent**: Implement ConsentManager abstraction with concrete consent flows for analytics and diagnostics
+  - **ConsentManager Interface**: Abstract class/interface with methods:
+    - `hasConsented(): boolean` - Check current consent status
+    - `requestConsent(): Promise<boolean>` - Request consent from user
+    - `revokeConsent(): void` - Revoke existing consent
+    - `onConsentChanged(callback: (consented: boolean) => void): () => void` - Subscribe to consent changes
+  - **Default Opt-out**: Mandate default opt-out state for all users
+  - **Persistent Storage**: Store consent choice in secure, encrypted local storage (MMKV/AsyncStorage)
+  - **Integration Points**:
+    - **App Startup**: Check `hasConsented()` before initializing any analytics/diagnostics SDKs
+    - **Background Services**: Queue or drop events until consent granted
+    - **SDK Wrappers**: Subscribe to `onConsentChanged()` to enable/disable dispatching dynamically
+  - **Example Flow**:
+    ```
+    1. App startup → Check hasConsented()
+    2. If no consent → Show consent UI → User grants consent
+    3. Persist result → Call ConsentManager.requestConsent()
+    4. Only then initialize telemetry SDKs and flush queued events
+    5. Subscribe to onConsentChanged() for dynamic enable/disable
+    ```
 - **Regional Compliance**: Handle GDPR, CCPA, and other regional requirements
 - **Transparency**: Clear disclosure of all data practices
 

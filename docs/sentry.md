@@ -7,7 +7,7 @@ This project uses @sentry/react-native with the Expo plugin (@sentry/react-nativ
 Required environment variables in CI/Build
 
 - SENTRY_ENV - e.g. `production`, `staging`, `development`. This maps to Sentry "environment" and helps group events by deployment environment.
-- SENTRY_RELEASE - the release identifier (recommended: the app version or a CI build id). Example: `1.2.3` or `my-app@1.2.3+build.1234`.
+- SENTRY_RELEASE - the release identifier (recommended: the app version or a CI build id). Example: `1.2.3` or `app@1.2.3+123-abc1234`.
 
 How this repo uses them
 
