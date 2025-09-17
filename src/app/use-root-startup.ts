@@ -102,7 +102,8 @@ function startRootInitialization(
       applyRTLIfNeeded?.();
       setIsI18nReady(true);
     }
-
+    // Additional safety: ensure component still mounted before creating service
+    if (!isMounted) return;
     // NOTE: There's a race between i18n initialization and showing the
     // permission prompt. Only call requestPermissions when i18n init
     // succeeded so the prompt can show localized strings.
