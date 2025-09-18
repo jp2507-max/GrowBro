@@ -1707,7 +1707,8 @@ BEGIN
     body,
     data,
     deep_link,
-    created_at
+    created_at,
+    created_by
   ) VALUES (
     (SELECT user_id FROM posts WHERE id = NEW.post_id),
     'community.reply',
@@ -1718,7 +1719,8 @@ BEGIN
       'reply_id', NEW.id
     ),
     'https://growbro.app/post/' || NEW.post_id,
-    NOW()
+    NOW(),
+    auth.uid()
   );
 
   RETURN NEW;
@@ -1738,6 +1740,7 @@ CREATE TRIGGER post_reply_notification
 CREATE TABLE notification_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
+  created_by UUID NOT NULL,
   type TEXT NOT NULL,
   title TEXT NOT NULL,
   body TEXT NOT NULL,
@@ -1755,6 +1758,11 @@ ALTER TABLE notification_requests ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can read own notification requests"
   ON notification_requests FOR SELECT
   USING (auth.uid() = user_id);
+
+-- Allow end users to queue notifications via triggers
+CREATE POLICY "Users can queue notification requests"
+  ON notification_requests FOR INSERT
+  WITH CHECK (auth.uid() = created_by);
 
 -- Allow service role to process notifications
 CREATE POLICY "Service role can manage notification requests"
