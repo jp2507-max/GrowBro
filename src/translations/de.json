@@ -20,6 +20,82 @@
     "cancel": "Abbrechen",
     "ok": "OK"
   },
+  "consent": {
+    "accept_all": "Alle akzeptieren",
+    "aiTraining": {
+      "impact": "Aus: Diagnose funktioniert weiterhin; keine Bilder im Trainingspool. Rechtsgrundlage: Einwilligung; Aufbewahrung: 365T",
+      "subtitle": "Erlaube die Nutzung deiner Bilder zur Modellverbesserung",
+      "title": "KI-Trainingsbilder"
+    },
+    "analytics": {
+      "impact": "Aus: Playbook-Verbesserungsanalytik deaktiviert. Rechtsgrundlage: Einwilligung; Aufbewahrung: 180T aggregiert",
+      "infoBody": "Anonyme Nutzung der Playbooks hilft uns Zeitpläne und KI-Empfehlungen zu verfeinern.",
+      "infoTitle": "Playbook-Analytik",
+      "subtitle": "Hilf Playbooks & KI-Vorschläge zu verbessern",
+      "title": "Playbook-Analytik"
+    },
+    "crashDiagnostics": {
+      "impact": "Aus: keine Absturzberichte werden gesendet. Rechtsgrundlage: Einwilligung; Aufbewahrung: 180T",
+      "subtitle": "Minimierte Absturzberichte senden",
+      "title": "Absturzdiagnostik"
+    },
+    "crashReporting": {
+      "impact": "Aus: keine Absturzdiagnostik gesendet. Rechtsgrundlage: Einwilligung; Aufbewahrung: 90T aggregiert",
+      "infoBody": "Absturzdiagnostik hilft uns Stabilitätsprobleme schneller zu beheben. Identifizierende Daten werden soweit möglich entfernt.",
+      "infoTitle": "Absturzberichte",
+      "subtitle": "Minimierte Absturzdiagnostik senden",
+      "title": "Absturzberichte"
+    },
+    "experiments": {
+      "impact": "Aus: keine A/B-Tests; Feature-Rollouts für dich deaktiviert. Rechtsgrundlage: Einwilligung",
+      "subtitle": "A/B-Tests und Flags nach Einwilligung aktivieren",
+      "title": "Experimente / Feature-Flags"
+    },
+    "first_run_title": "Deine Datenschutzwahl",
+    "getStarted": "Los geht's",
+    "lastUpdated": "Zuletzt aktualisiert: {{date}}",
+    "optOutAll": "Alles abwählen",
+    "optOutError": {
+      "message": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
+      "title": "Widerruf fehlgeschlagen"
+    },
+    "optOutSubtitle": "Hier kannst du bereits erteilte Einwilligungen widerrufen.",
+    "optOutSuccess": {
+      "message": "Analyse und Telemetrie wurden deaktiviert.",
+      "title": "Alle Einwilligungen widerrufen"
+    },
+    "optOutTitle": "Tracking widerrufen",
+    "personalized": {
+      "impact": "Aus: Berichte bleiben vollständig anonym. Rechtsgrundlage: Einwilligung; Aufbewahrung: 30T",
+      "infoBody": "Ermöglicht Pseudonyme für bessere Nachvollziehbarkeit. Keine direkten Personendaten.",
+      "infoTitle": "Personalisierte Diagnostik",
+      "subtitle": "Gehashte Kennungen in Berichte aufnehmen",
+      "title": "Personalisierte Diagnostik"
+    },
+    "quickOptOut": {
+      "description": "Alle optionalen Datenerfassungen sofort deaktivieren. Technisch notwendige Daten werden nicht erhoben.",
+      "title": "Schneller Widerruf"
+    },
+    "reject_all": "Alle ablehnen",
+    "save": "Speichern",
+    "sessionReplay": {
+      "impact": "Aus: keine Interaktionsaufzeichnungen. Rechtsgrundlage: Einwilligung; Aufbewahrung: 30T",
+      "infoBody": "Replay hilft komplexe UI-Probleme zu diagnostizieren. Sensible Felder werden maskiert.",
+      "infoTitle": "Session Replay",
+      "subtitle": "Anonymisierte Interaktionen erfassen",
+      "title": "Session Replay"
+    },
+    "settingsSubtitle": "Verwalte deine Datenerfassungs-Präferenzen.",
+    "settingsTitle": "Datenschutzeinstellungen",
+    "telemetry": {
+      "impact": "Aus: keine Nutzungsanalysen; Leistungsmetriken bleiben lokal. Rechtsgrundlage: Einwilligung; Aufbewahrung: 90T aggregiert",
+      "infoBody": "Telemetrie hilft uns zu verstehen, wie Funktionen genutzt werden, um Zuverlässigkeit zu verbessern. Wir minimieren und aggregieren Daten.",
+      "infoTitle": "Telemetrie / Analytik",
+      "subtitle": "Nutzungsanalysen nach Einwilligung erlauben",
+      "title": "Telemetrie / Analytik"
+    },
+    "title": "Datenschutzoptionen"
+  },
   "diagnostics": {
     "avg_payload": "Durchschn. Payload — {{operation}}: {{bytes}} B",
     "checkpoint_age_ms": "Checkpoint-Alter (ms)",
@@ -52,6 +128,8 @@
       "subtitle": "Hilf uns, Fehler zu beheben, indem du Absturzberichte sendest",
       "title": "Absturzberichte"
     },
+    "deleteAccount": "Mein Konto löschen",
+    "exportData": "Meine Daten exportieren",
     "lastUpdated": "Zuletzt aktualisiert: {{date}}",
     "personalized": {
       "body": "Dies umfasst IP-Adressen, Benutzer-IDs und andere identifizierende Informationen, die uns helfen, Fehlerberichte und Analysen zu verbessern. Diese Daten werden gemäß unserer Datenschutzerklärung verarbeitet.",

@@ -59,6 +59,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: false,
   },
+  global: {
+    headers: {
+      'x-gdpr-compliant': 'true',
+    },
+  },
   realtime: {
     params: {
       eventsPerSecond: 10,

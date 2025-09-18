@@ -120,7 +120,7 @@ Here is a simple example of how a component should be written using :
 ```tsx
 import * as React from 'react';
 
-import { Text, View, Image, SavaAreaView } from '@/components/ui';
+import { Text, View, Image, SafeAreaView } from '@/components/ui';
 
 // Props should be defined in the top of the component
 type Props = {
@@ -134,9 +134,14 @@ export function Title({ text }: Props) {
       <View className="h-[2px] flex-1 bg-neutral-300" />
 
       <Image
-        source={require('@assets/images/demo.png')}
+        // Use a documented import alias or a relative path to assets. In this repo
+        // the alias `@/assets` isn't guaranteed in all setups, so prefer a
+        // relative path from the file where the component lives, for example:
+        source={require('../../assets/images/demo.png')}
         style={{ width: 24, height: 24 }}
-        contentFit="contain"
+        // `contentFit` is supported by `expo-image`. If `Image` here is a
+        // re-export of `expo-image` then `contentFit` can be used. Otherwise
+        // remove it or use `resizeMode` for the native Image component.
       />
     </View>
   );

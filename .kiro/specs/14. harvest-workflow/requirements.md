@@ -160,7 +160,11 @@ The Harvest Workflow feature enables home cannabis growers to systematically tra
 3. WHEN pushing changes THEN the system SHALL follow order: created → updated → deleted with last_pulled_at checkpoint
 4. WHEN conflicts occur THEN the system SHALL use Last-Write-Wins by server updated_at timestamp
 5. WHEN conflicts are detected THEN the system SHALL mark row conflict_seen=true and show "Updated elsewhere — review changes"
-6. WHEN sync operations occur THEN the system SHALL capture telemetry for sync duration, checkpoint age, queued mutations, and rejection rate
+6. WHEN sync operations occur AND telemetry is explicitly enabled THEN the system SHALL capture telemetry for sync duration, checkpoint age, queued mutations, and rejection rate
+7. WHEN telemetry is captured THEN the system SHALL apply per-event PII minimization by scrubbing user identifiers, plant names, and location data
+8. WHEN telemetry settings are accessed THEN the system SHALL provide clear opt-in/opt-out toggle with documented data purpose for improving sync reliability
+9. WHEN users are in EU regions THEN the system SHALL disable telemetry by default and require explicit, revocable opt-in consent
+10. WHEN telemetry data is stored THEN the system SHALL enforce 90-day retention policy with automatic purge on opt-out or expiry
 
 ### Requirement 13
 

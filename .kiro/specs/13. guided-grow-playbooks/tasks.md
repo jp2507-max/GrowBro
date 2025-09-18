@@ -8,7 +8,7 @@
 - **Offline-First**: All writes through WatermelonDB, all sync through synchronize(), flight-mode E2E required
 - **Performance**: FlashList v2 targeting 60 FPS for 1k+ items in release builds
 - **Accessibility**: 44pt (iOS) / 48dp (Android) minimum touch targets with automated checks
-- **Analytics**: Structured events for all key operations with health monitoring
+- **Analytics**: Structured events for all key operations with health monitoring — require opt-in, no PII, rotate identifiers, and store data regionally
 
 ## Suggested Implementation Sequence
 

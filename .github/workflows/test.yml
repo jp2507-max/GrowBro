@@ -32,7 +32,7 @@ jobs:
 
     steps:
       - name: 📦 Checkout project repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
           fetch-depth: 0
 
@@ -43,7 +43,7 @@ jobs:
         run: pnpm run test:ci
 
       - name: Jest Coverage Comment
-        uses: MishaKav/jest-coverage-comment@main
+        uses: MishaKav/jest-coverage-comment@aa3935cf9ee61efc40d9e47dcc8a523a49a70b96
         if: (success() || failure()) && github.event_name == 'pull_request'
         with:
           coverage-summary-path: ./coverage/coverage-summary.json
@@ -55,3 +55,13 @@ jobs:
           coverage-title: 👀 Tests Details
           coverage-path: ./coverage/coverage.txt
           report-only-changed-files: true
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: coverage
+          path: |
+            coverage/coverage-summary.json
+            coverage/jest-junit.xml
+            coverage/coverage.txt

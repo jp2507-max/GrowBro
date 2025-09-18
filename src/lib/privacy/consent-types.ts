@@ -1,0 +1,51 @@
+export type ConsentPurpose =
+  | 'telemetry'
+  | 'experiments'
+  | 'aiTraining'
+  | 'crashDiagnostics';
+
+export const LAWFUL_BASIS = {
+  CONSENT: 'consent-6.1.a',
+  LEGITIMATE_INTERESTS: 'legitimate-interests-6.1.f',
+} as const;
+
+export type LawfulBasis = (typeof LAWFUL_BASIS)[keyof typeof LAWFUL_BASIS];
+
+export const LAWFUL_BASIS_BY_PURPOSE: Record<ConsentPurpose, LawfulBasis> = {
+  telemetry: LAWFUL_BASIS.CONSENT,
+  experiments: LAWFUL_BASIS.CONSENT,
+  aiTraining: LAWFUL_BASIS.CONSENT,
+  crashDiagnostics: LAWFUL_BASIS.CONSENT,
+};
+
+export type ConsentMetadata = {
+  uiSurface: 'first-run' | 'settings' | 'feature-prompt';
+  policyVersion: string;
+  controllerIdentity: string;
+  lawfulBasis: LawfulBasis;
+  justificationId: string;
+  region: string;
+};
+
+export type ConsentState = {
+  telemetry: boolean;
+  experiments: boolean;
+  aiTraining: boolean;
+  crashDiagnostics: boolean;
+  version: string;
+  timestamp: string; // ISO string
+  locale: string;
+};
+
+export type ConsentAuditLog = {
+  id: string;
+  action: 'grant' | 'withdraw' | 'update';
+  purpose: ConsentPurpose;
+  timestamp: string; // ISO
+  metadata: ConsentMetadata;
+};
+
+export type ValidationResult = {
+  isValid: boolean;
+  reasons?: string[];
+};
