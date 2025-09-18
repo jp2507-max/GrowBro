@@ -806,6 +806,53 @@ interface NotificationMetrics {
 }
 ```
 
+> Implementation note: all metric emission points MUST gate through a runtime
+> consent check and a policy-configured global kill-switch. The examples below
+> show a minimal local helper called `TelemetryGate` that centralizes the
+> decision logic. Telemetry defaults to disabled until the user explicitly
+> opts in; if consent is revoked the gate must immediately stop further
+> emissions (no backlog replay).
+
+```typescript
+// TelemetryGate: central runtime guard for all telemetry emissions
+const TelemetryGate = {
+  // Read runtime user consent (async source: storage, state, etc.)
+  async hasUserConsent(): Promise<boolean> {
+    // Implement using your persisted privacy settings (AsyncStorage, MMKV, etc.)
+    // Example: return (await Settings.get('telemetry_consent')) === true;
+    return false; // safe default: disabled
+  },
+
+  // Read a policy-configured global kill-switch (server-driven config)
+  // This should be fetched at startup and refreshed periodically.
+  async isGlobalKillSwitchActive(): Promise<boolean> {
+    // Implement using remote config / feature flagging service
+    // Example: return (await RemoteConfig.get('telemetry_kill_switch')) === true;
+    return true; // safe default: kill-switch ON until config says otherwise
+  },
+
+  // Combined decision: allow emission only when consent is granted AND kill-switch is off
+  async canEmit(): Promise<boolean> {
+    const [consent, killSwitch] = await Promise.all([
+      this.hasUserConsent(),
+      this.isGlobalKillSwitchActive(),
+    ]);
+    return Boolean(consent) && !Boolean(killSwitch);
+  },
+
+  // Helper to pseudonymize identifiers before sending (hashing example)
+  // Always hash/pseudonymize any identifier (user id, message id, token id)
+  hashIdentifier(id: string): string {
+    // Use a stable one-way hash; do NOT include raw PII in telemetry payloads.
+    // Example placeholder: return sha256(id) or HMAC with app secret.
+    return `hashed_${id}`;
+  },
+};
+```
+
+Note: identifiers included in metrics (message_id, user_id, token identifiers)
+MUST be hashed or pseudonymized before inclusion in telemetry payloads.
+
 This design provides a comprehensive, production-ready notification system that handles the complexity of modern mobile notification requirements while maintaining the offline-first architecture of GrowBro.
 
 ## Platform-Specific Constraints & Implementation Details
@@ -1243,20 +1290,29 @@ class AnalyticsService {
     messageId: string,
     source: 'push' | 'in-app'
   ): Promise<void> {
-    // This is reliably trackable on both platforms
-    await this.analytics.track('notification_opened', {
-      message_id: messageId,
+    // Guard emission with consent + kill-switch. Abort early when not allowed.
+    if (!(await TelemetryGate.canEmit())) return;
+
+    // Always pseudonymize identifiers before sending
+    const payload = {
+      message_id: TelemetryGate.hashIdentifier(messageId),
       source,
       platform: Platform.OS,
       timestamp: Date.now(),
-    });
+    };
+
+    await this.analytics.track('notification_opened', payload);
   }
 
   async trackDelivery(messageId: string): Promise<void> {
     // Limited tracking capability - document expectations
+    if (!(await TelemetryGate.canEmit())) return;
+
+    const hashedId = TelemetryGate.hashIdentifier(messageId);
+
     if (Platform.OS === 'android') {
       // Requires FCM BigQuery export setup
-      await this.trackAndroidDelivery(messageId);
+      await this.trackAndroidDelivery(hashedId);
     } else {
       // iOS: No per-message delivery receipts
       // Use Apple Push Console for aggregate metrics

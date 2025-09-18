@@ -74,6 +74,16 @@ export class TelemetryClient {
 
   private flushing = false;
 
+  // Promise representing the currently running flush (if any). Exposed so
+  // callers can await an in-flight flush instead of returning early.
+  private inFlightFlush: Promise<void> | null = null;
+
+  // When events arrive while a flush is active, we set this flag so the
+  // running flush can schedule a follow-up run after it completes. This
+  // guarantees the queue will be drained eventually instead of leaving the
+  // last burst of events buffered indefinitely.
+  private flushRequested = false;
+
   private readonly sdkName = 'telemetry';
 
   constructor(options?: TelemetryClientOptions) {
@@ -131,43 +141,70 @@ export class TelemetryClient {
   }
 
   async flush(): Promise<void> {
-    if (this.flushing) return;
-
-    this.flushing = true;
-    try {
-      // Simulate sequential delivery with rate limiting (max 5 events/sec)
-      const throttleMs = 200;
-      while (this.buffer.length > 0) {
-        // Peek at head without removing so we only update accounting
-        // after a successful delivery. This avoids double-counting when
-        // delivery is aborted due to missing consent or SDK blocking.
-        const next = this.buffer[0] as Buffered;
-        const requiredConsent = this.getRequiredConsentForEvent(
-          next.event.name
-        );
-
-        // Check both required consent and SDK gate. If delivery is not
-        // allowed, abort and leave the queue and bufferBytes intact.
-        if (
-          !this.hasRequiredConsent(requiredConsent) ||
-          !SDKGate.isSDKAllowed(this.sdkName)
-        ) {
-          break;
-        }
-
-        // Perform the send. Only remove from queue and adjust
-        // bufferBytes after a successful delivery to keep accounting
-        // consistent.
-        // No real network send in minimal skeleton.
-        await new Promise((r) => setTimeout(r, throttleMs));
-
-        // After successful send, remove from the queue and update size
-        const removed = this.buffer.shift() as Buffered;
-        this.bufferBytes -= removed.size;
-      }
-    } finally {
-      this.flushing = false;
+    // NOTE (P1): If a flush is already in progress, mark that another flush
+    // was requested and return the existing in-flight promise. This ensures
+    // callers get a promise they can await and that we will run a follow-up
+    // flush after the current one finishes so newly enqueued events are not
+    // left permanently buffered.
+    if (this.flushing) {
+      this.flushRequested = true;
+      return this.inFlightFlush ?? Promise.resolve();
     }
+
+    // Create and store the in-flight promise so concurrent callers can await
+    // it instead of returning early. The promise will chain a follow-up
+    // flush when needed.
+    this.flushing = true;
+    this.inFlightFlush = (async () => {
+      try {
+        // Simulate sequential delivery with rate limiting (max 5 events/sec)
+        const throttleMs = 200;
+        while (this.buffer.length > 0) {
+          // Peek at head without removing so we only update accounting
+          // after a successful delivery. This avoids double-counting when
+          // delivery is aborted due to missing consent or SDK blocking.
+          const next = this.buffer[0] as Buffered;
+          const requiredConsent = this.getRequiredConsentForEvent(
+            next.event.name
+          );
+
+          // Check both required consent and SDK gate. If delivery is not
+          // allowed, abort and leave the queue and bufferBytes intact.
+          if (
+            !this.hasRequiredConsent(requiredConsent) ||
+            !SDKGate.isSDKAllowed(this.sdkName)
+          ) {
+            break;
+          }
+
+          // Perform the send. Only remove from queue and adjust
+          // bufferBytes after a successful delivery to keep accounting
+          // consistent.
+          // No real network send in minimal skeleton.
+          await new Promise((r) => setTimeout(r, throttleMs));
+
+          // After successful send, remove from the queue and update size
+          const removed = this.buffer.shift() as Buffered;
+          this.bufferBytes -= removed.size;
+        }
+      } finally {
+        this.flushing = false;
+      }
+    })();
+
+    try {
+      await this.inFlightFlush;
+    } finally {
+      // Clear stored in-flight promise and run another flush if requested
+      // while the previous run was active.
+      this.inFlightFlush = null;
+      if (this.flushRequested) {
+        this.flushRequested = false;
+        // Schedule a follow-up flush; callers may await this new promise.
+        await this.flush();
+      }
+    }
+    return;
   }
 
   async clearQueue(): Promise<void> {
@@ -236,6 +273,9 @@ export class TelemetryClient {
     }
     this.buffer.push({ event, enqueuedAt: now, size });
     this.bufferBytes += size;
+    // If we enqueue while a flush is active, ensure a follow-up flush
+    // is scheduled so newly buffered events will be delivered.
+    if (this.flushing) this.flushRequested = true;
   }
 
   private dropExpired(nowMs: number): void {
