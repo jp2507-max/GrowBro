@@ -24,7 +24,7 @@ type Props = {
 type ToggleRowProps = {
   title: string;
   subtitle: string;
-  value: boolean;
+  checked: boolean;
   onChange: (value: boolean) => void;
   testID: string;
 };
@@ -32,7 +32,7 @@ type ToggleRowProps = {
 function ToggleRow({
   title,
   subtitle,
-  value,
+  checked,
   onChange,
   testID,
 }: ToggleRowProps) {
@@ -50,9 +50,10 @@ function ToggleRow({
         </Text>
       </View>
       <Switch
-        value={value}
-        onValueChange={onChange}
+        checked={checked}
+        onChange={onChange}
         testID={`${testID}-switch`}
+        accessibilityLabel={title}
       />
     </View>
   );
@@ -339,7 +340,7 @@ function ConsentSections(props: {
       <ToggleRow
         title={translate('consent.telemetry.title')}
         subtitle={translate('consent.telemetry.subtitle')}
-        value={telemetry}
+        checked={telemetry}
         onChange={setTelemetry}
         testID="toggle-telemetry"
       />
@@ -349,7 +350,7 @@ function ConsentSections(props: {
       <ToggleRow
         title={translate('consent.experiments.title')}
         subtitle={translate('consent.experiments.subtitle')}
-        value={experiments}
+        checked={experiments}
         onChange={setExperiments}
         testID="toggle-experiments"
       />
@@ -359,7 +360,7 @@ function ConsentSections(props: {
       <ToggleRow
         title={translate('consent.aiTraining.title')}
         subtitle={translate('consent.aiTraining.subtitle')}
-        value={aiTraining}
+        checked={aiTraining}
         onChange={setAiTraining}
         testID="toggle-aiTraining"
       />
@@ -369,7 +370,7 @@ function ConsentSections(props: {
       <ToggleRow
         title={translate('consent.crashDiagnostics.title')}
         subtitle={translate('consent.crashDiagnostics.subtitle')}
-        value={crashDiagnostics}
+        checked={crashDiagnostics}
         onChange={setCrashDiagnostics}
         testID="toggle-crashDiagnostics"
       />

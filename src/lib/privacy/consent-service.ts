@@ -77,6 +77,61 @@ export class ConsentServiceImpl {
     this.emit(next);
   }
 
+  /**
+   * Atomically set multiple consents in a single read-modify-write.
+   * This avoids the race where multiple concurrent setConsent calls
+   * would each read the same snapshot and overwrite each other.
+   */
+  async setConsents(
+    consents: Partial<Record<ConsentPurpose, boolean>>,
+    metadata?: ConsentMetadata
+  ): Promise<void> {
+    const current = await this.getConsents();
+    // Build the new state by applying provided consent changes
+    const next: ConsentState = {
+      ...current,
+      ...consents,
+      version: CURRENT_CONSENT_VERSION,
+      timestamp: nowIso(),
+      locale: getLocale(),
+    };
+
+    // Persist once
+    setItem(CONSENT_KEY, next);
+
+    // Append audit entries for each purpose that changed
+    const entries: {
+      action: 'grant' | 'withdraw';
+      purpose: ConsentPurpose;
+      metadata: ConsentMetadata;
+    }[] = [];
+
+    for (const purpose of Object.keys(consents) as ConsentPurpose[]) {
+      const newVal = consents[purpose];
+      // Only audit explicit boolean changes
+      if (typeof newVal === 'boolean') {
+        entries.push({
+          action: newVal ? 'grant' : 'withdraw',
+          purpose,
+          metadata: metadata ?? this.defaultMetadata(purpose),
+        });
+      }
+    }
+
+    for (const e of entries) {
+      // appendAudit is async but we intentionally await each entry so tests
+      // and callers can observe audit rows after this method completes.
+      await this.appendAudit({
+        action: e.action,
+        purpose: e.purpose,
+        metadata: e.metadata,
+      });
+    }
+
+    // Emit the new consolidated state once
+    this.emit(next);
+  }
+
   async withdrawConsent(
     purpose: ConsentPurpose,
     reason?: string

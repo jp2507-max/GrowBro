@@ -156,10 +156,16 @@ function persistConsents(
     justificationId: 'POL-GBR-2025-001',
     region: 'EU',
   } as const;
-  void ConsentService.setConsent('telemetry', c.telemetry, meta);
-  void ConsentService.setConsent('experiments', c.experiments, meta);
-  void ConsentService.setConsent('aiTraining', c.aiTraining, meta);
-  void ConsentService.setConsent('crashDiagnostics', c.crashDiagnostics, meta);
+
+  void ConsentService.setConsents(
+    {
+      telemetry: c.telemetry,
+      experiments: c.experiments,
+      aiTraining: c.aiTraining,
+      crashDiagnostics: c.crashDiagnostics,
+    },
+    meta
+  );
   setPrivacyConsent({
     analytics: c.telemetry,
     crashReporting: c.crashDiagnostics,
