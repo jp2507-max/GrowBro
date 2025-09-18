@@ -16,15 +16,20 @@ description: 'Setup  Node + PNPM + Install Dependencies'
 runs:
   using: 'composite'
   steps:
-    - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+    - uses: actions/setup-node@v4
       with:
         node-version: 20
         cache: 'pnpm'
         cache-dependency-path: 'pnpm-lock.yaml'
-    - uses: pnpm/action-setup@36de12bed180fa130ed56a35e7344f2fa7a820ab
+    - uses: pnpm/action-setup@v4
       with:
         run_install: false
-        version: 10.15.0
+        # Use Node 20-compatible pnpm/action-setup v4 (tags auto-update minor/patch)
+        # NOTE: Using a tag here is acceptable since upstream maintains v4 for Node20.
+        # If you prefer pinning to a commit SHA, replace `v4` with the latest commit for v4.
+        # See: https://github.com/pnpm/action-setup
+        # Also align PNPM version with package.json `packageManager` field
+        version: 10.17.0
 
     - name: 📦 Install Project Dependencies
       run: pnpm install --frozen-lockfile

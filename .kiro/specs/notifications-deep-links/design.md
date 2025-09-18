@@ -1531,126 +1531,6 @@ async function sendToDevice(
   }
 }
 
-  <!-- REVIEW NOTES (lines ~1388-1511):
-  Summary
-  -------
-  - The current implementation correctly inspects the immediate `/push/send`
-    response. However, for Expo the authoritative per-device delivery result
-    often arrives later via the receipts endpoint. Relying solely on the send
-    response risks missing revocations like `DeviceNotRegistered` which are
-    surfaced in receipts. Add a receipts follow-up (preferred: background job)
-    and make token deactivation idempotent, auditable, and performed with the
-    service role key.
-
-  Actionable recommendations
-  -------------------------
-  1. Collect ticket IDs from the `parsedBody` when Expo returns tickets
-     (tickets array with `{ id, status }` entries) and correlate them to the
-     device/token and the `message_id` you included in the payload. Store the
-     mapping in the DB (e.g., `expo_ticket_map(ticket_id, token, message_id)`)
-     or enqueue it in a short-lived receipts job. This is necessary so a
-     later receipts call can map a failing ticket back to a token to deactivate.
-
-  2. Implement a receipts poller as a background job / cron / Edge Function
-     that runs shortly after send (or consumes an enqueue) and calls
-     `POST https://exp.host/--/api/v2/push/getReceipts` with the ticket ids.
-     The poller should:
-       - Be tolerant to timeouts (configurable, e.g. EXPO_RECEIPTS_TIMEOUT_MS, default 10000ms)
-       - Be idempotent (check and skip already-deactivated ticket ids)
-       - Use the Supabase service role key to update `push_tokens` and
-         `notification_queue` safely inside a DB transaction
-       - Persist per-token error details (but redact message text unless consented)
-
-  3. Token deactivation policy
-     - Deactivation must be idempotent and record a `deactivated_at` and
-       `deactivation_reason` (store canonical error code when available).
-     - Use a service-role credential (never end-user JWT) when mutating token state.
-     - Gracefully handle DB errors and surface them in a telemetry/error table
-       rather than throwing from the receipts job.
-
-  4. Update `notification_queue` on per-token failures
-     - When a receipt indicates a permanent failure for a token, update the
-       corresponding `notification_queue` row(s) to `status = 'failed'` and
-       add a short `error_message` (use hashed message ids or structured codes).
-     - Emit telemetry only when user consent permits; otherwise store minimal
-       aggregated counters.
-
-  5. Error detection improvements
-     - Read the receipts payload shape: receipts typically look like
-       `{ <ticketId>: { status: 'ok'|'error', message?: string, details?: { error: 'DeviceNotRegistered' }}}`.
-     - Prefer using exact `receipt.status === 'error'` and `details?.error` or
-       `message` fields. Fall back to regex only as a last resort.
-
-  6. Configuration & timeouts
-     - Make timeouts and retry/backoff parameters configurable via env
-       (e.g., PUSH_SEND_TIMEOUT_MS, EXPO_RECEIPTS_TIMEOUT_MS, RECEIPTS_RETRY_DELAY_MS).
-     - Consider a short synchronous receipts fetch only for critical flows, but
-       prefer async background processing to avoid increasing user-facing latency.
-
-  7. Race conditions & safety
-     - Ensure single-writer guarantees or transactions when marking tokens
-       inactive and updating queue rows to avoid conflicting concurrent writes.
-     - If possible, use a DB-level flag or lease to guarantee only one receipts
-       worker processes a ticket id at a time.
-
-  Minimal receipts helper (edge/cron) — committable sketch
-
-    // Helper: fetch receipts from Expo (10s timeout default)
-    async function fetchExpoReceipts(ticketIds: string[], timeoutMs = 10000) {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), timeoutMs);
-      try {
-        const res = await fetch('https://exp.host/--/api/v2/push/getReceipts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ids: ticketIds }),
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error(`receipts_fetch_failed:${res.status}`);
-        return await res.json();
-      } finally {
-        clearTimeout(timeout);
-      }
-    }
-
-    // Receipts processing outline (run in a background worker):
-    // 1. Read pending ticket ids and correlate to tokens (expo_ticket_map)
-    // 2. Call fetchExpoReceipts(ticketIds)
-    // 3. For each receipt where receipt.status === 'error':
-    //      - use receipt.details?.error || receipt.message to get canonical code
-    //      - mark push_tokens.is_active = false, set deactivated_at, deactivation_reason
-    //      - update notification_queue rows -> status = 'failed' and append error info
-    //      - record an audit log row (service-only) for future debugging
-
-  Privacy and observability
-  -------------------------
-  - Never persist full message text or PII into logs/telemetry unless explicit
-    user consent exists. Use hashed message ids or aggregated counters for
-    telemetry. Store error codes (e.g., DeviceNotRegistered) and timestamps.
-  - Respect the project's telemetry gating: check consent before emitting any
-    analytics events for failed deliveries.
-
-  Risks & follow-ups
-  ------------------
-  - If you deactivate tokens synchronously inside the same request, you may
-    add latency to the send path. Prefer enqueueing receipts work for later
-    processing, especially for high fan-out sends.
-  - Ensure the receipts worker has access to a service-role credential and
-    runs with least privilege.
-  - Add a small DB migration/table (expo_ticket_map) or reuse notification_queue
-    to correlate tickets -> tokens if you don't already persist ticket ids.
-
-  Implementation checklist
-  ------------------------
-  - [ ] Persist ticket_id -> token (or message_id) mapping on send
-  - [ ] Create receipts worker/cron using service role
-  - [ ] Make timeouts/configs env-driven
-  - [ ] Mark tokens deactivated with reason and timestamp (idempotent)
-  - [ ] Update notification_queue rows and record audit logs
-  - [ ] Respect telemetry consent for any emission
-
-  End REVIEW NOTES -->
-
 function getChannelId(type: string): string {
   const channelMap = {
     'community.reply': 'community.interactions.v1',
@@ -1684,6 +1564,133 @@ function isNotificationAllowed(type: string, preferences: any): boolean {
   return typeMap[type] ?? true;
 }
 ```
+
+## REVIEW NOTES
+
+### Summary
+
+- The current implementation correctly inspects the immediate `/push/send`
+  response. However, for Expo the authoritative per-device delivery result
+  often arrives later via the receipts endpoint. Relying solely on the send
+  response risks missing revocations like `DeviceNotRegistered` which are
+  surfaced in receipts. Add a receipts follow-up (preferred: background job)
+  and make token deactivation idempotent, auditable, and performed with the
+  service role key.
+
+### Actionable recommendations
+
+1. Collect ticket IDs from the `parsedBody` when Expo returns tickets
+   (tickets array with `{ id, status }` entries) and correlate them to the
+   device/token and the `message_id` you included in the payload. Store the
+   mapping in the DB (e.g., `expo_ticket_map(ticket_id, token, message_id)`)
+   or enqueue it in a short-lived receipts job. This is necessary so a
+   later receipts call can map a failing ticket back to a token to deactivate.
+
+2. Implement a receipts poller as a background job / cron / Edge Function
+   that runs shortly after send (or consumes an enqueue) and calls
+   `POST https://exp.host/--/api/v2/push/getReceipts` with the ticket ids.
+   The poller should:
+
+   - Be tolerant to timeouts (configurable, e.g. EXPO_RECEIPTS_TIMEOUT_MS, default 10000ms)
+   - Be idempotent (check and skip already-deactivated ticket ids)
+   - Use the Supabase service role key to update `push_tokens` and
+     `notification_queue` safely inside a DB transaction
+   - Persist per-token error details (but redact message text unless consented)
+
+3. Token deactivation policy
+
+   - Deactivation must be idempotent and record a `deactivated_at` and
+     `deactivation_reason` (store canonical error code when available).
+   - Use a service-role credential (never end-user JWT) when mutating token state.
+   - Gracefully handle DB errors and surface them in a telemetry/error table
+     rather than throwing from the receipts job.
+
+4. Update `notification_queue` on per-token failures
+
+   - When a receipt indicates a permanent failure for a token, update the
+     corresponding `notification_queue` row(s) to `status = 'failed'` and
+     add a short `error_message` (use hashed message ids or structured codes).
+   - Emit telemetry only when user consent permits; otherwise store minimal
+     aggregated counters.
+
+5. Error detection improvements
+
+   - Read the receipts payload shape: receipts typically look like
+     `{ <ticketId>: { status: 'ok'|'error', message?: string, details?: { error: 'DeviceNotRegistered' }}}`.
+   - Prefer using exact `receipt.status === 'error'` and `details?.error` or
+     `message` fields. Fall back to regex only as a last resort.
+
+6. Configuration & timeouts
+
+   - Make timeouts and retry/backoff parameters configurable via env
+     (e.g., PUSH_SEND_TIMEOUT_MS, EXPO_RECEIPTS_TIMEOUT_MS, RECEIPTS_RETRY_DELAY_MS).
+   - Consider a short synchronous receipts fetch only for critical flows, but
+     prefer async background processing to avoid increasing user-facing latency.
+
+7. Race conditions & safety
+   - Ensure single-writer guarantees or transactions when marking tokens
+     inactive and updating queue rows to avoid conflicting concurrent writes.
+   - If possible, use a DB-level flag or lease to guarantee only one receipts
+     worker processes a ticket id at a time.
+
+### Minimal receipts helper (edge/cron) — committable sketch
+
+```typescript
+// Helper: fetch receipts from Expo (10s timeout default)
+async function fetchExpoReceipts(ticketIds: string[], timeoutMs = 10000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch('https://exp.host/--/api/v2/push/getReceipts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: ticketIds }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`receipts_fetch_failed:${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+```
+
+### Receipts processing outline
+
+1. Read pending ticket ids and correlate to tokens (expo_ticket_map)
+2. Call fetchExpoReceipts(ticketIds)
+3. For each receipt where receipt.status === 'error':
+   - use receipt.details?.error || receipt.message to get canonical code
+   - mark push_tokens.is_active = false, set deactivated_at, deactivation_reason
+   - update notification_queue rows -> status = 'failed' and append error info
+   - record an audit log row (service-only) for future debugging
+
+### Privacy and observability
+
+- Never persist full message text or PII into logs/telemetry unless explicit
+  user consent exists. Use hashed message ids or aggregated counters for
+  telemetry. Store error codes (e.g., DeviceNotRegistered) and timestamps.
+- Respect the project's telemetry gating: check consent before emitting any
+  analytics events for failed deliveries.
+
+### Risks & follow-ups
+
+- If you deactivate tokens synchronously inside the same request, you may
+  add latency to the send path. Prefer enqueueing receipts work for later
+  processing, especially for high fan-out sends.
+- Ensure the receipts worker has access to a service-role credential and
+  runs with least privilege.
+- Add a small DB migration/table (expo_ticket_map) or reuse notification_queue
+  to correlate tickets -> tokens if you don't already persist ticket ids.
+
+### Implementation checklist
+
+- [ ] Persist ticket_id -> token (or message_id) mapping on send
+- [ ] Create receipts worker/cron using service role
+- [ ] Make timeouts/configs env-driven
+- [ ] Mark tokens deactivated with reason and timestamp (idempotent)
+- [ ] Update notification_queue rows and record audit logs
+- [ ] Respect telemetry consent for any emission
 
 ### Database Trigger for Automatic Notifications
 

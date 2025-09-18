@@ -35,7 +35,14 @@ export class ConsentServiceImpl {
 
   getConsents(): Promise<ConsentState> {
     const stored = getItem<ConsentState>(CONSENT_KEY);
-    if (stored) return Promise.resolve(stored);
+    if (stored && stored.version === CURRENT_CONSENT_VERSION) {
+      return Promise.resolve(stored);
+    }
+    // Clear outdated consent data and create fresh defaults
+    if (stored && stored.version !== CURRENT_CONSENT_VERSION) {
+      // Note: We don't clear the audit log as it contains historical data
+      setItem(CONSENT_KEY, null);
+    }
     const fresh: ConsentState = {
       telemetry: false,
       experiments: false,
@@ -51,7 +58,7 @@ export class ConsentServiceImpl {
 
   hasConsent(purpose: ConsentPurpose): boolean {
     const state = getItem<ConsentState>(CONSENT_KEY);
-    if (!state) return false;
+    if (!state || state.version !== CURRENT_CONSENT_VERSION) return false;
     return state[purpose] === true;
   }
 
