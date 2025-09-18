@@ -427,6 +427,23 @@ CREATE POLICY "push_tokens_service_insert"
   USING (false)
   WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
 
+-- Service update policy: allow service role to UPDATE push_tokens (used by receipts
+-- processing to mark tokens inactive or to update deactivation metadata)
+CREATE POLICY "push_tokens_service_update"
+  ON public.push_tokens
+  FOR UPDATE
+  TO authenticated
+  USING (auth.jwt() ->> 'role' = 'service_role')
+  WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
+
+-- Service delete policy: allow service role to DELETE push_tokens (used by
+-- cleanup jobs or audits). DELETE does not support WITH CHECK.
+CREATE POLICY "push_tokens_service_delete"
+  ON public.push_tokens
+  FOR DELETE
+  TO authenticated
+  USING (auth.jwt() ->> 'role' = 'service_role');
+
 -- Notification queue for delivery tracking
 CREATE TABLE notification_queue (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -458,15 +475,27 @@ CREATE POLICY "notification_queue_service_insert"
   USING (auth.jwt() ->> 'role' = 'service_role')
   WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
 
--- By default, deny end-user inserts (no additional policy means inserts
--- are denied unless matched above). Consider adding a read policy that
--- limits SELECT to the service role as well to avoid exposing payloads:
---
--- CREATE POLICY "notification_queue_service_select"
---   ON public.notification_queue
---   FOR SELECT
---   TO authenticated
---   USING (auth.jwt() ->> 'role' = 'service_role');
+-- Allow service role to UPDATE queue entries for status transitions
+-- (pending->sent->delivered/opened/failed). This enables the service
+-- to update notification statuses after processing.
+CREATE POLICY "notification_queue_service_update"
+  ON public.notification_queue
+  FOR UPDATE
+  TO authenticated
+  USING (auth.jwt() ->> 'role' = 'service_role')
+  WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
+
+-- Allow service role to SELECT queue entries for status monitoring
+-- and selective payload reading. This restricts reads to the service
+-- role to avoid exposing sensitive payloads to end users.
+CREATE POLICY "notification_queue_service_select"
+  ON public.notification_queue
+  FOR SELECT
+  TO authenticated
+  USING (auth.jwt() ->> 'role' = 'service_role');
+
+-- By default, deny end-user inserts/updates/selects (no additional policies
+-- means operations are denied unless matched above).
 
 -- Payload review guidance:
 -- - Avoid storing secrets, auth tokens, or full external links containing
@@ -1016,8 +1045,17 @@ class DeepLinkValidator {
         return false;
       }
 
+      // For custom schemes, concatenate hostname and pathname for validation
+      // e.g., growbro://post/123 -> 'post/123' -> '/post/123'
+      let pathToValidate: string;
+      if (parsed.protocol === 'growbro:') {
+        pathToValidate = `/${parsed.hostname}${parsed.pathname}`;
+      } else {
+        pathToValidate = parsed.pathname;
+      }
+
       // Validate path pattern
-      if (!this.isAllowedPath(parsed.pathname)) {
+      if (!this.isAllowedPath(pathToValidate)) {
         return false;
       }
 

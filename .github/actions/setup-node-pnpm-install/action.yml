@@ -16,20 +16,27 @@ description: 'Setup  Node + PNPM + Install Dependencies'
 runs:
   using: 'composite'
   steps:
+    - uses: pnpm/action-setup@v4
+      with:
+        run_install: false
+        # Use Node 20-compatible pnpm/action-setup v4
+        version: 10.17.0
     - uses: actions/setup-node@v4
       with:
         node-version: 20
         cache: 'pnpm'
         cache-dependency-path: 'pnpm-lock.yaml'
-    - uses: pnpm/action-setup@v4
-      with:
-        run_install: false
-        # Use Node 20-compatible pnpm/action-setup v4 (tags auto-update minor/patch)
-        # NOTE: Using a tag here is acceptable since upstream maintains v4 for Node20.
-        # If you prefer pinning to a commit SHA, replace `v4` with the latest commit for v4.
-        # See: https://github.com/pnpm/action-setup
-        # Also align PNPM version with package.json `packageManager` field
-        version: 10.17.0
+
+    - name: ✅ Ensure pnpm is available (fallback)
+      # Some runners can fail to expose pnpm from pnpm/action-setup; install as a fallback
+      run: |
+        if ! command -v pnpm >/dev/null 2>&1; then
+          echo "pnpm not found in PATH — installing pnpm@10.17.0 globally as fallback"
+          npm install -g pnpm@10.17.0
+        else
+          echo "pnpm found: $(pnpm --version)"
+        fi
+      shell: bash
 
     - name: 📦 Install Project Dependencies
       run: pnpm install --frozen-lockfile
