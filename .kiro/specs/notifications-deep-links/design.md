@@ -1531,6 +1531,68 @@ async function sendToDevice(
   }
 }
 
+  <!-- REVIEW NOTES (lines ~1388-1511):
+  - Expo ticket vs receipts: Expo often returns "tickets" on the initial send and
+    definitive per-device errors (e.g., DeviceNotRegistered) appear in a
+    subsequent receipts call. The current code inspects the immediate response
+    body which is useful, but insufficient to reliably detect revoked/unregistered
+    tokens. Add a follow-up receipts fetch (see sketch below) or a background job
+    that polls receipts for ticket IDs returned by Expo, then deactivates tokens
+    and updates the notification queue accordingly.
+
+  - Suggested receipts helper (edge/cron): implement a short-lived task that
+    collects returned ticket IDs from `parsedBody` (when present), calls
+    `POST https://exp.host/--/api/v2/push/getReceipts` with those ids, and
+    processes any per-token errors. Keep the receipts fetch tolerant to timeouts
+    (10s) and idempotent (don't deactivate the same token more than once).
+
+  - Token deactivation: the comment currently points to `deactivateToken(token)`.
+    Make sure the real implementation:
+      * is idempotent,
+      * records a 'deactivated_at' timestamp and reason,
+      * is performed by a service role (not on behalf of the end-user JWT), and
+      * does not throw (or errors are caught and surfaced in result.errors).
+
+  - Error classification: widen the detection to include receipt payload shapes
+    (receipt.status === 'error', receipt.details?.error), and prefer exact
+    error code strings when available (e.g., 'DeviceNotRegistered'). Avoid
+    relying solely on regex matching of arbitrary strings.
+
+  - Observability & queue updates: when receipts indicate per-token failure,
+    update `notification_queue` row (status -> 'failed') and persist the
+    per-token errors for later debugging. Emit a telemetry event only if the
+    user consent allows it (respect privacy gating in design).
+
+  - Timeouts & retries: increase or parameterize `timeoutMs` for slower
+    networks or consider exponential backoff for transient network failures.
+
+  - Race conditions: if you deactivate tokens immediately in this function,
+    ensure there's no concurrent process that may re-activate a token or write
+    new rows for the same token. Prefer single writer logic or DB transactions.
+
+  - Security: calls that modify push token state should use the Supabase
+    service role key (not end-user JWT). For Edge Functions, store the service
+    key in an environment variable and restrict access.
+
+  Minimal receipts sketch (non-executable comment):
+
+    // After parsing `parsedBody` from /push/send:
+    const ticketIds = extractTicketIds(parsedBody); // collect ids
+    // enqueue or call receipts endpoint (background job preferred):
+    const receipts = await fetchExpoReceipts(ticketIds);
+    // receipts: { <ticketId>: { status: 'ok'|'error', message?: string, details?: {...} } }
+    for (const [id, receipt] of Object.entries(receipts)) {
+      if (receipt.status === 'error') {
+        // lookup token by ticketId or correlate using message_id in payload
+        // deactivate token and update notification_queue to 'failed'
+      }
+    }
+
+  - Privacy: never include full message text in telemetry or error logs unless
+    consent is present. Log minimal identifiers or hashed message ids.
+
+  End REVIEW NOTES -->
+
 function getChannelId(type: string): string {
   const channelMap = {
     'community.reply': 'community.interactions.v1',

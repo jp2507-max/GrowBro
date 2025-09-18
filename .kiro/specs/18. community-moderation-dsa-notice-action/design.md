@@ -732,20 +732,28 @@ class DSASubmissionCircuitBreaker {
     idempotencyKey: string
   ): Promise<SoRExportQueue> {
     // Atomic upsert: insert new row or return existing if conflict on statement_id
+    // Use a CTE + DO NOTHING pattern to avoid firing BEFORE UPDATE triggers
+    // when the row already exists. The INSERT returns the newly created row
+    // in the CTE; if nothing was inserted (conflict), fall back to selecting
+    // the existing row by statement_id. This returns either the new or
+    // existing row without performing an UPDATE.
     const result = await this.db.query(
       `
-      INSERT INTO sor_export_queue (
-        statement_id,
-        idempotency_key,
-        status,
-        attempts,
-        created_at
-      ) VALUES ($1, $2, 'pending', 0, $3)
-      ON CONFLICT (statement_id)
-      DO UPDATE SET
-        -- No-op update to return existing row without modification
-        statement_id = EXCLUDED.statement_id
-      RETURNING *
+      WITH inserted AS (
+        INSERT INTO sor_export_queue (
+          statement_id,
+          idempotency_key,
+          status,
+          attempts,
+          created_at
+        ) VALUES ($1, $2, 'pending', 0, $3)
+        ON CONFLICT (statement_id) DO NOTHING
+        RETURNING *
+      )
+      SELECT * FROM inserted
+      UNION ALL
+      SELECT * FROM sor_export_queue WHERE statement_id = $1
+      LIMIT 1
     `,
       [statement.id, idempotencyKey, new Date()]
     );
@@ -1048,10 +1056,27 @@ class DSASubmissionCircuitBreaker {
   private categorizeEvidenceType(
     reports: any[]
   ): 'text' | 'image' | 'video' | 'mixed' {
-    const types = reports.flatMap((r) => r.evidenceTypes || []);
-    const hasText = types.includes('text');
-    const hasImage = types.includes('image');
-    const hasVideo = types.includes('video');
+    // Collect and normalize evidence types defensively
+    const normalizedTypes: string[] = [];
+
+    for (const report of reports) {
+      if (report.evidenceTypes && Array.isArray(report.evidenceTypes)) {
+        for (const type of report.evidenceTypes) {
+          // Guard against null/undefined by skipping, or coerce to string and normalize
+          if (type != null) {
+            const normalizedType = String(type).toLowerCase().trim();
+            if (normalizedType) {
+              normalizedTypes.push(normalizedType);
+            }
+          }
+        }
+      }
+    }
+
+    // Check for presence of each evidence type using normalized values
+    const hasText = normalizedTypes.includes('text');
+    const hasImage = normalizedTypes.includes('image');
+    const hasVideo = normalizedTypes.includes('video');
 
     if (hasText && !hasImage && !hasVideo) return 'text';
     if (!hasText && hasImage && !hasVideo) return 'image';

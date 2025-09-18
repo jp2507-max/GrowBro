@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Switch } from 'react-native';
+import { View } from 'react-native';
 
-import { Button, Text, View } from '@/components/ui';
-import { translate } from '@/lib';
+import { Button, Switch, Text } from '@/components/ui';
 import type { TxKeyPath } from '@/lib/i18n/utils';
+import { translate } from '@/lib/i18n/utils';
 import { ConsentService } from '@/lib/privacy/consent-service';
 
 type ConsentDecisions = {
@@ -129,10 +129,14 @@ function useLoadConsents(
     ConsentService.getConsents()
       .then((c) => {
         if (!mounted) return;
-        setters.setTelemetry(!!c.telemetry);
-        setters.setExperiments(!!c.experiments);
-        setters.setAiTraining(!!c.aiTraining);
-        setters.setCrashDiagnostics(!!c.crashDiagnostics);
+        const consents = c ?? {};
+        setters.setTelemetry(!!consents.telemetry);
+        setters.setExperiments(!!consents.experiments);
+        setters.setAiTraining(!!consents.aiTraining);
+        setters.setCrashDiagnostics(!!consents.crashDiagnostics);
+      })
+      .catch((error) => {
+        console.error('Failed to load consents:', error);
       })
       .finally(() => {
         if (mounted) setLoaded(true);

@@ -55,28 +55,68 @@ function useSyncAndMetrics(): void {
   React.useEffect(() => {
     void registerBackgroundTask();
     const dispose = setupSyncTriggers();
-
     const start = Date.now();
-    const cleanup = registerNotificationMetrics();
 
-    // Only initialize analytics if user has consented
-    if (consentManager.hasConsented('analytics')) {
-      const coldStartTimer = setTimeout(() => {
-        void NoopAnalytics.track('perf_cold_start_ms', {
-          ms: Date.now() - start,
-        });
-      }, 0);
+    // IMPORTANT: registerNotificationMetrics installs listeners that emit
+    // telemetry via NoopAnalytics.track for notification events. These
+    // listeners must not be registered before the user has given analytics
+    // consent, otherwise an actual analytics client wired in place of
+    // NoopAnalytics would record events prior to opt-in. We subscribe to
+    // consent changes so listeners are added when consent is granted and
+    // removed again if consent is withdrawn during the app lifetime.
 
-      return () => {
-        clearTimeout(coldStartTimer);
-        cleanup();
-        dispose();
-      };
+    let cleanupNotificationMetrics: (() => void) | undefined;
+    let coldStartTimer: ReturnType<typeof setTimeout> | undefined;
+    let coldStartTracked = false; // ensure we track the cold start metric at most once
+
+    function registerMetricsOnce() {
+      if (!cleanupNotificationMetrics) {
+        cleanupNotificationMetrics = registerNotificationMetrics();
+      }
+      if (!coldStartTracked) {
+        coldStartTimer = setTimeout(() => {
+          void NoopAnalytics.track('perf_cold_start_ms', {
+            ms: Date.now() - start,
+          });
+          coldStartTracked = true;
+          coldStartTimer = undefined;
+        }, 0);
+      }
     }
 
-    // If no consent, just return cleanup functions
+    function unregisterMetrics() {
+      try {
+        cleanupNotificationMetrics?.();
+      } catch {}
+      cleanupNotificationMetrics = undefined;
+      if (coldStartTimer) {
+        clearTimeout(coldStartTimer);
+        coldStartTimer = undefined;
+      }
+    }
+
+    // Initialize based on current consent state
+    if (consentManager.hasConsented('analytics')) {
+      registerMetricsOnce();
+    }
+
+    // Subscribe to consent changes so we can add/remove listeners at runtime
+    const unsubscribe = consentManager.onConsentChanged(
+      'analytics',
+      (consented) => {
+        try {
+          if (consented) registerMetricsOnce();
+          else unregisterMetrics();
+        } catch {}
+      }
+    );
+
     return () => {
-      cleanup();
+      // cleanup subscription and any registered metrics/listeners
+      try {
+        unsubscribe();
+      } catch {}
+      unregisterMetrics();
       dispose();
     };
   }, []);
