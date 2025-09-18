@@ -155,42 +155,7 @@ export class TelemetryClient {
     // it instead of returning early. The promise will chain a follow-up
     // flush when needed.
     this.flushing = true;
-    this.inFlightFlush = (async () => {
-      try {
-        // Simulate sequential delivery with rate limiting (max 5 events/sec)
-        const throttleMs = 200;
-        while (this.buffer.length > 0) {
-          // Peek at head without removing so we only update accounting
-          // after a successful delivery. This avoids double-counting when
-          // delivery is aborted due to missing consent or SDK blocking.
-          const next = this.buffer[0] as Buffered;
-          const requiredConsent = this.getRequiredConsentForEvent(
-            next.event.name
-          );
-
-          // Check both required consent and SDK gate. If delivery is not
-          // allowed, abort and leave the queue and bufferBytes intact.
-          if (
-            !this.hasRequiredConsent(requiredConsent) ||
-            !SDKGate.isSDKAllowed(this.sdkName)
-          ) {
-            break;
-          }
-
-          // Perform the send. Only remove from queue and adjust
-          // bufferBytes after a successful delivery to keep accounting
-          // consistent.
-          // No real network send in minimal skeleton.
-          await new Promise((r) => setTimeout(r, throttleMs));
-
-          // After successful send, remove from the queue and update size
-          const removed = this.buffer.shift() as Buffered;
-          this.bufferBytes -= removed.size;
-        }
-      } finally {
-        this.flushing = false;
-      }
-    })();
+    this.inFlightFlush = this.runFlushLoop();
 
     try {
       await this.inFlightFlush;
@@ -205,6 +170,55 @@ export class TelemetryClient {
       }
     }
     return;
+  }
+
+  // Extracted flush loop to keep `flush()` concise and within line limits.
+  private async runFlushLoop(): Promise<void> {
+    try {
+      // Simulate sequential delivery with rate limiting (max 5 events/sec)
+      const throttleMs = 200;
+      while (this.buffer.length > 0) {
+        // Peek at head without removing so we only update accounting
+        // after a successful delivery. This avoids double-counting when
+        // delivery is aborted due to missing consent or SDK blocking.
+        const next = this.buffer[0] as Buffered;
+        const requiredConsent = this.getRequiredConsentForEvent(
+          next.event.name
+        );
+
+        // Check both required consent and SDK gate. If delivery is not
+        // allowed, abort and leave the queue and bufferBytes intact.
+        if (
+          !this.hasRequiredConsent(requiredConsent) ||
+          !SDKGate.isSDKAllowed(this.sdkName)
+        ) {
+          break;
+        }
+
+        // Perform the send. Only remove from queue and adjust
+        // bufferBytes after a successful delivery to keep accounting
+        // consistent.
+        // No real network send in minimal skeleton.
+        await new Promise((r) => setTimeout(r, throttleMs));
+
+        // After successful send, remove from the queue and update size
+        // Defensive check: the queue may be mutated concurrently by
+        // `clearQueue()` (or other callers) which resets `this.buffer` to
+        // an empty array and sets `this.bufferBytes = 0`. If that happens
+        // between the `await` above and this removal, `shift()` will
+        // return `undefined` and accessing `.size` would throw. To avoid
+        // crashing the in-flight flush, re-check the buffer length and
+        // bail out of the loop if the queue was cleared.
+        const removed = this.buffer.shift() as Buffered | undefined;
+        if (!removed) {
+          // Queue was cleared concurrently; nothing left to do.
+          break;
+        }
+        this.bufferBytes -= removed.size;
+      }
+    } finally {
+      this.flushing = false;
+    }
   }
 
   async clearQueue(): Promise<void> {
