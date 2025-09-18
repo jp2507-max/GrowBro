@@ -130,13 +130,16 @@ function useLoadConsents(
     ConsentService.getConsents()
       .then((c) => {
         if (!mounted) return;
-        const consents = c ?? {};
-        setters.setTelemetry(!!consents.telemetry);
-        setters.setExperiments(!!consents.experiments);
-        setters.setAiTraining(!!consents.aiTraining);
-        setters.setCrashDiagnostics(!!consents.crashDiagnostics);
+        // null-safe accessor: treat `c` as possibly undefined/null and
+        // coerce each key to a boolean.
+        const has = (k: string) => !!(c as any)?.[k];
+        setters.setTelemetry(has('telemetry'));
+        setters.setExperiments(has('experiments'));
+        setters.setAiTraining(has('aiTraining'));
+        setters.setCrashDiagnostics(has('crashDiagnostics'));
       })
       .catch((error) => {
+        // Follow project logging conventions: include context and the error
         console.error('Failed to load consents:', error);
       })
       .finally(() => {

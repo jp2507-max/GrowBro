@@ -271,6 +271,11 @@ interface RedactedSoR {
     scrubbingVersion: string; // Version of scrubbing algorithm used
     redactedFields: string[]; // List of all redacted fields for auditability
     environmentSaltVersion: string; // Version of salt used for pseudonymization
+    aggregationSuppression: {
+      reportCount: boolean; // Whether reportCount was suppressed due to k-anonymity
+      jurisdictionCount: boolean; // Whether jurisdictionCount was suppressed due to k-anonymity
+      k: number; // k-anonymity threshold used for suppression
+    };
   };
 }
 ```
