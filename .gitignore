@@ -23,7 +23,6 @@ expo-env.d.ts
 .env
 .env.development
 .env.production
-.env.staging
 .env.local
 .env.staging.local
 .env.production.local
@@ -31,6 +30,5 @@ expo-env.d.ts
 
 .codex/
 
-# Ignore MCP config stored by VS Code and Cursor
+# Ignore MCP config stored by VS Code
 .vscode/mcp.json
-.cursor/

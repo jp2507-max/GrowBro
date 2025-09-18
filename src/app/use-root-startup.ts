@@ -1,12 +1,9 @@
 import * as Localization from 'expo-localization';
 import React from 'react';
 
-import { retentionWorker, useSyncPrefs } from '@/lib';
+import { useSyncPrefs } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
 import { registerNotificationMetrics } from '@/lib/notification-metrics';
-import { consentManager } from '@/lib/privacy/consent-manager';
-import { setDeletionAdapter } from '@/lib/privacy/deletion-adapter';
-import { createSupabaseDeletionAdapter } from '@/lib/privacy/deletion-adapter-supabase';
 import { registerBackgroundTask } from '@/lib/sync/background-sync';
 import { setupSyncTriggers } from '@/lib/sync/sync-triggers';
 import { TaskNotificationService } from '@/lib/task-notifications';
@@ -55,68 +52,18 @@ function useSyncAndMetrics(): void {
   React.useEffect(() => {
     void registerBackgroundTask();
     const dispose = setupSyncTriggers();
+
     const start = Date.now();
-
-    // IMPORTANT: registerNotificationMetrics installs listeners that emit
-    // telemetry via NoopAnalytics.track for notification events. These
-    // listeners must not be registered before the user has given analytics
-    // consent, otherwise an actual analytics client wired in place of
-    // NoopAnalytics would record events prior to opt-in. We subscribe to
-    // consent changes so listeners are added when consent is granted and
-    // removed again if consent is withdrawn during the app lifetime.
-
-    let cleanupNotificationMetrics: (() => void) | undefined;
-    let coldStartTimer: ReturnType<typeof setTimeout> | undefined;
-    let coldStartTracked = false; // ensure we track the cold start metric at most once
-
-    function registerMetricsOnce() {
-      if (!cleanupNotificationMetrics) {
-        cleanupNotificationMetrics = registerNotificationMetrics();
-      }
-      if (!coldStartTracked) {
-        coldStartTimer = setTimeout(() => {
-          void NoopAnalytics.track('perf_cold_start_ms', {
-            ms: Date.now() - start,
-          });
-          coldStartTracked = true;
-          coldStartTimer = undefined;
-        }, 0);
-      }
-    }
-
-    function unregisterMetrics() {
-      try {
-        cleanupNotificationMetrics?.();
-      } catch {}
-      cleanupNotificationMetrics = undefined;
-      if (coldStartTimer) {
-        clearTimeout(coldStartTimer);
-        coldStartTimer = undefined;
-      }
-    }
-
-    // Initialize based on current consent state
-    if (consentManager.hasConsented('analytics')) {
-      registerMetricsOnce();
-    }
-
-    // Subscribe to consent changes so we can add/remove listeners at runtime
-    const unsubscribe = consentManager.onConsentChanged(
-      'analytics',
-      (consented) => {
-        try {
-          if (consented) registerMetricsOnce();
-          else unregisterMetrics();
-        } catch {}
-      }
-    );
+    const cleanup = registerNotificationMetrics();
+    const coldStartTimer = setTimeout(() => {
+      void NoopAnalytics.track('perf_cold_start_ms', {
+        ms: Date.now() - start,
+      });
+    }, 0);
 
     return () => {
-      // cleanup subscription and any registered metrics/listeners
-      try {
-        unsubscribe();
-      } catch {}
-      unregisterMetrics();
+      clearTimeout(coldStartTimer);
+      cleanup();
       dispose();
     };
   }, []);
@@ -147,15 +94,15 @@ function startRootInitialization(
       refreshIsRTL = i18nModule.refreshIsRTL;
     } catch {
       // non-fatal
-    } finally {
-      if (isMounted) {
-        refreshIsRTL?.();
-        applyRTLIfNeeded?.();
-        setIsI18nReady(true);
-      }
     }
-    // Additional safety: ensure component still mounted before creating service
+
     if (!isMounted) return;
+    refreshIsRTL?.();
+    applyRTLIfNeeded?.();
+    setIsI18nReady(true);
+
+    if (!isMounted) return;
+
     // NOTE: There's a race between i18n initialization and showing the
     // permission prompt. Only call requestPermissions when i18n init
     // succeeded so the prompt can show localized strings.
@@ -211,30 +158,9 @@ export function useRootStartup(
     const start = Date.now();
     requestAnimationFrame(() => {
       const firstPaintMs = Date.now() - start;
-      // Only track performance metrics if user has consented to analytics
-      if (consentManager.hasConsented('analytics')) {
-        void NoopAnalytics.track('perf_first_paint_ms', { ms: firstPaintMs });
-      }
+      void NoopAnalytics.track('perf_first_paint_ms', { ms: firstPaintMs });
     });
   }, []);
 
   useSyncAndMetrics();
-
-  // Fire-and-forget: run retention daily (simple 24h interval)
-  React.useEffect(() => {
-    // Wire deletion adapter to Supabase buckets for cascades
-    try {
-      setDeletionAdapter(createSupabaseDeletionAdapter());
-    } catch {}
-    const run = () => {
-      try {
-        retentionWorker.runNow();
-      } catch {}
-    };
-    // initial run at app start
-    run();
-    const dayMs = 24 * 60 * 60 * 1000;
-    const id = setInterval(run, dayMs);
-    return () => clearInterval(id);
-  }, []);
 }

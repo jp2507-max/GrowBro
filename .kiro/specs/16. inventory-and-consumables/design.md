@@ -369,7 +369,9 @@ CREATE POLICY "movements_insert" ON inventory_movements
     item_id IN (SELECT id FROM inventory_items WHERE user_id = auth.uid())
   );
 CREATE POLICY "movements_delete" ON inventory_movements
-  FOR DELETE USING (false);
+  FOR DELETE USING (
+    item_id IN (SELECT id FROM inventory_items WHERE user_id = auth.uid())
+  );
 ```
 
 ### WatermelonDB Models

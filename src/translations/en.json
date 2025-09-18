@@ -20,82 +20,6 @@
     "cancel": "Cancel",
     "ok": "OK"
   },
-  "consent": {
-    "accept_all": "Accept all",
-    "aiTraining": {
-      "impact": "Off: diagnosis still works; no images added to training pool. Basis: consent; Retention: 365d",
-      "subtitle": "Allow using your images to improve models",
-      "title": "AI training images"
-    },
-    "analytics": {
-      "impact": "Off: playbook improvement analytics disabled. Basis: consent; Retention: 180d aggregated",
-      "infoBody": "Anonymous usage of guided grow playbooks helps us refine schedules and AI recommendations.",
-      "infoTitle": "Guided grow analytics",
-      "subtitle": "Help improve playbooks & AI suggestions",
-      "title": "Guided grow analytics"
-    },
-    "crashDiagnostics": {
-      "impact": "Off: no crash reports are sent. Basis: consent; Retention: 180d",
-      "subtitle": "Send minimized crash reports",
-      "title": "Crash diagnostics"
-    },
-    "crashReporting": {
-      "impact": "Off: no crash diagnostics sent. Basis: consent; Retention: 90d aggregated",
-      "infoBody": "Sending crash diagnostics helps us fix stability issues faster. We strip identifiers where possible.",
-      "infoTitle": "Crash reporting",
-      "subtitle": "Send minimized crash diagnostics",
-      "title": "Crash reporting"
-    },
-    "experiments": {
-      "impact": "Off: no A/B tests; feature rollouts disabled for you. Basis: consent",
-      "subtitle": "Enable A/B tests and flags after consent",
-      "title": "Experiments / feature flags"
-    },
-    "first_run_title": "Your privacy choices",
-    "getStarted": "Get started",
-    "lastUpdated": "Last updated: {{date}}",
-    "optOutAll": "Opt out all",
-    "optOutError": {
-      "message": "Something went wrong withdrawing consent. Please try again.",
-      "title": "Opt-out failed"
-    },
-    "optOutSubtitle": "You can withdraw previously granted consent choices here.",
-    "optOutSuccess": {
-      "message": "We've disabled analytics and telemetry going forward.",
-      "title": "All consents withdrawn"
-    },
-    "optOutTitle": "Opt out of tracking",
-    "personalized": {
-      "impact": "Off: reports stay fully anonymous. Basis: consent; Retention: 30d",
-      "infoBody": "Allows attaching pseudonymous IDs to improve error traceability. No direct personal data is stored.",
-      "infoTitle": "Personalized diagnostics",
-      "subtitle": "Include hashed identifiers in reports",
-      "title": "Personalized diagnostics"
-    },
-    "quickOptOut": {
-      "description": "Withdraw all optional data collection consents instantly. Mandatory technical data is not collected.",
-      "title": "Quick opt-out"
-    },
-    "reject_all": "Reject all",
-    "save": "Save",
-    "sessionReplay": {
-      "impact": "Off: no interaction replays. Basis: consent; Retention: 30d",
-      "infoBody": "Replay helps diagnose complex UI issues. Sensitive fields are masked where possible.",
-      "infoTitle": "Session replay",
-      "subtitle": "Allow anonymized interaction capture",
-      "title": "Session replay"
-    },
-    "settingsSubtitle": "Manage your data collection preferences.",
-    "settingsTitle": "Privacy settings",
-    "telemetry": {
-      "impact": "Off: no usage analytics; performance metrics remain local. Basis: consent; Retention: 90d aggregated",
-      "infoBody": "Telemetry helps us understand feature usage and performance so we can improve reliability. We minimize and aggregate data.",
-      "infoTitle": "Telemetry / analytics",
-      "subtitle": "Allow usage analytics after consent",
-      "title": "Telemetry / analytics"
-    },
-    "title": "Privacy choices"
-  },
   "diagnostics": {
     "avg_payload": "Avg payload — {{operation}}: {{bytes}} B",
     "checkpoint_age_ms": "Checkpoint age (ms)",
@@ -128,8 +52,6 @@
       "subtitle": "Help us fix bugs by sending crash reports",
       "title": "Crash Reporting"
     },
-    "deleteAccount": "Delete my account",
-    "exportData": "Export my data",
     "lastUpdated": "Last updated: {{date}}",
     "personalized": {
       "body": "This includes IP addresses, user IDs, and other identifying information that helps us provide better error reports and analytics. This data is handled according to our privacy policy.",

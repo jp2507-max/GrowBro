@@ -22,8 +22,7 @@
     "android",
     "ios",
     "lint-staged.config.js",
-    "dist",
-    "react-native-reanimated"
+    "dist"
   ],
   "include": [
     "**/*.ts",

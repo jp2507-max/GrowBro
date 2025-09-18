@@ -970,9 +970,7 @@ class CommunityHealthMonitor {
 
     // Alert if P95 > 3000ms
     if (this.metrics.realtime_latency_p95 > 3000) {
-      if (ConsentManager.telemetryEnabled()) {
-        Sentry.captureMessage('High realtime latency detected', 'warning');
-      }
+      Sentry.captureMessage('High realtime latency detected', 'warning');
     }
   }
 
@@ -982,11 +980,9 @@ class CommunityHealthMonitor {
 
     // Alert if outbox is backing up
     if (depth > 50) {
-      if (ConsentManager.telemetryEnabled()) {
-        Sentry.captureMessage('Outbox depth high', 'warning', {
-          extra: { outbox_depth: depth },
-        });
-      }
+      Sentry.captureMessage('Outbox depth high', 'warning', {
+        extra: { outbox_depth: depth },
+      });
     }
   }
 

@@ -1,12 +1,12 @@
-TASK_ID: {8} with subtasks (make sure task with sub task is fully implemented)
+TASK_ID: {3 - 14}
 AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the plan
 
 CONTEXT
 
-- Feature: 5. privacy-consent-and-telemetry
-- Task index: .kiro\specs\5. privacy-consent-and-telemetry\tasks.md
-- Design spec: .kiro\specs\5. privacy-consent-and-telemetry\design.md
-- Requirements spec: .kiro\specs\5. privacy-consent-and-telemetry\requirements.md
+- Feature: Adjustments to Existing Epics
+- Task index: .kiro\specs\22. adjustments-to-existing-epics\tasks.md
+- Design spec: .kiro\specs\22. adjustments-to-existing-epics\design.md
+- Requirements spec: .kiro\specs\22. adjustments-to-existing-epics\requirements.md
 
 CONTRACT (outputs)
 
@@ -31,7 +31,7 @@ OUTPUT FORMAT
 
 AUTO-CONTINUE
 
-- If AUTO_CONTINUE=auto and no blocking questions, implement the plan. Create commits and run typecheck/lint/tests. If failures occur, attempt up to 2 quick fixes and then report a blocker.
+- If AUTO_CONTINUE=auto and no blocking questions, implement minimal, low-risk edits after the plan. Create small commits and run typecheck/lint/tests. If failures occur, attempt up to 2 quick fixes and then report a blocker.
 
 VERIFICATION (local)
 

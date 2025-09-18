@@ -28,7 +28,7 @@ This feature focuses on implementing comprehensive UI refinement and Visual QA p
 1. WHEN UI code changes THEN CI SHALL run on device matrix (iPhone SE/12/Pro Max, Pixel 6, high-DPI Android) in light & dark for en/de/en-XA/ar-XB locales
 2. WHEN screenshots are compared THEN system SHALL use Detox + jest-image-snapshot with SSIM ≥ 0.995 and anti-aliasing tolerance, masking dynamic regions
 3. WHEN diff exceeds threshold THEN CI SHALL post inline PR comment with side-by-side images and block merge with required "Design Review" check
-4. WHEN tests pass on default branch THEN baselines SHALL update only with baseline-approved label and store masked diffs by default. Raw diffs MUST NOT be stored unless explicitly approved; when explicitly approved they MUST be encrypted at rest, accessible only via strict access control lists (ACLs), access MUST be logged, and retention SHALL be limited to a short configurable window (for example, 7 days) after which they are deleted. Prefer eliminating raw diffs entirely unless there is a compelling, documented reason.
+4. WHEN tests pass on default branch THEN baselines SHALL update only with baseline-approved label and store masked+raw diffs with commit SHA
 5. WHEN snapshots fail non-deterministically THEN system SHALL retry once and mark as quarantined with flaky tags for known issues
 
 ### Requirement 2
@@ -124,4 +124,4 @@ This feature focuses on implementing comprehensive UI refinement and Visual QA p
 - No inline style/token violations; ESLint rules enforced (eslint-plugin-react-native/no-inline-styles, eslint-plugin-react-native-a11y)
 - Release-build perf run (Hermes, Dev Mode OFF) meets budgets on Pixel-class device + iPhone class; report attached
 - UI QA Report published for latest main commit with i18n coverage and trend analysis; no Blockers open
-  -- Baselines updated with approval, commit SHA, and diffs archived with masked diffs by default. Raw diffs MUST only be stored when explicitly approved and, if stored, MUST be encrypted at rest, restricted by strict access controls with logged access, and retained only for a short configurable window (for example, 7 days) or eliminated.
+- Baselines updated with approval, commit SHA, and diffs archived with masked+raw versions

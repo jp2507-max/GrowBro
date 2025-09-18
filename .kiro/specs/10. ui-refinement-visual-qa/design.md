@@ -651,25 +651,11 @@ PII_SCRUBBING_STRICT_MODE = true;
 
 ```typescript
 // sentry.config.ts
-import { ConsentManager } from '@/lib/privacy/consent-manager';
-import { LogSanitizer } from '@/lib/privacy/log-sanitizer';
-
-// Get user consent synchronously (cached)
-const consent = ConsentManager.getConsent();
-
-// Create sanitizer instance for data scrubbing
-const sanitizer = new LogSanitizer({
-  customPatterns: [
-    // Add any app-specific sensitive patterns
-    /\bgrow[_-]?log[_-]?id[_-]?[a-f0-9]+\b/gi,
-  ],
-});
-
 Sentry.init({
   // Disable PII capture
   sendDefaultPii: false,
 
-  // Custom data scrubbing with proper sanitization
+  // Custom data scrubbing
   beforeSend(event) {
     // Remove sensitive data from event
     if (event.user) {
@@ -677,57 +663,39 @@ Sentry.init({
       delete event.user.ip_address;
     }
 
-    // Sanitize breadcrumbs using LogSanitizer instance
+    // Sanitize breadcrumbs
     if (event.breadcrumbs) {
       event.breadcrumbs = event.breadcrumbs.map((breadcrumb) => ({
         ...breadcrumb,
-        data: sanitizer.sanitizeObject(breadcrumb.data),
+        data: sanitizeObject(breadcrumb.data),
       }));
     }
 
     return event;
   },
 
-  // Configure session replay with explicit consent gating
-  replaysSessionSampleRate: consent.replay ? 0.1 : 0,
-  replaysOnErrorSampleRate: consent.replay ? 1.0 : 0,
+  // Configure session replay with PII protection
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
 
   integrations: [
-    // Only add Replay integration if user consented to session replay
-    ...(consent.replay
-      ? [
-          new Sentry.Replay({
-            // Mask all text content by default
-            maskAllText: true,
+    new Sentry.Replay({
+      // Mask all text content by default
+      maskAllText: true,
 
-            // Block specific selectors
-            blockSelector: [
-              '[data-sensitive]',
-              '.user-content',
-              '.grow-log-entry',
-              'input[type="password"]',
-              'input[type="email"]',
-            ],
+      // Block specific selectors
+      blockSelector: [
+        '[data-sensitive]',
+        '.user-content',
+        '.grow-log-entry',
+        'input[type="password"]',
+        'input[type="email"]',
+      ],
 
-            // Mask additional selectors
-            maskSelector: ['.user-avatar', '.profile-info', '.location-data'],
-          }),
-        ]
-      : []),
+      // Mask additional selectors
+      maskSelector: ['.user-avatar', '.profile-info', '.location-data'],
+    }),
   ],
-});
-
-// Dynamic consent change handling
-ConsentManager.onConsentChange((newConsent) => {
-  // Update Sentry replay sampling rates dynamically
-  Sentry.setContext('replay_consent', {
-    enabled: newConsent.replay,
-    timestamp: new Date().toISOString(),
-  });
-
-  // Note: Some Sentry settings cannot be changed at runtime.
-  // For full dynamic control, consider reinitializing Sentry
-  // or implementing custom filtering in the beforeSend hook.
 });
 ```
 

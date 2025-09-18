@@ -101,18 +101,36 @@ runs:
         fi
 
         # Parse JSON and extract channel names. The CLI typically returns an array of channel objects.
-        # jq is available on GitHub runners; handle both array and {channels:[]} shapes
-        names="$(printf '%s' "$CHANNELS_OUTPUT" | jq -r '
-          if type=="array" then .[]?.name
-          elif has("channels") then .channels[]?.name
-          else empty end
-        ')"
-        if printf '%s\n' "$names" | grep -Fxq "$REQUIRED_CHANNEL"; then
-          echo "✅ Found required EAS channel: $REQUIRED_CHANNEL"
-        else
-          echo "❌ Required EAS channel '$REQUIRED_CHANNEL' not found. Available: $(printf '%s' "$names" | paste -sd, -)"
-          exit 3
-        fi
+        # Pipe the JSON into node via a bash heredoc to avoid YAML parsing issues with
+        # single-quoted inline scripts and to keep lines short for yamllint.
+        printf '%s' "$CHANNELS_OUTPUT" | node <<'NODE_SCRIPT'
+const fs = require("fs");
+const input = fs.readFileSync(0, "utf8");
+let arr;
+try {
+  arr = JSON.parse(input);
+} catch (e) {
+  console.error("❌ Invalid JSON returned by eas channel:list:", e.message);
+  process.exit(2);
+}
+const names = Array.isArray(arr)
+  ? arr.map(c => c && c.name).filter(Boolean)
+  : (arr && arr.channels
+    ? arr.channels.map(c => c && c.name).filter(Boolean)
+    : []);
+const required = process.env.REQUIRED_CHANNEL;
+if (!required) {
+  console.error("❌ REQUIRED channel not set in environment.");
+  process.exit(4);
+}
+if (names.includes(required)) {
+  console.log("✅ Found required EAS channel:", required);
+  process.exit(0);
+} else {
+  console.error("❌ Required EAS channel '" + required + "' not found. Available channels: " + names.join(", "));
+  process.exit(3);
+}
+NODE_SCRIPT
       shell: bash
 
     - name: ⚙️ Run Prebuild

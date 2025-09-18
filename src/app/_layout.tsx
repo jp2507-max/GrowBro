@@ -13,23 +13,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { APIProvider } from '@/api';
-import { ConsentModal } from '@/components/consent-modal';
-import {
-  ConsentService,
-  hydrateAuth,
-  loadSelectedTheme,
-  SDKGate,
-  useIsFirstTime,
-} from '@/lib';
+import { hydrateAuth, loadSelectedTheme, useIsFirstTime } from '@/lib';
 import { Env } from '@/lib/env';
-import {
-  hasConsent,
-  initializePrivacyConsent,
-  setPrivacyConsent,
-} from '@/lib/privacy-consent';
+import { hasConsent, initializePrivacyConsent } from '@/lib/privacy-consent';
 import { beforeSendHook } from '@/lib/sentry-utils';
-// Install AI consent hooks to handle withdrawal cascades
-import { installAiConsentHooks } from '@/lib/uploads/ai-images';
 import { useThemeConfig } from '@/lib/use-theme-config';
 
 import { useRootStartup } from './use-root-startup';
@@ -48,19 +35,6 @@ export const unstable_settings = {
 
 // Initialize privacy consent cache before Sentry
 initializePrivacyConsent();
-
-// Register known SDKs and install a minimal safety net to ensure zero-traffic pre-consent
-SDKGate.registerSDK('sentry', 'crashDiagnostics', [
-  'sentry.io',
-  'ingest.sentry.io',
-]);
-SDKGate.registerSDK('analytics', 'telemetry', [
-  'analytics',
-  'segment',
-  'amplitude',
-]);
-SDKGate.installNetworkSafetyNet?.();
-installAiConsentHooks();
 
 // i18n initialization moved to RootLayout component to prevent race conditions
 // where components render with untranslated keys before i18n completes
@@ -96,9 +70,6 @@ if (Env.SENTRY_DSN && hasConsent('crashReporting') && !sentryInitialized) {
     // uncomment the line below to enable Spotlight (https://spotlightjs.com)
     // spotlight: __DEV__,
   });
-
-  // Update registry; this is a no-op pre-consent
-  void SDKGate.initializeSDK('sentry');
 }
 
 hydrateAuth();
@@ -113,80 +84,26 @@ SplashScreen.setOptions({ duration: 500, fade: true });
 function RootLayout(): React.ReactElement {
   const [isFirstTime] = useIsFirstTime();
   const [isI18nReady, setIsI18nReady] = React.useState(false);
-  const [showConsent, setShowConsent] = React.useState(false);
 
+  // Move startup effects into a hook to keep component short for eslint
   useRootStartup(setIsI18nReady, isFirstTime);
-  React.useEffect(() => {
-    if (ConsentService.isConsentRequired()) setShowConsent(true);
-  }, []);
 
-  if (!isI18nReady) return <BootSplash />;
+  if (!isI18nReady) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white dark:bg-gray-900">
+        {/* Keep splash screen visible until i18n is ready */}
+      </View>
+    );
+  }
 
   return (
     <Providers>
-      {showConsent && (
-        <ConsentModal
-          isVisible
-          mode={isFirstTime ? 'first-run' : 'settings-update'}
-          onComplete={(c) => {
-            persistConsents(c, isFirstTime);
-            setShowConsent(false);
-          }}
-        />
-      )}
-      <AppStack />
+      <Stack>
+        <Stack.Screen name="(app)" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+      </Stack>
     </Providers>
-  );
-}
-
-function persistConsents(
-  c: {
-    telemetry: boolean;
-    experiments: boolean;
-    aiTraining: boolean;
-    crashDiagnostics: boolean;
-  },
-  isFirstTime: boolean
-): void {
-  const meta = {
-    uiSurface: isFirstTime ? 'first-run' : 'settings',
-    policyVersion: ConsentService.getConsentVersion(),
-    controllerIdentity: 'GrowBro',
-    lawfulBasis: 'consent-6.1.a',
-    justificationId: 'POL-GBR-2025-001',
-    region: 'EU',
-  } as const;
-
-  void ConsentService.setConsents(
-    {
-      telemetry: c.telemetry,
-      experiments: c.experiments,
-      aiTraining: c.aiTraining,
-      crashDiagnostics: c.crashDiagnostics,
-    },
-    meta
-  );
-  setPrivacyConsent({
-    analytics: c.telemetry,
-    crashReporting: c.crashDiagnostics,
-    personalizedData: false,
-    sessionReplay: false,
-  });
-}
-
-function BootSplash(): React.ReactElement {
-  return (
-    <View className="flex-1 items-center justify-center bg-white dark:bg-gray-900" />
-  );
-}
-
-function AppStack(): React.ReactElement {
-  return (
-    <Stack>
-      <Stack.Screen name="(app)" options={{ headerShown: false }} />
-      <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-      <Stack.Screen name="login" options={{ headerShown: false }} />
-    </Stack>
   );
 }
 

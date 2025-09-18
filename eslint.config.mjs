@@ -30,10 +30,6 @@ export default defineConfig([
     'docs/',
     'cli/',
     'expo-env.d.ts',
-    // Ignore vendored workspace to avoid Prettier plugin resolution from its config
-    'react-native-reanimated/',
-    // Ignore built outputs
-    'package/dist/',
   ]),
   expoConfig,
   eslintPluginPrettierRecommended,

@@ -226,58 +226,6 @@ interface StatementOfReasons {
   transparencyDbId?: string; // returned by EC DB
   createdAt: Date;
 }
-
-/**
- * Redacted Statement of Reasons for DSA Transparency Database submission (Art. 24(5))
- *
- * This interface represents a Statement of Reasons that has been processed through
- * comprehensive PII scrubbing while preserving aggregated/anonymized data required
- * for transparency reporting. The original SoR is retained internally under Row-Level
- * Security (RLS) while only this redacted variant crosses system boundaries.
- */
-interface RedactedSoR {
-  // Preserved non-PII fields
-  decisionId: string;
-  decisionGround: 'illegal' | 'terms';
-  legalReference?: string;
-  contentType: 'post' | 'comment' | 'image' | 'profile' | string;
-  automatedDetection: boolean;
-  automatedDecision: boolean;
-  territorialScope?: string[]; // e.g., ['DE','AT']
-  redress: Array<'internal_appeal' | 'ods' | 'court'>;
-  transparencyDbId?: string; // returned by EC DB
-  createdAt: Date;
-
-  // Redacted fields are omitted from this shape. The list of removed fields
-  // is recorded in `scrubbingMetadata.redactedFields` for auditability.
-
-  // Preserved aggregated/anonymized summaries
-  aggregatedData: {
-    reportCount: number | 'suppressed'; // Count of related reports (k-anon)
-    evidenceType: 'text' | 'image' | 'video' | 'mixed'; // Categorized evidence type
-    contentAge: 'new' | 'recent' | 'archived'; // Age categorization
-    jurisdictionCount: number | 'suppressed'; // Number of affected jurisdictions
-    hasTrustedFlagger: boolean; // Whether trusted flagger was involved
-  };
-
-  // Pseudonymized actor identifiers (deterministic hashing with environment-specific salt)
-  pseudonymizedReporterId: string;
-  pseudonymizedModeratorId: string;
-  pseudonymizedDecisionId: string; // For correlation without exposing original IDs
-
-  // Audit trail for scrubbing process
-  scrubbingMetadata: {
-    scrubbedAt: Date;
-    scrubbingVersion: string; // Version of scrubbing algorithm used
-    redactedFields: string[]; // List of all redacted fields for auditability
-    environmentSaltVersion: string; // Version of salt used for pseudonymization
-    aggregationSuppression: {
-      reportCount: boolean; // Whether reportCount was suppressed due to k-anonymity
-      jurisdictionCount: boolean; // Whether jurisdictionCount was suppressed due to k-anonymity
-      k: number; // k-anonymity threshold used for suppression
-    };
-  };
-}
 ```
 
 ### 3. Appeals Service
@@ -519,7 +467,6 @@ interface RepeatOffenderRecord {
 interface SoRExportQueue {
   id: string;
   statementOfReasonsId: string;
-  idempotencyKey: string; // Unique key for idempotent operations
   status: 'pending' | 'retry' | 'submitted' | 'failed' | 'dlq';
   attempts: number;
   lastAttempt?: Date;
@@ -527,53 +474,6 @@ interface SoRExportQueue {
   errorMessage?: string;
   createdAt: Date;
 }
-```
-
-**Database Migration: SoR Export Queue Table**
-
-```sql
--- Create SoR export queue table for DSA transparency database submissions
--- Implements idempotent queue operations with atomic upsert support
-
-CREATE TABLE IF NOT EXISTS sor_export_queue (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  statement_id UUID NOT NULL,
-  idempotency_key TEXT NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('pending', 'retry', 'submitted', 'failed', 'dlq')),
-  attempts INTEGER NOT NULL DEFAULT 0,
-  last_attempt TIMESTAMPTZ,
-  transparency_db_response TEXT,
-  error_message TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Enforce uniqueness on statement_id to prevent duplicate queue entries
--- This ensures idempotency at the database level
-ALTER TABLE sor_export_queue ADD CONSTRAINT sor_export_queue_statement_id_unique UNIQUE (statement_id);
-
--- Index for efficient retry/visibility queries
--- Supports queries filtering by status with ordering by attempts and last_attempt
-CREATE INDEX IF NOT EXISTS idx_sor_export_queue_status_attempts_last_attempt
-ON sor_export_queue (status, attempts, last_attempt);
-
--- Index for idempotency key lookups (used in conflict resolution)
-CREATE INDEX IF NOT EXISTS idx_sor_export_queue_idempotency_key
-ON sor_export_queue (idempotency_key);
-
--- Updated at trigger
-CREATE OR REPLACE FUNCTION update_sor_export_queue_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_update_sor_export_queue_updated_at
-  BEFORE UPDATE ON sor_export_queue
-  FOR EACH ROW
-  EXECUTE FUNCTION update_sor_export_queue_updated_at();
 ```
 
 ### Database Schema Design
@@ -594,79 +494,6 @@ CREATE TRIGGER trigger_update_sor_export_queue_updated_at
 - Automated backup and archival processes
 - Restricted access with comprehensive logging
 - PII scrubbing pipeline before SoR exports (Art. 24(5) compliance)
-
-### PII Scrubbing Process (Art. 24(5) Compliance)
-
-**Overview**: The PII scrubbing pipeline implements comprehensive data minimization for DSA transparency reporting while preserving analytical value through aggregated/anonymized data. Original Statement of Reasons (SoR) are retained internally under Row-Level Security (RLS) while only redacted variants cross system boundaries.
-
-**Redaction Map**:
-
-- **Free-text fields**: `factsAndCircumstances`, `explanation`, `reasoning`, `counterArguments`, `description`, `metadata`
-- **Direct PII fields**: `reporterContact`, `personalIdentifiers`, `contactInfo`
-- **Actor identifiers**: `reporterId`, `moderatorId`, `userId` (replaced with pseudonyms)
-- **Content locators**: `contentLocator`, `evidenceUrls`
-- **Evidence data**: `evidence`, `supportingEvidence`
-- **Location/IP data**: `ipAddress`, `locationData`
-
-**Pseudonymization Algorithm**:
-
-- **Method**: HMAC-SHA256 with environment-specific salt
-- **Deterministic**: Same input always produces same pseudonym within environment
-- **Environment isolation**: Different environments use different salts, ensuring cross-environment unlinkability
-- **Salt composition**: `${NODE_ENV}-${context}-${PII_SCRUBBING_SALT}`
-- **Output format**: 16-character hexadecimal string
-- **Salt versioning**: Tracked via `PII_SALT_VERSION` environment variable
-
-**Aggregation Strategy**:
-
-- **Report counts**: Anonymized total count of related reports
-- **Evidence categorization**: Categorized as 'text', 'image', 'video', or 'mixed'
-- **Content age**: Categorized as 'new' (<24h), 'recent' (<7d), or 'archived' (≥7d)
-- **Jurisdiction scope**: Count of affected territories
-- **Trusted flagger involvement**: Boolean indicator
-
-**Audit Trail**:
-
-- **Scrubbing timestamp**: Exact time of redaction
-- **Algorithm version**: Version of scrubbing implementation
-- **Redacted fields list**: Complete enumeration of removed fields
-- **Salt version**: Version of pseudonymization salt used
-
-**Data Retention**:
-
-The previous wording that retained the original Statement of Reasons (SoR) "indefinitely" conflicts with data minimization and storage limitation principles (GDPR Art. 5(1)(e)). This section defines a purpose-bound retention policy, legal-hold exceptions, and concrete operational controls to ensure compliance while preserving transparency and investigatory needs.
-
-- Purpose-bound retention windows:
-
-  - Original (unredacted) SoR and related moderation records: retained for a default of 5 years from the decision execution date, unless a shorter statutory requirement applies. This retention period is tied to the legitimate purposes of (1) meeting Transparency & Impact Assessment (TIA) recordkeeping needs, (2) defense against legal claims, and (3) internal safety and repeat-offender analysis. The 5-year baseline balances regulatory, evidentiary, and operational needs; it must be reviewed annually by the Data Protection Officer (DPO).
-  - Redacted SoR variants exported to the Commission Transparency Database: retained according to the Commission DB rules (as a boundary transfer) and local export logs stored for 2 years to support audits and reproducibility.
-  - Audit events (cryptographically signed) and integrity proofs stored in the Audit Database: retained for 7 years to support forensic investigations and regulatory requests. Shorter retention may be applied where legally allowed.
-
-- Legal-hold and exception handling:
-
-  - Active legal holds override the scheduled retention policy for specific records (decision IDs, report IDs, content snapshots) and must specify scope, legal basis, and a review cadence. Legal-hold metadata is recorded in the Audit Database and includes owner, reason, start date, and expected review date.
-  - Security incidents, criminal investigations (official request), or other legitimately justified regulatory investigations may extend retention on a per-case basis. Each extension requires a documented legal justification and approval by the DPO or Counsel and is time-boxed and logged.
-
-- Operational processes (implementation-level):
-
-  - Automated scheduled purge jobs: a daily scheduled job will scan for expired records and enqueue deletions. Purge windows are configurable; initial rollout uses a 30-day grace window after expiry (i.e., records with retentionUntil <= now - 30 days are deleted) to allow for operator review and emergency intervention.
-  - Deletion mechanics: deletions are implemented as a two-stage process — (1) logical tombstone (mark as deleted, remove access via RLS and application-layer checks) and (2) irreversible physical removal after a 14-day tombstone review period. Tombstone creation triggers an audit event capturing actor, scope, retention policy, and TTL.
-  - Backfill / restore procedures: when a legitimate restore is required (e.g., error recovery, overturned appeal, or Court order), a documented backfill process can restore records only from secure backups. Restores require an approved change request, re-application of RLS controls, and generation of audit events for the restore action. Restored records inherit the original retention policy or a new retentionUntil if explicitly specified.
-  - Audit logging for deletions and restores: every purge, tombstone, and restore operation must record an immutable audit event that includes operator ID (or system actor), target IDs, retention policy applied, legal-hold flags, and justification. Audit events are shipped to the Audit Database (WORM-style) and their integrity signatures recorded.
-
-- Boundary transfers and redaction rules (preserved):
-
-  - Redacted SoR rules remain in effect for any boundary transfer (Art. 24(5)). Only redacted variants cross system boundaries (e.g., Commission DB). Original/unredacted SoRs never leave the primary data environment except under explicit, documented legal process (e.g., court order), and only subject to strict export controls and RLS.
-
-- Timeline and ownership:
-
-  - Implementation timeline: the automated retention and purge pipeline, audit-event capture for retention actions, and legal-hold metadata stores must be implemented within 6 weeks from approval of this spec. A 30-day pilot on a non-production dataset is recommended before full rollout.
-  - Policy owner and reviewers: the DPO is the owner of the retention policy and is responsible for annual review. Engineering ownership for implementation and scheduled jobs: Moderation Platform Team (owner: Lead, Moderation Platform). Legal/Counsel must be involved for legal-hold procedures and retention extensions.
-
-- Compliance notes and review cadence:
-  - The DPO must review the baseline retention periods and legal-hold processes annually or when laws/regulatory guidance change. All retention changes require documented business justification and must be recorded in the Audit Database.
-
-This operationalized retention policy preserves the ability to meet TIA/transparency needs while aligning with GDPR's storage limitation principle and adding safeguards for deletion, restore, and legal exceptions.
 
 **File Storage (S3-Compatible)**
 
@@ -706,8 +533,6 @@ This operationalized retention policy preserves the ability to meet TIA/transpar
 **Circuit Breaker Pattern with SoR Exporter**
 
 ```typescript
-import { createHmac } from 'crypto';
-
 class DSASubmissionCircuitBreaker {
   private failureCount = 0;
   private lastFailureTime?: Date;
@@ -718,52 +543,14 @@ class DSASubmissionCircuitBreaker {
     this.retryableOperation = retryableOperation;
   }
 
-  /**
-   * Idempotently adds a Statement of Reasons to the export queue.
-   *
-   * This method ensures that repeated calls with the same statement_id and idempotency_key
-   * do not create duplicate queue entries. If a queue item already exists for the given
-   * statement_id, it returns the existing item without modification.
-   *
-   * The upsert operation is atomic and uses database-native conflict handling to prevent
-   * race conditions in concurrent environments.
-   *
-   * @param statement - The Statement of Reasons to queue for export
-   * @param idempotencyKey - Unique key to ensure idempotent operations
-   * @returns Promise<SoRExportQueue> - The existing or newly created queue item
-   */
-  private async addToExportQueue(
-    statement: StatementOfReasons,
-    idempotencyKey: string
-  ): Promise<SoRExportQueue> {
-    // Atomic upsert: insert new row or return existing if conflict on statement_id
-    // Use a CTE + DO NOTHING pattern to avoid firing BEFORE UPDATE triggers
-    // when the row already exists. The INSERT returns the newly created row
-    // in the CTE; if nothing was inserted (conflict), fall back to selecting
-    // the existing row by statement_id. This returns either the new or
-    // existing row without performing an UPDATE.
-    const result = await this.db.query(
-      `
-      WITH inserted AS (
-        INSERT INTO sor_export_queue (
-          statement_id,
-          idempotency_key,
-          status,
-          attempts,
-          created_at
-        ) VALUES ($1, $2, 'pending', 0, $3)
-        ON CONFLICT (statement_id) DO NOTHING
-        RETURNING *
-      )
-      SELECT * FROM inserted
-      UNION ALL
-      SELECT * FROM sor_export_queue WHERE statement_id = $1
-      LIMIT 1
-    `,
-      [statement.id, idempotencyKey, new Date()]
-    );
-
-    return result.rows[0]; // Return the queue item (existing or new)
+  private async addToExportQueue(statement: StatementOfReasons): Promise<void> {
+    // Add statement to export queue for processing
+    await this.db.insert('sor_export_queue', {
+      statement_id: statement.id,
+      status: 'pending',
+      attempts: 0,
+      created_at: new Date(),
+    });
   }
 
   private async markForRetry(statementId: string): Promise<void> {
@@ -800,8 +587,7 @@ class DSASubmissionCircuitBreaker {
 
   async submitToTransparencyDB(statement: StatementOfReasons): Promise<void> {
     // Add to export queue first (idempotent)
-    const idempotencyKey = `dsa-submission-${statement.id}`;
-    await this.addToExportQueue(statement, idempotencyKey);
+    await this.addToExportQueue(statement);
 
     if (this.state === 'open') {
       if (this.shouldAttemptReset()) {
@@ -855,308 +641,13 @@ class DSASubmissionCircuitBreaker {
   }
 
   private async scrubPII(statement: StatementOfReasons): Promise<RedactedSoR> {
-    // Comprehensive PII scrubbing per Art. 24(5) requirements
-    // Original SoR retained under RLS; only redacted variant crosses boundaries
-
-    // Get related data for aggregation (anonymized counts and categories)
-    // Normalize any derived/joined evidence types into `evidenceTypes` so
-    // categorizeEvidenceType can read the actual list instead of falling back
-    // to 'mixed' when the field is missing.
-    const rawRelatedReports = await this.getRelatedReports(
-      statement.decisionId
-    );
-    const relatedReports = rawRelatedReports.map((r: any) => ({
-      ...r,
-      // support DB column name `evidence_types` (snake_case) or already
-      // normalized `evidenceTypes` (camelCase). Coerce to an array of strings.
-      evidenceTypes:
-        r.evidenceTypes ||
-        r.evidence_types ||
-        r.evidence_types_json ||
-        null ||
-        [],
-    }));
-
-    const aggregatedData = await this.computeAggregatedData(
-      statement,
-      relatedReports
-    );
-
-    // Get actor IDs from related reports if not present on the statement
-    // Prefer explicit actor IDs if provided by callers; otherwise derive from related reports.
-    const reporterIdFromReports = relatedReports.find(
-      (r) => r.reporter_id
-    )?.reporter_id;
-    const moderatorIdFromReports = relatedReports.find(
-      (r) => r.moderator_id
-    )?.moderator_id;
-
-    const reporterId =
-      (statement as any).reporterId ?? reporterIdFromReports ?? 'unknown';
-    const moderatorId =
-      (statement as any).moderatorId ?? moderatorIdFromReports ?? 'system';
-
-    // Pseudonymize actor identifiers deterministically using HMAC-SHA256
-    const pseudonymizedReporterId = this.pseudonymizeIdentifier(
-      reporterId,
-      'reporter'
-    );
-    const pseudonymizedModeratorId = this.pseudonymizeIdentifier(
-      moderatorId,
-      'moderator'
-    );
-    const pseudonymizedDecisionId = this.pseudonymizeIdentifier(
-      statement.decisionId,
-      'decision'
-    );
-
-    // Build a set of fields to redact (names only). We'll omit them from the
-    // returned object rather than including them with undefined values.
-    const redactedFieldNames = new Set([
-      'factsAndCircumstances',
-      'explanation',
-      'reasoning',
-      'reporterContact',
-      'personalIdentifiers',
-      'contactInfo',
-      'reporterId',
-      'moderatorId',
-      'userId',
-      'contentLocator',
-      'evidence',
-      'supportingEvidence',
-      'evidenceUrls',
-      'ipAddress',
-      'locationData',
-      'counterArguments',
-      'description',
-      'metadata',
-    ]);
-
-    // Redact recursively by omitting fields
-    const redact = (obj: any): any => {
-      if (!obj || typeof obj !== 'object') return obj;
-      if (Array.isArray(obj)) return obj.map(redact);
-      const out: Record<string, any> = {};
-      for (const [k, v] of Object.entries(obj)) {
-        if (redactedFieldNames.has(k)) continue; // omit
-        out[k] = typeof v === 'object' && v !== null ? redact(v) : v;
-      }
-      return out;
-    };
-
-    const redactedStatement = redact(statement);
-
-    // Apply aggregation privacy rule: suppress small counts (k-anonymity)
-    const safeAggregatedData = this.applySuppressionToAggregates(
-      aggregatedData,
-      { k: 5 }
-    );
-
-    const redactedSoR: RedactedSoR = {
-      // Preserve non-PII fields explicitly
-      decisionId: statement.decisionId,
-      decisionGround: statement.decisionGround,
-      legalReference: statement.legalReference,
-      contentType: statement.contentType,
-      automatedDetection: statement.automatedDetection,
-      automatedDecision: statement.automatedDecision,
-      territorialScope: statement.territorialScope,
-      redress: statement.redress,
-      transparencyDbId: statement.transparencyDbId,
-      createdAt: statement.createdAt,
-
-      // Aggregated/anonymized data (suppressed for low counts)
-      aggregatedData: safeAggregatedData,
-
-      // Pseudonymized identifiers
-      pseudonymizedReporterId,
-      pseudonymizedModeratorId,
-      pseudonymizedDecisionId,
-
-      // Scrubbing audit trail
-      scrubbingMetadata: {
-        scrubbedAt: new Date(),
-        scrubbingVersion: '1.0.0',
-        redactedFields: Array.from(redactedFieldNames),
-        environmentSaltVersion: this.getEnvironmentSaltVersion(),
-        aggregationSuppression: { k: 5 },
-      },
-    };
-
-    return redactedSoR;
-  }
-
-  /**
-   * Deterministic pseudonymization using HMAC-SHA256 with environment-specific salt
-   * Same input always produces same pseudonym within environment, different across environments
-   */
-  private pseudonymizeIdentifier(identifier: string, context: string): string {
-    const salt = this.getEnvironmentSpecificSalt(context);
-    const hmac = createHmac('sha256', salt);
-    hmac.update(identifier);
-    // Return a short, URL-safe pseudonym. Truncate for readability.
-    return hmac.digest('hex').substring(0, 16); // 16-character pseudonym
-  }
-
-  /**
-   * Environment-specific salt for pseudonymization
-   * Ensures same actor maps consistently within environment but differently across environments
-   */
-  private getEnvironmentSpecificSalt(context: string): string {
-    const baseSalt = process.env.PII_SCRUBBING_SALT; // required
-    if (!baseSalt) throw new Error('missing PII_SCRUBBING_SALT');
-    return baseSalt; // derive context/env via HMAC input, not key
-  }
-
-  /**
-   * Get current salt version for auditability
-   */
-  private getEnvironmentSaltVersion(): string {
-    return process.env.PII_SALT_VERSION || 'v1.0';
-  }
-
-  /**
-   * Recursively apply redaction map to remove PII from nested objects
-   */
-  private applyRedactionMap(
-    obj: any,
-    redactionMap: Record<string, undefined>
-  ): any {
-    // Deprecated in favor of omission-based redaction implemented inline in scrubPII.
-    // Keep for backward compatibility but implement omission semantics.
-    if (!obj || typeof obj !== 'object') return obj;
-    if (Array.isArray(obj))
-      return obj.map((v) => this.applyRedactionMap(v, redactionMap));
-    const out: Record<string, any> = {};
-    for (const [k, v] of Object.entries(obj)) {
-      if (Object.prototype.hasOwnProperty.call(redactionMap, k)) continue; // omit
-      out[k] =
-        typeof v === 'object' && v !== null
-          ? this.applyRedactionMap(v, redactionMap)
-          : v;
-    }
-    return out;
-  }
-
-  /**
-   * Compute aggregated/anonymized data for transparency reporting
-   */
-  private async computeAggregatedData(
-    statement: StatementOfReasons,
-    relatedReports: any[]
-  ): Promise<RedactedSoR['aggregatedData']> {
+    // Remove personal data per Art. 24(5) requirements
     return {
-      reportCount: relatedReports.length,
-      evidenceType: this.categorizeEvidenceType(relatedReports),
-      contentAge: this.categorizeContentAge(statement.createdAt),
-      jurisdictionCount: statement.territorialScope?.length || 1,
-      hasTrustedFlagger: relatedReports.some((r) => r.trustedFlagger),
+      ...statement,
+      reporterContact: undefined,
+      personalIdentifiers: undefined,
+      // Keep only aggregated/anonymized data
     };
-  }
-
-  /**
-   * Categorize evidence types for aggregated reporting
-   */
-  private categorizeEvidenceType(
-    reports: any[]
-  ): 'text' | 'image' | 'video' | 'mixed' {
-    // Collect and normalize evidence types defensively
-    const normalizedTypes: string[] = [];
-
-    for (const report of reports) {
-      if (report.evidenceTypes && Array.isArray(report.evidenceTypes)) {
-        for (const type of report.evidenceTypes) {
-          // Guard against null/undefined by skipping, or coerce to string and normalize
-          if (type != null) {
-            const normalizedType = String(type).toLowerCase().trim();
-            if (normalizedType) {
-              normalizedTypes.push(normalizedType);
-            }
-          }
-        }
-      }
-    }
-
-    // Check for presence of each evidence type using normalized values
-    const hasText = normalizedTypes.includes('text');
-    const hasImage = normalizedTypes.includes('image');
-    const hasVideo = normalizedTypes.includes('video');
-
-    if (hasText && !hasImage && !hasVideo) return 'text';
-    if (!hasText && hasImage && !hasVideo) return 'image';
-    if (!hasText && !hasImage && hasVideo) return 'video';
-    return 'mixed';
-  }
-
-  /**
-   * Categorize content age for aggregated reporting
-   */
-  private categorizeContentAge(createdAt: Date): 'new' | 'recent' | 'archived' {
-    const ageInHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
-
-    if (ageInHours < 24) return 'new';
-    if (ageInHours < 168) return 'recent'; // 7 days
-    return 'archived';
-  }
-
-  /**
-   * Get related reports for aggregation (without exposing PII)
-   */
-  private async getRelatedReports(decisionId: string): Promise<any[]> {
-    // Query reports related to this decision, excluding PII fields
-    // Also fetch reporter/moderator IDs for pseudonymization (internal-only)
-    // NOTE: include a derived/aggregated evidence_types array so downstream
-    // aggregation logic (categorizeEvidenceType) has access to actual evidence
-    // types instead of falling back to 'mixed'. This assumes there is a
-    // report_evidence table linking report_id -> evidence_type (text|image|video)
-    // and uses a string_agg / array_agg depending on DB flavor. Here we use
-    // a generic SQL that returns evidence_types as a JSON/array-compatible
-    // field named evidence_types.
-    const result = await this.db.query(
-      `
-      SELECT
-        r.id,
-        r.report_type,
-        r.trusted_flagger,
-        r.reporter_id,
-        r.moderator_id,
-        r.created_at,
-        -- aggregate evidence types for the report into an array
-        COALESCE(evidence_agg.evidence_types, ARRAY[]::text[]) AS evidence_types
-      FROM reports r
-      LEFT JOIN (
-        SELECT
-          re.report_id,
-          array_agg(DISTINCT re.evidence_type) AS evidence_types
-        FROM report_evidence re
-        WHERE re.evidence_type IS NOT NULL
-        GROUP BY re.report_id
-      ) AS evidence_agg ON evidence_agg.report_id = r.id
-      WHERE r.decision_id = $1
-    `,
-      [decisionId]
-    );
-    return result.rows;
-  }
-
-  /**
-   * Apply simple suppression to aggregated data to enforce k-anonymity for small counts.
-   * This is a lightweight approach; replace with DP mechanisms if stronger guarantees are required.
-   */
-  private applySuppressionToAggregates(aggregates: any, opts: { k: number }) {
-    const out = { ...aggregates };
-    if (typeof out.reportCount === 'number' && out.reportCount < opts.k) {
-      out.reportCount = 'suppressed';
-    }
-    // jurisdictionCount suppression
-    if (
-      typeof out.jurisdictionCount === 'number' &&
-      out.jurisdictionCount < opts.k
-    ) {
-      out.jurisdictionCount = 'suppressed';
-    }
-    return out;
   }
 
   private async getAttemptCount(statementId: string): Promise<number> {
@@ -1233,11 +724,10 @@ class DSASubmissionCircuitBreaker {
     statementId: string
   ): Promise<SoRExportQueue | null> {
     // Implementation to retrieve queue item from database
-    const res = await this.db.query(
-      'SELECT * FROM sor_export_queue WHERE statement_id = $1 LIMIT 1',
+    return await this.db.query(
+      'SELECT * FROM sor_export_queue WHERE statement_id = ?',
       [statementId]
     );
-    return res.rows?.[0] ?? null;
   }
 
   private async updateQueueItem(
