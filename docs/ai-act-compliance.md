@@ -21,8 +21,8 @@ This document tracks GrowBro features that involve AI and their tentative classi
 
 ### Milestones (target)
 
-- Transparency UI copy, links, and settings finalized by 2025‑12‑31
-- Risk management documentation refresh by 2026‑06‑30
+- Transparency UI copy, links, and settings finalized by 2025-12-31
+- Risk management documentation refresh by 2026-06-30
 
 ### Feature notes
 

@@ -4,6 +4,9 @@
 const fs = require('fs');
 const path = require('path');
 
+// Define repoRoot at module level so it's available to all functions
+const repoRoot = path.resolve(__dirname, '..');
+
 function readJson(filePath) {
   const abs = path.resolve(filePath);
   if (!fs.existsSync(abs)) throw new Error(`Missing file: ${filePath}`);
@@ -65,7 +68,7 @@ function validateAccessedApiReasons(manifest) {
   }
 }
 
-function assertAppConfigWiresManifest(repoRoot) {
+function assertAppConfigWiresManifest() {
   const appConfigPath = path.join(repoRoot, 'app.config.ts');
   const appConfig = fs.readFileSync(appConfigPath, 'utf8');
   assert(
@@ -74,7 +77,7 @@ function assertAppConfigWiresManifest(repoRoot) {
   );
 }
 
-function verifyDependencySnapshot(repoRoot) {
+function verifyDependencySnapshot() {
   const pkgPath = path.join(repoRoot, 'package.json');
   const pkg = readJson(pkgPath);
   const deps = Object.keys(pkg.dependencies || {}).sort();
@@ -103,8 +106,6 @@ function verifyDependencySnapshot(repoRoot) {
 }
 
 function main() {
-  const repoRoot = path.resolve(__dirname, '..');
-
   // 1) Validate manifest presence and structure
   const manifestPath = path.join(repoRoot, 'apple-privacy-manifest.json');
   const manifest = readJson(manifestPath);
@@ -114,10 +115,10 @@ function main() {
   validateAccessedApiReasons(manifest);
 
   // 3) Ensure we wire the manifest in app.config.ts (basic text check)
-  assertAppConfigWiresManifest(repoRoot);
+  assertAppConfigWiresManifest();
 
   // 4) Dependency change guardrail: ensure snapshot is up to date
-  verifyDependencySnapshot(repoRoot);
+  verifyDependencySnapshot();
 
   console.log('[privacy:validate] OK');
 }

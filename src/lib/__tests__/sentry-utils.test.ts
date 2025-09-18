@@ -103,16 +103,19 @@ describe('captureCategorizedErrorSync', () => {
     }));
 
     jest.isolateModules(() => {
-      const Sentry = require('@sentry/react-native') as {
-        captureException: jest.Mock;
-      };
+      // capture module references synchronously inside isolateModules
+      // to ensure module cache isolation, but don't await async work here.
+      // We'll flush microtasks and assert after isolateModules returns.
       const { captureCategorizedErrorSync: fn } =
         require('@/lib/sentry-utils') as typeof import('@/lib/sentry-utils');
       fn(new Error('boom'));
-      // wait microtask queue flush
-      return Promise.resolve().then(() => {
-        expect(Sentry.captureException).not.toHaveBeenCalled();
-      });
     });
+    // wait microtask queue flush so any internal async work completes
+    await Promise.resolve().then(() => {});
+    // Now assert that Sentry.captureException was not called
+    const Sentry = require('@sentry/react-native') as {
+      captureException: jest.Mock;
+    };
+    expect(Sentry.captureException).not.toHaveBeenCalled();
   });
 });

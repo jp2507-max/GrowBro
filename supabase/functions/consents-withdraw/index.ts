@@ -52,6 +52,7 @@ async function createAuthedClient(req: Request) {
 
   const client = createClient(supabaseUrl, supabaseKey, {
     global: { headers: { Authorization: authHeader } },
+    db: { schema: 'privacy' },
   });
   return { client };
 }
@@ -62,7 +63,7 @@ async function insertWithdrawJob(
   payload: WithdrawPayload
 ) {
   return await client
-    .from('privacy.dsr_jobs')
+    .from('dsr_jobs')
     .insert([
       {
         user_id: userId,

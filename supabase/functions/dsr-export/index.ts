@@ -59,6 +59,7 @@ async function createAuthedClient(req: Request) {
   }
 
   const client = createClient(supabaseUrl, supabaseKey, {
+    db: { schema: 'privacy' },
     global: { headers: { Authorization: authHeader } },
   });
   return { client };
@@ -71,7 +72,7 @@ async function queueExportJob(
 ) {
   const estimated = addDays(new Date(), 30);
   return await client
-    .from('privacy.dsr_jobs')
+    .from('dsr_jobs')
     .insert([
       {
         user_id: userId,
