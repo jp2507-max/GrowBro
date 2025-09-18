@@ -407,6 +407,26 @@ CREATE TABLE push_tokens (
   UNIQUE(user_id, token)
 );
 
+-- Security: enable Row Level Security (RLS) and add least-privilege policies
+-- so only the owner can read/write their push tokens. Also allow an
+-- authenticated service role to insert when acting on behalf of the system.
+ALTER TABLE public.push_tokens ENABLE ROW LEVEL SECURITY;
+
+-- Owner policy: only the user (auth.uid()) may SELECT/UPDATE/DELETE their rows
+CREATE POLICY "push_tokens_owner_read_write"
+  ON public.push_tokens
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- Service insert policy: allow server/service role to INSERT (check JWT role)
+-- Adjust 'service_role' to match your project's role name if different.
+CREATE POLICY "push_tokens_service_insert"
+  ON public.push_tokens
+  FOR INSERT
+  TO authenticated
+  USING (false)
+  WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
+
 -- Notification queue for delivery tracking
 CREATE TABLE notification_queue (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -423,6 +443,40 @@ CREATE TABLE notification_queue (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Security: notification_queue contains payloads and should be write-only
+-- for server/service processes. Enable RLS and permit only the service role
+-- to INSERT (and optionally SELECT) based on the JWT role claim.
+ALTER TABLE public.notification_queue ENABLE ROW LEVEL SECURITY;
+
+-- Allow service role to INSERT queue entries. We check auth.jwt() 'role'
+-- claim so only the service may write. Replace 'service_role' if your
+-- environment uses a different role name.
+CREATE POLICY "notification_queue_service_insert"
+  ON public.notification_queue
+  FOR INSERT
+  TO authenticated
+  USING (auth.jwt() ->> 'role' = 'service_role')
+  WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
+
+-- By default, deny end-user inserts (no additional policy means inserts
+-- are denied unless matched above). Consider adding a read policy that
+-- limits SELECT to the service role as well to avoid exposing payloads:
+--
+-- CREATE POLICY "notification_queue_service_select"
+--   ON public.notification_queue
+--   FOR SELECT
+--   TO authenticated
+--   USING (auth.jwt() ->> 'role' = 'service_role');
+
+-- Payload review guidance:
+-- - Avoid storing secrets, auth tokens, or full external links containing
+--   sensitive query params in `payload`.
+-- - Prefer storing minimal structured references (type + resource id) and
+--   resolving full content server-side when delivering the notification.
+-- - If richer payloads are required, mask or redact sensitive fields before
+--   inserting, or encrypt payloads at rest using pgcrypto and restrict
+--   SELECT access to the service role.
+
 -- User notification preferences
 CREATE TABLE notification_preferences (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -436,6 +490,24 @@ CREATE TABLE notification_preferences (
   quiet_hours_end TIME,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Enable RLS and allow owners to read/update only their own preferences
+ALTER TABLE public.notification_preferences ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "notification_preferences_owner_read_write"
+  ON public.notification_preferences
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- Optional: allow service/admin role to update preferences for migrations
+-- or cleanup tasks. Restrict to service role if needed:
+--
+-- CREATE POLICY "notification_preferences_service_write"
+--   ON public.notification_preferences
+--   FOR ALL
+--   TO authenticated
+--   USING (auth.jwt() ->> 'role' = 'service_role')
+--   WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
 ```
 
 ## Error Handling
@@ -656,9 +728,34 @@ const TESTING_SCENARIOS = [
 
 ### Monitoring and Analytics
 
+#### Privacy-First Telemetry Design
+
+**CRITICAL**: All analytics events are emitted only after explicit user consent with a global runtime kill-switch configurable by policy. Telemetry defaults to disabled until consent is obtained.
+
+##### Consent-Aware Telemetry Gates
+
+- Analytics events require explicit user opt-in via privacy settings
+- Global runtime kill-switch allows policy-based disablement
+- No backlog emission after consent revocation
+- Telemetry gating checks must be implemented in all instrumentation points
+
+##### Data Minimization Rules
+
+- All reported fields use aggregated or pseudonymized identifiers only
+- Message type or message ID hash - never raw message content
+- Never include user-identifiable text or personal data
+- Retention policies limit data collection to minimum required for feature improvement
+
+##### Implementation Requirements
+
+- Check telemetry consent before any metric emission
+- Implement safe defaults (telemetry disabled) until consent obtained
+- Handle consent revocation by immediately stopping all data collection
+- Use hashed/pseudonymized identifiers for all user-related metrics
+
 ```typescript
 interface NotificationMetrics {
-  // Delivery metrics
+  // Delivery metrics (pseudonymized/aggregated only)
   pushNotificationsSent: number;
   pushNotificationsDelivered: number;
   pushNotificationsOpened: number;
@@ -1283,19 +1380,155 @@ async function sendToDevice(
         }),
   };
 
-  const response = await fetch('https://exp.host/--/api/v2/push/send', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+  // Use AbortController to fail fast on slow networks / hung requests
+  const controller = new AbortController();
+  const timeoutMs = 5000; // short timeout for push service calls; tune as needed
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-  return {
-    success: response.ok,
-    messageId: effectiveMessageId,
-    platform: tokenData.platform,
-  };
+  try {
+    const response = await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    // Try to parse the response body to surface ticket/receipt errors.
+    // Expo can return structured tickets/receipts or error objects; attempt
+    // to parse in all cases so we can surface useful debugging info.
+    let parsedBody: any = null;
+    try {
+      parsedBody = await response.json();
+    } catch (parseErr) {
+      // If JSON parse fails, keep parsedBody as null but preserve status
+      parsedBody = null;
+    }
+
+    // Base result shape - always return effectiveMessageId & platform
+    const result: any = {
+      success: response.ok,
+      messageId: effectiveMessageId,
+      platform: tokenData.platform,
+      statusCode: response.status,
+      body: parsedBody,
+    };
+
+    // Inspect parsedBody for per-token/ticket errors. Expo returns
+    // several shapes depending on success/error (tickets array, or
+    // { errors: [...] }, etc.). Normalize and look for known error
+    // indicators so we can mark tokens as revoked/unregistered.
+    const errors: string[] = [];
+    let shouldDeactivateToken = false;
+
+    const markErrorString = (str: string | undefined) => {
+      if (!str) return;
+      errors.push(str);
+      // Common indicators that a device/token should be deactivated
+      if (
+        /DeviceNotRegistered|NotRegistered|Unregistered|Revoked|InvalidCredentials|MessageTooBig/i.test(
+          str
+        )
+      ) {
+        shouldDeactivateToken = true;
+      }
+    };
+
+    if (parsedBody) {
+      // If the service returns an array (tickets), iterate them
+      const candidates = Array.isArray(parsedBody)
+        ? parsedBody
+        : (parsedBody.data ?? parsedBody.errors ?? [parsedBody]);
+
+      for (const item of candidates) {
+        if (!item) continue;
+
+        // Expo ticket style: { status: 'ok' } or { status: 'error', message: '...' }
+        if (item.status === 'error') {
+          markErrorString(item.message || JSON.stringify(item));
+        }
+
+        // Some responses include a 'details' or 'error' field
+        if (item.details && typeof item.details === 'object') {
+          // details.error is common in a few provider formats
+          markErrorString(item.details.error || JSON.stringify(item.details));
+        }
+
+        if (item.error) {
+          markErrorString(
+            typeof item.error === 'string'
+              ? item.error
+              : JSON.stringify(item.error)
+          );
+        }
+
+        // Fallback: look for any string fields that look like an error code
+        for (const v of Object.values(item)) {
+          if (
+            typeof v === 'string' &&
+            /DeviceNotRegistered|NotRegistered|Unregistered|Revoked|InvalidCredentials|MessageTooBig/i.test(
+              v
+            )
+          ) {
+            markErrorString(v);
+          }
+        }
+      }
+    } else if (!response.ok) {
+      // No JSON body but non-OK status - surface status text
+      markErrorString(`HTTP ${response.status}`);
+    }
+
+    if (shouldDeactivateToken) {
+      // Call the existing token deactivation routine here so the token
+      // is marked inactive in the DB and future sends skip it.
+      // Replace `deactivateToken` with the real routine used in your
+      // codebase (for example: deactivatePushToken(token) or
+      // supabase.from('push_tokens').update(...)). This design assumes
+      // such a routine exists and is safe to call from the Edge Function.
+      try {
+        // await deactivateToken(tokenData.token);
+        // NOTE: Uncomment and replace the above call with your project's
+        // token deactivation helper.
+      } catch (deactErr) {
+        // If deactivation fails, surface but don't throw - we're trying
+        // to continue best-effort and still return the delivery result.
+        errors.push(
+          `deactivation_error:${deactErr?.message ?? String(deactErr)}`
+        );
+      }
+    }
+
+    if (errors.length > 0) {
+      result.success = false; // reflect per-token failures
+      result.errors = errors;
+    }
+
+    return result;
+  } catch (err: any) {
+    clearTimeout(timeout);
+
+    // Handle fetch/network errors and timeouts explicitly
+    const isAbort =
+      err && (err.name === 'AbortError' || /aborted/i.test(err.message || ''));
+    const errDetail = {
+      message: err?.message ?? String(err),
+      name: err?.name,
+      isTimeout: Boolean(isAbort),
+    };
+
+    return {
+      success: false,
+      messageId: effectiveMessageId,
+      platform: tokenData.platform,
+      error: errDetail,
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function getChannelId(type: string): string {
@@ -1339,34 +1572,27 @@ function isNotificationAllowed(type: string, preferences: any): boolean {
 CREATE OR REPLACE FUNCTION notify_post_reply()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Call Edge Function to send notification
-  PERFORM
-    net.http_post(
-      url := 'https://your-project.supabase.co/functions/v1/send-push-notification',
-      headers := jsonb_build_object(
-        'Content-Type', 'application/json',
-        -- ⚠️ SECURITY WARNING: Avoid using current_setting('app.service_role_key')
-        -- This pattern exposes service credentials in SQL and encourages insecure practices.
-        -- RECOMMENDED ALTERNATIVES:
-        -- 1. Queue notifications in a table under RLS, then process via Edge Function/Cron
-        --    with service credentials stored in function environment variables
-        -- 2. Call an internal webhook secured by signed JWTs instead of direct HTTP calls
-        'Authorization', 'Bearer ' || current_setting('app.service_role_key')
-      ),
-      body := jsonb_build_object(
-        'userId', (SELECT user_id FROM posts WHERE id = NEW.post_id),
-        'type', 'community.reply',
-        'title', 'New reply',
-        'body', substring(NEW.content, 1, 100) || '...',
-        'data', jsonb_build_object(
-          'post_id', NEW.post_id,
-          'reply_id', NEW.id
-        ),
-        'deepLink', 'https://growbro.app/post/' || NEW.post_id,
-        'collapseKey', 'post_' || NEW.post_id,
-        'threadId', 'post_' || NEW.post_id
-      )
-    );
+  -- Queue notification for processing by Edge Function/Cron job
+  INSERT INTO notification_requests (
+    user_id,
+    type,
+    title,
+    body,
+    data,
+    deep_link,
+    created_at
+  ) VALUES (
+    (SELECT user_id FROM posts WHERE id = NEW.post_id),
+    'community.reply',
+    'New reply',
+    substring(NEW.content, 1, 100) || '...',
+    jsonb_build_object(
+      'post_id', NEW.post_id,
+      'reply_id', NEW.id
+    ),
+    'https://growbro.app/post/' || NEW.post_id,
+    NOW()
+  );
 
   RETURN NEW;
 END;
@@ -1377,6 +1603,36 @@ CREATE TRIGGER post_reply_notification
   AFTER INSERT ON post_replies
   FOR EACH ROW
   EXECUTE FUNCTION notify_post_reply();
+```
+
+```sql
+-- Queue table for notification requests
+-- Process via Edge Function or Cron job with service credentials in environment
+CREATE TABLE notification_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  data JSONB DEFAULT '{}',
+  deep_link TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  processed_at TIMESTAMPTZ,
+  processed BOOLEAN DEFAULT FALSE
+);
+
+-- Enable RLS
+ALTER TABLE notification_requests ENABLE ROW LEVEL SECURITY;
+
+-- Allow users to read only their own queued notifications
+CREATE POLICY "Users can read own notification requests"
+  ON notification_requests FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Allow service role to process notifications
+CREATE POLICY "Service role can manage notification requests"
+  ON notification_requests FOR ALL
+  USING (auth.jwt() ->> 'role' = 'service_role');
 ```
 
 This updated design addresses all the critical platform constraints and provides concrete implementation patterns using Supabase Edge Functions that will prevent common pitfalls during development.

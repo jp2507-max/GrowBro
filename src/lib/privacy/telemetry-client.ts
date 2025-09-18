@@ -138,25 +138,32 @@ export class TelemetryClient {
       // Simulate sequential delivery with rate limiting (max 5 events/sec)
       const throttleMs = 200;
       while (this.buffer.length > 0) {
-        const next = this.buffer.shift() as Buffered;
+        // Peek at head without removing so we only update accounting
+        // after a successful delivery. This avoids double-counting when
+        // delivery is aborted due to missing consent or SDK blocking.
+        const next = this.buffer[0] as Buffered;
         const requiredConsent = this.getRequiredConsentForEvent(
           next.event.name
         );
 
-        // Check both required consent and SDK gate
+        // Check both required consent and SDK gate. If delivery is not
+        // allowed, abort and leave the queue and bufferBytes intact.
         if (
           !this.hasRequiredConsent(requiredConsent) ||
           !SDKGate.isSDKAllowed(this.sdkName)
         ) {
-          // Put back to head and abort
-          this.buffer.unshift(next);
-          this.bufferBytes += next.size;
           break;
         }
 
-        this.bufferBytes -= next.size;
-        // No real network send in minimal skeleton
+        // Perform the send. Only remove from queue and adjust
+        // bufferBytes after a successful delivery to keep accounting
+        // consistent.
+        // No real network send in minimal skeleton.
         await new Promise((r) => setTimeout(r, throttleMs));
+
+        // After successful send, remove from the queue and update size
+        const removed = this.buffer.shift() as Buffered;
+        this.bufferBytes -= removed.size;
       }
     } finally {
       this.flushing = false;

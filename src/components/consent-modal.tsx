@@ -181,22 +181,11 @@ function makeRejectAll(setters: {
 }
 
 function makeComplete(
-  onComplete: (consents: any) => void,
-  consents: {
-    telemetry: boolean;
-    experiments: boolean;
-    aiTraining: boolean;
-    crashDiagnostics: boolean;
-  }
+  onComplete: (consents: ConsentDecisions) => void,
+  consents: Omit<ConsentDecisions, 'acceptedAt'>
 ) {
   return () => {
-    onComplete({
-      telemetry: consents.telemetry,
-      experiments: consents.experiments,
-      aiTraining: consents.aiTraining,
-      crashDiagnostics: consents.crashDiagnostics,
-      acceptedAt: new Date(),
-    });
+    onComplete({ ...consents, acceptedAt: new Date() });
   };
 }
 

@@ -253,10 +253,10 @@ interface RedactedSoR {
 
   // Preserved aggregated/anonymized summaries
   aggregatedData: {
-    reportCount: number; // Count of related reports (anonymized)
+    reportCount: number | 'suppressed'; // Count of related reports (k-anon)
     evidenceType: 'text' | 'image' | 'video' | 'mixed'; // Categorized evidence type
     contentAge: 'new' | 'recent' | 'archived'; // Age categorization
-    jurisdictionCount: number; // Number of affected jurisdictions
+    jurisdictionCount: number | 'suppressed'; // Number of affected jurisdictions
     hasTrustedFlagger: boolean; // Whether trusted flagger was involved
   };
 
@@ -740,7 +740,7 @@ class DSASubmissionCircuitBreaker {
         status,
         attempts,
         created_at
-      ) VALUES (?, ?, 'pending', 0, ?)
+      ) VALUES ($1, $2, 'pending', 0, $3)
       ON CONFLICT (statement_id)
       DO UPDATE SET
         -- No-op update to return existing row without modification
@@ -750,7 +750,7 @@ class DSASubmissionCircuitBreaker {
       [statement.id, idempotencyKey, new Date()]
     );
 
-    return result[0]; // Return the queue item (existing or new)
+    return result.rows[0]; // Return the queue item (existing or new)
   }
 
   private async markForRetry(statementId: string): Promise<void> {
@@ -1083,7 +1083,7 @@ class DSASubmissionCircuitBreaker {
     // and uses a string_agg / array_agg depending on DB flavor. Here we use
     // a generic SQL that returns evidence_types as a JSON/array-compatible
     // field named evidence_types.
-    return await this.db.query(
+    const result = await this.db.query(
       `
       SELECT
         r.id,
@@ -1107,6 +1107,7 @@ class DSASubmissionCircuitBreaker {
     `,
       [decisionId]
     );
+    return result.rows;
   }
 
   /**
