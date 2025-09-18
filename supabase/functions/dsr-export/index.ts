@@ -3,11 +3,29 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+// CORS: replace wildcard '*' with an allowlist sourced from the ALLOWED_ORIGINS env var
+function parseAllowedOrigins(): string[] {
+  const raw = Deno.env.get('ALLOWED_ORIGINS') ?? '';
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function getValidatedOrigin(req: Request): string | null {
+  const origin = req.headers.get('Origin') ?? '';
+  if (!origin) return null;
+  const allowed = parseAllowedOrigins();
+  return allowed.includes(origin) ? origin : null;
+}
+
+function makeCorsHeaders(origin: string) {
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  } as Record<string, string>;
+}
 
 type ExportPayload = {
   includeTelemetry?: boolean;
@@ -28,21 +46,27 @@ async function getUserId(client: any): Promise<string | null> {
   return data.user.id as string;
 }
 
-function json(payload: unknown, status: number): Response {
-  return new Response(JSON.stringify(payload), {
-    status,
-    headers: { 'Content-Type': 'application/json', ...corsHeaders },
-  });
+function json(req: Request, payload: unknown, status: number): Response {
+  const origin = getValidatedOrigin(req);
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (origin) Object.assign(headers, makeCorsHeaders(origin));
+  return new Response(JSON.stringify(payload), { status, headers });
 }
 
 function guardMethod(req: Request): Response | null {
+  const origin = getValidatedOrigin(req);
+  const headers: Record<string, string> = {};
+  if (origin) Object.assign(headers, makeCorsHeaders(origin));
+
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers: corsHeaders });
+    return new Response(null, { status: 200, headers });
   }
   if (req.method !== 'POST') {
     return new Response('Method Not Allowed', {
       status: 405,
-      headers: corsHeaders,
+      headers,
     });
   }
   return null;
@@ -50,12 +74,12 @@ function guardMethod(req: Request): Response | null {
 
 async function createAuthedClient(req: Request) {
   const authHeader = req.headers.get('Authorization') ?? '';
-  if (!authHeader) return { error: json({ error: 'Unauthorized' }, 401) };
+  if (!authHeader) return { error: json(req, { error: 'Unauthorized' }, 401) };
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
   const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
   if (!supabaseUrl || !supabaseKey) {
-    return { error: json({ error: 'Server misconfiguration' }, 500) };
+    return { error: json(req, { error: 'Server misconfiguration' }, 500) };
   }
 
   const client = createClient(supabaseUrl, supabaseKey, {
