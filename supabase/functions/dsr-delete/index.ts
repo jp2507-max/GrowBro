@@ -130,6 +130,31 @@ async function handler(req: Request): Promise<Response> {
       payload = (await req.json()) as DeletePayload;
     } catch {}
 
+    // Return existing active job if present to make delete requests idempotent.
+    const existing = await client
+      .from('dsr_jobs')
+      .select('id, status, estimated_completion')
+      .eq('user_id', userId)
+      .eq('job_type', 'delete')
+      .in('status', ['queued', 'processing'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existing.error) {
+      return json(req, { error: existing.error.message }, 500);
+    }
+    if (existing.data) {
+      return json(
+        req,
+        {
+          jobId: existing.data.id,
+          status: existing.data.status,
+          estimatedCompletion: existing.data.estimated_completion,
+        },
+        200
+      );
+    }
+
     const { data, error } = await queueDeleteJob(client, userId, payload);
     if (error) return json(req, { error: error.message }, 500);
 

@@ -120,7 +120,7 @@ async function handler(req: Request): Promise<Response> {
     const { client } = init;
 
     const userId = await getUserId(client);
-    if (!userId) return json({ error: 'Unauthorized' }, 401);
+    if (!userId) return json(req, { error: 'Unauthorized' }, 401);
 
     let payload: ExportPayload = {};
     try {
@@ -128,9 +128,10 @@ async function handler(req: Request): Promise<Response> {
     } catch {}
 
     const { data, error } = await queueExportJob(client, userId, payload);
-    if (error) return json({ error: error.message }, 500);
+    if (error) return json(req, { error: error.message }, 500);
 
     return json(
+      req,
       {
         jobId: data.id,
         status: data.status,
@@ -139,7 +140,7 @@ async function handler(req: Request): Promise<Response> {
       202
     );
   } catch (err) {
-    return json({ error: String((err as Error)?.message ?? err) }, 500);
+    return json(req, { error: String((err as Error)?.message ?? err) }, 500);
   }
 }
 
