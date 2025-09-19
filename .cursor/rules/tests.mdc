@@ -41,6 +41,7 @@ Follow the following steps one by one:
    - While mocking functions, make sure to mock the function with the correct type and arguments
 
 4. Run the tests for the file with test coverage: `pnpm test <component-name> -- --coverage --coverageReporters="text"`
+  - Prefer running full `pnpm check-all` per task group. If local execution isn't possible, push changes and rely on CI to run the same gates. Do not claim PASS locally if not executed.
 
 5. Check Tests Results and Coverage:
 
