@@ -15,7 +15,7 @@ export type DPIAConfig = {
   aiModelVersion: string;
   completedAt: string; // ISO string for portability
   signedOff: boolean;
-  mitigations: DPIAMitigation[];
+  mitigations?: DPIAMitigation[];
 };
 // Backwards-compatible helper used by tests and existing callers.
 export function assertDPIAUpToDate(
