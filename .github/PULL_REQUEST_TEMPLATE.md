@@ -1,23 +1,42 @@
-## What does this do?
+## PR Title
 
-<!---
-_Describe what your changes **do**; did you add a $COOL_FEATURE? Write about it here._
--->
+Use: `spec(<SPEC_NUM>): <SPEC_SLUG>`
 
-## Why did you do this?
+## Links
 
-<!---
-_**Why** did you make these changes? This is your opportunity to provide the rationale that drove the design of your solution._
--->
+- Closes #<ISSUE_NUMBER>
+- Spec dir: `.kiro/specs/<SPEC_NUM>. <SPEC_SLUG>/`
+- design.md: <link>
+- requirements.md: <link>
+- tasks.md: <link>
 
-## Who/what does this impact?
+## Summary
 
-<!---
-_Does your code affect something downstream? Are there side effects people should know about? Tag any developers that should be kept abreast of this change._
--->
+What does this change do and why now? Brief rationale referencing AGENTS.md and design constraints.
 
-## How did you test this?
+## Task Checklist (paste from tasks.md)
 
-<!---
-_How did you test your change? Document it here._
--->
+<!-- Paste the task list from tasks.md below so GitHub renders checkboxes. Mark items as completed or already implemented. -->
+
+## Quality Gates
+
+- [ ] pnpm check-all passed locally (or individually: lint, type-check, lint:translations, i18n:validate, privacy:validate, test)
+- [ ] CodeRabbit shows 0 open improvement comments
+- [ ] All required status checks are green
+
+## Reviews
+
+- [ ] Requested `@coderabbitai review`
+- [ ] After CodeRabbit, requested `@codex review`
+- [ ] Consulted Cursor/Codex rules under `/.cursor/rules/*` if present
+
+## Testing & Verification
+
+- Platforms/devices tested:
+- Manual steps to verify:
+- Notes on risk/rollback:
+
+## Notes
+
+- Any deviations from design.md/requirements.md and why
+- Follow-ups or TODOs

@@ -1,13 +1,17 @@
-# Summary:
+> For Spec implementation issues, please use the new Issue Form: New Issue → "Spec — Implementation Issue".
 
-## Steps to reproduce:
+# Bug Report (General)
 
-## Expected behavior:
+## Summary
 
-## Additional notes:
+## Steps to Reproduce
 
-#### Tasks
+## Expected Behavior
 
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
+## Additional Notes
+
+### Tasks
+
+- [ ] Minimal repro attached
+- [ ] Logs included (if applicable)
+- [ ] Affected platforms listed

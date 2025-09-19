@@ -1,0 +1,68 @@
+name: Spec — Implementation Issue
+description: Create a Spec issue with links and tasklist for the coding agent
+labels: [spec, expo, mobile]
+title: 'Spec <num> – <slug>'
+body:
+  - type: input
+    id: spec_number
+    attributes:
+      label: Spec number
+      description: Numeric spec identifier used for branch/PR naming
+      placeholder: '21'
+    validations:
+      required: true
+  - type: input
+    id: spec_slug
+    attributes:
+      label: Spec slug
+      description: Kebab or words slug used for directory and branch
+      placeholder: 'performance-and-reliability'
+    validations:
+      required: true
+  - type: input
+    id: spec_dir
+    attributes:
+      label: Spec directory (auto-derived if blank)
+      description: Defaults to .kiro/specs/<num>. <slug>/
+      placeholder: '.kiro/specs/21. performance-and-reliability/'
+    validations:
+      required: false
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary / Context
+      description: Short description of the spec and scope. Include any constraints.
+      placeholder: >-
+        Implement performance monitoring infra, enable New Architecture, migrate lists to FlashList v2,
+        add budgets, and CI artifacts.
+  - type: textarea
+    id: links
+    attributes:
+      label: Spec file links
+      description: Provide links or confirm standard paths exist in the repo.
+      value: |
+        - Design: /.kiro/specs/<num>. <slug>/design.md
+        - Requirements: /.kiro/specs/<num>. <slug>/requirements.md
+        - Tasks: /.kiro/specs/<num>. <slug>/tasks.md
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks (paste from tasks.md)
+      description: Paste the checklist so GitHub renders it; the agent will mirror it into the PR.
+      placeholder: |
+        - [ ] 1. Setup Performance Monitoring Infrastructure
+        - [ ] 2. Enable React Native New Architecture
+        - [ ] ...
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I will assign this issue to the coding agent
+          required: false
+        - label: I will keep the PR as Draft until all gates pass and reviews are addressed
+          required: false
