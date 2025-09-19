@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Supabase",
+    "purpose": "storage",
+    "region": "EU",
+    "dpaLink": "https://supabase.com/legal/dpa",
+    "sccModule": "SCC-2021-914-Module-2",
+    "tiaDocId": "TIA-SUP-2024-001"
+  },
+  {
+    "name": "Sentry",
+    "purpose": "crashDiagnostics",
+    "region": "EU",
+    "dpaLink": "https://sentry.io/legal/dpa/",
+    "sccModule": "SCC-2021-914-Module-2",
+    "tiaDocId": "TIA-SEN-2024-001"
+  }
+]

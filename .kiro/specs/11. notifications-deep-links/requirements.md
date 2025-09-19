@@ -39,7 +39,7 @@ This feature implements a comprehensive notification system for GrowBro that inc
 1. WHEN another user replies to my post THEN the system SHALL send a push notification using `community.interactions` channel with reply preview (max 100 chars)
 2. WHEN another user likes my post THEN the system SHALL send a push notification using `community.likes` channel with FCM collapse_key/APNs apns-collapse-id for deduplication
 3. WHEN I tap on a community notification THEN the app SHALL launch Activity directly via PendingIntent.getActivity (Android 12+ trampoline compliance)
-4. WHEN multiple interactions occur THEN the system SHALL group using setGroup/setGroupSummary (Android) and threadIdentifier per post (iOS)
+4. WHEN multiple interactions occur THEN the system SHALL group using collapseKey (FCM) for deduplication and threadIdentifier per post (iOS); note that client-side grouping is limited by expo-notifications API constraints
 5. WHEN notification payload is created THEN it SHALL include deep link, message_id for tracking, and iOS thread-id for grouping
 6. WHEN channels don't exist before posting THEN the notification SHALL fail on Android 8+ (channels must be pre-created)
 7. WHEN notification includes actions THEN the system SHALL provide Reply and View Profile using UNNotificationAction (iOS) and action buttons (Android)

@@ -32,8 +32,8 @@ Calendar 2.0 is a comprehensive task management system for cannabis growers that
 3. WHEN notification permission is denied THEN the system SHALL show in-app banner with Settings deep-link
 4. WHEN a reminder time is reached THEN the system SHALL fire a local push notification using expo-notifications
 5. WHEN the app starts THEN the system SHALL verify and re-plan all scheduled notifications
-6. WHEN device enters Doze mode THEN the system SHALL accept potential delivery delays and track metrics
-7. WHEN notifications fire under battery optimization THEN the system SHALL measure and log delivery latency
+6. WHEN device enters Doze mode THEN the system SHALL accept potential delivery delays; metrics MUST be recorded only after explicit user opt-in, with PII-free payloads.
+7. WHEN notifications fire under battery optimization THEN the system SHALL measure and log delivery latency ONLY if analytics consent is granted.
 8. WHEN a task is completed or deleted THEN the system SHALL cancel associated notifications
 
 ### Requirement 3

@@ -1,0 +1,965 @@
+# Design Document
+
+## Overview
+
+The Guided Grow Playbooks feature provides a comprehensive system for cannabis cultivation guidance through structured, templated schedules that automatically generate calendar tasks. The system is built on an offline-first architecture using WatermelonDB for local storage, with robust sync capabilities to Supabase backend services.
+
+The design emphasizes user experience through intelligent defaults, flexible customization, and seamless offline functionality while maintaining strict compliance with app store policies and cannabis regulations.
+
+## Architecture
+
+### High-Level Architecture
+
+```mermaid
+graph TB
+    UI[React Native UI Layer]
+    BL[Business Logic Layer]
+    DB[WatermelonDB Local Storage]
+    SYNC[Sync Engine]
+    API[Supabase Backend]
+    NOTIF[Notification System]
+
+    UI --> BL
+    BL --> DB
+    BL --> SYNC
+    BL --> NOTIF
+    SYNC --> API
+
+    subgraph "Offline-First"
+        DB
+        NOTIF
+    end
+
+    subgraph "Cloud Services"
+        API
+    end
+```
+
+### Data Flow Architecture
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI
+    participant PlaybookService
+    participant TaskGenerator
+    participant WatermelonDB
+    participant NotificationService
+    participant SyncEngine
+
+    User->>UI: Select Playbook
+    UI->>PlaybookService: Apply Playbook to Plant
+    PlaybookService->>TaskGenerator: Generate Tasks from Template
+    TaskGenerator->>WatermelonDB: Store Tasks with RRULE
+    TaskGenerator->>NotificationService: Schedule Reminders
+    WatermelonDB->>SyncEngine: Queue for Sync
+    SyncEngine->>SyncEngine: Sync when Online
+```
+
+## Components and Interfaces
+
+### Core Components
+
+#### 1. PlaybookService
+
+**Responsibility**: Manages playbook selection, application, and customization logic with idempotency and conflict handling.
+
+```typescript
+interface PlaybookService {
+  // Playbook Management
+  getAvailablePlaybooks(): Promise<Playbook[]>;
+  getPlaybookPreview(playbookId: string): Promise<PlaybookPreview>; // Shows total weeks, phase durations, task counts
+  applyPlaybookToPlant(
+    playbookId: string,
+    plantId: string,
+    options?: {
+      idempotencyKey?: string;
+      allowMultiple?: boolean;
+    }
+  ): Promise<{ appliedTaskCount: number; durationMs: number; jobId: string }>;
+
+  // Schedule Management
+  shiftPlaybookSchedule(
+    plantId: string,
+    daysDelta: number,
+    flags?: {
+      includeCompleted?: boolean;
+      includeManuallyEdited?: boolean;
+    }
+  ): Promise<ShiftPreview>;
+  confirmScheduleShift(plantId: string, shiftId: string): Promise<void>;
+  undoScheduleShift(plantId: string, shiftId: string): Promise<void>; // Restores RRULEs and notifications atomically
+
+  // AI Integration
+  suggestScheduleAdjustments(
+    plantId: string,
+    context: AdjustmentContext
+  ): Promise<Suggestion[]>;
+  applyAISuggestion(plantId: string, suggestionId: string): Promise<void>;
+
+  // Validation
+  validateOneActivePlaybookPerPlant(
+    plantId: string,
+    playbookId: string
+  ): Promise<boolean>;
+}
+```
+
+#### 2. TaskGenerator
+
+**Responsibility**: Converts playbook templates into concrete calendar tasks with RFC 5545 compliant RRULE patterns and timezone-aware calculations.
+
+```typescript
+interface TaskGenerator {
+  generateTasksFromPlaybook(playbook: Playbook, plant: Plant): Promise<Task[]>; // Batched operations
+  generateRRULE(
+    taskTemplate: TaskTemplate,
+    startDate: Date,
+    timezone: string
+  ): string; // RFC 5545 compliant
+  calculateTaskDueDates(
+    playbook: Playbook,
+    plantStartDate: Date,
+    timezone: string
+  ): TaskSchedule; // DST-safe
+  validateRRULEPattern(rrule: string): boolean; // Checks FREQ first, no duplicates, RFC 5545 ordering
+  nextOccurrence(rrule: string, after: Date, timezone: string): Date; // Timezone-aware calculation
+  getAnchorDate(playbook: Playbook, plant: Plant): Date; // plant.startDate or phase.startDate
+}
+```
+
+#### 3. NotificationScheduler
+
+**Responsibility**: Manages local notification scheduling with Android/iOS compatibility, channels, and power management.
+
+```typescript
+interface NotificationScheduler {
+  // Core scheduling
+  scheduleTaskReminder(task: Task): Promise<string>;
+  cancelTaskReminder(notificationId: string): Promise<void>;
+  rescheduleTaskReminder(task: Task): Promise<void>;
+  rehydrateNotifications(): Promise<void>; // Called on app start
+
+  // Android-specific handling
+  ensureChannels(): Promise<void>; // Create notification channels on startup
+  canUseExactAlarms(): Promise<boolean>; // Check Android 14+ permissions
+  requestExactAlarmPermission(): Promise<boolean>;
+  handleDozeMode(): Promise<void>; // Fallback strategies
+
+  // Health monitoring
+  verifyDelivery(notificationId: string): Promise<boolean>;
+  getDeliveryStats(): Promise<NotificationStats>;
+}
+```
+
+#### 4. SyncEngine
+
+**Responsibility**: Handles offline-first synchronization with Supabase backend using single entry point and idempotent operations.
+
+```typescript
+interface SyncEngine {
+  synchronize(): Promise<SyncResult>; // Single entry point for all sync operations
+  pullChanges(lastPulledAt: number): Promise<Changes>;
+  pushChanges(changes: Changes, idempotencyKey: string): Promise<PushResult>; // Idempotent with header
+  handleConflicts(conflicts: Conflict[]): Promise<Resolution[]>; // LWW with user notification
+  queueOfflineChanges(changes: Changes): Promise<void>;
+
+  // Conflict resolution
+  showConflictDiff(localData: any, remoteData: any): Promise<void>; // Non-blocking toast with "View changes"
+  restoreLocalVersion(conflictId: string): Promise<void>; // One-tap restore to local
+
+  // Health monitoring
+  getSyncStats(): Promise<SyncStats>; // Latency, fail rate, etc.
+}
+```
+
+#### 5. TrichomeHelper
+
+**Responsibility**: Provides educational harvest timing guidance through trichome assessment with disclaimers.
+
+```typescript
+interface TrichomeHelper {
+  getAssessmentGuide(): TrichomeGuide; // Educational content with disclaimers
+  logTrichomeCheck(assessment: TrichomeAssessment): Promise<void>;
+  suggestHarvestAdjustments(
+    assessment: TrichomeAssessment
+  ): Promise<HarvestSuggestion[]>; // Nudges with confirmation, no auto-moves
+  getHarvestWindows(strainType: StrainType): HarvestWindow[]; // Range + disclaimer text, no product recommendations
+  getMacroPhotographyTips(): PhotographyTips; // Lighting and technique guidance
+}
+```
+
+### Data Models
+
+#### Playbook Model
+
+```typescript
+interface Playbook {
+  id: string;
+  name: string;
+  setup: 'auto_indoor' | 'auto_outdoor' | 'photo_indoor' | 'photo_outdoor';
+  locale: string;
+  phaseOrder: Phase[];
+  steps: PlaybookStep[];
+  metadata: PlaybookMetadata;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface PlaybookStep {
+  id: string;
+  phase: 'seedling' | 'veg' | 'flower' | 'harvest';
+  title: string;
+  descriptionIcu: string;
+  relativeDay: number;
+  rrule?: string;
+  defaultReminderLocal: string; // HH:mm format
+  taskType: TaskType;
+  durationDays?: number;
+  dependencies: string[];
+}
+```
+
+#### Task Model (WatermelonDB)
+
+```typescript
+@model('tasks')
+class Task extends Model {
+  @field('plant_id') plantId!: string;
+  @field('playbook_id') playbookId!: string;
+  @field('origin_step_id') originStepId!: string; // Immutable traceability
+  @field('phase_index') phaseIndex!: number; // Speed up progress queries
+  @field('title') title!: string;
+  @field('description') description!: string;
+  @field('due_date') dueDate!: string; // YYYY-MM-DD
+  @field('recurrence_rule') recurrenceRule?: string; // RFC 5545 RRULE
+  @field('reminder_at') reminderAt!: string; // ISO datetime
+  @field('status') status!: TaskStatus;
+  @json('flags', sanitizeFlags) flags!: TaskFlags; // manualEdited, excludeFromBulkShift
+  @field('notification_id') notificationId?: string; // For reliable cancel/reschedule
+  @field('created_at') createdAt!: number;
+  @field('updated_at') updatedAt!: number;
+  @field('deleted_at') deletedAt?: number;
+}
+
+interface TaskFlags {
+  manualEdited: boolean;
+  excludeFromBulkShift: boolean;
+}
+```
+
+## Error Handling
+
+### Typed Error System
+
+```typescript
+// Stable error codes for analytics and user messaging
+enum ErrorCode {
+  RRULE_INVALID_FORMAT = 'RRULE_INVALID_FORMAT',
+  RRULE_MISSING_FREQ = 'RRULE_MISSING_FREQ',
+  NOTIFICATION_CHANNEL_MISSING = 'NOTIFICATION_CHANNEL_MISSING',
+  NOTIFICATION_PERMISSION_DENIED = 'NOTIFICATION_PERMISSION_DENIED',
+  SYNC_NETWORK_ERROR = 'SYNC_NETWORK_ERROR',
+  SYNC_CONFLICT_DETECTED = 'SYNC_CONFLICT_DETECTED',
+  PLAYBOOK_ALREADY_APPLIED = 'PLAYBOOK_ALREADY_APPLIED',
+}
+
+class RRULEError extends Error {
+  constructor(
+    public code: ErrorCode,
+    message: string,
+    public rrule?: string
+  ) {
+    super(message);
+  }
+}
+
+class NotificationError extends Error {
+  constructor(
+    public code: ErrorCode,
+    message: string,
+    public taskId?: string
+  ) {
+    super(message);
+  }
+}
+
+class SyncError extends Error {
+  constructor(
+    public code: ErrorCode,
+    message: string,
+    public retryable: boolean = true
+  ) {
+    super(message);
+  }
+}
+```
+
+### Offline Error Handling
+
+```typescript
+class OfflineErrorHandler {
+  handleSyncFailure(error: SyncError): Promise<void> {
+    // Queue changes for retry with exponential backoff
+    // Show user-friendly offline indicator
+    // Emit sync_fail_rate metric
+    if (error.retryable) {
+      return this.scheduleRetry(error);
+    }
+    return this.showPermanentError(error);
+  }
+
+  handleNotificationFailure(error: NotificationError): Promise<void> {
+    // Fallback to in-app reminders
+    // Log failure for analytics: notif_missed
+    // Retry with WorkManager/JobScheduler on Android
+    return this.createInAppReminder(error.taskId);
+  }
+
+  handleRRULEValidationError(error: RRULEError): Promise<void> {
+    // Show localized error message with specific guidance
+    // Provide fallback simple recurrence (daily/weekly)
+    // Log for debugging with sanitized RRULE
+    return this.showRRULEFallbackOptions(error);
+  }
+}
+```
+
+### Conflict Resolution Strategy
+
+The system implements Last-Write-Wins (LWW) conflict resolution with user notification:
+
+```typescript
+class ConflictResolver {
+  resolveTaskConflict(localTask: Task, remoteTask: Task): Resolution {
+    if (remoteTask.updatedAt > localTask.updatedAt) {
+      return {
+        action: 'accept_remote',
+        notification: 'Task updated on another device',
+        showComparison: true,
+      };
+    }
+    return { action: 'keep_local' };
+  }
+
+  showConflictNotification(conflicts: Conflict[]): void {
+    // Display non-intrusive notification
+    // Provide "View Changes" option
+    // Allow manual resolution if needed
+  }
+}
+```
+
+## Testing Strategy
+
+### Unit Testing
+
+- **RRULE Generation**: Test all recurrence patterns (daily, weekly, custom intervals)
+- **Task Generation**: Verify correct task creation from playbook templates
+- **Notification Scheduling**: Mock notification system and verify scheduling logic
+- **Conflict Resolution**: Test LWW logic with various timestamp scenarios
+- **Schema Validation**: Validate all JSON schemas with edge cases
+
+### Integration Testing
+
+- **Offline Sync**: Test complete offline → online sync cycle
+- **Notification Delivery**: Test on real devices with various power states
+- **Performance**: Verify 60 FPS with 1k+ tasks in FlashList
+- **Cross-Platform**: Test notification behavior on Android/iOS
+
+### End-to-End Testing
+
+```typescript
+describe('Playbook E2E Flow', () => {
+  test('Complete offline playbook workflow', async () => {
+    // 1. Go offline
+    await device.setNetworkConnection(false);
+
+    // 2. Apply playbook
+    await applyPlaybook('auto_indoor', 'plant_1');
+
+    // 3. Shift schedule +3 days
+    await shiftSchedule('plant_1', 3);
+
+    // 4. Customize 5 tasks
+    await customizeTasks(['task_1', 'task_2', 'task_3', 'task_4', 'task_5']);
+
+    // 5. Mark 10 tasks complete
+    await markTasksComplete(10);
+
+    // 6. Go online and sync
+    await device.setNetworkConnection(true);
+    await waitForSync();
+
+    // 7. Verify changes on second device
+    await verifyChangesOnSecondDevice();
+  });
+});
+```
+
+### Performance Testing
+
+- **FlashList Performance**: Automated frame rate monitoring
+- **Memory Usage**: Monitor memory consumption with large datasets
+- **Battery Impact**: Test notification scheduling impact on battery
+- **Sync Performance**: Measure sync times with various data sizes
+
+## Implementation Details
+
+### RRULE Implementation
+
+The system uses RFC 5545 compliant RRULE patterns with strict validation and timezone awareness:
+
+```typescript
+class RRULEGenerator {
+  generateDailyRRULE(interval: number = 1): string {
+    return `FREQ=DAILY;INTERVAL=${interval}`;
+  }
+
+  generateWeeklyRRULE(days: WeekDay[], interval: number = 1): string {
+    const dayString = days.join(',');
+    return `FREQ=WEEKLY;INTERVAL=${interval};BYDAY=${dayString}`;
+  }
+
+  generateCustomRRULE(template: TaskTemplate, timezone: string): string {
+    // Handle complex recurrence patterns
+    // Support timezone-aware calculations with DST handling
+    // Validate against RFC 5545 spec
+    const rrule = this.buildRRULE(template);
+    if (!this.validateRRULEPattern(rrule)) {
+      throw new RRULEError(
+        ErrorCode.RRULE_INVALID_FORMAT,
+        'Invalid RRULE format',
+        rrule
+      );
+    }
+    return rrule;
+  }
+
+  validateRRULEPattern(rrule: string): boolean {
+    // Check FREQ appears first
+    // Ensure no duplicate parts
+    // Validate RFC 5545 ordering
+    const parts = rrule.split(';');
+    if (!parts[0].startsWith('FREQ=')) {
+      return false;
+    }
+
+    const seenParts = new Set();
+    for (const part of parts) {
+      const [key] = part.split('=');
+      if (seenParts.has(key)) {
+        return false; // Duplicate part
+      }
+      seenParts.add(key);
+    }
+
+    return true;
+  }
+
+  nextOccurrence(rrule: string, after: Date, timezone: string): Date {
+    // Timezone-aware calculation with DST handling
+    // Use anchor date (plant.startDate or phase.startDate)
+    // Handle spring/fall DST transitions
+    return this.calculateNextInTimezone(rrule, after, timezone);
+  }
+}
+```
+
+### Notification System Architecture
+
+```typescript
+class NotificationManager {
+  async ensureChannels(): Promise<void> {
+    // Create notification channels on Android 8+
+    await Notifications.setNotificationChannelAsync('tasks.reminders', {
+      name: 'Task Reminders',
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+    });
+
+    await Notifications.setNotificationChannelAsync('playbooks.suggestions', {
+      name: 'Playbook Suggestions',
+      importance: Notifications.AndroidImportance.DEFAULT,
+    });
+  }
+
+  async scheduleNotification(task: Task): Promise<string> {
+    // Ensure channels exist first
+    await this.ensureChannels();
+
+    const canUseExact = await this.canUseExactAlarms();
+    const trigger = this.createTrigger(
+      task.reminderAt,
+      task.recurrenceRule,
+      canUseExact
+    );
+
+    const notificationId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: task.title,
+        body: task.description,
+        data: { taskId: task.id, plantId: task.plantId },
+      },
+      trigger,
+    });
+
+    // Emit analytics
+    this.analytics.track('notif_scheduled', {
+      taskId: task.id,
+      exact: canUseExact,
+    });
+
+    return notificationId;
+  }
+
+  private createTrigger(
+    reminderAt: string,
+    rrule?: string,
+    useExact: boolean = false
+  ): NotificationTrigger {
+    if (rrule) {
+      return this.createRepeatingTrigger(reminderAt, rrule, useExact);
+    }
+
+    // Use inexact alarms by default for better battery life
+    return {
+      date: new Date(reminderAt),
+      channelId: 'tasks.reminders',
+    };
+  }
+
+  async canUseExactAlarms(): Promise<boolean> {
+    // Check Android 14+ SCHEDULE_EXACT_ALARM permission
+    if (Platform.OS === 'android' && Platform.Version >= 31) {
+      return await Notifications.canScheduleExactNotifications();
+    }
+    return true;
+  }
+
+  async handleAndroidDozeMode(): Promise<void> {
+    // Request battery optimization exemption
+    // Implement WorkManager/JobScheduler fallback
+    // Monitor delivery success rates: ≥95% within ±5 min
+    const stats = await this.getDeliveryStats();
+    if (stats.deliveryRate < 0.95) {
+      await this.implementFallbackStrategy();
+    }
+  }
+
+  async rehydrateNotifications(): Promise<void> {
+    // Called on app start to reschedule future notifications
+    const pendingTasks = await this.database.collections
+      .get<Task>('tasks')
+      .query(Q.where('status', 'pending'))
+      .fetch();
+
+    for (const task of pendingTasks) {
+      if (task.notificationId) {
+        await this.rescheduleTaskReminder(task);
+      }
+    }
+  }
+}
+```
+
+### Sync Implementation
+
+```typescript
+class PlaybookSyncEngine {
+  async pullChanges(lastPulledAt: number): Promise<Changes> {
+    const response = await this.supabaseClient.rpc('sync_pull', {
+      last_pulled_at: lastPulledAt,
+      tables: ['playbooks', 'tasks', 'plants'],
+    });
+
+    return this.transformServerResponse(response.data);
+  }
+
+  async pushChanges(changes: Changes): Promise<PushResult> {
+    const response = await this.supabaseClient.rpc('sync_push', {
+      changes,
+      idempotency_key: generateUUID(),
+    });
+
+    return this.handlePushResponse(response.data);
+  }
+
+  private handleConflicts(conflicts: Conflict[]): Promise<Resolution[]> {
+    // Implement Last-Write-Wins
+    // Show user notifications for important conflicts
+    // Provide comparison UI for manual resolution
+  }
+}
+```
+
+### Community Template Sharing
+
+```typescript
+class CommunityTemplateService {
+  async shareTemplate(playbook: Playbook): Promise<void> {
+    const sanitizedTemplate = this.stripPII(playbook);
+    const communityTemplate = {
+      ...sanitizedTemplate,
+      authorHandle: await this.getCurrentUserHandle(),
+      license: 'CC-BY-SA',
+      sharedAt: new Date().toISOString(),
+    };
+
+    await this.supabaseClient
+      .from('community_templates')
+      .insert(communityTemplate);
+  }
+
+  private stripPII(playbook: Playbook): Playbook {
+    // Remove personal plant data
+    // Remove identifying information
+    // Keep only normalized steps schema
+  }
+}
+```
+
+## Security and Privacy
+
+### Data Protection
+
+- **PII Stripping**: Automatic removal of personal information from shared templates
+- **RLS Enforcement**: Row-level security for all user data
+- **Encryption**: Local database encryption for sensitive data
+- **Audit Logging**: Track data access and modifications
+
+### Compliance
+
+- **Age Gating**: Enforce 18+ requirement
+- **Content Guidelines**: Educational content only, no commercial recommendations
+- **Legal Disclaimers**: Clear disclaimers on AI outputs and trichome guidance
+- **Data Retention**: User-controlled data deletion with cascade to remote
+
+## Accessibility and Internationalization
+
+### Accessibility Implementation
+
+```typescript
+const PlaybookCard = ({ playbook }: { playbook: Playbook }) => (
+  <TouchableOpacity
+    style={styles.card}
+    accessibilityRole="button"
+    accessibilityLabel={`Select ${playbook.name} playbook`}
+    accessibilityHint="Double tap to apply this playbook to your plant"
+    style={{ minHeight: 48 }} // Meet 48dp minimum
+  >
+    <Text style={styles.title}>{playbook.name}</Text>
+  </TouchableOpacity>
+)
+```
+
+### Internationalization
+
+```typescript
+// Using ICU MessageFormat for complex pluralization
+const taskCountMessage = formatMessage(
+  {
+    id: 'playbook.taskCount',
+    defaultMessage:
+      '{count, plural, =0 {No tasks} =1 {1 task} other {# tasks}}',
+  },
+  { count: taskCount }
+);
+```
+
+## Performance Optimizations
+
+### FlashList v2 Implementation
+
+```typescript
+const TaskTimeline = ({ tasks }: { tasks: Task[] }) => {
+  const renderTask = useCallback(({ item }: { item: Task }) => (
+    <TaskCard task={item} />
+  ), [])
+
+  return (
+    <FlashList
+      data={tasks}
+      renderItem={renderTask}
+      keyExtractor={(item) => item.id}
+      // FlashList v2 advantages:
+      // - No estimatedItemSize required (automatic precise sizing)
+      // - Built for React Native's New Architecture
+      // - Faster load times and improved scrolling performance
+      // - JS-only solution with better memory management
+    />
+  )
+}
+```
+
+### Memory Management
+
+- **Lazy Loading**: Load playbook details on demand
+- **Image Optimization**: Compress and cache trichome guide images
+- **Database Optimization**: Use indexes for common queries
+- **Background Processing**: Handle sync operations off main thread
+
+This design provides a comprehensive foundation for implementing the Guided Grow Playbooks feature with robust offline capabilities, excellent user experience, and strict compliance with platform requirements.
+
+## Analytics and Observability
+
+### Privacy and Consent Gating
+
+**ALL analytics events containing user-identifying information (plantId, playbookId, taskId, etc.) SHALL only be emitted when explicit user consent for analytics/telemetry has been recorded.** The event pipeline SHALL perform consent checks before emission:
+
+- **Consent Check Behavior**: Events with identifiers SHALL be dropped silently if consent is absent or withdrawn
+- **Raw ID Prohibition**: Raw database identifiers (UUIDs, auto-increment IDs) SHALL NEVER be sent without consent
+- **Pseudonymization Requirements**: When consent is present, identifiers SHALL be transformed using:
+  - Salted/versioned hashing (SHA-256 with per-user salt + version prefix), OR
+  - Server-side ID mapping service returning opaque tokens, OR
+  - Non-identifying counters (e.g., "playbook_count": 3, "task_index": 5)
+- **Fallback Strategy**: Events SHALL use non-identifying aggregations when consent is absent (e.g., "playbook_applied" without IDs, "customizations_made": 2)
+- **Consent State Tracking**: The analytics pipeline SHALL monitor consent state changes and immediately cease identifier emission upon withdrawal
+
+**Implementation Note**: Update instrumentation tests and telemetry ingestion documentation to validate consent gating logic and pseudonymization correctness.
+
+### Health Metrics
+
+The system SHALL emit the following structured analytics events (with consent-gated identifier handling):
+
+```typescript
+interface AnalyticsEvents {
+  // Core playbook operations (consent-gated with pseudonymized IDs)
+  playbook_apply:
+    | {
+        playbookId: string; // Pseudonymized: hashed/salted or opaque token when consented
+        plantId: string; // Pseudonymized: hashed/salted or opaque token when consented
+        durationMs: number;
+        taskCount: number;
+      }
+    | {
+        // Fallback when consent absent: non-identifying counters only
+        playbook_applied: true;
+        durationMs: number;
+        taskCount: number;
+      };
+
+  playbook_shift_preview:
+    | {
+        plantId: string; // Pseudonymized when consented
+        daysDelta: number;
+        affectedTasks: number;
+      }
+    | {
+        // Fallback when consent absent
+        shift_previewed: true;
+        daysDelta: number;
+        affectedTasks: number;
+      };
+
+  playbook_shift_apply:
+    | {
+        plantId: string; // Pseudonymized when consented
+        daysDelta: number;
+        durationMs: number;
+      }
+    | {
+        // Fallback when consent absent
+        shift_applied: true;
+        daysDelta: number;
+        durationMs: number;
+      };
+
+  playbook_shift_undo:
+    | {
+        plantId: string; // Pseudonymized when consented
+        restoredTasks: number;
+      }
+    | {
+        // Fallback when consent absent
+        shift_undone: true;
+        restoredTasks: number;
+      };
+
+  // Task customization (consent-gated with pseudonymized IDs)
+  playbook_task_customized:
+    | {
+        taskId: string; // Pseudonymized when consented
+        field: string;
+        playbookId: string; // Pseudonymized when consented
+      }
+    | {
+        // Fallback when consent absent
+        task_customized: true;
+        field: string;
+        customizations_count: number;
+      };
+
+  playbook_saved_as_template:
+    | {
+        originalPlaybookId: string; // Pseudonymized when consented
+        customizations: number;
+      }
+    | {
+        // Fallback when consent absent
+        template_saved: true;
+        customizations: number;
+      };
+
+  // AI integration (consent-gated with pseudonymized IDs)
+  ai_adjustment_suggested:
+    | {
+        plantId: string; // Pseudonymized when consented
+        reason: string;
+        confidence: number;
+      }
+    | {
+        // Fallback when consent absent
+        ai_suggestion_made: true;
+        reason: string;
+        confidence: number;
+      };
+
+  ai_adjustment_applied:
+    | {
+        plantId: string; // Pseudonymized when consented
+        suggestionId: string; // Pseudonymized when consented
+      }
+    | {
+        // Fallback when consent absent
+        ai_adjustment_accepted: true;
+      };
+
+  ai_adjustment_declined:
+    | {
+        plantId: string; // Pseudonymized when consented
+        suggestionId: string; // Pseudonymized when consented
+      }
+    | {
+        // Fallback when consent absent
+        ai_adjustment_rejected: true;
+      };
+
+  // Trichome helper (consent-gated with pseudonymized IDs)
+  trichome_helper_open:
+    | {
+        plantId: string; // Pseudonymized when consented
+        phase: string;
+      }
+    | {
+        // Fallback when consent absent
+        trichome_helper_opened: true;
+        phase: string;
+      };
+
+  trichome_helper_logged:
+    | {
+        plantId: string; // Pseudonymized when consented
+        assessment: string;
+        photoCount: number;
+      }
+    | {
+        // Fallback when consent absent
+        trichome_assessment_logged: true;
+        assessment: string;
+        photoCount: number;
+      };
+
+  // Notifications (consent-gated with pseudonymized IDs)
+  notif_scheduled:
+    | {
+        taskId: string; // Pseudonymized when consented
+        exact: boolean;
+      }
+    | {
+        // Fallback when consent absent
+        notification_scheduled: true;
+        exact: boolean;
+      };
+
+  notif_delivered:
+    | {
+        taskId: string; // Pseudonymized when consented
+        deliveryLatencyMs: number;
+      }
+    | {
+        // Fallback when consent absent
+        notification_delivered: true;
+        deliveryLatencyMs: number;
+      };
+
+  notif_missed:
+    | {
+        taskId: string; // Pseudonymized when consented
+        reason: string;
+      }
+    | {
+        // Fallback when consent absent
+        notification_missed: true;
+        reason: string;
+      };
+
+  // Sync performance (non-identifying - no consent gating needed)
+  sync_latency_ms: { operation: 'pull' | 'push'; durationMs: number };
+  sync_fail_rate: { operation: 'pull' | 'push'; errorCode: string };
+
+  // Conflicts (non-identifying - no consent gating needed)
+  conflict_seen: { table: string; conflictType: string };
+  restore_clicked: { conflictId: string; table: string };
+}
+```
+
+## Enhanced Acceptance Criteria
+
+### RRULE Conformance
+
+- **WHEN** RRULE patterns are generated **THEN** all rules SHALL validate against RFC 5545 specification
+- **WHEN** testing RRULE **THEN** unit tests SHALL include DST boundary cases (spring/fall transitions)
+- **WHEN** validating RRULE **THEN** system SHALL reject patterns missing FREQ first or containing duplicate parts
+
+### Notifications Matrix
+
+- **WHEN** testing on Pixel 6 (Android 14), Moto G-class, and iPhone SE/13 **THEN** ≥95% of reminders SHALL be delivered within ±5 minutes
+- **WHEN** device is in screen off, Doze, or Low Power mode **THEN** notifications SHALL still meet delivery targets
+- **WHEN** scheduling notifications **THEN** system SHALL use inexact alarms by default with exact alarms only on user opt-in
+
+### FlashList v2 Performance
+
+- **WHEN** rendering timeline with 1,000+ items **THEN** list SHALL maintain 60 FPS in release mode using FlashList v2's automatic sizing
+- **WHEN** scrolling through large datasets **THEN** system SHALL leverage FlashList v2's improved memory management and precise rendering
+- **WHEN** testing performance **THEN** automated checks SHALL verify no dropped frames with FlashList v2's ground-up rewrite optimizations
+- **WHEN** using FlashList v2 **THEN** system SHALL benefit from faster load times and improved scrolling performance without manual size estimates
+
+### Sync Flight-Mode E2E
+
+- **WHEN** testing offline functionality **THEN** system SHALL pass complete workflow: apply playbook → shift +3 days → customize 5 tasks → complete 10 → reconnect → verify second device parity
+- **WHEN** reconnecting after offline changes **THEN** all mutations SHALL sync successfully with conflict resolution
+- **WHEN** handling large datasets **THEN** sync SHALL work correctly with 1k+ tasks and power-saving modes
+
+### Accessibility Compliance
+
+- **WHEN** designing interactive elements **THEN** all actionable controls SHALL meet ≥44pt (iOS) / ≥48dp (Android) minimum size
+- **WHEN** implementing UI **THEN** automated checks SHALL enforce minimum touch target requirements
+- **WHEN** providing content **THEN** all text SHALL include proper focus order and voice labels
+
+### Schema Validation
+
+- **WHEN** creating playbooks **THEN** all data SHALL validate against JSON Schema 2020-12 specification
+- **WHEN** building CI pipeline **THEN** schema validation SHALL be enforced with fixtures and automated tests
+- **WHEN** handling invalid data **THEN** system SHALL provide clear error messages with recovery options
+
+### Community Template Security
+
+- **WHEN** sharing templates **THEN** system SHALL strip all PII and personal plant data
+- **WHEN** accessing community content **THEN** RLS SHALL enforce public-read, owner-write permissions
+- **WHEN** using Realtime **THEN** subscriptions SHALL be limited to community/shared templates only (not personal data)
+
+### One-Active-Playbook Rule
+
+- **WHEN** applying playbook to plant **THEN** system SHALL enforce one-active-playbook-per-plant constraint
+- **WHEN** attempting to apply multiple playbooks **THEN** system SHALL require explicit allowMultiple=true flag
+- **WHEN** showing preview **THEN** system SHALL display total weeks, phase durations, and task counts before application
+
+### Idempotency and Undo
+
+- **WHEN** performing apply/shift/customize operations **THEN** system SHALL support idempotency keys to prevent duplicate operations
+- **WHEN** undoing operations **THEN** system SHALL restore RRULEs and notifications atomically
+- **WHEN** conflicts occur **THEN** system SHALL provide one-tap restore to local version with diff comparison
+
+This comprehensive design provides a robust foundation for implementing the Guided Grow Playbooks feature with enterprise-grade reliability, performance, and user experience while maintaining strict compliance with platform requirements and cannabis regulations.

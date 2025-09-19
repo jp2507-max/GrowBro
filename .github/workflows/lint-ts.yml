@@ -36,7 +36,7 @@ jobs:
 
     steps:
       - name: 📦 Checkout project repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
           fetch-depth: 0
 
@@ -45,10 +45,11 @@ jobs:
 
       - name: 🏃‍♂️ Run ESLint PR
         if: github.event_name == 'pull_request'
-        uses: reviewdog/action-eslint@v1
+        uses: reviewdog/action-eslint@556a3fdaf8b4201d4d74d406013386aa4f7dab96
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
+          fail_on_error: true
           eslint_flags: '. --ext .js,.jsx,.ts,.tsx'
 
       - name: 🏃‍♂️ Run ESLint PR

@@ -17,7 +17,6 @@ export type DPIAConfig = {
   signedOff: boolean;
   mitigations: DPIAMitigation[];
 };
-
 // Backwards-compatible helper used by tests and existing callers.
 export function assertDPIAUpToDate(
   dpia: DPIAConfig,
