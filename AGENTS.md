@@ -39,6 +39,7 @@ Process each Spec in `.kiro/specs/*/tasks.md`. Use `design.md` as the source of 
 
    - Derive `SPEC_NUM=<number>`, `SPEC_SLUG=<slug>`
    - Derive `SPEC_DIR=.kiro/specs/<number>. <slug>/` (if not provided explicitly)
+   - Fetch issue title/body/labels via GitHub API/MCP (do not rely on local repo search)
 
 2. Create or reuse the feature branch `spec/<number>-<slug>`, based on `main`
 
@@ -69,6 +70,25 @@ Process each Spec in `.kiro/specs/*/tasks.md`. Use `design.md` as the source of 
    - Resolve all CodeRabbit comments
    - Call `@coderabbitai review`; then call `@codex review` to cross-check after CodeRabbit
    - Move PR from Draft → Ready for review
+
+---
+
+## Spec Resolution Rules (critical)
+
+Always determine the Spec from the Issue content, never from the GitHub issue number.
+
+Priority order for deriving SPEC_NUM, SPEC_SLUG, SPEC_DIR:
+
+1. Issue title pattern `Spec <number> – <slug>` (preferred)
+2. Issue body links (e.g., “Kontext / Dateien” or “Spec file links”) pointing to
+   `/.kiro/specs/<number>. <slug>/design.md` etc. — infer `<number>. <slug>` from these
+3. Issue Form fields if present: `spec_number`, `spec_slug`, `spec_dir`
+4. Label `spec:<number>` for SPEC_NUM only (slug still required from title/body/fields)
+
+Rules:
+
+- NEVER infer `SPEC_NUM` from the GitHub issue ID
+- On conflicts, prefer the title; note the chosen values in the PR body under “Spec Resolution”
 
 ---
 
