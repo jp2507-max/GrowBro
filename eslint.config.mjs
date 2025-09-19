@@ -19,6 +19,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig([
   globalIgnores([
     'dist/*',
+    'package/dist',
     'node_modules',
     '__tests__/',
     'coverage',
@@ -116,18 +117,6 @@ export default defineConfig([
       },
     },
   },
-  // Disable no-flatlist rule for test and storybook files
-  {
-    files: [
-      '**/__tests__/**/*.{ts,tsx}',
-      '**/*.test.{ts,tsx}',
-      '**/*.stories.{ts,tsx}',
-      '**/*.spec.{ts,tsx}',
-    ],
-    rules: {
-      'no-flatlist/no-flatlist': 'off',
-    },
-  },
   {
     files: ['src/translations/*.json'],
     plugins: { 'i18n-json': i18nJsonPlugin },
@@ -181,6 +170,31 @@ export default defineConfig([
     files: ['supabase/functions/**/*.{ts,tsx}'],
     rules: {
       'import/no-unresolved': 'off',
+    },
+  },
+  // Scripts and generated packages run in Node; allow __dirname/Buffer and relax length
+  {
+    files: ['scripts/**/*.js', 'package/dist/**/*.{js,ts}'],
+    languageOptions: {
+      globals: {
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        Buffer: 'readonly',
+        process: 'readonly',
+        global: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
+        setImmediate: 'readonly',
+        clearImmediate: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+      },
+    },
+    rules: {
+      'no-undef': 'off',
     },
   },
 ]);

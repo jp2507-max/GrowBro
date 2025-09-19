@@ -99,7 +99,7 @@
   - Write consent-aware event processing with purpose validation
   - _Requirements: 2.2, 2.4, 4.5_
 
-- [ ] 4. Build automated data retention and lifecycle management
+- [x] 4. Build automated data retention and lifecycle management
 
   - Implement RetentionWorker with automated data purging and aggregation
   - Create retention policy enforcement with concrete time windows
@@ -239,56 +239,56 @@
   - Implement audit log export functionality for compliance reporting
   - _Requirements: 7.4, 5.6_
 
-- [ ] 9. Create data subject rights (DSR) endpoints
+- [x] 9. Create data subject rights (DSR) endpoints
 
   - Build data export functionality with comprehensive user data collection
   - Implement account deletion with cascading data removal validation
   - Create consent withdrawal propagation to external processors
   - _Requirements: 6.4, 6.5, 2.3, 5.6_
 
-- [ ] 9.1 Build data export system with in-app delivery
+- [x] 9.1 Build data export system with in-app delivery
 
   - Create /dsr/export endpoint with job ID tracking and GDPR timeline compliance (≤30 days)
   - Export delivers in-app download (avoid email PII risks), includes evidence (consents, audit logs, retention reports)
   - Write data export formatting and delivery with audit logging
   - _Requirements: 6.4_
 
-- [ ] 9.2 Implement account deletion system
+- [x] 9.2 Implement account deletion system
 
   - Create /dsr/delete endpoint with cascading deletion across WatermelonDB, file system, cloud storage
   - Write deletion validation and verification with comprehensive audit trails
   - Implement deletion job tracking and completion notification
   - _Requirements: 6.5, 5.6_
 
-- [ ] 9.3 Create consent withdrawal propagation with job tracking
+- [x] 9.3 Create consent withdrawal propagation with job tracking
 
   - Build /consents/withdraw endpoint with immediate processor notification
   - Consent withdrawal propagates to processors and returns job IDs
   - Do not log any "opt-out ack" server-side (local acknowledgment only)
   - _Requirements: 2.3, 2.4_
 
-- [ ] 10. Write comprehensive test suite for GDPR compliance
+- [x] 10. Write comprehensive test suite for GDPR compliance
 
   - Create unit tests for consent logic, retention policies, and SDK gating
   - Build integration tests for consent flows, withdrawal propagation, and deletion cascades
   - Implement E2E tests for zero-traffic pre-consent and compliance validation
   - _Requirements: All requirements validation_
 
-- [ ] 10.1 Create consent management unit tests
+- [x] 10.1 Create consent management unit tests
 
   - Write tests for ConsentService consent granting, withdrawal, and validation logic
   - Create tests for SDK gating with consent-based initialization blocking
   - Implement retention policy tests with automated data purging validation
   - _Requirements: 1.1-1.6, 2.1-2.6, 4.1-4.6_
 
-- [ ] 10.2 Build integration tests for consent flows
+- [x] 10.2 Build integration tests for consent flows
 
   - Create first-run consent flow tests with "Reject all" prominence validation
   - Write consent withdrawal tests with immediate SDK stopping and deletion job scheduling
   - Implement AI image flow tests separating diagnosis from training consent requirements
   - _Requirements: 1.1, 1.2, 2.2, 2.4, 7.1, 7.2_
 
-- [ ] 10.3 Implement E2E compliance validation tests with mechanical pass/fail
+- [x] 10.3 Implement E2E compliance validation tests with mechanical pass/fail
 
   - Create zero-traffic pre-consent tests: assert no network calls to analytics/crash/A-B endpoints before any consent tap (proxy or packet capture)
   - Write retention verification tests: assert daily PurgeReport freshness + counts; fail build if stale
@@ -296,28 +296,28 @@
   - Build DPIA validation tests blocking releases without proper documentation
   - _Requirements: 1.4, 4.6, 5.1, 5.3, 5.5_
 
-- [ ] 11. Create iOS Privacy Manifests and App Store compliance
+- [x] 11. Create iOS Privacy Manifests and App Store compliance
 
   - Build Apple Privacy Manifests for app and third-party SDKs declaring data collection
   - Document Required-Reasons APIs usage to prevent App Store review blocks
   - Create static checks for privacy manifest completeness and accuracy
   - _Requirements: App Store compliance, iOS privacy requirements_
 
-- [ ] 11.1 Build iOS Privacy Manifests for app and SDKs
+- [x] 11.1 Build iOS Privacy Manifests for app and SDKs
 
   - Create Privacy Manifest declaring data collection purposes and Required-Reasons APIs
   - Document all third-party SDK privacy manifests (Supabase, Sentry, analytics SDKs)
   - Write privacy manifest validation and completeness checking
   - _Requirements: iOS App Store compliance_
 
-- [ ] 11.2 Implement Privacy Manifest static validation
+- [x] 11.2 Implement Privacy Manifest static validation
 
   - Create static check that iOS privacy manifests exist and list all Required-Reasons APIs used
   - Write CI validation for privacy manifest accuracy and completeness
   - Implement privacy manifest update detection for SDK changes
   - _Requirements: iOS App Store compliance_
 
-- [ ] 12. Add EU AI Act compliance monitoring (non-blocking)
+- [x] 12. Add EU AI Act compliance monitoring (non-blocking)
   - Map AI features to EU AI Act transparency duties and risk categories
   - Track 2025/2026 phased applicability for AI model compliance
   - Create AI Act compliance documentation and monitoring system

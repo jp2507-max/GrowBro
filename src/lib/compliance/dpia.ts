@@ -15,8 +15,18 @@ export type DPIAConfig = {
   aiModelVersion: string;
   completedAt: string; // ISO string for portability
   signedOff: boolean;
-  mitigations: DPIAMitigation[];
+  mitigations?: DPIAMitigation[];
 };
+// Backwards-compatible helper used by tests and existing callers.
+export function assertDPIAUpToDate(
+  dpia: DPIAConfig,
+  currentModelVersion: string
+): void {
+  if (!dpia.signedOff || dpia.aiModelVersion !== currentModelVersion) {
+    // Keep the legacy message so existing tests that assert on this text continue to pass
+    throw new Error('DPIA required for AI model version change');
+  }
+}
 
 export function validateDPIAConfig(
   config: DPIAConfig,
