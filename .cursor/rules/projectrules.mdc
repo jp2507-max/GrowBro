@@ -19,6 +19,7 @@ Every time you choose to apply a rule(s), explicitly state the rule(s) in the ou
 - Ensure components are modular, reusable, and maintainable.
 - Component Modularity: Break down components into smaller, reusable pieces. Keep components focused on a single responsibility and shouldn't be more than 80 lines of code.
 - To install new packages use `npx expo install <package-name>`
+- When executing multi-step specs, batch work into "task groups" (interfaces+config, store/state, screens+navigation, i18n+tests). Run validation per group to reduce churn.
 - Structure repository files as follows:
 
 ```
@@ -89,6 +90,7 @@ src
 - Use absolute imports for all files @/...
 - Avoid try/catch blocks unless there's good reason to translate or handle error in that abstraction
 - Use explicit return types for all functions
+- Prefer types over interfaces for exported shapes (typed-interfaces policy means strongly typed shapes; using `type` aliases is preferred here)
 
 ## State Management
 
@@ -105,6 +107,8 @@ src
 ## Internationalization (I18n)
 
 - make sure all user-visible strings (UI labels, buttons, error messages, placeholders, notifications, email templates, tooltips, and any text rendered to users) are internationalized in German and English
+- Pre-create translation keys and add EN/DE entries before wiring new UI so translation validators pass throughout a long-running slice.
+- If copy is provisional, add a PR note `I18N-TODO:` and replace before moving PR to Ready.
 
 ## UI and Styling
 
@@ -154,6 +158,7 @@ export function Title({ text }: Props) {
 - Write unit tests for utilities and complex components
 - The test file should be named like the component file but with the .test.tsx extension (e.g., component-name.test.tsx)
 - Do not write unit tests for simple components that only show data
+\n+### Execution cadence and honesty\n+\n+- Run `pnpm check-all` per task group, not for every tiny edit. If a local runner is unavailable, push to CI and let it evaluate gates; do not claim local PASS.\n+- Use `RESEARCH-TODO:` comments in PRs when documentation lookup (MCP/web) is temporarily unavailable; proceed with established patterns from this repo.
 
 ## Git Usage
 
