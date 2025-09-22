@@ -32,9 +32,17 @@ jobs:
           fi
       - name: Scan Android Manifest for restricted permissions
         run: pnpm run compliance:scan:android
+      - name: Validate data safety disclosures
+        run: pnpm run data-safety:validate
       - name: Upload compliance report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: android-compliance-report
           path: build/reports/compliance/android-manifest-scan.json
+      - name: Upload data safety validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-safety-validation-report
+          path: build/reports/compliance/data-safety-validation.json
