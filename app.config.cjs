@@ -1,5 +1,9 @@
 // Load .env only in local/dev; CI may set EXPO_NO_DOTENV=1
-const { config } = require('dotenv');
+const dotenv = require('dotenv');
+
+if (process.env.EXPO_NO_DOTENV !== '1') {
+  dotenv.config();
+}
 
 // IMPORTANT: Do not import from '@env' here because the Expo config is evaluated
 // directly by Node (no Babel module resolver / TS path mapping). Use the root
@@ -35,10 +39,6 @@ try {
     ACCOUNT_DELETION_URL:
       process.env.ACCOUNT_DELETION_URL || 'https://growbro.app/delete-account',
   };
-}
-
-if (process.env.EXPO_NO_DOTENV !== '1') {
-  config();
 }
 
 const appIconBadgeConfig = {
@@ -155,9 +155,12 @@ function createExpoConfig(config) {
       EXPO_PUBLIC_SUPABASE_ANON_KEY: Env.SUPABASE_ANON_KEY,
       EXPO_PUBLIC_ACCOUNT_DELETION_URL: Env.ACCOUNT_DELETION_URL,
       // App Access Reviewer Credentials for Play Store compliance
-      EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL: Env.APP_ACCESS_REVIEWER_EMAIL,
-      EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD:
-        Env.APP_ACCESS_REVIEWER_PASSWORD,
+      // Only expose in non-production builds to prevent secrets in production bundles
+      ...(Env.APP_ENV !== 'production' && {
+        EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL: Env.APP_ACCESS_REVIEWER_EMAIL,
+        EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD:
+          Env.APP_ACCESS_REVIEWER_PASSWORD,
+      }),
       eas: {
         projectId: Env.EAS_PROJECT_ID,
       },

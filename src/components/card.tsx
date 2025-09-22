@@ -4,6 +4,7 @@ import React from 'react';
 import type { Post } from '@/api';
 import { ModerationActions } from '@/components/moderation-actions';
 import { Image, Pressable, Text, View } from '@/components/ui';
+import { translate } from '@/lib';
 
 type Props = Post;
 

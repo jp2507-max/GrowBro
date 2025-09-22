@@ -96,25 +96,53 @@ function maskSecret(value: string | undefined, envKey: string): MaskedSecret {
 }
 
 export function provideTestCredentials(): TestCredentials {
-  const username = maskSecret(
-    Env.EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL,
-    'EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL'
-  );
-  const password = maskSecret(
-    Env.EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD,
-    'EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD'
-  );
+  // Only read sensitive credentials in development mode to prevent secret leakage
+  // In production builds, these values are never exposed to the client bundle
+  if (__DEV__) {
+    // In non-production builds, try to read from EXPO_PUBLIC_* first (for backward compatibility)
+    // In production, these won't be exposed, so fall back to direct env access
+    const emailFromPublic = Env.EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL;
+    const passwordFromPublic = Env.EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD;
 
+    const email = emailFromPublic || Env.APP_ACCESS_REVIEWER_EMAIL;
+    const password = passwordFromPublic || Env.APP_ACCESS_REVIEWER_PASSWORD;
+
+    const username = maskSecret(
+      email,
+      emailFromPublic
+        ? 'EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL'
+        : 'APP_ACCESS_REVIEWER_EMAIL'
+    );
+    const passwordMasked = maskSecret(
+      password,
+      passwordFromPublic
+        ? 'EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD'
+        : 'APP_ACCESS_REVIEWER_PASSWORD'
+    );
+
+    return {
+      username,
+      password: passwordMasked,
+      delivery: 'play-console',
+      notes: [
+        'Credentials live in Play Console > App content > App access.',
+        'Rotate reviewer account after every release cycle.',
+        'Update CI secret references when credentials change.',
+      ],
+      valid: username.present && passwordMasked.present,
+    };
+  }
+
+  // In production builds, never expose credentials to prevent secret leakage
   return {
-    username,
-    password,
+    username: maskSecret(undefined, 'APP_ACCESS_REVIEWER_EMAIL'),
+    password: maskSecret(undefined, 'APP_ACCESS_REVIEWER_PASSWORD'),
     delivery: 'play-console',
     notes: [
-      'Credentials live in Play Console > App content > App access.',
-      'Rotate reviewer account after every release cycle.',
-      'Update CI secret references when credentials change.',
+      'Credentials are managed securely in production builds.',
+      'Contact development team for reviewer access setup.',
     ],
-    valid: username.present && password.present,
+    valid: false,
   };
 }
 

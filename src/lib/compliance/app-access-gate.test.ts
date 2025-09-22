@@ -9,6 +9,17 @@ import {
 const originalEmail = process.env.APP_ACCESS_REVIEWER_EMAIL;
 const originalPassword = process.env.APP_ACCESS_REVIEWER_PASSWORD;
 
+// Mock expo-constants to provide the normalized env vars
+jest.mock('expo-constants', () => ({
+  expoConfig: {
+    extra: {
+      APP_ACCESS_REVIEWER_EMAIL: 'reviewer@example.com',
+      APP_ACCESS_REVIEWER_PASSWORD: 'Sup3rSecret!',
+    },
+  },
+  manifest2: null,
+}));
+
 const artifactPath = path.resolve(
   __dirname,
   '../../..',

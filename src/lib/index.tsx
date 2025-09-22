@@ -29,16 +29,6 @@ export { SDKGate } from './privacy/sdk-gate';
 export * as rrule from './rrule';
 export * from './sentry-utils';
 export * from './supabase';
-export {
-  isSyncInFlight,
-  getPendingChangesCount,
-  synchronize,
-  runSyncWithRetry,
-  type SyncRequest,
-  type SyncResponse,
-  type PushRequest,
-  type SyncResult,
-} from './sync-engine';
 export * from './sync/preferences';
 export * from './sync/storage-manager';
 export * from './task-manager';

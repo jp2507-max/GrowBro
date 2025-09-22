@@ -109,6 +109,13 @@ function buildBirthDate(input: AgeGateVerifyInput): Date | null {
   }
   const date = new Date(Date.UTC(birthYear, birthMonth - 1, birthDay));
   if (Number.isNaN(date.getTime())) return null;
+  if (
+    date.getUTCFullYear() !== birthYear ||
+    date.getUTCMonth() + 1 !== birthMonth ||
+    date.getUTCDate() !== birthDay
+  ) {
+    return null;
+  }
   return date;
 }
 
@@ -129,7 +136,7 @@ function createSessionId(): string {
   return `ag-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function createHydrateFunction(set: any) {
+function createHydrateFunction(set: any): () => void {
   return () => {
     const persisted = loadPersistedState();
     if (persisted.verifiedAt) {
@@ -144,8 +151,10 @@ function createHydrateFunction(set: any) {
   };
 }
 
-function createVerifyFunction(set: any) {
-  return (input: AgeGateVerifyInput) => {
+function createVerifyFunction(
+  set: any
+): (input: AgeGateVerifyInput) => AgeGateVerifyResult {
+  return (input: AgeGateVerifyInput): AgeGateVerifyResult => {
     const birthDate = buildBirthDate(input);
     const now = new Date();
     const timestamp = now.toISOString();
@@ -186,7 +195,7 @@ function createVerifyFunction(set: any) {
   };
 }
 
-function createResetFunction(set: any) {
+function createResetFunction(set: any): () => void {
   return () => {
     storage.delete(AGE_GATE_STATE_KEY);
     storage.delete(AGE_GATE_AUDIT_KEY);
@@ -200,7 +209,7 @@ function createResetFunction(set: any) {
   };
 }
 
-function createStartSessionFunction(set: any, get: any) {
+function createStartSessionFunction(set: any, get: any): () => void {
   return () => {
     const state = get();
     if (state.status !== 'verified') {
@@ -214,9 +223,9 @@ function createStartSessionFunction(set: any, get: any) {
   };
 }
 
-function createAgeGateStore(set: any, get: any) {
+function createAgeGateStore(set: any, get: any): AgeGateStoreState {
   return {
-    status: 'unknown',
+    status: 'unknown' as AgeGateStatus,
     verifiedAt: null,
     method: null,
     sessionId: null,

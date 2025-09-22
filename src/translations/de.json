@@ -141,7 +141,7 @@
     "mute": "Stummschalten",
     "mute_failed": "Benutzer konnte nicht stummgeschaltet werden. Bitte versuchen Sie es erneut.",
     "queue": {
-      "appeal": "Berufung",
+      "appeal": "Einspruch",
       "empty": "Leer",
       "escalate": "Eskalieren",
       "processAll": "Alle verarbeiten",
