@@ -26,6 +26,7 @@ export class DeepLinkValidator {
   ];
 
   private readonly ALLOWED_PATHS = [
+    '/app-access/assessment-overview',
     '/post/:id',
     '/profile/:id',
     '/grow/:id',

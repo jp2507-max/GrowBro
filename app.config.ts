@@ -1,17 +1,17 @@
 // Load .env only in local/dev; CI may set EXPO_NO_DOTENV=1
 import type { AppIconBadgeConfig } from 'app-icon-badge/types';
+import { config } from 'dotenv';
 
 import applePrivacyManifest from './apple-privacy-manifest.json';
-
-if (process.env.EXPO_NO_DOTENV !== '1') {
-  require('dotenv').config();
-}
 // IMPORTANT: Do not import from '@env' here because the Expo config is evaluated
 // directly by Node (no Babel module resolver / TS path mapping). Use the root
 // env.js exports instead which are plain Node modules.
 // Lazy import to avoid throwing before dotenv (or CI env) is in place.
+import { Env } from './env';
 
-const { Env } = require('./env');
+if (process.env.EXPO_NO_DOTENV !== '1') {
+  config();
+}
 
 const appIconBadgeConfig: AppIconBadgeConfig = {
   enabled: Env.APP_ENV !== 'production',
@@ -125,6 +125,7 @@ function createExpoConfig(config: any): any {
       // Ensure client env is available at runtime (normalize in src/lib/env.js)
       EXPO_PUBLIC_SUPABASE_URL: Env.SUPABASE_URL,
       EXPO_PUBLIC_SUPABASE_ANON_KEY: Env.SUPABASE_ANON_KEY,
+      EXPO_PUBLIC_ACCOUNT_DELETION_URL: Env.ACCOUNT_DELETION_URL,
       eas: {
         projectId: Env.EAS_PROJECT_ID,
       },

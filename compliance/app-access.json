@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "delivery": "play-console",
+  "credentials": {
+    "usernameEnv": "APP_ACCESS_REVIEWER_EMAIL",
+    "passwordEnv": "APP_ACCESS_REVIEWER_PASSWORD",
+    "masking": "Use AppAccessManager.provideTestCredentials to verify presence without exposing values."
+  },
+  "features": [
+    {
+      "id": "assessment",
+      "title": "AI assessment",
+      "steps": [
+        "Access AI assessment history",
+        "Launch GrowBro with reviewer credentials.",
+        "On age gate prompt choose \"I am over 18\".",
+        "Tap Insights -> AI Assessment.",
+        "Open the \"Sample Leaf Analysis\" card to view results.",
+        "Trigger guided assessment demo",
+        "From AI Assessment, tap \"Run guided assessment\".",
+        "Select the demo plant \"Aurora Borealis\".",
+        "Choose the sample gallery image to simulate capture.",
+        "Review the generated guidance summary."
+      ],
+      "deepLinks": [
+        "growbro://app-access/assessment-overview",
+        "https://growbro.app/app-access/assessment-overview"
+      ],
+      "notes": [
+        "Demo data reset script seeds at least one completed assessment with guidance output.",
+        "Guided assessment flow requires selected demo plant and sample asset bundle."
+      ]
+    },
+    {
+      "id": "community",
+      "title": "Community feed",
+      "steps": [
+        "Reach community feed",
+        "Tap Community from the bottom navigation bar.",
+        "Scroll to the \"Compliance launch checklist\" pinned post.",
+        "Open the actions menu to verify moderation options are visible.",
+        "Access sample report flow",
+        "Within pinned post, tap the three dot menu.",
+        "Show Report / Mute / Block options.",
+        "Cancel to return to the feed."
+      ],
+      "deepLinks": ["growbro://feed", "https://growbro.app/feed"],
+      "notes": [
+        "Pinned post content is pre-moderated and safe for review screen recording.",
+        "Moderation actions remain visible even when reviewer account has read-only flag."
+      ]
+    },
+    {
+      "id": "reminders",
+      "title": "Reminders calendar",
+      "steps": [
+        "Review scheduled reminders",
+        "Tap Calendar from navigation.",
+        "Select today's date to show the scheduled feeding task.",
+        "Open reminder details to display notification status.",
+        "Demonstrate reminder notification settings",
+        "In Calendar, tap the reminder settings icon.",
+        "Adjust default reminder lead time.",
+        "Save to confirm update and note expected push behavior."
+      ],
+      "deepLinks": ["growbro://calendar", "https://growbro.app/calendar"],
+      "notes": [
+        "Demo reminder uses local notification stub; no push is sent until POST_NOTIFICATIONS granted.",
+        "Calendar view seeded via ci/app-access-seed.ts provisioning script."
+      ]
+    }
+  ],
+  "checklist": [
+    "Rotate reviewer credentials and update Play Console App access before each submission.",
+    "Run pnpm compliance:app-access to verify instructions and deep links.",
+    "Attach reviewer walkthrough PDF and this JSON to the compliance package in docs/compliance.",
+    "Confirm reviewer account is age-verified and bypass tokens remain valid."
+  ]
+}

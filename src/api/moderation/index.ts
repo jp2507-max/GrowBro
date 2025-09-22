@@ -19,9 +19,7 @@ export async function apiReportContent(payload: ReportPayload): Promise<void> {
       );
       console.error(`Moderation API Error [${endpoint}]`, {
         contextId,
-        payload,
         status: response.status,
-        data: response.data,
       });
       throw error;
     }
@@ -29,9 +27,7 @@ export async function apiReportContent(payload: ReportPayload): Promise<void> {
     const categorizedError = categorizeError(error);
     console.error(`Moderation API Error [${endpoint}]`, {
       contextId,
-      payload,
       error: categorizedError,
-      originalError: error,
     });
 
     // Throw user-friendly error message
@@ -63,9 +59,7 @@ export async function apiBlockUser(payload: SimpleUserPayload): Promise<void> {
       );
       console.error(`Moderation API Error [${endpoint}]`, {
         contextId,
-        payload,
         status: response.status,
-        data: response.data,
       });
       throw error;
     }
@@ -73,9 +67,7 @@ export async function apiBlockUser(payload: SimpleUserPayload): Promise<void> {
     const categorizedError = categorizeError(error);
     console.error(`Moderation API Error [${endpoint}]`, {
       contextId,
-      payload,
       error: categorizedError,
-      originalError: error,
     });
 
     // Throw user-friendly error message
@@ -109,9 +101,7 @@ export async function apiMuteUser(payload: SimpleUserPayload): Promise<void> {
       );
       console.error(`Moderation API Error [${endpoint}]`, {
         contextId,
-        payload,
         status: response.status,
-        data: response.data,
       });
       throw error;
     }
@@ -119,9 +109,7 @@ export async function apiMuteUser(payload: SimpleUserPayload): Promise<void> {
     const categorizedError = categorizeError(error);
     console.error(`Moderation API Error [${endpoint}]`, {
       contextId,
-      payload,
       error: categorizedError,
-      originalError: error,
     });
 
     // Throw user-friendly error message
@@ -157,9 +145,7 @@ export async function apiDeleteOwnContent(
       );
       console.error(`Moderation API Error [${endpoint}]`, {
         contextId,
-        payload,
         status: response.status,
-        data: response.data,
       });
       throw error;
     }
@@ -167,9 +153,7 @@ export async function apiDeleteOwnContent(
     const categorizedError = categorizeError(error);
     console.error(`Moderation API Error [${endpoint}]`, {
       contextId,
-      payload,
       error: categorizedError,
-      originalError: error,
     });
 
     // Throw user-friendly error message

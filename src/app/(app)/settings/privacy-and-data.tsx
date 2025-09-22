@@ -28,15 +28,8 @@ function extractErrorMessage(error: unknown): string {
   return String(error);
 }
 
-export default function PrivacyAndDataScreen(): React.ReactElement {
-  const signOut = useAuth.use.signOut();
+function useDataExport(): { queueExport: () => void; isExporting: boolean } {
   const [isExporting, setIsExporting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const webDeletionUrl = useMemo(() => provideWebDeletionUrl(), []);
-  const webDeletionLabel = useMemo(
-    () => webDeletionUrl.replace(/^https?:\/\//, ''),
-    [webDeletionUrl]
-  );
 
   const queueExport = useCallback(() => {
     if (isExporting) return;
@@ -63,6 +56,16 @@ export default function PrivacyAndDataScreen(): React.ReactElement {
       }
     })();
   }, [isExporting]);
+
+  return { queueExport, isExporting };
+}
+
+function useAccountDeletion(signOut: () => void): {
+  queueDeletion: () => void;
+  confirmDeletion: () => void;
+  isDeleting: boolean;
+} {
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const queueDeletion = useCallback(() => {
     if (isDeleting) return;
@@ -111,11 +114,46 @@ export default function PrivacyAndDataScreen(): React.ReactElement {
     );
   }, [queueDeletion]);
 
+  return { queueDeletion, confirmDeletion, isDeleting };
+}
+
+function WebDeletionSection(): React.ReactElement {
+  const webDeletionUrl = useMemo(() => provideWebDeletionUrl(), []);
+  const webDeletionLabel = useMemo(
+    () => webDeletionUrl.replace(/^https?:\/\//, ''),
+    [webDeletionUrl]
+  );
+
+  return (
+    <View className="gap-2 rounded-lg bg-gray-100 p-4 dark:bg-gray-800">
+      <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+        {translate('privacy.webDeletionHeading')}
+      </Text>
+      <Text className="text-sm text-gray-700 dark:text-gray-300">
+        {translate('privacy.webDeletionPrompt', {
+          url: webDeletionLabel,
+        })}
+      </Text>
+      <Button
+        label={translate('privacy.openWebDeletion')}
+        onPress={() => {
+          void Linking.openURL(webDeletionUrl);
+        }}
+      />
+    </View>
+  );
+}
+
+export default function PrivacyAndDataScreen(): React.ReactElement {
+  const signOut = useAuth.use.signOut();
+  const { queueExport } = useDataExport();
+  const { confirmDeletion } = useAccountDeletion(signOut);
+
   return (
     <>
       <FocusAwareStatusBar />
       <ScrollView>
-        <View className="gap-6 px-4 pt-16 pb-12">
+        <View className="gap-6 px-4 pb-12 pt-16">
           <View className="gap-2">
             <Text className="text-xl font-bold">
               {translate('settings.privacy_and_data')}
@@ -130,20 +168,7 @@ export default function PrivacyAndDataScreen(): React.ReactElement {
             onAccountDeletion={confirmDeletion}
           />
 
-          <View className="gap-2 rounded-lg bg-gray-100 p-4 dark:bg-gray-800">
-            <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-              {translate('privacy.webDeletionHeading')}
-            </Text>
-            <Text className="text-sm text-gray-700 dark:text-gray-300">
-              {translate('privacy.webDeletionPrompt', { url: webDeletionLabel })}
-            </Text>
-            <Button
-              label={translate('privacy.openWebDeletion')}
-              onPress={() => {
-                void Linking.openURL(webDeletionUrl);
-              }}
-            />
-          </View>
+          <WebDeletionSection />
         </View>
       </ScrollView>
     </>

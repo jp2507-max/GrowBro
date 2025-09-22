@@ -175,7 +175,7 @@
 - Add integration tests for complete appeal workflow
 - _Requirements: 10.4_
 
-- [ ] 5. Build account and data deletion system
+- [x] 5. Build account and data deletion system
 
   - Create in-app account deletion flow accessible in ≤3 taps
   - Implement public web deletion request system
@@ -183,7 +183,7 @@
   - Build deletion audit and compliance tracking
   - _Requirements: 9.1, 9.2, 9.3, 9.4_
 
-- [ ] 5.1 Implement in-app deletion flow
+- [x] 5.1 Implement in-app deletion flow
 
   - Create deleteAccountInApp() method with complete data removal
   - Build UI flow accessible in ≤3 taps from Profile/Settings
@@ -192,7 +192,7 @@
   - Write unit tests for in-app deletion flow and accessibility
   - _Requirements: 9.1, 9.3_
 
-- [ ] 5.2 Create web deletion request system
+- [x] 5.2 Create web deletion request system
 
   - Build public web page for deletion requests
   - Implement requestDeletionViaWeb() API endpoint
@@ -201,7 +201,7 @@
   - Write integration tests for web deletion request processing
   - _Requirements: 9.2_
 
-- [ ] 5.3 Integrate deletion methods with Data Safety
+- [x] 5.3 Integrate deletion methods with Data Safety
 
   - Implement updateDataSafetyWithDeletionMethods() to reference both paths
   - Add CI validation ensuring deletion methods are documented
@@ -209,7 +209,7 @@
   - Write automated tests validating Data Safety form includes deletion references
   - _Requirements: 9.4_
 
-- [ ] 5.4 Deletion compliance release gate
+- [x] 5.4 Deletion compliance release gate
 
   - Validate in-app delete path discoverability (≤3 taps from Profile/Settings)
   - Validate web deletion URL present in Play Console Data safety answers

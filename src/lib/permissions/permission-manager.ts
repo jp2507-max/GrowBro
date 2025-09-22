@@ -29,8 +29,13 @@ export interface PermissionManagerAPI {
 export const PermissionManager: PermissionManagerAPI = {
   async requestNotificationPermission(): Promise<PermissionResult> {
     if (Platform.OS !== 'android') {
+      const notificationsCompat = Notifications as unknown as {
+        requestPermissionsAsync?: Function;
+      };
       try {
-        const { status } = await Notifications.requestPermissionsAsync();
+        const result = await notificationsCompat.requestPermissionsAsync?.();
+        if (!result) return 'unavailable';
+        const { status } = result;
         // Expo returns 'granted' | 'denied' | 'undetermined' in some versions.
         // Map to our PermissionResult type where anything truthy and not 'denied' is treated as granted.
         if (status === 'granted') return 'granted';
@@ -59,8 +64,13 @@ export const PermissionManager: PermissionManagerAPI = {
 
   async isNotificationPermissionGranted(): Promise<boolean> {
     if (Platform.OS !== 'android') {
+      const notificationsCompat = Notifications as unknown as {
+        getPermissionsAsync?: Function;
+      };
       try {
-        const { status } = await Notifications.getPermissionsAsync();
+        const result = await notificationsCompat.getPermissionsAsync?.();
+        if (!result) return false;
+        const { status } = result;
         return status === 'granted';
       } catch {
         return false;

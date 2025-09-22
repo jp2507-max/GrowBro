@@ -3,7 +3,8 @@ import { getItem, setItem } from '@/lib/storage';
 export type AuditAction =
   | 'retention-delete'
   | 'retention-aggregate'
-  | 'retention-anonymize';
+  | 'retention-anonymize'
+  | 'account-delete-request';
 
 export type AuditEntry = {
   id: string;

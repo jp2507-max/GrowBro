@@ -31,6 +31,15 @@ function loadPolicy(repoRoot) {
   return readJson(path.join(repoRoot, 'compliance', 'privacy-policy.json'));
 }
 
+function loadDeletionMethods(repoRoot) {
+  const data = readJson(
+    path.join(repoRoot, 'compliance', 'deletion-methods.json')
+  );
+  if (!Array.isArray(data.methods))
+    throw new Error('deletion-methods.json: methods[] required');
+  return data.methods;
+}
+
 function generateInventory(repoRoot) {
   const items = loadInventory(repoRoot);
   // Stamp generatedAt to aid diffing
@@ -78,6 +87,7 @@ function validateSdkDisclosuresWithSdkIndex(repoRoot) {
 
 function createDraftFromInventory(repoRoot) {
   const items = loadInventory(repoRoot);
+  const deletionMethods = loadDeletionMethods(repoRoot);
   // Minimal Play Data Safety form shape for CI/artifact purposes
   const draft = {
     generatedAt: new Date().toISOString(),
@@ -89,6 +99,7 @@ function createDraftFromInventory(repoRoot) {
       sharedWith: it.sharedWith,
       sdkSource: it.sdkSource || null,
     })),
+    accountDeletion: deletionMethods.map((method) => ({ ...method })),
   };
   return draft;
 }
@@ -97,6 +108,23 @@ function syncWithPrivacyPolicy(repoRoot) {
   const draft = createDraftFromInventory(repoRoot);
   const policy = loadPolicy(repoRoot);
   const problems = [];
+  const deletionMethods = draft.accountDeletion || [];
+  const webMethod = deletionMethods.find((m) => m.type === 'web' && m.url);
+  if (!webMethod) {
+    problems.push({
+      type: 'missing-web-deletion-method',
+      message:
+        'compliance/deletion-methods.json must include a web method with type "web" and url matching accountDeletionUrl',
+    });
+  }
+  const inAppMethod = deletionMethods.find((m) => m.type === 'in_app');
+  if (!inAppMethod) {
+    problems.push({
+      type: 'missing-in-app-deletion-method',
+      message:
+        'compliance/deletion-methods.json must include an in-app method describing discoverability (<=3 taps)',
+    });
+  }
   if (
     !policy.privacyPolicyUrl ||
     !/^https?:\/\//.test(policy.privacyPolicyUrl)
@@ -115,12 +143,21 @@ function syncWithPrivacyPolicy(repoRoot) {
       message: 'privacy-policy.json must include a valid accountDeletionUrl',
     });
   }
+  if (webMethod && webMethod.url && policy.accountDeletionUrl) {
+    if (webMethod.url !== policy.accountDeletionUrl) {
+      problems.push({
+        type: 'deletion-url-mismatch',
+        message: `Web deletion method url (${webMethod.url}) must match privacy-policy.json accountDeletionUrl (${policy.accountDeletionUrl})`,
+      });
+    }
+  }
   // Very light sync check: ensure both URLs exist; deeper content sync is manual review.
   return {
     ok: problems.length === 0,
     problems,
     policy,
     draftSummaryCount: draft.dataCollection.length,
+    accountDeletionSummary: deletionMethods.length,
   };
 }
 
@@ -129,6 +166,7 @@ module.exports = {
   loadInventory,
   loadSdkIndex,
   loadPolicy,
+  loadDeletionMethods,
   generateInventory,
   validateSdkDisclosuresWithSdkIndex,
   createDraftFromInventory,

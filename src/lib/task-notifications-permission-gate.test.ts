@@ -18,21 +18,20 @@ describe('TaskNotificationService permission gate', () => {
     Object.defineProperty(RN.Platform, 'OS', { value: originalOS });
     Object.defineProperty(RN.Platform, 'Version', { value: originalVersion });
   });
-  it('throws when POST_NOTIFICATIONS is not granted', async () => {
+  it('returns empty string when POST_NOTIFICATIONS is not granted', async () => {
     jest
       .spyOn(NotificationHandler, 'isNotificationPermissionGranted')
       .mockResolvedValue(false);
     const svc = new TaskNotificationService();
-    await expect(
-      svc.scheduleTaskReminder({
-        id: 't1',
-        title: 'x',
-        description: 'y',
-        reminderAtUtc: new Date().toISOString(),
-        reminderAtLocal: null,
-        dueAtUtc: null,
-        dueAtLocal: null,
-      } as any)
-    ).rejects.toThrow('Notifications permission not granted');
+    const result = await svc.scheduleTaskReminder({
+      id: 't1',
+      title: 'x',
+      description: 'y',
+      reminderAtUtc: new Date().toISOString(),
+      reminderAtLocal: null,
+      dueAtUtc: null,
+      dueAtLocal: null,
+    } as any);
+    expect(result).toBe('');
   });
 });

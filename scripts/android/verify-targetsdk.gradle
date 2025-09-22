@@ -43,7 +43,18 @@ gradle.rootProject { root ->
           if (androidExt && androidExt.hasProperty('applicationVariants')) {
             androidExt.applicationVariants.all { variant ->
               def variantName = variant.name
-              def isEnforced = ENFORCE_VARIANTS.any { variantName.toLowerCase().contains(it) || (variant.buildType?.name?.toLowerCase() == it) }
+              def isEnforced = ENFORCE_VARIANTS.any { enforcedName ->
+                // Check build type name for exact match
+                if (variant.buildType?.name?.toLowerCase() == enforcedName) {
+                  return true
+                }
+                // Check product flavor names for exact match
+                if (variant.productFlavors?.any { flavor -> flavor.name?.toLowerCase() == enforcedName }) {
+                  return true
+                }
+                // Fallback: check full variant name for exact match
+                return variantName.toLowerCase() == enforcedName
+              }
               if (!isEnforced) {
                 return
               }

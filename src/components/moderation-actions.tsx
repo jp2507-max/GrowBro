@@ -2,7 +2,8 @@ import React from 'react';
 
 import { Button, View } from '@/components/ui';
 import { showErrorMessage } from '@/components/ui/utils';
-import { AuthenticationError, getAuthenticatedUserId, translate } from '@/lib';
+import { translate } from '@/lib';
+import { AuthenticationError, getAuthenticatedUserId } from '@/lib/auth';
 import modManager from '@/lib/moderation/moderation-manager';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 

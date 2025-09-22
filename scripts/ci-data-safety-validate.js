@@ -25,13 +25,12 @@ function main() {
   const syncRes = syncWithPrivacyPolicy(repoRoot);
   // Staleness check: docs/data-safety-draft.json must exist and be newer than compliance sources
   const problems = [...sdkRes.problems, ...syncRes.problems];
-  const fs = require('fs');
-  const path = require('path');
   const draftPath = path.join(repoRoot, 'docs', 'data-safety-draft.json');
   const sources = [
     path.join(repoRoot, 'compliance', 'data-inventory.json'),
     path.join(repoRoot, 'compliance', 'sdk-index.json'),
     path.join(repoRoot, 'compliance', 'privacy-policy.json'),
+    path.join(repoRoot, 'compliance', 'deletion-methods.json'),
   ];
   if (!fs.existsSync(draftPath)) {
     problems.push({
@@ -58,6 +57,7 @@ function main() {
     ok,
     problems,
     draftSummaryCount: syncRes.draftSummaryCount,
+    accountDeletionMethods: syncRes.accountDeletionSummary,
     privacyPolicyUrl: syncRes.policy?.privacyPolicyUrl,
     accountDeletionUrl: syncRes.policy?.accountDeletionUrl,
   };

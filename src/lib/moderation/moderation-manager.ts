@@ -13,10 +13,57 @@ import { detectSpam } from '@/lib/moderation/spam-detector';
 
 export type ModerationReason = 'spam' | 'harassment' | 'illegal' | 'other';
 
-export type ReportResult = { status: 'queued' | 'sent'; submittedAt: number };
-export type BlockResult = { status: 'ok'; blockedUserId: string | number };
-export type MuteResult = { status: 'ok'; mutedUserId: string | number };
-export type DeleteResult = { status: 'ok'; contentId: string | number };
+export type ReportResult =
+  | {
+      status: 'queued' | 'sent';
+      submittedAt?: number;
+      error?: { message?: string; code?: string };
+      retryAfterMs?: number;
+    }
+  | {
+      status: 'error';
+      error: { message?: string; code?: string };
+      retryAfterMs?: number;
+    };
+
+export type BlockResult =
+  | {
+      status: 'ok';
+      blockedUserId?: string | number;
+      error?: { message?: string; code?: string };
+      retryAfterMs?: number;
+    }
+  | {
+      status: 'error';
+      error: { message?: string; code?: string };
+      retryAfterMs?: number;
+    };
+
+export type MuteResult =
+  | {
+      status: 'ok';
+      mutedUserId?: string | number;
+      error?: { message?: string; code?: string };
+      retryAfterMs?: number;
+    }
+  | {
+      status: 'error';
+      error: { message?: string; code?: string };
+      retryAfterMs?: number;
+    };
+
+export type DeleteResult =
+  | {
+      status: 'ok';
+      contentId?: string | number;
+      error?: { message?: string; code?: string };
+      retryAfterMs?: number;
+    }
+  | {
+      status: 'error';
+      error: { message?: string; code?: string };
+      retryAfterMs?: number;
+    };
 
 export interface ModerationManager {
   reportContent(

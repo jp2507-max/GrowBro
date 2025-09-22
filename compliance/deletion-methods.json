@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "methods": [
+    {
+      "type": "in_app",
+      "entryPoint": "Settings > Privacy & Data",
+      "discoverability": "<=3 taps",
+      "description": "Users can remove their GrowBro account directly in the app via Settings."
+    },
+    {
+      "type": "web",
+      "url": "https://growbro.app/delete-account",
+      "description": "Public deletion portal for users who cannot access the app."
+    }
+  ]
+}

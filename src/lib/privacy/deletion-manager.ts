@@ -1,16 +1,14 @@
-import { Env } from '@/lib/env';
+import { Env } from '@env';
+
 import { appendAudit } from '@/lib/privacy/audit-log';
 import { supabase } from '@/lib/supabase';
+
+import privacyPolicy from '../../../compliance/privacy-policy.json';
 
 export type DeletionResult = {
   jobId: string;
   status: 'queued' | 'processing' | 'completed' | 'failed';
   estimatedCompletion?: string | null;
-};
-
-export type WebDeletionResult = {
-  url: string;
-  verified: boolean;
 };
 
 export type AccessibilityStep = {
@@ -52,7 +50,8 @@ const DELETION_STEPS: AccessibilityStep[] = [
   },
 ];
 
-const ACCOUNT_DELETION_URL = Env.ACCOUNT_DELETION_URL;
+const ACCOUNT_DELETION_URL =
+  Env.ACCOUNT_DELETION_URL || privacyPolicy.accountDeletionUrl;
 
 async function invokeSupabaseFunction<T>(
   name: string,
@@ -80,27 +79,42 @@ function auditDeletionRequest(metadata: DeletionAuditMetadata): void {
   });
 }
 
-export async function deleteAccountInApp(
-  reason: string = 'user_initiated_in_app'
+async function queueDeletionRequest(
+  reason: string,
+  source: 'in_app' | 'web',
+  metadata: Partial<Omit<DeletionAuditMetadata, 'source' | 'reason'>> = {}
 ): Promise<DeletionResult> {
   try {
     const result = await invokeSupabaseFunction<DeletionResult>('dsr-delete', {
       reason,
     });
-    auditDeletionRequest({
-      source: 'in_app',
+    const normalized: DeletionResult = {
       jobId: result.jobId,
+      status: result.status,
       estimatedCompletion: result.estimatedCompletion ?? null,
-      reason,
-    });
-    return result;
-  } catch (err) {
+    };
     auditDeletionRequest({
-      source: 'in_app',
+      source,
+      jobId: normalized.jobId,
+      estimatedCompletion: normalized.estimatedCompletion,
       reason,
+      ...metadata,
     });
-    throw err;
+    return normalized;
+  } catch (error) {
+    auditDeletionRequest({
+      source,
+      reason,
+      ...metadata,
+    });
+    throw error;
   }
+}
+
+export async function deleteAccountInApp(
+  reason: string = 'user_initiated_in_app'
+): Promise<DeletionResult> {
+  return queueDeletionRequest(reason, 'in_app');
 }
 
 export async function requestDataExport(
@@ -123,22 +137,18 @@ export async function requestDataExport(
     estimatedCompletion: result.estimatedCompletion ?? null,
     reason: 'data_export_before_delete',
   });
-  return result;
+  return {
+    jobId: result.jobId,
+    status: result.status,
+    estimatedCompletion: result.estimatedCompletion ?? null,
+  };
 }
 
-export function requestDeletionViaWeb(
-  userId: string,
-  metadata: { reason?: string } = {}
-): WebDeletionResult {
-  auditDeletionRequest({
-    source: 'web',
-    userId,
-    reason: metadata.reason ?? 'self_service_web_flow',
-  });
-  return {
-    url: ACCOUNT_DELETION_URL,
-    verified: true,
-  };
+export async function requestDeletionViaWeb(
+  metadata: { reason?: string; userId?: string } = {}
+): Promise<DeletionResult> {
+  const { reason = 'web_self_service', userId } = metadata;
+  return queueDeletionRequest(reason, 'web', { userId });
 }
 
 export function validateDeletionPathAccessibility(): AccessibilityResult {

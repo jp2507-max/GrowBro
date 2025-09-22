@@ -184,12 +184,14 @@ export class TaskNotificationService {
    */
   async scheduleTaskReminder(task: Task): Promise<string> {
     // Enforce zero notifications before grant (Android 13+)
+    // Return early instead of throwing to avoid blocking task operations
     if (Platform.OS === 'android' && Platform.Version >= 33) {
       const granted =
         await NotificationHandler.isNotificationPermissionGranted();
       if (!granted) {
         NotificationHandler.suppressNotifications();
-        throw new Error('Notifications permission not granted');
+        // Skip scheduling instead of failing the operation
+        return '';
       }
     }
 

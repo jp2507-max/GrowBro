@@ -113,50 +113,76 @@ export class AppealsQueue {
   async processOne(item: Appeal): Promise<Appeal> {
     if (item.notBefore && now() < item.notBefore) return item;
 
-    return withRetry(async () => {
-      // Acquire lock for the critical section
-      const release = await queueMutex.acquire();
+    try {
+      return await withRetry(() => this.attemptSubmit(item));
+    } catch (_error) {
+      // All retry attempts exhausted - persist failure status
+      console.error(
+        `[AppealsQueue] Failed to submit appeal ${item.id} after all retries:`,
+        _error
+      );
+      return this.persistFailure(item);
+    }
+  }
 
-      try {
-        // Load current state
-        const items = this.load();
+  private async attemptSubmit(item: Appeal): Promise<Appeal> {
+    // Acquire lock for the critical section
+    const release = await queueMutex.acquire();
 
-        // Check if item still exists and is in expected state
-        const currentItem = items.find((x) => x.id === item.id);
-        if (!currentItem || currentItem.status !== 'queued') {
-          return currentItem || item;
-        }
+    try {
+      // Load current state
+      const items = this.load();
 
-        try {
-          // Attempt to submit the appeal
-          await apiSubmitAppeal({
-            contentId: item.contentId,
-            reason: item.reason,
-            details: item.details,
-          });
-
-          // Success: remove from queue
-          const updatedItems = items.filter((x) => x.id !== item.id);
-          this.save(updatedItems);
-          return { ...item, status: 'sent', attempts: item.attempts + 1 };
-        } catch (error) {
-          // Failure: update item status and retry count
-          const updated: Appeal = {
-            ...item,
-            status: 'failed',
-            attempts: item.attempts + 1,
-          };
-          const updatedItems = items.map((x) =>
-            x.id === item.id ? updated : x
-          );
-          this.save(updatedItems);
-          return updated;
-        }
-      } finally {
-        // Always release the lock
-        release();
+      // Check if item still exists and is in expected state
+      const currentItem = items.find((x) => x.id === item.id);
+      if (!currentItem || currentItem.status !== 'queued') {
+        return currentItem || item;
       }
-    });
+
+      // Attempt to submit the appeal
+      await apiSubmitAppeal({
+        contentId: item.contentId,
+        reason: item.reason,
+        details: item.details,
+      });
+
+      // Success: remove from queue
+      const updatedItems = items.filter((x) => x.id !== item.id);
+      this.save(updatedItems);
+      return { ...item, status: 'sent', attempts: item.attempts + 1 };
+    } finally {
+      // Always release the lock
+      release();
+    }
+  }
+
+  private async persistFailure(item: Appeal): Promise<Appeal> {
+    // Acquire lock for the critical section
+    const release = await queueMutex.acquire();
+
+    try {
+      // Load current state
+      const items = this.load();
+
+      // Check if item still exists
+      const currentItem = items.find((x) => x.id === item.id);
+      if (!currentItem) {
+        return item;
+      }
+
+      // Update item status and retry count
+      const updated: Appeal = {
+        ...item,
+        status: 'failed',
+        attempts: item.attempts + 1,
+      };
+      const updatedItems = items.map((x) => (x.id === item.id ? updated : x));
+      this.save(updatedItems);
+      return updated;
+    } finally {
+      // Always release the lock
+      release();
+    }
   }
   async processAll(): Promise<void> {
     const items = this.load();
@@ -168,8 +194,9 @@ export class AppealsQueue {
 
       try {
         await this.processOne(a);
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error(String(error));
+      } catch (_error) {
+        const err =
+          _error instanceof Error ? _error : new Error(String(_error));
         console.error(
           `[AppealsQueue] Failed to process appeal ${a.id} (${a.status}):`,
           err

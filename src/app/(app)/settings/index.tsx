@@ -1,8 +1,8 @@
-import { useRouter } from 'expo-router';
 import { Env } from '@env';
+import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
-import { Linking } from 'react-native';
 import React, { type ReactElement } from 'react';
+import { Linking } from 'react-native';
 
 import { DevDiagnosticsItem } from '@/components/settings/dev-diagnostics-item';
 import { Item } from '@/components/settings/item';
@@ -46,14 +46,76 @@ function SupportLinks({ iconColor }: { iconColor: string }): ReactElement {
   );
 }
 
+function GeneralSettings(): ReactElement {
+  return (
+    <ItemsContainer title="settings.general">
+      <LanguageItem />
+      <ThemeItem />
+    </ItemsContainer>
+  );
+}
+
+function PrivacySettings({ router }: { router: any }): ReactElement {
+  const deletionUrl = provideWebDeletionUrl();
+  const deletionLabel = deletionUrl.replace(/^https?:\/\//, '');
+
+  return (
+    <ItemsContainer title="settings.privacy_section">
+      <Item
+        text="settings.privacy_and_data"
+        onPress={() => router.push('/(app)/settings/privacy-and-data')}
+      />
+      <Item
+        text="settings.web_deletion"
+        value={deletionLabel}
+        onPress={() => {
+          void Linking.openURL(deletionUrl);
+        }}
+      />
+      <Item
+        text="settings.privacy_policy"
+        value={privacyPolicyLabel}
+        onPress={() => {
+          void Linking.openURL(privacyPolicyUrl);
+        }}
+      />
+    </ItemsContainer>
+  );
+}
+
+function AboutSection(): ReactElement {
+  return (
+    <ItemsContainer title="settings.about">
+      <Item text="settings.app_name" value={Env.NAME} />
+      <Item text="settings.version" value={Env.VERSION} />
+    </ItemsContainer>
+  );
+}
+
+function LinksSection({ iconColor }: { iconColor: string }): ReactElement {
+  return (
+    <ItemsContainer title="settings.links">
+      <Item text="settings.terms" onPress={() => {}} />
+      <Item
+        text="settings.github"
+        icon={<Github color={iconColor} />}
+        onPress={() => {}}
+      />
+      <Item
+        text="settings.website"
+        icon={<Website color={iconColor} />}
+        onPress={() => {}}
+      />
+    </ItemsContainer>
+  );
+}
+
 export default function Settings() {
   const router = useRouter();
   const signOut = useAuth.use.signOut();
   const { colorScheme } = useColorScheme();
   const iconColor =
     colorScheme === 'dark' ? colors.neutral[400] : colors.neutral[500];
-  const deletionUrl = provideWebDeletionUrl();
-  const deletionLabel = deletionUrl.replace(/^https?:\/\//, '');
 
   return (
     <>
@@ -64,54 +126,17 @@ export default function Settings() {
           <Text className="text-xl font-bold">
             {translate('settings.title')}
           </Text>
-          <ItemsContainer title="settings.general">
-            <LanguageItem />
-            <ThemeItem />
-          </ItemsContainer>
+          <GeneralSettings />
 
           <SyncPreferences />
 
-          <ItemsContainer title="settings.privacy_section">
-            <Item
-              text="settings.privacy_and_data"
-              onPress={() => router.push('/(app)/settings/privacy-and-data')}
-            />
-            <Item
-              text="settings.web_deletion"
-              value={deletionLabel}
-              onPress={() => {
-                void Linking.openURL(deletionUrl);
-              }}
-            />
-            <Item
-              text="settings.privacy_policy"
-              value={privacyPolicyLabel}
-              onPress={() => {
-                void Linking.openURL(privacyPolicyUrl);
-              }}
-            />
-          </ItemsContainer>
+          <PrivacySettings router={router} />
 
-          <ItemsContainer title="settings.about">
-            <Item text="settings.app_name" value={Env.NAME} />
-            <Item text="settings.version" value={Env.VERSION} />
-          </ItemsContainer>
+          <AboutSection />
 
           <SupportLinks iconColor={iconColor} />
 
-          <ItemsContainer title="settings.links">
-            <Item text="settings.terms" onPress={() => {}} />
-            <Item
-              text="settings.github"
-              icon={<Github color={iconColor} />}
-              onPress={() => {}}
-            />
-            <Item
-              text="settings.website"
-              icon={<Website color={iconColor} />}
-              onPress={() => {}}
-            />
-          </ItemsContainer>
+          <LinksSection iconColor={iconColor} />
 
           <View className="my-8">
             <ItemsContainer>

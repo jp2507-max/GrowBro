@@ -48,7 +48,9 @@
     "compliance:scan:android": "pnpm prebuild && node scripts/ci-android-manifest-scan.js",
     "data-safety:generate": "node scripts/generate-data-safety-draft.js",
     "data-safety:validate": "node scripts/ci-data-safety-validate.js",
-    "privacy-policy:validate": "node scripts/validate-privacy-policy.js"
+    "privacy-policy:validate": "node scripts/validate-privacy-policy.js",
+    "privacy:deletion-gate": "pnpm run test -- deletion-gate.test.ts",
+    "compliance:app-access": "pnpm run test -- app-access-gate.test.ts"
   },
   "sentry": {
     "notes": "Set SENTRY_ENV and SENTRY_RELEASE in your CI before building. For EAS builds you can set SENTRY_RELEASE to the package.json version. Ensure source maps/dSYMs are uploaded from the build step or use the Expo Sentry plugin to handle this."

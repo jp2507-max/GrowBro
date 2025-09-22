@@ -21,3 +21,4 @@ export * from './sync/storage-manager';
 export * from './task-manager';
 export * from './template-manager';
 export * from './utils';
+export * from './compliance/app-access-manager';
