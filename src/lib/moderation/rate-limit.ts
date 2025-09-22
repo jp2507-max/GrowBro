@@ -14,6 +14,8 @@ type Bucket = {
   windowStart: number;
   // count of actions in current window
   count: number;
+  // backoff duration in milliseconds (only used for backoff buckets)
+  backoffMs?: number;
 };
 
 type RateTable = Record<WindowKey, Bucket>;
@@ -100,7 +102,7 @@ export function recordBackoff(
 ): void {
   const table = load();
   const key = `backoff:${userId}:${contentId}`;
-  table[key] = { windowStart: Date.now(), count: ms } as any;
+  table[key] = { windowStart: Date.now(), count: 0, backoffMs: ms };
   save(table);
 }
 
@@ -111,8 +113,8 @@ export function getBackoffUntil(
   const table = load();
   const key = `backoff:${userId}:${contentId}`;
   const bucket = table[key];
-  if (!bucket) return undefined;
-  const until = bucket.windowStart + (bucket.count as any as number);
+  if (!bucket || !bucket.backoffMs) return undefined;
+  const until = bucket.windowStart + bucket.backoffMs;
   if (Date.now() >= until) return undefined;
   return until;
 }

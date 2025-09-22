@@ -1,4 +1,7 @@
+import * as Notifications from 'expo-notifications';
 import { Linking, PermissionsAndroid, Platform } from 'react-native';
+
+import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
 export type PermissionResult = 'granted' | 'denied' | 'unavailable';
 export type AlarmPermissionResult =
@@ -25,7 +28,20 @@ export interface PermissionManagerAPI {
 
 export const PermissionManager: PermissionManagerAPI = {
   async requestNotificationPermission(): Promise<PermissionResult> {
-    if (Platform.OS !== 'android') return 'granted';
+    if (Platform.OS !== 'android') {
+      try {
+        const { status } = await Notifications.requestPermissionsAsync();
+        // Expo returns 'granted' | 'denied' | 'undetermined' in some versions.
+        // Map to our PermissionResult type where anything truthy and not 'denied' is treated as granted.
+        if (status === 'granted') return 'granted';
+        if (status === 'denied') return 'denied';
+        return 'unavailable';
+      } catch (error) {
+        captureCategorizedErrorSync(error);
+        console.error('requestNotificationPermission failed', error);
+        return 'unavailable';
+      }
+    }
     if (Platform.Version < 33) return 'granted';
     try {
       const status = await PermissionsAndroid.request(
@@ -34,13 +50,22 @@ export const PermissionManager: PermissionManagerAPI = {
       return status === PermissionsAndroid.RESULTS.GRANTED
         ? 'granted'
         : 'denied';
-    } catch {
+    } catch (error) {
+      captureCategorizedErrorSync(error);
+      console.error('requestNotificationPermission failed', error);
       return 'unavailable';
     }
   },
 
   async isNotificationPermissionGranted(): Promise<boolean> {
-    if (Platform.OS !== 'android') return true;
+    if (Platform.OS !== 'android') {
+      try {
+        const { status } = await Notifications.getPermissionsAsync();
+        return status === 'granted';
+      } catch {
+        return false;
+      }
+    }
     if (Platform.Version < 33) return true;
     try {
       return await PermissionsAndroid.check(

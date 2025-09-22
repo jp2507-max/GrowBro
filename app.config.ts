@@ -1,14 +1,17 @@
-// Load environment variables before any Env usage (Option A)
-// This ensures process.env is populated for zod validation in ./env during prebuild
-import 'dotenv/config';
-
+// Load .env only in local/dev; CI may set EXPO_NO_DOTENV=1
 import type { AppIconBadgeConfig } from 'app-icon-badge/types';
 
 import applePrivacyManifest from './apple-privacy-manifest.json';
+
+if (process.env.EXPO_NO_DOTENV !== '1') {
+  require('dotenv').config();
+}
 // IMPORTANT: Do not import from '@env' here because the Expo config is evaluated
 // directly by Node (no Babel module resolver / TS path mapping). Use the root
 // env.js exports instead which are plain Node modules.
-import { Env } from './env';
+// Lazy import to avoid throwing before dotenv (or CI env) is in place.
+
+const { Env } = require('./env');
 
 const appIconBadgeConfig: AppIconBadgeConfig = {
   enabled: Env.APP_ENV !== 'production',

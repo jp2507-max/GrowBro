@@ -1,8 +1,10 @@
 import React from 'react';
 
 import { Button, View } from '@/components/ui';
-import { translate } from '@/lib';
+import { showErrorMessage } from '@/components/ui/utils';
+import { AuthenticationError, getAuthenticatedUserId, translate } from '@/lib';
 import modManager from '@/lib/moderation/moderation-manager';
+import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
 type Props = {
   contentId: string | number;
@@ -10,40 +12,99 @@ type Props = {
   onDeleteSuccess?: () => void;
 };
 
+const handleError = (error: unknown, fallbackMessage: string) => {
+  if (error instanceof AuthenticationError) {
+    showErrorMessage(translate('moderation.authentication_required'));
+  } else {
+    captureCategorizedErrorSync(error);
+    showErrorMessage(fallbackMessage);
+  }
+};
+
+const ModerationButton = ({
+  label,
+  testId,
+  onPress,
+  variant = 'default',
+}: {
+  label: string;
+  testId: string;
+  onPress: () => Promise<void>;
+  variant?: 'default' | 'destructive';
+}) => (
+  <Button
+    size="sm"
+    label={label}
+    variant={variant}
+    onPress={onPress}
+    testID={testId}
+  />
+);
+
 export function ModerationActions({
   contentId,
   authorId,
   onDeleteSuccess,
 }: Props) {
+  const reportContent = async () => {
+    try {
+      const userId = await getAuthenticatedUserId();
+      await modManager.reportContent(contentId, 'other', userId);
+    } catch (error) {
+      handleError(error, translate('moderation.report_failed'));
+    }
+  };
+
+  const blockUser = async () => {
+    try {
+      const userId = await getAuthenticatedUserId();
+      await modManager.blockUser(authorId, userId);
+    } catch (error) {
+      handleError(error, translate('moderation.block_failed'));
+    }
+  };
+
+  const muteUser = async () => {
+    try {
+      const userId = await getAuthenticatedUserId();
+      await modManager.muteUser(authorId, userId);
+    } catch (error) {
+      handleError(error, translate('moderation.mute_failed'));
+    }
+  };
+
+  const deleteContent = async () => {
+    try {
+      const userId = await getAuthenticatedUserId();
+      const res = await modManager.deleteOwnContent(contentId, userId);
+      if (res.status === 'ok') onDeleteSuccess?.();
+    } catch (error) {
+      handleError(error, translate('moderation.delete_failed'));
+    }
+  };
+
   return (
     <View className="flex-row flex-wrap gap-2" testID="moderation-actions">
-      <Button
-        size="sm"
+      <ModerationButton
         label={translate('moderation.report')}
-        onPress={() => modManager.reportContent(contentId, 'other')}
-        testID="moderation-report-btn"
+        testId="moderation-report-btn"
+        onPress={reportContent}
       />
-      <Button
-        size="sm"
+      <ModerationButton
         label={translate('moderation.block')}
-        onPress={() => modManager.blockUser(authorId)}
-        testID="moderation-block-btn"
+        testId="moderation-block-btn"
+        onPress={blockUser}
       />
-      <Button
-        size="sm"
+      <ModerationButton
         label={translate('moderation.mute')}
-        onPress={() => modManager.muteUser(authorId)}
-        testID="moderation-mute-btn"
+        testId="moderation-mute-btn"
+        onPress={muteUser}
       />
-      <Button
-        size="sm"
-        variant="destructive"
+      <ModerationButton
         label={translate('moderation.delete')}
-        onPress={async () => {
-          const res = await modManager.deleteOwnContent(contentId);
-          if (res.status === 'ok') onDeleteSuccess?.();
-        }}
-        testID="moderation-delete-btn"
+        testId="moderation-delete-btn"
+        variant="destructive"
+        onPress={deleteContent}
       />
     </View>
   );

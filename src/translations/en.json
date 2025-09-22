@@ -110,11 +110,34 @@
     "sync_now": "Sync now",
     "title": "Sync Diagnostics"
   },
+  "errors": {
+    "postLoad": "Error loading post"
+  },
   "moderation": {
+    "audit": {
+      "empty": "Empty",
+      "title": "Audit Trail"
+    },
+    "authentication_required": "Authentication required to perform this action",
     "block": "Block",
+    "block_failed": "Failed to block user. Please try again.",
     "delete": "Delete",
+    "delete_failed": "Failed to delete content. Please try again.",
     "mute": "Mute",
-    "report": "Report"
+    "mute_failed": "Failed to mute user. Please try again.",
+    "queue": {
+      "appeal": "Appeal",
+      "empty": "Empty",
+      "escalate": "Escalate",
+      "processAll": "Process All",
+      "title": "Moderation Queue"
+    },
+    "report": "Report",
+    "report_failed": "Failed to report content. Please try again."
+  },
+  "nav": {
+    "feed": "Feed",
+    "post": "Post"
   },
   "onboarding": {
     "allow_button": "Allow notifications",
@@ -147,7 +170,25 @@
       "subtitle": "Record app interactions for debugging",
       "title": "Session Replay"
     },
-    "title": "Privacy Settings"
+    "title": "Privacy Settings",
+    "manageDataDescription": "Manage your GrowBro data export, account deletion, and policy disclosures.",
+    "webDeletionHeading": "Need to delete outside the app?",
+    "webDeletionPrompt": "Use our web form ({{url}}) if you cannot access the mobile app.",
+    "openWebDeletion": "Open web deletion page",
+    "deleteAccountConfirmTitle": "Delete account?",
+    "deleteAccountConfirmBody": "This schedules permanent deletion of your account and associated GrowBro data. You can export your data first if needed.",
+    "deleteAccountConfirmAction": "Delete account",
+    "deleteAccountConfirmCancel": "Keep account",
+    "deleteAccountQueuedTitle": "Deletion scheduled",
+    "deleteAccountQueuedBody": "We queued your deletion request. Estimated completion: {{eta}}.",
+    "deleteAccountQueuedBodyNoEta": "We queued your deletion request. You will receive a confirmation once completed.",
+    "deleteAccountErrorTitle": "Deletion request failed",
+    "deleteAccountErrorBody": "We could not queue the deletion. Details: {{message}}",
+    "exportQueuedTitle": "Export requested",
+    "exportQueuedBody": "We queued your data export. Estimated completion: {{eta}}.",
+    "exportQueuedBodyNoEta": "We queued your data export. You will receive a link when it is ready.",
+    "exportErrorTitle": "Export request failed",
+    "exportErrorBody": "We could not queue the export. Details: {{message}}"
   },
   "settings": {
     "about": "About",
@@ -186,7 +227,11 @@
     },
     "title": "Settings",
     "version": "Version",
-    "website": "Website"
+    "website": "Website",
+    "privacy_section": "Privacy & data",
+    "privacy_and_data": "Privacy & data controls",
+    "web_deletion": "Web deletion portal",
+    "privacy_policy": "Privacy Policy"
   },
   "sync": {
     "last_sync_and_pending": "Last sync: {{time}}, {{count}} pending",

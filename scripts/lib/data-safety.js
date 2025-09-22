@@ -43,9 +43,27 @@ function validateSdkDisclosuresWithSdkIndex(repoRoot) {
   const bySdk = new Map(sdks.map((s) => [s.name, s]));
   const problems = [];
   for (const it of items) {
-    if (it.sdkSource && bySdk.has(it.sdkSource)) {
+    if (it.sdkSource) {
+      if (!bySdk.has(it.sdkSource)) {
+        problems.push({
+          type: 'unknown-sdk-source',
+          sdkSource: it.sdkSource,
+          message: `Unknown SDK source '${it.sdkSource}' referenced by data item`,
+        });
+        continue;
+      }
       const sdk = bySdk.get(it.sdkSource);
-      if (!sdk.declaredData.includes(it.dataType)) {
+      const declaredData = Array.isArray(sdk.declaredData)
+        ? sdk.declaredData
+        : [];
+      if (!Array.isArray(sdk.declaredData)) {
+        problems.push({
+          type: 'invalid-sdk-declaredData',
+          sdk: sdk.name,
+          message: `SDK '${sdk.name}' has malformed declaredData (expected array, got ${typeof sdk.declaredData})`,
+        });
+      }
+      if (!declaredData.includes(it.dataType)) {
         problems.push({
           type: 'sdk-declaration-mismatch',
           sdk: sdk.name,

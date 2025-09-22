@@ -39,7 +39,34 @@ function now(): number {
   return Date.now();
 }
 
+function extractSafeErrorMetadata(error: unknown): {
+  name: string;
+  message: string;
+} {
+  // Handle Error objects
+  if (error instanceof Error) {
+    const name = error.name || 'Error';
+    const message = error.message || 'An error occurred';
+    return {
+      name,
+      message: message.length > 256 ? `${message.slice(0, 256)}...` : message,
+    };
+  }
+
+  // Handle non-Error throwables (convert to string and truncate)
+  const errorString = error ? String(error) : '';
+  const message =
+    errorString.length > 256 ? `${errorString.slice(0, 256)}...` : errorString;
+
+  return {
+    name: 'UnknownError',
+    message: message || 'An unknown error occurred',
+  };
+}
+
 export class ModerationQueue {
+  private isProcessing = false;
+
   private loadQueue(): ContentReport[] {
     return getItem<ContentReport[]>(QUEUE_KEY) ?? [];
   }
@@ -129,24 +156,34 @@ export class ModerationQueue {
         r.id === report.id ? updated : r
       );
       this.saveQueue(items);
+      const errorMetadata = extractSafeErrorMetadata(e);
       this.auditAction('report_failed', {
         contentId: report.contentId,
         id: report.id,
-        error: (e as Error)?.message,
+        error: errorMetadata,
       });
       return updated;
     }
   }
 
   async processAll(): Promise<void> {
-    const items = this.loadQueue();
-    for (const r of items) {
-      if (r.status !== 'queued') continue;
-      if (r.notBefore && now() < r.notBefore) continue; // skip until allowed
-      // process sequentially to keep it simple and predictable
-      // SLA target (<=5s to submit) depends on server availability; this method just forwards ASAP
-      // In CI or offline mode, they will remain queued or be marked failed and retried later.
-      await this.processReport(r);
+    if (this.isProcessing) {
+      return; // prevent reentrant calls
+    }
+
+    this.isProcessing = true;
+    try {
+      const items = this.loadQueue();
+      for (const r of items) {
+        if (r.status !== 'queued') continue;
+        if (r.notBefore && now() < r.notBefore) continue; // skip until allowed
+        // process sequentially to keep it simple and predictable
+        // SLA target (<=5s to submit) depends on server availability; this method just forwards ASAP
+        // In CI or offline mode, they will remain queued or be marked failed and retried later.
+        await this.processReport(r);
+      }
+    } finally {
+      this.isProcessing = false;
     }
   }
 

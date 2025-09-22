@@ -1,7 +1,7 @@
 {
   "calendar": {
     "drag_item_hint": "Lange drücken und ziehen, um neu zu planen. Doppeltippen für Menü.",
-    "drag_item_label": "{{title}} ziehen",
+    "drag_item_label": "Ziehen {{title}}",
     "ec_range": "EC@25°C‑Ziel: {{min}}–{{max}} mS/cm",
     "log_ph_ec": "pH/EC protokollieren",
     "move": "Verschieben",
@@ -110,11 +110,34 @@
     "sync_now": "Jetzt synchronisieren",
     "title": "Sync-Diagnostik"
   },
+  "errors": {
+    "postLoad": "Fehler beim Laden des Beitrags"
+  },
   "moderation": {
+    "audit": {
+      "empty": "Leer",
+      "title": "Audit-Protokoll"
+    },
+    "authentication_required": "Authentifizierung erforderlich für diese Aktion",
     "block": "Blockieren",
+    "block_failed": "Benutzer konnte nicht blockiert werden. Bitte versuchen Sie es erneut.",
     "delete": "Löschen",
+    "delete_failed": "Löschen des Inhalts fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "mute": "Stummschalten",
-    "report": "Melden"
+    "mute_failed": "Benutzer konnte nicht stummgeschaltet werden. Bitte versuchen Sie es erneut.",
+    "queue": {
+      "appeal": "Berufung",
+      "empty": "Leer",
+      "escalate": "Eskalieren",
+      "processAll": "Alle verarbeiten",
+      "title": "Moderationswarteschlange"
+    },
+    "report": "Melden",
+    "report_failed": "Inhalt konnte nicht gemeldet werden. Bitte versuchen Sie es erneut."
+  },
+  "nav": {
+    "feed": "Feed",
+    "post": "Beitrag"
   },
   "onboarding": {
     "allow_button": "Benachrichtigungen erlauben",
@@ -147,7 +170,25 @@
       "subtitle": "App-Interaktionen für Debugging aufzeichnen",
       "title": "Sitzungswiedergabe"
     },
-    "title": "Datenschutzeinstellungen"
+    "title": "Datenschutzeinstellungen",
+    "manageDataDescription": "Verwalte Datenexport, Kontol�schung und Offenlegungen f�r GrowBro.",
+    "webDeletionHeading": "Du brauchst eine L�schung ohne App-Zugriff?",
+    "webDeletionPrompt": "Nutze unser Webformular ({{url}}), falls du nicht auf die mobile App zugreifen kannst.",
+    "openWebDeletion": "Web-L�schseite �ffnen",
+    "deleteAccountConfirmTitle": "Konto l�schen?",
+    "deleteAccountConfirmBody": "Damit wird die endg�ltige L�schung deines Kontos und aller GrowBro-Daten angesto�en. Exportiere deine Daten vorher, falls n�tig.",
+    "deleteAccountConfirmAction": "Konto l�schen",
+    "deleteAccountConfirmCancel": "Abbrechen",
+    "deleteAccountQueuedTitle": "L�schung geplant",
+    "deleteAccountQueuedBody": "Wir haben deine L�schung eingeplant. Voraussichtlicher Abschluss: {{eta}}.",
+    "deleteAccountQueuedBodyNoEta": "Wir haben deine L�schung eingeplant. Du erh�ltst eine Best�tigung nach Abschluss.",
+    "deleteAccountErrorTitle": "L�schanfrage fehlgeschlagen",
+    "deleteAccountErrorBody": "Die L�schung konnte nicht eingereicht werden. Details: {{message}}",
+    "exportQueuedTitle": "Export angefordert",
+    "exportQueuedBody": "Wir haben den Datenexport eingeplant. Voraussichtlicher Abschluss: {{eta}}.",
+    "exportQueuedBodyNoEta": "Wir haben den Datenexport eingeplant. Du erh�ltst einen Link, sobald er bereitsteht.",
+    "exportErrorTitle": "Export fehlgeschlagen",
+    "exportErrorBody": "Der Export konnte nicht eingereicht werden. Details: {{message}}"
   },
   "settings": {
     "about": "Über",
@@ -186,7 +227,11 @@
     },
     "title": "Einstellungen",
     "version": "Version",
-    "website": "Website"
+    "website": "Website",
+    "privacy_section": "Datenschutz & Daten",
+    "privacy_and_data": "Datenschutz- und Datenkontrollen",
+    "web_deletion": "Web-L�schportal",
+    "privacy_policy": "Datenschutzerkl�rung"
   },
   "sync": {
     "last_sync_and_pending": "Letzte Sync: {{time}}, {{count}} ausstehend",

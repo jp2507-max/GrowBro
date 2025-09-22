@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from '@/components/ui';
+import { translate } from '@/lib/i18n';
 
 export default function Post() {
   const local = useLocalSearchParams<{ id: string }>();
@@ -21,7 +22,12 @@ export default function Post() {
   if (isPending) {
     return (
       <View className="flex-1 justify-center  p-3">
-        <Stack.Screen options={{ title: 'Post', headerBackTitle: 'Feed' }} />
+        <Stack.Screen
+          options={{
+            title: translate('nav.post'),
+            headerBackTitle: translate('nav.feed'),
+          }}
+        />
         <FocusAwareStatusBar />
         <ActivityIndicator />
       </View>
@@ -30,16 +36,26 @@ export default function Post() {
   if (isError) {
     return (
       <View className="flex-1 justify-center p-3">
-        <Stack.Screen options={{ title: 'Post', headerBackTitle: 'Feed' }} />
+        <Stack.Screen
+          options={{
+            title: translate('nav.post'),
+            headerBackTitle: translate('nav.feed'),
+          }}
+        />
         <FocusAwareStatusBar />
-        <Text className="text-center">Error loading post</Text>
+        <Text className="text-center">{translate('errors.postLoad')}</Text>
       </View>
     );
   }
 
   return (
     <View className="flex-1 p-3 ">
-      <Stack.Screen options={{ title: 'Post', headerBackTitle: 'Feed' }} />
+      <Stack.Screen
+        options={{
+          title: translate('nav.post'),
+          headerBackTitle: translate('nav.feed'),
+        }}
+      />
       <FocusAwareStatusBar />
       <Text className="text-xl">{data.title}</Text>
       <Text>{data.body} </Text>

@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import { Button, Text, View } from '@/components/ui';
+import { translate } from '@/lib/i18n/utils';
 import { appealsQueue } from '@/lib/moderation/appeals-queue';
 import { moderationQueue } from '@/lib/moderation/moderation-queue';
 
@@ -11,9 +12,11 @@ export default function ModerationDashboard() {
 
   return (
     <View className="flex-1 p-4" testID="moderation-dashboard">
-      <Text className="mb-2 text-xl">Moderation Queue</Text>
+      <Text className="mb-2 text-xl">
+        {translate('moderation.queue.title')}
+      </Text>
       {queue.length === 0 ? (
-        <Text testID="queue-empty">Empty</Text>
+        <Text testID="queue-empty">{translate('moderation.queue.empty')}</Text>
       ) : (
         queue.map((r) => (
           <View key={r.id} className="mb-2" testID={`queue-item-${r.id}`}>
@@ -22,7 +25,7 @@ export default function ModerationDashboard() {
             </Text>
             <Button
               size="sm"
-              label="Escalate"
+              label={translate('moderation.queue.escalate')}
               onPress={() => {
                 moderationQueue.escalateToHuman(r.id, 'manual');
                 force();
@@ -30,7 +33,7 @@ export default function ModerationDashboard() {
             />
             <Button
               size="sm"
-              label="Appeal"
+              label={translate('moderation.queue.appeal')}
               onPress={async () => {
                 appealsQueue.enqueue(r.contentId, 'appeal: context');
                 await appealsQueue.processAll();
@@ -42,7 +45,7 @@ export default function ModerationDashboard() {
 
       <View className="mt-4">
         <Button
-          label="Process All"
+          label={translate('moderation.queue.processAll')}
           onPress={async () => {
             await moderationQueue.processAll();
             force();
@@ -51,9 +54,11 @@ export default function ModerationDashboard() {
         />
       </View>
 
-      <Text className="mb-2 mt-6 text-xl">Audit Trail</Text>
+      <Text className="mb-2 mt-6 text-xl">
+        {translate('moderation.audit.title')}
+      </Text>
       {audit.length === 0 ? (
-        <Text testID="audit-empty">Empty</Text>
+        <Text testID="audit-empty">{translate('moderation.audit.empty')}</Text>
       ) : (
         audit.slice(0, 20).map((a) => (
           <Text key={a.id} testID={`audit-item-${a.id}`}>

@@ -1,5 +1,7 @@
+import { useRouter } from 'expo-router';
 import { Env } from '@env';
 import { useColorScheme } from 'nativewind';
+import { Linking } from 'react-native';
 import React, { type ReactElement } from 'react';
 
 import { DevDiagnosticsItem } from '@/components/settings/dev-diagnostics-item';
@@ -17,6 +19,10 @@ import {
 } from '@/components/ui';
 import { Github, Rate, Share, Support, Website } from '@/components/ui/icons';
 import { translate, useAuth } from '@/lib';
+import { provideWebDeletionUrl } from '@/lib/privacy/deletion-manager';
+
+const privacyPolicyUrl = 'https://growbro.app/privacy';
+const privacyPolicyLabel = privacyPolicyUrl.replace(/^https?:\/\//, '');
 
 function SupportLinks({ iconColor }: { iconColor: string }): ReactElement {
   return (
@@ -41,10 +47,14 @@ function SupportLinks({ iconColor }: { iconColor: string }): ReactElement {
 }
 
 export default function Settings() {
+  const router = useRouter();
   const signOut = useAuth.use.signOut();
   const { colorScheme } = useColorScheme();
   const iconColor =
     colorScheme === 'dark' ? colors.neutral[400] : colors.neutral[500];
+  const deletionUrl = provideWebDeletionUrl();
+  const deletionLabel = deletionUrl.replace(/^https?:\/\//, '');
+
   return (
     <>
       <FocusAwareStatusBar />
@@ -61,6 +71,27 @@ export default function Settings() {
 
           <SyncPreferences />
 
+          <ItemsContainer title="settings.privacy_section">
+            <Item
+              text="settings.privacy_and_data"
+              onPress={() => router.push('/(app)/settings/privacy-and-data')}
+            />
+            <Item
+              text="settings.web_deletion"
+              value={deletionLabel}
+              onPress={() => {
+                void Linking.openURL(deletionUrl);
+              }}
+            />
+            <Item
+              text="settings.privacy_policy"
+              value={privacyPolicyLabel}
+              onPress={() => {
+                void Linking.openURL(privacyPolicyUrl);
+              }}
+            />
+          </ItemsContainer>
+
           <ItemsContainer title="settings.about">
             <Item text="settings.app_name" value={Env.NAME} />
             <Item text="settings.version" value={Env.VERSION} />
@@ -69,7 +100,6 @@ export default function Settings() {
           <SupportLinks iconColor={iconColor} />
 
           <ItemsContainer title="settings.links">
-            <Item text="settings.privacy" onPress={() => {}} />
             <Item text="settings.terms" onPress={() => {}} />
             <Item
               text="settings.github"

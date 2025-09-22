@@ -1,3 +1,4 @@
+import fs from 'fs/promises';
 import path from 'path';
 
 // lightweight runtime import of Node scripts
@@ -7,6 +8,15 @@ const dataSafety = require('../../../scripts/lib/data-safety');
 const repoRoot = path.resolve(__dirname, '../../..');
 
 describe('Data Safety tooling', () => {
+  afterEach(async () => {
+    // Clean up any generated draft file to avoid polluting the repo
+    const draftPath = path.join(repoRoot, 'docs', 'data-safety-draft.json');
+    try {
+      await fs.unlink(draftPath);
+    } catch {
+      // File doesn't exist, that's fine
+    }
+  });
   test('generateInventory returns items', () => {
     const items = dataSafety.generateInventory(repoRoot);
     expect(Array.isArray(items)).toBe(true);

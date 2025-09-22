@@ -11,10 +11,39 @@ jest.mock('expo-notifications', () => ({
 }));
 
 describe('NotificationHandler', () => {
+  let originalPlatformOSDescriptor: PropertyDescriptor;
+  let originalPlatformVersionDescriptor: PropertyDescriptor;
+
+  beforeAll(() => {
+    originalPlatformOSDescriptor = Object.getOwnPropertyDescriptor(
+      RN.Platform,
+      'OS'
+    )!;
+    originalPlatformVersionDescriptor = Object.getOwnPropertyDescriptor(
+      RN.Platform,
+      'Version'
+    )!;
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
-    (RN as any).Platform.OS = 'android';
-    (RN as any).Platform.Version = 34;
+    Object.defineProperty(RN.Platform, 'OS', {
+      writable: true,
+      value: 'android',
+    });
+    Object.defineProperty(RN.Platform, 'Version', {
+      writable: true,
+      value: 34,
+    });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(RN.Platform, 'OS', originalPlatformOSDescriptor);
+    Object.defineProperty(
+      RN.Platform,
+      'Version',
+      originalPlatformVersionDescriptor
+    );
   });
 
   it('does not create channels when permission not granted', async () => {

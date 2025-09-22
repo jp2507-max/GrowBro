@@ -1,7 +1,28 @@
 // Gradle init/applied script to verify per-variant targetSdk using AGP Variant APIs
 // Usage: ./gradlew -I ../scripts/android/verify-targetsdk.gradle verifyTargetSdkCompliance
 
-def EXPECTED_TARGET_SDK = (System.getenv('EXPECTED_TARGET_SDK') ?: '35') as Integer
+def EXPECTED_TARGET_SDK = {
+  def envValue = System.getenv('EXPECTED_TARGET_SDK')
+  if (envValue == null) {
+    return 35
+  }
+
+  // Validate the string matches integer pattern
+  if (!envValue.matches(/^\d+$/)) {
+    logger.warn("[verifyTargetSdkCompliance] EXPECTED_TARGET_SDK '${envValue}' is not a valid integer, falling back to default: 35")
+    return 35
+  }
+
+  def parsedValue = envValue as Integer
+
+  // Verify the parsed integer falls within acceptable Android target SDK range (16-100)
+  if (parsedValue < 16 || parsedValue > 100) {
+    throw new GradleException("[verifyTargetSdkCompliance] EXPECTED_TARGET_SDK '${parsedValue}' is out of acceptable range (16-100). Please provide a valid Android target SDK version.")
+  }
+
+  return parsedValue
+}()
+
 def ENFORCE_VARIANTS = ['release', 'production']
 
 gradle.rootProject { root ->
@@ -35,16 +56,15 @@ gradle.rootProject { root ->
               }
 
               def status = (effectiveTarget == EXPECTED_TARGET_SDK) ? 'pass' : 'fail'
-              def json = """
-{
-  "variant": "${variantName}",
-  "effectiveTargetSdk": ${effectiveTarget == null ? 'null' : effectiveTarget},
-  "expectedTargetSdk": ${EXPECTED_TARGET_SDK},
-  "status": "${status}",
-  "remediation": "Set targetSdkVersion ${EXPECTED_TARGET_SDK} for this variant",
-  "deadline": "2025-08-31"
-}
-"""
+              def reportData = [
+                variant: variantName,
+                effectiveTargetSdk: effectiveTarget,
+                expectedTargetSdk: EXPECTED_TARGET_SDK,
+                status: status,
+                remediation: "Set targetSdkVersion ${EXPECTED_TARGET_SDK} for this variant",
+                deadline: "2025-08-31"
+              ]
+              def json = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(reportData))
               def out = new File(reportDir, "${variantName}.json")
               out.text = json
 
