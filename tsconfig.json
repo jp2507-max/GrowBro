@@ -4,9 +4,10 @@
     "strict": true,
     "baseUrl": ".",
     "experimentalDecorators": true,
+    "useDefineForClassFields": false,
     "paths": {
       "@/*": ["./src/*"],
-      "@env": ["./src/lib/env.js"]
+      "@env": ["./src/lib/env"]
     },
     "esModuleInterop": true,
     "checkJs": true,
@@ -25,5 +26,5 @@
     "dist",
     "react-native-reanimated"
   ],
-  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts"]
+  "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts", "nativewind-env.d.ts"]
 }

@@ -9,7 +9,8 @@ import {
 // Mock __DEV__ to be true for testing credential access
 Object.defineProperty(global, '__DEV__', {
   value: true,
-  writable: false,
+  writable: true,
+  configurable: true,
 });
 
 jest.mock('expo-constants', () => ({
@@ -23,7 +24,7 @@ jest.mock('expo-constants', () => ({
 }));
 
 // Mock the env module that @env imports from
-jest.mock('@/lib/env', () => ({
+jest.mock('@env', () => ({
   Env: {
     APP_ACCESS_REVIEWER_EMAIL: 'reviewer@example.com',
     APP_ACCESS_REVIEWER_PASSWORD: 'Sup3rSecret!',
@@ -47,11 +48,8 @@ describe('AppAccessManager - credentials', () => {
 
   test('provideTestCredentials returns absent credentials in production mode', () => {
     // Temporarily override __DEV__ for this test
-    const originalDev = global.__DEV__;
-    Object.defineProperty(global, '__DEV__', {
-      value: false,
-      writable: true,
-    });
+    const originalDev = (globalThis as any).__DEV__;
+    (globalThis as any).__DEV__ = false;
 
     const credentials = provideTestCredentials();
 
@@ -65,10 +63,7 @@ describe('AppAccessManager - credentials', () => {
     );
 
     // Restore original __DEV__ value
-    Object.defineProperty(global, '__DEV__', {
-      value: originalDev,
-      writable: false,
-    });
+    (globalThis as any).__DEV__ = originalDev;
   });
 });
 
@@ -105,7 +100,7 @@ describe('AppAccessManager - demo flow and instructions', () => {
 describe('AppAccessManager - validation', () => {
   test('validateAccessToGatedFeatures passes when env and deep links are valid in dev mode', () => {
     // Ensure __DEV__ is true for credential validation
-    expect(global.__DEV__).toBe(true);
+    expect((globalThis as any).__DEV__).toBe(true);
     const result = validateAccessToGatedFeatures();
     expect(result.ok).toBe(true);
     expect(result.issues).toHaveLength(0);

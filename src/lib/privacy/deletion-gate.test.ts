@@ -1,7 +1,7 @@
+import { Env } from '@env';
 import fs from 'fs';
 import path from 'path';
 
-import { Env } from '@/lib/env';
 import {
   provideWebDeletionUrl,
   validateDeletionPathAccessibility,

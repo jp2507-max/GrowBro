@@ -1,3 +1,5 @@
+import { Env } from '@env';
+
 import { appendAudit } from '@/lib/privacy/audit-log';
 import { supabase } from '@/lib/supabase';
 
@@ -163,8 +165,11 @@ export function validateDeletionPathAccessibility(): AccessibilityResult {
 }
 
 export function provideWebDeletionUrl(): string | undefined {
-  if (process.env.ACCOUNT_DELETION_URL) {
-    return process.env.ACCOUNT_DELETION_URL;
+  // NOTE: In Expo builds, only EXPO_PUBLIC_* environment variables are available at runtime.
+  // Configure ACCOUNT_DELETION_URL as EXPO_PUBLIC_ACCOUNT_DELETION_URL in .env files
+  // to ensure it's properly injected into the app bundle and accessible via Env.ACCOUNT_DELETION_URL.
+  if (Env.ACCOUNT_DELETION_URL) {
+    return Env.ACCOUNT_DELETION_URL;
   }
 
   try {

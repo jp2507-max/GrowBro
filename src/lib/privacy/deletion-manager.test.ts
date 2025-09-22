@@ -165,7 +165,7 @@ describe('deletion-manager - validation and URL utilities', () => {
     jest.resetModules();
     jest.isolateModules(() => {
       const { provideWebDeletionUrl: provideWebDeletionUrlFallback } =
-        jest.requireMock('./deletion-manager');
+        jest.requireActual('./deletion-manager');
 
       expect(provideWebDeletionUrlFallback()).toBe(
         'https://growbro.app/delete-account'

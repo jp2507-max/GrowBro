@@ -36,8 +36,7 @@ try {
       process.env.EAS_PROJECT_ID ?? '0ce1e1fc-7b61-4a2f-ae2b-790c097ced82',
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
-    ACCOUNT_DELETION_URL:
-      process.env.ACCOUNT_DELETION_URL || 'https://growbro.app/delete-account',
+    ACCOUNT_DELETION_URL: process.env.EXPO_PUBLIC_ACCOUNT_DELETION_URL,
   };
 }
 
@@ -59,9 +58,14 @@ const appIconBadgeConfig = {
 
 // eslint-disable-next-line max-lines-per-function
 function createExpoConfig(config) {
+  const ALLOWED_PUBLIC_KEYS = new Set([
+    'EXPO_PUBLIC_SUPABASE_URL',
+    'EXPO_PUBLIC_SUPABASE_ANON_KEY',
+    'EXPO_PUBLIC_ACCOUNT_DELETION_URL',
+  ]);
   const publicExtra = Object.fromEntries(
     Object.entries(process.env ?? {}).filter(
-      ([key, value]) => key.startsWith('EXPO_PUBLIC_') && value != null
+      ([key, value]) => ALLOWED_PUBLIC_KEYS.has(key) && value != null
     )
   );
   return {

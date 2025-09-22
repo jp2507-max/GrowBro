@@ -98,7 +98,7 @@ function maskSecret(value: string | undefined, envKey: string): MaskedSecret {
 export function provideTestCredentials(): TestCredentials {
   // Only read sensitive credentials in development mode to prevent secret leakage
   // In production builds, these values are never exposed to the client bundle
-  if (__DEV__) {
+  if (typeof __DEV__ !== 'undefined' && __DEV__) {
     // In non-production builds, try to read from EXPO_PUBLIC_* first (for backward compatibility)
     // In production, these won't be exposed, so fall back to direct env access
     const emailFromPublic = Env.EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL;

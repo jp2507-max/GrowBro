@@ -1,6 +1,7 @@
 // Import  global CSS file
 import '../../global.css';
 
+import { Env } from '@env';
 /* eslint-disable react-compiler/react-compiler */
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { ThemeProvider } from '@react-navigation/native';
@@ -25,7 +26,6 @@ import {
   useAgeGate,
   useIsFirstTime,
 } from '@/lib';
-import { Env } from '@/lib/env';
 import {
   hasConsent,
   initializePrivacyConsent,

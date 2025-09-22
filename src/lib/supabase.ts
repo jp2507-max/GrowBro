@@ -1,14 +1,13 @@
 import 'react-native-url-polyfill/auto';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createClient } from '@supabase/supabase-js';
-
 // Import a client-safe env export. We assume the client-only env lives in `src/lib/env.js`
 // and is reachable via the project's absolute import aliases. This avoids pulling any
 // build-time/server secrets into the client bundle. If your project uses a different
 // convention (for example `@env/client`), adjust this import accordingly and ensure
 // your bundler alias for `@env` resolves to the client-only export.
-import { Env as ClientEnv } from '@/lib/env';
+import { Env as ClientEnv } from '@env';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createClient } from '@supabase/supabase-js';
 
 // Determine if we're running in a test environment
 const isTestEnvironment =

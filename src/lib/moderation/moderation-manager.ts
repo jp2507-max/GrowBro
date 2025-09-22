@@ -32,6 +32,27 @@ function scheduleQueueProcessing(): void {
   }, 1000); // 1 second delay to allow batching
 }
 
+// Background processing scheduler for appeals queue
+let appealsProcessScheduled = false;
+function scheduleAppealsQueueProcessing(): void {
+  if (appealsProcessScheduled) return; // already scheduled
+  appealsProcessScheduled = true;
+
+  // Process queued appeals after a short delay to batch multiple enqueues
+  setTimeout(async () => {
+    appealsProcessScheduled = false;
+    try {
+      await appealsQueue.processAll();
+    } catch (error) {
+      // Log error but don't throw - this is background processing
+      console.warn(
+        '[ModerationManager] Failed to process appeals queue:',
+        error
+      );
+    }
+  }, 1000); // 1 second delay to allow batching
+}
+
 export type ModerationReason = 'spam' | 'harassment' | 'illegal' | 'other';
 
 export type ReportResult =
@@ -216,6 +237,8 @@ export const moderationManager: ModerationManager = {
       return { status: 'sent', submittedAt: Date.now() };
     } catch {
       appealsQueue.enqueue(contentId, reason, details);
+      // Schedule background processing of queued appeals
+      scheduleAppealsQueueProcessing();
       return { status: 'queued', submittedAt: Date.now() };
     }
   },

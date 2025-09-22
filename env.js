@@ -159,7 +159,7 @@ const client = z.object({
 
   // Account deletion portal
 
-  ACCOUNT_DELETION_URL: z.string().url(),
+  ACCOUNT_DELETION_URL: z.string().url().optional(),
 
   // Sentry Configuration (Client)
 
@@ -231,8 +231,7 @@ const _clientEnv = {
 
   // Account deletion portal
 
-  ACCOUNT_DELETION_URL:
-    process.env.ACCOUNT_DELETION_URL || 'https://growbro.app/delete-account',
+  ACCOUNT_DELETION_URL: process.env.EXPO_PUBLIC_ACCOUNT_DELETION_URL,
 
   // Sentry Configuration (Client)
 
