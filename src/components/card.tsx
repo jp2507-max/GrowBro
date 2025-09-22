@@ -29,6 +29,9 @@ export const Card = ({ title, body, id, userId }: Props) => {
           />
 
           <View className="p-2">
+            <Text className="w-fit rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
+              {translate('cannabis.educational_badge')}
+            </Text>
             <Text className="py-3 text-2xl ">{title}</Text>
             <Text numberOfLines={3} className="leading-snug text-gray-600">
               {body}

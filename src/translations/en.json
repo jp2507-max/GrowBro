@@ -16,6 +16,21 @@
     "tomorrow": "Tomorrow",
     "yesterday": "Yesterday"
   },
+  "cannabis": {
+    "age_gate_body": "GrowBro offers educational cannabis guidance only. Confirm your age to continue.",
+    "age_gate_day": "Day",
+    "age_gate_disclaimer": "GrowBro never provides shopping, ordering, pickup, or delivery features. Content remains educational only.",
+    "age_gate_error_invalid": "Enter a valid birth date to confirm your age.",
+    "age_gate_error_underage": "GrowBro is limited to adults 18 or older.",
+    "age_gate_month": "Month",
+    "age_gate_secondary_disclaimer": "By continuing you confirm you are at least 18 years old and understand GrowBro avoids commerce functionality.",
+    "age_gate_submit": "Enter GrowBro",
+    "age_gate_title": "Confirm you are 18 or older",
+    "age_gate_year": "Year",
+    "educational_badge": "Educational only",
+    "educational_banner_body": "GrowBro does not facilitate sales, vendor links, pickup, or delivery. All features remain educational and policy compliant.",
+    "educational_banner_title": "Educational cannabis guidance only"
+  },
   "common": {
     "cancel": "Cancel",
     "ok": "OK"
@@ -152,6 +167,8 @@
       "subtitle": "Help us improve the app with usage analytics",
       "title": "Analytics"
     },
+    "cannotOpenUrlBody": "Unable to open the web deletion page. Please check your internet connection or contact support.",
+    "cannotOpenUrlTitle": "Cannot open URL",
     "crashReporting": {
       "body": "Help us fix bugs by sending crash reports.",
       "subtitle": "Help us fix bugs by sending crash reports",
@@ -173,6 +190,8 @@
     "exportQueuedBody": "We queued your data export. Estimated completion: {{eta}}.",
     "exportQueuedBodyNoEta": "We queued your data export. You will receive a link when it is ready.",
     "exportQueuedTitle": "Export requested",
+    "invalidUrlBody": "The web deletion URL is not secure. Please contact support.",
+    "invalidUrlTitle": "Invalid URL",
     "lastUpdated": "Last updated: {{date}}",
     "manageDataDescription": "Manage your GrowBro data export, account deletion, and policy disclosures.",
     "openWebDeletion": "Open web deletion page",
@@ -187,6 +206,8 @@
       "title": "Session Replay"
     },
     "title": "Privacy Settings",
+    "urlErrorBody": "An error occurred while opening the web deletion page. Details: {{message}}",
+    "urlErrorTitle": "URL Error",
     "webDeletionHeading": "Need to delete outside the app?",
     "webDeletionPrompt": "Use our web form ({{url}}) if you cannot access the mobile app.",
     "webPortalAuthNote": "Sign in so we can verify your identity before queuing deletion. You can sign out after submitting your request.",

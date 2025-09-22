@@ -29,7 +29,16 @@ export { SDKGate } from './privacy/sdk-gate';
 export * as rrule from './rrule';
 export * from './sentry-utils';
 export * from './supabase';
-export * from './sync-engine';
+export {
+  isSyncInFlight,
+  getPendingChangesCount,
+  synchronize,
+  runSyncWithRetry,
+  type SyncRequest,
+  type SyncResponse,
+  type PushRequest,
+  type SyncResult,
+} from './sync-engine';
 export * from './sync/preferences';
 export * from './sync/storage-manager';
 export * from './task-manager';
@@ -50,3 +59,11 @@ export {
   type AccessValidationResult,
   type ReviewerGuide,
 } from '@/lib/compliance/app-access-manager';
+export {
+  useAgeGate,
+  verifyAgeGate,
+  startAgeGateSession,
+  hydrateAgeGate,
+  isAgeGateVerified,
+  getAgeGateAuditLog,
+} from '@/lib/compliance/age-gate';

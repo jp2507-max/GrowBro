@@ -140,8 +140,34 @@ function WebDeletionSection(): React.ReactElement | null {
       </Text>
       <Button
         label={translate('privacy.openWebDeletion')}
-        onPress={() => {
-          void Linking.openURL(webDeletionUrl);
+        onPress={async () => {
+          try {
+            if (!webDeletionUrl.startsWith('https://')) {
+              Alert.alert(
+                translate('privacy.invalidUrlTitle'),
+                translate('privacy.invalidUrlBody')
+              );
+              return;
+            }
+
+            const canOpen = await Linking.canOpenURL(webDeletionUrl);
+            if (canOpen) {
+              await Linking.openURL(webDeletionUrl);
+            } else {
+              Alert.alert(
+                translate('privacy.cannotOpenUrlTitle'),
+                translate('privacy.cannotOpenUrlBody')
+              );
+            }
+          } catch (error) {
+            console.error('Error opening web deletion URL:', error);
+            Alert.alert(
+              translate('privacy.urlErrorTitle'),
+              translate('privacy.urlErrorBody', {
+                message: extractErrorMessage(error),
+              })
+            );
+          }
         }}
       />
     </View>

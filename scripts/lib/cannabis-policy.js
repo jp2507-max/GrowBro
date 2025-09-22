@@ -61,7 +61,10 @@ function scanForCommerceLanguage(text, locale, config) {
 
   const matches = [];
   for (const term of denyTerms) {
-    const regex = new RegExp(`\\b${escapeRegExp(term)}\\b`, 'gi');
+    const regex = new RegExp(
+      `(?<!\\p{L})(${escapeRegExp(term)})(?!\\p{L})`,
+      'giu'
+    );
     let match;
     while ((match = regex.exec(text))) {
       const snippet = createSnippet(text, match.index, match[0].length);

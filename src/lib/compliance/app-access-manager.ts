@@ -97,12 +97,12 @@ function maskSecret(value: string | undefined, envKey: string): MaskedSecret {
 
 export function provideTestCredentials(): TestCredentials {
   const username = maskSecret(
-    Env.APP_ACCESS_REVIEWER_EMAIL,
-    'APP_ACCESS_REVIEWER_EMAIL'
+    Env.EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL,
+    'EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL'
   );
   const password = maskSecret(
-    Env.APP_ACCESS_REVIEWER_PASSWORD,
-    'APP_ACCESS_REVIEWER_PASSWORD'
+    Env.EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD,
+    'EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD'
   );
 
   return {

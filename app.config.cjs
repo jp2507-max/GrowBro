@@ -1,19 +1,15 @@
 // Load .env only in local/dev; CI may set EXPO_NO_DOTENV=1
-import type { AppIconBadgeConfig } from 'app-icon-badge/types';
-import { config } from 'dotenv';
+const { config } = require('dotenv');
+
 // IMPORTANT: Do not import from '@env' here because the Expo config is evaluated
 // directly by Node (no Babel module resolver / TS path mapping). Use the root
 // env.js exports instead which are plain Node (CommonJS) modules.
-// Use Node's createRequire so we can load the CommonJS file safely when
-// this TS/ES module is evaluated by Node. If loading the project's `env.js`
-// fails (missing .env or zod validation), fall back to a minimal Env so
-// tooling such as `expo doctor` can still read the config.
-import { createRequire } from 'module';
+// If loading the project's `env.js` fails (missing .env or zod validation),
+// fall back to a minimal Env so tooling such as `expo doctor` can still read the config.
 
-import applePrivacyManifest from './apple-privacy-manifest.json';
-const require = createRequire(import.meta.url);
+const applePrivacyManifest = require('./apple-privacy-manifest.json');
 
-let Env: any;
+let Env;
 try {
   Env = require('./env').Env;
 } catch {
@@ -21,7 +17,7 @@ try {
   // avoids crashing when .env files are not present during doctor/CI runs.
   const packageJSON = require('./package.json');
   const APP_ENV = process.env.APP_ENV ?? 'development';
-  const withEnvSuffix = (name: string) =>
+  const withEnvSuffix = (name) =>
     APP_ENV === 'production' ? name : `${name}.${APP_ENV}`;
 
   Env = {
@@ -38,14 +34,14 @@ try {
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
     ACCOUNT_DELETION_URL:
       process.env.ACCOUNT_DELETION_URL || 'https://growbro.app/delete-account',
-  } as const;
+  };
 }
 
 if (process.env.EXPO_NO_DOTENV !== '1') {
   config();
 }
 
-const appIconBadgeConfig: AppIconBadgeConfig = {
+const appIconBadgeConfig = {
   enabled: Env.APP_ENV !== 'production',
   badges: [
     {
@@ -62,7 +58,7 @@ const appIconBadgeConfig: AppIconBadgeConfig = {
 };
 
 // eslint-disable-next-line max-lines-per-function
-function createExpoConfig(config: any): any {
+function createExpoConfig(config) {
   const publicExtra = Object.fromEntries(
     Object.entries(process.env ?? {}).filter(
       ([key, value]) => key.startsWith('EXPO_PUBLIC_') && value != null
@@ -158,6 +154,10 @@ function createExpoConfig(config: any): any {
       EXPO_PUBLIC_SUPABASE_URL: Env.SUPABASE_URL,
       EXPO_PUBLIC_SUPABASE_ANON_KEY: Env.SUPABASE_ANON_KEY,
       EXPO_PUBLIC_ACCOUNT_DELETION_URL: Env.ACCOUNT_DELETION_URL,
+      // App Access Reviewer Credentials for Play Store compliance
+      EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL: Env.APP_ACCESS_REVIEWER_EMAIL,
+      EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD:
+        Env.APP_ACCESS_REVIEWER_PASSWORD,
       eas: {
         projectId: Env.EAS_PROJECT_ID,
       },
@@ -165,4 +165,4 @@ function createExpoConfig(config: any): any {
   };
 }
 
-export default ({ config }: any): any => createExpoConfig(config);
+module.exports = ({ config }) => createExpoConfig(config);

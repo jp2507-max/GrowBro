@@ -3,6 +3,7 @@ import React from 'react';
 
 import type { Post } from '@/api';
 import { usePosts } from '@/api';
+import { CannabisEducationalBanner } from '@/components/cannabis-educational-banner';
 import { Card } from '@/components/card';
 import { EmptyList, FocusAwareStatusBar, Text, View } from '@/components/ui';
 
@@ -29,6 +30,11 @@ export default function Feed() {
         renderItem={renderItem}
         keyExtractor={(_, index) => `item-${index}`}
         contentContainerStyle={{ flexGrow: 1 }}
+        ListHeaderComponent={
+          <View className="px-2 pb-2">
+            <CannabisEducationalBanner />
+          </View>
+        }
         ListEmptyComponent={<EmptyList isLoading={isPending} />}
       />
     </View>

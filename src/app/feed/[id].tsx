@@ -2,6 +2,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 
 import { usePost } from '@/api';
+import { CannabisEducationalBanner } from '@/components/cannabis-educational-banner';
 import { ModerationActions } from '@/components/moderation-actions';
 import {
   ActivityIndicator,
@@ -57,6 +58,7 @@ export default function Post() {
         }}
       />
       <FocusAwareStatusBar />
+      <CannabisEducationalBanner className="mb-4" />
       <Text className="text-xl">{data.title}</Text>
       <Text>{data.body} </Text>
       <View className="mt-4">

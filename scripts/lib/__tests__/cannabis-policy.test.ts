@@ -3,9 +3,9 @@ const os = require('os');
 const path = require('path');
 
 const {
+  runCannabisComplianceScan,
   scanForCommerceLanguage,
   validateExternalLinks,
-  runCannabisComplianceScan,
 } = require('../cannabis-policy');
 
 function createTempRepo(): string {
@@ -38,7 +38,7 @@ describe('cannabis-policy scanner utilities', () => {
       config
     );
     expect(matches).toHaveLength(2);
-    const terms = matches.map((match) => match.term).sort();
+    const terms = matches.map((match: { term: string }) => match.term).sort();
     expect(terms).toEqual(['buy', 'pickup']);
 
     const allowed = scanForCommerceLanguage(

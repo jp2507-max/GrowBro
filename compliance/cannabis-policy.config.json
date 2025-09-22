@@ -23,7 +23,8 @@
         "lieferung",
         "abholung",
         "versand",
-        "gesch?ft"
+        "geschäft",
+        "geschaeft"
       ],
       "allowlist": ["Bestellnummer"],
       "storeListingPath": "docs/compliance/store-listing.de.json"

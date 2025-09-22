@@ -16,6 +16,21 @@
     "tomorrow": "Morgen",
     "yesterday": "Gestern"
   },
+  "cannabis": {
+    "age_gate_body": "GrowBro vermittelt ausschliesslich Bildungsinhalte zum Cannabisanbau. Bitte bestaetige dein Alter, um fortzufahren.",
+    "age_gate_day": "Tag",
+    "age_gate_disclaimer": "GrowBro stellt keine Einkaufs-, Abhol- oder Lieferfunktionen bereit. Alle Inhalte sind rein informativ.",
+    "age_gate_error_invalid": "Bitte gib ein gueltiges Geburtsdatum ein.",
+    "age_gate_error_underage": "GrowBro steht nur Erwachsenen ab 18 Jahren zur Verfuegung.",
+    "age_gate_month": "Monat",
+    "age_gate_secondary_disclaimer": "Mit dem Fortfahren bestaetigst du, dass du mindestens 18 Jahre alt bist und verstanden hast, dass GrowBro keine Commerce-Funktionen anbietet.",
+    "age_gate_submit": "Weiter zu GrowBro",
+    "age_gate_title": "Bestaetige dein Alter (18+)",
+    "age_gate_year": "Jahr",
+    "educational_badge": "Nur Bildung",
+    "educational_banner_body": "GrowBro unterstuetzt weder Verkauf noch Anbieter-Links, Abholung oder Lieferung. Alle Funktionen bleiben bildungsorientiert und richtlinienkonform.",
+    "educational_banner_title": "Reine Bildungsinhalte zum Thema Cannabis"
+  },
   "common": {
     "cancel": "Abbrechen",
     "ok": "OK"
@@ -152,6 +167,8 @@
       "subtitle": "Hilf uns, die App mit Nutzungsanalysen zu verbessern",
       "title": "Analytik"
     },
+    "cannotOpenUrlBody": "Die Web-Löschseite kann nicht geöffnet werden. Bitte überprüfe deine Internetverbindung oder wende dich an den Support.",
+    "cannotOpenUrlTitle": "URL kann nicht geöffnet werden",
     "crashReporting": {
       "body": "Hilf uns, Fehler zu beheben, indem du Absturzberichte sendest.",
       "subtitle": "Hilf uns, Fehler zu beheben, indem du Absturzberichte sendest",
@@ -173,6 +190,8 @@
     "exportQueuedBody": "Wir haben den Datenexport eingeplant. Voraussichtlicher Abschluss: {{eta}}.",
     "exportQueuedBodyNoEta": "Wir haben den Datenexport eingeplant. Du erhältst einen Link, sobald er bereitsteht.",
     "exportQueuedTitle": "Export angefordert",
+    "invalidUrlBody": "Die Web-Lösch-URL ist nicht sicher. Bitte wende dich an den Support.",
+    "invalidUrlTitle": "Ungültige URL",
     "lastUpdated": "Zuletzt aktualisiert: {{date}}",
     "manageDataDescription": "Verwalte Datenexport, Kontolöschung und Offenlegungen für GrowBro.",
     "openWebDeletion": "Web-Löschseite öffnen",
@@ -187,6 +206,8 @@
       "title": "Sitzungswiedergabe"
     },
     "title": "Datenschutzeinstellungen",
+    "urlErrorBody": "Beim Öffnen der Web-Löschseite ist ein Fehler aufgetreten. Details: {{message}}",
+    "urlErrorTitle": "URL-Fehler",
     "webDeletionHeading": "Du brauchst eine Löschung ohne App-Zugriff?",
     "webDeletionPrompt": "Nutze unser Webformular ({{url}}), falls du nicht auf die mobile App zugreifen kannst.",
     "webPortalAuthNote": "Melde dich an, damit wir deine Identität prüfen können. Du kannst dich nach dem Absenden wieder abmelden.",
