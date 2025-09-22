@@ -110,6 +110,12 @@
     "sync_now": "Sync now",
     "title": "Sync Diagnostics"
   },
+  "moderation": {
+    "block": "Block",
+    "delete": "Delete",
+    "mute": "Mute",
+    "report": "Report"
+  },
   "onboarding": {
     "allow_button": "Allow notifications",
     "continue_button": "Continue",

@@ -92,6 +92,15 @@ function createExpoConfig(config: any): any {
       ],
       'expo-localization',
       'expo-router',
+      [
+        'expo-build-properties',
+        {
+          android: {
+            compileSdkVersion: 35,
+            targetSdkVersion: 35,
+          },
+        },
+      ],
       ['app-icon-badge', appIconBadgeConfig],
       ['react-native-edge-to-edge'],
       [

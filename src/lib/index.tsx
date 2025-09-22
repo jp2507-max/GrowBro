@@ -1,18 +1,23 @@
+/* eslint-disable simple-import-sort/exports */
+export * from './alarms';
 export * from './analytics';
 export * from './auth';
 export * from './hooks';
 export * from './i18n';
+export * from './media/photo-access';
+export * from './permissions/notification-handler';
+export * from './permissions/permission-manager';
 export { ConsentService } from './privacy/consent-service';
 export * from './privacy/consent-types';
 export { retentionWorker } from './privacy/retention-worker';
-export { SDKGate } from './privacy/sdk-gate';
 export * from './privacy-consent';
+export { SDKGate } from './privacy/sdk-gate';
 export * as rrule from './rrule';
 export * from './sentry-utils';
 export * from './supabase';
+export * from './sync-engine';
 export * from './sync/preferences';
 export * from './sync/storage-manager';
-export * from './sync-engine';
 export * from './task-manager';
 export * from './template-manager';
 export * from './utils';

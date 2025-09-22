@@ -2,6 +2,7 @@ import { Link } from 'expo-router';
 import React from 'react';
 
 import type { Post } from '@/api';
+import { ModerationActions } from '@/components/moderation-actions';
 import { Image, Pressable, Text, View } from '@/components/ui';
 
 type Props = Post;
@@ -14,7 +15,7 @@ const images = [
   'https://images.unsplash.com/photo-1587974928442-77dc3e0dba72?auto=format&fit=crop&w=800&q=80',
 ];
 
-export const Card = ({ title, body, id }: Props) => {
+export const Card = ({ title, body, id, userId }: Props) => {
   return (
     <Link href={`/feed/${id}`} asChild>
       <Pressable>
@@ -32,6 +33,9 @@ export const Card = ({ title, body, id }: Props) => {
             <Text numberOfLines={3} className="leading-snug text-gray-600">
               {body}
             </Text>
+            <View className="mt-3" testID={`moderation-actions-post-${id}`}>
+              <ModerationActions contentId={id} authorId={userId} />
+            </View>
           </View>
         </View>
       </Pressable>

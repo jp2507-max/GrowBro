@@ -110,6 +110,12 @@
     "sync_now": "Jetzt synchronisieren",
     "title": "Sync-Diagnostik"
   },
+  "moderation": {
+    "block": "Blockieren",
+    "delete": "Löschen",
+    "mute": "Stummschalten",
+    "report": "Melden"
+  },
   "onboarding": {
     "allow_button": "Benachrichtigungen erlauben",
     "continue_button": "Weiter",

@@ -7,6 +7,7 @@ import { showMessage } from 'react-native-flash-message';
 
 import { NoopAnalytics } from '@/lib/analytics';
 import { translate } from '@/lib/i18n';
+import { NotificationHandler } from '@/lib/permissions/notification-handler';
 
 import { InvalidTaskTimestampError } from './notification-errors';
 
@@ -52,20 +53,8 @@ export class TaskNotificationService {
    */
   private async ensureChannels(): Promise<void> {
     if (Platform.OS !== 'android') return;
-    try {
-      const ExpoNotif: any = Notifications as any;
-      await ExpoNotif.setNotificationChannelAsync('cultivation.reminders.v1', {
-        name: 'Reminders',
-        importance: ExpoNotif.AndroidImportance?.HIGH ?? 4,
-        lockscreenVisibility:
-          ExpoNotif.AndroidNotificationVisibility?.PUBLIC ?? 1,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#34D399',
-      });
-    } catch (error) {
-      // Do not throw; scheduling can still work on some devices with default channel
-      console.warn('[Notifications] ensureChannels failed', error);
-    }
+    // Do not create channels until permission is granted
+    await NotificationHandler.createChannelsAfterGrant();
   }
 
   /**
@@ -82,7 +71,6 @@ export class TaskNotificationService {
    * Shows persistent banner with a Settings deep-link when denied.
    */
   async requestPermissions(): Promise<boolean> {
-    await this.ensureChannels();
     if (Platform.OS === 'android' && Platform.Version >= 33) {
       try {
         const status = await PermissionsAndroid.request(
@@ -97,6 +85,10 @@ export class TaskNotificationService {
             duration: 0,
             onPress: () => Linking.openSettings(),
           });
+          NotificationHandler.suppressNotifications();
+        }
+        if (granted) {
+          await NotificationHandler.createChannelsAfterGrant();
         }
         return granted;
       } catch (error) {
@@ -117,6 +109,7 @@ export class TaskNotificationService {
         type: 'warning',
         duration: 4000,
       });
+      NotificationHandler.suppressNotifications();
     }
     return granted;
   }
@@ -232,6 +225,16 @@ export class TaskNotificationService {
    * Schedules a task reminder with proper timestamp validation and fallback logic
    */
   async scheduleTaskReminder(task: Task): Promise<string> {
+    // Enforce zero notifications before grant (Android 13+)
+    if (Platform.OS === 'android' && Platform.Version >= 33) {
+      const granted =
+        await NotificationHandler.isNotificationPermissionGranted();
+      if (!granted) {
+        NotificationHandler.suppressNotifications();
+        throw new Error('Notifications permission not granted');
+      }
+    }
+
     await this.ensureChannels();
 
     const expectsUtc = await this.resolveNotificationExpectsUtc();

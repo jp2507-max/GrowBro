@@ -1,0 +1,72 @@
+// Gradle init/applied script to verify per-variant targetSdk using AGP Variant APIs
+// Usage: ./gradlew -I ../scripts/android/verify-targetsdk.gradle verifyTargetSdkCompliance
+
+def EXPECTED_TARGET_SDK = (System.getenv('EXPECTED_TARGET_SDK') ?: '35') as Integer
+def ENFORCE_VARIANTS = ['release', 'production']
+
+gradle.rootProject { root ->
+  def aggregate = root.tasks.create('verifyTargetSdkCompliance')
+
+  root.subprojects { proj ->
+    proj.plugins.withId('com.android.application') {
+      def reportDir = new File(proj.buildDir, 'reports/target-sdk-compliance')
+      reportDir.mkdirs()
+
+      def checkTask = proj.tasks.create('verifyTargetSdkComplianceForModule') {
+        group = 'verification'
+        description = 'Verifies that enforced variants have targetSdk set to EXPECTED_TARGET_SDK.'
+        doLast {
+          def failures = []
+
+          def androidExt = proj.extensions.findByName('android')
+          if (androidExt && androidExt.hasProperty('applicationVariants')) {
+            androidExt.applicationVariants.all { variant ->
+              def variantName = variant.name
+              def isEnforced = ENFORCE_VARIANTS.any { variantName.toLowerCase().contains(it) || (variant.buildType?.name?.toLowerCase() == it) }
+              if (!isEnforced) {
+                return
+              }
+
+              def effectiveTarget = null
+              try {
+                effectiveTarget = variant.mergedFlavor?.targetSdkVersion?.apiLevel
+              } catch (Throwable ignored) {
+                effectiveTarget = null
+              }
+
+              def status = (effectiveTarget == EXPECTED_TARGET_SDK) ? 'pass' : 'fail'
+              def json = """
+{
+  "variant": "${variantName}",
+  "effectiveTargetSdk": ${effectiveTarget == null ? 'null' : effectiveTarget},
+  "expectedTargetSdk": ${EXPECTED_TARGET_SDK},
+  "status": "${status}",
+  "remediation": "Set targetSdkVersion ${EXPECTED_TARGET_SDK} for this variant",
+  "deadline": "2025-08-31"
+}
+"""
+              def out = new File(reportDir, "${variantName}.json")
+              out.text = json
+
+              if (status == 'fail') {
+                failures << "${proj.path}:${variantName} targetSdk=${effectiveTarget}"
+              }
+            }
+          } else {
+            logger.warn("[verifyTargetSdkCompliance] Android extension not found or applicationVariants unavailable in ${proj.path}")
+          }
+
+          if (!failures.isEmpty()) {
+            throw new GradleException("Target SDK compliance failed for: \n - " + failures.join('\n - '))
+          } else {
+            logger.lifecycle("[verifyTargetSdkCompliance] All enforced variants compliant in ${proj.path}")
+          }
+        }
+      }
+
+      aggregate.dependsOn(checkTask)
+    }
+  }
+}
+
+

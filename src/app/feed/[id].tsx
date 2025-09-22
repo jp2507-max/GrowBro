@@ -2,6 +2,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 
 import { usePost } from '@/api';
+import { ModerationActions } from '@/components/moderation-actions';
 import {
   ActivityIndicator,
   FocusAwareStatusBar,
@@ -42,6 +43,9 @@ export default function Post() {
       <FocusAwareStatusBar />
       <Text className="text-xl">{data.title}</Text>
       <Text>{data.body} </Text>
+      <View className="mt-4">
+        <ModerationActions contentId={data.id} authorId={data.userId} />
+      </View>
     </View>
   );
 }

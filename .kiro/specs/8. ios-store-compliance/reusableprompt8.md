@@ -3,10 +3,10 @@ AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the
 
 CONTEXT
 
-- Feature: 7. android-store-compliance
-- Task index: .kiro\specs\7. android-store-compliance\tasks.md
-- Design spec: .kiro\specs\7. android-store-compliance\design.md
-- Requirements spec: .kiro\specs\7. android-store-compliance\requirements.md
+- Feature: 8. ios-store-compliance
+- Task index: .kiro\specs\8. ios-store-compliance\tasks.md
+- Design spec: .kiro\specs\8. ios-store-compliance\design.md
+- Requirements spec: .kiro\specs\8. ios-store-compliance\requirements.md
 
 CONTRACT (outputs)
 
