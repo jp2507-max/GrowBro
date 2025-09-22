@@ -1,3 +1,5 @@
+import { Env } from '@env';
+
 import { DeepLinkValidator } from '@/lib/deep-link-validator';
 
 const REQUIRED_FEATURES = ['assessment', 'community', 'reminders'] as const;
@@ -95,11 +97,11 @@ function maskSecret(value: string | undefined, envKey: string): MaskedSecret {
 
 export function provideTestCredentials(): TestCredentials {
   const username = maskSecret(
-    process.env.APP_ACCESS_REVIEWER_EMAIL,
+    Env.APP_ACCESS_REVIEWER_EMAIL,
     'APP_ACCESS_REVIEWER_EMAIL'
   );
   const password = maskSecret(
-    process.env.APP_ACCESS_REVIEWER_PASSWORD,
+    Env.APP_ACCESS_REVIEWER_PASSWORD,
     'APP_ACCESS_REVIEWER_PASSWORD'
   );
 

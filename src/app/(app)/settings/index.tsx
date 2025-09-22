@@ -57,7 +57,9 @@ function GeneralSettings(): ReactElement {
 
 function PrivacySettings({ router }: { router: any }): ReactElement {
   const deletionUrl = provideWebDeletionUrl();
-  const deletionLabel = deletionUrl.replace(/^https?:\/\//, '');
+  const deletionLabel = deletionUrl
+    ? deletionUrl.replace(/^https?:\/\//, '')
+    : '';
 
   return (
     <ItemsContainer title="settings.privacy_section">
@@ -65,13 +67,15 @@ function PrivacySettings({ router }: { router: any }): ReactElement {
         text="settings.privacy_and_data"
         onPress={() => router.push('/(app)/settings/privacy-and-data')}
       />
-      <Item
-        text="settings.web_deletion"
-        value={deletionLabel}
-        onPress={() => {
-          void Linking.openURL(deletionUrl);
-        }}
-      />
+      {deletionUrl && (
+        <Item
+          text="settings.web_deletion"
+          value={deletionLabel}
+          onPress={() => {
+            void Linking.openURL(deletionUrl);
+          }}
+        />
+      )}
       <Item
         text="settings.privacy_policy"
         value={privacyPolicyLabel}

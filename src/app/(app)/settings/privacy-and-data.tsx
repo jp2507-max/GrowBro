@@ -117,12 +117,16 @@ function useAccountDeletion(signOut: () => void): {
   return { queueDeletion, confirmDeletion, isDeleting };
 }
 
-function WebDeletionSection(): React.ReactElement {
+function WebDeletionSection(): React.ReactElement | null {
   const webDeletionUrl = useMemo(() => provideWebDeletionUrl(), []);
   const webDeletionLabel = useMemo(
-    () => webDeletionUrl.replace(/^https?:\/\//, ''),
+    () => (webDeletionUrl ? webDeletionUrl.replace(/^https?:\/\//, '') : ''),
     [webDeletionUrl]
   );
+
+  if (!webDeletionUrl) {
+    return null;
+  }
 
   return (
     <View className="gap-2 rounded-lg bg-gray-100 p-4 dark:bg-gray-800">

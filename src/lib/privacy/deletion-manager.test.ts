@@ -153,7 +153,7 @@ describe('deletion-manager - validation and URL utilities', () => {
     expect(provideWebDeletionUrl()).toBe('https://growbro.app/delete-account');
   });
 
-  test('provideWebDeletionUrl falls back to privacy-policy.json when Env.ACCOUNT_DELETION_URL is falsy', async () => {
+  test('provideWebDeletionUrl falls back to privacy-policy.json when Env.ACCOUNT_DELETION_URL is falsy', () => {
     // Temporarily mock Env.ACCOUNT_DELETION_URL as undefined
     jest.doMock('@env', () => ({
       Env: {
@@ -163,11 +163,13 @@ describe('deletion-manager - validation and URL utilities', () => {
 
     // Re-import the module to use the new mock
     jest.resetModules();
-    const { provideWebDeletionUrl: provideWebDeletionUrlFallback } =
-      await import('./deletion-manager');
+    jest.isolateModules(() => {
+      const { provideWebDeletionUrl: provideWebDeletionUrlFallback } =
+        jest.requireMock('./deletion-manager');
 
-    expect(provideWebDeletionUrlFallback()).toBe(
-      'https://growbro.app/delete-account'
-    );
+      expect(provideWebDeletionUrlFallback()).toBe(
+        'https://growbro.app/delete-account'
+      );
+    });
   });
 });

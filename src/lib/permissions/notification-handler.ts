@@ -47,5 +47,3 @@ export const NotificationHandler: NotificationHandlerAPI = {
     return ok;
   },
 };
-
-export default NotificationHandler;

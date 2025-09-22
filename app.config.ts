@@ -1,13 +1,45 @@
 // Load .env only in local/dev; CI may set EXPO_NO_DOTENV=1
 import type { AppIconBadgeConfig } from 'app-icon-badge/types';
 import { config } from 'dotenv';
-
-import applePrivacyManifest from './apple-privacy-manifest.json';
 // IMPORTANT: Do not import from '@env' here because the Expo config is evaluated
 // directly by Node (no Babel module resolver / TS path mapping). Use the root
-// env.js exports instead which are plain Node modules.
-// Lazy import to avoid throwing before dotenv (or CI env) is in place.
-import { Env } from './env';
+// env.js exports instead which are plain Node (CommonJS) modules.
+// Use Node's createRequire so we can load the CommonJS file safely when
+// this TS/ES module is evaluated by Node. If loading the project's `env.js`
+// fails (missing .env or zod validation), fall back to a minimal Env so
+// tooling such as `expo doctor` can still read the config.
+import { createRequire } from 'module';
+
+import applePrivacyManifest from './apple-privacy-manifest.json';
+const require = createRequire(import.meta.url);
+
+let Env: any;
+try {
+  Env = require('./env').Env;
+} catch {
+  // Fallback minimal Env. This mirrors the important fields used below and
+  // avoids crashing when .env files are not present during doctor/CI runs.
+  const packageJSON = require('./package.json');
+  const APP_ENV = process.env.APP_ENV ?? 'development';
+  const withEnvSuffix = (name: string) =>
+    APP_ENV === 'production' ? name : `${name}.${APP_ENV}`;
+
+  Env = {
+    APP_ENV,
+    NAME: process.env.NAME ?? 'GrowBro',
+    SCHEME: process.env.SCHEME ?? 'GrowBro',
+    BUNDLE_ID: withEnvSuffix(process.env.BUNDLE_ID ?? 'com.growbro'),
+    PACKAGE: withEnvSuffix(process.env.PACKAGE ?? 'com.growbro'),
+    VERSION: packageJSON.version,
+    EXPO_ACCOUNT_OWNER: process.env.EXPO_ACCOUNT_OWNER ?? 'jan_100',
+    EAS_PROJECT_ID:
+      process.env.EAS_PROJECT_ID ?? '0ce1e1fc-7b61-4a2f-ae2b-790c097ced82',
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+    ACCOUNT_DELETION_URL:
+      process.env.ACCOUNT_DELETION_URL || 'https://growbro.app/delete-account',
+  } as const;
+}
 
 if (process.env.EXPO_NO_DOTENV !== '1') {
   config();

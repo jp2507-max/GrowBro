@@ -28,17 +28,15 @@
 
  */
 
-const z = require('zod');
-
-const packageJSON = require('./package.json');
-
 const path = require('path');
-
+const z = require('zod');
+// Use CommonJS __dirname directly and resolve package.json from it
 // eslint-disable-next-line no-undef
-const __dirname = path.dirname(__filename);
+const packageJSON = require(path.join(__dirname, 'package.json'));
 
 const APP_ENV = process.env.APP_ENV ?? 'development';
 
+// eslint-disable-next-line no-undef
 const envPath = path.resolve(__dirname, `.env.${APP_ENV}`);
 
 require('dotenv').config({
@@ -49,6 +47,7 @@ require('dotenv').config({
 
 // from .env.{APP_ENV} to keep secrets out of VCS while preserving dev defaults.
 
+// eslint-disable-next-line no-undef
 const localEnvPath = path.resolve(__dirname, `.env.local`);
 
 require('dotenv').config({ path: localEnvPath, override: true });
@@ -173,6 +172,12 @@ const client = z.object({
   SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE: z.number().min(0).max(1).optional(),
 
   SENTRY_ENABLE_REPLAY: z.boolean().optional(),
+
+  // App Access Reviewer Credentials
+
+  APP_ACCESS_REVIEWER_EMAIL: z.string().optional(),
+
+  APP_ACCESS_REVIEWER_PASSWORD: z.string().optional(),
 });
 
 const buildTime = z.object({
@@ -246,6 +251,12 @@ const _clientEnv = {
     : undefined,
 
   SENTRY_ENABLE_REPLAY: process.env.SENTRY_ENABLE_REPLAY === 'true',
+
+  // App Access Reviewer Credentials
+
+  APP_ACCESS_REVIEWER_EMAIL: process.env.APP_ACCESS_REVIEWER_EMAIL,
+
+  APP_ACCESS_REVIEWER_PASSWORD: process.env.APP_ACCESS_REVIEWER_PASSWORD,
 };
 
 /**

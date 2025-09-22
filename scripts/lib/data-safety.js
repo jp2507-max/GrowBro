@@ -127,20 +127,22 @@ function syncWithPrivacyPolicy(repoRoot) {
   }
   if (
     !policy.privacyPolicyUrl ||
-    !/^https?:\/\//.test(policy.privacyPolicyUrl)
+    !/^https:\/\//.test(policy.privacyPolicyUrl)
   ) {
     problems.push({
       type: 'missing-privacy-policy-url',
-      message: 'privacy-policy.json must include a valid privacyPolicyUrl',
+      message:
+        'privacy-policy.json must include a valid HTTPS privacyPolicyUrl',
     });
   }
   if (
     !policy.accountDeletionUrl ||
-    !/^https?:\/\//.test(policy.accountDeletionUrl)
+    !/^https:\/\//.test(policy.accountDeletionUrl)
   ) {
     problems.push({
       type: 'missing-deletion-url',
-      message: 'privacy-policy.json must include a valid accountDeletionUrl',
+      message:
+        'privacy-policy.json must include a valid HTTPS accountDeletionUrl',
     });
   }
   if (webMethod && webMethod.url && policy.accountDeletionUrl) {

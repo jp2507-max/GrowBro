@@ -1,3 +1,5 @@
+// Import after mocking
+
 import {
   AppAccessManager,
   createReviewerInstructions,
@@ -6,27 +8,24 @@ import {
   validateAccessToGatedFeatures,
 } from '@/lib/compliance/app-access-manager';
 
-const originalEmail = process.env.APP_ACCESS_REVIEWER_EMAIL;
-const originalPassword = process.env.APP_ACCESS_REVIEWER_PASSWORD;
+// Mock @env module
+jest.mock('@env', () => ({
+  APP_ACCESS_REVIEWER_EMAIL: 'reviewer@example.com',
+  APP_ACCESS_REVIEWER_PASSWORD: 'Sup3rSecret!',
+}));
 
 describe('AppAccessManager - credentials', () => {
+  const mockedEnv = jest.mocked(jest.requireMock('@env'));
+
   beforeEach(() => {
-    process.env.APP_ACCESS_REVIEWER_EMAIL = 'reviewer@example.com';
-    process.env.APP_ACCESS_REVIEWER_PASSWORD = 'Sup3rSecret!';
+    mockedEnv.APP_ACCESS_REVIEWER_EMAIL = 'reviewer@example.com';
+    mockedEnv.APP_ACCESS_REVIEWER_PASSWORD = 'Sup3rSecret!';
   });
 
   afterEach(() => {
-    if (originalEmail === undefined) {
-      delete process.env.APP_ACCESS_REVIEWER_EMAIL;
-    } else {
-      process.env.APP_ACCESS_REVIEWER_EMAIL = originalEmail;
-    }
-
-    if (originalPassword === undefined) {
-      delete process.env.APP_ACCESS_REVIEWER_PASSWORD;
-    } else {
-      process.env.APP_ACCESS_REVIEWER_PASSWORD = originalPassword;
-    }
+    // Reset to default mocked values
+    mockedEnv.APP_ACCESS_REVIEWER_EMAIL = 'reviewer@example.com';
+    mockedEnv.APP_ACCESS_REVIEWER_PASSWORD = 'Sup3rSecret!';
   });
 
   test('provideTestCredentials masks secrets and stays valid', () => {
@@ -43,23 +42,17 @@ describe('AppAccessManager - credentials', () => {
 });
 
 describe('AppAccessManager - demo flow and instructions', () => {
+  const mockedEnv = jest.mocked(jest.requireMock('@env'));
+
   beforeEach(() => {
-    process.env.APP_ACCESS_REVIEWER_EMAIL = 'reviewer@example.com';
-    process.env.APP_ACCESS_REVIEWER_PASSWORD = 'Sup3rSecret!';
+    mockedEnv.APP_ACCESS_REVIEWER_EMAIL = 'reviewer@example.com';
+    mockedEnv.APP_ACCESS_REVIEWER_PASSWORD = 'Sup3rSecret!';
   });
 
   afterEach(() => {
-    if (originalEmail === undefined) {
-      delete process.env.APP_ACCESS_REVIEWER_EMAIL;
-    } else {
-      process.env.APP_ACCESS_REVIEWER_EMAIL = originalEmail;
-    }
-
-    if (originalPassword === undefined) {
-      delete process.env.APP_ACCESS_REVIEWER_PASSWORD;
-    } else {
-      process.env.APP_ACCESS_REVIEWER_PASSWORD = originalPassword;
-    }
+    // Reset to default mocked values
+    mockedEnv.APP_ACCESS_REVIEWER_EMAIL = 'reviewer@example.com';
+    mockedEnv.APP_ACCESS_REVIEWER_PASSWORD = 'Sup3rSecret!';
   });
 
   test('generateDemoFlow exposes steps for every required feature', () => {
@@ -92,23 +85,17 @@ describe('AppAccessManager - demo flow and instructions', () => {
 });
 
 describe('AppAccessManager - validation', () => {
+  const mockedEnv = jest.mocked(jest.requireMock('@env'));
+
   beforeEach(() => {
-    process.env.APP_ACCESS_REVIEWER_EMAIL = 'reviewer@example.com';
-    process.env.APP_ACCESS_REVIEWER_PASSWORD = 'Sup3rSecret!';
+    mockedEnv.APP_ACCESS_REVIEWER_EMAIL = 'reviewer@example.com';
+    mockedEnv.APP_ACCESS_REVIEWER_PASSWORD = 'Sup3rSecret!';
   });
 
   afterEach(() => {
-    if (originalEmail === undefined) {
-      delete process.env.APP_ACCESS_REVIEWER_EMAIL;
-    } else {
-      process.env.APP_ACCESS_REVIEWER_EMAIL = originalEmail;
-    }
-
-    if (originalPassword === undefined) {
-      delete process.env.APP_ACCESS_REVIEWER_PASSWORD;
-    } else {
-      process.env.APP_ACCESS_REVIEWER_PASSWORD = originalPassword;
-    }
+    // Reset to default mocked values
+    mockedEnv.APP_ACCESS_REVIEWER_EMAIL = 'reviewer@example.com';
+    mockedEnv.APP_ACCESS_REVIEWER_PASSWORD = 'Sup3rSecret!';
   });
 
   test('validateAccessToGatedFeatures passes when env and deep links are valid', () => {
@@ -118,8 +105,8 @@ describe('AppAccessManager - validation', () => {
   });
 
   test('validateAccessToGatedFeatures fails when credentials missing', () => {
-    delete process.env.APP_ACCESS_REVIEWER_EMAIL;
-    delete process.env.APP_ACCESS_REVIEWER_PASSWORD;
+    mockedEnv.APP_ACCESS_REVIEWER_EMAIL = undefined;
+    mockedEnv.APP_ACCESS_REVIEWER_PASSWORD = undefined;
 
     const result = AppAccessManager.validateAccessToGatedFeatures();
 

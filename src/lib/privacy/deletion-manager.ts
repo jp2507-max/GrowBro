@@ -1,9 +1,5 @@
-import { Env } from '@env';
-
 import { appendAudit } from '@/lib/privacy/audit-log';
 import { supabase } from '@/lib/supabase';
-
-import privacyPolicy from '../../../compliance/privacy-policy.json';
 
 export type DeletionResult = {
   jobId: string;
@@ -50,9 +46,6 @@ const DELETION_STEPS: AccessibilityStep[] = [
   },
 ];
 
-const ACCOUNT_DELETION_URL =
-  Env.ACCOUNT_DELETION_URL || privacyPolicy.accountDeletionUrl;
-
 async function invokeSupabaseFunction<T>(
   name: string,
   body?: Record<string, unknown>
@@ -74,7 +67,7 @@ function auditDeletionRequest(metadata: DeletionAuditMetadata): void {
     action: 'account-delete-request',
     details: {
       ...metadata,
-      deletionUrl: ACCOUNT_DELETION_URL,
+      deletionUrl: provideWebDeletionUrl(),
     },
   });
 }
@@ -169,6 +162,15 @@ export function validateDeletionPathAccessibility(): AccessibilityResult {
   };
 }
 
-export function provideWebDeletionUrl(): string {
-  return ACCOUNT_DELETION_URL;
+export function provideWebDeletionUrl(): string | undefined {
+  if (process.env.ACCOUNT_DELETION_URL) {
+    return process.env.ACCOUNT_DELETION_URL;
+  }
+
+  try {
+    const privacyPolicy = require('../../../compliance/privacy-policy.json');
+    return privacyPolicy.accountDeletionUrl;
+  } catch {
+    return undefined;
+  }
 }

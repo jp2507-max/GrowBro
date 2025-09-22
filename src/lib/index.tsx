@@ -1,12 +1,26 @@
 /* eslint-disable simple-import-sort/exports */
-export * from './alarms';
+export {
+  scheduleInexact,
+  requestExactIfJustified,
+  type AlarmScheduleResult,
+} from '@/lib/alarms';
 export * from './analytics';
 export * from './auth';
 export * from './hooks';
 export * from './i18n';
-export * from './media/photo-access';
-export * from './permissions/notification-handler';
-export * from './permissions/permission-manager';
+export {
+  requestSelectedPhotos,
+  showReselectionUI,
+  type PhotoAccessResult,
+} from '@/lib/media/photo-access';
+export { NotificationHandler } from '@/lib/permissions/notification-handler';
+export {
+  PermissionManager,
+  type PermissionManagerAPI,
+  type PermissionResult,
+  type AlarmPermissionResult,
+  type StoragePermissionStatus,
+} from '@/lib/permissions/permission-manager';
 export { ConsentService } from './privacy/consent-service';
 export * from './privacy/consent-types';
 export { retentionWorker } from './privacy/retention-worker';
@@ -21,4 +35,18 @@ export * from './sync/storage-manager';
 export * from './task-manager';
 export * from './template-manager';
 export * from './utils';
-export * from './compliance/app-access-manager';
+export {
+  AppAccessManager,
+  provideTestCredentials,
+  generateDemoFlow,
+  validateAccessToGatedFeatures,
+  createReviewerInstructions,
+  type RequiredFeature,
+  type MaskedSecret,
+  type TestCredentials,
+  type DemoFlowStep,
+  type DemoFlowInstructions,
+  type AccessValidationIssue,
+  type AccessValidationResult,
+  type ReviewerGuide,
+} from '@/lib/compliance/app-access-manager';

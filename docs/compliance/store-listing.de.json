@@ -1,0 +1,21 @@
+{
+  "locale": "de",
+  "title": "GrowBro - Bildung rund um Cannabis",
+  "shortDescription": "Lernbegleiter fuer den verantwortungsbewussten Cannabisanbau ohne Handelsfunktionen.",
+  "fullDescription": "GrowBro vermittelt strukturiertes Wissen fuer Hobby-Gaertnerinnen und -Gaertner. Die App bietet Lernplaene, Erinnerungshilfen und Policy-Hinweise, bleibt aber strikt bildungsorientiert. Es gibt keine Einkaufs-, Abhol- oder Lieferfunktionen. Stattdessen lernen Nutzerinnen und Nutzer, wie sie Pflanzenpflege, Sicherheit und Community-Regeln einhalten.",
+  "features": [
+    "Gefuehrte Lernpfade mit woechentlichen Aufgaben",
+    "Hinweise zur sicheren Pflanzenernaehrung und Belichtung",
+    "Compliance-Uebersichten mit Google-Play-Richtlinien",
+    "Community-Moderation mit Melden-, Blockieren- und Stummschaltoptionen"
+  ],
+  "highlights": [
+    "Nur Bildung, kein Handel",
+    "Alterspruefung ab 18 Jahren",
+    "Deutliche Hinweise auf Bildungszweck in der gesamten App"
+  ],
+  "externalLinks": [
+    "https://growbro.app/datenschutz",
+    "https://growbro.app/support"
+  ]
+}

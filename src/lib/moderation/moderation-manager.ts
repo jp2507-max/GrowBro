@@ -11,6 +11,27 @@ import {
 } from '@/lib/moderation/rate-limit';
 import { detectSpam } from '@/lib/moderation/spam-detector';
 
+// Background processing scheduler to avoid calling processAll() too frequently
+let processScheduled = false;
+function scheduleQueueProcessing(): void {
+  if (processScheduled) return; // already scheduled
+  processScheduled = true;
+
+  // Process queued reports after a short delay to batch multiple enqueues
+  setTimeout(async () => {
+    processScheduled = false;
+    try {
+      await moderationQueue.processAll();
+    } catch (error) {
+      // Log error but don't throw - this is background processing
+      console.warn(
+        '[ModerationManager] Failed to process moderation queue:',
+        error
+      );
+    }
+  }, 1000); // 1 second delay to allow batching
+}
+
 export type ModerationReason = 'spam' | 'harassment' | 'illegal' | 'other';
 
 export type ReportResult =
@@ -113,6 +134,8 @@ export const moderationManager: ModerationManager = {
       }
       // backoff if duplicate rapid reports on same content
       recordBackoff(validatedUserId, contentId, 10_000);
+      // Schedule background processing of queued reports
+      scheduleQueueProcessing();
       return { status: 'queued', submittedAt: Date.now() };
     }
     try {
@@ -127,6 +150,8 @@ export const moderationManager: ModerationManager = {
       const backoffUntil = getBackoffUntil(validatedUserId, contentId);
       const r = moderationQueue.enqueueReport(contentId, reason);
       if (backoffUntil) moderationQueue.setNotBefore(r.id, backoffUntil);
+      // Schedule background processing of queued reports
+      scheduleQueueProcessing();
       return { status: 'queued', submittedAt: Date.now() };
     }
   },
