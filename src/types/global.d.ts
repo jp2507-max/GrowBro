@@ -20,7 +20,4 @@ declare global {
       __DEV__: boolean;
     }
   }
-
-  // Ensure the `global` variable itself is typed with `__DEV__`
-  var global: NodeJS.Global & typeof globalThis & { __DEV__: boolean };
 }

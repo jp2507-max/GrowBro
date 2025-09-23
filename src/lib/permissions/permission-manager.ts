@@ -121,7 +121,10 @@ export const PermissionManager: PermissionManagerAPI = {
 
   provideFallbackExperience(permission: string): void {
     // For POST_NOTIFICATIONS, open app settings to allow users to re-enable the permission
-    if (permission === PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS) {
+    if (
+      permission === 'POST_NOTIFICATIONS' ||
+      permission === PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+    ) {
       void Linking.openSettings();
     }
     // For other permissions, implement UI-level fallbacks elsewhere (e.g., show in-app badge or banners)

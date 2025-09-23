@@ -12,7 +12,15 @@
         "retail",
         "ship"
       ],
-      "allowlist": ["buy-in", "orderly", "delivery of insights"],
+      "allowlist": [
+        "buy-in",
+        "orderly",
+        "delivery of insights",
+        "never provides shopping, ordering, pickup, or delivery",
+        "does not facilitate sales, vendor links, pickup, or delivery",
+        "educational cannabis guidance only",
+        "educational only"
+      ],
       "storeListingPath": "docs/compliance/store-listing.en.json"
     },
     "de": {
@@ -26,7 +34,13 @@
         "geschäft",
         "geschaeft"
       ],
-      "allowlist": ["Bestellnummer"],
+      "allowlist": [
+        "Bestellnummer",
+        "keine einkaufs-, abhol- oder lieferfunktionen",
+        "unterstuetzt weder verkauf noch anbieter-links, abholung oder lieferung",
+        "reine bildungsinhalte",
+        "nur bildung"
+      ],
       "storeListingPath": "docs/compliance/store-listing.de.json"
     }
   },
@@ -38,6 +52,7 @@
     "grubhub.com",
     "ubereats.com"
   ],
+  "allowedDomains": ["growbro.app"],
   "report": {
     "json": "build/reports/compliance/cannabis-policy.json",
     "markdown": "build/reports/compliance/cannabis-policy.md"

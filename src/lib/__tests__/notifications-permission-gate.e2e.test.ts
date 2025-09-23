@@ -1,0 +1,40 @@
+import * as RN from 'react-native';
+
+import { NotificationHandler } from '@/lib/permissions/notification-handler';
+import { TaskNotificationService } from '@/lib/task-notifications';
+
+jest.mock('expo-notifications', () => ({
+  scheduleNotificationAsync: jest.fn().mockResolvedValue('id'),
+  setNotificationChannelAsync: jest.fn().mockResolvedValue(undefined),
+}));
+
+describe('Notifications gate (Android 13+): zero notifications before grant', () => {
+  const originalOS = RN.Platform.OS;
+  const originalVersion = RN.Platform.Version as any;
+  beforeEach(() => {
+    jest.clearAllMocks();
+    Object.defineProperty(RN.Platform, 'OS', { value: 'android' });
+    Object.defineProperty(RN.Platform, 'Version', { value: 34 });
+  });
+  afterEach(() => {
+    Object.defineProperty(RN.Platform, 'OS', { value: originalOS });
+    Object.defineProperty(RN.Platform, 'Version', { value: originalVersion });
+  });
+
+  it('schedules nothing when permission denied', async () => {
+    jest
+      .spyOn(NotificationHandler, 'isNotificationPermissionGranted')
+      .mockResolvedValue(false);
+    const svc = new TaskNotificationService();
+    const result = await svc.scheduleTaskReminder({
+      id: 't1',
+      title: 'x',
+      description: 'y',
+      reminderAtUtc: new Date('2025-01-01T10:00:00Z').toISOString(),
+      reminderAtLocal: null,
+      dueAtUtc: null,
+      dueAtLocal: null,
+    } as any);
+    expect(result).toBe('');
+  });
+});

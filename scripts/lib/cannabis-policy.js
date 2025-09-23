@@ -69,8 +69,17 @@ function scanForCommerceLanguage(text, locale, config) {
     while ((match = regex.exec(text))) {
       const snippet = createSnippet(text, match.index, match[0].length);
       const snippetLower = snippet.toLowerCase();
-      const isAllowed = Array.from(allowPhrases).some((phrase) =>
-        snippetLower.includes(phrase)
+      // To reduce false positives, consider a wider window around the term
+      const windowRadius = 120;
+      const start = Math.max(0, match.index - windowRadius);
+      const end = Math.min(
+        text.length,
+        match.index + match[0].length + windowRadius
+      );
+      const windowLower = text.slice(start, end).toLowerCase();
+      const isAllowed = Array.from(allowPhrases).some(
+        (phrase) =>
+          snippetLower.includes(phrase) || windowLower.includes(phrase)
       );
       if (isAllowed) continue;
       matches.push({
@@ -107,6 +116,7 @@ function flattenStrings(node, ancestors = []) {
 
 function validateExternalLinks(links, config, context) {
   const blocked = buildTermSet(config.blockedDomains);
+  const allowed = buildTermSet(config.allowedDomains);
   if (blocked.size === 0) return [];
 
   const violations = [];
@@ -114,7 +124,11 @@ function validateExternalLinks(links, config, context) {
     try {
       const url = new URL(link);
       const domain = url.hostname.toLowerCase();
-      if (blocked.has(domain) || blocked.has(domain.replace(/^www\./, ''))) {
+      const base = domain.replace(/^www\./, '');
+      if (allowed.has(domain) || allowed.has(base)) {
+        continue;
+      }
+      if (blocked.has(domain) || blocked.has(base)) {
         violations.push({
           ruleId: 'links:blocked-domain',
           message: `Blocked domain detected: ${domain}`,

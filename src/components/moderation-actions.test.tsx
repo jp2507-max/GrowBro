@@ -7,7 +7,7 @@ import * as authUtils from '@/lib/auth/user-utils';
 import { AuthenticationError } from '@/lib/auth/user-utils';
 // Mock the translate function
 import * as i18nUtils from '@/lib/i18n/utils';
-import modManager from '@/lib/moderation/moderation-manager';
+import { moderationManager as modManager } from '@/lib/moderation/moderation-manager';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 import { cleanup, screen, setup, waitFor } from '@/lib/test-utils';
 

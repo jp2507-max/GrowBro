@@ -37,13 +37,14 @@
     "lint:translations": "eslint ./src/translations/ --fix --ext .json  ",
     "i18n:validate": "node scripts/i18next-syntax-validation.js",
     "test": "jest --runInBand --forceExit",
-    "check-all": "pnpm run lint && pnpm run type-check && pnpm run lint:translations && pnpm run i18n:validate && pnpm run privacy:validate && pnpm run privacy-policy:validate && pnpm run data-safety:generate && pnpm run data-safety:validate && pnpm run compliance:cannabis && pnpm run test",
+    "check-all": "pnpm run lint && pnpm run type-check && pnpm run lint:translations && pnpm run i18n:validate && pnpm run compliance:docs:validate && pnpm run privacy:validate && pnpm run privacy-policy:validate && pnpm run data-safety:generate && pnpm run data-safety:validate && pnpm run compliance:cannabis && pnpm run compliance:audit && pnpm run test",
     "test:ci": "pnpm run test --coverage",
     "test:watch": "pnpm run test --watch",
     "install-maestro": "curl -Ls 'https://get.maestro.mobile.dev' | bash",
     "e2e-test": "maestro test .maestro/ -e APP_ID=com.obytes.development",
     "privacy:snapshot": "node scripts/snapshot-privacy-deps.js",
     "privacy:validate": "node scripts/validate-privacy-manifest.js",
+    "prelaunch:validate": "node scripts/ci-prelaunch-validate.js",
     "ai:monitor": "node scripts/ai-act-monitor.js",
     "compliance:scan:android": "pnpm prebuild && node scripts/ci-android-manifest-scan.js",
     "data-safety:generate": "node scripts/generate-data-safety-draft.js",
@@ -51,7 +52,9 @@
     "privacy-policy:validate": "node scripts/validate-privacy-policy.js",
     "privacy:deletion-gate": "pnpm run test -- deletion-gate.test.ts",
     "compliance:app-access": "pnpm run test -- app-access-gate.test.ts",
-    "compliance:cannabis": "node scripts/ci-cannabis-policy-scan.js"
+    "compliance:cannabis": "node scripts/ci-cannabis-policy-scan.js",
+    "compliance:docs:validate": "node scripts/ci-compliance-docs-validate.js",
+    "compliance:audit": "node scripts/ci-compliance-audit.js"
   },
   "sentry": {
     "notes": "Set SENTRY_ENV and SENTRY_RELEASE in your CI before building. For EAS builds you can set SENTRY_RELEASE to the package.json version. Ensure source maps/dSYMs are uploaded from the build step or use the Expo Sentry plugin to handle this."

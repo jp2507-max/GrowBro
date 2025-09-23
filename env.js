@@ -178,6 +178,10 @@ const client = z.object({
   APP_ACCESS_REVIEWER_EMAIL: z.string().optional(),
 
   APP_ACCESS_REVIEWER_PASSWORD: z.string().optional(),
+
+  EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL: z.string().optional(),
+
+  EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD: z.string().optional(),
 });
 
 const buildTime = z.object({
@@ -253,9 +257,13 @@ const _clientEnv = {
 
   // App Access Reviewer Credentials
 
-  APP_ACCESS_REVIEWER_EMAIL: process.env.APP_ACCESS_REVIEWER_EMAIL,
+  APP_ACCESS_REVIEWER_EMAIL:
+    process.env.APP_ACCESS_REVIEWER_EMAIL ||
+    process.env.EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL,
 
-  APP_ACCESS_REVIEWER_PASSWORD: process.env.APP_ACCESS_REVIEWER_PASSWORD,
+  APP_ACCESS_REVIEWER_PASSWORD:
+    process.env.APP_ACCESS_REVIEWER_PASSWORD ||
+    process.env.EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD,
 };
 
 /**

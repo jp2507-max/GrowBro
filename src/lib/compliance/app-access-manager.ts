@@ -104,20 +104,13 @@ export function provideTestCredentials(): TestCredentials {
     const emailFromPublic = Env.EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL;
     const passwordFromPublic = Env.EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD;
 
-    const email = emailFromPublic || Env.APP_ACCESS_REVIEWER_EMAIL;
-    const password = passwordFromPublic || Env.APP_ACCESS_REVIEWER_PASSWORD;
+    const email = emailFromPublic;
+    const password = passwordFromPublic;
 
-    const username = maskSecret(
-      email,
-      emailFromPublic
-        ? 'EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL'
-        : 'APP_ACCESS_REVIEWER_EMAIL'
-    );
+    const username = maskSecret(email, 'EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL');
     const passwordMasked = maskSecret(
       password,
-      passwordFromPublic
-        ? 'EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD'
-        : 'APP_ACCESS_REVIEWER_PASSWORD'
+      'EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD'
     );
 
     return {
@@ -135,8 +128,8 @@ export function provideTestCredentials(): TestCredentials {
 
   // In production builds, never expose credentials to prevent secret leakage
   return {
-    username: maskSecret(undefined, 'APP_ACCESS_REVIEWER_EMAIL'),
-    password: maskSecret(undefined, 'APP_ACCESS_REVIEWER_PASSWORD'),
+    username: maskSecret(undefined, 'EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL'),
+    password: maskSecret(undefined, 'EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD'),
     delivery: 'play-console',
     notes: [
       'Credentials are managed securely in production builds.',

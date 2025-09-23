@@ -1,5 +1,14 @@
 import '@testing-library/react-native/extend-expect';
 
+// Initialize __DEV__ global for tests
+// This ensures the global declaration in src/types/global.d.ts is properly initialized
+// Tests typically run in development mode, so we set it to true
+Object.defineProperty(global, '__DEV__', {
+  value: true,
+  writable: true,
+  configurable: true,
+});
+
 // Print an immediate snapshot of active Node handles (one-time) to help
 // debug CI hangs. This is intentionally lightweight and only logs constructors
 // names to avoid leaking sensitive details.
@@ -33,6 +42,16 @@ jest.mock('@react-native-async-storage/async-storage', () => {
     return require('@react-native-async-storage/async-storage/jest/async-storage-mock');
   }
 });
+
+// mock: @env to provide test environment configuration
+jest.mock('@env', () => ({
+  Env: {
+    APP_ACCESS_REVIEWER_EMAIL: 'test@example.com',
+    APP_ACCESS_REVIEWER_PASSWORD: 'testpassword123',
+    EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL: 'test@example.com',
+    EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD: 'testpassword123',
+  },
+}));
 
 // mock: expo-notifications (avoid recursive require by returning plain object)
 jest.mock('expo-notifications', () => {

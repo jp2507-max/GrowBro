@@ -31,8 +31,6 @@ declare module '@env' {
     // App Access (compliance)
     EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL?: string;
     EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD?: string;
-    APP_ACCESS_REVIEWER_EMAIL?: string;
-    APP_ACCESS_REVIEWER_PASSWORD?: string;
 
     // Sentry (client)
     SENTRY_DSN?: string;
@@ -40,12 +38,6 @@ declare module '@env' {
     SENTRY_REPLAYS_SESSION_SAMPLE_RATE?: number;
     SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE?: number;
     SENTRY_ENABLE_REPLAY?: boolean;
-
-    // App Access Reviewer (optional, can be provided via EXPO_PUBLIC_* or unprefixed)
-    EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL?: string;
-    EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD?: string;
-    APP_ACCESS_REVIEWER_EMAIL?: string;
-    APP_ACCESS_REVIEWER_PASSWORD?: string;
   };
 
   // The module exports a single named object `Env` with the above shape.

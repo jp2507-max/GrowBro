@@ -8,7 +8,7 @@ const SENSITIVE_PATTERNS = {
   phone: /(\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/g,
   // Common address patterns - street numbers and names
   address:
-    /\b\d+\s+[A-Za-z0-9\s,.-]+(?:Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Boulevard|Blvd|Court|Ct|Place|Pl|Way|Circle|Cir)\b/gi,
+    /\b\d+\s+[A-Za-z0-9\s,.-]+(?:Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Boulevard|Blvd|Court|Ct|Place|Pl|Way|Circle|Cir|Terrace|Ter)\b/gi,
   // Credit card numbers (basic pattern)
   creditCard: /\b(?:\d{4}[-\s]?){3}\d{4}\b/g,
   // Social Security Numbers
@@ -220,6 +220,30 @@ export const beforeSendHook = (event: any, _hint?: any): any | null => {
     return null;
   }
 };
+
+/**
+ * Public helper that sanitizes text for PII. Use for analytics/telemetry payloads as needed.
+ * Intentionally lightweight and shared with the Sentry beforeSend hook implementation.
+ */
+export function sanitizeTextPII(text: string): string {
+  try {
+    return scrubSensitiveData(text);
+  } catch {
+    return text;
+  }
+}
+
+/**
+ * Public helper that sanitizes arbitrary JSON-serializable data for PII.
+ * Limits depth and handles circulars; safe for analytics/telemetry payloads.
+ */
+export function sanitizeObjectPII<T = unknown>(value: T, maxDepth = 6): T {
+  try {
+    return scrubObjectData(value, { maxDepth }) as T;
+  } catch {
+    return value;
+  }
+}
 
 /**
  * Captures an error to Sentry with categorization metadata.

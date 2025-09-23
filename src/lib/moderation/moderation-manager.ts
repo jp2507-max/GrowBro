@@ -243,5 +243,3 @@ export const moderationManager: ModerationManager = {
     }
   },
 };
-
-export default moderationManager;

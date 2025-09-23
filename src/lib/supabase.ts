@@ -5,7 +5,7 @@ import 'react-native-url-polyfill/auto';
 // build-time/server secrets into the client bundle. If your project uses a different
 // convention (for example `@env/client`), adjust this import accordingly and ensure
 // your bundler alias for `@env` resolves to the client-only export.
-import { Env as ClientEnv } from '@env';
+import { Env } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
@@ -25,29 +25,22 @@ if (isTestEnvironment) {
   supabaseAnonKey = 'test-key';
 } else {
   // In production/staging/development, require real environment variables
-  if (!ClientEnv.SUPABASE_URL && (ClientEnv as any).EXPO_PUBLIC_SUPABASE_URL) {
+  if (!Env.SUPABASE_URL && (Env as any).EXPO_PUBLIC_SUPABASE_URL) {
     // Fallback to public-prefixed keys if only those are present in extra
-    (ClientEnv as any).SUPABASE_URL = (
-      ClientEnv as any
-    ).EXPO_PUBLIC_SUPABASE_URL;
+    (Env as any).SUPABASE_URL = (Env as any).EXPO_PUBLIC_SUPABASE_URL;
   }
-  if (
-    !ClientEnv.SUPABASE_ANON_KEY &&
-    (ClientEnv as any).EXPO_PUBLIC_SUPABASE_ANON_KEY
-  ) {
-    (ClientEnv as any).SUPABASE_ANON_KEY = (
-      ClientEnv as any
-    ).EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  if (!Env.SUPABASE_ANON_KEY && (Env as any).EXPO_PUBLIC_SUPABASE_ANON_KEY) {
+    (Env as any).SUPABASE_ANON_KEY = (Env as any).EXPO_PUBLIC_SUPABASE_ANON_KEY;
   }
 
-  if (!ClientEnv.SUPABASE_URL) {
+  if (!Env.SUPABASE_URL) {
     throw new Error('Missing required environment variable: SUPABASE_URL');
   }
-  if (!ClientEnv.SUPABASE_ANON_KEY) {
+  if (!Env.SUPABASE_ANON_KEY) {
     throw new Error('Missing required environment variable: SUPABASE_ANON_KEY');
   }
-  supabaseUrl = ClientEnv.SUPABASE_URL;
-  supabaseAnonKey = ClientEnv.SUPABASE_ANON_KEY;
+  supabaseUrl = Env.SUPABASE_URL;
+  supabaseAnonKey = Env.SUPABASE_ANON_KEY;
 }
 
 // Create Supabase client with latest best practices
