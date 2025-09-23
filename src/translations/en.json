@@ -16,6 +16,21 @@
     "tomorrow": "Tomorrow",
     "yesterday": "Yesterday"
   },
+  "cannabis": {
+    "age_gate_body": "GrowBro offers educational cannabis guidance only. Confirm your age to continue.",
+    "age_gate_day": "Day",
+    "age_gate_disclaimer": "GrowBro never provides shopping, ordering, pickup, or delivery features. Content remains educational only.",
+    "age_gate_error_invalid": "Enter a valid birth date to confirm your age.",
+    "age_gate_error_underage": "GrowBro is limited to adults 18 or older.",
+    "age_gate_month": "Month",
+    "age_gate_secondary_disclaimer": "By continuing you confirm you are at least 18 years old and understand GrowBro avoids commerce functionality.",
+    "age_gate_submit": "Enter GrowBro",
+    "age_gate_title": "Confirm you are 18 or older",
+    "age_gate_year": "Year",
+    "educational_badge": "Educational only",
+    "educational_banner_body": "GrowBro does not facilitate sales, vendor links, pickup, or delivery. All features remain educational and policy compliant.",
+    "educational_banner_title": "Educational cannabis guidance only"
+  },
   "common": {
     "cancel": "Cancel",
     "ok": "OK"
@@ -110,6 +125,35 @@
     "sync_now": "Sync now",
     "title": "Sync Diagnostics"
   },
+  "errors": {
+    "postLoad": "Error loading post"
+  },
+  "moderation": {
+    "audit": {
+      "empty": "Empty",
+      "title": "Audit Trail"
+    },
+    "authentication_required": "Authentication required to perform this action",
+    "block": "Block",
+    "block_failed": "Failed to block user. Please try again.",
+    "delete": "Delete",
+    "delete_failed": "Failed to delete content. Please try again.",
+    "mute": "Mute",
+    "mute_failed": "Failed to mute user. Please try again.",
+    "queue": {
+      "appeal": "Appeal",
+      "empty": "Empty",
+      "escalate": "Escalate",
+      "processAll": "Process All",
+      "title": "Moderation Queue"
+    },
+    "report": "Report",
+    "report_failed": "Failed to report content. Please try again."
+  },
+  "nav": {
+    "feed": "Feed",
+    "post": "Post"
+  },
   "onboarding": {
     "allow_button": "Allow notifications",
     "continue_button": "Continue",
@@ -123,14 +167,34 @@
       "subtitle": "Help us improve the app with usage analytics",
       "title": "Analytics"
     },
+    "cannotOpenUrlBody": "Unable to open the web deletion page. Please check your internet connection or contact support.",
+    "cannotOpenUrlTitle": "Cannot open URL",
     "crashReporting": {
       "body": "Help us fix bugs by sending crash reports.",
       "subtitle": "Help us fix bugs by sending crash reports",
       "title": "Crash Reporting"
     },
     "deleteAccount": "Delete my account",
+    "deleteAccountConfirmAction": "Delete account",
+    "deleteAccountConfirmBody": "This schedules permanent deletion of your account and associated GrowBro data. You can export your data first if needed.",
+    "deleteAccountConfirmCancel": "Keep account",
+    "deleteAccountConfirmTitle": "Delete account?",
+    "deleteAccountErrorBody": "We could not queue the deletion. Details: {{message}}",
+    "deleteAccountErrorTitle": "Deletion request failed",
+    "deleteAccountQueuedBody": "We queued your deletion request. Estimated completion: {{eta}}.",
+    "deleteAccountQueuedBodyNoEta": "We queued your deletion request. You will receive a confirmation once completed.",
+    "deleteAccountQueuedTitle": "Deletion scheduled",
     "exportData": "Export my data",
+    "exportErrorBody": "We could not queue the export. Details: {{message}}",
+    "exportErrorTitle": "Export request failed",
+    "exportQueuedBody": "We queued your data export. Estimated completion: {{eta}}.",
+    "exportQueuedBodyNoEta": "We queued your data export. You will receive a link when it is ready.",
+    "exportQueuedTitle": "Export requested",
+    "invalidUrlBody": "The web deletion URL is not secure. Please contact support.",
+    "invalidUrlTitle": "Invalid URL",
     "lastUpdated": "Last updated: {{date}}",
+    "manageDataDescription": "Manage your GrowBro data export, account deletion, and policy disclosures.",
+    "openWebDeletion": "Open web deletion page",
     "personalized": {
       "body": "This includes IP addresses, user IDs, and other identifying information that helps us provide better error reports and analytics. This data is handled according to our privacy policy.",
       "subtitle": "Include identifying information in reports",
@@ -141,7 +205,21 @@
       "subtitle": "Record app interactions for debugging",
       "title": "Session Replay"
     },
-    "title": "Privacy Settings"
+    "title": "Privacy Settings",
+    "urlErrorBody": "An error occurred while opening the web deletion page. Details: {{message}}",
+    "urlErrorTitle": "URL Error",
+    "webDeletionHeading": "Need to delete outside the app?",
+    "webDeletionPrompt": "Use our web form ({{url}}) if you cannot access the mobile app.",
+    "webPortalAuthNote": "Sign in so we can verify your identity before queuing deletion. You can sign out after submitting your request.",
+    "webPortalDeletionCopy": "We will queue the deletion and send a confirmation when processing is complete. Deletion typically finishes within 30 days.",
+    "webPortalDeletionCta": "Request deletion",
+    "webPortalDeletionHeading": "Delete your GrowBro account",
+    "webPortalExportCopy": "Export requests compile your GrowBro data set for download. We will email or notify you when it is ready.",
+    "webPortalExportCta": "Request export",
+    "webPortalExportHeading": "Export your GrowBro data",
+    "webPortalIntro": "Use this page to request account deletion or a data export if you cannot open the mobile app.",
+    "webPortalLogin": "Open sign-in",
+    "webPortalTitle": "GrowBro account deletion portal"
   },
   "settings": {
     "about": "About",
@@ -156,6 +234,9 @@
     "logout": "Logout",
     "more": "More",
     "privacy": "Privacy Policy",
+    "privacy_and_data": "Privacy & data controls",
+    "privacy_policy": "Privacy Policy",
+    "privacy_section": "Privacy & data",
     "rate": "Rate",
     "share": "Share",
     "support": "Support",
@@ -180,6 +261,7 @@
     },
     "title": "Settings",
     "version": "Version",
+    "web_deletion": "Web deletion portal",
     "website": "Website"
   },
   "sync": {

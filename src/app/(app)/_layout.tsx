@@ -8,11 +8,17 @@ import {
   Settings as SettingsIcon,
   Style as StyleIcon,
 } from '@/components/ui/icons';
-import { useAuth, useIsFirstTime } from '@/lib';
+import { useAgeGate, useAuth, useIsFirstTime } from '@/lib';
+
+const tabScreenOptions = {
+  tabBarHideOnKeyboard: true,
+};
 
 export default function TabLayout() {
   const status = useAuth.use.status();
   const [isFirstTime] = useIsFirstTime();
+  // eslint-disable-next-line react-compiler/react-compiler
+  const ageGateStatus = useAgeGate.status();
   const hideSplash = useCallback(async () => {
     await SplashScreen.hideAsync();
   }, []);
@@ -24,19 +30,12 @@ export default function TabLayout() {
     }
   }, [hideSplash, status]);
 
-  if (isFirstTime) {
-    return <Redirect href="/onboarding" />;
-  }
-  if (status === 'signOut') {
-    return <Redirect href="/login" />;
-  }
+  if (isFirstTime) return <Redirect href="/onboarding" />;
+  if (status === 'signOut') return <Redirect href="/login" />;
+  if (ageGateStatus !== 'verified') return <Redirect href="/age-gate" />;
+
   return (
-    <Tabs
-      initialRouteName="index"
-      screenOptions={{
-        tabBarHideOnKeyboard: true,
-      }}
-    >
+    <Tabs initialRouteName="index" screenOptions={tabScreenOptions}>
       <Tabs.Screen
         name="index"
         options={{
@@ -46,7 +45,6 @@ export default function TabLayout() {
           tabBarButtonTestID: 'feed-tab',
         }}
       />
-
       <Tabs.Screen
         name="calendar"
         options={{
@@ -55,7 +53,6 @@ export default function TabLayout() {
           tabBarButtonTestID: 'calendar-tab',
         }}
       />
-
       <Tabs.Screen
         name="style"
         options={{

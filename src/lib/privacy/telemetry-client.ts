@@ -4,6 +4,7 @@ import { ConsentService } from '@/lib/privacy/consent-service';
 import type { ConsentState } from '@/lib/privacy/consent-types';
 import { SDKGate } from '@/lib/privacy/sdk-gate';
 import { hasConsent } from '@/lib/privacy-consent';
+import { sanitizeObjectPII, sanitizeTextPII } from '@/lib/sentry-utils';
 
 export type TelemetryEvent = {
   name: string;
@@ -59,6 +60,11 @@ function estimateSize(event: TelemetryEvent): number {
 
 export type TelemetryClientOptions = {
   buffer?: TelemetryBufferConfig;
+  /**
+   * Optional delivery callback used in tests or to plug a transport.
+   * If provided, it will receive already-sanitized events for delivery.
+   */
+  deliver?: (event: TelemetryEvent) => Promise<void> | void;
 };
 
 export class TelemetryClient {
@@ -86,8 +92,11 @@ export class TelemetryClient {
 
   private readonly sdkName = 'telemetry';
 
+  private deliver?: (event: TelemetryEvent) => Promise<void> | void;
+
   constructor(options?: TelemetryClientOptions) {
     this.config = { ...DEFAULT_BUFFER_CONFIG, ...(options?.buffer ?? {}) };
+    this.deliver = options?.deliver;
     // Register with SDK gate to benefit from network safety net
     SDKGate.registerSDK(this.sdkName, 'telemetry', [
       'analytics',
@@ -127,8 +136,9 @@ export class TelemetryClient {
       return;
     }
 
-    // With consent → enqueue then flush (apply backpressure sequentially)
-    this.enqueue(event);
+    // With consent → sanitize, minimize and enqueue then flush
+    const safeEvent = this.sanitizeEvent(event);
+    this.enqueue(safeEvent);
     await this.flush();
   }
 
@@ -195,11 +205,13 @@ export class TelemetryClient {
           break;
         }
 
-        // Perform the send. Only remove from queue and adjust
-        // bufferBytes after a successful delivery to keep accounting
-        // consistent.
-        // No real network send in minimal skeleton.
-        await new Promise((r) => setTimeout(r, throttleMs));
+        // Perform the send using injected deliver or simulated delay
+        if (this.deliver) {
+          await this.deliver(next.event);
+        } else {
+          // No real network send in minimal skeleton.
+          await new Promise((r) => setTimeout(r, throttleMs));
+        }
 
         // After successful send, remove from the queue and update size
         // Defensive check: the queue may be mutated concurrently by
@@ -302,6 +314,36 @@ export class TelemetryClient {
       return keep;
     });
     if (removedBytes > 0) this.bufferBytes -= removedBytes;
+  }
+
+  // Minimize and sanitize payload before enqueue/delivery
+  private sanitizeEvent(event: TelemetryEvent): TelemetryEvent {
+    // Data minimization: if enabled, trim string properties and drop overly long ones
+    const props: Record<string, number | boolean | Date | string> = {};
+    for (const [k, v] of Object.entries(event.properties)) {
+      if (typeof v === 'string') {
+        // Run PII sanitization and ensure bounded length
+        const s = sanitizeTextPII(v).slice(0, 128);
+        props[k] = s;
+      } else if (v instanceof Date) {
+        props[k] = v; // schema bounds date type
+      } else {
+        props[k] = v as any;
+      }
+    }
+
+    // Scrub any nested objects that might sneak in via future changes
+    const scrubbedProps = sanitizeObjectPII(props, 3) as typeof props;
+
+    return {
+      ...event,
+      name: sanitizeTextPII(event.name).slice(0, 64),
+      sessionId: sanitizeTextPII(event.sessionId).slice(0, 64),
+      userId: event.userId
+        ? sanitizeTextPII(event.userId).slice(0, 128)
+        : undefined,
+      properties: scrubbedProps,
+    };
   }
 }
 

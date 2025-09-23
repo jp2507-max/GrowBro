@@ -1,0 +1,22 @@
+{
+  "sdks": [
+    {
+      "name": "@sentry/react-native",
+      "version": "^6.20.0",
+      "declaredData": ["app_events", "crash_diagnostics"],
+      "notes": "PII redaction enabled by default per repo policy"
+    },
+    {
+      "name": "@supabase/supabase-js",
+      "version": "^2.56.0",
+      "declaredData": ["user_generated_content", "auth"],
+      "notes": "UGC and auth data stored under user control"
+    },
+    {
+      "name": "expo-notifications",
+      "version": "~0.32.11",
+      "declaredData": ["notifications_tokens"],
+      "notes": "Requires POST_NOTIFICATIONS; no channels before grant"
+    }
+  ]
+}

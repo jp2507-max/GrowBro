@@ -2,11 +2,10 @@
 
 import { Q } from '@nozbe/watermelondb';
 import * as Notifications from 'expo-notifications';
-import { Linking, PermissionsAndroid, Platform } from 'react-native';
-import { showMessage } from 'react-native-flash-message';
+import { PermissionsAndroid, Platform } from 'react-native';
 
 import { NoopAnalytics } from '@/lib/analytics';
-import { translate } from '@/lib/i18n';
+import { NotificationHandler } from '@/lib/permissions/notification-handler';
 
 import { InvalidTaskTimestampError } from './notification-errors';
 
@@ -52,20 +51,8 @@ export class TaskNotificationService {
    */
   private async ensureChannels(): Promise<void> {
     if (Platform.OS !== 'android') return;
-    try {
-      const ExpoNotif: any = Notifications as any;
-      await ExpoNotif.setNotificationChannelAsync('cultivation.reminders.v1', {
-        name: 'Reminders',
-        importance: ExpoNotif.AndroidImportance?.HIGH ?? 4,
-        lockscreenVisibility:
-          ExpoNotif.AndroidNotificationVisibility?.PUBLIC ?? 1,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#34D399',
-      });
-    } catch (error) {
-      // Do not throw; scheduling can still work on some devices with default channel
-      console.warn('[Notifications] ensureChannels failed', error);
-    }
+    // Do not create channels until permission is granted
+    await NotificationHandler.createChannelsAfterGrant();
   }
 
   /**
@@ -82,43 +69,7 @@ export class TaskNotificationService {
    * Shows persistent banner with a Settings deep-link when denied.
    */
   async requestPermissions(): Promise<boolean> {
-    await this.ensureChannels();
-    if (Platform.OS === 'android' && Platform.Version >= 33) {
-      try {
-        const status = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
-        );
-        const granted = status === PermissionsAndroid.RESULTS.GRANTED;
-        if (!granted) {
-          showMessage({
-            message: translate('onboarding.notifications_title'),
-            description: translate('onboarding.notifications_body'),
-            type: 'warning',
-            duration: 0,
-            onPress: () => Linking.openSettings(),
-          });
-        }
-        return granted;
-      } catch (error) {
-        console.warn(
-          '[Notifications] Android permission request failed',
-          error
-        );
-        return false;
-      }
-    }
-
-    const ExpoNotif: any = Notifications as any;
-    const { status, canAskAgain } = await ExpoNotif.requestPermissionsAsync();
-    const granted = status === 'granted';
-    if (!granted && canAskAgain) {
-      showMessage({
-        message: translate('onboarding.notifications_body'),
-        type: 'warning',
-        duration: 4000,
-      });
-    }
-    return granted;
+    return NotificationHandler.requestPermissionWithPrimer();
   }
 
   async checkPermissionStatus(): Promise<{
@@ -232,6 +183,18 @@ export class TaskNotificationService {
    * Schedules a task reminder with proper timestamp validation and fallback logic
    */
   async scheduleTaskReminder(task: Task): Promise<string> {
+    // Enforce zero notifications before grant (Android 13+)
+    // Return early instead of throwing to avoid blocking task operations
+    if (Platform.OS === 'android' && Platform.Version >= 33) {
+      const granted =
+        await NotificationHandler.isNotificationPermissionGranted();
+      if (!granted) {
+        NotificationHandler.suppressNotifications();
+        // Skip scheduling instead of failing the operation
+        return '';
+      }
+    }
+
     await this.ensureChannels();
 
     const expectsUtc = await this.resolveNotificationExpectsUtc();

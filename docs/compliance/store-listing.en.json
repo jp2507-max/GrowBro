@@ -1,0 +1,21 @@
+{
+  "locale": "en",
+  "title": "GrowBro - Educational Cannabis Companion",
+  "shortDescription": "Educational cannabis cultivation guidance with policy-safe workflows.",
+  "fullDescription": "GrowBro delivers structured, educational guidance for home growers to learn compliant cannabis cultivation practices. The app focuses on plant care planning, moderation tools, and safety checklists. It never facilitates shopping, pickup, delivery, or any transaction. Users receive educational timelines, reminder scheduling, and policy tips so they can understand responsible cultivation without commercial features.",
+  "features": [
+    "Interactive grow journals with educational milestones",
+    "Reminder planning that teaches safe nutrition and lighting routines",
+    "Compliance dashboards referencing Google Play cannabis guidelines",
+    "Moderation tools for community posts with reporting and block controls"
+  ],
+  "highlights": [
+    "Educational-only cannabis knowledge base",
+    "Age-restricted access with 18+ verification",
+    "Inline disclaimers reminding users that GrowBro avoids commerce"
+  ],
+  "externalLinks": [
+    "https://growbro.app/privacy",
+    "https://growbro.app/support"
+  ]
+}

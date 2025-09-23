@@ -1,0 +1,48 @@
+name: Android Compliance
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  manifest-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Prebuild (managed → native)
+        run: pnpm prebuild
+      - name: Verify targetSdk per variant (AGP)
+        shell: bash
+        run: |
+          if [ -d android ]; then
+            (cd android && ./gradlew -I ../scripts/android/verify-targetsdk.gradle verifyTargetSdkCompliance | cat)
+          else
+            echo "android/ not found after prebuild" && exit 2
+          fi
+      - name: Scan Android Manifest for restricted permissions
+        run: pnpm run compliance:scan:android
+      - name: Validate data safety disclosures
+        run: pnpm run data-safety:validate
+      - name: Upload compliance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-compliance-report
+          path: build/reports/compliance/android-manifest-scan.json
+      - name: Upload data safety validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-safety-validation-report
+          path: build/reports/compliance/data-safety-validation.json

@@ -1,6 +1,8 @@
 // Import  global CSS file
 import '../../global.css';
 
+import { Env } from '@env';
+/* eslint-disable react-compiler/react-compiler */
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
@@ -16,12 +18,14 @@ import { APIProvider } from '@/api';
 import { ConsentModal } from '@/components/consent-modal';
 import {
   ConsentService,
+  hydrateAgeGate,
   hydrateAuth,
   loadSelectedTheme,
   SDKGate,
+  startAgeGateSession,
+  useAgeGate,
   useIsFirstTime,
 } from '@/lib';
-import { Env } from '@/lib/env';
 import {
   hasConsent,
   initializePrivacyConsent,
@@ -102,6 +106,7 @@ if (Env.SENTRY_DSN && hasConsent('crashReporting') && !sentryInitialized) {
 }
 
 hydrateAuth();
+hydrateAgeGate();
 loadSelectedTheme();
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -112,10 +117,17 @@ SplashScreen.setOptions({ duration: 500, fade: true });
 
 function RootLayout(): React.ReactElement {
   const [isFirstTime] = useIsFirstTime();
+  const ageGateStatus = useAgeGate.status();
+  const sessionId = useAgeGate.sessionId();
   const [isI18nReady, setIsI18nReady] = React.useState(false);
   const [showConsent, setShowConsent] = React.useState(false);
-
   useRootStartup(setIsI18nReady, isFirstTime);
+
+  React.useEffect(() => {
+    if (ageGateStatus === 'verified' && !sessionId) {
+      startAgeGateSession();
+    }
+  }, [ageGateStatus, sessionId]);
   React.useEffect(() => {
     if (ConsentService.isConsentRequired()) setShowConsent(true);
   }, []);
@@ -184,6 +196,7 @@ function AppStack(): React.ReactElement {
   return (
     <Stack>
       <Stack.Screen name="(app)" options={{ headerShown: false }} />
+      <Stack.Screen name="age-gate" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
     </Stack>
