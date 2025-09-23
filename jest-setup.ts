@@ -238,6 +238,7 @@ jest.mock('@sentry/react-native', () => {
     setContext: jest.fn(),
     mobileReplayIntegration: jest.fn(() => ({})),
     feedbackIntegration: jest.fn(() => ({})),
+    reactNavigationIntegration: jest.fn(() => ({})),
   };
   return sentry;
 });

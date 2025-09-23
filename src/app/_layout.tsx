@@ -6,6 +6,7 @@ import { Env } from '@env';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
+import { reactNavigationIntegration } from '@sentry/react-native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import React from 'react';
@@ -76,6 +77,12 @@ if (Env.SENTRY_DSN && hasConsent('crashReporting') && !sentryInitialized) {
 
   const integrations: any[] = [];
 
+  // Always add React Navigation integration for performance (TTID/TTFD)
+  // SLO: TTID p95 ≤ 2s on mid-tier Android devices
+  integrations.push(
+    reactNavigationIntegration({ enableTimeToInitialDisplay: true })
+  );
+
   // Only add replay/feedback if enabled AND user consented to session replay
   if (Env.SENTRY_ENABLE_REPLAY && hasConsent('sessionReplay')) {
     integrations.push(Sentry.mobileReplayIntegration());
@@ -97,6 +104,12 @@ if (Env.SENTRY_DSN && hasConsent('crashReporting') && !sentryInitialized) {
     // Use Env.VERSION (set from app.config) as the app version/release.
     environment: process.env.SENTRY_ENV || Env.APP_ENV || process.env.NODE_ENV,
     release: process.env.SENTRY_RELEASE || String(Env.VERSION),
+    // Dist helps Sentry distinguish build variants within the same release.
+    // Prefer CI-provided SENTRY_DIST; can be set to EAS_BUILD_ID in CI.
+    dist: process.env.SENTRY_DIST,
+    // Performance & profiling sampling (env-aware)
+    tracesSampleRate: Env.APP_ENV === 'production' ? 0.2 : 1.0,
+    profilesSampleRate: Env.APP_ENV === 'production' ? 0.1 : 1.0,
     // uncomment the line below to enable Spotlight (https://spotlightjs.com)
     // spotlight: __DEV__,
   });

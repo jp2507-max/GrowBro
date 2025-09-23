@@ -1,12 +1,12 @@
-TASK_ID: {10} with subtasks (make sure task with sub task is fully implemented)
+TASK_ID: {2} with subtasks (make sure task with sub task is fully implemented)
 AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the plan
 
 CONTEXT
 
-- Feature: 7. android-store-compliance
-- Task index: .kiro\specs\7. android-store-compliance\tasks.md
-- Design spec: .kiro\specs\7. android-store-compliance\design.md
-- Requirements spec: .kiro\specs\7. android-store-compliance\requirements.md
+- Feature: 4. observability-and-quality
+- Task index: .kiro\specs\4. observability-and-quality\tasks.md
+- Design spec: .kiro\specs\4. observability-and-quality\design.md
+- Requirements spec: .kiro\specs\4. observability-and-quality\requirements.md
 
 CONTRACT (outputs)
 
