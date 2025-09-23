@@ -14,6 +14,8 @@ export type ContentReport = {
   attempts: number;
   // optional processing gate: do not attempt sending before this time (ms)
   notBefore?: number;
+  // retry delay in ms for exponential backoff
+  retryDelay?: number;
 };
 
 export type AuditActionType =
@@ -114,6 +116,7 @@ export class ModerationQueue {
       createdAt: now(),
       status: 'queued',
       attempts: 0,
+      retryDelay: 1000, // initial retry delay in ms
     };
     items.push(report);
     this.saveQueue(items);
@@ -133,6 +136,25 @@ export class ModerationQueue {
     if (report.notBefore && now() < report.notBefore) {
       return report; // skip for now; will be retried later
     }
+
+    // check retry limit: max 5 attempts
+    if (report.attempts >= 5) {
+      const updated: ContentReport = {
+        ...report,
+        status: 'failed',
+      };
+      const items = this.loadQueue().map((r) =>
+        r.id === report.id ? updated : r
+      );
+      this.saveQueue(items);
+      this.auditAction('report_failed', {
+        contentId: report.contentId,
+        id: report.id,
+        reason: 'max_attempts_exceeded',
+      });
+      return updated;
+    }
+
     try {
       await apiReportContent({
         contentId: report.contentId,
@@ -147,10 +169,16 @@ export class ModerationQueue {
       this.saveQueue(items);
       return { ...report, status: 'sent', attempts: report.attempts + 1 };
     } catch (e) {
+      const retryDelay = report.retryDelay || 1000;
+      const nextRetryDelay = Math.min(retryDelay * 2, 30000); // exponential backoff, cap at 30s
+      const notBefore = now() + nextRetryDelay;
+
       const updated: ContentReport = {
         ...report,
         status: 'failed',
         attempts: report.attempts + 1,
+        retryDelay: nextRetryDelay,
+        notBefore,
       };
       const items = this.loadQueue().map((r) =>
         r.id === report.id ? updated : r
@@ -161,6 +189,7 @@ export class ModerationQueue {
         contentId: report.contentId,
         id: report.id,
         error: errorMetadata,
+        attempts: updated.attempts,
       });
       return updated;
     }
@@ -175,11 +204,12 @@ export class ModerationQueue {
     try {
       const items = this.loadQueue();
       for (const r of items) {
-        if (r.status !== 'queued') continue;
+        // process queued items and failed items that are ready for retry
+        if (r.status !== 'queued' && r.status !== 'failed') continue;
         if (r.notBefore && now() < r.notBefore) continue; // skip until allowed
         // process sequentially to keep it simple and predictable
         // SLA target (<=5s to submit) depends on server availability; this method just forwards ASAP
-        // In CI or offline mode, they will remain queued or be marked failed and retried later.
+        // Failed items will be retried with exponential backoff until max attempts are reached.
         await this.processReport(r);
       }
     } finally {
