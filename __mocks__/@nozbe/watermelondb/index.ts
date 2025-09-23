@@ -49,18 +49,21 @@ export const Q = {
 };
 
 function createMockRecord(): any {
-  return {
-    id: makeId('id'),
-    _raw: {},
-    update: async (fn: (rec2: any) => void) => {
-      await fn(rec);
-      return rec;
-    },
-    markAsDeleted: async () => {
-      rec.deletedAt = new Date();
-      return rec;
-    },
+  // Define the record first so closures below capture the correct instance
+  const rec: any = { id: makeId('id'), _raw: {} };
+
+  rec.update = async (fn: (rec2: any) => void) => {
+    await fn(rec);
+    rec.updatedAt = new Date();
+    return rec;
   };
+
+  rec.markAsDeleted = async () => {
+    rec.deletedAt = new Date();
+    return rec;
+  };
+
+  return rec;
 }
 
 function applyRecordDefaults(rec: any): void {
@@ -98,18 +101,21 @@ function limitResults(results: any[], take: number): any[] {
 }
 
 function createPlaceholderRecord(id: string): any {
-  return {
-    id,
-    _raw: {},
-    update: async (fn: (rec2: any) => void) => {
-      await fn(rec as any);
-      return rec;
-    },
-    markAsDeleted: async () => {
-      (rec as any).deletedAt = new Date();
-      return rec;
-    },
-  } as any;
+  // Same pattern as above: create object first, then attach methods
+  const rec: any = { id, _raw: {} };
+
+  rec.update = async (fn: (rec2: any) => void) => {
+    await fn(rec);
+    rec.updatedAt = new Date();
+    return rec;
+  };
+
+  rec.markAsDeleted = async () => {
+    rec.deletedAt = new Date();
+    return rec;
+  };
+
+  return rec as any;
 }
 
 // Generic collection factory
