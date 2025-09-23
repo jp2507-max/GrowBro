@@ -15,6 +15,7 @@ function main() {
     'docs/compliance/troubleshooting.md',
     'docs/compliance/policy-deadlines.md',
     'docs/compliance/developer-onboarding-for-compliance.md',
+    'docs/review-notes-ios.md',
     'compliance/data-inventory.json',
     'compliance/privacy-policy.json',
     'compliance/deletion-methods.json',

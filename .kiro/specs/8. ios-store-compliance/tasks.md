@@ -1,4 +1,6 @@
-# iOS Store Compliance — Essential Remaining Tasks (2025)
+# iOS Store Complianc- [x] 4. Push notifications aren't required for core use
+
+- Add a pre-submit check that the app remains fully usable with notifications denied. We already defer channel creation until grant; add a simple functional test that the calendar/tasks core works with permission denied.— Essential Remaining Tasks (2025)
 
 This list is trimmed to only what’s still needed in our codebase. Verified against Apple docs:
 
@@ -8,27 +10,35 @@ This list is trimmed to only what’s still needed in our codebase. Verified aga
 - PHPicker — `https://developer.apple.com/documentation/photosui/phpickerviewcontroller`
 - App Tracking Transparency — `https://developer.apple.com/documentation/apptrackingtransparency`
 
-- [ ] 1. Privacy manifest guardrails in CI (minimal)
+- [x] 1. Privacy manifest guardrails in CI (minimal)
   - Add CI task to run `scripts/validate-privacy-manifest.js` and fail on mismatch.
   - Ensure the script checks `app.config.cjs` (we don’t use `app.config.ts`).
+  - Implemented via `.github/workflows/privacy-manifest-validate.yml`. Validator updated to read `app.config.cjs`. Dependency snapshot refreshed.
 
-- [ ] 2. ATT prompt policy guard
-  - Add a tiny guard to ensure we never show ATT on iOS (we don’t track/IDFA). Keep `NSUserTrackingUsageDescription` absent.
+- [x] 2. ATT prompt policy guard
+  - Added `scripts/ci-att-guard.js` and `pnpm run compliance:att-guard` to enforce no ATT/IDFA code and ensure `NSUserTrackingUsageDescription` is absent in config/Info.plist. Wired into `check-all` and aggregated in compliance audit.
 
-- [ ] 3. Photos access via PHPicker path
+- [x] 3. Photos access via PHPicker path
   - Replace `src/lib/media/photo-access.ts` stub with a real PHPicker-based flow (Expo 54 recommended path) and ensure no full library permission is requested. Add one integration test.
 
-- [ ] 4. Push notifications aren’t required for core use
+- [x] 4. Push notifications aren’t required for core use
   - Add a pre-submit check that the app remains fully usable with notifications denied. We already defer channel creation until grant; add a simple functional test that the calendar/tasks core works with permission denied.
 
-- [ ] 5. In‑app account deletion discoverability (≤3 taps)
-  - Keep current flow in `settings -> privacy-and-data`; add a test asserting `MAX_ALLOWED_TAPS` policy and that deletion is reachable within 3 taps and queues `dsr-delete`.
+- [x] 5. In‑app account deletion discoverability (≤3 taps)
+  - Kept current flow in `settings -> privacy-and-data`.
+  - Added/validated tests:
+    - `src/lib/privacy/deletion-gate.test.ts` asserts `validateDeletionPathAccessibility()` stays within `MAX_ALLOWED_TAPS` (3) and web deletion URL consistency.
+    - `src/app/(app)/settings/__tests__/privacy-and-data.test.tsx` ensures deletion is reachable within ≤3 taps and triggers `deleteAccountInApp` (queues `dsr-delete`) and signs out.
+    - `src/lib/privacy/deletion-manager.test.ts` verifies Supabase `functions.invoke('dsr-delete')` and audit logging.
+  - Constant: `MAX_ALLOWED_TAPS = 3` in `src/lib/privacy/deletion-manager.ts`.
 
 - [ ] 6. SIWA readiness (only if adding third‑party login later)
   - We don’t currently ship any third‑party login. Add a repo guard (lint/script) to fail CI if Google/Facebook auth is introduced without SIWA.
 
-- [ ] 7. Commerce/consumption guardrails (content‑only)
-  - Keep `scripts/lib/cannabis-policy.js` in pre-submit to scan strings for ordering/delivery/affiliate promotion and consumption encouragement. Block on violations.
+- [x] 7. Commerce/consumption guardrails (content‑only)
+  - Added CI workflow `.github/workflows/content-compliance.yml` to run `pnpm run compliance:cannabis` on PRs/pushes and upload reports.
+  - Expanded `compliance/cannabis-policy.config.json` denylist to include affiliate/referral/promo/discount terms and allowlist disclaimers (EN/DE) to reduce false positives.
+  - Scanner already blocks on violations and is aggregated in `ci-compliance-audit.js`.
 
 - [ ] 8. Review kit
   - Add minimal reviewer notes generator: demo login, age‑gate note, UGC safeguards (report/mute/block), permissions copy, and deletion path. Store at `docs/review-notes-ios.md`.

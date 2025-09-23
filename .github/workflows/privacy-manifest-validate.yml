@@ -1,0 +1,30 @@
+name: iOS Privacy Manifest Validate
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📦 Checkout
+        uses: actions/checkout@v4
+      - name: 📦 Setup Node + PNPM + install deps
+        uses: ./.github/actions/setup-node-pnpm-install
+      - name: 🔍 Validate Apple Privacy Manifest wiring and snapshot
+        run: pnpm run privacy:validate
+      - name: 📄 Upload validation logs (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: privacy-validate-logs
+          path: |
+            build/reports/**
+          if-no-files-found: ignore

@@ -24,6 +24,8 @@ function main() {
     prelaunch: readJsonSafe(path.join(outDir, 'prelaunch-validate.json')),
     targetApi: readJsonSafe(path.join(outDir, 'target-api-gate.json')),
     mediaAudit: readJsonSafe(path.join(outDir, 'media-usage-audit.json')),
+    attGuard: readJsonSafe(path.join(outDir, 'att-guard.json')),
+    siwaGuard: readJsonSafe(path.join(outDir, 'siwa-guard.json')),
   };
 
   const problems = [];
