@@ -509,6 +509,7 @@ export function maybeMarkNeedsReview(
   const localServerTsRaw =
     (rec as any)._raw?.server_updated_at_ms ??
     (rec as any).serverUpdatedAtMs ??
+    (rec as any).server_updated_at_ms ??
     toMillis((rec as any).updatedAt as any);
   const serverServerTsRaw =
     payload.server_updated_at_ms ?? toMillis(payload.updatedAt as any);
@@ -597,40 +598,36 @@ function applyServerPayloadToRecord(rec: any, payload: any): void {
   }
 }
 
-async function handleUpdate(
-  table: TableName,
-  existing: any,
-  payload: any
-): Promise<void> {
-  const resolver = createConflictResolver();
-
-  // Pre-compute all values outside the synchronous update callback
-
-  // Determine if server is authoritative
-  // NOTE: P1 BUG - Server revision metadata not persisted in WatermelonDB schema
-  // The WatermelonDB schema for tasks (and other tables) currently only defines
-  // created_at/updated_at/deleted_at columns without server_revision or
-  // server_updated_at_ms fields. This means these values are never persisted
-  // and _raw will always return undefined after record reload, causing conflict
-  // resolution to fall back to client timestamps and lose server-authoritative ordering.
-  // TODO: Add server_revision and server_updated_at_ms fields to WatermelonDB schema
-  // TODO: Update migration to persist these fields properly
-  const localRev = existing._raw.server_revision ?? null;
+function computeConflictResolutionValues(existing: any, payload: any) {
+  const localRev =
+    (existing as any)._raw?.server_revision ??
+    (existing as any).serverRevision ??
+    (existing as any)._rev ??
+    null;
   const serverRev = payload.server_revision ?? null;
   const localServerTs =
-    existing._raw.server_updated_at_ms ?? toMillis(existing.updatedAt);
+    (existing as any)._raw?.server_updated_at_ms ??
+    (existing as any).serverUpdatedAtMs ??
+    (existing as any).server_updated_at_ms ??
+    toMillis(existing.updatedAt);
   const serverServerTs =
     payload.server_updated_at_ms ?? toMillis(payload.updatedAt as any);
 
+  return { localRev, serverRev, localServerTs, serverServerTs };
+}
+
+function determineServerAuthorityWithRecordCheck(
+  existing: any,
+  conflictValues: {
+    localRev: any;
+    serverRev: any;
+    localServerTs: number;
+    serverServerTs: number;
+  }
+): boolean {
   let serverIsAuthoritative = determineServerAuthority(
-    {
-      rev: localRev,
-      serverTs: localServerTs,
-    },
-    {
-      rev: serverRev,
-      serverTs: serverServerTs,
-    }
+    { rev: conflictValues.localRev, serverTs: conflictValues.localServerTs },
+    { rev: conflictValues.serverRev, serverTs: conflictValues.serverServerTs }
   );
 
   // Replace DB-wide hasUnsyncedChanges() with record-level check
@@ -639,28 +636,52 @@ async function handleUpdate(
     serverIsAuthoritative = false;
   }
 
-  // Create local snapshot for conflict detection
-  const localSnapshot: Record<string, unknown> = { ...existing };
+  return serverIsAuthoritative;
+}
 
-  // Detect conflicts outside the update callback
+function detectAndLogConflicts(
+  resolver: any,
+  table: TableName,
+  recordInfo: { existing: any; payload: any }
+): void {
+  const localSnapshot: Record<string, unknown> = { ...recordInfo.existing };
+
   try {
     const conflict: Conflict = buildConflict({
       tableName: table,
-      recordId: existing.id,
+      recordId: recordInfo.existing.id,
       localRecord: localSnapshot,
-      remoteRecord: payload,
+      remoteRecord: recordInfo.payload,
     });
     if (conflict.conflictFields.length > 0) {
       resolver.logConflict(conflict);
     }
   } catch {}
+}
+
+async function handleUpdate(
+  table: TableName,
+  existing: any,
+  payload: any
+): Promise<void> {
+  const resolver = createConflictResolver();
+
+  // Pre-compute all values outside the synchronous update callback
+  const { localRev, serverRev, localServerTs, serverServerTs } =
+    computeConflictResolutionValues(existing, payload);
+
+  const serverIsAuthoritative = determineServerAuthorityWithRecordCheck(
+    existing,
+    { localRev, serverRev, localServerTs, serverServerTs }
+  );
+
+  // Detect conflicts outside the update callback
+  detectAndLogConflicts(resolver, table, { existing, payload });
 
   // Perform synchronous update
   await existing.update((rec: any) => {
-    // Always call maybeMarkNeedsReview to flag conflicts
     maybeMarkNeedsReview(table, rec, payload);
 
-    // Only apply server fields when server is authoritative
     if (serverIsAuthoritative) {
       applyServerPayloadToRecord(rec, payload);
     }
