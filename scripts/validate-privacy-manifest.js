@@ -69,11 +69,15 @@ function validateAccessedApiReasons(manifest) {
 }
 
 function assertAppConfigWiresManifest() {
-  const appConfigPath = path.join(repoRoot, 'app.config.ts');
+  // We use CommonJS Expo config in this repo
+  const appConfigPath = path.join(repoRoot, 'app.config.cjs');
+  if (!fs.existsSync(appConfigPath)) {
+    throw new Error('Expected app.config.cjs to be present in repo root');
+  }
   const appConfig = fs.readFileSync(appConfigPath, 'utf8');
   assert(
     appConfig.includes('privacyManifests'),
-    'app.config.ts must include the ios.privacyManifests configuration'
+    'app.config.cjs must include the ios.privacyManifests configuration'
   );
 }
 

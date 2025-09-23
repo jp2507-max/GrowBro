@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-09-18T11:50:49.926Z",
+  "generatedAt": "2025-09-23T15:02:44.494Z",
   "dependencies": [
     "@expo/metro-runtime",
     "@gorhom/bottom-sheet",
@@ -17,12 +17,14 @@
     "axios",
     "expo",
     "expo-background-task",
+    "expo-build-properties",
     "expo-constants",
     "expo-crypto",
     "expo-dev-client",
     "expo-font",
     "expo-image",
     "expo-image-manipulator",
+    "expo-image-picker",
     "expo-linking",
     "expo-localization",
     "expo-notifications",

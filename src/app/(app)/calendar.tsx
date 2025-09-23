@@ -35,13 +35,17 @@ function Header({
   onNext: () => void;
 }) {
   return (
-    <View className="flex-row items-center justify-between p-4">
+    <View
+      className="flex-row items-center justify-between p-4"
+      testID="calendar-header"
+    >
       <Button
         variant="outline"
         size="sm"
         label="Prev"
         onPress={onPrev}
         className="w-24"
+        testID="calendar-prev-button"
       />
       <Text className="text-lg font-semibold">
         {date.toLocaleDateString(undefined, {
@@ -56,6 +60,7 @@ function Header({
         label="Next"
         onPress={onNext}
         className="w-24"
+        testID="calendar-next-button"
       />
     </View>
   );
@@ -95,7 +100,7 @@ export default function CalendarScreen(): React.ReactElement {
 
   return (
     <DragDropProvider>
-      <View className="flex-1">
+      <View className="flex-1" testID="calendar-screen">
         <FocusAwareStatusBar />
         <Header date={currentDate} onPrev={onPrev} onNext={onNext} />
         <AgendaList
