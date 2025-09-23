@@ -10,7 +10,7 @@ The App Store Policy Guardrails system provides comprehensive compliance automat
 
 2. **Conservative Mode Over Lockouts:** Prefer Conservative Mode (read-only community, neutral copy, stronger disclaimers) over hard app lockouts except where law/store policy forces geofencing for legal cannabis features.
 
-3. **2025 Compliance:** Apple's App Store age tiers are 4+/9+/13+/16+/18+ with App Store Connect questionnaire deadline Jan 31, 2026. Google Play target API requirements mandate Android 15 / API 35 for new/updated apps by Aug 31, 2025 with extension to Nov 1, 2025; existing apps must target at least API 34. Google Play Photos/Videos permission guidance states READ_MEDIA_IMAGES/READ_MEDIA_VIDEO must be limited to core features and declared via Play Console with full compliance by late May 2025.
+3. **2025 Compliance:** Apple's App Store age tiers are 4+/9+/12+/17+ with App Store Connect questionnaire deadline Jan 31, 2026. Google Play target API requirements mandate Android 15 / API 35 for new/updated apps by Aug 31, 2025 with extension to Nov 1, 2025; existing apps must target at least API 34. Google Play Photos/Videos permission guidance states READ_MEDIA_IMAGES/READ_MEDIA_VIDEO must be limited to core features and declared via Play Console with full compliance by late May 2025.
 
 The design follows a multi-layered approach with client-side enforcement, server-side validation, build-time checks, and runtime monitoring to create a robust compliance framework that adapts to different jurisdictions and policy requirements.
 
@@ -317,10 +317,13 @@ interface EntityValidationResult {
   isLegalEntity: boolean; // Must be Organization, not Individual
   hasValidSupport: boolean;
   hasPrivacyPolicy: boolean;
-  hasDUNS: boolean; // Apple requirement for highly regulated apps
+  // D‑U‑N‑S is used for Apple Developer Program organization enrollment in some regions.
+  // It is NOT an App Store submission gate and MUST NOT block builds/reviews.
+  // Keep as optional metadata only.
+  hasDUNS?: boolean;
   playConsoleComplete: boolean; // App Content declarations
   geoRestrictionStatement: boolean; // Required for cannabis features
-  targetApiLevel: number; // Must be Android 14 (API 35) for new updates from Aug 31, 2025
+  targetApiLevel: number; // API 35 corresponds to Android 15 for new updates from Aug 31, 2025
   photosVideosDeclaration: boolean; // Google Play 2025 requirement
   violations: string[];
 }
@@ -351,7 +354,7 @@ interface DisclaimerManager {
 }
 
 interface AgeGateConfig {
-  minimumAge: number; // Use Apple's new rating tiers (13+/16+/18+)
+  minimumAge: number; // Use Apple's official App Store rating tiers (4+/9+/12+/17+)
   title: string;
   description: string;
   acceptText: string;
@@ -435,7 +438,7 @@ interface PolicyLintResult {
 **Validation Gates:**
 
 - **Policy Linter (CI):** Fails builds on flagged terms in app strings, store listing, and push templates
-- **Target API Level:** Block release if target < Android 14 (API 35) for new updates from Aug 31, 2025
+- **Target API Level:** Block release if target < Android 15 (API 35) for new updates from Aug 31, 2025
 - **Permission Declarations:** Enforce Play Photos/Videos and Background Location declarations
 - **Apple Age Rating:** Validate new age categories are used and match in-app gating
 - **Legal Entity Check:** Ensure seller is organization with required documentation
@@ -549,27 +552,23 @@ interface ComplianceReport {
 ### Client-Side Error Handling
 
 1. **Region Token Failures:**
-
    - Fallback to manual country selection with alternatives per Apple 5.1.1(iv)
    - Default to Conservative Mode for unknown regions or token validation failures
    - Cache last known good region token with TTL expiration
    - Log all token validation failures server-side for audit trail
 
 2. **Server Region Service Failures:**
-
    - Implement circuit breaker pattern for Region Service calls
    - Fallback to cached region mappings with extended TTL during outages
    - Alert monitoring systems for service degradation
    - Provide manual region override capability for critical scenarios
 
 3. **Content Scanning Failures:**
-
    - Fail-safe to block content on scanner errors
    - Provide manual override for authorized users with audit trail
    - Log all scanner failures for investigation
 
 4. **Network Connectivity Issues:**
-
    - Cache policy configurations locally with versioning
    - Implement offline-first compliance checks
    - Queue compliance events for sync when connectivity restored
@@ -582,14 +581,12 @@ interface ComplianceReport {
 ### Server-Side Error Handling
 
 1. **Region Service Failures:**
-
    - Implement circuit breaker pattern for IP→region resolution
    - Fallback to cached region mappings during service outages
    - Alert monitoring systems immediately for service degradation
    - Maintain audit trail of all region resolution attempts and failures
 
 2. **Token Generation Failures:**
-
    - Fallback to conservative region defaults during token generation errors
    - Log all token generation failures with IP metadata (server-side only)
    - Implement token regeneration retry logic with exponential backoff
@@ -648,7 +645,6 @@ interface PrivacyAlignment {
 ### Unit Testing
 
 1. **Region Service Tests:**
-
    - Mock server-side IP→region resolution with various IP ranges
    - Test region token generation, signing, and validation
    - Validate token TTL enforcement and expiration handling
@@ -656,14 +652,12 @@ interface PrivacyAlignment {
    - Verify no raw IP/ASN data leakage in tokens
 
 2. **Client Token Acceptance Tests:**
-
    - Test client rejection of non-token region sources
    - Validate client-side token parsing and validation
    - Test token refresh logic and expiration handling
    - Verify clients never perform IP lookups for geolocation
 
 3. **Content Scanner Tests:**
-
    - Test against known violation patterns
    - Validate false positive handling
    - Test ruleset updates and versioning
@@ -676,13 +670,11 @@ interface PrivacyAlignment {
 ### Integration Testing
 
 1. **End-to-End Policy Flows:**
-
    - Test complete user journey in different regions
    - Validate policy mode changes and feature toggles
    - Test content moderation workflows with appeals
 
 2. **Build Pipeline Testing:**
-
    - Test policy compliance checks in CI/CD with failure scenarios
    - Validate submission readiness checks for both Apple and Google
    - Test compliance certificate generation with all required fields
@@ -695,14 +687,13 @@ interface PrivacyAlignment {
 ### Compliance Testing
 
 1. **App Store Policy Validation:**
-
    - Test against Apple App Store Review Guidelines (1.4.3, 5.1.1(iv))
    - Validate Google Play Store policy compliance (Marijuana, UGC policies)
-   - Test age-gating with Apple's new rating tiers (13+/16+/18+)
-   - Validate geo-restriction features for cannabis content
+
+- Test age-gating with Apple's official rating tiers (4+/9+/12+/17+)
+- Validate geo-restriction features for cannabis content
 
 2. **UGC Compliance Testing:**
-
    - Ensure report/block functionality works as required by Play UGC policy
    - Test auto-hide triggers and thresholds
    - Validate appeals process exists and functions
@@ -716,7 +707,6 @@ interface PrivacyAlignment {
 ### Performance Testing
 
 1. **Region Service Performance:**
-
    - Test IP→region resolution speed and accuracy across global IP ranges
    - Validate token generation and signing performance
    - Test server-side caching effectiveness for region lookups
@@ -724,7 +714,6 @@ interface PrivacyAlignment {
    - Benchmark coarse granularity mapping performance
 
 2. **Token Lifecycle Performance:**
-
    - Test token refresh timing and network overhead
    - Validate TTL enforcement and expiration handling
    - Measure impact of token-based approach vs. client-side IP lookups
@@ -740,9 +729,8 @@ interface PrivacyAlignment {
 ### Data Privacy
 
 1. **Region Token Security:**
-
-   - **Signing Algorithm:** Use PASETO v4.public for token signing, providing modern cryptographic security with forward secrecy and resistance to common JWT vulnerabilities
-   - **Token Headers:** Require "kid" (Key ID) field in all token headers to identify the specific key used for signing/verification
+   - **Signing Algorithm:** Use PASETO v4.public for token signing, providing modern cryptographic security and resistance to common JWT pitfalls
+   - **Key Identification:** For JWT, require "kid" (Key ID) in the header; for PASETO, include key ID in the footer or resolve by server‑side key versioning (no JWT‑style headers)
    - **Key Rotation:** Implement automatic key rotation every 90 days with cryptographic key generation using secure entropy sources
    - **Key Overlap:** Maintain previous signing keys for a 24-hour grace period during rotation to validate tokens issued before the rotation event
    - **Public Key Exposure:** Expose current and previous public keys via a dedicated PASETO public-key endpoint for client-side verification
@@ -754,7 +742,6 @@ interface PrivacyAlignment {
    - Implement server-side audit logging for all token operations
 
 2. **IP Data Handling (Server-Only):**
-
    - Minimize IP data collection and retention on server
    - Use IP→region resolution only for policy compliance
    - Implement data retention policies for IP logs
@@ -769,7 +756,6 @@ interface PrivacyAlignment {
 ### Access Control
 
 1. **Administrative Functions:**
-
    - Role-based access for policy management
    - Audit trail for all administrative actions
    - Multi-factor authentication for sensitive operations
@@ -788,7 +774,6 @@ interface PrivacyAlignment {
 **Key Metrics:**
 
 1. **Compliance Metrics:**
-
    - Age-gate pass rate and regional variations
    - Region mode distribution (Normal/Conservative/Restricted)
    - % low-confidence AI results (forces "ask community" fallback)
@@ -796,7 +781,6 @@ interface PrivacyAlignment {
    - User acknowledgment rates for disclaimers by version
 
 2. **UGC Moderation Metrics:**
-
    - Total reports, auto-hides, appeals processed
    - Moderation SLA compliance and breach alerts
    - Average response time for moderation decisions
@@ -810,7 +794,6 @@ interface PrivacyAlignment {
 ### Alert Conditions
 
 1. **Critical Alerts:**
-
    - Policy violation detection in production content
    - Build compliance check failures blocking releases
    - Legal entity validation failures
@@ -827,13 +810,11 @@ interface PrivacyAlignment {
 ### Phased Rollout
 
 1. **Phase 1: Core Infrastructure**
-
    - Deploy geo-detection service
    - Implement basic content scanning
    - Set up monitoring and alerting
 
 2. **Phase 2: Policy Enforcement**
-
    - Enable policy mode enforcement
    - Deploy disclaimer management
    - Implement build-time compliance checks
@@ -857,7 +838,6 @@ All compliance features will be controlled by feature flags to enable:
 ### Policy Rule Updates
 
 1. **Automated Updates:**
-
    - Regular sync with app store policy changes
    - Automated ruleset version management
    - Backward compatibility validation
@@ -870,7 +850,6 @@ All compliance features will be controlled by feature flags to enable:
 ### Compliance Monitoring
 
 1. **Continuous Monitoring:**
-
    - Real-time policy compliance tracking
    - Automated violation detection
    - Proactive alert generation

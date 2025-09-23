@@ -17,7 +17,7 @@ export type SpamContext = {
 export function detectSpam(ctx: SpamContext): SpamVerdict {
   const r = (ctx.reason || '').trim().toLowerCase();
   if (!r) return 'deny';
-  if (r.length < MIN_REASON_LENGTH) return 'deny';
+  if (r.length < MIN_REASON_LENGTH) return 'suspicious';
   // basic repetitive character heuristic
   if (RegExp(`(.)\\1{${REPETITIVE_CHAR_REPEAT_THRESHOLD},}`).test(r))
     return 'suspicious';

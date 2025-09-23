@@ -37,6 +37,7 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@env$': '<rootDir>/src/lib/env.js',
+    '\\.(css)$': '<rootDir>/__mocks__/style-mock.js',
     '^@gorhom/bottom-sheet(.*)$':
       '<rootDir>/__mocks__/@gorhom/bottom-sheet.tsx',
     '^@nozbe/watermelondb/adapters/sqlite$':

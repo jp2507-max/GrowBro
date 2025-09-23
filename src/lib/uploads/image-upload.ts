@@ -1,3 +1,4 @@
+import { stripExifAndGeolocation } from '@/lib/media/exif';
 import { supabase } from '@/lib/supabase';
 
 export interface UploadProgressCallback {
@@ -19,22 +20,30 @@ export async function uploadImageWithProgress(params: {
   const { plantId, filename, localUri, mimeType, onProgress } = params;
 
   try {
-    // Read the file as blob
-    const response = await fetch(localUri);
+    // Strip EXIF/GPS and read the file as blob
+    const stripped = await stripExifAndGeolocation(localUri);
+    const response = await fetch(stripped.uri);
     const blob = await response.blob();
+
+    // If EXIF was stripped, the image was re-encoded to JPEG
+    const didStrip = stripped.didStrip;
+    const finalMimeType = didStrip ? 'image/jpeg' : mimeType;
+    const finalFilename = didStrip
+      ? filename.replace(/\.[^.]+$/, '.jpg')
+      : filename;
 
     // Convert blob to ArrayBuffer for Supabase upload
     const arrayBuffer = await blob.arrayBuffer();
 
     // Create the file path in Supabase storage
     const bucket = 'plant-images';
-    const path = `${plantId}/${filename}`;
+    const path = `${plantId}/${finalFilename}`;
 
     // Upload to Supabase storage
     const { data, error } = await supabase.storage
       .from(bucket)
       .upload(path, arrayBuffer, {
-        contentType: mimeType,
+        contentType: finalMimeType,
         upsert: false, // Don't overwrite existing files
       });
 

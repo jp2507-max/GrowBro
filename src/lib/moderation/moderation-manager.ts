@@ -1,6 +1,7 @@
 import { client } from '@/api';
 import { validateAuthenticatedUserId } from '@/lib/auth';
 import { appealsQueue } from '@/lib/moderation/appeals-queue';
+import { incrementReportAndMaybeHide } from '@/lib/moderation/auto-hide';
 import { moderationQueue } from '@/lib/moderation/moderation-queue';
 import {
   checkRateLimit,
@@ -145,6 +146,16 @@ export const moderationManager: ModerationManager = {
     const rl = checkRateLimit(validatedUserId, 'report', DEFAULT_POLICY);
     const spam = detectSpam({ reason });
     if (!rl.allowed || spam === 'deny' || spam === 'suspicious') {
+      // Increment local report stats and maybe auto-hide
+      const result = incrementReportAndMaybeHide(contentId);
+      if (result.hidden) {
+        moderationQueue.auditAction('report_enqueued', {
+          contentId,
+          reason,
+          autoHidden: true,
+          count: result.count,
+        });
+      }
       const notBefore = !rl.allowed
         ? nextAllowedTimestamp(validatedUserId, 'report', DEFAULT_POLICY)
         : undefined;
@@ -159,15 +170,24 @@ export const moderationManager: ModerationManager = {
       scheduleQueueProcessing();
       return { status: 'queued', submittedAt: Date.now() };
     }
+    // Increment local report stats and maybe auto-hide once per report attempt
+    const result = incrementReportAndMaybeHide(contentId);
+
+    // Build audit payload once
+    const auditPayload = {
+      contentId,
+      reason,
+      userId: validatedUserId,
+      autoHidden: result.hidden,
+      count: result.count,
+    };
+
     try {
       await client.post('/moderation/report', { contentId, reason });
-      moderationQueue.auditAction('report_sent', {
-        contentId,
-        reason,
-        userId: validatedUserId,
-      });
+      moderationQueue.auditAction('report_sent', auditPayload);
       return { status: 'sent', submittedAt: Date.now() };
     } catch {
+      moderationQueue.auditAction('report_failed', auditPayload);
       const backoffUntil = getBackoffUntil(validatedUserId, contentId);
       const r = moderationQueue.enqueueReport(contentId, reason);
       if (backoffUntil) moderationQueue.setNotBefore(r.id, backoffUntil);

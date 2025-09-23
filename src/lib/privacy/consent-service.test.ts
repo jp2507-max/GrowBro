@@ -21,6 +21,7 @@ describe('ConsentService - getConsents', () => {
     expect(result).toEqual({
       telemetry: false,
       experiments: false,
+      cloudProcessing: false,
       aiTraining: false,
       crashDiagnostics: false,
       version: CURRENT_CONSENT_VERSION,
@@ -33,6 +34,7 @@ describe('ConsentService - getConsents', () => {
     const storedConsent: ConsentState = {
       telemetry: true,
       experiments: false,
+      cloudProcessing: false,
       aiTraining: true,
       crashDiagnostics: false,
       version: CURRENT_CONSENT_VERSION,
@@ -45,11 +47,19 @@ describe('ConsentService - getConsents', () => {
 
     expect(result).toEqual(storedConsent);
   });
+});
+
+describe('ConsentService - getConsents (versioning)', () => {
+  beforeEach(() => {
+    setItem(CONSENT_KEY, null);
+    jest.restoreAllMocks();
+  });
 
   test('clears and returns fresh defaults when stored version is outdated', async () => {
     const outdatedConsent: ConsentState = {
       telemetry: true,
       experiments: true,
+      cloudProcessing: true,
       aiTraining: true,
       crashDiagnostics: true,
       version: '2024-01-01', // Old version
@@ -64,6 +74,7 @@ describe('ConsentService - getConsents', () => {
     expect(result).toEqual({
       telemetry: false,
       experiments: false,
+      cloudProcessing: false,
       aiTraining: false,
       crashDiagnostics: false,
       version: CURRENT_CONSENT_VERSION,
@@ -89,6 +100,7 @@ describe('ConsentService - hasConsent', () => {
     const outdatedConsent: ConsentState = {
       telemetry: true,
       experiments: false,
+      cloudProcessing: false,
       aiTraining: false,
       crashDiagnostics: true,
       version: '2024-01-01', // Old version
@@ -112,6 +124,7 @@ describe('ConsentService - hasConsent', () => {
     const currentConsent: ConsentState = {
       telemetry: true,
       experiments: false,
+      cloudProcessing: false,
       aiTraining: true,
       crashDiagnostics: false,
       version: CURRENT_CONSENT_VERSION,
@@ -139,6 +152,7 @@ describe('ConsentService - isConsentRequired', () => {
     const outdatedConsent: ConsentState = {
       telemetry: true,
       experiments: false,
+      cloudProcessing: false,
       aiTraining: false,
       crashDiagnostics: true,
       version: '2024-01-01', // Old version

@@ -1,3 +1,4 @@
+import { stripExifAndGeolocation } from '@/lib/media/exif';
 import { ConsentService } from '@/lib/privacy/consent-service';
 import { getDeletionAdapter } from '@/lib/privacy/deletion-adapter';
 import { addRetentionRecord } from '@/lib/privacy/retention-worker';
@@ -48,13 +49,15 @@ function chooseExtension(mimeType?: string, fallbackUri?: string): string {
   return 'jpg';
 }
 
-function buildFilename(params: UploadAiImageParams): string {
-  const h = simpleHash(
-    `${params.localUri}|${params.plantId}|${params.taskId ?? ''}`
-  );
-  const ext = chooseExtension(params.mimeType, params.localUri);
-  const token = params.taskId ?? 'notask';
-  return `${params.plantId}_${token}_${h}.${ext}`;
+async function prepareUploadNaming(p: UploadAiImageParams) {
+  const stripped = await stripExifAndGeolocation(p.localUri);
+  const didStrip = stripped.didStrip;
+  const ext = didStrip ? 'jpg' : chooseExtension(p.mimeType, stripped.uri);
+  const mime = didStrip ? 'image/jpeg' : (p.mimeType ?? 'image/jpeg');
+  const hash = simpleHash(`${stripped.uri}|${p.plantId}|${p.taskId ?? ''}`);
+  const token = p.taskId ?? 'notask';
+  const filename = `${p.plantId}_${token}_${hash}.${ext}`;
+  return { strippedUri: stripped.uri, filename, mime };
 }
 
 type DoUploadArgs = {
@@ -71,12 +74,12 @@ async function doUpload({
   mimeType,
 }: DoUploadArgs): Promise<UploadAiImageResult> {
   const response = await fetch(localUri);
-  const blob = await response.blob();
-  const arrayBuffer = await blob.arrayBuffer();
+  const arrayBuffer = await response.arrayBuffer();
+  const blob = new Blob([arrayBuffer], { type: mimeType });
   const { data, error } = await supabase.storage
     .from(bucket)
-    .upload(path, arrayBuffer, {
-      contentType: mimeType ?? 'image/jpeg',
+    .upload(path, blob, {
+      contentType: mimeType,
       upsert: false,
     });
   if (error) throw new Error(`Upload failed: ${error.message}`);
@@ -103,7 +106,11 @@ function buildObjectPath({
 export async function uploadInferenceImage(
   params: UploadAiImageParams
 ): Promise<UploadAiImageResult> {
-  const filename = buildFilename(params);
+  // If user opted out of cloud processing, do not upload to cloud.
+  if (!ConsentService.hasConsent('cloudProcessing')) {
+    throw new ConsentRequiredError('cloudProcessing consent is required');
+  }
+  const { strippedUri, filename, mime } = await prepareUploadNaming(params);
   const bucket = 'plant-images';
   const path = buildObjectPath({
     prefix: 'inference',
@@ -114,8 +121,8 @@ export async function uploadInferenceImage(
   const result = await doUpload({
     bucket,
     path,
-    localUri: params.localUri,
-    mimeType: params.mimeType,
+    localUri: strippedUri,
+    mimeType: mime,
   });
   addRetentionRecord({
     id: result.path,
@@ -137,10 +144,14 @@ export class ConsentRequiredError extends Error {
 export async function uploadTrainingImage(
   params: UploadAiImageParams
 ): Promise<UploadAiImageResult> {
+  // Training requires both cloud processing (to upload) and explicit aiTraining.
+  if (!ConsentService.hasConsent('cloudProcessing')) {
+    throw new ConsentRequiredError('cloudProcessing consent is required');
+  }
   if (!ConsentService.hasConsent('aiTraining')) {
     throw new ConsentRequiredError('aiTraining consent is required');
   }
-  const filename = buildFilename(params);
+  const { strippedUri, filename, mime } = await prepareUploadNaming(params);
   const bucket = 'plant-images';
   const consentVersion = ConsentService.getConsentVersion();
   const prefix = `training/consent_v-${consentVersion}`;
@@ -153,8 +164,8 @@ export async function uploadTrainingImage(
   const result = await doUpload({
     bucket,
     path,
-    localUri: params.localUri,
-    mimeType: params.mimeType,
+    localUri: strippedUri,
+    mimeType: mime,
   });
   addRetentionRecord({
     id: result.path,

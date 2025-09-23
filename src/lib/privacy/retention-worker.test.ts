@@ -52,18 +52,19 @@ describe('RetentionWorker: images', () => {
   test('purges expired inference/train images and triggers deletion adapter', async () => {
     let inf = 0;
     let trn = 0;
-    const { setDeletionAdapter } = await import(
-      '@/lib/privacy/deletion-adapter'
-    );
-    setDeletionAdapter({
-      async purgeInferenceImages() {
-        inf += 1;
-        return 1;
-      },
-      async purgeTrainingImages() {
-        trn += 1;
-        return 1;
-      },
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { setDeletionAdapter } = require('@/lib/privacy/deletion-adapter');
+      setDeletionAdapter({
+        async purgeInferenceImages() {
+          inf += 1;
+          return 1;
+        },
+        async purgeTrainingImages() {
+          trn += 1;
+          return 1;
+        },
+      });
     });
 
     const now = Date.now();

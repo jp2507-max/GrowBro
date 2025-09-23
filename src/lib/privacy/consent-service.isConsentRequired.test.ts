@@ -19,6 +19,7 @@ describe('ConsentService.isConsentRequired', () => {
     const outdatedConsent: ConsentState = {
       telemetry: true,
       experiments: false,
+      cloudProcessing: false,
       aiTraining: false,
       crashDiagnostics: true,
       version: '2024-01-01', // Old version

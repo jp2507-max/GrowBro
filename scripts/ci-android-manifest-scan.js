@@ -62,12 +62,12 @@ function scan(content) {
     {
       id: 'media:READ_MEDIA_IMAGES',
       re: /android\.permission\.READ_MEDIA_IMAGES/g,
-      msg: 'READ_MEDIA_IMAGES present — ensure Photo Picker is preferred; require local justification.',
+      msg: 'READ_MEDIA_IMAGES present — prefer Android Photo Picker. If kept, ensure justification file exists and scope is minimized.',
     },
     {
       id: 'media:READ_MEDIA_VIDEO',
       re: /android\.permission\.READ_MEDIA_VIDEO/g,
-      msg: 'READ_MEDIA_VIDEO present — ensure Photo Picker is preferred; require local justification.',
+      msg: 'READ_MEDIA_VIDEO present — prefer Android Photo Picker. If kept, ensure justification file exists and scope is minimized.',
     },
     {
       id: 'media:READ_MEDIA_VISUAL_USER_SELECTED',

@@ -1,6 +1,7 @@
 export type ConsentPurpose =
   | 'telemetry'
   | 'experiments'
+  | 'cloudProcessing'
   | 'aiTraining'
   | 'crashDiagnostics';
 
@@ -14,6 +15,7 @@ export type LawfulBasis = (typeof LAWFUL_BASIS)[keyof typeof LAWFUL_BASIS];
 export const LAWFUL_BASIS_BY_PURPOSE: Record<ConsentPurpose, LawfulBasis> = {
   telemetry: LAWFUL_BASIS.CONSENT,
   experiments: LAWFUL_BASIS.CONSENT,
+  cloudProcessing: LAWFUL_BASIS.CONSENT,
   aiTraining: LAWFUL_BASIS.CONSENT,
   crashDiagnostics: LAWFUL_BASIS.CONSENT,
 };
@@ -30,6 +32,7 @@ export type ConsentMetadata = {
 export type ConsentState = {
   telemetry: boolean;
   experiments: boolean;
+  cloudProcessing: boolean;
   aiTraining: boolean;
   crashDiagnostics: boolean;
   version: string;

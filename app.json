@@ -1,4 +1,0 @@
-{
-  "userInterfaceStyle": "automatic",
-  "plugins": ["expo-router", "expo-build-properties"]
-}

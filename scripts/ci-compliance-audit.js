@@ -22,6 +22,8 @@ function main() {
     dataSafety: readJsonSafe(path.join(outDir, 'data-safety-validation.json')),
     cannabis: readJsonSafe(path.join(outDir, 'cannabis-policy.json')),
     prelaunch: readJsonSafe(path.join(outDir, 'prelaunch-validate.json')),
+    targetApi: readJsonSafe(path.join(outDir, 'target-api-gate.json')),
+    mediaAudit: readJsonSafe(path.join(outDir, 'media-usage-audit.json')),
   };
 
   const problems = [];
