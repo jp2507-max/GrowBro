@@ -213,11 +213,7 @@ export const moderationManager: ModerationManager = {
     const validatedUserId =
       await validateAuthenticatedUserId(authenticatedUserId);
 
-    try {
-      await client.post('/moderation/delete', { contentId });
-    } catch {
-      // Optimistic: continue even if API call fails, log for later retry
-    }
+    await client.post('/moderation/delete', { contentId });
     moderationQueue.auditAction('delete_content', {
       contentId,
       authenticatedUserId: validatedUserId,
