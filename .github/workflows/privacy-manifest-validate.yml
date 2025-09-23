@@ -27,3 +27,4 @@ jobs:
           name: privacy-validate-logs
           path: |
             build/reports/**
+          if-no-files-found: ignore

@@ -34,6 +34,8 @@ jobs:
         run: pnpm run compliance:scan:android
       - name: Validate data safety disclosures
         run: pnpm run data-safety:validate
+      - name: Check SIWA compliance
+        run: pnpm run compliance:siwa-guard
       - name: Upload compliance report
         if: always()
         uses: actions/upload-artifact@v4
@@ -46,3 +48,9 @@ jobs:
         with:
           name: data-safety-validation-report
           path: build/reports/compliance/data-safety-validation.json
+      - name: Upload SIWA guard report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: siwa-guard-report
+          path: build/reports/compliance/siwa-guard.json
