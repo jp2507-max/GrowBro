@@ -1,0 +1,4 @@
+{
+  "userInterfaceStyle": "automatic",
+  "plugins": ["expo-router"]
+}

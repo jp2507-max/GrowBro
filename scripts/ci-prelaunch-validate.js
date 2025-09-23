@@ -43,4 +43,9 @@ function main() {
   console.log(`Pre-launch validation OK. Report -> ${outPath}`);
 }
 
-main();
+try {
+  main();
+} catch (e) {
+  console.error(`[prelaunch] ${e.message}`);
+  process.exit(1);
+}
