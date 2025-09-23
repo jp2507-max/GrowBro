@@ -2,7 +2,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 export type PhotoAccessResult = {
   granted: boolean;
-  selection: { uri: string }[];
+  selection?: { uri: string }[];
   reselectionSupported: boolean;
 };
 
@@ -19,7 +19,7 @@ export async function requestSelectedPhotos(): Promise<PhotoAccessResult> {
   });
 
   if (result.canceled) {
-    return { granted: false, selection: [], reselectionSupported: true };
+    return { granted: false, reselectionSupported: true };
   }
 
   const selection = (result.assets ?? []).map((a) => ({ uri: a.uri }));
