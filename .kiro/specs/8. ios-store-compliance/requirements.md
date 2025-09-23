@@ -1,5 +1,45 @@
 # Requirements Document
 
+## Revised requirements (aligned with tasks.md)
+
+Only the items below are in scope for this iteration. Legacy requirements remain archived further down for reference.
+
+### R1. Privacy manifest CI guard (minimal)
+
+- WHEN CI runs THEN it SHALL execute `scripts/validate-privacy-manifest.js` and fail on mismatch.
+- The validator SHALL verify `ios.privacyManifests` is wired in `app.config.cjs` and validate `apple-privacy-manifest.json` structure/reasons.
+
+### R2. ATT prompt policy guard
+
+- GIVEN we do not track or access IDFA THEN the app SHALL not include `NSUserTrackingUsageDescription` and SHALL never present ATT prompts.
+
+### R3. Photos access via PHPicker
+
+- WHEN selecting photos THEN the app SHALL use the platform Photos picker path and SHALL NOT request full photo library permission.
+- A test SHALL verify the selection path runs without requesting full library access.
+
+### R4. Core functionality without notifications
+
+- WHEN notification permission is denied THEN core calendar/tasks features SHALL remain usable.
+- A functional test SHALL assert usability with notifications denied.
+
+### R5. In‑app account deletion discoverability (≤3 taps)
+
+- WHEN navigating settings THEN the deletion action SHALL be reachable within 3 taps.
+- A test SHALL assert `MAX_ALLOWED_TAPS` and that deletion queues `dsr-delete`.
+
+### R6. SIWA readiness guard (future‑proof)
+
+- IF any third‑party login (Google/Facebook/etc.) is introduced THEN CI SHALL fail unless Sign in with Apple is implemented as a first‑class option.
+
+### R7. Commerce/consumption guardrails
+
+- Submission checks SHALL block strings indicating ordering/delivery/affiliate promotion or consumption encouragement using `scripts/lib/cannabis-policy.js`.
+
+### R8. Minimal reviewer notes
+
+- The repository SHALL include `docs/review-notes-ios.md` containing: demo login, age‑gate note, UGC safeguards (report/mute/block), permissions copy, and the in‑app deletion path.
+
 ## Introduction
 
 This feature ensures GrowBro meets all iOS App Store compliance requirements based on August 2025 guidelines, specifically focusing on privacy manifests with required-reason API mappings, App Privacy questionnaire completion, 17+ age-rating with in-app age-gating, UGC safeguards, and AI assessment disclaimers. The goal is to pass App Store Connect review without any privacy warnings while maintaining full compliance with Apple's privacy, content, and safety guidelines.
@@ -32,7 +72,7 @@ This feature ensures GrowBro meets all iOS App Store compliance requirements bas
 
 ### Requirement 3
 
-**User Story:** As a product manager, I want to implement 17+ age-rating with mandatory 18+ in-app age-gating, so that the app complies with cannabis content restrictions and legal requirements.
+**User Story:** As a product manager, I want to implement App Store 17+ age-rating with mandatory in‑app 18+ age-gating, so that the app complies with cannabis content restrictions and legal requirements.
 
 #### Acceptance Criteria
 

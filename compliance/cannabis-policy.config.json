@@ -1,4 +1,32 @@
 {
+  "globalDenylist": [
+    "cart",
+    "checkout",
+    "price",
+    "prices",
+    "dm to buy",
+    "dm for price",
+    "whatsapp",
+    "telegram",
+    "text us",
+    "call us",
+    "order by phone",
+    "phone order",
+    "phone ordering",
+    "order via phone"
+  ],
+  "globalAllowlist": [
+    "never facilitates shopping, ordering, pickup, or delivery",
+    "does not facilitate sales, vendor links, pickup, or delivery",
+    "educational only",
+    "educational cannabis guidance only",
+    "no commerce features",
+    "no shopping, pickup, delivery, or transactions",
+    "keine einkaufs-, abhol- oder lieferfunktionen",
+    "unterstuetzt weder verkauf noch anbieter-links, abholung oder lieferung",
+    "reine bildungsinhalte",
+    "nur bildung"
+  ],
   "locales": {
     "en": {
       "denylist": [
@@ -10,16 +38,34 @@
         "dispensary",
         "shop",
         "retail",
-        "ship"
+        "ship",
+        "cart",
+        "checkout",
+        "price",
+        "prices",
+        "dm to buy",
+        "dm for price",
+        "whatsapp",
+        "telegram",
+        "text us",
+        "call us",
+        "order by phone",
+        "phone order",
+        "phone ordering",
+        "order via phone"
       ],
       "allowlist": [
         "buy-in",
         "orderly",
         "delivery of insights",
+        "it never facilitates shopping, pickup, delivery, or any transaction",
+        "never facilitates shopping, pickup, delivery, or any transaction",
         "never provides shopping, ordering, pickup, or delivery",
         "does not facilitate sales, vendor links, pickup, or delivery",
         "educational cannabis guidance only",
-        "educational only"
+        "educational only",
+        "no commerce features",
+        "no shopping, pickup, delivery, or transactions"
       ],
       "storeListingPath": "docs/compliance/store-listing.en.json"
     },
@@ -32,14 +78,26 @@
         "abholung",
         "versand",
         "geschäft",
-        "geschaeft"
+        "geschaeft",
+        "warenkorb",
+        "kasse",
+        "preis",
+        "preise",
+        "whatsapp",
+        "telegram",
+        "pn",
+        "per telefon bestellen",
+        "telefonische bestellung",
+        "telefonbestellung",
+        "per telefon"
       ],
       "allowlist": [
         "Bestellnummer",
         "keine einkaufs-, abhol- oder lieferfunktionen",
         "unterstuetzt weder verkauf noch anbieter-links, abholung oder lieferung",
         "reine bildungsinhalte",
-        "nur bildung"
+        "nur bildung",
+        "keine shopping-, abhol-, liefer- oder zahlungsfunktionen"
       ],
       "storeListingPath": "docs/compliance/store-listing.de.json"
     }

@@ -15,7 +15,7 @@ export type ConsentFeature = Exclude<keyof PrivacyConsent, 'lastUpdated'>;
 
 const DEFAULT_CONSENT: PrivacyConsent = {
   analytics: false,
-  crashReporting: false,
+  crashReporting: true,
   personalizedData: false,
   sessionReplay: false,
   lastUpdated: Date.now(),

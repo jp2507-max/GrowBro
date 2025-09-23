@@ -1,3 +1,4 @@
+import { stripExifAndGeolocation } from '@/lib/media/exif';
 import { supabase } from '@/lib/supabase';
 
 export interface UploadProgressCallback {
@@ -19,8 +20,9 @@ export async function uploadImageWithProgress(params: {
   const { plantId, filename, localUri, mimeType, onProgress } = params;
 
   try {
-    // Read the file as blob
-    const response = await fetch(localUri);
+    // Strip EXIF/GPS and read the file as blob
+    const stripped = await stripExifAndGeolocation(localUri);
+    const response = await fetch(stripped.uri);
     const blob = await response.blob();
 
     // Convert blob to ArrayBuffer for Supabase upload

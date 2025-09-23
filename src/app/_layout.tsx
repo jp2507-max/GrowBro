@@ -6,7 +6,6 @@ import { Env } from '@env';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
-import { reactNavigationIntegration } from '@sentry/react-native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import React from 'react';
@@ -76,12 +75,6 @@ if (Env.SENTRY_DSN && hasConsent('crashReporting') && !sentryInitialized) {
   sentryInitialized = true; // Set flag to prevent re-initialization
 
   const integrations: any[] = [];
-
-  // Always add React Navigation integration for performance (TTID/TTFD)
-  // SLO: TTID p95 ≤ 2s on mid-tier Android devices
-  integrations.push(
-    reactNavigationIntegration({ enableTimeToInitialDisplay: true })
-  );
 
   // Only add replay/feedback if enabled AND user consented to session replay
   if (Env.SENTRY_ENABLE_REPLAY && hasConsent('sessionReplay')) {

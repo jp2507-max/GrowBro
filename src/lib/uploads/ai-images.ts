@@ -1,3 +1,4 @@
+import { stripExifAndGeolocation } from '@/lib/media/exif';
 import { ConsentService } from '@/lib/privacy/consent-service';
 import { getDeletionAdapter } from '@/lib/privacy/deletion-adapter';
 import { addRetentionRecord } from '@/lib/privacy/retention-worker';
@@ -70,7 +71,8 @@ async function doUpload({
   localUri,
   mimeType,
 }: DoUploadArgs): Promise<UploadAiImageResult> {
-  const response = await fetch(localUri);
+  const stripped = await stripExifAndGeolocation(localUri);
+  const response = await fetch(stripped.uri);
   const blob = await response.blob();
   const arrayBuffer = await blob.arrayBuffer();
   const { data, error } = await supabase.storage
@@ -103,6 +105,10 @@ function buildObjectPath({
 export async function uploadInferenceImage(
   params: UploadAiImageParams
 ): Promise<UploadAiImageResult> {
+  // If user opted out of cloud processing, do not upload to cloud.
+  if (!ConsentService.hasConsent('cloudProcessing')) {
+    throw new ConsentRequiredError('cloudProcessing consent is required');
+  }
   const filename = buildFilename(params);
   const bucket = 'plant-images';
   const path = buildObjectPath({
@@ -137,6 +143,10 @@ export class ConsentRequiredError extends Error {
 export async function uploadTrainingImage(
   params: UploadAiImageParams
 ): Promise<UploadAiImageResult> {
+  // Training requires both cloud processing (to upload) and explicit aiTraining.
+  if (!ConsentService.hasConsent('cloudProcessing')) {
+    throw new ConsentRequiredError('cloudProcessing consent is required');
+  }
   if (!ConsentService.hasConsent('aiTraining')) {
     throw new ConsentRequiredError('aiTraining consent is required');
   }

@@ -99,6 +99,32 @@ describe('ModerationActions - successful interactions', () => {
       )
     );
   });
+
+  test('report flow handles queued result without error', async () => {
+    // Override reportContent to return queued
+    jest.spyOn(modManager, 'reportContent').mockResolvedValueOnce({
+      status: 'queued',
+      submittedAt: Date.now(),
+    } as any);
+
+    const { user } = setup(
+      <ModerationActions contentId={contentId} authorId={authorId} />
+    );
+
+    await screen.findByTestId('moderation-report-btn');
+    await user.press(screen.getByTestId('moderation-report-btn'));
+
+    await waitFor(() =>
+      expect(modManager.reportContent).toHaveBeenCalledWith(
+        contentId,
+        'other',
+        userId
+      )
+    );
+
+    // Ensure no error toast is shown for queued
+    expect(showErrorMessage).not.toHaveBeenCalled();
+  });
 });
 
 describe('ModerationActions - delete success callback', () => {

@@ -27,7 +27,7 @@ export function AgendaList({
   const { listRef, onScroll, onLayout } = useRegisterScrollHandlers();
 
   return (
-    <List<AgendaItem>
+    <List
       ref={listRef as any}
       data={data}
       renderItem={renderItem}

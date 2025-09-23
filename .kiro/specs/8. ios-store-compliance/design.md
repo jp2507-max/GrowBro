@@ -1,17 +1,48 @@
 # Design Document
 
+## Scope update (Sep 2025)
+
+This document is trimmed to match the essential tasks in `tasks.md`. The sections below this scope update are archived and non-binding for this iteration.
+
+Focus for iOS submission:
+
+1. Privacy manifest CI guard (minimal)
+   - Run `scripts/validate-privacy-manifest.js` in CI and fail on mismatch.
+   - Ensure it checks `app.config.cjs` wiring of `apple-privacy-manifest.json`.
+
+2. ATT prompt policy guard
+   - We do not track/IDFA. Ensure no `NSUserTrackingUsageDescription` and never show ATT.
+
+3. Photos access via PHPicker
+   - Replace `src/lib/media/photo-access.ts` stub with platform Photos picker (no full library permission). Add one integration test.
+
+4. Push not required for core use
+   - Core features remain usable when notifications are denied. Add a simple functional test.
+
+5. In‑app account deletion discoverability (≤3 taps)
+   - Keep current flow; add test asserting `MAX_ALLOWED_TAPS` and queuing `dsr-delete`.
+
+6. SIWA readiness guard (only if 3P login added later)
+   - Repo guard that fails CI if Google/Facebook is introduced without SIWA.
+
+7. Commerce/consumption guardrails
+   - Keep pre-submit scanner (`scripts/lib/cannabis-policy.js`) to block ordering/delivery/affiliate/encouragement text.
+
+8. Reviewer notes
+   - Generate minimal `docs/review-notes-ios.md` (demo login, age‑gate note, UGC safeguards, permissions copy, deletion path).
+
+Out of scope for this pass (kept for reference below): heavy SDK inventory/signature validation, expanded UGC/AI compliance systems, EU DSA automation, export-control automation, and extensive age‑verification redesign.
+
 ## Overview
 
 **Implementation Details / Responsibility split**:
 
 - TypeScript responsibility (JS/TS pipeline):
-
   - Produce machine-readable manifest inputs: `privacy-manifests/privacy-manifest-inputs.json` and a human-readable `privacy-manifests/PrivacyInfo.xcprivacy` that list declared APIs, purpose strings, and SDK mapping metadata.
   - Maintain the mapping of source-level API usage to purpose strings and suggested Required‑Reason categories for audit and developer review.
   - Provide auxiliary files used by native validation (e.g. `privacy-manifests/rrapi-symbols.txt` and `privacy-manifests/rrapi-exclusions.txt`).
 
 - Native responsibility (Xcode / prebuild):
-
   - Detect Required‑Reason API usage from compiled/native symbols and linked frameworks. Detection must run against the binary and frameworks (using `nm`/`otool` or equivalent) rather than source-only heuristics.
   - Validate that `PrivacyInfo.xcprivacy` (and Info.plist entries) include matching declarations and justifications for detected RRAPI symbols.
   - Emit a machine-readable validation report (`ios/privacy-validation/privacy-validation.json`) that CI can consume and that makes the prebuild/pass/fail decision.
@@ -386,10 +417,7 @@ interface ComplianceConfig {
     showATTPrompt: boolean;
     localizedPurposeStrings: Record<string, string>;
   };
-  euDSA: {
-    traderStatusRequired: boolean;
-    contactInfo: TraderContactInfo;
-  };
+  euDSA: { traderStatusRequired: boolean; contactInfo: TraderContactInfo };
   exportControl: {
     usesNonExemptEncryption: boolean;
     requiresCCATS: boolean;

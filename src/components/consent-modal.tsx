@@ -52,6 +52,8 @@ function ToggleRow({
       <Switch
         checked={checked}
         onChange={onChange}
+        // Support tests that dispatch `valueChange` on Switch
+        onValueChange={onChange}
         testID={`${testID}-switch`}
         accessibilityLabel={title}
       />

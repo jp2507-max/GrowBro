@@ -1,4 +1,7 @@
 {
   "userInterfaceStyle": "automatic",
-  "plugins": ["expo-router", "expo-build-properties"]
+  "plugins": ["expo-router", "expo-build-properties"],
+  "android": {
+    "package": "com.jan_100.growbro"
+  }
 }

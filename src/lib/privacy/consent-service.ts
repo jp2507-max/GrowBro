@@ -46,6 +46,7 @@ export class ConsentServiceImpl {
     const fresh: ConsentState = {
       telemetry: false,
       experiments: false,
+      cloudProcessing: false,
       aiTraining: false,
       crashDiagnostics: false,
       version: CURRENT_CONSENT_VERSION,

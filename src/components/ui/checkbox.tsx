@@ -24,6 +24,10 @@ export interface RootProps extends Omit<PressableProps, 'onPress'> {
   checked?: boolean;
   className?: string;
   accessibilityLabel: string;
+  // for tests: mirror checked state as `value` prop on host element
+  value?: boolean;
+  // optional RN Switch-compatible prop; forwarded to onChange
+  onValueChange?: (checked: boolean) => void;
 }
 
 export type IconProps = {
@@ -39,8 +43,12 @@ export const Root = ({
   ...props
 }: RootProps) => {
   const handleChange = useCallback(() => {
-    onChange(!checked);
-  }, [onChange, checked]);
+    const next = !checked;
+    onChange(next);
+    // If caller passed RN-like onValueChange, call it too
+    // @ts-ignore – optional prop for compatibility
+    props?.onValueChange?.(next);
+  }, [onChange, checked, props]);
 
   return (
     <Pressable
@@ -50,6 +58,8 @@ export const Root = ({
       }`}
       accessibilityState={{ checked }}
       disabled={disabled}
+      // expose a stable `value` prop for tests that expect Switch-like API
+      value={checked}
       {...props}
     >
       {children}

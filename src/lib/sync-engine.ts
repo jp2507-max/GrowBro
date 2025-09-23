@@ -500,10 +500,12 @@ export function maybeMarkNeedsReview(
   if (table !== 'tasks') return;
 
   // Prefer server_revision if present, otherwise compare server_updated_at_ms
-  const localRevRaw = (rec as any)._raw?.server_revision ?? null;
+  const localRevRaw =
+    (rec as any)._raw?.server_revision ?? (rec as any)._rev ?? null;
   const serverRevRaw = payload.server_revision ?? null;
   const localServerTsRaw =
     (rec as any)._raw?.server_updated_at_ms ??
+    (rec as any).server_updated_at_ms ??
     toMillis((rec as any).updatedAt as any);
   const serverServerTsRaw =
     payload.server_updated_at_ms ?? toMillis(payload.updatedAt as any);
