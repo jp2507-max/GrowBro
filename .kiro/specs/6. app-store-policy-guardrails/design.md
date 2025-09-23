@@ -323,7 +323,7 @@ interface EntityValidationResult {
   hasDUNS?: boolean;
   playConsoleComplete: boolean; // App Content declarations
   geoRestrictionStatement: boolean; // Required for cannabis features
-  targetApiLevel: number; // Must be Android 14 (API 35) for new updates from Aug 31, 2025
+  targetApiLevel: number; // API 35 corresponds to Android 15 for new updates from Aug 31, 2025
   photosVideosDeclaration: boolean; // Google Play 2025 requirement
   violations: string[];
 }
@@ -438,7 +438,7 @@ interface PolicyLintResult {
 **Validation Gates:**
 
 - **Policy Linter (CI):** Fails builds on flagged terms in app strings, store listing, and push templates
-- **Target API Level:** Block release if target < Android 14 (API 35) for new updates from Aug 31, 2025
+- **Target API Level:** Block release if target < Android 15 (API 35) for new updates from Aug 31, 2025
 - **Permission Declarations:** Enforce Play Photos/Videos and Background Location declarations
 - **Apple Age Rating:** Validate new age categories are used and match in-app gating
 - **Legal Entity Check:** Ensure seller is organization with required documentation
@@ -729,8 +729,8 @@ interface PrivacyAlignment {
 ### Data Privacy
 
 1. **Region Token Security:**
-   - **Signing Algorithm:** Use PASETO v4.public for token signing, providing modern cryptographic security with forward secrecy and resistance to common JWT vulnerabilities
-   - **Token Headers:** Require "kid" (Key ID) field in all token headers to identify the specific key used for signing/verification
+   - **Signing Algorithm:** Use PASETO v4.public for token signing, providing modern cryptographic security and resistance to common JWT pitfalls
+   - **Key Identification:** For JWT, require "kid" (Key ID) in the header; for PASETO, include key ID in the footer or resolve by server‑side key versioning (no JWT‑style headers)
    - **Key Rotation:** Implement automatic key rotation every 90 days with cryptographic key generation using secure entropy sources
    - **Key Overlap:** Maintain previous signing keys for a 24-hour grace period during rotation to validate tokens issued before the rotation event
    - **Public Key Exposure:** Expose current and previous public keys via a dedicated PASETO public-key endpoint for client-side verification

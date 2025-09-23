@@ -6,10 +6,10 @@ import { I18nManager, NativeModules, Platform } from 'react-native';
 import { useMMKVString } from 'react-native-mmkv';
 import RNRestart from 'react-native-restart';
 
-import { storage } from '../storage';
-import type { Language } from './resources';
-import { resources } from './resources';
-import type { RecursiveKeyOf } from './types';
+import type { Language } from '@/lib/i18n/resources';
+import { resources } from '@/lib/i18n/resources';
+import type { RecursiveKeyOf } from '@/lib/i18n/types';
+import { storage } from '@/lib/storage';
 
 // runtime reference so `resources` is treated as a value import (needed for `typeof resources` in types)
 export const AVAILABLE_LANGUAGES = Object.keys(resources) as Language[];

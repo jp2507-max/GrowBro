@@ -170,35 +170,24 @@ export const moderationManager: ModerationManager = {
       scheduleQueueProcessing();
       return { status: 'queued', submittedAt: Date.now() };
     }
+    // Increment local report stats and maybe auto-hide once per report attempt
+    const result = incrementReportAndMaybeHide(contentId);
+
+    // Build audit payload once
+    const auditPayload = {
+      contentId,
+      reason,
+      userId: validatedUserId,
+      autoHidden: result.hidden,
+      count: result.count,
+    };
+
     try {
-      // Increment local report stats and maybe auto-hide
-      const result = incrementReportAndMaybeHide(contentId);
-      if (result.hidden) {
-        moderationQueue.auditAction('report_sent', {
-          contentId,
-          reason,
-          autoHidden: true,
-          count: result.count,
-        });
-      }
       await client.post('/moderation/report', { contentId, reason });
-      moderationQueue.auditAction('report_sent', {
-        contentId,
-        reason,
-        userId: validatedUserId,
-      });
+      moderationQueue.auditAction('report_sent', auditPayload);
       return { status: 'sent', submittedAt: Date.now() };
     } catch {
-      // Even when server fails, we still count the report locally for moderation visibility
-      const result = incrementReportAndMaybeHide(contentId);
-      if (result.hidden) {
-        moderationQueue.auditAction('report_failed', {
-          contentId,
-          reason,
-          autoHidden: true,
-          count: result.count,
-        });
-      }
+      moderationQueue.auditAction('report_failed', auditPayload);
       const backoffUntil = getBackoffUntil(validatedUserId, contentId);
       const r = moderationQueue.enqueueReport(contentId, reason);
       if (backoffUntil) moderationQueue.setNotBefore(r.id, backoffUntil);

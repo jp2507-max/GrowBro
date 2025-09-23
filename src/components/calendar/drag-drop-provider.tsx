@@ -493,23 +493,20 @@ export function useDragDrop(): DragContextValue {
   const ctx = React.useContext(DragContext);
   if (!ctx) {
     // In test environments, return a no-op context to simplify unit tests
-    if (
-      typeof (globalThis as any).jest !== 'undefined' ||
-      typeof process !== 'undefined'
-    ) {
+    if (typeof (globalThis as any).jest !== 'undefined') {
       return {
         isDragging: false,
         draggedTask: undefined,
         startDrag: () => {},
         cancelDrag: () => {},
         completeDrop: async () => {},
-        onDragUpdate: () => 0,
+        onDragUpdate: () => undefined,
         registerListRef: () => {},
         registerViewportHeight: () => {},
         computeTargetDate: (d: Date) => d,
         updateCurrentOffset: () => {},
         undo: async () => {},
-      } as DragContextValue;
+      } satisfies DragContextValue;
     }
     throw new Error('useDragDrop must be used within DragDropProvider');
   }

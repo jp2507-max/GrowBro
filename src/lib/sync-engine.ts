@@ -501,11 +501,14 @@ export function maybeMarkNeedsReview(
 
   // Prefer server_revision if present, otherwise compare server_updated_at_ms
   const localRevRaw =
-    (rec as any)._raw?.server_revision ?? (rec as any)._rev ?? null;
+    (rec as any)._raw?.server_revision ??
+    (rec as any).serverRevision ??
+    (rec as any)._rev ??
+    null;
   const serverRevRaw = payload.server_revision ?? null;
   const localServerTsRaw =
     (rec as any)._raw?.server_updated_at_ms ??
-    (rec as any).server_updated_at_ms ??
+    (rec as any).serverUpdatedAtMs ??
     toMillis((rec as any).updatedAt as any);
   const serverServerTsRaw =
     payload.server_updated_at_ms ?? toMillis(payload.updatedAt as any);
