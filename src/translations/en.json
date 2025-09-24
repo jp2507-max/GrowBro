@@ -168,6 +168,14 @@
     "notifications_body": "Allow notifications to get timely task reminders.",
     "notifications_title": "Task reminders"
   },
+  "plants": {
+    "empty_state": "No plants in your inventory",
+    "error": "Failed to load plants. Try again.",
+    "no_results": "No plants found",
+    "offline_notice": "Showing saved plants",
+    "retry": "Retry",
+    "search_placeholder": "Search plants…"
+  },
   "privacy": {
     "analytics": {
       "body": "Help us improve the app with usage analytics.",
@@ -293,6 +301,14 @@
       "subtitle": "Search profiles and genetics.",
       "title": "Browse strains"
     }
+  },
+  "strains": {
+    "empty_state": "No strains available",
+    "error": "Failed to load strains. Try again.",
+    "no_results": "No strains found",
+    "offline_notice": "Showing saved strains",
+    "retry": "Retry",
+    "search_placeholder": "Search strains…"
   },
   "sync": {
     "last_sync_and_pending": "Last sync: {{time}}, {{count}} pending",

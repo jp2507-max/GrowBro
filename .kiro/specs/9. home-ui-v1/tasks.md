@@ -15,7 +15,7 @@
   - Ensure header updates within 1 second of connectivity/sync changes
   - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 3. Create Community feed with FlashList v2 and proper state handling
+- [x] 3. Create Community feed with FlashList v2 and proper state handling
   - Implement Community tab with FlashList v2 using stable keyExtractor (remove all size estimate props)
   - Ensure FlashList parent has flex:1 (avoid contentContainerStyle={{flexGrow:1}} to prevent "rendered size not usable" error)
   - Replace spinner with skeleton loading components that timeout after 1.2 seconds
@@ -24,7 +24,7 @@
   - Implement cursor-based pagination with onEndReachedThreshold ≈ 0.4 and guard double-fetch
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 4. Build Strains browser with search and deep linking
+- [x] 4. Build Strains browser with search and deep linking
   - Create Strains tab with searchable, paginated list using FlashList v2 (no size estimates, stable keys)
   - Implement search input with ~300ms debounce and non-blocking UI while typing
   - Add offline behavior with cached results and "Showing saved strains" banner
@@ -33,12 +33,18 @@
   - Consider lazy image thumbnails for large lists to protect scroll performance
   - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6_
 
-- [ ] 5. Implement Plants inventory tab
+- [x] 5. Implement Plants inventory tab
   - Create Plants tab screen with basic structure
   - Add FlashList v2 for plant inventory display (mirror Community/Strains list patterns)
   - Implement skeleton → empty → inline error states consistent with other tabs
   - Consider lazy image thumbnails for large plant lists to protect scroll performance
   - _Requirements: 1.1_
+  - TODO (follow-up): When the Strains screen is implemented to the fullest, revisit the Plants screen to adopt the scroll parallax card pattern:
+    - Use Reanimated 4 scroll-driven item transforms (scale≈0.96, subtle translateY) with a CustomCellRendererComponent that injects an itemY shared value per row.
+    - Drive animations from the existing useAnimatedScrollList().listOffsetY; wire the FlashList CellRendererComponent to pass itemY to the card wrapper.
+    - Keep any blur effect iOS-only and behind a feature flag; consider adding expo-blur later—don’t introduce it now to avoid extra dependency churn.
+    - Prefer measured/variable heights (capture via onLayout) instead of assuming a fixed ITEM_HEIGHT, since cards may grow with notes/metadata.
+    - Reuse the same pattern for the future Strains browser to keep list interactions visually consistent across Plants/Strains.
 
 - [ ] 6. Add Create Post functionality and navigation
   - Create "Create" button in Community headerRight that navigates to /community/add-post

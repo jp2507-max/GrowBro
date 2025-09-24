@@ -1,4 +1,4 @@
-TASK_ID: {3} with subtasks (make sure task with sub task is fully implemented)
+TASK_ID: {5} with subtasks (make sure task with sub task is fully implemented)
 AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the plan
 
 CONTEXT
@@ -39,7 +39,7 @@ OUTPUT FORMAT
 
 AUTO-CONTINUE
 
-- If AUTO_CONTINUE=auto and no blocking questions, implement the plan. Create commits and run typecheck/lint/tests. If failures occur, attempt up to 2 quick fixes and then report a blocker.
+- If AUTO_CONTINUE=auto and no blocking questions, implement the plan. Dont show me your findings and then I have to say continue. When i say execute the task dont stop till you done with the task. Create commits and run typecheck/lint/tests. If failures occur, attempt up to 2 quick fixes and then report a blocker.
 
 VERIFICATION (local)
 

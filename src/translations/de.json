@@ -168,6 +168,14 @@
     "notifications_body": "Erlaube Benachrichtigungen, um rechtzeitig an Aufgaben erinnert zu werden.",
     "notifications_title": "Aufgaben-Erinnerungen"
   },
+  "plants": {
+    "empty_state": "Keine Pflanzen in Ihrem Inventar",
+    "error": "Pflanzen konnten nicht geladen werden. Bitte erneut versuchen.",
+    "no_results": "Keine Pflanzen gefunden",
+    "offline_notice": "Gespeicherte Pflanzen werden angezeigt",
+    "retry": "Erneut versuchen",
+    "search_placeholder": "Pflanzen suchen…"
+  },
   "privacy": {
     "analytics": {
       "body": "Hilf uns, die App mit Nutzungsanalysen zu verbessern.",
@@ -293,6 +301,14 @@
       "subtitle": "Finde Profile und Genetik.",
       "title": "Sorten durchsuchen"
     }
+  },
+  "strains": {
+    "empty_state": "Keine Sorten verfügbar",
+    "error": "Sorten konnten nicht geladen werden. Bitte erneut versuchen.",
+    "no_results": "Keine Sorten gefunden",
+    "offline_notice": "Gespeicherte Sorten werden angezeigt",
+    "retry": "Erneut versuchen",
+    "search_placeholder": "Sorten suchen…"
   },
   "sync": {
     "last_sync_and_pending": "Letzte Sync: {{time}}, {{count}} ausstehend",
