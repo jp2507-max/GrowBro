@@ -1,9 +1,7 @@
 /* eslint-disable react-compiler/react-compiler */
 import React from 'react';
-import Animated, {
-  type SharedValue,
-  useSharedValue,
-} from 'react-native-reanimated';
+import { type SharedValue, useSharedValue } from 'react-native-reanimated';
+import useAnimatedScrollHandler from 'react-native-reanimated';
 
 import type { ScrollDirectionValue } from '@/lib/animations/use-scroll-direction';
 import { useScrollDirection } from '@/lib/animations/use-scroll-direction';
@@ -86,7 +84,7 @@ export function AnimatedScrollListProvider({
   } = useScrollDirection();
   const enableAutoScrollLock = usePointerLock(listPointerEvents);
 
-  const scrollHandler = Animated.useAnimatedScrollHandler({
+  const scrollHandler = useAnimatedScrollHandler({
     onBeginDrag: (e: any) => {
       isDragging.value = true;
       listPointerEvents.value = true;

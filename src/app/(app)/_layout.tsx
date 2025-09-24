@@ -135,7 +135,7 @@ function StrainsTab(): React.ReactElement {
 
 const CreateNewPostLink = () => {
   return (
-    <Link href="/feed/add-post" asChild>
+    <Link href="/community/add-post" asChild>
       <Pressable>
         <Text className="px-3 text-primary-300">Create</Text>
       </Pressable>

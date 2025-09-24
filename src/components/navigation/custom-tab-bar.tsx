@@ -9,6 +9,7 @@ import { Pressable } from '@/components/ui';
 import {
   Feed as FeedIcon,
   Home as HomeIcon,
+  Rate as StrainsIcon,
   Style as StyleIcon,
   TopDress as PlantsIcon,
 } from '@/components/ui/icons';
@@ -42,7 +43,7 @@ export function CustomTabBar({
     >
       <Pressable
         className="flex-1 items-center justify-center"
-        onPress={() => navigation.navigate('(app)')}
+        onPress={() => navigation.navigate('index')}
       >
         <HomeIcon />
       </Pressable>
@@ -63,6 +64,12 @@ export function CustomTabBar({
         onPress={() => navigation.navigate('plants')}
       >
         <PlantsIcon />
+      </Pressable>
+      <Pressable
+        className="flex-1 items-center justify-center"
+        onPress={() => navigation.navigate('strains')}
+      >
+        <StrainsIcon />
       </Pressable>
     </Animated.View>
   );
