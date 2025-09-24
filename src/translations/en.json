@@ -33,7 +33,14 @@
   },
   "common": {
     "cancel": "Cancel",
-    "ok": "OK"
+    "ok": "OK",
+    "retry": "Retry"
+  },
+  "community": {
+    "create_post": "Create Post",
+    "empty_state": "No posts yet. Be the first to share!",
+    "load_error": "Failed to load posts. Tap to retry.",
+    "loading": "Loading posts..."
   },
   "consent": {
     "accept_all": "Accept all",
@@ -214,7 +221,7 @@
     "webPortalDeletionCopy": "We will queue the deletion and send a confirmation when processing is complete. Deletion typically finishes within 30 days.",
     "webPortalDeletionCta": "Request deletion",
     "webPortalDeletionHeading": "Delete your GrowBro account",
-    "webPortalExportCopy": "Export requests compile your GrowBro data set for download. We will email or notify you when it is ready.",
+    "webPortalExportCopy": "We prepare your data export and inform you once it’s ready.",
     "webPortalExportCta": "Request export",
     "webPortalExportHeading": "Export your GrowBro data",
     "webPortalIntro": "Use this page to request account deletion or a data export if you cannot open the mobile app.",
@@ -264,9 +271,41 @@
     "web_deletion": "Web deletion portal",
     "website": "Website"
   },
+  "shared_header": {
+    "app_title": "GrowBro",
+    "calendar": {
+      "subtitle": "Scroll upcoming grows and tasks.",
+      "title": "Calendar overview"
+    },
+    "community": {
+      "subtitle": "See updates from fellow growers.",
+      "title": "Community feed"
+    },
+    "home": {
+      "subtitle": "Review tasks, signals, and quick actions.",
+      "title": "Today in your garden"
+    },
+    "plants": {
+      "subtitle": "Track plant stages and health.",
+      "title": "Plant inventory"
+    },
+    "strains": {
+      "subtitle": "Search profiles and genetics.",
+      "title": "Browse strains"
+    }
+  },
   "sync": {
     "last_sync_and_pending": "Last sync: {{time}}, {{count}} pending",
-    "offline_banner": "You're offline. Changes will sync when back online."
+    "offline_banner": "You're offline. Changes will sync when back online.",
+    "offline_banner_action_hint": "Opens sync diagnostics screen",
+    "offline_banner_action_label": "Open sync diagnostics"
+  },
+  "tabs": {
+    "calendar": "Calendar",
+    "community": "Community",
+    "home": "Home",
+    "plants": "Plants",
+    "strains": "Strains"
   },
   "welcome": "Welcome to GrowBro app site"
 }

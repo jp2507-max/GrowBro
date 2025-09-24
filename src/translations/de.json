@@ -33,7 +33,14 @@
   },
   "common": {
     "cancel": "Abbrechen",
-    "ok": "OK"
+    "ok": "OK",
+    "retry": "Erneut versuchen"
+  },
+  "community": {
+    "create_post": "Beitrag erstellen",
+    "empty_state": "Noch keine Beiträge. Sei die oder der Erste!",
+    "load_error": "Beiträge konnten nicht geladen werden. Zum Wiederholen tippen.",
+    "loading": "Beiträge werden geladen..."
   },
   "consent": {
     "accept_all": "Alle akzeptieren",
@@ -264,9 +271,41 @@
     "web_deletion": "Web-Löschportal",
     "website": "Website"
   },
+  "shared_header": {
+    "app_title": "GrowBro",
+    "calendar": {
+      "subtitle": "Scrolle zu kommenden Grows und Tasks.",
+      "title": "Kalenderübersicht"
+    },
+    "community": {
+      "subtitle": "Sieh Updates anderer Grower.",
+      "title": "Community-Feed"
+    },
+    "home": {
+      "subtitle": "Überblicke Aufgaben, Hinweise und Schnellaktionen.",
+      "title": "Heute in deinem Grow"
+    },
+    "plants": {
+      "subtitle": "Verfolge Stadien und Gesundheit.",
+      "title": "Pflanzeninventar"
+    },
+    "strains": {
+      "subtitle": "Finde Profile und Genetik.",
+      "title": "Sorten durchsuchen"
+    }
+  },
   "sync": {
     "last_sync_and_pending": "Letzte Sync: {{time}}, {{count}} ausstehend",
-    "offline_banner": "Du bist offline. Änderungen werden später synchronisiert."
+    "offline_banner": "Du bist offline. Änderungen werden später synchronisiert.",
+    "offline_banner_action_hint": "Öffnet den Sync-Diagnose-Bildschirm",
+    "offline_banner_action_label": "Sync-Diagnose öffnen"
+  },
+  "tabs": {
+    "calendar": "Kalender",
+    "community": "Community",
+    "home": "Home",
+    "plants": "Pflanzen",
+    "strains": "Sorten"
   },
   "welcome": "Willkommen bei der GrowBro App"
 }
