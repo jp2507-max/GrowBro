@@ -11,8 +11,8 @@ type NetworkStatus = {
 };
 
 const initialStatus: NetworkStatus = {
-  isConnected: true,
-  isInternetReachable: true,
+  isConnected: false,
+  isInternetReachable: false,
   state: null,
 };
 
@@ -30,8 +30,9 @@ export function useNetworkStatus(): NetworkStatus {
         return;
       }
       setStatus({
-        isConnected: Boolean(next.isConnected),
-        isInternetReachable: next.isInternetReachable ?? true,
+        isConnected: next?.isConnected ?? false,
+        isInternetReachable:
+          (next?.isConnected && (next?.isInternetReachable ?? false)) ?? false,
         state: next,
       });
     };

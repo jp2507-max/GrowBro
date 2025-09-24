@@ -250,7 +250,11 @@ function StrainCard({ strain, onPress }: StrainCardProps): React.ReactElement {
         </Text>
       ) : null}
       {strain.description ? (
-        <Text className="pt-2 text-sm text-neutral-600 dark:text-neutral-200">
+        <Text
+          className="pt-2 text-sm text-neutral-600 dark:text-neutral-200"
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
           {strain.description}
         </Text>
       ) : null}

@@ -1,7 +1,10 @@
 /* eslint-disable react-compiler/react-compiler */
 import React from 'react';
-import { type SharedValue, useSharedValue } from 'react-native-reanimated';
-import useAnimatedScrollHandler from 'react-native-reanimated';
+import {
+  type SharedValue,
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from 'react-native-reanimated';
 
 import type { ScrollDirectionValue } from '@/lib/animations/use-scroll-direction';
 import { useScrollDirection } from '@/lib/animations/use-scroll-direction';

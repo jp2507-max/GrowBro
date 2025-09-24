@@ -116,7 +116,11 @@ function PlantCardContent({
         </Text>
       ) : null}
       {plant.notes ? (
-        <Text className="mt-2 line-clamp-2 text-sm text-neutral-600 dark:text-neutral-200">
+        <Text
+          className="mt-2 text-sm text-neutral-600 dark:text-neutral-200"
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
           {plant.notes}
         </Text>
       ) : null}

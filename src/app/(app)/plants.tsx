@@ -1,8 +1,8 @@
 import { useScrollToTop } from '@react-navigation/native';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListProps } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { type ListRenderItemInfo } from 'react-native';
+import { type ListRenderItemInfo, type ViewProps } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import type { Plant } from '@/api';
@@ -24,7 +24,9 @@ import { useNetworkStatus } from '@/lib/hooks';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-const AnimatedFlashList = Animated.createAnimatedComponent(FlashList as any);
+const AnimatedFlashList = Animated.createAnimatedComponent(
+  FlashList as React.ComponentType<FlashListProps<Plant>>
+);
 
 function usePlantsData(searchQuery: string) {
   const {
@@ -97,10 +99,12 @@ function useSkeletonVisibility(isLoading: boolean, itemsCount: number) {
 // eslint-disable-next-line max-lines-per-function
 export default function PlantsScreen(): React.ReactElement {
   const router = useRouter();
-  const { listRef, scrollHandler } = useAnimatedScrollList();
-  useScrollToTop(listRef);
+  const { scrollHandler } = useAnimatedScrollList();
   const { grossHeight } = useBottomTabBarHeight();
   const { isConnected, isInternetReachable } = useNetworkStatus();
+
+  const listRef = React.useRef<React.ElementRef<typeof FlashList<Plant>>>(null);
+  useScrollToTop(listRef);
 
   const isOffline = !isConnected || !isInternetReachable;
 
@@ -150,8 +154,7 @@ export default function PlantsScreen(): React.ReactElement {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const renderItem = React.useCallback(
-    ({ item }: ListRenderItemInfo<Plant>) =>
-      renderPlantItem({ item } as any, onItemPress),
+    (info: ListRenderItemInfo<Plant>) => renderPlantItem(info, onItemPress),
     [onItemPress]
   );
 
@@ -198,11 +201,15 @@ export default function PlantsScreen(): React.ReactElement {
         <PlantsOfflineBanner isVisible={isOffline} />
       </View>
       <AnimatedFlashList
-        ref={listRef as React.RefObject<any>}
+        ref={listRef}
         data={listData}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
-        CellRendererComponent={CustomCellRendererComponent as any}
+        CellRendererComponent={
+          CustomCellRendererComponent as React.ComponentType<
+            React.PropsWithChildren<ViewProps>
+          >
+        }
         onEndReached={onEndReached}
         onEndReachedThreshold={0.4}
         onScroll={scrollHandler}

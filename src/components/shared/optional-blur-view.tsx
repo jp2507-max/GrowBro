@@ -17,6 +17,7 @@ export function OptionalBlurView({
   tint = 'dark',
   style,
   testID,
+  pointerEvents,
 }: BlurProps) {
   const [Blur, setBlur] = React.useState<React.ComponentType<any> | null>(null);
   React.useEffect(() => {
@@ -36,6 +37,7 @@ export function OptionalBlurView({
       tint={tint}
       intensity={intensity}
       testID={testID}
+      pointerEvents={pointerEvents}
     />
   );
 }
