@@ -15,9 +15,11 @@ import {
   Text,
   View,
 } from '@/components/ui';
+import { useAnalytics } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import { useScreenErrorLogger } from '@/lib/hooks';
+import { translate } from '@/lib/i18n';
 import { consentManager } from '@/lib/privacy/consent-manager';
 import { useThemeConfig } from '@/lib/use-theme-config';
 

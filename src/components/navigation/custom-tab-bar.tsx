@@ -8,10 +8,10 @@ import Animated, {
 
 import { colors, Pressable, View } from '@/components/ui';
 import {
+  Calendar as CalendarIcon,
   Feed as FeedIcon,
   Home as HomeIcon,
   Rate as StrainsIcon,
-  Style as StyleIcon,
   TopDress as PlantsIcon,
 } from '@/components/ui/icons';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
@@ -46,7 +46,7 @@ const TAB_ITEMS: readonly TabItem[] = [
   },
   {
     route: 'calendar',
-    Icon: StyleIcon,
+    Icon: CalendarIcon,
     testID: 'calendar-tab',
     iconTestID: 'calendar-icon',
     labelKey: 'tabs.calendar',

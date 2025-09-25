@@ -17,6 +17,7 @@ import {
 import { ComposeBtn } from '@/components/compose-btn';
 import { FocusAwareStatusBar, Text, View } from '@/components/ui';
 import { translate, useAnalytics } from '@/lib';
+import { sanitizeCommunityErrorType } from '@/lib/analytics';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import { useScreenErrorLogger } from '@/lib/hooks';
@@ -153,13 +154,14 @@ export default function CommunityScreen(): React.ReactElement {
       return;
     }
 
-    const errorType =
+    const rawErrorType =
       (error?.name && error.name.trim()) ||
       (error?.message && error.message.trim()) ||
       'unknown';
-    if (lastErrorTypeRef.current === errorType) return;
-    lastErrorTypeRef.current = errorType;
-    void analytics.track('community_error', { error_type: errorType });
+    const normalized = sanitizeCommunityErrorType(rawErrorType);
+    if (lastErrorTypeRef.current === rawErrorType) return;
+    lastErrorTypeRef.current = rawErrorType;
+    void analytics.track('community_error', { error_type: normalized });
   }, [analytics, error, isError]);
 
   const onRetry = React.useCallback(() => {

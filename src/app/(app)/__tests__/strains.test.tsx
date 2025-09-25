@@ -24,6 +24,14 @@ jest.mock('@/lib', () => {
   };
 });
 
+jest.mock('@/lib/hooks', () => {
+  const actual = jest.requireActual('@/lib/hooks');
+  return {
+    ...actual,
+    useAnalyticsConsent: () => true, // Mock as consented by default
+  };
+});
+
 const networkStatusMock = jest.fn(() => ({
   isConnected: true,
   isInternetReachable: true,

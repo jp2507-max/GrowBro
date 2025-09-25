@@ -165,9 +165,16 @@ export default function PlantsScreen(): React.ReactElement {
   );
 
   const onEndReached = React.useCallback(() => {
+    if (!isConnected || !isInternetReachable) return;
     if (!hasNextPage || isFetchingNextPage) return;
     void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  }, [
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isConnected,
+    isInternetReachable,
+  ]);
 
   const renderItem = React.useCallback(
     (info: ListRenderItemInfo<Plant>) => renderPlantItem(info, onItemPress),

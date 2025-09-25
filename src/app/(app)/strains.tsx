@@ -24,7 +24,11 @@ import {
 import { translate, useAnalytics } from '@/lib';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
-import { useNetworkStatus, useScreenErrorLogger } from '@/lib/hooks';
+import {
+  useAnalyticsConsent,
+  useNetworkStatus,
+  useScreenErrorLogger,
+} from '@/lib/hooks';
 import type { TxKeyPath } from '@/lib/i18n';
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -109,6 +113,7 @@ export default function StrainsScreen(): React.ReactElement {
   const { grossHeight } = useBottomTabBarHeight();
   const { isConnected, isInternetReachable } = useNetworkStatus();
   const analytics = useAnalytics();
+  const hasAnalyticsConsent = useAnalyticsConsent();
 
   const isOffline = !isConnected || !isInternetReachable;
 
@@ -181,24 +186,29 @@ export default function StrainsScreen(): React.ReactElement {
       query: debouncedQuery,
       resultsCount: listData.length,
       isOffline,
+      hasAnalyticsConsent,
     };
     const last = lastSearchPayloadRef.current;
     if (
       last &&
       last.query === payload.query &&
-      last.isOffline === payload.isOffline
+      last.isOffline === payload.isOffline &&
+      last.hasAnalyticsConsent === payload.hasAnalyticsConsent
     ) {
       return;
     }
     lastSearchPayloadRef.current = payload;
-    void analytics.track('strain_search', {
-      query: payload.query,
-      results_count: payload.resultsCount,
-      is_offline: payload.isOffline,
-    });
+    if (hasAnalyticsConsent) {
+      void analytics.track('strain_search', {
+        query: payload.query,
+        results_count: payload.resultsCount,
+        is_offline: payload.isOffline,
+      });
+    }
   }, [
     analytics,
     debouncedQuery,
+    hasAnalyticsConsent,
     isFetchingNextPage,
     isLoading,
     isOffline,

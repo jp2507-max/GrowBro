@@ -178,10 +178,16 @@
     "share_update_title": "Share a grow update"
   },
   "list": {
-    "empty_description": "There are no items to display.",
-    "empty_title": "No items",
+    "empty": {
+      "body": "There are no items to display.",
+      "title": "No items"
+    },
+    "error": {
+      "body": "We couldn't load the content. Please try again.",
+      "title": "Something went wrong"
+    },
     "loading": "Loading...",
-    "retry_label": "Retry"
+    "retry": "Retry"
   },
   "moderation": {
     "audit": {

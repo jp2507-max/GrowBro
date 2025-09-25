@@ -178,10 +178,16 @@
     "share_update_title": "Grow-Update teilen"
   },
   "list": {
-    "empty_description": "Wir zeigen hier Inhalte, sobald sie verfügbar sind.",
-    "empty_title": "Hier ist noch nichts",
+    "empty": {
+      "body": "Wir zeigen hier Inhalte, sobald sie verfügbar sind.",
+      "title": "Hier ist noch nichts"
+    },
+    "error": {
+      "body": "Wir konnten die Inhalte nicht laden. Bitte versuchen Sie es erneut.",
+      "title": "Etwas ist schiefgelaufen"
+    },
     "loading": "Wird geladen...",
-    "retry_label": "Erneut versuchen"
+    "retry": "Erneut versuchen"
   },
   "moderation": {
     "audit": {
@@ -371,7 +377,7 @@
   "tabs": {
     "calendar": "Kalender",
     "community": "Community",
-    "home": "Home",
+    "home": "Startseite",
     "plants": "Pflanzen",
     "strains": "Sorten"
   },
