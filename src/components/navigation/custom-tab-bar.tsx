@@ -14,10 +14,10 @@ import {
   Style as StyleIcon,
   TopDress as PlantsIcon,
 } from '@/components/ui/icons';
-import { translate } from '@/lib';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import type { TxKeyPath } from '@/lib/i18n';
+import { translate } from '@/lib/i18n';
 import { useThemeConfig } from '@/lib/use-theme-config';
 
 const DURATION = 300;

@@ -53,7 +53,7 @@ export type AnalyticsEvents = {
     trigger: 'initial_load' | 'refresh';
   };
   community_error: {
-    error_type: string;
+    error_type: 'network' | 'validation' | 'timeout' | 'unknown';
   };
   home_view: {
     widgets_shown: string[];
@@ -226,11 +226,53 @@ export function createConsentGatedAnalytics(
   };
 }
 
+// Helper to sanitize community error types to safe union
+function sanitizeCommunityErrorType(
+  errorType: string
+): 'network' | 'validation' | 'timeout' | 'unknown' {
+  const normalized = errorType.toLowerCase().trim();
+
+  // Check for network-related errors
+  if (
+    normalized.includes('network') ||
+    normalized.includes('fetch') ||
+    normalized.includes('connection') ||
+    normalized.includes('timeout') ||
+    normalized.includes('abort') ||
+    normalized.includes('cancel')
+  ) {
+    return normalized.includes('timeout') ? 'timeout' : 'network';
+  }
+
+  // Check for validation errors
+  if (
+    normalized.includes('validation') ||
+    normalized.includes('invalid') ||
+    normalized.includes('bad request') ||
+    normalized.includes('unauthorized') ||
+    normalized.includes('forbidden')
+  ) {
+    return 'validation';
+  }
+
+  // Default to unknown for anything else
+  return 'unknown';
+}
+
 // PII stripping and data minimization for analytics payloads
 function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(
   name: N,
   payload: AnalyticsEventPayload<N>
 ): AnalyticsEventPayload<N> {
+  // Sanitize community error types to prevent PII leakage
+  if (name === 'community_error') {
+    const sanitized = { ...payload };
+    if (typeof sanitized.error_type === 'string') {
+      sanitized.error_type = sanitizeCommunityErrorType(sanitized.error_type);
+    }
+    return sanitized as AnalyticsEventPayload<N>;
+  }
+
   // For guided grow playbook events, ensure minimal identifiers
   if (
     name.startsWith('playbook_') ||

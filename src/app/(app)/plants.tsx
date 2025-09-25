@@ -17,10 +17,10 @@ import {
 } from '@/components/plants';
 import CustomCellRendererComponent from '@/components/shared/custom-cell-renderer-component';
 import { FocusAwareStatusBar, Input, Text, View } from '@/components/ui';
-import { translate } from '@/lib';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import { useNetworkStatus, useScreenErrorLogger } from '@/lib/hooks';
+import { translate } from '@/lib/i18n';
 
 const SEARCH_DEBOUNCE_MS = 300;
 

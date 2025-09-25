@@ -177,6 +177,12 @@
     "share_update_subtitle": "Let the community know how your plants are doing.",
     "share_update_title": "Share a grow update"
   },
+  "list": {
+    "empty_description": "There are no items to display.",
+    "empty_title": "No items",
+    "loading": "Loading...",
+    "retry_label": "Retry"
+  },
   "moderation": {
     "audit": {
       "empty": "Empty",

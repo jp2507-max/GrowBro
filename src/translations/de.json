@@ -177,6 +177,12 @@
     "share_update_subtitle": "Sag der Community, wie es deinen Pflanzen geht.",
     "share_update_title": "Grow-Update teilen"
   },
+  "list": {
+    "empty_description": "Wir zeigen hier Inhalte, sobald sie verfügbar sind.",
+    "empty_title": "Hier ist noch nichts",
+    "loading": "Wird geladen...",
+    "retry_label": "Erneut versuchen"
+  },
   "moderation": {
     "audit": {
       "empty": "Leer",

@@ -15,7 +15,7 @@ import {
   Text,
   View,
 } from '@/components/ui';
-import { NoopAnalytics, translate, useAnalytics } from '@/lib';
+import { NoopAnalytics } from '@/lib/analytics';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import { useScreenErrorLogger } from '@/lib/hooks';
 import { consentManager } from '@/lib/privacy/consent-manager';
@@ -35,8 +35,10 @@ function getNow(): number {
 const BOTTOM_PADDING_EXTRA = 24;
 
 function useHomeTti(isPending: boolean, isError: boolean, itemCount: number) {
+  const analytics = useAnalytics();
   const startRef = React.useRef<number>(getNow());
   const hasLoggedRef = React.useRef(false);
+  const hasConsented = consentManager.hasConsented('analytics');
 
   React.useEffect(() => {
     if (hasLoggedRef.current) return;
@@ -46,8 +48,8 @@ function useHomeTti(isPending: boolean, isError: boolean, itemCount: number) {
     const finalize = () => {
       if (hasLoggedRef.current) return;
       const duration = Math.max(0, getNow() - startRef.current);
-      if (consentManager.hasConsented('analytics')) {
-        void NoopAnalytics.track('home_tti_ms', { ms: Math.round(duration) });
+      if (hasConsented && analytics !== NoopAnalytics) {
+        void analytics.track('home_tti_ms', { ms: Math.round(duration) });
       }
       hasLoggedRef.current = true;
     };
@@ -61,12 +63,13 @@ function useHomeTti(isPending: boolean, isError: boolean, itemCount: number) {
     return () => {
       interaction?.cancel?.();
     };
-  }, [isError, isPending, itemCount]);
+  }, [isError, isPending, itemCount, analytics, hasConsented]);
 }
 
 function useHomeAnalyticsTracking(isPending: boolean, itemCount: number): void {
   const analytics = useAnalytics();
   const hasTrackedRef = React.useRef(false);
+  const hasConsented = consentManager.hasConsented('analytics');
 
   React.useEffect(() => {
     if (hasTrackedRef.current) return;
@@ -74,8 +77,10 @@ function useHomeAnalyticsTracking(isPending: boolean, itemCount: number): void {
     hasTrackedRef.current = true;
     const widgets: string[] = ['share_update_banner'];
     if (itemCount > 0) widgets.push('post_list');
-    void analytics.track('home_view', { widgets_shown: widgets });
-  }, [analytics, isPending, itemCount]);
+    if (hasConsented && analytics !== NoopAnalytics) {
+      void analytics.track('home_view', { widgets_shown: widgets });
+    }
+  }, [analytics, isPending, itemCount, hasConsented]);
 }
 
 const HomeListHeader = React.memo(function HomeListHeader({

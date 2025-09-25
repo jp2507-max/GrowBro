@@ -290,7 +290,6 @@ export default function StrainsScreen(): React.ReactElement {
         }}
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
-        estimatedItemSize={undefined}
       />
     </View>
   );

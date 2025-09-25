@@ -153,6 +153,8 @@ function createExpoConfig(config) {
       '@morrowdigital/watermelondb-expo-plugin',
       // Ensure CocoaPods CDN and pod repo update for CI/EAS so simdjson is found
       './plugins/ensure-cocoapods',
+      // Add simdjson pod explicitly so WatermelonDB resolves during EAS builds
+      './plugins/ensure-simdjson',
     ],
     extra: {
       // Expose only public vars; keep secrets out of the bundle.

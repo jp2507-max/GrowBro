@@ -5,14 +5,16 @@ import { CustomTabBar } from '@/components/navigation/custom-tab-bar';
 import { SharedHeader } from '@/components/navigation/shared-header';
 import { Pressable, Text } from '@/components/ui';
 import {
+  Calendar as CalendarIcon,
   Feed as FeedIcon,
   Home as HomeIcon,
   Settings as SettingsIcon,
   Style as StyleIcon,
   TopDress as PlantsIcon,
 } from '@/components/ui/icons';
-import { translate, useAgeGate, useAuth, useIsFirstTime } from '@/lib';
+import { useAgeGate, useAuth, useIsFirstTime } from '@/lib';
 import { AnimatedScrollListProvider } from '@/lib/animations/animated-scroll-list-provider';
+import { translate } from '@/lib/i18n';
 import { useThemeConfig } from '@/lib/use-theme-config';
 
 type HeaderOptions = {
@@ -130,7 +132,7 @@ function CalendarTab(): React.ReactElement {
       name="calendar"
       options={{
         title: translate('tabs.calendar'),
-        tabBarIcon: ({ color }) => <HomeIcon color={color} />,
+        tabBarIcon: ({ color }) => <CalendarIcon color={color} />,
         tabBarButtonTestID: 'calendar-tab',
       }}
     />

@@ -14,7 +14,6 @@ export function CommunityEmptyState({
     <View
       testID="community-empty-state"
       className="flex-1 items-center justify-center gap-6 px-6 py-12"
-      accessibilityRole="summary"
     >
       <View className="items-center gap-3">
         <Text className="text-center text-base text-neutral-600 dark:text-neutral-300">
