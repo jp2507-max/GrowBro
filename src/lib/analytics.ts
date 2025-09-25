@@ -444,17 +444,18 @@ function sanitizeSearchQuery(query: string): string {
   // obvious PII patterns (emails, phone numbers). Keep it simple and safe.
   if (typeof query !== 'string') return '';
   const trimmed = query.trim();
-  // Bound length to avoid leaking large content
-  const maxLen = 128;
-  let out = trimmed.length > maxLen ? trimmed.slice(0, maxLen) + '…' : trimmed;
 
   // Basic PII redaction: emails and phone-like numbers
   // Replace emails
   const emailRegex = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
-  out = out.replace(emailRegex, '[redacted_email]');
-  // Replace sequences of 7-15 digits (simple phone detection)
-  const phoneRegex = /\b\d{7,15}\b/g;
+  let out = trimmed.replace(emailRegex, '[redacted_email]');
+  // Replace phone numbers with separators and optional country code (7-15 digits total)
+  const phoneRegex = /(?=(?:.*\d){7,15})[\+]?[\d\s\-\.\(\)]+/g;
   out = out.replace(phoneRegex, '[redacted_phone]');
+
+  // Bound length to avoid leaking large content (after redaction)
+  const maxLen = 128;
+  out = out.length > maxLen ? out.slice(0, maxLen) + '…' : out;
 
   return out;
 }
