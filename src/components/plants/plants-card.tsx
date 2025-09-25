@@ -172,11 +172,15 @@ export function PlantCard({
   const onLayout = React.useCallback(
     (e: LayoutChangeEvent) => {
       const h = e.nativeEvent.layout.height;
+      const y = e.nativeEvent.layout.y;
       if (h && Math.abs(h - measuredHeight.value) > 0.5) {
         measuredHeight.value = h;
       }
+      if (y !== localItemY.value) {
+        localItemY.value = y;
+      }
     },
-    [measuredHeight]
+    [measuredHeight, localItemY]
   );
 
   return (

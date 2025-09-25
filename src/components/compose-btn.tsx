@@ -62,6 +62,8 @@ export function ComposeBtn({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={translate('community.create_post')}
+      accessibilityHint={translate('accessibility.community.compose_hint')}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
       <Text className="text-base text-primary-300" style={rTextStyle}>
         {translate('community.create_post')}

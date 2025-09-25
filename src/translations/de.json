@@ -1,4 +1,31 @@
 {
+  "accessibility": {
+    "common": {
+      "retry_hint": "Wiederholt die letzte Aktion."
+    },
+    "community": {
+      "compose_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
+      "create_post_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
+      "open_post_hint": "Öffnet die Beitragsdetails."
+    },
+    "home": {
+      "open_settings_hint": "Öffnet die Einstellungen.",
+      "share_update_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags."
+    },
+    "plants": {
+      "open_detail_hint": "Öffnet die Pflanzendetails."
+    },
+    "strains": {
+      "open_detail_hint": "Öffnet die Sortendetails."
+    },
+    "tabs": {
+      "calendar_hint": "Doppeltippen, um den Kalender zu öffnen.",
+      "community_hint": "Doppeltippen, um den Community-Feed zu öffnen.",
+      "home_hint": "Doppeltippen, um die Übersicht Home zu öffnen.",
+      "plants_hint": "Doppeltippen, um das Pflanzeninventar zu öffnen.",
+      "strains_hint": "Doppeltippen, um Sorten zu durchsuchen."
+    }
+  },
   "calendar": {
     "drag_item_hint": "Lange drücken und ziehen, um neu zu planen. Doppeltippen für Menü.",
     "drag_item_label": "Ziehen {{title}}",
@@ -39,8 +66,17 @@
   "community": {
     "create_post": "Beitrag erstellen",
     "empty_state": "Noch keine Beiträge. Sei die oder der Erste!",
+    "list_empty_body": "Wir zeigen hier Updates, sobald sie verfügbar sind.",
+    "list_empty_title": "Hier ist noch nichts",
+    "list_error_body": "Bitte überprüfe deine Verbindung und versuche es erneut.",
+    "list_error_title": "Wir konnten das nicht laden",
+    "list_retry": "Erneut versuchen",
     "load_error": "Beiträge konnten nicht geladen werden. Zum Wiederholen tippen.",
-    "loading": "Beiträge werden geladen..."
+    "loading": "Beiträge werden geladen...",
+    "posts_count": "{{count}} Beiträge",
+    "posts_count_one": "{{count}} Beitrag",
+    "posts_count_other": "{{count}} Beiträge",
+    "posts_count_zero": "Keine Beiträge"
   },
   "consent": {
     "accept_all": "Alle akzeptieren",
@@ -134,6 +170,12 @@
   },
   "errors": {
     "postLoad": "Fehler beim Laden des Beitrags"
+  },
+  "home": {
+    "open_settings": "Einstellungen öffnen",
+    "share_update_cta": "Update teilen",
+    "share_update_subtitle": "Sag der Community, wie es deinen Pflanzen geht.",
+    "share_update_title": "Grow-Update teilen"
   },
   "moderation": {
     "audit": {
@@ -307,6 +349,10 @@
     "error": "Sorten konnten nicht geladen werden. Bitte erneut versuchen.",
     "no_results": "Keine Sorten gefunden",
     "offline_notice": "Gespeicherte Sorten werden angezeigt",
+    "results_count": "{{count}} Sorten",
+    "results_count_one": "{{count}} Sorte",
+    "results_count_other": "{{count}} Sorten",
+    "results_count_zero": "Keine Sorten",
     "retry": "Erneut versuchen",
     "search_placeholder": "Sorten suchen…"
   },

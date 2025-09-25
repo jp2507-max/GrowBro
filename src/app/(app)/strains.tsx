@@ -21,10 +21,11 @@ import {
   Text,
   View,
 } from '@/components/ui';
-import { translate } from '@/lib';
+import { translate, useAnalytics } from '@/lib';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
-import { useNetworkStatus } from '@/lib/hooks';
+import { useNetworkStatus, useScreenErrorLogger } from '@/lib/hooks';
+import type { TxKeyPath } from '@/lib/i18n';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -35,6 +36,7 @@ function useStrainsData(searchQuery: string) {
     data,
     isLoading,
     isError,
+    error,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -54,6 +56,7 @@ function useStrainsData(searchQuery: string) {
     hasNextPage,
     isFetchingNextPage,
     refetch,
+    error,
   } as const;
 }
 
@@ -105,6 +108,7 @@ export default function StrainsScreen(): React.ReactElement {
   useScrollToTop(listRef);
   const { grossHeight } = useBottomTabBarHeight();
   const { isConnected, isInternetReachable } = useNetworkStatus();
+  const analytics = useAnalytics();
 
   const isOffline = !isConnected || !isInternetReachable;
 
@@ -117,6 +121,7 @@ export default function StrainsScreen(): React.ReactElement {
     strains,
     isLoading,
     isError,
+    error,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -136,10 +141,69 @@ export default function StrainsScreen(): React.ReactElement {
   }, [isOffline, strains, cachedStrains]);
 
   const isSkeletonVisible = useSkeletonVisibility(isLoading, strains.length);
+  const lastSearchPayloadRef = React.useRef<{
+    query: string;
+    resultsCount: number;
+    isOffline: boolean;
+  } | null>(null);
 
   const onRetry = React.useCallback(() => {
     void refetch();
   }, [refetch]);
+
+  useScreenErrorLogger(isError ? error : null, {
+    screen: 'strains',
+    feature: 'strains-browser',
+    action: 'fetch',
+    queryKey: 'strains-infinite',
+    metadata: {
+      resultsCount: listData.length,
+      searchQuery: debouncedQuery,
+      isOffline,
+      isFetchingNextPage,
+      hasNextPage,
+    },
+  });
+
+  const showResultsCount = !isSkeletonVisible;
+  const resultsCountKey: TxKeyPath = React.useMemo(() => {
+    if (listData.length === 0) return 'strains.results_count_zero';
+    if (listData.length === 1) return 'strains.results_count_one';
+    return 'strains.results_count_other';
+  }, [listData.length]);
+  const resultsCountLabel = translate(resultsCountKey, {
+    count: listData.length,
+  });
+
+  React.useEffect(() => {
+    if (isLoading || isFetchingNextPage) return;
+    const payload = {
+      query: debouncedQuery,
+      resultsCount: listData.length,
+      isOffline,
+    };
+    const last = lastSearchPayloadRef.current;
+    if (
+      last &&
+      last.query === payload.query &&
+      last.isOffline === payload.isOffline
+    ) {
+      return;
+    }
+    lastSearchPayloadRef.current = payload;
+    void analytics.track('strain_search', {
+      query: payload.query,
+      results_count: payload.resultsCount,
+      is_offline: payload.isOffline,
+    });
+  }, [
+    analytics,
+    debouncedQuery,
+    isFetchingNextPage,
+    isLoading,
+    isOffline,
+    listData.length,
+  ]);
 
   const onItemPress = React.useCallback(
     (id: string) => {
@@ -149,9 +213,9 @@ export default function StrainsScreen(): React.ReactElement {
   );
 
   const onEndReached = React.useCallback(() => {
-    if (!hasNextPage || isFetchingNextPage) return;
+    if (!hasNextPage || isFetchingNextPage || isOffline) return;
     void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isOffline]);
 
   const renderItem = React.useCallback(
     ({ item }: ListRenderItemInfo<Strain>) => (
@@ -201,6 +265,15 @@ export default function StrainsScreen(): React.ReactElement {
           testID="strains-search-input"
         />
         <StrainsOfflineBanner isVisible={isOffline} />
+        {showResultsCount ? (
+          <Text
+            className="pt-3 text-sm text-neutral-600 dark:text-neutral-300"
+            accessibilityRole="text"
+            testID="strains-results-count"
+          >
+            {resultsCountLabel}
+          </Text>
+        ) : null}
       </View>
       <AnimatedFlashList
         ref={listRef as React.RefObject<any>}

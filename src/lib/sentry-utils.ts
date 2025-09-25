@@ -1,5 +1,7 @@
 import { getPrivacyConsentSync } from './privacy-consent';
 
+type ErrorContext = Record<string, unknown>;
+
 /**
  * Regex patterns for detecting sensitive information
  */
@@ -262,7 +264,10 @@ export function sanitizeObjectPII<T = unknown>(value: T, maxDepth = 6): T {
  * If synchronous behavior is needed, consider using a fire-and-forget approach
  * with privacy consent checking as suggested by CodeRabbit AI.
  */
-export async function captureCategorizedError(error: unknown): Promise<void> {
+export async function captureCategorizedError(
+  error: unknown,
+  context?: ErrorContext
+): Promise<void> {
   try {
     // Dynamic imports to avoid requiring modules at bundle time
     // This prevents Sentry from being initialized unless actually used
@@ -279,13 +284,18 @@ export async function captureCategorizedError(error: unknown): Promise<void> {
     const cat = categorizeError(error);
 
     // Capture with enhanced metadata for better debugging
+    const sanitizedContext = context ? sanitizeObjectPII(context) : {};
+
     SentryClient.captureException(error, {
       tags: {
         category: cat.category,
         retryable: String(cat.isRetryable),
         status: cat.statusCode ? String(cat.statusCode) : undefined,
       },
-      extra: { categorizedMessage: cat.message },
+      extra: {
+        categorizedMessage: cat.message,
+        ...sanitizedContext,
+      },
     });
   } catch {
     // Silently fail if imports or categorization fails
@@ -304,7 +314,10 @@ export async function captureCategorizedError(error: unknown): Promise<void> {
  *
  * @param error - The error to capture (can be any type)
  */
-export function captureCategorizedErrorSync(error: unknown): void {
+export function captureCategorizedErrorSync(
+  error: unknown,
+  context?: ErrorContext
+): void {
   // Respect user consent before doing any work using synchronous cache
   const consent = getPrivacyConsentSync();
 
@@ -322,6 +335,8 @@ export function captureCategorizedErrorSync(error: unknown): void {
   }
 
   // Lazy-load modules; do not block the caller
+  const sanitizedContext = context ? sanitizeObjectPII(context) : {};
+
   void Promise.all([
     import('@sentry/react-native'),
     import('@/lib/error-handling'),
@@ -337,7 +352,10 @@ export function captureCategorizedErrorSync(error: unknown): void {
           retryable: String(cat.isRetryable),
           status: cat.statusCode ? String(cat.statusCode) : undefined,
         },
-        extra: { categorizedMessage: cat.message },
+        extra: {
+          categorizedMessage: cat.message,
+          ...sanitizedContext,
+        },
       });
     })
     .catch(() => {

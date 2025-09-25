@@ -1,4 +1,31 @@
 {
+  "accessibility": {
+    "common": {
+      "retry_hint": "Retries the last action."
+    },
+    "community": {
+      "compose_hint": "Opens the Create Post screen.",
+      "create_post_hint": "Opens the Create Post screen.",
+      "open_post_hint": "Opens the post details screen."
+    },
+    "home": {
+      "open_settings_hint": "Opens the Settings screen.",
+      "share_update_hint": "Opens the Create Post screen."
+    },
+    "plants": {
+      "open_detail_hint": "Opens plant details."
+    },
+    "strains": {
+      "open_detail_hint": "Opens strain details."
+    },
+    "tabs": {
+      "calendar_hint": "Double-tap to open the Calendar tab.",
+      "community_hint": "Double-tap to view the Community feed.",
+      "home_hint": "Double-tap to view the Home overview.",
+      "plants_hint": "Double-tap to open the Plants inventory.",
+      "strains_hint": "Double-tap to browse strains."
+    }
+  },
   "calendar": {
     "drag_item_hint": "Long-press then drag to reschedule. Double-tap to open move menu.",
     "drag_item_label": "Drag {{title}}",
@@ -39,8 +66,17 @@
   "community": {
     "create_post": "Create Post",
     "empty_state": "No posts yet. Be the first to share!",
+    "list_empty_body": "We’ll show updates once they’re available.",
+    "list_empty_title": "Nothing here yet",
+    "list_error_body": "Please check your connection and try again.",
+    "list_error_title": "We couldn’t load this",
+    "list_retry": "Try again",
     "load_error": "Failed to load posts. Tap to retry.",
-    "loading": "Loading posts..."
+    "loading": "Loading posts...",
+    "posts_count": "{{count}} posts",
+    "posts_count_one": "{{count}} post",
+    "posts_count_other": "{{count}} posts",
+    "posts_count_zero": "No posts yet"
   },
   "consent": {
     "accept_all": "Accept all",
@@ -134,6 +170,12 @@
   },
   "errors": {
     "postLoad": "Error loading post"
+  },
+  "home": {
+    "open_settings": "Open Settings",
+    "share_update_cta": "Share update",
+    "share_update_subtitle": "Let the community know how your plants are doing.",
+    "share_update_title": "Share a grow update"
   },
   "moderation": {
     "audit": {
@@ -307,6 +349,10 @@
     "error": "Failed to load strains. Try again.",
     "no_results": "No strains found",
     "offline_notice": "Showing saved strains",
+    "results_count": "{{count}} strains",
+    "results_count_one": "{{count}} strain",
+    "results_count_other": "{{count}} strains",
+    "results_count_zero": "No strains",
     "retry": "Retry",
     "search_placeholder": "Search strains…"
   },

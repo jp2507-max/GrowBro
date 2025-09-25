@@ -22,10 +22,12 @@ import {
   hydrateAuth,
   loadSelectedTheme,
   SDKGate,
+  setAnalyticsClient,
   startAgeGateSession,
   useAgeGate,
   useIsFirstTime,
 } from '@/lib';
+import { NoopAnalytics } from '@/lib/analytics';
 import {
   hasConsent,
   initializePrivacyConsent,
@@ -65,6 +67,9 @@ SDKGate.registerSDK('analytics', 'telemetry', [
 ]);
 SDKGate.installNetworkSafetyNet?.();
 installAiConsentHooks();
+
+// Initialize analytics registry with noop client to ensure zero traffic before consent
+setAnalyticsClient(NoopAnalytics);
 
 // i18n initialization moved to RootLayout component to prevent race conditions
 // where components render with untranslated keys before i18n completes
@@ -202,6 +207,7 @@ function AppStack(): React.ReactElement {
   return (
     <Stack>
       <Stack.Screen name="(app)" options={{ headerShown: false }} />
+      <Stack.Screen name="(modals)" options={{ headerShown: false }} />
       <Stack.Screen name="age-gate" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />

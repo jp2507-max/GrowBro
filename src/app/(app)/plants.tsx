@@ -20,7 +20,7 @@ import { FocusAwareStatusBar, Input, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
-import { useNetworkStatus } from '@/lib/hooks';
+import { useNetworkStatus, useScreenErrorLogger } from '@/lib/hooks';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -33,6 +33,7 @@ function usePlantsData(searchQuery: string) {
     data,
     isLoading,
     isError,
+    error,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -52,6 +53,7 @@ function usePlantsData(searchQuery: string) {
     hasNextPage,
     isFetchingNextPage,
     refetch,
+    error,
   } as const;
 }
 
@@ -117,6 +119,7 @@ export default function PlantsScreen(): React.ReactElement {
     plants,
     isLoading,
     isError,
+    error,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -136,6 +139,19 @@ export default function PlantsScreen(): React.ReactElement {
   }, [isOffline, plants, cachedPlants]);
 
   const isSkeletonVisible = useSkeletonVisibility(isLoading, plants.length);
+
+  useScreenErrorLogger(isError ? error : null, {
+    screen: 'plants',
+    feature: 'plants-inventory',
+    action: 'fetch',
+    queryKey: 'plants-infinite',
+    metadata: {
+      itemCount: plants.length,
+      isOffline,
+      isFetchingNextPage,
+      hasNextPage,
+    },
+  });
 
   const onRetry = React.useCallback(() => {
     void refetch();

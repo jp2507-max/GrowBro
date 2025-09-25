@@ -45,6 +45,25 @@ export type AnalyticsEvents = {
     ms: number;
   };
 
+  // Home UI analytics events
+  community_view: {
+    post_count: number;
+  };
+  community_empty: {
+    trigger: 'initial_load' | 'refresh';
+  };
+  community_error: {
+    error_type: string;
+  };
+  home_view: {
+    widgets_shown: string[];
+  };
+  strain_search: {
+    query: string;
+    results_count: number;
+    is_offline: boolean;
+  };
+
   // Plant telemetry events
   plant_watered: {
     taskId: string;
@@ -79,6 +98,9 @@ export type AnalyticsEvents = {
     ms: number;
   };
   perf_cold_start_ms: {
+    ms: number;
+  };
+  home_tti_ms: {
     ms: number;
   };
 

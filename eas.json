@@ -54,7 +54,8 @@
       "env": {
         "APP_ENV": "development",
         "EXPO_NO_DOTENV": "1",
-        "HUSKY": "0"
+        "HUSKY": "0",
+        "BUNDLE_ID": "com.growbro.development"
       }
     },
     "simulator": {
@@ -72,11 +73,6 @@
         "EXPO_NO_DOTENV": "1",
         "HUSKY": "0"
       }
-    }
-  },
-  "updates": {
-    "runtimeVersion": {
-      "policy": "appVersion"
     }
   },
   "submit": {

@@ -1,6 +1,6 @@
 /* eslint-disable simple-import-sort/imports */
 import React from 'react';
-import { Platform, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -21,7 +21,6 @@ export function OptionalBlurView({
 }: BlurProps) {
   const [Blur, setBlur] = React.useState<React.ComponentType<any> | null>(null);
   React.useEffect(() => {
-    if (Platform.OS !== 'ios') return;
     const moduleName = 'expo-blur';
     // Dynamic import to avoid bundling/type resolution issues if expo-blur is not installed yet
     import(moduleName)
@@ -29,7 +28,7 @@ export function OptionalBlurView({
       .catch(() => setBlur(null));
   }, []);
 
-  if (Platform.OS !== 'ios' || !Blur) return null;
+  if (!Blur) return null;
 
   return (
     <Blur

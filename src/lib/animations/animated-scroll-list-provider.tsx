@@ -1,8 +1,7 @@
 /* eslint-disable react-compiler/react-compiler */
 import React from 'react';
-import {
-  type SharedValue,
-  useAnimatedScrollHandler,
+import type { SharedValue } from 'react-native-reanimated';
+import useAnimatedScrollHandler, {
   useSharedValue,
 } from 'react-native-reanimated';
 

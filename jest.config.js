@@ -38,6 +38,9 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@env$': '<rootDir>/src/lib/env.js',
     '\\.(css)$': '<rootDir>/__mocks__/style-mock.js',
+    '^react-native-css-interop$':
+      '<rootDir>/__mocks__/react-native-css-interop.ts',
+    '^@shopify/flash-list$': '<rootDir>/__mocks__/@shopify/flash-list.tsx',
     '^@gorhom/bottom-sheet(.*)$':
       '<rootDir>/__mocks__/@gorhom/bottom-sheet.tsx',
     '^@nozbe/watermelondb/adapters/sqlite$':

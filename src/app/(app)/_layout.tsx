@@ -13,27 +13,71 @@ import {
 } from '@/components/ui/icons';
 import { translate, useAgeGate, useAuth, useIsFirstTime } from '@/lib';
 import { AnimatedScrollListProvider } from '@/lib/animations/animated-scroll-list-provider';
+import { useThemeConfig } from '@/lib/use-theme-config';
 
-const tabScreenOptions = {
-  tabBarHideOnKeyboard: true,
-  freezeOnBlur: true,
-  header: ({ route, options }: { route: { name: string }; options: any }) => (
+type HeaderOptions = {
+  route: { name: string };
+  options: Record<string, unknown>;
+};
+
+function resolveBooleanOption(
+  options: Record<string, unknown>,
+  key: 'showConnectivity' | 'showSync'
+): boolean {
+  if (Object.prototype.hasOwnProperty.call(options, key)) {
+    return Boolean(options[key]);
+  }
+  return true;
+}
+
+function renderSharedHeader({
+  route,
+  options,
+}: HeaderOptions): React.ReactElement {
+  const rightComponent =
+    typeof options.headerRight === 'function'
+      ? (options.headerRight as () => React.ReactNode)()
+      : undefined;
+  const title =
+    (options.headerTitle as string) ?? (options.title as string) ?? route.name;
+
+  return (
     <SharedHeader
-      rightComponent={options.headerRight?.()}
-      showConnectivity={options.showConnectivity ?? true}
-      showSync={options.showSync ?? true}
-      title={options.headerTitle ?? options.title ?? route.name}
+      rightComponent={rightComponent}
+      showConnectivity={resolveBooleanOption(options, 'showConnectivity')}
+      showSync={resolveBooleanOption(options, 'showSync')}
+      title={title}
       routeName={route.name}
     />
-  ),
-  headerStyle: { height: 148 },
-};
+  );
+}
+
+function useTabScreenOptions(theme: ReturnType<typeof useThemeConfig>) {
+  return React.useMemo(
+    () => ({
+      tabBarHideOnKeyboard: true,
+      freezeOnBlur: true,
+      detachInactiveScreens: true,
+      header: renderSharedHeader,
+      headerStyle: {
+        height: 148,
+        backgroundColor: theme.colors.card,
+      },
+      sceneStyle: {
+        backgroundColor: theme.colors.background,
+      },
+    }),
+    [theme.colors.background, theme.colors.card]
+  );
+}
 
 export default function TabLayout() {
   const status = useAuth.use.status();
   const [isFirstTime] = useIsFirstTime();
   // eslint-disable-next-line react-compiler/react-compiler
   const ageGateStatus = useAgeGate.status();
+  const theme = useThemeConfig();
+  const tabScreenOptions = useTabScreenOptions(theme);
   const hideSplash = React.useCallback(async () => {
     await SplashScreen.hideAsync();
   }, []);
@@ -134,21 +178,36 @@ function StrainsTab(): React.ReactElement {
 }
 
 const CreateNewPostLink = () => {
+  const createPostLabel = translate('community.create_post');
+  const createPostHint = translate('accessibility.community.create_post_hint');
   return (
-    <Link href="/community/add-post" asChild>
-      <Pressable>
-        <Text className="px-3 text-primary-300">Create</Text>
+    <Link href="/add-post" asChild>
+      <Pressable
+        className="ml-3 h-12 flex-row items-center rounded-full bg-primary-600 px-5"
+        accessibilityRole="button"
+        accessibilityLabel={createPostLabel}
+        accessibilityHint={createPostHint}
+        testID="community-header-create"
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Text className="text-sm font-semibold text-neutral-50">
+          {createPostLabel}
+        </Text>
       </Pressable>
     </Link>
   );
 };
-
 const SettingsLink = () => {
+  const settingsLabel = translate('home.open_settings');
+  const settingsHint = translate('accessibility.home.open_settings_hint');
   return (
-    <Link href="/(app)/settings" asChild>
+    <Link href="/settings" asChild>
       <Pressable
+        className="ml-3 size-12 items-center justify-center"
         accessibilityRole="button"
-        accessibilityLabel={translate('settings.title')}
+        accessibilityLabel={settingsLabel}
+        accessibilityHint={settingsHint}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
         <SettingsIcon />
       </Pressable>

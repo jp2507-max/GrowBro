@@ -15,9 +15,12 @@ import {
   CommunitySkeletonList,
 } from '@/components/community';
 import { ComposeBtn } from '@/components/compose-btn';
-import { FocusAwareStatusBar, View } from '@/components/ui';
+import { FocusAwareStatusBar, Text, View } from '@/components/ui';
+import { translate, useAnalytics } from '@/lib';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
+import { useScreenErrorLogger } from '@/lib/hooks';
+import type { TxKeyPath } from '@/lib/i18n';
 
 const AnimatedFlashList: any = Animated.createAnimatedComponent(
   FlashList as any
@@ -28,6 +31,7 @@ function useCommunityData() {
     data,
     isLoading,
     isError,
+    error,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -47,6 +51,7 @@ function useCommunityData() {
     hasNextPage,
     isFetchingNextPage,
     refetch,
+    error,
   } as const;
 }
 
@@ -87,11 +92,13 @@ export default function CommunityScreen(): React.ReactElement {
   const { listRef, scrollHandler, listPointerEvents } = useAnimatedScrollList();
   useScrollToTop(listRef);
   const { grossHeight } = useBottomTabBarHeight();
+  const analytics = useAnalytics();
 
   const {
     posts,
     isLoading,
     isError,
+    error,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -99,13 +106,70 @@ export default function CommunityScreen(): React.ReactElement {
   } = useCommunityData();
 
   const isSkeletonVisible = useSkeletonVisibility(isLoading, posts.length);
+  const hasTrackedViewRef = React.useRef(false);
+  const trackedEmptyReasonsRef = React.useRef<Set<'initial_load' | 'refresh'>>(
+    new Set()
+  );
+  const emptyTriggerRef = React.useRef<'initial_load' | 'refresh'>(
+    'initial_load'
+  );
+  const lastErrorTypeRef = React.useRef<string | null>(null);
+
+  useScreenErrorLogger(isError ? error : null, {
+    screen: 'community',
+    feature: 'community-feed',
+    action: 'fetch',
+    queryKey: 'posts-infinite',
+    metadata: {
+      postsCount: posts.length,
+      isFetchingNextPage,
+      hasNextPage,
+    },
+  });
+
+  React.useEffect(() => {
+    if (hasTrackedViewRef.current) return;
+    if (isLoading || isSkeletonVisible) return;
+    hasTrackedViewRef.current = true;
+    void analytics.track('community_view', { post_count: posts.length });
+  }, [analytics, isLoading, isSkeletonVisible, posts.length]);
+
+  React.useEffect(() => {
+    if (isLoading || isSkeletonVisible || isError) return;
+    if (posts.length > 0) {
+      trackedEmptyReasonsRef.current.clear();
+      return;
+    }
+
+    const reason = emptyTriggerRef.current;
+    if (trackedEmptyReasonsRef.current.has(reason)) return;
+    trackedEmptyReasonsRef.current.add(reason);
+    void analytics.track('community_empty', { trigger: reason });
+  }, [analytics, isError, isLoading, isSkeletonVisible, posts.length]);
+
+  React.useEffect(() => {
+    if (!isError) {
+      lastErrorTypeRef.current = null;
+      return;
+    }
+
+    const errorType =
+      (error?.name && error.name.trim()) ||
+      (error?.message && error.message.trim()) ||
+      'unknown';
+    if (lastErrorTypeRef.current === errorType) return;
+    lastErrorTypeRef.current = errorType;
+    void analytics.track('community_error', { error_type: errorType });
+  }, [analytics, error, isError]);
 
   const onRetry = React.useCallback(() => {
+    emptyTriggerRef.current = 'refresh';
+    trackedEmptyReasonsRef.current.delete('refresh');
     void refetch();
   }, [refetch]);
 
   const onCreatePress = React.useCallback(() => {
-    router.push('/community/add-post');
+    router.push('/add-post');
   }, [router]);
 
   const renderItem = React.useCallback(
@@ -123,23 +187,6 @@ export default function CommunityScreen(): React.ReactElement {
     return <CommunityEmptyState onCreatePress={onCreatePress} />;
   }, [isSkeletonVisible, isError, onRetry, onCreatePress]);
 
-  const listHeader = React.useMemo(
-    () => (
-      <View className="px-4 pb-4">
-        <CannabisEducationalBanner />
-        {posts.length > 0 && isError ? (
-          <View className="pt-4">
-            <CommunityErrorCard
-              onRetry={onRetry}
-              testID="community-inline-error"
-            />
-          </View>
-        ) : null}
-      </View>
-    ),
-    [posts.length, isError, onRetry]
-  );
-
   const listFooter = React.useCallback(
     () => <CommunityFooterLoader isVisible={isFetchingNextPage} />,
     [isFetchingNextPage]
@@ -150,6 +197,16 @@ export default function CommunityScreen(): React.ReactElement {
     void fetchNextPage();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
+  const showPostsCount = !isSkeletonVisible;
+  const postsCountKey: TxKeyPath = React.useMemo(() => {
+    if (posts.length === 0) return 'community.posts_count_zero';
+    if (posts.length === 1) return 'community.posts_count_one';
+    return 'community.posts_count_other';
+  }, [posts.length]);
+  const postsCountLabel = translate(postsCountKey, {
+    count: posts.length,
+  });
+
   return (
     <CommunityListView
       listRef={listRef}
@@ -158,7 +215,28 @@ export default function CommunityScreen(): React.ReactElement {
       onEndReached={onEndReached}
       scrollHandler={scrollHandler}
       grossHeight={grossHeight}
-      listHeader={listHeader}
+      listHeader={
+        <View className="px-4 pb-4">
+          <CannabisEducationalBanner />
+          {showPostsCount ? (
+            <Text
+              className="pt-4 text-sm text-neutral-600 dark:text-neutral-300"
+              accessibilityRole="text"
+              testID="community-posts-count"
+            >
+              {postsCountLabel}
+            </Text>
+          ) : null}
+          {posts.length > 0 && isError ? (
+            <View className="pt-4">
+              <CommunityErrorCard
+                onRetry={onRetry}
+                testID="community-inline-error"
+              />
+            </View>
+          ) : null}
+        </View>
+      }
       listEmpty={listEmpty}
       listFooter={listFooter}
       listInteractiveStyle={listInteractiveStyle}

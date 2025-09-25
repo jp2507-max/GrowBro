@@ -20,12 +20,15 @@ applyTo: '**'
 - **Semi-Pro Growers**: Template-based tasks and accurate harvest tracking
 - **Community Enthusiasts**: Social features and knowledge sharing
 
-## Key Constraints
+## Key Principles
 
-- **Age-gated 18+** - strict compliance requirement
-- **No commerce features** - educational content only, no sales/delivery
-- **Privacy-focused** - user data protection, opt-in sharing
-- **Legal compliance** - avoid consumption encouragement, include disclaimers
+- **Educational Focus**: All content is educational; no commerce or product sales
+- **Privacy-First**: Default-private data, explicit opt-ins for sharing, minimal retention, clear data export/delete
+- **Offline-First**: Core functionality works offline; queue-and-sync for posts/tasks; predictable conflict resolution
+- **Age-Gated**: 18+ or 21+ where required; regional/legal disclaimers; geofencing where mandated
+- **Compliance**: Adheres to app store policies and regional regulations; legal review for jurisdictional restrictions
+- **Content Moderation & Safety**: Reporting, blocking, rate limiting, and transparent enforcement workflow
+- **Accessibility**: WCAG-inspired mobile a11y (screen reader labels, contrast, larger text, focus order)
 
 ## Success Metrics
 

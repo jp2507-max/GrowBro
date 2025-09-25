@@ -46,27 +46,27 @@
     - Prefer measured/variable heights (capture via onLayout) instead of assuming a fixed ITEM_HEIGHT, since cards may grow with notes/metadata.
     - Reuse the same pattern for the future Strains browser to keep list interactions visually consistent across Plants/Strains.
 
-- [ ] 6. Add Create Post functionality and navigation
+- [x] 6. Add Create Post functionality and navigation
   - Create "Create" button in Community headerRight that navigates to /community/add-post
   - Add "Share update" quick action on Home screen
   - Implement modal presentation for add-post screen in (modals) group with presentation: 'modal'
   - Ensure all Create buttons have proper accessibilityRole and localized labels
   - _Requirements: 4.1, 4.2, 4.3_
 
-- [ ] 7. Set up Settings access from Home header
+- [x] 7. Set up Settings access from Home header
   - Add Settings icon in Home headerRight that navigates to /settings
   - Move Settings screen outside of tabs structure to keep tab bar consistent
   - Ensure Settings icon has accessible label "Open Settings" and ≥44×44pt touch target
   - _Requirements: 12.1, 12.2, 12.3_
 
-- [ ] 8. Enhance Home screen with overview content
+- [x] 8. Enhance Home screen with overview content
   - Update Home screen to show light overview/dashboard content (snapshot + quick actions)
   - Add "Share update" quick action component
   - Implement proper loading and error states for Home content
   - Avoid realtime subscriptions on Home (reserve for Community to save battery)
   - _Requirements: 4.2_
 
-- [ ] 9. Update existing UI components for FlashList v2 compatibility
+- [x] 9. Update existing UI components for FlashList v2 compatibility
   - Modify src/components/ui/list.tsx to support FlashList v2 patterns (remove all size estimates)
   - Add stable keyExtractor support and ensure parent containers have flex: 1
   - Update EmptyList component to support skeleton loading with timeout
@@ -74,7 +74,7 @@
   - Verify no contentContainerStyle={{flexGrow:1}} usage that could cause sizing issues
   - _Requirements: 3.4, 8.1_
 
-- [ ] 10. Implement theme integration and performance optimizations
+- [x] 10. Implement theme integration and performance optimizations
   - Ensure all new components respect useThemeConfig dark/light settings
   - Avoid per-frame class toggling during theme changes
   - Implement proper tab bar styling with theme colors
@@ -82,7 +82,7 @@
   - Verify lists maintain 60fps scrolling performance
   - _Requirements: 5.1, 5.2, 8.1, 8.2, 8.3_
 
-- [ ] 11. Add comprehensive internationalization support
+- [x] 11. Add comprehensive internationalization support
   - Create new translation keys for tabs, community, and strains in en.json and de.json
   - Implement ICU plurals for count-based strings (e.g., 0/1/n posts, strains)
   - Ensure Expo Router tab labels are localized

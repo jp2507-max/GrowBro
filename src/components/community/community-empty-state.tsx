@@ -24,7 +24,9 @@ export function CommunityEmptyState({
       <Button
         label={translate('community.create_post')}
         onPress={onCreatePress}
-        accessibilityHint={translate('community.create_post')}
+        accessibilityHint={translate(
+          'accessibility.community.create_post_hint'
+        )}
         accessibilityRole="button"
         testID="community-empty-state-create"
       />
