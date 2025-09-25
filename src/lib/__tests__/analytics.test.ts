@@ -261,16 +261,62 @@ describe('ConsentGatedAnalytics', () => {
       expect(events[0].payload).toEqual(payload);
     });
 
-    it('handles empty or minimal payloads correctly', () => {
-      gatedClient.track('trichome_helper_open', { playbookId: 'pb-123' });
+    it('sanitizes community_error payloads with context', () => {
+      const payload = {
+        error_type: 'network' as const,
+        context: {
+          strain_search: {
+            query: 'test query with email@example.com',
+            results_count: 5,
+            is_offline: false,
+          },
+          home_view: {
+            widgets_shown: [
+              'widget1',
+              'widget2',
+              'widget3',
+              'widget4',
+              'widget5',
+              'widget6',
+              'widget7',
+              'widget8',
+              'widget9',
+              'widget10',
+              'widget11',
+            ],
+          },
+        },
+      };
+
+      gatedClient.track('community_error', payload);
 
       const events = baseClient.getAll();
       expect(events).toHaveLength(1);
 
-      const payload = events[0].payload as any;
-      expect(payload.playbookId).toBe('pb-123');
-      // Should not have any unexpected PII fields
-      expect(Object.keys(payload)).toEqual(['playbookId']);
+      const sanitizedPayload = events[0].payload as any;
+      // error_type should be sanitized
+      expect(sanitizedPayload.error_type).toBe('network');
+
+      // strain_search should have sanitized_query instead of query
+      expect(sanitizedPayload.context.strain_search.sanitized_query).toBe(
+        'test query with [redacted_email]'
+      );
+      expect(sanitizedPayload.context.strain_search.query).toBeUndefined();
+
+      // home_view widgets should be sanitized and limited to 10
+      expect(sanitizedPayload.context.home_view.widgets_shown).toHaveLength(10);
+      expect(sanitizedPayload.context.home_view.widgets_shown).toEqual([
+        'widget1',
+        'widget2',
+        'widget3',
+        'widget4',
+        'widget5',
+        'widget6',
+        'widget7',
+        'widget8',
+        'widget9',
+        'widget10',
+      ]);
     });
   });
 

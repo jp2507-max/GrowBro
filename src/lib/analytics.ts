@@ -54,6 +54,17 @@ export type AnalyticsEvents = {
   };
   community_error: {
     error_type: 'network' | 'validation' | 'timeout' | 'unknown';
+    context?: {
+      strain_search?: {
+        query?: string;
+        sanitized_query?: string;
+        results_count: number;
+        is_offline: boolean;
+      };
+      home_view?: {
+        widgets_shown: string[];
+      };
+    };
   };
   home_view: {
     widgets_shown: string[];
@@ -280,44 +291,46 @@ function sanitizeStrainSearchPayload<N extends AnalyticsEventName>(
 }
 
 // Sanitize community error event payloads
-function sanitizeCommunityErrorPayload<N extends AnalyticsEventName>(
-  payload: AnalyticsEventPayload<N>
-): AnalyticsEventPayload<N> {
-  const sanitized = { ...payload } as any;
+function sanitizeCommunityErrorPayload(
+  payload: AnalyticsEventPayload<'community_error'>
+): AnalyticsEventPayload<'community_error'> {
+  const sanitized = { ...payload };
+
+  // Sanitize error_type
   if (typeof sanitized.error_type === 'string') {
     sanitized.error_type = sanitizeCommunityErrorType(sanitized.error_type);
   }
-  // Additional sanitization for community_error payloads that may contain
-  // user-provided search queries or widget identifiers.
-  try {
-    const hasStrainSearch =
-      sanitized.strain_search && typeof sanitized.strain_search === 'object';
-    if (hasStrainSearch) {
-      const ss = { ...sanitized.strain_search } as any;
-      if (typeof ss.query === 'string') {
-        ss.query = sanitizeSearchQuery(ss.query);
+
+  // Sanitize context if it exists
+  if (sanitized.context && typeof sanitized.context === 'object') {
+    const context = { ...sanitized.context };
+
+    // Handle strain_search in context
+    if (context.strain_search && typeof context.strain_search === 'object') {
+      const strainSearch = { ...context.strain_search };
+      if (typeof strainSearch.query === 'string') {
+        strainSearch.sanitized_query = sanitizeSearchQuery(strainSearch.query);
+        delete strainSearch.query;
       }
-      sanitized.strain_search = ss;
+      context.strain_search = strainSearch;
     }
 
-    if (sanitized.home_view && typeof sanitized.home_view === 'object') {
-      const hv = { ...sanitized.home_view } as any;
-      if (Array.isArray(hv.widgets_shown)) {
-        // Sanitize each widget string and bound the array length to 10 items
-        const maxItems = 10;
-        hv.widgets_shown = hv.widgets_shown
-          .filter((w: any) => typeof w === 'string')
-          .slice(0, maxItems)
-          .map((w: string) => sanitizeSearchQuery(w));
+    // Handle home_view in context
+    if (context.home_view && typeof context.home_view === 'object') {
+      const homeView = { ...context.home_view };
+      if (Array.isArray(homeView.widgets_shown)) {
+        homeView.widgets_shown = homeView.widgets_shown
+          .filter((widget): widget is string => typeof widget === 'string')
+          .slice(0, 10)
+          .map((widget) => sanitizeSearchQuery(widget));
       }
-      sanitized.home_view = hv;
+      context.home_view = homeView;
     }
-  } catch {
-    // If anything unexpected happens, fall back to the original minimal sanitized object
-    return sanitized as AnalyticsEventPayload<N>;
+
+    sanitized.context = context;
   }
 
-  return sanitized as AnalyticsEventPayload<N>;
+  return sanitized;
 }
 
 // Sanitize playbook-related event payloads
@@ -370,7 +383,9 @@ function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(
 
   // Sanitize community error types to prevent PII leakage
   if (name === 'community_error') {
-    return sanitizeCommunityErrorPayload(payload);
+    return sanitizeCommunityErrorPayload(
+      payload as AnalyticsEventPayload<'community_error'>
+    ) as AnalyticsEventPayload<N>;
   }
 
   if (name === 'home_view') {
