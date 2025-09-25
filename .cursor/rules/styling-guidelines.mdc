@@ -106,6 +106,18 @@ const st = useAnimatedStyle(() => ({
 - Linting: `eslint-plugin-tailwindcss` enforces class order. Keep `className` stable across frames.
 - Add tokens by editing `src/components/ui/colors.js`; Tailwind already imports it.
 
+### 🌈 Theme tokens workflow (GrowBro standard)
+
+- **Palette first:** tweak shades in `src/components/ui/colors.js`. Tailwind classes & runtime tokens consume the same palette, so a single change propagates everywhere.
+- **Semantic roles:** `src/lib/theme-tokens.ts` defines light/dark roles for `surface`, `text`, and `action` (primary, CTA, link, focus ring). Use these instead of hardcoding palette indices inside components.
+  - Navigation themes already read from `themeRoles`.
+  - Dynamic styles (buttons, alerts, focus rings) should import the relevant token rather than `colors.*` directly.
+- **Tailwind vs. tokens:**
+  - Use Tailwind classes (e.g., `bg-primary-600`) for static layout.
+  - Use theme tokens when you need runtime decisions (`style` props, React Navigation, FlashMessage, conditional focus rings).
+- **States & accessibility:** tokens include hover/background/content colors plus focus-ring values; always combine CTA/primary backgrounds with their `content` color for readable text.
+- **Adding new roles:** extend `themeRoles` (and document the intent) before sprinkling ad-hoc palette references—keeps contrast and theming audit-friendly.
+
 ---
 
 ## Layout transitions

@@ -1,12 +1,12 @@
-TASK_ID: {2} with subtasks (make sure task with sub task is fully implemented)
+TASK_ID: {15} with subtasks (make sure task with sub task is fully implemented)
 AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the plan
 
 CONTEXT
 
-- Feature: 4. observability-and-quality
-- Task index: .kiro\specs\4. observability-and-quality\tasks.md
-- Design spec: .kiro\specs\4. observability-and-quality\design.md
-- Requirements spec: .kiro\specs\4. observability-and-quality\requirements.md
+- Feature: 9. home-ui-v1
+- Task index: .kiro\specs\9. home-ui-v1\tasks.md
+- Design spec: .kiro\specs\9. home-ui-v1\design.md
+- Requirements spec: .kiro\specs\9. home-ui-v1\requirements.md
 
 CONTRACT (outputs)
 
@@ -19,7 +19,7 @@ STRICT PROCEDURE
 
 1. Read only Task {TASK_ID} in the tasks index.
 2. Extract requirement IDs or inline bullets. If IDs, read ONLY those lines from `requirements.md`. If inline bullets, treat those bullets as the requirements.
-3. If Task {TASK_ID} does NOT explicitly reference design sections, SEARCH the design spec for phrases matching the task title (e.g., "background sync", "image upload") and read any matching sections. The design file is mandatory context for implementation details. When the design is long (≈200+ lines), has multiple subsystems, or contains non‑trivial code/config blocks, prepare both an Executive summary and an Expanded design notes section (see Output Format) so no critical implementation detail is lost to a hard bullet cap.
+3. If Task {TASK_ID} does NOT explicitly reference design sections, SEARCH the design spec for phrases matching the task title (e.g., "background sync", "image upload") and read any matching sections. The design file is mandatory context for implementation details. When the design is long (≈200+ lines), has multiple subsystems, or contains non‑trivial code/config blocks, prepare both an Executive summary and an Expanded design notes section (see Output Format) so no critical implementation detail is lost to a hard bullet cap but dont present it to me, its just for you.
 4. Inspect the task file for implementation hints/file paths.
 5. Consult external package docs when required.
 
@@ -39,7 +39,7 @@ OUTPUT FORMAT
 
 AUTO-CONTINUE
 
-- If AUTO_CONTINUE=auto and no blocking questions, implement the plan. Create commits and run typecheck/lint/tests. If failures occur, attempt up to 2 quick fixes and then report a blocker.
+- When AUTO_CONTINUE=auto and no blocking questions exist, execute the plan and continue through commits, typecheck/lint/tests; on failures attempt up to two quick fixes then report a blocker.
 
 VERIFICATION (local)
 

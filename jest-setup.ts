@@ -86,6 +86,31 @@ jest.mock('react-native-reanimated', () => {
   return mockReanimated;
 });
 
+// mock: animated-scroll-list-provider to avoid context dependency in tests
+jest.mock('@/lib/animations/animated-scroll-list-provider', () => ({
+  useAnimatedScrollList: () => ({
+    listRef: { current: null },
+    scrollHandler: jest.fn(),
+    listPointerEvents: { value: true },
+    listOffsetY: { value: 0 },
+    isDragging: { value: false },
+    scrollDirection: { value: 'none' },
+    offsetYAnchorOnBeginDrag: { value: 0 },
+    offsetYAnchorOnChangeDirection: { value: 0 },
+    velocityOnEndDrag: { value: 0 },
+    enableAutoScrollLock: jest.fn(),
+  }),
+  AnimatedScrollListProvider: ({ children }: any) => children ?? null,
+}));
+
+// mock: bottom tab bar height hook
+jest.mock('@/lib/animations/use-bottom-tab-bar-height', () => ({
+  useBottomTabBarHeight: () => ({
+    netHeight: 80,
+    grossHeight: 80,
+  }),
+}));
+
 // mock: nativewind exports used by components. Provide cssInterop no-op plus
 // stubs for useColorScheme, colorScheme and setColorScheme so components that
 // call these hooks in tests won't throw TypeError.
@@ -144,13 +169,12 @@ jest.mock('react-native-edge-to-edge', () => ({
   SystemBars: () => null,
 }));
 
-// mock: @shopify/flash-list with a minimal stub that preserves API shape
-jest.mock('@shopify/flash-list', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- intentional require for test stub
-  const React = require('react');
-  const FlashList = React.forwardRef((_props: any, _ref: any) => null);
-  return { FlashList };
-});
+// mock: @shopify/flash-list leverages manual mock backed by FlatList so list
+// props like ListEmptyComponent render during tests
+jest.mock('@shopify/flash-list', () =>
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- reuse shared manual mock
+  require('__mocks__/@shopify/flash-list')
+);
 
 // mock: react-navigation to provide a minimal NavigationContainer and hooks
 jest.mock('@react-navigation/native', () => {
@@ -159,6 +183,7 @@ jest.mock('@react-navigation/native', () => {
   return {
     NavigationContainer,
     useIsFocused: () => true,
+    useScrollToTop: () => {},
     // Provide identity ThemeProvider/value to satisfy consumers if used
     ThemeProvider: ({ children, _value }: any) => children ?? null,
     DefaultTheme: {},
@@ -313,6 +338,27 @@ jest.mock('@react-native-community/netinfo', () => ({
     });
     return () => {};
   }),
+}));
+
+// mock: expo-router to avoid native navigation in tests
+jest.mock('expo-router', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+    canGoBack: jest.fn(() => true),
+  }),
+  useLocalSearchParams: () => ({}),
+  useSearchParams: () => ({}),
+  useSegments: () => [],
+  usePathname: () => '/',
+  Link: ({ children, ..._props }: any) => children ?? null,
+  Stack: {
+    Screen: ({ children, ..._props }: any) => children ?? null,
+  },
+  Tabs: {
+    Screen: ({ children, ..._props }: any) => children ?? null,
+  },
 }));
 
 // Global cleanup to reduce risk of hanging Jest due to stray timers or intervals

@@ -23,7 +23,9 @@ GrowBro is a mobile application designed to help home growers plan, track, and o
 ## Key Principles
 
 - **Educational Focus**: All content is educational; no commerce or product sales
-- **Privacy-First**: User data protection with explicit opt-ins for sharing
-- **Offline-First**: Core functionality works without internet connection
-- **Age-Gated**: 18+ only with appropriate legal disclaimers
-- **Compliance**: Adheres to app store policies and regional regulations
+- **Privacy-First**: Default-private data, explicit opt-ins for sharing, minimal retention, clear data export/delete
+- **Offline-First**: Core functionality works offline; queue-and-sync for posts/tasks; predictable conflict resolution
+- **Age-Gated**: 18+ or 21+ where required; regional/legal disclaimers; geofencing where mandated
+- **Compliance**: Adheres to app store policies and regional regulations; legal review for jurisdictional restrictions
+- **Content Moderation & Safety**: Reporting, blocking, rate limiting, and transparent enforcement workflow
+- **Accessibility**: WCAG-inspired mobile a11y (screen reader labels, contrast, larger text, focus order)

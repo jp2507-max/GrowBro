@@ -1,3 +1,4 @@
+import type { ListRenderItem } from '@shopify/flash-list';
 import React from 'react';
 
 import { useRegisterScrollHandlers } from '@/components/calendar/drag-drop-provider';
@@ -7,7 +8,7 @@ import type { AgendaItem } from '@/types/agenda';
 type Props = {
   data: AgendaItem[];
   isLoading: boolean;
-  renderItem: ({ item }: { item: AgendaItem }) => React.ReactElement | null;
+  renderItem: ListRenderItem<AgendaItem>;
   keyExtractor?: (item: AgendaItem, index: number) => string;
 };
 
@@ -17,7 +18,10 @@ export function AgendaList({
   renderItem,
   keyExtractor,
 }: Props): React.ReactElement {
-  const getItemType = React.useCallback((item: AgendaItem) => item.type, []);
+  const getItemType = React.useCallback(
+    (item: AgendaItem, _index: number) => item.type,
+    []
+  );
 
   const _keyExtractor = React.useCallback(
     (item: AgendaItem, index: number) => keyExtractor?.(item, index) ?? item.id,
@@ -30,9 +34,11 @@ export function AgendaList({
     <List
       ref={listRef as any}
       data={data}
-      renderItem={renderItem}
-      keyExtractor={_keyExtractor}
-      getItemType={getItemType}
+      renderItem={renderItem as ListRenderItem<unknown>}
+      keyExtractor={_keyExtractor as (item: unknown, index: number) => string}
+      getItemType={
+        getItemType as (item: unknown, index: number) => string | number
+      }
       removeClippedSubviews
       onScroll={onScroll}
       onLayout={onLayout}

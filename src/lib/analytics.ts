@@ -45,6 +45,39 @@ export type AnalyticsEvents = {
     ms: number;
   };
 
+  // Home UI analytics events
+  community_view: {
+    post_count: number;
+  };
+  community_empty: {
+    trigger: 'initial_load' | 'refresh';
+  };
+  community_error: {
+    error_type: 'network' | 'validation' | 'timeout' | 'unknown';
+    context?: {
+      strain_search?: {
+        query?: string;
+        sanitized_query?: string;
+        results_count: number;
+        is_offline: boolean;
+      };
+      home_view?: {
+        widgets_shown: string[];
+      };
+    };
+  };
+  home_view: {
+    widgets_shown: string[];
+  };
+  strain_search: {
+    // 'query' may be provided by callers; analytics sanitization will
+    // convert it to 'sanitized_query' before sending to the client.
+    query?: string;
+    sanitized_query?: string;
+    results_count: number;
+    is_offline: boolean;
+  };
+
   // Plant telemetry events
   plant_watered: {
     taskId: string;
@@ -79,6 +112,9 @@ export type AnalyticsEvents = {
     ms: number;
   };
   perf_cold_start_ms: {
+    ms: number;
+  };
+  home_tti_ms: {
     ms: number;
   };
 
@@ -191,12 +227,13 @@ export function createConsentGatedAnalytics(
       name: N,
       payload: AnalyticsEventPayload<N>
     ): void | Promise<void> {
-      const isPlaybookEvent =
+      const requiresConsent =
+        name === 'strain_search' ||
         name.startsWith('playbook_') ||
         name.startsWith('ai_adjustment_') ||
         name.startsWith('trichome_');
 
-      if (isPlaybookEvent && !hasConsent('analytics')) return;
+      if (requiresConsent && !hasConsent('analytics')) return;
 
       const sanitizedPayload = sanitizeAnalyticsPayload(name, payload);
       return client.track(name, sanitizedPayload);
@@ -204,57 +241,177 @@ export function createConsentGatedAnalytics(
   };
 }
 
+// Helper to sanitize community error types to safe union
+export function sanitizeCommunityErrorType(
+  errorType: string
+): 'network' | 'validation' | 'timeout' | 'unknown' {
+  const normalized = errorType.toLowerCase().trim();
+
+  // Check for network-related errors
+  if (
+    normalized.includes('network') ||
+    normalized.includes('fetch') ||
+    normalized.includes('connection') ||
+    normalized.includes('timeout') ||
+    normalized.includes('abort') ||
+    normalized.includes('cancel')
+  ) {
+    return normalized.includes('timeout') ? 'timeout' : 'network';
+  }
+
+  // Check for validation errors
+  if (
+    normalized.includes('validation') ||
+    normalized.includes('invalid') ||
+    normalized.includes('bad request') ||
+    normalized.includes('unauthorized') ||
+    normalized.includes('forbidden')
+  ) {
+    return 'validation';
+  }
+
+  // Default to unknown for anything else
+  return 'unknown';
+}
+
 // PII stripping and data minimization for analytics payloads
+
+// Sanitize search queries to prevent PII leakage
+
+// Sanitize strain search event payloads
+function sanitizeStrainSearchPayload<N extends AnalyticsEventName>(
+  payload: AnalyticsEventPayload<N>
+): AnalyticsEventPayload<N> {
+  const sanitized = { ...payload } as any;
+  if (typeof sanitized.query === 'string') {
+    sanitized.sanitized_query = sanitizeSearchQuery(sanitized.query);
+    delete sanitized.query; // Remove raw query
+  }
+  return sanitized as AnalyticsEventPayload<N>;
+}
+
+// Sanitize community error event payloads
+function sanitizeCommunityErrorPayload(
+  payload: AnalyticsEventPayload<'community_error'>
+): AnalyticsEventPayload<'community_error'> {
+  const sanitized = { ...payload };
+
+  // Sanitize error_type
+  if (typeof sanitized.error_type === 'string') {
+    sanitized.error_type = sanitizeCommunityErrorType(sanitized.error_type);
+  }
+
+  // Sanitize context if it exists
+  if (sanitized.context && typeof sanitized.context === 'object') {
+    const context = { ...sanitized.context };
+
+    // Handle strain_search in context
+    if (context.strain_search && typeof context.strain_search === 'object') {
+      const strainSearch = { ...context.strain_search };
+      if (typeof strainSearch.query === 'string') {
+        strainSearch.sanitized_query = sanitizeSearchQuery(strainSearch.query);
+        delete strainSearch.query;
+      }
+      context.strain_search = strainSearch;
+    }
+
+    // Handle home_view in context
+    if (context.home_view && typeof context.home_view === 'object') {
+      const homeView = { ...context.home_view };
+      if (Array.isArray(homeView.widgets_shown)) {
+        homeView.widgets_shown = homeView.widgets_shown
+          .filter((widget): widget is string => typeof widget === 'string')
+          .slice(0, 10)
+          .map((widget) => sanitizeSearchQuery(widget));
+      }
+      context.home_view = homeView;
+    }
+
+    sanitized.context = context;
+  }
+
+  return sanitized;
+}
+
+// Sanitize playbook-related event payloads
+function sanitizePlaybookPayload<N extends AnalyticsEventName>(
+  payload: AnalyticsEventPayload<N>
+): AnalyticsEventPayload<N> {
+  const sanitized = { ...payload };
+
+  // Ensure playbookId is hashed or anonymized (implementation depends on your ID strategy)
+  if ('playbookId' in sanitized && typeof sanitized.playbookId === 'string') {
+    // If playbookId contains PII, hash it here
+    // For now, assume playbookId is already a non-identifiable UUID or similar
+  }
+
+  // Strip any potential PII from template names
+  if ('templateName' in sanitized && sanitized.templateName) {
+    // Remove any personal identifiers from template names
+    sanitized.templateName = sanitized.templateName
+      .replace(/[^\w\s\-!.]/g, '')
+      .substring(0, 50);
+  }
+
+  // Ensure taskId is non-identifiable
+  if ('taskId' in sanitized && typeof sanitized.taskId === 'string') {
+    // If taskId contains PII, hash it here
+    // For now, assume taskId is already a non-identifiable UUID or similar
+  }
+
+  // Remove any email, name, or location data that might slip through
+  // This is a safeguard in case future events accidentally include PII
+  const sanitizedObj = sanitized as any;
+  const piiFields = ['email', 'name', 'location', 'address', 'phone', 'userId'];
+  piiFields.forEach((field) => {
+    if (field in sanitizedObj) {
+      delete sanitizedObj[field];
+    }
+  });
+
+  return sanitized as AnalyticsEventPayload<N>;
+}
+
 function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(
   name: N,
   payload: AnalyticsEventPayload<N>
 ): AnalyticsEventPayload<N> {
+  // Sanitize strain search queries to prevent PII leakage
+  if (name === 'strain_search') {
+    return sanitizeStrainSearchPayload(payload);
+  }
+
+  // Sanitize community error types to prevent PII leakage
+  if (name === 'community_error') {
+    return sanitizeCommunityErrorPayload(
+      payload as AnalyticsEventPayload<'community_error'>
+    ) as AnalyticsEventPayload<N>;
+  }
+
+  if (name === 'home_view') {
+    const sanitized = { ...(payload as AnalyticsEventPayload<'home_view'>) };
+    sanitized.widgets_shown = Array.isArray(sanitized.widgets_shown)
+      ? sanitized.widgets_shown
+          .filter((widget): widget is string => typeof widget === 'string')
+          .slice(0, 10)
+          .map((widget) =>
+            sanitizeSearchQuery(widget)
+              .toLowerCase()
+              .replace(/[^a-z0-9._-]/g, '')
+              .slice(0, 32)
+          )
+          .filter(Boolean)
+      : [];
+    return sanitized as AnalyticsEventPayload<N>;
+  }
+
   // For guided grow playbook events, ensure minimal identifiers
   if (
     name.startsWith('playbook_') ||
     name.startsWith('ai_adjustment_') ||
     name.startsWith('trichome_')
   ) {
-    const sanitized = { ...payload };
-
-    // Ensure playbookId is hashed or anonymized (implementation depends on your ID strategy)
-    if ('playbookId' in sanitized && typeof sanitized.playbookId === 'string') {
-      // If playbookId contains PII, hash it here
-      // For now, assume playbookId is already a non-identifiable UUID or similar
-    }
-
-    // Strip any potential PII from template names
-    if ('templateName' in sanitized && sanitized.templateName) {
-      // Remove any personal identifiers from template names
-      sanitized.templateName = sanitized.templateName
-        .replace(/[^\w\s\-!.]/g, '')
-        .substring(0, 50);
-    }
-
-    // Ensure taskId is non-identifiable
-    if ('taskId' in sanitized && typeof sanitized.taskId === 'string') {
-      // If taskId contains PII, hash it here
-      // For now, assume taskId is already a non-identifiable UUID or similar
-    }
-
-    // Remove any email, name, or location data that might slip through
-    // This is a safeguard in case future events accidentally include PII
-    const sanitizedObj = sanitized as any;
-    const piiFields = [
-      'email',
-      'name',
-      'location',
-      'address',
-      'phone',
-      'userId',
-    ];
-    piiFields.forEach((field) => {
-      if (field in sanitizedObj) {
-        delete sanitizedObj[field];
-      }
-    });
-
-    return sanitized as AnalyticsEventPayload<N>;
+    return sanitizePlaybookPayload(payload);
   }
 
   // For non-playbook events, return as-is (they should already be PII-free per existing schema)
@@ -281,3 +438,24 @@ export const ANALYTICS_CONSENT_KEY = 'analytics';
  * - Use createConsentGatedAnalytics() for automatic consent checking
  * - All playbook events: playbook_*, ai_adjustment_*, trichome_*
  */
+
+function sanitizeSearchQuery(query: string): string {
+  // Centralized redaction for search queries: trim, limit length, and redact
+  // obvious PII patterns (emails, phone numbers). Keep it simple and safe.
+  if (typeof query !== 'string') return '';
+  const trimmed = query.trim();
+
+  // Basic PII redaction: emails and phone-like numbers
+  // Replace emails
+  const emailRegex = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
+  let out = trimmed.replace(emailRegex, '[redacted_email]');
+  // Replace phone numbers with separators and optional country code (7-15 digits total)
+  const phoneRegex = /(?=(?:.*\d){7,15})[\+]?[\d\s\-\.\(\)]+/g;
+  out = out.replace(phoneRegex, '[redacted_phone]');
+
+  // Bound length to avoid leaking large content (after redaction)
+  const maxLen = 128;
+  out = out.length > maxLen ? out.slice(0, maxLen) + '…' : out;
+
+  return out;
+}

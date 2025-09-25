@@ -36,32 +36,32 @@ src
 
 ## Tech Stack
 
-- Expo 54
-- React Native
-- TypeScript
-- Nativewind ( Tailwind CSS for React Native )
-- Expo Router v6
-- React Query with React Query Kit
-- Zustand
-- React Native Keyboard Controller
-- React Native SVG
-- React Native MMKV
-- Supabase (Backend & Database)
-- WatermelonDB (local database)
-- Axios (HTTP client)
-- React Hook Form + Zod (forms and validation)
-- i18next + react-i18next (internationalization)
-- @gorhom/bottom-sheet (bottom sheets)
-- @shopify/flash-list (high-performance lists)
-- react-native-flash-message (toast notifications)
-- react-native-gesture-handler and react-native-reanimated (gestures and animations)
-- react-native-screens and react-native-safe-area-context (navigation primitives)
-- react-native-edge-to-edge (layout)
-- react-native-url-polyfill (URL APIs)
-- Luxon (date/time utilities)
-- tailwind-variants (variant utilities for Nativewind)
-- Expo modules: Image, Font, Constants, System UI, Updates, Linking, Localization, Notifications
-- Sentry (@sentry/react-native) for error and performance monitoring
+- Expo 54 (expo@~54.0.10)
+- React Native (react-native@0.81.4)
+- TypeScript (typescript@^5.9.2)
+- Nativewind (Tailwind CSS for React Native) (nativewind@^4.2.1, tailwindcss@3.4.4)
+- Expo Router v6 (expo-router@~6.0.8)
+- React Query with React Query Kit (@tanstack/react-query@^5.90.1, react-query-kit@^3.3.2)
+- Zustand (zustand@^5.0.8)
+- React Native Keyboard Controller (react-native-keyboard-controller@^1.18.5)
+- React Native SVG (react-native-svg@~15.12.1)
+- React Native MMKV (react-native-mmkv@~3.1.0)
+- Supabase (Backend & Database) (@supabase/supabase-js@^2.57.4)
+- WatermelonDB (local database) (@nozbe/watermelondb@^0.28.0, @morrowdigital/watermelondb-expo-plugin@^2.3.3)
+- Axios (HTTP client) (axios@^1.12.2)
+- React Hook Form + Zod (forms and validation) (react-hook-form@^7.63.0, zod@^3.25.76, @hookform/resolvers@^3.10.0)
+- i18next + react-i18next (internationalization) (i18next@^23.16.8, react-i18next@^15.7.3)
+- @gorhom/bottom-sheet (bottom sheets) (@gorhom/bottom-sheet@^5.2.6)
+- @shopify/flash-list (high-performance lists) (@shopify/flash-list@2.0.2)
+- react-native-flash-message (toast notifications) (react-native-flash-message@^0.4.2)
+- react-native-gesture-handler and react-native-reanimated (gestures and animations) (react-native-gesture-handler@~2.28.0, react-native-reanimated@~4.1.0)
+- react-native-screens and react-native-safe-area-context (navigation primitives) (react-native-screens@~4.16.0, react-native-safe-area-context@5.6.1)
+- react-native-edge-to-edge (layout) (react-native-edge-to-edge@^1.7.0)
+- react-native-url-polyfill (URL APIs) (react-native-url-polyfill@^2.0.0)
+- Luxon (date/time utilities) (luxon@^3.7.2)
+- tailwind-variants (variant utilities for Nativewind) (tailwind-variants@^0.2.1)
+- Expo modules: Image, Font, Constants, System UI, Updates, Linking, Localization, Notifications (expo-image@~3.0.8, expo-font@~14.0.8, expo-constants@~18.0.9, expo-system-ui@~6.0.7, expo-updates@~29.0.11, expo-linking@~8.0.8, expo-localization@~17.0.7, expo-notifications@~0.32.11)
+- Sentry (@sentry/react-native) for error and performance monitoring (@sentry/react-native@^6.20.0)
 
 ## Supabase Integration
 

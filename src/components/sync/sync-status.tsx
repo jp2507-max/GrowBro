@@ -7,6 +7,7 @@ import { getPendingChangesCount, isSyncInFlight } from '@/lib/sync-engine';
 
 type Props = {
   className?: string;
+  testID?: string;
 };
 
 function formatTime(ts: number | null): string {
@@ -17,7 +18,10 @@ function formatTime(ts: number | null): string {
   return `${hh}:${mm}`;
 }
 
-export function SyncStatus({ className }: Props): React.ReactElement | null {
+export function SyncStatus({
+  className,
+  testID,
+}: Props): React.ReactElement | null {
   const [pendingCount, setPendingCount] = React.useState<number>(0);
   const [inFlight, setInFlight] = React.useState<boolean>(false);
   const [lastSyncMs, setLastSyncMs] = React.useState<number | null>(
@@ -33,7 +37,7 @@ export function SyncStatus({ className }: Props): React.ReactElement | null {
 
   React.useEffect(() => {
     void refresh();
-    const id = setInterval(refresh, 2000);
+    const id = setInterval(refresh, 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -45,6 +49,7 @@ export function SyncStatus({ className }: Props): React.ReactElement | null {
   return (
     <View
       className={`flex-row items-center gap-2 px-3 py-2 ${className ?? ''}`}
+      testID={testID}
     >
       {inFlight ? <ActivityIndicator /> : null}
       <Text className="text-xs text-neutral-600">{label}</Text>

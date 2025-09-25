@@ -1,0 +1,194 @@
+---
+trigger: always_on
+---
+
+# 🎬 React Native Reanimated Production Cheatsheet (4.x, Expo SDK 54)
+
+_Last updated Sep 2025 • ≈250 lines_
+
+---
+
+## 🚀 Worklets in 4.x — What runs on the UI thread
+
+- Auto‑workletization remains: callbacks passed to Reanimated APIs (`useAnimatedStyle`, `useDerivedValue`, animation finish/gesture callbacks) run on the UI thread without adding `'worklet'`.
+- Add `'worklet'` manually if you:
+  1. call imported/external functions as worklets,
+  2. create worklets via expressions/ternaries,
+  3. define worklet callbacks inside custom hooks you own,
+  4. expose top‑level reusable worklet utilities.
+
+- `runOnUI`: inline callbacks are workletized automatically; external references still need `'worklet'`.
+- ✔ Checklist
+  - [ ] No `.value` reads in React render (derive inside worklets)
+  - [ ] `cancelAnimation` on unmount for long/looping animations
+
+```ts
+// Auto‑workletized
+const animatedStyle = useAnimatedStyle(() => ({
+  transform: [{ scale: scale.value }],
+}));
+
+// Imported function as a worklet
+export function cardWorklet() {
+  'worklet';
+  return { opacity: 1 };
+}
+const st = useAnimatedStyle(cardWorklet);
+
+// Expression/ternary defined worklet
+const makeStyle = isOn
+  ? () => {
+      'worklet';
+      return { opacity: 1 };
+    }
+  : () => {
+      'worklet';
+      return { opacity: 0.5 };
+    };
+```
+
+---
+
+## Reanimated 4 essentials (agent)
+
+- Auto‑workletization for Reanimated hooks/callbacks. Add `'worklet'` when calling imported functions, expressions, or custom hooks on UI thread.
+- Don’t read `.value` in React render; derive inside worklets. Assign to shared values, don’t mutate objects deeply.
+- Prefer layout/shared transitions; honor reduced motion via `.reduceMotion(ReduceMotion.System)`.
+- Use RNGH v2 `Gesture.*()` with `GestureDetector` (legacy handler components and `useAnimatedGestureHandler` are deprecated in 4.x).
+- Cross-thread: use `runOnJS` sparingly; `runOnUI` auto‑workletizes inline callbacks.
+
+Imports quick ref
+
+```ts
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+```
+
+---
+
+## Tiny examples
+
+```ts
+const offset = useSharedValue(0);
+const st = useAnimatedStyle(() => ({
+  transform: [{ translateX: offset.value }],
+}));
+```
+
+---
+
+## 🧭 Styling with NativeWind
+
+- Keep static styling in `className`; attach animated changes via `style={animatedStyle}`.
+- Class order: layout → flex/grid → spacing → sizing → border/radius → background → text/font → effects → state/dark.
+- Use design tokens defined in `tailwind.config.js`; avoid hardcoded hex/spacing off‑scale.
+- Prefer small variant helpers (e.g., tv/cva) over long JSX ternaries.
+- Forward and merge `className` in custom components; keep `className` stable across frames.
+
+## 🧩 GrowBro repo-specific styling conventions
+
+- Use Tailwind tokens from `src/components/ui/colors.js` (wired via `tailwind.config.js`).
+  - Palettes: `primary`, `neutral`, `charcoal`, `success`, `warning`, `danger`.
+  - Prefer tokens (e.g., `bg-primary-600`, `text-neutral-100`, `bg-charcoal-950`) instead of raw hex.
+- Fonts: `font-inter` is the default; override via class names, not inline styles.
+- Dark mode: `darkMode: 'class'`. Pair light/dark classes. App themes mirror tokens in `src/lib/use-theme-config.tsx`.
+- Variants: compose with `tailwind-variants` `tv()`; keep layout static in slots, switch tokens via variants; allow overrides with `slots.container({ className })`.
+- SVG: `cssInterop` enables `className` on `react-native-svg` (`src/components/ui/index.tsx`).
+- Merge classes with `tailwind-merge` for text; avoid manual concatenation.
+- Native props needing colors: import from `@/components/ui/colors` (e.g., `placeholderTextColor`).
+- Linting: `eslint-plugin-tailwindcss` enforces class order. Keep `className` stable across frames.
+- Add tokens by editing `src/components/ui/colors.js`; Tailwind already imports it.
+
+### 🌈 Theme tokens workflow (GrowBro standard)
+
+- **Palette first:** tweak shades in `src/components/ui/colors.js`. Tailwind classes & runtime tokens consume the same palette, so a single change propagates everywhere.
+- **Semantic roles:** `src/lib/theme-tokens.ts` defines light/dark roles for `surface`, `text`, and `action` (primary, CTA, link, focus ring). Use these instead of hardcoding palette indices inside components.
+  - Navigation themes already read from `themeRoles`.
+  - Dynamic styles (buttons, alerts, focus rings) should import the relevant token rather than `colors.*` directly.
+- **Tailwind vs. tokens:**
+  - Use Tailwind classes (e.g., `bg-primary-600`) for static layout.
+  - Use theme tokens when you need runtime decisions (`style` props, React Navigation, FlashMessage, conditional focus rings).
+- **States & accessibility:** tokens include hover/background/content colors plus focus-ring values; always combine CTA/primary backgrounds with their `content` color for readable text.
+- **Adding new roles:** extend `themeRoles` (and document the intent) before sprinkling ad-hoc palette references—keeps contrast and theming audit-friendly.
+
+---
+
+## Layout transitions
+
+- Prefer `LinearTransition`/`EntryExitTransition`/`CurvedTransition` over manual size animations.
+- Always chain `.reduceMotion(ReduceMotion.System)`.
+
+---
+
+## Shared element transitions
+
+- Use `sharedTransitionTag` with a prefixed domain (e.g., `feed.card.image`, `settings.avatar`).
+- Centralize optional `sharedTransitionStyle` in `src/lib/animations/shared.ts`.
+
+---
+
+## Modern gestures (RNGH v2)
+
+- Use `Gesture.*()` + `GestureDetector`.
+- Replace `useAnimatedGestureHandler` (3.x) with `onStart/onUpdate/onEnd` chain.
+- Keep your own shared `ctx` via `useSharedValue` if needed.
+
+---
+
+## Cleanup & chaining
+
+- Cancel animations on unmount for long/looping sequences (`cancelAnimation`).
+- Chain finish callbacks to start follow-up animations.
+
+---
+
+## Crossing threads
+
+- `runOnUI` to start UI work; inline callbacks auto‑workletized.
+- `runOnJS` to update React state from a worklet.
+
+---
+
+## 🚨 Pitfalls (4.x)
+
+1. Don’t read `.value` in React render logic.
+2. Don’t mutate shared values inside `useAnimatedStyle` (read/assign only).
+3. Alias `interpolateColor` to avoid naming collisions.
+4. Cancel long/looping animations on unmount.
+5. Avoid per‑frame `className` churn; keep static styles in Tailwind.
+6. For imports/expressions/custom hooks, add `'worklet'` explicitly.
+
+---
+
+## ⚙️ Expo SDK 54 Specifics
+
+- Reanimated: 4.x bundled with SDK 54.
+- RNGH: v2 Gesture API recommended.
+- Babel: `react-native-reanimated/plugin` comes via `babel-preset-expo` — no manual changes typically needed.
+- Install via `npx expo install react-native-reanimated react-native-gesture-handler` to match the SDK.
+
+---
+
+## ✅ Do / Avoid (Quick)
+
+Do
+
+- Use Tailwind for static styles, Reanimated only for dynamic parts
+- Prefer layout/shared transitions over manual width/height animations
+- Honor reduced motion via `.reduceMotion(ReduceMotion.System)`
+- Centralize shared transition tags and helpers under `src/lib/animations/`
+
+Avoid
+
+- Animating by toggling class lists per frame
+- Animating text/shadow colors continuously; prefer fade/scale
+- Nesting `Animated.View` unnecessarily; compose transforms in one container
+
+---
+
+**Short version for agent:** Tailwind for static; Reanimated for dynamic. Keep `className` stable. Prefer layout/shared transitions. Honor reduced motion. Minimize worklet logic. Prefix `sharedTransitionTag` with feature. Centralize helpers.

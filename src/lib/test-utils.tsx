@@ -2,16 +2,35 @@ import '@shopify/flash-list/jestSetup';
 
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { NavigationContainer } from '@react-navigation/native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { RenderOptions } from '@testing-library/react-native';
 import { render, userEvent } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import React from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const createAppWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+
   return ({ children }: { children: React.ReactNode }) => (
-    <BottomSheetModalProvider>
-      <NavigationContainer>{children}</NavigationContainer>
-    </BottomSheetModalProvider>
+    <SafeAreaProvider
+      initialMetrics={{
+        frame: { x: 0, y: 0, width: 375, height: 812 },
+        insets: { top: 0, bottom: 0, left: 0, right: 0 },
+      }}
+    >
+      <QueryClientProvider client={queryClient}>
+        <BottomSheetModalProvider>
+          <NavigationContainer>{children}</NavigationContainer>
+        </BottomSheetModalProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 };
 

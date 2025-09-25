@@ -5,6 +5,7 @@ export {
   type AlarmScheduleResult,
 } from '@/lib/alarms';
 export * from './analytics';
+export { getAnalyticsClient, setAnalyticsClient } from './analytics-registry';
 export * from './auth';
 export * from './hooks';
 export * from './i18n';
@@ -34,6 +35,7 @@ export * from './sync/storage-manager';
 export * from './task-manager';
 export * from './template-manager';
 export * from './utils';
+export { useAnalytics } from './use-analytics';
 export {
   AppAccessManager,
   provideTestCredentials,

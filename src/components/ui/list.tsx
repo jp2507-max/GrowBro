@@ -1,97 +1,401 @@
-import { FlashList as NFlashList } from '@shopify/flash-list';
-import React from 'react';
+import {
+  FlashList,
+  type FlashListProps,
+  type FlashListRef,
+  type ListRenderItemInfo,
+} from '@shopify/flash-list';
+import React, { forwardRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
 
-import { Text } from './text';
-type Props = {
-  isLoading: boolean;
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
+import { useThemeConfig } from '@/lib/use-theme-config';
+
+const SKELETON_PLACEHOLDERS = 6;
+
+type ListStrings = {
+  readonly emptyTitle: string;
+  readonly emptyBody: string;
+  readonly errorTitle: string;
+  readonly errorBody: string;
+  readonly retryLabel: string;
 };
 
-// In tests, the FlashList mock renders null, making it impossible to query
-// list contents. Provide a minimal wrapper that, when JEST_WORKER_ID is set,
-// renders items via a basic map so tests can assert on text content.
-export const List = React.forwardRef<any, any>((props, ref) => {
-  const isJest = typeof process !== 'undefined' && !!process.env.JEST_WORKER_ID;
-  if (!isJest) {
-    return (<NFlashList ref={ref as any} {...(props as any)} />) as any;
+type ListProps<ItemT> = Omit<FlashListProps<ItemT>, 'estimatedItemSize'> & {
+  readonly isLoading?: boolean;
+  readonly isSkeletonTimedOut?: boolean;
+  readonly error?: Error | null;
+  readonly onRetry?: () => void;
+  readonly ListSkeletonComponent?: React.ComponentType<{ index: number }>;
+  readonly strings?: Partial<ListStrings>;
+};
+
+type ListStateBaseProps = {
+  readonly title: string;
+  readonly body?: string;
+  readonly className?: string;
+};
+
+type ListErrorStateProps = ListStateBaseProps & {
+  readonly onRetry?: () => void;
+  readonly retryLabel?: string;
+};
+
+const DEFAULT_STRINGS: ListStrings = {
+  emptyTitle: 'list.empty.title',
+  emptyBody: 'list.empty.body',
+  errorTitle: 'list.error.title',
+  errorBody: 'list.error.body',
+  retryLabel: 'list.retry',
+};
+
+function resolveStrings(
+  translate: (key: string) => string,
+  overrides?: Partial<ListStrings>
+): ListStrings {
+  return {
+    emptyTitle: overrides?.emptyTitle ?? translate(DEFAULT_STRINGS.emptyTitle),
+    emptyBody: overrides?.emptyBody ?? translate(DEFAULT_STRINGS.emptyBody),
+    errorTitle: overrides?.errorTitle ?? translate(DEFAULT_STRINGS.errorTitle),
+    errorBody: overrides?.errorBody ?? translate(DEFAULT_STRINGS.errorBody),
+    retryLabel: overrides?.retryLabel ?? translate(DEFAULT_STRINGS.retryLabel),
+  };
+}
+
+function fallbackKeyExtractor<ItemT>(item: ItemT, index: number): string {
+  if (
+    item &&
+    typeof item === 'object' &&
+    'id' in (item as Record<string, unknown>)
+  ) {
+    const idValue = (item as { id?: string | number }).id;
+    if (idValue != null) return String(idValue);
+  }
+  return String(index);
+}
+
+function renderFooter(
+  footer?: React.ComponentType | React.ReactElement | null
+): React.ReactNode {
+  if (!footer) return null;
+  if (React.isValidElement(footer)) return footer;
+  return React.createElement(footer);
+}
+
+type EmptyContentProps = {
+  readonly hasError: boolean;
+  readonly strings: ListStrings;
+  readonly onRetry?: () => void;
+  readonly ListEmptyComponent?: React.ComponentType | React.ReactElement | null;
+};
+
+function renderEmptyContent({
+  hasError,
+  strings,
+  onRetry,
+  ListEmptyComponent,
+}: EmptyContentProps): React.ReactElement {
+  if (hasError) {
+    return (
+      <ListErrorState
+        title={strings.errorTitle}
+        body={strings.errorBody}
+        retryLabel={strings.retryLabel}
+        onRetry={onRetry}
+      />
+    );
   }
 
+  if (ListEmptyComponent) {
+    if (React.isValidElement(ListEmptyComponent)) return ListEmptyComponent;
+    const Component = ListEmptyComponent as React.ComponentType;
+    return <Component />;
+  }
+
+  return <ListEmptyState title={strings.emptyTitle} body={strings.emptyBody} />;
+}
+
+function renderJestList<ItemT>(
+  props: ListProps<ItemT> & {
+    readonly strings: ListStrings;
+    readonly showSkeleton: boolean;
+    readonly showError: boolean;
+    readonly isEmpty: boolean;
+  }
+): React.ReactElement {
   const {
-    data = [],
+    data,
+    renderItem,
+    ListFooterComponent,
+    ListSkeletonComponent,
+    keyExtractor = fallbackKeyExtractor,
+    strings,
+    showSkeleton,
+    showError,
+    isEmpty,
+    onRetry,
+    ListEmptyComponent,
+  } = props;
+
+  if (showSkeleton) {
+    const Skeleton = ListSkeletonComponent ?? DefaultListSkeleton;
+    return (
+      <View className="flex-1" testID="list-skeleton">
+        {Array.from({ length: SKELETON_PLACEHOLDERS }, (_, index) => (
+          <Skeleton key={`skeleton-${index}`} index={index} />
+        ))}
+      </View>
+    );
+  }
+
+  if (showError || isEmpty) {
+    return renderEmptyContent({
+      hasError: showError,
+      strings,
+      onRetry,
+      ListEmptyComponent,
+    });
+  }
+
+  const footer = renderFooter(ListFooterComponent);
+  const items = (data ?? []) as ItemT[];
+
+  return (
+    <View className="flex-1" testID="list-content">
+      {items.map((item, index) => (
+        <View key={keyExtractor(item, index)}>
+          {renderItem?.({ item, index } as any)}
+        </View>
+      ))}
+      {footer}
+    </View>
+  );
+}
+
+function renderNativeList<ItemT>(
+  props: ListProps<ItemT> & {
+    readonly strings: ListStrings;
+    readonly showSkeleton: boolean;
+    readonly showError: boolean;
+    readonly themeBackground: string;
+    readonly ref: React.ForwardedRef<FlashListRef<ItemT>>;
+  }
+): React.ReactElement {
+  const {
+    data,
     renderItem,
     ListEmptyComponent,
-    keyExtractor = (item: any, index: number) => item?.id ?? String(index),
+    ListFooterComponent,
+    ListSkeletonComponent,
+    keyExtractor = fallbackKeyExtractor,
+    onRetry,
+    strings,
+    showSkeleton,
+    showError,
+    themeBackground,
+    ref,
+    onEndReachedThreshold,
+    contentContainerStyle,
     ...rest
-  } = props as any;
+  } = props;
 
-  if (!data || data.length === 0) {
+  const Skeleton = ListSkeletonComponent ?? DefaultListSkeleton;
+  const listData = showSkeleton
+    ? Array.from(
+        { length: SKELETON_PLACEHOLDERS },
+        (_, index) => index as unknown as ItemT
+      )
+    : ((data ?? []) as ItemT[]);
+
+  return (
+    <FlashList<ItemT>
+      ref={ref}
+      data={listData}
+      renderItem={(info: ListRenderItemInfo<ItemT>) => {
+        if (showSkeleton) {
+          return <Skeleton index={info.index} />;
+        }
+        return renderItem?.(info) ?? null;
+      }}
+      keyExtractor={(item, index) =>
+        showSkeleton ? `skeleton-${index}` : keyExtractor(item, index)
+      }
+      ListEmptyComponent={() =>
+        renderEmptyContent({
+          hasError: showSkeleton ? false : showError,
+          strings,
+          onRetry,
+          ListEmptyComponent,
+        })
+      }
+      ListFooterComponent={ListFooterComponent}
+      onEndReachedThreshold={onEndReachedThreshold ?? 0.4}
+      contentContainerStyle={[{ flexGrow: 0 }, contentContainerStyle]}
+      style={{ flex: 1, backgroundColor: themeBackground }}
+      {...rest}
+    />
+  );
+}
+
+export const List = forwardRef(function ListInner<ItemT>(
+  {
+    data,
+    renderItem,
+    ListEmptyComponent,
+    ListFooterComponent,
+    ListSkeletonComponent,
+    keyExtractor,
+    onRetry,
+    error,
+    isLoading,
+    isSkeletonTimedOut,
+    strings,
+    ...rest
+  }: ListProps<ItemT>,
+  ref: React.ForwardedRef<FlashListRef<ItemT>>
+): React.ReactElement {
+  const { t } = useTranslation();
+  const theme = useThemeConfig();
+  const resolvedStrings = useMemo(
+    () => resolveStrings(t, strings),
+    [strings, t]
+  );
+  const showSkeleton = Boolean(isLoading && !isSkeletonTimedOut);
+  const showError = Boolean(error);
+  const isEmpty = !data || (data as ItemT[]).length === 0;
+  const isJest = Boolean(process?.env?.JEST_WORKER_ID);
+
+  const sharedProps: ListProps<ItemT> & {
+    readonly strings: ListStrings;
+    readonly showSkeleton: boolean;
+    readonly showError: boolean;
+  } = {
+    data,
+    renderItem,
+    ListEmptyComponent,
+    ListFooterComponent,
+    ListSkeletonComponent,
+    keyExtractor,
+    onRetry,
+    error,
+    isLoading,
+    isSkeletonTimedOut,
+    strings: resolvedStrings,
+    showSkeleton,
+    showError,
+    ...rest,
+  };
+
+  if (isJest) {
+    return renderJestList({ ...sharedProps, isEmpty });
+  }
+
+  return renderNativeList({
+    ...sharedProps,
+    themeBackground: theme.colors.background,
+    ref,
+  });
+});
+
+export const EmptyList = React.memo(function EmptyList({
+  isLoading = false,
+}: {
+  isLoading?: boolean;
+}) {
+  const { t } = useTranslation();
+
+  if (isLoading) {
     return (
-      <View {...rest}>
-        {typeof ListEmptyComponent === 'function' ? (
-          <ListEmptyComponent />
-        ) : (
-          ((ListEmptyComponent ?? null) as any)
-        )}
+      <View
+        className="flex-1 items-center justify-center gap-2 py-12"
+        testID="list-empty-loading"
+      >
+        <ActivityIndicator />
+        <Text className="text-sm text-neutral-600 dark:text-neutral-300">
+          {t(DEFAULT_STRINGS.emptyBody)}
+        </Text>
       </View>
     );
   }
 
   return (
-    <View {...rest} ref={ref}>
-      {data.map((item: any, index: number) => (
-        <View key={keyExtractor(item, index)}>
-          {renderItem?.({ item, index })}
-        </View>
-      ))}
-    </View>
+    <ListEmptyState
+      className="py-12"
+      title={t(DEFAULT_STRINGS.emptyTitle)}
+      body={t(DEFAULT_STRINGS.emptyBody)}
+    />
   );
 });
 
-export const EmptyList = React.memo(({ isLoading }: Props) => {
+export const ListEmptyState = React.memo(function ListEmptyState({
+  className,
+  title,
+  body,
+}: ListStateBaseProps) {
   return (
-    <View className="min-h-[400px] flex-1 items-center justify-center">
-      {!isLoading ? (
-        <View>
-          <NoData />
-          <Text className="pt-4 text-center">Sorry! No data found</Text>
-        </View>
-      ) : (
-        <ActivityIndicator />
-      )}
+    <View
+      accessibilityLiveRegion="polite"
+      accessibilityRole="text"
+      className={`flex-1 items-center justify-center px-6 py-12 ${className ?? ''}`.trim()}
+      testID="list-empty"
+    >
+      <Text className="text-center text-lg font-semibold text-charcoal-50 dark:text-neutral-100">
+        {title}
+      </Text>
+      {body ? (
+        <Text className="mt-2 text-center text-base text-neutral-400 dark:text-neutral-300">
+          {body}
+        </Text>
+      ) : null}
     </View>
   );
 });
 
-export const NoData = () => (
-  <Svg width={200} height={200} viewBox="0 0 647.636 632.174">
-    <Path
-      d="M411.146 142.174h-174.51a15.018 15.018 0 0 0-15 15v387.85l-2 .61-42.81 13.11a8.007 8.007 0 0 1-9.99-5.31l-127.34-415.95a8.003 8.003 0 0 1 5.31-9.99l65.97-20.2 191.25-58.54 65.97-20.2a7.99 7.99 0 0 1 9.99 5.3l32.55 106.32Z"
-      fill="#f2f2f2"
-    />
-    <Path
-      d="m449.226 140.174-39.23-128.14a16.994 16.994 0 0 0-21.23-11.28l-92.75 28.39-191.24 58.55-92.75 28.4a17.015 17.015 0 0 0-11.28 21.23l134.08 437.93a17.027 17.027 0 0 0 16.26 12.03 16.79 16.79 0 0 0 4.97-.75l63.58-19.46 2-.62v-2.09l-2 .61-64.17 19.65a15.015 15.015 0 0 1-18.73-9.95L2.666 136.734a14.98 14.98 0 0 1 9.95-18.73l92.75-28.4 191.24-58.54 92.75-28.4a15.156 15.156 0 0 1 4.41-.66 15.015 15.015 0 0 1 14.32 10.61l39.05 127.56.62 2h2.08Z"
-      fill="#3f3d56"
-    />
-    <Path
-      d="M122.68 127.82a9.016 9.016 0 0 1-8.61-6.366l-12.88-42.072a8.999 8.999 0 0 1 5.97-11.24L283.1 14.278a9.009 9.009 0 0 1 11.24 5.971l12.88 42.072a9.01 9.01 0 0 1-5.97 11.241l-175.94 53.864a8.976 8.976 0 0 1-2.63.395Z"
-      fill="#7eb55a"
-    />
-    <Circle cx={190.154} cy={24.955} r={20} fill="#7eb55a" />
-    <Circle cx={190.154} cy={24.955} r={12.665} fill="#fff" />
-    <Path
-      d="M602.636 582.174h-338a8.51 8.51 0 0 1-8.5-8.5v-405a8.51 8.51 0 0 1 8.5-8.5h338a8.51 8.51 0 0 1 8.5 8.5v405a8.51 8.51 0 0 1-8.5 8.5Z"
-      fill="#e6e6e6"
-    />
-    <Path
-      d="M447.136 140.174h-210.5a17.024 17.024 0 0 0-17 17v407.8l2-.61v-407.19a15.018 15.018 0 0 1 15-15h211.12Zm183.5 0h-394a17.024 17.024 0 0 0-17 17v458a17.024 17.024 0 0 0 17 17h394a17.024 17.024 0 0 0 17-17v-458a17.024 17.024 0 0 0-17-17Zm15 475a15.018 15.018 0 0 1-15 15h-394a15.018 15.018 0 0 1-15-15v-458a15.018 15.018 0 0 1 15-15h394a15.018 15.018 0 0 1 15 15Z"
-      fill="#3f3d56"
-    />
-    <Path
-      d="M525.636 184.174h-184a9.01 9.01 0 0 1-9-9v-44a9.01 9.01 0 0 1 9-9h184a9.01 9.01 0 0 1 9 9v44a9.01 9.01 0 0 1-9 9Z"
-      fill="#7eb55a"
-    />
-    <Circle cx={433.636} cy={105.174} r={20} fill="#7eb55a" />
-    <Circle cx={433.636} cy={105.174} r={12.182} fill="#fff" />
-  </Svg>
-);
+export const ListErrorState = React.memo(function ListErrorState({
+  className,
+  title,
+  body,
+  onRetry,
+  retryLabel,
+}: ListErrorStateProps) {
+  return (
+    <View
+      accessibilityLiveRegion="polite"
+      accessibilityRole="alert"
+      className={`flex-1 items-center justify-center px-6 py-12 ${className ?? ''}`.trim()}
+      testID="list-error"
+    >
+      <Text className="text-center text-lg font-semibold text-charcoal-50 dark:text-neutral-100">
+        {title}
+      </Text>
+      {body ? (
+        <Text className="mt-2 text-center text-base text-neutral-400 dark:text-neutral-300">
+          {body}
+        </Text>
+      ) : null}
+      {onRetry ? (
+        <Button
+          className="mt-6"
+          accessibilityRole="button"
+          onPress={onRetry}
+          testID="list-retry"
+        >
+          {retryLabel}
+        </Button>
+      ) : null}
+    </View>
+  );
+});
+
+const DefaultListSkeleton = React.memo(function DefaultListSkeleton() {
+  return (
+    <View className="flex-row items-center gap-4 px-6 py-4">
+      <View className="size-12 rounded-full bg-neutral-800/30 dark:bg-neutral-200/20" />
+      <View className="flex-1 gap-2">
+        <View className="h-4 w-3/5 rounded-full bg-neutral-800/30 dark:bg-neutral-200/20" />
+        <View className="h-4 w-2/5 rounded-full bg-neutral-800/20 dark:bg-neutral-200/10" />
+      </View>
+    </View>
+  );
+});

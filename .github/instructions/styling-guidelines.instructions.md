@@ -12,7 +12,6 @@ _Last updated Sep 2025 • ≈250 lines_
 
 - Auto‑workletization remains: callbacks passed to Reanimated APIs (`useAnimatedStyle`, `useDerivedValue`, animation finish/gesture callbacks) run on the UI thread without adding `'worklet'`.
 - Add `'worklet'` manually if you:
-
   1. call imported/external functions as worklets,
   2. create worklets via expressions/ternaries,
   3. define worklet callbacks inside custom hooks you own,
@@ -20,7 +19,6 @@ _Last updated Sep 2025 • ≈250 lines_
 
 - `runOnUI`: inline callbacks are workletized automatically; external references still need `'worklet'`.
 - ✔ Checklist
-
   - [ ] No `.value` reads in React render (derive inside worklets)
   - [ ] `cancelAnimation` on unmount for long/looping animations
 
@@ -105,6 +103,18 @@ const st = useAnimatedStyle(() => ({
 - Native props needing colors: import from `@/components/ui/colors` (e.g., `placeholderTextColor`).
 - Linting: `eslint-plugin-tailwindcss` enforces class order. Keep `className` stable across frames.
 - Add tokens by editing `src/components/ui/colors.js`; Tailwind already imports it.
+
+### 🌈 Theme tokens workflow (GrowBro standard)
+
+- **Palette first:** tweak shades in `src/components/ui/colors.js`. Tailwind classes & runtime tokens consume the same palette, so a single change propagates everywhere.
+- **Semantic roles:** `src/lib/theme-tokens.ts` defines light/dark roles for `surface`, `text`, and `action` (primary, CTA, link, focus ring). Use these instead of hardcoding palette indices inside components.
+  - Navigation themes already read from `themeRoles`.
+  - Dynamic styles (buttons, alerts, focus rings) should import the relevant token rather than `colors.*` directly.
+- **Tailwind vs. tokens:**
+  - Use Tailwind classes (e.g., `bg-primary-600`) for static layout.
+  - Use theme tokens when you need runtime decisions (`style` props, React Navigation, FlashMessage, conditional focus rings).
+- **States & accessibility:** tokens include hover/background/content colors plus focus-ring values; always combine CTA/primary backgrounds with their `content` color for readable text.
+- **Adding new roles:** extend `themeRoles` (and document the intent) before sprinkling ad-hoc palette references—keeps contrast and theming audit-friendly.
 
 ---
 

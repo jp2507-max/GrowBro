@@ -77,9 +77,10 @@ function createExpoConfig(config) {
     slug: 'growbro',
     version: Env.VERSION.toString(),
     // Ensure runtimeVersion is set to a stable policy to prevent mismatched
-    // JS/native bundles when performing OTA updates. Using the 'sdkVersion'
-    // policy ties runtimeVersion to the Expo SDK and is a safe default.
-    runtimeVersion: { policy: 'sdkVersion' },
+    // JS/native bundles when performing OTA updates. Using the 'appVersion'
+    // policy ties runtimeVersion to the native version we ship to stores so
+    // every store submission automatically gets its own runtime.
+    runtimeVersion: { policy: 'appVersion' },
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
@@ -150,6 +151,10 @@ function createExpoConfig(config) {
       'expo-background-task',
       // WatermelonDB config plugin to enable JSI adapter in Expo managed workflow
       '@morrowdigital/watermelondb-expo-plugin',
+      // Ensure CocoaPods CDN and pod repo update for CI/EAS so simdjson is found
+      './plugins/ensure-cocoapods',
+      // Add simdjson pod explicitly so WatermelonDB resolves during EAS builds
+      './plugins/ensure-simdjson',
     ],
     extra: {
       // Expose only public vars; keep secrets out of the bundle.
