@@ -89,21 +89,25 @@ export function AnimatedScrollListProvider({
 
   const scrollHandler = useAnimatedScrollHandler({
     onBeginDrag: (e: any) => {
+      'worklet';
       isDragging.value = true;
       listPointerEvents.value = true;
       velocityOnEndDrag.value = 0;
       scrollDirectionOnBeginDrag(e);
     },
     onScroll: (e: any) => {
+      'worklet';
       listOffsetY.value = e.contentOffset.y;
       scrollDirectionOnScroll(e);
     },
     onEndDrag: (e: any) => {
+      'worklet';
       isDragging.value = false;
       velocityOnEndDrag.value = e.velocity?.y ?? 0;
       scrollDirectionOnEndDrag();
     },
     onMomentumEnd: () => {
+      'worklet';
       velocityOnEndDrag.value = 0;
       listPointerEvents.value = true;
     },

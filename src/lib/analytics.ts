@@ -59,7 +59,10 @@ export type AnalyticsEvents = {
     widgets_shown: string[];
   };
   strain_search: {
-    sanitized_query: string;
+    // 'query' may be provided by callers; analytics sanitization will
+    // convert it to 'sanitized_query' before sending to the client.
+    query?: string;
+    sanitized_query?: string;
     results_count: number;
     is_offline: boolean;
   };

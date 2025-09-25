@@ -13,26 +13,17 @@ jest.mock('@react-navigation/native', () => ({
 jest.mock('expo-router', () => ({
   useRouter: jest.fn(),
 }));
-const _analyticsTrackMock = jest.fn();
+const mockAnalyticsTrack = jest.fn();
 
 jest.mock('@/lib', () => {
   const actual = jest.requireActual('@/lib');
   return {
     ...actual,
     translate: jest.fn((key: string) => key),
-    useAnalytics: () => ({ track: _analyticsTrackMock }),
+    useAnalytics: () => ({ track: mockAnalyticsTrack }),
   };
 });
-
-jest.mock('@/lib/hooks', () => {
-  const actual = jest.requireActual('@/lib/hooks');
-  return {
-    ...actual,
-    useAnalyticsConsent: () => true, // Mock as consented by default
-  };
-});
-
-const networkStatusMock = jest.fn(() => ({
+const mockNetworkStatus = jest.fn(() => ({
   isConnected: true,
   isInternetReachable: true,
   state: null,
@@ -42,15 +33,16 @@ jest.mock('@/lib/hooks', () => {
   const actual = jest.requireActual('@/lib/hooks');
   return {
     ...actual,
-    useNetworkStatus: () => networkStatusMock(),
+    useAnalyticsConsent: () => true, // Mock as consented by default
+    useNetworkStatus: () => mockNetworkStatus(),
     useScreenErrorLogger: jest.fn(),
   };
 });
 
-const strainsInfiniteMock = jest.fn();
+const mockStrainsInfinite = jest.fn();
 
 jest.mock('@/api', () => ({
-  useStrainsInfinite: (...args: any[]) => strainsInfiniteMock(...args),
+  useStrainsInfinite: (...args: any[]) => mockStrainsInfinite(...args),
 }));
 
 afterEach(() => {
@@ -86,7 +78,7 @@ function mockStrainsState(): {
 }
 
 const renderStrains = (state: Partial<HookState>) => {
-  strainsInfiniteMock.mockReturnValue({
+  mockStrainsInfinite.mockReturnValue({
     ...mockStrainsState(),
     ...state,
   });
@@ -102,7 +94,7 @@ beforeEach(() => {
     back: jest.fn(),
     canGoBack: jest.fn(() => true),
   });
-  networkStatusMock.mockReturnValue({
+  mockNetworkStatus.mockReturnValue({
     isConnected: true,
     isInternetReachable: true,
     state: null,
@@ -141,7 +133,7 @@ describe('StrainsScreen basics', () => {
 
 describe('StrainsScreen connectivity', () => {
   test('shows offline banner when network is unavailable', () => {
-    networkStatusMock.mockReturnValue({
+    mockNetworkStatus.mockReturnValue({
       isConnected: false,
       isInternetReachable: false,
       state: null,
@@ -166,7 +158,7 @@ describe('StrainsScreen pagination', () => {
 
   test('does not fetch next page when offline', () => {
     const fetchNextPage = jest.fn();
-    networkStatusMock.mockReturnValue({
+    mockNetworkStatus.mockReturnValue({
       isConnected: false,
       isInternetReachable: false,
       state: null,
@@ -189,16 +181,16 @@ describe('StrainsScreen search', () => {
     const input = screen.getByTestId('strains-search-input');
     fireEvent.changeText(input, 'Blue Dream');
 
-    const initialCalls = strainsInfiniteMock.mock.calls.length;
+    const initialCalls = mockStrainsInfinite.mock.calls.length;
     expect(initialCalls).toBeGreaterThan(0);
 
     jest.advanceTimersByTime(200);
-    expect(strainsInfiniteMock.mock.calls.length).toBe(initialCalls);
+    expect(mockStrainsInfinite.mock.calls.length).toBe(initialCalls);
 
     jest.advanceTimersByTime(150);
 
     const lastCall =
-      strainsInfiniteMock.mock.calls[strainsInfiniteMock.mock.calls.length - 1];
+      mockStrainsInfinite.mock.calls[mockStrainsInfinite.mock.calls.length - 1];
     expect(lastCall?.[0]).toMatchObject({ variables: { query: 'Blue Dream' } });
   });
 });

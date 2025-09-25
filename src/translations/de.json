@@ -183,7 +183,7 @@
       "title": "Hier ist noch nichts"
     },
     "error": {
-      "body": "Wir konnten die Inhalte nicht laden. Bitte versuchen Sie es erneut.",
+      "body": "Wir konnten die Inhalte nicht laden. Bitte versuche es erneut.",
       "title": "Etwas ist schiefgelaufen"
     },
     "loading": "Wird geladen...",
@@ -196,11 +196,11 @@
     },
     "authentication_required": "Authentifizierung erforderlich für diese Aktion",
     "block": "Blockieren",
-    "block_failed": "Benutzer konnte nicht blockiert werden. Bitte versuchen Sie es erneut.",
+    "block_failed": "Benutzer konnte nicht blockiert werden. Bitte versuche es erneut.",
     "delete": "Löschen",
-    "delete_failed": "Löschen des Inhalts fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "delete_failed": "Löschen des Inhalts fehlgeschlagen. Bitte versuche es erneut.",
     "mute": "Stummschalten",
-    "mute_failed": "Benutzer konnte nicht stummgeschaltet werden. Bitte versuchen Sie es erneut.",
+    "mute_failed": "Benutzer konnte nicht stummgeschaltet werden. Bitte versuche es erneut.",
     "queue": {
       "appeal": "Einspruch",
       "empty": "Leer",
@@ -209,7 +209,7 @@
       "title": "Moderationswarteschlange"
     },
     "report": "Melden",
-    "report_failed": "Inhalt konnte nicht gemeldet werden. Bitte versuchen Sie es erneut."
+    "report_failed": "Inhalt konnte nicht gemeldet werden. Bitte versuche es erneut."
   },
   "nav": {
     "feed": "Feed",
@@ -223,7 +223,7 @@
     "notifications_title": "Aufgaben-Erinnerungen"
   },
   "plants": {
-    "empty_state": "Keine Pflanzen in Ihrem Inventar",
+    "empty_state": "Keine Pflanzen in deinem Inventar",
     "error": "Pflanzen konnten nicht geladen werden. Bitte erneut versuchen.",
     "no_results": "Keine Pflanzen gefunden",
     "offline_notice": "Gespeicherte Pflanzen werden angezeigt",
@@ -270,7 +270,7 @@
       "title": "Personalisierte Daten"
     },
     "sessionReplay": {
-      "body": "Sitzungswiedergaben protokollieren Ihre Interaktionen mit der App, um Probleme zu debuggen. Sensible Daten werden nach Möglichkeit gefiltert oder unkenntlich gemacht; siehe Datenschutzerklärung für Details.",
+      "body": "Sitzungswiedergaben protokollieren deine Interaktionen mit der App, um Probleme zu debuggen. Sensible Daten werden nach Möglichkeit gefiltert oder unkenntlich gemacht; siehe Datenschutzerklärung für Details.",
       "subtitle": "App-Interaktionen für Debugging aufzeichnen",
       "title": "Sitzungswiedergabe"
     },

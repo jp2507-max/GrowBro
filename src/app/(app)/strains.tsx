@@ -24,11 +24,8 @@ import {
 import { translate, useAnalytics } from '@/lib';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
-import {
-  useAnalyticsConsent,
-  useNetworkStatus,
-  useScreenErrorLogger,
-} from '@/lib/hooks';
+import { useNetworkStatus, useScreenErrorLogger } from '@/lib/hooks';
+import { useAnalyticsConsent } from '@/lib/hooks/use-analytics-consent';
 import type { TxKeyPath } from '@/lib/i18n';
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -146,10 +143,12 @@ export default function StrainsScreen(): React.ReactElement {
   }, [isOffline, strains, cachedStrains]);
 
   const isSkeletonVisible = useSkeletonVisibility(isLoading, strains.length);
+
   const lastSearchPayloadRef = React.useRef<{
     query: string;
     resultsCount: number;
     isOffline: boolean;
+    hasAnalyticsConsent: boolean;
   } | null>(null);
 
   const onRetry = React.useCallback(() => {
@@ -200,7 +199,7 @@ export default function StrainsScreen(): React.ReactElement {
     lastSearchPayloadRef.current = payload;
     if (hasAnalyticsConsent) {
       void analytics.track('strain_search', {
-        query: payload.query,
+        sanitized_query: payload.query,
         results_count: payload.resultsCount,
         is_offline: payload.isOffline,
       });
