@@ -114,7 +114,9 @@ export default function StrainsScreen(): React.ReactElement {
 
   const isOffline = !isConnected || !isInternetReachable;
 
-  const [cachedStrains, setCachedStrains] = React.useState<Strain[]>([]);
+  const [cachedStrains, setCachedStrains] = React.useState<
+    Record<string, Strain[]>
+  >({});
 
   const [searchValue, setSearchValue] = React.useState('');
   const debouncedQuery = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS);
@@ -131,16 +133,18 @@ export default function StrainsScreen(): React.ReactElement {
   } = useStrainsData(debouncedQuery);
 
   React.useEffect(() => {
-    if (!isOffline && strains.length > 0) {
-      setCachedStrains(strains);
+    if (!isOffline) {
+      setCachedStrains((prev) => ({
+        ...prev,
+        [debouncedQuery]: strains,
+      }));
     }
-  }, [isOffline, strains]);
+  }, [isOffline, strains, debouncedQuery]);
 
   const listData = React.useMemo(() => {
     if (!isOffline) return strains;
-    if (strains.length > 0) return strains;
-    return cachedStrains;
-  }, [isOffline, strains, cachedStrains]);
+    return cachedStrains[debouncedQuery] || [];
+  }, [isOffline, strains, cachedStrains, debouncedQuery]);
 
   const isSkeletonVisible = useSkeletonVisibility(isLoading, strains.length);
 
@@ -199,7 +203,7 @@ export default function StrainsScreen(): React.ReactElement {
     lastSearchPayloadRef.current = payload;
     if (hasAnalyticsConsent) {
       void analytics.track('strain_search', {
-        sanitized_query: payload.query,
+        query: payload.query,
         results_count: payload.resultsCount,
         is_offline: payload.isOffline,
       });
@@ -241,7 +245,9 @@ export default function StrainsScreen(): React.ReactElement {
     return (
       <StrainsEmptyState
         query={debouncedQuery}
-        showOfflineNotice={isOffline && cachedStrains.length > 0}
+        showOfflineNotice={
+          isOffline && (cachedStrains[debouncedQuery]?.length ?? 0) > 0
+        }
       />
     );
   }, [
@@ -249,7 +255,7 @@ export default function StrainsScreen(): React.ReactElement {
     isError,
     isSkeletonVisible,
     isOffline,
-    cachedStrains.length,
+    cachedStrains,
     onRetry,
   ]);
 

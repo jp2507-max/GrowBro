@@ -373,6 +373,23 @@ function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(
     return sanitizeCommunityErrorPayload(payload);
   }
 
+  if (name === 'home_view') {
+    const sanitized = { ...(payload as AnalyticsEventPayload<'home_view'>) };
+    sanitized.widgets_shown = Array.isArray(sanitized.widgets_shown)
+      ? sanitized.widgets_shown
+          .filter((widget): widget is string => typeof widget === 'string')
+          .slice(0, 10)
+          .map((widget) =>
+            sanitizeSearchQuery(widget)
+              .toLowerCase()
+              .replace(/[^a-z0-9._-]/g, '')
+              .slice(0, 32)
+          )
+          .filter(Boolean)
+      : [];
+    return sanitized as AnalyticsEventPayload<N>;
+  }
+
   // For guided grow playbook events, ensure minimal identifiers
   if (
     name.startsWith('playbook_') ||
@@ -407,7 +424,7 @@ export const ANALYTICS_CONSENT_KEY = 'analytics';
  * - All playbook events: playbook_*, ai_adjustment_*, trichome_*
  */
 
-function sanitizeSearchQuery(query: string) {
+function sanitizeSearchQuery(query: string): string {
   // Centralized redaction for search queries: trim, limit length, and redact
   // obvious PII patterns (emails, phone numbers). Keep it simple and safe.
   if (typeof query !== 'string') return '';
