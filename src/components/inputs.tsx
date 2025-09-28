@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { OptionType } from '@/components/ui';
 import { Checkbox, Input, Radio, Select, Switch, View } from '@/components/ui';
-import { translate } from '@/lib/i18n';
+import { translate, type TxKeyPath } from '@/lib';
 
 import { Title } from './title';
 
@@ -73,12 +73,12 @@ const SwitchExample = () => {
     <Switch.Root
       checked={active}
       onChange={setActive}
-      accessibilityLabel="switch"
+      accessibilityLabel={translate('inputs.switch_label' as TxKeyPath)}
       accessibilityHint={translate('accessibility.common.toggle_hint')}
       className="pb-2"
     >
       <Switch.Icon checked={active} />
-      <Switch.Label text="switch" />
+      <Switch.Label text={translate('inputs.switch_label' as TxKeyPath)} />
     </Switch.Root>
   );
 };

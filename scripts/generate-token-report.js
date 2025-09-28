@@ -102,7 +102,12 @@ function analyzeTokens(content, matchers) {
 function analyzeSpacingTokens(content, matchers) {
   const used = new Set();
   for (const matcher of matchers) {
-    if (matcher.tests.some((regex) => regex.test(content))) {
+    if (
+      matcher.tests.some((regex) => {
+        regex.lastIndex = 0;
+        return regex.test(content);
+      })
+    ) {
       used.add(matcher.token);
     }
   }

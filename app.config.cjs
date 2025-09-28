@@ -134,6 +134,13 @@ function createExpoConfig(config) {
           android: {
             compileSdkVersion: 35,
             targetSdkVersion: 35,
+            kotlinVersion: '1.6.10',
+            packagingOptions: {
+              pickFirst: ['**/libc++_shared.so'],
+            },
+          },
+          ios: {
+            newArchEnabled: true,
           },
         },
       ],
@@ -151,10 +158,6 @@ function createExpoConfig(config) {
       'expo-background-task',
       // WatermelonDB config plugin to enable JSI adapter in Expo managed workflow
       '@morrowdigital/watermelondb-expo-plugin',
-      // Ensure CocoaPods CDN and pod repo update for CI/EAS so simdjson is found
-      './plugins/ensure-cocoapods',
-      // Add simdjson pod explicitly so WatermelonDB resolves during EAS builds
-      './plugins/ensure-simdjson',
     ],
     extra: {
       // Expose only public vars; keep secrets out of the bundle.

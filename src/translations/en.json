@@ -196,6 +196,9 @@
     "share_update_subtitle": "Let the community know how your plants are doing.",
     "share_update_title": "Share a grow update"
   },
+  "inputs": {
+    "switch_label": "Switch"
+  },
   "list": {
     "empty": {
       "body": "There are no items to display.",

@@ -196,6 +196,9 @@
     "share_update_subtitle": "Sag der Community, wie es deinen Pflanzen geht.",
     "share_update_title": "Grow-Update teilen"
   },
+  "inputs": {
+    "switch_label": "Schalter"
+  },
   "list": {
     "empty": {
       "body": "Wir zeigen hier Inhalte, sobald sie verfügbar sind.",

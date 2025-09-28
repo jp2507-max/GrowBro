@@ -1,8 +1,4 @@
-const path = require('node:path');
-
-const colors = require(
-  path.resolve(__dirname, '../../src/components/ui/colors')
-);
+const colors = require('./colors.json');
 
 const spacingScale = [
   { token: '0', value: 0 },
@@ -54,6 +50,14 @@ const spacingLookup = spacingScale.reduce((acc, entry) => {
 }, new Map());
 
 const flattenColors = (colorObject, prefix = []) => {
+  if (
+    typeof colorObject !== 'object' ||
+    colorObject === null ||
+    Array.isArray(colorObject)
+  ) {
+    return [];
+  }
+
   return Object.entries(colorObject).flatMap(([key, value]) => {
     if (typeof value === 'string') {
       return [
@@ -64,7 +68,11 @@ const flattenColors = (colorObject, prefix = []) => {
       ];
     }
 
-    return flattenColors(value, [...prefix, key]);
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      return flattenColors(value, [...prefix, key]);
+    }
+
+    return [];
   });
 };
 

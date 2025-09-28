@@ -14,7 +14,7 @@ import testingLibrary from 'eslint-plugin-testing-library';
 // eslint-disable-next-line import/no-named-as-default, import/no-named-as-default-member, import/namespace
 import eslintPluginUnicorn from 'eslint-plugin-unicorn';
 import unusedImports from 'eslint-plugin-unused-imports';
-import { configs, parser } from 'typescript-eslint';
+import { configs, parser, plugin } from 'typescript-eslint';
 
 import growbroDesignTokens from './scripts/eslint/design-tokens/index.js';
 
@@ -64,7 +64,6 @@ export default defineConfig([
       ],
       'tailwindcss/no-custom-classname': 'off',
       'react/display-name': 'off',
-      'react/no-inline-styles': 'off',
       'react/destructuring-assignment': 'off',
       'react/require-default-props': 'off',
       'unicorn/filename-case': [
@@ -86,8 +85,8 @@ export default defineConfig([
         },
       ],
       'import/prefer-default-export': 'off',
-      'import/no-cycle': ['error', { maxDepth: '∞' }],
-      'prettier/prettier': ['error', { ignores: ['expo-env.d.ts'] }],
+      'import/no-cycle': ['error', { maxDepth: Infinity }],
+      'prettier/prettier': ['error'],
       'react-native/no-inline-styles': 'warn',
       'react-native/no-color-literals': 'off',
       'react-native-a11y/has-accessibility-hint': 'warn',
@@ -116,6 +115,9 @@ export default defineConfig([
         project: './tsconfig.json',
         sourceType: 'module',
       },
+    },
+    plugins: {
+      '@typescript-eslint': plugin,
     },
     rules: {
       ...configs.recommended.rules,

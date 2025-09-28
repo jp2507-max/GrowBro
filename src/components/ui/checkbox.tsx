@@ -54,13 +54,13 @@ export const Root = ({
   return (
     <Pressable
       onPress={handleChange}
-      className={`flex-row items-center ${className} ${
-        disabled ? 'opacity-50' : ''
-      }`}
-      accessibilityState={{ checked }}
+      className={`flex-row items-center ${className} ${disabled ? 'opacity-50' : ''}`}
+      accessibilityState={
+        props.accessibilityRole === 'radio'
+          ? { selected: checked, disabled: !!disabled }
+          : { checked, disabled: !!disabled }
+      }
       disabled={disabled}
-      // expose a stable `value` prop for tests that expect Switch-like API
-      value={checked}
       {...props}
     >
       {children}
@@ -202,9 +202,15 @@ export const Radio = Object.assign(RadioBase, {
 });
 
 export const SwitchIcon = ({ checked = false }: IconProps) => {
-  const translateX = checked
-    ? THUMB_OFFSET
-    : WIDTH - THUMB_WIDTH - THUMB_OFFSET;
+  const offDist = WIDTH - THUMB_WIDTH - THUMB_OFFSET;
+  // Distance from the right edge; keep right: 0 anchoring
+  const dist = I18nManager.isRTL
+    ? checked
+      ? offDist
+      : THUMB_OFFSET // RTL: ON = left
+    : checked
+      ? THUMB_OFFSET
+      : offDist; // LTR: ON = right
 
   const backgroundColor = checked ? colors.primary[300] : colors.charcoal[400];
 
@@ -215,9 +221,7 @@ export const SwitchIcon = ({ checked = false }: IconProps) => {
       </View>
       <MotiView
         style={styles.switchThumb}
-        animate={{
-          translateX: I18nManager.isRTL ? translateX : -translateX,
-        }}
+        animate={{ translateX: -dist }}
         transition={{ translateX: { overshootClamping: true } }}
       />
     </View>

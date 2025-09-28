@@ -4,9 +4,8 @@ const { withDangerousMod } = require('@expo/config-plugins');
 
 /**
  * Ensures the generated iOS Podfile declares the simdjson dependency that
- * WatermelonDB requires. Expo's managed workflow does not add this pod by
- * default, which causes cloud builds to fail when CocoaPods cannot resolve the
- * spec from the CDN.
+ * WatermelonDB requires. This works in conjunction with react-native.config.js
+ * which handles the proper linking of the simdjson package.
  */
 module.exports = function ensureSimdjson(config) {
   return withDangerousMod(config, [
@@ -22,11 +21,8 @@ module.exports = function ensureSimdjson(config) {
         }
 
         let content = fs.readFileSync(podfilePath, 'utf8');
-        // Normalize newlines to make regexes simpler
-        const nl = content.includes('\r\n') ? '\r\n' : '\n';
-        const podLine =
-          "  pod 'simdjson', path: '../node_modules/@nozbe/simdjson', modular_headers: true";
 
+        // Check if simdjson is already handled by autolinking or manual declaration
         if (
           content.includes('@nozbe/simdjson') ||
           content.includes("pod 'simdjson'")
@@ -35,36 +31,13 @@ module.exports = function ensureSimdjson(config) {
           return config;
         }
 
-        // Try a sequence of insertion points that match common Podfile styles.
-        const patterns = [
-          /use_expo_modules!\s*\n/i,
-          /use_react_native!\([^\)]*\)\s*\n/i,
-          /use_react_native!.*\n/i,
-          /target\s+['\"][^'\"]+['\"]\s+do\s*\n/i,
-        ];
-
-        let patched = false;
-        for (const pat of patterns) {
-          if (pat.test(content)) {
-            content = content.replace(pat, (m) => `${m}${podLine}${nl}`);
-            patched = true;
-            console.info(
-              '[ensure-simdjson] inserted simdjson after match',
-              pat.toString()
-            );
-            break;
-          }
-        }
-
-        if (!patched) {
-          // Fallback: add at top
-          content = `${podLine}${nl}${content}`;
-          console.info('[ensure-simdjson] inserted simdjson at top of Podfile');
-        }
-
-        fs.writeFileSync(podfilePath, content, 'utf8');
+        // Since we're using react-native.config.js for proper linking,
+        // this plugin now serves as a backup only if autolinking fails
+        console.info(
+          '[ensure-simdjson] simdjson should be handled by autolinking via react-native.config.js'
+        );
       } catch (error) {
-        console.warn('[ensure-simdjson] failed to patch Podfile:', error);
+        console.warn('[ensure-simdjson] failed to check Podfile:', error);
       }
 
       return config;
