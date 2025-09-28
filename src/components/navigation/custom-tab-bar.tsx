@@ -177,12 +177,19 @@ const TabBarButton = React.memo(function TabBarButton({
   const color = isFocused ? activeColor : inactiveColor;
   const label = translate(item.labelKey);
   const hint = translate(item.hintKey);
+  const indicatorColorStyle = React.useMemo(
+    () => ({ backgroundColor: activeColor }),
+    [activeColor]
+  );
+  const indicatorOpacityStyle = isFocused
+    ? styles.indicatorVisible
+    : styles.indicatorHidden;
 
   return (
     <Pressable
       testID={item.testID}
       className="flex-1 items-center justify-center px-2"
-      style={{ minHeight: 48 }}
+      style={styles.tabButton}
       accessibilityRole="tab"
       accessibilityLabel={label}
       accessibilityState={{ selected: isFocused }}
@@ -195,10 +202,7 @@ const TabBarButton = React.memo(function TabBarButton({
       </View>
       <View
         pointerEvents="none"
-        style={[
-          styles.indicator,
-          { backgroundColor: activeColor, opacity: isFocused ? 1 : 0 },
-        ]}
+        style={[styles.indicator, indicatorColorStyle, indicatorOpacityStyle]}
       />
     </Pressable>
   );
@@ -213,5 +217,14 @@ const styles = StyleSheet.create({
     height: 3,
     width: 18,
     borderRadius: 999,
+  },
+  indicatorHidden: {
+    opacity: 0,
+  },
+  indicatorVisible: {
+    opacity: 1,
+  },
+  tabButton: {
+    minHeight: 48,
   },
 });

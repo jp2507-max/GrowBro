@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import React from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
+import { StyleSheet } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import * as z from 'zod';
 
@@ -33,7 +34,7 @@ export const LoginForm = ({ onSubmit = () => {} }: LoginFormProps) => {
   });
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={styles.keyboardAvoider}
       behavior="padding"
       keyboardVerticalOffset={10}
     >
@@ -82,3 +83,9 @@ export const LoginForm = ({ onSubmit = () => {} }: LoginFormProps) => {
     </KeyboardAvoidingView>
   );
 };
+
+const styles = StyleSheet.create({
+  keyboardAvoider: {
+    flex: 1,
+  },
+});

@@ -46,7 +46,11 @@ jest.mock('@/components/card', () => ({
 
 jest.mock('@/components/compose-btn', () => ({
   ComposeBtn: ({ onPress }: { onPress: () => void }) => (
-    <Pressable onPress={onPress} testID="compose-btn">
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      testID="compose-btn"
+    >
       <Text>compose</Text>
     </Pressable>
   ),

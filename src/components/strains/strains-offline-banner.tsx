@@ -18,6 +18,7 @@ export function StrainsOfflineBanner({
       testID="strains-offline-banner"
       accessibilityRole="alert"
       accessibilityLabel={translate('strains.offline_notice')}
+      accessibilityHint={translate('accessibility.strains.offline_banner_hint')}
     >
       <Text className="text-sm text-warning-700 dark:text-warning-100">
         {translate('strains.offline_notice')}

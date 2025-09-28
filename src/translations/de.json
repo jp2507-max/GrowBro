@@ -1,11 +1,20 @@
 {
   "accessibility": {
+    "calendar": {
+      "needs_review_hint": "Kennzeichnet diese Aufgabe als konfliktbehaftet und prüfungsbedürftig.",
+      "out_of_range_hint": "Zeigt an, dass der letzte Messwert außerhalb des Zielbereichs liegt.",
+      "targets_hint": "Zeigt die pH- und EC-Zielwerte dieser Aufgabe."
+    },
     "common": {
-      "retry_hint": "Wiederholt die letzte Aktion."
+      "retry_hint": "Wiederholt die letzte Aktion.",
+      "select_open_hint": "Öffnet die Auswahl für {{label}}. Doppeltippen zum Auswählen.",
+      "select_option_hint": "Wählt die Option {{label}}.",
+      "toggle_hint": "Doppeltippen, um diese Einstellung umzuschalten."
     },
     "community": {
       "compose_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
       "create_post_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
+      "error_card_hint": "Informiert, dass der Community-Feed nicht geladen werden konnte.",
       "open_post_hint": "Öffnet die Beitragsdetails."
     },
     "home": {
@@ -13,10 +22,20 @@
       "share_update_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags."
     },
     "plants": {
-      "open_detail_hint": "Öffnet die Pflanzendetails."
+      "error_card_hint": "Informiert, dass Pflanzen nicht geladen werden konnten.",
+      "offline_banner_hint": "Zeigt gespeicherte Pflanzen im Offline-Modus an.",
+      "open_detail_hint": "Öffnet die Pflanzendetails.",
+      "search_hint": "Filtert die Pflanzenliste während der Eingabe."
     },
     "strains": {
-      "open_detail_hint": "Öffnet die Sortendetails."
+      "error_card_hint": "Informiert, dass Sorten nicht geladen werden konnten.",
+      "offline_banner_hint": "Zeigt gespeicherte Sorten im Offline-Modus an.",
+      "open_detail_hint": "Öffnet die Sortendetails.",
+      "search_hint": "Filtert die Sortenliste während der Eingabe."
+    },
+    "sync": {
+      "clear_logs_hint": "Löscht das Sync-Diagnoseprotokoll.",
+      "sync_now_hint": "Startet sofort eine manuelle Synchronisierung."
     },
     "tabs": {
       "calendar_hint": "Doppeltippen, um den Kalender zu öffnen.",
@@ -176,6 +195,11 @@
     "share_update_cta": "Update teilen",
     "share_update_subtitle": "Sag der Community, wie es deinen Pflanzen geht.",
     "share_update_title": "Grow-Update teilen"
+  },
+  "inputs": {
+    "accept_terms_label": "Nutzungsbedingungen akzeptieren",
+    "checkbox_label": "Kontrollkästchen",
+    "switch_label": "Schalter"
   },
   "list": {
     "empty": {

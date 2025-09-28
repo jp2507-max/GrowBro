@@ -33,6 +33,7 @@ function TargetsSection({
       className="mb-3 rounded-md border border-neutral-200 p-3"
       accessibilityRole="summary"
       accessibilityLabel={translate('calendar.targets_title')}
+      accessibilityHint={translate('accessibility.calendar.targets_hint')}
     >
       <Text className="mb-1 text-xs uppercase text-neutral-500">
         {translate('calendar.targets_title')}

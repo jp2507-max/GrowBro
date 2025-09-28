@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import * as React from 'react';
+import { StyleSheet } from 'react-native';
 
 import {
   Button,
@@ -98,7 +99,7 @@ export default function AgeGateScreen(): React.ReactElement {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         className="flex-1"
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={styles.scrollContent}
       >
         <View className="flex-1 px-6 py-10">
           <AgeGateCopy />
@@ -202,3 +203,9 @@ function parseNumberValue(value: string): number {
   if (Number.isFinite(parsed)) return parsed;
   return Number.NaN;
 }
+
+const styles = StyleSheet.create({
+  scrollContent: {
+    flexGrow: 1,
+  },
+});

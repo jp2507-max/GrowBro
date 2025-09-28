@@ -2,7 +2,7 @@ import { useScrollToTop } from '@react-navigation/native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { type ListRenderItemInfo } from 'react-native';
+import { type ListRenderItemInfo, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import type { Strain } from '@/api';
@@ -29,6 +29,8 @@ import { useAnalyticsConsent } from '@/lib/hooks/use-analytics-consent';
 import type { TxKeyPath } from '@/lib/i18n';
 
 const SEARCH_DEBOUNCE_MS = 300;
+const LIST_HORIZONTAL_PADDING = 16;
+const LIST_BOTTOM_EXTRA = 16;
 
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList as any);
 
@@ -264,6 +266,11 @@ export default function StrainsScreen(): React.ReactElement {
     [isFetchingNextPage]
   );
 
+  const listContentPadding = React.useMemo(
+    () => ({ paddingBottom: grossHeight + LIST_BOTTOM_EXTRA }),
+    [grossHeight]
+  );
+
   return (
     <View className="flex-1" testID="strains-screen">
       <FocusAwareStatusBar />
@@ -277,6 +284,7 @@ export default function StrainsScreen(): React.ReactElement {
           onChangeText={setSearchValue}
           placeholder={translate('strains.search_placeholder')}
           accessibilityLabel={translate('strains.search_placeholder')}
+          accessibilityHint={translate('accessibility.strains.search_hint')}
           testID="strains-search-input"
         />
         <StrainsOfflineBanner isVisible={isOffline} />
@@ -299,10 +307,10 @@ export default function StrainsScreen(): React.ReactElement {
         onEndReachedThreshold={0.4}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
-        contentContainerStyle={{
-          paddingBottom: grossHeight + 16,
-          paddingHorizontal: 16,
-        }}
+        contentContainerStyle={[
+          styles.listContentContainer,
+          listContentPadding,
+        ]}
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
       />
@@ -326,6 +334,7 @@ function StrainCard({ strain, onPress }: StrainCardProps): React.ReactElement {
       testID={`strain-card-${strain.id}`}
       accessibilityRole="button"
       accessibilityLabel={strain.name}
+      accessibilityHint={translate('accessibility.strains.open_detail_hint')}
       onPress={handlePress}
     >
       <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
@@ -348,3 +357,9 @@ function StrainCard({ strain, onPress }: StrainCardProps): React.ReactElement {
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  listContentContainer: {
+    paddingHorizontal: LIST_HORIZONTAL_PADDING,
+  },
+});

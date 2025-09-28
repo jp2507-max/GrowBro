@@ -4,6 +4,7 @@ import {
   I18nManager,
   Pressable,
   type PressableProps,
+  StyleSheet,
   View,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -53,13 +54,13 @@ export const Root = ({
   return (
     <Pressable
       onPress={handleChange}
-      className={`flex-row items-center ${className} ${
-        disabled ? 'opacity-50' : ''
-      }`}
-      accessibilityState={{ checked }}
+      className={`flex-row items-center ${className} ${disabled ? 'opacity-50' : ''}`}
+      accessibilityState={
+        props.accessibilityRole === 'radio'
+          ? { selected: checked, disabled: !!disabled }
+          : { checked, disabled: !!disabled }
+      }
       disabled={disabled}
-      // expose a stable `value` prop for tests that expect Switch-like API
-      value={checked}
       {...props}
     >
       {children}
@@ -85,11 +86,7 @@ export const CheckboxIcon = ({ checked = false }: IconProps) => {
   const color = checked ? colors.primary[300] : colors.charcoal[400];
   return (
     <MotiView
-      style={{
-        height: SIZE,
-        width: SIZE,
-        borderColor: color,
-      }}
+      style={[styles.checkboxIcon, { borderColor: color }]}
       className="items-center justify-center rounded-[5px] border-2"
       from={{ backgroundColor: 'transparent', borderColor: '#CCCFD6' }}
       animate={{
@@ -156,11 +153,7 @@ export const RadioIcon = ({ checked = false }: IconProps) => {
   const color = checked ? colors.primary[300] : colors.charcoal[400];
   return (
     <MotiView
-      style={{
-        height: SIZE,
-        width: SIZE,
-        borderColor: color,
-      }}
+      style={[styles.radioIcon, { borderColor: color }]}
       className="items-center justify-center rounded-[20px] border-2 bg-transparent"
       from={{ borderColor: '#CCCFD6' }}
       animate={{
@@ -169,7 +162,7 @@ export const RadioIcon = ({ checked = false }: IconProps) => {
       transition={{ borderColor: { duration: 100, type: 'timing' } }}
     >
       <MotiView
-        className={`size-[10px] rounded-[10px] ${checked && 'bg-primary-300'} `}
+        className={`size-[10px] rounded-[10px] ${checked ? 'bg-primary-300' : ''}`}
         from={{ opacity: 0 }}
         animate={{ opacity: checked ? 1 : 0 }}
         transition={{ opacity: { duration: 50, type: 'timing' } }}
@@ -209,35 +202,26 @@ export const Radio = Object.assign(RadioBase, {
 });
 
 export const SwitchIcon = ({ checked = false }: IconProps) => {
-  const translateX = checked
-    ? THUMB_OFFSET
-    : WIDTH - THUMB_WIDTH - THUMB_OFFSET;
+  const offDist = WIDTH - THUMB_WIDTH - THUMB_OFFSET;
+  // Distance from the right edge; keep right: 0 anchoring
+  const dist = I18nManager.isRTL
+    ? checked
+      ? offDist
+      : THUMB_OFFSET // RTL: ON = left
+    : checked
+      ? THUMB_OFFSET
+      : offDist; // LTR: ON = right
 
   const backgroundColor = checked ? colors.primary[300] : colors.charcoal[400];
 
   return (
     <View className="w-[50px] justify-center">
       <View className="overflow-hidden rounded-full">
-        <View
-          style={{
-            width: WIDTH,
-            height: HEIGHT,
-            backgroundColor,
-          }}
-        />
+        <View style={[styles.switchTrack, { backgroundColor }]} />
       </View>
       <MotiView
-        style={{
-          height: THUMB_HEIGHT,
-          width: THUMB_WIDTH,
-          position: 'absolute',
-          backgroundColor: 'white',
-          borderRadius: 13,
-          right: 0,
-        }}
-        animate={{
-          translateX: I18nManager.isRTL ? translateX : -translateX,
-        }}
+        style={styles.switchThumb}
+        animate={{ translateX: -dist }}
         transition={{ translateX: { overshootClamping: true } }}
       />
     </View>
@@ -271,4 +255,27 @@ export const Switch = Object.assign(SwitchBase, {
   Icon: SwitchIcon,
   Root: SwitchRoot,
   Label,
+});
+
+const styles = StyleSheet.create({
+  checkboxIcon: {
+    height: SIZE,
+    width: SIZE,
+  },
+  radioIcon: {
+    height: SIZE,
+    width: SIZE,
+  },
+  switchThumb: {
+    backgroundColor: colors.white,
+    borderRadius: 13,
+    height: THUMB_HEIGHT,
+    position: 'absolute',
+    right: 0,
+    width: THUMB_WIDTH,
+  },
+  switchTrack: {
+    height: HEIGHT,
+    width: WIDTH,
+  },
 });

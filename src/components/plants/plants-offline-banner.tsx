@@ -18,6 +18,7 @@ export function PlantsOfflineBanner({
       testID="plants-offline-banner"
       accessibilityRole="alert"
       accessibilityLabel={translate('plants.offline_notice')}
+      accessibilityHint={translate('accessibility.plants.offline_banner_hint')}
     >
       <Text className="text-sm text-warning-700 dark:text-warning-100">
         {translate('plants.offline_notice')}

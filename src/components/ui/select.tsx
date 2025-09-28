@@ -8,8 +8,8 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import type { FieldValues } from 'react-hook-form';
 import { useController } from 'react-hook-form';
-import { Platform, View } from 'react-native';
-import { Pressable, type PressableProps } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Platform, Pressable, type PressableProps, View } from 'react-native';
 import type { SvgProps } from 'react-native-svg';
 import Svg, { Path } from 'react-native-svg';
 import { tv } from 'tailwind-variants';
@@ -64,6 +64,7 @@ type OptionsProps = {
   onSelect: (option: OptionType) => void;
   value?: string | number;
   testID?: string;
+  onDismiss?: () => void;
 };
 
 function keyExtractor(item: OptionType) {
@@ -71,11 +72,12 @@ function keyExtractor(item: OptionType) {
 }
 
 export const Options = React.forwardRef<BottomSheetModal, OptionsProps>(
-  ({ options, onSelect, value, testID }, ref) => {
+  ({ options, onSelect, value, testID, onDismiss }, ref) => {
     const height = options.length * 70 + 100;
     const snapPoints = React.useMemo(() => [height], [height]);
     const { colorScheme } = useColorScheme();
     const isDark = colorScheme === 'dark';
+    const { t } = useTranslation();
 
     const renderSelectItem = React.useCallback(
       ({ item }: { item: OptionType }) => (
@@ -84,10 +86,14 @@ export const Options = React.forwardRef<BottomSheetModal, OptionsProps>(
           label={item.label}
           selected={value === item.value}
           onPress={() => onSelect(item)}
+          accessibilityHint={t('accessibility.common.select_option_hint', {
+            label: item.label,
+          })}
+          accessibilityLabel={item.label}
           testID={testID ? `${testID}-item-${item.value}` : undefined}
         />
       ),
-      [onSelect, value, testID]
+      [onSelect, value, testID, t]
     );
 
     return (
@@ -95,6 +101,7 @@ export const Options = React.forwardRef<BottomSheetModal, OptionsProps>(
         ref={ref}
         index={0}
         snapPoints={snapPoints}
+        onDismiss={onDismiss}
         backgroundStyle={{
           backgroundColor: isDark ? colors.neutral[800] : colors.white,
         }}
@@ -114,6 +121,8 @@ const Option = React.memo(
   ({
     label,
     selected = false,
+    accessibilityHint,
+    accessibilityRole = 'menuitem',
     ...props
   }: PressableProps & {
     selected?: boolean;
@@ -122,6 +131,10 @@ const Option = React.memo(
     return (
       <Pressable
         className="flex-row items-center border-b border-neutral-300 bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800"
+        accessibilityLabel={label}
+        accessibilityRole={accessibilityRole}
+        accessibilityHint={accessibilityHint}
+        accessibilityState={{ selected }}
         {...props}
       >
         <Text className="flex-1 dark:text-neutral-100 ">{label}</Text>
@@ -157,10 +170,25 @@ export const Select = (props: SelectProps) => {
     testID,
   } = props;
   const modal = useModal();
+  const { t } = useTranslation();
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  const handleDismiss = React.useCallback(() => {
+    setIsOpen(false);
+  }, []);
+
+  const openModal = React.useCallback(() => {
+    if (disabled) {
+      return;
+    }
+    setIsOpen(true);
+    modal.present();
+  }, [disabled, modal]);
 
   const onSelectOption = React.useCallback(
     (option: OptionType) => {
       onSelect?.(option.value);
+      setIsOpen(false);
       modal.dismiss();
     },
     [modal, onSelect]
@@ -197,7 +225,17 @@ export const Select = (props: SelectProps) => {
         <Pressable
           className={styles.input()}
           disabled={disabled}
-          onPress={modal.present}
+          onPress={openModal}
+          accessibilityRole="button"
+          accessibilityLabel={label ?? placeholder}
+          accessibilityHint={
+            disabled
+              ? undefined
+              : t('accessibility.common.select_open_hint', {
+                  label: label ?? placeholder,
+                })
+          }
+          accessibilityState={{ disabled, expanded: isOpen }}
           testID={testID ? `${testID}-trigger` : undefined}
         >
           <View className="flex-1">
@@ -219,6 +257,7 @@ export const Select = (props: SelectProps) => {
         ref={modal.ref}
         options={options}
         onSelect={onSelectOption}
+        onDismiss={handleDismiss}
       />
     </>
   );

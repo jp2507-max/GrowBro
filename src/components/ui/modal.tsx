@@ -34,9 +34,11 @@ import type {
 } from '@gorhom/bottom-sheet';
 import { BottomSheetModal, useBottomSheet } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Path, Svg } from 'react-native-svg';
+
+import colors from '@/components/ui/colors';
 
 import { Text } from './text';
 
@@ -122,7 +124,7 @@ const CustomBackdrop = ({ style }: BottomSheetBackdropProps) => {
       onPress={() => close()}
       entering={FadeIn.duration(50)}
       exiting={FadeOut.duration(20)}
-      style={[style, { backgroundColor: 'rgba(0, 0, 0, 0.4)' }]}
+      style={[style, styles.backdrop]}
     />
   );
 };
@@ -145,7 +147,7 @@ const getDetachedProps = (detached: boolean) => {
     return {
       detached: true,
       bottomInset: 46,
-      style: { marginHorizontal: 16, overflow: 'hidden' },
+      style: styles.detached,
     } as Partial<BottomSheetModalProps>;
   }
   return {} as Partial<BottomSheetModalProps>;
@@ -195,3 +197,14 @@ const CloseButton = ({ close }: { close: () => void }) => {
     </Pressable>
   );
 };
+
+const styles = StyleSheet.create({
+  backdrop: {
+    backgroundColor: colors.charcoal[950],
+    opacity: 0.4,
+  },
+  detached: {
+    marginHorizontal: 16,
+    overflow: 'hidden',
+  },
+});

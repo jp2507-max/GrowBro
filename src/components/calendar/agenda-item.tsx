@@ -53,6 +53,9 @@ export function AgendaItemRow({ task, now }: Props): React.ReactElement {
         {isOutOfRange ? (
           <View
             accessibilityLabel={translate('calendar.out_of_range_label')}
+            accessibilityHint={translate(
+              'accessibility.calendar.out_of_range_hint'
+            )}
             className="ml-1 rounded-full bg-rose-600 px-2 py-0.5"
           >
             <Text className="text-[10px] text-white">
@@ -63,6 +66,9 @@ export function AgendaItemRow({ task, now }: Props): React.ReactElement {
         {'metadata' in task && (task as any).metadata?.needsReview ? (
           <View
             accessibilityLabel={translate('calendar.needs_review_label')}
+            accessibilityHint={translate(
+              'accessibility.calendar.needs_review_hint'
+            )}
             className="ml-1 rounded-full bg-amber-500 px-2 py-0.5"
           >
             <Text className="text-[10px] text-white">

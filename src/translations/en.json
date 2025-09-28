@@ -1,11 +1,20 @@
 {
   "accessibility": {
+    "calendar": {
+      "needs_review_hint": "Marks this task as needing review due to a conflict.",
+      "out_of_range_hint": "Indicates the latest reading is outside the target range.",
+      "targets_hint": "Shows the pH and EC targets for this task."
+    },
     "common": {
-      "retry_hint": "Retries the last action."
+      "retry_hint": "Retries the last action.",
+      "select_open_hint": "Opens the {{label}} picker. Double-tap to choose.",
+      "select_option_hint": "Selects the {{label}} option.",
+      "toggle_hint": "Double-tap to toggle this setting."
     },
     "community": {
       "compose_hint": "Opens the Create Post screen.",
       "create_post_hint": "Opens the Create Post screen.",
+      "error_card_hint": "Informs that the community feed failed to load.",
       "open_post_hint": "Opens the post details screen."
     },
     "home": {
@@ -13,10 +22,20 @@
       "share_update_hint": "Opens the Create Post screen."
     },
     "plants": {
-      "open_detail_hint": "Opens plant details."
+      "error_card_hint": "Informs that plants failed to load.",
+      "offline_banner_hint": "Shows saved plants while offline.",
+      "open_detail_hint": "Opens plant details.",
+      "search_hint": "Filters plants as you type."
     },
     "strains": {
-      "open_detail_hint": "Opens strain details."
+      "error_card_hint": "Informs that strains failed to load.",
+      "offline_banner_hint": "Shows saved strains while offline.",
+      "open_detail_hint": "Opens strain details.",
+      "search_hint": "Filters strains as you type."
+    },
+    "sync": {
+      "clear_logs_hint": "Clears the sync diagnostics log.",
+      "sync_now_hint": "Starts a manual sync immediately."
     },
     "tabs": {
       "calendar_hint": "Double-tap to open the Calendar tab.",
@@ -176,6 +195,11 @@
     "share_update_cta": "Share update",
     "share_update_subtitle": "Let the community know how your plants are doing.",
     "share_update_title": "Share a grow update"
+  },
+  "inputs": {
+    "accept_terms_label": "Accept terms and conditions",
+    "checkbox_label": "Checkbox",
+    "switch_label": "Switch"
   },
   "list": {
     "empty": {
