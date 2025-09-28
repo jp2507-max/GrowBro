@@ -197,6 +197,8 @@
     "share_update_title": "Grow-Update teilen"
   },
   "inputs": {
+    "accept_terms_label": "Nutzungsbedingungen akzeptieren",
+    "checkbox_label": "Kontrollkästchen",
     "switch_label": "Schalter"
   },
   "list": {

@@ -134,7 +134,6 @@ function createExpoConfig(config) {
           android: {
             compileSdkVersion: 35,
             targetSdkVersion: 35,
-            kotlinVersion: '1.6.10',
             packagingOptions: {
               pickFirst: ['**/libc++_shared.so'],
             },

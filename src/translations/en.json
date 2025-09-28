@@ -197,6 +197,8 @@
     "share_update_title": "Share a grow update"
   },
   "inputs": {
+    "accept_terms_label": "Accept terms and conditions",
+    "checkbox_label": "Checkbox",
     "switch_label": "Switch"
   },
   "list": {

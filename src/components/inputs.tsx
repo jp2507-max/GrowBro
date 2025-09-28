@@ -41,12 +41,13 @@ const CheckboxExample = () => {
     <Checkbox.Root
       checked={checked}
       onChange={setChecked}
-      accessibilityLabel="accept terms of condition"
+      accessibilityLabel={translate('inputs.accept_terms_label' as TxKeyPath)}
       accessibilityHint={translate('accessibility.common.toggle_hint')}
       className="pb-2"
+      testID="checkbox-example"
     >
       <Checkbox.Icon checked={checked} />
-      <Checkbox.Label text="checkbox" />
+      <Checkbox.Label text={translate('inputs.checkbox_label' as TxKeyPath)} />
     </Checkbox.Root>
   );
 };
