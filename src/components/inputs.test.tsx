@@ -21,7 +21,7 @@ describe('Inputs', () => {
       setup(<Inputs />);
       const checkbox = await screen.findByTestId('checkbox-example');
       expect(checkbox).toBeOnTheScreen();
-      expect(checkbox).toHaveAccessibilityValue({ checked: false });
+      expect(checkbox.props.accessibilityState.checked).toBe(false);
     });
   });
 
@@ -31,18 +31,18 @@ describe('Inputs', () => {
       const checkbox = await screen.findByTestId('checkbox-example');
 
       // Initially unchecked
-      expect(checkbox).toHaveAccessibilityValue({ checked: false });
+      expect(checkbox.props.accessibilityState.checked).toBe(false);
 
       // Toggle on
       await user.press(checkbox);
       await waitFor(() => {
-        expect(checkbox).toHaveAccessibilityValue({ checked: true });
+        expect(checkbox.props.accessibilityState.checked).toBe(true);
       });
 
       // Toggle off
       await user.press(checkbox);
       await waitFor(() => {
-        expect(checkbox).toHaveAccessibilityValue({ checked: false });
+        expect(checkbox.props.accessibilityState.checked).toBe(false);
       });
     });
   });
