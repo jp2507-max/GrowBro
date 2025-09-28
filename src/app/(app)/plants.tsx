@@ -2,7 +2,11 @@ import { useScrollToTop } from '@react-navigation/native';
 import { FlashList, type FlashListProps } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { type ListRenderItemInfo, type ViewProps } from 'react-native';
+import {
+  type ListRenderItemInfo,
+  StyleSheet,
+  type ViewProps,
+} from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import type { Plant } from '@/api';
@@ -23,6 +27,8 @@ import { useNetworkStatus, useScreenErrorLogger } from '@/lib/hooks';
 import { translate } from '@/lib/i18n';
 
 const SEARCH_DEBOUNCE_MS = 300;
+const LIST_HORIZONTAL_PADDING = 16;
+const LIST_BOTTOM_EXTRA = 16;
 
 const AnimatedFlashList = Animated.createAnimatedComponent(
   FlashList as React.ComponentType<FlashListProps<Plant>>
@@ -104,6 +110,10 @@ export default function PlantsScreen(): React.ReactElement {
   const { scrollHandler } = useAnimatedScrollList();
   const { grossHeight } = useBottomTabBarHeight();
   const { isConnected, isInternetReachable } = useNetworkStatus();
+  const listContentPadding = React.useMemo(
+    () => ({ paddingBottom: grossHeight + LIST_BOTTOM_EXTRA }),
+    [grossHeight]
+  );
 
   const listRef = React.useRef<React.ElementRef<typeof FlashList<Plant>>>(null);
   useScrollToTop(listRef);
@@ -219,6 +229,7 @@ export default function PlantsScreen(): React.ReactElement {
           onChangeText={setSearchValue}
           placeholder={translate('plants.search_placeholder')}
           accessibilityLabel={translate('plants.search_placeholder')}
+          accessibilityHint={translate('accessibility.plants.search_hint')}
           testID="plants-search-input"
         />
         <PlantsOfflineBanner isVisible={isOffline} />
@@ -237,10 +248,10 @@ export default function PlantsScreen(): React.ReactElement {
         onEndReachedThreshold={0.4}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
-        contentContainerStyle={{
-          paddingBottom: grossHeight + 16,
-          paddingHorizontal: 16,
-        }}
+        contentContainerStyle={[
+          styles.listContentContainer,
+          listContentPadding,
+        ]}
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
         estimatedItemSize={undefined}
@@ -248,3 +259,9 @@ export default function PlantsScreen(): React.ReactElement {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  listContentContainer: {
+    paddingHorizontal: LIST_HORIZONTAL_PADDING,
+  },
+});

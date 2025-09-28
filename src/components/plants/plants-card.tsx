@@ -15,6 +15,7 @@ import {
   AnimatedOptionalBlurView,
   OptionalBlurView,
 } from '@/components/shared/optional-blur-view';
+import { translate } from '@/lib/i18n';
 
 export type PlantCardProps = {
   plant: Plant;
@@ -93,6 +94,7 @@ function PlantCardContent({
       testID={`plant-card-${plant.id}`}
       accessibilityRole="button"
       accessibilityLabel={`${plant.name}${plant.stage ? `, ${plant.stage}` : ''}`}
+      accessibilityHint={translate('accessibility.plants.open_detail_hint')}
       onPress={handlePress}
     >
       <View className="flex-row items-center justify-between">

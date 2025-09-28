@@ -90,12 +90,14 @@ function DiagnosticsActions({
         label={translate('diagnostics.sync_now')}
         onPress={onSyncNow}
         accessibilityLabel={translate('diagnostics.sync_now')}
+        accessibilityHint={translate('accessibility.sync.sync_now_hint')}
       />
       <Button
         label={translate('diagnostics.clear_logs')}
         variant="outline"
         onPress={onClear}
         accessibilityLabel={translate('diagnostics.clear_logs')}
+        accessibilityHint={translate('accessibility.sync.clear_logs_hint')}
       />
     </View>
   );

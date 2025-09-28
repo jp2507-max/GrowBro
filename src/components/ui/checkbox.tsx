@@ -4,6 +4,7 @@ import {
   I18nManager,
   Pressable,
   type PressableProps,
+  StyleSheet,
   View,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -85,11 +86,7 @@ export const CheckboxIcon = ({ checked = false }: IconProps) => {
   const color = checked ? colors.primary[300] : colors.charcoal[400];
   return (
     <MotiView
-      style={{
-        height: SIZE,
-        width: SIZE,
-        borderColor: color,
-      }}
+      style={[styles.checkboxIcon, { borderColor: color }]}
       className="items-center justify-center rounded-[5px] border-2"
       from={{ backgroundColor: 'transparent', borderColor: '#CCCFD6' }}
       animate={{
@@ -156,11 +153,7 @@ export const RadioIcon = ({ checked = false }: IconProps) => {
   const color = checked ? colors.primary[300] : colors.charcoal[400];
   return (
     <MotiView
-      style={{
-        height: SIZE,
-        width: SIZE,
-        borderColor: color,
-      }}
+      style={[styles.radioIcon, { borderColor: color }]}
       className="items-center justify-center rounded-[20px] border-2 bg-transparent"
       from={{ borderColor: '#CCCFD6' }}
       animate={{
@@ -218,23 +211,10 @@ export const SwitchIcon = ({ checked = false }: IconProps) => {
   return (
     <View className="w-[50px] justify-center">
       <View className="overflow-hidden rounded-full">
-        <View
-          style={{
-            width: WIDTH,
-            height: HEIGHT,
-            backgroundColor,
-          }}
-        />
+        <View style={[styles.switchTrack, { backgroundColor }]} />
       </View>
       <MotiView
-        style={{
-          height: THUMB_HEIGHT,
-          width: THUMB_WIDTH,
-          position: 'absolute',
-          backgroundColor: 'white',
-          borderRadius: 13,
-          right: 0,
-        }}
+        style={styles.switchThumb}
         animate={{
           translateX: I18nManager.isRTL ? translateX : -translateX,
         }}
@@ -271,4 +251,27 @@ export const Switch = Object.assign(SwitchBase, {
   Icon: SwitchIcon,
   Root: SwitchRoot,
   Label,
+});
+
+const styles = StyleSheet.create({
+  checkboxIcon: {
+    height: SIZE,
+    width: SIZE,
+  },
+  radioIcon: {
+    height: SIZE,
+    width: SIZE,
+  },
+  switchThumb: {
+    backgroundColor: colors.white,
+    borderRadius: 13,
+    height: THUMB_HEIGHT,
+    position: 'absolute',
+    right: 0,
+    width: THUMB_WIDTH,
+  },
+  switchTrack: {
+    height: HEIGHT,
+    width: WIDTH,
+  },
 });

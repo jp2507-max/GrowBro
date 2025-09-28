@@ -6,6 +6,8 @@ import expoConfig from 'eslint-config-expo/flat.js';
 import i18nJsonPlugin from 'eslint-plugin-i18n-json';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import reactCompiler from 'eslint-plugin-react-compiler';
+import reactNative from 'eslint-plugin-react-native';
+import reactNativeA11y from 'eslint-plugin-react-native-a11y';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import tailwind from 'eslint-plugin-tailwindcss';
 import testingLibrary from 'eslint-plugin-testing-library';
@@ -13,6 +15,8 @@ import testingLibrary from 'eslint-plugin-testing-library';
 import eslintPluginUnicorn from 'eslint-plugin-unicorn';
 import unusedImports from 'eslint-plugin-unused-imports';
 import { configs, parser } from 'typescript-eslint';
+
+import growbroDesignTokens from './scripts/eslint/design-tokens/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -45,6 +49,9 @@ export default defineConfig([
       'simple-import-sort': simpleImportSort,
       unicorn: eslintPluginUnicorn,
       'unused-imports': unusedImports,
+      'react-native': reactNative,
+      'react-native-a11y': reactNativeA11y,
+      'growbro-design-tokens': growbroDesignTokens,
     },
     rules: {
       'max-params': ['error', 3],
@@ -81,6 +88,23 @@ export default defineConfig([
       'import/prefer-default-export': 'off',
       'import/no-cycle': ['error', { maxDepth: '∞' }],
       'prettier/prettier': ['error', { ignores: ['expo-env.d.ts'] }],
+      'react-native/no-inline-styles': 'warn',
+      'react-native/no-color-literals': 'off',
+      'react-native-a11y/has-accessibility-hint': 'warn',
+      'react-native-a11y/has-accessibility-props': 'error',
+      'react-native-a11y/has-valid-accessibility-actions': 'error',
+      'react-native-a11y/has-valid-accessibility-component-type': 'error',
+      'react-native-a11y/has-valid-accessibility-descriptors': 'error',
+      'react-native-a11y/has-valid-accessibility-role': 'error',
+      'react-native-a11y/has-valid-accessibility-state': 'error',
+      'react-native-a11y/has-valid-accessibility-states': 'error',
+      'react-native-a11y/has-valid-accessibility-traits': 'error',
+      'react-native-a11y/has-valid-accessibility-value': 'error',
+      'react-native-a11y/has-valid-accessibility-ignores-invert-colors': 'warn',
+      'react-native-a11y/has-valid-accessibility-live-region': 'error',
+      'react-native-a11y/has-valid-important-for-accessibility': 'warn',
+      'react-native-a11y/no-nested-touchables': 'error',
+      'growbro-design-tokens/enforce-design-tokens': 'warn',
       // (removed custom no-flatlist rule)
     },
   },

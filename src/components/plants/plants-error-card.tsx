@@ -18,6 +18,7 @@ export function PlantsErrorCard({
       testID="plants-error-card"
       accessibilityRole="alert"
       accessibilityLabel={translate('plants.error')}
+      accessibilityHint={translate('accessibility.plants.error_card_hint')}
     >
       <Text className="text-sm text-warning-700 dark:text-warning-100">
         {translate('plants.error')}

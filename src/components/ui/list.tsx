@@ -6,7 +6,13 @@ import {
 } from '@shopify/flash-list';
 import React, { forwardRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, View } from 'react-native';
+import {
+  ActivityIndicator,
+  type StyleProp,
+  StyleSheet,
+  View,
+  type ViewStyle,
+} from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
@@ -49,6 +55,53 @@ const DEFAULT_STRINGS: ListStrings = {
   errorBody: 'list.error.body',
   retryLabel: 'list.retry',
 };
+
+const styles = StyleSheet.create({
+  contentContainer: {
+    flexGrow: 0,
+  },
+  list: {
+    flex: 1,
+  },
+});
+
+const baseListStyle = StyleSheet.flatten(styles.list) as ViewStyle;
+const baseContentStyle = StyleSheet.flatten(
+  styles.contentContainer
+) as ViewStyle;
+
+function mergeListStyle(
+  styleProp: StyleProp<ViewStyle>,
+  backgroundColor: string
+): ViewStyle {
+  const flattened = StyleSheet.flatten(styleProp) as ViewStyle | undefined;
+  return {
+    ...baseListStyle,
+    backgroundColor,
+    ...(flattened ?? {}),
+  };
+}
+
+function mergeContentStyle(styleProp: StyleProp<ViewStyle>): ViewStyle {
+  const flattened = StyleSheet.flatten(styleProp) as ViewStyle | undefined;
+  return {
+    ...baseContentStyle,
+    ...(flattened ?? {}),
+  };
+}
+
+function buildListData<ItemT>(
+  showSkeleton: boolean,
+  data: readonly ItemT[] | null | undefined
+): ItemT[] {
+  if (showSkeleton) {
+    return Array.from(
+      { length: SKELETON_PLACEHOLDERS },
+      (_, index) => index as unknown as ItemT
+    );
+  }
+  return data ? [...data] : [];
+}
 
 function resolveStrings(
   translate: (key: string) => string,
@@ -197,16 +250,19 @@ function renderNativeList<ItemT>(
     ref,
     onEndReachedThreshold,
     contentContainerStyle,
+    style,
     ...rest
   } = props;
 
   const Skeleton = ListSkeletonComponent ?? DefaultListSkeleton;
-  const listData = showSkeleton
-    ? Array.from(
-        { length: SKELETON_PLACEHOLDERS },
-        (_, index) => index as unknown as ItemT
-      )
-    : ((data ?? []) as ItemT[]);
+  const listData = buildListData(showSkeleton, data);
+  const mergedContentContainerStyle = mergeContentStyle(
+    contentContainerStyle as StyleProp<ViewStyle>
+  );
+  const mergedListStyle = mergeListStyle(
+    style as StyleProp<ViewStyle>,
+    themeBackground
+  );
 
   return (
     <FlashList<ItemT>
@@ -231,8 +287,8 @@ function renderNativeList<ItemT>(
       }
       ListFooterComponent={ListFooterComponent}
       onEndReachedThreshold={onEndReachedThreshold ?? 0.4}
-      contentContainerStyle={[{ flexGrow: 0 }, contentContainerStyle]}
-      style={{ flex: 1, backgroundColor: themeBackground }}
+      contentContainerStyle={mergedContentContainerStyle}
+      style={mergedListStyle}
       {...rest}
     />
   );

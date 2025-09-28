@@ -19,6 +19,7 @@ export function CommunityErrorCard({
       accessibilityRole="alert"
       accessibilityLiveRegion="polite"
       accessibilityLabel={translate('community.load_error')}
+      accessibilityHint={translate('accessibility.community.error_card_hint')}
     >
       <Text className="text-sm text-warning-700 dark:text-warning-100">
         {translate('community.load_error')}

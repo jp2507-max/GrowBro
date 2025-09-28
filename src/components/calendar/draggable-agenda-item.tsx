@@ -1,5 +1,6 @@
 import React from 'react';
 import type { AccessibilityActionEvent } from 'react-native';
+import { StyleSheet } from 'react-native';
 import type { GestureType } from 'react-native-gesture-handler';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { AnimatedStyle, SharedValue } from 'react-native-reanimated';
@@ -48,7 +49,7 @@ function AgendaItemBody({
     <GestureDetector gesture={gesture}>
       <View>
         <Animated.View
-          style={[animatedStyle, { minHeight: 44 }]}
+          style={[animatedStyle, styles.body]}
           accessible
           accessibilityRole="button"
           accessibilityLabel={translate('calendar.drag_item_label', {
@@ -313,3 +314,9 @@ export function DraggableAgendaItem({ task }: Props): React.ReactElement {
     />
   );
 }
+
+const styles = StyleSheet.create({
+  body: {
+    minHeight: 44,
+  },
+});

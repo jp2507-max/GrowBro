@@ -2,6 +2,7 @@ import React from 'react';
 
 import type { OptionType } from '@/components/ui';
 import { Checkbox, Input, Radio, Select, Switch, View } from '@/components/ui';
+import { translate } from '@/lib/i18n';
 
 import { Title } from './title';
 
@@ -41,6 +42,7 @@ const CheckboxExample = () => {
       checked={checked}
       onChange={setChecked}
       accessibilityLabel="accept terms of condition"
+      accessibilityHint={translate('accessibility.common.toggle_hint')}
       className="pb-2"
     >
       <Checkbox.Icon checked={checked} />
@@ -56,6 +58,7 @@ const RadioExample = () => {
       checked={selected}
       onChange={setSelected}
       accessibilityLabel="radio button"
+      accessibilityHint={translate('accessibility.common.toggle_hint')}
       className="pb-2"
     >
       <Radio.Icon checked={selected} />
@@ -71,6 +74,7 @@ const SwitchExample = () => {
       checked={active}
       onChange={setActive}
       accessibilityLabel="switch"
+      accessibilityHint={translate('accessibility.common.toggle_hint')}
       className="pb-2"
     >
       <Switch.Icon checked={active} />

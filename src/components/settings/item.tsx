@@ -18,6 +18,8 @@ export const Item = ({ text, value, icon, onPress }: ItemProps) => {
       onPress={onPress}
       pointerEvents={isPressable ? 'auto' : 'none'}
       className="flex-1 flex-row items-center justify-between px-4 py-2"
+      accessibilityRole={isPressable ? 'button' : undefined}
+      accessibilityState={{ disabled: !isPressable }}
     >
       <View className="flex-row items-center">
         {icon && <View className="pr-2">{icon}</View>}

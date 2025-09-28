@@ -1,12 +1,12 @@
-TASK_ID: {15} with subtasks (make sure task with sub task is fully implemented)
+TASK_ID: {3.1} with subtasks (make sure task with sub task is fully implemented)
 AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the plan
 
 CONTEXT
 
-- Feature: 9. home-ui-v1
-- Task index: .kiro\specs\9. home-ui-v1\tasks.md
-- Design spec: .kiro\specs\9. home-ui-v1\design.md
-- Requirements spec: .kiro\specs\9. home-ui-v1\requirements.md
+- Feature: 10. ui-refinement-visual-qa
+- Task index: .kiro\specs\10. ui-refinement-visual-qa\tasks.md
+- Design spec: .kiro\specs\10. ui-refinement-visual-qa\design.md
+- Requirements spec: .kiro\specs\10. ui-refinement-visual-qa\requirements.md
 
 CONTRACT (outputs)
 

@@ -59,7 +59,8 @@
     "compliance:target-api": "node scripts/ci-target-api-gate.js",
     "compliance:media-audit": "node scripts/ci-media-usage-audit.js",
     "compliance:docs:validate": "node scripts/ci-compliance-docs-validate.js",
-    "compliance:audit": "node scripts/ci-compliance-audit.js"
+    "compliance:audit": "node scripts/ci-compliance-audit.js",
+    "design-tokens:coverage": "node scripts/generate-token-report.js"
   },
   "sentry": {
     "notes": "Set SENTRY_ENV and SENTRY_RELEASE in your CI before building. For EAS builds you can set SENTRY_RELEASE to the package.json version. Ensure source maps/dSYMs are uploaded from the build step or use the Expo Sentry plugin to handle this."
@@ -163,6 +164,8 @@
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-react-compiler": "19.1.0-rc.2",
+    "eslint-plugin-react-native": "^5.0.0",
+    "eslint-plugin-react-native-a11y": "^3.5.1",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-tailwindcss": "^3.18.2",
     "eslint-plugin-testing-library": "^7.8.1",

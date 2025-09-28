@@ -56,6 +56,7 @@ function ToggleRow({
         onValueChange={onChange}
         testID={`${testID}-switch`}
         accessibilityLabel={title}
+        accessibilityHint={translate('accessibility.common.toggle_hint')}
       />
     </View>
   );

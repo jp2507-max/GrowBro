@@ -18,6 +18,7 @@ export function StrainsErrorCard({
       testID="strains-error-card"
       accessibilityRole="alert"
       accessibilityLabel={translate('strains.error')}
+      accessibilityHint={translate('accessibility.strains.error_card_hint')}
     >
       <Text className="text-sm text-warning-700 dark:text-warning-100">
         {translate('strains.error')}

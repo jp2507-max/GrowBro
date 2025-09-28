@@ -19,7 +19,11 @@ const images = [
 export const Card = ({ title, body, id, userId }: Props) => {
   return (
     <Link href={`/feed/${id}`} asChild>
-      <Pressable>
+      <Pressable
+        accessibilityHint={translate('accessibility.community.open_post_hint')}
+        accessibilityLabel={title}
+        accessibilityRole="link"
+      >
         <View className="m-2 overflow-hidden rounded-xl  border border-neutral-300 bg-white  dark:bg-neutral-900">
           <Image
             className="h-56 w-full overflow-hidden rounded-t-xl"

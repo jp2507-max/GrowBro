@@ -17,35 +17,52 @@ module.exports = function ensureSimdjson(config) {
 
       try {
         if (!fs.existsSync(podfilePath)) {
+          console.info('[ensure-simdjson] Podfile not found at', podfilePath);
           return config;
         }
 
         let content = fs.readFileSync(podfilePath, 'utf8');
+        // Normalize newlines to make regexes simpler
+        const nl = content.includes('\r\n') ? '\r\n' : '\n';
         const podLine =
           "  pod 'simdjson', path: '../node_modules/@nozbe/simdjson', modular_headers: true";
 
-        if (!content.includes('@nozbe/simdjson')) {
-          if (/(use_expo_modules!\s*\n)/.test(content)) {
-            content = content.replace(
-              /(use_expo_modules!\s*\n)/,
-              `$1${podLine}\n`
-            );
-          } else if (/(use_react_native!.*\n)/.test(content)) {
-            content = content.replace(
-              /(use_react_native!.*\n)/,
-              `$1${podLine}\n`
-            );
-          } else if (/(target\s+'[^']+'\s+do\s*\n)/.test(content)) {
-            content = content.replace(
-              /(target\s+'[^']+'\s+do\s*\n)/,
-              `$1${podLine}\n`
-            );
-          } else {
-            content = `${podLine}\n${content}`;
-          }
-
-          fs.writeFileSync(podfilePath, content, 'utf8');
+        if (
+          content.includes('@nozbe/simdjson') ||
+          content.includes("pod 'simdjson'")
+        ) {
+          console.info('[ensure-simdjson] simdjson already present in Podfile');
+          return config;
         }
+
+        // Try a sequence of insertion points that match common Podfile styles.
+        const patterns = [
+          /use_expo_modules!\s*\n/i,
+          /use_react_native!\([^\)]*\)\s*\n/i,
+          /use_react_native!.*\n/i,
+          /target\s+['\"][^'\"]+['\"]\s+do\s*\n/i,
+        ];
+
+        let patched = false;
+        for (const pat of patterns) {
+          if (pat.test(content)) {
+            content = content.replace(pat, (m) => `${m}${podLine}${nl}`);
+            patched = true;
+            console.info(
+              '[ensure-simdjson] inserted simdjson after match',
+              pat.toString()
+            );
+            break;
+          }
+        }
+
+        if (!patched) {
+          // Fallback: add at top
+          content = `${podLine}${nl}${content}`;
+          console.info('[ensure-simdjson] inserted simdjson at top of Podfile');
+        }
+
+        fs.writeFileSync(podfilePath, content, 'utf8');
       } catch (error) {
         console.warn('[ensure-simdjson] failed to patch Podfile:', error);
       }

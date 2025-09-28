@@ -22,7 +22,11 @@ jest.mock('@/components/sync/connectivity-banner', () => ({
     onPress?: () => void;
     testID?: string;
   }) => (
-    <Pressable testID={testID ?? 'mock-connectivity-banner'} onPress={onPress}>
+    <Pressable
+      accessibilityRole="button"
+      testID={testID ?? 'mock-connectivity-banner'}
+      onPress={onPress}
+    >
       <Text>connectivity</Text>
     </Pressable>
   ),
