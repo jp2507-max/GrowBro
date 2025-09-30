@@ -77,7 +77,7 @@ BEGIN
   -- First deactivate any existing active tokens for this token (regardless of user_id)
   -- to prevent privacy leaks when device re-registers for different users
   UPDATE push_tokens
-  SET is_active = false, last_used_at = p_last_used_at, updated_at = now()
+  SET is_active = false, updated_at = now()
   WHERE token = p_token
     AND platform = p_platform
     AND is_active = true;
