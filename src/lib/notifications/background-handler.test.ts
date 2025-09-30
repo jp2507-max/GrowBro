@@ -103,7 +103,7 @@ function testHandleBackgroundMessage() {
   });
 }
 
-function testProcessPendingTasks() {
+function testProcessPendingTasksSuccess() {
   const mockMessage = createMockMessage();
 
   it('should process all queued tasks', async () => {
@@ -147,8 +147,12 @@ function testProcessPendingTasks() {
 
     expect(BackgroundNotificationHandler.getPendingTaskCount()).toBe(0);
   });
+}
 
-  it('should handle errors in pending tasks', async () => {
+function testProcessPendingTasksErrorHandling() {
+  const mockMessage = createMockMessage();
+
+  it('should handle errors in pending tasks and re-queue failed tasks', async () => {
     Platform.OS = 'android';
     BackgroundNotificationHandler.setDozeMode(true);
 
@@ -164,8 +168,36 @@ function testProcessPendingTasks() {
 
     await BackgroundNotificationHandler.processPendingTasks();
 
-    expect(mockCapture).toHaveBeenCalled();
-    expect(BackgroundNotificationHandler.getPendingTaskCount()).toBe(0);
+    expect(mockCapture).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({
+        operation: 'process_pending_background_tasks',
+        taskId: 'msg-123',
+        context: 'Individual background task failed, re-queueing for retry',
+      })
+    );
+    // Failed task should be re-queued for retry
+    expect(BackgroundNotificationHandler.getPendingTaskCount()).toBe(1);
+  });
+
+  it('should throw aggregated error when all tasks fail', async () => {
+    Platform.OS = 'android';
+    BackgroundNotificationHandler.setDozeMode(true);
+
+    await BackgroundNotificationHandler.handleBackgroundMessage(mockMessage);
+    BackgroundNotificationHandler.setDozeMode(false);
+
+    const { saveNotifications } = await import(
+      '@/lib/notifications/notification-storage'
+    );
+    const mockSave = saveNotifications as jest.Mock;
+    mockSave.mockRejectedValue(new Error('Processing error'));
+
+    await expect(
+      BackgroundNotificationHandler.processPendingTasks()
+    ).rejects.toThrow('All 1 background tasks failed');
+    // Task should still be re-queued for potential retry
+    expect(BackgroundNotificationHandler.getPendingTaskCount()).toBe(1);
   });
 }
 
@@ -193,6 +225,9 @@ function testStateManagement() {
 
 describe('BackgroundNotificationHandler', () => {
   describe('handleBackgroundMessage', testHandleBackgroundMessage);
-  describe('processPendingTasks', testProcessPendingTasks);
+  describe('processPendingTasks', () => {
+    describe('success scenarios', testProcessPendingTasksSuccess);
+    describe('error handling', testProcessPendingTasksErrorHandling);
+  });
   describe('state management', testStateManagement);
 });

@@ -5,6 +5,11 @@ import { NotificationErrorType } from '@/lib/notification-errors';
 import { getAndroidChannelId } from '@/lib/notifications/android-channels';
 import { DeepLinkService } from '@/lib/notifications/deep-link-service';
 import { NotificationGroupingService } from '@/lib/notifications/grouping-service';
+import { notificationAnalytics } from '@/lib/notifications/notification-analytics';
+import {
+  recordDeliveredToDevice,
+  recordOpenedByUser,
+} from '@/lib/notifications/notification-monitor';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
 type NotificationType =
@@ -93,6 +98,11 @@ async function handleForegroundNotification(
     const data = extractNotificationData(event.notification);
     const notificationType = data.type || 'system_update';
 
+    // Track delivery to device
+    if (data.messageId) {
+      recordDeliveredToDevice(data.messageId);
+    }
+
     // Apply grouping logic for community notifications
     if (
       notificationType === 'community_interaction' ||
@@ -140,6 +150,13 @@ async function handleNotificationResponse(
 
     // Track notification opened
     if (data.messageId) {
+      // Record in performance monitor
+      recordOpenedByUser(data.messageId);
+
+      // Track in analytics (updates notification_queue status)
+      await notificationAnalytics.trackNotificationOpened(data.messageId);
+
+      // Track open event in push service
       const { PushNotificationService } = await import('./push-service');
       await PushNotificationService.trackNotificationOpened(data.messageId);
     }

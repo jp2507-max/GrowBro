@@ -238,16 +238,20 @@ function collectFingerprints(environments) {
       continue;
     }
 
-    const fingerprint = getSHA256Fingerprint(
-      config.path,
-      config.alias,
-      config.password
-    );
-    if (fingerprint) {
-      fingerprints[env] = fingerprint;
-      console.log(`OK ${env}: ${fingerprint}`);
-    } else {
-      console.log(`FAIL ${env}: Failed to extract fingerprint`);
+    try {
+      const fingerprint = getSHA256Fingerprint(
+        config.path,
+        config.alias,
+        config.password
+      );
+      if (fingerprint) {
+        fingerprints[env] = fingerprint;
+        console.log(`OK ${env}: ${fingerprint}`);
+      } else {
+        console.log(`FAIL ${env}: Failed to extract fingerprint`);
+      }
+    } catch (error) {
+      console.log(`FAIL ${env}: ${error.message}`);
     }
   }
 

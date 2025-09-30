@@ -35,77 +35,71 @@ export const NotificationGroupingService = {
 };
 
 async function handleAndroidGrouping(
-  notification: CommunityNotification
+  communityNotification: CommunityNotification
 ): Promise<void> {
   try {
-    const groupKey = `post_${notification.postId}`;
+    const groupKey = `post_${communityNotification.postId}`;
     const currentCount = (groupCounts.get(groupKey) || 0) + 1;
     groupCounts.set(groupKey, currentCount);
 
     const channelId =
-      notification.type === 'community_interaction'
+      communityNotification.type === 'community_interaction'
         ? getAndroidChannelId('community.interactions')
         : getAndroidChannelId('community.likes');
 
     // Create or update group summary
-    const anyNotifications: any = Notifications as any;
-    await anyNotifications.scheduleNotificationAsync({
+    await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Community Activity',
         body: `${currentCount} new ${currentCount > 1 ? 'interactions' : 'interaction'}`,
-        data: { groupKey, type: 'summary' },
+        data: { groupKey, type: 'summary', channelId },
       },
-      trigger: null, // Present immediately
-      identifier: `summary_${groupKey}`,
-      channelId,
-      groupAlertBehavior: 'summary',
-      groupKey,
-      groupSummary: true,
+      trigger: null as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
     });
 
     // Present individual notification
-    const content = notification.notification.request?.content || {};
-    await anyNotifications.scheduleNotificationAsync({
+    const content = communityNotification.notification.request?.content || {};
+    await Notifications.scheduleNotificationAsync({
       content: {
         title: content.title || '',
         body: content.body || '',
-        data: content.data || {},
+        data: { ...content.data, groupKey, channelId },
       },
-      trigger: null, // Present immediately
-      channelId,
-      groupKey,
+      trigger: null as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
     });
   } catch (error) {
     captureCategorizedErrorSync(error, {
       operation: 'android_notification_grouping',
-      postId: notification.postId,
+      postId: communityNotification.postId,
     });
   }
 }
 
 async function handleiOSThreading(
-  notification: CommunityNotification
+  communityNotification: CommunityNotification
 ): Promise<void> {
   try {
     // On iOS, the server should already set threadIdentifier in the APNs payload
     // We just present the notification; iOS handles visual grouping automatically
-    const anyNotifications: any = Notifications as any;
-    const content = notification.notification.request?.content || {};
+    const content = communityNotification.notification.request?.content || {};
 
-    await anyNotifications.scheduleNotificationAsync({
+    await Notifications.scheduleNotificationAsync({
       content: {
         title: content.title || '',
         body: content.body || '',
-        data: content.data || {},
-        threadIdentifier:
-          notification.threadId || `post_${notification.postId}`,
+        data: {
+          ...content.data,
+          threadIdentifier:
+            communityNotification.threadId ||
+            `post_${communityNotification.postId}`,
+        },
       },
-      trigger: null, // Present immediately
+      trigger: null as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
     });
   } catch (error) {
     captureCategorizedErrorSync(error, {
       operation: 'ios_notification_threading',
-      postId: notification.postId,
+      postId: communityNotification.postId,
     });
   }
 }
