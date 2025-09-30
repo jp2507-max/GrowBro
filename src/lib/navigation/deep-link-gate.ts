@@ -13,7 +13,7 @@ type DeferredDeepLinkState = {
   clear: () => void;
 };
 
-function normalizePath(path: string): string {
+export function normalizePath(path: string): string {
   if (!path) return '/';
   return path.startsWith('/') ? path : `/${path}`;
 }

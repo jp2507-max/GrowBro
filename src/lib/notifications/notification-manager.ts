@@ -48,89 +48,152 @@ export type NotificationPreferencesSnapshot = {
   quietHoursEnd: string | null;
 };
 
-let responseSubscription: { remove: () => void } | null = null;
-let currentUserId: string | undefined;
-let currentProjectId: string | undefined;
-let listenerUserId: string | null = null;
+class NotificationManager {
+  private responseSubscription: { remove: () => void } | null = null;
+  private currentUserId: string | undefined;
+  private currentProjectId: string | undefined;
+  private listenerUserId: string | null = null;
 
-export const NotificationManager = {
+  // Mutex for serializing critical operations
+  private operationQueue: (() => Promise<any>)[] = [];
+  private isProcessingQueue = false;
+  private isDisposed = false;
+
   async initialize(options: InitializeOptions = {}): Promise<void> {
-    currentUserId = options.userId ?? currentUserId;
-    currentProjectId = options.projectId ?? currentProjectId;
+    return this.enqueueOperation(async () => {
+      if (this.isDisposed) return;
 
-    if (Platform.OS === 'ios') {
-      await registerNotificationCategories();
-    }
+      this.currentUserId = options.userId ?? this.currentUserId;
+      this.currentProjectId = options.projectId ?? this.currentProjectId;
 
-    const permissionGranted =
-      await PermissionManager.isNotificationPermissionGranted();
-    if (permissionGranted) {
-      await registerAndroidChannels();
-    }
+      if (Platform.OS === 'ios') {
+        await registerNotificationCategories();
+      }
 
-    subscribeToNotificationResponses({
-      ensureAuthenticated: options.ensureAuthenticated,
-      stashRedirect: options.stashRedirect,
-      onDeepLinkFailure: options.onDeepLinkFailure,
-    });
+      const permissionGranted =
+        await PermissionManager.isNotificationPermissionGranted();
+      if (permissionGranted) {
+        await registerAndroidChannels();
+      }
 
-    if (permissionGranted && currentUserId) {
-      await PushNotificationService.registerDeviceToken({
-        userId: currentUserId,
-        projectId: currentProjectId,
+      this.subscribeToNotificationResponses({
+        ensureAuthenticated: options.ensureAuthenticated,
+        stashRedirect: options.stashRedirect,
+        onDeepLinkFailure: options.onDeepLinkFailure,
       });
-      await ensureTokenListener();
-    }
-  },
+
+      if (permissionGranted && this.currentUserId) {
+        try {
+          await PushNotificationService.registerDeviceToken({
+            userId: this.currentUserId,
+            projectId: this.currentProjectId,
+          });
+          await this.ensureTokenListener();
+        } catch (error) {
+          captureCategorizedErrorSync(error, {
+            category: 'notification',
+            message: 'Device token registration failed during initialization',
+            context: {
+              userId: this.currentUserId,
+              projectId: this.currentProjectId,
+            },
+          });
+        }
+      }
+    });
+  }
 
   async requestPermissions(): Promise<RequestPermissionResult> {
-    const result = await PermissionManager.requestNotificationPermission();
-    if (result === 'granted') {
-      await registerAndroidChannels();
-      if (currentUserId) {
-        await PushNotificationService.registerDeviceToken({
-          userId: currentUserId,
-          projectId: currentProjectId,
-        });
-        await ensureTokenListener();
+    return this.enqueueOperation(async () => {
+      if (this.isDisposed)
+        return {
+          granted: false,
+          error: NotificationErrorType.PERMISSION_DENIED,
+        };
+
+      const result = await PermissionManager.requestNotificationPermission();
+      if (result === 'granted') {
+        await registerAndroidChannels();
+        if (this.currentUserId) {
+          try {
+            await PushNotificationService.registerDeviceToken({
+              userId: this.currentUserId,
+              projectId: this.currentProjectId,
+            });
+            await this.ensureTokenListener();
+          } catch (error) {
+            captureCategorizedErrorSync(error, {
+              category: 'notification',
+              message:
+                'Device token registration failed after permission granted',
+              context: {
+                userId: this.currentUserId,
+                projectId: this.currentProjectId,
+              },
+            });
+            return {
+              granted: false,
+              error: NotificationErrorType.NETWORK_ERROR,
+            };
+          }
+        }
+        return { granted: true };
       }
-      return { granted: true };
-    }
-    if (result === 'denied') {
-      return { granted: false, error: NotificationErrorType.PERMISSION_DENIED };
-    }
-    return { granted: false, error: NotificationErrorType.NETWORK_ERROR };
-  },
+      if (result === 'denied') {
+        return {
+          granted: false,
+          error: NotificationErrorType.PERMISSION_DENIED,
+        };
+      }
+      return { granted: false, error: NotificationErrorType.NETWORK_ERROR };
+    });
+  }
 
   async registerCurrentUser(
     userId: string,
     options?: { projectId?: string }
   ): Promise<void> {
-    currentUserId = userId;
-    if (options?.projectId) currentProjectId = options.projectId;
-    const granted = await PermissionManager.isNotificationPermissionGranted();
-    if (granted) {
-      await PushNotificationService.registerDeviceToken({
-        userId,
-        projectId: currentProjectId,
-      });
-      await ensureTokenListener();
-    }
-    await ensurePreferencesRecord(userId);
-  },
+    return this.enqueueOperation(async () => {
+      if (this.isDisposed) return;
+
+      this.currentUserId = userId;
+      if (options?.projectId) this.currentProjectId = options.projectId;
+      const granted = await PermissionManager.isNotificationPermissionGranted();
+      if (granted) {
+        try {
+          await PushNotificationService.registerDeviceToken({
+            userId,
+            projectId: this.currentProjectId,
+          });
+          await this.ensureTokenListener();
+        } catch (error) {
+          captureCategorizedErrorSync(error, {
+            category: 'notification',
+            message:
+              'Device token registration failed during user registration',
+            context: {
+              userId,
+              projectId: this.currentProjectId,
+            },
+          });
+        }
+      }
+      await ensurePreferencesRecord(userId);
+    });
+  }
 
   async getPreferences(): Promise<NotificationPreferencesSnapshot> {
-    if (!currentUserId) return { ...DEFAULT_PREFERENCES };
-    return getPreferencesForUser(currentUserId);
-  },
+    if (!this.currentUserId) return { ...DEFAULT_PREFERENCES };
+    return getPreferencesForUser(this.currentUserId);
+  }
 
   async updatePreferences(
     partial: Partial<NotificationPreferencesSnapshot>
-  ): Promise<void> {
-    if (!currentUserId) return;
-    await upsertPreferences(currentUserId, partial);
-    await syncPreferencesRemote(currentUserId);
-  },
+  ): Promise<boolean> {
+    if (!this.currentUserId) return true;
+    await upsertPreferences(this.currentUserId, partial);
+    return syncPreferencesRemote(this.currentUserId);
+  }
 
   async scheduleLocalReminder(request: {
     title: string;
@@ -148,17 +211,163 @@ export const NotificationManager = {
       androidChannelKey: request.androidChannelKey,
       threadId: request.threadId,
     });
-  },
+  }
 
   dispose(): void {
-    if (responseSubscription) {
-      responseSubscription.remove();
-      responseSubscription = null;
+    this.isDisposed = true;
+    if (this.responseSubscription) {
+      this.responseSubscription.remove();
+      this.responseSubscription = null;
     }
     PushNotificationService.stopTokenListener();
-    listenerUserId = null;
-  },
-};
+    this.listenerUserId = null;
+  }
+
+  // Private methods converted from module-level functions
+  private subscribeToNotificationResponses(options: {
+    ensureAuthenticated?: () => Promise<boolean>;
+    stashRedirect?: (url: string) => Promise<void> | void;
+    onDeepLinkFailure?: (reason: string) => void;
+  }): void {
+    // Dispose of existing subscription before creating a new one
+    if (this.responseSubscription) {
+      if (typeof this.responseSubscription.remove === 'function') {
+        this.responseSubscription.remove();
+      } else if (
+        typeof (this.responseSubscription as any).unsubscribe === 'function'
+      ) {
+        (this.responseSubscription as any).unsubscribe();
+      }
+      this.responseSubscription = null;
+    }
+
+    const anyNotifications: any = Notifications as any;
+    this.responseSubscription =
+      anyNotifications.addNotificationResponseReceivedListener(
+        async (response: any) => {
+          const deepLink = (response.notification.request.content.data as any)
+            ?.deepLink as string | undefined;
+          if (!deepLink) return;
+          const result = await DeepLinkService.handle(deepLink, {
+            ensureAuthenticated: options.ensureAuthenticated,
+            stashRedirect: options.stashRedirect,
+            onInvalid: options.onDeepLinkFailure,
+          });
+          if (!result.ok && options.onDeepLinkFailure) {
+            options.onDeepLinkFailure(result.reason);
+          }
+        }
+      );
+  }
+
+  private async ensureTokenListener(): Promise<void> {
+    if (!this.currentUserId) return;
+    const permissionGranted =
+      await PermissionManager.isNotificationPermissionGranted();
+    if (!permissionGranted) return;
+
+    // If we already have a listener for the current user, nothing to do
+    if (this.listenerUserId === this.currentUserId) return;
+
+    // If switching users, implement atomic handover:
+    // Start new listener first, then stop old one only if new one succeeds
+    if (this.listenerUserId && this.listenerUserId !== this.currentUserId) {
+      try {
+        // Start the new listener first
+        await PushNotificationService.startTokenListener({
+          userId: this.currentUserId,
+          projectId: this.currentProjectId,
+        });
+
+        // Only stop the old listener after confirming the new one is active
+        PushNotificationService.stopTokenListener();
+        this.listenerUserId = this.currentUserId;
+      } catch (error) {
+        // On failure, keep the existing listener active and log the error
+        captureCategorizedErrorSync(error, {
+          category: 'notification',
+          message:
+            'Failed to start token listener for new user, keeping existing listener active',
+          context: {
+            currentUserId: this.currentUserId,
+            existingListenerUserId: this.listenerUserId,
+            projectId: this.currentProjectId,
+          },
+        });
+        // Don't change listenerUserId - existing listener remains active
+        return;
+      }
+    } else {
+      // No existing listener, just start a new one
+      try {
+        await PushNotificationService.startTokenListener({
+          userId: this.currentUserId,
+          projectId: this.currentProjectId,
+        });
+        this.listenerUserId = this.currentUserId;
+      } catch (error) {
+        captureCategorizedErrorSync(error, {
+          category: 'notification',
+          message: 'Failed to start token listener',
+          context: {
+            userId: this.currentUserId,
+            projectId: this.currentProjectId,
+          },
+        });
+        // listenerUserId remains null/undefined
+        throw error; // Re-throw for caller to handle
+      }
+    }
+  }
+
+  // Mutex implementation using operation queue
+  private async enqueueOperation<T>(operation: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      this.operationQueue.push(async () => {
+        try {
+          const result = await operation();
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      });
+      this.processQueue();
+    });
+  }
+
+  private async processQueue(): Promise<void> {
+    if (this.isProcessingQueue || this.operationQueue.length === 0) {
+      return;
+    }
+
+    this.isProcessingQueue = true;
+
+    while (this.operationQueue.length > 0) {
+      const operation = this.operationQueue.shift()!;
+      await operation();
+    }
+
+    this.isProcessingQueue = false;
+  }
+}
+
+// Factory function for creating instances
+export function createNotificationManager(): NotificationManager {
+  return new NotificationManager();
+}
+
+// Singleton instance for backward compatibility
+let singletonInstance: NotificationManager | null = null;
+
+export function getNotificationManager(): NotificationManager {
+  if (!singletonInstance) {
+    singletonInstance = new NotificationManager();
+  }
+  return singletonInstance;
+}
+
+// Export the class for direct instantiation if needed
+export { NotificationManager };
 
 async function getPreferencesForUser(
   userId: string
@@ -211,9 +420,18 @@ async function upsertPreferences(
           systemUpdates: partial.systemUpdates ?? model.systemUpdates,
           quietHoursEnabled:
             partial.quietHoursEnabled ?? model.quietHoursEnabled,
-          quietHoursStart:
-            partial.quietHoursStart ?? model.quietHoursStart ?? null,
-          quietHoursEnd: partial.quietHoursEnd ?? model.quietHoursEnd ?? null,
+          quietHoursStart: Object.prototype.hasOwnProperty.call(
+            partial,
+            'quietHoursStart'
+          )
+            ? partial.quietHoursStart
+            : model.quietHoursStart,
+          quietHoursEnd: Object.prototype.hasOwnProperty.call(
+            partial,
+            'quietHoursEnd'
+          )
+            ? partial.quietHoursEnd
+            : model.quietHoursEnd,
           updatedAt: new Date(),
         });
       });
@@ -250,73 +468,47 @@ async function ensurePreferencesRecord(userId: string): Promise<void> {
   }
 }
 
-async function syncPreferencesRemote(userId: string): Promise<void> {
-  if (getIsTestEnvironment()) return;
-  try {
-    const prefs = await getPreferencesForUser(userId);
-    await supabase.from('notification_preferences').upsert(
-      {
-        user_id: userId,
-        community_interactions: prefs.communityInteractions,
-        community_likes: prefs.communityLikes,
-        cultivation_reminders: prefs.cultivationReminders,
-        system_updates: prefs.systemUpdates,
-        quiet_hours_enabled: prefs.quietHoursEnabled,
-        quiet_hours_start: prefs.quietHoursStart,
-        quiet_hours_end: prefs.quietHoursEnd,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id' }
-    );
-  } catch (error) {
-    captureCategorizedErrorSync(error);
-  }
-}
+async function syncPreferencesRemote(userId: string): Promise<boolean> {
+  if (getIsTestEnvironment()) return true;
 
-function subscribeToNotificationResponses(options: {
-  ensureAuthenticated?: () => Promise<boolean>;
-  stashRedirect?: (url: string) => Promise<void> | void;
-  onDeepLinkFailure?: (reason: string) => void;
-}): void {
-  if (responseSubscription) return;
-  const anyNotifications: any = Notifications as any;
-  responseSubscription =
-    anyNotifications.addNotificationResponseReceivedListener(
-      async (response: any) => {
-        const deepLink = (response.notification.request.content.data as any)
-          ?.deepLink as string | undefined;
-        if (!deepLink) return;
-        const result = await DeepLinkService.handle(deepLink, {
-          ensureAuthenticated: options.ensureAuthenticated,
-          stashRedirect: options.stashRedirect,
-          onInvalid: options.onDeepLinkFailure,
-        });
-        if (!result.ok && options.onDeepLinkFailure) {
-          options.onDeepLinkFailure(result.reason);
-        }
+  const maxRetries = 2;
+  let lastError: any;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const prefs = await getPreferencesForUser(userId);
+      await supabase.from('notification_preferences').upsert(
+        {
+          user_id: userId,
+          community_interactions: prefs.communityInteractions,
+          community_likes: prefs.communityLikes,
+          cultivation_reminders: prefs.cultivationReminders,
+          system_updates: prefs.systemUpdates,
+          quiet_hours_enabled: prefs.quietHoursEnabled,
+          quiet_hours_start: prefs.quietHoursStart,
+          quiet_hours_end: prefs.quietHoursEnd,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' }
+      );
+      return true;
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxRetries) {
+        // Exponential backoff: 1000ms, 2000ms
+        const delay = Math.pow(2, attempt) * 1000;
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
-    );
+    }
+  }
+
+  // All retries failed
+  captureCategorizedErrorSync(lastError);
+  return false;
 }
 
 function getIsTestEnvironment(): boolean {
   return (
     typeof process !== 'undefined' && process.env?.JEST_WORKER_ID !== undefined
   );
-}
-
-async function ensureTokenListener(): Promise<void> {
-  if (!currentUserId) return;
-  const permissionGranted =
-    await PermissionManager.isNotificationPermissionGranted();
-  if (!permissionGranted) return;
-  if (listenerUserId && listenerUserId !== currentUserId) {
-    PushNotificationService.stopTokenListener();
-    listenerUserId = null;
-  }
-  if (listenerUserId === currentUserId) return;
-  await PushNotificationService.startTokenListener({
-    userId: currentUserId,
-    projectId: currentProjectId,
-  });
-  listenerUserId = currentUserId;
 }

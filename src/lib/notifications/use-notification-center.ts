@@ -51,9 +51,8 @@ type Setter = Parameters<StoreCreator>[0];
 
 type Getter = Parameters<StoreCreator>[1];
 
-const cachedUnreadCount = loadCachedUnreadCount();
-
-void updateAppBadgeCount(cachedUnreadCount);
+let initializeInProgress = false;
+let refreshInProgress = false;
 
 const _useNotificationCenter = create<NotificationCenterState>((set, get) => ({
   status: 'idle',
@@ -62,7 +61,7 @@ const _useNotificationCenter = create<NotificationCenterState>((set, get) => ({
   localCursor: null,
   remoteCursor: null,
   includeArchived: false,
-  unreadCount: cachedUnreadCount,
+  unreadCount: 0,
   isLoadingMore: false,
   initialize: createInitialize(set),
   refresh: createRefresh(set, get),
@@ -76,14 +75,29 @@ const _useNotificationCenter = create<NotificationCenterState>((set, get) => ({
 
 function createInitialize(set: Setter) {
   return async (options?: { includeArchived?: boolean }) => {
-    const includeArchived = options?.includeArchived ?? false;
-    set({ status: 'loading', error: null, includeArchived, items: [] });
+    if (initializeInProgress) return;
+    initializeInProgress = true;
     try {
+      const includeArchived = options?.includeArchived ?? false;
+      set({ status: 'loading', error: null, includeArchived, items: [] });
+      const initialUnreadCount = loadCachedUnreadCount();
+      set({ unreadCount: initialUnreadCount });
+      await updateAppBadgeCount(initialUnreadCount);
+
       await archiveOlderThan();
       await flushPendingJobs();
       const page = await syncNotificationInbox({ includeArchived });
       set({ remoteCursor: page.nextCursor ?? null });
-      await hydrateFromStorage({ includeArchived, reset: true });
+      const hydrated = await hydrateFromStorage({
+        includeArchived,
+        reset: true,
+      });
+      set({
+        items: hydrated.items,
+        localCursor: hydrated.localCursor,
+        status: 'ready',
+        error: null,
+      });
       const unread = await reconcileUnreadCount();
       cacheUnreadCount(unread);
       set({ status: 'ready', unreadCount: unread });
@@ -93,18 +107,31 @@ function createInitialize(set: Setter) {
         status: 'error',
         error: error instanceof Error ? error.message : 'unknown-error',
       });
+    } finally {
+      initializeInProgress = false;
     }
   };
 }
 
 function createRefresh(set: Setter, get: Getter) {
   return async () => {
-    const includeArchived = get().includeArchived;
-    set({ status: 'loading', error: null });
+    if (refreshInProgress) return;
+    refreshInProgress = true;
     try {
+      const includeArchived = get().includeArchived;
+      set({ status: 'loading', error: null });
       const page = await syncNotificationInbox({ includeArchived });
       set({ remoteCursor: page.nextCursor ?? null });
-      await hydrateFromStorage({ includeArchived, reset: true });
+      const hydrated = await hydrateFromStorage({
+        includeArchived,
+        reset: true,
+      });
+      set({
+        items: hydrated.items,
+        localCursor: hydrated.localCursor,
+        status: 'ready',
+        error: null,
+      });
       const unread = await reconcileUnreadCount();
       cacheUnreadCount(unread);
       set({ status: 'ready', unreadCount: unread });
@@ -114,6 +141,8 @@ function createRefresh(set: Setter, get: Getter) {
         status: 'error',
         error: error instanceof Error ? error.message : 'unknown-error',
       });
+    } finally {
+      refreshInProgress = false;
     }
   };
 }
@@ -121,23 +150,35 @@ function createRefresh(set: Setter, get: Getter) {
 function createLoadMore(set: Setter, get: Getter) {
   return async () => {
     const state = get();
-    if (state.isLoadingMore) return;
+    if (state.isLoadingMore || state.status === 'loading') return;
     set({ isLoadingMore: true });
     try {
       const includeArchived = state.includeArchived;
-      const result = await hydrateFromStorage({
+      const hydrated = await hydrateFromStorage({
         includeArchived,
         cursor: state.localCursor,
       });
-      if ((result?.items.length ?? 0) === 0 && state.remoteCursor) {
+      set({
+        items: hydrated.items,
+        localCursor: hydrated.localCursor,
+        status: 'ready',
+        error: null,
+      });
+      if ((hydrated.result.items.length ?? 0) === 0 && state.remoteCursor) {
         const remotePage = await syncNotificationInbox({
           cursor: state.remoteCursor,
           includeArchived,
         });
         set({ remoteCursor: remotePage.nextCursor ?? null });
-        await hydrateFromStorage({
+        const hydratedAgain = await hydrateFromStorage({
           includeArchived,
           cursor: state.localCursor,
+        });
+        set({
+          items: hydratedAgain.items,
+          localCursor: hydratedAgain.localCursor,
+          status: 'ready',
+          error: null,
         });
       }
       set({ isLoadingMore: false });
@@ -153,8 +194,26 @@ function createLoadMore(set: Setter, get: Getter) {
 
 function createToggleArchived(set: Setter) {
   return async (value: boolean) => {
-    set({ includeArchived: value });
-    await hydrateFromStorage({ includeArchived: value, reset: true });
+    const previousValue = _useNotificationCenter.getState().includeArchived;
+    set({ includeArchived: value, status: 'loading', error: null });
+    try {
+      const hydrated = await hydrateFromStorage({
+        includeArchived: value,
+        reset: true,
+      });
+      set({
+        items: hydrated.items,
+        localCursor: hydrated.localCursor,
+        status: 'ready',
+        error: null,
+      });
+    } catch (error) {
+      set({
+        status: 'error',
+        error: error instanceof Error ? error.message : 'unknown-error',
+        includeArchived: previousValue,
+      });
+    }
   };
 }
 
@@ -164,9 +223,15 @@ function createMarkAsRead(set: Setter, get: Getter) {
     const now = new Date();
     try {
       await markNotificationsReadRemote(ids, now);
-      await hydrateFromStorage({
+      const hydrated = await hydrateFromStorage({
         includeArchived: get().includeArchived,
         reset: true,
+      });
+      set({
+        items: hydrated.items,
+        localCursor: hydrated.localCursor,
+        status: 'ready',
+        error: null,
       });
       const unread = await reconcileUnreadCount();
       cacheUnreadCount(unread);
@@ -197,9 +262,15 @@ function createArchive(set: Setter, get: Getter) {
     if (!ids.length) return;
     try {
       await archiveNotifications(ids);
-      await hydrateFromStorage({
+      const hydrated = await hydrateFromStorage({
         includeArchived: get().includeArchived,
         reset: true,
+      });
+      set({
+        items: hydrated.items,
+        localCursor: hydrated.localCursor,
+        status: 'ready',
+        error: null,
       });
     } catch (error) {
       set({
@@ -215,9 +286,15 @@ function createDelete(set: Setter, get: Getter) {
     if (!ids.length) return;
     try {
       await deleteNotificationsRemote(ids);
-      await hydrateFromStorage({
+      const hydrated = await hydrateFromStorage({
         includeArchived: get().includeArchived,
         reset: true,
+      });
+      set({
+        items: hydrated.items,
+        localCursor: hydrated.localCursor,
+        status: 'ready',
+        error: null,
       });
       const unread = await reconcileUnreadCount();
       cacheUnreadCount(unread);
@@ -240,7 +317,11 @@ async function hydrateFromStorage({
   includeArchived: boolean;
   cursor?: number | null;
   reset?: boolean;
-}): Promise<ListNotificationsResult | null> {
+}): Promise<{
+  items: NotificationSnapshot[];
+  localCursor: number | null;
+  result: ListNotificationsResult;
+}> {
   const state = _useNotificationCenter.getState();
   const effectiveCursor = reset ? null : (cursor ?? state.localCursor);
   const result = await listNotifications({
@@ -249,13 +330,7 @@ async function hydrateFromStorage({
     includeDeleted: false,
   });
   const items = reset ? result.items : [...state.items, ...result.items];
-  _useNotificationCenter.setState({
-    items,
-    localCursor: result.nextCursor,
-    status: 'ready',
-    error: null,
-  });
-  return result;
+  return { items, localCursor: result.nextCursor, result };
 }
 
 export const useNotificationCenter = createSelectors(_useNotificationCenter);

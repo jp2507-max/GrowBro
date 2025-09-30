@@ -118,7 +118,7 @@ export const PermissionManager: PermissionManagerAPI = {
     if (Number.isNaN(version)) {
       return false;
     }
-    return version >= 33;
+    return version >= 31;
   },
 
   async checkStoragePermissions(): Promise<StoragePermissionStatus> {

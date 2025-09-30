@@ -30,10 +30,15 @@ export const AndroidExactAlarmCoordinator = {
       return { granted: true };
     }
 
-    const fallback = await scheduleInexact(options.triggerAt, {
-      taskId: options.taskId,
-    });
-    return { granted: false, fallbackId: fallback.id };
+    try {
+      const fallback = await scheduleInexact(options.triggerAt, {
+        taskId: options.taskId,
+      });
+      return { granted: false, fallbackId: fallback.id };
+    } catch (error) {
+      console.error('Failed to schedule inexact alarm fallback:', error);
+      return { granted: false };
+    }
   },
 };
 

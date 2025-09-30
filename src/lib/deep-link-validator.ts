@@ -148,10 +148,20 @@ export class DeepLinkValidator {
     for (const [key, value] of Object.entries(params)) {
       if (!key || !value) continue;
       if (key.length > 256 || value.length > 256) continue;
-      if (!/^[a-zA-Z0-9_-]+$/.test(key)) continue;
-      if (!/^[a-zA-Z0-9_-]+$/.test(value)) continue;
-      if (this.options.navParamKeys.includes(key)) continue;
-      sanitized[key] = value;
+      // Strict key validation: allow letters, digits, dot, underscore, hyphen
+      if (!/^[a-zA-Z0-9._-]+$/.test(key)) continue;
+      // Relaxed value validation: decode and reject only control/null chars and excessive length
+      try {
+        const decoded = decodeURIComponent(value);
+        if (decoded.length > 256) continue;
+        // Reject control characters and null bytes
+        if (/[\x00-\x1F\x7F]/.test(decoded)) continue;
+        if (this.options.navParamKeys.includes(key)) continue;
+        sanitized[key] = decoded;
+      } catch {
+        // If decoding fails, reject the value
+        continue;
+      }
     }
     return sanitized;
   }

@@ -141,9 +141,17 @@ describe('DeepLinkValidator security edge-case matrix', () => {
     const sanitized = validator.sanitizeParams({
       id: 'abc_123',
       redirect: '/feed',
-      bad: 'a b',
+      bad: 'a\x00b', // null byte should be rejected
+      good: 'a b', // spaces should be allowed
+      email: 'user@example.com', // emails should be allowed
+      encoded: 'hello%20world', // percent-encoded should be allowed
     });
 
-    expect(sanitized).toEqual({ id: 'abc_123' });
+    expect(sanitized).toEqual({
+      id: 'abc_123',
+      good: 'a b',
+      email: 'user@example.com',
+      encoded: 'hello world', // should be decoded
+    });
   });
 });

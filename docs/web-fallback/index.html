@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta
       name="apple-itunes-app"
-      content="app-id=APPLE_APP_ID, app-argument=https://growbro.app/feed"
+      content="app-id=W7FKN3H4Y2, app-argument=https://growbro.app/feed"
     />
     <meta name="google-play-app" content="app-id=com.growbro" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -54,14 +54,15 @@
           if (event && typeof event.preventDefault === 'function') {
             event.preventDefault();
           }
-        } catch (err) {}
+        } catch (err) {
+          console.error('Failed to prevent default event behavior:', err);
+        }
 
         var ua = (navigator && navigator.userAgent) || '';
         var isIOS = /iPhone|iPad|iPod/i.test(ua);
 
         if (isIOS) {
-          window.location.href =
-            'https://apps.apple.com/app/growbro/idAPPLE_APP_ID';
+          window.location.href = 'https://apps.apple.com/app/idW7FKN3H4Y2';
         } else {
           window.location.href =
             'https://play.google.com/store/apps/details?id=com.growbro';

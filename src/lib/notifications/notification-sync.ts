@@ -1,3 +1,5 @@
+import { Q } from '@nozbe/watermelondb';
+
 import {
   acknowledgeNotifications,
   coerceRemoteNotification,
@@ -14,10 +16,53 @@ import {
   saveNotifications,
 } from '@/lib/notifications/notification-storage';
 import { getItem, removeItem, setItem } from '@/lib/storage';
+import { database } from '@/lib/watermelon';
+import type { NotificationModel } from '@/lib/watermelon-models/notification';
 
 const UNREAD_CACHE_KEY = 'notifications.unreadCount';
 const PENDING_ACK_KEY = 'notifications.pendingAck.v1';
 const PENDING_DELETE_KEY = 'notifications.pendingDelete.v1';
+const COLLECTION_NAME = 'notifications';
+
+// Mutex for synchronizing ack queue operations
+let ackQueueMutex: Promise<unknown> | null = null;
+
+// Mutex for synchronizing delete queue operations
+let deleteQueueMutex: Promise<unknown> | null = null;
+
+async function withAckQueueMutex<T>(operation: () => Promise<T>): Promise<T> {
+  // Wait for any ongoing operation to complete
+  if (ackQueueMutex) {
+    await ackQueueMutex;
+  }
+
+  // Execute the operation while holding the mutex
+  ackQueueMutex = operation();
+
+  try {
+    return (await ackQueueMutex) as T;
+  } finally {
+    ackQueueMutex = null;
+  }
+}
+
+async function withDeleteQueueMutex<T>(
+  operation: () => Promise<T>
+): Promise<T> {
+  // Wait for any ongoing operation to complete
+  if (deleteQueueMutex) {
+    await deleteQueueMutex;
+  }
+
+  // Execute the operation while holding the mutex
+  deleteQueueMutex = operation();
+
+  try {
+    return (await deleteQueueMutex) as T;
+  } finally {
+    deleteQueueMutex = null;
+  }
+}
 
 export type SyncOptions = {
   cursor?: string | null;
@@ -76,10 +121,14 @@ export async function markNotificationsReadRemote(
   await markAsRead(ids, readAt);
   try {
     await acknowledgeNotifications(ids, iso);
-    await flushPendingAcks();
   } catch {
-    enqueuePendingAck(ids, iso);
+    await enqueuePendingAck(ids, iso);
   }
+
+  // Always attempt to flush pending acks to ensure sync before returning
+  // This guarantees that any queued work is processed before updating unread count
+  await flushPendingAcks();
+
   const localUnread = await countUnread();
   cacheUnreadCount(localUnread);
 }
@@ -92,8 +141,13 @@ export async function deleteNotificationsRemote(
   try {
     await removeNotifications(ids);
     await flushPendingDeletes();
-  } catch {
-    enqueuePendingDelete(ids);
+  } catch (err) {
+    // Same mitigation as acks: after failed flush, re-check which ids still need enqueuing
+    const remainingIds = await getPendingDeleteIds(ids);
+    if (remainingIds.length > 0) {
+      await enqueuePendingDelete(remainingIds);
+    }
+    throw err; // Re-throw the original error
   }
   const localUnread = await countUnread();
   cacheUnreadCount(localUnread);
@@ -127,56 +181,83 @@ export async function flushPendingJobs(): Promise<void> {
   await Promise.all([flushPendingAcks(), flushPendingDeletes()]);
 }
 
-function enqueuePendingAck(ids: readonly string[], readAtIso: string): void {
-  const queue = getItem<PendingAck[]>(PENDING_ACK_KEY) ?? [];
-  queue.push({ ids: Array.from(ids), readAtIso });
-  setItem(PENDING_ACK_KEY, queue);
+async function enqueuePendingAck(
+  ids: readonly string[],
+  readAtIso: string
+): Promise<void> {
+  await withAckQueueMutex(async () => {
+    const queue = getItem<PendingAck[]>(PENDING_ACK_KEY) ?? [];
+    queue.push({ ids: Array.from(ids), readAtIso });
+    setItem(PENDING_ACK_KEY, queue);
+  });
 }
 
-function enqueuePendingDelete(ids: readonly string[]): void {
-  const queue = getItem<PendingDelete[]>(PENDING_DELETE_KEY) ?? [];
-  queue.push({ ids: Array.from(ids) });
-  setItem(PENDING_DELETE_KEY, queue);
+async function enqueuePendingDelete(ids: readonly string[]): Promise<void> {
+  await withDeleteQueueMutex(async () => {
+    const queue = getItem<PendingDelete[]>(PENDING_DELETE_KEY) ?? [];
+    queue.push({ ids: Array.from(ids) });
+    setItem(PENDING_DELETE_KEY, queue);
+  });
+}
+
+async function getPendingDeleteIds(ids: readonly string[]): Promise<string[]> {
+  if (!ids.length) return [];
+
+  const collection = database.collections.get(
+    COLLECTION_NAME as keyof typeof database.collections
+  ) as any;
+
+  const records = (await collection
+    .query(Q.where('id', Q.oneOf([...ids])))
+    .fetch()) as NotificationModel[];
+
+  return records
+    .filter((record) => record.deletedAt != null)
+    .map((record) => record.id);
 }
 
 async function flushPendingAcks(): Promise<void> {
-  const queue = getItem<PendingAck[]>(PENDING_ACK_KEY) ?? [];
-  if (queue.length === 0) return;
+  await withAckQueueMutex(async () => {
+    const queue = getItem<PendingAck[]>(PENDING_ACK_KEY) ?? [];
+    if (queue.length === 0) return;
 
-  const remaining: PendingAck[] = [];
-  for (const ack of queue) {
-    try {
-      await acknowledgeNotifications(ack.ids, ack.readAtIso);
-    } catch {
-      remaining.push(ack);
+    const remaining: PendingAck[] = [];
+    for (const ack of queue) {
+      try {
+        await acknowledgeNotifications(ack.ids, ack.readAtIso);
+      } catch {
+        remaining.push(ack);
+      }
     }
-  }
 
-  if (remaining.length === 0) {
-    removeItem(PENDING_ACK_KEY);
-    return;
-  }
-  setItem(PENDING_ACK_KEY, remaining);
+    if (remaining.length === 0) {
+      removeItem(PENDING_ACK_KEY);
+      return;
+    }
+    setItem(PENDING_ACK_KEY, remaining);
+  });
 }
 
 async function flushPendingDeletes(): Promise<void> {
-  const queue = getItem<PendingDelete[]>(PENDING_DELETE_KEY) ?? [];
-  if (queue.length === 0) return;
+  await withDeleteQueueMutex(async () => {
+    const queue = getItem<PendingDelete[]>(PENDING_DELETE_KEY) ?? [];
+    if (queue.length === 0) return;
 
-  const remaining: PendingDelete[] = [];
-  for (const job of queue) {
-    try {
-      await removeNotifications(job.ids);
-    } catch {
-      remaining.push(job);
+    const remaining: PendingDelete[] = [];
+    for (const job of queue) {
+      try {
+        await removeNotifications(job.ids);
+      } catch {
+        remaining.push(job);
+      }
     }
-  }
 
-  if (remaining.length === 0) {
-    removeItem(PENDING_DELETE_KEY);
-    return;
-  }
-  setItem(PENDING_DELETE_KEY, remaining);
+    if (remaining.length === 0) {
+      removeItem(PENDING_DELETE_KEY);
+      return;
+    }
+    setItem(PENDING_DELETE_KEY, remaining);
+  });
 }
 
 type PendingAck = {

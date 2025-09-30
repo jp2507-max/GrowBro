@@ -2,6 +2,7 @@ import {
   clearPendingDeepLink,
   consumePendingDeepLink,
   isProtectedDeepLinkPath,
+  normalizePath,
   peekPendingDeepLink,
   stashPendingDeepLink,
 } from './deep-link-gate';
@@ -27,6 +28,33 @@ describe('deep-link gate store', () => {
     stashPendingDeepLink('/calendar');
     clearPendingDeepLink();
     expect(peekPendingDeepLink()).toBeNull();
+  });
+});
+
+describe('normalizePath', () => {
+  test('returns "/" for empty string', () => {
+    expect(normalizePath('')).toBe('/');
+  });
+
+  test('returns "/" for null', () => {
+    expect(normalizePath(null as any)).toBe('/');
+  });
+
+  test('returns "/" for undefined', () => {
+    expect(normalizePath(undefined as any)).toBe('/');
+  });
+
+  test('adds leading slash to path without one', () => {
+    expect(normalizePath('foo/bar')).toBe('/foo/bar');
+  });
+
+  test('leaves root path "/" unchanged', () => {
+    expect(normalizePath('/')).toBe('/');
+  });
+
+  test('leaves already-slash-prefixed paths unchanged', () => {
+    expect(normalizePath('/post/123')).toBe('/post/123');
+    expect(normalizePath('/calendar')).toBe('/calendar');
   });
 });
 

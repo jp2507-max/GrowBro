@@ -25,6 +25,10 @@ export async function cancelScheduledNotificationAsync(
   return;
 }
 
+export async function cancelAllScheduledNotificationsAsync(): Promise<void> {
+  return;
+}
+
 export async function setNotificationChannelAsync(
   _id: string,
   _config: any

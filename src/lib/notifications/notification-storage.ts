@@ -128,6 +128,8 @@ export async function markAsRead(
     COLLECTION_NAME as keyof typeof database.collections
   ) as any;
 
+  const failedIds: string[] = [];
+
   await database.write(async () => {
     for (const id of ids) {
       try {
@@ -136,10 +138,17 @@ export async function markAsRead(
           model.readAt = readAt;
         });
       } catch {
-        // Ignore missing records
+        failedIds.push(id);
       }
     }
   });
+
+  if (failedIds.length > 0) {
+    console.error(
+      `Failed to mark ${failedIds.length} notification(s) as read:`,
+      { failedIds, totalAttempted: ids.length }
+    );
+  }
 }
 
 export async function markAsUnread(ids: readonly string[]): Promise<void> {
@@ -292,16 +301,18 @@ export async function saveNotifications(
 
     if (options.pruneMissing) {
       const keepIds = new Set(sourceIds);
+      const payloadIds = Array.from(keepIds);
       const survivors = (await collection
-        .query(Q.where('deleted_at', null))
+        .query(Q.where('deleted_at', null), Q.where('id', Q.notIn(payloadIds)))
         .fetch()) as NotificationModel[];
-      for (const record of survivors) {
-        if (!keepIds.has(record.id)) {
-          await record.update((model: NotificationModel) => {
-            model.deletedAt = new Date();
-          });
-        }
-      }
+      const deleteDate = new Date();
+      await Promise.all(
+        survivors.map((record) =>
+          record.update((model: NotificationModel) => {
+            model.deletedAt = deleteDate;
+          })
+        )
+      );
     }
   });
 }
@@ -316,16 +327,14 @@ function assignNotificationFields(
   model.data = stringifyPayloadData(payload.data);
   model.deepLink = payload.deepLink ?? undefined;
   model.createdAt = ensureDate(payload.createdAt);
-  model.readAt = payload.readAt ? ensureDate(payload.readAt) : undefined;
-  model.expiresAt = payload.expiresAt
-    ? ensureDate(payload.expiresAt)
-    : undefined;
-  model.archivedAt = payload.archivedAt
-    ? ensureDate(payload.archivedAt)
-    : undefined;
-  model.deletedAt = payload.deletedAt
-    ? ensureDate(payload.deletedAt)
-    : undefined;
+  model.readAt =
+    payload.readAt != null ? ensureDate(payload.readAt) : undefined;
+  model.expiresAt =
+    payload.expiresAt != null ? ensureDate(payload.expiresAt) : undefined;
+  model.archivedAt =
+    payload.archivedAt != null ? ensureDate(payload.archivedAt) : undefined;
+  model.deletedAt =
+    payload.deletedAt != null ? ensureDate(payload.deletedAt) : undefined;
   model.messageId = payload.messageId ?? undefined;
 }
 
@@ -337,27 +346,32 @@ async function safeFind(collection: any, id: string) {
   }
 }
 
-function stringifyPayloadData(
+export function stringifyPayloadData(
   value: NotificationUpsertPayload['data']
 ): string {
-  if (value == null) return 'null';
-  if (typeof value === 'string') return value;
+  if (value == null) return '<<NULL>>';
   try {
     return JSON.stringify(value);
   } catch {
-    return 'null';
+    return '<<SERIALIZE_ERROR>>';
   }
 }
 
 function ensureDate(value: string | Date): Date {
   if (value instanceof Date) return value;
   const ms = Date.parse(value);
-  if (Number.isNaN(ms)) return new Date();
+  if (Number.isNaN(ms)) {
+    throw new TypeError(
+      `Invalid date string in notification: ${String(value)}`
+    );
+  }
   return new Date(ms);
 }
 
-function parseData(raw: string): Record<string, unknown> | null {
+export function parseData(raw: string): Record<string, unknown> | null {
   if (!raw) return null;
+  if (raw === '<<NULL>>') return null;
+  if (raw === '<<SERIALIZE_ERROR>>') return null;
   try {
     const parsed = JSON.parse(raw);
     return typeof parsed === 'object' && parsed !== null ? parsed : {};

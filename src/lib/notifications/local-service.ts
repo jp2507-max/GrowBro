@@ -19,14 +19,14 @@ type ScheduleRequest = {
 export const LocalNotificationService = {
   async scheduleExactNotification(request: ScheduleRequest): Promise<string> {
     await enforceIosPendingLimit(request.triggerDate);
-    const trigger: any = {
+    const trigger: Notifications.NotificationTriggerInput = {
       type: 'date',
       date: request.triggerDate,
     };
     if (Platform.OS === 'android' && request.androidChannelKey) {
       trigger.channelId = getAndroidChannelId(request.androidChannelKey);
     }
-    const content: any = {
+    const content: Notifications.NotificationContentInput = {
       title: request.title,
       body: request.body,
       data: request.data ?? {},
@@ -35,8 +35,7 @@ export const LocalNotificationService = {
     if (request.androidChannelKey === 'cultivation.reminders') {
       content.sound = 'default';
     }
-    const anyNotifications: any = Notifications as any;
-    const id = await anyNotifications.scheduleNotificationAsync({
+    const id = await Notifications.scheduleNotificationAsync({
       content,
       trigger,
     });
@@ -45,40 +44,33 @@ export const LocalNotificationService = {
 
   async cancelScheduledNotification(identifier: string): Promise<void> {
     if (!identifier) return;
-    const anyNotifications: any = Notifications as any;
-    await anyNotifications.cancelScheduledNotificationAsync(identifier);
+    await Notifications.cancelScheduledNotificationAsync(identifier);
   },
 
   async cancelNotifications(identifiers: string[]): Promise<void> {
-    const anyNotifications: any = Notifications as any;
     await Promise.all(
       identifiers.map((identifier) =>
-        anyNotifications.cancelScheduledNotificationAsync(identifier)
+        Notifications.cancelScheduledNotificationAsync(identifier)
       )
     );
   },
 
   async cancelAllScheduled(): Promise<void> {
-    const anyNotifications: any = Notifications as any;
-    await anyNotifications.cancelAllScheduledNotificationsAsync();
+    await Notifications.cancelAllScheduledNotificationsAsync();
   },
 
   async getPendingCount(): Promise<number> {
-    const anyNotifications: any = Notifications as any;
-    const scheduled =
-      await anyNotifications.getAllScheduledNotificationsAsync();
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     return scheduled.length;
   },
 };
 
 async function enforceIosPendingLimit(incoming: Date): Promise<void> {
   if (Platform.OS !== 'ios') return;
-  const anyNotifications: any = Notifications as any;
-  const scheduled: any[] =
-    await anyNotifications.getAllScheduledNotificationsAsync();
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   if (scheduled.length < MAX_IOS_PENDING) return;
   const normalized = scheduled
-    .map((entry: any) => ({
+    .map((entry) => ({
       id: entry.identifier,
       date: extractTriggerDate(entry.trigger),
     }))
@@ -94,7 +86,7 @@ async function enforceIosPendingLimit(incoming: Date): Promise<void> {
   );
   await Promise.all(
     toCancel.map((entry) =>
-      anyNotifications.cancelScheduledNotificationAsync(entry.id)
+      Notifications.cancelScheduledNotificationAsync(entry.id)
     )
   );
 }

@@ -35,11 +35,9 @@ export class TaskNotificationService {
   private iosAppStateListener?: { remove(): void };
 
   constructor() {
-    // Ensure any platform-specific power-management handlers are at least
-    // present (no-op for now). Call without await to avoid changing
-    // synchronous initialization behavior in callers/tests.
-    void this.handleDozeMode();
+    this.setupDozeListener();
     this.setupIosForegroundRefresh();
+    void this.restorePendingDozeTasks();
   }
   /**
    * Resolves whether the notification system expects UTC timestamps
@@ -184,7 +182,8 @@ export class TaskNotificationService {
 
     if (await this.shouldDeferForDoze(timestamp)) {
       this.pendingDozeTasks.set(task.id, task);
-      return 'deferred-doze';
+      await this.persistPendingDozeTasks();
+      return '';
     }
 
     await this.ensureExactAlarms(task, timestamp);
@@ -217,10 +216,17 @@ export class TaskNotificationService {
 
   private async ensureExactAlarms(task: Task, when: Date): Promise<void> {
     if (Platform.OS !== 'android') return;
-    await AndroidExactAlarmCoordinator.ensurePermission({
-      taskId: task.id,
-      triggerAt: when,
-    });
+    try {
+      await AndroidExactAlarmCoordinator.ensurePermission({
+        taskId: task.id,
+        triggerAt: when,
+      });
+    } catch (error) {
+      console.warn(
+        '[Notifications] ensureExactAlarms failed (best-effort)',
+        error
+      );
+    }
   }
 
   private async shouldDeferForDoze(when: Date): Promise<boolean> {
@@ -236,6 +242,8 @@ export class TaskNotificationService {
     if (this.pendingDozeTasks.size === 0) return;
     const tasks = Array.from(this.pendingDozeTasks.values());
     this.pendingDozeTasks.clear();
+    await this.persistPendingDozeTasks();
+
     for (const task of tasks) {
       try {
         await this.scheduleTaskReminder(task);
@@ -243,16 +251,60 @@ export class TaskNotificationService {
         console.warn('[Notifications] deferred schedule failed', error);
       }
     }
+
+    // Clear storage after successful flush to avoid reprocessing stale entries
+    try {
+      await AsyncStorage.removeItem(PENDING_DOZE_TASKS_STORAGE_KEY);
+    } catch (error) {
+      console.warn(
+        '[Notifications] failed to clear pending doze tasks storage',
+        error
+      );
+    }
   }
 
-  /**
-   * Stub for handling Android Doze / power-save modes.
-   *
-   * The design interface requires handleDozeMode(): Promise<void>.
-   * Provide a no-op async implementation that logs a TODO so callers
-   * can safely call this method and compilation/types pass.
-   */
-  async handleDozeMode(): Promise<void> {
+  private async persistPendingDozeTasks(): Promise<void> {
+    try {
+      const serialized = JSON.stringify(
+        Array.from(this.pendingDozeTasks.entries())
+      );
+      await AsyncStorage.setItem(PENDING_DOZE_TASKS_STORAGE_KEY, serialized);
+    } catch (error) {
+      console.warn(
+        '[Notifications] failed to persist pending doze tasks',
+        error
+      );
+    }
+  }
+
+  private async restorePendingDozeTasks(): Promise<void> {
+    try {
+      const raw = await AsyncStorage.getItem(PENDING_DOZE_TASKS_STORAGE_KEY);
+      if (!raw) return;
+
+      const entries: [string, Task][] = JSON.parse(raw);
+      this.pendingDozeTasks = new Map(entries);
+
+      // Flush restored tasks
+      await this.flushPendingDozeTasks();
+    } catch (error) {
+      console.warn(
+        '[Notifications] failed to restore pending doze tasks',
+        error
+      );
+      // Clear corrupted storage
+      try {
+        await AsyncStorage.removeItem(PENDING_DOZE_TASKS_STORAGE_KEY);
+      } catch (clearError) {
+        console.warn(
+          '[Notifications] failed to clear corrupted storage',
+          clearError
+        );
+      }
+    }
+  }
+
+  private setupDozeListener(): void {
     if (Platform.OS !== 'android' || Platform.Version < 23) return;
     this.isDozeRestricted = AppState.currentState !== 'active';
     this.appStateListener?.remove?.();
@@ -264,6 +316,18 @@ export class TaskNotificationService {
         this.isDozeRestricted = true;
       }
     }) as unknown as { remove(): void };
+  }
+
+  /**
+   * Stub for handling Android Doze / power-save modes.
+   *
+   * The design interface requires handleDozeMode(): Promise<void>.
+   * Provide a no-op async implementation that logs a TODO so callers
+   * can safely call this method and compilation/types pass.
+   */
+  async handleDozeMode(): Promise<void> {
+    // No-op implementation for backward compatibility
+    // Actual setup is now done synchronously in constructor via setupDozeListener()
   }
 
   async refreshAfterBackgroundTask(): Promise<void> {
@@ -720,3 +784,5 @@ function buildCalendarOverdueDeepLink(): string {
 }
 
 const OVERDUE_DIGEST_STORAGE_KEY = '@growbro/notifications/overdue-digest';
+const PENDING_DOZE_TASKS_STORAGE_KEY =
+  '@growbro/notifications/pending-doze-tasks';

@@ -122,25 +122,43 @@ async function upsertLocalToken(token: string, userId: string): Promise<void> {
     .query(Q.where('token', token))
     .fetch()) as any[];
   if (existing.length > 0) {
+    try {
+      await database.write(async () => {
+        await existing[0].update((model: any) => {
+          model.userId = userId;
+          model.lastUsedAt = new Date();
+          model.isActive = true;
+        });
+      });
+    } catch (error) {
+      captureCategorizedErrorSync(error, {
+        operation: 'update_device_token',
+        token: token.substring(0, 10) + '...', // Truncate for privacy
+        userId,
+      });
+      throw error;
+    }
+    return;
+  }
+  try {
     await database.write(async () => {
-      await existing[0].update((model: any) => {
+      await (collection as any).create((model: any) => {
+        model.token = token;
+        model.platform = Platform.OS;
         model.userId = userId;
+        model.createdAt = new Date();
         model.lastUsedAt = new Date();
         model.isActive = true;
       });
     });
-    return;
-  }
-  await database.write(async () => {
-    await (collection as any).create((model: any) => {
-      model.token = token;
-      model.platform = Platform.OS;
-      model.userId = userId;
-      model.createdAt = new Date();
-      model.lastUsedAt = new Date();
-      model.isActive = true;
+  } catch (error) {
+    captureCategorizedErrorSync(error, {
+      operation: 'create_device_token',
+      token: token.substring(0, 10) + '...', // Truncate for privacy
+      userId,
     });
-  });
+    throw error;
+  }
 }
 
 async function updateTokenActiveState(
@@ -153,12 +171,21 @@ async function updateTokenActiveState(
     .query(Q.where('token', token))
     .fetch()) as any[];
   if (matches.length === 0) return;
-  await database.write(async () => {
-    await matches[0].update((model: any) => {
-      model.isActive = isActive;
-      model.lastUsedAt = new Date();
+  try {
+    await database.write(async () => {
+      await matches[0].update((model: any) => {
+        model.isActive = isActive;
+        model.lastUsedAt = new Date();
+      });
     });
-  });
+  } catch (error) {
+    captureCategorizedErrorSync(error, {
+      operation: 'update_token_active_state',
+      token: token.substring(0, 10) + '...', // Truncate for privacy
+      isActive,
+    });
+    throw error;
+  }
 }
 
 async function markTokenInactiveRemote(token: string): Promise<void> {
@@ -215,16 +242,26 @@ async function deactivateOtherLocalTokens(
     .fetch()) as any[];
   const stale = matches.filter((model: any) => model.token !== activeToken);
   if (stale.length === 0) return;
-  await database.write(async () => {
-    await Promise.all(
-      stale.map((model: any) =>
-        model.update((entry: any) => {
-          entry.isActive = false;
-          entry.lastUsedAt = new Date();
-        })
-      )
-    );
-  });
+  try {
+    await database.write(async () => {
+      await Promise.all(
+        stale.map((model: any) =>
+          model.update((entry: any) => {
+            entry.isActive = false;
+            entry.lastUsedAt = new Date();
+          })
+        )
+      );
+    });
+  } catch (error) {
+    captureCategorizedErrorSync(error, {
+      operation: 'deactivate_stale_tokens',
+      activeToken: activeToken.substring(0, 10) + '...', // Truncate for privacy
+      userId,
+      staleCount: stale.length,
+    });
+    throw error;
+  }
 }
 
 async function syncTokenWithSupabase(
@@ -234,22 +271,15 @@ async function syncTokenWithSupabase(
   if (getIsTestEnvironment()) return;
   try {
     const nowIso = new Date().toISOString();
-    await supabase.from('push_tokens').upsert(
-      {
-        user_id: userId,
-        token,
-        platform: Platform.OS,
-        last_used_at: nowIso,
-        is_active: true,
-      },
-      { onConflict: 'user_id,token' }
-    );
-    await supabase
-      .from('push_tokens')
-      .update({ is_active: false, last_used_at: nowIso })
-      .eq('user_id', userId)
-      .eq('platform', Platform.OS)
-      .neq('token', token);
+
+    // Use atomic RPC to prevent race conditions between deactivation and upsert
+    // This ensures all operations happen within a single database transaction
+    await supabase.rpc('upsert_push_token', {
+      p_user_id: userId,
+      p_token: token,
+      p_platform: Platform.OS,
+      p_last_used_at: nowIso,
+    });
   } catch (error) {
     captureCategorizedErrorSync(error);
   }

@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import i18n from '@/lib/i18n';
+import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
 export type AndroidChannelKey =
   | 'community.interactions'
@@ -59,25 +60,59 @@ export function getAndroidChannelId(key: AndroidChannelKey): string {
 export async function registerAndroidChannels(): Promise<void> {
   if (Platform.OS !== 'android') return;
   const anyNotifications: any = Notifications as any;
-  await Promise.all(
-    Object.values(ANDROID_CHANNEL_DEFINITIONS).map(async (definition) => {
-      const name = i18n.t(definition.nameKey);
-      const description = i18n.t(definition.descriptionKey);
-      await anyNotifications.setNotificationChannelAsync(definition.id, {
-        name,
-        description,
-        importance: definition.importance,
-        sound: definition.sound ?? undefined,
-        vibrationPattern:
-          definition.importance >= getAndroidImportance('default')
-            ? [0, 250, 250, 250]
-            : undefined,
-        lockscreenVisibility:
-          anyNotifications.AndroidNotificationVisibility?.PUBLIC ??
-          getAndroidNotificationVisibilityPublic(),
+
+  try {
+    const results = await Promise.allSettled(
+      Object.values(ANDROID_CHANNEL_DEFINITIONS).map(async (definition) => {
+        const name = i18n.t(definition.nameKey);
+        const description = i18n.t(definition.descriptionKey);
+        await anyNotifications.setNotificationChannelAsync(definition.id, {
+          name,
+          description,
+          importance: definition.importance,
+          sound: definition.sound ?? undefined,
+          vibrationPattern:
+            definition.importance >= getAndroidImportance('default')
+              ? [0, 250, 250, 250]
+              : undefined,
+          lockscreenVisibility:
+            anyNotifications.AndroidNotificationVisibility?.PUBLIC ??
+            getAndroidNotificationVisibilityPublic(),
+        });
+        return definition.id; // Return channel ID for success logging
+      })
+    );
+
+    // Process results to log any failures
+    const failures = results
+      .map((result, index) => ({ result, index }))
+      .filter(({ result }) => result.status === 'rejected')
+      .map(({ result, index }) => {
+        const channelId = Object.values(ANDROID_CHANNEL_DEFINITIONS)[index].id;
+        return {
+          channelId,
+          error: (result as PromiseRejectedResult).reason,
+        };
       });
-    })
-  );
+
+    if (failures.length > 0) {
+      failures.forEach(({ channelId, error }) => {
+        captureCategorizedErrorSync(error, {
+          channelId,
+          operation: 'android_channel_registration',
+          message: `Failed to register Android notification channel: ${channelId}`,
+        });
+      });
+    }
+  } catch (error) {
+    // This should be extremely rare since we're using Promise.allSettled,
+    // but log any unexpected global failures
+    captureCategorizedErrorSync(error, {
+      operation: 'android_channel_registration_batch',
+      message:
+        'Unexpected error during Android channel registration batch processing',
+    });
+  }
 }
 
 export function resolveMigratedChannelId(channelId: string): string {

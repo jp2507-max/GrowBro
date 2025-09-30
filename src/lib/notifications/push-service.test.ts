@@ -133,14 +133,14 @@ notificationsMock.__emitPushToken = async (token: string | null) => {
     })
   );
 };
-const watermelonMock = jest.requireMock('@/lib/watermelon');
-const supabaseMock = jest.requireMock('@/lib/supabase');
+const mockWatermelon = jest.requireMock('@/lib/watermelon');
+const mockSupabase = jest.requireMock('@/lib/supabase');
 
 let originalJestWorkerId: string | undefined;
 
 beforeAll(() => {
   originalJestWorkerId = process.env.JEST_WORKER_ID;
-  (globalThis as any).__growbroWatermelonLoader = async () => watermelonMock;
+  (globalThis as any).__growbroWatermelonLoader = async () => mockWatermelon;
 });
 
 afterAll(() => {
@@ -157,8 +157,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   pushTokenListeners.clear();
   notificationsMock.__setMockExpoPushToken('ExponentPushToken[DEVICE]');
-  watermelonMock.__resetTokens();
-  supabaseMock.__reset();
+  mockWatermelon.__resetTokens();
+  mockSupabase.__reset();
   (Platform as any).OS = 'ios';
 });
 
@@ -170,7 +170,7 @@ afterEach(() => {
   }
 });
 
-describe('registerDeviceToken', () => {
+describe('registerDeviceToken - initial storage', () => {
   test('stores token locally and syncs remotely', async () => {
     const result = await PushNotificationService.registerDeviceToken({
       userId: 'user-1',
@@ -178,7 +178,7 @@ describe('registerDeviceToken', () => {
 
     expect(result).toEqual({ token: 'ExponentPushToken[DEVICE]' });
 
-    const tokens = watermelonMock.__getTokens();
+    const tokens = mockWatermelon.__getTokens();
     expect(tokens).toHaveLength(1);
     expect(tokens[0]).toMatchObject({
       token: 'ExponentPushToken[DEVICE]',
@@ -186,7 +186,26 @@ describe('registerDeviceToken', () => {
       isActive: true,
     });
 
-    const builder = supabaseMock.__pushTokensBuilder;
+    const builder = mockSupabase.__pushTokensBuilder;
+
+    // First update: deactivate any existing active tokens for this token (regardless of user)
+    expect(builder.update).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ is_active: false })
+    );
+
+    // Second update: deactivate other tokens for this user
+    expect(builder.update).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ is_active: false })
+    );
+    expect(builder.eq).toHaveBeenCalledWith('user_id', 'user-1');
+    expect(builder.neq).toHaveBeenCalledWith(
+      'token',
+      'ExponentPushToken[DEVICE]'
+    );
+
+    // Then upsert the new active token
     expect(builder.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: 'user-1',
@@ -195,19 +214,17 @@ describe('registerDeviceToken', () => {
       }),
       { onConflict: 'user_id,token' }
     );
-    expect(builder.update).toHaveBeenCalledWith(
-      expect.objectContaining({ is_active: false })
-    );
-    expect(builder.eq).toHaveBeenCalledWith('user_id', 'user-1');
   });
+});
 
+describe('registerDeviceToken - rotations', () => {
   test('deactivates stale tokens locally and remotely', async () => {
     await PushNotificationService.registerDeviceToken({ userId: 'user-1' });
 
     notificationsMock.__setMockExpoPushToken('ExponentPushToken[ROTATED]');
     await PushNotificationService.registerDeviceToken({ userId: 'user-1' });
 
-    const tokens = watermelonMock.__getTokens();
+    const tokens = mockWatermelon.__getTokens();
     expect(tokens).toHaveLength(2);
     const active = tokens.find(
       (token: any) => token.token === 'ExponentPushToken[ROTATED]'
@@ -219,7 +236,7 @@ describe('registerDeviceToken', () => {
     expect(active?.isActive).toBe(true);
     expect(inactive?.isActive).toBe(false);
 
-    const builder = supabaseMock.__pushTokensBuilder;
+    const builder = mockSupabase.__pushTokensBuilder;
     expect(builder.neq).toHaveBeenCalledWith(
       'token',
       'ExponentPushToken[ROTATED]'
@@ -235,7 +252,7 @@ describe('token listener', () => {
       notificationsMock.__emitPushToken('ExponentPushToken[LISTENER]')
     );
 
-    const tokens = watermelonMock.__getTokens();
+    const tokens = mockWatermelon.__getTokens();
     expect(
       tokens.some((token: any) => token.token === 'ExponentPushToken[LISTENER]')
     ).toBe(true);
@@ -250,13 +267,13 @@ describe('markTokenInactive', () => {
       'ExponentPushToken[DEVICE]'
     );
 
-    const tokens = watermelonMock.__getTokens();
+    const tokens = mockWatermelon.__getTokens();
     const stored = tokens.find(
       (token: any) => token.token === 'ExponentPushToken[DEVICE]'
     );
     expect(stored?.isActive).toBe(false);
 
-    const builder = supabaseMock.__pushTokensBuilder;
+    const builder = mockSupabase.__pushTokensBuilder;
     expect(builder.update).toHaveBeenCalledWith(
       expect.objectContaining({ is_active: false })
     );
