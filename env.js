@@ -151,6 +151,14 @@ const client = z.object({
 
   VAR_BOOL: z.boolean(),
 
+  // Strains API Configuration
+
+  STRAINS_API_URL: z.string().url(),
+
+  STRAINS_API_KEY: z.string().min(1),
+
+  STRAINS_API_HOST: z.string().min(1),
+
   // Supabase Configuration
 
   SUPABASE_URL: z.string().url(),
@@ -226,6 +234,14 @@ const _clientEnv = {
   VAR_NUMBER: Number(process.env.VAR_NUMBER),
 
   VAR_BOOL: process.env.VAR_BOOL === 'true',
+
+  // Strains API Configuration
+
+  STRAINS_API_URL: process.env.STRAINS_API_URL,
+
+  STRAINS_API_KEY: process.env.STRAINS_API_KEY,
+
+  STRAINS_API_HOST: process.env.STRAINS_API_HOST,
 
   // Supabase Configuration
 

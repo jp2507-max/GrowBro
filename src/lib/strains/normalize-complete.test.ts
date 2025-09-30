@@ -48,5 +48,22 @@ describe('normalizeStrain - complete data', () => {
     expect(result.cbd).toEqual({ min: 0.5, max: 1 });
     expect(result.thc_display).toBe('18-24%');
     expect(result.cbd_display).toBe('0.5-1%');
+    expect(result.effects).toEqual([{ name: 'Relaxed', intensity: 'high' }]);
+  });
+
+  test('normalizes effects as strings correctly', () => {
+    const apiStrain = {
+      id: 'test-strain',
+      name: 'Test Strain',
+      effects: ['Relaxed', 'Happy', 'Euphoric'],
+    };
+
+    const result = normalizeStrain(apiStrain);
+
+    expect(result.effects).toEqual([
+      { name: 'Relaxed' },
+      { name: 'Happy' },
+      { name: 'Euphoric' },
+    ]);
   });
 });

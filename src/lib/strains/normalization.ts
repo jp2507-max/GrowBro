@@ -202,10 +202,15 @@ function normalizeEffects(effects: any): Effect[] {
   }
 
   return effects
-    .filter((effect) => effect && typeof effect === 'object')
+    .filter(
+      (effect) =>
+        effect !== null &&
+        (typeof effect === 'object' || typeof effect === 'string')
+    )
     .map((effect) => ({
-      name: String(effect.name || effect),
-      intensity: effect.intensity || undefined,
+      name: typeof effect === 'string' ? effect : String(effect.name || effect),
+      intensity:
+        effect && typeof effect === 'object' ? effect.intensity : undefined,
     }));
 }
 
@@ -363,18 +368,18 @@ export function formatFloweringTime(weeks?: {
     return DEFAULT_FLOWERING_TIME;
   }
 
-  if (weeks.min_weeks && weeks.max_weeks) {
+  if (weeks.min_weeks !== undefined && weeks.max_weeks !== undefined) {
     if (weeks.min_weeks === weeks.max_weeks) {
       return `${weeks.min_weeks} weeks`;
     }
     return `${weeks.min_weeks}-${weeks.max_weeks} weeks`;
   }
 
-  if (weeks.min_weeks) {
+  if (weeks.min_weeks !== undefined) {
     return `${weeks.min_weeks}+ weeks`;
   }
 
-  if (weeks.max_weeks) {
+  if (weeks.max_weeks !== undefined) {
     return `Up to ${weeks.max_weeks} weeks`;
   }
 
@@ -385,7 +390,13 @@ export function formatFloweringTime(weeks?: {
  * Formats yield information for display
  */
 export function formatYield(
-  yieldInfo?: { min_grams?: number; max_grams?: number; label?: string },
+  yieldInfo?: {
+    min_grams?: number;
+    max_grams?: number;
+    min_oz?: number;
+    max_oz?: number;
+    label?: string;
+  },
   unit: 'grams' | 'oz' = 'grams'
 ): string {
   if (!yieldInfo) {
@@ -397,20 +408,50 @@ export function formatYield(
   }
 
   const unitLabel = unit === 'grams' ? 'g' : 'oz';
+  const GRAMS_PER_OUNCE = 28.3495;
 
-  if (yieldInfo.min_grams && yieldInfo.max_grams) {
-    if (yieldInfo.min_grams === yieldInfo.max_grams) {
-      return `${yieldInfo.min_grams}${unitLabel}`;
+  // Normalize values to requested unit
+  let minValue: number | undefined;
+  let maxValue: number | undefined;
+
+  if (unit === 'oz') {
+    // Prefer oz values, otherwise convert from grams
+    minValue =
+      yieldInfo.min_oz !== undefined
+        ? yieldInfo.min_oz
+        : yieldInfo.min_grams !== undefined
+          ? Math.round((yieldInfo.min_grams / GRAMS_PER_OUNCE) * 100) / 100
+          : undefined;
+    maxValue =
+      yieldInfo.max_oz !== undefined
+        ? yieldInfo.max_oz
+        : yieldInfo.max_grams !== undefined
+          ? Math.round((yieldInfo.max_grams / GRAMS_PER_OUNCE) * 100) / 100
+          : undefined;
+  } else {
+    // Use grams directly
+    minValue = yieldInfo.min_grams;
+    maxValue = yieldInfo.max_grams;
+  }
+
+  // Check for no numeric values
+  if (minValue === undefined && maxValue === undefined) {
+    return DEFAULT_YIELD;
+  }
+
+  if (minValue !== undefined && maxValue !== undefined) {
+    if (minValue === maxValue) {
+      return `${minValue}${unitLabel}`;
     }
-    return `${yieldInfo.min_grams}-${yieldInfo.max_grams}${unitLabel}`;
+    return `${minValue}-${maxValue}${unitLabel}`;
   }
 
-  if (yieldInfo.min_grams) {
-    return `${yieldInfo.min_grams}${unitLabel}+`;
+  if (minValue !== undefined) {
+    return `${minValue}${unitLabel}+`;
   }
 
-  if (yieldInfo.max_grams) {
-    return `Up to ${yieldInfo.max_grams}${unitLabel}`;
+  if (maxValue !== undefined) {
+    return `Up to ${maxValue}${unitLabel}`;
   }
 
   return DEFAULT_YIELD;

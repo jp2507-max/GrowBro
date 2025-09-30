@@ -44,11 +44,13 @@ function useStrainsData(searchQuery: string) {
     hasNextPage,
     isFetchingNextPage,
     refetch,
-  } = useStrainsInfinite({ variables: { query: searchQuery.trim() } });
+  } = useStrainsInfinite({
+    variables: { searchQuery: searchQuery.trim() },
+  });
 
   const strains = React.useMemo<Strain[]>(() => {
     if (!data?.pages?.length) return [];
-    return data.pages.flatMap((page) => page.results);
+    return data.pages.flatMap((page) => page.data);
   }, [data?.pages]);
 
   return {
@@ -340,9 +342,9 @@ function StrainCard({ strain, onPress }: StrainCardProps): React.ReactElement {
       <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
         {strain.name}
       </Text>
-      {strain.type ? (
+      {strain.race ? (
         <Text className="text-sm text-neutral-500 dark:text-neutral-300">
-          {strain.type}
+          {strain.race}
         </Text>
       ) : null}
       {strain.description ? (

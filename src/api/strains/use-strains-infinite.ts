@@ -1,43 +1,57 @@
 import { keepPreviousData } from '@tanstack/react-query';
 import { createInfiniteQuery } from 'react-query-kit';
 
-import { client, DEFAULT_LIMIT } from '@/api/common';
-import { getNextPageParam } from '@/api/common/utils';
-import type { Strain } from '@/api/strains/types';
-import type { PaginateQuery } from '@/api/types';
+import { getStrainsApiClient } from './client';
+import type { StrainFilters, StrainsResponse } from './types';
 
-type Variables = {
-  cursor?: string;
-  query?: string;
+/**
+ * Parameters for infinite strains query
+ */
+export type UseStrainsInfiniteParams = {
+  searchQuery?: string;
+  filters?: StrainFilters;
+  pageSize?: number;
 };
 
-type StrainPage = PaginateQuery<Strain>;
-
+/**
+ * Infinite query hook for browsing strains with search and filters
+ * Implements React Query v5 patterns with cursor-based pagination
+ *
+ * @example
+ * ```tsx
+ * const { data, fetchNextPage, hasNextPage, isLoading } = useStrainsInfinite({
+ *   searchQuery: 'og kush',
+ *   filters: { race: 'hybrid' },
+ *   pageSize: 20
+ * });
+ * ```
+ */
 export const useStrainsInfinite = createInfiniteQuery<
-  StrainPage,
-  Variables,
+  StrainsResponse,
+  UseStrainsInfiniteParams,
   Error,
   string | undefined
 >({
-  queryKey: ['strains-infinite'],
+  queryKey: ['strains'],
   fetcher: async (variables, { pageParam, signal }) => {
-    const params: Record<string, string> = {
-      limit: String(DEFAULT_LIMIT),
-    };
+    const client = getStrainsApiClient();
 
-    if (variables?.query) {
-      params.search = variables.query;
-    }
+    const response = await client.getStrains({
+      searchQuery: variables?.searchQuery,
+      filters: variables?.filters,
+      pageSize: variables?.pageSize ?? 20,
+      cursor: pageParam,
+      signal,
+    });
 
-    const cursor = pageParam ?? variables?.cursor;
-    if (cursor) {
-      params.cursor = cursor;
-    }
-
-    const response = await client.get('strains', { params, signal });
-    return response.data as StrainPage;
+    return response;
   },
-  getNextPageParam,
+  getNextPageParam: (lastPage) => {
+    // Return cursor if more pages available, undefined to stop pagination
+    return lastPage.hasMore ? lastPage.nextCursor : undefined;
+  },
   placeholderData: keepPreviousData,
   initialPageParam: undefined,
+  staleTime: 5 * 60 * 1000, // 5 minutes - prevents unnecessary refetches
+  gcTime: 10 * 60 * 1000, // 10 minutes - cache garbage collection
 });

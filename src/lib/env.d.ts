@@ -17,6 +17,11 @@ declare module '@env' {
     // API
     API_URL: string;
 
+    // Strains API
+    STRAINS_API_URL: string;
+    STRAINS_API_KEY: string;
+    STRAINS_API_HOST: string;
+
     // Misc
     VAR_NUMBER: number;
     VAR_BOOL: boolean;

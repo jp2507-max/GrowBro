@@ -1,48 +1,48 @@
 # Implementation Plan
 
-- [ ] 1. Set up core data types and utilities
+- [x] 1. Set up core data types and utilities
   - Create TypeScript interfaces for Strain, FavoriteStrain, and related types
   - Implement data normalization utilities with unit tests for parsing THC/CBD ranges, yields, and flowering times
   - Add constants for default values, BlurHash placeholders, and error messages
   - _Requirements: 10.1, 10.2, 11.3_
 
-- [ ] 2. Implement API client with proxy integration
-- [ ] 2.1 Create base API client with proper URL handling
+- [x] 2. Implement API client with proxy integration
+- [x] 2.1 Create base API client with proper URL handling
   - Write StrainsApiClient class with URL encoding and AbortSignal support
   - Verify and map to actual The Weed DB endpoints (query params vs path params)
   - Add HTTP caching with ETag/If-None-Match and Cache-Control headers
   - Implement truncated exponential backoff with jitter, capped max delay
   - _Requirements: 10.1, 10.2, 10.6_
 
-- [ ] 2.2 Add API response normalization
+- [x] 2.2 Add API response normalization
   - Create normalizeStrain function to handle inconsistent API data
   - Implement parsePercentageRange and formatPercentageDisplay with Intl.NumberFormat
   - Add FormatJS polyfills for Hermes compatibility on iOS
   - Add unit tests for all normalization functions with edge cases and locale formatting
   - _Requirements: 10.1, 10.2, 11.3_
 
-- [ ] 3. Set up React Query hooks for data fetching
-- [ ] 3.1 Implement infinite query hook for strains list
+- [x] 3. Set up React Query hooks for data fetching
+- [x] 3.1 Implement infinite query hook for strains list
   - Create useStrainsInfinite hook with explicit initialPageParam and placeholderData: keepPreviousData
   - Add AbortSignal integration to cancel in-flight requests on query changes
   - Implement truncated exponential backoff with jitter for 429/5xx errors only
   - Add queryClient.ensureInfiniteQueryData for prefetching list pages
   - _Requirements: 1.1, 1.2, 9.4, 9.5, 9.6_
 
-- [ ] 3.2 Create single strain detail query hook
+- [x] 3.2 Create single strain detail query hook
   - Implement useStrain hook with 24-hour staleTime
   - Add proper error handling and loading states
   - Create prefetch utilities for detail pages
   - _Requirements: 4.1, 9.5_
 
-- [ ] 4. Build WatermelonDB schema and models
-- [ ] 4.1 Create database schema for favorites and cached strains
+- [x] 4. Build WatermelonDB schema and models
+- [x] 4.1 Create database schema for favorites and cached strains
   - Define favorites table with strain_id, snapshot, and sync fields
   - Create cached_strains table for offline browsing support
   - Add proper indexing for query performance
   - _Requirements: 5.1, 5.4, 5.5_
 
-- [ ] 4.2 Implement WatermelonDB models and repositories
+- [x] 4.2 Implement WatermelonDB models and repositories
   - Configure Expo config plugin and JSI for dev builds
   - Create Favorite model with JSON snapshot parsing and LWW semantics
   - Implement CachedStrain model with composite indexes for (query_hash, page_number)

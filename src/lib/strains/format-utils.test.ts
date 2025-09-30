@@ -2,7 +2,7 @@
  * Unit tests for format utilities
  */
 
-import { NOT_REPORTED } from './constants';
+import { DEFAULT_FLOWERING_TIME, NOT_REPORTED } from './constants';
 import { formatFloweringTime, formatYield } from './normalization';
 
 describe('formatFloweringTime', () => {
@@ -24,9 +24,15 @@ describe('formatFloweringTime', () => {
     expect(formatFloweringTime({ max_weeks: 10 })).toBe('Up to 10 weeks');
   });
 
+  test('handles zero values correctly', () => {
+    expect(formatFloweringTime({ min_weeks: 0, max_weeks: 0 })).toBe('0 weeks');
+    expect(formatFloweringTime({ min_weeks: 0 })).toBe('0+ weeks');
+    expect(formatFloweringTime({ max_weeks: 0 })).toBe('Up to 0 weeks');
+  });
+
   test('returns default for undefined', () => {
-    expect(formatFloweringTime(undefined)).toBe('Varies');
-    expect(formatFloweringTime({})).toBe('Varies');
+    expect(formatFloweringTime(undefined)).toBe(DEFAULT_FLOWERING_TIME);
+    expect(formatFloweringTime({})).toBe(DEFAULT_FLOWERING_TIME);
   });
 });
 
