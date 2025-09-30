@@ -12,6 +12,9 @@ export const AndroidNotificationVisibility = {
   SECRET: -1,
 } as const;
 
+let mockExpoPushToken: string | null = 'ExponentPushToken[MOCK]';
+let pushTokenListener: ((payload: unknown) => void) | null = null;
+
 export async function scheduleNotificationAsync(_: any): Promise<string> {
   return 'mock-notification-id';
 }
@@ -27,6 +30,42 @@ export async function setNotificationChannelAsync(
   _config: any
 ): Promise<void> {
   return;
+}
+
+export async function getExpoPushTokenAsync(_options?: any): Promise<{
+  data?: string;
+}> {
+  if (!mockExpoPushToken) return { data: undefined };
+  return { data: mockExpoPushToken };
+}
+
+export function addPushTokenListener(listener: (payload: unknown) => void): {
+  remove: () => void;
+} {
+  pushTokenListener = listener;
+  return {
+    remove: () => {
+      if (pushTokenListener === listener) {
+        pushTokenListener = null;
+      }
+    },
+  };
+}
+
+export function __setMockExpoPushToken(token: string | null): void {
+  mockExpoPushToken = token;
+}
+
+export function __emitPushToken(payload: unknown): Promise<void> | void {
+  const result = pushTokenListener?.(payload);
+  if (result && typeof (result as Promise<any>).then === 'function') {
+    return result as Promise<void>;
+  }
+  return result as void;
+}
+
+export async function getAllScheduledNotificationsAsync(): Promise<any[]> {
+  return [];
 }
 
 export async function requestPermissionsAsync(): Promise<{

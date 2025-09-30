@@ -2,7 +2,10 @@ import { Database } from '@nozbe/watermelondb';
 import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
 
 import { migrations } from './watermelon-migrations';
+import { DeviceTokenModel } from './watermelon-models/device-token';
 import { ImageUploadQueueModel } from './watermelon-models/image-upload-queue';
+import { NotificationModel } from './watermelon-models/notification';
+import { NotificationPreferenceModel } from './watermelon-models/notification-preference';
 import { NotificationQueueModel } from './watermelon-models/notification-queue';
 import { OccurrenceOverrideModel } from './watermelon-models/occurrence-override';
 import { SeriesModel } from './watermelon-models/series';
@@ -26,6 +29,9 @@ export const database = new Database({
     TaskModel,
     OccurrenceOverrideModel,
     NotificationQueueModel,
+    NotificationModel,
+    NotificationPreferenceModel,
+    DeviceTokenModel,
     ImageUploadQueueModel,
   ],
 });

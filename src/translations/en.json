@@ -239,6 +239,95 @@
     "feed": "Feed",
     "post": "Post"
   },
+  "notifications": {
+    "actions": {
+      "dismiss": "Dismiss",
+      "markDone": "Mark as done",
+      "reply": "Reply",
+      "replyPlaceholder": "Type your reply…",
+      "replySubmit": "Send",
+      "snooze": "Snooze",
+      "viewDetails": "View details",
+      "viewPost": "View post",
+      "viewProfile": "View profile"
+    },
+    "channels": {
+      "communityInteractions": {
+        "description": "Replies, mentions, and moderation requests from the community.",
+        "name": "Community interactions"
+      },
+      "communityLikes": {
+        "description": "Likes and reactions to your shared updates.",
+        "name": "Community likes"
+      },
+      "cultivationReminders": {
+        "description": "Task reminders and drying or curing alerts for your grow.",
+        "name": "Grow reminders"
+      },
+      "systemUpdates": {
+        "description": "Critical account notices, policy reminders, or security alerts.",
+        "name": "System updates"
+      }
+    },
+    "exactAlarm": {
+      "body": "Allow exact alarms so watering and feeding reminders fire exactly when scheduled.",
+      "cta": "Open settings",
+      "title": "Keep reminders on time"
+    },
+    "inbox": {
+      "archived": {
+        "hide": "Hide archived",
+        "show": "Show archived",
+        "toggle_hint": "Toggles whether archived notifications are shown."
+      },
+      "empty": {
+        "all": {
+          "body": "New updates will appear here.",
+          "title": "You're all caught up"
+        },
+        "unread": {
+          "body": "We'll keep this updated as soon as something new arrives.",
+          "title": "No unread notifications"
+        }
+      },
+      "error": {
+        "body": "Check your connection and try again.",
+        "retry": "Retry",
+        "title": "Couldn't load notifications"
+      },
+      "filters": {
+        "all": "All",
+        "unread": "Unread"
+      },
+      "loading": "Loading notifications…",
+      "mark_all_hint": "Marks every notification as read.",
+      "mark_all_read": "Mark all as read",
+      "mark_read": "Mark as read",
+      "open_hint": "Opens notification details",
+      "refresh": "Pull to refresh",
+      "sections": {
+        "default": "{{date}}",
+        "today": "Today",
+        "yesterday": "Yesterday"
+      },
+      "timestamp": {
+        "default": "{{date}} · {{time}}",
+        "today": "Today · {{time}}",
+        "weekday": "{{weekday}} · {{time}}",
+        "yesterday": "Yesterday · {{time}}"
+      },
+      "title": "Notifications",
+      "unread_badge": "Unread",
+      "unread_count_one": "{{count}} unread",
+      "unread_count_other": "{{count}} unread",
+      "unread_count_zero": "All caught up"
+    },
+    "overdue": {
+      "body_one": "You have {{count}} overdue task. Catch up to keep your grow on track.",
+      "body_other": "You have {{count}} overdue tasks. Catch up to keep your grow on track.",
+      "title": "Tasks need attention"
+    }
+  },
   "onboarding": {
     "allow_button": "Allow notifications",
     "continue_button": "Continue",

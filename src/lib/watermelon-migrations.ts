@@ -630,5 +630,165 @@ export const migrations = schemaMigrations({
         }),
       ],
     },
+    {
+      toVersion: 7,
+      steps: [
+        {
+          type: 'create_table',
+          schema: {
+            name: 'notifications',
+            columns: {
+              type: { name: 'type', type: 'string', isIndexed: true },
+              title: { name: 'title', type: 'string' },
+              body: { name: 'body', type: 'string' },
+              data: { name: 'data', type: 'string' },
+              deep_link: {
+                name: 'deep_link',
+                type: 'string',
+                isOptional: true,
+              },
+              read_at: {
+                name: 'read_at',
+                type: 'number',
+                isOptional: true,
+                isIndexed: true,
+              },
+              created_at: {
+                name: 'created_at',
+                type: 'number',
+                isIndexed: true,
+              },
+              expires_at: {
+                name: 'expires_at',
+                type: 'number',
+                isOptional: true,
+                isIndexed: true,
+              },
+              message_id: {
+                name: 'message_id',
+                type: 'string',
+                isOptional: true,
+                isIndexed: true,
+              },
+            },
+            columnArray: [
+              { name: 'type', type: 'string', isIndexed: true },
+              { name: 'title', type: 'string' },
+              { name: 'body', type: 'string' },
+              { name: 'data', type: 'string' },
+              { name: 'deep_link', type: 'string', isOptional: true },
+              {
+                name: 'read_at',
+                type: 'number',
+                isOptional: true,
+                isIndexed: true,
+              },
+              { name: 'created_at', type: 'number', isIndexed: true },
+              {
+                name: 'expires_at',
+                type: 'number',
+                isOptional: true,
+                isIndexed: true,
+              },
+              {
+                name: 'message_id',
+                type: 'string',
+                isOptional: true,
+                isIndexed: true,
+              },
+            ],
+          },
+        },
+        {
+          type: 'create_table',
+          schema: {
+            name: 'notification_preferences',
+            columns: {
+              user_id: { name: 'user_id', type: 'string', isIndexed: true },
+              community_interactions: {
+                name: 'community_interactions',
+                type: 'boolean',
+              },
+              community_likes: {
+                name: 'community_likes',
+                type: 'boolean',
+              },
+              cultivation_reminders: {
+                name: 'cultivation_reminders',
+                type: 'boolean',
+              },
+              system_updates: {
+                name: 'system_updates',
+                type: 'boolean',
+              },
+              quiet_hours_enabled: {
+                name: 'quiet_hours_enabled',
+                type: 'boolean',
+              },
+              quiet_hours_start: {
+                name: 'quiet_hours_start',
+                type: 'string',
+                isOptional: true,
+              },
+              quiet_hours_end: {
+                name: 'quiet_hours_end',
+                type: 'string',
+                isOptional: true,
+              },
+              updated_at: { name: 'updated_at', type: 'number' },
+            },
+            columnArray: [
+              { name: 'user_id', type: 'string', isIndexed: true },
+              { name: 'community_interactions', type: 'boolean' },
+              { name: 'community_likes', type: 'boolean' },
+              { name: 'cultivation_reminders', type: 'boolean' },
+              { name: 'system_updates', type: 'boolean' },
+              { name: 'quiet_hours_enabled', type: 'boolean' },
+              { name: 'quiet_hours_start', type: 'string', isOptional: true },
+              { name: 'quiet_hours_end', type: 'string', isOptional: true },
+              { name: 'updated_at', type: 'number' },
+            ],
+          },
+        },
+        {
+          type: 'create_table',
+          schema: {
+            name: 'device_tokens',
+            columns: {
+              token: { name: 'token', type: 'string', isIndexed: true },
+              platform: { name: 'platform', type: 'string' },
+              user_id: { name: 'user_id', type: 'string', isIndexed: true },
+              created_at: { name: 'created_at', type: 'number' },
+              last_used_at: { name: 'last_used_at', type: 'number' },
+              is_active: {
+                name: 'is_active',
+                type: 'boolean',
+                isIndexed: true,
+              },
+            },
+            columnArray: [
+              { name: 'token', type: 'string', isIndexed: true },
+              { name: 'platform', type: 'string' },
+              { name: 'user_id', type: 'string', isIndexed: true },
+              { name: 'created_at', type: 'number' },
+              { name: 'last_used_at', type: 'number' },
+              { name: 'is_active', type: 'boolean', isIndexed: true },
+            ],
+          },
+        },
+      ],
+    },
+    {
+      toVersion: 8,
+      steps: [
+        addColumns({
+          table: 'notifications',
+          columns: [
+            { name: 'archived_at', type: 'number', isOptional: true },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ],
+        }),
+      ],
+    },
   ],
 });

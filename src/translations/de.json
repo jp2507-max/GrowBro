@@ -239,6 +239,95 @@
     "feed": "Feed",
     "post": "Beitrag"
   },
+  "notifications": {
+    "actions": {
+      "dismiss": "Schließen",
+      "markDone": "Als erledigt markieren",
+      "reply": "Antworten",
+      "replyPlaceholder": "Antwort hier eingeben…",
+      "replySubmit": "Senden",
+      "snooze": "Später erinnern",
+      "viewDetails": "Details anzeigen",
+      "viewPost": "Beitrag ansehen",
+      "viewProfile": "Profil ansehen"
+    },
+    "channels": {
+      "communityInteractions": {
+        "description": "Antworten, Erwähnungen und Moderationshinweise aus der Community.",
+        "name": "Community-Interaktionen"
+      },
+      "communityLikes": {
+        "description": "Likes und Reaktionen auf deine Updates.",
+        "name": "Community-Likes"
+      },
+      "cultivationReminders": {
+        "description": "Aufgaben-Erinnerungen sowie Trocknungs- und Aushärtungswarnungen.",
+        "name": "Grow-Erinnerungen"
+      },
+      "systemUpdates": {
+        "description": "Wichtige Konto-Hinweise, Richtlinien-Updates oder Sicherheitswarnungen.",
+        "name": "Systembenachrichtigungen"
+      }
+    },
+    "exactAlarm": {
+      "body": "Erlaube exakte Alarme, damit Bewässerungs- und Düngeerinnerungen exakt zur geplanten Zeit erscheinen.",
+      "cta": "Einstellungen öffnen",
+      "title": "Erinnerungen pünktlich halten"
+    },
+    "inbox": {
+      "archived": {
+        "hide": "Archivierte ausblenden",
+        "show": "Archivierte anzeigen",
+        "toggle_hint": "Schaltet archivierte Benachrichtigungen ein oder aus."
+      },
+      "empty": {
+        "all": {
+          "body": "Neue Updates erscheinen hier.",
+          "title": "Alles erledigt"
+        },
+        "unread": {
+          "body": "Wir informieren dich sofort, wenn etwas Neues da ist.",
+          "title": "Keine ungelesenen Benachrichtigungen"
+        }
+      },
+      "error": {
+        "body": "Prüfe deine Verbindung und versuche es erneut.",
+        "retry": "Erneut versuchen",
+        "title": "Benachrichtigungen konnten nicht geladen werden"
+      },
+      "filters": {
+        "all": "Alle",
+        "unread": "Ungelesen"
+      },
+      "loading": "Benachrichtigungen werden geladen…",
+      "mark_all_hint": "Markiert alle Benachrichtigungen als gelesen.",
+      "mark_all_read": "Alle als gelesen markieren",
+      "mark_read": "Als gelesen markieren",
+      "open_hint": "Öffnet Details der Benachrichtigung",
+      "refresh": "Zum Aktualisieren ziehen",
+      "sections": {
+        "default": "{{date}}",
+        "today": "Heute",
+        "yesterday": "Gestern"
+      },
+      "timestamp": {
+        "default": "{{date}} · {{time}}",
+        "today": "Heute · {{time}}",
+        "weekday": "{{weekday}} · {{time}}",
+        "yesterday": "Gestern · {{time}}"
+      },
+      "title": "Benachrichtigungen",
+      "unread_badge": "Ungelesen",
+      "unread_count_one": "{{count}} ungelesen",
+      "unread_count_other": "{{count}} ungelesen",
+      "unread_count_zero": "Alles erledigt"
+    },
+    "overdue": {
+      "body_one": "Du hast {{count}} überfällige Aufgabe. Hol sie nach, um im Plan zu bleiben.",
+      "body_other": "Du hast {{count}} überfällige Aufgaben. Hol sie nach, um im Plan zu bleiben.",
+      "title": "Aufgaben warten auf dich"
+    }
+  },
   "onboarding": {
     "allow_button": "Benachrichtigungen erlauben",
     "continue_button": "Weiter",

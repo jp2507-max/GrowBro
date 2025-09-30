@@ -169,13 +169,6 @@ jest.mock('react-native-edge-to-edge', () => ({
   SystemBars: () => null,
 }));
 
-// mock: @shopify/flash-list leverages manual mock backed by FlatList so list
-// props like ListEmptyComponent render during tests
-jest.mock('@shopify/flash-list', () =>
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- reuse shared manual mock
-  require('__mocks__/@shopify/flash-list')
-);
-
 // mock: react-navigation to provide a minimal NavigationContainer and hooks
 jest.mock('@react-navigation/native', () => {
   const NavigationContainer = ({ children }: any) => children ?? null;
