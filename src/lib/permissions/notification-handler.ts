@@ -1,6 +1,6 @@
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+import { registerAndroidChannels } from '@/lib/notifications/android-channels';
 import { PermissionManager } from '@/lib/permissions/permission-manager';
 
 export interface NotificationHandlerAPI {
@@ -20,14 +20,11 @@ export const NotificationHandler: NotificationHandlerAPI = {
     if (Platform.OS !== 'android') return;
     const granted = await PermissionManager.isNotificationPermissionGranted();
     if (!granted) return; // do not create channels before grant
-    const anyNotif: any = Notifications as any;
-    await anyNotif.setNotificationChannelAsync('cultivation.reminders.v1', {
-      name: 'Reminders',
-      importance: anyNotif.AndroidImportance?.HIGH ?? 4,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#34D399',
-      lockscreenVisibility: anyNotif.AndroidNotificationVisibility?.PUBLIC ?? 1,
-    });
+    try {
+      await registerAndroidChannels();
+    } catch (error) {
+      console.warn('[Notifications] channel registration failed', error);
+    }
   },
 
   showInAppBadge(): void {

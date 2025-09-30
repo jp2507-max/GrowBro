@@ -1,7 +1,6 @@
 # Implementation Plan
 
 - [ ] 1. Set up database schema and migrations
-
   - Create database migration for posts table to add moderation columns: deleted_at TIMESTAMPTZ, hidden_at TIMESTAMPTZ, moderation_reason TEXT, and undo_expires_at TIMESTAMPTZ
   - Create database migration for post_comments table with hidden_at and undo_expires_at TIMESTAMPTZ columns
   - Create database migration for post_likes table with UNIQUE(post_id, user_id) constraint
@@ -63,7 +62,6 @@
   - _Requirements: 1.5, 1.6, 2.5, 2.6, 4.5, 4.6, 9.1, 9.2, 10.1_
 
 - [ ] 2. Implement Row Level Security policies (moved up for safety)
-
   - Create RLS policies for posts table (public read, owner write/delete)
   - Create RLS policies for post_comments table with same pattern
   - Create RLS policies for post_likes table (users manage own likes only)
@@ -92,9 +90,7 @@
   - _Requirements: 10.1, 10.2, 10.3_
 
 - [ ] 3. Build core API service layer
-
   - [ ] 3.1 Implement community API service with idempotency
-
     - Create CommunityAPI class with all CRUD operations
     - All mutating endpoints accept Idempotency-Key + X-Client-Tx-Id headers
     - Implement UPSERT pattern for idempotency key handling. Use an INSERT with an "ON CONFLICT DO UPDATE" no-op
@@ -132,7 +128,6 @@
     - _Requirements: 1.5, 1.6, 2.5, 2.6, 9.4, 10.4_
 
   - [ ] 3.2 Implement server-side undo functionality
-
     - DELETE /posts/:id returns `{ undo_expires_at }` (now() + 15s)
     - POST /posts/:id/undo restores only if now() < undo_expires_at (409 if expired)
     - Add soft delete logic with proper tombstone handling
@@ -158,7 +153,6 @@
     - _Requirements: 9.4, 10.4, 10.5_
 
 - [ ] 3.4 Create idempotency service implementation
-
   - Build IdempotencyService class with atomic UPSERT operations:
 
     ```typescript
@@ -244,9 +238,7 @@
   - _Requirements: 9.4, 10.4_
 
 - [ ] 4. Implement WatermelonDB schema and models
-
   - [ ] 4.1 Create WatermelonDB schema definitions for community tables
-
     - Define posts schema with all required columns including undo_expires_at
     - Define post_comments schema with hidden_at and undo_expires_at columns
     - Define post_likes schema for relationship tracking
@@ -265,9 +257,7 @@
     - _Requirements: 6.5, 6.6, 9.5_
 
 - [ ] 5. Implement real-time updates with Supabase
-
   - [ ] 5.1 Create realtime connection manager
-
     - Implement WebSocket connection with auto-reconnect and exponential backoff
     - Add connection state management and fallback to 30s polling after 3 failures
     - Subscribe narrowly: global feed channel for posts, scoped comments channel per opened post
@@ -302,9 +292,7 @@
     - _Requirements: 3.4, 3.5, 3.6, 3.8_
 
 - [ ] 6. Create offline-first outbox system
-
   - [ ] 6.1 Implement outbox queue manager
-
     - Create OutboxProcessor class with FIFO queue management
     - Enforce backoff 1→32s, max 5 retries, mark as failed with manual retry UI
     - Add outbox entry status tracking (pending, failed, confirmed)
@@ -353,9 +341,7 @@
     - _Requirements: 1.1, 1.2, 2.1, 2.2, 6.2, 6.3_
 
 - [ ] 7. Create community feed UI components
-
   - [ ] 7.1 Build main feed container component
-
     - Create CommunityFeed container with infinite scroll using FlashList
     - Provide getItemType for FlashList performance, test in release builds (not dev)
     - Implement feed pagination with proper loading states
@@ -365,7 +351,6 @@
     - _Requirements: 9.1, 6.1_
 
   - [ ] 7.2 Implement Post component with interactions
-
     - Create Post component with like button and optimistic updates
     - Add comment count display and navigation to comment thread
     - Implement author profile linking and avatar display
@@ -383,9 +368,7 @@
     - _Requirements: 2.1, 2.2, 2.3, 2.8, 4.1, 4.2_
 
 - [ ] 8. Implement user profiles and navigation
-
   - [ ] 8.1 Create user profile screen
-
     - Build UserProfile component with avatar and username display
     - Implement user's recent posts list with pagination (created_at DESC)
     - Apply visibility filter (deleted_at/hidden_at IS NULL) for profile posts
@@ -400,9 +383,7 @@
     - _Requirements: 5.1, 5.7_
 
 - [ ] 9. Build content moderation system
-
   - [ ] 9.1 Implement reporting functionality
-
     - Create report content modal with reason selection
     - Implement report submission with proper validation
     - Add report status tracking and user feedback
@@ -416,9 +397,7 @@
     - _Requirements: 7.2, 7.3, 7.6, 7.7, 10.3_
 
 - [ ] 10. Implement push notifications system
-
   - [ ] 10.1 Create notification service
-
     - Implement push notification setup and permission handling
     - Create notification preferences management UI
     - Add notification payload handling and deep linking
@@ -427,16 +406,19 @@
     - _Requirements: 8.1, 8.2, 8.5, 8.6_
 
   - [ ] 10.2 Build notification triggers and delivery
-    - Create server-side notification triggers for likes and comments
+    - Deploy database migration for community notification triggers (see `supabase/migrations/20250930000001_add_community_notification_triggers.sql`)
+      - Migration creates `notify_post_reply()` and `notify_post_like()` database functions
+      - Triggers automatically call Edge Function `send-push-notification` via pg_net
+      - Includes anti-spam guards (no self-notifications), collapse keys for like deduplication
+      - **Prerequisites**: Requires `posts`, `post_replies`, `post_likes` tables; pg_net extension; Supabase config settings (edge_function_url, service_role_key)
+      - **Deployment**: Use `mcp_supabase_apply_migration` with project_id `mgbekkpswaizzthgefbc`
     - Implement notification delivery with retry logic
     - Add notification open tracking for reliability monitoring
     - Create notification history and management
     - _Requirements: 8.3, 8.4, 8.7, 8.8_
 
 - [ ] 11. Implement performance monitoring and health checks
-
   - [ ] 11.1 Create metrics tracking system
-
     - Track P50/P95 WS event latency (commit_timestamp → UI update)
     - Monitor WebSocket reconnects/session, outbox depth, dedupe drops/min
     - Track undo usage rate and mutation failure rate (<2%/day)
@@ -451,9 +433,7 @@
     - _Requirements: 10.6_
 
 - [ ] 12. Write comprehensive tests
-
   - [ ] 12.1 Create unit tests for core functionality
-
     - Write tests for API service methods with mock responses
     - Test outbox processor with various failure scenarios
     - Create tests for realtime event handling and deduplication
@@ -479,9 +459,7 @@
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.8, 6.9_
 
 - [ ] 13. Performance optimization and accessibility
-
   - [ ] 13.1 Optimize list rendering and memory usage
-
     - Implement FlashList with proper getItemType for performance
     - Add image lazy loading and caching for media content (thumbnails in lists, lazy-load originals)
     - Optimize WatermelonDB queries to avoid N+1 problems

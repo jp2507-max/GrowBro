@@ -37,6 +37,14 @@ export * from './template-manager';
 export * from './utils';
 export { useAnalytics } from './use-analytics';
 export {
+  clearPendingDeepLink,
+  consumePendingDeepLink,
+  isProtectedDeepLinkPath,
+  peekPendingDeepLink,
+  stashPendingDeepLink,
+  useDeferredDeepLink,
+} from './navigation/deep-link-gate';
+export {
   AppAccessManager,
   provideTestCredentials,
   generateDemoFlow,

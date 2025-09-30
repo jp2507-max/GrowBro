@@ -1,13 +1,11 @@
-import * as Notifications from 'expo-notifications';
 import * as RN from 'react-native';
 
+import { registerAndroidChannels } from '@/lib/notifications/android-channels';
 import { NotificationHandler } from '@/lib/permissions/notification-handler';
 import { PermissionManager } from '@/lib/permissions/permission-manager';
 
-jest.mock('expo-notifications', () => ({
-  setNotificationChannelAsync: jest.fn().mockResolvedValue(undefined),
-  AndroidImportance: { HIGH: 4 },
-  AndroidNotificationVisibility: { PUBLIC: 1 },
+jest.mock('@/lib/notifications/android-channels', () => ({
+  registerAndroidChannels: jest.fn().mockResolvedValue(undefined),
 }));
 
 describe('NotificationHandler', () => {
@@ -51,9 +49,7 @@ describe('NotificationHandler', () => {
       .spyOn(PermissionManager, 'isNotificationPermissionGranted')
       .mockResolvedValue(false);
     await NotificationHandler.createChannelsAfterGrant();
-    expect(
-      (Notifications as any).setNotificationChannelAsync
-    ).not.toHaveBeenCalled();
+    expect(registerAndroidChannels).not.toHaveBeenCalled();
   });
 
   it('creates channels after permission granted', async () => {
@@ -61,8 +57,6 @@ describe('NotificationHandler', () => {
       .spyOn(PermissionManager, 'isNotificationPermissionGranted')
       .mockResolvedValue(true);
     await NotificationHandler.createChannelsAfterGrant();
-    expect(
-      (Notifications as any).setNotificationChannelAsync
-    ).toHaveBeenCalled();
+    expect(registerAndroidChannels).toHaveBeenCalled();
   });
 });

@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const schema = appSchema({
-  version: 6,
+  version: 8,
   tables: [
     tableSchema({
       name: 'series',
@@ -72,6 +72,68 @@ export const schema = appSchema({
         { name: 'status', type: 'string' },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'notifications',
+      columns: [
+        { name: 'type', type: 'string', isIndexed: true },
+        { name: 'title', type: 'string' },
+        { name: 'body', type: 'string' },
+        { name: 'data', type: 'string' },
+        { name: 'deep_link', type: 'string', isOptional: true },
+        { name: 'read_at', type: 'number', isOptional: true, isIndexed: true },
+        { name: 'created_at', type: 'number', isIndexed: true },
+        {
+          name: 'expires_at',
+          type: 'number',
+          isOptional: true,
+          isIndexed: true,
+        },
+        {
+          name: 'message_id',
+          type: 'string',
+          isOptional: true,
+          isIndexed: true,
+        },
+        {
+          name: 'archived_at',
+          type: 'number',
+          isOptional: true,
+          isIndexed: true,
+        },
+        {
+          name: 'deleted_at',
+          type: 'number',
+          isOptional: true,
+          isIndexed: true,
+        },
+      ],
+    }),
+    tableSchema({
+      name: 'notification_preferences',
+      columns: [
+        // Uniqueness by user_id is enforced at the application level via findOrCreate/upsert methods
+        { name: 'user_id', type: 'string', isIndexed: true },
+        { name: 'community_interactions', type: 'boolean' },
+        { name: 'community_likes', type: 'boolean' },
+        { name: 'cultivation_reminders', type: 'boolean' },
+        { name: 'system_updates', type: 'boolean' },
+        { name: 'quiet_hours_enabled', type: 'boolean' },
+        { name: 'quiet_hours_start', type: 'string', isOptional: true },
+        { name: 'quiet_hours_end', type: 'string', isOptional: true },
+        { name: 'updated_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'device_tokens',
+      columns: [
+        { name: 'token', type: 'string', isIndexed: true },
+        { name: 'platform', type: 'string' },
+        { name: 'user_id', type: 'string', isIndexed: true },
+        { name: 'created_at', type: 'number' },
+        { name: 'last_used_at', type: 'number' },
+        { name: 'is_active', type: 'boolean', isIndexed: true },
       ],
     }),
     tableSchema({

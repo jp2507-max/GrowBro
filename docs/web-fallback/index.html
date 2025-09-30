@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="apple-itunes-app"
+      content="app-id=W7FKN3H4Y2, app-argument=https://growbro.app/feed"
+    />
+    <meta name="google-play-app" content="app-id=com.growbro" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GrowBro</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+    />
+    <style>
+      body {
+        font-family:
+          'Inter',
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        background: #0f172a;
+        color: #f8fafc;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 24px;
+        text-align: center;
+      }
+      a {
+        color: #38bdf8;
+      }
+      button {
+        border: 0;
+        border-radius: 9999px;
+        padding: 12px 24px;
+        font-size: 16px;
+        font-weight: 600;
+        background: #22d3ee;
+        color: #082f49;
+        cursor: pointer;
+      }
+    </style>
+    <script>
+      function openStore(e) {
+        try {
+          const event = e || window.event;
+          if (event && typeof event.preventDefault === 'function') {
+            event.preventDefault();
+          }
+        } catch (err) {
+          console.error('Failed to prevent default event behavior:', err);
+        }
+
+        var ua = (navigator && navigator.userAgent) || '';
+        var isIOS = /iPhone|iPad|iPod/i.test(ua);
+
+        if (isIOS) {
+          window.location.href = 'https://apps.apple.com/app/idW7FKN3H4Y2';
+        } else {
+          window.location.href =
+            'https://play.google.com/store/apps/details?id=com.growbro';
+        }
+      }
+
+      setTimeout(function () {
+        openStore();
+      }, 2000);
+    </script>
+  </head>
+  <body>
+    <h1>Opening GrowBro…</h1>
+    <p>If the app does not open automatically, you can download it below.</p>
+    <button onclick="openStore(event)">Get GrowBro</button>
+  </body>
+</html>

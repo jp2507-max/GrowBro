@@ -67,6 +67,10 @@ function PrivacySettings({ router }: { router: any }): ReactElement {
         text="settings.privacy_and_data"
         onPress={() => router.push('/(app)/settings/privacy-and-data')}
       />
+      <Item
+        text="settings.notifications"
+        onPress={() => router.push('/(app)/settings/notifications')}
+      />
       {deletionUrl && (
         <Item
           text="settings.web_deletion"

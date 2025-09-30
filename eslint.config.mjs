@@ -39,6 +39,8 @@ export default defineConfig([
     'react-native-reanimated/',
     // Ignore built outputs
     'package/dist/',
+    // Ignore Deno test files in Supabase functions
+    'supabase/functions/**/*.test.ts',
   ]),
   expoConfig,
   eslintPluginPrettierRecommended,

@@ -1,0 +1,26 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.growbro",
+      "sha256_cert_fingerprints": ["SHA256_FINGERPRINT_PRODUCTION"]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.growbro.staging",
+      "sha256_cert_fingerprints": ["SHA256_FINGERPRINT_STAGING"]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.growbro.development",
+      "sha256_cert_fingerprints": ["SHA256_FINGERPRINT_DEVELOPMENT"]
+    }
+  }
+]
