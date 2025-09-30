@@ -14,9 +14,10 @@
  * - Keystore files must exist at expected locations
  */
 
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 // Keystore configurations - update these paths and aliases for your project
 const KEYSTORE_CONFIGS = {
@@ -40,11 +41,88 @@ const KEYSTORE_CONFIGS = {
   },
 };
 
-function getSHA256Fingerprint(keystorePath, alias, password) {
+function validateInputs(keystorePath, alias, password) {
+  // Validate inputs
+  if (!keystorePath || typeof keystorePath !== 'string') {
+    throw new Error('Invalid keystore path: must be a non-empty string');
+  }
+
+  if (!alias || typeof alias !== 'string') {
+    throw new Error('Invalid alias: must be a non-empty string');
+  }
+
+  if (!password || typeof password !== 'string') {
+    throw new Error('Invalid password: must be a non-empty string');
+  }
+
+  // Validate keystore path exists and is a file
+  if (!fs.existsSync(keystorePath)) {
+    throw new Error(`Keystore file does not exist: ${keystorePath}`);
+  }
+
+  const stats = fs.statSync(keystorePath);
+  if (!stats.isFile()) {
+    throw new Error(`Keystore path is not a file: ${keystorePath}`);
+  }
+
+  // Validate keystore path and alias for allowed characters (prevent command injection)
+  const pathRegex = /^[a-zA-Z0-9._\-\\/:]+$/;
+  if (!pathRegex.test(keystorePath)) {
+    throw new Error('Keystore path contains invalid characters');
+  }
+
+  const aliasRegex = /^[a-zA-Z0-9._\-]+$/;
+  if (!aliasRegex.test(alias)) {
+    throw new Error('Alias contains invalid characters');
+  }
+}
+
+function executeKeytool(keystorePath, alias, password) {
+  // Generate unique environment variable names to avoid conflicts
+  const storePassEnv = `KEYTOOL_STOREPASS_${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
+  const keyPassEnv = `KEYTOOL_KEYPASS_${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
+
+  // Set environment variables for passwords
+  const env = { ...process.env };
+  env[storePassEnv] = password;
+  env[keyPassEnv] = password;
+
   try {
-    // Run keytool command to get certificate info
-    const command = `keytool -list -v -keystore "${keystorePath}" -alias "${alias}" -storepass "${password}" -keypass "${password}"`;
-    const output = execSync(command, { encoding: 'utf8' });
+    // Use spawnSync with array arguments to prevent command injection
+    const result = spawnSync(
+      'keytool',
+      [
+        '-list',
+        '-v',
+        '-keystore',
+        keystorePath,
+        '-alias',
+        alias,
+        `-storepass:env=${storePassEnv}`,
+        `-keypass:env=${keyPassEnv}`,
+      ],
+      {
+        encoding: 'utf8',
+        env: env,
+        stdio: 'pipe',
+      }
+    );
+
+    if (result.error) {
+      throw new Error(`keytool execution failed: ${result.error.message}`);
+    }
+
+    if (result.status !== 0) {
+      const stderr = result.stderr ? result.stderr.trim() : '';
+      throw new Error(
+        `keytool exited with code ${result.status}${stderr ? `: ${stderr}` : ''}`
+      );
+    }
+
+    const output = result.stdout;
+    if (!output) {
+      throw new Error('No output received from keytool');
+    }
 
     // Extract SHA256 fingerprint
     const sha256Match = output.match(/SHA256:\s*([A-F0-9:]+)/i);
@@ -54,12 +132,39 @@ function getSHA256Fingerprint(keystorePath, alias, password) {
 
     // Remove colons and convert to uppercase (Android format)
     return sha256Match[1].replace(/:/g, '').toUpperCase();
+  } finally {
+    // Clean up environment variables
+    delete env[storePassEnv];
+    delete env[keyPassEnv];
+  }
+}
+
+function sanitizeError(error) {
+  // Re-throw with sanitized error message (no sensitive data)
+  if (
+    error.message.includes('Invalid keystore path') ||
+    error.message.includes('Invalid alias') ||
+    error.message.includes('Invalid password') ||
+    error.message.includes('Keystore file does not exist') ||
+    error.message.includes('Keystore path is not a file') ||
+    error.message.includes('contains invalid characters')
+  ) {
+    throw error; // These are safe to re-throw as-is
+  }
+
+  // For keytool errors, provide generic message without exposing command details
+  throw new Error(
+    `Failed to extract fingerprint from keystore: ${error.message}`
+  );
+}
+
+function getSHA256Fingerprint(keystorePath, alias, password) {
+  validateInputs(keystorePath, alias, password);
+
+  try {
+    return executeKeytool(keystorePath, alias, password);
   } catch (error) {
-    console.error(
-      `Error extracting fingerprint from ${keystorePath}:`,
-      error.message
-    );
-    return null;
+    sanitizeError(error);
   }
 }
 
@@ -156,18 +261,20 @@ function collectFingerprints(environments) {
 }
 
 function logManualFingerprintCommands() {
+  const filterCmd = process.platform === 'win32' ? 'findstr' : 'grep';
+
   console.log('\nManual commands to get fingerprints:');
   console.log('# Production:');
   console.log(
-    `keytool -list -v -keystore "${KEYSTORE_CONFIGS.production.path}" -alias "${KEYSTORE_CONFIGS.production.alias}" | findstr "SHA256:"`
+    `keytool -list -v -keystore "${KEYSTORE_CONFIGS.production.path}" -alias "${KEYSTORE_CONFIGS.production.alias}" | ${filterCmd} "SHA256:"`
   );
   console.log('# Staging:');
   console.log(
-    `keytool -list -v -keystore "${KEYSTORE_CONFIGS.staging.path}" -alias "${KEYSTORE_CONFIGS.staging.alias}" | findstr "SHA256:"`
+    `keytool -list -v -keystore "${KEYSTORE_CONFIGS.staging.path}" -alias "${KEYSTORE_CONFIGS.staging.alias}" | ${filterCmd} "SHA256:"`
   );
   console.log('# Development:');
   console.log(
-    `keytool -list -v -keystore "${KEYSTORE_CONFIGS.development.path}" -alias "${KEYSTORE_CONFIGS.development.alias}" | findstr "SHA256:"`
+    `keytool -list -v -keystore "${KEYSTORE_CONFIGS.development.path}" -alias "${KEYSTORE_CONFIGS.development.alias}" | ${filterCmd} "SHA256:"`
   );
 }
 

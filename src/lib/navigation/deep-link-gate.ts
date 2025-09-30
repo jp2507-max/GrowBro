@@ -61,7 +61,7 @@ export function isProtectedDeepLinkPath(path: string): boolean {
 
   const stripped = normalized.split('?')[0];
   for (const prefix of PUBLIC_PREFIXES) {
-    if (stripped.startsWith(`/${prefix}`)) {
+    if (stripped === `/${prefix}` || stripped.startsWith(`/${prefix}/`)) {
       return false;
     }
   }

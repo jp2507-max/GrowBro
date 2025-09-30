@@ -3,6 +3,8 @@ import { DateTime } from 'luxon';
 import type { TxKeyPath } from '@/lib/i18n';
 import type { NotificationSnapshot } from '@/lib/notifications/notification-storage';
 
+const INVALID_DATE_KEY = 'unknown-day';
+
 type TranslateFn = (
   key: TxKeyPath,
   options?: Record<string, unknown>
@@ -50,7 +52,16 @@ export function buildNotificationListItems({
     const created = DateTime.fromJSDate(notification.createdAt)
       .setLocale(locale)
       .startOf('minute');
-    const dayKey = created.startOf('day').toISO() ?? `${notification.id}-day`;
+
+    let dayKey: string;
+    if (created.isValid) {
+      dayKey = created.startOf('day').toISO()!;
+    } else {
+      dayKey = INVALID_DATE_KEY;
+      console.warn(
+        `Invalid createdAt date for notification ${notification.id}`
+      );
+    }
 
     if (!seenDayKeys.has(dayKey)) {
       seenDayKeys.add(dayKey);

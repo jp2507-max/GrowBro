@@ -113,6 +113,7 @@ export const schema = appSchema({
     tableSchema({
       name: 'notification_preferences',
       columns: [
+        // Uniqueness by user_id is enforced at the application level via findOrCreate/upsert methods
         { name: 'user_id', type: 'string', isIndexed: true },
         { name: 'community_interactions', type: 'boolean' },
         { name: 'community_likes', type: 'boolean' },

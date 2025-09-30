@@ -124,10 +124,17 @@ describe('TaskNotificationService scheduleTaskReminder errors', () => {
 
 describe('TaskNotificationService scheduleTaskReminder doze handling', () => {
   test('returns empty string when Android doze defers execution', async () => {
-    const osSpy = jest.spyOn(Platform, 'OS', 'get').mockReturnValue('android');
-    const versionSpy = jest
-      .spyOn(Platform, 'Version', 'get')
-      .mockReturnValue(23 as any);
+    const originalOS = Platform.OS;
+    const originalVersion = Platform.Version;
+
+    Object.defineProperty(Platform, 'OS', {
+      value: 'android',
+      configurable: true,
+    });
+    Object.defineProperty(Platform, 'Version', {
+      value: 23,
+      configurable: true,
+    });
 
     const service = new TaskNotificationService();
     (service as any).isDozeRestricted = true;
@@ -139,8 +146,14 @@ describe('TaskNotificationService scheduleTaskReminder doze handling', () => {
 
     await expect(service.scheduleTaskReminder(task as any)).resolves.toBe('');
 
-    osSpy.mockRestore();
-    versionSpy.mockRestore();
+    Object.defineProperty(Platform, 'OS', {
+      value: originalOS,
+      configurable: true,
+    });
+    Object.defineProperty(Platform, 'Version', {
+      value: originalVersion,
+      configurable: true,
+    });
   });
 });
 

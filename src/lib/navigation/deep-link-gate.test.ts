@@ -65,8 +65,16 @@ describe('isProtectedDeepLinkPath', () => {
   });
 
   test('marks known prefixes as public', () => {
+    expect(isProtectedDeepLinkPath('/legal')).toBe(false);
+    expect(isProtectedDeepLinkPath('/privacy')).toBe(false);
     expect(isProtectedDeepLinkPath('/legal/terms')).toBe(false);
     expect(isProtectedDeepLinkPath('/privacy/policy')).toBe(false);
+  });
+
+  test('does not treat adjacent names as public prefixes', () => {
+    expect(isProtectedDeepLinkPath('/legalese')).toBe(true);
+    expect(isProtectedDeepLinkPath('/privacy-policy')).toBe(true);
+    expect(isProtectedDeepLinkPath('/legality')).toBe(true);
   });
 
   test('defaults to protected for app content', () => {

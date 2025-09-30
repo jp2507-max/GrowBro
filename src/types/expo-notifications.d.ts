@@ -11,7 +11,7 @@ declare module 'expo-notifications' {
     body: string;
     data?: Record<string, unknown>;
     threadId?: string;
-    sound?: 'default' | null;
+    sound?: boolean | string;
   };
 
   export function scheduleNotificationAsync(options: {

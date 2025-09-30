@@ -1,6 +1,7 @@
 import {
   addColumns,
   schemaMigrations,
+  unsafeExecuteSql,
 } from '@nozbe/watermelondb/Schema/migrations';
 
 export const migrations = schemaMigrations({
@@ -788,6 +789,12 @@ export const migrations = schemaMigrations({
             { name: 'deleted_at', type: 'number', isOptional: true },
           ],
         }),
+        unsafeExecuteSql(
+          'CREATE INDEX notifications_archived_at ON notifications (archived_at)'
+        ),
+        unsafeExecuteSql(
+          'CREATE INDEX notifications_deleted_at ON notifications (deleted_at)'
+        ),
       ],
     },
   ],

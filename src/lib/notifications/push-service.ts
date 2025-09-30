@@ -3,7 +3,10 @@ import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import { NotificationErrorType } from '@/lib/notification-errors';
+import {
+  NotificationErrorCode,
+  type NotificationErrorType,
+} from '@/lib/notification-errors';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 import { supabase } from '@/lib/supabase';
 
@@ -29,6 +32,13 @@ type TokenListenerOptions = {
 };
 
 let tokenSubscription: { remove: () => void } | null = null;
+let currentListenerUserId: string | null = null;
+
+// Export for testing
+export const __testResetGlobals = () => {
+  tokenSubscription = null;
+  currentListenerUserId = null;
+};
 
 export const PushNotificationService = {
   async registerDeviceToken(
@@ -39,7 +49,7 @@ export const PushNotificationService = {
       if (!token) {
         return {
           token: null,
-          error: NotificationErrorType.TOKEN_REFRESH_FAILED,
+          error: NotificationErrorCode.TOKEN_REFRESH_FAILED,
         };
       }
       await persistAndSyncToken({
@@ -49,7 +59,7 @@ export const PushNotificationService = {
       return { token };
     } catch (error) {
       captureCategorizedErrorSync(error);
-      return { token: null, error: NotificationErrorType.TOKEN_REFRESH_FAILED };
+      return { token: null, error: NotificationErrorCode.TOKEN_REFRESH_FAILED };
     }
   },
 
@@ -72,7 +82,16 @@ export const PushNotificationService = {
   },
 
   async startTokenListener(options: TokenListenerOptions): Promise<void> {
-    if (tokenSubscription) return;
+    // If we already have a listener for the same user, nothing to do
+    if (tokenSubscription && currentListenerUserId === options.userId) return;
+
+    // If we have a listener for a different user, stop it first
+    if (tokenSubscription) {
+      tokenSubscription.remove();
+      tokenSubscription = null;
+    }
+
+    // Create new listener for the current user
     const anyNotifications: any = Notifications as any;
     tokenSubscription = anyNotifications.addPushTokenListener(
       async (payload: unknown) => {
@@ -88,12 +107,15 @@ export const PushNotificationService = {
         }
       }
     );
+
+    currentListenerUserId = options.userId;
   },
 
   stopTokenListener(): void {
     if (!tokenSubscription) return;
     tokenSubscription.remove();
     tokenSubscription = null;
+    currentListenerUserId = null;
   },
 };
 

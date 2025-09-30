@@ -241,26 +241,22 @@ export class TaskNotificationService {
   private async flushPendingDozeTasks(): Promise<void> {
     if (this.pendingDozeTasks.size === 0) return;
     const tasks = Array.from(this.pendingDozeTasks.values());
-    this.pendingDozeTasks.clear();
-    await this.persistPendingDozeTasks();
+    const failedTasks = new Map<string, Task>();
 
     for (const task of tasks) {
       try {
         await this.scheduleTaskReminder(task);
       } catch (error) {
         console.warn('[Notifications] deferred schedule failed', error);
+        failedTasks.set(task.id, task);
       }
     }
 
-    // Clear storage after successful flush to avoid reprocessing stale entries
-    try {
-      await AsyncStorage.removeItem(PENDING_DOZE_TASKS_STORAGE_KEY);
-    } catch (error) {
-      console.warn(
-        '[Notifications] failed to clear pending doze tasks storage',
-        error
-      );
-    }
+    // Update in-memory state with only the failed tasks
+    this.pendingDozeTasks = failedTasks;
+
+    // Persist the updated state (either empty or containing failed tasks)
+    await this.persistPendingDozeTasks();
   }
 
   private async persistPendingDozeTasks(): Promise<void> {
@@ -715,24 +711,30 @@ export class TaskNotificationService {
       count: overdue.length,
     });
 
-    const notificationId =
-      await LocalNotificationService.scheduleExactNotification({
-        idTag: 'overdue-digest',
-        title,
-        body,
-        data: {
-          deepLink: buildCalendarOverdueDeepLink(),
-          overdueTaskIds: overdue.map((task) => task.id),
-        },
-        triggerDate,
-        androidChannelKey: 'cultivation.reminders',
-        threadId: 'cultivation.overdue.digest',
-      });
+    try {
+      const notificationId =
+        await LocalNotificationService.scheduleExactNotification({
+          idTag: 'overdue-digest',
+          title,
+          body,
+          data: {
+            deepLink: buildCalendarOverdueDeepLink(),
+            overdueTaskIds: overdue.map((task) => task.id),
+          },
+          triggerDate,
+          androidChannelKey: 'cultivation.reminders',
+          threadId: 'cultivation.overdue.digest',
+        });
 
-    await AsyncStorage.setItem(
-      OVERDUE_DIGEST_STORAGE_KEY,
-      JSON.stringify({ dateKey: todayKey, notificationId })
-    );
+      await AsyncStorage.setItem(
+        OVERDUE_DIGEST_STORAGE_KEY,
+        JSON.stringify({ dateKey: todayKey, notificationId })
+      );
+    } catch (error) {
+      // Clean up any existing stale record to allow future retry attempts
+      await this.cancelOverdueDigestIfScheduled();
+      throw error; // Re-throw to maintain error propagation
+    }
   }
 
   private async cancelOverdueDigestIfScheduled(): Promise<void> {

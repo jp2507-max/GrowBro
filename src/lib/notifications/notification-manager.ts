@@ -2,7 +2,10 @@ import { Q } from '@nozbe/watermelondb';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import { NotificationErrorType } from '@/lib/notification-errors';
+import {
+  NotificationErrorCode,
+  type NotificationErrorType,
+} from '@/lib/notification-errors';
 import {
   type AndroidChannelKey,
   registerAndroidChannels,
@@ -108,7 +111,7 @@ class NotificationManager {
       if (this.isDisposed)
         return {
           granted: false,
-          error: NotificationErrorType.PERMISSION_DENIED,
+          error: NotificationErrorCode.PERMISSION_DENIED,
         };
 
       const result = await PermissionManager.requestNotificationPermission();
@@ -133,7 +136,7 @@ class NotificationManager {
             });
             return {
               granted: false,
-              error: NotificationErrorType.NETWORK_ERROR,
+              error: NotificationErrorCode.NETWORK_ERROR,
             };
           }
         }
@@ -142,10 +145,10 @@ class NotificationManager {
       if (result === 'denied') {
         return {
           granted: false,
-          error: NotificationErrorType.PERMISSION_DENIED,
+          error: NotificationErrorCode.PERMISSION_DENIED,
         };
       }
-      return { granted: false, error: NotificationErrorType.NETWORK_ERROR };
+      return { granted: false, error: NotificationErrorCode.NETWORK_ERROR };
     });
   }
 
