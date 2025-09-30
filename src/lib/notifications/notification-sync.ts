@@ -100,7 +100,7 @@ export async function syncNotificationInbox(
   });
 
   await saveNotifications(normalized, {
-    pruneMissing: !options.cursor,
+    pruneMissing: false, // Never prune during paginated syncs - only prune when complete dataset is available
     sourceIds: new Set(normalized.map((n) => n.id)),
   });
 

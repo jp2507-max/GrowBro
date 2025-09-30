@@ -1,5 +1,5 @@
 import type { Database } from '@nozbe/watermelondb';
-import { Model } from '@nozbe/watermelondb';
+import { Model, Q } from '@nozbe/watermelondb';
 import { date, field } from '@nozbe/watermelondb/decorators';
 
 export class NotificationPreferenceModel extends Model {
@@ -37,8 +37,7 @@ export class NotificationPreferenceModel extends Model {
 
       // Query for existing record by user_id
       const existingRecords = await collection
-        .query()
-        .where('user_id', userId)
+        .query(Q.where('user_id', userId))
         .fetch();
 
       if (existingRecords.length > 0) {

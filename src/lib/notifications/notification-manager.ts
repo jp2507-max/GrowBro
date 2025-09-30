@@ -2,10 +2,7 @@ import { Q } from '@nozbe/watermelondb';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import {
-  NotificationErrorCode,
-  type NotificationErrorType,
-} from '@/lib/notification-errors';
+import { NotificationErrorType } from '@/lib/notification-errors';
 import {
   type AndroidChannelKey,
   registerAndroidChannels,
@@ -13,6 +10,7 @@ import {
 import { DeepLinkService } from '@/lib/notifications/deep-link-service';
 import { registerNotificationCategories } from '@/lib/notifications/ios-categories';
 import { LocalNotificationService } from '@/lib/notifications/local-service';
+import { PushReceiverService } from '@/lib/notifications/push-receiver-service';
 import { PushNotificationService } from '@/lib/notifications/push-service';
 import { PermissionManager } from '@/lib/permissions/permission-manager';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
@@ -79,6 +77,9 @@ class NotificationManager {
         await registerAndroidChannels();
       }
 
+      // Setup push notification handlers for foreground/background
+      await PushReceiverService.setupNotificationHandlers();
+
       this.subscribeToNotificationResponses({
         ensureAuthenticated: options.ensureAuthenticated,
         stashRedirect: options.stashRedirect,
@@ -111,7 +112,7 @@ class NotificationManager {
       if (this.isDisposed)
         return {
           granted: false,
-          error: NotificationErrorCode.PERMISSION_DENIED,
+          error: NotificationErrorType.PERMISSION_DENIED,
         };
 
       const result = await PermissionManager.requestNotificationPermission();
@@ -136,7 +137,7 @@ class NotificationManager {
             });
             return {
               granted: false,
-              error: NotificationErrorCode.NETWORK_ERROR,
+              error: NotificationErrorType.NETWORK_ERROR,
             };
           }
         }
@@ -145,10 +146,10 @@ class NotificationManager {
       if (result === 'denied') {
         return {
           granted: false,
-          error: NotificationErrorCode.PERMISSION_DENIED,
+          error: NotificationErrorType.PERMISSION_DENIED,
         };
       }
-      return { granted: false, error: NotificationErrorCode.NETWORK_ERROR };
+      return { granted: false, error: NotificationErrorType.NETWORK_ERROR };
     });
   }
 
@@ -222,6 +223,7 @@ class NotificationManager {
       this.responseSubscription.remove();
       this.responseSubscription = null;
     }
+    PushReceiverService.removeNotificationHandlers();
     PushNotificationService.stopTokenListener();
     this.listenerUserId = null;
   }

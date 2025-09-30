@@ -87,56 +87,50 @@ function executeKeytool(keystorePath, alias, password) {
   env[storePassEnv] = password;
   env[keyPassEnv] = password;
 
-  try {
-    // Use spawnSync with array arguments to prevent command injection
-    const result = spawnSync(
-      'keytool',
-      [
-        '-list',
-        '-v',
-        '-keystore',
-        keystorePath,
-        '-alias',
-        alias,
-        `-storepass:env=${storePassEnv}`,
-        `-keypass:env=${keyPassEnv}`,
-      ],
-      {
-        encoding: 'utf8',
-        env: env,
-        stdio: 'pipe',
-      }
-    );
-
-    if (result.error) {
-      throw new Error(`keytool execution failed: ${result.error.message}`);
+  // Use spawnSync with array arguments to prevent command injection
+  const result = spawnSync(
+    'keytool',
+    [
+      '-list',
+      '-v',
+      '-keystore',
+      keystorePath,
+      '-alias',
+      alias,
+      `-storepass:env=${storePassEnv}`,
+      `-keypass:env=${keyPassEnv}`,
+    ],
+    {
+      encoding: 'utf8',
+      env: env,
+      stdio: 'pipe',
     }
+  );
 
-    if (result.status !== 0) {
-      const stderr = result.stderr ? result.stderr.trim() : '';
-      throw new Error(
-        `keytool exited with code ${result.status}${stderr ? `: ${stderr}` : ''}`
-      );
-    }
-
-    const output = result.stdout;
-    if (!output) {
-      throw new Error('No output received from keytool');
-    }
-
-    // Extract SHA256 fingerprint
-    const sha256Match = output.match(/SHA256:\s*([A-F0-9:]+)/i);
-    if (!sha256Match) {
-      throw new Error('SHA256 fingerprint not found in keytool output');
-    }
-
-    // Remove colons and convert to uppercase (Android format)
-    return sha256Match[1].replace(/:/g, '').toUpperCase();
-  } finally {
-    // Clean up environment variables
-    delete env[storePassEnv];
-    delete env[keyPassEnv];
+  if (result.error) {
+    throw new Error(`keytool execution failed: ${result.error.message}`);
   }
+
+  if (result.status !== 0) {
+    const stderr = result.stderr ? result.stderr.trim() : '';
+    throw new Error(
+      `keytool exited with code ${result.status}${stderr ? `: ${stderr}` : ''}`
+    );
+  }
+
+  const output = result.stdout;
+  if (!output) {
+    throw new Error('No output received from keytool');
+  }
+
+  // Extract SHA256 fingerprint
+  const sha256Match = output.match(/SHA256:\s*([A-F0-9:]+)/i);
+  if (!sha256Match) {
+    throw new Error('SHA256 fingerprint not found in keytool output');
+  }
+
+  // Remove colons and convert to uppercase (Android format)
+  return sha256Match[1].replace(/:/g, '').toUpperCase();
 }
 
 function sanitizeError(error) {

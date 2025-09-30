@@ -18,8 +18,6 @@ export enum NotificationErrorType {
   NETWORK_ERROR = 'NETWORK_ERROR',
 }
 
-export const NotificationErrorCode = NotificationErrorType;
-
 export type NotificationError = {
   type: NotificationErrorType;
   message: string;

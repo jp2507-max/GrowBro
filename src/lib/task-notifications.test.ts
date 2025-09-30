@@ -127,33 +127,35 @@ describe('TaskNotificationService scheduleTaskReminder doze handling', () => {
     const originalOS = Platform.OS;
     const originalVersion = Platform.Version;
 
-    Object.defineProperty(Platform, 'OS', {
-      value: 'android',
-      configurable: true,
-    });
-    Object.defineProperty(Platform, 'Version', {
-      value: 23,
-      configurable: true,
-    });
+    try {
+      Object.defineProperty(Platform, 'OS', {
+        value: 'android',
+        configurable: true,
+      });
+      Object.defineProperty(Platform, 'Version', {
+        value: 23,
+        configurable: true,
+      });
 
-    const service = new TaskNotificationService();
-    (service as any).isDozeRestricted = true;
+      const service = new TaskNotificationService();
+      (service as any).isDozeRestricted = true;
 
-    const task = createTask({
-      id: 'task-doze',
-      reminderAtUtc: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-    });
+      const task = createTask({
+        id: 'task-doze',
+        reminderAtUtc: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      });
 
-    await expect(service.scheduleTaskReminder(task as any)).resolves.toBe('');
-
-    Object.defineProperty(Platform, 'OS', {
-      value: originalOS,
-      configurable: true,
-    });
-    Object.defineProperty(Platform, 'Version', {
-      value: originalVersion,
-      configurable: true,
-    });
+      await expect(service.scheduleTaskReminder(task as any)).resolves.toBe('');
+    } finally {
+      Object.defineProperty(Platform, 'OS', {
+        value: originalOS,
+        configurable: true,
+      });
+      Object.defineProperty(Platform, 'Version', {
+        value: originalVersion,
+        configurable: true,
+      });
+    }
   });
 });
 

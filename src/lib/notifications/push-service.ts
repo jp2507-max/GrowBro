@@ -3,10 +3,7 @@ import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import {
-  NotificationErrorCode,
-  type NotificationErrorType,
-} from '@/lib/notification-errors';
+import { NotificationErrorType } from '@/lib/notification-errors';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 import { supabase } from '@/lib/supabase';
 
@@ -49,7 +46,7 @@ export const PushNotificationService = {
       if (!token) {
         return {
           token: null,
-          error: NotificationErrorCode.TOKEN_REFRESH_FAILED,
+          error: NotificationErrorType.TOKEN_REFRESH_FAILED,
         };
       }
       await persistAndSyncToken({
@@ -59,7 +56,7 @@ export const PushNotificationService = {
       return { token };
     } catch (error) {
       captureCategorizedErrorSync(error);
-      return { token: null, error: NotificationErrorCode.TOKEN_REFRESH_FAILED };
+      return { token: null, error: NotificationErrorType.TOKEN_REFRESH_FAILED };
     }
   },
 

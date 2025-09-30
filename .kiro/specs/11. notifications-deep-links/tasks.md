@@ -364,20 +364,20 @@ Notes:
   - Write tests for badge counting and platform-specific behavior
   - _Requirements: 6.4_
 
-- [ ] 7. Implement push notification handling with grouping and deduplication
+- [x] 7. Implement push notification handling with grouping and deduplication
   - Create push notification receiver with foreground/background handling
   - Implement notification grouping for Android and threading for iOS
   - Add notification deduplication using collapse keys and thread IDs
   - _Requirements: 1.1, 1.2, 1.4, 1.5, 9.1, 9.2, 9.3, 9.6, 9.7_
 
-- [ ] 7.1 Create push notification receiver service
+- [x] 7.1 Create push notification receiver service
   - Implement foreground and background message handling
   - Add notification presentation logic with channel/category routing
   - Create notification tap handling with deep link integration
   - Write tests for message handling and notification presentation
   - _Requirements: 1.1, 9.1, 9.2_
 
-- [ ] 7.2 Implement notification grouping and deduplication
+- [x] 7.2 Implement notification grouping and deduplication
   - Server sets collapse_key (Android) and apns-collapse-id (iOS) with per-post thread-id
   - Create Android notification grouping with group summary notifications on client
   - Implement iOS notification threading with thread identifiers for visual grouping
@@ -385,7 +385,7 @@ Notes:
   - Write tests for grouping behavior and server-side deduplication logic
   - _Requirements: 1.4, 1.5_
 
-- [ ] 7.3 Build background notification processing with platform constraints
+- [x] 7.3 Build background notification processing with platform constraints
   - Implement background message handling respecting platform limitations
   - Add data sync operations for background notifications
   - Create background processing with Doze mode and battery optimization handling
