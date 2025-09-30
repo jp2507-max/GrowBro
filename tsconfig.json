@@ -24,7 +24,8 @@
     "ios",
     "lint-staged.config.js",
     "dist",
-    "react-native-reanimated"
+    "react-native-reanimated",
+    "supabase/functions/**/*.test.ts"
   ],
   "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts", "nativewind-env.d.ts"]
 }

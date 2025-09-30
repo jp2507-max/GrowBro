@@ -1,6 +1,13 @@
 import * as Notifications from 'expo-notifications';
-import { Linking, PermissionsAndroid, Platform } from 'react-native';
+import {
+  Alert,
+  Linking,
+  NativeModules,
+  PermissionsAndroid,
+  Platform,
+} from 'react-native';
 
+import i18n from '@/lib/i18n';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
 export type PermissionResult = 'granted' | 'denied' | 'unavailable';
@@ -87,19 +94,31 @@ export const PermissionManager: PermissionManagerAPI = {
   },
 
   async handleExactAlarmPermission(): Promise<AlarmPermissionResult> {
-    // Default to inexact alarms; request path is Settings-based on Android 14+
-    return { status: 'denied', fallbackUsed: true };
+    return this.requestExactAlarmIfJustified();
   },
 
   async requestExactAlarmIfJustified(): Promise<AlarmPermissionResult> {
-    // As per policy, only request with strong justification and Play declaration
-    // We provide a stub returning denied with fallback to inexact scheduling
+    if (!shouldConsiderExactAlarmFlow()) {
+      return { status: 'unavailable' };
+    }
+
+    if (await canScheduleExactAlarms()) {
+      return { status: 'granted' };
+    }
+
+    showExactAlarmPrimer();
     return { status: 'denied', fallbackUsed: true };
   },
 
   needsExactAlarms(): boolean {
-    // Gatekeeper: default false; callers use inexact scheduling by default
-    return false;
+    if (Platform.OS !== 'android') {
+      return false;
+    }
+    const version = Number(Platform.Version);
+    if (Number.isNaN(version)) {
+      return false;
+    }
+    return version >= 31;
   },
 
   async checkStoragePermissions(): Promise<StoragePermissionStatus> {
@@ -130,3 +149,74 @@ export const PermissionManager: PermissionManagerAPI = {
     // For other permissions, implement UI-level fallbacks elsewhere (e.g., show in-app badge or banners)
   },
 };
+
+type ExactAlarmNativeModule = {
+  canScheduleExactAlarms?: () => Promise<boolean>;
+  openExactAlarmSettings?: () => Promise<void>;
+};
+
+const { ExactAlarmModule } = NativeModules as {
+  ExactAlarmModule?: ExactAlarmNativeModule;
+};
+
+function shouldConsiderExactAlarmFlow(): boolean {
+  if (Platform.OS !== 'android') {
+    return false;
+  }
+  const version = Number(Platform.Version);
+  if (Number.isNaN(version)) {
+    return false;
+  }
+  return version >= 31;
+}
+
+async function canScheduleExactAlarms(): Promise<boolean> {
+  if (!shouldConsiderExactAlarmFlow()) {
+    return false;
+  }
+  if (ExactAlarmModule?.canScheduleExactAlarms) {
+    try {
+      return await ExactAlarmModule.canScheduleExactAlarms();
+    } catch {}
+  }
+  return false;
+}
+
+function showExactAlarmPrimer(): void {
+  if (!shouldConsiderExactAlarmFlow()) {
+    return;
+  }
+  if (process.env.JEST_WORKER_ID !== undefined) {
+    return;
+  }
+
+  Alert.alert(
+    i18n.t('notifications.exactAlarm.title'),
+    i18n.t('notifications.exactAlarm.body'),
+    [
+      { text: i18n.t('common.cancel'), style: 'cancel' },
+      {
+        text: i18n.t('notifications.exactAlarm.cta'),
+        onPress: () => {
+          void openExactAlarmSettings();
+        },
+      },
+    ],
+    { cancelable: true }
+  );
+}
+
+async function openExactAlarmSettings(): Promise<void> {
+  if (!shouldConsiderExactAlarmFlow()) {
+    return;
+  }
+  if (ExactAlarmModule?.openExactAlarmSettings) {
+    try {
+      await ExactAlarmModule.openExactAlarmSettings();
+      return;
+    } catch {}
+  }
+  try {
+    await Linking.openSettings();
+  } catch {}
+}

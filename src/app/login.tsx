@@ -4,7 +4,7 @@ import React from 'react';
 import type { LoginFormProps } from '@/components/login-form';
 import { LoginForm } from '@/components/login-form';
 import { FocusAwareStatusBar } from '@/components/ui';
-import { useAuth } from '@/lib';
+import { consumePendingDeepLink, useAuth } from '@/lib';
 
 export default function Login() {
   const router = useRouter();
@@ -13,7 +13,12 @@ export default function Login() {
   const onSubmit: LoginFormProps['onSubmit'] = (data) => {
     console.log(data);
     signIn({ access: 'access-token', refresh: 'refresh-token' });
-    router.push('/');
+    const pendingPath = consumePendingDeepLink();
+    if (pendingPath) {
+      router.replace(pendingPath);
+      return;
+    }
+    router.replace('/');
   };
   return (
     <>

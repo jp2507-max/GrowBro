@@ -1,0 +1,40 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "W7FKN3H4Y2.com.growbro",
+        "paths": [
+          "/post/*",
+          "/profile/*",
+          "/grow/*",
+          "/task/*",
+          "/feed",
+          "/calendar"
+        ]
+      },
+      {
+        "appID": "W7FKN3H4Y2.com.growbro.staging",
+        "paths": [
+          "/post/*",
+          "/profile/*",
+          "/grow/*",
+          "/task/*",
+          "/feed",
+          "/calendar"
+        ]
+      },
+      {
+        "appID": "W7FKN3H4Y2.com.growbro.development",
+        "paths": [
+          "/post/*",
+          "/profile/*",
+          "/grow/*",
+          "/task/*",
+          "/feed",
+          "/calendar"
+        ]
+      }
+    ]
+  }
+}

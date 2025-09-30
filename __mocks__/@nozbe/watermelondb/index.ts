@@ -248,6 +248,26 @@ function buildUploadQueueCollection() {
   return col;
 }
 
+function buildNotificationPreferencesCollection() {
+  const col = makeCollection();
+  const originalCreate = col.create.bind(col);
+  col.create = async (cb: any) => {
+    return originalCreate(async (rec: any) => {
+      rec.userId = '';
+      rec.communityInteractions = true;
+      rec.communityLikes = true;
+      rec.cultivationReminders = true;
+      rec.systemUpdates = true;
+      rec.quietHoursEnabled = false;
+      rec.quietHoursStart = null;
+      rec.quietHoursEnd = null;
+      rec.updatedAt = new Date();
+      await cb?.(rec);
+    });
+  };
+  return col;
+}
+
 // Mock Database class
 class DatabaseMock {
   collections: Map<string, any> = new Map();
@@ -257,6 +277,10 @@ class DatabaseMock {
     this.collections.set('series', buildSeriesCollection());
     this.collections.set('occurrence_overrides', buildOverridesCollection());
     this.collections.set('image_upload_queue', buildUploadQueueCollection());
+    this.collections.set(
+      'notification_preferences',
+      buildNotificationPreferencesCollection()
+    );
   }
 
   write = jest

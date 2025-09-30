@@ -1,7 +1,6 @@
 import React from 'react';
 import { FlatList, type FlatListProps } from 'react-native';
 
-// Mock FlashList as FlatList for tests since FlashList has complex native dependencies
 export interface FlashListProps<T>
   extends Omit<FlatListProps<T>, 'estimatedItemSize'> {
   estimatedItemSize?: number;
@@ -20,6 +19,4 @@ export const FlashList = FlashListComponent as React.ComponentType<
   FlashListProps<any>
 >;
 
-export default {
-  FlashList,
-};
+export default FlashList;

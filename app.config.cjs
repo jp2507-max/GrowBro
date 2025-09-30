@@ -1,8 +1,17 @@
+/* eslint-env node */
+/* global __dirname */
 // Load .env only in local/dev; CI may set EXPO_NO_DOTENV=1
 const dotenv = require('dotenv');
+const path = require('path');
 
 if (process.env.EXPO_NO_DOTENV !== '1') {
-  dotenv.config();
+  const APP_ENV = process.env.APP_ENV ?? 'development';
+  const envPath = path.resolve(__dirname, `.env.${APP_ENV}`);
+  dotenv.config({ path: envPath });
+
+  // Optionally load local overrides (never committed)
+  const localEnvPath = path.resolve(__dirname, `.env.local`);
+  dotenv.config({ path: localEnvPath, override: true });
 }
 
 // IMPORTANT: Do not import from '@env' here because the Expo config is evaluated

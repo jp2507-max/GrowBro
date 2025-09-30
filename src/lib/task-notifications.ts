@@ -1,21 +1,20 @@
 // Static import for runtime (tests mock this module)
 
 import { Q } from '@nozbe/watermelondb';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
-import { PermissionsAndroid, Platform } from 'react-native';
+import { AppState, PermissionsAndroid, Platform } from 'react-native';
 
 import { NoopAnalytics } from '@/lib/analytics';
+import i18n from '@/lib/i18n';
+import {
+  IOS_PENDING_LIMIT,
+  LocalNotificationService,
+} from '@/lib/notifications/local-service';
 import { NotificationHandler } from '@/lib/permissions/notification-handler';
 
 import { InvalidTaskTimestampError } from './notification-errors';
-
-// Minimal type shape for notification trigger used in this module
-type NotificationTriggerInput = {
-  type: 'date';
-  date: Date;
-  // Android-only channel selection
-  channelId?: string;
-};
+import { AndroidExactAlarmCoordinator } from './notifications/android-exact-alarm-service';
 
 interface Task {
   id: string;
@@ -30,11 +29,15 @@ interface Task {
 }
 
 export class TaskNotificationService {
+  private pendingDozeTasks = new Map<string, Task>();
+  private isDozeRestricted = false;
+  private appStateListener?: { remove(): void };
+  private iosAppStateListener?: { remove(): void };
+
   constructor() {
-    // Ensure any platform-specific power-management handlers are at least
-    // present (no-op for now). Call without await to avoid changing
-    // synchronous initialization behavior in callers/tests.
-    void this.handleDozeMode();
+    this.setupDozeListener();
+    this.setupIosForegroundRefresh();
+    void this.restorePendingDozeTasks();
   }
   /**
    * Resolves whether the notification system expects UTC timestamps
@@ -84,36 +87,13 @@ export class TaskNotificationService {
       // Without extra deps, we conservatively report false for batteryOptimized
       return { granted, canAskAgain: !granted, batteryOptimized: false };
     }
-    const ExpoNotif: any = Notifications as any;
-    const { status, canAskAgain } = await ExpoNotif.getPermissionsAsync();
+    const anyNotifications: any = Notifications;
+    const { status, canAskAgain } =
+      await anyNotifications.getPermissionsAsync();
     return {
       granted: status === 'granted',
       canAskAgain,
       batteryOptimized: false,
-    };
-  }
-
-  /**
-   * Creates a notification trigger from timestamp and recurrence rule
-   */
-  private createTrigger(
-    timestamp: Date | string,
-    recurrenceRule?: string,
-    _canUseExact: boolean = true
-  ): NotificationTriggerInput {
-    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
-
-    if (isNaN(date.getTime())) {
-      throw new Error('Invalid date provided to createTrigger');
-    }
-
-    // TODO: Implement proper trigger creation based on recurrence rule
-    // For now, create a simple date trigger
-    return {
-      type: 'date' as const,
-      date: date,
-      channelId:
-        Platform.OS === 'android' ? 'cultivation.reminders.v1' : undefined,
     };
   }
 
@@ -199,21 +179,29 @@ export class TaskNotificationService {
 
     const expectsUtc = await this.resolveNotificationExpectsUtc();
     const timestamp = this.resolveReminderTimestamp(task, expectsUtc);
-    const _canUseExact = await this.canUseExactAlarms();
 
-    const trigger = this.createTrigger(
-      timestamp,
-      task.recurrenceRule,
-      _canUseExact
-    );
-    const notificationId = await Notifications.scheduleNotificationAsync({
-      content: {
+    if (await this.shouldDeferForDoze(timestamp)) {
+      this.pendingDozeTasks.set(task.id, task);
+      await this.persistPendingDozeTasks();
+      return '';
+    }
+
+    await this.ensureExactAlarms(task, timestamp);
+
+    const notificationId =
+      await LocalNotificationService.scheduleExactNotification({
+        idTag: `task:${task.id}`,
         title: task.title,
         body: task.description,
-        data: { taskId: task.id, plantId: task.plantId },
-      },
-      trigger,
-    });
+        data: {
+          taskId: task.id,
+          plantId: task.plantId,
+          deepLink: buildCalendarDeepLink(task.id),
+        },
+        triggerDate: timestamp,
+        androidChannelKey: 'cultivation.reminders',
+        threadId: `cultivation.task.${task.id}`,
+      });
 
     if (process.env.JEST_WORKER_ID === undefined) {
       await this.persistNotificationMapping(task, notificationId);
@@ -226,6 +214,106 @@ export class TaskNotificationService {
     return notificationId;
   }
 
+  private async ensureExactAlarms(task: Task, when: Date): Promise<void> {
+    if (Platform.OS !== 'android') return;
+    try {
+      await AndroidExactAlarmCoordinator.ensurePermission({
+        taskId: task.id,
+        triggerAt: when,
+      });
+    } catch (error) {
+      console.warn(
+        '[Notifications] ensureExactAlarms failed (best-effort)',
+        error
+      );
+    }
+  }
+
+  private async shouldDeferForDoze(when: Date): Promise<boolean> {
+    if (Platform.OS !== 'android' || Platform.Version < 23) return false;
+    if (!this.isDozeRestricted) return false;
+    const millisUntil = when.getTime() - Date.now();
+    if (millisUntil <= 0) return false;
+    const deferThresholdMs = 2 * 60 * 60 * 1000;
+    return millisUntil <= deferThresholdMs;
+  }
+
+  private async flushPendingDozeTasks(): Promise<void> {
+    if (this.pendingDozeTasks.size === 0) return;
+    const tasks = Array.from(this.pendingDozeTasks.values());
+    const failedTasks = new Map<string, Task>();
+
+    for (const task of tasks) {
+      try {
+        await this.scheduleTaskReminder(task);
+      } catch (error) {
+        console.warn('[Notifications] deferred schedule failed', error);
+        failedTasks.set(task.id, task);
+      }
+    }
+
+    // Update in-memory state with only the failed tasks
+    this.pendingDozeTasks = failedTasks;
+
+    // Persist the updated state (either empty or containing failed tasks)
+    await this.persistPendingDozeTasks();
+  }
+
+  private async persistPendingDozeTasks(): Promise<void> {
+    try {
+      const serialized = JSON.stringify(
+        Array.from(this.pendingDozeTasks.entries())
+      );
+      await AsyncStorage.setItem(PENDING_DOZE_TASKS_STORAGE_KEY, serialized);
+    } catch (error) {
+      console.warn(
+        '[Notifications] failed to persist pending doze tasks',
+        error
+      );
+    }
+  }
+
+  private async restorePendingDozeTasks(): Promise<void> {
+    try {
+      const raw = await AsyncStorage.getItem(PENDING_DOZE_TASKS_STORAGE_KEY);
+      if (!raw) return;
+
+      const entries: [string, Task][] = JSON.parse(raw);
+      this.pendingDozeTasks = new Map(entries);
+
+      // Flush restored tasks
+      await this.flushPendingDozeTasks();
+    } catch (error) {
+      console.warn(
+        '[Notifications] failed to restore pending doze tasks',
+        error
+      );
+      // Clear corrupted storage
+      try {
+        await AsyncStorage.removeItem(PENDING_DOZE_TASKS_STORAGE_KEY);
+      } catch (clearError) {
+        console.warn(
+          '[Notifications] failed to clear corrupted storage',
+          clearError
+        );
+      }
+    }
+  }
+
+  private setupDozeListener(): void {
+    if (Platform.OS !== 'android' || Platform.Version < 23) return;
+    this.isDozeRestricted = AppState.currentState !== 'active';
+    this.appStateListener?.remove?.();
+    this.appStateListener = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        this.isDozeRestricted = false;
+        void this.flushPendingDozeTasks();
+      } else if (state === 'inactive' || state === 'background') {
+        this.isDozeRestricted = true;
+      }
+    }) as unknown as { remove(): void };
+  }
+
   /**
    * Stub for handling Android Doze / power-save modes.
    *
@@ -234,14 +322,22 @@ export class TaskNotificationService {
    * can safely call this method and compilation/types pass.
    */
   async handleDozeMode(): Promise<void> {
-    // TODO: Implement real Doze handling (acquire wakelocks, schedule
-    // work via WorkManager, use exact alarms, etc.). Left as a no-op
-    // for now to preserve cross-platform behavior.
-    // Use console.trace for easier debugging during development.
-    console.trace(
-      '[TaskNotificationService] handleDozeMode: TODO - no-op stub'
-    );
-    return Promise.resolve();
+    // No-op implementation for backward compatibility
+    // Actual setup is now done synchronously in constructor via setupDozeListener()
+  }
+
+  async refreshAfterBackgroundTask(): Promise<void> {
+    await this.rehydrateNotifications();
+  }
+
+  private setupIosForegroundRefresh(): void {
+    if (Platform.OS !== 'ios') return;
+    this.iosAppStateListener?.remove?.();
+    this.iosAppStateListener = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void this.rehydrateNotifications();
+      }
+    }) as unknown as { remove(): void };
   }
 
   /**
@@ -257,8 +353,9 @@ export class TaskNotificationService {
       const rows: any[] = await (queue as any).query().fetch();
       const pending = rows.filter((r: any) => r.taskId === taskId);
       for (const row of pending as any[]) {
-        const ExpoNotif: any = Notifications as any;
-        await ExpoNotif.cancelScheduledNotificationAsync(row.notificationId);
+        await LocalNotificationService.cancelScheduledNotification(
+          row.notificationId
+        );
         await database.write(async () => {
           await (row as any).markAsDeleted();
         });
@@ -362,6 +459,52 @@ export class TaskNotificationService {
     return { database, queue, existing, tasksToUpdate };
   }
 
+  private selectSchedulableTasks(tasks: any[]): any[] {
+    if (Platform.OS !== 'ios') {
+      return tasks;
+    }
+
+    const annotated = tasks
+      .map((task: Task) => ({
+        task,
+        timestamp: this.getTaskOrderingTimestamp(task),
+      }))
+      .filter((entry) => entry.timestamp !== null);
+
+    if (annotated.length <= IOS_PENDING_LIMIT) {
+      return annotated.map((entry) => entry.task);
+    }
+
+    annotated.sort((a, b) => a.timestamp! - b.timestamp!);
+
+    const limited = annotated.slice(0, IOS_PENDING_LIMIT);
+    const selectedIds = new Set(limited.map((entry) => entry.task.id));
+
+    return tasks.filter((task: Task) => selectedIds.has(task.id));
+  }
+
+  private getTaskOrderingTimestamp(task: Task): number | null {
+    const candidates: (Date | string | null | undefined)[] = [
+      task.reminderAtLocal,
+      task.reminderAtUtc,
+      task.dueAtLocal,
+      task.dueAtUtc,
+    ];
+
+    let earliest: number | null = null;
+    for (const value of candidates) {
+      if (!value) continue;
+      const date = value instanceof Date ? value : new Date(value);
+      const time = date.getTime();
+      if (Number.isNaN(time)) continue;
+      if (earliest === null || time < earliest) {
+        earliest = time;
+      }
+    }
+
+    return earliest;
+  }
+
   /**
    * Cancels outdated notifications and removes them from database
    */
@@ -372,8 +515,9 @@ export class TaskNotificationService {
   ): Promise<void> {
     for (const { notificationId } of diff.toCancel) {
       try {
-        const ExpoNotif: any = Notifications as any;
-        await ExpoNotif.cancelScheduledNotificationAsync(notificationId);
+        await LocalNotificationService.cancelScheduledNotification(
+          notificationId
+        );
       } catch (err) {
         console.warn('[Notifications] cancel during rehydrate failed', err);
       }
@@ -518,8 +662,10 @@ export class TaskNotificationService {
     const { database, existing, tasksToUpdate } =
       await this.fetchNotificationsAndTasks(changedTaskIds);
 
+    const schedulingCandidates = this.selectSchedulableTasks(tasksToUpdate);
+
     const diff = TaskNotificationService.computeNotificationDiff(
-      tasksToUpdate.map((t: any) => ({
+      schedulingCandidates.map((t: any) => ({
         id: t.id,
         status: t.status,
         reminderAtUtc: t.reminderAtUtc,
@@ -536,12 +682,109 @@ export class TaskNotificationService {
     const mergedDiff = this.mergeDiffWithOrphans({
       diff,
       existing,
-      tasksToUpdate,
+      tasksToUpdate: schedulingCandidates,
       changedTaskIds,
     });
 
     await this.cancelOutdatedNotifications(mergedDiff, existing, database);
-    await this.scheduleMissingNotifications(mergedDiff, tasksToUpdate);
+    await this.scheduleMissingNotifications(mergedDiff, schedulingCandidates);
+    await this.scheduleOverdueDigest(tasksToUpdate as Task[]);
     await this.trackRehydrateAnalytics(mergedDiff);
   }
+
+  private async scheduleOverdueDigest(tasks: Task[]): Promise<void> {
+    const now = new Date();
+    const overdue = tasks.filter((task) => this.isTaskOverdue(task, now));
+
+    if (overdue.length === 0) {
+      await this.cancelOverdueDigestIfScheduled();
+      return;
+    }
+
+    const todayKey = now.toISOString().slice(0, 10);
+    const record = await this.getOverdueDigestRecord();
+    if (record?.dateKey === todayKey) return;
+
+    const triggerDate = computeDigestTrigger(now);
+    const title = i18n.t('notifications.overdue.title');
+    const body = i18n.t('notifications.overdue.body', {
+      count: overdue.length,
+    });
+
+    try {
+      const notificationId =
+        await LocalNotificationService.scheduleExactNotification({
+          idTag: 'overdue-digest',
+          title,
+          body,
+          data: {
+            deepLink: buildCalendarOverdueDeepLink(),
+            overdueTaskIds: overdue.map((task) => task.id),
+          },
+          triggerDate,
+          androidChannelKey: 'cultivation.reminders',
+          threadId: 'cultivation.overdue.digest',
+        });
+
+      await AsyncStorage.setItem(
+        OVERDUE_DIGEST_STORAGE_KEY,
+        JSON.stringify({ dateKey: todayKey, notificationId })
+      );
+    } catch (error) {
+      // Clean up any existing stale record to allow future retry attempts
+      await this.cancelOverdueDigestIfScheduled();
+      throw error; // Re-throw to maintain error propagation
+    }
+  }
+
+  private async cancelOverdueDigestIfScheduled(): Promise<void> {
+    const record = await this.getOverdueDigestRecord();
+    if (!record?.notificationId) return;
+    await LocalNotificationService.cancelScheduledNotification(
+      record.notificationId
+    );
+    await AsyncStorage.removeItem(OVERDUE_DIGEST_STORAGE_KEY);
+  }
+
+  private async getOverdueDigestRecord(): Promise<{
+    dateKey: string;
+    notificationId: string;
+  } | null> {
+    try {
+      const raw = await AsyncStorage.getItem(OVERDUE_DIGEST_STORAGE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  private isTaskOverdue(task: Task, reference: Date): boolean {
+    const source = task.dueAtUtc ?? task.reminderAtUtc;
+    if (!source) return false;
+    const dueDate = source instanceof Date ? source : new Date(source);
+    if (Number.isNaN(dueDate.getTime())) return false;
+    return dueDate.getTime() < reference.getTime();
+  }
 }
+
+function computeDigestTrigger(now: Date): Date {
+  const trigger = new Date(now);
+  trigger.setHours(9, 0, 0, 0);
+  if (trigger.getTime() <= now.getTime()) {
+    trigger.setDate(trigger.getDate() + 1);
+  }
+  return trigger;
+}
+
+function buildCalendarDeepLink(taskId: string): string {
+  return `growbro://calendar?taskId=${encodeURIComponent(taskId)}`;
+}
+
+function buildCalendarOverdueDeepLink(): string {
+  return 'growbro://calendar?filter=overdue';
+}
+
+const OVERDUE_DIGEST_STORAGE_KEY = '@growbro/notifications/overdue-digest';
+const PENDING_DOZE_TASKS_STORAGE_KEY =
+  '@growbro/notifications/pending-doze-tasks';
