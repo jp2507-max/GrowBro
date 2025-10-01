@@ -87,7 +87,7 @@ export class StrainsApiClient {
 
     // Add search query
     if (searchQuery && searchQuery.trim()) {
-      queryParams.set('search', encodeURIComponent(searchQuery.trim()));
+      queryParams.set('search', searchQuery.trim());
     }
 
     // Add filters
