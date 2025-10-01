@@ -49,39 +49,39 @@
   - Add repository pattern for CRUD operations with batch support to avoid N+1 queries
   - _Requirements: 5.1, 5.4, 5.6_
 
-- [ ] 5. Create Zustand favorites store with persistence
-- [ ] 5.1 Implement favorites state management
+- [x] 5. Create Zustand favorites store with persistence
+- [x] 5.1 Implement favorites state management
   - Create useFavorites store with serializable array/object structure for MMKV persistence
   - Add addFavorite, removeFavorite, and isFavorite methods with proper hydration
   - Integrate with WatermelonDB for local persistence with batch operations
   - Add composite indexes for (strain_id) and query performance optimization
   - _Requirements: 5.1, 5.2, 5.3_
 
-- [ ] 5.2 Add Supabase sync for authenticated users
+- [x] 5.2 Add Supabase sync for authenticated users
   - Implement syncToCloud method for favorites synchronization
   - Add conflict resolution for favorites sync
   - Create background sync on app foreground/network reconnection
   - _Requirements: 5.4, 5.5_
 
-- [ ] 6. Build core UI components with accessibility
-- [ ] 6.1 Create StrainCard component with expo-image
-  - Implement memoized StrainCard with proper accessibility labels
-  - Add expo-image with BlurHash placeholders and caching
-  - Include race, THC, and difficulty badges with proper styling
-  - _Requirements: 1.5, 7.1, 7.2, 8.1, 8.2_
+- [x] 6.  Build core UI components with accessibility
+- [x] 6.1 Create StrainCard component with expo-image
+- Implement memoized StrainCard with proper accessibility labels
+- Add expo-image with BlurHash placeholders and caching
+- Include race, THC, and difficulty badges with proper styling
+- _Requirements: 1.5, 7.1, 7.2, 8.1, 8.2_
 
-- [ ] 6.2 Implement FavoriteButton with accessibility states
-  - Create toggle button with accessibilityRole="togglebutton"
-  - Add accessibilityState={{ checked }} and descriptive accessibilityHint
-  - Implement haptic feedback and animation on toggle
-  - Add accessibilityLiveRegion="polite" for count changes announcements
-  - _Requirements: 5.1, 5.2, 7.1, 7.2_
+- [x] 6.2 Implement FavoriteButton with accessibility states
+- Create toggle button with accessibilityRole="togglebutton"
+- Add accessibilityState={{ checked }} and descriptive accessibilityHint
+- Implement haptic feedback and animation on toggle
+- Add accessibilityLiveRegion="polite" for count changes announcements
+- _Requirements: 5.1, 5.2, 7.1, 7.2_
 
-- [ ] 6.3 Build badge components for strain characteristics
-  - Create RaceBadge, THCBadge, and DifficultyBadge components
-  - Implement proper color contrast for WCAG AA compliance
-  - Add localized number formatting for THC/CBD ranges
-  - _Requirements: 1.5, 7.4, 8.3_
+- [x] 6.3 Build badge components for strain characteristics
+- Create RaceBadge, THCBadge, and DifficultyBadge components
+- Implement proper color contrast for WCAG AA compliance
+- Add localized number formatting for THC/CBD ranges
+- _Requirements: 1.5, 7.4, 8.3_
 
 - [ ] 7. Implement FlashList-based strains listing
 - [ ] 7.1 Create StrainsList component with infinite scroll

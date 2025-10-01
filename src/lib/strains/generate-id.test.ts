@@ -9,8 +9,12 @@ describe('generateId', () => {
     const id1 = generateId();
     const id2 = generateId();
 
-    expect(id1).toMatch(/^strain_\d+_[a-z0-9]+$/);
-    expect(id2).toMatch(/^strain_\d+_[a-z0-9]+$/);
+    expect(id1).toMatch(
+      /^strain:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+    );
+    expect(id2).toMatch(
+      /^strain:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+    );
     expect(id1).not.toBe(id2);
   });
 });

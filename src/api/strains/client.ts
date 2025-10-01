@@ -36,7 +36,90 @@ export class StrainsApiClient {
       },
     });
 
-    // Add retry interceptor with exponential backoff
+    // Add security interceptors to strip sensitive headers from logs/serialization
+    this.setupSecurityInterceptors();
+  }
+
+  /**
+   * Setup axios interceptors to sanitize sensitive headers from request/response objects
+   * This prevents API keys from being leaked in logs, error reports, or serialized objects
+   */
+  private setupSecurityInterceptors(): void {
+    const { sanitizeHeaders, sanitizeConfig } =
+      this.createSanitizationHelpers();
+
+    this.setupRequestInterceptor(sanitizeConfig);
+    this.setupResponseInterceptor(sanitizeHeaders, sanitizeConfig);
+    this.setupRetryInterceptor();
+  }
+
+  private createSanitizationHelpers() {
+    const sensitiveHeaders = [
+      'x-rapidapi-key',
+      'x-rapidapi-host',
+      'authorization',
+      'x-api-key',
+    ];
+
+    const sanitizeHeaders = (headers: any): any => {
+      if (!headers || typeof headers !== 'object') return headers;
+      const sanitized = { ...headers };
+      for (const headerName of sensitiveHeaders) {
+        if (sanitized[headerName] !== undefined) {
+          sanitized[headerName] = '[REDACTED]';
+        }
+      }
+      return sanitized;
+    };
+
+    const sanitizeConfig = (config: any): any => {
+      if (!config || typeof config !== 'object') return config;
+      const sanitized = { ...config };
+      if (sanitized.headers) {
+        sanitized.headers = sanitizeHeaders(sanitized.headers);
+      }
+      return sanitized;
+    };
+
+    return { sanitizeHeaders, sanitizeConfig };
+  }
+
+  private setupRequestInterceptor(sanitizeConfig: (config: any) => any): void {
+    this.client.interceptors.request.use(
+      (config) => sanitizeConfig(config),
+      (error) => {
+        if (error.config) {
+          error.config = sanitizeConfig(error.config);
+        }
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  private setupResponseInterceptor(
+    sanitizeHeaders: (headers: any) => any,
+    sanitizeConfig: (config: any) => any
+  ): void {
+    this.client.interceptors.response.use(
+      (response) => {
+        if (response.headers) {
+          response.headers = sanitizeHeaders(response.headers);
+        }
+        return response;
+      },
+      (error) => {
+        if (error.response?.headers) {
+          error.response.headers = sanitizeHeaders(error.response.headers);
+        }
+        if (error.config) {
+          error.config = sanitizeConfig(error.config);
+        }
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  private setupRetryInterceptor(): void {
     this.client.interceptors.response.use(
       (response) => response,
       async (error) => {
@@ -49,7 +132,6 @@ export class StrainsApiClient {
         const isIdempotent =
           method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
 
-        // Don't retry rate limits (429) - let the UI handle it
         const status = error?.response?.status;
         if (status === 429) {
           return Promise.reject(error);
@@ -60,7 +142,6 @@ export class StrainsApiClient {
         }
 
         cfg.__retryCount += 1;
-        // Truncated exponential backoff with jitter
         const delay = computeBackoffMs(cfg.__retryCount, 1000, 30_000);
         await new Promise((r) => setTimeout(r, delay));
 
@@ -218,9 +299,12 @@ export class StrainsApiClient {
       // Handle 304 Not Modified - return cached data
       if (error?.response?.status === 304) {
         const cached = this.getCachedData(queryParams.toString());
-        if (cached) {
+        if (cached && cached.data.length > 0) {
+          // Optionally: validate cache timestamp or version
           return cached;
         }
+        // If cache miss on 304, this is unexpected—log and re-throw
+        console.warn('304 Not Modified but no cached data found');
       }
 
       throw error;

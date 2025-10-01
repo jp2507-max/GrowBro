@@ -5,9 +5,7 @@ import type {
   Flavor,
   GrowCharacteristics,
   GrowDifficulty,
-  PercentageRange,
   Race,
-  Strain,
   Terpene,
 } from './types';
 export { parsePercentageRange };
@@ -35,43 +33,7 @@ export function normalizeRace(race: any): Race {
   return 'hybrid';
 }
 
-/**
- * Format percentage range for display with locale support
- */
-export function formatPercentageDisplay(
-  range: PercentageRange,
-  locale: string = 'en-US'
-): string {
-  // Use label if available
-  if (range.label) {
-    return range.label;
-  }
-
-  // Format numeric ranges
-  if (range.min !== undefined && range.max !== undefined) {
-    const formatter = new Intl.NumberFormat(locale, {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 1,
-    });
-
-    if (range.min === range.max) {
-      return `${formatter.format(range.min)}%`;
-    }
-    return `${formatter.format(range.min)}-${formatter.format(range.max)}%`;
-  }
-
-  // Handle min-only (e.g., "15%+")
-  if (range.min !== undefined) {
-    const formatter = new Intl.NumberFormat(locale, {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 1,
-    });
-    return `${formatter.format(range.min)}%+`;
-  }
-
-  // Fallback for missing data
-  return 'Not reported';
-}
+export { formatPercentageDisplay } from '@/lib/strains/normalization';
 
 /**
  * Normalize effects array
@@ -254,54 +216,4 @@ export function slugify(text: string): string {
     .replace(/\-\-+/g, '-');
 }
 
-/**
- * Generate a unique ID
- */
-export function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-}
-
-/**
- * Normalize complete strain data from API response
- */
-export function normalizeStrain(
-  apiStrain: any,
-  locale: string = 'en-US'
-): Strain {
-  const thc = parsePercentageRange(apiStrain.thc);
-  const cbd = parsePercentageRange(apiStrain.cbd);
-
-  return {
-    id: apiStrain.id || generateId(),
-    name: apiStrain.name || 'Unknown Strain',
-    slug: apiStrain.slug || slugify(apiStrain.name || 'unknown'),
-    synonyms: Array.isArray(apiStrain.synonyms) ? apiStrain.synonyms : [],
-    link: apiStrain.link || '',
-    imageUrl: apiStrain.image || apiStrain.imageUrl || DEFAULT_STRAIN_IMAGE,
-    description: Array.isArray(apiStrain.description)
-      ? apiStrain.description
-      : apiStrain.description
-        ? [apiStrain.description]
-        : ['No description available'],
-    genetics: {
-      parents: Array.isArray(apiStrain.parents)
-        ? apiStrain.parents
-        : apiStrain.genetics?.parents || [],
-      lineage: apiStrain.lineage || apiStrain.genetics?.lineage || '',
-    },
-    race: normalizeRace(apiStrain.race || apiStrain.type),
-    thc,
-    cbd,
-    effects: normalizeEffects(apiStrain.effects),
-    flavors: normalizeFlavors(apiStrain.flavors),
-    terpenes: normalizeTerpenes(apiStrain.terpenes),
-    grow: normalizeGrowCharacteristics(apiStrain.grow),
-    source: {
-      provider: 'The Weed DB',
-      updated_at: new Date().toISOString(),
-      attribution_url: apiStrain.link || '',
-    },
-    thc_display: formatPercentageDisplay(thc, locale),
-    cbd_display: formatPercentageDisplay(cbd, locale),
-  };
-}
+export { normalizeStrain } from '@/lib/strains/normalization';

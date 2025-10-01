@@ -29,6 +29,7 @@
     },
     "strains": {
       "error_card_hint": "Informiert, dass Sorten nicht geladen werden konnten.",
+      "favorite_hint": "Doppeltippen, um den Favoriten-Status zu wechseln.",
       "offline_banner_hint": "Zeigt gespeicherte Sorten im Offline-Modus an.",
       "open_detail_hint": "Öffnet die Sortendetails.",
       "search_hint": "Filtert die Sortenliste während der Eingabe."
@@ -471,16 +472,29 @@
     }
   },
   "strains": {
+    "add_favorite": "Zu Favoriten hinzufügen",
+    "difficulty": {
+      "advanced": "Fortgeschritten",
+      "beginner": "Anfänger",
+      "intermediate": "Mittel"
+    },
     "empty_state": "Keine Sorten verfügbar",
     "error": "Sorten konnten nicht geladen werden. Bitte erneut versuchen.",
     "no_results": "Keine Sorten gefunden",
     "offline_notice": "Gespeicherte Sorten werden angezeigt",
+    "race": {
+      "hybrid": "Hybrid",
+      "indica": "Indica",
+      "sativa": "Sativa"
+    },
+    "remove_favorite": "Von Favoriten entfernen",
     "results_count": "{{count}} Sorten",
     "results_count_one": "{{count}} Sorte",
     "results_count_other": "{{count}} Sorten",
     "results_count_zero": "Keine Sorten",
     "retry": "Erneut versuchen",
-    "search_placeholder": "Sorten suchen…"
+    "search_placeholder": "Sorten suchen…",
+    "thc": "THC {{value}}"
   },
   "sync": {
     "last_sync_and_pending": "Letzte Sync: {{time}}, {{count}} ausstehend",

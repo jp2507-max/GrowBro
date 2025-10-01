@@ -126,7 +126,6 @@ describe('usePrefetchStrain', () => {
 
       expect(mockClient.getStrains).toHaveBeenCalledWith({
         ...params,
-        cursor: undefined,
         signal: mockSignal,
       });
     });

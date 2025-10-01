@@ -6,11 +6,32 @@ import type { FavoriteStrain, FavoriteStrainSnapshot, Strain } from '@/types';
 
 import type { FavoriteModel } from './favorite';
 
+type FavoritesRepository = {
+  findByStrainId: (
+    strainId: string,
+    userId?: string
+  ) => Promise<FavoriteModel | null>;
+  getAllFavorites: (userId?: string) => Promise<FavoriteModel[]>;
+  getFavoritesNeedingSync: (userId?: string) => Promise<FavoriteModel[]>;
+  addFavorite: (strain: Strain, userId?: string) => Promise<FavoriteModel>;
+  removeFavorite: (strainId: string, userId?: string) => Promise<void>;
+  isFavorite: (strainId: string, userId?: string) => Promise<boolean>;
+  batchAddFavorites: (
+    strains: Strain[],
+    userId?: string
+  ) => Promise<FavoriteModel[]>;
+  markAsSynced: (favoriteIds: string[]) => Promise<void>;
+  toFavoriteStrain: (model: FavoriteModel) => FavoriteStrain;
+  getAllAsFavoriteStrains: (userId?: string) => Promise<FavoriteStrain[]>;
+};
+
 /**
  * Repository for managing favorites with batch operations
  * Implements LWW conflict resolution and sync support
  */
-export function createFavoritesRepository(database: Database) {
+export function createFavoritesRepository(
+  database: Database
+): FavoritesRepository {
   const collection = database.get<FavoriteModel>('favorites');
 
   /**

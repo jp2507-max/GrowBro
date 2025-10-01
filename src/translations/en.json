@@ -29,6 +29,7 @@
     },
     "strains": {
       "error_card_hint": "Informs that strains failed to load.",
+      "favorite_hint": "Double-tap to toggle favorite status for this strain.",
       "offline_banner_hint": "Shows saved strains while offline.",
       "open_detail_hint": "Opens strain details.",
       "search_hint": "Filters strains as you type."
@@ -471,16 +472,29 @@
     }
   },
   "strains": {
+    "add_favorite": "Add to favorites",
+    "difficulty": {
+      "advanced": "Advanced",
+      "beginner": "Beginner",
+      "intermediate": "Intermediate"
+    },
     "empty_state": "No strains available",
     "error": "Failed to load strains. Try again.",
     "no_results": "No strains found",
     "offline_notice": "Showing saved strains",
+    "race": {
+      "hybrid": "Hybrid",
+      "indica": "Indica",
+      "sativa": "Sativa"
+    },
+    "remove_favorite": "Remove from favorites",
     "results_count": "{{count}} strains",
     "results_count_one": "{{count}} strain",
     "results_count_other": "{{count}} strains",
     "results_count_zero": "No strains",
     "retry": "Retry",
-    "search_placeholder": "Search strains…"
+    "search_placeholder": "Search strains…",
+    "thc": "THC {{value}}"
   },
   "sync": {
     "last_sync_and_pending": "Last sync: {{time}}, {{count}} pending",

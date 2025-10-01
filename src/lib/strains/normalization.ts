@@ -24,9 +24,10 @@ import {
 
 /**
  * Generates a fallback ID for strains missing an ID
+ * Uses crypto.randomUUID() for secure, collision-resistant IDs
  */
 export function generateId(): string {
-  return `strain_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  return `strain:${crypto.randomUUID()}`;
 }
 
 /**
@@ -262,6 +263,53 @@ function normalizeTerpenes(terpenes: any): Terpene[] | undefined {
 }
 
 /**
+ * Normalizes yield data for indoor or outdoor growing
+ */
+function normalizeYieldData(yieldData: any): any {
+  if (!yieldData) return { label: DEFAULT_YIELD };
+
+  return {
+    min_grams:
+      typeof yieldData.min_grams === 'number' ? yieldData.min_grams : undefined,
+    max_grams:
+      typeof yieldData.max_grams === 'number' ? yieldData.max_grams : undefined,
+    min_oz: typeof yieldData.min_oz === 'number' ? yieldData.min_oz : undefined,
+    max_oz: typeof yieldData.max_oz === 'number' ? yieldData.max_oz : undefined,
+    label: yieldData.label || DEFAULT_YIELD,
+  };
+}
+
+/**
+ * Normalizes flowering time data
+ */
+function normalizeFloweringTime(floweringTime: any) {
+  return {
+    min_weeks:
+      typeof floweringTime?.min_weeks === 'number'
+        ? floweringTime.min_weeks
+        : undefined,
+    max_weeks:
+      typeof floweringTime?.max_weeks === 'number'
+        ? floweringTime.max_weeks
+        : undefined,
+    label: floweringTime?.label || DEFAULT_FLOWERING_TIME,
+  };
+}
+
+/**
+ * Normalizes height data
+ */
+function normalizeHeight(height: any) {
+  return {
+    indoor_cm:
+      typeof height?.indoor_cm === 'number' ? height.indoor_cm : undefined,
+    outdoor_cm:
+      typeof height?.outdoor_cm === 'number' ? height.outdoor_cm : undefined,
+    label: height?.label || DEFAULT_HEIGHT,
+  };
+}
+
+/**
  * Normalizes growing characteristics
  */
 function normalizeGrowCharacteristics(grow: any): GrowCharacteristics {
@@ -271,36 +319,12 @@ function normalizeGrowCharacteristics(grow: any): GrowCharacteristics {
     difficulty,
     indoor_suitable: Boolean(grow?.indoor_suitable ?? true),
     outdoor_suitable: Boolean(grow?.outdoor_suitable ?? true),
-    flowering_time: {
-      min_weeks: grow?.flowering_time?.min_weeks,
-      max_weeks: grow?.flowering_time?.max_weeks,
-      label: grow?.flowering_time?.label || DEFAULT_FLOWERING_TIME,
-    },
+    flowering_time: normalizeFloweringTime(grow?.flowering_time),
     yield: {
-      indoor: grow?.yield?.indoor
-        ? {
-            min_grams: grow.yield.indoor.min_grams,
-            max_grams: grow.yield.indoor.max_grams,
-            min_oz: grow.yield.indoor.min_oz,
-            max_oz: grow.yield.indoor.max_oz,
-            label: grow.yield.indoor.label || DEFAULT_YIELD,
-          }
-        : { label: DEFAULT_YIELD },
-      outdoor: grow?.yield?.outdoor
-        ? {
-            min_grams: grow.yield.outdoor.min_grams,
-            max_grams: grow.yield.outdoor.max_grams,
-            min_oz: grow.yield.outdoor.min_oz,
-            max_oz: grow.yield.outdoor.max_oz,
-            label: grow.yield.outdoor.label || DEFAULT_YIELD,
-          }
-        : { label: DEFAULT_YIELD },
+      indoor: normalizeYieldData(grow?.yield?.indoor),
+      outdoor: normalizeYieldData(grow?.yield?.outdoor),
     },
-    height: {
-      indoor_cm: grow?.height?.indoor_cm,
-      outdoor_cm: grow?.height?.outdoor_cm,
-      label: grow?.height?.label || DEFAULT_HEIGHT,
-    },
+    height: normalizeHeight(grow?.height),
   };
 }
 

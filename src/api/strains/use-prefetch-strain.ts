@@ -70,7 +70,7 @@ export function usePrefetchStrainsPage() {
           const { pageParam, signal } = context;
           return await client.getStrains({
             ...params,
-            cursor: pageParam,
+            cursor: pageParam ?? params.cursor,
             signal,
           });
         },
