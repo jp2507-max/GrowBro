@@ -46,6 +46,11 @@ export function parsePercentageRange(value: any): PercentageRange {
   if (typeof value === 'string') {
     const trimmed = value.trim();
 
+    // Handle empty strings
+    if (trimmed.length === 0) {
+      return {};
+    }
+
     // Handle qualitative values (High, Low, Medium, etc.)
     if (!/\d/.test(trimmed)) {
       return { label: trimmed };
@@ -240,13 +245,19 @@ function normalizeTerpenes(terpenes: any): Terpene[] | undefined {
   }
 
   return terpenes
-    .filter((terpene) => terpene && typeof terpene === 'object')
-    .map((terpene) => ({
-      name: String(terpene.name || ''),
-      percentage:
-        typeof terpene.percentage === 'number' ? terpene.percentage : undefined,
-      aroma_description: terpene.aroma_description || undefined,
-    }))
+    .filter((terpene) => terpene != null)
+    .map((terpene) =>
+      typeof terpene === 'string'
+        ? { name: String(terpene) }
+        : {
+            name: String(terpene.name || ''),
+            percentage:
+              typeof terpene.percentage === 'number'
+                ? terpene.percentage
+                : undefined,
+            aroma_description: terpene.aroma_description || undefined,
+          }
+    )
     .filter((terpene) => terpene.name);
 }
 
@@ -333,7 +344,9 @@ export function normalizeStrain(apiStrain: any, locale = 'en-US'): Strain {
     genetics: {
       parents: Array.isArray(apiStrain.genetics?.parents)
         ? apiStrain.genetics.parents.filter(Boolean).map(String)
-        : [],
+        : Array.isArray(apiStrain.parents)
+          ? apiStrain.parents.filter(Boolean).map(String)
+          : [],
       lineage: String(apiStrain.genetics?.lineage || ''),
     },
     race: normalizeRace(apiStrain.race || apiStrain.type),

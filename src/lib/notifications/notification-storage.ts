@@ -82,7 +82,7 @@ export async function listNotifications(
     clauses.push(Q.where('created_at', Q.lt(cursor)));
   }
 
-  clauses.push(Q.sortBy('created_at', Q.desc));
+  clauses.push(Q.sortBy('created_at', 'desc'));
   clauses.push(Q.take(limit));
 
   const records = (await collection

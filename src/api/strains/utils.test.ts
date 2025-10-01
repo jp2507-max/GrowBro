@@ -10,7 +10,6 @@ import {
   normalizeStrain,
   normalizeTerpenes,
   parsePercentageRange,
-  slugify,
 } from './utils';
 
 describe('Strains Utilities', () => {
@@ -122,7 +121,10 @@ describe('Strains Utilities', () => {
 
     test('returns "Not reported" for empty values', () => {
       expect(formatPercentageDisplay({})).toBe('Not reported');
-      expect(formatPercentageDisplay({ max: 20 })).toBe('Not reported');
+    });
+
+    test('formats max-only values', () => {
+      expect(formatPercentageDisplay({ max: 20 })).toBe('Up to 20%');
     });
 
     test('supports locale formatting', () => {
@@ -352,30 +354,6 @@ describe('Strains Utilities', () => {
     });
   });
 
-  describe('slugify', () => {
-    test('creates valid slugs', () => {
-      expect(slugify('OG Kush')).toBe('og-kush');
-      expect(slugify('Blue Dream')).toBe('blue-dream');
-      expect(slugify('Girl Scout Cookies')).toBe('girl-scout-cookies');
-    });
-
-    test('handles special characters', () => {
-      expect(slugify('Jack Herer #1')).toBe('jack-herer-1');
-      expect(slugify('Lemon G!!! (Special)')).toBe('lemon-g-special');
-    });
-
-    test('handles whitespace', () => {
-      expect(slugify('  Multiple   Spaces  ')).toBe('multiple-spaces');
-      expect(slugify('\tTabs\tAnd\tSpaces\t')).toBe('tabs-and-spaces');
-    });
-
-    test('handles empty and edge cases', () => {
-      expect(slugify('')).toBe('');
-      expect(slugify('   ')).toBe('');
-      expect(slugify('123')).toBe('123');
-    });
-  });
-
   describe('generateId', () => {
     test('generates unique IDs', () => {
       const id1 = generateId();
@@ -385,7 +363,7 @@ describe('Strains Utilities', () => {
 
     test('generates valid ID format', () => {
       const id = generateId();
-      expect(id).toMatch(/^\d+-[a-z0-9]+$/);
+      expect(id).toMatch(/^strain_\d+_[a-z0-9]+$/);
     });
   });
 

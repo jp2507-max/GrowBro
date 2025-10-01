@@ -1,3 +1,5 @@
+import { parsePercentageRange } from '@/lib/strains';
+
 import type {
   Effect,
   Flavor,
@@ -8,6 +10,7 @@ import type {
   Strain,
   Terpene,
 } from './types';
+export { parsePercentageRange };
 
 /**
  * Default placeholder for missing strain images
@@ -30,61 +33,6 @@ export function normalizeRace(race: any): Race {
   if (normalized.includes('indica')) return 'indica';
   if (normalized.includes('sativa')) return 'sativa';
   return 'hybrid';
-}
-
-/**
- * Parse percentage values from various formats
- * Handles: "17%", "15-20%", "High", numeric values, etc.
- */
-export function parsePercentageRange(value: any): PercentageRange {
-  // Handle null/undefined
-  if (value === null || value === undefined) {
-    return {};
-  }
-
-  // Handle string values
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-
-    // Try to parse numeric ranges like "17%" or "15-20%"
-    const numericMatch = trimmed.match(
-      /(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*%?/
-    );
-    if (numericMatch) {
-      const min = parseFloat(numericMatch[1]);
-      const max = parseFloat(numericMatch[2]);
-      return { min, max };
-    }
-
-    // Try to parse single numeric value like "17%" or "17"
-    const singleMatch = trimmed.match(/(\d+(?:\.\d+)?)\s*%?/);
-    if (singleMatch) {
-      const value = parseFloat(singleMatch[1]);
-      return { min: value, max: value };
-    }
-
-    // Qualitative values like "High", "Low", "Medium"
-    if (trimmed.length > 0) {
-      return { label: trimmed };
-    }
-  }
-
-  // Handle numeric values
-  if (typeof value === 'number' && !isNaN(value)) {
-    return { min: value, max: value };
-  }
-
-  // Handle object with min/max
-  if (typeof value === 'object' && value !== null) {
-    const obj = value as any;
-    return {
-      min: typeof obj.min === 'number' ? obj.min : undefined,
-      max: typeof obj.max === 'number' ? obj.max : undefined,
-      label: typeof obj.label === 'string' ? obj.label : undefined,
-    };
-  }
-
-  return {};
 }
 
 /**

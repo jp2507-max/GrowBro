@@ -347,13 +347,13 @@ function StrainCard({ strain, onPress }: StrainCardProps): React.ReactElement {
           {strain.race}
         </Text>
       ) : null}
-      {strain.description ? (
+      {Array.isArray(strain.description) && strain.description.length > 0 ? (
         <Text
           className="pt-2 text-sm text-neutral-600 dark:text-neutral-200"
           numberOfLines={2}
           ellipsizeMode="tail"
         >
-          {strain.description}
+          {strain.description[0]}
         </Text>
       ) : null}
     </Pressable>

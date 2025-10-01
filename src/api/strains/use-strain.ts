@@ -9,7 +9,7 @@ import type { Strain } from './types';
  *
  * @example
  * ```tsx
- * const { data: strain, isLoading, error } = useStrain('og-kush-123');
+ * const { data: strain, isLoading, error } = useStrain({ variables: { strainId: 'og-kush-123' } });
  * ```
  */
 export const useStrain = createQuery<Strain, { strainId: string }, Error>({

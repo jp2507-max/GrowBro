@@ -2,6 +2,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 import { getStrainsApiClient } from './client';
+import type { GetStrainsParams } from './types';
+
+type PrefetchStrainsPageParams = Omit<GetStrainsParams, 'signal' | 'page'>;
 
 /**
  * Hook for prefetching strain details
@@ -58,24 +61,20 @@ export function usePrefetchStrainsPage() {
   const queryClient = useQueryClient();
 
   const prefetchPage = useCallback(
-    async (params: {
-      cursor?: string;
-      searchQuery?: string;
-      filters?: any;
-      pageSize?: number;
-    }) => {
+    async (params: PrefetchStrainsPageParams) => {
       const client = getStrainsApiClient();
 
-      // Prefetch using regular query since we're fetching a specific page
-      // The infinite query will pick it up from cache
-      await queryClient.prefetchQuery({
-        queryKey: ['strains-page', params],
-        queryFn: async ({ signal }) => {
+      await queryClient.prefetchInfiniteQuery({
+        queryKey: ['strains'],
+        queryFn: async (context) => {
+          const { pageParam, signal } = context;
           return await client.getStrains({
             ...params,
+            cursor: pageParam,
             signal,
           });
         },
+        initialPageParam: undefined,
         staleTime: 5 * 60 * 1000, // 5 minutes - match useStrainsInfinite config
         gcTime: 10 * 60 * 1000,
       });

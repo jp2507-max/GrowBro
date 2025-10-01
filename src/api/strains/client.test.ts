@@ -85,7 +85,7 @@ describe('StrainsApiClient', () => {
 
       const callArgs = mockAxiosInstance.get.mock.calls[0];
       const params = callArgs[1].params as URLSearchParams;
-      expect(params.get('search')).toBe('OG%20Kush%20%231');
+      expect(params.get('search')).toBe('OG Kush #1');
     });
 
     test('applies filters correctly', async () => {
