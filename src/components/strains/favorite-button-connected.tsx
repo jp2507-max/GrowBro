@@ -25,13 +25,13 @@ export const FavoriteButtonConnected = React.memo<Props>(
     }, [isFavorite, strainId]);
 
     const handleToggle = React.useCallback(() => {
-      if (!strain) return;
-      if (isFav) {
-        void removeFavorite(strainId);
-      } else {
+      if (!isFav) {
+        if (!strain) return;
         void addFavorite(strain);
+      } else {
+        void removeFavorite(strainId);
       }
-    }, [strain, isFav, strainId, addFavorite, removeFavorite]);
+    }, [isFav, strainId, strain, addFavorite, removeFavorite]);
 
     return (
       <BaseFavoriteButton

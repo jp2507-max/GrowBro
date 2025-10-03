@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 
-import { Pressable, Text, View } from '@/components/ui';
 import { cleanup, fireEvent, render, screen } from '@/lib/test-utils';
 
 import { SharedHeader } from './shared-header';
@@ -14,31 +13,33 @@ jest.mock('@/lib', () => {
   };
 });
 
-jest.mock('@/components/sync/connectivity-banner', () => ({
-  ConnectivityBanner: ({
-    onPress,
-    testID,
-  }: {
-    onPress?: () => void;
-    testID?: string;
-  }) => (
-    <Pressable
-      accessibilityRole="button"
-      testID={testID ?? 'mock-connectivity-banner'}
-      onPress={onPress}
-    >
-      <Text>connectivity</Text>
-    </Pressable>
-  ),
-}));
+jest.mock('@/components/sync/connectivity-banner', () => {
+  const { Pressable, Text } = jest.requireActual('@/components/ui');
+  return {
+    ConnectivityBanner: ({
+      onPress,
+      testID,
+    }: {
+      onPress?: () => void;
+      testID?: string;
+    }) => (
+      <Pressable accessibilityRole="button" testID={testID} onPress={onPress}>
+        <Text>connectivity</Text>
+      </Pressable>
+    ),
+  };
+});
 
-jest.mock('@/components/sync/sync-status', () => ({
-  SyncStatus: ({ testID }: { testID?: string }) => (
-    <View testID={testID ?? 'mock-sync-status'}>
-      <Text>sync</Text>
-    </View>
-  ),
-}));
+jest.mock('@/components/sync/sync-status', () => {
+  const { View, Text } = jest.requireActual('@/components/ui');
+  return {
+    SyncStatus: ({ testID }: { testID?: string }) => (
+      <View testID={testID}>
+        <Text>sync</Text>
+      </View>
+    ),
+  };
+});
 
 jest.mock('expo-router', () => ({
   useRouter: jest.fn(),

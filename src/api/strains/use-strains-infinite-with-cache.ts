@@ -31,15 +31,15 @@ function getCacheRepository(): CachedStrainsRepository {
   return cacheRepo;
 }
 
+type PageParamShape = { index: number; cursor?: string };
+
 async function tryGetCachedData(
   repo: CachedStrainsRepository,
   params: any,
-  pageParam: string | number | undefined
+  pageParam: PageParamShape | undefined
 ): Promise<(StrainsResponse & { fromCache: boolean }) | null> {
-  const cachedStrains = await repo.getCachedStrains(
-    params,
-    typeof pageParam === 'number' ? pageParam : 0
-  );
+  const pageIndex = pageParam?.index ?? 0;
+  const cachedStrains = await repo.getCachedStrains(params, pageIndex);
 
   if (cachedStrains && cachedStrains.length > 0) {
     return {
@@ -57,7 +57,7 @@ async function fetchAndCache(params: {
   client: ReturnType<typeof getStrainsApiClient>;
   repo: CachedStrainsRepository;
   vars: UseStrainsInfiniteWithCacheParams | undefined;
-  pageParam: string | number | undefined;
+  pageParam: PageParamShape | undefined;
   signal: AbortSignal | undefined;
 }): Promise<StrainsResponse & { fromCache: boolean }> {
   const { client, repo, vars, pageParam, signal } = params;
@@ -66,8 +66,8 @@ async function fetchAndCache(params: {
     searchQuery: vars?.searchQuery,
     filters: vars?.filters,
     pageSize: vars?.pageSize ?? 20,
-    page: typeof pageParam === 'number' ? pageParam : 0,
-    cursor: typeof pageParam === 'string' ? pageParam : undefined,
+    page: pageParam?.index ?? 0,
+    cursor: pageParam?.cursor ?? undefined,
     signal,
   });
 
@@ -79,15 +79,11 @@ async function fetchAndCache(params: {
       sortDirection: vars?.sortDirection,
     };
 
-    await repo
-      .cachePage(
-        cacheParams,
-        typeof pageParam === 'number' ? pageParam : 0,
-        response.data
-      )
-      .catch((err) => {
-        console.warn('[fetchAndCache] Cache write failed:', err);
-      });
+    const pageIndex = pageParam?.index ?? 0;
+
+    await repo.cachePage(cacheParams, pageIndex, response.data).catch((err) => {
+      console.warn('[fetchAndCache] Cache write failed:', err);
+    });
   }
 
   return { ...response, fromCache: false };
@@ -97,10 +93,13 @@ export const useStrainsInfiniteWithCache = createInfiniteQuery<
   StrainsResponse & { fromCache?: boolean },
   UseStrainsInfiniteWithCacheParams,
   Error,
-  string | number | undefined
+  PageParamShape | undefined
 >({
   queryKey: ['strains-with-cache'],
-  fetcher: async (variables, { pageParam = 0, signal }) => {
+  fetcher: async (
+    variables,
+    { pageParam = { index: 0 }, signal }
+  ): Promise<StrainsResponse & { fromCache: boolean }> => {
     const client = getStrainsApiClient();
     const repo = getCacheRepository();
 
@@ -116,7 +115,7 @@ export const useStrainsInfiniteWithCache = createInfiniteQuery<
         client,
         repo,
         vars: variables,
-        pageParam, // ✅ FIXED: Now passes string | number | undefined, fetchAndCache handles both
+        pageParam, // Now a PageParamShape | undefined; fetchAndCache handles index/cursor
         signal,
       });
     } catch (error) {
@@ -132,11 +131,13 @@ export const useStrainsInfiniteWithCache = createInfiniteQuery<
   // Supports both cursor-based and page-based pagination
   getNextPageParam: (lastPage, allPages) => {
     if (lastPage.fromCache) return undefined;
-    if (lastPage.nextCursor) return lastPage.nextCursor;
-    return lastPage.hasMore ? allPages.length : undefined;
+    const nextIndex = allPages.length; // next page index (0-based)
+    if (lastPage.nextCursor)
+      return { index: nextIndex, cursor: lastPage.nextCursor };
+    return lastPage.hasMore ? { index: nextIndex } : undefined;
   },
   placeholderData: keepPreviousData,
-  initialPageParam: 0, // ✅ Good: Starts with page 0 for initial load
+  initialPageParam: { index: 0 }, // Starts with page 0 for initial load
   staleTime: 5 * 60 * 1000, // ✅ Good: 5min stale time for reasonable freshness
   gcTime: 10 * 60 * 1000, // ✅ Good: 10min garbage collection time
   retry: (failureCount, error) => {

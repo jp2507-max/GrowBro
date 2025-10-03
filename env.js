@@ -176,7 +176,7 @@ const client = z.object({
 
   STRAINS_API_HOST: z.string().optional(),
 
-  STRAINS_USE_PROXY: z.string().optional(),
+  STRAINS_USE_PROXY: z.boolean().optional(),
 
   // Feature Flags
 
@@ -250,10 +250,12 @@ const strainsApiHost = readEnv(
   'STRAINS_API_HOST',
   'EXPO_PUBLIC_STRAINS_API_HOST'
 );
-const strainsUseProxyRaw = readEnv(
-  'STRAINS_USE_PROXY',
-  'EXPO_PUBLIC_STRAINS_USE_PROXY'
-);
+const strainsUseProxyRaw = (() => {
+  const v = readEnv('STRAINS_USE_PROXY', 'EXPO_PUBLIC_STRAINS_USE_PROXY');
+  if (v === 'true') return true;
+  if (v === undefined) return APP_ENV === 'development';
+  return false;
+})();
 const featureStrainsEnabledRaw = readEnv(
   'FEATURE_STRAINS_ENABLED',
   'EXPO_PUBLIC_FEATURE_STRAINS_ENABLED'

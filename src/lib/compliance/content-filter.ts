@@ -92,8 +92,28 @@ export function isCommerceLink(url: string): boolean {
     'checkout',
   ];
 
-  const lowerUrl = url.toLowerCase();
-  return commerceDomains.some((domain) => lowerUrl.includes(domain));
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
+
+    // Check hostname labels for exact matches
+    const hostnameLabels = hostname.split('.');
+    if (hostnameLabels.some((label) => commerceDomains.includes(label))) {
+      return true;
+    }
+
+    // Check first path segment
+    const pathname = urlObj.pathname.toLowerCase();
+    const pathSegments = pathname.split('/').filter(Boolean);
+    if (pathSegments.length > 0 && commerceDomains.includes(pathSegments[0])) {
+      return true;
+    }
+
+    return false;
+  } catch {
+    // Invalid URL, return false
+    return false;
+  }
 }
 
 /**

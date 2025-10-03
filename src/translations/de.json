@@ -609,6 +609,8 @@
     "retry": "Erneut versuchen",
     "search": {
       "clear_all": "Alle löschen",
+      "did_you_mean_hint": "Wendet den vorgeschlagenen Suchbegriff an",
+      "did_you_mean_label": "Meinten Sie {{suggestion}}?",
       "recent_searches": "Letzte Suchen"
     },
     "search_placeholder": "Sorten suchen…",

@@ -17,7 +17,7 @@ export class FavoriteModel extends Model {
   @field('synced_at') syncedAt?: number;
   @date('created_at') createdAt!: Date;
   @date('updated_at') updatedAt!: Date;
-  @date('deleted_at') deletedAt?: Date;
+  @date('deleted_at') deletedAt?: Date | null;
 
   /**
    * Parse the JSON snapshot into typed object

@@ -1,6 +1,6 @@
-# Strains Feature Testing Guide
+# Plant Variants Feature Testing Guide
 
-This guide covers all testing procedures for the Strains Browser feature, including unit tests, integration tests, performance tests, and E2E tests.
+This guide covers all testing procedures for the Plant Variants Browser feature, including unit tests, integration tests, performance tests, and E2E tests.
 
 ## Test Structure
 

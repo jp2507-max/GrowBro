@@ -1,4 +1,5 @@
 import * as Localization from 'expo-localization';
+import type { GetState, SetState } from 'zustand';
 import { create } from 'zustand';
 
 import { getItem, setItem } from '@/lib/storage';
@@ -55,7 +56,9 @@ function savePersistedMode(mode: ComplianceMode): void {
   setItem(REGIONAL_COMPLIANCE_KEY, mode);
 }
 
-function createInitializeFunction(set: any): () => void {
+function createInitializeFunction(
+  set: SetState<RegionalComplianceState>
+): () => void {
   return () => {
     const detectedRegion = detectRegion();
     const isRestricted = isRestrictedRegion(detectedRegion);
@@ -77,7 +80,9 @@ function createInitializeFunction(set: any): () => void {
   };
 }
 
-function createSetModeFunction(set: any): (mode: ComplianceMode) => void {
+function createSetModeFunction(
+  set: SetState<RegionalComplianceState>
+): (mode: ComplianceMode) => void {
   return (mode: ComplianceMode) => {
     set({ mode });
     savePersistedMode(mode);
@@ -85,8 +90,8 @@ function createSetModeFunction(set: any): (mode: ComplianceMode) => void {
 }
 
 function createRegionalComplianceStore(
-  set: any,
-  _get: any
+  set: SetState<RegionalComplianceState>,
+  _get: GetState<RegionalComplianceState>
 ): RegionalComplianceState {
   return {
     mode: 'standard' as ComplianceMode,

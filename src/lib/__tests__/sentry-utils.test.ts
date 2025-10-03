@@ -1,3 +1,73 @@
+import { sanitizeObjectPII, sanitizeTextPII } from '@/lib/sentry-utils';
+import { cleanup } from '@/lib/test-utils';
+
+afterEach(cleanup);
+
+describe('sentry-utils scrubObjectForSentry', () => {
+  test('respects maxDepth for nested objects', () => {
+    const obj: any = { a: { b: { c: { d: { e: 5 } } } } };
+    const scrubbed = sanitizeObjectPII(obj, 2 as any);
+    // Implementation returns '[MaxDepth]' when depth exceeded
+    expect(scrubbed.a.b).toBe('[MaxDepth]');
+  });
+
+  test('handles circular references without throwing', () => {
+    const obj: any = { a: 1 };
+    obj.self = obj;
+    const scrubbed = sanitizeObjectPII(obj as any);
+    expect(scrubbed.a).toBe(1);
+    // self should be replaced with a marker
+    expect(scrubbed.self).toBe('[Circular]');
+  });
+
+  test('handles mixed-type arrays and nested structures', () => {
+    const obj: any = {
+      arr: [1, 'two', { three: 3 }, [4]],
+    };
+    const scrubbed = sanitizeObjectPII(obj as any);
+    expect(scrubbed.arr[0]).toBe(1);
+    expect(scrubbed.arr[1]).toBe('two');
+    expect(scrubbed.arr[2].three).toBe(3);
+    expect(Array.isArray(scrubbed.arr[3])).toBe(true);
+    expect(scrubbed.arr[3][0]).toBe(4);
+  });
+
+  test('serializes Maps and Sets into arrays', () => {
+    const map = new Map();
+    map.set('k', 'v');
+    const set = new Set([1, 2]);
+    const obj = { map, set } as any;
+    const scrubbed = sanitizeObjectPII(obj as any);
+    // Maps are serialized into objects with string keys
+    expect(scrubbed.map).toEqual({ k: 'v' });
+    expect(scrubbed.set).toEqual([1, 2]);
+  });
+
+  test('scrubs axios-like objects (config, request, response)', () => {
+    const axiosLike: any = {
+      config: {
+        url: 'https://example.com',
+        headers: { Authorization: 'secret' },
+      },
+      request: { _header: 'raw header' },
+      response: { status: 500, data: { message: 'oh no' } },
+    };
+
+    const scrubbed = sanitizeObjectPII(axiosLike as any);
+    // ensure config is present and preserved
+    expect(scrubbed.config.url).toBe('https://example.com');
+    expect(scrubbed.config.headers).toBeDefined();
+    expect(scrubbed.response.status).toBe(500);
+    expect(scrubbed.request).toBeDefined();
+  });
+});
+
+describe('sanitizeTextPII', () => {
+  test('redacts emails from text', () => {
+    const txt = 'reach me at test@example.com';
+    expect(sanitizeTextPII(txt)).toContain('[EMAIL_REDACTED]');
+  });
+});
 /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/consistent-type-imports */
 // Mock dynamic imports in captureCategorizedErrorSync
 jest.mock('@sentry/react-native', () => ({

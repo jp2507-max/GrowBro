@@ -74,6 +74,7 @@ const mockStrain: Strain = {
 
 describe('useStrain', () => {
   beforeEach(() => {
+    queryClient.clear();
     jest.clearAllMocks();
     mockGetStrainsApiClient.mockReturnValue(
       mockClient as unknown as StrainsApiClient
@@ -160,7 +161,8 @@ describe('useStrain', () => {
 
   describe('error handling', () => {
     test('handles fetch errors', async () => {
-      const error = new Error('Strain not found');
+      const error = new Error('Strain not found') as any;
+      error.response = { status: 404 };
       mockClient.getStrain.mockRejectedValueOnce(error);
 
       const { result } = renderHook(useStrain, {
@@ -177,7 +179,8 @@ describe('useStrain', () => {
     });
 
     test('retries once on failure', async () => {
-      const error = new Error('Network error');
+      const error = new Error('Network error') as any;
+      error.response = { status: 500 };
       mockClient.getStrain
         .mockRejectedValueOnce(error)
         .mockResolvedValueOnce(mockStrain);

@@ -5,6 +5,7 @@ import Animated, {
   FadeIn,
   FadeOut,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
@@ -146,8 +147,7 @@ function useSharedHeaderAnimation({
   }, [height, insetsTop, routeKey]);
 
   // Update header position based on scroll
-  React.useEffect(() => {
-    'worklet';
+  useDerivedValue(() => {
     if (!isCollapsible) {
       translateY.value = 0;
       return;
@@ -157,11 +157,10 @@ function useSharedHeaderAnimation({
     const maxOffset = currentHeight + HEADER_TOP_SPACING + insetsTop;
     const anchor = Math.max(offsetYAnchorOnBeginDrag.value, 0);
     const delta = Math.max(listOffsetY.value - anchor, 0);
-    if (scrollDirection.value === 'to-bottom') {
-      translateY.value = -Math.min(delta, maxOffset);
-      return;
-    }
-    translateY.value = -Math.max(maxOffset - listOffsetY.value, 0);
+    translateY.value =
+      scrollDirection.value === 'to-bottom'
+        ? -Math.min(delta, maxOffset)
+        : -Math.max(maxOffset - listOffsetY.value, 0);
   }, [
     insetsTop,
     isCollapsible,
@@ -169,7 +168,6 @@ function useSharedHeaderAnimation({
     routeKey,
     scrollDirection,
     listOffsetY,
-    translateY,
   ]);
 
   const animatedContainerStyle = useAnimatedStyle(() => ({

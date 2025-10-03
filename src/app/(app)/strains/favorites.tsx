@@ -34,13 +34,17 @@ const AnimatedFlashList = Animated.createAnimatedComponent(FlashList as any);
 // numeric representative used for sorting. Convention: if both min and max
 // are available use the average; otherwise prefer min then max. If the value
 // is qualitative or missing, return NaN so callers can treat it as unknown.
-function numericRepresentativeFromTHCDisplay(thcDisplay: any): number {
+function numericRepresentativeFromTHCDisplay(
+  thcDisplay: string | unknown
+): number {
   const parsed = parsePercentageRange(thcDisplay);
-  if (parsed.min !== undefined && parsed.max !== undefined) {
+  if (!parsed) return NaN;
+
+  if (typeof parsed.min === 'number' && typeof parsed.max === 'number') {
     return (parsed.min + parsed.max) / 2;
   }
-  if (parsed.min !== undefined) return parsed.min;
-  if (parsed.max !== undefined) return parsed.max;
+  if (typeof parsed.min === 'number') return parsed.min;
+  if (typeof parsed.max === 'number') return parsed.max;
   return NaN;
 }
 
@@ -64,11 +68,11 @@ function sortFavorites(
 
       // Always push unknowns to the end regardless of sort direction.
       if (aUnknown && bUnknown) {
-        comparison = 0;
+        return 0;
       } else if (aUnknown) {
-        comparison = 1; // a after b
+        return 1; // a after b
       } else if (bUnknown) {
-        comparison = -1; // a before b
+        return -1; // a before b
       } else {
         // both known numbers — apply direction-sensitive comparison here
         comparison = direction === 'asc' ? valA - valB : valB - valA;

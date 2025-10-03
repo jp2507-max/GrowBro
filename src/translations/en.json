@@ -609,6 +609,8 @@
     "retry": "Retry",
     "search": {
       "clear_all": "Clear All",
+      "did_you_mean_hint": "Applies suggested search term",
+      "did_you_mean_label": "Did you mean {{suggestion}}?",
       "recent_searches": "Recent Searches"
     },
     "search_placeholder": "Search strains…",

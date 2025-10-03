@@ -130,7 +130,7 @@ export async function pullFavoritesFromCloud(): Promise<number> {
             record.syncedAt = Date.now();
             record.deletedAt = remote.deleted_at
               ? new Date(remote.deleted_at)
-              : undefined;
+              : null;
           });
         });
         mergedCount++;

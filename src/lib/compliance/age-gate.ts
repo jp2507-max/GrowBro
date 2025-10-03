@@ -149,7 +149,8 @@ function calculateExpirationDate(fromDate: Date): string {
 }
 
 function isExpired(expiresAt: string | null): boolean {
-  if (!expiresAt) return true;
+  // Treat missing/null expiresAt as not expired so legacy records don't force re-verification
+  if (!expiresAt) return false;
   const now = new Date();
   const expiration = new Date(expiresAt);
   return now >= expiration;
