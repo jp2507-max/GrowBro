@@ -268,9 +268,13 @@ async function fetchFromApi(
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(
+    const error = new Error(
       `API request failed: ${response.status} ${response.statusText} - ${errorText}`
     );
+    // Attach status code and retry-after header to the error
+    (error as any).status = response.status;
+    (error as any).retryAfter = response.headers.get('retry-after');
+    throw error;
   }
 
   return await response.json();
@@ -464,9 +468,23 @@ Deno.serve(async (req: Request) => {
     const errorMessage =
       error instanceof Error ? error.message : 'Internal server error';
 
+    // Check if this is an API error with status code
+    const status = (error as any).status || 500;
+    const retryAfter = (error as any).retryAfter;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...corsHeaders,
+    };
+
+    // Add Retry-After header if present (for 429 responses)
+    if (retryAfter) {
+      headers['Retry-After'] = retryAfter;
+    }
+
     return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      status,
+      headers,
     });
   }
 });
