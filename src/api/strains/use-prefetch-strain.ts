@@ -65,9 +65,13 @@ export function usePrefetchStrainsPage() {
       const client = getStrainsApiClient();
 
       await queryClient.prefetchInfiniteQuery({
-        queryKey: ['strains'],
-        queryFn: async (context) => {
-          const { pageParam, signal } = context;
+        queryKey: [
+          'strains-infinite',
+          params.searchQuery,
+          params.filters,
+          params.pageSize ?? 20,
+        ],
+        queryFn: async ({ pageParam, signal }) => {
           return await client.getStrains({
             ...params,
             cursor: pageParam ?? params.cursor,

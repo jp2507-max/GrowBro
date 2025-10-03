@@ -1,8 +1,7 @@
-import { keepPreviousData } from '@tanstack/react-query';
-import { createInfiniteQuery } from 'react-query-kit';
+import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 
 import { getStrainsApiClient } from './client';
-import type { StrainFilters, StrainsResponse } from './types';
+import type { StrainFilters } from './types';
 
 /**
  * Parameters for infinite strains query
@@ -28,32 +27,38 @@ export type UseStrainsInfiniteParams = {
  * });
  * ```
  */
-export const useStrainsInfinite = createInfiniteQuery<
-  StrainsResponse,
-  UseStrainsInfiniteParams,
-  Error,
-  string | undefined
->({
-  queryKey: ['strains-infinite'],
-  fetcher: async (variables, { pageParam, signal }) => {
-    const client = getStrainsApiClient();
+export function useStrainsInfinite({
+  variables,
+}: {
+  variables?: UseStrainsInfiniteParams;
+} = {}) {
+  return useInfiniteQuery({
+    queryKey: [
+      'strains-infinite',
+      variables?.searchQuery,
+      variables?.filters,
+      variables?.pageSize ?? 20,
+    ],
+    queryFn: async ({ pageParam, signal }) => {
+      const client = getStrainsApiClient();
 
-    const response = await client.getStrains({
-      searchQuery: variables?.searchQuery,
-      filters: variables?.filters,
-      pageSize: variables?.pageSize ?? 20,
-      cursor: pageParam,
-      signal,
-    });
+      const response = await client.getStrains({
+        searchQuery: variables?.searchQuery,
+        filters: variables?.filters,
+        pageSize: variables?.pageSize ?? 20,
+        cursor: pageParam,
+        signal,
+      });
 
-    return response;
-  },
-  getNextPageParam: (lastPage) => {
-    // Return cursor if more pages available, undefined to stop pagination
-    return lastPage.hasMore ? lastPage.nextCursor : undefined;
-  },
-  placeholderData: keepPreviousData,
-  initialPageParam: undefined,
-  staleTime: 5 * 60 * 1000, // 5 minutes - prevents unnecessary refetches
-  gcTime: 10 * 60 * 1000, // 10 minutes - cache garbage collection
-});
+      return response;
+    },
+    getNextPageParam: (lastPage) => {
+      // Return cursor if more pages available, undefined to stop pagination
+      return lastPage.hasMore ? lastPage.nextCursor : undefined;
+    },
+    placeholderData: keepPreviousData,
+    initialPageParam: undefined,
+    staleTime: 5 * 60 * 1000, // 5 minutes - prevents unnecessary refetches
+    gcTime: 10 * 60 * 1000, // 10 minutes - cache garbage collection
+  });
+}

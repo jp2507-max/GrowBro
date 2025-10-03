@@ -228,7 +228,8 @@ export function normalizeEffects(effects: any): Effect[] {
       const intensity =
         effect &&
         typeof effect === 'object' &&
-        Number.isFinite(effect.intensity)
+        typeof effect.intensity === 'string' &&
+        ['low', 'medium', 'high'].includes(effect.intensity)
           ? effect.intensity
           : undefined;
       return {
@@ -297,7 +298,7 @@ export function normalizeTerpenes(terpenes: any): Terpene[] | undefined {
             aroma_description: terpene.aroma_description || undefined,
           }
     )
-    .filter((terpene) => terpene.name);
+    .filter((t): t is Terpene => typeof t.name === 'string');
 }
 
 /**

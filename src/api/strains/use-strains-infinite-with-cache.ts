@@ -3,9 +3,12 @@
  * Integrates WatermelonDB cache for offline browsing
  */
 
-import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import React, { useEffect, useMemo } from 'react';
-import { createInfiniteQuery } from 'react-query-kit';
 
 import { useNetworkStatus } from '@/lib/hooks/use-network-status';
 import { database } from '@/lib/watermelon';
@@ -89,62 +92,67 @@ async function fetchAndCache(params: {
   return { ...response, fromCache: false };
 }
 
-export const useStrainsInfiniteWithCache = createInfiniteQuery<
-  StrainsResponse & { fromCache?: boolean },
-  UseStrainsInfiniteWithCacheParams,
-  Error,
-  PageParamShape | undefined
->({
-  queryKey: ['strains-with-cache'],
-  fetcher: async (
-    variables,
-    { pageParam = { index: 0 }, signal }
-  ): Promise<StrainsResponse & { fromCache: boolean }> => {
-    const client = getStrainsApiClient();
-    const repo = getCacheRepository();
+export function useStrainsInfiniteWithCache({
+  variables,
+}: {
+  variables?: UseStrainsInfiniteWithCacheParams;
+} = {}) {
+  return useInfiniteQuery({
+    queryKey: [
+      'strains-with-cache',
+      variables?.searchQuery,
+      variables?.filters,
+      variables?.pageSize ?? 20,
+      variables?.sortBy,
+      variables?.sortDirection,
+    ],
+    queryFn: async ({ pageParam = { index: 0 }, signal }) => {
+      const client = getStrainsApiClient();
+      const repo = getCacheRepository();
 
-    const cacheParams = {
-      searchQuery: variables?.searchQuery,
-      filters: variables?.filters,
-      sortBy: variables?.sortBy,
-      sortDirection: variables?.sortDirection,
-    };
+      const cacheParams = {
+        searchQuery: variables?.searchQuery,
+        filters: variables?.filters,
+        sortBy: variables?.sortBy,
+        sortDirection: variables?.sortDirection,
+      };
 
-    try {
-      return await fetchAndCache({
-        client,
-        repo,
-        vars: variables,
-        pageParam, // Now a PageParamShape | undefined; fetchAndCache handles index/cursor
-        signal,
-      });
-    } catch (error) {
-      const cached = await tryGetCachedData(repo, cacheParams, pageParam);
-      if (cached) {
-        console.info('[useStrainsInfiniteWithCache] Using cache fallback');
-        return cached;
+      try {
+        return await fetchAndCache({
+          client,
+          repo,
+          vars: variables,
+          pageParam, // Now a PageParamShape | undefined; fetchAndCache handles index/cursor
+          signal,
+        });
+      } catch (error) {
+        const cached = await tryGetCachedData(repo, cacheParams, pageParam);
+        if (cached) {
+          console.info('[useStrainsInfiniteWithCache] Using cache fallback');
+          return cached;
+        }
+        throw error;
       }
-      throw error;
-    }
-  },
-  // ✅ FIXED: Prioritizes API cursor tokens, falls back to page numbers
-  // Supports both cursor-based and page-based pagination
-  getNextPageParam: (lastPage, allPages) => {
-    if (lastPage.fromCache) return undefined;
-    const nextIndex = allPages.length; // next page index (0-based)
-    if (lastPage.nextCursor)
-      return { index: nextIndex, cursor: lastPage.nextCursor };
-    return lastPage.hasMore ? { index: nextIndex } : undefined;
-  },
-  placeholderData: keepPreviousData,
-  initialPageParam: { index: 0 }, // Starts with page 0 for initial load
-  staleTime: 5 * 60 * 1000, // ✅ Good: 5min stale time for reasonable freshness
-  gcTime: 10 * 60 * 1000, // ✅ Good: 10min garbage collection time
-  retry: (failureCount, error) => {
-    if (error.message.includes('No network connection')) return false; // ✅ Good: No retry on network issues
-    return failureCount < 1; // ⚠️ Conservative: Only 1 retry, may be too aggressive
-  },
-});
+    },
+    // ✅ FIXED: Prioritizes API cursor tokens, falls back to page numbers
+    // Supports both cursor-based and page-based pagination
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.fromCache) return undefined;
+      const nextIndex = allPages.length; // next page index (0-based)
+      if (lastPage.nextCursor)
+        return { index: nextIndex, cursor: lastPage.nextCursor };
+      return lastPage.hasMore ? { index: nextIndex } : undefined;
+    },
+    placeholderData: keepPreviousData,
+    initialPageParam: { index: 0 }, // Starts with page 0 for initial load
+    staleTime: 5 * 60 * 1000, // ✅ Good: 5min stale time for reasonable freshness
+    gcTime: 10 * 60 * 1000, // ✅ Good: 10min garbage collection time
+    retry: (failureCount, error: any) => {
+      if (error?.message?.includes('No network connection')) return false; // ✅ Good: No retry on network issues
+      return failureCount < 1; // ⚠️ Conservative: Only 1 retry, may be too aggressive
+    },
+  });
+}
 
 export function useCacheStats() {
   const [stats, setStats] = React.useState<{

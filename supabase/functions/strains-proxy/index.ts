@@ -132,18 +132,8 @@ function buildApiUrl(params: ProxyRequest, baseUrl: string): string {
     // Detail endpoint
     path = `/strains/${encodeURIComponent(params.strainId)}`;
   } else if (params.endpoint === 'list') {
-    // List endpoint with optional filters
-    if (params.searchQuery) {
-      path = `/strains/search/name/${encodeURIComponent(params.searchQuery)}`;
-    } else if (params.filters?.race) {
-      path = `/strains/search/race/${encodeURIComponent(params.filters.race)}`;
-    } else if (params.filters?.effects && params.filters.effects.length > 0) {
-      path = `/strains/search/effect/${encodeURIComponent(params.filters.effects[0])}`;
-    } else if (params.filters?.flavors && params.filters.flavors.length > 0) {
-      path = `/strains/search/flavor/${encodeURIComponent(params.filters.flavors[0])}`;
-    } else {
-      path = '/strains';
-    }
+    // List endpoint - always use /strains and pass filters as query parameters
+    path = '/strains';
   } else {
     throw new Error('Invalid endpoint or missing parameters');
   }
@@ -161,10 +151,43 @@ function buildApiUrl(params: ProxyRequest, baseUrl: string): string {
     url.searchParams.set('limit', String(params.pageSize));
   }
 
+  // Add search query
+  if (params.searchQuery && params.searchQuery.trim()) {
+    url.searchParams.set('search', params.searchQuery.trim());
+  }
+
   // Add sort parameters
   if (params.sortBy) {
     url.searchParams.set('sort_by', params.sortBy);
     url.searchParams.set('sort_direction', params.sortDirection || 'asc');
+  }
+
+  // Add filter parameters
+  if (params.filters) {
+    if (params.filters.race) {
+      url.searchParams.set('type', params.filters.race);
+    }
+    if (params.filters.effects && params.filters.effects.length > 0) {
+      url.searchParams.set('effects', params.filters.effects.join(','));
+    }
+    if (params.filters.flavors && params.filters.flavors.length > 0) {
+      url.searchParams.set('flavors', params.filters.flavors.join(','));
+    }
+    if (params.filters.difficulty) {
+      url.searchParams.set('difficulty', params.filters.difficulty);
+    }
+    if (params.filters.thcMin !== undefined) {
+      url.searchParams.set('thc_min', String(params.filters.thcMin));
+    }
+    if (params.filters.thcMax !== undefined) {
+      url.searchParams.set('thc_max', String(params.filters.thcMax));
+    }
+    if (params.filters.cbdMin !== undefined) {
+      url.searchParams.set('cbd_min', String(params.filters.cbdMin));
+    }
+    if (params.filters.cbdMax !== undefined) {
+      url.searchParams.set('cbd_max', String(params.filters.cbdMax));
+    }
   }
 
   return url.toString();

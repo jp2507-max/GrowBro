@@ -1,3 +1,4 @@
+import type * as SentryUtils from '@/lib/sentry-utils';
 import { sanitizeObjectPII, sanitizeTextPII } from '@/lib/sentry-utils';
 import { cleanup } from '@/lib/test-utils';
 
@@ -81,8 +82,9 @@ test('beforeSendHook drops event when crashReporting not consented', () => {
   }));
 
   jest.isolateModules(() => {
-    const { beforeSendHook: hook } =
-      require('@/lib/sentry-utils') as typeof import('@/lib/sentry-utils');
+    const { beforeSendHook: hook } = jest.requireActual(
+      '@/lib/sentry-utils'
+    ) as typeof SentryUtils;
     const result = hook({ message: 'test' });
     expect(result).toBeNull();
   });
@@ -100,8 +102,9 @@ test('beforeSendHook scrubs PII from strings in event fields', () => {
   }));
 
   jest.isolateModules(() => {
-    const { beforeSendHook: hook } =
-      require('@/lib/sentry-utils') as typeof import('@/lib/sentry-utils');
+    const { beforeSendHook: hook } = jest.requireActual(
+      '@/lib/sentry-utils'
+    ) as typeof SentryUtils;
     const event = {
       exception: {
         values: [
@@ -176,8 +179,9 @@ describe('captureCategorizedErrorSync', () => {
       // capture module references synchronously inside isolateModules
       // to ensure module cache isolation, but don't await async work here.
       // We'll flush microtasks and assert after isolateModules returns.
-      const { captureCategorizedErrorSync: fn } =
-        require('@/lib/sentry-utils') as typeof import('@/lib/sentry-utils');
+      const { captureCategorizedErrorSync: fn } = jest.requireActual(
+        '@/lib/sentry-utils'
+      ) as typeof SentryUtils;
       fn(new Error('boom'));
     });
     // wait microtask queue flush so any internal async work completes
