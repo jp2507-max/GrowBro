@@ -20,9 +20,12 @@ export const ExpandableSection = React.memo<Props>(
     const rotation = useSharedValue(defaultExpanded ? 180 : 0);
 
     const toggleExpanded = React.useCallback(() => {
-      setIsExpanded((prev) => !prev);
-      rotation.value = withTiming(isExpanded ? 0 : 180, { duration: 200 });
-    }, [isExpanded, rotation]);
+      setIsExpanded((prev) => {
+        const next = !prev;
+        rotation.value = withTiming(next ? 180 : 0, { duration: 200 });
+        return next;
+      });
+    }, [rotation]);
 
     const chevronStyle = useAnimatedStyle(() => ({
       transform: [{ rotate: `${rotation.value}deg` }],

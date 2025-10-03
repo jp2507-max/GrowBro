@@ -29,14 +29,22 @@
       "search_hint": "Filtert die Pflanzenliste während der Eingabe."
     },
     "strains": {
+      "clear_search_hint": "Leert das Suchfeld",
+      "clear_search_history_hint": "Entfernt alle gespeicherten Suchen",
+      "clear_search_history_label": "Gesamten Suchverlauf löschen",
+      "clear_search_label": "Suche löschen",
       "error_card_hint": "Informiert, dass Sorten nicht geladen werden konnten.",
       "favorite_hint": "Doppeltippen, um den Favoriten-Status zu wechseln.",
       "offline_banner_hint": "Zeigt gespeicherte Sorten im Offline-Modus an.",
       "open_detail_hint": "Öffnet die Sortendetails.",
       "open_filters_hint": "Öffnet Filteroptionen.",
       "playbook_cta_hint": "Doppeltippen, um einen Anbauplan mit dieser Sorte zu erstellen",
+      "remove_query_from_history_hint": "Löscht diese Suche aus dem Verlauf",
+      "remove_query_from_history_label": "{{query}} aus dem Verlauf entfernen",
       "retry_load_hint": "Sortendetails erneut laden",
+      "search_for_query_label": "Nach {{query}} suchen",
       "search_hint": "Filtert die Sortenliste während der Eingabe.",
+      "select_search_query_hint": "Füllt die Suche mit dieser Abfrage",
       "toggle_effect_hint": "Schaltet Effektfilter um.",
       "toggle_flavor_hint": "Schaltet Aromenfilter um."
     },
@@ -480,6 +488,14 @@
   },
   "strains": {
     "add_favorite": "Zu Favoriten hinzufügen",
+    "cache": {
+      "connect_for_latest": "Verbinde dich mit dem Internet, um die neuesten Sorten zu sehen",
+      "viewing_cached_data": "📦 Zwischengespeicherte Daten werden angezeigt"
+    },
+    "compliance": {
+      "body": "Diese Informationen dienen nur zu Bildungszwecken. GrowBro erleichtert keine Verkäufe, Lieferungen oder kommerzielle Transaktionen. Bitte informieren Sie sich über lokale Gesetze bezüglich Cannabisanbau.",
+      "headline": "⚠️ Nur Bildungsinhalte"
+    },
     "detail": {
       "cbd": "CBD",
       "description_title": "Beschreibung",
@@ -504,10 +520,13 @@
       "terpenes_description": "Terpene verleihen Cannabis sein einzigartiges Aroma und können die Wirkung beeinflussen",
       "terpenes_title": "Terpenprofil",
       "title": "Sortendetails",
+      "up_to": "bis zu",
       "use_in_playbook": "Diese Sorte in einem Playbook verwenden",
       "weeks": "Wochen",
       "yield": "Ertrag"
     },
+    "did_you_mean_prefix": "Meinten Sie",
+    "did_you_mean_suffix": "?",
     "difficulty": {
       "advanced": "Fortgeschritten",
       "beginner": "Anfänger",
@@ -540,6 +559,7 @@
       "selected_count": "{{count}} ausgewählt",
       "sort": {
         "date_added": "Hinzugefügt am",
+        "hint": "Sortierung der Favoriten ändern",
         "name": "Name",
         "thc_content": "THC-Gehalt",
         "title": "Favoriten sortieren"
@@ -549,6 +569,8 @@
     "filters": {
       "apply": "Filter anwenden",
       "button_label": "Sorten filtern",
+      "clearAllHint": "Entfernt alle aktiven Filter",
+      "clearAllLabel": "Alle Filter löschen",
       "clear_all": "Alle löschen",
       "difficulty_label": "Schwierigkeit",
       "effects_count": "{{count}} Effekte",
@@ -556,6 +578,8 @@
       "flavors_count": "{{count}} Aromen",
       "flavors_label": "Aromen",
       "race_label": "Typ",
+      "removeHint": "Entfernt diesen Filter",
+      "removeLabel": "Filter entfernen: {{label}}",
       "title": "Sorten filtern"
     },
     "flavors": {
@@ -583,6 +607,10 @@
     "results_count_other": "{{count}} Sorten",
     "results_count_zero": "Keine Sorten",
     "retry": "Erneut versuchen",
+    "search": {
+      "clear_all": "Alle löschen",
+      "recent_searches": "Letzte Suchen"
+    },
     "search_placeholder": "Sorten suchen…",
     "sort": {
       "apply": "Sortierung anwenden",
@@ -603,7 +631,14 @@
     "last_sync_and_pending": "Letzte Sync: {{time}}, {{count}} ausstehend",
     "offline_banner": "Du bist offline. Änderungen werden später synchronisiert.",
     "offline_banner_action_hint": "Öffnet den Sync-Diagnose-Bildschirm",
-    "offline_banner_action_label": "Sync-Diagnose öffnen"
+    "offline_banner_action_label": "Sync-Diagnose öffnen",
+    "pending_favorites_one": "{{count}} Favorit wartet auf Synchronisierung",
+    "pending_favorites_other": "{{count}} Favoriten warten auf Synchronisierung",
+    "retry_button": "Erneut versuchen",
+    "retry_sync_hint": "Tippen, um Favoriten-Synchronisierung zu wiederholen",
+    "retry_sync_label": "Sync wiederholen",
+    "sync_failed": "Synchronisierung fehlgeschlagen",
+    "syncing_favorites": "Favoriten werden synchronisiert..."
   },
   "tabs": {
     "calendar": "Kalender",

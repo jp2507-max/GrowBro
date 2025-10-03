@@ -27,6 +27,57 @@ interface SearchHistoryListProps {
   onClearAll: () => void;
 }
 
+interface HistoryItemProps {
+  item: SearchHistoryItem;
+  testID: string;
+  onSelect: (query: string) => void;
+  onRemove: (query: string) => void;
+}
+
+function HistoryItem({ item, testID, onSelect, onRemove }: HistoryItemProps) {
+  return (
+    <View
+      key={item.query}
+      className="flex-row items-center justify-between py-2"
+    >
+      <Pressable
+        onPress={() => onSelect(item.query)}
+        className="flex-1"
+        testID={`${testID}-history-item-${item.query}`}
+        accessibilityRole="button"
+        accessibilityLabel={translate(
+          'accessibility.strains.search_for_query_label',
+          { query: item.query }
+        )}
+        accessibilityHint={translate(
+          'accessibility.strains.select_search_query_hint'
+        )}
+      >
+        <View className="flex-row items-center">
+          <Text className="mr-2 text-neutral-400">🕐</Text>
+          <Text className="text-neutral-900 dark:text-neutral-100">
+            {item.query}
+          </Text>
+        </View>
+      </Pressable>
+      <Pressable
+        onPress={() => onRemove(item.query)}
+        testID={`${testID}-remove-history-${item.query}`}
+        accessibilityRole="button"
+        accessibilityLabel={translate(
+          'accessibility.strains.remove_query_from_history_label',
+          { query: item.query }
+        )}
+        accessibilityHint={translate(
+          'accessibility.strains.remove_query_from_history_hint'
+        )}
+      >
+        <Text className="text-neutral-400">✕</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function SearchHistoryList({
   history,
   testID,
@@ -41,51 +92,33 @@ function SearchHistoryList({
     >
       <View className="mb-2 flex-row items-center justify-between">
         <Text className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-          Recent Searches
+          {translate('strains.search.recent_searches')}
         </Text>
         <Pressable
           onPress={onClearAll}
           testID={`${testID}-clear-history`}
           accessibilityRole="button"
-          accessibilityLabel="Clear all search history"
-          accessibilityHint="Removes all saved searches"
+          accessibilityLabel={translate(
+            'accessibility.strains.clear_search_history_label'
+          )}
+          accessibilityHint={translate(
+            'accessibility.strains.clear_search_history_hint'
+          )}
         >
           <Text className="text-sm text-primary-600 dark:text-primary-400">
-            Clear All
+            {translate('strains.search.clear_all')}
           </Text>
         </Pressable>
       </View>
 
       {history.map((item) => (
-        <View
+        <HistoryItem
           key={item.query}
-          className="flex-row items-center justify-between py-2"
-        >
-          <Pressable
-            onPress={() => onSelect(item.query)}
-            className="flex-1"
-            testID={`${testID}-history-item-${item.query}`}
-            accessibilityRole="button"
-            accessibilityLabel={`Search for ${item.query}`}
-            accessibilityHint="Fills search with this query"
-          >
-            <View className="flex-row items-center">
-              <Text className="mr-2 text-neutral-400">🕐</Text>
-              <Text className="text-neutral-900 dark:text-neutral-100">
-                {item.query}
-              </Text>
-            </View>
-          </Pressable>
-          <Pressable
-            onPress={() => onRemove(item.query)}
-            testID={`${testID}-remove-history-${item.query}`}
-            accessibilityRole="button"
-            accessibilityLabel={`Remove ${item.query} from history`}
-            accessibilityHint="Deletes this search from history"
-          >
-            <Text className="text-neutral-400">✕</Text>
-          </Pressable>
-        </View>
+          item={item}
+          testID={testID}
+          onSelect={onSelect}
+          onRemove={onRemove}
+        />
       ))}
     </View>
   );
@@ -174,8 +207,12 @@ export function SearchInput({
             onPress={handleClear}
             className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-neutral-200 px-2 py-1 dark:bg-neutral-700"
             testID={`${testID}-clear`}
-            accessibilityLabel="Clear search"
-            accessibilityHint="Clears the search input"
+            accessibilityLabel={translate(
+              'accessibility.strains.clear_search_label'
+            )}
+            accessibilityHint={translate(
+              'accessibility.strains.clear_search_hint'
+            )}
             accessibilityRole="button"
           >
             <Text className="text-xs text-neutral-600 dark:text-neutral-300">

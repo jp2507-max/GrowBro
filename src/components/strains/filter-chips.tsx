@@ -26,8 +26,8 @@ function FilterChip({
       className="flex-row items-center gap-1 rounded-full bg-primary-100 px-3 py-1 dark:bg-primary-900"
       testID={testID}
       accessibilityRole="button"
-      accessibilityLabel={`Remove filter: ${label}`}
-      accessibilityHint="Removes this filter"
+      accessibilityLabel={translate('strains.filters.removeLabel', { label })}
+      accessibilityHint={translate('strains.filters.removeHint')}
     >
       <Text className="text-sm text-primary-700 dark:text-primary-300">
         {label}
@@ -73,7 +73,9 @@ export function FilterChips({
 
       {filters.effects && filters.effects.length > 0 && (
         <FilterChip
-          label={`${filters.effects.length} effects`}
+          label={translate('strains.filters.effects_count', {
+            count: filters.effects.length,
+          })}
           onRemove={() => onRemoveFilter('effects')}
           testID={`${testID}-effects`}
         />
@@ -81,7 +83,9 @@ export function FilterChips({
 
       {filters.flavors && filters.flavors.length > 0 && (
         <FilterChip
-          label={`${filters.flavors.length} flavors`}
+          label={translate('strains.filters.flavors_count', {
+            count: filters.flavors.length,
+          })}
           onRemove={() => onRemoveFilter('flavors')}
           testID={`${testID}-flavors`}
         />
@@ -92,11 +96,11 @@ export function FilterChips({
         className="rounded-full border border-neutral-300 px-3 py-1 dark:border-neutral-700"
         testID={`${testID}-clear-all`}
         accessibilityRole="button"
-        accessibilityLabel="Clear all filters"
-        accessibilityHint="Removes all active filters"
+        accessibilityLabel={translate('strains.filters.clearAllLabel')}
+        accessibilityHint={translate('strains.filters.clearAllHint')}
       >
         <Text className="text-sm text-neutral-700 dark:text-neutral-300">
-          Clear All
+          {translate('strains.filters.clear_all')}
         </Text>
       </Pressable>
     </View>

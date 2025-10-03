@@ -22,6 +22,9 @@ function formatFloweringTime(
     }
     return `${flowering_time.min_weeks} ${translate('strains.detail.weeks')}`;
   }
+  if (flowering_time.max_weeks !== undefined) {
+    return `${translate('strains.detail.up_to')} ${flowering_time.max_weeks} ${translate('strains.detail.weeks')}`;
+  }
   return translate('strains.detail.not_reported');
 }
 
@@ -35,6 +38,12 @@ function formatYield(
       return `${yieldData.min_grams}-${yieldData.max_grams}g`;
     }
     return `${yieldData.min_grams}g`;
+  }
+  if (yieldData.min_oz !== undefined) {
+    if (yieldData.max_oz && yieldData.max_oz !== yieldData.min_oz) {
+      return `${yieldData.min_oz}-${yieldData.max_oz}oz`;
+    }
+    return `${yieldData.min_oz}oz`;
   }
   return translate('strains.detail.not_reported');
 }

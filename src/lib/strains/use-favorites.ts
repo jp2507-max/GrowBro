@@ -224,6 +224,8 @@ async function pullFromCloudImpl(
 
     const { storage } = await import('@/lib/storage');
     storage.set('favorites_last_sync_at', Date.now());
+    context.setLastSync(Date.now());
+    storage.delete('favorites_last_sync_error');
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown pull error';

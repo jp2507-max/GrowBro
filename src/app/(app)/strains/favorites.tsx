@@ -21,6 +21,7 @@ import { translate } from '@/lib';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import { useNetworkStatus } from '@/lib/hooks';
+import { parsePercentageRange } from '@/lib/strains/normalization';
 import { useFavorites } from '@/lib/strains/use-favorites';
 import type { FavoriteStrain } from '@/types/strains';
 
@@ -29,9 +30,18 @@ const LIST_BOTTOM_EXTRA = 16;
 
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList as any);
 
-function parseTHC(thcDisplay: string): number {
-  const match = thcDisplay.match(/(\d+)/);
-  return match ? parseInt(match[1], 10) : 0;
+// Convert a display string (like "18-22%", "18%", "High") into a
+// numeric representative used for sorting. Convention: if both min and max
+// are available use the average; otherwise prefer min then max. If the value
+// is qualitative or missing, return NaN so callers can treat it as unknown.
+function numericRepresentativeFromTHCDisplay(thcDisplay: any): number {
+  const parsed = parsePercentageRange(thcDisplay);
+  if (parsed.min !== undefined && parsed.max !== undefined) {
+    return (parsed.min + parsed.max) / 2;
+  }
+  if (parsed.min !== undefined) return parsed.min;
+  if (parsed.max !== undefined) return parsed.max;
+  return NaN;
 }
 
 function sortFavorites(
@@ -46,9 +56,25 @@ function sortFavorites(
     } else if (sortBy === 'name') {
       comparison = a.snapshot.name.localeCompare(b.snapshot.name);
     } else if (sortBy === 'thc') {
-      const thcA = parseTHC(a.snapshot.thc_display);
-      const thcB = parseTHC(b.snapshot.thc_display);
-      comparison = thcA - thcB;
+      const valA = numericRepresentativeFromTHCDisplay(a.snapshot.thc_display);
+      const valB = numericRepresentativeFromTHCDisplay(b.snapshot.thc_display);
+
+      const aUnknown = Number.isNaN(valA);
+      const bUnknown = Number.isNaN(valB);
+
+      // Always push unknowns to the end regardless of sort direction.
+      if (aUnknown && bUnknown) {
+        comparison = 0;
+      } else if (aUnknown) {
+        comparison = 1; // a after b
+      } else if (bUnknown) {
+        comparison = -1; // a before b
+      } else {
+        // both known numbers — apply direction-sensitive comparison here
+        comparison = direction === 'asc' ? valA - valB : valB - valA;
+        // we've handled direction here, so return comparison directly
+        return comparison;
+      }
     }
     return direction === 'asc' ? comparison : -comparison;
   });
@@ -118,7 +144,7 @@ function FavoritesHeader({
           className="flex-row items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900"
           accessibilityRole="button"
           accessibilityLabel={translate('strains.favorites.sort.title')}
-          accessibilityHint="Change how favorites are sorted"
+          accessibilityHint={translate('strains.favorites.sort.hint')}
           testID="favorites-sort-button"
         >
           <Text className="text-sm text-neutral-900 dark:text-neutral-50">

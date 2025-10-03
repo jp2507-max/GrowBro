@@ -26,7 +26,7 @@ export function useFavoritesAutoSync() {
   useEffect(() => {
     const now = Date.now();
     const timeSinceLastSync = now - lastSyncAttemptRef.current;
-    const justCameOnline = !wasOfflineRef.current && isInternetReachable;
+    const justCameOnline = wasOfflineRef.current && isInternetReachable;
 
     const shouldSync =
       isInternetReachable &&

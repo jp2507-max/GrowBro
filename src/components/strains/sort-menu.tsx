@@ -27,14 +27,16 @@ interface SortMenuContentProps {
   localOptions: SortOptions;
   hasSortOptions: boolean;
   onSortBySelect: (sortBy: SortBy) => void;
-  onDirectionToggle: () => void;
+  onDirectionAsc: () => void;
+  onDirectionDesc: () => void;
 }
 
 function SortMenuContent({
   localOptions,
   hasSortOptions,
   onSortBySelect,
-  onDirectionToggle,
+  onDirectionAsc,
+  onDirectionDesc,
 }: SortMenuContentProps) {
   return (
     <>
@@ -68,7 +70,7 @@ function SortMenuContent({
               variant={
                 localOptions.sortDirection === 'asc' ? 'default' : 'outline'
               }
-              onPress={onDirectionToggle}
+              onPress={onDirectionAsc}
               testID="sort-direction-asc"
               className="flex-1"
             />
@@ -77,7 +79,7 @@ function SortMenuContent({
               variant={
                 localOptions.sortDirection === 'desc' ? 'default' : 'outline'
               }
-              onPress={onDirectionToggle}
+              onPress={onDirectionDesc}
               testID="sort-direction-desc"
               className="flex-1"
             />
@@ -153,10 +155,17 @@ export const SortMenu = React.forwardRef<any, SortMenuProps>(
       }));
     }, []);
 
-    const handleDirectionToggle = React.useCallback(() => {
+    const handleDirectionAsc = React.useCallback(() => {
       setLocalOptions((prev) => ({
         ...prev,
-        sortDirection: prev.sortDirection === 'asc' ? 'desc' : 'asc',
+        sortDirection: 'asc',
+      }));
+    }, []);
+
+    const handleDirectionDesc = React.useCallback(() => {
+      setLocalOptions((prev) => ({
+        ...prev,
+        sortDirection: 'desc',
       }));
     }, []);
 
@@ -182,7 +191,8 @@ export const SortMenu = React.forwardRef<any, SortMenuProps>(
             localOptions={localOptions}
             hasSortOptions={hasSortOptions}
             onSortBySelect={handleSortBySelect}
-            onDirectionToggle={handleDirectionToggle}
+            onDirectionAsc={handleDirectionAsc}
+            onDirectionDesc={handleDirectionDesc}
           />
         </BottomSheetScrollView>
 

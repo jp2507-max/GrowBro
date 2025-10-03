@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef } from 'react';
 
 import { useAnalytics } from '@/lib/use-analytics';
 
-import { FlashListPerformanceTracker } from './strains-performance';
+import { createFlashListPerformanceTracker } from './strains-performance';
 
 /**
  * Monitor FlashList performance with FPS and frame drop tracking
@@ -21,14 +21,16 @@ export function useFlashListPerformance(params: {
   stopTracking: () => void;
 } {
   const analytics = useAnalytics();
-  const tracker = useRef<FlashListPerformanceTracker | null>(null);
+  const tracker = useRef<ReturnType<
+    typeof createFlashListPerformanceTracker
+  > | null>(null);
   const lastSampleTime = useRef(0);
   const sampleInterval = params.sampleInterval || 100; // Default 100ms
 
   useEffect(() => {
     if (params.enabled === false) return;
 
-    tracker.current = new FlashListPerformanceTracker();
+    tracker.current = createFlashListPerformanceTracker();
 
     return () => {
       if (tracker.current) {

@@ -27,8 +27,8 @@ import { StrainsSkeletonList } from './strains-skeleton-list';
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList as any);
 
 interface StrainsListWithCacheProps {
-  searchQuery: string;
-  filters: StrainFilters;
+  searchQuery?: string;
+  filters?: StrainFilters;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
   onScroll?: any;
@@ -84,8 +84,8 @@ function useScrollRestoration(
 
 // eslint-disable-next-line max-lines-per-function
 export function StrainsListWithCache({
-  searchQuery,
-  filters,
+  searchQuery = '',
+  filters = {},
   sortBy,
   sortDirection,
   onScroll,
@@ -111,8 +111,8 @@ export function StrainsListWithCache({
     isOffline,
     isUsingCache,
   } = useOfflineAwareStrains({
-    searchQuery: searchQuery.trim(),
-    filters,
+    searchQuery: (searchQuery || '').trim(),
+    filters: filters || {},
     sortBy,
     sortDirection,
     pageSize: 20,
@@ -238,7 +238,6 @@ export function StrainsListWithCache({
       removeClippedSubviews={flashListConfig.removeClippedSubviews}
       // Performance optimizations for low-memory devices
       drawDistance={flashListConfig.drawDistance}
-      recycleBufferedViews={flashListConfig.recycleBufferedViews}
       maxToRenderPerBatch={flashListConfig.maxToRenderPerBatch}
       windowSize={flashListConfig.windowSize}
       updateCellsBatchingPeriod={flashListConfig.updateCellsBatchingPeriod}

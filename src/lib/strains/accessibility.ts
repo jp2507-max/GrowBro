@@ -64,11 +64,13 @@ export function useFontScale(): number {
   useEffect(() => {
     const updateFontScale = async () => {
       try {
-        // Get system font scale
-        const scale = await AccessibilityInfo.getRecommendedTimeoutMillis(1000);
-        // Normalize to 1-2 range (100%-200%)
-        const normalizedScale = Math.min(Math.max(scale / 1000, 1), 2);
-        setFontScale(normalizedScale);
+        // Get system font scale using isScreenReaderEnabled as a proxy
+        // If screen reader is enabled, we can assume larger text preferences
+        const screenReaderEnabled =
+          await AccessibilityInfo.isScreenReaderEnabled();
+        // Set a reasonable scale based on screen reader status
+        const scale = screenReaderEnabled ? 1.5 : 1;
+        setFontScale(scale);
       } catch {
         setFontScale(1);
       }

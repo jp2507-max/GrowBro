@@ -29,14 +29,22 @@
       "search_hint": "Filters plants as you type."
     },
     "strains": {
+      "clear_search_hint": "Clears the search input",
+      "clear_search_history_hint": "Removes all saved searches",
+      "clear_search_history_label": "Clear all search history",
+      "clear_search_label": "Clear search",
       "error_card_hint": "Informs that strains failed to load.",
       "favorite_hint": "Double-tap to toggle favorite status for this strain.",
       "offline_banner_hint": "Shows saved strains while offline.",
       "open_detail_hint": "Opens strain details.",
       "open_filters_hint": "Opens filter options.",
       "playbook_cta_hint": "Double-tap to create a grow playbook with this strain",
+      "remove_query_from_history_hint": "Deletes this search from history",
+      "remove_query_from_history_label": "Remove {{query}} from history",
       "retry_load_hint": "Retry loading the strain details",
+      "search_for_query_label": "Search for {{query}}",
       "search_hint": "Filters strains as you type.",
+      "select_search_query_hint": "Fills search with this query",
       "toggle_effect_hint": "Toggles effect filter.",
       "toggle_flavor_hint": "Toggles flavor filter."
     },
@@ -480,6 +488,14 @@
   },
   "strains": {
     "add_favorite": "Add to favorites",
+    "cache": {
+      "connect_for_latest": "Connect to the internet to see the latest strains",
+      "viewing_cached_data": "📦 Viewing cached data"
+    },
+    "compliance": {
+      "body": "This information is for educational purposes only. GrowBro does not facilitate sales, delivery, or any commercial transactions. Please consult local laws regarding cannabis cultivation.",
+      "headline": "⚠️ Educational Content Only"
+    },
     "detail": {
       "cbd": "CBD",
       "description_title": "Description",
@@ -504,10 +520,13 @@
       "terpenes_description": "Terpenes give cannabis its unique aroma and may influence effects",
       "terpenes_title": "Terpene Profile",
       "title": "Strain Details",
+      "up_to": "up to",
       "use_in_playbook": "Use This Strain in a Playbook",
       "weeks": "weeks",
       "yield": "Yield"
     },
+    "did_you_mean_prefix": "Did you mean",
+    "did_you_mean_suffix": "?",
     "difficulty": {
       "advanced": "Advanced",
       "beginner": "Beginner",
@@ -540,6 +559,7 @@
       "selected_count": "{{count}} selected",
       "sort": {
         "date_added": "Date Added",
+        "hint": "Change how favorites are sorted",
         "name": "Name",
         "thc_content": "THC Content",
         "title": "Sort Favorites"
@@ -549,6 +569,8 @@
     "filters": {
       "apply": "Apply Filters",
       "button_label": "Filter strains",
+      "clearAllHint": "Removes all active filters",
+      "clearAllLabel": "Clear all filters",
       "clear_all": "Clear All",
       "difficulty_label": "Grow Difficulty",
       "effects_count": "{{count}} effects",
@@ -556,6 +578,8 @@
       "flavors_count": "{{count}} flavors",
       "flavors_label": "Flavors",
       "race_label": "Type",
+      "removeHint": "Removes this filter",
+      "removeLabel": "Remove filter: {{label}}",
       "title": "Filter Strains"
     },
     "flavors": {
@@ -583,6 +607,10 @@
     "results_count_other": "{{count}} strains",
     "results_count_zero": "No strains",
     "retry": "Retry",
+    "search": {
+      "clear_all": "Clear All",
+      "recent_searches": "Recent Searches"
+    },
     "search_placeholder": "Search strains…",
     "sort": {
       "apply": "Apply Sort",
@@ -603,7 +631,14 @@
     "last_sync_and_pending": "Last sync: {{time}}, {{count}} pending",
     "offline_banner": "You're offline. Changes will sync when back online.",
     "offline_banner_action_hint": "Opens sync diagnostics screen",
-    "offline_banner_action_label": "Open sync diagnostics"
+    "offline_banner_action_label": "Open sync diagnostics",
+    "pending_favorites_one": "{{count}} favorite waiting to sync",
+    "pending_favorites_other": "{{count}} favorites waiting to sync",
+    "retry_button": "Retry",
+    "retry_sync_hint": "Tap to retry syncing favorites",
+    "retry_sync_label": "Retry sync",
+    "sync_failed": "Sync failed",
+    "syncing_favorites": "Syncing favorites..."
   },
   "tabs": {
     "calendar": "Calendar",

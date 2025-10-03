@@ -37,11 +37,15 @@ export type GrowCharacteristics = {
     indoor?: {
       min_grams?: number;
       max_grams?: number;
+      min_oz?: number;
+      max_oz?: number;
       label?: string;
     };
     outdoor?: {
       min_grams?: number;
       max_grams?: number;
+      min_oz?: number;
+      max_oz?: number;
       label?: string;
     };
   };

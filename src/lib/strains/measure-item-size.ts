@@ -5,6 +5,18 @@
 import { Platform } from 'react-native';
 
 /**
+ * Configuration interface for FlashList performance optimization
+ */
+interface FlashListConfig {
+  drawDistance: number;
+  estimatedItemSize: number;
+  removeClippedSubviews: boolean;
+  maxToRenderPerBatch: number;
+  windowSize: number;
+  updateCellsBatchingPeriod: number;
+}
+
+/**
  * Measured dimensions for StrainCard component
  * Based on actual layout measurements:
  * - Image height: 192px (h-48 = 12 * 16 = 192)
@@ -56,12 +68,11 @@ export function calculateEstimatedItemSize(hasDescription: boolean): number {
 /**
  * Get optimized FlashList configuration for low-memory devices
  */
-export function getOptimizedFlashListConfig() {
+export function getOptimizedFlashListConfig(): FlashListConfig {
   const isLowMemoryDevice = Platform.OS === 'android' && Platform.Version < 29;
 
   return {
     drawDistance: isLowMemoryDevice ? 400 : 500,
-    recycleBufferedViews: true,
     estimatedItemSize: 288, // Average size with description
     removeClippedSubviews: true,
     maxToRenderPerBatch: isLowMemoryDevice ? 5 : 10,

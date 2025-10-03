@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { Text, View } from '@/components/ui';
+import { translate } from '@/lib';
 import {
   initializeRegionalCompliance,
   useRegionalCompliance,
@@ -24,12 +25,10 @@ export function ComplianceBanner(): React.ReactElement | null {
       testID="strains-compliance-banner"
     >
       <Text className="text-xs font-medium text-amber-900 dark:text-amber-100">
-        ⚠️ Educational Content Only
+        {translate('strains.compliance.headline')}
       </Text>
       <Text className="mt-1 text-xs text-amber-800 dark:text-amber-200">
-        This information is for educational purposes only. GrowBro does not
-        facilitate sales, delivery, or any commercial transactions. Please
-        consult local laws regarding cannabis cultivation.
+        {translate('strains.compliance.body')}
       </Text>
     </View>
   );

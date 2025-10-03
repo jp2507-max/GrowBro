@@ -1,7 +1,7 @@
 import { useScrollToTop } from '@react-navigation/native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { type ListRenderItemInfo, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -29,7 +29,7 @@ import {
 import { translate, useAnalytics } from '@/lib';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
-import { useNetworkStatus, useScreenErrorLogger } from '@/lib/hooks';
+import { useNetworkStatus } from '@/lib/hooks';
 import { useAnalyticsConsent } from '@/lib/hooks/use-analytics-consent';
 import type { TxKeyPath } from '@/lib/i18n';
 
@@ -50,7 +50,10 @@ function useStrainsData(searchQuery: string, filters: StrainFilters) {
     isFetchingNextPage,
     refetch,
   } = useStrainsInfinite({
-    variables: { searchQuery: searchQuery.trim(), filters },
+    variables: {
+      searchQuery: searchQuery.trim(),
+      filters,
+    },
   });
 
   const strains = React.useMemo<Strain[]>(() => {
@@ -144,7 +147,6 @@ export default function StrainsScreen(): React.ReactElement {
     strains,
     isLoading,
     isError,
-    error,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -191,28 +193,18 @@ export default function StrainsScreen(): React.ReactElement {
     filterModal.closeFilters();
   }, [filterModal]);
 
-  const hasActiveFilters = React.useMemo(() => {
+  const hasActiveFilters = useMemo(() => {
     return (
-      filters.race !== undefined ||
-      filters.difficulty !== undefined ||
+      (filters.race && filters.race.length > 0) ||
       (filters.effects && filters.effects.length > 0) ||
-      (filters.flavors && filters.flavors.length > 0)
+      (filters.flavors && filters.flavors.length > 0) ||
+      filters.difficulty !== undefined ||
+      filters.thcMin !== undefined ||
+      filters.thcMax !== undefined ||
+      filters.cbdMin !== undefined ||
+      filters.cbdMax !== undefined
     );
   }, [filters]);
-
-  useScreenErrorLogger(isError ? error : null, {
-    screen: 'strains',
-    feature: 'strains-browser',
-    action: 'fetch',
-    queryKey: 'strains-infinite',
-    metadata: {
-      resultsCount: listData.length,
-      searchQuery: debouncedQuery,
-      isOffline,
-      isFetchingNextPage,
-      hasNextPage,
-    },
-  });
 
   const showResultsCount = !isSkeletonVisible;
   const resultsCountKey: TxKeyPath = React.useMemo(() => {

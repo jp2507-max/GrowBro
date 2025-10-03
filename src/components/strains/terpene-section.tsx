@@ -40,7 +40,9 @@ export const TerpeneSection = React.memo<Props>(({ terpenes, testID }) => {
       <View className="gap-3">
         {sortedTerpenes.map((terpene, index) => {
           const widthPercentage =
-            ((terpene.percentage ?? 0) / maxPercentage) * 100;
+            maxPercentage > 0
+              ? ((terpene.percentage ?? 0) / maxPercentage) * 100
+              : 0;
 
           return (
             <View key={index}>

@@ -30,7 +30,9 @@ export class StrainsApiClient {
   constructor() {
     // Use proxy URL in production, direct API URL in development
     const useProxy =
-      process.env.NODE_ENV === 'production' || Env.STRAINS_USE_PROXY;
+      process.env.NODE_ENV === 'production' ||
+      Env.STRAINS_USE_PROXY === 'true' ||
+      Env.STRAINS_USE_PROXY === '1';
 
     this.baseURL = useProxy
       ? `${Env.SUPABASE_URL}/functions/v1/strains-proxy`
@@ -101,10 +103,10 @@ export class StrainsApiClient {
 
   private setupRequestInterceptor(sanitizeConfig: (config: any) => any): void {
     this.client.interceptors.request.use(
-      (config) => sanitizeConfig(config),
+      (config) => config,
       (error) => {
         if (error.config) {
-          error.config = sanitizeConfig(error.config);
+          error.config = sanitizeConfig({ ...error.config });
         }
         return Promise.reject(error);
       }
@@ -127,7 +129,7 @@ export class StrainsApiClient {
           error.response.headers = sanitizeHeaders(error.response.headers);
         }
         if (error.config) {
-          error.config = sanitizeConfig(error.config);
+          error.config = sanitizeConfig({ ...error.config });
         }
         return Promise.reject(error);
       }

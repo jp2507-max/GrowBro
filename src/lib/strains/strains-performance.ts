@@ -7,56 +7,73 @@ import type { AnalyticsClient } from '@/lib/analytics';
 /**
  * FlashList performance metrics tracker
  */
-export class FlashListPerformanceTracker {
-  private frameTimestamps: number[] = [];
-  private startTime: number = 0;
-  private isTracking: boolean = false;
+export function createFlashListPerformanceTracker() {
+  let frameTimestamps: number[] = [];
+  let startTime: number = 0;
+  let isTracking: boolean = false;
 
-  start(): void {
-    this.frameTimestamps = [];
-    this.startTime = Date.now();
-    this.isTracking = true;
-  }
+  return {
+    start(): void {
+      frameTimestamps = [];
+      startTime = Date.now();
+      isTracking = true;
+    },
 
-  recordFrame(): void {
-    if (!this.isTracking) return;
-    this.frameTimestamps.push(Date.now());
-  }
+    recordFrame(): void {
+      if (!isTracking) return;
+      frameTimestamps.push(Date.now());
+    },
 
-  stop(analytics: AnalyticsClient, listSize: number): void {
-    if (!this.isTracking || this.frameTimestamps.length === 0) return;
+    stop(analytics: AnalyticsClient, listSize: number): void {
+      if (!isTracking || frameTimestamps.length === 0) return;
 
-    this.isTracking = false;
+      isTracking = false;
 
-    const totalTime = Date.now() - this.startTime;
-    const totalFrames = this.frameTimestamps.length;
+      const totalTime = Date.now() - startTime;
+      const totalFrames = frameTimestamps.length;
 
-    // Calculate frame times
-    const frameTimes: number[] = [];
-    for (let i = 1; i < this.frameTimestamps.length; i++) {
-      frameTimes.push(this.frameTimestamps[i] - this.frameTimestamps[i - 1]);
-    }
+      // Guard against zero-duration or single-sample cases
+      if (frameTimestamps.length < 2 || totalTime <= 0) {
+        // Emit safe defaults
+        analytics.track('strain_list_performance', {
+          fps: 0,
+          frame_drops: 0,
+          total_frames: totalFrames,
+          avg_frame_time_ms: 0,
+          list_size: listSize,
+        });
+        return;
+      }
 
-    // Calculate metrics
-    const avgFrameTime =
-      frameTimes.reduce((sum, time) => sum + time, 0) / frameTimes.length;
-    const fps = totalFrames / (totalTime / 1000);
-    const frameDrops = frameTimes.filter((time) => time > 32).length; // 32ms = ~30fps threshold
+      // Calculate frame times
+      const frameTimes: number[] = [];
+      for (let i = 1; i < frameTimestamps.length; i++) {
+        frameTimes.push(frameTimestamps[i] - frameTimestamps[i - 1]);
+      }
 
-    analytics.track('strain_list_performance', {
-      fps: Math.round(fps),
-      frame_drops: frameDrops,
-      total_frames: totalFrames,
-      avg_frame_time_ms: Math.round(avgFrameTime),
-      list_size: listSize,
-    });
-  }
+      // Calculate metrics with safe computations
+      const avgFrameTime =
+        frameTimes.length > 0
+          ? frameTimes.reduce((sum, time) => sum + time, 0) / frameTimes.length
+          : 0;
+      const fps = totalTime > 0 ? totalFrames / (totalTime / 1000) : 0;
+      const frameDrops = frameTimes.filter((time) => time > 32).length; // 32ms = ~30fps threshold
 
-  reset(): void {
-    this.frameTimestamps = [];
-    this.startTime = 0;
-    this.isTracking = false;
-  }
+      analytics.track('strain_list_performance', {
+        fps: Math.round(fps),
+        frame_drops: frameDrops,
+        total_frames: totalFrames,
+        avg_frame_time_ms: Math.round(avgFrameTime),
+        list_size: listSize,
+      });
+    },
+
+    reset(): void {
+      frameTimestamps = [];
+      startTime = 0;
+      isTracking = false;
+    },
+  };
 }
 
 /**
@@ -124,62 +141,66 @@ export function trackCachePerformance(
 /**
  * Simple performance timer utility
  */
-export class PerformanceTimer {
-  private startTime: number = 0;
+export function createPerformanceTimer() {
+  let startTime: number = 0;
 
-  start(): void {
-    this.startTime = Date.now();
-  }
+  return {
+    start(): void {
+      startTime = Date.now();
+    },
 
-  stop(): number {
-    return Date.now() - this.startTime;
-  }
+    stop(): number {
+      return Date.now() - startTime;
+    },
 
-  reset(): void {
-    this.startTime = 0;
-  }
+    reset(): void {
+      startTime = 0;
+    },
+  };
 }
 
 /**
  * Aggregate performance metrics over time
  */
-export class PerformanceAggregator {
-  private metrics: Map<string, number[]> = new Map();
+export function createPerformanceAggregator() {
+  const metrics: Map<string, number[]> = new Map();
 
-  record(key: string, value: number): void {
-    const values = this.metrics.get(key) || [];
-    values.push(value);
+  return {
+    record(key: string, value: number): void {
+      const values = metrics.get(key) || [];
+      values.push(value);
 
-    // Keep only last 100 values to prevent memory issues
-    if (values.length > 100) {
-      values.shift();
-    }
+      // Keep only last 100 values to prevent memory issues
+      if (values.length > 100) {
+        values.shift();
+      }
 
-    this.metrics.set(key, values);
-  }
+      metrics.set(key, values);
+    },
 
-  getAverage(key: string): number | null {
-    const values = this.metrics.get(key);
-    if (!values || values.length === 0) return null;
+    getAverage(key: string): number | null {
+      const values = metrics.get(key);
+      if (!values || values.length === 0) return null;
 
-    const sum = values.reduce((acc, val) => acc + val, 0);
-    return sum / values.length;
-  }
+      const sum = values.reduce((acc, val) => acc + val, 0);
+      return sum / values.length;
+    },
 
-  getP95(key: string): number | null {
-    const values = this.metrics.get(key);
-    if (!values || values.length === 0) return null;
+    getP95(key: string): number | null {
+      const values = metrics.get(key);
+      if (!values || values.length === 0) return null;
 
-    const sorted = [...values].sort((a, b) => a - b);
-    const index = Math.floor(sorted.length * 0.95);
-    return sorted[index];
-  }
+      const sorted = [...values].sort((a, b) => a - b);
+      const index = Math.floor(sorted.length * 0.95);
+      return sorted[index];
+    },
 
-  clear(key?: string): void {
-    if (key) {
-      this.metrics.delete(key);
-    } else {
-      this.metrics.clear();
-    }
-  }
+    clear(key?: string): void {
+      if (key) {
+        metrics.delete(key);
+      } else {
+        metrics.clear();
+      }
+    },
+  };
 }

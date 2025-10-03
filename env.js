@@ -36,10 +36,17 @@ const packageJSON = require(path.join(__dirname, 'package.json'));
 
 const APP_ENV = process.env.APP_ENV ?? 'development';
 
+/**
+ * Reads environment variables from the provided keys, returning the first defined value.
+ * Empty strings are treated as valid values (not undefined).
+ *
+ * @param {...string} keys - Environment variable keys to check in order
+ * @returns {string|undefined} The first defined value, or undefined if none found
+ */
 const readEnv = (...keys) => {
   for (const key of keys) {
     const value = Reflect.get(process.env, key);
-    if (value !== undefined && value !== '') {
+    if (value !== undefined) {
       return value;
     }
   }
@@ -169,7 +176,7 @@ const client = z.object({
 
   STRAINS_API_HOST: z.string().optional(),
 
-  STRAINS_USE_PROXY: z.boolean().optional(),
+  STRAINS_USE_PROXY: z.string().optional(),
 
   // Feature Flags
 
@@ -323,25 +330,24 @@ const _clientEnv = {
 
   STRAINS_API_HOST: strainsApiHost,
 
-  STRAINS_USE_PROXY:
-    strainsUseProxyRaw !== undefined ? strainsUseProxyRaw === 'true' : true,
+  STRAINS_USE_PROXY: strainsUseProxyRaw,
 
   // Feature Flags
 
   FEATURE_STRAINS_ENABLED:
     featureStrainsEnabledRaw !== undefined
       ? featureStrainsEnabledRaw === 'true'
-      : true,
+      : APP_ENV === 'development',
 
   FEATURE_STRAINS_FAVORITES_SYNC:
     featureStrainsFavoritesSyncRaw !== undefined
       ? featureStrainsFavoritesSyncRaw === 'true'
-      : true,
+      : APP_ENV === 'development',
 
   FEATURE_STRAINS_OFFLINE_CACHE:
     featureStrainsOfflineCacheRaw !== undefined
       ? featureStrainsOfflineCacheRaw === 'true'
-      : true,
+      : APP_ENV === 'development',
 
   // Supabase Configuration
 

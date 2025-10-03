@@ -281,14 +281,14 @@ All analytics payloads are automatically sanitized to remove PII:
 
 ## Performance Utilities
 
-### `FlashListPerformanceTracker`
+### `createFlashListPerformanceTracker`
 
 Tracks FPS and frame drops for FlashList.
 
 ```typescript
-import { FlashListPerformanceTracker } from '@/lib/strains/strains-performance';
+import { createFlashListPerformanceTracker } from '@/lib/strains/strains-performance';
 
-const tracker = new FlashListPerformanceTracker();
+const tracker = createFlashListPerformanceTracker();
 tracker.start();
 // ... record frames during scroll
 tracker.recordFrame();
@@ -296,27 +296,27 @@ tracker.recordFrame();
 tracker.stop(analytics, listSize);
 ```
 
-### `PerformanceTimer`
+### `createPerformanceTimer`
 
 Simple timer for measuring operation duration.
 
 ```typescript
-import { PerformanceTimer } from '@/lib/strains/strains-performance';
+import { createPerformanceTimer } from '@/lib/strains/strains-performance';
 
-const timer = new PerformanceTimer();
+const timer = createPerformanceTimer();
 timer.start();
 // ... perform operation
 const duration = timer.stop();
 ```
 
-### `PerformanceAggregator`
+### `createPerformanceAggregator`
 
 Aggregates metrics over time for analysis.
 
 ```typescript
-import { PerformanceAggregator } from '@/lib/strains/strains-performance';
+import { createPerformanceAggregator } from '@/lib/strains/strains-performance';
 
-const aggregator = new PerformanceAggregator();
+const aggregator = createPerformanceAggregator();
 aggregator.record('api_response_time', 234);
 aggregator.record('api_response_time', 189);
 

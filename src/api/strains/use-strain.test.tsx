@@ -9,6 +9,7 @@ import React from 'react';
 
 import type { Strain } from '@/types/strains';
 
+import type { StrainsApiClient } from './client';
 import { getStrainsApiClient } from './client';
 import { useStrain } from './use-strain';
 
@@ -19,26 +20,22 @@ const mockGetStrainsApiClient = getStrainsApiClient as jest.MockedFunction<
 >;
 
 const mockClient = {
-  getStrains: jest.fn(),
-  getStrain: jest.fn(),
-};
+  getStrains: jest.fn() as jest.MockedFunction<StrainsApiClient['getStrains']>,
+  getStrain: jest.fn() as jest.MockedFunction<StrainsApiClient['getStrain']>,
+} as Partial<StrainsApiClient>;
 
-const createWrapper = () => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-        gcTime: 0,
-      },
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      gcTime: 0,
     },
-  });
+  },
+});
 
-  return function Wrapper({ children }: { children: React.ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-  };
-};
+const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+);
 
 const mockStrain: Strain = {
   id: 'og-kush-001',
@@ -79,7 +76,7 @@ describe('useStrain', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetStrainsApiClient.mockReturnValue(
-      mockClient as ReturnType<typeof getStrainsApiClient>
+      mockClient as unknown as StrainsApiClient
     );
   });
 
@@ -87,12 +84,10 @@ describe('useStrain', () => {
     test('fetches strain by ID', async () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
-      const { result } = renderHook(
-        () => useStrain({ strainId: 'og-kush-001' }),
-        {
-          wrapper: createWrapper(),
-        }
-      );
+      const { result } = renderHook(useStrain, {
+        initialProps: { variables: { strainId: 'og-kush-001' } },
+        wrapper,
+      });
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
@@ -109,12 +104,10 @@ describe('useStrain', () => {
     test('returns all strain fields', async () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
-      const { result } = renderHook(
-        () => useStrain({ strainId: 'og-kush-001' }),
-        {
-          wrapper: createWrapper(),
-        }
-      );
+      const { result } = renderHook(useStrain, {
+        initialProps: { variables: { strainId: 'og-kush-001' } },
+        wrapper,
+      });
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
@@ -138,12 +131,10 @@ describe('useStrain', () => {
         () => new Promise(() => {}) // Never resolves
       );
 
-      const { result } = renderHook(
-        () => useStrain({ strainId: 'og-kush-001' }),
-        {
-          wrapper: createWrapper(),
-        }
-      );
+      const { result } = renderHook(useStrain, {
+        initialProps: { variables: { strainId: 'og-kush-001' } },
+        wrapper,
+      });
 
       expect(result.current.isLoading).toBe(true);
       expect(result.current.data).toBeUndefined();
@@ -152,12 +143,10 @@ describe('useStrain', () => {
     test('transitions to success state', async () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
-      const { result } = renderHook(
-        () => useStrain({ strainId: 'og-kush-001' }),
-        {
-          wrapper: createWrapper(),
-        }
-      );
+      const { result } = renderHook(useStrain, {
+        initialProps: { variables: { strainId: 'og-kush-001' } },
+        wrapper,
+      });
 
       expect(result.current.isLoading).toBe(true);
 
@@ -174,12 +163,10 @@ describe('useStrain', () => {
       const error = new Error('Strain not found');
       mockClient.getStrain.mockRejectedValueOnce(error);
 
-      const { result } = renderHook(
-        () => useStrain({ strainId: 'non-existent' }),
-        {
-          wrapper: createWrapper(),
-        }
-      );
+      const { result } = renderHook(useStrain, {
+        initialProps: { variables: { strainId: 'non-existent' } },
+        wrapper,
+      });
 
       await waitFor(() => {
         expect(result.current.isError).toBe(true);
@@ -195,7 +182,7 @@ describe('useStrain', () => {
         .mockRejectedValueOnce(error)
         .mockResolvedValueOnce(mockStrain);
 
-      const queryClient = new QueryClient({
+      const retryQueryClient = new QueryClient({
         defaultOptions: {
           queries: {
             retry: 1,
@@ -205,18 +192,18 @@ describe('useStrain', () => {
         },
       });
 
-      const wrapper = ({ children }: { children: React.ReactNode }) => (
-        <QueryClientProvider client={queryClient}>
+      const retryWrapper: React.FC<{ children: React.ReactNode }> = ({
+        children,
+      }) => (
+        <QueryClientProvider client={retryQueryClient}>
           {children}
         </QueryClientProvider>
       );
 
-      const { result } = renderHook(
-        () => useStrain({ strainId: 'og-kush-001' }),
-        {
-          wrapper,
-        }
-      );
+      const { result } = renderHook(useStrain, {
+        initialProps: { variables: { strainId: 'og-kush-001' } },
+        wrapper: retryWrapper,
+      });
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
@@ -231,12 +218,10 @@ describe('useStrain', () => {
     test('uses 24-hour staleTime', async () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
-      const { result } = renderHook(
-        () => useStrain({ strainId: 'og-kush-001' }),
-        {
-          wrapper: createWrapper(),
-        }
-      );
+      const { result } = renderHook(useStrain, {
+        initialProps: { variables: { strainId: 'og-kush-001' } },
+        wrapper,
+      });
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
@@ -249,20 +234,20 @@ describe('useStrain', () => {
     test('caches strain data by ID', async () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
-      const { result: result1 } = renderHook(
-        () => useStrain({ strainId: 'og-kush-001' }),
-        { wrapper: createWrapper() }
-      );
+      const { result: result1 } = renderHook(useStrain, {
+        initialProps: { variables: { strainId: 'og-kush-001' } },
+        wrapper,
+      });
 
       await waitFor(() => {
         expect(result1.current.isSuccess).toBe(true);
       });
 
       // Second hook with same ID should use cache
-      const { result: result2 } = renderHook(
-        () => useStrain({ strainId: 'og-kush-001' }),
-        { wrapper: createWrapper() }
-      );
+      const { result: result2 } = renderHook(useStrain, {
+        initialProps: { variables: { strainId: 'og-kush-001' } },
+        wrapper,
+      });
 
       // Should immediately have data from cache
       expect(result2.current.data).toEqual(mockStrain);
@@ -274,12 +259,10 @@ describe('useStrain', () => {
     test('passes AbortSignal to API client', async () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
-      const { result } = renderHook(
-        () => useStrain({ strainId: 'og-kush-001' }),
-        {
-          wrapper: createWrapper(),
-        }
-      );
+      const { result } = renderHook(useStrain, {
+        initialProps: { variables: { strainId: 'og-kush-001' } },
+        wrapper,
+      });
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
@@ -296,19 +279,19 @@ describe('useStrain', () => {
     test('uses consistent query key for same strain ID', async () => {
       mockClient.getStrain.mockResolvedValue(mockStrain);
 
-      const { result: result1 } = renderHook(
-        () => useStrain({ strainId: 'og-kush-001' }),
-        { wrapper: createWrapper() }
-      );
+      const { result: result1 } = renderHook(useStrain, {
+        initialProps: { variables: { strainId: 'og-kush-001' } },
+        wrapper,
+      });
 
       await waitFor(() => {
         expect(result1.current.isSuccess).toBe(true);
       });
 
-      const { result: result2 } = renderHook(
-        () => useStrain({ strainId: 'og-kush-001' }),
-        { wrapper: createWrapper() }
-      );
+      const { result: result2 } = renderHook(useStrain, {
+        initialProps: { variables: { strainId: 'og-kush-001' } },
+        wrapper,
+      });
 
       // Both should use the same cached data
       expect(result2.current.data).toBe(result1.current.data);

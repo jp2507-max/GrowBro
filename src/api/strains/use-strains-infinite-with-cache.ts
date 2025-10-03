@@ -34,9 +34,12 @@ function getCacheRepository(): CachedStrainsRepository {
 async function tryGetCachedData(
   repo: CachedStrainsRepository,
   params: any,
-  pageParam: number
+  pageParam: string | number | undefined
 ): Promise<(StrainsResponse & { fromCache: boolean }) | null> {
-  const cachedStrains = await repo.getCachedStrains(params, pageParam);
+  const cachedStrains = await repo.getCachedStrains(
+    params,
+    typeof pageParam === 'number' ? pageParam : 0
+  );
 
   if (cachedStrains && cachedStrains.length > 0) {
     return {
@@ -54,7 +57,7 @@ async function fetchAndCache(params: {
   client: ReturnType<typeof getStrainsApiClient>;
   repo: CachedStrainsRepository;
   vars: UseStrainsInfiniteWithCacheParams | undefined;
-  pageParam: number;
+  pageParam: string | number | undefined;
   signal: AbortSignal | undefined;
 }): Promise<StrainsResponse & { fromCache: boolean }> {
   const { client, repo, vars, pageParam, signal } = params;
@@ -63,7 +66,8 @@ async function fetchAndCache(params: {
     searchQuery: vars?.searchQuery,
     filters: vars?.filters,
     pageSize: vars?.pageSize ?? 20,
-    cursor: String(pageParam),
+    page: typeof pageParam === 'number' ? pageParam : 0,
+    cursor: typeof pageParam === 'string' ? pageParam : undefined,
     signal,
   });
 
@@ -75,9 +79,15 @@ async function fetchAndCache(params: {
       sortDirection: vars?.sortDirection,
     };
 
-    await repo.cachePage(cacheParams, pageParam, response.data).catch((err) => {
-      console.warn('[fetchAndCache] Cache write failed:', err);
-    });
+    await repo
+      .cachePage(
+        cacheParams,
+        typeof pageParam === 'number' ? pageParam : 0,
+        response.data
+      )
+      .catch((err) => {
+        console.warn('[fetchAndCache] Cache write failed:', err);
+      });
   }
 
   return { ...response, fromCache: false };
@@ -87,7 +97,7 @@ export const useStrainsInfiniteWithCache = createInfiniteQuery<
   StrainsResponse & { fromCache?: boolean },
   UseStrainsInfiniteWithCacheParams,
   Error,
-  number
+  string | number | undefined
 >({
   queryKey: ['strains-with-cache'],
   fetcher: async (variables, { pageParam = 0, signal }) => {
@@ -106,7 +116,7 @@ export const useStrainsInfiniteWithCache = createInfiniteQuery<
         client,
         repo,
         vars: variables,
-        pageParam,
+        pageParam, // ✅ FIXED: Now passes string | number | undefined, fetchAndCache handles both
         signal,
       });
     } catch (error) {
@@ -118,17 +128,20 @@ export const useStrainsInfiniteWithCache = createInfiniteQuery<
       throw error;
     }
   },
+  // ✅ FIXED: Prioritizes API cursor tokens, falls back to page numbers
+  // Supports both cursor-based and page-based pagination
   getNextPageParam: (lastPage, allPages) => {
     if (lastPage.fromCache) return undefined;
+    if (lastPage.nextCursor) return lastPage.nextCursor;
     return lastPage.hasMore ? allPages.length : undefined;
   },
   placeholderData: keepPreviousData,
-  initialPageParam: 0,
-  staleTime: 5 * 60 * 1000,
-  gcTime: 10 * 60 * 1000,
+  initialPageParam: 0, // ✅ Good: Starts with page 0 for initial load
+  staleTime: 5 * 60 * 1000, // ✅ Good: 5min stale time for reasonable freshness
+  gcTime: 10 * 60 * 1000, // ✅ Good: 10min garbage collection time
   retry: (failureCount, error) => {
-    if (error.message.includes('No network connection')) return false;
-    return failureCount < 1;
+    if (error.message.includes('No network connection')) return false; // ✅ Good: No retry on network issues
+    return failureCount < 1; // ⚠️ Conservative: Only 1 retry, may be too aggressive
   },
 });
 

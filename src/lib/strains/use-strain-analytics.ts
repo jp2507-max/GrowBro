@@ -24,14 +24,14 @@ export function useTrackStrainDetailView(params: {
   enabled?: boolean;
 }): void {
   const analytics = useAnalytics();
-  const tracked = useRef(false);
+  const tracked = useRef<string | null>(null);
 
   useEffect(() => {
-    if (params.enabled === false || tracked.current) {
+    if (params.enabled === false || tracked.current === params.strainId) {
       return;
     }
 
-    tracked.current = true;
+    tracked.current = params.strainId;
 
     trackStrainDetailViewed(analytics, {
       strainId: params.strainId,

@@ -6,6 +6,7 @@ import { RaceBadge } from '@/components/strains/race-badge';
 import { THCBadge } from '@/components/strains/thc-badge';
 import { Image, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
+import { getDetailImageProps } from '@/lib/strains/image-optimization';
 
 type Props = {
   strain: Strain;

@@ -18,7 +18,7 @@ import type { Strain } from '@/types/strains';
 jest.mock('@env', () => ({
   Env: {
     SUPABASE_URL: 'https://test.supabase.co',
-    STRAINS_USE_PROXY: false,
+    STRAINS_USE_PROXY: 'false',
     STRAINS_API_URL: 'https://api.test.com',
     STRAINS_API_KEY: 'test-key',
     STRAINS_API_HOST: 'test-host',

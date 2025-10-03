@@ -60,7 +60,7 @@ env:
 
 # Verify filter chips are visible
 - assertVisible:
-    id: 'filter-chip-*'
+    idMatches: 'filter-chip-.*'
 
 # Verify filtered results
 - assertVisible:

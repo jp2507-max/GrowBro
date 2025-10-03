@@ -44,6 +44,7 @@ export const FavoriteButton = React.memo<Props>(
     const handlePress = React.useCallback(() => {
       // Animation
       scale.value = withSpring(0.8, { damping: 10, stiffness: 400 }, () => {
+        'worklet';
         scale.value = withSpring(1, { damping: 10, stiffness: 400 });
       });
 

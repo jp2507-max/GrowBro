@@ -21,7 +21,9 @@ let supabaseUrl: string;
 let supabaseAnonKey: string;
 
 const runtimeEnv =
-  typeof process !== 'undefined' && process.env ? process.env : undefined;
+  typeof process !== 'undefined' && process.env
+    ? process.env
+    : ({} as NodeJS.ProcessEnv);
 
 const expoExtra =
   (Constants.expoConfig?.extra as Record<string, unknown> | undefined) ??
@@ -45,7 +47,7 @@ if (isTestEnvironment) {
   // In production/staging/development, require real environment variables
   const resolvedSupabaseUrl = pickFirstString(
     Env?.SUPABASE_URL,
-    (Env as any)?.EXPO_PUBLIC_SUPABASE_URL,
+    Env?.EXPO_PUBLIC_SUPABASE_URL,
     expoExtra?.SUPABASE_URL,
     expoExtra?.EXPO_PUBLIC_SUPABASE_URL,
     runtimeEnv?.EXPO_PUBLIC_SUPABASE_URL,
@@ -54,7 +56,7 @@ if (isTestEnvironment) {
 
   const resolvedSupabaseAnonKey = pickFirstString(
     Env?.SUPABASE_ANON_KEY,
-    (Env as any)?.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+    Env?.EXPO_PUBLIC_SUPABASE_ANON_KEY,
     expoExtra?.SUPABASE_ANON_KEY,
     expoExtra?.EXPO_PUBLIC_SUPABASE_ANON_KEY,
     runtimeEnv?.EXPO_PUBLIC_SUPABASE_ANON_KEY,
