@@ -226,6 +226,44 @@ describe('Strains Utilities', () => {
       expect(normalizeFlavors(undefined)).toEqual([]);
       expect(normalizeFlavors('not an array')).toEqual([]);
     });
+
+    test('filters out empty strings and trims whitespace', () => {
+      const input = ['Valid', '', '   ', '  Also Valid  '];
+      const result = normalizeFlavors(input);
+      expect(result).toEqual([{ name: 'Valid' }, { name: 'Also Valid' }]);
+    });
+
+    test('handles objects with undefined or invalid names', () => {
+      const input = [
+        { name: 'Valid' },
+        { name: undefined },
+        { name: null },
+        { name: '' },
+        { name: '   ' },
+        { name: 0 },
+        {},
+      ];
+      const result = normalizeFlavors(input);
+      expect(result).toEqual([{ name: 'Valid' }]);
+    });
+
+    test('handles non-string categories', () => {
+      const input = [
+        { name: 'Flavor1', category: 'Valid Category' },
+        { name: 'Flavor2', category: 123 },
+        { name: 'Flavor3', category: null },
+        { name: 'Flavor4', category: undefined },
+        { name: 'Flavor5' }, // no category
+      ];
+      const result = normalizeFlavors(input);
+      expect(result).toEqual([
+        { name: 'Flavor1', category: 'Valid Category' },
+        { name: 'Flavor2' },
+        { name: 'Flavor3' },
+        { name: 'Flavor4' },
+        { name: 'Flavor5' },
+      ]);
+    });
   });
 
   describe('normalizeTerpenes', () => {

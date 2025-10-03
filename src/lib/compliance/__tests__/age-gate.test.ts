@@ -39,13 +39,14 @@ test('legacy persisted state with expiresAt = null remains verified on hydrate',
     .mockImplementation((key: string) => storageStore.get(key) ?? undefined);
   jest
     .spyOn(storage, 'set')
-    .mockImplementation((key: string, value: string) => {
-      storageStore.set(key, value);
-      return undefined;
-    });
+    .mockImplementation(
+      (key: string, value: string | number | boolean | ArrayBuffer): void => {
+        storageStore.set(key, String(value));
+      }
+    );
   jest
     .spyOn(storage, 'delete')
-    .mockImplementation((key: string) => storageStore.delete(key));
+    .mockImplementation((key: string) => Boolean(storageStore.delete(key)));
 
   // Set the persisted state
   storageStore.set(AGE_GATE_STATE_KEY, JSON.stringify(persisted));
@@ -74,13 +75,14 @@ test('past expiresAt causes expiration and appends verify-denied audit', () => {
     .mockImplementation((key: string) => storageStore.get(key) ?? undefined);
   jest
     .spyOn(storage, 'set')
-    .mockImplementation((key: string, value: string) => {
-      storageStore.set(key, value);
-      return undefined;
-    });
+    .mockImplementation(
+      (key: string, value: string | number | boolean | ArrayBuffer): void => {
+        storageStore.set(key, String(value));
+      }
+    );
   jest
     .spyOn(storage, 'delete')
-    .mockImplementation((key: string) => storageStore.delete(key));
+    .mockImplementation((key: string) => Boolean(storageStore.delete(key)));
 
   // Set the persisted state
   storageStore.set(AGE_GATE_STATE_KEY, JSON.stringify(persisted));

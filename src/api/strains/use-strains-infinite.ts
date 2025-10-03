@@ -34,7 +34,14 @@ export const useStrainsInfinite = createInfiniteQuery<
   Error,
   string | undefined
 >({
-  queryKey: ['strains'],
+  queryKey: [
+    'strains',
+    {
+      searchQuery: variables?.searchQuery,
+      filters: variables?.filters,
+      pageSize: variables?.pageSize,
+    },
+  ],
   fetcher: async (variables, { pageParam, signal }) => {
     const client = getStrainsApiClient();
 

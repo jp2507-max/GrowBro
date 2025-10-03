@@ -5,12 +5,15 @@
 import type {
   Effect,
   Flavor,
+  FloweringTime,
   GrowCharacteristics,
   GrowDifficulty,
+  HeightInfo,
   PercentageRange,
   Strain,
   StrainRace,
   Terpene,
+  YieldInfo,
 } from '@/types/strains';
 
 import {
@@ -213,13 +216,27 @@ export function normalizeEffects(effects: any): Effect[] {
     .filter(
       (effect) =>
         effect !== null &&
-        (typeof effect === 'object' || typeof effect === 'string')
+        (typeof effect === 'string' ||
+          (typeof effect === 'object' && typeof effect.name === 'string'))
     )
-    .map((effect) => ({
-      name: typeof effect === 'string' ? effect : String(effect.name || effect),
-      intensity:
-        effect && typeof effect === 'object' ? effect.intensity : undefined,
-    }));
+    .map((effect) => {
+      const name =
+        typeof effect === 'string' ? effect.trim() : effect.name.trim();
+      if (!name) {
+        return null;
+      }
+      const intensity =
+        effect &&
+        typeof effect === 'object' &&
+        Number.isFinite(effect.intensity)
+          ? effect.intensity
+          : undefined;
+      return {
+        name,
+        intensity,
+      };
+    })
+    .filter((effect) => effect !== null);
 }
 
 /**
@@ -231,12 +248,31 @@ export function normalizeFlavors(flavors: any): Flavor[] {
   }
 
   return flavors
-    .filter((flavor) => flavor)
-    .map((flavor) =>
-      typeof flavor === 'string'
-        ? { name: flavor }
-        : { name: String(flavor.name || flavor), category: flavor.category }
-    );
+    .filter(
+      (flavor) =>
+        flavor !== null &&
+        (typeof flavor === 'string' ||
+          (typeof flavor === 'object' && typeof flavor.name === 'string'))
+    )
+    .map((flavor) => {
+      if (typeof flavor === 'string') {
+        const name = flavor.trim();
+        return name ? { name } : null;
+      }
+
+      // At this point, flavor is an object with string name
+      const name = flavor.name.trim();
+      if (!name) return null;
+
+      const result: Flavor = { name };
+
+      if (typeof flavor.category === 'string') {
+        result.category = flavor.category;
+      }
+
+      return result;
+    })
+    .filter((flavor): flavor is Flavor => flavor !== null);
 }
 
 /**
@@ -267,7 +303,7 @@ export function normalizeTerpenes(terpenes: any): Terpene[] | undefined {
 /**
  * Normalizes yield data for indoor or outdoor growing
  */
-function normalizeYieldData(yieldData: any): any {
+function normalizeYieldData(yieldData: any): YieldInfo {
   if (!yieldData) return { label: DEFAULT_YIELD };
 
   return {
@@ -284,7 +320,7 @@ function normalizeYieldData(yieldData: any): any {
 /**
  * Normalizes flowering time data
  */
-function normalizeFloweringTime(floweringTime: any) {
+function normalizeFloweringTime(floweringTime: any): FloweringTime {
   return {
     min_weeks:
       typeof floweringTime?.min_weeks === 'number'
@@ -301,7 +337,7 @@ function normalizeFloweringTime(floweringTime: any) {
 /**
  * Normalizes height data
  */
-function normalizeHeight(height: any) {
+function normalizeHeight(height: any): HeightInfo {
   return {
     indoor_cm:
       typeof height?.indoor_cm === 'number' ? height.indoor_cm : undefined,
