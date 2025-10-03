@@ -20,9 +20,11 @@ export type UseStrainsInfiniteParams = {
  * @example
  * ```tsx
  * const { data, fetchNextPage, hasNextPage, isLoading } = useStrainsInfinite({
- *   searchQuery: 'og kush',
- *   filters: { race: 'hybrid' },
- *   pageSize: 20
+ *   variables: {
+ *     searchQuery: 'og kush',
+ *     filters: { race: 'hybrid' },
+ *     pageSize: 20
+ *   }
  * });
  * ```
  */

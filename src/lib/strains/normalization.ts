@@ -24,10 +24,12 @@ import {
 
 /**
  * Generates a fallback ID for strains missing an ID
- * Uses crypto.randomUUID() for secure, collision-resistant IDs
+ * Uses timestamp and random string for collision-resistant IDs
  */
 export function generateId(): string {
-  return `strain:${crypto.randomUUID()}`;
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 8);
+  return `strain_${timestamp}_${random}`;
 }
 
 /**
@@ -356,7 +358,7 @@ export function normalizeStrain(apiStrain: any, locale = 'en-US'): Strain {
     : [];
 
   return {
-    id: apiStrain.id || generateId(),
+    id: String(apiStrain.id || generateId()),
     name: String(apiStrain.name || 'Unknown Strain'),
     slug: String(apiStrain.slug || apiStrain.name || 'unknown').toLowerCase(),
     synonyms,
