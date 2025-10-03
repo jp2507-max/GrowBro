@@ -1,7 +1,11 @@
-import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
+import {
+  type InfiniteData,
+  keepPreviousData,
+  useInfiniteQuery,
+} from '@tanstack/react-query';
 
 import { getStrainsApiClient } from './client';
-import type { StrainFilters } from './types';
+import type { GetStrainsResponse, StrainFilters } from './types';
 
 /**
  * Parameters for infinite strains query
@@ -32,11 +36,17 @@ export function useStrainsInfinite({
 }: {
   variables?: UseStrainsInfiniteParams;
 } = {}) {
-  return useInfiniteQuery({
+  return useInfiniteQuery<
+    GetStrainsResponse,
+    Error,
+    InfiniteData<GetStrainsResponse, string | undefined>,
+    readonly ['strains-infinite', string, object, number],
+    string | undefined
+  >({
     queryKey: [
       'strains-infinite',
-      variables?.searchQuery,
-      variables?.filters,
+      variables?.searchQuery ?? '',
+      variables?.filters ?? {},
       variables?.pageSize ?? 20,
     ],
     queryFn: async ({ pageParam, signal }) => {

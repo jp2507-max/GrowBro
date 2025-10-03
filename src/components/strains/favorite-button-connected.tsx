@@ -15,7 +15,7 @@ type Props = {
  */
 export const FavoriteButtonConnected = React.memo<Props>(
   ({ strainId, testID }) => {
-    const { data: strain } = useStrain({ variables: { strainId } });
+    const { data: strain } = useStrain({ strainId });
     const isFavorite = useFavorites.use.isFavorite();
     const addFavorite = useFavorites.use.addFavorite();
     const removeFavorite = useFavorites.use.removeFavorite();

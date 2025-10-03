@@ -70,7 +70,7 @@ export default function StrainDetailScreen(): React.ReactElement {
     isLoading,
     isError,
     refetch,
-  } = useStrain({ variables: { strainId: id as string } });
+  } = useStrain({ strainId: id as string });
 
   const handleBack = React.useCallback(() => {
     router.back();

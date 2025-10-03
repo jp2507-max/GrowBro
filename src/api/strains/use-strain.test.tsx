@@ -89,7 +89,7 @@ describe('useStrain', () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
       const { result } = renderHook(useStrain, {
-        initialProps: { variables: { strainId: 'og-kush-001' } },
+        initialProps: { strainId: 'og-kush-001' },
         wrapper,
       });
 
@@ -109,7 +109,7 @@ describe('useStrain', () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
       const { result } = renderHook(useStrain, {
-        initialProps: { variables: { strainId: 'og-kush-001' } },
+        initialProps: { strainId: 'og-kush-001' },
         wrapper,
       });
 
@@ -136,7 +136,7 @@ describe('useStrain', () => {
       );
 
       const { result } = renderHook(useStrain, {
-        initialProps: { variables: { strainId: 'og-kush-001' } },
+        initialProps: { strainId: 'og-kush-001' },
         wrapper,
       });
 
@@ -148,7 +148,7 @@ describe('useStrain', () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
       const { result } = renderHook(useStrain, {
-        initialProps: { variables: { strainId: 'og-kush-001' } },
+        initialProps: { strainId: 'og-kush-001' },
         wrapper,
       });
 
@@ -169,7 +169,7 @@ describe('useStrain', () => {
       mockClient.getStrain.mockRejectedValueOnce(error);
 
       const { result } = renderHook(useStrain, {
-        initialProps: { variables: { strainId: 'non-existent' } },
+        initialProps: { strainId: 'non-existent' },
         wrapper,
       });
 
@@ -207,7 +207,7 @@ describe('useStrain', () => {
       );
 
       const { result } = renderHook(useStrain, {
-        initialProps: { variables: { strainId: 'og-kush-001' } },
+        initialProps: { strainId: 'og-kush-001' },
         wrapper: retryWrapper,
       });
 
@@ -225,7 +225,7 @@ describe('useStrain', () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
       const { result } = renderHook(useStrain, {
-        initialProps: { variables: { strainId: 'og-kush-001' } },
+        initialProps: { strainId: 'og-kush-001' },
         wrapper,
       });
 
@@ -241,7 +241,7 @@ describe('useStrain', () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
       const { result: result1 } = renderHook(useStrain, {
-        initialProps: { variables: { strainId: 'og-kush-001' } },
+        initialProps: { strainId: 'og-kush-001' },
         wrapper,
       });
 
@@ -251,7 +251,7 @@ describe('useStrain', () => {
 
       // Second hook with same ID should use cache
       const { result: result2 } = renderHook(useStrain, {
-        initialProps: { variables: { strainId: 'og-kush-001' } },
+        initialProps: { strainId: 'og-kush-001' },
         wrapper,
       });
 
@@ -266,7 +266,7 @@ describe('useStrain', () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
       const { result } = renderHook(useStrain, {
-        initialProps: { variables: { strainId: 'og-kush-001' } },
+        initialProps: { strainId: 'og-kush-001' },
         wrapper,
       });
 
@@ -286,7 +286,7 @@ describe('useStrain', () => {
       mockClient.getStrain.mockResolvedValue(mockStrain);
 
       const { result: result1 } = renderHook(useStrain, {
-        initialProps: { variables: { strainId: 'og-kush-001' } },
+        initialProps: { strainId: 'og-kush-001' },
         wrapper,
       });
 
@@ -295,7 +295,7 @@ describe('useStrain', () => {
       });
 
       const { result: result2 } = renderHook(useStrain, {
-        initialProps: { variables: { strainId: 'og-kush-001' } },
+        initialProps: { strainId: 'og-kush-001' },
         wrapper,
       });
 

@@ -115,3 +115,5 @@ export type StrainsResponse = {
   hasMore: boolean;
   nextCursor?: string;
 };
+
+export type GetStrainsResponse = StrainsResponse;

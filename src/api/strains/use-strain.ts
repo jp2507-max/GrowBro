@@ -1,7 +1,6 @@
-import { createQuery } from 'react-query-kit';
+import { useQuery } from '@tanstack/react-query';
 
 import { getStrainsApiClient } from './client';
-import type { Strain } from './types';
 
 /**
  * Query hook for fetching a single strain by ID
@@ -9,24 +8,32 @@ import type { Strain } from './types';
  *
  * @example
  * ```tsx
- * const { data: strain, isLoading, error } = useStrain({ variables: { strainId: 'og-kush-123' } });
+ * const { data: strain, isLoading, error } = useStrain({ strainId: 'og-kush-123' });
  * ```
  */
-export const useStrain = createQuery<Strain, { strainId: string }, Error>({
-  queryKey: ['strain'],
-  fetcher: async (variables, { signal }) => {
-    const client = getStrainsApiClient();
-    return await client.getStrain(variables.strainId, signal);
-  },
-  staleTime: 24 * 60 * 60 * 1000, // 24 hours
-  gcTime: 2 * 24 * 60 * 60 * 1000, // 48 hours
-  retry: (failureCount, error: any) => {
-    // Don't retry on 404 (strain not found) or 429 (rate limited)
-    const status = error?.response?.status;
-    if (status === 404 || status === 429) {
-      return false;
-    }
-    // Retry once for 5xx errors
-    return failureCount < 1;
-  },
-});
+// TODO: Include strainId in query key to avoid cache collisions
+// The useStrain hook stores every request under the fixed key ['strain']. If two different IDs are requested,
+// the second fetch overwrites the first and any component using the hook can render the wrong strain or stale data.
+// It also breaks the usePrefetchStrain helper, which prefetches under a key that includes the ID and therefore
+// never matches this cache entry. The query key should incorporate strainId so each strain response is isolated
+// and prefetched data can be reused.
+export function useStrain({ strainId }: { strainId: string }) {
+  return useQuery({
+    queryKey: ['strain', { strainId }],
+    queryFn: async ({ signal }) => {
+      const client = getStrainsApiClient();
+      return await client.getStrain(strainId, signal);
+    },
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours
+    gcTime: 2 * 24 * 60 * 60 * 1000, // 48 hours
+    retry: (failureCount, error: any) => {
+      // Don't retry on 404 (strain not found) or 429 (rate limited)
+      const status = error?.response?.status;
+      if (status === 404 || status === 429) {
+        return false;
+      }
+      // Retry once for 5xx errors
+      return failureCount < 1;
+    },
+  });
+}
