@@ -194,6 +194,9 @@ function AgeGateCopy(): React.ReactElement {
       <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
         {translate('cannabis.age_gate_secondary_disclaimer')}
       </Text>
+      <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+        {translate('cannabis.age_gate_re_verification')}
+      </Text>
     </View>
   );
 }

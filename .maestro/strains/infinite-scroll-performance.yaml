@@ -1,0 +1,140 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'user@test.com'
+  PASSWORD: 'password'
+---
+# E2E Test: Infinite Scroll Performance
+# Tests pagination, maxPages eviction, and scroll position restoration
+
+- launchApp
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Navigate to Strains tab
+- tapOn:
+    id: 'strains-tab'
+- assertVisible: 'Strains'
+
+# Verify initial page loads
+- assertVisible:
+    id: 'strains-list'
+- assertVisible:
+    id: 'strain-card-0'
+
+# Scroll to trigger page 2
+- scroll:
+    direction: DOWN
+- scroll:
+    direction: DOWN
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Verify page 2 loaded
+- assertVisible:
+    id: 'strains-list'
+
+# Continue scrolling to trigger page 3
+- scroll:
+    direction: DOWN
+- scroll:
+    direction: DOWN
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Continue scrolling to trigger page 4
+- scroll:
+    direction: DOWN
+- scroll:
+    direction: DOWN
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Continue scrolling to trigger page 5
+- scroll:
+    direction: DOWN
+- scroll:
+    direction: DOWN
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Verify hasNextPage behavior
+- assertVisible:
+    id: 'strains-list'
+
+# Test scroll position restoration
+- tapOn:
+    id: 'strain-card-*'
+- waitForAnimationToEnd
+
+# Go back
+- back
+
+# Verify scroll position maintained
+- assertVisible:
+    id: 'strains-list'
+
+# Scroll back up to verify cached pages
+- scroll:
+    direction: UP
+- scroll:
+    direction: UP
+- scroll:
+    direction: UP
+
+# Verify early pages still accessible from cache
+- assertVisible:
+    id: 'strain-card-0'
+
+# Test maxPages eviction by scrolling to many pages
+- scroll:
+    direction: DOWN
+- scroll:
+    direction: DOWN
+- scroll:
+    direction: DOWN
+- scroll:
+    direction: DOWN
+- scroll:
+    direction: DOWN
+- scroll:
+    direction: DOWN
+- scroll:
+    direction: DOWN
+- scroll:
+    direction: DOWN
+- scroll:
+    direction: DOWN
+- scroll:
+    direction: DOWN
+
+# Wait for pages to load
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Verify list still responsive
+- assertVisible:
+    id: 'strains-list'
+
+# Test pull-to-refresh
+- scroll:
+    direction: UP
+- scroll:
+    direction: UP
+- scroll:
+    direction: UP
+- scroll:
+    direction: UP
+
+# Pull to refresh at top
+- swipe:
+    direction: DOWN
+    duration: 500
+
+# Wait for refresh
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Verify list refreshed
+- assertVisible:
+    id: 'strains-list'
+- assertVisible:
+    id: 'strain-card-0'

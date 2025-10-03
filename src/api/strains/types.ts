@@ -92,12 +92,17 @@ export type StrainFilters = {
   cbdMax?: number;
 };
 
+export type SortBy = 'name' | 'thc' | 'cbd' | 'popularity';
+export type SortDirection = 'asc' | 'desc';
+
 export type GetStrainsParams = {
   page?: number;
   pageSize?: number;
   cursor?: string;
   searchQuery?: string;
   filters?: StrainFilters;
+  sortBy?: SortBy;
+  sortDirection?: SortDirection;
   signal?: AbortSignal;
 };
 

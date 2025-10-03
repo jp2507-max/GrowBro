@@ -83,8 +83,8 @@
 - Add localized number formatting for THC/CBD ranges
 - _Requirements: 1.5, 7.4, 8.3_
 
-- [ ] 7. Implement FlashList-based strains listing
-- [ ] 7.1 Create StrainsList component with infinite scroll
+- [x] 7. Implement FlashList-based strains listing
+- [x] 7.1 Create StrainsList component with infinite scroll
   - Build FlashList with FlashList v2 patterns (review V2 changes documentation)
   - Add getItemType and overrideItemLayout for constant heights to avoid layout passes
   - Measure real row heights and apply recommended sizing patterns
@@ -92,125 +92,129 @@
   - _Requirements: 1.1, 1.2, 1.7, 9.1_
   - TODO (follow-up): Align list interaction polish with Plants parallax pattern. Reuse a CustomCellRendererComponent to inject per-item itemY shared values and apply subtle scale (≈0.96) and translateY (~1px) transforms tied to the shared scroll offset. Add an iOS-only blur overlay (expo-blur) behind a feature flag and keep intensity conservative for performance. When finalizing Strains, revisit the Plants screen to ensure both lists feel consistent.
 
-- [ ] 7.2 Add loading states and error handling
+- [x] 7.2 Add loading states and error handling
   - Create skeleton placeholders for loading states
   - Implement error boundaries with retry functionality
   - Add empty state component for no results
   - _Requirements: 1.3, 2.3, 12.1_
 
-- [ ] 7.3 Integrate search and filter functionality
+- [x] 7.3 Integrate search and filter functionality
   - Add debounced search input with 300ms delay
   - Create filter modal with multi-select for effects and flavors
   - Implement filter chips with one-tap clear functionality
   - _Requirements: 2.1, 2.2, 3.1, 3.2, 12.1, 12.2_
 
-- [ ] 8. Build strain detail page with comprehensive information
-- [ ] 8.1 Create StrainDetail component with at-a-glance banner
+- [x] 8. Build strain detail page with comprehensive information
+- [x] 8.1 Create StrainDetail component with at-a-glance banner
   - Implement detail page with race badge, THC/CBD range, and difficulty
   - Add indoor/outdoor suitability indicators
   - Create expandable description sections with proper typography
   - _Requirements: 4.1, 4.2, 11.1, 11.6_
 
-- [ ] 8.2 Add terpene visualization and growing information
+- [x] 8.2 Add terpene visualization and growing information
   - Create TerpeneSection with visual bars and aroma tooltips
   - Implement GrowingInfo component with flowering time and yield data
   - Add "Not reported" handling for missing data fields
   - _Requirements: 4.3, 11.2, 11.3_
 
-- [ ] 8.3 Integrate playbook CTA and favorite functionality
+- [x] 8.3 Integrate playbook CTA and favorite functionality
   - Add "Use this strain in a playbook" button with Auto/Photo preselection
   - Integrate favorite toggle with proper state management
   - Implement share functionality for strain information
   - _Requirements: 4.5, 5.1, 11.5_
 
-- [ ] 9. Implement search and filtering system
-- [ ] 9.1 Create search input with debouncing
+- [x] 9. Implement search and filtering system
+- [x] 9.1 Create search input with debouncing
   - Build search component with 300ms debounce and AbortSignal cancellation
   - Cancel in-flight queries via AbortSignal when query changes to avoid flicker
   - Add search history and suggestions
   - Implement "Did you mean?" functionality for typos using Levenshtein distance
   - _Requirements: 2.1, 2.2, 12.1_
 
-- [ ] 9.2 Build comprehensive filter modal
+- [x] 9.2 Build comprehensive filter modal
   - Create filter interface with race, effects, flavors, and difficulty
   - Add THC/CBD range sliders with qualitative fallbacks
   - Document server-side vs client-side filter combinations with UI banner for partial results
   - Implement saved filter presets with MMKV storage
   - _Requirements: 3.1, 3.2, 3.3, 12.2, 12.4_
 
-- [ ] 9.3 Add sort functionality
+- [x] 9.3 Add sort functionality
   - Implement sort by THC, CBD, popularity, and alphabetical order
   - Add sort direction toggle (ascending/descending)
   - Integrate with API endpoints and client-side fallbacks
   - _Requirements: 12.3_
 
-- [ ] 10. Create favorites management system
-- [ ] 10.1 Build favorites list view
+- [x] 10. Create favorites management system
+- [x] 10.1 Build favorites list view
   - Create dedicated favorites screen with FlashList
   - Add grid layout option with numColumns support
   - Implement empty state for no favorites
   - _Requirements: 5.3, 5.6_
 
-- [ ] 10.2 Add favorites organization features
+- [x] 10.2 Add favorites organization features
   - Implement favorites sorting by date added, name, or THC content
   - Add bulk actions for removing multiple favorites
   - Create favorites export functionality
   - _Requirements: 5.3_
 
-- [ ] 11. Implement offline-first functionality
-- [ ] 11.1 Add cached browsing support
+- [x] 11. Implement offline-first functionality
+
+- [x] 11.1 Add cached browsing support
   - Implement page caching in WatermelonDB with TTL
   - Create offline indicator when network is unavailable
   - Add cached page navigation with scroll position restoration
   - _Requirements: 1.8, 9.8_
 
-- [ ] 11.2 Build offline favorites management
+- [x] 11.2 Build offline favorites management
   - Ensure favorites work completely offline
   - Implement sync queue for offline favorite changes
   - Add conflict resolution for favorites sync
   - _Requirements: 5.6_
 
-- [ ] 12. Add compliance and age-gating features
-- [ ] 12.1 Implement age verification system
+- [x] 12. Add compliance and age-gating features
+
+- [x] 12.1 Implement age verification system
   - Create age-gate modal with 18+ verification
   - Add local persistence with 12-month re-verification
   - Implement legal disclaimer and privacy policy links
   - _Requirements: 6.1, 6.2, 13.1, 13.2, 13.3_
 
-- [ ] 12.2 Add regional compliance handling
+- [x] 12.2 Add regional compliance handling
   - Implement conservative mode for restricted regions
   - Add educational-only content filtering per Apple 1.4.3 and Google Play policies
   - Remove commerce links and promotional language completely
   - Create internal policy linter checklist for PR reviews
   - _Requirements: 13.1, 13.4_
 
-- [ ] 13. Implement analytics and monitoring
-- [ ] 13.1 Add user interaction tracking
+- [x] 13. Implement analytics and monitoring
+
+- [x] 13.1 Add user interaction tracking
   - Track search terms, filter usage, and result interactions
   - Monitor detail page views and favorite actions
   - Add offline usage pattern analytics
   - _Requirements: 14.1, 14.2_
 
-- [ ] 13.2 Implement performance monitoring
+- [x] 13.2 Implement performance monitoring
   - Add FlashList performance metrics (FPS, frame drops)
   - Monitor API response times and error rates
   - Track image loading performance and cache hit rates
   - _Requirements: 14.6_
 
-- [ ] 14. Create comprehensive test suite
-- [ ] 14.1 Write unit tests for utilities and hooks
+- [x] 14. Create comprehensive test suite
+
+- [x] 14.1 Write unit tests for utilities and hooks
   - Test all normalization functions with edge cases
   - Add tests for React Query hooks with MSW mocking
   - Test favorites store state management
   - _Requirements: 14.3_
 
-- [ ] 14.2 Implement component testing
+- [x] 14.2 Implement component testing
   - Test StrainCard rendering with various data states
   - Add StrainsList interaction and loading state tests
   - Test filter modal functionality and state management
   - _Requirements: 14.4_
 
-- [ ] 14.3 Add E2E testing scenarios
+- [x] 14.3 Add E2E testing scenarios
   - Test complete browse, search, and favorite workflows with Detox official setup recipes
   - Add infinite scroll assertions for hasNextPage behavior and maxPages eviction
   - Verify scroll position restoration from cache works correctly
@@ -218,41 +222,43 @@
   - Test age-gate and compliance flows
   - _Requirements: 14.5_
 
-- [ ] 15. Performance optimization and polish
-- [ ] 15.1 Optimize FlashList performance
+- [x] 15. Performance optimization and polish
+
+- [x] 15.1 Optimize FlashList performance
   - Fine-tune estimatedItemSize based on actual measurements
   - Implement getItemType for heterogeneous content
   - Add recycleBufferedViews for low-memory devices
   - _Requirements: 1.7, 9.1, 9.7_
 
-- [ ] 15.2 Implement image optimization
+- [x] 15.2 Implement image optimization
   - Add image prefetching for visible-next thumbnails via expo-image Image.prefetch
   - Implement progressive image loading with BlurHash placeholders
   - Use separate URIs for thumbnails (list) vs full images (detail) to maximize cache hits
   - Add conservative LRU limits for low-RAM devices
   - _Requirements: 9.2_
 
-- [ ] 15.3 Add final accessibility improvements
+- [x] 15.3 Add final accessibility improvements
   - Implement dynamic type scaling support up to 200%
   - Add high contrast mode support
   - Test with screen readers and voice control
   - _Requirements: 7.3, 7.4, 7.5_
 
-- [ ] 16. Integration and deployment preparation
-- [ ] 16.1 Set up serverless proxy function
+- [x] 16. Integration and deployment preparation
+
+- [x] 16.1 Set up serverless proxy function
   - Create Supabase Edge Function for API proxy with function-level rate limiting
   - Implement ETag/Last-Modified caching and CDN cache headers where safe
   - Add API key protection and request normalization to uniform response format
   - Map actual The Weed DB endpoints and add escape hatch for unknown filters
   - _Requirements: 10.3, 10.4, 10.7_
 
-- [ ] 16.2 Configure environment and deployment
+- [x] 16.2 Configure environment and deployment
   - Set up environment variables for different stages
   - Configure EAS build profiles for strains feature
   - Add feature flags for gradual rollout
   - _Requirements: 6.3, 6.4_
 
-- [ ] 16.3 Final integration testing
+- [x] 16.3 Final integration testing
   - Test complete feature integration with existing app
   - Verify navigation and deep linking functionality
   - Conduct performance testing on target devices

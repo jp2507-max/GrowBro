@@ -16,6 +16,22 @@ const rawExtra =
   // Accessing manifest?.extra is not supported in newer Expo SDK types, fallback removed
   {};
 
+// In development with Dev Client, also merge in EXPO_PUBLIC_* from process.env
+// as they may not be available in Constants.expoConfig.extra
+const runtimeEnv =
+  typeof process !== 'undefined' && process.env ? process.env : {};
+
+// Merge both sources: Constants.extra (build-time) and process.env (runtime for dev)
+const mergedExtra = { ...rawExtra };
+for (const [key, value] of Object.entries(runtimeEnv)) {
+  if (key.startsWith('EXPO_PUBLIC_') && value != null && value !== '') {
+    // Only add if not already present from Constants.extra
+    if (!Object.prototype.hasOwnProperty.call(mergedExtra, key)) {
+      mergedExtra[key] = value;
+    }
+  }
+}
+
 /**
  * Normalize Expo `extra` so code can read unprefixed keys.
  * If keys are provided as `EXPO_PUBLIC_*`, expose both the original prefixed
@@ -52,4 +68,4 @@ function normalizeExtra(extra) {
   return normalized;
 }
 
-export const Env = normalizeExtra(rawExtra);
+export const Env = normalizeExtra(mergedExtra);

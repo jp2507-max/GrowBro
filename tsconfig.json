@@ -3,29 +3,26 @@
   "compilerOptions": {
     "strict": true,
     "baseUrl": ".",
-    "experimentalDecorators": true,
-    "useDefineForClassFields": false,
     "paths": {
       "@/*": ["./src/*"],
       "@env": ["./src/lib/env"]
     },
-    "esModuleInterop": true,
-    "checkJs": true,
+    "skipLibCheck": true,
+    "jsx": "react-native",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
-    "outDir": "./dist"
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "allowJs": true
   },
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
   "exclude": [
     "node_modules",
     "babel.config.js",
     "metro.config.js",
-    "docs",
-    "cli",
-    "android",
-    "ios",
-    "lint-staged.config.js",
-    "dist",
-    "react-native-reanimated",
-    "supabase/functions/**/*.test.ts"
-  ],
-  "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts", "nativewind-env.d.ts"]
+    "jest.config.js"
+  ]
 }

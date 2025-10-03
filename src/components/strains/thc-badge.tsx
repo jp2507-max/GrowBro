@@ -8,7 +8,10 @@ type Props = {
   testID?: string;
 };
 
-export const THCBadge = React.memo<Props>(({ thc, testID }) => {
+const THCBadgeComponent = ({
+  thc,
+  testID,
+}: Props): React.ReactElement | null => {
   if (!thc) return null;
 
   return (
@@ -17,12 +20,15 @@ export const THCBadge = React.memo<Props>(({ thc, testID }) => {
       testID={testID}
       accessibilityRole="text"
       accessibilityLabel={translate('strains.thc', { value: thc })}
+      accessibilityHint={translate('strains.thc', { value: thc })}
     >
       <Text className="text-xs font-semibold uppercase tracking-wide text-warning-800 dark:text-warning-200">
         {thc}
       </Text>
     </View>
   );
-});
+};
+
+export const THCBadge = React.memo<Props>(THCBadgeComponent);
 
 THCBadge.displayName = 'THCBadge';

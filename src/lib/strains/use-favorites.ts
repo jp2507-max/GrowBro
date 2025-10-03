@@ -11,6 +11,40 @@ import { database } from '@/lib/watermelon';
 import { createFavoritesRepository } from '@/lib/watermelon-models/favorites-repository';
 import type { FavoritesIndex, FavoriteStrain, Strain } from '@/types/strains';
 
+/**
+ * Track favorite analytics (non-blocking)
+ */
+async function trackFavoriteAnalytics(
+  action: 'added' | 'removed',
+  strainId: string,
+  totalFavorites: number
+): Promise<void> {
+  try {
+    const { getAnalyticsClient } = await import('@/lib/analytics-registry');
+    const { trackStrainFavoriteAdded, trackStrainFavoriteRemoved } =
+      await import('./strains-analytics');
+
+    const analytics = getAnalyticsClient();
+
+    if (action === 'added') {
+      trackStrainFavoriteAdded(analytics, {
+        strainId,
+        source: 'detail', // Default to detail, can be overridden by caller
+        totalFavorites,
+      });
+    } else {
+      trackStrainFavoriteRemoved(analytics, {
+        strainId,
+        source: 'detail', // Default to detail, can be overridden by caller
+        totalFavorites,
+      });
+    }
+  } catch (error) {
+    // Silently fail analytics to not impact user experience
+    console.debug('[useFavorites] Analytics tracking failed:', error);
+  }
+}
+
 interface FavoritesState {
   favorites: FavoritesIndex;
   isHydrated: boolean;
@@ -22,6 +56,8 @@ interface FavoritesState {
   isFavorite: (strainId: string) => boolean;
   getFavorites: () => FavoriteStrain[];
   syncToCloud: () => Promise<void>;
+  pullFromCloud: () => Promise<void>;
+  fullSync: () => Promise<void>;
   hydrate: () => Promise<void>;
   setFavorites: (favorites: FavoritesIndex) => void;
   setSyncing: (isSyncing: boolean) => void;
@@ -149,17 +185,59 @@ async function syncToCloudImpl(context: SyncContext): Promise<void> {
     }
     await performCloudSync(userId);
     setLastSync(Date.now());
+
+    // Store last sync time
+    const { storage } = await import('@/lib/storage');
+    storage.set('favorites_last_sync_at', Date.now());
+    storage.delete('favorites_last_sync_error');
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown sync error';
     console.error('[useFavorites] Sync to cloud failed:', error);
     setSyncError(errorMessage);
+
+    // Store sync error
+    const { storage } = await import('@/lib/storage');
+    storage.set('favorites_last_sync_error', errorMessage);
+
     throw error;
   } finally {
     setSyncing(false);
   }
 }
 
+async function pullFromCloudImpl(
+  context: SyncContext & { hydrate: () => Promise<void> }
+): Promise<void> {
+  const { isSyncing, setSyncing, setSyncError, hydrate } = context;
+  if (isSyncing) return;
+
+  try {
+    setSyncing(true);
+    setSyncError(null);
+
+    const { pullFavoritesFromCloud } = await import('./favorites-sync-queue');
+    const pulled = await pullFavoritesFromCloud();
+
+    console.info(`[useFavorites] Pulled ${pulled} favorites from cloud`);
+    await hydrate();
+
+    const { storage } = await import('@/lib/storage');
+    storage.set('favorites_last_sync_at', Date.now());
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown pull error';
+    console.error('[useFavorites] Pull from cloud failed:', error);
+    setSyncError(errorMessage);
+
+    const { storage } = await import('@/lib/storage');
+    storage.set('favorites_last_sync_error', errorMessage);
+  } finally {
+    setSyncing(false);
+  }
+}
+
+// eslint-disable-next-line max-lines-per-function
 const _useFavorites = create<FavoritesState>((set, get) => ({
   favorites: {},
   isHydrated: false,
@@ -185,12 +263,19 @@ const _useFavorites = create<FavoritesState>((set, get) => ({
         }));
       },
       () => {
-        get()
+        void get()
           .syncToCloud()
           .catch((e) => {
             console.error('[useFavorites] Background sync failed:', e);
           });
       }
+    );
+
+    // Track analytics (non-blocking)
+    void trackFavoriteAnalytics(
+      'added',
+      strain.id,
+      get().getFavorites().length
     );
   },
   removeFavorite: async (strainId: string) => {
@@ -204,12 +289,19 @@ const _useFavorites = create<FavoritesState>((set, get) => ({
         });
       },
       () => {
-        get()
+        void get()
           .syncToCloud()
           .catch((e) => {
             console.error('[useFavorites] Background sync failed:', e);
           });
       }
+    );
+
+    // Track analytics (non-blocking)
+    void trackFavoriteAnalytics(
+      'removed',
+      strainId,
+      get().getFavorites().length
     );
   },
   isFavorite: (strainId: string) => get().favorites[strainId] !== undefined,
@@ -226,6 +318,22 @@ const _useFavorites = create<FavoritesState>((set, get) => ({
       setLastSync: (timestamp) =>
         set({ lastSyncAt: timestamp, syncError: null }),
     });
+  },
+  pullFromCloud: async () => {
+    const { isSyncing, setSyncing, setSyncError, hydrate } = get();
+    await pullFromCloudImpl({
+      isSyncing,
+      setSyncing,
+      setSyncError,
+      hydrate,
+      setLastSync: (timestamp) =>
+        set({ lastSyncAt: timestamp, syncError: null }),
+    });
+  },
+  fullSync: async () => {
+    const { pullFromCloud, syncToCloud } = get();
+    await pullFromCloud();
+    await syncToCloud();
   },
 }));
 

@@ -71,6 +71,18 @@ function createExpoConfig(config) {
     'EXPO_PUBLIC_SUPABASE_URL',
     'EXPO_PUBLIC_SUPABASE_ANON_KEY',
     'EXPO_PUBLIC_ACCOUNT_DELETION_URL',
+    // Strains API (RapidAPI) - expose these in client builds when present
+    'EXPO_PUBLIC_STRAINS_API_KEY',
+    'EXPO_PUBLIC_STRAINS_API_HOST',
+    'EXPO_PUBLIC_STRAINS_API_URL',
+    'EXPO_PUBLIC_SENTRY_DSN',
+    'EXPO_PUBLIC_SENTRY_SEND_DEFAULT_PII',
+    'EXPO_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE',
+    'EXPO_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE',
+    'EXPO_PUBLIC_SENTRY_ENABLE_REPLAY',
+    'EXPO_PUBLIC_API_URL',
+    'EXPO_PUBLIC_VAR_NUMBER',
+    'EXPO_PUBLIC_VAR_BOOL',
   ]);
   const publicExtra = Object.fromEntries(
     Object.entries(process.env ?? {}).filter(
@@ -171,9 +183,15 @@ function createExpoConfig(config) {
       // Expose only public vars; keep secrets out of the bundle.
       ...publicExtra,
       // Ensure client env is available at runtime (normalize in src/lib/env.js)
-      EXPO_PUBLIC_SUPABASE_URL: Env.SUPABASE_URL,
-      EXPO_PUBLIC_SUPABASE_ANON_KEY: Env.SUPABASE_ANON_KEY,
-      EXPO_PUBLIC_ACCOUNT_DELETION_URL: Env.ACCOUNT_DELETION_URL,
+      ...(Env.SUPABASE_URL && {
+        EXPO_PUBLIC_SUPABASE_URL: Env.SUPABASE_URL,
+      }),
+      ...(Env.SUPABASE_ANON_KEY && {
+        EXPO_PUBLIC_SUPABASE_ANON_KEY: Env.SUPABASE_ANON_KEY,
+      }),
+      ...(Env.ACCOUNT_DELETION_URL && {
+        EXPO_PUBLIC_ACCOUNT_DELETION_URL: Env.ACCOUNT_DELETION_URL,
+      }),
       // App Access Reviewer Credentials for Play Store compliance
       // Only expose in non-production builds to prevent secrets in production bundles
       ...(Env.APP_ENV !== 'production' && {

@@ -45,6 +45,7 @@ export const RaceBadge = React.memo<Props>(({ race, testID }) => {
       testID={testID}
       accessibilityRole="text"
       accessibilityLabel={translate(`strains.race.${race}`)}
+      accessibilityHint={translate(`strains.race.${race}`)}
     >
       <Text
         className={`text-xs font-semibold uppercase tracking-wide ${textStyles}`}

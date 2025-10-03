@@ -162,7 +162,7 @@ function formatNumber(value: number, locale: string): string {
 /**
  * Normalizes strain race/type values
  */
-function normalizeRace(race: any): StrainRace {
+export function normalizeRace(race: any): StrainRace {
   if (typeof race !== 'string') {
     return 'hybrid';
   }
@@ -182,7 +182,7 @@ function normalizeRace(race: any): StrainRace {
 /**
  * Normalizes grow difficulty values
  */
-function normalizeGrowDifficulty(difficulty: any): GrowDifficulty {
+export function normalizeGrowDifficulty(difficulty: any): GrowDifficulty {
   if (typeof difficulty !== 'string') {
     return 'intermediate';
   }
@@ -202,7 +202,7 @@ function normalizeGrowDifficulty(difficulty: any): GrowDifficulty {
 /**
  * Normalizes effects array
  */
-function normalizeEffects(effects: any): Effect[] {
+export function normalizeEffects(effects: any): Effect[] {
   if (!Array.isArray(effects)) {
     return [];
   }
@@ -223,7 +223,7 @@ function normalizeEffects(effects: any): Effect[] {
 /**
  * Normalizes flavors array
  */
-function normalizeFlavors(flavors: any): Flavor[] {
+export function normalizeFlavors(flavors: any): Flavor[] {
   if (!Array.isArray(flavors)) {
     return [];
   }
@@ -240,7 +240,7 @@ function normalizeFlavors(flavors: any): Flavor[] {
 /**
  * Normalizes terpenes array
  */
-function normalizeTerpenes(terpenes: any): Terpene[] | undefined {
+export function normalizeTerpenes(terpenes: any): Terpene[] | undefined {
   if (!Array.isArray(terpenes) || terpenes.length === 0) {
     return undefined;
   }
@@ -312,7 +312,7 @@ function normalizeHeight(height: any) {
 /**
  * Normalizes growing characteristics
  */
-function normalizeGrowCharacteristics(grow: any): GrowCharacteristics {
+export function normalizeGrowCharacteristics(grow: any): GrowCharacteristics {
   const difficulty = normalizeGrowDifficulty(grow?.difficulty);
 
   return {

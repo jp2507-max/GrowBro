@@ -6,6 +6,7 @@
       "targets_hint": "Zeigt die pH- und EC-Zielwerte dieser Aufgabe."
     },
     "common": {
+      "go_back": "Zurück",
       "retry_hint": "Wiederholt die letzte Aktion.",
       "select_open_hint": "Öffnet die Auswahl für {{label}}. Doppeltippen zum Auswählen.",
       "select_option_hint": "Wählt die Option {{label}}.",
@@ -32,7 +33,12 @@
       "favorite_hint": "Doppeltippen, um den Favoriten-Status zu wechseln.",
       "offline_banner_hint": "Zeigt gespeicherte Sorten im Offline-Modus an.",
       "open_detail_hint": "Öffnet die Sortendetails.",
-      "search_hint": "Filtert die Sortenliste während der Eingabe."
+      "open_filters_hint": "Öffnet Filteroptionen.",
+      "playbook_cta_hint": "Doppeltippen, um einen Anbauplan mit dieser Sorte zu erstellen",
+      "retry_load_hint": "Sortendetails erneut laden",
+      "search_hint": "Filtert die Sortenliste während der Eingabe.",
+      "toggle_effect_hint": "Schaltet Effektfilter um.",
+      "toggle_flavor_hint": "Schaltet Aromenfilter um."
     },
     "sync": {
       "clear_logs_hint": "Löscht das Sync-Diagnoseprotokoll.",
@@ -70,6 +76,7 @@
     "age_gate_error_invalid": "Bitte gib ein gueltiges Geburtsdatum ein.",
     "age_gate_error_underage": "GrowBro steht nur Erwachsenen ab 18 Jahren zur Verfuegung.",
     "age_gate_month": "Monat",
+    "age_gate_re_verification": "Aus Compliance-Gruenden wirst du alle 12 Monate gebeten, dein Alter erneut zu bestaetigen.",
     "age_gate_secondary_disclaimer": "Mit dem Fortfahren bestaetigst du, dass du mindestens 18 Jahre alt bist und verstanden hast, dass GrowBro keine Commerce-Funktionen anbietet.",
     "age_gate_submit": "Weiter zu GrowBro",
     "age_gate_title": "Bestaetige dein Alter (18+)",
@@ -473,13 +480,96 @@
   },
   "strains": {
     "add_favorite": "Zu Favoriten hinzufügen",
+    "detail": {
+      "cbd": "CBD",
+      "description_title": "Beschreibung",
+      "effects": "Effekte",
+      "error_message": "Diese Sorte konnte nicht geladen werden. Bitte überprüfe deine Verbindung und versuche es erneut.",
+      "error_title": "Sorte konnte nicht geladen werden",
+      "flavors": "Aromen",
+      "flowering_time": "Blütezeit",
+      "genetics": "Genetik",
+      "growing_info": "Anbauinformationen",
+      "height": "Höhe",
+      "indoor": "Indoor",
+      "loading": "Sortendetails werden geladen...",
+      "no_description": "Keine Beschreibung verfügbar",
+      "not_reported": "Nicht angegeben",
+      "outdoor": "Outdoor",
+      "playbook_cta_hint": "Erstelle einen Anbauplan mit dieser Sorte",
+      "playbook_description": "Erstelle einen personalisierten Anbauplan",
+      "quick_facts": "Kurzinformationen",
+      "suitable_for": "Geeignet für",
+      "terpenes": "Terpene",
+      "terpenes_description": "Terpene verleihen Cannabis sein einzigartiges Aroma und können die Wirkung beeinflussen",
+      "terpenes_title": "Terpenprofil",
+      "title": "Sortendetails",
+      "use_in_playbook": "Diese Sorte in einem Playbook verwenden",
+      "weeks": "Wochen",
+      "yield": "Ertrag"
+    },
     "difficulty": {
       "advanced": "Fortgeschritten",
       "beginner": "Anfänger",
       "intermediate": "Mittel"
     },
+    "effects": {
+      "creative": "Kreativ",
+      "energetic": "Energiegeladen",
+      "euphoric": "Euphorisch",
+      "focused": "Konzentriert",
+      "giggly": "Kichernd",
+      "happy": "Glücklich",
+      "hungry": "Hungrig",
+      "relaxed": "Entspannt",
+      "sleepy": "Schläfrig",
+      "uplifted": "Aufgehoben"
+    },
     "empty_state": "Keine Sorten verfügbar",
     "error": "Sorten konnten nicht geladen werden. Bitte erneut versuchen.",
+    "favorites": {
+      "bulk_remove": "Ausgewählte entfernen",
+      "cancel_selection": "Abbrechen",
+      "empty_cta": "Sorten durchsuchen",
+      "empty_description": "Tippe auf das Herzsymbol bei einer Sorte, um sie hier für schnellen Zugriff zu speichern.",
+      "empty_title": "Noch keine Favoriten",
+      "export_favorites": "Favoriten exportieren",
+      "grid_view": "Rasteransicht",
+      "list_view": "Listenansicht",
+      "select_mode": "Auswählen",
+      "selected_count": "{{count}} ausgewählt",
+      "sort": {
+        "date_added": "Hinzugefügt am",
+        "name": "Name",
+        "thc_content": "THC-Gehalt",
+        "title": "Favoriten sortieren"
+      },
+      "title": "Meine Favoriten"
+    },
+    "filters": {
+      "apply": "Filter anwenden",
+      "button_label": "Sorten filtern",
+      "clear_all": "Alle löschen",
+      "difficulty_label": "Schwierigkeit",
+      "effects_count": "{{count}} Effekte",
+      "effects_label": "Effekte",
+      "flavors_count": "{{count}} Aromen",
+      "flavors_label": "Aromen",
+      "race_label": "Typ",
+      "title": "Sorten filtern"
+    },
+    "flavors": {
+      "berry": "Beere",
+      "citrus": "Zitrus",
+      "diesel": "Diesel",
+      "earthy": "Erdig",
+      "fruity": "Fruchtig",
+      "pine": "Kiefer",
+      "sour": "Sauer",
+      "spicy": "Würzig",
+      "sweet": "Süß",
+      "woody": "Holzig"
+    },
     "no_results": "Keine Sorten gefunden",
     "offline_notice": "Gespeicherte Sorten werden angezeigt",
     "race": {
@@ -487,13 +577,26 @@
       "indica": "Indica",
       "sativa": "Sativa"
     },
-    "remove_favorite": "Von Favoriten entfernen",
+    "remove_favorite": "Aus Favoriten entfernen",
     "results_count": "{{count}} Sorten",
     "results_count_one": "{{count}} Sorte",
     "results_count_other": "{{count}} Sorten",
     "results_count_zero": "Keine Sorten",
     "retry": "Erneut versuchen",
     "search_placeholder": "Sorten suchen…",
+    "sort": {
+      "apply": "Sortierung anwenden",
+      "ascending": "Aufsteigend",
+      "cbd": "CBD-Gehalt",
+      "clear": "Sortierung löschen",
+      "descending": "Absteigend",
+      "direction_label": "Sortierrichtung",
+      "name": "Name",
+      "popularity": "Beliebtheit",
+      "sort_by_label": "Sortieren nach",
+      "thc": "THC-Gehalt",
+      "title": "Sorten sortieren"
+    },
     "thc": "THC {{value}}"
   },
   "sync": {

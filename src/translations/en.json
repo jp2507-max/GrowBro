@@ -6,6 +6,7 @@
       "targets_hint": "Shows the pH and EC targets for this task."
     },
     "common": {
+      "go_back": "Go back",
       "retry_hint": "Retries the last action.",
       "select_open_hint": "Opens the {{label}} picker. Double-tap to choose.",
       "select_option_hint": "Selects the {{label}} option.",
@@ -32,7 +33,12 @@
       "favorite_hint": "Double-tap to toggle favorite status for this strain.",
       "offline_banner_hint": "Shows saved strains while offline.",
       "open_detail_hint": "Opens strain details.",
-      "search_hint": "Filters strains as you type."
+      "open_filters_hint": "Opens filter options.",
+      "playbook_cta_hint": "Double-tap to create a grow playbook with this strain",
+      "retry_load_hint": "Retry loading the strain details",
+      "search_hint": "Filters strains as you type.",
+      "toggle_effect_hint": "Toggles effect filter.",
+      "toggle_flavor_hint": "Toggles flavor filter."
     },
     "sync": {
       "clear_logs_hint": "Clears the sync diagnostics log.",
@@ -70,6 +76,7 @@
     "age_gate_error_invalid": "Enter a valid birth date to confirm your age.",
     "age_gate_error_underage": "GrowBro is limited to adults 18 or older.",
     "age_gate_month": "Month",
+    "age_gate_re_verification": "For compliance, you'll be asked to re-verify your age every 12 months.",
     "age_gate_secondary_disclaimer": "By continuing you confirm you are at least 18 years old and understand GrowBro avoids commerce functionality.",
     "age_gate_submit": "Enter GrowBro",
     "age_gate_title": "Confirm you are 18 or older",
@@ -473,13 +480,96 @@
   },
   "strains": {
     "add_favorite": "Add to favorites",
+    "detail": {
+      "cbd": "CBD",
+      "description_title": "Description",
+      "effects": "Effects",
+      "error_message": "We couldn't load this strain. Please check your connection and try again.",
+      "error_title": "Failed to load strain",
+      "flavors": "Flavors",
+      "flowering_time": "Flowering Time",
+      "genetics": "Genetics",
+      "growing_info": "Growing Information",
+      "height": "Height",
+      "indoor": "Indoor",
+      "loading": "Loading strain details...",
+      "no_description": "No description available",
+      "not_reported": "Not reported",
+      "outdoor": "Outdoor",
+      "playbook_cta_hint": "Create a grow playbook with this strain",
+      "playbook_description": "Create a personalized growing schedule",
+      "quick_facts": "Quick Facts",
+      "suitable_for": "Suitable for",
+      "terpenes": "Terpenes",
+      "terpenes_description": "Terpenes give cannabis its unique aroma and may influence effects",
+      "terpenes_title": "Terpene Profile",
+      "title": "Strain Details",
+      "use_in_playbook": "Use This Strain in a Playbook",
+      "weeks": "weeks",
+      "yield": "Yield"
+    },
     "difficulty": {
       "advanced": "Advanced",
       "beginner": "Beginner",
       "intermediate": "Intermediate"
     },
+    "effects": {
+      "creative": "Creative",
+      "energetic": "Energetic",
+      "euphoric": "Euphoric",
+      "focused": "Focused",
+      "giggly": "Giggly",
+      "happy": "Happy",
+      "hungry": "Hungry",
+      "relaxed": "Relaxed",
+      "sleepy": "Sleepy",
+      "uplifted": "Uplifted"
+    },
     "empty_state": "No strains available",
     "error": "Failed to load strains. Try again.",
+    "favorites": {
+      "bulk_remove": "Remove Selected",
+      "cancel_selection": "Cancel",
+      "empty_cta": "Browse Strains",
+      "empty_description": "Tap the heart icon on any strain to save it here for quick access.",
+      "empty_title": "No favorites yet",
+      "export_favorites": "Export Favorites",
+      "grid_view": "Grid view",
+      "list_view": "List view",
+      "select_mode": "Select",
+      "selected_count": "{{count}} selected",
+      "sort": {
+        "date_added": "Date Added",
+        "name": "Name",
+        "thc_content": "THC Content",
+        "title": "Sort Favorites"
+      },
+      "title": "My Favorites"
+    },
+    "filters": {
+      "apply": "Apply Filters",
+      "button_label": "Filter strains",
+      "clear_all": "Clear All",
+      "difficulty_label": "Grow Difficulty",
+      "effects_count": "{{count}} effects",
+      "effects_label": "Effects",
+      "flavors_count": "{{count}} flavors",
+      "flavors_label": "Flavors",
+      "race_label": "Type",
+      "title": "Filter Strains"
+    },
+    "flavors": {
+      "berry": "Berry",
+      "citrus": "Citrus",
+      "diesel": "Diesel",
+      "earthy": "Earthy",
+      "fruity": "Fruity",
+      "pine": "Pine",
+      "sour": "Sour",
+      "spicy": "Spicy",
+      "sweet": "Sweet",
+      "woody": "Woody"
+    },
     "no_results": "No strains found",
     "offline_notice": "Showing saved strains",
     "race": {
@@ -494,6 +584,19 @@
     "results_count_zero": "No strains",
     "retry": "Retry",
     "search_placeholder": "Search strains…",
+    "sort": {
+      "apply": "Apply Sort",
+      "ascending": "Ascending",
+      "cbd": "CBD Content",
+      "clear": "Clear Sort",
+      "descending": "Descending",
+      "direction_label": "Sort Direction",
+      "name": "Name",
+      "popularity": "Popularity",
+      "sort_by_label": "Sort By",
+      "thc": "THC Content",
+      "title": "Sort Strains"
+    },
     "thc": "THC {{value}}"
   },
   "sync": {

@@ -4,7 +4,10 @@ import type { SharedValue } from 'react-native-reanimated';
 import Animated, {
   FadeIn,
   FadeOut,
+  LinearTransition,
+  ReduceMotion,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
@@ -103,9 +106,7 @@ export const SharedHeader = memo(function SharedHeader({
         },
         animatedContainerStyle,
       ]}
-      layout={Animated.LinearTransition.springified().reduceMotion(
-        Animated.ReduceMotion.System
-      )}
+      layout={LinearTransition.springify().reduceMotion(ReduceMotion.System)}
     >
       <HeaderTopRow rightComponent={rightComponent} title={title} />
       <HeaderPerTabContent
@@ -148,7 +149,7 @@ function useSharedHeaderAnimation({
     });
   }, [height, insetsTop, routeKey]);
 
-  Animated.useDerivedValue(() => {
+  useDerivedValue(() => {
     if (!isCollapsible) {
       translateY.value = 0;
       return;
@@ -254,11 +255,9 @@ function AnimatedPerTabContent({
   return (
     <Animated.View
       key={routeKey}
-      entering={FadeIn.duration(180).reduceMotion(Animated.ReduceMotion.System)}
-      exiting={FadeOut.duration(140).reduceMotion(Animated.ReduceMotion.System)}
-      layout={Animated.LinearTransition.springified().reduceMotion(
-        Animated.ReduceMotion.System
-      )}
+      entering={FadeIn.duration(180).reduceMotion(ReduceMotion.System)}
+      exiting={FadeOut.duration(140).reduceMotion(ReduceMotion.System)}
+      layout={LinearTransition.springify().reduceMotion(ReduceMotion.System)}
       className="gap-1"
     >
       <Text

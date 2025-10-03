@@ -14,6 +14,7 @@ type Props = {
   isFavorite: boolean;
   onToggle: () => void;
   accessibilityLabel?: string;
+  accessibilityHint?: string;
   testID?: string;
 };
 
@@ -33,7 +34,7 @@ const HeartIcon = ({ filled }: { filled: boolean }) => (
 );
 
 export const FavoriteButton = React.memo<Props>(
-  ({ isFavorite, onToggle, accessibilityLabel, testID }) => {
+  ({ isFavorite, onToggle, accessibilityLabel, accessibilityHint, testID }) => {
     const scale = useSharedValue(1);
 
     const animatedStyle = useAnimatedStyle(() => ({
@@ -63,7 +64,9 @@ export const FavoriteButton = React.memo<Props>(
         accessibilityRole="switch"
         accessibilityState={{ checked: isFavorite }}
         accessibilityLabel={label}
-        accessibilityHint={translate('accessibility.strains.favorite_hint')}
+        accessibilityHint={
+          accessibilityHint ?? translate('accessibility.strains.favorite_hint')
+        }
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
         <Animated.View style={animatedStyle}>

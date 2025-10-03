@@ -36,6 +36,16 @@ const packageJSON = require(path.join(__dirname, 'package.json'));
 
 const APP_ENV = process.env.APP_ENV ?? 'development';
 
+const readEnv = (...keys) => {
+  for (const key of keys) {
+    const value = Reflect.get(process.env, key);
+    if (value !== undefined && value !== '') {
+      return value;
+    }
+  }
+  return undefined;
+};
+
 // eslint-disable-next-line no-undef
 const envPath = path.resolve(__dirname, `.env.${APP_ENV}`);
 
@@ -153,11 +163,21 @@ const client = z.object({
 
   // Strains API Configuration
 
-  STRAINS_API_URL: z.string().url(),
+  STRAINS_API_URL: z.string().url().optional(),
 
-  STRAINS_API_KEY: z.string().min(1),
+  STRAINS_API_KEY: z.string().optional(),
 
-  STRAINS_API_HOST: z.string().min(1),
+  STRAINS_API_HOST: z.string().optional(),
+
+  STRAINS_USE_PROXY: z.boolean().optional(),
+
+  // Feature Flags
+
+  FEATURE_STRAINS_ENABLED: z.boolean().optional(),
+
+  FEATURE_STRAINS_FAVORITES_SYNC: z.boolean().optional(),
+
+  FEATURE_STRAINS_OFFLINE_CACHE: z.boolean().optional(),
 
   // Supabase Configuration
 
@@ -214,6 +234,66 @@ const buildTime = z.object({
 
  */
 
+const apiUrl = readEnv('API_URL', 'EXPO_PUBLIC_API_URL');
+const varNumberRaw = readEnv('VAR_NUMBER', 'EXPO_PUBLIC_VAR_NUMBER');
+const varBoolRaw = readEnv('VAR_BOOL', 'EXPO_PUBLIC_VAR_BOOL');
+const strainsApiUrl = readEnv('STRAINS_API_URL', 'EXPO_PUBLIC_STRAINS_API_URL');
+const strainsApiKey = readEnv('STRAINS_API_KEY', 'EXPO_PUBLIC_STRAINS_API_KEY');
+const strainsApiHost = readEnv(
+  'STRAINS_API_HOST',
+  'EXPO_PUBLIC_STRAINS_API_HOST'
+);
+const strainsUseProxyRaw = readEnv(
+  'STRAINS_USE_PROXY',
+  'EXPO_PUBLIC_STRAINS_USE_PROXY'
+);
+const featureStrainsEnabledRaw = readEnv(
+  'FEATURE_STRAINS_ENABLED',
+  'EXPO_PUBLIC_FEATURE_STRAINS_ENABLED'
+);
+const featureStrainsFavoritesSyncRaw = readEnv(
+  'FEATURE_STRAINS_FAVORITES_SYNC',
+  'EXPO_PUBLIC_FEATURE_STRAINS_FAVORITES_SYNC'
+);
+const featureStrainsOfflineCacheRaw = readEnv(
+  'FEATURE_STRAINS_OFFLINE_CACHE',
+  'EXPO_PUBLIC_FEATURE_STRAINS_OFFLINE_CACHE'
+);
+const supabaseUrl = readEnv('SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_URL');
+const supabaseAnonKey = readEnv(
+  'SUPABASE_ANON_KEY',
+  'EXPO_PUBLIC_SUPABASE_ANON_KEY'
+);
+const accountDeletionUrl = readEnv(
+  'ACCOUNT_DELETION_URL',
+  'EXPO_PUBLIC_ACCOUNT_DELETION_URL'
+);
+const sentryDsn = readEnv('SENTRY_DSN', 'EXPO_PUBLIC_SENTRY_DSN');
+const sentrySendDefaultPiiRaw = readEnv(
+  'SENTRY_SEND_DEFAULT_PII',
+  'EXPO_PUBLIC_SENTRY_SEND_DEFAULT_PII'
+);
+const sentryReplaysSessionSampleRateRaw = readEnv(
+  'SENTRY_REPLAYS_SESSION_SAMPLE_RATE',
+  'EXPO_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE'
+);
+const sentryReplaysOnErrorSampleRateRaw = readEnv(
+  'SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE',
+  'EXPO_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE'
+);
+const sentryEnableReplayRaw = readEnv(
+  'SENTRY_ENABLE_REPLAY',
+  'EXPO_PUBLIC_SENTRY_ENABLE_REPLAY'
+);
+const appAccessReviewerEmail = readEnv(
+  'APP_ACCESS_REVIEWER_EMAIL',
+  'EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL'
+);
+const appAccessReviewerPassword = readEnv(
+  'APP_ACCESS_REVIEWER_PASSWORD',
+  'EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD'
+);
+
 const _clientEnv = {
   APP_ENV,
 
@@ -229,57 +309,79 @@ const _clientEnv = {
 
   // ADD YOUR ENV VARS HERE TOO
 
-  API_URL: process.env.API_URL,
+  API_URL: apiUrl,
 
-  VAR_NUMBER: Number(process.env.VAR_NUMBER),
+  VAR_NUMBER: varNumberRaw !== undefined ? Number(varNumberRaw) : undefined,
 
-  VAR_BOOL: process.env.VAR_BOOL === 'true',
+  VAR_BOOL: varBoolRaw === 'true',
 
   // Strains API Configuration
 
-  STRAINS_API_URL: process.env.STRAINS_API_URL,
+  STRAINS_API_URL: strainsApiUrl,
 
-  STRAINS_API_KEY: process.env.STRAINS_API_KEY,
+  STRAINS_API_KEY: strainsApiKey,
 
-  STRAINS_API_HOST: process.env.STRAINS_API_HOST,
+  STRAINS_API_HOST: strainsApiHost,
+
+  STRAINS_USE_PROXY:
+    strainsUseProxyRaw !== undefined ? strainsUseProxyRaw === 'true' : true,
+
+  // Feature Flags
+
+  FEATURE_STRAINS_ENABLED:
+    featureStrainsEnabledRaw !== undefined
+      ? featureStrainsEnabledRaw === 'true'
+      : true,
+
+  FEATURE_STRAINS_FAVORITES_SYNC:
+    featureStrainsFavoritesSyncRaw !== undefined
+      ? featureStrainsFavoritesSyncRaw === 'true'
+      : true,
+
+  FEATURE_STRAINS_OFFLINE_CACHE:
+    featureStrainsOfflineCacheRaw !== undefined
+      ? featureStrainsOfflineCacheRaw === 'true'
+      : true,
 
   // Supabase Configuration
 
-  SUPABASE_URL: process.env.SUPABASE_URL,
+  SUPABASE_URL: supabaseUrl,
 
-  SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+  SUPABASE_ANON_KEY: supabaseAnonKey,
 
   // Account deletion portal
 
-  ACCOUNT_DELETION_URL: process.env.EXPO_PUBLIC_ACCOUNT_DELETION_URL,
+  ACCOUNT_DELETION_URL: accountDeletionUrl,
 
   // Sentry Configuration (Client)
 
-  SENTRY_DSN: process.env.SENTRY_DSN,
+  SENTRY_DSN: sentryDsn,
 
-  SENTRY_SEND_DEFAULT_PII: process.env.SENTRY_SEND_DEFAULT_PII === 'true',
+  SENTRY_SEND_DEFAULT_PII:
+    sentrySendDefaultPiiRaw !== undefined
+      ? sentrySendDefaultPiiRaw === 'true'
+      : undefined,
 
-  SENTRY_REPLAYS_SESSION_SAMPLE_RATE: process.env
-    .SENTRY_REPLAYS_SESSION_SAMPLE_RATE
-    ? Number(process.env.SENTRY_REPLAYS_SESSION_SAMPLE_RATE)
-    : undefined,
+  SENTRY_REPLAYS_SESSION_SAMPLE_RATE:
+    sentryReplaysSessionSampleRateRaw !== undefined
+      ? Number(sentryReplaysSessionSampleRateRaw)
+      : undefined,
 
-  SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE: process.env
-    .SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE
-    ? Number(process.env.SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE)
-    : undefined,
+  SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE:
+    sentryReplaysOnErrorSampleRateRaw !== undefined
+      ? Number(sentryReplaysOnErrorSampleRateRaw)
+      : undefined,
 
-  SENTRY_ENABLE_REPLAY: process.env.SENTRY_ENABLE_REPLAY === 'true',
+  SENTRY_ENABLE_REPLAY:
+    sentryEnableReplayRaw !== undefined
+      ? sentryEnableReplayRaw === 'true'
+      : undefined,
 
   // App Access Reviewer Credentials
 
-  APP_ACCESS_REVIEWER_EMAIL:
-    process.env.APP_ACCESS_REVIEWER_EMAIL ||
-    process.env.EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL,
+  APP_ACCESS_REVIEWER_EMAIL: appAccessReviewerEmail,
 
-  APP_ACCESS_REVIEWER_PASSWORD:
-    process.env.APP_ACCESS_REVIEWER_PASSWORD ||
-    process.env.EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD,
+  APP_ACCESS_REVIEWER_PASSWORD: appAccessReviewerPassword,
 };
 
 /**

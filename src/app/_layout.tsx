@@ -28,6 +28,7 @@ import {
   useIsFirstTime,
 } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
+import { useRootStartup } from '@/lib/hooks/use-root-startup';
 import {
   hasConsent,
   initializePrivacyConsent,
@@ -37,8 +38,6 @@ import { beforeSendHook } from '@/lib/sentry-utils';
 // Install AI consent hooks to handle withdrawal cascades
 import { installAiConsentHooks } from '@/lib/uploads/ai-images';
 import { useThemeConfig } from '@/lib/use-theme-config';
-
-import { useRootStartup } from './use-root-startup';
 
 // Module-scoped flag to prevent multiple Sentry initializations
 let sentryInitialized = false;

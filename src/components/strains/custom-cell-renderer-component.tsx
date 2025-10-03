@@ -20,6 +20,13 @@ const Component = memo(({ children, ...props }: any) => {
       onLayout={(e) => {
         // Update position when cell layout changes
         itemY.value = e.nativeEvent.layout.y;
+
+        // Forward the layout event to the original handler so FlashList
+        // (or any parent) can still measure cells for virtualization.
+        // Call safely in case props.onLayout is not provided.
+        if (typeof props.onLayout === 'function') {
+          props.onLayout(e);
+        }
       }}
     >
       {/* Inject itemY prop into each child component for position-aware animations */}

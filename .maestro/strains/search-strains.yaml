@@ -1,0 +1,57 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'user@test.com'
+  PASSWORD: 'password'
+---
+# E2E Test: Search Strains
+# Tests search functionality with debouncing and results
+
+- launchApp
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Navigate to Strains tab
+- tapOn:
+    id: 'strains-tab'
+- assertVisible: 'Strains'
+
+# Tap on search input
+- tapOn:
+    id: 'search-input'
+
+# Type search query
+- inputText: 'og kush'
+
+# Wait for debounce (300ms) and results
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Verify search results
+- assertVisible:
+    id: 'strains-list'
+
+# Verify strain cards with search results
+- assertVisible:
+    id: 'strain-card-*'
+
+# Clear search
+- tapOn:
+    id: 'search-clear-button'
+
+# Verify full list returns
+- assertVisible:
+    id: 'strains-list'
+
+# Test search with no results
+- tapOn:
+    id: 'search-input'
+- inputText: 'nonexistentstrainxyz123'
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Verify empty state or "did you mean" suggestion
+- assertVisible:
+    id: 'strains-empty-state'
+
+# Clear search again
+- tapOn:
+    id: 'search-clear-button'

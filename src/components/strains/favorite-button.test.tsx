@@ -97,6 +97,7 @@ describe('FavoriteButton', () => {
           isFavorite={false}
           onToggle={mockOnToggle}
           accessibilityLabel="Custom label"
+          accessibilityHint="Custom hint"
           testID="favorite-button"
         />
       );

@@ -75,7 +75,10 @@ export type AnalyticsEvents = {
     query?: string;
     sanitized_query?: string;
     results_count: number;
+    filters_applied?: string[];
+    sort_by?: string;
     is_offline: boolean;
+    response_time_ms?: number;
   };
 
   // Plant telemetry events
@@ -174,6 +177,71 @@ export type AnalyticsEvents = {
     assessmentConfidence: number;
   };
 
+  // Strains feature events
+  strain_filter_applied: {
+    filter_type: 'race' | 'effects' | 'flavors' | 'difficulty' | 'thc' | 'cbd';
+    filter_value: string;
+    results_count: number;
+  };
+  strain_sort_changed: {
+    sort_by: 'thc' | 'cbd' | 'popularity' | 'name';
+    sort_direction: 'asc' | 'desc';
+  };
+  strain_detail_viewed: {
+    strain_id: string;
+    strain_name?: string;
+    race?: string;
+    source: 'list' | 'search' | 'favorites' | 'deep_link';
+    is_offline: boolean;
+  };
+  strain_favorite_added: {
+    strain_id: string;
+    source: 'detail' | 'list';
+    total_favorites: number;
+  };
+  strain_favorite_removed: {
+    strain_id: string;
+    source: 'detail' | 'list' | 'favorites_screen';
+    total_favorites: number;
+  };
+  strain_list_scrolled: {
+    page_number: number;
+    total_items_loaded: number;
+    is_offline: boolean;
+  };
+  strain_offline_usage: {
+    action: 'browse' | 'search' | 'view_detail' | 'manage_favorites';
+    cached_pages_available: number;
+  };
+
+  // Strains performance events
+  strain_list_performance: {
+    fps: number;
+    frame_drops: number;
+    total_frames: number;
+    avg_frame_time_ms: number;
+    list_size: number;
+  };
+  strain_api_performance: {
+    endpoint: 'list' | 'detail';
+    response_time_ms: number;
+    status_code: number;
+    cache_hit: boolean;
+    error_type?: string;
+  };
+  strain_image_performance: {
+    load_time_ms: number;
+    cache_hit: boolean;
+    image_size_kb?: number;
+    failed: boolean;
+  };
+  strain_cache_performance: {
+    operation: 'read' | 'write' | 'evict';
+    cache_type: 'memory' | 'disk' | 'etag';
+    hit_rate?: number;
+    size_kb?: number;
+  };
+
   // Add future events below
   // example_event: { foo: string; bar?: number };
 };
@@ -229,6 +297,7 @@ export function createConsentGatedAnalytics(
     ): void | Promise<void> {
       const requiresConsent =
         name === 'strain_search' ||
+        name.startsWith('strain_') ||
         name.startsWith('playbook_') ||
         name.startsWith('ai_adjustment_') ||
         name.startsWith('trichome_');
@@ -412,6 +481,19 @@ function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(
     name.startsWith('trichome_')
   ) {
     return sanitizePlaybookPayload(payload);
+  }
+
+  // Sanitize strain detail viewed events to remove PII
+  if (name === 'strain_detail_viewed') {
+    const sanitized = {
+      ...(payload as AnalyticsEventPayload<'strain_detail_viewed'>),
+    };
+    // Keep strain_id as-is (should be non-identifiable UUID)
+    // Remove strain_name if it could contain PII (keep it for now as it's public data)
+    if (sanitized.strain_name) {
+      sanitized.strain_name = sanitized.strain_name.substring(0, 50);
+    }
+    return sanitized as AnalyticsEventPayload<N>;
   }
 
   // For non-playbook events, return as-is (they should already be PII-free per existing schema)

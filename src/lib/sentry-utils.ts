@@ -15,9 +15,11 @@ const SENSITIVE_PATTERNS = {
   creditCard: /\b(?:\d{4}[-\s]?){3}\d{4}\b/g,
   // Social Security Numbers
   ssn: /\b\d{3}-?\d{2}-?\d{4}\b/g,
-  // API keys and tokens - various common patterns
+  // API keys and tokens - various common patterns (with optional separators)
   apiKey:
-    /\b(?:sk|pk|api_key|x-api-key|x-rapidapi-key|bearer|token)[-_]?\w*[:=]\s*['"]?([a-zA-Z0-9_-]{20,})['"]?\b/gi,
+    /\b(?:sk|pk|api_key|x-api-key|x-rapidapi-key|bearer|token)[-_]?\w*(?:[:=]\s*['"]?)?([a-zA-Z0-9_-]{20,})['"]?\b/gi,
+  // Bare API tokens with common prefixes (sk_live_*, sk_test_*, pk_live_*, etc.)
+  bareApiKey: /\b(?:sk|pk)_(?:live|test)_[a-zA-Z0-9_-]{20,}\b/gi,
   // RapidAPI keys (typically 50+ character alphanumeric strings)
   rapidApiKey: /\b[a-zA-Z0-9]{50,}\b/g,
   // Authorization headers with tokens
@@ -64,6 +66,10 @@ function scrubSensitiveData(text: string): string {
   // Replace API keys and tokens
   scrubbedText = scrubbedText.replace(
     SENSITIVE_PATTERNS.apiKey,
+    '[API_KEY_REDACTED]'
+  );
+  scrubbedText = scrubbedText.replace(
+    SENSITIVE_PATTERNS.bareApiKey,
     '[API_KEY_REDACTED]'
   );
   scrubbedText = scrubbedText.replace(

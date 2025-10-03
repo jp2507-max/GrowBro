@@ -8,6 +8,7 @@ import 'react-native-url-polyfill/auto';
 import { Env } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+import Constants from 'expo-constants';
 
 // Determine if we're running in a test environment
 const isTestEnvironment =
@@ -19,28 +20,55 @@ const isTestEnvironment =
 let supabaseUrl: string;
 let supabaseAnonKey: string;
 
+const runtimeEnv =
+  typeof process !== 'undefined' && process.env ? process.env : undefined;
+
+const expoExtra =
+  (Constants.expoConfig?.extra as Record<string, unknown> | undefined) ??
+  (Constants.manifest2?.extra as Record<string, unknown> | undefined) ??
+  {};
+
+const pickFirstString = (...candidates: unknown[]): string | undefined => {
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.length > 0) {
+      return candidate;
+    }
+  }
+  return undefined;
+};
+
 if (isTestEnvironment) {
   // Use dummy values for tests
   supabaseUrl = 'http://localhost';
   supabaseAnonKey = 'test-key';
 } else {
   // In production/staging/development, require real environment variables
-  if (!Env.SUPABASE_URL && (Env as any).EXPO_PUBLIC_SUPABASE_URL) {
-    // Fallback to public-prefixed keys if only those are present in extra
-    (Env as any).SUPABASE_URL = (Env as any).EXPO_PUBLIC_SUPABASE_URL;
-  }
-  if (!Env.SUPABASE_ANON_KEY && (Env as any).EXPO_PUBLIC_SUPABASE_ANON_KEY) {
-    (Env as any).SUPABASE_ANON_KEY = (Env as any).EXPO_PUBLIC_SUPABASE_ANON_KEY;
-  }
+  const resolvedSupabaseUrl = pickFirstString(
+    Env?.SUPABASE_URL,
+    (Env as any)?.EXPO_PUBLIC_SUPABASE_URL,
+    expoExtra?.SUPABASE_URL,
+    expoExtra?.EXPO_PUBLIC_SUPABASE_URL,
+    runtimeEnv?.EXPO_PUBLIC_SUPABASE_URL,
+    runtimeEnv?.SUPABASE_URL
+  );
 
-  if (!Env.SUPABASE_URL) {
+  const resolvedSupabaseAnonKey = pickFirstString(
+    Env?.SUPABASE_ANON_KEY,
+    (Env as any)?.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+    expoExtra?.SUPABASE_ANON_KEY,
+    expoExtra?.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+    runtimeEnv?.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+    runtimeEnv?.SUPABASE_ANON_KEY
+  );
+
+  if (!resolvedSupabaseUrl) {
     throw new Error('Missing required environment variable: SUPABASE_URL');
   }
-  if (!Env.SUPABASE_ANON_KEY) {
+  if (!resolvedSupabaseAnonKey) {
     throw new Error('Missing required environment variable: SUPABASE_ANON_KEY');
   }
-  supabaseUrl = Env.SUPABASE_URL;
-  supabaseAnonKey = Env.SUPABASE_ANON_KEY;
+  supabaseUrl = resolvedSupabaseUrl;
+  supabaseAnonKey = resolvedSupabaseAnonKey;
 }
 
 // Create Supabase client with latest best practices

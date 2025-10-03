@@ -7,6 +7,18 @@ import { computeBackoffMs } from '@/lib/sync/backoff';
 import type { GetStrainsParams, Strain, StrainsResponse } from './types';
 import { normalizeStrain } from './utils';
 
+// Analytics tracking (lazy loaded to avoid circular dependencies)
+let analyticsClient: any = null;
+async function getAnalyticsClient() {
+  if (!analyticsClient) {
+    const { getAnalyticsClient: getClient } = await import(
+      '@/lib/analytics-registry'
+    );
+    analyticsClient = getClient();
+  }
+  return analyticsClient;
+}
+
 /**
  * API client for The Weed DB strains data
  * Routes through serverless proxy to protect API credentials
@@ -17,11 +29,12 @@ export class StrainsApiClient {
 
   constructor() {
     // Use proxy URL in production, direct API URL in development
-    this.baseURL =
-      Env.STRAINS_API_URL ||
-      (process.env.NODE_ENV === 'production'
-        ? `${Env.API_URL}/strains-proxy`
-        : 'https://api.theweeddb.com/v1');
+    const useProxy =
+      process.env.NODE_ENV === 'production' || Env.STRAINS_USE_PROXY;
+
+    this.baseURL = useProxy
+      ? `${Env.SUPABASE_URL}/functions/v1/strains-proxy`
+      : Env.STRAINS_API_URL || 'https://api.theweeddb.com/v1';
 
     this.client = axios.create({
       baseURL: this.baseURL,
@@ -29,10 +42,12 @@ export class StrainsApiClient {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        ...(Env.STRAINS_API_KEY && {
-          'x-rapidapi-key': Env.STRAINS_API_KEY,
-          'x-rapidapi-host': Env.STRAINS_API_HOST,
-        }),
+        // Only add API keys when NOT using proxy
+        ...(!useProxy &&
+          Env.STRAINS_API_KEY && {
+            'x-rapidapi-key': Env.STRAINS_API_KEY,
+            'x-rapidapi-host': Env.STRAINS_API_HOST,
+          }),
       },
     });
 
@@ -154,7 +169,15 @@ export class StrainsApiClient {
    * Build query parameters for strains API request
    */
   private buildQueryParams(params: GetStrainsParams): URLSearchParams {
-    const { page = 0, pageSize = 20, cursor, searchQuery, filters } = params;
+    const {
+      page = 0,
+      pageSize = 20,
+      cursor,
+      searchQuery,
+      filters,
+      sortBy,
+      sortDirection = 'asc',
+    } = params;
 
     const queryParams = new URLSearchParams();
 
@@ -169,6 +192,12 @@ export class StrainsApiClient {
     // Add search query
     if (searchQuery && searchQuery.trim()) {
       queryParams.set('search', searchQuery.trim());
+    }
+
+    // Add sort params
+    if (sortBy) {
+      queryParams.set('sort_by', sortBy);
+      queryParams.set('sort_direction', sortDirection);
     }
 
     // Add filters
@@ -249,16 +278,44 @@ export class StrainsApiClient {
   async getStrains(params: GetStrainsParams = {}): Promise<StrainsResponse> {
     const { signal, pageSize = 20 } = params;
     const queryParams = this.buildQueryParams(params);
+    const startTime = Date.now();
 
+    const config = this.buildRequestConfig(queryParams, signal);
+
+    try {
+      const response = await this.client.get('/strains', config);
+      return this.handleSuccessResponse({
+        response,
+        queryParams,
+        params,
+        pageSize,
+        responseTime: Date.now() - startTime,
+      });
+    } catch (error: any) {
+      return this.handleErrorResponse({
+        error,
+        queryParams,
+        params,
+        responseTime: Date.now() - startTime,
+      });
+    }
+  }
+
+  /**
+   * Build request config with caching headers
+   */
+  private buildRequestConfig(
+    queryParams: URLSearchParams,
+    signal?: AbortSignal
+  ): AxiosRequestConfig {
     const config: AxiosRequestConfig = {
       params: queryParams,
       signal,
       headers: {
-        'Cache-Control': 'max-age=300', // 5 minutes
+        'Cache-Control': 'max-age=300',
       },
     };
 
-    // Support ETag caching if available
     const cachedETag = this.getCachedETag(queryParams.toString());
     if (cachedETag) {
       config.headers = {
@@ -267,47 +324,101 @@ export class StrainsApiClient {
       };
     }
 
-    try {
-      const response = await this.client.get('/strains', config);
+    return config;
+  }
 
-      // Cache ETag for future requests
-      const etag = response.headers['etag'];
-      if (etag) {
-        this.setCachedETag(queryParams.toString(), etag);
+  /**
+   * Handle successful API response
+   */
+  private handleSuccessResponse(options: {
+    response: any;
+    queryParams: URLSearchParams;
+    params: GetStrainsParams;
+    pageSize: number;
+    responseTime: number;
+  }): StrainsResponse {
+    const etag = options.response.headers['etag'];
+    if (etag) {
+      this.setCachedETag(options.queryParams.toString(), etag);
+    }
+
+    const { strains, hasMore, nextCursor } = this.normalizeResponse(
+      options.response.data,
+      options.pageSize
+    );
+
+    const result = {
+      data: strains.map((s) => normalizeStrain(s)),
+      hasMore,
+      nextCursor,
+    };
+
+    this.setCachedData(options.queryParams.toString(), result);
+
+    if (options.params.searchQuery || options.params.filters) {
+      void this.trackSearchAnalytics({
+        params: options.params,
+        resultsCount: result.data.length,
+        responseTimeMs: options.responseTime,
+        isOffline: false,
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * Handle API error response
+   */
+  private handleErrorResponse(options: {
+    error: any;
+    queryParams: URLSearchParams;
+    params: GetStrainsParams;
+    responseTime: number;
+  }): StrainsResponse {
+    if (options.error?.response?.status === 304) {
+      const cached = this.getCachedData(options.queryParams.toString());
+      if (cached && cached.data.length > 0) {
+        void this.trackSearchAnalytics({
+          params: options.params,
+          resultsCount: cached.data.length,
+          responseTimeMs: options.responseTime,
+          isOffline: true,
+        });
+        return cached;
       }
+      console.warn('304 Not Modified but no cached data found');
+    }
 
-      // Normalize response format
-      const { strains, hasMore, nextCursor } = this.normalizeResponse(
-        response.data,
-        pageSize
+    throw options.error;
+  }
+
+  /**
+   * Track search analytics (non-blocking)
+   */
+  private async trackSearchAnalytics(options: {
+    params: GetStrainsParams;
+    resultsCount: number;
+    responseTimeMs: number;
+    isOffline: boolean;
+  }): Promise<void> {
+    try {
+      const analytics = await getAnalyticsClient();
+      const { trackStrainSearch } = await import(
+        '@/lib/strains/strains-analytics'
       );
 
-      // Normalize all strain data
-      const normalizedStrains = strains.map((s) => normalizeStrain(s));
-
-      const result = {
-        data: normalizedStrains,
-        hasMore,
-        nextCursor,
-      };
-
-      // Cache the response
-      this.setCachedData(queryParams.toString(), result);
-
-      return result;
-    } catch (error: any) {
-      // Handle 304 Not Modified - return cached data
-      if (error?.response?.status === 304) {
-        const cached = this.getCachedData(queryParams.toString());
-        if (cached && cached.data.length > 0) {
-          // Optionally: validate cache timestamp or version
-          return cached;
-        }
-        // If cache miss on 304, this is unexpected—log and re-throw
-        console.warn('304 Not Modified but no cached data found');
-      }
-
-      throw error;
+      trackStrainSearch(analytics, {
+        query: options.params.searchQuery,
+        resultsCount: options.resultsCount,
+        filters: options.params.filters,
+        sortBy: options.params.sortBy,
+        isOffline: options.isOffline,
+        responseTimeMs: options.responseTimeMs,
+      });
+    } catch (error) {
+      // Silently fail analytics to not impact user experience
+      console.debug('[StrainsApiClient] Analytics tracking failed:', error);
     }
   }
 
@@ -316,6 +427,8 @@ export class StrainsApiClient {
    */
   async getStrain(strainId: string, signal?: AbortSignal): Promise<Strain> {
     const encodedId = encodeURIComponent(strainId);
+    const startTime = Date.now();
+
     const config: AxiosRequestConfig = {
       signal,
       headers: {
@@ -323,13 +436,61 @@ export class StrainsApiClient {
       },
     };
 
-    const response = await this.client.get(`/strains/${encodedId}`, config);
-    const data = response.data;
+    try {
+      const response = await this.client.get(`/strains/${encodedId}`, config);
+      const responseTime = Date.now() - startTime;
+      const data = response.data;
 
-    // Handle different response formats
-    const strainData = data.strain || data.data || data;
+      // Handle different response formats
+      const strainData = data.strain || data.data || data;
 
-    return normalizeStrain(strainData);
+      // Track API performance
+      void this.trackApiPerformance({
+        endpoint: 'detail',
+        responseTimeMs: responseTime,
+        statusCode: response.status,
+        cacheHit: false,
+      });
+
+      return normalizeStrain(strainData);
+    } catch (error: any) {
+      const responseTime = Date.now() - startTime;
+      const statusCode = error?.response?.status || 0;
+
+      // Track error performance
+      void this.trackApiPerformance({
+        endpoint: 'detail',
+        responseTimeMs: responseTime,
+        statusCode,
+        cacheHit: false,
+        errorType: error?.message || 'unknown',
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   * Track API performance (non-blocking)
+   */
+  private async trackApiPerformance(options: {
+    endpoint: 'list' | 'detail';
+    responseTimeMs: number;
+    statusCode: number;
+    cacheHit: boolean;
+    errorType?: string;
+  }): Promise<void> {
+    try {
+      const analytics = await getAnalyticsClient();
+      const { trackApiPerformance } = await import(
+        '@/lib/strains/strains-performance'
+      );
+
+      trackApiPerformance(analytics, options);
+    } catch (error) {
+      // Silently fail analytics to not impact user experience
+      console.debug('[StrainsApiClient] Performance tracking failed:', error);
+    }
   }
 
   /**
@@ -340,7 +501,13 @@ export class StrainsApiClient {
   private dataCache = new Map<string, StrainsResponse>();
 
   private getCachedETag(key: string): string | undefined {
-    return this.etagCache.get(key);
+    const hit = this.etagCache.get(key);
+    void this.trackCacheOperation({
+      operation: 'read',
+      cacheType: 'etag',
+      hit: hit !== undefined,
+    });
+    return hit;
   }
 
   private setCachedETag(key: string, etag: string): void {
@@ -349,13 +516,29 @@ export class StrainsApiClient {
       const firstKey = this.etagCache.keys().next().value;
       if (firstKey) {
         this.etagCache.delete(firstKey);
+        void this.trackCacheOperation({
+          operation: 'evict',
+          cacheType: 'etag',
+          hit: false,
+        });
       }
     }
     this.etagCache.set(key, etag);
+    void this.trackCacheOperation({
+      operation: 'write',
+      cacheType: 'etag',
+      hit: false,
+    });
   }
 
   private getCachedData(key: string): StrainsResponse | undefined {
-    return this.dataCache.get(key);
+    const hit = this.dataCache.get(key);
+    void this.trackCacheOperation({
+      operation: 'read',
+      cacheType: 'memory',
+      hit: hit !== undefined,
+    });
+    return hit;
   }
 
   private setCachedData(key: string, data: StrainsResponse): void {
@@ -364,9 +547,51 @@ export class StrainsApiClient {
       const firstKey = this.dataCache.keys().next().value;
       if (firstKey) {
         this.dataCache.delete(firstKey);
+        void this.trackCacheOperation({
+          operation: 'evict',
+          cacheType: 'memory',
+          hit: false,
+        });
       }
     }
     this.dataCache.set(key, data);
+
+    // Calculate approximate size
+    const sizeKb = Math.round(JSON.stringify(data).length / 1024);
+    void this.trackCacheOperation({
+      operation: 'write',
+      cacheType: 'memory',
+      hit: false,
+      sizeKb,
+    });
+  }
+
+  /**
+   * Track cache operation (non-blocking)
+   */
+  private async trackCacheOperation(options: {
+    operation: 'read' | 'write' | 'evict';
+    cacheType: 'memory' | 'disk' | 'etag';
+    hit: boolean;
+    sizeKb?: number;
+  }): Promise<void> {
+    try {
+      const analytics = await getAnalyticsClient();
+      const { trackCachePerformance } = await import(
+        '@/lib/strains/strains-performance'
+      );
+
+      trackCachePerformance(analytics, {
+        operation: options.operation,
+        cacheType: options.cacheType,
+        hitRate:
+          options.operation === 'read' ? (options.hit ? 1 : 0) : undefined,
+        sizeKb: options.sizeKb,
+      });
+    } catch (error) {
+      // Silently fail analytics to not impact user experience
+      console.debug('[StrainsApiClient] Cache tracking failed:', error);
+    }
   }
 }
 

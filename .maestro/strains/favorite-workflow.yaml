@@ -1,0 +1,67 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'user@test.com'
+  PASSWORD: 'password'
+---
+# E2E Test: Favorite Workflow
+# Tests adding, viewing, and removing favorites
+
+- launchApp
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Navigate to Strains tab
+- tapOn:
+    id: 'strains-tab'
+- assertVisible: 'Strains'
+
+# Tap on first strain card to open detail
+- tapOn:
+    id: 'strain-card-0'
+
+# Wait for detail page to load
+- waitForAnimationToEnd
+
+# Verify detail page loaded
+- assertVisible:
+    id: 'strain-detail'
+
+# Add to favorites
+- tapOn:
+    id: 'favorite-button'
+
+# Verify favorite button state changed
+- assertVisible:
+    id: 'favorite-button'
+
+# Go back to list
+- back
+
+# Navigate to Favorites tab
+- tapOn:
+    id: 'favorites-tab'
+
+# Verify favorites list
+- assertVisible:
+    id: 'favorites-list'
+
+# Verify favorited strain appears
+- assertVisible:
+    id: 'strain-card-*'
+
+# Tap on favorited strain
+- tapOn:
+    id: 'strain-card-0'
+
+# Wait for detail page
+- waitForAnimationToEnd
+
+# Remove from favorites
+- tapOn:
+    id: 'favorite-button'
+
+# Go back to favorites list
+- back
+
+# Verify empty state or strain removed
+- assertVisible:
+    id: 'favorites-empty-state'

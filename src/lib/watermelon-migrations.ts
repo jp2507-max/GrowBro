@@ -790,10 +790,10 @@ export const migrations = schemaMigrations({
           ],
         }),
         unsafeExecuteSql(
-          'CREATE INDEX notifications_archived_at ON notifications (archived_at)'
+          'CREATE INDEX notifications_archived_at ON notifications (archived_at);'
         ),
         unsafeExecuteSql(
-          'CREATE INDEX notifications_deleted_at ON notifications (deleted_at)'
+          'CREATE INDEX notifications_deleted_at ON notifications (deleted_at);'
         ),
       ],
     },
