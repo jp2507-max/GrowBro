@@ -289,7 +289,7 @@ export function normalizeTerpenes(terpenes: any): Terpene[] | undefined {
       typeof terpene === 'string'
         ? { name: String(terpene) }
         : {
-            name: String(terpene.name || ''),
+            name: typeof terpene.name === 'string' ? terpene.name : undefined,
             percentage:
               typeof terpene.percentage === 'number'
                 ? terpene.percentage
@@ -409,7 +409,7 @@ export function normalizeStrain(apiStrain: any, locale = 'en-US'): Strain {
         : Array.isArray(apiStrain.parents)
           ? apiStrain.parents.filter(Boolean).map(String)
           : [],
-      lineage: String(apiStrain.genetics?.lineage || ''),
+      lineage: String(apiStrain.genetics?.lineage ?? apiStrain.lineage ?? ''),
     },
     race: normalizeRace(apiStrain.race || apiStrain.type),
     thc,
