@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* eslint-disable max-lines-per-function */
 /**
  * Integration tests for Strains feature

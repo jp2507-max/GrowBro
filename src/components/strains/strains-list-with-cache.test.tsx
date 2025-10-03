@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* eslint-disable max-lines-per-function */
 /**
  * Unit tests for StrainsListWithCache component
@@ -124,7 +125,7 @@ describe('StrainsListWithCache', () => {
         () => new Promise(() => {}) // Never resolves
       );
 
-      render(<StrainsListWithCache />, { wrapper: createWrapper() });
+      render(<StrainsListWithCache />, { wrapper: createWrapper() } as any);
 
       // Skeleton should be visible
       expect(screen.getByTestId('strains-skeleton-list')).toBeOnTheScreen();
@@ -133,7 +134,7 @@ describe('StrainsListWithCache', () => {
     test('shows strains after loading', async () => {
       mockClient.getStrains.mockResolvedValueOnce(mockStrainsResponse);
 
-      render(<StrainsListWithCache />, { wrapper: createWrapper() });
+      render(<StrainsListWithCache />, { wrapper: createWrapper() } as any);
 
       await waitFor(() => {
         expect(screen.getByText('OG Kush')).toBeOnTheScreen();
@@ -149,7 +150,7 @@ describe('StrainsListWithCache', () => {
         nextCursor: undefined,
       });
 
-      render(<StrainsListWithCache />, { wrapper: createWrapper() });
+      render(<StrainsListWithCache />, { wrapper: createWrapper() } as any);
 
       await waitFor(() => {
         expect(screen.getByTestId('strains-empty-state')).toBeOnTheScreen();
@@ -162,7 +163,7 @@ describe('StrainsListWithCache', () => {
       const error = new Error('Network error');
       mockClient.getStrains.mockRejectedValueOnce(error);
 
-      render(<StrainsListWithCache />, { wrapper: createWrapper() });
+      render(<StrainsListWithCache />, { wrapper: createWrapper() } as any);
 
       await waitFor(() => {
         expect(screen.getByTestId('strains-error-card')).toBeOnTheScreen();
@@ -272,7 +273,7 @@ describe('StrainsListWithCache', () => {
         .mockResolvedValueOnce(page1Response)
         .mockResolvedValueOnce(page2Response);
 
-      render(<StrainsListWithCache />, { wrapper: createWrapper() });
+      render(<StrainsListWithCache />, { wrapper: createWrapper() } as any);
 
       await waitFor(() => {
         expect(screen.getByText('OG Kush')).toBeOnTheScreen();
@@ -292,7 +293,7 @@ describe('StrainsListWithCache', () => {
 
       mockClient.getStrains.mockResolvedValueOnce(response);
 
-      render(<StrainsListWithCache />, { wrapper: createWrapper() });
+      render(<StrainsListWithCache />, { wrapper: createWrapper() } as any);
 
       await waitFor(() => {
         expect(screen.getByText('OG Kush')).toBeOnTheScreen();

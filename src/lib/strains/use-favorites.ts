@@ -74,7 +74,7 @@ function toFavoritesIndex(favoritesArray: FavoriteStrain[]): FavoritesIndex {
 
 async function performCloudSync(userId: string): Promise<number> {
   const repo = createFavoritesRepository(database);
-  const favoritesNeedingSync = await repo.getFavoritesNeedingSync(userId);
+  const favoritesNeedingSync = await repo.getAllFavoritesNeedingSync(userId);
   if (favoritesNeedingSync.length === 0) {
     return 0;
   }

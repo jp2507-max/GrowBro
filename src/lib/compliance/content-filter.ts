@@ -47,10 +47,27 @@ export function filterStrainDescription(description: string): string {
 
   filtered = cleanSentences.join('. ').trim();
 
-  // Remove glamorization phrases
+  // Remove glamorization phrases using string methods to avoid RegExp construction
   GLAMORIZATION_KEYWORDS.forEach((phrase) => {
-    const regex = new RegExp(phrase, 'gi');
-    filtered = filtered.replace(regex, '');
+    let lowerPhrase = phrase.toLowerCase();
+    let lowerFiltered = filtered.toLowerCase();
+    let originalFiltered = filtered;
+
+    let index = lowerFiltered.indexOf(lowerPhrase);
+    while (index !== -1) {
+      // Remove the substring from the original filtered string
+      originalFiltered =
+        originalFiltered.slice(0, index) +
+        originalFiltered.slice(index + phrase.length);
+      // Update the lower-cased copy
+      lowerFiltered =
+        lowerFiltered.slice(0, index) +
+        lowerFiltered.slice(index + lowerPhrase.length);
+      // Find next occurrence
+      index = lowerFiltered.indexOf(lowerPhrase);
+    }
+
+    filtered = originalFiltered;
   });
 
   // Clean up extra whitespace

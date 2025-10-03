@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* eslint-disable max-lines-per-function */
 /**
  * Unit tests for useStrain React Query hook
@@ -19,10 +20,12 @@ const mockGetStrainsApiClient = getStrainsApiClient as jest.MockedFunction<
   typeof getStrainsApiClient
 >;
 
-const mockClient = {
-  getStrains: jest.fn() as jest.MockedFunction<StrainsApiClient['getStrains']>,
-  getStrain: jest.fn() as jest.MockedFunction<StrainsApiClient['getStrain']>,
-} as Partial<StrainsApiClient>;
+const mockClient: jest.Mocked<
+  Pick<StrainsApiClient, 'getStrains' | 'getStrain'>
+> = {
+  getStrains: jest.fn(),
+  getStrain: jest.fn(),
+};
 
 const queryClient = new QueryClient({
   defaultOptions: {

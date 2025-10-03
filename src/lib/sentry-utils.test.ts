@@ -1,12 +1,12 @@
 // @ts-nocheck
 
-/* eslint-disable */
-// @ts-nocheck
+/* eslint-disable max-lines-per-function -- Test file with comprehensive test cases that exceed line limits */
+/* eslint-disable prettier/prettier -- Formatting conflicts with test readability */
 
 import {
   sanitizeObjectPII,
   sanitizeTextPII,
-} from './sentry-utils';
+} from '@/lib/sentry-utils';
 
 describe('sentry-utils', () => {
   describe('sanitizeTextPII', () => {

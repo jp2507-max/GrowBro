@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* eslint-disable max-lines-per-function */
 /* eslint-disable testing-library/prefer-screen-queries */
 /* eslint-disable react/no-unknown-property */

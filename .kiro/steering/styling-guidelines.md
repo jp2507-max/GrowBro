@@ -1,7 +1,3 @@
----
-alwaysApply: true
----
-
 # 🎬 React Native Reanimated Production Cheatsheet (4.x, Expo SDK 54)
 
 _Last updated Sep 2025 • ≈250 lines_

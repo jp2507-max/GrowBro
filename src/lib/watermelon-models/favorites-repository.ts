@@ -13,6 +13,7 @@ type FavoritesRepository = {
   ) => Promise<FavoriteModel | null>;
   getAllFavorites: (userId?: string) => Promise<FavoriteModel[]>;
   getFavoritesNeedingSync: (userId?: string) => Promise<FavoriteModel[]>;
+  getAllFavoritesNeedingSync: (userId?: string) => Promise<FavoriteModel[]>;
   addFavorite: (strain: Strain, userId?: string) => Promise<FavoriteModel>;
   removeFavorite: (strainId: string, userId?: string) => Promise<void>;
   isFavorite: (strainId: string, userId?: string) => Promise<boolean>;
@@ -85,6 +86,23 @@ export function createFavoritesRepository(
     userId?: string
   ): Promise<FavoriteModel[]> {
     const query = [Q.where('deleted_at', null)];
+
+    if (userId) {
+      query.push(Q.where('user_id', userId));
+    }
+
+    const favorites = await collection.query(...query).fetch();
+
+    return favorites.filter((f) => f.needsSync);
+  }
+
+  /**
+   * Get all favorites that need syncing, including soft-deleted ones
+   */
+  async function getAllFavoritesNeedingSync(
+    userId?: string
+  ): Promise<FavoriteModel[]> {
+    const query: any[] = [];
 
     if (userId) {
       query.push(Q.where('user_id', userId));
@@ -252,6 +270,7 @@ export function createFavoritesRepository(
     findByStrainId,
     getAllFavorites,
     getFavoritesNeedingSync,
+    getAllFavoritesNeedingSync,
     addFavorite,
     removeFavorite,
     isFavorite,

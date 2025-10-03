@@ -7,18 +7,22 @@ import {
   getAgeGateState,
   checkAgeGateExpiration,
   isAgeGateVerified,
+  verifyAgeGate,
+  resetAgeGate,
 } from '@/lib/compliance/age-gate';
 
 // key used by the age-gate storage
 const AGE_GATE_STATE_KEY = 'compliance.ageGate.state';
 
+// In-memory store for spied storage
+const storageStore = new Map<string, string>();
+
 afterEach(() => {
   cleanup();
-  // reset storage mocks
+  // clear storage store and restore spies
+  storageStore.clear();
   try {
-    (storage.getString as jest.Mock).mockReset();
-    (storage.set as jest.Mock).mockReset();
-    (storage.delete as jest.Mock).mockReset();
+    jest.restoreAllMocks();
   } catch {}
 });
 
@@ -29,10 +33,21 @@ test('legacy persisted state with expiresAt = null remains verified on hydrate',
     method: 'self-certification',
     expiresAt: null,
   };
-  // make storage.getString return our persisted value for the state key
-  (storage.getString as jest.Mock).mockImplementation((key: string) =>
-    key === AGE_GATE_STATE_KEY ? JSON.stringify(persisted) : null
-  );
+  // make storage.getString return our persisted value
+  jest
+    .spyOn(storage, 'getString')
+    .mockImplementation((key: string) => storageStore.get(key) || null);
+  jest
+    .spyOn(storage, 'set')
+    .mockImplementation((key: string, value: string) =>
+      storageStore.set(key, value)
+    );
+  jest
+    .spyOn(storage, 'delete')
+    .mockImplementation((key: string) => storageStore.delete(key));
+
+  // Set the persisted state
+  storageStore.set(AGE_GATE_STATE_KEY, JSON.stringify(persisted));
 
   hydrateAgeGate();
 
@@ -52,9 +67,21 @@ test('past expiresAt causes expiration and appends verify-denied audit', () => {
     method: 'self-certification',
     expiresAt: old,
   };
-  (storage.getString as jest.Mock).mockImplementation((key: string) =>
-    key === AGE_GATE_STATE_KEY ? JSON.stringify(persisted) : null
-  );
+  // make storage work with in-memory store
+  jest
+    .spyOn(storage, 'getString')
+    .mockImplementation((key: string) => storageStore.get(key) || null);
+  jest
+    .spyOn(storage, 'set')
+    .mockImplementation((key: string, value: string) =>
+      storageStore.set(key, value)
+    );
+  jest
+    .spyOn(storage, 'delete')
+    .mockImplementation((key: string) => storageStore.delete(key));
+
+  // Set the persisted state
+  storageStore.set(AGE_GATE_STATE_KEY, JSON.stringify(persisted));
 
   hydrateAgeGate();
 
@@ -69,33 +96,41 @@ test('past expiresAt causes expiration and appends verify-denied audit', () => {
   expect(events.some((e) => e.type === 'verify-denied')).toBe(true);
 });
 
-test('checkAgeGateExpiration returns true and appends audit when state is verified but expires in past', () => {
-  const old = new Date(Date.now() - 1000 * 60 * 60 * 24 * 365).toISOString(); // 1 year ago
-  const persisted = {
-    verifiedAt: old,
+test('checkAgeGateExpiration returns true and blocks when verified state has expired expiresAt', () => {
+  // Reset any existing state
+  resetAgeGate();
+
+  // Verify age gate with valid input to set verified state
+  const result = verifyAgeGate({
+    birthYear: 1990,
+    birthMonth: 1,
+    birthDay: 1,
     method: 'self-certification',
-    expiresAt: old,
-  };
-  (storage.getString as jest.Mock).mockImplementation((key: string) =>
-    key === AGE_GATE_STATE_KEY ? JSON.stringify(persisted) : null
-  );
-  // hydrate again to set verified then run checkExpiration via exported function
-  hydrateAgeGate();
+  });
+  expect(result.ok).toBe(true);
 
-  // ensure current state is blocked from hydrate
-  const state = getAgeGateState();
-  expect(state.status).toBe('blocked');
+  // Verify state is verified with future expiration
+  const initialState = getAgeGateState();
+  expect(initialState.status).toBe('verified');
+  expect(initialState.expiresAt).toBeTruthy();
 
-  // Now set a verified state with expiresAt in the past directly to the store to test checkAgeGateExpiration
-  (storage.getString as jest.Mock).mockImplementation((key: string) =>
-    key === AGE_GATE_STATE_KEY ? JSON.stringify(persisted) : null
-  );
-  // hydrate again to set verified then run checkExpiration via exported function
-  hydrateAgeGate();
+  // Use fake timers to set system time past expiration
+  jest.useFakeTimers();
+  const futureExpiration = new Date(initialState.expiresAt!);
+  const pastExpiration = new Date(
+    futureExpiration.getTime() + 24 * 60 * 60 * 1000
+  ); // 1 day after expiration
+  jest.setSystemTime(pastExpiration);
 
-  // If it's expired, checkAgeGateExpiration should return true
+  // Now checkAgeGateExpiration should detect expiration and block
   const expired = checkAgeGateExpiration();
   expect(expired).toBe(true);
+
+  jest.useRealTimers();
+
+  // Verify state is now blocked
+  const finalState = getAgeGateState();
+  expect(finalState.status).toBe('blocked');
 
   const events = getAgeGateAuditLog();
   expect(events.some((e) => e.type === 'verify-denied')).toBe(true);

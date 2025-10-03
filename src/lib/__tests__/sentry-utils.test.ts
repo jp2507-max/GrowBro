@@ -68,20 +68,6 @@ describe('sanitizeTextPII', () => {
     expect(sanitizeTextPII(txt)).toContain('[EMAIL_REDACTED]');
   });
 });
-/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/consistent-type-imports */
-// Mock dynamic imports in captureCategorizedErrorSync
-jest.mock('@sentry/react-native', () => ({
-  captureException: jest.fn(),
-}));
-
-jest.mock('@/lib/error-handling', () => ({
-  categorizeError: (e: unknown) => ({
-    category: 'test',
-    isRetryable: false,
-    statusCode: 0,
-    message: String(e),
-  }),
-}));
 
 test('beforeSendHook drops event when crashReporting not consented', () => {
   jest.doMock('@/lib/privacy-consent', () => ({
@@ -162,6 +148,11 @@ test('beforeSendHook scrubs PII from strings in event fields', () => {
 
 describe('captureCategorizedErrorSync', () => {
   test('no-ops when crash reporting not consented', async () => {
+    // Mock modules needed for this test
+    jest.doMock('@sentry/react-native', () => ({
+      captureException: jest.fn(),
+    }));
+
     jest.doMock('@/lib/privacy-consent', () => ({
       getPrivacyConsentSync: jest.fn(() => ({
         analytics: false,
@@ -170,6 +161,15 @@ describe('captureCategorizedErrorSync', () => {
         sessionReplay: false,
         lastUpdated: Date.now(),
       })),
+    }));
+
+    jest.doMock('@/lib/error-handling', () => ({
+      categorizeError: (e: unknown) => ({
+        category: 'test',
+        isRetryable: false,
+        statusCode: 0,
+        message: String(e),
+      }),
     }));
 
     jest.isolateModules(() => {
