@@ -2,7 +2,9 @@ import { Database } from '@nozbe/watermelondb';
 import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
 
 import { migrations } from './watermelon-migrations';
+import { CachedStrainModel } from './watermelon-models/cached-strain';
 import { DeviceTokenModel } from './watermelon-models/device-token';
+import { FavoriteModel } from './watermelon-models/favorite';
 import { ImageUploadQueueModel } from './watermelon-models/image-upload-queue';
 import { NotificationModel } from './watermelon-models/notification';
 import { NotificationPreferenceModel } from './watermelon-models/notification-preference';
@@ -33,5 +35,7 @@ export const database = new Database({
     NotificationPreferenceModel,
     DeviceTokenModel,
     ImageUploadQueueModel,
+    FavoriteModel,
+    CachedStrainModel,
   ],
 });

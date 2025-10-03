@@ -1,105 +1,180 @@
-# Project Structure & Organization
+# Project Structure
 
-## Root Directory Structure
+## Root Organization
 
 ```
-├── src/                    # Main source code
-├── assets/                 # Static assets (images, fonts, icons)
-├── supabase/              # Supabase functions and migrations
-├── .expo/                 # Expo configuration and cache
-├── .kiro/                 # Kiro AI assistant configuration
-├── .maestro/              # E2E test configurations
-├── __mocks__/             # Jest mocks for testing
-├── scripts/               # Build and utility scripts
-├── docs/                  # Project documentation
-└── prompts/               # AI assistant prompts
+├── src/                      # Application source code
+├── android/                  # Native Android project
+├── ios/                      # Native iOS project (generated)
+├── assets/                   # Static assets (fonts, images)
+├── supabase/                 # Backend functions and migrations
+├── scripts/                  # Build, compliance, and validation scripts
+├── docs/                     # Documentation and compliance docs
+├── compliance/               # Compliance configuration files
+├── __mocks__/                # Jest mocks for native modules
+├── .kiro/                    # Kiro AI assistant configuration
+├── .maestro/                 # E2E test flows
+└── plugins/                  # Expo config plugins
 ```
 
-## Source Code Organization (`src/`)
+## Source Directory (`src/`)
 
-### Core Directories
+### `src/app/` - Expo Router File-Based Routing
 
-- **`src/app/`** - Expo Router pages and layouts (file-based routing)
-- **`src/components/`** - Reusable UI components
-- **`src/lib/`** - Business logic, utilities, and services
-- **`src/api/`** - API layer and data fetching logic
-- **`src/types/`** - TypeScript type definitions
-- **`src/translations/`** - Internationalization files
+- `_layout.tsx` - Root layout with providers
+- `(app)/` - Main authenticated app screens
+- `(modals)/` - Modal screens
+- `community/` - Community feature screens
+- `feed/` - Feed screens
+- `notifications/` - Notification screens
+- `settings/` - Settings screens
+- `age-gate.tsx`, `login.tsx`, `onboarding.tsx` - Auth flows
 
-### Component Structure (`src/components/`)
+### `src/components/` - UI Components
 
-- **`ui/`** - Base UI components (buttons, inputs, typography)
-- **Feature-specific folders** - Components grouped by feature (calendar, settings, sync)
-- **Root level** - Shared components used across features
+- `ui/` - Base UI components (buttons, inputs, typography)
+- `calendar/` - Calendar and task components
+- `community/` - Community feed components
+- `home/` - Home screen components
+- `navigation/` - Navigation components
+- `notifications/` - Notification components
+- `plants/` - Plant management components
+- `settings/` - Settings components
+- `shared/` - Shared/common components
+- `strains/` - Strain-related components
+- `sync/` - Sync status components
 
-### Library Structure (`src/lib/`)
+### `src/api/` - Data Fetching Layer
 
-- **`auth/`** - Authentication logic and utilities
-- **`hooks/`** - Custom React hooks
-- **`i18n/`** - Internationalization configuration
-- **`utils/`** - General utility functions
-- **`watermelon-models/`** - Database models and schema
-- **Feature-specific folders** - Business logic grouped by feature
+- `common/` - Shared API utilities
+- `moderation/` - Moderation endpoints
+- `notifications/` - Notification endpoints
+- `plants/` - Plant CRUD operations
+- `posts/` - Community post operations
+- `strains/` - Strain data operations
+- `index.tsx` - API client setup
+- `types.ts` - API type definitions
 
-## File Naming Conventions
+Uses React Query (via react-query-kit) for data fetching, caching, and mutations.
 
-- **kebab-case** for all files and directories (enforced by ESLint)
-- **PascalCase** for React components
-- **camelCase** for functions and variables
-- **SCREAMING_SNAKE_CASE** for constants
+### `src/lib/` - Core Utilities & Business Logic
 
-## Import Path Aliases
+- `alarms/` - Local alarm scheduling
+- `animations/` - Animation utilities
+- `auth/` - Authentication logic
+- `compliance/` - Compliance checks and validators
+- `hooks/` - Custom React hooks
+- `i18n/` - Internationalization setup
+- `ics/` - Calendar export utilities
+- `media/` - Image/video handling
+- `moderation/` - Content moderation
+- `navigation/` - Navigation utilities
+- `notifications/` - Push notification logic
+- `permissions/` - Permission handling
+- `privacy/` - Privacy controls
+- `rrule/` - Recurring task rules
+- `storage/` - Local storage (MMKV)
+- `strains/` - Strain data utilities
+- `sync/` - Sync engine logic
+- `tasks/` - Task management
+- `uploads/` - File upload utilities
+- `utils/` - General utilities
+- `watermelon-models/` - WatermelonDB models
+- `watermelon-schema.ts` - Database schema
+- `watermelon-migrations.ts` - Database migrations
+- `watermelon.ts` - Database initialization
+- `supabase.ts` - Supabase client setup
+- `env.js` - Environment variable validation
 
-- `@/*` maps to `./src/*` for clean imports
-- `@env` maps to environment variables via `./src/lib/env.js`
+### `src/translations/` - i18n Files
 
-## Architecture Patterns
+- `en.json` - English translations
+- `de.json` - German translations
+
+All keys must be identical across files (enforced by ESLint).
+
+### `src/types/` - TypeScript Type Definitions
+
+- `agenda.ts` - Agenda/calendar types
+- `calendar.ts` - Calendar types
+- `strains.ts` - Strain types
+- `templates.ts` - Template types
+- `index.ts` - Exported types
+- `*.d.ts` - Module declarations
+
+## Backend (`supabase/`)
+
+- `functions/` - Supabase Edge Functions (Deno)
+- `migrations/` - Database migrations (SQL)
+
+Edge Functions use `jsr:` and `npm:` specifiers (Deno-style imports).
+
+## Scripts (`scripts/`)
+
+Node.js scripts for:
+
+- Compliance validation (`ci-*.js`)
+- Privacy manifest validation
+- Data safety generation
+- Design token coverage
+- Android manifest scanning
+- Cannabis policy checks
+
+## Key Conventions
+
+### File Naming
+
+- **kebab-case** for all files (enforced by ESLint)
+- Components: `my-component.tsx`
+- Tests: `my-component.test.tsx` or `my-component.spec.tsx`
+- Types: `my-types.ts`
+
+### Import Aliases
+
+- `@/*` maps to `src/*`
+- `@env` maps to `src/lib/env`
 
 ### Component Organization
 
-- Components are organized by feature and reusability
-- UI components use Tailwind variants for consistent styling
-- Each component should have a single responsibility
+- One component per file
+- Co-locate tests with components
+- Export named exports (not default exports preferred)
+- Keep components under 70 lines (enforced by ESLint)
+- Max 3 function parameters (enforced by ESLint)
 
-### Data Layer
+### State Management
 
-- **WatermelonDB** for offline-first local storage
-- **Supabase** for backend services and real-time sync
-- **React Query** for server state management and caching
-- **Zustand** for client-side state management
+- **Local state**: React useState/useReducer
+- **Server state**: React Query (via react-query-kit)
+- **Global state**: Zustand stores
+- **Persistent state**: MMKV (via `src/lib/storage`)
+- **Database**: WatermelonDB models in `src/lib/watermelon-models/`
 
-### Navigation Structure
+### Styling
 
-- File-based routing with Expo Router
-- Typed routes enabled for type safety
-- Layout components for shared UI structure
+- Use NativeWind (Tailwind) classes
+- Custom colors defined in `src/components/ui/colors`
+- No inline styles (warned by ESLint)
+- Design tokens enforced by custom ESLint plugin
 
-### Environment Configuration
+### Testing
 
-- Environment variables managed through `env.js` with Zod validation
-- Separate client and build-time variable schemas
-- Environment-specific `.env` files for different deployment targets
+- Jest with jest-expo preset
+- React Native Testing Library
+- Tests co-located with source files
+- Mocks in `__mocks__/` directory
+- Coverage reports in `coverage/`
 
-## Code Quality Standards
+### Accessibility
 
-- **TypeScript strict mode** enabled
-- **ESLint** with comprehensive rule set including:
-  - Import sorting and unused import removal
-  - Tailwind class ordering
-  - Maximum function length (70 lines) and parameters (3)
-  - Filename case enforcement
-- **Prettier** for code formatting
-- **Husky** git hooks for pre-commit quality checks
+- All interactive elements need accessibility labels
+- Enforced by react-native-a11y ESLint plugin
+- 44pt minimum touch targets
+- Proper ARIA roles and states
 
-## Testing Structure
+### Internationalization
 
-- **Unit tests** co-located with source files (`*.test.ts`)
-- **Mocks** in `__mocks__/` directory for external dependencies
-- **E2E tests** in `.maestro/` directory
-- **Test utilities** in `src/lib/test-utils.tsx`
-
-## Asset Organization
-
-- **Icons and images** in `assets/` directory
-- **Fonts** in `assets/fonts/`
-- **App icons** with environment-specific badges for non-production builds
+- No hardcoded strings in UI code
+- Use `useTranslation()` hook from react-i18next
+- Keys validated by custom ESLint plugin
+- Syntax validation via `pnpm i18n:validate`

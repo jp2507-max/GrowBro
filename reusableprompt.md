@@ -1,12 +1,12 @@
-TASK_ID: {13} with subtasks (make sure task with sub task is fully implemented)
+TASK_ID: {10} with subtasks (make sure task with sub task is fully implemented)
 AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the plan
 
 CONTEXT
 
-- Feature: 11. notifications-deep-links
-- Task index: .kiro\specs\11. notifications-deep-links\tasks.md
-- Design spec: .kiro\specs\11. notifications-deep-links\design.md
-- Requirements spec: .kiro\specs\11. notifications-deep-links\requirements.md
+- Feature: 12. strains-browser
+- Task index: .kiro\specs\12. strains-browser\tasks.md
+- Design spec: .kiro\specs\12. strains-browser\design.md
+- Requirements spec: .kiro\specs\12. strains-browser\requirements.md
 
 CONTRACT (outputs)
 

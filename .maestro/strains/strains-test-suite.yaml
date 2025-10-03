@@ -1,0 +1,28 @@
+appId: ${APP_ID}
+---
+# Strains Feature E2E Test Suite
+# Runs all strains-related E2E tests in sequence
+
+# Test 1: Browse Strains
+- runFlow: browse-strains.yaml
+
+# Test 2: Search Functionality
+- runFlow: search-strains.yaml
+
+# Test 3: Filter Functionality
+- runFlow: filter-strains.yaml
+
+# Test 4: Favorite Workflow
+- runFlow: favorite-workflow.yaml
+
+# Test 5: Strain Detail Page
+- runFlow: strain-detail.yaml
+
+# Test 6: Age Gate Compliance
+- runFlow: age-gate.yaml
+
+# Test 7: Infinite Scroll Performance
+- runFlow: infinite-scroll-performance.yaml
+# Test 8: Offline Mode (requires special setup)
+# Note: Offline mode test requires adb commands and may need to run separately
+# - runFlow: offline-mode.yaml

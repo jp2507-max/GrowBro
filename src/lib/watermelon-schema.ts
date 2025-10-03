@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const schema = appSchema({
-  version: 8,
+  version: 9,
   tables: [
     tableSchema({
       name: 'series',
@@ -318,6 +318,32 @@ export const schema = appSchema({
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
         { name: 'deleted_at', type: 'number', isOptional: true },
+      ],
+    }),
+    // Strains Browser Tables
+    tableSchema({
+      name: 'favorites',
+      columns: [
+        { name: 'strain_id', type: 'string', isIndexed: true },
+        { name: 'user_id', type: 'string', isOptional: true, isIndexed: true },
+        { name: 'added_at', type: 'number', isIndexed: true },
+        { name: 'snapshot', type: 'string' },
+        { name: 'synced_at', type: 'number', isOptional: true },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'deleted_at', type: 'number', isOptional: true },
+      ],
+    }),
+    tableSchema({
+      name: 'cached_strains',
+      columns: [
+        { name: 'query_hash', type: 'string', isIndexed: true },
+        { name: 'page_number', type: 'number', isIndexed: true },
+        { name: 'strains_data', type: 'string' },
+        { name: 'cached_at', type: 'number' },
+        { name: 'expires_at', type: 'number', isIndexed: true },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
       ],
     }),
   ],

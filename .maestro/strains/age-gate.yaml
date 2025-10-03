@@ -1,0 +1,75 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'user@test.com'
+  PASSWORD: 'password'
+---
+# E2E Test: Age Gate Compliance
+# Tests age verification flow for strains feature
+
+- launchApp
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Clear age gate verification (if stored)
+- runScript: |
+    adb shell pm clear ${APP_ID}
+
+# Relaunch app
+- launchApp
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Navigate to Strains tab
+- tapOn:
+    id: 'strains-tab'
+
+# Verify age gate modal appears
+- assertVisible:
+    id: 'age-gate-modal'
+
+# Verify age gate content
+- assertVisible: '18+'
+- assertVisible:
+    id: 'age-gate-confirm-button'
+- assertVisible:
+    id: 'age-gate-decline-button'
+
+# Test decline button
+- tapOn:
+    id: 'age-gate-decline-button'
+
+# Verify strains content not accessible
+- assertNotVisible:
+    id: 'strains-list'
+
+# Navigate away and back
+- tapOn:
+    id: 'home-tab'
+- tapOn:
+    id: 'strains-tab'
+
+# Age gate should appear again
+- assertVisible:
+    id: 'age-gate-modal'
+
+# Confirm age verification
+- tapOn:
+    id: 'age-gate-confirm-button'
+
+# Verify strains content now accessible
+- assertVisible:
+    id: 'strains-list'
+
+# Navigate away and back
+- tapOn:
+    id: 'home-tab'
+- tapOn:
+    id: 'strains-tab'
+
+# Age gate should NOT appear again (stored for 12 months)
+- assertNotVisible:
+    id: 'age-gate-modal'
+- assertVisible:
+    id: 'strains-list'
+
+# Verify compliance banner
+- assertVisible:
+    id: 'compliance-banner'

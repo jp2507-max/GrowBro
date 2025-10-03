@@ -16,6 +16,18 @@ declare module '@env' {
 
     // API
     API_URL: string;
+    EXPO_PUBLIC_API_BASE_URL?: string;
+
+    // Strains API
+    STRAINS_API_URL: string;
+    STRAINS_API_KEY: string;
+    STRAINS_API_HOST: string;
+    STRAINS_USE_PROXY?: string;
+
+    // Feature Flags
+    FEATURE_STRAINS_ENABLED?: boolean;
+    FEATURE_STRAINS_FAVORITES_SYNC?: boolean;
+    FEATURE_STRAINS_OFFLINE_CACHE?: boolean;
 
     // Misc
     VAR_NUMBER: number;
@@ -24,6 +36,8 @@ declare module '@env' {
     // Supabase
     SUPABASE_URL: string;
     SUPABASE_ANON_KEY: string;
+    EXPO_PUBLIC_SUPABASE_URL?: string;
+    EXPO_PUBLIC_SUPABASE_ANON_KEY?: string;
 
     // Optional public URL for self-serve deletion portal
     ACCOUNT_DELETION_URL?: string;

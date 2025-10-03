@@ -1,0 +1,87 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'user@test.com'
+  PASSWORD: 'password'
+---
+# E2E Test: Filter Strains
+# Tests filter modal functionality and state management
+
+- launchApp
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Navigate to Strains tab
+- tapOn:
+    id: 'strains-tab'
+- assertVisible: 'Strains'
+
+# Open filter modal
+- tapOn:
+    id: 'filter-button'
+
+# Verify filter modal opens
+- assertVisible:
+    id: 'filter-modal'
+
+# Select race filter (Indica)
+- tapOn:
+    id: 'filter-race-indica'
+
+# Select difficulty filter (Beginner)
+- tapOn:
+    id: 'filter-difficulty-beginner'
+
+# Scroll to effects section
+- scroll:
+    direction: DOWN
+
+# Select effects
+- tapOn:
+    id: 'filter-effect-relaxed'
+- tapOn:
+    id: 'filter-effect-happy'
+
+# Scroll to flavors section
+- scroll:
+    direction: DOWN
+
+# Select flavors
+- tapOn:
+    id: 'filter-flavor-earthy'
+- tapOn:
+    id: 'filter-flavor-pine'
+
+# Apply filters
+- tapOn:
+    id: 'filter-apply-button'
+
+# Wait for filtered results
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Verify filter chips are visible
+- assertVisible:
+    idMatches: 'filter-chip-.*'
+
+# Verify filtered results
+- assertVisible:
+    id: 'strains-list'
+
+# Open filter modal again
+- tapOn:
+    id: 'filter-button'
+
+# Clear all filters
+- tapOn:
+    id: 'filter-clear-button'
+
+# Verify filters cleared
+- assertVisible:
+    id: 'filter-apply-button'
+
+# Close modal
+- tapOn:
+    id: 'filter-apply-button'
+
+# Verify full list returns
+- assertVisible:
+    id: 'strains-list'

@@ -103,9 +103,6 @@ export const SharedHeader = memo(function SharedHeader({
         },
         animatedContainerStyle,
       ]}
-      layout={Animated.LinearTransition.springified().reduceMotion(
-        Animated.ReduceMotion.System
-      )}
     >
       <HeaderTopRow rightComponent={rightComponent} title={title} />
       <HeaderPerTabContent
@@ -148,7 +145,11 @@ function useSharedHeaderAnimation({
     });
   }, [height, insetsTop, routeKey]);
 
-  Animated.useDerivedValue(() => {
+  // Update header position based on scroll
+  // Some Reanimated versions export hooks as named exports; others
+  // attach them on the default Animated object. Try both safely.
+  const useDerived = (Animated as any).useDerivedValue ?? (() => {});
+  useDerived(() => {
     if (!isCollapsible) {
       translateY.value = 0;
       return;
@@ -158,11 +159,10 @@ function useSharedHeaderAnimation({
     const maxOffset = currentHeight + HEADER_TOP_SPACING + insetsTop;
     const anchor = Math.max(offsetYAnchorOnBeginDrag.value, 0);
     const delta = Math.max(listOffsetY.value - anchor, 0);
-    if (scrollDirection.value === 'to-bottom') {
-      translateY.value = -Math.min(delta, maxOffset);
-      return;
-    }
-    translateY.value = -Math.max(maxOffset - listOffsetY.value, 0);
+    translateY.value =
+      scrollDirection.value === 'to-bottom'
+        ? -Math.min(delta, maxOffset)
+        : -Math.max(maxOffset - listOffsetY.value, 0);
   }, [
     insetsTop,
     isCollapsible,
@@ -170,7 +170,6 @@ function useSharedHeaderAnimation({
     routeKey,
     scrollDirection,
     listOffsetY,
-    translateY,
   ]);
 
   const animatedContainerStyle = useAnimatedStyle(() => ({
@@ -254,12 +253,9 @@ function AnimatedPerTabContent({
   return (
     <Animated.View
       key={routeKey}
-      entering={FadeIn.duration(180).reduceMotion(Animated.ReduceMotion.System)}
-      exiting={FadeOut.duration(140).reduceMotion(Animated.ReduceMotion.System)}
-      layout={Animated.LinearTransition.springified().reduceMotion(
-        Animated.ReduceMotion.System
-      )}
-      className="gap-1"
+      entering={FadeIn.duration(180)}
+      exiting={FadeOut.duration(140)}
+      className="py-1"
     >
       <Text
         className="text-base font-semibold text-neutral-900 dark:text-neutral-100"

@@ -6,6 +6,7 @@ import { createSelectors } from '@/lib/utils';
 const AGE_GATE_STATE_KEY = 'compliance.ageGate.state';
 const AGE_GATE_AUDIT_KEY = 'compliance.ageGate.audit';
 const MAX_AUDIT_EVENTS = 100;
+const RE_VERIFICATION_MONTHS = 12;
 
 export type AgeGateMethod = 'self-certification' | 'document';
 export type AgeGateStatus = 'unknown' | 'verified' | 'blocked';
@@ -31,6 +32,7 @@ export type AgeGateVerifyResult =
 type PersistedAgeGateState = {
   verifiedAt: string | null;
   method: AgeGateMethod | null;
+  expiresAt: string | null;
 };
 
 export type AgeGateStoreState = {
@@ -39,17 +41,19 @@ export type AgeGateStoreState = {
   method: AgeGateMethod | null;
   sessionId: string | null;
   sessionStartedAt: string | null;
+  expiresAt: string | null;
   hydrate: () => void;
   verify: (input: AgeGateVerifyInput) => AgeGateVerifyResult;
   reset: () => void;
   startSession: () => void;
+  checkExpiration: () => boolean;
 };
 
 function loadPersistedState(): PersistedAgeGateState {
   try {
     const raw = storage.getString(AGE_GATE_STATE_KEY);
     if (!raw) {
-      return { verifiedAt: null, method: null };
+      return { verifiedAt: null, method: null, expiresAt: null };
     }
     const parsed = JSON.parse(raw) as PersistedAgeGateState;
     return {
@@ -59,9 +63,11 @@ function loadPersistedState(): PersistedAgeGateState {
         typeof parsed?.method === 'string'
           ? (parsed.method as AgeGateMethod)
           : null,
+      expiresAt:
+        typeof parsed?.expiresAt === 'string' ? parsed.expiresAt : null,
     };
   } catch {
-    return { verifiedAt: null, method: null };
+    return { verifiedAt: null, method: null, expiresAt: null };
   }
 }
 
@@ -136,17 +142,52 @@ function createSessionId(): string {
   return `ag-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function calculateExpirationDate(fromDate: Date): string {
+  const expiration = new Date(fromDate);
+  expiration.setMonth(expiration.getMonth() + RE_VERIFICATION_MONTHS);
+  return expiration.toISOString();
+}
+
+function isExpired(expiresAt: string | null): boolean {
+  // Treat missing/null expiresAt as not expired so legacy records don't force re-verification
+  if (!expiresAt) return false;
+  const now = new Date();
+  const expiration = new Date(expiresAt);
+  return now >= expiration;
+}
+
 function createHydrateFunction(set: any): () => void {
   return () => {
     const persisted = loadPersistedState();
     if (persisted.verifiedAt) {
-      set({
-        status: 'verified',
-        verifiedAt: persisted.verifiedAt,
-        method: persisted.method ?? 'self-certification',
-      });
+      // Check if verification has expired (12 months)
+      if (persisted.expiresAt && isExpired(persisted.expiresAt)) {
+        appendAudit({
+          timestamp: new Date().toISOString(),
+          type: 'verify-denied',
+          detail: 're-verification-required',
+        });
+        set({
+          status: 'blocked',
+          verifiedAt: null,
+          method: null,
+          expiresAt: null,
+        });
+      } else {
+        set({
+          status: 'verified',
+          verifiedAt: persisted.verifiedAt,
+          method: persisted.method ?? 'self-certification',
+          expiresAt: persisted.expiresAt,
+        });
+      }
     } else {
-      set({ status: 'blocked', verifiedAt: null, method: null });
+      set({
+        status: 'blocked',
+        verifiedAt: null,
+        method: null,
+        expiresAt: null,
+      });
     }
   };
 }
@@ -164,7 +205,12 @@ function createVerifyFunction(
         type: 'verify-denied',
         detail: 'invalid-input',
       });
-      set({ status: 'blocked', sessionId: null, sessionStartedAt: null });
+      set({
+        status: 'blocked',
+        sessionId: null,
+        sessionStartedAt: null,
+        expiresAt: null,
+      });
       return { ok: false, reason: 'invalid-input' };
     }
 
@@ -175,21 +221,29 @@ function createVerifyFunction(
         type: 'verify-denied',
         detail: `age:${age}`,
       });
-      set({ status: 'blocked', sessionId: null, sessionStartedAt: null });
+      set({
+        status: 'blocked',
+        sessionId: null,
+        sessionStartedAt: null,
+        expiresAt: null,
+      });
       return { ok: false, reason: 'underage' };
     }
 
     const method = input.method ?? 'self-certification';
     const sessionId = createSessionId();
     const sessionStartedAt = timestamp;
+    const expiresAt = calculateExpirationDate(now);
+
     set({
       status: 'verified',
       verifiedAt: timestamp,
       method,
       sessionId,
       sessionStartedAt,
+      expiresAt,
     });
-    savePersistedState({ verifiedAt: timestamp, method });
+    savePersistedState({ verifiedAt: timestamp, method, expiresAt });
     appendAudit({ timestamp, type: 'verify-success', detail: method });
     return { ok: true };
   };
@@ -205,7 +259,34 @@ function createResetFunction(set: any): () => void {
       method: null,
       sessionId: null,
       sessionStartedAt: null,
+      expiresAt: null,
     });
+  };
+}
+
+function createCheckExpirationFunction(get: any, set: any): () => boolean {
+  return () => {
+    const state = get();
+    if (state.status !== 'verified') return false;
+
+    if (isExpired(state.expiresAt)) {
+      appendAudit({
+        timestamp: new Date().toISOString(),
+        type: 'verify-denied',
+        detail: 're-verification-required',
+      });
+      set({
+        status: 'blocked',
+        verifiedAt: null,
+        method: null,
+        sessionId: null,
+        sessionStartedAt: null,
+        expiresAt: null,
+      });
+      savePersistedState({ verifiedAt: null, method: null, expiresAt: null });
+      return true;
+    }
+    return false;
   };
 }
 
@@ -230,10 +311,12 @@ function createAgeGateStore(set: any, get: any): AgeGateStoreState {
     method: null,
     sessionId: null,
     sessionStartedAt: null,
+    expiresAt: null,
     hydrate: createHydrateFunction(set),
     verify: createVerifyFunction(set),
     reset: createResetFunction(set),
     startSession: createStartSessionFunction(set, get),
+    checkExpiration: createCheckExpirationFunction(get, set),
   };
 }
 
@@ -273,4 +356,8 @@ export function getAgeGateAuditLog(limit = 50): AgeGateAuditEvent[] {
 
 export function getAgeGateState(): AgeGateStoreState {
   return ageGateStore.getState();
+}
+
+export function checkAgeGateExpiration(): boolean {
+  return ageGateStore.getState().checkExpiration();
 }

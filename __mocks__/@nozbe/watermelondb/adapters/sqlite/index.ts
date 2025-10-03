@@ -20,6 +20,10 @@ class SQLiteAdapterMock {
   batch(_operations: any[]): Promise<void> {
     return Promise.resolve();
   }
+
+  unsafeExecuteSql(_sql: string): Promise<void> {
+    return Promise.resolve();
+  }
 }
 
 export default SQLiteAdapterMock;

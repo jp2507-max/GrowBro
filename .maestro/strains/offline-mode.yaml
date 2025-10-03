@@ -1,0 +1,121 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'user@test.com'
+  PASSWORD: 'password'
+---
+# E2E Test: Offline Mode
+# Tests offline functionality with cached data
+
+- launchApp
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Navigate to Strains tab
+- tapOn:
+    id: 'strains-tab'
+- assertVisible: 'Strains'
+
+# Browse strains to cache data
+- scroll:
+    direction: DOWN
+- scroll:
+    direction: DOWN
+
+# Wait for data to load and cache
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Open a strain detail to cache it
+- tapOn:
+    id: 'strain-card-0'
+- waitForAnimationToEnd
+- back
+
+# Add a favorite while online
+- tapOn:
+    id: 'strain-card-1'
+- waitForAnimationToEnd
+- tapOn:
+    id: 'favorite-button'
+- back
+
+# Enable airplane mode
+- runScript: |
+    adb shell cmd connectivity airplane-mode enable
+
+# Wait for network state to update
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# Verify offline indicator appears
+- assertVisible:
+    id: 'strains-offline-banner'
+
+# Verify cached strains still visible
+- assertVisible:
+    id: 'strains-list'
+- assertVisible:
+    id: 'strain-card-*'
+
+# Test scrolling through cached pages
+- scroll:
+    direction: DOWN
+- assertVisible:
+    id: 'strains-list'
+
+# Open cached strain detail
+- tapOn:
+    id: 'strain-card-0'
+- waitForAnimationToEnd
+
+# Verify detail loads from cache
+- assertVisible:
+    id: 'strain-detail'
+
+# Go back
+- back
+
+# Navigate to favorites (should work offline)
+- tapOn:
+    id: 'favorites-tab'
+
+# Verify favorites accessible offline
+- assertVisible:
+    id: 'favorites-list'
+- assertVisible:
+    id: 'strain-card-*'
+
+# Test removing favorite offline
+- tapOn:
+    id: 'strain-card-0'
+- waitForAnimationToEnd
+- tapOn:
+    id: 'favorite-button'
+- back
+
+# Verify favorite removed locally
+- assertVisible:
+    id: 'favorites-list'
+
+# Disable airplane mode
+- runScript: |
+    adb shell cmd connectivity airplane-mode disable
+
+# Wait for network to reconnect
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Verify offline banner disappears
+- assertNotVisible:
+    id: 'strains-offline-banner'
+
+# Verify sync happens in background
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Navigate back to strains
+- tapOn:
+    id: 'strains-tab'
+
+# Verify fresh data loads
+- assertVisible:
+    id: 'strains-list'

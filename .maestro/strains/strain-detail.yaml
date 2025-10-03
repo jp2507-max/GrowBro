@@ -1,0 +1,90 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'user@test.com'
+  PASSWORD: 'password'
+---
+# E2E Test: Strain Detail Page
+# Tests comprehensive strain information display
+
+- launchApp
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Navigate to Strains tab
+- tapOn:
+    id: 'strains-tab'
+- assertVisible: 'Strains'
+
+# Tap on first strain card
+- tapOn:
+    id: 'strain-card-0'
+
+# Wait for detail page to load
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Verify detail page components
+- assertVisible:
+    id: 'strain-detail'
+
+# Verify strain banner with at-a-glance info
+- assertVisible:
+    id: 'strain-banner'
+
+# Verify quick facts section
+- assertVisible:
+    id: 'quick-facts'
+
+# Scroll to see more content
+- scroll:
+    direction: DOWN
+
+# Verify terpene section (if available)
+- assertVisible:
+    id: 'terpene-section'
+
+# Scroll to growing info
+- scroll:
+    direction: DOWN
+
+# Verify growing information
+- assertVisible:
+    id: 'growing-info'
+
+# Scroll to playbook CTA
+- scroll:
+    direction: DOWN
+
+# Verify playbook CTA button
+- assertVisible:
+    id: 'playbook-cta-button'
+
+# Test expandable sections
+- tapOn:
+    id: 'expandable-description'
+
+# Verify description expanded
+- assertVisible:
+    id: 'expandable-description-content'
+
+# Collapse description
+- tapOn:
+    id: 'expandable-description'
+
+# Test favorite button
+- tapOn:
+    id: 'favorite-button'
+
+# Verify haptic feedback and state change
+- assertVisible:
+    id: 'favorite-button'
+
+# Test share functionality (if available)
+- tapOn:
+    id: 'share-button'
+
+# Go back to list
+- back
+
+# Verify returned to strains list
+- assertVisible:
+    id: 'strains-list'

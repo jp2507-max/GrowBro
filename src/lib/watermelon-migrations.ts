@@ -790,11 +790,100 @@ export const migrations = schemaMigrations({
           ],
         }),
         unsafeExecuteSql(
-          'CREATE INDEX notifications_archived_at ON notifications (archived_at)'
+          'CREATE INDEX notifications_archived_at ON notifications (archived_at);'
         ),
         unsafeExecuteSql(
-          'CREATE INDEX notifications_deleted_at ON notifications (deleted_at)'
+          'CREATE INDEX notifications_deleted_at ON notifications (deleted_at);'
         ),
+      ],
+    },
+    {
+      toVersion: 9,
+      steps: [
+        {
+          type: 'create_table',
+          schema: {
+            name: 'favorites',
+            columns: {
+              strain_id: {
+                name: 'strain_id',
+                type: 'string',
+                isIndexed: true,
+              },
+              user_id: {
+                name: 'user_id',
+                type: 'string',
+                isOptional: true,
+                isIndexed: true,
+              },
+              added_at: { name: 'added_at', type: 'number', isIndexed: true },
+              snapshot: { name: 'snapshot', type: 'string' },
+              synced_at: {
+                name: 'synced_at',
+                type: 'number',
+                isOptional: true,
+              },
+              created_at: { name: 'created_at', type: 'number' },
+              updated_at: { name: 'updated_at', type: 'number' },
+              deleted_at: {
+                name: 'deleted_at',
+                type: 'number',
+                isOptional: true,
+              },
+            },
+            columnArray: [
+              { name: 'strain_id', type: 'string', isIndexed: true },
+              {
+                name: 'user_id',
+                type: 'string',
+                isOptional: true,
+                isIndexed: true,
+              },
+              { name: 'added_at', type: 'number', isIndexed: true },
+              { name: 'snapshot', type: 'string' },
+              { name: 'synced_at', type: 'number', isOptional: true },
+              { name: 'created_at', type: 'number' },
+              { name: 'updated_at', type: 'number' },
+              { name: 'deleted_at', type: 'number', isOptional: true },
+            ],
+          },
+        },
+        {
+          type: 'create_table',
+          schema: {
+            name: 'cached_strains',
+            columns: {
+              query_hash: {
+                name: 'query_hash',
+                type: 'string',
+                isIndexed: true,
+              },
+              page_number: {
+                name: 'page_number',
+                type: 'number',
+                isIndexed: true,
+              },
+              strains_data: { name: 'strains_data', type: 'string' },
+              cached_at: { name: 'cached_at', type: 'number' },
+              expires_at: {
+                name: 'expires_at',
+                type: 'number',
+                isIndexed: true,
+              },
+              created_at: { name: 'created_at', type: 'number' },
+              updated_at: { name: 'updated_at', type: 'number' },
+            },
+            columnArray: [
+              { name: 'query_hash', type: 'string', isIndexed: true },
+              { name: 'page_number', type: 'number', isIndexed: true },
+              { name: 'strains_data', type: 'string' },
+              { name: 'cached_at', type: 'number' },
+              { name: 'expires_at', type: 'number', isIndexed: true },
+              { name: 'created_at', type: 'number' },
+              { name: 'updated_at', type: 'number' },
+            ],
+          },
+        },
       ],
     },
   ],

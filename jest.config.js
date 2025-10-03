@@ -2,6 +2,9 @@ module.exports = {
   preset: 'jest-expo',
   setupFilesAfterEnv: ['<rootDir>/jest-setup.ts'],
   testMatch: ['**/?(*.)+(spec|test).ts?(x)'],
+  fakeTimers: {
+    timers: 'modern',
+  },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!**/coverage/**',

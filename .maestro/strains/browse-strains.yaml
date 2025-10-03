@@ -1,0 +1,52 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'user@test.com'
+  PASSWORD: 'password'
+---
+# E2E Test: Browse Strains List
+# Tests basic browsing functionality with infinite scroll
+
+- launchApp
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Navigate to Strains tab
+- tapOn:
+    id: 'strains-tab'
+- assertVisible: 'Strains'
+
+# Verify strains list loads
+- assertVisible:
+    id: 'strains-list'
+
+# Verify strain cards are visible
+- assertVisible:
+    id: 'strain-card-*'
+
+# Test infinite scroll
+- scroll:
+    direction: DOWN
+- assertVisible:
+    id: 'strains-list'
+
+# Scroll to trigger next page load
+- scroll:
+    direction: DOWN
+- scroll:
+    direction: DOWN
+
+# Wait for loading footer
+- waitForAnimationToEnd
+
+# Verify more strains loaded
+- assertVisible:
+    id: 'strain-card-*'
+
+# Test scroll back up
+- scroll:
+    direction: UP
+- scroll:
+    direction: UP
+
+# Verify first strains still visible (cached)
+- assertVisible:
+    id: 'strains-list'

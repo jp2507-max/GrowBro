@@ -7,7 +7,8 @@ type ErrorContext = Record<string, unknown>;
  */
 const SENSITIVE_PATTERNS = {
   email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/gi,
-  phone: /(\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/g,
+  phone:
+    /\b(\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]*([0-9]{3})[-.\s]*([0-9]{4})\b/g,
   // Common address patterns - street numbers and names
   address:
     /\b\d+\s+[A-Za-z0-9\s,.-]+(?:Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Boulevard|Blvd|Court|Ct|Place|Pl|Way|Circle|Cir|Terrace|Ter)\b/gi,
@@ -15,6 +16,19 @@ const SENSITIVE_PATTERNS = {
   creditCard: /\b(?:\d{4}[-\s]?){3}\d{4}\b/g,
   // Social Security Numbers
   ssn: /\b\d{3}-?\d{2}-?\d{4}\b/g,
+  // API keys and tokens - various common patterns (with optional separators)
+  apiKey:
+    /\b(?:sk|pk|api_key|x-api-key|x-rapidapi-key|bearer|token)[-_]?\w*(?:[:=]\s*['"]?)?([a-zA-Z0-9_-]{20,})['"]?\b/gi,
+  // Bare API tokens with common prefixes (sk_live_*, sk_test_*, pk_live_*, etc.)
+  bareApiKey: /\b(?:sk|pk)_(?:live|test)_[a-zA-Z0-9_-]{20,}\b/gi,
+  // RapidAPI keys (typically 50+ character alphanumeric strings)
+  rapidApiKey: /\b[a-zA-Z0-9]{50,}\b/g,
+  // Authorization headers with tokens
+  authHeader:
+    /\b(?:authorization|auth):\s*(?:bearer|basic)\s+[a-zA-Z0-9_.-]{20,}/gi,
+  // Generic sensitive header values (long alphanumeric strings that could be keys)
+  sensitiveHeader:
+    /\b(?:x-rapidapi-key|x-rapidapi-host|x-api-key|api-key|apikey):\s*[a-zA-Z0-9_-]{20,}/gi,
 };
 
 /**
@@ -50,6 +64,28 @@ function scrubSensitiveData(text: string): string {
   // Replace SSNs
   scrubbedText = scrubbedText.replace(SENSITIVE_PATTERNS.ssn, '[SSN_REDACTED]');
 
+  // Replace API keys and tokens
+  scrubbedText = scrubbedText.replace(
+    SENSITIVE_PATTERNS.apiKey,
+    '[API_KEY_REDACTED]'
+  );
+  scrubbedText = scrubbedText.replace(
+    SENSITIVE_PATTERNS.bareApiKey,
+    '[API_KEY_REDACTED]'
+  );
+  scrubbedText = scrubbedText.replace(
+    SENSITIVE_PATTERNS.rapidApiKey,
+    '[RAPIDAPI_KEY_REDACTED]'
+  );
+  scrubbedText = scrubbedText.replace(
+    SENSITIVE_PATTERNS.authHeader,
+    '[AUTH_HEADER_REDACTED]'
+  );
+  scrubbedText = scrubbedText.replace(
+    SENSITIVE_PATTERNS.sensitiveHeader,
+    '[SENSITIVE_HEADER_REDACTED]'
+  );
+
   return scrubbedText;
 }
 
@@ -72,11 +108,7 @@ function scrubObjectData(
   return _scrubObjectData(obj, { currentDepth, visited, maxDepth });
 }
 
-function _scrubObjectData(
-  obj: any,
-  ctx: { currentDepth: number; visited: WeakSet<object>; maxDepth: number }
-): any {
-  const { currentDepth, visited, maxDepth } = ctx;
+function scrubPrimitives(obj: any, ctx: ScrubContext): any {
   if (typeof obj === 'string') return scrubSensitiveData(obj);
   if (
     obj === null ||
@@ -86,32 +118,38 @@ function _scrubObjectData(
     typeof obj === 'bigint' ||
     typeof obj === 'symbol' ||
     typeof obj === 'function'
-  )
+  ) {
     return obj;
-  if (currentDepth >= maxDepth) return '[MaxDepth]';
-  if (visited.has(obj)) return '[Circular]';
-  visited.add(obj);
+  }
+  if (ctx.currentDepth >= ctx.maxDepth) return '[MaxDepth]';
+  if (ctx.visited.has(obj)) return '[Circular]';
+  return null;
+}
 
+function scrubArrayAndBuiltins(obj: any, ctx: ScrubContext): any {
   if (Array.isArray(obj)) {
     return obj.map((item) =>
       _scrubObjectData(item, {
-        currentDepth: currentDepth + 1,
-        visited,
-        maxDepth,
+        currentDepth: ctx.currentDepth + 1,
+        visited: ctx.visited,
+        maxDepth: ctx.maxDepth,
       })
     );
   }
   if (obj instanceof Date) return obj.toISOString();
   if (obj instanceof RegExp) return obj.toString();
+  return null;
+}
 
+function scrubMapAndSet(obj: any, ctx: ScrubContext): any {
   if (obj instanceof Map) {
     const result: any = {};
     for (const [k, v] of obj.entries()) {
       try {
         result[String(k)] = _scrubObjectData(v, {
-          currentDepth: currentDepth + 1,
-          visited,
-          maxDepth,
+          currentDepth: ctx.currentDepth + 1,
+          visited: ctx.visited,
+          maxDepth: ctx.maxDepth,
         });
       } catch {
         result[String(k)] = '[Unserializable]';
@@ -122,19 +160,72 @@ function _scrubObjectData(
   if (obj instanceof Set) {
     return Array.from(obj).map((v) =>
       _scrubObjectData(v, {
-        currentDepth: currentDepth + 1,
-        visited,
-        maxDepth,
+        currentDepth: ctx.currentDepth + 1,
+        visited: ctx.visited,
+        maxDepth: ctx.maxDepth,
       })
     );
   }
+  return null;
+}
+
+function scrubAxiosObject(obj: any, ctx: ScrubContext): any {
+  if (
+    obj &&
+    typeof obj === 'object' &&
+    (obj.config || obj.request || obj.response)
+  ) {
+    const sanitized = { ...obj };
+    const nextCtx = {
+      currentDepth: ctx.currentDepth + 1,
+      visited: ctx.visited,
+      maxDepth: ctx.maxDepth,
+    };
+
+    if (sanitized.config && typeof sanitized.config === 'object') {
+      sanitized.config = _scrubObjectData(sanitized.config, nextCtx);
+    }
+    if (sanitized.request && typeof sanitized.request === 'object') {
+      sanitized.request = _scrubObjectData(sanitized.request, nextCtx);
+    }
+    if (sanitized.response && typeof sanitized.response === 'object') {
+      sanitized.response = _scrubObjectData(sanitized.response, nextCtx);
+    }
+    return sanitized;
+  }
+  return null;
+}
+
+type ScrubContext = {
+  currentDepth: number;
+  visited: WeakSet<object>;
+  maxDepth: number;
+};
+
+function _scrubObjectData(obj: any, ctx: ScrubContext): any {
+  const primitiveResult = scrubPrimitives(obj, ctx);
+  if (primitiveResult !== null || typeof primitiveResult !== 'object') {
+    return primitiveResult;
+  }
+
+  ctx.visited.add(obj);
+
+  const arrayResult = scrubArrayAndBuiltins(obj, ctx);
+  if (arrayResult !== null) return arrayResult;
+
+  const mapSetResult = scrubMapAndSet(obj, ctx);
+  if (mapSetResult !== null) return mapSetResult;
+
+  const axiosResult = scrubAxiosObject(obj, ctx);
+  if (axiosResult !== null) return axiosResult;
+
   if (obj && typeof obj === 'object') {
     const scrubbed: any = {};
     for (const [key, value] of Object.entries(obj)) {
       scrubbed[key] = _scrubObjectData(value, {
-        currentDepth: currentDepth + 1,
-        visited,
-        maxDepth,
+        currentDepth: ctx.currentDepth + 1,
+        visited: ctx.visited,
+        maxDepth: ctx.maxDepth,
       });
     }
     return scrubbed;

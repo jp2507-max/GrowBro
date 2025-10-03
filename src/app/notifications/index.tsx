@@ -7,17 +7,16 @@ import { NotificationRow } from '@/components/notifications/notification-row';
 import { NotificationSectionHeader } from '@/components/notifications/notification-section-header';
 import { ActivityIndicator, Pressable, Text, View } from '@/components/ui';
 import i18n, { translate, type TxKeyPath } from '@/lib/i18n';
+import {
+  buildNotificationListItems,
+  type NotificationListItem,
+} from '@/lib/notifications/notification-list-helpers';
 import type { NotificationSnapshot } from '@/lib/notifications/notification-storage';
 import {
   type NotificationCenterStatus,
   useNotificationCenter,
 } from '@/lib/notifications/use-notification-center';
 import { openLinkInBrowser } from '@/lib/utils';
-
-import {
-  buildNotificationListItems,
-  type NotificationListItem,
-} from './notification-list-helpers';
 
 const listContentStyles = StyleSheet.create({
   content: {
