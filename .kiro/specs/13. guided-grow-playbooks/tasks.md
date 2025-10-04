@@ -43,7 +43,7 @@
   - **DoD**: Notifications work on Pixel 6 (A14), Moto G-class, iPhone SE/13 in Doze/Low Power modes
   - _Requirements: 2.5, 2.6, 2.7, 2.8, 2.9_
 
-- [ ] 4. Create playbook service and template management
+- [x] 4. Create playbook service and template management
   - Build playbook selection with preview showing total weeks, per-phase durations, and task count
   - Enforce one-active-playbook-per-plant by default, require allowMultiple=true to bypass
   - Add idempotencyKey parameter to applyPlaybookToPlant() returning {appliedTaskCount, durationMs, jobId}
@@ -53,7 +53,7 @@
   - **DoD**: Preview accurate, constraints enforced, idempotency prevents double-apply, metrics emitted
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8_
 
-- [ ] 5. Implement task generation from playbook templates
+- [x] 5. Implement task generation from playbook templates
   - Create task generator converting playbook steps to concrete tasks with batched database inserts
   - Build RRULE pattern assignment using timezone-aware calculations from anchor dates
   - Store immutable origin_step_id for traceability and phase_index for faster progress queries
@@ -63,7 +63,7 @@
   - **DoD**: Tasks generated efficiently, RRULE patterns valid, notifications scheduled, metadata complete
   - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-- [ ] 6. Build schedule shifting and bulk operations
+- [x] 6. Build schedule shifting and bulk operations
   - Create shift preview showing affected task count, first/last new dates, and collision warnings
   - Default to shifting future, non-completed tasks with toggles for including completed/manually edited tasks
   - Implement atomic schedule shifting updating due dates, RRULEs, and notifications together
@@ -81,7 +81,7 @@
   - **DoD**: Preview accurate, atomic operations, undo works perfectly, manual edits protected
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9_
 
-- [ ] 7. Implement task customization and inheritance tracking
+- [x] 7. Implement task customization and inheritance tracking
   - Build task editing interface preserving origin linkage (playbook_id, origin_step_id) with edited badges
   - On first manual edit, set flags.manualEdited=true and exclude from bulk shift unless user opts in
   - Determine which field changes break inheritance from future bulk operations
@@ -92,7 +92,7 @@
   - **DoD**: Edits tracked properly, inheritance logic works, template saving functional, analytics emitted
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8_
 
-- [ ] 8. Create offline-first sync engine
+- [x] 8. Create offline-first sync engine
   - Implement WatermelonDB synchronize() as single entry point with pullChanges/pushChanges contract
   - Build Last-Write-Wins conflict resolution with user-visible diff on overwrite
   - Add offline change queuing with pending_push status tracking for all mutations

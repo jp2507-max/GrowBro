@@ -2,6 +2,7 @@ import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import Animated, {
   useAnimatedStyle,
+  useDerivedValue,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -25,19 +26,21 @@ export function ComposeBtn({
   const { listOffsetY, offsetYAnchorOnBeginDrag, scrollDirection } =
     useAnimatedScrollList();
 
-  const rContainerStyle = useAnimatedStyle(() => {
-    const shouldCollapse =
+  const isHiddenOrCollapsed = useDerivedValue(
+    () =>
       listOffsetY.value >= offsetYAnchorOnBeginDrag.value &&
-      scrollDirection.value === 'to-bottom';
+      scrollDirection.value === 'to-bottom'
+  );
 
+  const rContainerStyle = useAnimatedStyle(() => {
     return {
-      width: withTiming(shouldCollapse ? BTN_HEIGHT : BTN_WIDTH, {
+      width: withTiming(isHiddenOrCollapsed.value ? BTN_HEIGHT : BTN_WIDTH, {
         duration: DURATION,
       }),
       height: withTiming(BTN_HEIGHT, { duration: DURATION }),
       transform: [
         {
-          translateY: withTiming(shouldCollapse ? netHeight : 0, {
+          translateY: withTiming(isHiddenOrCollapsed.value ? netHeight : 0, {
             duration: DURATION,
           }),
         },
@@ -46,13 +49,9 @@ export function ComposeBtn({
   }, [netHeight]);
 
   const rTextStyle = useAnimatedStyle(() => {
-    const shouldHide =
-      listOffsetY.value >= offsetYAnchorOnBeginDrag.value &&
-      scrollDirection.value === 'to-bottom';
-
     return {
-      opacity: withTiming(shouldHide ? 0 : 1, {
-        duration: shouldHide ? DURATION / 2 : DURATION,
+      opacity: withTiming(isHiddenOrCollapsed.value ? 0 : 1, {
+        duration: isHiddenOrCollapsed.value ? DURATION / 2 : DURATION,
       }),
     };
   }, []);

@@ -1,4 +1,4 @@
-/* eslint-disable max-lines-per-function */
+/* eslint-disable max-lines-per-function, @typescript-eslint/no-require-imports */
 import { Platform } from 'react-native';
 
 import { AndroidExactAlarmCoordinator } from '@/lib/notifications/android-exact-alarm-service';
@@ -23,6 +23,8 @@ jest.mock('@/lib/sentry-utils', () => ({
 
 describe('PlaybookNotificationScheduler', () => {
   let scheduler: PlaybookNotificationScheduler;
+  const originalOS = Platform.OS;
+  const originalVersion = Platform.Version;
 
   const mockTask = {
     id: 'task-1',
@@ -36,6 +38,16 @@ describe('PlaybookNotificationScheduler', () => {
     jest.clearAllMocks();
     scheduler = new PlaybookNotificationScheduler();
 
+    // Restore Platform state to prevent test pollution
+    Object.defineProperty(Platform, 'OS', {
+      value: originalOS,
+      configurable: true,
+    });
+    Object.defineProperty(Platform, 'Version', {
+      value: originalVersion,
+      configurable: true,
+    });
+
     // Default mocks
     (PermissionManager.needsExactAlarms as jest.Mock).mockReturnValue(true);
     (
@@ -45,7 +57,10 @@ describe('PlaybookNotificationScheduler', () => {
 
   describe('ensureChannels', () => {
     it('should register Android channels on Android', async () => {
-      Platform.OS = 'android';
+      Object.defineProperty(Platform, 'OS', {
+        value: 'android',
+        configurable: true,
+      });
 
       const {
         registerAndroidChannels,
@@ -58,7 +73,10 @@ describe('PlaybookNotificationScheduler', () => {
     });
 
     it('should not register channels on iOS', async () => {
-      Platform.OS = 'ios';
+      Object.defineProperty(Platform, 'OS', {
+        value: 'ios',
+        configurable: true,
+      });
 
       const {
         registerAndroidChannels,
@@ -71,7 +89,10 @@ describe('PlaybookNotificationScheduler', () => {
     });
 
     it.skip('should throw error if channel registration fails', async () => {
-      Platform.OS = 'android';
+      Object.defineProperty(Platform, 'OS', {
+        value: 'android',
+        configurable: true,
+      });
 
       const {
         registerAndroidChannels,
@@ -86,7 +107,10 @@ describe('PlaybookNotificationScheduler', () => {
 
   describe('canUseExactAlarms', () => {
     it('should return false on iOS', async () => {
-      Platform.OS = 'ios';
+      Object.defineProperty(Platform, 'OS', {
+        value: 'ios',
+        configurable: true,
+      });
 
       const result = await scheduler.canUseExactAlarms();
 
@@ -94,8 +118,14 @@ describe('PlaybookNotificationScheduler', () => {
     });
 
     it('should return false on Android < 31', async () => {
-      Platform.OS = 'android';
-      (Platform as any).Version = 30;
+      Object.defineProperty(Platform, 'OS', {
+        value: 'android',
+        configurable: true,
+      });
+      Object.defineProperty(Platform, 'Version', {
+        value: 30,
+        configurable: true,
+      });
 
       const result = await scheduler.canUseExactAlarms();
 
@@ -103,34 +133,20 @@ describe('PlaybookNotificationScheduler', () => {
     });
 
     it('should check permission on Android 31+', async () => {
-      const originalOS = Platform.OS;
-      const originalVersion = Platform.Version;
+      Object.defineProperty(Platform, 'OS', {
+        value: 'android',
+        configurable: true,
+      });
+      Object.defineProperty(Platform, 'Version', {
+        value: 31,
+        configurable: true,
+      });
+      (PermissionManager.needsExactAlarms as jest.Mock).mockReturnValue(true);
 
-      try {
-        Object.defineProperty(Platform, 'OS', {
-          value: 'android',
-          writable: true,
-        });
-        Object.defineProperty(Platform, 'Version', {
-          value: 31,
-          writable: true,
-        });
-        (PermissionManager.needsExactAlarms as jest.Mock).mockReturnValue(true);
+      const result = await scheduler.canUseExactAlarms();
 
-        const result = await scheduler.canUseExactAlarms();
-
-        expect(result).toBe(true);
-        expect(PermissionManager.needsExactAlarms).toHaveBeenCalled();
-      } finally {
-        Object.defineProperty(Platform, 'OS', {
-          value: originalOS,
-          writable: true,
-        });
-        Object.defineProperty(Platform, 'Version', {
-          value: originalVersion,
-          writable: true,
-        });
-      }
+      expect(result).toBe(true);
+      expect(PermissionManager.needsExactAlarms).toHaveBeenCalled();
     });
   });
 
@@ -185,7 +201,10 @@ describe('PlaybookNotificationScheduler', () => {
 
   describe('scheduleTaskReminder - exact alarms', () => {
     it('should attempt exact alarm when useExactAlarm is true on Android', async () => {
-      Platform.OS = 'android';
+      Object.defineProperty(Platform, 'OS', {
+        value: 'android',
+        configurable: true,
+      });
       (
         AndroidExactAlarmCoordinator.ensurePermission as jest.Mock
       ).mockResolvedValue({ granted: true });
@@ -200,7 +219,10 @@ describe('PlaybookNotificationScheduler', () => {
     });
 
     it('should use fallback when exact alarm permission denied', async () => {
-      Platform.OS = 'android';
+      Object.defineProperty(Platform, 'OS', {
+        value: 'android',
+        configurable: true,
+      });
       (
         AndroidExactAlarmCoordinator.ensurePermission as jest.Mock
       ).mockResolvedValue({
@@ -218,7 +240,10 @@ describe('PlaybookNotificationScheduler', () => {
     });
 
     it('should schedule inexact when exact permission denied without fallback', async () => {
-      Platform.OS = 'android';
+      Object.defineProperty(Platform, 'OS', {
+        value: 'android',
+        configurable: true,
+      });
       (
         AndroidExactAlarmCoordinator.ensurePermission as jest.Mock
       ).mockResolvedValue({ granted: false });
@@ -303,6 +328,27 @@ describe('PlaybookNotificationScheduler', () => {
       ).toHaveBeenCalledTimes(2);
     });
 
+    it('should update task notificationId fields with new notification IDs', async () => {
+      const task1 = { ...mockTask, notificationId: 'old-notif-1' };
+      const task2 = {
+        ...mockTask,
+        id: 'task-2',
+        reminderAtUtc: new Date(Date.now() + 7200000).toISOString(),
+        notificationId: 'old-notif-2',
+      };
+      const tasks = [task1, task2];
+
+      // Mock different notification IDs for each schedule
+      (LocalNotificationService.scheduleExactNotification as jest.Mock)
+        .mockResolvedValueOnce('new-notif-1')
+        .mockResolvedValueOnce('new-notif-2');
+
+      await scheduler.rehydrateNotifications(tasks);
+
+      expect(task1.notificationId).toBe('new-notif-1');
+      expect(task2.notificationId).toBe('new-notif-2');
+    });
+
     it('should skip past reminders', async () => {
       const tasks = [
         mockTask,
@@ -335,25 +381,29 @@ describe('PlaybookNotificationScheduler', () => {
   });
 
   describe('rehydrateNotifications - error handling', () => {
-    it('should handle scheduling failures gracefully', async () => {
+    it('should handle scheduling failures gracefully and not update notificationId for failed tasks', async () => {
+      const task1 = { ...mockTask, notificationId: 'old-notif-1' };
+      const task2 = {
+        ...mockTask,
+        id: 'task-2',
+        reminderAtUtc: new Date(Date.now() + 7200000).toISOString(),
+        notificationId: 'old-notif-2',
+      };
+      const tasks = [task1, task2];
+
       (LocalNotificationService.scheduleExactNotification as jest.Mock)
         .mockRejectedValueOnce(new Error('Schedule failed'))
-        .mockResolvedValueOnce('notif-456');
-
-      const tasks = [
-        mockTask,
-        {
-          ...mockTask,
-          id: 'task-2',
-          reminderAtUtc: new Date(Date.now() + 7200000).toISOString(),
-        },
-      ];
+        .mockResolvedValueOnce('new-notif-2');
 
       await scheduler.rehydrateNotifications(tasks);
 
       expect(
         LocalNotificationService.scheduleExactNotification
       ).toHaveBeenCalledTimes(2);
+      // First task failed, so notificationId should remain unchanged
+      expect(task1.notificationId).toBe('old-notif-1');
+      // Second task succeeded, so notificationId should be updated
+      expect(task2.notificationId).toBe('new-notif-2');
     });
   });
 

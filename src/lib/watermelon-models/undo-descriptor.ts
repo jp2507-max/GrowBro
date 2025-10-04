@@ -1,41 +1,28 @@
 import { Model } from '@nozbe/watermelondb';
 import { date, field, json, text } from '@nozbe/watermelondb/decorators';
 
-import type { UndoDescriptor as UndoDescriptorType } from '@/types/playbook';
+export interface UndoDescriptorData {
+  operationType: string;
+  affectedTaskIds: string[];
+  priorFieldValues: Record<string, any>;
+  timestamp: number;
+  expiresAt: number;
+}
 
-/**
- * Undo Descriptor Model
- * Stores undo information for 30-second undo functionality
- */
 export class UndoDescriptorModel extends Model {
   static table = 'undo_descriptors';
 
-  @text('operation_type') operationType!: 'schedule_shift';
-
+  @text('operation_type') operationType!: string;
   @json('affected_task_ids', (raw) => raw as string[])
   affectedTaskIds!: string[];
-
-  @json('prior_field_values', (raw) => raw as Record<string, unknown>)
-  priorFieldValues!: Record<string, unknown>;
-
+  @json('prior_field_values', (raw) => raw as Record<string, any>)
+  priorFieldValues!: Record<string, any>;
   @field('timestamp') timestamp!: number;
   @field('expires_at') expiresAt!: number;
-
   @date('created_at') createdAt!: Date;
 
-  /**
-   * Check if this undo descriptor has expired
-   */
-  isExpired(): boolean {
-    return Date.now() > this.expiresAt;
-  }
-
-  /**
-   * Convert model to plain object
-   */
-  toUndoDescriptor(): UndoDescriptorType {
+  toData(): UndoDescriptorData {
     return {
-      id: this.id,
       operationType: this.operationType,
       affectedTaskIds: this.affectedTaskIds,
       priorFieldValues: this.priorFieldValues,

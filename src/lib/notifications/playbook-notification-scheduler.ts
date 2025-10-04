@@ -208,6 +208,13 @@ export class PlaybookNotificationScheduler {
       futureReminders.map((task) => this.scheduleTaskReminder(task))
     );
 
+    // Update task notification IDs with newly scheduled notification IDs
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        futureReminders[index].notificationId = result.value.notificationId;
+      }
+    });
+
     const failures = results.filter((r) => r.status === 'rejected');
     if (failures.length > 0) {
       captureCategorizedErrorSync(

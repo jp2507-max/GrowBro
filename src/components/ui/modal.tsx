@@ -35,7 +35,11 @@ import type {
 import { BottomSheetModal, useBottomSheet } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  ReduceMotion,
+} from 'react-native-reanimated';
 import { Path, Svg } from 'react-native-svg';
 
 import colors from '@/components/ui/colors';
@@ -118,21 +122,19 @@ export const Modal = React.forwardRef(
 const CustomBackdrop = ({ style }: BottomSheetBackdropProps) => {
   const { close } = useBottomSheet();
   return (
-    <View style={style}>
-      <Animated.View
-        entering={FadeIn.duration(50)}
-        exiting={FadeOut.duration(20)}
-        style={styles.backdrop}
-      >
-        <Pressable
-          onPress={() => close()}
-          style={StyleSheet.absoluteFill}
-          accessibilityRole="button"
-          accessibilityLabel="Close modal"
-          accessibilityHint="Tap to dismiss the modal"
-        />
-      </Animated.View>
-    </View>
+    <Animated.View
+      entering={FadeIn.duration(50).reduceMotion(ReduceMotion.System)}
+      exiting={FadeOut.duration(20).reduceMotion(ReduceMotion.System)}
+      style={[style, styles.backdrop]}
+    >
+      <Pressable
+        onPress={() => close()}
+        style={StyleSheet.absoluteFill}
+        accessibilityRole="button"
+        accessibilityLabel="Close modal"
+        accessibilityHint="Tap to dismiss the modal"
+      />
+    </Animated.View>
   );
 };
 

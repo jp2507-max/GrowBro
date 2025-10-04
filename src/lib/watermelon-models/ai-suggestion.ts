@@ -57,6 +57,7 @@ export class AISuggestionModel extends Model {
       reasoning: this.reasoning,
       affectedTasks: this.affectedTasks,
       confidence: this.confidence,
+      status: this.status,
       cooldownUntil: this.cooldownUntil,
       createdAt: this.createdAt.toISOString(),
       expiresAt: new Date(this.expiresAt).toISOString(),

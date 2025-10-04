@@ -152,6 +152,8 @@ describe('validateISODatetime', () => {
       '2025-01-01T00:00:00.000Z',
       '2025-12-31T23:59:59.999Z',
       '2025-06-15T12:30:45.123Z',
+      '2025-01-01', // Date-only ISO string
+      '2025-01-01T00:00:00', // Datetime without timezone
     ];
 
     validDatetimes.forEach((datetime) => {
@@ -161,12 +163,10 @@ describe('validateISODatetime', () => {
 
   test('rejects invalid ISO datetime strings', () => {
     const invalidDatetimes = [
-      '2025-01-01',
-      '2025-01-01T00:00:00',
       'invalid',
       '',
-      '2025-13-01T00:00:00.000Z',
-      '2025-01-32T00:00:00.000Z',
+      '2025-13-01T00:00:00.000Z', // Invalid month
+      '2025-01-32T00:00:00.000Z', // Invalid day
     ];
 
     invalidDatetimes.forEach((datetime) => {

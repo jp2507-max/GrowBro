@@ -79,9 +79,11 @@ const API_BASE =
   process.env.API_URL ??
   '';
 
-if (!API_BASE && __DEV__) {
-  // Only warn in development; expected for local dev without a backend
-  console.info('SYNC: API_BASE is empty; sync is disabled (expected in dev)');
+if (!API_BASE) {
+  // Log missing API_BASE - warn in production, info in development
+  const logMethod = __DEV__ ? console.info : console.warn;
+  const devMessage = __DEV__ ? ' (expected in dev)' : '';
+  logMethod(`SYNC: API_BASE is empty; sync is disabled${devMessage}`);
 }
 
 const REQUEST_TIMEOUT_MS = 30000; // 30 second timeout

@@ -5,6 +5,7 @@
  * for time strings and ISO datetimes.
  */
 
+import { DateTime } from 'luxon';
 import { z } from 'zod';
 
 /**
@@ -29,7 +30,7 @@ const playbookStepSchema = z.object({
   id: z.string().min(1),
   phase: z.enum(['seedling', 'veg', 'flower', 'harvest']),
   title: z.string().min(1).max(200),
-  descriptionIcu: z.string().optional(),
+  descriptionIcu: z.string(),
   relativeDay: z.number().int().min(0),
   rrule: z
     .string()
@@ -40,8 +41,7 @@ const playbookStepSchema = z.object({
     .optional(),
   defaultReminderLocal: z
     .string()
-    .regex(timeFormatRegex, 'Time must be in HH:mm format')
-    .optional(),
+    .regex(timeFormatRegex, 'Time must be in HH:mm format'),
   taskType: z.enum([
     'water',
     'feed',
@@ -79,14 +79,11 @@ export const playbookSchema = z.object({
     'photo_outdoor',
   ]),
   locale: z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/),
-  phaseOrder: z
-    .array(z.enum(['seedling', 'veg', 'flower', 'harvest']))
-    .min(1)
-    .optional(),
+  phaseOrder: z.array(z.enum(['seedling', 'veg', 'flower', 'harvest'])).min(1),
   steps: z.array(playbookStepSchema).min(1),
-  metadata: playbookMetadataSchema.optional(),
-  isTemplate: z.boolean().optional(),
-  isCommunity: z.boolean().optional(),
+  metadata: playbookMetadataSchema,
+  isTemplate: z.boolean(),
+  isCommunity: z.boolean(),
   authorHandle: z.string().max(100).optional(),
   license: z.string().max(50).optional(),
 });
@@ -142,12 +139,7 @@ export function validateTimeFormat(time: string): boolean {
  * Validate ISO datetime format
  */
 export function validateISODatetime(datetime: string): boolean {
-  try {
-    const date = new Date(datetime);
-    return !isNaN(date.getTime()) && date.toISOString() === datetime;
-  } catch {
-    return false;
-  }
+  return DateTime.fromISO(datetime, { setZone: true }).isValid;
 }
 
 /**

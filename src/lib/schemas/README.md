@@ -31,10 +31,10 @@ Each step in a playbook validates:
 - **id**: Unique identifier
 - **phase**: One of `seedling`, `veg`, `flower`, `harvest`
 - **title**: 1-200 characters
-- **descriptionIcu**: Optional ICU MessageFormat string for i18n
+- **descriptionIcu**: ICU MessageFormat string for i18n
 - **relativeDay**: Non-negative integer (day offset from phase start)
 - **rrule**: Optional RFC 5545 RRULE pattern (must start with `FREQ=`)
-- **defaultReminderLocal**: Optional time in `HH:mm` format
+- **defaultReminderLocal**: Time in `HH:mm` format
 - **taskType**: One of `water`, `feed`, `prune`, `train`, `monitor`, `note`, `custom`
 - **durationDays**: Optional positive integer for multi-day tasks
 - **dependencies**: Array of step IDs that must complete first

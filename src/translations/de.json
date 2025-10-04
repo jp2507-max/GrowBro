@@ -359,6 +359,31 @@
     "retry": "Erneut versuchen",
     "search_placeholder": "Pflanzen suchen…"
   },
+  "playbooks": {
+    "customNotes": "Eigene Notizen",
+    "customNotesHint": "Notizen beeinflussen keine Massenoperationen",
+    "customNotesPlaceholder": "Füge deine eigenen Notizen hinzu...",
+    "customizationLevel": "Anpassungsgrad",
+    "customizedTasks": "Angepasste Aufgaben",
+    "editTask": "Aufgabe bearbeiten",
+    "edited": "Bearbeitet",
+    "excludedFromBulkOperations": "Von Massenverschiebungen ausgeschlossen",
+    "excludedFromBulkShift": "Diese Aufgabe wurde angepasst und wird von Massenverschiebungen ausgeschlossen",
+    "manuallyEdited": "Manuell bearbeitet",
+    "saveAsTemplate": "Als Vorlage speichern",
+    "saveAsTemplateDescription": "Du hast {{percentage}}% der Aufgaben angepasst ({{customized}}/{{total}}). Speichere dies als Vorlage zum Wiederverwenden oder Teilen mit der Community.",
+    "shareWithCommunity": "Mit Community teilen",
+    "shareWithCommunityHint": "Diese Vorlage anderen Growern zur Verfügung stellen",
+    "tags": "Tags",
+    "tagsHint": "Tags mit Kommas trennen",
+    "tagsPlaceholder": "indoor, anfänger, auto...",
+    "taskDescription": "Beschreibung",
+    "taskDescriptionPlaceholder": "Aufgabenbeschreibung...",
+    "taskTitle": "Titel",
+    "taskTitlePlaceholder": "Aufgabentitel...",
+    "templateName": "Vorlagenname",
+    "templateNamePlaceholder": "Mein eigener Playbook"
+  },
   "privacy": {
     "analytics": {
       "body": "Hilf uns, die App mit Nutzungsanalysen zu verbessern.",

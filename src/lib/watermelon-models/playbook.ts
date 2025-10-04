@@ -20,14 +20,14 @@ export class PlaybookModel extends Model {
   @text('setup') setup!: PlaybookSetup;
   @text('locale') locale!: string;
 
-  @json('phase_order', (raw) => raw as GrowPhase[])
-  phaseOrder!: GrowPhase[];
+  @json('phase_order', (raw) => (raw ? (raw as GrowPhase[]) : undefined))
+  phaseOrder?: GrowPhase[];
 
   @json('steps', (raw) => raw as PlaybookStep[])
   steps!: PlaybookStep[];
 
-  @json('metadata', (raw) => raw as PlaybookMetadata)
-  metadata!: PlaybookMetadata;
+  @json('metadata', (raw) => (raw ? (raw as PlaybookMetadata) : undefined))
+  metadata?: PlaybookMetadata;
 
   @field('is_template') isTemplate!: boolean;
   @field('is_community') isCommunity!: boolean;
@@ -50,9 +50,9 @@ export class PlaybookModel extends Model {
       name: this.name,
       setup: this.setup,
       locale: this.locale,
-      phaseOrder: this.phaseOrder,
+      ...(this.phaseOrder && { phaseOrder: this.phaseOrder }),
       steps: this.steps,
-      metadata: this.metadata,
+      ...(this.metadata && { metadata: this.metadata }),
       isTemplate: this.isTemplate,
       isCommunity: this.isCommunity,
       authorHandle: this.authorHandle,

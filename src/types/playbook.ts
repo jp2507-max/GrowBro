@@ -136,18 +136,17 @@ export type PlaybookApplicationResult = {
  */
 export type ScheduleShiftPreview = {
   shiftId: string;
+  plantId: string;
   daysDelta: number;
   affectedTaskCount: number;
-  firstNewDate: string;
-  lastNewDate: string;
-  conflicts: {
-    taskId: string;
-    taskTitle: string;
-    reason: string;
-  }[];
-  manuallyEditedTasks: {
-    taskId: string;
-    taskTitle: string;
+  firstNewDate: string | null;
+  lastNewDate: string | null;
+  collisionWarnings: string[];
+  manuallyEditedCount: number;
+  phaseBreakdown: {
+    phaseIndex: number;
+    taskCount: number;
+    netDelta: number;
   }[];
 };
 
@@ -221,6 +220,7 @@ export type AISuggestion = {
     reason: string;
   }[];
   confidence: number;
+  status: 'pending' | 'accepted' | 'declined';
   cooldownUntil?: number;
   createdAt: string;
   expiresAt: string;

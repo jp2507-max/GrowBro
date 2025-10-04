@@ -359,6 +359,31 @@
     "retry": "Retry",
     "search_placeholder": "Search plants…"
   },
+  "playbooks": {
+    "customNotes": "Custom Notes",
+    "customNotesHint": "Notes won't affect bulk operations",
+    "customNotesPlaceholder": "Add your own notes...",
+    "customizationLevel": "Customization Level",
+    "customizedTasks": "Customized Tasks",
+    "editTask": "Edit Task",
+    "edited": "Edited",
+    "excludedFromBulkOperations": "Excluded from bulk schedule shifts",
+    "excludedFromBulkShift": "This task has been customized and will be excluded from bulk schedule shifts",
+    "manuallyEdited": "Manually Edited",
+    "saveAsTemplate": "Save as Template",
+    "saveAsTemplateDescription": "You've customized {{percentage}}% of tasks ({{customized}}/{{total}}). Save this as a template to reuse or share with the community.",
+    "shareWithCommunity": "Share with Community",
+    "shareWithCommunityHint": "Make this template available to other growers",
+    "tags": "Tags",
+    "tagsHint": "Separate tags with commas",
+    "tagsPlaceholder": "indoor, beginner, auto...",
+    "taskDescription": "Description",
+    "taskDescriptionPlaceholder": "Task description...",
+    "taskTitle": "Title",
+    "taskTitlePlaceholder": "Task title...",
+    "templateName": "Template Name",
+    "templateNamePlaceholder": "My Custom Playbook"
+  },
   "privacy": {
     "analytics": {
       "body": "Help us improve the app with usage analytics.",

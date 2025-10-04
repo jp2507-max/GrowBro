@@ -1,6 +1,6 @@
 import { Link } from 'expo-router';
 import * as React from 'react';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, type ViewStyle } from 'react-native';
 
 import { DifficultyBadge } from '@/components/strains/difficulty-badge';
 import { RaceBadge } from '@/components/strains/race-badge';
@@ -97,7 +97,9 @@ export const StrainCard = React.memo<Props>(({ strain, testID }) => {
         testID={testID}
         className="px-4 py-2"
         android_ripple={{ color: 'transparent' }}
-        style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+        style={({ pressed }: { pressed: boolean }): ViewStyle[] => [
+          { opacity: pressed ? 0.7 : 1 },
+        ]}
       >
         <View
           className="flex-1 overflow-hidden rounded-3xl border border-neutral-300/80 bg-white dark:border-neutral-800 dark:bg-neutral-900"
