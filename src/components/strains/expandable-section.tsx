@@ -27,9 +27,12 @@ export const ExpandableSection = React.memo<Props>(
       });
     }, [rotation]);
 
-    const chevronStyle = useAnimatedStyle(() => ({
-      transform: [{ rotate: `${rotation.value}deg` }],
-    }));
+    const chevronStyle = useAnimatedStyle(
+      () => ({
+        transform: [{ rotate: `${rotation.value}deg` }],
+      }),
+      []
+    );
 
     return (
       <View

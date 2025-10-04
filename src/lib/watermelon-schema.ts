@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const schema = appSchema({
-  version: 9,
+  version: 10,
   tables: [
     tableSchema({
       name: 'series',
@@ -54,6 +54,10 @@ export const schema = appSchema({
         { name: 'status', type: 'string' },
         { name: 'completed_at', type: 'number', isOptional: true },
         { name: 'metadata', type: 'string' },
+        { name: 'playbook_id', type: 'string', isOptional: true },
+        { name: 'origin_step_id', type: 'string', isOptional: true },
+        { name: 'phase_index', type: 'number', isOptional: true },
+        { name: 'notification_id', type: 'string', isOptional: true },
         { name: 'server_revision', type: 'number', isOptional: true },
         { name: 'server_updated_at_ms', type: 'number', isOptional: true },
         { name: 'created_at', type: 'number' },
@@ -344,6 +348,113 @@ export const schema = appSchema({
         { name: 'expires_at', type: 'number', isIndexed: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
+      ],
+    }),
+    // Guided Grow Playbooks Tables
+    tableSchema({
+      name: 'playbooks',
+      columns: [
+        { name: 'name', type: 'string' },
+        { name: 'setup', type: 'string' }, // auto_indoor | auto_outdoor | photo_indoor | photo_outdoor
+        { name: 'locale', type: 'string' },
+        { name: 'phase_order', type: 'string' }, // JSON array of phases
+        { name: 'steps', type: 'string' }, // JSON array of PlaybookStep
+        { name: 'metadata', type: 'string' }, // JSON PlaybookMetadata
+        { name: 'is_template', type: 'boolean' },
+        { name: 'is_community', type: 'boolean' },
+        { name: 'author_handle', type: 'string', isOptional: true },
+        { name: 'license', type: 'string', isOptional: true },
+        { name: 'server_revision', type: 'number', isOptional: true },
+        { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'deleted_at', type: 'number', isOptional: true },
+      ],
+    }),
+    tableSchema({
+      name: 'playbook_applications',
+      columns: [
+        { name: 'playbook_id', type: 'string', isIndexed: true },
+        { name: 'plant_id', type: 'string', isIndexed: true },
+        { name: 'applied_at', type: 'number', isIndexed: true },
+        { name: 'task_count', type: 'number' },
+        { name: 'duration_ms', type: 'number' },
+        { name: 'job_id', type: 'string' },
+        {
+          name: 'idempotency_key',
+          type: 'string',
+          isOptional: true,
+          isIndexed: true,
+        },
+        { name: 'status', type: 'string' }, // pending | completed | failed
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'undo_descriptors',
+      columns: [
+        { name: 'operation_type', type: 'string' },
+        { name: 'affected_task_ids', type: 'string' }, // JSON array
+        { name: 'prior_field_values', type: 'string' }, // JSON object
+        { name: 'timestamp', type: 'number', isIndexed: true },
+        { name: 'expires_at', type: 'number', isIndexed: true },
+        { name: 'created_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'outbox_notification_actions',
+      columns: [
+        { name: 'action_type', type: 'string' },
+        { name: 'payload', type: 'string' }, // JSON object
+        {
+          name: 'business_key',
+          type: 'string',
+          isOptional: true,
+          isIndexed: true,
+        },
+        { name: 'ttl', type: 'number' },
+        { name: 'expires_at', type: 'number', isIndexed: true },
+        { name: 'next_attempt_at', type: 'number', isIndexed: true },
+        { name: 'attempted_count', type: 'number' },
+        { name: 'status', type: 'string', isIndexed: true },
+        { name: 'last_error', type: 'string', isOptional: true },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'ai_suggestions',
+      columns: [
+        { name: 'plant_id', type: 'string', isIndexed: true },
+        { name: 'suggestion_type', type: 'string' },
+        { name: 'reasoning', type: 'string' },
+        { name: 'affected_tasks', type: 'string' }, // JSON array
+        { name: 'confidence', type: 'number' },
+        {
+          name: 'cooldown_until',
+          type: 'number',
+          isOptional: true,
+          isIndexed: true,
+        },
+        { name: 'expires_at', type: 'number', isIndexed: true },
+        { name: 'status', type: 'string' }, // pending | accepted | declined
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'trichome_assessments',
+      columns: [
+        { name: 'plant_id', type: 'string', isIndexed: true },
+        { name: 'assessment_date', type: 'string' },
+        { name: 'clear_percent', type: 'number', isOptional: true },
+        { name: 'milky_percent', type: 'number', isOptional: true },
+        { name: 'amber_percent', type: 'number', isOptional: true },
+        { name: 'photos', type: 'string', isOptional: true }, // JSON array of URIs
+        { name: 'notes', type: 'string', isOptional: true },
+        { name: 'harvest_window_suggestion', type: 'string', isOptional: true }, // JSON object
+        { name: 'created_at', type: 'number' },
       ],
     }),
   ],

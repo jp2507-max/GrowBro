@@ -187,6 +187,7 @@ describe('captureCategorizedErrorSync', () => {
     // wait microtask queue flush so any internal async work completes
     await Promise.resolve().then(() => {});
     // Now assert that Sentry.captureException was not called
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const Sentry = require('@sentry/react-native') as {
       captureException: jest.Mock;
     };

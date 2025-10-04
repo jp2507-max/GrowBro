@@ -1,0 +1,62 @@
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "Auto Indoor Beginner",
+  "setup": "auto_indoor",
+  "locale": "en",
+  "phaseOrder": ["seedling", "veg", "flower", "harvest"],
+  "steps": [
+    {
+      "id": "step-1",
+      "phase": "seedling",
+      "title": "Initial Watering",
+      "descriptionIcu": "Water seedling with {amount, number} ml",
+      "relativeDay": 0,
+      "defaultReminderLocal": "08:00",
+      "taskType": "water",
+      "dependencies": []
+    },
+    {
+      "id": "step-2",
+      "phase": "seedling",
+      "title": "Daily Monitoring",
+      "descriptionIcu": "Check seedling health and environment",
+      "relativeDay": 1,
+      "rrule": "FREQ=DAILY;INTERVAL=1",
+      "defaultReminderLocal": "20:00",
+      "taskType": "monitor",
+      "durationDays": 14,
+      "dependencies": ["step-1"]
+    },
+    {
+      "id": "step-3",
+      "phase": "veg",
+      "title": "First Feeding",
+      "descriptionIcu": "Apply vegetative nutrients",
+      "relativeDay": 0,
+      "defaultReminderLocal": "09:00",
+      "taskType": "feed",
+      "dependencies": []
+    },
+    {
+      "id": "step-4",
+      "phase": "veg",
+      "title": "Weekly Training",
+      "descriptionIcu": "Perform LST or topping",
+      "relativeDay": 7,
+      "rrule": "FREQ=WEEKLY;INTERVAL=1",
+      "defaultReminderLocal": "10:00",
+      "taskType": "train",
+      "dependencies": ["step-3"]
+    }
+  ],
+  "metadata": {
+    "author": "GrowBro Team",
+    "version": "1.0.0",
+    "tags": ["beginner", "autoflower", "indoor"],
+    "difficulty": "beginner",
+    "estimatedDuration": 12,
+    "strainTypes": ["autoflower"]
+  },
+  "isTemplate": true,
+  "isCommunity": false
+}

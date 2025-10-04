@@ -148,6 +148,7 @@ function createExpoConfig(config) {
         },
       ],
       'expo-localization',
+      'expo-system-ui',
       'expo-router',
       [
         'expo-build-properties',

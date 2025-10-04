@@ -127,21 +127,23 @@ export type AnalyticsEvents = {
     strainType?: string;
     setupType?: string;
   };
-  playbook_shift_preview: {
-    playbookId: string;
-    shiftType: 'forward' | 'backward';
-    shiftDays: number;
+  shift_preview: {
+    plantId: string;
+    daysDelta: number;
+    affectedTaskCount: number;
+    manuallyEditedCount: number;
   };
-  playbook_shift_apply: {
-    playbookId: string;
-    shiftType: 'forward' | 'backward';
-    shiftDays: number;
-    tasksAffected: number;
+  shift_apply: {
+    plantId: string;
+    shiftId: string;
+    daysDelta: number;
+    affectedTaskCount: number;
+    durationMs: number;
   };
-  playbook_shift_undo: {
-    playbookId: string;
-    originalShiftType: 'forward' | 'backward';
-    originalShiftDays: number;
+  shift_undo: {
+    plantId: string;
+    shiftId: string;
+    affectedTaskCount: number;
   };
   playbook_task_customized: {
     playbookId: string;

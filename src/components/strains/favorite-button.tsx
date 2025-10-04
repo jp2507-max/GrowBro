@@ -37,9 +37,12 @@ export const FavoriteButton = React.memo<Props>(
   ({ isFavorite, onToggle, accessibilityLabel, accessibilityHint, testID }) => {
     const scale = useSharedValue(1);
 
-    const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: scale.value }],
-    }));
+    const animatedStyle = useAnimatedStyle(
+      () => ({
+        transform: [{ scale: scale.value }],
+      }),
+      []
+    );
 
     const handlePress = React.useCallback(() => {
       // Animation

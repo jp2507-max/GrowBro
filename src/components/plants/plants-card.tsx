@@ -156,7 +156,7 @@ export function PlantCard({
       [0, 0, 1]
     );
     return { transform: [{ translateY }, { scale }] };
-  });
+  }, []);
 
   const blurAnimatedProps = (Reanimated as any).useAnimatedProps(() => {
     const h = Math.max(measuredHeight.value, 1);

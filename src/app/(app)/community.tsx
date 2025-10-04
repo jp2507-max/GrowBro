@@ -2,7 +2,7 @@ import { useScrollToTop } from '@react-navigation/native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 
 import type { Post } from '@/api';
 import { usePostsInfinite } from '@/api';
@@ -90,7 +90,7 @@ function useSkeletonVisibility(isLoading: boolean, postsLength: number) {
 // eslint-disable-next-line max-lines-per-function
 export default function CommunityScreen(): React.ReactElement {
   const router = useRouter();
-  const { listRef, scrollHandler, listPointerEvents } = useAnimatedScrollList();
+  const { listRef, scrollHandler } = useAnimatedScrollList();
   useScrollToTop(listRef);
   const { grossHeight } = useBottomTabBarHeight();
   const analytics = useAnalytics();
@@ -179,10 +179,6 @@ export default function CommunityScreen(): React.ReactElement {
     []
   );
 
-  const listInteractiveStyle = useAnimatedStyle(() => ({
-    pointerEvents: listPointerEvents.value ? 'auto' : 'none',
-  }));
-
   const listEmpty = React.useCallback(() => {
     if (isSkeletonVisible) return <CommunitySkeletonList />;
     if (isError) return <CommunityErrorCard onRetry={onRetry} />;
@@ -241,7 +237,6 @@ export default function CommunityScreen(): React.ReactElement {
       }
       listEmpty={listEmpty}
       listFooter={listFooter}
-      listInteractiveStyle={listInteractiveStyle}
       onCreatePress={onCreatePress}
     />
   );
@@ -257,7 +252,6 @@ function CommunityListView({
   listHeader,
   listEmpty,
   listFooter,
-  listInteractiveStyle,
   onCreatePress,
 }: {
   listRef: React.RefObject<any>;
@@ -269,7 +263,6 @@ function CommunityListView({
   listHeader: React.ReactNode;
   listEmpty: React.ReactNode | (() => React.ReactElement);
   listFooter: React.ReactNode | (() => React.ReactElement);
-  listInteractiveStyle: any;
   onCreatePress: () => void;
 }): React.ReactElement {
   return (
@@ -288,7 +281,6 @@ function CommunityListView({
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
-        style={listInteractiveStyle}
       />
       <ComposeBtn onPress={onCreatePress} />
     </View>

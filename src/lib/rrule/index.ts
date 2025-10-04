@@ -1,3 +1,11 @@
+export {
+  RRULEError,
+  RRULEErrorCode,
+  RRULEGenerator,
+  rruleGenerator,
+  type TaskTemplate,
+  type WeekDay,
+} from './generator';
 export { buildIterator } from './iterator';
 export { parseRule } from './parse';
 export type {
