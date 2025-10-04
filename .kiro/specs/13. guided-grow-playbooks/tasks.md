@@ -14,8 +14,7 @@
 
 **Low Risk → High Risk**: 1→2→3→5→4→6→7→8→11→12→10→9→13→15→16→17→18→19→20
 
-- [ ] 1. Set up core data models and schema validation
-
+- [x] 1. Set up core data models and schema validation
   - Create WatermelonDB models for playbooks, tasks, and related entities with immutable origin_step_id and phase_index
   - Implement JSON Schema 2020-12 validation with meta + CI validation using Ajv 2020
   - Include format annotations for time strings (HH:mm, ISO datetimes)
@@ -24,8 +23,7 @@
   - **DoD**: Schema fixtures + ajv-cli validation running in CI pipeline
   - _Requirements: 1.1, 1.2, 6.1, 7.1_
 
-- [ ] 2. Implement RRULE generation and validation system
-
+- [x] 2. Implement RRULE generation and validation system
   - Implement strict RRULE parser/validator ensuring FREQ first, no duplicate rule parts, valid BYDAY/BYMONTHDAY values
   - Create RFC 5545 compliant RRULE generator with timezone awareness and DST handling
   - Build nextOccurrence() function computing dates in user's timezone with DST boundary support
@@ -34,8 +32,7 @@
   - **DoD**: RRULE validation rejects invalid patterns, DST tests pass, timezone calculations accurate
   - _Requirements: 2.2, 2.3, 2.9_
 
-- [ ] 3. Build notification system with Android/iOS compatibility
-
+- [x] 3. Build notification system with Android/iOS compatibility
   - Add ensureChannels() to create Android notification channels on startup with health check
   - Implement canUseExactAlarms() checking Android 14+ SCHEDULE_EXACT_ALARM permission
   - Create notification scheduler defaulting to inexact alarms with exact alarm opt-in setting
@@ -47,7 +44,6 @@
   - _Requirements: 2.5, 2.6, 2.7, 2.8, 2.9_
 
 - [ ] 4. Create playbook service and template management
-
   - Build playbook selection with preview showing total weeks, per-phase durations, and task count
   - Enforce one-active-playbook-per-plant by default, require allowMultiple=true to bypass
   - Add idempotencyKey parameter to applyPlaybookToPlant() returning {appliedTaskCount, durationMs, jobId}
@@ -58,7 +54,6 @@
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8_
 
 - [ ] 5. Implement task generation from playbook templates
-
   - Create task generator converting playbook steps to concrete tasks with batched database inserts
   - Build RRULE pattern assignment using timezone-aware calculations from anchor dates
   - Store immutable origin_step_id for traceability and phase_index for faster progress queries
@@ -69,7 +64,6 @@
   - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
 - [ ] 6. Build schedule shifting and bulk operations
-
   - Create shift preview showing affected task count, first/last new dates, and collision warnings
   - Default to shifting future, non-completed tasks with toggles for including completed/manually edited tasks
   - Implement atomic schedule shifting updating due dates, RRULEs, and notifications together
@@ -88,7 +82,6 @@
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9_
 
 - [ ] 7. Implement task customization and inheritance tracking
-
   - Build task editing interface preserving origin linkage (playbook_id, origin_step_id) with edited badges
   - On first manual edit, set flags.manualEdited=true and exclude from bulk shift unless user opts in
   - Determine which field changes break inheritance from future bulk operations
@@ -100,7 +93,6 @@
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8_
 
 - [ ] 8. Create offline-first sync engine
-
   - Implement WatermelonDB synchronize() as single entry point with pullChanges/pushChanges contract
   - Build Last-Write-Wins conflict resolution with user-visible diff on overwrite
   - Add offline change queuing with pending_push status tracking for all mutations
@@ -112,7 +104,6 @@
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
 - [ ] 9. Build AI-driven schedule adjustment system
-
   - Gate suggestions behind remote feature flags with thresholds: ≥2 skipped tasks in 7 days or assessment confidence <70%
   - Implement explainable adjustment proposals showing which tasks move and why
   - Allow partial acceptance of suggestions (per phase or per task) with user control
@@ -124,7 +115,6 @@
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8_
 
 - [ ] 10. Implement trichome helper with educational content
-
   - Create neutral, educational trichome guide: clear (immature), milky/cloudy (peak), amber (more sedating trend)
   - Include macro photography tips and lighting cautions with educational disclaimer
   - Log assessments with time-stamps and optional photos, no product recommendations
@@ -136,7 +126,6 @@
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
 
 - [ ] 11. Create phase progress tracking system
-
   - Derive phase from date windows or completion of key tasks with clear computation rules
   - Build FlashList v2-backed timeline targeting 60 FPS performance with 1k+ items in release builds
   - Add phase transition notifications alerting users to upcoming care requirement changes
@@ -148,7 +137,6 @@
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7_
 
 - [ ] 12. Build strain-specific guidance system
-
   - Create strain metadata fields: autoflower/photoperiod, breeder flowering range, sativa/indica lean
   - When breeder flowering range provided, set phase durations accordingly with conservative defaults if missing
   - Add "Assumptions" chip when using conservative defaults to indicate default values
@@ -160,7 +148,6 @@
   - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7_
 
 - [ ] 13. Implement community template sharing
-
   - Strip all PII and personal plant data, include only normalized steps schema plus author handle
   - Add license field (CC-BY-SA) to clarify community reuse terms for shared templates
   - Implement RLS enforcement: owner-write/public-read permissions for community templates
@@ -172,7 +159,6 @@
   - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7, 10.8_
 
 - [ ] 14. Create comprehensive error handling system
-
   - Introduce typed errors (RRULEError, NotificationError, SyncError) with stable codes doubling as analytics fields
   - Build RRULE validation errors with localized messages and fallback simple recurrence options
   - Add notification failure handling with in-app reminder fallbacks and WorkManager/JobScheduler retry
@@ -184,7 +170,6 @@
   - _Requirements: Cross-cutting error handling_
 
 - [ ] 15. Build analytics and observability system
-
   - Implement structured event tracking: playbook_apply, apply_duration_ms, shift_preview|apply|undo, task_customized
   - Add notification health metrics: notif_scheduled|delivered|missed with delivery rate monitoring
   - Create conflict tracking: conflict_seen|restored with table and conflict type details
@@ -196,7 +181,6 @@
   - _Requirements: Analytics and observability_
 
 - [ ] 16. Implement accessibility and internationalization
-
   - Enforce 44pt (iOS) / 48dp (Android) minimum touch targets with automated checks in CI
   - Add proper focus order and VoiceOver/TalkBack labels on all key interactive controls
   - Implement ICU MessageFormat for all playbook text, titles, summaries with pluralization support
@@ -208,7 +192,6 @@
   - _Requirements: Accessibility and i18n_
 
 - [ ] 17. Create comprehensive test suite
-
   - Build RRULE unit tests with DST boundary test vectors covering spring/fall transitions
   - Implement notification matrix testing on Pixel 6 (A14), mid-tier Moto, iPhone SE/13 in Doze/Low Power modes
   - Create flight-mode E2E script: apply playbook → shift +3 days → customize 5 tasks → complete 10 → reconnect → verify second device parity
@@ -220,7 +203,6 @@
   - _Requirements: Testing strategy_
 
 - [ ] 18. Implement UI components with FlashList v2
-
   - Create playbook selection interface with preview cards showing weeks, phases, task counts
   - Build task timeline using FlashList v2 leveraging automatic sizing without estimatedItemSize
   - Implement shift preview modal showing before/after diff and conflict warnings for manually edited tasks
@@ -232,7 +214,6 @@
   - _Requirements: UI/UX implementation_
 
 - [ ] 19. Build Supabase backend integration
-
   - Create sync endpoints implementing pullChanges/pushChanges objects exactly as WatermelonDB expects
   - Add idempotency keys for push operations preventing duplicate mutations
   - Implement RLS policies securing all private user tables with per-user isolation

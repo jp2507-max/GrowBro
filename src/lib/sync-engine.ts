@@ -79,8 +79,9 @@ const API_BASE =
   process.env.API_URL ??
   '';
 
-if (!API_BASE) {
-  console.warn('SYNC: API_BASE is empty; network calls will fail on device');
+if (!API_BASE && __DEV__) {
+  // Only warn in development; expected for local dev without a backend
+  console.info('SYNC: API_BASE is empty; sync is disabled (expected in dev)');
 }
 
 const REQUEST_TIMEOUT_MS = 30000; // 30 second timeout

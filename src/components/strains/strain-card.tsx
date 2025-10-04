@@ -96,6 +96,8 @@ export const StrainCard = React.memo<Props>(({ strain, testID }) => {
         accessibilityRole="link"
         testID={testID}
         className="px-4 py-2"
+        android_ripple={{ color: 'transparent' }}
+        style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
       >
         <View
           className="flex-1 overflow-hidden rounded-3xl border border-neutral-300/80 bg-white dark:border-neutral-800 dark:bg-neutral-900"

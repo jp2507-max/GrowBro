@@ -11,6 +11,7 @@ import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-pro
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 
 const AnimatedPressable = Animated.createAnimatedComponent(TouchableOpacity);
+const AnimatedText = Animated.createAnimatedComponent(Text);
 const BTN_WIDTH = 125;
 const BTN_HEIGHT = 50;
 const DURATION = 200;
@@ -25,34 +26,36 @@ export function ComposeBtn({
     useAnimatedScrollList();
 
   const rContainerStyle = useAnimatedStyle(() => {
-    if (
+    const shouldCollapse =
       listOffsetY.value >= offsetYAnchorOnBeginDrag.value &&
-      scrollDirection.value === 'to-bottom'
-    ) {
-      return {
-        width: withTiming(BTN_HEIGHT, { duration: DURATION }),
-        height: withTiming(BTN_HEIGHT, { duration: DURATION }),
-        transform: [
-          { translateY: withTiming(netHeight, { duration: DURATION }) },
-        ],
-      };
-    }
+      scrollDirection.value === 'to-bottom';
+
     return {
-      width: withTiming(BTN_WIDTH, { duration: DURATION }),
+      width: withTiming(shouldCollapse ? BTN_HEIGHT : BTN_WIDTH, {
+        duration: DURATION,
+      }),
       height: withTiming(BTN_HEIGHT, { duration: DURATION }),
-      transform: [{ translateY: withTiming(0, { duration: DURATION }) }],
+      transform: [
+        {
+          translateY: withTiming(shouldCollapse ? netHeight : 0, {
+            duration: DURATION,
+          }),
+        },
+      ],
     };
-  });
+  }, [netHeight]);
 
   const rTextStyle = useAnimatedStyle(() => {
-    if (
+    const shouldHide =
       listOffsetY.value >= offsetYAnchorOnBeginDrag.value &&
-      scrollDirection.value === 'to-bottom'
-    ) {
-      return { opacity: withTiming(0, { duration: DURATION / 2 }) };
-    }
-    return { opacity: withTiming(1, { duration: DURATION }) };
-  });
+      scrollDirection.value === 'to-bottom';
+
+    return {
+      opacity: withTiming(shouldHide ? 0 : 1, {
+        duration: shouldHide ? DURATION / 2 : DURATION,
+      }),
+    };
+  }, []);
 
   return (
     <AnimatedPressable
@@ -65,9 +68,9 @@ export function ComposeBtn({
       accessibilityHint={translate('accessibility.community.compose_hint')}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
-      <Text className="text-base text-primary-300" style={rTextStyle}>
+      <AnimatedText className="text-base text-primary-300" style={rTextStyle}>
         {translate('community.create_post')}
-      </Text>
+      </AnimatedText>
     </AnimatedPressable>
   );
 }

@@ -1,0 +1,17 @@
+{
+  "id": "not-a-uuid",
+  "name": "",
+  "setup": "invalid_setup",
+  "locale": "invalid",
+  "steps": [
+    {
+      "id": "step-1",
+      "phase": "invalid_phase",
+      "title": "Test",
+      "relativeDay": -1,
+      "defaultReminderLocal": "25:99",
+      "taskType": "invalid_type",
+      "dependencies": []
+    }
+  ]
+}

@@ -73,16 +73,24 @@ function useTabScreenOptions(theme: ReturnType<typeof useThemeConfig>) {
   );
 }
 
-export default function TabLayout() {
+function useTabLayoutRedirects() {
   const status = useAuth.use.status();
   const [isFirstTime] = useIsFirstTime();
   // eslint-disable-next-line react-compiler/react-compiler
   const ageGateStatus = useAgeGate.status();
-  const theme = useThemeConfig();
-  const tabScreenOptions = useTabScreenOptions(theme);
+
+  if (isFirstTime) return '/onboarding';
+  if (status === 'signOut') return '/login';
+  if (ageGateStatus !== 'verified') return '/age-gate';
+  return null;
+}
+
+function useSplashScreenHide() {
+  const status = useAuth.use.status();
   const hideSplash = React.useCallback(async () => {
     await SplashScreen.hideAsync();
   }, []);
+
   React.useEffect(() => {
     if (status !== 'idle') {
       setTimeout(() => {
@@ -90,10 +98,15 @@ export default function TabLayout() {
       }, 1000);
     }
   }, [hideSplash, status]);
+}
 
-  if (isFirstTime) return <Redirect href="/onboarding" />;
-  if (status === 'signOut') return <Redirect href="/login" />;
-  if (ageGateStatus !== 'verified') return <Redirect href="/age-gate" />;
+export default function TabLayout() {
+  const theme = useThemeConfig();
+  const tabScreenOptions = useTabScreenOptions(theme);
+  const redirectTo = useTabLayoutRedirects();
+  useSplashScreenHide();
+
+  if (redirectTo) return <Redirect href={redirectTo} />;
 
   return (
     <AnimatedScrollListProvider>
@@ -102,83 +115,54 @@ export default function TabLayout() {
         screenOptions={tabScreenOptions}
         tabBar={(p) => <CustomTabBar {...p} />}
       >
-        <HomeTab />
-        <CalendarTab />
-        <CommunityTab />
-        <PlantsTab />
-        <StrainsTab />
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: translate('tabs.home'),
+            tabBarIcon: ({ color }) => <HomeIcon color={color} />,
+            headerRight: () => <SettingsLink />,
+            tabBarButtonTestID: 'home-tab',
+          }}
+        />
+        <Tabs.Screen
+          name="calendar"
+          options={{
+            title: translate('tabs.calendar'),
+            tabBarIcon: ({ color }) => <CalendarIcon color={color} />,
+            tabBarButtonTestID: 'calendar-tab',
+          }}
+        />
+        <Tabs.Screen
+          name="community"
+          options={{
+            title: translate('tabs.community'),
+            tabBarIcon: ({ color }) => <FeedIcon color={color} />,
+            headerRight: () => <CreateNewPostLink />,
+            tabBarButtonTestID: 'community-tab',
+          }}
+        />
+        <Tabs.Screen
+          name="plants"
+          options={{
+            title: translate('tabs.plants'),
+            tabBarIcon: ({ color }) => <PlantsIcon color={color} />,
+            tabBarButtonTestID: 'plants-tab',
+          }}
+        />
+        <Tabs.Screen
+          name="strains"
+          options={{
+            title: translate('tabs.strains'),
+            tabBarIcon: ({ color }) => <StyleIcon color={color} />,
+            tabBarButtonTestID: 'strains-tab',
+          }}
+        />
       </Tabs>
     </AnimatedScrollListProvider>
   );
 }
 
-function HomeTab(): React.ReactElement {
-  return (
-    <Tabs.Screen
-      name="index"
-      options={{
-        title: translate('tabs.home'),
-        tabBarIcon: ({ color }) => <HomeIcon color={color} />,
-        headerRight: () => <SettingsLink />,
-        tabBarButtonTestID: 'home-tab',
-      }}
-    />
-  );
-}
-
-function CalendarTab(): React.ReactElement {
-  return (
-    <Tabs.Screen
-      name="calendar"
-      options={{
-        title: translate('tabs.calendar'),
-        tabBarIcon: ({ color }) => <CalendarIcon color={color} />,
-        tabBarButtonTestID: 'calendar-tab',
-      }}
-    />
-  );
-}
-
-function CommunityTab(): React.ReactElement {
-  return (
-    <Tabs.Screen
-      name="community"
-      options={{
-        title: translate('tabs.community'),
-        tabBarIcon: ({ color }) => <FeedIcon color={color} />,
-        headerRight: () => <CreateNewPostLink />,
-        tabBarButtonTestID: 'community-tab',
-      }}
-    />
-  );
-}
-
-function PlantsTab(): React.ReactElement {
-  return (
-    <Tabs.Screen
-      name="plants"
-      options={{
-        title: translate('tabs.plants'),
-        tabBarIcon: ({ color }) => <PlantsIcon color={color} />,
-        tabBarButtonTestID: 'plants-tab',
-      }}
-    />
-  );
-}
-
-function StrainsTab(): React.ReactElement {
-  return (
-    <Tabs.Screen
-      name="strains"
-      options={{
-        title: translate('tabs.strains'),
-        tabBarIcon: ({ color }) => <StyleIcon color={color} />,
-        tabBarButtonTestID: 'strains-tab',
-      }}
-    />
-  );
-}
-
+// Header right components
 const CreateNewPostLink = () => {
   const createPostLabel = translate('community.create_post');
   const createPostHint = translate('accessibility.community.create_post_hint');
@@ -199,6 +183,7 @@ const CreateNewPostLink = () => {
     </Link>
   );
 };
+
 const SettingsLink = () => {
   const settingsLabel = translate('home.open_settings');
   const settingsHint = translate('accessibility.home.open_settings_hint');

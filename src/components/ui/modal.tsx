@@ -115,17 +115,24 @@ export const Modal = React.forwardRef(
  * Custom Backdrop
  */
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 const CustomBackdrop = ({ style }: BottomSheetBackdropProps) => {
   const { close } = useBottomSheet();
   return (
-    <AnimatedPressable
-      onPress={() => close()}
-      entering={FadeIn.duration(50)}
-      exiting={FadeOut.duration(20)}
-      style={[style, styles.backdrop]}
-    />
+    <View style={style}>
+      <Animated.View
+        entering={FadeIn.duration(50)}
+        exiting={FadeOut.duration(20)}
+        style={styles.backdrop}
+      >
+        <Pressable
+          onPress={() => close()}
+          style={StyleSheet.absoluteFill}
+          accessibilityRole="button"
+          accessibilityLabel="Close modal"
+          accessibilityHint="Tap to dismiss the modal"
+        />
+      </Animated.View>
+    </View>
   );
 };
 
@@ -183,7 +190,7 @@ const CloseButton = ({ close }: { close: () => void }) => {
       hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
       accessibilityLabel="close modal"
       accessibilityRole="button"
-      accessibilityHint="closes the modal"
+      accessibilityHint="Double tap to close the modal and return to the previous screen"
     >
       <Svg
         className="fill-neutral-300 dark:fill-white"
