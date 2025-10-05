@@ -6,6 +6,7 @@
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 
@@ -51,23 +52,25 @@ function LatestAssessmentCard({
 }: {
   assessment: TrichomeAssessment;
 }) {
+  const { t } = useTranslation();
+
   return (
     <View className="mt-4 rounded-lg bg-white p-4 dark:bg-charcoal-900">
       <Text className="mb-2 text-sm font-semibold text-charcoal-950 dark:text-neutral-100">
-        Latest Assessment
+        {t('trichome.helper.latestAssessmentTitle')}
       </Text>
       <Text className="text-xs text-neutral-600 dark:text-neutral-400">
         {new Date(assessment.createdAt).toLocaleDateString()}
       </Text>
       <View className="mt-2 flex-row justify-between">
         <Text className="text-xs text-neutral-700 dark:text-neutral-300">
-          Clear: {assessment.clearPercent || 0}%
+          {t('trichome.helper.clearLabelShort')} {assessment.clearPercent || 0}%
         </Text>
         <Text className="text-xs text-neutral-700 dark:text-neutral-300">
-          Milky: {assessment.milkyPercent || 0}%
+          {t('trichome.helper.milkyLabelShort')} {assessment.milkyPercent || 0}%
         </Text>
         <Text className="text-xs text-neutral-700 dark:text-neutral-300">
-          Amber: {assessment.amberPercent || 0}%
+          {t('trichome.helper.amberLabelShort')} {assessment.amberPercent || 0}%
         </Text>
       </View>
     </View>
@@ -83,12 +86,14 @@ function SuggestionsSection({
   onAccept: (s: any) => Promise<void>;
   onDecline: (s: any) => void;
 }) {
+  const { t } = useTranslation();
+
   if (suggestions.length === 0) return null;
 
   return (
     <View className="mb-6">
       <Text className="mb-3 text-lg font-semibold text-charcoal-950 dark:text-neutral-100">
-        Harvest Suggestions
+        {t('trichome.helper.harvestSuggestionsTitle')}
       </Text>
       {suggestions.map((suggestion, index) => (
         <HarvestSuggestionCard
@@ -243,13 +248,15 @@ function useTrichomeState(plantId?: string, playbookId?: string) {
 }
 
 function ModalHeader({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
+
   return (
     <View className="flex-row items-center justify-between">
       <Text className="text-xl font-semibold text-charcoal-950 dark:text-neutral-100">
-        Trichome Helper
+        {t('trichome.helper.header')}
       </Text>
       <Button
-        label="Close"
+        label={t('trichome.helper.closeButton')}
         variant="ghost"
         size="sm"
         onPress={onClose}
@@ -268,23 +275,25 @@ function TabBar({
   setActiveTab: (tab: TabType) => void;
   hasPlantId: boolean;
 }) {
+  const { t } = useTranslation();
+
   return (
     <View className="mt-3 flex-row gap-2">
       <TabButton
-        label="Guide"
+        label={t('trichome.helper.guideTab')}
         active={activeTab === 'guide'}
         onPress={() => setActiveTab('guide')}
         testID="guide-tab"
       />
       <TabButton
-        label="Assess"
+        label={t('trichome.helper.assessTab')}
         active={activeTab === 'assess'}
         onPress={() => setActiveTab('assess')}
         disabled={!hasPlantId}
         testID="assess-tab"
       />
       <TabButton
-        label="Windows"
+        label={t('trichome.helper.windowsTab')}
         active={activeTab === 'windows'}
         onPress={() => setActiveTab('windows')}
         testID="windows-tab"
@@ -314,12 +323,14 @@ function TabContent({
   onAccept: (suggestion: any) => Promise<void>;
   windows: any[];
 }) {
+  const { t } = useTranslation();
+
   if (activeTab === 'guide') {
     if (!guide) {
       return (
         <View className="rounded-lg bg-white p-4 dark:bg-charcoal-900">
           <Text className="text-center text-neutral-600 dark:text-neutral-400">
-            Loading guide...
+            {t('trichome.helper.loadingGuide')}
           </Text>
         </View>
       );
@@ -357,6 +368,8 @@ function useAcceptHandler(
   acceptSuggestionFn: any,
   setSuggestions: any
 ) {
+  const { t } = useTranslation();
+
   const onAccept = async (suggestion: any) => {
     if (!plantId) return;
 
@@ -372,8 +385,8 @@ function useAcceptHandler(
     } catch (error) {
       setSuggestions(previousSuggestions);
       showMessage({
-        message: 'Failed to accept suggestion',
-        description: 'Please try again',
+        message: t('trichome.helper.failedToAcceptSuggestion'),
+        description: t('trichome.helper.pleaseTryAgain'),
         type: 'danger',
       });
       console.error('Failed to accept harvest suggestion:', error);
@@ -389,6 +402,7 @@ export default function TrichomeHelperModal() {
     plantId?: string;
     playbookId?: string;
   }>();
+  const { t } = useTranslation();
 
   const [activeTab, setActiveTab] = React.useState<TabType>('guide');
 
@@ -443,9 +457,7 @@ export default function TrichomeHelperModal() {
 
       <View className="border-t border-neutral-200 bg-white px-4 py-3 dark:border-charcoal-700 dark:bg-charcoal-900">
         <Text className="text-center text-xs italic text-neutral-600 dark:text-neutral-400">
-          ⓘ All information provided is educational only and not professional
-          cultivation or horticultural advice. Always research your specific
-          strain and comply with local regulations.
+          {t('trichome.helper.footerDisclaimer')}
         </Text>
       </View>
     </View>

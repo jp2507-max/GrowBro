@@ -224,7 +224,13 @@
       "already_applied": "This playbook is already applied to this plant",
       "generation_failed": "Failed to generate tasks from playbook",
       "invalid_schema": "Invalid playbook format",
+      "noTasks": "No tasks found",
       "not_found": "Playbook not found",
+      "status": {
+        "completed": "✓ Completed",
+        "current": "Current",
+        "upcoming": "Upcoming"
+      },
       "title": "Playbook Error"
     },
     "postLoad": "Error loading post",
@@ -440,6 +446,7 @@
       "logTrichomeCheck": "Log trichome check",
       "phaseProgress": "{{phase}} phase, {{status}}, {{completed}} of {{{total}}} tasks completed",
       "playbookCard": "{{name}} playbook, {{setup}} setup, {{weeks}} weeks, {{tasks}} tasks",
+      "selectPlantHint": "Double tap to select this plant",
       "shareTemplate": "Share template with community",
       "shiftSchedule": "Shift schedule",
       "shiftScheduleHint": "Shifts all tasks {{direction}} by {{days}} {{daysUnit}}",
@@ -491,15 +498,17 @@
         "conditionsPlaceholder": "Indoor tent, LED lights, soil medium...",
         "description": "Description",
         "descriptionPlaceholder": "Describe your growing approach and results...",
-        "error": "Failed to share template",
-        "license": "License",
+        "durationDays": "{{count}} days",
+        "durationDays_one": "{{count}} day",
+        "durationDays_other": "{{count}} days",
         "licenseDescription": "By sharing, you agree to license this template under CC-BY-SA 4.0",
         "name": "Template Name",
         "namePlaceholder": "My Custom Auto Indoor Schedule",
-        "outcomes": "Outcomes",
-        "outcomesPlaceholder": "Yield, quality notes, lessons learned...",
         "submit": "Share Template",
         "success": "Template shared successfully",
+        "taskCount": "{{count}} tasks",
+        "taskCount_one": "{{count}} task",
+        "taskCount_other": "{{count}} tasks",
         "title": "Share Template"
       },
       "subtitle": "Discover and share successful grow schedules",
@@ -551,6 +560,7 @@
       }
     },
     "outcomes": "Outcomes",
+    "overdue": "Overdue",
     "preview": "Playbook Preview",
     "progress": {
       "careChanges": "Care requirements will change",
@@ -639,6 +649,7 @@
     "tags": "Tags",
     "tagsHint": "Separate tags with commas",
     "tagsPlaceholder": "indoor, beginner, auto...",
+    "taskCount": "{{count}} tasks",
     "taskCount_one": "{{count}} task",
     "taskCount_other": "{{count}} tasks",
     "taskDescription": "Description",
@@ -647,16 +658,35 @@
     "taskTitlePlaceholder": "Task title...",
     "taskTypes": {
       "custom": "Custom",
-      "feed": "Feeding",
-      "monitor": "Monitoring",
-      "note": "Notes",
-      "prune": "Pruning",
-      "train": "Training",
-      "water": "Watering"
+      "feed": "Feed",
+      "monitor": "Monitor",
+      "note": "Note",
+      "prune": "Prune",
+      "train": "Train",
+      "water": "Water"
     },
     "templateName": "Template Name",
     "templateNamePlaceholder": "My Custom Playbook",
+    "templates": {
+      "detail": {
+        "adoptButton": "Adopt This Playbook",
+        "adoptDescription": "You can customize the playbook after adopting it",
+        "adopted": "Adopted",
+        "authorPrefix": "by",
+        "communityRating": "Community Rating",
+        "duration": "Duration",
+        "growthPhases": "Growth Phases",
+        "licenseDescription": "You can use and modify this playbook with attribution to the author",
+        "licensePrefix": "License:",
+        "moreTasks": "+ {{count}} more tasks",
+        "rateButton": "Rate",
+        "ratings": "ratings",
+        "tasks": "Tasks",
+        "tasksPreview": "Tasks Preview ({{total}} total)"
+      }
+    },
     "title": "Playbooks",
+    "totalWeeks": "{{count}} weeks",
     "trichome": {
       "assessment": {
         "addPhoto": "Add Photo",
@@ -1039,11 +1069,24 @@
     "formTitle": "Log Trichome Assessment",
     "guideTitle": "Trichome Assessment Guide",
     "helper": {
-      "assessmentTab": "Log Assessment",
+      "accessibilityForm": "Show trichome assessment form",
+      "accessibilityGuide": "Show trichome assessment guide",
+      "amberLabelShort": "Amber:",
+      "assessTab": "Assess",
+      "clearLabelShort": "Clear:",
+      "closeButton": "Close",
+      "failedToAcceptSuggestion": "Failed to accept suggestion",
+      "footerDisclaimer": "ⓘ All information provided is educational only and not professional cultivation or horticultural advice. Always research your specific strain and comply with local regulations.",
       "guideTab": "Guide",
+      "harvestSuggestionsTitle": "Harvest Suggestions",
       "header": "Trichome Helper",
+      "latestAssessmentTitle": "Latest Assessment",
+      "loadingGuide": "Loading guide...",
+      "milkyLabelShort": "Milky:",
+      "pleaseTryAgain": "Please try again",
       "quickReference": "Quick Reference",
-      "subtitle": "Assess trichome development for harvest timing"
+      "subtitle": "Assess trichome development for harvest timing",
+      "windowsTab": "Windows"
     },
     "lightingCautions": "Lighting Cautions",
     "milky": "Milky",

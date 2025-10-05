@@ -160,12 +160,22 @@ export type AnalyticsEvents = {
     strainType?: string;
     setupType?: string;
   };
+
+  /**
+   * @deprecated Use playbook_shift_preview instead. This event is for legacy shift operations
+   * that don't support playbook-specific context or advanced filtering options.
+   */
   shift_preview: {
     plantId: string;
     daysDelta: number;
     affectedTaskCount: number;
     manuallyEditedCount: number;
   };
+
+  /**
+   * @deprecated Use playbook_shift_apply instead. This event is for legacy shift operations
+   * that don't support playbook-specific context or timing measurements.
+   */
   shift_apply: {
     plantId: string;
     shiftId: string;
@@ -173,6 +183,11 @@ export type AnalyticsEvents = {
     affectedTaskCount: number;
     durationMs: number;
   };
+
+  /**
+   * @deprecated Use playbook_shift_undo instead. This event is for legacy shift operations
+   * that don't support playbook-specific context.
+   */
   shift_undo: {
     plantId: string;
     shiftId: string;
@@ -218,15 +233,35 @@ export type AnalyticsEvents = {
       | 'schedule_shift';
     reason?: string;
   };
+  /**
+   * Preview of a schedule shift operation within the playbook context.
+   * Tracks the potential impact before applying changes, including filtering options
+   * for completed and manually edited tasks.
+   */
   playbook_shift_preview: {
     plantId: string;
     daysDelta: number;
     affectedTaskCount: number;
   };
+
+  /**
+   * Application of a schedule shift operation within the playbook context.
+   * Records the execution of planned shifts with timing and impact measurements.
+   */
   playbook_shift_apply: {
     plantId: string;
     daysDelta: number;
     affectedTaskCount: number;
+  };
+
+  /**
+   * Reversal of a previously applied schedule shift within the playbook context.
+   * Tracks the restoration of tasks to their original schedule positions.
+   */
+  playbook_shift_undo: {
+    plantId: string;
+    shiftId: string;
+    restoredTaskCount: number;
   };
   trichome_helper_open: {
     playbookId: string;

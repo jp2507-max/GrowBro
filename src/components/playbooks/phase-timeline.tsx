@@ -16,6 +16,31 @@ import { Checkbox, Text, View } from '@/components/ui';
 import type { TaskModel } from '@/lib/watermelon-models/task';
 import type { GrowPhase } from '@/types/playbook';
 
+const VALID_GROW_PHASES = new Set<GrowPhase>([
+  'seedling',
+  'veg',
+  'flower',
+  'harvest',
+]);
+
+function isValidGrowPhase(value: unknown): value is GrowPhase {
+  return typeof value === 'string' && VALID_GROW_PHASES.has(value as GrowPhase);
+}
+
+function validateGrowPhase(
+  value: unknown,
+  fallback: GrowPhase = 'seedling'
+): GrowPhase {
+  if (isValidGrowPhase(value)) {
+    return value;
+  }
+
+  console.warn(
+    `Invalid GrowPhase encountered: ${String(value)}. Falling back to '${fallback}'.`
+  );
+  return fallback;
+}
+
 type TimelineTask = {
   id: string;
   title: string;
@@ -115,7 +140,7 @@ function createSectionItem(
 ): TimelineSection | null {
   if (!firstTask) return null;
 
-  const phase = (firstTask.metadata?.phase as GrowPhase) || 'seedling';
+  const phase = validateGrowPhase(firstTask.metadata?.phase);
   if (!phase) return null;
 
   return {
@@ -162,7 +187,7 @@ function createTaskItems({
       title: task.title,
       dueDate: dueDate.toISO()!,
       status,
-      phase: (task.metadata?.phase as GrowPhase) || 'seedling',
+      phase: validateGrowPhase(task.metadata?.phase),
       phaseIndex,
       taskType: (task.metadata?.taskType as string) || 'custom',
       isOverdue,
@@ -207,14 +232,14 @@ export function PhaseTimeline({
     return (
       <View className="flex-1 items-center justify-center p-8">
         <Text className="text-center text-neutral-600 dark:text-neutral-400">
-          No tasks found
+          {t('playbook.noTasks')}
         </Text>
       </View>
     );
   }
 
   return (
-    <View className={`flex-1 ${className}`}>
+    <View className={`flex-1 ${className}`} testID="phase-timeline">
       <FlashList
         data={timelineItems}
         renderItem={renderItem}
@@ -232,6 +257,7 @@ function SectionHeader({
   section: TimelineSection;
   currentPhaseIndex: number;
 }) {
+  const { t } = useTranslation();
   const isCurrent = section.phaseIndex === currentPhaseIndex;
   const isCompleted = section.phaseIndex < currentPhaseIndex;
   const isUpcoming = section.phaseIndex > currentPhaseIndex;
@@ -248,17 +274,19 @@ function SectionHeader({
         </Text>
         {isCurrent && (
           <View className="rounded-full bg-primary-500 px-2 py-0.5">
-            <Text className="text-xs font-medium text-white">Current</Text>
+            <Text className="text-xs font-medium text-white">
+              {t('playbook.status.current')}
+            </Text>
           </View>
         )}
         {isCompleted && (
           <Text className="text-sm text-success-600 dark:text-success-400">
-            ✓ Completed
+            {t('playbook.status.completed')}
           </Text>
         )}
         {isUpcoming && (
           <Text className="text-sm text-neutral-500 dark:text-neutral-500">
-            Upcoming
+            {t('playbook.status.upcoming')}
           </Text>
         )}
       </View>
@@ -279,6 +307,8 @@ function TaskInfo({
   isPending: boolean;
   isOverdue: boolean;
 }) {
+  const { t } = useTranslation();
+
   return (
     <View className="flex-1">
       <Text
@@ -302,7 +332,7 @@ function TaskInfo({
         </Text>
         {isOverdue && isPending && (
           <Text className="text-xs text-danger-600 dark:text-danger-400">
-            Overdue
+            {t('playbooks.overdue')}
           </Text>
         )}
       </View>

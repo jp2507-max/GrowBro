@@ -221,6 +221,7 @@ function ActionButtons({
         onPress={onCancel}
         className="flex-1"
         disabled={isPending}
+        testID="share-template-cancel-button"
       >
         <Text>Cancel</Text>
       </Button>
@@ -228,6 +229,7 @@ function ActionButtons({
         onPress={onShare}
         className="flex-1"
         disabled={isPending || !isValid}
+        testID="share-template-confirm-button"
       >
         <Text>{isPending ? 'Sharing...' : 'Share'}</Text>
       </Button>

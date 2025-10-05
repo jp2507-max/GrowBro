@@ -29,6 +29,8 @@ function PlantSelectionList({
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <View className="space-y-3">
       {plants.map((plant) => (
@@ -44,7 +46,7 @@ function PlantSelectionList({
           accessibilityLabel={
             plant.strain ? `${plant.name}, ${plant.strain}` : plant.name
           }
-          accessibilityHint="Double tap to select this plant"
+          accessibilityHint={t('playbooks.accessibility.selectPlantHint')}
           testID={`plant-option-${plant.id}`}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >

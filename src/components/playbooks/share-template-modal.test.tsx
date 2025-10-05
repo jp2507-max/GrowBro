@@ -9,7 +9,18 @@ afterEach(cleanup);
 const mockPlaybook = {
   id: 'test-playbook',
   name: 'Test Playbook',
-  tasks: [],
+  setup: 'auto_indoor' as const,
+  locale: 'en',
+  phaseOrder: ['seedling', 'veg', 'flower', 'harvest'],
+  steps: [],
+  metadata: {
+    author: 'Test Author',
+    version: '1.0',
+    difficulty: 'beginner',
+    estimatedDuration: 8,
+  },
+  createdAt: new Date('2024-01-01T00:00:00Z'),
+  updatedAt: new Date('2024-01-01T00:00:00Z'),
 };
 
 const mockOnSuccess = jest.fn();

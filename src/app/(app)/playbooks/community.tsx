@@ -53,7 +53,7 @@ function useCommunityTemplates() {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const templates = [
+    const mockTemplates: CommunityTemplate[] = [
       {
         id: '1',
         authorId: 'user1',
@@ -94,8 +94,10 @@ function useCommunityTemplates() {
       },
     ];
 
-    track('community_templates_viewed', { templateCount: templates.length });
-    setTemplates(templates);
+    track('community_templates_viewed', {
+      templateCount: mockTemplates.length,
+    });
+    setTemplates(mockTemplates);
     setLoading(false);
   }, [track]);
 

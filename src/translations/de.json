@@ -224,7 +224,13 @@
       "already_applied": "Dieses Playbook ist bereits auf diese Pflanze angewendet",
       "generation_failed": "Aufgaben konnten nicht aus Playbook generiert werden",
       "invalid_schema": "Ungültiges Playbook-Format",
+      "noTasks": "Keine Aufgaben gefunden",
       "not_found": "Playbook nicht gefunden",
+      "status": {
+        "completed": "✓ Abgeschlossen",
+        "current": "Aktuell",
+        "upcoming": "Bevorstehend"
+      },
       "title": "Playbook-Fehler"
     },
     "postLoad": "Fehler beim Laden des Beitrags",
@@ -440,6 +446,7 @@
       "logTrichomeCheck": "Trichom-Check protokollieren",
       "phaseProgress": "{{phase}}-Phase, {{status}}, {{completed}} von {{{total}}} Aufgaben abgeschlossen",
       "playbookCard": "{{name}} Playbook, {{setup}} Setup, {{weeks}} Wochen, {{tasks}} Aufgaben",
+      "selectPlantHint": "Doppelt tippen, um diese Pflanze auszuwählen",
       "shareTemplate": "Vorlage mit Community teilen",
       "shiftSchedule": "Zeitplan verschieben",
       "shiftScheduleHint": "Verschiebt alle Aufgaben {{direction}} um {{days}} {{daysUnit}}",
@@ -491,15 +498,17 @@
         "conditionsPlaceholder": "Indoor-Zelt, LED-Lichter, Erdsubstrat...",
         "description": "Beschreibung",
         "descriptionPlaceholder": "Beschreibe deinen Anbauansatz und Ergebnisse...",
-        "error": "Vorlage konnte nicht geteilt werden",
-        "license": "Lizenz",
+        "durationDays": "{{count}} Tage",
+        "durationDays_one": "{{count}} Tag",
+        "durationDays_other": "{{count}} Tage",
         "licenseDescription": "Durch das Teilen stimmst du zu, diese Vorlage unter CC-BY-SA 4.0 zu lizenzieren",
         "name": "Vorlagenname",
         "namePlaceholder": "Mein eigener Auto-Indoor-Zeitplan",
-        "outcomes": "Ergebnisse",
-        "outcomesPlaceholder": "Ertrag, Qualitätsnotizen, gelernte Lektionen...",
         "submit": "Vorlage teilen",
         "success": "Vorlage erfolgreich geteilt",
+        "taskCount": "{{count}} Aufgaben",
+        "taskCount_one": "{{count}} Aufgabe",
+        "taskCount_other": "{{count}} Aufgaben",
         "title": "Vorlage teilen"
       },
       "subtitle": "Erfolgreiche Anbaupläne entdecken und teilen",
@@ -551,6 +560,7 @@
       }
     },
     "outcomes": "Ergebnisse",
+    "overdue": "Überfällig",
     "preview": "Playbook-Vorschau",
     "progress": {
       "careChanges": "Pflegeanforderungen werden sich ändern",
@@ -639,6 +649,7 @@
     "tags": "Tags",
     "tagsHint": "Tags mit Kommas trennen",
     "tagsPlaceholder": "indoor, anfänger, auto...",
+    "taskCount": "{{count}} Aufgaben",
     "taskCount_one": "{{count}} Aufgabe",
     "taskCount_other": "{{count}} Aufgaben",
     "taskDescription": "Beschreibung",
@@ -656,7 +667,26 @@
     },
     "templateName": "Vorlagenname",
     "templateNamePlaceholder": "Mein eigener Playbook",
+    "templates": {
+      "detail": {
+        "adoptButton": "Dieses Playbook übernehmen",
+        "adoptDescription": "Du kannst das Playbook nach der Übernahme anpassen",
+        "adopted": "Übernommen",
+        "authorPrefix": "von",
+        "communityRating": "Community-Bewertung",
+        "duration": "Dauer",
+        "growthPhases": "Wachstumsphasen",
+        "licenseDescription": "Du kannst dieses Playbook mit Namensnennung des Autors verwenden und modifizieren",
+        "licensePrefix": "Lizenz:",
+        "moreTasks": "+ {{count}} weitere Aufgaben",
+        "rateButton": "Bewerten",
+        "ratings": "Bewertungen",
+        "tasks": "Aufgaben",
+        "tasksPreview": "Aufgabenvorschau ({{total}} insgesamt)"
+      }
+    },
     "title": "Playbooks",
+    "totalWeeks": "{{count}} Wochen",
     "trichome": {
       "assessment": {
         "addPhoto": "Foto hinzufügen",
@@ -1039,11 +1069,24 @@
     "formTitle": "Trichom-Einschätzung protokollieren",
     "guideTitle": "Trichom-Bewertungsanleitung",
     "helper": {
-      "assessmentTab": "Einschätzung protokollieren",
+      "accessibilityForm": "Trichom-Bewertungsformular anzeigen",
+      "accessibilityGuide": "Trichom-Bewertungsanleitung anzeigen",
+      "amberLabelShort": "Bernstein:",
+      "assessTab": "Einschätzen",
+      "clearLabelShort": "Klar:",
+      "closeButton": "Schließen",
+      "failedToAcceptSuggestion": "Vorschlag konnte nicht akzeptiert werden",
+      "footerDisclaimer": "ⓘ Alle bereitgestellten Informationen sind nur lehrreich und kein professioneller Anbau- oder gartenbaulicher Rat. Informiere dich immer über deine spezifische Sorte und halte dich an lokale Vorschriften.",
       "guideTab": "Anleitung",
+      "harvestSuggestionsTitle": "Erntevorschläge",
       "header": "Trichom-Helfer",
+      "latestAssessmentTitle": "Letzte Einschätzung",
+      "loadingGuide": "Anleitung wird geladen...",
+      "milkyLabelShort": "Milchig:",
+      "pleaseTryAgain": "Bitte versuche es erneut",
       "quickReference": "Schnellreferenz",
-      "subtitle": "Bewerte Trichom-Entwicklung für Erntezeitpunkt"
+      "subtitle": "Bewerte Trichom-Entwicklung für Erntezeitpunkt",
+      "windowsTab": "Zeiträume"
     },
     "lightingCautions": "Beleuchtungswarnungen",
     "milky": "Milchig",

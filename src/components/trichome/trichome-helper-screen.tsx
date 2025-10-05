@@ -75,7 +75,7 @@ export function TrichomeHelperScreen({
             className="flex-1"
             testID="show-guide-tab"
             accessibilityLabel={t('trichome.helper.guideTab')}
-            accessibilityHint="Show trichome assessment guide"
+            accessibilityHint={t('trichome.helper.accessibilityGuide')}
           />
           <Button
             variant={!showGuide ? 'default' : 'outline'}
@@ -85,7 +85,7 @@ export function TrichomeHelperScreen({
             className="flex-1"
             testID="show-assessment-tab"
             accessibilityLabel={t('trichome.helper.assessmentTab')}
-            accessibilityHint="Show trichome assessment form"
+            accessibilityHint={t('trichome.helper.accessibilityForm')}
           />
         </View>
       </View>

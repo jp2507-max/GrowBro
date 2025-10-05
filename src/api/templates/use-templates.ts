@@ -55,7 +55,26 @@ function mapDbRowToTemplateComment(row: any): TemplateComment {
 /**
  * Hook to fetch community templates list
  */
-export const useTemplates = createQuery<
+/*
+ * NOTE (React Query keys):
+ * The original hooks registered static query keys (['templates'], ['template'],
+ * ['template-comments']) while their fetchers depend on runtime variables
+ * (filters, ids, pagination). React Query caches results by the query key, so
+ * using a static key causes cache collisions: for example, fetching
+ * useTemplate({ id: 'a' }) and later useTemplate({ id: 'b' }) will map both
+ * requests to the same cache entry and can return the wrong template.
+ *
+ * To avoid this, include the input variables in the query key. Examples:
+ *  - useTemplates: ['templates', { setup, locale, sortBy, limit, offset }]
+ *  - useTemplate: ['template', id]
+ *  - useTemplateComments: ['template-comments', { templateId, limit, offset }]
+ *
+ * Keep keys as small and serializable values when possible (strings, numbers,
+ * arrays, or plain objects). This ensures queries are cached/separated by their
+ * inputs and prevents UI showing stale or incorrect data when users navigate
+ * between different templates or pages.
+ */
+const _useTemplates = createQuery<
   { templates: CommunityTemplate[]; total: number },
   TemplateListParams
 >({
@@ -109,10 +128,17 @@ export const useTemplates = createQuery<
   },
 });
 
+// Wrapper that preserves the simple call signature used across the app
+// while forwarding the inputs into react-query-kit's `variables` so the
+// final cache key becomes ['templates', variables].
+export function useTemplates(variables: TemplateListParams) {
+  return _useTemplates({ variables });
+}
+
 /**
  * Hook to fetch a single template by ID
  */
-export const useTemplate = createQuery<CommunityTemplate, { id: string }>({
+const _useTemplate = createQuery<CommunityTemplate, { id: string }>({
   queryKey: ['template'],
   fetcher: async ({ id }) => {
     const { data, error } = await supabase
@@ -134,10 +160,14 @@ export const useTemplate = createQuery<CommunityTemplate, { id: string }>({
   },
 });
 
+export function useTemplate(variables: { id: string }) {
+  return _useTemplate({ variables });
+}
+
 /**
  * Hook to fetch template comments
  */
-export const useTemplateComments = createQuery<
+const _useTemplateComments = createQuery<
   TemplateComment[],
   { templateId: string; limit?: number; offset?: number }
 >({
@@ -158,3 +188,11 @@ export const useTemplateComments = createQuery<
     return (data || []).map(mapDbRowToTemplateComment);
   },
 });
+
+export function useTemplateComments(variables: {
+  templateId: string;
+  limit?: number;
+  offset?: number;
+}) {
+  return _useTemplateComments({ variables });
+}

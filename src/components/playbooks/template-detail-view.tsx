@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 
 import type { CommunityTemplate } from '@/api/templates';
@@ -17,6 +18,8 @@ interface TemplateDetailViewProps {
 }
 
 function TemplateHeader({ template }: { template: CommunityTemplate }) {
+  // Displays the template title, setup type badge, and author information
+  const { t } = useTranslation();
   return (
     <View className="mb-4">
       <Text className="mb-2 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
@@ -29,7 +32,7 @@ function TemplateHeader({ template }: { template: CommunityTemplate }) {
           </Text>
         </View>
         <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-          by {template.authorHandle}
+          {t('playbooks.templates.detail.authorPrefix')} {template.authorHandle}
         </Text>
       </View>
     </View>
@@ -37,11 +40,13 @@ function TemplateHeader({ template }: { template: CommunityTemplate }) {
 }
 
 function TemplateStats({ template }: { template: CommunityTemplate }) {
+  // Shows key statistics: duration in weeks, total tasks, and adoption count
+  const { t } = useTranslation();
   return (
     <View className="mb-4 flex-row gap-3">
       <View className="flex-1 rounded-lg bg-neutral-100 p-3 dark:bg-charcoal-900">
         <Text className="text-xs text-neutral-500 dark:text-neutral-500">
-          Duration
+          {t('playbooks.templates.detail.duration')}
         </Text>
         <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
           {template.totalWeeks || 0} weeks
@@ -49,7 +54,7 @@ function TemplateStats({ template }: { template: CommunityTemplate }) {
       </View>
       <View className="flex-1 rounded-lg bg-neutral-100 p-3 dark:bg-charcoal-900">
         <Text className="text-xs text-neutral-500 dark:text-neutral-500">
-          Tasks
+          {t('playbooks.templates.detail.tasks')}
         </Text>
         <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
           {template.taskCount}
@@ -57,7 +62,7 @@ function TemplateStats({ template }: { template: CommunityTemplate }) {
       </View>
       <View className="flex-1 rounded-lg bg-neutral-100 p-3 dark:bg-charcoal-900">
         <Text className="text-xs text-neutral-500 dark:text-neutral-500">
-          Adopted
+          {t('playbooks.templates.detail.adopted')}
         </Text>
         <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
           {template.adoptionCount}
@@ -74,6 +79,8 @@ function TemplateRating({
   template: CommunityTemplate;
   onRate?: (template: CommunityTemplate) => void;
 }) {
+  // Displays community rating with star emoji and rating count, includes rate button if onRate provided
+  const { t } = useTranslation();
   if (!template.ratingAverage) return null;
 
   return (
@@ -81,14 +88,15 @@ function TemplateRating({
       <View className="flex-row items-center justify-between">
         <View>
           <Text className="text-xs text-neutral-500 dark:text-neutral-500">
-            Community Rating
+            {t('playbooks.templates.detail.communityRating')}
           </Text>
           <View className="flex-row items-center gap-2">
             <Text className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
               {template.ratingAverage.toFixed(1)}
             </Text>
             <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-              ⭐ ({template.ratingCount} ratings)
+              ⭐ ({template.ratingCount}{' '}
+              {t('playbooks.templates.detail.ratings')})
             </Text>
           </View>
         </View>
@@ -99,7 +107,7 @@ function TemplateRating({
             size="sm"
             onPress={() => onRate(template)}
           >
-            <Text>Rate</Text>
+            <Text>{t('playbooks.templates.detail.rateButton')}</Text>
           </Button>
         )}
       </View>
@@ -108,23 +116,27 @@ function TemplateRating({
 }
 
 function TemplateLicense({ license }: { license: string }) {
+  // Shows the template's license information with educational attribution notice
+  const { t } = useTranslation();
   return (
     <View className="dark:bg-primary-950 mb-4 rounded-lg bg-primary-50 p-3">
       <Text className="mb-1 text-xs font-medium text-primary-700 dark:text-primary-300">
-        License: {license}
+        {t('playbooks.templates.detail.licensePrefix')} {license}
       </Text>
       <Text className="text-xs text-primary-600 dark:text-primary-400">
-        You can use and modify this playbook with attribution to the author
+        {t('playbooks.templates.detail.licenseDescription')}
       </Text>
     </View>
   );
 }
 
 function TemplatePhases({ phases }: { phases: string[] }) {
+  // Displays the growth phases covered by this template as capitalized badges
+  const { t } = useTranslation();
   return (
     <View className="mb-4">
       <Text className="mb-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        Growth Phases
+        {t('playbooks.templates.detail.growthPhases')}
       </Text>
       <View className="flex-row flex-wrap gap-2">
         {phases.map((phase) => (
@@ -143,10 +155,14 @@ function TemplatePhases({ phases }: { phases: string[] }) {
 }
 
 function TemplateStepsPreview({ template }: { template: CommunityTemplate }) {
+  // Shows a preview of the first 5 tasks with day, phase, and task type information
+  const { t } = useTranslation();
   return (
     <View className="mb-6">
       <Text className="mb-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        Tasks Preview ({template.steps.length} total)
+        {t('playbooks.templates.detail.tasksPreview', {
+          total: template.steps.length,
+        })}
       </Text>
       <View className="rounded-lg bg-neutral-100 p-3 dark:bg-charcoal-900">
         {template.steps.slice(0, 5).map((step) => (
@@ -164,7 +180,9 @@ function TemplateStepsPreview({ template }: { template: CommunityTemplate }) {
         ))}
         {template.steps.length > 5 && (
           <Text className="mt-2 text-xs text-neutral-500 dark:text-neutral-500">
-            + {template.steps.length - 5} more tasks
+            {t('playbooks.templates.detail.moreTasks', {
+              count: template.steps.length - 5,
+            })}
           </Text>
         )}
       </View>
@@ -177,6 +195,8 @@ export function TemplateDetailView({
   onAdopt,
   onRate,
 }: TemplateDetailViewProps) {
+  // Main component that renders the complete template detail view with all sections
+  const { t } = useTranslation();
   return (
     <ScrollView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <View className="p-4">
@@ -201,11 +221,13 @@ export function TemplateDetailView({
           onPress={() => onAdopt(template)}
           size="lg"
         >
-          <Text className="font-semibold">Adopt This Playbook</Text>
+          <Text className="font-semibold">
+            {t('playbooks.templates.detail.adoptButton')}
+          </Text>
         </Button>
 
         <Text className="mt-2 text-center text-xs text-neutral-500 dark:text-neutral-500">
-          You can customize the playbook after adopting it
+          {t('playbooks.templates.detail.adoptDescription')}
         </Text>
       </View>
     </ScrollView>

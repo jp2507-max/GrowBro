@@ -21,7 +21,11 @@ type OnboardingStep = {
   icon: string;
 };
 
-export function usePlaybookOnboarding() {
+export function usePlaybookOnboarding(): {
+  showOnboarding: boolean;
+  loading: boolean;
+  completeOnboarding: () => void;
+} {
   const [showOnboarding, setShowOnboarding] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
 
@@ -57,15 +61,18 @@ type PlaybookOnboardingProps = {
 function StepIndicator({
   steps,
   currentStep,
+  testID = 'step-indicator',
 }: {
   steps: OnboardingStep[];
   currentStep: number;
-}) {
+  testID?: string;
+}): React.ReactElement {
   return (
-    <View className="mb-6 flex-row gap-2">
+    <View testID={testID} className="mb-6 flex-row gap-2">
       {steps.map((_, index) => (
         <View
           key={index}
+          testID={`${testID}-dot-${index}`}
           className={`h-2 w-8 rounded-full ${
             index === currentStep
               ? 'bg-primary-600'
@@ -77,9 +84,19 @@ function StepIndicator({
   );
 }
 
-function StepContent({ step }: { step: OnboardingStep }) {
+function StepContent({
+  step,
+  testID,
+}: {
+  step: OnboardingStep;
+  testID?: string;
+}): React.ReactElement {
   return (
-    <Animated.View entering={FadeIn.duration(400)} className="items-center">
+    <Animated.View
+      testID={testID}
+      entering={FadeIn.duration(400)}
+      className="items-center"
+    >
       <Text className="mb-6 text-6xl">{step.icon}</Text>
       <Text className="mb-4 text-center text-3xl font-bold text-neutral-900 dark:text-neutral-100">
         {step.title}
@@ -101,7 +118,7 @@ function NavigationButtons({
   totalSteps: number;
   onNext: () => void;
   onSkip: () => void;
-}) {
+}): React.ReactElement {
   const { t } = useTranslation();
   return (
     <View className="border-t border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
@@ -126,15 +143,10 @@ function NavigationButtons({
   );
 }
 
-export function PlaybookOnboarding({
-  onComplete,
-  onSkip,
-}: PlaybookOnboardingProps) {
-  const { t } = useTranslation();
-  const { track } = useAnalytics();
-  const [currentStep, setCurrentStep] = React.useState(0);
-
-  const steps: OnboardingStep[] = React.useMemo(
+function useOnboardingSteps(
+  t: ReturnType<typeof useTranslation>['t']
+): OnboardingStep[] {
+  return React.useMemo(
     () => [
       {
         title: t('playbooks.onboarding.step1.title'),
@@ -159,6 +171,17 @@ export function PlaybookOnboarding({
     ],
     [t]
   );
+}
+
+function useOnboardingNavigation(
+  steps: OnboardingStep[],
+  callbacks: {
+    onComplete: () => void;
+    onSkip: () => void;
+  },
+  track: ReturnType<typeof useAnalytics>['track']
+) {
+  const [currentStep, setCurrentStep] = React.useState(0);
 
   React.useEffect(() => {
     track('playbook_onboarding_viewed', { step: currentStep });
@@ -169,17 +192,36 @@ export function PlaybookOnboarding({
       setCurrentStep((prev) => prev + 1);
     } else {
       track('playbook_onboarding_completed', { totalSteps: steps.length });
-      onComplete();
+      callbacks.onComplete();
     }
-  }, [currentStep, steps.length, onComplete, track]);
+  }, [currentStep, steps.length, callbacks.onComplete, track]);
 
   const handleSkip = React.useCallback(() => {
     track('playbook_onboarding_skipped', { step: currentStep });
-    onSkip();
-  }, [currentStep, onSkip, track]);
+    callbacks.onSkip();
+  }, [currentStep, callbacks.onSkip, track]);
+
+  return { currentStep, handleNext, handleSkip };
+}
+
+export function PlaybookOnboarding({
+  onComplete,
+  onSkip,
+}: PlaybookOnboardingProps): React.ReactElement {
+  const { t } = useTranslation();
+  const { track } = useAnalytics();
+  const steps = useOnboardingSteps(t);
+  const { currentStep, handleNext, handleSkip } = useOnboardingNavigation(
+    steps,
+    { onComplete, onSkip },
+    track
+  );
 
   return (
-    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
+    <View
+      testID="playbook-onboarding"
+      className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
+    >
       <ScrollView
         className="flex-1"
         contentContainerClassName="flex-1 justify-center px-6"

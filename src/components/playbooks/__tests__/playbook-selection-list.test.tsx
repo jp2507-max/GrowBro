@@ -13,13 +13,28 @@ const mockPlaybooks = [
   {
     playbookId: '1',
     name: 'Test Playbook 1',
-    description: 'A test playbook',
     setup: 'auto_indoor' as const,
     totalWeeks: 8,
-    taskCount: 15,
-    authorHandle: 'testuser',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
+    totalTasks: 15,
+    phaseBreakdown: [
+      {
+        phase: 'seedling' as const,
+        durationDays: 7,
+        taskCount: 3,
+      },
+      {
+        phase: 'veg' as const,
+        durationDays: 14,
+        taskCount: 5,
+      },
+      {
+        phase: 'flower' as const,
+        durationDays: 21,
+        taskCount: 7,
+      },
+    ],
+    estimatedStartDate: '2024-01-01T00:00:00Z',
+    estimatedEndDate: '2024-01-08T00:00:00Z',
   },
 ];
 

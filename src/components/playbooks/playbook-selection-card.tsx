@@ -12,7 +12,11 @@ import { useTranslation } from 'react-i18next';
 import { Pressable } from 'react-native';
 
 import { Text, View } from '@/components/ui';
-import type { PlaybookPreview, PlaybookSetup } from '@/types/playbook';
+import type {
+  GrowPhase,
+  PlaybookPreview,
+  PlaybookSetup,
+} from '@/types/playbook';
 
 type PlaybookSelectionCardProps = {
   preview: PlaybookPreview;
@@ -52,10 +56,10 @@ function PhaseBreakdownItem({
   taskCount,
   getPhaseLabel,
 }: {
-  phase: string;
+  phase: GrowPhase;
   durationDays: number;
   taskCount: number;
-  getPhaseLabel: (phase: string) => string;
+  getPhaseLabel: (phase: GrowPhase) => string;
 }) {
   const { t } = useTranslation();
   return (
@@ -137,8 +141,8 @@ function PlaybookCardBreakdown({
   getPhaseLabel,
   t,
 }: {
-  phaseBreakdown: any[];
-  getPhaseLabel: (phase: string) => string;
+  phaseBreakdown: PlaybookPreview['phaseBreakdown'];
+  getPhaseLabel: (phase: GrowPhase) => string;
   t: (key: string) => string;
 }) {
   return (
@@ -195,8 +199,8 @@ export function PlaybookSelectionCard({
     [t]
   );
   const getPhaseLabel = React.useCallback(
-    (phase: string) =>
-      t(`phases.${phase as PlaybookSetup}`, {
+    (phase: GrowPhase) =>
+      t(`phases.${phase}`, {
         defaultValue: phase,
       }),
     [t]

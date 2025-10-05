@@ -24,7 +24,9 @@ type ConflictHeaderProps = {
   tableName: string;
 };
 
-function ConflictHeader({ tableName }: ConflictHeaderProps) {
+function ConflictHeader({
+  tableName,
+}: ConflictHeaderProps): React.ReactElement {
   return (
     <View
       className="border-b border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900"
@@ -43,7 +45,7 @@ function ConflictHeader({ tableName }: ConflictHeaderProps) {
   );
 }
 
-function ConflictExplanation() {
+function ConflictExplanation(): React.ReactElement {
   return (
     <View
       className="mb-4 rounded-lg border border-primary-200 bg-primary-50 p-4 dark:border-primary-800 dark:bg-primary-900/20"
@@ -67,7 +69,7 @@ function ConflictFieldCard({
   field,
   localValue,
   remoteValue,
-}: ConflictFieldCardProps) {
+}: ConflictFieldCardProps): React.ReactElement {
   return (
     <View className="mt-3 rounded-xl border border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
       {/* Field Name */}
@@ -120,7 +122,7 @@ function ConflictFieldCard({
   );
 }
 
-function ConflictWarning() {
+function ConflictWarning(): React.ReactElement {
   return (
     <View
       className="rounded-lg border border-warning-200 bg-warning-50 p-4 dark:border-warning-800 dark:bg-warning-900/20"
@@ -139,7 +141,10 @@ type ConflictActionsProps = {
   onDismiss: () => void;
 };
 
-function ConflictActions({ onResolve, onDismiss }: ConflictActionsProps) {
+function ConflictActions({
+  onResolve,
+  onDismiss,
+}: ConflictActionsProps): React.ReactElement {
   return (
     <View className="border-t border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
       <View className="mb-3 flex-row gap-3">
@@ -151,12 +156,14 @@ function ConflictActions({ onResolve, onDismiss }: ConflictActionsProps) {
             className="min-h-[48px]"
           >
             <View className="items-center">
-              <Text className="text-sm font-semibold text-primary-700 dark:text-primary-300">
-                Keep My Version
-              </Text>
-              <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-                (This Device)
-              </Text>
+              <Text
+                className="text-sm font-semibold text-primary-700 dark:text-primary-300"
+                tx="sync.conflict.keepLocal"
+              />
+              <Text
+                className="text-xs text-neutral-600 dark:text-neutral-400"
+                tx="sync.conflict.keepLocalHint"
+              />
             </View>
           </Button>
         </View>
@@ -167,10 +174,14 @@ function ConflictActions({ onResolve, onDismiss }: ConflictActionsProps) {
             className="min-h-[48px]"
           >
             <View className="items-center">
-              <Text className="text-sm font-semibold text-white">
-                Use Server Version
-              </Text>
-              <Text className="text-xs text-white/80">(Other Device)</Text>
+              <Text
+                className="text-sm font-semibold text-white"
+                tx="sync.conflict.acceptServer"
+              />
+              <Text
+                className="text-xs text-white/80"
+                tx="sync.conflict.acceptServerHint"
+              />
             </View>
           </Button>
         </View>
@@ -178,10 +189,11 @@ function ConflictActions({ onResolve, onDismiss }: ConflictActionsProps) {
       <Button
         variant="ghost"
         onPress={onDismiss}
-        label="Decide Later"
         testID="dismiss-conflict-button"
         className="min-h-[44px]"
-      />
+      >
+        <Text tx="sync.conflict.decideLater" />
+      </Button>
     </View>
   );
 }
@@ -206,9 +218,11 @@ export function EnhancedConflictResolutionModal({
 
         {/* Conflict Fields */}
         <View className="mb-4">
-          <Text className="mb-3 text-sm font-medium uppercase text-neutral-500 dark:text-neutral-400">
-            Conflicting Fields ({conflict.conflictFields.length})
-          </Text>
+          <Text
+            className="mb-3 text-sm font-medium uppercase text-neutral-500 dark:text-neutral-400"
+            tx="sync.conflict.fieldsHeading"
+            txOptions={{ count: conflict.conflictFields.length }}
+          />
 
           {conflict.conflictFields.map((field) => (
             <ConflictFieldCard

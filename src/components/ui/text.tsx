@@ -1,3 +1,4 @@
+import type { TOptions } from 'i18next';
 import React from 'react';
 import type { TextProps, TextStyle } from 'react-native';
 import { I18nManager, StyleSheet, Text as NNText } from 'react-native';
@@ -6,11 +7,11 @@ import { twMerge } from 'tailwind-merge';
 import type { TxKeyPath } from '@/lib/i18n';
 import { translate } from '@/lib/i18n';
 
-interface Props extends TextProps {
+type Props = TextProps & {
   className?: string;
   tx?: TxKeyPath;
-  txOptions?: Record<string, any>;
-}
+  txOptions?: TOptions;
+};
 
 export const Text = ({
   className = '',
