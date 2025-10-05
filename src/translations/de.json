@@ -96,6 +96,7 @@
   "common": {
     "back": "Zurück",
     "cancel": "Abbrechen",
+    "null": "null",
     "ok": "OK",
     "retry": "Erneut versuchen"
   },

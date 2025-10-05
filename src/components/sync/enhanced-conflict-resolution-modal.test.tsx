@@ -36,18 +36,18 @@ describe('ConflictFieldCard', () => {
       });
     });
 
-    test('returns displayNameMap fallback when field exists in map but not in translations', async () => {
-      // Assuming 'custom_field' exists in displayNameMap but not in FIELD_TRANSLATION_KEYS
+    test('returns field name as fallback when field is not in translations', async () => {
+      // Using a field that's not in FIELD_TRANSLATION_KEYS
       setup(
         <ConflictFieldCard
-          field="notes"
-          localValue="Test Notes"
-          remoteValue="Server Notes"
+          field="nonexistent_field"
+          localValue="Test Value"
+          remoteValue="Server Value"
         />
       );
 
       await waitFor(() => {
-        expect(screen.getByText('Notes')).toBeOnTheScreen();
+        expect(screen.getByText('nonexistent_field')).toBeOnTheScreen();
       });
     });
   });

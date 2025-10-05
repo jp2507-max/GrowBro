@@ -8,6 +8,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 
 import { Button, Text, View } from '@/components/ui';
@@ -15,79 +16,22 @@ import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
 import type { Conflict } from '@/lib/sync/conflict-resolver';
 
-// Map database field names to user-friendly display names
-const displayNameMap: Record<string, string> = {
-  name: 'Name',
-  description: 'Description',
-  created_at: 'Created Date',
-  updated_at: 'Last Updated',
-  strain_id: 'Strain',
-  plant_id: 'Plant',
-  status: 'Status',
-  notes: 'Notes',
-  phase: 'Growth Phase',
-  start_date: 'Start Date',
-  end_date: 'End Date',
-  pH: 'pH Level',
-  ec: 'EC Level',
-  temperature: 'Temperature',
-  humidity: 'Humidity',
-  light_schedule: 'Light Schedule',
-  watering_schedule: 'Watering Schedule',
-  feeding_schedule: 'Feeding Schedule',
-  pruning_schedule: 'Pruning Schedule',
-  training_schedule: 'Training Schedule',
-  monitoring_schedule: 'Monitoring Schedule',
-  harvest_date: 'Harvest Date',
-  drying_start: 'Drying Start',
-  curing_start: 'Curing Start',
-  thc_content: 'THC Content',
-  cbd_content: 'CBD Content',
-  yield_estimate: 'Yield Estimate',
-  difficulty: 'Difficulty Level',
-  indoor_outdoor: 'Grow Environment',
-  auto_photo: 'Flowering Type',
-  genetics: 'Genetics',
-  effects: 'Effects',
-  flavors: 'Flavors',
-  terpenes: 'Terpenes',
-  height: 'Height',
-  flowering_time: 'Flowering Time',
-  user_id: 'User',
-  email: 'Email',
-  username: 'Username',
-  avatar_url: 'Avatar',
-  preferences: 'Preferences',
-  settings: 'Settings',
-  notifications_enabled: 'Notifications',
-  theme: 'Theme',
-  language: 'Language',
-  timezone: 'Timezone',
-  location: 'Location',
-  device_id: 'Device',
-  app_version: 'App Version',
-  os_version: 'OS Version',
-  last_sync_at: 'Last Sync',
-  sync_status: 'Sync Status',
-  is_deleted: 'Deleted',
-  deleted_at: 'Deleted Date',
-  tags: 'Tags',
-  categories: 'Categories',
-  priority: 'Priority',
-  due_date: 'Due Date',
-  completed_at: 'Completed Date',
-  reminder_at: 'Reminder Date',
-  recurrence: 'Recurrence',
-  parent_task_id: 'Parent Task',
-  assigned_to: 'Assigned To',
-  created_by: 'Created By',
-  modified_by: 'Modified By',
-};
+export function formatValue(
+  value: unknown,
+  t?: (key: string) => string
+): string {
+  if (value === null || value === undefined) {
+    return t?.('common.null') ?? 'null';
+  }
 
-export function formatValue(value: unknown): string {
-  if (value === null || value === undefined) return 'null';
-  if (value instanceof Date) return value.toLocaleString();
-  if (typeof value === 'object') return JSON.stringify(value, null, 2);
+  if (value instanceof Date) {
+    return value.toLocaleString();
+  }
+
+  if (typeof value === 'object') {
+    return JSON.stringify(value, null, 2);
+  }
+
   return String(value);
 }
 
@@ -163,15 +107,49 @@ const FIELD_TRANSLATION_KEYS: Partial<Record<string, TxKeyPath>> = {
   indoor_outdoor: 'sync.conflict.field.indoor_outdoor',
   auto_photo: 'sync.conflict.field.auto_photo',
   genetics: 'sync.conflict.field.genetics',
+  effects: 'sync.conflict.field.effects',
+  flavors: 'sync.conflict.field.flavors',
+  terpenes: 'sync.conflict.field.terpenes',
+  height: 'sync.conflict.field.height',
+  flowering_time: 'sync.conflict.field.flowering_time',
+  user_id: 'sync.conflict.field.user_id',
+  email: 'sync.conflict.field.email',
+  username: 'sync.conflict.field.username',
+  avatar_url: 'sync.conflict.field.avatar_url',
+  preferences: 'sync.conflict.field.preferences',
+  settings: 'sync.conflict.field.settings',
+  notifications_enabled: 'sync.conflict.field.notifications_enabled',
+  theme: 'sync.conflict.field.theme',
+  language: 'sync.conflict.field.language',
+  timezone: 'sync.conflict.field.timezone',
+  location: 'sync.conflict.field.location',
+  device_id: 'sync.conflict.field.device_id',
+  app_version: 'sync.conflict.field.app_version',
+  os_version: 'sync.conflict.field.os_version',
+  last_sync_at: 'sync.conflict.field.last_sync_at',
+  sync_status: 'sync.conflict.field.sync_status',
+  is_deleted: 'sync.conflict.field.is_deleted',
+  deleted_at: 'sync.conflict.field.deleted_at',
+  tags: 'sync.conflict.field.tags',
+  categories: 'sync.conflict.field.categories',
+  priority: 'sync.conflict.field.priority',
+  due_date: 'sync.conflict.field.due_date',
+  completed_at: 'sync.conflict.field.completed_at',
+  reminder_at: 'sync.conflict.field.reminder_at',
+  recurrence: 'sync.conflict.field.recurrence',
+  parent_task_id: 'sync.conflict.field.parent_task_id',
+  assigned_to: 'sync.conflict.field.assigned_to',
+  created_by: 'sync.conflict.field.created_by',
+  modified_by: 'sync.conflict.field.modified_by',
 };
 
-// Get localized field name with fallback to displayNameMap or original field
+// Get localized field name with fallback to original field name
 function getFieldDisplayName(fieldName: string): string {
   const translationKey = FIELD_TRANSLATION_KEYS[fieldName];
   if (translationKey) {
     return translate(translationKey);
   }
-  return displayNameMap[fieldName] || fieldName;
+  return fieldName;
 }
 
 type ConflictFieldCardProps = {
@@ -185,6 +163,7 @@ function ConflictFieldCard({
   localValue,
   remoteValue,
 }: ConflictFieldCardProps): React.ReactElement {
+  const { t } = useTranslation();
   return (
     <View className="mt-3 rounded-xl border border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
       {/* Field Name */}
@@ -208,7 +187,7 @@ function ConflictFieldCard({
         </View>
         <View className="min-h-[48px] rounded-lg border border-primary-200 bg-primary-50 p-3 dark:border-primary-800 dark:bg-primary-900/20">
           <Text className="font-mono text-sm text-neutral-800 dark:text-neutral-200">
-            {formatValue(localValue)}
+            {formatValue(localValue, t)}
           </Text>
         </View>
       </View>
@@ -229,7 +208,7 @@ function ConflictFieldCard({
         </View>
         <View className="min-h-[48px] rounded-lg border border-success-200 bg-success-50 p-3 dark:border-success-800 dark:bg-success-900/20">
           <Text className="font-mono text-sm text-neutral-800 dark:text-neutral-200">
-            {formatValue(remoteValue)}
+            {formatValue(remoteValue, t)}
           </Text>
         </View>
       </View>
