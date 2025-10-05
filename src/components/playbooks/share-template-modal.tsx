@@ -5,7 +5,13 @@
  */
 
 import React from 'react';
-import { type Control, Controller, useForm } from 'react-hook-form';
+import {
+  type Control,
+  Controller,
+  useForm,
+  type UseFormHandleSubmit,
+  type UseFormStateReturn,
+} from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
 
@@ -14,7 +20,15 @@ import { Button, Input, Text, View } from '@/components/ui';
 import type { Playbook } from '@/lib/playbooks/sanitize-playbook';
 import { validatePlaybookForSharing } from '@/lib/playbooks/sanitize-playbook';
 
-function useShareTemplateForm(playbook: Playbook, onSuccess: () => void) {
+function useShareTemplateForm(
+  playbook: Playbook,
+  onSuccess: () => void
+): {
+  control: Control<ShareTemplateFormData>;
+  handleSubmit: UseFormHandleSubmit<ShareTemplateFormData>;
+  formState: UseFormStateReturn<ShareTemplateFormData>;
+  isPending: boolean;
+} {
   const { t } = useTranslation();
   const { control, handleSubmit, formState } = useForm<ShareTemplateFormData>({
     defaultValues: {
@@ -87,7 +101,7 @@ function AuthorHandleField({
   control,
 }: {
   control: Control<ShareTemplateFormData>;
-}) {
+}): React.ReactElement {
   const { t } = useTranslation();
 
   return (
@@ -137,7 +151,7 @@ function DescriptionField({
   control,
 }: {
   control: Control<ShareTemplateFormData>;
-}) {
+}): React.ReactElement {
   const { t } = useTranslation();
 
   return (
@@ -179,7 +193,7 @@ function LicenseField({
   control,
 }: {
   control: Control<ShareTemplateFormData>;
-}) {
+}): React.ReactElement {
   const { t } = useTranslation();
 
   return (
@@ -205,7 +219,7 @@ function LicenseField({
   );
 }
 
-function PrivacyNotice() {
+function PrivacyNotice(): React.ReactElement {
   const { t } = useTranslation();
 
   return (
@@ -227,7 +241,7 @@ function ActionButtons({
   onShare: () => void;
   isPending: boolean;
   isValid: boolean;
-}) {
+}): React.ReactElement {
   const { t } = useTranslation();
 
   return (
@@ -257,7 +271,7 @@ function ActionButtons({
   );
 }
 
-function ModalHeader() {
+function ModalHeader(): React.ReactElement {
   const { t } = useTranslation();
 
   return (

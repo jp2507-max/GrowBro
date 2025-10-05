@@ -7,7 +7,9 @@ type TrichomeHelperHeaderProps = {
   onClose?: () => void;
 };
 
-export function TrichomeHelperHeader({ onClose }: TrichomeHelperHeaderProps) {
+export function TrichomeHelperHeader({
+  onClose,
+}: TrichomeHelperHeaderProps): React.JSX.Element {
   const { t } = useTranslation();
 
   return (

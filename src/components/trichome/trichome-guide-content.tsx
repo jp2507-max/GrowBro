@@ -8,7 +8,9 @@ type TrichomeGuideContentProps = {
   guide: TrichomeGuide;
 };
 
-export function TrichomeGuideContent({ guide }: TrichomeGuideContentProps) {
+export function TrichomeGuideContent({
+  guide,
+}: TrichomeGuideContentProps): React.ReactElement {
   return (
     <>
       {/* Educational Guide */}

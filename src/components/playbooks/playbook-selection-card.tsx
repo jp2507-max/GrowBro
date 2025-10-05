@@ -33,14 +33,9 @@ const SETUP_LABEL_KEYS: Record<PlaybookSetup, string> = {
 
 export function getSetupDisplayLabel(
   setup: PlaybookSetup
-): (t: (key: string) => string) => string {
-  return (t: (key: string) => string) => {
-    try {
-      return t(SETUP_LABEL_KEYS[setup]);
-    } catch {
-      return setup; // Fallback to the raw slug if translation fails
-    }
-  };
+): (t: (key: string, options?: any) => string) => string {
+  return (t: (key: string, options?: any) => string) =>
+    t(SETUP_LABEL_KEYS[setup], { defaultValue: setup });
 }
 
 const SETUP_COLORS: Record<PlaybookSetup, string> = {
@@ -187,7 +182,7 @@ export function PlaybookSelectionCard({
   preview,
   onPress,
   className = '',
-}: PlaybookSelectionCardProps): JSX.Element {
+}: PlaybookSelectionCardProps) {
   const { t } = useTranslation();
   const setupLabels = React.useMemo(
     () => ({

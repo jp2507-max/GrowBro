@@ -11,7 +11,7 @@ type TrichomeHelperTabsProps = {
 export function TrichomeHelperTabs({
   showGuide,
   onToggleGuide,
-}: TrichomeHelperTabsProps) {
+}: TrichomeHelperTabsProps): React.JSX.Element {
   const { t } = useTranslation();
 
   return (

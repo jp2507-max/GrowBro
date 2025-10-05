@@ -35,7 +35,7 @@ export function TrichomeHelperScreen({
   onSubmitAssessment,
   onClose,
   loading = false,
-}: TrichomeHelperScreenProps): JSX.Element {
+}: TrichomeHelperScreenProps): React.JSX.Element {
   const [showGuide, setShowGuide] = useState(true);
 
   return (

@@ -7,7 +7,9 @@ type TrichomeQuickReferenceProps = {
   guide: TrichomeGuide;
 };
 
-export function TrichomeQuickReference({ guide }: TrichomeQuickReferenceProps) {
+export function TrichomeQuickReference({
+  guide,
+}: TrichomeQuickReferenceProps): React.ReactElement {
   return (
     <View className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
       <Text

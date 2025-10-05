@@ -12,6 +12,7 @@ import { ScrollView } from 'react-native';
 
 import { Button, Text, View } from '@/components/ui';
 import { translate } from '@/lib/i18n';
+import type { TxKeyPath } from '@/lib/i18n/utils';
 import type { Conflict } from '@/lib/sync/conflict-resolver';
 
 // Map database field names to user-friendly display names
@@ -129,6 +130,41 @@ function ConflictExplanation(): React.ReactElement {
   );
 }
 
+// Map field names to their corresponding translation keys for type safety
+const FIELD_TRANSLATION_KEYS: Partial<Record<string, TxKeyPath>> = {
+  name: 'sync.conflict.field.name',
+  description: 'sync.conflict.field.description',
+  created_at: 'sync.conflict.field.created_at',
+  updated_at: 'sync.conflict.field.updated_at',
+  strain_id: 'sync.conflict.field.strain_id',
+  plant_id: 'sync.conflict.field.plant_id',
+  status: 'sync.conflict.field.status',
+  notes: 'sync.conflict.field.notes',
+  phase: 'sync.conflict.field.phase',
+  start_date: 'sync.conflict.field.start_date',
+  end_date: 'sync.conflict.field.end_date',
+  pH: 'sync.conflict.field.pH',
+  ec: 'sync.conflict.field.ec',
+  temperature: 'sync.conflict.field.temperature',
+  humidity: 'sync.conflict.field.humidity',
+  light_schedule: 'sync.conflict.field.light_schedule',
+  watering_schedule: 'sync.conflict.field.watering_schedule',
+  feeding_schedule: 'sync.conflict.field.feeding_schedule',
+  pruning_schedule: 'sync.conflict.field.pruning_schedule',
+  training_schedule: 'sync.conflict.field.training_schedule',
+  monitoring_schedule: 'sync.conflict.field.monitoring_schedule',
+  harvest_date: 'sync.conflict.field.harvest_date',
+  drying_start: 'sync.conflict.field.drying_start',
+  curing_start: 'sync.conflict.field.curing_start',
+  thc_content: 'sync.conflict.field.thc_content',
+  cbd_content: 'sync.conflict.field.cbd_content',
+  yield_estimate: 'sync.conflict.field.yield_estimate',
+  difficulty: 'sync.conflict.field.difficulty',
+  indoor_outdoor: 'sync.conflict.field.indoor_outdoor',
+  auto_photo: 'sync.conflict.field.auto_photo',
+  genetics: 'sync.conflict.field.genetics',
+};
+
 type ConflictFieldCardProps = {
   field: string;
   localValue: unknown;
@@ -142,13 +178,11 @@ function ConflictFieldCard({
 }: ConflictFieldCardProps): React.ReactElement {
   // Get localized field name with fallback to displayNameMap or original field
   const getFieldDisplayName = (fieldName: string): string => {
-    const translationKey = `sync.conflict.field.${fieldName}` as const;
-    const translated = translate(translationKey);
-    // If translation returns the key itself, it means the key wasn't found
-    if (translated === translationKey) {
-      return displayNameMap[fieldName] || fieldName;
+    const translationKey = FIELD_TRANSLATION_KEYS[fieldName];
+    if (translationKey) {
+      return translate(translationKey);
     }
-    return translated;
+    return displayNameMap[fieldName] || fieldName;
   };
 
   return (
