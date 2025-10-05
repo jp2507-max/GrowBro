@@ -9,7 +9,6 @@
  * - Reconnect and sync
  * - Verify changes on second device
  */
-/* eslint-disable max-lines-per-function */
 
 import { database } from '@/lib/watermelon';
 

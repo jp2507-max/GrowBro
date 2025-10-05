@@ -3,7 +3,6 @@
  *
  * Tests for playbook selection, application, and constraint enforcement
  */
-/* eslint-disable max-lines-per-function */
 
 import { type Database } from '@nozbe/watermelondb';
 

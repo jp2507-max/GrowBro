@@ -8,3 +8,4 @@ export * from './harvest-suggestion-card';
 export * from './harvest-window-list';
 export * from './trichome-assessment-form';
 export * from './trichome-guide-card';
+export * from './trichome-helper-screen';

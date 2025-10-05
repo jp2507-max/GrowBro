@@ -14,7 +14,6 @@ jest.mock('@/lib/supabase', () => ({
   },
 }));
 
-/* eslint-disable max-lines-per-function */
 describe('NotificationAnalyticsService', () => {
   beforeEach(() => {
     jest.clearAllMocks();

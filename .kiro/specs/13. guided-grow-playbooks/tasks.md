@@ -136,7 +136,7 @@
   - **DoD**: Phase computation accurate, timeline performs at 60 FPS, transitions notify properly
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7_
 
-- [ ] 12. Build strain-specific guidance system
+- [x] 12. Build strain-specific guidance system
   - Create strain metadata fields: autoflower/photoperiod, breeder flowering range, sativa/indica lean
   - When breeder flowering range provided, set phase durations accordingly with conservative defaults if missing
   - Add "Assumptions" chip when using conservative defaults to indicate default values
@@ -147,7 +147,7 @@
   - **DoD**: Strain data influences timing, assumptions clear, guidance educational and compliant
   - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7_
 
-- [ ] 13. Implement community template sharing
+- [x] 13. Implement community template sharing
   - Strip all PII and personal plant data, include only normalized steps schema plus author handle
   - Add license field (CC-BY-SA) to clarify community reuse terms for shared templates
   - Implement RLS enforcement: owner-write/public-read permissions for community templates
@@ -158,7 +158,7 @@
   - **DoD**: PII stripped properly, RLS enforced, Realtime limited to public data, adoption works
   - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7, 10.8_
 
-- [ ] 14. Create comprehensive error handling system
+- [x] 14. Create comprehensive error handling system
   - Introduce typed errors (RRULEError, NotificationError, SyncError) with stable codes doubling as analytics fields
   - Build RRULE validation errors with localized messages and fallback simple recurrence options
   - Add notification failure handling with in-app reminder fallbacks and WorkManager/JobScheduler retry
@@ -169,7 +169,7 @@
   - **DoD**: Errors typed and trackable, fallbacks work, user messaging clear, analytics accurate
   - _Requirements: Cross-cutting error handling_
 
-- [ ] 15. Build analytics and observability system
+- [x] 15. Build analytics and observability system
   - Implement structured event tracking: playbook_apply, apply_duration_ms, shift_preview|apply|undo, task_customized
   - Add notification health metrics: notif_scheduled|delivered|missed with delivery rate monitoring
   - Create conflict tracking: conflict_seen|restored with table and conflict type details
@@ -180,7 +180,7 @@
   - **DoD**: All key events tracked, health metrics accurate, delivery monitoring functional
   - _Requirements: Analytics and observability_
 
-- [ ] 16. Implement accessibility and internationalization
+- [x] 16. Implement accessibility and internationalization
   - Enforce 44pt (iOS) / 48dp (Android) minimum touch targets with automated checks in CI
   - Add proper focus order and VoiceOver/TalkBack labels on all key interactive controls
   - Implement ICU MessageFormat for all playbook text, titles, summaries with pluralization support
@@ -191,7 +191,7 @@
   - **DoD**: Touch targets compliant, screen readers work, ICU translations functional, checks automated
   - _Requirements: Accessibility and i18n_
 
-- [ ] 17. Create comprehensive test suite
+- [x] 17. Create comprehensive test suite
   - Build RRULE unit tests with DST boundary test vectors covering spring/fall transitions
   - Implement notification matrix testing on Pixel 6 (A14), mid-tier Moto, iPhone SE/13 in Doze/Low Power modes
   - Create flight-mode E2E script: apply playbook → shift +3 days → customize 5 tasks → complete 10 → reconnect → verify second device parity
@@ -202,7 +202,7 @@
   - **DoD**: RRULE/DST tests pass, notification matrix succeeds, E2E offline workflow works, performance verified
   - _Requirements: Testing strategy_
 
-- [ ] 18. Implement UI components with FlashList v2
+- [x] 18. Implement UI components with FlashList v2 (check our enhanced existing components)
   - Create playbook selection interface with preview cards showing weeks, phases, task counts
   - Build task timeline using FlashList v2 leveraging automatic sizing without estimatedItemSize
   - Implement shift preview modal showing before/after diff and conflict warnings for manually edited tasks
@@ -213,7 +213,7 @@
   - **DoD**: UI responsive and accessible, FlashList v2 performs well, previews accurate, conflicts clear
   - _Requirements: UI/UX implementation_
 
-- [ ] 19. Build Supabase backend integration
+- [x] 19. Build Supabase backend integration (use supabase mcp tool)
   - Create sync endpoints implementing pullChanges/pushChanges objects exactly as WatermelonDB expects
   - Add idempotency keys for push operations preventing duplicate mutations
   - Implement RLS policies securing all private user tables with per-user isolation
@@ -224,7 +224,7 @@
   - **DoD**: Sync contract matches WatermelonDB, RLS enforced, Realtime limited to public data, idempotency works
   - _Requirements: Backend integration_
 
-- [ ] 20. Integrate and polish complete feature
+- [x] 20. Integrate and polish complete feature
   - Wire all components together into cohesive user experience
   - Implement final error handling and edge case coverage
   - Add loading states, optimistic updates, and smooth transitions

@@ -191,6 +191,7 @@ export default defineConfig([
     plugins: { 'testing-library': testingLibrary },
     rules: {
       ...testingLibrary.configs.react.rules,
+      'max-lines-per-function': 'off',
     },
   },
   // Deno Edge Functions use jsr:/npm: specifiers that Node import resolver can't resolve

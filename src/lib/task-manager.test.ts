@@ -14,7 +14,6 @@ import {
 // without asserting on Watermelon internals. They verify shapes and basic
 // invariants per Task 3 requirements.
 
-/* eslint-disable max-lines-per-function */
 const createDailySeries = () =>
   createSeries({
     title: 'Daily misting',

@@ -135,11 +135,10 @@ describe('TaskGenerator', () => {
 
   describe('nextOccurrence', () => {
     it('calculates next occurrence', () => {
-      const next = taskGenerator.nextOccurrence(
-        new Date('2025-01-01T00:00:00Z'),
-        'UTC',
-        'FREQ=DAILY;INTERVAL=1'
-      );
+      const next = taskGenerator.nextOccurrence('FREQ=DAILY;INTERVAL=1', {
+        after: new Date('2025-01-01T00:00:00Z'),
+        timezone: 'UTC',
+      });
       expect(next).not.toBeNull();
     });
   });

@@ -1,4 +1,3 @@
-/* eslint-disable max-lines-per-function */
 import { useQueryClient } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react-native';
 

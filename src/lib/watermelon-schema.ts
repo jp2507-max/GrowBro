@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const schema = appSchema({
-  version: 11,
+  version: 12,
   tables: [
     tableSchema({
       name: 'series',
@@ -15,6 +15,7 @@ export const schema = appSchema({
         { name: 'until_utc', type: 'string', isOptional: true },
         { name: 'count', type: 'number', isOptional: true },
         { name: 'plant_id', type: 'string', isOptional: true },
+        { name: 'user_id', type: 'string', isOptional: true },
         { name: 'server_revision', type: 'number', isOptional: true },
         { name: 'server_updated_at_ms', type: 'number', isOptional: true },
         { name: 'created_at', type: 'number' },
@@ -32,6 +33,7 @@ export const schema = appSchema({
         { name: 'reminder_at_local', type: 'string', isOptional: true },
         { name: 'reminder_at_utc', type: 'string', isOptional: true },
         { name: 'status', type: 'string', isOptional: true },
+        { name: 'user_id', type: 'string', isOptional: true },
         { name: 'server_revision', type: 'number', isOptional: true },
         { name: 'server_updated_at_ms', type: 'number', isOptional: true },
         { name: 'created_at', type: 'number' },
@@ -58,6 +60,7 @@ export const schema = appSchema({
         { name: 'origin_step_id', type: 'string', isOptional: true },
         { name: 'phase_index', type: 'number', isOptional: true },
         { name: 'notification_id', type: 'string', isOptional: true },
+        { name: 'user_id', type: 'string', isOptional: true },
         { name: 'server_revision', type: 'number', isOptional: true },
         { name: 'server_updated_at_ms', type: 'number', isOptional: true },
         { name: 'created_at', type: 'number' },
@@ -178,6 +181,7 @@ export const schema = appSchema({
         { name: 'meter_id', type: 'string', isOptional: true, isIndexed: true },
         { name: 'note', type: 'string', isOptional: true },
         { name: 'quality_flags', type: 'string', isOptional: true }, // JSON array of flags
+        { name: 'user_id', type: 'string', isOptional: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
         { name: 'deleted_at', type: 'number', isOptional: true },

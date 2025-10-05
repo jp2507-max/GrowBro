@@ -1,4 +1,3 @@
-/* eslint-disable max-lines-per-function */
 import { type Database } from '@nozbe/watermelondb';
 
 import type { AdjustmentContext } from '@/types/ai-adjustments';
@@ -338,6 +337,10 @@ describe('AIAdjustmentService', () => {
       };
 
       const mockCooldownsCollection = {
+        query: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnThis(),
+          fetch: jest.fn().mockResolvedValue([]),
+        }),
         create: jest.fn(),
       };
 

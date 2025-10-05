@@ -204,7 +204,74 @@
     "title": "Sync-Diagnostik"
   },
   "errors": {
-    "postLoad": "Fehler beim Laden des Beitrags"
+    "notification": {
+      "battery_optimization_title": "Batterieoptimierung aktiv",
+      "cancel_failed": "Erinnerung konnte nicht abgebrochen werden",
+      "channel_missing": "Benachrichtigungskanal nicht konfiguriert",
+      "delivery_failed": "Erinnerung wurde nicht zugestellt",
+      "doze_mode_active": "Geräte-Batterieoptimierung kann Erinnerungen verzögern",
+      "exact_alarm_unavailable": "Exakte Alarmplanung auf diesem Gerät nicht verfügbar",
+      "fallback_description": "Wir zeigen dir eine Erinnerung, wenn du die App öffnest",
+      "fallback_title": "Erinnerung erstellt",
+      "invalid_trigger": "Ungültige Erinnerungszeit",
+      "permission_denied": "Benachrichtigungsberechtigung verweigert. Bitte aktiviere Benachrichtigungen in den Einstellungen.",
+      "permission_title": "Benachrichtigungen deaktiviert",
+      "schedule_failed": "Erinnerung konnte nicht geplant werden",
+      "title": "Erinnerungsfehler"
+    },
+    "playbook": {
+      "already_applied": "Dieses Playbook ist bereits auf diese Pflanze angewendet",
+      "generation_failed": "Aufgaben konnten nicht aus Playbook generiert werden",
+      "invalid_schema": "Ungültiges Playbook-Format",
+      "not_found": "Playbook nicht gefunden",
+      "title": "Playbook-Fehler"
+    },
+    "postLoad": "Fehler beim Laden des Beitrags",
+    "recovery": {
+      "check_connection": "Überprüfe deine Internetverbindung",
+      "disable_battery_optimization": "Deaktiviere Batterieoptimierung für diese App in den Einstellungen",
+      "enable_notifications": "Öffne Einstellungen, um Benachrichtigungen zu aktivieren",
+      "rrule_fallback": "Verwende stattdessen einfache tägliche oder wöchentliche Wiederholung",
+      "sign_in_again": "Melde dich erneut an",
+      "update_app": "Aktualisiere die App aus dem Store"
+    },
+    "rrule": {
+      "byday_and_bymonthday": "Wiederholungsmuster kann nicht sowohl Wochentag als auch Monatstag angeben",
+      "count_and_until": "Wiederholungsmuster kann nicht sowohl Anzahl als auch Enddatum haben",
+      "invalid_byday": "Ungültiger Wochentag im Wiederholungsmuster",
+      "invalid_bymonthday": "Ungültiger Monatstag im Wiederholungsmuster",
+      "invalid_format": "Ungültiges Wiederholungsmuster-Format",
+      "invalid_freq": "Ungültige Wiederholungshäufigkeit",
+      "invalid_interval": "Wiederholungsintervall muss eine positive Zahl sein",
+      "missing_freq": "Wiederholungsmuster muss eine Häufigkeit angeben (täglich, wöchentlich usw.)",
+      "parse_error": "Wiederholungsmuster konnte nicht analysiert werden",
+      "timezone_error": "Ungültige Zeitzone für Wiederholungsberechnung",
+      "title": "Wiederholungsfehler"
+    },
+    "sync": {
+      "auth_error": "Authentifizierungsfehler. Bitte melde dich erneut an.",
+      "conflict_detected": "Daten wurden auf einem anderen Gerät aktualisiert",
+      "invalid_data": "Ungültige Daten vom Server empfangen",
+      "max_retries_description": "{{message}} Bitte versuche es später erneut.",
+      "max_retries_title": "Synchronisierung fehlgeschlagen",
+      "network_error": "Netzwerkverbindungsfehler. Änderungen werden synchronisiert, wenn online.",
+      "permanent_title": "Synchronisierungsfehler",
+      "quota_exceeded": "Speicherkontingent überschritten",
+      "retrying_description": "{{message}} Wiederholung in {{delay}}s (Versuch {{attempt}})",
+      "retrying_title": "Synchronisiere...",
+      "server_error": "Serverfehler. Bitte versuche es später erneut.",
+      "timeout": "Synchronisierung abgelaufen. Bitte versuche es erneut.",
+      "version_mismatch": "App-Versionsfehler. Bitte aktualisiere die App."
+    },
+    "task": {
+      "invalid_timestamp": "Ungültiges Aufgabendatum oder -zeit",
+      "not_found": "Aufgabe nicht gefunden",
+      "timestamp_title": "Ungültiges Datum",
+      "update_failed": "Aufgabe konnte nicht aktualisiert werden"
+    },
+    "unknown": "Ein unerwarteter Fehler ist aufgetreten",
+    "unknown_description": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
+    "unknown_title": "Fehler"
   },
   "home": {
     "open_settings": "Einstellungen öffnen",
@@ -351,6 +418,12 @@
     "notifications_body": "Erlaube Benachrichtigungen, um rechtzeitig an Aufgaben erinnert zu werden.",
     "notifications_title": "Aufgaben-Erinnerungen"
   },
+  "phases": {
+    "flower": "Blütenphase",
+    "harvest": "Erntephase",
+    "seedling": "Keimlingsphase",
+    "veg": "Vegetative Phase"
+  },
   "plants": {
     "empty_state": "Keine Pflanzen in deinem Inventar",
     "error": "Pflanzen konnten nicht geladen werden. Bitte erneut versuchen.",
@@ -360,20 +433,180 @@
     "search_placeholder": "Pflanzen suchen…"
   },
   "playbooks": {
+    "accessibility": {
+      "adoptTemplate": "Community-Vorlage übernehmen",
+      "applyPlaybook": "{{name}} Playbook auf Pflanze anwenden",
+      "logTrichomeCheck": "Trichom-Check protokollieren",
+      "phaseProgress": "{{phase}}-Phase, {{status}}, {{completed}} von {{{total}}} Aufgaben abgeschlossen",
+      "playbookCard": "{{name}} Playbook, {{setup}} Setup, {{weeks}} Wochen, {{tasks}} Aufgaben",
+      "shareTemplate": "Vorlage mit Community teilen",
+      "shiftSchedule": "Zeitplan verschieben",
+      "shiftScheduleHint": "Verschiebt alle Aufgaben {{direction}} um {{days}} {{daysUnit}}",
+      "taskItem": "{{title}}, fällig {{date}}, {{status}}{{reminder}}",
+      "taskItemWithReminder": ", hat Erinnerung",
+      "trichomeAssessment": "Trichom-Bewertung: {{clear}}% klar, {{milky}}% milchig, {{amber}}% bernstein. Empfehlung: {{recommendation}}",
+      "undoShift": "Zeitplanverschiebung rückgängig machen"
+    },
+    "activities": "Aktivitäten",
+    "adjustments": {
+      "confidence": "{{percent}}% Zuverlässigkeit",
+      "disclaimer": "KI-Vorschlag • Bildungszwecke, kein professioneller Rat",
+      "scheduleAdjustment": "💡 Terminplananpassung",
+      "tasksAffected_one": "{{count}} Aufgabe betroffen",
+      "tasksAffected_other": "{{count}} Aufgaben betroffen",
+      "viewDetails": "Details anzeigen"
+    },
+    "apply": {
+      "alreadyApplied": "Dieser Playbook ist bereits auf diese Pflanze angewendet",
+      "applying": "Playbook wird angewendet...",
+      "createPlant": "Neue Pflanze erstellen",
+      "error": "Playbook konnte nicht angewendet werden",
+      "selectPlant": "Wähle eine Pflanze für diesen Playbook",
+      "success_one": "{{count}} Aufgabe erfolgreich erstellt",
+      "success_other": "{{count}} Aufgaben erfolgreich erstellt"
+    },
+    "applyError": "Anwendung fehlgeschlagen",
+    "applyErrorDescription": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+    "applyPlaybook": "Playbook anwenden",
+    "applySuccess": "Playbook angewendet",
+    "applySuccessDescription": "{{count}} Aufgaben für deine Pflanze erfolgreich erstellt",
+    "applyToPlant": "Auf Pflanze anwenden",
+    "applying": "Wird angewendet...",
+    "community": {
+      "adopt": {
+        "adoptions_one": "{{count}} Übernahme",
+        "adoptions_other": "{{count}} Übernahmen",
+        "applyDirectly": "Direkt anwenden",
+        "author": "Von {{author}}",
+        "customize": "Vor Anwendung anpassen",
+        "preview": "Vorschau",
+        "ratings_one": "{{count}} Bewertung",
+        "ratings_other": "{{count}} Bewertungen",
+        "title": "Vorlage übernehmen"
+      },
+      "share": {
+        "cancel": "Abbrechen",
+        "conditions": "Anbaubedingungen",
+        "conditionsPlaceholder": "Indoor-Zelt, LED-Lichter, Erdsubstrat...",
+        "description": "Beschreibung",
+        "descriptionPlaceholder": "Beschreibe deinen Anbauansatz und Ergebnisse...",
+        "error": "Vorlage konnte nicht geteilt werden",
+        "license": "Lizenz",
+        "licenseDescription": "Durch das Teilen stimmst du zu, diese Vorlage unter CC-BY-SA 4.0 zu lizenzieren",
+        "name": "Vorlagenname",
+        "namePlaceholder": "Mein eigener Auto-Indoor-Zeitplan",
+        "outcomes": "Ergebnisse",
+        "outcomesPlaceholder": "Ertrag, Qualitätsnotizen, gelernte Lektionen...",
+        "submit": "Vorlage teilen",
+        "success": "Vorlage erfolgreich geteilt",
+        "title": "Vorlage teilen"
+      },
+      "subtitle": "Erfolgreiche Anbaupläne entdecken und teilen",
+      "title": "Community-Vorlagen"
+    },
+    "communityDescription": "Durchsuche und übernehme Playbooks, die von anderen Growern geteilt wurden",
+    "communityTemplates": "Community-Vorlagen",
+    "createPlant": "Pflanze erstellen",
     "customNotes": "Eigene Notizen",
     "customNotesHint": "Notizen beeinflussen keine Massenoperationen",
     "customNotesPlaceholder": "Füge deine eigenen Notizen hinzu...",
     "customizationLevel": "Anpassungsgrad",
     "customizedTasks": "Angepasste Aufgaben",
+    "detailDescription": "Dieses Playbook erstellt einen vollständigen Aufgabenplan, der auf die Wachstumsphasen deiner Pflanze zugeschnitten ist, mit automatischen Erinnerungen und Fortschrittsverfolgung.",
     "editTask": "Aufgabe bearbeiten",
     "edited": "Bearbeitet",
     "excludedFromBulkOperations": "Von Massenverschiebungen ausgeschlossen",
     "excludedFromBulkShift": "Diese Aufgabe wurde angepasst und wird von Massenverschiebungen ausgeschlossen",
+    "loadError": "Playbooks konnten nicht geladen werden. Bitte versuche es erneut.",
     "manuallyEdited": "Manuell bearbeitet",
+    "noPlants": "Du hast noch keine Pflanzen. Erstelle eine, um dieses Playbook anzuwenden.",
+    "noTemplates": "Noch keine Community-Vorlagen verfügbar",
+    "notFound": "Playbook nicht gefunden",
+    "onboarding": {
+      "getStarted": "Los geht's",
+      "next": "Weiter",
+      "skip": "Überspringen",
+      "step1": {
+        "description": "Erhalte einen vollständigen Anbauplan, der auf dein Setup zugeschnitten ist - Auto oder Photo, Indoor oder Outdoor.",
+        "title": "Geführte Anbaupläne"
+      },
+      "step2": {
+        "description": "Automatische Erinnerungen für Bewässerung, Düngung, Beschneiden und Überwachung halten deinen Anbau auf Kurs.",
+        "title": "Verpasse keine Aufgabe"
+      },
+      "step3": {
+        "description": "Passe Aufgaben an, verschiebe Zeitpläne und speichere deine eigenen Vorlagen zum Wiederverwenden oder Teilen mit der Community.",
+        "title": "Passe es an deine Bedürfnisse an"
+      },
+      "step4": {
+        "description": "Überwache deine Pflanze durch jede Wachstumsphase mit visueller Fortschrittsverfolgung und Phasenübergangsbenachrichtigungen.",
+        "title": "Verfolge deinen Fortschritt"
+      }
+    },
+    "outcomes": "Ergebnisse",
+    "preview": "Playbook-Vorschau",
+    "progress": {
+      "careChanges": "Pflegeanforderungen werden sich ändern",
+      "completedTasks_one": "{{count}} von {{{total}}} Aufgabe abgeschlossen",
+      "completedTasks_other": "{{count}} von {{{total}}} Aufgaben abgeschlossen",
+      "currentPhase": "Aktuelle Phase",
+      "phaseTransition": "Phasenübergang",
+      "title": "Phasenfortschritt",
+      "transitionNotice": "Deine Pflanze wechselt in die {{phase}}-Phase",
+      "upcomingTasks": "Bevorstehende Aufgaben"
+    },
     "saveAsTemplate": "Als Vorlage speichern",
-    "saveAsTemplateDescription": "Du hast {{percentage}}% der Aufgaben angepasst ({{customized}}/{{total}}). Speichere dies als Vorlage zum Wiederverwenden oder Teilen mit der Community.",
+    "saveAsTemplateDescription": "Du hast {{percentage}}% der Aufgaben angepasst ({{customized}}/{{{total}}}). Speichere dies als Vorlage zum Wiederverwenden oder Teilen mit der Community.",
+    "schedule": {
+      "shift": {
+        "affectedTasks_one": "{{count}} Aufgabe wird betroffen sein",
+        "affectedTasks_other": "{{count}} Aufgaben werden betroffen sein",
+        "apply": "Verschiebung anwenden",
+        "backward": "Rückwärts",
+        "cancel": "Abbrechen",
+        "conflictWarning": "Einige manuell bearbeitete Aufgaben werden betroffen sein",
+        "conflicts_one": "{{count}} Konflikt erkannt",
+        "conflicts_other": "{{count}} Konflikte erkannt",
+        "daysLabel": "Tage zum Verschieben",
+        "daysPlaceholder": "Anzahl der Tage eingeben",
+        "error": "Zeitplan konnte nicht verschoben werden",
+        "firstNewDate": "Erste Aufgabe: {{date}}",
+        "forward": "Vorwärts",
+        "includeCompleted": "Abgeschlossene Aufgaben einbeziehen",
+        "includeManuallyEdited": "Manuell bearbeitete Aufgaben einbeziehen",
+        "lastNewDate": "Letzte Aufgabe: {{date}}",
+        "preview": "Änderungen vorschauen",
+        "previewTitle": "Zeitplanverschiebungs-Vorschau",
+        "subtitle": "Alle Aufgabendaten um eine bestimmte Anzahl von Tagen anpassen",
+        "success": "Zeitplan erfolgreich verschoben",
+        "title": "Zeitplan verschieben",
+        "undo": "Rückgängig",
+        "undoAvailable": "Rückgängig verfügbar für {{seconds}}s"
+      }
+    },
+    "selectPlant": "Pflanze auswählen",
+    "selectPlantDescription": "Wähle aus, auf welche Pflanze du dieses Playbook anwenden möchtest.",
+    "selection": {
+      "autoIndoor": "Auto Indoor",
+      "autoOutdoor": "Auto Outdoor",
+      "photoIndoor": "Photo Indoor",
+      "photoOutdoor": "Photo Outdoor",
+      "preview": {
+        "apply": "Auf Pflanze anwenden",
+        "cancel": "Abbrechen",
+        "phases": "Phasen",
+        "taskCount_one": "{{count}} Aufgabe",
+        "taskCount_other": "{{count}} Aufgaben",
+        "title": "Playbook-Vorschau",
+        "totalWeeks_one": "{{count}} Woche insgesamt",
+        "totalWeeks_other": "{{count}} Wochen insgesamt"
+      },
+      "subtitle": "Wähle einen Anbauplan, der zu deinem Setup passt",
+      "title": "Wähle deinen Playbook"
+    },
     "shareWithCommunity": "Mit Community teilen",
     "shareWithCommunityHint": "Diese Vorlage anderen Growern zur Verfügung stellen",
+    "subtitle": "Geführte Anbaupläne für deine Pflanzen",
     "tags": "Tags",
     "tagsHint": "Tags mit Kommas trennen",
     "tagsPlaceholder": "indoor, anfänger, auto...",
@@ -381,8 +614,69 @@
     "taskDescriptionPlaceholder": "Aufgabenbeschreibung...",
     "taskTitle": "Titel",
     "taskTitlePlaceholder": "Aufgabentitel...",
+    "taskTypes": {
+      "custom": "Benutzerdefiniert",
+      "feed": "Düngung",
+      "monitor": "Überwachen",
+      "note": "Notizen",
+      "prune": "Beschneiden",
+      "train": "Trainieren",
+      "water": "Bewässerung"
+    },
     "templateName": "Vorlagenname",
-    "templateNamePlaceholder": "Mein eigener Playbook"
+    "templateNamePlaceholder": "Mein eigener Playbook",
+    "title": "Playbooks",
+    "trichome": {
+      "assessment": {
+        "addPhoto": "Foto hinzufügen",
+        "amberPercent": "Bernstein %",
+        "clearPercent": "Klar %",
+        "harvestWindow": "Erntefenster",
+        "milkyPercent": "Milchig %",
+        "notes": "Notizen",
+        "notesPlaceholder": "Beobachtungen zur Trichom-Entwicklung...",
+        "recommendation": "Empfehlung",
+        "save": "Bewertung speichern",
+        "title": "Bewertung protokollieren"
+      },
+      "disclaimer": "Diese Anleitung dient Bildungszwecken, nicht als professioneller Rat. Berücksichtige immer deine spezifischen Anbaubedingungen und Vorlieben.",
+      "guide": {
+        "amber": "Bernsteinfarben (Reif)",
+        "amberDescription": "Trichome sind bernsteinfarben/braun. Mehr beruhigende, entspannende Effekte.",
+        "clear": "Klar (Unreif)",
+        "clearDescription": "Trichome sind transparent. Pflanze ist nicht erntereif.",
+        "milky": "Milchig/Trüb (Höhepunkt)",
+        "milkyDescription": "Trichome sind trüb weiß. Höchste Potenz und ausgewogene Effekte.",
+        "title": "Trichom-Entwicklungsleitfaden"
+      },
+      "nudge": {
+        "cancel": "Aktuellen Zeitplan beibehalten",
+        "confirm": "Aufgaben anpassen",
+        "message": "Basierend auf deiner Bewertung, möchtest du die Ernteaufgaben um {{days}} Tage anpassen?",
+        "title": "Ernteaufgaben anpassen"
+      },
+      "photography": {
+        "angle": "Betrachte Trichome bei 60-100x Vergrößerung",
+        "focus": "Fokussiere auf Kelche, nicht auf Zuckerblätter",
+        "lighting": "Verwende natürliches Licht oder eine Juwelierlupe mit LED",
+        "timing": "Überprüfe mehrere Blüten von verschiedenen Teilen der Pflanze",
+        "title": "Fotografie-Tipps"
+      },
+      "recommendations": {
+        "balanced": "Jetzt ernten für ausgewogene Effekte (milchig mit etwas Bernstein)",
+        "energetic": "Jetzt ernten für energetische Effekte (größtenteils milchig)",
+        "overripe": "Bald ernten - hoher Bernsteinanteil",
+        "sedating": "Jetzt ernten für beruhigende Effekte (signifikanter Bernsteinanteil)",
+        "tooEarly": "Warte länger - Trichome sind größtenteils klar"
+      },
+      "subtitle": "Optimalen Erntezeitpunkt bestimmen",
+      "title": "Trichom-Check-Helfer"
+    },
+    "voteHelpful": "👍 Hilfreich",
+    "voteNotHelpful": "👎 Nicht hilfreich",
+    "votingQuestion": "War dieser Vorschlag hilfreich?",
+    "votingThanks": "Danke für dein Feedback! {{{emoji}}}",
+    "whatYouGet": "Was du bekommst"
   },
   "privacy": {
     "analytics": {
@@ -676,7 +970,12 @@
     "retry_sync_hint": "Tippen, um Favoriten-Synchronisierung zu wiederholen",
     "retry_sync_label": "Sync wiederholen",
     "status": {
-      "syncing": "Synchronisiert..."
+      "active": "Aktuell",
+      "completed": "✓ Abgeschlossen",
+      "overdue": "Überfällig",
+      "pending": "Ausstehend",
+      "syncing": "Synchronisiert...",
+      "upcoming": "Bevorstehend"
     },
     "sync_failed": "Synchronisierung fehlgeschlagen",
     "syncing_favorites": "Favoriten werden synchronisiert..."
@@ -687,6 +986,28 @@
     "home": "Startseite",
     "plants": "Pflanzen",
     "strains": "Sorten"
+  },
+  "trichome": {
+    "amber": "Bernstein",
+    "amberLabel": "Bernstein-Trichome (%)",
+    "assessmentDisclaimer": "ⓘ Diese Einschätzung dient deiner persönlichen Verfolgung. Die Ergebnisse sind lehrreich und kein professioneller Rat.",
+    "clear": "Klar",
+    "clearLabel": "Klare Trichome (%)",
+    "formTitle": "Trichom-Einschätzung protokollieren",
+    "guideTitle": "Trichom-Bewertungsanleitung",
+    "lightingCautions": "Beleuchtungswarnungen",
+    "milky": "Milchig",
+    "milkyLabel": "Milchige/Wolkige Trichome (%)",
+    "notesLabel": "Notizen (optional)",
+    "notesPlaceholder": "Beobachtungen hinzufügen...",
+    "percentPlaceholder": "{{min}}-{{max}}",
+    "photographyTips": "Fotografie-Tipps",
+    "submitButton": "Einschätzung protokollieren",
+    "totalPercent": "Gesamt: {{total}}%",
+    "totalPercentWarning": "Gesamt: {{total}}% (Prozentsätze sollten 100% ergeben)",
+    "trichomeRatio": "Trichom-Verhältnis",
+    "validationMax": "Muss {{max}} oder kleiner sein",
+    "validationMin": "Muss {{min}} oder größer sein"
   },
   "welcome": "Willkommen bei der GrowBro App"
 }

@@ -10,6 +10,7 @@ import * as React from 'react';
 import { useAnalytics } from '@/lib/use-analytics';
 import type { TrichomeAssessment } from '@/types/playbook';
 
+import type { HarvestSuggestion } from './trichome-helper';
 import { TrichomeHelper } from './trichome-helper';
 
 function getDominantStage(
@@ -64,6 +65,13 @@ export function useTrichomeHelper() {
     [helper, analytics]
   );
 
+  const acceptSuggestion = React.useCallback(
+    async (plantId: string, suggestion: HarvestSuggestion) => {
+      return await helper.acceptSuggestion(plantId, suggestion);
+    },
+    [helper]
+  );
+
   return {
     getAssessmentGuide,
     getHarvestWindows: () => helper.getHarvestWindows(),
@@ -73,5 +81,6 @@ export function useTrichomeHelper() {
       helper.suggestHarvestAdjustments(a),
     getAssessmentsForPlant: (id: string) => helper.getAssessmentsForPlant(id),
     getLatestAssessment: (id: string) => helper.getLatestAssessment(id),
+    acceptSuggestion,
   };
 }

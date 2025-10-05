@@ -204,7 +204,74 @@
     "title": "Sync Diagnostics"
   },
   "errors": {
-    "postLoad": "Error loading post"
+    "notification": {
+      "battery_optimization_title": "Battery Optimization Active",
+      "cancel_failed": "Failed to cancel reminder",
+      "channel_missing": "Notification channel not configured",
+      "delivery_failed": "Reminder was not delivered",
+      "doze_mode_active": "Device battery optimization may delay reminders",
+      "exact_alarm_unavailable": "Exact alarm scheduling not available on this device",
+      "fallback_description": "We'll show you a reminder when you open the app",
+      "fallback_title": "Reminder Created",
+      "invalid_trigger": "Invalid reminder time",
+      "permission_denied": "Notification permission denied. Please enable notifications in settings.",
+      "permission_title": "Notifications Disabled",
+      "schedule_failed": "Failed to schedule reminder",
+      "title": "Reminder Error"
+    },
+    "playbook": {
+      "already_applied": "This playbook is already applied to this plant",
+      "generation_failed": "Failed to generate tasks from playbook",
+      "invalid_schema": "Invalid playbook format",
+      "not_found": "Playbook not found",
+      "title": "Playbook Error"
+    },
+    "postLoad": "Error loading post",
+    "recovery": {
+      "check_connection": "Check your internet connection",
+      "disable_battery_optimization": "Disable battery optimization for this app in Settings",
+      "enable_notifications": "Open Settings to enable notifications",
+      "rrule_fallback": "Use simple daily or weekly recurrence instead",
+      "sign_in_again": "Sign in again",
+      "update_app": "Update the app from the store"
+    },
+    "rrule": {
+      "byday_and_bymonthday": "Recurrence pattern cannot specify both day of week and day of month",
+      "count_and_until": "Recurrence pattern cannot have both count and end date",
+      "invalid_byday": "Invalid day of week in recurrence pattern",
+      "invalid_bymonthday": "Invalid day of month in recurrence pattern",
+      "invalid_format": "Invalid recurrence pattern format",
+      "invalid_freq": "Invalid recurrence frequency",
+      "invalid_interval": "Recurrence interval must be a positive number",
+      "missing_freq": "Recurrence pattern must specify frequency (daily, weekly, etc.)",
+      "parse_error": "Could not parse recurrence pattern",
+      "timezone_error": "Invalid timezone for recurrence calculation",
+      "title": "Recurrence Error"
+    },
+    "sync": {
+      "auth_error": "Authentication error. Please sign in again.",
+      "conflict_detected": "Data was updated on another device",
+      "invalid_data": "Invalid data received from server",
+      "max_retries_description": "{{message}} Please try again later.",
+      "max_retries_title": "Sync Failed",
+      "network_error": "Network connection error. Changes will sync when online.",
+      "permanent_title": "Sync Error",
+      "quota_exceeded": "Storage quota exceeded",
+      "retrying_description": "{{message}} Retrying in {{delay}}s (attempt {{attempt}})",
+      "retrying_title": "Syncing...",
+      "server_error": "Server error. Please try again later.",
+      "timeout": "Sync timed out. Please try again.",
+      "version_mismatch": "App version mismatch. Please update the app."
+    },
+    "task": {
+      "invalid_timestamp": "Invalid task date or time",
+      "not_found": "Task not found",
+      "timestamp_title": "Invalid Date",
+      "update_failed": "Failed to update task"
+    },
+    "unknown": "An unexpected error occurred",
+    "unknown_description": "An unexpected error occurred. Please try again.",
+    "unknown_title": "Error"
   },
   "home": {
     "open_settings": "Open Settings",
@@ -351,6 +418,12 @@
     "notifications_body": "Allow notifications to get timely task reminders.",
     "notifications_title": "Task reminders"
   },
+  "phases": {
+    "flower": "Flowering",
+    "harvest": "Harvest",
+    "seedling": "Seedling",
+    "veg": "Vegetative"
+  },
   "plants": {
     "empty_state": "No plants in your inventory",
     "error": "Failed to load plants. Try again.",
@@ -360,20 +433,180 @@
     "search_placeholder": "Search plants…"
   },
   "playbooks": {
+    "accessibility": {
+      "adoptTemplate": "Adopt community template",
+      "applyPlaybook": "Apply {{name}} playbook to plant",
+      "logTrichomeCheck": "Log trichome check",
+      "phaseProgress": "{{phase}} phase, {{status}}, {{completed}} of {{{total}}} tasks completed",
+      "playbookCard": "{{name}} playbook, {{setup}} setup, {{weeks}} weeks, {{tasks}} tasks",
+      "shareTemplate": "Share template with community",
+      "shiftSchedule": "Shift schedule",
+      "shiftScheduleHint": "Shifts all tasks {{direction}} by {{days}} {{daysUnit}}",
+      "taskItem": "{{title}}, due {{date}}, {{status}}{{reminder}}",
+      "taskItemWithReminder": ", has reminder",
+      "trichomeAssessment": "Trichome assessment: {{clear}}% clear, {{milky}}% milky, {{amber}}% amber. Recommendation: {{recommendation}}",
+      "undoShift": "Undo schedule shift"
+    },
+    "activities": "Activities",
+    "adjustments": {
+      "confidence": "{{percent}}% confidence",
+      "disclaimer": "AI suggestion • Educational, not professional advice",
+      "scheduleAdjustment": "💡 Schedule Adjustment",
+      "tasksAffected_one": "{{count}} task affected",
+      "tasksAffected_other": "{{count}} tasks affected",
+      "viewDetails": "View Details"
+    },
+    "apply": {
+      "alreadyApplied": "This playbook is already applied to this plant",
+      "applying": "Applying playbook...",
+      "createPlant": "Create New Plant",
+      "error": "Failed to apply playbook",
+      "selectPlant": "Select a plant to apply this playbook",
+      "success_one": "Successfully created {{count}} task",
+      "success_other": "Successfully created {{count}} tasks"
+    },
+    "applyError": "Failed to Apply",
+    "applyErrorDescription": "Something went wrong. Please try again.",
+    "applyPlaybook": "Apply Playbook",
+    "applySuccess": "Playbook Applied",
+    "applySuccessDescription": "Successfully created {{count}} tasks for your plant",
+    "applyToPlant": "Apply to Plant",
+    "applying": "Applying...",
+    "community": {
+      "adopt": {
+        "adoptions_one": "{{count}} adoption",
+        "adoptions_other": "{{count}} adoptions",
+        "applyDirectly": "Apply Directly",
+        "author": "By {{author}}",
+        "customize": "Customize Before Applying",
+        "preview": "Preview",
+        "ratings_one": "{{count}} rating",
+        "ratings_other": "{{count}} ratings",
+        "title": "Adopt Template"
+      },
+      "share": {
+        "cancel": "Cancel",
+        "conditions": "Growing Conditions",
+        "conditionsPlaceholder": "Indoor tent, LED lights, soil medium...",
+        "description": "Description",
+        "descriptionPlaceholder": "Describe your growing approach and results...",
+        "error": "Failed to share template",
+        "license": "License",
+        "licenseDescription": "By sharing, you agree to license this template under CC-BY-SA 4.0",
+        "name": "Template Name",
+        "namePlaceholder": "My Custom Auto Indoor Schedule",
+        "outcomes": "Outcomes",
+        "outcomesPlaceholder": "Yield, quality notes, lessons learned...",
+        "submit": "Share Template",
+        "success": "Template shared successfully",
+        "title": "Share Template"
+      },
+      "subtitle": "Discover and share successful grow schedules",
+      "title": "Community Templates"
+    },
+    "communityDescription": "Browse and adopt playbooks shared by other growers",
+    "communityTemplates": "Community Templates",
+    "createPlant": "Create Plant",
     "customNotes": "Custom Notes",
     "customNotesHint": "Notes won't affect bulk operations",
     "customNotesPlaceholder": "Add your own notes...",
     "customizationLevel": "Customization Level",
     "customizedTasks": "Customized Tasks",
+    "detailDescription": "This playbook will generate a complete schedule of tasks tailored to your plant's growth stages, with automatic reminders and progress tracking.",
     "editTask": "Edit Task",
     "edited": "Edited",
     "excludedFromBulkOperations": "Excluded from bulk schedule shifts",
     "excludedFromBulkShift": "This task has been customized and will be excluded from bulk schedule shifts",
+    "loadError": "Failed to load playbooks. Please try again.",
     "manuallyEdited": "Manually Edited",
+    "noPlants": "You don't have any plants yet. Create one to apply this playbook.",
+    "noTemplates": "No community templates available yet",
+    "notFound": "Playbook not found",
+    "onboarding": {
+      "getStarted": "Get Started",
+      "next": "Next",
+      "skip": "Skip",
+      "step1": {
+        "description": "Get a complete cultivation schedule tailored to your setup - Auto or Photo, Indoor or Outdoor.",
+        "title": "Guided Grow Schedules"
+      },
+      "step2": {
+        "description": "Automatic reminders for watering, feeding, pruning, and monitoring keep your grow on track.",
+        "title": "Never Miss a Task"
+      },
+      "step3": {
+        "description": "Adjust tasks, shift schedules, and save your own templates to reuse or share with the community.",
+        "title": "Customize Your Way"
+      },
+      "step4": {
+        "description": "Monitor your plant through each growth phase with visual progress tracking and phase transition alerts.",
+        "title": "Track Your Progress"
+      }
+    },
+    "outcomes": "Outcomes",
+    "preview": "Playbook Preview",
+    "progress": {
+      "careChanges": "Care requirements will change",
+      "completedTasks_one": "{{count}} of {{{total}}} task completed",
+      "completedTasks_other": "{{count}} of {{{total}}} tasks completed",
+      "currentPhase": "Current Phase",
+      "phaseTransition": "Phase Transition",
+      "title": "Phase Progress",
+      "transitionNotice": "Your plant is transitioning to {{phase}} phase",
+      "upcomingTasks": "Upcoming Tasks"
+    },
     "saveAsTemplate": "Save as Template",
-    "saveAsTemplateDescription": "You've customized {{percentage}}% of tasks ({{customized}}/{{total}}). Save this as a template to reuse or share with the community.",
+    "saveAsTemplateDescription": "You've customized {{percentage}}% of tasks ({{customized}}/{{{total}}}). Save this as a template to reuse or share with the community.",
+    "schedule": {
+      "shift": {
+        "affectedTasks_one": "{{count}} task will be affected",
+        "affectedTasks_other": "{{count}} tasks will be affected",
+        "apply": "Apply Shift",
+        "backward": "Backward",
+        "cancel": "Cancel",
+        "conflictWarning": "Some manually edited tasks will be affected",
+        "conflicts_one": "{{count}} conflict detected",
+        "conflicts_other": "{{count}} conflicts detected",
+        "daysLabel": "Days to shift",
+        "daysPlaceholder": "Enter number of days",
+        "error": "Failed to shift schedule",
+        "firstNewDate": "First task: {{date}}",
+        "forward": "Forward",
+        "includeCompleted": "Include completed tasks",
+        "includeManuallyEdited": "Include manually edited tasks",
+        "lastNewDate": "Last task: {{date}}",
+        "preview": "Preview Changes",
+        "previewTitle": "Schedule Shift Preview",
+        "subtitle": "Adjust all task dates by a specific number of days",
+        "success": "Schedule shifted successfully",
+        "title": "Shift Schedule",
+        "undo": "Undo",
+        "undoAvailable": "Undo available for {{seconds}}s"
+      }
+    },
+    "selectPlant": "Select a Plant",
+    "selectPlantDescription": "Choose which plant you want to apply this playbook to.",
+    "selection": {
+      "autoIndoor": "Auto Indoor",
+      "autoOutdoor": "Auto Outdoor",
+      "photoIndoor": "Photo Indoor",
+      "photoOutdoor": "Photo Outdoor",
+      "preview": {
+        "apply": "Apply to Plant",
+        "cancel": "Cancel",
+        "phases": "Phases",
+        "taskCount_one": "{{count}} task",
+        "taskCount_other": "{{count}} tasks",
+        "title": "Playbook Preview",
+        "totalWeeks_one": "{{count}} week total",
+        "totalWeeks_other": "{{count}} weeks total"
+      },
+      "subtitle": "Select a cultivation schedule that matches your setup",
+      "title": "Choose Your Playbook"
+    },
     "shareWithCommunity": "Share with Community",
     "shareWithCommunityHint": "Make this template available to other growers",
+    "subtitle": "Guided grow schedules for your plants",
     "tags": "Tags",
     "tagsHint": "Separate tags with commas",
     "tagsPlaceholder": "indoor, beginner, auto...",
@@ -381,8 +614,69 @@
     "taskDescriptionPlaceholder": "Task description...",
     "taskTitle": "Title",
     "taskTitlePlaceholder": "Task title...",
+    "taskTypes": {
+      "custom": "Custom",
+      "feed": "Feeding",
+      "monitor": "Monitoring",
+      "note": "Notes",
+      "prune": "Pruning",
+      "train": "Training",
+      "water": "Watering"
+    },
     "templateName": "Template Name",
-    "templateNamePlaceholder": "My Custom Playbook"
+    "templateNamePlaceholder": "My Custom Playbook",
+    "title": "Playbooks",
+    "trichome": {
+      "assessment": {
+        "addPhoto": "Add Photo",
+        "amberPercent": "Amber %",
+        "clearPercent": "Clear %",
+        "harvestWindow": "Harvest Window",
+        "milkyPercent": "Milky %",
+        "notes": "Notes",
+        "notesPlaceholder": "Observations about trichome development...",
+        "recommendation": "Recommendation",
+        "save": "Save Assessment",
+        "title": "Log Assessment"
+      },
+      "disclaimer": "This guidance is educational, not professional advice. Always consider your specific growing conditions and preferences.",
+      "guide": {
+        "amber": "Amber (Mature)",
+        "amberDescription": "Trichomes are amber/brown. More sedating, relaxing effects.",
+        "clear": "Clear (Immature)",
+        "clearDescription": "Trichomes are transparent. Plant is not ready for harvest.",
+        "milky": "Milky/Cloudy (Peak)",
+        "milkyDescription": "Trichomes are cloudy white. Peak potency and balanced effects.",
+        "title": "Trichome Development Guide"
+      },
+      "nudge": {
+        "cancel": "Keep Current Schedule",
+        "confirm": "Adjust Tasks",
+        "message": "Based on your assessment, would you like to adjust harvest tasks by {{days}} days?",
+        "title": "Adjust Harvest Tasks"
+      },
+      "photography": {
+        "angle": "View trichomes at 60-100x magnification",
+        "focus": "Focus on calyxes, not sugar leaves",
+        "lighting": "Use natural light or a jeweler's loupe with LED",
+        "timing": "Check multiple buds from different parts of the plant",
+        "title": "Photography Tips"
+      },
+      "recommendations": {
+        "balanced": "Harvest now for balanced effects (milky with some amber)",
+        "energetic": "Harvest now for energetic effects (mostly milky)",
+        "overripe": "Harvest soon - high amber percentage",
+        "sedating": "Harvest now for sedating effects (significant amber)",
+        "tooEarly": "Wait longer - trichomes are mostly clear"
+      },
+      "subtitle": "Determine optimal harvest timing",
+      "title": "Trichome Check Helper"
+    },
+    "voteHelpful": "👍 Helpful",
+    "voteNotHelpful": "👎 Not Helpful",
+    "votingQuestion": "Was this suggestion helpful?",
+    "votingThanks": "Thanks for your feedback! {{emoji}}",
+    "whatYouGet": "What You'll Get"
   },
   "privacy": {
     "analytics": {
@@ -676,7 +970,12 @@
     "retry_sync_hint": "Tap to retry syncing favorites",
     "retry_sync_label": "Retry sync",
     "status": {
-      "syncing": "Syncing..."
+      "active": "Current",
+      "completed": "✓ Completed",
+      "overdue": "Overdue",
+      "pending": "Pending",
+      "syncing": "Syncing...",
+      "upcoming": "Upcoming"
     },
     "sync_failed": "Sync failed",
     "syncing_favorites": "Syncing favorites..."
@@ -687,6 +986,28 @@
     "home": "Home",
     "plants": "Plants",
     "strains": "Strains"
+  },
+  "trichome": {
+    "amber": "Amber",
+    "amberLabel": "Amber Trichomes (%)",
+    "assessmentDisclaimer": "ⓘ This assessment is for your personal tracking. Results are educational and not professional advice.",
+    "clear": "Clear",
+    "clearLabel": "Clear Trichomes (%)",
+    "formTitle": "Log Trichome Assessment",
+    "guideTitle": "Trichome Assessment Guide",
+    "lightingCautions": "Lighting Cautions",
+    "milky": "Milky",
+    "milkyLabel": "Milky/Cloudy Trichomes (%)",
+    "notesLabel": "Notes (optional)",
+    "notesPlaceholder": "Add any observations...",
+    "percentPlaceholder": "{{min}}-{{max}}",
+    "photographyTips": "Photography Tips",
+    "submitButton": "Log Assessment",
+    "totalPercent": "Total: {{total}}%",
+    "totalPercentWarning": "Total: {{total}}% (percentages should add up to 100%)",
+    "trichomeRatio": "Trichome Ratio",
+    "validationMax": "Must be {{max}} or less",
+    "validationMin": "Must be {{min}} or greater"
   },
   "welcome": "Welcome to GrowBro app site"
 }

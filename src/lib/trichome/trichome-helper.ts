@@ -329,4 +329,33 @@ export class TrichomeHelper {
     const assessments = await this.getAssessmentsForPlant(plantId);
     return assessments[0] || null;
   }
+
+  /**
+   * Accept a harvest suggestion and update the latest assessment
+   * Records the accepted harvest window suggestion for tracking
+   */
+  async acceptSuggestion(
+    plantId: string,
+    suggestion: HarvestSuggestion
+  ): Promise<void> {
+    const latestAssessment = await this.getLatestAssessment(plantId);
+    if (!latestAssessment) {
+      throw new Error('No assessment found for plant');
+    }
+
+    const collection = this.database.get<TrichomeAssessmentModel>(
+      'trichome_assessments'
+    );
+
+    await this.database.write(async () => {
+      const record = await collection.find(latestAssessment.id);
+      await record.update((assessment: TrichomeAssessmentModel) => {
+        assessment.harvestWindowSuggestion = {
+          minDays: suggestion.minDays,
+          maxDays: suggestion.maxDays,
+          targetEffect: suggestion.targetEffect,
+        };
+      });
+    });
+  }
 }

@@ -1,5 +1,5 @@
 // @ts-nocheck
-/* eslint-disable max-lines-per-function */
+
 /**
  * Unit tests for StrainsListWithCache component
  */

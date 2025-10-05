@@ -7,6 +7,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as React from 'react';
 import { ScrollView, View } from 'react-native';
+import { showMessage } from 'react-native-flash-message';
 
 import {
   HarvestSuggestionCard,
@@ -75,9 +76,11 @@ function LatestAssessmentCard({
 
 function SuggestionsSection({
   suggestions,
+  onAccept,
   onDecline,
 }: {
   suggestions: any[];
+  onAccept: (s: any) => Promise<void>;
   onDecline: (s: any) => void;
 }) {
   if (suggestions.length === 0) return null;
@@ -91,7 +94,7 @@ function SuggestionsSection({
         <HarvestSuggestionCard
           key={index}
           suggestion={suggestion}
-          onAccept={() => console.log('Accept:', suggestion)}
+          onAccept={() => onAccept(suggestion)}
           onDecline={() => onDecline(suggestion)}
           className="mb-3"
         />
@@ -187,6 +190,7 @@ function useTrichomeState(plantId?: string, playbookId?: string) {
     logTrichomeCheck,
     suggestHarvestAdjustments,
     getLatestAssessment,
+    acceptSuggestion,
   } = useTrichomeHelper();
 
   const {
@@ -210,6 +214,9 @@ function useTrichomeState(plantId?: string, playbookId?: string) {
     setSuggestions,
   });
 
+  const [guide, setGuide] = React.useState<any>(null);
+  const [windows, setWindows] = React.useState<any[]>([]);
+
   React.useEffect(() => {
     getAssessmentGuide(playbookId);
     if (plantId) {
@@ -217,14 +224,22 @@ function useTrichomeState(plantId?: string, playbookId?: string) {
     }
   }, [plantId, playbookId, getAssessmentGuide, loadLatestAssessment]);
 
+  React.useEffect(() => {
+    const assessmentGuide = getAssessmentGuide(playbookId);
+    const harvestWindows = getHarvestWindows();
+    setGuide(assessmentGuide);
+    setWindows(harvestWindows);
+  }, [playbookId, getAssessmentGuide, getHarvestWindows]);
+
   return {
     loading,
     latestAssessment,
     suggestions,
     setSuggestions,
     handleSubmitAssessment,
-    guide: getAssessmentGuide(playbookId),
-    windows: getHarvestWindows(),
+    acceptSuggestion,
+    guide,
+    windows,
   };
 }
 
@@ -287,6 +302,7 @@ function TabContent({
   latestAssessment,
   suggestions,
   setSuggestions,
+  onAccept,
   windows,
 }: {
   activeTab: TabType;
@@ -296,6 +312,7 @@ function TabContent({
   latestAssessment: TrichomeAssessment | null;
   suggestions: any[];
   setSuggestions: React.Dispatch<React.SetStateAction<any[]>>;
+  onAccept: (suggestion: any) => Promise<void>;
   windows: any[];
 }) {
   if (activeTab === 'guide') {
@@ -317,6 +334,7 @@ function TabContent({
     <View>
       <SuggestionsSection
         suggestions={suggestions}
+        onAccept={onAccept}
         onDecline={(s) =>
           setSuggestions((prev) => prev.filter((item) => item !== s))
         }
@@ -324,6 +342,37 @@ function TabContent({
       <HarvestWindowList windows={windows} />
     </View>
   );
+}
+
+function useAcceptHandler(
+  plantId: string | undefined,
+  acceptSuggestionFn: any,
+  setSuggestions: any
+) {
+  const onAccept = async (suggestion: any) => {
+    if (!plantId) return;
+
+    const previousSuggestions = await new Promise<any>((resolve) => {
+      setSuggestions((prev: any) => {
+        resolve(prev);
+        return prev.filter((item: any) => item !== suggestion);
+      });
+    });
+
+    try {
+      await acceptSuggestionFn(plantId, suggestion);
+    } catch (error) {
+      setSuggestions(previousSuggestions);
+      showMessage({
+        message: 'Failed to accept suggestion',
+        description: 'Please try again',
+        type: 'danger',
+      });
+      console.error('Failed to accept harvest suggestion:', error);
+    }
+  };
+
+  return onAccept;
 }
 
 export default function TrichomeHelperModal() {
@@ -341,9 +390,16 @@ export default function TrichomeHelperModal() {
     suggestions,
     setSuggestions,
     handleSubmitAssessment,
+    acceptSuggestion: acceptSuggestionFn,
     guide,
     windows,
   } = useTrichomeState(params.plantId, params.playbookId);
+
+  const onAccept = useAcceptHandler(
+    params.plantId,
+    acceptSuggestionFn,
+    setSuggestions
+  );
 
   const onSubmit = async (data: any) => {
     const hasSuggestions = await handleSubmitAssessment(data);
@@ -372,6 +428,7 @@ export default function TrichomeHelperModal() {
           latestAssessment={latestAssessment}
           suggestions={suggestions}
           setSuggestions={setSuggestions}
+          onAccept={onAccept}
           windows={windows}
         />
       </ScrollView>

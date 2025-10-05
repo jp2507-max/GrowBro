@@ -61,6 +61,7 @@
     "compliance:media-audit": "node scripts/ci-media-usage-audit.js",
     "compliance:docs:validate": "node scripts/ci-compliance-docs-validate.js",
     "compliance:audit": "node scripts/ci-compliance-audit.js",
+    "accessibility:check": "node scripts/ci-accessibility-check.js",
     "design-tokens:coverage": "node scripts/generate-token-report.js"
   },
   "sentry": {

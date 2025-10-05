@@ -1,12 +1,14 @@
 /**
  * Playbook Components
  *
- * UI components for playbook features
+ * Exports all playbook-related components
  */
 
-export { InheritanceBadge } from './inheritance-badge';
-export { PhaseProgressIndicator } from './phase-progress-indicator';
-export { PhaseSummaryCard } from './phase-summary-card';
-export { PhaseTimeline } from './phase-timeline';
-export { SaveTemplatePrompt } from './save-template-prompt';
-export { TaskEditModal } from './task-edit-modal';
+export * from './loading-states';
+export * from './playbook-onboarding';
+export * from './playbook-selection-card';
+export * from './playbook-selection-list';
+export * from './share-template-modal';
+export * from './shift-preview-modal';
+export * from './template-detail-view';
+export * from './template-list-item';

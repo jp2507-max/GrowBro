@@ -1,6 +1,5 @@
 // @ts-nocheck
 
-/* eslint-disable max-lines-per-function -- Test file with comprehensive test cases that exceed line limits */
 /* eslint-disable prettier/prettier -- Formatting conflicts with test readability */
 
 import {

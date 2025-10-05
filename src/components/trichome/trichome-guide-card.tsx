@@ -59,9 +59,10 @@ export function TrichomeGuideCard({ guide, className = '' }: Props) {
       className={`rounded-lg bg-white p-4 dark:bg-charcoal-900 ${className}`}
       testID="trichome-guide-card"
     >
-      <Text className="mb-4 text-xl font-semibold text-charcoal-950 dark:text-neutral-100">
-        Trichome Assessment Guide
-      </Text>
+      <Text
+        className="mb-4 text-xl font-semibold text-charcoal-950 dark:text-neutral-100"
+        tx="trichome.guideTitle"
+      />
 
       <View className="mb-6">
         {guide.stages.map((stage, index) => (
@@ -74,16 +75,18 @@ export function TrichomeGuideCard({ guide, className = '' }: Props) {
       </View>
 
       <View className="mb-6">
-        <Text className="mb-2 text-base font-semibold text-charcoal-950 dark:text-neutral-100">
-          Photography Tips
-        </Text>
+        <Text
+          className="mb-2 text-base font-semibold text-charcoal-950 dark:text-neutral-100"
+          tx="trichome.photographyTips"
+        />
         <TipsList tips={guide.photographyTips} />
       </View>
 
       <View className="mb-6">
-        <Text className="mb-2 text-base font-semibold text-charcoal-950 dark:text-neutral-100">
-          Lighting Cautions
-        </Text>
+        <Text
+          className="mb-2 text-base font-semibold text-charcoal-950 dark:text-neutral-100"
+          tx="trichome.lightingCautions"
+        />
         {guide.lightingCautions.map((caution, index) => (
           <View key={index} className="mb-2 flex-row">
             <Text className="mr-2 text-sm text-warning-600 dark:text-warning-400">

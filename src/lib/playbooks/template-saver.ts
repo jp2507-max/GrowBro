@@ -365,10 +365,14 @@ export class TemplateSaverService {
 
       const step: PlaybookStep = {
         id: task.originStepId || randomUUID(),
-        phase: this.inferPhaseFromIndex(metadata?.phaseIndex),
+        phase:
+          originalStep?.phase ||
+          (metadata?.phaseIndex !== undefined
+            ? this.inferPhaseFromIndex(metadata.phaseIndex)
+            : 'veg'),
         title: task.title,
         descriptionIcu: task.description || '',
-        relativeDay,
+        relativeDay: originalStep?.relativeDay ?? relativeDay,
         defaultReminderLocal,
         taskType: this.inferTaskType(task.title),
         dependencies: originalStep?.dependencies || [],

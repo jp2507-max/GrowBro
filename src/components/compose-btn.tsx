@@ -2,7 +2,6 @@ import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import Animated, {
   useAnimatedStyle,
-  // @ts-ignore - useDerivedValue exists but TypeScript can't find it
   useDerivedValue,
   withTiming,
 } from 'react-native-reanimated';

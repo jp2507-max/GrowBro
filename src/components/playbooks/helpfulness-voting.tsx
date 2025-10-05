@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Pressable } from 'react-native';
 
+import { translate } from '@/lib';
 import type { HelpfulnessVote } from '@/types/ai-adjustments';
 
 import { Text, View } from '../ui';
@@ -34,7 +35,9 @@ export function HelpfulnessVoting({
         testID="voting-complete"
       >
         <Text className="text-center text-sm text-neutral-600 dark:text-neutral-400">
-          Thanks for your feedback! {vote === 'helpful' ? '👍' : '👎'}
+          {translate('playbooks.votingThanks', {
+            emoji: vote === 'helpful' ? '👍' : '👎',
+          })}
         </Text>
       </View>
     );
@@ -63,7 +66,7 @@ export function HelpfulnessVoting({
           testID="vote-not-helpful"
         >
           <Text className="text-center text-danger-700 dark:text-danger-300">
-            👎 Not Helpful
+            {translate('playbooks.voteNotHelpful')}
           </Text>
         </Pressable>
       </View>

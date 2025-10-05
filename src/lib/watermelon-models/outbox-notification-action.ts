@@ -28,7 +28,7 @@ export class OutboxNotificationActionModel extends Model {
   @text('business_key') businessKey?: string;
   @field('ttl') ttl!: number;
   @field('expires_at') expiresAt!: number;
-  @field('next_attempt_at') nextAttemptAt!: number;
+  @field('next_attempt_at') nextAttemptAt!: number | null;
   @field('attempted_count') attemptedCount!: number;
   @text('status') status!: OutboxStatus;
   @text('last_error') lastError?: string;

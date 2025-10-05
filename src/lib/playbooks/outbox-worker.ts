@@ -214,6 +214,7 @@ export class OutboxWorker {
         if (record.attemptedCount >= this.maxRetries) {
           record.status = 'failed';
           record.lastError = `Max retries exceeded: ${errorMessage}`;
+          record.nextAttemptAt = null;
         } else {
           record.status = 'failed';
           record.lastError = errorMessage;
@@ -248,7 +249,9 @@ export class OutboxWorker {
       await this.database.write(async () => {
         for (const action of expiredActions) {
           await action.update((record) => {
-            record.status = 'expired';
+            if (record.status === 'pending') {
+              record.status = 'expired';
+            }
           });
         }
       });

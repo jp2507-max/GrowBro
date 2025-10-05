@@ -4,6 +4,7 @@
 
 import * as React from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { Button, Input, Text } from '@/components/ui';
@@ -26,24 +27,25 @@ function PercentInput({
   name,
   label,
   errors,
+  t,
 }: {
   control: any;
   name: keyof TrichomeFormData;
   label: string;
   errors: any;
+  t: (key: string, options?: any) => string;
 }) {
   return (
     <Controller
       control={control}
       name={name}
-      rules={{
-        min: { value: 0, message: 'Must be 0 or greater' },
-        max: { value: 100, message: 'Must be 100 or less' },
-      }}
       render={({ field: { onChange, onBlur, value } }) => (
         <Input
           label={label}
-          placeholder="0-100"
+          placeholder={t('trichome.percentPlaceholder', {
+            min: 0,
+            max: 100,
+          })}
           keyboardType="numeric"
           onBlur={onBlur}
           onChangeText={(text) =>
@@ -74,18 +76,23 @@ function TotalIndicator({ total }: { total: number }) {
   );
 }
 
-function Disclaimer() {
+function Disclaimer({ t }: { t: (key: string) => string }) {
   return (
     <View className="mb-4 rounded-md bg-neutral-100 p-3 dark:bg-charcoal-800">
       <Text className="text-xs italic text-neutral-600 dark:text-neutral-400">
-        ⓘ This assessment is for your personal tracking. Results are educational
-        and not professional advice.
+        {t('trichome.assessmentDisclaimer')}
       </Text>
     </View>
   );
 }
 
-function NotesInput({ control }: { control: any }) {
+function NotesInput({
+  control,
+  t,
+}: {
+  control: any;
+  t: (key: string) => string;
+}) {
   return (
     <View className="mb-4">
       <Controller
@@ -93,8 +100,8 @@ function NotesInput({ control }: { control: any }) {
         name="notes"
         render={({ field: { onChange, onBlur, value } }) => (
           <Input
-            label="Notes (optional)"
-            placeholder="Add any observations..."
+            label={t('trichome.notesLabel')}
+            placeholder={t('trichome.notesPlaceholder')}
             multiline
             numberOfLines={3}
             onBlur={onBlur}
@@ -113,6 +120,7 @@ export function TrichomeAssessmentForm({
   loading = false,
   className = '',
 }: Props) {
+  const { t } = useTranslation();
   const {
     control,
     handleSubmit,
@@ -127,37 +135,40 @@ export function TrichomeAssessmentForm({
   return (
     <View className={`${className}`} testID="trichome-assessment-form">
       <Text className="mb-4 text-lg font-semibold text-charcoal-950 dark:text-neutral-100">
-        Log Trichome Assessment
+        {t('trichome.formTitle')}
       </Text>
       <View className="mb-4">
         <PercentInput
           control={control}
           name="clearPercent"
-          label="Clear Trichomes (%)"
+          label={t('trichome.clearLabel')}
           errors={errors}
+          t={t}
         />
       </View>
       <View className="mb-4">
         <PercentInput
           control={control}
           name="milkyPercent"
-          label="Milky/Cloudy Trichomes (%)"
+          label={t('trichome.milkyLabel')}
           errors={errors}
+          t={t}
         />
       </View>
       <View className="mb-4">
         <PercentInput
           control={control}
           name="amberPercent"
-          label="Amber Trichomes (%)"
+          label={t('trichome.amberLabel')}
           errors={errors}
+          t={t}
         />
       </View>
       <TotalIndicator total={total} />
-      <NotesInput control={control} />
-      <Disclaimer />
+      <NotesInput control={control} t={t} />
+      <Disclaimer t={t} />
       <Button
-        label="Log Assessment"
+        label={t('trichome.submitButton')}
         onPress={handleSubmit(onSubmit)}
         loading={loading}
         disabled={loading || total === 0}

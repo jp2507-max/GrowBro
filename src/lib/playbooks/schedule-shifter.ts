@@ -239,6 +239,7 @@ export class ScheduleShifter {
       await this.database
         .get<UndoDescriptorModel>('undo_descriptors')
         .create((record) => {
+          record.createdAt = new Date(now);
           record.operationType = 'schedule_shift';
           record.affectedTaskIds = affectedTasks.map((t) => t.id);
           record.priorFieldValues = priorFieldValues;

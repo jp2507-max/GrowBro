@@ -237,6 +237,25 @@ export type AnalyticsEvents = {
     assessmentConfidence: number;
   };
 
+  // Community template events
+  community_templates_viewed: {
+    templateCount: number;
+  };
+  community_template_selected: {
+    templateId: string;
+  };
+
+  // Playbook onboarding events
+  playbook_onboarding_viewed: {
+    step: number;
+  };
+  playbook_onboarding_completed: {
+    totalSteps: number;
+  };
+  playbook_onboarding_skipped: {
+    step: number;
+  };
+
   // Strains feature events
   strain_filter_applied: {
     filter_type: 'race' | 'effects' | 'flavors' | 'difficulty' | 'thc' | 'cbd';

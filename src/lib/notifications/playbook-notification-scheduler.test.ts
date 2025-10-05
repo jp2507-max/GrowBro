@@ -1,4 +1,4 @@
-/* eslint-disable max-lines-per-function, @typescript-eslint/no-require-imports */
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { Platform } from 'react-native';
 
 import { AndroidExactAlarmCoordinator } from '@/lib/notifications/android-exact-alarm-service';

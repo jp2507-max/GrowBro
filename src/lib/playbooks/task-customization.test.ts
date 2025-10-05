@@ -1,7 +1,6 @@
 /**
  * Task Customization Service Tests
  */
-/* eslint-disable max-lines-per-function */
 
 import { type Database } from '@nozbe/watermelondb';
 

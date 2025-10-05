@@ -1,5 +1,5 @@
 // @ts-nocheck
-/* eslint-disable max-lines-per-function */
+
 /**
  * Integration tests for Strains feature
  * Tests complete feature integration with existing app

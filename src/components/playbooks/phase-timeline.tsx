@@ -12,6 +12,7 @@ import { DateTime } from 'luxon';
 import React, { useMemo } from 'react';
 
 import { Pressable, Text, View } from '@/components/ui';
+import { translate } from '@/lib/i18n';
 import type { TaskModel } from '@/lib/watermelon-models/task';
 import type { GrowPhase } from '@/types/playbook';
 
@@ -45,10 +46,10 @@ type PhaseTimelineProps = {
 };
 
 const PHASE_LABELS: Record<GrowPhase, string> = {
-  seedling: 'Seedling',
-  veg: 'Vegetative',
-  flower: 'Flowering',
-  harvest: 'Harvest',
+  seedling: translate('phases.seedling'),
+  veg: translate('phases.veg'),
+  flower: translate('phases.flower'),
+  harvest: translate('phases.harvest'),
 };
 
 const PHASE_COLORS: Record<GrowPhase, string> = {
@@ -112,11 +113,16 @@ function useTimelineItems(tasks: TaskModel[], timezone: string) {
           }).setZone(timezone);
           const isOverdue = dueDate < now && task.status === 'pending';
 
+          const validStatuses = ['completed', 'pending', 'skipped'] as const;
+          const status = validStatuses.includes(task.status as any)
+            ? (task.status as 'completed' | 'pending' | 'skipped')
+            : 'pending';
+
           items.push({
             id: task.id,
             title: task.title,
             dueDate: dueDate.toISO()!,
-            status: task.status as any,
+            status,
             phase,
             phaseIndex,
             taskType: (task.metadata?.taskType as string) || 'custom',

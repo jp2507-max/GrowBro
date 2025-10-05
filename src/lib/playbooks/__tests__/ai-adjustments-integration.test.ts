@@ -1,4 +1,3 @@
-/* eslint-disable max-lines-per-function */
 /**
  * Integration test for AI adjustment system
  * Tests the complete flow from suggestion generation to acceptance and voting

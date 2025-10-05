@@ -50,3 +50,21 @@ export type {
   UsePhaseProgressResult,
 } from './use-phase-progress';
 export { usePhaseProgress, usePhaseSummary } from './use-phase-progress';
+
+// Strain-specific guidance
+export type {
+  CustomizedPhaseDurations,
+  StrainAssumptions,
+  StrainTip,
+} from './strain-guidance';
+export {
+  calculatePhaseDurations,
+  customizePlaybookForStrain,
+  getAssumptionsChipData,
+  getStrainSpecificTips,
+  STRAIN_GUIDANCE_DISCLAIMER,
+} from './strain-guidance';
+export { useStrainGuidance } from './use-strain-guidance';
+
+// Hooks
+export { usePlaybookService } from './use-playbook-service';

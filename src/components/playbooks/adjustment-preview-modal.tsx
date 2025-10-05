@@ -140,16 +140,14 @@ function ActionButtons({
   );
 }
 
-export function AdjustmentPreviewModal({
-  suggestion,
-  onAcceptAll,
-  onAcceptPartial,
-  onDecline,
-  onClose,
-}: Props) {
+function useTaskSelection(suggestion: AdjustmentSuggestion) {
   const [selectedTasks, setSelectedTasks] = React.useState<Set<string>>(
     new Set(suggestion.affectedTasks.map((t) => t.taskId))
   );
+
+  React.useEffect(() => {
+    setSelectedTasks(new Set(suggestion.affectedTasks.map((t) => t.taskId)));
+  }, [suggestion]);
 
   const toggleTask = (taskId: string) => {
     setSelectedTasks((prev) => {
@@ -163,9 +161,25 @@ export function AdjustmentPreviewModal({
     });
   };
 
+  return { selectedTasks, toggleTask };
+}
+
+export function AdjustmentPreviewModal({
+  suggestion,
+  onAcceptAll,
+  onAcceptPartial,
+  onDecline,
+  onClose,
+}: Props) {
+  const { selectedTasks, toggleTask } = useTaskSelection(suggestion);
+
   const handleAcceptPartial = () => {
     if (selectedTasks.size === 0) return;
-    onAcceptPartial(Array.from(selectedTasks));
+    const currentTaskIds = suggestion.affectedTasks.map((t) => t.taskId);
+    const validSelectedTasks = Array.from(selectedTasks).filter((taskId) =>
+      currentTaskIds.includes(taskId)
+    );
+    onAcceptPartial(validSelectedTasks);
   };
 
   return (

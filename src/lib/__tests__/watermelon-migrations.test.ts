@@ -38,8 +38,8 @@ const testOccurrenceOverridesTable = () => {
 };
 
 const testSchemaVersion = () => {
-  it('has schema version 6', () => {
-    expect((schema as any).version).toBe(6);
+  it('has schema version 11', () => {
+    expect((schema as any).version).toBe(11);
   });
 };
 
@@ -92,12 +92,12 @@ const testDataTypeConsistency = () => {
 };
 
 const testMigrationVersions = () => {
-  it('has migrations up to version 6', () => {
+  it('has migrations up to version 11', () => {
     const migrationVersions = (migrations as any).migrations.map(
       (m: any) => m.toVersion
     );
-    expect(migrationVersions).toContain(6);
-    expect(Math.max(...migrationVersions)).toBe(6);
+    expect(migrationVersions).toContain(11);
+    expect(Math.max(...migrationVersions)).toBe(11);
   });
 };
 

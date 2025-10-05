@@ -14,13 +14,20 @@ function useLoadSuggestions(service: AIAdjustmentService, plantId: string) {
   const [suggestions, setSuggestions] = React.useState<AdjustmentSuggestion[]>(
     []
   );
+  const [acceptedSuggestions, setAcceptedSuggestions] = React.useState<
+    AdjustmentSuggestion[]
+  >([]);
   const [loading, setLoading] = React.useState(false);
 
   const loadSuggestions = React.useCallback(async () => {
     setLoading(true);
     try {
-      const pending = await service.getPendingSuggestions(plantId);
+      const [pending, accepted] = await Promise.all([
+        service.getPendingSuggestions(plantId),
+        service.getAcceptedSuggestions(plantId),
+      ]);
       setSuggestions(pending);
+      setAcceptedSuggestions(accepted);
     } catch (error) {
       console.error('[useAIAdjustments] Failed to load suggestions:', error);
     } finally {
@@ -28,7 +35,15 @@ function useLoadSuggestions(service: AIAdjustmentService, plantId: string) {
     }
   }, [plantId, service]);
 
-  return { suggestions, setSuggestions, loading, setLoading, loadSuggestions };
+  return {
+    suggestions,
+    acceptedSuggestions,
+    setSuggestions,
+    setAcceptedSuggestions,
+    loading,
+    setLoading,
+    loadSuggestions,
+  };
 }
 
 function useGenerateSuggestion(options: {
@@ -73,8 +88,13 @@ function useGenerateSuggestion(options: {
 function useAcceptSuggestion(options: {
   service: AIAdjustmentService;
   suggestions: AdjustmentSuggestion[];
+  acceptedSuggestions: AdjustmentSuggestion[];
   analytics: any;
-  loadSuggestions: () => Promise<void>;
+  setters: {
+    setAcceptedSuggestions: React.Dispatch<
+      React.SetStateAction<AdjustmentSuggestion[]>
+    >;
+  };
 }) {
   return React.useCallback(
     async (suggestionId: string, taskIds?: string[]) => {
@@ -85,14 +105,26 @@ function useAcceptSuggestion(options: {
           (s) => s.id === suggestionId
         );
         if (suggestion) {
+          const updatedSuggestion: AdjustmentSuggestion = {
+            ...suggestion,
+            status: 'accepted',
+            acceptedTasks: taskIds,
+            updatedAt: Date.now(),
+          };
+
+          options.setters.setAcceptedSuggestions((prev) => [
+            ...prev,
+            updatedSuggestion,
+          ]);
+
           options.analytics.track('ai_adjustment_applied', {
             playbookId: suggestion.playbookId || '',
             adjustmentType: suggestion.suggestionType,
             applied: true,
           });
-        }
 
-        await options.loadSuggestions();
+          return updatedSuggestion;
+        }
       } catch (error) {
         console.error('[useAIAdjustments] Failed to accept suggestion:', error);
         throw error;
@@ -105,26 +137,35 @@ function useAcceptSuggestion(options: {
 function useDeclineSuggestion(options: {
   service: AIAdjustmentService;
   suggestions: AdjustmentSuggestion[];
+  acceptedSuggestions: AdjustmentSuggestion[];
   analytics: any;
-  loadSuggestions: () => Promise<void>;
+  setters: {
+    setAcceptedSuggestions: React.Dispatch<
+      React.SetStateAction<AdjustmentSuggestion[]>
+    >;
+  };
 }) {
   return React.useCallback(
     async (suggestionId: string, reason?: string) => {
       try {
         await options.service.declineSuggestion(suggestionId);
 
-        const suggestion = options.suggestions.find(
-          (s) => s.id === suggestionId
-        );
+        const suggestion = [
+          ...options.suggestions,
+          ...options.acceptedSuggestions,
+        ].find((s) => s.id === suggestionId);
         if (suggestion) {
+          // Remove from accepted suggestions if it was accepted
+          options.setters.setAcceptedSuggestions((prev) =>
+            prev.filter((s) => s.id !== suggestionId)
+          );
+
           options.analytics.track('ai_adjustment_declined', {
             playbookId: suggestion.playbookId || '',
             adjustmentType: suggestion.suggestionType,
             reason,
           });
         }
-
-        await options.loadSuggestions();
       } catch (error) {
         console.error(
           '[useAIAdjustments] Failed to decline suggestion:',
@@ -186,8 +227,15 @@ export function useAIAdjustments(plantId: string) {
 
   const service = serviceRef.current;
 
-  const { suggestions, setSuggestions, loading, setLoading, loadSuggestions } =
-    useLoadSuggestions(service, plantId);
+  const {
+    suggestions,
+    acceptedSuggestions,
+    setSuggestions,
+    setAcceptedSuggestions,
+    loading,
+    setLoading,
+    loadSuggestions,
+  } = useLoadSuggestions(service, plantId);
 
   const generateSuggestion = useGenerateSuggestion({
     service,
@@ -198,15 +246,17 @@ export function useAIAdjustments(plantId: string) {
   const acceptSuggestion = useAcceptSuggestion({
     service,
     suggestions,
+    acceptedSuggestions,
     analytics,
-    loadSuggestions,
+    setters: { setAcceptedSuggestions },
   });
 
   const declineSuggestion = useDeclineSuggestion({
     service,
     suggestions,
+    acceptedSuggestions,
     analytics,
-    loadSuggestions,
+    setters: { setAcceptedSuggestions },
   });
 
   const { voteHelpfulness, setNeverSuggest } = useVoteAndPreference(
@@ -221,6 +271,7 @@ export function useAIAdjustments(plantId: string) {
 
   return {
     suggestions,
+    acceptedSuggestions,
     loading,
     generateSuggestion,
     acceptSuggestion,

@@ -758,6 +758,29 @@ async function pushChanges(lastPulledAt: number | null): Promise<number> {
   const total = countChanges(toPush);
   if (total === 0) return 0;
 
+  // Get current user ID for RLS
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const userId = user?.id;
+
+  // Enrich all records with user_id for RLS
+  if (userId) {
+    const enrichWithUserId = (records: any[]) =>
+      records.map((r) => ({ ...r, user_id: userId }));
+
+    toPush.series.created = enrichWithUserId(toPush.series.created);
+    toPush.series.updated = enrichWithUserId(toPush.series.updated);
+    toPush.tasks.created = enrichWithUserId(toPush.tasks.created);
+    toPush.tasks.updated = enrichWithUserId(toPush.tasks.updated);
+    toPush.occurrence_overrides.created = enrichWithUserId(
+      toPush.occurrence_overrides.created
+    );
+    toPush.occurrence_overrides.updated = enrichWithUserId(
+      toPush.occurrence_overrides.updated
+    );
+  }
+
   const token = await getBearerToken();
   const batches = buildPushBatches(toPush, lastPulledAt);
   let pushedCount = 0;

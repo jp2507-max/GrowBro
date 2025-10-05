@@ -19,11 +19,86 @@ type Props = {
   playbookId?: string;
 };
 
+type AcceptParams = {
+  selectedSuggestion: AdjustmentSuggestion | null;
+  acceptSuggestion: any;
+  setAcceptedSuggestions: React.Dispatch<
+    React.SetStateAction<AdjustmentSuggestion[]>
+  >;
+  setShowPreview: any;
+  setSelectedSuggestion: any;
+  taskIds?: string[];
+};
+
+async function acceptAllTasks(params: AcceptParams) {
+  if (!params.selectedSuggestion) return;
+  try {
+    const updated = await params.acceptSuggestion(params.selectedSuggestion.id);
+    if (updated) {
+      params.setAcceptedSuggestions((prev: AdjustmentSuggestion[]) => [
+        ...prev,
+        updated,
+      ]);
+    }
+    params.setShowPreview(false);
+    params.setSelectedSuggestion(null);
+  } catch (error) {
+    console.error('Failed to accept suggestion:', error);
+  }
+}
+
+async function acceptPartialTasks(params: AcceptParams) {
+  if (!params.selectedSuggestion || !params.taskIds) return;
+  try {
+    const updated = await params.acceptSuggestion(
+      params.selectedSuggestion.id,
+      params.taskIds
+    );
+    if (updated) {
+      params.setAcceptedSuggestions((prev: AdjustmentSuggestion[]) => [
+        ...prev,
+        updated,
+      ]);
+    }
+    params.setShowPreview(false);
+    params.setSelectedSuggestion(null);
+  } catch (error) {
+    console.error('Failed to accept partial suggestion:', error);
+  }
+}
+
+type DeclineParams = {
+  selectedSuggestion: AdjustmentSuggestion | null;
+  declineSuggestion: any;
+  setAcceptedSuggestions: React.Dispatch<
+    React.SetStateAction<AdjustmentSuggestion[]>
+  >;
+  setShowPreview: any;
+  setSelectedSuggestion: any;
+};
+
+async function declineSuggestionHandler(params: DeclineParams) {
+  if (!params.selectedSuggestion) return;
+  try {
+    await params.declineSuggestion(params.selectedSuggestion.id);
+    params.setAcceptedSuggestions((prev: AdjustmentSuggestion[]) =>
+      prev.filter((s) => s.id !== params.selectedSuggestion!.id)
+    );
+    params.setShowPreview(false);
+    params.setSelectedSuggestion(null);
+  } catch (error) {
+    console.error('Failed to decline suggestion:', error);
+  }
+}
+
 function useAdjustmentHandlers(options: {
   acceptSuggestion: any;
   declineSuggestion: any;
+  acceptedSuggestions: AdjustmentSuggestion[];
+  setAcceptedSuggestions: React.Dispatch<
+    React.SetStateAction<AdjustmentSuggestion[]>
+  >;
   setters: {
-    setAcceptedSuggestions: any;
     setShowPreview: any;
     setSelectedSuggestion: any;
   };
@@ -31,50 +106,39 @@ function useAdjustmentHandlers(options: {
   const handleAcceptAll = async (
     selectedSuggestion: AdjustmentSuggestion | null
   ) => {
-    if (!selectedSuggestion) return;
-
-    try {
-      await options.acceptSuggestion(selectedSuggestion.id);
-      options.setters.setAcceptedSuggestions((prev: Set<string>) =>
-        new Set(prev).add(selectedSuggestion.id)
-      );
-      options.setters.setShowPreview(false);
-      options.setters.setSelectedSuggestion(null);
-    } catch (error) {
-      console.error('Failed to accept suggestion:', error);
-    }
+    await acceptAllTasks({
+      selectedSuggestion,
+      acceptSuggestion: options.acceptSuggestion,
+      setAcceptedSuggestions: options.setAcceptedSuggestions,
+      setShowPreview: options.setters.setShowPreview,
+      setSelectedSuggestion: options.setters.setSelectedSuggestion,
+    });
   };
 
   const handleAcceptPartial = async (
     selectedSuggestion: AdjustmentSuggestion | null,
     taskIds: string[]
   ) => {
-    if (!selectedSuggestion) return;
-
-    try {
-      await options.acceptSuggestion(selectedSuggestion.id, taskIds);
-      options.setters.setAcceptedSuggestions((prev: Set<string>) =>
-        new Set(prev).add(selectedSuggestion.id)
-      );
-      options.setters.setShowPreview(false);
-      options.setters.setSelectedSuggestion(null);
-    } catch (error) {
-      console.error('Failed to accept partial suggestion:', error);
-    }
+    await acceptPartialTasks({
+      selectedSuggestion,
+      taskIds,
+      acceptSuggestion: options.acceptSuggestion,
+      setAcceptedSuggestions: options.setAcceptedSuggestions,
+      setShowPreview: options.setters.setShowPreview,
+      setSelectedSuggestion: options.setters.setSelectedSuggestion,
+    });
   };
 
   const handleDecline = async (
     selectedSuggestion: AdjustmentSuggestion | null
   ) => {
-    if (!selectedSuggestion) return;
-
-    try {
-      await options.declineSuggestion(selectedSuggestion.id);
-      options.setters.setShowPreview(false);
-      options.setters.setSelectedSuggestion(null);
-    } catch (error) {
-      console.error('Failed to decline suggestion:', error);
-    }
+    await declineSuggestionHandler({
+      selectedSuggestion,
+      declineSuggestion: options.declineSuggestion,
+      setAcceptedSuggestions: options.setAcceptedSuggestions,
+      setShowPreview: options.setters.setShowPreview,
+      setSelectedSuggestion: options.setters.setSelectedSuggestion,
+    });
   };
 
   return { handleAcceptAll, handleAcceptPartial, handleDecline };
@@ -287,9 +351,31 @@ function DebugSection({
   );
 }
 
+function useLocalSuggestionState(acceptedSuggestions: AdjustmentSuggestion[]) {
+  const [selectedSuggestion, setSelectedSuggestion] =
+    React.useState<AdjustmentSuggestion | null>(null);
+  const [showPreview, setShowPreview] = React.useState(false);
+  const [localAcceptedSuggestions, setLocalAcceptedSuggestions] =
+    React.useState<AdjustmentSuggestion[]>([]);
+
+  React.useEffect(() => {
+    setLocalAcceptedSuggestions(acceptedSuggestions);
+  }, [acceptedSuggestions]);
+
+  return {
+    selectedSuggestion,
+    setSelectedSuggestion,
+    showPreview,
+    setShowPreview,
+    localAcceptedSuggestions,
+    setLocalAcceptedSuggestions,
+  };
+}
+
 function useAdjustmentState(plantId: string, playbookId?: string) {
   const {
     suggestions,
+    acceptedSuggestions,
     loading,
     generateSuggestion,
     acceptSuggestion,
@@ -298,22 +384,22 @@ function useAdjustmentState(plantId: string, playbookId?: string) {
     setNeverSuggest,
   } = useAIAdjustments(plantId);
 
-  const [selectedSuggestion, setSelectedSuggestion] =
-    React.useState<AdjustmentSuggestion | null>(null);
-  const [showPreview, setShowPreview] = React.useState(false);
-  const [acceptedSuggestions, setAcceptedSuggestions] = React.useState<
-    Set<string>
-  >(new Set());
+  const {
+    selectedSuggestion,
+    setSelectedSuggestion,
+    showPreview,
+    setShowPreview,
+    localAcceptedSuggestions,
+    setLocalAcceptedSuggestions,
+  } = useLocalSuggestionState(acceptedSuggestions);
 
   const { handleAcceptAll, handleAcceptPartial, handleDecline } =
     useAdjustmentHandlers({
       acceptSuggestion,
       declineSuggestion,
-      setters: {
-        setAcceptedSuggestions,
-        setShowPreview,
-        setSelectedSuggestion,
-      },
+      acceptedSuggestions: localAcceptedSuggestions,
+      setAcceptedSuggestions: setLocalAcceptedSuggestions,
+      setters: { setShowPreview, setSelectedSuggestion },
     });
 
   const {
@@ -336,9 +422,6 @@ function useAdjustmentState(plantId: string, playbookId?: string) {
   };
 
   const pendingSuggestions = suggestions.filter((s) => s.status === 'pending');
-  const acceptedSuggestionsList = suggestions.filter((s) =>
-    acceptedSuggestions.has(s.id)
-  );
 
   return {
     loading,
@@ -354,7 +437,7 @@ function useAdjustmentState(plantId: string, playbookId?: string) {
     handleGenerateTestSuggestion,
     handleViewDetails,
     pendingSuggestions,
-    acceptedSuggestionsList,
+    acceptedSuggestionsList: localAcceptedSuggestions,
   };
 }
 

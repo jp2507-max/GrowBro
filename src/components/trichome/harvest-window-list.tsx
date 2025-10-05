@@ -59,30 +59,34 @@ function WindowCard({
       </Text>
 
       <View className="mb-3 rounded-md bg-white p-3 dark:bg-charcoal-900">
-        <Text className="mb-2 text-xs font-semibold uppercase text-neutral-600 dark:text-neutral-400">
-          Trichome Ratio
-        </Text>
+        <Text
+          className="mb-2 text-xs font-semibold uppercase text-neutral-600 dark:text-neutral-400"
+          tx="trichome.trichomeRatio"
+        />
         <View className="flex-row justify-between">
           <View className="flex-1">
-            <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-              Clear
-            </Text>
+            <Text
+              className="text-xs text-neutral-600 dark:text-neutral-400"
+              tx="trichome.clear"
+            />
             <Text className="text-sm font-semibold text-charcoal-950 dark:text-neutral-100">
               {window.trichomeRatio.clear}
             </Text>
           </View>
           <View className="flex-1">
-            <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-              Milky
-            </Text>
+            <Text
+              className="text-xs text-neutral-600 dark:text-neutral-400"
+              tx="trichome.milky"
+            />
             <Text className="text-sm font-semibold text-charcoal-950 dark:text-neutral-100">
               {window.trichomeRatio.milky}
             </Text>
           </View>
           <View className="flex-1">
-            <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-              Amber
-            </Text>
+            <Text
+              className="text-xs text-neutral-600 dark:text-neutral-400"
+              tx="trichome.amber"
+            />
             <Text className="text-sm font-semibold text-charcoal-950 dark:text-neutral-100">
               {window.trichomeRatio.amber}
             </Text>

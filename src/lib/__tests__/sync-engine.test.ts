@@ -1,4 +1,3 @@
-/* eslint-disable max-lines-per-function */
 import { database } from '@/lib/watermelon';
 
 import {

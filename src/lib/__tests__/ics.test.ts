@@ -1,6 +1,5 @@
 import { exportIcs, importIcs } from '@/lib/ics';
 
-/* eslint-disable-next-line max-lines-per-function */
 describe('ICS export/import', () => {
   test('exports tasks to ICS text', () => {
     const ics = exportIcs({

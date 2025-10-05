@@ -8,7 +8,6 @@
  * - Manual edit protection
  * - Outbox pattern integration
  */
-/* eslint-disable max-lines-per-function */
 
 import { type Database } from '@nozbe/watermelondb';
 

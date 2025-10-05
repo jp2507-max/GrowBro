@@ -1,4 +1,3 @@
-/* eslint-disable max-lines-per-function */
 import {
   ANALYTICS_CONSENT_KEY,
   createConsentGatedAnalytics,

@@ -8,6 +8,7 @@
 
 import { DateTime } from 'luxon';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Text, View } from '@/components/ui';
 import type { PhaseSummary } from '@/lib/playbooks/phase-tracker';
@@ -17,22 +18,16 @@ type PhaseSummaryCardProps = {
   className?: string;
 };
 
-const PHASE_LABELS: Record<string, string> = {
-  seedling: 'Seedling Phase',
-  veg: 'Vegetative Phase',
-  flower: 'Flowering Phase',
-  harvest: 'Harvest Phase',
-};
+function getPhaseLabel(t: (key: string) => string, phase: string): string {
+  return t(`playbooks.phases.${phase}`) || phase;
+}
 
-const TASK_TYPE_LABELS: Record<string, string> = {
-  water: 'Watering',
-  feed: 'Feeding',
-  prune: 'Pruning',
-  train: 'Training',
-  monitor: 'Monitoring',
-  note: 'Notes',
-  custom: 'Custom',
-};
+function getTaskTypeLabel(
+  t: (key: string) => string,
+  taskType: string
+): string {
+  return t(`playbooks.taskTypes.${taskType}`) || taskType;
+}
 
 function ProgressBar({
   completed,
@@ -60,15 +55,17 @@ function ProgressBar({
 
 function ActivitiesSection({
   activities,
+  t,
 }: {
   activities: { taskType: string; count: number }[];
+  t: (key: string) => string;
 }) {
   if (activities.length === 0) return null;
 
   return (
     <View className="mb-3">
       <Text className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
-        Activities
+        {t('playbooks.activities')}
       </Text>
       <View className="flex-row flex-wrap gap-2">
         {activities.map((activity) => (
@@ -77,8 +74,7 @@ function ActivitiesSection({
             className="rounded-lg bg-neutral-100 px-3 py-1.5 dark:bg-neutral-800"
           >
             <Text className="text-xs text-neutral-700 dark:text-neutral-300">
-              {TASK_TYPE_LABELS[activity.taskType] || activity.taskType}:{' '}
-              {activity.count}
+              {getTaskTypeLabel(t, activity.taskType)}: {activity.count}
             </Text>
           </View>
         ))}
@@ -87,13 +83,19 @@ function ActivitiesSection({
   );
 }
 
-function OutcomesSection({ outcomes }: { outcomes: string[] }) {
+function OutcomesSection({
+  outcomes,
+  t,
+}: {
+  outcomes: string[];
+  t: (key: string) => string;
+}) {
   if (outcomes.length === 0) return null;
 
   return (
     <View>
       <Text className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
-        Outcomes
+        {t('playbooks.outcomes')}
       </Text>
       {outcomes.map((outcome, index) => (
         <View key={index} className="mb-1 flex-row items-start gap-2">
@@ -111,6 +113,7 @@ export function PhaseSummaryCard({
   summary,
   className,
 }: PhaseSummaryCardProps) {
+  const { t } = useTranslation();
   const startDate = DateTime.fromISO(summary.startDate);
   const endDate = DateTime.fromISO(summary.endDate);
   const duration = endDate.diff(startDate, 'days').days;
@@ -121,7 +124,7 @@ export function PhaseSummaryCard({
     >
       <View className="mb-3">
         <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-          {PHASE_LABELS[summary.phase] || summary.phase}
+          {getPhaseLabel(t, summary.phase)}
         </Text>
         <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
           {startDate.toFormat('MMM d')} - {endDate.toFormat('MMM d, yyyy')} (
@@ -133,8 +136,8 @@ export function PhaseSummaryCard({
         completed={summary.completedTasks}
         total={summary.totalTasks}
       />
-      <ActivitiesSection activities={summary.activities} />
-      <OutcomesSection outcomes={summary.outcomes} />
+      <ActivitiesSection activities={summary.activities} t={t} />
+      <OutcomesSection outcomes={summary.outcomes} t={t} />
     </View>
   );
 }

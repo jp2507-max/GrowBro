@@ -257,6 +257,20 @@ export class AIAdjustmentService {
     return records.map((r: any) => this.mapRecordToSuggestion(r));
   }
 
+  /**
+   * Get accepted suggestions for a plant
+   */
+  async getAcceptedSuggestions(
+    plantId: string
+  ): Promise<AdjustmentSuggestion[]> {
+    const suggestionsCollection = this.database.get('adjustment_suggestions');
+    const records = await suggestionsCollection
+      .query(Q.where('plant_id', plantId), Q.where('status', 'accepted'))
+      .fetch();
+
+    return records.map((r: any) => this.mapRecordToSuggestion(r));
+  }
+
   // Private helper methods
 
   private async getPlantPreference(
@@ -287,8 +301,9 @@ export class AIAdjustmentService {
 
     if (records.length === 0) return false;
 
-    const cooldownUntil = (records[0]._raw as any).cooldown_until;
-    return Date.now() < cooldownUntil;
+    // Check if any record has an active cooldown (cooldown_until > now)
+    const now = Date.now();
+    return records.some((record) => (record._raw as any).cooldown_until > now);
   }
 
   private async setCooldown(
@@ -299,12 +314,25 @@ export class AIAdjustmentService {
 
     await this.database.write(async () => {
       const cooldownsCollection = this.database.get('adjustment_cooldowns');
-      await cooldownsCollection.create((c: any) => {
-        c.plant_id = plantId;
-        c.root_cause = rootCause;
-        c.cooldown_until = cooldownUntil;
-        c.created_at = Date.now();
-      });
+      const existing = await cooldownsCollection
+        .query(Q.where('plant_id', plantId), Q.where('root_cause', rootCause))
+        .fetch();
+
+      if (existing.length > 0) {
+        // Update existing record
+        await existing[0].update((c: any) => {
+          c.cooldown_until = cooldownUntil;
+          c.created_at = Date.now();
+        });
+      } else {
+        // Create new record
+        await cooldownsCollection.create((c: any) => {
+          c.plant_id = plantId;
+          c.root_cause = rootCause;
+          c.cooldown_until = cooldownUntil;
+          c.created_at = Date.now();
+        });
+      }
     });
   }
 
@@ -426,6 +454,7 @@ export class AIAdjustmentService {
     await this.database.write(async () => {
       const suggestionsCollection = this.database.get('adjustment_suggestions');
       await suggestionsCollection.create((s: any) => {
+        s.id = suggestion.id;
         s.plant_id = suggestion.plantId;
         s.playbook_id = suggestion.playbookId;
         s.suggestion_type = suggestion.suggestionType;
