@@ -10,6 +10,10 @@ export interface FeatureFlags {
   strainsEnabled: boolean;
   strainsFavoritesSync: boolean;
   strainsOfflineCache: boolean;
+  // AI adjustment feature flags
+  aiAdjustmentsEnabled: boolean;
+  aiAdjustmentsMinSkippedTasks: number;
+  aiAdjustmentsMinConfidence: number;
 }
 
 /**
@@ -20,6 +24,11 @@ export function getFeatureFlags(): FeatureFlags {
     strainsEnabled: Env.FEATURE_STRAINS_ENABLED ?? true,
     strainsFavoritesSync: Env.FEATURE_STRAINS_FAVORITES_SYNC ?? true,
     strainsOfflineCache: Env.FEATURE_STRAINS_OFFLINE_CACHE ?? true,
+    aiAdjustmentsEnabled: Env.FEATURE_AI_ADJUSTMENTS_ENABLED ?? false,
+    aiAdjustmentsMinSkippedTasks:
+      Env.FEATURE_AI_ADJUSTMENTS_MIN_SKIPPED_TASKS ?? 2,
+    aiAdjustmentsMinConfidence:
+      Env.FEATURE_AI_ADJUSTMENTS_MIN_CONFIDENCE ?? 0.7,
   };
 }
 
@@ -47,7 +56,9 @@ export function refreshFeatureFlags(): void {
 /**
  * Check if a specific feature is enabled
  */
-export function isFeatureEnabled(feature: keyof FeatureFlags): boolean {
+export function isFeatureEnabled(
+  feature: keyof FeatureFlags
+): boolean | number {
   const flags = getFeatureFlags();
   return flags[feature];
 }
@@ -62,7 +73,7 @@ export function useFeatureFlags(): FeatureFlags {
 /**
  * Hook to check if a specific feature is enabled
  */
-export function useFeatureFlag(feature: keyof FeatureFlags): boolean {
+export function useFeatureFlag(feature: keyof FeatureFlags): boolean | number {
   const flags = useFeatureFlags();
   return flags[feature];
 }

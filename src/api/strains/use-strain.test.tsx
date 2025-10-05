@@ -1,5 +1,3 @@
-// @ts-nocheck
-/* eslint-disable max-lines-per-function */
 /**
  * Unit tests for useStrain React Query hook
  */

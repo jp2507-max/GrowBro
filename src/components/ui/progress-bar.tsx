@@ -31,13 +31,14 @@ export const ProgressBar = forwardRef<ProgressBarRef, Props>(
       };
     }, [progress]);
 
-    const style = useAnimatedStyle(() => {
-      return {
+    const style = useAnimatedStyle(
+      () => ({
         width: `${progress.value}%`,
         backgroundColor: '#000',
         height: 2,
-      };
-    });
+      }),
+      []
+    );
     return (
       <View className={twMerge(` bg-[#EAEAEA]`, className)}>
         <Animated.View style={style} />

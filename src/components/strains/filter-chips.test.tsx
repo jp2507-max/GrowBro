@@ -1,4 +1,3 @@
-/* eslint-disable max-lines-per-function */
 import * as React from 'react';
 
 import type { StrainFilters } from '@/api/strains/types';

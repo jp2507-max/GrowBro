@@ -235,9 +235,12 @@ function useDragGesture(options: {
     originDate.current = new Date(task.dueAtLocal);
   }, [task.dueAtLocal]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: tx.value }, { translateY: ty.value }],
-  }));
+  const animatedStyle = useAnimatedStyle(
+    () => ({
+      transform: [{ translateX: tx.value }, { translateY: ty.value }],
+    }),
+    []
+  );
 
   const pan = useCreatePanGesture({
     tx,

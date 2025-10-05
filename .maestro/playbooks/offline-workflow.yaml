@@ -1,0 +1,213 @@
+appId: com.growbro.app
+---
+# Playbook Offline Workflow E2E Test
+# Tests: apply playbook → shift +3 days → customize 5 tasks → complete 10 → reconnect → verify sync
+# NOTE: This test requires Android device/emulator with adb. iOS offline testing is not supported.
+
+- launchApp
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Navigate to Plants screen
+- tapOn: 'Plants'
+- assertVisible: 'My Plants'
+
+# Create a test plant if needed
+- tapOn: 'Add Plant'
+- inputText: 'E2E Test Plant'
+- tapOn: 'Auto'
+- tapOn: 'Indoor'
+- tapOn: 'Save'
+- assertVisible: 'E2E Test Plant'
+
+# Navigate to Playbooks
+- tapOn: 'E2E Test Plant'
+- tapOn: 'Playbooks'
+- assertVisible: 'Select Playbook'
+
+# Step 1: Apply playbook offline
+- runScript: |
+    # Disable network (Android only - iOS offline testing not supported)
+    if [ "$MAESTRO_DRIVER_PLATFORM" = "android" ]; then
+      adb shell cmd connectivity airplane-mode enable
+      sleep 2
+    else
+      echo "ERROR: iOS offline testing is not supported. This test requires Android device/emulator."
+      exit 1
+    fi
+
+- tapOn: 'Auto Indoor'
+- assertVisible: 'Preview'
+- assertVisible: 'Total weeks'
+- assertVisible: 'Task count'
+- tapOn: 'Apply Playbook'
+- assertVisible: 'Playbook applied'
+- assertVisible: 'Tasks generated'
+
+# Verify tasks were created offline
+- tapOn: 'View Tasks'
+- assertVisible: 'Water'
+- assertVisible: 'Feed'
+- assertVisible: 'Monitor'
+
+# Step 2: Shift schedule +3 days offline
+- tapOn: 'Schedule'
+- tapOn: 'Shift Schedule'
+- assertVisible: 'Shift by days'
+- inputText: '3'
+- assertVisible: 'Preview'
+- assertVisible: 'affected tasks'
+- tapOn: 'Apply Shift'
+- assertVisible: 'Schedule shifted'
+
+# Verify shift was applied
+- assertVisible: 'Undo'
+- assertVisible: '30 seconds'
+
+# Step 3: Customize 5 tasks offline
+- tapOn: 'Tasks'
+- scrollUntilVisible:
+    element: 'Water plants'
+    direction: DOWN
+
+# Customize task 1
+- tapOn: 'Water plants'
+- tapOn: 'Edit'
+- inputText: 'Custom watering schedule'
+- tapOn: 'Save'
+- assertVisible: 'edited'
+
+# Customize task 2
+- tapOn: 'Feed nutrients'
+- tapOn: 'Edit'
+- inputText: 'Custom feeding schedule'
+- tapOn: 'Save'
+- assertVisible: 'edited'
+
+# Customize task 3
+- tapOn: 'Check pH'
+- tapOn: 'Edit'
+- inputText: 'Custom pH check'
+- tapOn: 'Save'
+- assertVisible: 'edited'
+
+# Customize task 4
+- tapOn: 'Prune leaves'
+- tapOn: 'Edit'
+- inputText: 'Custom pruning'
+- tapOn: 'Save'
+- assertVisible: 'edited'
+
+# Customize task 5
+- tapOn: 'Train branches'
+- tapOn: 'Edit'
+- inputText: 'Custom training'
+- tapOn: 'Save'
+- assertVisible: 'edited'
+
+# Step 4: Mark 10 tasks complete offline
+- tapOn: 'Tasks'
+- scrollUntilVisible:
+    element: 'Water plants'
+    direction: DOWN
+
+# Complete 10 tasks
+- tapOn:
+    id: 'task-checkbox-0'
+- assertVisible: 'completed'
+
+- tapOn:
+    id: 'task-checkbox-1'
+- assertVisible: 'completed'
+
+- tapOn:
+    id: 'task-checkbox-2'
+- assertVisible: 'completed'
+
+- tapOn:
+    id: 'task-checkbox-3'
+- assertVisible: 'completed'
+
+- tapOn:
+    id: 'task-checkbox-4'
+- assertVisible: 'completed'
+
+- tapOn:
+    id: 'task-checkbox-5'
+- assertVisible: 'completed'
+
+- tapOn:
+    id: 'task-checkbox-6'
+- assertVisible: 'completed'
+
+- tapOn:
+    id: 'task-checkbox-7'
+- assertVisible: 'completed'
+
+- tapOn:
+    id: 'task-checkbox-8'
+- assertVisible: 'completed'
+
+- tapOn:
+    id: 'task-checkbox-9'
+- assertVisible: 'completed'
+
+# Verify offline indicator
+- assertVisible: 'Offline'
+- assertVisible: 'Changes queued'
+
+# Step 5: Reconnect and sync
+- runScript: |
+    # Re-enable network (Android only)
+    if [ "$MAESTRO_DRIVER_PLATFORM" = "android" ]; then
+      adb shell cmd connectivity airplane-mode disable
+      sleep 5
+    fi
+
+# Wait for sync to complete
+- assertVisible: 'Syncing'
+- waitForAnimationToEnd
+- assertVisible: 'Synced'
+
+# Step 6: Verify changes persisted
+- tapOn: 'Tasks'
+- assertVisible: 'Custom watering schedule'
+- assertVisible: 'Custom feeding schedule'
+- assertVisible: 'Custom pH check'
+- assertVisible: 'Custom pruning'
+- assertVisible: 'Custom training'
+
+# Verify completed tasks
+- assertVisible: '10 completed'
+
+# Verify shift was applied
+- tapOn: 'Schedule'
+- assertVisible: 'Shifted by 3 days'
+
+# Step 7: Verify on second device (simulated by logout/login)
+- tapOn: 'Settings'
+- tapOn: 'Logout'
+- assertVisible: 'Login'
+
+# Login again
+- runFlow: ../utils/login.yaml
+
+# Navigate back to plant
+- tapOn: 'Plants'
+- tapOn: 'E2E Test Plant'
+- tapOn: 'Tasks'
+
+# Verify all changes are present
+- assertVisible: 'Custom watering schedule'
+- assertVisible: 'Custom feeding schedule'
+- assertVisible: '10 completed'
+
+# Verify playbook is still applied
+- tapOn: 'Playbooks'
+- assertVisible: 'Auto Indoor'
+- assertVisible: 'Applied'
+
+# Cleanup
+- tapOn: 'Settings'
+- tapOn: 'Delete Plant'
+- tapOn: 'Confirm'
+- assertVisible: 'Plant deleted'

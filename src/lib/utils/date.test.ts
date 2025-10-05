@@ -1,4 +1,3 @@
-/* eslint-disable max-lines-per-function */
 /**
  * Unit tests for date utility functions
  */

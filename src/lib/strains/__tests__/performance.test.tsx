@@ -1,4 +1,3 @@
-/* eslint-disable max-lines-per-function */
 /**
  * Performance tests for Strains feature
  * Tests FlashList performance, image loading, and caching

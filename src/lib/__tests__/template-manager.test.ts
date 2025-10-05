@@ -7,7 +7,6 @@ import {
   previewTemplateApplication,
   undoBulkShift,
 } from '@/lib/template-manager';
-/* eslint-disable max-lines-per-function */
 import { database } from '@/lib/watermelon';
 
 describe('TemplateManager', () => {

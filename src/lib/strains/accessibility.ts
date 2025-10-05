@@ -6,6 +6,8 @@
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Platform } from 'react-native';
 
+import { getMinTouchTargetSize } from '../accessibility/constants';
+
 /**
  * Hook to detect if screen reader is enabled
  */
@@ -148,11 +150,7 @@ export function getScaledFontSize(
 /**
  * Get minimum touch target size (44pt on iOS, 48dp on Android)
  */
-export const MIN_TOUCH_TARGET_SIZE = Platform.select({
-  ios: 44,
-  android: 48,
-  default: 44,
-});
+export const getMinTouchTargetSizeStrains = getMinTouchTargetSize;
 
 /**
  * Accessibility labels for strain characteristics

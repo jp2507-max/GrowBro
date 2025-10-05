@@ -1,4 +1,3 @@
-/* eslint-disable max-lines-per-function */
 import { Env } from '@env';
 import { act, renderHook } from '@testing-library/react-native';
 

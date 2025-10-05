@@ -1,4 +1,4 @@
-/* eslint-disable max-lines-per-function, import/first */
+/* eslint-disable import/first */
 // Mock axios FIRST before any imports
 jest.mock('axios');
 

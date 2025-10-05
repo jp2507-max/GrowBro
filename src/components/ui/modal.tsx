@@ -35,7 +35,11 @@ import type {
 import { BottomSheetModal, useBottomSheet } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  ReduceMotion,
+} from 'react-native-reanimated';
 import { Path, Svg } from 'react-native-svg';
 
 import colors from '@/components/ui/colors';
@@ -115,17 +119,22 @@ export const Modal = React.forwardRef(
  * Custom Backdrop
  */
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 const CustomBackdrop = ({ style }: BottomSheetBackdropProps) => {
   const { close } = useBottomSheet();
   return (
-    <AnimatedPressable
-      onPress={() => close()}
-      entering={FadeIn.duration(50)}
-      exiting={FadeOut.duration(20)}
+    <Animated.View
+      entering={FadeIn.duration(50).reduceMotion(ReduceMotion.System)}
+      exiting={FadeOut.duration(20).reduceMotion(ReduceMotion.System)}
       style={[style, styles.backdrop]}
-    />
+    >
+      <Pressable
+        onPress={() => close()}
+        style={StyleSheet.absoluteFill}
+        accessibilityRole="button"
+        accessibilityLabel="Close modal"
+        accessibilityHint="Tap to dismiss the modal"
+      />
+    </Animated.View>
   );
 };
 
@@ -183,7 +192,7 @@ const CloseButton = ({ close }: { close: () => void }) => {
       hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
       accessibilityLabel="close modal"
       accessibilityRole="button"
-      accessibilityHint="closes the modal"
+      accessibilityHint="Double tap to close the modal and return to the previous screen"
     >
       <Svg
         className="fill-neutral-300 dark:fill-white"

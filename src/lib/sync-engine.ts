@@ -80,7 +80,10 @@ const API_BASE =
   '';
 
 if (!API_BASE) {
-  console.warn('SYNC: API_BASE is empty; network calls will fail on device');
+  // Log missing API_BASE - warn in production, info in development
+  const logMethod = __DEV__ ? console.info : console.warn;
+  const devMessage = __DEV__ ? ' (expected in dev)' : '';
+  logMethod(`SYNC: API_BASE is empty; sync is disabled${devMessage}`);
 }
 
 const REQUEST_TIMEOUT_MS = 30000; // 30 second timeout
@@ -754,6 +757,29 @@ async function pushChanges(lastPulledAt: number | null): Promise<number> {
   const toPush = await collectLocalChanges(lastPulledAt);
   const total = countChanges(toPush);
   if (total === 0) return 0;
+
+  // Get current user ID for RLS
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const userId = user?.id;
+
+  // Enrich all records with user_id for RLS
+  if (userId) {
+    const enrichWithUserId = (records: any[]) =>
+      records.map((r) => ({ ...r, user_id: userId }));
+
+    toPush.series.created = enrichWithUserId(toPush.series.created);
+    toPush.series.updated = enrichWithUserId(toPush.series.updated);
+    toPush.tasks.created = enrichWithUserId(toPush.tasks.created);
+    toPush.tasks.updated = enrichWithUserId(toPush.tasks.updated);
+    toPush.occurrence_overrides.created = enrichWithUserId(
+      toPush.occurrence_overrides.created
+    );
+    toPush.occurrence_overrides.updated = enrichWithUserId(
+      toPush.occurrence_overrides.updated
+    );
+  }
 
   const token = await getBearerToken();
   const batches = buildPushBatches(toPush, lastPulledAt);

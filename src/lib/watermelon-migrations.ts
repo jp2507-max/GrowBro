@@ -1,11 +1,22 @@
 import {
   addColumns,
   schemaMigrations,
-  unsafeExecuteSql,
 } from '@nozbe/watermelondb/Schema/migrations';
+
+const createTableSchema = (name: string, columnArray: any[]) => {
+  const columns = columnArray.reduce(
+    (acc, col) => {
+      acc[col.name] = col;
+      return acc;
+    },
+    {} as Record<string, any>
+  );
+  return { name, columns, columnArray };
+};
 
 export const migrations = schemaMigrations({
   migrations: [
+    // Migration from version 1 to 2: Add soft delete support
     {
       toVersion: 2,
       steps: [
@@ -19,604 +30,204 @@ export const migrations = schemaMigrations({
         }),
       ],
     },
+    // Migration from version 2 to 3: Add image upload queue
     {
       toVersion: 3,
       steps: [
         {
           type: 'create_table',
-          schema: {
-            name: 'image_upload_queue',
-            columns: {
-              local_uri: { name: 'local_uri', type: 'string' },
-              remote_path: {
-                name: 'remote_path',
-                type: 'string',
-                isOptional: true,
-              },
-              task_id: { name: 'task_id', type: 'string', isOptional: true },
-              plant_id: { name: 'plant_id', type: 'string', isOptional: true },
-              filename: { name: 'filename', type: 'string', isOptional: true },
-              mime_type: {
-                name: 'mime_type',
-                type: 'string',
-                isOptional: true,
-              },
-              status: { name: 'status', type: 'string', isIndexed: true },
-              retry_count: {
-                name: 'retry_count',
-                type: 'number',
-                isOptional: true,
-              },
-              last_error: {
-                name: 'last_error',
-                type: 'string',
-                isOptional: true,
-              },
-              next_attempt_at: {
-                name: 'next_attempt_at',
-                type: 'number',
-                isOptional: true,
-                isIndexed: true,
-              },
-              created_at: { name: 'created_at', type: 'number' },
-              updated_at: { name: 'updated_at', type: 'number' },
+          schema: createTableSchema('image_upload_queue', [
+            { name: 'local_uri', type: 'string' },
+            { name: 'remote_path', type: 'string', isOptional: true },
+            { name: 'task_id', type: 'string', isOptional: true },
+            { name: 'plant_id', type: 'string', isOptional: true },
+            { name: 'filename', type: 'string', isOptional: true },
+            { name: 'mime_type', type: 'string', isOptional: true },
+            { name: 'status', type: 'string', isIndexed: true },
+            { name: 'retry_count', type: 'number', isOptional: true },
+            { name: 'last_error', type: 'string', isOptional: true },
+            {
+              name: 'next_attempt_at',
+              type: 'number',
+              isOptional: true,
+              isIndexed: true,
             },
-            columnArray: [
-              { name: 'local_uri', type: 'string' },
-              { name: 'remote_path', type: 'string', isOptional: true },
-              { name: 'task_id', type: 'string', isOptional: true },
-              { name: 'plant_id', type: 'string', isOptional: true },
-              { name: 'filename', type: 'string', isOptional: true },
-              { name: 'mime_type', type: 'string', isOptional: true },
-              { name: 'status', type: 'string', isIndexed: true },
-              { name: 'retry_count', type: 'number', isOptional: true },
-              { name: 'last_error', type: 'string', isOptional: true },
-              {
-                name: 'next_attempt_at',
-                type: 'number',
-                isOptional: true,
-                isIndexed: true,
-              },
-              { name: 'created_at', type: 'number' },
-              { name: 'updated_at', type: 'number' },
-            ],
-          },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+          ]),
         },
       ],
     },
+    // Migration from version 3 to 4: No changes
     {
       toVersion: 4,
       steps: [],
     },
+    // Migration from version 4 to 5: Add Nutrient Engine tables
     {
       toVersion: 5,
       steps: [
-        // Create nutrient engine tables with optimized indexing strategy
         {
           type: 'create_table',
-          schema: {
-            name: 'ph_ec_readings',
-            columns: {
-              plant_id: { name: 'plant_id', type: 'string', isOptional: true },
-              reservoir_id: {
-                name: 'reservoir_id',
-                type: 'string',
-                isOptional: true,
-              },
-              measured_at: {
-                name: 'measured_at',
-                type: 'number',
-                isIndexed: true,
-              },
-              ph: { name: 'ph', type: 'number', isOptional: true },
-              ec_raw: { name: 'ec_raw', type: 'number', isOptional: true },
-              ec_25c: { name: 'ec_25c', type: 'number', isOptional: true },
-              temp_c: { name: 'temp_c', type: 'number', isOptional: true },
-              atc_on: { name: 'atc_on', type: 'boolean' },
-              ppm_scale: { name: 'ppm_scale', type: 'string' },
-              meter_id: {
-                name: 'meter_id',
-                type: 'string',
-                isOptional: true,
-                isIndexed: true,
-              },
-              note: { name: 'note', type: 'string', isOptional: true },
-              quality_flags: {
-                name: 'quality_flags',
-                type: 'string',
-                isOptional: true,
-              },
-              created_at: { name: 'created_at', type: 'number' },
-              updated_at: { name: 'updated_at', type: 'number' },
-              deleted_at: {
-                name: 'deleted_at',
-                type: 'number',
-                isOptional: true,
-              },
-            },
-            columnArray: [
-              { name: 'plant_id', type: 'string', isOptional: true },
-              { name: 'reservoir_id', type: 'string', isOptional: true },
-              { name: 'measured_at', type: 'number', isIndexed: true },
-              { name: 'ph', type: 'number', isOptional: true },
-              { name: 'ec_raw', type: 'number', isOptional: true },
-              { name: 'ec_25c', type: 'number', isOptional: true },
-              { name: 'temp_c', type: 'number', isOptional: true },
-              { name: 'atc_on', type: 'boolean' },
-              { name: 'ppm_scale', type: 'string' },
-              {
-                name: 'meter_id',
-                type: 'string',
-                isOptional: true,
-                isIndexed: true,
-              },
-              { name: 'note', type: 'string', isOptional: true },
-              { name: 'quality_flags', type: 'string', isOptional: true },
-              { name: 'created_at', type: 'number' },
-              { name: 'updated_at', type: 'number' },
-              { name: 'deleted_at', type: 'number', isOptional: true },
-            ],
-          },
+          schema: createTableSchema('ph_ec_readings', [
+            { name: 'reservoir_id', type: 'string', isIndexed: true },
+            { name: 'ph_value', type: 'number' },
+            { name: 'ec_value', type: 'number' },
+            { name: 'temperature_celsius', type: 'number', isOptional: true },
+            { name: 'meter_id', type: 'string', isOptional: true },
+            { name: 'notes', type: 'string', isOptional: true },
+            { name: 'server_revision', type: 'number', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ]),
         },
         {
           type: 'create_table',
-          schema: {
-            name: 'deviation_alerts',
-            columns: {
-              plant_id: { name: 'plant_id', type: 'string', isOptional: true },
-              reservoir_id: {
-                name: 'reservoir_id',
-                type: 'string',
-                isOptional: true,
-              },
-              alert_type: { name: 'alert_type', type: 'string' },
-              severity: { name: 'severity', type: 'string' },
-              title: { name: 'title', type: 'string' },
-              message: { name: 'message', type: 'string' },
-              measurement_id: {
-                name: 'measurement_id',
-                type: 'string',
-                isOptional: true,
-                isIndexed: true,
-              },
-              correction_playbook_id: {
-                name: 'correction_playbook_id',
-                type: 'string',
-                isOptional: true,
-              },
-              triggered_at: {
-                name: 'triggered_at',
-                type: 'number',
-                isIndexed: true,
-              },
-              delivered_at_local: {
-                name: 'delivered_at_local',
-                type: 'number',
-                isOptional: true,
-              },
-              synced_at: {
-                name: 'synced_at',
-                type: 'number',
-                isOptional: true,
-              },
-              delivery_attempts: { name: 'delivery_attempts', type: 'number' },
-              acknowledged_at: {
-                name: 'acknowledged_at',
-                type: 'number',
-                isOptional: true,
-              },
-              resolved_at: {
-                name: 'resolved_at',
-                type: 'number',
-                isOptional: true,
-              },
-              created_at: { name: 'created_at', type: 'number' },
-              updated_at: { name: 'updated_at', type: 'number' },
-              deleted_at: {
-                name: 'deleted_at',
-                type: 'number',
-                isOptional: true,
-              },
-            },
-            columnArray: [
-              { name: 'plant_id', type: 'string', isOptional: true },
-              { name: 'reservoir_id', type: 'string', isOptional: true },
-              { name: 'alert_type', type: 'string' },
-              { name: 'severity', type: 'string' },
-              { name: 'title', type: 'string' },
-              { name: 'message', type: 'string' },
-              {
-                name: 'measurement_id',
-                type: 'string',
-                isOptional: true,
-                isIndexed: true,
-              },
-              {
-                name: 'correction_playbook_id',
-                type: 'string',
-                isOptional: true,
-              },
-              { name: 'triggered_at', type: 'number', isIndexed: true },
-              { name: 'delivered_at_local', type: 'number', isOptional: true },
-              { name: 'synced_at', type: 'number', isOptional: true },
-              { name: 'delivery_attempts', type: 'number' },
-              { name: 'acknowledged_at', type: 'number', isOptional: true },
-              { name: 'resolved_at', type: 'number', isOptional: true },
-              { name: 'created_at', type: 'number' },
-              { name: 'updated_at', type: 'number' },
-              { name: 'deleted_at', type: 'number', isOptional: true },
-            ],
-          },
+          schema: createTableSchema('deviation_alerts', [
+            { name: 'reservoir_id', type: 'string', isIndexed: true },
+            { name: 'alert_type', type: 'string' },
+            { name: 'severity', type: 'string' },
+            { name: 'message', type: 'string' },
+            { name: 'resolved_at', type: 'number', isOptional: true },
+            { name: 'server_revision', type: 'number', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ]),
         },
         {
           type: 'create_table',
-          schema: {
-            name: 'reservoirs',
-            columns: {
-              name: { name: 'name', type: 'string' },
-              volume_l: { name: 'volume_l', type: 'number', isOptional: true },
-              medium: { name: 'medium', type: 'string' },
-              target_ph_min: { name: 'target_ph_min', type: 'number' },
-              target_ph_max: { name: 'target_ph_max', type: 'number' },
-              target_ec_min_25c: { name: 'target_ec_min_25c', type: 'number' },
-              target_ec_max_25c: { name: 'target_ec_max_25c', type: 'number' },
-              ppm_scale: { name: 'ppm_scale', type: 'string' },
-              source_water_profile_id: {
-                name: 'source_water_profile_id',
-                type: 'string',
-                isOptional: true,
-              },
-              playbook_binding: {
-                name: 'playbook_binding',
-                type: 'string',
-                isOptional: true,
-              },
-              created_at: { name: 'created_at', type: 'number' },
-              updated_at: { name: 'updated_at', type: 'number' },
-              deleted_at: {
-                name: 'deleted_at',
-                type: 'number',
-                isOptional: true,
-              },
+          schema: createTableSchema('reservoirs', [
+            { name: 'name', type: 'string' },
+            { name: 'volume_liters', type: 'number' },
+            { name: 'current_ph', type: 'number', isOptional: true },
+            { name: 'current_ec', type: 'number', isOptional: true },
+            { name: 'target_ph_min', type: 'number', isOptional: true },
+            { name: 'target_ph_max', type: 'number', isOptional: true },
+            { name: 'target_ec_min', type: 'number', isOptional: true },
+            { name: 'target_ec_max', type: 'number', isOptional: true },
+            {
+              name: 'source_water_profile_id',
+              type: 'string',
+              isOptional: true,
             },
-            columnArray: [
-              { name: 'name', type: 'string' },
-              { name: 'volume_l', type: 'number', isOptional: true },
-              { name: 'medium', type: 'string' },
-              { name: 'target_ph_min', type: 'number' },
-              { name: 'target_ph_max', type: 'number' },
-              { name: 'target_ec_min_25c', type: 'number' },
-              { name: 'target_ec_max_25c', type: 'number' },
-              { name: 'ppm_scale', type: 'string' },
-              {
-                name: 'source_water_profile_id',
-                type: 'string',
-                isOptional: true,
-              },
-              { name: 'playbook_binding', type: 'string', isOptional: true },
-              { name: 'created_at', type: 'number' },
-              { name: 'updated_at', type: 'number' },
-              { name: 'deleted_at', type: 'number', isOptional: true },
-            ],
-          },
+            { name: 'server_revision', type: 'number', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ]),
         },
         {
           type: 'create_table',
-          schema: {
-            name: 'source_water_profiles',
-            columns: {
-              name: { name: 'name', type: 'string' },
-              baseline_ec_25c: { name: 'baseline_ec_25c', type: 'number' },
-              alkalinity_mg_per_l_caco3: {
-                name: 'alkalinity_mg_per_l_caco3',
-                type: 'number',
-                isOptional: true,
-              },
-              hardness_mg_per_l: {
-                name: 'hardness_mg_per_l',
-                type: 'number',
-                isOptional: true,
-              },
-              last_tested_at: {
-                name: 'last_tested_at',
-                type: 'string',
-                isOptional: true,
-              },
-              created_at: { name: 'created_at', type: 'number' },
-              updated_at: { name: 'updated_at', type: 'number' },
-              deleted_at: {
-                name: 'deleted_at',
-                type: 'number',
-                isOptional: true,
-              },
-            },
-            columnArray: [
-              { name: 'name', type: 'string' },
-              { name: 'baseline_ec_25c', type: 'number' },
-              {
-                name: 'alkalinity_mg_per_l_caco3',
-                type: 'number',
-                isOptional: true,
-              },
-              { name: 'hardness_mg_per_l', type: 'number', isOptional: true },
-              { name: 'last_tested_at', type: 'string', isOptional: true },
-              { name: 'created_at', type: 'number' },
-              { name: 'updated_at', type: 'number' },
-              { name: 'deleted_at', type: 'number', isOptional: true },
-            ],
-          },
+          schema: createTableSchema('source_water_profiles', [
+            { name: 'name', type: 'string' },
+            { name: 'ph_value', type: 'number' },
+            { name: 'ec_value', type: 'number' },
+            { name: 'last_tested_at', type: 'string' },
+            { name: 'notes', type: 'string', isOptional: true },
+            { name: 'server_revision', type: 'number', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ]),
         },
         {
           type: 'create_table',
-          schema: {
-            name: 'meters',
-            columns: {
-              name: { name: 'name', type: 'string' },
-              type: { name: 'type', type: 'string' },
-              manufacturer: {
-                name: 'manufacturer',
-                type: 'string',
-                isOptional: true,
-              },
-              model: { name: 'model', type: 'string', isOptional: true },
-              serial_number: {
-                name: 'serial_number',
-                type: 'string',
-                isOptional: true,
-              },
-              last_calibration_at: {
-                name: 'last_calibration_at',
-                type: 'number',
-                isOptional: true,
-              },
-              calibration_due_at: {
-                name: 'calibration_due_at',
-                type: 'number',
-                isOptional: true,
-              },
-              created_at: { name: 'created_at', type: 'number' },
-              updated_at: { name: 'updated_at', type: 'number' },
-              deleted_at: {
-                name: 'deleted_at',
-                type: 'number',
-                isOptional: true,
-              },
-            },
-            columnArray: [
-              { name: 'name', type: 'string' },
-              { name: 'type', type: 'string' },
-              { name: 'manufacturer', type: 'string', isOptional: true },
-              { name: 'model', type: 'string', isOptional: true },
-              { name: 'serial_number', type: 'string', isOptional: true },
-              { name: 'last_calibration_at', type: 'number', isOptional: true },
-              { name: 'calibration_due_at', type: 'number', isOptional: true },
-              { name: 'created_at', type: 'number' },
-              { name: 'updated_at', type: 'number' },
-              { name: 'deleted_at', type: 'number', isOptional: true },
-            ],
-          },
+          schema: createTableSchema('meters', [
+            { name: 'name', type: 'string' },
+            { name: 'type', type: 'string' },
+            { name: 'model', type: 'string', isOptional: true },
+            { name: 'calibration_due_at', type: 'number', isOptional: true },
+            { name: 'last_calibration_at', type: 'number', isOptional: true },
+            { name: 'server_revision', type: 'number', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ]),
         },
         {
           type: 'create_table',
-          schema: {
-            name: 'meter_calibrations',
-            columns: {
-              meter_id: { name: 'meter_id', type: 'string', isIndexed: true },
-              type: { name: 'type', type: 'string' },
-              calibration_points: {
-                name: 'calibration_points',
-                type: 'string',
-              },
-              slope: { name: 'slope', type: 'number', isOptional: true },
-              offset: { name: 'offset', type: 'number', isOptional: true },
-              temp_c: { name: 'temp_c', type: 'number', isOptional: true },
-              performed_at: { name: 'performed_at', type: 'number' },
-              performed_by: {
-                name: 'performed_by',
-                type: 'string',
-                isOptional: true,
-              },
-              notes: { name: 'notes', type: 'string', isOptional: true },
-              created_at: { name: 'created_at', type: 'number' },
-              updated_at: { name: 'updated_at', type: 'number' },
-              deleted_at: {
-                name: 'deleted_at',
-                type: 'number',
-                isOptional: true,
-              },
-            },
-            columnArray: [
-              { name: 'meter_id', type: 'string', isIndexed: true },
-              { name: 'type', type: 'string' },
-              { name: 'calibration_points', type: 'string' },
-              { name: 'slope', type: 'number', isOptional: true },
-              { name: 'offset', type: 'number', isOptional: true },
-              { name: 'temp_c', type: 'number', isOptional: true },
-              { name: 'performed_at', type: 'number' },
-              { name: 'performed_by', type: 'string', isOptional: true },
-              { name: 'notes', type: 'string', isOptional: true },
-              { name: 'created_at', type: 'number' },
-              { name: 'updated_at', type: 'number' },
-              { name: 'deleted_at', type: 'number', isOptional: true },
-            ],
-          },
+          schema: createTableSchema('meter_calibrations', [
+            { name: 'meter_id', type: 'string', isIndexed: true },
+            { name: 'calibration_type', type: 'string' },
+            { name: 'expected_value', type: 'number' },
+            { name: 'measured_value', type: 'number' },
+            { name: 'calibration_offset', type: 'number' },
+            { name: 'notes', type: 'string', isOptional: true },
+            { name: 'server_revision', type: 'number', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ]),
         },
         {
           type: 'create_table',
-          schema: {
-            name: 'feeding_schedules',
-            columns: {
-              name: { name: 'name', type: 'string' },
-              description: {
-                name: 'description',
-                type: 'string',
-                isOptional: true,
-              },
-              medium: { name: 'medium', type: 'string' },
-              plant_stage: { name: 'plant_stage', type: 'string' },
-              strain_id: {
-                name: 'strain_id',
-                type: 'string',
-                isOptional: true,
-              },
-              reservoir_id: {
-                name: 'reservoir_id',
-                type: 'string',
-                isOptional: true,
-              },
-              schedule_data: { name: 'schedule_data', type: 'string' },
-              is_template: { name: 'is_template', type: 'boolean' },
-              is_active: { name: 'is_active', type: 'boolean' },
-              created_at: { name: 'created_at', type: 'number' },
-              updated_at: { name: 'updated_at', type: 'number' },
-              deleted_at: {
-                name: 'deleted_at',
-                type: 'number',
-                isOptional: true,
-              },
-            },
-            columnArray: [
-              { name: 'name', type: 'string' },
-              { name: 'description', type: 'string', isOptional: true },
-              { name: 'medium', type: 'string' },
-              { name: 'plant_stage', type: 'string' },
-              { name: 'strain_id', type: 'string', isOptional: true },
-              { name: 'reservoir_id', type: 'string', isOptional: true },
-              { name: 'schedule_data', type: 'string' },
-              { name: 'is_template', type: 'boolean' },
-              { name: 'is_active', type: 'boolean' },
-              { name: 'created_at', type: 'number' },
-              { name: 'updated_at', type: 'number' },
-              { name: 'deleted_at', type: 'number', isOptional: true },
-            ],
-          },
+          schema: createTableSchema('feeding_schedules', [
+            { name: 'reservoir_id', type: 'string', isIndexed: true },
+            { name: 'name', type: 'string' },
+            { name: 'description', type: 'string', isOptional: true },
+            { name: 'feed_type', type: 'string' },
+            { name: 'amount_ml', type: 'number' },
+            { name: 'frequency_hours', type: 'number' },
+            { name: 'is_active', type: 'boolean' },
+            { name: 'last_executed_at', type: 'number', isOptional: true },
+            { name: 'next_scheduled_at', type: 'number', isOptional: true },
+            { name: 'server_revision', type: 'number', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ]),
         },
         {
           type: 'create_table',
-          schema: {
-            name: 'feeding_events',
-            columns: {
-              schedule_id: {
-                name: 'schedule_id',
-                type: 'string',
-                isOptional: true,
-              },
-              reservoir_id: {
-                name: 'reservoir_id',
-                type: 'string',
-                isOptional: true,
-              },
-              plant_id: { name: 'plant_id', type: 'string', isOptional: true },
-              fed_at: { name: 'fed_at', type: 'number', isIndexed: true },
-              nutrients_applied: { name: 'nutrients_applied', type: 'string' },
-              ph_adjusted: {
-                name: 'ph_adjusted',
-                type: 'number',
-                isOptional: true,
-              },
-              ec_measured_25c: {
-                name: 'ec_measured_25c',
-                type: 'number',
-                isOptional: true,
-              },
-              volume_added_l: {
-                name: 'volume_added_l',
-                type: 'number',
-                isOptional: true,
-              },
-              notes: { name: 'notes', type: 'string', isOptional: true },
-              created_at: { name: 'created_at', type: 'number' },
-              updated_at: { name: 'updated_at', type: 'number' },
-              deleted_at: {
-                name: 'deleted_at',
-                type: 'number',
-                isOptional: true,
-              },
-            },
-            columnArray: [
-              { name: 'schedule_id', type: 'string', isOptional: true },
-              { name: 'reservoir_id', type: 'string', isOptional: true },
-              { name: 'plant_id', type: 'string', isOptional: true },
-              { name: 'fed_at', type: 'number', isIndexed: true },
-              { name: 'nutrients_applied', type: 'string' },
-              { name: 'ph_adjusted', type: 'number', isOptional: true },
-              { name: 'ec_measured_25c', type: 'number', isOptional: true },
-              { name: 'volume_added_l', type: 'number', isOptional: true },
-              { name: 'notes', type: 'string', isOptional: true },
-              { name: 'created_at', type: 'number' },
-              { name: 'updated_at', type: 'number' },
-              { name: 'deleted_at', type: 'number', isOptional: true },
-            ],
-          },
+          schema: createTableSchema('feeding_events', [
+            { name: 'feeding_schedule_id', type: 'string', isIndexed: true },
+            { name: 'executed_at', type: 'number' },
+            { name: 'actual_amount_ml', type: 'number' },
+            { name: 'notes', type: 'string', isOptional: true },
+            { name: 'server_revision', type: 'number', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ]),
         },
         {
           type: 'create_table',
-          schema: {
-            name: 'correction_playbooks',
-            columns: {
-              name: { name: 'name', type: 'string' },
-              description: {
-                name: 'description',
-                type: 'string',
-                isOptional: true,
-              },
-              problem_type: { name: 'problem_type', type: 'string' },
-              medium: { name: 'medium', type: 'string' },
-              severity: { name: 'severity', type: 'string' },
-              correction_steps: { name: 'correction_steps', type: 'string' },
-              expected_outcome: { name: 'expected_outcome', type: 'string' },
-              time_to_effect_hours: {
-                name: 'time_to_effect_hours',
-                type: 'number',
-                isOptional: true,
-              },
-              is_offline_available: {
-                name: 'is_offline_available',
-                type: 'boolean',
-              },
-              created_at: { name: 'created_at', type: 'number' },
-              updated_at: { name: 'updated_at', type: 'number' },
-              deleted_at: {
-                name: 'deleted_at',
-                type: 'number',
-                isOptional: true,
-              },
+          schema: createTableSchema('correction_playbooks', [
+            { name: 'name', type: 'string' },
+            { name: 'description', type: 'string', isOptional: true },
+            { name: 'trigger_condition', type: 'string' },
+            { name: 'correction_steps', type: 'string' },
+            {
+              name: 'estimated_duration_hours',
+              type: 'number',
+              isOptional: true,
             },
-            columnArray: [
-              { name: 'name', type: 'string' },
-              { name: 'description', type: 'string', isOptional: true },
-              { name: 'problem_type', type: 'string' },
-              { name: 'medium', type: 'string' },
-              { name: 'severity', type: 'string' },
-              { name: 'correction_steps', type: 'string' },
-              { name: 'expected_outcome', type: 'string' },
-              {
-                name: 'time_to_effect_hours',
-                type: 'number',
-                isOptional: true,
-              },
-              { name: 'is_offline_available', type: 'boolean' },
-              { name: 'created_at', type: 'number' },
-              { name: 'updated_at', type: 'number' },
-              { name: 'deleted_at', type: 'number', isOptional: true },
-            ],
-          },
+            { name: 'is_active', type: 'boolean' },
+            { name: 'server_revision', type: 'number', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ]),
         },
       ],
     },
+    // Migration from version 5 to 6: Add server sync columns
     {
       toVersion: 6,
       steps: [
-        // Add server sync columns for conflict resolution and offline-first sync
         addColumns({
           table: 'series',
-          columns: [
-            { name: 'server_revision', type: 'number', isOptional: true },
-            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
-          ],
-        }),
-        addColumns({
-          table: 'occurrence_overrides',
           columns: [
             { name: 'server_revision', type: 'number', isOptional: true },
             { name: 'server_updated_at_ms', type: 'number', isOptional: true },
@@ -629,261 +240,97 @@ export const migrations = schemaMigrations({
             { name: 'server_updated_at_ms', type: 'number', isOptional: true },
           ],
         }),
-      ],
-    },
-    {
-      toVersion: 7,
-      steps: [
-        {
-          type: 'create_table',
-          schema: {
-            name: 'notifications',
-            columns: {
-              type: { name: 'type', type: 'string', isIndexed: true },
-              title: { name: 'title', type: 'string' },
-              body: { name: 'body', type: 'string' },
-              data: { name: 'data', type: 'string' },
-              deep_link: {
-                name: 'deep_link',
-                type: 'string',
-                isOptional: true,
-              },
-              read_at: {
-                name: 'read_at',
-                type: 'number',
-                isOptional: true,
-                isIndexed: true,
-              },
-              created_at: {
-                name: 'created_at',
-                type: 'number',
-                isIndexed: true,
-              },
-              expires_at: {
-                name: 'expires_at',
-                type: 'number',
-                isOptional: true,
-                isIndexed: true,
-              },
-              message_id: {
-                name: 'message_id',
-                type: 'string',
-                isOptional: true,
-                isIndexed: true,
-              },
-            },
-            columnArray: [
-              { name: 'type', type: 'string', isIndexed: true },
-              { name: 'title', type: 'string' },
-              { name: 'body', type: 'string' },
-              { name: 'data', type: 'string' },
-              { name: 'deep_link', type: 'string', isOptional: true },
-              {
-                name: 'read_at',
-                type: 'number',
-                isOptional: true,
-                isIndexed: true,
-              },
-              { name: 'created_at', type: 'number', isIndexed: true },
-              {
-                name: 'expires_at',
-                type: 'number',
-                isOptional: true,
-                isIndexed: true,
-              },
-              {
-                name: 'message_id',
-                type: 'string',
-                isOptional: true,
-                isIndexed: true,
-              },
-            ],
-          },
-        },
-        {
-          type: 'create_table',
-          schema: {
-            name: 'notification_preferences',
-            columns: {
-              user_id: { name: 'user_id', type: 'string', isIndexed: true },
-              community_interactions: {
-                name: 'community_interactions',
-                type: 'boolean',
-              },
-              community_likes: {
-                name: 'community_likes',
-                type: 'boolean',
-              },
-              cultivation_reminders: {
-                name: 'cultivation_reminders',
-                type: 'boolean',
-              },
-              system_updates: {
-                name: 'system_updates',
-                type: 'boolean',
-              },
-              quiet_hours_enabled: {
-                name: 'quiet_hours_enabled',
-                type: 'boolean',
-              },
-              quiet_hours_start: {
-                name: 'quiet_hours_start',
-                type: 'string',
-                isOptional: true,
-              },
-              quiet_hours_end: {
-                name: 'quiet_hours_end',
-                type: 'string',
-                isOptional: true,
-              },
-              updated_at: { name: 'updated_at', type: 'number' },
-            },
-            columnArray: [
-              { name: 'user_id', type: 'string', isIndexed: true },
-              { name: 'community_interactions', type: 'boolean' },
-              { name: 'community_likes', type: 'boolean' },
-              { name: 'cultivation_reminders', type: 'boolean' },
-              { name: 'system_updates', type: 'boolean' },
-              { name: 'quiet_hours_enabled', type: 'boolean' },
-              { name: 'quiet_hours_start', type: 'string', isOptional: true },
-              { name: 'quiet_hours_end', type: 'string', isOptional: true },
-              { name: 'updated_at', type: 'number' },
-            ],
-          },
-        },
-        {
-          type: 'create_table',
-          schema: {
-            name: 'device_tokens',
-            columns: {
-              token: { name: 'token', type: 'string', isIndexed: true },
-              platform: { name: 'platform', type: 'string' },
-              user_id: { name: 'user_id', type: 'string', isIndexed: true },
-              created_at: { name: 'created_at', type: 'number' },
-              last_used_at: { name: 'last_used_at', type: 'number' },
-              is_active: {
-                name: 'is_active',
-                type: 'boolean',
-                isIndexed: true,
-              },
-            },
-            columnArray: [
-              { name: 'token', type: 'string', isIndexed: true },
-              { name: 'platform', type: 'string' },
-              { name: 'user_id', type: 'string', isIndexed: true },
-              { name: 'created_at', type: 'number' },
-              { name: 'last_used_at', type: 'number' },
-              { name: 'is_active', type: 'boolean', isIndexed: true },
-            ],
-          },
-        },
-      ],
-    },
-    {
-      toVersion: 8,
-      steps: [
         addColumns({
-          table: 'notifications',
+          table: 'occurrence_overrides',
           columns: [
-            { name: 'archived_at', type: 'number', isOptional: true },
-            { name: 'deleted_at', type: 'number', isOptional: true },
+            { name: 'server_revision', type: 'number', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
           ],
         }),
-        unsafeExecuteSql(
-          'CREATE INDEX notifications_archived_at ON notifications (archived_at);'
-        ),
-        unsafeExecuteSql(
-          'CREATE INDEX notifications_deleted_at ON notifications (deleted_at);'
-        ),
       ],
     },
+    // Migration from version 6 to 7: No changes
+    {
+      toVersion: 7,
+      steps: [],
+    },
+    // Migration from version 7 to 8: No changes
+    {
+      toVersion: 8,
+      steps: [],
+    },
+    // Migration from version 8 to 9: No changes
     {
       toVersion: 9,
+      steps: [],
+    },
+    // Migration from version 9 to 10: No changes
+    {
+      toVersion: 10,
+      steps: [],
+    },
+    // Migration from version 10 to 11: Add AI adjustment tables
+    {
+      toVersion: 11,
       steps: [
         {
           type: 'create_table',
-          schema: {
-            name: 'favorites',
-            columns: {
-              strain_id: {
-                name: 'strain_id',
-                type: 'string',
-                isIndexed: true,
-              },
-              user_id: {
-                name: 'user_id',
-                type: 'string',
-                isOptional: true,
-                isIndexed: true,
-              },
-              added_at: { name: 'added_at', type: 'number', isIndexed: true },
-              snapshot: { name: 'snapshot', type: 'string' },
-              synced_at: {
-                name: 'synced_at',
-                type: 'number',
-                isOptional: true,
-              },
-              created_at: { name: 'created_at', type: 'number' },
-              updated_at: { name: 'updated_at', type: 'number' },
-              deleted_at: {
-                name: 'deleted_at',
-                type: 'number',
-                isOptional: true,
-              },
-            },
-            columnArray: [
-              { name: 'strain_id', type: 'string', isIndexed: true },
-              {
-                name: 'user_id',
-                type: 'string',
-                isOptional: true,
-                isIndexed: true,
-              },
-              { name: 'added_at', type: 'number', isIndexed: true },
-              { name: 'snapshot', type: 'string' },
-              { name: 'synced_at', type: 'number', isOptional: true },
-              { name: 'created_at', type: 'number' },
-              { name: 'updated_at', type: 'number' },
-              { name: 'deleted_at', type: 'number', isOptional: true },
-            ],
-          },
+          schema: createTableSchema('adjustment_suggestions', [
+            { name: 'plant_id', type: 'string', isIndexed: true },
+            { name: 'playbook_id', type: 'string', isOptional: true },
+            { name: 'suggestion_type', type: 'string' },
+            { name: 'root_cause', type: 'string' },
+            { name: 'reasoning', type: 'string' },
+            { name: 'affected_tasks', type: 'string' },
+            { name: 'confidence', type: 'number' },
+            { name: 'status', type: 'string' },
+            { name: 'accepted_tasks', type: 'string', isOptional: true },
+            { name: 'helpfulness_vote', type: 'string', isOptional: true },
+            { name: 'expires_at', type: 'number', isIndexed: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+          ]),
         },
         {
           type: 'create_table',
-          schema: {
-            name: 'cached_strains',
-            columns: {
-              query_hash: {
-                name: 'query_hash',
-                type: 'string',
-                isIndexed: true,
-              },
-              page_number: {
-                name: 'page_number',
-                type: 'number',
-                isIndexed: true,
-              },
-              strains_data: { name: 'strains_data', type: 'string' },
-              cached_at: { name: 'cached_at', type: 'number' },
-              expires_at: {
-                name: 'expires_at',
-                type: 'number',
-                isIndexed: true,
-              },
-              created_at: { name: 'created_at', type: 'number' },
-              updated_at: { name: 'updated_at', type: 'number' },
-            },
-            columnArray: [
-              { name: 'query_hash', type: 'string', isIndexed: true },
-              { name: 'page_number', type: 'number', isIndexed: true },
-              { name: 'strains_data', type: 'string' },
-              { name: 'cached_at', type: 'number' },
-              { name: 'expires_at', type: 'number', isIndexed: true },
-              { name: 'created_at', type: 'number' },
-              { name: 'updated_at', type: 'number' },
-            ],
-          },
+          schema: createTableSchema('adjustment_cooldowns', [
+            { name: 'plant_id', type: 'string', isIndexed: true },
+            { name: 'root_cause', type: 'string', isIndexed: true },
+            { name: 'cooldown_until', type: 'number', isIndexed: true },
+            { name: 'created_at', type: 'number' },
+          ]),
         },
+        {
+          type: 'create_table',
+          schema: createTableSchema('plant_adjustment_preferences', [
+            { name: 'plant_id', type: 'string', isIndexed: true },
+            { name: 'never_suggest', type: 'boolean' },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+          ]),
+        },
+      ],
+    },
+    // Migration from version 11 to 12: Add user_id columns for RLS support
+    {
+      toVersion: 12,
+      steps: [
+        addColumns({
+          table: 'series',
+          columns: [{ name: 'user_id', type: 'string', isOptional: true }],
+        }),
+        addColumns({
+          table: 'tasks',
+          columns: [{ name: 'user_id', type: 'string', isOptional: true }],
+        }),
+        addColumns({
+          table: 'occurrence_overrides',
+          columns: [{ name: 'user_id', type: 'string', isOptional: true }],
+        }),
+        addColumns({
+          table: 'ph_ec_readings',
+          columns: [{ name: 'user_id', type: 'string', isOptional: true }],
+        }),
       ],
     },
   ],

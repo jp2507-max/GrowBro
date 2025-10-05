@@ -120,14 +120,14 @@ export function CustomTabBar({
   );
 
   const rContainerStyle = useAnimatedStyle(() => {
-    if (
+    const shouldHide =
       listOffsetY.value >= offsetYAnchorOnBeginDrag.value &&
-      scrollDirection.value === 'to-bottom'
-    ) {
-      return { bottom: withTiming(-grossHeight, { duration: DURATION }) };
-    }
-    return { bottom: withTiming(0, { duration: DURATION }) };
-  });
+      scrollDirection.value === 'to-bottom';
+
+    return {
+      bottom: withTiming(shouldHide ? -grossHeight : 0, { duration: DURATION }),
+    };
+  }, [grossHeight]);
 
   const currentRoute = state.routes[state.index]?.name;
 

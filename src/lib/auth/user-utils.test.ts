@@ -19,7 +19,6 @@ const mockGetUser = supabase.auth.getUser as jest.MockedFunction<
   typeof supabase.auth.getUser
 >;
 
-// eslint-disable-next-line max-lines-per-function
 describe('Auth Utils', function () {
   afterEach(() => {
     jest.clearAllMocks();

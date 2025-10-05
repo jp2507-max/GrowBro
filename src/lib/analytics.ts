@@ -106,8 +106,41 @@ export type AnalyticsEvents = {
     table: 'series' | 'tasks' | 'occurrence_overrides';
     count: number;
   };
+  sync_conflict_resolved: {
+    table: 'series' | 'tasks' | 'occurrence_overrides';
+    strategy: 'keep-local' | 'accept-server';
+    field_count: number;
+  };
+  sync_conflict_dismissed: {
+    table: 'series' | 'tasks' | 'occurrence_overrides';
+    field_count: number;
+  };
   sync_checkpoint_age_ms: {
     ms: number;
+  };
+  sync_latency_ms: {
+    ms: number;
+  };
+  sync_fail_rate: {
+    rate: number;
+  };
+  sync_success: {
+    duration_ms: number;
+  };
+  sync_pending_changes: {
+    count: number;
+  };
+  sync_retry: {
+    attempt: number;
+  };
+  sync_payload_size: {
+    bytes: number;
+  };
+  sync_manual_trigger: {
+    source: string;
+  };
+  sync_background_trigger: {
+    source: string;
   };
 
   // Performance KPIs
@@ -127,21 +160,38 @@ export type AnalyticsEvents = {
     strainType?: string;
     setupType?: string;
   };
-  playbook_shift_preview: {
-    playbookId: string;
-    shiftType: 'forward' | 'backward';
-    shiftDays: number;
+
+  /**
+   * @deprecated Use playbook_shift_preview instead. This event is for legacy shift operations
+   * that don't support playbook-specific context or advanced filtering options.
+   */
+  shift_preview: {
+    plantId: string;
+    daysDelta: number;
+    affectedTaskCount: number;
+    manuallyEditedCount: number;
   };
-  playbook_shift_apply: {
-    playbookId: string;
-    shiftType: 'forward' | 'backward';
-    shiftDays: number;
-    tasksAffected: number;
+
+  /**
+   * @deprecated Use playbook_shift_apply instead. This event is for legacy shift operations
+   * that don't support playbook-specific context or timing measurements.
+   */
+  shift_apply: {
+    plantId: string;
+    shiftId: string;
+    daysDelta: number;
+    affectedTaskCount: number;
+    durationMs: number;
   };
-  playbook_shift_undo: {
-    playbookId: string;
-    originalShiftType: 'forward' | 'backward';
-    originalShiftDays: number;
+
+  /**
+   * @deprecated Use playbook_shift_undo instead. This event is for legacy shift operations
+   * that don't support playbook-specific context.
+   */
+  shift_undo: {
+    plantId: string;
+    shiftId: string;
+    affectedTaskCount: number;
   };
   playbook_task_customized: {
     playbookId: string;
@@ -155,18 +205,63 @@ export type AnalyticsEvents = {
   };
   ai_adjustment_suggested: {
     playbookId: string;
-    adjustmentType: 'watering' | 'feeding' | 'lighting' | 'environment';
+    adjustmentType:
+      | 'watering'
+      | 'feeding'
+      | 'lighting'
+      | 'environment'
+      | 'schedule_shift';
     confidence: number;
   };
   ai_adjustment_applied: {
     playbookId: string;
-    adjustmentType: 'watering' | 'feeding' | 'lighting' | 'environment';
+    adjustmentType:
+      | 'watering'
+      | 'feeding'
+      | 'lighting'
+      | 'environment'
+      | 'schedule_shift';
     applied: boolean;
   };
   ai_adjustment_declined: {
     playbookId: string;
-    adjustmentType: 'watering' | 'feeding' | 'lighting' | 'environment';
+    adjustmentType:
+      | 'watering'
+      | 'feeding'
+      | 'lighting'
+      | 'environment'
+      | 'schedule_shift';
     reason?: string;
+  };
+  /**
+   * Preview of a schedule shift operation within the playbook context.
+   * Tracks the potential impact before applying changes, including filtering options
+   * for completed and manually edited tasks.
+   */
+  playbook_shift_preview: {
+    plantId: string;
+    daysDelta: number;
+    affectedTaskCount: number;
+  };
+
+  /**
+   * Application of a schedule shift operation within the playbook context.
+   * Records the execution of planned shifts with timing and impact measurements.
+   */
+  playbook_shift_apply: {
+    plantId: string;
+    daysDelta: number;
+    affectedTaskCount: number;
+  };
+
+  /**
+   * Reversal of a previously applied schedule shift within the playbook context.
+   * Tracks the restoration of tasks to their original schedule positions.
+   */
+  playbook_shift_undo: {
+    plantId: string;
+    shiftId: string;
+    restoredTaskCount: number;
   };
   trichome_helper_open: {
     playbookId: string;
@@ -175,6 +270,25 @@ export type AnalyticsEvents = {
     playbookId: string;
     trichomeStage: 'clear' | 'milky' | 'cloudy' | 'amber';
     assessmentConfidence: number;
+  };
+
+  // Community template events
+  community_templates_viewed: {
+    templateCount: number;
+  };
+  community_template_selected: {
+    templateId: string;
+  };
+
+  // Playbook onboarding events
+  playbook_onboarding_viewed: {
+    step: number;
+  };
+  playbook_onboarding_completed: {
+    totalSteps: number;
+  };
+  playbook_onboarding_skipped: {
+    step: number;
   };
 
   // Strains feature events
@@ -300,7 +414,8 @@ export function createConsentGatedAnalytics(
         name.startsWith('strain_') ||
         name.startsWith('playbook_') ||
         name.startsWith('ai_adjustment_') ||
-        name.startsWith('trichome_');
+        name.startsWith('trichome_') ||
+        name.startsWith('shift_');
 
       if (requiresConsent && !hasConsent('analytics')) return;
 
@@ -478,7 +593,8 @@ function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(
   if (
     name.startsWith('playbook_') ||
     name.startsWith('ai_adjustment_') ||
-    name.startsWith('trichome_')
+    name.startsWith('trichome_') ||
+    name.startsWith('shift_')
   ) {
     return sanitizePlaybookPayload(payload);
   }

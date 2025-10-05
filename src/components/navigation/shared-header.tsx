@@ -172,11 +172,14 @@ function useSharedHeaderAnimation({
     listOffsetY,
   ]);
 
-  const animatedContainerStyle = useAnimatedStyle(() => ({
-    height: height.value,
-    transform: [{ translateY: translateY.value }],
-    opacity: isCollapsible ? 1 + translateY.value / (height.value || 1) : 1,
-  }));
+  const animatedContainerStyle = useAnimatedStyle(
+    () => ({
+      height: height.value,
+      transform: [{ translateY: translateY.value }],
+      opacity: isCollapsible ? 1 + translateY.value / (height.value || 1) : 1,
+    }),
+    [isCollapsible]
+  );
 
   return { animatedContainerStyle } as const;
 }
@@ -251,22 +254,23 @@ function AnimatedPerTabContent({
   if (!content) return null;
 
   return (
-    <Animated.View
-      key={routeKey}
-      entering={FadeIn.duration(180)}
-      exiting={FadeOut.duration(140)}
-      className="py-1"
-    >
-      <Text
-        className="text-base font-semibold text-neutral-900 dark:text-neutral-100"
-        tx={content.titleKey}
-      />
-      {content.subtitleKey ? (
+    <View className="py-1">
+      <Animated.View
+        key={routeKey}
+        entering={FadeIn.duration(180)}
+        exiting={FadeOut.duration(140)}
+      >
         <Text
-          className="text-sm text-neutral-600 dark:text-neutral-300"
-          tx={content.subtitleKey}
+          className="text-base font-semibold text-neutral-900 dark:text-neutral-100"
+          tx={content.titleKey}
         />
-      ) : null}
-    </Animated.View>
+        {content.subtitleKey ? (
+          <Text
+            className="text-sm text-neutral-600 dark:text-neutral-300"
+            tx={content.subtitleKey}
+          />
+        ) : null}
+      </Animated.View>
+    </View>
   );
 }

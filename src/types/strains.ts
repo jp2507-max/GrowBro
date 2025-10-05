@@ -84,6 +84,25 @@ export interface HeightInfo {
 }
 
 /**
+ * Strain type classification for playbook customization
+ */
+export type StrainType = 'autoflower' | 'photoperiod';
+
+/**
+ * Sativa/Indica lean for strain characteristics
+ */
+export type StrainLean = 'sativa' | 'indica' | 'balanced';
+
+/**
+ * Breeder-provided flowering range
+ */
+export interface BreederFloweringRange {
+  min_weeks: number;
+  max_weeks: number;
+  source?: string; // Breeder name or source
+}
+
+/**
  * Growing characteristics and requirements
  */
 export interface GrowCharacteristics {
@@ -96,6 +115,10 @@ export interface GrowCharacteristics {
     outdoor?: YieldInfo;
   };
   height: HeightInfo;
+  // New fields for playbook customization
+  strain_type?: StrainType; // autoflower or photoperiod
+  breeder_flowering_range?: BreederFloweringRange; // Breeder-specific timing
+  strain_lean?: StrainLean; // sativa/indica/balanced
 }
 
 /**
