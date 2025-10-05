@@ -5,11 +5,20 @@ import { Platform } from 'react-native';
  * iOS: 44pt (Human Interface Guidelines)
  * Android: 48dp (Material Design Guidelines)
  */
-export const MIN_TOUCH_TARGET_SIZE = Platform.select({
-  ios: 44,
-  android: 48,
-  default: 44,
-});
+export const getMinTouchTargetSize = () =>
+  Platform.select({
+    ios: 44,
+    android: 48,
+    default: 44,
+  });
+
+/**
+ * Minimum touch target sizes per platform guidelines
+ * iOS: 44pt (Human Interface Guidelines)
+ * Android: 48dp (Material Design Guidelines)
+ * @deprecated Use getMinTouchTargetSize() instead for runtime platform evaluation
+ */
+export const MIN_TOUCH_TARGET_SIZE = getMinTouchTargetSize();
 
 /**
  * Recommended touch target size for better accessibility

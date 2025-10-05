@@ -136,28 +136,21 @@ export class PlaybookService {
 
   /**
    * Validate one-active-playbook-per-plant constraint
+   *
+   * Ensures only one playbook can be active (pending) at a time per plant.
+   * Completed or failed applications do not block new playbook applications.
    */
   async validateOneActivePlaybookPerPlant(
     plantId: string,
-    playbookId: string
+    _playbookId: string
   ): Promise<boolean> {
-    const existingApplications = await this.database
+    const pendingApplications = await this.database
       .get<PlaybookApplicationModel>('playbook_applications')
-      .query(
-        Q.where('plant_id', plantId),
-        Q.where('status', 'completed'),
-        Q.sortBy('applied_at', Q.desc)
-      )
+      .query(Q.where('plant_id', plantId), Q.where('status', 'pending'))
       .fetch();
 
-    if (existingApplications.length > 0) {
-      const latestApplication = existingApplications[0];
-      if (latestApplication.playbookId !== playbookId) {
-        return false;
-      }
-    }
-
-    return true;
+    // Block if there are any pending applications for this plant
+    return pendingApplications.length === 0;
   }
 
   /**

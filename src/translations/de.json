@@ -94,6 +94,7 @@
     "educational_banner_title": "Reine Bildungsinhalte zum Thema Cannabis"
   },
   "common": {
+    "back": "Zurück",
     "cancel": "Abbrechen",
     "ok": "OK",
     "retry": "Erneut versuchen"
@@ -513,8 +514,14 @@
     "customizationLevel": "Anpassungsgrad",
     "customizedTasks": "Angepasste Aufgaben",
     "detailDescription": "Dieses Playbook erstellt einen vollständigen Aufgabenplan, der auf die Wachstumsphasen deiner Pflanze zugeschnitten ist, mit automatischen Erinnerungen und Fortschrittsverfolgung.",
+    "durationDays_one": "{{count}} Tag",
+    "durationDays_other": "{{count}} Tage",
     "editTask": "Aufgabe bearbeiten",
     "edited": "Bearbeitet",
+    "empty": {
+      "subtitle": "Schau später für Anbau-Anleitungen vorbei",
+      "title": "Keine Playbooks verfügbar"
+    },
     "excludedFromBulkOperations": "Von Massenverschiebungen ausgeschlossen",
     "excludedFromBulkShift": "Diese Aufgabe wurde angepasst und wird von Massenverschiebungen ausgeschlossen",
     "loadError": "Playbooks konnten nicht geladen werden. Bitte versuche es erneut.",
@@ -589,6 +596,8 @@
     "selection": {
       "autoIndoor": "Auto Indoor",
       "autoOutdoor": "Auto Outdoor",
+      "estimatedRange": "Geschätzt: {{start}} → {{end}}",
+      "phaseBreakdownTitle": "Phasenübersicht",
       "photoIndoor": "Photo Indoor",
       "photoOutdoor": "Photo Outdoor",
       "preview": {
@@ -606,10 +615,32 @@
     },
     "shareWithCommunity": "Mit Community teilen",
     "shareWithCommunityHint": "Diese Vorlage anderen Growern zur Verfügung stellen",
+    "shiftPreview": {
+      "accessibilityLabel": "Zeitplanverschiebungs-Vorschau-Dialog",
+      "affectedTasks": "Betroffene Aufgaben",
+      "applyShift": "Verschiebung anwenden",
+      "cancel": "Abbrechen",
+      "changesByPhase": "Änderungen nach Phase",
+      "daysDelta": "{{delta}} Tage",
+      "manuallyEditedTasks": "Manuell bearbeitete Aufgaben",
+      "newDateRange": "Neuer Datumsbereich",
+      "phaseLabel": "Phase {{number}}",
+      "potentialConflicts": "Potenzielle Konflikte",
+      "subtitle": "{{count}} Tag{{plural}} {{direction}} verschieben",
+      "taskCount": "{{count}} Aufgaben",
+      "task_one": "{{count}} Aufgabe",
+      "task_other": "{{count}} Aufgaben",
+      "title": "Zeitplanverschiebungs-Vorschau",
+      "undoInfo": "ℹ️ Sie haben 30 Sekunden Zeit, diese Änderung nach dem Anwenden rückgängig zu machen",
+      "willBeExcluded": "werden von dieser Verschiebung ausgeschlossen",
+      "willBeShifted": "werden verschoben (Sie haben sich dafür entschieden)"
+    },
     "subtitle": "Geführte Anbaupläne für deine Pflanzen",
     "tags": "Tags",
     "tagsHint": "Tags mit Kommas trennen",
     "tagsPlaceholder": "indoor, anfänger, auto...",
+    "taskCount_one": "{{count}} Aufgabe",
+    "taskCount_other": "{{count}} Aufgaben",
     "taskDescription": "Beschreibung",
     "taskDescriptionPlaceholder": "Aufgabenbeschreibung...",
     "taskTitle": "Titel",
@@ -805,6 +836,10 @@
       "title": "Sorten durchsuchen"
     }
   },
+  "strainTip": {
+    "accessibilityHint": "Informationeller Tipp zu dieser Sorte",
+    "label": "Sortentipp"
+  },
   "strains": {
     "add_favorite": "Zu Favoriten hinzufügen",
     "cache": {
@@ -951,13 +986,21 @@
   "sync": {
     "conflict": {
       "acceptButton": "Server akzeptieren",
-      "conflictingFields": "Konfliktfelder",
+      "conflictingFields": "Konfliktfelder ({{count}})",
       "description": "Dieses {{tableName}} wurde auf einem anderen Gerät geändert. Wählen Sie, welche Version beibehalten werden soll.",
-      "dismissButton": "Verwerfen",
+      "dismissButton": "Später entscheiden",
+      "explanation": "ℹ️ Derselbe Eintrag wurde auf mehreren Geräten geändert. Wählen Sie, welche Version beibehalten werden soll.",
+      "keepLocalButton": "Meine Version behalten",
+      "localLabel": "(Dieses Gerät)",
       "note": "Hinweis: Standardmäßig wird die Server-Version verwendet (Last-Write-Wins). Sie können Ihre lokale Version bei Bedarf wiederherstellen.",
+      "otherDeviceLabel": "Anderes Gerät",
+      "remoteLabel": "(Anderes Gerät)",
       "restoreButton": "Meine Version wiederherstellen",
-      "serverVersion": "Server-Version",
+      "serverVersion": "Server-Version (Remote)",
+      "thisDeviceLabel": "Dieses Gerät",
       "title": "Sync-Konflikt erkannt",
+      "useServerButton": "Server-Version verwenden",
+      "warning": "⚠️ Die Auswahl einer Version überschreibt die andere. Diese Aktion kann nicht rückgängig gemacht werden.",
       "yourVersion": "Ihre Version (Lokal)"
     },
     "last_sync_and_pending": "Letzte Sync: {{time}}, {{count}} ausstehend",
@@ -995,6 +1038,13 @@
     "clearLabel": "Klare Trichome (%)",
     "formTitle": "Trichom-Einschätzung protokollieren",
     "guideTitle": "Trichom-Bewertungsanleitung",
+    "helper": {
+      "assessmentTab": "Einschätzung protokollieren",
+      "guideTab": "Anleitung",
+      "header": "Trichom-Helfer",
+      "quickReference": "Schnellreferenz",
+      "subtitle": "Bewerte Trichom-Entwicklung für Erntezeitpunkt"
+    },
     "lightingCautions": "Beleuchtungswarnungen",
     "milky": "Milchig",
     "milkyLabel": "Milchige/Wolkige Trichome (%)",

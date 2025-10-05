@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * Unit tests for useStrain React Query hook
  */

@@ -9,6 +9,7 @@
 
 /* eslint-disable max-lines-per-function */
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 
 import { TrichomeAssessmentForm } from '@/components/trichome/trichome-assessment-form';
@@ -34,6 +35,7 @@ export function TrichomeHelperScreen({
   onClose,
   loading = false,
 }: TrichomeHelperScreenProps) {
+  const { t } = useTranslation();
   const [showGuide, setShowGuide] = useState(true);
 
   return (
@@ -43,10 +45,10 @@ export function TrichomeHelperScreen({
         <View className="flex-row items-center justify-between">
           <View className="flex-1">
             <Text className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-              Trichome Helper
+              {t('trichome.helper.header')}
             </Text>
             <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-              Assess trichome development for harvest timing
+              {t('trichome.helper.subtitle')}
             </Text>
           </View>
           {onClose && (
@@ -57,6 +59,8 @@ export function TrichomeHelperScreen({
               label="✕"
               className="ml-2"
               testID="close-trichome-helper"
+              accessibilityLabel={t('common.cancel')}
+              accessibilityHint={t('accessibility.common.go_back')}
             />
           )}
         </View>
@@ -67,17 +71,21 @@ export function TrichomeHelperScreen({
             variant={showGuide ? 'default' : 'outline'}
             size="sm"
             onPress={() => setShowGuide(true)}
-            label="Guide"
+            label={t('trichome.helper.guideTab')}
             className="flex-1"
             testID="show-guide-tab"
+            accessibilityLabel={t('trichome.helper.guideTab')}
+            accessibilityHint="Show trichome assessment guide"
           />
           <Button
             variant={!showGuide ? 'default' : 'outline'}
             size="sm"
             onPress={() => setShowGuide(false)}
-            label="Log Assessment"
+            label={t('trichome.helper.assessmentTab')}
             className="flex-1"
             testID="show-assessment-tab"
+            accessibilityLabel={t('trichome.helper.assessmentTab')}
+            accessibilityHint="Show trichome assessment form"
           />
         </View>
       </View>
@@ -90,9 +98,10 @@ export function TrichomeHelperScreen({
 
             {/* Macro Photography Tips Section */}
             <View className="mb-4 rounded-lg border border-primary-200 bg-primary-50 p-4 dark:border-primary-800 dark:bg-primary-900/20">
-              <Text className="mb-2 text-base font-semibold text-primary-800 dark:text-primary-200">
-                📸 Macro Photography Tips
-              </Text>
+              <Text
+                className="mb-2 text-base font-semibold text-primary-800 dark:text-primary-200"
+                tx="trichome.photographyTips"
+              />
               <View className="gap-2">
                 {guide.photographyTips.map((tip, index) => (
                   <View key={index} className="flex-row">
@@ -109,9 +118,10 @@ export function TrichomeHelperScreen({
 
             {/* Lighting Cautions */}
             <View className="mb-4 rounded-lg border border-warning-200 bg-warning-50 p-4 dark:border-warning-800 dark:bg-warning-900/20">
-              <Text className="mb-2 text-base font-semibold text-warning-800 dark:text-warning-200">
-                ⚠️ Lighting Cautions
-              </Text>
+              <Text
+                className="mb-2 text-base font-semibold text-warning-800 dark:text-warning-200"
+                tx="trichome.lightingCautions"
+              />
               <View className="gap-2">
                 {guide.lightingCautions.map((caution, index) => (
                   <View key={index} className="flex-row">
@@ -144,9 +154,10 @@ export function TrichomeHelperScreen({
 
             {/* Quick Reference */}
             <View className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
-              <Text className="mb-3 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                Quick Reference
-              </Text>
+              <Text
+                className="mb-3 text-sm font-semibold text-neutral-900 dark:text-neutral-100"
+                tx="trichome.helper.quickReference"
+              />
               {guide.stages.map((stage, index) => (
                 <View
                   key={stage.stage}

@@ -9,12 +9,14 @@ import { translate } from '@/lib/i18n';
 interface Props extends TextProps {
   className?: string;
   tx?: TxKeyPath;
+  txOptions?: Record<string, any>;
 }
 
 export const Text = ({
   className = '',
   style,
   tx,
+  txOptions,
   children,
   ...props
 }: Props) => {
@@ -39,7 +41,7 @@ export const Text = ({
   );
   return (
     <NNText className={textStyle} style={nStyle} {...props}>
-      {tx ? translate(tx) : children}
+      {tx ? translate(tx, txOptions) : children}
     </NNText>
   );
 };

@@ -53,9 +53,7 @@ function useCommunityTemplates() {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    track('community_templates_viewed', { templateCount: 0 });
-
-    setTemplates([
+    const templates = [
       {
         id: '1',
         authorId: 'user1',
@@ -94,7 +92,10 @@ function useCommunityTemplates() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
-    ]);
+    ];
+
+    track('community_templates_viewed', { templateCount: templates.length });
+    setTemplates(templates);
     setLoading(false);
   }, [track]);
 

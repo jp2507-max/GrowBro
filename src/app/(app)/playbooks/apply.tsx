@@ -7,7 +7,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, ScrollView } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 
 import { Button, SafeAreaView, Text, View } from '@/components/ui';
@@ -32,14 +32,21 @@ function PlantSelectionList({
   return (
     <View className="space-y-3">
       {plants.map((plant) => (
-        <View
+        <Pressable
           key={plant.id}
           className={`rounded-xl border-2 p-4 ${
             selectedId === plant.id
               ? 'dark:bg-primary-950 border-primary-600 bg-primary-50 dark:border-primary-500'
               : 'border-neutral-200 bg-white dark:border-charcoal-800 dark:bg-charcoal-900'
           }`}
-          onTouchEnd={() => onSelect(plant.id)}
+          onPress={() => onSelect(plant.id)}
+          accessibilityRole="button"
+          accessibilityLabel={
+            plant.strain ? `${plant.name}, ${plant.strain}` : plant.name
+          }
+          accessibilityHint="Double tap to select this plant"
+          testID={`plant-option-${plant.id}`}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
             {plant.name}
@@ -49,7 +56,7 @@ function PlantSelectionList({
               {plant.strain}
             </Text>
           )}
-        </View>
+        </Pressable>
       ))}
     </View>
   );

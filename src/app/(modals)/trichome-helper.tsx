@@ -218,11 +218,10 @@ function useTrichomeState(plantId?: string, playbookId?: string) {
   const [windows, setWindows] = React.useState<any[]>([]);
 
   React.useEffect(() => {
-    getAssessmentGuide(playbookId);
     if (plantId) {
       loadLatestAssessment();
     }
-  }, [plantId, playbookId, getAssessmentGuide, loadLatestAssessment]);
+  }, [plantId, loadLatestAssessment]);
 
   React.useEffect(() => {
     const assessmentGuide = getAssessmentGuide(playbookId);
@@ -316,6 +315,15 @@ function TabContent({
   windows: any[];
 }) {
   if (activeTab === 'guide') {
+    if (!guide) {
+      return (
+        <View className="rounded-lg bg-white p-4 dark:bg-charcoal-900">
+          <Text className="text-center text-neutral-600 dark:text-neutral-400">
+            Loading guide...
+          </Text>
+        </View>
+      );
+    }
     return <TrichomeGuideCard guide={guide} />;
   }
 

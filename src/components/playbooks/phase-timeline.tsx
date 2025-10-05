@@ -10,9 +10,9 @@
 import { FlashList } from '@shopify/flash-list';
 import { DateTime } from 'luxon';
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
-import { Pressable, Text, View } from '@/components/ui';
-import { translate } from '@/lib/i18n';
+import { Checkbox, Text, View } from '@/components/ui';
 import type { TaskModel } from '@/lib/watermelon-models/task';
 import type { GrowPhase } from '@/types/playbook';
 
@@ -45,11 +45,11 @@ type PhaseTimelineProps = {
   className?: string;
 };
 
-const PHASE_LABELS: Record<GrowPhase, string> = {
-  seedling: translate('phases.seedling'),
-  veg: translate('phases.veg'),
-  flower: translate('phases.flower'),
-  harvest: translate('phases.harvest'),
+const PHASE_LABEL_KEYS: Record<GrowPhase, string> = {
+  seedling: 'phases.seedling',
+  veg: 'phases.veg',
+  flower: 'phases.flower',
+  harvest: 'phases.harvest',
 };
 
 const PHASE_COLORS: Record<GrowPhase, string> = {
@@ -66,73 +66,108 @@ const PHASE_TEXT_COLORS: Record<GrowPhase, string> = {
   harvest: 'text-danger-700 dark:text-danger-300',
 };
 
-function useTimelineItems(tasks: TaskModel[], timezone: string) {
+function useTimelineItems(
+  tasks: TaskModel[],
+  timezone: string,
+  t: (key: string, options?: any) => string
+) {
   return useMemo(() => {
     const now = DateTime.now().setZone(timezone);
-    const tasksByPhase = tasks.reduce(
-      (acc, task) => {
-        const phaseIndex = task.phaseIndex ?? 0;
-        if (!acc[phaseIndex]) {
-          acc[phaseIndex] = [];
-        }
-        acc[phaseIndex].push(task);
-        return acc;
-      },
-      {} as Record<number, TaskModel[]>
-    );
-
+    const tasksByPhase = groupTasksByPhase(tasks);
     const items: TimelineItem[] = [];
 
     Object.entries(tasksByPhase)
       .sort(([a], [b]) => Number(a) - Number(b))
       .forEach(([phaseIndexStr, phaseTasks]) => {
         const phaseIndex = Number(phaseIndexStr);
-        const firstTask = phaseTasks[0];
-        if (!firstTask) return;
+        const sectionItem = createSectionItem(phaseTasks[0], phaseIndex, t);
+        if (sectionItem) items.push(sectionItem);
 
-        const phase = (firstTask.metadata?.phase as GrowPhase) || 'seedling';
-        if (!phase) return;
-
-        items.push({
-          type: 'section',
-          id: `section_${phaseIndex}`,
-          title: PHASE_LABELS[phase] || phase,
-          phase,
+        const taskItems = createTaskItems({
+          phaseTasks,
           phaseIndex,
+          timezone,
+          now,
         });
-
-        const sortedTasks = [...phaseTasks].sort((a, b) => {
-          const dateA = DateTime.fromISO(a.dueAtUtc, { zone: 'utc' });
-          const dateB = DateTime.fromISO(b.dueAtUtc, { zone: 'utc' });
-          return dateA.toMillis() - dateB.toMillis();
-        });
-
-        sortedTasks.forEach((task) => {
-          const dueDate = DateTime.fromISO(task.dueAtUtc, {
-            zone: 'utc',
-          }).setZone(timezone);
-          const isOverdue = dueDate < now && task.status === 'pending';
-
-          const validStatuses = ['completed', 'pending', 'skipped'] as const;
-          const status = validStatuses.includes(task.status as any)
-            ? (task.status as 'completed' | 'pending' | 'skipped')
-            : 'pending';
-
-          items.push({
-            id: task.id,
-            title: task.title,
-            dueDate: dueDate.toISO()!,
-            status,
-            phase,
-            phaseIndex,
-            taskType: (task.metadata?.taskType as string) || 'custom',
-            isOverdue,
-          });
-        });
+        items.push(...taskItems);
       });
 
     return items;
-  }, [tasks, timezone]);
+  }, [tasks, timezone, t]);
+}
+
+function groupTasksByPhase(tasks: TaskModel[]): Record<number, TaskModel[]> {
+  return tasks.reduce(
+    (acc, task) => {
+      const phaseIndex = task.phaseIndex ?? 0;
+      if (!acc[phaseIndex]) acc[phaseIndex] = [];
+      acc[phaseIndex].push(task);
+      return acc;
+    },
+    {} as Record<number, TaskModel[]>
+  );
+}
+
+function createSectionItem(
+  firstTask: TaskModel | undefined,
+  phaseIndex: number,
+  t: (key: string, options?: any) => string
+): TimelineSection | null {
+  if (!firstTask) return null;
+
+  const phase = (firstTask.metadata?.phase as GrowPhase) || 'seedling';
+  if (!phase) return null;
+
+  return {
+    type: 'section',
+    id: `section_${phaseIndex}`,
+    title: t(PHASE_LABEL_KEYS[phase] ?? 'phases.unknown', {
+      defaultValue: phase,
+    }),
+    phase,
+    phaseIndex,
+  };
+}
+
+function createTaskItems({
+  phaseTasks,
+  phaseIndex,
+  timezone,
+  now,
+}: {
+  phaseTasks: TaskModel[];
+  phaseIndex: number;
+  timezone: string;
+  now: DateTime;
+}): TimelineTask[] {
+  const sortedTasks = [...phaseTasks].sort((a, b) => {
+    const dateA = DateTime.fromISO(a.dueAtUtc, { zone: 'utc' });
+    const dateB = DateTime.fromISO(b.dueAtUtc, { zone: 'utc' });
+    return dateA.toMillis() - dateB.toMillis();
+  });
+
+  return sortedTasks.map((task) => {
+    const dueDate = DateTime.fromISO(task.dueAtUtc, { zone: 'utc' }).setZone(
+      timezone
+    );
+    const isOverdue = dueDate < now && task.status === 'pending';
+
+    const validStatuses = ['completed', 'pending', 'skipped'] as const;
+    const status = validStatuses.includes(task.status as any)
+      ? (task.status as 'completed' | 'pending' | 'skipped')
+      : 'pending';
+
+    return {
+      id: task.id,
+      title: task.title,
+      dueDate: dueDate.toISO()!,
+      status,
+      phase: (task.metadata?.phase as GrowPhase) || 'seedling',
+      phaseIndex,
+      taskType: (task.metadata?.taskType as string) || 'custom',
+      isOverdue,
+    };
+  });
 }
 
 export function PhaseTimeline({
@@ -142,9 +177,16 @@ export function PhaseTimeline({
   onTaskPress,
   className,
 }: PhaseTimelineProps) {
-  const timelineItems = useTimelineItems(tasks, timezone);
+  const { t } = useTranslation();
+  const timelineItems = useTimelineItems(tasks, timezone, t);
 
-  const renderItem = ({ item }: { item: TimelineItem }) => {
+  const renderItem = ({
+    item,
+    index,
+  }: {
+    item: TimelineItem;
+    index: number;
+  }) => {
     if ('type' in item && item.type === 'section') {
       return (
         <SectionHeader section={item} currentPhaseIndex={currentPhaseIndex} />
@@ -156,6 +198,7 @@ export function PhaseTimeline({
         task={item as TimelineTask}
         onPress={onTaskPress}
         currentPhaseIndex={currentPhaseIndex}
+        index={index}
       />
     );
   };
@@ -223,49 +266,6 @@ function SectionHeader({
   );
 }
 
-function StatusIndicator({
-  isCompleted,
-  isPending,
-  isSkipped,
-  isOverdue,
-}: {
-  isCompleted: boolean;
-  isPending: boolean;
-  isSkipped: boolean;
-  isOverdue: boolean;
-}) {
-  return (
-    <View
-      className={`size-10 items-center justify-center rounded-full ${
-        isCompleted
-          ? 'bg-success-100 dark:bg-success-900/20'
-          : isPending && isOverdue
-            ? 'bg-danger-100 dark:bg-danger-900/20'
-            : isPending
-              ? 'bg-primary-100 dark:bg-primary-900/20'
-              : 'bg-neutral-100 dark:bg-neutral-800'
-      }`}
-    >
-      {isCompleted && (
-        <Text className="text-lg text-success-600 dark:text-success-400">
-          ✓
-        </Text>
-      )}
-      {isPending && !isOverdue && (
-        <View className="size-3 rounded-full border-2 border-primary-500" />
-      )}
-      {isPending && isOverdue && (
-        <Text className="text-lg text-danger-600 dark:text-danger-400">!</Text>
-      )}
-      {isSkipped && (
-        <Text className="text-lg text-neutral-500 dark:text-neutral-500">
-          −
-        </Text>
-      )}
-    </View>
-  );
-}
-
 function TaskInfo({
   title,
   dueDate,
@@ -313,28 +313,33 @@ function TaskInfo({
 function TaskItem({
   task,
   onPress,
+  index,
 }: {
   task: TimelineTask;
   onPress?: (taskId: string) => void;
   currentPhaseIndex: number;
+  index: number;
 }) {
   const dueDate = DateTime.fromISO(task.dueDate);
   const isCompleted = task.status === 'completed';
   const isPending = task.status === 'pending';
-  const isSkipped = task.status === 'skipped';
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={() => onPress?.(task.id)}
-      className="mx-4 mb-2 flex-row items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 dark:border-neutral-800 dark:bg-neutral-900"
-    >
-      <StatusIndicator
-        isCompleted={isCompleted}
-        isPending={isPending}
-        isSkipped={isSkipped}
-        isOverdue={task.isOverdue}
-      />
+    <View className="mx-4 mb-2 flex-row items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 dark:border-neutral-800 dark:bg-neutral-900">
+      <Checkbox.Root
+        checked={isCompleted}
+        onChange={(checked) => {
+          if (checked && !isCompleted) {
+            onPress?.(task.id);
+          }
+        }}
+        accessibilityLabel={`Complete task: ${task.title}`}
+        accessibilityHint="Tap to mark this task as completed"
+        testID={`task-checkbox-${index}`}
+        className="shrink-0"
+      >
+        <Checkbox.Icon checked={isCompleted} />
+      </Checkbox.Root>
       <TaskInfo
         title={task.title}
         dueDate={dueDate}
@@ -343,6 +348,6 @@ function TaskItem({
         isOverdue={task.isOverdue}
       />
       <Text className="text-neutral-400 dark:text-neutral-600">›</Text>
-    </Pressable>
+    </View>
   );
 }

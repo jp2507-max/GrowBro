@@ -28,7 +28,7 @@ export function TemplateListItem({ template, onPress }: TemplateListItemProps) {
         </Text>
         <View className="ml-2 rounded-full bg-primary-100 px-2 py-1 dark:bg-primary-900">
           <Text className="text-xs font-medium text-primary-700 dark:text-primary-300">
-            {template.setup.replace('_', ' ').toUpperCase()}
+            {template.setup.replace(/_/g, ' ').toUpperCase()}
           </Text>
         </View>
       </View>

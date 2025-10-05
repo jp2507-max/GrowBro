@@ -6,7 +6,51 @@ import { createQuery } from 'react-query-kit';
 
 import { supabase } from '@/lib/supabase';
 
-import type { CommunityTemplate, TemplateListParams } from './types';
+import type {
+  CommunityTemplate,
+  TemplateComment,
+  TemplateListParams,
+} from './types';
+
+/**
+ * Maps a database row from community_playbook_templates to CommunityTemplate
+ */
+function mapDbRowToCommunityTemplate(row: any): CommunityTemplate {
+  return {
+    id: row.id,
+    authorId: row.author_id,
+    authorHandle: row.author_handle,
+    name: row.name,
+    description: row.description,
+    setup: row.setup,
+    locale: row.locale,
+    license: row.license,
+    steps: row.steps,
+    phaseOrder: row.phase_order,
+    totalWeeks: row.total_weeks,
+    taskCount: row.task_count,
+    adoptionCount: row.adoption_count,
+    ratingAverage: row.rating_average,
+    ratingCount: row.rating_count,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+/**
+ * Maps a database row from template_comments to TemplateComment
+ */
+function mapDbRowToTemplateComment(row: any): TemplateComment {
+  return {
+    id: row.id,
+    templateId: row.template_id,
+    authorId: row.user_id,
+    content: row.comment,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    userHandle: row.user_handle,
+  };
+}
 
 /**
  * Hook to fetch community templates list
@@ -59,25 +103,7 @@ export const useTemplates = createQuery<
     }
 
     return {
-      templates: (data || []).map((t) => ({
-        id: t.id,
-        authorId: t.author_id,
-        authorHandle: t.author_handle,
-        name: t.name,
-        description: t.description,
-        setup: t.setup,
-        locale: t.locale,
-        license: t.license,
-        steps: t.steps,
-        phaseOrder: t.phase_order,
-        totalWeeks: t.total_weeks,
-        taskCount: t.task_count,
-        adoptionCount: t.adoption_count,
-        ratingAverage: t.rating_average,
-        ratingCount: t.rating_count,
-        createdAt: t.created_at,
-        updatedAt: t.updated_at,
-      })),
+      templates: (data || []).map(mapDbRowToCommunityTemplate),
       total: count || 0,
     };
   },
@@ -104,25 +130,7 @@ export const useTemplate = createQuery<CommunityTemplate, { id: string }>({
       throw new Error('Template not found');
     }
 
-    return {
-      id: data.id,
-      authorId: data.author_id,
-      authorHandle: data.author_handle,
-      name: data.name,
-      description: data.description,
-      setup: data.setup,
-      locale: data.locale,
-      license: data.license,
-      steps: data.steps,
-      phaseOrder: data.phase_order,
-      totalWeeks: data.total_weeks,
-      taskCount: data.task_count,
-      adoptionCount: data.adoption_count,
-      ratingAverage: data.rating_average,
-      ratingCount: data.rating_count,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
-    };
+    return mapDbRowToCommunityTemplate(data);
   },
 });
 
@@ -130,7 +138,7 @@ export const useTemplate = createQuery<CommunityTemplate, { id: string }>({
  * Hook to fetch template comments
  */
 export const useTemplateComments = createQuery<
-  any[],
+  TemplateComment[],
   { templateId: string; limit?: number; offset?: number }
 >({
   queryKey: ['template-comments'],
@@ -147,6 +155,6 @@ export const useTemplateComments = createQuery<
       throw new Error(`Failed to fetch comments: ${error.message}`);
     }
 
-    return data || [];
+    return (data || []).map(mapDbRowToTemplateComment);
   },
 });

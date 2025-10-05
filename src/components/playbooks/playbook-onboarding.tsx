@@ -106,6 +106,7 @@ function NavigationButtons({
   return (
     <View className="border-t border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
       <Button
+        testID="onboarding-next-button"
         label={
           currentStep === totalSteps - 1
             ? t('playbooks.onboarding.getStarted')
@@ -115,6 +116,7 @@ function NavigationButtons({
         className="mb-3 w-full"
       />
       <Button
+        testID="onboarding-skip-button"
         label={t('playbooks.onboarding.skip')}
         onPress={onSkip}
         variant="ghost"

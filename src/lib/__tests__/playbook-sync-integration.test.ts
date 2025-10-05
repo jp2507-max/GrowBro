@@ -73,6 +73,8 @@ describe('Playbook Sync Integration', () => {
         timestamp: new Date(),
       });
 
+      expect(consoleSpy).toHaveBeenCalled();
+
       consoleSpy.mockRestore();
     });
   });

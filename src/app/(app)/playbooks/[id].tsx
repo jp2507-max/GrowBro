@@ -9,16 +9,19 @@ import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 
+import { getSetupDisplayLabel } from '@/components/playbooks/playbook-selection-card';
 import { Button, SafeAreaView, Text, View } from '@/components/ui';
 import { usePlaybookService } from '@/lib/playbooks';
 import type { PlaybookPreview } from '@/types/playbook';
 
 function LoadingState() {
+  const { t } = useTranslation();
+
   return (
     <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <View className="flex-1 items-center justify-center">
         <Text className="text-neutral-600 dark:text-neutral-400">
-          Loading...
+          {t('list.loading')}
         </Text>
       </View>
     </SafeAreaView>
@@ -55,7 +58,7 @@ function PlaybookContent({
               {preview.name}
             </Text>
             <Text className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
-              {preview.setup}
+              {getSetupDisplayLabel(preview.setup)(t)}
             </Text>
             <Text className="text-base text-neutral-700 dark:text-neutral-300">
               {preview.totalWeeks} weeks • {preview.totalTasks} tasks

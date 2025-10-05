@@ -7,8 +7,8 @@ import {
   getAccessibilityHint,
   getAccessibleBackgroundColor,
   getAccessibleTextColor,
+  getMinTouchTargetSizeStrains,
   getScaledFontSize,
-  MIN_TOUCH_TARGET_SIZE,
 } from '../accessibility';
 
 describe('formatStrainCardLabel', () => {
@@ -89,9 +89,9 @@ describe('getScaledFontSize', () => {
   });
 });
 
-describe('MIN_TOUCH_TARGET_SIZE', () => {
+describe('getMinTouchTargetSizeStrains', () => {
   it('is defined and reasonable', () => {
-    expect(MIN_TOUCH_TARGET_SIZE).toBeGreaterThanOrEqual(44);
-    expect(MIN_TOUCH_TARGET_SIZE).toBeLessThanOrEqual(48);
+    expect(getMinTouchTargetSizeStrains()).toBeGreaterThanOrEqual(44);
+    expect(getMinTouchTargetSizeStrains()).toBeLessThanOrEqual(48);
   });
 });

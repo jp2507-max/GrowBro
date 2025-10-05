@@ -1,5 +1,5 @@
 import {
-  MIN_TOUCH_TARGET_SIZE,
+  getMinTouchTargetSize,
   RECOMMENDED_TOUCH_TARGET_SIZE,
 } from '../constants';
 import {
@@ -16,7 +16,7 @@ describe('Touch Target Utilities', () => {
 
       expect(result.isValid).toBe(true);
       expect(result.violations).toHaveLength(0);
-      expect(result.minRequired).toBe(MIN_TOUCH_TARGET_SIZE);
+      expect(result.minRequired).toBe(getMinTouchTargetSize());
     });
 
     test('should detect width violations', () => {
@@ -45,7 +45,7 @@ describe('Touch Target Utilities', () => {
     });
 
     test('should validate exact minimum size', () => {
-      const minSize = MIN_TOUCH_TARGET_SIZE;
+      const minSize = getMinTouchTargetSize();
       const result = validateTouchTarget({ width: minSize, height: minSize });
 
       expect(result.isValid).toBe(true);
@@ -53,7 +53,7 @@ describe('Touch Target Utilities', () => {
     });
 
     test('should reject size just below minimum', () => {
-      const minSize = MIN_TOUCH_TARGET_SIZE;
+      const minSize = getMinTouchTargetSize();
       const result = validateTouchTarget({
         width: minSize - 1,
         height: minSize - 1,
@@ -132,7 +132,7 @@ describe('Touch Target Utilities', () => {
     });
 
     test('should calculate correct padding amount', () => {
-      const minSize = MIN_TOUCH_TARGET_SIZE;
+      const minSize = getMinTouchTargetSize();
       const elementSize = 30;
       const expectedPadding = Math.ceil((minSize - elementSize) / 2);
 
@@ -150,8 +150,8 @@ describe('Touch Target Utilities', () => {
     test('should create default accessible touch target', () => {
       const style = createAccessibleTouchTarget();
 
-      expect(style.minWidth).toBe(MIN_TOUCH_TARGET_SIZE);
-      expect(style.minHeight).toBe(MIN_TOUCH_TARGET_SIZE);
+      expect(style.minWidth).toBe(getMinTouchTargetSize());
+      expect(style.minHeight).toBe(getMinTouchTargetSize());
       expect(style.justifyContent).toBe('center');
       expect(style.alignItems).toBe('center');
     });
@@ -167,7 +167,7 @@ describe('Touch Target Utilities', () => {
       const style = createAccessibleTouchTarget({ width: 60 });
 
       expect(style.minWidth).toBe(60);
-      expect(style.minHeight).toBe(MIN_TOUCH_TARGET_SIZE);
+      expect(style.minHeight).toBe(getMinTouchTargetSize());
     });
 
     test('should always include centering styles', () => {

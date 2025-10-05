@@ -2,6 +2,8 @@
  * API Types for Community Templates
  */
 
+import type { PlaybookStep } from '@/lib/playbooks/sanitize-playbook';
+
 export interface CommunityTemplate {
   id: string;
   authorId: string;
@@ -11,7 +13,7 @@ export interface CommunityTemplate {
   setup: 'auto_indoor' | 'auto_outdoor' | 'photo_indoor' | 'photo_outdoor';
   locale: string;
   license: string;
-  steps: any[];
+  steps: PlaybookStep[];
   phaseOrder: string[];
   totalWeeks?: number;
   taskCount: number;
@@ -67,4 +69,17 @@ export interface CommentTemplateParams {
   templateId: string;
   comment: string;
   userHandle: string;
+}
+
+/**
+ * Represents a comment on a community template
+ */
+export interface TemplateComment {
+  id: string;
+  templateId: string;
+  authorId: string;
+  content: string;
+  createdAt: string;
+  updatedAt?: string;
+  userHandle?: string; // Optional metadata for display purposes
 }

@@ -5,45 +5,47 @@
 
 import { Platform } from 'react-native';
 
-import { MIN_TOUCH_TARGET_SIZE } from '../constants';
+import { getMinTouchTargetSize } from '../constants';
 import { validateTouchTarget } from '../touch-target';
 
-describe('Touch Target Validation', () => {
-  const originalOS = Platform.OS;
+// Mock Platform module
+jest.mock('react-native', () => ({
+  Platform: {
+    OS: 'ios',
+    select: jest.fn((obj) => obj.ios || obj.default),
+  },
+  // Include other RN modules if needed
+}));
 
+describe('Touch Target Validation', () => {
   afterEach(() => {
-    Object.defineProperty(Platform, 'OS', {
-      value: originalOS,
-      configurable: true,
-    });
+    // Reset the Platform.select mock
+    (Platform.select as jest.Mock).mockImplementation(
+      (obj) => obj.ios || obj.default
+    );
   });
 
   describe('Platform-specific minimum sizes', () => {
     it('should use 44pt minimum for iOS', () => {
-      Object.defineProperty(Platform, 'OS', {
-        value: 'ios',
-        configurable: true,
-      });
-
-      expect(MIN_TOUCH_TARGET_SIZE).toBe(44);
+      (Platform.select as jest.Mock).mockImplementation(
+        (obj) => obj.ios || obj.default
+      );
+      expect(getMinTouchTargetSize()).toBe(44);
     });
 
     it('should use 48dp minimum for Android', () => {
-      Object.defineProperty(Platform, 'OS', {
-        value: 'android',
-        configurable: true,
-      });
-
-      expect(MIN_TOUCH_TARGET_SIZE).toBe(48);
+      (Platform.select as jest.Mock).mockImplementation(
+        (obj) => obj.android || obj.default
+      );
+      expect(getMinTouchTargetSize()).toBe(48);
     });
   });
 
   describe('validateTouchTarget', () => {
     beforeEach(() => {
-      Object.defineProperty(Platform, 'OS', {
-        value: 'ios',
-        configurable: true,
-      });
+      (Platform.select as jest.Mock).mockImplementation(
+        (obj) => obj.ios || obj.default
+      );
     });
 
     it('should pass for valid touch target', () => {
@@ -105,10 +107,9 @@ describe('Touch Target Validation', () => {
 
   describe('Playbook-specific components', () => {
     beforeEach(() => {
-      Object.defineProperty(Platform, 'OS', {
-        value: 'ios',
-        configurable: true,
-      });
+      (Platform.select as jest.Mock).mockImplementation(
+        (obj) => obj.ios || obj.default
+      );
     });
 
     it('should validate playbook selection cards', () => {
@@ -155,10 +156,9 @@ describe('Touch Target Validation', () => {
 
   describe('Platform-specific validation', () => {
     it('should validate against iOS guidelines', () => {
-      Object.defineProperty(Platform, 'OS', {
-        value: 'ios',
-        configurable: true,
-      });
+      (Platform.select as jest.Mock).mockImplementation(
+        (obj) => obj.ios || obj.default
+      );
 
       const result = validateTouchTarget({
         width: 44,
@@ -169,10 +169,9 @@ describe('Touch Target Validation', () => {
     });
 
     it('should validate against Android guidelines', () => {
-      Object.defineProperty(Platform, 'OS', {
-        value: 'android',
-        configurable: true,
-      });
+      (Platform.select as jest.Mock).mockImplementation(
+        (obj) => obj.android || obj.default
+      );
 
       const result = validateTouchTarget({
         width: 48,
@@ -183,10 +182,9 @@ describe('Touch Target Validation', () => {
     });
 
     it('should reject Android target below 48dp', () => {
-      Object.defineProperty(Platform, 'OS', {
-        value: 'android',
-        configurable: true,
-      });
+      (Platform.select as jest.Mock).mockImplementation(
+        (obj) => obj.android || obj.default
+      );
 
       const result = validateTouchTarget({
         width: 44,
@@ -198,10 +196,9 @@ describe('Touch Target Validation', () => {
 
   describe('Edge cases', () => {
     beforeEach(() => {
-      Object.defineProperty(Platform, 'OS', {
-        value: 'ios',
-        configurable: true,
-      });
+      (Platform.select as jest.Mock).mockImplementation(
+        (obj) => obj.ios || obj.default
+      );
     });
 
     it('should handle zero dimensions', () => {

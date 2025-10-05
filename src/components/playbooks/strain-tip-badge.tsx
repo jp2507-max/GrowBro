@@ -8,6 +8,7 @@
 import React from 'react';
 
 import { Text, View } from '@/components/ui';
+import { translate } from '@/lib';
 
 interface StrainTipBadgeProps {
   tip: string;
@@ -17,20 +18,20 @@ interface StrainTipBadgeProps {
 export function StrainTipBadge({
   tip,
   testID = 'strain-tip-badge',
-}: StrainTipBadgeProps) {
+}: StrainTipBadgeProps): React.ReactElement {
   return (
     <View
       className="dark:bg-primary-950/30 mt-3 rounded-lg border border-primary-200 bg-primary-50 p-3 dark:border-primary-800"
       accessibilityRole="text"
       accessibilityLabel={`Strain tip: ${tip}`}
-      accessibilityHint="Informational tip about this strain"
+      accessibilityHint={translate('strainTip.accessibilityHint')}
       testID={testID}
     >
       <View className="flex-row items-start gap-2">
         <Text className="text-base">💡</Text>
         <View className="flex-1">
           <Text className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary-700 dark:text-primary-300">
-            Strain Tip
+            {translate('strainTip.label')}
           </Text>
           <Text className="text-sm leading-relaxed text-neutral-800 dark:text-neutral-200">
             {tip}

@@ -107,12 +107,12 @@ export type AnalyticsEvents = {
     count: number;
   };
   sync_conflict_resolved: {
-    table: string;
+    table: 'series' | 'tasks' | 'occurrence_overrides';
     strategy: 'keep-local' | 'accept-server';
     field_count: number;
   };
   sync_conflict_dismissed: {
-    table: string;
+    table: 'series' | 'tasks' | 'occurrence_overrides';
     field_count: number;
   };
   sync_checkpoint_age_ms: {

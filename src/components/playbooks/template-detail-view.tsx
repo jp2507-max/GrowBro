@@ -25,7 +25,7 @@ function TemplateHeader({ template }: { template: CommunityTemplate }) {
       <View className="flex-row items-center gap-2">
         <View className="rounded-full bg-primary-100 px-3 py-1 dark:bg-primary-900">
           <Text className="text-sm font-medium text-primary-700 dark:text-primary-300">
-            {template.setup.replace('_', ' ').toUpperCase()}
+            {template.setup.replace(/_/g, ' ').toUpperCase()}
           </Text>
         </View>
         <Text className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -93,7 +93,12 @@ function TemplateRating({
           </View>
         </View>
         {onRate && (
-          <Button variant="outline" size="sm" onPress={() => onRate(template)}>
+          <Button
+            testID="template-rate-button"
+            variant="outline"
+            size="sm"
+            onPress={() => onRate(template)}
+          >
             <Text>Rate</Text>
           </Button>
         )}
@@ -191,7 +196,11 @@ export function TemplateDetailView({
         <TemplatePhases phases={template.phaseOrder} />
         <TemplateStepsPreview template={template} />
 
-        <Button onPress={() => onAdopt(template)} size="lg">
+        <Button
+          testID="template-adopt-button"
+          onPress={() => onAdopt(template)}
+          size="lg"
+        >
           <Text className="font-semibold">Adopt This Playbook</Text>
         </Button>
 

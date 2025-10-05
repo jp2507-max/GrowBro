@@ -1,5 +1,5 @@
 import {
-  MIN_TOUCH_TARGET_SIZE,
+  getMinTouchTargetSize,
   RECOMMENDED_TOUCH_TARGET_SIZE,
 } from './constants';
 
@@ -23,7 +23,7 @@ export function validateTouchTarget(
   dimensions: TouchTargetDimensions
 ): TouchTargetValidation {
   const violations: string[] = [];
-  const minRequired = MIN_TOUCH_TARGET_SIZE;
+  const minRequired = getMinTouchTargetSize();
 
   if (dimensions.width < minRequired) {
     violations.push(
@@ -65,7 +65,7 @@ export function calculateRequiredPadding(dimensions: TouchTargetDimensions): {
   horizontal: number;
   vertical: number;
 } {
-  const minRequired = MIN_TOUCH_TARGET_SIZE;
+  const minRequired = getMinTouchTargetSize();
 
   const horizontalPadding = Math.max(
     0,
@@ -88,11 +88,11 @@ export function calculateRequiredPadding(dimensions: TouchTargetDimensions): {
 export function createAccessibleTouchTarget(
   dimensions?: Partial<TouchTargetDimensions>
 ) {
-  const minSize = MIN_TOUCH_TARGET_SIZE;
+  const minSize = getMinTouchTargetSize();
 
   return {
-    minWidth: dimensions?.width || minSize,
-    minHeight: dimensions?.height || minSize,
+    minWidth: Math.max(minSize, dimensions?.width ?? minSize),
+    minHeight: Math.max(minSize, dimensions?.height ?? minSize),
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
   };

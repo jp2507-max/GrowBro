@@ -4,6 +4,46 @@ import { PlaybookSelectionCard } from '@/components/playbooks/playbook-selection
 import { cleanup, screen, setup } from '@/lib/test-utils';
 import type { PlaybookPreview } from '@/types/playbook';
 
+// Mock react-i18next
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: any) => {
+      // For testing, return a simple version of the translation
+      if (key.includes('durationDays')) {
+        return `${options?.count || 0} days`;
+      }
+      if (key.includes('taskCount')) {
+        return `${options?.count || 0} tasks`;
+      }
+      if (key.includes('totalWeeks')) {
+        return `${options?.count || 0} weeks`;
+      }
+      if (key.includes('phaseBreakdownTitle')) {
+        return 'Phase Breakdown';
+      }
+      if (key.includes('estimatedRange')) {
+        return `Estimated: ${options?.start} → ${options?.end}`;
+      }
+      if (key.includes('phases.')) {
+        return key.replace('phases.', ''); // Return just the phase name
+      }
+      if (key.includes('selection.autoIndoor')) {
+        return 'Auto Indoor';
+      }
+      if (key.includes('selection.autoOutdoor')) {
+        return 'Auto Outdoor';
+      }
+      if (key.includes('selection.photoIndoor')) {
+        return 'Photo Indoor';
+      }
+      if (key.includes('selection.photoOutdoor')) {
+        return 'Photo Outdoor';
+      }
+      return key; // Fallback to return the key itself
+    },
+  }),
+}));
+
 afterEach(cleanup);
 
 const mockPreview: PlaybookPreview = {

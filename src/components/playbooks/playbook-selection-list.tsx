@@ -9,9 +9,10 @@
 
 import { FlashList } from '@shopify/flash-list';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { PlaybookSelectionCard } from '@/components/playbooks/playbook-selection-card';
-import { Text, View } from '@/components/ui';
+import { Button, Text, View } from '@/components/ui';
 import type { PlaybookPreview } from '@/types/playbook';
 
 type PlaybookSelectionListProps = {
@@ -25,7 +26,10 @@ type PlaybookSelectionListProps = {
 
 function LoadingSkeleton() {
   return (
-    <View className="mb-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
+    <View
+      className="mb-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900"
+      testID="loading-skeleton"
+    >
       <View className="mb-3 flex-row items-center justify-between">
         <View className="h-6 w-32 rounded-full bg-neutral-200 dark:bg-charcoal-700" />
         <View className="h-6 w-24 rounded-full bg-neutral-200 dark:bg-charcoal-700" />
@@ -44,13 +48,17 @@ function LoadingSkeleton() {
 }
 
 function EmptyState() {
+  const { t } = useTranslation();
+
   return (
     <View className="flex-1 items-center justify-center p-8">
       <Text className="text-center text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        No Playbooks Available
+        {t('playbooks.empty.title', { defaultValue: 'No Playbooks Available' })}
       </Text>
       <Text className="mt-2 text-center text-sm text-neutral-600 dark:text-neutral-400">
-        Check back later for cultivation guides
+        {t('playbooks.empty.subtitle', {
+          defaultValue: 'Check back later for cultivation guides',
+        })}
       </Text>
     </View>
   );
@@ -63,6 +71,8 @@ function ErrorState({
   error: Error;
   onRetry?: () => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <View className="flex-1 items-center justify-center p-8">
       <Text className="text-center text-lg font-semibold text-danger-600 dark:text-danger-400">
@@ -73,12 +83,15 @@ function ErrorState({
       </Text>
       {onRetry && (
         <View className="mt-4">
-          <Text
+          <Button
+            label={t('retry')}
+            variant="ghost"
+            size="sm"
             onPress={onRetry}
-            className="text-sm font-medium text-primary-600 dark:text-primary-400"
-          >
-            Tap to Retry
-          </Text>
+            textClassName="text-primary-600 dark:text-primary-400"
+            testID="playbook-selection-retry"
+            accessibilityRole="button"
+          />
         </View>
       )}
     </View>

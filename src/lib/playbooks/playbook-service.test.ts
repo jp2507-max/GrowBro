@@ -10,7 +10,6 @@ import type { Playbook } from '@/types/playbook';
 
 import { InMemoryMetrics } from '../analytics';
 import type { PlaybookModel } from '../watermelon-models/playbook';
-import type { PlaybookApplicationModel } from '../watermelon-models/playbook-application';
 import { PlaybookService } from './playbook-service';
 import { type ScheduleShifter } from './schedule-shifter';
 
@@ -53,9 +52,32 @@ const createMockDatabase = () => {
       }
       if (tableName === 'playbook_applications') {
         return {
-          query: jest.fn(() => ({
-            fetch: jest.fn(() => Promise.resolve(mockApplications)),
-          })),
+          query: jest.fn((...conditions: any[]) => {
+            // Simple mock filtering based on Q.where conditions
+            let filtered = [...mockApplications];
+            conditions.forEach((condition) => {
+              if (
+                condition.type === 'where' &&
+                condition.left &&
+                condition.comparison
+              ) {
+                const field = condition.left;
+                const value = condition.comparison.right.value;
+                filtered = filtered.filter((app) => app[field] === value);
+              } else if (condition.key && 'value' in condition) {
+                // Alternative format: { key: 'field', value: 'val' }
+                const field = condition.key;
+                const value = condition.value;
+                filtered = filtered.filter((app) => app[field] === value);
+              }
+            });
+            return {
+              fetch: jest.fn(() => Promise.resolve(filtered)),
+              sortBy: jest.fn(() => ({
+                fetch: jest.fn(() => Promise.resolve(filtered)),
+              })),
+            };
+          }),
           create: jest.fn((callback: any) => {
             const record: any = {
               id: 'app-1',
@@ -225,12 +247,12 @@ describe('PlaybookService', () => {
     });
 
     test('returns false when different playbook is already applied', async () => {
-      const mockApplication: Partial<PlaybookApplicationModel> = {
+      const mockApplication: any = {
         id: 'app-1',
-        playbookId: 'playbook-2',
-        plantId: 'plant-1',
-        status: 'completed',
-        appliedAt: new Date(),
+        playbook_id: 'playbook-2',
+        plant_id: 'plant-1',
+        status: 'pending', // Changed to pending - this should block
+        applied_at: new Date(),
       };
 
       (database as any).mockApplications.push(mockApplication);
@@ -243,13 +265,13 @@ describe('PlaybookService', () => {
       expect(isValid).toBe(false);
     });
 
-    test('returns true when same playbook is already applied', async () => {
-      const mockApplication: Partial<PlaybookApplicationModel> = {
+    test('returns true when completed playbook exists for plant', async () => {
+      const mockApplication: any = {
         id: 'app-1',
-        playbookId: 'playbook-1',
-        plantId: 'plant-1',
+        playbook_id: 'playbook-1', // Use database field names
+        plant_id: 'plant-1',
         status: 'completed',
-        appliedAt: new Date(),
+        applied_at: new Date(),
       };
 
       (database as any).mockApplications.push(mockApplication);
@@ -260,6 +282,25 @@ describe('PlaybookService', () => {
       );
 
       expect(isValid).toBe(true);
+    });
+
+    test('returns false when pending playbook exists for plant', async () => {
+      const mockApplication: any = {
+        id: 'app-1',
+        playbook_id: 'playbook-1',
+        plant_id: 'plant-1',
+        status: 'pending',
+        applied_at: new Date(),
+      };
+
+      (database as any).mockApplications.push(mockApplication);
+
+      const isValid = await service.validateOneActivePlaybookPerPlant(
+        'plant-1',
+        'playbook-2' // Different playbook
+      );
+
+      expect(isValid).toBe(false);
     });
   });
 
@@ -352,13 +393,13 @@ describe('PlaybookService', () => {
       expect(result2.appliedTaskCount).toBe(result1.appliedTaskCount);
     });
 
-    test('throws error when plant has different active playbook', async () => {
-      const mockApplication: Partial<PlaybookApplicationModel> = {
+    test('throws error when plant has active playbook', async () => {
+      const mockApplication: any = {
         id: 'app-1',
-        playbookId: 'playbook-2',
-        plantId: 'plant-1',
-        status: 'completed',
-        appliedAt: new Date(),
+        playbook_id: 'playbook-2',
+        plant_id: 'plant-1',
+        status: 'pending', // Changed to pending - this should block
+        applied_at: new Date(),
       };
 
       (database as any).mockApplications.push(mockApplication);
@@ -390,12 +431,12 @@ describe('PlaybookService', () => {
     });
 
     test('allows multiple playbooks when allowMultiple is true', async () => {
-      const mockApplication: Partial<PlaybookApplicationModel> = {
+      const mockApplication: any = {
         id: 'app-1',
-        playbookId: 'playbook-2',
-        plantId: 'plant-1',
-        status: 'completed',
-        appliedAt: new Date(),
+        playbook_id: 'playbook-2',
+        plant_id: 'plant-1',
+        status: 'pending', // Changed to pending so constraint applies
+        applied_at: new Date(),
       };
 
       (database as any).mockApplications.push(mockApplication);

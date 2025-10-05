@@ -94,6 +94,7 @@
     "educational_banner_title": "Educational cannabis guidance only"
   },
   "common": {
+    "back": "Back",
     "cancel": "Cancel",
     "ok": "OK",
     "retry": "Retry"
@@ -513,8 +514,14 @@
     "customizationLevel": "Customization Level",
     "customizedTasks": "Customized Tasks",
     "detailDescription": "This playbook will generate a complete schedule of tasks tailored to your plant's growth stages, with automatic reminders and progress tracking.",
+    "durationDays_one": "{{count}} day",
+    "durationDays_other": "{{count}} days",
     "editTask": "Edit Task",
     "edited": "Edited",
+    "empty": {
+      "subtitle": "Check back later for cultivation guides",
+      "title": "No Playbooks Available"
+    },
     "excludedFromBulkOperations": "Excluded from bulk schedule shifts",
     "excludedFromBulkShift": "This task has been customized and will be excluded from bulk schedule shifts",
     "loadError": "Failed to load playbooks. Please try again.",
@@ -589,6 +596,8 @@
     "selection": {
       "autoIndoor": "Auto Indoor",
       "autoOutdoor": "Auto Outdoor",
+      "estimatedRange": "Estimated: {{start}} → {{end}}",
+      "phaseBreakdownTitle": "Phase Breakdown",
       "photoIndoor": "Photo Indoor",
       "photoOutdoor": "Photo Outdoor",
       "preview": {
@@ -606,10 +615,32 @@
     },
     "shareWithCommunity": "Share with Community",
     "shareWithCommunityHint": "Make this template available to other growers",
+    "shiftPreview": {
+      "accessibilityLabel": "Schedule shift preview dialog",
+      "affectedTasks": "Affected Tasks",
+      "applyShift": "Apply Shift",
+      "cancel": "Cancel",
+      "changesByPhase": "Changes by Phase",
+      "daysDelta": "{{delta}} days",
+      "manuallyEditedTasks": "Manually Edited Tasks",
+      "newDateRange": "New Date Range",
+      "phaseLabel": "Phase {{number}}",
+      "potentialConflicts": "Potential Conflicts",
+      "subtitle": "Moving {{count}} day{{plural}} {{direction}}",
+      "taskCount": "{{count}} tasks",
+      "task_one": "{{count}} task",
+      "task_other": "{{count}} tasks",
+      "title": "Schedule Shift Preview",
+      "undoInfo": "ℹ️ You'll have 30 seconds to undo this change after applying",
+      "willBeExcluded": "will be excluded from this shift",
+      "willBeShifted": "will be shifted (you opted in)"
+    },
     "subtitle": "Guided grow schedules for your plants",
     "tags": "Tags",
     "tagsHint": "Separate tags with commas",
     "tagsPlaceholder": "indoor, beginner, auto...",
+    "taskCount_one": "{{count}} task",
+    "taskCount_other": "{{count}} tasks",
     "taskDescription": "Description",
     "taskDescriptionPlaceholder": "Task description...",
     "taskTitle": "Title",
@@ -805,6 +836,10 @@
       "title": "Browse strains"
     }
   },
+  "strainTip": {
+    "accessibilityHint": "Informational tip about this strain",
+    "label": "Strain Tip"
+  },
   "strains": {
     "add_favorite": "Add to favorites",
     "cache": {
@@ -951,13 +986,21 @@
   "sync": {
     "conflict": {
       "acceptButton": "Accept Server",
-      "conflictingFields": "Conflicting Fields",
+      "conflictingFields": "Conflicting Fields ({{count}})",
       "description": "This {{tableName}} was modified on another device. Choose which version to keep.",
-      "dismissButton": "Dismiss",
+      "dismissButton": "Decide Later",
+      "explanation": "ℹ️ The same item was changed on multiple devices. Choose which version to keep.",
+      "keepLocalButton": "Keep My Version",
+      "localLabel": "(This Device)",
       "note": "Note: By default, the server version will be used (Last-Write-Wins). You can restore your local version if needed.",
+      "otherDeviceLabel": "Other Device",
+      "remoteLabel": "(Other Device)",
       "restoreButton": "Restore My Version",
-      "serverVersion": "Server Version",
+      "serverVersion": "Server Version (Remote)",
+      "thisDeviceLabel": "This Device",
       "title": "Sync Conflict Detected",
+      "useServerButton": "Use Server Version",
+      "warning": "⚠️ Choosing a version will overwrite the other. This action cannot be undone.",
       "yourVersion": "Your Version (Local)"
     },
     "last_sync_and_pending": "Last sync: {{time}}, {{count}} pending",
@@ -995,6 +1038,13 @@
     "clearLabel": "Clear Trichomes (%)",
     "formTitle": "Log Trichome Assessment",
     "guideTitle": "Trichome Assessment Guide",
+    "helper": {
+      "assessmentTab": "Log Assessment",
+      "guideTab": "Guide",
+      "header": "Trichome Helper",
+      "quickReference": "Quick Reference",
+      "subtitle": "Assess trichome development for harvest timing"
+    },
     "lightingCautions": "Lighting Cautions",
     "milky": "Milky",
     "milkyLabel": "Milky/Cloudy Trichomes (%)",

@@ -5,13 +5,64 @@
  */
 
 import React from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { type Control, Controller, useForm } from 'react-hook-form';
 import { Alert } from 'react-native';
 
 import { useShareTemplate } from '@/api/templates';
 import { Button, Input, Text, View } from '@/components/ui';
 import type { Playbook } from '@/lib/playbooks/sanitize-playbook';
 import { validatePlaybookForSharing } from '@/lib/playbooks/sanitize-playbook';
+
+function useShareTemplateForm(playbook: Playbook, onSuccess: () => void) {
+  const { control, handleSubmit, formState } = useForm<ShareTemplateFormData>({
+    defaultValues: {
+      authorHandle: '',
+      description: '',
+      license: 'CC-BY-SA',
+    },
+  });
+
+  const shareTemplate = useShareTemplate();
+
+  const onSubmit = async (data: ShareTemplateFormData) => {
+    const validation = validatePlaybookForSharing(playbook);
+    if (!validation.valid) {
+      Alert.alert(
+        'Validation Error',
+        `Cannot share playbook:\n${validation.errors.join('\n')}`
+      );
+      return;
+    }
+
+    try {
+      await shareTemplate.mutateAsync({
+        playbook,
+        authorHandle: data.authorHandle,
+        description: data.description,
+        license: data.license,
+        isPublic: true,
+      });
+
+      Alert.alert(
+        'Success',
+        'Your playbook has been shared with the community!'
+      );
+      onSuccess();
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'Failed to share template'
+      );
+    }
+  };
+
+  return {
+    control,
+    handleSubmit: handleSubmit(onSubmit),
+    formState,
+    isPending: shareTemplate.isPending,
+  };
+}
 
 interface ShareTemplateFormData {
   authorHandle: string;
@@ -25,7 +76,11 @@ interface ShareTemplateModalProps {
   onCancel: () => void;
 }
 
-function AuthorHandleField({ control }: { control: any }) {
+function AuthorHandleField({
+  control,
+}: {
+  control: Control<ShareTemplateFormData>;
+}) {
   return (
     <View className="mb-4">
       <Text className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
@@ -52,6 +107,7 @@ function AuthorHandleField({ control }: { control: any }) {
         render={({ field: { onChange, value }, fieldState: { error } }) => (
           <>
             <Input
+              testID="share-template-handle-input"
               value={value}
               onChangeText={onChange}
               placeholder="your_handle"
@@ -68,7 +124,11 @@ function AuthorHandleField({ control }: { control: any }) {
   );
 }
 
-function DescriptionField({ control }: { control: any }) {
+function DescriptionField({
+  control,
+}: {
+  control: Control<ShareTemplateFormData>;
+}) {
   return (
     <View className="mb-4">
       <Text className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
@@ -86,6 +146,7 @@ function DescriptionField({ control }: { control: any }) {
         render={({ field: { onChange, value }, fieldState: { error } }) => (
           <>
             <Input
+              testID="share-template-description-input"
               value={value}
               onChangeText={onChange}
               placeholder="Describe your playbook..."
@@ -103,7 +164,11 @@ function DescriptionField({ control }: { control: any }) {
   );
 }
 
-function LicenseField({ control }: { control: any }) {
+function LicenseField({
+  control,
+}: {
+  control: Control<ShareTemplateFormData>;
+}) {
   return (
     <View className="mb-6">
       <Text className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
@@ -189,47 +254,10 @@ export function ShareTemplateModal({
   onSuccess,
   onCancel,
 }: ShareTemplateModalProps) {
-  const { control, handleSubmit, formState } = useForm<ShareTemplateFormData>({
-    defaultValues: {
-      authorHandle: '',
-      description: '',
-      license: 'CC-BY-SA',
-    },
-  });
-
-  const shareTemplate = useShareTemplate();
-
-  const onSubmit = async (data: ShareTemplateFormData) => {
-    const validation = validatePlaybookForSharing(playbook);
-    if (!validation.valid) {
-      Alert.alert(
-        'Validation Error',
-        `Cannot share playbook:\n${validation.errors.join('\n')}`
-      );
-      return;
-    }
-
-    try {
-      await shareTemplate.mutateAsync({
-        playbook,
-        authorHandle: data.authorHandle,
-        description: data.description,
-        license: data.license,
-        isPublic: true,
-      });
-
-      Alert.alert(
-        'Success',
-        'Your playbook has been shared with the community!'
-      );
-      onSuccess();
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        error instanceof Error ? error.message : 'Failed to share template'
-      );
-    }
-  };
+  const { control, handleSubmit, formState, isPending } = useShareTemplateForm(
+    playbook,
+    onSuccess
+  );
 
   return (
     <View className="flex-1 bg-neutral-50 p-4 dark:bg-charcoal-950">
@@ -240,8 +268,8 @@ export function ShareTemplateModal({
       <PrivacyNotice />
       <ActionButtons
         onCancel={onCancel}
-        onShare={handleSubmit(onSubmit)}
-        isPending={shareTemplate.isPending}
+        onShare={handleSubmit}
+        isPending={isPending}
         isValid={formState.isValid}
       />
     </View>
