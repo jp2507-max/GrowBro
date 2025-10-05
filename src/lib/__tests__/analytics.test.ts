@@ -49,9 +49,9 @@ describe('ConsentGatedAnalytics', () => {
         setupType: 'hydroponic',
       });
       gatedClient.track('playbook_shift_preview', {
-        playbookId: 'pb-123',
-        shiftType: 'forward',
-        shiftDays: 7,
+        plantId: 'plant-123',
+        daysDelta: 7,
+        affectedTaskCount: 5,
       });
       gatedClient.track('ai_adjustment_suggested', {
         playbookId: 'pb-123',
@@ -84,10 +84,9 @@ describe('ConsentGatedAnalytics', () => {
 
       // Try to track another event
       gatedClient.track('playbook_shift_apply', {
-        playbookId: 'pb-123',
-        shiftType: 'backward',
-        shiftDays: 3,
-        tasksAffected: 5,
+        plantId: 'plant-123',
+        daysDelta: -3,
+        affectedTaskCount: 5,
       });
 
       // Verify only the first event was tracked
@@ -135,18 +134,17 @@ describe('ConsentGatedAnalytics', () => {
         {
           name: 'playbook_shift_preview' as const,
           payload: {
-            playbookId: 'pb-1',
-            shiftType: 'forward' as const,
-            shiftDays: 5,
+            plantId: 'plant-1',
+            daysDelta: 5,
+            affectedTaskCount: 10,
           },
         },
         {
           name: 'playbook_shift_apply' as const,
           payload: {
-            playbookId: 'pb-1',
-            shiftType: 'backward' as const,
-            shiftDays: 3,
-            tasksAffected: 8,
+            plantId: 'plant-1',
+            daysDelta: -3,
+            affectedTaskCount: 8,
           },
         },
         {

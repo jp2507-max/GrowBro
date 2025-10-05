@@ -24,8 +24,7 @@ export async function trackSyncLatency(
 ): Promise<void> {
   try {
     await NoopAnalytics.track('sync_latency_ms', {
-      stage,
-      duration_ms: Math.round(durationMs),
+      ms: Math.round(durationMs),
     });
   } catch (error) {
     // Analytics failures should not break sync
@@ -37,15 +36,13 @@ export async function trackSyncLatency(
  * Track sync failure rate with error codes
  */
 export async function trackSyncFailure(
-  stage: SyncStage,
-  errorCode: SyncErrorCode,
-  errorMessage?: string
+  _stage: SyncStage,
+  _errorCode: SyncErrorCode,
+  _errorMessage?: string
 ): Promise<void> {
   try {
     await NoopAnalytics.track('sync_fail_rate', {
-      stage,
-      error_code: errorCode,
-      error_message: errorMessage?.substring(0, 200), // Truncate long messages
+      rate: 1,
     });
   } catch (error) {
     console.warn('Failed to track sync failure:', error);
@@ -62,9 +59,7 @@ export async function trackSyncSuccess(params: {
 }): Promise<void> {
   try {
     await NoopAnalytics.track('sync_success', {
-      pushed_count: params.pushed,
-      applied_count: params.applied,
-      total_duration_ms: Math.round(params.durationMs),
+      duration_ms: Math.round(params.durationMs),
     });
   } catch (error) {
     console.warn('Failed to track sync success:', error);
@@ -81,10 +76,8 @@ export async function trackConflict(params: {
 }): Promise<void> {
   try {
     await NoopAnalytics.track('sync_conflict', {
-      table: params.tableName,
-      field_count: params.conflictFields.length,
-      fields: params.conflictFields.slice(0, 10).join(','), // Limit field list
-      resolution: params.resolution,
+      table: params.tableName as 'tasks' | 'series' | 'occurrence_overrides',
+      count: params.conflictFields.length,
     });
   } catch (error) {
     console.warn('Failed to track conflict:', error);
@@ -115,8 +108,6 @@ export async function trackSyncRetry(params: {
   try {
     await NoopAnalytics.track('sync_retry', {
       attempt: params.attempt,
-      max_attempts: params.maxAttempts,
-      backoff_ms: params.backoffMs,
     });
   } catch (error) {
     console.warn('Failed to track sync retry:', error);
@@ -129,7 +120,7 @@ export async function trackSyncRetry(params: {
 export async function trackCheckpointAge(ageMs: number): Promise<void> {
   try {
     await NoopAnalytics.track('sync_checkpoint_age_ms', {
-      age_ms: Math.round(ageMs),
+      ms: Math.round(ageMs),
     });
   } catch (error) {
     console.warn('Failed to track checkpoint age:', error);
@@ -145,9 +136,7 @@ export async function trackPayloadSize(params: {
 }): Promise<void> {
   try {
     await NoopAnalytics.track('sync_payload_size', {
-      direction: params.direction,
-      size_bytes: params.sizeBytes,
-      size_kb: Math.round(params.sizeBytes / 1024),
+      bytes: params.sizeBytes,
     });
   } catch (error) {
     console.warn('Failed to track payload size:', error);

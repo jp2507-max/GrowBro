@@ -13,12 +13,22 @@ import { InMemoryMetrics } from '../analytics';
 import type { PlaybookModel } from '../watermelon-models/playbook';
 import type { PlaybookApplicationModel } from '../watermelon-models/playbook-application';
 import { PlaybookService } from './playbook-service';
+import { type ScheduleShifter } from './schedule-shifter';
 
 // Mock expo-crypto
 jest.mock('expo-crypto', () => ({
   randomUUID: jest.fn(
     () => 'test-uuid-' + Math.random().toString(36).substring(7)
   ),
+}));
+
+// Mock ScheduleShifter
+jest.mock('./schedule-shifter', () => ({
+  ScheduleShifter: jest.fn().mockImplementation(() => ({
+    generatePreview: jest.fn(),
+    applyShift: jest.fn(),
+    undoShift: jest.fn(),
+  })),
 }));
 
 // Mock database
@@ -73,11 +83,18 @@ describe('PlaybookService', () => {
   let service: PlaybookService;
   let database: Database;
   let analytics: InMemoryMetrics;
+  let mockScheduleShifter: jest.Mocked<ScheduleShifter>;
 
   beforeEach(() => {
     database = createMockDatabase();
     analytics = new InMemoryMetrics();
     service = new PlaybookService({ database, analytics });
+
+    // Spy on the ScheduleShifter methods
+    mockScheduleShifter = (service as any).scheduleShifter;
+    jest.spyOn(mockScheduleShifter, 'generatePreview');
+    jest.spyOn(mockScheduleShifter, 'applyShift');
+    jest.spyOn(mockScheduleShifter, 'undoShift');
   });
 
   afterEach(() => {
@@ -450,22 +467,55 @@ describe('PlaybookService', () => {
   });
 
   describe('placeholder methods', () => {
-    test('shiftPlaybookSchedule throws not implemented error', async () => {
-      await expect(service.shiftPlaybookSchedule('plant-1', 3)).rejects.toThrow(
-        'Not implemented yet'
+    test('shiftPlaybookSchedule returns schedule shift preview', async () => {
+      const mockPreview = {
+        shiftId: 'shift-123',
+        plantId: 'plant-1',
+        daysDelta: 3,
+        affectedTaskCount: 5,
+        firstNewDate: '2024-01-04T00:00:00.000Z',
+        lastNewDate: '2024-01-10T00:00:00.000Z',
+        collisionWarnings: [],
+        manuallyEditedCount: 0,
+        phaseBreakdown: [
+          {
+            phaseIndex: 0,
+            taskCount: 2,
+            netDelta: 3,
+          },
+        ],
+        options: {},
+      };
+
+      mockScheduleShifter.generatePreview.mockResolvedValue(mockPreview);
+
+      const result = await service.shiftPlaybookSchedule('plant-1', 3);
+
+      expect(mockScheduleShifter.generatePreview).toHaveBeenCalledWith(
+        'plant-1',
+        3,
+        undefined
       );
+      expect(result).toEqual(mockPreview);
     });
 
-    test('confirmScheduleShift throws not implemented error', async () => {
-      await expect(
-        service.confirmScheduleShift('plant-1', 'shift-1')
-      ).rejects.toThrow('Not implemented yet');
+    test('confirmScheduleShift calls applyShift with correct arguments', async () => {
+      mockScheduleShifter.applyShift.mockResolvedValue(undefined);
+
+      await service.confirmScheduleShift('plant-1', 'shift-123');
+
+      expect(mockScheduleShifter.applyShift).toHaveBeenCalledWith('shift-123');
     });
 
-    test('undoScheduleShift throws not implemented error', async () => {
-      await expect(
-        service.undoScheduleShift('plant-1', 'shift-1')
-      ).rejects.toThrow('Not implemented yet');
+    test('undoScheduleShift calls undoShift with correct arguments', async () => {
+      mockScheduleShifter.undoShift.mockResolvedValue(undefined);
+
+      await service.undoScheduleShift('plant-1', 'shift-123');
+
+      expect(mockScheduleShifter.undoShift).toHaveBeenCalledWith(
+        'plant-1',
+        'shift-123'
+      );
     });
 
     test('suggestScheduleAdjustments throws not implemented error', async () => {

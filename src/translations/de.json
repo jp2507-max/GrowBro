@@ -655,6 +655,17 @@
     "thc": "THC {{value}}"
   },
   "sync": {
+    "conflict": {
+      "acceptButton": "Server akzeptieren",
+      "conflictingFields": "Konfliktfelder",
+      "description": "Dieses {{tableName}} wurde auf einem anderen Gerät geändert. Wählen Sie, welche Version beibehalten werden soll.",
+      "dismissButton": "Verwerfen",
+      "note": "Hinweis: Standardmäßig wird die Server-Version verwendet (Last-Write-Wins). Sie können Ihre lokale Version bei Bedarf wiederherstellen.",
+      "restoreButton": "Meine Version wiederherstellen",
+      "serverVersion": "Server-Version",
+      "title": "Sync-Konflikt erkannt",
+      "yourVersion": "Ihre Version (Lokal)"
+    },
     "last_sync_and_pending": "Letzte Sync: {{time}}, {{count}} ausstehend",
     "offline_banner": "Du bist offline. Änderungen werden später synchronisiert.",
     "offline_banner_action_hint": "Öffnet den Sync-Diagnose-Bildschirm",
@@ -664,6 +675,9 @@
     "retry_button": "Erneut versuchen",
     "retry_sync_hint": "Tippen, um Favoriten-Synchronisierung zu wiederholen",
     "retry_sync_label": "Sync wiederholen",
+    "status": {
+      "syncing": "Synchronisiert..."
+    },
     "sync_failed": "Synchronisierung fehlgeschlagen",
     "syncing_favorites": "Favoriten werden synchronisiert..."
   },

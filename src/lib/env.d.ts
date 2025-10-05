@@ -28,6 +28,9 @@ declare module '@env' {
     FEATURE_STRAINS_ENABLED?: boolean;
     FEATURE_STRAINS_FAVORITES_SYNC?: boolean;
     FEATURE_STRAINS_OFFLINE_CACHE?: boolean;
+    FEATURE_AI_ADJUSTMENTS_ENABLED?: boolean;
+    FEATURE_AI_ADJUSTMENTS_MIN_SKIPPED_TASKS?: number;
+    FEATURE_AI_ADJUSTMENTS_MIN_CONFIDENCE?: number;
 
     // Misc
     VAR_NUMBER: number;

@@ -21,8 +21,6 @@ const mockDatabase = {
 // Mock analytics
 const mockAnalytics: AnalyticsClient = {
   track: jest.fn(),
-  identify: jest.fn(),
-  reset: jest.fn(),
 };
 
 describe('TemplateSaverService', () => {
@@ -265,6 +263,30 @@ describe('TemplateSaverService', () => {
         setup: 'auto_indoor',
         locale: 'en',
         phaseOrder: ['seedling', 'veg', 'flower', 'harvest'],
+        steps: [
+          {
+            id: 'step-1',
+            phase: 'seedling',
+            title: 'Water seedling',
+            descriptionIcu: 'Water the seedling',
+            relativeDay: 0,
+            defaultReminderLocal: '08:00',
+            taskType: 'water',
+            dependencies: ['step-prereq'],
+            rrule: 'FREQ=WEEKLY;BYDAY=MO',
+            durationDays: 1,
+          },
+          {
+            id: 'step-2',
+            phase: 'veg',
+            title: 'Feed nutrients',
+            descriptionIcu: 'Feed the plant',
+            relativeDay: 2,
+            defaultReminderLocal: '09:00',
+            taskType: 'feed',
+            dependencies: [],
+          },
+        ],
         metadata: {
           difficulty: 'beginner',
           strainTypes: ['indica'],
@@ -280,7 +302,12 @@ describe('TemplateSaverService', () => {
       const mockPlaybooksCollection = {
         find: jest.fn().mockResolvedValue(mockOriginalPlaybook),
         create: jest.fn((fn) => {
-          const record = {} as any;
+          const record = {
+            id: 'generated-id',
+            createdAt: new Date('2025-01-01T00:00:00Z'),
+            updatedAt: new Date('2025-01-01T00:00:00Z'),
+            _raw: {},
+          } as any;
           fn(record);
           return Promise.resolve(record);
         }),
@@ -308,6 +335,31 @@ describe('TemplateSaverService', () => {
       expect(result.isCommunity).toBe(true);
       expect(result.license).toBe('CC-BY-SA');
 
+      // Verify that dependencies and other fields are preserved from original steps
+      expect(result.steps[0]).toMatchObject({
+        id: 'step-1',
+        phase: 'seedling',
+        title: 'Water seedling',
+        descriptionIcu: 'Water the seedling',
+        relativeDay: 0,
+        defaultReminderLocal: '08:00',
+        taskType: 'water',
+        dependencies: ['step-prereq'],
+        rrule: 'FREQ=WEEKLY;BYDAY=MO',
+        durationDays: 1,
+      });
+
+      expect(result.steps[1]).toMatchObject({
+        id: 'step-2',
+        phase: 'veg',
+        title: 'Feed nutrients',
+        descriptionIcu: 'Feed the plant',
+        relativeDay: 2,
+        defaultReminderLocal: '09:00',
+        taskType: 'feed',
+        dependencies: [],
+      });
+
       expect(mockAnalytics.track).toHaveBeenCalledWith(
         'playbook_saved_as_template',
         expect.objectContaining({
@@ -331,6 +383,54 @@ describe('TemplateSaverService', () => {
           name: 'Test',
         })
       ).rejects.toThrow('No tasks found for plant');
+    });
+
+    it('should throw error when tasks exist but none have playbookId', async () => {
+      const mockTasks = [
+        {
+          id: 'task-1',
+          title: 'Water seedling',
+          description: 'Water the seedling',
+          dueAtUtc: '2025-01-01T08:00:00Z',
+          dueAtLocal: '2025-01-01T08:00:00',
+          reminderAtLocal: '2025-01-01T08:00:00',
+          playbookId: null, // No playbookId
+          originStepId: 'step-1',
+          metadata: {
+            phaseIndex: 0,
+            flags: { manualEdited: true },
+          } as PlaybookTaskMetadata,
+        },
+        {
+          id: 'task-2',
+          title: 'Feed nutrients',
+          description: 'Feed the plant',
+          dueAtUtc: '2025-01-03T08:00:00Z',
+          dueAtLocal: '2025-01-03T08:00:00',
+          reminderAtLocal: '2025-01-03T08:00:00',
+          playbookId: undefined, // No playbookId
+          originStepId: 'step-2',
+          metadata: {
+            phaseIndex: 1,
+            flags: { manualEdited: true },
+          } as PlaybookTaskMetadata,
+        },
+      ] as TaskModel[];
+
+      // Mock getPlaybookTasks to return tasks with null playbookIds
+      const getPlaybookTasksSpy = jest.spyOn(
+        service as any,
+        'getPlaybookTasks'
+      );
+      getPlaybookTasksSpy.mockResolvedValue(mockTasks);
+
+      await expect(
+        service.saveAsTemplate('plant-1', {
+          name: 'Test',
+        })
+      ).rejects.toThrow(
+        'Cannot save as template: missing playbookId on tasks — ensure tasks belong to a playbook or re-run with valid tasks'
+      );
     });
   });
 });

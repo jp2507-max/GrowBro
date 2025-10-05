@@ -186,6 +186,12 @@ const client = z.object({
 
   FEATURE_STRAINS_OFFLINE_CACHE: z.boolean().optional(),
 
+  FEATURE_AI_ADJUSTMENTS_ENABLED: z.boolean().optional(),
+
+  FEATURE_AI_ADJUSTMENTS_MIN_SKIPPED_TASKS: z.number().optional(),
+
+  FEATURE_AI_ADJUSTMENTS_MIN_CONFIDENCE: z.number().optional(),
+
   // Supabase Configuration
 
   SUPABASE_URL: z.string().url(),
@@ -267,6 +273,18 @@ const featureStrainsFavoritesSyncRaw = readEnv(
 const featureStrainsOfflineCacheRaw = readEnv(
   'FEATURE_STRAINS_OFFLINE_CACHE',
   'EXPO_PUBLIC_FEATURE_STRAINS_OFFLINE_CACHE'
+);
+const featureAiAdjustmentsEnabledRaw = readEnv(
+  'FEATURE_AI_ADJUSTMENTS_ENABLED',
+  'EXPO_PUBLIC_FEATURE_AI_ADJUSTMENTS_ENABLED'
+);
+const featureAiAdjustmentsMinSkippedTasksRaw = readEnv(
+  'FEATURE_AI_ADJUSTMENTS_MIN_SKIPPED_TASKS',
+  'EXPO_PUBLIC_FEATURE_AI_ADJUSTMENTS_MIN_SKIPPED_TASKS'
+);
+const featureAiAdjustmentsMinConfidenceRaw = readEnv(
+  'FEATURE_AI_ADJUSTMENTS_MIN_CONFIDENCE',
+  'EXPO_PUBLIC_FEATURE_AI_ADJUSTMENTS_MIN_CONFIDENCE'
 );
 const supabaseUrl = readEnv('SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_URL');
 const supabaseAnonKey = readEnv(
@@ -350,6 +368,21 @@ const _clientEnv = {
     featureStrainsOfflineCacheRaw !== undefined
       ? featureStrainsOfflineCacheRaw === 'true'
       : APP_ENV === 'development',
+
+  FEATURE_AI_ADJUSTMENTS_ENABLED:
+    featureAiAdjustmentsEnabledRaw !== undefined
+      ? featureAiAdjustmentsEnabledRaw === 'true'
+      : false,
+
+  FEATURE_AI_ADJUSTMENTS_MIN_SKIPPED_TASKS:
+    featureAiAdjustmentsMinSkippedTasksRaw !== undefined
+      ? Number(featureAiAdjustmentsMinSkippedTasksRaw)
+      : 2,
+
+  FEATURE_AI_ADJUSTMENTS_MIN_CONFIDENCE:
+    featureAiAdjustmentsMinConfidenceRaw !== undefined
+      ? Number(featureAiAdjustmentsMinConfidenceRaw)
+      : 0.7,
 
   // Supabase Configuration
 

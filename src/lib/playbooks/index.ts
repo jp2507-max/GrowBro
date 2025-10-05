@@ -30,3 +30,23 @@ export type {
   TemplateValidationResult,
 } from './template-saver';
 export { TemplateSaverService } from './template-saver';
+
+// Phase tracking
+export type { PhaseTransitionNotification } from './phase-notifications';
+export {
+  cancelPhaseTransitionNotification,
+  checkUpcomingTransitions,
+  rehydratePhaseNotifications,
+  schedulePhaseTransitionNotification,
+} from './phase-notifications';
+export type { PhaseInfo, PhaseProgress, PhaseSummary } from './phase-tracker';
+export {
+  computeCurrentPhase,
+  getPhaseProgress,
+  getPhaseSummary,
+} from './phase-tracker';
+export type {
+  UsePhaseProgressOptions,
+  UsePhaseProgressResult,
+} from './use-phase-progress';
+export { usePhaseProgress, usePhaseSummary } from './use-phase-progress';

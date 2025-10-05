@@ -136,16 +136,18 @@ export class OutboxWorker {
     action: OutboxNotificationActionModel
   ): Promise<boolean> {
     try {
+      let claimed = false;
       await this.database.write(async () => {
         await action.update((record) => {
           // Only claim if still pending/failed
           if (record.status === 'pending' || record.status === 'failed') {
             record.status = 'processing';
             record.attemptedCount = record.attemptedCount + 1;
+            claimed = true;
           }
         });
       });
-      return true;
+      return claimed;
     } catch {
       // Another worker may have claimed it
       return false;

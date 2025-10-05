@@ -302,14 +302,9 @@ export class TaskGenerator {
    * Calculate next occurrence for a recurring task
    */
   nextOccurrence(
-    after: Date,
-    timezone: string,
-    dtstartIso?: string
+    rruleString: string,
+    options: { after: Date; timezone: string; dtstartIso?: string }
   ): Date | null {
-    return rruleGenerator.nextOccurrence({
-      after,
-      timezone,
-      dtstartIso,
-    });
+    return rruleGenerator.nextOccurrence(rruleString, options);
   }
 }

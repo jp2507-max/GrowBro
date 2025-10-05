@@ -27,9 +27,10 @@ export function SyncStatusIndicator({
         testID="sync-status-indicator"
       />
       {showLabel && (
-        <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-          Syncing...
-        </Text>
+        <Text
+          className="text-sm text-neutral-600 dark:text-neutral-400"
+          tx="sync.status.syncing"
+        />
       )}
     </View>
   );

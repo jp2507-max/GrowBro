@@ -89,6 +89,7 @@ export class ScheduleShifter {
         collisionWarnings: [],
         manuallyEditedCount: 0,
         phaseBreakdown: [],
+        options,
       };
       this.activeShifts.set(shiftId, preview);
       return preview;
@@ -155,6 +156,7 @@ export class ScheduleShifter {
       collisionWarnings,
       manuallyEditedCount,
       phaseBreakdown,
+      options,
     };
 
     // Store preview for confirmation
@@ -186,24 +188,31 @@ export class ScheduleShifter {
       throw new Error('No tasks to shift');
     }
 
-    const { plantId, daysDelta } = preview;
+    const { plantId, daysDelta, options } = preview;
+    const includeCompleted = options.includeCompleted ?? false;
+    const includeManuallyEdited = options.includeManuallyEdited ?? false;
 
-    // Get affected tasks
+    // Get affected tasks using same logic as generatePreview
     const queryConditions = [
       Q.where('plant_id', plantId),
       Q.where('deleted_at', null),
-      Q.where('status', Q.notEq('completed')),
     ];
+
+    // Default: only future, non-completed tasks
+    if (!includeCompleted) {
+      queryConditions.push(Q.where('status', Q.notEq('completed')));
+    }
 
     const tasks = await this.database
       .get<TaskModel>('tasks')
       .query(...queryConditions)
       .fetch();
 
+    // Filter out manually edited tasks unless explicitly included
     const affectedTasks = tasks.filter((task) => {
       const metadata = task.metadata as any;
       const isManuallyEdited = metadata?.flags?.manualEdited ?? false;
-      return !isManuallyEdited;
+      return includeManuallyEdited || !isManuallyEdited;
     });
 
     // Capture prior state for undo

@@ -106,8 +106,41 @@ export type AnalyticsEvents = {
     table: 'series' | 'tasks' | 'occurrence_overrides';
     count: number;
   };
+  sync_conflict_resolved: {
+    table: string;
+    strategy: 'keep-local' | 'accept-server';
+    field_count: number;
+  };
+  sync_conflict_dismissed: {
+    table: string;
+    field_count: number;
+  };
   sync_checkpoint_age_ms: {
     ms: number;
+  };
+  sync_latency_ms: {
+    ms: number;
+  };
+  sync_fail_rate: {
+    rate: number;
+  };
+  sync_success: {
+    duration_ms: number;
+  };
+  sync_pending_changes: {
+    count: number;
+  };
+  sync_retry: {
+    attempt: number;
+  };
+  sync_payload_size: {
+    bytes: number;
+  };
+  sync_manual_trigger: {
+    source: string;
+  };
+  sync_background_trigger: {
+    source: string;
   };
 
   // Performance KPIs
@@ -157,18 +190,43 @@ export type AnalyticsEvents = {
   };
   ai_adjustment_suggested: {
     playbookId: string;
-    adjustmentType: 'watering' | 'feeding' | 'lighting' | 'environment';
+    adjustmentType:
+      | 'watering'
+      | 'feeding'
+      | 'lighting'
+      | 'environment'
+      | 'schedule_shift';
     confidence: number;
   };
   ai_adjustment_applied: {
     playbookId: string;
-    adjustmentType: 'watering' | 'feeding' | 'lighting' | 'environment';
+    adjustmentType:
+      | 'watering'
+      | 'feeding'
+      | 'lighting'
+      | 'environment'
+      | 'schedule_shift';
     applied: boolean;
   };
   ai_adjustment_declined: {
     playbookId: string;
-    adjustmentType: 'watering' | 'feeding' | 'lighting' | 'environment';
+    adjustmentType:
+      | 'watering'
+      | 'feeding'
+      | 'lighting'
+      | 'environment'
+      | 'schedule_shift';
     reason?: string;
+  };
+  playbook_shift_preview: {
+    plantId: string;
+    daysDelta: number;
+    affectedTaskCount: number;
+  };
+  playbook_shift_apply: {
+    plantId: string;
+    daysDelta: number;
+    affectedTaskCount: number;
   };
   trichome_helper_open: {
     playbookId: string;
@@ -302,7 +360,8 @@ export function createConsentGatedAnalytics(
         name.startsWith('strain_') ||
         name.startsWith('playbook_') ||
         name.startsWith('ai_adjustment_') ||
-        name.startsWith('trichome_');
+        name.startsWith('trichome_') ||
+        name.startsWith('shift_');
 
       if (requiresConsent && !hasConsent('analytics')) return;
 
@@ -480,7 +539,8 @@ function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(
   if (
     name.startsWith('playbook_') ||
     name.startsWith('ai_adjustment_') ||
-    name.startsWith('trichome_')
+    name.startsWith('trichome_') ||
+    name.startsWith('shift_')
   ) {
     return sanitizePlaybookPayload(payload);
   }

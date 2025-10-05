@@ -3,6 +3,7 @@ import React from 'react';
 import { ScrollView } from 'react-native';
 
 import { Button, Text, View } from '@/components/ui';
+import { translate } from '@/lib';
 import type { Conflict } from '@/lib/sync/conflict-resolver';
 
 type ConflictResolutionModalProps = {
@@ -27,18 +28,19 @@ export function ConflictResolutionModal({
     <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <View className="border-b border-neutral-200 bg-white px-4 py-3 dark:border-charcoal-800 dark:bg-charcoal-900">
         <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-          Sync Conflict Detected
+          {translate('sync.conflict.title')}
         </Text>
         <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-          This {conflict.tableName} was modified on another device. Choose which
-          version to keep.
+          {translate('sync.conflict.description', {
+            tableName: conflict.tableName,
+          })}
         </Text>
       </View>
 
       <ScrollView className="flex-1 p-4">
         <View className="mb-4">
           <Text className="mb-2 text-xs font-medium uppercase text-neutral-500 dark:text-neutral-400">
-            Conflicting Fields
+            {translate('sync.conflict.conflictingFields')}
           </Text>
           {conflict.conflictFields.map((field) => (
             <View
@@ -51,7 +53,7 @@ export function ConflictResolutionModal({
 
               <View className="mb-2">
                 <Text className="mb-1 text-xs font-medium text-primary-600 dark:text-primary-400">
-                  Your Version (Local)
+                  {translate('sync.conflict.yourVersion')}
                 </Text>
                 <View className="dark:bg-primary-950 rounded bg-primary-50 p-2">
                   <Text className="font-mono text-xs text-neutral-800 dark:text-neutral-200">
@@ -62,7 +64,7 @@ export function ConflictResolutionModal({
 
               <View>
                 <Text className="mb-1 text-xs font-medium text-success-600 dark:text-success-400">
-                  Server Version
+                  {translate('sync.conflict.serverVersion')}
                 </Text>
                 <View className="dark:bg-success-950 rounded bg-success-50 p-2">
                   <Text className="font-mono text-xs text-neutral-800 dark:text-neutral-200">
@@ -76,9 +78,7 @@ export function ConflictResolutionModal({
 
         <View className="dark:bg-warning-950 mb-2 rounded-lg border border-warning-200 bg-warning-50 p-3 dark:border-warning-800">
           <Text className="text-xs text-warning-800 dark:text-warning-200">
-            <Text className="font-semibold">Note:</Text> By default, the server
-            version will be used (Last-Write-Wins). You can restore your local
-            version if needed.
+            {translate('sync.conflict.note')}
           </Text>
         </View>
       </ScrollView>
@@ -89,18 +89,22 @@ export function ConflictResolutionModal({
             <Button
               variant="outline"
               onPress={() => onResolve('keep-local')}
-              label="Restore My Version"
+              label={translate('sync.conflict.restoreButton')}
             />
           </View>
           <View className="flex-1">
             <Button
               onPress={() => onResolve('accept-server')}
-              label="Accept Server"
+              label={translate('sync.conflict.acceptButton')}
             />
           </View>
         </View>
         <View className="mt-2">
-          <Button variant="ghost" onPress={onDismiss} label="Dismiss" />
+          <Button
+            variant="ghost"
+            onPress={onDismiss}
+            label={translate('sync.conflict.dismissButton')}
+          />
         </View>
       </View>
     </View>

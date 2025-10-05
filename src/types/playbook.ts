@@ -6,6 +6,11 @@
  * date handling.
  */
 
+export type ShiftOptions = {
+  includeCompleted?: boolean;
+  includeManuallyEdited?: boolean;
+};
+
 export type PlaybookSetup =
   | 'auto_indoor'
   | 'auto_outdoor'
@@ -148,6 +153,7 @@ export type ScheduleShiftPreview = {
     taskCount: number;
     netDelta: number;
   }[];
+  options: ShiftOptions; // Options used to generate this preview
 };
 
 /**

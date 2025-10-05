@@ -237,7 +237,7 @@ export class PlaybookService {
     this.analytics.track('playbook_apply', {
       playbookId: params.playbook.id,
       setupType: params.playbook.setup,
-      strainType: params.playbook.metadata.strainTypes?.join(','),
+      strainType: params.playbook.metadata?.strainTypes?.join(','),
     });
 
     return {

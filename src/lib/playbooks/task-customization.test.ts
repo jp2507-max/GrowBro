@@ -20,8 +20,6 @@ const mockDatabase = {
 // Mock analytics
 const mockAnalytics: AnalyticsClient = {
   track: jest.fn(),
-  identify: jest.fn(),
-  reset: jest.fn(),
 };
 
 describe('TaskCustomizationService', () => {

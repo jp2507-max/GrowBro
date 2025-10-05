@@ -61,6 +61,7 @@ export function useConflictResolution() {
               });
             } catch (error) {
               console.error('Failed to restore local version:', error);
+              throw error;
             }
           });
 
@@ -87,6 +88,7 @@ export function useConflictResolution() {
               });
             } catch (error) {
               console.error('Failed to accept server version:', error);
+              throw error;
             }
           });
 

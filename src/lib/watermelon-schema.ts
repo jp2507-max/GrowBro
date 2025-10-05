@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const schema = appSchema({
-  version: 10,
+  version: 11,
   tables: [
     tableSchema({
       name: 'series',
@@ -455,6 +455,42 @@ export const schema = appSchema({
         { name: 'notes', type: 'string', isOptional: true },
         { name: 'harvest_window_suggestion', type: 'string', isOptional: true }, // JSON object
         { name: 'created_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'adjustment_suggestions',
+      columns: [
+        { name: 'plant_id', type: 'string', isIndexed: true },
+        { name: 'playbook_id', type: 'string', isOptional: true },
+        { name: 'suggestion_type', type: 'string' },
+        { name: 'root_cause', type: 'string' },
+        { name: 'reasoning', type: 'string' },
+        { name: 'affected_tasks', type: 'string' }, // JSON array of task adjustments
+        { name: 'confidence', type: 'number' },
+        { name: 'status', type: 'string' }, // pending | accepted | declined | expired
+        { name: 'accepted_tasks', type: 'string', isOptional: true }, // JSON array of accepted task IDs
+        { name: 'helpfulness_vote', type: 'string', isOptional: true }, // helpful | not_helpful
+        { name: 'expires_at', type: 'number', isIndexed: true },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'adjustment_cooldowns',
+      columns: [
+        { name: 'plant_id', type: 'string', isIndexed: true },
+        { name: 'root_cause', type: 'string', isIndexed: true },
+        { name: 'cooldown_until', type: 'number', isIndexed: true },
+        { name: 'created_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'plant_adjustment_preferences',
+      columns: [
+        { name: 'plant_id', type: 'string', isIndexed: true },
+        { name: 'never_suggest', type: 'boolean' },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
       ],
     }),
   ],

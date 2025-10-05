@@ -95,8 +95,18 @@ export class TemplateSaverService {
     options: SaveTemplateOptions
   ): Promise<Playbook> {
     const tasks = await this.getPlaybookTasks(plantId);
+
+    // Guard: ensure at least one task has a valid playbookId
+    const playbookId =
+      tasks?.[0]?.playbookId || tasks.find((t) => t.playbookId)?.playbookId;
+    if (!playbookId) {
+      throw new Error(
+        'Cannot save as template: missing playbookId on tasks — ensure tasks belong to a playbook or re-run with valid tasks'
+      );
+    }
+
     const originalPlaybook = await this.getOriginalPlaybook(tasks);
-    const steps = this.convertTasksToSteps(tasks);
+    const steps = this.convertTasksToSteps(tasks, originalPlaybook);
     const newPlaybook = this.createPlaybookFromTasks({
       tasks,
       originalPlaybook,
@@ -166,10 +176,13 @@ export class TemplateSaverService {
       author: options.authorHandle,
       tags: options.tags || [],
       difficulty: originalPlaybook.metadata?.difficulty,
-      estimatedDuration: Math.ceil(
-        (new Date(tasks[tasks.length - 1].dueAtUtc).getTime() -
-          new Date(tasks[0].dueAtUtc).getTime()) /
-          (1000 * 60 * 60 * 24 * 7)
+      estimatedDuration: Math.max(
+        1,
+        Math.ceil(
+          (new Date(tasks[tasks.length - 1].dueAtUtc).getTime() -
+            new Date(tasks[0].dueAtUtc).getTime()) /
+            (1000 * 60 * 60 * 24 * 7)
+        )
       ),
       strainTypes: originalPlaybook.metadata?.strainTypes,
     };
@@ -208,18 +221,31 @@ export class TemplateSaverService {
    */
   private async savePlaybookToDatabase(playbook: Playbook): Promise<void> {
     await this.database.write(async () => {
-      await this.database.get<PlaybookModel>('playbooks').create((record) => {
-        record.name = playbook.name;
-        record.setup = playbook.setup;
-        record.locale = playbook.locale;
-        record.phaseOrder = playbook.phaseOrder;
-        record.steps = playbook.steps;
-        record.metadata = playbook.metadata;
-        record.isTemplate = playbook.isTemplate;
-        record.isCommunity = playbook.isCommunity;
-        record.authorHandle = playbook.authorHandle;
-        record.license = playbook.license;
-      });
+      const createdRecord = await this.database
+        .get<PlaybookModel>('playbooks')
+        .create((record) => {
+          record.name = playbook.name;
+          record.setup = playbook.setup;
+          record.locale = playbook.locale;
+          record.phaseOrder = playbook.phaseOrder;
+          record.steps = playbook.steps;
+          record.metadata = playbook.metadata;
+          record.isTemplate = playbook.isTemplate;
+          record.isCommunity = playbook.isCommunity;
+          record.authorHandle = playbook.authorHandle;
+          record.license = playbook.license;
+        });
+
+      // Update the playbook object to match the database record
+      playbook.id = createdRecord.id;
+      playbook.createdAt = createdRecord.createdAt.toISOString();
+      playbook.updatedAt = createdRecord.updatedAt.toISOString();
+
+      // Ensure template-related raw fields are properly set
+      (createdRecord._raw as any).is_template = playbook.isTemplate;
+      (createdRecord._raw as any).is_community = playbook.isCommunity;
+      (createdRecord._raw as any).author_handle = playbook.authorHandle;
+      (createdRecord._raw as any).license = playbook.license;
     });
   }
 
@@ -305,9 +331,17 @@ export class TemplateSaverService {
    * Convert tasks to playbook steps
    * Strips personal data and normalizes structure
    */
-  private convertTasksToSteps(tasks: TaskModel[]): PlaybookStep[] {
+  private convertTasksToSteps(
+    tasks: TaskModel[],
+    originalPlaybook: PlaybookModel
+  ): PlaybookStep[] {
     const steps: PlaybookStep[] = [];
     const firstTaskDate = new Date(tasks[0].dueAtUtc);
+
+    // Create a map of original steps by ID for quick lookup
+    const originalStepsMap = new Map(
+      originalPlaybook.steps.map((step) => [step.id, step])
+    );
 
     tasks.forEach((task) => {
       const metadata = task.metadata as PlaybookTaskMetadata;
@@ -316,9 +350,15 @@ export class TemplateSaverService {
         (taskDate.getTime() - firstTaskDate.getTime()) / (1000 * 60 * 60 * 24)
       );
 
-      // Extract reminder time in HH:mm format
-      let defaultReminderLocal = '09:00';
-      if (task.reminderAtLocal) {
+      // Find the original step to preserve its data
+      const originalStep = task.originStepId
+        ? originalStepsMap.get(task.originStepId)
+        : undefined;
+
+      // Extract reminder time in HH:mm format - prefer original step's value
+      let defaultReminderLocal = originalStep?.defaultReminderLocal || '09:00';
+      if (!originalStep && task.reminderAtLocal) {
+        // Fallback to deriving from task reminder if no original step
         const reminderDate = new Date(task.reminderAtLocal);
         defaultReminderLocal = `${String(reminderDate.getHours()).padStart(2, '0')}:${String(reminderDate.getMinutes()).padStart(2, '0')}`;
       }
@@ -331,7 +371,9 @@ export class TemplateSaverService {
         relativeDay,
         defaultReminderLocal,
         taskType: this.inferTaskType(task.title),
-        dependencies: [],
+        dependencies: originalStep?.dependencies || [],
+        rrule: originalStep?.rrule,
+        durationDays: originalStep?.durationDays,
       };
 
       steps.push(step);

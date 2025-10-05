@@ -136,9 +136,9 @@ describe('TaskGenerator', () => {
   describe('nextOccurrence', () => {
     it('calculates next occurrence', () => {
       const next = taskGenerator.nextOccurrence(
-        'FREQ=DAILY;INTERVAL=1',
         new Date('2025-01-01T00:00:00Z'),
-        'UTC'
+        'UTC',
+        'FREQ=DAILY;INTERVAL=1'
       );
       expect(next).not.toBeNull();
     });

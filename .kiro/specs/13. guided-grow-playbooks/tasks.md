@@ -103,7 +103,7 @@
   - **DoD**: Flight-mode E2E passes, conflicts handled gracefully, no sync bypassing, metrics accurate
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
-- [ ] 9. Build AI-driven schedule adjustment system
+- [x] 9. Build AI-driven schedule adjustment system
   - Gate suggestions behind remote feature flags with thresholds: ≥2 skipped tasks in 7 days or assessment confidence <70%
   - Implement explainable adjustment proposals showing which tasks move and why
   - Allow partial acceptance of suggestions (per phase or per task) with user control
@@ -114,7 +114,7 @@
   - **DoD**: Suggestions properly gated, explanations clear, partial acceptance works, outcomes tracked
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8_
 
-- [ ] 10. Implement trichome helper with educational content
+- [x] 10. Implement trichome helper with educational content
   - Create neutral, educational trichome guide: clear (immature), milky/cloudy (peak), amber (more sedating trend)
   - Include macro photography tips and lighting cautions with educational disclaimer
   - Log assessments with time-stamps and optional photos, no product recommendations
@@ -125,7 +125,7 @@
   - **DoD**: Content educational and compliant, assessments logged properly, nudges require confirmation
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
 
-- [ ] 11. Create phase progress tracking system
+- [x] 11. Create phase progress tracking system
   - Derive phase from date windows or completion of key tasks with clear computation rules
   - Build FlashList v2-backed timeline targeting 60 FPS performance with 1k+ items in release builds
   - Add phase transition notifications alerting users to upcoming care requirement changes

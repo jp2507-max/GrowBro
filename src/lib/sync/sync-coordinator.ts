@@ -132,7 +132,7 @@ export async function isSyncNeeded(): Promise<boolean> {
  */
 export async function manualSync(): Promise<SyncResult> {
   await NoopAnalytics.track('sync_manual_trigger', {
-    timestamp: Date.now(),
+    source: 'manual',
   });
 
   return performSync({
@@ -147,7 +147,7 @@ export async function manualSync(): Promise<SyncResult> {
  */
 export async function backgroundSync(): Promise<SyncResult> {
   await NoopAnalytics.track('sync_background_trigger', {
-    timestamp: Date.now(),
+    source: 'background',
   });
 
   return performSync({

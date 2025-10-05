@@ -655,6 +655,17 @@
     "thc": "THC {{value}}"
   },
   "sync": {
+    "conflict": {
+      "acceptButton": "Accept Server",
+      "conflictingFields": "Conflicting Fields",
+      "description": "This {{tableName}} was modified on another device. Choose which version to keep.",
+      "dismissButton": "Dismiss",
+      "note": "Note: By default, the server version will be used (Last-Write-Wins). You can restore your local version if needed.",
+      "restoreButton": "Restore My Version",
+      "serverVersion": "Server Version",
+      "title": "Sync Conflict Detected",
+      "yourVersion": "Your Version (Local)"
+    },
     "last_sync_and_pending": "Last sync: {{time}}, {{count}} pending",
     "offline_banner": "You're offline. Changes will sync when back online.",
     "offline_banner_action_hint": "Opens sync diagnostics screen",
@@ -664,6 +675,9 @@
     "retry_button": "Retry",
     "retry_sync_hint": "Tap to retry syncing favorites",
     "retry_sync_label": "Retry sync",
+    "status": {
+      "syncing": "Syncing..."
+    },
     "sync_failed": "Sync failed",
     "syncing_favorites": "Syncing favorites..."
   },
