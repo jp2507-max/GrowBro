@@ -131,9 +131,16 @@ const _useTemplates = createQuery<
 // Wrapper that preserves the simple call signature used across the app
 // while forwarding the inputs into react-query-kit's `variables` so the
 // final cache key becomes ['templates', variables].
-export function useTemplates(variables: TemplateListParams) {
-  return _useTemplates({ variables });
-}
+type UseTemplatesOptions = Omit<
+  Parameters<typeof _useTemplates>[0],
+  'variables'
+>;
+
+export const useTemplates = Object.assign(
+  (variables: TemplateListParams, options?: UseTemplatesOptions) =>
+    _useTemplates({ ...options, variables }),
+  _useTemplates
+);
 
 /**
  * Hook to fetch a single template by ID
@@ -160,9 +167,13 @@ const _useTemplate = createQuery<CommunityTemplate, { id: string }>({
   },
 });
 
-export function useTemplate(variables: { id: string }) {
-  return _useTemplate({ variables });
-}
+type UseTemplateOptions = Omit<Parameters<typeof _useTemplate>[0], 'variables'>;
+
+export const useTemplate = Object.assign(
+  (variables: { id: string }, options?: UseTemplateOptions) =>
+    _useTemplate({ ...options, variables }),
+  _useTemplate
+);
 
 /**
  * Hook to fetch template comments
@@ -189,10 +200,19 @@ const _useTemplateComments = createQuery<
   },
 });
 
-export function useTemplateComments(variables: {
-  templateId: string;
-  limit?: number;
-  offset?: number;
-}) {
-  return _useTemplateComments({ variables });
-}
+type UseTemplateCommentsOptions = Omit<
+  Parameters<typeof _useTemplateComments>[0],
+  'variables'
+>;
+
+export const useTemplateComments = Object.assign(
+  (
+    variables: {
+      templateId: string;
+      limit?: number;
+      offset?: number;
+    },
+    options?: UseTemplateCommentsOptions
+  ) => _useTemplateComments({ ...options, variables }),
+  _useTemplateComments
+);

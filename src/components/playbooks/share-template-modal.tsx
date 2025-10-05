@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { type Control, Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
 
 import { useShareTemplate } from '@/api/templates';
@@ -14,6 +15,7 @@ import type { Playbook } from '@/lib/playbooks/sanitize-playbook';
 import { validatePlaybookForSharing } from '@/lib/playbooks/sanitize-playbook';
 
 function useShareTemplateForm(playbook: Playbook, onSuccess: () => void) {
+  const { t } = useTranslation();
   const { control, handleSubmit, formState } = useForm<ShareTemplateFormData>({
     defaultValues: {
       authorHandle: '',
@@ -28,8 +30,10 @@ function useShareTemplateForm(playbook: Playbook, onSuccess: () => void) {
     const validation = validatePlaybookForSharing(playbook);
     if (!validation.valid) {
       Alert.alert(
-        'Validation Error',
-        `Cannot share playbook:\n${validation.errors.join('\n')}`
+        t('shareTemplate.validationTitle'),
+        t('shareTemplate.validationMessage', {
+          errors: validation.errors.join('\n'),
+        })
       );
       return;
     }
@@ -44,14 +48,17 @@ function useShareTemplateForm(playbook: Playbook, onSuccess: () => void) {
       });
 
       Alert.alert(
-        'Success',
-        'Your playbook has been shared with the community!'
+        t('shareTemplate.successTitle'),
+        t('shareTemplate.successMessage')
       );
       onSuccess();
     } catch (error) {
       Alert.alert(
-        'Error',
-        error instanceof Error ? error.message : 'Failed to share template'
+        t('shareTemplate.errorTitle'),
+        t('shareTemplate.errorMessage', {
+          message:
+            error instanceof Error ? error.message : 'Failed to share template',
+        })
       );
     }
   };
@@ -81,27 +88,29 @@ function AuthorHandleField({
 }: {
   control: Control<ShareTemplateFormData>;
 }) {
+  const { t } = useTranslation();
+
   return (
     <View className="mb-4">
       <Text className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
-        Author Handle *
+        {t('playbooks.shareTemplate.authorHandle')}
       </Text>
       <Controller
         control={control}
         name="authorHandle"
         rules={{
-          required: 'Author handle is required',
+          required: t('playbooks.shareTemplate.errors.handleRequired'),
           minLength: {
             value: 3,
-            message: 'Handle must be at least 3 characters',
+            message: t('playbooks.shareTemplate.errors.handleMinLength'),
           },
           maxLength: {
             value: 30,
-            message: 'Handle must be at most 30 characters',
+            message: t('playbooks.shareTemplate.errors.handleMaxLength'),
           },
           pattern: {
             value: /^[a-zA-Z0-9_-]+$/,
-            message: 'Handle can only contain letters, numbers, - and _',
+            message: t('playbooks.shareTemplate.errors.handlePattern'),
           },
         }}
         render={({ field: { onChange, value }, fieldState: { error } }) => (
@@ -110,7 +119,7 @@ function AuthorHandleField({
               testID="share-template-handle-input"
               value={value}
               onChangeText={onChange}
-              placeholder="your_handle"
+              placeholder={t('playbooks.shareTemplate.placeholderHandle')}
               autoCapitalize="none"
               className="mb-1"
             />
@@ -129,10 +138,12 @@ function DescriptionField({
 }: {
   control: Control<ShareTemplateFormData>;
 }) {
+  const { t } = useTranslation();
+
   return (
     <View className="mb-4">
       <Text className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
-        Description (Optional)
+        {t('playbooks.shareTemplate.description')}
       </Text>
       <Controller
         control={control}
@@ -140,7 +151,7 @@ function DescriptionField({
         rules={{
           maxLength: {
             value: 500,
-            message: 'Description must be at most 500 characters',
+            message: t('playbooks.shareTemplate.errors.descriptionMaxLength'),
           },
         }}
         render={({ field: { onChange, value }, fieldState: { error } }) => (
@@ -149,7 +160,7 @@ function DescriptionField({
               testID="share-template-description-input"
               value={value}
               onChangeText={onChange}
-              placeholder="Describe your playbook..."
+              placeholder={t('playbooks.shareTemplate.placeholderDescription')}
               multiline
               numberOfLines={4}
               className="mb-1"
@@ -169,10 +180,12 @@ function LicenseField({
 }: {
   control: Control<ShareTemplateFormData>;
 }) {
+  const { t } = useTranslation();
+
   return (
     <View className="mb-6">
       <Text className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
-        License
+        {t('playbooks.shareTemplate.license')}
       </Text>
       <Controller
         control={control}
@@ -180,10 +193,10 @@ function LicenseField({
         render={({ field: { value } }) => (
           <View className="rounded-lg bg-neutral-100 p-3 dark:bg-charcoal-900">
             <Text className="text-sm text-neutral-700 dark:text-neutral-300">
-              {value} - Creative Commons Attribution-ShareAlike
+              {t('playbooks.shareTemplate.licenseText', { license: value })}
             </Text>
             <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
-              Others can use and modify your playbook with attribution
+              {t('playbooks.shareTemplate.licenseDescription')}
             </Text>
           </View>
         )}
@@ -193,11 +206,12 @@ function LicenseField({
 }
 
 function PrivacyNotice() {
+  const { t } = useTranslation();
+
   return (
     <View className="dark:bg-primary-950 mb-4 rounded-lg bg-primary-50 p-3">
       <Text className="text-xs text-primary-700 dark:text-primary-300">
-        ℹ️ All personal information, plant names, and custom notes will be
-        automatically removed before sharing.
+        {t('playbooks.shareTemplate.privacyNotice')}
       </Text>
     </View>
   );
@@ -214,6 +228,8 @@ function ActionButtons({
   isPending: boolean;
   isValid: boolean;
 }) {
+  const { t } = useTranslation();
+
   return (
     <View className="flex-row gap-3">
       <Button
@@ -223,7 +239,7 @@ function ActionButtons({
         disabled={isPending}
         testID="share-template-cancel-button"
       >
-        <Text>Cancel</Text>
+        <Text>{t('common.cancel')}</Text>
       </Button>
       <Button
         onPress={onShare}
@@ -231,21 +247,26 @@ function ActionButtons({
         disabled={isPending || !isValid}
         testID="share-template-confirm-button"
       >
-        <Text>{isPending ? 'Sharing...' : 'Share'}</Text>
+        <Text>
+          {isPending
+            ? t('playbooks.shareTemplate.sharing')
+            : t('playbooks.shareTemplate.share')}
+        </Text>
       </Button>
     </View>
   );
 }
 
 function ModalHeader() {
+  const { t } = useTranslation();
+
   return (
     <>
       <Text className="mb-4 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-        Share Playbook
+        {t('playbooks.shareTemplate.title')}
       </Text>
       <Text className="mb-6 text-sm text-neutral-600 dark:text-neutral-400">
-        Share your customized playbook with the community. All personal
-        information will be automatically removed.
+        {t('playbooks.shareTemplate.subtitle')}
       </Text>
     </>
   );

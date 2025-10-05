@@ -173,6 +173,12 @@ function useOnboardingSteps(
   );
 }
 
+type OnboardingNavigation = {
+  currentStep: number;
+  handleNext: () => void;
+  handleSkip: () => void;
+};
+
 function useOnboardingNavigation(
   steps: OnboardingStep[],
   callbacks: {
@@ -180,7 +186,7 @@ function useOnboardingNavigation(
     onSkip: () => void;
   },
   track: ReturnType<typeof useAnalytics>['track']
-) {
+): OnboardingNavigation {
   const [currentStep, setCurrentStep] = React.useState(0);
 
   React.useEffect(() => {
@@ -194,12 +200,12 @@ function useOnboardingNavigation(
       track('playbook_onboarding_completed', { totalSteps: steps.length });
       callbacks.onComplete();
     }
-  }, [currentStep, steps.length, callbacks.onComplete, track]);
+  }, [currentStep, steps.length, callbacks, track]);
 
   const handleSkip = React.useCallback(() => {
     track('playbook_onboarding_skipped', { step: currentStep });
     callbacks.onSkip();
-  }, [currentStep, callbacks.onSkip, track]);
+  }, [currentStep, callbacks, track]);
 
   return { currentStep, handleNext, handleSkip };
 }
@@ -211,9 +217,13 @@ export function PlaybookOnboarding({
   const { t } = useTranslation();
   const { track } = useAnalytics();
   const steps = useOnboardingSteps(t);
+  const callbacks = React.useMemo(
+    () => ({ onComplete, onSkip }),
+    [onComplete, onSkip]
+  );
   const { currentStep, handleNext, handleSkip } = useOnboardingNavigation(
     steps,
-    { onComplete, onSkip },
+    callbacks,
     track
   );
 

@@ -11,7 +11,77 @@ import React from 'react';
 import { ScrollView } from 'react-native';
 
 import { Button, Text, View } from '@/components/ui';
+import { translate } from '@/lib/i18n';
 import type { Conflict } from '@/lib/sync/conflict-resolver';
+
+// Map database field names to user-friendly display names
+const displayNameMap: Record<string, string> = {
+  name: 'Name',
+  description: 'Description',
+  created_at: 'Created Date',
+  updated_at: 'Last Updated',
+  strain_id: 'Strain',
+  plant_id: 'Plant',
+  status: 'Status',
+  notes: 'Notes',
+  phase: 'Growth Phase',
+  start_date: 'Start Date',
+  end_date: 'End Date',
+  pH: 'pH Level',
+  ec: 'EC Level',
+  temperature: 'Temperature',
+  humidity: 'Humidity',
+  light_schedule: 'Light Schedule',
+  watering_schedule: 'Watering Schedule',
+  feeding_schedule: 'Feeding Schedule',
+  pruning_schedule: 'Pruning Schedule',
+  training_schedule: 'Training Schedule',
+  monitoring_schedule: 'Monitoring Schedule',
+  harvest_date: 'Harvest Date',
+  drying_start: 'Drying Start',
+  curing_start: 'Curing Start',
+  thc_content: 'THC Content',
+  cbd_content: 'CBD Content',
+  yield_estimate: 'Yield Estimate',
+  difficulty: 'Difficulty Level',
+  indoor_outdoor: 'Grow Environment',
+  auto_photo: 'Flowering Type',
+  genetics: 'Genetics',
+  effects: 'Effects',
+  flavors: 'Flavors',
+  terpenes: 'Terpenes',
+  height: 'Height',
+  flowering_time: 'Flowering Time',
+  user_id: 'User',
+  email: 'Email',
+  username: 'Username',
+  avatar_url: 'Avatar',
+  preferences: 'Preferences',
+  settings: 'Settings',
+  notifications_enabled: 'Notifications',
+  theme: 'Theme',
+  language: 'Language',
+  timezone: 'Timezone',
+  location: 'Location',
+  device_id: 'Device',
+  app_version: 'App Version',
+  os_version: 'OS Version',
+  last_sync_at: 'Last Sync',
+  sync_status: 'Sync Status',
+  is_deleted: 'Deleted',
+  deleted_at: 'Deleted Date',
+  tags: 'Tags',
+  categories: 'Categories',
+  priority: 'Priority',
+  due_date: 'Due Date',
+  completed_at: 'Completed Date',
+  reminder_at: 'Reminder Date',
+  recurrence: 'Recurrence',
+  parent_task_id: 'Parent Task',
+  assigned_to: 'Assigned To',
+  created_by: 'Created By',
+  modified_by: 'Modified By',
+};
 
 export function formatValue(value: unknown): string {
   if (value === null || value === undefined) return 'null';
@@ -70,11 +140,22 @@ function ConflictFieldCard({
   localValue,
   remoteValue,
 }: ConflictFieldCardProps): React.ReactElement {
+  // Get localized field name with fallback to displayNameMap or original field
+  const getFieldDisplayName = (fieldName: string): string => {
+    const translationKey = `sync.conflict.field.${fieldName}` as const;
+    const translated = translate(translationKey);
+    // If translation returns the key itself, it means the key wasn't found
+    if (translated === translationKey) {
+      return displayNameMap[fieldName] || fieldName;
+    }
+    return translated;
+  };
+
   return (
     <View className="mt-3 rounded-xl border border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
       {/* Field Name */}
       <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-100">
-        {field}
+        {getFieldDisplayName(field)}
       </Text>
 
       {/* Your Version */}
@@ -158,11 +239,11 @@ function ConflictActions({
             <View className="items-center">
               <Text
                 className="text-sm font-semibold text-primary-700 dark:text-primary-300"
-                tx="sync.conflict.keepLocal"
+                tx="sync.conflict.keepLocalButton"
               />
               <Text
                 className="text-xs text-neutral-600 dark:text-neutral-400"
-                tx="sync.conflict.keepLocalHint"
+                tx="sync.conflict.localLabel"
               />
             </View>
           </Button>
@@ -176,11 +257,11 @@ function ConflictActions({
             <View className="items-center">
               <Text
                 className="text-sm font-semibold text-white"
-                tx="sync.conflict.acceptServer"
+                tx="sync.conflict.useServerButton"
               />
               <Text
                 className="text-xs text-white/80"
-                tx="sync.conflict.acceptServerHint"
+                tx="sync.conflict.remoteLabel"
               />
             </View>
           </Button>
@@ -192,7 +273,7 @@ function ConflictActions({
         testID="dismiss-conflict-button"
         className="min-h-[44px]"
       >
-        <Text tx="sync.conflict.decideLater" />
+        <Text tx="sync.conflict.dismissButton" />
       </Button>
     </View>
   );
@@ -220,7 +301,7 @@ export function EnhancedConflictResolutionModal({
         <View className="mb-4">
           <Text
             className="mb-3 text-sm font-medium uppercase text-neutral-500 dark:text-neutral-400"
-            tx="sync.conflict.fieldsHeading"
+            tx="sync.conflict.conflictingFields"
             txOptions={{ count: conflict.conflictFields.length }}
           />
 

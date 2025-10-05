@@ -60,7 +60,7 @@ function PhaseBreakdownItem({
   durationDays: number;
   taskCount: number;
   getPhaseLabel: (phase: GrowPhase) => string;
-}) {
+}): React.JSX.Element {
   const { t } = useTranslation();
   return (
     <View className="flex-row items-center justify-between rounded-lg bg-neutral-50 px-3 py-2 dark:bg-charcoal-800">
@@ -94,7 +94,7 @@ function PlaybookCardHeader({
   name: string;
   setup: PlaybookSetup;
   setupLabels: Record<PlaybookSetup, string>;
-}) {
+}): React.JSX.Element {
   return (
     <View className="mb-3 flex-row items-center justify-between">
       <Text className="flex-1 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
@@ -117,7 +117,7 @@ function PlaybookCardStats({
   totalWeeks: number;
   totalTasks: number;
   t: (key: string, options?: any) => string;
-}) {
+}): React.JSX.Element {
   return (
     <View className="mb-3 flex-row items-center gap-4">
       <View className="flex-row items-center">
@@ -144,7 +144,7 @@ function PlaybookCardBreakdown({
   phaseBreakdown: PlaybookPreview['phaseBreakdown'];
   getPhaseLabel: (phase: GrowPhase) => string;
   t: (key: string) => string;
-}) {
+}): React.JSX.Element {
   return (
     <View className="gap-2">
       <Text className="text-xs font-medium uppercase text-neutral-500 dark:text-neutral-400">
@@ -169,7 +169,7 @@ function PlaybookCardEstimated({
   estimatedStartDate?: string;
   estimatedEndDate?: string;
   t: (key: string, options?: any) => string;
-}) {
+}): React.JSX.Element | null {
   if (!estimatedStartDate || !estimatedEndDate) return null;
   return (
     <View className="mt-3 rounded-lg bg-primary-50 p-2 dark:bg-primary-900/10">
@@ -187,7 +187,7 @@ export function PlaybookSelectionCard({
   preview,
   onPress,
   className = '',
-}: PlaybookSelectionCardProps) {
+}: PlaybookSelectionCardProps): JSX.Element {
   const { t } = useTranslation();
   const setupLabels = React.useMemo(
     () => ({

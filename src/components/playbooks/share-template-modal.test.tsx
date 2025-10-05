@@ -4,6 +4,37 @@ import { cleanup, screen, setup, waitFor } from '@/lib/test-utils';
 
 import { ShareTemplateModal } from './share-template-modal';
 
+// Mock react-i18next
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: any) => {
+      // Return actual translations for share template keys
+      const translations: Record<string, string> = {
+        'playbooks.shareTemplate.title': 'Share Playbook',
+        'playbooks.shareTemplate.subtitle':
+          'Share your customized playbook with the community. All personal information will be automatically removed.',
+        'playbooks.shareTemplate.authorHandle': 'Author Handle *',
+        'playbooks.shareTemplate.description': 'Description (Optional)',
+        'playbooks.shareTemplate.license': 'License',
+        'playbooks.shareTemplate.licenseText': options?.license
+          ? `${options.license} - Creative Commons Attribution-ShareAlike`
+          : 'CC-BY-SA - Creative Commons Attribution-ShareAlike',
+        'playbooks.shareTemplate.licenseDescription':
+          'Others can use and modify your playbook with attribution',
+        'playbooks.shareTemplate.privacyNotice':
+          'ℹ️ All personal information, plant names, and custom notes will be automatically removed before sharing.',
+        'playbooks.shareTemplate.placeholderHandle': 'your_handle',
+        'playbooks.shareTemplate.placeholderDescription':
+          'Describe your playbook...',
+        'playbooks.shareTemplate.share': 'Share',
+        'playbooks.shareTemplate.sharing': 'Sharing...',
+        'common.cancel': 'Cancel',
+      };
+      return translations[key] || key;
+    },
+  }),
+}));
+
 afterEach(cleanup);
 
 const mockPlaybook = {

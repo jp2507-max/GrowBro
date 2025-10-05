@@ -2,8 +2,31 @@ import React from 'react';
 
 import { cleanup, screen, setup } from '@/lib/test-utils';
 import type { TaskModel } from '@/lib/watermelon-models/task';
+import type { TaskStatus } from '@/types';
 
 import { PhaseTimeline } from './phase-timeline';
+
+// Mock react-i18next
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, _options?: any) => {
+      // For testing, return the English translations
+      if (key === 'playbooks.overdue') {
+        return 'Overdue';
+      }
+      if (key === 'playbook.noTasks') {
+        return 'No tasks found';
+      }
+      if (key === 'playbook.status.current') {
+        return 'Current';
+      }
+      if (key.startsWith('phases.')) {
+        return key.replace('phases.', ''); // Return just the phase name
+      }
+      return key; // Fallback to return the key itself
+    },
+  }),
+}));
 
 afterEach(cleanup);
 
@@ -12,29 +35,33 @@ const mockTasks: TaskModel[] = [
   {
     id: 'task-1',
     title: 'Water seedlings',
-    dueDate: '2024-01-15T10:00:00.000Z',
-    isCompleted: false,
-    isPending: true,
-    isOverdue: false,
-    phaseIndex: 0,
+    dueAtLocal: '2024-01-15T10:00:00.000+00:00',
+    dueAtUtc: '2024-01-15T10:00:00.000Z',
+    timezone: 'UTC',
+    status: 'pending' as TaskStatus,
     metadata: {
       phase: 'seedling',
       taskType: 'water',
     },
-  } as TaskModel,
+    createdAt: new Date('2024-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2024-01-01T00:00:00.000Z'),
+    phaseIndex: 0,
+  } as unknown as TaskModel,
   {
     id: 'task-2',
     title: 'Check pH levels',
-    dueDate: '2024-01-10T10:00:00.000Z', // Past date to make it overdue
-    isCompleted: false,
-    isPending: true,
-    isOverdue: true,
-    phaseIndex: 0,
+    dueAtLocal: '2024-01-10T10:00:00.000+00:00', // Past date to make it overdue
+    dueAtUtc: '2024-01-10T10:00:00.000Z',
+    timezone: 'UTC',
+    status: 'pending' as TaskStatus,
     metadata: {
       phase: 'seedling',
       taskType: 'monitor',
     },
-  } as TaskModel,
+    createdAt: new Date('2024-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2024-01-01T00:00:00.000Z'),
+    phaseIndex: 0,
+  } as unknown as TaskModel,
 ];
 
 describe('PhaseTimeline', () => {
@@ -77,7 +104,7 @@ describe('PhaseTimeline', () => {
     test('renders empty state when no tasks', async () => {
       setup(<PhaseTimeline tasks={[]} currentPhaseIndex={0} timezone="UTC" />);
 
-      expect(screen.getByText('playbook.noTasks')).toBeOnTheScreen();
+      expect(screen.getByText('No tasks found')).toBeOnTheScreen();
     });
 
     test('renders phase status indicators correctly', async () => {
@@ -86,7 +113,7 @@ describe('PhaseTimeline', () => {
       );
 
       // Current phase should show "Current"
-      expect(screen.getByText('playbook.status.current')).toBeOnTheScreen();
+      expect(screen.getByText('Current')).toBeOnTheScreen();
     });
   });
 

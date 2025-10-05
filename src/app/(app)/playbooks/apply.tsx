@@ -10,6 +10,8 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 
+import { client } from '@/api/common';
+import type { Plant as ApiPlant } from '@/api/plants/types';
 import { Button, SafeAreaView, Text, View } from '@/components/ui';
 import { usePlaybookService } from '@/lib/playbooks';
 
@@ -64,19 +66,96 @@ function PlantSelectionList({
   );
 }
 
+function useCreatePlantHandler({
+  params,
+  router,
+}: {
+  params: { playbookId: string };
+  router: ReturnType<typeof useRouter>;
+}): () => void {
+  const handleCreatePlant = React.useCallback(() => {
+    router.push({
+      pathname: '/plants/create',
+      params: { returnTo: '/playbooks/apply', playbookId: params.playbookId },
+    });
+  }, [params.playbookId, router]);
+
+  return handleCreatePlant;
+}
+
+function usePlantLoader(): {
+  plants: Plant[];
+  loading: boolean;
+} {
+  const [plants, setPlants] = React.useState<Plant[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let isMounted = true;
+
+    const loadPlants = async () => {
+      try {
+        setLoading(true);
+        const response = await client.get<ApiPlant[]>('plants');
+        const apiPlants = response.data;
+
+        if (!isMounted) return;
+
+        // Transform API plants to component Plant shape
+        const transformedPlants: Plant[] = apiPlants
+          .filter((plant) => plant.id && plant.name) // Ensure required fields are present
+          .map((plant) => ({
+            id: plant.id,
+            name: plant.name,
+            strain: plant.strain,
+            startDate: plant.plantedAt || new Date().toISOString(), // Use plantedAt as startDate, fallback to now
+          }));
+
+        setPlants(transformedPlants);
+      } catch (error) {
+        console.error('Failed to load plants:', error);
+        // Optionally show user-friendly error message
+        if (isMounted) {
+          showMessage({
+            message: 'Failed to load plants',
+            description: 'Please check your connection and try again',
+            type: 'danger',
+          });
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadPlants();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  return { plants, loading };
+}
+
 function useApplyHandlers({
   selectedPlantId,
   params,
   playbookService,
   router,
   setApplying,
+  idempotencyKey,
 }: {
   selectedPlantId: string | null;
   params: { playbookId: string };
   playbookService: ReturnType<typeof usePlaybookService>;
   router: ReturnType<typeof useRouter>;
   setApplying: (value: boolean) => void;
-}) {
+  idempotencyKey: string;
+}): {
+  handleApply: () => Promise<void>;
+} {
   const { t } = useTranslation();
 
   const handleApply = React.useCallback(async () => {
@@ -89,7 +168,7 @@ function useApplyHandlers({
         params.playbookId,
         selectedPlantId,
         {
-          idempotencyKey: `${params.playbookId}-${selectedPlantId}-${Date.now()}`,
+          idempotencyKey,
         }
       );
 
@@ -121,16 +200,10 @@ function useApplyHandlers({
     router,
     t,
     setApplying,
+    idempotencyKey,
   ]);
 
-  const handleCreatePlant = React.useCallback(() => {
-    router.push({
-      pathname: '/plants/create',
-      params: { returnTo: '/playbooks/apply', playbookId: params.playbookId },
-    });
-  }, [params.playbookId, router]);
-
-  return { handleApply, handleCreatePlant };
+  return { handleApply };
 }
 
 function EmptyPlantState({ onCreatePlant }: { onCreatePlant: () => void }) {
@@ -206,42 +279,30 @@ function ApplyPlaybookScreen() {
   const params = useLocalSearchParams<{ playbookId: string }>();
   const playbookService = usePlaybookService();
 
-  const [plants, setPlants] = React.useState<Plant[]>([]);
   const [selectedPlantId, setSelectedPlantId] = React.useState<string | null>(
     null
   );
-  const [loading, setLoading] = React.useState(true);
   const [applying, setApplying] = React.useState(false);
+  const { plants, loading } = usePlantLoader();
 
-  const { handleApply, handleCreatePlant } = useApplyHandlers({
+  // Generate stable idempotency key once on mount for retries
+  const idempotencyKeyRef = React.useRef<string>(
+    `${params.playbookId}-${Date.now()}`
+  );
+
+  const { handleApply } = useApplyHandlers({
     selectedPlantId,
     params,
     playbookService,
     router,
     setApplying,
+    idempotencyKey: idempotencyKeyRef.current,
   });
 
-  React.useEffect(() => {
-    const loadPlants = async () => {
-      try {
-        setLoading(true);
-        setPlants([
-          {
-            id: '1',
-            name: 'Northern Lights #1',
-            strain: 'Northern Lights',
-            startDate: new Date().toISOString(),
-          },
-        ]);
-      } catch (error) {
-        console.error('Failed to load plants:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadPlants();
-  }, []);
+  const handleCreatePlant = useCreatePlantHandler({
+    params,
+    router,
+  });
 
   if (loading) {
     return (
