@@ -25,7 +25,7 @@ function useShareTemplateForm(
   onSuccess: () => void
 ): {
   control: Control<ShareTemplateFormData>;
-  handleSubmit: UseFormHandleSubmit<ShareTemplateFormData>;
+  handleSubmit: ReturnType<UseFormHandleSubmit<ShareTemplateFormData>>;
   formState: UseFormStateReturn<ShareTemplateFormData>;
   isPending: boolean;
 } {

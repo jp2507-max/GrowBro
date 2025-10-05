@@ -165,6 +165,15 @@ const FIELD_TRANSLATION_KEYS: Partial<Record<string, TxKeyPath>> = {
   genetics: 'sync.conflict.field.genetics',
 };
 
+// Get localized field name with fallback to displayNameMap or original field
+function getFieldDisplayName(fieldName: string): string {
+  const translationKey = FIELD_TRANSLATION_KEYS[fieldName];
+  if (translationKey) {
+    return translate(translationKey);
+  }
+  return displayNameMap[fieldName] || fieldName;
+}
+
 type ConflictFieldCardProps = {
   field: string;
   localValue: unknown;
@@ -176,15 +185,6 @@ function ConflictFieldCard({
   localValue,
   remoteValue,
 }: ConflictFieldCardProps): React.ReactElement {
-  // Get localized field name with fallback to displayNameMap or original field
-  const getFieldDisplayName = (fieldName: string): string => {
-    const translationKey = FIELD_TRANSLATION_KEYS[fieldName];
-    if (translationKey) {
-      return translate(translationKey);
-    }
-    return displayNameMap[fieldName] || fieldName;
-  };
-
   return (
     <View className="mt-3 rounded-xl border border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
       {/* Field Name */}
@@ -236,6 +236,9 @@ function ConflictFieldCard({
     </View>
   );
 }
+
+// Exported for testing
+export { ConflictFieldCard };
 
 function ConflictWarning(): React.ReactElement {
   return (
