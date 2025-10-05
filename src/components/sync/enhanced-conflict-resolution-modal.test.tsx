@@ -22,7 +22,7 @@ describe('ConflictFieldCard', () => {
       });
     });
 
-    test('returns displayNameMap fallback when translation key does not exist', async () => {
+    test('returns raw field name fallback when translation key does not exist', async () => {
       setup(
         <ConflictFieldCard
           field="unknown_field"
