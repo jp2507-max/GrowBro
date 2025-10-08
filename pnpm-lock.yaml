@@ -62,6 +62,9 @@ importers:
       expo-background-task:
         specifier: ~1.0.8
         version: 1.0.8(expo@54.0.12)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))
+      expo-battery:
+        specifier: ~10.0.7
+        version: 10.0.7(expo@54.0.12)(react@19.1.0)
       expo-blur:
         specifier: ~15.0.7
         version: 15.0.7(expo@54.0.12)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
@@ -77,6 +80,9 @@ importers:
       expo-dev-client:
         specifier: ~6.0.13
         version: 6.0.13(expo@54.0.12)
+      expo-file-system:
+        specifier: ~19.0.16
+        version: 19.0.16(expo@54.0.12)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))
       expo-font:
         specifier: ~14.0.8
         version: 14.0.8(expo@54.0.12)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
@@ -101,6 +107,9 @@ importers:
       expo-router:
         specifier: ~6.0.10
         version: 6.0.10(5c9b50b2df1068e4e78adcd9280b5685)
+      expo-secure-store:
+        specifier: ~15.0.7
+        version: 15.0.7(expo@54.0.12)
       expo-splash-screen:
         specifier: ~31.0.10
         version: 31.0.10(expo@54.0.12)
@@ -4269,6 +4278,12 @@ packages:
     peerDependencies:
       expo: '*'
 
+  expo-battery@10.0.7:
+    resolution: {integrity: sha512-3Sf+L+9/oZyefz/nqnvHC73FqZ9oX10ANa1SQ6dC7xet8Zk2SLYOsY3FTwg0xEV9iH8SANfBNRAxWa/Z4hqKGA==}
+    peerDependencies:
+      expo: '*'
+      react: '*'
+
   expo-blur@15.0.7:
     resolution: {integrity: sha512-SugQQbQd+zRPy8z2G5qDD4NqhcD7srBF7fN7O7yq6q7ZFK59VWvpDxtMoUkmSfdxgqONsrBN/rLdk00USADrMg==}
     peerDependencies:
@@ -4430,6 +4445,11 @@ packages:
         optional: true
       react-server-dom-webpack:
         optional: true
+
+  expo-secure-store@15.0.7:
+    resolution: {integrity: sha512-9q7+G1Zxr5P6J5NRIlm86KulvmYwc6UnQlYPjQLDu1drDnerz6AT6l884dPu29HgtDTn4rR0heYeeGFhMKM7/Q==}
+    peerDependencies:
+      expo: '*'
 
   expo-server@1.0.0:
     resolution: {integrity: sha512-fAAI0ZXxayc2Rt5KfQjULv+TFreuLRZ+hdpc5TxZJ7CDpW1ZIqaVzELHh1rYTRVEBDFDiCBXtioS9WWTEAX+fg==}
@@ -13294,6 +13314,11 @@ snapshots:
     transitivePeerDependencies:
       - react-native
 
+  expo-battery@10.0.7(expo@54.0.12)(react@19.1.0):
+    dependencies:
+      expo: 54.0.12(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.10)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
+      react: 19.1.0
+
   expo-blur@15.0.7(expo@54.0.12)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0):
     dependencies:
       expo: 54.0.12(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.10)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
@@ -13489,6 +13514,10 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
       - supports-color
+
+  expo-secure-store@15.0.7(expo@54.0.12):
+    dependencies:
+      expo: 54.0.12(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.10)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
 
   expo-server@1.0.0: {}
 

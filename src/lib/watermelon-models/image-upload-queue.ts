@@ -8,6 +8,10 @@ export class ImageUploadQueueModel extends Model {
   @text('remote_path') remotePath?: string;
   @text('task_id') taskId?: string;
   @text('plant_id') plantId?: string;
+  @text('harvest_id') harvestId?: string;
+  @text('variant') variant?: 'original' | 'resized' | 'thumbnail';
+  @text('hash') hash?: string;
+  @text('extension') extension?: string;
   @text('filename') filename?: string;
   @text('mime_type') mimeType?: string;
   @text('status') status!: 'pending' | 'uploading' | 'completed' | 'failed';

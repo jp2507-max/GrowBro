@@ -281,6 +281,136 @@
     "unknown_description": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
     "unknown_title": "Fehler"
   },
+  "harvest": {
+    "accessibility": {
+      "cancelButton": "Abbrechen und Modal schließen",
+      "cancelHint": "Änderungen verwerfen und Ernte-Modal schließen",
+      "dryWeightInput": "Trockengewicht-Eingabe",
+      "notesHint": "Optionales Notizenfeld für zusätzliche Ernte-Details",
+      "notesInput": "Notizen-Eingabe",
+      "submitButton": "Erntedaten speichern",
+      "submitHint": "Ernte-Daten in Ihrer Pflanzen-Akte speichern",
+      "trimmingsWeightInput": "Verschnitt-Gewicht-Eingabe",
+      "unitToggle": "Zwischen Gramm und Unzen wechseln",
+      "wetWeightInput": "Nassgewicht-Eingabe"
+    },
+    "actions": {
+      "advance": "Zu {{stage}} fortschreiten",
+      "advance_hint": "Doppeltippen, um zur {{stage}}-Phase zu wechseln",
+      "override": "Zu Phase springen",
+      "override_hint": "Doppeltippen, um zu einer späteren Phase zu springen",
+      "revert": "Phase zurücksetzen",
+      "revert_hint": "Doppeltippen, um zur vorherigen Phase zurückzukehren",
+      "undo": "Rückgängig",
+      "undo_expires": "Rückgängig läuft in {{seconds}}s ab",
+      "undo_hint": "Doppeltippen, um letzte Phasenänderung rückgängig zu machen"
+    },
+    "curing_checklist": {
+      "aroma": "Aroma-Prüfung",
+      "aroma_description": "Blüten sollten ein angenehmes Aroma haben, nicht schimmelig oder heuartig",
+      "jar_humidity": "Glas-Luftfeuchtigkeit",
+      "jar_humidity_description": "Luftfeuchtigkeit sollte zwischen 55-65% RH für optimale Aushärtung liegen",
+      "stem_snap": "Stängel-Knack-Test",
+      "stem_snap_description": "Stängel sollten sauber brechen statt sich zu biegen"
+    },
+    "errors": {
+      "failed": "Phase-Aktualisierung fehlgeschlagen. Bitte versuche es erneut.",
+      "invalid_transition": "Ungültiger Phasenübergang",
+      "reason_required": "Grund ist für diese Aktion erforderlich",
+      "undo_expired": "Rückgängig-Zeitfenster abgelaufen. Verwende stattdessen Phase zurücksetzen."
+    },
+    "inventory": {
+      "concurrent_finalize_toast": "Inventar bereits von einem anderen Prozess abgeschlossen",
+      "finalize_curing": "Aushärtung abschließen & Inventar erstellen",
+      "finalize_success_toast": "Aushärtung abgeschlossen und Inventar erfolgreich erstellt",
+      "missing_dry_weight": "Trockengewicht muss vor Abschluss der Aushärtung gesetzt werden",
+      "missing_dry_weight_cta": "Trockengewicht aktualisieren",
+      "retry_failed": "Aushärtung konnte nach mehreren Versuchen nicht abgeschlossen werden. Bitte überprüfe deine Verbindung und versuche es erneut."
+    },
+    "modals": {
+      "override": {
+        "cancel": "Abbrechen",
+        "confirm": "Zu Phase springen",
+        "reason_label": "Grund (erforderlich)",
+        "reason_placeholder": "Erkläre, warum du Phasen überspringen musst...",
+        "reason_required": "Bitte gib einen Grund für das Überspringen an",
+        "subtitle": "Diese Aktion wird im Audit-Protokoll erfasst",
+        "target_stage_label": "Springen zu Phase",
+        "title": "Zu späterer Phase springen"
+      },
+      "revert": {
+        "cancel": "Abbrechen",
+        "confirm": "Phase zurücksetzen",
+        "reason_label": "Grund (erforderlich)",
+        "reason_placeholder": "Erkläre, warum du zurücksetzen musst...",
+        "reason_required": "Bitte gib einen Grund für das Zurücksetzen an",
+        "subtitle": "Diese Aktion wird im Audit-Protokoll erfasst",
+        "target_stage_label": "Zurücksetzen auf Phase",
+        "title": "Zur vorherigen Phase zurückkehren"
+      }
+    },
+    "photo": {
+      "accessibility": {
+        "add_photo_hint": "Doppeltippen, um ein Ernte-Foto von Kamera oder Galerie hinzuzufügen"
+      },
+      "actions": {
+        "add_photo": "Foto hinzufügen",
+        "choose_from_library": "Aus Galerie wählen",
+        "dismiss_error": "Verwerfen",
+        "free_up_space": "Speicherplatz freigeben",
+        "take_photo": "Foto aufnehmen"
+      },
+      "alerts": {
+        "photo_options_title": "Foto hinzufügen"
+      },
+      "errors": {
+        "camera_permission_denied": "Kamera-Berechtigung verweigert",
+        "capture_failed": "Foto konnte nicht aufgenommen werden",
+        "no_uri": "Keine Foto-URI zurückgegeben",
+        "processing_failed": "Foto konnte nicht verarbeitet werden",
+        "select_failed": "Foto konnte nicht ausgewählt werden",
+        "storage_failed": "Foto konnte nicht gespeichert werden",
+        "upload_failed": "Foto konnte nicht hochgeladen werden",
+        "upload_missing_metadata": "Foto-Metadaten sind unvollständig",
+        "upload_not_authenticated": "Sie müssen angemeldet sein, um Fotos hochzuladen"
+      },
+      "status": {
+        "processing": "Foto wird verarbeitet...",
+        "upload_complete": "Fotos erfolgreich hochgeladen",
+        "upload_queued": "{{count}} Fotos für Upload eingereiht",
+        "uploading": "{{count}} Fotos werden hochgeladen..."
+      },
+      "storage": {
+        "available": "{{size}} verfügbar",
+        "cleanup_complete": "Bereinigung abgeschlossen",
+        "cleanup_success": "Speicherbereinigung erfolgreich abgeschlossen",
+        "duration": "Abgeschlossen in {{ms}}ms",
+        "files_deleted": "{{count}} Dateien gelöscht",
+        "orphans_removed": "{{count}} verwaiste Dateien entfernt",
+        "space_freed": "{{amount}} freigegeben",
+        "title": "Fotospeicher",
+        "used": "{{size}} verwendet",
+        "used_of_total": "{{used}} von {{total}} verwendet"
+      },
+      "success": "Foto erfolgreich hinzugefügt"
+    },
+    "stage_tracker": {
+      "completed": "Abgeschlossen",
+      "elapsed": "{{days}}T {{hours}}Std {{minutes}}Min vergangen",
+      "elapsed_days_one": "{{count}} Tag vergangen",
+      "elapsed_days_other": "{{count}} Tage vergangen",
+      "on_track": "Im Zeitplan",
+      "overdue": "{{days}} Tage überfällig",
+      "target": "Ziel: {{days}} Tage",
+      "title": "Ernte-Fortschritt"
+    },
+    "stages": {
+      "curing": "Aushärten",
+      "drying": "Trocknen",
+      "harvest": "Ernte",
+      "inventory": "Inventar"
+    }
+  },
   "home": {
     "open_settings": "Einstellungen öffnen",
     "share_update_cta": "Update teilen",

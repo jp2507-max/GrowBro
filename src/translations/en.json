@@ -281,6 +281,136 @@
     "unknown_description": "An unexpected error occurred. Please try again.",
     "unknown_title": "Error"
   },
+  "harvest": {
+    "accessibility": {
+      "cancelButton": "Cancel and close modal",
+      "cancelHint": "Discard changes and close the harvest modal",
+      "dryWeightInput": "Dry weight input",
+      "notesHint": "Optional notes field for additional harvest details",
+      "notesInput": "Notes input",
+      "submitButton": "Save harvest data",
+      "submitHint": "Save the harvest data to your plant record",
+      "trimmingsWeightInput": "Trimmings weight input",
+      "unitToggle": "Toggle between grams and ounces",
+      "wetWeightInput": "Wet weight input"
+    },
+    "actions": {
+      "advance": "Advance to {{stage}}",
+      "advance_hint": "Double-tap to advance to {{stage}} stage",
+      "override": "Skip to Stage",
+      "override_hint": "Double-tap to skip to a later stage",
+      "revert": "Revert Stage",
+      "revert_hint": "Double-tap to revert to previous stage",
+      "undo": "Undo",
+      "undo_expires": "Undo expires in {{seconds}}s",
+      "undo_hint": "Double-tap to undo last stage change"
+    },
+    "curing_checklist": {
+      "aroma": "Aroma Check",
+      "aroma_description": "Buds should have a pleasant aroma, not moldy or hay-like smell",
+      "jar_humidity": "Jar Humidity",
+      "jar_humidity_description": "Humidity should be between 55-65% RH for optimal curing",
+      "stem_snap": "Stem Snap Test",
+      "stem_snap_description": "Stems should snap cleanly rather than bend"
+    },
+    "errors": {
+      "failed": "Failed to update stage. Please try again.",
+      "invalid_transition": "Invalid stage transition",
+      "reason_required": "Reason is mandatory for this action",
+      "undo_expired": "Undo window expired. Use Revert Stage instead."
+    },
+    "inventory": {
+      "concurrent_finalize_toast": "Inventory already finalized by another process",
+      "finalize_curing": "Finalize Curing & Create Inventory",
+      "finalize_success_toast": "Curing completed and inventory created successfully",
+      "missing_dry_weight": "Dry weight must be set before finalizing curing",
+      "missing_dry_weight_cta": "Update Dry Weight",
+      "retry_failed": "Failed to finalize curing after multiple attempts. Please check your connection and try again."
+    },
+    "modals": {
+      "override": {
+        "cancel": "Cancel",
+        "confirm": "Skip to Stage",
+        "reason_label": "Reason (required)",
+        "reason_placeholder": "Explain why you need to skip stages...",
+        "reason_required": "Please provide a reason for skipping",
+        "subtitle": "This action will be recorded in the audit trail",
+        "target_stage_label": "Skip to stage",
+        "title": "Skip to Later Stage"
+      },
+      "revert": {
+        "cancel": "Cancel",
+        "confirm": "Revert Stage",
+        "reason_label": "Reason (required)",
+        "reason_placeholder": "Explain why you need to revert...",
+        "reason_required": "Please provide a reason for reverting",
+        "subtitle": "This action will be recorded in the audit trail",
+        "target_stage_label": "Revert to stage",
+        "title": "Revert to Previous Stage"
+      }
+    },
+    "photo": {
+      "accessibility": {
+        "add_photo_hint": "Double-tap to add a harvest photo from camera or library"
+      },
+      "actions": {
+        "add_photo": "Add Photo",
+        "choose_from_library": "Choose from Library",
+        "dismiss_error": "Dismiss",
+        "free_up_space": "Free Up Space",
+        "take_photo": "Take Photo"
+      },
+      "alerts": {
+        "photo_options_title": "Add Photo"
+      },
+      "errors": {
+        "camera_permission_denied": "Camera permission denied",
+        "capture_failed": "Failed to capture photo",
+        "no_uri": "No photo URI returned",
+        "processing_failed": "Failed to process photo",
+        "select_failed": "Failed to select photo",
+        "storage_failed": "Failed to store photo",
+        "upload_failed": "Failed to upload photo",
+        "upload_missing_metadata": "Photo metadata is incomplete",
+        "upload_not_authenticated": "You must be logged in to upload photos"
+      },
+      "status": {
+        "processing": "Processing photo...",
+        "upload_complete": "Photos uploaded successfully",
+        "upload_queued": "{{count}} photos queued for upload",
+        "uploading": "Uploading {{count}} photos..."
+      },
+      "storage": {
+        "available": "{{size}} available",
+        "cleanup_complete": "Cleanup complete",
+        "cleanup_success": "Storage cleanup completed successfully",
+        "duration": "Completed in {{ms}}ms",
+        "files_deleted": "{{count}} files deleted",
+        "orphans_removed": "{{count}} orphaned files removed",
+        "space_freed": "Freed {{amount}}",
+        "title": "Photo Storage",
+        "used": "{{size}} used",
+        "used_of_total": "{{used}} of {{total}} used"
+      },
+      "success": "Photo added successfully"
+    },
+    "stage_tracker": {
+      "completed": "Completed",
+      "elapsed": "{{days}}d {{hours}}h {{minutes}}m elapsed",
+      "elapsed_days_one": "{{count}} day elapsed",
+      "elapsed_days_other": "{{count}} days elapsed",
+      "on_track": "On track",
+      "overdue": "{{days}} days overdue",
+      "target": "Target: {{days}} days",
+      "title": "Harvest Progress"
+    },
+    "stages": {
+      "curing": "Curing",
+      "drying": "Drying",
+      "harvest": "Harvest",
+      "inventory": "Inventory"
+    }
+  },
   "home": {
     "open_settings": "Open Settings",
     "share_update_cta": "Share update",

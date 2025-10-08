@@ -227,10 +227,8 @@ export function StrainsListWithCache({
       keyExtractor={keyExtractor}
       getItemType={getItemType}
       overrideItemLayout={overrideItemLayout}
-      // Fine-tuned based on actual measurements:
-      // Image: 192px (h-48), Content: ~88px (badges + title + description)
-      // Total: ~280px + padding/margins
-      estimatedItemSize={flashListConfig.estimatedItemSize}
+      // FlashList v2: No estimatedItemSize needed - auto-calculated
+      // Fine-tuned performance based on device capabilities
       onEndReached={onEndReached}
       onEndReachedThreshold={0.7}
       onScroll={handleScroll}

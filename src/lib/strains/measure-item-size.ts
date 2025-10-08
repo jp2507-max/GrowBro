@@ -1,15 +1,16 @@
 /**
- * Utility to measure actual FlashList item sizes for performance optimization
+ * Utility to measure actual FlashList v2 item sizes for performance optimization
+ * FlashList v2 (targeting New Architecture) no longer requires estimatedItemSize
  */
 
 import { Platform } from 'react-native';
 
 /**
- * Configuration interface for FlashList performance optimization
+ * Configuration interface for FlashList v2 performance optimization
+ * Note: estimatedItemSize removed in v2 - FlashList auto-calculates
  */
 interface FlashListConfig {
   drawDistance: number;
-  estimatedItemSize: number;
   removeClippedSubviews: boolean;
   maxToRenderPerBatch: number;
   windowSize: number;
@@ -17,7 +18,8 @@ interface FlashListConfig {
 }
 
 /**
- * Measured dimensions for StrainCard component
+ * Measured dimensions for StrainCard component (for reference/documentation)
+ * FlashList v2 calculates sizes automatically - these are for layout debugging only
  * Based on actual layout measurements:
  * - Image height: 192px (h-48 = 12 * 16 = 192)
  * - Content padding: 16px (p-4 = 4 * 4 = 16)
@@ -39,7 +41,9 @@ export const STRAIN_CARD_DIMENSIONS = {
 } as const;
 
 /**
- * Calculate estimated item size based on content
+ * Calculate expected item size for reference/debugging
+ * Note: FlashList v2 no longer needs this - kept for documentation only
+ * @deprecated Use for debugging only - FlashList v2 auto-calculates sizes
  */
 export function calculateEstimatedItemSize(hasDescription: boolean): number {
   const {
@@ -66,14 +70,14 @@ export function calculateEstimatedItemSize(hasDescription: boolean): number {
 }
 
 /**
- * Get optimized FlashList configuration for low-memory devices
+ * Get optimized FlashList v2 configuration
+ * Note: Removed estimatedItemSize - FlashList v2 calculates automatically
  */
 export function getOptimizedFlashListConfig(): FlashListConfig {
   const isLowMemoryDevice = Platform.OS === 'android' && Platform.Version < 29;
 
   return {
     drawDistance: isLowMemoryDevice ? 400 : 500,
-    estimatedItemSize: 288, // Average size with description
     removeClippedSubviews: true,
     maxToRenderPerBatch: isLowMemoryDevice ? 5 : 10,
     windowSize: isLowMemoryDevice ? 5 : 10,

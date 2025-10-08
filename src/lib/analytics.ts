@@ -103,16 +103,34 @@ export type AnalyticsEvents = {
     code?: string | number;
   };
   sync_conflict: {
-    table: 'series' | 'tasks' | 'occurrence_overrides';
+    table:
+      | 'series'
+      | 'tasks'
+      | 'occurrence_overrides'
+      | 'harvests'
+      | 'inventory'
+      | 'harvest_audits';
     count: number;
   };
   sync_conflict_resolved: {
-    table: 'series' | 'tasks' | 'occurrence_overrides';
+    table:
+      | 'series'
+      | 'tasks'
+      | 'occurrence_overrides'
+      | 'harvests'
+      | 'inventory'
+      | 'harvest_audits';
     strategy: 'keep-local' | 'accept-server';
     field_count: number;
   };
   sync_conflict_dismissed: {
-    table: 'series' | 'tasks' | 'occurrence_overrides';
+    table:
+      | 'series'
+      | 'tasks'
+      | 'occurrence_overrides'
+      | 'harvests'
+      | 'inventory'
+      | 'harvest_audits';
     field_count: number;
   };
   sync_checkpoint_age_ms: {

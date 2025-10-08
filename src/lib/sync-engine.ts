@@ -21,7 +21,13 @@ import { getSyncState } from '@/lib/sync/sync-state';
 import { TaskNotificationService } from '@/lib/task-notifications';
 import { database } from '@/lib/watermelon';
 
-type TableName = 'series' | 'tasks' | 'occurrence_overrides';
+type TableName =
+  | 'series'
+  | 'tasks'
+  | 'occurrence_overrides'
+  | 'harvests'
+  | 'inventory'
+  | 'harvest_audits';
 
 type ChangesForTable<T = any> = {
   created: T[];
@@ -70,7 +76,14 @@ export type SyncResult = {
   serverTimestamp: number | null;
 };
 
-const SYNC_TABLES: TableName[] = ['series', 'tasks', 'occurrence_overrides'];
+const SYNC_TABLES: TableName[] = [
+  'series',
+  'tasks',
+  'occurrence_overrides',
+  'harvests',
+  'inventory',
+  'harvest_audits',
+];
 const MAX_PUSH_CHUNK_PER_TABLE = 1000; // per-batch limit (Req 6.2)
 const CHECKPOINT_KEY = 'sync.lastPulledAt';
 const API_BASE =
@@ -204,6 +217,21 @@ function buildPushBatches(
           updated: slice(changes.occurrence_overrides.updated),
           deleted: slice(changes.occurrence_overrides.deleted),
         },
+        harvests: {
+          created: slice(changes.harvests.created),
+          updated: slice(changes.harvests.updated),
+          deleted: slice(changes.harvests.deleted),
+        },
+        inventory: {
+          created: slice(changes.inventory.created),
+          updated: slice(changes.inventory.updated),
+          deleted: slice(changes.inventory.deleted),
+        },
+        harvest_audits: {
+          created: slice(changes.harvest_audits.created),
+          updated: slice(changes.harvest_audits.updated),
+          deleted: slice(changes.harvest_audits.deleted),
+        },
       },
     };
     if (countChanges(batch.changes) > 0) out.push(batch);
@@ -275,6 +303,40 @@ async function sendPushBatch(
   }
 }
 
+function bucketRowIntoChanges(params: {
+  table: TableName;
+  row: any;
+  lastPulledAt: number | null;
+  changes: ChangesByTable;
+}): void {
+  const { table, row, lastPulledAt, changes } = params;
+  const createdAtMs = toMillis(row.createdAt);
+  const updatedAtMs = toMillis(row.updatedAt);
+  const deletedAtMs = toMillis(row.deletedAt);
+
+  const hasDeleted = deletedAtMs !== null;
+  const afterCheckpoint = (ts: number | null) =>
+    lastPulledAt === null ? true : ts !== null && ts > lastPulledAt;
+
+  if (hasDeleted) {
+    // Tombstone
+    if (afterCheckpoint(deletedAtMs)) {
+      changes[table].deleted.push({
+        id: row.id,
+        deleted_at_client:
+          row.deletedAt.toISOString?.() ?? String(row.deletedAt),
+      });
+    }
+    return;
+  }
+
+  const isCreated = afterCheckpoint(createdAtMs);
+  const isUpdated = afterCheckpoint(updatedAtMs) && !isCreated;
+
+  if (isCreated) changes[table].created.push(serializeRecord(row));
+  else if (isUpdated) changes[table].updated.push(serializeRecord(row));
+}
+
 async function collectLocalChanges(
   lastPulledAt: number | null
 ): Promise<ChangesByTable> {
@@ -282,51 +344,58 @@ async function collectLocalChanges(
     series: { created: [], updated: [], deleted: [] },
     tasks: { created: [], updated: [], deleted: [] },
     occurrence_overrides: { created: [], updated: [], deleted: [] },
+    harvests: { created: [], updated: [], deleted: [] },
+    inventory: { created: [], updated: [], deleted: [] },
+    harvest_audits: { created: [], updated: [], deleted: [] },
   };
 
   const repos = {
     tasks: database.collections.get('tasks' as any),
     series: database.collections.get('series' as any),
     overrides: database.collections.get('occurrence_overrides' as any),
+    harvests: database.collections.get('harvests' as any),
+    inventory: database.collections.get('inventory' as any),
+    harvestAudits: database.collections.get('harvest_audits' as any),
   } as const;
 
-  const [taskRows, seriesRows, overrideRows] = await Promise.all([
+  const [
+    taskRows,
+    seriesRows,
+    overrideRows,
+    harvestRows,
+    inventoryRows,
+    auditRows,
+  ] = await Promise.all([
     (repos.tasks as any).query().fetch(),
     (repos.series as any).query().fetch(),
     (repos.overrides as any).query().fetch(),
+    (repos.harvests as any).query().fetch(),
+    (repos.inventory as any).query().fetch(),
+    (repos.harvestAudits as any).query().fetch(),
   ]);
 
-  function bucketRow(table: TableName, row: any) {
-    const createdAtMs = toMillis(row.createdAt);
-    const updatedAtMs = toMillis(row.updatedAt);
-    const deletedAtMs = toMillis(row.deletedAt);
-
-    const hasDeleted = deletedAtMs !== null;
-    const afterCheckpoint = (ts: number | null) =>
-      lastPulledAt === null ? true : ts !== null && ts > lastPulledAt;
-
-    if (hasDeleted) {
-      // Tombstone
-      if (afterCheckpoint(deletedAtMs)) {
-        changes[table].deleted.push({
-          id: row.id,
-          deleted_at_client:
-            row.deletedAt.toISOString?.() ?? String(row.deletedAt),
-        });
-      }
-      return;
-    }
-
-    const isCreated = afterCheckpoint(createdAtMs);
-    const isUpdated = afterCheckpoint(updatedAtMs) && !isCreated;
-
-    if (isCreated) changes[table].created.push(serializeRecord(row));
-    else if (isUpdated) changes[table].updated.push(serializeRecord(row));
-  }
-
-  for (const r of seriesRows as any[]) bucketRow('series', r);
-  for (const r of taskRows as any[]) bucketRow('tasks', r);
-  for (const r of overrideRows as any[]) bucketRow('occurrence_overrides', r);
+  for (const r of seriesRows as any[])
+    bucketRowIntoChanges({ table: 'series', row: r, lastPulledAt, changes });
+  for (const r of taskRows as any[])
+    bucketRowIntoChanges({ table: 'tasks', row: r, lastPulledAt, changes });
+  for (const r of overrideRows as any[])
+    bucketRowIntoChanges({
+      table: 'occurrence_overrides',
+      row: r,
+      lastPulledAt,
+      changes,
+    });
+  for (const r of harvestRows as any[])
+    bucketRowIntoChanges({ table: 'harvests', row: r, lastPulledAt, changes });
+  for (const r of inventoryRows as any[])
+    bucketRowIntoChanges({ table: 'inventory', row: r, lastPulledAt, changes });
+  for (const r of auditRows as any[])
+    bucketRowIntoChanges({
+      table: 'harvest_audits',
+      row: r,
+      lastPulledAt,
+      changes,
+    });
   return changes;
 }
 
@@ -347,6 +416,154 @@ class PushConflictError extends Error {
   }
 }
 
+function getAllRepos() {
+  return {
+    tasks: database.collections.get('tasks' as any),
+    series: database.collections.get('series' as any),
+    overrides: database.collections.get('occurrence_overrides' as any),
+    harvests: database.collections.get('harvests' as any),
+    inventory: database.collections.get('inventory' as any),
+    harvestAudits: database.collections.get('harvest_audits' as any),
+  } as const;
+}
+
+async function applyUpsertsCoreTables(
+  changes: SyncResponse['changes']
+): Promise<{ applied: number; changedTaskIds: string[] }> {
+  const { applied: sC, changedTaskIds: sCIds } = await upsertBatch(
+    'series',
+    changes.series?.created ?? []
+  );
+  const { applied: sU, changedTaskIds: sUIds } = await upsertBatch(
+    'series',
+    changes.series?.updated ?? []
+  );
+  const { applied: tC, changedTaskIds: tCIds } = await upsertBatch(
+    'tasks',
+    changes.tasks?.created ?? []
+  );
+  const { applied: tU, changedTaskIds: tUIds } = await upsertBatch(
+    'tasks',
+    changes.tasks?.updated ?? []
+  );
+  const { applied: oC, changedTaskIds: oCIds } = await upsertBatch(
+    'occurrence_overrides',
+    changes.occurrence_overrides?.created ?? []
+  );
+  const { applied: oU, changedTaskIds: oUIds } = await upsertBatch(
+    'occurrence_overrides',
+    changes.occurrence_overrides?.updated ?? []
+  );
+
+  const applied = sC + sU + tC + tU + oC + oU;
+  const changedIds = [
+    ...sCIds,
+    ...sUIds,
+    ...tCIds,
+    ...tUIds,
+    ...oCIds,
+    ...oUIds,
+  ];
+
+  return { applied, changedTaskIds: changedIds };
+}
+
+async function applyUpsertsHarvestTables(
+  changes: SyncResponse['changes']
+): Promise<{ applied: number; changedTaskIds: string[] }> {
+  const { applied: hC, changedTaskIds: hCIds } = await upsertBatch(
+    'harvests',
+    changes.harvests?.created ?? []
+  );
+  const { applied: hU, changedTaskIds: hUIds } = await upsertBatch(
+    'harvests',
+    changes.harvests?.updated ?? []
+  );
+  const { applied: iC, changedTaskIds: iCIds } = await upsertBatch(
+    'inventory',
+    changes.inventory?.created ?? []
+  );
+  const { applied: iU, changedTaskIds: iUIds } = await upsertBatch(
+    'inventory',
+    changes.inventory?.updated ?? []
+  );
+  const { applied: aC, changedTaskIds: aCIds } = await upsertBatch(
+    'harvest_audits',
+    changes.harvest_audits?.created ?? []
+  );
+  const { applied: aU, changedTaskIds: aUIds } = await upsertBatch(
+    'harvest_audits',
+    changes.harvest_audits?.updated ?? []
+  );
+
+  const applied = hC + hU + iC + iU + aC + aU;
+  const changedIds = [
+    ...hCIds,
+    ...hUIds,
+    ...iCIds,
+    ...iUIds,
+    ...aCIds,
+    ...aUIds,
+  ];
+
+  return { applied, changedTaskIds: changedIds };
+}
+
+async function applyUpserts(
+  changes: SyncResponse['changes']
+): Promise<{ applied: number; changedTaskIds: string[] }> {
+  const coreResult = await applyUpsertsCoreTables(changes);
+  const harvestResult = await applyUpsertsHarvestTables(changes);
+
+  return {
+    applied: coreResult.applied + harvestResult.applied,
+    changedTaskIds: [
+      ...coreResult.changedTaskIds,
+      ...harvestResult.changedTaskIds,
+    ],
+  };
+}
+
+async function applyDeletes(
+  changes: SyncResponse['changes']
+): Promise<{ applied: number; changedTaskIds: string[] }> {
+  let applied = 0;
+  const changedIds: string[] = [];
+
+  // Core tables
+  const { applied: dT, changedTaskIds: dTIds } = await applyDeletesBatch(
+    'tasks',
+    changes.tasks?.deleted ?? []
+  );
+  const { applied: dS, changedTaskIds: dSIds } = await applyDeletesBatch(
+    'series',
+    changes.series?.deleted ?? []
+  );
+  const { applied: dO, changedTaskIds: dOIds } = await applyDeletesBatch(
+    'occurrence_overrides',
+    changes.occurrence_overrides?.deleted ?? []
+  );
+
+  // Harvest tables
+  const { applied: dH, changedTaskIds: dHIds } = await applyDeletesBatch(
+    'harvests',
+    changes.harvests?.deleted ?? []
+  );
+  const { applied: dI, changedTaskIds: dIIds } = await applyDeletesBatch(
+    'inventory',
+    changes.inventory?.deleted ?? []
+  );
+  const { applied: dA, changedTaskIds: dAIds } = await applyDeletesBatch(
+    'harvest_audits',
+    changes.harvest_audits?.deleted ?? []
+  );
+
+  applied = dT + dS + dO + dH + dI + dA;
+  changedIds.push(...dTIds, ...dSIds, ...dOIds, ...dHIds, ...dIIds, ...dAIds);
+
+  return { applied, changedTaskIds: changedIds };
+}
+
 async function applyServerChanges(
   resp: SyncResponse
 ): Promise<{ appliedCount: number; changedTaskIds: string[] }> {
@@ -356,55 +573,13 @@ async function applyServerChanges(
   const changedIds: string[] = [];
 
   await database.write(async () => {
-    const { applied: sC, changedTaskIds: sCIds } = await upsertBatch(
-      'series',
-      changes.series?.created ?? []
-    );
-    const { applied: sU, changedTaskIds: sUIds } = await upsertBatch(
-      'series',
-      changes.series?.updated ?? []
-    );
-    const { applied: tC, changedTaskIds: tCIds } = await upsertBatch(
-      'tasks',
-      changes.tasks?.created ?? []
-    );
-    const { applied: tU, changedTaskIds: tUIds } = await upsertBatch(
-      'tasks',
-      changes.tasks?.updated ?? []
-    );
-    const { applied: oC, changedTaskIds: oCIds } = await upsertBatch(
-      'occurrence_overrides',
-      changes.occurrence_overrides?.created ?? []
-    );
-    const { applied: oU, changedTaskIds: oUIds } = await upsertBatch(
-      'occurrence_overrides',
-      changes.occurrence_overrides?.updated ?? []
-    );
+    const upsertResult = await applyUpserts(changes);
+    const deleteResult = await applyDeletes(changes);
 
-    const { applied: dT, changedTaskIds: dTIds } = await applyDeletesBatch(
-      'tasks',
-      changes.tasks?.deleted ?? []
-    );
-    const { applied: dS, changedTaskIds: dSIds } = await applyDeletesBatch(
-      'series',
-      changes.series?.deleted ?? []
-    );
-    const { applied: dO, changedTaskIds: dOIds } = await applyDeletesBatch(
-      'occurrence_overrides',
-      changes.occurrence_overrides?.deleted ?? []
-    );
-
-    appliedCount = sC + sU + tC + tU + oC + oU + dT + dS + dO;
+    appliedCount = upsertResult.applied + deleteResult.applied;
     changedIds.push(
-      ...sCIds,
-      ...sUIds,
-      ...tCIds,
-      ...tUIds,
-      ...oCIds,
-      ...oUIds,
-      ...dTIds,
-      ...dSIds,
-      ...dOIds
+      ...upsertResult.changedTaskIds,
+      ...deleteResult.changedTaskIds
     );
   });
 
@@ -423,15 +598,18 @@ function getCollectionByTable(
     tasks: any;
     series: any;
     overrides: any;
+    harvests: any;
+    inventory: any;
+    harvestAudits: any;
   }
 ): any {
-  return (
-    table === 'tasks'
-      ? repos.tasks
-      : table === 'series'
-        ? repos.series
-        : repos.overrides
-  ) as any;
+  if (table === 'tasks') return repos.tasks;
+  if (table === 'series') return repos.series;
+  if (table === 'occurrence_overrides') return repos.overrides;
+  if (table === 'harvests') return repos.harvests;
+  if (table === 'inventory') return repos.inventory;
+  if (table === 'harvest_audits') return repos.harvestAudits;
+  return repos.tasks; // fallback
 }
 
 function applyPayloadToRecord(target: any, payload: any): void {
@@ -695,11 +873,7 @@ async function upsertBatch(
   table: TableName,
   payloads: any[]
 ): Promise<{ applied: number; changedTaskIds: string[] }> {
-  const repos = {
-    tasks: database.collections.get('tasks' as any),
-    series: database.collections.get('series' as any),
-    overrides: database.collections.get('occurrence_overrides' as any),
-  } as const;
+  const repos = getAllRepos();
   const coll = getCollectionByTable(table, repos);
   let applied = 0;
   const changedTaskIds: string[] = [];
@@ -726,18 +900,8 @@ async function applyDeletesBatch(
   table: TableName,
   deletions: { id: string }[]
 ): Promise<{ applied: number; changedTaskIds: string[] }> {
-  const repos = {
-    tasks: database.collections.get('tasks' as any),
-    series: database.collections.get('series' as any),
-    overrides: database.collections.get('occurrence_overrides' as any),
-  } as const;
-  const coll = (
-    table === 'tasks'
-      ? repos.tasks
-      : table === 'series'
-        ? repos.series
-        : repos.overrides
-  ) as any;
+  const repos = getAllRepos();
+  const coll = getCollectionByTable(table, repos);
   let applied = 0;
   const changedTaskIds: string[] = [];
   for (const d of deletions) {
@@ -769,6 +933,7 @@ async function pushChanges(lastPulledAt: number | null): Promise<number> {
     const enrichWithUserId = (records: any[]) =>
       records.map((r) => ({ ...r, user_id: userId }));
 
+    // Core tables
     toPush.series.created = enrichWithUserId(toPush.series.created);
     toPush.series.updated = enrichWithUserId(toPush.series.updated);
     toPush.tasks.created = enrichWithUserId(toPush.tasks.created);
@@ -778,6 +943,18 @@ async function pushChanges(lastPulledAt: number | null): Promise<number> {
     );
     toPush.occurrence_overrides.updated = enrichWithUserId(
       toPush.occurrence_overrides.updated
+    );
+
+    // Harvest tables
+    toPush.harvests.created = enrichWithUserId(toPush.harvests.created);
+    toPush.harvests.updated = enrichWithUserId(toPush.harvests.updated);
+    toPush.inventory.created = enrichWithUserId(toPush.inventory.created);
+    toPush.inventory.updated = enrichWithUserId(toPush.inventory.updated);
+    toPush.harvest_audits.created = enrichWithUserId(
+      toPush.harvest_audits.created
+    );
+    toPush.harvest_audits.updated = enrichWithUserId(
+      toPush.harvest_audits.updated
     );
   }
 
@@ -1020,6 +1197,8 @@ export async function runSyncWithRetry(
             queryClient.invalidateQueries({
               queryKey: ['occurrence_overrides'],
             }),
+            queryClient.invalidateQueries({ queryKey: ['harvests'] }),
+            queryClient.invalidateQueries({ queryKey: ['inventory'] }),
           ]);
         } catch {}
         await setItem('sync.lastSuccessAt', nowMs());

@@ -2,6 +2,7 @@ import { Q } from '@nozbe/watermelondb';
 
 import { computeBackoffMs } from '@/lib/sync/backoff';
 import { canSyncLargeFiles } from '@/lib/sync/network-manager';
+import type { PhotoVariant } from '@/lib/uploads/harvest-photo-upload';
 import { uploadImageWithProgress } from '@/lib/uploads/image-upload';
 import { database } from '@/lib/watermelon';
 
@@ -11,6 +12,10 @@ type QueueItemRaw = {
   remotePath?: string | null;
   taskId?: string | null;
   plantId?: string | null;
+  harvestId?: string | null;
+  variant?: PhotoVariant | null;
+  hash?: string | null;
+  extension?: string | null;
   filename?: string | null;
   mimeType?: string | null;
   status: 'pending' | 'uploading' | 'completed' | 'failed';
@@ -90,6 +95,10 @@ export async function enqueueImage(params: {
       rec.remotePath = null;
       rec.taskId = params.taskId ?? null;
       rec.plantId = params.plantId;
+      rec.harvestId = null;
+      rec.variant = null;
+      rec.hash = null;
+      rec.extension = null;
       rec.filename = finalFilename;
       rec.mimeType = params.mimeType ?? 'image/jpeg';
       rec.status = 'pending';
@@ -100,6 +109,91 @@ export async function enqueueImage(params: {
   );
   return finalFilename;
 }
+
+/**
+ * Enqueue harvest photo variant for upload
+ *
+ * @param params - Queue parameters
+ * @returns Queue item ID
+ */
+export async function enqueueHarvestPhotoVariant(params: {
+  localUri: string;
+  userId: string;
+  harvestId: string;
+  variant: PhotoVariant;
+  hash: string;
+  extension: string;
+  mimeType: string;
+}): Promise<string> {
+  const coll = database.collections.get('image_upload_queue' as any);
+  let queueId = '';
+
+  await database.write(async () => {
+    const rec = await (coll as any).create((r: any) => {
+      r.localUri = params.localUri;
+      r.remotePath = null;
+      r.taskId = null;
+      r.plantId = null;
+      r.harvestId = params.harvestId;
+      r.variant = params.variant;
+      r.hash = params.hash;
+      r.extension = params.extension;
+      r.filename = `${params.hash}_${params.variant}.${params.extension}`;
+      r.mimeType = params.mimeType;
+      r.status = 'pending';
+      r.lastError = null;
+      r.createdAt = new Date();
+      r.updatedAt = new Date();
+    });
+    queueId = rec.id;
+  });
+
+  return queueId;
+}
+
+/**
+ * Update harvest record with remote photo path
+ *
+ * @param harvestId - Harvest ID
+ * @param variant - Photo variant
+ * @param remotePath - Remote storage path
+ */
+async function updateHarvestWithRemotePath(
+  harvestId: string,
+  variant: PhotoVariant,
+  remotePath: string
+): Promise<void> {
+  try {
+    const coll = database.collections.get('harvests' as any);
+    const harvest = await (coll as any).find(harvestId);
+
+    await database.write(async () =>
+      harvest.update((rec: any) => {
+        // photos is stored as JSON array
+        const photos = (rec.photos ?? []) as {
+          variant: string;
+          localUri: string;
+          remotePath?: string;
+        }[];
+
+        // Find and update the matching variant
+        const updated = photos.map((photo) =>
+          photo.variant === variant ? { ...photo, remotePath } : photo
+        );
+
+        rec.photos = updated as any;
+        rec.updatedAt = new Date();
+      })
+    );
+  } catch (error) {
+    console.warn(
+      `Failed to update harvest ${harvestId} with remote path:`,
+      error
+    );
+    // Don't throw - the photo is already uploaded, just the metadata update failed
+  }
+}
+
 // Fetch a batch of pending upload queue items that are due for processing
 // This function retrieves items with status 'pending' and either no next_attempt_at
 // or next_attempt_at <= current time, limited to the specified batch size
@@ -178,6 +272,86 @@ async function markFailed(id: string, reason: string): Promise<void> {
   );
 }
 
+/**
+ * Process harvest photo upload
+ */
+async function processHarvestPhotoUpload(item: QueueItemRaw): Promise<boolean> {
+  const { uploadHarvestPhoto } = await import('./harvest-photo-upload');
+
+  if (!item.harvestId || !item.variant || !item.hash || !item.extension) {
+    await markFailed(item.id, 'Missing harvest photo metadata');
+    return false;
+  }
+
+  // Get user ID from auth (required for harvest photos)
+  const { supabase } = await import('@/lib/supabase');
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    await markFailed(item.id, 'User not authenticated');
+    return false;
+  }
+
+  await markUploading(item.id);
+
+  const result = await uploadHarvestPhoto({
+    userId: user.id,
+    harvestId: item.harvestId,
+    localUri: item.localUri,
+    variant: item.variant as PhotoVariant,
+    hash: item.hash,
+    extension: item.extension,
+    mimeType: item.mimeType ?? 'image/jpeg',
+  });
+
+  // Update harvest record with remote path
+  await updateHarvestWithRemotePath(
+    item.harvestId,
+    item.variant as PhotoVariant,
+    result.fullPath
+  );
+
+  await markCompleted(item.id, result.path);
+  return true;
+}
+
+/**
+ * Process plant image upload
+ */
+async function processPlantImageUpload(item: QueueItemRaw): Promise<boolean> {
+  // Check for missing or falsy plant_id before attempting upload
+  if (!item.plantId) {
+    await markFailed(item.id, 'Missing or invalid plant_id');
+    return false;
+  }
+
+  await markUploading(item.id);
+  const { bucket, path } = await uploadImageWithProgress({
+    plantId: item.plantId,
+    filename:
+      item.filename ??
+      generateDeterministicFilename({
+        localUri: item.localUri,
+        plantId: item.plantId,
+        taskId: item.taskId ?? undefined,
+        mimeType: item.mimeType ?? undefined,
+      }),
+    localUri: item.localUri,
+    mimeType: item.mimeType ?? 'image/jpeg',
+    onProgress: () => {},
+  });
+
+  // Backfill to task metadata if task present
+  if (item.taskId) {
+    await backfillTaskRemotePath(item.taskId, `${bucket}/${path}`);
+  }
+
+  await markCompleted(item.id, path);
+  return true;
+}
+
 export async function processImageQueueOnce(
   maxBatch = 3
 ): Promise<{ processed: number }> {
@@ -186,40 +360,23 @@ export async function processImageQueueOnce(
 
   const due = await fetchDueBatch(maxBatch);
   let processed = 0;
+
   for (const item of due) {
     try {
-      // Check for missing or falsy plant_id before attempting upload
-      if (!item.plantId) {
-        await markFailed(item.id, 'Missing or invalid plant_id');
-        continue;
-      }
+      // Check if this is a harvest photo or plant image
+      const isHarvestPhoto = Boolean(item.harvestId);
 
-      await markUploading(item.id);
-      const { bucket, path } = await uploadImageWithProgress({
-        plantId: item.plantId,
-        filename:
-          item.filename ??
-          generateDeterministicFilename({
-            localUri: item.localUri,
-            plantId: item.plantId,
-            taskId: item.taskId ?? undefined,
-            mimeType: item.mimeType ?? undefined,
-          }),
-        localUri: item.localUri,
-        mimeType: item.mimeType ?? 'image/jpeg',
-        onProgress: () => {},
-      });
-      // Backfill to task metadata if task present
-      if (item.taskId) {
-        await backfillTaskRemotePath(item.taskId, `${bucket}/${path}`);
-      }
-      await markCompleted(item.id, path);
-      processed++;
+      const success = isHarvestPhoto
+        ? await processHarvestPhotoUpload(item)
+        : await processPlantImageUpload(item);
+
+      if (success) processed++;
     } catch (err) {
       const attempt = (item.retryCount ?? 0) + 1;
       await markFailure(item.id, attempt, err);
     }
   }
+
   return { processed };
 }
 

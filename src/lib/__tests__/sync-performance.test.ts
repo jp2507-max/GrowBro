@@ -19,6 +19,9 @@ describe('sync performance stubs', () => {
         },
         series: { created: [], updated: [], deleted: [] },
         occurrence_overrides: { created: [], updated: [], deleted: [] },
+        harvests: { created: [], updated: [], deleted: [] },
+        inventory: { created: [], updated: [], deleted: [] },
+        harvest_audits: { created: [], updated: [], deleted: [] },
       },
     };
     const start = Date.now();
