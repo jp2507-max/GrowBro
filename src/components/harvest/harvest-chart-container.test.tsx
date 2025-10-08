@@ -6,6 +6,7 @@
 
 import React from 'react';
 
+import { Text, View } from '@/components/ui';
 import { cleanup, render, screen, setup, waitFor } from '@/lib/test-utils';
 import { HarvestStages } from '@/types/harvest';
 
@@ -13,38 +14,29 @@ import { HarvestChartContainer } from './harvest-chart-container';
 import { WeightChart } from './weight-chart';
 
 // Mock all chart components
-jest.mock('./weight-chart', () => {
-  const { Text, View } = require('@/components/ui');
-  return {
-    WeightChart: jest.fn((props: any) => (
-      <View testID={props.testID || 'weight-chart'}>
-        <Text testID={`${props.testID}-data-count`}>{props.data.length}</Text>
-      </View>
-    )),
-  };
-});
+jest.mock('./weight-chart', () => ({
+  WeightChart: jest.fn((props: any) => (
+    <View testID={props.testID || 'weight-chart'}>
+      <Text testID={`${props.testID}-data-count`}>{props.data.length}</Text>
+    </View>
+  )),
+}));
 
-jest.mock('./weight-chart-empty', () => {
-  const { Text, View } = require('@/components/ui');
-  return {
-    WeightChartEmpty: ({ variant, testID }: any) => (
-      <View testID={testID || 'weight-chart-empty'}>
-        <Text>{variant}</Text>
-      </View>
-    ),
-  };
-});
+jest.mock('./weight-chart-empty', () => ({
+  WeightChartEmpty: ({ variant, testID }: any) => (
+    <View testID={testID || 'weight-chart-empty'}>
+      <Text>{variant}</Text>
+    </View>
+  ),
+}));
 
-jest.mock('./weight-chart-table', () => {
-  const { Text, View } = require('@/components/ui');
-  return {
-    WeightChartTable: ({ data, testID }: any) => (
-      <View testID={testID || 'weight-chart-table'}>
-        <Text testID="table-data-count">{data.length}</Text>
-      </View>
-    ),
-  };
-});
+jest.mock('./weight-chart-table', () => ({
+  WeightChartTable: ({ data, testID }: any) => (
+    <View testID={testID || 'weight-chart-table'}>
+      <Text testID="table-data-count">{data.length}</Text>
+    </View>
+  ),
+}));
 
 afterEach(cleanup);
 

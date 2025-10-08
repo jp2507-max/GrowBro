@@ -528,13 +528,22 @@ describe('InventoryService', () => {
 
   describe('getInventoryByHarvestId', () => {
     it('should return inventory for harvest', async () => {
-      const mockInventory = {
+      const mockInventory: Partial<InventoryModel> = {
         id: 'inventory-1',
-        harvest_id: 'harvest-123',
+        plantId: 'plant-1',
+        harvestId: 'harvest-123',
+        userId: 'user-1',
         finalWeightG: 50000,
-      } as InventoryModel;
+        harvestDate: '2025-01-01',
+        totalDurationDays: 21,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: undefined,
+      };
 
-      const mockFetch = jest.fn().mockResolvedValue([mockInventory]);
+      const mockFetch = jest
+        .fn()
+        .mockResolvedValue([mockInventory as InventoryModel]);
       const mockQuery = jest.fn().mockReturnValue({
         fetch: mockFetch,
       });
@@ -549,7 +558,7 @@ describe('InventoryService', () => {
         key: 'harvest_id',
         value: 'harvest-123',
       }); // Q.where
-      expect(result).toEqual(mockInventory);
+      expect(result).toEqual(mockInventory as InventoryModel);
     });
 
     it('should return null if inventory not found', async () => {

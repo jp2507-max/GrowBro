@@ -275,6 +275,7 @@ async function updateLocalState(
       const harvest = await harvestsCollection.find(harvestId);
       const updatedHarvest = await harvest.update((record) => {
         record.stage = HarvestStages.INVENTORY;
+        record.dryWeightG = finalizedWeightG ?? record.dryWeightG ?? 0;
         record.stageStartedAt = new Date(response.server_timestamp_ms);
         record.stageCompletedAt = new Date(response.server_timestamp_ms);
         record.serverUpdatedAtMs = response.server_timestamp_ms;

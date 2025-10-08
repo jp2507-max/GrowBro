@@ -8,7 +8,7 @@
  * - 4.4: Batch aggregation
  */
 
-import type { ChartDataPoint, TimeRange } from '@/types/harvest';
+import type { ChartDataPoint, HarvestStage, TimeRange } from '@/types/harvest';
 
 /**
  * Filter chart data by plant ID
@@ -107,7 +107,7 @@ export function filterByTimeRange(
 export function harvestsToChartData(
   harvests: {
     stage_started_at: Date;
-    stage: string;
+    stage: HarvestStage;
     wet_weight_g?: number;
     dry_weight_g?: number;
     trimmings_weight_g?: number;
@@ -123,7 +123,7 @@ export function harvestsToChartData(
     .map((h) => ({
       date: h.stage_started_at,
       weight_g: h[weightField]!,
-      stage: h.stage as any, // Type assertion needed
+      stage: h.stage,
       plant_id: h.plant_id,
     }))
     .sort((a, b) => a.date.getTime() - b.date.getTime());

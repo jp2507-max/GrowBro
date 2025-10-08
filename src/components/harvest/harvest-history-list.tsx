@@ -81,21 +81,18 @@ export function HarvestHistoryList({
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: unknown }) => (
+    ({ item }: { item: HarvestListItem }) => (
       <HarvestHistoryRow
-        item={item as HarvestListItem}
+        item={item}
         relativeTime={relativeTime}
         onPress={onSelect}
-        testID={`${testID}-item-${(item as HarvestListItem).id}`}
+        testID={`${testID}-item-${item.id}`}
       />
     ),
     [relativeTime, onSelect, testID]
   );
 
-  const keyExtractor = useCallback(
-    (item: unknown) => (item as HarvestListItem).id,
-    []
-  );
+  const keyExtractor = useCallback((item: HarvestListItem) => item.id, []);
 
   const emptyComponent = useMemo(
     () => (

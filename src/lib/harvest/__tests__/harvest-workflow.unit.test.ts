@@ -10,10 +10,15 @@
  * - Complete workflow state management
  */
 
+import type { Harvest, Inventory } from '@/types/harvest';
 import { HarvestStages } from '@/types/harvest';
 
+// Type aliases for test data generators
+type TestHarvest = ReturnType<typeof generateTestHarvest>;
+type TestInventory = ReturnType<typeof generateTestInventory>;
+
 // Test data generators
-function generateTestHarvest(overrides = {}) {
+function generateTestHarvest(overrides = {}): Harvest {
   return {
     id: `test-harvest-${Date.now()}`,
     plant_id: 'test-plant-1',
@@ -23,18 +28,18 @@ function generateTestHarvest(overrides = {}) {
     dry_weight_g: null,
     trimmings_weight_g: 50,
     notes: 'Test harvest',
-    stage_started_at: new Date().toISOString(),
+    stage_started_at: new Date(),
     stage_completed_at: null,
     photos: [],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_at: new Date(),
+    updated_at: new Date(),
     deleted_at: null,
     conflict_seen: false,
     ...overrides,
-  };
+  } as Harvest;
 }
 
-function generateTestInventory(harvestId: string, overrides = {}) {
+function generateTestInventory(harvestId: string, overrides = {}): Inventory {
   return {
     id: `test-inventory-${Date.now()}`,
     plant_id: 'test-plant-1',
@@ -43,11 +48,11 @@ function generateTestInventory(harvestId: string, overrides = {}) {
     final_weight_g: 850,
     harvest_date: new Date().toISOString().split('T')[0],
     total_duration_days: 21,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_at: new Date(),
+    updated_at: new Date(),
     deleted_at: null,
     ...overrides,
-  };
+  } as Inventory;
 }
 
 describe('Harvest Workflow - Unit Tests', () => {
@@ -449,13 +454,13 @@ describe('Harvest Workflow - Unit Tests', () => {
       // 1. Create harvest and enter DRYING stage
       const harvest = generateTestHarvest({
         stage: HarvestStages.DRYING,
-        stage_started_at: new Date().toISOString(),
+        stage_started_at: new Date(),
       });
 
       // 2. Schedule notification for target duration (7 days)
       const targetDurationDays = 7;
       const notificationDate = new Date(
-        Date.parse(harvest.stage_started_at) +
+        harvest.stage_started_at.getTime() +
           targetDurationDays * 24 * 60 * 60 * 1000
       );
 
@@ -476,17 +481,17 @@ describe('Harvest Workflow - Unit Tests', () => {
       // 1. Create harvest with existing stage
       const harvest = generateTestHarvest({
         stage: HarvestStages.CURING,
-        stage_started_at: new Date().toISOString(),
+        stage_started_at: new Date(),
       });
 
       const oldNotificationId = 'notif-old';
 
-      // 2. Edit stage_started_at to be 2 days earlier
+      // 3. Edit stage_started_at to be 2 days earlier
       const updatedHarvest = {
         ...harvest,
         stage_started_at: new Date(
-          Date.now() - 2 * 24 * 60 * 60 * 1000
-        ).toISOString(),
+          harvest.stage_started_at.getTime() - 2 * 24 * 60 * 60 * 1000
+        ),
       };
 
       // 3. Cancel old notification
@@ -495,7 +500,7 @@ describe('Harvest Workflow - Unit Tests', () => {
       // 4. Schedule new notification with updated date
       const targetDurationDays = 14; // Curing duration
       const newTrigger = new Date(
-        Date.parse(updatedHarvest.stage_started_at) +
+        updatedHarvest.stage_started_at.getTime() +
           targetDurationDays * 24 * 60 * 60 * 1000
       );
 
@@ -516,12 +521,10 @@ describe('Harvest Workflow - Unit Tests', () => {
         generateTestHarvest({
           id: 'h1',
           stage: HarvestStages.DRYING,
-          stage_started_at: new Date().toISOString(),
         }),
         generateTestHarvest({
           id: 'h2',
           stage: HarvestStages.CURING,
-          stage_started_at: new Date().toISOString(),
         }),
       ];
 
@@ -533,7 +536,7 @@ describe('Harvest Workflow - Unit Tests', () => {
           harvestId: h.id,
           stage: h.stage,
           trigger: new Date(
-            Date.parse(h.stage_started_at) + daysToAdd * 24 * 60 * 60 * 1000
+            h.stage_started_at.getTime() + daysToAdd * 24 * 60 * 60 * 1000
           ).toISOString(),
         };
       });
@@ -573,12 +576,12 @@ describe('Harvest Workflow - Unit Tests', () => {
         stage: HarvestStages.DRYING,
         stage_started_at: new Date(
           Date.now() - actualDurationDays * 24 * 60 * 60 * 1000
-        ).toISOString(),
+        ),
       });
 
       // 2. Check if exceeded
       const elapsedDays = Math.floor(
-        (Date.now() - Date.parse(harvest.stage_started_at)) /
+        (Date.now() - harvest.stage_started_at.getTime()) /
           (24 * 60 * 60 * 1000)
       );
 
@@ -666,11 +669,11 @@ describe('Harvest Workflow - Unit Tests', () => {
       const advanced = {
         ...harvest,
         stage: HarvestStages.DRYING,
-        stage_completed_at: new Date().toISOString(),
+        stage_completed_at: new Date(),
       };
 
       // 2. Undo within 15 seconds
-      const completedAt = Date.parse(advanced.stage_completed_at!);
+      const completedAt = advanced.stage_completed_at!.getTime();
       const now = Date.now();
       const elapsedSeconds = (now - completedAt) / 1000;
 
@@ -693,11 +696,11 @@ describe('Harvest Workflow - Unit Tests', () => {
       // 1. Advance stage
       const harvest = generateTestHarvest({
         stage: HarvestStages.DRYING,
-        stage_completed_at: new Date(Date.now() - 60 * 1000).toISOString(), // 60 seconds ago
+        stage_completed_at: new Date(Date.now() - 60 * 1000), // 60 seconds ago
       });
 
       // 2. Check if undo window elapsed
-      const completedAt = Date.parse(harvest.stage_completed_at!);
+      const completedAt = harvest.stage_completed_at!.getTime();
       const now = Date.now();
       const elapsedSeconds = (now - completedAt) / 1000;
 

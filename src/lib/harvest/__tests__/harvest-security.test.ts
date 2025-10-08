@@ -85,12 +85,26 @@ describe('Harvest Security - RLS Enforcement', () => {
     it('should enforce private bucket policy on harvest-photos', async () => {
       // Requirement 18.5: Private bucket, no public reads
 
+      const mockBucketInfo = {
+        id: 'harvest-photos',
+        name: 'harvest-photos',
+        owner: 'test-owner',
+        public: false,
+        file_size_limit: null,
+        allowed_mime_types: null,
+        created_at: '2023-01-01T00:00:00.000Z',
+        updated_at: '2023-01-01T00:00:00.000Z',
+      };
+      const getBucketSpy = jest.spyOn(supabase.storage, 'getBucket');
+      getBucketSpy.mockResolvedValue({ data: mockBucketInfo, error: null });
+
       const { data: bucketInfo } =
         await supabase.storage.getBucket('harvest-photos');
 
-      if (bucketInfo) {
-        expect(bucketInfo.public).toBe(false);
-      }
+      expect(bucketInfo).toEqual(mockBucketInfo);
+      expect(bucketInfo?.public).toBe(false);
+
+      getBucketSpy.mockRestore();
     });
 
     it('should prevent reading photos from other users folders', async () => {

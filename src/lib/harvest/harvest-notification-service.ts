@@ -562,6 +562,17 @@ export async function rehydrateNotifications(): Promise<RehydrationStats> {
 }
 
 /**
+ * Normalize trigger payload to extract timestamp
+ * Checks in order: timestamp ?? value ?? date, coerces to Number
+ * Returns Date if finite number, null otherwise
+ */
+function normalizeTriggerDate(trigger: any): Date | null {
+  const timestamp = trigger?.timestamp ?? trigger?.value ?? trigger?.date;
+  const numericValue = Number(timestamp);
+  return Number.isFinite(numericValue) ? new Date(numericValue) : null;
+}
+
+/**
  * Get current notification status for a harvest
  */
 export async function getNotificationStatus(harvestId: string): Promise<{
@@ -595,10 +606,10 @@ export async function getNotificationStatus(harvestId: string): Promise<{
       hasTargetNotification: !!targetNotification,
       hasOverdueNotification: !!overdueNotification,
       targetScheduledFor: targetNotification?.trigger
-        ? new Date((targetNotification.trigger as any).date)
+        ? normalizeTriggerDate(targetNotification.trigger)
         : null,
       overdueScheduledFor: overdueNotification?.trigger
-        ? new Date((overdueNotification.trigger as any).date)
+        ? normalizeTriggerDate(overdueNotification.trigger)
         : null,
     };
   } catch {

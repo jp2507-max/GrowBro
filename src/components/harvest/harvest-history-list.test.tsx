@@ -12,6 +12,8 @@ import {
 } from './harvest-history-list';
 
 const BASE_HARVEST = {
+  id: 'default-harvest-id',
+  stage: HarvestStages.HARVEST,
   plant_id: 'plant-1',
   user_id: 'user-1',
   wet_weight_g: 1200,
@@ -34,7 +36,7 @@ const makeHarvest = (
     readonly id: string;
     readonly stage: HarvestStage;
   }
-) => ({
+): HarvestHistoryListProps['harvests'][number] => ({
   ...BASE_HARVEST,
   ...overrides,
 });

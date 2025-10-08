@@ -94,6 +94,7 @@ export function StageActions({
     <View className={className}>
       {canAdvance && metadata.canAdvance && (
         <Button
+          testID="harvest-advance-button"
           label={t('harvest.actions.advance', { stage: nextStage })}
           onPress={onAdvance}
           accessibilityHint={t('harvest.actions.advance_hint', {
@@ -105,6 +106,7 @@ export function StageActions({
 
       {canUndo && (
         <Button
+          testID="harvest-undo-button"
           label={`${t('harvest.actions.undo')} (${undoSeconds}s)`}
           onPress={onUndo}
           variant="outline"
@@ -115,6 +117,7 @@ export function StageActions({
 
       {!canUndo && metadata.canRevert && (
         <Button
+          testID="harvest-revert-button"
           label={t('harvest.actions.revert')}
           onPress={onRevert}
           variant="outline"
@@ -125,6 +128,7 @@ export function StageActions({
 
       {metadata.canAdvance && (
         <Button
+          testID="harvest-override-button"
           label={t('harvest.actions.override')}
           onPress={onOverride}
           variant="ghost"

@@ -206,15 +206,11 @@ function usePhotoHandler(
   setPhotoUris: React.Dispatch<React.SetStateAction<string[]>>,
   t: (key: string) => string
 ) {
-  return (variants: PhotoVariants[]) => {
-    // Store full variants for upload queueing
-    setPhotoVariants((prev) => [...prev, ...variants]);
+  return (variant: PhotoVariants) => {
+    // Store full variant for upload queueing
+    setPhotoVariants((prev) => [...prev, variant]);
     // Store URIs for display and harvest record
-    const newUris = variants.flatMap((variant) => [
-      variant.original,
-      variant.resized,
-      variant.thumbnail,
-    ]);
+    const newUris = [variant.original, variant.resized, variant.thumbnail];
     setPhotoUris((prev) => [...prev, ...newUris]);
     showMessage({
       message: t('harvest.photo.success'),
@@ -245,7 +241,7 @@ function ModalBody({
   onUnitChange: (unit: WeightUnit) => void;
   errors: any;
   photoVariants: PhotoVariants[];
-  onAddPhoto: (variants: PhotoVariants[]) => void;
+  onAddPhoto: (variant: PhotoVariants) => void;
   plantId: string;
   historicalData?: {
     date: Date;
@@ -434,7 +430,7 @@ function FormContent({
   onUnitChange: (unit: WeightUnit) => void;
   errors: any;
   photoVariants: PhotoVariants[];
-  onAddPhoto: (variants: PhotoVariants[]) => void;
+  onAddPhoto: (variant: PhotoVariants) => void;
   plantId: string;
   historicalData?: {
     date: Date;
@@ -576,7 +572,7 @@ function PhotoSection({
   t,
 }: {
   photoVariants: PhotoVariants[];
-  onAddPhoto: (variants: PhotoVariants[]) => void;
+  onAddPhoto: (variant: PhotoVariants) => void;
   t: (key: string) => string;
 }) {
   return (

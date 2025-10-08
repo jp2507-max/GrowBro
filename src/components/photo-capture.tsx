@@ -8,7 +8,7 @@ import { captureAndStore } from '@/lib/media/photo-storage-service';
 import type { PhotoVariants } from '@/types/photo-storage';
 
 export interface PhotoCaptureProps {
-  onPhotoCaptured?: (photoVariants: PhotoVariants[]) => void;
+  onPhotoCaptured?: (photoVariant: PhotoVariants) => void;
   onError?: (error: Error) => void;
   disabled?: boolean;
   buttonText?: string;
@@ -135,7 +135,7 @@ function createPhotoCaptureHandler({
 }: {
   setState: React.Dispatch<React.SetStateAction<PhotoCaptureState>>;
   t: (key: string) => string;
-  onPhotoCaptured?: (photoVariants: PhotoVariants[]) => void;
+  onPhotoCaptured?: (photoVariant: PhotoVariants) => void;
   onError?: (error: Error) => void;
 }) {
   return async (
@@ -143,8 +143,8 @@ function createPhotoCaptureHandler({
   ) => {
     try {
       setState({ isProcessing: true, error: null });
-      const variants = await captureFunction(t);
-      onPhotoCaptured?.([variants]);
+      const variant = await captureFunction(t);
+      onPhotoCaptured?.(variant);
       setState({ isProcessing: false, error: null });
     } catch (err) {
       // Check if this is a cancellation error by examining the error message

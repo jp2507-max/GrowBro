@@ -24,10 +24,22 @@ export interface FlashListProps<T> {
 }
 
 const FlashListComponent = React.forwardRef<any, FlashListProps<any>>(
-  ({ data: _data = [], testID }, ref) => {
-    // For performance tests, just render a simple view with testID
-    // The actual rendering logic is not needed for timing measurements
-    return <View ref={ref} testID={testID} />;
+  ({ data = [], renderItem, testID, ...props }, ref) => {
+    // For tests, render actual items if renderItem is provided
+    const items = data.map((item, index) => {
+      if (renderItem) {
+        return React.cloneElement(renderItem({ item, index }), {
+          key: `item-${index}`,
+        });
+      }
+      return null;
+    });
+
+    return (
+      <View ref={ref} testID={testID} {...props}>
+        {items}
+      </View>
+    );
   }
 );
 
@@ -35,6 +47,10 @@ FlashListComponent.displayName = 'FlashList';
 
 export const FlashList = FlashListComponent as React.ComponentType<
   FlashListProps<any>
->;
+> & {
+  displayName?: string;
+};
+
+FlashList.displayName = 'FlashList';
 
 export default FlashList;

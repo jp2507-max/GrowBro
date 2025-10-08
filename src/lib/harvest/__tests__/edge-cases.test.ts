@@ -22,8 +22,8 @@ import {
   checkOverlappingHarvests,
   validateOverlapOverride,
 } from '../overlap-detection';
+import { calculateElapsedDays } from '../stage-config';
 import {
-  calculateElapsedDays,
   updateStageTimestamps,
   validateStageDuration,
 } from '../stage-edit-handler';
@@ -83,6 +83,7 @@ describe('Overlap Detection', () => {
   // Note: Actual database queries tested in integration tests
   describe('checkOverlappingHarvests (unit)', () => {
     it('should handle query errors gracefully', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { database } = require('../../watermelon');
       database.get.mockReturnValue({
         query: jest.fn().mockReturnValue({
@@ -109,20 +110,20 @@ describe('Stage Edit Handler', () => {
       expect(days).toBe(7);
     });
 
-    it('should handle same-day dates', () => {
+    it('should handle same-day dates (returns whole days)', () => {
       const start = new Date('2025-01-01T00:00:00Z');
       const end = new Date('2025-01-01T12:00:00Z');
 
       const days = calculateElapsedDays(start, end);
-      expect(days).toBe(0.5);
+      expect(days).toBe(0); // Floored to whole number
     });
 
-    it('should handle fractional days with rounding', () => {
+    it('should handle fractional days (returns whole days)', () => {
       const start = new Date('2025-01-01T00:00:00Z');
       const end = new Date('2025-01-01T08:00:00Z'); // 8 hours = 0.333... days
 
       const days = calculateElapsedDays(start, end);
-      expect(days).toBe(0.3); // Rounded to 1 decimal
+      expect(days).toBe(0); // Floored to whole number
     });
 
     it('should handle negative duration (end before start)', () => {
@@ -171,6 +172,7 @@ describe('Stage Edit Handler', () => {
     });
 
     it('should accept valid past timestamps', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { database } = require('../../watermelon');
       const mockHarvest: any = {
         id: 'test-harvest',

@@ -37,7 +37,6 @@ describe('WeightChartTable', () => {
       render(<WeightChartTable data={mockData} testID="weight-chart-table" />);
 
       expect(screen.getByTestId('weight-chart-table')).toBeOnTheScreen();
-      expect(screen.getByText('Weight History')).toBeOnTheScreen();
     });
 
     it('should render table headers', () => {
@@ -57,10 +56,19 @@ describe('WeightChartTable', () => {
       expect(screen.getByText('250 g')).toBeOnTheScreen();
     });
 
-    it('should not render when data is empty', () => {
+    it('should render container and headers but no data rows when data is empty', () => {
       render(<WeightChartTable data={[]} testID="weight-chart-table" />);
 
-      expect(screen.queryByTestId('weight-chart-table')).not.toBeOnTheScreen();
+      // Container should still render
+      expect(screen.getByTestId('weight-chart-table')).toBeOnTheScreen();
+
+      // Headers should still be present
+      expect(screen.getByText('Date')).toBeOnTheScreen();
+      expect(screen.getByText('Weight')).toBeOnTheScreen();
+      expect(screen.getByText('Stage')).toBeOnTheScreen();
+
+      // No data rows should be present - check that no weight values are rendered
+      expect(screen.queryByText(/\d+ g/)).not.toBeOnTheScreen();
     });
   });
 

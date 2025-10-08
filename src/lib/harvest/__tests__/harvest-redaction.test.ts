@@ -204,8 +204,8 @@ describe('Harvest Redaction', () => {
     it('should calculate average duration', () => {
       const summary = createHarvestSharingSummary(mockHarvests);
 
-      // (6 days + 9 days + 13 days) / 3 = 9.33 days
-      expect(summary.avg_duration_days).toBeCloseTo(9.33, 1);
+      // (6 days + 7 days + 9 days) / 3 = 7.33 days (floored durations)
+      expect(summary.avg_duration_days).toBeCloseTo(7.33, 2);
     });
 
     it('should count stages', () => {

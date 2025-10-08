@@ -208,7 +208,7 @@ describe('harvestsToChartData', () => {
   const mockHarvests = [
     {
       stage_started_at: new Date('2024-01-01'),
-      stage: 'harvest',
+      stage: HarvestStages.HARVEST,
       wet_weight_g: 1000,
       dry_weight_g: 250,
       trimmings_weight_g: 100,
@@ -216,7 +216,7 @@ describe('harvestsToChartData', () => {
     },
     {
       stage_started_at: new Date('2024-01-02'),
-      stage: 'drying',
+      stage: HarvestStages.DRYING,
       wet_weight_g: undefined,
       dry_weight_g: 240,
       trimmings_weight_g: undefined,
@@ -224,7 +224,7 @@ describe('harvestsToChartData', () => {
     },
     {
       stage_started_at: new Date('2024-01-03'),
-      stage: 'curing',
+      stage: HarvestStages.CURING,
       wet_weight_g: undefined,
       dry_weight_g: 235,
       trimmings_weight_g: undefined,
@@ -259,13 +259,13 @@ describe('harvestsToChartData', () => {
     const harvestsWithNulls = [
       {
         stage_started_at: new Date('2024-01-01'),
-        stage: 'harvest',
+        stage: HarvestStages.HARVEST,
         wet_weight_g: 1000,
         dry_weight_g: undefined,
       },
       {
         stage_started_at: new Date('2024-01-02'),
-        stage: 'drying',
+        stage: HarvestStages.DRYING,
         dry_weight_g: 240,
       },
     ];
@@ -280,17 +280,17 @@ describe('harvestsToChartData', () => {
     const unsortedHarvests = [
       {
         stage_started_at: new Date('2024-01-03'),
-        stage: 'curing',
+        stage: HarvestStages.CURING,
         dry_weight_g: 235,
       },
       {
         stage_started_at: new Date('2024-01-01'),
-        stage: 'harvest',
+        stage: HarvestStages.HARVEST,
         dry_weight_g: 250,
       },
       {
         stage_started_at: new Date('2024-01-02'),
-        stage: 'drying',
+        stage: HarvestStages.DRYING,
         dry_weight_g: 240,
       },
     ];
