@@ -299,17 +299,24 @@ describe('HarvestModal', () => {
       });
     });
 
-    test('preserves data when unit is toggled', async () => {
+    test('converts weight values when unit is toggled', async () => {
       const { user } = setup(<HarvestModal {...defaultProps} />);
 
       const wetWeightInput = screen.getByTestId('wet-weight-input');
       const ouncesButton = screen.getByTestId('unit-toggle-ounces');
 
+      // Enter 100 grams
       await user.type(wetWeightInput, '100');
-      await user.press(ouncesButton);
+      expect(wetWeightInput.props.value).toBe('100');
 
-      // Value should remain (conversion logic can be tested separately)
-      expect(wetWeightInput).toBeTruthy();
+      // Switch to ounces - should convert 100g to ~3.5oz
+      await user.press(ouncesButton);
+      expect(wetWeightInput.props.value).toBe('3.5');
+
+      // Switch back to grams - should convert back to 99g (due to rounding)
+      const gramsButton = screen.getByTestId('unit-toggle-grams');
+      await user.press(gramsButton);
+      expect(wetWeightInput.props.value).toBe('99');
     });
   });
 });

@@ -18,58 +18,6 @@ interface FlashListConfig {
 }
 
 /**
- * Measured dimensions for StrainCard component (for reference/documentation)
- * FlashList v2 calculates sizes automatically - these are for layout debugging only
- * Based on actual layout measurements:
- * - Image height: 192px (h-48 = 12 * 16 = 192)
- * - Content padding: 16px (p-4 = 4 * 4 = 16)
- * - Badges row: ~28px
- * - Title: ~28px (text-lg with line height)
- * - Description: ~40px (2 lines of text-sm)
- * - Card padding: 8px top + 8px bottom (py-2)
- * - Card margin: 8px bottom (mb-2)
- */
-export const STRAIN_CARD_DIMENSIONS = {
-  imageHeight: 192,
-  contentPadding: 16,
-  badgesHeight: 28,
-  titleHeight: 28,
-  descriptionHeight: 40,
-  cardVerticalPadding: 16, // py-2 = 8px top + 8px bottom
-  cardMarginBottom: 8,
-  borderWidth: 1,
-} as const;
-
-/**
- * Calculate expected item size for reference/debugging
- * Note: FlashList v2 no longer needs this - kept for documentation only
- * @deprecated Use for debugging only - FlashList v2 auto-calculates sizes
- */
-export function calculateEstimatedItemSize(hasDescription: boolean): number {
-  const {
-    imageHeight,
-    contentPadding,
-    badgesHeight,
-    titleHeight,
-    descriptionHeight,
-    cardVerticalPadding,
-    cardMarginBottom,
-    borderWidth,
-  } = STRAIN_CARD_DIMENSIONS;
-
-  const baseHeight =
-    imageHeight +
-    contentPadding * 2 + // top and bottom padding
-    badgesHeight +
-    titleHeight +
-    cardVerticalPadding +
-    cardMarginBottom +
-    borderWidth * 2;
-
-  return hasDescription ? baseHeight + descriptionHeight : baseHeight;
-}
-
-/**
  * Get optimized FlashList v2 configuration
  * Note: Removed estimatedItemSize - FlashList v2 calculates automatically
  */

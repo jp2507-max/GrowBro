@@ -105,7 +105,7 @@ export async function deleteFile(path: string): Promise<boolean> {
   try {
     const file = new File(path);
     if (file.exists) {
-      file.delete();
+      await file.delete();
       return true;
     }
     return false;

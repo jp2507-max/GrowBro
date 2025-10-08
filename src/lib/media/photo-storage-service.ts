@@ -6,6 +6,7 @@ import type {
   StorageInfo,
 } from '@/types/photo-storage';
 
+import { stripExifAndGeolocation } from './exif';
 import {
   deleteFile,
   extractExtension,
@@ -59,11 +60,27 @@ export async function captureAndStore(
   try {
     const dir = getPhotoDirectory();
 
-    // Generate variants (resized + thumbnail)
-    const variants = await generatePhotoVariants(sourceUri);
+    // Strip EXIF from original to create sanitized version
+    const { uri: sanitizedOriginal, didStrip } =
+      await stripExifAndGeolocation(sourceUri);
 
-    // Hash and store original (already EXIF-stripped)
-    const originalUri = await hashAndStore(sourceUri, 'original', dir);
+    // Generate variants from sanitized original (resized + thumbnail)
+    const variants = await generatePhotoVariants(sanitizedOriginal);
+
+    // Hash and store sanitized original
+    const originalUri = await hashAndStore(sanitizedOriginal, 'original', dir);
+
+    // Clean up intermediate sanitized file if it was created and is different from sourceUri
+    if (didStrip && sanitizedOriginal !== sourceUri) {
+      try {
+        await deleteFile(sanitizedOriginal);
+      } catch (cleanupError) {
+        console.warn(
+          'Failed to clean up intermediate sanitized file:',
+          cleanupError
+        );
+      }
+    }
 
     // Hash and store resized variant
     const resizedUri = await hashAndStore(variants.resized, 'resized', dir);

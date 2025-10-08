@@ -305,6 +305,36 @@
       "undo_expires": "Undo expires in {{seconds}}s",
       "undo_hint": "Double-tap to undo last stage change"
     },
+    "chart": {
+      "empty": {
+        "createButton": "Create First Harvest",
+        "filtered": "No Data Found",
+        "filteredGuidance": "Try adjusting your filters to see harvest data.",
+        "noData": "No Harvest Data Yet",
+        "noDataGuidance": "Start your first harvest to see weight progression over time."
+      },
+      "error": {
+        "renderFailed": "Chart rendering failed",
+        "showTable": "Show table view"
+      },
+      "filters": {
+        "batchView": "Batch View",
+        "individualView": "Individual View"
+      },
+      "table": {
+        "date": "Date",
+        "stage": "Stage",
+        "weight": "Weight"
+      },
+      "timeRange": {
+        "30d": "Last 30 days",
+        "365d": "Last year",
+        "7d": "Last 7 days",
+        "90d": "Last 90 days",
+        "all": "All time"
+      },
+      "title": "Weight Progression"
+    },
     "curing_checklist": {
       "aroma": "Aroma Check",
       "aroma_description": "Buds should have a pleasant aroma, not moldy or hay-like smell",
@@ -313,11 +343,86 @@
       "stem_snap": "Stem Snap Test",
       "stem_snap_description": "Stems should snap cleanly rather than bend"
     },
+    "duration": {
+      "day": "1 day",
+      "days": "{{count}} days",
+      "hour": "1 hour",
+      "hours": "{{count}} hours"
+    },
+    "error": {
+      "createFailed": "Failed to create harvest. Please try again."
+    },
     "errors": {
+      "actions": {
+        "dismiss": "Dismiss",
+        "retry_now": "Retry Now",
+        "sign_in_again": "Sign In Again",
+        "view_details": "View Details"
+      },
+      "business_logic": {
+        "missing_dry_weight": "Dry weight must be set before finalizing curing.",
+        "title": "Action Not Allowed"
+      },
       "failed": "Failed to update stage. Please try again.",
       "invalid_transition": "Invalid stage transition",
       "reason_required": "Reason is mandatory for this action",
-      "undo_expired": "Undo window expired. Use Revert Stage instead."
+      "sync": {
+        "conflict_detected": "This harvest was updated on another device. Please review the changes.",
+        "network_timeout": "Request timed out. Please check your connection and try again.",
+        "payload_too_large": "Data too large to sync. Reducing payload size...",
+        "permission_denied": "You don't have permission to perform this action.",
+        "persistent_description": "Unable to sync harvest data. Please check your connection and try again.",
+        "persistent_title": "Sync Failed",
+        "server_error": "Server error occurred. We'll retry automatically.",
+        "transient_description": "A temporary sync error occurred. We'll retry automatically.",
+        "transient_title": "Sync Error",
+        "unauthorized": "Your session has expired. Please sign in again.",
+        "unknown": "An unexpected error occurred. Please try again.",
+        "validation_failed": "Invalid data provided. Please check your inputs."
+      },
+      "undo_expired": "Undo window expired. Use Revert Stage instead.",
+      "validation": {
+        "description": "Please correct the errors below and try again.",
+        "title": "Validation Error"
+      }
+    },
+    "history": {
+      "accessibility": {
+        "emptyCreate": "Create a new harvest",
+        "list": "Harvest history list",
+        "rowHint": "Double-tap to open harvest details",
+        "summary": "Harvest history empty state"
+      },
+      "actions": {
+        "clearFilters": "Clear filters",
+        "create": "Create harvest"
+      },
+      "empty": {
+        "default": {
+          "body": "Create your first harvest to start tracking progress.",
+          "title": "No harvests yet"
+        },
+        "filtered": {
+          "body": "Try adjusting or clearing filters to see all harvests.",
+          "title": "No harvests match these filters"
+        },
+        "offline": {
+          "body": "Reconnect to sync the latest harvest history.",
+          "title": "Offline mode"
+        }
+      },
+      "list": {
+        "conflict_badge": "Needs review",
+        "updated": "Updated {{relativeTime}}",
+        "weight": "Dry weight: {{weight}} g"
+      },
+      "relative": {
+        "days": "{{count}} days ago",
+        "hours": "{{count}} hours ago",
+        "minutes": "{{count}} minutes ago",
+        "now": "Just now"
+      },
+      "title": "Harvest history"
     },
     "inventory": {
       "concurrent_finalize_toast": "Inventory already finalized by another process",
@@ -326,6 +431,20 @@
       "missing_dry_weight": "Dry weight must be set before finalizing curing",
       "missing_dry_weight_cta": "Update Dry Weight",
       "retry_failed": "Failed to finalize curing after multiple attempts. Please check your connection and try again."
+    },
+    "modal": {
+      "cancel": "Cancel",
+      "dryWeight": "Dry Weight",
+      "notes": "Notes",
+      "notesPlaceholder": "Add notes about this harvest...",
+      "photos": "Photos",
+      "submit": "Save Harvest",
+      "submitting": "Saving...",
+      "subtitle": "Enter harvest details and weights",
+      "title": "Record Harvest",
+      "trimmingsWeight": "Trimmings Weight",
+      "unitToggle": "Unit",
+      "wetWeight": "Wet Weight"
     },
     "modals": {
       "override": {
@@ -349,6 +468,16 @@
         "title": "Revert to Previous Stage"
       }
     },
+    "notifications": {
+      "overdue": {
+        "body": "Your harvest has been in {{stage}} for {{days}} days. Please check if it's ready to advance.",
+        "title": "{{stage}} stage check recommended"
+      },
+      "target": {
+        "body": "Your harvest has been in {{stage}} for {{days}} days. Consider advancing to the next stage.",
+        "title": "{{stage}} stage target reached"
+      }
+    },
     "photo": {
       "accessibility": {
         "add_photo_hint": "Double-tap to add a harvest photo from camera or library"
@@ -356,13 +485,16 @@
       "actions": {
         "add_photo": "Add Photo",
         "choose_from_library": "Choose from Library",
-        "dismiss_error": "Dismiss",
+        "dismiss": "Dismiss",
         "free_up_space": "Free Up Space",
         "take_photo": "Take Photo"
       },
       "alerts": {
         "photo_options_title": "Add Photo"
       },
+      "cancel": "Cancel",
+      "capture_failed": "Capture failed",
+      "choose_source": "Opens photo picker to add a harvest photo from camera or library",
       "errors": {
         "camera_permission_denied": "Camera permission denied",
         "capture_failed": "Failed to capture photo",
@@ -374,6 +506,7 @@
         "upload_missing_metadata": "Photo metadata is incomplete",
         "upload_not_authenticated": "You must be logged in to upload photos"
       },
+      "processing_photo": "Processing photo...",
       "status": {
         "processing": "Processing photo...",
         "upload_complete": "Photos uploaded successfully",
@@ -392,7 +525,8 @@
         "used": "{{size}} used",
         "used_of_total": "{{used}} of {{total}} used"
       },
-      "success": "Photo added successfully"
+      "success": "Photo added successfully",
+      "title": "Add Photo"
     },
     "stage_tracker": {
       "completed": "Completed",
@@ -409,6 +543,15 @@
       "drying": "Drying",
       "harvest": "Harvest",
       "inventory": "Inventory"
+    },
+    "success": {
+      "created": "Harvest created successfully"
+    },
+    "units": {
+      "grams": "g",
+      "gramsLong": "Grams",
+      "ounces": "oz",
+      "ouncesLong": "Ounces"
     }
   },
   "home": {

@@ -109,9 +109,42 @@ function classifyInventoryError(error: unknown): {
   errorCode: CompleteCuringResult['errorCode'];
   isRetryable: boolean;
 } {
-  const { isRetryable } = categorizeError(error);
+  // Check for Supabase PostgREST/PostgresError shapes
+  if (
+    error &&
+    typeof error === 'object' &&
+    ('code' in error || 'message' in error || 'details' in error)
+  ) {
+    const postgrestError = error as {
+      code?: string;
+      message?: string;
+      details?: string;
+    };
 
-  // Check for HTTP status codes
+    // Map SQLSTATE codes to domain errorCodes
+    if (postgrestError.code === '23505') {
+      // unique_violation - concurrent finalize attempt
+      return { errorCode: 'CONCURRENT_FINALIZE', isRetryable: false };
+    }
+
+    // Map other SQLSTATE codes from RPC validation to VALIDATION
+    if (postgrestError.code && postgrestError.code.startsWith('23')) {
+      // Other constraint violations (23xxx codes are integrity constraint violations)
+      return { errorCode: 'VALIDATION', isRetryable: false };
+    }
+
+    // Check for validation-related error messages
+    if (
+      postgrestError.message &&
+      (postgrestError.message.includes('validation') ||
+        postgrestError.message.includes('invalid') ||
+        postgrestError.message.includes('check constraint'))
+    ) {
+      return { errorCode: 'VALIDATION', isRetryable: false };
+    }
+  }
+
+  // Check for legacy HTTP status codes (backward compatibility)
   const status =
     error &&
     typeof error === 'object' &&
@@ -130,7 +163,11 @@ function classifyInventoryError(error: unknown): {
     return { errorCode: 'VALIDATION', isRetryable: false };
   }
 
-  if (isRetryable) {
+  // Use categorizeError for network/retryable detection
+  const { isRetryable } = categorizeError(error);
+
+  // Treat TypeError and other network faults as retryable
+  if (error instanceof TypeError || isRetryable) {
     return { errorCode: 'NETWORK', isRetryable: true };
   }
 
@@ -225,7 +262,8 @@ async function callCompleteCuringRPC(
  */
 async function updateLocalState(
   harvestId: string,
-  response: CompleteCuringResponse
+  response: CompleteCuringResponse,
+  finalizedWeightG: number
 ): Promise<{ harvest: HarvestModel; inventory: InventoryModel } | null> {
   try {
     const harvestsCollection = database.get<HarvestModel>('harvests');
@@ -246,7 +284,7 @@ async function updateLocalState(
         record.harvestId = response.harvest_id;
         record.plantId = harvest.plantId;
         record.userId = harvest.userId;
-        record.finalWeightG = harvest.dryWeightG ?? 0;
+        record.finalWeightG = finalizedWeightG ?? harvest.dryWeightG ?? 0;
         record.harvestDate = new Date().toISOString().split('T')[0]; // ISO date
         record.totalDurationDays = Math.floor(
           (response.server_timestamp_ms - harvest.stageStartedAt.getTime()) /
@@ -297,7 +335,11 @@ async function executeCompleteCuring(params: {
     };
   }
 
-  const localState = await updateLocalState(params.harvestId, data);
+  const localState = await updateLocalState(
+    params.harvestId,
+    data,
+    params.finalWeightG
+  );
 
   if (!localState) {
     console.warn('[InventoryService] Local state update failed');

@@ -397,5 +397,22 @@ export const migrations = schemaMigrations({
         }),
       ],
     },
+    // Migration from version 15 to 16: Add notification tracking to harvests
+    {
+      toVersion: 16,
+      steps: [
+        addColumns({
+          table: 'harvests',
+          columns: [
+            { name: 'notification_id', type: 'string', isOptional: true },
+            {
+              name: 'overdue_notification_id',
+              type: 'string',
+              isOptional: true,
+            },
+          ],
+        }),
+      ],
+    },
   ],
 });

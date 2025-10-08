@@ -12,6 +12,7 @@ import { randomUUID } from 'expo-crypto';
 
 import { HarvestStage } from '@/types';
 
+import { supabase } from '../supabase';
 import { database } from '../watermelon';
 import type { HarvestModel } from '../watermelon-models/harvest';
 import type { InventoryModel } from '../watermelon-models/inventory';
@@ -29,6 +30,7 @@ jest.mock('../error-handling', () => ({
     // Check for network errors or 5xx
     if (
       error?.message?.includes('Network') ||
+      error?.message?.includes('Connection timeout') ||
       (error?.response?.status >= 500 && error?.response?.status < 600)
     ) {
       isRetryable = true;
@@ -130,7 +132,6 @@ describe('InventoryService', () => {
         });
 
         // Mock Supabase RPC to fail gracefully (we're testing key generation only)
-        const { supabase } = require('../supabase');
         supabase.rpc = jest.fn().mockResolvedValue({
           data: null,
           error: new Error('Network error'),
@@ -161,7 +162,6 @@ describe('InventoryService', () => {
           find: jest.fn().mockResolvedValue(mockHarvest),
         });
 
-        const { supabase } = require('../supabase');
         supabase.rpc = jest.fn().mockResolvedValue({
           data: null,
           error: new Error('Network error'),
@@ -194,7 +194,6 @@ describe('InventoryService', () => {
           find: jest.fn().mockResolvedValue(mockHarvest),
         });
 
-        const { supabase } = require('../supabase');
         const mockResponse = {
           harvest_id: mockHarvestId,
           inventory_id: 'inventory-456',
@@ -260,7 +259,6 @@ describe('InventoryService', () => {
           stageStartedAt: new Date('2025-01-01'),
         } as HarvestModel;
 
-        const { supabase } = require('../supabase');
         const serverTimestamp = Date.now();
         supabase.rpc = jest.fn().mockResolvedValue({
           data: {
@@ -312,7 +310,6 @@ describe('InventoryService', () => {
           find: jest.fn().mockResolvedValue(mockHarvest),
         });
 
-        const { supabase } = require('../supabase');
         const error409 = {
           response: { status: 409 },
           message: 'Conflict',
@@ -341,7 +338,6 @@ describe('InventoryService', () => {
           find: jest.fn().mockResolvedValue(mockHarvest),
         });
 
-        const { supabase } = require('../supabase');
         const error422 = {
           response: { status: 422 },
           message: 'Validation failed',
@@ -360,6 +356,137 @@ describe('InventoryService', () => {
         expect(result.errorCode).toBe('VALIDATION');
       });
 
+      it('should classify PostgREST unique_violation (23505) as CONCURRENT_FINALIZE', async () => {
+        const mockHarvest = {
+          plantId: 'plant-1',
+          wetWeightG: 100000,
+        } as HarvestModel;
+
+        (database.get as jest.Mock).mockReturnValue({
+          find: jest.fn().mockResolvedValue(mockHarvest),
+        });
+
+        const postgrestError = {
+          code: '23505',
+          message: 'duplicate key value violates unique constraint',
+          details: 'Key (harvest_id)=(harvest-123) already exists.',
+        };
+        supabase.rpc = jest.fn().mockResolvedValue({
+          data: null,
+          error: postgrestError,
+        });
+
+        const result = await InventoryService.completeCuring({
+          harvestId: mockHarvestId,
+          finalWeightG: mockFinalWeightG,
+        });
+
+        expect(result.success).toBe(false);
+        expect(result.errorCode).toBe('CONCURRENT_FINALIZE');
+      });
+
+      it('should classify PostgREST constraint violations (23xxx) as VALIDATION', async () => {
+        const mockHarvest = {
+          plantId: 'plant-1',
+          wetWeightG: 100000,
+        } as HarvestModel;
+
+        (database.get as jest.Mock).mockReturnValue({
+          find: jest.fn().mockResolvedValue(mockHarvest),
+        });
+
+        const postgrestError = {
+          code: '23514',
+          message: 'new row for relation "inventory" violates check constraint',
+          details: 'Failing row contains (final_weight_g) values (0).',
+        };
+        supabase.rpc = jest.fn().mockResolvedValue({
+          data: null,
+          error: postgrestError,
+        });
+
+        const result = await InventoryService.completeCuring({
+          harvestId: mockHarvestId,
+          finalWeightG: mockFinalWeightG,
+        });
+
+        expect(result.success).toBe(false);
+        expect(result.errorCode).toBe('VALIDATION');
+      });
+
+      it('should classify validation message errors as VALIDATION', async () => {
+        const mockHarvest = {
+          plantId: 'plant-1',
+          wetWeightG: 100000,
+        } as HarvestModel;
+
+        (database.get as jest.Mock).mockReturnValue({
+          find: jest.fn().mockResolvedValue(mockHarvest),
+        });
+
+        const postgrestError = {
+          message: 'validation failed: final weight cannot exceed wet weight',
+        };
+        supabase.rpc = jest.fn().mockResolvedValue({
+          data: null,
+          error: postgrestError,
+        });
+
+        const result = await InventoryService.completeCuring({
+          harvestId: mockHarvestId,
+          finalWeightG: mockFinalWeightG,
+        });
+
+        expect(result.success).toBe(false);
+        expect(result.errorCode).toBe('VALIDATION');
+      });
+
+      it('should classify TypeError as NETWORK', async () => {
+        const mockHarvest = {
+          plantId: 'plant-1',
+          wetWeightG: 100000,
+        } as HarvestModel;
+
+        (database.get as jest.Mock).mockReturnValue({
+          find: jest.fn().mockResolvedValue(mockHarvest),
+        });
+
+        supabase.rpc = jest
+          .fn()
+          .mockRejectedValue(new TypeError('Network request failed'));
+
+        const result = await InventoryService.completeCuring({
+          harvestId: mockHarvestId,
+          finalWeightG: mockFinalWeightG,
+        });
+
+        expect(result.success).toBe(false);
+        expect(result.errorCode).toBe('NETWORK');
+      });
+
+      it('should classify retryable errors as NETWORK', async () => {
+        const mockHarvest = {
+          plantId: 'plant-1',
+          wetWeightG: 100000,
+        } as HarvestModel;
+
+        (database.get as jest.Mock).mockReturnValue({
+          find: jest.fn().mockResolvedValue(mockHarvest),
+        });
+
+        supabase.rpc = jest
+          .fn()
+          .mockRejectedValue(new Error('Connection timeout'));
+
+        const result = await InventoryService.completeCuring({
+          harvestId: mockHarvestId,
+          finalWeightG: mockFinalWeightG,
+        });
+
+        expect(result.success).toBe(false);
+        expect(result.errorCode).toBe('NETWORK');
+      });
+
       it('should return success with warning if local state update fails', async () => {
         const mockHarvest = {
           plantId: 'plant-1',
@@ -370,7 +497,6 @@ describe('InventoryService', () => {
           find: jest.fn().mockResolvedValue(mockHarvest),
         });
 
-        const { supabase } = require('../supabase');
         const serverTimestamp = Date.now();
         supabase.rpc = jest.fn().mockResolvedValue({
           data: {

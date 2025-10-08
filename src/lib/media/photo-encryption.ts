@@ -1,5 +1,6 @@
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
+import { fromByteArray } from 'react-native-quick-base64';
 
 /**
  * Photo encryption utilities using OS keystore
@@ -25,7 +26,8 @@ async function getOrCreateEncryptionKey(): Promise<string> {
     if (!key) {
       // Generate new 256-bit key
       const randomBytes = await Crypto.getRandomBytesAsync(32);
-      key = btoa(String.fromCharCode(...randomBytes));
+      // Use react-native-quick-base64 for reliable encoding
+      key = fromByteArray(randomBytes);
 
       // Store in secure keystore
       await SecureStore.setItemAsync(ENCRYPTION_KEY_NAME, key);

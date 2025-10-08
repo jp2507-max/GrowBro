@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert } from 'react-native';
 
 import { Button, Text, View } from '@/components/ui';
@@ -64,15 +65,17 @@ async function selectFromLibrary(): Promise<PhotoVariants> {
 function ErrorDisplay({
   error,
   onDismiss,
+  t,
 }: {
   error: string;
   onDismiss: () => void;
+  t: (key: string) => string;
 }) {
   return (
     <View className="rounded-lg bg-danger-50 p-3">
       <Text className="text-sm text-danger-700">{error}</Text>
       <Button onPress={onDismiss} variant="link" size="sm" className="mt-2">
-        <Text className="text-danger-600">Dismiss</Text>
+        <Text className="text-danger-600">{t('harvest.photo.dismiss')}</Text>
       </Button>
     </View>
   );
@@ -83,11 +86,13 @@ function CaptureButton({
   disabled,
   isProcessing,
   buttonText,
+  t,
 }: {
   onPress: () => void;
   disabled: boolean;
   isProcessing: boolean;
   buttonText?: string;
+  t: (key: string) => string;
 }) {
   return (
     <Button
@@ -95,16 +100,17 @@ function CaptureButton({
       disabled={disabled}
       variant="outline"
       className="min-h-[44px]"
-      accessibilityLabel="Add harvest photo"
-      accessibilityHint="Opens photo picker to add a harvest photo from camera or library"
+      accessibilityLabel={t('harvest.photo.addPhoto')}
+      accessibilityHint={t('harvest.photo.chooseSource')}
+      testID="photo-capture-button"
     >
       {isProcessing ? (
         <View className="flex-row items-center gap-2">
           <ActivityIndicator size="small" />
-          <Text>Processing photo...</Text>
+          <Text>{t('harvest.photo.processingPhoto')}</Text>
         </View>
       ) : (
-        <Text>{buttonText ?? 'Add Photo'}</Text>
+        <Text>{buttonText ? t(buttonText) : t('harvest.photo.addPhoto')}</Text>
       )}
     </Button>
   );
@@ -116,6 +122,7 @@ export function PhotoCapture({
   disabled = false,
   buttonText,
 }: PhotoCaptureProps) {
+  const { t } = useTranslation();
   const [state, setState] = useState<PhotoCaptureState>({
     isProcessing: false,
     error: null,
@@ -128,28 +135,30 @@ export function PhotoCapture({
       setState({ isProcessing: true, error: null });
       const variants = await captureFunction();
       onPhotoCaptured?.(variants);
+      setState({ isProcessing: false, error: null });
     } catch (err) {
       if (err instanceof Error && err.message.includes('cancelled')) {
         setState({ isProcessing: false, error: null });
         return;
       }
-      const message = err instanceof Error ? err.message : 'Capture failed';
+      const message =
+        err instanceof Error ? err.message : t('harvest.photo.captureFailed');
       setState({ isProcessing: false, error: message });
       onError?.(err instanceof Error ? err : new Error(message));
     }
   };
 
   const showPhotoOptions = () => {
-    Alert.alert('Add Photo', 'Choose a source for your harvest photo', [
+    Alert.alert(t('harvest.photo.title'), t('harvest.photo.chooseSource'), [
       {
-        text: 'Take Photo',
+        text: t('harvest.photo.takePhoto'),
         onPress: () => handlePhotoCapture(captureFromCamera),
       },
       {
-        text: 'Choose from Library',
+        text: t('harvest.photo.chooseFromLibrary'),
         onPress: () => handlePhotoCapture(selectFromLibrary),
       },
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('harvest.photo.cancel'), style: 'cancel' },
     ]);
   };
 
@@ -160,11 +169,13 @@ export function PhotoCapture({
         disabled={disabled || state.isProcessing}
         isProcessing={state.isProcessing}
         buttonText={buttonText}
+        t={t}
       />
       {state.error && (
         <ErrorDisplay
           error={state.error}
           onDismiss={() => setState({ ...state, error: null })}
+          t={t}
         />
       )}
     </View>

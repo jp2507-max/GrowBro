@@ -1,7 +1,7 @@
 import { appSchema as createSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const appSchema = createSchema({
-  version: 15,
+  version: 16,
   tables: [
     tableSchema({
       name: 'series',
@@ -514,6 +514,8 @@ export const appSchema = createSchema({
         { name: 'stage_started_at', type: 'number' },
         { name: 'stage_completed_at', type: 'number', isOptional: true },
         { name: 'photos', type: 'string' }, // JSON array of photo URIs
+        { name: 'notification_id', type: 'string', isOptional: true }, // Target duration notification
+        { name: 'overdue_notification_id', type: 'string', isOptional: true }, // Max duration reminder
         { name: 'server_revision', type: 'number', isOptional: true },
         { name: 'server_updated_at_ms', type: 'number', isOptional: true },
         { name: 'conflict_seen', type: 'boolean' },
@@ -551,6 +553,10 @@ export const appSchema = createSchema({
         { name: 'performed_at', type: 'number' },
         { name: 'metadata', type: 'string' }, // JSON
         { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'deleted_at', type: 'number', isOptional: true },
+        { name: 'server_revision', type: 'number' },
+        { name: 'server_updated_at_ms', type: 'number' },
       ],
     }),
   ],

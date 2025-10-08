@@ -11,10 +11,7 @@ import type { Strain } from '@/api';
 import type { StrainFilters } from '@/api/strains/types';
 import { useOfflineAwareStrains } from '@/api/strains/use-strains-infinite-with-cache';
 import { prefetchStrainImages } from '@/lib/strains/image-optimization';
-import {
-  calculateEstimatedItemSize,
-  getOptimizedFlashListConfig,
-} from '@/lib/strains/measure-item-size';
+import { getOptimizedFlashListConfig } from '@/lib/strains/measure-item-size';
 import { useScrollPosition } from '@/lib/strains/use-scroll-position';
 
 import { StrainCard } from './strain-card';
@@ -179,19 +176,6 @@ export function StrainsListWithCache({
   // Get optimized configuration for device capabilities
   const flashListConfig = useMemo(() => getOptimizedFlashListConfig(), []);
 
-  // Calculate estimated item size based on content
-  const overrideItemLayout = useCallback(
-    (
-      layout: { span?: number; size?: number },
-      item: Strain,
-      _index: number
-    ) => {
-      const hasDescription = item.description?.[0]?.length > 0;
-      layout.size = calculateEstimatedItemSize(hasDescription);
-    },
-    []
-  );
-
   const listEmpty = useMemo(() => {
     if (isLoading && strains.length === 0) {
       return <StrainsSkeletonList />;
@@ -226,8 +210,7 @@ export function StrainsListWithCache({
       renderItem={renderItem}
       keyExtractor={keyExtractor}
       getItemType={getItemType}
-      overrideItemLayout={overrideItemLayout}
-      // FlashList v2: No estimatedItemSize needed - auto-calculated
+      // FlashList v2: Auto-calculates item sizes - no manual override needed
       // Fine-tuned performance based on device capabilities
       onEndReached={onEndReached}
       onEndReachedThreshold={0.7}

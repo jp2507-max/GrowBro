@@ -1,5 +1,5 @@
 import * as Battery from 'expo-battery';
-import { File } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system';
 
 import type {
   CleanupResult,
@@ -93,14 +93,10 @@ async function deleteLRUFiles({
     }
 
     try {
-      const fileObj = new File(file.path);
-      if (fileObj.exists) {
-        const fileSize = fileObj.size;
-        fileObj.delete();
-        bytesFreed += fileSize;
-        size -= fileSize;
-        filesDeleted++;
-      }
+      await FileSystem.deleteAsync(file.path, { idempotent: true });
+      bytesFreed += file.size;
+      size -= file.size;
+      filesDeleted++;
     } catch (error) {
       console.warn(`Failed to delete file ${file.path}:`, error);
     }

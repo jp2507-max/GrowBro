@@ -5,10 +5,18 @@
  * Requirements: 1.3 (save with timestamp), 1.4 (offline support)
  */
 
+import { Q } from '@nozbe/watermelondb';
+
 import { HarvestStage } from '@/types';
 
 import { database } from '../watermelon';
 import type { HarvestModel } from '../watermelon-models/harvest';
+import {
+  cancelStageReminders,
+  scheduleOverdueReminder,
+  scheduleStageReminder,
+} from './harvest-notification-service';
+import { getAllStages, getStageIndex } from './stage-config';
 
 export interface CreateHarvestInput {
   plantId: string;
@@ -16,7 +24,11 @@ export interface CreateHarvestInput {
   dryWeightG: number | null;
   trimmingsWeightG: number | null;
   notes: string;
-  photos?: string[];
+  photos?: {
+    variant: string;
+    localUri: string;
+    remotePath?: string;
+  }[];
 }
 
 export interface CreateHarvestResult {
@@ -137,15 +149,11 @@ export async function getHarvest(
  * @returns Array of harvest records
  */
 export async function getHarvestsForPlant(
-  _plantId: string
+  plantId: string
 ): Promise<HarvestModel[]> {
   try {
     const harvestsCollection = database.get<HarvestModel>('harvests');
-    return await harvestsCollection
-      .query
-      /* No Q imports needed for this pattern */
-      ()
-      .fetch();
+    return await harvestsCollection.query(Q.where('plant_id', plantId)).fetch();
   } catch (error) {
     console.error('[HarvestService] Failed to get harvests for plant:', error);
     return [];
@@ -163,6 +171,9 @@ export async function deleteHarvest(harvestId: string): Promise<boolean> {
     const harvestsCollection = database.get<HarvestModel>('harvests');
     const harvest = await harvestsCollection.find(harvestId);
 
+    // Cancel any pending notifications before deleting
+    await cancelStageReminders(harvestId);
+
     await database.write(async () => {
       await harvest.markAsDeleted();
     });
@@ -171,5 +182,75 @@ export async function deleteHarvest(harvestId: string): Promise<boolean> {
   } catch (error) {
     console.error('[HarvestService] Failed to delete harvest:', error);
     return false;
+  }
+}
+
+/**
+ * Advance harvest to next stage with notification scheduling
+ * Requirements: 14.1 (schedule notifications on stage entry)
+ *
+ * @param harvestId Harvest record ID
+ * @returns Updated harvest record
+ */
+export async function advanceHarvestStage(
+  harvestId: string
+): Promise<CreateHarvestResult> {
+  try {
+    const harvestsCollection = database.get<HarvestModel>('harvests');
+    const harvest = await harvestsCollection.find(harvestId);
+
+    const currentStage = harvest.stage;
+    const stages = getAllStages();
+    const currentIndex = getStageIndex(currentStage);
+
+    // Validate we can advance
+    if (currentIndex === -1 || currentIndex >= stages.length - 1) {
+      return {
+        success: false,
+        harvest: null,
+        error: 'Cannot advance from current stage',
+      };
+    }
+
+    const nextStage = stages[currentIndex + 1];
+    const now = new Date();
+
+    // Cancel existing notifications before advancing
+    await cancelStageReminders(harvestId);
+
+    // Update harvest stage
+    const updated = await database.write(async () => {
+      return await harvest.update((record) => {
+        record.stage = nextStage;
+        record.stageCompletedAt = now; // Mark current stage as completed
+        record.stageStartedAt = now; // Start new stage
+      });
+    });
+
+    // Schedule new notifications for the new stage
+    const targetResult = await scheduleStageReminder(harvestId, nextStage, now);
+
+    if (targetResult.scheduled) {
+      const overdueResult = await scheduleOverdueReminder(
+        harvestId,
+        nextStage,
+        now
+      );
+
+      console.log('[HarvestService] Scheduled notifications for stage:', {
+        stage: nextStage,
+        targetScheduled: targetResult.scheduled,
+        overdueScheduled: overdueResult.scheduled,
+      });
+    }
+
+    return { success: true, harvest: updated };
+  } catch (error) {
+    console.error('[HarvestService] Failed to advance harvest stage:', error);
+    return {
+      success: false,
+      harvest: null,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
   }
 }

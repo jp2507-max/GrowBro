@@ -145,7 +145,7 @@ async function extractMetadata(
     console.warn('Failed to extract metadata:', error);
     return {
       gpsStripped,
-      mimeType: 'image/jpeg',
+      ...(gpsStripped && { mimeType: 'image/jpeg' }),
     };
   }
 }

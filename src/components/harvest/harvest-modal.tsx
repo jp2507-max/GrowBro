@@ -9,13 +9,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Modal, Pressable, ScrollView } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 
 import { PhotoCapture } from '@/components/photo-capture';
 import { Button, Input, Text, View } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { enqueueHarvestPhotos } from '@/lib/uploads/harvest-photo-queue';
+import type { ChartDataPoint } from '@/types/harvest';
 import type { PhotoVariants } from '@/types/photo-storage';
 
 import {
@@ -29,6 +30,7 @@ import {
 } from '../../lib/harvest/harvest-service';
 import type { WeightUnit } from '../../lib/harvest/weight-conversion';
 import { toDisplayValue } from '../../lib/harvest/weight-conversion';
+import { HarvestChartContainer } from './harvest-chart-container';
 
 export interface HarvestModalProps {
   /** Control modal visibility */
@@ -39,6 +41,9 @@ export interface HarvestModalProps {
 
   /** Initial data for editing existing harvest */
   initialData?: Partial<CreateHarvestInput>;
+
+  /** Historical harvest data for chart display */
+  historicalData?: ChartDataPoint[];
 
   /** Called on successful save */
   onSubmit?: (harvest: any) => void;
@@ -69,12 +74,13 @@ function UnitToggle({
       <View className="flex-row overflow-hidden rounded-lg border border-neutral-300 dark:border-neutral-700">
         <Pressable
           onPress={() => onChange('g')}
-          className={`px-4 py-2 ${unit === 'g' ? 'bg-primary-600' : 'bg-neutral-100 dark:bg-neutral-800'}`}
+          className={`px-6 py-3 ${unit === 'g' ? 'bg-primary-600' : 'bg-neutral-100 dark:bg-neutral-800'}`}
           accessibilityRole="button"
           accessibilityLabel={t('harvest.units.gramsLong')}
           accessibilityHint={t('harvest.accessibility.unitToggle')}
           accessibilityState={{ selected: unit === 'g' }}
           testID={`${testID}-grams`}
+          style={touchTargetStyles.minimum}
         >
           <Text
             className={`text-sm font-medium ${unit === 'g' ? 'text-white' : 'text-charcoal-950 dark:text-neutral-100'}`}
@@ -84,12 +90,13 @@ function UnitToggle({
         </Pressable>
         <Pressable
           onPress={() => onChange('oz')}
-          className={`px-4 py-2 ${unit === 'oz' ? 'bg-primary-600' : 'bg-neutral-100 dark:bg-neutral-800'}`}
+          className={`px-6 py-3 ${unit === 'oz' ? 'bg-primary-600' : 'bg-neutral-100 dark:bg-neutral-800'}`}
           accessibilityRole="button"
           accessibilityLabel={t('harvest.units.ouncesLong')}
           accessibilityHint={t('harvest.accessibility.unitToggle')}
           accessibilityState={{ selected: unit === 'oz' }}
           testID={`${testID}-ounces`}
+          style={touchTargetStyles.minimum}
         >
           <Text
             className={`text-sm font-medium ${unit === 'oz' ? 'text-white' : 'text-charcoal-950 dark:text-neutral-100'}`}
@@ -178,7 +185,7 @@ function useHarvestModalState(
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoVariants, setPhotoVariants] = useState<PhotoVariants[]>([]);
   const [photoUris, setPhotoUris] = useState<string[]>(
-    initialData?.photos || []
+    initialData?.photos?.map((photo) => photo.localUri) || []
   );
 
   return {
@@ -226,6 +233,8 @@ function ModalBody({
   errors,
   photos,
   onAddPhoto,
+  plantId,
+  historicalData,
   t,
   isSubmitting,
   onCancel,
@@ -237,6 +246,13 @@ function ModalBody({
   errors: any;
   photos: string[];
   onAddPhoto: (variants: PhotoVariants) => void;
+  plantId: string;
+  historicalData?: {
+    date: Date;
+    weight_g: number;
+    stage: string;
+    plant_id?: string;
+  }[];
   t: (key: string, options?: any) => string;
   isSubmitting: boolean;
   onCancel: () => void;
@@ -253,6 +269,8 @@ function ModalBody({
           errors={errors}
           photos={photos}
           onAddPhoto={onAddPhoto}
+          plantId={plantId}
+          historicalData={historicalData}
           t={t}
         />
       </ScrollView>
@@ -266,13 +284,22 @@ function ModalBody({
   );
 }
 
+const touchTargetStyles = StyleSheet.create({
+  minimum: {
+    minHeight: 44,
+    minWidth: 44,
+  },
+});
+
 /**
  * Main HarvestModal component
  */
+// eslint-disable-next-line max-lines-per-function
 export function HarvestModal({
   isVisible,
   plantId,
   initialData,
+  historicalData,
   onSubmit,
   onCancel,
 }: HarvestModalProps) {
@@ -291,6 +318,7 @@ export function HarvestModal({
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<HarvestFormData>({
     resolver: zodResolver(harvestFormSchema),
@@ -302,7 +330,36 @@ export function HarvestModal({
 
   const handleUnitChange = (newUnit: WeightUnit) => {
     if (newUnit === currentUnit) return;
-    setValue('unit', newUnit);
+
+    const currentValues = getValues();
+    const parsed = parseHarvestFormData({
+      ...currentValues,
+      unit: currentUnit,
+    });
+
+    const applyConvertedValue = (
+      field: 'wetWeight' | 'dryWeight' | 'trimmingsWeight',
+      gramsValue: number | null
+    ) => {
+      if (gramsValue === null || gramsValue === undefined) {
+        setValue(field, '', { shouldDirty: true, shouldValidate: false });
+        return;
+      }
+
+      const converted = toDisplayValue(gramsValue, newUnit);
+      const formatted =
+        newUnit === 'g'
+          ? Math.round(converted).toString()
+          : parseFloat(converted.toFixed(2)).toString();
+
+      setValue(field, formatted, { shouldDirty: true, shouldValidate: false });
+    };
+
+    applyConvertedValue('wetWeight', parsed.wetWeightG);
+    applyConvertedValue('dryWeight', parsed.dryWeightG);
+    applyConvertedValue('trimmingsWeight', parsed.trimmingsWeightG);
+
+    setValue('unit', newUnit, { shouldDirty: true, shouldValidate: false });
   };
 
   const onSubmitForm = useHandleSubmit({
@@ -330,6 +387,8 @@ export function HarvestModal({
           errors={errors}
           photos={photoUris}
           onAddPhoto={handleAddPhoto}
+          plantId={plantId}
+          historicalData={historicalData}
           t={t}
           isSubmitting={isSubmitting}
           onCancel={onCancel}
@@ -366,6 +425,8 @@ function FormContent({
   errors,
   photos,
   onAddPhoto,
+  plantId,
+  historicalData,
   t,
 }: {
   control: any;
@@ -374,10 +435,28 @@ function FormContent({
   errors: any;
   photos: string[];
   onAddPhoto: (variants: PhotoVariants) => void;
+  plantId: string;
+  historicalData?: {
+    date: Date;
+    weight_g: number;
+    stage: string;
+    plant_id?: string;
+  }[];
   t: (key: string, options?: any) => string;
 }) {
   return (
     <>
+      {/* Weight Chart - Show if historical data exists */}
+      {historicalData && historicalData.length > 0 && (
+        <View className="mb-6">
+          <HarvestChartContainer
+            data={historicalData as ChartDataPoint[]}
+            plantId={plantId}
+            testID="harvest-modal-chart"
+          />
+        </View>
+      )}
+
       <UnitToggle
         unit={currentUnit}
         onChange={onUnitChange}
@@ -602,7 +681,7 @@ async function queuePhotoUploads(
  */
 function useHandleSubmit({
   plantId,
-  photoUris,
+  photoUris: _photoUris,
   photoVariants,
   setIsSubmitting,
   onSubmit,
@@ -623,13 +702,20 @@ function useHandleSubmit({
     try {
       const parsedData = parseHarvestFormData(data);
 
+      // Convert PhotoVariants to the format expected by createHarvest
+      const photosForHarvest = photoVariants.flatMap((variants) => [
+        { variant: 'original', localUri: variants.original },
+        { variant: 'resized', localUri: variants.resized },
+        { variant: 'thumbnail', localUri: variants.thumbnail },
+      ]);
+
       const input: CreateHarvestInput = {
         plantId,
         wetWeightG: parsedData.wetWeightG,
         dryWeightG: parsedData.dryWeightG,
         trimmingsWeightG: parsedData.trimmingsWeightG,
         notes: parsedData.notes,
-        photos: photoUris,
+        photos: photosForHarvest,
       };
 
       const result = await createHarvest(input);

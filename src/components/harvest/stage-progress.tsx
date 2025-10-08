@@ -10,6 +10,10 @@ import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { Text } from '@/components/ui';
+import {
+  createHarvestStageA11yLabel,
+  createStageProgressA11yLabel,
+} from '@/lib/accessibility/labels';
 import { getAllStages, getStageIndex } from '@/lib/harvest/stage-config';
 import { type HarvestStage } from '@/types/harvest';
 
@@ -24,8 +28,25 @@ export function StageProgress({ currentStage, className }: Props) {
   const stages = getAllStages();
   const currentIndex = getStageIndex(currentStage);
 
+  const progressLabel = createStageProgressA11yLabel({
+    currentStage: t(`harvest.stages.${currentStage}`),
+    totalStages: stages.length,
+    completedStages: currentIndex,
+  });
+
   return (
-    <View className={className} accessible accessibilityRole="progressbar">
+    <View
+      className={className}
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={progressLabel}
+      accessibilityHint="Shows progress through harvest stages from harvest to inventory"
+      accessibilityValue={{
+        min: 0,
+        max: stages.length,
+        now: currentIndex + 1,
+      }}
+    >
       {/* Stage dots and connectors */}
       <View className="flex-row items-center justify-between px-4">
         {stages.map((stage, index) => {
@@ -56,14 +77,23 @@ export function StageProgress({ currentStage, className }: Props) {
                         : 'bg-neutral-300'
                   }`}
                   accessible
-                  accessibilityLabel={
+                  accessibilityLabel={createHarvestStageA11yLabel({
+                    stage: stageName,
+                    isCompleted,
+                    isCurrent,
+                  })}
+                  accessibilityHint={
                     isCurrent
-                      ? `${stageName} - current stage`
+                      ? `Currently in ${stageName} stage`
                       : isCompleted
-                        ? `${stageName} - completed`
-                        : `${stageName} - upcoming`
+                        ? `Completed ${stageName} stage`
+                        : `${stageName} stage not started`
                   }
-                  accessibilityHint="Stage indicator in harvest workflow"
+                  accessibilityRole="button"
+                  accessibilityState={{
+                    disabled: true,
+                    selected: isCurrent,
+                  }}
                 >
                   {isCompleted && !isCurrent && (
                     <Text className="text-base text-white">✓</Text>

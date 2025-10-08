@@ -98,3 +98,116 @@ export function createTrichomeA11yLabel(config: {
 }): string {
   return `Trichome assessment: ${config.clearPercent}% clear, ${config.milkyPercent}% milky, ${config.amberPercent}% amber. Recommendation: ${config.recommendation}`;
 }
+
+/**
+ * Creates accessibility label for harvest stage indicator
+ */
+export function createHarvestStageA11yLabel(config: {
+  stage: string;
+  isCompleted: boolean;
+  isCurrent: boolean;
+}): string {
+  if (config.isCurrent) {
+    return `${config.stage} - current stage`;
+  }
+  if (config.isCompleted) {
+    return `${config.stage} - completed`;
+  }
+  return `${config.stage} - upcoming`;
+}
+
+/**
+ * Creates accessibility label for weight input field
+ */
+export function createWeightInputA11yLabel(config: {
+  fieldName: string;
+  unit: string;
+  value?: number;
+}): string {
+  const valuePart =
+    config.value != null
+      ? `, current value: ${config.value} ${config.unit}`
+      : '';
+  return `${config.fieldName} input${valuePart}`;
+}
+
+/**
+ * Creates accessibility label for stage action button
+ */
+export function createStageActionA11yLabel(config: {
+  action: 'advance' | 'undo' | 'revert' | 'override';
+  targetStage?: string;
+  undoSeconds?: number;
+}): string {
+  switch (config.action) {
+    case 'advance':
+      return `Advance to ${config.targetStage} stage`;
+    case 'undo':
+      return config.undoSeconds
+        ? `Undo last stage change (${config.undoSeconds}s remaining)`
+        : 'Undo last stage change';
+    case 'revert':
+      return 'Revert to previous stage';
+    case 'override':
+      return 'Skip to later stage';
+    default:
+      return 'Stage action';
+  }
+}
+
+/**
+ * Creates accessibility hint for stage action button
+ */
+export function createStageActionA11yHint(config: {
+  action: 'advance' | 'undo' | 'revert' | 'override';
+  targetStage?: string;
+}): string {
+  switch (config.action) {
+    case 'advance':
+      return `Double-tap to advance to ${config.targetStage} stage`;
+    case 'undo':
+      return 'Double-tap to undo last stage change';
+    case 'revert':
+      return 'Double-tap to revert to previous stage';
+    case 'override':
+      return 'Double-tap to skip to a later stage';
+    default:
+      return 'Double-tap to perform action';
+  }
+}
+
+/**
+ * Creates accessibility label for harvest history item
+ */
+export function createHarvestHistoryA11yLabel(config: {
+  stage: string;
+  updatedAt: string;
+  dryWeight?: number;
+  hasConflict: boolean;
+}): string {
+  const parts = [
+    `Harvest in ${config.stage} stage`,
+    `updated ${config.updatedAt}`,
+  ];
+
+  if (config.dryWeight != null) {
+    parts.push(`dry weight ${config.dryWeight} grams`);
+  }
+
+  if (config.hasConflict) {
+    parts.push('needs review');
+  }
+
+  return parts.join(', ');
+}
+
+/**
+ * Creates accessibility label for stage progress indicator
+ */
+export function createStageProgressA11yLabel(config: {
+  currentStage: string;
+  totalStages: number;
+  completedStages: number;
+}): string {
+  return `Harvest progress: ${config.currentStage} stage, ${config.completedStages} of ${config.totalStages} stages completed`;
+}

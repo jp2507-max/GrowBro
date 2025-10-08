@@ -35,9 +35,18 @@ export class HarvestModel extends Model {
   /** Server-authoritative UTC timestamp */
   @date('stage_completed_at') stageCompletedAt?: Date;
 
-  /** File URIs for photos (stored as JSON array) */
-  @json('photos', (raw) => raw as string[])
-  photos!: string[];
+  /** File URIs for photos with variant metadata (stored as JSON array) */
+  @json(
+    'photos',
+    (raw) => raw as { variant: string; localUri: string; remotePath?: string }[]
+  )
+  photos!: { variant: string; localUri: string; remotePath?: string }[];
+
+  /** Notification ID for target duration reminder */
+  @text('notification_id') notificationId?: string;
+
+  /** Notification ID for overdue/max duration reminder */
+  @text('overdue_notification_id') overdueNotificationId?: string;
 
   /** Sync: server revision number for conflict resolution */
   @field('server_revision') serverRevision?: number;

@@ -111,7 +111,7 @@
   - _Requirements: 7.1, 7.2, 7.3, 12.1, 12.2, 12.3, 12.4, 12.5_
   - _Completed: Harvest sync fully integrated into existing infrastructure. Telemetry follows existing consent/PII requirements (12.6-12.10) via established privacy-consent.ts system._
 
-- [ ] 8. Build weight chart component with performance optimization (use react native gifted charts, get docs via context7 or brave search)
+- [x] 8. Build weight chart component with performance optimization (use react native gifted charts, get docs via context7 or brave search)
   - Create WeightChart component using line chart for weight progression
   - Implement explicit LTTB (Largest-Triangle-Three-Buckets) downsampling for large series
   - Cap chart points for 0-365 day datasets to ensure smooth rendering
@@ -120,7 +120,7 @@
   - Write performance tests and chart rendering validation
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 15.1, 15.2, 15.3, 15.4_
 
-- [ ] 9. Implement local notification system
+- [x] 9. Implement local notification system
   - Schedule local notifications on stage entry for target durations
   - Add gentle reminder notifications when durations exceed recommendations
   - Rehydrate notification schedules on app start from database records
@@ -129,7 +129,7 @@
   - Write tests for scheduling, rehydration, and cleanup
   - _Requirements: 5.1, 5.2, 14.1, 14.2, 14.3, 14.4_
 
-- [ ] 10. Create harvest history and list components
+- [x] 10. Create harvest history and list components
   - Build HarvestHistoryList using FlashList v2 defaults only (no size estimates)
   - Use default maintainVisibleContentPosition; for chat-style use startRenderingFromBottom + onStartReached
   - Add getItemType for heterogeneous items; use masonry prop if needed
@@ -139,7 +139,7 @@
   - Write tests for list performance, filtering, and empty states
   - _Requirements: 4.5, 15.4, 16.2_
 
-- [ ] 11. Implement comprehensive error handling
+- [x] 11. Implement comprehensive error handling
   - Create error classification system (validation, network, business logic, consistency)
   - Add inline validation messages for form inputs
   - Implement toast notifications for transient sync errors

@@ -305,6 +305,36 @@
       "undo_expires": "Rückgängig läuft in {{seconds}}s ab",
       "undo_hint": "Doppeltippen, um letzte Phasenänderung rückgängig zu machen"
     },
+    "chart": {
+      "empty": {
+        "createButton": "Erste Ernte erstellen",
+        "filtered": "Keine Daten gefunden",
+        "filteredGuidance": "Passen Sie Ihre Filter an, um Erntedaten zu sehen.",
+        "noData": "Noch keine Erntedaten",
+        "noDataGuidance": "Starten Sie Ihre erste Ernte, um den Gewichtsverlauf zu sehen."
+      },
+      "error": {
+        "renderFailed": "Diagramm konnte nicht gerendert werden",
+        "showTable": "Tabellenansicht anzeigen"
+      },
+      "filters": {
+        "batchView": "Stapelansicht",
+        "individualView": "Einzelansicht"
+      },
+      "table": {
+        "date": "Datum",
+        "stage": "Phase",
+        "weight": "Gewicht"
+      },
+      "timeRange": {
+        "30d": "Letzte 30 Tage",
+        "365d": "Letztes Jahr",
+        "7d": "Letzte 7 Tage",
+        "90d": "Letzte 90 Tage",
+        "all": "Gesamte Zeit"
+      },
+      "title": "Gewichtsverlauf"
+    },
     "curing_checklist": {
       "aroma": "Aroma-Prüfung",
       "aroma_description": "Blüten sollten ein angenehmes Aroma haben, nicht schimmelig oder heuartig",
@@ -313,11 +343,86 @@
       "stem_snap": "Stängel-Knack-Test",
       "stem_snap_description": "Stängel sollten sauber brechen statt sich zu biegen"
     },
+    "duration": {
+      "day": "1 Tag",
+      "days": "{{count}} Tage",
+      "hour": "1 Stunde",
+      "hours": "{{count}} Stunden"
+    },
+    "error": {
+      "createFailed": "Ernte konnte nicht erstellt werden. Bitte versuche es erneut."
+    },
     "errors": {
+      "actions": {
+        "dismiss": "Schließen",
+        "retry_now": "Jetzt wiederholen",
+        "sign_in_again": "Erneut anmelden",
+        "view_details": "Details anzeigen"
+      },
+      "business_logic": {
+        "missing_dry_weight": "Trockengewicht muss vor Abschluss der Aushärtung gesetzt werden.",
+        "title": "Aktion nicht erlaubt"
+      },
       "failed": "Phase-Aktualisierung fehlgeschlagen. Bitte versuche es erneut.",
       "invalid_transition": "Ungültiger Phasenübergang",
       "reason_required": "Grund ist für diese Aktion erforderlich",
-      "undo_expired": "Rückgängig-Zeitfenster abgelaufen. Verwende stattdessen Phase zurücksetzen."
+      "sync": {
+        "conflict_detected": "Diese Ernte wurde auf einem anderen Gerät aktualisiert. Bitte überprüfe die Änderungen.",
+        "network_timeout": "Zeitüberschreitung der Anfrage. Bitte überprüfe deine Verbindung und versuche es erneut.",
+        "payload_too_large": "Daten zu groß zum Synchronisieren. Reduziere die Nutzlastgröße...",
+        "permission_denied": "Du hast keine Berechtigung für diese Aktion.",
+        "persistent_description": "Ernte-Daten konnten nicht synchronisiert werden. Bitte überprüfe deine Verbindung und versuche es erneut.",
+        "persistent_title": "Synchronisierung fehlgeschlagen",
+        "server_error": "Serverfehler aufgetreten. Wir versuchen es automatisch erneut.",
+        "transient_description": "Ein vorübergehender Synchronisierungsfehler ist aufgetreten. Wir versuchen es automatisch erneut.",
+        "transient_title": "Synchronisierungsfehler",
+        "unauthorized": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
+        "unknown": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
+        "validation_failed": "Ungültige Daten bereitgestellt. Bitte überprüfe deine Eingaben."
+      },
+      "undo_expired": "Rückgängig-Zeitfenster abgelaufen. Verwende stattdessen Phase zurücksetzen.",
+      "validation": {
+        "description": "Bitte korrigiere die unten stehenden Fehler und versuche es erneut.",
+        "title": "Validierungsfehler"
+      }
+    },
+    "history": {
+      "accessibility": {
+        "emptyCreate": "Neue Ernte erstellen",
+        "list": "Ernteverlaufsliste",
+        "rowHint": "Doppeltippen, um Erntedetails zu öffnen",
+        "summary": "Leerer Zustand des Ernteverlaufs"
+      },
+      "actions": {
+        "clearFilters": "Filter zurücksetzen",
+        "create": "Ernte erstellen"
+      },
+      "empty": {
+        "default": {
+          "body": "Erstelle deine erste Ernte, um den Fortschritt zu verfolgen.",
+          "title": "Noch keine Ernten"
+        },
+        "filtered": {
+          "body": "Passe die Filter an oder setze sie zurück, um alle Ernten zu sehen.",
+          "title": "Keine Ernten für diese Filter"
+        },
+        "offline": {
+          "body": "Stelle die Verbindung wieder her, um den neuesten Verlauf zu synchronisieren.",
+          "title": "Offline-Modus"
+        }
+      },
+      "list": {
+        "conflict_badge": "Überprüfen",
+        "updated": "Aktualisiert {{relativeTime}}",
+        "weight": "Trockengewicht: {{weight}} g"
+      },
+      "relative": {
+        "days": "vor {{count}} Tagen",
+        "hours": "vor {{count}} Stunden",
+        "minutes": "vor {{count}} Minuten",
+        "now": "Gerade eben"
+      },
+      "title": "Ernteverlauf"
     },
     "inventory": {
       "concurrent_finalize_toast": "Inventar bereits von einem anderen Prozess abgeschlossen",
@@ -326,6 +431,20 @@
       "missing_dry_weight": "Trockengewicht muss vor Abschluss der Aushärtung gesetzt werden",
       "missing_dry_weight_cta": "Trockengewicht aktualisieren",
       "retry_failed": "Aushärtung konnte nach mehreren Versuchen nicht abgeschlossen werden. Bitte überprüfe deine Verbindung und versuche es erneut."
+    },
+    "modal": {
+      "cancel": "Abbrechen",
+      "dryWeight": "Trockengewicht",
+      "notes": "Notizen",
+      "notesPlaceholder": "Notizen zu dieser Ernte hinzufügen...",
+      "photos": "Fotos",
+      "submit": "Ernte speichern",
+      "submitting": "Wird gespeichert...",
+      "subtitle": "Erntedetails und Gewichte eingeben",
+      "title": "Ernte aufzeichnen",
+      "trimmingsWeight": "Verschnitt-Gewicht",
+      "unitToggle": "Einheit",
+      "wetWeight": "Nassgewicht"
     },
     "modals": {
       "override": {
@@ -349,6 +468,16 @@
         "title": "Zur vorherigen Phase zurückkehren"
       }
     },
+    "notifications": {
+      "overdue": {
+        "body": "Deine Ernte ist seit {{days}} Tagen in der {{stage}}-Phase. Bitte überprüfe, ob sie bereit ist fortzufahren.",
+        "title": "{{stage}}-Phase Überprüfung empfohlen"
+      },
+      "target": {
+        "body": "Deine Ernte ist seit {{days}} Tagen in der {{stage}}-Phase. Erwäge, zur nächsten Phase überzugehen.",
+        "title": "{{stage}}-Phase Ziel erreicht"
+      }
+    },
     "photo": {
       "accessibility": {
         "add_photo_hint": "Doppeltippen, um ein Ernte-Foto von Kamera oder Galerie hinzuzufügen"
@@ -356,13 +485,16 @@
       "actions": {
         "add_photo": "Foto hinzufügen",
         "choose_from_library": "Aus Galerie wählen",
-        "dismiss_error": "Verwerfen",
+        "dismiss": "Verwerfen",
         "free_up_space": "Speicherplatz freigeben",
         "take_photo": "Foto aufnehmen"
       },
       "alerts": {
         "photo_options_title": "Foto hinzufügen"
       },
+      "cancel": "Abbrechen",
+      "capture_failed": "Aufnahme fehlgeschlagen",
+      "choose_source": "Öffnet den Foto-Picker, um ein Ernte-Foto von Kamera oder Galerie hinzuzufügen",
       "errors": {
         "camera_permission_denied": "Kamera-Berechtigung verweigert",
         "capture_failed": "Foto konnte nicht aufgenommen werden",
@@ -374,6 +506,7 @@
         "upload_missing_metadata": "Foto-Metadaten sind unvollständig",
         "upload_not_authenticated": "Sie müssen angemeldet sein, um Fotos hochzuladen"
       },
+      "processing_photo": "Foto wird verarbeitet...",
       "status": {
         "processing": "Foto wird verarbeitet...",
         "upload_complete": "Fotos erfolgreich hochgeladen",
@@ -392,7 +525,8 @@
         "used": "{{size}} verwendet",
         "used_of_total": "{{used}} von {{total}} verwendet"
       },
-      "success": "Foto erfolgreich hinzugefügt"
+      "success": "Foto erfolgreich hinzugefügt",
+      "title": "Foto hinzufügen"
     },
     "stage_tracker": {
       "completed": "Abgeschlossen",
@@ -409,6 +543,15 @@
       "drying": "Trocknen",
       "harvest": "Ernte",
       "inventory": "Inventar"
+    },
+    "success": {
+      "created": "Ernte erfolgreich erstellt"
+    },
+    "units": {
+      "grams": "g",
+      "gramsLong": "Gramm",
+      "ounces": "oz",
+      "ouncesLong": "Unzen"
     }
   },
   "home": {

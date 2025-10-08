@@ -7,15 +7,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
 
-import { Text } from '@/components/ui';
 import {
   calculateElapsedTime,
   exceedsMaxDuration,
   getStageConfig,
 } from '@/lib/harvest/stage-config';
 import { type HarvestStage } from '@/types/harvest';
+
+import { StageTimerProgress } from './stage-timer-progress';
 
 type Props = {
   stage: HarvestStage;
@@ -47,45 +47,21 @@ export function StageTimer({ stage, stageStartedAt, className }: Props) {
     return null;
   }
 
+  const timerLabel = `${t('harvest.stage_tracker.elapsed', {
+    days: elapsed.days,
+    hours: elapsed.hours,
+    minutes: elapsed.minutes,
+  })}. ${isOverdue ? t('harvest.stage_tracker.overdue', { days: Math.floor(elapsed.totalDays - config.max_duration_days) }) : t('harvest.stage_tracker.on_track')}`;
+
   return (
-    <View className={className}>
-      {/* Elapsed time */}
-      <View className="mb-2 flex-row items-center justify-between">
-        <Text className="text-sm text-neutral-600">
-          {t('harvest.stage_tracker.elapsed', {
-            days: elapsed.days,
-            hours: elapsed.hours,
-            minutes: elapsed.minutes,
-          })}
-        </Text>
-
-        {isOverdue ? (
-          <Text className="text-sm font-semibold text-danger-600">
-            {t('harvest.stage_tracker.overdue', {
-              days: Math.floor(elapsed.totalDays - config.max_duration_days),
-            })}
-          </Text>
-        ) : (
-          <Text className="text-sm font-semibold text-primary-600">
-            {t('harvest.stage_tracker.on_track')}
-          </Text>
-        )}
-      </View>
-
-      {/* Target duration */}
-      <Text className="text-xs text-neutral-500">
-        {t('harvest.stage_tracker.target', { days: targetDays })}
-      </Text>
-
-      {/* Progress bar */}
-      <View className="mt-2 h-1 overflow-hidden rounded-full bg-neutral-200">
-        <View
-          className={`h-full ${isOverdue ? 'bg-danger-600' : 'bg-primary-600'}`}
-          style={{
-            width: `${Math.min((elapsed.totalDays / targetDays) * 100, 100)}%`,
-          }}
-        />
-      </View>
-    </View>
+    <StageTimerProgress
+      className={className}
+      timerLabel={timerLabel}
+      elapsed={elapsed}
+      isOverdue={isOverdue}
+      targetDays={targetDays}
+      maxDurationDays={config.max_duration_days}
+      t={t}
+    />
   );
 }

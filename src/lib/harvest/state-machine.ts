@@ -127,7 +127,7 @@ export function canUndoStageChange(
   currentServerTime: Date
 ): boolean {
   const elapsedMs = currentServerTime.getTime() - stageCompletedAt.getTime();
-  return elapsedMs <= UNDO_WINDOW_MS;
+  return elapsedMs >= 0 && elapsedMs <= UNDO_WINDOW_MS;
 }
 
 /**

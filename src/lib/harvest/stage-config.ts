@@ -5,6 +5,7 @@
  * Requirement 2.3: Target duration guidance
  */
 
+import { translate } from '@/lib/i18n';
 import type { StageConfig } from '@/types/harvest';
 import { HarvestStage } from '@/types/harvest';
 
@@ -113,9 +114,13 @@ export function exceedsMaxDuration(
 export function formatDuration(days: number): string {
   if (days < 1) {
     const hours = Math.floor(days * 24);
-    return hours === 1 ? '1 hour' : `${hours} hours`;
+    return hours === 1
+      ? translate('harvest.duration.hour', { count: 1 })
+      : translate('harvest.duration.hours', { count: hours });
   }
-  return days === 1 ? '1 day' : `${days} days`;
+  return days === 1
+    ? translate('harvest.duration.day', { count: 1 })
+    : translate('harvest.duration.days', { count: days });
 }
 
 /**

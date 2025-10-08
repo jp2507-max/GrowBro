@@ -13,6 +13,7 @@ import { Button } from '@/components/ui';
 import {
   canUndoStageChange,
   getStageMetadata,
+  UNDO_WINDOW_MS,
 } from '@/lib/harvest/state-machine';
 import { HarvestStage } from '@/types/harvest';
 
@@ -55,7 +56,10 @@ function useUndoTimer(stageCompletedAt: Date | null) {
 
       if (eligible) {
         const elapsed = now.getTime() - stageCompletedAt.getTime();
-        const remaining = Math.max(0, Math.ceil((15000 - elapsed) / 1000));
+        const remaining = Math.max(
+          0,
+          Math.ceil((UNDO_WINDOW_MS - elapsed) / 1000)
+        );
         setUndoSeconds(remaining);
       }
     };

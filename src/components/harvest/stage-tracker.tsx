@@ -38,26 +38,26 @@ export function StageTracker({
   const revertModalRef = useRef<RevertModalRef>(null);
   const overrideModalRef = useRef<OverrideModalRef>(null);
 
-  const handleRevertPress = () => {
-    revertModalRef.current?.present();
-  };
-
-  const handleOverridePress = () => {
-    overrideModalRef.current?.present();
-  };
-
-  const handleRevertConfirm = (toStage: HarvestStage, reason: string) => {
-    onRevert(toStage, reason);
-    revertModalRef.current?.dismiss();
-  };
-
-  const handleOverrideConfirm = (toStage: HarvestStage, reason: string) => {
-    onOverride(toStage, reason);
-    overrideModalRef.current?.dismiss();
-  };
+  const {
+    handleRevertPress,
+    handleOverridePress,
+    handleRevertConfirm,
+    handleOverrideConfirm,
+  } = useStageTrackerHandlers({
+    revertModalRef: revertModalRef as React.RefObject<RevertModalRef>,
+    overrideModalRef: overrideModalRef as React.RefObject<OverrideModalRef>,
+    onRevert,
+    onOverride,
+  });
 
   return (
-    <View className={className}>
+    <View
+      className={className}
+      accessible
+      accessibilityRole="summary"
+      accessibilityLabel="Harvest stage tracker"
+      accessibilityHint="Shows progress through harvest stages with actions to advance or modify"
+    >
       {/* Visual stage progression */}
       <StageProgress currentStage={harvest.stage} className="mb-6" />
 
@@ -95,4 +95,41 @@ export function StageTracker({
       />
     </View>
   );
+}
+
+function useStageTrackerHandlers({
+  revertModalRef,
+  overrideModalRef,
+  onRevert,
+  onOverride,
+}: {
+  revertModalRef: React.RefObject<RevertModalRef>;
+  overrideModalRef: React.RefObject<OverrideModalRef>;
+  onRevert: Props['onRevert'];
+  onOverride: Props['onOverride'];
+}) {
+  const handleRevertPress = () => {
+    revertModalRef.current?.present();
+  };
+
+  const handleOverridePress = () => {
+    overrideModalRef.current?.present();
+  };
+
+  const handleRevertConfirm = (toStage: HarvestStage, reason: string) => {
+    onRevert(toStage, reason);
+    revertModalRef.current?.dismiss();
+  };
+
+  const handleOverrideConfirm = (toStage: HarvestStage, reason: string) => {
+    onOverride(toStage, reason);
+    overrideModalRef.current?.dismiss();
+  };
+
+  return {
+    handleRevertPress,
+    handleOverridePress,
+    handleRevertConfirm,
+    handleOverrideConfirm,
+  };
 }

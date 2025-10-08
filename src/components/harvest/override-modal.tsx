@@ -57,14 +57,18 @@ export const OverrideModal = React.forwardRef<OverrideModalRef, Props>(
       }
 
       onConfirm(selectedStage, reason.trim());
-      handleClose();
+      closeAfterConfirm();
     };
 
-    const handleClose = () => {
+    const closeAfterConfirm = () => {
       setSelectedStage(null);
       setReason('');
       setError('');
       modal.dismiss();
+    };
+
+    const handleClose = () => {
+      closeAfterConfirm();
       onCancel();
     };
 

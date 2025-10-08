@@ -135,6 +135,11 @@ export interface ChartDataPoint {
 }
 
 /**
+ * Time range filter for charts
+ */
+export type TimeRange = '7d' | '30d' | '90d' | '365d' | 'all';
+
+/**
  * Photo metadata for harvest documentation
  */
 export interface HarvestPhoto {
