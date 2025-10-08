@@ -53,9 +53,16 @@ async function deleteRemotePhotos(
   if (remotePaths.length === 0) return 0;
 
   try {
+    // Strip bucket prefix from paths since .from('harvest-photos') already specifies the bucket
+    const relativePaths = remotePaths.map((path) =>
+      path.startsWith('harvest-photos/')
+        ? path.slice('harvest-photos/'.length)
+        : path
+    );
+
     const { data, error } = await supabase.storage
       .from('harvest-photos')
-      .remove(remotePaths);
+      .remove(relativePaths);
 
     if (error) {
       console.error(`Failed to delete photos for harvest ${harvestId}:`, error);

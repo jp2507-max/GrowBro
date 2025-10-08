@@ -5,7 +5,7 @@
  * Requirements: 4.3 (filtering), 4.4 (batch view), 4.5 (empty states), 4.6 (fallback)
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
@@ -64,6 +64,11 @@ export function HarvestChartContainer({
     result = filterByTimeRange(result, timeRange);
 
     return result;
+  }, [data, plantId, showBatchView, timeRange]);
+
+  // Reset error state when filter inputs change to retry chart rendering
+  useEffect(() => {
+    setHasError(false);
   }, [data, plantId, showBatchView, timeRange]);
 
   // Loading state

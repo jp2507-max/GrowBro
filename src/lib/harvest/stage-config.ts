@@ -23,6 +23,7 @@ export const STAGE_CONFIGS: Record<HarvestStage, StageConfig> = {
     max_duration_days: 1,
     required_fields: [],
     optional_fields: ['wet_weight_g', 'notes', 'photos'],
+    canAdvance: true,
   },
   [HarvestStage.DRYING]: {
     stage: HarvestStage.DRYING,
@@ -33,6 +34,7 @@ export const STAGE_CONFIGS: Record<HarvestStage, StageConfig> = {
     max_duration_days: 14,
     required_fields: [],
     optional_fields: ['dry_weight_g', 'notes', 'photos'],
+    canAdvance: true,
   },
   [HarvestStage.CURING]: {
     stage: HarvestStage.CURING,
@@ -43,6 +45,7 @@ export const STAGE_CONFIGS: Record<HarvestStage, StageConfig> = {
     max_duration_days: 60,
     required_fields: ['dry_weight_g'],
     optional_fields: ['notes', 'photos'],
+    canAdvance: true,
   },
   [HarvestStage.INVENTORY]: {
     stage: HarvestStage.INVENTORY,
@@ -53,6 +56,7 @@ export const STAGE_CONFIGS: Record<HarvestStage, StageConfig> = {
     max_duration_days: 0,
     required_fields: ['final_weight_g'],
     optional_fields: [],
+    canAdvance: false,
   },
 };
 

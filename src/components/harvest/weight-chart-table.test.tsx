@@ -13,13 +13,20 @@ import { WeightChartTable } from './weight-chart-table';
 
 // Mock FlashList
 jest.mock('@shopify/flash-list', () => {
-  const MockFlatList = ({
-    data: _data,
-    renderItem: _renderItem,
-    testID: _testID,
-  }: any) => null;
+  const MockFlashList = ({ data, renderItem, testID, ...props }: any) => {
+    if (!data || !renderItem) return null;
+
+    return React.createElement(
+      'div',
+      { 'data-testid': testID, ...props },
+      data.map((item: any, index: number) =>
+        renderItem({ item, index, separators: {} })
+      )
+    );
+  };
+
   return {
-    FlashList: MockFlatList,
+    FlashList: MockFlashList,
   };
 });
 
@@ -46,14 +53,14 @@ describe('WeightChartTable', () => {
 
   describe('Rendering', () => {
     it('should render table with data (Requirement 4.6)', () => {
-      render(<WeightChartTable data={mockData} />);
+      render(<WeightChartTable data={mockData} testID="weight-chart-table" />);
 
       expect(screen.getByTestId('weight-chart-table')).toBeOnTheScreen();
       expect(screen.getByText('Weight History')).toBeOnTheScreen();
     });
 
     it('should render table headers', () => {
-      render(<WeightChartTable data={mockData} />);
+      render(<WeightChartTable data={mockData} testID="weight-chart-table" />);
 
       expect(screen.getByText('Date')).toBeOnTheScreen();
       expect(screen.getByText('Weight')).toBeOnTheScreen();
@@ -61,7 +68,7 @@ describe('WeightChartTable', () => {
     });
 
     it('should render all data rows', () => {
-      render(<WeightChartTable data={mockData} />);
+      render(<WeightChartTable data={mockData} testID="weight-chart-table" />);
 
       // Check for formatted weights
       expect(screen.getByText('1,000 g')).toBeOnTheScreen();
@@ -70,7 +77,7 @@ describe('WeightChartTable', () => {
     });
 
     it('should not render when data is empty', () => {
-      render(<WeightChartTable data={[]} />);
+      render(<WeightChartTable data={[]} testID="weight-chart-table" />);
 
       expect(screen.queryByTestId('weight-chart-table')).not.toBeOnTheScreen();
     });
@@ -78,7 +85,7 @@ describe('WeightChartTable', () => {
 
   describe('Data Formatting', () => {
     it('should format dates correctly', () => {
-      render(<WeightChartTable data={mockData} />);
+      render(<WeightChartTable data={mockData} testID="weight-chart-table" />);
 
       // Dates should be formatted (we verify presence, exact format depends on locale)
       const list = screen.getByTestId('weight-chart-table');
@@ -86,13 +93,13 @@ describe('WeightChartTable', () => {
     });
 
     it('should format weights with commas (Requirement 15.4)', () => {
-      render(<WeightChartTable data={mockData} />);
+      render(<WeightChartTable data={mockData} testID="weight-chart-table" />);
 
       expect(screen.getByText('1,000 g')).toBeOnTheScreen();
     });
 
     it('should display stage information', () => {
-      render(<WeightChartTable data={mockData} />);
+      render(<WeightChartTable data={mockData} testID="weight-chart-table" />);
 
       expect(screen.getByText('harvest')).toBeOnTheScreen();
       expect(screen.getByText('drying')).toBeOnTheScreen();
@@ -102,7 +109,7 @@ describe('WeightChartTable', () => {
 
   describe('List Performance', () => {
     it('should use FlashList for performance', () => {
-      render(<WeightChartTable data={mockData} />);
+      render(<WeightChartTable data={mockData} testID="weight-chart-table" />);
 
       // Verify list renders (FlashList is mocked as FlatList)
       expect(screen.getByTestId('weight-chart-table')).toBeOnTheScreen();
@@ -117,7 +124,9 @@ describe('WeightChartTable', () => {
 
       // Should render without errors
       expect(() => {
-        render(<WeightChartTable data={largeDataset} />);
+        render(
+          <WeightChartTable data={largeDataset} testID="weight-chart-table" />
+        );
       }).not.toThrow();
     });
   });
@@ -130,7 +139,7 @@ describe('WeightChartTable', () => {
     });
 
     it('should have accessible headers', () => {
-      render(<WeightChartTable data={mockData} />);
+      render(<WeightChartTable data={mockData} testID="weight-chart-table" />);
 
       expect(screen.getByText('Date')).toBeOnTheScreen();
       expect(screen.getByText('Weight')).toBeOnTheScreen();

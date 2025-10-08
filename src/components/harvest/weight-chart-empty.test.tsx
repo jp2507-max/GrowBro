@@ -12,6 +12,25 @@ import { WeightChartEmpty } from './weight-chart-empty';
 
 afterEach(cleanup);
 
+// Mock useTranslation hook only
+jest.mock('react-i18next', () => ({
+  ...jest.requireActual('react-i18next'),
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        'chart.empty.noData': 'No Harvest Data Yet',
+        'chart.empty.noDataGuidance':
+          'Start your first harvest to see weight progression over time.',
+        'chart.empty.filtered': 'No Data Found',
+        'chart.empty.filteredGuidance':
+          'Try adjusting your filters to see harvest data.',
+        'chart.empty.createButton': 'Create First Harvest',
+      };
+      return translations[key] || key;
+    },
+  }),
+}));
+
 describe('WeightChartEmpty', () => {
   describe('Rendering', () => {
     it('should render with no-data variant (Requirement 4.5)', () => {

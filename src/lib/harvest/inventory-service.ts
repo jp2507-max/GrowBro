@@ -274,6 +274,7 @@ async function updateLocalState(
       const harvest = await harvestsCollection.find(harvestId);
       const updatedHarvest = await harvest.update((record) => {
         record.stage = HarvestStage.INVENTORY;
+        record.stageStartedAt = new Date(response.server_timestamp_ms);
         record.stageCompletedAt = new Date(response.server_timestamp_ms);
         record.serverUpdatedAtMs = response.server_timestamp_ms;
       });
@@ -285,9 +286,11 @@ async function updateLocalState(
         record.plantId = harvest.plantId;
         record.userId = harvest.userId;
         record.finalWeightG = finalizedWeightG ?? harvest.dryWeightG ?? 0;
-        record.harvestDate = new Date().toISOString().split('T')[0]; // ISO date
+        record.harvestDate = new Date(response.server_timestamp_ms)
+          .toISOString()
+          .split('T')[0]; // ISO date
         record.totalDurationDays = Math.floor(
-          (response.server_timestamp_ms - harvest.stageStartedAt.getTime()) /
+          (response.server_timestamp_ms - harvest.createdAt.getTime()) /
             86400000
         );
         record.serverUpdatedAtMs = response.server_timestamp_ms;

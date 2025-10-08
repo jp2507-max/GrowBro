@@ -50,8 +50,9 @@ async function cleanupOrphanedFiles(
 ): Promise<{ orphansRemoved: number; remainingFiles: PhotoFile[] }> {
   const allFiles = await getAllPhotoFiles();
   const orphans = await detectOrphans(referencedUris);
-  const orphansRemoved = await cleanupOrphans(orphans);
-  const remainingFiles = allFiles.filter((f) => !orphans.includes(f.path));
+  const { deletedCount: orphansRemoved, deletedPaths } =
+    await cleanupOrphans(orphans);
+  const remainingFiles = allFiles.filter((f) => !deletedPaths.includes(f.path));
 
   return { orphansRemoved, remainingFiles };
 }

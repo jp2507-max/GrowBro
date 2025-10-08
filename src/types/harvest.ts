@@ -8,14 +8,30 @@
  */
 
 /**
+ * ISO 8601 date string as stored in database
+ */
+export type ISODateString = string;
+
+/**
  * Harvest stage finite state machine
  * Allowed transitions: HARVEST → DRYING → CURING → INVENTORY (forward only)
  */
-export enum HarvestStage {
-  HARVEST = 'harvest',
-  DRYING = 'drying',
-  CURING = 'curing',
-  INVENTORY = 'inventory',
+export const HarvestStages = {
+  HARVEST: 'harvest',
+  DRYING: 'drying',
+  CURING: 'curing',
+  INVENTORY: 'inventory',
+} as const;
+
+export type HarvestStage = (typeof HarvestStages)[keyof typeof HarvestStages];
+
+/**
+ * Photo object for harvest documentation
+ */
+export interface HarvestPhotoObject {
+  variant: string;
+  localUri: string;
+  remotePath?: string;
 }
 
 /**
@@ -45,8 +61,8 @@ export interface Harvest {
   /** Server-authoritative UTC timestamp (ISO 8601) */
   stage_completed_at: Date | null;
 
-  /** File URIs for photos (stored in device filesystem) */
-  photos: string[];
+  /** Photo objects for harvest documentation */
+  photos: HarvestPhotoObject[];
 
   /** Server-authoritative UTC timestamp (ISO 8601) */
   created_at: Date;
@@ -80,8 +96,8 @@ export interface Inventory {
   /** Final dry weight in integer grams (Requirement 11.1, 11.3) */
   final_weight_g: number;
 
-  /** Date harvest was completed */
-  harvest_date: Date;
+  /** ISO-8601 date string when harvest was completed (as stored in DB) */
+  harvest_date: ISODateString;
 
   /** Total duration from harvest start to inventory creation (days) */
   total_duration_days: number;
@@ -114,6 +130,7 @@ export interface StageConfig {
   max_duration_days: number;
   required_fields: string[];
   optional_fields: string[];
+  canAdvance: boolean;
 }
 
 /**
@@ -189,20 +206,26 @@ export interface CompleteCuringResponse {
 /**
  * Audit action types for harvest workflow state changes
  */
-export enum HarvestAuditAction {
-  STAGE_ADVANCE = 'stage_advance',
-  STAGE_UNDO = 'stage_undo',
-  STAGE_REVERT = 'stage_revert',
-  STAGE_OVERRIDE_SKIP = 'stage_override_skip',
-}
+export const HarvestAuditActions = {
+  STAGE_ADVANCE: 'stage_advance',
+  STAGE_UNDO: 'stage_undo',
+  STAGE_REVERT: 'stage_revert',
+  STAGE_OVERRIDE_SKIP: 'stage_override_skip',
+} as const;
+
+export type HarvestAuditAction =
+  (typeof HarvestAuditActions)[keyof typeof HarvestAuditActions];
 
 /**
  * Audit entry status
  */
-export enum HarvestAuditStatus {
-  PERMITTED = 'permitted',
-  BLOCKED = 'blocked',
-}
+export const HarvestAuditStatuses = {
+  PERMITTED: 'permitted',
+  BLOCKED: 'blocked',
+} as const;
+
+export type HarvestAuditStatus =
+  (typeof HarvestAuditStatuses)[keyof typeof HarvestAuditStatuses];
 
 /**
  * Audit entry for harvest workflow state changes

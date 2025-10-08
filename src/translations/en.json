@@ -349,6 +349,65 @@
       "hour": "1 hour",
       "hours": "{{count}} hours"
     },
+    "edgeCase": {
+      "clockSkew": {
+        "description": "Your device clock differs significantly from the server. This may affect sync reliability.",
+        "ignore": "Ignore for Now",
+        "syncTime": "Sync Device Time",
+        "title": "Device Time Mismatch"
+      },
+      "duration": {
+        "adjustDate": "Adjust Date",
+        "continue": "Continue Anyway",
+        "dismiss": "Dismiss"
+      },
+      "durationTooLong": {
+        "description": "This stage has exceeded the recommended duration. You may want to review the conditions.",
+        "title": "Stage Duration Extended"
+      },
+      "durationTooShort": {
+        "description": "This stage is shorter than recommended. Continuing may affect quality.",
+        "title": "Stage Duration Too Short"
+      },
+      "invalidTimestamps": {
+        "description": "The stage completion date cannot be before the start date. Please correct the dates.",
+        "dismiss": "Cancel",
+        "fixDates": "Fix Dates",
+        "title": "Invalid Dates"
+      },
+      "invalidWeightRatio": {
+        "description": "Dry weight cannot exceed wet weight. Please check your measurements.",
+        "dismiss": "Cancel",
+        "fixWeights": "Fix Weights",
+        "title": "Invalid Weight Ratio"
+      },
+      "missingDryWeight": {
+        "addWeight": "Add Dry Weight",
+        "description": "You must enter a dry weight before completing the curing stage and recording the final yield.",
+        "dismiss": "Go Back",
+        "title": "Dry Weight Required"
+      },
+      "overlappingHarvests": {
+        "closeOther": "Close Other Harvest",
+        "description": "This plant already has an open harvest. Close the existing harvest or provide a reason to override.",
+        "override": "Override & Continue",
+        "title": "Overlapping Harvests Detected",
+        "viewExisting": "View Existing Harvests"
+      },
+      "storageFull": {
+        "continueWithout": "Continue Without Photos",
+        "description": "Photo storage is running low. You can free up space or continue without photos.",
+        "dismiss": "Cancel",
+        "freeSpace": "Free Up Space",
+        "title": "Storage Nearly Full"
+      },
+      "syncConflict": {
+        "description": "This harvest was updated on another device. The latest version has been applied.",
+        "dismiss": "Dismiss",
+        "title": "Updated Elsewhere",
+        "viewChanges": "View Details"
+      }
+    },
     "error": {
       "createFailed": "Failed to create harvest. Please try again."
     },
@@ -360,7 +419,7 @@
         "view_details": "View Details"
       },
       "business_logic": {
-        "missing_dry_weight": "Dry weight must be set before finalizing curing.",
+        "missing_dry_weight": "Dry weight must be set before completing curing.",
         "title": "Action Not Allowed"
       },
       "failed": "Failed to update stage. Please try again.",
@@ -389,9 +448,12 @@
     "history": {
       "accessibility": {
         "emptyCreate": "Create a new harvest",
+        "emptyCreateHint": "Double-tap to create a new harvest",
         "list": "Harvest history list",
+        "listHint": "Scrollable list of harvest records",
         "rowHint": "Double-tap to open harvest details",
-        "summary": "Harvest history empty state"
+        "summary": "Harvest history empty state",
+        "summaryHint": "No harvests found"
       },
       "actions": {
         "clearFilters": "Clear filters",
@@ -413,6 +475,9 @@
       },
       "list": {
         "conflict_badge": "Needs review",
+        "rowLabel": "Harvest in {{stage}} stage, updated {{time}}",
+        "rowLabelConflict": ", needs review",
+        "rowLabelWeight": ", dry weight {{weight}} grams",
         "updated": "Updated {{relativeTime}}",
         "weight": "Dry weight: {{weight}} g"
       },
@@ -425,12 +490,12 @@
       "title": "Harvest history"
     },
     "inventory": {
-      "concurrent_finalize_toast": "Inventory already finalized by another process",
-      "finalize_curing": "Finalize Curing & Create Inventory",
-      "finalize_success_toast": "Curing completed and inventory created successfully",
-      "missing_dry_weight": "Dry weight must be set before finalizing curing",
+      "concurrent_finalize_toast": "Harvest record already completed by another process",
+      "finalize_curing": "Complete Curing & Record Final Yield",
+      "finalize_success_toast": "Curing completed and final yield recorded successfully",
+      "missing_dry_weight": "Dry weight must be set before completing curing",
       "missing_dry_weight_cta": "Update Dry Weight",
-      "retry_failed": "Failed to finalize curing after multiple attempts. Please check your connection and try again."
+      "retry_failed": "Failed to complete curing after multiple attempts. Please check your connection and try again."
     },
     "modal": {
       "cancel": "Cancel",
@@ -528,6 +593,34 @@
       "success": "Photo added successfully",
       "title": "Add Photo"
     },
+    "security": {
+      "cascade_deletion": "All harvest data will be permanently deleted when you delete your account",
+      "data_isolation": "Your harvest data is private and only accessible by you",
+      "private_photos": "Photos are stored privately with no public access",
+      "rls_protected": "Row-level security ensures data isolation"
+    },
+    "sharing": {
+      "actions": {
+        "cancel": "Cancel",
+        "share": "Share Summary"
+      },
+      "privacy_notice": "No personal information (plant names, notes, or photos) will be shared.",
+      "redaction": {
+        "aggregated_data": "Aggregated harvest metrics",
+        "no_pii": "Personal information removed",
+        "redacted_at": "Data prepared on {{date}}"
+      },
+      "summary": {
+        "avg_duration": "Average duration",
+        "date_range": "Time period",
+        "photo_count": "{{count}} photos",
+        "stages_completed": "Stages completed",
+        "title": "Harvest Summary",
+        "total_harvests": "{{count}} harvests",
+        "total_weight": "Total weight"
+      },
+      "title": "Share Harvest Data"
+    },
     "stage_tracker": {
       "completed": "Completed",
       "elapsed": "{{days}}d {{hours}}h {{minutes}}m elapsed",
@@ -542,7 +635,7 @@
       "curing": "Curing",
       "drying": "Drying",
       "harvest": "Harvest",
-      "inventory": "Inventory"
+      "inventory": "Completion"
     },
     "success": {
       "created": "Harvest created successfully"

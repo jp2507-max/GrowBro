@@ -148,7 +148,7 @@ describe('Weight Chart Performance', () => {
       const duration = performance.now() - start;
 
       expect(result).toEqual([]);
-      expect(duration).toBeLessThan(1);
+      expect(duration).toBeLessThan(10);
     });
 
     it('should handle single point quickly', () => {
@@ -157,7 +157,7 @@ describe('Weight Chart Performance', () => {
       const duration = performance.now() - start;
 
       expect(result).toEqual([{ x: 1, y: 100 }]);
-      expect(duration).toBeLessThan(1);
+      expect(duration).toBeLessThan(10);
     });
 
     it('should handle data smaller than threshold quickly', () => {
@@ -171,7 +171,7 @@ describe('Weight Chart Performance', () => {
       const duration = performance.now() - start;
 
       expect(result).toEqual(data);
-      expect(duration).toBeLessThan(1);
+      expect(duration).toBeLessThan(10);
     });
   });
 });

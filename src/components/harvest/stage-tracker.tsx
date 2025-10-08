@@ -8,6 +8,7 @@
 import React, { useRef } from 'react';
 import { View } from 'react-native';
 
+import { getStageConfig } from '@/lib/harvest/stage-config';
 import type { Harvest, HarvestStage } from '@/types/harvest';
 
 import type { OverrideModalRef } from './override-modal';
@@ -72,7 +73,7 @@ export function StageTracker({
       <StageActions
         currentStage={harvest.stage}
         stageCompletedAt={harvest.stage_completed_at}
-        canAdvance={true}
+        canAdvance={getStageConfig(harvest.stage).canAdvance}
         onAdvance={onAdvance}
         onUndo={onUndo}
         onRevert={handleRevertPress}

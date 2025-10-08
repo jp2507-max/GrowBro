@@ -22,6 +22,12 @@ import type { HarvestModel } from '@/lib/watermelon-models/harvest';
 import { HarvestStage, type StageConfig } from '@/types/harvest';
 
 import {
+  recordRehydrationAttempt,
+  recordScheduleAttempt,
+  trackNotificationRehydration,
+  trackNotificationSchedule,
+} from './notification-monitoring';
+import {
   calculateElapsedDays,
   exceedsMaxDuration,
   getStageConfig,
@@ -139,6 +145,7 @@ function createOverdueNotificationContent(
  * Schedule target duration notification for a harvest stage
  * Requirement 14.1: Schedule local notification for target duration
  */
+// eslint-disable-next-line max-lines-per-function
 export async function scheduleStageReminder(
   harvestId: string,
   stage: HarvestStage,
@@ -187,10 +194,21 @@ export async function scheduleStageReminder(
       notificationId
     );
 
-    return {
+    const result = {
       notificationId,
       scheduled: true,
     };
+
+    // Track success
+    recordScheduleAttempt(true);
+    await trackNotificationSchedule({
+      type: 'target',
+      result,
+      harvestId,
+      stage,
+    });
+
+    return result;
   } catch (error) {
     captureCategorizedErrorSync(error, {
       category: 'notification',
@@ -198,11 +216,22 @@ export async function scheduleStageReminder(
       context: { harvestId, stage },
     });
 
-    return {
+    const result = {
       notificationId: null,
       scheduled: false,
       error: error instanceof Error ? error.message : 'unknown_error',
     };
+
+    // Track failure
+    recordScheduleAttempt(false);
+    await trackNotificationSchedule({
+      type: 'target',
+      result,
+      harvestId,
+      stage,
+    });
+
+    return result;
   }
 }
 
@@ -211,6 +240,7 @@ export async function scheduleStageReminder(
  * Requirement 14.2: Send gentle reminder when duration exceeds recommendation
  * Requirement 5.2: Provide gentle notifications with guidance
  */
+// eslint-disable-next-line max-lines-per-function
 export async function scheduleOverdueReminder(
   harvestId: string,
   stage: HarvestStage,
@@ -259,10 +289,21 @@ export async function scheduleOverdueReminder(
       notificationId
     );
 
-    return {
+    const result = {
       notificationId,
       scheduled: true,
     };
+
+    // Track success
+    recordScheduleAttempt(true);
+    await trackNotificationSchedule({
+      type: 'overdue',
+      result,
+      harvestId,
+      stage,
+    });
+
+    return result;
   } catch (error) {
     captureCategorizedErrorSync(error, {
       category: 'notification',
@@ -270,11 +311,22 @@ export async function scheduleOverdueReminder(
       context: { harvestId, stage },
     });
 
-    return {
+    const result = {
       notificationId: null,
       scheduled: false,
       error: error instanceof Error ? error.message : 'unknown_error',
     };
+
+    // Track failure
+    recordScheduleAttempt(false);
+    await trackNotificationSchedule({
+      type: 'overdue',
+      result,
+      harvestId,
+      stage,
+    });
+
+    return result;
   }
 }
 
@@ -349,6 +401,7 @@ export async function cancelNotificationById(
  */
 // eslint-disable-next-line max-lines-per-function
 export async function rehydrateNotifications(): Promise<RehydrationStats> {
+  const startTime = Date.now();
   const stats: RehydrationStats = {
     totalHarvests: 0,
     notificationsScheduled: 0,
@@ -482,6 +535,11 @@ export async function rehydrateNotifications(): Promise<RehydrationStats> {
       }
     }
 
+    // Track rehydration success
+    const durationMs = Date.now() - startTime;
+    recordRehydrationAttempt(stats, durationMs);
+    await trackNotificationRehydration(stats, durationMs);
+
     return stats;
   } catch (error) {
     captureCategorizedErrorSync(error, {
@@ -489,6 +547,12 @@ export async function rehydrateNotifications(): Promise<RehydrationStats> {
       message: 'Failed to rehydrate harvest notifications',
     });
     stats.errors++;
+
+    // Track rehydration failure
+    const durationMs = Date.now() - startTime;
+    recordRehydrationAttempt(stats, durationMs);
+    await trackNotificationRehydration(stats, durationMs);
+
     return stats;
   }
 }

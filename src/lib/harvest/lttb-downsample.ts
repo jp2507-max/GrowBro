@@ -28,6 +28,17 @@ function calculateAveragePoint<T extends DownsamplePoint>(
   end: number
 ): { x: number; y: number } {
   const length = Math.min(end, data.length) - start;
+
+  // Guard against division by zero when start === end
+  if (length <= 0) {
+    // Return data[start] if start is within bounds, otherwise last element
+    const fallbackIndex = start < data.length ? start : data.length - 1;
+    return {
+      x: data[fallbackIndex].x,
+      y: data[fallbackIndex].y,
+    };
+  }
+
   let avgX = 0;
   let avgY = 0;
 

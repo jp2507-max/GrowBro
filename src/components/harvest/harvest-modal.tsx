@@ -14,22 +14,22 @@ import { showMessage } from 'react-native-flash-message';
 
 import { PhotoCapture } from '@/components/photo-capture';
 import { Button, Input, Text, View } from '@/components/ui';
+import {
+  type HarvestFormData,
+  harvestFormSchema,
+  parseHarvestFormData,
+} from '@/lib/harvest/harvest-form-schema';
+import {
+  createHarvest,
+  type CreateHarvestInput,
+} from '@/lib/harvest/harvest-service';
+import type { WeightUnit } from '@/lib/harvest/weight-conversion';
+import { toDisplayValue } from '@/lib/harvest/weight-conversion';
 import { supabase } from '@/lib/supabase';
 import { enqueueHarvestPhotos } from '@/lib/uploads/harvest-photo-queue';
 import type { ChartDataPoint } from '@/types/harvest';
 import type { PhotoVariants } from '@/types/photo-storage';
 
-import {
-  type HarvestFormData,
-  harvestFormSchema,
-  parseHarvestFormData,
-} from '../../lib/harvest/harvest-form-schema';
-import {
-  createHarvest,
-  type CreateHarvestInput,
-} from '../../lib/harvest/harvest-service';
-import type { WeightUnit } from '../../lib/harvest/weight-conversion';
-import { toDisplayValue } from '../../lib/harvest/weight-conversion';
 import { HarvestChartContainer } from './harvest-chart-container';
 
 export interface HarvestModalProps {
@@ -232,6 +232,7 @@ function ModalBody({
   onUnitChange,
   errors,
   photos,
+  photoVariants,
   onAddPhoto,
   plantId,
   historicalData,
@@ -245,6 +246,7 @@ function ModalBody({
   onUnitChange: (unit: WeightUnit) => void;
   errors: any;
   photos: string[];
+  photoVariants: PhotoVariants[];
   onAddPhoto: (variants: PhotoVariants) => void;
   plantId: string;
   historicalData?: {
@@ -268,6 +270,7 @@ function ModalBody({
           onUnitChange={onUnitChange}
           errors={errors}
           photos={photos}
+          photoVariants={photoVariants}
           onAddPhoto={onAddPhoto}
           plantId={plantId}
           historicalData={historicalData}
@@ -386,6 +389,7 @@ export function HarvestModal({
           onUnitChange={handleUnitChange}
           errors={errors}
           photos={photoUris}
+          photoVariants={photoVariants}
           onAddPhoto={handleAddPhoto}
           plantId={plantId}
           historicalData={historicalData}
@@ -424,6 +428,7 @@ function FormContent({
   onUnitChange,
   errors,
   photos,
+  photoVariants,
   onAddPhoto,
   plantId,
   historicalData,
@@ -434,6 +439,7 @@ function FormContent({
   onUnitChange: (unit: WeightUnit) => void;
   errors: any;
   photos: string[];
+  photoVariants: PhotoVariants[];
   onAddPhoto: (variants: PhotoVariants) => void;
   plantId: string;
   historicalData?: {
@@ -469,7 +475,12 @@ function FormContent({
         t={t}
       />
       <NotesField control={control} t={t} />
-      <PhotoSection photos={photos} onAddPhoto={onAddPhoto} t={t} />
+      <PhotoSection
+        photos={photos}
+        photoVariants={photoVariants}
+        onAddPhoto={onAddPhoto}
+        t={t}
+      />
     </>
   );
 }
@@ -567,18 +578,18 @@ function NotesField({
  * Photo capture section with PhotoCapture component
  */
 function PhotoSection({
-  photos,
+  photoVariants,
   onAddPhoto,
   t,
 }: {
-  photos: string[];
+  photoVariants: PhotoVariants[];
   onAddPhoto: (variants: any) => void;
   t: (key: string) => string;
 }) {
   return (
     <View className="mt-4">
       <Text className="mb-2 text-base text-neutral-700 dark:text-neutral-300">
-        {t('harvest.modal.photos')} ({photos.length})
+        {t('harvest.modal.photos')} ({photoVariants.length})
       </Text>
       <PhotoCapture
         onPhotoCaptured={onAddPhoto}

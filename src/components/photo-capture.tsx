@@ -19,10 +19,12 @@ interface PhotoCaptureState {
   error: string | null;
 }
 
-async function captureFromCamera(): Promise<PhotoVariants> {
+async function captureFromCamera(
+  t: (key: string) => string
+): Promise<PhotoVariants> {
   const permission = await ImagePicker.requestCameraPermissionsAsync();
   if (!permission.granted) {
-    throw new Error('Camera permission denied');
+    throw new Error(t('harvest.photo.errors.camera_permission_denied'));
   }
 
   const result = await ImagePicker.launchCameraAsync({
@@ -32,18 +34,20 @@ async function captureFromCamera(): Promise<PhotoVariants> {
   });
 
   if (result.canceled) {
-    throw new Error('Capture cancelled');
+    throw new Error(t('harvest.photo.errors.capture_cancelled'));
   }
 
   const photoUri = result.assets[0]?.uri;
   if (!photoUri) {
-    throw new Error('No photo URI returned from camera');
+    throw new Error(t('harvest.photo.errors.no_photo_uri'));
   }
 
   return captureAndStore(photoUri);
 }
 
-async function selectFromLibrary(): Promise<PhotoVariants> {
+async function selectFromLibrary(
+  t: (key: string) => string
+): Promise<PhotoVariants> {
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ImagePicker.MediaTypeOptions.Images,
     quality: 1,
@@ -51,12 +55,12 @@ async function selectFromLibrary(): Promise<PhotoVariants> {
   });
 
   if (result.canceled) {
-    throw new Error('Selection cancelled');
+    throw new Error(t('harvest.photo.errors.selection_cancelled'));
   }
 
   const photoUri = result.assets[0]?.uri;
   if (!photoUri) {
-    throw new Error('No photo URI returned from library');
+    throw new Error(t('harvest.photo.errors.no_photo_uri'));
   }
 
   return captureAndStore(photoUri);
@@ -116,28 +120,41 @@ function CaptureButton({
   );
 }
 
-export function PhotoCapture({
-  onPhotoCaptured,
-  onError,
-  disabled = false,
-  buttonText,
-}: PhotoCaptureProps) {
-  const { t } = useTranslation();
-  const [state, setState] = useState<PhotoCaptureState>({
+function usePhotoCaptureState() {
+  return useState<PhotoCaptureState>({
     isProcessing: false,
     error: null,
   });
+}
 
-  const handlePhotoCapture = async (
-    captureFunction: () => Promise<PhotoVariants>
+function createPhotoCaptureHandler({
+  setState,
+  t,
+  onPhotoCaptured,
+  onError,
+}: {
+  setState: React.Dispatch<React.SetStateAction<PhotoCaptureState>>;
+  t: (key: string) => string;
+  onPhotoCaptured?: (photoVariants: PhotoVariants) => void;
+  onError?: (error: Error) => void;
+}) {
+  return async (
+    captureFunction: (t: (key: string) => string) => Promise<PhotoVariants>
   ) => {
     try {
       setState({ isProcessing: true, error: null });
-      const variants = await captureFunction();
+      const variants = await captureFunction(t);
       onPhotoCaptured?.(variants);
       setState({ isProcessing: false, error: null });
     } catch (err) {
-      if (err instanceof Error && err.message.includes('cancelled')) {
+      // Check if this is a cancellation error by examining the error message
+      // Since messages are now localized, we check for the specific cancellation keys
+      const isCancellation =
+        err instanceof Error &&
+        (err.message === t('harvest.photo.errors.capture_cancelled') ||
+          err.message === t('harvest.photo.errors.selection_cancelled'));
+
+      if (isCancellation) {
         setState({ isProcessing: false, error: null });
         return;
       }
@@ -147,8 +164,15 @@ export function PhotoCapture({
       onError?.(err instanceof Error ? err : new Error(message));
     }
   };
+}
 
-  const showPhotoOptions = () => {
+function createPhotoOptionsHandler(
+  handlePhotoCapture: (
+    captureFunction: (t: (key: string) => string) => Promise<PhotoVariants>
+  ) => Promise<void>,
+  t: (key: string) => string
+) {
+  return () => {
     Alert.alert(t('harvest.photo.title'), t('harvest.photo.chooseSource'), [
       {
         text: t('harvest.photo.takePhoto'),
@@ -161,6 +185,25 @@ export function PhotoCapture({
       { text: t('harvest.photo.cancel'), style: 'cancel' },
     ]);
   };
+}
+
+export function PhotoCapture({
+  onPhotoCaptured,
+  onError,
+  disabled = false,
+  buttonText,
+}: PhotoCaptureProps) {
+  const { t } = useTranslation();
+  const [state, setState] = usePhotoCaptureState();
+
+  const handlePhotoCapture = createPhotoCaptureHandler({
+    setState,
+    t,
+    onPhotoCaptured,
+    onError,
+  });
+
+  const showPhotoOptions = createPhotoOptionsHandler(handlePhotoCapture, t);
 
   return (
     <View className="gap-2">

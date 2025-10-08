@@ -101,8 +101,7 @@ export async function decryptFile(encryptedUri: string): Promise<string> {
  */
 export async function isEncryptionAvailable(): Promise<boolean> {
   try {
-    await SecureStore.isAvailableAsync();
-    return true;
+    return await SecureStore.isAvailableAsync();
   } catch {
     return false;
   }

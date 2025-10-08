@@ -67,5 +67,35 @@ export const setup = (
   };
 };
 
+// Mock network state for offline testing
+let mockIsOffline = false;
+
+export const mockNetworkState = {
+  setOffline: (offline: boolean) => {
+    mockIsOffline = offline;
+  },
+  isOffline: () => mockIsOffline,
+};
+
+// Mock file system for photo testing
+const mockFileSystem: Record<string, string> = {};
+
+export const mockFileSystemHelpers = {
+  write: (uri: string, content: string) => {
+    mockFileSystem[uri] = content;
+  },
+  read: (uri: string): string | undefined => mockFileSystem[uri],
+  delete: (uri: string) => {
+    delete mockFileSystem[uri];
+  },
+  exists: (uri: string): boolean => uri in mockFileSystem,
+  clear: () => {
+    Object.keys(mockFileSystem).forEach((key) => {
+      delete mockFileSystem[key];
+    });
+  },
+  getAll: () => ({ ...mockFileSystem }),
+};
+
 export * from '@testing-library/react-native';
 export { customRender as render };

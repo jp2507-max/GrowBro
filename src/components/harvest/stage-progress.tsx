@@ -40,7 +40,7 @@ export function StageProgress({ currentStage, className }: Props) {
       accessible
       accessibilityRole="progressbar"
       accessibilityLabel={progressLabel}
-      accessibilityHint="Shows progress through harvest stages from harvest to inventory"
+      accessibilityHint={t('harvest.stageProgress.hint.overview')}
       accessibilityValue={{
         min: 0,
         max: stages.length,
@@ -52,6 +52,7 @@ export function StageProgress({ currentStage, className }: Props) {
         {stages.map((stage, index) => {
           const isCompleted = index < currentIndex;
           const isCurrent = index === currentIndex;
+          const connectorCompleted = index <= currentIndex;
           const stageName = t(`harvest.stages.${stage}`);
 
           return (
@@ -60,7 +61,7 @@ export function StageProgress({ currentStage, className }: Props) {
               {index > 0 && (
                 <View
                   className={`h-0.5 flex-1 ${
-                    isCompleted ? 'bg-primary-600' : 'bg-neutral-300'
+                    connectorCompleted ? 'bg-primary-600' : 'bg-neutral-300'
                   }`}
                   accessible={false}
                 />
@@ -84,10 +85,16 @@ export function StageProgress({ currentStage, className }: Props) {
                   })}
                   accessibilityHint={
                     isCurrent
-                      ? `Currently in ${stageName} stage`
+                      ? t('harvest.stageProgress.hint.current', {
+                          stage: stageName,
+                        })
                       : isCompleted
-                        ? `Completed ${stageName} stage`
-                        : `${stageName} stage not started`
+                        ? t('harvest.stageProgress.hint.completed', {
+                            stage: stageName,
+                          })
+                        : t('harvest.stageProgress.hint.notStarted', {
+                            stage: stageName,
+                          })
                   }
                   accessibilityRole="button"
                   accessibilityState={{

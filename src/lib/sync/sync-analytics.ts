@@ -98,6 +98,30 @@ export async function trackPendingChanges(count: number): Promise<void> {
 }
 
 /**
+ * Track harvest-specific sync metrics
+ * Requirements: 16.4 (telemetry for sync performance)
+ */
+export async function trackHarvestSyncMetrics(params: {
+  operation: 'create' | 'update' | 'delete' | 'advance_stage';
+  table: 'harvests' | 'inventory' | 'harvest_audits';
+  success: boolean;
+  durationMs: number;
+  offline: boolean;
+  retryCount?: number;
+}): Promise<void> {
+  try {
+    await NoopAnalytics.track('harvest_sync_operation', {
+      operation: params.operation,
+      duration_ms: Math.round(params.durationMs),
+      success: params.success,
+      offline: params.offline,
+    });
+  } catch (error) {
+    console.warn('Failed to track harvest sync metrics:', error);
+  }
+}
+
+/**
  * Track sync retry attempts
  */
 export async function trackSyncRetry(params: {
@@ -140,5 +164,51 @@ export async function trackPayloadSize(params: {
     });
   } catch (error) {
     console.warn('Failed to track payload size:', error);
+  }
+}
+
+/**
+ * Track photo upload performance metrics
+ * Requirements: 16.4 (telemetry for photo storage performance)
+ */
+export async function trackPhotoUploadMetrics(params: {
+  variant: 'original' | 'resized' | 'thumbnail';
+  sizeBytes: number;
+  durationMs: number;
+  success: boolean;
+  errorCode?: string;
+}): Promise<void> {
+  try {
+    await NoopAnalytics.track('photo_upload', {
+      variant: params.variant,
+      bytes: params.sizeBytes,
+      duration_ms: Math.round(params.durationMs),
+      success: params.success,
+    });
+  } catch (error) {
+    console.warn('Failed to track photo upload metrics:', error);
+  }
+}
+
+/**
+ * Track photo cleanup performance
+ * Requirements: 16.3 (background cleanup monitoring)
+ */
+export async function trackPhotoCleanupMetrics(params: {
+  filesDeleted: number;
+  bytesFreed: number;
+  orphansRemoved: number;
+  durationMs: number;
+  trigger: 'background' | 'manual' | 'threshold';
+}): Promise<void> {
+  try {
+    await NoopAnalytics.track('photo_cleanup', {
+      files_deleted: params.filesDeleted,
+      bytes_freed: params.bytesFreed,
+      orphans_removed: params.orphansRemoved,
+      duration_ms: Math.round(params.durationMs),
+    });
+  } catch (error) {
+    console.warn('Failed to track photo cleanup metrics:', error);
   }
 }

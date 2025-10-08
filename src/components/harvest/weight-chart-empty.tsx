@@ -22,7 +22,7 @@ export function WeightChartEmpty({
   onCreateHarvest,
   onCreatePress,
   variant = 'no-data',
-  testID,
+  testID = 'weight-chart-empty',
 }: Props) {
   const { t } = useTranslation();
 

@@ -4,10 +4,9 @@
 
 import * as React from 'react';
 
+import { Text } from '@/components/ui';
+import { Button } from '@/components/ui/button';
 import type { ErrorAction } from '@/lib/harvest/harvest-error-types';
-
-import { Text } from '../ui';
-import { Button } from '../ui/button';
 
 type Props = {
   action: ErrorAction;

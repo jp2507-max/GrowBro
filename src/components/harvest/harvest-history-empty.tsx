@@ -40,7 +40,7 @@ export function HarvestHistoryEmpty({
       className="flex-1 items-center justify-center gap-4 px-6 py-12"
       accessibilityRole="summary"
       accessibilityLabel={translate('harvest.history.accessibility.summary')}
-      accessibilityHint="No harvests found"
+      accessibilityHint={translate('harvest.history.accessibility.summaryHint')}
       testID={testID}
     >
       <Text className="text-center text-lg font-semibold text-neutral-900 dark:text-neutral-50">
@@ -58,7 +58,9 @@ export function HarvestHistoryEmpty({
           accessibilityLabel={translate(
             'harvest.history.accessibility.emptyCreate'
           )}
-          accessibilityHint="Double-tap to create a new harvest"
+          accessibilityHint={translate(
+            'harvest.history.accessibility.emptyCreateHint'
+          )}
         />
       ) : null}
 

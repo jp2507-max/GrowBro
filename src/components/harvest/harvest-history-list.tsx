@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { List, Pressable, Text, View } from '@/components/ui';
@@ -44,6 +44,18 @@ const STATUS_PREDICATE: Record<
   completed: (harvest) => harvest.stage === HarvestStage.INVENTORY,
 };
 
+/**
+ * HarvestHistoryList component optimized for FlashList v2 performance
+ * Requirements: 15.3, 15.4 (60fps on mid-tier Android)
+ *
+ * Performance optimizations:
+ * - Memoized renderItem to prevent re-creation on every render
+ * - Memoized keyExtractor callback
+ * - Stable ItemSeparatorComponent reference
+ * - Memoized empty component
+ * - Proper data transformation pipeline
+ */
+
 export function HarvestHistoryList({
   harvests,
   filters,
@@ -63,37 +75,51 @@ export function HarvestHistoryList({
   );
   const items = useMemo(() => filtered.map(mapHarvestToItem), [filtered]);
 
-  const emptyVariant = resolveEmptyVariant(
-    harvests.length,
-    items.length,
-    isOffline
+  const emptyVariant = useMemo(
+    () => resolveEmptyVariant(harvests.length, items.length, isOffline),
+    [harvests.length, items.length, isOffline]
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: unknown }) => (
+      <HarvestHistoryRow
+        item={item as HarvestListItem}
+        relativeTime={relativeTime}
+        onPress={onSelect}
+        testID={`${testID}-item-${(item as HarvestListItem).id}`}
+      />
+    ),
+    [relativeTime, onSelect, testID]
+  );
+
+  const keyExtractor = useCallback(
+    (item: unknown) => (item as HarvestListItem).id,
+    []
+  );
+
+  const emptyComponent = useMemo(
+    () => (
+      <HarvestHistoryEmpty
+        variant={emptyVariant}
+        onCreateHarvest={onCreateHarvest}
+        onClearFilters={onClearFilters}
+        testID={`${testID}-empty`}
+      />
+    ),
+    [emptyVariant, onCreateHarvest, onClearFilters, testID]
   );
 
   return (
     <List
       data={items}
-      renderItem={({ item }) => (
-        <HarvestHistoryRow
-          item={item as HarvestListItem}
-          relativeTime={relativeTime}
-          onPress={onSelect}
-          testID={`${testID}-item-${(item as HarvestListItem).id}`}
-        />
-      )}
-      keyExtractor={(item) => (item as HarvestListItem).id}
+      renderItem={renderItem}
+      keyExtractor={keyExtractor}
       maintainVisibleContentPosition={{ autoscrollToTopThreshold: 0 }}
       accessibilityRole="list"
       accessibilityLabel={t('harvest.history.accessibility.list')}
-      accessibilityHint="Scrollable list of harvest records"
-      ListEmptyComponent={
-        <HarvestHistoryEmpty
-          variant={emptyVariant}
-          onCreateHarvest={onCreateHarvest}
-          onClearFilters={onClearFilters}
-          testID={`${testID}-empty`}
-        />
-      }
-      ItemSeparatorComponent={Separator}
+      accessibilityHint={t('harvest.history.accessibility.listHint')}
+      ListEmptyComponent={emptyComponent}
+      ItemSeparatorComponent={MemoizedSeparator}
       isLoading={isLoading}
       testID={testID}
     />
@@ -161,7 +187,11 @@ type RowProps = {
   readonly testID?: string;
 };
 
-function HarvestHistoryRow({
+/**
+ * Memoized row component for FlashList v2 performance
+ * Prevents re-renders when scrolling through large lists
+ */
+const HarvestHistoryRow = memo<RowProps>(function HarvestHistoryRow({
   item,
   relativeTime,
   onPress,
@@ -169,7 +199,7 @@ function HarvestHistoryRow({
 }: RowProps): React.ReactElement {
   const { t } = useTranslation();
 
-  const handlePress = React.useCallback(() => {
+  const handlePress = useCallback(() => {
     if (!onPress) return;
 
     onPress({
@@ -177,7 +207,21 @@ function HarvestHistoryRow({
     });
   }, [item.source, onPress]);
 
-  const rowLabel = `Harvest in ${t(`harvest.stages.${item.stage}`)} stage, updated ${relativeTime(item.updatedAt)}${item.dryWeight != null ? `, dry weight ${item.dryWeight} grams` : ''}${item.conflictSeen ? ', needs review' : ''}`;
+  const rowLabel = useMemo(
+    () =>
+      `${t('harvest.history.list.rowLabel', {
+        stage: t(`harvest.stages.${item.stage}`),
+        time: relativeTime(item.updatedAt),
+      })}${item.dryWeight != null ? t('harvest.history.list.rowLabelWeight', { weight: item.dryWeight }) : ''}${item.conflictSeen ? t('harvest.history.list.rowLabelConflict') : ''}`,
+    [
+      t,
+      item.stage,
+      item.updatedAt,
+      item.dryWeight,
+      item.conflictSeen,
+      relativeTime,
+    ]
+  );
 
   return (
     <Pressable
@@ -214,11 +258,16 @@ function HarvestHistoryRow({
       </View>
     </Pressable>
   );
-}
+});
 
-function Separator(): React.ReactElement {
+/**
+ * Memoized separator component for stable reference in FlashList
+ */
+const Separator = memo(function Separator(): React.ReactElement {
   return <View className="h-px bg-neutral-200 dark:bg-neutral-700" />;
-}
+});
+
+const MemoizedSeparator = Separator;
 
 function useRelativeTime(): (date: Date) => string {
   const { t } = useTranslation();

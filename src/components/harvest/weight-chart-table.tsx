@@ -31,11 +31,11 @@ type TableRow = {
  * Requirement 4.6
  */
 export function WeightChartTable({ data, testID }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const tableData: TableRow[] = data.map((point, index) => ({
     id: `${point.date.getTime()}-${index}`,
-    date: formatDate(point.date),
+    date: formatDate(point.date, i18n.language),
     weight: formatWeight(point.weight_g),
     stage: t(`harvest.stages.${point.stage as HarvestStage}`),
   }));
@@ -87,8 +87,8 @@ function TableRowItem({ item }: { item: TableRow }) {
 /**
  * Format date for table display
  */
-function formatDate(date: Date): string {
-  return date.toLocaleDateString('en-US', {
+function formatDate(date: Date, locale?: string): string {
+  return date.toLocaleDateString(locale || 'en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',

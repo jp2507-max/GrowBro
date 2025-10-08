@@ -85,12 +85,29 @@ export async function captureAndStore(
     // Hash and store resized variant
     const resizedUri = await hashAndStore(variants.resized, 'resized', dir);
 
+    // Clean up temporary resized file after successful hashAndStore
+    try {
+      await deleteFile(variants.resized);
+    } catch (cleanupError) {
+      console.warn('Failed to clean up temporary resized file:', cleanupError);
+    }
+
     // Hash and store thumbnail
     const thumbnailUri = await hashAndStore(
       variants.thumbnail,
       'thumbnail',
       dir
     );
+
+    // Clean up temporary thumbnail file after successful hashAndStore
+    try {
+      await deleteFile(variants.thumbnail);
+    } catch (cleanupError) {
+      console.warn(
+        'Failed to clean up temporary thumbnail file:',
+        cleanupError
+      );
+    }
 
     return {
       original: originalUri,
@@ -214,23 +231,28 @@ export async function detectOrphans(
  * Clean up orphaned files
  *
  * @param orphanPaths - Array of file paths to delete
- * @returns Number of files deleted
+ * @returns Object with count of deleted files and array of successfully deleted paths
  */
-export async function cleanupOrphans(orphanPaths: string[]): Promise<number> {
-  let deleted = 0;
+export async function cleanupOrphans(orphanPaths: string[]): Promise<{
+  deletedCount: number;
+  deletedPaths: string[];
+}> {
+  let deletedCount = 0;
+  const deletedPaths: string[] = [];
 
   for (const path of orphanPaths) {
     try {
       const success = await deleteFile(path);
       if (success) {
-        deleted++;
+        deletedCount++;
+        deletedPaths.push(path);
       }
     } catch (error) {
       console.warn(`Failed to delete orphan ${path}:`, error);
     }
   }
 
-  return deleted;
+  return { deletedCount, deletedPaths };
 }
 
 /**

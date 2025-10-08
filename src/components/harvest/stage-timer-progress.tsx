@@ -76,7 +76,7 @@ export function StageTimerProgress({
         <View
           className={`h-full ${isOverdue ? 'bg-danger-600' : 'bg-primary-600'}`}
           style={{
-            width: `${Math.min((elapsed.totalDays / targetDays) * 100, 100)}%`,
+            width: `${targetDays > 0 ? Math.min((elapsed.totalDays / targetDays) * 100, 100) : 0}%`,
           }}
         />
       </View>

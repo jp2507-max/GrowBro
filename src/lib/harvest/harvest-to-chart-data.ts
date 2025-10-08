@@ -31,7 +31,7 @@ export function harvestsToChartDataPoints(
     .filter((h) => h.deleted_at === null)
     .map((harvest) => ({
       date: new Date(harvest.stage_started_at),
-      weight_g: harvest.dry_weight_g || harvest.wet_weight_g || 0,
+      weight_g: harvest.dry_weight_g ?? harvest.wet_weight_g ?? 0,
       stage: harvest.stage as HarvestStage,
       plant_id: harvest.plant_id,
     }))

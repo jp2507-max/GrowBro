@@ -349,6 +349,65 @@
       "hour": "1 Stunde",
       "hours": "{{count}} Stunden"
     },
+    "edgeCase": {
+      "clockSkew": {
+        "description": "Ihre Geräteuhr weicht erheblich vom Server ab. Dies kann die Synchronisationszuverlässigkeit beeinträchtigen.",
+        "ignore": "Vorerst ignorieren",
+        "syncTime": "Gerätezeit synchronisieren",
+        "title": "Gerätezeit-Abweichung"
+      },
+      "duration": {
+        "adjustDate": "Datum anpassen",
+        "continue": "Trotzdem fortfahren",
+        "dismiss": "Verwerfen"
+      },
+      "durationTooLong": {
+        "description": "Diese Phase hat die empfohlene Dauer überschritten. Sie sollten die Bedingungen überprüfen.",
+        "title": "Phasendauer verlängert"
+      },
+      "durationTooShort": {
+        "description": "Diese Phase ist kürzer als empfohlen. Das Fortfahren kann die Qualität beeinträchtigen.",
+        "title": "Phasendauer zu kurz"
+      },
+      "invalidTimestamps": {
+        "description": "Das Abschlussdatum der Phase kann nicht vor dem Startdatum liegen. Bitte korrigieren Sie die Daten.",
+        "dismiss": "Abbrechen",
+        "fixDates": "Daten korrigieren",
+        "title": "Ungültige Daten"
+      },
+      "invalidWeightRatio": {
+        "description": "Das Trockengewicht kann das Nassgewicht nicht überschreiten. Bitte überprüfen Sie Ihre Messungen.",
+        "dismiss": "Abbrechen",
+        "fixWeights": "Gewichte korrigieren",
+        "title": "Ungültiges Gewichtsverhältnis"
+      },
+      "missingDryWeight": {
+        "addWeight": "Trockengewicht hinzufügen",
+        "description": "Sie müssen ein Trockengewicht eingeben, bevor Sie die Aushärtungsphase abschließen und den Endertrag aufzeichnen können.",
+        "dismiss": "Zurück",
+        "title": "Trockengewicht erforderlich"
+      },
+      "overlappingHarvests": {
+        "closeOther": "Andere Ernte schließen",
+        "description": "Diese Pflanze hat bereits eine offene Ernte. Schließen Sie die bestehende Ernte oder geben Sie einen Grund zum Überschreiben an.",
+        "override": "Überschreiben & Fortfahren",
+        "title": "Überlappende Ernten erkannt",
+        "viewExisting": "Bestehende Ernten anzeigen"
+      },
+      "storageFull": {
+        "continueWithout": "Ohne Fotos fortfahren",
+        "description": "Der Foto-Speicher wird knapp. Sie können Speicherplatz freigeben oder ohne Fotos fortfahren.",
+        "dismiss": "Abbrechen",
+        "freeSpace": "Speicherplatz freigeben",
+        "title": "Speicher fast voll"
+      },
+      "syncConflict": {
+        "description": "Diese Ernte wurde auf einem anderen Gerät aktualisiert. Die neueste Version wurde angewendet.",
+        "dismiss": "Verwerfen",
+        "title": "Anderswo aktualisiert",
+        "viewChanges": "Details anzeigen"
+      }
+    },
     "error": {
       "createFailed": "Ernte konnte nicht erstellt werden. Bitte versuche es erneut."
     },
@@ -389,9 +448,12 @@
     "history": {
       "accessibility": {
         "emptyCreate": "Neue Ernte erstellen",
+        "emptyCreateHint": "Doppeltippen, um eine neue Ernte zu erstellen",
         "list": "Ernteverlaufsliste",
+        "listHint": "Scrollbare Liste der Ernteaufzeichnungen",
         "rowHint": "Doppeltippen, um Erntedetails zu öffnen",
-        "summary": "Leerer Zustand des Ernteverlaufs"
+        "summary": "Leerer Zustand des Ernteverlaufs",
+        "summaryHint": "Keine Ernten gefunden"
       },
       "actions": {
         "clearFilters": "Filter zurücksetzen",
@@ -413,6 +475,9 @@
       },
       "list": {
         "conflict_badge": "Überprüfen",
+        "rowLabel": "Ernte in {{stage}}-Phase, aktualisiert {{time}}",
+        "rowLabelConflict": ", Überprüfung erforderlich",
+        "rowLabelWeight": ", Trockengewicht {{weight}} Gramm",
         "updated": "Aktualisiert {{relativeTime}}",
         "weight": "Trockengewicht: {{weight}} g"
       },
@@ -425,9 +490,9 @@
       "title": "Ernteverlauf"
     },
     "inventory": {
-      "concurrent_finalize_toast": "Inventar bereits von einem anderen Prozess abgeschlossen",
-      "finalize_curing": "Aushärtung abschließen & Inventar erstellen",
-      "finalize_success_toast": "Aushärtung abgeschlossen und Inventar erfolgreich erstellt",
+      "concurrent_finalize_toast": "Ernteaufzeichnung bereits von einem anderen Prozess abgeschlossen",
+      "finalize_curing": "Aushärtung abschließen & Endertrag aufzeichnen",
+      "finalize_success_toast": "Aushärtung abgeschlossen und Endertrag erfolgreich aufgezeichnet",
       "missing_dry_weight": "Trockengewicht muss vor Abschluss der Aushärtung gesetzt werden",
       "missing_dry_weight_cta": "Trockengewicht aktualisieren",
       "retry_failed": "Aushärtung konnte nach mehreren Versuchen nicht abgeschlossen werden. Bitte überprüfe deine Verbindung und versuche es erneut."
@@ -528,6 +593,34 @@
       "success": "Foto erfolgreich hinzugefügt",
       "title": "Foto hinzufügen"
     },
+    "security": {
+      "cascade_deletion": "Alle Ernte-Daten werden dauerhaft gelöscht, wenn du dein Konto löschst",
+      "data_isolation": "Deine Ernte-Daten sind privat und nur für dich zugänglich",
+      "private_photos": "Fotos werden privat gespeichert ohne öffentlichen Zugriff",
+      "rls_protected": "Row-Level-Security gewährleistet Datenisolierung"
+    },
+    "sharing": {
+      "actions": {
+        "cancel": "Abbrechen",
+        "share": "Zusammenfassung teilen"
+      },
+      "privacy_notice": "Es werden keine persönlichen Informationen (Pflanzennamen, Notizen oder Fotos) geteilt.",
+      "redaction": {
+        "aggregated_data": "Aggregierte Ernte-Metriken",
+        "no_pii": "Persönliche Informationen entfernt",
+        "redacted_at": "Daten vorbereitet am {{date}}"
+      },
+      "summary": {
+        "avg_duration": "Durchschnittliche Dauer",
+        "date_range": "Zeitraum",
+        "photo_count": "{{count}} Fotos",
+        "stages_completed": "Abgeschlossene Phasen",
+        "title": "Ernte-Zusammenfassung",
+        "total_harvests": "{{count}} Ernten",
+        "total_weight": "Gesamtgewicht"
+      },
+      "title": "Ernte-Daten teilen"
+    },
     "stage_tracker": {
       "completed": "Abgeschlossen",
       "elapsed": "{{days}}T {{hours}}Std {{minutes}}Min vergangen",
@@ -542,7 +635,7 @@
       "curing": "Aushärten",
       "drying": "Trocknen",
       "harvest": "Ernte",
-      "inventory": "Inventar"
+      "inventory": "Abschluss"
     },
     "success": {
       "created": "Ernte erfolgreich erstellt"

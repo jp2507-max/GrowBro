@@ -11,7 +11,7 @@
  * - 15.1-15.4: Performance validation
  */
 
-import React, { useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
@@ -30,17 +30,42 @@ type Props = {
 };
 
 /**
- * WeightChart component with LTTB downsampling
- * Requirement 4.1, 4.2
+ * WeightChart component with LTTB downsampling and performance optimizations
+ * Requirements: 4.1, 4.2, 15.1, 15.4
+ *
+ * Performance optimizations:
+ * - React.memo to prevent unnecessary re-renders
+ * - useMemo for expensive data transformations
+ * - LTTB downsampling for datasets > 365 points
+ * - Memoized chart configuration
  */
-export function WeightChart({ data, onError, testID }: Props) {
+const WeightChartComponent = ({ data, onError, testID }: Props) => {
   const { t } = useTranslation();
 
-  // Apply LTTB downsampling for performance (Requirement 4.2)
-  const chartData = useMemo(() => prepareChartData(data), [data]);
+  // Apply LTTB downsampling for performance (Requirement 4.2, 15.2)
+  // Hooks must be called unconditionally before any early returns
+  const chartData = useMemo(() => {
+    if (data.length === 0) return [];
 
-  // Error boundary
-  if (chartData.length === 0) {
+    const startTime = performance.now();
+    const result = prepareChartData(data);
+    const duration = performance.now() - startTime;
+
+    // Log performance in dev mode
+    if (__DEV__ && data.length > 100) {
+      console.log(
+        `[WeightChart] Processed ${data.length} → ${result.length} points in ${duration.toFixed(2)}ms`
+      );
+    }
+
+    return result;
+  }, [data]);
+
+  // Memoize chart config to prevent object recreation on every render
+  const chartConfig = useMemo(() => getChartConfig(chartData), [chartData]);
+
+  // Error boundary - early return for empty data
+  if (data.length === 0) {
     return null;
   }
 
@@ -48,9 +73,9 @@ export function WeightChart({ data, onError, testID }: Props) {
     return (
       <View testID={testID} className="p-4">
         <Text className="mb-4 text-lg font-semibold text-charcoal-950 dark:text-neutral-100">
-          {t('chart.title')}
+          {t('harvest.chart.title')}
         </Text>
-        <LineChart {...getChartConfig(chartData)} />
+        <LineChart {...chartConfig} />
       </View>
     );
   } catch (error) {
@@ -60,7 +85,13 @@ export function WeightChart({ data, onError, testID }: Props) {
     }
     return null;
   }
-}
+};
+
+/**
+ * Memoized WeightChart to prevent unnecessary re-renders
+ * Requirements: 15.4 (performance optimization)
+ */
+export const WeightChart = memo(WeightChartComponent);
 
 /**
  * Prepare chart data with LTTB downsampling

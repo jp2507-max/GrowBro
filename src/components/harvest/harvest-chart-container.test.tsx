@@ -13,37 +13,34 @@ import { HarvestChartContainer } from './harvest-chart-container';
 
 // Mock all chart components
 jest.mock('./weight-chart', () => {
-  const MockText = ({ children: _children, testID: _testID }: any) => null;
-  const MockView = ({ children: _children, testID: _testID }: any) => null;
+  const { Text, View } = require('@/components/ui');
   return {
     WeightChart: ({ data, testID }: any) => (
-      <MockView testID={testID || 'weight-chart'}>
-        <MockText testID="chart-data-count">{data.length}</MockText>
-      </MockView>
+      <View testID={testID || 'weight-chart'}>
+        <Text testID={`${testID}-data-count`}>{data.length}</Text>
+      </View>
     ),
   };
 });
 
 jest.mock('./weight-chart-empty', () => {
-  const MockText = ({ children: _children }: any) => null;
-  const MockView = ({ children: _children, testID: _testID }: any) => null;
+  const { Text, View } = require('@/components/ui');
   return {
     WeightChartEmpty: ({ variant, testID }: any) => (
-      <MockView testID={testID || 'weight-chart-empty'}>
-        <MockText>{variant}</MockText>
-      </MockView>
+      <View testID={testID || 'weight-chart-empty'}>
+        <Text>{variant}</Text>
+      </View>
     ),
   };
 });
 
 jest.mock('./weight-chart-table', () => {
-  const MockText = ({ children: _children, testID: _testID }: any) => null;
-  const MockView = ({ children: _children, testID: _testID }: any) => null;
+  const { Text, View } = require('@/components/ui');
   return {
     WeightChartTable: ({ data, testID }: any) => (
-      <MockView testID={testID || 'weight-chart-table'}>
-        <MockText testID="table-data-count">{data.length}</MockText>
-      </MockView>
+      <View testID={testID || 'weight-chart-table'}>
+        <Text testID="table-data-count">{data.length}</Text>
+      </View>
     ),
   };
 });
@@ -54,7 +51,7 @@ describe('HarvestChartContainer', () => {
   const mockData = [
     {
       id: '1',
-      date: new Date('2024-01-01'),
+      date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
       weight_g: 1000,
       stage: HarvestStage.HARVEST,
       plant_id: 'plant-1',
@@ -62,7 +59,7 @@ describe('HarvestChartContainer', () => {
     },
     {
       id: '2',
-      date: new Date('2024-01-05'),
+      date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
       weight_g: 900,
       stage: HarvestStage.DRYING,
       plant_id: 'plant-1',
@@ -70,7 +67,7 @@ describe('HarvestChartContainer', () => {
     },
     {
       id: '3',
-      date: new Date('2024-01-15'),
+      date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
       weight_g: 250,
       stage: HarvestStage.CURING,
       plant_id: 'plant-2',
@@ -80,24 +77,40 @@ describe('HarvestChartContainer', () => {
 
   describe('Rendering', () => {
     it('should render chart with data', () => {
-      render(<HarvestChartContainer data={mockData} />);
+      render(
+        <HarvestChartContainer
+          data={mockData}
+          testID="harvest-chart-container"
+        />
+      );
 
       expect(screen.getByTestId('harvest-chart-container')).toBeOnTheScreen();
-      expect(screen.getByTestId('weight-chart')).toBeOnTheScreen();
+      expect(
+        screen.getByTestId('harvest-chart-container-chart')
+      ).toBeOnTheScreen();
     });
 
     it('should show empty state when no data (Requirement 4.5)', () => {
-      render(<HarvestChartContainer data={[]} />);
+      render(
+        <HarvestChartContainer data={[]} testID="harvest-chart-container" />
+      );
 
-      expect(screen.getByTestId('weight-chart-empty')).toBeOnTheScreen();
+      expect(
+        screen.getByTestId('harvest-chart-container-empty')
+      ).toBeOnTheScreen();
       expect(screen.getByText('no-data')).toBeOnTheScreen();
     });
 
     it('should show loading state', () => {
-      render(<HarvestChartContainer data={[]} isLoading />);
+      render(
+        <HarvestChartContainer
+          data={[]}
+          isLoading
+          testID="harvest-chart-container"
+        />
+      );
 
-      expect(screen.getByTestId('loading-spinner')).toBeOnTheScreen();
-      expect(screen.getByText('Loading chart...')).toBeOnTheScreen();
+      expect(screen.getByRole('progressbar')).toBeOnTheScreen();
     });
   });
 
@@ -119,79 +132,130 @@ describe('HarvestChartContainer', () => {
         },
       ];
 
-      const { user } = setup(<HarvestChartContainer data={recentData} />);
+      const { user } = setup(
+        <HarvestChartContainer
+          data={recentData}
+          testID="harvest-chart-container"
+        />
+      );
 
       // Open time range selector
-      const selector = screen.getByTestId('time-range-selector');
+      const selector = screen.getByTestId('harvest-chart-container-time-range');
       await user.press(selector);
 
       // Select 7 days
-      const option7d = screen.getByText('Last 7 Days');
+      const option7d = screen.getByText('Last 7 days');
       await user.press(option7d);
 
       await waitFor(() => {
         // Should filter to only show data within 7 days
-        expect(screen.getByTestId('chart-data-count')).toHaveTextContent('1');
+        expect(
+          screen.getByTestId('harvest-chart-container-chart-data-count')
+        ).toHaveTextContent('1');
       });
     });
 
     it('should filter by 30 days (Requirement 15.1)', async () => {
-      const { user } = setup(<HarvestChartContainer data={mockData} />);
+      const { user } = setup(
+        <HarvestChartContainer
+          data={mockData}
+          testID="harvest-chart-container"
+        />
+      );
 
-      const selector = screen.getByTestId('time-range-selector');
+      const selector = screen.getByTestId('harvest-chart-container-time-range');
       await user.press(selector);
 
-      const option30d = screen.getByText('Last 30 Days');
+      const option30d = screen.getByText('Last 30 days');
       await user.press(option30d);
 
       await waitFor(() => {
-        expect(screen.getByTestId('weight-chart')).toBeOnTheScreen();
+        expect(
+          screen.getByTestId('harvest-chart-container-chart')
+        ).toBeOnTheScreen();
       });
     });
 
     it('should show all data by default (Requirement 15.1)', () => {
-      render(<HarvestChartContainer data={mockData} />);
+      render(
+        <HarvestChartContainer
+          data={mockData}
+          testID="harvest-chart-container"
+        />
+      );
 
-      expect(screen.getByTestId('chart-data-count')).toHaveTextContent('3');
+      expect(
+        screen.getByTestId('harvest-chart-container-chart-data-count')
+      ).toHaveTextContent('3');
     });
   });
 
   describe('Plant Filtering', () => {
     it('should filter by plant ID (Requirement 4.3)', async () => {
-      setup(<HarvestChartContainer data={mockData} plantId="plant-1" />);
+      setup(
+        <HarvestChartContainer
+          data={mockData}
+          plantId="plant-1"
+          testID="harvest-chart-container"
+        />
+      );
 
       await waitFor(() => {
         // Should show only plant-1 data (2 entries)
-        expect(screen.getByTestId('chart-data-count')).toHaveTextContent('2');
+        expect(
+          screen.getByTestId('harvest-chart-container-chart-data-count')
+        ).toHaveTextContent('2');
       });
     });
 
     it('should show empty state when plant has no data', () => {
-      render(<HarvestChartContainer data={mockData} plantId="non-existent" />);
+      render(
+        <HarvestChartContainer
+          data={mockData}
+          plantId="non-existent"
+          testID="harvest-chart-container"
+        />
+      );
 
-      expect(screen.getByTestId('weight-chart-empty')).toBeOnTheScreen();
+      expect(
+        screen.getByTestId('harvest-chart-container-filtered-empty')
+      ).toBeOnTheScreen();
       expect(screen.getByText('filtered')).toBeOnTheScreen();
     });
   });
 
   describe('Batch vs Individual View', () => {
     it('should aggregate by batch when enabled (Requirement 4.4)', async () => {
-      const { user } = setup(<HarvestChartContainer data={mockData} />);
+      const { user } = setup(
+        <HarvestChartContainer
+          data={mockData}
+          testID="harvest-chart-container"
+        />
+      );
 
       // Toggle batch view
-      const toggle = screen.getByTestId('batch-toggle');
+      const toggle = screen.getByTestId('harvest-chart-container-batch-toggle');
       await user.press(toggle);
 
       await waitFor(() => {
         // Should aggregate data by date (fewer points)
-        expect(screen.getByTestId('weight-chart')).toBeOnTheScreen();
+        expect(
+          screen.getByTestId('harvest-chart-container-chart')
+        ).toBeOnTheScreen();
       });
     });
 
     it('should show individual entries by default', () => {
-      render(<HarvestChartContainer data={mockData} />);
+      render(
+        <HarvestChartContainer
+          data={mockData}
+          testID="harvest-chart-container"
+        />
+      );
 
-      expect(screen.getByTestId('chart-data-count')).toHaveTextContent('3');
+      expect(
+        screen.getByTestId('harvest-chart-container-chart-data-count')
+      ).toHaveTextContent('3');
     });
   });
 
@@ -199,7 +263,12 @@ describe('HarvestChartContainer', () => {
     it('should handle chart errors gracefully (Requirement 4.6)', () => {
       // Error handling is built into the component
       // This test verifies the component has error handling capability
-      render(<HarvestChartContainer data={mockData} />);
+      render(
+        <HarvestChartContainer
+          data={mockData}
+          testID="harvest-chart-container"
+        />
+      );
       expect(screen.getByTestId('harvest-chart-container')).toBeOnTheScreen();
     });
   });
@@ -232,33 +301,43 @@ describe('HarvestChartContainer', () => {
       ];
 
       const { user } = setup(
-        <HarvestChartContainer data={combinedData} plantId="plant-1" />
+        <HarvestChartContainer
+          data={combinedData}
+          plantId="plant-1"
+          testID="harvest-chart-container"
+        />
       );
 
       // Apply 7-day filter
-      const selector = screen.getByTestId('time-range-selector');
+      const selector = screen.getByTestId('harvest-chart-container-time-range');
       await user.press(selector);
 
-      const option7d = screen.getByText('Last 7 Days');
+      const option7d = screen.getByText('Last 7 days');
       await user.press(option7d);
 
       await waitFor(() => {
         // Should show only plant-1 data within 7 days (1 entry)
-        expect(screen.getByTestId('chart-data-count')).toHaveTextContent('1');
+        expect(
+          screen.getByTestId('harvest-chart-container-chart-data-count')
+        ).toHaveTextContent('1');
       });
     });
 
     it('should show filtered empty state when no matches', async () => {
       const { user } = setup(
-        <HarvestChartContainer data={mockData} plantId="plant-1" />
+        <HarvestChartContainer
+          data={mockData}
+          plantId="plant-1"
+          testID="harvest-chart-container"
+        />
       );
 
       // Apply very short time range that excludes all data
-      const selector = screen.getByTestId('time-range-selector');
+      const selector = screen.getByTestId('harvest-chart-container-time-range');
       await user.press(selector);
 
       // Mock to return no data after filtering
-      const option7d = screen.getByText('Last 7 Days');
+      const option7d = screen.getByText('Last 7 days');
       await user.press(option7d);
 
       // Note: Depending on mock data dates, this might not show empty
@@ -276,10 +355,19 @@ describe('HarvestChartContainer', () => {
     });
 
     it('should have accessible filter controls (Requirement 15.3)', () => {
-      render(<HarvestChartContainer data={mockData} />);
+      render(
+        <HarvestChartContainer
+          data={mockData}
+          testID="harvest-chart-container"
+        />
+      );
 
-      expect(screen.getByTestId('time-range-selector')).toBeOnTheScreen();
-      expect(screen.getByTestId('batch-toggle')).toBeOnTheScreen();
+      expect(
+        screen.getByTestId('harvest-chart-container-time-range')
+      ).toBeOnTheScreen();
+      expect(
+        screen.getByTestId('harvest-chart-container-batch-toggle')
+      ).toBeOnTheScreen();
     });
   });
 });

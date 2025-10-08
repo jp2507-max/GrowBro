@@ -182,15 +182,18 @@ export function createAuditNoteForRejection(rejection: SyncRejection): string {
 
 function isNetworkError(error: unknown): boolean {
   if (error && typeof error === 'object') {
-    return (
-      'response' in error ||
-      'code' in error ||
-      (error instanceof Error &&
-        (error.message.includes('network') ||
-          error.message.includes('fetch') ||
-          error.message.includes('timeout') ||
-          error.message.includes('connection')))
-    );
+    const err = error as any;
+    const hasResponse = 'response' in error;
+    const hasAxiosFlag = 'isAxiosError' in error && error.isAxiosError === true;
+    const hasNumericCode = 'code' in error && typeof err.code === 'number';
+    const hasNetworkMessage =
+      error instanceof Error &&
+      (error.message.includes('network') ||
+        error.message.includes('fetch') ||
+        error.message.includes('timeout') ||
+        error.message.includes('connection'));
+
+    return hasResponse || hasAxiosFlag || hasNumericCode || hasNetworkMessage;
   }
   return false;
 }

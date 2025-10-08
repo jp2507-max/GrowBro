@@ -139,9 +139,10 @@ export function createStageActionA11yLabel(config: {
   targetStage?: string;
   undoSeconds?: number;
 }): string {
+  const stageLabel = config.targetStage ?? 'next stage';
   switch (config.action) {
     case 'advance':
-      return `Advance to ${config.targetStage} stage`;
+      return `Advance to ${stageLabel}`;
     case 'undo':
       return config.undoSeconds
         ? `Undo last stage change (${config.undoSeconds}s remaining)`
@@ -162,9 +163,10 @@ export function createStageActionA11yHint(config: {
   action: 'advance' | 'undo' | 'revert' | 'override';
   targetStage?: string;
 }): string {
+  const stageLabel = config.targetStage ?? 'next stage';
   switch (config.action) {
     case 'advance':
-      return `Double-tap to advance to ${config.targetStage} stage`;
+      return `Double-tap to advance to ${stageLabel}`;
     case 'undo':
       return 'Double-tap to undo last stage change';
     case 'revert':
