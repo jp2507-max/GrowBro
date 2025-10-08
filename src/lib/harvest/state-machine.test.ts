@@ -4,7 +4,7 @@
  * Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7
  */
 
-import { HarvestStage } from '@/types';
+import { HarvestStages } from '@/types';
 import type {
   HarvestAuditAction,
   HarvestAuditStatus,
@@ -29,8 +29,8 @@ import {
 describe('harvest state machine', () => {
   describe('getStageMetadata', () => {
     it('returns correct metadata for HARVEST stage', () => {
-      const metadata = getStageMetadata(HarvestStage.HARVEST);
-      expect(metadata.stage).toBe(HarvestStage.HARVEST);
+      const metadata = getStageMetadata(HarvestStages.HARVEST);
+      expect(metadata.stage).toBe(HarvestStages.HARVEST);
       expect(metadata.name).toBe('Harvest');
       expect(metadata.canAdvance).toBe(true);
       expect(metadata.canUndo).toBe(false);
@@ -38,8 +38,8 @@ describe('harvest state machine', () => {
     });
 
     it('returns correct metadata for DRYING stage', () => {
-      const metadata = getStageMetadata(HarvestStage.DRYING);
-      expect(metadata.stage).toBe(HarvestStage.DRYING);
+      const metadata = getStageMetadata(HarvestStages.DRYING);
+      expect(metadata.stage).toBe(HarvestStages.DRYING);
       expect(metadata.name).toBe('Drying');
       expect(metadata.canAdvance).toBe(true);
       expect(metadata.canUndo).toBe(true);
@@ -47,8 +47,8 @@ describe('harvest state machine', () => {
     });
 
     it('returns correct metadata for CURING stage', () => {
-      const metadata = getStageMetadata(HarvestStage.CURING);
-      expect(metadata.stage).toBe(HarvestStage.CURING);
+      const metadata = getStageMetadata(HarvestStages.CURING);
+      expect(metadata.stage).toBe(HarvestStages.CURING);
       expect(metadata.name).toBe('Curing');
       expect(metadata.canAdvance).toBe(true);
       expect(metadata.canUndo).toBe(true);
@@ -56,8 +56,8 @@ describe('harvest state machine', () => {
     });
 
     it('returns correct metadata for INVENTORY stage', () => {
-      const metadata = getStageMetadata(HarvestStage.INVENTORY);
-      expect(metadata.stage).toBe(HarvestStage.INVENTORY);
+      const metadata = getStageMetadata(HarvestStages.INVENTORY);
+      expect(metadata.stage).toBe(HarvestStages.INVENTORY);
       expect(metadata.name).toBe('Inventory');
       expect(metadata.canAdvance).toBe(false);
       expect(metadata.canUndo).toBe(true);
@@ -68,8 +68,8 @@ describe('harvest state machine', () => {
   describe('validateStageTransition', () => {
     it('allows valid forward transition from HARVEST to DRYING', () => {
       const result = validateStageTransition(
-        HarvestStage.HARVEST,
-        HarvestStage.DRYING
+        HarvestStages.HARVEST,
+        HarvestStages.DRYING
       );
       expect(result.valid).toBe(true);
       expect(result.error).toBeUndefined();
@@ -77,8 +77,8 @@ describe('harvest state machine', () => {
 
     it('allows valid forward transition from DRYING to CURING', () => {
       const result = validateStageTransition(
-        HarvestStage.DRYING,
-        HarvestStage.CURING
+        HarvestStages.DRYING,
+        HarvestStages.CURING
       );
       expect(result.valid).toBe(true);
       expect(result.error).toBeUndefined();
@@ -86,8 +86,8 @@ describe('harvest state machine', () => {
 
     it('allows valid forward transition from CURING to INVENTORY', () => {
       const result = validateStageTransition(
-        HarvestStage.CURING,
-        HarvestStage.INVENTORY
+        HarvestStages.CURING,
+        HarvestStages.INVENTORY
       );
       expect(result.valid).toBe(true);
       expect(result.error).toBeUndefined();
@@ -95,8 +95,8 @@ describe('harvest state machine', () => {
 
     it('rejects transition to same stage', () => {
       const result = validateStageTransition(
-        HarvestStage.DRYING,
-        HarvestStage.DRYING
+        HarvestStages.DRYING,
+        HarvestStages.DRYING
       );
       expect(result.valid).toBe(false);
       expect(result.error).toContain('Already at target stage');
@@ -104,8 +104,8 @@ describe('harvest state machine', () => {
 
     it('rejects backward transition', () => {
       const result = validateStageTransition(
-        HarvestStage.CURING,
-        HarvestStage.DRYING
+        HarvestStages.CURING,
+        HarvestStages.DRYING
       );
       expect(result.valid).toBe(false);
       expect(result.error).toContain('Invalid transition');
@@ -114,8 +114,8 @@ describe('harvest state machine', () => {
 
     it('rejects skipping stages', () => {
       const result = validateStageTransition(
-        HarvestStage.HARVEST,
-        HarvestStage.CURING
+        HarvestStages.HARVEST,
+        HarvestStages.CURING
       );
       expect(result.valid).toBe(false);
       expect(result.error).toContain('Invalid transition');
@@ -123,8 +123,8 @@ describe('harvest state machine', () => {
 
     it('rejects transition from final stage', () => {
       const result = validateStageTransition(
-        HarvestStage.INVENTORY,
-        HarvestStage.HARVEST
+        HarvestStages.INVENTORY,
+        HarvestStages.HARVEST
       );
       expect(result.valid).toBe(false);
       expect(result.error).toContain('Cannot advance from final stage');
@@ -179,7 +179,7 @@ describe('harvest state machine', () => {
         };
         const result = validateUndoRequest(
           request,
-          HarvestStage.DRYING,
+          HarvestStages.DRYING,
           currentTime
         );
         expect(result.valid).toBe(true);
@@ -195,7 +195,7 @@ describe('harvest state machine', () => {
         };
         const result = validateUndoRequest(
           request,
-          HarvestStage.DRYING,
+          HarvestStages.DRYING,
           currentTime
         );
         expect(result.valid).toBe(false);
@@ -212,7 +212,7 @@ describe('harvest state machine', () => {
         };
         const result = validateUndoRequest(
           request,
-          HarvestStage.HARVEST,
+          HarvestStages.HARVEST,
           currentTime
         );
         expect(result.valid).toBe(false);
@@ -225,10 +225,10 @@ describe('harvest state machine', () => {
     it('allows revert to earlier stage with valid reason', () => {
       const request: StageRevertRequest = {
         harvest_id: 'test-harvest',
-        to_stage: HarvestStage.DRYING,
+        to_stage: HarvestStages.DRYING,
         reason: 'Need to re-dry due to high moisture content',
       };
-      const result = validateRevertRequest(request, HarvestStage.CURING);
+      const result = validateRevertRequest(request, HarvestStages.CURING);
       expect(result.valid).toBe(true);
       expect(result.error).toBeUndefined();
     });
@@ -236,20 +236,20 @@ describe('harvest state machine', () => {
     it('allows revert from INVENTORY to HARVEST', () => {
       const request: StageRevertRequest = {
         harvest_id: 'test-harvest',
-        to_stage: HarvestStage.HARVEST,
+        to_stage: HarvestStages.HARVEST,
         reason: 'Major data entry error, need to restart',
       };
-      const result = validateRevertRequest(request, HarvestStage.INVENTORY);
+      const result = validateRevertRequest(request, HarvestStages.INVENTORY);
       expect(result.valid).toBe(true);
     });
 
     it('rejects revert to same stage', () => {
       const request: StageRevertRequest = {
         harvest_id: 'test-harvest',
-        to_stage: HarvestStage.DRYING,
+        to_stage: HarvestStages.DRYING,
         reason: 'Test',
       };
-      const result = validateRevertRequest(request, HarvestStage.DRYING);
+      const result = validateRevertRequest(request, HarvestStages.DRYING);
       expect(result.valid).toBe(false);
       expect(result.error).toContain('Can only revert to earlier stages');
     });
@@ -257,10 +257,10 @@ describe('harvest state machine', () => {
     it('rejects revert to later stage', () => {
       const request: StageRevertRequest = {
         harvest_id: 'test-harvest',
-        to_stage: HarvestStage.CURING,
+        to_stage: HarvestStages.CURING,
         reason: 'Test',
       };
-      const result = validateRevertRequest(request, HarvestStage.DRYING);
+      const result = validateRevertRequest(request, HarvestStages.DRYING);
       expect(result.valid).toBe(false);
       expect(result.error).toContain('Can only revert to earlier stages');
     });
@@ -268,10 +268,10 @@ describe('harvest state machine', () => {
     it('rejects revert from HARVEST stage', () => {
       const request: StageRevertRequest = {
         harvest_id: 'test-harvest',
-        to_stage: HarvestStage.HARVEST,
+        to_stage: HarvestStages.HARVEST,
         reason: 'Test',
       };
-      const result = validateRevertRequest(request, HarvestStage.HARVEST);
+      const result = validateRevertRequest(request, HarvestStages.HARVEST);
       expect(result.valid).toBe(false);
       expect(result.error).toContain('Cannot revert from stage');
     });
@@ -279,10 +279,10 @@ describe('harvest state machine', () => {
     it('rejects revert without reason', () => {
       const request: StageRevertRequest = {
         harvest_id: 'test-harvest',
-        to_stage: HarvestStage.DRYING,
+        to_stage: HarvestStages.DRYING,
         reason: '',
       };
-      const result = validateRevertRequest(request, HarvestStage.CURING);
+      const result = validateRevertRequest(request, HarvestStages.CURING);
       expect(result.valid).toBe(false);
       expect(result.error).toContain('Reason is mandatory');
     });
@@ -290,10 +290,10 @@ describe('harvest state machine', () => {
     it('rejects revert with whitespace-only reason', () => {
       const request: StageRevertRequest = {
         harvest_id: 'test-harvest',
-        to_stage: HarvestStage.DRYING,
+        to_stage: HarvestStages.DRYING,
         reason: '   ',
       };
-      const result = validateRevertRequest(request, HarvestStage.CURING);
+      const result = validateRevertRequest(request, HarvestStages.CURING);
       expect(result.valid).toBe(false);
       expect(result.error).toContain('Reason is mandatory');
     });
@@ -303,10 +303,10 @@ describe('harvest state machine', () => {
     it('allows override to skip forward with valid reason', () => {
       const request: OverrideSkipRequest = {
         harvest_id: 'test-harvest',
-        to_stage: HarvestStage.CURING,
+        to_stage: HarvestStages.CURING,
         reason: 'Emergency harvest, skipping drying stage',
       };
-      const result = validateOverrideRequest(request, HarvestStage.HARVEST);
+      const result = validateOverrideRequest(request, HarvestStages.HARVEST);
       expect(result.valid).toBe(true);
       expect(result.error).toBeUndefined();
     });
@@ -314,20 +314,20 @@ describe('harvest state machine', () => {
     it('allows override from HARVEST to INVENTORY', () => {
       const request: OverrideSkipRequest = {
         harvest_id: 'test-harvest',
-        to_stage: HarvestStage.INVENTORY,
+        to_stage: HarvestStages.INVENTORY,
         reason: 'Testing purposes, skip all intermediate stages',
       };
-      const result = validateOverrideRequest(request, HarvestStage.HARVEST);
+      const result = validateOverrideRequest(request, HarvestStages.HARVEST);
       expect(result.valid).toBe(true);
     });
 
     it('rejects override to same stage', () => {
       const request: OverrideSkipRequest = {
         harvest_id: 'test-harvest',
-        to_stage: HarvestStage.DRYING,
+        to_stage: HarvestStages.DRYING,
         reason: 'Test',
       };
-      const result = validateOverrideRequest(request, HarvestStage.DRYING);
+      const result = validateOverrideRequest(request, HarvestStages.DRYING);
       expect(result.valid).toBe(false);
       expect(result.error).toContain('Override can only skip forward');
     });
@@ -335,10 +335,10 @@ describe('harvest state machine', () => {
     it('rejects override to earlier stage', () => {
       const request: OverrideSkipRequest = {
         harvest_id: 'test-harvest',
-        to_stage: HarvestStage.HARVEST,
+        to_stage: HarvestStages.HARVEST,
         reason: 'Test',
       };
-      const result = validateOverrideRequest(request, HarvestStage.CURING);
+      const result = validateOverrideRequest(request, HarvestStages.CURING);
       expect(result.valid).toBe(false);
       expect(result.error).toContain('Override can only skip forward');
     });
@@ -346,10 +346,10 @@ describe('harvest state machine', () => {
     it('rejects override without reason', () => {
       const request: OverrideSkipRequest = {
         harvest_id: 'test-harvest',
-        to_stage: HarvestStage.CURING,
+        to_stage: HarvestStages.CURING,
         reason: '',
       };
-      const result = validateOverrideRequest(request, HarvestStage.HARVEST);
+      const result = validateOverrideRequest(request, HarvestStages.HARVEST);
       expect(result.valid).toBe(false);
       expect(result.error).toContain('Reason is mandatory');
     });
@@ -357,10 +357,10 @@ describe('harvest state machine', () => {
     it('rejects override with whitespace-only reason', () => {
       const request: OverrideSkipRequest = {
         harvest_id: 'test-harvest',
-        to_stage: HarvestStage.INVENTORY,
+        to_stage: HarvestStages.INVENTORY,
         reason: '  \n  ',
       };
-      const result = validateOverrideRequest(request, HarvestStage.DRYING);
+      const result = validateOverrideRequest(request, HarvestStages.DRYING);
       expect(result.valid).toBe(false);
       expect(result.error).toContain('Reason is mandatory');
     });
@@ -368,20 +368,22 @@ describe('harvest state machine', () => {
 
   describe('getPreviousStage', () => {
     it('returns null for HARVEST stage', () => {
-      expect(getPreviousStage(HarvestStage.HARVEST)).toBeNull();
+      expect(getPreviousStage(HarvestStages.HARVEST)).toBeNull();
     });
 
     it('returns HARVEST for DRYING stage', () => {
-      expect(getPreviousStage(HarvestStage.DRYING)).toBe(HarvestStage.HARVEST);
+      expect(getPreviousStage(HarvestStages.DRYING)).toBe(
+        HarvestStages.HARVEST
+      );
     });
 
     it('returns DRYING for CURING stage', () => {
-      expect(getPreviousStage(HarvestStage.CURING)).toBe(HarvestStage.DRYING);
+      expect(getPreviousStage(HarvestStages.CURING)).toBe(HarvestStages.DRYING);
     });
 
     it('returns CURING for INVENTORY stage', () => {
-      expect(getPreviousStage(HarvestStage.INVENTORY)).toBe(
-        HarvestStage.CURING
+      expect(getPreviousStage(HarvestStages.INVENTORY)).toBe(
+        HarvestStages.CURING
       );
     });
   });
@@ -395,8 +397,8 @@ describe('harvest state machine', () => {
         user_id: 'user-123',
         action: 'stage_advance' as HarvestAuditAction,
         status: 'permitted' as HarvestAuditStatus,
-        from_stage: HarvestStage.HARVEST,
-        to_stage: HarvestStage.DRYING,
+        from_stage: HarvestStages.HARVEST,
+        to_stage: HarvestStages.DRYING,
         reason: null,
         performed_at: baseTime,
       });
@@ -405,8 +407,8 @@ describe('harvest state machine', () => {
       expect(entry.user_id).toBe('user-123');
       expect(entry.action).toBe('stage_advance');
       expect(entry.status).toBe('permitted');
-      expect(entry.from_stage).toBe(HarvestStage.HARVEST);
-      expect(entry.to_stage).toBe(HarvestStage.DRYING);
+      expect(entry.from_stage).toBe(HarvestStages.HARVEST);
+      expect(entry.to_stage).toBe(HarvestStages.DRYING);
       expect(entry.reason).toBeNull();
       expect(entry.performed_at).toBe(baseTime);
       expect(entry.metadata).toEqual({});
@@ -418,8 +420,8 @@ describe('harvest state machine', () => {
         user_id: 'user-456',
         action: 'stage_override_skip' as HarvestAuditAction,
         status: 'permitted' as HarvestAuditStatus,
-        from_stage: HarvestStage.HARVEST,
-        to_stage: HarvestStage.CURING,
+        from_stage: HarvestStages.HARVEST,
+        to_stage: HarvestStages.CURING,
         reason: 'Emergency bypass due to equipment failure',
         performed_at: baseTime,
       });
@@ -440,8 +442,8 @@ describe('harvest state machine', () => {
         user_id: 'user-789',
         action: 'stage_undo' as HarvestAuditAction,
         status: 'permitted' as HarvestAuditStatus,
-        from_stage: HarvestStage.DRYING,
-        to_stage: HarvestStage.HARVEST,
+        from_stage: HarvestStages.DRYING,
+        to_stage: HarvestStages.HARVEST,
         reason: null,
         performed_at: baseTime,
         metadata,
@@ -456,7 +458,7 @@ describe('harvest state machine', () => {
         user_id: 'user-999',
         action: 'stage_undo' as HarvestAuditAction,
         status: 'blocked' as HarvestAuditStatus,
-        from_stage: HarvestStage.DRYING,
+        from_stage: HarvestStages.DRYING,
         to_stage: null,
         reason: null,
         performed_at: baseTime,
@@ -474,8 +476,8 @@ describe('harvest state machine', () => {
         user_id: null,
         action: 'stage_advance' as HarvestAuditAction,
         status: 'permitted' as HarvestAuditStatus,
-        from_stage: HarvestStage.CURING,
-        to_stage: HarvestStage.INVENTORY,
+        from_stage: HarvestStages.CURING,
+        to_stage: HarvestStages.INVENTORY,
         reason: null,
         performed_at: baseTime,
       });

@@ -49,7 +49,7 @@ describe('photo-storage-service', () => {
       uri: 'file:///cache/harvest-photos',
     };
 
-    (Directory as jest.Mock).mockImplementation(() => mockDirectory);
+    (Directory as unknown as jest.Mock).mockImplementation(() => mockDirectory);
   });
 
   describe('captureAndStore', () => {
@@ -59,7 +59,7 @@ describe('photo-storage-service', () => {
         uri: 'file:///stored.jpg',
         copy: jest.fn(),
       };
-      (File as jest.Mock).mockImplementation(() => mockFile);
+      (File as unknown as jest.Mock).mockImplementation(() => mockFile);
 
       const result = await captureAndStore('file:///source.jpg');
 
@@ -72,7 +72,7 @@ describe('photo-storage-service', () => {
     });
 
     it('should handle storage errors', async () => {
-      (File as jest.Mock).mockImplementation(() => {
+      (File as unknown as jest.Mock).mockImplementation(() => {
         throw new Error('Storage full');
       });
 
@@ -90,7 +90,7 @@ describe('photo-storage-service', () => {
       const mockSourceFile = {
         copy: jest.fn(),
       };
-      (File as jest.Mock)
+      (File as unknown as jest.Mock)
         .mockImplementationOnce(() => mockFile) // target file
         .mockImplementationOnce(() => mockSourceFile); // source file
 
@@ -109,7 +109,7 @@ describe('photo-storage-service', () => {
         exists: true,
         uri: 'file:///cache/harvest-photos/abc123hash.jpg',
       };
-      (File as jest.Mock).mockImplementation(() => mockFile);
+      (File as unknown as jest.Mock).mockImplementation(() => mockFile);
 
       const result = await hashAndStore(
         'file:///source.jpg',
@@ -122,7 +122,7 @@ describe('photo-storage-service', () => {
     });
 
     it('should handle hash and store errors', async () => {
-      (File as jest.Mock).mockImplementation(() => {
+      (File as unknown as jest.Mock).mockImplementation(() => {
         throw new Error('Hash failed');
       });
 

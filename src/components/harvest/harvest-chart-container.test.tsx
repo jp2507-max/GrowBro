@@ -7,19 +7,20 @@
 import React from 'react';
 
 import { cleanup, render, screen, setup, waitFor } from '@/lib/test-utils';
-import { HarvestStage } from '@/types/harvest';
+import { HarvestStages } from '@/types/harvest';
 
 import { HarvestChartContainer } from './harvest-chart-container';
+import { WeightChart } from './weight-chart';
 
 // Mock all chart components
 jest.mock('./weight-chart', () => {
   const { Text, View } = require('@/components/ui');
   return {
-    WeightChart: ({ data, testID }: any) => (
-      <View testID={testID || 'weight-chart'}>
-        <Text testID={`${testID}-data-count`}>{data.length}</Text>
+    WeightChart: jest.fn((props: any) => (
+      <View testID={props.testID || 'weight-chart'}>
+        <Text testID={`${props.testID}-data-count`}>{props.data.length}</Text>
       </View>
-    ),
+    )),
   };
 });
 
@@ -53,7 +54,7 @@ describe('HarvestChartContainer', () => {
       id: '1',
       date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
       weight_g: 1000,
-      stage: HarvestStage.HARVEST,
+      stage: HarvestStages.HARVEST,
       plant_id: 'plant-1',
       batch_id: 'batch-1',
     },
@@ -61,7 +62,7 @@ describe('HarvestChartContainer', () => {
       id: '2',
       date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
       weight_g: 900,
-      stage: HarvestStage.DRYING,
+      stage: HarvestStages.DRYING,
       plant_id: 'plant-1',
       batch_id: 'batch-1',
     },
@@ -69,7 +70,7 @@ describe('HarvestChartContainer', () => {
       id: '3',
       date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
       weight_g: 250,
-      stage: HarvestStage.CURING,
+      stage: HarvestStages.CURING,
       plant_id: 'plant-2',
       batch_id: 'batch-2',
     },
@@ -122,13 +123,13 @@ describe('HarvestChartContainer', () => {
           id: '1',
           date: new Date(now - 2 * 24 * 60 * 60 * 1000),
           weight_g: 1000,
-          stage: HarvestStage.HARVEST,
+          stage: HarvestStages.HARVEST,
         },
         {
           id: '2',
           date: new Date(now - 10 * 24 * 60 * 60 * 1000),
           weight_g: 900,
-          stage: HarvestStage.DRYING,
+          stage: HarvestStages.DRYING,
         },
       ];
 
@@ -260,16 +261,36 @@ describe('HarvestChartContainer', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle chart errors gracefully (Requirement 4.6)', () => {
-      // Error handling is built into the component
-      // This test verifies the component has error handling capability
+    it('should handle chart errors gracefully (Requirement 4.6)', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      // Mock WeightChart to call onError immediately to trigger fallback
+      const mockedWeightChart = jest.mocked(WeightChart);
+      mockedWeightChart.mockImplementation(({ onError }: any) => {
+        // Call onError immediately to simulate chart failure
+        onError();
+        return null;
+      });
+
       render(
         <HarvestChartContainer
           data={mockData}
           testID="harvest-chart-container"
         />
       );
-      expect(screen.getByTestId('harvest-chart-container')).toBeOnTheScreen();
+
+      // Wait for the error state to be reflected in the UI
+      await waitFor(() => {
+        expect(
+          screen.getByTestId('harvest-chart-container-table')
+        ).toBeOnTheScreen();
+      });
+
+      expect(
+        screen.getByText('harvest.chart.error.renderFailed')
+      ).toBeOnTheScreen();
+
+      consoleErrorSpy.mockRestore();
     });
   });
 
@@ -281,21 +302,21 @@ describe('HarvestChartContainer', () => {
           id: '1',
           date: new Date(now - 2 * 24 * 60 * 60 * 1000),
           weight_g: 1000,
-          stage: HarvestStage.HARVEST,
+          stage: HarvestStages.HARVEST,
           plant_id: 'plant-1',
         },
         {
           id: '2',
           date: new Date(now - 10 * 24 * 60 * 60 * 1000),
           weight_g: 900,
-          stage: HarvestStage.DRYING,
+          stage: HarvestStages.DRYING,
           plant_id: 'plant-1',
         },
         {
           id: '3',
           date: new Date(now - 2 * 24 * 60 * 60 * 1000),
           weight_g: 800,
-          stage: HarvestStage.HARVEST,
+          stage: HarvestStages.HARVEST,
           plant_id: 'plant-2',
         },
       ];

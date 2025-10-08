@@ -100,6 +100,78 @@ export type ConsistencyError = ClassifiedError & {
 };
 
 /**
+ * Error codes for business logic and consistency errors
+ */
+export const BUSINESS_LOGIC_ERROR_CODES = {
+  INVALID_STAGE_TRANSITION: 'INVALID_STAGE_TRANSITION',
+  MISSING_REQUIRED_FIELD: 'MISSING_REQUIRED_FIELD',
+  INVALID_OPERATION: 'INVALID_OPERATION',
+  BUSINESS_RULE_VIOLATION: 'BUSINESS_RULE_VIOLATION',
+} as const;
+
+export const CONSISTENCY_ERROR_CODES = {
+  CONCURRENT_MODIFICATION: 'CONCURRENT_MODIFICATION',
+  DATA_CONFLICT: 'DATA_CONFLICT',
+  STALE_DATA: 'STALE_DATA',
+  VERSION_MISMATCH: 'VERSION_MISMATCH',
+} as const;
+
+export type BusinessLogicErrorCode =
+  (typeof BUSINESS_LOGIC_ERROR_CODES)[keyof typeof BUSINESS_LOGIC_ERROR_CODES];
+
+export type ConsistencyErrorCode =
+  (typeof CONSISTENCY_ERROR_CODES)[keyof typeof CONSISTENCY_ERROR_CODES];
+
+/**
+ * Custom error classes for type-safe error classification
+ */
+export class BusinessLogicErrorClass extends Error {
+  public readonly category = ERROR_CATEGORY.BUSINESS_LOGIC;
+  public readonly code: BusinessLogicErrorCode;
+  public readonly correctiveActions?: string[];
+  public readonly timestamp: Date;
+
+  constructor(
+    code: BusinessLogicErrorCode,
+    message: string,
+    correctiveActions?: string[]
+  ) {
+    super(message);
+    this.name = 'BusinessLogicError';
+    this.code = code;
+    this.correctiveActions = correctiveActions;
+    this.timestamp = new Date();
+  }
+}
+
+export class ConsistencyErrorClass extends Error {
+  public readonly category = ERROR_CATEGORY.CONSISTENCY;
+  public readonly code: ConsistencyErrorCode;
+  public readonly conflictingFields?: string[];
+  public readonly localValue?: unknown;
+  public readonly remoteValue?: unknown;
+  public readonly timestamp: Date;
+
+  constructor(
+    code: ConsistencyErrorCode,
+    message: string,
+    options?: {
+      conflictingFields?: string[];
+      localValue?: unknown;
+      remoteValue?: unknown;
+    }
+  ) {
+    super(message);
+    this.name = 'ConsistencyError';
+    this.code = code;
+    this.conflictingFields = options?.conflictingFields;
+    this.localValue = options?.localValue;
+    this.remoteValue = options?.remoteValue;
+    this.timestamp = new Date();
+  }
+}
+
+/**
  * Error handler result with UI instructions
  */
 export type ErrorHandlerResult = {

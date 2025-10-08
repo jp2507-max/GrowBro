@@ -4,7 +4,8 @@
  * Requirements: 4.3, 4.4
  */
 
-import { HarvestStage } from '@/types/harvest';
+import type { HarvestStage } from '@/types/harvest';
+import { HarvestStages } from '@/types/harvest';
 
 import {
   aggregateByDate,
@@ -20,19 +21,19 @@ describe('filterByPlant', () => {
     {
       date: new Date('2024-01-01'),
       weight_g: 100,
-      stage: HarvestStage.HARVEST,
+      stage: HarvestStages.HARVEST,
       plant_id: 'plant-1',
     },
     {
       date: new Date('2024-01-02'),
       weight_g: 200,
-      stage: HarvestStage.DRYING,
+      stage: HarvestStages.DRYING,
       plant_id: 'plant-2',
     },
     {
       date: new Date('2024-01-03'),
       weight_g: 150,
-      stage: HarvestStage.CURING,
+      stage: HarvestStages.CURING,
       plant_id: 'plant-1',
     },
   ];
@@ -62,19 +63,19 @@ describe('aggregateByDate', () => {
       {
         date: new Date('2024-01-01T10:00:00Z'),
         weight_g: 100,
-        stage: HarvestStage.HARVEST,
+        stage: HarvestStages.HARVEST as HarvestStage,
         plant_id: 'plant-1',
       },
       {
         date: new Date('2024-01-01T14:00:00Z'),
         weight_g: 200,
-        stage: HarvestStage.HARVEST,
+        stage: HarvestStages.HARVEST,
         plant_id: 'plant-2',
       },
       {
         date: new Date('2024-01-02T10:00:00Z'),
         weight_g: 150,
-        stage: HarvestStage.DRYING,
+        stage: HarvestStages.DRYING as HarvestStage,
         plant_id: 'plant-1',
       },
     ];
@@ -92,17 +93,17 @@ describe('aggregateByDate', () => {
       {
         date: new Date('2024-01-03'),
         weight_g: 150,
-        stage: HarvestStage.CURING,
+        stage: HarvestStages.CURING as HarvestStage,
       },
       {
         date: new Date('2024-01-01'),
         weight_g: 100,
-        stage: HarvestStage.HARVEST,
+        stage: HarvestStages.HARVEST,
       },
       {
         date: new Date('2024-01-02'),
         weight_g: 200,
-        stage: HarvestStage.DRYING,
+        stage: HarvestStages.DRYING,
       },
     ];
 
@@ -123,12 +124,12 @@ describe('aggregateByDate', () => {
       {
         date: new Date('2024-01-01T08:00:00Z'),
         weight_g: 100,
-        stage: HarvestStage.HARVEST,
+        stage: HarvestStages.HARVEST,
       },
       {
         date: new Date('2024-01-01T20:00:00Z'),
         weight_g: 200,
-        stage: HarvestStage.HARVEST,
+        stage: HarvestStages.HARVEST,
       },
     ];
 
@@ -147,22 +148,22 @@ describe('filterByTimeRange', () => {
       {
         date: new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000), // 6 days ago
         weight_g: 100,
-        stage: HarvestStage.HARVEST,
+        stage: HarvestStages.HARVEST,
       },
       {
         date: new Date(now.getTime() - 16 * 24 * 60 * 60 * 1000), // 16 days ago
         weight_g: 200,
-        stage: HarvestStage.DRYING,
+        stage: HarvestStages.DRYING,
       },
       {
         date: new Date(now.getTime() - 61 * 24 * 60 * 60 * 1000), // 61 days ago
         weight_g: 150,
-        stage: HarvestStage.CURING,
+        stage: HarvestStages.CURING,
       },
       {
         date: new Date(now.getTime() - 335 * 24 * 60 * 60 * 1000), // 335 days ago
         weight_g: 180,
-        stage: HarvestStage.INVENTORY,
+        stage: HarvestStages.INVENTORY,
       },
     ];
   };

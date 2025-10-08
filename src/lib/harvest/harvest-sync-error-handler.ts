@@ -6,7 +6,7 @@
 
 import { showMessage } from 'react-native-flash-message';
 
-import { HarvestAuditStatus } from '@/types/harvest';
+import { HarvestAuditStatuses } from '@/types/harvest';
 
 import { database } from '../watermelon';
 import type { HarvestModel } from '../watermelon-models/harvest';
@@ -75,7 +75,7 @@ export async function attachAuditNoteForRejection(
       await auditsCollection.create((audit) => {
         audit.harvestId = rejection.recordId;
         audit.action = 'stage_revert' as any; // Enum doesn't have sync_rejection yet
-        audit.status = HarvestAuditStatus.BLOCKED;
+        audit.status = HarvestAuditStatuses.BLOCKED;
         audit.reason = auditNote;
         audit.performedAt = rejection.timestamp;
         audit.metadata = {

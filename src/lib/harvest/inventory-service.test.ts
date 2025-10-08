@@ -10,7 +10,7 @@
 
 import { randomUUID } from 'expo-crypto';
 
-import { HarvestStage } from '@/types';
+import { HarvestStages } from '@/types';
 
 import { supabase } from '../supabase';
 import { database } from '../watermelon';
@@ -207,7 +207,7 @@ describe('InventoryService', () => {
         // Mock database write
         const mockUpdate = jest.fn().mockImplementation((fn) => {
           fn({
-            stage: HarvestStage.HARVEST,
+            stage: HarvestStages.HARVEST,
             stageCompletedAt: null,
             serverUpdatedAtMs: 0,
           });
@@ -530,34 +530,44 @@ describe('InventoryService', () => {
     it('should return inventory for harvest', async () => {
       const mockInventory = {
         id: 'inventory-1',
-        harvestId: 'harvest-123',
+        harvest_id: 'harvest-123',
         finalWeightG: 50000,
       } as InventoryModel;
 
       const mockFetch = jest.fn().mockResolvedValue([mockInventory]);
+      const mockQuery = jest.fn().mockReturnValue({
+        fetch: mockFetch,
+      });
       (database.get as jest.Mock).mockReturnValue({
-        query: jest.fn().mockReturnValue({
-          fetch: mockFetch,
-        }),
+        query: mockQuery,
       });
 
       const result =
         await InventoryService.getInventoryByHarvestId('harvest-123');
 
+      expect(mockQuery).toHaveBeenCalledWith({
+        key: 'harvest_id',
+        value: 'harvest-123',
+      }); // Q.where
       expect(result).toEqual(mockInventory);
     });
 
     it('should return null if inventory not found', async () => {
       const mockFetch = jest.fn().mockResolvedValue([]);
+      const mockQuery = jest.fn().mockReturnValue({
+        fetch: mockFetch,
+      });
       (database.get as jest.Mock).mockReturnValue({
-        query: jest.fn().mockReturnValue({
-          fetch: mockFetch,
-        }),
+        query: mockQuery,
       });
 
       const result =
         await InventoryService.getInventoryByHarvestId('harvest-123');
 
+      expect(mockQuery).toHaveBeenCalledWith({
+        key: 'harvest_id',
+        value: 'harvest-123',
+      }); // Q.where
       expect(result).toBeNull();
     });
 

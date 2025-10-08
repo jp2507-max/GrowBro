@@ -25,7 +25,7 @@ describe('photo-hash', () => {
           .fn()
           .mockResolvedValue(new Uint8Array([1, 2, 3, 4]).buffer),
       };
-      (File as jest.Mock).mockImplementation(() => mockFile);
+      (File as unknown as jest.Mock).mockImplementation(() => mockFile);
       (Crypto.digestStringAsync as jest.Mock).mockResolvedValue('abc123hash');
 
       const hash = await hashFileContent('file:///test.jpg');
@@ -39,7 +39,7 @@ describe('photo-hash', () => {
     });
 
     it('should throw error on hash failure', async () => {
-      (File as jest.Mock).mockImplementation(() => {
+      (File as unknown as jest.Mock).mockImplementation(() => {
         throw new Error('File read failed');
       });
 
@@ -90,7 +90,7 @@ describe('photo-hash', () => {
   describe('fileExists', () => {
     it('should return true if file exists', async () => {
       const mockFile = { exists: true };
-      (File as jest.Mock).mockImplementation(() => mockFile);
+      (File as unknown as jest.Mock).mockImplementation(() => mockFile);
 
       const exists = await fileExists('file:///test.jpg');
 
@@ -99,7 +99,7 @@ describe('photo-hash', () => {
 
     it('should return false if file does not exist', async () => {
       const mockFile = { exists: false };
-      (File as jest.Mock).mockImplementation(() => mockFile);
+      (File as unknown as jest.Mock).mockImplementation(() => mockFile);
 
       const exists = await fileExists('file:///missing.jpg');
 
@@ -107,7 +107,7 @@ describe('photo-hash', () => {
     });
 
     it('should return false on error', async () => {
-      (File as jest.Mock).mockImplementation(() => {
+      (File as unknown as jest.Mock).mockImplementation(() => {
         throw new Error('Access denied');
       });
 
@@ -120,7 +120,7 @@ describe('photo-hash', () => {
   describe('getFileSize', () => {
     it('should return file size in bytes', async () => {
       const mockFile = { exists: true, size: 1024 };
-      (File as jest.Mock).mockImplementation(() => mockFile);
+      (File as unknown as jest.Mock).mockImplementation(() => mockFile);
 
       const size = await getFileSize('file:///test.jpg');
 
@@ -129,7 +129,7 @@ describe('photo-hash', () => {
 
     it('should return 0 if file does not exist', async () => {
       const mockFile = { exists: false, size: 0 };
-      (File as jest.Mock).mockImplementation(() => mockFile);
+      (File as unknown as jest.Mock).mockImplementation(() => mockFile);
 
       const size = await getFileSize('file:///missing.jpg');
 
@@ -137,7 +137,7 @@ describe('photo-hash', () => {
     });
 
     it('should return 0 on error', async () => {
-      (File as jest.Mock).mockImplementation(() => {
+      (File as unknown as jest.Mock).mockImplementation(() => {
         throw new Error('Access error');
       });
 
@@ -151,7 +151,7 @@ describe('photo-hash', () => {
     it('should delete existing file and return true', async () => {
       const mockDelete = jest.fn();
       const mockFile = { exists: true, delete: mockDelete };
-      (File as jest.Mock).mockImplementation(() => mockFile);
+      (File as unknown as jest.Mock).mockImplementation(() => mockFile);
 
       const result = await deleteFile('file:///test.jpg');
 
@@ -161,7 +161,7 @@ describe('photo-hash', () => {
 
     it('should return false if file does not exist', async () => {
       const mockFile = { exists: false };
-      (File as jest.Mock).mockImplementation(() => mockFile);
+      (File as unknown as jest.Mock).mockImplementation(() => mockFile);
 
       const result = await deleteFile('file:///missing.jpg');
 
@@ -173,7 +173,7 @@ describe('photo-hash', () => {
         exists: true,
         delete: jest.fn().mockRejectedValue(new Error('Delete failed')),
       };
-      (File as jest.Mock).mockImplementation(() => mockFile);
+      (File as unknown as jest.Mock).mockImplementation(() => mockFile);
 
       const result = await deleteFile('file:///error.jpg');
 

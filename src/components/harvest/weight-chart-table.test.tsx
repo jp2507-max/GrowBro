@@ -7,28 +7,9 @@
 import React from 'react';
 
 import { cleanup, render, screen } from '@/lib/test-utils';
-import { HarvestStage } from '@/types/harvest';
+import { HarvestStages } from '@/types/harvest';
 
 import { WeightChartTable } from './weight-chart-table';
-
-// Mock FlashList
-jest.mock('@shopify/flash-list', () => {
-  const MockFlashList = ({ data, renderItem, testID, ...props }: any) => {
-    if (!data || !renderItem) return null;
-
-    return React.createElement(
-      'div',
-      { 'data-testid': testID, ...props },
-      data.map((item: any, index: number) =>
-        renderItem({ item, index, separators: {} })
-      )
-    );
-  };
-
-  return {
-    FlashList: MockFlashList,
-  };
-});
 
 afterEach(cleanup);
 
@@ -37,17 +18,17 @@ describe('WeightChartTable', () => {
     {
       date: new Date('2024-01-01'),
       weight_g: 1000,
-      stage: HarvestStage.HARVEST,
+      stage: HarvestStages.HARVEST,
     },
     {
       date: new Date('2024-01-05'),
       weight_g: 900,
-      stage: HarvestStage.DRYING,
+      stage: HarvestStages.DRYING,
     },
     {
       date: new Date('2024-01-15'),
       weight_g: 250,
-      stage: HarvestStage.CURING,
+      stage: HarvestStages.CURING,
     },
   ];
 
@@ -119,7 +100,7 @@ describe('WeightChartTable', () => {
       const largeDataset = Array.from({ length: 1000 }, (_, i) => ({
         date: new Date(2024, 0, i + 1),
         weight_g: 1000 - i,
-        stage: HarvestStage.DRYING,
+        stage: HarvestStages.DRYING,
       }));
 
       // Should render without errors

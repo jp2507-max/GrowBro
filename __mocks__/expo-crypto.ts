@@ -20,6 +20,7 @@ export enum CryptoEncoding {
 export const digestStringAsync = jest.fn();
 export const getRandomBytes = jest.fn();
 export const getRandomBytesAsync = jest.fn();
+export const randomUUID = jest.fn();
 
 export default {
   CryptoDigestAlgorithm,
@@ -27,4 +28,5 @@ export default {
   digestStringAsync,
   getRandomBytes,
   getRandomBytesAsync,
+  randomUUID,
 };

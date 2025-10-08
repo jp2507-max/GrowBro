@@ -8,7 +8,7 @@ import * as Notifications from 'expo-notifications';
 import { translate } from '@/lib/i18n';
 import { NotificationHandler } from '@/lib/permissions/notification-handler';
 import { database } from '@/lib/watermelon';
-import { HarvestStage } from '@/types/harvest';
+import { type HarvestStage, HarvestStages } from '@/types/harvest';
 
 import {
   cancelNotificationById,
@@ -71,7 +71,7 @@ describe('Harvest Notification Service', () => {
     // Mock database
     const mockHarvest: any = {
       id: 'harvest-123',
-      stage: HarvestStage.DRYING,
+      stage: HarvestStages.DRYING as HarvestStage,
       stageStartedAt: new Date(),
       update: jest.fn((updateFn: any): any => {
         const mockRecord = {};
@@ -96,7 +96,7 @@ describe('Harvest Notification Service', () => {
     it('should schedule target duration notification successfully', async () => {
       // Requirement 14.1: Schedule local notification for target duration
       const harvestId = 'harvest-123';
-      const stage = HarvestStage.DRYING;
+      const stage = HarvestStages.DRYING as HarvestStage;
       const stageStartedAt = new Date();
 
       const result = await scheduleStageReminder(
@@ -126,7 +126,7 @@ describe('Harvest Notification Service', () => {
 
     it('should not schedule for stages with zero target duration', async () => {
       const harvestId = 'harvest-123';
-      const stage = HarvestStage.HARVEST; // target_duration_days: 0
+      const stage = HarvestStages.HARVEST as HarvestStage; // target_duration_days: 0
       const stageStartedAt = new Date();
 
       const result = await scheduleStageReminder(
@@ -142,7 +142,7 @@ describe('Harvest Notification Service', () => {
 
     it('should not schedule for past trigger times', async () => {
       const harvestId = 'harvest-123';
-      const stage = HarvestStage.DRYING;
+      const stage = HarvestStages.DRYING as HarvestStage;
       // Stage started 20 days ago (past target of 10 days)
       const stageStartedAt = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000);
 
@@ -167,7 +167,7 @@ describe('Harvest Notification Service', () => {
 
       const result = await scheduleStageReminder(
         'harvest-123',
-        HarvestStage.DRYING,
+        HarvestStages.DRYING as HarvestStage,
         new Date()
       );
 
@@ -187,7 +187,7 @@ describe('Harvest Notification Service', () => {
 
       const result = await scheduleStageReminder(
         'harvest-123',
-        HarvestStage.DRYING,
+        HarvestStages.DRYING as HarvestStage,
         new Date()
       );
 
@@ -200,7 +200,7 @@ describe('Harvest Notification Service', () => {
     it('should schedule overdue notification successfully', async () => {
       // Requirement 14.2: Send gentle reminder when duration exceeds recommendation
       const harvestId = 'harvest-123';
-      const stage = HarvestStage.DRYING;
+      const stage = HarvestStages.DRYING as HarvestStage;
       const stageStartedAt = new Date();
 
       const result = await scheduleOverdueReminder(
@@ -227,7 +227,7 @@ describe('Harvest Notification Service', () => {
 
     it('should not schedule for stages with zero max duration', async () => {
       const harvestId = 'harvest-123';
-      const stage = HarvestStage.INVENTORY; // max_duration_days: 0
+      const stage = HarvestStages.INVENTORY as HarvestStage; // max_duration_days: 0
       const stageStartedAt = new Date();
 
       const result = await scheduleOverdueReminder(

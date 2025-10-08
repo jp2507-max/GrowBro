@@ -6,16 +6,16 @@
  */
 
 import { translate } from '@/lib/i18n';
-import type { StageConfig } from '@/types/harvest';
-import { HarvestStage } from '@/types/harvest';
+import type { HarvestStage, StageConfig } from '@/types/harvest';
+import { HarvestStages } from '@/types/harvest';
 
 /**
  * Stage configurations with timing guidance
  * Durations in days
  */
 export const STAGE_CONFIGS: Record<HarvestStage, StageConfig> = {
-  [HarvestStage.HARVEST]: {
-    stage: HarvestStage.HARVEST,
+  [HarvestStages.HARVEST]: {
+    stage: HarvestStages.HARVEST as HarvestStage,
     name: 'Harvest',
     description: 'Initial harvest stage - record weights and begin drying',
     target_duration_days: 0,
@@ -25,8 +25,8 @@ export const STAGE_CONFIGS: Record<HarvestStage, StageConfig> = {
     optional_fields: ['wet_weight_g', 'notes', 'photos'],
     canAdvance: true,
   },
-  [HarvestStage.DRYING]: {
-    stage: HarvestStage.DRYING,
+  [HarvestStages.DRYING]: {
+    stage: HarvestStages.DRYING as HarvestStage,
     name: 'Drying',
     description: 'Dry harvested material in controlled environment',
     target_duration_days: 10,
@@ -36,8 +36,8 @@ export const STAGE_CONFIGS: Record<HarvestStage, StageConfig> = {
     optional_fields: ['dry_weight_g', 'notes', 'photos'],
     canAdvance: true,
   },
-  [HarvestStage.CURING]: {
-    stage: HarvestStage.CURING,
+  [HarvestStages.CURING]: {
+    stage: HarvestStages.CURING as HarvestStage,
     name: 'Curing',
     description: 'Cure dried material to optimize flavor and quality',
     target_duration_days: 30,
@@ -47,8 +47,8 @@ export const STAGE_CONFIGS: Record<HarvestStage, StageConfig> = {
     optional_fields: ['notes', 'photos'],
     canAdvance: true,
   },
-  [HarvestStage.INVENTORY]: {
-    stage: HarvestStage.INVENTORY,
+  [HarvestStages.INVENTORY]: {
+    stage: HarvestStages.INVENTORY as HarvestStage,
     name: 'Inventory',
     description: 'Final inventory record with complete harvest data',
     target_duration_days: 0,
@@ -72,10 +72,10 @@ export function getStageConfig(stage: HarvestStage): StageConfig {
  */
 export function getAllStages(): HarvestStage[] {
   return [
-    HarvestStage.HARVEST,
-    HarvestStage.DRYING,
-    HarvestStage.CURING,
-    HarvestStage.INVENTORY,
+    HarvestStages.HARVEST,
+    HarvestStages.DRYING,
+    HarvestStages.CURING,
+    HarvestStages.INVENTORY,
   ];
 }
 

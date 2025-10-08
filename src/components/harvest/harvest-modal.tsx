@@ -206,16 +206,16 @@ function usePhotoHandler(
   setPhotoUris: React.Dispatch<React.SetStateAction<string[]>>,
   t: (key: string) => string
 ) {
-  return (variants: PhotoVariants) => {
+  return (variants: PhotoVariants[]) => {
     // Store full variants for upload queueing
-    setPhotoVariants((prev) => [...prev, variants]);
+    setPhotoVariants((prev) => [...prev, ...variants]);
     // Store URIs for display and harvest record
-    setPhotoUris((prev) => [
-      ...prev,
-      variants.original,
-      variants.resized,
-      variants.thumbnail,
+    const newUris = variants.flatMap((variant) => [
+      variant.original,
+      variant.resized,
+      variant.thumbnail,
     ]);
+    setPhotoUris((prev) => [...prev, ...newUris]);
     showMessage({
       message: t('harvest.photo.success'),
       type: 'success',
@@ -231,7 +231,6 @@ function ModalBody({
   currentUnit,
   onUnitChange,
   errors,
-  photos,
   photoVariants,
   onAddPhoto,
   plantId,
@@ -245,9 +244,8 @@ function ModalBody({
   currentUnit: WeightUnit;
   onUnitChange: (unit: WeightUnit) => void;
   errors: any;
-  photos: string[];
   photoVariants: PhotoVariants[];
-  onAddPhoto: (variants: PhotoVariants) => void;
+  onAddPhoto: (variants: PhotoVariants[]) => void;
   plantId: string;
   historicalData?: {
     date: Date;
@@ -269,7 +267,6 @@ function ModalBody({
           currentUnit={currentUnit}
           onUnitChange={onUnitChange}
           errors={errors}
-          photos={photos}
           photoVariants={photoVariants}
           onAddPhoto={onAddPhoto}
           plantId={plantId}
@@ -388,7 +385,6 @@ export function HarvestModal({
           currentUnit={currentUnit}
           onUnitChange={handleUnitChange}
           errors={errors}
-          photos={photoUris}
           photoVariants={photoVariants}
           onAddPhoto={handleAddPhoto}
           plantId={plantId}
@@ -427,7 +423,6 @@ function FormContent({
   currentUnit,
   onUnitChange,
   errors,
-  photos,
   photoVariants,
   onAddPhoto,
   plantId,
@@ -438,9 +433,8 @@ function FormContent({
   currentUnit: WeightUnit;
   onUnitChange: (unit: WeightUnit) => void;
   errors: any;
-  photos: string[];
   photoVariants: PhotoVariants[];
-  onAddPhoto: (variants: PhotoVariants) => void;
+  onAddPhoto: (variants: PhotoVariants[]) => void;
   plantId: string;
   historicalData?: {
     date: Date;
@@ -476,7 +470,6 @@ function FormContent({
       />
       <NotesField control={control} t={t} />
       <PhotoSection
-        photos={photos}
         photoVariants={photoVariants}
         onAddPhoto={onAddPhoto}
         t={t}
@@ -583,7 +576,7 @@ function PhotoSection({
   t,
 }: {
   photoVariants: PhotoVariants[];
-  onAddPhoto: (variants: any) => void;
+  onAddPhoto: (variants: PhotoVariants[]) => void;
   t: (key: string) => string;
 }) {
   return (

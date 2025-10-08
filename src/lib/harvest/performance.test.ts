@@ -4,7 +4,7 @@
  * Requirements: 4.2 (optimize rendering for 365+ data points)
  */
 
-import { HarvestStage } from '@/types/harvest';
+import { HarvestStages } from '@/types/harvest';
 
 import { aggregateByDate, harvestsToChartData } from './chart-data-utils';
 import { lttbDownsample } from './lttb-downsample';
@@ -61,7 +61,7 @@ describe('Weight Chart Performance', () => {
     it('should transform 365 harvests to chart data in <50ms', () => {
       const harvests = Array.from({ length: 365 }, (_, i) => ({
         stage_started_at: new Date(2024, 0, i + 1),
-        stage: HarvestStage.DRYING,
+        stage: HarvestStages.DRYING,
         dry_weight_g: 1000 - i * 2,
         plant_id: 'plant-1',
       }));
@@ -79,7 +79,7 @@ describe('Weight Chart Performance', () => {
       const chartData = Array.from({ length: 1000 }, (_, i) => ({
         date: new Date(2024, 0, (i % 365) + 1),
         weight_g: 100 + i * 0.5,
-        stage: HarvestStage.DRYING,
+        stage: HarvestStages.DRYING,
         plant_id: `plant-${i % 10}`,
       }));
 
@@ -97,7 +97,7 @@ describe('Weight Chart Performance', () => {
       // Simulate realistic scenario: 500 harvests over 180 days
       const harvests = Array.from({ length: 500 }, (_, i) => ({
         stage_started_at: new Date(Date.now() - i * 24 * 60 * 60 * 1000),
-        stage: HarvestStage.DRYING,
+        stage: HarvestStages.DRYING,
         dry_weight_g: Math.floor(800 + Math.random() * 200),
         plant_id: `plant-${Math.floor(i / 50)}`,
       }));

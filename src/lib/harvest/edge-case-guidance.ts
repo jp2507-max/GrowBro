@@ -241,6 +241,7 @@ export function getStorageFullGuidance(
  * Requirement 19.5
  *
  * @param harvestState Current harvest state
+ * @param harvestState.clockSkew Clock skew in milliseconds (will be converted to minutes for display)
  * @returns Array of guidance messages for all detected issues
  */
 export function getHarvestValidationGuidance(harvestState: {
@@ -252,7 +253,7 @@ export function getHarvestValidationGuidance(harvestState: {
     min: number;
     max: number;
   };
-  clockSkew?: number;
+  clockSkew?: number; // milliseconds
   invalidOrder?: boolean;
   invalidWeightRatio?: boolean;
   syncConflict?: boolean;

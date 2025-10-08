@@ -8,15 +8,24 @@ import { showMessage } from 'react-native-flash-message';
 
 import type {
   BusinessLogicError,
+  BusinessLogicErrorCode,
   ClassifiedError,
   ConsistencyError,
+  ConsistencyErrorCode,
   ErrorHandlerResult,
   NetworkError,
   ServerErrorCode,
   SyncRejection,
   ValidationError,
 } from './harvest-error-types';
-import { ERROR_CATEGORY, SERVER_ERROR_MAPPING } from './harvest-error-types';
+import {
+  BUSINESS_LOGIC_ERROR_CODES,
+  BusinessLogicErrorClass,
+  CONSISTENCY_ERROR_CODES,
+  ConsistencyErrorClass,
+  ERROR_CATEGORY,
+  SERVER_ERROR_MAPPING,
+} from './harvest-error-types';
 
 /**
  * Classifies an unknown error into a category with metadata
@@ -77,16 +86,12 @@ export function classifyError(error: unknown): ClassifiedError {
  * Requirement 17.1: Inline validation messages for form inputs
  */
 export function handleValidationError(
-  error: ValidationError | ValidationError[]
+  _error: ValidationError | ValidationError[]
 ): ErrorHandlerResult {
-  const errors = Array.isArray(error) ? error : [error];
-  const message = errors.map((e) => e.message).join(', ');
-
   return {
     shouldShowToast: false,
     shouldShowBanner: false,
     shouldShowInline: true,
-    bannerMessage: message,
   };
 }
 
@@ -210,25 +215,42 @@ function isValidationError(error: unknown): boolean {
 }
 
 function isBusinessLogicError(error: unknown): boolean {
-  if (error && typeof error === 'object' && error instanceof Error) {
+  // Check for custom error class
+  if (error instanceof BusinessLogicErrorClass) {
+    return true;
+  }
+
+  // Check for error.code property matching defined constants
+  if (error && typeof error === 'object' && 'code' in error) {
+    const code = (error as any).code;
     return (
-      error.message.includes('stage') ||
-      error.message.includes('transition') ||
-      error.message.includes('invalid') ||
-      error.message.includes('required')
+      typeof code === 'string' &&
+      Object.values(BUSINESS_LOGIC_ERROR_CODES).includes(
+        code as BusinessLogicErrorCode
+      )
     );
   }
+
   return false;
 }
 
 function isConsistencyError(error: unknown): boolean {
-  if (error && typeof error === 'object' && error instanceof Error) {
+  // Check for custom error class
+  if (error instanceof ConsistencyErrorClass) {
+    return true;
+  }
+
+  // Check for error.code property matching defined constants
+  if (error && typeof error === 'object' && 'code' in error) {
+    const code = (error as any).code;
     return (
-      error.message.includes('conflict') ||
-      error.message.includes('concurrent') ||
-      error.message.includes('modified')
+      typeof code === 'string' &&
+      Object.values(CONSISTENCY_ERROR_CODES).includes(
+        code as ConsistencyErrorCode
+      )
     );
   }
+
   return false;
 }
 

@@ -1,13 +1,13 @@
 /**
- * Integration E2E Tests - Harvest Workflow
- * Task 17: Complete end-to-end validation scenarios
+ * Unit Tests - Harvest Workflow Business Logic
+ * Fast, mock-based tests for harvest workflow business logic and data transformations
  *
  * Coverage:
- * - Complete offline-to-online sync with conflict resolution
- * - Atomic inventory creation under failure conditions
- * - Photo storage cleanup and orphan detection
- * - Notification scheduling and rehydration
- * - Full workflow: Harvest → Drying → Curing → Inventory
+ * - Harvest state transitions and validation logic
+ * - Conflict resolution algorithms (LWW, idempotency)
+ * - Photo storage and cleanup business rules
+ * - Notification scheduling calculations
+ * - Complete workflow state management
  */
 
 import { HarvestStages } from '@/types/harvest';
@@ -50,7 +50,7 @@ function generateTestInventory(harvestId: string, overrides = {}) {
   };
 }
 
-describe('Harvest Workflow - Integration E2E Tests', () => {
+describe('Harvest Workflow - Unit Tests', () => {
   describe('Scenario 1: Complete Offline-to-Online Sync with Conflict Resolution', () => {
     it('should create harvest offline, sync online, and resolve conflicts with LWW', async () => {
       // 1. Simulate offline mode (tracked for context)
@@ -243,39 +243,49 @@ describe('Harvest Workflow - Integration E2E Tests', () => {
 
     it('should retry transient failures with exponential backoff', async () => {
       const maxRetries = 3;
-      const retryAttempts: number[] = [];
+      let attemptCount = 0;
+      const delays: number[] = [];
 
-      // Simulate transient failure (e.g., network timeout)
-      let attempt = 0;
-      const executeWithRetry = async () => {
-        attempt++;
-        retryAttempts.push(attempt);
-
-        if (attempt < maxRetries) {
+      const mockOperation = async (): Promise<{
+        harvest: TestHarvest;
+        inventory: TestInventory;
+      }> => {
+        attemptCount++;
+        if (attemptCount < maxRetries) {
           throw new Error('Transient network error');
         }
-
-        // Success on 3rd attempt
         return {
           harvest: generateTestHarvest({ stage: HarvestStages.INVENTORY }),
           inventory: generateTestInventory('h-retry-1'),
         };
       };
 
-      try {
-        await executeWithRetry();
-      } catch {
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // 1s backoff
-        try {
-          await executeWithRetry();
-        } catch {
-          await new Promise((resolve) => setTimeout(resolve, 2000)); // 2s backoff
-          const result = await executeWithRetry();
-          expect(result.harvest.stage).toBe(HarvestStages.INVENTORY);
+      // Mock retry utility with exponential backoff
+      const retryWithBackoff = async <T>(
+        operation: () => Promise<T>,
+        maxRetries: number,
+        baseDelay = 100
+      ): Promise<T> => {
+        for (let i = 0; i < maxRetries; i++) {
+          if (i > 0) {
+            const delay = baseDelay * Math.pow(2, i - 1);
+            delays.push(delay);
+            // In real tests, use fake timers instead of actual delays
+          }
+          const result = await operation().catch((err) => {
+            if (i === maxRetries - 1) throw err;
+            return null;
+          });
+          if (result) return result;
         }
-      }
+        throw new Error('Max retries exceeded');
+      };
 
-      expect(retryAttempts).toHaveLength(3);
+      const result = await retryWithBackoff(mockOperation, maxRetries);
+
+      expect(attemptCount).toBe(3);
+      expect(delays).toEqual([100, 200]); // 100 * 2^0, 100 * 2^1
+      expect(result.harvest.stage).toBe(HarvestStages.INVENTORY);
     });
 
     it('should require dry weight to finalize curing', async () => {
@@ -517,7 +527,7 @@ describe('Harvest Workflow - Integration E2E Tests', () => {
 
       // 2. Rehydrate notifications from persisted state
       const rehydratedNotifications = persistedHarvests.map((h) => {
-        const daysToAdd = (h.stage as string) === 'drying' ? 7 : 14;
+        const daysToAdd = h.stage === HarvestStages.DRYING ? 7 : 14;
         return {
           id: `notif-${h.id}`,
           harvestId: h.id,
@@ -707,98 +717,6 @@ describe('Harvest Workflow - Integration E2E Tests', () => {
       expect(reverted.notes).toContain(
         'Reverted: Reverting due to measurement error'
       );
-    });
-  });
-
-  describe('Scenario 6: Accessibility Validation', () => {
-    it('should provide proper screen reader labels', () => {
-      // Accessibility labels validated in harvest-labels.test.ts
-      const labels = {
-        advanceStage: 'Advance to Drying stage',
-        currentStage: 'Current stage: Harvest',
-        weightInput: 'Wet weight in grams',
-        photoCapture: 'Capture harvest photo',
-        submitHarvest: 'Save harvest record',
-      };
-
-      expect(labels.advanceStage).toBeTruthy();
-      expect(labels.currentStage).toBeTruthy();
-      expect(labels.weightInput).toBeTruthy();
-      expect(labels.photoCapture).toBeTruthy();
-      expect(labels.submitHarvest).toBeTruthy();
-    });
-
-    it('should meet minimum touch target sizes (≥44pt)', () => {
-      // Touch target validation in touch-target.test.ts
-      const minTouchTarget = 44;
-
-      const buttons = [
-        { name: 'Advance Stage', width: 64, height: 48 },
-        { name: 'Capture Photo', width: 56, height: 56 },
-        { name: 'Save Harvest', width: 120, height: 48 },
-      ];
-
-      buttons.forEach((button) => {
-        const minDimension = Math.min(button.width, button.height);
-        expect(minDimension).toBeGreaterThanOrEqual(minTouchTarget);
-      });
-    });
-  });
-
-  describe('Scenario 7: Security and RLS Enforcement', () => {
-    it('should prevent cross-user data access', () => {
-      // Security tests in harvest-security.test.ts
-      const user1 = 'user-1';
-      const user2 = 'user-2';
-
-      const harvest = generateTestHarvest({
-        user_id: user1,
-      });
-
-      // Attempt access as user2
-      const hasAccess = harvest.user_id === user2;
-
-      expect(hasAccess).toBe(false); // RLS blocks access
-    });
-
-    it('should enforce owner-only Storage policies', () => {
-      const userId = 'user-1';
-      const harvestId = 'h-storage-1';
-
-      // Storage path: /user_id/harvest_id/photo.jpg
-      const storagePath = `${userId}/${harvestId}/photo.jpg`;
-
-      // RLS policy: auth.uid() = user_id in path
-      const canRead = storagePath.startsWith(userId);
-
-      expect(canRead).toBe(true);
-
-      // Different user cannot access
-      const otherUserId = 'user-2';
-      const canOtherUserRead = storagePath.startsWith(otherUserId);
-
-      expect(canOtherUserRead).toBe(false);
-    });
-
-    it('should cascade delete on user account deletion', () => {
-      const userId = 'user-delete-test';
-
-      const harvests = [
-        generateTestHarvest({ id: 'h1', user_id: userId }),
-        generateTestHarvest({ id: 'h2', user_id: userId }),
-      ];
-
-      const inventory = [
-        generateTestInventory('h1', { user_id: userId }),
-        generateTestInventory('h2', { user_id: userId }),
-      ];
-
-      // Simulate cascade delete
-      const deletedHarvests = harvests.filter((h) => h.user_id !== userId);
-      const deletedInventory = inventory.filter((i) => i.user_id !== userId);
-
-      expect(deletedHarvests).toHaveLength(0);
-      expect(deletedInventory).toHaveLength(0);
     });
   });
 });

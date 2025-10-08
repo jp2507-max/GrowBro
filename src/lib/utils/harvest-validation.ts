@@ -5,7 +5,8 @@
  * Requirements: 11.3 (non-negative, ≤100000g, dry≤wet)
  */
 
-import { HarvestStage, type WeightValidationError } from '@/types';
+import type { HarvestStage, WeightValidationError } from '@/types/harvest';
+import { HarvestStages } from '@/types/harvest';
 
 /**
  * Maximum weight allowed in grams (Requirement 11.3)
@@ -21,10 +22,10 @@ export const MIN_WEIGHT_G = 0;
  * Valid harvest stages for FSM validation
  */
 const VALID_STAGES: readonly HarvestStage[] = [
-  HarvestStage.HARVEST,
-  HarvestStage.DRYING,
-  HarvestStage.CURING,
-  HarvestStage.INVENTORY,
+  HarvestStages.HARVEST as HarvestStage,
+  HarvestStages.DRYING as HarvestStage,
+  HarvestStages.CURING as HarvestStage,
+  HarvestStages.INVENTORY as HarvestStage,
 ] as const;
 
 /**

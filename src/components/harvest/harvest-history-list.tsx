@@ -2,8 +2,8 @@ import React, { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { List, Pressable, Text, View } from '@/components/ui';
-import type { Harvest } from '@/types/harvest';
-import { HarvestStage } from '@/types/harvest';
+import type { Harvest, HarvestStage } from '@/types';
+import { HarvestStages } from '@/types';
 
 import { HarvestHistoryEmpty } from './harvest-history-empty';
 
@@ -40,8 +40,8 @@ const STATUS_PREDICATE: Record<
   (harvest: Harvest) => boolean
 > = {
   all: () => true,
-  active: (harvest) => harvest.stage !== HarvestStage.INVENTORY,
-  completed: (harvest) => harvest.stage === HarvestStage.INVENTORY,
+  active: (harvest) => harvest.stage !== HarvestStages.INVENTORY,
+  completed: (harvest) => harvest.stage === HarvestStages.INVENTORY,
 };
 
 /**
@@ -161,7 +161,7 @@ function mapHarvestToItem(harvest: Harvest): HarvestListItem {
     updatedAt: harvest.updated_at,
     dryWeight: harvest.dry_weight_g ?? undefined,
     conflictSeen: harvest.conflict_seen,
-    isCompleted: harvest.stage === HarvestStage.INVENTORY,
+    isCompleted: harvest.stage === HarvestStages.INVENTORY,
     source: harvest,
   };
 }

@@ -10,7 +10,7 @@
  * - Empty states and error messages
  */
 
-import { HarvestStage } from '@/types/harvest';
+import { HarvestStages } from '@/types/harvest';
 
 describe('Harvest Workflow - Accessibility Audit', () => {
   describe('Screen Reader Support', () => {
@@ -96,7 +96,7 @@ describe('Harvest Workflow - Accessibility Audit', () => {
       };
 
       expect(
-        announcements.stageAdvanced(HarvestStage.HARVEST, HarvestStage.DRYING)
+        announcements.stageAdvanced(HarvestStages.HARVEST, HarvestStages.DRYING)
       ).toBe('Harvest stage changed from harvest to drying');
 
       expect(announcements.undoCompleted('Harvest')).toBe(

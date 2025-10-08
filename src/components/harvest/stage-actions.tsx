@@ -15,7 +15,8 @@ import {
   getStageMetadata,
   UNDO_WINDOW_MS,
 } from '@/lib/harvest/state-machine';
-import { HarvestStage } from '@/types/harvest';
+import type { HarvestStage } from '@/types';
+import { HarvestStages } from '@/types';
 
 type Props = {
   currentStage: HarvestStage;
@@ -30,10 +31,10 @@ type Props = {
 
 function getNextStageKey(current: HarvestStage): string {
   const order = [
-    HarvestStage.HARVEST,
-    HarvestStage.DRYING,
-    HarvestStage.CURING,
-    HarvestStage.INVENTORY,
+    HarvestStages.HARVEST,
+    HarvestStages.DRYING,
+    HarvestStages.CURING,
+    HarvestStages.INVENTORY,
   ];
   const index = order.indexOf(current);
   return order[index + 1] || current;

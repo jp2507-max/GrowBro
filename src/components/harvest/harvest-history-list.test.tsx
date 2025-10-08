@@ -2,7 +2,8 @@ import React from 'react';
 
 import { translate } from '@/lib/i18n';
 import { cleanup, render, screen, setup } from '@/lib/test-utils';
-import { HarvestStage } from '@/types/harvest';
+import type { HarvestPhotoObject, HarvestStage } from '@/types/harvest';
+import { HarvestStages } from '@/types/harvest';
 
 import {
   type HarvestHistoryFilter,
@@ -19,7 +20,7 @@ const BASE_HARVEST = {
   notes: 'Initial notes',
   stage_started_at: new Date('2024-01-01T00:00:00.000Z'),
   stage_completed_at: null,
-  photos: [] as string[],
+  photos: [] as HarvestPhotoObject[],
   created_at: new Date('2024-01-01T00:00:00.000Z'),
   updated_at: new Date('2024-01-01T00:00:00.000Z'),
   deleted_at: null,
@@ -47,13 +48,13 @@ describe('HarvestHistoryList', () => {
   const harvests = [
     makeHarvest({
       id: 'harvest-1',
-      stage: HarvestStage.HARVEST,
+      stage: HarvestStages.HARVEST,
       updated_at: new Date(Date.now() - 5 * 60 * 1000),
       notes: 'Harvest started',
     }),
     makeHarvest({
       id: 'harvest-2',
-      stage: HarvestStage.CURING,
+      stage: HarvestStages.CURING,
       updated_at: new Date(Date.now() - 2 * 60 * 60 * 1000),
       notes: 'Curing in progress',
       plant_id: 'plant-2',
@@ -61,7 +62,7 @@ describe('HarvestHistoryList', () => {
     }),
     makeHarvest({
       id: 'harvest-3',
-      stage: HarvestStage.INVENTORY,
+      stage: HarvestStages.INVENTORY,
       updated_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
       notes: 'Inventory created',
       conflict_seen: true,
@@ -100,7 +101,7 @@ describe('HarvestHistoryList', () => {
     await user.press(screen.getByTestId('harvest-history-list-item-harvest-2'));
 
     expect(onSelect).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'harvest-2', stage: HarvestStage.CURING })
+      expect.objectContaining({ id: 'harvest-2', stage: HarvestStages.CURING })
     );
   });
 

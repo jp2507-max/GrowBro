@@ -19,7 +19,8 @@ import { NotificationHandler } from '@/lib/permissions/notification-handler';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 import { database } from '@/lib/watermelon';
 import type { HarvestModel } from '@/lib/watermelon-models/harvest';
-import { HarvestStage, type StageConfig } from '@/types/harvest';
+import type { HarvestStage, StageConfig } from '@/types/harvest';
+import { HarvestStages } from '@/types/harvest';
 
 import {
   recordRehydrationAttempt,
@@ -428,7 +429,7 @@ export async function rehydrateNotifications(): Promise<RehydrationStats> {
     const harvests = await database
       .get<HarvestModel>('harvests')
       .query(
-        Q.where('stage', Q.notEq(HarvestStage.INVENTORY)),
+        Q.where('stage', Q.notEq(HarvestStages.INVENTORY)),
         Q.where('deleted_at', null)
       )
       .fetch();
@@ -449,7 +450,7 @@ export async function rehydrateNotifications(): Promise<RehydrationStats> {
           harvest.stageStartedAt,
           currentTime
         );
-        const config = getStageConfig(harvest.stage);
+        const config = getStageConfig(harvest.stage as HarvestStage);
 
         // Check target duration notification
         if (notificationId && !scheduledIds.has(notificationId)) {
@@ -457,7 +458,7 @@ export async function rehydrateNotifications(): Promise<RehydrationStats> {
           if (elapsedDays < config.target_duration_days) {
             const result = await scheduleStageReminder(
               harvest.id,
-              harvest.stage,
+              harvest.stage as HarvestStage,
               harvest.stageStartedAt
             );
             if (result.scheduled) {
@@ -473,7 +474,7 @@ export async function rehydrateNotifications(): Promise<RehydrationStats> {
           // No notification ID stored but stage is active, schedule new
           const result = await scheduleStageReminder(
             harvest.id,
-            harvest.stage,
+            harvest.stage as HarvestStage,
             harvest.stageStartedAt
           );
           if (result.scheduled) {
@@ -484,7 +485,10 @@ export async function rehydrateNotifications(): Promise<RehydrationStats> {
         }
 
         // Check overdue notification
-        const isOverdue = exceedsMaxDuration(harvest.stage, elapsedDays);
+        const isOverdue = exceedsMaxDuration(
+          harvest.stage as HarvestStage,
+          elapsedDays
+        );
         if (overdueNotificationId && !scheduledIds.has(overdueNotificationId)) {
           // Overdue notification missing, reschedule if approaching max
           if (
@@ -493,7 +497,7 @@ export async function rehydrateNotifications(): Promise<RehydrationStats> {
           ) {
             const result = await scheduleOverdueReminder(
               harvest.id,
-              harvest.stage,
+              harvest.stage as HarvestStage,
               harvest.stageStartedAt
             );
             if (result.scheduled) {
@@ -510,7 +514,7 @@ export async function rehydrateNotifications(): Promise<RehydrationStats> {
           // No overdue notification but approaching max, schedule new
           const result = await scheduleOverdueReminder(
             harvest.id,
-            harvest.stage,
+            harvest.stage as HarvestStage,
             harvest.stageStartedAt
           );
           if (result.scheduled) {

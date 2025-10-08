@@ -21,7 +21,10 @@ function mapFieldName(field: string): string {
   }
 }
 
-type WhereCond = { key: string; value: any } | { key: string; $oneOf: any[] };
+type WhereCond =
+  | { key: string; value: any }
+  | { key: string; $oneOf: any[] }
+  | { key: string; $notEq: any };
 
 // Minimal Model base class so modelClasses can extend it without side effects
 export class Model {}
@@ -32,7 +35,13 @@ export const Q = {
     if (typeof value === 'object' && value && '$oneOf' in value) {
       return { key, $oneOf: value.$oneOf };
     }
+    if (typeof value === 'object' && value && '$notEq' in value) {
+      return { key, $notEq: value.$notEq };
+    }
     return { key, value };
+  },
+  notEq(value: any): { $notEq: any } {
+    return { $notEq: value };
   },
   oneOf(values: any[]): { $oneOf: any[] } {
     return { $oneOf: values };
@@ -77,6 +86,8 @@ function filterResults(store: any[], filters: WhereCond[]): any[] {
       const key = mapFieldName(c.key);
       if ('$oneOf' in c) {
         return c.$oneOf.includes((row as any)[key]);
+      } else if ('$notEq' in c) {
+        return (row as any)[key] !== c.$notEq;
       } else {
         return (row as any)[key] === c.value;
       }
@@ -268,6 +279,29 @@ function buildNotificationPreferencesCollection() {
   return col;
 }
 
+function buildHarvestsCollection() {
+  const col = makeCollection();
+  const originalCreate = col.create.bind(col);
+  col.create = async (cb: any) => {
+    return originalCreate(async (rec: any) => {
+      rec.plantId = 'mock-plant-id';
+      rec.stage = 'harvest';
+      rec.wetWeightG = null;
+      rec.dryWeightG = null;
+      rec.trimmingsWeightG = null;
+      rec.notes = '';
+      rec.photos = [];
+      rec.stageStartedAt = new Date();
+      rec.stageCompletedAt = null;
+      rec.createdAt = new Date();
+      rec.updatedAt = new Date();
+      rec.deletedAt = null;
+      await cb?.(rec);
+    });
+  };
+  return col;
+}
+
 // Mock Database class
 class DatabaseMock {
   collections: Map<string, any> = new Map();
@@ -281,6 +315,7 @@ class DatabaseMock {
       'notification_preferences',
       buildNotificationPreferencesCollection()
     );
+    this.collections.set('harvests', buildHarvestsCollection());
   }
 
   write = jest

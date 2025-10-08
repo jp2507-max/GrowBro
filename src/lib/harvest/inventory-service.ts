@@ -15,6 +15,7 @@
  * - 10.5: Block finalization if dry weight missing, provide fix CTA
  */
 
+import { Q } from '@nozbe/watermelondb';
 import { randomUUID } from 'expo-crypto';
 
 import { categorizeError } from '@/lib/error-handling';
@@ -23,7 +24,7 @@ import { computeBackoffMs } from '@/lib/sync/backoff';
 import { database } from '@/lib/watermelon';
 import type { HarvestModel } from '@/lib/watermelon-models/harvest';
 import type { InventoryModel } from '@/lib/watermelon-models/inventory';
-import { HarvestStage } from '@/types';
+import { HarvestStages } from '@/types';
 import type {
   CompleteCuringRequest,
   CompleteCuringResponse,
@@ -273,7 +274,7 @@ async function updateLocalState(
       // Update harvest to INVENTORY stage
       const harvest = await harvestsCollection.find(harvestId);
       const updatedHarvest = await harvest.update((record) => {
-        record.stage = HarvestStage.INVENTORY;
+        record.stage = HarvestStages.INVENTORY;
         record.stageStartedAt = new Date(response.server_timestamp_ms);
         record.stageCompletedAt = new Date(response.server_timestamp_ms);
         record.serverUpdatedAtMs = response.server_timestamp_ms;
@@ -422,12 +423,10 @@ export async function getInventoryByHarvestId(
   try {
     const inventoryCollection = database.get<InventoryModel>('inventory');
     const inventories = await inventoryCollection
-      .query
-      /* No Q imports needed for this pattern */
-      ()
+      .query(Q.where('harvest_id', harvestId))
       .fetch();
 
-    return inventories.find((inv) => inv.harvestId === harvestId) ?? null;
+    return inventories[0] ?? null;
   } catch (error) {
     console.error('[InventoryService] Failed to get inventory:', error);
     return null;

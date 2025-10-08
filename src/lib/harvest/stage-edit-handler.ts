@@ -5,16 +5,18 @@
  * Requirement 19.2: Recompute derived durations consistently when historical stages are edited
  */
 
-import { type HarvestStage } from '@/types/harvest';
-
-import { database } from '../watermelon';
-import type { HarvestModel } from '../watermelon-models/harvest';
 import {
   cancelStageReminders,
   scheduleOverdueReminder,
   scheduleStageReminder,
-} from './harvest-notification-service';
-import { getStageConfig } from './stage-config';
+} from '@/lib/harvest/harvest-notification-service';
+import {
+  calculateElapsedDays,
+  getStageConfig,
+} from '@/lib/harvest/stage-config';
+import { database } from '@/lib/watermelon';
+import type { HarvestModel } from '@/lib/watermelon-models/harvest';
+import { type HarvestStage } from '@/types/harvest';
 
 export interface StageEditInput {
   harvestId: string;
@@ -29,19 +31,6 @@ export interface StageEditResult {
   durationRecomputed: boolean;
   notificationsRescheduled: boolean;
   error?: string;
-}
-
-/**
- * Calculate elapsed days between two dates
- *
- * @param startDate Stage start date
- * @param endDate Current or completion date
- * @returns Elapsed days (rounded to 1 decimal)
- */
-export function calculateElapsedDays(startDate: Date, endDate: Date): number {
-  const msPerDay = 1000 * 60 * 60 * 24;
-  const diffMs = endDate.getTime() - startDate.getTime();
-  return Math.round((diffMs / msPerDay) * 10) / 10;
 }
 
 /**
@@ -161,11 +150,12 @@ export async function updateStageTimestamps(
       });
     });
 
-    const notificationsRescheduled =
-      hasTimestampChange && !updated.stageCompletedAt
+    const notificationsRescheduled = updated.stageCompletedAt
+      ? (await cancelStageReminders(input.harvestId), true)
+      : hasTimestampChange && !updated.stageCompletedAt
         ? await rescheduleNotifications(
             input.harvestId,
-            updated.stage,
+            updated.stage as HarvestStage,
             updated.stageStartedAt
           )
         : false;
@@ -202,7 +192,7 @@ export function validateStageDuration(harvest: HarvestModel): {
   valid: boolean;
   warnings: string[];
 } {
-  const config = getStageConfig(harvest.stage);
+  const config = getStageConfig(harvest.stage as HarvestStage);
   const elapsed = harvest.stageCompletedAt
     ? calculateElapsedDays(harvest.stageStartedAt, harvest.stageCompletedAt)
     : calculateElapsedDays(harvest.stageStartedAt, new Date());

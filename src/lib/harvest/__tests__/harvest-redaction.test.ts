@@ -3,7 +3,7 @@
  * Requirements: 18.4 (redact private data appropriately)
  */
 
-import { type Harvest, HarvestStage } from '@/types/harvest';
+import { type Harvest, HarvestStages } from '@/types/harvest';
 
 import {
   createHarvestSharingSummary,
@@ -17,14 +17,25 @@ describe('Harvest Redaction', () => {
     id: 'harvest-123',
     plant_id: 'plant-456',
     user_id: 'user-789',
-    stage: HarvestStage.DRYING,
+    stage: HarvestStages.DRYING,
     wet_weight_g: 500,
     dry_weight_g: 125,
     trimmings_weight_g: 50,
     notes: 'PII: John Doe, 123 Main St, email@example.com',
     stage_started_at: new Date('2025-01-01T00:00:00Z'),
     stage_completed_at: new Date('2025-01-08T00:00:00Z'),
-    photos: ['file:///storage/photo1.jpg', 'file:///storage/photo2.jpg'],
+    photos: [
+      {
+        variant: 'thumbnail',
+        localUri: 'file:///storage/photo1.jpg',
+        remotePath: undefined,
+      },
+      {
+        variant: 'full',
+        localUri: 'file:///storage/photo2.jpg',
+        remotePath: undefined,
+      },
+    ],
     created_at: new Date('2025-01-01T00:00:00Z'),
     updated_at: new Date('2025-01-08T00:00:00Z'),
     deleted_at: null,
@@ -54,7 +65,7 @@ describe('Harvest Redaction', () => {
     it('should preserve stage and timing information', () => {
       const redacted = redactHarvest(mockHarvest);
 
-      expect(redacted.stage).toBe(HarvestStage.DRYING);
+      expect(redacted.stage).toBe(HarvestStages.DRYING);
       expect(redacted.stage_started_at).toEqual(
         new Date('2025-01-01T00:00:00Z')
       );
@@ -152,7 +163,7 @@ describe('Harvest Redaction', () => {
       {
         ...mockHarvest,
         id: 'harvest-1',
-        stage: HarvestStage.CURING,
+        stage: HarvestStages.CURING,
         wet_weight_g: 400,
         dry_weight_g: 100,
         stage_completed_at: new Date('2025-01-07T00:00:00Z'),
@@ -161,7 +172,7 @@ describe('Harvest Redaction', () => {
       {
         ...mockHarvest,
         id: 'harvest-2',
-        stage: HarvestStage.DRYING,
+        stage: HarvestStages.DRYING,
         wet_weight_g: 500,
         dry_weight_g: 125,
         stage_completed_at: new Date('2025-01-10T00:00:00Z'),
@@ -170,7 +181,7 @@ describe('Harvest Redaction', () => {
       {
         ...mockHarvest,
         id: 'harvest-3',
-        stage: HarvestStage.INVENTORY,
+        stage: HarvestStages.INVENTORY,
         wet_weight_g: 600,
         dry_weight_g: 150,
         stage_completed_at: new Date('2025-01-14T00:00:00Z'),

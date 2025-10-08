@@ -7,7 +7,7 @@
 
 import { Q } from '@nozbe/watermelondb';
 
-import { HarvestStage } from '@/types';
+import { type HarvestStage, HarvestStages } from '@/types/harvest';
 
 import { database } from '../watermelon';
 import type { HarvestModel } from '../watermelon-models/harvest';
@@ -53,7 +53,7 @@ export async function createHarvest(
     const harvest = await database.write(async () => {
       return await harvestsCollection.create((record) => {
         record.plantId = input.plantId;
-        record.stage = HarvestStage.HARVEST;
+        record.stage = HarvestStages.HARVEST;
         record.wetWeightG = input.wetWeightG ?? undefined;
         record.dryWeightG = input.dryWeightG ?? undefined;
         record.trimmingsWeightG = input.trimmingsWeightG ?? undefined;
@@ -199,7 +199,7 @@ export async function advanceHarvestStage(
     const harvestsCollection = database.get<HarvestModel>('harvests');
     const harvest = await harvestsCollection.find(harvestId);
 
-    const currentStage = harvest.stage;
+    const currentStage = harvest.stage as HarvestStage;
     const stages = getAllStages();
     const currentIndex = getStageIndex(currentStage);
 

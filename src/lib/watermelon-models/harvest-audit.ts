@@ -1,11 +1,7 @@
 import { Model } from '@nozbe/watermelondb';
 import { date, json, text } from '@nozbe/watermelondb/decorators';
 
-import type {
-  HarvestAuditAction,
-  HarvestAuditStatus,
-  HarvestStage,
-} from '@/types';
+import type { HarvestAuditAction, HarvestAuditStatus } from '@/types';
 
 /**
  * WatermelonDB model for harvest audit trail
@@ -22,8 +18,8 @@ export class HarvestAuditModel extends Model {
   @text('action') action!: HarvestAuditAction;
   @text('status') status!: HarvestAuditStatus;
 
-  @text('from_stage') fromStage?: HarvestStage;
-  @text('to_stage') toStage?: HarvestStage;
+  @text('from_stage') fromStage?: string;
+  @text('to_stage') toStage?: string;
 
   @text('reason') reason!: string;
 

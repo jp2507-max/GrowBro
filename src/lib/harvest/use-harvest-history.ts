@@ -5,8 +5,12 @@ import React from 'react';
 import { useNetworkStatus } from '@/lib/hooks';
 import { database } from '@/lib/watermelon';
 import type { HarvestModel } from '@/lib/watermelon-models/harvest';
-import type { Harvest } from '@/types/harvest';
-import { HarvestStage } from '@/types/harvest';
+import type {
+  Harvest,
+  HarvestPhotoObject,
+  HarvestStage,
+} from '@/types/harvest';
+import { HarvestStages } from '@/types/harvest';
 
 export type HarvestHistoryFilters = {
   readonly plantId?: string;
@@ -19,8 +23,8 @@ const STATUS_FILTERS: Record<
   (harvest: HarvestModel) => boolean
 > = {
   all: () => true,
-  active: (harvest) => harvest.stage !== HarvestStage.INVENTORY,
-  completed: (harvest) => harvest.stage === HarvestStage.INVENTORY,
+  active: (harvest) => harvest.stage !== HarvestStages.INVENTORY,
+  completed: (harvest) => harvest.stage === HarvestStages.INVENTORY,
 };
 
 export function useHarvestHistory(initialFilters?: HarvestHistoryFilters) {
@@ -87,14 +91,18 @@ function mapModelToHarvest(model: HarvestModel): Harvest {
     id: model.id,
     plant_id: model.plantId,
     user_id: model.userId ?? '',
-    stage: model.stage,
+    stage: model.stage as HarvestStage,
     wet_weight_g: model.wetWeightG ?? null,
     dry_weight_g: model.dryWeightG ?? null,
     trimmings_weight_g: model.trimmingsWeightG ?? null,
     notes: model.notes,
     stage_started_at: model.stageStartedAt,
     stage_completed_at: model.stageCompletedAt ?? null,
-    photos: model.photos.map((photo) => photo.localUri),
+    photos: model.photos.map((photo) => ({
+      variant: photo.variant,
+      localUri: photo.localUri,
+      remotePath: photo.remotePath,
+    })) as HarvestPhotoObject[],
     created_at: model.createdAt,
     updated_at: model.updatedAt,
     deleted_at: model.deletedAt ?? null,

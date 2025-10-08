@@ -3,7 +3,7 @@
  * Requirements: 11.3 (validation rules)
  */
 
-import { HarvestStage } from '@/types';
+import { HarvestStages } from '@/types';
 
 import {
   getNextStage,
@@ -96,10 +96,10 @@ describe('harvest-validation', () => {
 
   describe('isValidStage', () => {
     it('should return true for valid stages', () => {
-      expect(isValidStage(HarvestStage.HARVEST)).toBe(true);
-      expect(isValidStage(HarvestStage.DRYING)).toBe(true);
-      expect(isValidStage(HarvestStage.CURING)).toBe(true);
-      expect(isValidStage(HarvestStage.INVENTORY)).toBe(true);
+      expect(isValidStage(HarvestStages.HARVEST)).toBe(true);
+      expect(isValidStage(HarvestStages.DRYING)).toBe(true);
+      expect(isValidStage(HarvestStages.CURING)).toBe(true);
+      expect(isValidStage(HarvestStages.INVENTORY)).toBe(true);
     });
 
     it('should return false for invalid stages', () => {
@@ -113,54 +113,54 @@ describe('harvest-validation', () => {
 
   describe('getNextStage', () => {
     it('should return correct next stages in FSM', () => {
-      expect(getNextStage(HarvestStage.HARVEST)).toBe(HarvestStage.DRYING);
-      expect(getNextStage(HarvestStage.DRYING)).toBe(HarvestStage.CURING);
-      expect(getNextStage(HarvestStage.CURING)).toBe(HarvestStage.INVENTORY);
+      expect(getNextStage(HarvestStages.HARVEST)).toBe(HarvestStages.DRYING);
+      expect(getNextStage(HarvestStages.DRYING)).toBe(HarvestStages.CURING);
+      expect(getNextStage(HarvestStages.CURING)).toBe(HarvestStages.INVENTORY);
     });
 
     it('should return null for final stage', () => {
-      expect(getNextStage(HarvestStage.INVENTORY)).toBeNull();
+      expect(getNextStage(HarvestStages.INVENTORY)).toBeNull();
     });
   });
 
   describe('isValidTransition', () => {
     it('should allow forward transitions only', () => {
       // Valid forward transitions
-      expect(isValidTransition(HarvestStage.HARVEST, HarvestStage.DRYING)).toBe(
-        true
-      );
-      expect(isValidTransition(HarvestStage.DRYING, HarvestStage.CURING)).toBe(
-        true
-      );
       expect(
-        isValidTransition(HarvestStage.CURING, HarvestStage.INVENTORY)
+        isValidTransition(HarvestStages.HARVEST, HarvestStages.DRYING)
+      ).toBe(true);
+      expect(
+        isValidTransition(HarvestStages.DRYING, HarvestStages.CURING)
+      ).toBe(true);
+      expect(
+        isValidTransition(HarvestStages.CURING, HarvestStages.INVENTORY)
       ).toBe(true);
     });
 
     it('should reject backward transitions', () => {
-      expect(isValidTransition(HarvestStage.DRYING, HarvestStage.HARVEST)).toBe(
-        false
-      );
       expect(
-        isValidTransition(HarvestStage.INVENTORY, HarvestStage.CURING)
+        isValidTransition(HarvestStages.DRYING, HarvestStages.HARVEST)
+      ).toBe(false);
+      expect(
+        isValidTransition(HarvestStages.INVENTORY, HarvestStages.CURING)
       ).toBe(false);
     });
 
     it('should reject skipping stages', () => {
-      expect(isValidTransition(HarvestStage.HARVEST, HarvestStage.CURING)).toBe(
-        false
-      );
       expect(
-        isValidTransition(HarvestStage.HARVEST, HarvestStage.INVENTORY)
+        isValidTransition(HarvestStages.HARVEST, HarvestStages.CURING)
       ).toBe(false);
       expect(
-        isValidTransition(HarvestStage.DRYING, HarvestStage.INVENTORY)
+        isValidTransition(HarvestStages.HARVEST, HarvestStages.INVENTORY)
+      ).toBe(false);
+      expect(
+        isValidTransition(HarvestStages.DRYING, HarvestStages.INVENTORY)
       ).toBe(false);
     });
 
     it('should reject staying in same stage', () => {
       expect(
-        isValidTransition(HarvestStage.HARVEST, HarvestStage.HARVEST)
+        isValidTransition(HarvestStages.HARVEST, HarvestStages.HARVEST)
       ).toBe(false);
     });
   });

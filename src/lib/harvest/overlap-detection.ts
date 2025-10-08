@@ -7,7 +7,7 @@
 
 import { Q } from '@nozbe/watermelondb';
 
-import { HarvestStage } from '@/types';
+import { HarvestStages } from '@/types/harvest';
 
 import { database } from '../watermelon';
 import type { HarvestModel } from '../watermelon-models/harvest';
@@ -46,7 +46,7 @@ export async function checkOverlappingHarvests(
     const query = harvestsCollection
       .query(
         Q.where('plant_id', plantId),
-        Q.where('stage', HarvestStage.HARVEST),
+        Q.where('stage', HarvestStages.HARVEST),
         Q.where('deleted_at', null)
       )
       .fetch();

@@ -49,6 +49,17 @@ function getPhotoDirectory(): Directory {
 }
 
 /**
+ * Clean up temporary file with error handling
+ */
+async function cleanupTempFile(uri: string, label: string): Promise<void> {
+  try {
+    await deleteFile(uri);
+  } catch (error) {
+    console.warn(`Failed to clean up ${label}:`, error);
+  }
+}
+
+/**
  * Capture and store photo with variants
  *
  * @param sourceUri - Source photo URI from camera/gallery
@@ -70,26 +81,12 @@ export async function captureAndStore(
     // Hash and store sanitized original
     const originalUri = await hashAndStore(sanitizedOriginal, 'original', dir);
 
-    // Clean up intermediate sanitized file if it was created and is different from sourceUri
-    if (didStrip && sanitizedOriginal !== sourceUri) {
-      try {
-        await deleteFile(sanitizedOriginal);
-      } catch (cleanupError) {
-        console.warn(
-          'Failed to clean up intermediate sanitized file:',
-          cleanupError
-        );
-      }
-    }
-
     // Hash and store resized variant
     const resizedUri = await hashAndStore(variants.resized, 'resized', dir);
 
-    // Clean up temporary resized file after successful hashAndStore
-    try {
-      await deleteFile(variants.resized);
-    } catch (cleanupError) {
-      console.warn('Failed to clean up temporary resized file:', cleanupError);
+    // Clean up temporary resized file after successful hashAndStore (only if different from sanitized original)
+    if (variants.resized !== sanitizedOriginal) {
+      await cleanupTempFile(variants.resized, 'temporary resized file');
     }
 
     // Hash and store thumbnail
@@ -100,13 +97,12 @@ export async function captureAndStore(
     );
 
     // Clean up temporary thumbnail file after successful hashAndStore
-    try {
-      await deleteFile(variants.thumbnail);
-    } catch (cleanupError) {
-      console.warn(
-        'Failed to clean up temporary thumbnail file:',
-        cleanupError
-      );
+    await cleanupTempFile(variants.thumbnail, 'temporary thumbnail file');
+
+    // Clean up intermediate sanitized file if it was created and is different from sourceUri
+    // (do this last since variants might reference it)
+    if (didStrip && sanitizedOriginal !== sourceUri) {
+      await cleanupTempFile(sanitizedOriginal, 'intermediate sanitized file');
     }
 
     return {

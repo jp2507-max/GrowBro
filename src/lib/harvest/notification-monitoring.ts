@@ -201,7 +201,9 @@ class NotificationMetricsAggregator {
 
   recordRehydration(stats: RehydrationStats, durationMs: number): void {
     this.rehydrationAttempts++;
-    this.rehydrationSuccesses++;
+    if (stats.errors === 0) {
+      this.rehydrationSuccesses++;
+    }
     this.rehydrationDurations.push(durationMs);
     this.totalRehydrationErrors += stats.errors;
     this.lastRehydrationStats = stats;

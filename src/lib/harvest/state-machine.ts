@@ -6,15 +6,16 @@
  */
 
 import { isValidTransition } from '@/lib/utils/harvest-validation';
-import { HarvestStage } from '@/types';
 import type {
   HarvestAuditAction,
   HarvestAuditEntry,
   HarvestAuditStatus,
+  HarvestStage,
   OverrideSkipRequest,
   StageRevertRequest,
   StageUndoRequest,
 } from '@/types/harvest';
+import { HarvestStages } from '@/types/harvest';
 
 /**
  * Undo window duration in milliseconds (default 15 seconds)
@@ -37,29 +38,29 @@ interface StageMetadata {
  * Stage metadata lookup
  */
 const STAGE_METADATA: Record<HarvestStage, StageMetadata> = {
-  [HarvestStage.HARVEST]: {
-    stage: HarvestStage.HARVEST,
+  [HarvestStages.HARVEST]: {
+    stage: HarvestStages.HARVEST as HarvestStage,
     name: 'Harvest',
     canAdvance: true,
     canUndo: false, // Initial stage, nothing to undo to
     canRevert: false,
   },
-  [HarvestStage.DRYING]: {
-    stage: HarvestStage.DRYING,
+  [HarvestStages.DRYING]: {
+    stage: HarvestStages.DRYING as HarvestStage,
     name: 'Drying',
     canAdvance: true,
     canUndo: true,
     canRevert: true,
   },
-  [HarvestStage.CURING]: {
-    stage: HarvestStage.CURING,
+  [HarvestStages.CURING]: {
+    stage: HarvestStages.CURING as HarvestStage,
     name: 'Curing',
     canAdvance: true,
     canUndo: true,
     canRevert: true,
   },
-  [HarvestStage.INVENTORY]: {
-    stage: HarvestStage.INVENTORY,
+  [HarvestStages.INVENTORY]: {
+    stage: HarvestStages.INVENTORY as HarvestStage,
     name: 'Inventory',
     canAdvance: false, // Final stage
     canUndo: true,
@@ -198,10 +199,10 @@ export function validateRevertRequest(
 
   // Check if target stage is before current stage
   const stages = [
-    HarvestStage.HARVEST,
-    HarvestStage.DRYING,
-    HarvestStage.CURING,
-    HarvestStage.INVENTORY,
+    HarvestStages.HARVEST as HarvestStage,
+    HarvestStages.DRYING as HarvestStage,
+    HarvestStages.CURING as HarvestStage,
+    HarvestStages.INVENTORY as HarvestStage,
   ];
   const currentIndex = stages.indexOf(currentStage);
   const targetIndex = stages.indexOf(request.to_stage);
@@ -238,10 +239,10 @@ export function validateOverrideRequest(
 ): { valid: boolean; error?: string } {
   // Check if target stage is ahead of current stage
   const stages = [
-    HarvestStage.HARVEST,
-    HarvestStage.DRYING,
-    HarvestStage.CURING,
-    HarvestStage.INVENTORY,
+    HarvestStages.HARVEST as HarvestStage,
+    HarvestStages.DRYING as HarvestStage,
+    HarvestStages.CURING as HarvestStage,
+    HarvestStages.INVENTORY as HarvestStage,
   ];
   const currentIndex = stages.indexOf(currentStage);
   const targetIndex = stages.indexOf(request.to_stage);
@@ -274,10 +275,10 @@ export function getPreviousStage(
   currentStage: HarvestStage
 ): HarvestStage | null {
   const stages = [
-    HarvestStage.HARVEST,
-    HarvestStage.DRYING,
-    HarvestStage.CURING,
-    HarvestStage.INVENTORY,
+    HarvestStages.HARVEST as HarvestStage,
+    HarvestStages.DRYING as HarvestStage,
+    HarvestStages.CURING as HarvestStage,
+    HarvestStages.INVENTORY as HarvestStage,
   ];
   const currentIndex = stages.indexOf(currentStage);
   if (currentIndex <= 0) {

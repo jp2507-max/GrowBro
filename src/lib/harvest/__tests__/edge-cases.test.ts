@@ -5,7 +5,7 @@
  * Requirements: 19.1, 19.2, 19.3, 19.4, 19.5
  */
 
-import { HarvestStage } from '@/types';
+import { HarvestStages } from '@/types';
 
 import {
   getClockSkewGuidance,
@@ -174,7 +174,7 @@ describe('Stage Edit Handler', () => {
       const { database } = require('../../watermelon');
       const mockHarvest: any = {
         id: 'test-harvest',
-        stage: HarvestStage.DRYING,
+        stage: HarvestStages.DRYING,
         stageStartedAt: new Date('2025-01-01T00:00:00Z'),
         stageCompletedAt: null,
         update: jest.fn((fn: any) => {
@@ -202,7 +202,7 @@ describe('Stage Edit Handler', () => {
     it('should warn when duration is below minimum', () => {
       const mockHarvest = {
         id: 'test',
-        stage: HarvestStage.DRYING,
+        stage: HarvestStages.DRYING,
         stageStartedAt: new Date('2025-01-08T00:00:00Z'),
         stageCompletedAt: new Date('2025-01-10T00:00:00Z'), // 2 days (min is 5)
       } as any;
@@ -217,7 +217,7 @@ describe('Stage Edit Handler', () => {
     it('should warn when duration exceeds maximum', () => {
       const mockHarvest = {
         id: 'test',
-        stage: HarvestStage.DRYING,
+        stage: HarvestStages.DRYING,
         stageStartedAt: new Date('2025-01-01T00:00:00Z'),
         stageCompletedAt: new Date('2025-02-01T00:00:00Z'), // 31 days (max is 21)
       } as any;
@@ -232,7 +232,7 @@ describe('Stage Edit Handler', () => {
     it('should have no warnings for optimal duration', () => {
       const mockHarvest = {
         id: 'test',
-        stage: HarvestStage.DRYING,
+        stage: HarvestStages.DRYING,
         stageStartedAt: new Date('2025-01-01T00:00:00Z'),
         stageCompletedAt: new Date('2025-01-08T00:00:00Z'), // 7 days (target)
       } as any;
@@ -428,7 +428,7 @@ describe('Edge Case Guidance', () => {
   describe('getUnusualDurationGuidance', () => {
     it('should provide guidance for too short duration', () => {
       const guidance = getUnusualDurationGuidance({
-        stage: HarvestStage.DRYING,
+        stage: HarvestStages.DRYING,
         actualDays: 2,
         recommendedMin: 5,
         recommendedMax: 14,
@@ -441,7 +441,7 @@ describe('Edge Case Guidance', () => {
 
     it('should provide guidance for too long duration', () => {
       const guidance = getUnusualDurationGuidance({
-        stage: HarvestStage.DRYING,
+        stage: HarvestStages.DRYING,
         actualDays: 30,
         recommendedMin: 5,
         recommendedMax: 14,
@@ -477,7 +477,7 @@ describe('Edge Case Guidance', () => {
     it('should include duration guidance when provided', () => {
       const guidance = getHarvestValidationGuidance({
         durationIssue: {
-          stage: HarvestStage.CURING,
+          stage: HarvestStages.CURING,
           days: 2,
           min: 14,
           max: 60,
@@ -503,7 +503,12 @@ describe('Edge Case Guidance', () => {
       const allGuidance = [
         getOverlappingHarvestsGuidance('Plant', 1),
         getMissingDryWeightGuidance(),
-        getUnusualDurationGuidance(HarvestStage.DRYING, 2, 5, 14),
+        getUnusualDurationGuidance({
+          stage: HarvestStages.DRYING,
+          actualDays: 2,
+          recommendedMin: 5,
+          recommendedMax: 14,
+        }),
         getClockSkewGuidance(10),
         getInvalidTimestampOrderGuidance(),
         getInvalidWeightRatioGuidance(),

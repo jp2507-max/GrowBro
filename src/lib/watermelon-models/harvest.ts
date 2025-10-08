@@ -1,8 +1,6 @@
 import { Model } from '@nozbe/watermelondb';
 import { date, field, json, text } from '@nozbe/watermelondb/decorators';
 
-import type { HarvestStage } from '@/types';
-
 /**
  * WatermelonDB model for harvest tracking
  *
@@ -16,7 +14,7 @@ export class HarvestModel extends Model {
 
   @text('plant_id') plantId!: string;
   @text('user_id') userId?: string;
-  @text('stage') stage!: HarvestStage;
+  @text('stage') stage!: string;
 
   /** Weight in integer grams (Requirement 11.1) */
   @field('wet_weight_g') wetWeightG?: number;

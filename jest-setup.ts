@@ -136,12 +136,13 @@ jest.mock('nativewind', () => {
 
 // mock: react-native-css-interop runtime to avoid installing wrappers and timers
 jest.mock('react-native-css-interop', () => {
-  const styled = (c: any) => c;
-  const cssInterop = (_c: any, _cfg: any) => {};
+  // Disable CSS interop completely for tests
   return {
     __esModule: true,
-    styled,
-    cssInterop,
+    styled: (c: any) => c,
+    cssInterop: (Component: any, _cfg: any) => Component,
+    // Mock the problematic third-party libs module
+    thirdPartyLibs: {},
   };
 });
 
@@ -197,8 +198,8 @@ jest.mock('react-native-flash-message', () => ({
 jest.mock('react-native-safe-area-context', () => {
   const SafeAreaProvider = ({ children }: any) => children ?? null;
   const SafeAreaView = ({ children }: any) => children ?? null;
-  (SafeAreaProvider as any).displayName = 'SafeAreaProvider';
-  (SafeAreaView as any).displayName = 'SafeAreaView';
+  SafeAreaProvider.displayName = 'SafeAreaProvider';
+  SafeAreaView.displayName = 'SafeAreaView';
   return {
     SafeAreaProvider,
     SafeAreaView,

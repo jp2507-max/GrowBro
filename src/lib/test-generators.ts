@@ -3,9 +3,13 @@
  * Provides factories for creating mock Harvest, Inventory, and Photo data
  */
 
-import type { Harvest, HarvestStage } from '@/types/harvest';
+import type {
+  Harvest,
+  HarvestPhotoObject,
+  HarvestStage,
+} from '@/types/harvest';
 import { HarvestStages } from '@/types/harvest';
-import type { PhotoVariants } from '@/types/photo-storage';
+import type { ExifMetadata, PhotoVariants } from '@/types/photo-storage';
 
 // Inventory type definition (simplified for testing)
 export interface Inventory {
@@ -32,7 +36,7 @@ export interface GenerateHarvestOptions {
   notes?: string;
   stage_started_at?: Date;
   stage_completed_at?: Date | null;
-  photos?: string[];
+  photos?: HarvestPhotoObject[];
   created_at?: Date;
   updated_at?: Date;
   deleted_at?: Date | null;
@@ -56,7 +60,7 @@ export interface GeneratePhotoVariantsOptions {
   original?: string;
   resized?: string;
   thumbnail?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Partial<ExifMetadata>;
 }
 
 let harvestIdCounter = 0;
@@ -76,7 +80,9 @@ export function generateHarvest(options: GenerateHarvestOptions = {}): Harvest {
     id,
     plant_id,
     user_id,
-    stage: options.stage || HarvestStages.HARVEST,
+    stage:
+      (options.stage as HarvestStage) ||
+      (HarvestStages.HARVEST as HarvestStage),
     wet_weight_g: options.wet_weight_g ?? 1000,
     dry_weight_g: options.dry_weight_g ?? null,
     trimmings_weight_g: options.trimmings_weight_g ?? null,
@@ -129,13 +135,12 @@ export function generatePhotoVariants(
     original: options.original || `file:///photos/${hash}-original.jpg`,
     resized: options.resized || `file:///photos/${hash}-resized.jpg`,
     thumbnail: options.thumbnail || `file:///photos/${hash}-thumb.jpg`,
-    metadata: options.metadata || {
+    metadata: {
       width: 4032,
       height: 3024,
       capturedAt: new Date().toISOString(),
       gpsStripped: true,
-      cameraMake: 'Test Camera',
-      cameraModel: 'TestCam 3000',
+      ...options.metadata,
     },
   };
 }

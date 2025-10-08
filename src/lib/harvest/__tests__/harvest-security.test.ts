@@ -177,7 +177,7 @@ describe('Harvest Security - RLS Enforcement', () => {
       // 3. Run cleanupDeletedHarvestPhotos()
       // 4. Verify Storage objects removed
 
-      // This is tested in harvest-photo-cleanup.test.ts
+      // This is tested in src/lib/uploads/__tests__/harvest-photo-cleanup.test.ts
 
       expect(true).toBe(true); // Placeholder
     });
