@@ -6,6 +6,7 @@
  */
 
 import { FlashList } from '@shopify/flash-list';
+import type { TFunction } from 'i18next';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
@@ -51,7 +52,7 @@ function TableHeaderCell({
 }: {
   children: React.ReactNode;
   isTest: boolean;
-}) {
+}): React.JSX.Element {
   return (
     <Text
       {...(isTest
@@ -76,7 +77,13 @@ function TableHeaderCell({
 /**
  * Render table header
  */
-function TableHeader({ isTest, t }: { isTest: boolean; t: any }) {
+function TableHeader({
+  isTest,
+  t,
+}: {
+  isTest: boolean;
+  t: TFunction;
+}): React.JSX.Element {
   return (
     <View
       {...(isTest
@@ -111,7 +118,7 @@ function TableHeader({ isTest, t }: { isTest: boolean; t: any }) {
  * Table fallback for chart rendering errors
  * Requirement 4.6
  */
-export function WeightChartTable({ data, testID }: Props) {
+export function WeightChartTable({ data, testID }: Props): React.ReactElement {
   const { t, i18n } = useTranslation();
   const tableData = createTableData(data, t, i18n);
   const isTest = __DEV__ && typeof jest !== 'undefined';
@@ -136,7 +143,7 @@ export function WeightChartTable({ data, testID }: Props) {
 /**
  * Table row component
  */
-function TableRowItem({ item }: { item: TableRow }) {
+function TableRowItem({ item }: { item: TableRow }): React.JSX.Element {
   // In tests, avoid CSS interop issues by using inline styles
   const isTest = __DEV__ && typeof jest !== 'undefined';
 

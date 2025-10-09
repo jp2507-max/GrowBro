@@ -18,9 +18,17 @@ export async function getReferencedPhotoUris(): Promise<string[]> {
     const photoUris: string[] = [];
 
     for (const harvest of harvests) {
-      const photos = (harvest as any).photos as string[];
+      const photos = (harvest as any).photos as {
+        variant: string;
+        localUri: string;
+        remotePath?: string;
+      }[];
       if (Array.isArray(photos)) {
-        photoUris.push(...photos);
+        for (const photo of photos) {
+          if (photo.localUri) {
+            photoUris.push(photo.localUri);
+          }
+        }
       }
     }
 

@@ -222,7 +222,7 @@ export async function advanceHarvestStage(
     const updated = await database.write(async () => {
       return await harvest.update((record) => {
         record.stage = nextStage;
-        record.stageCompletedAt = null; // Clear completion time for new stage
+        record.stageCompletedAt = undefined; // Clear completion time for new stage
         record.stageStartedAt = now; // Start new stage
       });
     });

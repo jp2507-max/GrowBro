@@ -203,7 +203,7 @@ export function PhotoCapture({
   onError,
   disabled = false,
   buttonText,
-}: PhotoCaptureProps): JSX.Element {
+}: PhotoCaptureProps): React.ReactElement {
   const { t } = useTranslation();
   const [state, setState] = usePhotoCaptureState();
 

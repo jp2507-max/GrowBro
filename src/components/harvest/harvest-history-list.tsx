@@ -1,3 +1,4 @@
+import type { ListRenderItem } from '@shopify/flash-list';
 import React, { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -109,8 +110,8 @@ export function HarvestHistoryList({
   return (
     <List
       data={items}
-      renderItem={renderItem}
-      keyExtractor={keyExtractor}
+      renderItem={renderItem as ListRenderItem<unknown>}
+      keyExtractor={keyExtractor as (item: unknown, index: number) => string}
       maintainVisibleContentPosition={{ autoscrollToTopThreshold: 0 }}
       accessibilityRole="list"
       accessibilityLabel={t('harvest.history.accessibility.list')}
