@@ -253,9 +253,24 @@ describe('HarvestChartContainer', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle chart errors gracefully (Requirement 4.6)', async () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+    let consoleErrorSpy: jest.SpyInstance;
+    let originalWeightChartImplementation: any;
 
+    beforeEach(() => {
+      consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      originalWeightChartImplementation = jest
+        .mocked(WeightChart)
+        .getMockImplementation();
+    });
+
+    afterEach(() => {
+      consoleErrorSpy.mockRestore();
+      jest
+        .mocked(WeightChart)
+        .mockImplementation(originalWeightChartImplementation);
+    });
+
+    it('should handle chart errors gracefully (Requirement 4.6)', async () => {
       // Mock WeightChart to call onError immediately to trigger fallback
       const mockedWeightChart = jest.mocked(WeightChart);
       mockedWeightChart.mockImplementation(({ onError }: any) => {
@@ -281,8 +296,6 @@ describe('HarvestChartContainer', () => {
       expect(
         screen.getByText('harvest.chart.error.renderFailed')
       ).toBeOnTheScreen();
-
-      consoleErrorSpy.mockRestore();
     });
   });
 

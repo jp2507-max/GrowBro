@@ -29,18 +29,21 @@ type Props = {
   className?: string;
 };
 
-function getNextStageKey(current: HarvestStage): string {
-  const order = [
+function getNextStageKey(current: HarvestStage): HarvestStage {
+  const order: HarvestStage[] = [
     HarvestStages.HARVEST,
     HarvestStages.DRYING,
     HarvestStages.CURING,
     HarvestStages.INVENTORY,
   ];
   const index = order.indexOf(current);
-  return order[index + 1] || current;
+  return order[index + 1] ?? current;
 }
 
-function useUndoTimer(stageCompletedAt: Date | null) {
+function useUndoTimer(stageCompletedAt: Date | null): {
+  canUndo: boolean;
+  undoSeconds: number;
+} {
   const [canUndo, setCanUndo] = useState(false);
   const [undoSeconds, setUndoSeconds] = useState(0);
 
@@ -82,7 +85,7 @@ export function StageActions({
   onRevert,
   onOverride,
   className,
-}: Props) {
+}: Props): React.ReactElement {
   const { t } = useTranslation();
   const metadata = getStageMetadata(currentStage);
   const { canUndo, undoSeconds } = useUndoTimer(stageCompletedAt);

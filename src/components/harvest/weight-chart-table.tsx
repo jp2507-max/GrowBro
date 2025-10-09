@@ -27,44 +27,101 @@ type TableRow = {
 };
 
 /**
- * Table fallback for chart rendering errors
- * Requirement 4.6
+ * Create table data from chart data points
  */
-export function WeightChartTable({ data, testID }: Props) {
-  const { t, i18n } = useTranslation();
-
-  const tableData: TableRow[] = data.map((point, index) => ({
+function createTableData(
+  data: ChartDataPoint[],
+  t: any,
+  i18n: any
+): TableRow[] {
+  return data.map((point, index) => ({
     id: `${point.date.getTime()}-${index}`,
     date: formatDate(point.date, i18n.language),
     weight: formatWeight(point.weight_g),
     stage: t(`harvest.stages.${point.stage as HarvestStage}`),
   }));
+}
 
-  // In tests, avoid CSS interop issues by using inline styles
+/**
+ * Table header cell component
+ */
+function TableHeaderCell({
+  children,
+  isTest,
+}: {
+  children: React.ReactNode;
+  isTest: boolean;
+}) {
+  return (
+    <Text
+      {...(isTest
+        ? {
+            style: {
+              flex: 1,
+              fontSize: 14,
+              fontWeight: '600' as const,
+              color: '#1c1917',
+            },
+          }
+        : {
+            className:
+              'flex-1 text-sm font-semibold text-charcoal-950 dark:text-neutral-100',
+          })}
+    >
+      {children}
+    </Text>
+  );
+}
+
+/**
+ * Render table header
+ */
+function TableHeader({ isTest, t }: { isTest: boolean; t: any }) {
+  return (
+    <View
+      {...(isTest
+        ? {
+            style: {
+              marginBottom: 8,
+              flexDirection: 'row' as const,
+              borderBottomWidth: 1,
+              borderBottomColor: '#d1d5db',
+              paddingBottom: 8,
+            },
+          }
+        : {
+            className:
+              'mb-2 flex-row border-b border-neutral-300 pb-2 dark:border-neutral-700',
+          })}
+    >
+      <TableHeaderCell isTest={isTest}>
+        {t('harvest.chart.table.date')}
+      </TableHeaderCell>
+      <TableHeaderCell isTest={isTest}>
+        {t('harvest.chart.table.weight')}
+      </TableHeaderCell>
+      <TableHeaderCell isTest={isTest}>
+        {t('harvest.chart.table.stage')}
+      </TableHeaderCell>
+    </View>
+  );
+}
+
+/**
+ * Table fallback for chart rendering errors
+ * Requirement 4.6
+ */
+export function WeightChartTable({ data, testID }: Props) {
+  const { t, i18n } = useTranslation();
+  const tableData = createTableData(data, t, i18n);
   const isTest = __DEV__ && typeof jest !== 'undefined';
 
-  const containerStyle = isTest ? { flex: 1 } : 'flex-1';
-  const headerContainerStyle = isTest
-    ? {
-        marginBottom: 8,
-        flexDirection: 'row',
-        borderBottomWidth: 1,
-        borderBottomColor: '#d1d5db',
-        paddingBottom: 8,
-      }
-    : 'mb-2 flex-row border-b border-neutral-300 pb-2 dark:border-neutral-700';
-  const headerTextStyle = isTest
-    ? { flex: 1, fontSize: 14, fontWeight: '600', color: '#1c1917' }
-    : 'flex-1 text-sm font-semibold text-charcoal-950 dark:text-neutral-100';
-
   return (
-    <View testID={testID} style={containerStyle}>
-      {/* Header */}
-      <View style={headerContainerStyle}>
-        <Text style={headerTextStyle}>{t('harvest.chart.table.date')}</Text>
-        <Text style={headerTextStyle}>{t('harvest.chart.table.weight')}</Text>
-        <Text style={headerTextStyle}>{t('harvest.chart.table.stage')}</Text>
-      </View>
+    <View
+      testID={testID}
+      {...(isTest ? { style: { flex: 1 } } : { className: 'flex-1' })}
+    >
+      <TableHeader isTest={isTest} t={t} />
 
       {/* Data rows using FlashList v2 */}
       <FlashList
@@ -83,23 +140,52 @@ function TableRowItem({ item }: { item: TableRow }) {
   // In tests, avoid CSS interop issues by using inline styles
   const isTest = __DEV__ && typeof jest !== 'undefined';
 
-  const rowContainerStyle = isTest
-    ? {
-        flexDirection: 'row',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
-        paddingVertical: 8,
-      }
-    : 'flex-row border-b border-neutral-200 py-2 dark:border-neutral-800';
-  const rowTextStyle = isTest
-    ? { flex: 1, fontSize: 14, color: '#1c1917' }
-    : 'flex-1 text-sm text-charcoal-950 dark:text-neutral-100';
-
   return (
-    <View style={rowContainerStyle}>
-      <Text style={rowTextStyle}>{item.date}</Text>
-      <Text style={rowTextStyle}>{item.weight}</Text>
-      <Text style={rowTextStyle}>{item.stage}</Text>
+    <View
+      {...(isTest
+        ? {
+            style: {
+              flexDirection: 'row' as const,
+              borderBottomWidth: 1,
+              borderBottomColor: '#e5e7eb',
+              paddingVertical: 8,
+            },
+          }
+        : {
+            className:
+              'flex-row border-b border-neutral-200 py-2 dark:border-neutral-800',
+          })}
+    >
+      <Text
+        {...(isTest
+          ? { style: { flex: 1, fontSize: 14, color: '#1c1917' } }
+          : {
+              className:
+                'flex-1 text-sm text-charcoal-950 dark:text-neutral-100',
+            })}
+      >
+        {item.date}
+      </Text>
+      <Text
+        {...(isTest
+          ? { style: { flex: 1, fontSize: 14, color: '#1c1917' } }
+          : {
+              className:
+                'flex-1 text-sm text-charcoal-950 dark:text-neutral-100',
+            })}
+      >
+        {item.weight}
+      </Text>
+      <Text
+        {...(isTest
+          ? { style: { flex: 1, fontSize: 14, color: '#1c1917' } }
+          : {
+              className:
+                'flex-1 text-sm text-charcoal-950 dark:text-neutral-100',
+            })}
+      >
+        {item.stage}
+      </Text>
     </View>
   );
 }

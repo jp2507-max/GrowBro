@@ -26,17 +26,22 @@ export interface FlashListProps<T> {
 const FlashListComponent = React.forwardRef<any, FlashListProps<any>>(
   ({ data = [], renderItem, testID, ...props }, ref) => {
     // For tests, render actual items if renderItem is provided
-    const items = data.map((item, index) => {
-      if (renderItem) {
-        return React.cloneElement(renderItem({ item, index }), {
-          key: `item-${index}`,
-        });
-      }
-      return null;
-    });
+    const items = data
+      .map((item, index) => {
+        if (renderItem) {
+          const renderedItem = renderItem({ item, index });
+          if (React.isValidElement(renderedItem)) {
+            return React.cloneElement(renderedItem, {
+              key: `item-${index}`,
+            });
+          }
+        }
+        return null;
+      })
+      .filter((item): item is React.ReactElement => item !== null);
 
     return (
-      <View ref={ref} testID={testID} {...props}>
+      <View {...props} testID={testID} ref={ref}>
         {items}
       </View>
     );

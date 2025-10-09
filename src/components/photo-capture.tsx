@@ -7,17 +7,24 @@ import { Button, Text, View } from '@/components/ui';
 import { captureAndStore } from '@/lib/media/photo-storage-service';
 import type { PhotoVariants } from '@/types/photo-storage';
 
-export interface PhotoCaptureProps {
+class CancellationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CancellationError';
+  }
+}
+
+export type PhotoCaptureProps = {
   onPhotoCaptured?: (photoVariant: PhotoVariants) => void;
   onError?: (error: Error) => void;
   disabled?: boolean;
   buttonText?: string;
-}
+};
 
-interface PhotoCaptureState {
+type PhotoCaptureState = {
   isProcessing: boolean;
   error: string | null;
-}
+};
 
 async function captureFromCamera(
   t: (key: string) => string
@@ -34,7 +41,7 @@ async function captureFromCamera(
   });
 
   if (result.canceled) {
-    throw new Error(t('harvest.photo.errors.capture_cancelled'));
+    throw new CancellationError(t('harvest.photo.errors.capture_cancelled'));
   }
 
   const photoUri = result.assets[0]?.uri;
@@ -55,7 +62,7 @@ async function selectFromLibrary(
   });
 
   if (result.canceled) {
-    throw new Error(t('harvest.photo.errors.selection_cancelled'));
+    throw new CancellationError(t('harvest.photo.errors.selection_cancelled'));
   }
 
   const photoUri = result.assets[0]?.uri;
@@ -66,15 +73,17 @@ async function selectFromLibrary(
   return captureAndStore(photoUri);
 }
 
+type ErrorDisplayProps = {
+  error: string;
+  onDismiss: () => void;
+  t: (key: string) => string;
+};
+
 function ErrorDisplay({
   error,
   onDismiss,
   t,
-}: {
-  error: string;
-  onDismiss: () => void;
-  t: (key: string) => string;
-}) {
+}: ErrorDisplayProps): React.ReactElement {
   return (
     <View className="rounded-lg bg-danger-50 p-3">
       <Text className="text-sm text-danger-700">{error}</Text>
@@ -85,19 +94,21 @@ function ErrorDisplay({
   );
 }
 
+type CaptureButtonProps = {
+  onPress: () => void;
+  disabled: boolean;
+  isProcessing: boolean;
+  buttonText?: string;
+  t: (key: string) => string;
+};
+
 function CaptureButton({
   onPress,
   disabled,
   isProcessing,
   buttonText,
   t,
-}: {
-  onPress: () => void;
-  disabled: boolean;
-  isProcessing: boolean;
-  buttonText?: string;
-  t: (key: string) => string;
-}) {
+}: CaptureButtonProps): React.ReactElement {
   return (
     <Button
       onPress={onPress}
@@ -120,7 +131,10 @@ function CaptureButton({
   );
 }
 
-function usePhotoCaptureState() {
+function usePhotoCaptureState(): [
+  PhotoCaptureState,
+  React.Dispatch<React.SetStateAction<PhotoCaptureState>>,
+] {
   return useState<PhotoCaptureState>({
     isProcessing: false,
     error: null,
@@ -137,7 +151,9 @@ function createPhotoCaptureHandler({
   t: (key: string) => string;
   onPhotoCaptured?: (photoVariant: PhotoVariants) => void;
   onError?: (error: Error) => void;
-}) {
+}): (
+  captureFunction: (t: (key: string) => string) => Promise<PhotoVariants>
+) => Promise<void> {
   return async (
     captureFunction: (t: (key: string) => string) => Promise<PhotoVariants>
   ) => {
@@ -147,12 +163,7 @@ function createPhotoCaptureHandler({
       onPhotoCaptured?.(variant);
       setState({ isProcessing: false, error: null });
     } catch (err) {
-      // Check if this is a cancellation error by examining the error message
-      // Since messages are now localized, we check for the specific cancellation keys
-      const isCancellation =
-        err instanceof Error &&
-        (err.message === t('harvest.photo.errors.capture_cancelled') ||
-          err.message === t('harvest.photo.errors.selection_cancelled'));
+      const isCancellation = err instanceof CancellationError;
 
       if (isCancellation) {
         setState({ isProcessing: false, error: null });
@@ -171,7 +182,7 @@ function createPhotoOptionsHandler(
     captureFunction: (t: (key: string) => string) => Promise<PhotoVariants>
   ) => Promise<void>,
   t: (key: string) => string
-) {
+): () => void {
   return () => {
     Alert.alert(t('harvest.photo.title'), t('harvest.photo.chooseSource'), [
       {
@@ -192,7 +203,7 @@ export function PhotoCapture({
   onError,
   disabled = false,
   buttonText,
-}: PhotoCaptureProps) {
+}: PhotoCaptureProps): JSX.Element {
   const { t } = useTranslation();
   const [state, setState] = usePhotoCaptureState();
 
