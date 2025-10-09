@@ -28,12 +28,15 @@ const mockClient = {
 // Mock expo-router
 jest.mock('expo-router', () => ({
   Link: ({ children, href, ...props }: any) => {
-    const child = React.Children.only(children);
-    return React.cloneElement(child, {
-      ...props,
-      ...child.props,
-      'data-href': href,
-    });
+    // Return a real React element with forwarded props and data-href
+    return React.createElement(
+      'a',
+      {
+        ...props,
+        'data-href': href,
+      },
+      children
+    );
   },
 }));
 

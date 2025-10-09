@@ -29,6 +29,8 @@ import {
 } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
 import { useRootStartup } from '@/lib/hooks/use-root-startup';
+import { initializeJanitor } from '@/lib/media/photo-janitor';
+import { getReferencedPhotoUris } from '@/lib/media/photo-storage-helpers';
 import {
   hasConsent,
   initializePrivacyConsent,
@@ -138,9 +140,23 @@ function RootLayout(): React.ReactElement {
       startAgeGateSession();
     }
   }, [ageGateStatus, sessionId]);
+
   React.useEffect(() => {
     if (ConsentService.isConsentRequired()) setShowConsent(true);
   }, []);
+
+  // Initialize photo storage janitor on app start
+  React.useEffect(() => {
+    if (isI18nReady) {
+      getReferencedPhotoUris()
+        .then((referencedUris) => {
+          initializeJanitor(undefined, referencedUris);
+        })
+        .catch((error) => {
+          console.error('[RootLayout] Janitor initialization failed:', error);
+        });
+    }
+  }, [isI18nReady]);
 
   if (!isI18nReady) return <BootSplash />;
 

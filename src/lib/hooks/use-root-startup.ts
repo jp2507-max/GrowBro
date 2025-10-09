@@ -122,6 +122,7 @@ function useSyncAndMetrics(): void {
   }, []);
 }
 
+// eslint-disable-next-line max-lines-per-function
 function startRootInitialization(
   setIsI18nReady: (v: boolean) => void,
   isFirstTime: boolean,
@@ -163,6 +164,15 @@ function startRootInitialization(
     if (i18nInitSucceeded && !isFirstTime) void svc.requestPermissions();
     void svc.rehydrateNotifications();
 
+    // Rehydrate harvest notifications (Requirement 14.3)
+    try {
+      const { rehydrateNotifications: rehydrateHarvestNotifications } =
+        await import('@/lib/harvest/harvest-notification-service');
+      void rehydrateHarvestNotifications();
+    } catch {
+      // non-fatal
+    }
+
     if (!isMounted) return;
 
     let lastTz = getCurrentTimeZone();
@@ -171,6 +181,10 @@ function startRootInitialization(
       if (currentTz !== lastTz) {
         lastTz = currentTz;
         void svc?.rehydrateNotifications();
+        // Also rehydrate harvest notifications on timezone change
+        void import('@/lib/harvest/harvest-notification-service').then(
+          ({ rehydrateNotifications }) => rehydrateNotifications()
+        );
       }
     }, 60 * 1000);
   };

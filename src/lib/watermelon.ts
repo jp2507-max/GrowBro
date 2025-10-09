@@ -6,7 +6,10 @@ import { AISuggestionModel } from './watermelon-models/ai-suggestion';
 import { CachedStrainModel } from './watermelon-models/cached-strain';
 import { DeviceTokenModel } from './watermelon-models/device-token';
 import { FavoriteModel } from './watermelon-models/favorite';
+import { HarvestModel } from './watermelon-models/harvest';
+import { HarvestAuditModel } from './watermelon-models/harvest-audit';
 import { ImageUploadQueueModel } from './watermelon-models/image-upload-queue';
+import { InventoryModel } from './watermelon-models/inventory';
 import { NotificationModel } from './watermelon-models/notification';
 import { NotificationPreferenceModel } from './watermelon-models/notification-preference';
 import { NotificationQueueModel } from './watermelon-models/notification-queue';
@@ -50,5 +53,9 @@ export const database = new Database({
     OutboxNotificationActionModel,
     AISuggestionModel,
     TrichomeAssessmentModel,
+    // Harvest workflow models
+    HarvestModel,
+    HarvestAuditModel,
+    InventoryModel,
   ],
 });

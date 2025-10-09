@@ -1,7 +1,7 @@
-import { appSchema, tableSchema } from '@nozbe/watermelondb';
+import { appSchema as createSchema, tableSchema } from '@nozbe/watermelondb';
 
-export const schema = appSchema({
-  version: 12,
+export const appSchema = createSchema({
+  version: 16,
   tables: [
     tableSchema({
       name: 'series',
@@ -150,6 +150,10 @@ export const schema = appSchema({
         { name: 'remote_path', type: 'string', isOptional: true },
         { name: 'task_id', type: 'string', isOptional: true },
         { name: 'plant_id', type: 'string', isOptional: true },
+        { name: 'harvest_id', type: 'string', isOptional: true },
+        { name: 'variant', type: 'string', isOptional: true },
+        { name: 'hash', type: 'string', isOptional: true },
+        { name: 'extension', type: 'string', isOptional: true },
         { name: 'filename', type: 'string', isOptional: true },
         { name: 'mime_type', type: 'string', isOptional: true },
         { name: 'status', type: 'string', isIndexed: true }, // pending | uploading | completed | failed
@@ -497,5 +501,66 @@ export const schema = appSchema({
         { name: 'updated_at', type: 'number' },
       ],
     }),
+    tableSchema({
+      name: 'harvests',
+      columns: [
+        { name: 'plant_id', type: 'string', isIndexed: true },
+        { name: 'user_id', type: 'string', isOptional: true },
+        { name: 'stage', type: 'string', isIndexed: true },
+        { name: 'wet_weight_g', type: 'number', isOptional: true },
+        { name: 'dry_weight_g', type: 'number', isOptional: true },
+        { name: 'trimmings_weight_g', type: 'number', isOptional: true },
+        { name: 'notes', type: 'string' },
+        { name: 'stage_started_at', type: 'number' },
+        { name: 'stage_completed_at', type: 'number', isOptional: true },
+        { name: 'photos', type: 'string' }, // JSON array of photo URIs
+        { name: 'notification_id', type: 'string', isOptional: true }, // Target duration notification
+        { name: 'overdue_notification_id', type: 'string', isOptional: true }, // Max duration reminder
+        { name: 'server_revision', type: 'number', isOptional: true },
+        { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+        { name: 'conflict_seen', type: 'boolean' },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'deleted_at', type: 'number', isOptional: true },
+      ],
+    }),
+    tableSchema({
+      name: 'inventory',
+      columns: [
+        { name: 'plant_id', type: 'string', isIndexed: true },
+        { name: 'harvest_id', type: 'string', isIndexed: true },
+        { name: 'user_id', type: 'string', isOptional: true },
+        { name: 'final_weight_g', type: 'number' },
+        { name: 'harvest_date', type: 'string' }, // ISO date string
+        { name: 'total_duration_days', type: 'number' },
+        { name: 'server_revision', type: 'number', isOptional: true },
+        { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'deleted_at', type: 'number', isOptional: true },
+      ],
+    }),
+    tableSchema({
+      name: 'harvest_audits',
+      columns: [
+        { name: 'harvest_id', type: 'string', isIndexed: true },
+        { name: 'user_id', type: 'string', isOptional: true },
+        { name: 'action', type: 'string' },
+        { name: 'status', type: 'string' },
+        { name: 'from_stage', type: 'string', isOptional: true },
+        { name: 'to_stage', type: 'string', isOptional: true },
+        { name: 'reason', type: 'string' },
+        { name: 'performed_at', type: 'number' },
+        { name: 'metadata', type: 'string' }, // JSON
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'deleted_at', type: 'number', isOptional: true },
+        { name: 'server_revision', type: 'number' },
+        { name: 'server_updated_at_ms', type: 'number' },
+      ],
+    }),
   ],
 });
+
+// Backwards compatibility export
+export const schema = appSchema;

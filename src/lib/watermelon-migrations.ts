@@ -333,5 +333,105 @@ export const migrations = schemaMigrations({
         }),
       ],
     },
+    // Migration from version 12 to 13: Add harvest workflow tables
+    {
+      toVersion: 13,
+      steps: [
+        {
+          type: 'create_table',
+          schema: createTableSchema('harvests', [
+            { name: 'plant_id', type: 'string', isIndexed: true },
+            { name: 'user_id', type: 'string', isOptional: true },
+            { name: 'stage', type: 'string', isIndexed: true },
+            { name: 'wet_weight_g', type: 'number', isOptional: true },
+            { name: 'dry_weight_g', type: 'number', isOptional: true },
+            { name: 'trimmings_weight_g', type: 'number', isOptional: true },
+            { name: 'notes', type: 'string' },
+            { name: 'stage_started_at', type: 'number' },
+            { name: 'stage_completed_at', type: 'number', isOptional: true },
+            { name: 'photos', type: 'string' },
+            { name: 'server_revision', type: 'number', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+            { name: 'conflict_seen', type: 'boolean' },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ]),
+        },
+        {
+          type: 'create_table',
+          schema: createTableSchema('inventory', [
+            { name: 'plant_id', type: 'string', isIndexed: true },
+            { name: 'harvest_id', type: 'string', isIndexed: true },
+            { name: 'user_id', type: 'string', isOptional: true },
+            { name: 'final_weight_g', type: 'number' },
+            { name: 'harvest_date', type: 'string' },
+            { name: 'total_duration_days', type: 'number' },
+            { name: 'server_revision', type: 'number', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ]),
+        },
+      ],
+    },
+    // Migration from version 13 to 14: Add harvest audit table
+    {
+      toVersion: 14,
+      steps: [
+        {
+          type: 'create_table',
+          schema: createTableSchema('harvest_audits', [
+            { name: 'harvest_id', type: 'string', isIndexed: true },
+            { name: 'user_id', type: 'string', isOptional: true },
+            { name: 'action', type: 'string' },
+            { name: 'status', type: 'string' },
+            { name: 'from_stage', type: 'string', isOptional: true },
+            { name: 'to_stage', type: 'string', isOptional: true },
+            { name: 'reason', type: 'string' },
+            { name: 'performed_at', type: 'number' },
+            { name: 'metadata', type: 'string' }, // JSON
+            { name: 'server_revision', type: 'number' },
+            { name: 'server_updated_at_ms', type: 'number' },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ]),
+        },
+      ],
+    },
+    // Migration from version 14 to 15: Add harvest photo fields to image_upload_queue
+    {
+      toVersion: 15,
+      steps: [
+        addColumns({
+          table: 'image_upload_queue',
+          columns: [
+            { name: 'harvest_id', type: 'string', isOptional: true },
+            { name: 'variant', type: 'string', isOptional: true }, // original | resized | thumbnail
+            { name: 'hash', type: 'string', isOptional: true },
+            { name: 'extension', type: 'string', isOptional: true },
+          ],
+        }),
+      ],
+    },
+    // Migration from version 15 to 16: Add notification tracking to harvests
+    {
+      toVersion: 16,
+      steps: [
+        addColumns({
+          table: 'harvests',
+          columns: [
+            { name: 'notification_id', type: 'string', isOptional: true },
+            {
+              name: 'overdue_notification_id',
+              type: 'string',
+              isOptional: true,
+            },
+          ],
+        }),
+      ],
+    },
   ],
 });

@@ -3,7 +3,13 @@ import { NoopAnalytics } from '@/lib/analytics';
 export type ResolutionStrategy = 'server-lww' | 'needs-review' | 'field-level';
 
 export type Conflict = {
-  tableName: 'series' | 'tasks' | 'occurrence_overrides';
+  tableName:
+    | 'series'
+    | 'tasks'
+    | 'occurrence_overrides'
+    | 'harvests'
+    | 'inventory'
+    | 'harvest_audits';
   recordId: string;
   localRecord: Record<string, unknown> | null;
   remoteRecord: Record<string, unknown> | null;
@@ -21,7 +27,8 @@ function getResolutionStrategy(
   tableName: Conflict['tableName']
 ): ResolutionStrategy {
   // v1 keeps server as source of truth (LWW). Client may mark for review.
-  if (tableName === 'tasks') return 'needs-review';
+  // Harvest tables use needs-review to ensure data integrity visibility
+  if (tableName === 'tasks' || tableName === 'harvests') return 'needs-review';
   return 'server-lww';
 }
 

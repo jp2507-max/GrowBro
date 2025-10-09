@@ -103,16 +103,34 @@ export type AnalyticsEvents = {
     code?: string | number;
   };
   sync_conflict: {
-    table: 'series' | 'tasks' | 'occurrence_overrides';
+    table:
+      | 'series'
+      | 'tasks'
+      | 'occurrence_overrides'
+      | 'harvests'
+      | 'inventory'
+      | 'harvest_audits';
     count: number;
   };
   sync_conflict_resolved: {
-    table: 'series' | 'tasks' | 'occurrence_overrides';
+    table:
+      | 'series'
+      | 'tasks'
+      | 'occurrence_overrides'
+      | 'harvests'
+      | 'inventory'
+      | 'harvest_audits';
     strategy: 'keep-local' | 'accept-server';
     field_count: number;
   };
   sync_conflict_dismissed: {
-    table: 'series' | 'tasks' | 'occurrence_overrides';
+    table:
+      | 'series'
+      | 'tasks'
+      | 'occurrence_overrides'
+      | 'harvests'
+      | 'inventory'
+      | 'harvest_audits';
     field_count: number;
   };
   sync_checkpoint_age_ms: {
@@ -141,6 +159,50 @@ export type AnalyticsEvents = {
   };
   sync_background_trigger: {
     source: string;
+  };
+
+  // Harvest workflow analytics
+  harvest_notification_schedule: {
+    event?: string;
+    success?: boolean;
+    error?: string;
+  };
+  harvest_notification_cancel: {
+    success?: boolean;
+    error?: string;
+  };
+  harvest_notification_rehydration: {
+    total_harvests?: number;
+    notifications_scheduled?: number;
+    notifications_cancelled?: number;
+    errors?: number;
+    success_rate?: number;
+    duration_ms?: number;
+  };
+  harvest_notification_delivery: {
+    type?: string;
+    delay_ms?: number;
+    delivered?: boolean;
+  };
+  harvest_sync_operation: {
+    operation: string;
+    duration_ms?: number;
+    success?: boolean;
+    offline?: boolean;
+  };
+
+  // Photo analytics
+  photo_upload: {
+    variant?: string;
+    bytes?: number;
+    duration_ms?: number;
+    success?: boolean;
+  };
+  photo_cleanup: {
+    files_deleted?: number;
+    bytes_freed?: number;
+    orphans_removed?: number;
+    duration_ms?: number;
   };
 
   // Performance KPIs

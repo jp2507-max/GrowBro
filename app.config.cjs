@@ -133,6 +133,8 @@ function createExpoConfig(config) {
       bundler: 'metro',
     },
     plugins: [
+      // Added from app.json (merged into this config)
+      'expo-secure-store',
       [
         'expo-splash-screen',
         {

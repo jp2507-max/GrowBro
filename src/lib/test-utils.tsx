@@ -5,9 +5,22 @@ import { NavigationContainer } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { RenderOptions } from '@testing-library/react-native';
 import { render, userEvent } from '@testing-library/react-native';
+import * as i18n from 'i18next';
 import type { ReactElement } from 'react';
 import React from 'react';
+import { initReactI18next } from 'react-i18next';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { resources } from './i18n/resources';
+
+// Initialize i18n for tests
+i18n.use(initReactI18next).init({
+  resources,
+  lng: 'en',
+  fallbackLng: 'en',
+  compatibilityJSON: 'v3',
+  interpolation: { escapeValue: false },
+});
 
 const createAppWrapper = () => {
   const queryClient = new QueryClient({
@@ -52,6 +65,36 @@ export const setup = (
     user: userEvent.setup(),
     ...render(ui, { wrapper: Wrapper, ...options }),
   };
+};
+
+// Mock network state for offline testing
+let mockIsOffline = false;
+
+export const mockNetworkState = {
+  setOffline: (offline: boolean) => {
+    mockIsOffline = offline;
+  },
+  isOffline: () => mockIsOffline,
+};
+
+// Mock file system for photo testing
+const mockFileSystem: Record<string, string> = {};
+
+export const mockFileSystemHelpers = {
+  write: (uri: string, content: string) => {
+    mockFileSystem[uri] = content;
+  },
+  read: (uri: string): string | undefined => mockFileSystem[uri],
+  delete: (uri: string) => {
+    delete mockFileSystem[uri];
+  },
+  exists: (uri: string): boolean => uri in mockFileSystem,
+  clear: () => {
+    Object.keys(mockFileSystem).forEach((key) => {
+      delete mockFileSystem[key];
+    });
+  },
+  getAll: () => ({ ...mockFileSystem }),
 };
 
 export * from '@testing-library/react-native';
