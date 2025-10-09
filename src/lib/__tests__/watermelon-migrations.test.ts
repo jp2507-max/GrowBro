@@ -38,8 +38,8 @@ const testOccurrenceOverridesTable = () => {
 };
 
 const testSchemaVersion = () => {
-  it('has schema version 12', () => {
-    expect((schema as any).version).toBe(12);
+  it('has schema version 17', () => {
+    expect((schema as any).version).toBe(17);
   });
 };
 
@@ -49,15 +49,13 @@ const testNutrientEngineTables = () => {
     const tableNames = tables.map((t) => t.name);
 
     const nutrientEngineTables = [
+      'feeding_templates',
       'ph_ec_readings',
-      'deviation_alerts',
       'reservoirs',
       'source_water_profiles',
-      'meters',
-      'meter_calibrations',
-      'feeding_schedules',
-      'feeding_events',
-      'correction_playbooks',
+      'calibrations',
+      'deviation_alerts',
+      'reservoir_events',
     ];
 
     nutrientEngineTables.forEach((tableName) => {
@@ -70,13 +68,13 @@ const testDataTypeConsistency = () => {
   it('has consistent data types between schema and migrations', () => {
     const tables = (schema as any).tables as any[];
 
-    // Check source_water_profiles last_tested_at type
+    // Check source_water_profiles last_tested_at type (should be number for epoch ms)
     const sourceWaterProfiles = getTableByName(tables, 'source_water_profiles');
     const lastTestedAtColumn = getColumnByName(
       sourceWaterProfiles.columns,
       'last_tested_at'
     );
-    expect(lastTestedAtColumn.type).toBe('string');
+    expect(lastTestedAtColumn.type).toBe('number');
 
     // Check server_revision types in existing tables
     const existingTables = ['series', 'tasks', 'occurrence_overrides'];
@@ -87,6 +85,31 @@ const testDataTypeConsistency = () => {
         'server_revision'
       );
       expect(serverRevisionColumn.type).toBe('number');
+    });
+
+    // Check nutrient engine tables have proper sync columns
+    const nutrientEngineTables = [
+      'feeding_templates',
+      'ph_ec_readings',
+      'reservoirs',
+      'source_water_profiles',
+      'calibrations',
+      'deviation_alerts',
+      'reservoir_events',
+    ];
+    nutrientEngineTables.forEach((tableName) => {
+      const table = getTableByName(tables, tableName);
+      expect(table).toBeTruthy();
+      const serverRevisionColumn = getColumnByName(
+        table.columns,
+        'server_revision'
+      );
+      const serverUpdatedAtColumn = getColumnByName(
+        table.columns,
+        'server_updated_at_ms'
+      );
+      expect(serverRevisionColumn?.type).toBe('number');
+      expect(serverUpdatedAtColumn?.type).toBe('number');
     });
   });
 };
@@ -179,6 +202,73 @@ const testVersion5Migration = () => {
   });
 };
 
+const testVersion17Migration = () => {
+  it('version 17 migration creates all new Nutrient Engine tables', () => {
+    const version17Migration = getMigrationByVersion(17);
+    expect(version17Migration).toBeTruthy();
+
+    const steps = version17Migration.steps;
+    const createTableSteps = steps.filter(
+      (s: any) => s.type === 'create_table'
+    );
+
+    const expectedTables = [
+      'feeding_templates',
+      'ph_ec_readings',
+      'reservoirs',
+      'source_water_profiles',
+      'calibrations',
+      'deviation_alerts',
+      'reservoir_events',
+    ];
+
+    const createdTables = createTableSteps.map((s: any) => s.schema.name);
+    expectedTables.forEach((tableName) => {
+      expect(createdTables).toContain(tableName);
+    });
+
+    // Verify ph_ec_readings has proper indexed columns
+    const phEcReadingsStep = createTableSteps.find(
+      (s: any) => s.schema.name === 'ph_ec_readings'
+    );
+    expect(phEcReadingsStep).toBeTruthy();
+    const phEcColumns = phEcReadingsStep.schema.columnArray;
+    const indexedColumns = phEcColumns.filter((c: any) => c.isIndexed);
+    const indexedColumnNames = indexedColumns.map((c: any) => c.name);
+    expect(indexedColumnNames).toContain('plant_id');
+    expect(indexedColumnNames).toContain('reservoir_id');
+    expect(indexedColumnNames).toContain('measured_at');
+    expect(indexedColumnNames).toContain('meter_id');
+    expect(indexedColumnNames).toContain('created_at');
+
+    // Verify calibrations has meter_id indexed
+    const calibrationsStep = createTableSteps.find(
+      (s: any) => s.schema.name === 'calibrations'
+    );
+    expect(calibrationsStep).toBeTruthy();
+    const calibrationColumns = calibrationsStep.schema.columnArray;
+    const meterIdColumn = calibrationColumns.find(
+      (c: any) => c.name === 'meter_id'
+    );
+    expect(meterIdColumn.isIndexed).toBe(true);
+
+    // Verify deviation_alerts has proper indexed columns
+    const deviationAlertsStep = createTableSteps.find(
+      (s: any) => s.schema.name === 'deviation_alerts'
+    );
+    expect(deviationAlertsStep).toBeTruthy();
+    const alertColumns = deviationAlertsStep.schema.columnArray;
+    const readingIdColumn = alertColumns.find(
+      (c: any) => c.name === 'reading_id'
+    );
+    const triggeredAtColumn = alertColumns.find(
+      (c: any) => c.name === 'triggered_at'
+    );
+    expect(readingIdColumn.isIndexed).toBe(true);
+    expect(triggeredAtColumn.isIndexed).toBe(true);
+  });
+};
+
 describe('WatermelonDB migrations', () => {
   testOccurrenceOverridesTable();
   testSchemaVersion();
@@ -187,4 +277,5 @@ describe('WatermelonDB migrations', () => {
   testMigrationVersions();
   testVersion6Migration();
   testVersion5Migration();
+  testVersion17Migration();
 });
