@@ -294,7 +294,11 @@ function renderNativeList<ItemT>(
   );
 }
 
-export const List = forwardRef(function ListInner<ItemT>(
+export const List = forwardRef(ListInner) as <ItemT>(
+  props: ListProps<ItemT> & React.RefAttributes<FlashListRef<ItemT>>
+) => React.ReactElement;
+
+function ListInner<ItemT>(
   {
     data,
     renderItem,
@@ -352,7 +356,7 @@ export const List = forwardRef(function ListInner<ItemT>(
     themeBackground: theme.colors.background,
     ref,
   });
-});
+}
 
 export const EmptyList = React.memo(function EmptyList({
   isLoading = false,

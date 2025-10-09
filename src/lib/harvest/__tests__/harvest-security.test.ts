@@ -8,6 +8,8 @@
  * Full implementation requires test database with multiple users and RLS enabled.
  */
 
+import type { Bucket } from '@supabase/supabase-js';
+
 import { supabase } from '@/lib/supabase';
 
 describe('Harvest Security - RLS Enforcement', () => {
@@ -85,13 +87,13 @@ describe('Harvest Security - RLS Enforcement', () => {
     it('should enforce private bucket policy on harvest-photos', async () => {
       // Requirement 18.5: Private bucket, no public reads
 
-      const mockBucketInfo = {
+      const mockBucketInfo: Bucket = {
         id: 'harvest-photos',
         name: 'harvest-photos',
         owner: 'test-owner',
         public: false,
-        file_size_limit: undefined,
-        allowed_mime_types: undefined,
+        file_size_limit: null,
+        allowed_mime_types: null,
         created_at: '2023-01-01T00:00:00.000Z',
         updated_at: '2023-01-01T00:00:00.000Z',
       };

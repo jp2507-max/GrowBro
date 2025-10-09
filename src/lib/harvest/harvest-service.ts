@@ -94,7 +94,7 @@ export async function updateHarvest(
     const harvest = await harvestsCollection.find(harvestId);
 
     const updated = await database.write(async () => {
-      return await harvest.update((record) => {
+      await harvest.update((record) => {
         if (updates.wetWeightG !== undefined) {
           record.wetWeightG = updates.wetWeightG ?? undefined;
         }
@@ -111,6 +111,9 @@ export async function updateHarvest(
           record.photos = updates.photos;
         }
       });
+
+      // Return the updated harvest record from the write transaction
+      return harvest;
     });
 
     return { success: true, harvest: updated };
@@ -219,13 +222,16 @@ export async function advanceHarvestStage(
     await cancelStageReminders(harvestId);
 
     // Update harvest stage
-    const updated = await database.write(async () => {
-      return await harvest.update((record) => {
+    await database.write(async () => {
+      await harvest.update((record) => {
         record.stage = nextStage;
         record.stageCompletedAt = undefined; // Clear completion time for new stage
         record.stageStartedAt = now; // Start new stage
       });
     });
+
+    // Fetch the updated harvest record after the write
+    const updated = await harvestsCollection.find(harvestId);
 
     // Schedule new notifications for the new stage
     const targetResult = await scheduleStageReminder(harvestId, nextStage, now);

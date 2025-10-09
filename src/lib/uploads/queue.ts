@@ -310,7 +310,7 @@ async function processHarvestPhotoUpload(item: QueueItemRaw): Promise<boolean> {
   await updateHarvestWithRemotePath(
     item.harvestId,
     item.variant as PhotoVariant,
-    result.fullPath
+    result.path
   );
 
   await markCompleted(item.id, result.path);
