@@ -1,7 +1,6 @@
 # Implementation Plan
 
 - [ ] 1. Set up core infrastructure and database schema
-
   - Create WatermelonDB schema with proper indexing for nutrient engine tables
   - Add composite indexes for optimal query performance: ph_ec_readings(reservoir_id, measured_at DESC), ph_ec_readings(plant_id, measured_at DESC), deviation_alerts(reservoir_id, triggered_at DESC)
   - Avoid over-indexing low-cardinality enum-like columns (alert_type, severity, medium) unless frequently filtered with high selectivity
@@ -45,10 +44,8 @@ The nutrient engine implements strategic composite indexing to optimize common q
 - Indexes applied at table creation for optimal initial performance
 - Migration includes both schema definition and column array for WatermelonDB compatibility
 
-- [ ] 2. Implement core utility functions and type definitions
-
-  - [ ] 2.1 Create EC/pH conversion and temperature compensation utilities
-
+- [x] 2. Implement core utility functions and type definitions
+  - [x] 2.1 Create EC/pH conversion and temperature compensation utilities
     - Write toEC25() function with configurable beta factor (≈1.9–2.0%/°C) that skips double-correction when atcOn=true
     - Implement ecToPpm() conversion with 500/700 scale support as view-only; preserve EC@25°C as canonical store
     - Replace stored confidence with derived qualityFlags: ('NO_ATC'|'CAL_STALE'|'TEMP_HIGH'|'OUTLIER')[]
@@ -56,15 +53,13 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - Add tests for both ATC on/off paths and conversion accuracy
     - _Requirements: 2.2, 2.7_
 
-  - [ ] 2.2 Define TypeScript type aliases and const objects
+  - [x] 2.2 Define TypeScript type aliases and const objects
     - Create type aliases: FeedingTemplate, FeedingPhase, PhEcReading, DeviationAlert, DiagnosticResult, Calibration, SourceWaterProfile, ReservoirEvent
     - Produce const-object maps with literal union types for PpmScale, AlertType, IssueType (e.g., const PpmScale = { ... } as const; type PpmScale = typeof PpmScale[keyof typeof PpmScale])
     - _Requirements: 1.6, 2.2, 3.1_
 
 - [ ] 3. Build WatermelonDB models and database layer
-
   - [ ] 3.1 Implement WatermelonDB model classes
-
     - Create FeedingTemplate model with JSON serialization for phases
     - Implement PhEcReading model with quality flags and computed confidence
     - Build Reservoir model with target ranges and source water profile relationships
@@ -80,9 +75,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: 2.5, 6.2_
 
 - [ ] 4. Build sync worker and offline functionality
-
   - [ ] 4.1 Implement background sync with retry logic
-
     - Implement synchronize() with retry/backoff + events; wire to your pull/push endpoints
     - Create SyncWorker with exponential backoff and retry mechanisms
     - Add sync event handling (onSyncStart, onSyncSuccess, onSyncError)
@@ -104,9 +97,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: 6.1, 6.3, 6.4, 6.6_
 
 - [ ] 5. Implement measurement tracking system
-
   - [ ] 5.1 Create pH/EC reading input and validation
-
     - Form must capture tempC, compute ec25c, and show ppm w/ scale; ATC detection -> badge
     - Flag readings if last calibration stale or tempC ≥ 28°C
     - Add PPM scale selection and conversion display
@@ -122,9 +113,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: 2.1, 6.2, 6.5_
 
 - [ ] 6. Create alert and deviation detection system
-
   - [ ] 6.1 Implement pure alert evaluation functions
-
     - Add hysteresis (deadbands) + min persistence window (e.g., 5 min) + per-reservoir cooldown to avoid thrash
     - Add per-reservoir cooldown logic to prevent alert spam
     - Implement target range checking with configurable dead bands
@@ -140,9 +129,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: 2.3, 2.4, 5.2, 5.5_
 
 - [ ] 7. Develop calibration management system
-
   - [ ] 7.1 Create calibration tracking and validation
-
     - Support one-/two-/three-point methods; store slope/offset + validity policy (days)
     - Add calibration expiration tracking and quality assessment
     - Create meter management with calibration history
@@ -157,9 +144,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: 2.7, 8.4_
 
 - [ ] 8. Build source water profile management
-
   - [ ] 8.1 Implement source water profile CRUD
-
     - Track alkalinity (mg/L as CaCO₃) & baseline EC@25°C; annual reminder to retest
     - Add alkalinity, hardness, and baseline EC tracking
     - Implement profile assignment to reservoirs
@@ -174,9 +159,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: 8.2, 8.6_
 
 - [ ] 9. Create reservoir and event tracking
-
   - [ ] 9.1 Implement reservoir management
-
     - Create reservoir CRUD operations with volume and medium tracking
     - Add target range configuration per reservoir
     - Implement source water profile assignment
@@ -191,9 +174,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: 2.5, 7.6_
 
 - [ ] 10. Build feeding template engine
-
   - [ ] 10.1 Implement template CRUD operations
-
     - Create functions for template creation, reading, updating, deletion
     - Validate ranges (pH min/max, EC@25°C min/max) per phase; forbid single-point targets
     - Implement per-strain adjustments and customization logic
@@ -209,9 +190,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: 1.4, 1.7, 1.8, 5.1_
 
 - [ ] 11. Implement calendar integration
-
   - [ ] 11.1 Create feeding task generation
-
     - Include unit-resolved instructions (2.0 mS/cm @25°C • 1000 ppm [500])
     - Add pH/EC measurement reminders to feeding tasks
     - Implement task completion tracking and schedule updates
@@ -226,9 +205,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: 5.5, 5.6_
 
 - [ ] 12. Build trend visualization and reporting
-
   - [ ] 12.1 Create pH/EC trend charts
-
     - 7/30/90d charts with target band overlays + event annotations; use FlashList for reading lists
     - Add reservoir event annotations on timeline
     - Create interactive charts with zoom and pan capabilities
@@ -243,9 +220,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: 7.3, 7.6_
 
 - [ ] 13. Create user interface components
-
   - [ ] 13.1 Build measurement input interface
-
     - Create pH/EC input form with real-time validation
     - Ensure explicit ppm scale labels and ATC badge
     - Implement PPM scale selection with clear labeling
@@ -260,9 +235,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: 1.1, 1.2, 4.6, 4.7_
 
 - [ ] 14. Add comprehensive testing and validation
-
   - [ ] 14.1 Implement unit and integration tests
-
     - Conversion tests (EC↔ppm 500/700), ATC/no-ATC, deadband/cooldown, migration smoke
     - Add database model and relationship testing
     - Build state management and sync operation tests
@@ -277,9 +250,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: 6.1, 6.2, 6.5_
 
 - [ ] 15. Create Zustand state management layer
-
   - [ ] 15.1 Implement lightweight Zustand store
-
     - Store only UI state + preferences (e.g., ppmScale) in Zustand; bind lists to WatermelonDB observables per screen (memory-safe)
     - Implement actions for template management and reading operations
     - Add offline queue management for sync operations
@@ -294,9 +265,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: 6.1, 6.6_
 
 - [ ] 16. Performance optimization and monitoring
-
   - [ ] 16.1 Optimize database performance
-
     - Implement efficient indexing strategy for large datasets
     - Add data archiving for old readings beyond retention period
     - Create lazy loading for historical data with pagination
@@ -312,9 +281,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: Performance and scalability_
 
 - [ ] 17. Create diagnostic engine for nutrient issues
-
   - [ ] 17.1 Implement rule-based classification system
-
     - Consider history + water profile to reduce false positives (e.g., chronic high pH from high alkalinity)
     - Build rule engine considering pH/EC history and source water
     - Add confidence scoring and false positive prevention
@@ -329,9 +296,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: 3.5, 3.7, 3.8_
 
 - [ ] 18. Implement security and privacy features
-
   - [ ] 18.1 Add data protection measures
-
     - Implement secure storage for sensitive configuration data
     - Add user consent management for cloud sync
     - Create data export functionality for user privacy rights
@@ -339,7 +304,6 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: 8.6_
 
   - [ ] 18.2 Implement ConsentManager component
-
     - Create dedicated ConsentManager component with consolidated consent management UI
     - Add explicit user consent recording and persistence with easy opt-out UI/actions
     - Wire all telemetry/analytics code paths to check consent before collecting/sending events
@@ -350,7 +314,6 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: 8.6, GDPR Article 7, CCPA §1798.120_
 
   - [ ] 18.3 Enhanced telemetry event schema
-
     - Implement PII-minimizing event schema (no raw identifiers, pseudonyms/hashes)
     - Add aggregated numeric metrics and strip free-text fields
     - Version the event schema for backward compatibility
@@ -358,7 +321,6 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: GDPR Article 25, CCPA §1798.100_
 
   - [ ] 18.4 Consent gating implementation
-
     - Wire all telemetry/analytics code paths to check consent before collection
     - Implement immediate opt-out with queue purging and upload cessation
     - Add consent change listeners for real-time updates
@@ -366,7 +328,6 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - _Requirements: GDPR Article 7(4), CCPA §1798.120_
 
   - [ ] 18.5 Testing and validation
-
     - Add unit tests for ConsentManager component functionality
     - Implement integration tests for consent gating behavior
     - Create tests for opt-out functionality and queue purging
