@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Set up core infrastructure and database schema
+- [x] 1. Set up core infrastructure and database schema
   - Create WatermelonDB schema with proper indexing for nutrient engine tables
   - Add composite indexes for optimal query performance: ph_ec_readings(reservoir_id, measured_at DESC), ph_ec_readings(plant_id, measured_at DESC), deviation_alerts(reservoir_id, triggered_at DESC)
   - Avoid over-indexing low-cardinality enum-like columns (alert_type, severity, medium) unless frequently filtered with high selectivity
