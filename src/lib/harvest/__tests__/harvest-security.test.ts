@@ -8,7 +8,7 @@
  * Full implementation requires test database with multiple users and RLS enabled.
  */
 
-import type { Bucket } from '@supabase/supabase-js';
+import type { Bucket } from '@supabase/storage-js';
 
 import { supabase } from '@/lib/supabase';
 
@@ -92,8 +92,8 @@ describe('Harvest Security - RLS Enforcement', () => {
         name: 'harvest-photos',
         owner: 'test-owner',
         public: false,
-        file_size_limit: null,
-        allowed_mime_types: null,
+        file_size_limit: undefined,
+        allowed_mime_types: undefined,
         created_at: '2023-01-01T00:00:00.000Z',
         updated_at: '2023-01-01T00:00:00.000Z',
       };

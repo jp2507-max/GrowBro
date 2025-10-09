@@ -67,6 +67,31 @@ export async function createHarvest(
       });
     });
 
+    // Schedule initial HARVEST-stage notifications (target and overdue)
+    // just like advanceHarvestStage does for new stages
+    const targetResult = await scheduleStageReminder(
+      harvest.id,
+      HarvestStages.HARVEST,
+      harvest.stageStartedAt
+    );
+
+    if (targetResult.scheduled) {
+      const overdueResult = await scheduleOverdueReminder(
+        harvest.id,
+        HarvestStages.HARVEST,
+        harvest.stageStartedAt
+      );
+
+      console.log(
+        '[HarvestService] Scheduled initial notifications for HARVEST stage:',
+        {
+          stage: HarvestStages.HARVEST,
+          targetScheduled: targetResult.scheduled,
+          overdueScheduled: overdueResult.scheduled,
+        }
+      );
+    }
+
     return { success: true, harvest };
   } catch (error) {
     console.error('[HarvestService] Failed to create harvest:', error);

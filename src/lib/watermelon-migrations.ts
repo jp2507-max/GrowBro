@@ -377,10 +377,29 @@ export const migrations = schemaMigrations({
       ],
     },
     // Migration from version 13 to 14: Add harvest audit table
-    // (Already exists from previous implementation)
     {
       toVersion: 14,
-      steps: [],
+      steps: [
+        {
+          type: 'create_table',
+          schema: createTableSchema('harvest_audits', [
+            { name: 'harvest_id', type: 'string', isIndexed: true },
+            { name: 'user_id', type: 'string', isOptional: true },
+            { name: 'action', type: 'string' },
+            { name: 'status', type: 'string' },
+            { name: 'from_stage', type: 'string', isOptional: true },
+            { name: 'to_stage', type: 'string', isOptional: true },
+            { name: 'reason', type: 'string' },
+            { name: 'performed_at', type: 'number' },
+            { name: 'metadata', type: 'string' }, // JSON
+            { name: 'server_revision', type: 'number' },
+            { name: 'server_updated_at_ms', type: 'number' },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ]),
+        },
+      ],
     },
     // Migration from version 14 to 15: Add harvest photo fields to image_upload_queue
     {
