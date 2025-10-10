@@ -58,7 +58,7 @@ describe('SyncWorker', () => {
         });
       });
 
-      await syncWorker.synchronize(pullEndpoint, pushEndpoint);
+      await syncWorker.synchronize({ pullEndpoint, pushEndpoint });
 
       const status = syncWorker.getStatus();
       expect(status.state).toBe('idle');
@@ -80,7 +80,7 @@ describe('SyncWorker', () => {
 
       mockSynchronize.mockResolvedValue();
 
-      await syncWorker.synchronize(pullEndpoint, pushEndpoint);
+      await syncWorker.synchronize({ pullEndpoint, pushEndpoint });
 
       expect(onSuccess).toHaveBeenCalled();
     });
@@ -105,7 +105,7 @@ describe('SyncWorker', () => {
       mockSynchronize.mockRejectedValue(new Error('Network error'));
 
       await expect(
-        workerWithNoRetries.synchronize(pullEndpoint, pushEndpoint)
+        workerWithNoRetries.synchronize({ pullEndpoint, pushEndpoint })
       ).rejects.toThrow('Network error');
 
       expect(onError).toHaveBeenCalledWith(expect.any(Error));
@@ -133,7 +133,7 @@ describe('SyncWorker', () => {
         enableLogging: false,
       });
 
-      await workerWithRetries.synchronize(pullEndpoint, pushEndpoint);
+      await workerWithRetries.synchronize({ pullEndpoint, pushEndpoint });
 
       expect(mockSynchronize).toHaveBeenCalledTimes(3);
     });
@@ -152,7 +152,7 @@ describe('SyncWorker', () => {
       });
 
       await expect(
-        workerWithRetries.synchronize(pullEndpoint, pushEndpoint)
+        workerWithRetries.synchronize({ pullEndpoint, pushEndpoint })
       ).rejects.toThrow('Always fails');
 
       const status = workerWithRetries.getStatus();
@@ -177,7 +177,7 @@ describe('SyncWorker', () => {
       expect(status.state).toBe('idle');
     });
 
-    it('does not change state from error to idle', () => {
+    it('does not change state from error to idle', async () => {
       const pullEndpoint = jest.fn();
       const pushEndpoint = jest.fn();
 
@@ -189,14 +189,14 @@ describe('SyncWorker', () => {
       });
 
       // Create error state
-      workerWithRetries.synchronize(pullEndpoint, pushEndpoint).catch(() => {});
+      await expect(
+        workerWithRetries.synchronize({ pullEndpoint, pushEndpoint })
+      ).rejects.toThrow();
 
-      setTimeout(() => {
-        workerWithRetries.setOnline();
-        const status = workerWithRetries.getStatus();
-        // Should still be error, not idle
-        expect(status.state).toBe('error');
-      }, 100);
+      workerWithRetries.setOnline();
+      const status = workerWithRetries.getStatus();
+      // Should still be error, not idle
+      expect(status.state).toBe('error');
     });
   });
 
@@ -215,7 +215,7 @@ describe('SyncWorker', () => {
 
       mockSynchronize.mockResolvedValue();
 
-      await syncWorker.synchronize(pullEndpoint, pushEndpoint);
+      await syncWorker.synchronize({ pullEndpoint, pushEndpoint });
 
       expect(onStart).toHaveBeenCalled();
     });

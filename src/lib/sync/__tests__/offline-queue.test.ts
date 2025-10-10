@@ -10,18 +10,18 @@ import {
 
 describe('generateIdempotencyKey', () => {
   it('generates consistent key for same inputs', () => {
-    const key1 = generateIdempotencyKey('readings', 'create', 'id1', 1000);
-    const key2 = generateIdempotencyKey('readings', 'create', 'id1', 1000);
+    const key1 = generateIdempotencyKey('create', 'id1', 1000);
+    const key2 = generateIdempotencyKey('create', 'id1', 1000);
 
     expect(key1).toBe(key2);
-    expect(key1).toBe('readings_create_id1_1000');
+    expect(key1).toBe('create_id1_1000');
   });
 
   it('generates different keys for different inputs', () => {
-    const key1 = generateIdempotencyKey('readings', 'create', 'id1', 1000);
-    const key2 = generateIdempotencyKey('readings', 'update', 'id1', 1000);
-    const key3 = generateIdempotencyKey('readings', 'create', 'id2', 1000);
-    const key4 = generateIdempotencyKey('readings', 'create', 'id1', 2000);
+    const key1 = generateIdempotencyKey('create', 'id1', 1000);
+    const key2 = generateIdempotencyKey('update', 'id1', 1000);
+    const key3 = generateIdempotencyKey('create', 'id2', 1000);
+    const key4 = generateIdempotencyKey('create', 'id1', 2000);
 
     expect(key1).not.toBe(key2);
     expect(key1).not.toBe(key3);

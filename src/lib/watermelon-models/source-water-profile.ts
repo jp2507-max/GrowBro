@@ -10,7 +10,7 @@ import { date, field, text } from '@nozbe/watermelondb/decorators';
  * Requirements: 8.1
  */
 export class SourceWaterProfileModel extends Model {
-  static table = 'source_water_profiles';
+  static table = 'source_water_profiles_v2';
 
   @text('name') name!: string;
 

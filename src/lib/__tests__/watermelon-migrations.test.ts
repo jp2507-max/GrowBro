@@ -50,11 +50,11 @@ const testNutrientEngineTables = () => {
 
     const nutrientEngineTables = [
       'feeding_templates',
-      'ph_ec_readings',
-      'reservoirs',
-      'source_water_profiles',
+      'ph_ec_readings_v2',
+      'reservoirs_v2',
+      'source_water_profiles_v2',
       'calibrations',
-      'deviation_alerts',
+      'deviation_alerts_v2',
       'reservoir_events',
     ];
 
@@ -68,8 +68,11 @@ const testDataTypeConsistency = () => {
   it('has consistent data types between schema and migrations', () => {
     const tables = (schema as any).tables as any[];
 
-    // Check source_water_profiles last_tested_at type (should be number for epoch ms)
-    const sourceWaterProfiles = getTableByName(tables, 'source_water_profiles');
+    // Check source_water_profiles_v2 last_tested_at type (should be number for epoch ms)
+    const sourceWaterProfiles = getTableByName(
+      tables,
+      'source_water_profiles_v2'
+    );
     const lastTestedAtColumn = getColumnByName(
       sourceWaterProfiles.columns,
       'last_tested_at'
@@ -90,11 +93,11 @@ const testDataTypeConsistency = () => {
     // Check nutrient engine tables have proper sync columns
     const nutrientEngineTables = [
       'feeding_templates',
-      'ph_ec_readings',
-      'reservoirs',
-      'source_water_profiles',
+      'ph_ec_readings_v2',
+      'reservoirs_v2',
+      'source_water_profiles_v2',
       'calibrations',
-      'deviation_alerts',
+      'deviation_alerts_v2',
       'reservoir_events',
     ];
     nutrientEngineTables.forEach((tableName) => {
@@ -214,11 +217,11 @@ const testVersion17Migration = () => {
 
     const expectedTables = [
       'feeding_templates',
-      'ph_ec_readings',
-      'reservoirs',
-      'source_water_profiles',
+      'ph_ec_readings_v2',
+      'reservoirs_v2',
+      'source_water_profiles_v2',
       'calibrations',
-      'deviation_alerts',
+      'deviation_alerts_v2',
       'reservoir_events',
     ];
 
@@ -227,9 +230,9 @@ const testVersion17Migration = () => {
       expect(createdTables).toContain(tableName);
     });
 
-    // Verify ph_ec_readings has proper indexed columns
+    // Verify ph_ec_readings_v2 has proper indexed columns
     const phEcReadingsStep = createTableSteps.find(
-      (s: any) => s.schema.name === 'ph_ec_readings'
+      (s: any) => s.schema.name === 'ph_ec_readings_v2'
     );
     expect(phEcReadingsStep).toBeTruthy();
     const phEcColumns = phEcReadingsStep.schema.columnArray;
@@ -252,9 +255,9 @@ const testVersion17Migration = () => {
     );
     expect(meterIdColumn.isIndexed).toBe(true);
 
-    // Verify deviation_alerts has proper indexed columns
+    // Verify deviation_alerts_v2 has proper indexed columns
     const deviationAlertsStep = createTableSteps.find(
-      (s: any) => s.schema.name === 'deviation_alerts'
+      (s: any) => s.schema.name === 'deviation_alerts_v2'
     );
     expect(deviationAlertsStep).toBeTruthy();
     const alertColumns = deviationAlertsStep.schema.columnArray;

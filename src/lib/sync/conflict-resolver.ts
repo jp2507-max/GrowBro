@@ -63,7 +63,7 @@ function resolveByRevision(
       winner: 'local',
       localRevision: local.server_revision,
       remoteRevision: remote.server_revision,
-      reason: 'Server revision higher (local wins)',
+      reason: 'Local revision higher (local wins)',
     };
   } else {
     // Equal revisions - remote wins by default

@@ -94,7 +94,7 @@ export function PhEcReadingForm({
 
   // Quality flags for display
   const qualityFlags = React.useMemo(() => {
-    if (!ecRaw || !tempC) return [];
+    if (ecRaw == null || tempC == null) return [];
 
     const flags: QualityFlag[] = [];
 
@@ -288,7 +288,7 @@ export function PhEcReadingForm({
         label={translate('nutrient.save_reading')}
         onPress={handleFormSubmit}
         loading={isSubmitting}
-        disabled={!ec25c || isSubmitting}
+        disabled={ec25c == null || isSubmitting}
         testID="submit-button"
       />
     </View>

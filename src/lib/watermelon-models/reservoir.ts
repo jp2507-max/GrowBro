@@ -12,7 +12,7 @@ import type { SourceWaterProfileModel } from './source-water-profile';
  * Requirements: 8.1
  */
 export class ReservoirModel extends Model {
-  static table = 'reservoirs';
+  static table = 'reservoirs_v2';
 
   @text('name') name!: string;
 

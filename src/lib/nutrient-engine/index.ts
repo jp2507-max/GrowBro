@@ -5,6 +5,8 @@
  * - EC/pH conversion utilities with temperature compensation
  * - Type definitions for feeding templates, measurements, and diagnostics
  * - Quality assessment and confidence scoring
+ * - Alert evaluation and deviation detection
+ * - Notification delivery for pH/EC alerts
  *
  * @module nutrient-engine
  */
@@ -18,6 +20,16 @@ export {
   formatPpmWithScale,
   toEC25,
 } from './utils/conversions';
+
+// Export alert evaluation utilities
+export {
+  COOLDOWN_MS,
+  DEAD_BAND,
+  evaluateReadingAgainstTargets,
+  generateRecommendations,
+  MIN_PERSIST_MS,
+  TEMP_HIGH_THRESHOLD,
+} from './utils/alert-evaluation';
 
 // Export domain model types (non-enum types only)
 export type {
@@ -54,3 +66,31 @@ export {
   QualityFlag,
   ReservoirEventKind,
 } from './types';
+
+// Export alert services
+export {
+  acknowledgeAlert,
+  createAlert,
+  evaluateAndTriggerAlert,
+  getActiveAlerts,
+  getAlertHistory,
+  getOfflineAlerts,
+  getUnacknowledgedAlerts,
+  markAlertDeliveredLocally,
+  observeActiveAlerts,
+  resolveAlert,
+} from './services/alert-service';
+
+// Export notification services
+export {
+  cancelAlertNotification,
+  cancelReservoirAlerts,
+  canSendNotifications,
+  deliverOfflineAlert,
+  openNotificationSettings,
+  scheduleAlertNotification,
+} from './services/alert-notification-service';
+
+// Export hooks
+export type { UseAlertEvaluationReturn } from './hooks/use-alert-evaluation';
+export { useAlertEvaluation } from './hooks/use-alert-evaluation';

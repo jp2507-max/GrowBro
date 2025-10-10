@@ -4,7 +4,19 @@
  * Ensures text data sync is never blocked by image uploads
  */
 
-import { documentDirectory } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system';
+
+// Type-safe interface for FileSystem module with proper null handling
+interface SafeFileSystem {
+  documentDirectory: string | null | undefined;
+  getInfoAsync: typeof FileSystem.getInfoAsync;
+  makeDirectoryAsync: typeof FileSystem.makeDirectoryAsync;
+  copyAsync: typeof FileSystem.copyAsync;
+  deleteAsync: typeof FileSystem.deleteAsync;
+}
+
+// Cast to our safe interface to maintain type safety
+const safeFileSystem = FileSystem as unknown as SafeFileSystem;
 
 /**
  * Image queue item for upload
@@ -23,7 +35,10 @@ type ImageQueueItem = {
  * Image storage configuration
  */
 const getImageStorageDir = (): string => {
-  return `${documentDirectory ?? ''}images/`;
+  if (!safeFileSystem.documentDirectory) {
+    throw new Error('Document directory is not available');
+  }
+  return `${safeFileSystem.documentDirectory}images/`;
 };
 const IMAGE_STORAGE_DIR = getImageStorageDir();
 const MAX_IMAGE_RETRIES = 3;

@@ -42,7 +42,8 @@ export default function NutrientReadingsScreen(): React.ReactElement {
               </Text>
               {data && data.total > 0 && (
                 <Text className="mt-1 text-sm text-neutral-600">
-                  {data.total} {data.total === 1 ? 'reading' : 'readings'}
+                  {data.total}{' '}
+                  {t('nutrient.readings_count', { count: data.total })}
                 </Text>
               )}
             </View>
@@ -60,7 +61,7 @@ export default function NutrientReadingsScreen(): React.ReactElement {
         {error && (
           <View className="flex-1 items-center justify-center p-4">
             <Text className="text-center text-danger-600">
-              Failed to load readings
+              {t('nutrient.load_error')}
             </Text>
             <Text className="mt-2 text-center text-sm text-neutral-500">
               {error.message}

@@ -80,7 +80,7 @@
   "cannabis": {
     "age_gate_body": "GrowBro offers educational cannabis guidance only. Confirm your age to continue.",
     "age_gate_day": "Day",
-    "age_gate_disclaimer": "GrowBro never provides shopping, ordering, pickup, or delivery features. Content remains educational only.",
+    "age_gate_disclaimer": "GrowBro does not include any commerce features. Content remains educational only.",
     "age_gate_error_invalid": "Enter a valid birth date to confirm your age.",
     "age_gate_error_underage": "GrowBro is limited to adults 18 or older.",
     "age_gate_month": "Month",
@@ -90,7 +90,7 @@
     "age_gate_title": "Confirm you are 18 or older",
     "age_gate_year": "Year",
     "educational_badge": "Educational only",
-    "educational_banner_body": "GrowBro does not facilitate sales, vendor links, pickup, or delivery. All features remain educational and policy compliant.",
+    "educational_banner_body": "GrowBro does not facilitate any commerce or transactions. All features remain educational and policy compliant.",
     "educational_banner_title": "Educational cannabis guidance only"
   },
   "common": {
@@ -210,7 +210,7 @@
       "battery_optimization_title": "Battery Optimization Active",
       "cancel_failed": "Failed to cancel reminder",
       "channel_missing": "Notification channel not configured",
-      "delivery_failed": "Reminder was not delivered",
+      "delivery_failed": "Reminder was not sent",
       "doze_mode_active": "Device battery optimization may delay reminders",
       "exact_alarm_unavailable": "Exact alarm scheduling not available on this device",
       "fallback_description": "We'll show you a reminder when you open the app",
@@ -709,6 +709,10 @@
       "viewProfile": "View profile"
     },
     "channels": {
+      "calibrationReminders": {
+        "description": "Reminders to recalibrate pH and EC meters for accurate measurements.",
+        "name": "Calibration reminders"
+      },
       "communityInteractions": {
         "description": "Replies, mentions, and moderation requests from the community.",
         "name": "Community interactions"
@@ -716,6 +720,10 @@
       "communityLikes": {
         "description": "Likes and reactions to your shared updates.",
         "name": "Community likes"
+      },
+      "cultivationAlerts": {
+        "description": "Immediate alerts when pH or EC readings are out of target range.",
+        "name": "pH/EC Alerts"
       },
       "cultivationReminders": {
         "description": "Task reminders and drying or curing alerts for your grow.",
@@ -788,10 +796,12 @@
   "nutrient": {
     "add_first_reading": "Log your first pH and EC measurement",
     "add_reading": "Add Reading",
+    "add_reading_description": "Log pH and EC measurements for your grow",
     "atc_label": "Automatic Temperature Compensation (ATC)",
     "cal_stale_warning": "Meter calibration is stale",
     "computed_values": "Computed Values",
     "ec_label": "EC (mS/cm)",
+    "load_error": "Failed to load readings",
     "loading_readings": "Loading readings...",
     "no_atc_warning": "Manual temperature compensation applied",
     "no_readings": "No readings yet",
@@ -803,6 +813,8 @@
     "reading_error": "Failed to save reading",
     "reading_history": "Reading History",
     "reading_saved": "Reading saved successfully",
+    "readings_count_one": "reading",
+    "readings_count_other": "readings",
     "reservoir_label": "Reservoir",
     "save_reading": "Save Reading",
     "temp_high_warning": "Temperature ≥28°C may affect accuracy",
@@ -1288,7 +1300,7 @@
       "viewing_cached_data": "📦 Viewing cached data"
     },
     "compliance": {
-      "body": "This information is for educational purposes only. GrowBro does not facilitate sales, delivery, or any commercial transactions. Please consult local laws regarding cannabis cultivation.",
+      "body": "This information is for educational purposes only. GrowBro does not facilitate any commercial transactions. Please consult local laws regarding cannabis cultivation.",
       "headline": "⚠️ Educational Content Only"
     },
     "detail": {

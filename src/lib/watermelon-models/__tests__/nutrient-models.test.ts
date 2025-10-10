@@ -156,12 +156,12 @@ describe('Nutrient Engine Models', () => {
     test('expected table names are defined', () => {
       const tableNames = [
         'feeding_templates',
-        'ph_ec_readings',
-        'reservoirs',
+        'ph_ec_readings_v2',
+        'reservoirs_v2',
         'reservoir_events',
-        'source_water_profiles',
+        'source_water_profiles_v2',
         'calibrations',
-        'deviation_alerts',
+        'deviation_alerts_v2',
       ];
 
       tableNames.forEach((name) => {

@@ -433,10 +433,11 @@ export const migrations = schemaMigrations({
         }),
       ],
     },
-    // Migration from version 16 to 17: Add nutrient engine tables
+    // Migration from version 16 to 17: Add nutrient engine tables (additive migration)
     {
       toVersion: 17,
       steps: [
+        // Create new feeding_templates table (doesn't exist in v5)
         {
           type: 'create_table',
           schema: createTableSchema('feeding_templates', [
@@ -453,9 +454,11 @@ export const migrations = schemaMigrations({
             { name: 'deleted_at', type: 'number', isOptional: true },
           ]),
         },
+        // Create ph_ec_readings_v2 with new schema (incompatible changes from v5)
+        // Note: Data migration from ph_ec_readings to ph_ec_readings_v2 will be handled separately
         {
           type: 'create_table',
-          schema: createTableSchema('ph_ec_readings', [
+          schema: createTableSchema('ph_ec_readings_v2', [
             {
               name: 'plant_id',
               type: 'string',
@@ -491,9 +494,11 @@ export const migrations = schemaMigrations({
             { name: 'deleted_at', type: 'number', isOptional: true },
           ]),
         },
+        // Create reservoirs_v2 with new schema (incompatible changes from v5)
+        // Note: Data migration from reservoirs to reservoirs_v2 will be handled separately
         {
           type: 'create_table',
-          schema: createTableSchema('reservoirs', [
+          schema: createTableSchema('reservoirs_v2', [
             { name: 'name', type: 'string' },
             { name: 'volume_l', type: 'number' },
             { name: 'medium', type: 'string', isIndexed: true },
@@ -516,9 +521,11 @@ export const migrations = schemaMigrations({
             { name: 'deleted_at', type: 'number', isOptional: true },
           ]),
         },
+        // Create source_water_profiles_v2 with new schema (incompatible changes from v5)
+        // Note: Data migration from source_water_profiles to source_water_profiles_v2 will be handled separately
         {
           type: 'create_table',
-          schema: createTableSchema('source_water_profiles', [
+          schema: createTableSchema('source_water_profiles_v2', [
             { name: 'name', type: 'string' },
             { name: 'baseline_ec_25c', type: 'number' },
             { name: 'alkalinity_mg_per_l_caco3', type: 'number' },
@@ -532,6 +539,7 @@ export const migrations = schemaMigrations({
             { name: 'deleted_at', type: 'number', isOptional: true },
           ]),
         },
+        // Create calibrations table (doesn't exist in v5)
         {
           type: 'create_table',
           schema: createTableSchema('calibrations', [
@@ -554,9 +562,11 @@ export const migrations = schemaMigrations({
             { name: 'deleted_at', type: 'number', isOptional: true },
           ]),
         },
+        // Create deviation_alerts_v2 with new schema (incompatible changes from v5)
+        // Note: Data migration from deviation_alerts to deviation_alerts_v2 will be handled separately
         {
           type: 'create_table',
-          schema: createTableSchema('deviation_alerts', [
+          schema: createTableSchema('deviation_alerts_v2', [
             { name: 'reading_id', type: 'string', isIndexed: true },
             { name: 'type', type: 'string' },
             { name: 'severity', type: 'string' },
@@ -580,6 +590,7 @@ export const migrations = schemaMigrations({
             { name: 'deleted_at', type: 'number', isOptional: true },
           ]),
         },
+        // Create reservoir_events table (doesn't exist in v5)
         {
           type: 'create_table',
           schema: createTableSchema('reservoir_events', [

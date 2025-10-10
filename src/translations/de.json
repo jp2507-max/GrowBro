@@ -709,6 +709,10 @@
       "viewProfile": "Profil ansehen"
     },
     "channels": {
+      "calibrationReminders": {
+        "description": "Erinnerungen zur Kalibrierung von pH- und EC-Messgeräten für genaue Messungen.",
+        "name": "Kalibrierungs-Erinnerungen"
+      },
       "communityInteractions": {
         "description": "Antworten, Erwähnungen und Moderationshinweise aus der Community.",
         "name": "Community-Interaktionen"
@@ -716,6 +720,10 @@
       "communityLikes": {
         "description": "Likes und Reaktionen auf deine Updates.",
         "name": "Community-Likes"
+      },
+      "cultivationAlerts": {
+        "description": "Sofortwarnungen, wenn pH- oder EC-Werte außerhalb des Zielbereichs liegen.",
+        "name": "pH/EC-Warnungen"
       },
       "cultivationReminders": {
         "description": "Aufgaben-Erinnerungen sowie Trocknungs- und Aushärtungswarnungen.",
@@ -788,10 +796,12 @@
   "nutrient": {
     "add_first_reading": "Protokollieren Sie Ihre erste pH- und EC-Messung",
     "add_reading": "Messung hinzufügen",
+    "add_reading_description": "Protokollieren Sie pH- und EC-Messungen für Ihren Anbau",
     "atc_label": "Automatische Temperaturkompensation (ATC)",
     "cal_stale_warning": "Messgerät-Kalibrierung ist veraltet",
     "computed_values": "Berechnete Werte",
     "ec_label": "EC (mS/cm)",
+    "load_error": "Messungen konnten nicht geladen werden",
     "loading_readings": "Messungen werden geladen...",
     "no_atc_warning": "Manuelle Temperaturkompensation angewendet",
     "no_readings": "Noch keine Messungen",
@@ -803,6 +813,8 @@
     "reading_error": "Fehler beim Speichern der Messung",
     "reading_history": "Messungsverlauf",
     "reading_saved": "Messung erfolgreich gespeichert",
+    "readings_count_one": "Messung",
+    "readings_count_other": "Messungen",
     "reservoir_label": "Reservoir",
     "save_reading": "Messung speichern",
     "temp_high_warning": "Temperatur ≥28°C kann Genauigkeit beeinträchtigen",

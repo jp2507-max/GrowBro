@@ -112,15 +112,15 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - Write tests for offline reading storage and sync recovery
     - _Requirements: 2.1, 6.2, 6.5_
 
-- [ ] 6. Create alert and deviation detection system
-  - [ ] 6.1 Implement pure alert evaluation functions
+- [x] 6. Create alert and deviation detection system
+  - [x] 6.1 Implement pure alert evaluation functions
     - Add hysteresis (deadbands) + min persistence window (e.g., 5 min) + per-reservoir cooldown to avoid thrash
     - Add per-reservoir cooldown logic to prevent alert spam
     - Implement target range checking with configurable dead bands
     - Write unit tests for alert evaluation logic and edge cases
     - _Requirements: 2.3, 2.4, 3.1_
 
-  - [ ] 6.2 Build alert notification and management
+  - [x] 6.2 Build alert notification and management
     - For Android 13/14, implement POST_NOTIFICATIONS request + handle SCHEDULE_EXACT_ALARM denied-by-default—fall back to inexact alarms; include channel setup before prompting on Android 13+
     - Add alert acknowledgment and resolution tracking
     - Create correction playbook suggestions with recommendation codes
@@ -128,15 +128,15 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - Test notification delivery and permission handling
     - _Requirements: 2.3, 2.4, 5.2, 5.5_
 
-- [ ] 7. Develop calibration management system
-  - [ ] 7.1 Create calibration tracking and validation
+- [x] 7. Develop calibration management system
+  - [x] 7.1 Create calibration tracking and validation
     - Support one-/two-/three-point methods; store slope/offset + validity policy (days)
     - Add calibration expiration tracking and quality assessment
     - Create meter management with calibration history
     - Build calibration reminder system based on age and usage
     - _Requirements: 2.7, 2.9, 8.4_
 
-  - [ ] 7.2 Integrate calibration quality with reading confidence
+  - [x] 7.2 Integrate calibration quality with reading confidence
     - Use calibration status to set qualityFlags in real time (don't persist numeric confidence)
     - Implement confidence score calculation using calibration age
     - Add low confidence warnings and user guidance

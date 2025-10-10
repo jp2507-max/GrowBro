@@ -8,6 +8,8 @@ export type AndroidChannelKey =
   | 'community.interactions'
   | 'community.likes'
   | 'cultivation.reminders'
+  | 'cultivation.alerts'
+  | 'calibration.reminders'
   | 'system.updates';
 
 type AndroidChannelDefinition = {
@@ -41,6 +43,20 @@ const ANDROID_CHANNEL_DEFINITIONS: Record<
     nameKey: 'notifications.channels.cultivationReminders.name',
     descriptionKey: 'notifications.channels.cultivationReminders.description',
     importance: getAndroidImportance('high'),
+    sound: 'default',
+  },
+  'cultivation.alerts': {
+    id: `cultivation.alerts.${CHANNEL_VERSION}`,
+    nameKey: 'notifications.channels.cultivationAlerts.name',
+    descriptionKey: 'notifications.channels.cultivationAlerts.description',
+    importance: getAndroidImportance('high'),
+    sound: 'default',
+  },
+  'calibration.reminders': {
+    id: `calibration.reminders.${CHANNEL_VERSION}`,
+    nameKey: 'notifications.channels.calibrationReminders.name',
+    descriptionKey: 'notifications.channels.calibrationReminders.description',
+    importance: getAndroidImportance('default'),
     sound: 'default',
   },
   'system.updates': {

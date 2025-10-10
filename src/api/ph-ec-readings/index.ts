@@ -24,6 +24,7 @@ type CreateReadingVariables = {
   plantId?: string;
   meterId?: string;
   note?: string;
+  measuredAt?: number;
 };
 
 type CreateReadingResponse = PhEcReading;
@@ -63,6 +64,7 @@ export async function createReadingLocal(
       record.tempC = variables.tempC;
       record.atcOn = variables.atcOn;
       record.ppmScale = variables.ppmScale;
+      record.measuredAt = variables.measuredAt ?? Date.now();
 
       if (variables.reservoirId) {
         record.reservoirId = variables.reservoirId;
@@ -89,7 +91,7 @@ export async function createReadingLocal(
         tempC: variables.tempC,
         atcOn: variables.atcOn,
         ppmScale: variables.ppmScale,
-        measuredAt: Date.now(),
+        measuredAt: variables.measuredAt ?? Date.now(),
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
@@ -111,50 +113,47 @@ export async function createReadingLocal(
     meterId: reading.meterId,
     note: reading.note,
     qualityFlags: reading.qualityFlags,
-    measuredAt: reading.measuredAt || Date.now(),
+    measuredAt: reading.measuredAt,
     createdAt: reading.createdAt.getTime(),
     updatedAt: reading.updatedAt.getTime(),
   };
 }
 
-/**
- * Fetch pH/EC readings from local database
- * Uses WatermelonDB queries for efficient retrieval
- * @internal
- */
 export async function fetchReadingsLocal(
   variables: FetchReadingsVariables
 ): Promise<FetchReadingsResponse> {
   const readingsCollection = database.get<PhEcReadingModel>('ph_ec_readings');
 
-  let query = readingsCollection.query(Q.sortBy('measured_at', Q.desc));
+  // Build cumulative where filter array
+  const whereFilters: any[] = [];
 
   if (variables.reservoirId) {
-    query = readingsCollection.query(
-      Q.where('reservoir_id', variables.reservoirId),
-      Q.sortBy('measured_at', Q.desc)
-    );
+    whereFilters.push(Q.where('reservoir_id', variables.reservoirId));
   }
 
   if (variables.plantId) {
-    query = readingsCollection.query(
-      Q.where('plant_id', variables.plantId),
-      Q.sortBy('measured_at', Q.desc)
-    );
+    whereFilters.push(Q.where('plant_id', variables.plantId));
   }
 
-  if (variables.limit) {
-    query = readingsCollection.query(
-      Q.take(variables.limit),
-      Q.skip(variables.offset || 0),
-      Q.sortBy('measured_at', Q.desc)
-    );
-  }
+  const query = readingsCollection.query(
+    ...whereFilters,
+    Q.sortBy('measured_at', Q.desc)
+  );
 
+  // TODO: Implement proper pagination with cursor-based approach
+  // Current implementation fetches all records for simplicity
   const records = await query.fetch();
-  const total = await readingsCollection.query().fetchCount();
+  const total = await readingsCollection.query(...whereFilters).fetchCount();
 
-  const data: PhEcReading[] = records.map((record) => ({
+  // Apply pagination by slicing the results
+  let paginatedRecords = records;
+  if (variables.limit !== undefined && variables.offset !== undefined) {
+    const startIndex = variables.offset;
+    const endIndex = startIndex + (variables.limit || records.length);
+    paginatedRecords = records.slice(startIndex, endIndex);
+  }
+
+  const data: PhEcReading[] = paginatedRecords.map((record) => ({
     id: record.id,
     ph: record.ph,
     ecRaw: record.ecRaw,
@@ -212,7 +211,7 @@ export const useCreateReading = createMutation<
  *
  * Requirements: 2.1, 2.5, 6.2
  */
-export const useFetchReadings = createQuery<
+const _useFetchReadings = createQuery<
   FetchReadingsResponse,
   FetchReadingsVariables,
   AxiosError
@@ -220,6 +219,17 @@ export const useFetchReadings = createQuery<
   queryKey: ['ph-ec-readings'],
   fetcher: (variables) => fetchReadingsLocal(variables),
 });
+
+type UseFetchReadingsOptions = Omit<
+  Parameters<typeof _useFetchReadings>[0],
+  'variables'
+>;
+
+export const useFetchReadings = Object.assign(
+  (variables: FetchReadingsVariables, options?: UseFetchReadingsOptions) =>
+    _useFetchReadings({ ...options, variables }),
+  _useFetchReadings
+);
 
 /**
  * Hook to fetch readings for a specific reservoir

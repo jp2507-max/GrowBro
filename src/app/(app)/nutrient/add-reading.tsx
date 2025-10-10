@@ -86,7 +86,7 @@ export default function AddReadingScreen(): React.ReactElement {
             {t('nutrient.add_reading')}
           </Text>
           <Text className="mt-1 text-sm text-neutral-600">
-            Log pH and EC measurements for your grow
+            {t('nutrient.add_reading_description')}
           </Text>
         </View>
 

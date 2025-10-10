@@ -18,7 +18,7 @@ import type { PhEcReadingModel } from './ph-ec-reading';
  * Requirements: 2.5, 6.2
  */
 export class DeviationAlertModel extends Model {
-  static table = 'deviation_alerts';
+  static table = 'deviation_alerts_v2';
 
   @text('reading_id') readingId!: string;
 

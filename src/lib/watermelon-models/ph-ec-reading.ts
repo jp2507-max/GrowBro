@@ -21,7 +21,7 @@ import type { ReservoirModel } from './reservoir';
  * Requirements: 2.5, 6.2
  */
 export class PhEcReadingModel extends Model {
-  static table = 'ph_ec_readings';
+  static table = 'ph_ec_readings_v2';
 
   @text('plant_id') plantId?: string;
   @text('reservoir_id') reservoirId?: string;
