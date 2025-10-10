@@ -58,8 +58,8 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - Produce const-object maps with literal union types for PpmScale, AlertType, IssueType (e.g., const PpmScale = { ... } as const; type PpmScale = typeof PpmScale[keyof typeof PpmScale])
     - _Requirements: 1.6, 2.2, 3.1_
 
-- [ ] 3. Build WatermelonDB models and database layer
-  - [ ] 3.1 Implement WatermelonDB model classes
+- [x] 3. Build WatermelonDB models and database layer
+  - [x] 3.1 Implement WatermelonDB model classes
     - Create FeedingTemplate model with JSON serialization for phases
     - Implement PhEcReading model with quality flags and computed confidence
     - Build Reservoir model with target ranges and source water profile relationships
@@ -67,15 +67,15 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - Create SourceWaterProfile, Calibration, and DeviationAlert models
     - _Requirements: 8.1, 8.4_
 
-  - [ ] 3.2 Add database relationships and queries
+  - [x] 3.2 Add database relationships and queries
     - Set up model associations (reservoirs to readings, profiles to reservoirs)
     - Implement efficient queries with proper indexing utilization
     - Use observables (Query.observe, Model.observe) for UI reactivity instead of loading large arrays
     - Write integration tests for model relationships and queries
     - _Requirements: 2.5, 6.2_
 
-- [ ] 4. Build sync worker and offline functionality
-  - [ ] 4.1 Implement background sync with retry logic
+- [x] 4. Build sync worker and offline functionality
+  - [x] 4.1 Implement background sync with retry logic
     - Implement synchronize() with retry/backoff + events; wire to your pull/push endpoints
     - Create SyncWorker with exponential backoff and retry mechanisms
     - Add sync event handling (onSyncStart, onSyncSuccess, onSyncError)
@@ -88,7 +88,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - Build sync queue management for offline operations
     - _Requirements: 6.2, 6.5_
 
-  - [ ] 4.2 Add offline-first data management
+  - [x] 4.2 Add offline-first data management
     - Implement offline reading logging and task completion
     - Persist local alerts and mirror on next sync (include delivered_at_local)
     - Add image storage on filesystem with URI tracking in database
@@ -96,15 +96,15 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - Test complete offline workflow and sync recovery
     - _Requirements: 6.1, 6.3, 6.4, 6.6_
 
-- [ ] 5. Implement measurement tracking system
-  - [ ] 5.1 Create pH/EC reading input and validation
+- [x] 5. Implement measurement tracking system
+  - [x] 5.1 Create pH/EC reading input and validation
     - Form must capture tempC, compute ec25c, and show ppm w/ scale; ATC detection -> badge
     - Flag readings if last calibration stale or tempC ≥ 28°C
     - Add PPM scale selection and conversion display
     - Validate reading ranges and add quality flag assessment
     - _Requirements: 2.1, 2.2, 2.7_
 
-  - [ ] 5.2 Build measurement storage and retrieval
+  - [x] 5.2 Build measurement storage and retrieval
     - Implement reading persistence with proper timestamp handling
     - Add offline queue management for readings without connectivity
     - Create efficient queries for historical data and trends

@@ -4,8 +4,11 @@ import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
 import { migrations } from './watermelon-migrations';
 import { AISuggestionModel } from './watermelon-models/ai-suggestion';
 import { CachedStrainModel } from './watermelon-models/cached-strain';
+import { CalibrationModel } from './watermelon-models/calibration';
+import { DeviationAlertModel } from './watermelon-models/deviation-alert';
 import { DeviceTokenModel } from './watermelon-models/device-token';
 import { FavoriteModel } from './watermelon-models/favorite';
+import { FeedingTemplateModel } from './watermelon-models/feeding-template';
 import { HarvestModel } from './watermelon-models/harvest';
 import { HarvestAuditModel } from './watermelon-models/harvest-audit';
 import { ImageUploadQueueModel } from './watermelon-models/image-upload-queue';
@@ -15,9 +18,13 @@ import { NotificationPreferenceModel } from './watermelon-models/notification-pr
 import { NotificationQueueModel } from './watermelon-models/notification-queue';
 import { OccurrenceOverrideModel } from './watermelon-models/occurrence-override';
 import { OutboxNotificationActionModel } from './watermelon-models/outbox-notification-action';
+import { PhEcReadingModel } from './watermelon-models/ph-ec-reading';
 import { PlaybookModel } from './watermelon-models/playbook';
 import { PlaybookApplicationModel } from './watermelon-models/playbook-application';
+import { ReservoirModel } from './watermelon-models/reservoir';
+import { ReservoirEventModel } from './watermelon-models/reservoir-event';
 import { SeriesModel } from './watermelon-models/series';
+import { SourceWaterProfileModel } from './watermelon-models/source-water-profile';
 import { TaskModel } from './watermelon-models/task';
 import { TrichomeAssessmentModel } from './watermelon-models/trichome-assessment';
 import { UndoDescriptorModel } from './watermelon-models/undo-descriptor';
@@ -57,5 +64,13 @@ export const database = new Database({
     HarvestModel,
     HarvestAuditModel,
     InventoryModel,
+    // Nutrient engine models
+    FeedingTemplateModel,
+    PhEcReadingModel,
+    ReservoirModel,
+    ReservoirEventModel,
+    SourceWaterProfileModel,
+    CalibrationModel,
+    DeviationAlertModel,
   ],
 });

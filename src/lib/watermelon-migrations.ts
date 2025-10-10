@@ -456,7 +456,12 @@ export const migrations = schemaMigrations({
         {
           type: 'create_table',
           schema: createTableSchema('ph_ec_readings', [
-            { name: 'plant_id', type: 'string', isOptional: true, isIndexed: true },
+            {
+              name: 'plant_id',
+              type: 'string',
+              isOptional: true,
+              isIndexed: true,
+            },
             {
               name: 'reservoir_id',
               type: 'string',
@@ -470,7 +475,12 @@ export const migrations = schemaMigrations({
             { name: 'temp_c', type: 'number' },
             { name: 'atc_on', type: 'boolean' },
             { name: 'ppm_scale', type: 'string' },
-            { name: 'meter_id', type: 'string', isOptional: true, isIndexed: true },
+            {
+              name: 'meter_id',
+              type: 'string',
+              isOptional: true,
+              isIndexed: true,
+            },
             { name: 'note', type: 'string', isOptional: true },
             { name: 'quality_flags_json', type: 'string', isOptional: true },
             { name: 'user_id', type: 'string', isOptional: true },
@@ -492,7 +502,11 @@ export const migrations = schemaMigrations({
             { name: 'target_ec_min_25c', type: 'number' },
             { name: 'target_ec_max_25c', type: 'number' },
             { name: 'ppm_scale', type: 'string' },
-            { name: 'source_water_profile_id', type: 'string', isOptional: true },
+            {
+              name: 'source_water_profile_id',
+              type: 'string',
+              isOptional: true,
+            },
             { name: 'playbook_binding', type: 'string', isOptional: true },
             { name: 'user_id', type: 'string', isOptional: true },
             { name: 'server_revision', type: 'number', isOptional: true },
@@ -548,7 +562,11 @@ export const migrations = schemaMigrations({
             { name: 'severity', type: 'string' },
             { name: 'message', type: 'string' },
             { name: 'recommendations_json', type: 'string' },
-            { name: 'recommendation_codes_json', type: 'string', isOptional: true },
+            {
+              name: 'recommendation_codes_json',
+              type: 'string',
+              isOptional: true,
+            },
             { name: 'cooldown_until', type: 'number', isOptional: true },
             { name: 'triggered_at', type: 'number', isIndexed: true },
             { name: 'acknowledged_at', type: 'number', isOptional: true },

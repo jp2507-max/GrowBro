@@ -785,6 +785,29 @@
       "title": "Tasks need attention"
     }
   },
+  "nutrient": {
+    "add_first_reading": "Log your first pH and EC measurement",
+    "add_reading": "Add Reading",
+    "atc_label": "Automatic Temperature Compensation (ATC)",
+    "cal_stale_warning": "Meter calibration is stale",
+    "computed_values": "Computed Values",
+    "ec_label": "EC (mS/cm)",
+    "loading_readings": "Loading readings...",
+    "no_atc_warning": "Manual temperature compensation applied",
+    "no_readings": "No readings yet",
+    "note_label": "Notes",
+    "offline_queue": "{{count}} readings pending sync",
+    "ph_label": "pH",
+    "ppm_scale_label": "PPM Scale",
+    "quality_flags": "Quality Flags",
+    "reading_error": "Failed to save reading",
+    "reading_history": "Reading History",
+    "reading_saved": "Reading saved successfully",
+    "reservoir_label": "Reservoir",
+    "save_reading": "Save Reading",
+    "temp_high_warning": "Temperature ≥28°C may affect accuracy",
+    "temp_label": "Temperature (°C)"
+  },
   "onboarding": {
     "allow_button": "Allow notifications",
     "continue_button": "Continue",

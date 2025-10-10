@@ -785,6 +785,29 @@
       "title": "Aufgaben warten auf dich"
     }
   },
+  "nutrient": {
+    "add_first_reading": "Protokollieren Sie Ihre erste pH- und EC-Messung",
+    "add_reading": "Messung hinzufügen",
+    "atc_label": "Automatische Temperaturkompensation (ATC)",
+    "cal_stale_warning": "Messgerät-Kalibrierung ist veraltet",
+    "computed_values": "Berechnete Werte",
+    "ec_label": "EC (mS/cm)",
+    "loading_readings": "Messungen werden geladen...",
+    "no_atc_warning": "Manuelle Temperaturkompensation angewendet",
+    "no_readings": "Noch keine Messungen",
+    "note_label": "Notizen",
+    "offline_queue": "{{count}} Messungen warten auf Synchronisierung",
+    "ph_label": "pH-Wert",
+    "ppm_scale_label": "PPM-Skala",
+    "quality_flags": "Qualitätsindikatoren",
+    "reading_error": "Fehler beim Speichern der Messung",
+    "reading_history": "Messungsverlauf",
+    "reading_saved": "Messung erfolgreich gespeichert",
+    "reservoir_label": "Reservoir",
+    "save_reading": "Messung speichern",
+    "temp_high_warning": "Temperatur ≥28°C kann Genauigkeit beeinträchtigen",
+    "temp_label": "Temperatur (°C)"
+  },
   "onboarding": {
     "allow_button": "Benachrichtigungen erlauben",
     "continue_button": "Weiter",

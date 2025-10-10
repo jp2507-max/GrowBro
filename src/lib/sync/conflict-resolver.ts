@@ -1,102 +1,165 @@
-import { NoopAnalytics } from '@/lib/analytics';
+/**
+ * Conflict Resolution Logic
+ * Resolves sync conflicts using server-assigned revisions or timestamps (LWW)
+ */
 
-export type ResolutionStrategy = 'server-lww' | 'needs-review' | 'field-level';
+import type { ConflictResolution } from './types';
 
-export type Conflict = {
-  tableName:
-    | 'series'
-    | 'tasks'
-    | 'occurrence_overrides'
-    | 'harvests'
-    | 'inventory'
-    | 'harvest_audits';
-  recordId: string;
-  localRecord: Record<string, unknown> | null;
-  remoteRecord: Record<string, unknown> | null;
-  conflictFields: string[];
-  timestamp: Date;
+type ConflictRecord = {
+  id: string;
+  server_revision?: number;
+  server_updated_at_ms?: number;
+  updated_at?: number; // Local timestamp
+  [key: string]: any;
 };
 
-export type ConflictResolver = {
-  getResolutionStrategy(tableName: Conflict['tableName']): ResolutionStrategy;
-  markForReview(conflicts: Conflict[]): Promise<void>;
-  logConflict(conflict: Conflict): void;
-};
-
-function getResolutionStrategy(
-  tableName: Conflict['tableName']
-): ResolutionStrategy {
-  // v1 keeps server as source of truth (LWW). Client may mark for review.
-  // Harvest tables use needs-review to ensure data integrity visibility
-  if (tableName === 'tasks' || tableName === 'harvests') return 'needs-review';
-  return 'server-lww';
-}
-
-function diffConflictingFields(
-  localRec: Record<string, unknown> | null,
-  remoteRec: Record<string, unknown> | null
-): string[] {
-  if (!localRec || !remoteRec) return [];
-  const fields = new Set<string>([
-    ...Object.keys(localRec),
-    ...Object.keys(remoteRec),
-  ]);
-  const out: string[] = [];
-  for (const k of fields) {
-    const l = (localRec as any)[k];
-    const r = (remoteRec as any)[k];
-    const lv = l instanceof Date ? l.toISOString() : l;
-    const rv = r instanceof Date ? r.toISOString() : r;
-    if (lv !== rv) out.push(k);
+/**
+ * Resolve conflict between local and remote records
+ * Server-assigned revision takes precedence; falls back to server timestamp
+ * NEVER uses client clock for conflict resolution
+ *
+ * @param local - Local record from device
+ * @param remote - Remote record from server
+ * @returns Conflict resolution with winner and reason
+ */
+export function resolveConflict(
+  local: ConflictRecord,
+  remote: ConflictRecord
+): ConflictResolution {
+  // Strategy 1: Use server_revision if both have it (preferred)
+  if (
+    remote.server_revision !== undefined &&
+    local.server_revision !== undefined
+  ) {
+    return resolveByRevision(local, remote);
   }
-  return out;
-}
 
-async function markForReview(conflicts: Conflict[]): Promise<void> {
-  // Analytics only for now; UI marking is done at apply time in sync-engine
-  try {
-    for (const _c of conflicts) {
-      await NoopAnalytics.track('sync_conflict', {
-        table: _c.tableName,
-        count: 1,
-      });
-    }
-  } catch {}
-}
-
-function logConflict(conflict: Conflict): void {
-  // Keep logs PII-light; rely on Analytics for counters, dev builds for console
-  if (process.env.NODE_ENV !== 'production') {
-    console.warn('[Sync][Conflict]', {
-      table: conflict.tableName,
-      id: conflict.recordId,
-      fields: conflict.conflictFields.slice(0, 8),
-      at: conflict.timestamp.toISOString(),
-    });
+  // Strategy 2: Use server_updated_at_ms if available (fallback)
+  if (remote.server_updated_at_ms !== undefined) {
+    return resolveByTimestamp(local, remote);
   }
-}
 
-export function createConflictResolver(): ConflictResolver {
+  // Strategy 3: No server metadata - remote wins by default
+  // Never fall back to client updated_at for conflict resolution
   return {
-    getResolutionStrategy,
-    markForReview,
-    logConflict,
+    winner: 'remote',
+    reason: 'No server revision/timestamp available (remote wins by default)',
   };
 }
 
-export function buildConflict(params: {
-  tableName: Conflict['tableName'];
-  recordId: string;
-  localRecord: Record<string, unknown> | null;
-  remoteRecord: Record<string, unknown> | null;
-}): Conflict {
-  const { tableName, recordId, localRecord, remoteRecord } = params;
-  return {
-    tableName,
-    recordId,
-    localRecord,
-    remoteRecord,
-    conflictFields: diffConflictingFields(localRecord, remoteRecord),
-    timestamp: new Date(),
-  };
+function resolveByRevision(
+  local: ConflictRecord,
+  remote: ConflictRecord
+): ConflictResolution {
+  if (remote.server_revision! > local.server_revision!) {
+    return {
+      winner: 'remote',
+      localRevision: local.server_revision,
+      remoteRevision: remote.server_revision,
+      reason: 'Server revision higher (remote wins)',
+    };
+  } else if (local.server_revision! > remote.server_revision!) {
+    return {
+      winner: 'local',
+      localRevision: local.server_revision,
+      remoteRevision: remote.server_revision,
+      reason: 'Server revision higher (local wins)',
+    };
+  } else {
+    // Equal revisions - remote wins by default
+    return {
+      winner: 'remote',
+      localRevision: local.server_revision,
+      remoteRevision: remote.server_revision,
+      reason: 'Server revisions equal (remote wins by default)',
+    };
+  }
+}
+
+function resolveByTimestamp(
+  local: ConflictRecord,
+  remote: ConflictRecord
+): ConflictResolution {
+  const localServerTimestamp = local.server_updated_at_ms;
+
+  if (localServerTimestamp === undefined) {
+    // Remote has server timestamp, local doesn't - remote wins
+    return {
+      winner: 'remote',
+      remoteTimestamp: remote.server_updated_at_ms,
+      reason: 'Only remote has server timestamp',
+    };
+  }
+
+  // Both have server timestamps - compare LWW
+  if (remote.server_updated_at_ms! > localServerTimestamp) {
+    return {
+      winner: 'remote',
+      localTimestamp: localServerTimestamp,
+      remoteTimestamp: remote.server_updated_at_ms,
+      reason: 'Server timestamp newer (remote wins)',
+    };
+  } else if (localServerTimestamp > remote.server_updated_at_ms!) {
+    return {
+      winner: 'local',
+      localTimestamp: localServerTimestamp,
+      remoteTimestamp: remote.server_updated_at_ms,
+      reason: 'Server timestamp newer (local wins)',
+    };
+  } else {
+    // Equal timestamps - remote wins by default
+    return {
+      winner: 'remote',
+      localTimestamp: localServerTimestamp,
+      remoteTimestamp: remote.server_updated_at_ms,
+      reason: 'Server timestamps equal (remote wins by default)',
+    };
+  }
+}
+
+/**
+ * Check if two records are likely duplicates based on deduplication key
+ * Used for ph_ec_readings: (plant_id, meter_id, measured_at within ±1s)
+ *
+ * @param record1 - First record
+ * @param record2 - Second record
+ * @param toleranceMs - Time tolerance in milliseconds (default 1000ms)
+ * @returns True if records are likely duplicates
+ */
+export function isDuplicate(
+  record1: { plant_id?: string; meter_id?: string; measured_at: number },
+  record2: { plant_id?: string; meter_id?: string; measured_at: number },
+  toleranceMs = 1000
+): boolean {
+  // Plant IDs must match (or both undefined)
+  if (record1.plant_id !== record2.plant_id) {
+    return false;
+  }
+
+  // Meter IDs must match (or both undefined)
+  if (record1.meter_id !== record2.meter_id) {
+    return false;
+  }
+
+  // Measured timestamps must be within tolerance
+  const timeDiff = Math.abs(record1.measured_at - record2.measured_at);
+  return timeDiff <= toleranceMs;
+}
+
+/**
+ * Generate deduplication key for ph_ec_readings
+ * Buckets measured_at to nearest second for server-side uniqueness check
+ *
+ * @param plantId - Plant ID (optional)
+ * @param meterId - Meter ID (optional)
+ * @param measuredAtMs - Measured timestamp in milliseconds
+ * @returns Deduplication key string
+ */
+export function generateDeduplicationKey(
+  plantId: string | undefined,
+  meterId: string | undefined,
+  measuredAtMs: number
+): string {
+  const bucketedSeconds = Math.floor(measuredAtMs / 1000);
+  return `${plantId || 'null'}_${meterId || 'null'}_${bucketedSeconds}`;
 }
