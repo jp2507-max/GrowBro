@@ -240,7 +240,7 @@ export type Reservoir = {
   targetEcMin25c: number; // mS/cm @25°C
   targetEcMax25c: number; // mS/cm @25°C
   ppmScale: PpmScale;
-  sourceWaterProfileId?: string;
+  sourceWaterProfileId?: string | null;
   playbookBinding?: string;
   createdAt: number; // epoch ms
   updatedAt: number; // epoch ms

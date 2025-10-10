@@ -37,7 +37,7 @@ export class ReservoirModel extends Model {
   /** PPM scale preference: '500' or '700' */
   @text('ppm_scale') ppmScale!: string;
 
-  @text('source_water_profile_id') sourceWaterProfileId?: string;
+  @text('source_water_profile_id') sourceWaterProfileId?: string | null;
 
   /** Optional playbook binding for medium-specific guidance */
   @text('playbook_binding') playbookBinding?: string;

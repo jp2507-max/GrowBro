@@ -11,6 +11,7 @@ import { updateTask } from '@/lib/task-manager';
 import type { DeviationAlert } from '../types';
 import {
   AdjustmentAction,
+  type AdjustmentUndoState,
   applyAdjustments,
   proposeAdjustments,
   revertAdjustments,
@@ -47,7 +48,6 @@ describe('schedule-adjustment-service', () => {
     const mockAlert: DeviationAlert = {
       id: 'alert-1',
       readingId: 'reading-1',
-      reservoirId: 'reservoir-1',
       type: 'ec_high',
       severity: 'warning',
       message: 'EC is above target range',
@@ -127,14 +127,16 @@ describe('schedule-adjustment-service', () => {
 
     test('respects maxTasks parameter', async () => {
       const mockQuery = mockTasksCollection.query();
-      mockQuery.fetch.mockResolvedValue(mockTasks);
+      // Mock fetch to return only 1 task when maxTasks is 1
+      mockQuery.fetch.mockResolvedValue([mockTasks[0]]);
 
-      await proposeAdjustments(mockDatabase, {
+      const proposal = await proposeAdjustments(mockDatabase, {
         alert: mockAlert,
         plantId: 'plant-1',
         maxTasks: 1,
       });
 
+      expect(proposal.proposedAdjustments).toHaveLength(1);
       // Verify Q.take was called with correct limit
       expect(mockTasksCollection.query).toHaveBeenCalled();
     });
@@ -219,7 +221,7 @@ describe('schedule-adjustment-service', () => {
 
       expect(result.undo).toBeDefined();
       expect(result.undo.operation).toBe('update');
-      expect(result.undo.previousEvents).toHaveLength(1);
+      expect(result.undo.previousTasks).toHaveLength(1);
     });
 
     test('handles task update errors', async () => {
@@ -266,14 +268,29 @@ describe('schedule-adjustment-service', () => {
   });
 
   describe('revertAdjustments', () => {
-    const mockUndo = {
-      scheduleId: 'manual-adjustment',
-      operation: 'update' as const,
-      previousEvents: [
+    const mockUndo: AdjustmentUndoState = {
+      adjustmentId: 'manual-adjustment',
+      operation: 'update',
+      previousTasks: [
         {
           id: 'task-1',
+          seriesId: 'series-1',
+          title: 'Feed - veg phase',
           description: 'Original instructions',
+          dueAtLocal: '2025-01-15T09:00:00Z',
+          dueAtUtc: '2025-01-15T09:00:00Z',
+          timezone: 'UTC',
+          reminderAtLocal: undefined,
+          reminderAtUtc: undefined,
+          plantId: 'plant-1',
+          status: 'pending',
+          completedAt: undefined,
           metadata: { type: 'feeding' },
+          serverRevision: undefined,
+          serverUpdatedAtMs: undefined,
+          createdAt: '2025-01-01T00:00:00Z',
+          updatedAt: '2025-01-01T00:00:00Z',
+          deletedAt: undefined,
         },
       ],
       timestamp: Date.now(),
@@ -292,11 +309,11 @@ describe('schedule-adjustment-service', () => {
     });
 
     test('continues on revert failures', async () => {
-      const multipleUndo = {
+      const multipleUndo: AdjustmentUndoState = {
         ...mockUndo,
-        previousEvents: [
-          mockUndo.previousEvents[0],
-          { ...mockUndo.previousEvents[0], id: 'task-2' },
+        previousTasks: [
+          mockUndo.previousTasks[0],
+          { ...mockUndo.previousTasks[0], id: 'task-2' },
         ],
       };
 

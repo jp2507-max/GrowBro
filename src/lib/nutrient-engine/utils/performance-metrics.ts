@@ -189,8 +189,11 @@ export function calculateCorrectionMetrics(
 
   correctionTimes.sort((a, b) => a - b);
 
-  const medianIndex = Math.floor(correctionTimes.length / 2);
-  const medianCorrectionTimeMs = correctionTimes[medianIndex];
+  const length = correctionTimes.length;
+  const medianCorrectionTimeMs =
+    length % 2 === 0
+      ? (correctionTimes[length / 2 - 1] + correctionTimes[length / 2]) / 2
+      : correctionTimes[Math.floor(length / 2)];
   const averageCorrectionTimeMs =
     correctionTimes.reduce((sum, time) => sum + time, 0) /
     correctionTimes.length;

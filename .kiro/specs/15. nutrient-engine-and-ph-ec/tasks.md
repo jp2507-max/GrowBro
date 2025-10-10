@@ -143,15 +143,15 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - Test calibration impact on reading reliability assessment
     - _Requirements: 2.7, 8.4_
 
-- [ ] 8. Build source water profile management
-  - [ ] 8.1 Implement source water profile CRUD
+- [x] 8. Build source water profile management
+  - [x] 8.1 Implement source water profile CRUD
     - Track alkalinity (mg/L as CaCO₃) & baseline EC@25°C; annual reminder to retest
     - Add alkalinity, hardness, and baseline EC tracking
     - Implement profile assignment to reservoirs
     - Build annual testing reminder system
     - _Requirements: 8.1, 8.2, 8.5_
 
-  - [ ] 8.2 Add alkalinity-based pH drift warnings
+  - [x] 8.2 Add alkalinity-based pH drift warnings
     - Show pH drift risk warnings for ≥120–150 mg/L alkalinity with educational guidance
     - Create pH drift risk warnings and mitigation guidance
     - Add educational content about alkalinity impact on pH

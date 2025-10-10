@@ -8,11 +8,13 @@
  */
 
 import type { Database } from '@nozbe/watermelondb';
+import { DateTime } from 'luxon';
 
 import type { CreateTaskInput } from '@/lib/task-manager';
 import { createTask } from '@/lib/task-manager';
 import { TaskNotificationManager } from '@/lib/tasks/task-notification-manager';
 import type { TaskModel } from '@/lib/watermelon-models/task';
+import type { Task } from '@/types/calendar';
 
 import type { FeedingSchedule } from './schedule-service';
 import { createCalendarTaskFromEvent } from './schedule-service';
@@ -72,16 +74,20 @@ export async function generateFeedingTasks(
       const taskData = createCalendarTaskFromEvent(event, ppmScale);
 
       // Calculate reminder time (30 minutes before due time)
-      const dueDate = new Date(taskData.dueDate);
-      const reminderDate = new Date(dueDate.getTime() - 30 * 60 * 1000);
+      const dueDateTime = DateTime.fromISO(taskData.dueDate, {
+        zone: timezone,
+      });
+      const reminderDateTime = dueDateTime.minus({ minutes: 30 });
 
       // Create task input
       const taskInput: CreateTaskInput = {
         title: taskData.title,
         description: taskData.description,
         timezone,
-        dueAtLocal: dueDate.toISOString(),
-        reminderAtLocal: reminderDate.toISOString(),
+        dueAtLocal: dueDateTime.toISO(),
+        dueAtUtc: dueDateTime.toUTC().toISO(),
+        reminderAtLocal: reminderDateTime.toISO(),
+        reminderAtUtc: reminderDateTime.toUTC().toISO(),
         plantId: taskData.plantId,
         metadata: {
           ...taskData.metadata,
@@ -132,13 +138,44 @@ export async function generateFeedingTasks(
  * Updates schedule state when feeding task is completed.
  * Stores completion timestamp and actual measurements if provided.
  *
- * @param taskId - Completed task ID
+ * @param eventId - Completed event ID
  * @param schedule - Associated feeding schedule
  * @param measurements - Optional pH/EC measurements taken during feeding
  * @returns Updated schedule
  */
 export async function logFeedingCompletion(
-  taskId: string,
+  eventId: string,
+  schedule: FeedingSchedule,
+  measurements?: {
+    ph?: number;
+    ec25c?: number;
+    tempC?: number;
+  }
+): Promise<FeedingSchedule>;
+
+/**
+ * Log feeding event completion from task
+ *
+ * Updates schedule state when feeding task is completed.
+ * Extracts eventId from task metadata and stores completion data.
+ *
+ * @param task - Completed task with eventId in metadata
+ * @param schedule - Associated feeding schedule
+ * @param measurements - Optional pH/EC measurements taken during feeding
+ * @returns Updated schedule
+ */
+export async function logFeedingCompletion(
+  task: Task,
+  schedule: FeedingSchedule,
+  measurements?: {
+    ph?: number;
+    ec25c?: number;
+    tempC?: number;
+  }
+): Promise<FeedingSchedule>;
+
+export async function logFeedingCompletion(
+  eventIdOrTask: string | Task,
   schedule: FeedingSchedule,
   measurements?: {
     ph?: number;
@@ -146,14 +183,21 @@ export async function logFeedingCompletion(
     tempC?: number;
   }
 ): Promise<FeedingSchedule> {
-  // Find the event associated with this task
-  const eventIndex = schedule.events.findIndex(
-    (e) =>
-      `${schedule.plantId}-${schedule.templateId}-${e.phase.phase}` === taskId
-  );
+  // Extract eventId from task metadata or use directly
+  const eventId =
+    typeof eventIdOrTask === 'string'
+      ? eventIdOrTask
+      : (eventIdOrTask.metadata?.eventId as string);
+
+  if (!eventId) {
+    throw new Error('Event ID not found in task metadata or not provided');
+  }
+
+  // Find the event associated with this eventId
+  const eventIndex = schedule.events.findIndex((e) => e.id === eventId);
 
   if (eventIndex === -1) {
-    throw new Error(`Task ${taskId} not found in schedule ${schedule.id}`);
+    throw new Error(`Event ${eventId} not found in schedule ${schedule.id}`);
   }
 
   // Update event with completion data

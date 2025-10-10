@@ -289,6 +289,7 @@ jest.mock('@nozbe/watermelondb/decorators', () => {
     date: makeFactory(),
     json: makeFactory(),
     field: makeFactory(),
+    relation: makeFactory(),
     readonly: makeDecorator(),
   };
 });

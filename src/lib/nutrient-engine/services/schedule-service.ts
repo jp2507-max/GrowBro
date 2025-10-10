@@ -111,7 +111,7 @@ export async function generateSchedule(
       const eventDate = currentDate.plus({ days: i * feedingFrequencyDays });
 
       const event: FeedingEvent = {
-        id: `${plantId}-${templateId}-${phaseIndex}-${i}`,
+        id: `${plantId}-${templateId}-${_phaseIndex}-${i}`,
         plantId,
         templateId,
         phase,

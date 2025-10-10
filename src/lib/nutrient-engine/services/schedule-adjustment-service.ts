@@ -15,7 +15,6 @@ import type { TaskModel } from '@/lib/watermelon-models/task';
 import type { Task } from '@/types/calendar';
 
 import type { DeviationAlert } from '../types';
-import type { ScheduleUndoState } from './schedule-service';
 
 /**
  * Adjustment action types
@@ -56,12 +55,22 @@ export type AdjustmentProposal = {
 };
 
 /**
+ * Undo state for adjustment operations
+ */
+export type AdjustmentUndoState = {
+  adjustmentId: string;
+  operation: 'update';
+  previousTasks: Task[];
+  timestamp: number; // epoch ms
+};
+
+/**
  * Adjustment application result
  */
 export type AdjustmentApplicationResult = {
   tasksUpdated: number;
   taskIds: string[];
-  undo: ScheduleUndoState;
+  undo: AdjustmentUndoState;
   errors: { taskId: string; error: string }[];
 };
 
@@ -140,9 +149,9 @@ export async function applyAdjustments(
     tasksUpdated: 0,
     taskIds: [],
     undo: {
-      scheduleId: 'manual-adjustment',
+      adjustmentId: 'manual-adjustment',
       operation: 'update',
-      previousEvents: [],
+      previousTasks: [],
       timestamp: Date.now(),
     },
     errors: [],
@@ -158,10 +167,10 @@ export async function applyAdjustments(
       const currentTask = modelToTask(taskModel);
 
       // Store previous state for undo
-      result.undo.previousEvents.push({
+      result.undo.previousTasks.push({
         ...currentTask,
         id: proposal.taskId,
-      } as any);
+      });
 
       // Update task with new instructions
       await updateTask(proposal.taskId, {
@@ -198,20 +207,20 @@ export async function applyAdjustments(
  */
 export async function revertAdjustments(
   database: Database,
-  undo: ScheduleUndoState
+  undo: AdjustmentUndoState
 ): Promise<number> {
   let revertedCount = 0;
 
-  for (const previousEvent of undo.previousEvents) {
+  for (const previousTask of undo.previousTasks) {
     try {
-      await updateTask(previousEvent.id, {
-        description: (previousEvent as any).description,
-        metadata: (previousEvent as any).metadata,
+      await updateTask(previousTask.id, {
+        description: previousTask.description,
+        metadata: previousTask.metadata,
       });
 
       revertedCount++;
     } catch (error) {
-      console.warn(`Failed to revert task ${previousEvent.id}:`, error);
+      console.warn(`Failed to revert task ${previousTask.id}:`, error);
     }
   }
 

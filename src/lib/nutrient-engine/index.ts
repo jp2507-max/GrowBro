@@ -91,6 +91,61 @@ export {
   scheduleAlertNotification,
 } from './services/alert-notification-service';
 
+// Export reservoir services
+export {
+  assignSourceWaterProfile,
+  createReservoir,
+  type CreateReservoirData,
+  deleteReservoir,
+  getReservoir,
+  listReservoirs,
+  modelToReservoir,
+  observeReservoir,
+  observeReservoirs,
+  updateReservoir,
+  type UpdateReservoirData,
+} from './services/reservoir-service';
+
+// Export source water profile services
+export {
+  createSourceWaterProfile,
+  type CreateSourceWaterProfileData,
+  deleteSourceWaterProfile,
+  getSourceWaterProfile,
+  listSourceWaterProfiles,
+  modelToSourceWaterProfile,
+  observeSourceWaterProfile,
+  observeSourceWaterProfiles,
+  updateSourceWaterProfile,
+  type UpdateSourceWaterProfileData,
+} from './services/source-water-profile-service';
+
+// Export alkalinity warning utilities
+export {
+  ALKALINITY_THRESHOLDS,
+  type AlkalinityRiskLevel,
+  type AlkalinityWarning,
+  getAlkalinityEducationalContent,
+  getAlkalinityRiskLevel,
+  getAlkalinityTestingGuidance,
+  getAlkalinityWarning,
+  shouldShowAlkalinityWarning,
+} from './utils/alkalinity-warnings';
+
+// Export annual reminder utilities
+export {
+  ANNUAL_REMINDER_INTERVAL_MS,
+  EARLY_REMINDER_THRESHOLD_MS,
+  getAnnualTestingEducationalContent,
+  getDaysOverdue,
+  getDaysUntilReminder,
+  getReminderMessage,
+  getWaterTestingChecklist,
+  type ReminderMessage,
+  shouldShowAnnualReminder,
+  shouldShowEarlyReminder,
+} from './utils/annual-reminder';
+
 // Export hooks
 export type { UseAlertEvaluationReturn } from './hooks/use-alert-evaluation';
 export { useAlertEvaluation } from './hooks/use-alert-evaluation';

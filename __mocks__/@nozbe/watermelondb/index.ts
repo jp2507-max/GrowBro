@@ -24,7 +24,8 @@ function mapFieldName(field: string): string {
 type WhereCond =
   | { key: string; value: any }
   | { key: string; $oneOf: any[] }
-  | { key: string; $notEq: any };
+  | { key: string; $notEq: any }
+  | { key: string; $like: string };
 
 // Minimal Model base class so modelClasses can extend it without side effects
 export class Model {}
@@ -38,6 +39,9 @@ export const Q = {
     if (typeof value === 'object' && value && '$notEq' in value) {
       return { key, $notEq: value.$notEq };
     }
+    if (typeof value === 'object' && value && '$like' in value) {
+      return { key, $like: value.$like };
+    }
     return { key, value };
   },
   notEq(value: any): { $notEq: any } {
@@ -45,6 +49,9 @@ export const Q = {
   },
   oneOf(values: any[]): { $oneOf: any[] } {
     return { $oneOf: values };
+  },
+  like(pattern: string): { $like: string } {
+    return { $like: pattern };
   },
   sortBy(
     key: string,
@@ -88,6 +95,15 @@ function filterResults(store: any[], filters: WhereCond[]): any[] {
         return c.$oneOf.includes((row as any)[key]);
       } else if ('$notEq' in c) {
         return (row as any)[key] !== c.$notEq;
+      } else if ('$like' in c) {
+        // For metadata field, convert object to JSON string for like comparison
+        let rowValue = (row as any)[key];
+        if (key === 'metadata' && typeof rowValue === 'object') {
+          rowValue = JSON.stringify(rowValue);
+        }
+        rowValue = String(rowValue);
+        const pattern = c.$like.replace(/%/g, '');
+        return rowValue.includes(pattern);
       } else {
         return (row as any)[key] === c.value;
       }
@@ -129,6 +145,57 @@ function createPlaceholderRecord(id: string): any {
   return rec as any;
 }
 
+// Query chain builder for makeCollection
+function buildQueryChain(
+  store: any[],
+  initialConds: (
+    | WhereCond
+    | { $sortBy: { key: string; direction: 'asc' | 'desc' } }
+    | { $take: number }
+  )[]
+) {
+  const allConditions: typeof initialConds = [...initialConds];
+
+  const chain = {
+    where: (k: string, v: any) => {
+      allConditions.push(
+        typeof v === 'object' && v && '$like' in v
+          ? { key: k, $like: v.$like }
+          : { key: k, value: v }
+      );
+      return chain;
+    },
+    sortBy: (k: string, dir: any) => {
+      allConditions.push({
+        $sortBy: { key: k, direction: dir === Q.asc ? 'asc' : 'desc' },
+      });
+      return chain;
+    },
+    take: (count: number) => {
+      allConditions.push({ $take: count });
+      return chain;
+    },
+    async fetch() {
+      const filters = allConditions.filter((c) => 'key' in c) ?? [];
+      const sortBy = allConditions.find((c) => '$sortBy' in c)?.$sortBy;
+      const take = allConditions.find((c) => '$take' in c)?.$take;
+
+      let results = filterResults(store, filters);
+
+      if (sortBy) {
+        results = sortResults(results, sortBy);
+      }
+
+      if (take) {
+        results = limitResults(results, take);
+      }
+
+      return results;
+    },
+  } as const;
+  return chain;
+}
+
 // Generic collection factory
 function makeCollection(initial: any[] = []) {
   const store: any[] = [...initial];
@@ -145,35 +212,8 @@ function makeCollection(initial: any[] = []) {
       store.push(rec);
       return rec;
     },
-    query: (
-      ...conds: (
-        | WhereCond
-        | { $sortBy: { key: string; direction: 'asc' | 'desc' } }
-        | { $take: number }
-      )[]
-    ) => {
-      const filters = conds.filter((c) => 'key' in c) ?? [];
-      const sortBy = conds.find((c) => '$sortBy' in c)?.$sortBy;
-      const take = conds.find((c) => '$take' in c)?.$take;
-
-      const chain = {
-        where: (_k: string, _v: any) => chain,
-        async fetch() {
-          let results = filterResults(store, filters);
-
-          if (sortBy) {
-            results = sortResults(results, sortBy);
-          }
-
-          if (take) {
-            results = limitResults(results, take);
-          }
-
-          return results;
-        },
-      } as const;
-      return chain;
-    },
+    query: (...initialConds: Parameters<typeof buildQueryChain>[1]) =>
+      buildQueryChain(store, initialConds),
     async find(id: string) {
       const idx = findIndexById(id);
       if (idx === -1) {

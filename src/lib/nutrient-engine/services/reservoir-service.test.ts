@@ -139,6 +139,15 @@ describe('reservoir-service', () => {
 
       const mockReservoir = {
         id: 'reservoir-1',
+        name: 'Original Name',
+        volumeL: 100,
+        targetPhMin: 5.5,
+        targetPhMax: 6.5,
+        targetEcMin25c: 1.2,
+        targetEcMax25c: 1.8,
+        ppmScale: '500',
+        sourceWaterProfileId: null,
+        playbookBinding: null,
         update: mockUpdate,
       };
 
@@ -154,6 +163,58 @@ describe('reservoir-service', () => {
       });
 
       expect(mockUpdate).toHaveBeenCalled();
+    });
+
+    it('should reject invalid pH range when updating one bound', async () => {
+      const mockReservoir = {
+        id: 'reservoir-1',
+        name: 'Test Reservoir',
+        volumeL: 100,
+        targetPhMin: 5.5,
+        targetPhMax: 6.5, // Existing max is 6.5
+        targetEcMin25c: 1.2,
+        targetEcMax25c: 1.8,
+        ppmScale: '500',
+        sourceWaterProfileId: null,
+        playbookBinding: null,
+      };
+
+      (database as any).get = jest.fn().mockReturnValue({
+        find: jest.fn().mockResolvedValue(mockReservoir),
+      });
+
+      // Try to update targetPhMin to 7.0, which would be > existing targetPhMax of 6.5
+      await expect(
+        updateReservoir('reservoir-1', {
+          targetPhMin: 7.0, // This should fail validation
+        })
+      ).rejects.toThrow('Target pH min must be less than pH max');
+    });
+
+    it('should reject invalid EC range when updating one bound', async () => {
+      const mockReservoir = {
+        id: 'reservoir-1',
+        name: 'Test Reservoir',
+        volumeL: 100,
+        targetPhMin: 5.5,
+        targetPhMax: 6.5,
+        targetEcMin25c: 1.2,
+        targetEcMax25c: 1.8, // Existing max is 1.8
+        ppmScale: '500',
+        sourceWaterProfileId: null,
+        playbookBinding: null,
+      };
+
+      (database as any).get = jest.fn().mockReturnValue({
+        find: jest.fn().mockResolvedValue(mockReservoir),
+      });
+
+      // Try to update targetEcMin25c to 2.0, which would be > existing targetEcMax25c of 1.8
+      await expect(
+        updateReservoir('reservoir-1', {
+          targetEcMin25c: 2.0, // This should fail validation
+        })
+      ).rejects.toThrow('Target EC min must be less than EC max');
     });
   });
 
@@ -203,6 +264,33 @@ describe('reservoir-service', () => {
         .mockImplementation((callback) => callback());
 
       await assignSourceWaterProfile('reservoir-1', 'profile-1');
+
+      expect(mockUpdate).toHaveBeenCalled();
+    });
+
+    it('should unassign profile from reservoir when null is passed', async () => {
+      const mockUpdate = jest.fn().mockImplementation((callback) => {
+        const updated = {
+          id: 'reservoir-1',
+          sourceWaterProfileId: null,
+        };
+        callback(updated);
+        return Promise.resolve(updated);
+      });
+
+      const mockReservoir = {
+        id: 'reservoir-1',
+        update: mockUpdate,
+      };
+
+      (database as any).get = jest.fn().mockReturnValue({
+        find: jest.fn().mockResolvedValue(mockReservoir),
+      });
+      (database as any).write = jest
+        .fn()
+        .mockImplementation((callback) => callback());
+
+      await assignSourceWaterProfile('reservoir-1', null);
 
       expect(mockUpdate).toHaveBeenCalled();
     });

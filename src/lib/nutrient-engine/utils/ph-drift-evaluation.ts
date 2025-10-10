@@ -107,17 +107,17 @@ export function hasPhDriftRisk(profile: SourceWaterProfile): boolean {
  * @returns Array of mitigation strategy keys (i18n)
  */
 export function getPhDriftMitigationStrategies(
-  riskLevel: PhDriftRiskLevel
+  riskLevel: PhDriftRiskLevelType
 ): string[] {
   switch (riskLevel) {
-    case PhDriftRiskLevel.MODERATE:
+    case 'moderate':
       return [
         'nutrient.phDrift.mitigation.monitorFrequently',
         'nutrient.phDrift.mitigation.bufferSolutions',
         'nutrient.phDrift.mitigation.gradualAdjustment',
       ];
 
-    case PhDriftRiskLevel.HIGH:
+    case 'high':
       return [
         'nutrient.phDrift.mitigation.monitorDaily',
         'nutrient.phDrift.mitigation.acidInjection',
@@ -125,7 +125,7 @@ export function getPhDriftMitigationStrategies(
         'nutrient.phDrift.mitigation.sulfuricAcid',
       ];
 
-    case PhDriftRiskLevel.NONE:
+    case 'none':
     default:
       return [];
   }

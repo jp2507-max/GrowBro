@@ -28,7 +28,7 @@ export type CreateReservoirData = {
   targetEcMin25c: number;
   targetEcMax25c: number;
   ppmScale: PpmScale;
-  sourceWaterProfileId?: string;
+  sourceWaterProfileId?: string | null;
   playbookBinding?: string;
 };
 
@@ -160,7 +160,7 @@ export async function updateReservoir(
       if (updates.ppmScale !== undefined) {
         record.ppmScale = updates.ppmScale;
       }
-      if (updates.sourceWaterProfileId !== undefined) {
+      if ('sourceWaterProfileId' in updates) {
         record.sourceWaterProfileId = updates.sourceWaterProfileId;
       }
       if (updates.playbookBinding !== undefined) {
@@ -314,7 +314,7 @@ export async function assignSourceWaterProfile(
   profileId: string | null
 ): Promise<ReservoirModel> {
   return await updateReservoir(reservoirId, {
-    sourceWaterProfileId: profileId || undefined,
+    sourceWaterProfileId: profileId,
   });
 }
 
