@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { Text, View } from 'react-native';
 
 import { cleanup, render, screen } from '@/lib/test-utils';
 import { HarvestStages } from '@/types/harvest';
@@ -12,24 +13,20 @@ import { HarvestStages } from '@/types/harvest';
 import { WeightChart } from './weight-chart';
 
 // Mock react-native-gifted-charts
-jest.mock('react-native-gifted-charts', () => {
-  const RN = require('react-native');
-
-  return {
-    LineChart: ({ data, testID }: any) => {
-      return (
-        <RN.View testID={testID || 'line-chart'}>
-          <RN.Text testID="chart-data-count">{data.length}</RN.Text>
-          {data.map((point: any, index: number) => (
-            <RN.Text key={index} testID={`chart-point-${index}`}>
-              {point.value}
-            </RN.Text>
-          ))}
-        </RN.View>
-      );
-    },
-  };
-});
+jest.mock('react-native-gifted-charts', () => ({
+  LineChart: ({ data, testID }: any) => {
+    return (
+      <View testID={testID || 'line-chart'}>
+        <Text testID="chart-data-count">{data.length}</Text>
+        {data.map((point: any, index: number) => (
+          <Text key={index} testID={`chart-point-${index}`}>
+            {point.value}
+          </Text>
+        ))}
+      </View>
+    );
+  },
+}));
 
 afterEach(() => {
   cleanup();

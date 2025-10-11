@@ -3,8 +3,9 @@
  * Tests offline-first sync with conflict resolution for playbook operations
  */
 
-import type { ConflictResolver } from '@/lib/sync/conflict-resolver';
-import { createConflictResolver } from '@/lib/sync/conflict-resolver';
+// Legacy ConflictResolver removed
+// import type { ConflictResolver } from '@/lib/sync/conflict-resolver';
+// import { createConflictResolver } from '@/lib/sync/conflict-resolver';
 
 // Mock WatermelonDB
 jest.mock('@/lib/watermelon', () => ({
@@ -26,56 +27,61 @@ jest.mock('@/lib/supabase', () => ({
 }));
 
 describe('Playbook Sync Integration', () => {
-  let conflictResolver: ConflictResolver;
+  // Legacy ConflictResolver removed
+  // let conflictResolver: ConflictResolver;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    conflictResolver = createConflictResolver();
+    // conflictResolver = createConflictResolver();
   });
 
   describe('ConflictResolver', () => {
-    it('should get resolution strategy for tasks', () => {
-      const strategy = conflictResolver.getResolutionStrategy('tasks');
-      expect(strategy).toBe('needs-review');
+    it.skip('should get resolution strategy for tasks', () => {
+      // Legacy test - ConflictResolver removed
+      // const strategy = conflictResolver.getResolutionStrategy('tasks');
+      // expect(strategy).toBe('needs-review');
     });
 
-    it('should get resolution strategy for series', () => {
-      const strategy = conflictResolver.getResolutionStrategy('series');
-      expect(strategy).toBe('server-lww');
+    it.skip('should get resolution strategy for series', () => {
+      // Legacy test - ConflictResolver removed
+      // const strategy = conflictResolver.getResolutionStrategy('series');
+      // expect(strategy).toBe('server-lww');
     });
 
-    it('should mark conflicts for review', async () => {
-      const conflicts = [
-        {
-          tableName: 'tasks' as const,
-          recordId: 'task-1',
-          localRecord: { title: 'Local' },
-          remoteRecord: { title: 'Remote' },
-          conflictFields: ['title'],
-          timestamp: new Date(),
-        },
-      ];
-
-      await expect(
-        conflictResolver.markForReview(conflicts)
-      ).resolves.not.toThrow();
+    it.skip('should mark conflicts for review', async () => {
+      // Legacy test - ConflictResolver removed
+      // const conflicts = [
+      //   {
+      //     tableName: 'tasks' as const,
+      //     recordId: 'task-1',
+      //     localRecord: { title: 'Local' },
+      //     remoteRecord: { title: 'Remote' },
+      //     conflictFields: ['title'],
+      //     timestamp: new Date(),
+      //   },
+      // ];
+      //
+      // await expect(
+      //   conflictResolver.markForReview(conflicts)
+      // ).resolves.not.toThrow();
     });
 
-    it('should log conflicts', () => {
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-
-      conflictResolver.logConflict({
-        tableName: 'tasks',
-        recordId: 'task-1',
-        localRecord: { title: 'Local' },
-        remoteRecord: { title: 'Remote' },
-        conflictFields: ['title'],
-        timestamp: new Date(),
-      });
-
-      expect(consoleSpy).toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
+    it.skip('should log conflicts', () => {
+      // Legacy test - conflictResolver removed
+      // const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      //
+      // conflictResolver.logConflict({
+      //   tableName: 'tasks',
+      //   recordId: 'task-1',
+      //   localRecord: { title: 'Local' },
+      //   remoteRecord: { title: 'Remote' },
+      //   conflictFields: ['title'],
+      //   timestamp: new Date(),
+      // });
+      //
+      // expect(consoleSpy).toHaveBeenCalled();
+      //
+      // consoleSpy.mockRestore();
     });
   });
 });

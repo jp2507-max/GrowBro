@@ -794,31 +794,62 @@
     }
   },
   "nutrient": {
+    "addNutrient": "Nährstoff hinzufügen",
+    "addPhase": "Phase hinzufügen",
     "add_first_reading": "Protokollieren Sie Ihre erste pH- und EC-Messung",
     "add_reading": "Messung hinzufügen",
     "add_reading_description": "Protokollieren Sie pH- und EC-Messungen für Ihren Anbau",
+    "adjustmentsPreview": "Anpassungsvorschau",
     "all_mediums": "Alle Substrate",
     "apply_learnings": "Erkenntnisse anwenden",
+    "atcEnabled": "ATC aktiviert",
     "atc_label": "Automatische Temperaturkompensation (ATC)",
     "bulk_shift_schedule": "Zeitplan verschieben",
     "by_author": "Von {{author}}",
     "cal_stale_warning": "Messgerät-Kalibrierung ist veraltet",
     "community_templates": "Community-Vorlagen",
+    "computed": "Berechnet",
     "computed_values": "Berechnete Werte",
+    "confidence": {
+      "high": "Hohe Zuverlässigkeit",
+      "low": "Niedrige Zuverlässigkeit",
+      "medium": "Mittlere Zuverlässigkeit"
+    },
+    "createTemplate": "Vorlage erstellen",
     "custom": "Benutzerdefiniert",
+    "durationDays": "Dauer (Tage)",
+    "ecOffset": "EC-Versatz",
+    "ecRange": "EC-Bereich @25°C",
+    "ecRaw": "EC (mS/cm)",
     "ec_label": "EC (mS/cm)",
+    "editTemplate": "Vorlage bearbeiten",
+    "event": {
+      "ecDelta": "EC-Änderung",
+      "ecDeltaHint": "Änderung des EC-Werts gegenüber der vorherigen Messung",
+      "logEvent": "Reservoir-Ereignis protokollieren",
+      "note": "Notizen",
+      "notePlaceholder": "Optionale Notizen zu diesem Ereignis...",
+      "phDelta": "pH-Änderung",
+      "phDeltaHint": "Änderung des pH-Werts gegenüber der vorherigen Messung",
+      "type": "Ereignistyp"
+    },
     "export_my_template": "Meine Vorlage exportieren",
     "filter_by_medium": "Nach Substrat filtern",
+    "growingMedium": "Anbausubstrat",
     "import_description": "Von der Community geteilte Vorlagen importieren",
     "import_template": "Vorlage importieren",
     "load_error": "Messungen konnten nicht geladen werden",
     "loading_readings": "Messungen werden geladen...",
+    "logMeasurement": "pH/EC-Messung protokollieren",
+    "max": "Max",
     "medium": {
       "coco": "Kokos",
       "dwc": "DWC",
       "hydro": "Hydro",
-      "soil": "Erde"
+      "soil": "Erde",
+      "soilless": "Erdlos"
     },
+    "min": "Min",
     "no_atc_warning": "Manuelle Temperaturkompensation angewendet",
     "no_community_templates": "Keine Community-Vorlagen verfügbar",
     "no_events_description": "Reservoiränderungen protokollieren, um Ihren Verlauf zu verfolgen",
@@ -827,30 +858,102 @@
     "no_templates_description": "Erstellen Sie Ihre erste Fütterungsvorlage",
     "no_templates_title": "Noch keine Vorlagen",
     "note_label": "Notizen",
+    "notes": "Notizen",
+    "notesPlaceholder": "Optionale Notizen zu dieser Messung...",
+    "nutrients": "Nährstoffe",
     "offline_queue": "{{count}} Messungen warten auf Synchronisierung",
     "performance_report": "Leistungsbericht",
-    "ph_label": "pH-Wert",
-    "phase": {
-      "flower": "Blüte",
-      "seedling": "Keimling",
-      "transition": "Übergang",
-      "veg": "Vegetativ"
+    "ph": "pH-Wert",
+    "phDrift": {
+      "disclaimer": "Nur pädagogische Anleitung • Kein professioneller Rat",
+      "highRisk": {
+        "message": "Ihr Wasser hat eine hohe Pufferkapazität. Erwarten Sie signifikante Aufwärts-pH-Drift im Laufe der Zeit.",
+        "title": "Hohes pH-Drift-Risiko"
+      },
+      "learnMore": "Mehr erfahren",
+      "mitigation": {
+        "acidInjection": "Säure-Injektionssystem in Betracht ziehen",
+        "adjustGradually": "Langsam anpassen, um Schock zu vermeiden",
+        "heading": "Minderungsstrategien",
+        "monitorPh": "pH täglich überwachen",
+        "monitorPhFrequently": "pH häufig überwachen",
+        "phBuffer": "pH-Pufferlösungen verwenden",
+        "roBlend": "RO-Wasser-Mischung in Betracht ziehen",
+        "sulfuricAcid": "Schwefelsäure für pH-Absenkung verwenden"
+      },
+      "moderateRisk": {
+        "message": "Ihr Wasser hat eine mäßige Pufferkapazität. Überwachen Sie pH regelmäßig, um Drift frühzeitig zu erkennen.",
+        "title": "Mäßiges pH-Drift-Risiko"
+      },
+      "waterAlkalinity": "Wasser-Alkalinität: {{value}} mg/L"
     },
+    "phOffset": "pH-Versatz",
+    "phRange": "pH-Bereich",
+    "ph_label": "pH-Wert",
+    "phase": "Phase",
+    "phaseType": "Phasentyp",
+    "phases": "Phasen",
+    "ppmScale": "PPM-Skala",
     "ppm_scale_label": "PPM-Skala",
+    "qualityFlags": {
+      "calStale": "Kalibrierung veraltet",
+      "noAtc": "Kein ATC",
+      "outlier": "Ausreißer",
+      "tempHigh": "Temperatur hoch"
+    },
     "quality_flags": "Qualitätsindikatoren",
     "reading_error": "Fehler beim Speichern der Messung",
     "reading_history": "Messungsverlauf",
     "reading_saved": "Messung erfolgreich gespeichert",
     "readings_count_one": "Messung",
     "readings_count_other": "Messungen",
+    "removePhase": "Phase entfernen",
+    "reservoir": {
+      "max": "Max",
+      "medium": "Anbaumedium",
+      "min": "Min",
+      "name": "Reservoir-Name",
+      "namePlaceholder": "z.B. Hauptreservoir",
+      "noReservoirs": "Keine Reservoirs gefunden",
+      "selectReservoir": "Reservoir auswählen",
+      "targetEc": "Ziel-EC (mS/cm @ 25°C)",
+      "targetPh": "Ziel-pH",
+      "validation": {
+        "nameRequired": "Name erforderlich"
+      },
+      "volume": "Volumen (L)"
+    },
     "reservoir_label": "Reservoir",
+    "saveProfile": "Profil speichern",
     "save_profile_prompt": "Als Profil speichern?",
     "save_reading": "Messung speichern",
+    "strainAdjustments": "Sortenanpassungen",
+    "strainAdjustmentsHelp": "Feinabstimmung der pH- und EC-Ziele für diese Sorte. Geben Sie positive oder negative Versätze ein.",
     "temp_high_warning": "Temperatur ≥28°C kann Genauigkeit beeinträchtigen",
     "temp_label": "Temperatur (°C)",
+    "temperature": "Temperatur (°C)",
+    "templateName": "Vorlagenname",
+    "templateNamePlaceholder": "z.B. Hydro-Wachstumszeitplan",
     "templates_count": "{{count}} Vorlagen",
     "time_range": "Zeitbereich",
-    "undo_shift": "Verschiebung rückgängig machen"
+    "undo_shift": "Verschiebung rückgängig machen",
+    "waterProfile": {
+      "form": {
+        "alkalinity": "Alkalinität",
+        "alkalinityHelper": "Wasseralkalinität beeinflusst die pH-Stabilität. Höhere Werte zeigen mehr Pufferkapazität an.",
+        "baselineEc": "Grundlinie EC",
+        "baselineEcHelper": "EC-Wert Ihres Quellwassers vor dem Hinzufügen von Nährstoffen (gemessen bei 25°C).",
+        "educationalNote": "💡 Diese Werte helfen dabei, pH-Abdrift vorherzusagen und Ihre Nährstofflösung zu optimieren.",
+        "hardness": "Härte",
+        "hardnessHelper": "Die Gesamthärte des Wassers zeigt den Mineralgehalt an, der die Nährstoffaufnahme der Pflanzen beeinflussen kann.",
+        "name": "Profilname",
+        "namePlaceholder": "z.B. Leitungswasserprofil",
+        "validation": {
+          "nameRequired": "Profilname ist erforderlich"
+        }
+      },
+      "title": "Wasserprofil"
+    }
   },
   "onboarding": {
     "allow_button": "Benachrichtigungen erlauben",
@@ -1258,6 +1361,7 @@
     "about": "Über",
     "app_name": "App-Name",
     "arabic": "Arabisch",
+    "cancel": "Abbrechen",
     "english": "Englisch",
     "general": "Allgemein",
     "german": "Deutsch",
@@ -1272,6 +1376,7 @@
     "privacy_policy": "Datenschutzerklärung",
     "privacy_section": "Datenschutz & Daten",
     "rate": "Bewerten",
+    "save_changes": "Änderungen speichern",
     "share": "Teilen",
     "support": "Support",
     "support_us": "Unterstütze uns",

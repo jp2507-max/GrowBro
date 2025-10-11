@@ -7,7 +7,7 @@
  * Requirements: 8.5
  */
 
-import type { SourceWaterProfile } from '../types';
+import type { SourceWaterProfile } from '@/lib/nutrient-engine/types';
 
 // ============================================================================
 // Constants

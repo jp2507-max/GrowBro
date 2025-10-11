@@ -57,12 +57,14 @@ export async function evaluateAndTriggerAlert(
   const activeAlerts = activeAlertsModels.map(modelToAlert);
 
   // Evaluate if alert should be triggered
-  const alertData = evaluateReadingAgainstTargets({
-    reading: currentReading,
-    reservoir: reservoirData,
-    recentReadings,
-    activeAlerts,
-  });
+  const alertData = evaluateReadingAgainstTargets(
+    currentReading,
+    reservoirData,
+    {
+      recentReadings,
+      activeAlerts,
+    }
+  );
 
   if (!alertData) {
     return null;

@@ -7,11 +7,11 @@ import { translate } from '@/lib';
 
 type ReservoirEvent = {
   id: string;
-  type: string;
-  phDelta?: number;
-  ecDelta?: number;
+  kind: string;
+  deltaPh?: number;
+  deltaEc?: number;
   note?: string;
-  occurredAt: number;
+  createdAt: number;
 };
 
 type Props = {
@@ -24,7 +24,7 @@ export function ReservoirEventHistory({
   testID,
 }: Props): React.ReactElement {
   const renderEvent = ({ item }: { item: ReservoirEvent }) => {
-    const dateTime = DateTime.fromMillis(item.occurredAt);
+    const dateTime = DateTime.fromMillis(item.createdAt);
     const dateStr = dateTime.toFormat('MMM dd, yyyy');
     const timeStr = dateTime.toFormat('HH:mm');
 
@@ -33,21 +33,21 @@ export function ReservoirEventHistory({
         <View className="flex-row items-start justify-between">
           <View className="flex-1">
             <Text className="text-base font-semibold text-neutral-900">
-              {item.type}
+              {item.kind}
             </Text>
-            {(item.phDelta !== undefined && item.phDelta !== 0) ||
-            (item.ecDelta !== undefined && item.ecDelta !== 0) ? (
+            {(item.deltaPh !== undefined && item.deltaPh !== 0) ||
+            (item.deltaEc !== undefined && item.deltaEc !== 0) ? (
               <View className="mt-1 flex-row gap-3">
-                {item.phDelta !== undefined && item.phDelta !== 0 && (
+                {item.deltaPh !== undefined && item.deltaPh !== 0 && (
                   <Text className="text-sm text-neutral-600">
-                    pH: {item.phDelta > 0 ? '+' : ''}
-                    {item.phDelta.toFixed(1)}
+                    pH: {item.deltaPh > 0 ? '+' : ''}
+                    {item.deltaPh.toFixed(1)}
                   </Text>
                 )}
-                {item.ecDelta !== undefined && item.ecDelta !== 0 && (
+                {item.deltaEc !== undefined && item.deltaEc !== 0 && (
                   <Text className="text-sm text-neutral-600">
-                    EC: {item.ecDelta > 0 ? '+' : ''}
-                    {item.ecDelta.toFixed(1)} mS/cm
+                    EC: {item.deltaEc > 0 ? '+' : ''}
+                    {item.deltaEc.toFixed(1)} mS/cm
                   </Text>
                 )}
               </View>

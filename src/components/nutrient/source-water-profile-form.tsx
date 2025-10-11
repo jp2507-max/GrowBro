@@ -1,19 +1,31 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import React from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import {
+  type Control,
+  Controller,
+  type FieldErrors,
+  useForm,
+} from 'react-hook-form';
 import { z } from 'zod';
 
 import { Button, Input, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
 
 const profileSchema = z.object({
-  name: z.string().min(1, 'Profile name is required'),
+  name: z.string().refine((val) => val.length > 0, {
+    message: translate('nutrient.waterProfile.form.validation.nameRequired'),
+  }),
   baselineEc25c: z.number().min(0).max(5.0),
   alkalinityMgPerL: z.number().min(0).max(500),
   hardnessMgPerL: z.number().min(0).max(1000),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
+
+type FieldProps = {
+  control: Control<ProfileFormData>;
+  errors?: FieldErrors<ProfileFormData>;
+};
 
 type Props = {
   defaultValues?: Partial<ProfileFormData>;
@@ -23,7 +35,7 @@ type Props = {
   testID?: string;
 };
 
-function BaselineECField({ control, errors }: any) {
+function BaselineECField({ control, errors }: FieldProps) {
   return (
     <>
       <Controller
@@ -36,7 +48,7 @@ function BaselineECField({ control, errors }: any) {
             keyboardType="decimal-pad"
             value={value?.toString() ?? ''}
             onChangeText={(text) => onChange(parseFloat(text) || 0)}
-            error={errors.baselineEc25c?.message}
+            error={errors?.baselineEc25c?.message}
             testID="baseline-ec-input"
           />
         )}
@@ -48,7 +60,7 @@ function BaselineECField({ control, errors }: any) {
   );
 }
 
-function AlkalinityField({ control, errors }: any) {
+function AlkalinityField({ control, errors }: FieldProps) {
   return (
     <>
       <Controller
@@ -61,7 +73,7 @@ function AlkalinityField({ control, errors }: any) {
             keyboardType="number-pad"
             value={value?.toString() ?? ''}
             onChangeText={(text) => onChange(parseInt(text, 10) || 0)}
-            error={errors.alkalinityMgPerL?.message}
+            error={errors?.alkalinityMgPerL?.message}
             testID="alkalinity-input"
           />
         )}
@@ -73,7 +85,7 @@ function AlkalinityField({ control, errors }: any) {
   );
 }
 
-function HardnessField({ control, errors }: any) {
+function HardnessField({ control, errors }: FieldProps) {
   return (
     <>
       <Controller
@@ -86,7 +98,7 @@ function HardnessField({ control, errors }: any) {
             keyboardType="number-pad"
             value={value?.toString() ?? ''}
             onChangeText={(text) => onChange(parseInt(text, 10) || 0)}
-            error={errors.hardnessMgPerL?.message}
+            error={errors?.hardnessMgPerL?.message}
             testID="hardness-input"
           />
         )}
@@ -98,7 +110,7 @@ function HardnessField({ control, errors }: any) {
   );
 }
 
-function WaterProfileFormFields({ control, errors }: any) {
+function WaterProfileFormFields({ control, errors }: FieldProps) {
   return (
     <>
       <Controller
@@ -112,7 +124,7 @@ function WaterProfileFormFields({ control, errors }: any) {
             )}
             value={value}
             onChangeText={onChange}
-            error={errors.name?.message}
+            error={errors?.name?.message}
             testID="name-input"
           />
         )}

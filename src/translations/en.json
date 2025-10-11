@@ -794,31 +794,62 @@
     }
   },
   "nutrient": {
+    "addNutrient": "Add Nutrient",
+    "addPhase": "Add Phase",
     "add_first_reading": "Log your first pH and EC measurement",
     "add_reading": "Add Reading",
     "add_reading_description": "Log pH and EC measurements for your grow",
+    "adjustmentsPreview": "Adjustments Preview",
     "all_mediums": "All Mediums",
     "apply_learnings": "Apply Learnings",
+    "atcEnabled": "ATC Enabled",
     "atc_label": "Automatic Temperature Compensation (ATC)",
     "bulk_shift_schedule": "Bulk Shift Schedule",
     "by_author": "By {{author}}",
     "cal_stale_warning": "Meter calibration is stale",
     "community_templates": "Community Templates",
+    "computed": "Computed",
     "computed_values": "Computed Values",
+    "confidence": {
+      "high": "High Confidence",
+      "low": "Low Confidence",
+      "medium": "Medium Confidence"
+    },
+    "createTemplate": "Create Template",
     "custom": "Custom",
+    "durationDays": "Duration (Days)",
+    "ecOffset": "EC Offset",
+    "ecRange": "EC Range @25°C",
+    "ecRaw": "EC (mS/cm)",
     "ec_label": "EC (mS/cm)",
+    "editTemplate": "Edit Template",
+    "event": {
+      "ecDelta": "EC Change",
+      "ecDeltaHint": "Change in EC level from previous reading",
+      "logEvent": "Log Reservoir Event",
+      "note": "Notes",
+      "notePlaceholder": "Optional notes about this event...",
+      "phDelta": "pH Change",
+      "phDeltaHint": "Change in pH level from previous reading",
+      "type": "Event Type"
+    },
     "export_my_template": "Export My Template",
     "filter_by_medium": "Filter by medium",
+    "growingMedium": "Growing Medium",
     "import_description": "Import templates shared by the community",
     "import_template": "Import Template",
     "load_error": "Failed to load readings",
     "loading_readings": "Loading readings...",
+    "logMeasurement": "Log pH/EC Measurement",
+    "max": "Max",
     "medium": {
       "coco": "Coco",
       "dwc": "DWC",
       "hydro": "Hydro",
-      "soil": "Soil"
+      "soil": "Soil",
+      "soilless": "Soilless"
     },
+    "min": "Min",
     "no_atc_warning": "Manual temperature compensation applied",
     "no_community_templates": "No community templates available",
     "no_events_description": "Log reservoir changes to track your history",
@@ -827,30 +858,102 @@
     "no_templates_description": "Create your first feeding template",
     "no_templates_title": "No templates yet",
     "note_label": "Notes",
+    "notes": "Notes",
+    "notesPlaceholder": "Optional notes about this reading...",
+    "nutrients": "Nutrients",
     "offline_queue": "{{count}} readings pending sync",
     "performance_report": "Performance Report",
-    "ph_label": "pH",
-    "phase": {
-      "flower": "Flower",
-      "seedling": "Seedling",
-      "transition": "Transition",
-      "veg": "Vegetative"
+    "ph": "pH",
+    "phDrift": {
+      "disclaimer": "Educational guidance only • Not professional advice",
+      "highRisk": {
+        "message": "Your water has high buffering capacity. Expect significant upward pH drift over time.",
+        "title": "High pH Drift Risk"
+      },
+      "learnMore": "Learn More",
+      "mitigation": {
+        "acidInjection": "Consider acid injection system",
+        "adjustGradually": "Adjust gradually to avoid shock",
+        "heading": "Mitigation Strategies",
+        "monitorPh": "Monitor pH daily",
+        "monitorPhFrequently": "Monitor pH frequently",
+        "phBuffer": "Use pH buffer solutions",
+        "roBlend": "Consider RO water blending",
+        "sulfuricAcid": "Use sulfuric acid for pH down"
+      },
+      "moderateRisk": {
+        "message": "Your water has moderate buffering capacity. Monitor pH regularly to catch drift early.",
+        "title": "Moderate pH Drift Risk"
+      },
+      "waterAlkalinity": "Water alkalinity: {{value}} mg/L"
     },
+    "phOffset": "pH Offset",
+    "phRange": "pH Range",
+    "ph_label": "pH",
+    "phase": "Phase",
+    "phaseType": "Phase Type",
+    "phases": "Phases",
+    "ppmScale": "PPM Scale",
     "ppm_scale_label": "PPM Scale",
+    "qualityFlags": {
+      "calStale": "Calibration Stale",
+      "noAtc": "No ATC",
+      "outlier": "Outlier",
+      "tempHigh": "Temperature High"
+    },
     "quality_flags": "Quality Flags",
     "reading_error": "Failed to save reading",
     "reading_history": "Reading History",
     "reading_saved": "Reading saved successfully",
     "readings_count_one": "reading",
     "readings_count_other": "readings",
+    "removePhase": "Remove Phase",
+    "reservoir": {
+      "max": "Max",
+      "medium": "Growing Medium",
+      "min": "Min",
+      "name": "Reservoir Name",
+      "namePlaceholder": "e.g. Main Reservoir",
+      "noReservoirs": "No reservoirs found",
+      "selectReservoir": "Select Reservoir",
+      "targetEc": "Target EC (mS/cm @ 25°C)",
+      "targetPh": "Target pH",
+      "validation": {
+        "nameRequired": "Name required"
+      },
+      "volume": "Volume (L)"
+    },
     "reservoir_label": "Reservoir",
+    "saveProfile": "Save Profile",
     "save_profile_prompt": "Save as profile?",
     "save_reading": "Save Reading",
+    "strainAdjustments": "Strain Adjustments",
+    "strainAdjustmentsHelp": "Fine-tune pH and EC targets for this strain. Enter positive or negative offsets.",
     "temp_high_warning": "Temperature ≥28°C may affect accuracy",
     "temp_label": "Temperature (°C)",
+    "temperature": "Temperature (°C)",
+    "templateName": "Template Name",
+    "templateNamePlaceholder": "e.g. Hydro Veg Schedule",
     "templates_count": "{{count}} templates",
     "time_range": "Time Range",
-    "undo_shift": "Undo Shift"
+    "undo_shift": "Undo Shift",
+    "waterProfile": {
+      "form": {
+        "alkalinity": "Alkalinity",
+        "alkalinityHelper": "Water alkalinity affects pH stability. Higher values indicate more buffering capacity.",
+        "baselineEc": "Baseline EC",
+        "baselineEcHelper": "EC level of your source water before adding nutrients (measured at 25°C).",
+        "educationalNote": "💡 These values help predict pH drift and optimize your nutrient solution.",
+        "hardness": "Hardness",
+        "hardnessHelper": "Total water hardness indicates mineral content that can affect plant nutrient uptake.",
+        "name": "Profile Name",
+        "namePlaceholder": "e.g. Tap Water Profile",
+        "validation": {
+          "nameRequired": "Profile name is required"
+        }
+      },
+      "title": "Water Profile"
+    }
   },
   "onboarding": {
     "allow_button": "Allow notifications",
@@ -1258,6 +1361,7 @@
     "about": "About",
     "app_name": "App Name",
     "arabic": "Arabic",
+    "cancel": "Cancel",
     "english": "English",
     "general": "General",
     "german": "German",
@@ -1272,6 +1376,7 @@
     "privacy_policy": "Privacy Policy",
     "privacy_section": "Privacy & data",
     "rate": "Rate",
+    "save_changes": "Save Changes",
     "share": "Share",
     "support": "Support",
     "support_us": "Support Us",

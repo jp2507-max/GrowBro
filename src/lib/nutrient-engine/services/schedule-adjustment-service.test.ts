@@ -54,6 +54,8 @@ describe('schedule-adjustment-service', () => {
       recommendations: ['Dilute nutrient solution', 'Recheck in 24h'],
       recommendationCodes: ['DILUTE_10PCT', 'RECHECK_24H'],
       triggeredAt: Date.now(),
+      createdAt: 1640995200000, // 2022-01-01 00:00:00 UTC
+      updatedAt: 1640995200000, // 2022-01-01 00:00:00 UTC
     };
 
     const mockTasks = [

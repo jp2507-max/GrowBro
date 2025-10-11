@@ -50,13 +50,14 @@ export const TEMP_HIGH_THRESHOLD = 28;
  * Evaluates a pH/EC reading against reservoir target ranges
  * Returns a deviation alert if out of bounds, considering deadbands, persistence, and cooldown
  */
-export function evaluateReadingAgainstTargets(options: {
-  reading: PhEcReading;
-  reservoir: Reservoir;
-  recentReadings: PhEcReading[];
-  activeAlerts: DeviationAlert[];
-}): DeviationAlert | null {
-  const { reading, reservoir, recentReadings, activeAlerts } = options;
+export function evaluateReadingAgainstTargets(
+  reading: PhEcReading,
+  reservoir: Reservoir,
+  options: {
+    recentReadings: PhEcReading[];
+    activeAlerts: DeviationAlert[];
+  }
+): DeviationAlert | null {
   const now = Date.now();
 
   // Check pH deviation
@@ -66,8 +67,8 @@ export function evaluateReadingAgainstTargets(options: {
       shouldTriggerAlert({
         alertType: phDeviation,
         currentReading: reading,
-        recentReadings,
-        activeAlerts,
+        recentReadings: options.recentReadings,
+        activeAlerts: options.activeAlerts,
         now,
         metric: 'ph',
       })
@@ -83,8 +84,8 @@ export function evaluateReadingAgainstTargets(options: {
       shouldTriggerAlert({
         alertType: ecDeviation,
         currentReading: reading,
-        recentReadings,
-        activeAlerts,
+        recentReadings: options.recentReadings,
+        activeAlerts: options.activeAlerts,
         now,
         metric: 'ec',
       })
@@ -96,7 +97,7 @@ export function evaluateReadingAgainstTargets(options: {
   // Check temperature warning
   if (reading.tempC >= TEMP_HIGH_THRESHOLD) {
     const tempAlertType: AlertType = 'temp_high';
-    if (!isInCooldown(tempAlertType, activeAlerts, now)) {
+    if (!isInCooldown(tempAlertType, options.activeAlerts, now)) {
       return createAlert(tempAlertType, reading, reservoir);
     }
   }

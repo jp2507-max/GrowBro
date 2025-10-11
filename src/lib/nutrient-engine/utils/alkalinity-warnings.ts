@@ -20,7 +20,7 @@ export const ALKALINITY_THRESHOLDS = {
   /** Low risk: < 100 mg/L - minimal pH drift expected */
   LOW_THRESHOLD: 100,
 
-  /** Moderate risk: 100-150 mg/L - watch for gradual pH rise */
+  /** Moderate risk: 120–150 mg/L - watch for gradual pH rise */
   MODERATE_THRESHOLD: 120,
 
   /** High risk: ≥ 150 mg/L - expect significant pH drift, adjust nutrients */

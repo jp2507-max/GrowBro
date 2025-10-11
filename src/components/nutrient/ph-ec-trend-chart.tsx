@@ -1,6 +1,7 @@
 import { FlashList } from '@shopify/flash-list';
 import { DateTime } from 'luxon';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Text, View } from '@/components/ui';
 
@@ -21,6 +22,12 @@ type Props = {
   phRange: { min: number; max: number };
   ecRange: { min: number; max: number };
   testID?: string;
+};
+
+type TimelineItem = {
+  type: 'reading' | 'event';
+  timestamp: number;
+  data: Reading | EventMarker;
 };
 
 function ReadingRow({
@@ -68,25 +75,94 @@ function ReadingRow({
   );
 }
 
+function EventMarkerRow({ event }: { event: EventMarker }): React.ReactElement {
+  const dateTime = DateTime.fromMillis(event.timestamp);
+
+  // Map event types to display info
+  const eventTypeMap: Record<
+    string,
+    { icon: string; label: string; color: string }
+  > = {
+    FILL: { icon: '💧', label: 'Fill', color: 'text-primary-600' },
+    DILUTE: { icon: '🌊', label: 'Dilute', color: 'text-primary-500' },
+    ADD_NUTRIENT: {
+      icon: '🧪',
+      label: 'Add Nutrient',
+      color: 'text-success-600',
+    },
+    PH_UP: { icon: '⬆️', label: 'pH Up', color: 'text-warning-600' },
+    PH_DOWN: { icon: '⬇️', label: 'pH Down', color: 'text-warning-600' },
+    CHANGE: { icon: '🔄', label: 'Change', color: 'text-neutral-600' },
+  };
+
+  const eventInfo = eventTypeMap[event.type] || {
+    icon: '📝',
+    label: event.type,
+    color: 'text-neutral-600',
+  };
+
+  return (
+    <View className="mb-2 rounded-lg border-l-4 border-primary-400 bg-primary-50 p-3">
+      <View className="flex-row items-center gap-2">
+        <Text className="text-base">{eventInfo.icon}</Text>
+        <View className="flex-1">
+          <Text className={`text-sm font-medium ${eventInfo.color}`}>
+            {eventInfo.label}
+          </Text>
+          <Text className="text-xs text-neutral-500">
+            {dateTime.toFormat('MMM dd, yyyy • HH:mm')}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function EmptyState({ testID }: { testID?: string }): React.ReactElement {
+  const { t } = useTranslation();
+
+  return (
+    <View className="items-center justify-center p-8" testID={testID}>
+      <Text className="text-center text-base text-neutral-600">
+        {t('nutrient.no_readings')}
+      </Text>
+      <Text className="mt-1 text-center text-sm text-neutral-500">
+        {t('nutrient.start_logging_ph_ec')}
+      </Text>
+    </View>
+  );
+}
+
+function createTimelineItems(
+  readings: Reading[],
+  events: EventMarker[]
+): TimelineItem[] {
+  return [
+    ...readings.map(
+      (r): TimelineItem => ({
+        type: 'reading',
+        timestamp: r.timestamp,
+        data: r,
+      })
+    ),
+    ...events.map(
+      (e): TimelineItem => ({ type: 'event', timestamp: e.timestamp, data: e })
+    ),
+  ].sort((a, b) => b.timestamp - a.timestamp); // Sort descending (most recent first)
+}
+
 export function PhEcTrendChart({
   readings,
-  events: _events,
+  events,
   phRange,
   ecRange,
   testID,
 }: Props): React.ReactElement {
-  if (readings.length === 0) {
-    return (
-      <View className="items-center justify-center p-8" testID={testID}>
-        <Text className="text-center text-base text-neutral-600">
-          No readings available
-        </Text>
-        <Text className="mt-1 text-center text-sm text-neutral-500">
-          Start logging pH and EC to see trends
-        </Text>
-      </View>
-    );
+  if (readings.length === 0 && events.length === 0) {
+    return <EmptyState testID={testID} />;
   }
+
+  const timelineItems = createTimelineItems(readings, events);
 
   return (
     <View testID={testID} className="flex-1">
@@ -104,10 +180,21 @@ export function PhEcTrendChart({
         </View>
       </View>
       <FlashList
-        data={readings}
-        renderItem={({ item }) => (
-          <ReadingRow reading={item} phRange={phRange} ecRange={ecRange} />
-        )}
+        data={timelineItems}
+        renderItem={({ item }) => {
+          if (item.type === 'reading') {
+            return (
+              <ReadingRow
+                reading={item.data as Reading}
+                phRange={phRange}
+                ecRange={ecRange}
+              />
+            );
+          }
+          return <EventMarkerRow event={item.data as EventMarker} />;
+        }}
+        keyExtractor={(item) => `${item.type}-${item.timestamp}`}
+        getItemType={(item) => item.type}
         className="px-4"
       />
     </View>

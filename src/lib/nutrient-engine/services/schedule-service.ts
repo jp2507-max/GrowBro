@@ -91,10 +91,13 @@ export async function generateSchedule(
   const templatesCollection =
     database.get<FeedingTemplateModel>('feeding_templates');
 
-  const template = await templatesCollection.find(templateId);
-
-  if (!template) {
-    throw new Error(`Template ${templateId} not found`);
+  let template: FeedingTemplateModel;
+  try {
+    template = await templatesCollection.find(templateId);
+  } catch (error) {
+    throw new Error(
+      `Template ${templateId} not found: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 
   const events: FeedingEvent[] = [];
@@ -149,7 +152,7 @@ export async function generateSchedule(
 /**
  * Calculate dose guidance for nutrients
  *
- * Computes ml additions based on reservoir volume.
+ * Computes ml additions based on reservoir volume for ml/L ratios only.
  * Includes safety disclaimers.
  *
  * @param nutrients - Nutrient ratios from phase
@@ -160,25 +163,22 @@ export function calculateDoseGuidance(
   nutrients: NutrientRatio[],
   reservoirVolumeL: number
 ): DoseGuidance {
-  const nutrientAdditions = nutrients.map((nutrient) => {
-    // Calculate total amount needed
-    const amountMl =
-      nutrient.unit === 'ml/L'
-        ? nutrient.value * reservoirVolumeL
-        : nutrient.value; // Already in absolute units
-
-    return {
-      nutrient: nutrient.nutrient,
-      amountMl: Math.round(amountMl * 10) / 10, // Round to 1 decimal
-      stockConcentration: `${nutrient.value} ${nutrient.unit}`,
-    };
-  });
+  const nutrientAdditions = nutrients
+    .filter((n) => n.unit === 'ml/L')
+    .map((nutrient) => {
+      const amountMl = nutrient.value * reservoirVolumeL;
+      return {
+        nutrient: nutrient.nutrient,
+        amountMl: Math.round(amountMl * 10) / 10, // Round to 1 decimal
+        stockConcentration: `${nutrient.value} ${nutrient.unit}`,
+      };
+    });
 
   return {
     reservoirVolumeL,
     nutrientAdditions,
     safetyNote:
-      'Educational guidance only. Always start with lower doses and increase gradually. Measure pH/EC after each addition.',
+      'Educational guidance only. Only ml/L ratios are auto-calculated. For other units (ppm, g/L), convert manually. Always start lower and measure pH/EC after each addition.',
   };
 }
 

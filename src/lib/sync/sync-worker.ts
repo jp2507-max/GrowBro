@@ -142,12 +142,12 @@ export class SyncWorker {
     pullEndpoint: (lastPulledAt: number | null) => Promise<SyncPullResponse>,
     lastPulledAt: number | null
   ) {
-    return async ({
-      lastPulledAt: localLastPulledAt,
-    }: {
-      lastPulledAt: number | null;
+    return async (_args: {
+      lastPulledAt?: number;
+      schemaVersion: number;
+      migration: any;
     }) => {
-      const timestamp = lastPulledAt ?? localLastPulledAt ?? null;
+      const timestamp = lastPulledAt ?? _args.lastPulledAt ?? null;
 
       if (this.config.enableLogging) {
         console.log('[SyncWorker] Pulling changes since:', timestamp);

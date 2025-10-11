@@ -1,6 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import React from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import React, { useMemo } from 'react';
+import {
+  type Control,
+  Controller,
+  type FieldErrors,
+  useForm,
+} from 'react-hook-form';
 import { z } from 'zod';
 
 import type { OptionType } from '@/components/ui';
@@ -8,19 +13,17 @@ import { Button, Input, Select, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
 import { GrowingMedium } from '@/lib/nutrient-engine/types';
 
-const reservoirSchema = z.object({
-  name: z.string().min(1, 'Name required'),
-  volumeL: z.number().min(1).max(10000),
-  medium: z.string(),
-  targetPhMin: z.number().min(0).max(14),
-  targetPhMax: z.number().min(0).max(14),
-  targetEcMin25c: z.number().min(0).max(10),
-  targetEcMax25c: z.number().min(0).max(10),
-  ppmScale: z.enum(['500', '700']),
-  sourceWaterProfileId: z.string().optional(),
-});
-
-type ReservoirFormData = z.infer<typeof reservoirSchema>;
+type ReservoirFormData = {
+  name: string;
+  volumeL: number;
+  medium: string;
+  targetPhMin: number;
+  targetPhMax: number;
+  targetEcMin25c: number;
+  targetEcMax25c: number;
+  ppmScale: '500' | '700';
+  sourceWaterProfileId?: string;
+};
 
 type Props = {
   defaultValues?: Partial<ReservoirFormData>;
@@ -31,22 +34,33 @@ type Props = {
   testID?: string;
 };
 
-const mediumOptions: OptionType[] = [
-  { value: GrowingMedium.SOIL, label: translate('nutrient.medium.soil') },
-  { value: GrowingMedium.COCO, label: translate('nutrient.medium.coco') },
-  { value: GrowingMedium.HYDRO, label: translate('nutrient.medium.hydro') },
-  {
-    value: GrowingMedium.SOILLESS,
-    label: translate('nutrient.medium.soilless'),
-  },
-];
+type PHRangeFieldsProps = {
+  control: Control<ReservoirFormData, any>;
+  errors: FieldErrors<ReservoirFormData>;
+};
+
+type ECRangeFieldsProps = {
+  control: Control<ReservoirFormData, any>;
+  errors: FieldErrors<ReservoirFormData>;
+};
+
+type BasicInfoFieldsProps = {
+  control: Control<ReservoirFormData, any>;
+  errors: FieldErrors<ReservoirFormData>;
+  mediumOptions: OptionType[];
+};
+
+type ConfigFieldsProps = {
+  control: Control<ReservoirFormData, any>;
+  waterProfileOptions: OptionType[];
+};
 
 const ppmScaleOptions: OptionType[] = [
   { value: '500', label: 'PPM 500 (NaCl/TDS)' },
   { value: '700', label: 'PPM 700 (442/KCl)' },
 ];
 
-function PHRangeFields({ control, errors }: any) {
+function PHRangeFields({ control, errors }: PHRangeFieldsProps) {
   return (
     <>
       <Text className="mt-2 text-sm font-medium text-neutral-700">
@@ -88,7 +102,7 @@ function PHRangeFields({ control, errors }: any) {
   );
 }
 
-function ECRangeFields({ control, errors }: any) {
+function ECRangeFields({ control, errors }: ECRangeFieldsProps) {
   return (
     <>
       <Text className="mt-2 text-sm font-medium text-neutral-700">
@@ -130,7 +144,11 @@ function ECRangeFields({ control, errors }: any) {
   );
 }
 
-function BasicInfoFields({ control, errors }: any) {
+function BasicInfoFields({
+  control,
+  errors,
+  mediumOptions,
+}: BasicInfoFieldsProps) {
   return (
     <>
       <Controller
@@ -211,13 +229,7 @@ function FormActions({
   );
 }
 
-function ConfigFields({
-  control,
-  waterProfileOptions,
-}: {
-  control: any;
-  waterProfileOptions: OptionType[];
-}) {
+function ConfigFields({ control, waterProfileOptions }: ConfigFieldsProps) {
   return (
     <>
       <Controller
@@ -253,6 +265,62 @@ function ConfigFields({
   );
 }
 
+function createReservoirSchema() {
+  return z
+    .object({
+      name: z
+        .string()
+        .min(1, translate('nutrient.reservoir.validation.nameRequired')),
+      volumeL: z.number().min(1).max(10000),
+      medium: z.string(),
+      targetPhMin: z.number().min(0).max(14),
+      targetPhMax: z.number().min(0).max(14),
+      targetEcMin25c: z.number().min(0).max(10),
+      targetEcMax25c: z.number().min(0).max(10),
+      ppmScale: z.enum(['500', '700']),
+      sourceWaterProfileId: z.string().optional(),
+    })
+    .superRefine((data, ctx) => {
+      if (data.targetPhMin >= data.targetPhMax) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Minimum pH must be less than maximum pH',
+          path: ['targetPhMin'],
+        });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Maximum pH must be greater than minimum pH',
+          path: ['targetPhMax'],
+        });
+      }
+
+      if (data.targetEcMin25c >= data.targetEcMax25c) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Minimum EC must be less than maximum EC',
+          path: ['targetEcMin25c'],
+        });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Maximum EC must be greater than minimum EC',
+          path: ['targetEcMax25c'],
+        });
+      }
+    });
+}
+
+function getMediumOptions(): OptionType[] {
+  return [
+    { value: GrowingMedium.SOIL, label: translate('nutrient.medium.soil') },
+    { value: GrowingMedium.COCO, label: translate('nutrient.medium.coco') },
+    { value: GrowingMedium.HYDRO, label: translate('nutrient.medium.hydro') },
+    {
+      value: GrowingMedium.SOILLESS,
+      label: translate('nutrient.medium.soilless'),
+    },
+  ];
+}
+
 export function ReservoirForm({
   defaultValues,
   waterProfiles = [],
@@ -261,6 +329,10 @@ export function ReservoirForm({
   isSubmitting = false,
   testID,
 }: Props): React.ReactElement {
+  const reservoirSchema = useMemo(() => createReservoirSchema(), []);
+
+  const mediumOptions: OptionType[] = useMemo(() => getMediumOptions(), []);
+
   const {
     control,
     handleSubmit,
@@ -287,7 +359,11 @@ export function ReservoirForm({
 
   return (
     <View className="gap-4 p-4" testID={testID}>
-      <BasicInfoFields control={control} errors={errors} />
+      <BasicInfoFields
+        control={control}
+        errors={errors}
+        mediumOptions={mediumOptions}
+      />
       <PHRangeFields control={control} errors={errors} />
       <ECRangeFields control={control} errors={errors} />
       <ConfigFields

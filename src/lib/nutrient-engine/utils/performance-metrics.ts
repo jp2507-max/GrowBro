@@ -565,12 +565,12 @@ export function generatePerformanceReport(options: {
   const targetBands = reservoir
     ? {
         ph: {
-          min: reservoir.targetPhMin || 5.4,
-          max: reservoir.targetPhMax || 6.4,
+          min: reservoir.targetPhMin ?? 5.4,
+          max: reservoir.targetPhMax ?? 6.4,
         },
         ec: {
-          min: reservoir.targetEcMin25c || 0.8,
-          max: reservoir.targetEcMax25c || 2.5,
+          min: reservoir.targetEcMin25c ?? 0.8,
+          max: reservoir.targetEcMax25c ?? 2.5,
         },
       }
     : calculateTargetBands(sortedReadings);

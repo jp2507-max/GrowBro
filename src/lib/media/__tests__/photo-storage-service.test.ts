@@ -1,5 +1,6 @@
 import { Directory, File, Paths } from 'expo-file-system';
 
+import * as photoHash from '../photo-hash';
 import {
   captureAndStore,
   cleanupOrphans,
@@ -223,7 +224,7 @@ describe('photo-storage-service', () => {
 
   describe('cleanupOrphans', () => {
     it('should delete orphaned files', async () => {
-      const { deleteFile } = require('../photo-hash');
+      const { deleteFile } = photoHash as jest.Mocked<typeof photoHash>;
       deleteFile.mockResolvedValue(true);
 
       const orphanPaths = ['file:///orphan1.jpg', 'file:///orphan2.jpg'];
@@ -234,7 +235,7 @@ describe('photo-storage-service', () => {
     });
 
     it('should handle deletion failures gracefully', async () => {
-      const { deleteFile } = require('../photo-hash');
+      const { deleteFile } = photoHash as jest.Mocked<typeof photoHash>;
       deleteFile
         .mockResolvedValueOnce(true)
         .mockResolvedValueOnce(false)

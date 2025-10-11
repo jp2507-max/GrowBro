@@ -4,11 +4,6 @@ import { getItem, setItem } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { computeBackoffMs } from '@/lib/sync/backoff';
 import {
-  buildConflict,
-  type Conflict,
-  createConflictResolver,
-} from '@/lib/sync/conflict-resolver';
-import {
   logEvent,
   recordDuration,
   recordPayloadSize,
@@ -820,32 +815,13 @@ function determineServerAuthorityWithRecordCheck(
   return serverIsAuthoritative;
 }
 
-function detectAndLogConflicts(
-  resolver: any,
-  table: TableName,
-  recordInfo: { existing: any; payload: any }
-): void {
-  const localSnapshot: Record<string, unknown> = { ...recordInfo.existing };
-
-  try {
-    const conflict: Conflict = buildConflict({
-      tableName: table,
-      recordId: recordInfo.existing.id,
-      localRecord: localSnapshot,
-      remoteRecord: recordInfo.payload,
-    });
-    if (conflict.conflictFields.length > 0) {
-      resolver.logConflict(conflict);
-    }
-  } catch {}
-}
-
 async function handleUpdate(
   table: TableName,
   existing: any,
   payload: any
 ): Promise<void> {
-  const resolver = createConflictResolver();
+  // Conflict resolver disabled - using direct resolution
+  // const resolver = createConflictResolver();
 
   // Pre-compute all values outside the synchronous update callback
   const { localRev, serverRev, localServerTs, serverServerTs } =
@@ -856,8 +832,8 @@ async function handleUpdate(
     { localRev, serverRev, localServerTs, serverServerTs }
   );
 
-  // Detect conflicts outside the update callback
-  detectAndLogConflicts(resolver, table, { existing, payload });
+  // Detect conflicts outside the update callback (disabled)
+  // detectAndLogConflicts(resolver, table, { existing, payload });
 
   // Perform synchronous update
   await existing.update((rec: any) => {

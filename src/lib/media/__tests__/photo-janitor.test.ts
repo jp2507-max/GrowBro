@@ -4,6 +4,7 @@ import * as FileSystem from 'expo-file-system';
 import { DEFAULT_PHOTO_STORAGE_CONFIG } from '@/types/photo-storage';
 
 import { cleanupLRU, initializeJanitor } from '../photo-janitor';
+import * as photoStorageService from '../photo-storage-service';
 
 jest.mock('expo-battery');
 jest.mock('expo-file-system');
@@ -54,11 +55,8 @@ describe('photo-janitor', () => {
         batteryState: Battery.BatteryState.CHARGING,
       });
 
-      const {
-        getAllPhotoFiles,
-        detectOrphans,
-        cleanupOrphans,
-      } = require('../photo-storage-service');
+      const { getAllPhotoFiles, detectOrphans, cleanupOrphans } =
+        photoStorageService as jest.Mocked<typeof photoStorageService>;
       getAllPhotoFiles.mockResolvedValue([]);
       detectOrphans.mockResolvedValue([]);
       cleanupOrphans.mockResolvedValue({
@@ -77,11 +75,8 @@ describe('photo-janitor', () => {
         batteryState: Battery.BatteryState.UNPLUGGED,
       });
 
-      const {
-        getAllPhotoFiles,
-        detectOrphans,
-        cleanupOrphans,
-      } = require('../photo-storage-service');
+      const { getAllPhotoFiles, detectOrphans, cleanupOrphans } =
+        photoStorageService as jest.Mocked<typeof photoStorageService>;
       getAllPhotoFiles.mockResolvedValue([]);
       detectOrphans.mockResolvedValue([]);
       cleanupOrphans.mockResolvedValue(0);
@@ -92,11 +87,8 @@ describe('photo-janitor', () => {
     });
 
     it('should detect and remove orphaned files', async () => {
-      const {
-        getAllPhotoFiles,
-        detectOrphans,
-        cleanupOrphans,
-      } = require('../photo-storage-service');
+      const { getAllPhotoFiles, detectOrphans, cleanupOrphans } =
+        photoStorageService as jest.Mocked<typeof photoStorageService>;
 
       getAllPhotoFiles.mockResolvedValue([
         { path: 'file:///photo1.jpg', size: 1024, modifiedAt: Date.now() },
@@ -117,11 +109,8 @@ describe('photo-janitor', () => {
     });
 
     it('should skip LRU cleanup if below threshold', async () => {
-      const {
-        getAllPhotoFiles,
-        detectOrphans,
-        cleanupOrphans,
-      } = require('../photo-storage-service');
+      const { getAllPhotoFiles, detectOrphans, cleanupOrphans } =
+        photoStorageService as jest.Mocked<typeof photoStorageService>;
 
       getAllPhotoFiles.mockResolvedValue([
         {
@@ -148,11 +137,8 @@ describe('photo-janitor', () => {
     });
 
     it('should delete oldest files when over threshold', async () => {
-      const {
-        getAllPhotoFiles,
-        detectOrphans,
-        cleanupOrphans,
-      } = require('../photo-storage-service');
+      const { getAllPhotoFiles, detectOrphans, cleanupOrphans } =
+        photoStorageService as jest.Mocked<typeof photoStorageService>;
 
       const now = Date.now();
       const oldFile = {
@@ -194,11 +180,8 @@ describe('photo-janitor', () => {
     });
 
     it('should protect recent photos from deletion', async () => {
-      const {
-        getAllPhotoFiles,
-        detectOrphans,
-        cleanupOrphans,
-      } = require('../photo-storage-service');
+      const { getAllPhotoFiles, detectOrphans, cleanupOrphans } =
+        photoStorageService as jest.Mocked<typeof photoStorageService>;
 
       const now = Date.now();
       const recentFile = {
@@ -228,11 +211,8 @@ describe('photo-janitor', () => {
     });
 
     it('should ignore protection period in aggressive mode', async () => {
-      const {
-        getAllPhotoFiles,
-        detectOrphans,
-        cleanupOrphans,
-      } = require('../photo-storage-service');
+      const { getAllPhotoFiles, detectOrphans, cleanupOrphans } =
+        photoStorageService as jest.Mocked<typeof photoStorageService>;
 
       const now = Date.now();
       const recentFile = {
@@ -262,7 +242,9 @@ describe('photo-janitor', () => {
     });
 
     it('should handle cleanup errors gracefully', async () => {
-      const { getAllPhotoFiles } = require('../photo-storage-service');
+      const { getAllPhotoFiles } = photoStorageService as jest.Mocked<
+        typeof photoStorageService
+      >;
 
       getAllPhotoFiles.mockRejectedValue(new Error('Storage error'));
 
@@ -277,11 +259,8 @@ describe('photo-janitor', () => {
     });
 
     it('should handle file deletion errors and continue', async () => {
-      const {
-        getAllPhotoFiles,
-        detectOrphans,
-        cleanupOrphans,
-      } = require('../photo-storage-service');
+      const { getAllPhotoFiles, detectOrphans, cleanupOrphans } =
+        photoStorageService as jest.Mocked<typeof photoStorageService>;
 
       const now = Date.now();
       const file1 = {
@@ -325,11 +304,8 @@ describe('photo-janitor', () => {
 
   describe('initializeJanitor', () => {
     it('should schedule cleanup after delay', async () => {
-      const {
-        getAllPhotoFiles,
-        detectOrphans,
-        cleanupOrphans,
-      } = require('../photo-storage-service');
+      const { getAllPhotoFiles, detectOrphans, cleanupOrphans } =
+        photoStorageService as jest.Mocked<typeof photoStorageService>;
 
       getAllPhotoFiles.mockResolvedValue([]);
       detectOrphans.mockResolvedValue([]);
@@ -360,7 +336,9 @@ describe('photo-janitor', () => {
     });
 
     it('should handle initialization errors gracefully', async () => {
-      const { getAllPhotoFiles } = require('../photo-storage-service');
+      const { getAllPhotoFiles } = photoStorageService as jest.Mocked<
+        typeof photoStorageService
+      >;
 
       getAllPhotoFiles.mockRejectedValue(new Error('Init failed'));
 

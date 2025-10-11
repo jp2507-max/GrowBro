@@ -146,6 +146,37 @@ export {
   shouldShowEarlyReminder,
 } from './utils/annual-reminder';
 
+// Export template services
+export {
+  applyStrainAdjustments,
+  createStarterTemplate,
+  createTemplate,
+  type CreateTemplateOptions,
+  deleteTemplate,
+  getDefaultPhaseConfig,
+  getTemplate,
+  listTemplates,
+  type StrainAdjustment,
+  TemplateValidationError,
+  updateTemplate,
+  type UpdateTemplateOptions,
+  validatePhase,
+  validateTemplate,
+} from './services/template-service';
+
+// Export schedule services
+export {
+  applyUndo,
+  calculateDoseGuidance,
+  createCalendarTaskFromEvent,
+  type DoseGuidance,
+  type FeedingEvent,
+  type FeedingSchedule,
+  generateSchedule,
+  type ScheduleUndoState,
+  shiftSchedule,
+} from './services/schedule-service';
+
 // Export hooks
 export type { UseAlertEvaluationReturn } from './hooks/use-alert-evaluation';
 export { useAlertEvaluation } from './hooks/use-alert-evaluation';

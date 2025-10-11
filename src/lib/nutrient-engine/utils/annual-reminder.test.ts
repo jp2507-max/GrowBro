@@ -102,7 +102,7 @@ describe('annual-reminder', () => {
       expect(shouldShowEarlyReminder(profile, currentTime)).toBe(false);
     });
 
-    it('should return false at exactly 335 days (31 days before)', () => {
+    it('should return false at exactly 334 days (31 days before)', () => {
       const currentTime = Date.now();
       const lastTestedAt = currentTime - 334 * ONE_DAY_MS;
 

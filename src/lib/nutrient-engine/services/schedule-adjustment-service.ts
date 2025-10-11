@@ -135,7 +135,8 @@ export async function proposeAdjustments(
  * Apply schedule adjustments after user confirmation
  *
  * Updates tasks with new instructions and creates undo state.
- * All updates are atomic within a single database transaction.
+ * Updates are performed one-by-one sequentially, with errors collected per-update.
+ * Callers should expect possible partial success rather than a single all-or-nothing transaction.
  *
  * @param database - WatermelonDB instance
  * @param proposals - Approved adjustment proposals

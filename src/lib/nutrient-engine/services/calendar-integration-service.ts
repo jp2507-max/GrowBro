@@ -74,7 +74,7 @@ export async function generateFeedingTasks(
       const taskData = createCalendarTaskFromEvent(event, ppmScale);
 
       // Calculate reminder time (30 minutes before due time)
-      const dueDateTime = DateTime.fromISO(taskData.dueDate, {
+      const dueDateTime = DateTime.fromMillis(taskData.dueDate, {
         zone: timezone,
       });
       const reminderDateTime = dueDateTime.minus({ minutes: 30 });
@@ -84,10 +84,10 @@ export async function generateFeedingTasks(
         title: taskData.title,
         description: taskData.description,
         timezone,
-        dueAtLocal: dueDateTime.toISO(),
-        dueAtUtc: dueDateTime.toUTC().toISO(),
-        reminderAtLocal: reminderDateTime.toISO(),
-        reminderAtUtc: reminderDateTime.toUTC().toISO(),
+        dueAtLocal: dueDateTime.toISO() || undefined,
+        dueAtUtc: dueDateTime.toUTC().toISO() || undefined,
+        reminderAtLocal: reminderDateTime.toISO() || undefined,
+        reminderAtUtc: reminderDateTime.toUTC().toISO() || undefined,
         plantId: taskData.plantId,
         metadata: {
           ...taskData.metadata,

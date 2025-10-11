@@ -158,30 +158,30 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - Test warning triggers and user guidance display
     - _Requirements: 8.2, 8.6_
 
-- [ ] 9. Create reservoir and event tracking
-  - [ ] 9.1 Implement reservoir management
+- [x] 9. Create reservoir and event tracking
+  - [x] 9.1 Implement reservoir management
     - Create reservoir CRUD operations with volume and medium tracking
     - Add target range configuration per reservoir
     - Implement source water profile assignment
     - Build reservoir selection and switching interface
     - _Requirements: 1.6, 2.8, 8.1_
 
-  - [ ] 9.2 Add reservoir event logging
+  - [x] 9.2 Add reservoir event logging
     - Create reservoir event tracking (fill, dilute, nutrient additions)
     - Implement event annotation on trend charts
     - Add undo capability for recent reservoir changes
     - Build event history for retrospective analysis
     - _Requirements: 2.5, 7.6_
 
-- [ ] 10. Build feeding template engine
-  - [ ] 10.1 Implement template CRUD operations
+- [x] 10. Build feeding template engine
+  - [x] 10.1 Implement template CRUD operations
     - Create functions for template creation, reading, updating, deletion
     - Validate ranges (pH min/max, EC@25°C min/max) per phase; forbid single-point targets
     - Implement per-strain adjustments and customization logic
     - Write unit tests for template operations and validation
     - _Requirements: 1.1, 1.2, 1.6, 4.7_
 
-  - [ ] 10.2 Build schedule generation from templates
+  - [x] 10.2 Build schedule generation from templates
     - Create feeding schedule generator from template phases
     - Bulk-shift with undo; include reservoir volume for dose guidance
     - Add reservoir volume integration for dose calculations
@@ -189,7 +189,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - Write integration tests for schedule generation and calendar integration
     - _Requirements: 1.4, 1.7, 1.8, 5.1_
 
-- [ ] 11. Implement calendar integration
+- [x] 11. Implement calendar integration
   - [ ] 11.1 Create feeding task generation
     - Include unit-resolved instructions (2.0 mS/cm @25°C • 1000 ppm [500])
     - Add pH/EC measurement reminders to feeding tasks
@@ -204,7 +204,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - Build integration with existing calendar system
     - _Requirements: 5.5, 5.6_
 
-- [ ] 12. Build trend visualization and reporting
+- [x] 12. Build trend visualization and reporting
   - [ ] 12.1 Create pH/EC trend charts
     - 7/30/90d charts with target band overlays + event annotations; use FlashList for reading lists
     - Add reservoir event annotations on timeline
@@ -212,7 +212,7 @@ The nutrient engine implements strategic composite indexing to optimize common q
     - Build export functionality for trend data
     - _Requirements: 2.5, 7.3_
 
-  - [ ] 12.2 Add feeding performance reports
+  - [x] 12.2 Add feeding performance reports
     - Compute % time within band, median time-to-correction; "Apply learnings" seeds next template
     - Implement % time within target bands calculation
     - Add median time-to-correction metrics

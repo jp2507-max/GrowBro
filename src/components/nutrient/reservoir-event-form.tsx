@@ -153,7 +153,7 @@ export function ReservoirEventForm({
       <View className="mt-4 flex-row gap-3">
         <Button
           variant="outline"
-          label={translate('settings.cancel')}
+          label={translate('common.cancel')}
           onPress={onCancel}
           className="flex-1"
           testID="cancel-button"

@@ -32,6 +32,8 @@ export class Model {}
 
 // Mock Q (Query) builder with only what we use
 export const Q = {
+  asc: 'asc',
+  desc: 'desc',
   where(key: string, value: any): WhereCond {
     if (typeof value === 'object' && value && '$oneOf' in value) {
       return { key, $oneOf: value.$oneOf };

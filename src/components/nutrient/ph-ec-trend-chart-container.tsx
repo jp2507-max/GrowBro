@@ -42,6 +42,7 @@ export function PhEcTrendChartContainer({
   onExportJSON,
   testID,
 }: Props): React.ReactElement {
+  const safeBase = testID ? `${testID}` : undefined;
   const [timeRange, setTimeRange] = React.useState('30');
 
   const now = Date.now();
@@ -62,7 +63,7 @@ export function PhEcTrendChartContainer({
           value={timeRange}
           onSelect={(value) => setTimeRange(String(value))}
           label={translate('nutrient.time_range')}
-          testID={`${testID}.timeRange`}
+          testID={safeBase ? `${safeBase}.timeRange` : undefined}
         />
         <View className="flex-row gap-2">
           {onExportCSV && (
@@ -71,7 +72,7 @@ export function PhEcTrendChartContainer({
               onPress={onExportCSV}
               variant="outline"
               size="sm"
-              testID={`${testID}.exportCSV`}
+              testID={safeBase ? `${safeBase}.exportCSV` : undefined}
             />
           )}
           {onExportJSON && (
@@ -80,7 +81,7 @@ export function PhEcTrendChartContainer({
               onPress={onExportJSON}
               variant="outline"
               size="sm"
-              testID={`${testID}.exportJSON`}
+              testID={safeBase ? `${safeBase}.exportJSON` : undefined}
             />
           )}
         </View>
@@ -90,7 +91,7 @@ export function PhEcTrendChartContainer({
         events={events}
         phRange={phRange}
         ecRange={ecRange}
-        testID={`${testID}.chart`}
+        testID={safeBase ? `${safeBase}.chart` : undefined}
       />
     </View>
   );

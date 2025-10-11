@@ -2,8 +2,18 @@
 import { useCallback, useState } from 'react';
 
 import { NoopAnalytics } from '@/lib/analytics';
-import type { Conflict } from '@/lib/sync/conflict-resolver';
+// Conflict type removed - legacy feature
+// import type { Conflict } from '@/lib/sync/conflict-resolver';
 import { database } from '@/lib/watermelon';
+
+// Stub Conflict type for backward compatibility
+type Conflict = {
+  tableName: string;
+  recordId: string;
+  conflictFields: string[];
+  localRecord?: Record<string, any>;
+  remoteRecord?: Record<string, any>;
+};
 
 type ConflictResolutionState = {
   conflicts: Conflict[];
@@ -37,7 +47,9 @@ export function useConflictResolution() {
         if (strategy === 'keep-local') {
           // Create a new mutation to restore local version
           await database.write(async () => {
-            const collection = database.collections.get(conflict.tableName);
+            const collection = database.collections.get(
+              conflict.tableName as any
+            );
             try {
               const record = await collection.find(conflict.recordId);
               await record.update((rec: any) => {
@@ -66,14 +78,16 @@ export function useConflictResolution() {
           });
 
           await NoopAnalytics.track('sync_conflict_resolved', {
-            table: conflict.tableName,
+            table: conflict.tableName as any,
             strategy: 'keep-local',
             field_count: conflict.conflictFields.length,
           });
         } else {
           // Accept server version - just clear the needsReview flag
           await database.write(async () => {
-            const collection = database.collections.get(conflict.tableName);
+            const collection = database.collections.get(
+              conflict.tableName as any
+            );
             try {
               const record = await collection.find(conflict.recordId);
               await record.update((rec: any) => {
@@ -93,7 +107,7 @@ export function useConflictResolution() {
           });
 
           await NoopAnalytics.track('sync_conflict_resolved', {
-            table: conflict.tableName,
+            table: conflict.tableName as any,
             strategy: 'accept-server',
             field_count: conflict.conflictFields.length,
           });
@@ -132,7 +146,7 @@ export function useConflictResolution() {
     });
 
     NoopAnalytics.track('sync_conflict_dismissed', {
-      table: conflict.tableName,
+      table: conflict.tableName as any,
       field_count: conflict.conflictFields.length,
     });
   }, []);

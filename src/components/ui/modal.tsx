@@ -48,6 +48,7 @@ import { Text } from './text';
 
 type ModalProps = BottomSheetModalProps & {
   title?: string;
+  testID?: string;
 };
 
 type ModalRef = React.ForwardedRef<BottomSheetModal>;
