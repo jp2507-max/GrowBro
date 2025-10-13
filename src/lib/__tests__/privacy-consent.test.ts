@@ -70,6 +70,7 @@ test('setPrivacyConsent merges, persists, updates lastUpdated and Sentry context
   const before = PrivacyConsentModule.getPrivacyConsent();
   PrivacyConsentModule.setPrivacyConsent({ analytics: true });
   await flushPromises();
+  expect(secureStoreMock.setSecureConfig).toHaveBeenCalled();
   const storedArgs = secureStoreMock.setSecureConfig.mock.calls[0][1];
   const after = PrivacyConsentModule.getPrivacyConsent();
 

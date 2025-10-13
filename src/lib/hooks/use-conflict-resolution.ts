@@ -128,10 +128,23 @@ export function useConflictResolution() {
                 ) {
                   const taskRec = typedRec as TaskModel;
                   // Handle both string (serialized) and object metadata formats
-                  const metadata =
-                    typeof taskRec.metadata === 'string'
-                      ? JSON.parse(taskRec.metadata)
-                      : taskRec.metadata;
+                  let metadata;
+                  try {
+                    metadata =
+                      typeof taskRec.metadata === 'string'
+                        ? JSON.parse(taskRec.metadata)
+                        : taskRec.metadata;
+                  } catch (parseError) {
+                    console.error(
+                      `Failed to parse metadata for task ${taskRec.id} in table ${conflict.tableName}:`,
+                      parseError
+                    );
+                    // Recover by treating metadata as empty object or fallback to existing object
+                    metadata =
+                      typeof taskRec.metadata === 'string'
+                        ? {}
+                        : taskRec.metadata;
+                  }
                   // Remove the needsReview flag to indicate conflict is resolved
                   delete metadata.needsReview;
                   // Update both the generic record and typed record with cleaned metadata
@@ -171,10 +184,23 @@ export function useConflictResolution() {
                   (typedRec as TaskModel).metadata
                 ) {
                   const taskRec = typedRec as TaskModel;
-                  const metadata =
-                    typeof taskRec.metadata === 'string'
-                      ? JSON.parse(taskRec.metadata)
-                      : taskRec.metadata;
+                  let metadata;
+                  try {
+                    metadata =
+                      typeof taskRec.metadata === 'string'
+                        ? JSON.parse(taskRec.metadata)
+                        : taskRec.metadata;
+                  } catch (parseError) {
+                    console.error(
+                      `Failed to parse metadata for task ${taskRec.id} in table ${conflict.tableName}:`,
+                      parseError
+                    );
+                    // Recover by treating metadata as empty object or fallback to existing object
+                    metadata =
+                      typeof taskRec.metadata === 'string'
+                        ? {}
+                        : taskRec.metadata;
+                  }
                   delete metadata.needsReview;
                   taskRec.metadata = metadata;
                 }

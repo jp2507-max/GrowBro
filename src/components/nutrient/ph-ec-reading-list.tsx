@@ -133,115 +133,164 @@ type ReadingListItemProps = {
   readonly onSelect?: (reading: PhEcReading) => void;
 };
 
-const ReadingListItemComponent = memo(
-  ({ item, onSelect }: ReadingListItemProps) => {
-    const { t } = useTranslation();
+// Subcomponents split from ReadingListItemComponent to adhere to modularity
+// guideline (~80 lines per component). Each subcomponent owns its
+// translations and utility calls and is memoized for performance.
 
-    const handlePress = useCallback(() => {
-      onSelect?.(item.source);
-    }, [item.source, onSelect]);
+type MeasurementDisplayProps = {
+  readonly item: ReadingListItem;
+};
 
-    // Format date
-    const dateStr = useMemo(() => {
-      const date = new Date(item.measuredAt);
-      return date.toLocaleString();
-    }, [item.measuredAt]);
+const MeasurementDisplay = memo(function MeasurementDisplay({
+  item,
+}: MeasurementDisplayProps) {
+  const { t } = useTranslation();
 
-    // Compute PPM display
-    const ppmDisplay = useMemo(() => {
-      const ppm = ecToPpm(item.ec25c, item.ppmScale as '500' | '700');
-      return formatPpmWithScale(ppm, item.ppmScale as '500' | '700');
-    }, [item.ec25c, item.ppmScale]);
+  const dateStr = useMemo(
+    () => new Date(item.measuredAt).toLocaleString(),
+    [item.measuredAt]
+  );
 
-    // Check if reading has quality issues
-    const hasQualityFlags = item.qualityFlags.length > 0;
+  const ppmDisplay = useMemo(() => {
+    const ppm = ecToPpm(item.ec25c, item.ppmScale as '500' | '700');
+    return formatPpmWithScale(ppm, item.ppmScale as '500' | '700');
+  }, [item.ec25c, item.ppmScale]);
 
-    return (
-      <Pressable
-        accessibilityRole="button"
-        onPress={handlePress}
-        className="bg-white p-4"
-        testID={`reading-item-${item.id}`}
-      >
-        <View className="flex-row items-start justify-between">
-          {/* Left: Measurements */}
-          <View className="flex-1">
-            <View className="flex-row items-baseline gap-3">
-              <View>
-                <Text className="text-xs text-neutral-500">
-                  {t('nutrient.ph')}
-                </Text>
-                <Text className="text-lg font-semibold text-neutral-900">
-                  {item.ph.toFixed(2)}
-                </Text>
-              </View>
-
-              <View>
-                <Text className="text-xs text-neutral-500">
-                  {t('nutrient.ec_at_temp', { temp: item.tempC.toFixed(1) })}
-                </Text>
-                <Text className="text-lg font-semibold text-neutral-900">
-                  {item.ec25c.toFixed(2)} {t('units.ms_per_cm')}
-                </Text>
-              </View>
-
-              <View>
-                <Text className="text-xs text-neutral-500">
-                  {t('nutrient.ppm')}
-                </Text>
-                <Text className="text-sm font-medium text-neutral-700">
-                  {ppmDisplay}
-                </Text>
-              </View>
-            </View>
-
-            <Text className="mt-2 text-xs text-neutral-500">{dateStr}</Text>
-
-            {item.note && (
-              <Text className="mt-1 text-sm text-neutral-600" numberOfLines={2}>
-                {item.note}
-              </Text>
-            )}
-          </View>
-
-          {/* Right: Quality indicators */}
-          <View className="ml-2">
-            <Text className="text-xs text-neutral-500">
-              {item.tempC.toFixed(1)}
-              {t('units.celsius')}
-            </Text>
-
-            {hasQualityFlags && (
-              <View className="mt-1 rounded bg-warning-100 px-2 py-1">
-                <Text className="text-xs text-warning-700">⚠️</Text>
-              </View>
-            )}
-          </View>
+  return (
+    <>
+      <View className="flex-row items-baseline gap-3">
+        <View>
+          <Text className="text-xs text-neutral-500">{t('nutrient.ph')}</Text>
+          <Text className="text-lg font-semibold text-neutral-900">
+            {item.ph.toFixed(2)}
+          </Text>
         </View>
 
-        {/* Quality flags details */}
-        {hasQualityFlags && (
-          <View className="mt-2 gap-1">
-            {item.qualityFlags.includes(QualityFlagEnum.NO_ATC) && (
-              <Text className="text-xs text-warning-700">
-                • {t('nutrient.no_atc_warning')}
-              </Text>
-            )}
-            {item.qualityFlags.includes(QualityFlagEnum.TEMP_HIGH) && (
-              <Text className="text-xs text-warning-700">
-                • {t('nutrient.temp_high_warning')}
-              </Text>
-            )}
-            {item.qualityFlags.includes(QualityFlagEnum.CAL_STALE) && (
-              <Text className="text-xs text-warning-700">
-                • {t('nutrient.cal_stale_warning')}
-              </Text>
-            )}
-          </View>
-        )}
-      </Pressable>
-    );
-  }
-);
+        <View>
+          <Text className="text-xs text-neutral-500">
+            {t('nutrient.ec_at_temp', { temp: item.tempC.toFixed(1) })}
+          </Text>
+          <Text className="text-lg font-semibold text-neutral-900">
+            {item.ec25c.toFixed(2)} {t('units.ms_per_cm')}
+          </Text>
+        </View>
+
+        <View>
+          <Text className="text-xs text-neutral-500">{t('nutrient.ppm')}</Text>
+          <Text className="text-sm font-medium text-neutral-700">
+            {ppmDisplay}
+          </Text>
+        </View>
+      </View>
+
+      <Text className="mt-2 text-xs text-neutral-500">{dateStr}</Text>
+
+      {item.note && (
+        <Text className="mt-1 text-sm text-neutral-600" numberOfLines={2}>
+          {item.note}
+        </Text>
+      )}
+    </>
+  );
+});
+MeasurementDisplay.displayName = 'MeasurementDisplay';
+
+type QualityIndicatorProps = {
+  readonly item: ReadingListItem;
+};
+
+const QualityIndicator = memo(function QualityIndicator({
+  item,
+}: QualityIndicatorProps) {
+  const { t } = useTranslation();
+
+  const hasQualityFlags = item.qualityFlags.length > 0;
+
+  return (
+    <>
+      <Text className="text-xs text-neutral-500">
+        {item.tempC.toFixed(1)}
+        {t('units.celsius')}
+      </Text>
+
+      {hasQualityFlags && (
+        <View className="mt-1 rounded bg-warning-100 px-2 py-1">
+          <Text className="text-xs text-warning-700">⚠️</Text>
+        </View>
+      )}
+    </>
+  );
+});
+QualityIndicator.displayName = 'QualityIndicator';
+
+type QualityFlagDetailsProps = {
+  readonly qualityFlags: QualityFlag[];
+};
+
+const QualityFlagDetails = memo(function QualityFlagDetails({
+  qualityFlags,
+}: QualityFlagDetailsProps) {
+  const { t } = useTranslation();
+
+  if (qualityFlags.length === 0) return null;
+
+  return (
+    <View className="mt-2 gap-1">
+      {qualityFlags.includes(QualityFlagEnum.NO_ATC) && (
+        <Text className="text-xs text-warning-700">
+          • {t('nutrient.no_atc_warning')}
+        </Text>
+      )}
+      {qualityFlags.includes(QualityFlagEnum.TEMP_HIGH) && (
+        <Text className="text-xs text-warning-700">
+          • {t('nutrient.temp_high_warning')}
+        </Text>
+      )}
+      {qualityFlags.includes(QualityFlagEnum.CAL_STALE) && (
+        <Text className="text-xs text-warning-700">
+          • {t('nutrient.cal_stale_warning')}
+        </Text>
+      )}
+    </View>
+  );
+});
+QualityFlagDetails.displayName = 'QualityFlagDetails';
+
+const ReadingListItemComponent = memo(function ReadingListItemComponent({
+  item,
+  onSelect,
+}: ReadingListItemProps) {
+  const handlePress = useCallback(() => {
+    onSelect?.(item.source);
+  }, [item.source, onSelect]);
+
+  const hasQualityFlags = item.qualityFlags.length > 0;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={handlePress}
+      className="bg-white p-4"
+      testID={`reading-item-${item.id}`}
+    >
+      <View className="flex-row items-start justify-between">
+        {/* Left: Measurements */}
+        <View className="flex-1">
+          <MeasurementDisplay item={item} />
+        </View>
+
+        {/* Right: Quality indicators */}
+        <View className="ml-2">
+          <QualityIndicator item={item} />
+        </View>
+      </View>
+
+      {/* Quality flags details */}
+      {hasQualityFlags && (
+        <QualityFlagDetails qualityFlags={item.qualityFlags} />
+      )}
+    </Pressable>
+  );
+});
 
 ReadingListItemComponent.displayName = 'ReadingListItemComponent';

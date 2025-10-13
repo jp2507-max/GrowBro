@@ -20,9 +20,14 @@ jest.mock('@/lib/privacy/export-service', () => ({
 }));
 
 jest.mock('expo-file-system', () => ({
+  __esModule: true,
   documentDirectory: 'file:///mock/document/',
   writeAsStringAsync: jest.fn().mockResolvedValue(undefined),
   deleteAsync: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('expo-constants', () => ({
+  documentDirectory: 'file:///mock/document/',
 }));
 
 jest.mock('@/lib/privacy-consent', () => {
@@ -57,7 +62,7 @@ jest.mock('@/lib/privacy-consent', () => {
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  jest.restoreAllMocks();
   cleanup();
   // Reset mocked consent state between tests to prevent order dependency
   (privacyConsent as any).__resetConsent?.();
@@ -142,9 +147,12 @@ describe('PrivacySettings', () => {
   test('export button shows error alert on failure', async () => {
     const { user } = setup(<PrivacySettings />);
     const alertSpy = jest.spyOn(Alert, 'alert');
-    jest
-      .spyOn(exportService, 'generatePrivacyExportJson')
-      .mockRejectedValue(new Error('Export failed'));
+    // Temporarily override the mock to reject
+    const originalMock =
+      exportService.generatePrivacyExportJson as jest.MockedFunction<
+        typeof exportService.generatePrivacyExportJson
+      >;
+    originalMock.mockRejectedValueOnce(new Error('Export failed'));
 
     await user.press(screen.getByTestId('privacy-export-btn'));
 
@@ -161,11 +169,7 @@ describe('PrivacySettings', () => {
   test('export button does not show alert on user cancellation', async () => {
     const { user } = setup(<PrivacySettings />);
     const alertSpy = jest.spyOn(Alert, 'alert');
-    jest
-      .spyOn(Share, 'share')
-      .mockRejectedValue(new Error('User canceled the share action'));
-    // Mock Share.dismissed to simulate user cancellation
-    (Share as any).dismissed = true;
+    jest.spyOn(Share, 'share').mockResolvedValue({ action: 'dismissedAction' });
 
     await user.press(screen.getByTestId('privacy-export-btn'));
 

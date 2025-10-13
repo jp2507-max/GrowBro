@@ -161,5 +161,6 @@ export async function __resetPrivacyConsentForTests(): Promise<void> {
   cachedConsent = { ...DEFAULT_CONSENT, lastUpdated: Date.now() };
   hydrated = false;
   hydrationPromise = null;
+  consentListeners.clear();
   await removeSecureConfig(CONSENT_STORAGE_KEY);
 }

@@ -8,6 +8,7 @@
  */
 
 // Mock the database import before importing the service
+import { database } from '@/lib/watermelon';
 
 import {
   calculateDilutionRecommendation,
@@ -24,17 +25,23 @@ import {
   undoLastEvent,
 } from './reservoir-event-service';
 
-const mockDatabase = {
-  get: jest.fn(),
-  write: jest.fn((fn) => fn()),
+jest.mock('@/lib/watermelon');
+
+// Mock WatermelonDB Q functions
+const mockQ = {
+  where: jest.fn().mockReturnThis(),
+  gte: jest.fn().mockReturnThis(),
+  lte: jest.fn().mockReturnThis(),
+  sortBy: jest.fn().mockReturnThis(),
+  desc: jest.fn().mockReturnThis(),
+  asc: jest.fn().mockReturnThis(),
 };
 
-jest.mock('@/lib/watermelon', () => ({
-  database: mockDatabase,
+jest.mock('@nozbe/watermelondb', () => ({
+  ...jest.requireActual('@nozbe/watermelondb'),
+  Q: mockQ,
 }));
-
-// Mock WatermelonDB
-jest.mock('@nozbe/watermelondb');
+jest.mock('@nozbe/watermelondb/QueryDescription');
 
 // ============================================================================
 // Test Setup
@@ -83,8 +90,8 @@ describe('reservoir-event-service', () => {
     };
 
     // Mock the database methods
-    mockDatabase.get.mockReturnValue(mockCollection);
-    mockDatabase.write.mockImplementation((fn) => fn());
+    (database as any).get = jest.fn().mockReturnValue(mockCollection);
+    (database as any).write = jest.fn().mockImplementation((fn) => fn());
   });
 
   afterEach(() => {
@@ -113,7 +120,7 @@ describe('reservoir-event-service', () => {
         expect(result.deltaEc25c).toBe(0.5);
         expect(result.deltaPh).toBe(-0.2);
         expect(result.note).toBe('Added nutrients');
-        expect(mockDatabase.write).toHaveBeenCalled();
+        expect((database as any).write).toHaveBeenCalled();
         expect(mockCollection.create).toHaveBeenCalled();
       });
 
@@ -126,7 +133,7 @@ describe('reservoir-event-service', () => {
         await createReservoirEvent(eventData);
 
         expect(mockCollection.create).toHaveBeenCalled();
-        expect(mockDatabase.write).toHaveBeenCalled();
+        expect((database as any).write).toHaveBeenCalled();
       });
 
       test('validates required reservoirId', async () => {
@@ -196,8 +203,12 @@ describe('reservoir-event-service', () => {
           },
         ];
 
+        // Return events in descending order by createdAt (most recent first)
+        const sortedEvents = [...events].sort(
+          (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+        );
         mockCollection.query.mockReturnValue({
-          fetch: jest.fn().mockResolvedValue(events),
+          fetch: jest.fn().mockResolvedValue(sortedEvents),
         });
 
         const result = await listEventsByReservoir('reservoir-1');
@@ -214,8 +225,9 @@ describe('reservoir-event-service', () => {
           id: `event-${i}`,
         }));
 
+        // Mock should return limited results as the database query would
         mockCollection.query.mockReturnValue({
-          fetch: jest.fn().mockResolvedValue(events),
+          fetch: jest.fn().mockResolvedValue(events.slice(0, 5)),
         });
 
         const result = await listEventsByReservoir('reservoir-1', 5);
@@ -509,7 +521,7 @@ describe('reservoir-event-service', () => {
         await deleteReservoirEvent('event-1');
 
         expect(mockEvent.markAsDeleted).toHaveBeenCalled();
-        expect(mockDatabase.write).toHaveBeenCalled();
+        expect((database as any).write).toHaveBeenCalled();
         expect(mockCollection.find).toHaveBeenCalledWith('event-1');
       });
 
@@ -545,7 +557,8 @@ describe('reservoir-event-service', () => {
           observe: jest.fn().mockReturnValue(mockObservable),
         });
 
-        observeReservoirEvents('reservoir-1', 10);
+        const observable = observeReservoirEvents('reservoir-1', 10);
+        observable.subscribe(() => {});
 
         expect(mockCollection.query).toHaveBeenCalled();
       });

@@ -1,4 +1,5 @@
-import { documentDirectory, writeAsStringAsync } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system';
+import { documentDirectory } from 'expo-file-system';
 import React, { useEffect, useState } from 'react';
 import { Alert, Share, Switch, Text, View } from 'react-native';
 
@@ -159,27 +160,32 @@ function PrivacyActions({
 
       // For large JSON exports, write to temporary file to avoid truncation
       tempFileUri = `${documentDirectory}privacy-export-${Date.now()}.json`;
-      await writeAsStringAsync(tempFileUri, exportData);
+      await FileSystem.writeAsStringAsync(tempFileUri, exportData);
 
       // Use Share API to let user save or share the export file
-      await Share.share({
+      const shareResult = await Share.share({
         url: tempFileUri,
         title: translate('privacy.exportData'),
       });
 
-      if (onDataExport) {
+      // Handle user cancellation via Share.dismissedAction
+      if (shareResult.action === Share.dismissedAction) {
+        return; // User cancelled, silently return
+      }
+
+      // Only call onDataExport if the user actually shared
+      if (shareResult.action === Share.sharedAction && onDataExport) {
         onDataExport();
       }
     } catch (error) {
-      // Detect user cancellation - different platforms have different error signatures
-      const isUserCancelled =
-        (error as any)?.message?.toLowerCase().includes('cancel') ||
-        (error as any)?.message?.toLowerCase().includes('dismiss') ||
-        (error as any)?.message?.toLowerCase().includes('abort') ||
-        (error as any)?.code === 'ECANCELLED' ||
-        Share.dismissed === true;
+      // Only suppress alerts for genuine platform-specific cancellation indicators
+      const isPlatformCancellation =
+        (error as any)?.code === 'ECANCELLED' || // iOS specific
+        (error as any)?.domain === 'com.apple.ShareSheet' || // iOS ShareSheet cancellation
+        ((error as any)?.message?.includes('cancelled by user') &&
+          (error as any)?.code === 3); // Android specific
 
-      if (!isUserCancelled) {
+      if (!isPlatformCancellation) {
         console.error('[PrivacySettings] Data export failed:', error);
         Alert.alert(
           translate('privacy.exportError.title'),
@@ -187,7 +193,7 @@ function PrivacyActions({
           [{ text: translate('common.ok') }]
         );
       }
-      // If user cancelled, silently ignore and don't show error
+      // If user cancelled via platform-specific cancellation, silently ignore
     } finally {
       // Clean up temporary file regardless of success/failure
       if (tempFileUri) {

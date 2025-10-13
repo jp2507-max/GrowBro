@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Text, View } from '@/components/ui';
 import type { StrainAdjustment } from '@/lib/nutrient-engine/hooks/use-strain-adjustments';
 import { useStrainAdjustments } from '@/lib/nutrient-engine/hooks/use-strain-adjustments';
-import type { PlantPhase } from '@/lib/nutrient-engine/types';
+import { PlantPhase } from '@/lib/nutrient-engine/types';
 
 import { PhaseAdjustmentRow } from './phase-adjustment-row';
 
@@ -57,26 +57,24 @@ export function StrainAdjustmentPanel({
       </Text>
 
       <View className="gap-3">
-        {(['seedling', 'veg', 'flower', 'flush'] as PlantPhase[]).map(
-          (phase) => {
-            const adj = getAdjustment(phase);
-            return (
-              <PhaseAdjustmentRow
-                key={phase}
-                phase={phase}
-                phOffset={adj.phOffset}
-                ecOffset={adj.ecOffset}
-                onPhOffsetChange={(val) =>
-                  updateAdjustment(phase, 'phOffset', val)
-                }
-                onEcOffsetChange={(val) =>
-                  updateAdjustment(phase, 'ecOffset', val)
-                }
-                testID={`${testID}-${phase}`}
-              />
-            );
-          }
-        )}
+        {(Object.values(PlantPhase) as PlantPhase[]).map((phase) => {
+          const adj = getAdjustment(phase);
+          return (
+            <PhaseAdjustmentRow
+              key={phase}
+              phase={phase}
+              phOffset={adj.phOffset}
+              ecOffset={adj.ecOffset}
+              onPhOffsetChange={(val) =>
+                updateAdjustment(phase, 'phOffset', val)
+              }
+              onEcOffsetChange={(val) =>
+                updateAdjustment(phase, 'ecOffset', val)
+              }
+              testID={`${testID}-${phase}`}
+            />
+          );
+        })}
       </View>
 
       {hasAnyAdjustments && (
