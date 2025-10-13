@@ -1,10 +1,14 @@
-import { getItem, setItem } from '@/lib/storage';
+import {
+  getSecureConfig,
+  setSecureConfig,
+} from '@/lib/privacy/secure-config-store';
 
 export type AuditAction =
   | 'retention-delete'
   | 'retention-aggregate'
   | 'retention-anonymize'
-  | 'account-delete-request';
+  | 'account-delete-request'
+  | 'consent-block';
 
 export type AuditEntry = {
   id: string;
@@ -20,6 +24,15 @@ export type AuditEntry = {
 
 const AUDIT_KEY = 'privacy.audit.v1';
 
+let auditCache: AuditEntry[] | null = null;
+
+async function ensureAuditCache(): Promise<AuditEntry[]> {
+  if (auditCache) return auditCache;
+  const stored = await getSecureConfig<AuditEntry[]>(AUDIT_KEY);
+  auditCache = Array.isArray(stored) ? stored : [];
+  return auditCache;
+}
+
 function simpleHash(input: string): string {
   // Lightweight deterministic hash (FNV-1a 32-bit in hex) to avoid native deps in tests
   let hash = 0x811c9dc5;
@@ -30,14 +43,15 @@ function simpleHash(input: string): string {
   return hash.toString(16).padStart(8, '0');
 }
 
-export function getAuditLog(): AuditEntry[] {
-  return getItem<AuditEntry[]>(AUDIT_KEY) ?? [];
+export async function getAuditLog(): Promise<AuditEntry[]> {
+  const current = await ensureAuditCache();
+  return [...current];
 }
 
-export function appendAudit(
+export async function appendAudit(
   entry: Omit<AuditEntry, 'id' | 't' | 'prevHash' | 'hash'>
-): AuditEntry {
-  const existing = getAuditLog();
+): Promise<AuditEntry> {
+  const existing = await ensureAuditCache();
   const prevHash =
     existing.length > 0 ? existing[existing.length - 1]!.hash : '0';
   const t = Date.now();
@@ -45,12 +59,14 @@ export function appendAudit(
   const base = { ...entry, id, t, prevHash } as Omit<AuditEntry, 'hash'>;
   const hash = simpleHash(JSON.stringify(base));
   const full: AuditEntry = { ...base, hash };
-  setItem(AUDIT_KEY, [...existing, full]);
+  const next = [...existing, full];
+  auditCache = next;
+  await setSecureConfig(AUDIT_KEY, next);
   return full;
 }
 
-export function validateAuditChain(): boolean {
-  const list = getAuditLog();
+export async function validateAuditChain(): Promise<boolean> {
+  const list = await ensureAuditCache();
   let prev = '0';
   for (const e of list) {
     const { hash, ...rest } = e;
@@ -62,6 +78,7 @@ export function validateAuditChain(): boolean {
   return true;
 }
 
-export function exportAuditLogJson(): string {
-  return JSON.stringify(getAuditLog(), null, 2);
+export async function exportAuditLogJson(): Promise<string> {
+  const list = await ensureAuditCache();
+  return JSON.stringify(list, null, 2);
 }

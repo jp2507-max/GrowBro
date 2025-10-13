@@ -4,19 +4,18 @@
  * Multiline notes field for pH/EC readings
  */
 
-import React from 'react';
 import type { Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { ControlledInput } from '@/components/ui';
 import type { PhEcReadingFormData } from '@/lib/nutrient-engine/schemas/ph-ec-reading-schema';
 
-interface NotesInputProps {
+type NotesInputProps = {
   control: Control<PhEcReadingFormData>;
   testID: string;
-}
+};
 
-export function NotesInput({ control, testID }: NotesInputProps) {
+export function NotesInput({ control, testID }: NotesInputProps): JSX.Element {
   const { t } = useTranslation();
 
   return (

@@ -14,16 +14,7 @@ import { ScrollView } from 'react-native';
 import { Button, Text, View } from '@/components/ui';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
-// Conflict type removed - legacy feature
-
-// Stub Conflict type for backward compatibility
-type Conflict = {
-  tableName: string;
-  recordId: string;
-  conflictFields: string[];
-  localRecord?: Record<string, any>;
-  remoteRecord?: Record<string, any>;
-};
+import type { LegacyConflict as Conflict } from '@/lib/sync/types';
 
 export function formatValue(
   value: unknown,

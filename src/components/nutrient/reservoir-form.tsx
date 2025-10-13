@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import React, { useMemo } from 'react';
+import * as React from 'react';
 import {
   type Control,
   Controller,
@@ -329,9 +329,9 @@ export function ReservoirForm({
   isSubmitting = false,
   testID,
 }: Props): React.ReactElement {
-  const reservoirSchema = useMemo(() => createReservoirSchema(), []);
+  const reservoirSchema = createReservoirSchema();
 
-  const mediumOptions: OptionType[] = useMemo(() => getMediumOptions(), []);
+  const mediumOptions: OptionType[] = getMediumOptions();
 
   const {
     control,

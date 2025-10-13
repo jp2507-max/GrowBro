@@ -83,8 +83,10 @@ describe('evaluateReadingAgainstTargets - pH deviations', () => {
     const result = evaluateReadingAgainstTargets(
       currentReading,
       mockReservoir,
-      recentReadings,
-      []
+      {
+        recentReadings,
+        activeAlerts: [],
+      }
     );
 
     expect(result).toBeTruthy();
@@ -119,8 +121,10 @@ describe('evaluateReadingAgainstTargets - pH deviations', () => {
     const result = evaluateReadingAgainstTargets(
       currentReading,
       mockReservoir,
-      recentReadings,
-      []
+      {
+        recentReadings,
+        activeAlerts: [],
+      }
     );
 
     expect(result).toBeTruthy();
@@ -136,8 +140,10 @@ describe('evaluateReadingAgainstTargets - pH deviations', () => {
     const result = evaluateReadingAgainstTargets(
       currentReading,
       mockReservoir,
-      [],
-      []
+      {
+        recentReadings: [],
+        activeAlerts: [],
+      }
     );
 
     expect(result).toBeNull();
@@ -160,8 +166,10 @@ describe('evaluateReadingAgainstTargets - pH deviations', () => {
     const result = evaluateReadingAgainstTargets(
       currentReading,
       mockReservoir,
-      recentReadings,
-      []
+      {
+        recentReadings,
+        activeAlerts: [],
+      }
     );
 
     expect(result).toBeNull();
@@ -198,8 +206,10 @@ describe('evaluateReadingAgainstTargets - EC deviations', () => {
     const result = evaluateReadingAgainstTargets(
       currentReading,
       mockReservoir,
-      recentReadings,
-      []
+      {
+        recentReadings,
+        activeAlerts: [],
+      }
     );
 
     expect(result).toBeTruthy();
@@ -233,8 +243,10 @@ describe('evaluateReadingAgainstTargets - EC deviations', () => {
     const result = evaluateReadingAgainstTargets(
       currentReading,
       mockReservoir,
-      recentReadings,
-      []
+      {
+        recentReadings,
+        activeAlerts: [],
+      }
     );
 
     expect(result).toBeTruthy();
@@ -283,8 +295,10 @@ describe('evaluateReadingAgainstTargets - cooldown', () => {
     const result = evaluateReadingAgainstTargets(
       currentReading,
       mockReservoir,
-      recentReadings,
-      activeAlerts
+      {
+        recentReadings,
+        activeAlerts,
+      }
     );
 
     expect(result).toBeNull();
@@ -325,8 +339,10 @@ describe('evaluateReadingAgainstTargets - cooldown', () => {
     const result = evaluateReadingAgainstTargets(
       currentReading,
       mockReservoir,
-      recentReadings,
-      activeAlerts
+      {
+        recentReadings,
+        activeAlerts,
+      }
     );
 
     expect(result).toBeTruthy();
@@ -370,8 +386,10 @@ describe('evaluateReadingAgainstTargets - cooldown', () => {
     const result = evaluateReadingAgainstTargets(
       currentReading,
       mockReservoir,
-      recentReadings,
-      activeAlerts
+      {
+        recentReadings,
+        activeAlerts,
+      }
     );
 
     // Should trigger EC alert since it's not in cooldown
@@ -393,8 +411,10 @@ describe('evaluateReadingAgainstTargets - temperature', () => {
     const result = evaluateReadingAgainstTargets(
       currentReading,
       mockReservoir,
-      [],
-      []
+      {
+        recentReadings: [],
+        activeAlerts: [],
+      }
     );
 
     expect(result).toBeTruthy();
@@ -414,8 +434,10 @@ describe('evaluateReadingAgainstTargets - temperature', () => {
     const result = evaluateReadingAgainstTargets(
       currentReading,
       mockReservoir,
-      [],
-      []
+      {
+        recentReadings: [],
+        activeAlerts: [],
+      }
     );
 
     expect(result).toBeNull();
@@ -482,8 +504,10 @@ describe('evaluateReadingAgainstTargets - edge cases', () => {
     const result = evaluateReadingAgainstTargets(
       currentReading,
       mockReservoir,
-      [],
-      []
+      {
+        recentReadings: [],
+        activeAlerts: [],
+      }
     );
 
     // Should not trigger (boundary is inclusive of safe range)
@@ -498,8 +522,10 @@ describe('evaluateReadingAgainstTargets - edge cases', () => {
     const result = evaluateReadingAgainstTargets(
       currentReading,
       mockReservoir,
-      [], // No recent readings
-      []
+      {
+        recentReadings: [], // No recent readings
+        activeAlerts: [],
+      }
     );
 
     // Should not trigger without persistence verification
@@ -525,8 +551,10 @@ describe('evaluateReadingAgainstTargets - edge cases', () => {
     const result = evaluateReadingAgainstTargets(
       currentReading,
       mockReservoir,
-      recentReadings,
-      []
+      {
+        recentReadings,
+        activeAlerts: [],
+      }
     );
 
     expect(result).toBeNull();
@@ -553,8 +581,10 @@ describe('evaluateReadingAgainstTargets - edge cases', () => {
     const result = evaluateReadingAgainstTargets(
       currentReading,
       mockReservoir,
-      recentReadings,
-      []
+      {
+        recentReadings,
+        activeAlerts: [],
+      }
     );
 
     // Should return first detected (pH checked before EC)

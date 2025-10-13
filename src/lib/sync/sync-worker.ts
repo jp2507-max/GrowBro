@@ -7,6 +7,9 @@
 import type { Database } from '@nozbe/watermelondb';
 import { synchronize } from '@nozbe/watermelondb/sync';
 
+import { ConsentService } from '@/lib/privacy/consent-service';
+import { ConsentRequiredError } from '@/lib/privacy/errors';
+
 import { resolveConflict } from './conflict-resolver';
 import { retryWithBackoff } from './exponential-backoff';
 import type {
@@ -81,6 +84,7 @@ export class SyncWorker {
     lastPulledAt: number | null = null,
     migrationsEnabledAtVersion?: number
   ): Promise<void> {
+    await this.assertCloudProcessingConsent();
     this.currentState = 'syncing';
     this.callbacks.onSyncStart?.();
 
@@ -98,6 +102,19 @@ export class SyncWorker {
       this.handleSyncError(error as Error);
       throw error;
     }
+  }
+
+  private async assertCloudProcessingConsent(): Promise<void> {
+    const consents = await ConsentService.getConsents();
+    if (consents.cloudProcessing) return;
+    const error = new ConsentRequiredError(
+      'Cloud sync requires cloudProcessing consent',
+      'cloudProcessing'
+    );
+    this.currentState = 'error';
+    this.lastError = error;
+    this.callbacks.onSyncError?.(error);
+    throw error;
   }
 
   private async performSync(

@@ -73,21 +73,18 @@ export async function generateFeedingTasks(
       // Convert feeding event to calendar task data
       const taskData = createCalendarTaskFromEvent(event, ppmScale);
 
-      // Calculate reminder time (30 minutes before due time)
+      // Calculate due time
       const dueDateTime = DateTime.fromMillis(taskData.dueDate, {
         zone: timezone,
       });
-      const reminderDateTime = dueDateTime.minus({ minutes: 30 });
 
-      // Create task input
+      // Create task input with always-set due time fields
       const taskInput: CreateTaskInput = {
         title: taskData.title,
         description: taskData.description,
         timezone,
         dueAtLocal: dueDateTime.toISO() || undefined,
         dueAtUtc: dueDateTime.toUTC().toISO() || undefined,
-        reminderAtLocal: reminderDateTime.toISO() || undefined,
-        reminderAtUtc: reminderDateTime.toUTC().toISO() || undefined,
         plantId: taskData.plantId,
         metadata: {
           ...taskData.metadata,
@@ -97,6 +94,13 @@ export async function generateFeedingTasks(
           templateId: schedule.templateId,
         },
       };
+
+      // Only compute and set reminder fields when reminders are enabled
+      if (scheduleReminders) {
+        const reminderDateTime = dueDateTime.minus({ minutes: 30 });
+        taskInput.reminderAtLocal = reminderDateTime.toISO() || undefined;
+        taskInput.reminderAtUtc = reminderDateTime.toUTC().toISO() || undefined;
+      }
 
       // Create task
       const task = await createTask(taskInput);

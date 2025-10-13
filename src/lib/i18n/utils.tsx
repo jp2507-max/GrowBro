@@ -46,7 +46,7 @@ function interpolate(str: string, opts?: TOptions): string {
 }
 
 export const translate = memoize(
-  (key: TxKeyPath, options = undefined) => {
+  (key: TxKeyPath | string, options = undefined) => {
     // If i18n isn't initialized (common in tests), fall back to local resources
     if (!i18n.isInitialized) {
       const lang = (i18n.language as keyof typeof resources) || 'en';
@@ -56,7 +56,7 @@ export const translate = memoize(
     // eslint-disable-next-line import/no-named-as-default-member
     return i18n.t(key, options) as unknown as string;
   },
-  (key: TxKeyPath, options: TOptions) => {
+  (key: TxKeyPath | string, options: TOptions) => {
     // include current language so cached values are invalidated when language changes
     const lang = i18n.language || '';
     const base = options ? key + JSON.stringify(options) : key;

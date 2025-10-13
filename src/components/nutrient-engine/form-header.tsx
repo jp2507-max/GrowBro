@@ -4,12 +4,12 @@
  * Title for the pH/EC input form
  */
 
-import React from 'react';
+import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Text } from '@/components/ui';
 
-export function FormHeader() {
+export function FormHeader(): JSX.Element {
   const { t } = useTranslation();
 
   return (

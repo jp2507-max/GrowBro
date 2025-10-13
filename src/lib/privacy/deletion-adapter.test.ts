@@ -5,6 +5,11 @@ import {
   type RetentionRecord,
   retentionWorker,
 } from '@/lib/privacy/retention-worker';
+import { clearSecureConfigForTests } from '@/lib/privacy/secure-config-store';
+
+beforeEach(async () => {
+  await clearSecureConfigForTests();
+});
 
 describe('DeletionAdapter integration', () => {
   test('invokes adapter for image cascades and writes audit', async () => {
@@ -32,10 +37,10 @@ describe('DeletionAdapter integration', () => {
       dataType: 'training_images',
       createdAt: now - 366 * 24 * 60 * 60 * 1000,
     };
-    addRetentionRecord(oldInf);
-    addRetentionRecord(oldTrain);
+    await addRetentionRecord(oldInf);
+    await addRetentionRecord(oldTrain);
 
-    const report = retentionWorker.runNow();
+    const report = await retentionWorker.runNow();
     expect(report.entries).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ dataType: 'inference_images' }),
@@ -49,7 +54,7 @@ describe('DeletionAdapter integration', () => {
     expect(inferenceCalls).toBe(1);
     expect(trainingCalls).toBe(1);
 
-    const log = getAuditLog();
+    const log = await getAuditLog();
     expect(
       log.some(
         (e) =>
@@ -64,7 +69,7 @@ describe('DeletionAdapter integration', () => {
     ).toBe(true);
 
     // keep linter happy about unused import
-    appendAudit({
+    await appendAudit({
       action: 'retention-delete',
       dataType: 'telemetry_raw',
       count: 0,

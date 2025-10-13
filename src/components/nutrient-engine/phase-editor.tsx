@@ -6,34 +6,44 @@
 
 import React from 'react';
 import type { Control } from 'react-hook-form';
+import { useFieldArray } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { Button, View } from '@/components/ui';
+import type {
+  FeedingTemplateFormData,
+  NutrientRatioFormData,
+} from '@/lib/nutrient-engine/schemas/feeding-template-schema';
 
 import { NutrientsList } from './nutrients-list';
 import { PhaseHeader } from './phase-header';
 import { RangeInputPair } from './range-input-pair';
 
 interface PhaseEditorProps {
-  control: Control<any>;
+  control: Control<FeedingTemplateFormData>;
+  nutrients: NutrientRatioFormData[];
   phaseIndex: number;
   onRemove: () => void;
-  nutrients: any[];
-  onAddNutrient: () => void;
-  onRemoveNutrient: (index: number) => void;
   testID?: string;
 }
 
 export function PhaseEditor({
   control,
+  nutrients: _nutrients,
   phaseIndex,
   onRemove,
-  nutrients,
-  onAddNutrient,
-  onRemoveNutrient,
   testID = 'phase-editor',
 }: PhaseEditorProps) {
   const { t } = useTranslation();
+
+  const {
+    fields: nutrientFields,
+    append: appendNutrient,
+    remove: removeNutrient,
+  } = useFieldArray({
+    control,
+    name: `phases.${phaseIndex}.nutrients`,
+  });
 
   return (
     <View
@@ -64,9 +74,15 @@ export function PhaseEditor({
 
       <NutrientsList
         control={control}
-        nutrients={nutrients}
-        onAddNutrient={onAddNutrient}
-        onRemoveNutrient={onRemoveNutrient}
+        fields={nutrientFields}
+        onAddNutrient={() =>
+          appendNutrient({
+            nutrient: '',
+            value: 0,
+            unit: 'ml/L',
+          })
+        }
+        onRemoveNutrient={removeNutrient}
         testID={`${testID}-${phaseIndex}`}
       />
 

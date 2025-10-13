@@ -37,7 +37,7 @@ describe('sync conflicts', () => {
       return { ok: true, status: 200, json: async () => ({}) } as any;
     });
 
-    const res = await runSyncWithRetry(1);
+    const res = await runSyncWithRetry(1, { trigger: 'diagnostic' });
     expect(res.serverTimestamp).not.toBeNull();
     (global as any).fetch = originalFetch;
   });

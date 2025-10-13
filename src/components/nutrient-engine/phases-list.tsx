@@ -27,7 +27,7 @@ export function PhasesList({
   onAddPhase,
   onRemovePhase,
   testID,
-}: PhasesListProps) {
+}: PhasesListProps): JSX.Element {
   const { t } = useTranslation();
 
   return (
@@ -40,11 +40,9 @@ export function PhasesList({
         <PhaseEditor
           key={field.id}
           control={control}
+          nutrients={field.nutrients}
           phaseIndex={index}
           onRemove={() => onRemovePhase(index)}
-          nutrients={field.nutrients || []}
-          onAddNutrient={() => {}}
-          onRemoveNutrient={() => {}}
           testID={testID}
         />
       ))}

@@ -2,6 +2,10 @@ import { ConsentService } from '@/lib/privacy/consent-service';
 import { SDKGate } from '@/lib/privacy/sdk-gate';
 import { telemetryClient } from '@/lib/privacy/telemetry-client';
 
+jest.mock('@/lib/privacy/retention-worker', () => ({
+  addRetentionRecord: jest.fn().mockResolvedValue(undefined),
+}));
+
 // Lightweight tests that don't rely on real timers or network.
 describe('TelemetryClient buffer accounting', () => {
   beforeEach(() => {

@@ -201,6 +201,32 @@ describe('calendar-integration-service', () => {
       expect(result.notificationsScheduled).toBe(0);
     });
 
+    test('does not schedule reminders when scheduleReminders is false', async () => {
+      const result = await generateFeedingTasks(mockDatabase, mockSchedule, {
+        ppmScale: '500',
+        timezone: 'America/New_York',
+        scheduleReminders: false,
+      });
+
+      // Tasks should be created
+      expect(result.tasksCreated).toBe(2);
+      expect(result.notificationsScheduled).toBe(0);
+
+      // Should not attempt to schedule any notifications
+      expect(
+        TaskNotificationManager.scheduleReminderForTask
+      ).not.toHaveBeenCalled();
+
+      // Check that reminderAtLocal and reminderAtUtc are not set
+      expect(mockCreateTask).toHaveBeenCalledTimes(2);
+      const firstCall = mockCreateTask.mock.calls[0][0];
+      expect(firstCall.reminderAtLocal).toBeUndefined();
+      expect(firstCall.reminderAtUtc).toBeUndefined();
+      // But dueAtLocal and dueAtUtc should still be set
+      expect(firstCall.dueAtLocal).toBeDefined();
+      expect(firstCall.dueAtUtc).toBeDefined();
+    });
+
     test('handles task creation errors and continues with remaining tasks', async () => {
       mockCreateTask
         .mockRejectedValueOnce(new Error('Task creation failed'))

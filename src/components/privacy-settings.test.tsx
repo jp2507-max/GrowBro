@@ -1,6 +1,7 @@
 import React from 'react';
-import { Alert } from 'react-native';
+import { Alert, Share } from 'react-native';
 
+import * as exportService from '@/lib/privacy/export-service';
 import * as privacyConsent from '@/lib/privacy-consent';
 import { cleanup, fireEvent, screen, setup } from '@/lib/test-utils';
 
@@ -11,6 +12,10 @@ import { PrivacySettings } from './privacy-settings';
 // keep Jest alive or cause hangs on Windows. We only need `translate` here.
 jest.mock('@/lib', () => ({
   translate: (key: string) => key,
+}));
+
+jest.mock('@/lib/privacy/export-service', () => ({
+  generatePrivacyExportJson: jest.fn(async () => '{"mock":"export"}'),
 }));
 
 jest.mock('@/lib/privacy-consent', () => {
@@ -99,5 +104,42 @@ describe('PrivacySettings', () => {
     const alertSpy = jest.spyOn(Alert, 'alert');
     await user.press(screen.getByTestId('toggle-personalizedData-title'));
     expect(alertSpy).toHaveBeenCalled();
+  });
+
+  test('export button generates and shares privacy data', async () => {
+    const { user } = setup(<PrivacySettings />);
+    const shareSpy = jest
+      .spyOn(Share, 'share')
+      .mockResolvedValue({ action: 'sharedAction' });
+
+    await user.press(screen.getByTestId('privacy-export-btn'));
+
+    // Wait for async export to complete
+    await screen.findByTestId('privacy-export-btn');
+
+    expect(exportService.generatePrivacyExportJson).toHaveBeenCalled();
+    expect(shareSpy).toHaveBeenCalledWith({
+      message: '{"mock":"export"}',
+      title: 'privacy.exportData',
+    });
+  });
+
+  test('export button shows error alert on failure', async () => {
+    const { user } = setup(<PrivacySettings />);
+    const alertSpy = jest.spyOn(Alert, 'alert');
+    jest
+      .spyOn(exportService, 'generatePrivacyExportJson')
+      .mockRejectedValue(new Error('Export failed'));
+
+    await user.press(screen.getByTestId('privacy-export-btn'));
+
+    // Wait for error handling
+    await screen.findByTestId('privacy-export-btn');
+
+    expect(alertSpy).toHaveBeenCalledWith(
+      'privacy.exportError.title',
+      'privacy.exportError.message',
+      [{ text: 'common.ok' }]
+    );
   });
 });

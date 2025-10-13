@@ -5,16 +5,21 @@
  */
 
 import React from 'react';
-import type { Control } from 'react-hook-form';
+import type { Control, FieldArrayWithId } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { Button, Text, View } from '@/components/ui';
+import type { FeedingTemplateFormData } from '@/lib/nutrient-engine/schemas/feeding-template-schema';
 
 import { NutrientRatioInput } from './nutrient-ratio-input';
 
 interface NutrientsListProps {
-  control: Control<any>;
-  nutrients: any[];
+  control: Control<FeedingTemplateFormData>;
+  fields: FieldArrayWithId<
+    FeedingTemplateFormData,
+    `phases.${number}.nutrients`,
+    'id'
+  >[];
   onAddNutrient: () => void;
   onRemoveNutrient: (index: number) => void;
   testID: string;
@@ -22,7 +27,7 @@ interface NutrientsListProps {
 
 export function NutrientsList({
   control,
-  nutrients,
+  fields,
   onAddNutrient,
   onRemoveNutrient,
   testID,
@@ -34,12 +39,12 @@ export function NutrientsList({
       <Text className="mb-2 text-base font-medium text-neutral-700 dark:text-neutral-300">
         {t('nutrient.nutrients')}
       </Text>
-      {nutrients.map((_, idx) => (
+      {fields.map((field, index) => (
         <NutrientRatioInput
-          key={idx}
+          key={field.id}
           control={control}
-          index={idx}
-          onRemove={() => onRemoveNutrient(idx)}
+          index={index}
+          onRemove={() => onRemoveNutrient(index)}
           testID={`${testID}-nutrient`}
         />
       ))}

@@ -35,7 +35,10 @@ export function ComputedValuesDisplay({
         className="text-base font-semibold text-primary-700 dark:text-primary-300"
         testID={testID}
       >
-        {ec25c.toFixed(2)} mS/cm @25°C • {formatPpmWithScale(ppm, ppmScale)}
+        {t('nutrient.computedValue', {
+          ec: ec25c.toFixed(2),
+          ppm: formatPpmWithScale(ppm, ppmScale),
+        })}
       </Text>
     </View>
   );

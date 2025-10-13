@@ -45,6 +45,7 @@ export function PhEcInputForm({
 }: PhEcInputFormProps) {
   const { control, handleSubmit, watch, formState } =
     useForm<PhEcReadingFormData>({
+      mode: 'onChange',
       resolver: zodResolver(phEcReadingSchema),
       defaultValues: {
         atcOn: false,

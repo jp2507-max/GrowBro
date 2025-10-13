@@ -136,7 +136,7 @@ export default function SyncDiagnostics(): React.ReactElement {
   const onSyncNow = React.useCallback(async (): Promise<void> => {
     try {
       logEvent({ stage: 'total', message: 'manual sync invoked' });
-      await runSyncWithRetry(1);
+      await runSyncWithRetry(1, { trigger: 'diagnostic' });
     } catch (e) {
       logEvent({
         level: 'error',

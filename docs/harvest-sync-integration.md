@@ -257,7 +257,11 @@ The harvest sync reuses the existing telemetry system with opt-in consent and PI
 // Tracked via sync-analytics.ts
 await trackSyncLatency('push', durationMs);
 await trackSyncSuccess({ pushed, applied, durationMs });
-await trackConflict({ tableName: 'harvests', conflictFields, resolution });
+await trackConflict({
+  tableName: TABLE_NAMES.HARVESTS,
+  conflictFields,
+  resolution,
+});
 await trackPendingChanges(count);
 await trackCheckpointAge(ageMs);
 ```

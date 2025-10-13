@@ -3,9 +3,9 @@ import type { Database } from '@nozbe/watermelondb';
 import type {
   FeedingPhase,
   FeedingTemplate,
-  GrowingMedium,
   PlantPhase,
 } from '@/lib/nutrient-engine/types';
+import { GrowingMedium } from '@/lib/nutrient-engine/types';
 import { type FeedingTemplateModel } from '@/lib/watermelon-models/feeding-template';
 
 /**
@@ -215,7 +215,7 @@ export function validateTemplate(options: CreateTemplateOptions): void {
   }
 
   // Validate medium
-  const validMedia: GrowingMedium[] = ['soil', 'coco', 'hydro'];
+  const validMedia: GrowingMedium[] = Object.values(GrowingMedium);
   if (!validMedia.includes(options.medium)) {
     throw new TemplateValidationError(
       `Invalid medium: ${options.medium}`,

@@ -7,6 +7,7 @@ import { CachedStrainModel } from './watermelon-models/cached-strain';
 import { CalibrationModel } from './watermelon-models/calibration';
 import { DeviationAlertModel } from './watermelon-models/deviation-alert';
 import { DeviceTokenModel } from './watermelon-models/device-token';
+import { DiagnosticResultModel } from './watermelon-models/diagnostic-result';
 import { FavoriteModel } from './watermelon-models/favorite';
 import { FeedingTemplateModel } from './watermelon-models/feeding-template';
 import { HarvestModel } from './watermelon-models/harvest';
@@ -30,7 +31,7 @@ import { TrichomeAssessmentModel } from './watermelon-models/trichome-assessment
 import { UndoDescriptorModel } from './watermelon-models/undo-descriptor';
 import { schema } from './watermelon-schema';
 
-const adapter = new SQLiteAdapter({
+export const adapter = new SQLiteAdapter({
   schema,
   migrations,
   // Enable JSI for production performance. Keep disabled in Jest.
@@ -71,6 +72,7 @@ export const database = new Database({
     ReservoirEventModel,
     SourceWaterProfileModel,
     CalibrationModel,
+    DiagnosticResultModel,
     DeviationAlertModel,
   ],
 });

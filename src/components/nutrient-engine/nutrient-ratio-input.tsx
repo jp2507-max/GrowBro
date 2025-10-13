@@ -18,12 +18,6 @@ interface NutrientRatioInputProps {
   testID?: string;
 }
 
-const unitOptions = [
-  { label: 'ml/L', value: 'ml/L' },
-  { label: 'ppm', value: 'ppm' },
-  { label: 'g/L', value: 'g/L' },
-];
-
 export function NutrientRatioInput({
   control,
   index,
@@ -31,6 +25,12 @@ export function NutrientRatioInput({
   testID = 'nutrient-ratio',
 }: NutrientRatioInputProps) {
   const { t } = useTranslation();
+
+  const unitOptions = [
+    { label: t('nutrient.units.mlPerL'), value: 'ml/L' },
+    { label: t('nutrient.units.ppm'), value: 'ppm' },
+    { label: t('nutrient.units.gPerL'), value: 'g/L' },
+  ];
 
   return (
     <View
@@ -41,7 +41,7 @@ export function NutrientRatioInput({
         control={control}
         name={`phases.${index}.nutrient`}
         label={t('nutrient.nutrientName')}
-        placeholder="N-P-K"
+        placeholder={t('nutrient.nutrientPlaceholder')}
         testID={`${testID}-${index}-name`}
       />
 
@@ -52,7 +52,7 @@ export function NutrientRatioInput({
             name={`phases.${index}.value`}
             label={t('nutrient.value')}
             keyboardType="decimal-pad"
-            placeholder="10"
+            placeholder={t('nutrient.valuePlaceholder')}
             testID={`${testID}-${index}-value`}
           />
         </View>

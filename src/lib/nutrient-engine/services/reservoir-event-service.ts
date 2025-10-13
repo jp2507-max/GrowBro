@@ -310,16 +310,21 @@ export function observeRecentEvents(
       try {
         const eventsCollection =
           database.get<ReservoirEventModel>('reservoir_events');
-        const cutoffTime = Date.now() - UNDO_WINDOW_MS;
 
         const query = eventsCollection.query(
           Q.where('reservoir_id', reservoirId),
-          Q.where('created_at', Q.gte(cutoffTime)),
           Q.sortBy('created_at', Q.desc)
         );
 
         subscription = query.observe().subscribe({
-          next: (events: any) => subscriber.next(events),
+          next: (events: any) => {
+            const cutoff = Date.now() - UNDO_WINDOW_MS;
+            const recentEvents = events.filter(
+              (event: ReservoirEventModel) =>
+                event.createdAt.getTime() >= cutoff
+            );
+            subscriber.next(recentEvents);
+          },
           error: (error: any) => subscriber.error(error),
         });
       } catch (error) {
@@ -382,17 +387,19 @@ function generateDoseSteps(
     const stepAdditionML =
       (stepEcIncrease * params.volumeL) / params.stockConcentration;
     const actualAdditionML = Math.min(stepAdditionML, remainingAdditionML);
+    const actualEcIncrease =
+      (actualAdditionML * params.stockConcentration) / params.volumeL;
 
     steps.push({
       stepNumber,
       additionML: Math.round(actualAdditionML * 10) / 10,
-      expectedEc25c: Math.round((currentStepEc + stepEcIncrease) * 100) / 100,
+      expectedEc25c: Math.round((currentStepEc + actualEcIncrease) * 100) / 100,
       waitTimeMinutes: MIXING_TIME_MINUTES,
-      instructions: `Add ${Math.round(actualAdditionML * 10) / 10}mL of stock solution. Mix thoroughly and wait ${MIXING_TIME_MINUTES} minutes before measuring.`,
+      instructions: `Add ${Math.round(actualAdditionML * 10) / 10}mL of stock solution (+${Math.round(actualEcIncrease * 100) / 100} EC). Mix thoroughly and wait ${MIXING_TIME_MINUTES} minutes before measuring.`,
     });
 
     remainingAdditionML -= actualAdditionML;
-    currentStepEc += stepEcIncrease;
+    currentStepEc += actualEcIncrease;
     stepNumber++;
 
     if (stepNumber > 10) {

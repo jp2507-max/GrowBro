@@ -14,7 +14,7 @@ describe('conflict-resolver', () => {
     //   updatedAt: '2024-01-02T00:00:00.000Z',
     // };
     // const c = buildConflict({
-    //   tableName: 'tasks',
+    //   tableName: TABLE_NAMES.TASKS,
     //   recordId: 't1',
     //   localRecord: local,
     //   remoteRecord: remote,

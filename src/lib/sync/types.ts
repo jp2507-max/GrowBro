@@ -110,3 +110,52 @@ export type QueueItem = {
   retries: number;
   idempotencyKey?: string;
 };
+
+/**
+ * Valid table names from WatermelonDB schema
+ */
+export const TABLE_NAMES = {
+  SERIES: 'series',
+  OCCURRENCE_OVERRIDES: 'occurrence_overrides',
+  TASKS: 'tasks',
+  NOTIFICATION_QUEUE: 'notification_queue',
+  NOTIFICATIONS: 'notifications',
+  NOTIFICATION_PREFERENCES: 'notification_preferences',
+  DEVICE_TOKENS: 'device_tokens',
+  IMAGE_UPLOAD_QUEUE: 'image_upload_queue',
+  FAVORITES: 'favorites',
+  CACHED_STRAINS: 'cached_strains',
+  PLAYBOOKS: 'playbooks',
+  PLAYBOOK_APPLICATIONS: 'playbook_applications',
+  UNDO_DESCRIPTORS: 'undo_descriptors',
+  OUTBOX_NOTIFICATION_ACTIONS: 'outbox_notification_actions',
+  AI_SUGGESTIONS: 'ai_suggestions',
+  TRICHOME_ASSESSMENTS: 'trichome_assessments',
+  ADJUSTMENT_SUGGESTIONS: 'adjustment_suggestions',
+  ADJUSTMENT_COOLDOWNS: 'adjustment_cooldowns',
+  PLANT_ADJUSTMENT_PREFERENCES: 'plant_adjustment_preferences',
+  HARVESTS: 'harvests',
+  INVENTORY: 'inventory',
+  HARVEST_AUDITS: 'harvest_audits',
+  FEEDING_TEMPLATES: 'feeding_templates',
+  PH_EC_READINGS_V2: 'ph_ec_readings_v2',
+  RESERVOIRS_V2: 'reservoirs_v2',
+  SOURCE_WATER_PROFILES_V2: 'source_water_profiles_v2',
+  CALIBRATIONS: 'calibrations',
+  DEVIATION_ALERTS_V2: 'deviation_alerts_v2',
+  RESERVOIR_EVENTS: 'reservoir_events',
+} as const;
+
+export type TableName = (typeof TABLE_NAMES)[keyof typeof TABLE_NAMES];
+
+/**
+ * @deprecated Legacy conflict type for backward compatibility.
+ * New code should use the conflict resolution API from conflict-resolver.ts
+ */
+export type LegacyConflict = {
+  tableName: TableName;
+  recordId: string;
+  conflictFields: string[];
+  localRecord?: Record<string, any>;
+  remoteRecord?: Record<string, any>;
+};

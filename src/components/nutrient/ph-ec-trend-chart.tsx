@@ -39,6 +39,7 @@ function ReadingRow({
   phRange: { min: number; max: number };
   ecRange: { min: number; max: number };
 }): React.ReactElement {
+  const { t } = useTranslation();
   const dateTime = DateTime.fromMillis(reading.timestamp);
   const phInRange = reading.ph >= phRange.min && reading.ph <= phRange.max;
   const ecInRange = reading.ec >= ecRange.min && reading.ec <= ecRange.max;
@@ -55,7 +56,7 @@ function ReadingRow({
       </View>
       <View className="flex-row gap-4">
         <View className="items-end">
-          <Text className="text-xs text-neutral-500">pH</Text>
+          <Text className="text-xs text-neutral-500">{t('nutrient.ph')}</Text>
           <Text
             className={`text-base font-semibold ${phInRange ? 'text-success-600' : 'text-warning-600'}`}
           >
@@ -63,7 +64,9 @@ function ReadingRow({
           </Text>
         </View>
         <View className="items-end">
-          <Text className="text-xs text-neutral-500">EC</Text>
+          <Text className="text-xs text-neutral-500">
+            {t('nutrient.ec_label')}
+          </Text>
           <Text
             className={`text-base font-semibold ${ecInRange ? 'text-success-600' : 'text-warning-600'}`}
           >
@@ -76,6 +79,7 @@ function ReadingRow({
 }
 
 function EventMarkerRow({ event }: { event: EventMarker }): React.ReactElement {
+  const { t } = useTranslation();
   const dateTime = DateTime.fromMillis(event.timestamp);
 
   // Map event types to display info
@@ -83,16 +87,36 @@ function EventMarkerRow({ event }: { event: EventMarker }): React.ReactElement {
     string,
     { icon: string; label: string; color: string }
   > = {
-    FILL: { icon: '💧', label: 'Fill', color: 'text-primary-600' },
-    DILUTE: { icon: '🌊', label: 'Dilute', color: 'text-primary-500' },
+    FILL: {
+      icon: '💧',
+      label: t('nutrient.eventTypes.fill'),
+      color: 'text-primary-600',
+    },
+    DILUTE: {
+      icon: '🌊',
+      label: t('nutrient.eventTypes.dilute'),
+      color: 'text-primary-500',
+    },
     ADD_NUTRIENT: {
       icon: '🧪',
-      label: 'Add Nutrient',
+      label: t('nutrient.eventTypes.addNutrient'),
       color: 'text-success-600',
     },
-    PH_UP: { icon: '⬆️', label: 'pH Up', color: 'text-warning-600' },
-    PH_DOWN: { icon: '⬇️', label: 'pH Down', color: 'text-warning-600' },
-    CHANGE: { icon: '🔄', label: 'Change', color: 'text-neutral-600' },
+    PH_UP: {
+      icon: '⬆️',
+      label: t('nutrient.eventTypes.phUp'),
+      color: 'text-warning-600',
+    },
+    PH_DOWN: {
+      icon: '⬇️',
+      label: t('nutrient.eventTypes.phDown'),
+      color: 'text-warning-600',
+    },
+    CHANGE: {
+      icon: '🔄',
+      label: t('nutrient.eventTypes.change'),
+      color: 'text-neutral-600',
+    },
   };
 
   const eventInfo = eventTypeMap[event.type] || {
@@ -158,6 +182,8 @@ export function PhEcTrendChart({
   ecRange,
   testID,
 }: Props): React.ReactElement {
+  const { t } = useTranslation();
+
   if (readings.length === 0 && events.length === 0) {
     return <EmptyState testID={testID} />;
   }
@@ -168,14 +194,16 @@ export function PhEcTrendChart({
     <View testID={testID} className="flex-1">
       <View className="mb-3 rounded-lg bg-neutral-50 p-3">
         <Text className="mb-1 text-xs font-medium text-neutral-600">
-          Target Ranges
+          {t('nutrient.targetRanges')}
         </Text>
         <View className="flex-row gap-4">
           <Text className="text-sm text-neutral-700">
-            pH: {phRange.min.toFixed(1)}–{phRange.max.toFixed(1)}
+            {t('nutrient.ph')}: {phRange.min.toFixed(1)}–
+            {phRange.max.toFixed(1)}
           </Text>
           <Text className="text-sm text-neutral-700">
-            EC: {ecRange.min.toFixed(1)}–{ecRange.max.toFixed(1)} mS/cm
+            {t('nutrient.ec')}: {ecRange.min.toFixed(1)}–
+            {ecRange.max.toFixed(1)} {t('units.msPerCm')}
           </Text>
         </View>
       </View>

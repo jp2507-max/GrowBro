@@ -4,7 +4,7 @@
  * Requirements: 8.5
  */
 
-import type { SourceWaterProfile } from '../types';
+import type { SourceWaterProfile } from '@/lib/nutrient-engine/types';
 import {
   ANNUAL_REMINDER_INTERVAL_MS,
   EARLY_REMINDER_THRESHOLD_MS,
@@ -15,7 +15,7 @@ import {
   getWaterTestingChecklist,
   shouldShowAnnualReminder,
   shouldShowEarlyReminder,
-} from './annual-reminder';
+} from '@/lib/nutrient-engine/utils/annual-reminder';
 
 describe('annual-reminder', () => {
   const ONE_DAY_MS = 24 * 60 * 60 * 1000;

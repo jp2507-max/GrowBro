@@ -18,6 +18,8 @@ interface PhaseHeaderProps {
   testID: string;
 }
 
+// TODO: Localize phase option labels - move to i18n resources
+// Should use: t('nutrient.phaseOptions.seedling'), etc.
 const phaseOptions = [
   { label: 'Seedling', value: PlantPhase.SEEDLING },
   { label: 'Vegetative', value: PlantPhase.VEGETATIVE },
@@ -30,6 +32,8 @@ export function PhaseHeader({ control, phaseIndex, testID }: PhaseHeaderProps) {
 
   return (
     <>
+      {/* TODO: Use proper interpolation for phase heading */}
+      {/* Should use: t('nutrient.phaseTitle', { index: phaseIndex + 1 }) */}
       <Text className="mb-3 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         {t('nutrient.phase')} {phaseIndex + 1}
       </Text>
@@ -47,7 +51,7 @@ export function PhaseHeader({ control, phaseIndex, testID }: PhaseHeaderProps) {
         name={`phases.${phaseIndex}.durationDays`}
         label={t('nutrient.durationDays')}
         keyboardType="number-pad"
-        placeholder="14"
+        placeholder={t('nutrient.durationPlaceholder')}
         testID={`${testID}-${phaseIndex}-duration`}
       />
     </>

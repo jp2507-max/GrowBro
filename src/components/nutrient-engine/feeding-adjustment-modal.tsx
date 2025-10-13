@@ -9,6 +9,7 @@
 
 import { DateTime } from 'luxon';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView } from 'react-native';
 
 import { Button, Text, View } from '@/components/ui';
@@ -23,6 +24,18 @@ export type FeedingAdjustmentModalProps = {
   onConfirm: (adjustments: ProposedAdjustment[]) => Promise<void>;
   onCancel: () => void;
   timezone: string;
+};
+
+type FeedingAdjustmentModalInnerProps = {
+  modal: ReturnType<typeof useModal>;
+  proposal: AdjustmentProposal;
+  timezone: string;
+  selectedTasks: Set<string>;
+  toggleTask: (taskId: string) => void;
+  handleCancel: () => void;
+  handleConfirmAll: () => Promise<void>;
+  handleConfirmSelected: () => Promise<void>;
+  isLoading: boolean;
 };
 
 export type FeedingAdjustmentModalHandle = {
@@ -42,16 +55,17 @@ function ModalHeader({
   taskCount: number;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <View className="mb-4">
       <View className="mb-2 flex-row items-center justify-between">
         <Text className="text-xl font-bold text-charcoal-950 dark:text-neutral-100">
-          Adjustment Required
+          {t('nutrient.adjustmentRequired')}
         </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Close modal"
-          accessibilityHint="Closes the adjustment modal and cancels any changes"
+          accessibilityLabel={t('nutrient.closeModal')}
+          accessibilityHint={t('nutrient.closeModalHint')}
           onPress={onClose}
           className="rounded-full p-2"
           testID="close-button"
@@ -67,7 +81,9 @@ function ModalHeader({
           {alertMessage}
         </Text>
         <Text className="mt-1 text-xs text-warning-700 dark:text-warning-300">
-          {taskCount} {taskCount === 1 ? 'task' : 'tasks'} affected
+          {taskCount === 1
+            ? t('nutrient.tasksAffected_one', { count: taskCount })
+            : t('nutrient.tasksAffected_other', { count: taskCount })}
         </Text>
       </View>
     </View>
@@ -82,10 +98,11 @@ function RecommendationsSection({
 }: {
   recommendations: string[];
 }) {
+  const { t } = useTranslation();
   return (
     <View className="mb-4 rounded-lg bg-primary-50 p-4 dark:bg-primary-900/10">
       <Text className="mb-2 font-semibold text-primary-900 dark:text-primary-100">
-        Recommended Actions
+        {t('nutrient.recommendedActions')}
       </Text>
       {recommendations.map((rec, index) => (
         <View key={index} className="mb-1 flex-row">
@@ -121,6 +138,7 @@ function TaskAdjustmentRow({
   selected: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation();
   const severityColors = {
     low: 'bg-primary-100 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800',
     medium:
@@ -133,7 +151,9 @@ function TaskAdjustmentRow({
       accessibilityRole="checkbox"
       accessibilityState={{ checked: selected }}
       accessibilityLabel={`${adjustment.taskTitle}, ${adjustment.reason}`}
-      accessibilityHint={`Toggles selection of this task adjustment. Currently ${selected ? 'selected' : 'not selected'}`}
+      accessibilityHint={t('nutrient.toggleTaskHint', {
+        status: selected ? t('common.selected') : t('common.notSelected'),
+      })}
       onPress={onToggle}
       className={`mb-3 rounded-lg border p-3 ${severityColors[adjustment.severity]} ${
         selected ? 'opacity-100' : 'opacity-60'
@@ -162,7 +182,8 @@ function TaskAdjustmentRow({
 
       <View className="mb-2 rounded-md bg-white/50 p-2 dark:bg-charcoal-900/50">
         <Text className="text-xs font-semibold text-charcoal-800 dark:text-neutral-300">
-          Action: {adjustment.action.replace(/_/g, ' ').toUpperCase()}
+          {t('nutrient.actionLabel')}{' '}
+          {adjustment.action.replace(/_/g, ' ').toUpperCase()}
         </Text>
         <Text className="mt-1 text-xs text-neutral-700 dark:text-neutral-400">
           {adjustment.reason}
@@ -186,14 +207,18 @@ function TaskListSection({
   selectedTasks: Set<string>;
   onToggle: (taskId: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <View className="mb-4">
       <View className="mb-3 flex-row items-center justify-between">
         <Text className="font-semibold text-charcoal-950 dark:text-neutral-100">
-          Proposed Adjustments
+          {t('nutrient.proposedAdjustments')}
         </Text>
         <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-          {selectedTasks.size} of {adjustments.length} selected
+          {t('nutrient.selectionCount', {
+            selected: selectedTasks.size,
+            total: adjustments.length,
+          })}
         </Text>
       </View>
 
@@ -214,11 +239,11 @@ function TaskListSection({
  * Info notice about undo capability
  */
 function UndoNotice() {
+  const { t } = useTranslation();
   return (
     <View className="mb-4 rounded-lg bg-primary-50 p-3 dark:bg-primary-900/10">
       <Text className="text-xs text-primary-700 dark:text-primary-300">
-        ℹ️ You can undo these changes if needed. Adjustments will update task
-        instructions and can be reverted within the next few minutes.
+        {t('nutrient.undoNotice')}
       </Text>
     </View>
   );
@@ -242,6 +267,7 @@ function ActionButtons({
   totalCount: number;
   isLoading: boolean;
 }) {
+  const { t } = useTranslation();
   const hasSelection = selectedCount > 0;
   const allSelected = selectedCount === totalCount;
 
@@ -250,8 +276,8 @@ function ActionButtons({
       <Button
         label={
           allSelected
-            ? `Apply All (${totalCount})`
-            : `Apply Selected (${selectedCount})`
+            ? t('nutrient.applyAll', { count: totalCount })
+            : t('nutrient.applySelected', { count: selectedCount })
         }
         onPress={allSelected ? onConfirmAll : onConfirmSelected}
         disabled={!hasSelection || isLoading}
@@ -259,7 +285,7 @@ function ActionButtons({
         testID="confirm-adjustments-button"
       />
       <Button
-        label="Cancel"
+        label={t('common.cancel')}
         variant="outline"
         onPress={onCancel}
         disabled={isLoading}
@@ -445,21 +471,16 @@ function useFeedingAdjustmentModal(
  * ```
  */
 function FeedingAdjustmentModalInner({
+  modal,
   proposal,
-  onConfirm,
-  onCancel,
   timezone,
-}: FeedingAdjustmentModalProps) {
-  const {
-    modal,
-    isLoading,
-    selectedTasks,
-    toggleTask,
-    handleCancel,
-    handleConfirmAll,
-    handleConfirmSelected,
-  } = useFeedingAdjustmentModal(proposal, onConfirm, onCancel);
-
+  selectedTasks,
+  toggleTask,
+  handleCancel,
+  handleConfirmAll,
+  handleConfirmSelected,
+  isLoading,
+}: FeedingAdjustmentModalInnerProps) {
   return (
     <Modal
       ref={modal.ref}
@@ -485,7 +506,15 @@ export const FeedingAdjustmentModal = React.forwardRef<
   FeedingAdjustmentModalHandle,
   FeedingAdjustmentModalProps
 >(({ proposal, onConfirm, onCancel, timezone }, ref) => {
-  const modal = useModal();
+  const {
+    modal,
+    isLoading,
+    selectedTasks,
+    toggleTask,
+    handleCancel,
+    handleConfirmAll,
+    handleConfirmSelected,
+  } = useFeedingAdjustmentModal(proposal, onConfirm, onCancel);
 
   React.useImperativeHandle(ref, () => ({
     present: modal.present,
@@ -494,10 +523,15 @@ export const FeedingAdjustmentModal = React.forwardRef<
 
   return (
     <FeedingAdjustmentModalInner
+      modal={modal}
       proposal={proposal}
-      onConfirm={onConfirm}
-      onCancel={onCancel}
       timezone={timezone}
+      selectedTasks={selectedTasks}
+      toggleTask={toggleTask}
+      handleCancel={handleCancel}
+      handleConfirmAll={handleConfirmAll}
+      handleConfirmSelected={handleConfirmSelected}
+      isLoading={isLoading}
     />
   );
 });

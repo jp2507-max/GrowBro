@@ -3,7 +3,9 @@ import React from 'react';
 
 import { retentionWorker, useSyncPrefs } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
+import { getAnalyticsClient } from '@/lib/analytics-registry';
 import { registerNotificationMetrics } from '@/lib/notification-metrics';
+import { startUiResponsivenessMonitor } from '@/lib/perf/ui-responsiveness-monitor';
 import { consentManager } from '@/lib/privacy/consent-manager';
 import { setDeletionAdapter } from '@/lib/privacy/deletion-adapter';
 import { createSupabaseDeletionAdapter } from '@/lib/privacy/deletion-adapter-supabase';
@@ -51,7 +53,9 @@ export function getCurrentTimeZone(): string {
   return 'UTC';
 }
 
+// eslint-disable-next-line max-lines-per-function
 function useSyncAndMetrics(): void {
+  // eslint-disable-next-line max-lines-per-function
   React.useEffect(() => {
     void registerBackgroundTask();
     const dispose = setupSyncTriggers();
@@ -68,10 +72,17 @@ function useSyncAndMetrics(): void {
     let cleanupNotificationMetrics: (() => void) | undefined;
     let coldStartTimer: ReturnType<typeof setTimeout> | undefined;
     let coldStartTracked = false; // ensure we track the cold start metric at most once
+    let cleanupUiMonitor: (() => void) | undefined;
 
     function registerMetricsOnce() {
       if (!cleanupNotificationMetrics) {
         cleanupNotificationMetrics = registerNotificationMetrics();
+      }
+      if (!cleanupUiMonitor) {
+        cleanupUiMonitor = startUiResponsivenessMonitor({
+          analytics: getAnalyticsClient(),
+          isTrackingEnabled: () => consentManager.hasConsented('analytics'),
+        });
       }
       if (!coldStartTracked) {
         coldStartTimer = setTimeout(() => {
@@ -89,6 +100,10 @@ function useSyncAndMetrics(): void {
         cleanupNotificationMetrics?.();
       } catch {}
       cleanupNotificationMetrics = undefined;
+      try {
+        cleanupUiMonitor?.();
+      } catch {}
+      cleanupUiMonitor = undefined;
       if (coldStartTimer) {
         clearTimeout(coldStartTimer);
         coldStartTimer = undefined;

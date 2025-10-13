@@ -4,6 +4,7 @@
  * Title and basic inputs for feeding template form
  */
 
+import type { JSX } from 'react';
 import React from 'react';
 import type { Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -31,7 +32,7 @@ export function TemplateFormHeader({
   control,
   isEdit,
   testID,
-}: TemplateFormHeaderProps) {
+}: TemplateFormHeaderProps): JSX.Element {
   const { t } = useTranslation();
 
   return (

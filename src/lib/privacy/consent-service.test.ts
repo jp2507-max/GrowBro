@@ -1,20 +1,24 @@
-import { getItem, setItem } from '@/lib/storage';
 import { cleanup } from '@/lib/test-utils';
 
 import { ConsentService } from './consent-service';
 import type { ConsentState } from './consent-types';
+import {
+  clearSecureConfigForTests,
+  getSecureConfig,
+  setSecureConfig,
+} from './secure-config-store';
 
 const CONSENT_KEY = 'consents.v1';
 const CURRENT_CONSENT_VERSION = '2025-09-01';
 
 afterEach(cleanup);
 
+beforeEach(async () => {
+  await clearSecureConfigForTests();
+  (ConsentService as any).resetForTests();
+});
+
 describe('ConsentService - getConsents', () => {
-  beforeEach(() => {
-    // Clear any stored consent data before each test
-    setItem(CONSENT_KEY, null);
-    jest.restoreAllMocks();
-  });
   test('returns fresh defaults when no stored consent exists', async () => {
     const result = await ConsentService.getConsents();
 
@@ -42,7 +46,8 @@ describe('ConsentService - getConsents', () => {
       locale: 'en',
     };
 
-    setItem(CONSENT_KEY, storedConsent);
+    await setSecureConfig(CONSENT_KEY, storedConsent);
+    (ConsentService as any).resetForTests();
     const result = await ConsentService.getConsents();
 
     expect(result).toEqual(storedConsent);
@@ -50,11 +55,6 @@ describe('ConsentService - getConsents', () => {
 });
 
 describe('ConsentService - getConsents (versioning)', () => {
-  beforeEach(() => {
-    setItem(CONSENT_KEY, null);
-    jest.restoreAllMocks();
-  });
-
   test('clears and returns fresh defaults when stored version is outdated', async () => {
     const outdatedConsent: ConsentState = {
       telemetry: true,
@@ -67,7 +67,8 @@ describe('ConsentService - getConsents (versioning)', () => {
       locale: 'en',
     };
 
-    setItem(CONSENT_KEY, outdatedConsent);
+    await setSecureConfig(CONSENT_KEY, outdatedConsent);
+    (ConsentService as any).resetForTests();
     const result = await ConsentService.getConsents();
 
     // Should return fresh defaults, not the old consent values
@@ -83,20 +84,14 @@ describe('ConsentService - getConsents (versioning)', () => {
     });
 
     // Should have cleared the old data from storage
-    const stored = getItem<ConsentState>(CONSENT_KEY);
+    const stored = await getSecureConfig<ConsentState>(CONSENT_KEY);
     expect(stored?.version).toBe(CURRENT_CONSENT_VERSION);
     expect(stored?.telemetry).toBe(false);
   });
 });
 
 describe('ConsentService - hasConsent', () => {
-  beforeEach(() => {
-    // Clear any stored consent data before each test
-    setItem(CONSENT_KEY, null);
-    jest.restoreAllMocks();
-  });
-
-  test('returns false for outdated consent version', () => {
+  test('returns false for outdated consent version', async () => {
     const outdatedConsent: ConsentState = {
       telemetry: true,
       experiments: false,
@@ -108,7 +103,8 @@ describe('ConsentService - hasConsent', () => {
       locale: 'en',
     };
 
-    setItem(CONSENT_KEY, outdatedConsent);
+    await setSecureConfig(CONSENT_KEY, outdatedConsent);
+    (ConsentService as any).resetForTests();
 
     // Even though telemetry was true in old version, should return false
     expect(ConsentService.hasConsent('telemetry')).toBe(false);
@@ -116,11 +112,12 @@ describe('ConsentService - hasConsent', () => {
   });
 
   test('returns false when no consent data exists', () => {
+    (ConsentService as any).resetForTests();
     expect(ConsentService.hasConsent('telemetry')).toBe(false);
     expect(ConsentService.hasConsent('crashDiagnostics')).toBe(false);
   });
 
-  test('returns stored value when version matches', () => {
+  test('returns stored value when version matches', async () => {
     const currentConsent: ConsentState = {
       telemetry: true,
       experiments: false,
@@ -132,7 +129,9 @@ describe('ConsentService - hasConsent', () => {
       locale: 'en',
     };
 
-    setItem(CONSENT_KEY, currentConsent);
+    await setSecureConfig(CONSENT_KEY, currentConsent);
+    (ConsentService as any).resetForTests();
+    await ConsentService.getConsents();
 
     expect(ConsentService.hasConsent('telemetry')).toBe(true);
     expect(ConsentService.hasConsent('experiments')).toBe(false);
@@ -142,13 +141,7 @@ describe('ConsentService - hasConsent', () => {
 });
 
 describe('ConsentService - isConsentRequired', () => {
-  beforeEach(() => {
-    // Clear any stored consent data before each test
-    setItem(CONSENT_KEY, null);
-    jest.restoreAllMocks();
-  });
-
-  test('returns true when versions do not match', () => {
+  test('returns true when versions do not match', async () => {
     const outdatedConsent: ConsentState = {
       telemetry: true,
       experiments: false,
@@ -160,7 +153,8 @@ describe('ConsentService - isConsentRequired', () => {
       locale: 'en',
     };
 
-    setItem(CONSENT_KEY, outdatedConsent);
+    await setSecureConfig(CONSENT_KEY, outdatedConsent);
+    (ConsentService as any).resetForTests();
     expect(ConsentService.isConsentRequired()).toBe(true);
   });
 });

@@ -1,117 +1,127 @@
-/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/consistent-type-imports */
-// Mock storage to avoid native MMKV
-jest.mock('@/lib/storage', () => {
+jest.mock('@/lib/privacy/secure-config-store', () => {
   const store = new Map<string, any>();
-  return {
-    getItem: jest.fn((key: string) => (store.has(key) ? store.get(key) : null)),
-    setItem: jest.fn((key: string, value: any) => {
+  const api = {
+    getSecureConfig: jest.fn(async (key: string) =>
+      store.has(key) ? (store.get(key) as any) : null
+    ),
+    setSecureConfig: jest.fn(async (key: string, value: any) => {
       store.set(key, value);
     }),
-    removeItem: jest.fn((key: string) => store.delete(key)),
-    __reset: () => store.clear(),
+    removeSecureConfig: jest.fn(async (key: string) => {
+      store.delete(key);
+    }),
+    clearSecureConfigForTests: jest.fn(async () => {
+      store.clear();
+    }),
+    resetSecureStoreAvailabilityForTests: jest.fn(),
+  } as const;
+
+  return {
+    ...api,
+    __store: store,
+    __reset: () => {
+      store.clear();
+      Object.values(api).forEach((fn) => {
+        if (typeof fn === 'function' && 'mockClear' in fn) {
+          (fn as jest.Mock).mockClear();
+        }
+      });
+    },
+    __set: (key: string, value: any) => {
+      store.set(key, value);
+    },
   };
 });
 
-// Minimal Sentry mock for context updates
 jest.mock('@sentry/react-native', () => ({
   setContext: jest.fn(),
 }));
 
+const secureStoreMock = jest.requireMock(
+  '@/lib/privacy/secure-config-store'
+) as any;
+const sentryMock = jest.requireMock('@sentry/react-native') as {
+  setContext: jest.Mock;
+};
+
+const flushPromises = () => new Promise((resolve) => setImmediate(resolve));
+
 beforeEach(() => {
   jest.resetModules();
+  secureStoreMock.__reset();
+  sentryMock.setContext.mockClear();
 });
 
-test('getPrivacyConsent returns defaults when storage empty and populates cache', async () => {
-  jest.isolateModules(() => {
-    // Arrange
-    const { getPrivacyConsent } =
-      require('@/lib/privacy-consent') as typeof import('@/lib/privacy-consent');
-
-    // Act
-    const consent = getPrivacyConsent();
-
-    // Assert (subset of defaults)
-    expect(consent.analytics).toBe(false);
-    expect(consent.crashReporting).toBe(true);
-    expect(consent.personalizedData).toBe(false);
-    expect(consent.sessionReplay).toBe(false);
-    expect(typeof consent.lastUpdated).toBe('number');
-  });
+test('getPrivacyConsent returns defaults when secure store empty', async () => {
+  const module = await import('@/lib/privacy-consent');
+  const consent = module.getPrivacyConsent();
+  expect(consent.analytics).toBe(false);
+  expect(consent.crashReporting).toBe(true);
+  expect(consent.personalizedData).toBe(false);
+  expect(consent.sessionReplay).toBe(false);
+  expect(typeof consent.lastUpdated).toBe('number');
+  expect(module.getPrivacyConsentSync()).toEqual(consent);
 });
 
 test('setPrivacyConsent merges, persists, updates lastUpdated and Sentry context', async () => {
-  jest.isolateModules(() => {
-    const Sentry = require('@sentry/react-native') as {
-      setContext: jest.Mock;
-    };
-    const { getPrivacyConsent, setPrivacyConsent } =
-      require('@/lib/privacy-consent') as typeof import('@/lib/privacy-consent');
+  const module = await import('@/lib/privacy-consent');
+  const before = module.getPrivacyConsent();
+  module.setPrivacyConsent({ analytics: true });
+  await flushPromises();
+  const storedArgs = secureStoreMock.setSecureConfig.mock.calls[0][1];
+  const after = module.getPrivacyConsent();
 
-    const before = getPrivacyConsent();
-    setPrivacyConsent({ analytics: true });
-    const after = getPrivacyConsent();
-
-    expect(before.analytics).toBe(false);
-    expect(after.analytics).toBe(true);
-    expect(after.crashReporting).toBe(true);
-    expect(typeof after.lastUpdated).toBe('number');
-
-    expect(Sentry.setContext).toHaveBeenCalledWith(
-      'privacy_consent',
-      expect.objectContaining({
-        analytics: true,
-        crashReporting: true,
-        personalizedData: false,
-        sessionReplay: false,
-      })
-    );
-  });
+  expect(before.analytics).toBe(false);
+  expect(after.analytics).toBe(true);
+  expect(after.crashReporting).toBe(true);
+  expect(typeof after.lastUpdated).toBe('number');
+  expect(storedArgs.analytics).toBe(true);
+  expect(sentryMock.setContext).toHaveBeenCalledWith(
+    'privacy_consent',
+    expect.objectContaining({
+      analytics: true,
+      crashReporting: true,
+      personalizedData: false,
+      sessionReplay: false,
+    })
+  );
 });
 
-test('hasConsent reads current value', async () => {
-  jest.isolateModules(() => {
-    const { hasConsent, setPrivacyConsent } =
-      require('@/lib/privacy-consent') as typeof import('@/lib/privacy-consent');
-
-    expect(hasConsent('analytics')).toBe(false);
-    setPrivacyConsent({ analytics: true });
-    expect(hasConsent('analytics')).toBe(true);
-  });
+test('hasConsent reflects latest persisted value', async () => {
+  const module = await import('@/lib/privacy-consent');
+  expect(module.hasConsent('analytics')).toBe(false);
+  module.setPrivacyConsent({ analytics: true });
+  await flushPromises();
+  expect(module.hasConsent('analytics')).toBe(true);
 });
 
-test('initializePrivacyConsent populates Sentry context from stored state', async () => {
-  jest.isolateModules(() => {
-    const Sentry = require('@sentry/react-native') as {
-      setContext: jest.Mock;
-    };
-    const { initializePrivacyConsent, setPrivacyConsent } =
-      require('@/lib/privacy-consent') as typeof import('@/lib/privacy-consent');
-
-    setPrivacyConsent({ analytics: true, sessionReplay: true });
-    Sentry.setContext.mockClear();
-    initializePrivacyConsent();
-
-    expect(Sentry.setContext).toHaveBeenCalledWith(
-      'privacy_consent',
-      expect.objectContaining({ analytics: true, sessionReplay: true })
-    );
+test('initializePrivacyConsent hydrates and updates Sentry context', async () => {
+  secureStoreMock.__set('privacy-consent.v1', {
+    analytics: true,
+    sessionReplay: true,
+    crashReporting: false,
+    personalizedData: false,
+    lastUpdated: 123,
   });
+
+  const module = await import('@/lib/privacy-consent');
+  sentryMock.setContext.mockClear();
+  module.initializePrivacyConsent();
+  await flushPromises();
+
+  expect(sentryMock.setContext).toHaveBeenCalledWith(
+    'privacy_consent',
+    expect.objectContaining({ analytics: true, sessionReplay: true })
+  );
 });
 
-test('getPrivacyConsent handles storage errors and falls back to defaults', async () => {
-  // Force getItem to throw
-  jest.doMock('@/lib/storage', () => ({
-    getItem: jest.fn(() => {
-      throw new Error('boom');
-    }),
-    setItem: jest.fn(),
-    removeItem: jest.fn(),
-  }));
-
-  jest.isolateModules(() => {
-    const { getPrivacyConsent } =
-      require('@/lib/privacy-consent') as typeof import('@/lib/privacy-consent');
-    const consent = getPrivacyConsent();
-    expect(consent.crashReporting).toBe(true);
+test('getPrivacyConsent falls back to defaults when secure storage throws', async () => {
+  secureStoreMock.getSecureConfig.mockImplementationOnce(async () => {
+    throw new Error('boom');
   });
+
+  const module = await import('@/lib/privacy-consent');
+  const consent = module.getPrivacyConsent();
+  expect(consent.crashReporting).toBe(true);
+  expect(consent.analytics).toBe(false);
 });

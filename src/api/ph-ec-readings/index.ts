@@ -235,18 +235,14 @@ export const useFetchReadings = Object.assign(
  * Hook to fetch readings for a specific reservoir
  */
 export const useReservoirReadings = (reservoirId: string) => {
-  return useFetchReadings({
-    variables: { reservoirId },
-  });
+  return useFetchReadings({ reservoirId });
 };
 
 /**
  * Hook to fetch readings for a specific plant
  */
 export const usePlantReadings = (plantId: string) => {
-  return useFetchReadings({
-    variables: { plantId },
-  });
+  return useFetchReadings({ plantId });
 };
 
 // ============================================================================

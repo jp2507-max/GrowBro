@@ -96,9 +96,11 @@
   "common": {
     "back": "Back",
     "cancel": "Cancel",
+    "notSelected": "not selected",
     "null": "null",
     "ok": "OK",
-    "retry": "Retry"
+    "retry": "Retry",
+    "selected": "selected"
   },
   "community": {
     "create_post": "Create Post",
@@ -794,166 +796,116 @@
     }
   },
   "nutrient": {
-    "addNutrient": "Add Nutrient",
-    "addPhase": "Add Phase",
-    "add_first_reading": "Log your first pH and EC measurement",
-    "add_reading": "Add Reading",
-    "add_reading_description": "Log pH and EC measurements for your grow",
-    "adjustmentsPreview": "Adjustments Preview",
-    "all_mediums": "All Mediums",
-    "apply_learnings": "Apply Learnings",
-    "atcEnabled": "ATC Enabled",
-    "atc_label": "Automatic Temperature Compensation (ATC)",
-    "bulk_shift_schedule": "Bulk Shift Schedule",
-    "by_author": "By {{author}}",
-    "cal_stale_warning": "Meter calibration is stale",
-    "community_templates": "Community Templates",
-    "computed": "Computed",
-    "computed_values": "Computed Values",
-    "confidence": {
-      "high": "High Confidence",
-      "low": "Low Confidence",
-      "medium": "Medium Confidence"
+    "chart": {
+      "eventMarkersNote": "{{count}} event markers shown",
+      "noData": "No readings yet",
+      "startLogging": "Start logging pH/EC measurements to see trends"
     },
-    "createTemplate": "Create Template",
-    "custom": "Custom",
-    "durationDays": "Duration (Days)",
-    "ecOffset": "EC Offset",
-    "ecRange": "EC Range @25°C",
-    "ecRaw": "EC (mS/cm)",
-    "ec_label": "EC (mS/cm)",
-    "editTemplate": "Edit Template",
-    "event": {
-      "ecDelta": "EC Change",
-      "ecDeltaHint": "Change in EC level from previous reading",
-      "logEvent": "Log Reservoir Event",
-      "note": "Notes",
-      "notePlaceholder": "Optional notes about this event...",
-      "phDelta": "pH Change",
-      "phDeltaHint": "Change in pH level from previous reading",
-      "type": "Event Type"
+    "diagnostics": {
+      "actions": {
+        "N_DEFICIENCY_FEED": "Increase nitrogen feed",
+        "N_DEFICIENCY_MONITOR": "Retest in 48 hours",
+        "PH_DRIFT_BUFFER": "Buffer source water",
+        "PH_DRIFT_MONITOR": "Increase monitoring",
+        "TOXICITY_DILUTE": "Dilute reservoir",
+        "TOXICITY_MONITOR": "Retest in 12 hours"
+      },
+      "aiConfidence": "AI-based",
+      "causes": {
+        "highAlkalinity": "High source water alkalinity driving pH drift",
+        "insufficientNitrogen": "Recent feedings lacked available nitrogen",
+        "solutionTooStrong": "Nutrient solution too concentrated"
+      },
+      "community": {
+        "classification": "Issue detected",
+        "confidence": "Confidence",
+        "footer": "What do you think? Any advice appreciated!",
+        "header": "🌱 Need help with plant diagnosis",
+        "recommendations": "Suggested actions:",
+        "symptoms": "Symptoms:"
+      },
+      "confidenceBreakdown": "Confidence Breakdown",
+      "disclaimers": {
+        "aiOnlyPrimary": "Advice is AI-generated. Cross-check with manual readings or community feedback.",
+        "considerSecondOpinion": "Confidence is limited. Consider getting a second opinion from the community.",
+        "lowConfidence": "Confidence is below the safety threshold."
+      },
+      "feedbackQuestion": "Was this diagnostic helpful?",
+      "feedbackThanks": "Thanks for your feedback!",
+      "getSecondOpinion": "Get Second Opinion from Community",
+      "helpful": "Helpful",
+      "issueTypes": {
+        "deficiency": "Nutrient Deficiency",
+        "lockout": "Nutrient Lockout",
+        "ph_drift": "pH Drift",
+        "toxicity": "Nutrient Toxicity"
+      },
+      "notHelpful": "Not Helpful",
+      "nutrient": "Nutrient",
+      "priorityHigh": "High Priority",
+      "rationale": {
+        "aiBelowThreshold": "AI hypothesis below override threshold; retaining rule-based guidance.",
+        "ecAboveTarget": "EC trend is above the reservoir target range.",
+        "ecBelowTarget": "EC trend is below the reservoir target range.",
+        "highAlkalinity": "Source water alkalinity is high.",
+        "phPersistentlyHigh": "pH has remained above the reservoir target band.",
+        "tipBurnObserved": "Tip burn symptoms detected.",
+        "yellowingLowerLeaves": "Yellowing observed on lower leaves."
+      },
+      "recommendations": {
+        "bufferAlkalinity": "Add a buffer to neutralize source water alkalinity.",
+        "diluteReservoir": "Dilute the reservoir with balanced water to lower EC.",
+        "increaseMonitoring": "Increase pH/EC monitoring until readings stabilize.",
+        "monitor48h": "Retest after 48 hours to confirm recovery.",
+        "nitrogenFeed": "Increase nitrogen inputs according to the deficiency playbook.",
+        "retest12h": "Retest in 12 hours to verify corrections.",
+        "title": "Recommendations"
+      },
+      "resolution": {
+        "cancel": "Cancel",
+        "description": "Record how you addressed this diagnostic issue. This helps improve future recommendations.",
+        "error": "Failed to mark as resolved. Please try again.",
+        "notesLabel": "Resolution Notes (optional)",
+        "notesPlaceholder": "What did you do to fix this? What worked?",
+        "resolve": "Mark Resolved",
+        "title": "Mark as Resolved"
+      },
+      "rulesConfidence": "Rules-based",
+      "severity": {
+        "mild": "Mild",
+        "moderate": "Moderate",
+        "severe": "Severe"
+      },
+      "threshold": "Override threshold"
     },
-    "export_my_template": "Export My Template",
-    "filter_by_medium": "Filter by medium",
-    "growingMedium": "Growing Medium",
-    "import_description": "Import templates shared by the community",
-    "import_template": "Import Template",
-    "load_error": "Failed to load readings",
-    "loading_readings": "Loading readings...",
-    "logMeasurement": "Log pH/EC Measurement",
-    "max": "Max",
-    "medium": {
-      "coco": "Coco",
-      "dwc": "DWC",
-      "hydro": "Hydro",
-      "soil": "Soil",
-      "soilless": "Soilless"
+    "ec": "EC",
+    "ecTrend": "EC Trend",
+    "ec_label": "EC",
+    "eventTypes": {
+      "addNutrient": "Add Nutrient",
+      "change": "Reservoir Change",
+      "dilute": "Dilute",
+      "fill": "Fill",
+      "phDown": "pH Down",
+      "phUp": "pH Up"
     },
-    "min": "Min",
-    "no_atc_warning": "Manual temperature compensation applied",
-    "no_community_templates": "No community templates available",
-    "no_events_description": "Log reservoir changes to track your history",
-    "no_events_title": "No events logged yet",
-    "no_readings": "No readings yet",
-    "no_templates_description": "Create your first feeding template",
-    "no_templates_title": "No templates yet",
-    "note_label": "Notes",
-    "notes": "Notes",
-    "notesPlaceholder": "Optional notes about this reading...",
-    "nutrients": "Nutrients",
-    "offline_queue": "{{count}} readings pending sync",
-    "performance_report": "Performance Report",
+    "no_readings": "No readings available",
     "ph": "pH",
-    "phDrift": {
-      "disclaimer": "Educational guidance only • Not professional advice",
-      "highRisk": {
-        "message": "Your water has high buffering capacity. Expect significant upward pH drift over time.",
-        "title": "High pH Drift Risk"
-      },
-      "learnMore": "Learn More",
-      "mitigation": {
-        "acidInjection": "Consider acid injection system",
-        "adjustGradually": "Adjust gradually to avoid shock",
-        "heading": "Mitigation Strategies",
-        "monitorPh": "Monitor pH daily",
-        "monitorPhFrequently": "Monitor pH frequently",
-        "phBuffer": "Use pH buffer solutions",
-        "roBlend": "Consider RO water blending",
-        "sulfuricAcid": "Use sulfuric acid for pH down"
-      },
-      "moderateRisk": {
-        "message": "Your water has moderate buffering capacity. Monitor pH regularly to catch drift early.",
-        "title": "Moderate pH Drift Risk"
-      },
-      "waterAlkalinity": "Water alkalinity: {{value}} mg/L"
+    "phTrend": "pH Trend",
+    "start_logging_ph_ec": "Start logging pH/EC measurements",
+    "targetMax": "Max",
+    "targetMin": "Min",
+    "targetRange": "Target",
+    "targetRanges": "Target Ranges",
+    "timeRange": {
+      "30days": "30 Days",
+      "7days": "7 Days",
+      "90days": "90 Days",
+      "all": "All Time"
     },
-    "phOffset": "pH Offset",
-    "phRange": "pH Range",
-    "ph_label": "pH",
-    "phase": "Phase",
-    "phaseType": "Phase Type",
-    "phases": "Phases",
-    "ppmScale": "PPM Scale",
-    "ppm_scale_label": "PPM Scale",
-    "qualityFlags": {
-      "calStale": "Calibration Stale",
-      "noAtc": "No ATC",
-      "outlier": "Outlier",
-      "tempHigh": "Temperature High"
-    },
-    "quality_flags": "Quality Flags",
-    "reading_error": "Failed to save reading",
-    "reading_history": "Reading History",
-    "reading_saved": "Reading saved successfully",
-    "readings_count_one": "reading",
-    "readings_count_other": "readings",
-    "removePhase": "Remove Phase",
-    "reservoir": {
-      "max": "Max",
-      "medium": "Growing Medium",
-      "min": "Min",
-      "name": "Reservoir Name",
-      "namePlaceholder": "e.g. Main Reservoir",
-      "noReservoirs": "No reservoirs found",
-      "selectReservoir": "Select Reservoir",
-      "targetEc": "Target EC (mS/cm @ 25°C)",
-      "targetPh": "Target pH",
-      "validation": {
-        "nameRequired": "Name required"
-      },
-      "volume": "Volume (L)"
-    },
-    "reservoir_label": "Reservoir",
-    "saveProfile": "Save Profile",
-    "save_profile_prompt": "Save as profile?",
-    "save_reading": "Save Reading",
-    "strainAdjustments": "Strain Adjustments",
-    "strainAdjustmentsHelp": "Fine-tune pH and EC targets for this strain. Enter positive or negative offsets.",
-    "temp_high_warning": "Temperature ≥28°C may affect accuracy",
-    "temp_label": "Temperature (°C)",
-    "temperature": "Temperature (°C)",
-    "templateName": "Template Name",
-    "templateNamePlaceholder": "e.g. Hydro Veg Schedule",
-    "templates_count": "{{count}} templates",
     "time_range": "Time Range",
-    "undo_shift": "Undo Shift",
-    "waterProfile": {
-      "form": {
-        "alkalinity": "Alkalinity",
-        "alkalinityHelper": "Water alkalinity affects pH stability. Higher values indicate more buffering capacity.",
-        "baselineEc": "Baseline EC",
-        "baselineEcHelper": "EC level of your source water before adding nutrients (measured at 25°C).",
-        "educationalNote": "💡 These values help predict pH drift and optimize your nutrient solution.",
-        "hardness": "Hardness",
-        "hardnessHelper": "Total water hardness indicates mineral content that can affect plant nutrient uptake.",
-        "name": "Profile Name",
-        "namePlaceholder": "e.g. Tap Water Profile",
-        "validation": {
-          "nameRequired": "Profile name is required"
-        }
-      },
-      "title": "Water Profile"
-    }
+    "viewChart": "Chart",
+    "viewList": "List"
   },
   "onboarding": {
     "allow_button": "Allow notifications",
@@ -1321,6 +1273,10 @@
     "deleteAccountQueuedBodyNoEta": "We queued your deletion request. You will receive a confirmation once completed.",
     "deleteAccountQueuedTitle": "Deletion scheduled",
     "exportData": "Export my data",
+    "exportError": {
+      "message": "We could not generate your data export. Please try again later.",
+      "title": "Export failed"
+    },
     "exportErrorBody": "We could not queue the export. Details: {{message}}",
     "exportErrorTitle": "Export request failed",
     "exportQueuedBody": "We queued your data export. Estimated completion: {{eta}}.",

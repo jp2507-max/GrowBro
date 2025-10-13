@@ -196,16 +196,26 @@ describe('performance-analysis-service', () => {
       const now = Date.now();
       // 8 out of 10 readings in band = 80%
       const readings: PhEcReading[] = [
-        createReading('1', 6.0, 1.4, now - 10000),
-        createReading('2', 6.0, 1.4, now - 9000),
-        createReading('3', 6.0, 1.4, now - 8000),
-        createReading('4', 6.0, 1.4, now - 7000),
-        createReading('5', 6.0, 1.4, now - 6000),
-        createReading('6', 6.0, 1.4, now - 5000),
-        createReading('7', 6.0, 1.4, now - 4000),
-        createReading('8', 6.0, 1.4, now - 3000),
-        createReading('9', 6.5, 1.8, now - 2000), // Out of band
-        createReading('10', 5.5, 1.0, now - 1000), // Out of band
+        createReading({
+          id: '1',
+          ph: 6.0,
+          ec25c: 1.4,
+          measuredAt: now - 10000,
+        }),
+        createReading({ id: '2', ph: 6.0, ec25c: 1.4, measuredAt: now - 9000 }),
+        createReading({ id: '3', ph: 6.0, ec25c: 1.4, measuredAt: now - 8000 }),
+        createReading({ id: '4', ph: 6.0, ec25c: 1.4, measuredAt: now - 7000 }),
+        createReading({ id: '5', ph: 6.0, ec25c: 1.4, measuredAt: now - 6000 }),
+        createReading({ id: '6', ph: 6.0, ec25c: 1.4, measuredAt: now - 5000 }),
+        createReading({ id: '7', ph: 6.0, ec25c: 1.4, measuredAt: now - 4000 }),
+        createReading({ id: '8', ph: 6.0, ec25c: 1.4, measuredAt: now - 3000 }),
+        createReading({ id: '9', ph: 6.5, ec25c: 1.8, measuredAt: now - 2000 }), // Out of band
+        createReading({
+          id: '10',
+          ph: 5.5,
+          ec25c: 1.0,
+          measuredAt: now - 1000,
+        }), // Out of band
       ];
 
       const result = analyzePerformanceAndGenerateLearnings(
@@ -224,11 +234,11 @@ describe('performance-analysis-service', () => {
       const now = Date.now();
       // Poor performance with rising pH trend
       const readings: PhEcReading[] = [
-        createReading('1', 6.5, 1.4, now - 5000),
-        createReading('2', 6.6, 1.4, now - 4000),
-        createReading('3', 6.7, 1.4, now - 3000),
-        createReading('4', 6.8, 1.4, now - 2000),
-        createReading('5', 6.9, 1.4, now - 1000),
+        createReading({ id: '1', ph: 6.5, ec25c: 1.4, measuredAt: now - 5000 }),
+        createReading({ id: '2', ph: 6.6, ec25c: 1.4, measuredAt: now - 4000 }),
+        createReading({ id: '3', ph: 6.7, ec25c: 1.4, measuredAt: now - 3000 }),
+        createReading({ id: '4', ph: 6.8, ec25c: 1.4, measuredAt: now - 2000 }),
+        createReading({ id: '5', ph: 6.9, ec25c: 1.4, measuredAt: now - 1000 }),
       ];
 
       const result = analyzePerformanceAndGenerateLearnings(
@@ -252,12 +262,12 @@ describe('performance-analysis-service', () => {
       const now = Date.now();
       // Fluctuating readings with no clear trend
       const readings: PhEcReading[] = [
-        createReading('1', 5.7, 1.4, now - 6000),
-        createReading('2', 6.3, 1.4, now - 5000),
-        createReading('3', 5.6, 1.4, now - 4000),
-        createReading('4', 6.4, 1.4, now - 3000),
-        createReading('5', 5.5, 1.4, now - 2000),
-        createReading('6', 6.5, 1.4, now - 1000),
+        createReading({ id: '1', ph: 5.7, ec25c: 1.4, measuredAt: now - 6000 }),
+        createReading({ id: '2', ph: 6.3, ec25c: 1.4, measuredAt: now - 5000 }),
+        createReading({ id: '3', ph: 5.6, ec25c: 1.4, measuredAt: now - 4000 }),
+        createReading({ id: '4', ph: 6.4, ec25c: 1.4, measuredAt: now - 3000 }),
+        createReading({ id: '5', ph: 5.5, ec25c: 1.4, measuredAt: now - 2000 }),
+        createReading({ id: '6', ph: 6.5, ec25c: 1.4, measuredAt: now - 1000 }),
       ];
 
       const result = analyzePerformanceAndGenerateLearnings(
@@ -285,11 +295,11 @@ describe('performance-analysis-service', () => {
       const now = Date.now();
       // Extreme high pH readings
       const readings: PhEcReading[] = [
-        createReading('1', 6.6, 1.4, now - 5000),
-        createReading('2', 6.7, 1.4, now - 4000),
-        createReading('3', 6.8, 1.4, now - 3000),
-        createReading('4', 6.9, 1.4, now - 2000),
-        createReading('5', 7.0, 1.4, now - 1000),
+        createReading({ id: '1', ph: 6.6, ec25c: 1.4, measuredAt: now - 5000 }),
+        createReading({ id: '2', ph: 6.7, ec25c: 1.4, measuredAt: now - 4000 }),
+        createReading({ id: '3', ph: 6.8, ec25c: 1.4, measuredAt: now - 3000 }),
+        createReading({ id: '4', ph: 6.9, ec25c: 1.4, measuredAt: now - 2000 }),
+        createReading({ id: '5', ph: 7.0, ec25c: 1.4, measuredAt: now - 1000 }),
       ];
 
       const result = analyzePerformanceAndGenerateLearnings(
@@ -314,16 +324,26 @@ describe('performance-analysis-service', () => {
 
       // Severe deviation (>50% out of band) should give high confidence
       const severeReadings: PhEcReading[] = [
-        createReading('1', 6.8, 1.4, now - 10000),
-        createReading('2', 6.9, 1.4, now - 9000),
-        createReading('3', 7.0, 1.4, now - 8000),
-        createReading('4', 7.1, 1.4, now - 7000),
-        createReading('5', 7.2, 1.4, now - 6000),
-        createReading('6', 7.3, 1.4, now - 5000),
-        createReading('7', 7.4, 1.4, now - 4000),
-        createReading('8', 7.5, 1.4, now - 3000),
-        createReading('9', 6.0, 1.4, now - 2000),
-        createReading('10', 6.0, 1.4, now - 1000),
+        createReading({
+          id: '1',
+          ph: 6.8,
+          ec25c: 1.4,
+          measuredAt: now - 10000,
+        }),
+        createReading({ id: '2', ph: 6.9, ec25c: 1.4, measuredAt: now - 9000 }),
+        createReading({ id: '3', ph: 7.0, ec25c: 1.4, measuredAt: now - 8000 }),
+        createReading({ id: '4', ph: 7.1, ec25c: 1.4, measuredAt: now - 7000 }),
+        createReading({ id: '5', ph: 7.2, ec25c: 1.4, measuredAt: now - 6000 }),
+        createReading({ id: '6', ph: 7.3, ec25c: 1.4, measuredAt: now - 5000 }),
+        createReading({ id: '7', ph: 7.4, ec25c: 1.4, measuredAt: now - 4000 }),
+        createReading({ id: '8', ph: 7.5, ec25c: 1.4, measuredAt: now - 3000 }),
+        createReading({ id: '9', ph: 6.0, ec25c: 1.4, measuredAt: now - 2000 }),
+        createReading({
+          id: '10',
+          ph: 6.0,
+          ec25c: 1.4,
+          measuredAt: now - 1000,
+        }),
       ];
 
       const result = analyzePerformanceAndGenerateLearnings(

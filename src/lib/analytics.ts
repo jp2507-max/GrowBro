@@ -137,6 +137,7 @@ export type AnalyticsEvents = {
     ms: number;
   };
   sync_latency_ms: {
+    stage: 'push' | 'pull' | 'apply' | 'total';
     ms: number;
   };
   sync_fail_rate: {
@@ -214,6 +215,64 @@ export type AnalyticsEvents = {
   };
   home_tti_ms: {
     ms: number;
+  };
+
+  sync_metrics_snapshot: {
+    trigger: 'manual' | 'auto' | 'background' | 'diagnostic';
+    attempt: number;
+    total_ms: number;
+    push_p50_ms?: number;
+    push_p95_ms?: number;
+    pull_p50_ms?: number;
+    pull_p95_ms?: number;
+    apply_p50_ms?: number;
+    apply_p95_ms?: number;
+    total_p50_ms?: number;
+    total_p95_ms?: number;
+    payload_push_avg_bytes?: number;
+    payload_pull_avg_bytes?: number;
+    checkpoint_age_ms?: number;
+  };
+  ui_thread_jank: {
+    window_ms: number;
+    max_block_ms: number;
+    avg_block_ms: number;
+    jank_count: number;
+    sample_count: number;
+  };
+  background_worker_metrics: {
+    worker: 'sync';
+    trigger: 'background_task';
+    result: 'success' | 'blocked' | 'error';
+    duration_ms: number;
+    attempt_count: number;
+  };
+  nutrient_feature_usage: {
+    feature:
+      | 'log_reading'
+      | 'acknowledge_alert'
+      | 'resolve_alert'
+      | 'apply_template'
+      | 'sync_now'
+      | 'set_measurement_mode';
+    measurement_mode?: string;
+    has_plant?: boolean;
+    has_reservoir?: boolean;
+    has_meter?: boolean;
+    has_note?: boolean;
+    ppm_scale?: string;
+    atc_on?: boolean;
+    attempts?: number;
+    pushed?: number;
+    applied?: number;
+    pending_before?: number;
+    pending_after?: number;
+    alert_type?: string;
+    severity?: string;
+    event_count?: number;
+    has_reservoir_volume?: boolean;
+    has_calendar_tasks?: boolean;
+    context?: string;
   };
 
   // Guided Grow Playbook events
@@ -477,7 +536,8 @@ export function createConsentGatedAnalytics(
         name.startsWith('playbook_') ||
         name.startsWith('ai_adjustment_') ||
         name.startsWith('trichome_') ||
-        name.startsWith('shift_');
+        name.startsWith('shift_') ||
+        name.startsWith('nutrient_');
 
       if (requiresConsent && !hasConsent('analytics')) return;
 

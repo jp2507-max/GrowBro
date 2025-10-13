@@ -76,7 +76,9 @@ describe('FeedingAdjustmentModal', () => {
       expect(
         screen.getByText('EC is above target range (2.4 mS/cm)')
       ).toBeOnTheScreen();
-      expect(screen.getByText('2 tasks affected')).toBeOnTheScreen();
+      expect(
+        screen.getByText(/2 tasks affected|nutrient\.tasksAffected/)
+      ).toBeOnTheScreen();
     });
 
     test('renders recommendations section', () => {
@@ -290,7 +292,9 @@ describe('FeedingAdjustmentModal', () => {
         />
       );
 
-      expect(screen.getByText('1 task affected')).toBeOnTheScreen();
+      expect(
+        screen.getByText(/1 task affected|nutrient\.tasksAffected/)
+      ).toBeOnTheScreen();
       expect(screen.getByText('1 of 1 selected')).toBeOnTheScreen();
     });
 

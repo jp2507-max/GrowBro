@@ -4,7 +4,12 @@
  * Handles temperature compensation, PPM conversion, quality flags, and confidence scoring
  */
 
-import type { Calibration, PpmScale } from '@/lib/nutrient-engine/types';
+import type {
+  Calibration,
+  PhEcReading,
+  PpmScale,
+  QualityFlag,
+} from '@/lib/nutrient-engine/types';
 import {
   calculateConfidenceScore,
   computeQualityFlags,
@@ -15,7 +20,7 @@ import {
 interface ComputedMetrics {
   ec25c: number | null;
   ppm: number | null;
-  qualityFlags: string[];
+  qualityFlags: QualityFlag[];
   confidence: number;
 }
 
@@ -36,7 +41,7 @@ export function usePhEcComputation({
 }: UsePhEcComputationProps): ComputedMetrics {
   let ec25c: number | null = null;
   let ppm: number | null = null;
-  let qualityFlags: string[] = [];
+  let qualityFlags: QualityFlag[] = [];
   let confidence = 1.0;
 
   try {
@@ -44,15 +49,19 @@ export function usePhEcComputation({
       ec25c = atcOn ? ecRaw : toEC25(ecRaw, tempC);
       ppm = ecToPpm(ec25c, ppmScale);
 
-      const mockReading = {
-        ecRaw,
+      const mockReading: Pick<PhEcReading, 'atcOn' | 'tempC'> = {
+        atcOn: atcOn ?? false,
         tempC,
-        atcOn,
-        ec25c,
-      } as any;
+      };
 
-      qualityFlags = computeQualityFlags(mockReading, calibration);
-      confidence = calculateConfidenceScore(mockReading, calibration);
+      qualityFlags = computeQualityFlags(
+        mockReading as PhEcReading,
+        calibration
+      );
+      confidence = calculateConfidenceScore(
+        mockReading as PhEcReading,
+        calibration
+      );
     }
   } catch {
     // Invalid values, skip computation

@@ -64,8 +64,10 @@ async function invokeSupabaseFunction<T>(
   return data as T;
 }
 
-function auditDeletionRequest(metadata: DeletionAuditMetadata): void {
-  appendAudit({
+async function auditDeletionRequest(
+  metadata: DeletionAuditMetadata
+): Promise<void> {
+  await appendAudit({
     action: 'account-delete-request',
     details: {
       ...metadata,
@@ -88,7 +90,7 @@ async function queueDeletionRequest(
       status: result.status,
       estimatedCompletion: result.estimatedCompletion ?? null,
     };
-    auditDeletionRequest({
+    await auditDeletionRequest({
       source,
       jobId: normalized.jobId,
       estimatedCompletion: normalized.estimatedCompletion,
@@ -97,7 +99,7 @@ async function queueDeletionRequest(
     });
     return normalized;
   } catch (error) {
-    auditDeletionRequest({
+    await auditDeletionRequest({
       source,
       reason,
       ...metadata,
@@ -126,7 +128,7 @@ export async function requestDataExport(
     includeConsents: options.includeConsents ?? true,
     locale: options.locale,
   });
-  auditDeletionRequest({
+  await auditDeletionRequest({
     source: 'in_app',
     jobId: result.jobId,
     estimatedCompletion: result.estimatedCompletion ?? null,

@@ -104,8 +104,13 @@ function filterResults(store: any[], filters: WhereCond[]): any[] {
           rowValue = JSON.stringify(rowValue);
         }
         rowValue = String(rowValue);
-        const pattern = c.$like.replace(/%/g, '');
-        return rowValue.includes(pattern);
+        // Convert SQL LIKE pattern to RegExp: % -> .*, _ -> ., escape other special chars
+        const regexPattern = c.$like
+          .replace(/[.+?^${}()|[\]\\]/g, '\\$&') // escape regex special chars
+          .replace(/%/g, '.*') // % matches any sequence
+          .replace(/_/g, '.'); // _ matches single char
+        const regex = new RegExp(`^${regexPattern}$`, 'i');
+        return regex.test(rowValue);
       } else {
         return (row as any)[key] === c.value;
       }
@@ -167,9 +172,17 @@ function buildQueryChain(
       );
       return chain;
     },
-    sortBy: (k: string, dir: any) => {
+    sortBy: (k: string, dir: 'asc' | 'desc' | typeof Q.asc | typeof Q.desc) => {
+      let direction: 'asc' | 'desc';
+      if (dir === Q.asc || dir === 'asc') {
+        direction = 'asc';
+      } else if (dir === Q.desc || dir === 'desc') {
+        direction = 'desc';
+      } else {
+        direction = 'asc'; // default to ascending
+      }
       allConditions.push({
-        $sortBy: { key: k, direction: dir === Q.asc ? 'asc' : 'desc' },
+        $sortBy: { key: k, direction },
       });
       return chain;
     },

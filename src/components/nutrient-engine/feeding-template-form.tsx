@@ -34,7 +34,7 @@ export function FeedingTemplateForm({
   onSubmit,
   onCancel,
   testID = 'feeding-template-form',
-}: FeedingTemplateFormProps) {
+}: FeedingTemplateFormProps): JSX.Element {
   const { control, handleSubmit, formState } = useForm<FeedingTemplateFormData>(
     {
       resolver: zodResolver(feedingTemplateSchema),

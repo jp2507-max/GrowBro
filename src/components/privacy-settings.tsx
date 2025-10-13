@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Switch, Text, View } from 'react-native';
+import { Alert, Share, Switch, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui';
 import { translate } from '@/lib';
+import { generatePrivacyExportJson } from '@/lib/privacy/export-service';
 import {
   getPrivacyConsent,
   type PrivacyConsent,
@@ -141,6 +142,7 @@ function PrivacyToggles({
   );
 }
 
+// eslint-disable-next-line max-lines-per-function
 function PrivacyActions({
   updateConsent,
   onDataExport,
@@ -150,6 +152,28 @@ function PrivacyActions({
   onDataExport?: () => void;
   onAccountDeletion?: () => void;
 }): React.ReactElement {
+  const handleExport = async () => {
+    try {
+      const exportData = await generatePrivacyExportJson();
+
+      // Use Share API to let user save or share the export
+      await Share.share({
+        message: exportData,
+        title: translate('privacy.exportData'),
+      });
+
+      if (onDataExport) {
+        onDataExport();
+      }
+    } catch {
+      Alert.alert(
+        translate('privacy.exportError.title'),
+        translate('privacy.exportError.message'),
+        [{ text: translate('common.ok') }]
+      );
+    }
+  };
+
   return (
     <View className="mt-4 gap-2">
       <Button
@@ -174,15 +198,7 @@ function PrivacyActions({
       />
       <Button
         label={translate('privacy.exportData')}
-        onPress={() => {
-          if (onDataExport) onDataExport();
-          else
-            Alert.alert(
-              translate('privacy.exportData'),
-              translate('privacy.exportData'),
-              [{ text: translate('common.ok') }]
-            );
-        }}
+        onPress={handleExport}
         testID="privacy-export-btn"
       />
       <Button

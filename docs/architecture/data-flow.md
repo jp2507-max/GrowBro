@@ -263,6 +263,14 @@ If you see:
 queryClient.invalidateQueries({ queryKey: ['harvests'] });
 ```
 
+## SQLCipher Integration Plan
+
+- **Adapter Evaluation**: Prototype a build using `expo-sqlite` with the OP-SQLCipher fork (or `op-sqlite`) to confirm WatermelonDB compatibility. The spike should wrap SQLCipher in a custom WatermelonDB adapter.
+- **Build Requirements**: Ship via a custom development client and production builds—SQLCipher is unavailable in Expo Go. Update EAS profiles to bundle the SQLCipher-enabled SQLite binary.
+- **Migration Strategy**: Implement an encrypted-migration path that copies the plain-text database into an encrypted file, with backup and rollback guards. Verify schema bumps and retention workflows post-migration.
+- **Key Management**: Persist the encryption key with `expo-secure-store` (Keychain/Keystore). On logout or account deletion, delete the key to render the encrypted DB inaccessible.
+- **Testing & Compliance**: Add regression tests targeting the SQLCipher build variant, measure performance impact, and document results in privacy/compliance checklists prior to rollout.
+
 ## References
 
 - [WatermelonDB Sync Documentation](https://nozbe.github.io/WatermelonDB/Advanced/Sync.html)

@@ -26,7 +26,7 @@ export function PhaseAdjustmentRow({
   onPhOffsetChange,
   onEcOffsetChange,
   testID,
-}: PhaseAdjustmentRowProps) {
+}: PhaseAdjustmentRowProps): JSX.Element {
   const { t } = useTranslation();
 
   return (

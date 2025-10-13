@@ -1,8 +1,11 @@
+/* eslint-disable max-lines-per-function */
+
 import React from 'react';
 
 import { Button, Select, View } from '@/components/ui';
 import { translate } from '@/lib';
 
+import { PhEcLineChart } from './ph-ec-line-chart';
 import { PhEcTrendChart } from './ph-ec-trend-chart';
 
 type Reading = {
@@ -26,13 +29,6 @@ type Props = {
   testID?: string;
 };
 
-const TIME_RANGE_OPTIONS = [
-  { label: '7 days', value: '7' },
-  { label: '30 days', value: '30' },
-  { label: '90 days', value: '90' },
-  { label: 'All', value: 'all' },
-];
-
 export function PhEcTrendChartContainer({
   readings,
   events,
@@ -44,6 +40,18 @@ export function PhEcTrendChartContainer({
 }: Props): React.ReactElement {
   const safeBase = testID ? `${testID}` : undefined;
   const [timeRange, setTimeRange] = React.useState('30');
+  const [viewMode, setViewMode] = React.useState<'chart' | 'list'>('chart');
+  const [chartMetric, setChartMetric] = React.useState<'ph' | 'ec'>('ph');
+
+  const TIME_RANGE_OPTIONS = React.useMemo(
+    () => [
+      { label: translate('nutrient.timeRange.7days'), value: '7' },
+      { label: translate('nutrient.timeRange.30days'), value: '30' },
+      { label: translate('nutrient.timeRange.90days'), value: '90' },
+      { label: translate('nutrient.timeRange.all'), value: 'all' },
+    ],
+    []
+  );
 
   const now = Date.now();
   const filteredReadings =
@@ -57,42 +65,96 @@ export function PhEcTrendChartContainer({
 
   return (
     <View className="flex-1" testID={testID}>
-      <View className="mb-4 flex-row items-center justify-between px-4">
-        <Select
-          options={TIME_RANGE_OPTIONS}
-          value={timeRange}
-          onSelect={(value) => setTimeRange(String(value))}
-          label={translate('nutrient.time_range')}
-          testID={safeBase ? `${safeBase}.timeRange` : undefined}
-        />
-        <View className="flex-row gap-2">
-          {onExportCSV && (
-            <Button
-              label="CSV"
-              onPress={onExportCSV}
-              variant="outline"
-              size="sm"
-              testID={safeBase ? `${safeBase}.exportCSV` : undefined}
-            />
-          )}
-          {onExportJSON && (
-            <Button
-              label="JSON"
-              onPress={onExportJSON}
-              variant="outline"
-              size="sm"
-              testID={safeBase ? `${safeBase}.exportJSON` : undefined}
-            />
+      {/* Controls Row */}
+      <View className="mb-4 gap-3 px-4">
+        {/* Time Range and Export */}
+        <View className="flex-row items-center justify-between">
+          <Select
+            options={TIME_RANGE_OPTIONS}
+            value={timeRange}
+            onSelect={(value) => setTimeRange(String(value))}
+            label={translate('nutrient.time_range')}
+            testID={safeBase ? `${safeBase}.timeRange` : undefined}
+          />
+          <View className="flex-row gap-2">
+            {onExportCSV && (
+              <Button
+                label="CSV"
+                onPress={onExportCSV}
+                variant="outline"
+                size="sm"
+                testID={safeBase ? `${safeBase}.exportCSV` : undefined}
+              />
+            )}
+            {onExportJSON && (
+              <Button
+                label="JSON"
+                onPress={onExportJSON}
+                variant="outline"
+                size="sm"
+                testID={safeBase ? `${safeBase}.exportJSON` : undefined}
+              />
+            )}
+          </View>
+        </View>
+
+        {/* View Mode Toggle */}
+        <View className="flex-row items-center gap-2">
+          <Button
+            label={translate('nutrient.viewChart')}
+            onPress={() => setViewMode('chart')}
+            variant={viewMode === 'chart' ? 'default' : 'outline'}
+            size="sm"
+            testID={safeBase ? `${safeBase}.viewChart` : undefined}
+          />
+          <Button
+            label={translate('nutrient.viewList')}
+            onPress={() => setViewMode('list')}
+            variant={viewMode === 'list' ? 'default' : 'outline'}
+            size="sm"
+            testID={safeBase ? `${safeBase}.viewList` : undefined}
+          />
+          {viewMode === 'chart' && (
+            <>
+              <View className="mx-2 h-6 w-px bg-neutral-300 dark:bg-neutral-700" />
+              <Button
+                label="pH"
+                onPress={() => setChartMetric('ph')}
+                variant={chartMetric === 'ph' ? 'default' : 'outline'}
+                size="sm"
+                testID={safeBase ? `${safeBase}.metricPh` : undefined}
+              />
+              <Button
+                label="EC"
+                onPress={() => setChartMetric('ec')}
+                variant={chartMetric === 'ec' ? 'default' : 'outline'}
+                size="sm"
+                testID={safeBase ? `${safeBase}.metricEc` : undefined}
+              />
+            </>
           )}
         </View>
       </View>
-      <PhEcTrendChart
-        readings={filteredReadings}
-        events={events}
-        phRange={phRange}
-        ecRange={ecRange}
-        testID={safeBase ? `${safeBase}.chart` : undefined}
-      />
+
+      {/* Content Area */}
+      {viewMode === 'chart' ? (
+        <PhEcLineChart
+          readings={filteredReadings}
+          events={events}
+          metric={chartMetric}
+          targetMin={chartMetric === 'ph' ? phRange.min : ecRange.min}
+          targetMax={chartMetric === 'ph' ? phRange.max : ecRange.max}
+          testID={safeBase ? `${safeBase}.lineChart` : undefined}
+        />
+      ) : (
+        <PhEcTrendChart
+          readings={filteredReadings}
+          events={events}
+          phRange={phRange}
+          ecRange={ecRange}
+          testID={safeBase ? `${safeBase}.listView` : undefined}
+        />
+      )}
     </View>
   );
 }

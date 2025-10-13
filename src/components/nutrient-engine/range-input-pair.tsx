@@ -9,9 +9,10 @@ import type { Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { ControlledInput, Text, View } from '@/components/ui';
+import type { FeedingTemplateFormData } from '@/lib/nutrient-engine/schemas/feeding-template-schema';
 
 interface RangeInputPairProps {
-  control: Control<any>;
+  control: Control<FeedingTemplateFormData>;
   label: string;
   minName: string;
   maxName: string;
@@ -40,7 +41,7 @@ export function RangeInputPair({
         <View className="flex-1">
           <ControlledInput
             control={control}
-            name={minName}
+            name={minName as any}
             label={t('nutrient.min')}
             keyboardType="decimal-pad"
             placeholder={minPlaceholder}
@@ -50,7 +51,7 @@ export function RangeInputPair({
         <View className="flex-1">
           <ControlledInput
             control={control}
-            name={maxName}
+            name={maxName as any}
             label={t('nutrient.max')}
             keyboardType="decimal-pad"
             placeholder={maxPlaceholder}

@@ -79,7 +79,10 @@ describe('photo-janitor', () => {
         photoStorageService as jest.Mocked<typeof photoStorageService>;
       getAllPhotoFiles.mockResolvedValue([]);
       detectOrphans.mockResolvedValue([]);
-      cleanupOrphans.mockResolvedValue(0);
+      cleanupOrphans.mockResolvedValue({
+        deletedCount: 0,
+        deletedPaths: [],
+      });
 
       await cleanupLRU(DEFAULT_PHOTO_STORAGE_CONFIG, [], true);
 
@@ -91,8 +94,18 @@ describe('photo-janitor', () => {
         photoStorageService as jest.Mocked<typeof photoStorageService>;
 
       getAllPhotoFiles.mockResolvedValue([
-        { path: 'file:///photo1.jpg', size: 1024, modifiedAt: Date.now() },
-        { path: 'file:///photo2.jpg', size: 2048, modifiedAt: Date.now() },
+        {
+          path: 'file:///photo1.jpg',
+          size: 1024,
+          modifiedAt: Date.now(),
+          hash: 'hash1',
+        },
+        {
+          path: 'file:///photo2.jpg',
+          size: 2048,
+          modifiedAt: Date.now(),
+          hash: 'hash2',
+        },
       ]);
       detectOrphans.mockResolvedValue(['file:///photo2.jpg']);
       cleanupOrphans.mockResolvedValue({
@@ -117,6 +130,7 @@ describe('photo-janitor', () => {
           path: 'file:///photo1.jpg',
           size: 1024,
           modifiedAt: Date.now(),
+          hash: 'hash1',
         },
       ]);
       detectOrphans.mockResolvedValue([]);
@@ -145,11 +159,13 @@ describe('photo-janitor', () => {
         path: 'file:///old.jpg',
         size: 50000,
         modifiedAt: now - 100000,
+        hash: 'hash-old',
       };
       const newFile = {
         path: 'file:///new.jpg',
         size: 50000,
         modifiedAt: now,
+        hash: 'hash-new',
       };
 
       getAllPhotoFiles.mockResolvedValue([newFile, oldFile]);
@@ -188,6 +204,7 @@ describe('photo-janitor', () => {
         path: 'file:///recent.jpg',
         size: 50000,
         modifiedAt: now - 86400000, // 1 day ago
+        hash: 'hash-recent',
       };
 
       getAllPhotoFiles.mockResolvedValue([recentFile]);
@@ -219,6 +236,7 @@ describe('photo-janitor', () => {
         path: 'file:///recent.jpg',
         size: 50000,
         modifiedAt: now - 86400000,
+        hash: 'hash-recent2',
       };
 
       getAllPhotoFiles.mockResolvedValue([recentFile]);
@@ -267,11 +285,13 @@ describe('photo-janitor', () => {
         path: 'file:///file1.jpg',
         size: 50000,
         modifiedAt: now - 100000,
+        hash: 'hash-file1',
       };
       const file2 = {
         path: 'file:///file2.jpg',
         size: 50000,
         modifiedAt: now - 200000,
+        hash: 'hash-file2',
       };
 
       getAllPhotoFiles.mockResolvedValue([file1, file2]);

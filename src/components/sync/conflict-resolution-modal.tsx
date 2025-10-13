@@ -4,16 +4,7 @@ import { ScrollView } from 'react-native';
 
 import { Button, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
-// Conflict type removed - legacy feature
-
-// Stub Conflict type for backward compatibility
-type Conflict = {
-  tableName: string;
-  recordId: string;
-  conflictFields: string[];
-  localRecord?: Record<string, any>;
-  remoteRecord?: Record<string, any>;
-};
+import type { LegacyConflict as Conflict } from '@/lib/sync/types';
 
 type ConflictResolutionModalProps = {
   conflict: Conflict;

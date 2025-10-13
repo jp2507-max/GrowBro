@@ -4,6 +4,9 @@
 
 import { synchronize } from '@nozbe/watermelondb/sync';
 
+import { ConsentService } from '@/lib/privacy/consent-service';
+import { ConsentRequiredError } from '@/lib/privacy/errors';
+
 import { SyncWorker } from '../sync-worker';
 import type { SyncPullResponse } from '../types';
 
@@ -18,11 +21,12 @@ describe('SyncWorker', () => {
   let mockDatabase: any;
   let syncWorker: SyncWorker;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
     mockDatabase = {
       get: jest.fn(),
     };
+    await ConsentService.setConsent('cloudProcessing', true);
     syncWorker = new SyncWorker(mockDatabase);
   });
 
@@ -158,6 +162,16 @@ describe('SyncWorker', () => {
       const status = workerWithRetries.getStatus();
       expect(status.state).toBe('error');
       expect(status.lastError).toBe('Always fails');
+    });
+
+    it('throws ConsentRequiredError when cloudProcessing consent missing', async () => {
+      await ConsentService.setConsent('cloudProcessing', false);
+      const pullEndpoint = jest.fn();
+      const pushEndpoint = jest.fn();
+
+      await expect(
+        syncWorker.synchronize({ pullEndpoint, pushEndpoint })
+      ).rejects.toBeInstanceOf(ConsentRequiredError);
     });
   });
 

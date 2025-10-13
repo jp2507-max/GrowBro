@@ -19,11 +19,11 @@ import {
   trackSyncSuccess,
 } from '@/lib/sync/sync-analytics';
 import { categorizeSyncError } from '@/lib/sync/sync-errors';
+import type { SyncTrigger } from '@/lib/sync/sync-performance-metrics';
 import { getSyncState } from '@/lib/sync/sync-state';
 import {
   getPendingChangesCount,
   runSyncWithRetry,
-  synchronize,
   type SyncResult,
 } from '@/lib/sync-engine';
 
@@ -45,6 +45,12 @@ export type SyncCoordinatorOptions = {
    * @default true
    */
   trackAnalytics?: boolean;
+
+  /**
+   * Source trigger for analytics attribution
+   * @default 'auto'
+   */
+  trigger?: SyncTrigger;
 };
 
 /**
@@ -53,7 +59,12 @@ export type SyncCoordinatorOptions = {
 export async function performSync(
   options: SyncCoordinatorOptions = {}
 ): Promise<SyncResult> {
-  const { withRetry = true, maxRetries = 5, trackAnalytics = true } = options;
+  const {
+    withRetry = true,
+    maxRetries = 5,
+    trackAnalytics = true,
+    trigger = 'auto',
+  } = options;
 
   const startTime = Date.now();
 
@@ -72,9 +83,9 @@ export async function performSync(
     }
 
     // Perform sync
-    const result = withRetry
-      ? await runSyncWithRetry(maxRetries)
-      : await synchronize();
+    const result = await runSyncWithRetry(withRetry ? maxRetries : 1, {
+      trigger,
+    });
 
     // Track success metrics
     if (trackAnalytics) {
@@ -139,6 +150,7 @@ export async function manualSync(): Promise<SyncResult> {
     withRetry: true,
     maxRetries: 3,
     trackAnalytics: true,
+    trigger: 'manual',
   });
 }
 
@@ -154,6 +166,7 @@ export async function backgroundSync(): Promise<SyncResult> {
     withRetry: true,
     maxRetries: 5,
     trackAnalytics: true,
+    trigger: 'background',
   });
 }
 

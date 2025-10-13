@@ -2,18 +2,55 @@
 import { useCallback, useState } from 'react';
 
 import { NoopAnalytics } from '@/lib/analytics';
-// Conflict type removed - legacy feature
-// import type { Conflict } from '@/lib/sync/conflict-resolver';
+import type { LegacyConflict as Conflict } from '@/lib/sync/types';
+import { TABLE_NAMES } from '@/lib/sync/types';
 import { database } from '@/lib/watermelon';
 
-// Stub Conflict type for backward compatibility
-type Conflict = {
-  tableName: string;
-  recordId: string;
-  conflictFields: string[];
-  localRecord?: Record<string, any>;
-  remoteRecord?: Record<string, any>;
-};
+/**
+ * Table names that are valid for sync conflict analytics events
+ */
+type ValidSyncConflictTableName =
+  | 'series'
+  | 'tasks'
+  | 'occurrence_overrides'
+  | 'harvests'
+  | 'inventory'
+  | 'harvest_audits';
+
+/**
+ * Validates that a table name is one of the allowed values from the schema
+ */
+function validateTableName(
+  tableName: string
+): asserts tableName is (typeof TABLE_NAMES)[keyof typeof TABLE_NAMES] {
+  const validTableNames = Object.values(TABLE_NAMES);
+  if (!validTableNames.includes(tableName as any)) {
+    throw new Error(
+      `Invalid table name "${tableName}". Must be one of: ${validTableNames.join(', ')}`
+    );
+  }
+}
+
+/**
+ * Validates that a table name is valid for sync conflict analytics
+ */
+function validateSyncConflictTableName(
+  tableName: string
+): asserts tableName is ValidSyncConflictTableName {
+  const validTableNames: ValidSyncConflictTableName[] = [
+    'series',
+    'tasks',
+    'occurrence_overrides',
+    'harvests',
+    'inventory',
+    'harvest_audits',
+  ];
+  if (!validTableNames.includes(tableName as ValidSyncConflictTableName)) {
+    throw new Error(
+      `Invalid table name "${tableName}" for sync conflict analytics. Must be one of: ${validTableNames.join(', ')}`
+    );
+  }
+}
 
 type ConflictResolutionState = {
   conflicts: Conflict[];
@@ -44,12 +81,13 @@ export function useConflictResolution() {
       setState((prev) => ({ ...prev, isResolving: true }));
 
       try {
+        // Validate table name at runtime
+        validateTableName(conflict.tableName);
+
         if (strategy === 'keep-local') {
           // Create a new mutation to restore local version
           await database.write(async () => {
-            const collection = database.collections.get(
-              conflict.tableName as any
-            );
+            const collection = database.collections.get(conflict.tableName);
             try {
               const record = await collection.find(conflict.recordId);
               await record.update((rec: any) => {
@@ -62,7 +100,7 @@ export function useConflictResolution() {
                   }
                 }
                 // Clear the needsReview flag if it exists
-                if (conflict.tableName === 'tasks' && rec.metadata) {
+                if (conflict.tableName === TABLE_NAMES.TASKS && rec.metadata) {
                   const metadata =
                     typeof rec.metadata === 'string'
                       ? JSON.parse(rec.metadata)
@@ -77,21 +115,21 @@ export function useConflictResolution() {
             }
           });
 
+          validateSyncConflictTableName(conflict.tableName);
+
           await NoopAnalytics.track('sync_conflict_resolved', {
-            table: conflict.tableName as any,
+            table: conflict.tableName as ValidSyncConflictTableName,
             strategy: 'keep-local',
             field_count: conflict.conflictFields.length,
           });
         } else {
           // Accept server version - just clear the needsReview flag
           await database.write(async () => {
-            const collection = database.collections.get(
-              conflict.tableName as any
-            );
+            const collection = database.collections.get(conflict.tableName);
             try {
               const record = await collection.find(conflict.recordId);
               await record.update((rec: any) => {
-                if (conflict.tableName === 'tasks' && rec.metadata) {
+                if (conflict.tableName === TABLE_NAMES.TASKS && rec.metadata) {
                   const metadata =
                     typeof rec.metadata === 'string'
                       ? JSON.parse(rec.metadata)
@@ -106,8 +144,10 @@ export function useConflictResolution() {
             }
           });
 
+          validateSyncConflictTableName(conflict.tableName);
+
           await NoopAnalytics.track('sync_conflict_resolved', {
-            table: conflict.tableName as any,
+            table: conflict.tableName as ValidSyncConflictTableName,
             strategy: 'accept-server',
             field_count: conflict.conflictFields.length,
           });
@@ -145,8 +185,10 @@ export function useConflictResolution() {
       };
     });
 
+    validateSyncConflictTableName(conflict.tableName);
+
     NoopAnalytics.track('sync_conflict_dismissed', {
-      table: conflict.tableName as any,
+      table: conflict.tableName as ValidSyncConflictTableName,
       field_count: conflict.conflictFields.length,
     });
   }, []);

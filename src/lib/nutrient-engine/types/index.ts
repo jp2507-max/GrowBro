@@ -343,6 +343,50 @@ export type Recommendation = {
   priority: number; // 1 = highest
   description: string;
   code?: string; // machine-readable code
+  ctaKey?: string;
+  context?: Record<string, string | number>;
+};
+
+export const DiagnosticConfidenceFlag = {
+  LOW_HISTORY: 'LOW_HISTORY',
+  POOR_DATA_QUALITY: 'POOR_DATA_QUALITY',
+  AI_LOW_CONFIDENCE: 'AI_LOW_CONFIDENCE',
+  RULES_WEAK_MATCH: 'RULES_WEAK_MATCH',
+  MANUAL_OVERRIDE: 'MANUAL_OVERRIDE',
+  AI_ONLY_GUIDANCE: 'AI_ONLY_GUIDANCE',
+} as const;
+
+export type DiagnosticConfidenceFlag =
+  (typeof DiagnosticConfidenceFlag)[keyof typeof DiagnosticConfidenceFlag];
+
+export type DiagnosticFeedbackSummary = {
+  helpfulCount: number;
+  notHelpfulCount: number;
+};
+
+export type DiagnosticFeedbackInput = {
+  helpful: boolean;
+  submittedAt: number; // epoch ms
+  notes?: string;
+};
+
+export type DiagnosticConfidenceBreakdown = {
+  final: number;
+  threshold: number;
+  rules?: number;
+  ai?: number;
+};
+
+export type DiagnosticAiMetadata = {
+  hypothesisId?: string;
+  provider?: string;
+  version?: string;
+  reasoning?: string[];
+  rawPayload?: Record<string, unknown>;
+  feedback?: {
+    lastSubmittedAt?: number;
+    lastNotes?: string;
+  };
 };
 
 /**
@@ -351,16 +395,32 @@ export type Recommendation = {
 export type DiagnosticResult = {
   id: string;
   plantId: string;
+  reservoirId?: string;
   symptoms: Symptom[];
   classification: NutrientIssue;
+  nutrientCode?: string;
   confidence: number; // 0-1
+  confidenceBreakdown?: DiagnosticConfidenceBreakdown;
   recommendations: Recommendation[];
   inputReadingIds?: string[]; // pH/EC readings used
   waterProfileId?: string; // source water profile considered
   confidenceSource: ConfidenceSource;
   rulesBased: boolean;
   aiOverride?: boolean;
+  rulesConfidence?: number;
+  aiConfidence?: number;
+  confidenceThreshold?: number;
+  rationale?: string[];
+  disclaimerKeys?: string[];
+  needsSecondOpinion: boolean;
+  confidenceFlags?: DiagnosticConfidenceFlag[];
+  aiHypothesisId?: string;
+  aiMetadata?: DiagnosticAiMetadata;
+  feedback?: DiagnosticFeedbackSummary;
+  resolvedAt?: number;
+  resolutionNotes?: string;
   createdAt: number; // epoch ms
+  updatedAt?: number; // epoch ms
 };
 
 /**
