@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 
-import { translate } from '@/lib/i18n/utils';
+import { translate, translateDynamic } from '@/lib/i18n/utils';
 import type { DiagnosticResult } from '@/lib/nutrient-engine/types';
 
 /**
@@ -67,7 +67,7 @@ function buildDiagnosticSummaryForPost(result: DiagnosticResult): string {
     lines.push('');
     lines.push(translate('nutrient.diagnostics.community.recommendations'));
     result.recommendations.slice(0, 3).forEach((rec) => {
-      lines.push(`• ${translate(rec.description)}`);
+      lines.push(`• ${translateDynamic(rec.description)}`);
     });
   }
 

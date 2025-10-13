@@ -5,6 +5,12 @@ import { NoopAnalytics } from '@/lib/analytics';
 import type { LegacyConflict as Conflict } from '@/lib/sync/types';
 import { TABLE_NAMES } from '@/lib/sync/types';
 import { database } from '@/lib/watermelon';
+import type { HarvestModel } from '@/lib/watermelon-models/harvest';
+import type { HarvestAuditModel } from '@/lib/watermelon-models/harvest-audit';
+import type { InventoryModel } from '@/lib/watermelon-models/inventory';
+import type { OccurrenceOverrideModel } from '@/lib/watermelon-models/occurrence-override';
+import type { SeriesModel } from '@/lib/watermelon-models/series';
+import type { TaskModel } from '@/lib/watermelon-models/task';
 
 /**
  * Table names that are valid for sync conflict analytics events
@@ -23,8 +29,8 @@ type ValidSyncConflictTableName =
 function validateTableName(
   tableName: string
 ): asserts tableName is (typeof TABLE_NAMES)[keyof typeof TABLE_NAMES] {
-  const validTableNames = Object.values(TABLE_NAMES);
-  if (!validTableNames.includes(tableName as any)) {
+  const validTableNames: string[] = Object.values(TABLE_NAMES);
+  if (!validTableNames.includes(tableName)) {
     throw new Error(
       `Invalid table name "${tableName}". Must be one of: ${validTableNames.join(', ')}`
     );
@@ -85,23 +91,35 @@ export function useConflictResolution() {
             const collection = database.collections.get(conflict.tableName);
             try {
               const record = await collection.find(conflict.recordId);
-              await record.update((rec: any) => {
+              await record.update((rec) => {
+                // Type assertion for type safety - table name is validated above
+                const typedRec = rec as
+                  | SeriesModel
+                  | TaskModel
+                  | OccurrenceOverrideModel
+                  | HarvestModel
+                  | InventoryModel
+                  | HarvestAuditModel;
                 // Restore local values for conflicting fields
                 if (conflict.localRecord) {
                   for (const field of conflict.conflictFields) {
                     if (field in conflict.localRecord) {
-                      rec[field] = conflict.localRecord[field];
+                      (typedRec as any)[field] = conflict.localRecord[field];
                     }
                   }
                 }
                 // Clear the needsReview flag if it exists
-                if (conflict.tableName === TABLE_NAMES.TASKS && rec.metadata) {
+                if (
+                  conflict.tableName === TABLE_NAMES.TASKS &&
+                  (typedRec as TaskModel).metadata
+                ) {
+                  const taskRec = typedRec as TaskModel;
                   const metadata =
-                    typeof rec.metadata === 'string'
-                      ? JSON.parse(rec.metadata)
-                      : rec.metadata;
+                    typeof taskRec.metadata === 'string'
+                      ? JSON.parse(taskRec.metadata)
+                      : taskRec.metadata;
                   delete metadata.needsReview;
-                  rec.metadata = metadata;
+                  taskRec.metadata = metadata;
                 }
               });
             } catch (error) {
@@ -123,14 +141,26 @@ export function useConflictResolution() {
             const collection = database.collections.get(conflict.tableName);
             try {
               const record = await collection.find(conflict.recordId);
-              await record.update((rec: any) => {
-                if (conflict.tableName === TABLE_NAMES.TASKS && rec.metadata) {
+              await record.update((rec) => {
+                // Type assertion for type safety - table name is validated above
+                const typedRec = rec as
+                  | SeriesModel
+                  | TaskModel
+                  | OccurrenceOverrideModel
+                  | HarvestModel
+                  | InventoryModel
+                  | HarvestAuditModel;
+                if (
+                  conflict.tableName === TABLE_NAMES.TASKS &&
+                  (typedRec as TaskModel).metadata
+                ) {
+                  const taskRec = typedRec as TaskModel;
                   const metadata =
-                    typeof rec.metadata === 'string'
-                      ? JSON.parse(rec.metadata)
-                      : rec.metadata;
+                    typeof taskRec.metadata === 'string'
+                      ? JSON.parse(taskRec.metadata)
+                      : taskRec.metadata;
                   delete metadata.needsReview;
-                  rec.metadata = metadata;
+                  taskRec.metadata = metadata;
                 }
               });
             } catch (error) {
@@ -168,7 +198,7 @@ export function useConflictResolution() {
     []
   );
 
-  const dismissConflict = useCallback((conflict: Conflict) => {
+  const dismissConflict = useCallback(async (conflict: Conflict) => {
     setState((prev) => {
       const remaining = prev.conflicts.filter(
         (c) => c.recordId !== conflict.recordId
@@ -181,7 +211,7 @@ export function useConflictResolution() {
     });
 
     if (isSyncConflictAnalyticsTable(conflict.tableName)) {
-      NoopAnalytics.track('sync_conflict_dismissed', {
+      await NoopAnalytics.track('sync_conflict_dismissed', {
         table: conflict.tableName,
         field_count: conflict.conflictFields.length,
       });

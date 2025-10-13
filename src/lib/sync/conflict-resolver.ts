@@ -3,7 +3,7 @@
  * Resolves sync conflicts using server-assigned revisions or timestamps (LWW)
  */
 
-import type { ConflictResolution } from './types';
+import type { ConflictResolution, TableName } from './types';
 
 type ConflictRecord = {
   id: string;
@@ -14,18 +14,41 @@ type ConflictRecord = {
 };
 
 /**
+ * Get the conflict resolution strategy for a table
+ * Tasks use 'needs-review' strategy, others use 'server-lww'
+ *
+ * @param tableName - The table name
+ * @returns The resolution strategy
+ */
+export function getResolutionStrategy(
+  tableName: TableName
+): 'server-lww' | 'needs-review' {
+  return tableName === 'tasks' ? 'needs-review' : 'server-lww';
+}
+
+/**
  * Resolve conflict between local and remote records
  * Server-assigned revision takes precedence; falls back to server timestamp
  * NEVER uses client clock for conflict resolution
  *
  * @param local - Local record from device
  * @param remote - Remote record from server
+ * @param tableName - Optional table name for strategy selection
  * @returns Conflict resolution with winner and reason
  */
 export function resolveConflict(
   local: ConflictRecord,
-  remote: ConflictRecord
+  remote: ConflictRecord,
+  tableName?: TableName
 ): ConflictResolution {
+  // Check if table uses needs-review strategy
+  if (tableName && getResolutionStrategy(tableName) === 'needs-review') {
+    return {
+      winner: 'needs-review',
+      reason: `Table '${tableName}' requires manual review for conflicts`,
+    };
+  }
+
   // Strategy 1: Use server_revision if both have it (preferred)
   if (
     remote.server_revision !== undefined &&
@@ -47,7 +70,7 @@ export function resolveConflict(
   };
 }
 
-function resolveByRevision(
+export function resolveByRevision(
   local: ConflictRecord,
   remote: ConflictRecord
 ): ConflictResolution {
@@ -76,7 +99,7 @@ function resolveByRevision(
   }
 }
 
-function resolveByTimestamp(
+export function resolveByTimestamp(
   local: ConflictRecord,
   remote: ConflictRecord
 ): ConflictResolution {

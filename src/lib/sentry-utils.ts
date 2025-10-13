@@ -236,8 +236,7 @@ function _scrubObjectData(obj: any, ctx: ScrubContext): any {
 /**
  * Sentry beforeSend hook to scrub sensitive information and respect user consent
  */
-/* eslint-disable max-lines-per-function -- function intentionally contains a series of small
-  scrubbers and data transformations; splitting reduces readability for this hook. */
+
 export const beforeSendHook = (event: any, _hint?: any): any | null => {
   try {
     // Check user consent using synchronous cache

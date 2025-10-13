@@ -24,7 +24,6 @@ export type OverrideModalRef = {
   dismiss: () => void;
 };
 
-/* eslint-disable max-lines-per-function */
 export const OverrideModal = React.forwardRef<OverrideModalRef, Props>(
   ({ currentStage, onConfirm, onCancel }, ref) => {
     const { t } = useTranslation();

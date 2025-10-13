@@ -17,7 +17,7 @@
  * @param maxStepPct - Maximum adjustment per step (default 10%)
  * @returns Dose guidance with safety notes
  */
-// eslint-disable-next-line max-params, max-lines-per-function
+// eslint-disable-next-line max-params
 export function calculateEcAdjustment(
   currentEc: number,
   targetEc: number,

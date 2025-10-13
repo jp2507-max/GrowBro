@@ -52,7 +52,7 @@ export type FeedingTaskGenerationOptions = {
  * @param options - Generation options
  * @returns Generation result with task IDs and stats
  */
-// eslint-disable-next-line max-lines-per-function
+
 export async function generateFeedingTasks(
   database: Database,
   schedule: FeedingSchedule,

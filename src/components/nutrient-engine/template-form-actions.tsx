@@ -9,19 +9,19 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, View } from '@/components/ui';
 
-interface TemplateFormActionsProps {
+type TemplateFormActionsProps = {
   onCancel: () => void;
   onSubmit: () => void;
   isValid: boolean;
   testID: string;
-}
+};
 
 export function TemplateFormActions({
   onCancel,
   onSubmit,
   isValid,
   testID,
-}: TemplateFormActionsProps) {
+}: TemplateFormActionsProps): React.ReactElement {
   const { t } = useTranslation();
 
   return (

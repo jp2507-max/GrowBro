@@ -175,7 +175,6 @@ function buildRuleResult(
   };
 }
 
-// eslint-disable-next-line max-lines-per-function
 function evaluatePhDrift(inputs: RuleInputs): RuleResult {
   const { ctx, readings, rationale, flags } = inputs;
   const { reservoir, sourceWaterProfile } = ctx;
@@ -257,7 +256,6 @@ function hasNitrogenSymptom(symptoms: Symptom[]): boolean {
   });
 }
 
-// eslint-disable-next-line max-lines-per-function
 function evaluateNitrogenDeficiency(inputs: RuleInputs): RuleResult {
   const { ctx, readings, rationale, flags } = inputs;
   const { reservoir, symptoms } = ctx;
@@ -343,7 +341,6 @@ function hasToxicitySymptom(symptoms: Symptom[]): boolean {
   });
 }
 
-// eslint-disable-next-line max-lines-per-function
 function evaluateToxicity(inputs: RuleInputs): RuleResult {
   const { ctx, readings, rationale, flags } = inputs;
   const { reservoir, symptoms } = ctx;

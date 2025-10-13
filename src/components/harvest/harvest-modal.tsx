@@ -290,7 +290,7 @@ const touchTargetStyles = StyleSheet.create({
 /**
  * Main HarvestModal component
  */
-// eslint-disable-next-line max-lines-per-function
+
 export function HarvestModal({
   isVisible,
   plantId,

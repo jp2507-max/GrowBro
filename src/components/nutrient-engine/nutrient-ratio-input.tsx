@@ -10,14 +10,15 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, ControlledInput, View } from '@/components/ui';
 import { ControlledSelect } from '@/components/ui/select';
+import type { FeedingTemplateFormData } from '@/lib/nutrient-engine/schemas/feeding-template-schema';
 
-interface NutrientRatioInputProps {
-  control: Control<any>;
+type NutrientRatioInputProps = {
+  control: Control<FeedingTemplateFormData>;
   phaseIndex: number;
   nutrientIndex: number;
   onRemove: () => void;
   testID?: string;
-}
+};
 
 export function NutrientRatioInput({
   control,
@@ -25,7 +26,7 @@ export function NutrientRatioInput({
   nutrientIndex,
   onRemove,
   testID = 'nutrient-ratio',
-}: NutrientRatioInputProps) {
+}: NutrientRatioInputProps): JSX.Element {
   const { t } = useTranslation();
 
   const unitOptions = [

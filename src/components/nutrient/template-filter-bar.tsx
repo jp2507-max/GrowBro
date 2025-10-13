@@ -7,10 +7,9 @@
  * Requirements: 1.1, 1.2
  */
 
-import { tw } from 'nativewind';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 
 import { Button, View } from '@/components/ui';
 import { GrowingMedium } from '@/lib/nutrient-engine/types';
@@ -30,6 +29,12 @@ const mediumOptions: { value: GrowingMedium | null; labelKey: string }[] = [
   { value: GrowingMedium.PEAT, labelKey: 'nutrient.medium.peat' },
 ];
 
+const styles = StyleSheet.create({
+  scrollContent: {
+    paddingHorizontal: 16,
+  },
+});
+
 export function TemplateFilterBar({
   selectedMedium,
   onSelectMedium,
@@ -42,7 +47,7 @@ export function TemplateFilterBar({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={tw.style('px-4 gap-2')}
+        contentContainerStyle={styles.scrollContent}
         testID={testID}
       >
         {mediumOptions.map((option) => (
@@ -51,7 +56,7 @@ export function TemplateFilterBar({
             label={t(option.labelKey)}
             variant={selectedMedium === option.value ? 'default' : 'outline'}
             onPress={() => onSelectMedium(option.value)}
-            className="min-w-[80px]"
+            className="mr-2 min-w-[80px]"
             testID={`${testID}-${option.labelKey.split('.').pop()}`}
           />
         ))}

@@ -53,9 +53,7 @@ export function getCurrentTimeZone(): string {
   return 'UTC';
 }
 
-// eslint-disable-next-line max-lines-per-function
 function useSyncAndMetrics(): void {
-  // eslint-disable-next-line max-lines-per-function
   React.useEffect(() => {
     void registerBackgroundTask();
     const dispose = setupSyncTriggers();
@@ -137,7 +135,6 @@ function useSyncAndMetrics(): void {
   }, []);
 }
 
-// eslint-disable-next-line max-lines-per-function
 function startRootInitialization(
   setIsI18nReady: (v: boolean) => void,
   isFirstTime: boolean,

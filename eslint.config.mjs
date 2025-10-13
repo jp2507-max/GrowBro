@@ -57,7 +57,7 @@ export default defineConfig([
     },
     rules: {
       'max-params': ['error', 3],
-      'max-lines-per-function': ['error', 70],
+      'max-lines-per-function': ['warn', 110],
       'tailwindcss/classnames-order': [
         'warn',
         {
@@ -186,6 +186,31 @@ export default defineConfig([
       ],
     },
   },
+  // JSX-heavy components (screens, complex layouts) - more lenient
+  {
+    files: [
+      'src/app/**/*.tsx',
+      'src/components/**/*-screen.tsx',
+      'src/components/**/*-modal.tsx',
+      'src/components/**/*-sheet.tsx',
+    ],
+    rules: {
+      'max-lines-per-function': ['warn', 150],
+    },
+  },
+  // Services, hooks, utilities - stricter limits
+  {
+    files: [
+      'src/lib/**/*.{ts,tsx}',
+      'src/api/**/*.{ts,tsx}',
+      'src/**/use-*.{ts,tsx}',
+      'src/**/*.service.{ts,tsx}',
+    ],
+    rules: {
+      'max-lines-per-function': ['error', 90],
+    },
+  },
+  // Test files - exempt from max-lines-per-function (must come after stricter rules)
   {
     files: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
     plugins: { 'testing-library': testingLibrary },
@@ -203,7 +228,12 @@ export default defineConfig([
   },
   // Scripts and generated packages run in Node; allow __dirname/Buffer and relax length
   {
-    files: ['scripts/**/*.js', 'package/dist/**/*.{js,ts}'],
+    files: [
+      'scripts/**/*.js',
+      'package/dist/**/*.{js,ts}',
+      '**/*.stories.{ts,tsx}',
+      '**/*.generated.{ts,tsx}',
+    ],
     languageOptions: {
       globals: {
         __dirname: 'readonly',
@@ -224,6 +254,7 @@ export default defineConfig([
     },
     rules: {
       'no-undef': 'off',
+      'max-lines-per-function': 'off',
     },
   },
 ]);

@@ -55,7 +55,8 @@ type FetchReadingsResponse = {
 export async function createReadingLocal(
   variables: CreateReadingVariables
 ): Promise<PhEcReading> {
-  const readingsCollection = database.get<PhEcReadingModel>('ph_ec_readings');
+  const readingsCollection =
+    database.get<PhEcReadingModel>('ph_ec_readings_v2');
 
   const reading = await database.write(async () => {
     return await readingsCollection.create((record) => {
@@ -123,7 +124,8 @@ export async function createReadingLocal(
 export async function fetchReadingsLocal(
   variables: FetchReadingsVariables
 ): Promise<FetchReadingsResponse> {
-  const readingsCollection = database.get<PhEcReadingModel>('ph_ec_readings');
+  const readingsCollection =
+    database.get<PhEcReadingModel>('ph_ec_readings_v2');
 
   // Build cumulative where filter array
   const whereFilters: any[] = [];

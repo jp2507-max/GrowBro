@@ -15,7 +15,7 @@ import type { PpmScale } from '@/lib/nutrient-engine/types';
  * Allows users to manually log pH/EC measurements
  * Requirements: 2.1, 2.2, 2.7
  */
-// eslint-disable-next-line max-lines-per-function
+
 export default function AddReadingScreen(): React.ReactElement {
   const { t } = useTranslation();
   const router = useRouter();

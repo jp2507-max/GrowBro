@@ -7,7 +7,7 @@
  */
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import React from 'react';
+import { type ReactElement } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
 
@@ -34,7 +34,7 @@ export function FeedingTemplateForm({
   onSubmit,
   onCancel,
   testID = 'feeding-template-form',
-}: FeedingTemplateFormProps): JSX.Element {
+}: FeedingTemplateFormProps): ReactElement {
   const { control, handleSubmit, formState } = useForm<FeedingTemplateFormData>(
     {
       resolver: zodResolver(feedingTemplateSchema),

@@ -69,7 +69,6 @@ export function useStrainFilters() {
   };
 }
 
-/* eslint-disable max-lines-per-function */
 const FilterModalContent = ({
   localFilters,
   handleRaceToggle,
@@ -190,7 +189,6 @@ const FilterModalContent = ({
   );
 };
 
-/* eslint-disable max-lines-per-function */
 export const FilterModal = React.forwardRef<any, FilterModalProps>(
   ({ filters, onApply, onClear }, ref) => {
     const [localFilters, setLocalFilters] =

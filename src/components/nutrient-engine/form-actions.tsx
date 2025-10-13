@@ -4,6 +4,7 @@
  * Cancel and submit buttons for the pH/EC input form
  */
 
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, View } from '@/components/ui';

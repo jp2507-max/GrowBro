@@ -10,18 +10,18 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, Text, View } from '@/components/ui';
-import type { PhaseAdjustment } from '@/lib/nutrient-engine/hooks/use-strain-adjustments';
+import type { StrainAdjustment } from '@/lib/nutrient-engine/hooks/use-strain-adjustments';
 import { useStrainAdjustments } from '@/lib/nutrient-engine/hooks/use-strain-adjustments';
 import type { PlantPhase } from '@/lib/nutrient-engine/types';
 
 import { PhaseAdjustmentRow } from './phase-adjustment-row';
 
-interface StrainAdjustmentPanelProps {
-  adjustments: PhaseAdjustment[];
-  onAdjustmentsChange: (adjustments: PhaseAdjustment[]) => void;
+type StrainAdjustmentPanelProps = {
+  adjustments: StrainAdjustment[];
+  onAdjustmentsChange: (adjustments: StrainAdjustment[]) => void;
   onSaveAsProfile?: () => void;
   testID?: string;
-}
+};
 
 export function StrainAdjustmentPanel({
   adjustments,

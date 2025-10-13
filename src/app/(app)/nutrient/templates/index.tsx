@@ -32,8 +32,7 @@ function EmptyState({ message }: { message: string }): React.JSX.Element {
   );
 }
 
-// eslint-disable-next-line max-lines-per-function
-export default function TemplateListScreen(): JSX.Element {
+export default function TemplateListScreen(): React.JSX.Element {
   const { t } = useTranslation();
   const router = useRouter();
 

@@ -90,7 +90,7 @@ async function fetchReceipts(
 /**
  * Processes receipts and updates notification queue
  */
-// eslint-disable-next-line max-lines-per-function
+
 async function processReceipts(
   supabase: any,
   entries: NotificationQueueEntry[],

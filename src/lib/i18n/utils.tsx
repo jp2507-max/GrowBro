@@ -46,7 +46,7 @@ function interpolate(str: string, opts?: TOptions): string {
 }
 
 export const translate = memoize(
-  (key: TxKeyPath | string, options = undefined) => {
+  (key: TxKeyPath, options = undefined) => {
     // If i18n isn't initialized (common in tests), fall back to local resources
     if (!i18n.isInitialized) {
       const lang = (i18n.language as keyof typeof resources) || 'en';
@@ -56,13 +56,29 @@ export const translate = memoize(
     // eslint-disable-next-line import/no-named-as-default-member
     return i18n.t(key, options) as unknown as string;
   },
-  (key: TxKeyPath | string, options: TOptions) => {
+  (key: TxKeyPath, options: TOptions) => {
     // include current language so cached values are invalidated when language changes
     const lang = i18n.language || '';
     const base = options ? key + JSON.stringify(options) : key;
     return `${lang}:${base}`;
   }
 );
+
+/**
+ * Translates dynamic keys that cannot be statically verified at compile time.
+ * Performs runtime validation to ensure the key exists before delegating to the
+ * type-safe translate function. Logs a warning in development if the key is not found.
+ */
+export function translateDynamic(key: string, options = undefined): string {
+  // Runtime check for key existence
+  if (__DEV__ && !i18n.exists(key)) {
+    console.warn(
+      `[i18n] Missing translation key: "${key}". Consider adding it to the translation files.`
+    );
+  }
+  // Delegate to the type-safe translate function with a type assertion
+  return translate(key as TxKeyPath, options);
+}
 
 export const changeLanguage = (lang: Language) => {
   // eslint-disable-next-line import/no-named-as-default-member

@@ -1,9 +1,9 @@
 /* eslint-disable max-lines-per-function */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, Select, View } from '@/components/ui';
-import { translate } from '@/lib';
 
 import { PhEcLineChart } from './ph-ec-line-chart';
 import { PhEcTrendChart } from './ph-ec-trend-chart';
@@ -43,14 +43,16 @@ export function PhEcTrendChartContainer({
   const [viewMode, setViewMode] = React.useState<'chart' | 'list'>('chart');
   const [chartMetric, setChartMetric] = React.useState<'ph' | 'ec'>('ph');
 
+  const { t } = useTranslation();
+
   const TIME_RANGE_OPTIONS = React.useMemo(
     () => [
-      { label: translate('nutrient.timeRange.7days'), value: '7' },
-      { label: translate('nutrient.timeRange.30days'), value: '30' },
-      { label: translate('nutrient.timeRange.90days'), value: '90' },
-      { label: translate('nutrient.timeRange.all'), value: 'all' },
+      { label: t('nutrient.timeRange.7days'), value: '7' },
+      { label: t('nutrient.timeRange.30days'), value: '30' },
+      { label: t('nutrient.timeRange.90days'), value: '90' },
+      { label: t('nutrient.timeRange.all'), value: 'all' },
     ],
-    []
+    [t]
   );
 
   const now = Date.now();
@@ -73,13 +75,13 @@ export function PhEcTrendChartContainer({
             options={TIME_RANGE_OPTIONS}
             value={timeRange}
             onSelect={(value) => setTimeRange(String(value))}
-            label={translate('nutrient.time_range')}
+            label={t('nutrient.time_range')}
             testID={safeBase ? `${safeBase}.timeRange` : undefined}
           />
           <View className="flex-row gap-2">
             {onExportCSV && (
               <Button
-                label="CSV"
+                label={t('nutrient.export.csv')}
                 onPress={onExportCSV}
                 variant="outline"
                 size="sm"
@@ -88,7 +90,7 @@ export function PhEcTrendChartContainer({
             )}
             {onExportJSON && (
               <Button
-                label="JSON"
+                label={t('nutrient.export.json')}
                 onPress={onExportJSON}
                 variant="outline"
                 size="sm"
@@ -101,14 +103,14 @@ export function PhEcTrendChartContainer({
         {/* View Mode Toggle */}
         <View className="flex-row items-center gap-2">
           <Button
-            label={translate('nutrient.viewChart')}
+            label={t('nutrient.viewChart')}
             onPress={() => setViewMode('chart')}
             variant={viewMode === 'chart' ? 'default' : 'outline'}
             size="sm"
             testID={safeBase ? `${safeBase}.viewChart` : undefined}
           />
           <Button
-            label={translate('nutrient.viewList')}
+            label={t('nutrient.viewList')}
             onPress={() => setViewMode('list')}
             variant={viewMode === 'list' ? 'default' : 'outline'}
             size="sm"
@@ -118,14 +120,14 @@ export function PhEcTrendChartContainer({
             <>
               <View className="mx-2 h-6 w-px bg-neutral-300 dark:bg-neutral-700" />
               <Button
-                label="pH"
+                label={t('nutrient.metric.ph')}
                 onPress={() => setChartMetric('ph')}
                 variant={chartMetric === 'ph' ? 'default' : 'outline'}
                 size="sm"
                 testID={safeBase ? `${safeBase}.metricPh` : undefined}
               />
               <Button
-                label="EC"
+                label={t('nutrient.metric.ec')}
                 onPress={() => setChartMetric('ec')}
                 variant={chartMetric === 'ec' ? 'default' : 'outline'}
                 size="sm"

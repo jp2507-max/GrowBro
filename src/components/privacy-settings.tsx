@@ -142,7 +142,6 @@ function PrivacyToggles({
   );
 }
 
-// eslint-disable-next-line max-lines-per-function
 function PrivacyActions({
   updateConsent,
   onDataExport,

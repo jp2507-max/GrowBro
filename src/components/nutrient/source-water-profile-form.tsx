@@ -12,9 +12,12 @@ import { Button, Input, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
 
 const profileSchema = z.object({
-  name: z.string().refine((val) => val.length > 0, {
-    message: translate('nutrient.waterProfile.form.validation.nameRequired'),
-  }),
+  name: z.string().refine(
+    (val) => val.length > 0,
+    () => ({
+      message: translate('nutrient.waterProfile.form.validation.nameRequired'),
+    })
+  ),
   baselineEc25c: z.number().min(0).max(5.0),
   alkalinityMgPerL: z.number().min(0).max(500),
   hardnessMgPerL: z.number().min(0).max(1000),

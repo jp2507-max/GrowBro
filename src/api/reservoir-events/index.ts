@@ -306,20 +306,20 @@ export const useUndoReservoirEvent = createMutation<
 // ============================================================================
 
 /**
- * Hook for calculating dose recommendations (client-side only)
+ * Function for calculating dose recommendations (client-side only)
  *
  * This is educational guidance and doesn't require server interaction
  */
-export function useDoseRecommendation(variables: DoseRecommendationVariables) {
+export function doseRecommendation(variables: DoseRecommendationVariables) {
   return calculateDoseRecommendation(variables);
 }
 
 /**
- * Hook for calculating dilution recommendations (client-side only)
+ * Function for calculating dilution recommendations (client-side only)
  *
  * This is educational guidance and doesn't require server interaction
  */
-export function useDilutionRecommendation(
+export function dilutionRecommendation(
   variables: DilutionRecommendationVariables
 ) {
   return calculateDilutionRecommendation(variables);

@@ -2,10 +2,9 @@ import React from 'react';
 import { Pressable, View } from 'react-native';
 
 import { Button, Text } from '@/components/ui';
-import { translate } from '@/lib/i18n/utils';
+import { translate, translateDynamic } from '@/lib/i18n/utils';
 import type { DiagnosticResult } from '@/lib/nutrient-engine/types';
-
-import { navigateToSecondOpinion } from '../../lib/nutrient-engine/utils/community-navigation';
+import { navigateToSecondOpinion } from '@/lib/nutrient-engine/utils/community-navigation';
 
 type Props = {
   result: DiagnosticResult;
@@ -99,7 +98,7 @@ function ClassificationHeader({
     <View className="mb-3">
       <View className="mb-2 flex-row items-center justify-between">
         <Text className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-          {translate(issueTypeKey)}
+          {translateDynamic(issueTypeKey)}
         </Text>
         <View
           className={`rounded-full px-3 py-1 ${confidenceColor}`}
@@ -118,7 +117,7 @@ function ClassificationHeader({
       )}
 
       <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-        {translate(severityKey)}
+        {translateDynamic(severityKey)}
       </Text>
 
       <SourceBadge source={result.confidenceSource} />
@@ -203,7 +202,7 @@ function RationaleSection({
           key={index}
           className="mb-1 text-sm text-neutral-600 dark:text-neutral-400"
         >
-          • {translate(item)}
+          • {translateDynamic(item)}
         </Text>
       ))}
     </View>
@@ -227,7 +226,7 @@ function RecommendationsSection({
         >
           <View className="mb-1 flex-row items-center justify-between">
             <Text className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
-              {translate(rec.description)}
+              {translateDynamic(rec.description)}
             </Text>
             {rec.context?.source && (
               <Text className="text-xs text-neutral-500 dark:text-neutral-500">
@@ -261,7 +260,7 @@ function DisclaimersSection({
           key={index}
           className="mb-1 text-sm text-warning-700 dark:text-warning-300"
         >
-          • {translate(key)}
+          • {translateDynamic(key)}
         </Text>
       ))}
     </View>

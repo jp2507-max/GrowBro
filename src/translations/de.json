@@ -797,6 +797,8 @@
     }
   },
   "nutrient": {
+    "apply_learnings": "Erkenntnisse anwenden",
+    "atc_label": "Temperaturkompensiert (ATC)",
     "chart": {
       "eventMarkersNote": "{{count}} Ereignis-Marker angezeigt",
       "noData": "Noch keine Messwerte",
@@ -829,7 +831,8 @@
       "disclaimers": {
         "aiOnlyPrimary": "Hinweise stammen ausschließlich von der KI. Bitte mit Messwerten oder Community-Rückmeldungen abgleichen.",
         "considerSecondOpinion": "Geringe Sicherheit. Bitte hole eine zweite Einschätzung aus der Community ein.",
-        "lowConfidence": "Diagnosesicherheit liegt unter dem definierten Schwellenwert."
+        "lowConfidence": "Diagnosesicherheit liegt unter dem definierten Schwellenwert.",
+        "title": "⚠️ Hinweise"
       },
       "feedbackQuestion": "War diese Diagnose hilfreich?",
       "feedbackThanks": "Danke für dein Feedback!",
@@ -851,6 +854,7 @@
         "highAlkalinity": "Quellwasser weist hohe Alkalinität auf.",
         "phPersistentlyHigh": "pH lag wiederholt über dem Zielband des Reservoirs.",
         "tipBurnObserved": "Verbrennungserscheinungen an Blattspitzen erkannt.",
+        "title": "💡 Begründung",
         "yellowingLowerLeaves": "Vergilbung an unteren Blättern festgestellt."
       },
       "recommendations": {
@@ -882,6 +886,16 @@
     "ec": "EC",
     "ecTrend": "EC-Verlauf",
     "ec_label": "EC",
+    "event": {
+      "ecDelta": "EC-Änderung",
+      "ecDeltaHint": "Erwartete EC-Änderung nach diesem Ereignis",
+      "logEvent": "Ereignis protokollieren",
+      "note": "Notizen",
+      "notePlaceholder": "Füge Notizen zu diesem Ereignis hinzu...",
+      "phDelta": "pH-Änderung",
+      "phDeltaHint": "Erwartete pH-Änderung nach diesem Ereignis",
+      "type": "Ereignistyp"
+    },
     "eventTypes": {
       "addNutrient": "Nährstoffe hinzufügen",
       "change": "Reservoir-Wechsel",
@@ -890,6 +904,12 @@
       "phDown": "pH senken",
       "phUp": "pH erhöhen"
     },
+    "medium": {
+      "coco": "Coco",
+      "hydro": "Hydroponik",
+      "soil": "Erde",
+      "soilless": "Erdlos"
+    },
     "mediumOptions": {
       "coco": "Coco",
       "hydro": "Hydro",
@@ -897,9 +917,29 @@
       "soil": "Erde",
       "soilless": "Erdlos"
     },
+    "no_events_description": "Beginne Reservoir-Ereignisse zu protokollieren, um deine Änderungen zu verfolgen",
+    "no_events_title": "Keine Ereignisse aufgezeichnet",
     "no_readings": "Keine Messwerte verfügbar",
+    "performance_report": "Leistungsbericht",
     "ph": "pH",
     "phTrend": "pH-Verlauf",
+    "ppm_scale_label": "PPM-Skala",
+    "reservoir": {
+      "max": "Max",
+      "medium": "Anbaumedium",
+      "min": "Min",
+      "name": "Reservoir-Name",
+      "namePlaceholder": "z.B. Haupttank",
+      "noReservoirs": "Keine Reservoirs konfiguriert",
+      "selectReservoir": "Reservoir auswählen",
+      "targetEc": "EC-Zielbereich",
+      "targetPh": "pH-Zielbereich",
+      "validation": {
+        "nameRequired": "Reservoir-Name ist erforderlich"
+      },
+      "volume": "Volumen (L)"
+    },
+    "save_reading": "Messung speichern",
     "start_logging_ph_ec": "Starte pH/EC-Messungen",
     "targetMax": "Max",
     "targetMin": "Min",
@@ -912,8 +952,42 @@
       "all": "Gesamtverlauf"
     },
     "time_range": "Zeitbereich",
+    "validation": {
+      "ecInvalidType": "EC muss eine Zahl sein",
+      "ecMax": "EC muss {{max}} oder weniger sein",
+      "ecMin": "EC muss mindestens {{min}} sein",
+      "ecRequired": "EC ist erforderlich",
+      "noteMaxLength": "Notiz darf höchstens {{max}} Zeichen lang sein",
+      "phInvalidType": "pH muss eine Zahl sein",
+      "phMax": "pH muss {{max}} oder weniger sein",
+      "phMin": "pH muss mindestens {{min}} sein",
+      "phRequired": "pH ist erforderlich",
+      "ppmScaleInvalid": "Ungültige PPM-Skala",
+      "ppmScaleRequired": "PPM-Skala ist erforderlich",
+      "tempInvalidType": "Temperatur muss eine Zahl sein",
+      "tempMax": "Temperatur muss {{max}} oder weniger sein",
+      "tempMin": "Temperatur muss mindestens {{min}} sein",
+      "tempRequired": "Temperatur ist erforderlich"
+    },
     "viewChart": "Diagramm",
-    "viewList": "Liste"
+    "viewList": "Liste",
+    "waterProfile": {
+      "form": {
+        "alkalinity": "Alkalinität (ppm CaCO3)",
+        "alkalinityHelper": "Misst die Karbonatpufferkapazität",
+        "baselineEc": "Basis-EC (mS/cm)",
+        "baselineEcHelper": "EC deines Ausgangswassers vor Zugabe von Nährstoffen",
+        "educationalNote": "ℹ️ Diese Werte helfen, Nährstoffempfehlungen für deine Wasserquelle zu optimieren",
+        "hardness": "Gesamthärte (ppm)",
+        "hardnessHelper": "Kalzium- und Magnesiumgehalt",
+        "name": "Profilname",
+        "namePlaceholder": "z.B. Leitungswasser",
+        "validation": {
+          "nameRequired": "Profilname ist erforderlich"
+        }
+      },
+      "title": "Wasserprofil"
+    }
   },
   "onboarding": {
     "allow_button": "Benachrichtigungen erlauben",

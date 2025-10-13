@@ -1,5 +1,5 @@
 import type {
-  SQLiteAdapter,
+  default as SQLiteAdapter,
   SQLiteQuery,
 } from '@nozbe/watermelondb/adapters/sqlite';
 

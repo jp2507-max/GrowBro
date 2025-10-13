@@ -22,7 +22,6 @@ type Props = {
   className?: string;
 };
 
-/* eslint-disable max-lines-per-function */
 export function StageProgress({ currentStage, className }: Props) {
   const { t } = useTranslation();
   const stages = getAllStages();

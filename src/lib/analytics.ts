@@ -678,6 +678,52 @@ function sanitizePlaybookPayload<N extends AnalyticsEventName>(
   return sanitized as AnalyticsEventPayload<N>;
 }
 
+function sanitizeContextString(context: string): string | undefined {
+  if (typeof context !== 'string') return undefined;
+
+  // Trim whitespace and collapse excessive whitespace
+  let sanitized = context.trim().replace(/\s+/g, ' ');
+
+  // Strip control characters (non-printable characters)
+  sanitized = sanitized.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+
+  // Mask emails
+  const emailRegex = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
+  sanitized = sanitized.replace(emailRegex, '[redacted_email]');
+
+  // Mask phone numbers (more specific pattern: optional +country, then digits/spaces/hyphens/dots/parens)
+  // Requires at least 7 consecutive digits in the phone part
+  const phoneRegex =
+    /[\+]?[\d\s\-\.\(\)]*\d{3,}[\d\s\-\.\(\)]*\d{3,}[\d\s\-\.\(\)]*\d{4,}[\d\s\-\.\(\)]*/g;
+  sanitized = sanitized.replace(phoneRegex, '[redacted_phone]');
+
+  // Mask credit card numbers (13-19 digits, common patterns with spaces/hyphens)
+  const creditCardRegex = /\b\d{4}[\s\-]\d{4}[\s\-]\d{4}[\s\-]\d{4}\b/g;
+  sanitized = sanitized.replace(creditCardRegex, '[redacted_card]');
+
+  // Strip URLs
+  const urlRegex = /https?:\/\/[^\s]+/gi;
+  sanitized = sanitized.replace(urlRegex, '[redacted_url]');
+
+  // Strip potential auth tokens (Bearer tokens, API keys, etc.)
+  const authTokenRegex = /\b(?:bearer|token|key|secret|auth)[=\s:]*[^\s&]+/gi;
+  sanitized = sanitized.replace(authTokenRegex, '[redacted_token]');
+
+  // Truncate to max length (200 chars)
+  const maxLength = 200;
+  if (sanitized.length > maxLength) {
+    sanitized = sanitized.substring(0, maxLength).trim();
+  }
+
+  // Return undefined if empty or only contains redaction placeholders
+  const cleaned = sanitized.trim();
+  if (!cleaned || /^\[redacted_[^\]]+\]$/.test(cleaned)) {
+    return undefined;
+  }
+
+  return cleaned;
+}
+
 function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(
   name: N,
   payload: AnalyticsEventPayload<N>
@@ -730,6 +776,17 @@ function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(
     // Remove strain_name if it could contain PII (keep it for now as it's public data)
     if (sanitized.strain_name) {
       sanitized.strain_name = sanitized.strain_name.substring(0, 50);
+    }
+    return sanitized as AnalyticsEventPayload<N>;
+  }
+
+  // Sanitize nutrient feature usage context field
+  if (name === 'nutrient_feature_usage') {
+    const sanitized = {
+      ...(payload as AnalyticsEventPayload<'nutrient_feature_usage'>),
+    };
+    if (sanitized.context !== undefined) {
+      sanitized.context = sanitizeContextString(sanitized.context);
     }
     return sanitized as AnalyticsEventPayload<N>;
   }

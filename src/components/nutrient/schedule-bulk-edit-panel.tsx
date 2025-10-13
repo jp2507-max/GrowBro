@@ -19,7 +19,6 @@ interface ScheduleBulkEditPanelProps {
   testID?: string;
 }
 
-// eslint-disable-next-line max-lines-per-function
 export function ScheduleBulkEditPanel({
   onShift,
   onUndo,

@@ -161,7 +161,6 @@ function FavoritesHeader({
   );
 }
 
-// eslint-disable-next-line max-lines-per-function
 export default function FavoritesScreen(): React.ReactElement {
   const { listRef, scrollHandler } = useAnimatedScrollList();
   useScrollToTop(listRef);

@@ -81,7 +81,7 @@ export type SyncStatus = {
  * Conflict resolution result
  */
 export type ConflictResolution = {
-  winner: 'local' | 'remote';
+  winner: 'local' | 'remote' | 'needs-review';
   localRevision?: number;
   remoteRevision?: number;
   localTimestamp?: number;

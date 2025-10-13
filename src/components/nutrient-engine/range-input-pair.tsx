@@ -4,6 +4,7 @@
  * Min/max inputs for pH or EC ranges
  */
 
+import type { ReactElement } from 'react';
 import type { Control, FieldValues, Path } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
@@ -27,7 +28,7 @@ export function RangeInputPair<TFormValues extends FieldValues>({
   minPlaceholder,
   maxPlaceholder,
   testID,
-}: RangeInputPairProps<TFormValues>): JSX.Element {
+}: RangeInputPairProps<TFormValues>): ReactElement {
   const { t } = useTranslation();
 
   return (

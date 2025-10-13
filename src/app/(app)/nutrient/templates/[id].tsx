@@ -23,7 +23,6 @@ import {
 } from '@/lib/nutrient-engine/services/template-service';
 import { database } from '@/lib/watermelon';
 
-// eslint-disable-next-line max-lines-per-function
 export default function TemplateDetailScreen() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -75,7 +74,7 @@ export default function TemplateDetailScreen() {
     }
 
     loadTemplate();
-  }, [database, id, isNew, router, t]);
+  }, [id, isNew, router, t]);
 
   const handleSubmit = React.useCallback(
     async (data: FeedingTemplateFormData) => {
@@ -111,7 +110,7 @@ export default function TemplateDetailScreen() {
         });
       }
     },
-    [database, id, isNew, router, t]
+    [id, isNew, router, t]
   );
 
   const handleCancel = React.useCallback(() => {

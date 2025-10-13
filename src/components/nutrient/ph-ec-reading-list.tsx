@@ -40,7 +40,7 @@ type ReadingListItem = {
  * - Stable ItemSeparatorComponent reference
  * - Test performance in release mode
  */
-// eslint-disable-next-line max-lines-per-function
+
 export function PhEcReadingList({
   readings,
   isLoading = false,
@@ -134,7 +134,6 @@ type ReadingListItemProps = {
 };
 
 const ReadingListItemComponent = memo(
-  // eslint-disable-next-line max-lines-per-function
   ({ item, onSelect }: ReadingListItemProps) => {
     const { t } = useTranslation();
 

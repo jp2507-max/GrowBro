@@ -363,26 +363,13 @@ afterAll(() => {
   jest.clearAllTimers();
 });
 
-// Initialize i18n for tests using the same approach as test-utils
+// Initialize i18n for tests using the shared function from test-utils
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const i18n = require('./src/lib/i18n').default;
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { resources } = require('./src/lib/i18n/resources');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { initReactI18next } = require('react-i18next');
-
-  if (!i18n.isInitialized) {
-    i18n.use(initReactI18next).init({
-      resources,
-      lng: 'en',
-      fallbackLng: 'en',
-      compatibilityJSON: 'v3',
-      interpolation: { escapeValue: false },
-    });
-  }
+  const { initI18n } = require('./src/lib/test-utils');
+  initI18n();
 } catch {
-  // ignore if i18n cannot be initialized
+  console.warn('[jest-setup] i18n initialization skipped');
 }
 
 // Ensure i18next shuts down any internal resources after the test run to

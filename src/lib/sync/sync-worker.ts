@@ -216,7 +216,8 @@ export class SyncWorker {
     return (tableSchema: any, local: any, remote: any) => {
       const resolution = resolveConflict(
         { ...local, id: local.id },
-        { ...remote, id: remote.id }
+        { ...remote, id: remote.id },
+        tableSchema.name
       );
 
       if (this.config.enableLogging) {
@@ -224,6 +225,15 @@ export class SyncWorker {
           `[SyncWorker] Conflict in ${tableSchema.name}:`,
           resolution.reason
         );
+      }
+
+      // Handle needs-review conflicts by defaulting to remote for now
+      // TODO: Implement proper needs-review handling (e.g., store conflict for manual resolution)
+      if (resolution.winner === 'needs-review') {
+        console.warn(
+          `[SyncWorker] Conflict in ${tableSchema.name} requires manual review, defaulting to remote`
+        );
+        return remote;
       }
 
       return resolution.winner === 'remote' ? remote : local;

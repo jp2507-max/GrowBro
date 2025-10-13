@@ -14,6 +14,7 @@ jest.mock('expo-router', () => ({
 
 jest.mock('@/lib/i18n/utils', () => ({
   translate: jest.fn((key: string) => key),
+  translateDynamic: jest.fn((key: string) => key),
 }));
 
 describe('navigateToSecondOpinion', () => {

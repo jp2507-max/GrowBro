@@ -24,7 +24,6 @@ export type RevertModalRef = {
   dismiss: () => void;
 };
 
-/* eslint-disable max-lines-per-function */
 export const RevertModal = React.forwardRef<RevertModalRef, Props>(
   ({ currentStage, onConfirm, onCancel }, ref) => {
     const { t } = useTranslation();

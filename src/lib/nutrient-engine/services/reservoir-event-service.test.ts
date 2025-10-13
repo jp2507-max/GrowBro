@@ -754,8 +754,8 @@ describe('reservoir-event-service', () => {
     });
 
     test('handles null current EC with validation warning', () => {
-      // @ts-expect-error Testing invalid input
       const recommendation = calculateDoseRecommendation({
+        // @ts-expect-error Testing invalid input
         currentEc25c: null,
         targetEc25c: 2.0,
         volumeL: 20,
@@ -772,9 +772,9 @@ describe('reservoir-event-service', () => {
     });
 
     test('handles undefined target EC with validation warning', () => {
-      // @ts-expect-error Testing invalid input
       const recommendation = calculateDoseRecommendation({
         currentEc25c: 1.0,
+        // @ts-expect-error Testing invalid input
         targetEc25c: undefined,
         volumeL: 20,
         stockConcentration: 1.0,
@@ -790,10 +790,10 @@ describe('reservoir-event-service', () => {
     });
 
     test('handles null volume with validation warning', () => {
-      // @ts-expect-error Testing invalid input
       const recommendation = calculateDoseRecommendation({
         currentEc25c: 1.0,
         targetEc25c: 2.0,
+        // @ts-expect-error Testing invalid input
         volumeL: null,
         stockConcentration: 1.0,
       });
@@ -808,11 +808,11 @@ describe('reservoir-event-service', () => {
     });
 
     test('handles undefined stock concentration with validation warning', () => {
-      // @ts-expect-error Testing invalid input
       const recommendation = calculateDoseRecommendation({
         currentEc25c: 1.0,
         targetEc25c: 2.0,
-        volumeL: 20,
+        volumeL: 100,
+        // @ts-expect-error Testing invalid input
         stockConcentration: undefined,
       });
 

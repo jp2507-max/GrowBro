@@ -535,7 +535,6 @@ function createEmptyReport(reservoirId: string): PerformanceReport {
  * @returns Performance report
  */
 
-// eslint-disable-next-line max-lines-per-function
 export function generatePerformanceReport(options: {
   reservoirId: string;
   readings: PhEcReading[];

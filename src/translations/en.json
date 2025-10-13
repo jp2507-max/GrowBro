@@ -797,6 +797,8 @@
     }
   },
   "nutrient": {
+    "apply_learnings": "Apply Learnings",
+    "atc_label": "Temperature Compensated (ATC)",
     "chart": {
       "eventMarkersNote": "{{count}} event markers shown",
       "noData": "No readings yet",
@@ -829,7 +831,8 @@
       "disclaimers": {
         "aiOnlyPrimary": "Advice is AI-generated. Cross-check with manual readings or community feedback.",
         "considerSecondOpinion": "Confidence is limited. Consider getting a second opinion from the community.",
-        "lowConfidence": "Confidence is below the safety threshold."
+        "lowConfidence": "Confidence is below the safety threshold.",
+        "title": "⚠️ Disclaimers"
       },
       "feedbackQuestion": "Was this diagnostic helpful?",
       "feedbackThanks": "Thanks for your feedback!",
@@ -851,6 +854,7 @@
         "highAlkalinity": "Source water alkalinity is high.",
         "phPersistentlyHigh": "pH has remained above the reservoir target band.",
         "tipBurnObserved": "Tip burn symptoms detected.",
+        "title": "💡 Rationale",
         "yellowingLowerLeaves": "Yellowing observed on lower leaves."
       },
       "recommendations": {
@@ -882,6 +886,16 @@
     "ec": "EC",
     "ecTrend": "EC Trend",
     "ec_label": "EC",
+    "event": {
+      "ecDelta": "EC Change",
+      "ecDeltaHint": "Expected EC change after this event",
+      "logEvent": "Log Event",
+      "note": "Notes",
+      "notePlaceholder": "Add notes about this event...",
+      "phDelta": "pH Change",
+      "phDeltaHint": "Expected pH change after this event",
+      "type": "Event Type"
+    },
     "eventTypes": {
       "addNutrient": "Add Nutrient",
       "change": "Reservoir Change",
@@ -890,6 +904,12 @@
       "phDown": "pH Down",
       "phUp": "pH Up"
     },
+    "medium": {
+      "coco": "Coco",
+      "hydro": "Hydroponic",
+      "soil": "Soil",
+      "soilless": "Soilless"
+    },
     "mediumOptions": {
       "coco": "Coco",
       "hydro": "Hydro",
@@ -897,9 +917,29 @@
       "soil": "Soil",
       "soilless": "Soilless"
     },
+    "no_events_description": "Start logging reservoir events to track your changes",
+    "no_events_title": "No Events Recorded",
     "no_readings": "No readings available",
+    "performance_report": "Performance Report",
     "ph": "pH",
     "phTrend": "pH Trend",
+    "ppm_scale_label": "PPM Scale",
+    "reservoir": {
+      "max": "Max",
+      "medium": "Growing Medium",
+      "min": "Min",
+      "name": "Reservoir Name",
+      "namePlaceholder": "e.g., Main Tank",
+      "noReservoirs": "No reservoirs configured",
+      "selectReservoir": "Select Reservoir",
+      "targetEc": "Target EC Range",
+      "targetPh": "Target pH Range",
+      "validation": {
+        "nameRequired": "Reservoir name is required"
+      },
+      "volume": "Volume (L)"
+    },
+    "save_reading": "Save Reading",
     "start_logging_ph_ec": "Start logging pH/EC measurements",
     "targetMax": "Max",
     "targetMin": "Min",
@@ -912,8 +952,42 @@
       "all": "All Time"
     },
     "time_range": "Time Range",
+    "validation": {
+      "ecInvalidType": "EC must be a number",
+      "ecMax": "EC must be {{max}} or less",
+      "ecMin": "EC must be at least {{min}}",
+      "ecRequired": "EC is required",
+      "noteMaxLength": "Note must be {{max}} characters or less",
+      "phInvalidType": "pH must be a number",
+      "phMax": "pH must be {{max}} or less",
+      "phMin": "pH must be at least {{min}}",
+      "phRequired": "pH is required",
+      "ppmScaleInvalid": "Invalid PPM scale",
+      "ppmScaleRequired": "PPM scale is required",
+      "tempInvalidType": "Temperature must be a number",
+      "tempMax": "Temperature must be {{max}} or less",
+      "tempMin": "Temperature must be at least {{min}}",
+      "tempRequired": "Temperature is required"
+    },
     "viewChart": "Chart",
-    "viewList": "List"
+    "viewList": "List",
+    "waterProfile": {
+      "form": {
+        "alkalinity": "Alkalinity (ppm CaCO3)",
+        "alkalinityHelper": "Measures carbonate buffering capacity",
+        "baselineEc": "Baseline EC (mS/cm)",
+        "baselineEcHelper": "EC of your source water before adding nutrients",
+        "educationalNote": "ℹ️ These values help optimize nutrient recommendations for your water source",
+        "hardness": "Total Hardness (ppm)",
+        "hardnessHelper": "Calcium and magnesium content",
+        "name": "Profile Name",
+        "namePlaceholder": "e.g., City Water",
+        "validation": {
+          "nameRequired": "Profile name is required"
+        }
+      },
+      "title": "Water Profile"
+    }
   },
   "onboarding": {
     "allow_button": "Allow notifications",

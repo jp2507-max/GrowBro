@@ -100,7 +100,6 @@ function GuidanceDisplay({ guidance }: { guidance: any }) {
   );
 }
 
-// eslint-disable-next-line max-lines-per-function
 export function ReservoirCorrectionPanel({
   currentEc,
   targetEc,

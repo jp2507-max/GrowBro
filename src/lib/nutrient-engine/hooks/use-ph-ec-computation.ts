@@ -4,6 +4,8 @@
  * Handles temperature compensation, PPM conversion, quality flags, and confidence scoring
  */
 
+import { useMemo } from 'react';
+
 import type {
   Calibration,
   PpmScale,
@@ -16,20 +18,20 @@ import {
   toEC25,
 } from '@/lib/nutrient-engine/utils/conversions';
 
-interface ComputedMetrics {
+type ComputedMetrics = {
   ec25c: number | null;
   ppm: number | null;
   qualityFlags: QualityFlag[];
   confidence: number;
-}
+};
 
-interface UsePhEcComputationProps {
+type UsePhEcComputationProps = {
   ecRaw?: number;
   tempC?: number;
   atcOn?: boolean;
   ppmScale: PpmScale;
   calibration?: Calibration;
-}
+};
 
 export function usePhEcComputation({
   ecRaw,
@@ -38,27 +40,29 @@ export function usePhEcComputation({
   ppmScale,
   calibration,
 }: UsePhEcComputationProps): ComputedMetrics {
-  let ec25c: number | null = null;
-  let ppm: number | null = null;
-  let qualityFlags: QualityFlag[] = [];
-  let confidence = 1.0;
+  return useMemo(() => {
+    let ec25c: number | null = null;
+    let ppm: number | null = null;
+    let qualityFlags: QualityFlag[] = [];
+    let confidence = 1.0;
 
-  try {
-    if (ecRaw != null && tempC != null) {
-      ec25c = atcOn ? ecRaw : toEC25(ecRaw, tempC);
-      ppm = ecToPpm(ec25c, ppmScale);
+    try {
+      if (ecRaw != null && tempC != null) {
+        ec25c = atcOn ? ecRaw : toEC25(ecRaw, tempC);
+        ppm = ecToPpm(ec25c, ppmScale);
 
-      const qualityReading = {
-        atcOn: atcOn ?? false,
-        tempC,
-      };
+        const qualityReading = {
+          atcOn: atcOn ?? false,
+          tempC,
+        };
 
-      qualityFlags = computeQualityFlags(qualityReading, calibration);
-      confidence = calculateConfidenceScore(qualityReading, calibration);
+        qualityFlags = computeQualityFlags(qualityReading, calibration);
+        confidence = calculateConfidenceScore(qualityReading, calibration);
+      }
+    } catch (e) {
+      console.error('Error computing pH/EC metrics:', e);
     }
-  } catch (e) {
-    console.error('Error computing pH/EC metrics:', e);
-  }
 
-  return { ec25c, ppm, qualityFlags, confidence };
+    return { ec25c, ppm, qualityFlags, confidence };
+  }, [ecRaw, tempC, atcOn, ppmScale, calibration]);
 }

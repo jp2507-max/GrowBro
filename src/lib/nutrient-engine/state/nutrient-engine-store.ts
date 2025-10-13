@@ -538,7 +538,6 @@ function createTemplateActions(
   };
 }
 
-// eslint-disable-next-line max-lines-per-function
 function createObserverActions(
   set: StoreSet
 ): Pick<
