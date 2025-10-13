@@ -685,7 +685,7 @@ function sanitizeContextString(context: string): string | undefined {
   let sanitized = context.trim().replace(/\s+/g, ' ');
 
   // Strip control characters (non-printable characters)
-  sanitized = sanitized.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+  sanitized = sanitized.replace(/\p{Cc}+/gu, '');
 
   // Mask emails
   const emailRegex = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
@@ -698,7 +698,7 @@ function sanitizeContextString(context: string): string | undefined {
   sanitized = sanitized.replace(phoneRegex, '[redacted_phone]');
 
   // Mask credit card numbers (13-19 digits, common patterns with spaces/hyphens)
-  const creditCardRegex = /\b\d{4}[\s\-]\d{4}[\s\-]\d{4}[\s\-]\d{4}\b/g;
+  const creditCardRegex = /\b\d{4}(?:[\s\-]\d{4}){2,3}(?:[\s\-]\d{1,3})?\b/g;
   sanitized = sanitized.replace(creditCardRegex, '[redacted_card]');
 
   // Strip URLs

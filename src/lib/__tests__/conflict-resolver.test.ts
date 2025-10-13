@@ -4,7 +4,9 @@
  */
 
 import {
+  generateDeduplicationKey,
   getResolutionStrategy,
+  isDuplicate,
   resolveByRevision,
   resolveByTimestamp,
   resolveConflict,
@@ -215,5 +217,78 @@ describe('resolveByTimestamp', () => {
     expect(result.reason).toContain(
       'Server timestamps equal (remote wins by default)'
     );
+  });
+});
+
+describe('isDuplicate', () => {
+  test('returns true for identical records', () => {
+    const a = { plant_id: 'p1', meter_id: 'm1', measured_at: 1000 };
+    const b = { plant_id: 'p1', meter_id: 'm1', measured_at: 1000 };
+
+    expect(isDuplicate(a, b)).toBe(true);
+  });
+
+  test('returns true for near-duplicate within default tolerance', () => {
+    const a = { plant_id: 'p1', meter_id: 'm1', measured_at: 1000 };
+    const b = { plant_id: 'p1', meter_id: 'm1', measured_at: 1500 };
+
+    expect(isDuplicate(a, b)).toBe(true);
+  });
+
+  test('respects custom tolerance', () => {
+    const a = { plant_id: 'p1', meter_id: 'm1', measured_at: 1000 };
+    const b = { plant_id: 'p1', meter_id: 'm1', measured_at: 3000 };
+
+    // tolerance 2500ms should consider these duplicates
+    expect(isDuplicate(a, b, 2500)).toBe(true);
+    // default tolerance should not
+    expect(isDuplicate(a, b)).toBe(false);
+  });
+
+  test('returns false for different plant_id or meter_id', () => {
+    const base = { plant_id: 'p1', meter_id: 'm1', measured_at: 1000 };
+    const diffPlant = { plant_id: 'p2', meter_id: 'm1', measured_at: 1000 };
+    const diffMeter = { plant_id: 'p1', meter_id: 'm2', measured_at: 1000 };
+
+    expect(isDuplicate(base, diffPlant)).toBe(false);
+    expect(isDuplicate(base, diffMeter)).toBe(false);
+  });
+
+  test('treats undefined plant_id/meter_id as matching only when both undefined', () => {
+    const a = { measured_at: 1000 } as any;
+    const b = { measured_at: 1000 } as any;
+    const c = { plant_id: 'p1', measured_at: 1000 } as any;
+
+    expect(isDuplicate(a, b)).toBe(true);
+    expect(isDuplicate(a, c)).toBe(false);
+  });
+});
+
+describe('generateDeduplicationKey', () => {
+  test('generates same key for identical inputs', () => {
+    const k1 = generateDeduplicationKey('p1', 'm1', 1500);
+    const k2 = generateDeduplicationKey('p1', 'm1', 1999);
+
+    // Both floor to same second (1)
+    expect(k1).toBe(k2);
+  });
+
+  test('generates different keys for different inputs', () => {
+    const a = generateDeduplicationKey('p1', 'm1', 1000);
+    const b = generateDeduplicationKey('p2', 'm1', 1000);
+    const c = generateDeduplicationKey('p1', 'm2', 1000);
+    const d = generateDeduplicationKey(undefined, undefined, 1000);
+
+    expect(a).not.toBe(b);
+    expect(a).not.toBe(c);
+    // undefined values are serialized to 'null' in the key
+    expect(d).toBe('null_null_1');
+  });
+
+  test('bucketing edge cases: boundaries', () => {
+    const before = generateDeduplicationKey('p', 'm', 1999);
+    const after = generateDeduplicationKey('p', 'm', 2000);
+
+    expect(before).not.toBe(after);
   });
 });

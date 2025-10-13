@@ -28,7 +28,7 @@ export function StrainAdjustmentPanel({
   onAdjustmentsChange,
   onSaveAsProfile,
   testID = 'strain-adjustment',
-}: StrainAdjustmentPanelProps) {
+}: StrainAdjustmentPanelProps): React.JSX.Element {
   const { t } = useTranslation();
   const { updateAdjustment, getAdjustment, hasAnyAdjustments } =
     useStrainAdjustments(adjustments, onAdjustmentsChange);

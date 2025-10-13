@@ -18,6 +18,21 @@ import {
   formatDosingStep,
 } from '@/lib/nutrient-engine/utils/dosing-calculator';
 
+type EcGuidance =
+  | {
+      type: 'addition';
+      steps: { stepNumber: number; addMl: number; resultingEc: number }[];
+      totalMl: number;
+      safetyNotes: string[];
+    }
+  | {
+      type: 'dilution';
+      removeL: number;
+      addL: number;
+      resultingEc: number;
+      safetyNotes: string[];
+    };
+
 interface ReservoirCorrectionPanelProps {
   currentEc: number;
   targetEc: number;
@@ -34,33 +49,42 @@ function CurrentReadings({
   currentEc: number;
   targetEc: number;
   reservoirVolumeL: number;
-}) {
+}): React.ReactElement {
   const { t } = useTranslation();
   return (
     <View className="mb-2">
-      <Text className="text-sm text-primary-800 dark:text-primary-200">
+      <Text
+        testID="current-ec-text"
+        className="text-sm text-primary-800 dark:text-primary-200"
+      >
         {t('nutrient.currentEc')}: {currentEc.toFixed(2)} mS/cm
       </Text>
-      <Text className="text-sm text-primary-800 dark:text-primary-200">
+      <Text
+        testID="target-ec-text"
+        className="text-sm text-primary-800 dark:text-primary-200"
+      >
         {t('nutrient.targetEc')}: {targetEc.toFixed(2)} mS/cm
       </Text>
-      <Text className="text-sm text-primary-800 dark:text-primary-200">
+      <Text
+        testID="reservoir-volume-text"
+        className="text-sm text-primary-800 dark:text-primary-200"
+      >
         {t('nutrient.reservoirVolume')}: {reservoirVolumeL.toFixed(1)} L
       </Text>
     </View>
   );
 }
 
-function GuidanceDisplay({ guidance }: { guidance: any }) {
+function GuidanceDisplay({ guidance }: { guidance: EcGuidance }) {
   const { t } = useTranslation();
   return (
     <View className="mt-3 rounded-md bg-neutral-50 p-3 dark:bg-charcoal-900">
-      {'steps' in guidance ? (
+      {guidance.type === 'addition' ? (
         <>
           <Text className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
             {t('nutrient.stepwiseAddition')}
           </Text>
-          {guidance.steps.map((step: any, idx: number) => (
+          {guidance.steps.map((step, idx: number) => (
             <Text
               key={idx}
               className="mb-1 text-sm text-neutral-700 dark:text-neutral-300"
@@ -100,37 +124,43 @@ function GuidanceDisplay({ guidance }: { guidance: any }) {
   );
 }
 
-export function ReservoirCorrectionPanel({
+export function useEcGuidanceCalculation({
   currentEc,
   targetEc,
   reservoirVolumeL,
-  onClose,
-  testID = 'reservoir-correction-panel',
-}: ReservoirCorrectionPanelProps) {
-  const { t } = useTranslation();
-  const [stockConcentration, setStockConcentration] = React.useState('');
-  const [showGuidance, setShowGuidance] = React.useState(false);
-
+  stockConcentration,
+}: {
+  currentEc: number;
+  targetEc: number;
+  reservoirVolumeL: number;
+  stockConcentration: string;
+}) {
   const needsIncrease = currentEc < targetEc;
   const needsDecrease = currentEc > targetEc;
 
   const guidance = React.useMemo(() => {
     const stock = parseFloat(stockConcentration);
-    if (isNaN(stock) || stock <= 0) return null;
 
-    try {
-      if (needsIncrease) {
-        return calculateEcAdjustment(
-          currentEc,
-          targetEc,
-          reservoirVolumeL,
-          stock
-        );
-      } else if (needsDecrease) {
-        return calculateDilution(currentEc, targetEc, reservoirVolumeL);
-      }
-    } catch {
+    // Validate inputs before calling calculation functions
+    if (
+      !isFinite(currentEc) ||
+      !isFinite(targetEc) ||
+      reservoirVolumeL <= 0 ||
+      isNaN(stock) ||
+      stock <= 0
+    ) {
       return null;
+    }
+
+    if (needsIncrease) {
+      return calculateEcAdjustment(
+        currentEc,
+        targetEc,
+        reservoirVolumeL,
+        stock
+      );
+    } else if (needsDecrease) {
+      return calculateDilution(currentEc, targetEc, reservoirVolumeL);
     }
 
     return null;
@@ -139,42 +169,67 @@ export function ReservoirCorrectionPanel({
     targetEc,
     reservoirVolumeL,
     stockConcentration,
-    needsIncrease,
     needsDecrease,
+    needsIncrease,
   ]);
 
+  return { guidance, needsIncrease } as const;
+}
+
+function EducationalWarning(): React.ReactElement {
+  const { t } = useTranslation();
   return (
-    <View
-      className="dark:bg-primary-950 rounded-lg border border-primary-200 bg-primary-50 p-4 dark:border-primary-800"
-      testID={testID}
-    >
-      <Text className="mb-2 text-base font-semibold text-primary-900 dark:text-primary-100">
-        {t('nutrient.ecCorrection')}
+    <View className="dark:bg-warning-950 mb-3 rounded-md bg-warning-50 p-2">
+      <Text className="text-xs text-warning-800 dark:text-warning-200">
+        ⚠️ {t('nutrient.educationalGuidanceOnly')}
       </Text>
+    </View>
+  );
+}
 
-      <View className="dark:bg-warning-950 mb-3 rounded-md bg-warning-50 p-2">
-        <Text className="text-xs text-warning-800 dark:text-warning-200">
-          ⚠️ {t('nutrient.educationalGuidanceOnly')}
-        </Text>
-      </View>
+function StockConcentrationInput({
+  needsIncrease,
+  value,
+  onChangeText,
+  testID,
+}: {
+  needsIncrease: boolean;
+  value: string;
+  onChangeText: (v: string) => void;
+  testID: string;
+}): React.ReactElement | null {
+  const { t } = useTranslation();
+  if (!needsIncrease) return null;
+  return (
+    <Input
+      label={t('nutrient.stockConcentration')}
+      placeholder="e.g., 1.0"
+      keyboardType="decimal-pad"
+      value={value}
+      onChangeText={onChangeText}
+      testID={testID}
+    />
+  );
+}
 
-      <CurrentReadings
-        currentEc={currentEc}
-        targetEc={targetEc}
-        reservoirVolumeL={reservoirVolumeL}
-      />
-
-      {needsIncrease && (
-        <Input
-          label={t('nutrient.stockConcentration')}
-          placeholder="e.g., 1.0"
-          keyboardType="decimal-pad"
-          value={stockConcentration}
-          onChangeText={setStockConcentration}
-          testID={`${testID}-stock-input`}
-        />
-      )}
-
+function ActionButtons({
+  showGuidance,
+  setShowGuidance,
+  needsIncrease,
+  guidance,
+  onClose,
+  testID,
+}: {
+  showGuidance: boolean;
+  setShowGuidance: (v: boolean) => void;
+  needsIncrease: boolean;
+  guidance: EcGuidance | null;
+  onClose: () => void;
+  testID: string;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  return (
+    <>
       <Button
         label={
           showGuidance
@@ -199,6 +254,62 @@ export function ReservoirCorrectionPanel({
         className="mt-3"
         testID={`${testID}-close-btn`}
       />
-    </View>
+    </>
   );
 }
+
+export const ReservoirCorrectionPanel: React.FC<
+  ReservoirCorrectionPanelProps
+> = ({
+  currentEc,
+  targetEc,
+  reservoirVolumeL,
+  onClose,
+  testID = 'reservoir-correction-panel',
+}) => {
+  const { t } = useTranslation();
+  const [stockConcentration, setStockConcentration] = React.useState('');
+  const [showGuidance, setShowGuidance] = React.useState(false);
+
+  const { guidance, needsIncrease } = useEcGuidanceCalculation({
+    currentEc,
+    targetEc,
+    reservoirVolumeL,
+    stockConcentration,
+  });
+
+  return (
+    <View
+      className="dark:bg-primary-950 rounded-lg border border-primary-200 bg-primary-50 p-4 dark:border-primary-800"
+      testID={testID}
+    >
+      <Text className="mb-2 text-base font-semibold text-primary-900 dark:text-primary-100">
+        {t('nutrient.ecCorrection')}
+      </Text>
+
+      <EducationalWarning />
+
+      <CurrentReadings
+        currentEc={currentEc}
+        targetEc={targetEc}
+        reservoirVolumeL={reservoirVolumeL}
+      />
+
+      <StockConcentrationInput
+        needsIncrease={needsIncrease}
+        value={stockConcentration}
+        onChangeText={setStockConcentration}
+        testID={`${testID}-stock-input`}
+      />
+
+      <ActionButtons
+        showGuidance={showGuidance}
+        setShowGuidance={setShowGuidance}
+        needsIncrease={needsIncrease}
+        guidance={guidance}
+        onClose={onClose}
+        testID={testID}
+      />
+    </View>
+  );
+};

@@ -93,6 +93,7 @@ export function useConflictResolution() {
               const record = await collection.find(conflict.recordId);
               await record.update((rec) => {
                 // Type assertion for type safety - table name is validated above
+                // This narrows the type from generic Model to specific model types
                 const typedRec = rec as
                   | SeriesModel
                   | TaskModel
@@ -100,25 +101,40 @@ export function useConflictResolution() {
                   | HarvestModel
                   | InventoryModel
                   | HarvestAuditModel;
+
                 // Restore local values for conflicting fields
+                // This loop iterates through fields that were in conflict and restores
+                // the local (client-side) values over the server values
                 if (conflict.localRecord) {
                   for (const field of conflict.conflictFields) {
                     if (field in conflict.localRecord) {
+                      // NOTE: Type safety concern - using 'as any' to bypass TypeScript
+                      // checking for dynamic field access. This is necessary due to
+                      // WatermelonDB's API design but creates a potential runtime risk
+                      // if conflict.conflictFields contains invalid field names.
+                      // Consider implementing a type-safe field restoration helper
+                      // as suggested in code review to validate field existence.
                       (typedRec as any)[field] = conflict.localRecord[field];
                     }
                   }
                 }
-                // Clear the needsReview flag if it exists
+
+                // Clear the needsReview flag if it exists on task records
+                // This flag indicates the record had sync conflicts that needed manual review
+                // After resolving by keeping local changes, we remove this flag
                 if (
                   conflict.tableName === TABLE_NAMES.TASKS &&
                   (typedRec as TaskModel).metadata
                 ) {
                   const taskRec = typedRec as TaskModel;
+                  // Handle both string (serialized) and object metadata formats
                   const metadata =
                     typeof taskRec.metadata === 'string'
                       ? JSON.parse(taskRec.metadata)
                       : taskRec.metadata;
+                  // Remove the needsReview flag to indicate conflict is resolved
                   delete metadata.needsReview;
+                  // Update both the generic record and typed record with cleaned metadata
                   taskRec.metadata = metadata;
                 }
               });

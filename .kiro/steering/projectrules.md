@@ -121,7 +121,7 @@ Here is a simple example of how a component should be written using :
 ```tsx
 import * as React from 'react';
 
-import { Text, View, Image, SafeAreaView } from '@/components/ui';
+import { Text, View, Image } from '@/components/ui';
 
 // Props should be defined in the top of the component
 type Props = {

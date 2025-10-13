@@ -168,21 +168,27 @@ const ReadingListItemComponent = memo(
           <View className="flex-1">
             <View className="flex-row items-baseline gap-3">
               <View>
-                <Text className="text-xs text-neutral-500">pH</Text>
+                <Text className="text-xs text-neutral-500">
+                  {t('nutrient.ph')}
+                </Text>
                 <Text className="text-lg font-semibold text-neutral-900">
                   {item.ph.toFixed(2)}
                 </Text>
               </View>
 
               <View>
-                <Text className="text-xs text-neutral-500">EC@25°C</Text>
+                <Text className="text-xs text-neutral-500">
+                  {t('nutrient.ec_at_temp', { temp: item.tempC.toFixed(1) })}
+                </Text>
                 <Text className="text-lg font-semibold text-neutral-900">
-                  {item.ec25c.toFixed(2)} mS/cm
+                  {item.ec25c.toFixed(2)} {t('units.ms_per_cm')}
                 </Text>
               </View>
 
               <View>
-                <Text className="text-xs text-neutral-500">PPM</Text>
+                <Text className="text-xs text-neutral-500">
+                  {t('nutrient.ppm')}
+                </Text>
                 <Text className="text-sm font-medium text-neutral-700">
                   {ppmDisplay}
                 </Text>
@@ -201,7 +207,8 @@ const ReadingListItemComponent = memo(
           {/* Right: Quality indicators */}
           <View className="ml-2">
             <Text className="text-xs text-neutral-500">
-              {item.tempC.toFixed(1)}°C
+              {item.tempC.toFixed(1)}
+              {t('units.celsius')}
             </Text>
 
             {hasQualityFlags && (

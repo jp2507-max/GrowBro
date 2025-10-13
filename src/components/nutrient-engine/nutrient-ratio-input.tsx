@@ -26,7 +26,7 @@ export function NutrientRatioInput({
   nutrientIndex,
   onRemove,
   testID = 'nutrient-ratio',
-}: NutrientRatioInputProps): JSX.Element {
+}: NutrientRatioInputProps): React.ReactElement {
   const { t } = useTranslation();
 
   const unitOptions = [

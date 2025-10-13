@@ -25,6 +25,7 @@ export function calculateEcAdjustment(
   stockConcentrationMlPerL: number,
   maxStepPct: number = 0.1
 ): {
+  type: 'addition';
   steps: { stepNumber: number; addMl: number; resultingEc: number }[];
   safetyNotes: string[];
   totalMl: number;
@@ -42,6 +43,7 @@ export function calculateEcAdjustment(
   // If already at or above target, no adjustment needed
   if (currentEc >= targetEc) {
     return {
+      type: 'addition',
       steps: [],
       safetyNotes: ['Current EC is already at or above target'],
       totalMl: 0,
@@ -102,7 +104,7 @@ export function calculateEcAdjustment(
     );
   }
 
-  return { steps, safetyNotes, totalMl };
+  return { type: 'addition', steps, safetyNotes, totalMl };
 }
 
 /**
@@ -121,6 +123,7 @@ export function calculateDilution(
   reservoirVolumeL: number,
   maxDilutionPct: number = 0.2
 ): {
+  type: 'dilution';
   removeL: number;
   addL: number;
   resultingEc: number;
@@ -134,6 +137,7 @@ export function calculateDilution(
   // If already at or below target, no dilution needed
   if (currentEc <= targetEc) {
     return {
+      type: 'dilution',
       removeL: 0,
       addL: 0,
       resultingEc: currentEc,
@@ -167,6 +171,7 @@ export function calculateDilution(
   }
 
   return {
+    type: 'dilution',
     removeL: Math.round(actualRemoveL * 10) / 10,
     addL: Math.round(actualAddL * 10) / 10,
     resultingEc: Math.round(resultingEc * 100) / 100,

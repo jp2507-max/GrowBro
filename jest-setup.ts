@@ -280,6 +280,12 @@ jest.mock('@nozbe/watermelondb/decorators', () => {
     };
   };
 
+  const relationFactory = () => {
+    return (_tableName: string, _columnName: string) => {
+      return (_target: any, _propertyKey: any, descriptor?: any) => descriptor;
+    };
+  };
+
   const makeDecorator = () => {
     return (_target: any, _propertyKey: any, descriptor?: any) => descriptor;
   };
@@ -289,7 +295,7 @@ jest.mock('@nozbe/watermelondb/decorators', () => {
     date: makeFactory(),
     json: makeFactory(),
     field: makeFactory(),
-    relation: makeFactory(),
+    relation: relationFactory(),
     readonly: makeDecorator(),
   };
 });

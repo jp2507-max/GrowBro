@@ -1,3 +1,4 @@
+import { documentDirectory, writeAsStringAsync } from 'expo-file-system';
 import React, { useEffect, useState } from 'react';
 import { Alert, Share, Switch, Text, View } from 'react-native';
 
@@ -151,25 +152,47 @@ function PrivacyActions({
   onDataExport?: () => void;
   onAccountDeletion?: () => void;
 }): React.ReactElement {
-  const handleExport = async () => {
+  const handleExport = async (): Promise<void> => {
+    let tempFileUri: string | null = null;
     try {
       const exportData = await generatePrivacyExportJson();
 
-      // Use Share API to let user save or share the export
+      // For large JSON exports, write to temporary file to avoid truncation
+      tempFileUri = `${documentDirectory}privacy-export-${Date.now()}.json`;
+      await writeAsStringAsync(tempFileUri, exportData);
+
+      // Use Share API to let user save or share the export file
       await Share.share({
-        message: exportData,
+        url: tempFileUri,
         title: translate('privacy.exportData'),
       });
 
       if (onDataExport) {
         onDataExport();
       }
-    } catch {
-      Alert.alert(
-        translate('privacy.exportError.title'),
-        translate('privacy.exportError.message'),
-        [{ text: translate('common.ok') }]
-      );
+    } catch (error) {
+      // Detect user cancellation - different platforms have different error signatures
+      const isUserCancelled =
+        (error as any)?.message?.toLowerCase().includes('cancel') ||
+        (error as any)?.message?.toLowerCase().includes('dismiss') ||
+        (error as any)?.message?.toLowerCase().includes('abort') ||
+        (error as any)?.code === 'ECANCELLED' ||
+        Share.dismissed === true;
+
+      if (!isUserCancelled) {
+        console.error('[PrivacySettings] Data export failed:', error);
+        Alert.alert(
+          translate('privacy.exportError.title'),
+          translate('privacy.exportError.message'),
+          [{ text: translate('common.ok') }]
+        );
+      }
+      // If user cancelled, silently ignore and don't show error
+    } finally {
+      // Clean up temporary file regardless of success/failure
+      if (tempFileUri) {
+        await FileSystem.deleteAsync(tempFileUri, { idempotent: true });
+      }
     }
   };
 

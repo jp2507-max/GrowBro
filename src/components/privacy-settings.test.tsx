@@ -1,3 +1,4 @@
+import * as FileSystem from 'expo-file-system';
 import React from 'react';
 import { Alert, Share } from 'react-native';
 
@@ -16,6 +17,12 @@ jest.mock('@/lib', () => ({
 
 jest.mock('@/lib/privacy/export-service', () => ({
   generatePrivacyExportJson: jest.fn(async () => '{"mock":"export"}'),
+}));
+
+jest.mock('expo-file-system', () => ({
+  documentDirectory: 'file:///mock/document/',
+  writeAsStringAsync: jest.fn().mockResolvedValue(undefined),
+  deleteAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('@/lib/privacy-consent', () => {
@@ -118,10 +125,18 @@ describe('PrivacySettings', () => {
     await screen.findByTestId('privacy-export-btn');
 
     expect(exportService.generatePrivacyExportJson).toHaveBeenCalled();
+    expect(FileSystem.writeAsStringAsync).toHaveBeenCalledWith(
+      expect.stringContaining('file:///mock/document/privacy-export-'),
+      '{"mock":"export"}'
+    );
     expect(shareSpy).toHaveBeenCalledWith({
-      message: '{"mock":"export"}',
+      url: expect.stringContaining('file:///mock/document/privacy-export-'),
       title: 'privacy.exportData',
     });
+    expect(FileSystem.deleteAsync).toHaveBeenCalledWith(
+      expect.stringContaining('file:///mock/document/privacy-export-'),
+      { idempotent: true }
+    );
   });
 
   test('export button shows error alert on failure', async () => {
@@ -141,5 +156,23 @@ describe('PrivacySettings', () => {
       'privacy.exportError.message',
       [{ text: 'common.ok' }]
     );
+  });
+
+  test('export button does not show alert on user cancellation', async () => {
+    const { user } = setup(<PrivacySettings />);
+    const alertSpy = jest.spyOn(Alert, 'alert');
+    jest
+      .spyOn(Share, 'share')
+      .mockRejectedValue(new Error('User canceled the share action'));
+    // Mock Share.dismissed to simulate user cancellation
+    (Share as any).dismissed = true;
+
+    await user.press(screen.getByTestId('privacy-export-btn'));
+
+    // Wait for error handling
+    await screen.findByTestId('privacy-export-btn');
+
+    // The error should be logged but alert should not be shown
+    expect(alertSpy).not.toHaveBeenCalled();
   });
 });

@@ -120,6 +120,10 @@ test('getPrivacyConsent falls back to defaults when secure storage throws', asyn
     throw new Error('boom');
   });
 
+  // Trigger hydration to exercise the error path
+  PrivacyConsentModule.initializePrivacyConsent();
+  await flushPromises();
+
   const consent = PrivacyConsentModule.getPrivacyConsent();
   expect(consent.crashReporting).toBe(true);
   expect(consent.analytics).toBe(false);

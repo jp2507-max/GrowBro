@@ -21,7 +21,7 @@ export function FormActions({
   onSubmit,
   isValid,
   testID,
-}: FormActionsProps): JSX.Element {
+}: FormActionsProps): React.ReactElement {
   const { t } = useTranslation();
 
   return (

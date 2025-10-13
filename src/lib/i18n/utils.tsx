@@ -1,5 +1,5 @@
 import type { TOptions } from 'i18next';
-import i18n, { dir } from 'i18next';
+import i18n, { dir, exists as i18nextExists } from 'i18next';
 import memoize from 'lodash.memoize';
 import { useCallback } from 'react';
 import { I18nManager, NativeModules, Platform } from 'react-native';
@@ -71,7 +71,8 @@ export const translate = memoize(
  */
 export function translateDynamic(key: string, options = undefined): string {
   // Runtime check for key existence
-  if (__DEV__ && !i18n.exists(key)) {
+  // prefer the named `exists` import to satisfy eslint `import/no-named-as-default-member`
+  if (__DEV__ && !i18nextExists(key)) {
     console.warn(
       `[i18n] Missing translation key: "${key}". Consider adding it to the translation files.`
     );

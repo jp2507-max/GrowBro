@@ -885,6 +885,7 @@
     },
     "ec": "EC",
     "ecTrend": "EC-Verlauf",
+    "ec_at_temp": "EC@{{temp}}°C",
     "ec_label": "EC",
     "event": {
       "ecDelta": "EC-Änderung",
@@ -923,6 +924,7 @@
     "performance_report": "Leistungsbericht",
     "ph": "pH",
     "phTrend": "pH-Verlauf",
+    "ppm": "PPM",
     "ppm_scale_label": "PPM-Skala",
     "reservoir": {
       "max": "Max",
@@ -1772,6 +1774,10 @@
     "trichomeRatio": "Trichom-Verhältnis",
     "validationMax": "Muss {{max}} oder kleiner sein",
     "validationMin": "Muss {{min}} oder größer sein"
+  },
+  "units": {
+    "celsius": "°C",
+    "ms_per_cm": "mS/cm"
   },
   "welcome": "Willkommen bei der GrowBro App"
 }
