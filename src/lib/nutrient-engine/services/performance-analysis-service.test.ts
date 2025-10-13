@@ -357,5 +357,140 @@ describe('performance-analysis-service', () => {
       );
       expect(phSuggestion?.confidence).toBe('high');
     });
+
+    it('should clamp EC min values to non-negative when suggesting lower range adjustments', () => {
+      const now = Date.now();
+      // Create a phase with very low EC range that would go negative when reduced
+      const lowEcPhase: FeedingPhase = {
+        ...mockPhase,
+        ecRange25c: [0.1, 0.5], // Very low EC range
+      };
+
+      const lowEcTemplate: FeedingTemplate = {
+        ...mockTemplate,
+        phases: [lowEcPhase],
+      };
+
+      // Simulate falling EC trend with readings below target
+      const readings: PhEcReading[] = [
+        createReading({
+          id: '1',
+          ph: 6.0,
+          ec25c: 0.05,
+          measuredAt: now - 5000,
+        }), // Below 0.1
+        createReading({
+          id: '2',
+          ph: 6.0,
+          ec25c: 0.04,
+          measuredAt: now - 4000,
+        }),
+        createReading({
+          id: '3',
+          ph: 6.0,
+          ec25c: 0.03,
+          measuredAt: now - 3000,
+        }),
+        createReading({
+          id: '4',
+          ph: 6.0,
+          ec25c: 0.02,
+          measuredAt: now - 2000,
+        }),
+        createReading({
+          id: '5',
+          ph: 6.0,
+          ec25c: 0.01,
+          measuredAt: now - 1000,
+        }),
+      ];
+
+      const result = analyzePerformanceAndGenerateLearnings(
+        readings,
+        lowEcTemplate,
+        lowEcPhase
+      );
+
+      const ecSuggestion = result.suggestions.find(
+        (s) => s.adjustmentType === 'ec_range'
+      );
+      expect(ecSuggestion).toBeDefined();
+      expect(ecSuggestion?.suggestedEcMin).toBeGreaterThanOrEqual(0);
+      expect(ecSuggestion?.suggestedEcMin).toBeLessThan(
+        lowEcPhase.ecRange25c[0]
+      );
+      expect(ecSuggestion?.reason).toContain('0.0'); // Should show 0.0 in the reason string
+    });
+
+    it('should clamp EC min values to non-negative when widening both ends for unstable fluctuations', () => {
+      const now = Date.now();
+      // Create a phase with very low EC range that would go negative when widened
+      const lowEcPhase: FeedingPhase = {
+        ...mockPhase,
+        ecRange25c: [0.05, 0.5], // Very low EC min
+      };
+
+      const lowEcTemplate: FeedingTemplate = {
+        ...mockTemplate,
+        phases: [lowEcPhase],
+      };
+
+      // Create readings that fluctuate without clear trend but are mostly out of band
+      // EC range is [0.05, 0.5], so readings need to be outside this range
+      // Use values that create a stable (no clear trend) pattern with balanced oscillations
+      const readings: PhEcReading[] = [
+        createReading({
+          id: '1',
+          ph: 6.0,
+          ec25c: 0.04,
+          measuredAt: now - 6000,
+        }), // Below min
+        createReading({
+          id: '2',
+          ph: 6.0,
+          ec25c: 0.55,
+          measuredAt: now - 5000,
+        }), // Above max
+        createReading({
+          id: '3',
+          ph: 6.0,
+          ec25c: 0.04,
+          measuredAt: now - 4000,
+        }), // Below min
+        createReading({
+          id: '4',
+          ph: 6.0,
+          ec25c: 0.55,
+          measuredAt: now - 3000,
+        }), // Above max
+        createReading({
+          id: '5',
+          ph: 6.0,
+          ec25c: 0.04,
+          measuredAt: now - 2000,
+        }), // Below min
+        createReading({
+          id: '6',
+          ph: 6.0,
+          ec25c: 0.04,
+          measuredAt: now - 1000,
+        }), // Below min (stable at end)
+      ];
+
+      const result = analyzePerformanceAndGenerateLearnings(
+        readings,
+        lowEcTemplate,
+        lowEcPhase
+      );
+
+      const ecSuggestion = result.suggestions.find(
+        (s) => s.adjustmentType === 'ec_range'
+      );
+      expect(ecSuggestion).toBeDefined();
+      expect(ecSuggestion?.suggestedEcMin).toBeGreaterThanOrEqual(0);
+      // When clamping occurs, suggestedEcMin should be 0.0 (clamped from 0.05 - 0.1 = -0.05)
+      expect(ecSuggestion?.suggestedEcMin).toBe(0.0);
+      expect(ecSuggestion?.reason).toContain('0.0'); // Should show 0.0 in the reason string
+    });
   });
 });

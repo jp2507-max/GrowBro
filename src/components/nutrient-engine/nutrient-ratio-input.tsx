@@ -13,14 +13,16 @@ import { ControlledSelect } from '@/components/ui/select';
 
 interface NutrientRatioInputProps {
   control: Control<any>;
-  index: number;
+  phaseIndex: number;
+  nutrientIndex: number;
   onRemove: () => void;
   testID?: string;
 }
 
 export function NutrientRatioInput({
   control,
-  index,
+  phaseIndex,
+  nutrientIndex,
   onRemove,
   testID = 'nutrient-ratio',
 }: NutrientRatioInputProps) {
@@ -35,35 +37,35 @@ export function NutrientRatioInput({
   return (
     <View
       className="mb-3 rounded-lg border border-neutral-300 bg-neutral-50 p-3 dark:border-neutral-700 dark:bg-neutral-900"
-      testID={`${testID}-${index}`}
+      testID={`${testID}-${nutrientIndex}`}
     >
       <ControlledInput
         control={control}
-        name={`phases.${index}.nutrient`}
+        name={`phases.${phaseIndex}.nutrients.${nutrientIndex}.nutrient`}
         label={t('nutrient.nutrientName')}
         placeholder={t('nutrient.nutrientPlaceholder')}
-        testID={`${testID}-${index}-name`}
+        testID={`${testID}-${nutrientIndex}-name`}
       />
 
       <View className="flex-row gap-2">
         <View className="flex-1">
           <ControlledInput
             control={control}
-            name={`phases.${index}.value`}
+            name={`phases.${phaseIndex}.nutrients.${nutrientIndex}.value`}
             label={t('nutrient.value')}
             keyboardType="decimal-pad"
             placeholder={t('nutrient.valuePlaceholder')}
-            testID={`${testID}-${index}-value`}
+            testID={`${testID}-${nutrientIndex}-value`}
           />
         </View>
 
         <View className="flex-1">
           <ControlledSelect
             control={control}
-            name={`phases.${index}.unit`}
+            name={`phases.${phaseIndex}.nutrients.${nutrientIndex}.unit`}
             label={t('nutrient.unit')}
             options={unitOptions}
-            testID={`${testID}-${index}-unit`}
+            testID={`${testID}-${nutrientIndex}-unit`}
           />
         </View>
       </View>
@@ -73,7 +75,7 @@ export function NutrientRatioInput({
         onPress={onRemove}
         variant="outline"
         className="mt-2"
-        testID={`${testID}-${index}-remove`}
+        testID={`${testID}-${nutrientIndex}-remove`}
       />
     </View>
   );

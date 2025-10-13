@@ -6,7 +6,6 @@
 
 import type {
   Calibration,
-  PhEcReading,
   PpmScale,
   QualityFlag,
 } from '@/lib/nutrient-engine/types';
@@ -45,26 +44,20 @@ export function usePhEcComputation({
   let confidence = 1.0;
 
   try {
-    if (ecRaw && tempC) {
+    if (ecRaw != null && tempC != null) {
       ec25c = atcOn ? ecRaw : toEC25(ecRaw, tempC);
       ppm = ecToPpm(ec25c, ppmScale);
 
-      const mockReading: Pick<PhEcReading, 'atcOn' | 'tempC'> = {
+      const qualityReading = {
         atcOn: atcOn ?? false,
         tempC,
       };
 
-      qualityFlags = computeQualityFlags(
-        mockReading as PhEcReading,
-        calibration
-      );
-      confidence = calculateConfidenceScore(
-        mockReading as PhEcReading,
-        calibration
-      );
+      qualityFlags = computeQualityFlags(qualityReading, calibration);
+      confidence = calculateConfidenceScore(qualityReading, calibration);
     }
-  } catch {
-    // Invalid values, skip computation
+  } catch (e) {
+    console.error('Error computing pH/EC metrics:', e);
   }
 
   return { ec25c, ppm, qualityFlags, confidence };

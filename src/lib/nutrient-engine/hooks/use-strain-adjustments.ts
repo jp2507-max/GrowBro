@@ -4,6 +4,8 @@
  * Handles updating and retrieving per-phase pH/EC offsets
  */
 
+import { useCallback, useMemo } from 'react';
+
 import type { PlantPhase } from '@/lib/nutrient-engine/types';
 
 export interface StrainAdjustment {
@@ -26,41 +28,44 @@ export function useStrainAdjustments(
   adjustments: StrainAdjustment[],
   onAdjustmentsChange: (adjustments: StrainAdjustment[]) => void
 ): UseStrainAdjustments {
-  const updateAdjustment = (
-    phase: PlantPhase,
-    field: 'phOffset' | 'ecOffset',
-    value: number
-  ) => {
-    const existingIndex = adjustments.findIndex((a) => a.phase === phase);
+  const updateAdjustment = useCallback(
+    (phase: PlantPhase, field: 'phOffset' | 'ecOffset', value: number) => {
+      const existingIndex = adjustments.findIndex((a) => a.phase === phase);
 
-    if (existingIndex >= 0) {
-      const updated = [...adjustments];
-      updated[existingIndex] = { ...updated[existingIndex], [field]: value };
-      onAdjustmentsChange(updated);
-    } else {
-      onAdjustmentsChange([
-        ...adjustments,
-        {
-          phase,
-          phOffset: field === 'phOffset' ? value : 0,
-          ecOffset: field === 'ecOffset' ? value : 0,
-        },
-      ]);
-    }
-  };
-
-  const getAdjustment = (phase: PlantPhase): StrainAdjustment => {
-    return (
-      adjustments.find((a) => a.phase === phase) || {
-        phase,
-        phOffset: 0,
-        ecOffset: 0,
+      if (existingIndex >= 0) {
+        const updated = [...adjustments];
+        updated[existingIndex] = { ...updated[existingIndex], [field]: value };
+        onAdjustmentsChange(updated);
+      } else {
+        onAdjustmentsChange([
+          ...adjustments,
+          {
+            phase,
+            phOffset: field === 'phOffset' ? value : 0,
+            ecOffset: field === 'ecOffset' ? value : 0,
+          },
+        ]);
       }
-    );
-  };
+    },
+    [adjustments, onAdjustmentsChange]
+  );
 
-  const hasAnyAdjustments = adjustments.some(
-    (a) => a.phOffset !== 0 || a.ecOffset !== 0
+  const getAdjustment = useCallback(
+    (phase: PlantPhase): StrainAdjustment => {
+      return (
+        adjustments.find((a) => a.phase === phase) || {
+          phase,
+          phOffset: 0,
+          ecOffset: 0,
+        }
+      );
+    },
+    [adjustments]
+  );
+
+  const hasAnyAdjustments = useMemo(
+    () => adjustments.some((a) => a.phOffset !== 0 || a.ecOffset !== 0),
+    [adjustments]
   );
 
   return { updateAdjustment, getAdjustment, hasAnyAdjustments };

@@ -4,6 +4,7 @@
  * Multiline notes field for pH/EC readings
  */
 
+import * as React from 'react';
 import type { Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 

@@ -350,7 +350,7 @@ async function persistResult(
         }
         record.rulesBased = result.rulesBased;
         record.aiOverride = Boolean(result.aiOverride);
-        record.needsSecondOpinion = result.needsSecondOpinion;
+        record.needsSecond_opinion = result.needsSecondOpinion;
         record.symptomCodes = encodeSymptoms(result.symptoms);
         record.rationale = result.rationale ?? [];
         record.recommendationMessages = encodeRecommendations(
@@ -725,7 +725,7 @@ export function modelToDiagnosticResult(
     confidenceThreshold: model.confidenceThreshold ?? undefined,
     rationale: model.rationale ?? [],
     disclaimerKeys: model.disclaimerKeys ?? [],
-    needsSecondOpinion: Boolean(model.needsSecondOpinion),
+    needsSecondOpinion: Boolean(model.needsSecond_opinion),
     confidenceFlags: (model.confidenceFlags ??
       []) as DiagnosticConfidenceFlag[],
     aiHypothesisId: model.aiHypothesisId ?? undefined,

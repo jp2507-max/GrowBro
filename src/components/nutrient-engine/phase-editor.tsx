@@ -75,6 +75,7 @@ export function PhaseEditor({
       <NutrientsList
         control={control}
         fields={nutrientFields}
+        phaseIndex={phaseIndex}
         onAddNutrient={() =>
           appendNutrient({
             nutrient: '',

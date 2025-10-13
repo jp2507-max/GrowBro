@@ -20,6 +20,7 @@ interface NutrientsListProps {
     `phases.${number}.nutrients`,
     'id'
   >[];
+  phaseIndex: number;
   onAddNutrient: () => void;
   onRemoveNutrient: (index: number) => void;
   testID: string;
@@ -28,6 +29,7 @@ interface NutrientsListProps {
 export function NutrientsList({
   control,
   fields,
+  phaseIndex,
   onAddNutrient,
   onRemoveNutrient,
   testID,
@@ -43,7 +45,8 @@ export function NutrientsList({
         <NutrientRatioInput
           key={field.id}
           control={control}
-          index={index}
+          phaseIndex={phaseIndex}
+          nutrientIndex={index}
           onRemove={() => onRemoveNutrient(index)}
           testID={`${testID}-nutrient`}
         />

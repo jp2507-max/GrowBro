@@ -4,24 +4,22 @@
  * Min/max inputs for pH or EC ranges
  */
 
-import React from 'react';
-import type { Control } from 'react-hook-form';
+import type { Control, FieldValues, Path } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { ControlledInput, Text, View } from '@/components/ui';
-import type { FeedingTemplateFormData } from '@/lib/nutrient-engine/schemas/feeding-template-schema';
 
-interface RangeInputPairProps {
-  control: Control<FeedingTemplateFormData>;
+type RangeInputPairProps<TFormValues extends FieldValues> = {
+  control: Control<TFormValues>;
   label: string;
-  minName: string;
-  maxName: string;
+  minName: Path<TFormValues>;
+  maxName: Path<TFormValues>;
   minPlaceholder: string;
   maxPlaceholder: string;
   testID: string;
-}
+};
 
-export function RangeInputPair({
+export function RangeInputPair<TFormValues extends FieldValues>({
   control,
   label,
   minName,
@@ -29,7 +27,7 @@ export function RangeInputPair({
   minPlaceholder,
   maxPlaceholder,
   testID,
-}: RangeInputPairProps) {
+}: RangeInputPairProps<TFormValues>): JSX.Element {
   const { t } = useTranslation();
 
   return (
@@ -41,7 +39,7 @@ export function RangeInputPair({
         <View className="flex-1">
           <ControlledInput
             control={control}
-            name={minName as any}
+            name={minName}
             label={t('nutrient.min')}
             keyboardType="decimal-pad"
             placeholder={minPlaceholder}
@@ -51,7 +49,7 @@ export function RangeInputPair({
         <View className="flex-1">
           <ControlledInput
             control={control}
-            name={maxName as any}
+            name={maxName}
             label={t('nutrient.max')}
             keyboardType="decimal-pad"
             placeholder={maxPlaceholder}

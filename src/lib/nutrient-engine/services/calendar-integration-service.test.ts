@@ -337,7 +337,7 @@ describe('calendar-integration-service', () => {
     test('throws error when eventId not found', async () => {
       await expect(
         logFeedingCompletion('nonexistent-event', mockSchedule)
-      ).rejects.toThrow('Event nonexistent-event not found');
+      ).rejects.toThrow(/Event nonexistent-event not found/);
     });
 
     test('throws error when task metadata missing eventId', async () => {
@@ -355,7 +355,7 @@ describe('calendar-integration-service', () => {
 
       await expect(
         logFeedingCompletion(mockTask, mockSchedule)
-      ).rejects.toThrow('Event ID not found');
+      ).rejects.toThrow(/Event ID not found/);
     });
   });
 

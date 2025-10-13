@@ -444,6 +444,7 @@
       "undo_expired": "Rückgängig-Zeitfenster abgelaufen. Verwende stattdessen Phase zurücksetzen.",
       "validation": {
         "description": "Bitte korrigiere die unten stehenden Fehler und versuche es erneut.",
+        "strainNameRequired": "Stammname ist erforderlich",
         "title": "Validierungsfehler"
       }
     },
@@ -888,6 +889,13 @@
       "fill": "Auffüllen",
       "phDown": "pH senken",
       "phUp": "pH erhöhen"
+    },
+    "mediumOptions": {
+      "coco": "Coco",
+      "hydro": "Hydro",
+      "peat": "Torf",
+      "soil": "Erde",
+      "soilless": "Erdlos"
     },
     "no_readings": "Keine Messwerte verfügbar",
     "ph": "pH",

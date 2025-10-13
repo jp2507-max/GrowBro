@@ -27,7 +27,7 @@ export function PhasesList({
   onAddPhase,
   onRemovePhase,
   testID,
-}: PhasesListProps): JSX.Element {
+}: PhasesListProps): React.JSX.Element {
   const { t } = useTranslation();
 
   return (

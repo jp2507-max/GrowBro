@@ -45,7 +45,10 @@ function getFlagLabel(flag: QualityFlag, t: (key: string) => string): string {
   }
 }
 
-export function QualityBadge({ flags, testID }: QualityBadgeProps) {
+export function QualityBadge({
+  flags,
+  testID,
+}: QualityBadgeProps): React.JSX.Element | null {
   const { t } = useTranslation();
 
   if (flags.length === 0) {

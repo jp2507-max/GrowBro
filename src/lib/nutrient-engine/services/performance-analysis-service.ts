@@ -204,22 +204,24 @@ function generatePhSuggestion(
     confidence: 'medium',
   };
 
+  const clampPh = (value: number) => Math.min(14, Math.max(0, value));
+
   // Adjust based on trend
   if (metrics.phTrendDirection === 'rising' && metrics.avgPhDeviation > 0) {
-    suggestion.suggestedPhMax = phRange.max + 0.2;
+    suggestion.suggestedPhMax = clampPh(phRange.max + 0.2);
     suggestion.reason = `pH tends to rise above target. Consider widening upper range to ${suggestion.suggestedPhMax.toFixed(1)}.`;
     suggestion.confidence = metrics.phTimeInBand < 50 ? 'high' : 'medium';
   } else if (
     metrics.phTrendDirection === 'falling' &&
     metrics.avgPhDeviation > 0
   ) {
-    suggestion.suggestedPhMin = phRange.min - 0.2;
+    suggestion.suggestedPhMin = clampPh(phRange.min - 0.2);
     suggestion.reason = `pH tends to fall below target. Consider widening lower range to ${suggestion.suggestedPhMin.toFixed(1)}.`;
     suggestion.confidence = metrics.phTimeInBand < 50 ? 'high' : 'medium';
   } else {
     // Widen both ends slightly if unstable
-    suggestion.suggestedPhMin = phRange.min - 0.1;
-    suggestion.suggestedPhMax = phRange.max + 0.1;
+    suggestion.suggestedPhMin = clampPh(phRange.min - 0.1);
+    suggestion.suggestedPhMax = clampPh(phRange.max + 0.1);
     suggestion.reason = `pH fluctuates frequently. Consider slightly wider range: ${suggestion.suggestedPhMin.toFixed(1)}–${suggestion.suggestedPhMax.toFixed(1)}.`;
     suggestion.confidence = 'low';
   }
@@ -248,6 +250,9 @@ function generateEcSuggestion(
     confidence: 'medium',
   };
 
+  // Clamp EC min to non-negative values
+  const clampEcMin = (value: number) => Math.max(0, value);
+
   // Adjust based on trend
   if (metrics.ecTrendDirection === 'rising' && metrics.avgEcDeviation > 0) {
     suggestion.suggestedEcMax = ecRange.max + 0.2;
@@ -257,12 +262,12 @@ function generateEcSuggestion(
     metrics.ecTrendDirection === 'falling' &&
     metrics.avgEcDeviation > 0
   ) {
-    suggestion.suggestedEcMin = ecRange.min - 0.2;
+    suggestion.suggestedEcMin = clampEcMin(ecRange.min - 0.2);
     suggestion.reason = `EC tends to fall below target. Consider widening lower range to ${suggestion.suggestedEcMin.toFixed(1)} mS/cm.`;
     suggestion.confidence = metrics.ecTimeInBand < 50 ? 'high' : 'medium';
   } else {
     // Widen both ends slightly if unstable
-    suggestion.suggestedEcMin = ecRange.min - 0.1;
+    suggestion.suggestedEcMin = clampEcMin(ecRange.min - 0.1);
     suggestion.suggestedEcMax = ecRange.max + 0.1;
     suggestion.reason = `EC fluctuates frequently. Consider slightly wider range: ${suggestion.suggestedEcMin.toFixed(1)}–${suggestion.suggestedEcMax.toFixed(1)} mS/cm.`;
     suggestion.confidence = 'low';

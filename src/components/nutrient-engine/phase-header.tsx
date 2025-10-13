@@ -27,7 +27,11 @@ const phaseOptions = [
   { label: 'Flush', value: PlantPhase.FLUSH },
 ];
 
-export function PhaseHeader({ control, phaseIndex, testID }: PhaseHeaderProps) {
+export function PhaseHeader({
+  control,
+  phaseIndex,
+  testID,
+}: PhaseHeaderProps): React.JSX.Element {
   const { t } = useTranslation();
 
   return (

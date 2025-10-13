@@ -7,6 +7,7 @@
  * Requirements: 1.1, 1.2
  */
 
+import { tw } from 'nativewind';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
@@ -41,7 +42,7 @@ export function TemplateFilterBar({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerClassName="px-4 gap-2"
+        contentContainerStyle={tw.style('px-4 gap-2')}
         testID={testID}
       >
         {mediumOptions.map((option) => (

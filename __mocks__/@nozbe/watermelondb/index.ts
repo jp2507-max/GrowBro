@@ -165,11 +165,7 @@ function buildQueryChain(
 
   const chain = {
     where: (k: string, v: any) => {
-      allConditions.push(
-        typeof v === 'object' && v && '$like' in v
-          ? { key: k, $like: v.$like }
-          : { key: k, value: v }
-      );
+      allConditions.push(Q.where(k, v));
       return chain;
     },
     sortBy: (k: string, dir: 'asc' | 'desc' | typeof Q.asc | typeof Q.desc) => {
@@ -357,6 +353,28 @@ function buildHarvestsCollection() {
   return col;
 }
 
+function buildReservoirEventsCollection() {
+  const col = makeCollection();
+  const originalCreate = col.create.bind(col);
+  col.create = async (cb: any) => {
+    return originalCreate(async (rec: any) => {
+      rec.reservoirId = 'mock-reservoir-id';
+      rec.kind = 'CHANGE';
+      rec.deltaEc25c = null;
+      rec.deltaPh = null;
+      rec.note = '';
+      rec.userId = null;
+      rec.serverRevision = null;
+      rec.serverUpdatedAtMs = null;
+      rec.createdAt = new Date();
+      rec.updatedAt = new Date();
+      rec.deletedAt = null;
+      await cb?.(rec);
+    });
+  };
+  return col;
+}
+
 // Mock Database class
 class DatabaseMock {
   collections: Map<string, any> = new Map();
@@ -371,6 +389,7 @@ class DatabaseMock {
       buildNotificationPreferencesCollection()
     );
     this.collections.set('harvests', buildHarvestsCollection());
+    this.collections.set('reservoir_events', buildReservoirEventsCollection());
   }
 
   write = jest

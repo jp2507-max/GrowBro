@@ -1,4 +1,7 @@
-import type SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
+import type {
+  SQLiteAdapter,
+  SQLiteQuery,
+} from '@nozbe/watermelondb/adapters/sqlite';
 
 import {
   ensureNutrientEngineIndexes,

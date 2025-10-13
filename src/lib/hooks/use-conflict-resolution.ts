@@ -34,22 +34,17 @@ function validateTableName(
 /**
  * Validates that a table name is valid for sync conflict analytics
  */
-function validateSyncConflictTableName(
+function isSyncConflictAnalyticsTable(
   tableName: string
-): asserts tableName is ValidSyncConflictTableName {
-  const validTableNames: ValidSyncConflictTableName[] = [
-    'series',
-    'tasks',
-    'occurrence_overrides',
-    'harvests',
-    'inventory',
-    'harvest_audits',
-  ];
-  if (!validTableNames.includes(tableName as ValidSyncConflictTableName)) {
-    throw new Error(
-      `Invalid table name "${tableName}" for sync conflict analytics. Must be one of: ${validTableNames.join(', ')}`
-    );
-  }
+): tableName is ValidSyncConflictTableName {
+  return (
+    tableName === 'series' ||
+    tableName === 'tasks' ||
+    tableName === 'occurrence_overrides' ||
+    tableName === 'harvests' ||
+    tableName === 'inventory' ||
+    tableName === 'harvest_audits'
+  );
 }
 
 type ConflictResolutionState = {
@@ -115,13 +110,13 @@ export function useConflictResolution() {
             }
           });
 
-          validateSyncConflictTableName(conflict.tableName);
-
-          await NoopAnalytics.track('sync_conflict_resolved', {
-            table: conflict.tableName as ValidSyncConflictTableName,
-            strategy: 'keep-local',
-            field_count: conflict.conflictFields.length,
-          });
+          if (isSyncConflictAnalyticsTable(conflict.tableName)) {
+            await NoopAnalytics.track('sync_conflict_resolved', {
+              table: conflict.tableName,
+              strategy: 'keep-local',
+              field_count: conflict.conflictFields.length,
+            });
+          }
         } else {
           // Accept server version - just clear the needsReview flag
           await database.write(async () => {
@@ -144,13 +139,13 @@ export function useConflictResolution() {
             }
           });
 
-          validateSyncConflictTableName(conflict.tableName);
-
-          await NoopAnalytics.track('sync_conflict_resolved', {
-            table: conflict.tableName as ValidSyncConflictTableName,
-            strategy: 'accept-server',
-            field_count: conflict.conflictFields.length,
-          });
+          if (isSyncConflictAnalyticsTable(conflict.tableName)) {
+            await NoopAnalytics.track('sync_conflict_resolved', {
+              table: conflict.tableName,
+              strategy: 'accept-server',
+              field_count: conflict.conflictFields.length,
+            });
+          }
         }
 
         // Move to next conflict
@@ -185,12 +180,12 @@ export function useConflictResolution() {
       };
     });
 
-    validateSyncConflictTableName(conflict.tableName);
-
-    NoopAnalytics.track('sync_conflict_dismissed', {
-      table: conflict.tableName as ValidSyncConflictTableName,
-      field_count: conflict.conflictFields.length,
-    });
+    if (isSyncConflictAnalyticsTable(conflict.tableName)) {
+      NoopAnalytics.track('sync_conflict_dismissed', {
+        table: conflict.tableName,
+        field_count: conflict.conflictFields.length,
+      });
+    }
   }, []);
 
   const clearAllConflicts = useCallback(() => {

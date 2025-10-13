@@ -481,11 +481,13 @@ function FeedingAdjustmentModalInner({
   handleConfirmSelected,
   isLoading,
 }: FeedingAdjustmentModalInnerProps) {
+  const { t } = useTranslation();
+
   return (
     <Modal
       ref={modal.ref}
       snapPoints={['90%']}
-      title="Schedule Adjustment"
+      title={t('nutrient.scheduleAdjustmentTitle')}
       testID="feeding-adjustment-modal"
     >
       <ModalContent

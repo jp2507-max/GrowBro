@@ -19,6 +19,55 @@ interface PhaseAdjustmentRowProps {
   testID: string;
 }
 
+// Custom hook for numeric input handling with intermediate states
+function useNumericInput(
+  initialValue: number,
+  onChange: (value: number) => void
+) {
+  const [text, setText] = React.useState(initialValue.toString());
+  const editingRef = React.useRef(false);
+
+  // Sync local state with props when they change externally
+  React.useEffect(() => {
+    if (!editingRef.current) {
+      setText(initialValue.toString());
+    }
+  }, [initialValue]);
+
+  const handleChangeText = React.useCallback(
+    (newText: string) => {
+      editingRef.current = true;
+      setText(newText);
+
+      // Allow intermediate input states when typing
+      if (
+        newText === '' ||
+        newText === '-' ||
+        newText === '.' ||
+        newText === '-.'
+      ) {
+        return; // Keep the text as-is without calling the callback
+      }
+
+      const val = parseFloat(newText);
+      if (!isNaN(val)) {
+        onChange(val);
+      }
+    },
+    [onChange]
+  );
+
+  const handleBlur = React.useCallback(() => {
+    editingRef.current = false;
+    const val = parseFloat(text);
+    if (isNaN(val)) {
+      setText(initialValue.toString());
+    }
+  }, [text, initialValue]);
+
+  return { text, handleChangeText, handleBlur };
+}
+
 export function PhaseAdjustmentRow({
   phase,
   phOffset,
@@ -26,8 +75,11 @@ export function PhaseAdjustmentRow({
   onPhOffsetChange,
   onEcOffsetChange,
   testID,
-}: PhaseAdjustmentRowProps): JSX.Element {
+}: PhaseAdjustmentRowProps): React.JSX.Element {
   const { t } = useTranslation();
+
+  const phInput = useNumericInput(phOffset, onPhOffsetChange);
+  const ecInput = useNumericInput(ecOffset, onEcOffsetChange);
 
   return (
     <View
@@ -35,7 +87,7 @@ export function PhaseAdjustmentRow({
       testID={testID}
     >
       <Text className="mb-2 font-medium capitalize text-neutral-700 dark:text-neutral-300">
-        {phase}
+        {t(`phases.${phase}`, { defaultValue: phase })}
       </Text>
 
       <View className="flex-row gap-2">
@@ -43,11 +95,9 @@ export function PhaseAdjustmentRow({
           <Input
             label={t('nutrient.phOffset')}
             keyboardType="decimal-pad"
-            value={phOffset.toString()}
-            onChangeText={(text) => {
-              const val = parseFloat(text) || 0;
-              onPhOffsetChange(val);
-            }}
+            value={phInput.text}
+            onChangeText={phInput.handleChangeText}
+            onBlur={phInput.handleBlur}
             placeholder="±0.0"
             testID={`${testID}-ph`}
           />
@@ -57,11 +107,9 @@ export function PhaseAdjustmentRow({
           <Input
             label={t('nutrient.ecOffset')}
             keyboardType="decimal-pad"
-            value={ecOffset.toString()}
-            onChangeText={(text) => {
-              const val = parseFloat(text) || 0;
-              onEcOffsetChange(val);
-            }}
+            value={ecInput.text}
+            onChangeText={ecInput.handleChangeText}
+            onBlur={ecInput.handleBlur}
             placeholder="±0.0"
             testID={`${testID}-ec`}
           />

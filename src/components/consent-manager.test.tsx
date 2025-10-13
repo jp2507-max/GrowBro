@@ -1,27 +1,10 @@
 import React from 'react';
-import { Alert, Text, TouchableOpacity } from 'react-native';
+import { Alert } from 'react-native';
 
 import { ConsentManager } from '@/components/consent-manager';
+import { type ConsentState } from '@/lib/privacy/consent-types';
+import { type PrivacyConsent } from '@/lib/privacy-consent';
 import { cleanup, fireEvent, screen, setup } from '@/lib/test-utils';
-
-type ConsentState = {
-  telemetry: boolean;
-  experiments: boolean;
-  cloudProcessing: boolean;
-  aiTraining: boolean;
-  crashDiagnostics: boolean;
-  version: string;
-  timestamp: string;
-  locale: string;
-};
-
-type PrivacyConsentState = {
-  analytics: boolean;
-  crashReporting: boolean;
-  personalizedData: boolean;
-  sessionReplay: boolean;
-  lastUpdated: number;
-};
 
 let runtimeConsent: ConsentState = {
   telemetry: true,
@@ -34,7 +17,7 @@ let runtimeConsent: ConsentState = {
   locale: 'en-US',
 };
 
-let privacyConsent: PrivacyConsentState = {
+let privacyConsent: PrivacyConsent = {
   analytics: false,
   crashReporting: true,
   personalizedData: false,
@@ -47,59 +30,79 @@ jest.mock('@/lib', () => ({
     vars && 'date' in vars ? `${key}:${vars.date}` : key,
 }));
 
-jest.mock('@/components/ui', () => ({
-  Button: ({ label, onPress, testID }: any) => (
-    <TouchableOpacity
-      accessibilityRole="button"
-      onPress={onPress}
-      testID={testID}
-    >
-      <Text>{label}</Text>
-    </TouchableOpacity>
-  ),
-}));
+jest.mock('@/components/ui', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { TouchableOpacity, Text } = require('react-native');
+  return {
+    Button: ({ label, onPress, testID }: any) => (
+      <TouchableOpacity
+        accessibilityRole="button"
+        onPress={onPress}
+        testID={testID}
+      >
+        <Text>{label}</Text>
+      </TouchableOpacity>
+    ),
+  };
+});
 
 jest.mock('@/lib/privacy/consent-service', () => ({
   ConsentService: {
-    getConsents: jest.fn(async () => runtimeConsent),
-    setConsent: jest.fn(async (purpose: keyof ConsentState, value: boolean) => {
-      runtimeConsent = { ...runtimeConsent, [purpose]: value };
-    }),
-    setConsents: jest.fn(
-      async (changes: Partial<Record<keyof ConsentState, boolean>>) => {
-        runtimeConsent = { ...runtimeConsent, ...changes } as ConsentState;
-      }
-    ),
-    hasConsent: jest.fn(
-      (purpose: keyof ConsentState) => runtimeConsent[purpose] === true
-    ),
-    getConsentVersion: jest.fn(() => runtimeConsent.version),
-    onChange: jest.fn(() => () => undefined),
+    getConsents: jest.fn(),
+    setConsent: jest.fn(),
+    setConsents: jest.fn(),
+    hasConsent: jest.fn(),
+    getConsentVersion: jest.fn(),
+    onChange: jest.fn(),
     resetForTests: jest.fn(),
   },
 }));
 
 jest.mock('@/lib/privacy-consent', () => ({
-  getPrivacyConsent: jest.fn(() => privacyConsent),
-  setPrivacyConsent: jest.fn((updates: Partial<PrivacyConsentState>) => {
-    privacyConsent = {
-      ...privacyConsent,
-      ...updates,
-      lastUpdated: Date.now(),
-    };
-  }),
+  getPrivacyConsent: jest.fn(),
+  setPrivacyConsent: jest.fn(),
 }));
 
-const telemetryClientMock = {
-  clearQueue: jest.fn().mockResolvedValue(undefined),
-};
-
 jest.mock('@/lib/privacy/telemetry-client', () => ({
-  telemetryClient: telemetryClientMock,
+  telemetryClient: {
+    clearQueue: jest.fn().mockResolvedValue(undefined),
+  },
 }));
 
 const { ConsentService } = jest.requireMock('@/lib/privacy/consent-service');
-const { setPrivacyConsent } = jest.requireMock('@/lib/privacy-consent');
+const { getPrivacyConsent, setPrivacyConsent } = jest.requireMock(
+  '@/lib/privacy-consent'
+);
+const { telemetryClient } = jest.requireMock('@/lib/privacy/telemetry-client');
+
+// Set up mock implementations
+ConsentService.getConsents.mockImplementation(async () => runtimeConsent);
+ConsentService.setConsent.mockImplementation(
+  async (purpose: keyof ConsentState, value: boolean) => {
+    runtimeConsent = { ...runtimeConsent, [purpose]: value };
+  }
+);
+ConsentService.setConsents.mockImplementation(
+  async (changes: Partial<Record<keyof ConsentState, boolean>>) => {
+    runtimeConsent = { ...runtimeConsent, ...changes } as ConsentState;
+  }
+);
+ConsentService.hasConsent.mockImplementation(
+  (purpose: keyof ConsentState) => runtimeConsent[purpose] === true
+);
+ConsentService.getConsentVersion.mockImplementation(
+  () => runtimeConsent.version
+);
+ConsentService.onChange.mockImplementation(() => () => undefined);
+
+getPrivacyConsent.mockImplementation(() => privacyConsent);
+setPrivacyConsent.mockImplementation((updates: Partial<PrivacyConsent>) => {
+  privacyConsent = {
+    ...privacyConsent,
+    ...updates,
+    lastUpdated: Date.now(),
+  };
+});
 
 describe('ConsentManager', () => {
   beforeEach(() => {
@@ -154,7 +157,7 @@ describe('ConsentManager', () => {
     setup(<ConsentManager mode="opt-out" isVisible onComplete={jest.fn()} />);
     await screen.findByTestId('consent-manager');
     fireEvent.press(screen.getByTestId('opt-out-all-btn'));
-    expect(telemetryClientMock.clearQueue).toHaveBeenCalled();
+    expect(telemetryClient.clearQueue).toHaveBeenCalled();
     expect(ConsentService.setConsent).toHaveBeenCalledWith('telemetry', false);
     expect(setPrivacyConsent).toHaveBeenCalledWith({
       analytics: false,

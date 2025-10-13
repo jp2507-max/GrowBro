@@ -4,15 +4,7 @@ import React from 'react';
 
 import { Text, View } from '@/components/ui';
 import { translate } from '@/lib';
-
-type ReservoirEvent = {
-  id: string;
-  kind: string;
-  deltaPh?: number;
-  deltaEc?: number;
-  note?: string;
-  createdAt: number;
-};
+import type { ReservoirEvent } from '@/lib/nutrient-engine/types';
 
 type Props = {
   events: ReservoirEvent[];
@@ -36,7 +28,7 @@ export function ReservoirEventHistory({
               {item.kind}
             </Text>
             {(item.deltaPh !== undefined && item.deltaPh !== 0) ||
-            (item.deltaEc !== undefined && item.deltaEc !== 0) ? (
+            (item.deltaEc25c !== undefined && item.deltaEc25c !== 0) ? (
               <View className="mt-1 flex-row gap-3">
                 {item.deltaPh !== undefined && item.deltaPh !== 0 && (
                   <Text className="text-sm text-neutral-600">
@@ -44,10 +36,10 @@ export function ReservoirEventHistory({
                     {item.deltaPh.toFixed(1)}
                   </Text>
                 )}
-                {item.deltaEc !== undefined && item.deltaEc !== 0 && (
+                {item.deltaEc25c !== undefined && item.deltaEc25c !== 0 && (
                   <Text className="text-sm text-neutral-600">
-                    EC: {item.deltaEc > 0 ? '+' : ''}
-                    {item.deltaEc.toFixed(1)} mS/cm
+                    EC: {item.deltaEc25c > 0 ? '+' : ''}
+                    {item.deltaEc25c.toFixed(1)} mS/cm
                   </Text>
                 )}
               </View>

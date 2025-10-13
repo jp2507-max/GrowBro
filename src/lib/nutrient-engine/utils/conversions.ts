@@ -12,6 +12,11 @@ import type { Calibration, PhEcReading, QualityFlag } from '../types';
 import { QualityFlag as QualityFlagEnum } from '../types';
 
 /**
+ * Minimal type for quality computation containing only required fields
+ */
+type QualityReading = Pick<PhEcReading, 'atcOn' | 'tempC'>;
+
+/**
  * Temperature compensation coefficient (% per °C)
  * Typical range: 1.9-2.0% per °C
  * Default: 2.0% per °C
@@ -143,6 +148,14 @@ export function ecToPpm(ecMsCm: number, scale: '500' | '700'): number {
 export function computeQualityFlags(
   reading: PhEcReading,
   calibration?: Calibration
+): QualityFlag[];
+export function computeQualityFlags(
+  reading: QualityReading,
+  calibration?: Calibration
+): QualityFlag[];
+export function computeQualityFlags(
+  reading: PhEcReading | QualityReading,
+  calibration?: Calibration
 ): QualityFlag[] {
   const flags: QualityFlag[] = [];
 
@@ -191,6 +204,14 @@ export function computeQualityFlags(
  */
 export function calculateConfidenceScore(
   reading: PhEcReading,
+  calibration?: Calibration
+): number;
+export function calculateConfidenceScore(
+  reading: QualityReading,
+  calibration?: Calibration
+): number;
+export function calculateConfidenceScore(
+  reading: PhEcReading | QualityReading,
   calibration?: Calibration
 ): number {
   let score = 1.0;

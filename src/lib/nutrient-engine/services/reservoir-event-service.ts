@@ -355,18 +355,45 @@ export type DoseCalculationParams = {
 
 function validateDoseParams(params: DoseCalculationParams): string[] {
   const warnings: string[] = [];
-  if (params.currentEc25c < 0 || params.currentEc25c > 10) {
+
+  // Check for null/undefined parameters
+  if (params.currentEc25c == null || isNaN(params.currentEc25c)) {
+    warnings.push('Current EC value is required and must be a valid number');
+  }
+  if (params.targetEc25c == null || isNaN(params.targetEc25c)) {
+    warnings.push('Target EC value is required and must be a valid number');
+  }
+  if (params.volumeL == null || isNaN(params.volumeL)) {
+    warnings.push('Reservoir volume is required and must be a valid number');
+  }
+  if (params.stockConcentration == null || isNaN(params.stockConcentration)) {
+    warnings.push('Stock concentration is required and must be a valid number');
+  }
+
+  // Check for negative EC values
+  if (params.currentEc25c < 0) {
+    warnings.push('Current EC cannot be negative');
+  }
+  if (params.targetEc25c < 0) {
+    warnings.push('Target EC cannot be negative');
+  }
+
+  // Check ranges (allow negative values to be caught above, but still warn about extreme values)
+  if (params.currentEc25c > 10) {
     warnings.push('Current EC outside normal range (0-10 mS/cm)');
   }
-  if (params.targetEc25c < 0 || params.targetEc25c > 10) {
+  if (params.targetEc25c > 10) {
     warnings.push('Target EC outside normal range (0-10 mS/cm)');
   }
   if (params.volumeL <= 0 || params.volumeL > 1000) {
-    warnings.push('Reservoir volume outside reasonable range');
+    warnings.push(
+      'Reservoir volume outside reasonable range (must be positive and ≤ 1000L)'
+    );
   }
   if (params.stockConcentration <= 0) {
     warnings.push('Stock concentration must be positive');
   }
+
   return warnings;
 }
 
@@ -411,6 +438,99 @@ function generateDoseSteps(
 }
 
 /**
+ * Helper to create error result with default values
+ */
+function createErrorResult(
+  params: DoseCalculationParams,
+  errorMessages: string[],
+  baseWarnings: string[]
+): DoseRecommendation {
+  return {
+    targetEc25c: params.targetEc25c || 0,
+    currentEc25c: params.currentEc25c || 0,
+    volumeL: params.volumeL || 0,
+    stockConcentration: params.stockConcentration || 0,
+    recommendedAdditionML: 0,
+    safetyMargin: SAFETY_MARGIN,
+    steps: [],
+    warnings: [...errorMessages, ...baseWarnings],
+  };
+}
+
+/**
+ * Validates parameters and returns error result if invalid
+ */
+function validateCalculationParams(
+  params: DoseCalculationParams,
+  warnings: string[]
+): DoseRecommendation | null {
+  const hasInvalidParams =
+    params.currentEc25c == null ||
+    isNaN(params.currentEc25c) ||
+    params.targetEc25c == null ||
+    isNaN(params.targetEc25c) ||
+    params.volumeL == null ||
+    isNaN(params.volumeL) ||
+    params.stockConcentration == null ||
+    isNaN(params.stockConcentration);
+
+  if (hasInvalidParams) {
+    return createErrorResult(
+      params,
+      [
+        'All parameters must be valid numbers to calculate dose recommendation.',
+      ],
+      warnings
+    );
+  }
+
+  if (params.stockConcentration <= 0) {
+    return createErrorResult(
+      params,
+      [
+        'Stock concentration must be positive to calculate dose recommendation.',
+      ],
+      warnings
+    );
+  }
+
+  if (params.volumeL <= 0) {
+    return createErrorResult(
+      params,
+      ['Reservoir volume must be positive to calculate dose recommendation.'],
+      warnings
+    );
+  }
+
+  if (params.currentEc25c < 0) {
+    return createErrorResult(
+      params,
+      ['Current EC cannot be negative.'],
+      warnings
+    );
+  }
+
+  if (params.targetEc25c < 0) {
+    return createErrorResult(
+      params,
+      ['Target EC cannot be negative.'],
+      warnings
+    );
+  }
+
+  const ecDiff = params.targetEc25c - params.currentEc25c;
+  if (ecDiff <= 0) {
+    return createErrorResult(
+      params,
+      ['Current EC is at or above target. No nutrient addition recommended.'],
+      warnings
+    );
+  }
+
+  return null;
+}
+
+/**
  * Calculates conservative stepwise nutrient additions to reach target EC
  * EDUCATIONAL GUIDANCE ONLY - Not product promotion
  */
@@ -418,24 +538,13 @@ export function calculateDoseRecommendation(
   params: DoseCalculationParams
 ): DoseRecommendation {
   const warnings = validateDoseParams(params);
-  const ecDiff = params.targetEc25c - params.currentEc25c;
+  const validationError = validateCalculationParams(params, warnings);
 
-  if (ecDiff <= 0) {
-    return {
-      targetEc25c: params.targetEc25c,
-      currentEc25c: params.currentEc25c,
-      volumeL: params.volumeL,
-      stockConcentration: params.stockConcentration,
-      recommendedAdditionML: 0,
-      safetyMargin: SAFETY_MARGIN,
-      steps: [],
-      warnings: [
-        'Current EC is at or above target. No nutrient addition recommended.',
-        ...warnings,
-      ],
-    };
+  if (validationError) {
+    return validationError;
   }
 
+  const ecDiff = params.targetEc25c - params.currentEc25c;
   const totalAdditionML = (ecDiff * params.volumeL) / params.stockConcentration;
   const safeAdditionML = totalAdditionML * SAFETY_MARGIN;
   const { steps, warnings: stepWarnings } = generateDoseSteps(

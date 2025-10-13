@@ -22,7 +22,7 @@ import type {
 } from '@/lib/nutrient-engine/types';
 import { database } from '@/lib/watermelon';
 
-function EmptyState({ message }: { message: string }) {
+function EmptyState({ message }: { message: string }): React.JSX.Element {
   return (
     <View className="flex-1 items-center justify-center p-8">
       <Text className="text-center text-neutral-600 dark:text-neutral-400">
@@ -33,7 +33,7 @@ function EmptyState({ message }: { message: string }) {
 }
 
 // eslint-disable-next-line max-lines-per-function
-export default function TemplateListScreen() {
+export default function TemplateListScreen(): JSX.Element {
   const { t } = useTranslation();
   const router = useRouter();
 
@@ -59,7 +59,7 @@ export default function TemplateListScreen() {
     }
 
     loadTemplates();
-  }, [database, selectedMedium]);
+  }, [selectedMedium]);
 
   const handleTemplatePress = React.useCallback(
     (template: FeedingTemplate) => {

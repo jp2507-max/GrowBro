@@ -36,6 +36,13 @@ type EventMarker = {
   timestamp: number;
 };
 
+type ChartPoint = {
+  value: number;
+  label: string;
+  dataPointText: string;
+  timestamp: number;
+};
+
 type Props = {
   readings: Reading[];
   events?: EventMarker[];
@@ -61,7 +68,7 @@ const PhEcLineChartComponent = ({
   const { t } = useTranslation();
 
   // Prepare chart data with LTTB downsampling
-  const chartData = useMemo(() => {
+  const chartData: ChartPoint[] = useMemo(() => {
     if (readings.length === 0) return [];
 
     const startTime = performance.now();
@@ -79,11 +86,12 @@ const PhEcLineChartComponent = ({
       : points;
 
     // Convert to LineChart format
-    const chartPoints = processed.map((point) => ({
+    const chartPoints: ChartPoint[] = processed.map((point) => ({
       value: point.y,
       label: formatTimestamp(point.originalData.timestamp),
       dataPointText:
         metric === 'ph' ? point.y.toFixed(1) : `${point.y.toFixed(1)} mS/cm`,
+      timestamp: point.originalData.timestamp,
     }));
 
     const duration = performance.now() - startTime;
@@ -103,7 +111,7 @@ const PhEcLineChartComponent = ({
 
     return events
       .map((event) => {
-        const eventIndex = readings.findIndex(
+        const eventIndex = chartData.findIndex(
           (r) => r.timestamp >= event.timestamp
         );
         if (eventIndex === -1) return null;
@@ -116,84 +124,94 @@ const PhEcLineChartComponent = ({
         };
       })
       .filter(Boolean);
-  }, [events, readings]);
+  }, [events, chartData]);
 
   // Calculate chart bounds with target band
   const chartConfig = useMemo(() => {
-    if (chartData.length === 0) return null;
+    try {
+      if (chartData.length === 0) return null;
 
-    const values = chartData.map((d) => d.value);
-    const dataMin = Math.min(...values);
-    const dataMax = Math.max(...values);
+      const values = chartData.map((d) => d.value);
+      const dataMin = Math.min(...values);
+      const dataMax = Math.max(...values);
 
-    // Extend bounds to include target range
-    const minValue = Math.min(dataMin, targetMin) * 0.95;
-    const maxValue = Math.max(dataMax, targetMax) * 1.05;
+      // Extend bounds to include target range
+      const minValue = Math.min(dataMin, targetMin) * 0.95;
+      const maxValue = Math.max(dataMax, targetMax) * 1.05;
 
-    return {
-      data: chartData,
-      width: 320,
-      height: 220,
-      color: metric === 'ph' ? colors.warning[600] : colors.success[600],
-      thickness: 2.5,
-      startFillColor:
-        metric === 'ph' ? colors.warning[400] : colors.success[400],
-      endFillColor: metric === 'ph' ? colors.warning[100] : colors.success[100],
-      startOpacity: 0.3,
-      endOpacity: 0.05,
-      areaChart: true,
-      yAxisColor: colors.neutral[300],
-      xAxisColor: colors.neutral[300],
-      yAxisTextStyle: { color: colors.neutral[600], fontSize: 11 },
-      xAxisLabelTextStyle: {
-        color: colors.neutral[600],
-        fontSize: 9,
-        width: 60,
-      },
-      noOfSections: 5,
-      minValue,
-      maxValue,
-      hideDataPoints: chartData.length > 50,
-      dataPointsColor:
-        metric === 'ph' ? colors.warning[600] : colors.success[600],
-      dataPointsRadius: 3,
-      curved: true,
-      animateOnDataChange: true,
-      animationDuration: 800,
-      // Target band as horizontal rules
-      horizontalRulesConfig: {
-        rulesColor: colors.neutral[200],
-        rulesThickness: 1,
-      },
-      // Add target band reference lines
-      referenceLine1Position: targetMax,
-      referenceLine1Config: {
-        color: colors.primary[300],
-        thickness: 1.5,
-        dashWidth: 4,
-        dashGap: 4,
-        labelText: t('nutrient.targetMax'),
-        labelTextStyle: {
+      return {
+        data: chartData,
+        width: 320,
+        height: 220,
+        color: metric === 'ph' ? colors.warning[600] : colors.success[600],
+        thickness: 2.5,
+        startFillColor:
+          metric === 'ph' ? colors.warning[400] : colors.success[400],
+        endFillColor:
+          metric === 'ph' ? colors.warning[100] : colors.success[100],
+        startOpacity: 0.3,
+        endOpacity: 0.05,
+        areaChart: true,
+        yAxisColor: colors.neutral[300],
+        xAxisColor: colors.neutral[300],
+        yAxisTextStyle: { color: colors.neutral[600], fontSize: 11 },
+        xAxisLabelTextStyle: {
           color: colors.neutral[600],
           fontSize: 9,
+          width: 60,
         },
-      },
-      referenceLine2Position: targetMin,
-      referenceLine2Config: {
-        color: colors.primary[300],
-        thickness: 1.5,
-        dashWidth: 4,
-        dashGap: 4,
-        labelText: t('nutrient.targetMin'),
-        labelTextStyle: {
-          color: colors.neutral[600],
-          fontSize: 9,
+        noOfSections: 5,
+        minValue,
+        maxValue,
+        hideDataPoints: chartData.length > 50,
+        dataPointsColor:
+          metric === 'ph' ? colors.warning[600] : colors.success[600],
+        dataPointsRadius: 3,
+        curved: true,
+        animateOnDataChange: true,
+        animationDuration: 800,
+        // Target band as horizontal rules
+        horizontalRulesConfig: {
+          rulesColor: colors.neutral[200],
+          rulesThickness: 1,
         },
-      },
-      // Event markers
-      ...(referenceLines.length > 0 && { verticalLinesConfig: referenceLines }),
-    };
-  }, [chartData, targetMin, targetMax, metric, referenceLines, t]);
+        // Add target band reference lines
+        referenceLine1Position: targetMax,
+        referenceLine1Config: {
+          color: colors.primary[300],
+          thickness: 1.5,
+          dashWidth: 4,
+          dashGap: 4,
+          labelText: t('nutrient.targetMax'),
+          labelTextStyle: {
+            color: colors.neutral[600],
+            fontSize: 9,
+          },
+        },
+        referenceLine2Position: targetMin,
+        referenceLine2Config: {
+          color: colors.primary[300],
+          thickness: 1.5,
+          dashWidth: 4,
+          dashGap: 4,
+          labelText: t('nutrient.targetMin'),
+          labelTextStyle: {
+            color: colors.neutral[600],
+            fontSize: 9,
+          },
+        },
+        // Event markers
+        ...(referenceLines.length > 0 && {
+          verticalLinesConfig: referenceLines,
+        }),
+      };
+    } catch (error) {
+      if (onError) {
+        onError(error as Error);
+      }
+      return null;
+    }
+  }, [chartData, targetMin, targetMax, metric, referenceLines, t, onError]);
 
   // Error boundary - early return for empty data
   if (readings.length === 0) {

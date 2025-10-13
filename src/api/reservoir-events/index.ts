@@ -8,8 +8,9 @@
  */
 
 import { Q } from '@nozbe/watermelondb';
+import { useQuery } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
-import { createMutation, createQuery } from 'react-query-kit';
+import { createMutation } from 'react-query-kit';
 
 import {
   calculateDilutionRecommendation,
@@ -172,86 +173,87 @@ export const useCreateReservoirEvent = createMutation<
  *
  * Reads from local database (offline-first), falls back to server
  */
-export const useReservoirEvents = createQuery<
-  FetchEventsResponse,
-  FetchEventsVariables,
-  AxiosError
->({
-  queryKey: ['reservoir-events'],
-  fetcher: async (variables) => {
-    // Try local database first
-    try {
-      const localEvents = await listEventsByReservoir(
-        variables.reservoirId,
-        variables.limit
-      );
+export const useReservoirEvents = (variables: FetchEventsVariables) => {
+  return useQuery<FetchEventsResponse, AxiosError>({
+    queryKey: ['reservoir-events', variables],
+    queryFn: async () => {
+      // Try local database first
+      try {
+        const localEvents = await listEventsByReservoir(
+          variables.reservoirId,
+          variables.limit
+        );
 
-      // Convert to response type
-      const events: FetchEventsResponse = localEvents.map((event) => ({
-        id: event.id,
-        reservoirId: event.reservoirId,
-        kind: event.kind as ReservoirEventKind,
-        deltaEc25c: event.deltaEc25c,
-        deltaPh: event.deltaPh,
-        note: event.note,
-        createdAt: event.createdAt.getTime(),
-        updatedAt: event.updatedAt.getTime(),
-      }));
+        // Convert to response type
+        const events: FetchEventsResponse = localEvents.map((event) => ({
+          id: event.id,
+          reservoirId: event.reservoirId,
+          kind: event.kind as ReservoirEventKind,
+          deltaEc25c: event.deltaEc25c,
+          deltaPh: event.deltaPh,
+          note: event.note,
+          createdAt: event.createdAt.getTime(),
+          updatedAt: event.updatedAt.getTime(),
+        }));
 
-      // If we have local data, return it immediately
-      if (events.length > 0) {
-        return events;
+        // If we have local data, return it immediately
+        if (events.length > 0) {
+          return events;
+        }
+      } catch (error) {
+        console.warn('Failed to fetch local reservoir events:', error);
       }
-    } catch (error) {
-      console.warn('Failed to fetch local reservoir events:', error);
-    }
 
-    // Fall back to server if no local data
-    return await fetchEventsFromServer(variables);
-  },
-  staleTime: 1000 * 60 * 5, // 5 minutes
-});
+      // Fall back to server if no local data
+      return await fetchEventsFromServer(variables);
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
 
 /**
  * Query hook for fetching reservoir events by date range
  */
-export const useReservoirEventsByDateRange = createQuery<
-  FetchEventsResponse,
-  FetchEventsByDateRangeVariables,
-  AxiosError
->({
-  queryKey: ['reservoir-events', 'date-range'],
-  fetcher: async (variables) => {
-    // Try local database first
-    try {
-      const localEvents = await listEventsByDateRange(
-        variables.reservoirId,
-        variables.startMs,
-        variables.endMs
-      );
+export const useReservoirEventsByDateRange = (
+  variables: FetchEventsByDateRangeVariables
+) => {
+  return useQuery<FetchEventsResponse, AxiosError>({
+    queryKey: ['reservoir-events', 'date-range', variables],
+    queryFn: async () => {
+      // Try local database first
+      try {
+        const localEvents = await listEventsByDateRange(
+          variables.reservoirId,
+          variables.startMs,
+          variables.endMs
+        );
 
-      // Convert to response type
-      const events: FetchEventsResponse = localEvents.map((event) => ({
-        id: event.id,
-        reservoirId: event.reservoirId,
-        kind: event.kind as ReservoirEventKind,
-        deltaEc25c: event.deltaEc25c,
-        deltaPh: event.deltaPh,
-        note: event.note,
-        createdAt: event.createdAt.getTime(),
-        updatedAt: event.updatedAt.getTime(),
-      }));
+        // Convert to response type
+        const events: FetchEventsResponse = localEvents.map((event) => ({
+          id: event.id,
+          reservoirId: event.reservoirId,
+          kind: event.kind as ReservoirEventKind,
+          deltaEc25c: event.deltaEc25c,
+          deltaPh: event.deltaPh,
+          note: event.note,
+          createdAt: event.createdAt.getTime(),
+          updatedAt: event.updatedAt.getTime(),
+        }));
 
-      return events;
-    } catch (error) {
-      console.warn('Failed to fetch local reservoir events:', error);
-    }
+        // Only return local events if we have any, otherwise fall back to server
+        if (events.length > 0) {
+          return events;
+        }
+      } catch (error) {
+        console.warn('Failed to fetch local reservoir events:', error);
+      }
 
-    // Fall back to server
-    return await fetchEventsByDateRangeFromServer(variables);
-  },
-  staleTime: 1000 * 60 * 5, // 5 minutes
-});
+      // Fall back to server (on error or when local result is empty)
+      return await fetchEventsByDateRangeFromServer(variables);
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
 
 /**
  * Mutation hook for undoing the last reservoir event

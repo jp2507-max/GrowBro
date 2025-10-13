@@ -18,7 +18,7 @@ export default function NutrientReadingsScreen(): React.ReactElement {
   const router = useRouter();
 
   const { data, isLoading, error } = useFetchReadings({
-    variables: { limit: 100 },
+    limit: 100,
   });
 
   const handleAddReading = useCallback(() => {

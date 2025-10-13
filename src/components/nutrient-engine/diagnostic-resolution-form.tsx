@@ -15,7 +15,11 @@ function useResolutionSubmit(
   diagnosticId: string,
   notes: string,
   onResolve: Props['onResolve']
-) {
+): {
+  handleResolve: () => Promise<void>;
+  isSubmitting: boolean;
+  error: string | null;
+} {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -25,6 +29,7 @@ function useResolutionSubmit(
 
     try {
       await onResolve(diagnosticId, notes.trim() || undefined);
+      setIsSubmitting(false);
     } catch (err) {
       setError(
         err instanceof Error

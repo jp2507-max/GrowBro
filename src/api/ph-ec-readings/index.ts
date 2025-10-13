@@ -1,6 +1,7 @@
 import { Q } from '@nozbe/watermelondb';
+import { useQuery } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
-import { createMutation, createQuery } from 'react-query-kit';
+import { createMutation } from 'react-query-kit';
 
 import type { PhEcReading, PpmScale } from '@/lib/nutrient-engine/types';
 import { computeQualityFlags } from '@/lib/nutrient-engine/utils/conversions';
@@ -211,25 +212,12 @@ export const useCreateReading = createMutation<
  *
  * Requirements: 2.1, 2.5, 6.2
  */
-const _useFetchReadings = createQuery<
-  FetchReadingsResponse,
-  FetchReadingsVariables,
-  AxiosError
->({
-  queryKey: ['ph-ec-readings'],
-  fetcher: (variables) => fetchReadingsLocal(variables),
-});
-
-type UseFetchReadingsOptions = Omit<
-  Parameters<typeof _useFetchReadings>[0],
-  'variables'
->;
-
-export const useFetchReadings = Object.assign(
-  (variables: FetchReadingsVariables, options?: UseFetchReadingsOptions) =>
-    _useFetchReadings({ ...options, variables }),
-  _useFetchReadings
-);
+export const useFetchReadings = (variables: FetchReadingsVariables) => {
+  return useQuery<FetchReadingsResponse, AxiosError>({
+    queryKey: ['ph-ec-readings', variables],
+    queryFn: () => fetchReadingsLocal(variables),
+  });
+};
 
 /**
  * Hook to fetch readings for a specific reservoir

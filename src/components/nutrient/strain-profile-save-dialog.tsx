@@ -16,13 +16,11 @@ import { z } from 'zod';
 
 import { Button, Input, Text, View } from '@/components/ui';
 
-const strainProfileSchema = z.object({
-  name: z.string().min(1, 'Strain name is required'),
-  notes: z.string().optional(),
-  publishPrivately: z.boolean().default(false),
-});
-
-type StrainProfileFormData = z.infer<typeof strainProfileSchema>;
+type StrainProfileFormData = {
+  name: string;
+  notes?: string;
+  publishPrivately: boolean;
+};
 
 interface StrainProfileSaveDialogProps {
   visible: boolean;
@@ -41,6 +39,12 @@ export function StrainProfileSaveDialog({
   testID = 'strain-profile-dialog',
 }: StrainProfileSaveDialogProps) {
   const { t } = useTranslation();
+
+  const strainProfileSchema = z.object({
+    name: z.string().min(1, t('validation.strainNameRequired')),
+    notes: z.string().optional(),
+    publishPrivately: z.boolean().default(false),
+  });
 
   const { control, handleSubmit, reset } = useForm<StrainProfileFormData>({
     resolver: zodResolver(strainProfileSchema),

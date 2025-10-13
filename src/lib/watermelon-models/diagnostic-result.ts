@@ -40,7 +40,7 @@ export class DiagnosticResultModel extends Model {
 
   @field('ai_override') aiOverride!: boolean;
 
-  @field('needs_second_opinion') needsSecondOpinion!: boolean;
+  @field('needs_second_opinion') needsSecond_opinion!: boolean;
 
   @json('symptoms_json', (raw) => (raw as string[]) || [])
   symptomCodes!: string[];

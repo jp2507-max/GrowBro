@@ -5,7 +5,7 @@
  */
 
 import type { JSX } from 'react';
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
@@ -20,20 +20,26 @@ interface TemplateFormHeaderProps {
   testID: string;
 }
 
-const mediumOptions = [
-  { label: 'Soil', value: GrowingMedium.SOIL },
-  { label: 'Coco', value: GrowingMedium.COCO },
-  { label: 'Hydro', value: GrowingMedium.HYDRO },
-  { label: 'Soilless', value: GrowingMedium.SOILLESS },
-  { label: 'Peat', value: GrowingMedium.PEAT },
-];
-
 export function TemplateFormHeader({
   control,
   isEdit,
   testID,
 }: TemplateFormHeaderProps): JSX.Element {
   const { t } = useTranslation();
+
+  const mediumOptions = useMemo(
+    () => [
+      { label: t('nutrient.mediumOptions.soil'), value: GrowingMedium.SOIL },
+      { label: t('nutrient.mediumOptions.coco'), value: GrowingMedium.COCO },
+      { label: t('nutrient.mediumOptions.hydro'), value: GrowingMedium.HYDRO },
+      {
+        label: t('nutrient.mediumOptions.soilless'),
+        value: GrowingMedium.SOILLESS,
+      },
+      { label: t('nutrient.mediumOptions.peat'), value: GrowingMedium.PEAT },
+    ],
+    [t]
+  );
 
   return (
     <>

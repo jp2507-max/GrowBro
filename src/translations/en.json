@@ -444,6 +444,7 @@
       "undo_expired": "Undo window expired. Use Revert Stage instead.",
       "validation": {
         "description": "Please correct the errors below and try again.",
+        "strainNameRequired": "Strain name is required",
         "title": "Validation Error"
       }
     },
@@ -888,6 +889,13 @@
       "fill": "Fill",
       "phDown": "pH Down",
       "phUp": "pH Up"
+    },
+    "mediumOptions": {
+      "coco": "Coco",
+      "hydro": "Hydro",
+      "peat": "Peat",
+      "soil": "Soil",
+      "soilless": "Soilless"
     },
     "no_readings": "No readings available",
     "ph": "pH",

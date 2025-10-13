@@ -4,24 +4,23 @@
  * Cancel and submit buttons for the pH/EC input form
  */
 
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, View } from '@/components/ui';
 
-interface FormActionsProps {
+type FormActionsProps = {
   onCancel: () => void;
   onSubmit: () => void;
   isValid: boolean;
   testID: string;
-}
+};
 
 export function FormActions({
   onCancel,
   onSubmit,
   isValid,
   testID,
-}: FormActionsProps) {
+}: FormActionsProps): JSX.Element {
   const { t } = useTranslation();
 
   return (

@@ -13,7 +13,13 @@ import type { DeviationAlertModel } from '@/lib/watermelon-models/deviation-aler
 import type { PhEcReadingModel } from '@/lib/watermelon-models/ph-ec-reading';
 import type { ReservoirModel } from '@/lib/watermelon-models/reservoir';
 
-import type { DeviationAlert } from '../types';
+import type {
+  DeviationAlert,
+  GrowingMedium,
+  PhEcReading,
+  PpmScale,
+  Reservoir,
+} from '../types';
 import { evaluateReadingAgainstTargets } from '../utils/alert-evaluation';
 
 // ============================================================================
@@ -303,7 +309,7 @@ export function observeActiveAlerts(reservoirId: string, db?: Database): any {
 /**
  * Converts PhEcReadingModel to PhEcReading type
  */
-function modelToReading(model: PhEcReadingModel): any {
+function modelToReading(model: PhEcReadingModel): PhEcReading {
   return {
     id: model.id,
     plantId: model.plantId,
@@ -314,7 +320,7 @@ function modelToReading(model: PhEcReadingModel): any {
     ec25c: model.ec25c,
     tempC: model.tempC,
     atcOn: model.atcOn,
-    ppmScale: model.ppmScale,
+    ppmScale: model.ppmScale as PpmScale,
     meterId: model.meterId,
     note: model.note,
     qualityFlags: model.qualityFlags,
@@ -326,17 +332,17 @@ function modelToReading(model: PhEcReadingModel): any {
 /**
  * Converts ReservoirModel to Reservoir type
  */
-function modelToReservoir(model: ReservoirModel): any {
+function modelToReservoir(model: ReservoirModel): Reservoir {
   return {
     id: model.id,
     name: model.name,
     volumeL: model.volumeL,
-    medium: model.medium,
+    medium: model.medium as GrowingMedium,
     targetPhMin: model.targetPhMin,
     targetPhMax: model.targetPhMax,
     targetEcMin25c: model.targetEcMin25c,
     targetEcMax25c: model.targetEcMax25c,
-    ppmScale: model.ppmScale,
+    ppmScale: model.ppmScale as PpmScale,
     sourceWaterProfileId: model.sourceWaterProfileId,
     playbookBinding: model.playbookBinding,
     createdAt: model.createdAt.getTime(),

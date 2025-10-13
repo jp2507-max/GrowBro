@@ -144,9 +144,18 @@ describe('PhEcLineChart', () => {
     it('should call onError callback on render error (Requirement 7.3)', () => {
       const onErrorMock = jest.fn();
 
-      // Force an error by making LineChart throw
-      jest.spyOn(console, 'error').mockImplementation(() => {});
+      // Mock Math.max to throw an error during chartConfig creation
+      const originalMathMax = Math.max;
+      Math.max = jest.fn(() => {
+        throw new Error('Chart config error');
+      });
 
+      // Suppress console.error during the test
+      const consoleErrorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
+      // Render the component - it should handle the error gracefully
       render(
         <PhEcLineChart
           readings={mockReadings}
@@ -158,8 +167,16 @@ describe('PhEcLineChart', () => {
         />
       );
 
-      // Since we're mocking LineChart successfully, this test validates the callback exists
-      expect(onErrorMock).not.toHaveBeenCalled();
+      // The component should not render its content on error
+      expect(screen.queryByTestId('error-chart')).not.toBeOnTheScreen();
+
+      // Assert that onError callback was called
+      expect(onErrorMock).toHaveBeenCalledWith(expect.any(Error));
+      expect(onErrorMock).toHaveBeenCalledTimes(1);
+
+      // Restore mocks
+      Math.max = originalMathMax;
+      consoleErrorSpy.mockRestore();
     });
   });
 
