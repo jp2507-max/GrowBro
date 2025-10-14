@@ -41,6 +41,10 @@ type CreateEventVariables = {
   deltaEc25c?: number;
   deltaPh?: number;
   note?: string;
+  // Conflict resolution fields (optional, used when syncing local events)
+  id?: string;
+  createdAt?: number;
+  updatedAt?: number;
 };
 
 type CreateEventResponse = ReservoirEvent;
@@ -84,6 +88,10 @@ async function createEventOnServer(
     delta_ec_25c: variables.deltaEc25c,
     delta_ph: variables.deltaPh,
     note: variables.note,
+    // Include local ID and timestamps for conflict resolution
+    ...(variables.id && { id: variables.id }),
+    ...(variables.createdAt && { created_at: variables.createdAt }),
+    ...(variables.updatedAt && { updated_at: variables.updatedAt }),
   });
   return response.data;
 }
@@ -158,7 +166,12 @@ export const useCreateReservoirEvent = createMutation<
 
     // Queue for server sync in background
     try {
-      await createEventOnServer(variables);
+      await createEventOnServer({
+        ...variables,
+        id: localEvent.id,
+        createdAt: localEvent.createdAt.getTime(),
+        updatedAt: localEvent.updatedAt.getTime(),
+      });
     } catch (error) {
       // Log error but don't fail the mutation - sync will retry later
       console.warn('Failed to sync reservoir event to server:', error);
@@ -292,6 +305,9 @@ export const useUndoReservoirEvent = createMutation<
         deltaEc25c: undoEvent.deltaEc25c,
         deltaPh: undoEvent.deltaPh,
         note: undoEvent.note,
+        id: undoEvent.id,
+        createdAt: undoEvent.createdAt.getTime(),
+        updatedAt: undoEvent.updatedAt.getTime(),
       });
     } catch (error) {
       console.warn('Failed to sync undo event to server:', error);

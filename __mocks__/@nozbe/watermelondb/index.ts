@@ -132,6 +132,10 @@ function filterResults(store: any[], filters: WhereCond[]): any[] {
           rowValue = JSON.stringify(rowValue);
         }
         rowValue = String(rowValue);
+        // Limit pattern length to prevent ReDoS in test mocks
+        if (c.$like.length > 200) {
+          throw new Error('LIKE pattern too long for test mock');
+        }
         // Convert SQL LIKE pattern to RegExp: % -> .*, _ -> ., escape other special chars
         const regexPattern = c.$like
           .replace(/[.+?^${}()|[\]\\]/g, '\\$&') // escape regex special chars
