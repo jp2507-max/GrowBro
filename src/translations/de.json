@@ -797,8 +797,10 @@
     }
   },
   "nutrient": {
+    "add_first_reading": "Erste Messung hinzufügen",
     "apply_learnings": "Erkenntnisse anwenden",
     "atc_label": "Temperaturkompensiert (ATC)",
+    "cal_stale_warning": "Kalibrierung möglicherweise veraltet",
     "chart": {
       "eventMarkersNote": "{{count}} Ereignis-Marker angezeigt",
       "noData": "Noch keine Messwerte",
@@ -905,6 +907,7 @@
       "phDown": "pH senken",
       "phUp": "pH erhöhen"
     },
+    "loading_readings": "Lade Messwerte...",
     "medium": {
       "coco": "Coco",
       "hydro": "Hydroponik",
@@ -918,6 +921,7 @@
       "soil": "Erde",
       "soilless": "Erdlos"
     },
+    "no_atc_warning": "Keine ATC (automatische Temperaturkompensation)",
     "no_events_description": "Beginne Reservoir-Ereignisse zu protokollieren, um deine Änderungen zu verfolgen",
     "no_events_title": "Keine Ereignisse aufgezeichnet",
     "no_readings": "Keine Messwerte verfügbar",
@@ -947,6 +951,7 @@
     "targetMin": "Min",
     "targetRange": "Zielbereich",
     "targetRanges": "Zielbereiche",
+    "temp_high_warning": "Temperatur zu hoch",
     "timeRange": {
       "30days": "30 Tage",
       "7days": "7 Tage",

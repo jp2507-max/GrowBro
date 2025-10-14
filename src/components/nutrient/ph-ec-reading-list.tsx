@@ -147,7 +147,7 @@ type MeasurementDisplayProps = {
 
 const MeasurementDisplay = memo(function MeasurementDisplay({
   item,
-}: MeasurementDisplayProps): JSX.Element {
+}: MeasurementDisplayProps): React.ReactElement {
   const { t } = useTranslation();
 
   const dateStr = useMemo(
@@ -205,7 +205,7 @@ type QualityIndicatorProps = {
 
 const QualityIndicator = memo(function QualityIndicator({
   item,
-}: QualityIndicatorProps): JSX.Element {
+}: QualityIndicatorProps): React.ReactElement {
   const { t } = useTranslation();
 
   const hasQualityFlags = item.qualityFlags.length > 0;
@@ -233,7 +233,7 @@ type QualityFlagDetailsProps = {
 
 const QualityFlagDetails = memo(function QualityFlagDetails({
   qualityFlags,
-}: QualityFlagDetailsProps): JSX.Element | null {
+}: QualityFlagDetailsProps): React.ReactElement | null {
   const { t } = useTranslation();
 
   if (qualityFlags.length === 0) return null;
@@ -263,7 +263,7 @@ QualityFlagDetails.displayName = 'QualityFlagDetails';
 const ReadingListItemComponent = memo(function ReadingListItemComponent({
   item,
   onSelect,
-}: ReadingListItemProps): JSX.Element {
+}: ReadingListItemProps): React.ReactElement {
   const handlePress = useCallback(() => {
     onSelect?.(item.source);
   }, [item.source, onSelect]);

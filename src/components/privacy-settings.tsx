@@ -1,8 +1,9 @@
 import * as FileSystem from 'expo-file-system';
 import React, { useEffect, useState } from 'react';
-import { Alert, Share, Switch, Text, View } from 'react-native';
+import { Alert, Platform, Share, Switch, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui';
+import { showErrorMessage } from '@/components/ui/utils';
 import { translate } from '@/lib';
 import { generatePrivacyExportJson } from '@/lib/privacy/export-service';
 import {
@@ -95,6 +96,78 @@ function showCrashReportingInfo(): void {
   );
 }
 
+async function handleDataExport(): Promise<void> {
+  let tempFileUri: string | null = null;
+  try {
+    const exportData = await generatePrivacyExportJson();
+
+    // For large JSON exports, write to temporary file to avoid truncation
+    // Use the documentDirectory exposed on the FileSystem namespace. Some
+    // versions of the `expo-file-system` types don't declare these runtime
+    // constants, so cast to `any` to read them at runtime safely.
+    const fsAny = FileSystem as any;
+    const docDir = fsAny.documentDirectory ?? fsAny.cacheDirectory ?? '';
+
+    // Abort export if no valid directory is available to prevent invalid paths
+    if (!docDir) {
+      console.error(
+        '[PrivacySettings] No valid file system directory available for export'
+      );
+      showErrorMessage(translate('privacy.exportError.message'));
+      return;
+    }
+
+    tempFileUri = `${docDir}privacy-export-${Date.now()}.json`;
+    await FileSystem.writeAsStringAsync(tempFileUri, exportData);
+
+    // Use Share API to let user save or share the export file
+    const shareOptions =
+      Platform.OS === 'ios'
+        ? {
+            url: tempFileUri,
+            title: translate('privacy.exportData'),
+          }
+        : {
+            message: tempFileUri,
+            title: translate('privacy.exportData'),
+          };
+
+    const shareResult = await Share.share(shareOptions);
+
+    // Handle user cancellation via Share.dismissedAction
+    if (shareResult.action === Share.dismissedAction) {
+      return; // User cancelled, silently return
+    }
+
+    // Only call onDataExport if the user actually shared
+    if (shareResult.action === Share.sharedAction) {
+      // Note: onDataExport callback removed as it's not used in this context
+    }
+  } catch (error) {
+    // Only suppress alerts for genuine platform-specific cancellation indicators
+    const isPlatformCancellation =
+      (error as any)?.code === 'ECANCELLED' || // iOS specific
+      (error as any)?.domain === 'com.apple.ShareSheet' || // iOS ShareSheet cancellation
+      ((error as any)?.message?.includes('cancelled by user') &&
+        (error as any)?.code === 3); // Android specific
+
+    if (!isPlatformCancellation) {
+      console.error('[PrivacySettings] Data export failed:', error);
+      Alert.alert(
+        translate('privacy.exportError.title'),
+        translate('privacy.exportError.message'),
+        [{ text: translate('common.ok') }]
+      );
+    }
+    // If user cancelled via platform-specific cancellation, silently ignore
+  } finally {
+    // Clean up temporary file regardless of success/failure
+    if (tempFileUri) {
+      await FileSystem.deleteAsync(tempFileUri, { idempotent: true });
+    }
+  }
+}
+
 function PrivacyToggles({
   consent,
   updateConsent,
@@ -152,98 +225,60 @@ function PrivacyActions({
   onDataExport?: () => void;
   onAccountDeletion?: () => void;
 }): React.ReactElement {
-  const handleExport = async (): Promise<void> => {
-    let tempFileUri: string | null = null;
-    try {
-      const exportData = await generatePrivacyExportJson();
+  const handleExportWithCallback = async (): Promise<void> => {
+    await handleDataExport();
+    // Call onDataExport callback if provided
+    if (onDataExport) onDataExport();
+  };
 
-      // For large JSON exports, write to temporary file to avoid truncation
-      // Use the documentDirectory exposed on the FileSystem namespace. Some
-      // versions of the `expo-file-system` types don't declare these runtime
-      // constants, so cast to `any` to read them at runtime safely.
-      const fsAny = FileSystem as any;
-      const docDir = fsAny.documentDirectory ?? fsAny.cacheDirectory ?? '';
-      tempFileUri = `${docDir}privacy-export-${Date.now()}.json`;
-      await FileSystem.writeAsStringAsync(tempFileUri, exportData);
+  const handleRejectAll = (): void => {
+    updateConsent('crashReporting', false);
+    updateConsent('analytics', false);
+    updateConsent('personalizedData', false);
+    updateConsent('sessionReplay', false);
+  };
 
-      // Use Share API to let user save or share the export file
-      const shareResult = await Share.share({
-        url: tempFileUri,
-        title: translate('privacy.exportData'),
-      });
+  const handleAcceptAll = (): void => {
+    updateConsent('crashReporting', true);
+    updateConsent('analytics', true);
+    updateConsent('personalizedData', true);
+    updateConsent('sessionReplay', true);
+  };
 
-      // Handle user cancellation via Share.dismissedAction
-      if (shareResult.action === Share.dismissedAction) {
-        return; // User cancelled, silently return
-      }
-
-      // Only call onDataExport if the user actually shared
-      if (shareResult.action === Share.sharedAction && onDataExport) {
-        onDataExport();
-      }
-    } catch (error) {
-      // Only suppress alerts for genuine platform-specific cancellation indicators
-      const isPlatformCancellation =
-        (error as any)?.code === 'ECANCELLED' || // iOS specific
-        (error as any)?.domain === 'com.apple.ShareSheet' || // iOS ShareSheet cancellation
-        ((error as any)?.message?.includes('cancelled by user') &&
-          (error as any)?.code === 3); // Android specific
-
-      if (!isPlatformCancellation) {
-        console.error('[PrivacySettings] Data export failed:', error);
-        Alert.alert(
-          translate('privacy.exportError.title'),
-          translate('privacy.exportError.message'),
-          [{ text: translate('common.ok') }]
-        );
-      }
-      // If user cancelled via platform-specific cancellation, silently ignore
-    } finally {
-      // Clean up temporary file regardless of success/failure
-      if (tempFileUri) {
-        await FileSystem.deleteAsync(tempFileUri, { idempotent: true });
-      }
-    }
+  const handleDeleteAccount = (): void => {
+    if (onAccountDeletion) onAccountDeletion();
+    else
+      Alert.alert(
+        translate('privacy.deleteAccount'),
+        translate('privacy.deleteAccount'),
+        [{ text: translate('common.ok') }]
+      );
   };
 
   return (
     <View className="mt-4 gap-2">
+      {}
       <Button
         label={translate('consent.reject_all')}
-        onPress={() => {
-          updateConsent('crashReporting', false);
-          updateConsent('analytics', false);
-          updateConsent('personalizedData', false);
-          updateConsent('sessionReplay', false);
-        }}
+        onPress={handleRejectAll}
         testID="privacy-reject-all-btn"
       />
+      {}
       <Button
         label={translate('consent.accept_all')}
-        onPress={() => {
-          updateConsent('crashReporting', true);
-          updateConsent('analytics', true);
-          updateConsent('personalizedData', true);
-          updateConsent('sessionReplay', true);
-        }}
+        onPress={handleAcceptAll}
         testID="privacy-accept-all-btn"
       />
+      {}
       <Button
         label={translate('privacy.exportData')}
-        onPress={handleExport}
+        onPress={handleExportWithCallback}
         testID="privacy-export-btn"
       />
+      {}
       <Button
         label={translate('privacy.deleteAccount')}
-        onPress={() => {
-          if (onAccountDeletion) onAccountDeletion();
-          else
-            Alert.alert(
-              translate('privacy.deleteAccount'),
-              translate('privacy.deleteAccount'),
-              [{ text: translate('common.ok') }]
-            );
-        }}
+        onPress={handleDeleteAccount}
         testID="privacy-delete-btn"
       />
     </View>
