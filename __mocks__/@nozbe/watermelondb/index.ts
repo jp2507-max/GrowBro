@@ -55,6 +55,9 @@ export const Q = {
   like(pattern: string): { $like: string } {
     return { $like: pattern };
   },
+  gte(value: any): { $gte: any } {
+    return { $gte: value };
+  },
   sortBy(
     key: string,
     direction: 'asc' | 'desc' = 'asc'
@@ -81,6 +84,8 @@ function createMockRecord(): any {
     return rec;
   };
 
+  rec.destroyPermanently = jest.fn().mockResolvedValue(undefined);
+
   return rec;
 }
 
@@ -97,6 +102,8 @@ function filterResults(store: any[], filters: WhereCond[]): any[] {
         return c.$oneOf.includes((row as any)[key]);
       } else if ('$notEq' in c) {
         return (row as any)[key] !== c.$notEq;
+      } else if ('$gte' in c) {
+        return (row as any)[key] >= c.$gte;
       } else if ('$like' in c) {
         // For metadata field, convert object to JSON string for like comparison
         let rowValue = (row as any)[key];
@@ -353,6 +360,104 @@ function buildHarvestsCollection() {
   return col;
 }
 
+function buildReservoirsCollection() {
+  const col = makeCollection();
+  const originalCreate = col.create.bind(col);
+  col.create = async (cb: any) => {
+    return originalCreate(async (rec: any) => {
+      rec.name = 'Mock Reservoir';
+      rec.volumeL = 20;
+      rec.medium = 'hydro';
+      rec.targetPhMin = 5.5;
+      rec.targetPhMax = 6.5;
+      rec.targetEcMin25c = 1.0;
+      rec.targetEcMax25c = 2.0;
+      rec.ppmScale = '500';
+      rec.sourceWaterProfileId = null;
+      rec.playbookBinding = null;
+      rec.userId = null;
+      rec.serverRevision = null;
+      rec.serverUpdatedAtMs = null;
+      rec.createdAt = new Date();
+      rec.updatedAt = new Date();
+      rec.deletedAt = null;
+      await cb?.(rec);
+    });
+  };
+  return col;
+}
+
+function buildPhEcReadingsCollection() {
+  const col = makeCollection();
+  const originalCreate = col.create.bind(col);
+  col.create = async (cb: any) => {
+    return originalCreate(async (rec: any) => {
+      rec.reservoirId = 'mock-reservoir-id';
+      rec.measuredAt = Date.now();
+      rec.ph = 6.0;
+      rec.ecRaw = 1.5;
+      rec.ec25c = 1.5;
+      rec.temperatureC = 25;
+      rec.note = '';
+      rec.userId = null;
+      rec.serverRevision = null;
+      rec.serverUpdatedAtMs = null;
+      rec.createdAt = new Date();
+      rec.updatedAt = new Date();
+      rec.deletedAt = null;
+      await cb?.(rec);
+    });
+  };
+  return col;
+}
+
+function buildDeviationAlertsCollection() {
+  const col = makeCollection();
+  const originalCreate = col.create.bind(col);
+  col.create = async (cb: any) => {
+    const rec = await originalCreate(async (rec: any) => {
+      rec.readingId = 'mock-reading-id';
+      rec.type = 'pH_HIGH';
+      rec.severity = 'WARNING';
+      rec.message = 'Test alert';
+      rec.reservoirId = 'mock-reservoir-id';
+      rec.acknowledgedAt = null;
+      rec.resolvedAt = null;
+      rec.deliveredAtLocal = null;
+      rec.userId = null;
+      rec.serverRevision = null;
+      rec.serverUpdatedAtMs = null;
+      rec.createdAt = new Date();
+      rec.updatedAt = new Date();
+      rec.deletedAt = null;
+      await cb?.(rec);
+      return rec;
+    });
+
+    // Add model-specific methods
+    rec.markDeliveredLocally = jest.fn().mockImplementation(async function () {
+      await this.update(() => {
+        this.deliveredAtLocal = Date.now();
+      });
+    });
+
+    rec.acknowledge = jest.fn().mockImplementation(async function () {
+      await this.update(() => {
+        this.acknowledgedAt = Date.now();
+      });
+    });
+
+    rec.resolve = jest.fn().mockImplementation(async function () {
+      await this.update(() => {
+        this.resolvedAt = Date.now();
+      });
+    });
+
+    return rec;
+  };
+  return col;
+}
+
 function buildReservoirEventsCollection() {
   const col = makeCollection();
   const originalCreate = col.create.bind(col);
@@ -389,6 +494,12 @@ class DatabaseMock {
       buildNotificationPreferencesCollection()
     );
     this.collections.set('harvests', buildHarvestsCollection());
+    this.collections.set('reservoirs_v2', buildReservoirsCollection());
+    this.collections.set('ph_ec_readings_v2', buildPhEcReadingsCollection());
+    this.collections.set(
+      'deviation_alerts_v2',
+      buildDeviationAlertsCollection()
+    );
     this.collections.set('reservoir_events', buildReservoirEventsCollection());
   }
 

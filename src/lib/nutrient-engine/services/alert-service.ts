@@ -45,7 +45,7 @@ export async function evaluateAndTriggerAlert(
   // Get recent readings for persistence check (last 10 minutes)
   const tenMinutesAgo = Date.now() - 10 * 60_000;
   const recentReadingsModels = await db
-    .get<PhEcReadingModel>('ph_ec_readings')
+    .get<PhEcReadingModel>('ph_ec_readings_v2')
     .query(
       Q.where('reservoir_id', reservoir.id),
       Q.where('measured_at', Q.gte(tenMinutesAgo)),
@@ -78,19 +78,21 @@ export async function evaluateAndTriggerAlert(
 
   // Create alert in database
   const alertModel = await db.write(async () => {
-    return db.get<DeviationAlertModel>('deviation_alerts').create((alert) => {
-      alert.readingId = reading.id;
-      alert.type = alertData.type;
-      alert.severity = alertData.severity;
-      alert.message = alertData.message;
-      alert.recommendations = alertData.recommendations;
-      alert.recommendationCodes = alertData.recommendationCodes;
-      alert.cooldownUntil = alertData.cooldownUntil;
-      alert.triggeredAt = alertData.triggeredAt;
-      if (userId) {
-        alert.userId = userId;
-      }
-    });
+    return db
+      .get<DeviationAlertModel>('deviation_alerts_v2')
+      .create((alert) => {
+        alert.readingId = reading.id;
+        alert.type = alertData.type;
+        alert.severity = alertData.severity;
+        alert.message = alertData.message;
+        alert.recommendations = alertData.recommendations;
+        alert.recommendationCodes = alertData.recommendationCodes;
+        alert.cooldownUntil = alertData.cooldownUntil;
+        alert.triggeredAt = alertData.triggeredAt;
+        if (userId) {
+          alert.userId = userId;
+        }
+      });
   });
 
   return alertModel;
@@ -106,22 +108,24 @@ export async function createAlert(
   const db = database;
 
   return db.write(async () => {
-    return db.get<DeviationAlertModel>('deviation_alerts').create((alert) => {
-      alert.readingId = alertData.readingId;
-      alert.type = alertData.type;
-      alert.severity = alertData.severity;
-      alert.message = alertData.message;
-      alert.recommendations = alertData.recommendations;
-      alert.recommendationCodes = alertData.recommendationCodes;
-      alert.cooldownUntil = alertData.cooldownUntil;
-      alert.triggeredAt = alertData.triggeredAt;
-      alert.acknowledgedAt = alertData.acknowledgedAt;
-      alert.resolvedAt = alertData.resolvedAt;
-      alert.deliveredAtLocal = alertData.deliveredAtLocal;
-      if (userId) {
-        alert.userId = userId;
-      }
-    });
+    return db
+      .get<DeviationAlertModel>('deviation_alerts_v2')
+      .create((alert) => {
+        alert.readingId = alertData.readingId;
+        alert.type = alertData.type;
+        alert.severity = alertData.severity;
+        alert.message = alertData.message;
+        alert.recommendations = alertData.recommendations;
+        alert.recommendationCodes = alertData.recommendationCodes;
+        alert.cooldownUntil = alertData.cooldownUntil;
+        alert.triggeredAt = alertData.triggeredAt;
+        alert.acknowledgedAt = alertData.acknowledgedAt;
+        alert.resolvedAt = alertData.resolvedAt;
+        alert.deliveredAtLocal = alertData.deliveredAtLocal;
+        if (userId) {
+          alert.userId = userId;
+        }
+      });
   });
 }
 
@@ -138,7 +142,7 @@ export async function acknowledgeAlert(
 ): Promise<DeviationAlertModel> {
   const db = database;
   const alert = await db
-    .get<DeviationAlertModel>('deviation_alerts')
+    .get<DeviationAlertModel>('deviation_alerts_v2')
     .find(alertId);
 
   await alert.acknowledge();
@@ -154,7 +158,7 @@ export async function resolveAlert(
 ): Promise<DeviationAlertModel> {
   const db = database;
   const alert = await db
-    .get<DeviationAlertModel>('deviation_alerts')
+    .get<DeviationAlertModel>('deviation_alerts_v2')
     .find(alertId);
 
   await alert.resolve();
@@ -169,7 +173,7 @@ export async function markAlertDeliveredLocally(
 ): Promise<DeviationAlertModel> {
   const db = database;
   const alert = await db
-    .get<DeviationAlertModel>('deviation_alerts')
+    .get<DeviationAlertModel>('deviation_alerts_v2')
     .find(alertId);
 
   await alert.markDeliveredLocally();
@@ -191,7 +195,7 @@ export async function getActiveAlerts(
 
   // Get all readings for this reservoir
   const readings = await db
-    .get<PhEcReadingModel>('ph_ec_readings')
+    .get<PhEcReadingModel>('ph_ec_readings_v2')
     .query(Q.where('reservoir_id', reservoirId))
     .fetch();
 
@@ -203,7 +207,7 @@ export async function getActiveAlerts(
 
   // Get alerts for these readings that are not resolved
   return db
-    .get<DeviationAlertModel>('deviation_alerts')
+    .get<DeviationAlertModel>('deviation_alerts_v2')
     .query(
       Q.where('reading_id', Q.oneOf(readingIds)),
       Q.where('resolved_at', null),
@@ -228,7 +232,7 @@ export async function getAlertHistory(
 
   // Get all readings for this reservoir
   const readings = await db
-    .get<PhEcReadingModel>('ph_ec_readings')
+    .get<PhEcReadingModel>('ph_ec_readings_v2')
     .query(Q.where('reservoir_id', reservoirId))
     .fetch();
 
@@ -239,7 +243,7 @@ export async function getAlertHistory(
   }
 
   return db
-    .get<DeviationAlertModel>('deviation_alerts')
+    .get<DeviationAlertModel>('deviation_alerts_v2')
     .query(
       Q.where('reading_id', Q.oneOf(readingIds)),
       Q.where('triggered_at', Q.gte(cutoffTime)),
@@ -266,7 +270,7 @@ export async function getUnacknowledgedAlerts(
   }
 
   return db
-    .get<DeviationAlertModel>('deviation_alerts')
+    .get<DeviationAlertModel>('deviation_alerts_v2')
     .query(...queries)
     .fetch();
 }
@@ -279,7 +283,7 @@ export async function getOfflineAlerts(): Promise<DeviationAlertModel[]> {
   const db = database;
 
   return db
-    .get<DeviationAlertModel>('deviation_alerts')
+    .get<DeviationAlertModel>('deviation_alerts_v2')
     .query(
       Q.where('delivered_at_local', Q.notEq(null)),
       Q.sortBy('delivered_at_local', Q.asc)
@@ -295,9 +299,9 @@ export function observeActiveAlerts(reservoirId: string, db?: Database): any {
   const db2 = db || database;
 
   // Note: This is a simplified version. For production, you'd need to properly
-  // join with ph_ec_readings to filter by reservoir_id
+  // join with ph_ec_readings_v2 to filter by reservoir_id
   return db2
-    .get<DeviationAlertModel>('deviation_alerts')
+    .get<DeviationAlertModel>('deviation_alerts_v2')
     .query(Q.where('resolved_at', null), Q.sortBy('triggered_at', Q.desc))
     .observe();
 }

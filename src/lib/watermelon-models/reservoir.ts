@@ -55,6 +55,6 @@ export class ReservoirModel extends Model {
   @date('deleted_at') deletedAt?: Date;
 
   // Relations
-  @relation('source_water_profiles', 'source_water_profile_id')
+  @relation('source_water_profiles_v2', 'source_water_profile_id')
   sourceWaterProfile?: Relation<SourceWaterProfileModel>;
 }

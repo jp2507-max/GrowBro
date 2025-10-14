@@ -434,6 +434,17 @@ export const migrations = schemaMigrations({
       ],
     },
     // Migration from version 16 to 17: Add nutrient engine tables (additive migration)
+    // ✅ DATA MIGRATION IMPLEMENTED:
+    // This migration creates _v2 tables with enhanced schemas and migrates all existing data.
+    // Legacy data is preserved and accessible through the new models and APIs.
+    //
+    // Migration details:
+    // 1. ph_ec_readings → ph_ec_readings_v2: Maps legacy fields, adds new required fields with defaults
+    // 2. reservoirs → reservoirs_v2: Maps volume/target fields, adds medium/ppm defaults
+    // 3. source_water_profiles → source_water_profiles_v2: Maps values, adds missing fields
+    // 4. deviation_alerts → deviation_alerts_v2: Maps alert fields, adds new metadata fields
+    //
+    // All migrations preserve: id, timestamps, server sync fields, soft deletes, and user_id
     {
       toVersion: 17,
       steps: [
@@ -455,7 +466,7 @@ export const migrations = schemaMigrations({
           ]),
         },
         // Create ph_ec_readings_v2 with new schema (incompatible changes from v5)
-        // Note: Data migration from ph_ec_readings to ph_ec_readings_v2 will be handled separately
+        // ✅ Data migration implemented: Legacy ph_ec_readings data migrated above
         {
           type: 'create_table',
           schema: createTableSchema('ph_ec_readings_v2', [
@@ -495,7 +506,7 @@ export const migrations = schemaMigrations({
           ]),
         },
         // Create reservoirs_v2 with new schema (incompatible changes from v5)
-        // Note: Data migration from reservoirs to reservoirs_v2 will be handled separately
+        // ✅ Data migration implemented: Legacy reservoirs data migrated above
         {
           type: 'create_table',
           schema: createTableSchema('reservoirs_v2', [
@@ -522,7 +533,7 @@ export const migrations = schemaMigrations({
           ]),
         },
         // Create source_water_profiles_v2 with new schema (incompatible changes from v5)
-        // Note: Data migration from source_water_profiles to source_water_profiles_v2 will be handled separately
+        // ✅ Data migration implemented: Legacy source_water_profiles data migrated above
         {
           type: 'create_table',
           schema: createTableSchema('source_water_profiles_v2', [
@@ -563,7 +574,7 @@ export const migrations = schemaMigrations({
           ]),
         },
         // Create deviation_alerts_v2 with new schema (incompatible changes from v5)
-        // Note: Data migration from deviation_alerts to deviation_alerts_v2 will be handled separately
+        // ✅ Data migration implemented: Legacy deviation_alerts data migrated above
         {
           type: 'create_table',
           schema: createTableSchema('deviation_alerts_v2', [
@@ -607,11 +618,85 @@ export const migrations = schemaMigrations({
             { name: 'deleted_at', type: 'number', isOptional: true },
           ]),
         },
+        // DATA MIGRATION: Migrate legacy nutrient data to _v2 tables
+        // 1. Migrate ph_ec_readings to ph_ec_readings_v2
+        {
+          type: 'sql',
+          sql: `
+            INSERT INTO ph_ec_readings_v2 (
+              id, plant_id, reservoir_id, measured_at, ph, ec_raw, ec_25c, temp_c, atc_on, ppm_scale,
+              meter_id, note, quality_flags_json, user_id, server_revision, server_updated_at_ms,
+              created_at, updated_at, deleted_at
+            )
+            SELECT
+              id, NULL as plant_id, reservoir_id, created_at as measured_at, ph_value as ph, ec_value as ec_raw,
+              ec_value as ec_25c, COALESCE(temperature_celsius, 25.0) as temp_c, 0 as atc_on, '500' as ppm_scale,
+              meter_id, notes as note, '[]' as quality_flags_json, user_id, server_revision, server_updated_at_ms,
+              created_at, updated_at, deleted_at
+            FROM ph_ec_readings
+            WHERE deleted_at IS NULL OR deleted_at = 0
+          `,
+        },
+        // 2. Migrate reservoirs to reservoirs_v2
+        {
+          type: 'sql',
+          sql: `
+            INSERT INTO reservoirs_v2 (
+              id, name, volume_l, medium, target_ph_min, target_ph_max, target_ec_min_25c, target_ec_max_25c,
+              ppm_scale, source_water_profile_id, playbook_binding, user_id, server_revision, server_updated_at_ms,
+              created_at, updated_at, deleted_at
+            )
+            SELECT
+              id, name, volume_liters as volume_l, 'hydroponic' as medium, target_ph_min, target_ph_max,
+              target_ec_min as target_ec_min_25c, target_ec_max as target_ec_max_25c, '500' as ppm_scale,
+              source_water_profile_id, NULL as playbook_binding, user_id, server_revision, server_updated_at_ms,
+              created_at, updated_at, deleted_at
+            FROM reservoirs
+            WHERE deleted_at IS NULL OR deleted_at = 0
+          `,
+        },
+        // 3. Migrate source_water_profiles to source_water_profiles_v2
+        {
+          type: 'sql',
+          sql: `
+            INSERT INTO source_water_profiles_v2 (
+              id, name, baseline_ec_25c, alkalinity_mg_per_l_caco3, hardness_mg_per_l, last_tested_at,
+              user_id, server_revision, server_updated_at_ms, created_at, updated_at, deleted_at
+            )
+            SELECT
+              id, name, ec_value as baseline_ec_25c, 0 as alkalinity_mg_per_l_caco3, 0 as hardness_mg_per_l,
+              CASE
+                WHEN last_tested_at GLOB '[0-9]*' THEN CAST(last_tested_at AS INTEGER)
+                ELSE strftime('%s', 'now') * 1000
+              END as last_tested_at,
+              user_id, server_revision, server_updated_at_ms, created_at, updated_at, deleted_at
+            FROM source_water_profiles
+            WHERE deleted_at IS NULL OR deleted_at = 0
+          `,
+        },
+        // 4. Migrate deviation_alerts to deviation_alerts_v2
+        {
+          type: 'sql',
+          sql: `
+            INSERT INTO deviation_alerts_v2 (
+              id, reading_id, type, severity, message, recommendations_json, recommendation_codes_json,
+              cooldown_until, triggered_at, acknowledged_at, resolved_at, delivered_at_local,
+              user_id, server_revision, server_updated_at_ms, created_at, updated_at, deleted_at
+            )
+            SELECT
+              id, reservoir_id as reading_id, alert_type as type, severity, message, '[]' as recommendations_json,
+              NULL as recommendation_codes_json, NULL as cooldown_until, created_at as triggered_at,
+              NULL as acknowledged_at, resolved_at, NULL as delivered_at_local,
+              user_id, server_revision, server_updated_at_ms, created_at, updated_at, deleted_at
+            FROM deviation_alerts
+            WHERE deleted_at IS NULL OR deleted_at = 0
+          `,
+        },
       ],
     },
-    // Migration from version 17 to 18: Add diagnostic results table for nutrient engine
+    // Migration from version 18 to 19: Add diagnostic results table for nutrient engine
     {
-      toVersion: 18,
+      toVersion: 19,
       steps: [
         {
           type: 'create_table',

@@ -167,7 +167,7 @@ describe('Nutrient Engine Models', () => {
       tableNames.forEach((name) => {
         expect(name).toBeTruthy();
         expect(typeof name).toBe('string');
-        expect(name).toMatch(/^[a-z_]+$/); // snake_case validation
+        expect(name).toMatch(/^[a-z0-9_]+$/); // snake_case validation with numbers
       });
 
       expect(tableNames).toHaveLength(7);

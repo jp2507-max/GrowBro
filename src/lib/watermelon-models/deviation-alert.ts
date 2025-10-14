@@ -66,7 +66,7 @@ export class DeviationAlertModel extends Model {
   @date('deleted_at') deletedAt?: Date;
 
   // Relations
-  @relation('ph_ec_readings', 'reading_id')
+  @relation('ph_ec_readings_v2', 'reading_id')
   reading!: Relation<PhEcReadingModel>;
 
   /**

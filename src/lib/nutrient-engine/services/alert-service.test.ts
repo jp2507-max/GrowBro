@@ -32,7 +32,7 @@ beforeEach(async () => {
   // Create test reservoir
   reservoir = await db.write(async () => {
     return db
-      .get<ReservoirModel>('reservoirs')
+      .get<ReservoirModel>('reservoirs_v2')
       .create((res: ReservoirModel) => {
         res.name = 'Test Reservoir';
         res.volumeL = 20;
@@ -48,7 +48,7 @@ beforeEach(async () => {
   // Create test reading (within range)
   reading = await db.write(async () => {
     return db
-      .get<PhEcReadingModel>('ph_ec_readings')
+      .get<PhEcReadingModel>('ph_ec_readings_v2')
       .create((r: PhEcReadingModel) => {
         r.reservoirId = reservoir.id;
         r.measuredAt = Date.now();
@@ -70,7 +70,7 @@ afterEach(async () => {
 
     // Clean up any alerts
     const alerts = await db
-      .get<DeviationAlertModel>('deviation_alerts')
+      .get<DeviationAlertModel>('deviation_alerts_v2')
       .query()
       .fetch();
     await Promise.all(
@@ -91,7 +91,7 @@ describe('evaluateAndTriggerAlert', () => {
     // Create older readings showing persistent high pH
     const oldReading1 = await db.write(async () => {
       return db
-        .get<PhEcReadingModel>('ph_ec_readings')
+        .get<PhEcReadingModel>('ph_ec_readings_v2')
         .create((r: PhEcReadingModel) => {
           r.reservoirId = reservoir.id;
           r.measuredAt = now - 8 * 60_000; // 8 minutes ago
@@ -106,7 +106,7 @@ describe('evaluateAndTriggerAlert', () => {
 
     const oldReading2 = await db.write(async () => {
       return db
-        .get<PhEcReadingModel>('ph_ec_readings')
+        .get<PhEcReadingModel>('ph_ec_readings_v2')
         .create((r: PhEcReadingModel) => {
           r.reservoirId = reservoir.id;
           r.measuredAt = now - 6 * 60_000; // 6 minutes ago
@@ -122,7 +122,7 @@ describe('evaluateAndTriggerAlert', () => {
     // Create current reading with high pH
     const highPhReading = await db.write(async () => {
       return db
-        .get<PhEcReadingModel>('ph_ec_readings')
+        .get<PhEcReadingModel>('ph_ec_readings_v2')
         .create((r: PhEcReadingModel) => {
           r.reservoirId = reservoir.id;
           r.measuredAt = now;
@@ -164,7 +164,7 @@ describe('evaluateAndTriggerAlert', () => {
     // Create a single high reading without prior history
     const highReading = await db.write(async () => {
       return db
-        .get<PhEcReadingModel>('ph_ec_readings')
+        .get<PhEcReadingModel>('ph_ec_readings_v2')
         .create((r: PhEcReadingModel) => {
           r.reservoirId = reservoir.id;
           r.measuredAt = now;

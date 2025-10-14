@@ -40,5 +40,6 @@ export class ReservoirEventModel extends Model {
   @date('deleted_at') deletedAt?: Date;
 
   // Relations
-  @relation('reservoirs', 'reservoir_id') reservoir!: Relation<ReservoirModel>;
+  @relation('reservoirs_v2', 'reservoir_id')
+  reservoir!: Relation<ReservoirModel>;
 }
