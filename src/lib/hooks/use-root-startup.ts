@@ -253,9 +253,7 @@ export function useRootStartup(
       setDeletionAdapter(createSupabaseDeletionAdapter());
     } catch {}
     const run = () => {
-      try {
-        retentionWorker.runNow();
-      } catch {}
+      void retentionWorker.runNow().catch(() => {});
     };
     // initial run at app start
     run();

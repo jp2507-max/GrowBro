@@ -13,6 +13,31 @@ import type { SeriesModel } from '@/lib/watermelon-models/series';
 import type { TaskModel } from '@/lib/watermelon-models/task';
 
 /**
+ * Parses and cleans task metadata by handling both string and object formats,
+ * removing the needsReview flag, and providing error recovery for malformed JSON.
+ */
+function parseAndCleanTaskMetadata(
+  taskRec: TaskModel,
+  tableName: string
+): Record<string, unknown> {
+  let metadata;
+  try {
+    metadata =
+      typeof taskRec.metadata === 'string'
+        ? JSON.parse(taskRec.metadata)
+        : taskRec.metadata;
+  } catch (parseError) {
+    console.error(
+      `Failed to parse metadata for task ${taskRec.id} in table ${tableName}:`,
+      parseError
+    );
+    metadata = typeof taskRec.metadata === 'string' ? {} : taskRec.metadata;
+  }
+  delete metadata.needsReview;
+  return metadata;
+}
+
+/**
  * Table names that are valid for sync conflict analytics events
  */
 type ValidSyncConflictTableName =
@@ -127,28 +152,10 @@ export function useConflictResolution() {
                   (typedRec as TaskModel).metadata
                 ) {
                   const taskRec = typedRec as TaskModel;
-                  // Handle both string (serialized) and object metadata formats
-                  let metadata;
-                  try {
-                    metadata =
-                      typeof taskRec.metadata === 'string'
-                        ? JSON.parse(taskRec.metadata)
-                        : taskRec.metadata;
-                  } catch (parseError) {
-                    console.error(
-                      `Failed to parse metadata for task ${taskRec.id} in table ${conflict.tableName}:`,
-                      parseError
-                    );
-                    // Recover by treating metadata as empty object or fallback to existing object
-                    metadata =
-                      typeof taskRec.metadata === 'string'
-                        ? {}
-                        : taskRec.metadata;
-                  }
-                  // Remove the needsReview flag to indicate conflict is resolved
-                  delete metadata.needsReview;
-                  // Update both the generic record and typed record with cleaned metadata
-                  taskRec.metadata = metadata;
+                  taskRec.metadata = parseAndCleanTaskMetadata(
+                    taskRec,
+                    conflict.tableName
+                  );
                 }
               });
             } catch (error) {
@@ -184,25 +191,10 @@ export function useConflictResolution() {
                   (typedRec as TaskModel).metadata
                 ) {
                   const taskRec = typedRec as TaskModel;
-                  let metadata;
-                  try {
-                    metadata =
-                      typeof taskRec.metadata === 'string'
-                        ? JSON.parse(taskRec.metadata)
-                        : taskRec.metadata;
-                  } catch (parseError) {
-                    console.error(
-                      `Failed to parse metadata for task ${taskRec.id} in table ${conflict.tableName}:`,
-                      parseError
-                    );
-                    // Recover by treating metadata as empty object or fallback to existing object
-                    metadata =
-                      typeof taskRec.metadata === 'string'
-                        ? {}
-                        : taskRec.metadata;
-                  }
-                  delete metadata.needsReview;
-                  taskRec.metadata = metadata;
+                  taskRec.metadata = parseAndCleanTaskMetadata(
+                    taskRec,
+                    conflict.tableName
+                  );
                 }
               });
             } catch (error) {

@@ -1,5 +1,4 @@
 import * as FileSystem from 'expo-file-system';
-import { documentDirectory } from 'expo-file-system';
 import React, { useEffect, useState } from 'react';
 import { Alert, Share, Switch, Text, View } from 'react-native';
 
@@ -159,7 +158,12 @@ function PrivacyActions({
       const exportData = await generatePrivacyExportJson();
 
       // For large JSON exports, write to temporary file to avoid truncation
-      tempFileUri = `${documentDirectory}privacy-export-${Date.now()}.json`;
+      // Use the documentDirectory exposed on the FileSystem namespace. Some
+      // versions of the `expo-file-system` types don't declare these runtime
+      // constants, so cast to `any` to read them at runtime safely.
+      const fsAny = FileSystem as any;
+      const docDir = fsAny.documentDirectory ?? fsAny.cacheDirectory ?? '';
+      tempFileUri = `${docDir}privacy-export-${Date.now()}.json`;
       await FileSystem.writeAsStringAsync(tempFileUri, exportData);
 
       // Use Share API to let user save or share the export file

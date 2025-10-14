@@ -3,7 +3,11 @@ import React, { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Pressable, Text, View } from '@/components/ui';
-import type { PhEcReading, QualityFlag } from '@/lib/nutrient-engine/types';
+import type {
+  PhEcReading,
+  PpmScale,
+  QualityFlag,
+} from '@/lib/nutrient-engine/types';
 import { QualityFlag as QualityFlagEnum } from '@/lib/nutrient-engine/types';
 import {
   ecToPpm,
@@ -22,7 +26,7 @@ type ReadingListItem = {
   readonly ph: number;
   readonly ec25c: number;
   readonly tempC: number;
-  readonly ppmScale: string;
+  readonly ppmScale: PpmScale;
   readonly qualityFlags: QualityFlag[];
   readonly measuredAt: number;
   readonly note?: string;
@@ -143,7 +147,7 @@ type MeasurementDisplayProps = {
 
 const MeasurementDisplay = memo(function MeasurementDisplay({
   item,
-}: MeasurementDisplayProps) {
+}: MeasurementDisplayProps): JSX.Element {
   const { t } = useTranslation();
 
   const dateStr = useMemo(
@@ -152,8 +156,8 @@ const MeasurementDisplay = memo(function MeasurementDisplay({
   );
 
   const ppmDisplay = useMemo(() => {
-    const ppm = ecToPpm(item.ec25c, item.ppmScale as '500' | '700');
-    return formatPpmWithScale(ppm, item.ppmScale as '500' | '700');
+    const ppm = ecToPpm(item.ec25c, item.ppmScale);
+    return formatPpmWithScale(ppm, item.ppmScale);
   }, [item.ec25c, item.ppmScale]);
 
   return (
@@ -201,7 +205,7 @@ type QualityIndicatorProps = {
 
 const QualityIndicator = memo(function QualityIndicator({
   item,
-}: QualityIndicatorProps) {
+}: QualityIndicatorProps): JSX.Element {
   const { t } = useTranslation();
 
   const hasQualityFlags = item.qualityFlags.length > 0;
@@ -229,7 +233,7 @@ type QualityFlagDetailsProps = {
 
 const QualityFlagDetails = memo(function QualityFlagDetails({
   qualityFlags,
-}: QualityFlagDetailsProps) {
+}: QualityFlagDetailsProps): JSX.Element | null {
   const { t } = useTranslation();
 
   if (qualityFlags.length === 0) return null;
@@ -259,7 +263,7 @@ QualityFlagDetails.displayName = 'QualityFlagDetails';
 const ReadingListItemComponent = memo(function ReadingListItemComponent({
   item,
   onSelect,
-}: ReadingListItemProps) {
+}: ReadingListItemProps): JSX.Element {
   const handlePress = useCallback(() => {
     onSelect?.(item.source);
   }, [item.source, onSelect]);

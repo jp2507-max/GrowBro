@@ -26,10 +26,6 @@ jest.mock('expo-file-system', () => ({
   deleteAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('expo-constants', () => ({
-  documentDirectory: 'file:///mock/document/',
-}));
-
 jest.mock('@/lib/privacy-consent', () => {
   const actual = jest.requireActual('@/lib/privacy-consent');
   // Provide stable initial state and spyable setters
@@ -122,7 +118,7 @@ describe('PrivacySettings', () => {
     const { user } = setup(<PrivacySettings />);
     const shareSpy = jest
       .spyOn(Share, 'share')
-      .mockResolvedValue({ action: 'sharedAction' });
+      .mockResolvedValue({ action: Share.sharedAction });
 
     await user.press(screen.getByTestId('privacy-export-btn'));
 
@@ -169,7 +165,9 @@ describe('PrivacySettings', () => {
   test('export button does not show alert on user cancellation', async () => {
     const { user } = setup(<PrivacySettings />);
     const alertSpy = jest.spyOn(Alert, 'alert');
-    jest.spyOn(Share, 'share').mockResolvedValue({ action: 'dismissedAction' });
+    jest
+      .spyOn(Share, 'share')
+      .mockResolvedValue({ action: Share.dismissedAction });
 
     await user.press(screen.getByTestId('privacy-export-btn'));
 
