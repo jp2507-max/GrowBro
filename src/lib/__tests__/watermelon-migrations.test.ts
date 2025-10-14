@@ -12,15 +12,15 @@ jest.setTimeout(10000);
 
 console.log('[test-debug] watermelon-migrations test file loaded');
 
-const getTableByName = (tables: any[], name: string) => {
+const getTableByName = (tables: any[], name: string): any | undefined => {
   return tables.find((t) => t.name === name);
 };
 
-const getColumnByName = (columns: any[], name: string) => {
+const getColumnByName = (columns: any[], name: string): any | undefined => {
   return columns.find((c: any) => c.name === name);
 };
 
-const getMigrationByVersion = (version: number) => {
+const getMigrationByVersion = (version: number): any | undefined => {
   return (migrations as any).migrations.find(
     (m: any) => m.toVersion === version
   );
@@ -38,8 +38,8 @@ const testOccurrenceOverridesTable = () => {
 };
 
 const testSchemaVersion = () => {
-  it('has schema version 18', () => {
-    expect((schema as any).version).toBe(18);
+  it('has schema version 19', () => {
+    expect((schema as any).version).toBe(19);
   });
 };
 

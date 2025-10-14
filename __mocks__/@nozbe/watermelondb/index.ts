@@ -1,6 +1,14 @@
 // Main WatermelonDB mock for Jest with simple in-memory persistence
 import SQLiteAdapterMock from './adapters/sqlite';
 
+// Mock model interface for methods that use 'this'
+interface MockModel {
+  update(callback: (model: this) => void | Promise<void>): Promise<void>;
+  deliveredAtLocal?: number;
+  acknowledgedAt?: number;
+  resolvedAt?: number;
+}
+
 // Utilities
 let idCounter = 0;
 function makeId(prefix: string): string {
@@ -25,6 +33,8 @@ type WhereCond =
   | { key: string; value: any }
   | { key: string; $oneOf: any[] }
   | { key: string; $notEq: any }
+  | { key: string; $gte: any }
+  | { key: string; $lte: any }
   | { key: string; $like: string };
 
 // Minimal Model base class so modelClasses can extend it without side effects
@@ -40,6 +50,12 @@ export const Q = {
     }
     if (typeof value === 'object' && value && '$notEq' in value) {
       return { key, $notEq: value.$notEq };
+    }
+    if (typeof value === 'object' && value && '$gte' in value) {
+      return { key, $gte: value.$gte };
+    }
+    if (typeof value === 'object' && value && '$lte' in value) {
+      return { key, $lte: value.$lte };
     }
     if (typeof value === 'object' && value && '$like' in value) {
       return { key, $like: value.$like };
@@ -57,6 +73,9 @@ export const Q = {
   },
   gte(value: any): { $gte: any } {
     return { $gte: value };
+  },
+  lte(value: any): { $lte: any } {
+    return { $lte: value };
   },
   sortBy(
     key: string,
@@ -104,6 +123,8 @@ function filterResults(store: any[], filters: WhereCond[]): any[] {
         return (row as any)[key] !== c.$notEq;
       } else if ('$gte' in c) {
         return (row as any)[key] >= c.$gte;
+      } else if ('$lte' in c) {
+        return (row as any)[key] <= c.$lte;
       } else if ('$like' in c) {
         // For metadata field, convert object to JSON string for like comparison
         let rowValue = (row as any)[key];
@@ -435,19 +456,25 @@ function buildDeviationAlertsCollection() {
     });
 
     // Add model-specific methods
-    rec.markDeliveredLocally = jest.fn().mockImplementation(async function () {
+    rec.markDeliveredLocally = jest.fn().mockImplementation(async function (
+      this: MockModel
+    ) {
       await this.update(() => {
         this.deliveredAtLocal = Date.now();
       });
     });
 
-    rec.acknowledge = jest.fn().mockImplementation(async function () {
+    rec.acknowledge = jest.fn().mockImplementation(async function (
+      this: MockModel
+    ) {
       await this.update(() => {
         this.acknowledgedAt = Date.now();
       });
     });
 
-    rec.resolve = jest.fn().mockImplementation(async function () {
+    rec.resolve = jest.fn().mockImplementation(async function (
+      this: MockModel
+    ) {
       await this.update(() => {
         this.resolvedAt = Date.now();
       });

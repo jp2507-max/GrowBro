@@ -361,8 +361,8 @@ function modelToAlert(model: DeviationAlertModel): DeviationAlert {
   return {
     id: model.id,
     readingId: model.readingId,
-    type: model.type as any,
-    severity: model.severity as any,
+    type: model.type as DeviationAlert['type'],
+    severity: model.severity as DeviationAlert['severity'],
     message: model.message,
     recommendations: model.recommendations,
     recommendationCodes: model.recommendationCodes,
