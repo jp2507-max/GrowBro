@@ -62,7 +62,7 @@ describe('deletion-manager - deleteAccountInApp', () => {
       estimatedCompletion: '2025-09-01T00:00:00Z',
     });
 
-    const audit = getAuditLog();
+    const audit = await getAuditLog();
     expect(audit).toHaveLength(1);
     expect(audit[0]).toMatchObject({
       action: 'account-delete-request',
@@ -85,7 +85,7 @@ describe('deletion-manager - deleteAccountInApp', () => {
       body: { reason: 'user_initiated_in_app' },
     });
 
-    const audit = getAuditLog();
+    const audit = await getAuditLog();
     expect(audit).toHaveLength(1);
     expect(audit[0]?.details).toEqual(
       expect.objectContaining({ source: 'in_app' })
@@ -108,7 +108,7 @@ describe('deletion-manager - data export and web deletion', () => {
 
     expect(exportResult.jobId).toBe('job-123');
 
-    const audit = getAuditLog();
+    const audit = await getAuditLog();
     expect(
       audit.some(
         (entry) => entry.details?.reason === 'data_export_before_delete'
@@ -129,7 +129,7 @@ describe('deletion-manager - data export and web deletion', () => {
       estimatedCompletion: '2025-09-01T00:00:00Z',
     });
 
-    const audit = getAuditLog();
+    const audit = await getAuditLog();
     expect(audit).toHaveLength(1);
     expect(audit[0]).toMatchObject({
       details: expect.objectContaining({

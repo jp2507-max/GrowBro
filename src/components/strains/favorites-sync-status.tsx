@@ -1,7 +1,6 @@
 /**
  * Sync status indicator for favorites
  */
-/* eslint-disable max-lines-per-function */
 
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';

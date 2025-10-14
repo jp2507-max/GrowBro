@@ -1,5 +1,5 @@
 import type { TOptions } from 'i18next';
-import i18n, { dir } from 'i18next';
+import i18n, { dir, exists as i18nextExists } from 'i18next';
 import memoize from 'lodash.memoize';
 import { useCallback } from 'react';
 import { I18nManager, NativeModules, Platform } from 'react-native';
@@ -63,6 +63,23 @@ export const translate = memoize(
     return `${lang}:${base}`;
   }
 );
+
+/**
+ * Translates dynamic keys that cannot be statically verified at compile time.
+ * Performs runtime validation to ensure the key exists before delegating to the
+ * type-safe translate function. Logs a warning in development if the key is not found.
+ */
+export function translateDynamic(key: string, options = undefined): string {
+  // Runtime check for key existence
+  // prefer the named `exists` import to satisfy eslint `import/no-named-as-default-member`
+  if (__DEV__ && !i18nextExists(key)) {
+    console.warn(
+      `[i18n] Missing translation key: "${key}". Consider adding it to the translation files.`
+    );
+  }
+  // Delegate to the type-safe translate function with a type assertion
+  return translate(key as TxKeyPath, options);
+}
 
 export const changeLanguage = (lang: Language) => {
   // eslint-disable-next-line import/no-named-as-default-member

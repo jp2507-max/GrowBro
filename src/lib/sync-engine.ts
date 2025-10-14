@@ -4,11 +4,6 @@ import { getItem, setItem } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { computeBackoffMs } from '@/lib/sync/backoff';
 import {
-  buildConflict,
-  type Conflict,
-  createConflictResolver,
-} from '@/lib/sync/conflict-resolver';
-import {
   logEvent,
   recordDuration,
   recordPayloadSize,
@@ -17,6 +12,11 @@ import {
   categorizeSyncError,
   SyncSchemaMismatchError,
 } from '@/lib/sync/sync-errors';
+import {
+  emitSyncPerformanceSnapshot,
+  recordTotalDuration,
+  type SyncTrigger,
+} from '@/lib/sync/sync-performance-metrics';
 import { getSyncState } from '@/lib/sync/sync-state';
 import { TaskNotificationService } from '@/lib/task-notifications';
 import { database } from '@/lib/watermelon';
@@ -74,6 +74,11 @@ export type SyncResult = {
   pushed: number;
   applied: number;
   serverTimestamp: number | null;
+  attempts?: number;
+};
+
+export type SyncRunOptions = {
+  trigger?: SyncTrigger;
 };
 
 const SYNC_TABLES: TableName[] = [
@@ -820,32 +825,13 @@ function determineServerAuthorityWithRecordCheck(
   return serverIsAuthoritative;
 }
 
-function detectAndLogConflicts(
-  resolver: any,
-  table: TableName,
-  recordInfo: { existing: any; payload: any }
-): void {
-  const localSnapshot: Record<string, unknown> = { ...recordInfo.existing };
-
-  try {
-    const conflict: Conflict = buildConflict({
-      tableName: table,
-      recordId: recordInfo.existing.id,
-      localRecord: localSnapshot,
-      remoteRecord: recordInfo.payload,
-    });
-    if (conflict.conflictFields.length > 0) {
-      resolver.logConflict(conflict);
-    }
-  } catch {}
-}
-
 async function handleUpdate(
   table: TableName,
   existing: any,
   payload: any
 ): Promise<void> {
-  const resolver = createConflictResolver();
+  // Conflict resolver disabled - using direct resolution
+  // const resolver = createConflictResolver();
 
   // Pre-compute all values outside the synchronous update callback
   const { localRev, serverRev, localServerTs, serverServerTs } =
@@ -856,8 +842,8 @@ async function handleUpdate(
     { localRev, serverRev, localServerTs, serverServerTs }
   );
 
-  // Detect conflicts outside the update callback
-  detectAndLogConflicts(resolver, table, { existing, payload });
+  // Detect conflicts outside the update callback (disabled)
+  // detectAndLogConflicts(resolver, table, { existing, payload });
 
   // Perform synchronous update
   await existing.update((rec: any) => {
@@ -1176,17 +1162,20 @@ export async function synchronize(): Promise<SyncResult> {
 }
 
 export async function runSyncWithRetry(
-  maxAttempts: number = 5
+  maxAttempts: number = 5,
+  options: SyncRunOptions = {}
 ): Promise<SyncResult> {
   // Guard: return early if sync already in flight
   if (isSyncInFlight()) {
     throw new Error('sync already in flight');
   }
 
+  const trigger: SyncTrigger = options.trigger ?? 'auto';
   let lastError: unknown = null;
   getSyncState().setSyncInFlight(true);
   try {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const attemptStart = nowMs();
       try {
         const result = await synchronize();
         // Invalidate only relevant keys to avoid unnecessary refetches
@@ -1202,7 +1191,14 @@ export async function runSyncWithRetry(
           ]);
         } catch {}
         await setItem('sync.lastSuccessAt', nowMs());
-        return result;
+        const durationMs = nowMs() - attemptStart;
+        recordTotalDuration(durationMs);
+        await emitSyncPerformanceSnapshot({
+          trigger,
+          attempt: attempt + 1,
+          totalDurationMs: durationMs,
+        });
+        return { ...result, attempts: attempt + 1 };
       } catch (err) {
         lastError = err;
         const categorized = categorizeSyncError(err);

@@ -1,4 +1,5 @@
 import { NoopAnalytics } from '@/lib/analytics';
+import { type TABLE_NAMES } from '@/lib/sync/types';
 
 /**
  * Centralized sync analytics tracking
@@ -24,6 +25,7 @@ export async function trackSyncLatency(
 ): Promise<void> {
   try {
     await NoopAnalytics.track('sync_latency_ms', {
+      stage,
       ms: Math.round(durationMs),
     });
   } catch (error) {
@@ -70,13 +72,30 @@ export async function trackSyncSuccess(params: {
  * Track conflict detection and resolution
  */
 export async function trackConflict(params: {
-  tableName: string;
+  tableName: (typeof TABLE_NAMES)[keyof typeof TABLE_NAMES];
   conflictFields: string[];
   resolution?: 'keep-local' | 'accept-server' | 'dismissed';
 }): Promise<void> {
   try {
+    const syncTableMap: Record<
+      string,
+      | 'series'
+      | 'tasks'
+      | 'occurrence_overrides'
+      | 'harvests'
+      | 'inventory'
+      | 'harvest_audits'
+    > = {
+      series: 'series',
+      tasks: 'tasks',
+      occurrence_overrides: 'occurrence_overrides',
+      harvests: 'harvests',
+      inventory: 'inventory',
+      harvest_audits: 'harvest_audits',
+    };
+    const tableName = syncTableMap[params.tableName] || 'tasks';
     await NoopAnalytics.track('sync_conflict', {
-      table: params.tableName as 'tasks' | 'series' | 'occurrence_overrides',
+      table: tableName,
       count: params.conflictFields.length,
     });
   } catch (error) {

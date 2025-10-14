@@ -96,9 +96,11 @@
   "common": {
     "back": "Zurück",
     "cancel": "Abbrechen",
+    "notSelected": "nicht ausgewählt",
     "null": "null",
     "ok": "OK",
-    "retry": "Erneut versuchen"
+    "retry": "Erneut versuchen",
+    "selected": "ausgewählt"
   },
   "community": {
     "create_post": "Beitrag erstellen",
@@ -442,6 +444,7 @@
       "undo_expired": "Rückgängig-Zeitfenster abgelaufen. Verwende stattdessen Phase zurücksetzen.",
       "validation": {
         "description": "Bitte korrigiere die unten stehenden Fehler und versuche es erneut.",
+        "strainNameRequired": "Stammname ist erforderlich",
         "title": "Validierungsfehler"
       }
     },
@@ -709,6 +712,10 @@
       "viewProfile": "Profil ansehen"
     },
     "channels": {
+      "calibrationReminders": {
+        "description": "Erinnerungen zur Kalibrierung von pH- und EC-Messgeräten für genaue Messungen.",
+        "name": "Kalibrierungs-Erinnerungen"
+      },
       "communityInteractions": {
         "description": "Antworten, Erwähnungen und Moderationshinweise aus der Community.",
         "name": "Community-Interaktionen"
@@ -716,6 +723,10 @@
       "communityLikes": {
         "description": "Likes und Reaktionen auf deine Updates.",
         "name": "Community-Likes"
+      },
+      "cultivationAlerts": {
+        "description": "Sofortwarnungen, wenn pH- oder EC-Werte außerhalb des Zielbereichs liegen.",
+        "name": "pH/EC-Warnungen"
       },
       "cultivationReminders": {
         "description": "Aufgaben-Erinnerungen sowie Trocknungs- und Aushärtungswarnungen.",
@@ -783,6 +794,206 @@
       "body_one": "Du hast {{count}} überfällige Aufgabe. Hol sie nach, um im Plan zu bleiben.",
       "body_other": "Du hast {{count}} überfällige Aufgaben. Hol sie nach, um im Plan zu bleiben.",
       "title": "Aufgaben warten auf dich"
+    }
+  },
+  "nutrient": {
+    "add_first_reading": "Erste Messung hinzufügen",
+    "apply_learnings": "Erkenntnisse anwenden",
+    "atc_label": "Temperaturkompensiert (ATC)",
+    "cal_stale_warning": "Kalibrierung möglicherweise veraltet",
+    "chart": {
+      "eventMarkersNote": "{{count}} Ereignis-Marker angezeigt",
+      "noData": "Noch keine Messwerte",
+      "startLogging": "Beginne mit pH/EC-Messungen, um Trends zu sehen"
+    },
+    "diagnostics": {
+      "actions": {
+        "N_DEFICIENCY_FEED": "Stickstoffgabe erhöhen",
+        "N_DEFICIENCY_MONITOR": "In 48 Std. erneut prüfen",
+        "PH_DRIFT_BUFFER": "Puffer dosieren",
+        "PH_DRIFT_MONITOR": "Monitoring erhöhen",
+        "TOXICITY_DILUTE": "Reservoir verdünnen",
+        "TOXICITY_MONITOR": "In 12 Std. erneut prüfen"
+      },
+      "aiConfidence": "KI-basiert",
+      "causes": {
+        "highAlkalinity": "Hohe Alkalinität im Ausgangswasser verursacht pH-Drift",
+        "insufficientNitrogen": "Zu wenig verfügbarer Stickstoff in den letzten Fütterungen",
+        "solutionTooStrong": "Nährlösung ist zu konzentriert"
+      },
+      "community": {
+        "classification": "Erkanntes Problem",
+        "confidence": "Konfidenz",
+        "footer": "Was denkst du? Jeder Rat ist willkommen!",
+        "header": "🌱 Brauche Hilfe bei Pflanzendiagnose",
+        "recommendations": "Vorgeschlagene Maßnahmen:",
+        "symptoms": "Symptome:"
+      },
+      "confidenceBreakdown": "Konfidenz-Aufschlüsselung",
+      "disclaimers": {
+        "aiOnlyPrimary": "Hinweise stammen ausschließlich von der KI. Bitte mit Messwerten oder Community-Rückmeldungen abgleichen.",
+        "considerSecondOpinion": "Geringe Sicherheit. Bitte hole eine zweite Einschätzung aus der Community ein.",
+        "lowConfidence": "Diagnosesicherheit liegt unter dem definierten Schwellenwert.",
+        "title": "⚠️ Hinweise"
+      },
+      "feedbackQuestion": "War diese Diagnose hilfreich?",
+      "feedbackThanks": "Danke für dein Feedback!",
+      "getSecondOpinion": "Zweite Meinung aus der Community holen",
+      "helpful": "Hilfreich",
+      "issueTypes": {
+        "deficiency": "Nährstoffmangel",
+        "lockout": "Nährstoffblockade",
+        "ph_drift": "pH-Drift",
+        "toxicity": "Nährstofftoxizität"
+      },
+      "notHelpful": "Nicht hilfreich",
+      "nutrient": "Nährstoff",
+      "priorityHigh": "Hohe Priorität",
+      "rationale": {
+        "aiBelowThreshold": "KI-Hypothese unterhalb der Überschreibungs-Schwelle; Regelhinweise bleiben aktiv.",
+        "ecAboveTarget": "EC-Verlauf liegt über dem Zielbereich des Reservoirs.",
+        "ecBelowTarget": "EC-Verlauf liegt unter dem Zielbereich des Reservoirs.",
+        "highAlkalinity": "Quellwasser weist hohe Alkalinität auf.",
+        "phPersistentlyHigh": "pH lag wiederholt über dem Zielband des Reservoirs.",
+        "tipBurnObserved": "Verbrennungserscheinungen an Blattspitzen erkannt.",
+        "title": "💡 Begründung",
+        "yellowingLowerLeaves": "Vergilbung an unteren Blättern festgestellt."
+      },
+      "recommendations": {
+        "bufferAlkalinity": "Füge einen Puffer hinzu, um die Alkalinität des Ausgangswassers zu neutralisieren.",
+        "diluteReservoir": "Verdünne das Reservoir mit ausgewogenem Wasser, um EC zu senken.",
+        "increaseMonitoring": "Überwache pH/EC engmaschiger, bis sich die Werte stabilisieren.",
+        "monitor48h": "Prüfe nach 48 Stunden erneut, um die Entwicklung zu bewerten.",
+        "nitrogenFeed": "Erhöhe die Stickstoffzufuhr gemäß dem Defizit-Playbook.",
+        "retest12h": "Prüfe nach 12 Stunden erneut, um die Korrektur zu bestätigen.",
+        "title": "Empfehlungen"
+      },
+      "resolution": {
+        "cancel": "Abbrechen",
+        "description": "Dokumentiere, wie du dieses Problem behoben hast. Das hilft, zukünftige Empfehlungen zu verbessern.",
+        "error": "Fehler beim Markieren als gelöst. Bitte versuche es erneut.",
+        "notesLabel": "Lösungsnotizen (optional)",
+        "notesPlaceholder": "Was hast du gemacht? Was hat funktioniert?",
+        "resolve": "Als gelöst markieren",
+        "title": "Als gelöst markieren"
+      },
+      "rulesConfidence": "Regelbasiert",
+      "severity": {
+        "mild": "Leicht",
+        "moderate": "Mäßig",
+        "severe": "Schwer"
+      },
+      "threshold": "Überschreibungsschwelle"
+    },
+    "ec": "EC",
+    "ecTrend": "EC-Verlauf",
+    "ec_at_temp": "EC@{{temp}}°C",
+    "ec_label": "EC",
+    "event": {
+      "ecDelta": "EC-Änderung",
+      "ecDeltaHint": "Erwartete EC-Änderung nach diesem Ereignis",
+      "logEvent": "Ereignis protokollieren",
+      "note": "Notizen",
+      "notePlaceholder": "Füge Notizen zu diesem Ereignis hinzu...",
+      "phDelta": "pH-Änderung",
+      "phDeltaHint": "Erwartete pH-Änderung nach diesem Ereignis",
+      "type": "Ereignistyp"
+    },
+    "eventTypes": {
+      "addNutrient": "Nährstoffe hinzufügen",
+      "change": "Reservoir-Wechsel",
+      "dilute": "Verdünnen",
+      "fill": "Auffüllen",
+      "phDown": "pH senken",
+      "phUp": "pH erhöhen"
+    },
+    "loading_readings": "Lade Messwerte...",
+    "medium": {
+      "coco": "Coco",
+      "hydro": "Hydroponik",
+      "soil": "Erde",
+      "soilless": "Erdlos"
+    },
+    "mediumOptions": {
+      "coco": "Coco",
+      "hydro": "Hydro",
+      "peat": "Torf",
+      "soil": "Erde",
+      "soilless": "Erdlos"
+    },
+    "no_atc_warning": "Keine ATC (automatische Temperaturkompensation)",
+    "no_events_description": "Beginne Reservoir-Ereignisse zu protokollieren, um deine Änderungen zu verfolgen",
+    "no_events_title": "Keine Ereignisse aufgezeichnet",
+    "no_readings": "Keine Messwerte verfügbar",
+    "performance_report": "Leistungsbericht",
+    "ph": "pH",
+    "phTrend": "pH-Verlauf",
+    "ppm": "PPM",
+    "ppm_scale_label": "PPM-Skala",
+    "reservoir": {
+      "max": "Max",
+      "medium": "Anbaumedium",
+      "min": "Min",
+      "name": "Reservoir-Name",
+      "namePlaceholder": "z.B. Haupttank",
+      "noReservoirs": "Keine Reservoirs konfiguriert",
+      "selectReservoir": "Reservoir auswählen",
+      "targetEc": "EC-Zielbereich",
+      "targetPh": "pH-Zielbereich",
+      "validation": {
+        "nameRequired": "Reservoir-Name ist erforderlich"
+      },
+      "volume": "Volumen (L)"
+    },
+    "save_reading": "Messung speichern",
+    "start_logging_ph_ec": "Starte pH/EC-Messungen",
+    "targetMax": "Max",
+    "targetMin": "Min",
+    "targetRange": "Zielbereich",
+    "targetRanges": "Zielbereiche",
+    "temp_high_warning": "Temperatur zu hoch",
+    "timeRange": {
+      "30days": "30 Tage",
+      "7days": "7 Tage",
+      "90days": "90 Tage",
+      "all": "Gesamtverlauf"
+    },
+    "time_range": "Zeitbereich",
+    "validation": {
+      "ecInvalidType": "EC muss eine Zahl sein",
+      "ecMax": "EC muss {{max}} oder weniger sein",
+      "ecMin": "EC muss mindestens {{min}} sein",
+      "ecRequired": "EC ist erforderlich",
+      "noteMaxLength": "Notiz darf höchstens {{max}} Zeichen lang sein",
+      "phInvalidType": "pH muss eine Zahl sein",
+      "phMax": "pH muss {{max}} oder weniger sein",
+      "phMin": "pH muss mindestens {{min}} sein",
+      "phRequired": "pH ist erforderlich",
+      "ppmScaleInvalid": "Ungültige PPM-Skala",
+      "ppmScaleRequired": "PPM-Skala ist erforderlich",
+      "tempInvalidType": "Temperatur muss eine Zahl sein",
+      "tempMax": "Temperatur muss {{max}} oder weniger sein",
+      "tempMin": "Temperatur muss mindestens {{min}} sein",
+      "tempRequired": "Temperatur ist erforderlich"
+    },
+    "viewChart": "Diagramm",
+    "viewList": "Liste",
+    "waterProfile": {
+      "form": {
+        "alkalinity": "Alkalinität (ppm CaCO3)",
+        "alkalinityHelper": "Misst die Karbonatpufferkapazität",
+        "baselineEc": "Basis-EC (mS/cm)",
+        "baselineEcHelper": "EC deines Ausgangswassers vor Zugabe von Nährstoffen",
+        "educationalNote": "ℹ️ Diese Werte helfen, Nährstoffempfehlungen für deine Wasserquelle zu optimieren",
+        "hardness": "Gesamthärte (ppm)",
+        "hardnessHelper": "Kalzium- und Magnesiumgehalt",
+        "name": "Profilname",
+        "namePlaceholder": "z.B. Leitungswasser",
+        "validation": {
+          "nameRequired": "Profilname ist erforderlich"
+        }
+      },
+      "title": "Wasserprofil"
     }
   },
   "onboarding": {
@@ -1151,6 +1362,10 @@
     "deleteAccountQueuedBodyNoEta": "Wir haben deine Löschung eingeplant. Du erhältst eine Bestätigung nach Abschluss.",
     "deleteAccountQueuedTitle": "Löschung geplant",
     "exportData": "Meine Daten exportieren",
+    "exportError": {
+      "message": "Wir konnten Ihren Datenexport nicht generieren. Bitte versuchen Sie es später erneut.",
+      "title": "Export fehlgeschlagen"
+    },
     "exportErrorBody": "Der Export konnte nicht eingereicht werden. Details: {{message}}",
     "exportErrorTitle": "Export fehlgeschlagen",
     "exportQueuedBody": "Wir haben den Datenexport eingeplant. Voraussichtlicher Abschluss: {{eta}}.",
@@ -1191,6 +1406,7 @@
     "about": "Über",
     "app_name": "App-Name",
     "arabic": "Arabisch",
+    "cancel": "Abbrechen",
     "english": "Englisch",
     "general": "Allgemein",
     "german": "Deutsch",
@@ -1205,6 +1421,7 @@
     "privacy_policy": "Datenschutzerklärung",
     "privacy_section": "Datenschutz & Daten",
     "rate": "Bewerten",
+    "save_changes": "Änderungen speichern",
     "share": "Teilen",
     "support": "Support",
     "support_us": "Unterstütze uns",
@@ -1562,6 +1779,10 @@
     "trichomeRatio": "Trichom-Verhältnis",
     "validationMax": "Muss {{max}} oder kleiner sein",
     "validationMin": "Muss {{min}} oder größer sein"
+  },
+  "units": {
+    "celsius": "°C",
+    "ms_per_cm": "mS/cm"
   },
   "welcome": "Willkommen bei der GrowBro App"
 }

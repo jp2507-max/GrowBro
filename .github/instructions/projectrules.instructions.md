@@ -17,7 +17,12 @@ Every time you choose to apply a rule(s), explicitly state the rule(s) in the ou
 - Prefer iteration and modularization over code duplication
 - Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError)
 - Ensure components are modular, reusable, and maintainable.
-- Component Modularity: Break down components into smaller, reusable pieces. Keep components focused on a single responsibility and shouldn't be more than 80 lines of code.
+- Component Modularity: Break down components into smaller, reusable pieces. Keep components focused on a single responsibility.
+- Function Length Guidelines (enforced by ESLint):
+  - **Global default**: ~110 lines (warning) - suitable for most React Native/Expo code
+  - **JSX-heavy components** (screens, modals, sheets): up to 150 lines (warning) - allows for complex layouts
+  - **Services, hooks, utilities**: 90 lines (error) - stricter for business logic
+  - **Tests, stories, generated files**: no limit - complexity varies
 - To install new packages use `npx expo install <package-name>`
 - Structure repository files as follows:
 

@@ -1,10 +1,9 @@
-/* eslint-disable max-lines-per-function */
 import React from 'react';
 import { ScrollView } from 'react-native';
 
 import { Button, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
-import type { Conflict } from '@/lib/sync/conflict-resolver';
+import type { LegacyConflict as Conflict } from '@/lib/sync/types';
 
 type ConflictResolutionModalProps = {
   conflict: Conflict;

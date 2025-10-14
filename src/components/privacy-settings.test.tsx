@@ -1,6 +1,8 @@
+import * as FileSystem from 'expo-file-system';
 import React from 'react';
-import { Alert } from 'react-native';
+import { Alert, Share } from 'react-native';
 
+import * as exportService from '@/lib/privacy/export-service';
 import * as privacyConsent from '@/lib/privacy-consent';
 import { cleanup, fireEvent, screen, setup } from '@/lib/test-utils';
 
@@ -11,6 +13,17 @@ import { PrivacySettings } from './privacy-settings';
 // keep Jest alive or cause hangs on Windows. We only need `translate` here.
 jest.mock('@/lib', () => ({
   translate: (key: string) => key,
+}));
+
+jest.mock('@/lib/privacy/export-service', () => ({
+  generatePrivacyExportJson: jest.fn(async () => '{"mock":"export"}'),
+}));
+
+jest.mock('expo-file-system', () => ({
+  __esModule: true,
+  documentDirectory: 'file:///mock/document/',
+  writeAsStringAsync: jest.fn().mockResolvedValue(undefined),
+  deleteAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('@/lib/privacy-consent', () => {
@@ -45,7 +58,7 @@ jest.mock('@/lib/privacy-consent', () => {
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  jest.restoreAllMocks();
   cleanup();
   // Reset mocked consent state between tests to prevent order dependency
   (privacyConsent as any).__resetConsent?.();
@@ -99,5 +112,69 @@ describe('PrivacySettings', () => {
     const alertSpy = jest.spyOn(Alert, 'alert');
     await user.press(screen.getByTestId('toggle-personalizedData-title'));
     expect(alertSpy).toHaveBeenCalled();
+  });
+
+  test('export button generates and shares privacy data', async () => {
+    const { user } = setup(<PrivacySettings />);
+    const shareSpy = jest
+      .spyOn(Share, 'share')
+      .mockResolvedValue({ action: Share.sharedAction });
+
+    await user.press(screen.getByTestId('privacy-export-btn'));
+
+    // Wait for async export to complete
+    await screen.findByTestId('privacy-export-btn');
+
+    expect(exportService.generatePrivacyExportJson).toHaveBeenCalled();
+    expect(FileSystem.writeAsStringAsync).toHaveBeenCalledWith(
+      expect.stringContaining('file:///mock/document/privacy-export-'),
+      '{"mock":"export"}'
+    );
+    expect(shareSpy).toHaveBeenCalledWith({
+      url: expect.stringContaining('file:///mock/document/privacy-export-'),
+      title: 'privacy.exportData',
+    });
+    expect(FileSystem.deleteAsync).toHaveBeenCalledWith(
+      expect.stringContaining('file:///mock/document/privacy-export-'),
+      { idempotent: true }
+    );
+  });
+
+  test('export button shows error alert on failure', async () => {
+    const { user } = setup(<PrivacySettings />);
+    const alertSpy = jest.spyOn(Alert, 'alert');
+    // Temporarily override the mock to reject
+    const originalMock =
+      exportService.generatePrivacyExportJson as jest.MockedFunction<
+        typeof exportService.generatePrivacyExportJson
+      >;
+    originalMock.mockRejectedValueOnce(new Error('Export failed'));
+
+    await user.press(screen.getByTestId('privacy-export-btn'));
+
+    // Wait for error handling
+    await screen.findByTestId('privacy-export-btn');
+
+    expect(alertSpy).toHaveBeenCalledWith(
+      'privacy.exportError.title',
+      'privacy.exportError.message',
+      [{ text: 'common.ok' }]
+    );
+  });
+
+  test('export button does not show alert on user cancellation', async () => {
+    const { user } = setup(<PrivacySettings />);
+    const alertSpy = jest.spyOn(Alert, 'alert');
+    jest
+      .spyOn(Share, 'share')
+      .mockResolvedValue({ action: Share.dismissedAction });
+
+    await user.press(screen.getByTestId('privacy-export-btn'));
+
+    // Wait for error handling
+    await screen.findByTestId('privacy-export-btn');
+
+    // The error should be logged but alert should not be shown
+    expect(alertSpy).not.toHaveBeenCalled();
   });
 });

@@ -17,6 +17,8 @@ declare module 'react-native-reanimated' {
   export const useAnimatedScrollHandler: (...args: any[]) => any;
   export const withSpring: (...args: any[]) => any;
   export const withTiming: (...args: any[]) => any;
+  export const withRepeat: (...args: any[]) => any;
+  export const withSequence: (...args: any[]) => any;
 
   // Layout / transition helpers (used in modal.tsx)
   export const FadeIn: any;

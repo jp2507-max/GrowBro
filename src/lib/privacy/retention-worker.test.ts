@@ -5,9 +5,10 @@ import {
   type RetentionRecord,
   retentionWorker,
 } from '@/lib/privacy/retention-worker';
+import { clearSecureConfigForTests } from '@/lib/privacy/secure-config-store';
 
-afterEach(() => {
-  // cleanup is automatic in our test setup; avoid manual cleanup per lint rule
+beforeEach(async () => {
+  await clearSecureConfigForTests();
 });
 
 function msDays(days: number): number {
@@ -15,7 +16,7 @@ function msDays(days: number): number {
 }
 
 describe('RetentionWorker: telemetry raw', () => {
-  test('purges expired telemetry_raw and records report', () => {
+  test('purges expired telemetry_raw and records report', async () => {
     const now = Date.now();
     const fresh: RetentionRecord = {
       id: 'a',
@@ -28,23 +29,23 @@ describe('RetentionWorker: telemetry raw', () => {
       createdAt: now - msDays(200),
     };
 
-    addRetentionRecord(fresh);
-    addRetentionRecord(old);
+    await addRetentionRecord(fresh);
+    await addRetentionRecord(old);
 
-    const report = retentionWorker.runNow();
+    const report = await retentionWorker.runNow();
     expect(report.entries).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ dataType: 'telemetry_raw', purgedCount: 1 }),
       ])
     );
 
-    const stored = getLastPurgeReport();
+    const stored = await getLastPurgeReport();
     expect(stored?.generatedAt).toBeGreaterThan(0);
 
     // Verify audit entries and chain integrity
-    const audit = getAuditLog();
+    const audit = await getAuditLog();
     expect(audit.length).toBeGreaterThan(0);
-    expect(validateAuditChain()).toBe(true);
+    expect(await validateAuditChain()).toBe(true);
   });
 });
 
@@ -78,10 +79,10 @@ describe('RetentionWorker: images', () => {
       dataType: 'training_images' as const,
       createdAt: now - msDays(366),
     };
-    addRetentionRecord(oldInf);
-    addRetentionRecord(oldTrn);
+    await addRetentionRecord(oldInf);
+    await addRetentionRecord(oldTrn);
 
-    const report = retentionWorker.runNow();
+    const report = await retentionWorker.runNow();
     expect(report.entries).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ dataType: 'inference_images' }),

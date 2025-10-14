@@ -80,7 +80,7 @@
   "cannabis": {
     "age_gate_body": "GrowBro offers educational cannabis guidance only. Confirm your age to continue.",
     "age_gate_day": "Day",
-    "age_gate_disclaimer": "GrowBro never provides shopping, ordering, pickup, or delivery features. Content remains educational only.",
+    "age_gate_disclaimer": "GrowBro does not include any commerce features. Content remains educational only.",
     "age_gate_error_invalid": "Enter a valid birth date to confirm your age.",
     "age_gate_error_underage": "GrowBro is limited to adults 18 or older.",
     "age_gate_month": "Month",
@@ -90,15 +90,17 @@
     "age_gate_title": "Confirm you are 18 or older",
     "age_gate_year": "Year",
     "educational_badge": "Educational only",
-    "educational_banner_body": "GrowBro does not facilitate sales, vendor links, pickup, or delivery. All features remain educational and policy compliant.",
+    "educational_banner_body": "GrowBro does not facilitate any commerce or transactions. All features remain educational and policy compliant.",
     "educational_banner_title": "Educational cannabis guidance only"
   },
   "common": {
     "back": "Back",
     "cancel": "Cancel",
+    "notSelected": "not selected",
     "null": "null",
     "ok": "OK",
-    "retry": "Retry"
+    "retry": "Retry",
+    "selected": "selected"
   },
   "community": {
     "create_post": "Create Post",
@@ -210,7 +212,7 @@
       "battery_optimization_title": "Battery Optimization Active",
       "cancel_failed": "Failed to cancel reminder",
       "channel_missing": "Notification channel not configured",
-      "delivery_failed": "Reminder was not delivered",
+      "delivery_failed": "Reminder was not sent",
       "doze_mode_active": "Device battery optimization may delay reminders",
       "exact_alarm_unavailable": "Exact alarm scheduling not available on this device",
       "fallback_description": "We'll show you a reminder when you open the app",
@@ -442,6 +444,7 @@
       "undo_expired": "Undo window expired. Use Revert Stage instead.",
       "validation": {
         "description": "Please correct the errors below and try again.",
+        "strainNameRequired": "Strain name is required",
         "title": "Validation Error"
       }
     },
@@ -709,6 +712,10 @@
       "viewProfile": "View profile"
     },
     "channels": {
+      "calibrationReminders": {
+        "description": "Reminders to recalibrate pH and EC meters for accurate measurements.",
+        "name": "Calibration reminders"
+      },
       "communityInteractions": {
         "description": "Replies, mentions, and moderation requests from the community.",
         "name": "Community interactions"
@@ -716,6 +723,10 @@
       "communityLikes": {
         "description": "Likes and reactions to your shared updates.",
         "name": "Community likes"
+      },
+      "cultivationAlerts": {
+        "description": "Immediate alerts when pH or EC readings are out of target range.",
+        "name": "pH/EC Alerts"
       },
       "cultivationReminders": {
         "description": "Task reminders and drying or curing alerts for your grow.",
@@ -783,6 +794,206 @@
       "body_one": "You have {{count}} overdue task. Catch up to keep your grow on track.",
       "body_other": "You have {{count}} overdue tasks. Catch up to keep your grow on track.",
       "title": "Tasks need attention"
+    }
+  },
+  "nutrient": {
+    "add_first_reading": "Add your first reading",
+    "apply_learnings": "Apply Learnings",
+    "atc_label": "Temperature Compensated (ATC)",
+    "cal_stale_warning": "Calibration may be stale",
+    "chart": {
+      "eventMarkersNote": "{{count}} event markers shown",
+      "noData": "No readings yet",
+      "startLogging": "Start logging pH/EC measurements to see trends"
+    },
+    "diagnostics": {
+      "actions": {
+        "N_DEFICIENCY_FEED": "Increase nitrogen feed",
+        "N_DEFICIENCY_MONITOR": "Retest in 48 hours",
+        "PH_DRIFT_BUFFER": "Buffer source water",
+        "PH_DRIFT_MONITOR": "Increase monitoring",
+        "TOXICITY_DILUTE": "Dilute reservoir",
+        "TOXICITY_MONITOR": "Retest in 12 hours"
+      },
+      "aiConfidence": "AI-based",
+      "causes": {
+        "highAlkalinity": "High source water alkalinity driving pH drift",
+        "insufficientNitrogen": "Recent feedings lacked available nitrogen",
+        "solutionTooStrong": "Nutrient solution too concentrated"
+      },
+      "community": {
+        "classification": "Issue detected",
+        "confidence": "Confidence",
+        "footer": "What do you think? Any advice appreciated!",
+        "header": "🌱 Need help with plant diagnosis",
+        "recommendations": "Suggested actions:",
+        "symptoms": "Symptoms:"
+      },
+      "confidenceBreakdown": "Confidence Breakdown",
+      "disclaimers": {
+        "aiOnlyPrimary": "Advice is AI-generated. Cross-check with manual readings or community feedback.",
+        "considerSecondOpinion": "Confidence is limited. Consider getting a second opinion from the community.",
+        "lowConfidence": "Confidence is below the safety threshold.",
+        "title": "⚠️ Disclaimers"
+      },
+      "feedbackQuestion": "Was this diagnostic helpful?",
+      "feedbackThanks": "Thanks for your feedback!",
+      "getSecondOpinion": "Get Second Opinion from Community",
+      "helpful": "Helpful",
+      "issueTypes": {
+        "deficiency": "Nutrient Deficiency",
+        "lockout": "Nutrient Lockout",
+        "ph_drift": "pH Drift",
+        "toxicity": "Nutrient Toxicity"
+      },
+      "notHelpful": "Not Helpful",
+      "nutrient": "Nutrient",
+      "priorityHigh": "High Priority",
+      "rationale": {
+        "aiBelowThreshold": "AI hypothesis below override threshold; retaining rule-based guidance.",
+        "ecAboveTarget": "EC trend is above the reservoir target range.",
+        "ecBelowTarget": "EC trend is below the reservoir target range.",
+        "highAlkalinity": "Source water alkalinity is high.",
+        "phPersistentlyHigh": "pH has remained above the reservoir target band.",
+        "tipBurnObserved": "Tip burn symptoms detected.",
+        "title": "💡 Rationale",
+        "yellowingLowerLeaves": "Yellowing observed on lower leaves."
+      },
+      "recommendations": {
+        "bufferAlkalinity": "Add a buffer to neutralize source water alkalinity.",
+        "diluteReservoir": "Dilute the reservoir with balanced water to lower EC.",
+        "increaseMonitoring": "Increase pH/EC monitoring until readings stabilize.",
+        "monitor48h": "Retest after 48 hours to confirm recovery.",
+        "nitrogenFeed": "Increase nitrogen inputs according to the deficiency playbook.",
+        "retest12h": "Retest in 12 hours to verify corrections.",
+        "title": "Recommendations"
+      },
+      "resolution": {
+        "cancel": "Cancel",
+        "description": "Record how you addressed this diagnostic issue. This helps improve future recommendations.",
+        "error": "Failed to mark as resolved. Please try again.",
+        "notesLabel": "Resolution Notes (optional)",
+        "notesPlaceholder": "What did you do to fix this? What worked?",
+        "resolve": "Mark Resolved",
+        "title": "Mark as Resolved"
+      },
+      "rulesConfidence": "Rules-based",
+      "severity": {
+        "mild": "Mild",
+        "moderate": "Moderate",
+        "severe": "Severe"
+      },
+      "threshold": "Override threshold"
+    },
+    "ec": "EC",
+    "ecTrend": "EC Trend",
+    "ec_at_temp": "EC@{{temp}}°C",
+    "ec_label": "EC",
+    "event": {
+      "ecDelta": "EC Change",
+      "ecDeltaHint": "Expected EC change after this event",
+      "logEvent": "Log Event",
+      "note": "Notes",
+      "notePlaceholder": "Add notes about this event...",
+      "phDelta": "pH Change",
+      "phDeltaHint": "Expected pH change after this event",
+      "type": "Event Type"
+    },
+    "eventTypes": {
+      "addNutrient": "Add Nutrient",
+      "change": "Reservoir Change",
+      "dilute": "Dilute",
+      "fill": "Fill",
+      "phDown": "pH Down",
+      "phUp": "pH Up"
+    },
+    "loading_readings": "Loading readings...",
+    "medium": {
+      "coco": "Coco",
+      "hydro": "Hydroponic",
+      "soil": "Soil",
+      "soilless": "Soilless"
+    },
+    "mediumOptions": {
+      "coco": "Coco",
+      "hydro": "Hydro",
+      "peat": "Peat",
+      "soil": "Soil",
+      "soilless": "Soilless"
+    },
+    "no_atc_warning": "No ATC (Automatic Temperature Compensation)",
+    "no_events_description": "Start logging reservoir events to track your changes",
+    "no_events_title": "No Events Recorded",
+    "no_readings": "No readings available",
+    "performance_report": "Performance Report",
+    "ph": "pH",
+    "phTrend": "pH Trend",
+    "ppm": "PPM",
+    "ppm_scale_label": "PPM Scale",
+    "reservoir": {
+      "max": "Max",
+      "medium": "Growing Medium",
+      "min": "Min",
+      "name": "Reservoir Name",
+      "namePlaceholder": "e.g., Main Tank",
+      "noReservoirs": "No reservoirs configured",
+      "selectReservoir": "Select Reservoir",
+      "targetEc": "Target EC Range",
+      "targetPh": "Target pH Range",
+      "validation": {
+        "nameRequired": "Reservoir name is required"
+      },
+      "volume": "Volume (L)"
+    },
+    "save_reading": "Save Reading",
+    "start_logging_ph_ec": "Start logging pH/EC measurements",
+    "targetMax": "Max",
+    "targetMin": "Min",
+    "targetRange": "Target",
+    "targetRanges": "Target Ranges",
+    "temp_high_warning": "Temperature too high",
+    "timeRange": {
+      "30days": "30 Days",
+      "7days": "7 Days",
+      "90days": "90 Days",
+      "all": "All Time"
+    },
+    "time_range": "Time Range",
+    "validation": {
+      "ecInvalidType": "EC must be a number",
+      "ecMax": "EC must be {{max}} or less",
+      "ecMin": "EC must be at least {{min}}",
+      "ecRequired": "EC is required",
+      "noteMaxLength": "Note must be {{max}} characters or less",
+      "phInvalidType": "pH must be a number",
+      "phMax": "pH must be {{max}} or less",
+      "phMin": "pH must be at least {{min}}",
+      "phRequired": "pH is required",
+      "ppmScaleInvalid": "Invalid PPM scale",
+      "ppmScaleRequired": "PPM scale is required",
+      "tempInvalidType": "Temperature must be a number",
+      "tempMax": "Temperature must be {{max}} or less",
+      "tempMin": "Temperature must be at least {{min}}",
+      "tempRequired": "Temperature is required"
+    },
+    "viewChart": "Chart",
+    "viewList": "List",
+    "waterProfile": {
+      "form": {
+        "alkalinity": "Alkalinity (ppm CaCO3)",
+        "alkalinityHelper": "Measures carbonate buffering capacity",
+        "baselineEc": "Baseline EC (mS/cm)",
+        "baselineEcHelper": "EC of your source water before adding nutrients",
+        "educationalNote": "ℹ️ These values help optimize nutrient recommendations for your water source",
+        "hardness": "Total Hardness (ppm)",
+        "hardnessHelper": "Calcium and magnesium content",
+        "name": "Profile Name",
+        "namePlaceholder": "e.g., City Water",
+        "validation": {
+          "nameRequired": "Profile name is required"
+        }
+      },
+      "title": "Water Profile"
     }
   },
   "onboarding": {
@@ -1151,6 +1362,10 @@
     "deleteAccountQueuedBodyNoEta": "We queued your deletion request. You will receive a confirmation once completed.",
     "deleteAccountQueuedTitle": "Deletion scheduled",
     "exportData": "Export my data",
+    "exportError": {
+      "message": "We could not generate your data export. Please try again later.",
+      "title": "Export failed"
+    },
     "exportErrorBody": "We could not queue the export. Details: {{message}}",
     "exportErrorTitle": "Export request failed",
     "exportQueuedBody": "We queued your data export. Estimated completion: {{eta}}.",
@@ -1191,6 +1406,7 @@
     "about": "About",
     "app_name": "App Name",
     "arabic": "Arabic",
+    "cancel": "Cancel",
     "english": "English",
     "general": "General",
     "german": "German",
@@ -1205,6 +1421,7 @@
     "privacy_policy": "Privacy Policy",
     "privacy_section": "Privacy & data",
     "rate": "Rate",
+    "save_changes": "Save Changes",
     "share": "Share",
     "support": "Support",
     "support_us": "Support Us",
@@ -1265,7 +1482,7 @@
       "viewing_cached_data": "📦 Viewing cached data"
     },
     "compliance": {
-      "body": "This information is for educational purposes only. GrowBro does not facilitate sales, delivery, or any commercial transactions. Please consult local laws regarding cannabis cultivation.",
+      "body": "This information is for educational purposes only. GrowBro does not facilitate any commercial transactions. Please consult local laws regarding cannabis cultivation.",
       "headline": "⚠️ Educational Content Only"
     },
     "detail": {
@@ -1562,6 +1779,10 @@
     "trichomeRatio": "Trichome Ratio",
     "validationMax": "Must be {{max}} or less",
     "validationMin": "Must be {{min}} or greater"
+  },
+  "units": {
+    "celsius": "°C",
+    "ms_per_cm": "mS/cm"
   },
   "welcome": "Welcome to GrowBro app site"
 }

@@ -41,6 +41,7 @@ async function shouldExecuteNow(): Promise<boolean> {
 // Define the background task handler in module scope (skip in test environment)
 if (process.env.NODE_ENV !== 'test') {
   TaskManager.defineTask(TASK_NAME, async () => {
+    const startedAt = Date.now();
     try {
       const canRun = await shouldExecuteNow();
       if (!canRun) {
@@ -48,15 +49,36 @@ if (process.env.NODE_ENV !== 'test') {
           stage: 'unknown',
           code: 'bg_constraints_blocked',
         });
+        await NoopAnalytics.track('background_worker_metrics', {
+          worker: 'sync',
+          trigger: 'background_task',
+          result: 'blocked',
+          duration_ms: Date.now() - startedAt,
+          attempt_count: 0,
+        });
         return BackgroundTask.BackgroundTaskResult.Success;
       }
 
-      await runSyncWithRetry(3);
+      const result = await runSyncWithRetry(3, { trigger: 'background' });
+      await NoopAnalytics.track('background_worker_metrics', {
+        worker: 'sync',
+        trigger: 'background_task',
+        result: 'success',
+        duration_ms: Date.now() - startedAt,
+        attempt_count: result.attempts ?? 1,
+      });
       return BackgroundTask.BackgroundTaskResult.Success;
     } catch {
       await NoopAnalytics.track('sync_error', {
         stage: 'unknown',
         code: 'bg_error',
+      });
+      await NoopAnalytics.track('background_worker_metrics', {
+        worker: 'sync',
+        trigger: 'background_task',
+        result: 'error',
+        duration_ms: Date.now() - startedAt,
+        attempt_count: 0,
       });
       return BackgroundTask.BackgroundTaskResult.Failed;
     }

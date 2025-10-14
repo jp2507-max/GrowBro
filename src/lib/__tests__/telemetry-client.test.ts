@@ -1,6 +1,15 @@
 import { ConsentService } from '@/lib/privacy/consent-service';
 import type { TelemetryEvent } from '@/lib/privacy/telemetry-client';
 import { TelemetryClient } from '@/lib/privacy/telemetry-client';
+import { setPrivacyConsent } from '@/lib/privacy-consent';
+
+jest.mock('@/lib/privacy/retention-worker', () => ({
+  addRetentionRecord: jest.fn().mockResolvedValue(undefined),
+}));
+
+const retentionMock = jest.requireMock('@/lib/privacy/retention-worker') as {
+  addRetentionRecord: jest.Mock;
+};
 
 function makeEvent(overrides: Partial<TelemetryEvent> = {}) {
   const base: TelemetryEvent = {
@@ -13,6 +22,10 @@ function makeEvent(overrides: Partial<TelemetryEvent> = {}) {
 }
 
 describe('TelemetryClient', () => {
+  beforeEach(() => {
+    retentionMock.addRetentionRecord.mockClear();
+  });
+
   test('sanitizes PII in string properties and enforces bounds', async () => {
     const delivered: any[] = [];
     const client = new TelemetryClient({
@@ -22,6 +35,7 @@ describe('TelemetryClient', () => {
     });
     // Ensure telemetry consent so events are delivered immediately
     await ConsentService.setConsent('telemetry', true);
+    setPrivacyConsent({ analytics: true });
     const ev = makeEvent({
       properties: {
         ms: 42,
@@ -37,6 +51,13 @@ describe('TelemetryClient', () => {
     expect(out.properties.email).toContain('[EMAIL_REDACTED]');
     expect(out.properties.phone).toContain('[PHONE_REDACTED]');
     expect(String(out.properties.address)).toContain('[ADDRESS_REDACTED]');
+    expect(out.schemaVersion).toBe('telemetry.v1');
+    expect(out.consentSnapshot).toEqual(
+      expect.objectContaining({ telemetry: true, analytics: true })
+    );
+    expect(retentionMock.addRetentionRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ dataType: 'telemetry_raw' })
+    );
   });
 
   test('queues until consent then flushes via deliver callback', async () => {

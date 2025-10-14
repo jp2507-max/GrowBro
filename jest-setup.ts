@@ -280,6 +280,12 @@ jest.mock('@nozbe/watermelondb/decorators', () => {
     };
   };
 
+  const relationFactory = () => {
+    return (_tableName: string, _columnName: string) => {
+      return (_target: any, _propertyKey: any, descriptor?: any) => descriptor;
+    };
+  };
+
   const makeDecorator = () => {
     return (_target: any, _propertyKey: any, descriptor?: any) => descriptor;
   };
@@ -289,6 +295,7 @@ jest.mock('@nozbe/watermelondb/decorators', () => {
     date: makeFactory(),
     json: makeFactory(),
     field: makeFactory(),
+    relation: relationFactory(),
     readonly: makeDecorator(),
   };
 });
@@ -361,6 +368,15 @@ afterEach(() => {
 afterAll(() => {
   jest.clearAllTimers();
 });
+
+// Initialize i18n for tests using the shared function from test-utils
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { initI18n } = require('./src/lib/test-utils');
+  initI18n();
+} catch {
+  console.warn('[jest-setup] i18n initialization skipped');
+}
 
 // Ensure i18next shuts down any internal resources after the test run to
 // reduce the chance of open handles in Node (especially on Windows)

@@ -1,6 +1,7 @@
 import { stripExifAndGeolocation } from '@/lib/media/exif';
 import { ConsentService } from '@/lib/privacy/consent-service';
 import { getDeletionAdapter } from '@/lib/privacy/deletion-adapter';
+import { ConsentRequiredError } from '@/lib/privacy/errors';
 import { addRetentionRecord } from '@/lib/privacy/retention-worker';
 import { supabase } from '@/lib/supabase';
 
@@ -108,7 +109,10 @@ export async function uploadInferenceImage(
 ): Promise<UploadAiImageResult> {
   // If user opted out of cloud processing, do not upload to cloud.
   if (!ConsentService.hasConsent('cloudProcessing')) {
-    throw new ConsentRequiredError('cloudProcessing consent is required');
+    throw new ConsentRequiredError(
+      'cloudProcessing consent is required',
+      'cloudProcessing'
+    );
   }
   const { strippedUri, filename, mime } = await prepareUploadNaming(params);
   const bucket = 'plant-images';
@@ -124,7 +128,7 @@ export async function uploadInferenceImage(
     localUri: strippedUri,
     mimeType: mime,
   });
-  addRetentionRecord({
+  await addRetentionRecord({
     id: result.path,
     dataType: 'inference_images',
     createdAt: Date.now(),
@@ -132,24 +136,21 @@ export async function uploadInferenceImage(
   return result;
 }
 
-export class ConsentRequiredError extends Error {
-  code: 'CONSENT_REQUIRED';
-  constructor(message = 'Consent required') {
-    super(message);
-    this.name = 'ConsentRequiredError';
-    this.code = 'CONSENT_REQUIRED';
-  }
-}
-
 export async function uploadTrainingImage(
   params: UploadAiImageParams
 ): Promise<UploadAiImageResult> {
   // Training requires both cloud processing (to upload) and explicit aiTraining.
   if (!ConsentService.hasConsent('cloudProcessing')) {
-    throw new ConsentRequiredError('cloudProcessing consent is required');
+    throw new ConsentRequiredError(
+      'cloudProcessing consent is required',
+      'cloudProcessing'
+    );
   }
   if (!ConsentService.hasConsent('aiTraining')) {
-    throw new ConsentRequiredError('aiTraining consent is required');
+    throw new ConsentRequiredError(
+      'aiTraining consent is required',
+      'aiTraining'
+    );
   }
   const { strippedUri, filename, mime } = await prepareUploadNaming(params);
   const bucket = 'plant-images';
@@ -167,7 +168,7 @@ export async function uploadTrainingImage(
     localUri: strippedUri,
     mimeType: mime,
   });
-  addRetentionRecord({
+  await addRetentionRecord({
     id: result.path,
     dataType: 'training_images',
     createdAt: Date.now(),

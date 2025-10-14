@@ -146,7 +146,7 @@ function createOverdueNotificationContent(
  * Schedule target duration notification for a harvest stage
  * Requirement 14.1: Schedule local notification for target duration
  */
-// eslint-disable-next-line max-lines-per-function
+
 export async function scheduleStageReminder(
   harvestId: string,
   stage: HarvestStage,
@@ -241,7 +241,7 @@ export async function scheduleStageReminder(
  * Requirement 14.2: Send gentle reminder when duration exceeds recommendation
  * Requirement 5.2: Provide gentle notifications with guidance
  */
-// eslint-disable-next-line max-lines-per-function
+
 export async function scheduleOverdueReminder(
   harvestId: string,
   stage: HarvestStage,

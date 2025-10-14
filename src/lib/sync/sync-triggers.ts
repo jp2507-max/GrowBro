@@ -27,7 +27,7 @@ export function setupSyncTriggers(
     const prefs = getSyncPrefs();
     if (!prefs.autoSyncEnabled) return;
     try {
-      await runSyncWithRetry(1);
+      await runSyncWithRetry(1, { trigger: 'auto' });
       opts.onSuccess?.();
     } catch {
       // noop; retry/backoff is handled inside runSyncWithRetry

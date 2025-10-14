@@ -33,7 +33,7 @@ type Props = {
  * Container with filtering and error handling
  * Requirements: 4.3, 4.4, 4.5, 4.6
  */
-// eslint-disable-next-line max-lines-per-function
+
 export function HarvestChartContainer({
   data,
   plantId,

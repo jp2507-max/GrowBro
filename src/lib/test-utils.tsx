@@ -5,22 +5,31 @@ import { NavigationContainer } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { RenderOptions } from '@testing-library/react-native';
 import { render, userEvent } from '@testing-library/react-native';
-import * as i18n from 'i18next';
 import type { ReactElement } from 'react';
 import React from 'react';
-import { initReactI18next } from 'react-i18next';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { resources } from './i18n/resources';
 
-// Initialize i18n for tests
-i18n.use(initReactI18next).init({
-  resources,
-  lng: 'en',
-  fallbackLng: 'en',
-  compatibilityJSON: 'v3',
-  interpolation: { escapeValue: false },
-});
+// Initialize i18n for tests using the same approach as jest-setup
+export function initI18n() {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const i18n = require('./i18n').default;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { initReactI18next } = require('react-i18next');
+
+  if (!i18n.isInitialized) {
+    i18n.use(initReactI18next).init({
+      resources,
+      lng: 'en',
+      fallbackLng: 'en',
+      compatibilityJSON: 'v3',
+      interpolation: { escapeValue: false },
+    });
+  }
+}
+
+initI18n();
 
 const createAppWrapper = () => {
   const queryClient = new QueryClient({

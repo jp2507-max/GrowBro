@@ -22,7 +22,10 @@ export function date(_columnName?: string): PropertyDecoratorFn {
   return noopDecorator();
 }
 
-export function json(_columnName?: string): PropertyDecoratorFn {
+export function json(
+  _columnName?: string,
+  _sanitizer?: any
+): PropertyDecoratorFn {
   return noopDecorator();
 }
 
@@ -36,7 +39,10 @@ export function children(_relationName?: string): PropertyDecoratorFn {
   return noopDecorator();
 }
 
-export function relation(_table?: string, _options?: any): PropertyDecoratorFn {
+export function relation(
+  _table?: string,
+  _columnName?: string
+): PropertyDecoratorFn {
   return noopDecorator();
 }
 

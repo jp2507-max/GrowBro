@@ -2,8 +2,81 @@
 import { useCallback, useState } from 'react';
 
 import { NoopAnalytics } from '@/lib/analytics';
-import type { Conflict } from '@/lib/sync/conflict-resolver';
+import type { LegacyConflict as Conflict } from '@/lib/sync/types';
+import { TABLE_NAMES } from '@/lib/sync/types';
 import { database } from '@/lib/watermelon';
+import type { HarvestModel } from '@/lib/watermelon-models/harvest';
+import type { HarvestAuditModel } from '@/lib/watermelon-models/harvest-audit';
+import type { InventoryModel } from '@/lib/watermelon-models/inventory';
+import type { OccurrenceOverrideModel } from '@/lib/watermelon-models/occurrence-override';
+import type { SeriesModel } from '@/lib/watermelon-models/series';
+import type { TaskModel } from '@/lib/watermelon-models/task';
+
+/**
+ * Parses and cleans task metadata by handling both string and object formats,
+ * removing the needsReview flag, and providing error recovery for malformed JSON.
+ */
+function parseAndCleanTaskMetadata(
+  taskRec: TaskModel,
+  tableName: string
+): Record<string, unknown> {
+  let metadata;
+  try {
+    metadata =
+      typeof taskRec.metadata === 'string'
+        ? JSON.parse(taskRec.metadata)
+        : taskRec.metadata;
+  } catch (parseError) {
+    console.error(
+      `Failed to parse metadata for task ${taskRec.id} in table ${tableName}:`,
+      parseError
+    );
+    metadata = typeof taskRec.metadata === 'string' ? {} : taskRec.metadata;
+  }
+  delete metadata.needsReview;
+  return metadata;
+}
+
+/**
+ * Table names that are valid for sync conflict analytics events
+ */
+type ValidSyncConflictTableName =
+  | 'series'
+  | 'tasks'
+  | 'occurrence_overrides'
+  | 'harvests'
+  | 'inventory'
+  | 'harvest_audits';
+
+/**
+ * Validates that a table name is one of the allowed values from the schema
+ */
+function validateTableName(
+  tableName: string
+): asserts tableName is (typeof TABLE_NAMES)[keyof typeof TABLE_NAMES] {
+  const validTableNames: string[] = Object.values(TABLE_NAMES);
+  if (!validTableNames.includes(tableName)) {
+    throw new Error(
+      `Invalid table name "${tableName}". Must be one of: ${validTableNames.join(', ')}`
+    );
+  }
+}
+
+/**
+ * Validates that a table name is valid for sync conflict analytics
+ */
+function isSyncConflictAnalyticsTable(
+  tableName: string
+): tableName is ValidSyncConflictTableName {
+  return (
+    tableName === 'series' ||
+    tableName === 'tasks' ||
+    tableName === 'occurrence_overrides' ||
+    tableName === 'harvests' ||
+    tableName === 'inventory' ||
+    tableName === 'harvest_audits'
+  );
+}
 
 type ConflictResolutionState = {
   conflicts: Conflict[];
@@ -34,29 +107,55 @@ export function useConflictResolution() {
       setState((prev) => ({ ...prev, isResolving: true }));
 
       try {
+        // Validate table name at runtime
+        validateTableName(conflict.tableName);
+
         if (strategy === 'keep-local') {
           // Create a new mutation to restore local version
           await database.write(async () => {
             const collection = database.collections.get(conflict.tableName);
             try {
               const record = await collection.find(conflict.recordId);
-              await record.update((rec: any) => {
+              await record.update((rec) => {
+                // Type assertion for type safety - table name is validated above
+                // This narrows the type from generic Model to specific model types
+                const typedRec = rec as
+                  | SeriesModel
+                  | TaskModel
+                  | OccurrenceOverrideModel
+                  | HarvestModel
+                  | InventoryModel
+                  | HarvestAuditModel;
+
                 // Restore local values for conflicting fields
+                // This loop iterates through fields that were in conflict and restores
+                // the local (client-side) values over the server values
                 if (conflict.localRecord) {
                   for (const field of conflict.conflictFields) {
                     if (field in conflict.localRecord) {
-                      rec[field] = conflict.localRecord[field];
+                      // NOTE: Type safety concern - using 'as any' to bypass TypeScript
+                      // checking for dynamic field access. This is necessary due to
+                      // WatermelonDB's API design but creates a potential runtime risk
+                      // if conflict.conflictFields contains invalid field names.
+                      // Consider implementing a type-safe field restoration helper
+                      // as suggested in code review to validate field existence.
+                      (typedRec as any)[field] = conflict.localRecord[field];
                     }
                   }
                 }
-                // Clear the needsReview flag if it exists
-                if (conflict.tableName === 'tasks' && rec.metadata) {
-                  const metadata =
-                    typeof rec.metadata === 'string'
-                      ? JSON.parse(rec.metadata)
-                      : rec.metadata;
-                  delete metadata.needsReview;
-                  rec.metadata = metadata;
+
+                // Clear the needsReview flag if it exists on task records
+                // This flag indicates the record had sync conflicts that needed manual review
+                // After resolving by keeping local changes, we remove this flag
+                if (
+                  conflict.tableName === TABLE_NAMES.TASKS &&
+                  (typedRec as TaskModel).metadata
+                ) {
+                  const taskRec = typedRec as TaskModel;
+                  taskRec.metadata = parseAndCleanTaskMetadata(
+                    taskRec,
+                    conflict.tableName
+                  );
                 }
               });
             } catch (error) {
@@ -65,25 +164,37 @@ export function useConflictResolution() {
             }
           });
 
-          await NoopAnalytics.track('sync_conflict_resolved', {
-            table: conflict.tableName,
-            strategy: 'keep-local',
-            field_count: conflict.conflictFields.length,
-          });
+          if (isSyncConflictAnalyticsTable(conflict.tableName)) {
+            await NoopAnalytics.track('sync_conflict_resolved', {
+              table: conflict.tableName,
+              strategy: 'keep-local',
+              field_count: conflict.conflictFields.length,
+            });
+          }
         } else {
           // Accept server version - just clear the needsReview flag
           await database.write(async () => {
             const collection = database.collections.get(conflict.tableName);
             try {
               const record = await collection.find(conflict.recordId);
-              await record.update((rec: any) => {
-                if (conflict.tableName === 'tasks' && rec.metadata) {
-                  const metadata =
-                    typeof rec.metadata === 'string'
-                      ? JSON.parse(rec.metadata)
-                      : rec.metadata;
-                  delete metadata.needsReview;
-                  rec.metadata = metadata;
+              await record.update((rec) => {
+                // Type assertion for type safety - table name is validated above
+                const typedRec = rec as
+                  | SeriesModel
+                  | TaskModel
+                  | OccurrenceOverrideModel
+                  | HarvestModel
+                  | InventoryModel
+                  | HarvestAuditModel;
+                if (
+                  conflict.tableName === TABLE_NAMES.TASKS &&
+                  (typedRec as TaskModel).metadata
+                ) {
+                  const taskRec = typedRec as TaskModel;
+                  taskRec.metadata = parseAndCleanTaskMetadata(
+                    taskRec,
+                    conflict.tableName
+                  );
                 }
               });
             } catch (error) {
@@ -92,11 +203,13 @@ export function useConflictResolution() {
             }
           });
 
-          await NoopAnalytics.track('sync_conflict_resolved', {
-            table: conflict.tableName,
-            strategy: 'accept-server',
-            field_count: conflict.conflictFields.length,
-          });
+          if (isSyncConflictAnalyticsTable(conflict.tableName)) {
+            await NoopAnalytics.track('sync_conflict_resolved', {
+              table: conflict.tableName,
+              strategy: 'accept-server',
+              field_count: conflict.conflictFields.length,
+            });
+          }
         }
 
         // Move to next conflict
@@ -119,7 +232,7 @@ export function useConflictResolution() {
     []
   );
 
-  const dismissConflict = useCallback((conflict: Conflict) => {
+  const dismissConflict = useCallback(async (conflict: Conflict) => {
     setState((prev) => {
       const remaining = prev.conflicts.filter(
         (c) => c.recordId !== conflict.recordId
@@ -131,10 +244,12 @@ export function useConflictResolution() {
       };
     });
 
-    NoopAnalytics.track('sync_conflict_dismissed', {
-      table: conflict.tableName,
-      field_count: conflict.conflictFields.length,
-    });
+    if (isSyncConflictAnalyticsTable(conflict.tableName)) {
+      await NoopAnalytics.track('sync_conflict_dismissed', {
+        table: conflict.tableName,
+        field_count: conflict.conflictFields.length,
+      });
+    }
   }, []);
 
   const clearAllConflicts = useCallback(() => {

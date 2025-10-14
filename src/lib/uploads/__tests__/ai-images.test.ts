@@ -1,7 +1,7 @@
 import { stripExifAndGeolocation } from '@/lib/media/exif';
 import { ConsentService } from '@/lib/privacy/consent-service';
+import { ConsentRequiredError } from '@/lib/privacy/errors';
 import {
-  ConsentRequiredError,
   uploadInferenceImage,
   uploadTrainingImage,
 } from '@/lib/uploads/ai-images';

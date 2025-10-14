@@ -4,7 +4,6 @@
  * Modal for editing playbook tasks with inheritance tracking
  * Shows edited badge and inheritance status
  */
-/* eslint-disable max-lines-per-function */
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';

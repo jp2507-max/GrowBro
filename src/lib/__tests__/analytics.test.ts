@@ -315,6 +315,84 @@ describe('ConsentGatedAnalytics', () => {
         'widget10',
       ]);
     });
+
+    it('sanitizes nutrient_feature_usage context field', () => {
+      const payload = {
+        feature: 'log_reading' as const,
+        context:
+          'User logged pH reading of 6.2 with email user@example.com and phone +1-555-123-4567',
+      };
+
+      gatedClient.track('nutrient_feature_usage', payload);
+
+      const events = baseClient.getAll();
+      expect(events).toHaveLength(1);
+
+      const sanitizedPayload = events[0].payload as any;
+      expect(sanitizedPayload.feature).toBe('log_reading');
+      expect(sanitizedPayload.context).toBe(
+        'User logged pH reading of 6.2 with email [redacted_email] and phone [redacted_phone]'
+      );
+    });
+
+    it('removes nutrient_feature_usage context field when it contains only PII', () => {
+      const payload = {
+        feature: 'acknowledge_alert' as const,
+        context: 'user@example.com +1-555-123-4567',
+      };
+
+      gatedClient.track('nutrient_feature_usage', payload);
+
+      const events = baseClient.getAll();
+      expect(events).toHaveLength(1);
+
+      const sanitizedPayload = events[0].payload as any;
+      expect(sanitizedPayload.feature).toBe('acknowledge_alert');
+      expect(sanitizedPayload.context).toBeUndefined();
+    });
+
+    it('truncates nutrient_feature_usage context field to 200 characters', () => {
+      const longContext = 'A'.repeat(250) + ' with email user@example.com';
+      const payload = {
+        feature: 'apply_template' as const,
+        context: longContext,
+      };
+
+      gatedClient.track('nutrient_feature_usage', payload);
+
+      const events = baseClient.getAll();
+      expect(events).toHaveLength(1);
+
+      const sanitizedPayload = events[0].payload as any;
+      expect(sanitizedPayload.context?.length).toBeLessThanOrEqual(200);
+      expect(sanitizedPayload.context).toContain('[redacted_email]');
+    });
+
+    it('sanitizes various PII patterns in nutrient_feature_usage context', () => {
+      const payload = {
+        feature: 'sync_now' as const,
+        context: `User action: https://api.example.com/data?token=abc123def456&auth=bearer_xyz789
+        Contact: user@example.com or call +1 (555) 123-4567
+        Payment: card 4111-1111-1111-1111
+        Extra spaces   and tabs\t\t here`,
+      };
+
+      gatedClient.track('nutrient_feature_usage', payload);
+
+      const events = baseClient.getAll();
+      expect(events).toHaveLength(1);
+
+      const sanitizedPayload = events[0].payload as any;
+      const context = sanitizedPayload.context;
+      expect(context).toContain('[redacted_url]');
+      expect(context).toContain('[redacted_token]');
+      expect(context).toContain('[redacted_email]');
+      expect(context).toContain('[redacted_phone]');
+      expect(context).toContain('[redacted_card]');
+      // Should collapse whitespace
+      expect(context).not.toContain('  ');
+      expect(context).not.toContain('\t');
+    });
   });
 
   describe('Analytics Consent Key', () => {

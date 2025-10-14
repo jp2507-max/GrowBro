@@ -923,7 +923,6 @@ export async function rescheduleRecurringInstance(
   });
 }
 
-/* eslint-disable-next-line max-lines-per-function */
 export async function completeRecurringInstance(
   seriesId: string,
   occurrenceDate: Date

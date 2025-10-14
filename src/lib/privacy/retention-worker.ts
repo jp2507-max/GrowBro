@@ -1,8 +1,11 @@
 import { appendAudit } from '@/lib/privacy/audit-log';
 import { anonymizeAndTruncate } from '@/lib/privacy/crash-store';
 import { getDeletionAdapter } from '@/lib/privacy/deletion-adapter';
+import {
+  getSecureConfig,
+  setSecureConfig,
+} from '@/lib/privacy/secure-config-store';
 import { incrementAggregate } from '@/lib/privacy/telemetry-aggregates';
-import { getItem, setItem } from '@/lib/storage';
 
 export type RetainedDataType =
   | 'telemetry_raw'
@@ -37,17 +40,19 @@ export type RetentionRecord = {
   createdAt: number; // ms epoch
 };
 
-export function addRetentionRecord(record: RetentionRecord): void {
-  const all = getItem<RetentionRecord[]>(STORE_KEY) ?? [];
-  setItem(STORE_KEY, [...all, record]);
+export async function addRetentionRecord(
+  record: RetentionRecord
+): Promise<void> {
+  const all = (await getSecureConfig<RetentionRecord[]>(STORE_KEY)) ?? [];
+  await setSecureConfig(STORE_KEY, [...all, record]);
 }
 
-export function getRetentionRecords(): RetentionRecord[] {
-  return getItem<RetentionRecord[]>(STORE_KEY) ?? [];
+export async function getRetentionRecords(): Promise<RetentionRecord[]> {
+  return (await getSecureConfig<RetentionRecord[]>(STORE_KEY)) ?? [];
 }
 
-export function getLastPurgeReport(): PurgeReport | null {
-  return getItem<PurgeReport>(REPORT_KEY);
+export async function getLastPurgeReport(): Promise<PurgeReport | null> {
+  return (await getSecureConfig<PurgeReport>(REPORT_KEY)) ?? null;
 }
 
 export class RetentionWorker {
@@ -70,16 +75,20 @@ export class RetentionWorker {
     },
   ];
 
-  runNow(): PurgeReport {
+  async runNow(): Promise<PurgeReport> {
     const now = Date.now();
     const cutoffByType = this.computeCutoffs(now);
-    const { keep, purgedCounts } = this.partitionRecords(cutoffByType);
-    setItem(STORE_KEY, keep);
+    const { keep, purgedCounts } = await this.partitionRecords(cutoffByType);
+    await setSecureConfig(STORE_KEY, keep);
     const entries = this.buildEntries(purgedCounts);
-    this.emitAudits(entries, now);
+    await this.emitAudits(entries, now);
     const report: PurgeReport = { generatedAt: now, entries };
-    setItem(REPORT_KEY, report);
+    await setSecureConfig(REPORT_KEY, report);
     return report;
+  }
+
+  getPolicies(): RetentionPolicy[] {
+    return [...this.policies];
   }
 
   private computeCutoffs(now: number): Map<RetainedDataType, number> {
@@ -90,11 +99,13 @@ export class RetentionWorker {
     return map;
   }
 
-  private partitionRecords(cutoffByType: Map<RetainedDataType, number>): {
+  private async partitionRecords(
+    cutoffByType: Map<RetainedDataType, number>
+  ): Promise<{
     keep: RetentionRecord[];
     purgedCounts: Map<RetainedDataType, number>;
-  } {
-    const all = getRetentionRecords();
+  }> {
+    const all = await getRetentionRecords();
     const keep: RetentionRecord[] = [];
     const purgedCounts = new Map<RetainedDataType, number>();
     for (const rec of all) {
@@ -123,9 +134,12 @@ export class RetentionWorker {
     );
   }
 
-  private emitAudits(entries: PurgeReportEntry[], now: number): void {
+  private async emitAudits(
+    entries: PurgeReportEntry[],
+    now: number
+  ): Promise<void> {
     for (const e of entries) {
-      appendAudit({
+      await appendAudit({
         action: 'retention-delete',
         dataType: e.dataType,
         count: e.purgedCount,
@@ -133,7 +147,7 @@ export class RetentionWorker {
       if (e.dataType === 'telemetry_raw' && e.purgedCount > 0) {
         const bucket = new Date(now).toISOString().slice(0, 10);
         incrementAggregate(bucket, e.purgedCount);
-        appendAudit({
+        await appendAudit({
           action: 'retention-aggregate',
           dataType: 'telemetry_aggregated',
           count: e.purgedCount,
@@ -143,7 +157,7 @@ export class RetentionWorker {
       if (e.dataType === 'crash_logs' && e.purgedCount > 0) {
         const before = now - 180 * 24 * 60 * 60 * 1000;
         const changed = anonymizeAndTruncate(before);
-        appendAudit({
+        await appendAudit({
           action: 'retention-anonymize',
           dataType: 'crash_logs',
           count: changed,
@@ -154,7 +168,7 @@ export class RetentionWorker {
           .purgeInferenceImages(e.purgedCount)
           .then((deleted) => {
             if (deleted > 0)
-              appendAudit({
+              void appendAudit({
                 action: 'retention-delete',
                 dataType: 'inference_images',
                 count: deleted,
@@ -167,7 +181,7 @@ export class RetentionWorker {
           .purgeTrainingImages(e.purgedCount)
           .then((deleted) => {
             if (deleted > 0)
-              appendAudit({
+              void appendAudit({
                 action: 'retention-delete',
                 dataType: 'training_images',
                 count: deleted,
@@ -180,3 +194,7 @@ export class RetentionWorker {
 }
 
 export const retentionWorker = new RetentionWorker();
+
+export function getRetentionPolicies(): RetentionPolicy[] {
+  return retentionWorker.getPolicies();
+}

@@ -6,6 +6,8 @@ alwaysApply: true
 
 You are an expert in TypeScript, React Native, Expo, and Mobile UI development with Nativewind.
 
+Every time you choose to apply a rule(s), explicitly state the rule(s) in the output. You can abbreviate the rule description to a single word or phrase.
+
 ## Project Context
 
 ## Code Style and Structure
@@ -15,7 +17,12 @@ You are an expert in TypeScript, React Native, Expo, and Mobile UI development w
 - Prefer iteration and modularization over code duplication
 - Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError)
 - Ensure components are modular, reusable, and maintainable.
-- Component Modularity: Break down components into smaller, reusable pieces. Keep components focused on a single responsibility and shouldn't be more than 80 lines of code.
+- Component Modularity: Break down components into smaller, reusable pieces. Keep components focused on a single responsibility.
+- Function Length Guidelines (enforced by ESLint):
+  - **Global default**: ~110 lines (warning) - suitable for most React Native/Expo code
+  - **JSX-heavy components** (screens, modals, sheets): up to 150 lines (warning) - allows for complex layouts
+  - **Services, hooks, utilities**: 90 lines (error) - stricter for business logic
+  - **Tests, stories, generated files**: no limit - complexity varies
 - To install new packages use `npx expo install <package-name>`
 - Structure repository files as follows:
 
@@ -118,7 +125,7 @@ Here is a simple example of how a component should be written using :
 ```tsx
 import * as React from 'react';
 
-import { Text, View, Image, SavaAreaView } from '@/components/ui';
+import { Text, View, Image, SafeAreaView } from '@/components/ui';
 
 // Props should be defined in the top of the component
 type Props = {
@@ -132,9 +139,14 @@ export function Title({ text }: Props) {
       <View className="h-[2px] flex-1 bg-neutral-300" />
 
       <Image
-        source={require('@assets/images/demo.png')}
+        // Use a documented import alias or a relative path to assets. In this repo
+        // the alias `@/assets` isn't guaranteed in all setups, so prefer a
+        // relative path from the file where the component lives, for example:
+        source={require('../../assets/images/demo.png')}
         style={{ width: 24, height: 24 }}
-        contentFit="contain"
+        // `contentFit` is supported by `expo-image`. If `Image` here is a
+        // re-export of `expo-image` then `contentFit` can be used. Otherwise
+        // remove it or use `resizeMode` for the native Image component.
       />
     </View>
   );

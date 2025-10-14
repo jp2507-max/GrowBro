@@ -68,7 +68,7 @@ function isNotificationAllowed(
 /**
  * Sends push notification to a single device via Expo Push API
  */
-// eslint-disable-next-line max-params, max-lines-per-function
+// eslint-disable-next-line max-params
 async function sendToDevice(
   tokenData: PushToken,
   type: string,

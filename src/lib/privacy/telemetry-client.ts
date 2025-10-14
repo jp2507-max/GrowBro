@@ -2,9 +2,18 @@ import { z } from 'zod';
 
 import { ConsentService } from '@/lib/privacy/consent-service';
 import type { ConsentState } from '@/lib/privacy/consent-types';
+import { addRetentionRecord } from '@/lib/privacy/retention-worker';
 import { SDKGate } from '@/lib/privacy/sdk-gate';
 import { hasConsent } from '@/lib/privacy-consent';
 import { sanitizeObjectPII, sanitizeTextPII } from '@/lib/sentry-utils';
+
+const TELEMETRY_SCHEMA_VERSION = 'telemetry.v1';
+
+export type TelemetryConsentSnapshot = {
+  telemetry: boolean;
+  analytics: boolean;
+  version: string;
+};
 
 export type TelemetryEvent = {
   name: string;
@@ -14,6 +23,8 @@ export type TelemetryEvent = {
   timestamp: Date;
   sessionId: string;
   userId?: string;
+  schemaVersion?: string;
+  consentSnapshot?: TelemetryConsentSnapshot;
 };
 
 const TelemetryEventSchema = z.object({
@@ -29,6 +40,14 @@ const TelemetryEventSchema = z.object({
   timestamp: z.date(),
   sessionId: z.string().min(1).max(64),
   userId: z.string().min(1).max(128).optional(),
+  schemaVersion: z.string().min(1).max(32).optional(),
+  consentSnapshot: z
+    .object({
+      telemetry: z.boolean(),
+      analytics: z.boolean(),
+      version: z.string().min(1).max(32),
+    })
+    .optional(),
 });
 
 export type TelemetryBufferConfig = {
@@ -51,6 +70,8 @@ function estimateSize(event: TelemetryEvent): number {
   size += event.name.length;
   size += event.sessionId.length;
   if (event.userId) size += event.userId.length;
+  if (event.schemaVersion) size += event.schemaVersion.length;
+  if (event.consentSnapshot) size += 12;
   // Approx for properties
   for (const key of Object.keys(event.properties)) {
     size += key.length + 8; // key + primitive estimate
@@ -131,14 +152,16 @@ export class TelemetryClient {
 
     // Check consent based on event type
     const requiredConsent = this.getRequiredConsentForEvent(event.name);
+    const safeEvent = this.sanitizeEvent(event);
     if (!this.hasRequiredConsent(requiredConsent)) {
-      this.enqueue(event);
+      this.enqueue(safeEvent);
+      await this.recordRetention(safeEvent);
       return;
     }
 
-    // With consent → sanitize, minimize and enqueue then flush
-    const safeEvent = this.sanitizeEvent(event);
+    // With consent → sanitized event enqueued then flushed
     this.enqueue(safeEvent);
+    await this.recordRetention(safeEvent);
     await this.flush();
   }
 
@@ -343,7 +366,36 @@ export class TelemetryClient {
         ? sanitizeTextPII(event.userId).slice(0, 128)
         : undefined,
       properties: scrubbedProps,
+      schemaVersion: TELEMETRY_SCHEMA_VERSION,
+      consentSnapshot: this.buildConsentSnapshot(),
     };
+  }
+
+  private buildConsentSnapshot(): TelemetryConsentSnapshot {
+    return {
+      telemetry: this.consent?.telemetry === true,
+      analytics: hasConsent('analytics'),
+      version: this.consent?.version ?? 'unknown',
+    };
+  }
+
+  private async recordRetention(event: TelemetryEvent): Promise<void> {
+    try {
+      const id = `${event.name}-${event.timestamp.getTime()}-${Math.random()
+        .toString(36)
+        .slice(2, 10)}`;
+      await addRetentionRecord({
+        id,
+        dataType: 'telemetry_raw',
+        createdAt: Date.now(),
+      });
+    } catch {
+      // noop — retention recording best effort only
+    }
+  }
+
+  getBufferedEventsForExport(): TelemetryEvent[] {
+    return this.buffer.map((entry) => ({ ...entry.event }));
   }
 }
 

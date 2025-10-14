@@ -1,0 +1,68 @@
+/**
+ * Hook for computing EC@25°C and quality metrics
+ *
+ * Handles temperature compensation, PPM conversion, quality flags, and confidence scoring
+ */
+
+import { useMemo } from 'react';
+
+import type {
+  Calibration,
+  PpmScale,
+  QualityFlag,
+} from '@/lib/nutrient-engine/types';
+import {
+  calculateConfidenceScore,
+  computeQualityFlags,
+  ecToPpm,
+  toEC25,
+} from '@/lib/nutrient-engine/utils/conversions';
+
+type ComputedMetrics = {
+  ec25c: number | null;
+  ppm: number | null;
+  qualityFlags: QualityFlag[];
+  confidence: number;
+};
+
+type UsePhEcComputationProps = {
+  ecRaw?: number;
+  tempC?: number;
+  atcOn?: boolean;
+  ppmScale: PpmScale;
+  calibration?: Calibration;
+};
+
+export function usePhEcComputation({
+  ecRaw,
+  tempC,
+  atcOn,
+  ppmScale,
+  calibration,
+}: UsePhEcComputationProps): ComputedMetrics {
+  return useMemo(() => {
+    let ec25c: number | null = null;
+    let ppm: number | null = null;
+    let qualityFlags: QualityFlag[] = [];
+    let confidence = 1.0;
+
+    try {
+      if (ecRaw != null && tempC != null) {
+        ec25c = atcOn ? ecRaw : toEC25(ecRaw, tempC);
+        ppm = ecToPpm(ec25c, ppmScale);
+
+        const qualityReading = {
+          atcOn: atcOn ?? false,
+          tempC,
+        };
+
+        qualityFlags = computeQualityFlags(qualityReading, calibration);
+        confidence = calculateConfidenceScore(qualityReading, calibration);
+      }
+    } catch (e) {
+      console.error('Error computing pH/EC metrics:', e);
+    }
+
+    return { ec25c, ppm, qualityFlags, confidence };
+  }, [ecRaw, tempC, atcOn, ppmScale, calibration]);
+}

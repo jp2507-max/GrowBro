@@ -10,7 +10,7 @@
  * - Batched notification scheduling
  * - Category-specific default reminder times
  */
-/* eslint-disable max-lines-per-function, unused-imports/no-unused-vars */
+/* eslint-disable unused-imports/no-unused-vars */
 
 import { type Database } from '@nozbe/watermelondb';
 import { DateTime } from 'luxon';

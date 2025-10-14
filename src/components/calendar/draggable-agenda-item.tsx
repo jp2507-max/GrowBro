@@ -116,7 +116,7 @@ function handleLogPress(): void {
 }
 
 // Custom hook to create pan gesture
-// eslint-disable-next-line max-lines-per-function
+
 function useCreatePanGesture(options: {
   tx: SharedValue<number>;
   ty: SharedValue<number>;

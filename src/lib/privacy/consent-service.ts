@@ -1,7 +1,5 @@
 import { getLocales } from 'expo-localization';
 
-import { getItem, setItem } from '@/lib/storage';
-
 import type {
   ConsentAuditLog,
   ConsentMetadata,
@@ -10,6 +8,11 @@ import type {
   ValidationResult,
 } from './consent-types';
 import { LAWFUL_BASIS_BY_PURPOSE } from './consent-types';
+import {
+  getSecureConfig,
+  removeSecureConfig,
+  setSecureConfig,
+} from './secure-config-store';
 
 const CONSENT_KEY = 'consents.v1';
 const AUDIT_KEY = 'consents.audit.v1';
@@ -33,15 +36,25 @@ export type ConsentChangeListener = (state: ConsentState) => void;
 export class ConsentServiceImpl {
   private listeners: Set<ConsentChangeListener> = new Set();
 
-  getConsents(): Promise<ConsentState> {
-    const stored = getItem<ConsentState>(CONSENT_KEY);
-    if (stored && stored.version === CURRENT_CONSENT_VERSION) {
-      return Promise.resolve(stored);
+  private cache: ConsentState | null = null;
+
+  private auditCache: ConsentAuditLog[] | null = null;
+
+  constructor() {
+    void this.hydrateCache();
+  }
+
+  async getConsents(): Promise<ConsentState> {
+    if (this.cache && this.cache.version === CURRENT_CONSENT_VERSION) {
+      return this.cache;
     }
-    // Clear outdated consent data and create fresh defaults
+    const stored = await getSecureConfig<ConsentState>(CONSENT_KEY);
+    if (stored && stored.version === CURRENT_CONSENT_VERSION) {
+      this.cache = stored;
+      return stored;
+    }
     if (stored && stored.version !== CURRENT_CONSENT_VERSION) {
-      // Note: We don't clear the audit log as it contains historical data
-      setItem(CONSENT_KEY, null);
+      await removeSecureConfig(CONSENT_KEY);
     }
     const fresh: ConsentState = {
       telemetry: false,
@@ -53,14 +66,15 @@ export class ConsentServiceImpl {
       timestamp: nowIso(),
       locale: getLocale(),
     };
-    setItem(CONSENT_KEY, fresh);
-    return Promise.resolve(fresh);
+    await setSecureConfig(CONSENT_KEY, fresh);
+    this.cache = fresh;
+    return fresh;
   }
 
   hasConsent(purpose: ConsentPurpose): boolean {
-    const state = getItem<ConsentState>(CONSENT_KEY);
-    if (!state || state.version !== CURRENT_CONSENT_VERSION) return false;
-    return state[purpose] === true;
+    if (!this.cache || this.cache.version !== CURRENT_CONSENT_VERSION)
+      return false;
+    return this.cache[purpose] === true;
   }
 
   async setConsent(
@@ -76,7 +90,8 @@ export class ConsentServiceImpl {
       timestamp: nowIso(),
       locale: getLocale(),
     };
-    setItem(CONSENT_KEY, next);
+    await setSecureConfig(CONSENT_KEY, next);
+    this.cache = next;
     await this.appendAudit({
       action: value ? 'grant' : 'withdraw',
       purpose,
@@ -105,7 +120,8 @@ export class ConsentServiceImpl {
     };
 
     // Persist once
-    setItem(CONSENT_KEY, next);
+    await setSecureConfig(CONSENT_KEY, next);
+    this.cache = next;
 
     // Append audit entries for each purpose that changed
     const entries: {
@@ -158,13 +174,14 @@ export class ConsentServiceImpl {
   }
 
   isConsentRequired(): boolean {
-    const state = getItem<ConsentState>(CONSENT_KEY);
-    return !state || state.version !== CURRENT_CONSENT_VERSION;
+    if (!this.cache || this.cache.version !== CURRENT_CONSENT_VERSION) {
+      return true;
+    }
+    return false;
   }
 
   getConsentVersion(): string {
-    const state = getItem<ConsentState>(CONSENT_KEY);
-    return state?.version ?? CURRENT_CONSENT_VERSION;
+    return this.cache?.version ?? CURRENT_CONSENT_VERSION;
   }
 
   isSDKAllowed(_sdkName: string): boolean {
@@ -173,7 +190,14 @@ export class ConsentServiceImpl {
   }
 
   async exportConsentHistory(): Promise<ConsentAuditLog[]> {
-    return getItem<ConsentAuditLog[]>(AUDIT_KEY) ?? [];
+    if (this.auditCache) return [...this.auditCache];
+    const stored = await getSecureConfig<ConsentAuditLog[]>(AUDIT_KEY);
+    if (Array.isArray(stored)) {
+      this.auditCache = stored;
+      return [...stored];
+    }
+    this.auditCache = [];
+    return [];
   }
 
   async validateConsents(): Promise<ValidationResult> {
@@ -215,13 +239,32 @@ export class ConsentServiceImpl {
   private async appendAudit(
     entry: Omit<ConsentAuditLog, 'id' | 'timestamp'>
   ): Promise<void> {
-    const existing = getItem<ConsentAuditLog[]>(AUDIT_KEY) ?? [];
+    if (!this.auditCache) {
+      const stored = await getSecureConfig<ConsentAuditLog[]>(AUDIT_KEY);
+      this.auditCache = Array.isArray(stored) ? stored : [];
+    }
+    const existing = this.auditCache ?? [];
     const log: ConsentAuditLog = {
       id: String(existing.length + 1),
       timestamp: nowIso(),
       ...entry,
     };
-    setItem(AUDIT_KEY, [...existing, log]);
+    const next = [...existing, log];
+    this.auditCache = next;
+    await setSecureConfig(AUDIT_KEY, next);
+  }
+
+  private async hydrateCache(): Promise<void> {
+    const stored = await getSecureConfig<ConsentState>(CONSENT_KEY);
+    if (stored && stored.version === CURRENT_CONSENT_VERSION) {
+      this.cache = stored;
+    }
+  }
+
+  /** @internal test helper */
+  resetForTests(): void {
+    this.cache = null;
+    this.auditCache = null;
   }
 }
 

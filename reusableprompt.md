@@ -1,12 +1,12 @@
-TASK_ID: {17} with subtasks (make sure task with sub task is fully implemented)
+TASK_ID: {18} with subtasks (make sure task with sub task is fully implemented)
 AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the plan
 
 CONTEXT
 
-- Feature: 14. harvest-workflow
-- Task index: .kiro\specs\14. harvest-workflow\tasks.md
-- Design spec: .kiro\specs\14. harvest-workflow\design.md
-- Requirements spec: .kiro\specs\14. harvest-workflow\requirements.md
+- Feature: 15. nutrient-engine-and-ph-ec
+- Task index: .kiro\specs\15. nutrient-engine-and-ph-ec\tasks.md
+- Design spec: .kiro\specs\15. nutrient-engine-and-ph-ec\design.md
+- Requirements spec: .kiro\specs\15. nutrient-engine-and-ph-ec\requirements.md
 
 CONTRACT (outputs)
 

@@ -1,6 +1,10 @@
 import * as Sentry from '@sentry/react-native';
 
-import { getItem, setItem } from './storage';
+import {
+  getSecureConfig,
+  removeSecureConfig,
+  setSecureConfig,
+} from '@/lib/privacy/secure-config-store';
 
 export interface PrivacyConsent {
   analytics: boolean;
@@ -13,6 +17,8 @@ export interface PrivacyConsent {
 // Only consent feature keys (exclude metadata like lastUpdated)
 export type ConsentFeature = Exclude<keyof PrivacyConsent, 'lastUpdated'>;
 
+const CONSENT_STORAGE_KEY = 'privacy-consent.v1';
+
 const DEFAULT_CONSENT: PrivacyConsent = {
   analytics: false,
   crashReporting: true,
@@ -22,7 +28,32 @@ const DEFAULT_CONSENT: PrivacyConsent = {
 };
 
 // Cached consent state for synchronous access
-let cachedConsent: PrivacyConsent | null = null;
+let cachedConsent: PrivacyConsent = { ...DEFAULT_CONSENT };
+let hydrated = false;
+let hydrationPromise: Promise<void> | null = null;
+
+async function hydrateFromSecureStore(): Promise<void> {
+  if (hydrationPromise) return hydrationPromise;
+  hydrationPromise = (async () => {
+    try {
+      const stored = await getSecureConfig<PrivacyConsent>(CONSENT_STORAGE_KEY);
+      if (stored) {
+        cachedConsent = { ...DEFAULT_CONSENT, ...stored };
+      }
+    } catch (error) {
+      console.warn(
+        'Failed to hydrate privacy consent from secure storage:',
+        error
+      );
+    } finally {
+      hydrated = true;
+      hydrationPromise = null;
+    }
+  })();
+  return hydrationPromise;
+}
+
+void hydrateFromSecureStore();
 
 /**
  * Get current privacy consent settings synchronously from cache
@@ -36,20 +67,10 @@ export function getPrivacyConsentSync(): PrivacyConsent | null {
  * Get current privacy consent settings
  */
 export function getPrivacyConsent(): PrivacyConsent {
-  try {
-    const stored = getItem<PrivacyConsent>('privacy-consent');
-    if (stored) {
-      const consent = { ...DEFAULT_CONSENT, ...stored };
-      // Populate cache with the loaded consent
-      cachedConsent = consent;
-      return consent;
-    }
-  } catch (error) {
-    console.warn('Failed to load privacy consent settings:', error);
+  if (!hydrated && !hydrationPromise) {
+    void hydrateFromSecureStore();
   }
-  // Populate cache with default consent
-  cachedConsent = DEFAULT_CONSENT;
-  return DEFAULT_CONSENT;
+  return cachedConsent;
 }
 
 /**
@@ -64,10 +85,12 @@ export function setPrivacyConsent(consent: Partial<PrivacyConsent>): void {
       lastUpdated: Date.now(),
     };
 
-    setItem('privacy-consent', updated);
-
     // Update cache with the new consent
     cachedConsent = updated;
+
+    void setSecureConfig(CONSENT_STORAGE_KEY, updated).catch((error) => {
+      console.error('Failed to store privacy consent securely:', error);
+    });
 
     // Update Sentry configuration based on consent
     updateSentryConsent(updated);
@@ -119,8 +142,9 @@ export function hasConsent(feature: ConsentFeature): boolean {
  * This ensures the cache is populated for synchronous access
  */
 export function initializePrivacyConsent(): void {
-  const consent = getPrivacyConsent();
-  updateSentryConsent(consent);
+  void hydrateFromSecureStore().finally(() => {
+    updateSentryConsent(getPrivacyConsent());
+  });
 }
 
 // Lightweight subscription so SDKGate can react immediately to UI-driven consent changes
@@ -130,4 +154,13 @@ const consentListeners = new Set<ConsentListener>();
 export function onPrivacyConsentChange(cb: ConsentListener): () => void {
   consentListeners.add(cb);
   return () => consentListeners.delete(cb);
+}
+
+/** @internal test helper */
+export async function __resetPrivacyConsentForTests(): Promise<void> {
+  cachedConsent = { ...DEFAULT_CONSENT, lastUpdated: Date.now() };
+  hydrated = false;
+  hydrationPromise = null;
+  consentListeners.clear();
+  await removeSecureConfig(CONSENT_STORAGE_KEY);
 }
