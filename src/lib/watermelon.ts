@@ -14,6 +14,9 @@ import { HarvestModel } from './watermelon-models/harvest';
 import { HarvestAuditModel } from './watermelon-models/harvest-audit';
 import { ImageUploadQueueModel } from './watermelon-models/image-upload-queue';
 import { InventoryModel } from './watermelon-models/inventory';
+import { InventoryBatchModel } from './watermelon-models/inventory-batch';
+import { InventoryItemModel } from './watermelon-models/inventory-item';
+import { InventoryMovementModel } from './watermelon-models/inventory-movement';
 import { NotificationModel } from './watermelon-models/notification';
 import { NotificationPreferenceModel } from './watermelon-models/notification-preference';
 import { NotificationQueueModel } from './watermelon-models/notification-queue';
@@ -65,6 +68,10 @@ export const database = new Database({
     HarvestModel,
     HarvestAuditModel,
     InventoryModel,
+    // Inventory and consumables models
+    InventoryItemModel,
+    InventoryBatchModel,
+    InventoryMovementModel,
     // Nutrient engine models
     FeedingTemplateModel,
     PhEcReadingModel,

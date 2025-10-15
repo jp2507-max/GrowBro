@@ -1,7 +1,8 @@
 # Implementation Plan
 
-- [ ] 1. Set up enhanced database schema with proper foundations
+_Current state (Oct 2025 audit): consumable inventory tables and UI are absent; only harvest inventory exists. WatermelonDB adapter + Expo plugin and global Sentry wiring are already in place._
 
+- [x] 1. Set up enhanced database schema with proper foundations
   - Create Supabase migrations with BEFORE UPDATE triggers to auto-set updated_at on all three tables
   - Implement split RLS policies per command (SELECT/INSERT/UPDATE/DELETE) with USING + WITH CHECK
   - Add FK constraints with CASCADE/SET NULL and CHECK constraints on movements enforcing sign by type
@@ -10,18 +11,16 @@
   - Add policy tests in CI to prevent RLS regressions and verify cross-user access denial
   - _Requirements: 1.4, 2.1, 10.1, 10.3_
 
-- [ ] 2. Create WatermelonDB models with Expo config plugin setup
-
-  - Configure @morrowdigital/watermelondb-expo-plugin and verify in CI that plugin is present
+- [x] 2. Create WatermelonDB models with Expo config plugin setup
+  - Confirm existing @morrowdigital/watermelondb-expo-plugin entry in app.config.cjs/package.json stays intact and create a CI guard so it cannot regress
   - Implement InventoryItem, InventoryBatch, and InventoryMovement models with @readonly timestamps
   - Add proper @relation decorators and ensure Movement model mirrors SQL schema exactly
   - Set up development build requirements and document custom native code requirements
-  - Create sync scaffold with pullChanges/pushChanges and cursor pagination setup
+  - Hook consumable tables into the existing WatermelonDB pullChanges/pushChanges scaffold with cursor pagination and domain-specific adapters
   - Add CI check that WatermelonDB plugin is configured and development build is required
   - _Requirements: 10.1, 10.2_
 
-- [ ] 3. Implement core inventory item management
-
+- [x] 3. Implement core inventory item management
   - Create InventoryItem CRUD operations with atomic transactions and proper validation
   - Add validation for required fields (name, category, unit, tracking_mode) with TypeScript types
   - Implement category management with predefined categories and custom category support
@@ -29,8 +28,7 @@
   - Create comprehensive unit tests for inventory item operations and validation rules
   - _Requirements: 1.2, 1.3, 8.1_
 
-- [ ] 4. Build robust batch management with FEFO/FIFO policies
-
+- [x] 4. Build robust batch management with FEFO/FIFO policies
   - Implement InventoryBatch model with lot numbers, expiration dates, and integer cost tracking
   - Create FEFO picking logic (exclude expired by default, override with reason logging)
   - Implement FIFO costing (never revalue historical movements, cost from batch at pick time)
@@ -39,8 +37,7 @@
   - Document both policies in code comments and ensure test coverage for split consumption
   - _Requirements: 2.1, 2.2, 2.3, 2.6_
 
-- [ ] 5. Create immutable movement journal system
-
+- [x] 5. Create immutable movement journal system
   - Implement InventoryMovement model with proper constraints and integer minor currency units
   - Create movement types with quantity/cost validation and CHECK constraints by type
   - Implement atomic transaction handling with all deductions + movements succeeding or rolling back
@@ -49,8 +46,7 @@
   - Ensure 100% of inventory edits produce immutable movements for audit trails
   - _Requirements: 1.4, 3.3, 10.6_
 
-- [ ] 6. Implement automatic consumption with enhanced deduction logic
-
+- [x] 6. Implement automatic consumption with enhanced deduction logic
   - Create deduction mapping system accepting (source: 'task'|'manual'|'import', idempotencyKey?, allowExpiredOverride?)
   - Implement automatic inventory deduction with FEFO picking and FIFO costing integration
   - Add transactional support ensuring all deductions + movement writes succeed or roll back
@@ -60,7 +56,6 @@
   - _Requirements: 3.1, 3.2, 3.4, 3.6_
 
 - [ ] 7. Build high-performance inventory UI with FlashList v2
-
   - Create InventoryList using FlashList v2 with stable keys + getItemType for JS-only performance
   - Implement performance budget: ≥1k rows load <300ms, 60fps scroll on mid-tier Android
   - Build InventoryItem detail view with FEFO batch display showing "expires in X days / expired" pills
@@ -70,7 +65,6 @@
   - _Requirements: 1.1, 1.3, 2.2, 4.2_
 
 - [ ] 8. Implement stock monitoring with Android 13+ notification handling
-
   - Create reorder point calculation with lead time and forecasting (8-week SMA default)
   - Implement low stock detection with days-to-zero forecasting and 80% prediction intervals
   - Add Simple Exponential Smoothing for items with ≥12 weeks of data
@@ -85,7 +79,6 @@
   - _Requirements: 4.1, 4.2, 4.3, 4.5, 6.3_
 
 - [ ] 9. Build RFC 4180 compliant CSV system with size limits
-
   - Create CSV export generating items.csv, batches.csv, movements.csv with UTF-8 + CRLF
   - Implement RFC 4180 parsing with required headers, ISO-8601 dates, and dot decimals
   - Build dry-run preview with per-row diffs and specific validation errors
@@ -95,7 +88,6 @@
   - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
 - [ ] 10. Implement consumption analytics with integer cost tracking
-
   - Create consumption history with filtering and cost analysis using minor currency units
   - Implement usage pattern analysis with 8-week SMA and exponential smoothing options
   - Build cost tracking ensuring FIFO cost equals batch cost at pick time (no revaluation)
@@ -105,7 +97,6 @@
   - _Requirements: 6.1, 6.2, 6.3, 9.3, 9.4_
 
 - [ ] 11. Add comprehensive search with offline caching
-
   - Implement full-text search with 150ms debounce across names, SKUs, categories
   - Create faceted filtering (category, brand, form, hazard flags, N-P-K ratios)
   - Add advanced filtering for expiration dates, stock levels, and batch information
@@ -115,7 +106,6 @@
   - _Requirements: 8.2, 8.5, 8.6_
 
 - [ ] 12. Implement comprehensive cost valuation system
-
   - Create cost calculation using integer minor units (cents) to avoid float drift
   - Implement FIFO costing with batch-level precision and historical cost preservation
   - Build real-time inventory valuation summaries by category with automatic updates
@@ -125,8 +115,7 @@
   - _Requirements: 9.1, 9.2, 9.5, 9.6_
 
 - [ ] 13. Set up robust sync with conflict resolution UI
-
-  - Implement WatermelonDB synchronize() with pullChanges/pushChanges and cursor pagination
+  - Integrate new inventory tables into the existing WatermelonDB synchronize() pipeline (pullChanges/pushChanges with cursor pagination)
   - Create Last-Write-Wins with conflict toasts showing device + timestamp information
   - Add "Reapply my change" action that creates new mutations while keeping LWW on wire
   - Implement chunked sync for large datasets with tombstone handling for soft deletes
@@ -135,8 +124,7 @@
   - _Requirements: 7.1, 7.2, 7.3, 7.4_
 
 - [ ] 14. Add comprehensive error handling with Sentry integration
-
-  - Implement Expo Sentry setup with source map upload in EAS builds
+  - Extend the existing Expo Sentry setup (already active) with inventory-specific breadcrumbs, release health checks, and ensure source maps upload for new code paths in EAS builds
   - Create detailed error messages with recovery options and field-level validation
   - Add undo functionality for destructive actions with 15-second window
   - Implement conservative breadcrumb usage to avoid performance overhead
@@ -145,8 +133,7 @@
   - _Requirements: 11.4, 11.5_
 
 - [ ] 15. Implement performance monitoring and telemetry
-
-  - Add comprehensive metrics for sync operations, conflicts, and error rates
+  - Extend existing telemetry (sync metrics, analytics events) to include inventory operations, conflicts, and error rates
   - Implement performance benchmarks with <300ms load times for 1,000+ items
   - Create monitoring for import errors, auto-deduction failures, and batch operations
   - Add user action analytics and usage pattern tracking for optimization
@@ -155,7 +142,6 @@
   - _Requirements: 11.1, 11.2_
 
 - [ ] 16. Create comprehensive test suite with device matrix
-
   - Write unit tests for all models, FEFO/FIFO policies, and business logic
   - Create integration tests for task workflows, sync scenarios, and CSV operations
   - Add performance tests for FlashList v2 with 1,000+ items on mid-tier Android
@@ -165,7 +151,6 @@
   - _Requirements: 11.2, 11.3_
 
 - [ ] 17. Integrate navigation with deep linking and notification permissions
-
   - Add inventory routes to Expo Router with deep linking to items and "create batch"
   - Integrate with authentication, user context, and global state management
   - Implement Android 13+ exact alarm permission flow with fallback strategies

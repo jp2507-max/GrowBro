@@ -1,6 +1,7 @@
 import { Q } from '@nozbe/watermelondb';
 import { DateTime } from 'luxon';
 
+import { deduceInventory } from '@/lib/inventory/deduction-service';
 import {
   onSeriesOccurrenceCompleted,
   onTaskCompleted,
@@ -561,6 +562,44 @@ export async function completeTask(id: string): Promise<Task> {
     await onTaskCompleted(toTaskFromModel((updated as any) ?? task));
   } catch (error) {
     console.warn('[TaskManager] plant telemetry failed on completeTask', error);
+  }
+
+  // Non-blocking inventory deduction (if deduction map exists)
+  try {
+    const taskData = toTaskFromModel((updated as any) ?? task);
+    const deductionMap = (taskData.metadata as any)?.deductionMap;
+
+    if (deductionMap && Array.isArray(deductionMap)) {
+      const plantId = taskData.plantId;
+      const plantCount = plantId ? 1 : undefined; // TODO: Support multi-plant tasks
+
+      const result = await deduceInventory(database, {
+        source: 'task',
+        taskId: id,
+        deductionMap,
+        context: {
+          taskId: id,
+          plantCount,
+        },
+      });
+
+      if (!result.success) {
+        console.warn(
+          '[TaskManager] Inventory deduction failed:',
+          result.error ?? 'Insufficient stock'
+        );
+        // TODO: Surface insufficient stock errors to UI for recovery
+      } else {
+        console.log(
+          `[TaskManager] Inventory deducted successfully: ${result.movements.length} movements`
+        );
+      }
+    }
+  } catch (error) {
+    console.warn(
+      '[TaskManager] inventory deduction failed on completeTask',
+      error
+    );
   }
 
   // Materialize the next occurrence for recurring tasks
