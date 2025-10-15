@@ -277,54 +277,58 @@ interface CreateMovementsOptions {
 async function createConsumptionMovements(
   options: CreateMovementsOptions
 ): Promise<InventoryMovementModel[]> {
-  const { picksPerItem, taskId, idempotencyKey, source } = options;
+  const { database, picksPerItem, taskId, idempotencyKey, source } = options;
   const createdMovements: InventoryMovementModel[] = [];
 
-  // Import movement service for atomic operations
-  // This provides proper batch quantity validation and prevents underflow
-  const { createMovementWithBatchUpdate } = await import(
+  // Import internal movement service function for bulk atomic operations
+  // This allows wrapping multiple movements in a single transaction
+  const { createMovementWithBatchUpdateInternal } = await import(
     '@/lib/inventory/movement-service'
   );
 
-  // Process each item and its batch picks
-  // picksPerItem contains Map<itemId, { entry, picks[] }>
-  for (const [itemId, pickData] of picksPerItem) {
-    const { entry, picks } = pickData;
+  // Wrap entire deduction operation in single atomic transaction
+  // This ensures all batch updates and movements succeed or all fail
+  await database.write(async () => {
+    // Process each item and its batch picks
+    // picksPerItem contains Map<itemId, { entry, picks[] }>
+    for (const [itemId, pickData] of picksPerItem) {
+      const { entry, picks } = pickData;
 
-    // Process each batch pick for this item
-    // Multiple picks may be needed if FIFO allocation spans multiple batches
-    for (let i = 0; i < picks.length; i++) {
-      const pick = picks[i];
+      // Process each batch pick for this item
+      // Multiple picks may be needed if FIFO allocation spans multiple batches
+      for (let i = 0; i < picks.length; i++) {
+        const pick = picks[i];
 
-      // Generate per-pick idempotency key to handle retries correctly
-      // Format: baseKey:batchId:pickIndex - allows individual pick retries
-      // without affecting other picks in the same transaction
-      const pickKey = `${idempotencyKey}:${pick.batchId}:${i}`;
+        // Generate per-pick idempotency key to handle retries correctly
+        // Format: baseKey:batchId:pickIndex - allows individual pick retries
+        // without affecting other picks in the same transaction
+        const pickKey = `${idempotencyKey}:${pick.batchId}:${i}`;
 
-      // Use movement service for atomic batch update + movement creation
-      // This ensures batch quantity is validated before deduction
-      // and movement is created in the same transaction
-      const result = await createMovementWithBatchUpdate({
-        itemId,
-        batchId: pick.batchId,
-        type: 'consumption',
-        quantityDelta: -pick.quantity, // Negative for consumption
-        costPerUnitMinor: pick.costPerUnitMinor, // FIFO cost from batch
-        reason: `Auto-deduction from ${source}${entry.label ? `: ${entry.label}` : ''}`,
-        taskId: taskId ?? undefined,
-        externalKey: pickKey,
-      });
+        // Use internal movement service function within the bulk transaction
+        // This ensures batch quantity is validated before deduction
+        // and movement is created atomically with all other operations
+        const result = await createMovementWithBatchUpdateInternal(database, {
+          itemId,
+          batchId: pick.batchId,
+          type: 'consumption',
+          quantityDelta: -pick.quantity, // Negative for consumption
+          costPerUnitMinor: pick.costPerUnitMinor, // FIFO cost from batch
+          reason: `Auto-deduction from ${source}${entry.label ? `: ${entry.label}` : ''}`,
+          taskId: taskId ?? undefined,
+          externalKey: pickKey,
+        });
 
-      // Throw on any movement creation failure to maintain transaction integrity
-      if (!result.success || !result.movement) {
-        throw new Error(
-          result.error ?? 'Failed to create consumption movement'
-        );
+        // Throw on any movement creation failure to rollback entire transaction
+        if (!result.success || !result.movement) {
+          throw new Error(
+            result.error ?? 'Failed to create consumption movement'
+          );
+        }
+
+        createdMovements.push(result.movement);
       }
-
-      createdMovements.push(result.movement);
     }
-  }
+  });
 
   return createdMovements;
 }

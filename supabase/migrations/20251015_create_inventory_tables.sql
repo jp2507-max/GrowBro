@@ -63,7 +63,7 @@ CREATE TABLE inventory_movements (
   CONSTRAINT chk_qty_by_type CHECK (
     (type = 'receipt' AND quantity_delta > 0) OR
     (type = 'consumption' AND quantity_delta < 0) OR
-    (type = 'adjustment' AND quantity_delta <> 0)
+    (type = 'adjustment')
   ),
   CONSTRAINT chk_cost_required CHECK (
     type = 'adjustment' OR cost_per_unit_minor IS NOT NULL

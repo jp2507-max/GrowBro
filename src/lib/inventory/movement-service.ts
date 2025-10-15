@@ -255,6 +255,88 @@ export async function createMovement(
 }
 
 /**
+ * Internal function to create movement with batch update (without transaction wrapper)
+ *
+ * This performs the same logic as createMovementWithBatchUpdate but without
+ * wrapping in database.write(). Used for bulk operations that need atomicity
+ * across multiple movements.
+ *
+ * @param database - WatermelonDB instance
+ * @param request - Movement creation request
+ * @returns Operation result with movement or errors
+ */
+export async function createMovementWithBatchUpdateInternal(
+  database: Database,
+  request: CreateMovementRequest
+): Promise<MovementOperationResult> {
+  if (!request.batchId) {
+    return {
+      success: false,
+      error: 'Batch ID is required for batch-level movements',
+    };
+  }
+
+  // Validate request
+  const validation = validateMovement(request);
+  if (!validation.valid) {
+    return {
+      success: false,
+      error: 'Movement validation failed',
+      validationErrors: validation.errors,
+    };
+  }
+
+  const movementCollection = database.get<InventoryMovementModel>(
+    'inventory_movements'
+  );
+
+  // First perform lookup for existing movement with same externalKey (if provided)
+  if (request.externalKey) {
+    const existing = await movementCollection
+      .query(Q.where('external_key', request.externalKey))
+      .fetch();
+    if (existing.length > 0) {
+      // Movement already exists, return it without touching the batch
+      return { movement: existing[0], isDuplicate: true };
+    }
+  }
+
+  // Only proceed when no existing movement is found
+  // Get batch and verify existence
+  const batch = await database
+    .get<InventoryBatchModel>('inventory_batches')
+    .find(request.batchId!);
+
+  // Update batch quantity first to ensure no duplicate movements on retries
+  await batch.update((record) => {
+    const newQuantity = record.quantity + request.quantityDelta;
+
+    // Validate quantity doesn't go negative
+    if (newQuantity < 0) {
+      throw new Error(
+        `Insufficient batch quantity. Available: ${record.quantity}, Requested: ${Math.abs(request.quantityDelta)}`
+      );
+    }
+
+    record.quantity = newQuantity;
+  });
+
+  // Create movement record after batch update succeeds
+  const movement = await movementCollection.create((record) => {
+    record.itemId = request.itemId;
+    record.batchId = request.batchId;
+    record.type = request.type;
+    record.quantityDelta = request.quantityDelta;
+    record.costPerUnitMinor = request.costPerUnitMinor;
+    record.reason = request.reason;
+    record.taskId = request.taskId;
+    record.externalKey = request.externalKey;
+  });
+
+  return { movement, isDuplicate: false };
+}
+
+/**
  * Create movement and update batch quantity atomically
  * Requirement 1.4, 3.3
  *
@@ -287,54 +369,7 @@ export async function createMovementWithBatchUpdate(
   try {
     // Atomic transaction: check idempotency first, then create movement + update batch
     const result = await database.write(async () => {
-      const movementCollection = database.get<InventoryMovementModel>(
-        'inventory_movements'
-      );
-
-      // First perform lookup for existing movement with same externalKey (if provided)
-      if (request.externalKey) {
-        const existing = await movementCollection
-          .query(Q.where('external_key', request.externalKey))
-          .fetch();
-        if (existing.length > 0) {
-          // Movement already exists, return it without touching the batch
-          return { movement: existing[0], isDuplicate: true };
-        }
-      }
-
-      // Only proceed when no existing movement is found
-      // Get batch and verify existence
-      const batch = await database
-        .get<InventoryBatchModel>('inventory_batches')
-        .find(request.batchId!);
-
-      // Update batch quantity first to ensure no duplicate movements on retries
-      await batch.update((record) => {
-        const newQuantity = record.quantity + request.quantityDelta;
-
-        // Validate quantity doesn't go negative
-        if (newQuantity < 0) {
-          throw new Error(
-            `Insufficient batch quantity. Available: ${record.quantity}, Requested: ${Math.abs(request.quantityDelta)}`
-          );
-        }
-
-        record.quantity = newQuantity;
-      });
-
-      // Create movement record after batch update succeeds
-      const movement = await movementCollection.create((record) => {
-        record.itemId = request.itemId;
-        record.batchId = request.batchId;
-        record.type = request.type;
-        record.quantityDelta = request.quantityDelta;
-        record.costPerUnitMinor = request.costPerUnitMinor;
-        record.reason = request.reason;
-        record.taskId = request.taskId;
-        record.externalKey = request.externalKey;
-      });
-
-      return { movement, isDuplicate: false };
+      return await createMovementWithBatchUpdateInternal(database, request);
     });
 
     return {

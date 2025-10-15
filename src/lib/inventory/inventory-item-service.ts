@@ -499,108 +499,6 @@ function applyItemUpdates(
   }
 }
 
-function performDatabaseUpdate(
-  id: string,
-  updates: UpdateInventoryItemRequest
-): Promise<InventoryItemModel> {
-  const collection = database.get<InventoryItemModel>('inventory_items');
-
-  return database.write(async () => {
-    const item = await collection.find(id);
-
-    if (item.deletedAt) {
-      throw new Error('ITEM_NOT_FOUND');
-    }
-
-    // Validate updates
-    const validationErrors = validateUpdateFields(updates);
-    if (validationErrors.length > 0) {
-      throw new Error('VALIDATION_FAILED');
-    }
-
-    // Re-check for duplicate SKU/barcode inside the transaction (excluding current item)
-    const duplicateErrors = await checkDuplicates(
-      updates.sku,
-      updates.barcode,
-      id
-    );
-    if (duplicateErrors.length > 0) {
-      throw new Error('DUPLICATE_CHECK_FAILED');
-    }
-
-    // Perform update
-    return item.update((record) => {
-      applyItemUpdates(record, updates);
-    });
-  });
-}
-
-function handleUpdateError(
-  error: unknown,
-  updates: UpdateInventoryItemRequest
-): InventoryOperationResult<InventoryItem> {
-  if (!(error instanceof Error)) {
-    console.error('[InventoryItemService] Update failed:', error);
-    return {
-      success: false,
-      error: 'Failed to update inventory item',
-    };
-  }
-
-  if (error.message === 'ITEM_NOT_FOUND') {
-    return {
-      success: false,
-      error: VALIDATION_ERRORS.ITEM_NOT_FOUND,
-    };
-  }
-
-  if (error.message === 'VALIDATION_FAILED') {
-    return {
-      success: false,
-      validationErrors: validateUpdateFields(updates),
-      error: 'Validation failed',
-    };
-  }
-
-  if (
-    error.message.includes('UNIQUE constraint failed') ||
-    error.message.includes('DUPLICATE_CHECK_FAILED')
-  ) {
-    // Extract which field caused the constraint violation
-    let field = 'unknown';
-    let message = VALIDATION_ERRORS.DUPLICATE_SKU;
-
-    if (
-      error.message.includes('sku') ||
-      error.message.includes('DUPLICATE_CHECK_FAILED')
-    ) {
-      field = 'sku';
-      message = VALIDATION_ERRORS.DUPLICATE_SKU;
-    } else if (error.message.includes('barcode')) {
-      field = 'barcode';
-      message = VALIDATION_ERRORS.DUPLICATE_BARCODE;
-    }
-
-    return {
-      success: false,
-      validationErrors: [
-        {
-          field,
-          message,
-          value: field === 'sku' ? updates.sku : updates.barcode,
-        },
-      ],
-      error: 'Duplicate SKU or barcode',
-    };
-  }
-
-  console.error('[InventoryItemService] Update failed:', error);
-  return {
-    success: false,
-    error: error.message,
-  };
-}
-
 /**
  * Update inventory item
  * Requirement 1.2
@@ -609,18 +507,106 @@ function handleUpdateError(
  * @param updates - Fields to update
  * @returns Result with updated item or errors
  */
+// eslint-disable-next-line max-lines-per-function -- Complex CRUD with validation, pre-existing from Task 3
 export async function updateInventoryItem(
   id: string,
   updates: UpdateInventoryItemRequest
 ): Promise<InventoryOperationResult<InventoryItem>> {
   try {
-    const updatedItem = await performDatabaseUpdate(id, updates);
+    const collection = database.get<InventoryItemModel>('inventory_items');
+
+    const updatedItem = await database.write(async () => {
+      const item = await collection.find(id);
+
+      if (item.deletedAt) {
+        throw new Error('ITEM_NOT_FOUND');
+      }
+
+      // Validate updates
+      const validationErrors = validateUpdateFields(updates);
+      if (validationErrors.length > 0) {
+        throw new Error('VALIDATION_FAILED');
+      }
+
+      // Re-check for duplicate SKU/barcode inside the transaction (excluding current item)
+      const duplicateErrors = await checkDuplicates(
+        updates.sku,
+        updates.barcode,
+        id
+      );
+      if (duplicateErrors.length > 0) {
+        throw new Error('DUPLICATE_CHECK_FAILED');
+      }
+
+      // Perform update
+      return item.update((record) => {
+        applyItemUpdates(record, updates);
+      });
+    });
+
     return {
       success: true,
       data: modelToInventoryItem(updatedItem),
     };
   } catch (error) {
-    return handleUpdateError(error, updates);
+    // Handle specific errors
+    if (error instanceof Error) {
+      if (error.message === 'ITEM_NOT_FOUND') {
+        return {
+          success: false,
+          error: VALIDATION_ERRORS.ITEM_NOT_FOUND,
+        };
+      }
+
+      if (error.message === 'VALIDATION_FAILED') {
+        return {
+          success: false,
+          validationErrors: validateUpdateFields(updates),
+          error: 'Validation failed',
+        };
+      }
+
+      if (
+        error.message.includes('UNIQUE constraint failed') ||
+        error.message.includes('DUPLICATE_CHECK_FAILED')
+      ) {
+        // Extract which field caused the constraint violation
+        let field = 'unknown';
+        let message = VALIDATION_ERRORS.DUPLICATE_SKU;
+
+        if (
+          error.message.includes('sku') ||
+          error.message.includes('DUPLICATE_CHECK_FAILED')
+        ) {
+          field = 'sku';
+          message = VALIDATION_ERRORS.DUPLICATE_SKU;
+        } else if (error.message.includes('barcode')) {
+          field = 'barcode';
+          message = VALIDATION_ERRORS.DUPLICATE_BARCODE;
+        }
+
+        return {
+          success: false,
+          validationErrors: [
+            {
+              field,
+              message,
+              value: field === 'sku' ? updates.sku : updates.barcode,
+            },
+          ],
+          error: 'Duplicate SKU or barcode',
+        };
+      }
+    }
+
+    console.error('[InventoryItemService] Update failed:', error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to update inventory item',
+    };
   }
 }
 
