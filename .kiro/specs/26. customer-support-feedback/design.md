@@ -54,20 +54,20 @@ The Customer Support & Feedback Loop feature provides a comprehensive in-app sup
 **Data Flow:**
 
 ```
-User Search → Client-side Index (MiniSearch/FlexSearch in MMKV) → Ranked Results
+User Search → Client-side Index (MiniSearch in MMKV) → Ranked Results
            ↓
 User Search → Supabase Query (online) → Server-Ranked Results → Cache Update
 ```
 
 **Storage:**
 
-- WatermelonDB: `help_articles` table for offline cache
-- MMKV: Search index (MiniSearch/FlexSearch, <2MB), search history, article view telemetry (anonymized)
+- WatermelonDB: `help_articles_cache` table for offline cache
+- MMKV: Search index (MiniSearch, <2MB), search history, article view telemetry (anonymized)
 - Supabase: `help_articles` table (source of truth)
 
 **Technical Notes:**
 
-- **FTS Implementation:** Use MiniSearch or FlexSearch (pure JS) instead of SQLite FTS5 (not guaranteed in Expo runtime)
+- **FTS Implementation:** Use MiniSearch (pure JS)
 - **Markdown Rendering:** Use `@/components/ui/markdown` wrapper around react-native-markdown-display for theme tokens and link handling
 - **Link Interception:** External URLs require confirm dialog before opening
 - **Telemetry:** Store per-article impression counters locally, aggregate server-side via daily ping
@@ -921,15 +921,15 @@ interface RecoveryAction {
 
 **At Rest:**
 
-- WatermelonDB: Encrypted via platform keychain (iOS) or EncryptedSharedPreferences (Android)
+- WatermelonDB: store encryption keys in platform keychain (iOS) or EncryptedSharedPreferences (Android); encrypt database files via an encrypted adapter or by encrypting data before writing
 - MMKV: Encrypted storage for sensitive preferences
 - Queued payloads: Encrypted before storage, decrypted only during sync
 
 **In Transit:**
 
-- All API calls use TLS 1.3
+- All API calls use HTTPS with modern TLS (server-configured)
 - Signed URLs for photo uploads (time-limited, single-use)
-- Certificate pinning for Supabase endpoints
+- Certificate pinning: Not in MVP (see "Security & Privacy Refinements")
 
 ### Access Control
 
@@ -1094,7 +1094,7 @@ All user-facing strings must be added to `src/translations/en.json` and `src/tra
 
 **Search Optimization:**
 
-- Local FTS index using SQLite FTS5 extension
+- Local FTS index using MiniSearch
 - Debounced search input (300ms delay)
 - Limit results to 50 items
 - Lazy load article bodies (fetch on demand)

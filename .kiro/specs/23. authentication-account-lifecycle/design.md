@@ -16,7 +16,7 @@ This design document outlines the architecture for a comprehensive Authenticatio
 
 - **Supabase Auth as Foundation**: Leverage Supabase's built-in auth capabilities (email/password, OAuth, token refresh) rather than building custom JWT handling
 - **Zustand for Client State**: Continue using existing Zustand store for auth state management with enhanced session tracking
-- **AsyncStorage for Persistence**: Store encrypted session tokens in AsyncStorage for offline access and auto-login
+- **MMKV for Persistence**: Store session tokens in MMKV for offline access and auto-login (encrypted-at-rest on Android, OS-level encryption on iOS). Use Keychain (iOS) / Keystore (Android) for encryption keys and sensitive secrets.
 - **Custom Tables for Extensions**: Use Supabase tables for device tracking (`user_sessions`), lockout management (`auth_lockouts`), and audit logs (`auth_audit_log`)
 - **Edge Functions for Business Logic**: Implement device metadata capture, lockout enforcement, and email notifications via Supabase Edge Functions
 - **React Query Kit for API Layer**: Follow existing pattern with `createMutation` for auth operations (sign in, sign up, password reset)
@@ -41,8 +41,8 @@ graph TB
     end
 
     subgraph "Local Storage"
-        AsyncStorage[AsyncStorage<br/>encrypted tokens]
-        SecureStore[SecureStore<br/>consent state]
+        MMKV[MMKV<br/>encrypted tokens]
+        SecureStore[SecureStore<br/>consent state + encryption key]
         WatermelonDB[WatermelonDB<br/>user data]
     end
 
@@ -63,7 +63,7 @@ graph TB
     AuthHooks --> ReactQuery
     AuthHooks --> AuthStore
     AuthStore --> SessionMgr
-    SessionMgr --> AsyncStorage
+    SessionMgr --> MMKV
     ReactQuery --> SupabaseClient
     SupabaseClient --> SupabaseAuth
     SupabaseAuth --> EdgeFunctions
@@ -153,7 +153,7 @@ interface User {
 **Responsibilities**:
 
 - Manage authentication state across the app
-- Persist session to AsyncStorage
+- Persist session to MMKV
 - Hydrate state on app start
 - Emit events for analytics/telemetry (if consented)
 
@@ -878,7 +878,7 @@ export function sanitizeAuthError(error: any): any {
 
 1. **Auth Store Tests** (`src/lib/auth/index.test.tsx`)
    - Test state transitions (idle → signIn → signOut)
-   - Test token persistence to AsyncStorage
+   - Test token persistence to MMKV
    - Test hydration on app start
    - Test offline mode transitions
 
@@ -911,7 +911,7 @@ export function sanitizeAuthError(error: any): any {
    - Test successful email/password sign in
    - Test invalid credentials error
    - Test account lockout after 5 failed attempts
-   - Test session persistence to AsyncStorage
+   - Test session persistence to MMKV
    - Test auth state update in Zustand
 
 2. **Sign Up Flow** (`src/api/auth/use-sign-up.test.ts`)
@@ -984,24 +984,235 @@ export function sanitizeAuthError(error: any): any {
 
 ```typescript
 import { MMKV } from 'react-native-mmkv';
+import * as SecureStore from 'expo-secure-store';
+import * as Crypto from 'expo-crypto';
 
-const authStorage = new MMKV({
-  id: 'auth-storage',
-  encryptionKey: 'your-encryption-key',
-});
+// Constants for secure storage keys
+const MMKV_ENCRYPTION_KEY_NAME = 'mmkv-encryption-key';
+const MMKV_KEY_VERSION_NAME = 'mmkv-key-version';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    storage: {
-      getItem: (key) => authStorage.getString(key) ?? null,
-      setItem: (key, value) => authStorage.set(key, value),
-      removeItem: (key) => authStorage.delete(key),
+// Key rotation configuration
+const KEY_ROTATION_INTERVAL_DAYS = 90; // Rotate keys every 90 days
+const ENCRYPTION_KEY_SIZE = 32; // 256-bit encryption key
+
+interface EncryptionKeyInfo {
+  key: string;
+  version: number;
+  createdAt: Date;
+  lastRotatedAt: Date;
+}
+
+/**
+ * Securely generates a new 32-byte encryption key using CSPRNG
+ */
+async function generateEncryptionKey(): Promise<string> {
+  try {
+    const randomBytes = await Crypto.getRandomBytesAsync(ENCRYPTION_KEY_SIZE);
+    return Buffer.from(randomBytes).toString('base64');
+  } catch (error) {
+    console.error('Failed to generate encryption key:', error);
+    throw new Error('Unable to generate secure encryption key');
+  }
+}
+
+/**
+ * Retrieves encryption key info from secure storage
+ */
+async function getStoredKeyInfo(): Promise<EncryptionKeyInfo | null> {
+  try {
+    const [key, versionStr, createdAtStr, lastRotatedAtStr] = await Promise.all(
+      [
+        SecureStore.getItemAsync(MMKV_ENCRYPTION_KEY_NAME),
+        SecureStore.getItemAsync(MMKV_KEY_VERSION_NAME),
+        SecureStore.getItemAsync(`${MMKV_ENCRYPTION_KEY_NAME}-created`),
+        SecureStore.getItemAsync(`${MMKV_ENCRYPTION_KEY_NAME}-rotated`),
+      ]
+    );
+
+    if (!key || !versionStr || !createdAtStr) {
+      return null; // No key stored yet
+    }
+
+    return {
+      key,
+      version: parseInt(versionStr, 10),
+      createdAt: new Date(createdAtStr),
+      lastRotatedAt: new Date(lastRotatedAtStr || createdAtStr),
+    };
+  } catch (error) {
+    console.error('Failed to retrieve stored key info:', error);
+    // If secure storage is unavailable, we cannot safely store keys
+    throw new Error(
+      'Secure storage unavailable - cannot initialize encrypted storage'
+    );
+  }
+}
+
+/**
+ * Stores encryption key info in secure storage
+ */
+async function storeKeyInfo(keyInfo: EncryptionKeyInfo): Promise<void> {
+  try {
+    await Promise.all([
+      SecureStore.setItemAsync(MMKV_ENCRYPTION_KEY_NAME, keyInfo.key),
+      SecureStore.setItemAsync(
+        MMKV_KEY_VERSION_NAME,
+        keyInfo.version.toString()
+      ),
+      SecureStore.setItemAsync(
+        `${MMKV_ENCRYPTION_KEY_NAME}-created`,
+        keyInfo.createdAt.toISOString()
+      ),
+      SecureStore.setItemAsync(
+        `${MMKV_ENCRYPTION_KEY_NAME}-rotated`,
+        keyInfo.lastRotatedAt.toISOString()
+      ),
+    ]);
+  } catch (error) {
+    console.error('Failed to store key info:', error);
+    throw new Error('Failed to securely store encryption key');
+  }
+}
+
+/**
+ * Checks if key rotation is needed based on time interval
+ */
+function shouldRotateKey(lastRotatedAt: Date): boolean {
+  const daysSinceRotation =
+    (Date.now() - lastRotatedAt.getTime()) / (1000 * 60 * 60 * 24);
+  return daysSinceRotation > KEY_ROTATION_INTERVAL_DAYS;
+}
+
+/**
+ * Performs safe key rotation by migrating existing data
+ */
+async function rotateEncryptionKey(
+  oldKeyInfo: EncryptionKeyInfo
+): Promise<EncryptionKeyInfo> {
+  console.log('Performing key rotation...');
+
+  // Create temporary MMKV instance with old key to read existing data
+  const tempStorage = new MMKV({
+    id: 'auth-storage-temp',
+    encryptionKey: oldKeyInfo.key,
+  });
+
+  // Read all existing data
+  const allKeys = tempStorage.getAllKeys();
+  const existingData: Record<string, any> = {};
+
+  for (const key of allKeys) {
+    const value = tempStorage.getString(key);
+    if (value !== null) {
+      existingData[key] = value;
+    }
+  }
+
+  // Generate new key
+  const newKey = await generateEncryptionKey();
+  const newKeyInfo: EncryptionKeyInfo = {
+    key: newKey,
+    version: oldKeyInfo.version + 1,
+    createdAt: oldKeyInfo.createdAt,
+    lastRotatedAt: new Date(),
+  };
+
+  // Create new MMKV instance with new key
+  const newStorage = new MMKV({
+    id: 'auth-storage-new',
+    encryptionKey: newKey,
+  });
+
+  // Write data with new encryption
+  for (const [key, value] of Object.entries(existingData)) {
+    newStorage.set(key, value);
+  }
+
+  // Store new key info
+  await storeKeyInfo(newKeyInfo);
+
+  // Clean up temporary storage
+  tempStorage.clearAll();
+  newStorage.clearAll();
+
+  console.log(`Key rotation completed. New version: ${newKeyInfo.version}`);
+  return newKeyInfo;
+}
+
+/**
+ * Gets or creates encryption key with rotation support
+ */
+async function getOrCreateEncryptionKey(): Promise<string> {
+  try {
+    let keyInfo = await getStoredKeyInfo();
+
+    if (!keyInfo) {
+      // First run - generate new key
+      console.log('Generating initial encryption key...');
+      const key = await generateEncryptionKey();
+      keyInfo = {
+        key,
+        version: 1,
+        createdAt: new Date(),
+        lastRotatedAt: new Date(),
+      };
+      await storeKeyInfo(keyInfo);
+    } else if (shouldRotateKey(keyInfo.lastRotatedAt)) {
+      // Key rotation needed
+      keyInfo = await rotateEncryptionKey(keyInfo);
+    }
+
+    return keyInfo.key;
+  } catch (error) {
+    console.error('Encryption key management failed:', error);
+    // Fallback: generate key but don't store it (less secure but functional)
+    console.warn('Falling back to ephemeral encryption key');
+    return await generateEncryptionKey();
+  }
+}
+
+// Initialize MMKV asynchronously (cannot use top-level await)
+let authStorage: MMKV | null = null;
+
+export async function initializeAuthStorage(): Promise<MMKV> {
+  if (authStorage) {
+    return authStorage;
+  }
+
+  const encryptionKey = await getOrCreateEncryptionKey();
+  authStorage = new MMKV({
+    id: 'auth-storage',
+    encryptionKey,
+  });
+
+  return authStorage;
+}
+
+// Export a getter that ensures initialization
+export async function getAuthStorage(): Promise<MMKV> {
+  if (!authStorage) {
+    authStorage = await initializeAuthStorage();
+  }
+  return authStorage;
+}
+
+// Supabase client initialization (call initializeAuthStorage() first)
+export async function createSecureSupabaseClient() {
+  const storage = await getAuthStorage();
+
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      storage: {
+        getItem: (key) => storage.getString(key) ?? null,
+        setItem: (key, value) => storage.set(key, value),
+        removeItem: (key) => storage.delete(key),
+      },
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
     },
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-});
+  });
+}
 ```
 
 ### 2. Password Requirements
@@ -1405,7 +1616,7 @@ serve(async (req) => {
 1. **Extend Auth Store**
    - Add user, session, lastValidatedAt, offlineMode fields
    - Update signIn/signOut actions to handle new fields
-   - Add session persistence to AsyncStorage
+   - Add session persistence to MMKV
 
 2. **Create Session Manager**
    - Implement offline mode logic (0-7, 7-30, 30+ days)
@@ -1604,13 +1815,15 @@ None required - all functionality can be implemented with existing dependencies:
 - `@supabase/supabase-js` - Already installed, provides auth methods
 - `react-query-kit` - Already installed, for API hooks
 - `zustand` - Already installed, for state management
-- `@react-native-async-storage/async-storage` - Already installed, for token storage
-- `expo-secure-store` - Already installed, for consent state
+- `react-native-mmkv` - Already installed, for encrypted token storage (MMKV + Keychain for secrets)
+- `expo-secure-store` - Already installed, for consent state and encryption keys
 - `react-i18next` - Already installed, for translations
 - `zod` - Already installed, for validation
 - `react-hook-form` - Already installed, for forms
 - `@sentry/react-native` - Already installed, for error tracking
 - `expo-linking` - Already installed, for deep links
+
+**Note**: `@react-native-async-storage/async-storage` is deprecated for auth storage. MMKV + Keychain is the authoritative storage choice for encrypted session tokens and offline auto-login.
 
 ### Configuration Changes
 

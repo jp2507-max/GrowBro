@@ -17,7 +17,6 @@ import { Q } from '@nozbe/watermelondb';
 import { pickBatchesForConsumption } from '@/lib/inventory/batch-picker';
 import { validateDeductionMap } from '@/lib/inventory/deduction-validators';
 import { calculateScaledQuantity } from '@/lib/inventory/scaling-calculator';
-import type { InventoryBatchModel } from '@/lib/watermelon-models/inventory-batch';
 import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
 import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
 import type {
@@ -215,15 +214,23 @@ function generateIdempotencyKey(
   taskId: string,
   deductionMap: DeductionMapEntry[]
 ): string {
-  // Create deterministic hash from taskId + sorted item IDs
-  const itemIds = deductionMap
-    .map((e) => e.itemId)
-    .sort()
-    .join(',');
-
-  // Use UUID v5 (deterministic) with namespace
-  // For simplicity, using taskId + timestamp for uniqueness
-  return `deduction:${taskId}:${Date.now()}:${itemIds.slice(0, 8)}`;
+  // Deterministic: taskId + normalized deduction entries
+  const normalized = deductionMap
+    .map((e) => ({
+      itemId: e.itemId,
+      unit: e.unit,
+      perTaskQuantity: e.perTaskQuantity ?? null,
+      perPlantQuantity: e.perPlantQuantity ?? null,
+      scalingMode: e.scalingMode ?? 'fixed',
+    }))
+    .sort((a, b) => a.itemId.localeCompare(b.itemId));
+  const payload = JSON.stringify({ taskId, normalized });
+  // Simple stable hash to shorten key
+  let hash = 0;
+  for (let i = 0; i < payload.length; i++) {
+    hash = (hash * 31 + payload.charCodeAt(i)) | 0;
+  }
+  return `deduction:${taskId}:${Math.abs(hash)}`;
 }
 
 /**
@@ -270,42 +277,54 @@ interface CreateMovementsOptions {
 async function createConsumptionMovements(
   options: CreateMovementsOptions
 ): Promise<InventoryMovementModel[]> {
-  const { database, picksPerItem, taskId, idempotencyKey, source } = options;
+  const { picksPerItem, taskId, idempotencyKey, source } = options;
   const createdMovements: InventoryMovementModel[] = [];
 
-  await database.write(async () => {
-    const batchCollection =
-      database.get<InventoryBatchModel>('inventory_batches');
-    const movementCollection = database.get<InventoryMovementModel>(
-      'inventory_movements'
-    );
+  // Import movement service for atomic operations
+  // This provides proper batch quantity validation and prevents underflow
+  const { createMovementWithBatchUpdate } = await import(
+    '@/lib/inventory/movement-service'
+  );
 
-    for (const [itemId, pickData] of picksPerItem) {
-      const { entry, picks } = pickData;
+  // Process each item and its batch picks
+  // picksPerItem contains Map<itemId, { entry, picks[] }>
+  for (const [itemId, pickData] of picksPerItem) {
+    const { entry, picks } = pickData;
 
-      for (const pick of picks) {
-        // Update batch quantity
-        const batch = await batchCollection.find(pick.batchId);
-        await batch.update((b) => {
-          (b as any).quantity = (b as any).quantity - pick.quantity;
-        });
+    // Process each batch pick for this item
+    // Multiple picks may be needed if FIFO allocation spans multiple batches
+    for (let i = 0; i < picks.length; i++) {
+      const pick = picks[i];
 
-        // Create consumption movement
-        const movement = await movementCollection.create((m: any) => {
-          m.itemId = itemId;
-          m.batchId = pick.batchId;
-          m.type = 'consumption';
-          m.quantityDelta = -pick.quantity; // Negative for consumption
-          m.costPerUnitMinor = pick.costPerUnitMinor; // FIFO cost from batch
-          m.reason = `Auto-deduction from ${source}${entry.label ? `: ${entry.label}` : ''}`;
-          m.taskId = taskId;
-          m.externalKey = idempotencyKey;
-        });
+      // Generate per-pick idempotency key to handle retries correctly
+      // Format: baseKey:batchId:pickIndex - allows individual pick retries
+      // without affecting other picks in the same transaction
+      const pickKey = `${idempotencyKey}:${pick.batchId}:${i}`;
 
-        createdMovements.push(movement);
+      // Use movement service for atomic batch update + movement creation
+      // This ensures batch quantity is validated before deduction
+      // and movement is created in the same transaction
+      const result = await createMovementWithBatchUpdate({
+        itemId,
+        batchId: pick.batchId,
+        type: 'consumption',
+        quantityDelta: -pick.quantity, // Negative for consumption
+        costPerUnitMinor: pick.costPerUnitMinor, // FIFO cost from batch
+        reason: `Auto-deduction from ${source}${entry.label ? `: ${entry.label}` : ''}`,
+        taskId: taskId ?? undefined,
+        externalKey: pickKey,
+      });
+
+      // Throw on any movement creation failure to maintain transaction integrity
+      if (!result.success || !result.movement) {
+        throw new Error(
+          result.error ?? 'Failed to create consumption movement'
+        );
       }
+
+      createdMovements.push(result.movement);
     }
-  });
+  }
 
   return createdMovements;
 }

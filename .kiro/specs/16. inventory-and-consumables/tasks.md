@@ -16,7 +16,7 @@ _Current state (Oct 2025 audit): consumable inventory tables and UI are absent; 
   - Implement InventoryItem, InventoryBatch, and InventoryMovement models with @readonly timestamps
   - Add proper @relation decorators and ensure Movement model mirrors SQL schema exactly
   - Set up development build requirements and document custom native code requirements
-  - Hook consumable tables into the existing WatermelonDB pullChanges/pushChanges scaffold with cursor pagination and domain-specific adapters
+  - Hook consumable tables into the existing WatermelonDB pullChanges/pushChanges scaffold with cursor pagination using (updated_at, id) tuple and domain-specific adapters
   - Add CI check that WatermelonDB plugin is configured and development build is required
   - _Requirements: 10.1, 10.2_
 
@@ -38,10 +38,12 @@ _Current state (Oct 2025 audit): consumable inventory tables and UI are absent; 
   - _Requirements: 2.1, 2.2, 2.3, 2.6_
 
 - [x] 5. Create immutable movement journal system
-  - Implement InventoryMovement model with proper constraints and integer minor currency units
+  - Implement InventoryMovement model with proper constraints and integer minor currency units. Use 64-bit integers for cost_cents in the DB and surface as BigInt or string in JS/TS to avoid precision loss across platforms.
   - Create movement types with quantity/cost validation and CHECK constraints by type
-  - Implement atomic transaction handling with all deductions + movements succeeding or rolling back
-  - Add idempotency support with external keys and server-side Idempotency-Key header caching
+  - Implement RLS policy that forbids UPDATE and DELETE on the movements table (only INSERT allowed). Complement the policy with DB-level triggers that raise on attempted UPDATE/DELETE for defense-in-depth and clearer error messages for accidental mutations.
+  - Implement atomic transaction handling such that any deductions + movement writes are committed together or rolled back together (no partial states)
+  - Add idempotency support with a server-side Idempotency-Key store: scope the key to (user_id, method, path, hashed_body), persist the key + response for replay, set a TTL (recommend 24–72h), and ensure uniqueness within the scoped key space. Replay identical requests using the stored response instead of re-applying movements.
+  - Add server-side caching of Idempotency-Key header and explicit replay semantics for duplicate detection
   - Write integration tests proving exactly-once behavior under retries and timeouts
   - Ensure 100% of inventory edits produce immutable movements for audit trails
   - _Requirements: 1.4, 3.3, 10.6_
@@ -49,13 +51,15 @@ _Current state (Oct 2025 audit): consumable inventory tables and UI are absent; 
 - [x] 6. Implement automatic consumption with enhanced deduction logic
   - Create deduction mapping system accepting (source: 'task'|'manual'|'import', idempotencyKey?, allowExpiredOverride?)
   - Implement automatic inventory deduction with FEFO picking and FIFO costing integration
+  - Prevent double-picks under contention by selecting batches FOR UPDATE (or FOR UPDATE SKIP LOCKED when appropriate) during allocation. Ensure the allocation SELECT and subsequent InventoryMovement INSERTs occur within the same DB transaction so locks cover the full write path.
+  - Define default behavior for insufficient inventory (recommend: return an explicit `insufficient_stock` result and skip allocation by default; provide an optional `partial_fill` mode that consumes what is available). Make these behaviors idempotent across retries by tying allocation results to the provided idempotencyKey.
+  - Emit a deterministic allocation order to guarantee stable idempotency: FEFO (earliest expires_on first) -> FIFO (oldest created_at) -> id ASC as the final tiebreaker. Use a single ORDER BY clause that implements this priority to ensure repeatable allocations.
   - Add transactional support ensuring all deductions + movement writes succeed or roll back
-  - Handle insufficient inventory with three choices (partial/skip/adjust) and proper error recovery
   - Create integration tests with existing task workflows proving no double-deduction on retries
   - Add per-plant scaling support and nutrient calculation integration
   - _Requirements: 3.1, 3.2, 3.4, 3.6_
 
-- [ ] 7. Build high-performance inventory UI with FlashList v2
+- [x] 7. Build high-performance inventory UI with FlashList v2
   - Create InventoryList using FlashList v2 with stable keys + getItemType for JS-only performance
   - Implement performance budget: ≥1k rows load <300ms, 60fps scroll on mid-tier Android
   - Build InventoryItem detail view with FEFO batch display showing "expires in X days / expired" pills
@@ -69,7 +73,7 @@ _Current state (Oct 2025 audit): consumable inventory tables and UI are absent; 
   - Implement low stock detection with days-to-zero forecasting and 80% prediction intervals
   - Add Simple Exponential Smoothing for items with ≥12 weeks of data
   - **Android 13+/14+ Exact Alarm Implementation:**
-    - **Manifest Configuration:** Add SCHEDULE_EXACT_ALARM for API 31+ with maxSdkVersion split, USE_EXACT_ALARM only for core alarms with proper maxSdkVersion handling
+    - **Manifest Configuration:** Declare SCHEDULE_EXACT_ALARM for API 31+ (no USE_EXACT_ALARM). Use maxSdkVersion gates only if required by libraries. (See <attachments> above for file contents. You may not need to search or read the file again.)
     - **Eligibility Guards:** Implement canScheduleExactAlarms() pre-checks and handle ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED broadcasts
     - **Fallback-First Behavior:** Default to inexact schedulers when permission unavailable, with explicit upgrade prompts only after user interaction
     - **User-Visible Rationale:** Display clear permission rationale before ACTION_REQUEST_SCHEDULE_EXACT_ALARM, provide Settings guidance as secondary option (no hidden/background flows)
@@ -115,7 +119,7 @@ _Current state (Oct 2025 audit): consumable inventory tables and UI are absent; 
   - _Requirements: 9.1, 9.2, 9.5, 9.6_
 
 - [ ] 13. Set up robust sync with conflict resolution UI
-  - Integrate new inventory tables into the existing WatermelonDB synchronize() pipeline (pullChanges/pushChanges with cursor pagination)
+  - Integrate new inventory tables into the existing WatermelonDB synchronize() pipeline (cursor pagination using (updated_at, id) tuple)
   - Create Last-Write-Wins with conflict toasts showing device + timestamp information
   - Add "Reapply my change" action that creates new mutations while keeping LWW on wire
   - Implement chunked sync for large datasets with tombstone handling for soft deletes
@@ -180,7 +184,7 @@ _Current state (Oct 2025 audit): consumable inventory tables and UI are absent; 
 ### Sync (Task 13)
 
 - WatermelonDB synchronize() completes with pull/push operations
-- Only rows with updated_at > last_pulled_at are returned
+- Only rows with (updated_at, id) > (last_pulled_updated_at, last_pulled_id) are returned
 - Tombstones properly replicate soft deletes
 - Conflict toast appears with "Reapply" creating new server write
 

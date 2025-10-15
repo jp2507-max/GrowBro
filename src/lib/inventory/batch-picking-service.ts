@@ -171,19 +171,19 @@ export async function pickQuantity(
   for (const batch of batches) {
     if (remainingQuantity <= 0) break;
 
-    const pickQuantity = Math.min(batch.quantity, remainingQuantity);
-    const allocationCost = pickQuantity * batch.costPerUnitMinor;
+    const pickedQty = Math.min(batch.quantity, remainingQuantity);
+    const allocationCost = pickedQty * batch.costPerUnitMinor;
 
     allocations.push({
       batchId: batch.id,
       lotNumber: batch.lotNumber,
-      quantity: pickQuantity,
+      quantity: pickedQty,
       costPerUnitMinor: batch.costPerUnitMinor,
       totalCostMinor: allocationCost,
     });
 
     totalCostMinor += allocationCost;
-    remainingQuantity -= pickQuantity;
+    remainingQuantity -= pickedQty;
   }
 
   const quantityPicked = quantity - remainingQuantity;

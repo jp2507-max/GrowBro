@@ -118,13 +118,7 @@ export function validateMovement(request: CreateMovementRequest): {
     });
   }
 
-  if (request.type === 'adjustment' && request.quantityDelta === 0) {
-    errors.push({
-      field: 'quantityDelta',
-      message: 'Adjustment movements must have non-zero quantity',
-      value: request.quantityDelta,
-    });
-  }
+  // Note: Adjustment movements can have zero quantity for audit markers (e.g., skipped deductions)
 
   // Validate cost requirement (required except for adjustments)
   if (
@@ -168,24 +162,6 @@ export function validateMovement(request: CreateMovementRequest): {
 }
 
 /**
- * Check if external key already exists (idempotency check)
- * Requirement 3.3
- *
- * @param externalKey - External key to check
- * @returns Existing movement if found, null otherwise
- */
-export async function findMovementByExternalKey(
-  externalKey: string
-): Promise<InventoryMovementModel | null> {
-  const movements = await database
-    .get<InventoryMovementModel>('inventory_movements')
-    .query(Q.where('external_key', externalKey))
-    .fetch();
-
-  return movements.length > 0 ? movements[0] : null;
-}
-
-/**
  * Create immutable inventory movement record
  * Requirement 1.4, 3.3, 10.6
  *
@@ -193,7 +169,7 @@ export async function findMovementByExternalKey(
  * All inventory changes must flow through this function.
  *
  * Idempotency: If external_key is provided and exists, returns existing movement.
- * Transaction: Must be called within a database.write() transaction.
+ * Transaction: This function opens and manages its own write transaction internally.
  *
  * @param request - Movement creation request
  * @returns Operation result with movement or errors
@@ -212,41 +188,60 @@ export async function createMovement(
   }
 
   try {
-    // Idempotency check: return existing movement if external_key exists
-    if (request.externalKey) {
-      const existing = await findMovementByExternalKey(request.externalKey);
-      if (existing) {
-        return {
-          success: true,
-          movement: existing,
-          isIdempotentDuplicate: true,
-        };
-      }
-    }
-
-    // Create movement within transaction
-    const movement = await database.write(async () => {
+    // Create movement within transaction with idempotency check
+    const result = await database.write(async () => {
       const movementCollection = database.get<InventoryMovementModel>(
         'inventory_movements'
       );
 
-      return await movementCollection.create((record) => {
-        record.itemId = request.itemId;
-        record.batchId = request.batchId;
-        record.type = request.type;
-        record.quantityDelta = request.quantityDelta;
-        record.costPerUnitMinor = request.costPerUnitMinor;
-        record.reason = request.reason;
-        record.taskId = request.taskId;
-        record.externalKey = request.externalKey;
-        // createdAt is set automatically by @readonly decorator
-      });
+      // Check for existing movement by external_key within transaction
+      if (request.externalKey) {
+        const existing = await movementCollection
+          .query(Q.where('external_key', request.externalKey))
+          .fetch();
+        if (existing.length > 0) {
+          return { movement: existing[0], isDuplicate: true };
+        }
+      }
+
+      // Try to create movement
+      let movement: InventoryMovementModel;
+      try {
+        movement = await movementCollection.create((record) => {
+          record.itemId = request.itemId;
+          record.batchId = request.batchId;
+          record.type = request.type;
+          record.quantityDelta = request.quantityDelta;
+          record.costPerUnitMinor = request.costPerUnitMinor;
+          record.reason = request.reason;
+          record.taskId = request.taskId;
+          record.externalKey = request.externalKey;
+          // createdAt is set automatically by @readonly decorator
+        });
+      } catch (error) {
+        // If constraint violation, check if movement was created by another operation
+        if (
+          error instanceof Error &&
+          error.message.includes('UNIQUE constraint failed') &&
+          request.externalKey
+        ) {
+          const existing = await movementCollection
+            .query(Q.where('external_key', request.externalKey))
+            .fetch();
+          if (existing.length > 0) {
+            return { movement: existing[0], isDuplicate: true };
+          }
+        }
+        throw error; // Re-throw if not a handled constraint violation
+      }
+
+      return { movement, isDuplicate: false };
     });
 
     return {
       success: true,
-      movement,
-      isIdempotentDuplicate: false,
+      movement: result.movement,
+      isIdempotentDuplicate: result.isDuplicate,
     };
   } catch (error) {
     return {
@@ -290,26 +285,30 @@ export async function createMovementWithBatchUpdate(
   }
 
   try {
-    // Idempotency check before transaction
-    if (request.externalKey) {
-      const existing = await findMovementByExternalKey(request.externalKey);
-      if (existing) {
-        return {
-          success: true,
-          movement: existing,
-          isIdempotentDuplicate: true,
-        };
-      }
-    }
-
-    // Atomic transaction: update batch + create movement
+    // Atomic transaction: check idempotency first, then create movement + update batch
     const result = await database.write(async () => {
+      const movementCollection = database.get<InventoryMovementModel>(
+        'inventory_movements'
+      );
+
+      // First perform lookup for existing movement with same externalKey (if provided)
+      if (request.externalKey) {
+        const existing = await movementCollection
+          .query(Q.where('external_key', request.externalKey))
+          .fetch();
+        if (existing.length > 0) {
+          // Movement already exists, return it without touching the batch
+          return { movement: existing[0], isDuplicate: true };
+        }
+      }
+
+      // Only proceed when no existing movement is found
       // Get batch and verify existence
       const batch = await database
         .get<InventoryBatchModel>('inventory_batches')
         .find(request.batchId!);
 
-      // Update batch quantity
+      // Update batch quantity first to ensure no duplicate movements on retries
       await batch.update((record) => {
         const newQuantity = record.quantity + request.quantityDelta;
 
@@ -323,11 +322,7 @@ export async function createMovementWithBatchUpdate(
         record.quantity = newQuantity;
       });
 
-      // Create movement record
-      const movementCollection = database.get<InventoryMovementModel>(
-        'inventory_movements'
-      );
-
+      // Create movement record after batch update succeeds
       const movement = await movementCollection.create((record) => {
         record.itemId = request.itemId;
         record.batchId = request.batchId;
@@ -339,13 +334,13 @@ export async function createMovementWithBatchUpdate(
         record.externalKey = request.externalKey;
       });
 
-      return movement;
+      return { movement, isDuplicate: false };
     });
 
     return {
       success: true,
-      movement: result,
-      isIdempotentDuplicate: false,
+      movement: result.movement,
+      isIdempotentDuplicate: result.isDuplicate,
     };
   } catch (error) {
     return {
@@ -385,20 +380,15 @@ export async function getMovementsForItem(
     conditions.push(Q.where('type', options.type));
   }
 
-  // Add sort and pagination
-  const clauses: any[] = [...conditions, Q.sortBy('created_at', 'desc')];
-
-  if (options?.limit) {
-    clauses.push(Q.take(options.limit));
-  }
-  if (options?.offset) {
-    clauses.push(Q.skip(options.offset));
-  }
-
-  return await database
+  const results = await database
     .get<InventoryMovementModel>('inventory_movements')
-    .query(...clauses)
+    .query(...conditions, Q.sortBy('created_at', 'desc'))
     .fetch();
+
+  // Apply pagination post-fetch since Q.skip doesn't exist in WatermelonDB
+  const start = options?.offset ?? 0;
+  const end = options?.limit ? start + options.limit : undefined;
+  return results.slice(start, end);
 }
 
 /**
@@ -428,6 +418,24 @@ export async function getMovementByExternalKey(
   externalKey: string
 ): Promise<InventoryMovementModel | null> {
   return await findMovementByExternalKey(externalKey);
+}
+
+/**
+ * Check if external key already exists (idempotency check)
+ * Requirement 3.3
+ *
+ * @param externalKey - External key to check
+ * @returns Existing movement if found, null otherwise
+ */
+export async function findMovementByExternalKey(
+  externalKey: string
+): Promise<InventoryMovementModel | null> {
+  const movements = await database
+    .get<InventoryMovementModel>('inventory_movements')
+    .query(Q.where('external_key', externalKey))
+    .fetch();
+
+  return movements.length > 0 ? movements[0] : null;
 }
 
 /**

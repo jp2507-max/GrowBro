@@ -131,10 +131,14 @@ export async function getConsumptionHistory(
 
   // Fetch associated items for names and units
   const itemIds = [...new Set(movements.map((m) => m.itemId))];
-  const items = await database
-    .get<InventoryItemModel>('inventory_items')
-    .query(Q.where('id', Q.oneOf(itemIds)))
-    .fetch();
+  let items: InventoryItemModel[] = [];
+
+  if (itemIds.length > 0) {
+    items = await database
+      .get<InventoryItemModel>('inventory_items')
+      .query(Q.where('id', Q.oneOf(itemIds)))
+      .fetch();
+  }
 
   const itemMap = new Map(items.map((item) => [item.id, item]));
 
@@ -179,7 +183,8 @@ export async function getItemConsumptionSummary(
   averagePerDay: number;
   entryCount: number;
 }> {
-  const startDate = DateTime.now().minus({ days }).toJSDate();
+  const safeDays = Math.max(1, Math.floor(days));
+  const startDate = DateTime.now().minus({ days: safeDays }).toJSDate();
 
   const history = await getConsumptionHistory(database, {
     itemId,
@@ -192,7 +197,7 @@ export async function getItemConsumptionSummary(
     (sum, entry) => sum + entry.totalCostMinor,
     0
   );
-  const averagePerDay = totalQuantity / days;
+  const averagePerDay = totalQuantity / safeDays;
 
   return {
     totalQuantity,
@@ -217,6 +222,12 @@ export async function getConsumptionByCategory(
 
   // Get all items to map categories
   const itemIds = [...new Set(history.map((h) => h.itemId))];
+
+  // Short-circuit if no items to avoid invalid Q.oneOf([]) query
+  if (itemIds.length === 0) {
+    return new Map<string, { quantity: number; costMinor: number }>();
+  }
+
   const items = await database
     .get<InventoryItemModel>('inventory_items')
     .query(Q.where('id', Q.oneOf(itemIds)))

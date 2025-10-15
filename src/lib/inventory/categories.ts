@@ -13,13 +13,13 @@ import type { CategoryFacet, InventoryCategory } from '@/types/inventory';
 /**
  * Category metadata with description and supported facets
  */
-export interface CategoryMetadata {
+export type CategoryMetadata = {
   name: InventoryCategory;
   description: string;
   supportedFacets: (keyof CategoryFacet)[];
   commonUnits: string[];
   icon?: string;
-}
+};
 
 /**
  * Predefined inventory categories with metadata

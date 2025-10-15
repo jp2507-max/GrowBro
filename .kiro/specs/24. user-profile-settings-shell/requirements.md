@@ -150,9 +150,13 @@ The User Profile & Settings Shell feature consolidates all user-facing complianc
 4. WHEN the user taps "Report a Bug" THEN the system SHALL present a form to describe the issue with optional screenshot attachment and automatic inclusion of device diagnostics (if consent given)
 5. WHEN the user taps "Send Feedback" THEN the system SHALL present a form for general feedback with category selection (Feature Request, Improvement, Compliment, Other)
 6. WHEN the user taps "Community Guidelines" THEN the system SHALL display the community guidelines in a modal or navigate to a dedicated screen
-7. WHEN submitting support requests THEN the system SHALL include app version, device model, OS version, and user ID (if authenticated) for troubleshooting purposes
-8. WHEN submitting "Report a Bug" THEN the system SHALL attach environment metadata (appVersion, buildNumber, device model, OS, locale, free storage, last sync time) and an optional Sentry eventId if crash reporting consent is enabled
-9. WHEN attaching screenshots or logs THEN the system SHALL redact secrets and allow users to deselect diagnostics
+7. WHEN submitting support requests THEN the system SHALL include app version, device model, OS version, and a non-reversible hashedId (if authenticated) for troubleshooting purposes; raw user identifiers SHALL only be included with explicit user consent via settings toggle
+8. WHEN submitting "Report a Bug" THEN the system SHALL attach environment metadata (appVersion, buildNumber, device model, OS, locale, free storage, last sync time) and an optional Sentry eventId if crash reporting consent is enabled; full diagnostics and raw identifiers SHALL require explicit consent via in-flow checkbox and settings toggle
+9. WHEN attaching screenshots or logs THEN the system SHALL redact secrets and sensitive data, allow users to deselect diagnostics, and SHALL gate metadata/email attachments on user consent preferences stored in settings
+10. WHEN the user accesses support settings THEN the system SHALL display a "Include Diagnostics in Reports" toggle that controls whether raw identifiers and full diagnostics are attached to support requests
+11. WHEN submitting bug reports or support requests THEN the system SHALL display an in-flow consent checkbox for attaching full diagnostics and raw identifiers, defaulting to the user's settings preference
+12. WHEN consent for diagnostics is granted THEN the system SHALL store the consent preference in user settings and apply it to future support submissions
+13. WHEN processing support attachments THEN the system SHALL hash all user identifiers using a non-reversible algorithm and redact any secrets, API keys, or sensitive data before transmission
 
 ### Requirement 8
 

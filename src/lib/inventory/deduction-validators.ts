@@ -10,7 +10,6 @@
  */
 
 import type { Database } from '@nozbe/watermelondb';
-import { Q } from '@nozbe/watermelondb';
 
 import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
 import type {
@@ -106,13 +105,16 @@ export async function validateUnitCompatibility(
     };
   }
 
-  // Check if item exists
-  const item = await database
-    .get<InventoryItemModel>('inventory_items')
-    .query(Q.where('id', entry.itemId), Q.where('deleted_at', null))
-    .fetch();
+  // Check if item exists (use collection.find for primary key lookups)
+  const items = database.get<InventoryItemModel>('inventory_items');
+  let item: InventoryItemModel | null = null;
+  try {
+    item = await items.find(entry.itemId);
+  } catch {
+    item = null;
+  }
 
-  if (item.length === 0) {
+  if (!item || (item.deletedAt !== null && item.deletedAt !== undefined)) {
     return {
       code: 'MISSING_ITEM',
       field: 'itemId',
@@ -122,7 +124,7 @@ export async function validateUnitCompatibility(
   }
 
   // Validate unit matches item's unit_of_measure
-  const itemUnit = item[0].unitOfMeasure;
+  const itemUnit = item.unitOfMeasure;
   if (entry.unit !== itemUnit) {
     return {
       code: 'UNIT_MISMATCH',

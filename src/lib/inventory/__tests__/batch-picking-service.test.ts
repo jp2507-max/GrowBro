@@ -9,6 +9,9 @@
  * - 2.6: Expired batch exclusion with override
  */
 
+// Mock SQLiteAdapter to use LokiJSAdapter for Node.js tests
+import LokiJSAdapter from '@nozbe/watermelondb/adapters/lokijs';
+
 import { database } from '@/lib/watermelon';
 import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
 
@@ -20,6 +23,28 @@ import {
   validatePick,
 } from '../batch-picking-service';
 import { addBatch } from '../batch-service';
+
+jest.mock('@nozbe/watermelondb/adapters/sqlite', () => {
+  const LokiJSAdapterMock = LokiJSAdapter;
+
+  // Return a class that wraps LokiJSAdapter
+  return class MockSQLiteAdapter extends LokiJSAdapterMock {
+    constructor(options: any) {
+      // Map SQLiteAdapter options to LokiJSAdapter options
+      const lokiOptions = {
+        schema: options.schema,
+        // Skip migrations for in-memory testing to avoid validation issues
+        // migrations: options.migrations,
+        onSetUpError: options.onSetUpError,
+        // Disable web workers for Node.js tests
+        useWebWorker: false,
+        // Disable IndexedDB for Node.js tests
+        useIncrementalIndexedDB: false,
+      };
+      super(lokiOptions);
+    }
+  };
+});
 
 describe('BatchPickingService', () => {
   let testItemId: string;

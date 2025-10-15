@@ -61,6 +61,7 @@ type WhereCond =
   | { key: string; value: any }
   | { key: string; $oneOf: any[] }
   | { key: string; $notEq: any }
+  | { key: string; $gt: any }
   | { key: string; $gte: any }
   | { key: string; $lte: any }
   | { key: string; $like: string }
@@ -80,6 +81,9 @@ export const Q = {
     if (typeof value === 'object' && value && '$notEq' in value) {
       return { key, $notEq: value.$notEq };
     }
+    if (typeof value === 'object' && value && '$gt' in value) {
+      return { key, $gt: value.$gt };
+    }
     if (typeof value === 'object' && value && '$gte' in value) {
       return { key, $gte: value.$gte };
     }
@@ -96,6 +100,9 @@ export const Q = {
   },
   oneOf(values: any[]): { $oneOf: any[] } {
     return { $oneOf: values };
+  },
+  gt(value: any): { $gt: any } {
+    return { $gt: value };
   },
   like(pattern: string): { $like: string } {
     return { $like: pattern };
@@ -152,12 +159,6 @@ function applyRecordDefaults(rec: any): void {
 function filterResults(store: any[], filters: WhereCond[]): any[] {
   return store.filter((row) =>
     filters.every((c) => {
-      if ('$or' in c) {
-        // OR condition: at least one sub-condition must match
-        return c.$or.some((subCond) => {
-          return evaluateCondition(row, subCond);
-        });
-      }
       return evaluateCondition(row, c);
     })
   );
@@ -173,6 +174,8 @@ function evaluateCondition(row: any, c: WhereCond): boolean {
     return c.$oneOf.includes((row as any)[key]);
   } else if ('$notEq' in c) {
     return (row as any)[key] !== c.$notEq;
+  } else if ('$gt' in c) {
+    return (row as any)[key] > c.$gt;
   } else if ('$gte' in c) {
     return (row as any)[key] >= c.$gte;
   } else if ('$lte' in c) {
@@ -184,10 +187,16 @@ function evaluateCondition(row: any, c: WhereCond): boolean {
       rowValue = JSON.stringify(rowValue);
     }
     rowValue = String(rowValue);
-    // Limit pattern length to prevent ReDoS in test mocks
-    if (c.$like.length > 200) {
-      throw new Error('LIKE pattern too long for test mock');
+
+    // Stricter validation to prevent ReDoS in test mocks
+    if (c.$like.length > 100) {
+      throw new Error('LIKE pattern too long for test mock (max 100 chars)');
     }
+    // Reject patterns with nested quantifiers or backtracking risks
+    if (/(\*\+|%%)/.test(c.$like)) {
+      throw new Error('LIKE pattern contains nested quantifiers');
+    }
+
     // Convert SQL LIKE pattern to RegExp: % -> .*, _ -> ., escape other special chars
     const regexPattern = c.$like
       .replace(/[.+?^${}()|[\]\\]/g, '\\$&') // escape regex special chars

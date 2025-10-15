@@ -14,7 +14,6 @@
 import type { Database } from '@nozbe/watermelondb';
 
 import { pickBatchesForConsumption } from '@/lib/inventory/batch-picker';
-import type { InventoryBatchModel } from '@/lib/watermelon-models/inventory-batch';
 import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
 import type {
   DeductionMovement,
@@ -42,44 +41,45 @@ export async function handlePartialComplete(
   const { database, error, taskId, idempotencyKey } = options;
   const movements: DeductionMovement[] = [];
 
-  await database.write(async () => {
-    const batchCollection =
-      database.get<InventoryBatchModel>('inventory_batches');
-    const movementCollection = database.get<InventoryMovementModel>(
-      'inventory_movements'
-    );
+  // Import movement service for atomic operations
+  const { createMovementWithBatchUpdate } = await import(
+    '@/lib/inventory/movement-service'
+  );
 
-    // Pick available batches
-    const pickResult = await pickBatchesForConsumption({
-      database,
+  // Pick available batches
+  const pickResult = await pickBatchesForConsumption({
+    database,
+    itemId: error.itemId,
+    quantityNeeded: error.available,
+    allowExpiredOverride: false,
+  });
+
+  const shortage = error.required - error.available;
+
+  for (let i = 0; i < pickResult.picks.length; i++) {
+    const pick = pickResult.picks[i];
+
+    // Generate per-pick idempotency key
+    const pickKey = `${idempotencyKey}:partial:${pick.batchId}:${i}`;
+
+    // Use movement service for atomic batch update + movement creation
+    const result = await createMovementWithBatchUpdate({
       itemId: error.itemId,
-      quantityNeeded: error.available,
-      allowExpiredOverride: false,
+      batchId: pick.batchId,
+      type: 'consumption',
+      quantityDelta: -pick.quantity,
+      costPerUnitMinor: pick.costPerUnitMinor,
+      reason: `Partial deduction: consumed ${error.available} ${error.unit}, shortage ${shortage} ${error.unit}`,
+      taskId,
+      externalKey: pickKey,
     });
 
-    for (const pick of pickResult.picks) {
-      // Update batch quantity
-      const batch = await batchCollection.find(pick.batchId);
-      await batch.update((b) => {
-        (b as any).quantity = (b as any).quantity - pick.quantity;
-      });
-
-      // Create consumption movement with shortage metadata
-      const shortage = error.required - error.available;
-      const movement = await movementCollection.create((m: any) => {
-        m.itemId = error.itemId;
-        m.batchId = pick.batchId;
-        m.type = 'consumption';
-        m.quantityDelta = -pick.quantity;
-        m.costPerUnitMinor = pick.costPerUnitMinor;
-        m.reason = `Partial deduction: consumed ${error.available} ${error.unit}, shortage ${shortage} ${error.unit}`;
-        m.taskId = taskId;
-        m.externalKey = idempotencyKey;
-      });
-
-      movements.push(mapMovementToResult(movement));
+    if (!result.success || !result.movement) {
+      throw new Error(result.error ?? 'Failed to create partial movement');
     }
-  });
+
+    movements.push(mapMovementToResult(result.movement));
+  }
 
   return movements;
 }
@@ -102,30 +102,28 @@ export interface SkipDeductionOptions {
 export async function handleSkipDeduction(
   options: SkipDeductionOptions
 ): Promise<DeductionMovement[]> {
-  const { database, error, taskId, idempotencyKey } = options;
-  const movements: DeductionMovement[] = [];
+  const { error, taskId, idempotencyKey } = options;
 
-  await database.write(async () => {
-    const movementCollection = database.get<InventoryMovementModel>(
-      'inventory_movements'
-    );
+  // Import movement service for atomic operations
+  const { createMovement } = await import('@/lib/inventory/movement-service');
 
-    // Create marker movement with zero quantity
-    const movement = await movementCollection.create((m: any) => {
-      m.itemId = error.itemId;
-      m.batchId = null;
-      m.type = 'adjustment';
-      m.quantityDelta = 0; // Zero quantity marker
-      m.costPerUnitMinor = 0;
-      m.reason = `Skipped deduction due to insufficient stock: needed ${error.required} ${error.unit}, had ${error.available} ${error.unit}`;
-      m.taskId = taskId;
-      m.externalKey = idempotencyKey;
-    });
-
-    movements.push(mapMovementToResult(movement));
+  // Create zero-quantity marker movement through movement service
+  const result = await createMovement({
+    itemId: error.itemId,
+    batchId: undefined,
+    type: 'adjustment',
+    quantityDelta: 0, // Zero quantity marker for audit trail
+    costPerUnitMinor: 0,
+    reason: `Skipped deduction due to insufficient stock: needed ${error.required} ${error.unit}, had ${error.available} ${error.unit}`,
+    taskId,
+    externalKey: idempotencyKey,
   });
 
-  return movements;
+  if (!result.success || !result.movement) {
+    throw new Error(result.error ?? 'Failed to create skip marker movement');
+  }
+
+  return [mapMovementToResult(result.movement)];
 }
 
 /**

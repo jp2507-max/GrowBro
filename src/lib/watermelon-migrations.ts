@@ -826,5 +826,29 @@ export const migrations = schemaMigrations({
         },
       ],
     },
+    // Migration from version 20 to 21: Add unique constraint on inventory_movements.external_key
+    {
+      toVersion: 21,
+      steps: [
+        {
+          type: 'sql',
+          sql: 'CREATE UNIQUE INDEX idx_inventory_movements_external_key ON inventory_movements(external_key) WHERE external_key IS NOT NULL',
+        },
+      ],
+    },
+    // Migration from version 21 to 22: Add unique constraints on inventory_items.sku and inventory_items.barcode
+    {
+      toVersion: 22,
+      steps: [
+        {
+          type: 'sql',
+          sql: 'CREATE UNIQUE INDEX idx_inventory_items_sku ON inventory_items(sku) WHERE sku IS NOT NULL AND deleted_at IS NULL',
+        },
+        {
+          type: 'sql',
+          sql: 'CREATE UNIQUE INDEX idx_inventory_items_barcode ON inventory_items(barcode) WHERE barcode IS NOT NULL AND deleted_at IS NULL',
+        },
+      ],
+    },
   ],
 });

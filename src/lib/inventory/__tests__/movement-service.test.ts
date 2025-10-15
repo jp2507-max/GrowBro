@@ -91,20 +91,18 @@ describe('Movement Service', () => {
       expect(result.errors[0].message).toContain('negative');
     });
 
-    it('should validate adjustment movements require non-zero quantity', () => {
+    it('should allow adjustment movements with zero quantity for audit markers', () => {
       const request: CreateMovementRequest = {
         itemId: testItem.id,
         type: 'adjustment',
         quantityDelta: 0,
-        reason: 'Test adjustment',
+        reason: 'Skipped deduction marker',
       };
 
       const result = validateMovement(request);
 
-      expect(result.valid).toBe(false);
-      expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].field).toBe('quantityDelta');
-      expect(result.errors[0].message).toContain('non-zero');
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
     });
 
     it('should validate cost is required for receipt movements', () => {
@@ -419,6 +417,11 @@ describe('Movement Service', () => {
 
       expect(movements).toHaveLength(3);
       // Should be sorted by created_at desc
+      // Debug: log the actual order
+      console.log(
+        'Movement types in order:',
+        movements.map((m) => ({ type: m.type, createdAt: m.createdAt }))
+      );
       expect(movements[0].type).toBe('adjustment');
       expect(movements[1].type).toBe('consumption');
       expect(movements[2].type).toBe('receipt');

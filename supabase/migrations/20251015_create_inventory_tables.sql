@@ -83,10 +83,13 @@ BEGIN
 END
 $$;
 
+-- Ensure triggers are created idempotently
+DROP TRIGGER IF EXISTS trg_items_updated_at ON inventory_items;
 CREATE TRIGGER trg_items_updated_at
   BEFORE UPDATE ON inventory_items
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
+DROP TRIGGER IF EXISTS trg_batches_updated_at ON inventory_batches;
 CREATE TRIGGER trg_batches_updated_at
   BEFORE UPDATE ON inventory_batches
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
@@ -95,6 +98,10 @@ CREATE TRIGGER trg_batches_updated_at
 CREATE INDEX idx_items_user_category ON inventory_items(user_id, category) WHERE deleted_at IS NULL;
 CREATE INDEX idx_items_user_id ON inventory_items(user_id) WHERE deleted_at IS NULL;
 CREATE INDEX idx_items_updated ON inventory_items(user_id, updated_at) WHERE deleted_at IS NULL;
+
+-- Unique indexes for SKU and barcode (per user, excluding soft-deleted items)
+CREATE UNIQUE INDEX idx_items_user_sku ON inventory_items(user_id, sku) WHERE sku IS NOT NULL AND deleted_at IS NULL;
+CREATE UNIQUE INDEX idx_items_user_barcode ON inventory_items(user_id, barcode) WHERE barcode IS NOT NULL AND deleted_at IS NULL;
 
 CREATE INDEX idx_batches_item_expire ON inventory_batches(item_id, expires_on) WHERE deleted_at IS NULL;
 CREATE INDEX idx_batches_item_id ON inventory_batches(item_id) WHERE deleted_at IS NULL;
@@ -110,7 +117,21 @@ CREATE UNIQUE INDEX uq_batches_item_lot_active
   ON inventory_batches(item_id, lot_number)
   WHERE deleted_at IS NULL;
 
-CREATE UNIQUE INDEX uq_movements_external_key_active
+-- Unique indexes for SKU and barcode (per user, soft-delete aware)
+CREATE UNIQUE INDEX uq_items_user_sku_active
+  ON inventory_items(user_id, sku)
+  WHERE deleted_at IS NULL AND sku IS NOT NULL;
+
+CREATE UNIQUE INDEX uq_items_user_barcode_active
+  ON inventory_items(user_id, barcode)
+  WHERE deleted_at IS NULL AND barcode IS NOT NULL;
+
+-- Previously created a unique index on external_key which prevented multiple
+-- movements from sharing the same idempotency key. Change to a regular
+-- (non-unique) partial index so one deduction that creates multiple
+-- movements can reuse the same external_key.
+DROP INDEX IF EXISTS uq_movements_external_key_active;
+CREATE INDEX IF NOT EXISTS idx_movements_external_key_active
   ON inventory_movements(external_key)
   WHERE external_key IS NOT NULL;
 
@@ -121,29 +142,37 @@ ALTER TABLE inventory_movements ENABLE ROW LEVEL SECURITY;
 
 -- Split RLS policies per command with USING + WITH CHECK for proper validation
 -- Inventory Items
+-- Inventory Items
+DROP POLICY IF EXISTS "items_select" ON inventory_items;
 CREATE POLICY "items_select" ON inventory_items
   FOR SELECT USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "items_insert" ON inventory_items;
 CREATE POLICY "items_insert" ON inventory_items
   FOR INSERT WITH CHECK (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "items_update" ON inventory_items;
 CREATE POLICY "items_update" ON inventory_items
   FOR UPDATE USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "items_delete" ON inventory_items;
 CREATE POLICY "items_delete" ON inventory_items
   FOR DELETE USING (user_id = auth.uid());
 
 -- Inventory Batches
+DROP POLICY IF EXISTS "batches_select" ON inventory_batches;
 CREATE POLICY "batches_select" ON inventory_batches
   FOR SELECT USING (
     item_id IN (SELECT id FROM inventory_items WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "batches_insert" ON inventory_batches;
 CREATE POLICY "batches_insert" ON inventory_batches
   FOR INSERT WITH CHECK (
     item_id IN (SELECT id FROM inventory_items WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "batches_update" ON inventory_batches;
 CREATE POLICY "batches_update" ON inventory_batches
   FOR UPDATE USING (
     item_id IN (SELECT id FROM inventory_items WHERE user_id = auth.uid())
@@ -151,17 +180,20 @@ CREATE POLICY "batches_update" ON inventory_batches
     item_id IN (SELECT id FROM inventory_items WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "batches_delete" ON inventory_batches;
 CREATE POLICY "batches_delete" ON inventory_batches
   FOR DELETE USING (
     item_id IN (SELECT id FROM inventory_items WHERE user_id = auth.uid())
   );
 
 -- Inventory Movements (Note: No UPDATE or DELETE policies - movements are immutable)
+DROP POLICY IF EXISTS "movements_select" ON inventory_movements;
 CREATE POLICY "movements_select" ON inventory_movements
   FOR SELECT USING (
     item_id IN (SELECT id FROM inventory_items WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "movements_insert" ON inventory_movements;
 CREATE POLICY "movements_insert" ON inventory_movements
   FOR INSERT WITH CHECK (
     item_id IN (SELECT id FROM inventory_items WHERE user_id = auth.uid())
