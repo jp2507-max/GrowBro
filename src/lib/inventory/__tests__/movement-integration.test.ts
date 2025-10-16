@@ -10,6 +10,7 @@
 import { database } from '@/lib/watermelon';
 import type { InventoryBatchModel } from '@/lib/watermelon-models/inventory-batch';
 import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
+import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
 
 import {
   createMovement,
@@ -351,7 +352,7 @@ describe('Movement Service Integration - Exactly-Once Behavior', () => {
   });
 
   describe('Movement immutability verification', () => {
-    it('should not allow movement updates (append-only)', async () => {
+    it('should enforce append-only behavior for movements', async () => {
       const result = await createMovement({
         itemId: testItem.id,
         type: 'consumption',
@@ -361,16 +362,43 @@ describe('Movement Service Integration - Exactly-Once Behavior', () => {
       });
 
       expect(result.success).toBe(true);
-      const movement = result.movement!;
+      const originalMovement = result.movement!;
 
-      // Attempt to update should fail (WatermelonDB should not allow this)
-      await expect(
-        database.write(async () => {
-          await movement.update((record) => {
-            (record as any).quantityDelta = -200; // Attempt to change
-          });
-        })
-      ).rejects.toThrow();
+      // Verify original movement values
+      expect(originalMovement.quantityDelta).toBe(-100);
+      expect(originalMovement.reason).toBe('Original');
+
+      // Create corrective movement instead of updating
+      const correctionResult = await createMovement({
+        itemId: testItem.id,
+        type: 'adjustment',
+        quantityDelta: 50, // Correct from -100 to -50
+        reason: 'Correction for over-consumption',
+      });
+
+      expect(correctionResult.success).toBe(true);
+      const correctiveMovement = correctionResult.movement!;
+
+      // Verify corrective movement exists
+      expect(correctiveMovement.quantityDelta).toBe(50);
+      expect(correctiveMovement.reason).toBe('Correction for over-consumption');
+
+      // Verify original movement remains unchanged
+      const retrievedOriginal = await database
+        .get<InventoryMovementModel>('inventory_movements')
+        .find(originalMovement.id);
+      expect(retrievedOriginal.quantityDelta).toBe(-100);
+      expect(retrievedOriginal.reason).toBe('Original');
+
+      // Verify both movements exist
+      const allMovements = await getMovementsForItem(testItem.id);
+      expect(allMovements).toHaveLength(2);
+      expect(
+        allMovements.find((m) => m.id === originalMovement.id)
+      ).toBeDefined();
+      expect(
+        allMovements.find((m) => m.id === correctiveMovement.id)
+      ).toBeDefined();
     });
 
     it('should require new movement for corrections', async () => {

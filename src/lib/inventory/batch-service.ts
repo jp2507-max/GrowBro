@@ -12,8 +12,10 @@
 
 import { Q } from '@nozbe/watermelondb';
 
+import { getOptionalAuthenticatedUserId } from '@/lib/auth/user-utils';
 import { database } from '@/lib/watermelon';
 import type { InventoryBatchModel } from '@/lib/watermelon-models/inventory-batch';
+import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
 import type {
   CreateBatchRequest,
   InventoryBatch,
@@ -313,7 +315,30 @@ export async function updateBatchQuantity(
       };
     }
 
+    // Calculate the quantity change for the movement record
+    const quantityChange = updates.quantity - batch.quantity;
+
+    // Get current user for audit trail (optional)
+    const userId = await getOptionalAuthenticatedUserId();
+
+    // Create movement record and update batch quantity atomically
     const updatedBatch = await database.write(async () => {
+      const movementCollection = database.get<InventoryMovementModel>(
+        'inventory_movements'
+      );
+
+      // Create immutable movement record
+      await movementCollection.create((movement) => {
+        movement.itemId = batch.itemId;
+        movement.batchId = batch.id;
+        movement.type = 'adjustment';
+        movement.quantityDelta = quantityChange;
+        movement.reason = updates.reason;
+        movement.userId = userId || undefined;
+        // createdAt is set automatically by @readonly decorator
+      });
+
+      // Update batch quantity based on the movement
       return batch.update((record) => {
         record.quantity = updates.quantity;
       });

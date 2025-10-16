@@ -10,7 +10,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import {
+  type FieldErrors,
+  useForm,
+  type UseFormSetValue,
+  type UseFormWatch,
+} from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 import { z } from 'zod';
@@ -24,12 +29,6 @@ import {
 } from '@/components/ui';
 import { createInventoryItem } from '@/lib/inventory/inventory-item-service';
 import type { InventoryCategory } from '@/types/inventory';
-
-type FormFieldProps = {
-  control: any;
-  setValue: any;
-  watch: any;
-};
 
 function FormHeader({ onCancel }: { onCancel: () => void }) {
   const { t } = useTranslation();
@@ -57,7 +56,11 @@ function NameField({
   setValue,
   errors,
   isSubmitting,
-}: Pick<FormFieldProps, 'setValue' | 'errors'> & { isSubmitting: boolean }) {
+}: {
+  setValue: UseFormSetValue<AddItemFormData>;
+  errors: FieldErrors<AddItemFormData>;
+  isSubmitting: boolean;
+}) {
   const { t } = useTranslation();
 
   return (
@@ -83,7 +86,10 @@ function NameField({
 function CategoryField({
   setValue,
   watch,
-}: Pick<FormFieldProps, 'setValue' | 'watch'>) {
+}: {
+  setValue: UseFormSetValue<AddItemFormData>;
+  watch: UseFormWatch<AddItemFormData>;
+}) {
   const { t } = useTranslation();
   const selectedCategory = watch('category');
 
@@ -113,7 +119,11 @@ function UnitField({
   setValue,
   errors,
   isSubmitting,
-}: Pick<FormFieldProps, 'setValue' | 'errors'> & { isSubmitting: boolean }) {
+}: {
+  setValue: UseFormSetValue<AddItemFormData>;
+  errors: FieldErrors<AddItemFormData>;
+  isSubmitting: boolean;
+}) {
   const { t } = useTranslation();
 
   return (
@@ -139,7 +149,10 @@ function UnitField({
 function TrackingModeField({
   setValue,
   watch,
-}: Pick<FormFieldProps, 'setValue' | 'watch'>) {
+}: {
+  setValue: UseFormSetValue<AddItemFormData>;
+  watch: UseFormWatch<AddItemFormData>;
+}) {
   const { t } = useTranslation();
   const selectedTrackingMode = watch('trackingMode');
 
@@ -170,7 +183,11 @@ function MinStockField({
   setValue,
   errors,
   isSubmitting,
-}: Pick<FormFieldProps, 'setValue' | 'errors'> & { isSubmitting: boolean }) {
+}: {
+  setValue: UseFormSetValue<AddItemFormData>;
+  errors: FieldErrors<AddItemFormData>;
+  isSubmitting: boolean;
+}) {
   const { t } = useTranslation();
 
   return (
@@ -198,7 +215,11 @@ function ReorderMultipleField({
   setValue,
   errors,
   isSubmitting,
-}: Pick<FormFieldProps, 'setValue' | 'errors'> & { isSubmitting: boolean }) {
+}: {
+  setValue: UseFormSetValue<AddItemFormData>;
+  errors: FieldErrors<AddItemFormData>;
+  isSubmitting: boolean;
+}) {
   const { t } = useTranslation();
 
   return (
@@ -225,7 +246,10 @@ function ReorderMultipleField({
 function LeadTimeField({
   setValue,
   isSubmitting,
-}: Pick<FormFieldProps, 'setValue'> & { isSubmitting: boolean }) {
+}: {
+  setValue: UseFormSetValue<AddItemFormData>;
+  isSubmitting: boolean;
+}) {
   const { t } = useTranslation();
 
   return (
@@ -356,7 +380,7 @@ export default function AddInventoryItemScreen(): React.ReactElement {
           errors={errors}
           isSubmitting={isSubmitting}
         />
-        <CategoryField setValue={setValue} watch={watch} errors={errors} />
+        <CategoryField setValue={setValue} watch={watch} />
         <UnitField
           setValue={setValue}
           errors={errors}

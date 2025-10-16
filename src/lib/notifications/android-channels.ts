@@ -10,6 +10,7 @@ export type AndroidChannelKey =
   | 'cultivation.reminders'
   | 'cultivation.alerts'
   | 'calibration.reminders'
+  | 'inventory.alerts'
   | 'system.updates';
 
 type AndroidChannelDefinition = {
@@ -57,6 +58,13 @@ const ANDROID_CHANNEL_DEFINITIONS: Record<
     nameKey: 'notifications.channels.calibrationReminders.name',
     descriptionKey: 'notifications.channels.calibrationReminders.description',
     importance: getAndroidImportance('default'),
+    sound: 'default',
+  },
+  'inventory.alerts': {
+    id: `inventory.alerts.${CHANNEL_VERSION}`,
+    nameKey: 'notifications.channels.inventoryAlerts.name',
+    descriptionKey: 'notifications.channels.inventoryAlerts.description',
+    importance: getAndroidImportance('high'),
     sound: 'default',
   },
   'system.updates': {

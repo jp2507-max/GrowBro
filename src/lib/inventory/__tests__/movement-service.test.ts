@@ -10,6 +10,7 @@
 import { database } from '@/lib/watermelon';
 import type { InventoryBatchModel } from '@/lib/watermelon-models/inventory-batch';
 import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
+import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
 
 import {
   calculateStockFromMovements,
@@ -367,6 +368,81 @@ describe('Movement Service', () => {
         .get<InventoryBatchModel>('inventory_batches')
         .find(testBatch.id);
       expect(batchAfterSecond.quantity).toBe(quantityAfterFirst);
+    });
+
+    it('should handle UNIQUE constraint violation gracefully', async () => {
+      const externalKey = 'unique-violation-test';
+      const initialQuantity = testBatch.quantity;
+
+      const request: CreateMovementRequest = {
+        itemId: testItem.id,
+        batchId: testBatch.id,
+        type: 'consumption',
+        quantityDelta: -50,
+        costPerUnitMinor: 50,
+        reason: 'UNIQUE violation test',
+        externalKey,
+      };
+
+      // First, create a movement manually to simulate a "winning" concurrent call
+      const movementCollection = database.get<InventoryMovementModel>(
+        'inventory_movements'
+      );
+      await database.write(async () => {
+        // Update batch first
+        const batch = await database
+          .get<InventoryBatchModel>('inventory_batches')
+          .find(testBatch.id);
+        await batch.update((record) => {
+          record.quantity = record.quantity + request.quantityDelta;
+        });
+
+        // Create movement
+        await movementCollection.create((record) => {
+          record.itemId = request.itemId;
+          record.batchId = request.batchId;
+          record.type = request.type;
+          record.quantityDelta = request.quantityDelta;
+          record.costPerUnitMinor = request.costPerUnitMinor;
+          record.reason = request.reason;
+          record.externalKey = request.externalKey;
+        });
+      });
+
+      // Verify the movement was created and batch updated
+      const batchAfterSetup = await database
+        .get<InventoryBatchModel>('inventory_batches')
+        .find(testBatch.id);
+      expect(batchAfterSetup.quantity).toBe(initialQuantity - 50);
+
+      // Now simulate the "losing" concurrent call that hits UNIQUE constraint
+      // Mock the create method to throw UNIQUE constraint error
+      const originalCreate = movementCollection.create;
+      movementCollection.create = jest.fn().mockImplementation(async () => {
+        throw new Error(
+          'UNIQUE constraint failed: inventory_movements.external_key'
+        );
+      });
+
+      // This call should catch the UNIQUE error and return the existing movement
+      const result = await createMovementWithBatchUpdate({
+        ...request,
+        quantityDelta: -25, // Different delta to show it doesn't get applied
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.isIdempotentDuplicate).toBe(true);
+      expect(result.movement?.externalKey).toBe(externalKey);
+      expect(result.movement?.quantityDelta).toBe(-50); // Original movement's delta
+
+      // Batch quantity should remain unchanged (no additional update)
+      const batchAfterTest = await database
+        .get<InventoryBatchModel>('inventory_batches')
+        .find(testBatch.id);
+      expect(batchAfterTest.quantity).toBe(initialQuantity - 50);
+
+      // Restore original method
+      movementCollection.create = originalCreate;
     });
 
     it('should fail if batchId is missing', async () => {

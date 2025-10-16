@@ -1,0 +1,151 @@
+import { useColorScheme } from 'nativewind';
+import React, { memo, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { View } from 'react-native';
+import { LineChart } from 'react-native-gifted-charts';
+
+import { colors, Text } from '@/components/ui';
+
+export interface ConsumptionDataPoint {
+  /** Timestamp of consumption */
+  timestamp: number;
+  /** Quantity consumed */
+  quantityUsed: number;
+}
+
+type ConsumptionTrendChartProps = {
+  data: ConsumptionDataPoint[];
+  testID?: string;
+};
+
+/**
+ * Group consumption data by week and calculate weekly totals
+ */
+function groupByWeek(data: ConsumptionDataPoint[]): Map<string, number> {
+  const weeklyData = new Map<string, number>();
+  data.forEach(({ timestamp, quantityUsed }) => {
+    const date = new Date(timestamp);
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    const weekStart = new Date(date.setDate(diff));
+    weekStart.setHours(0, 0, 0, 0);
+    const weekKey = weekStart.toISOString().split('T')[0];
+    weeklyData.set(weekKey, (weeklyData.get(weekKey) || 0) + quantityUsed);
+  });
+  return weeklyData;
+}
+
+/**
+ * Format date for chart labels
+ */
+function formatWeekLabel(weekStart: string): string {
+  const date = new Date(weekStart);
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+/**
+ * Line chart showing consumption trends over time (weekly buckets).
+ * Visualizes usage patterns to help predict future consumption.
+ *
+ * @see Requirements 6.5 (Consumption forecasting visualization)
+ */
+const ConsumptionTrendChartComponent = ({
+  data,
+  testID = 'consumption-trend-chart',
+}: ConsumptionTrendChartProps) => {
+  const { t } = useTranslation();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  const chartData = useMemo(() => {
+    if (data.length === 0) return [];
+
+    const weeklyData = groupByWeek(data);
+    const sortedWeeks = Array.from(weeklyData.entries()).sort(
+      ([a], [b]) => new Date(a).getTime() - new Date(b).getTime()
+    );
+    const recentWeeks = sortedWeeks.slice(-8);
+
+    return recentWeeks.map(([weekStart, value]) => ({
+      value,
+      label: formatWeekLabel(weekStart),
+      dataPointText: `${value.toFixed(1)}`,
+    }));
+  }, [data]);
+
+  const chartConfig = useMemo(
+    () => ({
+      data: chartData,
+      width: 320,
+      height: 200,
+      color: colors.primary[600],
+      thickness: 2.5,
+      startFillColor: colors.primary[600],
+      endFillColor: colors.primary[200],
+      startOpacity: 0.4,
+      endOpacity: 0.1,
+      areaChart: true,
+      yAxisColor: isDark ? colors.neutral[700] : colors.neutral[300],
+      xAxisColor: isDark ? colors.neutral[700] : colors.neutral[300],
+      yAxisTextStyle: {
+        color: isDark ? colors.neutral[400] : colors.charcoal[600],
+      },
+      xAxisLabelTextStyle: {
+        color: isDark ? colors.neutral[400] : colors.charcoal[600],
+        fontSize: 10,
+      },
+      noOfSections: 4,
+      maxValue:
+        chartData.length > 0
+          ? Math.max(...chartData.map((d) => d.value)) * 1.1
+          : 100,
+      hideDataPoints: chartData.length > 10,
+      dataPointsColor: colors.primary[600],
+      dataPointsRadius: 4,
+      curved: true,
+      isAnimated: true,
+      animationDuration: 800,
+    }),
+    [chartData, isDark]
+  );
+
+  if (data.length === 0) {
+    return (
+      <View
+        className="rounded-xl bg-neutral-50 p-4 dark:bg-charcoal-900"
+        testID={testID}
+      >
+        <Text className="text-sm text-charcoal-600 dark:text-neutral-400">
+          {t('inventory.charts.noConsumptionData')}
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View
+      className="rounded-xl bg-neutral-50 p-4 dark:bg-charcoal-900"
+      testID={testID}
+    >
+      <View className="mb-3 flex-row items-center justify-between">
+        <Text className="font-inter-semibold text-base text-charcoal-900 dark:text-neutral-100">
+          {t('inventory.charts.consumptionTrend')}
+        </Text>
+        <Text className="text-xs text-charcoal-600 dark:text-neutral-400">
+          {t('inventory.charts.weekly')}
+        </Text>
+      </View>
+
+      <LineChart {...chartConfig} />
+
+      <Text className="mt-2 text-xs text-charcoal-600 dark:text-neutral-400">
+        {t('inventory.charts.consumptionNote')}
+      </Text>
+    </View>
+  );
+};
+
+/**
+ * Memoized chart component to prevent unnecessary re-renders
+ */
+export const ConsumptionTrendChart = memo(ConsumptionTrendChartComponent);

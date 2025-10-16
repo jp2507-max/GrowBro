@@ -17,8 +17,10 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { ExactAlarmFallbackBanner } from '@/components/inventory/exact-alarm-fallback-banner';
 import { InventoryList } from '@/components/inventory/inventory-list';
 import { Button, FocusAwareStatusBar, Text, View } from '@/components/ui';
+import { useExactAlarmPermissionStatus } from '@/lib/inventory/use-exact-alarm-permission-status';
 import { useInventoryItems } from '@/lib/inventory/use-inventory-items';
 
 export default function InventoryScreen(): React.ReactElement {
@@ -30,6 +32,7 @@ export default function InventoryScreen(): React.ReactElement {
 
   const { items, isLoading, error, refetch, lowStockCount } =
     useInventoryItems();
+  const { shouldShowBanner, dismissBanner } = useExactAlarmPermissionStatus();
 
   const handleAddItem = React.useCallback(() => {
     router.push('/inventory/add');
@@ -83,6 +86,11 @@ export default function InventoryScreen(): React.ReactElement {
           </Button>
         )}
       </View>
+
+      {/* Exact Alarm Permission Banner */}
+      {shouldShowBanner && (
+        <ExactAlarmFallbackBanner onDismiss={dismissBanner} />
+      )}
 
       {/* List */}
       <InventoryList

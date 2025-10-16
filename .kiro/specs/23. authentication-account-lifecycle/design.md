@@ -1084,29 +1084,15 @@ function shouldRotateKey(lastRotatedAt: Date): boolean {
 }
 
 /**
- * Performs safe key rotation by migrating existing data
+ * Performs atomic key rotation using MMKV's recrypt functionality.
+ * This simpler pattern leverages MMKV's built-in atomic recrypt operation
+ * which rotates encryption keys in-place without data copying or temporary storage.
  */
 async function rotateEncryptionKey(
+  store: MMKV,
   oldKeyInfo: EncryptionKeyInfo
 ): Promise<EncryptionKeyInfo> {
-  console.log('Performing key rotation...');
-
-  // Create temporary MMKV instance with old key to read existing data
-  const tempStorage = new MMKV({
-    id: 'auth-storage-temp',
-    encryptionKey: oldKeyInfo.key,
-  });
-
-  // Read all existing data
-  const allKeys = tempStorage.getAllKeys();
-  const existingData: Record<string, any> = {};
-
-  for (const key of allKeys) {
-    const value = tempStorage.getString(key);
-    if (value !== null) {
-      existingData[key] = value;
-    }
-  }
+  console.log('Performing atomic key rotation...');
 
   // Generate new key
   const newKey = await generateEncryptionKey();
@@ -1117,32 +1103,22 @@ async function rotateEncryptionKey(
     lastRotatedAt: new Date(),
   };
 
-  // Create new MMKV instance with new key
-  const newStorage = new MMKV({
-    id: 'auth-storage-new',
-    encryptionKey: newKey,
-  });
+  // Atomically rotate encryption key in-place
+  await store.recrypt(newKey);
 
-  // Write data with new encryption
-  for (const [key, value] of Object.entries(existingData)) {
-    newStorage.set(key, value);
-  }
-
-  // Store new key info
+  // Persist new key metadata immediately after successful recrypt
   await storeKeyInfo(newKeyInfo);
 
-  // Clean up temporary storage
-  tempStorage.clearAll();
-  newStorage.clearAll();
-
-  console.log(`Key rotation completed. New version: ${newKeyInfo.version}`);
+  console.log(
+    `Key rotation completed atomically. New version: ${newKeyInfo.version}`
+  );
   return newKeyInfo;
 }
 
 /**
  * Gets or creates encryption key with rotation support
  */
-async function getOrCreateEncryptionKey(): Promise<string> {
+async function getOrCreateEncryptionKey(): Promise<EncryptionKeyInfo> {
   try {
     let keyInfo = await getStoredKeyInfo();
 
@@ -1157,17 +1133,20 @@ async function getOrCreateEncryptionKey(): Promise<string> {
         lastRotatedAt: new Date(),
       };
       await storeKeyInfo(keyInfo);
-    } else if (shouldRotateKey(keyInfo.lastRotatedAt)) {
-      // Key rotation needed
-      keyInfo = await rotateEncryptionKey(keyInfo);
     }
 
-    return keyInfo.key;
+    return keyInfo;
   } catch (error) {
     console.error('Encryption key management failed:', error);
     // Fallback: generate key but don't store it (less secure but functional)
     console.warn('Falling back to ephemeral encryption key');
-    return await generateEncryptionKey();
+    const key = await generateEncryptionKey();
+    return {
+      key,
+      version: 1,
+      createdAt: new Date(),
+      lastRotatedAt: new Date(),
+    };
   }
 }
 
@@ -1179,11 +1158,21 @@ export async function initializeAuthStorage(): Promise<MMKV> {
     return authStorage;
   }
 
-  const encryptionKey = await getOrCreateEncryptionKey();
+  const keyInfo = await getOrCreateEncryptionKey();
   authStorage = new MMKV({
     id: 'auth-storage',
-    encryptionKey,
+    encryptionKey: keyInfo.key,
   });
+
+  // Check if rotation is needed and perform atomic rotation
+  if (shouldRotateKey(keyInfo.lastRotatedAt)) {
+    console.log('Key rotation needed, performing atomic recrypt...');
+    const newKeyInfo = await rotateEncryptionKey(authStorage, keyInfo);
+    // Update stored key info is already handled in rotateEncryptionKey
+    console.log(
+      `Storage initialized with rotated key version: ${newKeyInfo.version}`
+    );
+  }
 
   return authStorage;
 }

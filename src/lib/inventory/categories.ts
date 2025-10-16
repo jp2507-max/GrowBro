@@ -12,6 +12,10 @@ import type { CategoryFacet, InventoryCategory } from '@/types/inventory';
 
 /**
  * Category metadata with description and supported facets
+ *
+ * Note: Type incompatibility exists between mutable array props and 'as const' assertion
+ * on PREDEFINED_CATEGORIES. The 'as const' makes nested arrays readonly, but this type
+ * defines them as mutable. Consider removing 'as const' or making arrays readonly.
  */
 export type CategoryMetadata = {
   name: InventoryCategory;
@@ -68,7 +72,7 @@ export const PREDEFINED_CATEGORIES: readonly CategoryMetadata[] = [
     commonUnits: ['ml', 'L', 'g', 'kg'],
     icon: 'chemistry',
   },
-] as const;
+];
 
 /**
  * Get category metadata by name

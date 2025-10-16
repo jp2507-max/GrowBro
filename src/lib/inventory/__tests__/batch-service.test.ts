@@ -10,6 +10,7 @@
 
 import { database } from '@/lib/watermelon';
 import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
+import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
 
 import {
   addBatch,
@@ -353,6 +354,38 @@ describe('BatchService', () => {
       });
 
       expect(result.success).toBe(false);
+    });
+
+    test('creates movement record for quantity adjustment', async () => {
+      const created = await addBatch({
+        itemId: testItemId,
+        lotNumber: 'LOT-MOVEMENT',
+        quantity: 100,
+        costPerUnitMinor: 1000,
+      });
+
+      const result = await updateBatchQuantity(created.data!.id, {
+        quantity: 75,
+        reason: 'Manual adjustment for testing',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data?.quantity).toBe(75);
+
+      // Verify movement record was created
+      const movementCollection = database.get<InventoryMovementModel>(
+        'inventory_movements'
+      );
+      const movements = await movementCollection.query().fetch();
+
+      const adjustmentMovement = movements.find(
+        (m) => m.batchId === created.data!.id && m.type === 'adjustment'
+      );
+
+      expect(adjustmentMovement).toBeDefined();
+      expect(adjustmentMovement?.quantityDelta).toBe(-25); // 75 - 100 = -25
+      expect(adjustmentMovement?.reason).toBe('Manual adjustment for testing');
+      expect(adjustmentMovement?.itemId).toBe(testItemId);
     });
   });
 

@@ -102,6 +102,58 @@ export async function getAvailableBatches(
 }
 
 /**
+ * Validate pick request parameters
+ */
+function validatePickRequest(
+  quantity: number,
+  options?: PickOptions
+): PickResult | null {
+  if (quantity <= 0) {
+    return {
+      success: false,
+      quantityPicked: 0,
+      allocations: [],
+      totalCostMinor: 0,
+      averageCostPerUnitMinor: 0,
+      error: 'Quantity must be positive',
+    };
+  }
+
+  if (options?.allowExpiredOverride && !options.expiredOverrideReason) {
+    return {
+      success: false,
+      quantityPicked: 0,
+      allocations: [],
+      totalCostMinor: 0,
+      averageCostPerUnitMinor: 0,
+      error: 'Reason required when allowing expired override',
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Select and sort batches for picking (FEFO or FIFO fallback)
+ */
+async function selectBatchesForPicking(
+  itemId: string,
+  options?: PickOptions
+): Promise<InventoryBatch[]> {
+  const includeExpired = options?.allowExpiredOverride ?? false;
+  const batches = await getAvailableBatches(itemId, { includeExpired });
+
+  // FIFO fallback: if all have no expiry and requested, sort by receivedAt
+  if (options?.fallbackToFIFO && batches.every((b) => !b.expiresOn)) {
+    return [...batches].sort(
+      (a, b) => a.receivedAt.getTime() - b.receivedAt.getTime()
+    );
+  }
+
+  return batches;
+}
+
+/**
  * Pick quantity from batches using FEFO policy
  * Requirement 2.3, 2.6
  *
@@ -120,38 +172,14 @@ export async function pickQuantity(
   quantity: number,
   options?: PickOptions
 ): Promise<PickResult> {
-  if (quantity <= 0) {
-    return {
-      success: false,
-      quantityPicked: 0,
-      allocations: [],
-      totalCostMinor: 0,
-      averageCostPerUnitMinor: 0,
-      error: 'Quantity must be positive',
-    };
-  }
+  // Validate request
+  const validationError = validatePickRequest(quantity, options);
+  if (validationError) return validationError;
 
-  // Validate expired override
-  if (options?.allowExpiredOverride && !options.expiredOverrideReason) {
-    return {
-      success: false,
-      quantityPicked: 0,
-      allocations: [],
-      totalCostMinor: 0,
-      averageCostPerUnitMinor: 0,
-      error: 'Reason required when allowing expired override',
-    };
-  }
+  // Get candidate batches
+  const candidateBatches = await selectBatchesForPicking(itemId, options);
 
-  // Get available batches (FEFO-sorted)
-  const includeExpired = options?.allowExpiredOverride ?? false;
-  const batches = await getAvailableBatches(itemId, { includeExpired });
-
-  // If no batches with expiry exist and fallback to FIFO is enabled,
-  // getBatchesForItem already returns batches in received_at order
-  // when all batches have no expiry date
-
-  if (batches.length === 0) {
+  if (candidateBatches.length === 0) {
     return {
       success: false,
       quantityPicked: 0,
@@ -167,8 +195,8 @@ export async function pickQuantity(
   let remainingQuantity = quantity;
   let totalCostMinor = 0;
 
-  // Pick from batches in FEFO order
-  for (const batch of batches) {
+  // Pick from batches (FEFO or FIFO fallback)
+  for (const batch of candidateBatches) {
     if (remainingQuantity <= 0) break;
 
     const pickedQty = Math.min(batch.quantity, remainingQuantity);

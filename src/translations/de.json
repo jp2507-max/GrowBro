@@ -496,6 +496,12 @@
       "add_item": "Artikel hinzufügen",
       "batch_lot": "Charge {{lot}}",
       "batches_title": "Chargen",
+      "charts": {
+        "consumptionNote": "Basierend auf erfassten Abgangsbewegungen",
+        "consumptionTrend": "Verbrauchstrend",
+        "noConsumptionData": "Noch keine Verbrauchsdaten verfügbar",
+        "weekly": "Wöchentlich ({{unit}})"
+      },
       "concurrent_finalize_toast": "Ernteaufzeichnung bereits von einem anderen Prozess abgeschlossen",
       "current_stock": "Bestand",
       "empty_description": "Füge deinen ersten Inventarartikel hinzu, um Vorräte zu verfolgen",
@@ -506,6 +512,18 @@
       "expires_in": "Läuft in {{days}} Tagen ab",
       "finalize_curing": "Aushärtung abschließen & Endertrag aufzeichnen",
       "finalize_success_toast": "Aushärtung abgeschlossen und Endertrag erfolgreich aufgezeichnet",
+      "forecast": {
+        "basedOnUsagePattern": "Basierend auf deinem Nutzungsmuster",
+        "highConfidence": "Hoch",
+        "inDays": "In {{days}} Tagen",
+        "lowConfidence": "Niedrig",
+        "lowConfidenceNote": "Begrenzte Daten verfügbar. Die Vorhersagegenauigkeit verbessert sich mit mehr Nutzungsverlauf.",
+        "mediumConfidence": "Mittel",
+        "recommendedQuantity": "Empfohlene Menge",
+        "reorderNow": "Jetzt nachbestellen",
+        "reorderRecommendation": "Nachbestellempfehlung",
+        "timeToReorder": "Zeit bis zur Nachbestellung"
+      },
       "form": {
         "category": "Kategorie",
         "lead_time_days": "Lieferzeit (Tage)",
@@ -576,6 +594,21 @@
       "target": {
         "body": "Deine Ernte ist seit {{days}} Tagen in der {{stage}}-Phase. Erwäge, zur nächsten Phase überzugehen.",
         "title": "{{stage}}-Phase Ziel erreicht"
+      }
+    },
+    "permissions": {
+      "exactAlarm": {
+        "errorMessage": "Berechtigung konnte nicht angefordert werden. Bitte versuche es erneut.",
+        "errorTitle": "Berechtigungsfehler",
+        "fallbackBody": "Aktiviere exakte Alarme in den Einstellungen für sofortige Warnungen bei niedrigem Lagerbestand.",
+        "fallbackTitle": "Benachrichtigungen können verzögert sein",
+        "grantButton": "Benachrichtigungen aktivieren",
+        "ifDeniedBody": "Benachrichtigungen können bis zu 15 Minuten verzögert werden. Du erhältst weiterhin Warnungen, nur nicht sofort.",
+        "ifDeniedTitle": "Wenn du dies überspringst",
+        "openSettings": "Einstellungen öffnen",
+        "title": "Rechtzeitige Benachrichtigungen aktivieren",
+        "whyNeededBody": "Exakte Alarme stellen sicher, dass du sofort benachrichtigt wirst, wenn Vorräte zur Neige gehen, damit du rechtzeitig nachbestellen kannst.",
+        "whyNeededTitle": "Warum das wichtig ist"
       }
     },
     "photo": {
@@ -763,6 +796,10 @@
       "cultivationReminders": {
         "description": "Aufgaben-Erinnerungen sowie Trocknungs- und Aushärtungswarnungen.",
         "name": "Grow-Erinnerungen"
+      },
+      "inventoryAlerts": {
+        "description": "Rechtzeitige Warnungen, wenn Anbaumaterialien zur Neige gehen.",
+        "name": "Lagerbestands-Warnungen"
       },
       "systemUpdates": {
         "description": "Wichtige Konto-Hinweise, Richtlinien-Updates oder Sicherheitswarnungen.",

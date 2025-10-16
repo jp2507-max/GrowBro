@@ -8,7 +8,7 @@ The Inventory Deduction System automatically reduces inventory levels when tasks
 
 - **Automatic Deduction**: Inventory is automatically deducted when tasks complete
 - **FEFO Picking**: Batches expiring soonest are consumed first (First-Expire-First-Out)
-- **FIFO Costing**: Cost tracking uses First-In-First-Out for accurate accounting
+- **FIFO Valuation**: Valuation uses First-In-First-Out for accurate attribution
 - **Idempotency**: Duplicate task submissions don't create duplicate deductions
 - **Atomic Transactions**: All or nothing - partial failures roll back completely
 - **Three-Choice Recovery**: Handle insufficient stock with partial/skip/adjust options

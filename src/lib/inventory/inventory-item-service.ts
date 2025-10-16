@@ -285,7 +285,10 @@ export async function createInventoryItem(
       ) {
         // Extract which field caused the constraint violation
         let field = 'unknown';
-        let message = VALIDATION_ERRORS.DUPLICATE_SKU;
+        let message:
+          | typeof VALIDATION_ERRORS.DUPLICATE_SKU
+          | typeof VALIDATION_ERRORS.DUPLICATE_BARCODE =
+          VALIDATION_ERRORS.DUPLICATE_SKU;
 
         if (
           error.message.includes('sku') ||
@@ -572,7 +575,10 @@ export async function updateInventoryItem(
       ) {
         // Extract which field caused the constraint violation
         let field = 'unknown';
-        let message = VALIDATION_ERRORS.DUPLICATE_SKU;
+        let message:
+          | typeof VALIDATION_ERRORS.DUPLICATE_SKU
+          | typeof VALIDATION_ERRORS.DUPLICATE_BARCODE =
+          VALIDATION_ERRORS.DUPLICATE_SKU;
 
         if (
           error.message.includes('sku') ||

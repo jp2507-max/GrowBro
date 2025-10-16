@@ -624,6 +624,20 @@ function buildInventoryMovementsCollection() {
   const col = makeCollection();
   const originalCreate = col.create.bind(col);
   col.create = async (cb: any) => {
+    // Check for uniqueness constraint on externalKey before creating
+    const tempRec: any = {};
+    await cb?.(tempRec);
+    if (tempRec.externalKey !== null && tempRec.externalKey !== undefined) {
+      const existing = col.__store.find(
+        (r: any) => r.externalKey === tempRec.externalKey
+      );
+      if (existing) {
+        throw new Error(
+          `UNIQUE constraint failed: inventory_movements.external_key`
+        );
+      }
+    }
+
     return originalCreate(async (rec: any) => {
       rec.itemId = 'mock-item-id';
       rec.batchId = null;
@@ -636,6 +650,11 @@ function buildInventoryMovementsCollection() {
       rec.userId = null;
       rec.createdAt = new Date();
       await cb?.(rec);
+
+      // Override update method to enforce immutability
+      rec.update = async () => {
+        throw new Error('inventory_movements are immutable');
+      };
     });
   };
   return col;

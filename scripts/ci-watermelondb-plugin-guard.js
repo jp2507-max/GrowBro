@@ -63,10 +63,10 @@ function findExpoConfigFile() {
 }
 
 /**
- * Reads and parses an Expo config file
+ * Reads and parses an Expo config file safely
  * @param {string} configPath - Path to the config file
- * @returns {object} Parsed config object
- * @throws {Error} If reading or parsing fails
+ * @returns {object} Parsed config object or fallback with source text
+ * @throws {Error} If reading fails completely
  */
 function readExpoConfig(configPath) {
   const isJson = path.extname(configPath) === '.json';
@@ -77,10 +77,16 @@ function readExpoConfig(configPath) {
       const content = fs.readFileSync(configPath, 'utf-8');
       return JSON.parse(content);
     } else {
-      // For JS/TS/CJS files, use require
-      // Clear require cache to ensure fresh read
-      delete require.cache[require.resolve(configPath)];
-      return require(configPath);
+      // For JS/TS/CJS files, try require; fallback to text scanning on failure
+      try {
+        // Clear require cache to ensure fresh read
+        delete require.cache[require.resolve(configPath)];
+        return require(configPath);
+      } catch (_requireError) {
+        // If require fails (TS/ESM issues), read as text for plugin scanning
+        const content = fs.readFileSync(configPath, 'utf-8');
+        return { __source: content };
+      }
     }
   } catch (error) {
     if (error.code === 'ENOENT') {
@@ -118,7 +124,15 @@ function checkWatermelonDBPlugin() {
       typeof appConfig === 'function' ? appConfig({}) : appConfig;
 
     // Check plugins array
-    const plugins = configObj.plugins || [];
+    let plugins =
+      (Array.isArray(configObj.plugins) && configObj.plugins) ||
+      (Array.isArray(configObj.expo?.plugins) && configObj.expo.plugins) ||
+      [];
+    if (!plugins.length && typeof configObj.__source === 'string') {
+      const s = configObj.__source;
+      const has = /['"]@morrowdigital\/watermelondb-expo-plugin['"]/.test(s);
+      plugins = has ? ['@morrowdigital/watermelondb-expo-plugin'] : [];
+    }
     const hasWatermelonPlugin = plugins.some((plugin) => {
       if (typeof plugin === 'string') {
         return plugin === '@morrowdigital/watermelondb-expo-plugin';

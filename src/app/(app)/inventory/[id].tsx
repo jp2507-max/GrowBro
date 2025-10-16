@@ -13,8 +13,11 @@ import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 
 import { BatchList } from '@/components/inventory/batch-list';
+import { ConsumptionTrendChart } from '@/components/inventory/consumption-trend-chart';
+import { ReorderRecommendationCard } from '@/components/inventory/reorder-recommendation-card';
 import { Button, FocusAwareStatusBar, Text, View } from '@/components/ui';
 import { useInventoryItemDetail } from '@/lib/inventory/use-inventory-item-detail';
+import { useInventoryItemForecast } from '@/lib/inventory/use-inventory-item-forecast';
 
 export default function InventoryItemDetailScreen(): React.ReactElement {
   const { t } = useTranslation();
@@ -22,6 +25,12 @@ export default function InventoryItemDetailScreen(): React.ReactElement {
 
   const { item, batches, isLoading, error, refetch } =
     useInventoryItemDetail(id);
+
+  const {
+    consumptionHistory,
+    reorderRecommendation,
+    isLoading: forecastLoading,
+  } = useInventoryItemForecast(id);
 
   if (isLoading) {
     return (
@@ -81,6 +90,26 @@ export default function InventoryItemDetailScreen(): React.ReactElement {
             </View>
           </View>
         </View>
+
+        {/* Consumption Trends */}
+        {!forecastLoading && consumptionHistory.length > 0 && (
+          <View className="mt-4 border-b border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
+            <Text className="mb-3 text-lg font-semibold text-charcoal-950 dark:text-white">
+              {t('inventory.charts.consumption_trend')}
+            </Text>
+            <ConsumptionTrendChart data={consumptionHistory} />
+          </View>
+        )}
+
+        {/* Reorder Recommendation */}
+        {!forecastLoading && reorderRecommendation && item && (
+          <View className="mt-4 px-4">
+            <ReorderRecommendationCard
+              recommendation={reorderRecommendation}
+              unitOfMeasure={item.unitOfMeasure}
+            />
+          </View>
+        )}
 
         {/* Batches */}
         <View className="mt-4 px-4">

@@ -200,24 +200,30 @@ export async function createMovement(
           .query(Q.where('external_key', request.externalKey))
           .fetch();
         if (existing.length > 0) {
-          return { movement: existing[0], isDuplicate: true };
+          return {
+            success: true,
+            movement: existing[0],
+            isIdempotentDuplicate: true,
+          };
         }
       }
 
       // Try to create movement
       let movement: InventoryMovementModel;
       try {
-        movement = await movementCollection.create((record) => {
-          record.itemId = request.itemId;
-          record.batchId = request.batchId;
-          record.type = request.type;
-          record.quantityDelta = request.quantityDelta;
-          record.costPerUnitMinor = request.costPerUnitMinor;
-          record.reason = request.reason;
-          record.taskId = request.taskId;
-          record.externalKey = request.externalKey;
-          // createdAt is set automatically by @readonly decorator
-        });
+        movement = await movementCollection.create(
+          (record: InventoryMovementModel) => {
+            record.itemId = request.itemId;
+            record.batchId = request.batchId;
+            record.type = request.type;
+            record.quantityDelta = request.quantityDelta;
+            record.costPerUnitMinor = request.costPerUnitMinor;
+            record.reason = request.reason;
+            record.taskId = request.taskId;
+            record.externalKey = request.externalKey;
+            // createdAt is set automatically by @readonly decorator
+          }
+        );
       } catch (error) {
         // If constraint violation, check if movement was created by another operation
         if (
@@ -229,20 +235,20 @@ export async function createMovement(
             .query(Q.where('external_key', request.externalKey))
             .fetch();
           if (existing.length > 0) {
-            return { movement: existing[0], isDuplicate: true };
+            return {
+              success: true,
+              movement: existing[0],
+              isIdempotentDuplicate: true,
+            };
           }
         }
         throw error; // Re-throw if not a handled constraint violation
       }
 
-      return { movement, isDuplicate: false };
+      return { success: true, movement, isIdempotentDuplicate: false };
     });
 
-    return {
-      success: true,
-      movement: result.movement,
-      isIdempotentDuplicate: result.isDuplicate,
-    };
+    return result;
   } catch (error) {
     return {
       success: false,
@@ -255,18 +261,77 @@ export async function createMovement(
 }
 
 /**
+ * Check for existing movement by external key
+ */
+async function checkExistingMovement(
+  collection: any,
+  externalKey?: string
+): Promise<InventoryMovementModel | null> {
+  if (!externalKey) return null;
+
+  const existing = await collection
+    .query(Q.where('external_key', externalKey))
+    .fetch();
+  return existing.length > 0 ? existing[0] : null;
+}
+
+/**
+ * Update batch quantity
+ */
+async function updateBatchQuantity(
+  db: typeof database,
+  batchId: string,
+  quantityDelta: number
+): Promise<void> {
+  const batch = await db
+    .get<InventoryBatchModel>('inventory_batches')
+    .find(batchId);
+
+  await batch.update((record: InventoryBatchModel) => {
+    const newQuantity = record.quantity + quantityDelta;
+
+    if (newQuantity < 0) {
+      throw new Error(
+        `Insufficient batch quantity. Available: ${record.quantity}, Requested: ${Math.abs(quantityDelta)}`
+      );
+    }
+
+    record.quantity = newQuantity;
+  });
+}
+
+/**
+ * Create movement record
+ */
+async function createMovementRecord(
+  collection: any,
+  request: CreateMovementRequest
+): Promise<InventoryMovementModel> {
+  return await collection.create((record: InventoryMovementModel) => {
+    record.itemId = request.itemId;
+    record.batchId = request.batchId;
+    record.type = request.type;
+    record.quantityDelta = request.quantityDelta;
+    record.costPerUnitMinor = request.costPerUnitMinor;
+    record.reason = request.reason;
+    record.taskId = request.taskId;
+    record.externalKey = request.externalKey;
+  });
+}
+
+/**
  * Internal function to create movement with batch update (without transaction wrapper)
  *
  * This performs the same logic as createMovementWithBatchUpdate but without
  * wrapping in database.write(). Used for bulk operations that need atomicity
  * across multiple movements.
  *
- * @param database - WatermelonDB instance
+ * @param db - WatermelonDB instance
  * @param request - Movement creation request
  * @returns Operation result with movement or errors
  */
 export async function createMovementWithBatchUpdateInternal(
-  database: Database,
+  db: typeof database,
   request: CreateMovementRequest
 ): Promise<MovementOperationResult> {
   if (!request.batchId) {
@@ -286,54 +351,43 @@ export async function createMovementWithBatchUpdateInternal(
     };
   }
 
-  const movementCollection = database.get<InventoryMovementModel>(
+  const movementCollection = db.get<InventoryMovementModel>(
     'inventory_movements'
   );
 
-  // First perform lookup for existing movement with same externalKey (if provided)
-  if (request.externalKey) {
-    const existing = await movementCollection
-      .query(Q.where('external_key', request.externalKey))
-      .fetch();
-    if (existing.length > 0) {
-      // Movement already exists, return it without touching the batch
-      return { movement: existing[0], isDuplicate: true };
-    }
+  // Check for existing movement with same externalKey
+  const existing = await checkExistingMovement(
+    movementCollection,
+    request.externalKey
+  );
+  if (existing) {
+    return { success: true, movement: existing, isIdempotentDuplicate: true };
   }
 
-  // Only proceed when no existing movement is found
-  // Get batch and verify existence
-  const batch = await database
-    .get<InventoryBatchModel>('inventory_batches')
-    .find(request.batchId!);
+  // Update batch quantity first
+  await updateBatchQuantity(db, request.batchId, request.quantityDelta);
 
-  // Update batch quantity first to ensure no duplicate movements on retries
-  await batch.update((record) => {
-    const newQuantity = record.quantity + request.quantityDelta;
-
-    // Validate quantity doesn't go negative
-    if (newQuantity < 0) {
-      throw new Error(
-        `Insufficient batch quantity. Available: ${record.quantity}, Requested: ${Math.abs(request.quantityDelta)}`
+  // Create movement record
+  try {
+    const movement = await createMovementRecord(movementCollection, request);
+    return { success: true, movement, isIdempotentDuplicate: false };
+  } catch (error) {
+    // Handle constraint violation on retry
+    if (
+      error instanceof Error &&
+      request.externalKey &&
+      error.message.includes('UNIQUE constraint failed')
+    ) {
+      const retry = await checkExistingMovement(
+        movementCollection,
+        request.externalKey
       );
+      if (retry) {
+        return { success: true, movement: retry, isIdempotentDuplicate: true };
+      }
     }
-
-    record.quantity = newQuantity;
-  });
-
-  // Create movement record after batch update succeeds
-  const movement = await movementCollection.create((record) => {
-    record.itemId = request.itemId;
-    record.batchId = request.batchId;
-    record.type = request.type;
-    record.quantityDelta = request.quantityDelta;
-    record.costPerUnitMinor = request.costPerUnitMinor;
-    record.reason = request.reason;
-    record.taskId = request.taskId;
-    record.externalKey = request.externalKey;
-  });
-
-  return { movement, isDuplicate: false };
+    throw error;
+  }
 }
 
 /**
@@ -368,15 +422,9 @@ export async function createMovementWithBatchUpdate(
 
   try {
     // Atomic transaction: check idempotency first, then create movement + update batch
-    const result = await database.write(async () => {
+    return await database.write(async () => {
       return await createMovementWithBatchUpdateInternal(database, request);
     });
-
-    return {
-      success: true,
-      movement: result.movement,
-      isIdempotentDuplicate: result.isDuplicate,
-    };
   } catch (error) {
     return {
       success: false,

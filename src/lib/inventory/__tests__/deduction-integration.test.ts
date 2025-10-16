@@ -11,6 +11,7 @@
  * - 3.6: Rollback on failure
  */
 
+// Mock SQLiteAdapter to use LokiJSAdapter for Node.js tests
 import { DateTime } from 'luxon';
 
 import { deduceInventory } from '@/lib/inventory/deduction-service';
@@ -22,6 +23,29 @@ import { database } from '@/lib/watermelon';
 import type { InventoryBatchModel } from '@/lib/watermelon-models/inventory-batch';
 import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
 import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
+
+jest.mock('@nozbe/watermelondb/adapters/sqlite', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const LokiJSAdapter = require('@nozbe/watermelondb/adapters/lokijs').default;
+
+  // Return a class that wraps LokiJSAdapter
+  return class MockSQLiteAdapter extends LokiJSAdapter {
+    constructor(options: any) {
+      // Map SQLiteAdapter options to LokiJSAdapter options
+      const lokiOptions = {
+        schema: options.schema,
+        // Skip migrations for in-memory testing to avoid validation issues
+        // migrations: options.migrations,
+        onSetUpError: options.onSetUpError,
+        // Disable web workers for Node.js tests
+        useWebWorker: false,
+        // Disable IndexedDB for Node.js tests
+        useIncrementalIndexedDB: false,
+      };
+      super(lokiOptions);
+    }
+  };
+});
 
 describe('Inventory Deduction Integration', () => {
   beforeEach(async () => {

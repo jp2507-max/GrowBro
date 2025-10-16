@@ -730,6 +730,7 @@ export const STORAGE_KEYS = {
   HELP_SEARCH_HISTORY: 'help.searchHistory',
   HELP_ARTICLE_TELEMETRY: 'help.articleTelemetry',
   HELP_LAST_SYNC: 'help.lastSync',
+  HELP_SEARCH_INDEX: 'help.searchIndex',
 
   // Support
   SUPPORT_DRAFT: 'support.draft',
