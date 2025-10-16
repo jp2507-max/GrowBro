@@ -5,6 +5,8 @@
   <uses-permission android:name="android.permission.VIBRATE"/>
   <!-- Exact alarm permission for time-sensitive low-stock notifications (Android 13+) -->
   <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+  <!-- Notification permission for push notifications (Android 13+) -->
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
   <queries>
     <intent>
       <action android:name="android.intent.action.VIEW"/>

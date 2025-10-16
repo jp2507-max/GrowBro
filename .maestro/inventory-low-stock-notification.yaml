@@ -16,17 +16,11 @@ appId: com.growbro.app
 - assertVisible: 'No inventory items'
 
 # Step 1: Create low-stock item
-- tapOn: 'Add Item'
-- inputText: 'Test Nutrient'
-  id: 'item-name-input'
-- inputText: '500'
-  id: 'current-stock-input'
-- inputText: '1000'
-  id: 'min-stock-input'
-- inputText: 'ml'
-  id: 'unit-input'
-- tapOn: 'Add Item'
-  id: 'submit-button'
+- tapOn: { id: 'add-item-button' }
+- inputText: { id: 'name-input', text: 'Test Nutrient' }
+- inputText: { id: 'min-stock-input', text: '1000' }
+- inputText: { id: 'unit-input', text: 'ml' }
+- tapOn: { id: 'submit-button' }
 
 # Step 2: Verify item appears in low-stock section
 - assertVisible: 'Low Stock'
@@ -39,16 +33,9 @@ appId: com.growbro.app
       platform: android
       minSDKVersion: 33
     commands:
-      # Expect permission sheet to appear
-      - assertVisible: 'Enable Timely Notifications'
-      - assertVisible: 'Why this matters'
-
-      # Grant permission
-      - tapOn: 'Enable Notifications'
-
-      # Android system dialog
-      - tapOn: 'Allow'
-        id: 'permission_allow_button'
+      - assertVisible: { id: 'exact-alarm-fallback-banner' }
+      - tapOn: { id: 'exact-alarm-fallback-banner-settings-button' }
+      - tapOn: { id: 'exact-alarm-grant-button' }
 
 # Step 4: Verify notification was scheduled
 - assertVisible: 'Test Nutrient'

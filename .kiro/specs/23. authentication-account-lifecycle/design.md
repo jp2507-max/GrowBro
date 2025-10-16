@@ -198,6 +198,8 @@ type OfflineMode = 'full' | 'readonly' | 'blocked';
 **Hooks**:
 
 ```typescript
+import * as Crypto from 'expo-crypto';
+
 // Sign in with email/password
 export const useSignIn = createMutation<
   SignInResponse,
@@ -431,7 +433,7 @@ export const useRevokeSession = createMutation<
 export const useRevokeAllOtherSessions = createMutation<void, void, AxiosError>(
   {
     mutationFn: async () => {
-      const currentSessionKey = deriveSessionKey(
+      const currentSessionKey = await deriveSessionKey(
         useAuth.getState().session?.refresh_token
       );
       const { error } = await supabase.functions.invoke(
@@ -446,10 +448,12 @@ export const useRevokeAllOtherSessions = createMutation<void, void, AxiosError>(
 );
 
 // Helper to derive stable session key from refresh token
-function deriveSessionKey(refreshToken: string | undefined): string {
+async function deriveSessionKey(
+  refreshToken: string | undefined
+): Promise<string> {
   if (!refreshToken) return '';
   // Use SHA-256 hash of refresh token as stable session identifier
-  return crypto.createHash('sha256').update(refreshToken).digest('hex');
+  return await Crypto.digestStringAsync('SHA-256', refreshToken);
 }
 ```
 

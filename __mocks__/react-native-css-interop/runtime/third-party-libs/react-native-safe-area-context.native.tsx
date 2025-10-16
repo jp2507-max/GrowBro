@@ -4,6 +4,10 @@
  */
 
 export function wrap(Component: any) {
+  // Handle undefined or null components
+  if (!Component) {
+    return null;
+  }
   // Return component as-is without wrapping
   return Component;
 }

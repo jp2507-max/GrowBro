@@ -12,7 +12,6 @@
  */
 
 import type { Database } from '@nozbe/watermelondb';
-import { Q } from '@nozbe/watermelondb';
 
 import { pickBatchesForConsumption } from '@/lib/inventory/batch-picker';
 import { validateDeductionMap } from '@/lib/inventory/deduction-validators';
@@ -244,10 +243,14 @@ async function checkExistingMovements(
   database: Database,
   idempotencyKey: string
 ): Promise<InventoryMovementModel[]> {
-  return database
+  const allMovements = await database
     .get<InventoryMovementModel>('inventory_movements')
-    .query(Q.where('external_key', idempotencyKey))
+    .query()
     .fetch();
+
+  return allMovements.filter((movement) =>
+    movement.externalKey?.startsWith(`${idempotencyKey}:`)
+  );
 }
 
 interface CreateMovementsOptions {

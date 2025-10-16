@@ -83,6 +83,9 @@ export function ExactAlarmFallbackBanner({
           className="p-1"
           testID={`${testID}-dismiss-button`}
           accessibilityRole="button"
+          accessibilityLabel="Dismiss alarm banner"
+          accessibilityHint="Closes the alarm fallback banner"
+          hitSlop={{ top: 10, left: 10, right: 10, bottom: 10 }}
         >
           <Text className="text-base text-warning-700">✕</Text>
         </Pressable>

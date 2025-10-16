@@ -17,6 +17,7 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { ExportCSVButton, ImportCSVButton } from '@/components/inventory/csv';
 import { ExactAlarmFallbackBanner } from '@/components/inventory/exact-alarm-fallback-banner';
 import { InventoryList } from '@/components/inventory/inventory-list';
 import { Button, FocusAwareStatusBar, Text, View } from '@/components/ui';
@@ -67,6 +68,16 @@ export default function InventoryScreen(): React.ReactElement {
           >
             {t('inventory.add_item')}
           </Button>
+        </View>
+
+        {/* CSV Import/Export */}
+        <View className="mt-3 flex-row gap-2">
+          <View className="flex-1">
+            <ImportCSVButton variant="outline" size="sm" />
+          </View>
+          <View className="flex-1">
+            <ExportCSVButton variant="outline" size="sm" />
+          </View>
         </View>
 
         {lowStockCount > 0 && (

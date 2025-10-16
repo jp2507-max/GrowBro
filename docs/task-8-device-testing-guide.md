@@ -12,7 +12,7 @@
 - Low-stock notification scheduling
 - Android 13+ exact alarm permission flow
 - Permission fallback behavior
-- Notification delivery timing
+- Notification timing accuracy
 - Dark mode compatibility
 
 ## Manual QA Checklist

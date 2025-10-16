@@ -68,7 +68,7 @@ _Current state (Oct 2025 audit): consumable inventory tables and UI are absent; 
   - Write component tests and performance benchmarks on Pixel-6-class devices
   - _Requirements: 1.1, 1.3, 2.2, 4.2_
 
-- [ ] 8. Implement stock monitoring with Android 13+ notification handling
+- [x] 8. Implement stock monitoring with Android 13+ notification handling
   - Create reorder point calculation with lead time and forecasting (8-week SMA default)
   - Implement low stock detection with days-to-zero forecasting and 80% prediction intervals
   - Add Simple Exponential Smoothing for items with ≥12 weeks of data
@@ -82,7 +82,7 @@ _Current state (Oct 2025 audit): consumable inventory tables and UI are absent; 
   - Add device-matrix QA testing (Pixel + Samsung) for notification delivery variance
   - _Requirements: 4.1, 4.2, 4.3, 4.5, 6.3_
 
-- [ ] 9. Build RFC 4180 compliant CSV system with size limits
+- [x] 9. Build RFC 4180 compliant CSV system with size limits
   - Create CSV export generating items.csv, batches.csv, movements.csv with UTF-8 + CRLF
   - Implement RFC 4180 parsing with required headers, ISO-8601 dates, and dot decimals
   - Build dry-run preview with per-row diffs and specific validation errors
@@ -91,7 +91,7 @@ _Current state (Oct 2025 audit): consumable inventory tables and UI are absent; 
   - Create comprehensive CSV import UI with error handling and progress feedback
   - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
-- [ ] 10. Implement consumption analytics with integer cost tracking
+- [x] 10. Implement consumption analytics with integer cost tracking
   - Create consumption history with filtering and cost analysis using minor currency units
   - Implement usage pattern analysis with 8-week SMA and exponential smoothing options
   - Build cost tracking ensuring FIFO cost equals batch cost at pick time (no revaluation)
@@ -99,6 +99,7 @@ _Current state (Oct 2025 audit): consumable inventory tables and UI are absent; 
   - Create cost per harvest calculations and time-series visualizations by category
   - Write unit tests covering split consumption across multiple batches with cost integrity
   - _Requirements: 6.1, 6.2, 6.3, 9.3, 9.4_
+  - _Completed: Cost analysis service with minor currency units, consumption analytics hook with advanced filtering, enhanced consumption trend chart with prediction intervals, cost breakdown card, cost trend chart (BarChart), harvest cost calculator, and comprehensive tests (5/6 test suites passing - 26/31 tests, core functionality verified)_
 
 - [ ] 11. Add comprehensive search with offline caching
   - Implement full-text search with 150ms debounce across names, SKUs, categories

@@ -98,7 +98,7 @@ User Submits → Validate → Queue in WatermelonDB → Background Sync
 
 **Storage:**
 
-- WatermelonDB: `support_tickets` table (local queue + history)
+- WatermelonDB: `support_tickets_queue` table (local queue + history)
 - MMKV: Draft support requests, attachment metadata
 - Supabase: `support_tickets` table, `support_attachments` storage bucket
 
@@ -125,7 +125,7 @@ User Requests → Consent Check → Queue with Photo + Assessment Data
 
 **Storage:**
 
-- WatermelonDB: `ai_second_opinions` table (local queue + results)
+- WatermelonDB: `ai_second_opinions_queue` table (local queue + results)
 - MMKV: Consent preferences, review notifications
 - Supabase: `ai_second_opinions` table, `assessment_photos` storage bucket
 
@@ -616,37 +616,60 @@ CREATE INDEX idx_help_articles_updated_at ON help_articles(updated_at);
 CREATE INDEX idx_help_articles_fts ON help_articles
   USING gin(to_tsvector('english', title || ' ' || body_markdown));
 
--- Support Tickets
+-- Support Tickets with enum constraints
 CREATE TABLE support_tickets (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  category TEXT NOT NULL,
+  category TEXT NOT NULL CHECK (category IN ('technical-issue', 'account-help', 'feature-request', 'data-privacy', 'other')),
   subject TEXT NOT NULL,
   description TEXT NOT NULL,
   attachments TEXT[] NOT NULL DEFAULT '{}',
   device_context JSONB NOT NULL,
   status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in-progress', 'resolved')),
+  priority SMALLINT NOT NULL DEFAULT 2 CHECK (priority BETWEEN 1 AND 3),
   ticket_reference TEXT UNIQUE,
   article_id UUID REFERENCES help_articles(id),
   sentry_event_id TEXT,
   client_request_id TEXT NOT NULL UNIQUE,
+  error_code TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   resolved_at TIMESTAMPTZ
 );
 
-CREATE INDEX idx_support_tickets_user_id ON support_tickets(user_id);
-CREATE INDEX idx_support_tickets_status ON support_tickets(status);
-CREATE INDEX idx_support_tickets_created_at ON support_tickets(created_at);
+-- Partial index for faster queue queries
+CREATE INDEX idx_support_tickets_open ON support_tickets(status, priority) WHERE status = 'open';
 
--- Row-level security
+-- Auto-update updated_at trigger
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_support_tickets_updated_at
+  BEFORE UPDATE ON support_tickets
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- Support Tickets RLS
 ALTER TABLE support_tickets ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can view own tickets" ON support_tickets
-  FOR SELECT USING (auth.uid() = user_id);
+  FOR SELECT
+  USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can create own tickets" ON support_tickets
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+  FOR INSERT
+  WITH CHECK (
+    auth.uid() = user_id
+    AND status = 'open'
+    AND priority BETWEEN 1 AND 3
+  );
+
+-- No UPDATE policy - tickets are immutable after creation
 
 -- AI Second Opinions
 CREATE TABLE ai_second_opinions (
@@ -2167,69 +2190,7 @@ interface SupportTicket {
 
 ### Supabase DDL Refinements
 
-**Use CHECK constraints for enums:**
-
-```sql
--- Support Tickets with enum constraints
-CREATE TABLE support_tickets (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  category TEXT NOT NULL CHECK (category IN ('technical-issue', 'account-help', 'feature-request', 'data-privacy', 'other')),
-  subject TEXT NOT NULL,
-  description TEXT NOT NULL,
-  attachments TEXT[] NOT NULL DEFAULT '{}',
-  device_context JSONB NOT NULL,
-  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in-progress', 'resolved')),
-  priority SMALLINT NOT NULL DEFAULT 2 CHECK (priority BETWEEN 1 AND 3),
-  ticket_reference TEXT UNIQUE,
-  article_id UUID REFERENCES help_articles(id),
-  sentry_event_id TEXT,
-  client_request_id TEXT NOT NULL UNIQUE,
-  error_code TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  resolved_at TIMESTAMPTZ
-);
-
--- Partial index for faster queue queries
-CREATE INDEX idx_support_tickets_open ON support_tickets(status, priority) WHERE status = 'open';
-
--- Auto-update updated_at trigger
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_support_tickets_updated_at
-  BEFORE UPDATE ON support_tickets
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
-```
-
-**Enhanced RLS Policies:**
-
-```sql
--- Support Tickets RLS
-ALTER TABLE support_tickets ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view own tickets" ON support_tickets
-  FOR SELECT
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can create own tickets" ON support_tickets
-  FOR INSERT
-  WITH CHECK (
-    auth.uid() = user_id
-    AND status = 'open'
-    AND priority BETWEEN 1 AND 3
-  );
-
--- No UPDATE policy - tickets are immutable after creation
--- Staff updates via service role only
-```
+> **DEPRECATED**: The canonical DDL definition for `support_tickets` has been moved to the main schema section above. This duplicate definition is kept for reference but should not be used.
 
 **Audit Logs with Constraints:**
 

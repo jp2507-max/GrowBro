@@ -21,3 +21,15 @@ export * from './insufficient-stock-handler';
 
 // Consumption history queries
 export * from './consumption-history';
+
+// Cost analysis and tracking
+export * from './cost-analysis-service';
+export * from './harvest-cost-calculator';
+
+// Analytics hooks
+export * from './use-consumption-analytics';
+
+// CSV import/export
+export * from './csv-export-service';
+export * from './csv-import-service';
+export * from './csv-parser';

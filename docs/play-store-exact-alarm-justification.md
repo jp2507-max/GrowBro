@@ -1,5 +1,11 @@
 # Play Store Exact Alarm Permission Justification
 
+> Compliance disclaimer
+>
+> - This app does not facilitate the sale, purchase, delivery, or distribution of cannabis or controlled substances.
+> - It is a personal horticulture tracking tool only; there are no marketplace or commerce features.
+> - Content and features comply with local laws and Play policies; availability may vary by region.
+
 ## Policy Compliance Reference
 
 [Google Play Exact Alarms Policy](https://support.google.com/googleplay/android-developer/answer/13161072)

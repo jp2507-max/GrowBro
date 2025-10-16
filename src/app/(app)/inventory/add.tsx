@@ -10,12 +10,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import {
-  type FieldErrors,
-  useForm,
-  type UseFormSetValue,
-  type UseFormWatch,
-} from 'react-hook-form';
+import { Controller, type FieldErrors, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 import { z } from 'zod';
@@ -53,13 +48,15 @@ function FormHeader({ onCancel }: { onCancel: () => void }) {
 }
 
 function NameField({
-  setValue,
+  control,
   errors,
   isSubmitting,
+  serverValidationErrors,
 }: {
-  setValue: UseFormSetValue<AddItemFormData>;
+  control: any;
   errors: FieldErrors<AddItemFormData>;
   isSubmitting: boolean;
+  serverValidationErrors: Record<string, string>;
 }) {
   const { t } = useTranslation();
 
@@ -68,61 +65,80 @@ function NameField({
       <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
         {t('inventory.form.name')}
       </Text>
-      <Input
-        placeholder={t('inventory.form.name_placeholder')}
-        onChangeText={(text) => setValue('name', text)}
-        editable={!isSubmitting}
-        testID="name-input"
+      <Controller
+        control={control}
+        name="name"
+        rules={{
+          required: 'Name is required',
+          minLength: { value: 1, message: 'Name is required' },
+          maxLength: {
+            value: 100,
+            message: 'Name must be less than 100 characters',
+          },
+        }}
+        render={({ field: { onChange, onBlur, value, ref } }) => (
+          <Input
+            ref={ref}
+            value={value}
+            placeholder={t('inventory.form.name_placeholder')}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            editable={!isSubmitting}
+            testID="name-input"
+          />
+        )}
       />
-      {errors.name && (
+      {(errors.name || serverValidationErrors.name) && (
         <Text className="mt-1 text-xs text-danger-600 dark:text-danger-400">
-          {errors.name.message}
+          {serverValidationErrors.name || errors.name?.message}
         </Text>
       )}
     </View>
   );
 }
 
-function CategoryField({
-  setValue,
-  watch,
-}: {
-  setValue: UseFormSetValue<AddItemFormData>;
-  watch: UseFormWatch<AddItemFormData>;
-}) {
+function CategoryField({ control }: { control: any }) {
   const { t } = useTranslation();
-  const selectedCategory = watch('category');
 
   return (
     <View className="mb-4">
       <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
         {t('inventory.form.category')}
       </Text>
-      <View className="flex-row flex-wrap gap-2">
-        {CATEGORIES.map((category) => (
-          <Button
-            key={category}
-            onPress={() => setValue('category', category)}
-            variant={selectedCategory === category ? 'default' : 'outline'}
-            size="sm"
-            testID={`category-${category}`}
-          >
-            {category}
-          </Button>
-        ))}
-      </View>
+      <Controller
+        control={control}
+        name="category"
+        rules={{ required: 'Category is required' }}
+        render={({ field: { onChange, value } }) => (
+          <View className="flex-row flex-wrap gap-2">
+            {CATEGORIES.map((category) => (
+              <Button
+                key={category}
+                onPress={() => onChange(category)}
+                variant={value === category ? 'default' : 'outline'}
+                size="sm"
+                testID={`category-${category}`}
+              >
+                {category}
+              </Button>
+            ))}
+          </View>
+        )}
+      />
     </View>
   );
 }
 
 function UnitField({
-  setValue,
+  control,
   errors,
   isSubmitting,
+  serverValidationErrors,
 }: {
-  setValue: UseFormSetValue<AddItemFormData>;
+  control: any;
   errors: FieldErrors<AddItemFormData>;
   isSubmitting: boolean;
+  serverValidationErrors: Record<string, string>;
 }) {
   const { t } = useTranslation();
 
@@ -131,60 +147,78 @@ function UnitField({
       <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
         {t('inventory.form.unit')}
       </Text>
-      <Input
-        placeholder={t('inventory.form.unit_placeholder')}
-        onChangeText={(text) => setValue('unitOfMeasure', text)}
-        editable={!isSubmitting}
-        testID="unit-input"
+      <Controller
+        control={control}
+        name="unitOfMeasure"
+        rules={{
+          required: 'Unit is required',
+          minLength: { value: 1, message: 'Unit is required' },
+          maxLength: {
+            value: 20,
+            message: 'Unit must be less than 20 characters',
+          },
+        }}
+        render={({ field: { onChange, onBlur, value, ref } }) => (
+          <Input
+            ref={ref}
+            value={value}
+            placeholder={t('inventory.form.unit_placeholder')}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            editable={!isSubmitting}
+            testID="unit-input"
+          />
+        )}
       />
-      {errors.unitOfMeasure && (
+      {(errors.unitOfMeasure || serverValidationErrors.unitOfMeasure) && (
         <Text className="mt-1 text-xs text-danger-600 dark:text-danger-400">
-          {errors.unitOfMeasure.message}
+          {serverValidationErrors.unitOfMeasure ||
+            errors.unitOfMeasure?.message}
         </Text>
       )}
     </View>
   );
 }
 
-function TrackingModeField({
-  setValue,
-  watch,
-}: {
-  setValue: UseFormSetValue<AddItemFormData>;
-  watch: UseFormWatch<AddItemFormData>;
-}) {
+function TrackingModeField({ control }: { control: any }) {
   const { t } = useTranslation();
-  const selectedTrackingMode = watch('trackingMode');
 
   return (
     <View className="mb-4">
       <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
         {t('inventory.form.tracking_mode')}
       </Text>
-      <View className="flex-row gap-2">
-        {TRACKING_MODES.map((mode) => (
-          <Button
-            key={mode}
-            onPress={() => setValue('trackingMode', mode)}
-            variant={selectedTrackingMode === mode ? 'default' : 'outline'}
-            size="sm"
-            disabled={false}
-            testID={`tracking-mode-${mode}`}
-          >
-            {t(`inventory.form.tracking_${mode}`)}
-          </Button>
-        ))}
-      </View>
+      <Controller
+        control={control}
+        name="trackingMode"
+        rules={{ required: 'Tracking mode is required' }}
+        render={({ field: { onChange, value } }) => (
+          <View className="flex-row gap-2">
+            {TRACKING_MODES.map((mode) => (
+              <Button
+                key={mode}
+                onPress={() => onChange(mode)}
+                variant={value === mode ? 'default' : 'outline'}
+                size="sm"
+                disabled={false}
+                testID={`tracking-mode-${mode}`}
+              >
+                {t(`inventory.form.tracking_${mode}`)}
+              </Button>
+            ))}
+          </View>
+        )}
+      />
     </View>
   );
 }
 
 function MinStockField({
-  setValue,
+  control,
   errors,
   isSubmitting,
 }: {
-  setValue: UseFormSetValue<AddItemFormData>;
+  control: any;
   errors: FieldErrors<AddItemFormData>;
   isSubmitting: boolean;
 }) {
@@ -195,12 +229,35 @@ function MinStockField({
       <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
         {t('inventory.form.min_stock')}
       </Text>
-      <Input
-        placeholder="0"
-        keyboardType="numeric"
-        onChangeText={(text) => setValue('minStock', Number(text) || 0)}
-        editable={!isSubmitting}
-        testID="min-stock-input"
+      <Controller
+        control={control}
+        name="minStock"
+        rules={{
+          required: 'Minimum stock is required',
+          min: { value: 0, message: 'Minimum stock must be positive' },
+        }}
+        render={({ field: { onChange, onBlur, value, ref } }) => (
+          <Input
+            ref={ref}
+            value={value?.toString() || ''}
+            placeholder="0"
+            keyboardType="numeric"
+            onChangeText={(text) => {
+              if (text === '') {
+                onChange(0); // Allow empty to be converted to 0, validation will handle required
+              } else {
+                const numValue = Number(text);
+                if (!isNaN(numValue)) {
+                  onChange(numValue);
+                }
+                // If invalid, don't call onChange - let validation catch it
+              }
+            }}
+            onBlur={onBlur}
+            editable={!isSubmitting}
+            testID="min-stock-input"
+          />
+        )}
       />
       {errors.minStock && (
         <Text className="mt-1 text-xs text-danger-600 dark:text-danger-400">
@@ -212,11 +269,11 @@ function MinStockField({
 }
 
 function ReorderMultipleField({
-  setValue,
+  control,
   errors,
   isSubmitting,
 }: {
-  setValue: UseFormSetValue<AddItemFormData>;
+  control: any;
   errors: FieldErrors<AddItemFormData>;
   isSubmitting: boolean;
 }) {
@@ -227,12 +284,35 @@ function ReorderMultipleField({
       <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
         {t('inventory.form.reorder_multiple')}
       </Text>
-      <Input
-        placeholder="1"
-        keyboardType="numeric"
-        onChangeText={(text) => setValue('reorderMultiple', Number(text) || 1)}
-        editable={!isSubmitting}
-        testID="reorder-multiple-input"
+      <Controller
+        control={control}
+        name="reorderMultiple"
+        rules={{
+          required: 'Reorder multiple is required',
+          min: { value: 1, message: 'Reorder multiple must be at least 1' },
+        }}
+        render={({ field: { onChange, onBlur, value, ref } }) => (
+          <Input
+            ref={ref}
+            value={value?.toString() || ''}
+            placeholder="1"
+            keyboardType="numeric"
+            onChangeText={(text) => {
+              if (text === '') {
+                onChange(1); // Allow empty to be converted to 1, validation will handle required
+              } else {
+                const numValue = Number(text);
+                if (!isNaN(numValue)) {
+                  onChange(numValue);
+                }
+                // If invalid, don't call onChange - let validation catch it
+              }
+            }}
+            onBlur={onBlur}
+            editable={!isSubmitting}
+            testID="reorder-multiple-input"
+          />
+        )}
       />
       {errors.reorderMultiple && (
         <Text className="mt-1 text-xs text-danger-600 dark:text-danger-400">
@@ -244,10 +324,10 @@ function ReorderMultipleField({
 }
 
 function LeadTimeField({
-  setValue,
+  control,
   isSubmitting,
 }: {
-  setValue: UseFormSetValue<AddItemFormData>;
+  control: any;
   isSubmitting: boolean;
 }) {
   const { t } = useTranslation();
@@ -257,14 +337,105 @@ function LeadTimeField({
       <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
         {t('inventory.form.lead_time_days')} ({t('common.optional')})
       </Text>
-      <Input
-        placeholder="0"
-        keyboardType="numeric"
-        onChangeText={(text) =>
-          setValue('leadTimeDays', text ? Number(text) : undefined)
-        }
-        editable={!isSubmitting}
-        testID="lead-time-input"
+      <Controller
+        control={control}
+        name="leadTimeDays"
+        rules={{
+          min: { value: 0, message: 'Lead time must be positive' },
+        }}
+        render={({ field: { onChange, onBlur, value, ref } }) => (
+          <Input
+            ref={ref}
+            value={value?.toString() || ''}
+            placeholder="0"
+            keyboardType="numeric"
+            onChangeText={(text) => {
+              if (text === '') {
+                onChange(undefined); // Allow empty for optional field
+              } else {
+                const numValue = Number(text);
+                if (!isNaN(numValue)) {
+                  onChange(numValue);
+                }
+                // If invalid, don't call onChange - let validation catch it
+              }
+            }}
+            onBlur={onBlur}
+            editable={!isSubmitting}
+            testID="lead-time-input"
+          />
+        )}
+      />
+    </View>
+  );
+}
+
+function SkuField({
+  control,
+  isSubmitting,
+  serverValidationErrors,
+}: {
+  control: any;
+  isSubmitting: boolean;
+  serverValidationErrors: Record<string, string>;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <View className="mb-4">
+      <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
+        {t('inventory.form.sku')} ({t('common.optional')})
+      </Text>
+      <Controller
+        control={control}
+        name="sku"
+        render={({ field: { onChange, onBlur, value } }) => (
+          <Input
+            value={value}
+            placeholder={t('inventory.form.sku_placeholder')}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            editable={!isSubmitting}
+            testID="sku-input"
+          />
+        )}
+      />
+      {serverValidationErrors.sku && (
+        <Text className="mt-1 text-xs text-danger-600 dark:text-danger-400">
+          {serverValidationErrors.sku}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+function BarcodeField({
+  control,
+  isSubmitting,
+}: {
+  control: any;
+  isSubmitting: boolean;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <View className="mb-4">
+      <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
+        {t('inventory.form.barcode')} ({t('common.optional')})
+      </Text>
+      <Controller
+        control={control}
+        name="barcode"
+        render={({ field: { onChange, onBlur, value } }) => (
+          <Input
+            value={value}
+            placeholder={t('inventory.form.barcode_placeholder')}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            editable={!isSubmitting}
+            testID="barcode-input"
+          />
+        )}
       />
     </View>
   );
@@ -308,12 +479,15 @@ export default function AddInventoryItemScreen(): React.ReactElement {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [serverValidationErrors, setServerValidationErrors] = React.useState<
+    Record<string, string>
+  >({});
 
   const {
+    control,
     handleSubmit,
     formState: { errors },
-    setValue,
-    watch,
+    clearErrors,
   } = useForm<AddItemFormData>({
     resolver: zodResolver(addItemSchema),
     defaultValues: {
@@ -334,6 +508,7 @@ export default function AddInventoryItemScreen(): React.ReactElement {
     try {
       setIsSubmitting(true);
       setError(null);
+      setServerValidationErrors({});
 
       const result = await createInventoryItem({
         name: data.name,
@@ -351,7 +526,27 @@ export default function AddInventoryItemScreen(): React.ReactElement {
       if (result.success) {
         router.back();
       } else {
-        setError(result.error || 'Failed to create item');
+        // Handle validation errors by mapping them to specific form fields
+        if (result.validationErrors && result.validationErrors.length > 0) {
+          // Clear previous field errors
+          clearErrors();
+
+          // Map validation errors to server validation errors state
+          const fieldErrors: Record<string, string> = {};
+          result.validationErrors.forEach((validationError) => {
+            fieldErrors[validationError.field] = validationError.message;
+          });
+
+          setServerValidationErrors(fieldErrors);
+
+          // Only set global error if there are additional non-field errors
+          if (result.error) {
+            setError(result.error);
+          }
+        } else {
+          // No validation errors, set global error
+          setError(result.error || 'Failed to create item');
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -368,7 +563,10 @@ export default function AddInventoryItemScreen(): React.ReactElement {
       <ScrollView className="flex-1 p-4">
         {/* Error Message */}
         {error && (
-          <View className="mb-4 rounded-lg bg-danger-50 p-3 dark:bg-danger-900/20">
+          <View
+            className="mb-4 rounded-lg bg-danger-50 p-3 dark:bg-danger-900/20"
+            testID="global-error-container"
+          >
             <Text className="text-sm text-danger-700 dark:text-danger-400">
               {error}
             </Text>
@@ -376,28 +574,36 @@ export default function AddInventoryItemScreen(): React.ReactElement {
         )}
 
         <NameField
-          setValue={setValue}
+          control={control}
           errors={errors}
           isSubmitting={isSubmitting}
+          serverValidationErrors={serverValidationErrors}
         />
-        <CategoryField setValue={setValue} watch={watch} />
+        <CategoryField control={control} />
         <UnitField
-          setValue={setValue}
+          control={control}
           errors={errors}
           isSubmitting={isSubmitting}
+          serverValidationErrors={serverValidationErrors}
         />
-        <TrackingModeField setValue={setValue} watch={watch} />
+        <TrackingModeField control={control} />
         <MinStockField
-          setValue={setValue}
+          control={control}
           errors={errors}
           isSubmitting={isSubmitting}
         />
         <ReorderMultipleField
-          setValue={setValue}
+          control={control}
           errors={errors}
           isSubmitting={isSubmitting}
         />
-        <LeadTimeField setValue={setValue} isSubmitting={isSubmitting} />
+        <LeadTimeField control={control} isSubmitting={isSubmitting} />
+        <SkuField
+          control={control}
+          isSubmitting={isSubmitting}
+          serverValidationErrors={serverValidationErrors}
+        />
+        <BarcodeField control={control} isSubmitting={isSubmitting} />
 
         {/* Submit Button */}
         <Button

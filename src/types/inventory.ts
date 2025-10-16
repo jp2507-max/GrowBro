@@ -367,3 +367,188 @@ export interface CostAnalysis {
   /** Total quantity consumed */
   totalQuantity: number;
 }
+
+// ============================================================================
+// Search and Filtering Types (Requirement 8)
+// ============================================================================
+
+/**
+ * Sort field options for inventory items
+ * Requirement 8.2
+ */
+export type InventorySortField =
+  | 'name'
+  | 'category'
+  | 'currentStock'
+  | 'expiresOn'
+  | 'unitCost'
+  | 'totalValue'
+  | 'updatedAt';
+
+/**
+ * Sort direction
+ */
+export type SortDirection = 'asc' | 'desc';
+
+/**
+ * Sort options for inventory items
+ */
+export interface InventorySortOptions {
+  /** Field to sort by */
+  field: InventorySortField;
+
+  /** Sort direction */
+  direction: SortDirection;
+}
+
+/**
+ * Advanced inventory filters for search
+ * Requirement 8.2, 8.5
+ */
+export interface AdvancedInventoryFilters extends InventoryFilters {
+  /** Filter by brand name */
+  brand?: string;
+
+  /** Filter by form (powder, liquid, etc.) */
+  form?: CategoryFacet['form'];
+
+  /** Filter by hazard flags */
+  hazardFlags?: HazardFlag[];
+
+  /** Filter by N-P-K ratio (for nutrients) */
+  npkRatio?: string;
+
+  /** Filter by expiration date range */
+  expirationDateRange?: {
+    from?: Date;
+    to?: Date;
+  };
+
+  /** Filter by stock level range */
+  stockRange?: {
+    min?: number;
+    max?: number;
+  };
+
+  /** Filter by cost range (in minor units) */
+  costRange?: {
+    min?: number;
+    max?: number;
+  };
+
+  /** Show only expired items */
+  showExpiredOnly?: boolean;
+}
+
+/**
+ * Search query with filters and sorting
+ * Requirement 8.5
+ */
+export interface InventorySearchQuery {
+  /** Search text (name, SKU, category, tags, brand) */
+  searchText: string;
+
+  /** Advanced filters */
+  filters?: AdvancedInventoryFilters;
+
+  /** Sort options */
+  sort?: InventorySortOptions;
+
+  /** Maximum number of results (for performance) */
+  limit?: number;
+}
+
+/**
+ * Facet count for a specific value
+ */
+export interface FacetCount {
+  /** Facet value (e.g., "Nutrients", "powder") */
+  value: string;
+
+  /** Number of items matching this facet */
+  count: number;
+}
+
+/**
+ * Search facets with counts
+ * Requirement 8.2
+ */
+export interface SearchFacets {
+  /** Category facets with counts */
+  categories: FacetCount[];
+
+  /** Brand facets with counts */
+  brands: FacetCount[];
+
+  /** Form facets with counts */
+  forms: FacetCount[];
+
+  /** Hazard flag facets with counts */
+  hazardFlags: FacetCount[];
+
+  /** Total count of items */
+  totalCount: number;
+
+  /** Count of low stock items */
+  lowStockCount: number;
+
+  /** Count of expired items */
+  expiredCount: number;
+}
+
+/**
+ * Search result with facets
+ * Requirement 8.5
+ */
+export interface InventorySearchResult {
+  /** Matching inventory items */
+  items: InventoryItemWithStock[];
+
+  /** Facet counts for current search */
+  facets: SearchFacets;
+
+  /** Total count before pagination */
+  totalCount: number;
+
+  /** Whether results are from offline cache */
+  isOffline: boolean;
+
+  /** Search execution time in milliseconds */
+  executionTimeMs: number;
+}
+
+/**
+ * Cached search index for offline search
+ * Requirement 8.6
+ */
+export interface CachedSearchIndex {
+  /** Normalized search tokens mapped to item IDs */
+  tokens: Map<string, Set<string>>;
+
+  /** Item data cached for offline access */
+  items: Map<string, InventoryItemWithStock>;
+
+  /** Last update timestamp */
+  lastUpdated: Date;
+
+  /** Cache version for invalidation */
+  version: number;
+}
+
+/**
+ * Search preferences for saved filters
+ * Requirement 8.2
+ */
+export interface SearchPreferences {
+  /** Last used filters */
+  lastFilters?: AdvancedInventoryFilters;
+
+  /** Last used sort options */
+  lastSort?: InventorySortOptions;
+
+  /** Saved filter presets */
+  savedPresets?: {
+    name: string;
+    filters: AdvancedInventoryFilters;
+  }[];
+}
