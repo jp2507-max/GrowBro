@@ -109,7 +109,10 @@ export type AnalyticsEvents = {
       | 'occurrence_overrides'
       | 'harvests'
       | 'inventory'
-      | 'harvest_audits';
+      | 'harvest_audits'
+      | 'inventory_items'
+      | 'inventory_batches'
+      | 'inventory_movements';
     count: number;
   };
   sync_conflict_resolved: {
@@ -119,7 +122,10 @@ export type AnalyticsEvents = {
       | 'occurrence_overrides'
       | 'harvests'
       | 'inventory'
-      | 'harvest_audits';
+      | 'harvest_audits'
+      | 'inventory_items'
+      | 'inventory_batches'
+      | 'inventory_movements';
     strategy: 'keep-local' | 'accept-server';
     field_count: number;
   };
@@ -130,7 +136,10 @@ export type AnalyticsEvents = {
       | 'occurrence_overrides'
       | 'harvests'
       | 'inventory'
-      | 'harvest_audits';
+      | 'harvest_audits'
+      | 'inventory_items'
+      | 'inventory_batches'
+      | 'inventory_movements';
     field_count: number;
   };
   sync_checkpoint_age_ms: {

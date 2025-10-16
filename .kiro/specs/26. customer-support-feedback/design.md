@@ -613,6 +613,32 @@ CREATE INDEX idx_help_articles_locale ON help_articles(locale);
 CREATE INDEX idx_help_articles_updated_at ON help_articles(updated_at);
 
 -- Full-text search index
+-- NOTE: Current implementation hardcodes 'english' configuration, but table supports
+-- both EN and DE locales. German content will be tokenized with wrong stemming rules,
+-- leading to missed matches and degraded search relevance.
+--
+-- Recommended solutions:
+-- 1. Add a generated tsvector column that uses locale-appropriate configuration:
+--    ALTER TABLE help_articles ADD COLUMN search_vector tsvector
+--      GENERATED ALWAYS AS (
+--        CASE locale
+--          WHEN 'de' THEN to_tsvector('german', title || ' ' || body_markdown)
+--          WHEN 'en' THEN to_tsvector('english', title || ' ' || body_markdown)
+--          ELSE to_tsvector('simple', title || ' ' || body_markdown)
+--        END
+--      ) STORED;
+--    CREATE INDEX idx_help_articles_fts ON help_articles USING gin(search_vector);
+--
+-- 2. Or use a functional index with locale-aware search:
+--    CREATE INDEX idx_help_articles_fts ON help_articles USING gin(
+--      CASE locale
+--        WHEN 'de' THEN to_tsvector('german', title || ' ' || body_markdown)
+--        WHEN 'en' THEN to_tsvector('english', title || ' ' || body_markdown)
+--        ELSE to_tsvector('simple', title || ' ' || body_markdown)
+--      END
+--    );
+--
+-- 3. For search queries, use locale-specific tsquery construction
 CREATE INDEX idx_help_articles_fts ON help_articles
   USING gin(to_tsvector('english', title || ' ' || body_markdown));
 

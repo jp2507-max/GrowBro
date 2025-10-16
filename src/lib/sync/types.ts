@@ -144,6 +144,9 @@ export const TABLE_NAMES = {
   CALIBRATIONS: 'calibrations',
   DEVIATION_ALERTS_V2: 'deviation_alerts_v2',
   RESERVOIR_EVENTS: 'reservoir_events',
+  INVENTORY_ITEMS: 'inventory_items',
+  INVENTORY_BATCHES: 'inventory_batches',
+  INVENTORY_MOVEMENTS: 'inventory_movements',
 } as const;
 
 export type TableName = (typeof TABLE_NAMES)[keyof typeof TABLE_NAMES];

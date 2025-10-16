@@ -500,7 +500,12 @@
       "charts": {
         "consumptionNote": "Basierend auf erfassten Abgangsbewegungen",
         "consumptionTrend": "Verbrauchstrend",
+        "costTrend": "Kostentrend",
+        "costTrendNote": "Gesamtkosten über alle Kategorien",
+        "monthly": "Monatlich",
         "noConsumptionData": "Noch keine Verbrauchsdaten verfügbar",
+        "noCostData": "Noch keine Kostendaten verfügbar",
+        "total": "Gesamt",
         "weekly": "Wöchentlich ({{unit}})"
       },
       "clear_search_hint": "Suchtext löschen",

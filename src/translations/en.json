@@ -500,7 +500,12 @@
       "charts": {
         "consumptionNote": "Based on recorded outbound movements",
         "consumptionTrend": "Consumption Trend",
+        "costTrend": "Cost Trend",
+        "costTrendNote": "Total cost across all categories",
+        "monthly": "Monthly",
         "noConsumptionData": "No consumption data available yet",
+        "noCostData": "No cost data available yet",
+        "total": "Total",
         "weekly": "Weekly ({{unit}})"
       },
       "clear_search_hint": "Clear search text",

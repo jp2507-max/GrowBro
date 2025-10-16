@@ -80,7 +80,7 @@ The app gracefully handles denied permission:
 
 ### Notification Content Example
 
-```
+```text
 Title: Low stock: General Hydroponics pH Down
 Body: 50 ml remaining (below 200 ml) ~3 days left
 Action: Tap to view item details and reorder

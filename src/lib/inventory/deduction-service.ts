@@ -16,6 +16,11 @@ import type { Database } from '@nozbe/watermelondb';
 import { pickBatchesForConsumption } from '@/lib/inventory/batch-picker';
 import { validateDeductionMap } from '@/lib/inventory/deduction-validators';
 import { calculateScaledQuantity } from '@/lib/inventory/scaling-calculator';
+import {
+  logDeductionAttempt,
+  logInsufficientStock,
+  logInventoryMovement,
+} from '@/lib/inventory/sentry-breadcrumbs';
 import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
 import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
 import type {
@@ -48,22 +53,26 @@ export async function deduceInventory(
 ): Promise<DeductionResult> {
   const idempotencyKey =
     request.idempotencyKey ??
-    generateIdempotencyKey(request.taskId ?? 'manual', request.deductionMap);
+    (request.taskId
+      ? generateIdempotencyKey(request.taskId, request.deductionMap)
+      : null);
 
   try {
-    // Check for existing movements with this idempotency key
-    const existingMovements = await checkExistingMovements(
-      database,
-      idempotencyKey
-    );
+    // Check for existing movements with this idempotency key (only if key provided)
+    if (idempotencyKey) {
+      const existingMovements = await checkExistingMovements(
+        database,
+        idempotencyKey
+      );
 
-    if (existingMovements.length > 0) {
-      // Already processed - return existing movements
-      return {
-        success: true,
-        movements: existingMovements.map(mapMovementToResult),
-        idempotencyKey,
-      };
+      if (existingMovements.length > 0) {
+        // Already processed - return existing movements
+        return {
+          success: true,
+          movements: existingMovements.map(mapMovementToResult),
+          idempotencyKey,
+        };
+      }
     }
 
     // Validate deduction map
@@ -148,11 +157,25 @@ async function calculatePicks(
   for (const entry of request.deductionMap) {
     const quantityNeeded = calculateScaledQuantity(entry, context);
 
+    // Fetch item for logging
+    const item = await database
+      .get<InventoryItemModel>('inventory_items')
+      .find(entry.itemId);
+
     const pickResult = await pickBatchesForConsumption({
       database,
       itemId: entry.itemId,
       quantityNeeded,
       allowExpiredOverride: request.allowExpiredOverride ?? false,
+    });
+
+    // Log deduction attempt with available quantity
+    logDeductionAttempt({
+      itemId: entry.itemId,
+      itemName: item.name,
+      requestedQuantity: quantityNeeded,
+      availableQuantity: pickResult.totalAvailable,
+      taskId: request.taskId,
     });
 
     picksPerItem.set(entry.itemId, {
@@ -181,6 +204,15 @@ async function checkInsufficientStock(
       const item = await database
         .get<InventoryItemModel>('inventory_items')
         .find(itemId);
+
+      // Log insufficient stock for monitoring
+      logInsufficientStock({
+        itemId,
+        itemName: item.name,
+        required: pickData.quantityNeeded,
+        available: pickData.totalAvailable,
+        taskId,
+      });
 
       insufficientItems.push({
         code: 'INSUFFICIENT_STOCK',
@@ -264,7 +296,7 @@ interface CreateMovementsOptions {
     }
   >;
   taskId: string | null;
-  idempotencyKey: string;
+  idempotencyKey: string | null;
   source: string;
 }
 
@@ -302,10 +334,12 @@ async function createConsumptionMovements(
       for (let i = 0; i < picks.length; i++) {
         const pick = picks[i];
 
-        // Generate per-pick idempotency key to handle retries correctly
+        // Generate per-pick idempotency key to handle retries correctly (only if idempotency is enabled)
         // Format: baseKey:batchId:pickIndex - allows individual pick retries
         // without affecting other picks in the same transaction
-        const pickKey = `${idempotencyKey}:${pick.batchId}:${i}`;
+        const externalKey = idempotencyKey
+          ? `${idempotencyKey}:${pick.batchId}:${i}`
+          : undefined;
 
         // Use internal movement service function within the bulk transaction
         // This ensures batch quantity is validated before deduction
@@ -318,7 +352,7 @@ async function createConsumptionMovements(
           costPerUnitMinor: pick.costPerUnitMinor, // FIFO cost from batch
           reason: `Auto-deduction from ${source}${entry.label ? `: ${entry.label}` : ''}`,
           taskId: taskId ?? undefined,
-          externalKey: pickKey,
+          externalKey,
         });
 
         // Throw on any movement creation failure to rollback entire transaction
@@ -327,6 +361,14 @@ async function createConsumptionMovements(
             result.error ?? 'Failed to create consumption movement'
           );
         }
+
+        // Log successful movement creation
+        logInventoryMovement({
+          type: 'consumption',
+          itemId,
+          quantityDelta: -pick.quantity,
+          taskId: taskId ?? undefined,
+        });
 
         createdMovements.push(result.movement);
       }

@@ -117,8 +117,12 @@ export function InventoryFilters({
         ...filters,
         category: filters?.category === category ? undefined : category,
       };
+      // Remove keys with undefined values
+      const cleanedFilters = Object.fromEntries(
+        Object.entries(newFilters).filter(([, value]) => value !== undefined)
+      );
       onFiltersChange(
-        Object.keys(newFilters).length > 0 ? newFilters : undefined
+        Object.keys(cleanedFilters).length > 0 ? cleanedFilters : undefined
       );
     },
     [filters, onFiltersChange]
@@ -129,8 +133,12 @@ export function InventoryFilters({
       ...filters,
       isLowStock: filters?.isLowStock ? undefined : true,
     };
+    // Remove keys with undefined values
+    const cleanedFilters = Object.fromEntries(
+      Object.entries(newFilters).filter(([, value]) => value !== undefined)
+    );
     onFiltersChange(
-      Object.keys(newFilters).length > 0 ? newFilters : undefined
+      Object.keys(cleanedFilters).length > 0 ? cleanedFilters : undefined
     );
   }, [filters, onFiltersChange]);
 
@@ -149,7 +157,10 @@ export function InventoryFilters({
   );
 
   const hasActiveFilters = React.useMemo(() => {
-    return !!(filters && Object.keys(filters).length > 0);
+    return (
+      Object.keys(filters || {}).filter((k) => filters[k] !== undefined)
+        .length > 0
+    );
   }, [filters]);
 
   return (
@@ -188,7 +199,7 @@ export function InventoryFilters({
               label={category}
               isActive={filters?.category === category}
               onPress={() => handleCategoryToggle(category)}
-              testID={`${testID}-category-${category.toLowerCase().replace(' ', '-')}`}
+              testID={`${testID}-category-${category.toLowerCase().replace(/ /g, '-')}`}
             />
           ))}
         </View>

@@ -1371,13 +1371,16 @@ serve(async (req) => {
   );
 
   // Insert session record
+  const sessionKey = await hashRefreshToken(session.refresh_token);
+  const truncatedIp = truncateTo24(ipAddress);
+
   const { error } = await supabase.from('user_sessions').insert({
     user_id: user.id,
-    session_id: session.id,
+    session_key: sessionKey,
     device_name: deviceInfo.device,
     device_os: deviceInfo.os,
     app_version: appVersion,
-    ip_address: ipAddress,
+    truncated_ip: truncatedIp,
     user_agent: userAgent,
   });
 

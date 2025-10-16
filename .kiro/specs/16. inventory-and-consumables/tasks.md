@@ -101,7 +101,7 @@ _Current state (Oct 2025 audit): consumable inventory tables and UI are absent; 
   - _Requirements: 6.1, 6.2, 6.3, 9.3, 9.4_
   - _Completed: Cost analysis service with minor currency units, consumption analytics hook with advanced filtering, enhanced consumption trend chart with prediction intervals, cost breakdown card, cost trend chart (BarChart), harvest cost calculator, and comprehensive tests (5/6 test suites passing - 26/31 tests, core functionality verified)_
 
-- [ ] 11. Add comprehensive search with offline caching
+- [x] 11. Add comprehensive search with offline caching
   - Implement full-text search with 150ms debounce across names, SKUs, categories
   - Create faceted filtering (category, brand, form, hazard flags, N-P-K ratios)
   - Add advanced filtering for expiration dates, stock levels, and batch information
@@ -110,7 +110,7 @@ _Current state (Oct 2025 audit): consumable inventory tables and UI are absent; 
   - Write tests for search performance, accuracy, and offline functionality
   - _Requirements: 8.2, 8.5, 8.6_
 
-- [ ] 12. Implement comprehensive cost valuation system
+- [x] 12. Implement comprehensive cost valuation system
   - Create cost calculation using integer minor units (cents) to avoid float drift
   - Implement FIFO costing with batch-level precision and historical cost preservation
   - Build real-time inventory valuation summaries by category with automatic updates
@@ -119,7 +119,7 @@ _Current state (Oct 2025 audit): consumable inventory tables and UI are absent; 
   - Document when to switch to numeric for fractional minor units or multiple currencies
   - _Requirements: 9.1, 9.2, 9.5, 9.6_
 
-- [ ] 13. Set up robust sync with conflict resolution UI
+- [x] 13. Set up robust sync with conflict resolution UI
   - Integrate new inventory tables into the existing WatermelonDB synchronize() pipeline (cursor pagination using (updated_at, id) tuple)
   - Create Last-Write-Wins with conflict toasts showing device + timestamp information
   - Add "Reapply my change" action that creates new mutations while keeping LWW on wire
@@ -128,7 +128,7 @@ _Current state (Oct 2025 audit): consumable inventory tables and UI are absent; 
   - Write integration tests for offline scenarios and conflict resolution workflows
   - _Requirements: 7.1, 7.2, 7.3, 7.4_
 
-- [ ] 14. Add comprehensive error handling with Sentry integration
+- [x] 14. Add comprehensive error handling with Sentry integration
   - Extend the existing Expo Sentry setup (already active) with inventory-specific breadcrumbs, release health checks, and ensure source maps upload for new code paths in EAS builds
   - Create detailed error messages with recovery options and field-level validation
   - Add undo functionality for destructive actions with 15-second window

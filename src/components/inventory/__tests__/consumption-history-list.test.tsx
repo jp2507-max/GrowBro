@@ -7,7 +7,6 @@
  */
 
 import React from 'react';
-import { View } from 'react-native';
 
 import { cleanup, render, screen } from '@/lib/test-utils';
 
@@ -15,15 +14,24 @@ import { ConsumptionHistoryList } from '../consumption-history-list';
 
 // Mock FlashList to avoid display name issues with react-native-css-interop
 
-jest.mock('@shopify/flash-list', () => ({
-  FlashList: ({ data, renderItem, testID }: any) => {
-    return (
-      <View testID={testID}>
-        {data?.map((item: any, index: number) => renderItem({ item, index }))}
-      </View>
-    );
-  },
-}));
+jest.mock('@shopify/flash-list', () => {
+  const React = jest.requireActual('react');
+  const { View } = jest.requireActual('react-native');
+
+  return {
+    FlashList: ({ data, renderItem, testID }: any) => {
+      return (
+        <View testID={testID}>
+          {data?.map((item: any, index: number) => (
+            <React.Fragment key={item.id || index}>
+              {renderItem({ item, index })}
+            </React.Fragment>
+          ))}
+        </View>
+      );
+    },
+  };
+});
 
 afterEach(cleanup);
 

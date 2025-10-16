@@ -14,14 +14,12 @@
  * - Accessibility labels for screen readers
  */
 
-// Import colors via side-effect for Tailwind token access
-import '@/components/ui/colors';
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, TextInput } from 'react-native';
 
 import { Text, View } from '@/components/ui';
+import colors from '@/components/ui/colors';
 
 interface InventorySearchBarProps {
   /** Current search text */
@@ -76,7 +74,7 @@ export const InventorySearchBar = React.memo(function InventorySearchBar({
             value={value}
             onChangeText={onChangeText}
             placeholder={t('inventory.search_placeholder')}
-            placeholderTextColor="#A3A3A3"
+            placeholderTextColor={colors.neutral[400]}
             accessibilityLabel={t('inventory.search_label')}
             accessibilityHint={t('inventory.search_hint')}
             testID={`${testID}-input`}

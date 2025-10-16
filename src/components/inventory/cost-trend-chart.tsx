@@ -8,6 +8,7 @@
  * - 9.4: Cost analysis showing supply costs over time periods
  */
 
+import { DateTime } from 'luxon';
 import { useColorScheme } from 'nativewind';
 import React, { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -24,16 +25,60 @@ type CostTrendChartProps = {
 };
 
 /**
- * Generate chart colors for categories
+ * Helper function to compute period key and start timestamp
  */
-const CHART_COLORS = [
-  colors.primary[600],
-  colors.success[600],
-  colors.warning[600],
-  colors.danger[600],
-  colors.neutral[600],
-  colors.charcoal[600],
-];
+const getPeriodInfo = (date: Date, bucketType: 'week' | 'month') => {
+  const dt = DateTime.fromJSDate(date);
+  if (bucketType === 'week') {
+    // Use ISO week format for stable period key
+    const periodStart = dt.startOf('week');
+    const periodKey = periodStart.toISODate()!;
+    const label = `W${dt.weekNumber}`;
+    return { periodKey, periodStart: periodStart.toMillis(), label };
+  } else {
+    // Use month format for stable period key
+    const periodStart = dt.startOf('month');
+    const periodKey = periodStart.toFormat('yyyy-MM');
+    const label = dt.toFormat('MMM');
+    return { periodKey, periodStart: periodStart.toMillis(), label };
+  }
+};
+
+/**
+ * Compute aggregated chart data from time series
+ */
+const computeChartData = (
+  data: TimeSerieCostData[],
+  bucketType: 'week' | 'month'
+) => {
+  if (data.length === 0) return [];
+
+  // Aggregate all categories into single bars per period
+  const periodMap = new Map<
+    string,
+    { label: string; value: number; periodStart: number }
+  >();
+
+  data.forEach((series) => {
+    series.dataPoints.forEach((point) => {
+      const { periodKey, periodStart, label } = getPeriodInfo(
+        point.date,
+        bucketType
+      );
+      const existing = periodMap.get(periodKey) ?? {
+        label,
+        value: 0,
+        periodStart,
+      };
+      existing.value += point.costMinor / 100; // Convert to dollars
+      periodMap.set(periodKey, existing);
+    });
+  });
+
+  return Array.from(periodMap.values()).sort(
+    (a, b) => a.periodStart - b.periodStart
+  );
+};
 
 /**
  * Bar chart showing cost trends by category over time
@@ -55,27 +100,10 @@ const CostTrendChartComponent = ({
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const chartData = useMemo(() => {
-    if (data.length === 0) return [];
-
-    // Aggregate all categories into single bars per period
-    const periodMap = new Map<string, { label: string; value: number }>();
-
-    data.forEach((series) => {
-      series.dataPoints.forEach((point) => {
-        const existing = periodMap.get(point.label) ?? {
-          label: point.label,
-          value: 0,
-        };
-        existing.value += point.costMinor / 100; // Convert to dollars
-        periodMap.set(point.label, existing);
-      });
-    });
-
-    return Array.from(periodMap.values()).sort((a, b) =>
-      a.label.localeCompare(b.label)
-    );
-  }, [data]);
+  const chartData = useMemo(
+    () => computeChartData(data, bucketType),
+    [data, bucketType]
+  );
 
   const maxValue = useMemo(() => {
     if (chartData.length === 0) return 100;
@@ -133,19 +161,17 @@ const CostTrendChartComponent = ({
       />
 
       <View className="mt-3 flex-row flex-wrap gap-2">
-        {data.map((series, index) => (
-          <View key={series.category} className="flex-row items-center gap-1">
-            <View
-              className="size-3 rounded-sm"
-              style={{
-                backgroundColor: CHART_COLORS[index % CHART_COLORS.length],
-              }}
-            />
-            <Text className="text-xs text-charcoal-600 dark:text-neutral-400">
-              {series.category}
-            </Text>
-          </View>
-        ))}
+        <View className="flex-row items-center gap-1">
+          <View
+            className="size-3 rounded-sm"
+            style={{
+              backgroundColor: colors.primary[600],
+            }}
+          />
+          <Text className="text-xs text-charcoal-600 dark:text-neutral-400">
+            {t('inventory.charts.total')}
+          </Text>
+        </View>
       </View>
 
       <Text className="mt-2 text-xs text-charcoal-600 dark:text-neutral-400">

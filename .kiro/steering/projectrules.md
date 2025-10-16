@@ -37,11 +37,11 @@ src
 
 ## Tech Stack
 
-- Expo 54 (expo@~54.0.10)
+- Expo 54 (expo@~54.0.13)
 - React Native (react-native@0.81.4)
 - TypeScript (typescript@^5.9.2)
 - Nativewind (Tailwind CSS for React Native) (nativewind@^4.2.1, tailwindcss@3.4.4)
-- Expo Router v6 (expo-router@~6.0.8)
+- Expo Router v6 (expo-router@~6.0.12)
 - React Query with React Query Kit (@tanstack/react-query@^5.90.1, react-query-kit@^3.3.2)
 - Zustand (zustand@^5.0.8)
 - React Native Keyboard Controller (react-native-keyboard-controller@^1.18.5)
@@ -61,8 +61,19 @@ src
 - react-native-url-polyfill (URL APIs) (react-native-url-polyfill@^2.0.0)
 - Luxon (date/time utilities) (luxon@^3.7.2)
 - tailwind-variants (variant utilities for Nativewind) (tailwind-variants@^0.2.1)
-- Expo modules: Image, Font, Constants, System UI, Updates, Linking, Localization, Notifications (expo-image@~3.0.8, expo-font@~14.0.8, expo-constants@~18.0.9, expo-system-ui@~6.0.7, expo-updates@~29.0.11, expo-linking@~8.0.8, expo-localization@~17.0.7, expo-notifications@~0.32.11)
-- Sentry (@sentry/react-native) for error and performance monitoring (@sentry/react-native@^6.20.0)
+- Charts: react-native-gifted-charts (react-native-gifted-charts@^1.4.64)
+- Expo modules: Image, Font, Constants, System UI, Updates, Linking, Localization, Notifications, Blur, Document Picker, Sharing, Image Manipulator, Background Task, Task Manager, Dev Client (expo-image@~3.0.9, expo-font@~14.0.9, expo-constants@~18.0.9, expo-system-ui@~6.0.7, expo-updates@~29.0.12, expo-linking@~8.0.8, expo-localization@~17.0.7, expo-notifications@~0.32.12, expo-blur@~15.0.7, expo-document-picker@~14.0.7, expo-sharing@~14.0.7, expo-image-manipulator@~14.0.7, expo-background-task@~1.0.8, expo-task-manager@~14.0.7, expo-dev-client@~6.0.15)
+- Sentry (@sentry/react-native) for error and performance monitoring (@sentry/react-native@^7.2.0)
+
+Additional utilities in use
+
+- Network: @react-native-community/netinfo@11.4.1
+- Storage: @react-native-async-storage/async-storage@^2.2.0
+- Animations: moti@^0.29.0, react-native-worklets@0.5.1
+- Misc RN: react-native-restart@0.0.27, react-native-quick-base64@^2.2.2
+- Web: react-native-web@~0.21.1, react-dom@19.1.0
+- Data/utils: papaparse@^5.5.3, lodash.memoize@^4.1.2, rrule@^2.8.1, react-error-boundary@^4.1.2
+- Badging: app-icon-badge@^0.1.2
 
 ## Supabase Integration
 
@@ -121,7 +132,7 @@ Here is a simple example of how a component should be written using :
 ```tsx
 import * as React from 'react';
 
-import { Text, View, Image } from '@/components/ui';
+import { Text, View, Image, SafeAreaView } from '@/components/ui';
 
 // Props should be defined in the top of the component
 type Props = {

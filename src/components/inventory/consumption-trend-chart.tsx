@@ -23,12 +23,9 @@ type ConsumptionTrendChartProps = {
 function groupByWeek(data: ConsumptionDataPoint[]): Map<string, number> {
   const weeklyData = new Map<string, number>();
   data.forEach(({ timestamp, quantityUsed }) => {
-    const date = new Date(timestamp);
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    const weekStart = new Date(date.setDate(diff));
-    weekStart.setHours(0, 0, 0, 0);
-    const weekKey = weekStart.toISOString().split('T')[0];
+    const dateTime = DateTime.fromMillis(timestamp);
+    const weekStart = dateTime.startOf('week');
+    const weekKey = weekStart.toISODate();
     weeklyData.set(weekKey, (weeklyData.get(weekKey) || 0) + quantityUsed);
   });
   return weeklyData;

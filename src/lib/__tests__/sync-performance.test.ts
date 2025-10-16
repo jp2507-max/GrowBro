@@ -22,6 +22,9 @@ describe('sync performance stubs', () => {
         harvests: { created: [], updated: [], deleted: [] },
         inventory: { created: [], updated: [], deleted: [] },
         harvest_audits: { created: [], updated: [], deleted: [] },
+        inventory_items: { created: [], updated: [], deleted: [] },
+        inventory_batches: { created: [], updated: [], deleted: [] },
+        inventory_movements: { created: [], updated: [], deleted: [] },
       },
     };
     const start = Date.now();

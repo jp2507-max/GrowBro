@@ -14,7 +14,7 @@ import { DateTime } from 'luxon';
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Text, View } from '@/components/ui';
+import { Pressable, Text, View } from '@/components/ui';
 import type { ConsumptionHistoryEntry } from '@/lib/inventory/consumption-history';
 import { formatCost } from '@/lib/inventory/cost-analysis-service';
 
@@ -46,10 +46,13 @@ const ConsumptionHistoryItem = ({
   }, [entry.createdAt]);
 
   return (
-    <View
+    <Pressable
       className="border-b border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-950"
       testID={`consumption-history-item-${entry.id}`}
-      onTouchEnd={() => onPress?.(entry)}
+      onPress={() => onPress?.(entry)}
+      accessibilityRole="button"
+      accessibilityLabel={`Consumption history item ${entry.id}`}
+      accessibilityHint="Tap to view consumption details"
     >
       <View className="flex-row items-start justify-between">
         <View className="flex-1">
@@ -108,7 +111,7 @@ const ConsumptionHistoryItem = ({
       <Text className="mt-1 text-xs text-charcoal-500 dark:text-neutral-500">
         {formattedDate}
       </Text>
-    </View>
+    </Pressable>
   );
 };
 

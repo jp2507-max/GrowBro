@@ -26,6 +26,13 @@ export * from './consumption-history';
 export * from './cost-analysis-service';
 export * from './harvest-cost-calculator';
 
+// Inventory valuation (real-time value calculation)
+export * from './inventory-valuation-service';
+export * from './use-inventory-valuation';
+
+// Cost reports (comprehensive reporting)
+export * from './cost-report-service';
+
 // Analytics hooks
 export * from './use-consumption-analytics';
 
