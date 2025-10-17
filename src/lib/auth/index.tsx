@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 import { createSelectors } from '../utils';
 import type { TokenType } from './utils';
-import { getToken, removeToken, setToken } from './utils';
+import { getStableSessionId, getToken, removeToken, setToken } from './utils';
 
 interface AuthState {
   token: TokenType | null;
@@ -10,6 +10,7 @@ interface AuthState {
   signIn: (data: TokenType) => void;
   signOut: () => void;
   hydrate: () => void;
+  getStableSessionId: () => string | null;
 }
 
 const _useAuth = create<AuthState>((set, get) => ({
@@ -37,6 +38,9 @@ const _useAuth = create<AuthState>((set, get) => ({
       // catch error here
       // Maybe sign_out user!
     }
+  },
+  getStableSessionId: () => {
+    return getStableSessionId();
   },
 }));
 

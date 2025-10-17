@@ -31,7 +31,7 @@ type CostBreakdownCardProps = {
 export const CostBreakdownCard = ({
   categorySummaries,
   testID = 'cost-breakdown-card',
-}: CostBreakdownCardProps): JSX.Element => {
+}: CostBreakdownCardProps): React.JSX.Element => {
   const { t } = useTranslation();
 
   // Calculate total cost

@@ -160,8 +160,8 @@ export async function undoDeleteBatch(
     }
 
     // Restore batch by clearing deleted_at
-    await batch.update((b: any) => {
-      b.deletedAt = null;
+    await batch.update((b: InventoryBatchModel) => {
+      (b as any).deletedAt = null;
     });
   });
 }
@@ -258,8 +258,8 @@ export async function undoDeleteItem(
     }
 
     // Restore item by clearing deleted_at
-    await item.update((i: any) => {
-      i.deletedAt = null;
+    await item.update((i: InventoryItemModel) => {
+      (i as any).deletedAt = null;
     });
   });
 }

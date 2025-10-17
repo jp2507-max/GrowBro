@@ -146,10 +146,10 @@ export interface DeductionMovement {
   reason: string;
 
   /** Linked task ID */
-  taskId: string;
+  taskId: string | null;
 
   /** Idempotency key */
-  externalKey: string;
+  externalKey: string | null;
 
   /** Created timestamp */
   createdAt: Date;
@@ -227,7 +227,7 @@ export interface DeductionResult {
   error?: string;
 
   /** Idempotency key used */
-  idempotencyKey: string;
+  idempotencyKey: string | null;
 }
 
 /**

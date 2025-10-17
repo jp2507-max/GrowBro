@@ -21,6 +21,7 @@ import {
   logInsufficientStock,
   logInventoryMovement,
 } from '@/lib/inventory/sentry-breadcrumbs';
+import { trackDeductionFailure } from '@/lib/inventory/telemetry';
 import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
 import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
 import type {
@@ -96,7 +97,8 @@ export async function deduceInventory(
     // Check for insufficient stock
     const insufficientItems = await checkInsufficientStock(
       database,
-      picksPerItem
+      picksPerItem,
+      request.taskId ?? null
     );
 
     if (insufficientItems.length > 0) {
@@ -195,7 +197,8 @@ async function calculatePicks(
  */
 async function checkInsufficientStock(
   database: Database,
-  picksPerItem: Map<string, any>
+  picksPerItem: Map<string, any>,
+  taskId: string | null
 ): Promise<InsufficientStockError[]> {
   const insufficientItems: InsufficientStockError[] = [];
 
@@ -211,7 +214,19 @@ async function checkInsufficientStock(
         itemName: item.name,
         required: pickData.quantityNeeded,
         available: pickData.totalAvailable,
-        taskId,
+        taskId: taskId ?? undefined,
+      });
+
+      // Track telemetry for deduction failure (Requirement 11.1)
+      void trackDeductionFailure({
+        source: 'task',
+        failureType: 'insufficient_stock',
+        itemId,
+        itemName: item.name,
+        requiredQuantity: pickData.quantityNeeded,
+        availableQuantity: pickData.totalAvailable,
+        unit: item.unitOfMeasure,
+        taskId: taskId ?? undefined,
       });
 
       insufficientItems.push({
@@ -428,8 +443,8 @@ function mapMovementToResult(
     quantityDelta: movement.quantityDelta,
     costPerUnitMinor: movement.costPerUnitMinor ?? 0,
     reason: movement.reason,
-    taskId: movement.taskId ?? '',
-    externalKey: movement.externalKey ?? '',
+    taskId: movement.taskId ?? null,
+    externalKey: movement.externalKey ?? null,
     createdAt: movement.createdAt,
   };
 }

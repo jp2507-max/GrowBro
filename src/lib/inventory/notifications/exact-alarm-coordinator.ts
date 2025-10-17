@@ -104,7 +104,7 @@ async function launchExactAlarmPermissionScreen(): Promise<boolean> {
     const supported = await Linking.canOpenURL(`intent://${intent}`);
 
     if (supported) {
-      await Linking.openSettings();
+      await Linking.openURL(`intent://${intent}`);
       // Wait a bit for user to interact with settings
       await new Promise((resolve) => setTimeout(resolve, 500));
       // Check new status

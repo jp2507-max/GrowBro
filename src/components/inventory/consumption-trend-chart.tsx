@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import { DateTime } from 'luxon';
 import { useColorScheme } from 'nativewind';
 import React, { memo, useMemo } from 'react';
@@ -23,9 +24,12 @@ type ConsumptionTrendChartProps = {
 function groupByWeek(data: ConsumptionDataPoint[]): Map<string, number> {
   const weeklyData = new Map<string, number>();
   data.forEach(({ timestamp, quantityUsed }) => {
-    const dateTime = DateTime.fromMillis(timestamp);
-    const weekStart = dateTime.startOf('week');
-    const weekKey = weekStart.toISODate();
+    const dateTime = DateTime.fromMillis(timestamp, { zone: 'local' });
+    // Calculate Monday of the current week (weekday 1 = Monday in Luxon)
+    const weekday = dateTime.weekday;
+    const mondayOffset = weekday - 1; // Days to subtract to get to Monday
+    const weekStart = dateTime.startOf('day').minus({ days: mondayOffset });
+    const weekKey = weekStart.toISODate()!;
     weeklyData.set(weekKey, (weeklyData.get(weekKey) || 0) + quantityUsed);
   });
   return weeklyData;
@@ -53,7 +57,8 @@ function prepareChartConfig(
 
   const weeklyData = groupByWeek(data);
   const sortedWeeks = Array.from(weeklyData.entries()).sort(
-    ([a], [b]) => new Date(a).getTime() - new Date(b).getTime()
+    ([a], [b]) =>
+      DateTime.fromISO(a).toMillis() - DateTime.fromISO(b).toMillis()
   );
   const recentWeeks = sortedWeeks.slice(-8);
 
@@ -164,7 +169,9 @@ const ConsumptionTrendChartComponent = ({
           {stockoutDate && (
             <Text className="mt-1 text-xs text-primary-700 dark:text-primary-300">
               {t('inventory.charts.predictedStockout')}:{' '}
-              {new Date(stockoutDate).toLocaleDateString()}
+              {DateTime.fromJSDate(stockoutDate)
+                .setLocale(i18n.language)
+                .toLocaleString(DateTime.DATE_MED)}
             </Text>
           )}
         </View>

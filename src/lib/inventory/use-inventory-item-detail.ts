@@ -10,6 +10,8 @@ import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
 import React from 'react';
 
+import type { InventoryBatchModel } from '@/lib/watermelon-models/inventory-batch';
+import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
 import type {
   InventoryBatchWithStatus,
   InventoryItemWithStock,
@@ -26,11 +28,13 @@ interface UseInventoryItemDetailResult {
 /**
  * Build item with stock from raw WatermelonDB model
  */
-function buildItemWithStock(rawItem: any): InventoryItemWithStock {
+function buildItemWithStock(
+  rawItem: InventoryItemModel
+): InventoryItemWithStock {
   return {
     id: rawItem.id,
     name: rawItem.name,
-    category: rawItem.category,
+    category: rawItem.category as any,
     unitOfMeasure: rawItem.unitOfMeasure,
     trackingMode: rawItem.trackingMode,
     isConsumable: rawItem.isConsumable,
@@ -53,7 +57,9 @@ function buildItemWithStock(rawItem: any): InventoryItemWithStock {
 /**
  * Build batch with status from raw WatermelonDB model
  */
-function buildBatchWithStatus(batch: any): InventoryBatchWithStatus {
+function buildBatchWithStatus(
+  batch: InventoryBatchModel
+): InventoryBatchWithStatus {
   return {
     id: batch.id,
     itemId: batch.itemId,
@@ -92,10 +98,11 @@ export function useInventoryItemDetail(
       setError(null);
 
       // Load item
-      const itemsCollection = database.get('inventory_items');
-      const rawItem: any = await itemsCollection.find(itemId);
+      const itemsCollection =
+        database.get<InventoryItemModel>('inventory_items');
+      const rawItem = await itemsCollection.find(itemId);
 
-      if (!rawItem || rawItem.deletedAt) {
+      if (!rawItem || (rawItem as any).deletedAt) {
         throw new Error('Item not found');
       }
 
@@ -112,7 +119,9 @@ export function useInventoryItemDetail(
         )
         .fetch();
 
-      const batchesWithStatus = rawBatches.map(buildBatchWithStatus);
+      const batchesWithStatus = rawBatches.map((b) =>
+        buildBatchWithStatus(b as InventoryBatchModel)
+      );
       setBatches(batchesWithStatus);
     } catch (err) {
       setError(

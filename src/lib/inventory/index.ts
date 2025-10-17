@@ -40,3 +40,7 @@ export * from './use-consumption-analytics';
 export * from './csv-export-service';
 export * from './csv-import-service';
 export * from './csv-parser';
+
+// Telemetry (Requirement 11.1, 11.2)
+export * from './telemetry';
+export * from './telemetry-types';

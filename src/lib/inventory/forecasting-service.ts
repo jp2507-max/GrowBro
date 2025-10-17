@@ -16,6 +16,7 @@ import type { Database } from '@nozbe/watermelondb';
 import { Q } from '@nozbe/watermelondb';
 import { DateTime } from 'luxon';
 
+import type { InventoryBatchModel } from '@/lib/watermelon-models/inventory-batch';
 import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
 import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
 
@@ -244,11 +245,11 @@ export class ForecastingService {
 
     // Batched mode: sum all batch quantities
     const batches = await this.database
-      .get('inventory_batches')
+      .get<InventoryBatchModel>('inventory_batches')
       .query(Q.where('item_id', itemId), Q.where('deleted_at', Q.eq(null)))
       .fetch();
 
-    return batches.reduce((sum: number, b: any) => sum + (b.quantity || 0), 0);
+    return batches.reduce((sum: number, b) => sum + (b.quantity || 0), 0);
   }
 
   /**

@@ -1277,7 +1277,7 @@ function trackAuthEvent(event: string, properties?: Record<string, any>) {
   analyticsClient.track(event, {
     ...properties,
     timestamp: new Date().toISOString(),
-    sessionId: useAuth.getState().session?.id,
+    sessionId: useAuth.getState().getStableSessionId(),
   });
 }
 ```

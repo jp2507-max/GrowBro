@@ -52,12 +52,12 @@ const CATEGORIES: InventoryCategory[] = [
 ];
 
 const SORT_FIELDS: { value: InventorySortField; label: string }[] = [
-  { value: 'name', label: 'Name' },
-  { value: 'category', label: 'Category' },
-  { value: 'currentStock', label: 'Stock Level' },
-  { value: 'unitCost', label: 'Cost' },
-  { value: 'totalValue', label: 'Total Value' },
-  { value: 'updatedAt', label: 'Last Updated' },
+  { value: 'name', label: 'inventory.sort.name' },
+  { value: 'category', label: 'inventory.sort.category' },
+  { value: 'currentStock', label: 'inventory.sort.currentStock' },
+  { value: 'unitCost', label: 'inventory.sort.unitCost' },
+  { value: 'totalValue', label: 'inventory.sort.totalValue' },
+  { value: 'updatedAt', label: 'inventory.sort.updatedAt' },
 ];
 
 /**
@@ -157,10 +157,11 @@ export function InventoryFilters({
   );
 
   const hasActiveFilters = React.useMemo(() => {
-    return (
-      Object.keys(filters || {}).filter((k) => filters[k] !== undefined)
-        .length > 0
-    );
+    if (!filters) return false;
+
+    // Use keyof to safely index into filters
+    const keys = Object.keys(filters) as (keyof AdvancedInventoryFilters)[];
+    return keys.some((k) => filters[k] !== undefined);
   }, [filters]);
 
   return (
@@ -250,7 +251,7 @@ export function InventoryFilters({
                       : 'text-charcoal-950 dark:text-white'
                   }`}
                 >
-                  {label}
+                  {t(label)}
                 </Text>
                 {isActive && (
                   <Text

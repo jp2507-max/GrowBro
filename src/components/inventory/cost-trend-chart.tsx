@@ -27,7 +27,14 @@ type CostTrendChartProps = {
 /**
  * Helper function to compute period key and start timestamp
  */
-const getPeriodInfo = (date: Date, bucketType: 'week' | 'month') => {
+const getPeriodInfo = (
+  date: Date,
+  bucketType: 'week' | 'month'
+): {
+  periodKey: string;
+  periodStart: number;
+  label: string;
+} => {
   const dt = DateTime.fromJSDate(date);
   if (bucketType === 'week') {
     // Use ISO week format for stable period key
@@ -50,7 +57,7 @@ const getPeriodInfo = (date: Date, bucketType: 'week' | 'month') => {
 const computeChartData = (
   data: TimeSerieCostData[],
   bucketType: 'week' | 'month'
-) => {
+): { label: string; value: number; periodStart: number }[] => {
   if (data.length === 0) return [];
 
   // Aggregate all categories into single bars per period
@@ -105,7 +112,7 @@ const CostTrendChartComponent = ({
     [data, bucketType]
   );
 
-  const maxValue = useMemo(() => {
+  const maxValue = useMemo((): number => {
     if (chartData.length === 0) return 100;
     return Math.max(...chartData.map((d) => d.value)) * 1.1;
   }, [chartData]);

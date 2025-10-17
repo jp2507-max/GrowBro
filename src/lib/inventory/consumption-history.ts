@@ -88,7 +88,7 @@ export async function getConsumptionHistory(
   filters: ConsumptionHistoryFilters = {}
 ): Promise<ConsumptionHistoryEntry[]> {
   // Build query with filters
-  const conditions: any[] = [];
+  const conditions: Q.Clause[] = [];
 
   // Only consumption and adjustment movements (exclude receipts)
   if (filters.type) {

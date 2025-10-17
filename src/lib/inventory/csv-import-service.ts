@@ -19,6 +19,7 @@ import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item'
 import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
 
 import { parseCSVFiles } from './csv-parser';
+import { trackCSVOperation, trackImportError } from './telemetry';
 import type {
   CSVBatchRow,
   CSVImportPreview,
@@ -42,6 +43,8 @@ export async function previewCSVImport(files: {
   batches?: string;
   movements?: string;
 }): Promise<CSVImportPreview> {
+  const startTime = Date.now();
+
   // Parse all files
   const parseResult = await parseCSVFiles(files);
 
@@ -108,6 +111,33 @@ export async function previewCSVImport(files: {
   ];
 
   const invalidRows = validationErrors.length + parseErrors.length;
+
+  const durationMs = Date.now() - startTime;
+
+  // Track CSV preview telemetry (Requirement 11.1)
+  void trackCSVOperation({
+    operation: 'preview',
+    rowCount: totalRows,
+    successCount: validRows,
+    errorCount: invalidRows,
+    durationMs,
+  });
+
+  // Track import errors if any (Requirement 11.1)
+  if (parseErrors.length > 0) {
+    void trackImportError({
+      errorType: 'parse',
+      totalRows,
+      errorCount: parseErrors.length,
+    });
+  }
+  if (validationErrors.length > 0) {
+    void trackImportError({
+      errorType: 'validation',
+      totalRows,
+      errorCount: validationErrors.length,
+    });
+  }
 
   return {
     totalRows,
@@ -388,6 +418,11 @@ export async function importCSV(files: {
     movementsAdded: 0,
   };
 
+  const totalRows =
+    (parseResult.data.items?.length || 0) +
+    (parseResult.data.batches?.length || 0) +
+    (parseResult.data.movements?.length || 0);
+
   try {
     await database.write(async () => {
       // Import items
@@ -415,14 +450,34 @@ export async function importCSV(files: {
       }
     });
 
+    const durationMs = performance.now() - startTime;
+
+    // Track successful CSV import telemetry (Requirement 11.1)
+    void trackCSVOperation({
+      operation: 'import',
+      rowCount: totalRows,
+      successCount: totalRows,
+      errorCount: 0,
+      durationMs,
+    });
+
     return {
       success: true,
       changes,
       errors: [],
-      durationMs: performance.now() - startTime,
+      durationMs,
       timestamp: new Date(),
     };
   } catch (error) {
+    const durationMs = performance.now() - startTime;
+
+    // Track failed CSV import telemetry (Requirement 11.1)
+    void trackImportError({
+      errorType: 'transaction',
+      totalRows,
+      errorCount: 1,
+    });
+
     return {
       success: false,
       changes,
@@ -434,7 +489,7 @@ export async function importCSV(files: {
           severity: 'error',
         },
       ],
-      durationMs: performance.now() - startTime,
+      durationMs,
       timestamp: new Date(),
     };
   }

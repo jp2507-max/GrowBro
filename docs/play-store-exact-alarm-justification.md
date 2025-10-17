@@ -2,9 +2,9 @@
 
 > Compliance disclaimer
 >
-> - This app does not facilitate the sale, purchase, delivery, or distribution of cannabis or controlled substances.
-> - It is a personal horticulture tracking tool only; there are no marketplace or commerce features.
-> - Content and features comply with local laws and Play policies; availability may vary by region.
+> - This app is designed exclusively for personal plant care only.
+> - It does not provide marketplace or commerce/transactional or logistics features.
+> - Content complies with local laws and Play policies and may vary by region.
 
 ## Policy Compliance Reference
 

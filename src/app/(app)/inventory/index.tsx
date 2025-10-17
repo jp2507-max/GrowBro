@@ -20,7 +20,9 @@ import { useTranslation } from 'react-i18next';
 import { ExportCSVButton, ImportCSVButton } from '@/components/inventory/csv';
 import { ExactAlarmFallbackBanner } from '@/components/inventory/exact-alarm-fallback-banner';
 import { InventoryList } from '@/components/inventory/inventory-list';
+import { OfflineBanner } from '@/components/inventory/offline-banner';
 import { Button, FocusAwareStatusBar, Text, View } from '@/components/ui';
+import { useOfflineStatus } from '@/lib/hooks/use-offline-status';
 import { useExactAlarmPermissionStatus } from '@/lib/inventory/use-exact-alarm-permission-status';
 import { useInventoryItems } from '@/lib/inventory/use-inventory-items';
 
@@ -34,6 +36,7 @@ export default function InventoryScreen(): React.ReactElement {
   const { items, isLoading, error, refetch, lowStockCount } =
     useInventoryItems();
   const { shouldShowBanner, dismissBanner } = useExactAlarmPermissionStatus();
+  const isOffline = useOfflineStatus();
 
   const handleAddItem = React.useCallback(() => {
     router.push('/inventory/add');
@@ -97,6 +100,9 @@ export default function InventoryScreen(): React.ReactElement {
           </Button>
         )}
       </View>
+
+      {/* Offline Banner */}
+      {isOffline && <OfflineBanner variant="persistent" />}
 
       {/* Exact Alarm Permission Banner */}
       {shouldShowBanner && (

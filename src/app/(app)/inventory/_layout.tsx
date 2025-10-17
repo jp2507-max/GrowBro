@@ -2,8 +2,9 @@
  * Inventory Layout
  *
  * Navigation structure for inventory management screens.
+ * Supports deep linking to item details and batch creation.
  *
- * Requirements: 1.1
+ * Requirements: 1.1, 4.2
  */
 
 import { Stack } from 'expo-router';
@@ -29,6 +30,13 @@ export default function InventoryLayout(): React.ReactElement {
         name="[id]"
         options={{
           title: t('inventory.item_detail'),
+        }}
+      />
+      <Stack.Screen
+        name="[id]/batches/new"
+        options={{
+          title: t('inventory.add_batch'),
+          presentation: 'modal',
         }}
       />
       <Stack.Screen

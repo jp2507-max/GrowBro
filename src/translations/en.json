@@ -96,8 +96,11 @@
   "common": {
     "back": "Back",
     "cancel": "Cancel",
+    "dismiss": "Dismiss",
+    "loading": "Loading...",
     "notSelected": "not selected",
     "null": "null",
+    "offline_mode": "Offline Mode",
     "ok": "OK",
     "retry": "Retry",
     "selected": "selected"
@@ -493,6 +496,8 @@
       "title": "Harvest history"
     },
     "inventory": {
+      "add_batch": "Add Batch",
+      "add_batch_description": "Batch creation form will be available once the batch management UI is implemented.",
       "add_item": "Add Item",
       "batch_lot": "Lot {{lot}}",
       "batches_title": "Batches",
@@ -570,6 +575,13 @@
       "missing_dry_weight": "Dry weight must be set before completing curing",
       "missing_dry_weight_cta": "Update Dry Weight",
       "no_batches": "No batches available",
+      "offline_description": "Viewing cached data. Changes will sync when you're back online.",
+      "permissions": {
+        "exact_alarm_benefits": "Enable precise low-stock alerts to reorder supplies on time and avoid running out.",
+        "exact_alarm_description": "GrowBro needs permission to schedule exact alarms for timely low-stock notifications. This ensures you're alerted when supplies are running low.",
+        "exact_alarm_title": "Enable Precise Notifications",
+        "grant_permission": "Grant Permission"
+      },
       "retry_failed": "Failed to complete curing after multiple attempts. Please check your connection and try again.",
       "search_hint": "Type to search inventory items",
       "search_label": "Search inventory",
@@ -1834,6 +1846,7 @@
     "calendar": "Calendar",
     "community": "Community",
     "home": "Home",
+    "inventory": "Inventory",
     "plants": "Plants",
     "strains": "Strains"
   },

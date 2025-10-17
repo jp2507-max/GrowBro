@@ -165,14 +165,16 @@ function InventoryErrorFallback({
 /**
  * Hook to trigger error boundary from child components
  */
-export function useErrorHandler() {
-  const [error, setError] = React.useState<Error | null>(null);
-
-  React.useEffect(() => {
-    if (error) {
-      throw error;
-    }
-  }, [error]);
-
-  return setError;
+export function useErrorHandler(): React.Dispatch<
+  React.SetStateAction<Error | null>
+> {
+  return React.useCallback<React.Dispatch<React.SetStateAction<Error | null>>>(
+    (value) => {
+      const error = typeof value === 'function' ? value(null) : value;
+      if (error instanceof Error) {
+        throw error;
+      }
+    },
+    []
+  );
 }

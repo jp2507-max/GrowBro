@@ -96,8 +96,11 @@
   "common": {
     "back": "Zurück",
     "cancel": "Abbrechen",
+    "dismiss": "Schließen",
+    "loading": "Lädt...",
     "notSelected": "nicht ausgewählt",
     "null": "null",
+    "offline_mode": "Offline-Modus",
     "ok": "OK",
     "retry": "Erneut versuchen",
     "selected": "ausgewählt"
@@ -493,6 +496,8 @@
       "title": "Ernteverlauf"
     },
     "inventory": {
+      "add_batch": "Charge hinzufügen",
+      "add_batch_description": "Das Formular zur Chargenerstellung wird verfügbar sein, sobald die Chargenverwaltungs-UI implementiert ist.",
       "add_item": "Artikel hinzufügen",
       "batch_lot": "Charge {{lot}}",
       "batches_title": "Chargen",
@@ -570,6 +575,13 @@
       "missing_dry_weight": "Trockengewicht muss vor Abschluss der Aushärtung gesetzt werden",
       "missing_dry_weight_cta": "Trockengewicht aktualisieren",
       "no_batches": "Keine Chargen verfügbar",
+      "offline_description": "Zwischengespeicherte Daten werden angezeigt. Änderungen werden synchronisiert, wenn du wieder online bist.",
+      "permissions": {
+        "exact_alarm_benefits": "Aktiviere präzise Niedrigbestandswarnungen, um Nachschub rechtzeitig zu bestellen und Engpässe zu vermeiden.",
+        "exact_alarm_description": "GrowBro benötigt die Berechtigung, exakte Alarme für rechtzeitige Niedrigbestandsbenachrichtigungen zu planen. Dies stellt sicher, dass du benachrichtigt wirst, wenn Vorräte zur Neige gehen.",
+        "exact_alarm_title": "Präzise Benachrichtigungen aktivieren",
+        "grant_permission": "Berechtigung erteilen"
+      },
       "retry_failed": "Aushärtung konnte nach mehreren Versuchen nicht abgeschlossen werden. Bitte überprüfe deine Verbindung und versuche es erneut.",
       "search_hint": "Zum Suchen von Inventarartikeln eingeben",
       "search_label": "Inventar durchsuchen",
@@ -1834,6 +1846,7 @@
     "calendar": "Kalender",
     "community": "Community",
     "home": "Startseite",
+    "inventory": "Inventar",
     "plants": "Pflanzen",
     "strains": "Sorten"
   },

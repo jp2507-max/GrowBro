@@ -9,9 +9,7 @@ afterEach(cleanup);
 
 // Mock react-native-gifted-charts
 jest.mock('react-native-gifted-charts', () => ({
-  LineChart: ({ testID }: { testID?: string }) => (
-    <div data-testid={testID || 'line-chart'} />
-  ),
+  LineChart: ({ testID: _testID }: { testID?: string }) => null,
 }));
 
 // Mock i18n to return the key itself for testing
@@ -19,6 +17,11 @@ jest.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
   }),
+}));
+
+// Mock i18next for language access
+jest.mock('i18next', () => ({
+  language: 'en',
 }));
 
 describe('ConsumptionTrendChart', () => {
@@ -85,10 +88,6 @@ describe('ConsumptionTrendChart', () => {
           'inventory.charts.predictionInterval: 2.5 - 7.5 inventory.charts.unitsPerWeek'
         )
       ).toBeOnTheScreen();
-      expect(screen.getByText('2.5 - 7.5')).toBeOnTheScreen();
-      expect(
-        screen.getByText('inventory.charts.unitsPerWeek')
-      ).toBeOnTheScreen();
     });
 
     test('displays stockout date when provided', async () => {
@@ -106,7 +105,7 @@ describe('ConsumptionTrendChart', () => {
       );
 
       expect(
-        screen.getByText('inventory.charts.predictedStockout: 25.12.2024')
+        screen.getByText('inventory.charts.predictedStockout: Dec 25, 2024')
       ).toBeOnTheScreen();
     });
   });
