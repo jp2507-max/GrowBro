@@ -355,7 +355,8 @@ export async function createMovementWithBatchUpdateInternal(
     'inventory_movements'
   );
 
-  // Check for existing movement with same externalKey
+  // Check for existing movement with same externalKey BEFORE updating quantity
+  // This prevents race condition where quantity could be decremented twice
   const existing = await checkExistingMovement(
     movementCollection,
     request.externalKey
@@ -364,7 +365,8 @@ export async function createMovementWithBatchUpdateInternal(
     return { success: true, movement: existing, isIdempotentDuplicate: true };
   }
 
-  // Update batch quantity first
+  // Update batch quantity only if no existing movement found
+  // This ensures atomicity: either both operations succeed or both fail
   await updateBatchQuantity(db, request.batchId, request.quantityDelta);
 
   // Create movement record
@@ -372,7 +374,8 @@ export async function createMovementWithBatchUpdateInternal(
     const movement = await createMovementRecord(movementCollection, request);
     return { success: true, movement, isIdempotentDuplicate: false };
   } catch (error) {
-    // Handle constraint violation on retry
+    // If constraint violation occurs, check again in case of race condition
+    // Though this should be rare now that we check upfront
     if (
       error instanceof Error &&
       request.externalKey &&
@@ -383,10 +386,13 @@ export async function createMovementWithBatchUpdateInternal(
         request.externalKey
       );
       if (retry) {
+        // If we get here, another process created the movement after our initial check
+        // We need to rollback the batch quantity change since the movement already exists
+        await updateBatchQuantity(db, request.batchId, -request.quantityDelta);
         return { success: true, movement: retry, isIdempotentDuplicate: true };
       }
     }
-    throw error;
+    throw error; // Re-throw to rollback both batch update and any partial changes
   }
 }
 

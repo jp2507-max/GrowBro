@@ -7,6 +7,7 @@ _Last updated Sep 2025 • ≈250 lines_
 ## 🚀 Worklets in 4.x — What runs on the UI thread
 
 - Auto‑workletization remains: callbacks passed to Reanimated APIs (`useAnimatedStyle`, `useDerivedValue`, animation finish/gesture callbacks) run on the UI thread without adding `'worklet'`.
+
 - Add `'worklet'` manually if you:
   1. call imported/external functions as worklets,
   2. create worklets via expressions/ternaries,
@@ -14,6 +15,7 @@ _Last updated Sep 2025 • ≈250 lines_
   4. expose top‑level reusable worklet utilities.
 
 - `runOnUI`: inline callbacks are workletized automatically; external references still need `'worklet'`.
+
 - ✔ Checklist
   - [ ] No `.value` reads in React render (derive inside worklets)
   - [ ] `cancelAnimation` on unmount for long/looping animations
@@ -53,29 +55,6 @@ const makeStyle = isOn
 - Use RNGH v2 `Gesture.*()` with `GestureDetector` (legacy handler components and `useAnimatedGestureHandler` are deprecated in 4.x).
 - Cross-thread: use `runOnJS` sparingly; `runOnUI` auto‑workletizes inline callbacks.
 
-Imports quick ref
-
-```ts
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-} from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-```
-
----
-
-## Tiny examples
-
-```ts
-const offset = useSharedValue(0);
-const st = useAnimatedStyle(() => ({
-  transform: [{ translateX: offset.value }],
-}));
-```
-
 ---
 
 ## 🧭 Styling with NativeWind
@@ -91,6 +70,7 @@ const st = useAnimatedStyle(() => ({
 - Use Tailwind tokens from `src/components/ui/colors.js` (wired via `tailwind.config.js`).
   - Palettes: `primary`, `neutral`, `charcoal`, `success`, `warning`, `danger`.
   - Prefer tokens (e.g., `bg-primary-600`, `text-neutral-100`, `bg-charcoal-950`) instead of raw hex.
+
 - Fonts: `font-inter` is the default; override via class names, not inline styles.
 - Dark mode: `darkMode: 'class'`. Pair light/dark classes. App themes mirror tokens in `src/lib/use-theme-config.tsx`.
 - Variants: compose with `tailwind-variants` `tv()`; keep layout static in slots, switch tokens via variants; allow overrides with `slots.container({ className })`.
@@ -106,17 +86,17 @@ const st = useAnimatedStyle(() => ({
 - **Semantic roles:** `src/lib/theme-tokens.ts` defines light/dark roles for `surface`, `text`, and `action` (primary, CTA, link, focus ring). Use these instead of hardcoding palette indices inside components.
   - Navigation themes already read from `themeRoles`.
   - Dynamic styles (buttons, alerts, focus rings) should import the relevant token rather than `colors.*` directly.
+
 - **Tailwind vs. tokens:**
   - Use Tailwind classes (e.g., `bg-primary-600`) for static layout.
   - Use theme tokens when you need runtime decisions (`style` props, React Navigation, FlashMessage, conditional focus rings).
+
 - **States & accessibility:** tokens include hover/background/content colors plus focus-ring values; always combine CTA/primary backgrounds with their `content` color for readable text.
 - **Adding new roles:** extend `themeRoles` (and document the intent) before sprinkling ad-hoc palette references—keeps contrast and theming audit-friendly.
 
 ---
 
-## Layout transitions
-
-## Reanimated 4 — CSS API & Presets (short + examples, EN)
+## Reanimated 4 — CSS API & Presets
 
 ### CSS Animations (ambient, keyframe-based)
 
@@ -195,23 +175,6 @@ export function ToggleCard({ toggled }: { toggled: boolean }) {
         transitionProperty: ['width', 'backgroundColor'],
         transitionDuration: 400,
         transitionTimingFunction: 'ease-in-out',
-      }}
-    />
-  );
-}
-```
-
-**Press feedback (scale) with transitions**
-
-```tsx
-export function PressableScale({ pressed }: { pressed: boolean }) {
-  return (
-    <Animated.View
-      style={{
-        transform: [{ scale: pressed ? 0.96 : 1 }],
-        transitionProperty: ['transform'],
-        transitionDuration: 120,
-        transitionTimingFunction: 'ease-out',
       }}
     />
   );
@@ -312,7 +275,7 @@ export function ReorderDemo() {
 
 ### Quick refs
 
-**Primitives:** `withTiming`, `withSpring`, `withDecay`, `withSequence`, `withRepeat`, `withDelay`, `withClamp`, `cancelAnimation`  
+**Primitives:** `withTiming`, `withSpring`, `withDecay`, `withSequence`, `withRepeat`, `withDelay`, `withClamp`, `cancelAnimation`
 **Hooks/Utils:** `useScrollViewOffset`, `useAnimatedKeyboard`, `useAnimatedSensor`, `measure`, `scrollTo`
 
 - Prefer `LinearTransition`/`EntryExitTransition`/`CurvedTransition` over manual size animations.
@@ -363,7 +326,7 @@ export function ReorderDemo() {
 ## ⚙️ Expo SDK 54 Specifics
 
 - Reanimated: 4.x bundled with SDK 54.
-- RNGH: v2 Gesture API recommended.
+- RNGH: v2 Gesture API
 - Babel: `react-native-reanimated/plugin` comes via `babel-preset-expo` — no manual changes typically needed.
 - Install via `npx expo install react-native-reanimated react-native-gesture-handler` to match the SDK.
 
@@ -381,7 +344,6 @@ Do
 Avoid
 
 - Animating by toggling class lists per frame
-- Animating text/shadow colors continuously; prefer fade/scale
 - Nesting `Animated.View` unnecessarily; compose transforms in one container
 
 ---

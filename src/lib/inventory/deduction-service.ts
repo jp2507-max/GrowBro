@@ -27,6 +27,7 @@ import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-m
 import type {
   BatchPickResult,
   DeduceInventoryRequest,
+  DeductionContext,
   DeductionMapEntry,
   DeductionMovement,
   DeductionResult,
@@ -55,7 +56,11 @@ export async function deduceInventory(
   const idempotencyKey =
     request.idempotencyKey ??
     (request.taskId
-      ? generateIdempotencyKey(request.taskId, request.deductionMap)
+      ? generateIdempotencyKey(
+          request.taskId,
+          request.deductionMap,
+          request.context ?? { taskId: request.taskId ?? 'manual' }
+        )
       : null);
 
   try {
@@ -258,19 +263,18 @@ async function checkInsufficientStock(
  */
 function generateIdempotencyKey(
   taskId: string,
-  deductionMap: DeductionMapEntry[]
+  deductionMap: DeductionMapEntry[],
+  context: DeductionContext
 ): string {
-  // Deterministic: taskId + normalized deduction entries
-  // TODO: Include scaling context in idempotency key generation
-  // The idempotency key for task deductions is computed only from the static map
-  // (itemId, units, per-task/per-plant quantities, scaling mode). Inputs from
-  // DeductionContext—plant count, EC/PPM targets, reservoir volume—are omitted
-  // even though they change calculateScaledQuantity. Retrying the same task with
-  // a different plant count will generate the same key, checkExistingMovements
-  // will return the earlier movements, and no additional stock is deducted.
-  // This leaves inventory inaccurate for legitimate retries with new scaling values.
-  // Incorporate the relevant context into the payload so distinct quantities
-  // produce distinct keys.
+  // FIXED: Include scaling context in idempotency key to prevent inventory inaccuracies
+  //
+  // Include relevant context values that affect calculateScaledQuantity():
+  // - plantCount (for per-plant scaling)
+  // - targetEc, targetPpm, ppmScale (for nutrient-based scaling)
+  // - reservoirVolume (for volume-based scaling)
+  //
+  // This ensures distinct quantities produce distinct keys, preventing
+  // false idempotency matches and maintaining accurate inventory levels.
   const normalized = deductionMap
     .map((e) => ({
       itemId: e.itemId,
@@ -280,7 +284,21 @@ function generateIdempotencyKey(
       scalingMode: e.scalingMode ?? 'fixed',
     }))
     .sort((a, b) => a.itemId.localeCompare(b.itemId));
-  const payload = JSON.stringify({ taskId, normalized });
+
+  // Include only the context values that affect quantity calculation
+  const relevantContext = {
+    plantCount: context.plantCount,
+    targetEc: context.targetEc,
+    targetPpm: context.targetPpm,
+    ppmScale: context.ppmScale,
+    reservoirVolume: context.reservoirVolume,
+  };
+
+  const payload = JSON.stringify({
+    taskId,
+    normalized,
+    context: relevantContext,
+  });
   // Simple stable hash to shorten key
   let hash = 0;
   for (let i = 0; i < payload.length; i++) {
