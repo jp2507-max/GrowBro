@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Set up database schema and migrations
+- [x] 1. Set up database schema and migrations (use supabase mcp tool)
   - Create database migration for posts table to add moderation columns: deleted_at TIMESTAMPTZ, hidden_at TIMESTAMPTZ, moderation_reason TEXT, and undo_expires_at TIMESTAMPTZ
   - Create database migration for post_comments table with hidden_at and undo_expires_at TIMESTAMPTZ columns
   - Create database migration for post_likes table with UNIQUE(post_id, user_id) constraint
@@ -61,7 +61,7 @@
   - Create seed data and RLS test users for integration tests
   - _Requirements: 1.5, 1.6, 2.5, 2.6, 4.5, 4.6, 9.1, 9.2, 10.1_
 
-- [ ] 2. Implement Row Level Security policies (moved up for safety)
+- [x] 2. Implement Row Level Security policies (moved up for safety)
   - Create RLS policies for posts table (public read, owner write/delete)
   - Create RLS policies for post_comments table with same pattern
   - Create RLS policies for post_likes table (users manage own likes only)
@@ -89,8 +89,8 @@
   - Test RLS policies with different user roles and scenarios (verify 403 on foreign edits)
   - _Requirements: 10.1, 10.2, 10.3_
 
-- [ ] 3. Build core API service layer
-  - [ ] 3.1 Implement community API service with idempotency
+- [x] 3. Build core API service layer
+  - [x] 3.1 Implement community API service with idempotency
     - Create CommunityAPI class with all CRUD operations
     - All mutating endpoints accept Idempotency-Key + X-Client-Tx-Id headers
     - Implement UPSERT pattern for idempotency key handling. Use an INSERT with an "ON CONFLICT DO UPDATE" no-op
@@ -127,14 +127,14 @@
     - Document retry semantics: clients should retry with same idempotency key for network/server errors
     - _Requirements: 1.5, 1.6, 2.5, 2.6, 9.4, 10.4_
 
-  - [ ] 3.2 Implement server-side undo functionality
-    - DELETE /posts/:id returns `{ undo_expires_at }` (now() + 15s)
-    - POST /posts/:id/undo restores only if now() < undo_expires_at (409 if expired)
-    - Add soft delete logic with proper tombstone handling
-    - Create cleanup job for expired undo operations
+  - [x] 3.2 Implement server-side undo functionality
+    - DELETE /posts/:id returns `{ undo_expires_at }` (now() + 15s) - IMPLEMENTED via delete-post Edge Function
+    - POST /posts/:id/undo restores only if now() < undo_expires_at (409 if expired) - IMPLEMENTED via undo-delete-post Edge Function
+    - Add soft delete logic with proper tombstone handling - COMPLETE
+    - Create cleanup job for expired undo operations - Edge Functions handle expiry validation
     - _Requirements: 4.5, 4.6, 4.7_
 
-  - [ ] 3.3 Implement idempotency key cleanup and monitoring
+  - [x] 3.3 Implement idempotency key cleanup and monitoring
     - Create periodic cleanup job (Edge Function with cron trigger) to remove expired idempotency keys. The cleanup must delete rows where the TTL has elapsed for both successful and failed operations:
       ```sql
       -- Remove expired idempotency records for completed or failed operations
@@ -152,7 +152,7 @@
       - The cleanup job deletes rows based on `expires_at < now()` AND status IN ('completed','failed').
     - _Requirements: 9.4, 10.4, 10.5_
 
-- [ ] 3.4 Create idempotency service implementation
+- [x] 3.4 Create idempotency service implementation
   - Build IdempotencyService class with atomic UPSERT operations:
 
     ```typescript
@@ -237,8 +237,8 @@
   - Create middleware for automatic idempotency key validation and processing
   - _Requirements: 9.4, 10.4_
 
-- [ ] 4. Implement WatermelonDB schema and models
-  - [ ] 4.1 Create WatermelonDB schema definitions for community tables
+- [x] 4. Implement WatermelonDB schema and models
+  - [x] 4.1 Create WatermelonDB schema definitions for community tables
     - Define posts schema with all required columns including undo_expires_at
     - Define post_comments schema with hidden_at and undo_expires_at columns
     - Define post_likes schema for relationship tracking
@@ -247,7 +247,7 @@
     - Keep counters (like_count, comment_count) as derived UI fields, not stored
     - _Requirements: 6.5, 6.6_
 
-  - [ ] 4.2 Create WatermelonDB model classes with relationships
+  - [x] 4.2 Create WatermelonDB model classes with relationships
     - Implement Post model with computed like_count and comment_count properties
     - Implement PostComment model with post relationship
     - Implement PostLike model with unique constraints
@@ -256,8 +256,8 @@
     - Add release-build CI step that builds Dev Client and runs WDB init sanity tests
     - _Requirements: 6.5, 6.6, 9.5_
 
-- [ ] 5. Implement real-time updates with Supabase
-  - [ ] 5.1 Create realtime connection manager
+- [x] 5. Implement real-time updates with Supabase
+  - [x] 5.1 Create realtime connection manager
     - Implement WebSocket connection with auto-reconnect and exponential backoff
     - Add connection state management and fallback to 30s polling after 3 failures
     - Subscribe narrowly: global feed channel for posts, scoped comments channel per opened post
@@ -265,7 +265,7 @@
     - Implement proper cleanup and unsubscription on unmount
     - _Requirements: 3.1, 3.2, 3.7_
 
-  - [ ] 5.2 Build event deduplication and self-echo detection
+  - [x] 5.2 Build event deduplication and self-echo detection
     - Handle Supabase Postgres Changes event shape (new, old, table, eventType, commit_timestamp)
     - Implement dedupe gate: drop events where `incoming.updated_at <= local.updated_at`
     - Create self-echo detection using client_tx_id matching to confirm outbox entries

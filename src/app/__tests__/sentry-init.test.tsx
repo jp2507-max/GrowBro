@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
 /**
  * Smoke test: verifies Sentry.init is called with production-grade options
  * and React Navigation integration when consent is granted.

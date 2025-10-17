@@ -20,7 +20,7 @@ describe('WatermelonDB Plugin Configuration', () => {
     // Read app.config.cjs (exports a function, not direct config)
     const appConfigPath = path.resolve(__dirname, '../../../app.config.cjs');
     delete require.cache[require.resolve(appConfigPath)];
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+
     const appConfigModule = require(appConfigPath);
     // Call the function if it exports one, otherwise use direct export
     appConfig =

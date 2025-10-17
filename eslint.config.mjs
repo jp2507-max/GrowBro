@@ -210,13 +210,15 @@ export default defineConfig([
       'max-lines-per-function': ['error', 90],
     },
   },
-  // Test files - exempt from max-lines-per-function (must come after stricter rules)
+  // Test files - exempt from max-lines-per-function and max-params (must come after stricter rules)
   {
     files: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
     plugins: { 'testing-library': testingLibrary },
     rules: {
       ...testingLibrary.configs.react.rules,
       'max-lines-per-function': 'off',
+      'max-params': 'off',
+      '@typescript-eslint/no-require-imports': 'off', // Jest dynamic mocking requires require()
     },
   },
   // Deno Edge Functions use jsr:/npm: specifiers that Node import resolver can't resolve

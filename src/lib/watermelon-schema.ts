@@ -1,7 +1,7 @@
 import { appSchema as createSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const appSchema = createSchema({
-  version: 22,
+  version: 23,
   tables: [
     tableSchema({
       name: 'series',
@@ -640,6 +640,55 @@ export const appSchema = createSchema({
         { name: 'external_key', type: 'string', isOptional: true },
         { name: 'user_id', type: 'string', isOptional: true },
         { name: 'created_at', type: 'number', isIndexed: true },
+      ],
+    }),
+    // Community feed tables
+    tableSchema({
+      name: 'posts',
+      columns: [
+        { name: 'user_id', type: 'string' },
+        { name: 'body', type: 'string' },
+        { name: 'media_uri', type: 'string', isOptional: true },
+        { name: 'created_at', type: 'number', isIndexed: true },
+        { name: 'updated_at', type: 'number' },
+        { name: 'deleted_at', type: 'number', isOptional: true },
+        { name: 'hidden_at', type: 'number', isOptional: true },
+        { name: 'moderation_reason', type: 'string', isOptional: true },
+        { name: 'undo_expires_at', type: 'number', isOptional: true },
+      ],
+    }),
+    tableSchema({
+      name: 'post_comments',
+      columns: [
+        { name: 'post_id', type: 'string', isIndexed: true },
+        { name: 'user_id', type: 'string' },
+        { name: 'body', type: 'string' },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'deleted_at', type: 'number', isOptional: true },
+        { name: 'hidden_at', type: 'number', isOptional: true },
+        { name: 'undo_expires_at', type: 'number', isOptional: true },
+      ],
+    }),
+    tableSchema({
+      name: 'post_likes',
+      columns: [
+        { name: 'post_id', type: 'string', isIndexed: true },
+        { name: 'user_id', type: 'string' },
+        { name: 'created_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'outbox',
+      columns: [
+        { name: 'op', type: 'string' },
+        { name: 'payload', type: 'string' },
+        { name: 'client_tx_id', type: 'string' },
+        { name: 'idempotency_key', type: 'string' },
+        { name: 'created_at', type: 'number', isIndexed: true },
+        { name: 'retries', type: 'number' },
+        { name: 'next_retry_at', type: 'number', isOptional: true },
+        { name: 'status', type: 'string', isIndexed: true },
       ],
     }),
   ],

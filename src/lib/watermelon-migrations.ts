@@ -850,5 +850,59 @@ export const migrations = schemaMigrations({
         },
       ],
     },
+    // Migration from version 22 to 23: Add community feed tables
+    {
+      toVersion: 23,
+      steps: [
+        {
+          type: 'create_table',
+          schema: createTableSchema('posts', [
+            { name: 'user_id', type: 'string' },
+            { name: 'body', type: 'string' },
+            { name: 'media_uri', type: 'string', isOptional: true },
+            { name: 'created_at', type: 'number', isIndexed: true },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+            { name: 'hidden_at', type: 'number', isOptional: true },
+            { name: 'moderation_reason', type: 'string', isOptional: true },
+            { name: 'undo_expires_at', type: 'number', isOptional: true },
+          ]),
+        },
+        {
+          type: 'create_table',
+          schema: createTableSchema('post_comments', [
+            { name: 'post_id', type: 'string', isIndexed: true },
+            { name: 'user_id', type: 'string' },
+            { name: 'body', type: 'string' },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+            { name: 'hidden_at', type: 'number', isOptional: true },
+            { name: 'undo_expires_at', type: 'number', isOptional: true },
+          ]),
+        },
+        {
+          type: 'create_table',
+          schema: createTableSchema('post_likes', [
+            { name: 'post_id', type: 'string', isIndexed: true },
+            { name: 'user_id', type: 'string' },
+            { name: 'created_at', type: 'number' },
+          ]),
+        },
+        {
+          type: 'create_table',
+          schema: createTableSchema('outbox', [
+            { name: 'op', type: 'string' },
+            { name: 'payload', type: 'string' },
+            { name: 'client_tx_id', type: 'string' },
+            { name: 'idempotency_key', type: 'string' },
+            { name: 'created_at', type: 'number', isIndexed: true },
+            { name: 'retries', type: 'number' },
+            { name: 'next_retry_at', type: 'number', isOptional: true },
+            { name: 'status', type: 'string', isIndexed: true },
+          ]),
+        },
+      ],
+    },
   ],
 });

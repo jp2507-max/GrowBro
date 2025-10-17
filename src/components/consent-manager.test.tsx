@@ -31,7 +31,6 @@ jest.mock('@/lib', () => ({
 }));
 
 jest.mock('@/components/ui', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { TouchableOpacity, Text } = require('react-native');
   return {
     Button: ({ label, onPress, testID }: any) => (

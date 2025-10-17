@@ -4,7 +4,6 @@
   - validateExternalLinks: flags blocked domains; ignores allowed; handles invalid URLs
 */
 
-/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
