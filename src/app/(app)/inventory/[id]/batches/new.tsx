@@ -2,7 +2,8 @@
  * Add Batch Screen
  *
  * Create new inventory batch with lot number, expiration date, and cost.
- * Supports deep linking via growbro://inventory/items/:id/batches/new
+ * Deep linking planned — not yet functional; requires form and routing
+ * implementation (e.g., deep link growbro://inventory/items/:id/batches/new)
  *
  * Requirements: 2.1
  */

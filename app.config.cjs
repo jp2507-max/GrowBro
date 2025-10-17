@@ -96,21 +96,6 @@ function createExpoConfig(config) {
     owner: Env.EXPO_ACCOUNT_OWNER,
     scheme: Env.SCHEME,
     slug: 'growbro',
-    // Deep linking configuration for inventory and other features
-    intentFilters: [
-      {
-        action: 'VIEW',
-        autoVerify: true,
-        data: [
-          {
-            scheme: 'growbro',
-            host: '*',
-            pathPrefix: '/inventory',
-          },
-        ],
-        category: ['BROWSABLE', 'DEFAULT'],
-      },
-    ],
     version: Env.VERSION.toString(),
     // Ensure runtimeVersion is set to a stable policy to prevent mismatched
     // JS/native bundles when performing OTA updates. Using the 'appVersion'
@@ -142,6 +127,20 @@ function createExpoConfig(config) {
         backgroundColor: '#2E3C4B',
       },
       package: Env.PACKAGE,
+      intentFilters: [
+        {
+          action: 'VIEW',
+          autoVerify: true,
+          data: [
+            {
+              scheme: 'growbro',
+              host: '*',
+              pathPrefix: '/inventory',
+            },
+          ],
+          category: ['BROWSABLE', 'DEFAULT'],
+        },
+      ],
     },
     web: {
       favicon: './assets/favicon.png',

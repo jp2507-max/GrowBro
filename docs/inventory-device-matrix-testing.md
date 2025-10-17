@@ -1,5 +1,7 @@
 # Inventory Device Matrix Testing Guide
 
+> GrowBro is an educational app for home cannabis cultivation. It never facilitates shopping, pickup, delivery, or any transaction.
+
 ## Overview
 
 This document outlines the device matrix testing requirements for the Inventory and Consumables feature, focusing on notification behavior, exact alarm permissions, and cross-OEM compatibility.
@@ -550,4 +552,4 @@ interface PerformanceEvent {
 - Major: \_**\_ / \_\_** passed
 - Minor: \_**\_ / \_\_** passed
 
-**Notes:** **********\*\***********\_**********\*\***********
+**Notes:** ****\*\*****\*\*****\*\*****\_****\*\*****\*\*****\*\*****

@@ -6,22 +6,23 @@
  * Requirements: 4.2, 7.4
  */
 
-import { render, screen } from '@testing-library/react-native';
+import { screen } from '@testing-library/react-native';
 import React from 'react';
 
 import { OfflineBanner } from '@/components/inventory/offline-banner';
 import * as exactAlarm from '@/lib/permissions/exact-alarm';
+import { setup } from '@/lib/test-utils';
 
 describe('OfflineBanner', () => {
   it('renders with offline message', () => {
-    render(<OfflineBanner variant="persistent" />);
-    expect(screen.getByTestId('offline-banner')).toBeOnTheScreen();
+    setup(<OfflineBanner variant="persistent" />);
+    expect(screen.getByLabelText('Offline Mode')).toBeOnTheScreen();
   });
 
   it('shows dismissible variant when provided', () => {
     const mockDismiss = jest.fn();
-    render(<OfflineBanner variant="dismissible" onDismiss={mockDismiss} />);
-    expect(screen.getByTestId('offline-banner')).toBeOnTheScreen();
+    setup(<OfflineBanner variant="dismissible" onDismiss={mockDismiss} />);
+    expect(screen.getByLabelText('Offline Mode')).toBeOnTheScreen();
   });
 });
 
