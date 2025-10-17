@@ -7,9 +7,12 @@ import type { RenderOptions } from '@testing-library/react-native';
 import { render, userEvent } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import React from 'react';
+import { I18nextProvider } from 'react-i18next';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { resources } from './i18n/resources';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const i18n = require('./i18n').default;
 
 // Initialize i18n for tests using the same approach as jest-setup
 export function initI18n() {
@@ -49,7 +52,9 @@ const createAppWrapper = () => {
     >
       <QueryClientProvider client={queryClient}>
         <BottomSheetModalProvider>
-          <NavigationContainer>{children}</NavigationContainer>
+          <I18nextProvider i18n={i18n}>
+            <NavigationContainer>{children}</NavigationContainer>
+          </I18nextProvider>
         </BottomSheetModalProvider>
       </QueryClientProvider>
     </SafeAreaProvider>

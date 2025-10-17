@@ -261,6 +261,16 @@ function generateIdempotencyKey(
   deductionMap: DeductionMapEntry[]
 ): string {
   // Deterministic: taskId + normalized deduction entries
+  // TODO: Include scaling context in idempotency key generation
+  // The idempotency key for task deductions is computed only from the static map
+  // (itemId, units, per-task/per-plant quantities, scaling mode). Inputs from
+  // DeductionContext—plant count, EC/PPM targets, reservoir volume—are omitted
+  // even though they change calculateScaledQuantity. Retrying the same task with
+  // a different plant count will generate the same key, checkExistingMovements
+  // will return the earlier movements, and no additional stock is deducted.
+  // This leaves inventory inaccurate for legitimate retries with new scaling values.
+  // Incorporate the relevant context into the payload so distinct quantities
+  // produce distinct keys.
   const normalized = deductionMap
     .map((e) => ({
       itemId: e.itemId,

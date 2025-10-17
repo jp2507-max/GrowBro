@@ -568,6 +568,15 @@ async function importItems(items: CSVItemRow[]): Promise<{
   return { added, updated, skipped };
 }
 
+// Helper (file-level): check whether a movement with the given external_key exists.
+async function movementExistsByExternalKey(
+  movementsCollection: any,
+  key: string
+): Promise<boolean> {
+  const existing = await movementsCollection.query().fetch();
+  return existing.some((m: any) => m.externalKey === key);
+}
+
 /**
  * Import batches with idempotent upserts
  */
@@ -691,7 +700,6 @@ async function importMovements(
   }
 
   let added = 0;
-
   for (const csvMovement of movements) {
     // Resolve item ID
     const itemId = itemMap.get(csvMovement.item_external_key);
@@ -705,7 +713,19 @@ async function importMovements(
       batchId = batchMap.get(`${itemId}:${csvMovement.batch_lot}`) || null;
     }
 
-    // Create movement
+    // If an external_key is provided, check for an existing movement with
+    // the same external_key to keep imports idempotent. The `external_key`
+    // column has a unique index (WHERE external_key IS NOT NULL) so we should
+    // avoid creating duplicates by skipping existing keys. If no
+    // external_key is provided, fall back to always creating a new movement.
+    if (csvMovement.external_key) {
+      const exists = await movementExistsByExternalKey(
+        movementsCollection,
+        csvMovement.external_key
+      );
+      if (exists) continue;
+    }
+
     await movementsCollection.create((movement) => {
       movement.itemId = itemId;
       movement.batchId = batchId ?? undefined;
@@ -713,6 +733,10 @@ async function importMovements(
       movement.quantityDelta = csvMovement.qty_delta;
       movement.reason = csvMovement.reason;
       movement.taskId = csvMovement.task_external_id;
+      // Persist external key for idempotency (if provided)
+      if (csvMovement.external_key) {
+        movement.externalKey = csvMovement.external_key;
+      }
       // Override createdAt if provided (for historical imports)
       if (csvMovement.created_at) {
         movement.createdAt = new Date(csvMovement.created_at);

@@ -33,6 +33,7 @@ export function OfflineBanner({
       testID="offline-banner"
       accessibilityRole="alert"
       accessibilityLabel={t('common.offline_mode')}
+      accessibilityHint={t('inventory.offline_description')}
     >
       <View className="flex-row items-center justify-between">
         <View className="flex-1 flex-row items-center gap-2">
