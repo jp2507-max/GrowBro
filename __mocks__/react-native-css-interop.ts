@@ -1,7 +1,15 @@
 // Mock react-native-css-interop for tests
 // This prevents issues with CSS interop trying to process components that don't have displayName
 
-export function cssInterop(): void {}
+export function cssInterop(Component: any, _config?: any): any {
+  // Ensure component has displayName for React DevTools
+  if (Component) {
+    if (!Component.displayName) {
+      Component.displayName = Component.name || 'Component';
+    }
+  }
+  return Component;
+}
 
 export function rem(value: number): number {
   return value * 16;
@@ -24,6 +32,23 @@ export function vmax(value: number): number {
 }
 
 export function createInteropElement(Component: any): any {
+  // Defensive checks for Component existence and type
+  if (!Component) {
+    throw new Error('createInteropElement: Component is null or undefined');
+  }
+
+  if (typeof Component !== 'function' && typeof Component !== 'object') {
+    throw new Error(
+      'createInteropElement: Component must be a function or object'
+    );
+  }
+
+  // Ensure component has displayName with proper fallbacks
+  if (!Component.displayName) {
+    Component.displayName =
+      Component.name || Component.constructor?.name || 'UnknownComponent';
+  }
+
   return Component;
 }
 

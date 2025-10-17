@@ -8,6 +8,7 @@ import {
   Calendar as CalendarIcon,
   Feed as FeedIcon,
   Home as HomeIcon,
+  Inventory as InventoryIcon,
   Settings as SettingsIcon,
   Style as StyleIcon,
   TopDress as PlantsIcon,
@@ -15,6 +16,7 @@ import {
 import { useAgeGate, useAuth, useIsFirstTime } from '@/lib';
 import { AnimatedScrollListProvider } from '@/lib/animations/animated-scroll-list-provider';
 import { translate } from '@/lib/i18n';
+import { useInventoryLowStockCount } from '@/lib/inventory/use-inventory-low-stock-count';
 import { useThemeConfig } from '@/lib/use-theme-config';
 
 type HeaderOptions = {
@@ -104,6 +106,7 @@ export default function TabLayout() {
   const theme = useThemeConfig();
   const tabScreenOptions = useTabScreenOptions(theme);
   const redirectTo = useTabLayoutRedirects();
+  const { count: lowStockCount } = useInventoryLowStockCount();
   useSplashScreenHide();
 
   if (redirectTo) return <Redirect href={redirectTo} />;
@@ -147,6 +150,15 @@ export default function TabLayout() {
             title: translate('tabs.plants'),
             tabBarIcon: ({ color }) => <PlantsIcon color={color} />,
             tabBarButtonTestID: 'plants-tab',
+          }}
+        />
+        <Tabs.Screen
+          name="inventory"
+          options={{
+            title: translate('tabs.inventory'),
+            tabBarIcon: ({ color }) => <InventoryIcon color={color} />,
+            tabBarBadge: lowStockCount > 0 ? lowStockCount : undefined,
+            tabBarButtonTestID: 'inventory-tab',
           }}
         />
         <Tabs.Screen

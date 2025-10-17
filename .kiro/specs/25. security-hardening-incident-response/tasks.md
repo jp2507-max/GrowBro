@@ -1,0 +1,475 @@
+# Implementation Plan
+
+This implementation plan breaks down the Security Hardening & Incident Response feature into discrete, actionable coding tasks. Each task builds incrementally on previous work, prioritizes core functionality, and includes references to specific requirements from the requirements document.
+
+## Global Requirements
+
+- **Internationalization**: All user-visible strings must be internationalized (EN/DE) and accessibility-labeled
+- **Expo/EAS Requirements**: Certificate pinning requires EAS prebuild + custom dev client (not compatible with Expo Go)
+- **Code Style**: Use functional modules over classes to match project conventions
+- **Privacy**: Use privacy-safe device fingerprint (stable random install ID, salted hash, no hardware IDs)
+
+## Task List
+
+- [ ] 1. Set up security infrastructure and core types
+  - [ ] 1.1 Create base directory structure and interfaces
+    - Create base directory structure under `src/lib/security/`
+    - Define TypeScript interfaces for all security components (export narrow interfaces and concrete implementations separately for testing)
+    - Create security constants (Sentry category "security", event types, backoff constants)
+    - _Requirements: All requirements (foundation)_
+  - [ ] 1.2 Implement feature flags system
+    - Create `src/lib/security/feature-flags.ts` with typed flags
+    - Wire flags to environment configuration (dev/stage/prod)
+    - Add flags: ENABLE_ENCRYPTION, ENABLE_INTEGRITY_DETECTION, ENABLE_ATTESTATION, ENABLE_CERTIFICATE_PINNING, BLOCK_ON_COMPROMISE, ENABLE_THREAT_MONITORING, SENTRY_SAMPLING_RATE
+    - _Requirements: Cross-cutting concerns_
+  - [ ] 1.3 Implement privacy-safe device fingerprint utility
+    - Create `src/lib/security/device-fingerprint.ts`
+    - Generate stable random install ID on first launch
+    - Store in SecureStorage (encrypted)
+    - Create salted hash (app-specific salt in code, not config)
+    - Never log salt or expose hardware IDs
+    - _Requirements: 4.1, 5.10_
+
+- [ ] 2. Implement encrypted storage layer with MMKV
+  - [ ] 2.1 Install and configure react-native-keychain dependency
+    - Add react-native-keychain to package.json
+    - Configure iOS Keychain accessibility settings (AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY)
+    - Configure Android Keystore settings with TEE detection
+    - Add EAS config/entitlements notes for iOS Keychain access group if needed
+    - Record HW-backed mode vs SW fallback for audit
+    - _Requirements: 1.2, 1.3, 1.4_
+  - [ ] 2.2 Implement KeyManager for encryption key management
+    - Implement as functional module (not class) to match repo style
+    - Create key generation with 32-byte CSPRNG (algorithm-agnostic)
+    - Implement key storage in platform keychain with HW-backed preference
+    - Add key retrieval with fallback handling
+    - Implement key rotation (recrypt) functionality
+    - Add key aging metadata (createdAt) and rotation counter
+    - Never log key material
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.7, 1.12_
+  - [ ] 2.3 Create SecureStorage wrapper around MMKV
+    - Initialize five MMKV instances with separate IDs: auth, user-data, sync-metadata, security-cache, feature-flags
+    - Implement get/set/delete operations with encryption
+    - Add recrypt sequencing (pause → recrypt → verify sentinel → resume)
+    - Implement rekey on suspected compromise
+    - Add rekey sequencing test hook
+    - _Requirements: 1.1, 1.5, 1.6, 1.7_
+  - [ ] 2.4 Implement StorageAuditor for encryption verification
+    - Create sentinel write tests to assert encryption
+    - Implement scan for unencrypted data in AsyncStorage
+    - Add static scan for AsyncStorage keys in codebase (grep patterns)
+    - Add key-to-domain mapping validation
+    - Generate storage audit report with encryption mode and key age
+    - Generate evidence JSON with instance list, encryptionMode (HW/SW), keyAgeDays
+    - _Requirements: 1.9, 1.10, 1.12_
+  - [ ]\* 2.5 Write unit tests for encrypted storage
+    - Test key generation produces 32-byte keys
+    - Test key storage/retrieval from keychain
+    - Test MMKV initialization with encryption
+    - Test recrypt preserves data
+    - Test audit detects unencrypted data
+    - Test sentinel unencrypted instance does not contain sensitive keys
+    - _Requirements: 1.11_
+
+- [ ] 3. Implement device integrity detection
+  - [ ] 3.1 Install and configure react-native-root-detection
+    - Add react-native-root-detection dependency
+    - Configure detection for iOS and Android
+    - Document false-positive behavior on OEM/debug/test-keys builds
+    - _Requirements: 2.1_
+  - [ ] 3.2 Create IntegrityDetector with custom checks
+    - Implement iOS jailbreak detection (Cydia, suspicious paths, sandbox violations)
+    - Implement Android root detection (su binary, Magisk, test-keys)
+    - Add detection result caching in encrypted security-cache MMKV
+    - Implement 24-hour TTL with force recheck on app upgrade
+    - Force recheck on app version change; persist lastCheckVersion
+    - _Requirements: 2.1, 2.2, 2.3, 2.6_
+  - [ ] 3.3 Create localized warning modal component
+    - Design accessible modal with screen reader labels (EN/DE)
+    - Add a11y roles/labels and E2E IDs
+    - Add "I Understand" and "Learn More" actions
+    - Implement modal display logic on compromise detection
+    - Use EN/DE strings via i18n
+    - _Requirements: 2.7_
+  - [ ] 3.4 Implement security event logging for integrity
+    - Log Sentry event with detectionMethod, indicators count (not values), platform, osVersion
+    - Set sampling to 100% for compromised cases
+    - Ensure no PII in event metadata
+    - _Requirements: 2.8_
+  - [ ] 3.5 Add feature flag for blocking sensitive features
+    - Implement BLOCK_ON_COMPROMISE feature flag
+    - Add conditional blocking logic for export, account linking, and sensitive settings
+    - Show security warning badge in settings
+    - _Requirements: 2.9_
+  - [ ]\* 3.6 Write unit tests for device integrity
+    - Mock compromised and clean states
+    - Test cache persistence and expiration
+    - Test recheck scheduling
+    - Test warning modal display
+    - Test feature-flag behavior (warn-only vs block)
+    - _Requirements: 2.10_
+
+- [ ] 4. Implement certificate pinning layer
+  - [ ] 4.1 Research and select certificate pinning library
+    - Evaluate libraries compatible with Expo SDK 54, RN 0.81, Hermes
+    - Verify Expo config plugin support and RN 0.81/Hermes compatibility
+    - Plan fallback to platform-native (OkHttp CertificatePinner on Android, NSURLSession auth challenge on iOS) via custom plugin if needed
+    - Document library choice and rationale
+    - _Requirements: 3.1, 3.2_
+  - [ ] 4.1b Set up EAS Dev Client for pinning testing
+    - Document commands for custom dev client build
+    - Note: not compatible with Expo Go
+    - Add EAS dev client setup task so local dev can test pinning
+    - _Requirements: 3.1, 3.2_
+  - [ ] 4.2 Configure certificate pinning with bundled pins
+    - Create pin configuration for Supabase endpoints
+    - Generate SPKI hashes for intermediate CAs (prefer SPKI pins)
+    - Include primary and ≥2 backup pins
+    - Document how to generate SPKI
+    - Add Expo config plugin configuration
+    - _Requirements: 3.3, 3.4_
+  - [ ] 4.2b Create script to generate SPKI pins
+    - Create script to extract SPKI from certificates
+    - Add documentation for pin rotation process
+    - _Requirements: 3.3, 3.4_
+  - [ ] 4.3 Implement PinConfigManager for OTA updates
+    - Create remote config endpoint structure
+    - Implement signature verification (ed25519 recommended)
+    - Use canonical JSON format
+    - Add config merging logic (remote + bundled with precedence: remote→bundled on overlap)
+    - Implement stale config rejection (>30 days)
+    - Add fail-closed behavior with bundled fallback
+    - Never accept empty pinset
+    - _Requirements: 3.6, 3.7_
+  - [ ] 4.3b Implement remote-config signature verification
+    - Implement ed25519 signature verification
+    - Document key distribution and custody
+    - _Requirements: 3.6, 3.7_
+  - [ ] 4.4 Add certificate expiry monitoring
+    - Implement weekly background job for pin validation
+    - Add Sentry warnings at D-30, D-7, D-1
+    - _Requirements: 3.10_
+  - [ ] 4.5 Implement environment-based bypass
+    - Add bypass logic for development/staging
+    - Ensure bypass only works when APP_ENV !== 'production'
+    - Add unit test for guard
+    - _Requirements: 3.8, 3.9_
+  - [ ] 4.6 Add pinning violation error handling
+    - Display localized error message (EN/DE) on pinning failure
+    - Log Sentry security event (log violation event)
+    - Implement retry with capped exponential backoff
+    - _Requirements: 3.5_
+  - [ ]\* 4.7 Write unit tests and E2E tests for pinning
+    - Test pin validation logic
+    - Test remote config merge and signature verification
+    - Test environment bypass
+    - E2E: MITM test in lab environment (requires custom dev client and MITM infra, mark as "manual/lab")
+    - _Requirements: 3.11, 3.12_
+
+- [ ] 5. Implement threat monitoring and event system
+  - [ ] 5.1 Create SecurityEventLogger with standardized taxonomy
+    - Define SecurityEventType enum (auth_failed, integrity_compromised, etc.)
+    - Implement event logging with severity levels
+    - Add dedicated Sentry category for security events
+    - Ensure metadata is pre-scrubbed of PII
+    - Use device fingerprint in events
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [ ] 5.1b Create event schema validator
+    - Validate event structure before logging
+    - Enforce redaction and field shapes
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [ ] 5.2 Implement AuthThrottler with exponential backoff
+    - Create attempt counter persistence in security-cache (survives app restart)
+    - Implement exponential backoff calculation (1s, 2s, 4s, 8s, 16s, 30s max)
+    - Cap attempts at 5 per 15-minute window
+    - Display lockout timer to user (show remaining time)
+    - _Requirements: 4.4, 4.5_
+  - [ ] 5.3 Add session anomaly detection client-side handling
+    - Handle 401/419 responses with session_anomaly error code
+    - Implement forced sign-out and token clearing
+    - Display notification explaining the issue
+    - _Requirements: 4.7_
+  - [ ] 5.4 Configure Sentry sampling for security events
+    - Set critical events to 100% sampling (always)
+    - Set other events to 10% sampling with env override
+    - _Requirements: 4.8, 4.9_
+  - [ ]\* 5.5 Write unit tests for threat monitoring
+    - Test backoff calculation
+    - Test rate limiting enforcement
+    - Test event payload redaction (metadata redaction)
+    - Test event sampling behavior
+    - _Requirements: 4.10_
+
+- [ ] 6. Implement Sentry PII scrubbing system
+  - [ ] 6.1 Configure Sentry initialization with PII protection
+    - Set sendDefaultPii to false
+    - Set attachScreenshot to false
+    - Disable IP address collection in project settings
+    - _Requirements: 5.1, 5.2, 5.6_
+  - [ ] 6.1b Create project-level checklist
+    - Confirm Sentry IP collection disabled (manual step tracked in audit)
+    - Track in audit report
+    - _Requirements: 5.1, 5.2, 5.6_
+  - [ ] 6.2 Implement PIIScrubber with beforeSend hook
+    - Create scrubbing patterns (email, IP, JWT, UUID, phone)
+    - Implement beforeSend hook to scrub events (pure/deterministic and fast)
+    - Redact Authorization headers, cookies, and Set-Cookie
+    - Drop request bodies for auth/profile endpoints
+    - _Requirements: 5.3, 5.4_
+  - [ ] 6.3 Implement beforeBreadcrumb hook
+    - Scrub breadcrumbs using same patterns (pure/deterministic and fast)
+    - Ensure EXIF data removed from image contexts
+    - _Requirements: 5.3_
+  - [ ] 6.4 Configure user context with non-PII only
+    - Include only hashedId (salted with app-specific salt) and deviceCategory
+    - Remove email, name, IP from context
+    - Store salt in code, not config
+    - Do not log salt
+    - _Requirements: 5.5, 5.10_
+  - [ ] 6.5 Create CI leak sentinel test
+    - Implement PII pattern detection tests
+    - Test for emails, IPs, JWTs, UUIDs, phone numbers
+    - Fail CI if patterns detected in events
+    - Run for all changes touching src/lib/security or src/lib/sentry
+    - _Requirements: 5.8_
+  - [ ]\* 6.6 Write unit tests for PII scrubbing
+    - Test beforeSend scrubs all PII patterns
+    - Test beforeBreadcrumb scrubs breadcrumbs
+    - Test header and cookie masking
+    - Generate synthetic event to assert scrubbing (synthetic event generation)
+    - _Requirements: 5.7, 5.9, 5.11_
+
+- [ ] 7. Implement vulnerability management automation
+  - [ ] 7.1 Create vulnerability scanner script
+    - Implement pnpm audit integration
+    - Add optional OSV scanner integration
+    - Parse scan results into structured format
+    - Normalize outputs into one schema
+    - _Requirements: 6.1_
+  - [ ] 7.2 Implement VulnerabilityTriager with SLA assignment
+    - Define SLA matrix (Critical: 24h, High: 7d, Medium: 30d, Low: 90d)
+    - Implement severity-based triage logic
+    - Create deferral template with compensating controls (reason, compensating controls, sunset date)
+    - _Requirements: 6.3, 6.4_
+  - [ ] 7.3 Create SBOM generator
+    - Implement CycloneDX SBOM generation
+    - Include all dependencies with pinned versions
+    - Include integrity hash
+    - _Requirements: 6.2_
+  - [ ] 7.4 Add CI integration for vulnerability scanning
+    - Create GitHub Actions workflow for security scans
+    - Run pnpm audit on every PR
+    - Generate and archive scan results in build/reports/security/<commit>/
+    - Upload artifacts to CI
+    - _Requirements: 6.9_
+  - [ ] 7.5 Implement GitHub issue automation
+    - Auto-create issues for Critical/High vulnerabilities
+    - Add labels: security, CVE-xxxx, severity:high|critical
+    - Include remediation suggestions and fixedIn versions
+    - Link to commit and test evidence
+    - Gate by repo token
+    - _Requirements: 6.5, 6.6_
+  - [ ] 7.5b Configure GitHub token/secrets plumbing
+    - Configure GitHub token with least privileges
+    - Document secrets setup for issue automation
+    - _Requirements: 6.5, 6.6_
+  - [ ] 7.6 Add release checklist security delta section
+    - Document vulnerability changes in release notes
+    - Track remediation status
+    - Generate "security delta" section from scan results
+    - _Requirements: 6.10_
+
+- [ ] 8. Create breach response playbook and tooling
+  - [ ] 8.1 Document breach response playbook
+    - Define roles (Incident Commander, Technical Lead, Communications Lead) with deputies
+    - Document Phase 1-5 procedures (Detection, Containment, Investigation, Notification, Remediation)
+    - Create contact escalation matrix for vendors (Supabase, Sentry) with emails and off-hours contact
+    - Store playbook in docs/compliance/breach-response-playbook.md (maintain in docs; exclude from app binary)
+    - _Requirements: 7.1, 7.2, 7.9, 7.13_
+  - [ ] 8.2 Create notification templates
+    - Write EN/DE user notification templates
+    - Create DPA reporting templates with jurisdiction placeholders
+    - Add vendor coordination templates
+    - _Requirements: 7.3, 7.5, 7.12_
+  - [ ] 8.3 Implement IncidentCoordinator tooling
+    - Create incident report data structure
+    - Implement GDPR 72-hour clock tracking utility (emits remaining hours)
+    - Add role assignment functionality
+    - _Requirements: 7.4, 7.6_
+  - [ ] 8.4 Implement EvidenceCollector
+    - Create audit log export functionality
+    - Add Sentry event preservation
+    - Implement integrity status snapshot
+    - Generate forensic report
+    - Add evidence snapshot: storage audit report, integrity cache snapshot, current pin config
+    - _Requirements: 7.8_
+  - [ ] 8.5 Add credential revocation tooling
+    - Implement token invalidation
+    - Add API key rotation scripts
+    - Document token invalidation and API key rotation scripts/runbooks
+    - Note: actual revocation via backend
+    - _Requirements: 7.7_
+  - [ ] 8.6 Create post-incident analysis template
+    - Document root cause analysis with CWE mapping
+    - Track follow-up actions and control updates
+    - Require sign-off before closing
+    - Create post-mortem template with action items tracking
+    - _Requirements: 7.10, 7.11_
+  - [ ] 8.7 Schedule annual tabletop drill
+    - Create executable table-top checklist
+    - Document drill procedures
+    - Store annual drill checklist in repo
+    - Schedule via calendar/integration (out-of-scope to automate here)
+    - _Requirements: 7.14_
+
+- [ ] 9. Implement security audit and reporting system
+  - [ ] 9.1 Create SecurityAuditor with comprehensive checks
+    - Implement encryption status check (MMKV instances)
+    - Add certificate pinning configuration check
+    - Implement PII scrubbing validation check
+    - Add device integrity check validation
+    - Implement vulnerability scan summary check
+    - Add pinning bypass disabled in production check
+    - Add Sentry IP collection disabled check
+    - Add integrity cache TTL validation check
+    - Add encryption HW-backed preference recorded check
+    - _Requirements: 9.2, 8.1, 8.2_
+  - [ ] 9.1b Add audit checks for encryption mode
+    - Check encryption mode (HW/SW)
+    - Check key age
+    - Collect evidence
+    - _Requirements: 9.2, 8.1, 8.2_
+  - [ ] 9.2 Implement ComplianceReporter
+    - Generate signed JSON report with SHA-256
+    - Include commit hash, environment, library versions (security libs)
+    - Export CSV format
+    - Add content hash for integrity
+    - Embed signature
+    - _Requirements: 9.1, 9.4, 9.5_
+  - [ ] 9.3 Add remediation guidance
+    - Link failures to documentation and playbooks
+    - Provide actionable remediation steps
+    - Link each failure to a remediation doc section or playbook step
+    - _Requirements: 9.3_
+  - [ ] 9.4 Create audit script for local and CI execution
+    - Make script runnable locally and in CI
+    - Exit with non-zero code on blocking failures
+    - Write reports to build/reports/security/
+    - _Requirements: 9.9, 9.10_
+  - [ ] 9.5 Add evidence artifact generation
+    - Redact screenshots before storage
+    - Generate compliance checklist
+    - _Requirements: 9.7, 9.8_
+  - [ ] 9.6 Integrate audit into CI pipeline
+    - Run audit on every PR
+    - Block merge on critical failures
+    - Upload audit reports as artifacts
+    - _Requirements: 9.6_
+
+- [ ] 10. Integrate security initialization into app startup
+  - [ ] 10.1 Create SecurityInitializer orchestrator
+    - Implement initialization sequence (Storage → Integrity → Network → Sentry)
+    - Add error handling for each component
+    - Implement security-block screen for init failures
+    - Add retry logic
+    - Add "PII scrubbing dry-run" step after Sentry init (local only) to validate hooks
+    - _Requirements: All requirements (integration)_
+  - [ ] 10.1b Schedule SecurityInitializer background jobs
+    - Schedule weekly pin expiry job
+    - Schedule daily integrity recheck if TTL expired
+    - _Requirements: All requirements (integration)_
+  - [ ] 10.2 Add security initialization to app entry point
+    - Call SecurityInitializer before app renders
+    - Handle initialization failures gracefully
+    - Display localized error messages
+    - Implement localized "security-block" screen when storage init fails
+    - Add retry and support contact
+    - _Requirements: 1.10_
+  - [ ] 10.3 Implement security status monitoring
+    - Add security dashboard widget
+    - Display integrity status
+    - Show pin expiry warnings
+    - Track vulnerability remediation
+    - Create in-app "Security status" surface
+    - Show integrity status, pin expiry warnings, last audit summary
+    - _Requirements: Cross-cutting concerns_
+
+- [ ] 11. Create documentation and compliance artifacts
+  - [ ] 11.1 Write developer documentation
+    - Document security architecture overview
+    - Create component integration guides
+    - Write testing procedures
+    - Add troubleshooting guide
+    - _Requirements: Cross-cutting concerns_
+  - [ ] 11.2 Write operations documentation
+    - Document incident response procedures
+    - Create vulnerability management workflow guide
+    - Write audit procedures
+    - Maintain vendor contact information
+    - Add ops runbooks for Sentry bulk-delete on leak
+    - Add Supabase contact path
+    - _Requirements: Cross-cutting concerns_
+  - [ ] 11.3 Generate compliance documentation
+    - Document security control descriptions
+    - Generate initial audit report
+    - Prepare for penetration testing
+    - Create GDPR compliance evidence
+    - _Requirements: Cross-cutting concerns_
+
+- [ ] 12. Conduct security validation and testing
+  - [ ] 12.1 Run comprehensive security audit
+    - Execute audit script
+    - Review all check results
+    - Address any failures
+    - Generate final audit report
+    - _Requirements: 9.1_
+  - [ ] 12.2 Perform penetration testing
+    - Test MITM attack scenarios (certificate pinning)
+    - Attempt jailbreak/root detection bypass
+    - Verify PII extraction prevention from Sentry
+    - Test session hijacking prevention
+    - Attempt encrypted storage extraction
+    - Add MITM lab instructions (custom dev client build + proxy)
+    - Mark as manual E2E
+    - _Requirements: Testing Strategy_
+  - [ ] 12.3 Conduct team training
+    - Train team on breach response playbook
+    - Review vulnerability management workflow
+    - Practice incident response procedures
+    - Add team tabletop agenda referencing playbook
+    - Add drill checklist
+    - _Requirements: 7.14_
+
+## Cross-Cutting Implementation Notes
+
+### Certificate Pinning
+
+- Fail-closed on mismatch
+- Fallback to bundled pins only when remote config invalid
+- Never accept empty pinsets
+
+### Device Integrity
+
+- Cache TTL: 24 hours
+- Force recheck on app upgrade
+
+### Auth Throttling
+
+- Backoff sequence: 1s → 2s → 4s → 8s → 16s → 30s (cap)
+- Cap: 5 attempts per 15 minutes
+- State persisted in security-cache
+
+### Sentry Configuration
+
+- sendDefaultPii=false
+- attachScreenshot=false
+- beforeSend/beforeBreadcrumb scrubbers implemented
+- Headers redacted (Authorization, Cookie, Set-Cookie)
+- Request bodies dropped for auth/profile endpoints
+
+## Open Decisions to Resolve
+
+1. **Certificate pinning library**: Must be compatible with RN 0.81/Hermes and Expo config plugins; fallback may require custom plugin
+2. **Remote-config signature**: ed25519 recommended; define key rotation and custody
+3. **Attestation scope**: High-assurance requires backend attestation (Play Integrity/App Attest); adds complexity and cost
+4. **HW-backed availability**: Varies by device; audit should record mode and warn on SW fallback

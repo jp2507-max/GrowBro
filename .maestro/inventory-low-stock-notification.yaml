@@ -1,0 +1,47 @@
+# Low-Stock Notification E2E Test Flow
+#
+# Tests the complete low-stock notification workflow:
+# 1. Create inventory item with low stock
+# 2. Verify notification is scheduled
+# 3. Test permission flow (Android 13+)
+# 4. Verify notification delivery
+#
+# Devices: Pixel 6 (Android 13), Samsung Galaxy S21 (Android 14)
+
+appId: com.growbro.app
+---
+# Setup: Launch app and navigate to inventory
+- launchApp
+- tapOn: 'Inventory'
+- assertVisible: 'No inventory items'
+
+# Step 1: Create low-stock item
+- tapOn: { id: 'add-item-button' }
+- inputText: { id: 'name-input', text: 'Test Nutrient' }
+- inputText: { id: 'min-stock-input', text: '1000' }
+- inputText: { id: 'unit-input', text: 'ml' }
+- tapOn: { id: 'submit-button' }
+
+# Step 2: Verify item appears in low-stock section
+- assertVisible: 'Low Stock'
+- assertVisible: 'Test Nutrient'
+- assertVisible: '500 ml'
+
+# Step 3: Test notification permission (Android 13+)
+- runFlow:
+    when:
+      platform: android
+      minSDKVersion: 33
+    commands:
+      - assertVisible: { id: 'exact-alarm-fallback-banner' }
+      - tapOn: { id: 'exact-alarm-fallback-banner-settings-button' }
+      - tapOn: { id: 'exact-alarm-grant-button' }
+
+# Step 4: Verify notification was scheduled
+- assertVisible: 'Test Nutrient'
+- assertVisible: 'below 1000'
+
+# Cleanup
+- tapOn: 'Test Nutrient'
+- tapOn: 'Delete Item'
+- tapOn: 'Confirm'

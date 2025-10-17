@@ -2,6 +2,12 @@
 // Add new events here to ensure strong typing across the app.
 import { hasConsent } from './privacy-consent';
 
+// Base payload that all analytics events should include
+export type BaseAnalyticsPayload = {
+  sessionId?: string | null;
+  timestamp?: string;
+};
+
 // Map of event names to their payload shapes
 export type AnalyticsEvents = {
   // Notification events
@@ -109,7 +115,10 @@ export type AnalyticsEvents = {
       | 'occurrence_overrides'
       | 'harvests'
       | 'inventory'
-      | 'harvest_audits';
+      | 'harvest_audits'
+      | 'inventory_items'
+      | 'inventory_batches'
+      | 'inventory_movements';
     count: number;
   };
   sync_conflict_resolved: {
@@ -119,7 +128,10 @@ export type AnalyticsEvents = {
       | 'occurrence_overrides'
       | 'harvests'
       | 'inventory'
-      | 'harvest_audits';
+      | 'harvest_audits'
+      | 'inventory_items'
+      | 'inventory_batches'
+      | 'inventory_movements';
     strategy: 'keep-local' | 'accept-server';
     field_count: number;
   };
@@ -130,7 +142,10 @@ export type AnalyticsEvents = {
       | 'occurrence_overrides'
       | 'harvests'
       | 'inventory'
-      | 'harvest_audits';
+      | 'harvest_audits'
+      | 'inventory_items'
+      | 'inventory_batches'
+      | 'inventory_movements';
     field_count: number;
   };
   sync_checkpoint_age_ms: {
@@ -204,6 +219,56 @@ export type AnalyticsEvents = {
     bytes_freed?: number;
     orphans_removed?: number;
     duration_ms?: number;
+  };
+
+  // Inventory telemetry events (Requirement 11.1)
+  inventory_low_stock: {
+    item_id: string;
+    item_name: string;
+    category: string;
+    current_stock: number;
+    min_stock: number;
+    days_to_zero?: number;
+    unit: string;
+  };
+  inventory_import_error: {
+    error_type: 'parse' | 'validation' | 'transaction';
+    row_number?: number;
+    field?: string;
+    total_rows: number;
+    error_count: number;
+  };
+  inventory_deduction_failure: {
+    source: 'task' | 'manual' | 'import';
+    failure_type: 'insufficient_stock' | 'validation' | 'transaction';
+    item_id: string;
+    item_name: string;
+    required_quantity: number;
+    available_quantity: number;
+    unit: string;
+    task_id?: string;
+  };
+  inventory_batch_expired_override: {
+    batch_id: string;
+    item_id: string;
+    lot_number: string;
+    expires_on: string;
+    days_expired: number;
+    reason: string;
+  };
+  inventory_batch_operation: {
+    operation: 'create' | 'update' | 'delete' | 'consume';
+    item_id: string;
+    quantity: number;
+    unit: string;
+    duration_ms?: number;
+  };
+  inventory_csv_operation: {
+    operation: 'export' | 'import' | 'preview';
+    row_count: number;
+    success_count?: number;
+    error_count?: number;
+    duration_ms: number;
   };
 
   // Performance KPIs
@@ -483,7 +548,7 @@ export type AnalyticsEvents = {
 
 export type AnalyticsEventName = keyof AnalyticsEvents;
 export type AnalyticsEventPayload<N extends AnalyticsEventName> =
-  AnalyticsEvents[N];
+  AnalyticsEvents[N] & BaseAnalyticsPayload;
 
 // Optional interface for an analytics client implementation used by the app
 export interface AnalyticsClient {
@@ -737,7 +802,7 @@ function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(
   if (name === 'community_error') {
     return sanitizeCommunityErrorPayload(
       payload as AnalyticsEventPayload<'community_error'>
-    ) as AnalyticsEventPayload<N>;
+    ) as unknown as AnalyticsEventPayload<N>;
   }
 
   if (name === 'home_view') {
@@ -754,7 +819,7 @@ function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(
           )
           .filter(Boolean)
       : [];
-    return sanitized as AnalyticsEventPayload<N>;
+    return sanitized as unknown as AnalyticsEventPayload<N>;
   }
 
   // For guided grow playbook events, ensure minimal identifiers
@@ -777,7 +842,7 @@ function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(
     if (sanitized.strain_name) {
       sanitized.strain_name = sanitized.strain_name.substring(0, 50);
     }
-    return sanitized as AnalyticsEventPayload<N>;
+    return sanitized as unknown as AnalyticsEventPayload<N>;
   }
 
   // Sanitize nutrient feature usage context field
@@ -788,7 +853,7 @@ function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(
     if (sanitized.context !== undefined) {
       sanitized.context = sanitizeContextString(sanitized.context);
     }
-    return sanitized as AnalyticsEventPayload<N>;
+    return sanitized as unknown as AnalyticsEventPayload<N>;
   }
 
   // For non-playbook events, return as-is (they should already be PII-free per existing schema)

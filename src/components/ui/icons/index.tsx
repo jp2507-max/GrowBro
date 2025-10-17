@@ -4,6 +4,7 @@ export * from './caret-down';
 export * from './feed';
 export * from './github';
 export * from './home';
+export * from './inventory';
 export * from './language';
 export * from './rate';
 export * from './settings';

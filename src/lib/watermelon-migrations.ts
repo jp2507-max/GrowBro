@@ -767,5 +767,88 @@ export const migrations = schemaMigrations({
         },
       ],
     },
+    // Migration from version 19 to 20: Add inventory and consumables tables
+    {
+      toVersion: 20,
+      steps: [
+        {
+          type: 'create_table',
+          schema: createTableSchema('inventory_items', [
+            { name: 'name', type: 'string' },
+            { name: 'category', type: 'string' },
+            { name: 'unit_of_measure', type: 'string' },
+            { name: 'tracking_mode', type: 'string' }, // 'simple' | 'batched'
+            { name: 'is_consumable', type: 'boolean' },
+            { name: 'min_stock', type: 'number' },
+            { name: 'reorder_multiple', type: 'number' },
+            { name: 'lead_time_days', type: 'number', isOptional: true },
+            { name: 'sku', type: 'string', isOptional: true },
+            { name: 'barcode', type: 'string', isOptional: true },
+            { name: 'user_id', type: 'string', isOptional: true },
+            { name: 'server_revision', type: 'number', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ]),
+        },
+        {
+          type: 'create_table',
+          schema: createTableSchema('inventory_batches', [
+            { name: 'item_id', type: 'string', isIndexed: true },
+            { name: 'lot_number', type: 'string' },
+            { name: 'expires_on', type: 'number', isOptional: true },
+            { name: 'quantity', type: 'number' },
+            { name: 'cost_per_unit_minor', type: 'number' },
+            { name: 'received_at', type: 'number' },
+            { name: 'user_id', type: 'string', isOptional: true },
+            { name: 'server_revision', type: 'number', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ]),
+        },
+        {
+          type: 'create_table',
+          schema: createTableSchema('inventory_movements', [
+            { name: 'item_id', type: 'string', isIndexed: true },
+            { name: 'batch_id', type: 'string', isOptional: true },
+            { name: 'type', type: 'string' }, // 'receipt' | 'consumption' | 'adjustment'
+            { name: 'quantity_delta', type: 'number' },
+            { name: 'cost_per_unit_minor', type: 'number', isOptional: true },
+            { name: 'reason', type: 'string' },
+            { name: 'task_id', type: 'string', isOptional: true },
+            { name: 'external_key', type: 'string', isOptional: true },
+            { name: 'user_id', type: 'string', isOptional: true },
+            { name: 'created_at', type: 'number', isIndexed: true },
+          ]),
+        },
+      ],
+    },
+    // Migration from version 20 to 21: Add unique constraint on inventory_movements.external_key
+    {
+      toVersion: 21,
+      steps: [
+        {
+          type: 'sql',
+          sql: 'CREATE UNIQUE INDEX idx_inventory_movements_external_key ON inventory_movements(external_key) WHERE external_key IS NOT NULL',
+        },
+      ],
+    },
+    // Migration from version 21 to 22: Add unique constraints on inventory_items.sku and inventory_items.barcode
+    {
+      toVersion: 22,
+      steps: [
+        {
+          type: 'sql',
+          sql: 'CREATE UNIQUE INDEX idx_inventory_items_sku ON inventory_items(sku) WHERE sku IS NOT NULL AND deleted_at IS NULL',
+        },
+        {
+          type: 'sql',
+          sql: 'CREATE UNIQUE INDEX idx_inventory_items_barcode ON inventory_items(barcode) WHERE barcode IS NOT NULL AND deleted_at IS NULL',
+        },
+      ],
+    },
   ],
 });

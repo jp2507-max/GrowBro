@@ -16,7 +16,7 @@ type NotesInputProps = {
   testID: string;
 };
 
-export function NotesInput({ control, testID }: NotesInputProps): JSX.Element {
+export function NotesInput({ control, testID }: NotesInputProps) {
   const { t } = useTranslation();
 
   return (

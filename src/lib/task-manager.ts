@@ -1,6 +1,7 @@
 import { Q } from '@nozbe/watermelondb';
 import { DateTime } from 'luxon';
 
+import { deduceInventory } from '@/lib/inventory/deduction-service';
 import {
   onSeriesOccurrenceCompleted,
   onTaskCompleted,
@@ -539,6 +540,290 @@ export async function getTasksByDateRange(
   return visible.sort((a, b) => (a.dueAtLocal < b.dueAtLocal ? -1 : 1));
 }
 
+function validateDeductionMap(map: any): {
+  isValid: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+
+  // Must be a non-empty array
+  if (!map || !Array.isArray(map) || map.length === 0) {
+    errors.push('deductionMap must be a non-empty array');
+    return { isValid: false, errors };
+  }
+
+  // Validate each entry conforms to expected structure
+  map.forEach((entry, index) => {
+    if (!entry || typeof entry !== 'object') {
+      errors.push(`Entry ${index}: must be an object`);
+      return;
+    }
+
+    const e = entry as any;
+
+    // Required: itemId as non-empty string
+    if (typeof e.itemId !== 'string' || !e.itemId.trim()) {
+      errors.push(`Entry ${index}: itemId must be a non-empty string`);
+    }
+
+    // Required: unit as non-empty string
+    if (typeof e.unit !== 'string' || !e.unit.trim()) {
+      errors.push(`Entry ${index}: unit must be a non-empty string`);
+    }
+
+    // Must have at least one valid quantity field
+    const hasPerTaskQuantity =
+      typeof e.perTaskQuantity === 'number' && e.perTaskQuantity > 0;
+    const hasPerPlantQuantity =
+      typeof e.perPlantQuantity === 'number' && e.perPlantQuantity > 0;
+
+    if (!hasPerTaskQuantity && !hasPerPlantQuantity) {
+      errors.push(
+        `Entry ${index}: must have perTaskQuantity or perPlantQuantity > 0`
+      );
+    }
+
+    // Validate scaling mode if present
+    if (e.scalingMode !== undefined) {
+      const validModes = ['fixed', 'per-plant', 'ec-based'];
+      if (!validModes.includes(e.scalingMode)) {
+        errors.push(
+          `Entry ${index}: scalingMode must be one of ${validModes.join(', ')}`
+        );
+      }
+    }
+  });
+
+  return { isValid: errors.length === 0, errors };
+}
+
+function determinePlantCount(taskData: Task): number | undefined {
+  // Derive plantCount from taskData.plants or taskData.metadata.plants
+  const plantsArray =
+    (taskData as any).plants || (taskData.metadata as any)?.plants;
+  if (Array.isArray(plantsArray) && plantsArray.length > 0) {
+    // Multi-plant task - use plants array length
+    return plantsArray.length;
+  }
+
+  // TODO: Remove legacy plantIds support after migration
+  if (
+    !plantsArray &&
+    taskData.metadata &&
+    typeof (taskData.metadata as any).plantIds === 'object' &&
+    Array.isArray((taskData.metadata as any).plantIds) &&
+    (taskData.metadata as any).plantIds.length > 0
+  ) {
+    // Legacy multi-plant task support - use plantIds array length
+    return (taskData.metadata as any).plantIds.length;
+  }
+
+  // Single plant task or no plant association
+  return taskData.plantId ? 1 : undefined;
+}
+
+function createDeductionFailureDetails(
+  taskId: string,
+  plantCount: number | undefined,
+  result: any
+): any {
+  // Persist structured failure details in task metadata
+  const deductionMap = result.deductionMap || [];
+  return {
+    timestamp: new Date().toISOString(),
+    error: result.error ?? 'Insufficient stock',
+    deductionMapSummary: deductionMap.map((entry: any) => ({
+      itemId: entry.itemId,
+      unit: entry.unit,
+      perTaskQuantity: entry.perTaskQuantity,
+      perPlantQuantity: entry.perPlantQuantity,
+      scalingMode: entry.scalingMode,
+    })),
+    plantCount,
+    insufficientItems: result.insufficientItems,
+  };
+}
+
+async function persistDeductionFailure(
+  taskId: string,
+  failureDetails: any
+): Promise<void> {
+  // Update task metadata with failure details (non-blocking)
+  try {
+    await database.write(async () => {
+      const taskModel = await database.get('tasks').find(taskId);
+      await taskModel.update((record: any) => {
+        const metadata = { ...record.metadata };
+        metadata.lastDeductionFailure = failureDetails;
+        record.metadata = metadata;
+        record.updatedAt = new Date();
+      });
+    });
+  } catch (metadataError) {
+    console.warn(
+      '[TaskManager] Failed to persist deduction failure metadata:',
+      metadataError
+    );
+  }
+}
+
+function logDeductionFailure(
+  taskId: string,
+  plantCount: number | undefined,
+  context: { deductionMap: any[]; result: any; errorDetails?: string }
+): void {
+  const { deductionMap, result, errorDetails } = context;
+  const mapSummary = deductionMap
+    .map(
+      (e: any) =>
+        `${e.itemId}(${e.perTaskQuantity || e.perPlantQuantity}${e.unit})`
+    )
+    .join(', ');
+
+  console.warn(
+    '[TaskManager] Inventory deduction failed:',
+    result.error ?? 'Insufficient stock',
+    errorDetails ? `Details: ${errorDetails}` : '',
+    `Task: ${taskId}, Plants: ${plantCount ?? 'unknown'}, Map entries: ${deductionMap.length}`,
+    `Map summary: ${mapSummary}`
+  );
+}
+
+async function performInventoryDeduction(
+  taskId: string,
+  deductionMap: any[],
+  plantCount: number | undefined
+): Promise<any> {
+  let result;
+  try {
+    result = await deduceInventory(database, {
+      source: 'task',
+      taskId,
+      deductionMap,
+      context: {
+        taskId,
+        plantCount,
+      },
+    });
+  } catch (deductionError) {
+    // Handle unexpected exceptions as non-blocking failures
+    console.warn(
+      '[TaskManager] Inventory deduction threw exception:',
+      `Task: ${taskId}, Plants: ${plantCount ?? 'unknown'}, Map entries: ${deductionMap.length}`,
+      `Map summary: ${deductionMap.map((e: any) => `${e.itemId}(${e.perTaskQuantity || e.perPlantQuantity})`).join(', ')}`,
+      deductionError instanceof Error ? deductionError.message : deductionError
+    );
+
+    // Persist structured failure details for exceptions
+    const failureDetails = {
+      timestamp: new Date().toISOString(),
+      error:
+        deductionError instanceof Error
+          ? deductionError.message
+          : 'Unexpected deduction error',
+      deductionMapSummary: deductionMap.map((entry: any) => ({
+        itemId: entry.itemId,
+        unit: entry.unit,
+        perTaskQuantity: entry.perTaskQuantity,
+        perPlantQuantity: entry.perPlantQuantity,
+        scalingMode: entry.scalingMode,
+      })),
+      plantCount,
+      exception: true,
+    };
+
+    await persistDeductionFailure(taskId, failureDetails);
+    return null; // Indicate failure
+  }
+
+  return result;
+}
+
+/**
+ * Handle inventory deduction for a completed task
+ * @param taskData - Task data with potential deduction map
+ * @param taskId - Task ID for idempotency
+ */
+async function handleTaskInventoryDeduction(
+  taskData: Task,
+  taskId: string
+): Promise<void> {
+  const deductionMap = (taskData.metadata as any)?.deductionMap;
+
+  // Up-front validation of deduction map
+  const validation = validateDeductionMap(deductionMap);
+  if (!validation.isValid) {
+    console.warn(
+      '[TaskManager] Invalid deduction map - skipping inventory deduction:',
+      validation.errors.join('; '),
+      `Map entries: ${Array.isArray(deductionMap) ? deductionMap.length : 'N/A'}`
+    );
+    return; // Early return with clear warning
+  }
+
+  // Determine plant count for multi-plant tasks
+  const plantCount = determinePlantCount(taskData);
+
+  const result = await performInventoryDeduction(
+    taskId,
+    deductionMap,
+    plantCount
+  );
+
+  if (result === null) {
+    // Exception occurred, already handled
+    return;
+  }
+
+  if (!result.success) {
+    const failureDetails = createDeductionFailureDetails(taskId, plantCount, {
+      ...result,
+      deductionMap,
+    });
+    await persistDeductionFailure(taskId, failureDetails);
+
+    // Increment failure metric counter (simple console logging for now)
+    console.warn(
+      '[TaskManager] Inventory deduction failure metric incremented'
+    );
+
+    // Enqueue notification/alert for critical failures
+    const isCriticalFailure =
+      result.insufficientItems && result.insufficientItems.length > 0;
+    if (isCriticalFailure) {
+      console.warn(
+        '[TaskManager] Critical inventory shortage alert enqueued for task:',
+        taskId
+      );
+      // TODO: Integrate with notification service when available
+    }
+
+    const errorDetails = result.insufficientItems
+      ?.map(
+        (err: {
+          itemName?: string;
+          itemId: string;
+          required: number;
+          available: number;
+          unit: string;
+        }) =>
+          `${err.itemName ?? err.itemId}: needed ${err.required} ${err.unit}, had ${err.available} ${err.unit}`
+      )
+      .join('; ');
+
+    logDeductionFailure(taskId, plantCount, {
+      deductionMap,
+      result,
+      errorDetails,
+    });
+    // Note: Insufficient stock errors should be surfaced to UI for recovery
+  } else {
+    console.log(
+      `[TaskManager] Inventory deducted successfully: ${result.movements.length} movements for task ${taskId}`
+    );
+  }
+}
+
 export async function completeTask(id: string): Promise<Task> {
   const repos = getRepos();
   const task = (await (repos.tasks as any).find(id)) as TaskModel;
@@ -561,6 +846,17 @@ export async function completeTask(id: string): Promise<Task> {
     await onTaskCompleted(toTaskFromModel((updated as any) ?? task));
   } catch (error) {
     console.warn('[TaskManager] plant telemetry failed on completeTask', error);
+  }
+
+  // Non-blocking inventory deduction (if deduction map exists)
+  try {
+    const taskData = toTaskFromModel((updated as any) ?? task);
+    await handleTaskInventoryDeduction(taskData, id);
+  } catch (error) {
+    console.error(
+      '[TaskManager] Inventory deduction exception on completeTask:',
+      error instanceof Error ? error.message : String(error)
+    );
   }
 
   // Materialize the next occurrence for recurring tasks

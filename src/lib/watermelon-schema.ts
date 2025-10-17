@@ -1,7 +1,7 @@
 import { appSchema as createSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const appSchema = createSchema({
-  version: 19,
+  version: 22,
   tables: [
     tableSchema({
       name: 'series',
@@ -586,6 +586,60 @@ export const appSchema = createSchema({
         { name: 'created_at', type: 'number', isIndexed: true },
         { name: 'updated_at', type: 'number' },
         { name: 'deleted_at', type: 'number', isOptional: true },
+      ],
+    }),
+    // Inventory and Consumables Tables
+    tableSchema({
+      name: 'inventory_items',
+      columns: [
+        { name: 'name', type: 'string' },
+        { name: 'category', type: 'string' },
+        { name: 'unit_of_measure', type: 'string' },
+        { name: 'tracking_mode', type: 'string' }, // 'simple' | 'batched'
+        { name: 'is_consumable', type: 'boolean' },
+        { name: 'min_stock', type: 'number' },
+        { name: 'reorder_multiple', type: 'number' },
+        { name: 'lead_time_days', type: 'number', isOptional: true },
+        { name: 'sku', type: 'string', isOptional: true },
+        { name: 'barcode', type: 'string', isOptional: true },
+        { name: 'user_id', type: 'string', isOptional: true },
+        { name: 'server_revision', type: 'number', isOptional: true },
+        { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'deleted_at', type: 'number', isOptional: true },
+      ],
+    }),
+    tableSchema({
+      name: 'inventory_batches',
+      columns: [
+        { name: 'item_id', type: 'string', isIndexed: true },
+        { name: 'lot_number', type: 'string' },
+        { name: 'expires_on', type: 'number', isOptional: true }, // timestamp
+        { name: 'quantity', type: 'number' },
+        { name: 'cost_per_unit_minor', type: 'number' }, // integer cents
+        { name: 'received_at', type: 'number' }, // timestamp
+        { name: 'user_id', type: 'string', isOptional: true },
+        { name: 'server_revision', type: 'number', isOptional: true },
+        { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'deleted_at', type: 'number', isOptional: true },
+      ],
+    }),
+    tableSchema({
+      name: 'inventory_movements',
+      columns: [
+        { name: 'item_id', type: 'string', isIndexed: true },
+        { name: 'batch_id', type: 'string', isOptional: true },
+        { name: 'type', type: 'string' }, // 'receipt' | 'consumption' | 'adjustment'
+        { name: 'quantity_delta', type: 'number' },
+        { name: 'cost_per_unit_minor', type: 'number', isOptional: true },
+        { name: 'reason', type: 'string' },
+        { name: 'task_id', type: 'string', isOptional: true },
+        { name: 'external_key', type: 'string', isOptional: true },
+        { name: 'user_id', type: 'string', isOptional: true },
+        { name: 'created_at', type: 'number', isIndexed: true },
       ],
     }),
   ],

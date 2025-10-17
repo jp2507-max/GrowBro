@@ -127,6 +127,20 @@ function createExpoConfig(config) {
         backgroundColor: '#2E3C4B',
       },
       package: Env.PACKAGE,
+      intentFilters: [
+        {
+          action: 'VIEW',
+          autoVerify: true,
+          data: [
+            {
+              scheme: 'growbro',
+              host: '*',
+              pathPrefix: '/inventory',
+            },
+          ],
+          category: ['BROWSABLE', 'DEFAULT'],
+        },
+      ],
     },
     web: {
       favicon: './assets/favicon.png',

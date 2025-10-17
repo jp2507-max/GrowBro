@@ -27,7 +27,10 @@ type TableName =
   | 'occurrence_overrides'
   | 'harvests'
   | 'inventory'
-  | 'harvest_audits';
+  | 'harvest_audits'
+  | 'inventory_items'
+  | 'inventory_batches'
+  | 'inventory_movements';
 
 type ChangesForTable<T = any> = {
   created: T[];
@@ -88,6 +91,9 @@ const SYNC_TABLES: TableName[] = [
   'harvests',
   'inventory',
   'harvest_audits',
+  'inventory_items',
+  'inventory_batches',
+  'inventory_movements',
 ];
 const MAX_PUSH_CHUNK_PER_TABLE = 1000; // per-batch limit (Req 6.2)
 const CHECKPOINT_KEY = 'sync.lastPulledAt';
@@ -237,6 +243,21 @@ function buildPushBatches(
           updated: slice(changes.harvest_audits.updated),
           deleted: slice(changes.harvest_audits.deleted),
         },
+        inventory_items: {
+          created: slice(changes.inventory_items.created),
+          updated: slice(changes.inventory_items.updated),
+          deleted: slice(changes.inventory_items.deleted),
+        },
+        inventory_batches: {
+          created: slice(changes.inventory_batches.created),
+          updated: slice(changes.inventory_batches.updated),
+          deleted: slice(changes.inventory_batches.deleted),
+        },
+        inventory_movements: {
+          created: slice(changes.inventory_movements.created),
+          updated: slice(changes.inventory_movements.updated),
+          deleted: slice(changes.inventory_movements.deleted),
+        },
       },
     };
     if (countChanges(batch.changes) > 0) out.push(batch);
@@ -342,27 +363,40 @@ function bucketRowIntoChanges(params: {
   else if (isUpdated) changes[table].updated.push(serializeRecord(row));
 }
 
-async function collectLocalChanges(
-  lastPulledAt: number | null
-): Promise<ChangesByTable> {
-  const changes: ChangesByTable = {
+function createEmptyChanges(): ChangesByTable {
+  return {
     series: { created: [], updated: [], deleted: [] },
     tasks: { created: [], updated: [], deleted: [] },
     occurrence_overrides: { created: [], updated: [], deleted: [] },
     harvests: { created: [], updated: [], deleted: [] },
     inventory: { created: [], updated: [], deleted: [] },
     harvest_audits: { created: [], updated: [], deleted: [] },
+    inventory_items: { created: [], updated: [], deleted: [] },
+    inventory_batches: { created: [], updated: [], deleted: [] },
+    inventory_movements: { created: [], updated: [], deleted: [] },
   };
+}
 
-  const repos = {
-    tasks: database.collections.get('tasks' as any),
-    series: database.collections.get('series' as any),
-    overrides: database.collections.get('occurrence_overrides' as any),
-    harvests: database.collections.get('harvests' as any),
-    inventory: database.collections.get('inventory' as any),
-    harvestAudits: database.collections.get('harvest_audits' as any),
-  } as const;
+async function fetchAllRepositoryData(repos: ReturnType<typeof getAllRepos>) {
+  return Promise.all([
+    (repos.tasks as any).query().fetch(),
+    (repos.series as any).query().fetch(),
+    (repos.overrides as any).query().fetch(),
+    (repos.harvests as any).query().fetch(),
+    (repos.inventory as any).query().fetch(),
+    (repos.harvestAudits as any).query().fetch(),
+    (repos.inventoryItems as any).query().fetch(),
+    (repos.inventoryBatches as any).query().fetch(),
+    (repos.inventoryMovements as any).query().fetch(),
+  ]);
+}
 
+async function collectLocalChanges(
+  lastPulledAt: number | null
+): Promise<ChangesByTable> {
+  const changes = createEmptyChanges();
+
+  const repos = getAllRepos();
   const [
     taskRows,
     seriesRows,
@@ -370,14 +404,10 @@ async function collectLocalChanges(
     harvestRows,
     inventoryRows,
     auditRows,
-  ] = await Promise.all([
-    (repos.tasks as any).query().fetch(),
-    (repos.series as any).query().fetch(),
-    (repos.overrides as any).query().fetch(),
-    (repos.harvests as any).query().fetch(),
-    (repos.inventory as any).query().fetch(),
-    (repos.harvestAudits as any).query().fetch(),
-  ]);
+    inventoryItemRows,
+    inventoryBatchRows,
+    inventoryMovementRows,
+  ] = await fetchAllRepositoryData(repos);
 
   for (const r of seriesRows as any[])
     bucketRowIntoChanges({ table: 'series', row: r, lastPulledAt, changes });
@@ -397,6 +427,27 @@ async function collectLocalChanges(
   for (const r of auditRows as any[])
     bucketRowIntoChanges({
       table: 'harvest_audits',
+      row: r,
+      lastPulledAt,
+      changes,
+    });
+  for (const r of inventoryItemRows as any[])
+    bucketRowIntoChanges({
+      table: 'inventory_items',
+      row: r,
+      lastPulledAt,
+      changes,
+    });
+  for (const r of inventoryBatchRows as any[])
+    bucketRowIntoChanges({
+      table: 'inventory_batches',
+      row: r,
+      lastPulledAt,
+      changes,
+    });
+  for (const r of inventoryMovementRows as any[])
+    bucketRowIntoChanges({
+      table: 'inventory_movements',
       row: r,
       lastPulledAt,
       changes,
@@ -429,6 +480,9 @@ function getAllRepos() {
     harvests: database.collections.get('harvests' as any),
     inventory: database.collections.get('inventory' as any),
     harvestAudits: database.collections.get('harvest_audits' as any),
+    inventoryItems: database.collections.get('inventory_items' as any),
+    inventoryBatches: database.collections.get('inventory_batches' as any),
+    inventoryMovements: database.collections.get('inventory_movements' as any),
   } as const;
 }
 
@@ -514,17 +568,53 @@ async function applyUpsertsHarvestTables(
   return { applied, changedTaskIds: changedIds };
 }
 
+async function applyUpsertsInventoryConsumables(
+  changes: SyncResponse['changes']
+): Promise<{ applied: number; changedTaskIds: string[] }> {
+  const { applied: iiC } = await upsertBatch(
+    'inventory_items',
+    changes.inventory_items?.created ?? []
+  );
+  const { applied: iiU } = await upsertBatch(
+    'inventory_items',
+    changes.inventory_items?.updated ?? []
+  );
+  const { applied: ibC } = await upsertBatch(
+    'inventory_batches',
+    changes.inventory_batches?.created ?? []
+  );
+  const { applied: ibU } = await upsertBatch(
+    'inventory_batches',
+    changes.inventory_batches?.updated ?? []
+  );
+  // inventory_movements: only created allowed (immutable)
+  const { applied: imC } = await upsertBatch(
+    'inventory_movements',
+    changes.inventory_movements?.created ?? []
+  );
+
+  const applied = iiC + iiU + ibC + ibU + imC;
+
+  return { applied, changedTaskIds: [] };
+}
+
 async function applyUpserts(
   changes: SyncResponse['changes']
 ): Promise<{ applied: number; changedTaskIds: string[] }> {
   const coreResult = await applyUpsertsCoreTables(changes);
   const harvestResult = await applyUpsertsHarvestTables(changes);
+  const inventoryConsumablesResult =
+    await applyUpsertsInventoryConsumables(changes);
 
   return {
-    applied: coreResult.applied + harvestResult.applied,
+    applied:
+      coreResult.applied +
+      harvestResult.applied +
+      inventoryConsumablesResult.applied,
     changedTaskIds: [
       ...coreResult.changedTaskIds,
       ...harvestResult.changedTaskIds,
+      ...inventoryConsumablesResult.changedTaskIds,
     ],
   };
 }
@@ -563,7 +653,21 @@ async function applyDeletes(
     changes.harvest_audits?.deleted ?? []
   );
 
-  applied = dT + dS + dO + dH + dI + dA;
+  // Inventory consumables tables
+  const { applied: dII } = await applyDeletesBatch(
+    'inventory_items',
+    changes.inventory_items?.deleted ?? []
+  );
+  const { applied: dIB } = await applyDeletesBatch(
+    'inventory_batches',
+    changes.inventory_batches?.deleted ?? []
+  );
+  const { applied: dIM } = await applyDeletesBatch(
+    'inventory_movements',
+    changes.inventory_movements?.deleted ?? []
+  );
+
+  applied = dT + dS + dO + dH + dI + dA + dII + dIB + dIM;
   changedIds.push(...dTIds, ...dSIds, ...dOIds, ...dHIds, ...dIIds, ...dAIds);
 
   return { applied, changedTaskIds: changedIds };
@@ -942,6 +1046,39 @@ async function pushChanges(lastPulledAt: number | null): Promise<number> {
     toPush.harvest_audits.updated = enrichWithUserId(
       toPush.harvest_audits.updated
     );
+
+    // Inventory consumables tables
+    toPush.inventory_items.created = enrichWithUserId(
+      toPush.inventory_items.created
+    );
+    toPush.inventory_items.updated = enrichWithUserId(
+      toPush.inventory_items.updated
+    );
+    toPush.inventory_batches.created = enrichWithUserId(
+      toPush.inventory_batches.created
+    );
+    toPush.inventory_batches.updated = enrichWithUserId(
+      toPush.inventory_batches.updated
+    );
+    toPush.inventory_movements.created = enrichWithUserId(
+      toPush.inventory_movements.created
+    );
+    // inventory_movements: no updated/deleted allowed (immutable append-only)
+  }
+
+  // Enforce immutability for inventory_movements (Requirements 1.4, 10.6)
+  // Only 'created' movements are allowed; filter out any updated/deleted
+  if (toPush.inventory_movements.updated.length > 0) {
+    console.warn(
+      `[Sync] Filtered ${toPush.inventory_movements.updated.length} invalid UPDATE operations on inventory_movements (immutable table)`
+    );
+    toPush.inventory_movements.updated = [];
+  }
+  if (toPush.inventory_movements.deleted.length > 0) {
+    console.warn(
+      `[Sync] Filtered ${toPush.inventory_movements.deleted.length} invalid DELETE operations on inventory_movements (immutable table)`
+    );
+    toPush.inventory_movements.deleted = [];
   }
 
   const token = await getBearerToken();

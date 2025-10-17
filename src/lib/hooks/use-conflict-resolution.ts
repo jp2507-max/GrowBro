@@ -8,6 +8,9 @@ import { database } from '@/lib/watermelon';
 import type { HarvestModel } from '@/lib/watermelon-models/harvest';
 import type { HarvestAuditModel } from '@/lib/watermelon-models/harvest-audit';
 import type { InventoryModel } from '@/lib/watermelon-models/inventory';
+import type { InventoryBatchModel } from '@/lib/watermelon-models/inventory-batch';
+import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
+import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
 import type { OccurrenceOverrideModel } from '@/lib/watermelon-models/occurrence-override';
 import type { SeriesModel } from '@/lib/watermelon-models/series';
 import type { TaskModel } from '@/lib/watermelon-models/task';
@@ -46,7 +49,10 @@ type ValidSyncConflictTableName =
   | 'occurrence_overrides'
   | 'harvests'
   | 'inventory'
-  | 'harvest_audits';
+  | 'harvest_audits'
+  | 'inventory_items'
+  | 'inventory_batches'
+  | 'inventory_movements';
 
 /**
  * Validates that a table name is one of the allowed values from the schema
@@ -74,7 +80,10 @@ function isSyncConflictAnalyticsTable(
     tableName === 'occurrence_overrides' ||
     tableName === 'harvests' ||
     tableName === 'inventory' ||
-    tableName === 'harvest_audits'
+    tableName === 'harvest_audits' ||
+    tableName === 'inventory_items' ||
+    tableName === 'inventory_batches' ||
+    tableName === 'inventory_movements'
   );
 }
 
@@ -125,7 +134,10 @@ export function useConflictResolution() {
                   | OccurrenceOverrideModel
                   | HarvestModel
                   | InventoryModel
-                  | HarvestAuditModel;
+                  | HarvestAuditModel
+                  | InventoryItemModel
+                  | InventoryBatchModel
+                  | InventoryMovementModel;
 
                 // Restore local values for conflicting fields
                 // This loop iterates through fields that were in conflict and restores
@@ -185,7 +197,10 @@ export function useConflictResolution() {
                   | OccurrenceOverrideModel
                   | HarvestModel
                   | InventoryModel
-                  | HarvestAuditModel;
+                  | HarvestAuditModel
+                  | InventoryItemModel
+                  | InventoryBatchModel
+                  | InventoryMovementModel;
                 if (
                   conflict.tableName === TABLE_NAMES.TASKS &&
                   (typedRec as TaskModel).metadata

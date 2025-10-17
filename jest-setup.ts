@@ -137,7 +137,16 @@ jest.mock('nativewind', () => {
 // mock: react-native-css-interop runtime to avoid installing wrappers and timers
 jest.mock('react-native-css-interop', () => {
   // Disable CSS interop completely for tests to avoid displayName errors
-  return {};
+  return {
+    __esModule: true,
+    cssInterop: jest.fn((component: any) => component),
+    rem: (value: number) => value * 16,
+    vh: (value: number) => value,
+    vw: (value: number) => value,
+    vmin: (value: number) => value,
+    vmax: (value: number) => value,
+    createInteropElement: jest.fn((component: any) => component),
+  };
 });
 
 // mock: react-native-svg with lightweight React host components

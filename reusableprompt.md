@@ -3,10 +3,10 @@ AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the
 
 CONTEXT
 
-- Feature: 15. nutrient-engine-and-ph-ec
-- Task index: .kiro\specs\15. nutrient-engine-and-ph-ec\tasks.md
-- Design spec: .kiro\specs\15. nutrient-engine-and-ph-ec\design.md
-- Requirements spec: .kiro\specs\15. nutrient-engine-and-ph-ec\requirements.md
+- Feature: 16. inventory-and-consumables
+- Task index: .kiro\specs\16. inventory-and-consumables\tasks.md
+- Design spec: .kiro\specs\16. inventory-and-consumables\design.md
+- Requirements spec: .kiro\specs\16. inventory-and-consumables\requirements.md
 
 CONTRACT (outputs)
 

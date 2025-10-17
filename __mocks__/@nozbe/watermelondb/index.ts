@@ -24,6 +24,34 @@ function mapFieldName(field: string): string {
       return 'occurrenceLocalDate';
     case 'deleted_at':
       return 'deletedAt';
+    case 'item_id':
+      return 'itemId';
+    case 'lot_number':
+      return 'lotNumber';
+    case 'expires_on':
+      return 'expiresOn';
+    case 'cost_per_unit_minor':
+      return 'costPerUnitMinor';
+    case 'received_at':
+      return 'receivedAt';
+    case 'user_id':
+      return 'userId';
+    case 'server_revision':
+      return 'serverRevision';
+    case 'server_updated_at_ms':
+      return 'serverUpdatedAtMs';
+    case 'created_at':
+      return 'createdAt';
+    case 'updated_at':
+      return 'updatedAt';
+    case 'batch_id':
+      return 'batchId';
+    case 'quantity_delta':
+      return 'quantityDelta';
+    case 'external_key':
+      return 'externalKey';
+    case 'task_id':
+      return 'taskId';
     default:
       return field;
   }
@@ -33,9 +61,11 @@ type WhereCond =
   | { key: string; value: any }
   | { key: string; $oneOf: any[] }
   | { key: string; $notEq: any }
+  | { key: string; $gt: any }
   | { key: string; $gte: any }
   | { key: string; $lte: any }
-  | { key: string; $like: string };
+  | { key: string; $like: string }
+  | { $or: WhereCond[] };
 
 // Minimal Model base class so modelClasses can extend it without side effects
 export class Model {}
@@ -50,6 +80,9 @@ export const Q = {
     }
     if (typeof value === 'object' && value && '$notEq' in value) {
       return { key, $notEq: value.$notEq };
+    }
+    if (typeof value === 'object' && value && '$gt' in value) {
+      return { key, $gt: value.$gt };
     }
     if (typeof value === 'object' && value && '$gte' in value) {
       return { key, $gte: value.$gte };
@@ -68,6 +101,9 @@ export const Q = {
   oneOf(values: any[]): { $oneOf: any[] } {
     return { $oneOf: values };
   },
+  gt(value: any): { $gt: any } {
+    return { $gt: value };
+  },
   like(pattern: string): { $like: string } {
     return { $like: pattern };
   },
@@ -85,6 +121,13 @@ export const Q = {
   },
   take(count: number): { $take: number } {
     return { $take: count };
+  },
+  sanitizeLikeString(value: string): string {
+    // Escape special LIKE characters (%, _) and return the sanitized string
+    return value.replace(/[%_]/g, '\\$&');
+  },
+  or(...conditions: WhereCond[]): { $or: WhereCond[] } {
+    return { $or: conditions };
   },
 };
 
@@ -116,38 +159,54 @@ function applyRecordDefaults(rec: any): void {
 function filterResults(store: any[], filters: WhereCond[]): any[] {
   return store.filter((row) =>
     filters.every((c) => {
-      const key = mapFieldName(c.key);
-      if ('$oneOf' in c) {
-        return c.$oneOf.includes((row as any)[key]);
-      } else if ('$notEq' in c) {
-        return (row as any)[key] !== c.$notEq;
-      } else if ('$gte' in c) {
-        return (row as any)[key] >= c.$gte;
-      } else if ('$lte' in c) {
-        return (row as any)[key] <= c.$lte;
-      } else if ('$like' in c) {
-        // For metadata field, convert object to JSON string for like comparison
-        let rowValue = (row as any)[key];
-        if (key === 'metadata' && typeof rowValue === 'object') {
-          rowValue = JSON.stringify(rowValue);
-        }
-        rowValue = String(rowValue);
-        // Limit pattern length to prevent ReDoS in test mocks
-        if (c.$like.length > 200) {
-          throw new Error('LIKE pattern too long for test mock');
-        }
-        // Convert SQL LIKE pattern to RegExp: % -> .*, _ -> ., escape other special chars
-        const regexPattern = c.$like
-          .replace(/[.+?^${}()|[\]\\]/g, '\\$&') // escape regex special chars
-          .replace(/%/g, '.*') // % matches any sequence
-          .replace(/_/g, '.'); // _ matches single char
-        const regex = new RegExp(`^${regexPattern}$`, 'i');
-        return regex.test(rowValue);
-      } else {
-        return (row as any)[key] === c.value;
-      }
+      return evaluateCondition(row, c);
     })
   );
+}
+
+function evaluateCondition(row: any, c: WhereCond): boolean {
+  if ('$or' in c) {
+    return c.$or.some((subCond) => evaluateCondition(row, subCond));
+  }
+
+  const key = mapFieldName(c.key);
+  if ('$oneOf' in c) {
+    return c.$oneOf.includes((row as any)[key]);
+  } else if ('$notEq' in c) {
+    return (row as any)[key] !== c.$notEq;
+  } else if ('$gt' in c) {
+    return (row as any)[key] > c.$gt;
+  } else if ('$gte' in c) {
+    return (row as any)[key] >= c.$gte;
+  } else if ('$lte' in c) {
+    return (row as any)[key] <= c.$lte;
+  } else if ('$like' in c) {
+    // For metadata field, convert object to JSON string for like comparison
+    let rowValue = (row as any)[key];
+    if (key === 'metadata' && typeof rowValue === 'object') {
+      rowValue = JSON.stringify(rowValue);
+    }
+    rowValue = String(rowValue);
+
+    // Stricter validation to prevent ReDoS in test mocks
+    if (c.$like.length > 100) {
+      throw new Error('LIKE pattern too long for test mock (max 100 chars)');
+    }
+    // Reject patterns with nested quantifiers or backtracking risks
+    if (/(\*\+|%%)/.test(c.$like)) {
+      throw new Error('LIKE pattern contains nested quantifiers');
+    }
+
+    // Convert SQL LIKE pattern to RegExp: % -> .*, _ -> ., escape other special chars
+    const regexPattern = c.$like
+      .replace(/[.+?^${}()|[\]\\]/g, '\\$&') // escape regex special chars
+      .replace(/%/g, '.*') // % matches any sequence
+      .replace(/_/g, '.'); // _ matches single char
+    const regex = new RegExp(`^${regexPattern}$`, 'i');
+    return regex.test(rowValue);
+  } else {
+    return (row as any)[key] === c.value;
+  }
 }
 
 function sortResults(
@@ -511,6 +570,96 @@ function buildReservoirEventsCollection() {
   return col;
 }
 
+function buildInventoryItemsCollection() {
+  const col = makeCollection();
+  const originalCreate = col.create.bind(col);
+  col.create = async (cb: any) => {
+    return originalCreate(async (rec: any) => {
+      rec.name = 'Mock Item';
+      rec.category = 'Nutrients';
+      rec.unitOfMeasure = 'L';
+      rec.trackingMode = 'batched';
+      rec.isConsumable = true;
+      rec.minStock = 0;
+      rec.reorderMultiple = 1;
+      rec.leadTimeDays = null;
+      rec.sku = null;
+      rec.barcode = null;
+      rec.userId = null;
+      rec.serverRevision = null;
+      rec.serverUpdatedAtMs = null;
+      rec.createdAt = new Date();
+      rec.updatedAt = new Date();
+      rec.deletedAt = null;
+      await cb?.(rec);
+    });
+  };
+  return col;
+}
+
+function buildInventoryBatchesCollection() {
+  const col = makeCollection();
+  const originalCreate = col.create.bind(col);
+  col.create = async (cb: any) => {
+    return originalCreate(async (rec: any) => {
+      rec.itemId = 'mock-item-id';
+      rec.lotNumber = 'LOT001';
+      rec.expiresOn = null;
+      rec.quantity = 0;
+      rec.costPerUnitMinor = 0;
+      rec.receivedAt = new Date();
+      rec.userId = null;
+      rec.serverRevision = null;
+      rec.serverUpdatedAtMs = null;
+      rec.createdAt = new Date();
+      rec.updatedAt = new Date();
+      rec.deletedAt = null;
+      await cb?.(rec);
+    });
+  };
+  return col;
+}
+
+function buildInventoryMovementsCollection() {
+  const col = makeCollection();
+  const originalCreate = col.create.bind(col);
+  col.create = async (cb: any) => {
+    // Check for uniqueness constraint on externalKey before creating
+    const tempRec: any = {};
+    await cb?.(tempRec);
+    if (tempRec.externalKey !== null && tempRec.externalKey !== undefined) {
+      const existing = col.__store.find(
+        (r: any) => r.externalKey === tempRec.externalKey
+      );
+      if (existing) {
+        throw new Error(
+          `UNIQUE constraint failed: inventory_movements.external_key`
+        );
+      }
+    }
+
+    return originalCreate(async (rec: any) => {
+      rec.itemId = 'mock-item-id';
+      rec.batchId = null;
+      rec.type = 'receipt';
+      rec.quantityDelta = 0;
+      rec.costPerUnitMinor = null;
+      rec.reason = '';
+      rec.taskId = null;
+      rec.externalKey = null;
+      rec.userId = null;
+      rec.createdAt = new Date();
+      await cb?.(rec);
+
+      // Override update method to enforce immutability
+      rec.update = async () => {
+        throw new Error('inventory_movements are immutable');
+      };
+    });
+  };
+  return col;
+}
+
 // Mock Database class
 class DatabaseMock {
   collections: Map<string, any> = new Map();
@@ -532,6 +681,15 @@ class DatabaseMock {
       buildDeviationAlertsCollection()
     );
     this.collections.set('reservoir_events', buildReservoirEventsCollection());
+    this.collections.set('inventory_items', buildInventoryItemsCollection());
+    this.collections.set(
+      'inventory_batches',
+      buildInventoryBatchesCollection()
+    );
+    this.collections.set(
+      'inventory_movements',
+      buildInventoryMovementsCollection()
+    );
   }
 
   write = jest

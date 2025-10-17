@@ -96,8 +96,11 @@
   "common": {
     "back": "Zurück",
     "cancel": "Abbrechen",
+    "dismiss": "Schließen",
+    "loading": "Lädt...",
     "notSelected": "nicht ausgewählt",
     "null": "null",
+    "offline_mode": "Offline-Modus",
     "ok": "OK",
     "retry": "Erneut versuchen",
     "selected": "ausgewählt"
@@ -493,12 +496,101 @@
       "title": "Ernteverlauf"
     },
     "inventory": {
+      "add_batch": "Charge hinzufügen",
+      "add_batch_description": "Das Formular zur Chargenerstellung wird verfügbar sein, sobald die Chargenverwaltungs-UI implementiert ist.",
+      "add_item": "Artikel hinzufügen",
+      "batch_lot": "Charge {{lot}}",
+      "batches_title": "Chargen",
+      "category": "Kategorie",
+      "charts": {
+        "consumptionNote": "Basierend auf erfassten Abgangsbewegungen",
+        "consumptionTrend": "Verbrauchstrend",
+        "costTrend": "Kostentrend",
+        "costTrendNote": "Gesamtkosten über alle Kategorien",
+        "monthly": "Monatlich",
+        "noConsumptionData": "Noch keine Verbrauchsdaten verfügbar",
+        "noCostData": "Noch keine Kostendaten verfügbar",
+        "total": "Gesamt",
+        "weekly": "Wöchentlich ({{unit}})"
+      },
+      "clear_search_hint": "Suchtext löschen",
       "concurrent_finalize_toast": "Ernteaufzeichnung bereits von einem anderen Prozess abgeschlossen",
+      "csv": {
+        "export_button": "CSV exportieren",
+        "export_error_title": "Export fehlgeschlagen",
+        "export_success_description": "{{itemCount}} Artikel, {{batchCount}} Chargen, {{movementCount}} Bewegungen exportiert",
+        "export_success_title": "Export erfolgreich",
+        "export_title": "Inventardaten exportieren",
+        "import_button": "CSV importieren",
+        "import_error_title": "Import fehlgeschlagen",
+        "sharing_unavailable": "Teilen ist auf diesem Gerät nicht verfügbar"
+      },
+      "current_stock": "Bestand",
+      "empty_description": "Füge deinen ersten Inventarartikel hinzu, um Vorräte zu verfolgen",
+      "empty_title": "Keine Inventarartikel",
+      "error_title": "Inventar konnte nicht geladen werden",
+      "expired": "Abgelaufen",
+      "expired_on": "Abgelaufen am {{date}}",
+      "expires_in": "Läuft in {{days}} Tagen ab",
+      "filter_hint": "Filter- und Sortieroptionen öffnen",
+      "filters": "Filter",
+      "filters_and_sort": "Filter & Sortierung",
       "finalize_curing": "Aushärtung abschließen & Endertrag aufzeichnen",
       "finalize_success_toast": "Aushärtung abgeschlossen und Endertrag erfolgreich aufgezeichnet",
+      "forecast": {
+        "basedOnUsagePattern": "Basierend auf deinem Nutzungsmuster",
+        "highConfidence": "Hoch",
+        "inDays": "In {{days}} Tagen",
+        "lowConfidence": "Niedrig",
+        "lowConfidenceNote": "Begrenzte Daten verfügbar. Die Vorhersagegenauigkeit verbessert sich mit mehr Nutzungsverlauf.",
+        "mediumConfidence": "Mittel",
+        "recommendedQuantity": "Empfohlene Menge",
+        "reorderNow": "Jetzt nachbestellen",
+        "reorderRecommendation": "Nachbestellempfehlung",
+        "timeToReorder": "Zeit bis zur Nachbestellung"
+      },
+      "form": {
+        "barcode": "Barcode",
+        "barcode_placeholder": "z.B. 123456789012",
+        "category": "Kategorie",
+        "lead_time_days": "Lieferzeit (Tage)",
+        "min_stock": "Mindestbestand",
+        "name": "Artikelname",
+        "name_placeholder": "z.B. General Hydroponics FloraBloom",
+        "reorder_multiple": "Nachbestellmenge",
+        "sku": "Artikelnummer",
+        "sku_placeholder": "z.B. GH-FB-1L",
+        "submit": "Artikel hinzufügen",
+        "tracking_batched": "Chargen",
+        "tracking_mode": "Verfolgungsmodus",
+        "tracking_simple": "Einfach",
+        "unit": "Maßeinheit",
+        "unit_placeholder": "z.B. L, ml, g, kg"
+      },
+      "item_detail": "Artikeldetails",
+      "low_stock": "Niedriger Bestand",
+      "low_stock_count": "{{count}} Artikel mit niedrigem Bestand",
+      "low_stock_info": "Sortiert nach Dringlichkeit: Tage bis Lagerausfall, dann % unter Schwellenwert",
+      "min_stock": "Min",
       "missing_dry_weight": "Trockengewicht muss vor Abschluss der Aushärtung gesetzt werden",
       "missing_dry_weight_cta": "Trockengewicht aktualisieren",
-      "retry_failed": "Aushärtung konnte nach mehreren Versuchen nicht abgeschlossen werden. Bitte überprüfe deine Verbindung und versuche es erneut."
+      "no_batches": "Keine Chargen verfügbar",
+      "offline_description": "Zwischengespeicherte Daten werden angezeigt. Änderungen werden synchronisiert, wenn du wieder online bist.",
+      "permissions": {
+        "exact_alarm_benefits": "Aktiviere präzise Niedrigbestandswarnungen, um Nachschub rechtzeitig zu bestellen und Engpässe zu vermeiden.",
+        "exact_alarm_description": "GrowBro benötigt die Berechtigung, exakte Alarme für rechtzeitige Niedrigbestandsbenachrichtigungen zu planen. Dies stellt sicher, dass du benachrichtigt wirst, wenn Vorräte zur Neige gehen.",
+        "exact_alarm_title": "Präzise Benachrichtigungen aktivieren",
+        "grant_permission": "Berechtigung erteilen"
+      },
+      "retry_failed": "Aushärtung konnte nach mehreren Versuchen nicht abgeschlossen werden. Bitte überprüfe deine Verbindung und versuche es erneut.",
+      "search_hint": "Zum Suchen von Inventarartikeln eingeben",
+      "search_label": "Inventar durchsuchen",
+      "search_offline": "Offline-Modus - zwischengespeicherte Ergebnisse werden angezeigt",
+      "search_placeholder": "Artikel nach Name, SKU oder Kategorie suchen...",
+      "sort_by": "Sortieren nach",
+      "stock_level": "Lagerbestand",
+      "title": "Inventar",
+      "total_value": "Wert"
     },
     "modal": {
       "cancel": "Abbrechen",
@@ -544,6 +636,21 @@
       "target": {
         "body": "Deine Ernte ist seit {{days}} Tagen in der {{stage}}-Phase. Erwäge, zur nächsten Phase überzugehen.",
         "title": "{{stage}}-Phase Ziel erreicht"
+      }
+    },
+    "permissions": {
+      "exactAlarm": {
+        "errorMessage": "Berechtigung konnte nicht angefordert werden. Bitte versuche es erneut.",
+        "errorTitle": "Berechtigungsfehler",
+        "fallbackBody": "Aktiviere exakte Alarme in den Einstellungen für sofortige Warnungen bei niedrigem Lagerbestand.",
+        "fallbackTitle": "Benachrichtigungen können verzögert sein",
+        "grantButton": "Benachrichtigungen aktivieren",
+        "ifDeniedBody": "Benachrichtigungen können bis zu 15 Minuten verzögert werden. Du erhältst weiterhin Warnungen, nur nicht sofort.",
+        "ifDeniedTitle": "Wenn du dies überspringst",
+        "openSettings": "Einstellungen öffnen",
+        "title": "Rechtzeitige Benachrichtigungen aktivieren",
+        "whyNeededBody": "Exakte Alarme stellen sicher, dass du sofort benachrichtigt wirst, wenn Vorräte zur Neige gehen, damit du rechtzeitig nachbestellen kannst.",
+        "whyNeededTitle": "Warum das wichtig ist"
       }
     },
     "photo": {
@@ -731,6 +838,10 @@
       "cultivationReminders": {
         "description": "Aufgaben-Erinnerungen sowie Trocknungs- und Aushärtungswarnungen.",
         "name": "Grow-Erinnerungen"
+      },
+      "inventoryAlerts": {
+        "description": "Rechtzeitige Warnungen, wenn Anbaumaterialien zur Neige gehen.",
+        "name": "Lagerbestands-Warnungen"
       },
       "systemUpdates": {
         "description": "Wichtige Konto-Hinweise, Richtlinien-Updates oder Sicherheitswarnungen.",
@@ -1735,6 +1846,7 @@
     "calendar": "Kalender",
     "community": "Community",
     "home": "Startseite",
+    "inventory": "Inventar",
     "plants": "Pflanzen",
     "strains": "Sorten"
   },

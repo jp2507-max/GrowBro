@@ -16,7 +16,7 @@ module.exports = {
   ],
   moduleFileExtensions: ['js', 'ts', 'tsx'],
   transformIgnorePatterns: [
-    `node_modules/(?!(?:.pnpm/)?((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|@sentry/.*|native-base|react-native-svg))`,
+    `node_modules/(?!(?:.pnpm/)?((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|@sentry/.*|native-base|react-native-svg|react-native-gifted-charts|gifted-charts-core))`,
   ],
   coverageReporters: ['json-summary', ['text', { file: 'coverage.txt' }]],
   reporters: [

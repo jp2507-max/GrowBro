@@ -96,8 +96,11 @@
   "common": {
     "back": "Back",
     "cancel": "Cancel",
+    "dismiss": "Dismiss",
+    "loading": "Loading...",
     "notSelected": "not selected",
     "null": "null",
+    "offline_mode": "Offline Mode",
     "ok": "OK",
     "retry": "Retry",
     "selected": "selected"
@@ -493,12 +496,101 @@
       "title": "Harvest history"
     },
     "inventory": {
+      "add_batch": "Add Batch",
+      "add_batch_description": "Batch creation form will be available once the batch management UI is implemented.",
+      "add_item": "Add Item",
+      "batch_lot": "Lot {{lot}}",
+      "batches_title": "Batches",
+      "category": "Category",
+      "charts": {
+        "consumptionNote": "Based on recorded outbound movements",
+        "consumptionTrend": "Consumption Trend",
+        "costTrend": "Cost Trend",
+        "costTrendNote": "Total cost across all categories",
+        "monthly": "Monthly",
+        "noConsumptionData": "No consumption data available yet",
+        "noCostData": "No cost data available yet",
+        "total": "Total",
+        "weekly": "Weekly ({{unit}})"
+      },
+      "clear_search_hint": "Clear search text",
       "concurrent_finalize_toast": "Harvest record already completed by another process",
+      "csv": {
+        "export_button": "Export CSV",
+        "export_error_title": "Export Failed",
+        "export_success_description": "Exported {{itemCount}} items, {{batchCount}} batches, {{movementCount}} movements",
+        "export_success_title": "Export Successful",
+        "export_title": "Export Inventory Data",
+        "import_button": "Import CSV",
+        "import_error_title": "Import Failed",
+        "sharing_unavailable": "Sharing is not available on this device"
+      },
+      "current_stock": "Stock",
+      "empty_description": "Add your first inventory item to start tracking supplies",
+      "empty_title": "No inventory items",
+      "error_title": "Failed to load inventory",
+      "expired": "Expired",
+      "expired_on": "Expired on {{date}}",
+      "expires_in": "Expires in {{days}} days",
+      "filter_hint": "Open filter and sort options",
+      "filters": "Filters",
+      "filters_and_sort": "Filters & Sort",
       "finalize_curing": "Complete Curing & Record Final Yield",
       "finalize_success_toast": "Curing completed and final yield recorded successfully",
+      "forecast": {
+        "basedOnUsagePattern": "Based on your usage pattern",
+        "highConfidence": "High",
+        "inDays": "In {{days}} days",
+        "lowConfidence": "Low",
+        "lowConfidenceNote": "Limited data available. Forecast accuracy will improve with more usage history.",
+        "mediumConfidence": "Medium",
+        "recommendedQuantity": "Recommended quantity",
+        "reorderNow": "Reorder now",
+        "reorderRecommendation": "Reorder Recommendation",
+        "timeToReorder": "Time to reorder"
+      },
+      "form": {
+        "barcode": "Barcode",
+        "barcode_placeholder": "e.g., 123456789012",
+        "category": "Category",
+        "lead_time_days": "Lead Time (days)",
+        "min_stock": "Minimum Stock",
+        "name": "Item Name",
+        "name_placeholder": "e.g., General Hydroponics FloraBloom",
+        "reorder_multiple": "Reorder Multiple",
+        "sku": "SKU",
+        "sku_placeholder": "e.g., GH-FB-1L",
+        "submit": "Add Item",
+        "tracking_batched": "Batched",
+        "tracking_mode": "Tracking Mode",
+        "tracking_simple": "Simple",
+        "unit": "Unit of Measure",
+        "unit_placeholder": "e.g., L, ml, g, kg"
+      },
+      "item_detail": "Item Details",
+      "low_stock": "Low Stock",
+      "low_stock_count": "{{count}} items low on stock",
+      "low_stock_info": "Sorted by urgency: days until stockout, then % below threshold",
+      "min_stock": "Min",
       "missing_dry_weight": "Dry weight must be set before completing curing",
       "missing_dry_weight_cta": "Update Dry Weight",
-      "retry_failed": "Failed to complete curing after multiple attempts. Please check your connection and try again."
+      "no_batches": "No batches available",
+      "offline_description": "Viewing cached data. Changes will sync when you're back online.",
+      "permissions": {
+        "exact_alarm_benefits": "Enable precise low-stock alerts to reorder supplies on time and avoid running out.",
+        "exact_alarm_description": "GrowBro needs permission to schedule exact alarms for timely low-stock notifications. This ensures you're alerted when supplies are running low.",
+        "exact_alarm_title": "Enable Precise Notifications",
+        "grant_permission": "Grant Permission"
+      },
+      "retry_failed": "Failed to complete curing after multiple attempts. Please check your connection and try again.",
+      "search_hint": "Type to search inventory items",
+      "search_label": "Search inventory",
+      "search_offline": "Offline mode - showing cached results",
+      "search_placeholder": "Search items by name, SKU, or category...",
+      "sort_by": "Sort by",
+      "stock_level": "Stock Level",
+      "title": "Inventory",
+      "total_value": "Value"
     },
     "modal": {
       "cancel": "Cancel",
@@ -544,6 +636,21 @@
       "target": {
         "body": "Your harvest has been in {{stage}} for {{days}} days. Consider advancing to the next stage.",
         "title": "{{stage}} stage target reached"
+      }
+    },
+    "permissions": {
+      "exactAlarm": {
+        "errorMessage": "Unable to request permission. Please try again.",
+        "errorTitle": "Permission Error",
+        "fallbackBody": "Enable exact alarms in Settings for immediate low-stock alerts.",
+        "fallbackTitle": "Notifications may be delayed",
+        "grantButton": "Enable Notifications",
+        "ifDeniedBody": "Notifications may be delayed by up to 15 minutes. You'll still receive alerts, just not immediately.",
+        "ifDeniedTitle": "If you skip this",
+        "openSettings": "Open Settings",
+        "title": "Enable Timely Notifications",
+        "whyNeededBody": "Exact alarms ensure you're notified the moment supplies run low, so you can reorder before running out.",
+        "whyNeededTitle": "Why this matters"
       }
     },
     "photo": {
@@ -731,6 +838,10 @@
       "cultivationReminders": {
         "description": "Task reminders and drying or curing alerts for your grow.",
         "name": "Grow reminders"
+      },
+      "inventoryAlerts": {
+        "description": "Timely alerts when cultivation supplies are running low.",
+        "name": "Inventory alerts"
       },
       "systemUpdates": {
         "description": "Critical account notices, policy reminders, or security alerts.",
@@ -1735,6 +1846,7 @@
     "calendar": "Calendar",
     "community": "Community",
     "home": "Home",
+    "inventory": "Inventory",
     "plants": "Plants",
     "strains": "Strains"
   },
