@@ -245,7 +245,8 @@ export class CommunityApiClient implements CommunityAPI {
 
         if (error) {
           // Check if it's a 409 conflict (undo window expired)
-          if (error.status === 409) {
+          const status = error?.context?.status;
+          if (status === 409) {
             throw new ConflictError('Undo period has expired', {
               post_id: postId,
               user_id: userId,
@@ -516,7 +517,8 @@ export class CommunityApiClient implements CommunityAPI {
 
         if (error) {
           // Check if it's a 409 conflict (undo window expired)
-          if (error.status === 409) {
+          const status = error?.context?.status;
+          if (status === 409) {
             throw new ConflictError('Undo period has expired', {
               user_id: userId,
               exists: false,

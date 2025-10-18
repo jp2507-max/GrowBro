@@ -58,33 +58,55 @@ type OutboxAdapter = {
 /**
  * Create a cache adapter for React Query
  */
-function createQueryCacheAdapter<T>(
+function createQueryCacheAdapter<TStored, TCache = TStored>(
   queryClient: ReturnType<typeof useQueryClient>,
-  queryKey: string[],
-  keySelector: (row: T) => string
-): CacheAdapter<T> {
+  options: {
+    queryKey: string[];
+    keySelector: (row: TCache) => string;
+    toStored?: (cached: TCache) => TStored;
+    fromStored?: (stored: TStored, id: string) => TCache;
+  }
+): CacheAdapter<TCache> {
+  const { queryKey, keySelector, toStored, fromStored } = options;
+
   return {
     get: (key: string) => {
-      const data = queryClient.getQueryData<T[]>(queryKey);
-      return data?.find((item) => keySelector(item) === key);
+      const data = queryClient.getQueryData<TStored[]>(queryKey);
+      if (!data || !fromStored) return undefined;
+      const storedItem = data.find((item) => {
+        const cached = fromStored(item, key);
+        return keySelector(cached) === key;
+      });
+      return storedItem ? fromStored(storedItem, key) : undefined;
     },
-    upsert: (row: T) => {
-      queryClient.setQueryData<T[]>(queryKey, (old) => {
-        if (!old) return [row];
+    upsert: (row: TCache) => {
+      const storedRow = toStored ? toStored(row) : (row as unknown as TStored);
+      queryClient.setQueryData<TStored[]>(queryKey, (old) => {
+        if (!old) return [storedRow];
         const rowKey = keySelector(row);
-        const index = old.findIndex((item) => keySelector(item) === rowKey);
+        const index = old.findIndex((item) => {
+          const cached = fromStored
+            ? fromStored(item, rowKey)
+            : (item as unknown as TCache);
+          return keySelector(cached) === rowKey;
+        });
         if (index >= 0) {
           const updated = [...old];
-          updated[index] = row;
+          updated[index] = storedRow;
           return updated;
         }
-        return [...old, row];
+        return [...old, storedRow];
       });
     },
     remove: (key: string) => {
-      queryClient.setQueryData<T[]>(queryKey, (old) => {
+      queryClient.setQueryData<TStored[]>(queryKey, (old) => {
         if (!old) return [];
-        return old.filter((item) => keySelector(item) !== key);
+        return old.filter((item) => {
+          const cached = fromStored
+            ? fromStored(item, key)
+            : (item as unknown as TCache);
+          return keySelector(cached) !== key;
+        });
       });
     },
   };
@@ -121,21 +143,18 @@ function createRealtimeHandlers(
   queryClient: ReturnType<typeof useQueryClient>,
   outbox: OutboxAdapter
 ) {
-  const postsCache = createQueryCacheAdapter<Post>(
-    queryClient,
-    ['posts'],
-    (post) => post.id
-  );
-  const commentsCache = createQueryCacheAdapter<PostComment>(
-    queryClient,
-    ['comments'],
-    (comment) => comment.id
-  );
-  const likesCache = createQueryCacheAdapter<PostLike>(
-    queryClient,
-    ['post-likes'],
-    (like) => getLikeKey(like)
-  );
+  const postsCache = createQueryCacheAdapter<Post>(queryClient, {
+    queryKey: ['posts'],
+    keySelector: (post) => post.id,
+  });
+  const commentsCache = createQueryCacheAdapter<PostComment>(queryClient, {
+    queryKey: ['comments'],
+    keySelector: (comment) => comment.id,
+  });
+  const likesCache = createQueryCacheAdapter<PostLike>(queryClient, {
+    queryKey: ['post-likes'],
+    keySelector: (like) => `${like.post_id}:${like.user_id}`,
+  });
 
   return {
     onPostChange: async (event: RealtimeEvent<Post>) => {

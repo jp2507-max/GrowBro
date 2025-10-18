@@ -37,7 +37,7 @@ BEGIN
   END IF;
 
   -- Get current user (moderator)
-  v_moderator_id := auth.current_user();
+  v_moderator_id := auth.uid();
 
   IF v_moderator_id IS NULL THEN
     RAISE EXCEPTION 'Authentication required';

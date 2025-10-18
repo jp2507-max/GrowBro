@@ -1,10 +1,11 @@
 import React from 'react';
-import { Linking, Platform, Switch } from 'react-native';
+import { Linking, Platform } from 'react-native';
 
 import {
   FocusAwareStatusBar,
   Pressable,
   ScrollView,
+  Switch,
   Text,
   View,
 } from '@/components/ui';

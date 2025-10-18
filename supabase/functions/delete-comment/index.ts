@@ -94,7 +94,6 @@ Deno.serve(async (req: Request) => {
     // Soft delete with 15-second undo window using RPC
     const { data, error } = await supabase.rpc('soft_delete_comment', {
       comment_id: commentId,
-      user_id: user.id,
     });
 
     if (error) {

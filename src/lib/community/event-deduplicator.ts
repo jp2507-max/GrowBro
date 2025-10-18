@@ -1,4 +1,8 @@
-import type { PostLike, RealtimeEvent } from '@/types/community';
+import type {
+  CachedPostLike,
+  PostLike,
+  RealtimeEvent,
+} from '@/types/community';
 
 import { communityMetrics } from './metrics-tracker';
 
@@ -187,7 +191,7 @@ export async function handleRealtimeEvent<T>(
 
   if (!newRow && eventType !== 'DELETE') return;
 
-  const getKey = options.getKey ?? ((r: any) => (r as any).id);
+  const getKey = options.getKey ?? ((r: any) => r.id);
   const timestampField = options.timestampField ?? 'updated_at';
   const table = options.table;
   const { cache, outbox, onInvalidate } = options;
@@ -258,10 +262,10 @@ export async function handleRealtimeEvent<T>(
 /**
  * Handle post_likes events specially (composite key + commit_timestamp)
  */
-async function handlePostLikeEvent<T>(params: {
-  event: RealtimeEvent<T>;
+async function handlePostLikeEvent(params: {
+  event: RealtimeEvent<PostLike>;
   key: string;
-  cache: CacheOperations<T>;
+  cache: CacheOperations<CachedPostLike>;
   outbox: OutboxOperations;
   onInvalidate?: () => void;
 }): Promise<void> {
@@ -306,7 +310,8 @@ async function handlePostLikeEvent<T>(params: {
     case 'INSERT':
       if (!local && newRow) {
         // Ensure the stored row has a stable id equal to the composite key
-        cache.upsert({ ...(newRow as any), id: key });
+        const cachedLike: CachedPostLike = { ...newRow, id: key };
+        cache.upsert(cachedLike);
       }
       break;
     case 'DELETE':

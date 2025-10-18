@@ -131,12 +131,14 @@ describe('event-deduplicator', () => {
 
     beforeEach(() => {
       invalidateCalled = false;
+      const data = new Map();
       cache = {
-        data: new Map(),
-        get: jest.fn((key: string) => cache.data.get(key)),
-        upsert: jest.fn((row: any) => cache.data.set(row.id, row)),
-        remove: jest.fn((key: string) => cache.data.delete(key)),
+        data,
+        get: jest.fn(),
+        upsert: jest.fn(),
+        remove: jest.fn(),
       };
+      cache.get.mockReturnValue(undefined);
       outbox = {
         pending: new Set(),
         has: jest.fn((clientTxId: string) => outbox.pending.has(clientTxId)),
@@ -173,6 +175,7 @@ describe('event-deduplicator', () => {
           },
         } as EventHandlerOptions<Post>);
 
+        expect(cache.get).toHaveBeenCalledWith('post1');
         expect(cache.upsert).toHaveBeenCalledWith(event.new);
         expect(invalidateCalled).toBe(true);
       });

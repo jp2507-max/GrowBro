@@ -225,22 +225,38 @@ class CommunityMetricsTracker {
 
   private getLatencySamples(): LatencySample[] {
     const data = this.storage.getString(LATENCY_SAMPLES_KEY);
-    return data !== undefined ? (JSON.parse(data) as LatencySample[]) : [];
+    if (data !== undefined) {
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [];
+    }
+    return [];
   }
 
   private getDedupeDrops(): TimestampedEvent[] {
     const data = this.storage.getString(DEDUPE_DROPS_KEY);
-    return data !== undefined ? (JSON.parse(data) as TimestampedEvent[]) : [];
+    if (data !== undefined) {
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [];
+    }
+    return [];
   }
 
   private getUndoActions(): TimestampedEvent[] {
     const data = this.storage.getString(UNDO_ACTIONS_KEY);
-    return data !== undefined ? (JSON.parse(data) as TimestampedEvent[]) : [];
+    if (data !== undefined) {
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [];
+    }
+    return [];
   }
 
   private getMutationFailures(): TimestampedEvent[] {
     const data = this.storage.getString(MUTATION_FAILURES_KEY);
-    return data !== undefined ? (JSON.parse(data) as TimestampedEvent[]) : [];
+    if (data !== undefined) {
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [];
+    }
+    return [];
   }
 
   private calculatePercentile(values: number[], percentile: number): number {

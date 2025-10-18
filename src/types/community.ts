@@ -51,6 +51,14 @@ export interface PostLike {
   created_at: string;
 }
 
+/**
+ * Cached version of PostLike with synthetic ID for cache operations
+ * The ID is the composite key `${post_id}:${user_id}` used for deduplication
+ */
+export interface CachedPostLike extends PostLike {
+  id: string;
+}
+
 export interface OutboxEntry {
   id: string;
   op: OutboxOperation;
