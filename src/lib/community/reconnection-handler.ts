@@ -12,6 +12,7 @@ import { type Database } from '@nozbe/watermelondb';
 import NetInfo, { type NetInfoState } from '@react-native-community/netinfo';
 import { type QueryClient } from '@tanstack/react-query';
 
+import type { OutboxProcessor } from './outbox-processor';
 import { getOutboxProcessor } from './outbox-processor';
 
 export interface ReconnectionHandlerOptions {
@@ -24,7 +25,7 @@ export interface ReconnectionHandlerOptions {
 export class ReconnectionHandler {
   private database: Database;
   private queryClient: QueryClient;
-  private outboxProcessor;
+  private outboxProcessor: OutboxProcessor;
   private onReconnectCallback?: () => void;
   private onOutboxDrainedCallback?: () => void;
   private unsubscribe?: () => void;
@@ -61,7 +62,12 @@ export class ReconnectionHandler {
    * Handle network state change
    */
   private handleNetworkChange = async (state: NetInfoState): Promise<void> => {
-    if (!state.isConnected || !state.isInternetReachable) {
+    if (!state) {
+      console.log('[ReconnectionHandler] Network offline');
+      return;
+    }
+
+    if (state.isConnected === false || state.isInternetReachable === false) {
       console.log('[ReconnectionHandler] Network offline');
       return;
     }
@@ -91,7 +97,8 @@ export class ReconnectionHandler {
 
       // Invalidate queries to trigger refetch
       await this.queryClient.invalidateQueries({ queryKey: ['posts'] });
-      await this.queryClient.invalidateQueries({ queryKey: ['comments'] });
+      await this.queryClient.invalidateQueries({ queryKey: ['post-comments'] });
+      await this.queryClient.invalidateQueries({ queryKey: ['post-likes'] });
 
       console.log(
         '[ReconnectionHandler] Outbox drained and queries invalidated'

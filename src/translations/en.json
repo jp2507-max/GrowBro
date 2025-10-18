@@ -5,6 +5,11 @@
       "out_of_range_hint": "Indicates the latest reading is outside the target range.",
       "targets_hint": "Shows the pH and EC targets for this task."
     },
+    "card": {
+      "comment_plural": "comments",
+      "comment_singular": "comment",
+      "untitled": "Untitled"
+    },
     "common": {
       "go_back": "Go back",
       "retry_hint": "Retries the last action.",
@@ -138,6 +143,7 @@
     "comment_input_label": "Write a comment",
     "comment_placeholder": "Share your thoughts...",
     "comment_too_long": "Comment exceeds maximum length of 500 characters",
+    "community_activity": "Community Activity",
     "consent": {
       "accept_all": "Accept all",
       "aiTraining": {

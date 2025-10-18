@@ -78,8 +78,9 @@ function optimisticallyRemoveComment(
 
 // Success notification utility
 function showDeleteSuccessMessage(undoExpiresAt: string): void {
-  const secondsRemaining = Math.ceil(
-    (new Date(undoExpiresAt).getTime() - Date.now()) / 1000
+  const secondsRemaining = Math.max(
+    0,
+    Math.ceil((new Date(undoExpiresAt).getTime() - Date.now()) / 1000)
   );
   showMessage({
     message: 'Comment deleted',

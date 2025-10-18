@@ -7,7 +7,10 @@ export type OutboxOperation =
   | 'UNLIKE'
   | 'COMMENT'
   | 'DELETE_POST'
-  | 'DELETE_COMMENT';
+  | 'DELETE_COMMENT'
+  | 'UNDO_DELETE_POST'
+  | 'UNDO_DELETE_COMMENT'
+  | 'MODERATE_CONTENT';
 
 export type OutboxStatus = 'pending' | 'failed' | 'confirmed';
 
@@ -86,7 +89,7 @@ export interface CreateCommentData {
   body: string;
 }
 
-export interface PaginatedResponse<T> {
+export interface CursorPaginatedResponse<T> {
   data: T[];
   cursor?: string;
   hasMore: boolean;

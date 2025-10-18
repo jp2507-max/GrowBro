@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from '@/components/ui';
+import { colors } from '@/components/ui/colors';
 
 import { useCommunityNotifications } from './hooks/use-community-notifications';
 
@@ -124,11 +125,13 @@ export default function NotificationSettings() {
                 onValueChange={handleToggleCommunityInteractions}
                 disabled={loading || !userId}
                 trackColor={{
-                  false: '#d1d5db',
-                  true: '#4f46e5',
+                  false: colors.neutral[300],
+                  true: colors.indigo[600],
                 }}
                 thumbColor={
-                  communityInteractionsEnabled ? '#ffffff' : '#f3f4f6'
+                  communityInteractionsEnabled
+                    ? colors.white
+                    : colors.neutral[50]
                 }
               />
             </View>
@@ -149,10 +152,12 @@ export default function NotificationSettings() {
                 onValueChange={handleToggleCommunityLikes}
                 disabled={loading || !userId}
                 trackColor={{
-                  false: '#d1d5db',
-                  true: '#4f46e5',
+                  false: colors.neutral[300],
+                  true: colors.indigo[600],
                 }}
-                thumbColor={communityLikesEnabled ? '#ffffff' : '#f3f4f6'}
+                thumbColor={
+                  communityLikesEnabled ? colors.white : colors.neutral[50]
+                }
               />
             </View>
           </View>

@@ -22,24 +22,21 @@ async function unhideContent({
   contentType,
   contentId,
 }: UnhideContentParams): Promise<UnhideContentResult> {
-  // Determine the table based on content type
-  const table = contentType === 'post' ? 'posts' : 'comments';
+  const idempotencyKey = `${contentType}-${contentId}-unhide-${Date.now()}`;
 
-  // Perform the update and select the updated rows
-  const { data, error } = await supabase
-    .from(table)
-    .update({ hidden: false })
-    .eq('id', contentId)
-    .select('*');
+  const { data, error } = await supabase.rpc('moderate_content', {
+    p_content_type: contentType,
+    p_content_id: contentId,
+    p_action: 'unhide',
+    p_idempotency_key: idempotencyKey,
+  });
 
   if (error) {
     throw new Error(`Failed to unhide ${contentType}: ${error.message}`);
   }
 
-  if (!data || data.length === 0) {
-    throw new Error(
-      `No rows were updated for ${contentType} with id ${contentId}. Possible RLS policy violation or invalid id.`
-    );
+  if (!data || !data.success) {
+    throw new Error(`RPC failed: ${data?.error || 'Unknown error'}`);
   }
 
   return {

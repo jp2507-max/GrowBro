@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+import { translate } from '@/lib/i18n';
 import { getAndroidChannelId } from '@/lib/notifications/android-channels';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
@@ -51,9 +52,10 @@ async function handleAndroidGrouping(
     // Create or update group summary
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'Community Activity',
+        title: translate('community.community_activity'),
         body: `${currentCount} new ${currentCount > 1 ? 'interactions' : 'interaction'}`,
-        data: { groupKey, type: 'summary', channelId },
+        data: { groupKey, type: 'summary' },
+        android: { channelId },
       },
       trigger: null as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
     });
@@ -64,7 +66,8 @@ async function handleAndroidGrouping(
       content: {
         title: content.title || '',
         body: content.body || '',
-        data: { ...content.data, groupKey, channelId },
+        data: { ...content.data, groupKey },
+        android: { channelId },
       },
       trigger: null as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
     });

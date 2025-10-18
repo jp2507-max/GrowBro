@@ -187,102 +187,210 @@ describe('Offline Workflow Integration Tests', () => {
   });
 
   describe('Delete and Undo workflow', () => {
-    it('should soft delete with 15s undo window', async () => {
-      const mockEntry = createMockEntry(
-        '1',
-        'DELETE_POST',
-        { postId: 'post-1' },
-        0,
-        'pending'
-      );
+    describe('Delete operations', () => {
+      it('should soft delete with 15s undo window', async () => {
+        const mockEntry = createMockEntry(
+          '1',
+          'DELETE_POST',
+          { postId: 'post-1' },
+          0,
+          'pending'
+        );
 
-      mockOutboxCollection.query.mockReturnValue({
-        fetch: jest.fn().mockResolvedValue([mockEntry]),
+        mockOutboxCollection.query.mockReturnValue({
+          fetch: jest.fn().mockResolvedValue([mockEntry]),
+        });
+
+        const futureTime = new Date(Date.now() + 15000).toISOString();
+        mockApiClient.deletePost.mockResolvedValue({
+          undo_expires_at: futureTime,
+        });
+
+        await processor.processQueue();
+
+        expect(mockApiClient.deletePost).toHaveBeenCalledWith(
+          'post-1',
+          mockEntry.idempotencyKey,
+          mockEntry.clientTxId
+        );
       });
 
-      const futureTime = new Date(Date.now() + 15000).toISOString();
-      mockApiClient.deletePost.mockResolvedValue({
-        undo_expires_at: futureTime,
+      it('should process delete post operation successfully', async () => {
+        const mockEntry = createMockEntry(
+          '1',
+          'DELETE_POST',
+          { postId: 'post-1' },
+          0,
+          'pending'
+        );
+
+        mockOutboxCollection.query.mockReturnValue({
+          fetch: jest.fn().mockResolvedValue([mockEntry]),
+        });
+
+        mockApiClient.deletePost.mockResolvedValue({
+          undo_expires_at: new Date(Date.now() + 15000).toISOString(),
+        });
+
+        await processor.processQueue();
+
+        // Verify delete succeeds
+        expect(mockEntry.update).toHaveBeenCalled();
       });
 
-      await processor.processQueue();
+      it('should handle delete failure when undo window expired', async () => {
+        const mockEntry = createMockEntry(
+          '1',
+          'DELETE_POST',
+          { postId: 'post-1' },
+          0,
+          'pending'
+        );
 
-      expect(mockApiClient.deletePost).toHaveBeenCalledWith(
-        'post-1',
-        mockEntry.idempotencyKey,
-        mockEntry.clientTxId
-      );
+        mockOutboxCollection.query.mockReturnValue({
+          fetch: jest.fn().mockResolvedValue([mockEntry]),
+        });
+
+        // Mock 409 conflict error (undo window expired)
+        const error = new Error('Undo period has expired');
+        (error as any).message = 'expired';
+        mockApiClient.deletePost.mockRejectedValue(error);
+
+        await processor.processQueue();
+
+        // Entry should retry or fail
+        expect(mockEntry.update).toHaveBeenCalled();
+      });
     });
 
-    it('should process delete post operation successfully', async () => {
-      const mockEntry = createMockEntry(
-        '1',
-        'DELETE_POST',
-        { postId: 'post-1' },
-        0,
-        'pending'
-      );
+    describe('Undo operations', () => {
+      it('should process undo delete post operation successfully', async () => {
+        const mockEntry = createMockEntry(
+          '2',
+          'UNDO_DELETE_POST',
+          { postId: 'post-1' },
+          0,
+          'pending'
+        );
 
-      mockOutboxCollection.query.mockReturnValue({
-        fetch: jest.fn().mockResolvedValue([mockEntry]),
+        mockOutboxCollection.query.mockReturnValue({
+          fetch: jest.fn().mockResolvedValue([mockEntry]),
+        });
+
+        mockApiClient.undoDeletePost.mockResolvedValue({
+          success: true,
+        });
+
+        await processor.processQueue();
+
+        expect(mockApiClient.undoDeletePost).toHaveBeenCalledWith(
+          'post-1',
+          mockEntry.idempotencyKey,
+          mockEntry.clientTxId
+        );
+        expect(mockEntry.update).toHaveBeenCalled();
       });
 
-      mockApiClient.deletePost.mockResolvedValue({
-        undo_expires_at: new Date(Date.now() + 15000).toISOString(),
+      it('should process undo delete comment operation successfully', async () => {
+        const mockEntry = createMockEntry(
+          '3',
+          'UNDO_DELETE_COMMENT',
+          { commentId: 'comment-1' },
+          0,
+          'pending'
+        );
+
+        mockOutboxCollection.query.mockReturnValue({
+          fetch: jest.fn().mockResolvedValue([mockEntry]),
+        });
+
+        mockApiClient.undoDeleteComment.mockResolvedValue({
+          success: true,
+        });
+
+        await processor.processQueue();
+
+        expect(mockApiClient.undoDeleteComment).toHaveBeenCalledWith(
+          'comment-1',
+          mockEntry.idempotencyKey,
+          mockEntry.clientTxId
+        );
+        expect(mockEntry.update).toHaveBeenCalled();
       });
 
-      await processor.processQueue();
+      it('should handle undo failure when window has expired', async () => {
+        const mockEntry = createMockEntry(
+          '4',
+          'UNDO_DELETE_POST',
+          { postId: 'post-1' },
+          0,
+          'pending'
+        );
 
-      // Verify delete succeeds
-      expect(mockEntry.update).toHaveBeenCalled();
+        mockOutboxCollection.query.mockReturnValue({
+          fetch: jest.fn().mockResolvedValue([mockEntry]),
+        });
+
+        // Mock 409 conflict error (undo window expired)
+        const error = new Error('Undo period has expired');
+        (error as any).message = 'expired';
+        mockApiClient.undoDeletePost.mockRejectedValue(error);
+
+        await processor.processQueue();
+
+        // Entry should be marked as failed
+        expect(mockEntry.update).toHaveBeenCalled();
+      });
     });
 
-    it('should reject undo after 15s window expires', async () => {
-      const mockEntry = createMockEntry(
-        '1',
-        'DELETE_POST',
-        { postId: 'post-1' },
-        0,
-        'pending'
-      );
+    describe('Cross-device undo scenarios', () => {
+      it('should handle delete followed by undo from different device', async () => {
+        // Simulate delete operation (Device A)
+        const mockDeleteEntry = createMockEntry(
+          '5',
+          'DELETE_POST',
+          { postId: 'post-1' },
+          0,
+          'pending'
+        );
 
-      mockOutboxCollection.query.mockReturnValue({
-        fetch: jest.fn().mockResolvedValue([mockEntry]),
+        mockOutboxCollection.query.mockReturnValue({
+          fetch: jest.fn().mockResolvedValue([mockDeleteEntry]),
+        });
+
+        mockApiClient.deletePost.mockResolvedValue({
+          undo_expires_at: new Date(Date.now() + 15000).toISOString(),
+        });
+
+        await processor.processQueue();
+
+        expect(mockApiClient.deletePost).toHaveBeenCalled();
+
+        // Simulate undo operation (Device B) - would be triggered by UI/realtime
+        const mockUndoEntry = createMockEntry(
+          '6',
+          'UNDO_DELETE_POST',
+          { postId: 'post-1' },
+          0,
+          'pending'
+        );
+
+        mockOutboxCollection.query.mockReturnValue({
+          fetch: jest.fn().mockResolvedValue([mockUndoEntry]),
+        });
+
+        mockApiClient.undoDeletePost.mockResolvedValue({
+          success: true,
+        });
+
+        await processor.processQueue();
+
+        expect(mockApiClient.undoDeletePost).toHaveBeenCalledWith(
+          'post-1',
+          mockUndoEntry.idempotencyKey,
+          mockUndoEntry.clientTxId
+        );
       });
-
-      // Mock 409 conflict error (undo window expired)
-      const error = new Error('Undo period has expired');
-      (error as any).message = 'expired';
-      mockApiClient.deletePost.mockRejectedValue(error);
-
-      await processor.processQueue();
-
-      // Entry should retry or fail
-      expect(mockEntry.update).toHaveBeenCalled();
-    });
-
-    it('should handle undo across different devices', async () => {
-      // Device A deletes, Device B triggers undo within 15s
-      const mockDeleteEntry = createMockEntry(
-        '1',
-        'DELETE_POST',
-        { postId: 'post-1' },
-        0,
-        'pending'
-      );
-
-      mockOutboxCollection.query.mockReturnValue({
-        fetch: jest.fn().mockResolvedValue([mockDeleteEntry]),
-      });
-
-      mockApiClient.deletePost.mockResolvedValue({
-        undo_expires_at: new Date(Date.now() + 15000).toISOString(),
-      });
-
-      await processor.processQueue();
-
-      // Undo from another device should succeed via Edge Function
-      expect(mockDeleteEntry.update).toHaveBeenCalled();
     });
   });
 

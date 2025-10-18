@@ -1,11 +1,11 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
-import type {
-  AuthError,
+import {
+  type AuthError,
   createClient,
-  PostgrestError,
+  type PostgrestError,
   type SupabaseClient,
-  User,
+  type User,
 } from 'jsr:@supabase/supabase-js@2';
 
 type EdgeFunctionHandler = (req: Request) => Response | Promise<Response>;

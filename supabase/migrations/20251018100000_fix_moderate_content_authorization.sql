@@ -1,8 +1,10 @@
--- Migration: Create moderate_content RPC for atomic moderation operations
--- This SECURITY DEFINER function performs hide/unhide operations atomically with idempotency.
+-- Migration: Fix moderate_content RPC authorization security vulnerability
+-- Description: Add role-based authorization check to prevent any authenticated user from moderating content
+-- Critical Security Fix: P0 - Authorization bypass vulnerability
 
 BEGIN;
 
+-- Drop and recreate the function with proper authorization checks
 CREATE OR REPLACE FUNCTION moderate_content(
   p_content_type text,
   p_content_id uuid,
@@ -37,8 +39,9 @@ BEGIN
     RAISE EXCEPTION 'Authentication required';
   END IF;
 
-  -- Verify user has moderator or admin role
-  -- Check multiple JWT paths for role information (same as RLS policies)
+  -- CRITICAL SECURITY FIX: Verify user has moderator or admin role
+  -- This prevents any authenticated user from calling this function
+  -- Uses the same role checking logic as RLS policies for consistency
   IF NOT (
     auth.jwt() ->> 'role' IN ('admin', 'moderator')
     OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'moderator'
@@ -139,7 +142,7 @@ EXCEPTION
 END;
 $$;
 
--- Grant execute permission to authenticated users
+-- Grant execute permission to authenticated users (unchanged - permissions are checked at runtime)
 GRANT EXECUTE ON FUNCTION moderate_content(text, uuid, text, text, text) TO authenticated;
 
 COMMIT;

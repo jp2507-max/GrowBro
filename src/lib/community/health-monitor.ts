@@ -64,7 +64,7 @@ class CommunityHealthMonitor {
     const alerts: Alert[] = [];
 
     // Check P95 latency (Requirement 9.6: P95 < 3s)
-    if (metrics.realtime_latency_p95 > THRESHOLDS.LATENCY_P95_CRITICAL_MS) {
+    if (metrics.realtime_latency_p95 >= THRESHOLDS.LATENCY_P95_CRITICAL_MS) {
       alerts.push({
         severity: 'critical',
         message: 'Real-time latency P95 exceeds 3s threshold',
@@ -73,7 +73,7 @@ class CommunityHealthMonitor {
         metric: 'realtime_latency_p95',
       });
     } else if (
-      metrics.realtime_latency_p95 > THRESHOLDS.LATENCY_P95_WARNING_MS
+      metrics.realtime_latency_p95 >= THRESHOLDS.LATENCY_P95_WARNING_MS
     ) {
       alerts.push({
         severity: 'warning',
@@ -105,7 +105,7 @@ class CommunityHealthMonitor {
 
     // Check mutation failure rate (Requirement 10.5: <2% failures/day)
     if (
-      metrics.mutation_failure_rate > THRESHOLDS.MUTATION_FAILURE_RATE_CRITICAL
+      metrics.mutation_failure_rate >= THRESHOLDS.MUTATION_FAILURE_RATE_CRITICAL
     ) {
       alerts.push({
         severity: 'critical',
@@ -115,7 +115,7 @@ class CommunityHealthMonitor {
         metric: 'mutation_failure_rate',
       });
     } else if (
-      metrics.mutation_failure_rate > THRESHOLDS.MUTATION_FAILURE_RATE_WARNING
+      metrics.mutation_failure_rate >= THRESHOLDS.MUTATION_FAILURE_RATE_WARNING
     ) {
       alerts.push({
         severity: 'warning',

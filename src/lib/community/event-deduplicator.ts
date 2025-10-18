@@ -136,7 +136,13 @@ export async function handleRealtimeEvent<T>(
   const keyRow = (newRow ?? oldRow) as T;
   if (!keyRow) return;
 
-  const key = getKey(keyRow);
+  // Determine the key based on table type
+  let key: string;
+  if (table === 'post_likes') {
+    key = getLikeKey(keyRow as unknown as PostLike);
+  } else {
+    key = getKey(keyRow);
+  }
 
   // Special-case: post_likes uses a composite key and commit_timestamp.
   // INSERT/DELETE on post_likes should be treated as toggle operations

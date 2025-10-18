@@ -31,6 +31,19 @@ async function loadNotificationPreferences(options: {
   }
 }
 
+// Helper to update a specific preference
+async function updatePreference(
+  userId: string,
+  updates: Parameters<
+    typeof communityNotificationService.updateCommunityNotificationConfig
+  >[1]
+) {
+  await communityNotificationService.updateCommunityNotificationConfig(
+    userId,
+    updates
+  );
+}
+
 export function useCommunityNotifications() {
   const auth = useAuth();
   const [userId, setUserId] = React.useState<string | null>(null);
@@ -42,18 +55,29 @@ export function useCommunityNotifications() {
 
   // Get user ID from token
   React.useEffect(() => {
+    let isMounted = true;
     const loadUserId = async () => {
+      if (auth.token === null) {
+        if (isMounted) {
+          setUserId(null);
+          setCommunityInteractionsEnabled(true);
+          setCommunityLikesEnabled(true);
+          setLoading(false);
+        }
+        return;
+      }
       const id = await getOptionalAuthenticatedUserId();
-      setUserId(id);
+      if (isMounted) setUserId(id);
     };
-
     loadUserId();
+    return () => {
+      isMounted = false;
+    };
   }, [auth.token]);
 
   // Load preferences on mount when we have a userId
   React.useEffect(() => {
     if (!userId) return;
-
     loadNotificationPreferences({
       userId,
       setCommunityInteractionsEnabled,
@@ -65,42 +89,29 @@ export function useCommunityNotifications() {
   const handleToggleCommunityInteractions = React.useCallback(
     async (value: boolean) => {
       if (!userId) return;
-
+      const prev = communityInteractionsEnabled;
       setCommunityInteractionsEnabled(value);
       try {
-        await communityNotificationService.updateCommunityNotificationConfig(
-          userId,
-          {
-            communityInteractionsEnabled: value,
-          }
-        );
+        await updatePreference(userId, { communityInteractionsEnabled: value });
       } catch (error) {
         console.error(
           'Failed to update community interactions preference',
           error
         );
-        // Revert on error
-        setCommunityInteractionsEnabled(!value);
+        setCommunityInteractionsEnabled(prev);
       }
     },
-    [userId]
+    [userId, communityInteractionsEnabled]
   );
 
   const handleToggleCommunityLikes = React.useCallback(
     async (value: boolean) => {
       if (!userId) return;
-
       setCommunityLikesEnabled(value);
       try {
-        await communityNotificationService.updateCommunityNotificationConfig(
-          userId,
-          {
-            communityLikesEnabled: value,
-          }
-        );
+        await updatePreference(userId, { communityLikesEnabled: value });
       } catch (error) {
         console.error('Failed to update community likes preference', error);
-        // Revert on error
         setCommunityLikesEnabled(!value);
       }
     },

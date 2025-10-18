@@ -134,7 +134,7 @@ function createRealtimeHandlers(
   const likesCache = createQueryCacheAdapter<PostLike>(
     queryClient,
     ['post-likes'],
-    (like) => `${like.post_id}-${like.user_id}`
+    (like) => getLikeKey(like)
   );
 
   return {
@@ -295,6 +295,10 @@ export function useCommunityFeedRealtime(options: RealtimeOptions) {
   const queryClient = useQueryClient();
   const managerRef = React.useRef<RealtimeConnectionManager | null>(null);
   const outboxRef = React.useRef<OutboxAdapter>(outboxAdapter);
+
+  React.useEffect(() => {
+    outboxRef.current = outboxAdapter;
+  }, [outboxAdapter]);
 
   const [connectionState, setConnectionState] = React.useState<
     'disconnected' | 'connecting' | 'connected' | 'error'

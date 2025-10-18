@@ -542,6 +542,55 @@ export class CommunityApiClient implements CommunityAPI {
     });
   }
 
+  // ==================== Moderation ====================
+
+  async moderateContent(options: {
+    contentType: 'post' | 'comment';
+    contentId: string;
+    action: 'hide' | 'unhide';
+    reason?: string;
+    idempotencyKey?: string;
+    clientTxId?: string;
+  }): Promise<void> {
+    const {
+      contentType,
+      contentId,
+      action,
+      reason,
+      idempotencyKey,
+      clientTxId,
+    } = options;
+    const headers = createIdempotencyHeaders(idempotencyKey, clientTxId);
+    const { data: session } = await this.client.auth.getSession();
+
+    if (!session?.session?.user) {
+      throw new ValidationError('User must be authenticated');
+    }
+
+    return this.idempotencyService.processWithIdempotency({
+      key: headers['Idempotency-Key'],
+      clientTxId: headers['X-Client-Tx-Id'],
+      userId: session.session.user.id,
+      endpoint: '/api/moderate',
+      payload: { contentType, contentId, action, reason },
+      operation: async () => {
+        const { error } = await this.client.rpc('moderate_content', {
+          p_content_type: contentType,
+          p_content_id: contentId,
+          p_action: action,
+          p_reason: reason,
+          p_idempotency_key: headers['Idempotency-Key'],
+        });
+
+        if (error) {
+          throw new Error(
+            `Failed to ${action} ${contentType}: ${error.message}`
+          );
+        }
+      },
+    });
+  }
+
   // ==================== Profiles ====================
 
   async getUserProfile(userId: string): Promise<UserProfile> {

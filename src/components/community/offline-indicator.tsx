@@ -4,7 +4,7 @@
  * Banner showing offline status with:
  * - Network connectivity status
  * - Pending sync queue count
- * - Retry sync button when online
+ * - Retry sync button when offline
  */
 
 import NetInfo from '@react-native-community/netinfo';

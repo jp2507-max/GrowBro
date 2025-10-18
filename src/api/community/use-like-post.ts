@@ -113,7 +113,9 @@ export function useLikePost() {
             post.id === postId
               ? {
                   ...post,
-                  like_count: (post.like_count || 0) + 1,
+                  like_count: !post.user_has_liked
+                    ? (post.like_count || 0) + 1
+                    : post.like_count || 0,
                   user_has_liked: true,
                 }
               : post

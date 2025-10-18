@@ -29,12 +29,25 @@ jest.mock('@/lib/watermelon', () => ({
   },
 }));
 
+// Shared mock functions for consistent behavior across tests
+const mockLikePost = jest.fn();
+const mockUnlikePost = jest.fn();
+const mockApiClient = {
+  likePost: mockLikePost,
+  unlikePost: mockUnlikePost,
+};
+
 jest.mock('./client', () => ({
-  getCommunityApiClient: jest.fn(() => ({
-    likePost: jest.fn(),
-    unlikePost: jest.fn(),
-  })),
-  ConflictError: jest.fn(),
+  getCommunityApiClient: jest.fn(() => mockApiClient),
+  ConflictError: class ConflictError extends Error {
+    constructor(
+      message: string,
+      public readonly canonicalState: any
+    ) {
+      super(message);
+      this.name = 'ConflictError';
+    }
+  },
 }));
 
 jest.mock('react-native-flash-message', () => ({
@@ -97,9 +110,8 @@ describe('useLikePost', () => {
     queryClient.setQueryData(['posts'], mockPosts);
 
     // Mock API client
-    const { getCommunityApiClient } = require('./client');
-    mockApiClient = getCommunityApiClient();
-    mockApiClient.likePost.mockResolvedValue(undefined);
+    mockApiClient = mockApiClient; // Use shared mock client
+    mockLikePost.mockResolvedValue(undefined);
   });
 
   it('should optimistically update like count immediately', async () => {
@@ -122,7 +134,7 @@ describe('useLikePost', () => {
   });
 
   it('should rollback on API failure', async () => {
-    mockApiClient.likePost.mockRejectedValue(new Error('Network error'));
+    mockLikePost.mockRejectedValue(new Error('Network error'));
 
     const { result } = renderHook(() => useLikePost(), { wrapper });
 
@@ -158,7 +170,7 @@ describe('useLikePost', () => {
       message: 'Conflict detected',
     });
 
-    mockApiClient.likePost.mockRejectedValue(conflictError);
+    mockLikePost.mockRejectedValue(conflictError);
 
     const { result } = renderHook(() => useLikePost(), { wrapper });
 
@@ -266,9 +278,8 @@ describe('useUnlikePost', () => {
 
     queryClient.setQueryData(['posts'], mockPosts);
 
-    const { getCommunityApiClient } = require('./client');
-    mockApiClient = getCommunityApiClient();
-    mockApiClient.unlikePost.mockResolvedValue(undefined);
+    mockApiClient = mockApiClient; // Use shared mock client
+    mockUnlikePost.mockResolvedValue(undefined);
   });
 
   it('should optimistically update unlike count immediately', async () => {
@@ -289,7 +300,7 @@ describe('useUnlikePost', () => {
   });
 
   it('should rollback unlike on failure', async () => {
-    mockApiClient.unlikePost.mockRejectedValue(new Error('Network error'));
+    mockUnlikePost.mockRejectedValue(new Error('Network error'));
 
     const { result } = renderHook(() => useUnlikePost(), { wrapper });
 

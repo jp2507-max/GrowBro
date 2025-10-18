@@ -2,12 +2,15 @@
  * useHideContent hook
  *
  * React Query mutation for hiding content (posts/comments) with moderation reason.
+ * Uses WatermelonDB outbox pattern for offline-first architecture.
  * Requirements: 7.2, 7.6, 10.3
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { v4 as uuidv4 } from 'uuid';
 
-import { supabase } from '@/lib/supabase';
+import { database } from '@/lib/watermelon';
+import type { OutboxModel } from '@/lib/watermelon-models/outbox';
 
 type HideContentParams = {
   contentType: 'post' | 'comment';
@@ -17,7 +20,7 @@ type HideContentParams = {
 
 type HideContentResult = {
   success: boolean;
-  hiddenAt: string;
+  queuedAt: string;
 };
 
 async function hideContent({
@@ -25,31 +28,32 @@ async function hideContent({
   contentId,
   reason,
 }: HideContentParams): Promise<HideContentResult> {
-  // Generate idempotency key for this operation
-  const idempotencyKey = crypto.randomUUID();
+  // Generate client transaction ID and idempotency key
+  const clientTxId = uuidv4();
+  const idempotencyKey = uuidv4();
 
-  // Call the server-side RPC for atomic moderation
-  const { data, error } = await supabase.rpc('moderate_content', {
-    p_content_type: contentType,
-    p_content_id: contentId,
-    p_action: 'hide',
-    p_reason: reason,
-    p_idempotency_key: idempotencyKey,
+  // Queue moderation action in outbox for offline support
+  await database.write(async () => {
+    const outboxCollection = database.get<OutboxModel>('outbox');
+    await outboxCollection.create((record) => {
+      record.op = 'MODERATE_CONTENT';
+      record.payload = {
+        contentType,
+        contentId,
+        action: 'hide',
+        reason,
+      };
+      record.clientTxId = clientTxId;
+      record.idempotencyKey = idempotencyKey;
+      record.createdAt = new Date();
+      record.retries = 0;
+      record.status = 'pending';
+    });
   });
-
-  if (error) {
-    throw new Error(`Failed to hide ${contentType}: ${error.message}`);
-  }
-
-  if (!data || !data.success) {
-    throw new Error(
-      `Failed to hide ${contentType}: ${data?.error || 'Unknown error'}`
-    );
-  }
 
   return {
     success: true,
-    hiddenAt: data.moderated_at,
+    queuedAt: new Date().toISOString(),
   };
 }
 

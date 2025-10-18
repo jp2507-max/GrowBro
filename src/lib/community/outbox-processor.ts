@@ -344,6 +344,33 @@ export class OutboxProcessor {
         );
         break;
 
+      case 'UNDO_DELETE_POST':
+        await this.apiClient.undoDeletePost(
+          payload.postId,
+          idempotencyKey,
+          clientTxId
+        );
+        break;
+
+      case 'UNDO_DELETE_COMMENT':
+        await this.apiClient.undoDeleteComment(
+          payload.commentId,
+          idempotencyKey,
+          clientTxId
+        );
+        break;
+
+      case 'MODERATE_CONTENT':
+        await this.apiClient.moderateContent({
+          contentType: payload.contentType,
+          contentId: payload.contentId,
+          action: payload.action,
+          reason: payload.reason,
+          idempotencyKey,
+          clientTxId,
+        });
+        break;
+
       default:
         throw new Error(`Unknown operation: ${op}`);
     }
@@ -353,7 +380,7 @@ export class OutboxProcessor {
    * Calculate exponential backoff delay
    */
   private calculateBackoff(retries: number): number {
-    return Math.min(this.BASE_DELAY * Math.pow(2, retries), this.MAX_DELAY);
+    return Math.min(this.BASE_DELAY * Math.pow(2, retries - 1), this.MAX_DELAY);
   }
 
   /**

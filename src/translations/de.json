@@ -5,6 +5,11 @@
       "out_of_range_hint": "Zeigt an, dass der letzte Messwert außerhalb des Zielbereichs liegt.",
       "targets_hint": "Zeigt die pH- und EC-Zielwerte dieser Aufgabe."
     },
+    "card": {
+      "comment_plural": "Kommentare",
+      "comment_singular": "Kommentar",
+      "untitled": "Unbenannt"
+    },
     "common": {
       "go_back": "Zurück",
       "retry_hint": "Wiederholt die letzte Aktion.",
@@ -138,6 +143,7 @@
     "comment_input_label": "Kommentar schreiben",
     "comment_placeholder": "Teile deine Gedanken...",
     "comment_too_long": "Kommentar überschreitet die maximale Länge von 500 Zeichen",
+    "community_activity": "Community-Aktivität",
     "consent": {
       "accept_all": "Alle akzeptieren",
       "aiTraining": {

@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { ScrollView } from 'react-native';
@@ -18,6 +19,7 @@ import { translate, type TxKeyPath } from '@/lib/i18n';
 export default function Post() {
   const local = useLocalSearchParams<{ id: string; commentId?: string }>();
   const scrollViewRef = React.useRef<ScrollView>(null);
+  const queryClient = useQueryClient();
   // Note: Comment scrolling would require CommentList component to be updated
   // to support forwardRef and scrollToComment method
 
@@ -37,7 +39,8 @@ export default function Post() {
 
   const handleCommentCreated = React.useCallback(() => {
     void refetch();
-  }, [refetch]);
+    void queryClient.invalidateQueries({ queryKey: ['comments', local.id] });
+  }, [refetch, queryClient, local.id]);
 
   // TODO: Implement comment scrolling when CommentList supports it
   // Requires updating CommentList component to expose scrollToComment via ref

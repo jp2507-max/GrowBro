@@ -34,8 +34,9 @@ export const Card = ({
 
   // Prevent like button from triggering navigation
   const handleLikePress = React.useCallback((e: any) => {
-    e.stopPropagation();
-    e.preventDefault();
+    if (typeof e?.stopPropagation === 'function') {
+      e.stopPropagation();
+    }
   }, []);
 
   return (
@@ -58,7 +59,9 @@ export const Card = ({
             <Text className="w-fit rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
               {translate('cannabis.educational_badge')}
             </Text>
-            <Text className="py-3 text-2xl ">{title || 'Untitled'}</Text>
+            <Text className="py-3 text-2xl ">
+              {title || translate('card.untitled')}
+            </Text>
             <Text numberOfLines={3} className="leading-snug text-gray-600">
               {body}
             </Text>
@@ -79,7 +82,10 @@ export const Card = ({
                   className="text-sm text-neutral-600 dark:text-neutral-400"
                   testID={`comment-count-${id}`}
                 >
-                  {comment_count} {comment_count === 1 ? 'comment' : 'comments'}
+                  {comment_count}{' '}
+                  {comment_count === 1
+                    ? translate('card.comment_singular')
+                    : translate('card.comment_plural')}
                 </Text>
               )}
             </View>

@@ -69,19 +69,16 @@ describe('CommunityApiClient', () => {
         single: jest.fn().mockResolvedValue({ data: mockPost, error: null }),
       };
 
-      (mockSupabaseClient.from as jest.Mock).mockReturnValue(mockChain);
+      (mockSupabaseClient.from as jest.Mock).mockImplementation(
+        (table: string) => {
+          if (table === 'posts') return mockChain;
+          if (table === 'post_likes') return countChain;
+          return {};
+        }
+      );
       (mockSupabaseClient.auth.getSession as jest.Mock).mockResolvedValue({
         data: { session: null },
       });
-
-      // Mock enrichPost queries
-      const countChain = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        is: jest.fn().mockReturnThis(),
-        maybeSingle: jest.fn().mockResolvedValue({ data: null }),
-      };
-      (mockSupabaseClient.from as jest.Mock).mockReturnValue(countChain);
 
       const post = await client.getPost('post-1');
 
@@ -140,16 +137,12 @@ describe('CommunityApiClient', () => {
         single: jest.fn().mockResolvedValue({ data: mockPost, error: null }),
       };
 
-      (mockSupabaseClient.from as jest.Mock).mockReturnValue(insertChain);
-
-      // Mock enrichPost
-      const countChain = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        is: jest.fn().mockReturnThis(),
-        maybeSingle: jest.fn().mockResolvedValue({ data: null }),
-      };
-      (mockSupabaseClient.from as jest.Mock).mockReturnValue(countChain);
+      (mockSupabaseClient.from as jest.Mock).mockImplementation(
+        (table: string) => {
+          if (table === 'posts') return insertChain;
+          return {};
+        }
+      );
 
       const post = await client.createPost(postData);
 
@@ -249,29 +242,6 @@ describe('CommunityApiClient', () => {
         }),
       };
 
-      const updateChain = {
-        update: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({
-          data: {
-            id: 'post-1',
-            user_id: 'user-1',
-            body: 'Restored post',
-            created_at: '2024-01-01T00:00:00Z',
-            updated_at: '2024-01-01T00:00:00Z',
-          },
-          error: null,
-        }),
-      };
-
-      (mockSupabaseClient.auth.getSession as jest.Mock).mockResolvedValue(
-        mockSession
-      );
-      (mockSupabaseClient.from as jest.Mock)
-        .mockReturnValueOnce(selectChain)
-        .mockReturnValueOnce(updateChain);
-
       // Mock enrichPost
       const countChain = {
         select: jest.fn().mockReturnThis(),
@@ -279,7 +249,13 @@ describe('CommunityApiClient', () => {
         is: jest.fn().mockReturnThis(),
         maybeSingle: jest.fn().mockResolvedValue({ data: null }),
       };
-      (mockSupabaseClient.from as jest.Mock).mockReturnValue(countChain);
+
+      (mockSupabaseClient.auth.getSession as jest.Mock).mockResolvedValue(
+        mockSession
+      );
+      (mockSupabaseClient.from as jest.Mock)
+        .mockReturnValueOnce(selectChain)
+        .mockReturnValue(countChain);
 
       const post = await client.undoDeletePost('post-1');
 

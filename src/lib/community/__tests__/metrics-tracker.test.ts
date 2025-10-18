@@ -4,9 +4,7 @@
  * Requirements: 9.6, 10.5
  */
 
-import { MMKV } from 'react-native-mmkv';
-
-import { communityMetrics } from '../metrics-tracker';
+// import { communityMetrics } from '../metrics-tracker'; // Defer importing the tracker until beforeEach to ensure fresh mocks
 
 // Mock MMKV
 jest.mock('react-native-mmkv', () => ({
@@ -19,14 +17,29 @@ jest.mock('react-native-mmkv', () => ({
 }));
 
 describe('CommunityMetricsTracker', () => {
-  let tracker: typeof communityMetrics;
+  let tracker: any;
   let mockStorage: any;
 
   beforeEach(() => {
+    jest.resetModules();
     jest.clearAllMocks();
-    tracker = communityMetrics;
-    // Access the mock storage instance
-    mockStorage = (MMKV as jest.Mock).mock.results[0].value;
+    jest.isolateModules(() => {
+      // Re-require after mocks/reset
+
+      const { communityMetrics } = require('../metrics-tracker');
+      tracker = communityMetrics;
+      // Access the mock storage instance
+
+      const { MMKV } = require('react-native-mmkv');
+      mockStorage = (MMKV as jest.Mock).mock.results[0].value;
+    });
+    // Set default mock return values
+    mockStorage.getString.mockImplementation(() => undefined);
+    mockStorage.getNumber.mockImplementation(() => 0);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe('latency tracking', () => {
@@ -50,7 +63,9 @@ describe('CommunityMetricsTracker', () => {
         { timestamp: Date.now(), latency_ms: 2000 },
         { timestamp: Date.now(), latency_ms: 2500 },
       ];
-      mockStorage.getString.mockReturnValue(JSON.stringify(samples));
+      mockStorage.getString.mockImplementation((key) =>
+        key === 'latency_samples' ? JSON.stringify(samples) : undefined
+      );
 
       const metrics = tracker.getMetrics();
 
@@ -65,12 +80,14 @@ describe('CommunityMetricsTracker', () => {
         timestamp: Date.now(),
         latency_ms: i < 95 ? 1000 : 3000, // 95% at 1s, 5% at 3s
       }));
-      mockStorage.getString.mockReturnValue(JSON.stringify(samples));
+      mockStorage.getString.mockImplementation((key) =>
+        key === 'latency_samples' ? JSON.stringify(samples) : undefined
+      );
 
       const metrics = tracker.getMetrics();
 
-      // P95 should be around 3000ms
-      expect(metrics.realtime_latency_p95).toBeGreaterThanOrEqual(2500);
+      // P95 should be 1000ms since 95% of samples are at 1000ms
+      expect(metrics.realtime_latency_p95).toBe(1000);
     });
 
     test('should handle empty samples gracefully', () => {
@@ -101,7 +118,7 @@ describe('CommunityMetricsTracker', () => {
 
   describe('reconnection tracking', () => {
     test('should increment reconnect counter', () => {
-      mockStorage.getNumber.mockReturnValue(2);
+      mockStorage.getNumber.mockImplementation(() => 2);
 
       tracker.recordReconnect();
 
@@ -146,7 +163,9 @@ describe('CommunityMetricsTracker', () => {
         { timestamp: now - 45000, count: 1 }, // 45s ago
         { timestamp: now - 90000, count: 1 }, // 90s ago (should be excluded)
       ];
-      mockStorage.getString.mockReturnValue(JSON.stringify(drops));
+      mockStorage.getString.mockImplementation((key) =>
+        key === 'dedupe_drops' ? JSON.stringify(drops) : undefined
+      );
 
       const metrics = tracker.getMetrics();
 
@@ -179,7 +198,9 @@ describe('CommunityMetricsTracker', () => {
         failed: 2,
         confirmed: 3,
       };
-      mockStorage.getString.mockReturnValue(JSON.stringify(storedMetrics));
+      mockStorage.getString.mockImplementation((key) =>
+        key === 'outbox_metrics' ? JSON.stringify(storedMetrics) : undefined
+      );
 
       const metrics = tracker.getMetrics();
 
@@ -208,7 +229,9 @@ describe('CommunityMetricsTracker', () => {
         { timestamp: Date.now(), count: 0 }, // failure
         { timestamp: Date.now(), count: 1 }, // success
       ];
-      mockStorage.getString.mockReturnValue(JSON.stringify(actions));
+      mockStorage.getString.mockImplementation((key) =>
+        key === 'undo_actions' ? JSON.stringify(actions) : undefined
+      );
 
       const metrics = tracker.getMetrics();
 
@@ -237,7 +260,9 @@ describe('CommunityMetricsTracker', () => {
         { timestamp: Date.now(), count: 1 }, // failed
         { timestamp: Date.now(), count: 0 }, // success
       ];
-      mockStorage.getString.mockReturnValue(JSON.stringify(failures));
+      mockStorage.getString.mockImplementation((key) =>
+        key === 'mutation_failures' ? JSON.stringify(failures) : undefined
+      );
 
       const metrics = tracker.getMetrics();
 
@@ -251,7 +276,9 @@ describe('CommunityMetricsTracker', () => {
         ...Array(98).fill({ timestamp: Date.now(), count: 0 }),
         ...Array(2).fill({ timestamp: Date.now(), count: 1 }),
       ];
-      mockStorage.getString.mockReturnValue(JSON.stringify(failures));
+      mockStorage.getString.mockImplementation((key) =>
+        key === 'mutation_failures' ? JSON.stringify(failures) : undefined
+      );
 
       const metrics = tracker.getMetrics();
 
@@ -274,8 +301,8 @@ describe('CommunityMetricsTracker', () => {
 
   describe('singleton instance', () => {
     test('should export singleton instance', () => {
-      expect(communityMetrics).toBeDefined();
-      expect(typeof communityMetrics.getMetrics).toBe('function');
+      expect(tracker).toBeDefined();
+      expect(typeof tracker.getMetrics).toBe('function');
     });
   });
 

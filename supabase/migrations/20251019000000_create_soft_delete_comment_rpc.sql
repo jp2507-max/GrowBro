@@ -19,7 +19,7 @@ BEGIN
     undo_expires_at = now() + interval '15 seconds'
   WHERE
     id = comment_id
-    AND user_id = user_id
+    AND post_comments.user_id = user_id
     AND deleted_at IS NULL;
 
   -- Check if any row was updated

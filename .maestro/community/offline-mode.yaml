@@ -16,13 +16,9 @@ env:
     id: 'community-screen'
 - waitForAnimationToEnd
 
-# Enable airplane mode
-- runScript: |
-    if [ "$MAESTRO_DRIVER_PLATFORM" = "ios" ]; then
-      xcrun simctl status_bar booted override --dataNetwork wifi --wifiMode active --wifiBars 3
-    else
-      adb shell svc wifi disable && adb shell svc data disable
-    fi
+# Enable offline mode (requires manual device settings access)
+# Note: Maestro cannot control device network settings directly
+- runFlow: ../utils/offline-enable.yaml
 
 # Verify offline indicator appears
 - waitForAnimationToEnd
@@ -31,16 +27,16 @@ env:
 
 # Verify cached posts are still visible
 - assertVisible:
-    id: 'post-card-*'
+    idMatches: 'post-card-.*'
 
 # Attempt to like a post (should queue action)
 - tapOn:
-    id: 'like-button-*'
+    idMatches: 'like-button-.*'
 - assertVisible: 'liked'
 
 # Open post and attempt to comment
 - tapOn:
-    id: 'post-card-*'
+    idMatches: 'post-card-.*'
 - tapOn:
     id: 'comment-input'
 - inputText: 'Queued comment while offline'
@@ -50,13 +46,9 @@ env:
 # Verify comment shows pending state
 - assertVisible: 'pending'
 
-# Disable airplane mode
-- runScript: |
-    if [ "$MAESTRO_DRIVER_PLATFORM" = "ios" ]; then
-      xcrun simctl status_bar booted clear
-    else
-      adb shell svc wifi enable && adb shell svc data enable
-    fi
+# Disable offline mode (requires manual device settings access)
+# Note: Maestro cannot control device network settings directly
+- runFlow: ../utils/offline-disable.yaml
 
 # Wait for sync to complete
 - waitForAnimationToEnd:

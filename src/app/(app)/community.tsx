@@ -114,8 +114,8 @@ export default function CommunityScreen(): React.ReactElement {
   const undoMutation = useUndoDeletePost();
 
   const [undoState, setUndoState] = React.useState<{
-    postId: string;
-    expiresAt: string;
+    postId: string | number;
+    undoExpiresAt: string;
   } | null>(null);
 
   const {
@@ -200,8 +200,8 @@ export default function CommunityScreen(): React.ReactElement {
   }, [router]);
 
   const handlePostDelete = React.useCallback(
-    (postId: string, undoExpiresAt: string) => {
-      setUndoState({ postId, expiresAt: undoExpiresAt });
+    (postId: string | number, undoExpiresAt: string) => {
+      setUndoState({ postId, undoExpiresAt });
       void refetch();
     },
     [refetch]
@@ -298,7 +298,7 @@ export default function CommunityScreen(): React.ReactElement {
       <UndoSnackbar
         visible={!!undoState}
         message={translate('community.post_deleted' as TxKeyPath)}
-        expiresAt={undoState?.expiresAt ?? ''}
+        expiresAt={undoState?.undoExpiresAt ?? ''}
         onUndo={handleUndo}
         onDismiss={handleDismissUndo}
       />

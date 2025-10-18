@@ -19,13 +19,13 @@ export * from './use-delete-comment';
 export * from './use-like-post';
 export * from './use-unlike-post';
 
-const apiClient = getCommunityApiClient();
+// Resolve client on-demand to pick up resets in tests and env switches
 
 // ==================== Post Queries ====================
 
 export const usePost = createQuery<Post, { postId: string }, AxiosError>({
   queryKey: ['post', 'postId'],
-  fetcher: ({ postId }) => apiClient.getPost(postId),
+  fetcher: ({ postId }) => getCommunityApiClient().getPost(postId),
 });
 
 export const usePosts = ({
@@ -34,7 +34,7 @@ export const usePosts = ({
 }: { cursor?: string; limit?: number } = {}) => {
   return useQuery<PaginatedResponse<Post>, AxiosError>({
     queryKey: ['posts', cursor, limit],
-    queryFn: () => apiClient.getPosts(cursor, limit),
+    queryFn: () => getCommunityApiClient().getPosts(cursor, limit),
   });
 };
 
@@ -44,7 +44,7 @@ export const useUserProfile = createQuery<
   AxiosError
 >({
   queryKey: ['user-profile'],
-  fetcher: ({ userId }) => apiClient.getUserProfile(userId),
+  fetcher: ({ userId }) => getCommunityApiClient().getUserProfile(userId),
 });
 
 export const useUserPosts = ({
@@ -58,7 +58,7 @@ export const useUserPosts = ({
 }) => {
   return useQuery<PaginatedResponse<Post>, AxiosError>({
     queryKey: ['user-posts', userId, cursor, limit],
-    queryFn: () => apiClient.getUserPosts(userId, cursor, limit),
+    queryFn: () => getCommunityApiClient().getUserPosts(userId, cursor, limit),
   });
 };
 
@@ -75,7 +75,7 @@ export const useComments = ({
 }) => {
   return useQuery<PaginatedResponse<PostComment>, AxiosError>({
     queryKey: ['comments', postId, cursor, limit],
-    queryFn: () => apiClient.getComments(postId, cursor, limit),
+    queryFn: () => getCommunityApiClient().getComments(postId, cursor, limit),
   });
 };
 
@@ -91,7 +91,7 @@ export const useCreatePost = createMutation<
   AxiosError
 >({
   mutationFn: ({ data, idempotencyKey, clientTxId }) =>
-    apiClient.createPost(data, idempotencyKey, clientTxId),
+    getCommunityApiClient().createPost(data, idempotencyKey, clientTxId),
 });
 
 export const useDeletePost = createMutation<
@@ -104,7 +104,7 @@ export const useDeletePost = createMutation<
   AxiosError
 >({
   mutationFn: ({ postId, idempotencyKey, clientTxId }) =>
-    apiClient.deletePost(postId, idempotencyKey, clientTxId),
+    getCommunityApiClient().deletePost(postId, idempotencyKey, clientTxId),
 });
 
 export const useUndoDeletePost = createMutation<
@@ -117,7 +117,7 @@ export const useUndoDeletePost = createMutation<
   AxiosError | ConflictError
 >({
   mutationFn: ({ postId, idempotencyKey, clientTxId }) =>
-    apiClient.undoDeletePost(postId, idempotencyKey, clientTxId),
+    getCommunityApiClient().undoDeletePost(postId, idempotencyKey, clientTxId),
 });
 
 // ==================== Like Mutations ====================
@@ -136,5 +136,9 @@ export const useUndoDeleteComment = createMutation<
   AxiosError | ConflictError
 >({
   mutationFn: ({ commentId, idempotencyKey, clientTxId }) =>
-    apiClient.undoDeleteComment(commentId, idempotencyKey, clientTxId),
+    getCommunityApiClient().undoDeleteComment(
+      commentId,
+      idempotencyKey,
+      clientTxId
+    ),
 });

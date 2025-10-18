@@ -188,6 +188,8 @@ describe('OutboxProcessor', () => {
     });
 
     it('should apply exponential backoff on failures', async () => {
+      jest.useFakeTimers();
+
       mockEntries = [
         createMockEntry('1', 'LIKE', { postId: 'post-1' }, 0, 'pending'),
       ];
@@ -202,17 +204,21 @@ describe('OutboxProcessor', () => {
 
       expect(mockEntries[0].update).toHaveBeenCalledWith(expect.any(Function));
 
-      // Verify backoff calculation (1000 * 2^1 = 2000ms)
       const updateFn = (mockEntries[0].update as jest.Mock).mock.calls[0][0];
-      const mockRecord = {
+      const before = Date.now();
+      const rec: any = {
         retries: 0,
-        nextRetryAt: new Date(),
+        nextRetryAt: new Date(before),
         status: 'pending',
       };
-      updateFn(mockRecord);
+      updateFn(rec);
 
-      expect(mockRecord.retries).toBe(1);
-      expect(mockRecord.status).toBe('pending');
+      // 1st failure => 2000ms delay
+      expect(rec.retries).toBe(1);
+      const delta = rec.nextRetryAt.getTime() - before;
+      expect(delta).toBe(2000);
+
+      jest.useRealTimers();
     });
   });
 
@@ -309,7 +315,6 @@ describe('OutboxProcessor', () => {
 
       expect(status).toEqual({
         pending: 2,
-        processing: 0,
         failed: 1,
         confirmed: 1,
         total: 4,

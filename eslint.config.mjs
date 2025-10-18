@@ -41,8 +41,6 @@ export default defineConfig([
     'package/dist/',
     // Ignore Deno test files in Supabase functions
     'supabase/functions/**/*.test.ts',
-    // Ignore all Supabase functions as they run in Deno, not React Native
-    'supabase/functions/**/*.ts',
   ]),
   expoConfig,
   eslintPluginPrettierRecommended,
@@ -111,8 +109,18 @@ export default defineConfig([
       // (removed custom no-flatlist rule)
     },
   },
+  // Deno Edge Functions - must come BEFORE TypeScript config to avoid parser issues
+  {
+    files: ['supabase/functions/**/*.{ts,tsx}'],
+    rules: {
+      'import/no-unresolved': 'off',
+      'max-lines-per-function': 'off',
+      'max-params': 'off',
+    },
+  },
   {
     files: ['**/*.ts', '**/*.tsx'],
+    ignores: ['supabase/functions/**/*.{ts,tsx}'],
     languageOptions: {
       parser: parser,
       parserOptions: {
@@ -221,13 +229,6 @@ export default defineConfig([
       'max-lines-per-function': 'off',
       'max-params': 'off',
       '@typescript-eslint/no-require-imports': 'off', // Jest dynamic mocking requires require()
-    },
-  },
-  // Deno Edge Functions use jsr:/npm: specifiers that Node import resolver can't resolve
-  {
-    files: ['supabase/functions/**/*.{ts,tsx}'],
-    rules: {
-      'import/no-unresolved': 'off',
     },
   },
   // Scripts and generated packages run in Node; allow __dirname/Buffer and relax length

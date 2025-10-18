@@ -27,9 +27,7 @@ export class PostModel extends Model {
 
   // Computed properties for UI - not persisted in DB
   @lazy
-  likeCount = this.likes
-    .extend(Q.where('deleted_at', null))
-    .observeCount(false);
+  likeCount = this.likes.observeCount(false);
 
   @lazy
   commentCount = this.comments

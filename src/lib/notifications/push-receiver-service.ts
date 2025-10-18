@@ -62,8 +62,8 @@ export const PushReceiverService = {
     const anyNotifications: any = Notifications as any;
     anyNotifications.setNotificationHandler({
       handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
+        shouldShowAlert: false,
+        shouldPlaySound: false,
         shouldSetBadge: true,
       }),
     });
