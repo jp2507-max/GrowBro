@@ -1,11 +1,17 @@
 import deTranslations from '@/translations/de.json';
 import enTranslations from '@/translations/en.json';
 
+// Type assertion to access playbooks and phases which exist but aren't in the inferred type
+const _enPlaybooks = (enTranslations as any).playbooks;
+const _dePlaybooks = (deTranslations as any).playbooks;
+const _enPhases = (enTranslations as any).phases;
+const _dePhases = (deTranslations as any).phases;
+
 describe('Playbook Translations', () => {
   describe('ICU MessageFormat Validation', () => {
     describe('English translations', () => {
       test('should have valid ICU format for pluralization', () => {
-        const { playbooks } = enTranslations;
+        const { playbooks } = enTranslations as any;
 
         // Check pluralization patterns
         expect(playbooks.selection.preview.totalWeeks_one).toContain(
@@ -47,7 +53,7 @@ describe('Playbook Translations', () => {
       });
 
       test('should have valid ICU format for interpolation', () => {
-        const { playbooks } = enTranslations;
+        const { playbooks } = enTranslations as any;
 
         // Check interpolation patterns
         expect(playbooks.adjustments.confidence).toContain('{{percent}}');
@@ -67,7 +73,7 @@ describe('Playbook Translations', () => {
       });
 
       test('should have valid accessibility labels with interpolation', () => {
-        const { playbooks } = enTranslations;
+        const { playbooks } = enTranslations as any;
 
         expect(playbooks.accessibility.playbookCard).toContain('{{name}}');
         expect(playbooks.accessibility.playbookCard).toContain('{{setup}}');
@@ -110,7 +116,7 @@ describe('Playbook Translations', () => {
 
     describe('German translations', () => {
       test('should have valid ICU format for pluralization', () => {
-        const { playbooks } = deTranslations;
+        const { playbooks } = deTranslations as any;
 
         // Check pluralization patterns
         expect(playbooks.selection.preview.totalWeeks_one).toContain(
@@ -152,7 +158,7 @@ describe('Playbook Translations', () => {
       });
 
       test('should have valid ICU format for interpolation', () => {
-        const { playbooks } = deTranslations;
+        const { playbooks } = deTranslations as any;
 
         // Check interpolation patterns
         expect(playbooks.adjustments.confidence).toContain('{{percent}}');
@@ -172,7 +178,7 @@ describe('Playbook Translations', () => {
       });
 
       test('should have valid accessibility labels with interpolation', () => {
-        const { playbooks } = deTranslations;
+        const { playbooks } = deTranslations as any;
 
         expect(playbooks.accessibility.playbookCard).toContain('{{name}}');
         expect(playbooks.accessibility.playbookCard).toContain('{{setup}}');
@@ -215,43 +221,51 @@ describe('Playbook Translations', () => {
 
     describe('Translation key parity', () => {
       test('should have matching keys between EN and DE', () => {
-        const enKeys = Object.keys(enTranslations.playbooks);
-        const deKeys = Object.keys(deTranslations.playbooks);
+        const enKeys = Object.keys((enTranslations as any).playbooks);
+        const deKeys = Object.keys((deTranslations as any).playbooks);
 
         expect(enKeys.sort()).toEqual(deKeys.sort());
       });
 
       test('should have matching nested keys for selection', () => {
-        const enKeys = Object.keys(enTranslations.playbooks.selection);
-        const deKeys = Object.keys(deTranslations.playbooks.selection);
+        const enKeys = Object.keys((enTranslations as any).playbooks.selection);
+        const deKeys = Object.keys((deTranslations as any).playbooks.selection);
 
         expect(enKeys.sort()).toEqual(deKeys.sort());
       });
 
       test('should have matching nested keys for schedule.shift', () => {
-        const enKeys = Object.keys(enTranslations.playbooks.schedule.shift);
-        const deKeys = Object.keys(deTranslations.playbooks.schedule.shift);
+        const enKeys = Object.keys(
+          (enTranslations as any).playbooks.schedule.shift
+        );
+        const deKeys = Object.keys(
+          (deTranslations as any).playbooks.schedule.shift
+        );
 
         expect(enKeys.sort()).toEqual(deKeys.sort());
       });
 
       test('should have matching nested keys for trichome', () => {
-        const enKeys = Object.keys(enTranslations.playbooks.trichome);
-        const deKeys = Object.keys(deTranslations.playbooks.trichome);
+        const enKeys = Object.keys((enTranslations as any).playbooks.trichome);
+        const deKeys = Object.keys((deTranslations as any).playbooks.trichome);
 
         expect(enKeys.sort()).toEqual(deKeys.sort());
       });
 
       test('should have matching nested keys for community', () => {
-        const enKeys = Object.keys(enTranslations.playbooks.community);
-        const deKeys = Object.keys(deTranslations.playbooks.community);
+        const enKeys = Object.keys((enTranslations as any).playbooks.community);
+        const deKeys = Object.keys((deTranslations as any).playbooks.community);
 
         expect(enKeys.sort()).toEqual(deKeys.sort());
       });
 
       test('should have matching nested keys for accessibility', () => {
-        const enKeys = Object.keys(enTranslations.playbooks.accessibility);
-        const deKeys = Object.keys(deTranslations.playbooks.accessibility);
+        const enKeys = Object.keys(
+          (enTranslations as any).playbooks.accessibility
+        );
+        const deKeys = Object.keys(
+          (deTranslations as any).playbooks.accessibility
+        );
 
         expect(enKeys.sort()).toEqual(deKeys.sort());
       });
@@ -259,7 +273,7 @@ describe('Playbook Translations', () => {
 
     describe('Phases translations', () => {
       test('should have all phase translations in English', () => {
-        const { phases } = enTranslations;
+        const { phases } = enTranslations as any;
 
         expect(phases.seedling).toBeDefined();
         expect(phases.veg).toBeDefined();
@@ -268,7 +282,7 @@ describe('Playbook Translations', () => {
       });
 
       test('should have all phase translations in German', () => {
-        const { phases } = deTranslations;
+        const { phases } = deTranslations as any;
 
         expect(phases.seedling).toBeDefined();
         expect(phases.veg).toBeDefined();
@@ -277,8 +291,8 @@ describe('Playbook Translations', () => {
       });
 
       test('should have matching phase keys between EN and DE', () => {
-        const enKeys = Object.keys(enTranslations.phases);
-        const deKeys = Object.keys(deTranslations.phases);
+        const enKeys = Object.keys((enTranslations as any).phases);
+        const deKeys = Object.keys((deTranslations as any).phases);
 
         expect(enKeys.sort()).toEqual(deKeys.sort());
       });

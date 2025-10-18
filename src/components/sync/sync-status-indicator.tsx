@@ -29,7 +29,7 @@ export function SyncStatusIndicator({
       {showLabel && (
         <Text
           className="text-sm text-neutral-600 dark:text-neutral-400"
-          tx="sync.status.syncing"
+          tx="community.sync.status.syncing"
         />
       )}
     </View>

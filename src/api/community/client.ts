@@ -657,11 +657,11 @@ export class CommunityApiClient implements CommunityAPI {
     const { data: session } = await this.client.auth.getSession();
     const userId = session?.session?.user?.id;
 
-    // Build the select query with subqueries for counts
+    // Build the select query using denormalized count fields maintained by triggers
     const selectQuery = query.select(`
       *,
-      like_count: post_likes(count),
-      comment_count: post_comments(count)
+      like_count,
+      comment_count
     `);
 
     const { data: posts, error } = await selectQuery;

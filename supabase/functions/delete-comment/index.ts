@@ -29,18 +29,30 @@ Deno.serve(async (req: Request) => {
 
     if (!supabaseUrl) {
       console.error('SUPABASE_URL environment variable is missing or empty');
-      return new Response(JSON.stringify({ error: 'Server misconfiguration: SUPABASE_URL is missing' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'Server misconfiguration: SUPABASE_URL is missing',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
     }
 
     if (!supabaseKey) {
-      console.error('SUPABASE_ANON_KEY environment variable is missing or empty');
-      return new Response(JSON.stringify({ error: 'Server misconfiguration: SUPABASE_ANON_KEY is missing' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
+      console.error(
+        'SUPABASE_ANON_KEY environment variable is missing or empty'
+      );
+      return new Response(
+        JSON.stringify({
+          error: 'Server misconfiguration: SUPABASE_ANON_KEY is missing',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey, {
@@ -54,27 +66,36 @@ Deno.serve(async (req: Request) => {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'Unauthorized',
+        }),
+        {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
     }
 
     const { commentId } = (await req.json()) as { commentId: string };
 
     if (!commentId) {
-      return new Response(JSON.stringify({ error: 'commentId is required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'commentId is required',
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
     }
 
     // Soft delete with 15-second undo window using RPC
-    const { data, error } = await supabase
-      .rpc('soft_delete_comment', {
-        comment_id: commentId,
-        user_id: user.id
-      });
+    const { data, error } = await supabase.rpc('soft_delete_comment', {
+      comment_id: commentId,
+      user_id: user.id,
+    });
 
     if (error) {
       if (error.code === 'PGRST116' || error.code === 'P0002') {
@@ -87,10 +108,15 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
+      return new Response(
+        JSON.stringify({
+          error: error.message,
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
     }
 
     return new Response(

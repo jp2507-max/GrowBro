@@ -41,7 +41,7 @@ export function SyncStatus({
     return () => clearInterval(id);
   }, []);
 
-  const label = translate('sync.last_sync_and_pending', {
+  const label = translate('community.sync.last_sync_and_pending', {
     time: formatTime(lastSyncMs ?? null),
     count: String(pendingCount),
   });

@@ -11,7 +11,12 @@ declare module 'expo-notifications' {
     body: string;
     data?: Record<string, unknown>;
     threadId?: string;
+    threadIdentifier?: string;
     sound?: boolean | string;
+    android?: {
+      channelId?: string;
+      [key: string]: unknown;
+    };
   };
 
   export function scheduleNotificationAsync(options: {

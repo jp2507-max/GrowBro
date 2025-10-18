@@ -63,7 +63,7 @@ describe('CommunityMetricsTracker', () => {
         { timestamp: Date.now(), latency_ms: 2000 },
         { timestamp: Date.now(), latency_ms: 2500 },
       ];
-      mockStorage.getString.mockImplementation((key) =>
+      mockStorage.getString.mockImplementation((key: string) =>
         key === 'latency_samples' ? JSON.stringify(samples) : undefined
       );
 
@@ -80,7 +80,7 @@ describe('CommunityMetricsTracker', () => {
         timestamp: Date.now(),
         latency_ms: i < 95 ? 1000 : 3000, // 95% at 1s, 5% at 3s
       }));
-      mockStorage.getString.mockImplementation((key) =>
+      mockStorage.getString.mockImplementation((key: string) =>
         key === 'latency_samples' ? JSON.stringify(samples) : undefined
       );
 
@@ -163,7 +163,7 @@ describe('CommunityMetricsTracker', () => {
         { timestamp: now - 45000, count: 1 }, // 45s ago
         { timestamp: now - 90000, count: 1 }, // 90s ago (should be excluded)
       ];
-      mockStorage.getString.mockImplementation((key) =>
+      mockStorage.getString.mockImplementation((key: string) =>
         key === 'dedupe_drops' ? JSON.stringify(drops) : undefined
       );
 
@@ -198,7 +198,7 @@ describe('CommunityMetricsTracker', () => {
         failed: 2,
         confirmed: 3,
       };
-      mockStorage.getString.mockImplementation((key) =>
+      mockStorage.getString.mockImplementation((key: string) =>
         key === 'outbox_metrics' ? JSON.stringify(storedMetrics) : undefined
       );
 
@@ -229,7 +229,7 @@ describe('CommunityMetricsTracker', () => {
         { timestamp: Date.now(), count: 0 }, // failure
         { timestamp: Date.now(), count: 1 }, // success
       ];
-      mockStorage.getString.mockImplementation((key) =>
+      mockStorage.getString.mockImplementation((key: string) =>
         key === 'undo_actions' ? JSON.stringify(actions) : undefined
       );
 
@@ -260,7 +260,7 @@ describe('CommunityMetricsTracker', () => {
         { timestamp: Date.now(), count: 1 }, // failed
         { timestamp: Date.now(), count: 0 }, // success
       ];
-      mockStorage.getString.mockImplementation((key) =>
+      mockStorage.getString.mockImplementation((key: string) =>
         key === 'mutation_failures' ? JSON.stringify(failures) : undefined
       );
 
@@ -276,7 +276,7 @@ describe('CommunityMetricsTracker', () => {
         ...Array(98).fill({ timestamp: Date.now(), count: 0 }),
         ...Array(2).fill({ timestamp: Date.now(), count: 1 }),
       ];
-      mockStorage.getString.mockImplementation((key) =>
+      mockStorage.getString.mockImplementation((key: string) =>
         key === 'mutation_failures' ? JSON.stringify(failures) : undefined
       );
 
