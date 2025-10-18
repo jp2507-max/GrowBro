@@ -2,7 +2,7 @@ import React from 'react';
 import { ActivityIndicator } from 'react-native';
 
 import { Text, View } from '@/components/ui';
-import { colors } from '@/components/ui/colors';
+import colors from '@/components/ui/colors';
 import { useSyncState } from '@/lib/sync/sync-state';
 
 type SyncStatusIndicatorProps = {
@@ -30,7 +30,7 @@ export function SyncStatusIndicator({
       {showLabel && (
         <Text
           className="text-sm text-neutral-600 dark:text-neutral-400"
-          tx="community.sync.status.syncing"
+          tx="sync.status.syncing"
         />
       )}
     </View>

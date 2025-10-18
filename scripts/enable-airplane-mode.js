@@ -123,10 +123,12 @@ function enableVisualAirplaneMode() {
     'TODO: For real network isolation, run tests on physical device or enable Network Link Conditioner manually.'
   );
 
+  const udid = process.env.SIMULATOR_UDID || 'booted';
   execSync(
-    'xcrun simctl status_bar booted override --dataNetwork none --wifiMode inactive --wifiBars 0',
+    `xcrun simctl status_bar ${udid} override --dataNetwork none --wifiMode inactive --wifiBars 0`,
     {
       stdio: 'inherit',
+      timeout: 5000,
     }
   );
   console.log('iOS visual airplane mode enabled (networking still active)');

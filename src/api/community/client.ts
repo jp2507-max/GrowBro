@@ -163,6 +163,7 @@ export class CommunityApiClient implements CommunityAPI {
         // For newly created posts, counts are 0 and user hasn't liked their own post
         return {
           ...data,
+          userId: data.user_id,
           like_count: 0,
           comment_count: 0,
           user_has_liked: false,
@@ -196,6 +197,7 @@ export class CommunityApiClient implements CommunityAPI {
           'delete-post',
           {
             body: { postId },
+            headers,
           }
         );
 
@@ -237,6 +239,7 @@ export class CommunityApiClient implements CommunityAPI {
           'undo-delete-post',
           {
             body: { postId },
+            headers,
           }
         );
 
@@ -465,6 +468,7 @@ export class CommunityApiClient implements CommunityAPI {
           'delete-comment',
           {
             body: { commentId },
+            headers,
           }
         );
 
@@ -506,6 +510,7 @@ export class CommunityApiClient implements CommunityAPI {
           'undo-delete-comment',
           {
             body: { commentId },
+            headers,
           }
         );
 
@@ -707,9 +712,10 @@ export class CommunityApiClient implements CommunityAPI {
     // Map the results to include user_has_liked
     return posts.map((post: any) => ({
       ...post,
-      like_count: post.like_count || 0,
-      comment_count: post.comment_count || 0,
-      user_has_liked: userLikesMap.get(post.id) || false,
+      userId: post.user_id,
+      like_count: post.like_count ?? 0,
+      comment_count: post.comment_count ?? 0,
+      user_has_liked: userLikesMap.get(post.id) ?? false,
     }));
   }
 

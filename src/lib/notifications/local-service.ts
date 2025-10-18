@@ -30,8 +30,11 @@ export const LocalNotificationService = {
       title: request.title,
       body: request.body,
       data: request.data ?? {},
-      threadId: request.threadId,
     };
+    // Add threadId for iOS grouping if provided
+    if (Platform.OS === 'ios' && request.threadId) {
+      (content as any).threadId = request.threadId;
+    }
     if (request.androidChannelKey === 'cultivation.reminders') {
       content.sound = 'default';
     }

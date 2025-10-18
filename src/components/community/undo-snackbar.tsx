@@ -16,7 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Button, Pressable, Text, View } from '@/components/ui';
-import { translate, translateDynamic } from '@/lib/i18n';
+import { translate } from '@/lib/i18n';
 
 interface UndoSnackbarProps {
   visible: boolean;
@@ -46,6 +46,15 @@ export function UndoSnackbar({
     const updateCountdown = () => {
       const now = Date.now();
       const expiresAtMs = new Date(expiresAt).getTime();
+      if (!isFinite(expiresAtMs) || isNaN(expiresAtMs)) {
+        setRemainingSeconds(0);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        onDismiss();
+        return;
+      }
       const diffMs = expiresAtMs - now;
       const seconds = Math.max(0, Math.ceil(diffMs / 1000));
       setRemainingSeconds(seconds);
@@ -94,9 +103,12 @@ export function UndoSnackbar({
             className="mt-1 text-xs text-neutral-400 dark:text-neutral-500"
             testID={`${testID}-countdown`}
           >
-            {translateDynamic('community.undo_expires', {
-              seconds: remainingSeconds,
-            })}
+            {translate(
+              'accessibility.community.undo_expires' as any,
+              {
+                seconds: remainingSeconds,
+              } as any
+            )}
           </Text>
         </View>
 

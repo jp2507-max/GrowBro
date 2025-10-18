@@ -49,11 +49,11 @@ function ConflictHeader({
     >
       <Text
         className="text-xl font-semibold text-neutral-900 dark:text-neutral-100"
-        tx="community.sync.conflict.title"
+        tx="sync.conflict.title"
       />
       <Text
         className="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
-        tx="community.sync.conflict.description"
+        tx="sync.conflict.description"
         txOptions={{ tableName }}
       />
     </View>
@@ -68,7 +68,7 @@ function ConflictExplanation(): React.ReactElement {
     >
       <Text
         className="text-sm text-primary-800 dark:text-primary-200"
-        tx="community.sync.conflict.explanation"
+        tx="sync.conflict.explanation"
       />
     </View>
   );
@@ -76,71 +76,71 @@ function ConflictExplanation(): React.ReactElement {
 
 // Map field names to their corresponding translation keys for type safety
 const FIELD_TRANSLATION_KEYS: Partial<Record<string, TxKeyPath>> = {
-  name: 'community.sync.conflict.field.name',
-  description: 'community.sync.conflict.field.description',
-  created_at: 'community.sync.conflict.field.created_at',
-  updated_at: 'community.sync.conflict.field.updated_at',
-  strain_id: 'community.sync.conflict.field.strain_id',
-  plant_id: 'community.sync.conflict.field.plant_id',
-  status: 'community.sync.conflict.field.status',
-  notes: 'community.sync.conflict.field.notes',
-  phase: 'community.sync.conflict.field.phase',
-  start_date: 'community.sync.conflict.field.start_date',
-  end_date: 'community.sync.conflict.field.end_date',
-  pH: 'community.sync.conflict.field.pH',
-  ec: 'community.sync.conflict.field.ec',
-  temperature: 'community.sync.conflict.field.temperature',
-  humidity: 'community.sync.conflict.field.humidity',
-  light_schedule: 'community.sync.conflict.field.light_schedule',
-  watering_schedule: 'community.sync.conflict.field.watering_schedule',
-  feeding_schedule: 'community.sync.conflict.field.feeding_schedule',
-  pruning_schedule: 'community.sync.conflict.field.pruning_schedule',
-  training_schedule: 'community.sync.conflict.field.training_schedule',
-  monitoring_schedule: 'community.sync.conflict.field.monitoring_schedule',
-  harvest_date: 'community.sync.conflict.field.harvest_date',
-  drying_start: 'community.sync.conflict.field.drying_start',
-  curing_start: 'community.sync.conflict.field.curing_start',
-  thc_content: 'community.sync.conflict.field.thc_content',
-  cbd_content: 'community.sync.conflict.field.cbd_content',
-  yield_estimate: 'community.sync.conflict.field.yield_estimate',
-  difficulty: 'community.sync.conflict.field.difficulty',
-  indoor_outdoor: 'community.sync.conflict.field.indoor_outdoor',
-  auto_photo: 'community.sync.conflict.field.auto_photo',
-  genetics: 'community.sync.conflict.field.genetics',
-  effects: 'community.sync.conflict.field.effects',
-  flavors: 'community.sync.conflict.field.flavors',
-  terpenes: 'community.sync.conflict.field.terpenes',
-  height: 'community.sync.conflict.field.height',
-  flowering_time: 'community.sync.conflict.field.flowering_time',
-  user_id: 'community.sync.conflict.field.user_id',
-  email: 'community.sync.conflict.field.email',
-  username: 'community.sync.conflict.field.username',
-  avatar_url: 'community.sync.conflict.field.avatar_url',
-  preferences: 'community.sync.conflict.field.preferences',
-  settings: 'community.sync.conflict.field.settings',
-  notifications_enabled: 'community.sync.conflict.field.notifications_enabled',
-  theme: 'community.sync.conflict.field.theme',
-  language: 'community.sync.conflict.field.language',
-  timezone: 'community.sync.conflict.field.timezone',
-  location: 'community.sync.conflict.field.location',
-  device_id: 'community.sync.conflict.field.device_id',
-  app_version: 'community.sync.conflict.field.app_version',
-  os_version: 'community.sync.conflict.field.os_version',
-  last_sync_at: 'community.sync.conflict.field.last_sync_at',
-  sync_status: 'community.sync.conflict.field.sync_status',
-  is_deleted: 'community.sync.conflict.field.is_deleted',
-  deleted_at: 'community.sync.conflict.field.deleted_at',
-  tags: 'community.sync.conflict.field.tags',
-  categories: 'community.sync.conflict.field.categories',
-  priority: 'community.sync.conflict.field.priority',
-  due_date: 'community.sync.conflict.field.due_date',
-  completed_at: 'community.sync.conflict.field.completed_at',
-  reminder_at: 'community.sync.conflict.field.reminder_at',
-  recurrence: 'community.sync.conflict.field.recurrence',
-  parent_task_id: 'community.sync.conflict.field.parent_task_id',
-  assigned_to: 'community.sync.conflict.field.assigned_to',
-  created_by: 'community.sync.conflict.field.created_by',
-  modified_by: 'community.sync.conflict.field.modified_by',
+  name: 'sync.conflict.field.name',
+  description: 'sync.conflict.field.description',
+  created_at: 'sync.conflict.field.created_at',
+  updated_at: 'sync.conflict.field.updated_at',
+  strain_id: 'sync.conflict.field.strain_id',
+  plant_id: 'sync.conflict.field.plant_id',
+  status: 'sync.conflict.field.status',
+  notes: 'sync.conflict.field.notes',
+  phase: 'sync.conflict.field.phase',
+  start_date: 'sync.conflict.field.start_date',
+  end_date: 'sync.conflict.field.end_date',
+  pH: 'sync.conflict.field.pH',
+  ec: 'sync.conflict.field.ec',
+  temperature: 'sync.conflict.field.temperature',
+  humidity: 'sync.conflict.field.humidity',
+  light_schedule: 'sync.conflict.field.light_schedule',
+  watering_schedule: 'sync.conflict.field.watering_schedule',
+  feeding_schedule: 'sync.conflict.field.feeding_schedule',
+  pruning_schedule: 'sync.conflict.field.pruning_schedule',
+  training_schedule: 'sync.conflict.field.training_schedule',
+  monitoring_schedule: 'sync.conflict.field.monitoring_schedule',
+  harvest_date: 'sync.conflict.field.harvest_date',
+  drying_start: 'sync.conflict.field.drying_start',
+  curing_start: 'sync.conflict.field.curing_start',
+  thc_content: 'sync.conflict.field.thc_content',
+  cbd_content: 'sync.conflict.field.cbd_content',
+  yield_estimate: 'sync.conflict.field.yield_estimate',
+  difficulty: 'sync.conflict.field.difficulty',
+  indoor_outdoor: 'sync.conflict.field.indoor_outdoor',
+  auto_photo: 'sync.conflict.field.auto_photo',
+  genetics: 'sync.conflict.field.genetics',
+  effects: 'sync.conflict.field.effects',
+  flavors: 'sync.conflict.field.flavors',
+  terpenes: 'sync.conflict.field.terpenes',
+  height: 'sync.conflict.field.height',
+  flowering_time: 'sync.conflict.field.flowering_time',
+  user_id: 'sync.conflict.field.user_id',
+  email: 'sync.conflict.field.email',
+  username: 'sync.conflict.field.username',
+  avatar_url: 'sync.conflict.field.avatar_url',
+  preferences: 'sync.conflict.field.preferences',
+  settings: 'sync.conflict.field.settings',
+  notifications_enabled: 'sync.conflict.field.notifications_enabled',
+  theme: 'sync.conflict.field.theme',
+  language: 'sync.conflict.field.language',
+  timezone: 'sync.conflict.field.timezone',
+  location: 'sync.conflict.field.location',
+  device_id: 'sync.conflict.field.device_id',
+  app_version: 'sync.conflict.field.app_version',
+  os_version: 'sync.conflict.field.os_version',
+  last_sync_at: 'sync.conflict.field.last_sync_at',
+  sync_status: 'sync.conflict.field.sync_status',
+  is_deleted: 'sync.conflict.field.is_deleted',
+  deleted_at: 'sync.conflict.field.deleted_at',
+  tags: 'sync.conflict.field.tags',
+  categories: 'sync.conflict.field.categories',
+  priority: 'sync.conflict.field.priority',
+  due_date: 'sync.conflict.field.due_date',
+  completed_at: 'sync.conflict.field.completed_at',
+  reminder_at: 'sync.conflict.field.reminder_at',
+  recurrence: 'sync.conflict.field.recurrence',
+  parent_task_id: 'sync.conflict.field.parent_task_id',
+  assigned_to: 'sync.conflict.field.assigned_to',
+  created_by: 'sync.conflict.field.created_by',
+  modified_by: 'sync.conflict.field.modified_by',
 };
 
 // Get localized field name with fallback to original field name
@@ -176,12 +176,12 @@ function ConflictFieldCard({
         <View className="mb-2 flex-row items-center justify-between">
           <Text
             className="text-xs font-medium uppercase text-primary-600 dark:text-primary-400"
-            tx="community.sync.conflict.yourVersion"
+            tx="sync.conflict.yourVersion"
           />
           <View className="rounded-full bg-primary-100 px-2 py-0.5 dark:bg-primary-900/30">
             <Text
               className="text-xs font-medium text-primary-700 dark:text-primary-300"
-              tx="community.sync.conflict.thisDeviceLabel"
+              tx="sync.conflict.thisDeviceLabel"
             />
           </View>
         </View>
@@ -197,12 +197,12 @@ function ConflictFieldCard({
         <View className="mb-2 flex-row items-center justify-between">
           <Text
             className="text-xs font-medium uppercase text-success-600 dark:text-success-400"
-            tx="community.sync.conflict.serverVersion"
+            tx="sync.conflict.serverVersion"
           />
           <View className="rounded-full bg-success-100 px-2 py-0.5 dark:bg-success-900/30">
             <Text
               className="text-xs font-medium text-success-700 dark:text-success-300"
-              tx="community.sync.conflict.otherDeviceLabel"
+              tx="sync.conflict.otherDeviceLabel"
             />
           </View>
         </View>
@@ -227,7 +227,7 @@ function ConflictWarning(): React.ReactElement {
     >
       <Text
         className="text-xs text-warning-800 dark:text-warning-200"
-        tx="community.sync.conflict.warning"
+        tx="sync.conflict.warning"
       />
     </View>
   );
@@ -255,11 +255,11 @@ function ConflictActions({
             <View className="items-center">
               <Text
                 className="text-sm font-semibold text-primary-700 dark:text-primary-300"
-                tx="community.sync.conflict.keepLocalButton"
+                tx="sync.conflict.keepLocalButton"
               />
               <Text
                 className="text-xs text-neutral-600 dark:text-neutral-400"
-                tx="community.sync.conflict.localLabel"
+                tx="sync.conflict.localLabel"
               />
             </View>
           </Button>
@@ -273,11 +273,11 @@ function ConflictActions({
             <View className="items-center">
               <Text
                 className="text-sm font-semibold text-white"
-                tx="community.sync.conflict.useServerButton"
+                tx="sync.conflict.useServerButton"
               />
               <Text
                 className="text-xs text-white/80"
-                tx="community.sync.conflict.remoteLabel"
+                tx="sync.conflict.remoteLabel"
               />
             </View>
           </Button>
@@ -289,7 +289,7 @@ function ConflictActions({
         testID="dismiss-conflict-button"
         className="min-h-[44px]"
       >
-        <Text tx="community.sync.conflict.dismissButton" />
+        <Text tx="sync.conflict.dismissButton" />
       </Button>
     </View>
   );
@@ -317,7 +317,7 @@ export function EnhancedConflictResolutionModal({
         <View className="mb-4">
           <Text
             className="mb-3 text-sm font-medium uppercase text-neutral-500 dark:text-neutral-400"
-            tx="community.sync.conflict.conflictingFields"
+            tx="sync.conflict.conflictingFields"
             txOptions={{ count: conflict.conflictFields.length }}
           />
 

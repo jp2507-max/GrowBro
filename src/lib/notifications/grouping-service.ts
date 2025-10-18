@@ -39,7 +39,30 @@ async function handleAndroidGrouping(
   communityNotification: CommunityNotification
 ): Promise<void> {
   try {
-    const groupKey = `post_${communityNotification.postId}`;
+    const groupKey =
+      communityNotification.threadId ??
+      (communityNotification.postId
+        ? `post_${communityNotification.postId}`
+        : null);
+    if (!groupKey) {
+      // Present as a single notification without grouping
+      const content = communityNotification.notification.request?.content || {};
+      const t = communityNotification.type;
+      const isLike = t === 'community.like';
+      const channelId = getAndroidChannelId(
+        isLike ? 'community.likes' : 'community.interactions'
+      );
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: content.title || '',
+          body: content.body || '',
+          data: content.data,
+        },
+        trigger: { channelId } as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
+      });
+      return;
+    }
+
     const currentCount = (groupCounts.get(groupKey) || 0) + 1;
     groupCounts.set(groupKey, currentCount);
 

@@ -297,7 +297,7 @@ export default function CommunityScreen(): React.ReactElement {
       </CommunityErrorBoundary>
       <UndoSnackbar
         visible={!!undoState}
-        message={translate('community.post_deleted' as TxKeyPath)}
+        message={translate('accessibility.community.post_deleted')}
         expiresAt={undoState?.undoExpiresAt ?? ''}
         onUndo={handleUndo}
         onDismiss={handleDismissUndo}

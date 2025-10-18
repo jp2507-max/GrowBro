@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from '@/components/ui';
-import { colors } from '@/components/ui/colors';
+import colors from '@/components/ui/colors';
 
 import { useCommunityNotifications } from './hooks/use-community-notifications';
 

@@ -12,6 +12,12 @@ declare module 'expo-notifications' {
     data?: Record<string, unknown>;
     threadIdentifier?: string;
     sound?: boolean | string;
+    // iOS specific fields
+    subtitle?: string;
+    badge?: number | string;
+    // Android specific fields
+    color?: string;
+    priority?: 'min' | 'low' | 'default' | 'high' | 'max';
   };
 
   export function scheduleNotificationAsync(options: {

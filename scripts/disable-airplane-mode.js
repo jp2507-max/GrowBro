@@ -16,35 +16,27 @@ function disableNetworkLinkConditioner() {
     );
 
     // Use AppleScript to disable Network Link Conditioner
+    // Detect which Settings app to use (same approach as enable script)
+    let systemAppName;
+    try {
+      execSync(
+        'mdfind -name "System Settings.app" | grep -q "System Settings"',
+        { stdio: 'pipe', timeout: 2000 }
+      );
+      systemAppName = 'System Settings';
+    } catch {
+      systemAppName = 'System Preferences';
+    }
+
     const appleScript = `
-      tell application "System Events"
-        set frontApp to name of first application process whose frontmost is true
+      tell application "${systemAppName}"
+        activate
+        reveal pane "Network Link Conditioner"
+        delay 2
       end tell
-      set appName to frontApp
-
-      if appName contains "System Preferences" then
-        tell application "System Preferences"
-          activate
-          reveal pane "Network Link Conditioner"
-          delay 2
-        end tell
-      else if appName contains "System Settings" then
-        tell application "System Settings"
-          activate
-          delay 1
-          tell application "System Events"
-            tell process "System Settings"
-              click menu item "Developer" of menu "View" of menu bar 1
-              delay 1
-              click menu item "Network Link Conditioner" of menu "Developer" of menu bar 1
-              delay 2
-            end tell
-          end tell
-        end tell
-      end if
 
       tell application "System Events"
-        tell process appName
+        tell process "${systemAppName}"
           repeat 10 times
             if exists window "Network Link Conditioner" then
               exit repeat
@@ -75,7 +67,7 @@ function disableNetworkLinkConditioner() {
         end tell
       end tell
 
-      tell application appName to quit
+      tell application "${systemAppName}" to quit
     `;
 
     // Try to open prefPane first to normalize UI across macOS versions

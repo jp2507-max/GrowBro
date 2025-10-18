@@ -1,3 +1,4 @@
+import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { cleanup } from '@/lib/test-utils';
@@ -13,6 +14,7 @@ afterEach(() => {
   jest.clearAllMocks();
   NotificationGroupingService.resetGroupCount('post_123');
   NotificationGroupingService.resetGroupCount('post_456');
+  NotificationGroupingService.resetGroupCount('thread_123');
 });
 
 function createMockNotification() {
@@ -32,19 +34,17 @@ function createMockNotification() {
   };
 }
 
-async function setupMockScheduler() {
-  const { default: Notifications } = await import('expo-notifications');
-  const anyNotifications: any = Notifications as any;
-  const mockSchedule = jest.fn().mockResolvedValue('notif-id');
-  anyNotifications.scheduleNotificationAsync = mockSchedule;
+function setupMockScheduler() {
+  const mockSchedule = jest.mocked(Notifications.scheduleNotificationAsync);
+  mockSchedule.mockResolvedValue('notif-id');
   return mockSchedule;
 }
 
-async function setupMockChannelId(channelId: string) {
-  const { getAndroidChannelId } = await import(
-    '@/lib/notifications/android-channels'
-  );
-  (getAndroidChannelId as jest.Mock).mockReturnValue(channelId);
+function setupMockChannelId(channelId: string) {
+  const {
+    getAndroidChannelId,
+  } = require('@/lib/notifications/android-channels');
+  jest.mocked(getAndroidChannelId).mockReturnValue(channelId);
 }
 
 function testAndroidGrouping() {
@@ -55,8 +55,8 @@ function testAndroidGrouping() {
   });
 
   it('should create group summary and individual notification', async () => {
-    const mockSchedule = await setupMockScheduler();
-    await setupMockChannelId('community.interactions.v1');
+    const mockSchedule = setupMockScheduler();
+    setupMockChannelId('community.interactions.v1');
 
     await NotificationGroupingService.handleCommunityNotification(
       mockNotification
@@ -72,7 +72,7 @@ function testAndroidGrouping() {
       content: {
         title: 'Community Activity',
         body: '1 new interaction',
-        data: { groupKey: 'post_123', type: 'summary' },
+        data: { groupKey: 'thread_123', type: 'summary' },
       },
       trigger: { channelId: 'community.interactions.v1' },
     });
@@ -85,15 +85,15 @@ function testAndroidGrouping() {
       content: {
         title: 'New Reply',
         body: 'Someone replied to your post',
-        data: { postId: '123', groupKey: 'post_123' },
+        data: { postId: '123', groupKey: 'thread_123' },
       },
       trigger: { channelId: 'community.interactions.v1' },
     });
   });
 
   it('should use correct channel ID for likes', async () => {
-    const mockSchedule = await setupMockScheduler();
-    await setupMockChannelId('community.likes.v1');
+    const mockSchedule = setupMockScheduler();
+    setupMockChannelId('community.likes.v1');
 
     const likeNotification = {
       ...mockNotification,
@@ -110,6 +110,31 @@ function testAndroidGrouping() {
       })
     );
   });
+
+  it('should present single notification without grouping when postId and threadId are missing', async () => {
+    const mockSchedule = setupMockScheduler();
+    setupMockChannelId('community.interactions.v1');
+
+    const notificationWithoutIds = {
+      ...mockNotification,
+      postId: undefined as any,
+      threadId: undefined,
+    };
+
+    await NotificationGroupingService.handleCommunityNotification(
+      notificationWithoutIds
+    );
+
+    expect(mockSchedule).toHaveBeenCalledTimes(1);
+    expect(mockSchedule).toHaveBeenCalledWith({
+      content: {
+        title: 'New Reply',
+        body: 'Someone replied to your post',
+        data: { postId: '123' },
+      },
+      trigger: { channelId: 'community.interactions.v1' },
+    });
+  });
 }
 
 function testIOSThreading() {
@@ -120,7 +145,7 @@ function testIOSThreading() {
   });
 
   it('should set threadIdentifier for visual grouping', async () => {
-    const mockSchedule = await setupMockScheduler();
+    const mockSchedule = setupMockScheduler();
 
     await NotificationGroupingService.handleCommunityNotification(
       mockNotification
@@ -138,7 +163,7 @@ function testIOSThreading() {
   });
 
   it('should fallback to post ID if threadId not provided', async () => {
-    const mockSchedule = await setupMockScheduler();
+    const mockSchedule = setupMockScheduler();
 
     const notificationWithoutThread = {
       ...mockNotification,
@@ -162,13 +187,13 @@ function testGroupCountManagement() {
   it('should reset count for specific group', async () => {
     Platform.OS = 'android';
 
-    const { default: Notifications } = await import('expo-notifications');
+    const Notifications = require('expo-notifications');
     const anyNotifications: any = Notifications as any;
     anyNotifications.scheduleNotificationAsync = jest
       .fn()
       .mockResolvedValue('notif-id');
 
-    await setupMockChannelId('community.interactions.v1');
+    setupMockChannelId('community.interactions.v1');
 
     const notification = {
       notification: {

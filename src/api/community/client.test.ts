@@ -34,6 +34,31 @@ describe('CommunityApiClient', () => {
       auth: {
         getSession: jest.fn(),
       },
+      functions: {
+        invoke: jest.fn().mockImplementation((functionName: string) => {
+          if (
+            functionName === 'delete-post' ||
+            functionName === 'delete-comment'
+          ) {
+            return Promise.resolve({
+              data: {
+                undo_expires_at: new Date(Date.now() + 15000).toISOString(),
+              },
+              error: null,
+            });
+          }
+          if (
+            functionName === 'undo-delete-post' ||
+            functionName === 'undo-delete-comment'
+          ) {
+            return Promise.resolve({
+              data: { id: 'restored-id' },
+              error: null,
+            });
+          }
+          return Promise.resolve({ data: null, error: null });
+        }),
+      },
     } as any;
 
     // Mock idempotency service
