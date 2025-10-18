@@ -18,6 +18,7 @@ export * from './use-create-comment';
 export * from './use-delete-comment';
 export * from './use-like-post';
 export * from './use-unlike-post';
+export * from './use-user-posts';
 
 // Resolve client on-demand to pick up resets in tests and env switches
 
@@ -46,21 +47,6 @@ export const useUserProfile = createQuery<
   queryKey: ['user-profile'],
   fetcher: ({ userId }) => getCommunityApiClient().getUserProfile(userId),
 });
-
-export const useUserPosts = ({
-  userId,
-  cursor,
-  limit,
-}: {
-  userId: string;
-  cursor?: string;
-  limit?: number;
-}) => {
-  return useQuery<PaginatedResponse<Post>, AxiosError>({
-    queryKey: ['user-posts', userId, cursor, limit],
-    queryFn: () => getCommunityApiClient().getUserPosts(userId, cursor, limit),
-  });
-};
 
 // ==================== Comment Queries ====================
 

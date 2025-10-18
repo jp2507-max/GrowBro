@@ -18,7 +18,7 @@ export interface Post {
   id: string;
   userId: string;
   /** @deprecated Use userId instead. This field will be removed in a future version. */
-  user_id: string;
+  user_id?: string;
   body: string;
   media_uri?: string;
   created_at: string;

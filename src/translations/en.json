@@ -1636,7 +1636,32 @@
       "links": "Links",
       "logout": "Logout",
       "more": "More",
-      "notifications": "Notifications",
+      "notifications": {
+        "categories": {
+          "communityInteractions": "• Community Interactions (replies to your posts)",
+          "communityLikes": "• Community Likes (likes on your posts)",
+          "cultivationReminders": "• Cultivation Reminders (task and grow reminders)",
+          "systemUpdates": "• System Updates (important app updates)",
+          "title": "Available Categories:"
+        },
+        "community": {
+          "likes": "Likes",
+          "likesDescription": "Get notified when someone likes your posts (max 1 per post per 5 min)",
+          "repliesAndComments": "Replies & Comments",
+          "repliesAndCommentsDescription": "Get notified when someone replies to your posts",
+          "title": "Community Notifications"
+        },
+        "platformHelp": {
+          "android": "On Android, you can manage individual notification channels in system settings. Each category can be customized with different sounds, importance levels, and behaviors.",
+          "ios": "On iOS, you can customize notification settings including sounds, badges, and banners in system settings."
+        },
+        "systemPermissions": {
+          "description": "Control which notifications you receive from GrowBro. You can enable or disable notifications for community interactions, task reminders, and system updates.",
+          "openSettings": "Open System Settings",
+          "title": "System Notification Permissions"
+        },
+        "title": "Notification Settings"
+      },
       "privacy": "Privacy Policy",
       "privacy_and_data": "Privacy & data controls",
       "privacy_policy": "Privacy Policy",

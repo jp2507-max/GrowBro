@@ -1636,7 +1636,32 @@
       "links": "Links",
       "logout": "Abmelden",
       "more": "Mehr",
-      "notifications": "Benachrichtigungen",
+      "notifications": {
+        "categories": {
+          "communityInteractions": "• Community-Interaktionen (Antworten auf deine Beiträge)",
+          "communityLikes": "• Community-Likes (Likes auf deine Beiträge)",
+          "cultivationReminders": "• Anbau-Erinnerungen (Aufgaben- und Grow-Erinnerungen)",
+          "systemUpdates": "• System-Updates (wichtige App-Updates)",
+          "title": "Verfügbare Kategorien:"
+        },
+        "community": {
+          "likes": "Likes",
+          "likesDescription": "Erhalte Benachrichtigungen, wenn jemand deine Beiträge liked (max. 1 pro Beitrag alle 5 Min.)",
+          "repliesAndComments": "Antworten & Kommentare",
+          "repliesAndCommentsDescription": "Erhalte Benachrichtigungen, wenn jemand auf deine Beiträge antwortet",
+          "title": "Community-Benachrichtigungen"
+        },
+        "platformHelp": {
+          "android": "Auf Android kannst du individuelle Benachrichtigungskanäle in den Systemeinstellungen verwalten. Jede Kategorie kann mit unterschiedlichen Tönen, Wichtigkeitsstufen und Verhaltensweisen angepasst werden.",
+          "ios": "Auf iOS kannst du Benachrichtigungseinstellungen einschließlich Töne, Badges und Banner in den Systemeinstellungen anpassen."
+        },
+        "systemPermissions": {
+          "description": "Steuere, welche Benachrichtigungen du von GrowBro erhältst. Du kannst Benachrichtigungen für Community-Interaktionen, Aufgaben-Erinnerungen und System-Updates aktivieren oder deaktivieren.",
+          "openSettings": "Systemeinstellungen öffnen",
+          "title": "System-Benachrichtigungsberechtigungen"
+        },
+        "title": "Benachrichtigungseinstellungen"
+      },
       "privacy": "Datenschutzrichtlinie",
       "privacy_and_data": "Datenschutz- und Datenkontrollen",
       "privacy_policy": "Datenschutzerklärung",

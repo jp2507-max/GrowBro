@@ -14,8 +14,8 @@ function enableNetworkLinkConditioner() {
 
     // Check if Network Link Conditioner preference pane exists
     execSync(
-      'ls /System/Library/PreferencePanes/NetworkLinkConditioner.prefPane',
-      { stdio: 'pipe' }
+      '[ -e "/Library/PreferencePanes/Network Link Conditioner.prefPane" ] || [ -e ~/Library/PreferencePanes/Network Link Conditioner.prefPane ]',
+      { stdio: 'pipe', timeout: 5000 }
     );
 
     // Use AppleScript to enable Network Link Conditioner with "No Network" profile
@@ -43,7 +43,10 @@ function enableNetworkLinkConditioner() {
       tell application "System Preferences" to quit
     `;
 
-    execSync(`osascript -e '${appleScript}'`, { stdio: 'pipe' });
+    execSync(`osascript -e '${appleScript}'`, {
+      stdio: 'pipe',
+      timeout: 30000,
+    });
     console.log('Network Link Conditioner enabled with "No Network" profile');
     return true;
   } catch (error) {
@@ -68,7 +71,7 @@ function enableVisualAirplaneMode() {
   );
 
   execSync(
-    'xcrun simctl status_bar booted override --dataNetwork wifi --wifiMode active --wifiBars 3',
+    'xcrun simctl status_bar booted override --dataNetwork none --wifiMode inactive --wifiBars 0',
     {
       stdio: 'inherit',
     }
@@ -80,9 +83,7 @@ function enableAirplaneMode() {
   try {
     // Detect platform - check if iOS simulator or Android emulator
     const isIOS =
-      process.env.MAESTRO_PLATFORM === 'iOS' ||
-      process.platform === 'darwin' ||
-      process.env.SIMULATOR_UDID;
+      process.env.MAESTRO_PLATFORM === 'iOS' || process.env.SIMULATOR_UDID;
 
     if (isIOS) {
       if (ENABLE_REAL_NETWORK_ISOLATION) {
@@ -100,9 +101,16 @@ function enableAirplaneMode() {
       }
     } else {
       console.log('Enabling airplane mode on Android emulator...');
-      execSync('adb shell svc wifi disable && adb shell svc data disable', {
-        stdio: 'inherit',
-      });
+      const adbPrefix = process.env.ANDROID_SERIAL
+        ? `adb -s ${process.env.ANDROID_SERIAL}`
+        : 'adb';
+      execSync(
+        `${adbPrefix} shell svc wifi disable && ${adbPrefix} shell svc data disable`,
+        {
+          stdio: 'inherit',
+          timeout: 15000,
+        }
+      );
       console.log('Android airplane mode enabled');
     }
   } catch (error) {

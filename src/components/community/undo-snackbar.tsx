@@ -24,6 +24,7 @@ interface UndoSnackbarProps {
   expiresAt: string;
   onUndo: () => void;
   onDismiss: () => void;
+  disabled?: boolean;
   testID?: string;
 }
 
@@ -33,6 +34,7 @@ export function UndoSnackbar({
   expiresAt,
   onUndo,
   onDismiss,
+  disabled = false,
   testID = 'undo-snackbar',
 }: UndoSnackbarProps): React.ReactElement | null {
   const [remainingSeconds, setRemainingSeconds] = React.useState(0);
@@ -104,6 +106,7 @@ export function UndoSnackbar({
             onPress={onUndo}
             size="sm"
             variant="secondary"
+            disabled={disabled}
             testID={`${testID}-undo-button`}
           />
           <Pressable

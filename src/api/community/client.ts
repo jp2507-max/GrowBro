@@ -89,8 +89,8 @@ export class CommunityApiClient implements CommunityAPI {
     const { count } = await this.client
       .from('posts')
       .select('*', { count: 'exact', head: true })
-      .eq('deleted_at', null)
-      .eq('hidden_at', null);
+      .is('deleted_at', null)
+      .is('hidden_at', null);
 
     let query = this.client
       .from('posts')
@@ -617,8 +617,8 @@ export class CommunityApiClient implements CommunityAPI {
       .from('posts')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
-      .eq('deleted_at', null)
-      .eq('hidden_at', null);
+      .is('deleted_at', null)
+      .is('hidden_at', null);
 
     let query = this.client
       .from('posts')

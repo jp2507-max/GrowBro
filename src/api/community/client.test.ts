@@ -69,6 +69,12 @@ describe('CommunityApiClient', () => {
         single: jest.fn().mockResolvedValue({ data: mockPost, error: null }),
       };
 
+      const countChain = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        count: jest.fn().mockResolvedValue({ count: 0 }),
+      };
+
       (mockSupabaseClient.from as jest.Mock).mockImplementation(
         (table: string) => {
           if (table === 'posts') return mockChain;

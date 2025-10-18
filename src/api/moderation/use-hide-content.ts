@@ -67,7 +67,7 @@ export function useHideContent() {
       if (variables.contentType === 'post') {
         void queryClient.invalidateQueries({ queryKey: ['posts'] });
         void queryClient.invalidateQueries({
-          queryKey: ['post', 'postId'],
+          queryKey: ['post', variables.contentId],
         });
       } else {
         void queryClient.invalidateQueries({ queryKey: ['comments'] });

@@ -65,10 +65,13 @@ async function restorePostById(
   supabase: SupabaseClient,
   postId: string
 ): Promise<RestoreResult> {
+  const now = new Date().toISOString();
   return await supabase
     .from('posts')
     .update({ deleted_at: null, undo_expires_at: null })
     .eq('id', postId)
+    .neq('deleted_at', null)
+    .or(`undo_expires_at.is.null,undo_expires_at.gt.${now}`)
     .select('id')
     .single();
 }
@@ -169,7 +172,20 @@ async function handleRequest(req: Request): Promise<Response> {
       });
     }
 
-    return new Response(JSON.stringify({ id: data!.id, restored: true }), {
+    if (!data) {
+      return new Response(
+        JSON.stringify({
+          error:
+            'Post could not be restored, possibly due to expired undo window or concurrent modification',
+        }),
+        {
+          status: 409,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
+    }
+
+    return new Response(JSON.stringify({ id: data.id, restored: true }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });

@@ -6,12 +6,14 @@
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { randomUUID } from 'expo-crypto';
 
 import { supabase } from '@/lib/supabase';
 
 type UnhideContentParams = {
   contentType: 'post' | 'comment';
   contentId: string;
+  idempotencyKey?: string;
 };
 
 type UnhideContentResult = {
@@ -21,8 +23,9 @@ type UnhideContentResult = {
 async function unhideContent({
   contentType,
   contentId,
+  idempotencyKey: providedIdempotencyKey,
 }: UnhideContentParams): Promise<UnhideContentResult> {
-  const idempotencyKey = `${contentType}-${contentId}-unhide-${Date.now()}`;
+  const idempotencyKey = providedIdempotencyKey || randomUUID();
 
   const { data, error } = await supabase.rpc('moderate_content', {
     p_content_type: contentType,

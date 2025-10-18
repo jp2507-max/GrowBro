@@ -37,6 +37,40 @@ type NotificationResponse = {
   actionIdentifier: string;
 };
 
+const ANDROID_CHANNEL_KEY_MAP: Record<
+  NotificationType,
+  | 'community.interactions'
+  | 'community.likes'
+  | 'cultivation.reminders'
+  | 'system.updates'
+> = {
+  'community.interaction': 'community.interactions',
+  'community.reply': 'community.interactions',
+  'community.like': 'community.likes',
+  'cultivation.reminder': 'cultivation.reminders',
+  'system.update': 'system.updates',
+};
+
+const IOS_CATEGORY_MAP: Record<NotificationType, string> = {
+  'community.interaction': 'COMMUNITY_INTERACTIONS',
+  'community.reply': 'COMMUNITY_INTERACTIONS',
+  'community.like': 'COMMUNITY_LIKES',
+  'cultivation.reminder': 'CULTIVATION_REMINDERS',
+  'system.update': 'SYSTEM_UPDATES',
+};
+
+const NOTIFICATION_TYPES = new Set<NotificationType>([
+  'community.interaction',
+  'community.reply',
+  'community.like',
+  'cultivation.reminder',
+  'system.update',
+]);
+
+function isNotificationType(v: unknown): v is NotificationType {
+  return typeof v === 'string' && NOTIFICATION_TYPES.has(v as NotificationType);
+}
+
 let foregroundSubscription: any = null;
 let responseSubscription: any = null;
 
@@ -97,7 +131,9 @@ async function handleForegroundNotification(
 ): Promise<void> {
   try {
     const data = extractNotificationData(event.notification);
-    const notificationType = data.type || 'system.update';
+    const notificationType: NotificationType = isNotificationType(data.type)
+      ? data.type
+      : 'system.update';
 
     // Track delivery to device
     if (data.messageId) {
@@ -192,29 +228,9 @@ function extractNotificationData(notification: any): NotificationData {
 }
 
 function mapToAndroidChannelId(type: NotificationType): string {
-  const channelKeyMap: Record<
-    NotificationType,
-    | 'community.interactions'
-    | 'community.likes'
-    | 'cultivation.reminders'
-    | 'system.updates'
-  > = {
-    'community.interaction': 'community.interactions',
-    'community.reply': 'community.interactions',
-    'community.like': 'community.likes',
-    'cultivation.reminder': 'cultivation.reminders',
-    'system.update': 'system.updates',
-  };
-  return getAndroidChannelId(channelKeyMap[type]);
+  return getAndroidChannelId(ANDROID_CHANNEL_KEY_MAP[type]);
 }
 
 function getIOSCategoryId(type: NotificationType): string {
-  const categoryMap: Record<NotificationType, string> = {
-    'community.interaction': 'COMMUNITY_INTERACTIONS',
-    'community.reply': 'COMMUNITY_INTERACTIONS',
-    'community.like': 'COMMUNITY_LIKES',
-    'cultivation.reminder': 'CULTIVATION_REMINDERS',
-    'system.update': 'SYSTEM_UPDATES',
-  };
-  return categoryMap[type];
+  return IOS_CATEGORY_MAP[type];
 }

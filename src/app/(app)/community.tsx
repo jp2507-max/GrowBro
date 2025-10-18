@@ -210,7 +210,7 @@ export default function CommunityScreen(): React.ReactElement {
   const handleUndo = React.useCallback(async () => {
     if (!undoState) return;
     try {
-      await undoMutation.mutateAsync({ postId: undoState.postId });
+      await undoMutation.mutateAsync({ postId: String(undoState.postId) });
       setUndoState(null);
       void refetch();
     } catch (error) {
@@ -301,6 +301,7 @@ export default function CommunityScreen(): React.ReactElement {
         expiresAt={undoState?.undoExpiresAt ?? ''}
         onUndo={handleUndo}
         onDismiss={handleDismissUndo}
+        disabled={undoMutation.isLoading}
       />
     </>
   );

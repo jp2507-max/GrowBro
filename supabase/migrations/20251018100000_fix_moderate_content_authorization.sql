@@ -5,7 +5,7 @@
 BEGIN;
 
 -- Drop and recreate the function with proper authorization checks
-CREATE OR REPLACE FUNCTION moderate_content(
+CREATE OR REPLACE FUNCTION public.moderate_content(
   p_content_type text,
   p_content_id uuid,
   p_action text,
@@ -23,6 +23,9 @@ DECLARE
   v_existing_audit moderation_audit%ROWTYPE;
   v_result jsonb;
 BEGIN
+  -- Force search_path to prevent search_path hijacking
+  SET search_path = 'public';
+
   -- Validate inputs
   IF p_content_type NOT IN ('post', 'comment') THEN
     RAISE EXCEPTION 'Invalid content_type: %', p_content_type;
@@ -143,6 +146,6 @@ END;
 $$;
 
 -- Grant execute permission to authenticated users (unchanged - permissions are checked at runtime)
-GRANT EXECUTE ON FUNCTION moderate_content(text, uuid, text, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.moderate_content(text, uuid, text, text, text) TO authenticated;
 
 COMMIT;

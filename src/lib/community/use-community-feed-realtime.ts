@@ -128,12 +128,12 @@ function createRealtimeHandlers(
   );
   const commentsCache = createQueryCacheAdapter<PostComment>(
     queryClient,
-    ['post-comments'],
+    ['comments'],
     (comment) => comment.id
   );
   const likesCache = createQueryCacheAdapter<PostLike>(
     queryClient,
-    ['post-likes'],
+    ['posts'],
     (like) => getLikeKey(like)
   );
 
@@ -153,7 +153,7 @@ function createRealtimeHandlers(
         cache: commentsCache,
         outbox,
         onInvalidate: () =>
-          queryClient.invalidateQueries({ queryKey: ['post-comments'] }),
+          queryClient.invalidateQueries({ queryKey: ['comments'] }),
       } as EventHandlerOptions<PostComment>);
     },
     onLikeChange: async (event: RealtimeEvent<PostLike>) => {
@@ -163,7 +163,7 @@ function createRealtimeHandlers(
         cache: likesCache,
         outbox,
         onInvalidate: () =>
-          queryClient.invalidateQueries({ queryKey: ['post-likes'] }),
+          queryClient.invalidateQueries({ queryKey: ['posts'] }),
       } as EventHandlerOptions<PostLike>);
     },
   };
@@ -218,8 +218,7 @@ function useReconciliationTimer(
   const reconcile = React.useCallback(() => {
     console.log('Reconciling counters with server...');
     queryClient.invalidateQueries({ queryKey: ['posts'] });
-    queryClient.invalidateQueries({ queryKey: ['post-comments'] });
-    queryClient.invalidateQueries({ queryKey: ['post-likes'] });
+    queryClient.invalidateQueries({ queryKey: ['comments'] });
   }, [queryClient]);
 
   const startReconciliation = React.useCallback(() => {
@@ -263,8 +262,7 @@ function usePollingEffect(
       pollingIntervalRef.current = setInterval(() => {
         console.log('Polling: Invalidating queries...');
         queryClient.invalidateQueries({ queryKey: ['posts'] });
-        queryClient.invalidateQueries({ queryKey: ['post-comments'] });
-        queryClient.invalidateQueries({ queryKey: ['post-likes'] });
+        queryClient.invalidateQueries({ queryKey: ['comments'] });
       }, 30000);
     } else {
       // Clear polling interval when not polling

@@ -9,10 +9,10 @@ function disableNetworkLinkConditioner() {
   try {
     console.log('Attempting to disable Network Link Conditioner...');
 
-    // Check if Network Link Conditioner preference pane exists
+    // Check common install locations for Network Link Conditioner
     execSync(
-      'ls /System/Library/PreferencePanes/NetworkLinkConditioner.prefPane',
-      { stdio: 'pipe' }
+      '[ -e "/Library/PreferencePanes/Network Link Conditioner.prefPane" ] || [ -e "/System/Library/PreferencePanes/NetworkLinkConditioner.prefPane" ]',
+      { stdio: 'pipe', timeout: 2000 }
     );
 
     // Use AppleScript to disable Network Link Conditioner
@@ -34,7 +34,23 @@ function disableNetworkLinkConditioner() {
       tell application "System Preferences" to quit
     `;
 
-    execSync(`osascript -e '${appleScript}'`, { stdio: 'pipe' });
+    // Try to open prefPane first to normalize UI across macOS versions
+    try {
+      execSync(
+        'open "/Library/PreferencePanes/Network Link Conditioner.prefPane"',
+        { stdio: 'ignore' }
+      );
+    } catch {}
+    try {
+      execSync(
+        'open "/System/Library/PreferencePanes/NetworkLinkConditioner.prefPane"',
+        { stdio: 'ignore' }
+      );
+    } catch {}
+    execSync(`osascript -e '${appleScript}'`, {
+      stdio: 'pipe',
+      timeout: 15000,
+    });
     console.log('Network Link Conditioner disabled');
     return true;
   } catch (error) {
@@ -49,8 +65,10 @@ function disableNetworkLinkConditioner() {
 
 function disableVisualAirplaneMode() {
   console.log('Disabling visual airplane mode on iOS simulator...');
-  execSync('xcrun simctl status_bar booted clear', {
+  const udid = process.env.SIMULATOR_UDID || 'booted';
+  execSync(`xcrun simctl status_bar ${udid} clear`, {
     stdio: 'inherit',
+    timeout: 5000,
   });
   console.log('iOS visual airplane mode disabled');
 }
@@ -59,9 +77,7 @@ function disableAirplaneMode() {
   try {
     // Detect platform - check if iOS simulator or Android emulator
     const isIOS =
-      process.env.MAESTRO_PLATFORM === 'iOS' ||
-      process.platform === 'darwin' ||
-      process.env.SIMULATOR_UDID;
+      process.env.MAESTRO_PLATFORM === 'iOS' || process.env.SIMULATOR_UDID;
 
     if (isIOS) {
       if (ENABLE_REAL_NETWORK_ISOLATION) {
