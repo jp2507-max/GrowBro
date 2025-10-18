@@ -8,11 +8,8 @@ import {
   Text,
   View,
 } from '@/components/ui';
-import { getOptionalAuthenticatedUserId, useAuth } from '@/lib/auth';
-import { CommunityNotificationService } from '@/lib/notifications/community-notification-service';
-import { database } from '@/lib/watermelon';
 
-const communityNotificationService = new CommunityNotificationService(database);
+import { useCommunityNotifications } from './hooks/use-community-notifications';
 
 function CategoryList() {
   return (
@@ -62,83 +59,14 @@ function PlatformHelp() {
 }
 
 export default function NotificationSettings() {
-  const auth = useAuth();
-  const [userId, setUserId] = React.useState<string | null>(null);
-  const [communityInteractionsEnabled, setCommunityInteractionsEnabled] =
-    React.useState(true);
-  const [communityLikesEnabled, setCommunityLikesEnabled] =
-    React.useState(true);
-  const [loading, setLoading] = React.useState(true);
-
-  // Get user ID from token
-  React.useEffect(() => {
-    const loadUserId = async () => {
-      const id = await getOptionalAuthenticatedUserId();
-      setUserId(id);
-    };
-    loadUserId();
-  }, [auth.token]);
-
-  // Load preferences on mount
-  React.useEffect(() => {
-    if (!userId) return;
-
-    const loadPreferences = async () => {
-      try {
-        const config =
-          await communityNotificationService.getCommunityNotificationConfig(
-            userId
-          );
-        setCommunityInteractionsEnabled(config.communityInteractionsEnabled);
-        setCommunityLikesEnabled(config.communityLikesEnabled);
-      } catch (error) {
-        console.warn('Failed to load notification preferences', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadPreferences();
-  }, [userId]);
-
-  const handleToggleCommunityInteractions = async (value: boolean) => {
-    if (!userId) return;
-
-    setCommunityInteractionsEnabled(value);
-    try {
-      await communityNotificationService.updateCommunityNotificationConfig(
-        userId,
-        {
-          communityInteractionsEnabled: value,
-        }
-      );
-    } catch (error) {
-      console.error(
-        'Failed to update community interactions preference',
-        error
-      );
-      // Revert on error
-      setCommunityInteractionsEnabled(!value);
-    }
-  };
-
-  const handleToggleCommunityLikes = async (value: boolean) => {
-    if (!userId) return;
-
-    setCommunityLikesEnabled(value);
-    try {
-      await communityNotificationService.updateCommunityNotificationConfig(
-        userId,
-        {
-          communityLikesEnabled: value,
-        }
-      );
-    } catch (error) {
-      console.error('Failed to update community likes preference', error);
-      // Revert on error
-      setCommunityLikesEnabled(!value);
-    }
-  };
+  const {
+    userId,
+    communityInteractionsEnabled,
+    communityLikesEnabled,
+    loading,
+    handleToggleCommunityInteractions,
+    handleToggleCommunityLikes,
+  } = useCommunityNotifications();
 
   const handleOpenSettings = async () => {
     await Linking.openSettings();

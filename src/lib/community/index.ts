@@ -40,8 +40,9 @@ export {
 } from './event-deduplicator';
 
 // Outbox processing
-export type { OutboxProcessorOptions, OutboxStatus } from './outbox-processor';
+export type { OutboxCounts, OutboxProcessorOptions } from './outbox-processor';
 export { OutboxProcessor } from './outbox-processor';
 
 // Real-time connection management
 export { RealtimeConnectionManager } from './realtime-manager';
+export { createOutboxAdapter } from './use-community-feed-realtime';

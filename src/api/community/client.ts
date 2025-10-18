@@ -612,7 +612,7 @@ export class CommunityApiClient implements CommunityAPI {
     const selectQuery = query.select(`
       *,
       like_count: post_likes(count),
-      comment_count: post_comments!inner(count)
+      comment_count: post_comments(count)
     `);
 
     const { data: posts, error } = await selectQuery;

@@ -6,12 +6,7 @@ import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
 type CommunityNotification = {
   notification: any; // Expo notification object
-  type:
-    | 'community_interaction'
-    | 'community.interaction'
-    | 'community.reply'
-    | 'community_like'
-    | 'community.like';
+  type: 'community.interaction' | 'community.reply' | 'community.like';
   postId: string;
   threadId?: string;
 };
@@ -47,10 +42,11 @@ async function handleAndroidGrouping(
     const currentCount = (groupCounts.get(groupKey) || 0) + 1;
     groupCounts.set(groupKey, currentCount);
 
-    const channelId =
-      communityNotification.type === 'community_interaction'
-        ? getAndroidChannelId('community.interactions')
-        : getAndroidChannelId('community.likes');
+    const t = communityNotification.type;
+    const isLike = t === 'community.like';
+    const channelId = getAndroidChannelId(
+      isLike ? 'community.likes' : 'community.interactions'
+    );
 
     // Create or update group summary
     await Notifications.scheduleNotificationAsync({
@@ -92,11 +88,11 @@ async function handleiOSThreading(
       content: {
         title: content.title || '',
         body: content.body || '',
+        threadIdentifier:
+          communityNotification.threadId ||
+          `post_${communityNotification.postId}`,
         data: {
           ...content.data,
-          threadIdentifier:
-            communityNotification.threadId ||
-            `post_${communityNotification.postId}`,
         },
       },
       trigger: null as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)

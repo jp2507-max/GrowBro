@@ -32,6 +32,104 @@ export type ModeratorToolsModalRef = {
   dismiss: () => void;
 };
 
+type ModeratorToolsModalContentProps = {
+  t: (key: string) => string;
+  reason: string;
+  setReason: (reason: string) => void;
+  error: string;
+  isHidden: boolean;
+  isSubmitting: boolean;
+  onSubmit: () => void;
+  onCancel: () => void;
+};
+
+function ModeratorToolsModalContent({
+  t,
+  reason,
+  setReason,
+  error,
+  isHidden,
+  isSubmitting,
+  onSubmit,
+  onCancel,
+}: ModeratorToolsModalContentProps) {
+  return (
+    <ScrollView className="flex-1 px-4">
+      <View className="mb-6">
+        <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+          {isHidden
+            ? t('moderation.moderator_modal.unhide_subtitle')
+            : t('moderation.moderator_modal.hide_subtitle')}
+        </Text>
+      </View>
+
+      <View className="mb-4">
+        <Text className="mb-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+          {t('moderation.moderator_modal.reason_label')}
+        </Text>
+        <Input
+          value={reason}
+          onChangeText={setReason}
+          placeholder={t('moderation.moderator_modal.reason_placeholder')}
+          multiline
+          numberOfLines={4}
+          maxLength={500}
+          textAlignVertical="top"
+          testID="moderator-reason-input"
+          accessibilityLabel={t('moderation.moderator_modal.reason_label')}
+          accessibilityHint={t(
+            'moderation.moderator_modal.reason_accessibility'
+          )}
+        />
+        <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+          {reason.length}/500
+        </Text>
+      </View>
+
+      {error ? (
+        <View className="mb-4">
+          <Text className="text-sm text-danger-600 dark:text-danger-400">
+            {error}
+          </Text>
+        </View>
+      ) : null}
+
+      <View className="mb-4 flex-row gap-3">
+        <View className="flex-1">
+          <Button
+            label={t('moderation.moderator_modal.cancel')}
+            variant="outline"
+            onPress={onCancel}
+            disabled={isSubmitting}
+            testID="moderator-cancel-btn"
+          />
+        </View>
+        <View className="flex-1">
+          <Button
+            label={
+              isSubmitting
+                ? t('moderation.moderator_modal.submitting')
+                : isHidden
+                  ? t('moderation.moderator_modal.unhide_submit')
+                  : t('moderation.moderator_modal.hide_submit')
+            }
+            onPress={onSubmit}
+            disabled={isSubmitting}
+            variant={isHidden ? 'default' : 'destructive'}
+            testID="moderator-submit-btn"
+          />
+        </View>
+      </View>
+
+      <View className="dark:bg-warning-950 mb-2 rounded-lg bg-warning-50 p-3">
+        <Text className="text-xs text-warning-800 dark:text-warning-200">
+          {t('moderation.moderator_modal.audit_notice')}
+        </Text>
+      </View>
+    </ScrollView>
+  );
+}
+
 export const ModeratorToolsModal = React.forwardRef<
   ModeratorToolsModalRef,
   ModeratorToolsModalProps
@@ -118,79 +216,16 @@ export const ModeratorToolsModal = React.forwardRef<
       }
       testID="moderator-tools-modal"
     >
-      <ScrollView className="flex-1 px-4">
-        <View className="mb-6">
-          <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-            {isHidden
-              ? t('moderation.moderator_modal.unhide_subtitle')
-              : t('moderation.moderator_modal.hide_subtitle')}
-          </Text>
-        </View>
-
-        <View className="mb-4">
-          <Text className="mb-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
-            {t('moderation.moderator_modal.reason_label')}
-          </Text>
-          <Input
-            value={reason}
-            onChangeText={setReason}
-            placeholder={t('moderation.moderator_modal.reason_placeholder')}
-            multiline
-            numberOfLines={4}
-            maxLength={500}
-            textAlignVertical="top"
-            testID="moderator-reason-input"
-            accessibilityLabel={t('moderation.moderator_modal.reason_label')}
-            accessibilityHint={t(
-              'moderation.moderator_modal.reason_accessibility'
-            )}
-          />
-          <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-            {reason.length}/500
-          </Text>
-        </View>
-
-        {error ? (
-          <View className="mb-4">
-            <Text className="text-sm text-danger-600 dark:text-danger-400">
-              {error}
-            </Text>
-          </View>
-        ) : null}
-
-        <View className="mb-4 flex-row gap-3">
-          <View className="flex-1">
-            <Button
-              label={t('moderation.moderator_modal.cancel')}
-              variant="outline"
-              onPress={handleCancel}
-              disabled={isSubmitting}
-              testID="moderator-cancel-btn"
-            />
-          </View>
-          <View className="flex-1">
-            <Button
-              label={
-                isSubmitting
-                  ? t('moderation.moderator_modal.submitting')
-                  : isHidden
-                    ? t('moderation.moderator_modal.unhide_submit')
-                    : t('moderation.moderator_modal.hide_submit')
-              }
-              onPress={handleSubmit}
-              disabled={isSubmitting}
-              variant={isHidden ? 'default' : 'destructive'}
-              testID="moderator-submit-btn"
-            />
-          </View>
-        </View>
-
-        <View className="dark:bg-warning-950 mb-2 rounded-lg bg-warning-50 p-3">
-          <Text className="text-xs text-warning-800 dark:text-warning-200">
-            {t('moderation.moderator_modal.audit_notice')}
-          </Text>
-        </View>
-      </ScrollView>
+      <ModeratorToolsModalContent
+        t={t}
+        reason={reason}
+        setReason={setReason}
+        error={error}
+        isHidden={isHidden}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+      />
     </Modal>
   );
 });

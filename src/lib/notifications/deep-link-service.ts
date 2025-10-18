@@ -62,9 +62,9 @@ function resolvePath(url: string): string {
     if (postMatch) {
       const [, postId, commentId] = postMatch;
       if (commentId) {
-        return `/post/${postId}?commentId=${commentId}`;
+        return `/post/${encodeURIComponent(postId)}?commentId=${encodeURIComponent(commentId)}`;
       }
-      return `/post/${postId}`;
+      return `/post/${encodeURIComponent(postId)}`;
     }
 
     return path;

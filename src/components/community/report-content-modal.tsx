@@ -37,22 +37,16 @@ type ReasonOption = {
   description: string;
 };
 
-export const ReportContentModal = React.forwardRef<
-  ReportContentModalRef,
-  ReportContentModalProps
->(({ contentId, onSuccess }, ref) => {
+function useReportContentForm(
+  contentId: string | number,
+  onSuccess?: () => void
+) {
   const { t } = useTranslation();
-  const modal = useModal();
   const [selectedReason, setSelectedReason] = useState<ModerationReason | null>(
     null
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-
-  useImperativeHandle(ref, () => ({
-    present: modal.present,
-    dismiss: modal.dismiss,
-  }));
 
   const reasons: ReasonOption[] = [
     {
@@ -77,7 +71,7 @@ export const ReportContentModal = React.forwardRef<
     },
   ];
 
-  const handleSubmit = async () => {
+  const submitReport = async () => {
     if (!selectedReason) {
       setError(t('moderation.report_modal.select_reason'));
       return;
@@ -95,25 +89,18 @@ export const ReportContentModal = React.forwardRef<
       );
 
       if (result.status === 'sent' || result.status === 'queued') {
-        // Show success message
         const message =
           result.status === 'sent'
             ? t('moderation.report_modal.success')
             : t('moderation.report_modal.queued');
 
-        // Close modal first, then show success
-        modal.dismiss();
-
-        // Reset state
+        // Reset state and call success callback
         setSelectedReason(null);
         setError('');
-
-        // Call success callback
         onSuccess?.();
 
-        // Show toast after a short delay to ensure modal is closed
+        // Show toast after a short delay
         setTimeout(() => {
-          // We'll use the existing flash message system
           console.log(message);
         }, 300);
       }
@@ -129,9 +116,125 @@ export const ReportContentModal = React.forwardRef<
     }
   };
 
-  const handleCancel = () => {
+  const resetForm = () => {
     setSelectedReason(null);
     setError('');
+  };
+
+  return {
+    selectedReason,
+    setSelectedReason,
+    isSubmitting,
+    error,
+    reasons,
+    submitReport,
+    resetForm,
+  };
+}
+
+function ReportContentForm({
+  reasons,
+  selectedReason,
+  setSelectedReason,
+  error,
+  isSubmitting,
+  onSubmit,
+  onCancel,
+}: {
+  reasons: ReasonOption[];
+  selectedReason: ModerationReason | null;
+  setSelectedReason: (reason: ModerationReason | null) => void;
+  error: string;
+  isSubmitting: boolean;
+  onSubmit: () => void;
+  onCancel: () => void;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <ScrollView className="flex-1 px-4">
+      <View className="mb-6">
+        <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+          {t('moderation.report_modal.subtitle')}
+        </Text>
+      </View>
+
+      <View className="mb-6">
+        {reasons.map((reason) => (
+          <ReasonOptionComponent
+            key={reason.value}
+            option={reason}
+            selected={selectedReason === reason.value}
+            onSelect={() => setSelectedReason(reason.value)}
+            testID={`report-reason-${reason.value}`}
+          />
+        ))}
+      </View>
+
+      {error ? (
+        <View className="mb-4">
+          <Text className="text-sm text-danger-600 dark:text-danger-400">
+            {error}
+          </Text>
+        </View>
+      ) : null}
+
+      <View className="mb-4 flex-row gap-3">
+        <View className="flex-1">
+          <Button
+            label={t('moderation.report_modal.cancel')}
+            variant="outline"
+            onPress={onCancel}
+            disabled={isSubmitting}
+            testID="report-cancel-btn"
+          />
+        </View>
+        <View className="flex-1">
+          <Button
+            label={
+              isSubmitting
+                ? t('moderation.report_modal.submitting')
+                : t('moderation.report_modal.submit')
+            }
+            onPress={onSubmit}
+            disabled={isSubmitting || !selectedReason}
+            testID="report-submit-btn"
+          />
+        </View>
+      </View>
+    </ScrollView>
+  );
+}
+
+export const ReportContentModal = React.forwardRef<
+  ReportContentModalRef,
+  ReportContentModalProps
+>(({ contentId, onSuccess }, ref) => {
+  const { t } = useTranslation();
+  const modal = useModal();
+
+  const {
+    selectedReason,
+    setSelectedReason,
+    isSubmitting,
+    error,
+    reasons,
+    submitReport,
+    resetForm,
+  } = useReportContentForm(contentId, onSuccess);
+
+  useImperativeHandle(ref, () => ({
+    present: modal.present,
+    dismiss: modal.dismiss,
+  }));
+
+  const handleSubmit = async () => {
+    await submitReport();
+    modal.dismiss();
+  };
+
+  const handleCancel = () => {
+    resetForm();
     modal.dismiss();
   };
 
@@ -142,57 +245,15 @@ export const ReportContentModal = React.forwardRef<
       title={t('moderation.report_modal.title')}
       testID="report-content-modal"
     >
-      <ScrollView className="flex-1 px-4">
-        <View className="mb-6">
-          <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-            {t('moderation.report_modal.subtitle')}
-          </Text>
-        </View>
-
-        <View className="mb-6">
-          {reasons.map((reason) => (
-            <ReasonOption
-              key={reason.value}
-              option={reason}
-              selected={selectedReason === reason.value}
-              onSelect={() => setSelectedReason(reason.value)}
-              testID={`report-reason-${reason.value}`}
-            />
-          ))}
-        </View>
-
-        {error ? (
-          <View className="mb-4">
-            <Text className="text-sm text-danger-600 dark:text-danger-400">
-              {error}
-            </Text>
-          </View>
-        ) : null}
-
-        <View className="mb-4 flex-row gap-3">
-          <View className="flex-1">
-            <Button
-              label={t('moderation.report_modal.cancel')}
-              variant="outline"
-              onPress={handleCancel}
-              disabled={isSubmitting}
-              testID="report-cancel-btn"
-            />
-          </View>
-          <View className="flex-1">
-            <Button
-              label={
-                isSubmitting
-                  ? t('moderation.report_modal.submitting')
-                  : t('moderation.report_modal.submit')
-              }
-              onPress={handleSubmit}
-              disabled={isSubmitting || !selectedReason}
-              testID="report-submit-btn"
-            />
-          </View>
-        </View>
-      </ScrollView>
+      <ReportContentForm
+        reasons={reasons}
+        selectedReason={selectedReason}
+        setSelectedReason={setSelectedReason}
+        error={error}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+      />
     </Modal>
   );
 });
@@ -202,7 +263,7 @@ ReportContentModal.displayName = 'ReportContentModal';
 /**
  * Reason option component
  */
-function ReasonOption({
+function ReasonOptionComponent({
   option,
   selected,
   onSelect,
@@ -223,6 +284,7 @@ function ReasonOption({
       accessibilityRole="radio"
       accessibilityState={{ checked: selected }}
       accessibilityLabel={`${option.label}. ${option.description}`}
+      accessibilityHint="Double tap to select this reason for reporting"
       testID={testID}
     >
       <View

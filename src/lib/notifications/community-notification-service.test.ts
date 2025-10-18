@@ -178,12 +178,4 @@ describe('parsePostDeepLink', () => {
     const result = parsePostDeepLink('growbro://post/');
     expect(result).toBeNull();
   });
-
-  it('should handle leading slashes in pathname', () => {
-    const result = parsePostDeepLink('growbro:///post/post-123');
-    expect(result).toEqual({
-      postId: 'post-123',
-      commentId: undefined,
-    });
-  });
 });

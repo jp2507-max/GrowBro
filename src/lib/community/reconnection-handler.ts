@@ -112,7 +112,7 @@ export class ReconnectionHandler {
     while (Date.now() - startTime < timeoutMs) {
       const status = await this.outboxProcessor.getStatus();
 
-      if (status.pending === 0 && status.processing === 0) {
+      if (status.pending === 0) {
         console.log('[ReconnectionHandler] Outbox is empty');
         return;
       }

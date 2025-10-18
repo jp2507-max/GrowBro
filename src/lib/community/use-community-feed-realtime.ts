@@ -1,3 +1,5 @@
+import { type Database } from '@nozbe/watermelondb';
+import { Q } from '@nozbe/watermelondb';
 import { useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
 
@@ -13,6 +15,7 @@ import {
   getLikeKey,
   handleRealtimeEvent,
 } from './event-deduplicator';
+import { getOutboxProcessor } from './outbox-processor';
 import { RealtimeConnectionManager } from './realtime-manager';
 
 type RealtimeOptions = {
@@ -34,6 +37,11 @@ type RealtimeOptions = {
    * @default true
    */
   enabled?: boolean;
+
+  /**
+   * Outbox adapter for self-echo detection and confirmation
+   */
+  outboxAdapter: OutboxAdapter;
 };
 
 type CacheAdapter<T> = {
@@ -43,8 +51,8 @@ type CacheAdapter<T> = {
 };
 
 type OutboxAdapter = {
-  has: (clientTxId: string) => boolean;
-  confirm: (clientTxId: string) => void;
+  has: (clientTxId: string) => boolean | Promise<boolean>;
+  confirm: (clientTxId: string) => void | Promise<void>;
 };
 
 /**
@@ -83,17 +91,25 @@ function createQueryCacheAdapter<T>(
 }
 
 /**
- * Create a simple outbox adapter for testing self-echo detection
- * In production, this should be backed by the actual outbox implementation
+ * Create an outbox adapter backed by the WatermelonDB outbox table
+ * Used for self-echo detection and confirmation in real-time subscriptions
  */
-function createOutboxAdapter(): OutboxAdapter {
-  const pendingTxIds = new Set<string>();
+export function createOutboxAdapter(database: Database): OutboxAdapter {
+  const processor = getOutboxProcessor(database);
 
   return {
-    has: (clientTxId: string) => pendingTxIds.has(clientTxId),
-    confirm: (clientTxId: string) => {
-      pendingTxIds.delete(clientTxId);
-      console.log('Outbox confirmed:', clientTxId);
+    has: async (clientTxId: string) => {
+      const outboxCollection = database.get('outbox');
+      const entries = await outboxCollection
+        .query(
+          Q.where('client_tx_id', clientTxId),
+          Q.or(Q.where('status', 'pending'), Q.where('status', 'failed'))
+        )
+        .fetch();
+      return entries.length > 0;
+    },
+    confirm: async (clientTxId: string) => {
+      await processor.confirmEntry(clientTxId);
     },
   };
 }
@@ -122,8 +138,8 @@ function createRealtimeHandlers(
   );
 
   return {
-    onPostChange: (event: RealtimeEvent<Post>) => {
-      handleRealtimeEvent(event, {
+    onPostChange: async (event: RealtimeEvent<Post>) => {
+      await handleRealtimeEvent(event, {
         table: 'posts',
         cache: postsCache,
         outbox,
@@ -131,8 +147,8 @@ function createRealtimeHandlers(
           queryClient.invalidateQueries({ queryKey: ['posts'] }),
       } as EventHandlerOptions<Post>);
     },
-    onCommentChange: (event: RealtimeEvent<PostComment>) => {
-      handleRealtimeEvent(event, {
+    onCommentChange: async (event: RealtimeEvent<PostComment>) => {
+      await handleRealtimeEvent(event, {
         table: 'post_comments',
         cache: commentsCache,
         outbox,
@@ -140,8 +156,8 @@ function createRealtimeHandlers(
           queryClient.invalidateQueries({ queryKey: ['post-comments'] }),
       } as EventHandlerOptions<PostComment>);
     },
-    onLikeChange: (event: RealtimeEvent<PostLike>) => {
-      handleRealtimeEvent(event, {
+    onLikeChange: async (event: RealtimeEvent<PostLike>) => {
+      await handleRealtimeEvent(event, {
         table: 'post_likes',
         getKey: getLikeKey,
         cache: likesCache,
@@ -268,12 +284,17 @@ function usePollingEffect(
   }, [isPolling, queryClient]);
 }
 
-export function useCommunityFeedRealtime(options: RealtimeOptions = {}) {
-  const { postId, onConnectionStateChange, enabled = true } = options;
+export function useCommunityFeedRealtime(options: RealtimeOptions) {
+  const {
+    postId,
+    onConnectionStateChange,
+    enabled = true,
+    outboxAdapter,
+  } = options;
 
   const queryClient = useQueryClient();
   const managerRef = React.useRef<RealtimeConnectionManager | null>(null);
-  const outboxRef = React.useRef<OutboxAdapter>(createOutboxAdapter());
+  const outboxRef = React.useRef<OutboxAdapter>(outboxAdapter);
 
   const [connectionState, setConnectionState] = React.useState<
     'disconnected' | 'connecting' | 'connected' | 'error'
@@ -323,6 +344,7 @@ export function useCommunityFeedRealtime(options: RealtimeOptions = {}) {
     onConnectionStateChange,
     startReconciliation,
     stopReconciliation,
+    outboxAdapter,
   ]);
 
   return {

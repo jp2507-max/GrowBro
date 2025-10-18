@@ -14,6 +14,7 @@ import { ActivityIndicator } from 'react-native';
 
 import { useLikePost, useUnlikePost } from '@/api/community';
 import { Pressable, Text, View } from '@/components/ui';
+import colors from '@/components/ui/colors';
 
 interface LikeButtonProps {
   postId: string;
@@ -72,7 +73,7 @@ function LikeButtonComponent({
         {isPending ? (
           <ActivityIndicator
             size="small"
-            color={userHasLiked ? '#ffffff' : undefined}
+            color={userHasLiked ? colors.white : undefined}
             testID={`${testID}-loading`}
           />
         ) : (

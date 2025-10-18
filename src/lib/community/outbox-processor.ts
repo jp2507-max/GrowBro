@@ -24,9 +24,8 @@ export interface OutboxProcessorOptions {
   maxDelayMs?: number;
 }
 
-export interface OutboxStatus {
+export interface OutboxCounts {
   pending: number;
-  processing: number;
   failed: number;
   confirmed: number;
   total: number;
@@ -103,7 +102,17 @@ export class OutboxProcessor {
    */
   async retryEntry(entryId: string): Promise<void> {
     const outboxCollection = this.database.get<OutboxModel>('outbox');
-    const entry = await outboxCollection.find(entryId);
+    let entry: OutboxModel;
+
+    try {
+      entry = await outboxCollection.find(entryId);
+    } catch (error: any) {
+      console.error(
+        `[OutboxProcessor] Entry not found for retry ${entryId}:`,
+        error.message
+      );
+      throw new Error(`Outbox entry not found for retry: ${entryId}`);
+    }
 
     if (entry.status !== 'failed') {
       throw new Error('Can only retry failed entries');
@@ -118,7 +127,19 @@ export class OutboxProcessor {
   async cancelEntry(entryId: string): Promise<void> {
     await this.database.write(async () => {
       const outboxCollection = this.database.get<OutboxModel>('outbox');
-      const entry = await outboxCollection.find(entryId);
+      let entry: OutboxModel;
+
+      try {
+        entry = await outboxCollection.find(entryId);
+      } catch (error: any) {
+        console.error(
+          `[OutboxProcessor] Entry not found for cancel ${entryId}:`,
+          error.message
+        );
+        // Entry already doesn't exist, so cancel is effectively complete
+        return;
+      }
+
       await entry.destroyPermanently();
     });
   }
@@ -152,13 +173,12 @@ export class OutboxProcessor {
   /**
    * Get current outbox status
    */
-  async getStatus(): Promise<OutboxStatus> {
+  async getStatus(): Promise<OutboxCounts> {
     const outboxCollection = this.database.get<OutboxModel>('outbox');
     const allEntries = await outboxCollection.query().fetch();
 
-    const status: OutboxStatus = {
+    const status: OutboxCounts = {
       pending: 0,
-      processing: 0,
       failed: 0,
       confirmed: 0,
       total: allEntries.length,

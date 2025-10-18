@@ -29,25 +29,13 @@ jest.mock('@/lib/watermelon', () => ({
   },
 }));
 
-jest.mock('./client', () => {
-  class MockConflictError extends Error {
-    constructor(
-      message: string,
-      public readonly canonicalState: any
-    ) {
-      super(message);
-      this.name = 'ConflictError';
-    }
-  }
-
-  return {
-    getCommunityApiClient: jest.fn(() => ({
-      likePost: jest.fn(),
-      unlikePost: jest.fn(),
-    })),
-    ConflictError: MockConflictError,
-  };
-});
+jest.mock('./client', () => ({
+  getCommunityApiClient: jest.fn(() => ({
+    likePost: jest.fn(),
+    unlikePost: jest.fn(),
+  })),
+  ConflictError: jest.fn(),
+}));
 
 jest.mock('react-native-flash-message', () => ({
   showMessage: jest.fn(),
@@ -62,6 +50,7 @@ describe('useLikePost', () => {
     results: [
       {
         id: 'post-1',
+        userId: 'user-1',
         user_id: 'user-1',
         body: 'Test post',
         created_at: '2024-01-01T00:00:00Z',
@@ -72,6 +61,7 @@ describe('useLikePost', () => {
       },
       {
         id: 'post-2',
+        userId: 'user-2',
         user_id: 'user-2',
         body: 'Another post',
         created_at: '2024-01-02T00:00:00Z',
@@ -242,6 +232,7 @@ describe('useUnlikePost', () => {
     results: [
       {
         id: 'post-1',
+        userId: 'user-1',
         user_id: 'user-1',
         body: 'Test post',
         created_at: '2024-01-01T00:00:00Z',

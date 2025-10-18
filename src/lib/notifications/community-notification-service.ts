@@ -174,15 +174,6 @@ export function parsePostDeepLink(url: string): {
       return { postId, commentId };
     }
 
-    // Alternative format where 'post' might be in path
-    if (pathParts[0] === 'post' && pathParts[1]) {
-      const postId = pathParts[1];
-      const commentId =
-        pathParts[2] === 'comment' && pathParts[3] ? pathParts[3] : undefined;
-
-      return { postId, commentId };
-    }
-
     return null;
   } catch {
     return null;

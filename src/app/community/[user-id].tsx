@@ -21,7 +21,7 @@ import { translate } from '@/lib/i18n';
 
 export default function UserProfile() {
   const router = useRouter();
-  const { userId } = useLocalSearchParams<{ userId: string }>();
+  const { 'user-id': userId } = useLocalSearchParams<{ 'user-id': string }>();
 
   const {
     data: profile,

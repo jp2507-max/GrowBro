@@ -25,6 +25,14 @@ jest.mock('@/api/community/client', () => ({
   getCommunityApiClient: jest.fn(),
 }));
 
+// Mock community metrics tracker
+jest.mock('@/lib/community/metrics-tracker', () => ({
+  communityMetrics: {
+    recordMutationFailure: jest.fn(),
+    updateOutboxMetrics: jest.fn(),
+  },
+}));
+
 const mockApiClient = {
   likePost: jest.fn(),
   unlikePost: jest.fn(),
@@ -206,7 +214,7 @@ describe('Offline Workflow Integration Tests', () => {
       );
     });
 
-    it('should allow undo within 15s window', async () => {
+    it('should process delete post operation successfully', async () => {
       const mockEntry = createMockEntry(
         '1',
         'DELETE_POST',
@@ -219,15 +227,13 @@ describe('Offline Workflow Integration Tests', () => {
         fetch: jest.fn().mockResolvedValue([mockEntry]),
       });
 
-      mockApiClient.undoDeletePost.mockResolvedValue({
-        id: 'post-1',
-        body: 'Restored',
-        undo_expires_at: undefined,
-      } as any);
+      mockApiClient.deletePost.mockResolvedValue({
+        undo_expires_at: new Date(Date.now() + 15000).toISOString(),
+      });
 
       await processor.processQueue();
 
-      // Verify undo succeeds
+      // Verify delete succeeds
       expect(mockEntry.update).toHaveBeenCalled();
     });
 

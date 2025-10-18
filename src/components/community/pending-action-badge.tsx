@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { tv } from 'tailwind-variants';
 
 import { Text, View } from '@/components/ui';
@@ -36,15 +37,16 @@ const badgeVariants = tv({
   },
 });
 
-interface PendingActionBadgeProps {
+type PendingActionBadgeProps = {
   status: 'pending' | 'failed' | 'confirmed';
   className?: string;
-}
+};
 
 export function PendingActionBadge({
   status,
   className,
-}: PendingActionBadgeProps) {
+}: PendingActionBadgeProps): JSX.Element {
+  const { t } = useTranslation();
   const styles = badgeVariants({ status });
 
   // Don't show badge for confirmed actions
@@ -55,7 +57,9 @@ export function PendingActionBadge({
   return (
     <View className={styles.container({ className })}>
       <Text className={styles.text()}>
-        {status === 'pending' ? 'Pending' : 'Failed'}
+        {status === 'pending'
+          ? t('pendingAction.pending')
+          : t('pendingAction.failed')}
       </Text>
     </View>
   );

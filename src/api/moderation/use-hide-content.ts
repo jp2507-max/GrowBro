@@ -13,7 +13,6 @@ type HideContentParams = {
   contentType: 'post' | 'comment';
   contentId: string;
   reason: string;
-  idempotencyKey?: string;
 };
 
 type HideContentResult = {
@@ -26,41 +25,31 @@ async function hideContent({
   contentId,
   reason,
 }: HideContentParams): Promise<HideContentResult> {
-  const table = contentType === 'post' ? 'posts' : 'post_comments';
-  const now = new Date().toISOString();
+  // Generate idempotency key for this operation
+  const idempotencyKey = crypto.randomUUID();
 
-  // Update the content to set hidden_at and moderation_reason
-  const { error } = await supabase
-    .from(table)
-    .update({
-      hidden_at: now,
-      moderation_reason: reason,
-      updated_at: now,
-    })
-    .eq('id', contentId);
+  // Call the server-side RPC for atomic moderation
+  const { data, error } = await supabase.rpc('moderate_content', {
+    p_content_type: contentType,
+    p_content_id: contentId,
+    p_action: 'hide',
+    p_reason: reason,
+    p_idempotency_key: idempotencyKey,
+  });
 
   if (error) {
     throw new Error(`Failed to hide ${contentType}: ${error.message}`);
   }
 
-  // Log to moderation_audit
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    await supabase.from('moderation_audit').insert({
-      moderator_id: user.id,
-      content_type: contentType,
-      content_id: contentId,
-      action: 'hide',
-      reason,
-    });
+  if (!data || !data.success) {
+    throw new Error(
+      `Failed to hide ${contentType}: ${data?.error || 'Unknown error'}`
+    );
   }
 
   return {
     success: true,
-    hiddenAt: now,
+    hiddenAt: data.moderated_at,
   };
 }
 
@@ -74,13 +63,10 @@ export function useHideContent() {
       if (variables.contentType === 'post') {
         void queryClient.invalidateQueries({ queryKey: ['posts'] });
         void queryClient.invalidateQueries({
-          queryKey: ['post', variables.contentId],
+          queryKey: ['post', 'postId'],
         });
       } else {
         void queryClient.invalidateQueries({ queryKey: ['comments'] });
-        void queryClient.invalidateQueries({
-          queryKey: ['comment', variables.contentId],
-        });
       }
     },
   });

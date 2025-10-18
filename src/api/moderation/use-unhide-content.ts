@@ -12,7 +12,6 @@ import { supabase } from '@/lib/supabase';
 type UnhideContentParams = {
   contentType: 'post' | 'comment';
   contentId: string;
-  reason: string;
 };
 
 type UnhideContentResult = {
@@ -22,38 +21,25 @@ type UnhideContentResult = {
 async function unhideContent({
   contentType,
   contentId,
-  reason,
 }: UnhideContentParams): Promise<UnhideContentResult> {
-  const table = contentType === 'post' ? 'posts' : 'post_comments';
-  const now = new Date().toISOString();
+  // Determine the table based on content type
+  const table = contentType === 'post' ? 'posts' : 'comments';
 
-  // Update the content to clear hidden_at and moderation_reason
-  const { error } = await supabase
+  // Perform the update and select the updated rows
+  const { data, error } = await supabase
     .from(table)
-    .update({
-      hidden_at: null,
-      moderation_reason: null,
-      updated_at: now,
-    })
-    .eq('id', contentId);
+    .update({ hidden: false })
+    .eq('id', contentId)
+    .select('*');
 
   if (error) {
     throw new Error(`Failed to unhide ${contentType}: ${error.message}`);
   }
 
-  // Log to moderation_audit
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    await supabase.from('moderation_audit').insert({
-      moderator_id: user.id,
-      content_type: contentType,
-      content_id: contentId,
-      action: 'unhide',
-      reason,
-    });
+  if (!data || data.length === 0) {
+    throw new Error(
+      `No rows were updated for ${contentType} with id ${contentId}. Possible RLS policy violation or invalid id.`
+    );
   }
 
   return {

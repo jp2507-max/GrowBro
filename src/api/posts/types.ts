@@ -4,6 +4,7 @@ export type Post = {
   title?: string;
   body: string;
   // Community feed fields
+  /** @deprecated Use userId instead. This field will be removed in a future version. */
   user_id?: string;
   media_uri?: string;
   created_at?: string;

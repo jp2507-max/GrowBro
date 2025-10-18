@@ -26,7 +26,7 @@ function createMockNotification() {
         },
       },
     },
-    type: 'community_interaction' as const,
+    type: 'community.interaction' as const,
     postId: '123',
     threadId: 'thread_123',
   };
@@ -97,7 +97,7 @@ function testAndroidGrouping() {
 
     const likeNotification = {
       ...mockNotification,
-      type: 'community_like' as const,
+      type: 'community.like' as const,
     };
 
     await NotificationGroupingService.handleCommunityNotification(
@@ -174,7 +174,7 @@ function testGroupCountManagement() {
       notification: {
         request: { content: { title: 'Test', body: 'Test', data: {} } },
       },
-      type: 'community_interaction' as const,
+      type: 'community.interaction' as const,
       postId: '123',
     };
 

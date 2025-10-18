@@ -64,7 +64,11 @@ describe('OutboxProcessor', () => {
 
   describe('processQueue', () => {
     it('should process pending entries in FIFO order', async () => {
-      // Create mock entries
+      // Arrange: create two pending outbox entries in FIFO order.
+      // Entry '1' is a LIKE operation and should be processed before
+      // entry '2' which is a COMMENT. We use the helper to create
+      // lightweight mocks that expose the fields the processor expects
+      // (idempotencyKey, clientTxId, update/destroy methods, etc.).
       mockEntries = [
         createMockEntry('1', 'LIKE', { postId: 'post-1' }, 0, 'pending'),
         createMockEntry(
@@ -76,10 +80,16 @@ describe('OutboxProcessor', () => {
         ),
       ];
 
+      // Stub the WatermelonDB collection query to return our two entries.
       mockOutboxCollection.query.mockReturnValue({
         fetch: jest.fn().mockResolvedValue(mockEntries),
       });
 
+      // Stub API client methods to simulate successful remote calls.
+      // The LIKE returns no body, while creating a comment returns the
+      // created comment object. We don't care about response shapes here
+      // beyond verifying the calls and that the correct idempotency keys
+      // and client transaction ids are forwarded.
       mockApiClient.likePost.mockResolvedValue(undefined);
       mockApiClient.createComment.mockResolvedValue({
         id: 'comment-1',
@@ -87,14 +97,20 @@ describe('OutboxProcessor', () => {
         body: 'Test',
       });
 
+      // Act: process the queue
       await processor.processQueue();
 
+      // Assert: verify FIFO execution order and that idempotency metadata
+      // is passed through. The first call must be the LIKE for post-1
+      // using the first entry's idempotency/clientTx ids.
       expect(mockApiClient.likePost).toHaveBeenCalledWith(
         'post-1',
         mockEntries[0].idempotencyKey,
         mockEntries[0].clientTxId
       );
 
+      // Then the COMMENT call should have been made with the second
+      // entry's payload and idempotency information.
       expect(mockApiClient.createComment).toHaveBeenCalledWith(
         { post_id: 'post-1', body: 'Test' },
         mockEntries[1].idempotencyKey,

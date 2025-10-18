@@ -59,8 +59,8 @@ function handleLikeError(
   }
 
   if (error instanceof ConflictError) {
-    const serverState = (error as any).serverState;
-    if (serverState) {
+    const canonicalState = error.canonicalState;
+    if (canonicalState) {
       const currentData = queryClient.getQueryData<PaginatedResponse<Post>>([
         'posts',
       ]);
@@ -68,8 +68,8 @@ function handleLikeError(
         queryClient.setQueryData<PaginatedResponse<Post>>(['posts'], {
           ...currentData,
           results: currentData.results.map((post) =>
-            post.id === serverState.post_id
-              ? { ...post, user_has_liked: serverState.exists }
+            post.id === canonicalState.post_id
+              ? { ...post, user_has_liked: canonicalState.exists }
               : post
           ),
         });

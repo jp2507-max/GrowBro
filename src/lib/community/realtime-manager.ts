@@ -13,9 +13,9 @@ import { communityMetrics } from './metrics-tracker';
 type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
 
 type RealtimeCallbacks = {
-  onPostChange?: (event: RealtimeEvent<Post>) => void;
-  onCommentChange?: (event: RealtimeEvent<PostComment>) => void;
-  onLikeChange?: (event: RealtimeEvent<PostLike>) => void;
+  onPostChange?: (event: RealtimeEvent<Post>) => void | Promise<void>;
+  onCommentChange?: (event: RealtimeEvent<PostComment>) => void | Promise<void>;
+  onLikeChange?: (event: RealtimeEvent<PostLike>) => void | Promise<void>;
   onConnectionStateChange?: (state: ConnectionState) => void;
 };
 
@@ -243,7 +243,7 @@ export class RealtimeConnectionManager {
   /**
    * Handle post change events
    */
-  private handlePostChange(payload: any): void {
+  private async handlePostChange(payload: any): Promise<void> {
     const event = this.transformPayload<Post>(payload, 'posts');
     if (event && this.callbacks.onPostChange) {
       // Track latency: commit_timestamp → UI update
@@ -252,14 +252,14 @@ export class RealtimeConnectionManager {
         const latency = Date.now() - commitTime;
         communityMetrics.addLatencySample(latency);
       }
-      this.callbacks.onPostChange(event);
+      await this.callbacks.onPostChange(event);
     }
   }
 
   /**
    * Handle comment change events
    */
-  private handleCommentChange(payload: any): void {
+  private async handleCommentChange(payload: any): Promise<void> {
     const event = this.transformPayload<PostComment>(payload, 'post_comments');
     if (event && this.callbacks.onCommentChange) {
       // Track latency: commit_timestamp → UI update
@@ -268,14 +268,14 @@ export class RealtimeConnectionManager {
         const latency = Date.now() - commitTime;
         communityMetrics.addLatencySample(latency);
       }
-      this.callbacks.onCommentChange(event);
+      await this.callbacks.onCommentChange(event);
     }
   }
 
   /**
    * Handle like change events
    */
-  private handleLikeChange(payload: any): void {
+  private async handleLikeChange(payload: any): Promise<void> {
     const event = this.transformPayload<PostLike>(payload, 'post_likes');
     if (event && this.callbacks.onLikeChange) {
       // Track latency: commit_timestamp → UI update
@@ -284,7 +284,7 @@ export class RealtimeConnectionManager {
         const latency = Date.now() - commitTime;
         communityMetrics.addLatencySample(latency);
       }
-      this.callbacks.onLikeChange(event);
+      await this.callbacks.onLikeChange(event);
     }
   }
 

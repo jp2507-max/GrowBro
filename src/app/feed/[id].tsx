@@ -12,7 +12,8 @@ import {
   Text,
   View,
 } from '@/components/ui';
-import { translate } from '@/lib/i18n';
+import { normalizePostUserId } from '@/lib/community/post-utils';
+import { translate, type TxKeyPath } from '@/lib/i18n';
 
 export default function Post() {
   const local = useLocalSearchParams<{ id: string; commentId?: string }>();
@@ -52,8 +53,8 @@ export default function Post() {
       <View className="flex-1 justify-center p-3">
         <Stack.Screen
           options={{
-            title: translate('nav.post'),
-            headerBackTitle: translate('nav.feed'),
+            title: translate('nav.post' as TxKeyPath),
+            headerBackTitle: translate('nav.feed' as TxKeyPath),
           }}
         />
         <FocusAwareStatusBar />
@@ -67,12 +68,14 @@ export default function Post() {
       <View className="flex-1 justify-center p-3">
         <Stack.Screen
           options={{
-            title: translate('nav.post'),
-            headerBackTitle: translate('nav.feed'),
+            title: translate('nav.post' as TxKeyPath),
+            headerBackTitle: translate('nav.feed' as TxKeyPath),
           }}
         />
         <FocusAwareStatusBar />
-        <Text className="text-center">{translate('errors.postLoad')}</Text>
+        <Text className="text-center">
+          {translate('errors.postLoad' as TxKeyPath)}
+        </Text>
       </View>
     );
   }
@@ -91,16 +94,19 @@ export default function Post() {
       <ScrollView ref={scrollViewRef} className="flex-1">
         <View className="p-3">
           <CannabisEducationalBanner className="mb-4" />
-          <PostCard post={{ ...post, userId: post.user_id }} />
+          <PostCard post={normalizePostUserId(post)} />
           <View className="mt-4">
-            <ModerationActions contentId={post.id} authorId={post.user_id} />
+            <ModerationActions
+              contentId={post.id}
+              authorId={String(post.userId || post.user_id || '')}
+            />
           </View>
         </View>
 
         <View className="mt-6 border-t border-neutral-200 dark:border-neutral-800">
           <View className="p-4">
             <Text className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-              {translate('community.comments')}
+              {translate('community.comments' as TxKeyPath)}
             </Text>
             <CommentList comments={comments} isLoading={isLoadingComments} />
           </View>

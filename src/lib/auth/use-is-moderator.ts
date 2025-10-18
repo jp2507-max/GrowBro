@@ -1,8 +1,8 @@
 /**
  * useIsModerator hook
  *
- * Checks if the current user has moderator or admin role based on JWT claims.
- * Requirements: 10.3 (role verification via JWT)
+ * Checks if the current user has moderator or admin role based on session.user claims.
+ * Requirements: 10.3 (role verification via session.user/app_metadata)
  */
 
 import { useEffect, useState } from 'react';
@@ -26,17 +26,7 @@ export function useIsModerator(): boolean {
           return;
         }
 
-        // Check JWT claims for role
-        const jwt = session.access_token;
-        if (!jwt) {
-          setIsModerator(false);
-          return;
-        }
-
-        // Decode JWT to check claims
-        // In production, the JWT should contain role in either:
-        // 1. top-level 'role' claim
-        // 2. app_metadata.roles array
+        // Check session.user claims for role
         const user = session.user;
         const appMetadata = user.app_metadata as {
           roles?: UserRole[];

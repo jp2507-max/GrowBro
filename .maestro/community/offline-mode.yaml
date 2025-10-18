@@ -18,9 +18,11 @@ env:
 
 # Enable airplane mode
 - runScript: |
-    output.platform === 'iOS' 
-      ? mobile: shell('xcrun simctl status_bar booted override --dataNetwork wifi --wifiMode active --wifiBars 3') 
-      : mobile: shell('adb shell svc wifi disable && adb shell svc data disable')
+    if [ "$MAESTRO_DRIVER_PLATFORM" = "ios" ]; then
+      xcrun simctl status_bar booted override --dataNetwork wifi --wifiMode active --wifiBars 3
+    else
+      adb shell svc wifi disable && adb shell svc data disable
+    fi
 
 # Verify offline indicator appears
 - waitForAnimationToEnd
@@ -50,9 +52,11 @@ env:
 
 # Disable airplane mode
 - runScript: |
-    output.platform === 'iOS' 
-      ? mobile: shell('xcrun simctl status_bar booted clear') 
-      : mobile: shell('adb shell svc wifi enable && adb shell svc data enable')
+    if [ "$MAESTRO_DRIVER_PLATFORM" = "ios" ]; then
+      xcrun simctl status_bar booted clear
+    else
+      adb shell svc wifi enable && adb shell svc data enable
+    fi
 
 # Wait for sync to complete
 - waitForAnimationToEnd:

@@ -15,6 +15,7 @@
     "community": {
       "cancel_comment_hint": "Bricht das Posten dieses Kommentars ab.",
       "comment_input_hint": "Gib hier deinen Kommentar ein. Maximal 500 Zeichen.",
+      "comments": "Kommentare",
       "compose_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
       "create_post_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
       "delete": "Löschen",
@@ -22,10 +23,15 @@
       "delete_post_hint": "Doppeltippen, um diesen Beitrag zu löschen. Du hast 15 Sekunden Zeit zum Rückgängig machen.",
       "error_card_hint": "Informiert, dass der Community-Feed nicht geladen werden konnte.",
       "like_button_hint": "Doppeltippen, um den Gefällt-mir-Status für diesen Beitrag umzuschalten.",
+      "offline_message": "Du bist offline. Änderungen werden synchronisiert, sobald du wieder online bist.",
+      "offline_title": "Offline-Modus",
       "open_post_hint": "Öffnet die Beitragsdetails.",
+      "post_deleted": "Beitrag gelöscht",
       "post_image": "Bild von @{{author}}",
       "post_image_hint": "Teil des Beitragsinhalts.",
       "retry_comment_hint": "Versucht erneut, diesen Kommentar zu posten.",
+      "retry_sync": "Synchronisation wiederholen",
+      "undo_expires": "Rückgängigmachen läuft in {{seconds}}s ab",
       "view_author_profile": "Profil von @{{author}} anzeigen",
       "view_author_profile_hint": "Doppeltippen, um das Profil dieses Benutzers zu öffnen.",
       "view_comments": "{{count}} Kommentare",
@@ -123,16 +129,690 @@
     "cancel": "Abbrechen",
     "cancel_comment": "Kommentar abbrechen",
     "characters_over": "Zeichen über dem Limit",
+    "commentList": {
+      "empty": "Noch keine Kommentare. Sei die oder der Erste!",
+      "loading": "Kommentare werden geladen..."
+    },
     "comment_count_one": "Kommentar",
     "comment_count_other": "Kommentare",
     "comment_input_label": "Kommentar schreiben",
     "comment_placeholder": "Teile deine Gedanken...",
     "comment_too_long": "Kommentar überschreitet die maximale Länge von 500 Zeichen",
+    "consent": {
+      "accept_all": "Alle akzeptieren",
+      "aiTraining": {
+        "impact": "Aus: Diagnose funktioniert weiterhin; keine Bilder im Trainingspool. Rechtsgrundlage: Einwilligung; Aufbewahrung: 365T",
+        "subtitle": "Erlaube die Nutzung deiner Bilder zur Modellverbesserung",
+        "title": "KI-Trainingsbilder"
+      },
+      "analytics": {
+        "impact": "Aus: Playbook-Verbesserungsanalytik deaktiviert. Rechtsgrundlage: Einwilligung; Aufbewahrung: 180T aggregiert",
+        "infoBody": "Anonyme Nutzung der Playbooks hilft uns Zeitpläne und KI-Empfehlungen zu verfeinern.",
+        "infoTitle": "Playbook-Analytik",
+        "subtitle": "Hilf Playbooks & KI-Vorschläge zu verbessern",
+        "title": "Playbook-Analytik"
+      },
+      "crashDiagnostics": {
+        "impact": "Aus: keine Absturzberichte werden gesendet. Rechtsgrundlage: Einwilligung; Aufbewahrung: 180T",
+        "subtitle": "Minimierte Absturzberichte senden",
+        "title": "Absturzdiagnostik"
+      },
+      "crashReporting": {
+        "impact": "Aus: keine Absturzdiagnostik gesendet. Rechtsgrundlage: Einwilligung; Aufbewahrung: 90T aggregiert",
+        "infoBody": "Absturzdiagnostik hilft uns Stabilitätsprobleme schneller zu beheben. Identifizierende Daten werden soweit möglich entfernt.",
+        "infoTitle": "Absturzberichte",
+        "subtitle": "Minimierte Absturzdiagnostik senden",
+        "title": "Absturzberichte"
+      },
+      "experiments": {
+        "impact": "Aus: keine A/B-Tests; Feature-Rollouts für dich deaktiviert. Rechtsgrundlage: Einwilligung",
+        "subtitle": "A/B-Tests und Flags nach Einwilligung aktivieren",
+        "title": "Experimente / Feature-Flags"
+      },
+      "first_run_title": "Deine Datenschutzwahl",
+      "getStarted": "Los geht's",
+      "lastUpdated": "Zuletzt aktualisiert: {{date}}",
+      "optOutAll": "Alles abwählen",
+      "optOutError": {
+        "message": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
+        "title": "Widerruf fehlgeschlagen"
+      },
+      "optOutSubtitle": "Hier kannst du bereits erteilte Einwilligungen widerrufen.",
+      "optOutSuccess": {
+        "message": "Analyse und Telemetrie wurden deaktiviert.",
+        "title": "Alle Einwilligungen widerrufen"
+      },
+      "optOutTitle": "Tracking widerrufen",
+      "personalized": {
+        "impact": "Aus: Berichte bleiben vollständig anonym. Rechtsgrundlage: Einwilligung; Aufbewahrung: 30T",
+        "infoBody": "Ermöglicht Pseudonyme für bessere Nachvollziehbarkeit. Keine direkten Personendaten.",
+        "infoTitle": "Personalisierte Diagnostik",
+        "subtitle": "Gehashte Kennungen in Berichte aufnehmen",
+        "title": "Personalisierte Diagnostik"
+      },
+      "quickOptOut": {
+        "description": "Alle optionalen Datenerfassungen sofort deaktivieren. Technisch notwendige Daten werden weiterhin erhoben.",
+        "title": "Schneller Widerruf"
+      },
+      "reject_all": "Alle ablehnen",
+      "save": "Speichern",
+      "sessionReplay": {
+        "impact": "Aus: keine Interaktionsaufzeichnungen. Rechtsgrundlage: Einwilligung; Aufbewahrung: 30T",
+        "infoBody": "Replay hilft komplexe UI-Probleme zu diagnostizieren. Sensible Felder werden maskiert.",
+        "infoTitle": "Session Replay",
+        "subtitle": "Anonymisierte Interaktionen erfassen",
+        "title": "Session Replay"
+      },
+      "settingsSubtitle": "Verwalte deine Datenerfassungs-Präferenzen.",
+      "settingsTitle": "Datenschutzeinstellungen",
+      "telemetry": {
+        "impact": "Aus: keine Nutzungsanalysen; Leistungsmetriken bleiben lokal. Rechtsgrundlage: Einwilligung; Aufbewahrung: 90T aggregiert",
+        "infoBody": "Telemetrie hilft uns zu verstehen, wie Funktionen genutzt werden, um Zuverlässigkeit zu verbessern. Wir minimieren und aggregieren Daten.",
+        "infoTitle": "Telemetrie / Analytik",
+        "subtitle": "Nutzungsanalysen nach Einwilligung erlauben",
+        "title": "Telemetrie / Analytik"
+      },
+      "title": "Datenschutzoptionen"
+    },
     "create_post": "Beitrag erstellen",
+    "diagnostics": {
+      "avg_payload": "Durchschn. Payload — {{operation}}: {{bytes}} B",
+      "checkpoint_age_ms": "Checkpoint-Alter (ms)",
+      "clear_logs": "Protokolle löschen",
+      "last_checkpoint_at": "Letzter Checkpoint",
+      "last_success_at": "Letzter Erfolg",
+      "logs": "Protokolle",
+      "metrics": "Metriken",
+      "p50_ms": "p50 (ms) — push: {{push}}, pull: {{pull}}, apply: {{apply}}",
+      "p95_ms": "p95 (ms) — push: {{push}}, pull: {{pull}}, apply: {{apply}}",
+      "subtitle": "Metriken und aktuelle Sync-Logs",
+      "sync_now": "Jetzt synchronisieren",
+      "title": "Sync-Diagnostik"
+    },
     "empty_state": "Noch keine Beiträge. Sei die oder der Erste!",
+    "errors": {
+      "notification": {
+        "battery_optimization_title": "Batterieoptimierung aktiv",
+        "cancel_failed": "Erinnerung konnte nicht abgebrochen werden",
+        "channel_missing": "Benachrichtigungskanal nicht konfiguriert",
+        "delivery_failed": "Erinnerung wurde nicht zugestellt",
+        "doze_mode_active": "Geräte-Batterieoptimierung kann Erinnerungen verzögern",
+        "exact_alarm_unavailable": "Exakte Alarmplanung auf diesem Gerät nicht verfügbar",
+        "fallback_description": "Wir zeigen dir eine Erinnerung, wenn du die App öffnest",
+        "fallback_title": "Erinnerung erstellt",
+        "invalid_trigger": "Ungültige Erinnerungszeit",
+        "permission_denied": "Benachrichtigungsberechtigung verweigert. Bitte aktiviere Benachrichtigungen in den Einstellungen.",
+        "permission_title": "Benachrichtigungen deaktiviert",
+        "schedule_failed": "Erinnerung konnte nicht geplant werden",
+        "title": "Erinnerungsfehler"
+      },
+      "playbook": {
+        "already_applied": "Dieses Playbook ist bereits auf diese Pflanze angewendet",
+        "generation_failed": "Aufgaben konnten nicht aus Playbook generiert werden",
+        "invalid_schema": "Ungültiges Playbook-Format",
+        "noTasks": "Keine Aufgaben gefunden",
+        "not_found": "Playbook nicht gefunden",
+        "status": {
+          "completed": "✓ Abgeschlossen",
+          "current": "Aktuell",
+          "upcoming": "Bevorstehend"
+        },
+        "title": "Playbook-Fehler"
+      },
+      "postLoad": "Fehler beim Laden des Beitrags",
+      "recovery": {
+        "check_connection": "Überprüfe deine Internetverbindung",
+        "disable_battery_optimization": "Deaktiviere Batterieoptimierung für diese App in den Einstellungen",
+        "enable_notifications": "Öffne Einstellungen, um Benachrichtigungen zu aktivieren",
+        "rrule_fallback": "Verwende stattdessen einfache tägliche oder wöchentliche Wiederholung",
+        "sign_in_again": "Melde dich erneut an",
+        "update_app": "Aktualisiere die App aus dem Store"
+      },
+      "rrule": {
+        "byday_and_bymonthday": "Wiederholungsmuster kann nicht sowohl Wochentag als auch Monatstag angeben",
+        "count_and_until": "Wiederholungsmuster kann nicht sowohl Anzahl als auch Enddatum haben",
+        "invalid_byday": "Ungültiger Wochentag im Wiederholungsmuster",
+        "invalid_bymonthday": "Ungültiger Monatstag im Wiederholungsmuster",
+        "invalid_format": "Ungültiges Wiederholungsmuster-Format",
+        "invalid_freq": "Ungültige Wiederholungshäufigkeit",
+        "invalid_interval": "Wiederholungsintervall muss eine positive Zahl sein",
+        "missing_freq": "Wiederholungsmuster muss eine Häufigkeit angeben (täglich, wöchentlich usw.)",
+        "parse_error": "Wiederholungsmuster konnte nicht analysiert werden",
+        "timezone_error": "Ungültige Zeitzone für Wiederholungsberechnung",
+        "title": "Wiederholungsfehler"
+      },
+      "sync": {
+        "auth_error": "Authentifizierungsfehler. Bitte melde dich erneut an.",
+        "conflict_detected": "Daten wurden auf einem anderen Gerät aktualisiert",
+        "invalid_data": "Ungültige Daten vom Server empfangen",
+        "max_retries_description": "{{message}} Bitte versuche es später erneut.",
+        "max_retries_title": "Synchronisierung fehlgeschlagen",
+        "network_error": "Netzwerkverbindungsfehler. Änderungen werden synchronisiert, wenn online.",
+        "permanent_title": "Synchronisierungsfehler",
+        "quota_exceeded": "Speicherkontingent überschritten",
+        "retrying_description": "{{message}} Wiederholung in {{delay}}s (Versuch {{attempt}})",
+        "retrying_title": "Synchronisiere...",
+        "server_error": "Serverfehler. Bitte versuche es später erneut.",
+        "timeout": "Synchronisierung abgelaufen. Bitte versuche es erneut.",
+        "version_mismatch": "App-Versionsfehler. Bitte aktualisiere die App."
+      },
+      "task": {
+        "invalid_timestamp": "Ungültiges Aufgabendatum oder -zeit",
+        "not_found": "Aufgabe nicht gefunden",
+        "timestamp_title": "Ungültiges Datum",
+        "update_failed": "Aufgabe konnte nicht aktualisiert werden"
+      },
+      "unknown": "Ein unerwarteter Fehler ist aufgetreten",
+      "unknown_description": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
+      "unknown_title": "Fehler"
+    },
+    "harvest": {
+      "accessibility": {
+        "cancelButton": "Abbrechen und Modal schließen",
+        "cancelHint": "Änderungen verwerfen und Ernte-Modal schließen",
+        "dryWeightInput": "Trockengewicht-Eingabe",
+        "notesHint": "Optionales Notizenfeld für zusätzliche Ernte-Details",
+        "notesInput": "Notizen-Eingabe",
+        "submitButton": "Erntedaten speichern",
+        "submitHint": "Ernte-Daten in Ihrer Pflanzen-Akte speichern",
+        "trimmingsWeightInput": "Verschnitt-Gewicht-Eingabe",
+        "unitToggle": "Zwischen Gramm und Unzen wechseln",
+        "wetWeightInput": "Nassgewicht-Eingabe"
+      },
+      "actions": {
+        "advance": "Zu {{stage}} fortschreiten",
+        "advance_hint": "Doppeltippen, um zur {{stage}}-Phase zu wechseln",
+        "override": "Zu Phase springen",
+        "override_hint": "Doppeltippen, um zu einer späteren Phase zu springen",
+        "revert": "Phase zurücksetzen",
+        "revert_hint": "Doppeltippen, um zur vorherigen Phase zurückzukehren",
+        "undo": "Rückgängig",
+        "undo_expires": "Rückgängig läuft in {{seconds}}s ab",
+        "undo_hint": "Doppeltippen, um letzte Phasenänderung rückgängig zu machen"
+      },
+      "chart": {
+        "empty": {
+          "createButton": "Erste Ernte erstellen",
+          "filtered": "Keine Daten gefunden",
+          "filteredGuidance": "Passen Sie Ihre Filter an, um Erntedaten zu sehen.",
+          "noData": "Noch keine Erntedaten",
+          "noDataGuidance": "Starten Sie Ihre erste Ernte, um den Gewichtsverlauf zu sehen."
+        },
+        "error": {
+          "renderFailed": "Diagramm konnte nicht gerendert werden",
+          "showTable": "Tabellenansicht anzeigen"
+        },
+        "filters": {
+          "batchView": "Stapelansicht",
+          "individualView": "Einzelansicht"
+        },
+        "table": {
+          "date": "Datum",
+          "stage": "Phase",
+          "weight": "Gewicht"
+        },
+        "timeRange": {
+          "30d": "Letzte 30 Tage",
+          "365d": "Letztes Jahr",
+          "7d": "Letzte 7 Tage",
+          "90d": "Letzte 90 Tage",
+          "all": "Gesamte Zeit"
+        },
+        "title": "Gewichtsverlauf"
+      },
+      "curing_checklist": {
+        "aroma": "Aroma-Prüfung",
+        "aroma_description": "Blüten sollten ein angenehmes Aroma haben, nicht schimmelig oder heuartig",
+        "jar_humidity": "Glas-Luftfeuchtigkeit",
+        "jar_humidity_description": "Luftfeuchtigkeit sollte zwischen 55-65% RH für optimale Aushärtung liegen",
+        "stem_snap": "Stängel-Knack-Test",
+        "stem_snap_description": "Stängel sollten sauber brechen statt sich zu biegen"
+      },
+      "duration": {
+        "day": "1 Tag",
+        "days": "{{count}} Tage",
+        "hour": "1 Stunde",
+        "hours": "{{count}} Stunden"
+      },
+      "edgeCase": {
+        "clockSkew": {
+          "description": "Ihre Geräteuhr weicht erheblich vom Server ab. Dies kann die Synchronisationszuverlässigkeit beeinträchtigen.",
+          "ignore": "Vorerst ignorieren",
+          "syncTime": "Gerätezeit synchronisieren",
+          "title": "Gerätezeit-Abweichung"
+        },
+        "duration": {
+          "adjustDate": "Datum anpassen",
+          "continue": "Trotzdem fortfahren",
+          "dismiss": "Verwerfen"
+        },
+        "durationTooLong": {
+          "description": "Diese Phase hat die empfohlene Dauer überschritten. Sie sollten die Bedingungen überprüfen.",
+          "title": "Phasendauer verlängert"
+        },
+        "durationTooShort": {
+          "description": "Diese Phase ist kürzer als empfohlen. Das Fortfahren kann die Qualität beeinträchtigen.",
+          "title": "Phasendauer zu kurz"
+        },
+        "invalidTimestamps": {
+          "description": "Das Abschlussdatum der Phase kann nicht vor dem Startdatum liegen. Bitte korrigieren Sie die Daten.",
+          "dismiss": "Abbrechen",
+          "fixDates": "Daten korrigieren",
+          "title": "Ungültige Daten"
+        },
+        "invalidWeightRatio": {
+          "description": "Das Trockengewicht kann das Nassgewicht nicht überschreiten. Bitte überprüfen Sie Ihre Messungen.",
+          "dismiss": "Abbrechen",
+          "fixWeights": "Gewichte korrigieren",
+          "title": "Ungültiges Gewichtsverhältnis"
+        },
+        "missingDryWeight": {
+          "addWeight": "Trockengewicht hinzufügen",
+          "description": "Sie müssen ein Trockengewicht eingeben, bevor Sie die Aushärtungsphase abschließen und den Endertrag aufzeichnen können.",
+          "dismiss": "Zurück",
+          "title": "Trockengewicht erforderlich"
+        },
+        "overlappingHarvests": {
+          "closeOther": "Andere Ernte schließen",
+          "description": "Diese Pflanze hat bereits eine offene Ernte. Schließen Sie die bestehende Ernte oder geben Sie einen Grund zum Überschreiben an.",
+          "override": "Überschreiben & Fortfahren",
+          "title": "Überlappende Ernten erkannt",
+          "viewExisting": "Bestehende Ernten anzeigen"
+        },
+        "storageFull": {
+          "continueWithout": "Ohne Fotos fortfahren",
+          "description": "Der Foto-Speicher wird knapp. Sie können Speicherplatz freigeben oder ohne Fotos fortfahren.",
+          "dismiss": "Abbrechen",
+          "freeSpace": "Speicherplatz freigeben",
+          "title": "Speicher fast voll"
+        },
+        "syncConflict": {
+          "description": "Diese Ernte wurde auf einem anderen Gerät aktualisiert. Die neueste Version wurde angewendet.",
+          "dismiss": "Verwerfen",
+          "title": "Anderswo aktualisiert",
+          "viewChanges": "Details anzeigen"
+        }
+      },
+      "error": {
+        "createFailed": "Ernte konnte nicht erstellt werden. Bitte versuche es erneut."
+      },
+      "errors": {
+        "actions": {
+          "dismiss": "Schließen",
+          "retry_now": "Jetzt wiederholen",
+          "sign_in_again": "Erneut anmelden",
+          "view_details": "Details anzeigen"
+        },
+        "business_logic": {
+          "missing_dry_weight": "Trockengewicht muss vor Abschluss der Aushärtung gesetzt werden.",
+          "title": "Aktion nicht erlaubt"
+        },
+        "failed": "Phase-Aktualisierung fehlgeschlagen. Bitte versuche es erneut.",
+        "invalid_transition": "Ungültiger Phasenübergang",
+        "reason_required": "Grund ist für diese Aktion erforderlich",
+        "sync": {
+          "conflict_detected": "Diese Ernte wurde auf einem anderen Gerät aktualisiert. Bitte überprüfe die Änderungen.",
+          "network_timeout": "Zeitüberschreitung der Anfrage. Bitte überprüfe deine Verbindung und versuche es erneut.",
+          "payload_too_large": "Daten zu groß zum Synchronisieren. Reduziere die Nutzlastgröße...",
+          "permission_denied": "Du hast keine Berechtigung für diese Aktion.",
+          "persistent_description": "Ernte-Daten konnten nicht synchronisiert werden. Bitte überprüfe deine Verbindung und versuche es erneut.",
+          "persistent_title": "Synchronisierung fehlgeschlagen",
+          "server_error": "Serverfehler aufgetreten. Wir versuchen es automatisch erneut.",
+          "transient_description": "Ein vorübergehender Synchronisierungsfehler ist aufgetreten. Wir versuchen es automatisch erneut.",
+          "transient_title": "Synchronisierungsfehler",
+          "unauthorized": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
+          "unknown": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
+          "validation_failed": "Ungültige Daten bereitgestellt. Bitte überprüfe deine Eingaben."
+        },
+        "undo_expired": "Rückgängig-Zeitfenster abgelaufen. Verwende stattdessen Phase zurücksetzen.",
+        "validation": {
+          "description": "Bitte korrigiere die unten stehenden Fehler und versuche es erneut.",
+          "strainNameRequired": "Stammname ist erforderlich",
+          "title": "Validierungsfehler"
+        }
+      },
+      "history": {
+        "accessibility": {
+          "emptyCreate": "Neue Ernte erstellen",
+          "emptyCreateHint": "Doppeltippen, um eine neue Ernte zu erstellen",
+          "list": "Ernteverlaufsliste",
+          "listHint": "Scrollbare Liste der Ernteaufzeichnungen",
+          "rowHint": "Doppeltippen, um Erntedetails zu öffnen",
+          "summary": "Leerer Zustand des Ernteverlaufs",
+          "summaryHint": "Keine Ernten gefunden"
+        },
+        "actions": {
+          "clearFilters": "Filter zurücksetzen",
+          "create": "Ernte erstellen"
+        },
+        "empty": {
+          "default": {
+            "body": "Erstelle deine erste Ernte, um den Fortschritt zu verfolgen.",
+            "title": "Noch keine Ernten"
+          },
+          "filtered": {
+            "body": "Passe die Filter an oder setze sie zurück, um alle Ernten zu sehen.",
+            "title": "Keine Ernten für diese Filter"
+          },
+          "offline": {
+            "body": "Stelle die Verbindung wieder her, um den neuesten Verlauf zu synchronisieren.",
+            "title": "Offline-Modus"
+          }
+        },
+        "list": {
+          "conflict_badge": "Überprüfen",
+          "rowLabel": "Ernte in {{stage}}-Phase, aktualisiert {{time}}",
+          "rowLabelConflict": ", Überprüfung erforderlich",
+          "rowLabelWeight": ", Trockengewicht {{weight}} Gramm",
+          "updated": "Aktualisiert {{relativeTime}}",
+          "weight": "Trockengewicht: {{weight}} g"
+        },
+        "relative": {
+          "days": "vor {{count}} Tagen",
+          "hours": "vor {{count}} Stunden",
+          "minutes": "vor {{count}} Minuten",
+          "now": "Gerade eben"
+        },
+        "title": "Ernteverlauf"
+      },
+      "inventory": {
+        "add_batch": "Charge hinzufügen",
+        "add_batch_description": "Das Formular zur Chargenerstellung wird verfügbar sein, sobald die Chargenverwaltungs-UI implementiert ist.",
+        "add_item": "Artikel hinzufügen",
+        "batch_lot": "Charge {{lot}}",
+        "batches_title": "Chargen",
+        "category": "Kategorie",
+        "charts": {
+          "consumptionNote": "Basierend auf erfassten Abgangsbewegungen",
+          "consumptionTrend": "Verbrauchstrend",
+          "costTrend": "Kostentrend",
+          "costTrendNote": "Gesamtkosten über alle Kategorien",
+          "monthly": "Monatlich",
+          "noConsumptionData": "Noch keine Verbrauchsdaten verfügbar",
+          "noCostData": "Noch keine Kostendaten verfügbar",
+          "total": "Gesamt",
+          "weekly": "Wöchentlich ({{unit}})"
+        },
+        "clear_search_hint": "Suchtext löschen",
+        "concurrent_finalize_toast": "Ernteaufzeichnung bereits von einem anderen Prozess abgeschlossen",
+        "csv": {
+          "export_button": "CSV exportieren",
+          "export_error_title": "Export fehlgeschlagen",
+          "export_success_description": "{{itemCount}} Artikel, {{batchCount}} Chargen, {{movementCount}} Bewegungen exportiert",
+          "export_success_title": "Export erfolgreich",
+          "export_title": "Inventardaten exportieren",
+          "import_button": "CSV importieren",
+          "import_error_title": "Import fehlgeschlagen",
+          "sharing_unavailable": "Teilen ist auf diesem Gerät nicht verfügbar"
+        },
+        "current_stock": "Bestand",
+        "empty_description": "Füge deinen ersten Inventarartikel hinzu, um Vorräte zu verfolgen",
+        "empty_title": "Keine Inventarartikel",
+        "error_title": "Inventar konnte nicht geladen werden",
+        "expired": "Abgelaufen",
+        "expired_on": "Abgelaufen am {{date}}",
+        "expires_in": "Läuft in {{days}} Tagen ab",
+        "filter_hint": "Filter- und Sortieroptionen öffnen",
+        "filters": "Filter",
+        "filters_and_sort": "Filter & Sortierung",
+        "finalize_curing": "Aushärtung abschließen & Endertrag aufzeichnen",
+        "finalize_success_toast": "Aushärtung abgeschlossen und Endertrag erfolgreich aufgezeichnet",
+        "forecast": {
+          "basedOnUsagePattern": "Basierend auf deinem Nutzungsmuster",
+          "highConfidence": "Hoch",
+          "inDays": "In {{days}} Tagen",
+          "lowConfidence": "Niedrig",
+          "lowConfidenceNote": "Begrenzte Daten verfügbar. Die Vorhersagegenauigkeit verbessert sich mit mehr Nutzungsverlauf.",
+          "mediumConfidence": "Mittel",
+          "recommendedQuantity": "Empfohlene Menge",
+          "reorderNow": "Jetzt Bestände auffüllen",
+          "reorderRecommendation": "Auffüll-Empfehlung",
+          "timeToReorder": "Zeit bis zum Auffüllen"
+        },
+        "form": {
+          "barcode": "Barcode",
+          "barcode_placeholder": "z.B. 123456789012",
+          "category": "Kategorie",
+          "lead_time_days": "Lieferzeit (Tage)",
+          "min_stock": "Mindestbestand",
+          "name": "Artikelname",
+          "name_placeholder": "z.B. General Hydroponics FloraBloom",
+          "reorder_multiple": "Nachbestellmenge",
+          "sku": "Artikelnummer",
+          "sku_placeholder": "z.B. GH-FB-1L",
+          "submit": "Artikel hinzufügen",
+          "tracking_batched": "Chargen",
+          "tracking_mode": "Verfolgungsmodus",
+          "tracking_simple": "Einfach",
+          "unit": "Maßeinheit",
+          "unit_placeholder": "z.B. L, ml, g, kg"
+        },
+        "item_detail": "Artikeldetails",
+        "low_stock": "Niedriger Bestand",
+        "low_stock_count": "{{count}} Artikel mit niedrigem Bestand",
+        "low_stock_info": "Sortiert nach Dringlichkeit: Tage bis Lagerausfall, dann % unter Schwellenwert",
+        "min_stock": "Min",
+        "missing_dry_weight": "Trockengewicht muss vor Abschluss der Aushärtung gesetzt werden",
+        "missing_dry_weight_cta": "Trockengewicht aktualisieren",
+        "no_batches": "Keine Chargen verfügbar",
+        "offline_description": "Zwischengespeicherte Daten werden angezeigt. Änderungen werden synchronisiert, wenn du wieder online bist.",
+        "permissions": {
+          "exact_alarm_benefits": "Aktiviere präzise Niedrigbestandswarnungen, um Nachschub rechtzeitig zu bestellen und Engpässe zu vermeiden.",
+          "exact_alarm_description": "GrowBro benötigt die Berechtigung, exakte Alarme für rechtzeitige Niedrigbestandsbenachrichtigungen zu planen. Dies stellt sicher, dass du benachrichtigt wirst, wenn Vorräte zur Neige gehen.",
+          "exact_alarm_title": "Präzise Benachrichtigungen aktivieren",
+          "grant_permission": "Berechtigung erteilen"
+        },
+        "retry_failed": "Aushärtung konnte nach mehreren Versuchen nicht abgeschlossen werden. Bitte überprüfe deine Verbindung und versuche es erneut.",
+        "search_hint": "Zum Suchen von Inventarartikeln eingeben",
+        "search_label": "Inventar durchsuchen",
+        "search_offline": "Offline-Modus - zwischengespeicherte Ergebnisse werden angezeigt",
+        "search_placeholder": "Artikel nach Name, SKU oder Kategorie suchen...",
+        "sort_by": "Sortieren nach",
+        "stock_level": "Lagerbestand",
+        "title": "Inventar",
+        "total_value": "Wert"
+      },
+      "modal": {
+        "cancel": "Abbrechen",
+        "dryWeight": "Trockengewicht",
+        "notes": "Notizen",
+        "notesPlaceholder": "Notizen zu dieser Ernte hinzufügen...",
+        "photos": "Fotos",
+        "submit": "Ernte speichern",
+        "submitting": "Wird gespeichert...",
+        "subtitle": "Erntedetails und Gewichte eingeben",
+        "title": "Ernte aufzeichnen",
+        "trimmingsWeight": "Verschnitt-Gewicht",
+        "unitToggle": "Einheit",
+        "wetWeight": "Nassgewicht"
+      },
+      "modals": {
+        "override": {
+          "cancel": "Abbrechen",
+          "confirm": "Zu Phase springen",
+          "reason_label": "Grund (erforderlich)",
+          "reason_placeholder": "Erkläre, warum du Phasen überspringen musst...",
+          "reason_required": "Bitte gib einen Grund für das Überspringen an",
+          "subtitle": "Diese Aktion wird im Audit-Protokoll erfasst",
+          "target_stage_label": "Springen zu Phase",
+          "title": "Zu späterer Phase springen"
+        },
+        "revert": {
+          "cancel": "Abbrechen",
+          "confirm": "Phase zurücksetzen",
+          "reason_label": "Grund (erforderlich)",
+          "reason_placeholder": "Erkläre, warum du zurücksetzen musst...",
+          "reason_required": "Bitte gib einen Grund für das Zurücksetzen an",
+          "subtitle": "Diese Aktion wird im Audit-Protokoll erfasst",
+          "target_stage_label": "Zurücksetzen auf Phase",
+          "title": "Zur vorherigen Phase zurückkehren"
+        }
+      },
+      "notifications": {
+        "overdue": {
+          "body": "Deine Ernte ist seit {{days}} Tagen in der {{stage}}-Phase. Bitte überprüfe, ob sie bereit ist fortzufahren.",
+          "title": "{{stage}}-Phase Überprüfung empfohlen"
+        },
+        "target": {
+          "body": "Deine Ernte ist seit {{days}} Tagen in der {{stage}}-Phase. Erwäge, zur nächsten Phase überzugehen.",
+          "title": "{{stage}}-Phase Ziel erreicht"
+        }
+      },
+      "permissions": {
+        "exactAlarm": {
+          "errorMessage": "Berechtigung konnte nicht angefordert werden. Bitte versuche es erneut.",
+          "errorTitle": "Berechtigungsfehler",
+          "fallbackBody": "Aktiviere exakte Alarme in den Einstellungen für sofortige Warnungen bei niedrigem Lagerbestand.",
+          "fallbackTitle": "Benachrichtigungen können verzögert sein",
+          "grantButton": "Benachrichtigungen aktivieren",
+          "ifDeniedBody": "Benachrichtigungen können bis zu 15 Minuten verzögert werden. Du erhältst weiterhin Warnungen, nur nicht sofort.",
+          "ifDeniedTitle": "Wenn du dies überspringst",
+          "openSettings": "Einstellungen öffnen",
+          "title": "Rechtzeitige Benachrichtigungen aktivieren",
+          "whyNeededBody": "Exakte Alarme stellen sicher, dass du sofort benachrichtigt wirst, wenn Vorräte zur Neige gehen, damit du rechtzeitig nachbestellen kannst.",
+          "whyNeededTitle": "Warum das wichtig ist"
+        }
+      },
+      "photo": {
+        "accessibility": {
+          "add_photo_hint": "Doppeltippen, um ein Ernte-Foto von Kamera oder Galerie hinzuzufügen"
+        },
+        "actions": {
+          "add_photo": "Foto hinzufügen",
+          "choose_from_library": "Aus Galerie wählen",
+          "dismiss": "Verwerfen",
+          "free_up_space": "Speicherplatz freigeben",
+          "take_photo": "Foto aufnehmen"
+        },
+        "alerts": {
+          "photo_options_title": "Foto hinzufügen"
+        },
+        "cancel": "Abbrechen",
+        "capture_failed": "Aufnahme fehlgeschlagen",
+        "choose_source": "Öffnet den Foto-Picker, um ein Ernte-Foto von Kamera oder Galerie hinzuzufügen",
+        "errors": {
+          "camera_permission_denied": "Kamera-Berechtigung verweigert",
+          "capture_failed": "Foto konnte nicht aufgenommen werden",
+          "no_uri": "Keine Foto-URI zurückgegeben",
+          "processing_failed": "Foto konnte nicht verarbeitet werden",
+          "select_failed": "Foto konnte nicht ausgewählt werden",
+          "storage_failed": "Foto konnte nicht gespeichert werden",
+          "upload_failed": "Foto konnte nicht hochgeladen werden",
+          "upload_missing_metadata": "Foto-Metadaten sind unvollständig",
+          "upload_not_authenticated": "Sie müssen angemeldet sein, um Fotos hochzuladen"
+        },
+        "processing_photo": "Foto wird verarbeitet...",
+        "status": {
+          "processing": "Foto wird verarbeitet...",
+          "upload_complete": "Fotos erfolgreich hochgeladen",
+          "upload_queued": "{{count}} Fotos für Upload eingereiht",
+          "uploading": "{{count}} Fotos werden hochgeladen..."
+        },
+        "storage": {
+          "available": "{{size}} verfügbar",
+          "cleanup_complete": "Bereinigung abgeschlossen",
+          "cleanup_success": "Speicherbereinigung erfolgreich abgeschlossen",
+          "duration": "Abgeschlossen in {{ms}}ms",
+          "files_deleted": "{{count}} Dateien gelöscht",
+          "orphans_removed": "{{count}} verwaiste Dateien entfernt",
+          "space_freed": "{{amount}} freigegeben",
+          "title": "Fotospeicher",
+          "used": "{{size}} verwendet",
+          "used_of_total": "{{used}} von {{total}} verwendet"
+        },
+        "success": "Foto erfolgreich hinzugefügt",
+        "title": "Foto hinzufügen"
+      },
+      "profile": {
+        "no_posts": "Noch keine Beiträge",
+        "restricted": {
+          "blocked": "Du kannst dieses Profil nicht ansehen.",
+          "deleted": "Dieses Benutzerkonto wurde gelöscht.",
+          "not_found": "Dieses Benutzerprofil wurde nicht gefunden.",
+          "private": "Dieses Profil ist privat.",
+          "title": "Profil nicht verfügbar"
+        }
+      },
+      "security": {
+        "cascade_deletion": "Alle Ernte-Daten werden dauerhaft gelöscht, wenn du dein Konto löschst",
+        "data_isolation": "Deine Ernte-Daten sind privat und nur für dich zugänglich",
+        "private_photos": "Fotos werden privat gespeichert ohne öffentlichen Zugriff",
+        "rls_protected": "Row-Level-Security gewährleistet Datenisolierung"
+      },
+      "sharing": {
+        "actions": {
+          "cancel": "Abbrechen",
+          "share": "Zusammenfassung teilen"
+        },
+        "privacy_notice": "Es werden keine persönlichen Informationen (Pflanzennamen, Notizen oder Fotos) geteilt.",
+        "redaction": {
+          "aggregated_data": "Aggregierte Ernte-Metriken",
+          "no_pii": "Persönliche Informationen entfernt",
+          "redacted_at": "Daten vorbereitet am {{date}}"
+        },
+        "summary": {
+          "avg_duration": "Durchschnittliche Dauer",
+          "date_range": "Zeitraum",
+          "photo_count": "{{count}} Fotos",
+          "stages_completed": "Abgeschlossene Phasen",
+          "title": "Ernte-Zusammenfassung",
+          "total_harvests": "{{count}} Ernten",
+          "total_weight": "Gesamtgewicht"
+        },
+        "title": "Ernte-Daten teilen"
+      },
+      "stage_tracker": {
+        "completed": "Abgeschlossen",
+        "elapsed": "{{days}}T {{hours}}Std {{minutes}}Min vergangen",
+        "elapsed_days_one": "{{count}} Tag vergangen",
+        "elapsed_days_other": "{{count}} Tage vergangen",
+        "on_track": "Im Zeitplan",
+        "overdue": "{{days}} Tage überfällig",
+        "target": "Ziel: {{days}} Tage",
+        "title": "Ernte-Fortschritt"
+      },
+      "stages": {
+        "curing": "Aushärten",
+        "drying": "Trocknen",
+        "harvest": "Ernte",
+        "inventory": "Abschluss"
+      },
+      "success": {
+        "created": "Ernte erfolgreich erstellt"
+      },
+      "units": {
+        "grams": "g",
+        "gramsLong": "Gramm",
+        "ounces": "oz",
+        "ouncesLong": "Unzen"
+      }
+    },
+    "home": {
+      "open_settings": "Einstellungen öffnen",
+      "share_update_cta": "Update teilen",
+      "share_update_subtitle": "Sag der Community, wie es deinen Pflanzen geht.",
+      "share_update_title": "Grow-Update teilen"
+    },
+    "inputs": {
+      "accept_terms_label": "Nutzungsbedingungen akzeptieren",
+      "checkbox_label": "Kontrollkästchen",
+      "switch_label": "Schalter"
+    },
     "like": "Gefällt mir",
     "like_count_one": "Gefällt mir",
     "like_count_other": "Gefällt mir",
+    "list": {
+      "empty": {
+        "body": "Wir zeigen hier Inhalte, sobald sie verfügbar sind.",
+        "title": "Hier ist noch nichts"
+      },
+      "error": {
+        "body": "Wir konnten die Inhalte nicht laden. Bitte versuche es erneut.",
+        "title": "Etwas ist schiefgelaufen"
+      },
+      "loading": "Wird geladen...",
+      "retry": "Erneut versuchen"
+    },
     "list_empty_body": "Wir zeigen hier Updates, sobald sie verfügbar sind.",
     "list_empty_title": "Hier ist noch nichts",
     "list_error_body": "Bitte überprüfe deine Verbindung und versuche es erneut.",
@@ -141,599 +821,790 @@
     "load_error": "Beiträge konnten nicht geladen werden. Zum Wiederholen tippen.",
     "loading": "Beiträge werden geladen...",
     "loading_comments": "Kommentare werden geladen...",
+    "moderation": {
+      "audit": {
+        "empty": "Leer",
+        "title": "Audit-Protokoll"
+      },
+      "authentication_required": "Authentifizierung erforderlich für diese Aktion",
+      "block": "Blockieren",
+      "block_failed": "Benutzer konnte nicht blockiert werden. Bitte versuche es erneut.",
+      "delete": "Löschen",
+      "delete_failed": "Löschen des Inhalts fehlgeschlagen. Bitte versuche es erneut.",
+      "hide": "Verbergen",
+      "moderator_modal": {
+        "audit_notice": "Diese Aktion wird im Moderationsprotokoll mit deiner Benutzer-ID und Zeitstempel aufgezeichnet.",
+        "cancel": "Abbrechen",
+        "hide_failed": "Fehler beim Verbergen des Inhalts. Bitte versuche es erneut.",
+        "hide_submit": "Inhalt verbergen",
+        "hide_subtitle": "Dies verbirgt den Inhalt vor allen Benutzern. Du musst einen Grund angeben, der im Moderationsprotokoll gespeichert wird.",
+        "hide_success": "Inhalt erfolgreich verborgen",
+        "hide_title": "Inhalt verbergen",
+        "reason_accessibility": "Gib den Grund für diese Moderationsaktion ein. Maximal 500 Zeichen.",
+        "reason_label": "Grund (erforderlich)",
+        "reason_placeholder": "Erkläre, warum du diesen Inhalt verbirgst/wiederherstellst...",
+        "reason_required": "Bitte gib einen Grund für diese Moderationsaktion an",
+        "submitting": "Wird verarbeitet...",
+        "unhide_failed": "Fehler beim Wiederherstellen des Inhalts. Bitte versuche es erneut.",
+        "unhide_submit": "Inhalt wiederherstellen",
+        "unhide_subtitle": "Dies stellt den Inhalt wieder her und macht ihn für alle Benutzer sichtbar. Gib einen Grund für diese Aktion an.",
+        "unhide_success": "Inhalt erfolgreich wiederhergestellt",
+        "unhide_title": "Inhalt wiederherstellen"
+      },
+      "mute": "Stummschalten",
+      "mute_failed": "Benutzer konnte nicht stummgeschaltet werden. Bitte versuche es erneut.",
+      "queue": {
+        "appeal": "Einspruch",
+        "empty": "Leer",
+        "escalate": "Eskalieren",
+        "processAll": "Alle verarbeiten",
+        "title": "Moderationswarteschlange"
+      },
+      "report": "Melden",
+      "report_failed": "Inhalt konnte nicht gemeldet werden. Bitte versuche es erneut.",
+      "report_modal": {
+        "cancel": "Abbrechen",
+        "queued": "Meldung in Warteschlange. Sie wird gesendet, sobald du wieder online bist.",
+        "reason_harassment": "Belästigung",
+        "reason_harassment_desc": "Mobbing, Drohungen oder gezielte Beleidigungen",
+        "reason_illegal": "Illegaler Inhalt",
+        "reason_illegal_desc": "Inhalte, die gegen Gesetze oder Vorschriften verstoßen",
+        "reason_other": "Sonstiges",
+        "reason_other_desc": "Andere Verstöße gegen Community-Richtlinien",
+        "reason_spam": "Spam",
+        "reason_spam_desc": "Unerwünschte Werbung, wiederholte Beiträge oder Betrug",
+        "select_reason": "Bitte wähle einen Meldegrund aus",
+        "submit": "Meldung absenden",
+        "submitting": "Wird gesendet...",
+        "subtitle": "Hilf uns, die Community sicher zu halten, indem du Inhalte meldest, die gegen unsere Richtlinien verstoßen.",
+        "success": "Inhalt erfolgreich gemeldet. Vielen Dank, dass du hilfst, unsere Community sicher zu halten.",
+        "title": "Inhalt melden"
+      },
+      "unhide": "Wiederherstellen"
+    },
+    "nav": {
+      "back": "Zurück",
+      "feed": "Feed",
+      "post": "Beitrag",
+      "profile": "Profil"
+    },
     "no_comments": "Noch keine Kommentare. Sei die oder der Erste!",
+    "notifications": {
+      "actions": {
+        "dismiss": "Schließen",
+        "markDone": "Als erledigt markieren",
+        "reply": "Antworten",
+        "replyPlaceholder": "Antwort hier eingeben…",
+        "replySubmit": "Senden",
+        "snooze": "Später erinnern",
+        "viewDetails": "Details anzeigen",
+        "viewPost": "Beitrag ansehen",
+        "viewProfile": "Profil ansehen"
+      },
+      "channels": {
+        "calibrationReminders": {
+          "description": "Erinnerungen zur Kalibrierung von pH- und EC-Messgeräten für genaue Messungen.",
+          "name": "Kalibrierungs-Erinnerungen"
+        },
+        "communityInteractions": {
+          "description": "Antworten, Erwähnungen und Moderationshinweise aus der Community.",
+          "name": "Community-Interaktionen"
+        },
+        "communityLikes": {
+          "description": "Likes und Reaktionen auf deine Updates.",
+          "name": "Community-Likes"
+        },
+        "cultivationAlerts": {
+          "description": "Sofortwarnungen, wenn pH- oder EC-Werte außerhalb des Zielbereichs liegen.",
+          "name": "pH/EC-Warnungen"
+        },
+        "cultivationReminders": {
+          "description": "Aufgaben-Erinnerungen sowie Trocknungs- und Aushärtungswarnungen.",
+          "name": "Grow-Erinnerungen"
+        },
+        "inventoryAlerts": {
+          "description": "Rechtzeitige Warnungen, wenn Anbaumaterialien zur Neige gehen.",
+          "name": "Lagerbestands-Warnungen"
+        },
+        "systemUpdates": {
+          "description": "Wichtige Konto-Hinweise, Richtlinien-Updates oder Sicherheitswarnungen.",
+          "name": "Systembenachrichtigungen"
+        }
+      },
+      "exactAlarm": {
+        "body": "Erlaube exakte Alarme, damit Bewässerungs- und Düngeerinnerungen exakt zur geplanten Zeit erscheinen.",
+        "cta": "Einstellungen öffnen",
+        "title": "Erinnerungen pünktlich halten"
+      },
+      "inbox": {
+        "archived": {
+          "hide": "Archivierte ausblenden",
+          "show": "Archivierte anzeigen",
+          "toggle_hint": "Schaltet archivierte Benachrichtigungen ein oder aus."
+        },
+        "empty": {
+          "all": {
+            "body": "Neue Updates erscheinen hier.",
+            "title": "Alles erledigt"
+          },
+          "unread": {
+            "body": "Wir informieren dich sofort, wenn etwas Neues da ist.",
+            "title": "Keine ungelesenen Benachrichtigungen"
+          }
+        },
+        "error": {
+          "body": "Prüfe deine Verbindung und versuche es erneut.",
+          "retry": "Erneut versuchen",
+          "title": "Benachrichtigungen konnten nicht geladen werden"
+        },
+        "filters": {
+          "all": "Alle",
+          "unread": "Ungelesen"
+        },
+        "loading": "Benachrichtigungen werden geladen…",
+        "mark_all_hint": "Markiert alle Benachrichtigungen als gelesen.",
+        "mark_all_read": "Alle als gelesen markieren",
+        "mark_read": "Als gelesen markieren",
+        "open_hint": "Öffnet Details der Benachrichtigung",
+        "refresh": "Zum Aktualisieren ziehen",
+        "sections": {
+          "default": "{{date}}",
+          "today": "Heute",
+          "yesterday": "Gestern"
+        },
+        "timestamp": {
+          "default": "{{date}} · {{time}}",
+          "today": "Heute · {{time}}",
+          "weekday": "{{weekday}} · {{time}}",
+          "yesterday": "Gestern · {{time}}"
+        },
+        "title": "Benachrichtigungen",
+        "unread_badge": "Ungelesen",
+        "unread_count_one": "{{count}} ungelesen",
+        "unread_count_other": "{{count}} ungelesen",
+        "unread_count_zero": "Alles erledigt"
+      },
+      "overdue": {
+        "body_one": "Du hast {{count}} überfällige Aufgabe. Hol sie nach, um im Plan zu bleiben.",
+        "body_other": "Du hast {{count}} überfällige Aufgaben. Hol sie nach, um im Plan zu bleiben.",
+        "title": "Aufgaben warten auf dich"
+      }
+    },
+    "nutrient": {
+      "add_first_reading": "Erste Messung hinzufügen",
+      "apply_learnings": "Erkenntnisse anwenden",
+      "atc_label": "Temperaturkompensiert (ATC)",
+      "cal_stale_warning": "Kalibrierung möglicherweise veraltet",
+      "chart": {
+        "eventMarkersNote": "{{count}} Ereignis-Marker angezeigt",
+        "noData": "Noch keine Messwerte",
+        "startLogging": "Beginne mit pH/EC-Messungen, um Trends zu sehen"
+      },
+      "diagnostics": {
+        "actions": {
+          "N_DEFICIENCY_FEED": "Stickstoffgabe erhöhen",
+          "N_DEFICIENCY_MONITOR": "In 48 Std. erneut prüfen",
+          "PH_DRIFT_BUFFER": "Puffer dosieren",
+          "PH_DRIFT_MONITOR": "Monitoring erhöhen",
+          "TOXICITY_DILUTE": "Reservoir verdünnen",
+          "TOXICITY_MONITOR": "In 12 Std. erneut prüfen"
+        },
+        "aiConfidence": "KI-basiert",
+        "causes": {
+          "highAlkalinity": "Hohe Alkalinität im Ausgangswasser verursacht pH-Drift",
+          "insufficientNitrogen": "Zu wenig verfügbarer Stickstoff in den letzten Fütterungen",
+          "solutionTooStrong": "Nährlösung ist zu konzentriert"
+        },
+        "community": {
+          "classification": "Erkanntes Problem",
+          "confidence": "Konfidenz",
+          "footer": "Was denkst du? Jeder Rat ist willkommen!",
+          "header": "🌱 Brauche Hilfe bei Pflanzendiagnose",
+          "recommendations": "Vorgeschlagene Maßnahmen:",
+          "symptoms": "Symptome:"
+        },
+        "confidenceBreakdown": "Konfidenz-Aufschlüsselung",
+        "disclaimers": {
+          "aiOnlyPrimary": "Hinweise stammen ausschließlich von der KI. Bitte mit Messwerten oder Community-Rückmeldungen abgleichen.",
+          "considerSecondOpinion": "Geringe Sicherheit. Bitte hole eine zweite Einschätzung aus der Community ein.",
+          "lowConfidence": "Diagnosesicherheit liegt unter dem definierten Schwellenwert.",
+          "title": "⚠️ Hinweise"
+        },
+        "feedbackQuestion": "War diese Diagnose hilfreich?",
+        "feedbackThanks": "Danke für dein Feedback!",
+        "getSecondOpinion": "Zweite Meinung aus der Community holen",
+        "helpful": "Hilfreich",
+        "issueTypes": {
+          "deficiency": "Nährstoffmangel",
+          "lockout": "Nährstoffblockade",
+          "ph_drift": "pH-Drift",
+          "toxicity": "Nährstofftoxizität"
+        },
+        "notHelpful": "Nicht hilfreich",
+        "nutrient": "Nährstoff",
+        "priorityHigh": "Hohe Priorität",
+        "rationale": {
+          "aiBelowThreshold": "KI-Hypothese unterhalb der Überschreibungs-Schwelle; Regelhinweise bleiben aktiv.",
+          "ecAboveTarget": "EC-Verlauf liegt über dem Zielbereich des Reservoirs.",
+          "ecBelowTarget": "EC-Verlauf liegt unter dem Zielbereich des Reservoirs.",
+          "highAlkalinity": "Quellwasser weist hohe Alkalinität auf.",
+          "phPersistentlyHigh": "pH lag wiederholt über dem Zielband des Reservoirs.",
+          "tipBurnObserved": "Verbrennungserscheinungen an Blattspitzen erkannt.",
+          "title": "💡 Begründung",
+          "yellowingLowerLeaves": "Vergilbung an unteren Blättern festgestellt."
+        },
+        "recommendations": {
+          "bufferAlkalinity": "Füge einen Puffer hinzu, um die Alkalinität des Ausgangswassers zu neutralisieren.",
+          "diluteReservoir": "Verdünne das Reservoir mit ausgewogenem Wasser, um EC zu senken.",
+          "increaseMonitoring": "Überwache pH/EC engmaschiger, bis sich die Werte stabilisieren.",
+          "monitor48h": "Prüfe nach 48 Stunden erneut, um die Entwicklung zu bewerten.",
+          "nitrogenFeed": "Erhöhe die Stickstoffzufuhr gemäß dem Defizit-Playbook.",
+          "retest12h": "Prüfe nach 12 Stunden erneut, um die Korrektur zu bestätigen.",
+          "title": "Empfehlungen"
+        },
+        "resolution": {
+          "cancel": "Abbrechen",
+          "description": "Dokumentiere, wie du dieses Problem behoben hast. Das hilft, zukünftige Empfehlungen zu verbessern.",
+          "error": "Fehler beim Markieren als gelöst. Bitte versuche es erneut.",
+          "notesLabel": "Lösungsnotizen (optional)",
+          "notesPlaceholder": "Was hast du gemacht? Was hat funktioniert?",
+          "resolve": "Als gelöst markieren",
+          "title": "Als gelöst markieren"
+        },
+        "rulesConfidence": "Regelbasiert",
+        "severity": {
+          "mild": "Leicht",
+          "moderate": "Mäßig",
+          "severe": "Schwer"
+        },
+        "threshold": "Überschreibungsschwelle"
+      },
+      "ec": "EC",
+      "ecTrend": "EC-Verlauf",
+      "ec_at_temp": "EC@{{temp}}°C",
+      "ec_label": "EC",
+      "event": {
+        "ecDelta": "EC-Änderung",
+        "ecDeltaHint": "Erwartete EC-Änderung nach diesem Ereignis",
+        "logEvent": "Ereignis protokollieren",
+        "note": "Notizen",
+        "notePlaceholder": "Füge Notizen zu diesem Ereignis hinzu...",
+        "phDelta": "pH-Änderung",
+        "phDeltaHint": "Erwartete pH-Änderung nach diesem Ereignis",
+        "type": "Ereignistyp"
+      },
+      "eventTypes": {
+        "addNutrient": "Nährstoffe hinzufügen",
+        "change": "Reservoir-Wechsel",
+        "dilute": "Verdünnen",
+        "fill": "Auffüllen",
+        "phDown": "pH senken",
+        "phUp": "pH erhöhen"
+      },
+      "loading_readings": "Lade Messwerte...",
+      "medium": {
+        "coco": "Coco",
+        "hydro": "Hydroponik",
+        "soil": "Erde",
+        "soilless": "Erdlos"
+      },
+      "mediumOptions": {
+        "coco": "Coco",
+        "hydro": "Hydro",
+        "peat": "Torf",
+        "soil": "Erde",
+        "soilless": "Erdlos"
+      },
+      "no_atc_warning": "Keine ATC (automatische Temperaturkompensation)",
+      "no_events_description": "Beginne Reservoir-Ereignisse zu protokollieren, um deine Änderungen zu verfolgen",
+      "no_events_title": "Keine Ereignisse aufgezeichnet",
+      "no_readings": "Keine Messwerte verfügbar",
+      "performance_report": "Leistungsbericht",
+      "ph": "pH",
+      "phTrend": "pH-Verlauf",
+      "ppm": "PPM",
+      "ppm_scale_label": "PPM-Skala",
+      "reservoir": {
+        "max": "Max",
+        "medium": "Anbaumedium",
+        "min": "Min",
+        "name": "Reservoir-Name",
+        "namePlaceholder": "z.B. Haupttank",
+        "noReservoirs": "Keine Reservoirs konfiguriert",
+        "selectReservoir": "Reservoir auswählen",
+        "targetEc": "EC-Zielbereich",
+        "targetPh": "pH-Zielbereich",
+        "validation": {
+          "nameRequired": "Reservoir-Name ist erforderlich"
+        },
+        "volume": "Volumen (L)"
+      },
+      "save_reading": "Messung speichern",
+      "start_logging_ph_ec": "Starte pH/EC-Messungen",
+      "targetMax": "Max",
+      "targetMin": "Min",
+      "targetRange": "Zielbereich",
+      "targetRanges": "Zielbereiche",
+      "temp_high_warning": "Temperatur zu hoch",
+      "timeRange": {
+        "30days": "30 Tage",
+        "7days": "7 Tage",
+        "90days": "90 Tage",
+        "all": "Gesamtverlauf"
+      },
+      "time_range": "Zeitbereich",
+      "validation": {
+        "ecInvalidType": "EC muss eine Zahl sein",
+        "ecMax": "EC muss {{max}} oder weniger sein",
+        "ecMin": "EC muss mindestens {{min}} sein",
+        "ecRequired": "EC ist erforderlich",
+        "noteMaxLength": "Notiz darf höchstens {{max}} Zeichen lang sein",
+        "phInvalidType": "pH muss eine Zahl sein",
+        "phMax": "pH muss {{max}} oder weniger sein",
+        "phMin": "pH muss mindestens {{min}} sein",
+        "phRequired": "pH ist erforderlich",
+        "ppmScaleInvalid": "Ungültige PPM-Skala",
+        "ppmScaleRequired": "PPM-Skala ist erforderlich",
+        "tempInvalidType": "Temperatur muss eine Zahl sein",
+        "tempMax": "Temperatur muss {{max}} oder weniger sein",
+        "tempMin": "Temperatur muss mindestens {{min}} sein",
+        "tempRequired": "Temperatur ist erforderlich"
+      },
+      "viewChart": "Diagramm",
+      "viewList": "Liste",
+      "waterProfile": {
+        "form": {
+          "alkalinity": "Alkalinität (ppm CaCO3)",
+          "alkalinityHelper": "Misst die Karbonatpufferkapazität",
+          "baselineEc": "Basis-EC (mS/cm)",
+          "baselineEcHelper": "EC deines Ausgangswassers vor Zugabe von Nährstoffen",
+          "educationalNote": "ℹ️ Diese Werte helfen, Nährstoffempfehlungen für deine Wasserquelle zu optimieren",
+          "hardness": "Gesamthärte (ppm)",
+          "hardnessHelper": "Kalzium- und Magnesiumgehalt",
+          "name": "Profilname",
+          "namePlaceholder": "z.B. Leitungswasser",
+          "validation": {
+            "nameRequired": "Profilname ist erforderlich"
+          }
+        },
+        "title": "Wasserprofil"
+      }
+    },
+    "onboarding": {
+      "allow_button": "Benachrichtigungen erlauben",
+      "continue_button": "Weiter",
+      "message": "Willkommen bei der GrowBro App",
+      "notifications_body": "Erlaube Benachrichtigungen, um rechtzeitig an Aufgaben erinnert zu werden.",
+      "notifications_title": "Aufgaben-Erinnerungen"
+    },
+    "pendingAction": {
+      "failed": "Fehlgeschlagen",
+      "pending": "Ausstehend"
+    },
+    "phases": {
+      "flower": "Blütenphase",
+      "harvest": "Erntephase",
+      "seedling": "Keimlingsphase",
+      "veg": "Vegetative Phase"
+    },
+    "plants": {
+      "empty_state": "Keine Pflanzen in deinem Inventar",
+      "error": "Pflanzen konnten nicht geladen werden. Bitte erneut versuchen.",
+      "no_results": "Keine Pflanzen gefunden",
+      "offline_notice": "Gespeicherte Pflanzen werden angezeigt",
+      "retry": "Erneut versuchen",
+      "search_placeholder": "Pflanzen suchen…"
+    },
+    "playbooks": {
+      "accessibility": {
+        "adoptTemplate": "Community-Vorlage übernehmen",
+        "applyPlaybook": "{{name}} Playbook auf Pflanze anwenden",
+        "logTrichomeCheck": "Trichom-Check protokollieren",
+        "phaseProgress": "{{phase}}-Phase, {{status}}, {{completed}} von {{{total}}} Aufgaben abgeschlossen",
+        "playbookCard": "{{name}} Playbook, {{setup}} Setup, {{weeks}} Wochen, {{tasks}} Aufgaben",
+        "selectPlantHint": "Doppelt tippen, um diese Pflanze auszuwählen",
+        "shareTemplate": "Vorlage mit Community teilen",
+        "shiftSchedule": "Zeitplan verschieben",
+        "shiftScheduleHint": "Verschiebt alle Aufgaben {{direction}} um {{days}} {{daysUnit}}",
+        "taskItem": "{{title}}, fällig {{date}}, {{status}}{{reminder}}",
+        "taskItemWithReminder": ", hat Erinnerung",
+        "trichomeAssessment": "Trichom-Bewertung: {{clear}}% klar, {{milky}}% milchig, {{amber}}% bernstein. Empfehlung: {{recommendation}}",
+        "undoShift": "Zeitplanverschiebung rückgängig machen"
+      },
+      "activities": "Aktivitäten",
+      "adjustments": {
+        "confidence": "{{percent}}% Zuverlässigkeit",
+        "disclaimer": "KI-Vorschlag • Bildungszwecke, kein professioneller Rat",
+        "scheduleAdjustment": "💡 Terminplananpassung",
+        "tasksAffected_one": "{{count}} Aufgabe betroffen",
+        "tasksAffected_other": "{{count}} Aufgaben betroffen",
+        "viewDetails": "Details anzeigen"
+      },
+      "apply": {
+        "alreadyApplied": "Dieser Playbook ist bereits auf diese Pflanze angewendet",
+        "applying": "Playbook wird angewendet...",
+        "createPlant": "Neue Pflanze erstellen",
+        "error": "Playbook konnte nicht angewendet werden",
+        "selectPlant": "Wähle eine Pflanze für diesen Playbook",
+        "success_one": "{{count}} Aufgabe erfolgreich erstellt",
+        "success_other": "{{count}} Aufgaben erfolgreich erstellt"
+      },
+      "applyError": "Anwendung fehlgeschlagen",
+      "applyErrorDescription": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+      "applyPlaybook": "Playbook anwenden",
+      "applySuccess": "Playbook angewendet",
+      "applySuccessDescription": "{{count}} Aufgaben für deine Pflanze erfolgreich erstellt",
+      "applyToPlant": "Auf Pflanze anwenden",
+      "applying": "Wird angewendet...",
+      "community": {
+        "adopt": {
+          "adoptions_one": "{{count}} Übernahme",
+          "adoptions_other": "{{count}} Übernahmen",
+          "applyDirectly": "Direkt anwenden",
+          "author": "Von {{author}}",
+          "customize": "Vor Anwendung anpassen",
+          "preview": "Vorschau",
+          "ratings_one": "{{count}} Bewertung",
+          "ratings_other": "{{count}} Bewertungen",
+          "title": "Vorlage übernehmen"
+        },
+        "share": {
+          "cancel": "Abbrechen",
+          "conditions": "Anbaubedingungen",
+          "conditionsPlaceholder": "Indoor-Zelt, LED-Lichter, Erdsubstrat...",
+          "description": "Beschreibung",
+          "descriptionPlaceholder": "Beschreibe deinen Anbauansatz und Ergebnisse...",
+          "durationDays": "{{count}} Tage",
+          "durationDays_one": "{{count}} Tag",
+          "durationDays_other": "{{count}} Tage",
+          "licenseDescription": "Durch das Teilen stimmst du zu, diese Vorlage unter CC-BY-SA 4.0 zu lizenzieren",
+          "name": "Vorlagenname",
+          "namePlaceholder": "Mein eigener Auto-Indoor-Zeitplan",
+          "submit": "Vorlage teilen",
+          "success": "Vorlage erfolgreich geteilt",
+          "taskCount": "{{count}} Aufgaben",
+          "taskCount_one": "{{count}} Aufgabe",
+          "taskCount_other": "{{count}} Aufgaben",
+          "title": "Vorlage teilen"
+        },
+        "shareTemplate": {
+          "authorHandle": "Autoren-Handle *",
+          "description": "Beschreibung (Optional)",
+          "errors": {
+            "descriptionMaxLength": "Beschreibung darf höchstens 500 Zeichen lang sein",
+            "handleMaxLength": "Handle darf höchstens 30 Zeichen lang sein",
+            "handleMinLength": "Handle muss mindestens 3 Zeichen lang sein",
+            "handlePattern": "Handle darf nur Buchstaben, Zahlen, - und _ enthalten",
+            "handleRequired": "Autoren-Handle ist erforderlich"
+          },
+          "license": "Lizenz",
+          "licenseDescription": "Andere können dein Playbook verwenden und modifizieren mit Namensnennung",
+          "licenseText": "{{license}} - Creative Commons Attribution-ShareAlike",
+          "placeholderDescription": "Beschreibe dein Playbook...",
+          "placeholderHandle": "dein_handle",
+          "privacyNotice": "ℹ️ Alle persönlichen Informationen, Pflanzennamen und benutzerdefinierten Notizen werden automatisch vor dem Teilen entfernt.",
+          "share": "Teilen",
+          "sharing": "Wird geteilt...",
+          "subtitle": "Teile dein angepasstes Playbook mit der Community. Alle persönlichen Informationen werden automatisch entfernt.",
+          "title": "Playbook teilen"
+        },
+        "subtitle": "Erfolgreiche Anbaupläne entdecken und teilen",
+        "title": "Community-Vorlagen"
+      },
+      "communityDescription": "Durchsuche und übernehme Playbooks, die von anderen Growern geteilt wurden",
+      "communityTemplates": "Community-Vorlagen",
+      "createPlant": "Pflanze erstellen",
+      "customNotes": "Eigene Notizen",
+      "customNotesHint": "Notizen beeinflussen keine Massenoperationen",
+      "customNotesPlaceholder": "Füge deine eigenen Notizen hinzu...",
+      "customizationLevel": "Anpassungsgrad",
+      "customizedTasks": "Angepasste Aufgaben",
+      "detailDescription": "Dieses Playbook erstellt einen vollständigen Aufgabenplan, der auf die Wachstumsphasen deiner Pflanze zugeschnitten ist, mit automatischen Erinnerungen und Fortschrittsverfolgung.",
+      "durationDays_one": "{{count}} Tag",
+      "durationDays_other": "{{count}} Tage",
+      "editTask": "Aufgabe bearbeiten",
+      "edited": "Bearbeitet",
+      "empty": {
+        "subtitle": "Schau später für Anbau-Anleitungen vorbei",
+        "title": "Keine Playbooks verfügbar"
+      },
+      "excludedFromBulkOperations": "Von Massenverschiebungen ausgeschlossen",
+      "excludedFromBulkShift": "Diese Aufgabe wurde angepasst und wird von Massenverschiebungen ausgeschlossen",
+      "loadError": "Playbooks konnten nicht geladen werden. Bitte versuche es erneut.",
+      "manuallyEdited": "Manuell bearbeitet",
+      "noPlants": "Du hast noch keine Pflanzen. Erstelle eine, um dieses Playbook anzuwenden.",
+      "noTemplates": "Noch keine Community-Vorlagen verfügbar",
+      "notFound": "Playbook nicht gefunden",
+      "onboarding": {
+        "getStarted": "Los geht's",
+        "next": "Weiter",
+        "skip": "Überspringen",
+        "step1": {
+          "description": "Erhalte einen vollständigen Anbauplan, der auf dein Setup zugeschnitten ist - Auto oder Photo, Indoor oder Outdoor.",
+          "title": "Geführte Anbaupläne"
+        },
+        "step2": {
+          "description": "Automatische Erinnerungen für Bewässerung, Düngung, Beschneiden und Überwachung halten deinen Anbau auf Kurs.",
+          "title": "Verpasse keine Aufgabe"
+        },
+        "step3": {
+          "description": "Passe Aufgaben an, verschiebe Zeitpläne und speichere deine eigenen Vorlagen zum Wiederverwenden oder Teilen mit der Community.",
+          "title": "Passe es an deine Bedürfnisse an"
+        },
+        "step4": {
+          "description": "Überwache deine Pflanze durch jede Wachstumsphase mit visueller Fortschrittsverfolgung und Phasenübergangsbenachrichtigungen.",
+          "title": "Verfolge deinen Fortschritt"
+        }
+      },
+      "outcomes": "Ergebnisse",
+      "overdue": "Überfällig",
+      "preview": "Playbook-Vorschau",
+      "progress": {
+        "careChanges": "Pflegeanforderungen werden sich ändern",
+        "completedTasks_one": "{{count}} von {{{total}}} Aufgabe abgeschlossen",
+        "completedTasks_other": "{{count}} von {{{total}}} Aufgaben abgeschlossen",
+        "currentPhase": "Aktuelle Phase",
+        "phaseTransition": "Phasenübergang",
+        "title": "Phasenfortschritt",
+        "transitionNotice": "Deine Pflanze wechselt in die {{phase}}-Phase",
+        "upcomingTasks": "Bevorstehende Aufgaben"
+      },
+      "saveAsTemplate": "Als Vorlage speichern",
+      "saveAsTemplateDescription": "Du hast {{percentage}}% der Aufgaben angepasst ({{customized}}/{{{total}}}). Speichere dies als Vorlage zum Wiederverwenden oder Teilen mit der Community.",
+      "schedule": {
+        "shift": {
+          "affectedTasks_one": "{{count}} Aufgabe wird betroffen sein",
+          "affectedTasks_other": "{{count}} Aufgaben werden betroffen sein",
+          "apply": "Verschiebung anwenden",
+          "backward": "Rückwärts",
+          "cancel": "Abbrechen",
+          "conflictWarning": "Einige manuell bearbeitete Aufgaben werden betroffen sein",
+          "conflicts_one": "{{count}} Konflikt erkannt",
+          "conflicts_other": "{{count}} Konflikte erkannt",
+          "daysLabel": "Tage zum Verschieben",
+          "daysPlaceholder": "Anzahl der Tage eingeben",
+          "error": "Zeitplan konnte nicht verschoben werden",
+          "firstNewDate": "Erste Aufgabe: {{date}}",
+          "forward": "Vorwärts",
+          "includeCompleted": "Abgeschlossene Aufgaben einbeziehen",
+          "includeManuallyEdited": "Manuell bearbeitete Aufgaben einbeziehen",
+          "lastNewDate": "Letzte Aufgabe: {{date}}",
+          "preview": "Änderungen vorschauen",
+          "previewTitle": "Zeitplanverschiebungs-Vorschau",
+          "subtitle": "Alle Aufgabendaten um eine bestimmte Anzahl von Tagen anpassen",
+          "success": "Zeitplan erfolgreich verschoben",
+          "title": "Zeitplan verschieben",
+          "undo": "Rückgängig",
+          "undoAvailable": "Rückgängig verfügbar für {{seconds}}s"
+        }
+      },
+      "selectPlant": "Pflanze auswählen",
+      "selectPlantDescription": "Wähle aus, auf welche Pflanze du dieses Playbook anwenden möchtest.",
+      "selection": {
+        "autoIndoor": "Auto Indoor",
+        "autoOutdoor": "Auto Outdoor",
+        "estimatedRange": "Geschätzt: {{start}} → {{end}}",
+        "phaseBreakdownTitle": "Phasenübersicht",
+        "photoIndoor": "Photo Indoor",
+        "photoOutdoor": "Photo Outdoor",
+        "preview": {
+          "apply": "Auf Pflanze anwenden",
+          "cancel": "Abbrechen",
+          "phases": "Phasen",
+          "taskCount_one": "{{count}} Aufgabe",
+          "taskCount_other": "{{count}} Aufgaben",
+          "title": "Playbook-Vorschau",
+          "totalWeeks_one": "{{count}} Woche insgesamt",
+          "totalWeeks_other": "{{count}} Wochen insgesamt"
+        },
+        "subtitle": "Wähle einen Anbauplan, der zu deinem Setup passt",
+        "title": "Wähle deinen Playbook"
+      },
+      "shareWithCommunity": "Mit Community teilen",
+      "shareWithCommunityHint": "Diese Vorlage anderen Growern zur Verfügung stellen",
+      "shiftPreview": {
+        "accessibilityLabel": "Zeitplanverschiebungs-Vorschau-Dialog",
+        "affectedTasks": "Betroffene Aufgaben",
+        "applyShift": "Verschiebung anwenden",
+        "cancel": "Abbrechen",
+        "changesByPhase": "Änderungen nach Phase",
+        "daysDelta": "{{delta}} Tage",
+        "manuallyEditedTasks": "Manuell bearbeitete Aufgaben",
+        "newDateRange": "Neuer Datumsbereich",
+        "phaseLabel": "Phase {{number}}",
+        "potentialConflicts": "Potenzielle Konflikte",
+        "subtitle": "{{count}} Tag{{plural}} {{direction}} verschieben",
+        "taskCount": "{{count}} Aufgaben",
+        "task_one": "{{count}} Aufgabe",
+        "task_other": "{{count}} Aufgaben",
+        "title": "Zeitplanverschiebungs-Vorschau",
+        "undoInfo": "ℹ️ Sie haben 30 Sekunden Zeit, diese Änderung nach dem Anwenden rückgängig zu machen",
+        "willBeExcluded": "werden von dieser Verschiebung ausgeschlossen",
+        "willBeShifted": "werden verschoben (Sie haben sich dafür entschieden)"
+      },
+      "subtitle": "Geführte Anbaupläne für deine Pflanzen",
+      "tags": "Tags",
+      "tagsHint": "Tags mit Kommas trennen",
+      "tagsPlaceholder": "indoor, anfänger, auto...",
+      "taskCount": "{{count}} Aufgaben",
+      "taskCount_one": "{{count}} Aufgabe",
+      "taskCount_other": "{{count}} Aufgaben",
+      "taskDescription": "Beschreibung",
+      "taskDescriptionPlaceholder": "Aufgabenbeschreibung...",
+      "taskTitle": "Titel",
+      "taskTitlePlaceholder": "Aufgabentitel...",
+      "taskTypes": {
+        "custom": "Benutzerdefiniert",
+        "feed": "Düngung",
+        "monitor": "Überwachen",
+        "note": "Notizen",
+        "prune": "Beschneiden",
+        "train": "Trainieren",
+        "water": "Bewässerung"
+      },
+      "templateName": "Vorlagenname",
+      "templateNamePlaceholder": "Mein eigener Playbook",
+      "templates": {
+        "detail": {
+          "adoptButton": "Dieses Playbook übernehmen",
+          "adoptDescription": "Du kannst das Playbook nach der Übernahme anpassen",
+          "adopted": "Übernommen",
+          "authorPrefix": "von",
+          "communityRating": "Community-Bewertung",
+          "duration": "Dauer",
+          "growthPhases": "Wachstumsphasen",
+          "licenseDescription": "Du kannst dieses Playbook mit Namensnennung des Autors verwenden und modifizieren",
+          "licensePrefix": "Lizenz:",
+          "moreTasks": "+ {{count}} weitere Aufgaben",
+          "rateButton": "Bewerten",
+          "ratings": "Bewertungen",
+          "tasks": "Aufgaben",
+          "tasksPreview": "Aufgabenvorschau ({{total}} insgesamt)"
+        }
+      },
+      "title": "Playbooks",
+      "totalWeeks": "{{count}} Wochen",
+      "trichome": {
+        "assessment": {
+          "addPhoto": "Foto hinzufügen",
+          "amberPercent": "Bernstein %",
+          "clearPercent": "Klar %",
+          "harvestWindow": "Erntefenster",
+          "milkyPercent": "Milchig %",
+          "notes": "Notizen",
+          "notesPlaceholder": "Beobachtungen zur Trichom-Entwicklung...",
+          "recommendation": "Empfehlung",
+          "save": "Bewertung speichern",
+          "title": "Bewertung protokollieren"
+        },
+        "disclaimer": "Diese Anleitung dient Bildungszwecken, nicht als professioneller Rat. Berücksichtige immer deine spezifischen Anbaubedingungen und Vorlieben.",
+        "guide": {
+          "amber": "Bernsteinfarben (Reif)",
+          "amberDescription": "Trichome sind bernsteinfarben/braun. Mehr beruhigende, entspannende Effekte.",
+          "clear": "Klar (Unreif)",
+          "clearDescription": "Trichome sind transparent. Pflanze ist nicht erntereif.",
+          "milky": "Milchig/Trüb (Höhepunkt)",
+          "milkyDescription": "Trichome sind trüb weiß. Höchste Potenz und ausgewogene Effekte.",
+          "title": "Trichom-Entwicklungsleitfaden"
+        },
+        "nudge": {
+          "cancel": "Aktuellen Zeitplan beibehalten",
+          "confirm": "Aufgaben anpassen",
+          "message": "Basierend auf deiner Bewertung, möchtest du die Ernteaufgaben um {{days}} Tage anpassen?",
+          "title": "Ernteaufgaben anpassen"
+        },
+        "photography": {
+          "angle": "Betrachte Trichome bei 60-100x Vergrößerung",
+          "focus": "Fokussiere auf Kelche, nicht auf Zuckerblätter",
+          "lighting": "Verwende natürliches Licht oder eine Juwelierlupe mit LED",
+          "timing": "Überprüfe mehrere Blüten von verschiedenen Teilen der Pflanze",
+          "title": "Fotografie-Tipps"
+        },
+        "recommendations": {
+          "balanced": "Jetzt ernten für ausgewogene Effekte (milchig mit etwas Bernstein)",
+          "energetic": "Jetzt ernten für energetische Effekte (größtenteils milchig)",
+          "overripe": "Bald ernten - hoher Bernsteinanteil",
+          "sedating": "Jetzt ernten für beruhigende Effekte (signifikanter Bernsteinanteil)",
+          "tooEarly": "Warte länger - Trichome sind größtenteils klar"
+        },
+        "subtitle": "Optimalen Erntezeitpunkt bestimmen",
+        "title": "Trichom-Check-Helfer"
+      },
+      "voteHelpful": "👍 Hilfreich",
+      "voteNotHelpful": "👎 Nicht hilfreich",
+      "votingQuestion": "War dieser Vorschlag hilfreich?",
+      "votingThanks": "Danke für dein Feedback! {{{emoji}}}",
+      "whatYouGet": "Was du bekommst"
+    },
     "post_comment": "Posten",
     "posting": "Wird gepostet...",
     "posts_count": "{{count}} Beiträge",
     "posts_count_one": "{{count}} Beitrag",
     "posts_count_other": "{{count}} Beiträge",
     "posts_count_zero": "Keine Beiträge",
-    "retry": "Wiederholen",
-    "retry_comment": "Kommentar erneut posten",
-    "unlike": "Gefällt mir nicht mehr"
-  },
-  "consent": {
-    "accept_all": "Alle akzeptieren",
-    "aiTraining": {
-      "impact": "Aus: Diagnose funktioniert weiterhin; keine Bilder im Trainingspool. Rechtsgrundlage: Einwilligung; Aufbewahrung: 365T",
-      "subtitle": "Erlaube die Nutzung deiner Bilder zur Modellverbesserung",
-      "title": "KI-Trainingsbilder"
-    },
-    "analytics": {
-      "impact": "Aus: Playbook-Verbesserungsanalytik deaktiviert. Rechtsgrundlage: Einwilligung; Aufbewahrung: 180T aggregiert",
-      "infoBody": "Anonyme Nutzung der Playbooks hilft uns Zeitpläne und KI-Empfehlungen zu verfeinern.",
-      "infoTitle": "Playbook-Analytik",
-      "subtitle": "Hilf Playbooks & KI-Vorschläge zu verbessern",
-      "title": "Playbook-Analytik"
-    },
-    "crashDiagnostics": {
-      "impact": "Aus: keine Absturzberichte werden gesendet. Rechtsgrundlage: Einwilligung; Aufbewahrung: 180T",
-      "subtitle": "Minimierte Absturzberichte senden",
-      "title": "Absturzdiagnostik"
-    },
-    "crashReporting": {
-      "impact": "Aus: keine Absturzdiagnostik gesendet. Rechtsgrundlage: Einwilligung; Aufbewahrung: 90T aggregiert",
-      "infoBody": "Absturzdiagnostik hilft uns Stabilitätsprobleme schneller zu beheben. Identifizierende Daten werden soweit möglich entfernt.",
-      "infoTitle": "Absturzberichte",
-      "subtitle": "Minimierte Absturzdiagnostik senden",
-      "title": "Absturzberichte"
-    },
-    "experiments": {
-      "impact": "Aus: keine A/B-Tests; Feature-Rollouts für dich deaktiviert. Rechtsgrundlage: Einwilligung",
-      "subtitle": "A/B-Tests und Flags nach Einwilligung aktivieren",
-      "title": "Experimente / Feature-Flags"
-    },
-    "first_run_title": "Deine Datenschutzwahl",
-    "getStarted": "Los geht's",
-    "lastUpdated": "Zuletzt aktualisiert: {{date}}",
-    "optOutAll": "Alles abwählen",
-    "optOutError": {
-      "message": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
-      "title": "Widerruf fehlgeschlagen"
-    },
-    "optOutSubtitle": "Hier kannst du bereits erteilte Einwilligungen widerrufen.",
-    "optOutSuccess": {
-      "message": "Analyse und Telemetrie wurden deaktiviert.",
-      "title": "Alle Einwilligungen widerrufen"
-    },
-    "optOutTitle": "Tracking widerrufen",
-    "personalized": {
-      "impact": "Aus: Berichte bleiben vollständig anonym. Rechtsgrundlage: Einwilligung; Aufbewahrung: 30T",
-      "infoBody": "Ermöglicht Pseudonyme für bessere Nachvollziehbarkeit. Keine direkten Personendaten.",
-      "infoTitle": "Personalisierte Diagnostik",
-      "subtitle": "Gehashte Kennungen in Berichte aufnehmen",
-      "title": "Personalisierte Diagnostik"
-    },
-    "quickOptOut": {
-      "description": "Alle optionalen Datenerfassungen sofort deaktivieren. Technisch notwendige Daten werden weiterhin erhoben.",
-      "title": "Schneller Widerruf"
-    },
-    "reject_all": "Alle ablehnen",
-    "save": "Speichern",
-    "sessionReplay": {
-      "impact": "Aus: keine Interaktionsaufzeichnungen. Rechtsgrundlage: Einwilligung; Aufbewahrung: 30T",
-      "infoBody": "Replay hilft komplexe UI-Probleme zu diagnostizieren. Sensible Felder werden maskiert.",
-      "infoTitle": "Session Replay",
-      "subtitle": "Anonymisierte Interaktionen erfassen",
-      "title": "Session Replay"
-    },
-    "settingsSubtitle": "Verwalte deine Datenerfassungs-Präferenzen.",
-    "settingsTitle": "Datenschutzeinstellungen",
-    "telemetry": {
-      "impact": "Aus: keine Nutzungsanalysen; Leistungsmetriken bleiben lokal. Rechtsgrundlage: Einwilligung; Aufbewahrung: 90T aggregiert",
-      "infoBody": "Telemetrie hilft uns zu verstehen, wie Funktionen genutzt werden, um Zuverlässigkeit zu verbessern. Wir minimieren und aggregieren Daten.",
-      "infoTitle": "Telemetrie / Analytik",
-      "subtitle": "Nutzungsanalysen nach Einwilligung erlauben",
-      "title": "Telemetrie / Analytik"
-    },
-    "title": "Datenschutzoptionen"
-  },
-  "diagnostics": {
-    "avg_payload": "Durchschn. Payload — {{operation}}: {{bytes}} B",
-    "checkpoint_age_ms": "Checkpoint-Alter (ms)",
-    "clear_logs": "Protokolle löschen",
-    "last_checkpoint_at": "Letzter Checkpoint",
-    "last_success_at": "Letzter Erfolg",
-    "logs": "Protokolle",
-    "metrics": "Metriken",
-    "p50_ms": "p50 (ms) — push: {{push}}, pull: {{pull}}, apply: {{apply}}",
-    "p95_ms": "p95 (ms) — push: {{push}}, pull: {{pull}}, apply: {{apply}}",
-    "subtitle": "Metriken und aktuelle Sync-Logs",
-    "sync_now": "Jetzt synchronisieren",
-    "title": "Sync-Diagnostik"
-  },
-  "errors": {
-    "notification": {
-      "battery_optimization_title": "Batterieoptimierung aktiv",
-      "cancel_failed": "Erinnerung konnte nicht abgebrochen werden",
-      "channel_missing": "Benachrichtigungskanal nicht konfiguriert",
-      "delivery_failed": "Erinnerung wurde nicht zugestellt",
-      "doze_mode_active": "Geräte-Batterieoptimierung kann Erinnerungen verzögern",
-      "exact_alarm_unavailable": "Exakte Alarmplanung auf diesem Gerät nicht verfügbar",
-      "fallback_description": "Wir zeigen dir eine Erinnerung, wenn du die App öffnest",
-      "fallback_title": "Erinnerung erstellt",
-      "invalid_trigger": "Ungültige Erinnerungszeit",
-      "permission_denied": "Benachrichtigungsberechtigung verweigert. Bitte aktiviere Benachrichtigungen in den Einstellungen.",
-      "permission_title": "Benachrichtigungen deaktiviert",
-      "schedule_failed": "Erinnerung konnte nicht geplant werden",
-      "title": "Erinnerungsfehler"
-    },
-    "playbook": {
-      "already_applied": "Dieses Playbook ist bereits auf diese Pflanze angewendet",
-      "generation_failed": "Aufgaben konnten nicht aus Playbook generiert werden",
-      "invalid_schema": "Ungültiges Playbook-Format",
-      "noTasks": "Keine Aufgaben gefunden",
-      "not_found": "Playbook nicht gefunden",
-      "status": {
-        "completed": "✓ Abgeschlossen",
-        "current": "Aktuell",
-        "upcoming": "Bevorstehend"
+    "privacy": {
+      "analytics": {
+        "body": "Hilf uns, die App mit Nutzungsanalysen zu verbessern.",
+        "subtitle": "Hilf uns, die App mit Nutzungsanalysen zu verbessern",
+        "title": "Analytik"
       },
-      "title": "Playbook-Fehler"
-    },
-    "postLoad": "Fehler beim Laden des Beitrags",
-    "recovery": {
-      "check_connection": "Überprüfe deine Internetverbindung",
-      "disable_battery_optimization": "Deaktiviere Batterieoptimierung für diese App in den Einstellungen",
-      "enable_notifications": "Öffne Einstellungen, um Benachrichtigungen zu aktivieren",
-      "rrule_fallback": "Verwende stattdessen einfache tägliche oder wöchentliche Wiederholung",
-      "sign_in_again": "Melde dich erneut an",
-      "update_app": "Aktualisiere die App aus dem Store"
-    },
-    "rrule": {
-      "byday_and_bymonthday": "Wiederholungsmuster kann nicht sowohl Wochentag als auch Monatstag angeben",
-      "count_and_until": "Wiederholungsmuster kann nicht sowohl Anzahl als auch Enddatum haben",
-      "invalid_byday": "Ungültiger Wochentag im Wiederholungsmuster",
-      "invalid_bymonthday": "Ungültiger Monatstag im Wiederholungsmuster",
-      "invalid_format": "Ungültiges Wiederholungsmuster-Format",
-      "invalid_freq": "Ungültige Wiederholungshäufigkeit",
-      "invalid_interval": "Wiederholungsintervall muss eine positive Zahl sein",
-      "missing_freq": "Wiederholungsmuster muss eine Häufigkeit angeben (täglich, wöchentlich usw.)",
-      "parse_error": "Wiederholungsmuster konnte nicht analysiert werden",
-      "timezone_error": "Ungültige Zeitzone für Wiederholungsberechnung",
-      "title": "Wiederholungsfehler"
-    },
-    "sync": {
-      "auth_error": "Authentifizierungsfehler. Bitte melde dich erneut an.",
-      "conflict_detected": "Daten wurden auf einem anderen Gerät aktualisiert",
-      "invalid_data": "Ungültige Daten vom Server empfangen",
-      "max_retries_description": "{{message}} Bitte versuche es später erneut.",
-      "max_retries_title": "Synchronisierung fehlgeschlagen",
-      "network_error": "Netzwerkverbindungsfehler. Änderungen werden synchronisiert, wenn online.",
-      "permanent_title": "Synchronisierungsfehler",
-      "quota_exceeded": "Speicherkontingent überschritten",
-      "retrying_description": "{{message}} Wiederholung in {{delay}}s (Versuch {{attempt}})",
-      "retrying_title": "Synchronisiere...",
-      "server_error": "Serverfehler. Bitte versuche es später erneut.",
-      "timeout": "Synchronisierung abgelaufen. Bitte versuche es erneut.",
-      "version_mismatch": "App-Versionsfehler. Bitte aktualisiere die App."
-    },
-    "task": {
-      "invalid_timestamp": "Ungültiges Aufgabendatum oder -zeit",
-      "not_found": "Aufgabe nicht gefunden",
-      "timestamp_title": "Ungültiges Datum",
-      "update_failed": "Aufgabe konnte nicht aktualisiert werden"
-    },
-    "unknown": "Ein unerwarteter Fehler ist aufgetreten",
-    "unknown_description": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
-    "unknown_title": "Fehler"
-  },
-  "harvest": {
-    "accessibility": {
-      "cancelButton": "Abbrechen und Modal schließen",
-      "cancelHint": "Änderungen verwerfen und Ernte-Modal schließen",
-      "dryWeightInput": "Trockengewicht-Eingabe",
-      "notesHint": "Optionales Notizenfeld für zusätzliche Ernte-Details",
-      "notesInput": "Notizen-Eingabe",
-      "submitButton": "Erntedaten speichern",
-      "submitHint": "Ernte-Daten in Ihrer Pflanzen-Akte speichern",
-      "trimmingsWeightInput": "Verschnitt-Gewicht-Eingabe",
-      "unitToggle": "Zwischen Gramm und Unzen wechseln",
-      "wetWeightInput": "Nassgewicht-Eingabe"
-    },
-    "actions": {
-      "advance": "Zu {{stage}} fortschreiten",
-      "advance_hint": "Doppeltippen, um zur {{stage}}-Phase zu wechseln",
-      "override": "Zu Phase springen",
-      "override_hint": "Doppeltippen, um zu einer späteren Phase zu springen",
-      "revert": "Phase zurücksetzen",
-      "revert_hint": "Doppeltippen, um zur vorherigen Phase zurückzukehren",
-      "undo": "Rückgängig",
-      "undo_expires": "Rückgängig läuft in {{seconds}}s ab",
-      "undo_hint": "Doppeltippen, um letzte Phasenänderung rückgängig zu machen"
-    },
-    "chart": {
-      "empty": {
-        "createButton": "Erste Ernte erstellen",
-        "filtered": "Keine Daten gefunden",
-        "filteredGuidance": "Passen Sie Ihre Filter an, um Erntedaten zu sehen.",
-        "noData": "Noch keine Erntedaten",
-        "noDataGuidance": "Starten Sie Ihre erste Ernte, um den Gewichtsverlauf zu sehen."
+      "cannotOpenUrlBody": "Die Web-Löschseite kann nicht geöffnet werden. Bitte überprüfe deine Internetverbindung oder wende dich an den Support.",
+      "cannotOpenUrlTitle": "URL kann nicht geöffnet werden",
+      "crashReporting": {
+        "body": "Hilf uns, Fehler zu beheben, indem du Absturzberichte sendest.",
+        "subtitle": "Hilf uns, Fehler zu beheben, indem du Absturzberichte sendest",
+        "title": "Absturzberichte"
       },
-      "error": {
-        "renderFailed": "Diagramm konnte nicht gerendert werden",
-        "showTable": "Tabellenansicht anzeigen"
+      "deleteAccount": "Mein Konto löschen",
+      "deleteAccountConfirmAction": "Konto löschen",
+      "deleteAccountConfirmBody": "Damit wird die endgültige Löschung deines Kontos und aller GrowBro-Daten angestoßen. Exportiere deine Daten vorher, falls nötig.",
+      "deleteAccountConfirmCancel": "Abbrechen",
+      "deleteAccountConfirmTitle": "Konto löschen?",
+      "deleteAccountErrorBody": "Die Löschung konnte nicht eingereicht werden. Details: {{message}}",
+      "deleteAccountErrorTitle": "Löschanfrage fehlgeschlagen",
+      "deleteAccountQueuedBody": "Wir haben deine Löschung eingeplant. Voraussichtlicher Abschluss: {{eta}}.",
+      "deleteAccountQueuedBodyNoEta": "Wir haben deine Löschung eingeplant. Du erhältst eine Bestätigung nach Abschluss.",
+      "deleteAccountQueuedTitle": "Löschung geplant",
+      "exportData": "Meine Daten exportieren",
+      "exportError": {
+        "message": "Wir konnten Ihren Datenexport nicht generieren. Bitte versuchen Sie es später erneut.",
+        "title": "Export fehlgeschlagen"
       },
-      "filters": {
-        "batchView": "Stapelansicht",
-        "individualView": "Einzelansicht"
+      "exportErrorBody": "Der Export konnte nicht eingereicht werden. Details: {{message}}",
+      "exportErrorTitle": "Export fehlgeschlagen",
+      "exportQueuedBody": "Wir haben den Datenexport eingeplant. Voraussichtlicher Abschluss: {{eta}}.",
+      "exportQueuedBodyNoEta": "Wir haben den Datenexport eingeplant. Du erhältst einen Link, sobald er bereitsteht.",
+      "exportQueuedTitle": "Export angefordert",
+      "invalidUrlBody": "Die Web-Lösch-URL ist nicht sicher. Bitte wende dich an den Support.",
+      "invalidUrlTitle": "Ungültige URL",
+      "lastUpdated": "Zuletzt aktualisiert: {{date}}",
+      "manageDataDescription": "Verwalte Datenexport, Kontolöschung und Offenlegungen für GrowBro.",
+      "openWebDeletion": "Web-Löschseite öffnen",
+      "personalized": {
+        "body": "Dies umfasst IP-Adressen, Benutzer-IDs und andere identifizierende Informationen, die uns helfen, Fehlerberichte und Analysen zu verbessern. Diese Daten werden gemäß unserer Datenschutzerklärung verarbeitet.",
+        "subtitle": "Identifizierende Informationen in Berichten einschließen",
+        "title": "Personalisierte Daten"
       },
-      "table": {
-        "date": "Datum",
-        "stage": "Phase",
-        "weight": "Gewicht"
+      "sessionReplay": {
+        "body": "Sitzungswiedergaben protokollieren deine Interaktionen mit der App, um Probleme zu debuggen. Sensible Daten werden nach Möglichkeit gefiltert oder unkenntlich gemacht; siehe Datenschutzerklärung für Details.",
+        "subtitle": "App-Interaktionen für Debugging aufzeichnen",
+        "title": "Sitzungswiedergabe"
       },
-      "timeRange": {
-        "30d": "Letzte 30 Tage",
-        "365d": "Letztes Jahr",
-        "7d": "Letzte 7 Tage",
-        "90d": "Letzte 90 Tage",
-        "all": "Gesamte Zeit"
-      },
-      "title": "Gewichtsverlauf"
-    },
-    "curing_checklist": {
-      "aroma": "Aroma-Prüfung",
-      "aroma_description": "Blüten sollten ein angenehmes Aroma haben, nicht schimmelig oder heuartig",
-      "jar_humidity": "Glas-Luftfeuchtigkeit",
-      "jar_humidity_description": "Luftfeuchtigkeit sollte zwischen 55-65% RH für optimale Aushärtung liegen",
-      "stem_snap": "Stängel-Knack-Test",
-      "stem_snap_description": "Stängel sollten sauber brechen statt sich zu biegen"
-    },
-    "duration": {
-      "day": "1 Tag",
-      "days": "{{count}} Tage",
-      "hour": "1 Stunde",
-      "hours": "{{count}} Stunden"
-    },
-    "edgeCase": {
-      "clockSkew": {
-        "description": "Ihre Geräteuhr weicht erheblich vom Server ab. Dies kann die Synchronisationszuverlässigkeit beeinträchtigen.",
-        "ignore": "Vorerst ignorieren",
-        "syncTime": "Gerätezeit synchronisieren",
-        "title": "Gerätezeit-Abweichung"
-      },
-      "duration": {
-        "adjustDate": "Datum anpassen",
-        "continue": "Trotzdem fortfahren",
-        "dismiss": "Verwerfen"
-      },
-      "durationTooLong": {
-        "description": "Diese Phase hat die empfohlene Dauer überschritten. Sie sollten die Bedingungen überprüfen.",
-        "title": "Phasendauer verlängert"
-      },
-      "durationTooShort": {
-        "description": "Diese Phase ist kürzer als empfohlen. Das Fortfahren kann die Qualität beeinträchtigen.",
-        "title": "Phasendauer zu kurz"
-      },
-      "invalidTimestamps": {
-        "description": "Das Abschlussdatum der Phase kann nicht vor dem Startdatum liegen. Bitte korrigieren Sie die Daten.",
-        "dismiss": "Abbrechen",
-        "fixDates": "Daten korrigieren",
-        "title": "Ungültige Daten"
-      },
-      "invalidWeightRatio": {
-        "description": "Das Trockengewicht kann das Nassgewicht nicht überschreiten. Bitte überprüfen Sie Ihre Messungen.",
-        "dismiss": "Abbrechen",
-        "fixWeights": "Gewichte korrigieren",
-        "title": "Ungültiges Gewichtsverhältnis"
-      },
-      "missingDryWeight": {
-        "addWeight": "Trockengewicht hinzufügen",
-        "description": "Sie müssen ein Trockengewicht eingeben, bevor Sie die Aushärtungsphase abschließen und den Endertrag aufzeichnen können.",
-        "dismiss": "Zurück",
-        "title": "Trockengewicht erforderlich"
-      },
-      "overlappingHarvests": {
-        "closeOther": "Andere Ernte schließen",
-        "description": "Diese Pflanze hat bereits eine offene Ernte. Schließen Sie die bestehende Ernte oder geben Sie einen Grund zum Überschreiben an.",
-        "override": "Überschreiben & Fortfahren",
-        "title": "Überlappende Ernten erkannt",
-        "viewExisting": "Bestehende Ernten anzeigen"
-      },
-      "storageFull": {
-        "continueWithout": "Ohne Fotos fortfahren",
-        "description": "Der Foto-Speicher wird knapp. Sie können Speicherplatz freigeben oder ohne Fotos fortfahren.",
-        "dismiss": "Abbrechen",
-        "freeSpace": "Speicherplatz freigeben",
-        "title": "Speicher fast voll"
-      },
-      "syncConflict": {
-        "description": "Diese Ernte wurde auf einem anderen Gerät aktualisiert. Die neueste Version wurde angewendet.",
-        "dismiss": "Verwerfen",
-        "title": "Anderswo aktualisiert",
-        "viewChanges": "Details anzeigen"
-      }
-    },
-    "error": {
-      "createFailed": "Ernte konnte nicht erstellt werden. Bitte versuche es erneut."
-    },
-    "errors": {
-      "actions": {
-        "dismiss": "Schließen",
-        "retry_now": "Jetzt wiederholen",
-        "sign_in_again": "Erneut anmelden",
-        "view_details": "Details anzeigen"
-      },
-      "business_logic": {
-        "missing_dry_weight": "Trockengewicht muss vor Abschluss der Aushärtung gesetzt werden.",
-        "title": "Aktion nicht erlaubt"
-      },
-      "failed": "Phase-Aktualisierung fehlgeschlagen. Bitte versuche es erneut.",
-      "invalid_transition": "Ungültiger Phasenübergang",
-      "reason_required": "Grund ist für diese Aktion erforderlich",
-      "sync": {
-        "conflict_detected": "Diese Ernte wurde auf einem anderen Gerät aktualisiert. Bitte überprüfe die Änderungen.",
-        "network_timeout": "Zeitüberschreitung der Anfrage. Bitte überprüfe deine Verbindung und versuche es erneut.",
-        "payload_too_large": "Daten zu groß zum Synchronisieren. Reduziere die Nutzlastgröße...",
-        "permission_denied": "Du hast keine Berechtigung für diese Aktion.",
-        "persistent_description": "Ernte-Daten konnten nicht synchronisiert werden. Bitte überprüfe deine Verbindung und versuche es erneut.",
-        "persistent_title": "Synchronisierung fehlgeschlagen",
-        "server_error": "Serverfehler aufgetreten. Wir versuchen es automatisch erneut.",
-        "transient_description": "Ein vorübergehender Synchronisierungsfehler ist aufgetreten. Wir versuchen es automatisch erneut.",
-        "transient_title": "Synchronisierungsfehler",
-        "unauthorized": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
-        "unknown": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
-        "validation_failed": "Ungültige Daten bereitgestellt. Bitte überprüfe deine Eingaben."
-      },
-      "undo_expired": "Rückgängig-Zeitfenster abgelaufen. Verwende stattdessen Phase zurücksetzen.",
-      "validation": {
-        "description": "Bitte korrigiere die unten stehenden Fehler und versuche es erneut.",
-        "strainNameRequired": "Stammname ist erforderlich",
-        "title": "Validierungsfehler"
-      }
-    },
-    "history": {
-      "accessibility": {
-        "emptyCreate": "Neue Ernte erstellen",
-        "emptyCreateHint": "Doppeltippen, um eine neue Ernte zu erstellen",
-        "list": "Ernteverlaufsliste",
-        "listHint": "Scrollbare Liste der Ernteaufzeichnungen",
-        "rowHint": "Doppeltippen, um Erntedetails zu öffnen",
-        "summary": "Leerer Zustand des Ernteverlaufs",
-        "summaryHint": "Keine Ernten gefunden"
-      },
-      "actions": {
-        "clearFilters": "Filter zurücksetzen",
-        "create": "Ernte erstellen"
-      },
-      "empty": {
-        "default": {
-          "body": "Erstelle deine erste Ernte, um den Fortschritt zu verfolgen.",
-          "title": "Noch keine Ernten"
-        },
-        "filtered": {
-          "body": "Passe die Filter an oder setze sie zurück, um alle Ernten zu sehen.",
-          "title": "Keine Ernten für diese Filter"
-        },
-        "offline": {
-          "body": "Stelle die Verbindung wieder her, um den neuesten Verlauf zu synchronisieren.",
-          "title": "Offline-Modus"
-        }
-      },
-      "list": {
-        "conflict_badge": "Überprüfen",
-        "rowLabel": "Ernte in {{stage}}-Phase, aktualisiert {{time}}",
-        "rowLabelConflict": ", Überprüfung erforderlich",
-        "rowLabelWeight": ", Trockengewicht {{weight}} Gramm",
-        "updated": "Aktualisiert {{relativeTime}}",
-        "weight": "Trockengewicht: {{weight}} g"
-      },
-      "relative": {
-        "days": "vor {{count}} Tagen",
-        "hours": "vor {{count}} Stunden",
-        "minutes": "vor {{count}} Minuten",
-        "now": "Gerade eben"
-      },
-      "title": "Ernteverlauf"
-    },
-    "inventory": {
-      "add_batch": "Charge hinzufügen",
-      "add_batch_description": "Das Formular zur Chargenerstellung wird verfügbar sein, sobald die Chargenverwaltungs-UI implementiert ist.",
-      "add_item": "Artikel hinzufügen",
-      "batch_lot": "Charge {{lot}}",
-      "batches_title": "Chargen",
-      "category": "Kategorie",
-      "charts": {
-        "consumptionNote": "Basierend auf erfassten Abgangsbewegungen",
-        "consumptionTrend": "Verbrauchstrend",
-        "costTrend": "Kostentrend",
-        "costTrendNote": "Gesamtkosten über alle Kategorien",
-        "monthly": "Monatlich",
-        "noConsumptionData": "Noch keine Verbrauchsdaten verfügbar",
-        "noCostData": "Noch keine Kostendaten verfügbar",
-        "total": "Gesamt",
-        "weekly": "Wöchentlich ({{unit}})"
-      },
-      "clear_search_hint": "Suchtext löschen",
-      "concurrent_finalize_toast": "Ernteaufzeichnung bereits von einem anderen Prozess abgeschlossen",
-      "csv": {
-        "export_button": "CSV exportieren",
-        "export_error_title": "Export fehlgeschlagen",
-        "export_success_description": "{{itemCount}} Artikel, {{batchCount}} Chargen, {{movementCount}} Bewegungen exportiert",
-        "export_success_title": "Export erfolgreich",
-        "export_title": "Inventardaten exportieren",
-        "import_button": "CSV importieren",
-        "import_error_title": "Import fehlgeschlagen",
-        "sharing_unavailable": "Teilen ist auf diesem Gerät nicht verfügbar"
-      },
-      "current_stock": "Bestand",
-      "empty_description": "Füge deinen ersten Inventarartikel hinzu, um Vorräte zu verfolgen",
-      "empty_title": "Keine Inventarartikel",
-      "error_title": "Inventar konnte nicht geladen werden",
-      "expired": "Abgelaufen",
-      "expired_on": "Abgelaufen am {{date}}",
-      "expires_in": "Läuft in {{days}} Tagen ab",
-      "filter_hint": "Filter- und Sortieroptionen öffnen",
-      "filters": "Filter",
-      "filters_and_sort": "Filter & Sortierung",
-      "finalize_curing": "Aushärtung abschließen & Endertrag aufzeichnen",
-      "finalize_success_toast": "Aushärtung abgeschlossen und Endertrag erfolgreich aufgezeichnet",
-      "forecast": {
-        "basedOnUsagePattern": "Basierend auf deinem Nutzungsmuster",
-        "highConfidence": "Hoch",
-        "inDays": "In {{days}} Tagen",
-        "lowConfidence": "Niedrig",
-        "lowConfidenceNote": "Begrenzte Daten verfügbar. Die Vorhersagegenauigkeit verbessert sich mit mehr Nutzungsverlauf.",
-        "mediumConfidence": "Mittel",
-        "recommendedQuantity": "Empfohlene Menge",
-        "reorderNow": "Jetzt nachbestellen",
-        "reorderRecommendation": "Nachbestellempfehlung",
-        "timeToReorder": "Zeit bis zur Nachbestellung"
-      },
-      "form": {
-        "barcode": "Barcode",
-        "barcode_placeholder": "z.B. 123456789012",
-        "category": "Kategorie",
-        "lead_time_days": "Lieferzeit (Tage)",
-        "min_stock": "Mindestbestand",
-        "name": "Artikelname",
-        "name_placeholder": "z.B. General Hydroponics FloraBloom",
-        "reorder_multiple": "Nachbestellmenge",
-        "sku": "Artikelnummer",
-        "sku_placeholder": "z.B. GH-FB-1L",
-        "submit": "Artikel hinzufügen",
-        "tracking_batched": "Chargen",
-        "tracking_mode": "Verfolgungsmodus",
-        "tracking_simple": "Einfach",
-        "unit": "Maßeinheit",
-        "unit_placeholder": "z.B. L, ml, g, kg"
-      },
-      "item_detail": "Artikeldetails",
-      "low_stock": "Niedriger Bestand",
-      "low_stock_count": "{{count}} Artikel mit niedrigem Bestand",
-      "low_stock_info": "Sortiert nach Dringlichkeit: Tage bis Lagerausfall, dann % unter Schwellenwert",
-      "min_stock": "Min",
-      "missing_dry_weight": "Trockengewicht muss vor Abschluss der Aushärtung gesetzt werden",
-      "missing_dry_weight_cta": "Trockengewicht aktualisieren",
-      "no_batches": "Keine Chargen verfügbar",
-      "offline_description": "Zwischengespeicherte Daten werden angezeigt. Änderungen werden synchronisiert, wenn du wieder online bist.",
-      "permissions": {
-        "exact_alarm_benefits": "Aktiviere präzise Niedrigbestandswarnungen, um Nachschub rechtzeitig zu bestellen und Engpässe zu vermeiden.",
-        "exact_alarm_description": "GrowBro benötigt die Berechtigung, exakte Alarme für rechtzeitige Niedrigbestandsbenachrichtigungen zu planen. Dies stellt sicher, dass du benachrichtigt wirst, wenn Vorräte zur Neige gehen.",
-        "exact_alarm_title": "Präzise Benachrichtigungen aktivieren",
-        "grant_permission": "Berechtigung erteilen"
-      },
-      "retry_failed": "Aushärtung konnte nach mehreren Versuchen nicht abgeschlossen werden. Bitte überprüfe deine Verbindung und versuche es erneut.",
-      "search_hint": "Zum Suchen von Inventarartikeln eingeben",
-      "search_label": "Inventar durchsuchen",
-      "search_offline": "Offline-Modus - zwischengespeicherte Ergebnisse werden angezeigt",
-      "search_placeholder": "Artikel nach Name, SKU oder Kategorie suchen...",
-      "sort_by": "Sortieren nach",
-      "stock_level": "Lagerbestand",
-      "title": "Inventar",
-      "total_value": "Wert"
-    },
-    "modal": {
-      "cancel": "Abbrechen",
-      "dryWeight": "Trockengewicht",
-      "notes": "Notizen",
-      "notesPlaceholder": "Notizen zu dieser Ernte hinzufügen...",
-      "photos": "Fotos",
-      "submit": "Ernte speichern",
-      "submitting": "Wird gespeichert...",
-      "subtitle": "Erntedetails und Gewichte eingeben",
-      "title": "Ernte aufzeichnen",
-      "trimmingsWeight": "Verschnitt-Gewicht",
-      "unitToggle": "Einheit",
-      "wetWeight": "Nassgewicht"
-    },
-    "modals": {
-      "override": {
-        "cancel": "Abbrechen",
-        "confirm": "Zu Phase springen",
-        "reason_label": "Grund (erforderlich)",
-        "reason_placeholder": "Erkläre, warum du Phasen überspringen musst...",
-        "reason_required": "Bitte gib einen Grund für das Überspringen an",
-        "subtitle": "Diese Aktion wird im Audit-Protokoll erfasst",
-        "target_stage_label": "Springen zu Phase",
-        "title": "Zu späterer Phase springen"
-      },
-      "revert": {
-        "cancel": "Abbrechen",
-        "confirm": "Phase zurücksetzen",
-        "reason_label": "Grund (erforderlich)",
-        "reason_placeholder": "Erkläre, warum du zurücksetzen musst...",
-        "reason_required": "Bitte gib einen Grund für das Zurücksetzen an",
-        "subtitle": "Diese Aktion wird im Audit-Protokoll erfasst",
-        "target_stage_label": "Zurücksetzen auf Phase",
-        "title": "Zur vorherigen Phase zurückkehren"
-      }
-    },
-    "notifications": {
-      "overdue": {
-        "body": "Deine Ernte ist seit {{days}} Tagen in der {{stage}}-Phase. Bitte überprüfe, ob sie bereit ist fortzufahren.",
-        "title": "{{stage}}-Phase Überprüfung empfohlen"
-      },
-      "target": {
-        "body": "Deine Ernte ist seit {{days}} Tagen in der {{stage}}-Phase. Erwäge, zur nächsten Phase überzugehen.",
-        "title": "{{stage}}-Phase Ziel erreicht"
-      }
-    },
-    "permissions": {
-      "exactAlarm": {
-        "errorMessage": "Berechtigung konnte nicht angefordert werden. Bitte versuche es erneut.",
-        "errorTitle": "Berechtigungsfehler",
-        "fallbackBody": "Aktiviere exakte Alarme in den Einstellungen für sofortige Warnungen bei niedrigem Lagerbestand.",
-        "fallbackTitle": "Benachrichtigungen können verzögert sein",
-        "grantButton": "Benachrichtigungen aktivieren",
-        "ifDeniedBody": "Benachrichtigungen können bis zu 15 Minuten verzögert werden. Du erhältst weiterhin Warnungen, nur nicht sofort.",
-        "ifDeniedTitle": "Wenn du dies überspringst",
-        "openSettings": "Einstellungen öffnen",
-        "title": "Rechtzeitige Benachrichtigungen aktivieren",
-        "whyNeededBody": "Exakte Alarme stellen sicher, dass du sofort benachrichtigt wirst, wenn Vorräte zur Neige gehen, damit du rechtzeitig nachbestellen kannst.",
-        "whyNeededTitle": "Warum das wichtig ist"
-      }
-    },
-    "photo": {
-      "accessibility": {
-        "add_photo_hint": "Doppeltippen, um ein Ernte-Foto von Kamera oder Galerie hinzuzufügen"
-      },
-      "actions": {
-        "add_photo": "Foto hinzufügen",
-        "choose_from_library": "Aus Galerie wählen",
-        "dismiss": "Verwerfen",
-        "free_up_space": "Speicherplatz freigeben",
-        "take_photo": "Foto aufnehmen"
-      },
-      "alerts": {
-        "photo_options_title": "Foto hinzufügen"
-      },
-      "cancel": "Abbrechen",
-      "capture_failed": "Aufnahme fehlgeschlagen",
-      "choose_source": "Öffnet den Foto-Picker, um ein Ernte-Foto von Kamera oder Galerie hinzuzufügen",
-      "errors": {
-        "camera_permission_denied": "Kamera-Berechtigung verweigert",
-        "capture_failed": "Foto konnte nicht aufgenommen werden",
-        "no_uri": "Keine Foto-URI zurückgegeben",
-        "processing_failed": "Foto konnte nicht verarbeitet werden",
-        "select_failed": "Foto konnte nicht ausgewählt werden",
-        "storage_failed": "Foto konnte nicht gespeichert werden",
-        "upload_failed": "Foto konnte nicht hochgeladen werden",
-        "upload_missing_metadata": "Foto-Metadaten sind unvollständig",
-        "upload_not_authenticated": "Sie müssen angemeldet sein, um Fotos hochzuladen"
-      },
-      "processing_photo": "Foto wird verarbeitet...",
-      "status": {
-        "processing": "Foto wird verarbeitet...",
-        "upload_complete": "Fotos erfolgreich hochgeladen",
-        "upload_queued": "{{count}} Fotos für Upload eingereiht",
-        "uploading": "{{count}} Fotos werden hochgeladen..."
-      },
-      "storage": {
-        "available": "{{size}} verfügbar",
-        "cleanup_complete": "Bereinigung abgeschlossen",
-        "cleanup_success": "Speicherbereinigung erfolgreich abgeschlossen",
-        "duration": "Abgeschlossen in {{ms}}ms",
-        "files_deleted": "{{count}} Dateien gelöscht",
-        "orphans_removed": "{{count}} verwaiste Dateien entfernt",
-        "space_freed": "{{amount}} freigegeben",
-        "title": "Fotospeicher",
-        "used": "{{size}} verwendet",
-        "used_of_total": "{{used}} von {{total}} verwendet"
-      },
-      "success": "Foto erfolgreich hinzugefügt",
-      "title": "Foto hinzufügen"
+      "title": "Datenschutzeinstellungen",
+      "urlErrorBody": "Beim Öffnen der Web-Löschseite ist ein Fehler aufgetreten. Details: {{message}}",
+      "urlErrorTitle": "URL-Fehler",
+      "webDeletionHeading": "Du brauchst eine Löschung ohne App-Zugriff?",
+      "webDeletionPrompt": "Nutze unser Webformular ({{url}}), falls du nicht auf die mobile App zugreifen kannst.",
+      "webPortalAuthNote": "Melde dich an, damit wir deine Identität prüfen können. Du kannst dich nach dem Absenden wieder abmelden.",
+      "webPortalDeletionCopy": "Wir planen die Löschung ein und senden dir eine Bestätigung, sobald der Vorgang abgeschlossen ist (in der Regel innerhalb von 30 Tagen).",
+      "webPortalDeletionCta": "Löschung anfordern",
+      "webPortalDeletionHeading": "Dein GrowBro-Konto löschen",
+      "webPortalExportCopy": "Wir bereiten deinen Datenexport vor und informieren dich, sobald der Download bereitsteht.",
+      "webPortalExportCta": "Export anfordern",
+      "webPortalExportHeading": "GrowBro-Daten exportieren",
+      "webPortalIntro": "Nutze diese Seite, wenn du die mobile App nicht öffnen kannst und dennoch eine Kontolöschung oder einen Datenexport anstoßen musst.",
+      "webPortalLogin": "Anmeldung öffnen",
+      "webPortalTitle": "GrowBro-Löschportal"
     },
     "profile": {
       "no_posts": "Noch keine Beiträge",
@@ -745,1249 +1616,390 @@
         "title": "Profil nicht verfügbar"
       }
     },
-    "security": {
-      "cascade_deletion": "Alle Ernte-Daten werden dauerhaft gelöscht, wenn du dein Konto löschst",
-      "data_isolation": "Deine Ernte-Daten sind privat und nur für dich zugänglich",
-      "private_photos": "Fotos werden privat gespeichert ohne öffentlichen Zugriff",
-      "rls_protected": "Row-Level-Security gewährleistet Datenisolierung"
-    },
-    "sharing": {
-      "actions": {
-        "cancel": "Abbrechen",
-        "share": "Zusammenfassung teilen"
-      },
-      "privacy_notice": "Es werden keine persönlichen Informationen (Pflanzennamen, Notizen oder Fotos) geteilt.",
-      "redaction": {
-        "aggregated_data": "Aggregierte Ernte-Metriken",
-        "no_pii": "Persönliche Informationen entfernt",
-        "redacted_at": "Daten vorbereitet am {{date}}"
-      },
-      "summary": {
-        "avg_duration": "Durchschnittliche Dauer",
-        "date_range": "Zeitraum",
-        "photo_count": "{{count}} Fotos",
-        "stages_completed": "Abgeschlossene Phasen",
-        "title": "Ernte-Zusammenfassung",
-        "total_harvests": "{{count}} Ernten",
-        "total_weight": "Gesamtgewicht"
-      },
-      "title": "Ernte-Daten teilen"
-    },
-    "stage_tracker": {
-      "completed": "Abgeschlossen",
-      "elapsed": "{{days}}T {{hours}}Std {{minutes}}Min vergangen",
-      "elapsed_days_one": "{{count}} Tag vergangen",
-      "elapsed_days_other": "{{count}} Tage vergangen",
-      "on_track": "Im Zeitplan",
-      "overdue": "{{days}} Tage überfällig",
-      "target": "Ziel: {{days}} Tage",
-      "title": "Ernte-Fortschritt"
-    },
-    "stages": {
-      "curing": "Aushärten",
-      "drying": "Trocknen",
-      "harvest": "Ernte",
-      "inventory": "Abschluss"
-    },
-    "success": {
-      "created": "Ernte erfolgreich erstellt"
-    },
-    "units": {
-      "grams": "g",
-      "gramsLong": "Gramm",
-      "ounces": "oz",
-      "ouncesLong": "Unzen"
-    }
-  },
-  "home": {
-    "open_settings": "Einstellungen öffnen",
-    "share_update_cta": "Update teilen",
-    "share_update_subtitle": "Sag der Community, wie es deinen Pflanzen geht.",
-    "share_update_title": "Grow-Update teilen"
-  },
-  "inputs": {
-    "accept_terms_label": "Nutzungsbedingungen akzeptieren",
-    "checkbox_label": "Kontrollkästchen",
-    "switch_label": "Schalter"
-  },
-  "list": {
-    "empty": {
-      "body": "Wir zeigen hier Inhalte, sobald sie verfügbar sind.",
-      "title": "Hier ist noch nichts"
-    },
-    "error": {
-      "body": "Wir konnten die Inhalte nicht laden. Bitte versuche es erneut.",
-      "title": "Etwas ist schiefgelaufen"
-    },
-    "loading": "Wird geladen...",
-    "retry": "Erneut versuchen"
-  },
-  "moderation": {
-    "audit": {
-      "empty": "Leer",
-      "title": "Audit-Protokoll"
-    },
-    "authentication_required": "Authentifizierung erforderlich für diese Aktion",
-    "block": "Blockieren",
-    "block_failed": "Benutzer konnte nicht blockiert werden. Bitte versuche es erneut.",
-    "delete": "Löschen",
-    "delete_failed": "Löschen des Inhalts fehlgeschlagen. Bitte versuche es erneut.",
-    "hide": "Verbergen",
-    "moderator_modal": {
-      "audit_notice": "Diese Aktion wird im Moderationsprotokoll mit deiner Benutzer-ID und Zeitstempel aufgezeichnet.",
+    "retry": "Wiederholen",
+    "settings": {
+      "about": "Über",
+      "app_name": "App-Name",
+      "arabic": "Arabisch",
       "cancel": "Abbrechen",
-      "hide_failed": "Fehler beim Verbergen des Inhalts. Bitte versuche es erneut.",
-      "hide_submit": "Inhalt verbergen",
-      "hide_subtitle": "Dies verbirgt den Inhalt vor allen Benutzern. Du musst einen Grund angeben, der im Moderationsprotokoll gespeichert wird.",
-      "hide_success": "Inhalt erfolgreich verborgen",
-      "hide_title": "Inhalt verbergen",
-      "reason_accessibility": "Gib den Grund für diese Moderationsaktion ein. Maximal 500 Zeichen.",
-      "reason_label": "Grund (erforderlich)",
-      "reason_placeholder": "Erkläre, warum du diesen Inhalt verbirgst/wiederherstellst...",
-      "reason_required": "Bitte gib einen Grund für diese Moderationsaktion an",
-      "submitting": "Wird verarbeitet...",
-      "unhide_failed": "Fehler beim Wiederherstellen des Inhalts. Bitte versuche es erneut.",
-      "unhide_submit": "Inhalt wiederherstellen",
-      "unhide_subtitle": "Dies stellt den Inhalt wieder her und macht ihn für alle Benutzer sichtbar. Gib einen Grund für diese Aktion an.",
-      "unhide_success": "Inhalt erfolgreich wiederhergestellt",
-      "unhide_title": "Inhalt wiederherstellen"
+      "english": "Englisch",
+      "general": "Allgemein",
+      "german": "Deutsch",
+      "github": "Github",
+      "language": "Sprache",
+      "links": "Links",
+      "logout": "Abmelden",
+      "more": "Mehr",
+      "notifications": "Benachrichtigungen",
+      "privacy": "Datenschutzrichtlinie",
+      "privacy_and_data": "Datenschutz- und Datenkontrollen",
+      "privacy_policy": "Datenschutzerklärung",
+      "privacy_section": "Datenschutz & Daten",
+      "rate": "Bewerten",
+      "save_changes": "Änderungen speichern",
+      "share": "Teilen",
+      "support": "Support",
+      "support_us": "Unterstütze uns",
+      "sync": {
+        "auto_sync": "Auto-Sync (Vordergrund/Verbindung)",
+        "background": "Hintergrund-Sync",
+        "charging_only": "Nur beim Laden",
+        "reset_local": "Lokalen Cache zurücksetzen",
+        "reset_local_body": "Dies löscht die lokale Datenbank dauerhaft. Deine Cloud-Daten bleiben erhalten.",
+        "reset_local_title": "Lokalen Cache zurücksetzen?",
+        "staleness_hours": "Veraltet ab (Stunden)",
+        "title": "Sync",
+        "wifi_only": "Nur Wi‑Fi"
+      },
+      "terms": "Nutzungsbedingungen",
+      "theme": {
+        "dark": "Dunkel",
+        "light": "Hell",
+        "system": "System",
+        "title": "Thema"
+      },
+      "title": "Einstellungen",
+      "version": "Version",
+      "web_deletion": "Web-Löschportal",
+      "website": "Website"
     },
-    "mute": "Stummschalten",
-    "mute_failed": "Benutzer konnte nicht stummgeschaltet werden. Bitte versuche es erneut.",
-    "queue": {
-      "appeal": "Einspruch",
-      "empty": "Leer",
-      "escalate": "Eskalieren",
-      "processAll": "Alle verarbeiten",
-      "title": "Moderationswarteschlange"
-    },
-    "report": "Melden",
-    "report_failed": "Inhalt konnte nicht gemeldet werden. Bitte versuche es erneut.",
-    "report_modal": {
-      "cancel": "Abbrechen",
-      "queued": "Meldung in Warteschlange. Sie wird gesendet, sobald du wieder online bist.",
-      "reason_harassment": "Belästigung",
-      "reason_harassment_desc": "Mobbing, Drohungen oder gezielte Beleidigungen",
-      "reason_illegal": "Illegaler Inhalt",
-      "reason_illegal_desc": "Inhalte, die gegen Gesetze oder Vorschriften verstoßen",
-      "reason_other": "Sonstiges",
-      "reason_other_desc": "Andere Verstöße gegen Community-Richtlinien",
-      "reason_spam": "Spam",
-      "reason_spam_desc": "Unerwünschte Werbung, wiederholte Beiträge oder Betrug",
-      "select_reason": "Bitte wähle einen Meldegrund aus",
-      "submit": "Meldung absenden",
-      "submitting": "Wird gesendet...",
-      "subtitle": "Hilf uns, die Community sicher zu halten, indem du Inhalte meldest, die gegen unsere Richtlinien verstoßen.",
-      "success": "Inhalt erfolgreich gemeldet. Vielen Dank, dass du hilfst, unsere Community sicher zu halten.",
-      "title": "Inhalt melden"
-    },
-    "unhide": "Wiederherstellen"
-  },
-  "nav": {
-    "back": "Zurück",
-    "feed": "Feed",
-    "post": "Beitrag",
-    "profile": "Profil"
-  },
-  "notifications": {
-    "actions": {
-      "dismiss": "Schließen",
-      "markDone": "Als erledigt markieren",
-      "reply": "Antworten",
-      "replyPlaceholder": "Antwort hier eingeben…",
-      "replySubmit": "Senden",
-      "snooze": "Später erinnern",
-      "viewDetails": "Details anzeigen",
-      "viewPost": "Beitrag ansehen",
-      "viewProfile": "Profil ansehen"
-    },
-    "channels": {
-      "calibrationReminders": {
-        "description": "Erinnerungen zur Kalibrierung von pH- und EC-Messgeräten für genaue Messungen.",
-        "name": "Kalibrierungs-Erinnerungen"
-      },
-      "communityInteractions": {
-        "description": "Antworten, Erwähnungen und Moderationshinweise aus der Community.",
-        "name": "Community-Interaktionen"
-      },
-      "communityLikes": {
-        "description": "Likes und Reaktionen auf deine Updates.",
-        "name": "Community-Likes"
-      },
-      "cultivationAlerts": {
-        "description": "Sofortwarnungen, wenn pH- oder EC-Werte außerhalb des Zielbereichs liegen.",
-        "name": "pH/EC-Warnungen"
-      },
-      "cultivationReminders": {
-        "description": "Aufgaben-Erinnerungen sowie Trocknungs- und Aushärtungswarnungen.",
-        "name": "Grow-Erinnerungen"
-      },
-      "inventoryAlerts": {
-        "description": "Rechtzeitige Warnungen, wenn Anbaumaterialien zur Neige gehen.",
-        "name": "Lagerbestands-Warnungen"
-      },
-      "systemUpdates": {
-        "description": "Wichtige Konto-Hinweise, Richtlinien-Updates oder Sicherheitswarnungen.",
-        "name": "Systembenachrichtigungen"
-      }
-    },
-    "exactAlarm": {
-      "body": "Erlaube exakte Alarme, damit Bewässerungs- und Düngeerinnerungen exakt zur geplanten Zeit erscheinen.",
-      "cta": "Einstellungen öffnen",
-      "title": "Erinnerungen pünktlich halten"
-    },
-    "inbox": {
-      "archived": {
-        "hide": "Archivierte ausblenden",
-        "show": "Archivierte anzeigen",
-        "toggle_hint": "Schaltet archivierte Benachrichtigungen ein oder aus."
-      },
-      "empty": {
-        "all": {
-          "body": "Neue Updates erscheinen hier.",
-          "title": "Alles erledigt"
-        },
-        "unread": {
-          "body": "Wir informieren dich sofort, wenn etwas Neues da ist.",
-          "title": "Keine ungelesenen Benachrichtigungen"
-        }
-      },
-      "error": {
-        "body": "Prüfe deine Verbindung und versuche es erneut.",
-        "retry": "Erneut versuchen",
-        "title": "Benachrichtigungen konnten nicht geladen werden"
-      },
-      "filters": {
-        "all": "Alle",
-        "unread": "Ungelesen"
-      },
-      "loading": "Benachrichtigungen werden geladen…",
-      "mark_all_hint": "Markiert alle Benachrichtigungen als gelesen.",
-      "mark_all_read": "Alle als gelesen markieren",
-      "mark_read": "Als gelesen markieren",
-      "open_hint": "Öffnet Details der Benachrichtigung",
-      "refresh": "Zum Aktualisieren ziehen",
-      "sections": {
-        "default": "{{date}}",
-        "today": "Heute",
-        "yesterday": "Gestern"
-      },
-      "timestamp": {
-        "default": "{{date}} · {{time}}",
-        "today": "Heute · {{time}}",
-        "weekday": "{{weekday}} · {{time}}",
-        "yesterday": "Gestern · {{time}}"
-      },
-      "title": "Benachrichtigungen",
-      "unread_badge": "Ungelesen",
-      "unread_count_one": "{{count}} ungelesen",
-      "unread_count_other": "{{count}} ungelesen",
-      "unread_count_zero": "Alles erledigt"
-    },
-    "overdue": {
-      "body_one": "Du hast {{count}} überfällige Aufgabe. Hol sie nach, um im Plan zu bleiben.",
-      "body_other": "Du hast {{count}} überfällige Aufgaben. Hol sie nach, um im Plan zu bleiben.",
-      "title": "Aufgaben warten auf dich"
-    }
-  },
-  "nutrient": {
-    "add_first_reading": "Erste Messung hinzufügen",
-    "apply_learnings": "Erkenntnisse anwenden",
-    "atc_label": "Temperaturkompensiert (ATC)",
-    "cal_stale_warning": "Kalibrierung möglicherweise veraltet",
-    "chart": {
-      "eventMarkersNote": "{{count}} Ereignis-Marker angezeigt",
-      "noData": "Noch keine Messwerte",
-      "startLogging": "Beginne mit pH/EC-Messungen, um Trends zu sehen"
-    },
-    "diagnostics": {
-      "actions": {
-        "N_DEFICIENCY_FEED": "Stickstoffgabe erhöhen",
-        "N_DEFICIENCY_MONITOR": "In 48 Std. erneut prüfen",
-        "PH_DRIFT_BUFFER": "Puffer dosieren",
-        "PH_DRIFT_MONITOR": "Monitoring erhöhen",
-        "TOXICITY_DILUTE": "Reservoir verdünnen",
-        "TOXICITY_MONITOR": "In 12 Std. erneut prüfen"
-      },
-      "aiConfidence": "KI-basiert",
-      "causes": {
-        "highAlkalinity": "Hohe Alkalinität im Ausgangswasser verursacht pH-Drift",
-        "insufficientNitrogen": "Zu wenig verfügbarer Stickstoff in den letzten Fütterungen",
-        "solutionTooStrong": "Nährlösung ist zu konzentriert"
+    "shared_header": {
+      "app_title": "GrowBro",
+      "calendar": {
+        "subtitle": "Scrolle zu kommenden Grows und Tasks.",
+        "title": "Kalenderübersicht"
       },
       "community": {
-        "classification": "Erkanntes Problem",
-        "confidence": "Konfidenz",
-        "footer": "Was denkst du? Jeder Rat ist willkommen!",
-        "header": "🌱 Brauche Hilfe bei Pflanzendiagnose",
-        "recommendations": "Vorgeschlagene Maßnahmen:",
-        "symptoms": "Symptome:"
+        "subtitle": "Sieh Updates anderer Grower.",
+        "title": "Community-Feed"
       },
-      "confidenceBreakdown": "Konfidenz-Aufschlüsselung",
-      "disclaimers": {
-        "aiOnlyPrimary": "Hinweise stammen ausschließlich von der KI. Bitte mit Messwerten oder Community-Rückmeldungen abgleichen.",
-        "considerSecondOpinion": "Geringe Sicherheit. Bitte hole eine zweite Einschätzung aus der Community ein.",
-        "lowConfidence": "Diagnosesicherheit liegt unter dem definierten Schwellenwert.",
-        "title": "⚠️ Hinweise"
+      "home": {
+        "subtitle": "Überblicke Aufgaben, Hinweise und Schnellaktionen.",
+        "title": "Heute in deinem Grow"
       },
-      "feedbackQuestion": "War diese Diagnose hilfreich?",
-      "feedbackThanks": "Danke für dein Feedback!",
-      "getSecondOpinion": "Zweite Meinung aus der Community holen",
-      "helpful": "Hilfreich",
-      "issueTypes": {
-        "deficiency": "Nährstoffmangel",
-        "lockout": "Nährstoffblockade",
-        "ph_drift": "pH-Drift",
-        "toxicity": "Nährstofftoxizität"
+      "plants": {
+        "subtitle": "Verfolge Stadien und Gesundheit.",
+        "title": "Pflanzeninventar"
       },
-      "notHelpful": "Nicht hilfreich",
-      "nutrient": "Nährstoff",
-      "priorityHigh": "Hohe Priorität",
-      "rationale": {
-        "aiBelowThreshold": "KI-Hypothese unterhalb der Überschreibungs-Schwelle; Regelhinweise bleiben aktiv.",
-        "ecAboveTarget": "EC-Verlauf liegt über dem Zielbereich des Reservoirs.",
-        "ecBelowTarget": "EC-Verlauf liegt unter dem Zielbereich des Reservoirs.",
-        "highAlkalinity": "Quellwasser weist hohe Alkalinität auf.",
-        "phPersistentlyHigh": "pH lag wiederholt über dem Zielband des Reservoirs.",
-        "tipBurnObserved": "Verbrennungserscheinungen an Blattspitzen erkannt.",
-        "title": "💡 Begründung",
-        "yellowingLowerLeaves": "Vergilbung an unteren Blättern festgestellt."
-      },
-      "recommendations": {
-        "bufferAlkalinity": "Füge einen Puffer hinzu, um die Alkalinität des Ausgangswassers zu neutralisieren.",
-        "diluteReservoir": "Verdünne das Reservoir mit ausgewogenem Wasser, um EC zu senken.",
-        "increaseMonitoring": "Überwache pH/EC engmaschiger, bis sich die Werte stabilisieren.",
-        "monitor48h": "Prüfe nach 48 Stunden erneut, um die Entwicklung zu bewerten.",
-        "nitrogenFeed": "Erhöhe die Stickstoffzufuhr gemäß dem Defizit-Playbook.",
-        "retest12h": "Prüfe nach 12 Stunden erneut, um die Korrektur zu bestätigen.",
-        "title": "Empfehlungen"
-      },
-      "resolution": {
-        "cancel": "Abbrechen",
-        "description": "Dokumentiere, wie du dieses Problem behoben hast. Das hilft, zukünftige Empfehlungen zu verbessern.",
-        "error": "Fehler beim Markieren als gelöst. Bitte versuche es erneut.",
-        "notesLabel": "Lösungsnotizen (optional)",
-        "notesPlaceholder": "Was hast du gemacht? Was hat funktioniert?",
-        "resolve": "Als gelöst markieren",
-        "title": "Als gelöst markieren"
-      },
-      "rulesConfidence": "Regelbasiert",
-      "severity": {
-        "mild": "Leicht",
-        "moderate": "Mäßig",
-        "severe": "Schwer"
-      },
-      "threshold": "Überschreibungsschwelle"
-    },
-    "ec": "EC",
-    "ecTrend": "EC-Verlauf",
-    "ec_at_temp": "EC@{{temp}}°C",
-    "ec_label": "EC",
-    "event": {
-      "ecDelta": "EC-Änderung",
-      "ecDeltaHint": "Erwartete EC-Änderung nach diesem Ereignis",
-      "logEvent": "Ereignis protokollieren",
-      "note": "Notizen",
-      "notePlaceholder": "Füge Notizen zu diesem Ereignis hinzu...",
-      "phDelta": "pH-Änderung",
-      "phDeltaHint": "Erwartete pH-Änderung nach diesem Ereignis",
-      "type": "Ereignistyp"
-    },
-    "eventTypes": {
-      "addNutrient": "Nährstoffe hinzufügen",
-      "change": "Reservoir-Wechsel",
-      "dilute": "Verdünnen",
-      "fill": "Auffüllen",
-      "phDown": "pH senken",
-      "phUp": "pH erhöhen"
-    },
-    "loading_readings": "Lade Messwerte...",
-    "medium": {
-      "coco": "Coco",
-      "hydro": "Hydroponik",
-      "soil": "Erde",
-      "soilless": "Erdlos"
-    },
-    "mediumOptions": {
-      "coco": "Coco",
-      "hydro": "Hydro",
-      "peat": "Torf",
-      "soil": "Erde",
-      "soilless": "Erdlos"
-    },
-    "no_atc_warning": "Keine ATC (automatische Temperaturkompensation)",
-    "no_events_description": "Beginne Reservoir-Ereignisse zu protokollieren, um deine Änderungen zu verfolgen",
-    "no_events_title": "Keine Ereignisse aufgezeichnet",
-    "no_readings": "Keine Messwerte verfügbar",
-    "performance_report": "Leistungsbericht",
-    "ph": "pH",
-    "phTrend": "pH-Verlauf",
-    "ppm": "PPM",
-    "ppm_scale_label": "PPM-Skala",
-    "reservoir": {
-      "max": "Max",
-      "medium": "Anbaumedium",
-      "min": "Min",
-      "name": "Reservoir-Name",
-      "namePlaceholder": "z.B. Haupttank",
-      "noReservoirs": "Keine Reservoirs konfiguriert",
-      "selectReservoir": "Reservoir auswählen",
-      "targetEc": "EC-Zielbereich",
-      "targetPh": "pH-Zielbereich",
-      "validation": {
-        "nameRequired": "Reservoir-Name ist erforderlich"
-      },
-      "volume": "Volumen (L)"
-    },
-    "save_reading": "Messung speichern",
-    "start_logging_ph_ec": "Starte pH/EC-Messungen",
-    "targetMax": "Max",
-    "targetMin": "Min",
-    "targetRange": "Zielbereich",
-    "targetRanges": "Zielbereiche",
-    "temp_high_warning": "Temperatur zu hoch",
-    "timeRange": {
-      "30days": "30 Tage",
-      "7days": "7 Tage",
-      "90days": "90 Tage",
-      "all": "Gesamtverlauf"
-    },
-    "time_range": "Zeitbereich",
-    "validation": {
-      "ecInvalidType": "EC muss eine Zahl sein",
-      "ecMax": "EC muss {{max}} oder weniger sein",
-      "ecMin": "EC muss mindestens {{min}} sein",
-      "ecRequired": "EC ist erforderlich",
-      "noteMaxLength": "Notiz darf höchstens {{max}} Zeichen lang sein",
-      "phInvalidType": "pH muss eine Zahl sein",
-      "phMax": "pH muss {{max}} oder weniger sein",
-      "phMin": "pH muss mindestens {{min}} sein",
-      "phRequired": "pH ist erforderlich",
-      "ppmScaleInvalid": "Ungültige PPM-Skala",
-      "ppmScaleRequired": "PPM-Skala ist erforderlich",
-      "tempInvalidType": "Temperatur muss eine Zahl sein",
-      "tempMax": "Temperatur muss {{max}} oder weniger sein",
-      "tempMin": "Temperatur muss mindestens {{min}} sein",
-      "tempRequired": "Temperatur ist erforderlich"
-    },
-    "viewChart": "Diagramm",
-    "viewList": "Liste",
-    "waterProfile": {
-      "form": {
-        "alkalinity": "Alkalinität (ppm CaCO3)",
-        "alkalinityHelper": "Misst die Karbonatpufferkapazität",
-        "baselineEc": "Basis-EC (mS/cm)",
-        "baselineEcHelper": "EC deines Ausgangswassers vor Zugabe von Nährstoffen",
-        "educationalNote": "ℹ️ Diese Werte helfen, Nährstoffempfehlungen für deine Wasserquelle zu optimieren",
-        "hardness": "Gesamthärte (ppm)",
-        "hardnessHelper": "Kalzium- und Magnesiumgehalt",
-        "name": "Profilname",
-        "namePlaceholder": "z.B. Leitungswasser",
-        "validation": {
-          "nameRequired": "Profilname ist erforderlich"
-        }
-      },
-      "title": "Wasserprofil"
-    }
-  },
-  "onboarding": {
-    "allow_button": "Benachrichtigungen erlauben",
-    "continue_button": "Weiter",
-    "message": "Willkommen bei der GrowBro App",
-    "notifications_body": "Erlaube Benachrichtigungen, um rechtzeitig an Aufgaben erinnert zu werden.",
-    "notifications_title": "Aufgaben-Erinnerungen"
-  },
-  "phases": {
-    "flower": "Blütenphase",
-    "harvest": "Erntephase",
-    "seedling": "Keimlingsphase",
-    "veg": "Vegetative Phase"
-  },
-  "plants": {
-    "empty_state": "Keine Pflanzen in deinem Inventar",
-    "error": "Pflanzen konnten nicht geladen werden. Bitte erneut versuchen.",
-    "no_results": "Keine Pflanzen gefunden",
-    "offline_notice": "Gespeicherte Pflanzen werden angezeigt",
-    "retry": "Erneut versuchen",
-    "search_placeholder": "Pflanzen suchen…"
-  },
-  "playbooks": {
-    "accessibility": {
-      "adoptTemplate": "Community-Vorlage übernehmen",
-      "applyPlaybook": "{{name}} Playbook auf Pflanze anwenden",
-      "logTrichomeCheck": "Trichom-Check protokollieren",
-      "phaseProgress": "{{phase}}-Phase, {{status}}, {{completed}} von {{{total}}} Aufgaben abgeschlossen",
-      "playbookCard": "{{name}} Playbook, {{setup}} Setup, {{weeks}} Wochen, {{tasks}} Aufgaben",
-      "selectPlantHint": "Doppelt tippen, um diese Pflanze auszuwählen",
-      "shareTemplate": "Vorlage mit Community teilen",
-      "shiftSchedule": "Zeitplan verschieben",
-      "shiftScheduleHint": "Verschiebt alle Aufgaben {{direction}} um {{days}} {{daysUnit}}",
-      "taskItem": "{{title}}, fällig {{date}}, {{status}}{{reminder}}",
-      "taskItemWithReminder": ", hat Erinnerung",
-      "trichomeAssessment": "Trichom-Bewertung: {{clear}}% klar, {{milky}}% milchig, {{amber}}% bernstein. Empfehlung: {{recommendation}}",
-      "undoShift": "Zeitplanverschiebung rückgängig machen"
-    },
-    "activities": "Aktivitäten",
-    "adjustments": {
-      "confidence": "{{percent}}% Zuverlässigkeit",
-      "disclaimer": "KI-Vorschlag • Bildungszwecke, kein professioneller Rat",
-      "scheduleAdjustment": "💡 Terminplananpassung",
-      "tasksAffected_one": "{{count}} Aufgabe betroffen",
-      "tasksAffected_other": "{{count}} Aufgaben betroffen",
-      "viewDetails": "Details anzeigen"
-    },
-    "apply": {
-      "alreadyApplied": "Dieser Playbook ist bereits auf diese Pflanze angewendet",
-      "applying": "Playbook wird angewendet...",
-      "createPlant": "Neue Pflanze erstellen",
-      "error": "Playbook konnte nicht angewendet werden",
-      "selectPlant": "Wähle eine Pflanze für diesen Playbook",
-      "success_one": "{{count}} Aufgabe erfolgreich erstellt",
-      "success_other": "{{count}} Aufgaben erfolgreich erstellt"
-    },
-    "applyError": "Anwendung fehlgeschlagen",
-    "applyErrorDescription": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
-    "applyPlaybook": "Playbook anwenden",
-    "applySuccess": "Playbook angewendet",
-    "applySuccessDescription": "{{count}} Aufgaben für deine Pflanze erfolgreich erstellt",
-    "applyToPlant": "Auf Pflanze anwenden",
-    "applying": "Wird angewendet...",
-    "community": {
-      "adopt": {
-        "adoptions_one": "{{count}} Übernahme",
-        "adoptions_other": "{{count}} Übernahmen",
-        "applyDirectly": "Direkt anwenden",
-        "author": "Von {{author}}",
-        "customize": "Vor Anwendung anpassen",
-        "preview": "Vorschau",
-        "ratings_one": "{{count}} Bewertung",
-        "ratings_other": "{{count}} Bewertungen",
-        "title": "Vorlage übernehmen"
-      },
-      "share": {
-        "cancel": "Abbrechen",
-        "conditions": "Anbaubedingungen",
-        "conditionsPlaceholder": "Indoor-Zelt, LED-Lichter, Erdsubstrat...",
-        "description": "Beschreibung",
-        "descriptionPlaceholder": "Beschreibe deinen Anbauansatz und Ergebnisse...",
-        "durationDays": "{{count}} Tage",
-        "durationDays_one": "{{count}} Tag",
-        "durationDays_other": "{{count}} Tage",
-        "licenseDescription": "Durch das Teilen stimmst du zu, diese Vorlage unter CC-BY-SA 4.0 zu lizenzieren",
-        "name": "Vorlagenname",
-        "namePlaceholder": "Mein eigener Auto-Indoor-Zeitplan",
-        "submit": "Vorlage teilen",
-        "success": "Vorlage erfolgreich geteilt",
-        "taskCount": "{{count}} Aufgaben",
-        "taskCount_one": "{{count}} Aufgabe",
-        "taskCount_other": "{{count}} Aufgaben",
-        "title": "Vorlage teilen"
-      },
-      "shareTemplate": {
-        "authorHandle": "Autoren-Handle *",
-        "description": "Beschreibung (Optional)",
-        "errors": {
-          "descriptionMaxLength": "Beschreibung darf höchstens 500 Zeichen lang sein",
-          "handleMaxLength": "Handle darf höchstens 30 Zeichen lang sein",
-          "handleMinLength": "Handle muss mindestens 3 Zeichen lang sein",
-          "handlePattern": "Handle darf nur Buchstaben, Zahlen, - und _ enthalten",
-          "handleRequired": "Autoren-Handle ist erforderlich"
-        },
-        "license": "Lizenz",
-        "licenseDescription": "Andere können dein Playbook verwenden und modifizieren mit Namensnennung",
-        "licenseText": "{{license}} - Creative Commons Attribution-ShareAlike",
-        "placeholderDescription": "Beschreibe dein Playbook...",
-        "placeholderHandle": "dein_handle",
-        "privacyNotice": "ℹ️ Alle persönlichen Informationen, Pflanzennamen und benutzerdefinierten Notizen werden automatisch vor dem Teilen entfernt.",
-        "share": "Teilen",
-        "sharing": "Wird geteilt...",
-        "subtitle": "Teile dein angepasstes Playbook mit der Community. Alle persönlichen Informationen werden automatisch entfernt.",
-        "title": "Playbook teilen"
-      },
-      "subtitle": "Erfolgreiche Anbaupläne entdecken und teilen",
-      "title": "Community-Vorlagen"
-    },
-    "communityDescription": "Durchsuche und übernehme Playbooks, die von anderen Growern geteilt wurden",
-    "communityTemplates": "Community-Vorlagen",
-    "createPlant": "Pflanze erstellen",
-    "customNotes": "Eigene Notizen",
-    "customNotesHint": "Notizen beeinflussen keine Massenoperationen",
-    "customNotesPlaceholder": "Füge deine eigenen Notizen hinzu...",
-    "customizationLevel": "Anpassungsgrad",
-    "customizedTasks": "Angepasste Aufgaben",
-    "detailDescription": "Dieses Playbook erstellt einen vollständigen Aufgabenplan, der auf die Wachstumsphasen deiner Pflanze zugeschnitten ist, mit automatischen Erinnerungen und Fortschrittsverfolgung.",
-    "durationDays_one": "{{count}} Tag",
-    "durationDays_other": "{{count}} Tage",
-    "editTask": "Aufgabe bearbeiten",
-    "edited": "Bearbeitet",
-    "empty": {
-      "subtitle": "Schau später für Anbau-Anleitungen vorbei",
-      "title": "Keine Playbooks verfügbar"
-    },
-    "excludedFromBulkOperations": "Von Massenverschiebungen ausgeschlossen",
-    "excludedFromBulkShift": "Diese Aufgabe wurde angepasst und wird von Massenverschiebungen ausgeschlossen",
-    "loadError": "Playbooks konnten nicht geladen werden. Bitte versuche es erneut.",
-    "manuallyEdited": "Manuell bearbeitet",
-    "noPlants": "Du hast noch keine Pflanzen. Erstelle eine, um dieses Playbook anzuwenden.",
-    "noTemplates": "Noch keine Community-Vorlagen verfügbar",
-    "notFound": "Playbook nicht gefunden",
-    "onboarding": {
-      "getStarted": "Los geht's",
-      "next": "Weiter",
-      "skip": "Überspringen",
-      "step1": {
-        "description": "Erhalte einen vollständigen Anbauplan, der auf dein Setup zugeschnitten ist - Auto oder Photo, Indoor oder Outdoor.",
-        "title": "Geführte Anbaupläne"
-      },
-      "step2": {
-        "description": "Automatische Erinnerungen für Bewässerung, Düngung, Beschneiden und Überwachung halten deinen Anbau auf Kurs.",
-        "title": "Verpasse keine Aufgabe"
-      },
-      "step3": {
-        "description": "Passe Aufgaben an, verschiebe Zeitpläne und speichere deine eigenen Vorlagen zum Wiederverwenden oder Teilen mit der Community.",
-        "title": "Passe es an deine Bedürfnisse an"
-      },
-      "step4": {
-        "description": "Überwache deine Pflanze durch jede Wachstumsphase mit visueller Fortschrittsverfolgung und Phasenübergangsbenachrichtigungen.",
-        "title": "Verfolge deinen Fortschritt"
+      "strains": {
+        "subtitle": "Finde Profile und Genetik.",
+        "title": "Sorten durchsuchen"
       }
     },
-    "outcomes": "Ergebnisse",
-    "overdue": "Überfällig",
-    "preview": "Playbook-Vorschau",
-    "progress": {
-      "careChanges": "Pflegeanforderungen werden sich ändern",
-      "completedTasks_one": "{{count}} von {{{total}}} Aufgabe abgeschlossen",
-      "completedTasks_other": "{{count}} von {{{total}}} Aufgaben abgeschlossen",
-      "currentPhase": "Aktuelle Phase",
-      "phaseTransition": "Phasenübergang",
-      "title": "Phasenfortschritt",
-      "transitionNotice": "Deine Pflanze wechselt in die {{phase}}-Phase",
-      "upcomingTasks": "Bevorstehende Aufgaben"
-    },
-    "saveAsTemplate": "Als Vorlage speichern",
-    "saveAsTemplateDescription": "Du hast {{percentage}}% der Aufgaben angepasst ({{customized}}/{{{total}}}). Speichere dies als Vorlage zum Wiederverwenden oder Teilen mit der Community.",
-    "schedule": {
-      "shift": {
-        "affectedTasks_one": "{{count}} Aufgabe wird betroffen sein",
-        "affectedTasks_other": "{{count}} Aufgaben werden betroffen sein",
-        "apply": "Verschiebung anwenden",
-        "backward": "Rückwärts",
-        "cancel": "Abbrechen",
-        "conflictWarning": "Einige manuell bearbeitete Aufgaben werden betroffen sein",
-        "conflicts_one": "{{count}} Konflikt erkannt",
-        "conflicts_other": "{{count}} Konflikte erkannt",
-        "daysLabel": "Tage zum Verschieben",
-        "daysPlaceholder": "Anzahl der Tage eingeben",
-        "error": "Zeitplan konnte nicht verschoben werden",
-        "firstNewDate": "Erste Aufgabe: {{date}}",
-        "forward": "Vorwärts",
-        "includeCompleted": "Abgeschlossene Aufgaben einbeziehen",
-        "includeManuallyEdited": "Manuell bearbeitete Aufgaben einbeziehen",
-        "lastNewDate": "Letzte Aufgabe: {{date}}",
-        "preview": "Änderungen vorschauen",
-        "previewTitle": "Zeitplanverschiebungs-Vorschau",
-        "subtitle": "Alle Aufgabendaten um eine bestimmte Anzahl von Tagen anpassen",
-        "success": "Zeitplan erfolgreich verschoben",
-        "title": "Zeitplan verschieben",
-        "undo": "Rückgängig",
-        "undoAvailable": "Rückgängig verfügbar für {{seconds}}s"
-      }
-    },
-    "selectPlant": "Pflanze auswählen",
-    "selectPlantDescription": "Wähle aus, auf welche Pflanze du dieses Playbook anwenden möchtest.",
-    "selection": {
-      "autoIndoor": "Auto Indoor",
-      "autoOutdoor": "Auto Outdoor",
-      "estimatedRange": "Geschätzt: {{start}} → {{end}}",
-      "phaseBreakdownTitle": "Phasenübersicht",
-      "photoIndoor": "Photo Indoor",
-      "photoOutdoor": "Photo Outdoor",
-      "preview": {
-        "apply": "Auf Pflanze anwenden",
-        "cancel": "Abbrechen",
-        "phases": "Phasen",
-        "taskCount_one": "{{count}} Aufgabe",
-        "taskCount_other": "{{count}} Aufgaben",
-        "title": "Playbook-Vorschau",
-        "totalWeeks_one": "{{count}} Woche insgesamt",
-        "totalWeeks_other": "{{count}} Wochen insgesamt"
-      },
-      "subtitle": "Wähle einen Anbauplan, der zu deinem Setup passt",
-      "title": "Wähle deinen Playbook"
-    },
-    "shareWithCommunity": "Mit Community teilen",
-    "shareWithCommunityHint": "Diese Vorlage anderen Growern zur Verfügung stellen",
-    "shiftPreview": {
-      "accessibilityLabel": "Zeitplanverschiebungs-Vorschau-Dialog",
-      "affectedTasks": "Betroffene Aufgaben",
-      "applyShift": "Verschiebung anwenden",
-      "cancel": "Abbrechen",
-      "changesByPhase": "Änderungen nach Phase",
-      "daysDelta": "{{delta}} Tage",
-      "manuallyEditedTasks": "Manuell bearbeitete Aufgaben",
-      "newDateRange": "Neuer Datumsbereich",
-      "phaseLabel": "Phase {{number}}",
-      "potentialConflicts": "Potenzielle Konflikte",
-      "subtitle": "{{count}} Tag{{plural}} {{direction}} verschieben",
-      "taskCount": "{{count}} Aufgaben",
-      "task_one": "{{count}} Aufgabe",
-      "task_other": "{{count}} Aufgaben",
-      "title": "Zeitplanverschiebungs-Vorschau",
-      "undoInfo": "ℹ️ Sie haben 30 Sekunden Zeit, diese Änderung nach dem Anwenden rückgängig zu machen",
-      "willBeExcluded": "werden von dieser Verschiebung ausgeschlossen",
-      "willBeShifted": "werden verschoben (Sie haben sich dafür entschieden)"
-    },
-    "subtitle": "Geführte Anbaupläne für deine Pflanzen",
-    "tags": "Tags",
-    "tagsHint": "Tags mit Kommas trennen",
-    "tagsPlaceholder": "indoor, anfänger, auto...",
-    "taskCount": "{{count}} Aufgaben",
-    "taskCount_one": "{{count}} Aufgabe",
-    "taskCount_other": "{{count}} Aufgaben",
-    "taskDescription": "Beschreibung",
-    "taskDescriptionPlaceholder": "Aufgabenbeschreibung...",
-    "taskTitle": "Titel",
-    "taskTitlePlaceholder": "Aufgabentitel...",
-    "taskTypes": {
-      "custom": "Benutzerdefiniert",
-      "feed": "Düngung",
-      "monitor": "Überwachen",
-      "note": "Notizen",
-      "prune": "Beschneiden",
-      "train": "Trainieren",
-      "water": "Bewässerung"
-    },
-    "templateName": "Vorlagenname",
-    "templateNamePlaceholder": "Mein eigener Playbook",
-    "templates": {
-      "detail": {
-        "adoptButton": "Dieses Playbook übernehmen",
-        "adoptDescription": "Du kannst das Playbook nach der Übernahme anpassen",
-        "adopted": "Übernommen",
-        "authorPrefix": "von",
-        "communityRating": "Community-Bewertung",
-        "duration": "Dauer",
-        "growthPhases": "Wachstumsphasen",
-        "licenseDescription": "Du kannst dieses Playbook mit Namensnennung des Autors verwenden und modifizieren",
-        "licensePrefix": "Lizenz:",
-        "moreTasks": "+ {{count}} weitere Aufgaben",
-        "rateButton": "Bewerten",
-        "ratings": "Bewertungen",
-        "tasks": "Aufgaben",
-        "tasksPreview": "Aufgabenvorschau ({{total}} insgesamt)"
-      }
-    },
-    "title": "Playbooks",
-    "totalWeeks": "{{count}} Wochen",
-    "trichome": {
-      "assessment": {
-        "addPhoto": "Foto hinzufügen",
-        "amberPercent": "Bernstein %",
-        "clearPercent": "Klar %",
-        "harvestWindow": "Erntefenster",
-        "milkyPercent": "Milchig %",
-        "notes": "Notizen",
-        "notesPlaceholder": "Beobachtungen zur Trichom-Entwicklung...",
-        "recommendation": "Empfehlung",
-        "save": "Bewertung speichern",
-        "title": "Bewertung protokollieren"
-      },
-      "disclaimer": "Diese Anleitung dient Bildungszwecken, nicht als professioneller Rat. Berücksichtige immer deine spezifischen Anbaubedingungen und Vorlieben.",
-      "guide": {
-        "amber": "Bernsteinfarben (Reif)",
-        "amberDescription": "Trichome sind bernsteinfarben/braun. Mehr beruhigende, entspannende Effekte.",
-        "clear": "Klar (Unreif)",
-        "clearDescription": "Trichome sind transparent. Pflanze ist nicht erntereif.",
-        "milky": "Milchig/Trüb (Höhepunkt)",
-        "milkyDescription": "Trichome sind trüb weiß. Höchste Potenz und ausgewogene Effekte.",
-        "title": "Trichom-Entwicklungsleitfaden"
-      },
-      "nudge": {
-        "cancel": "Aktuellen Zeitplan beibehalten",
-        "confirm": "Aufgaben anpassen",
-        "message": "Basierend auf deiner Bewertung, möchtest du die Ernteaufgaben um {{days}} Tage anpassen?",
-        "title": "Ernteaufgaben anpassen"
-      },
-      "photography": {
-        "angle": "Betrachte Trichome bei 60-100x Vergrößerung",
-        "focus": "Fokussiere auf Kelche, nicht auf Zuckerblätter",
-        "lighting": "Verwende natürliches Licht oder eine Juwelierlupe mit LED",
-        "timing": "Überprüfe mehrere Blüten von verschiedenen Teilen der Pflanze",
-        "title": "Fotografie-Tipps"
-      },
-      "recommendations": {
-        "balanced": "Jetzt ernten für ausgewogene Effekte (milchig mit etwas Bernstein)",
-        "energetic": "Jetzt ernten für energetische Effekte (größtenteils milchig)",
-        "overripe": "Bald ernten - hoher Bernsteinanteil",
-        "sedating": "Jetzt ernten für beruhigende Effekte (signifikanter Bernsteinanteil)",
-        "tooEarly": "Warte länger - Trichome sind größtenteils klar"
-      },
-      "subtitle": "Optimalen Erntezeitpunkt bestimmen",
-      "title": "Trichom-Check-Helfer"
-    },
-    "voteHelpful": "👍 Hilfreich",
-    "voteNotHelpful": "👎 Nicht hilfreich",
-    "votingQuestion": "War dieser Vorschlag hilfreich?",
-    "votingThanks": "Danke für dein Feedback! {{{emoji}}}",
-    "whatYouGet": "Was du bekommst"
-  },
-  "privacy": {
-    "analytics": {
-      "body": "Hilf uns, die App mit Nutzungsanalysen zu verbessern.",
-      "subtitle": "Hilf uns, die App mit Nutzungsanalysen zu verbessern",
-      "title": "Analytik"
-    },
-    "cannotOpenUrlBody": "Die Web-Löschseite kann nicht geöffnet werden. Bitte überprüfe deine Internetverbindung oder wende dich an den Support.",
-    "cannotOpenUrlTitle": "URL kann nicht geöffnet werden",
-    "crashReporting": {
-      "body": "Hilf uns, Fehler zu beheben, indem du Absturzberichte sendest.",
-      "subtitle": "Hilf uns, Fehler zu beheben, indem du Absturzberichte sendest",
-      "title": "Absturzberichte"
-    },
-    "deleteAccount": "Mein Konto löschen",
-    "deleteAccountConfirmAction": "Konto löschen",
-    "deleteAccountConfirmBody": "Damit wird die endgültige Löschung deines Kontos und aller GrowBro-Daten angestoßen. Exportiere deine Daten vorher, falls nötig.",
-    "deleteAccountConfirmCancel": "Abbrechen",
-    "deleteAccountConfirmTitle": "Konto löschen?",
-    "deleteAccountErrorBody": "Die Löschung konnte nicht eingereicht werden. Details: {{message}}",
-    "deleteAccountErrorTitle": "Löschanfrage fehlgeschlagen",
-    "deleteAccountQueuedBody": "Wir haben deine Löschung eingeplant. Voraussichtlicher Abschluss: {{eta}}.",
-    "deleteAccountQueuedBodyNoEta": "Wir haben deine Löschung eingeplant. Du erhältst eine Bestätigung nach Abschluss.",
-    "deleteAccountQueuedTitle": "Löschung geplant",
-    "exportData": "Meine Daten exportieren",
-    "exportError": {
-      "message": "Wir konnten Ihren Datenexport nicht generieren. Bitte versuchen Sie es später erneut.",
-      "title": "Export fehlgeschlagen"
-    },
-    "exportErrorBody": "Der Export konnte nicht eingereicht werden. Details: {{message}}",
-    "exportErrorTitle": "Export fehlgeschlagen",
-    "exportQueuedBody": "Wir haben den Datenexport eingeplant. Voraussichtlicher Abschluss: {{eta}}.",
-    "exportQueuedBodyNoEta": "Wir haben den Datenexport eingeplant. Du erhältst einen Link, sobald er bereitsteht.",
-    "exportQueuedTitle": "Export angefordert",
-    "invalidUrlBody": "Die Web-Lösch-URL ist nicht sicher. Bitte wende dich an den Support.",
-    "invalidUrlTitle": "Ungültige URL",
-    "lastUpdated": "Zuletzt aktualisiert: {{date}}",
-    "manageDataDescription": "Verwalte Datenexport, Kontolöschung und Offenlegungen für GrowBro.",
-    "openWebDeletion": "Web-Löschseite öffnen",
-    "personalized": {
-      "body": "Dies umfasst IP-Adressen, Benutzer-IDs und andere identifizierende Informationen, die uns helfen, Fehlerberichte und Analysen zu verbessern. Diese Daten werden gemäß unserer Datenschutzerklärung verarbeitet.",
-      "subtitle": "Identifizierende Informationen in Berichten einschließen",
-      "title": "Personalisierte Daten"
-    },
-    "sessionReplay": {
-      "body": "Sitzungswiedergaben protokollieren deine Interaktionen mit der App, um Probleme zu debuggen. Sensible Daten werden nach Möglichkeit gefiltert oder unkenntlich gemacht; siehe Datenschutzerklärung für Details.",
-      "subtitle": "App-Interaktionen für Debugging aufzeichnen",
-      "title": "Sitzungswiedergabe"
-    },
-    "title": "Datenschutzeinstellungen",
-    "urlErrorBody": "Beim Öffnen der Web-Löschseite ist ein Fehler aufgetreten. Details: {{message}}",
-    "urlErrorTitle": "URL-Fehler",
-    "webDeletionHeading": "Du brauchst eine Löschung ohne App-Zugriff?",
-    "webDeletionPrompt": "Nutze unser Webformular ({{url}}), falls du nicht auf die mobile App zugreifen kannst.",
-    "webPortalAuthNote": "Melde dich an, damit wir deine Identität prüfen können. Du kannst dich nach dem Absenden wieder abmelden.",
-    "webPortalDeletionCopy": "Wir planen die Löschung ein und senden dir eine Bestätigung, sobald der Vorgang abgeschlossen ist (in der Regel innerhalb von 30 Tagen).",
-    "webPortalDeletionCta": "Löschung anfordern",
-    "webPortalDeletionHeading": "Dein GrowBro-Konto löschen",
-    "webPortalExportCopy": "Wir bereiten deinen Datenexport vor und informieren dich, sobald der Download bereitsteht.",
-    "webPortalExportCta": "Export anfordern",
-    "webPortalExportHeading": "GrowBro-Daten exportieren",
-    "webPortalIntro": "Nutze diese Seite, wenn du die mobile App nicht öffnen kannst und dennoch eine Kontolöschung oder einen Datenexport anstoßen musst.",
-    "webPortalLogin": "Anmeldung öffnen",
-    "webPortalTitle": "GrowBro-Löschportal"
-  },
-  "profile": {
-    "no_posts": "Noch keine Beiträge",
-    "restricted": {
-      "blocked": "Du kannst dieses Profil nicht ansehen.",
-      "deleted": "Dieses Benutzerkonto wurde gelöscht.",
-      "not_found": "Dieses Benutzerprofil wurde nicht gefunden.",
-      "private": "Dieses Profil ist privat.",
-      "title": "Profil nicht verfügbar"
-    }
-  },
-  "settings": {
-    "about": "Über",
-    "app_name": "App-Name",
-    "arabic": "Arabisch",
-    "cancel": "Abbrechen",
-    "english": "Englisch",
-    "general": "Allgemein",
-    "german": "Deutsch",
-    "github": "Github",
-    "language": "Sprache",
-    "links": "Links",
-    "logout": "Abmelden",
-    "more": "Mehr",
-    "notifications": "Benachrichtigungen",
-    "privacy": "Datenschutzrichtlinie",
-    "privacy_and_data": "Datenschutz- und Datenkontrollen",
-    "privacy_policy": "Datenschutzerklärung",
-    "privacy_section": "Datenschutz & Daten",
-    "rate": "Bewerten",
-    "save_changes": "Änderungen speichern",
-    "share": "Teilen",
-    "support": "Support",
-    "support_us": "Unterstütze uns",
-    "sync": {
-      "auto_sync": "Auto-Sync (Vordergrund/Verbindung)",
-      "background": "Hintergrund-Sync",
-      "charging_only": "Nur beim Laden",
-      "reset_local": "Lokalen Cache zurücksetzen",
-      "reset_local_body": "Dies löscht die lokale Datenbank dauerhaft. Deine Cloud-Daten bleiben erhalten.",
-      "reset_local_title": "Lokalen Cache zurücksetzen?",
-      "staleness_hours": "Veraltet ab (Stunden)",
-      "title": "Sync",
-      "wifi_only": "Nur Wi‑Fi"
-    },
-    "terms": "Nutzungsbedingungen",
-    "theme": {
-      "dark": "Dunkel",
-      "light": "Hell",
-      "system": "System",
-      "title": "Thema"
-    },
-    "title": "Einstellungen",
-    "version": "Version",
-    "web_deletion": "Web-Löschportal",
-    "website": "Website"
-  },
-  "shared_header": {
-    "app_title": "GrowBro",
-    "calendar": {
-      "subtitle": "Scrolle zu kommenden Grows und Tasks.",
-      "title": "Kalenderübersicht"
-    },
-    "community": {
-      "subtitle": "Sieh Updates anderer Grower.",
-      "title": "Community-Feed"
-    },
-    "home": {
-      "subtitle": "Überblicke Aufgaben, Hinweise und Schnellaktionen.",
-      "title": "Heute in deinem Grow"
-    },
-    "plants": {
-      "subtitle": "Verfolge Stadien und Gesundheit.",
-      "title": "Pflanzeninventar"
+    "strainTip": {
+      "accessibilityHint": "Informationeller Tipp zu dieser Sorte",
+      "label": "Sortentipp"
     },
     "strains": {
-      "subtitle": "Finde Profile und Genetik.",
-      "title": "Sorten durchsuchen"
-    }
-  },
-  "strainTip": {
-    "accessibilityHint": "Informationeller Tipp zu dieser Sorte",
-    "label": "Sortentipp"
-  },
-  "strains": {
-    "add_favorite": "Zu Favoriten hinzufügen",
-    "cache": {
-      "connect_for_latest": "Verbinde dich mit dem Internet, um die neuesten Sorten zu sehen",
-      "viewing_cached_data": "📦 Zwischengespeicherte Daten werden angezeigt"
-    },
-    "compliance": {
-      "body": "Diese Informationen dienen nur zu Bildungszwecken. GrowBro erleichtert keine Verkäufe, Lieferungen oder kommerzielle Transaktionen. Bitte informieren Sie sich über lokale Gesetze bezüglich Cannabisanbau.",
-      "headline": "⚠️ Nur Bildungsinhalte"
-    },
-    "detail": {
-      "cbd": "CBD",
-      "description_title": "Beschreibung",
-      "effects": "Effekte",
-      "error_message": "Diese Sorte konnte nicht geladen werden. Bitte überprüfe deine Verbindung und versuche es erneut.",
-      "error_title": "Sorte konnte nicht geladen werden",
-      "flavors": "Aromen",
-      "flowering_time": "Blütezeit",
-      "genetics": "Genetik",
-      "growing_info": "Anbauinformationen",
-      "height": "Höhe",
-      "indoor": "Indoor",
-      "loading": "Sortendetails werden geladen...",
-      "no_description": "Keine Beschreibung verfügbar",
-      "not_reported": "Nicht angegeben",
-      "outdoor": "Outdoor",
-      "playbook_cta_hint": "Erstelle einen Anbauplan mit dieser Sorte",
-      "playbook_description": "Erstelle einen personalisierten Anbauplan",
-      "quick_facts": "Kurzinformationen",
-      "suitable_for": "Geeignet für",
-      "terpenes": "Terpene",
-      "terpenes_description": "Terpene verleihen Cannabis sein einzigartiges Aroma und können die Wirkung beeinflussen",
-      "terpenes_title": "Terpenprofil",
-      "title": "Sortendetails",
-      "up_to": "bis zu",
-      "use_in_playbook": "Diese Sorte in einem Playbook verwenden",
-      "weeks": "Wochen",
-      "yield": "Ertrag"
-    },
-    "did_you_mean_prefix": "Meinten Sie",
-    "did_you_mean_suffix": "?",
-    "difficulty": {
-      "advanced": "Fortgeschritten",
-      "beginner": "Anfänger",
-      "intermediate": "Mittel"
-    },
-    "effects": {
-      "creative": "Kreativ",
-      "energetic": "Energiegeladen",
-      "euphoric": "Euphorisch",
-      "focused": "Konzentriert",
-      "giggly": "Kichernd",
-      "happy": "Glücklich",
-      "hungry": "Hungrig",
-      "relaxed": "Entspannt",
-      "sleepy": "Schläfrig",
-      "uplifted": "Aufgehoben"
-    },
-    "empty_state": "Keine Sorten verfügbar",
-    "error": "Sorten konnten nicht geladen werden. Bitte erneut versuchen.",
-    "favorites": {
-      "bulk_remove": "Ausgewählte entfernen",
-      "cancel_selection": "Abbrechen",
-      "empty_cta": "Sorten durchsuchen",
-      "empty_description": "Tippe auf das Herzsymbol bei einer Sorte, um sie hier für schnellen Zugriff zu speichern.",
-      "empty_title": "Noch keine Favoriten",
-      "export_favorites": "Favoriten exportieren",
-      "grid_view": "Rasteransicht",
-      "list_view": "Listenansicht",
-      "select_mode": "Auswählen",
-      "selected_count": "{{count}} ausgewählt",
-      "sort": {
-        "date_added": "Hinzugefügt am",
-        "hint": "Sortierung der Favoriten ändern",
-        "name": "Name",
-        "thc_content": "THC-Gehalt",
-        "title": "Favoriten sortieren"
+      "add_favorite": "Zu Favoriten hinzufügen",
+      "cache": {
+        "connect_for_latest": "Verbinde dich mit dem Internet, um die neuesten Sorten zu sehen",
+        "viewing_cached_data": "📦 Zwischengespeicherte Daten werden angezeigt"
       },
-      "title": "Meine Favoriten"
-    },
-    "filters": {
-      "apply": "Filter anwenden",
-      "button_label": "Sorten filtern",
-      "clearAllHint": "Entfernt alle aktiven Filter",
-      "clearAllLabel": "Alle Filter löschen",
-      "clear_all": "Alle löschen",
-      "difficulty_label": "Schwierigkeit",
-      "effects_count": "{{count}} Effekte",
-      "effects_label": "Effekte",
-      "flavors_count": "{{count}} Aromen",
-      "flavors_label": "Aromen",
-      "race_label": "Typ",
-      "removeHint": "Entfernt diesen Filter",
-      "removeLabel": "Filter entfernen: {{label}}",
-      "title": "Sorten filtern"
-    },
-    "flavors": {
-      "berry": "Beere",
-      "citrus": "Zitrus",
-      "diesel": "Diesel",
-      "earthy": "Erdig",
-      "fruity": "Fruchtig",
-      "pine": "Kiefer",
-      "sour": "Sauer",
-      "spicy": "Würzig",
-      "sweet": "Süß",
-      "woody": "Holzig"
-    },
-    "no_results": "Keine Sorten gefunden",
-    "offline_notice": "Gespeicherte Sorten werden angezeigt",
-    "race": {
-      "hybrid": "Hybrid",
-      "indica": "Indica",
-      "sativa": "Sativa"
-    },
-    "remove_favorite": "Aus Favoriten entfernen",
-    "results_count": "{{count}} Sorten",
-    "results_count_one": "{{count}} Sorte",
-    "results_count_other": "{{count}} Sorten",
-    "results_count_zero": "Keine Sorten",
-    "retry": "Erneut versuchen",
-    "search": {
-      "clear_all": "Alle löschen",
-      "did_you_mean_hint": "Wendet den vorgeschlagenen Suchbegriff an",
-      "did_you_mean_label": "Meinten Sie {{suggestion}}?",
-      "recent_searches": "Letzte Suchen"
-    },
-    "search_placeholder": "Sorten suchen…",
-    "sort": {
-      "apply": "Sortierung anwenden",
-      "ascending": "Aufsteigend",
-      "cbd": "CBD-Gehalt",
-      "clear": "Sortierung löschen",
-      "descending": "Absteigend",
-      "direction_label": "Sortierrichtung",
-      "name": "Name",
-      "popularity": "Beliebtheit",
-      "sort_by_label": "Sortieren nach",
-      "thc": "THC-Gehalt",
-      "title": "Sorten sortieren"
-    },
-    "thc": "THC {{value}}"
-  },
-  "sync": {
-    "conflict": {
-      "acceptButton": "Server akzeptieren",
-      "acceptServer": "Server akzeptieren",
-      "acceptServerHint": "Die Version vom anderen Gerät beibehalten",
-      "conflictingFields": "Konfliktfelder ({{count}})",
-      "decideLater": "Später entscheiden",
-      "description": "Dieses {{tableName}} wurde auf einem anderen Gerät geändert. Wählen Sie, welche Version beibehalten werden soll.",
-      "dismissButton": "Später entscheiden",
-      "explanation": "ℹ️ Derselbe Eintrag wurde auf mehreren Geräten geändert. Wählen Sie, welche Version beibehalten werden soll.",
-      "field": {
-        "app_version": "App-Version",
-        "assigned_to": "Zugewiesen an",
-        "auto_photo": "Blütenart",
-        "avatar_url": "Avatar",
-        "categories": "Kategorien",
-        "cbd_content": "CBD-Gehalt",
-        "completed_at": "Abgeschlossen am",
-        "created_at": "Erstellungsdatum",
-        "created_by": "Erstellt von",
-        "curing_start": "Reifebeginn",
-        "deleted_at": "Löschdatum",
-        "description": "Beschreibung",
-        "device_id": "Gerät",
-        "difficulty": "Schwierigkeitsgrad",
-        "drying_start": "Trocknungsbeginn",
-        "due_date": "Fälligkeitsdatum",
-        "ec": "EC-Wert",
-        "effects": "Wirkungen",
-        "email": "E-Mail",
-        "end_date": "Enddatum",
-        "feeding_schedule": "Fütterungsplan",
+      "compliance": {
+        "body": "Diese Informationen dienen nur zu Bildungszwecken. GrowBro erleichtert keine Verkäufe, Lieferungen oder kommerzielle Transaktionen. Bitte informieren Sie sich über lokale Gesetze bezüglich Cannabisanbau.",
+        "headline": "⚠️ Nur Bildungsinhalte"
+      },
+      "detail": {
+        "cbd": "CBD",
+        "description_title": "Beschreibung",
+        "effects": "Effekte",
+        "error_message": "Diese Sorte konnte nicht geladen werden. Bitte überprüfe deine Verbindung und versuche es erneut.",
+        "error_title": "Sorte konnte nicht geladen werden",
         "flavors": "Aromen",
         "flowering_time": "Blütezeit",
         "genetics": "Genetik",
-        "harvest_date": "Erntedatum",
+        "growing_info": "Anbauinformationen",
         "height": "Höhe",
-        "humidity": "Luftfeuchtigkeit",
-        "indoor_outdoor": "Anbauumgebung",
-        "is_deleted": "Gelöscht",
-        "language": "Sprache",
-        "last_sync_at": "Letzte Synchronisierung",
-        "light_schedule": "Lichtplan",
-        "location": "Standort",
-        "modified_by": "Geändert von",
-        "monitoring_schedule": "Überwachungsplan",
-        "name": "Name",
-        "notes": "Notizen",
-        "notifications_enabled": "Benachrichtigungen",
-        "os_version": "Betriebssystem-Version",
-        "pH": "pH-Wert",
-        "parent_task_id": "Übergeordnete Aufgabe",
-        "phase": "Wachstumsphase",
-        "plant_id": "Pflanze",
-        "preferences": "Einstellungen",
-        "priority": "Priorität",
-        "pruning_schedule": "Beschneideplan",
-        "recurrence": "Wiederholung",
-        "reminder_at": "Erinnerung am",
-        "settings": "Einstellungen",
-        "start_date": "Startdatum",
-        "status": "Status",
-        "strain_id": "Sorte",
-        "sync_status": "Synchronisierungsstatus",
-        "tags": "Tags",
-        "temperature": "Temperatur",
+        "indoor": "Indoor",
+        "loading": "Sortendetails werden geladen...",
+        "no_description": "Keine Beschreibung verfügbar",
+        "not_reported": "Nicht angegeben",
+        "outdoor": "Outdoor",
+        "playbook_cta_hint": "Erstelle einen Anbauplan mit dieser Sorte",
+        "playbook_description": "Erstelle einen personalisierten Anbauplan",
+        "quick_facts": "Kurzinformationen",
+        "suitable_for": "Geeignet für",
         "terpenes": "Terpene",
-        "thc_content": "THC-Gehalt",
-        "theme": "Thema",
-        "timezone": "Zeitzone",
-        "training_schedule": "Trainingsplan",
-        "updated_at": "Zuletzt aktualisiert",
-        "user_id": "Benutzer",
-        "username": "Benutzername",
-        "watering_schedule": "Bewässerungsplan",
-        "yield_estimate": "Ertragsschätzung"
+        "terpenes_description": "Terpene verleihen Cannabis sein einzigartiges Aroma und können die Wirkung beeinflussen",
+        "terpenes_title": "Terpenprofil",
+        "title": "Sortendetails",
+        "up_to": "bis zu",
+        "use_in_playbook": "Diese Sorte in einem Playbook verwenden",
+        "weeks": "Wochen",
+        "yield": "Ertrag"
       },
-      "fieldsHeading": "Konfliktfelder",
-      "keepLocal": "Lokal behalten",
-      "keepLocalButton": "Meine Version behalten",
-      "keepLocalHint": "Ihre lokalen Änderungen behalten und die Server-Version überschreiben",
-      "localLabel": "(Dieses Gerät)",
-      "note": "Hinweis: Standardmäßig wird die Server-Version verwendet (Last-Write-Wins). Sie können Ihre lokale Version bei Bedarf wiederherstellen.",
-      "otherDeviceLabel": "Anderes Gerät",
-      "remoteLabel": "(Anderes Gerät)",
-      "restoreButton": "Meine Version wiederherstellen",
-      "serverVersion": "Server-Version (Remote)",
-      "thisDeviceLabel": "Dieses Gerät",
-      "title": "Sync-Konflikt erkannt",
-      "useServerButton": "Server-Version verwenden",
-      "warning": "⚠️ Die Auswahl einer Version überschreibt die andere. Diese Aktion kann nicht rückgängig gemacht werden.",
-      "yourVersion": "Ihre Version (Lokal)"
+      "did_you_mean_prefix": "Meinten Sie",
+      "did_you_mean_suffix": "?",
+      "difficulty": {
+        "advanced": "Fortgeschritten",
+        "beginner": "Anfänger",
+        "intermediate": "Mittel"
+      },
+      "effects": {
+        "creative": "Kreativ",
+        "energetic": "Energiegeladen",
+        "euphoric": "Euphorisch",
+        "focused": "Konzentriert",
+        "giggly": "Kichernd",
+        "happy": "Glücklich",
+        "hungry": "Hungrig",
+        "relaxed": "Entspannt",
+        "sleepy": "Schläfrig",
+        "uplifted": "Aufgehoben"
+      },
+      "empty_state": "Keine Sorten verfügbar",
+      "error": "Sorten konnten nicht geladen werden. Bitte erneut versuchen.",
+      "favorites": {
+        "bulk_remove": "Ausgewählte entfernen",
+        "cancel_selection": "Abbrechen",
+        "empty_cta": "Sorten durchsuchen",
+        "empty_description": "Tippe auf das Herzsymbol bei einer Sorte, um sie hier für schnellen Zugriff zu speichern.",
+        "empty_title": "Noch keine Favoriten",
+        "export_favorites": "Favoriten exportieren",
+        "grid_view": "Rasteransicht",
+        "list_view": "Listenansicht",
+        "select_mode": "Auswählen",
+        "selected_count": "{{count}} ausgewählt",
+        "sort": {
+          "date_added": "Hinzugefügt am",
+          "hint": "Sortierung der Favoriten ändern",
+          "name": "Name",
+          "thc_content": "THC-Gehalt",
+          "title": "Favoriten sortieren"
+        },
+        "title": "Meine Favoriten"
+      },
+      "filters": {
+        "apply": "Filter anwenden",
+        "button_label": "Sorten filtern",
+        "clearAllHint": "Entfernt alle aktiven Filter",
+        "clearAllLabel": "Alle Filter löschen",
+        "clear_all": "Alle löschen",
+        "difficulty_label": "Schwierigkeit",
+        "effects_count": "{{count}} Effekte",
+        "effects_label": "Effekte",
+        "flavors_count": "{{count}} Aromen",
+        "flavors_label": "Aromen",
+        "race_label": "Typ",
+        "removeHint": "Entfernt diesen Filter",
+        "removeLabel": "Filter entfernen: {{label}}",
+        "title": "Sorten filtern"
+      },
+      "flavors": {
+        "berry": "Beere",
+        "citrus": "Zitrus",
+        "diesel": "Diesel",
+        "earthy": "Erdig",
+        "fruity": "Fruchtig",
+        "pine": "Kiefer",
+        "sour": "Sauer",
+        "spicy": "Würzig",
+        "sweet": "Süß",
+        "woody": "Holzig"
+      },
+      "no_results": "Keine Sorten gefunden",
+      "offline_notice": "Gespeicherte Sorten werden angezeigt",
+      "race": {
+        "hybrid": "Hybrid",
+        "indica": "Indica",
+        "sativa": "Sativa"
+      },
+      "remove_favorite": "Aus Favoriten entfernen",
+      "results_count": "{{count}} Sorten",
+      "results_count_one": "{{count}} Sorte",
+      "results_count_other": "{{count}} Sorten",
+      "results_count_zero": "Keine Sorten",
+      "retry": "Erneut versuchen",
+      "search": {
+        "clear_all": "Alle löschen",
+        "did_you_mean_hint": "Wendet den vorgeschlagenen Suchbegriff an",
+        "did_you_mean_label": "Meinten Sie {{suggestion}}?",
+        "recent_searches": "Letzte Suchen"
+      },
+      "search_placeholder": "Sorten suchen…",
+      "sort": {
+        "apply": "Sortierung anwenden",
+        "ascending": "Aufsteigend",
+        "cbd": "CBD-Gehalt",
+        "clear": "Sortierung löschen",
+        "descending": "Absteigend",
+        "direction_label": "Sortierrichtung",
+        "name": "Name",
+        "popularity": "Beliebtheit",
+        "sort_by_label": "Sortieren nach",
+        "thc": "THC-Gehalt",
+        "title": "Sorten sortieren"
+      },
+      "thc": "THC {{value}}"
     },
-    "last_sync_and_pending": "Letzte Sync: {{time}}, {{count}} ausstehend",
-    "offline_banner": "Du bist offline. Änderungen werden später synchronisiert.",
-    "offline_banner_action_hint": "Öffnet den Sync-Diagnose-Bildschirm",
-    "offline_banner_action_label": "Sync-Diagnose öffnen",
-    "pending_favorites_one": "{{count}} Favorit wartet auf Synchronisierung",
-    "pending_favorites_other": "{{count}} Favoriten warten auf Synchronisierung",
-    "retry_button": "Erneut versuchen",
-    "retry_sync_hint": "Tippen, um Favoriten-Synchronisierung zu wiederholen",
-    "retry_sync_label": "Sync wiederholen",
-    "status": {
-      "active": "Aktuell",
-      "completed": "✓ Abgeschlossen",
-      "overdue": "Überfällig",
-      "pending": "Ausstehend",
-      "syncing": "Synchronisiert...",
-      "upcoming": "Bevorstehend"
+    "sync": {
+      "conflict": {
+        "acceptButton": "Server akzeptieren",
+        "acceptServer": "Server akzeptieren",
+        "acceptServerHint": "Die Version vom anderen Gerät beibehalten",
+        "conflictingFields": "Konfliktfelder ({{count}})",
+        "decideLater": "Später entscheiden",
+        "description": "Dieses {{tableName}} wurde auf einem anderen Gerät geändert. Wählen Sie, welche Version beibehalten werden soll.",
+        "dismissButton": "Später entscheiden",
+        "explanation": "ℹ️ Derselbe Eintrag wurde auf mehreren Geräten geändert. Wählen Sie, welche Version beibehalten werden soll.",
+        "field": {
+          "app_version": "App-Version",
+          "assigned_to": "Zugewiesen an",
+          "auto_photo": "Blütenart",
+          "avatar_url": "Avatar",
+          "categories": "Kategorien",
+          "cbd_content": "CBD-Gehalt",
+          "completed_at": "Abgeschlossen am",
+          "created_at": "Erstellungsdatum",
+          "created_by": "Erstellt von",
+          "curing_start": "Reifebeginn",
+          "deleted_at": "Löschdatum",
+          "description": "Beschreibung",
+          "device_id": "Gerät",
+          "difficulty": "Schwierigkeitsgrad",
+          "drying_start": "Trocknungsbeginn",
+          "due_date": "Fälligkeitsdatum",
+          "ec": "EC-Wert",
+          "effects": "Wirkungen",
+          "email": "E-Mail",
+          "end_date": "Enddatum",
+          "feeding_schedule": "Fütterungsplan",
+          "flavors": "Aromen",
+          "flowering_time": "Blütezeit",
+          "genetics": "Genetik",
+          "harvest_date": "Erntedatum",
+          "height": "Höhe",
+          "humidity": "Luftfeuchtigkeit",
+          "indoor_outdoor": "Anbauumgebung",
+          "is_deleted": "Gelöscht",
+          "language": "Sprache",
+          "last_sync_at": "Letzte Synchronisierung",
+          "light_schedule": "Lichtplan",
+          "location": "Standort",
+          "modified_by": "Geändert von",
+          "monitoring_schedule": "Überwachungsplan",
+          "name": "Name",
+          "notes": "Notizen",
+          "notifications_enabled": "Benachrichtigungen",
+          "os_version": "Betriebssystem-Version",
+          "pH": "pH-Wert",
+          "parent_task_id": "Übergeordnete Aufgabe",
+          "phase": "Wachstumsphase",
+          "plant_id": "Pflanze",
+          "preferences": "Einstellungen",
+          "priority": "Priorität",
+          "pruning_schedule": "Beschneideplan",
+          "recurrence": "Wiederholung",
+          "reminder_at": "Erinnerung am",
+          "settings": "Einstellungen",
+          "start_date": "Startdatum",
+          "status": "Status",
+          "strain_id": "Sorte",
+          "sync_status": "Synchronisierungsstatus",
+          "tags": "Tags",
+          "temperature": "Temperatur",
+          "terpenes": "Terpene",
+          "thc_content": "THC-Gehalt",
+          "theme": "Thema",
+          "timezone": "Zeitzone",
+          "training_schedule": "Trainingsplan",
+          "updated_at": "Zuletzt aktualisiert",
+          "user_id": "Benutzer",
+          "username": "Benutzername",
+          "watering_schedule": "Bewässerungsplan",
+          "yield_estimate": "Ertragsschätzung"
+        },
+        "fieldsHeading": "Konfliktfelder",
+        "keepLocal": "Lokal behalten",
+        "keepLocalButton": "Meine Version behalten",
+        "keepLocalHint": "Ihre lokalen Änderungen behalten und die Server-Version überschreiben",
+        "localLabel": "(Dieses Gerät)",
+        "note": "Hinweis: Standardmäßig wird die Server-Version verwendet (Last-Write-Wins). Sie können Ihre lokale Version bei Bedarf wiederherstellen.",
+        "otherDeviceLabel": "Anderes Gerät",
+        "remoteLabel": "(Anderes Gerät)",
+        "restoreButton": "Meine Version wiederherstellen",
+        "serverVersion": "Server-Version (Remote)",
+        "thisDeviceLabel": "Dieses Gerät",
+        "title": "Sync-Konflikt erkannt",
+        "useServerButton": "Server-Version verwenden",
+        "warning": "⚠️ Die Auswahl einer Version überschreibt die andere. Diese Aktion kann nicht rückgängig gemacht werden.",
+        "yourVersion": "Ihre Version (Lokal)"
+      },
+      "last_sync_and_pending": "Letzte Sync: {{time}}, {{count}} ausstehend",
+      "offline_banner": "Du bist offline. Änderungen werden später synchronisiert.",
+      "offline_banner_action_hint": "Öffnet den Sync-Diagnose-Bildschirm",
+      "offline_banner_action_label": "Sync-Diagnose öffnen",
+      "pending_favorites_one": "{{count}} Favorit wartet auf Synchronisierung",
+      "pending_favorites_other": "{{count}} Favoriten warten auf Synchronisierung",
+      "retry_button": "Erneut versuchen",
+      "retry_sync_hint": "Tippen, um Favoriten-Synchronisierung zu wiederholen",
+      "retry_sync_label": "Sync wiederholen",
+      "status": {
+        "active": "Aktuell",
+        "completed": "✓ Abgeschlossen",
+        "overdue": "Überfällig",
+        "pending": "Ausstehend",
+        "syncing": "Synchronisiert...",
+        "upcoming": "Bevorstehend"
+      },
+      "sync_failed": "Synchronisierung fehlgeschlagen",
+      "syncing_favorites": "Favoriten werden synchronisiert..."
     },
-    "sync_failed": "Synchronisierung fehlgeschlagen",
-    "syncing_favorites": "Favoriten werden synchronisiert..."
-  },
-  "tabs": {
-    "calendar": "Kalender",
-    "community": "Community",
-    "home": "Startseite",
-    "inventory": "Inventar",
-    "plants": "Pflanzen",
-    "strains": "Sorten"
-  },
-  "trichome": {
-    "amber": "Bernstein",
-    "amberLabel": "Bernstein-Trichome (%)",
-    "assessmentDisclaimer": "ⓘ Diese Einschätzung dient deiner persönlichen Verfolgung. Die Ergebnisse sind lehrreich und kein professioneller Rat.",
-    "clear": "Klar",
-    "clearLabel": "Klare Trichome (%)",
-    "formTitle": "Trichom-Einschätzung protokollieren",
-    "guideTitle": "Trichom-Bewertungsanleitung",
-    "helper": {
-      "accessibilityForm": "Trichom-Bewertungsformular anzeigen",
-      "accessibilityGuide": "Trichom-Bewertungsanleitung anzeigen",
-      "amberLabelShort": "Bernstein:",
-      "assessTab": "Einschätzen",
-      "clearLabelShort": "Klar:",
-      "closeButton": "Schließen",
-      "failedToAcceptSuggestion": "Vorschlag konnte nicht akzeptiert werden",
-      "footerDisclaimer": "ⓘ Alle bereitgestellten Informationen sind nur lehrreich und kein professioneller Anbau- oder gartenbaulicher Rat. Informiere dich immer über deine spezifische Sorte und halte dich an lokale Vorschriften.",
-      "guideTab": "Anleitung",
-      "harvestSuggestionsTitle": "Erntevorschläge",
-      "header": "Trichom-Helfer",
-      "latestAssessmentTitle": "Letzte Einschätzung",
-      "loadingGuide": "Anleitung wird geladen...",
-      "milkyLabelShort": "Milchig:",
-      "pleaseTryAgain": "Bitte versuche es erneut",
-      "quickReference": "Schnellreferenz",
-      "subtitle": "Bewerte Trichom-Entwicklung für Erntezeitpunkt",
-      "windowsTab": "Zeiträume"
+    "tabs": {
+      "calendar": "Kalender",
+      "community": "Community",
+      "home": "Startseite",
+      "inventory": "Inventar",
+      "plants": "Pflanzen",
+      "strains": "Sorten"
     },
-    "lightingCautions": "Beleuchtungswarnungen",
-    "milky": "Milchig",
-    "milkyLabel": "Milchige/Wolkige Trichome (%)",
-    "notesLabel": "Notizen (optional)",
-    "notesPlaceholder": "Beobachtungen hinzufügen...",
-    "percentPlaceholder": "{{min}}-{{max}}",
-    "photographyTips": "Fotografie-Tipps",
-    "submitButton": "Einschätzung protokollieren",
-    "totalPercent": "Gesamt: {{total}}%",
-    "totalPercentWarning": "Gesamt: {{total}}% (Prozentsätze sollten 100% ergeben)",
-    "trichomeRatio": "Trichom-Verhältnis",
-    "validationMax": "Muss {{max}} oder kleiner sein",
-    "validationMin": "Muss {{min}} oder größer sein"
-  },
-  "units": {
-    "celsius": "°C",
-    "ms_per_cm": "mS/cm"
-  },
-  "welcome": "Willkommen bei der GrowBro App"
+    "trichome": {
+      "amber": "Bernstein",
+      "amberLabel": "Bernstein-Trichome (%)",
+      "assessmentDisclaimer": "ⓘ Diese Einschätzung dient deiner persönlichen Verfolgung. Die Ergebnisse sind lehrreich und kein professioneller Rat.",
+      "clear": "Klar",
+      "clearLabel": "Klare Trichome (%)",
+      "formTitle": "Trichom-Einschätzung protokollieren",
+      "guideTitle": "Trichom-Bewertungsanleitung",
+      "helper": {
+        "accessibilityForm": "Trichom-Bewertungsformular anzeigen",
+        "accessibilityGuide": "Trichom-Bewertungsanleitung anzeigen",
+        "amberLabelShort": "Bernstein:",
+        "assessTab": "Einschätzen",
+        "clearLabelShort": "Klar:",
+        "closeButton": "Schließen",
+        "failedToAcceptSuggestion": "Vorschlag konnte nicht akzeptiert werden",
+        "footerDisclaimer": "ⓘ Alle bereitgestellten Informationen sind nur lehrreich und kein professioneller Anbau- oder gartenbaulicher Rat. Informiere dich immer über deine spezifische Sorte und halte dich an lokale Vorschriften.",
+        "guideTab": "Anleitung",
+        "harvestSuggestionsTitle": "Erntevorschläge",
+        "header": "Trichom-Helfer",
+        "latestAssessmentTitle": "Letzte Einschätzung",
+        "loadingGuide": "Anleitung wird geladen...",
+        "milkyLabelShort": "Milchig:",
+        "pleaseTryAgain": "Bitte versuche es erneut",
+        "quickReference": "Schnellreferenz",
+        "subtitle": "Bewerte Trichom-Entwicklung für Erntezeitpunkt",
+        "windowsTab": "Zeiträume"
+      },
+      "lightingCautions": "Beleuchtungswarnungen",
+      "milky": "Milchig",
+      "milkyLabel": "Milchige/Wolkige Trichome (%)",
+      "notesLabel": "Notizen (optional)",
+      "notesPlaceholder": "Beobachtungen hinzufügen...",
+      "percentPlaceholder": "{{min}}-{{max}}",
+      "photographyTips": "Fotografie-Tipps",
+      "submitButton": "Einschätzung protokollieren",
+      "totalPercent": "Gesamt: {{total}}%",
+      "totalPercentWarning": "Gesamt: {{total}}% (Prozentsätze sollten 100% ergeben)",
+      "trichomeRatio": "Trichom-Verhältnis",
+      "validationMax": "Muss {{max}} oder kleiner sein",
+      "validationMin": "Muss {{min}} oder größer sein"
+    },
+    "units": {
+      "celsius": "°C",
+      "ms_per_cm": "mS/cm",
+      "welcome": "Willkommen bei der GrowBro App"
+    }
+  }
 }

@@ -26,6 +26,62 @@ interface CommentItemProps {
   testID?: string;
 }
 
+function formatCommentDate(createdAt?: string): string {
+  if (!createdAt) return '';
+  try {
+    const date = new Date(createdAt);
+    return date.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return '';
+  }
+}
+
+type FailedActionsProps = {
+  onRetry?: () => void;
+  onCancel?: () => void;
+  testID: string;
+};
+
+function FailedActions({ onRetry, onCancel, testID }: FailedActionsProps) {
+  return (
+    <View className="mt-2 flex-row gap-2" testID={`${testID}-failed-actions`}>
+      <Pressable
+        onPress={onRetry}
+        accessibilityRole="button"
+        accessibilityLabel={translate('common.retry')}
+        accessibilityHint={translate(
+          'accessibility.community.retry_comment_hint'
+        )}
+        testID={`${testID}-retry`}
+        className="min-h-11 flex-row items-center gap-1 rounded-md bg-primary-600 px-3 py-1.5"
+      >
+        <Text className="text-xs font-semibold text-white">
+          {translate('common.retry')}
+        </Text>
+      </Pressable>
+      <Pressable
+        onPress={onCancel}
+        accessibilityRole="button"
+        accessibilityLabel={translate('common.cancel')}
+        accessibilityHint={translate(
+          'accessibility.community.cancel_comment_hint'
+        )}
+        testID={`${testID}-cancel`}
+        className="min-h-11 flex-row items-center gap-1 rounded-md bg-neutral-200 px-3 py-1.5 dark:bg-neutral-800"
+      >
+        <Text className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+          {translate('common.cancel')}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function CommentItemComponent({
   comment,
   status = 'confirmed',
@@ -41,19 +97,10 @@ function CommentItemComponent({
     router.push(`/community/${comment.user_id}`);
   }, [router, comment.user_id]);
 
-  const formattedDate = React.useMemo(() => {
-    try {
-      const date = new Date(comment.created_at);
-      return date.toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return '';
-    }
-  }, [comment.created_at]);
+  const formattedDate = React.useMemo(
+    () => formatCommentDate(comment.created_at),
+    [comment.created_at]
+  );
 
   return (
     <View
@@ -114,39 +161,7 @@ function CommentItemComponent({
         </View>
       </View>
       {isFailed && (
-        <View
-          className="mt-2 flex-row gap-2"
-          testID={`${testID}-failed-actions`}
-        >
-          <Pressable
-            onPress={onRetry}
-            accessibilityRole="button"
-            accessibilityLabel={translate('common.retry')}
-            accessibilityHint={translate(
-              'accessibility.community.retry_comment_hint'
-            )}
-            testID={`${testID}-retry`}
-            className="min-h-11 flex-row items-center gap-1 rounded-md bg-primary-600 px-3 py-1.5"
-          >
-            <Text className="text-xs font-semibold text-white">
-              {translate('common.retry')}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={onCancel}
-            accessibilityRole="button"
-            accessibilityLabel={translate('common.cancel')}
-            accessibilityHint={translate(
-              'accessibility.community.cancel_comment_hint'
-            )}
-            testID={`${testID}-cancel`}
-            className="min-h-11 flex-row items-center gap-1 rounded-md bg-neutral-200 px-3 py-1.5 dark:bg-neutral-800"
-          >
-            <Text className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-              {translate('common.cancel')}
-            </Text>
-          </Pressable>
-        </View>
+        <FailedActions onRetry={onRetry} onCancel={onCancel} testID={testID} />
       )}
     </View>
   );

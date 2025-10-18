@@ -9,6 +9,7 @@ import React from 'react';
 
 import type { Post } from '@/api/community';
 import { ActivityIndicator, Text, View } from '@/components/ui';
+import { normalizePostUserId } from '@/lib/community/post-utils';
 import { translate } from '@/lib/i18n';
 
 import { PostCard } from './post-card';
@@ -19,7 +20,7 @@ interface UserPostsListProps {
   isFetchingNextPage: boolean;
   hasNextPage: boolean;
   onEndReached: () => void;
-  onPostDelete?: (postId: string, undoExpiresAt: string) => void;
+  onPostDelete?: (postId: number | string, undoExpiresAt: string) => void;
   testID?: string;
 }
 
@@ -64,7 +65,7 @@ export function UserPostsList({
       data={posts}
       renderItem={({ item }) => (
         <PostCard
-          post={{ ...item, userId: item.user_id }}
+          post={normalizePostUserId(item)}
           onDelete={onPostDelete}
           testID={`${testID}-post-${item.id}`}
         />

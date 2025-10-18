@@ -9,6 +9,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useCreateComment } from '@/api/community';
 import { Button, Input, Text, View } from '@/components/ui';
@@ -26,20 +27,23 @@ export function CommentInput({
   onCommentCreated,
   testID = 'comment-input',
 }: CommentInputProps): React.ReactElement {
+  const { t } = useTranslation();
   const [body, setBody] = React.useState('');
   const createCommentMutation = useCreateComment();
 
-  const characterCount = body.length;
+  const trimmedBody = body.trim();
+  const characterCount = trimmedBody.length;
   const isOverLimit = characterCount > MAX_COMMENT_LENGTH;
-  const isEmpty = body.trim().length === 0;
+  const isEmpty = trimmedBody.length === 0;
   const canSubmit =
     !isEmpty && !isOverLimit && !createCommentMutation.isPending;
 
   const handleSubmit = React.useCallback(() => {
     if (!canSubmit) return;
 
+    const currentTrimmed = body.trim();
     createCommentMutation.mutate(
-      { postId, body: body.trim() },
+      { postId, body: currentTrimmed },
       {
         onSuccess: () => {
           setBody('');
@@ -61,14 +65,15 @@ export function CommentInput({
       <Input
         value={body}
         onChangeText={setBody}
-        placeholder="Share your thoughts..."
+        placeholder={t('community.comment_placeholder')}
         multiline
         numberOfLines={3}
         maxLength={MAX_COMMENT_LENGTH + 50} // Allow typing slightly over to show warning
         className="min-h-20 rounded-lg border border-neutral-300 p-3 dark:border-neutral-700"
         testID={`${testID}-field`}
-        accessibilityLabel="Write a comment"
-        accessibilityHint="Type your comment here. Maximum 500 characters."
+        accessibilityLabel={t('community.comment_input_label')}
+        accessibilityHint={t('community.comment_input_hint')}
+        error={isOverLimit ? t('community.comment_too_long') : undefined}
       />
       <View className="flex-row items-center justify-between">
         <Text
@@ -77,10 +82,14 @@ export function CommentInput({
         >
           {characterCount}/{MAX_COMMENT_LENGTH}
           {isOverLimit &&
-            ` (${characterCount - MAX_COMMENT_LENGTH} characters over limit)`}
+            ` (${characterCount - MAX_COMMENT_LENGTH} ${t('community.characters_over')})`}
         </Text>
         <Button
-          label={createCommentMutation.isPending ? 'Posting...' : 'Post'}
+          label={
+            createCommentMutation.isPending
+              ? t('community.posting')
+              : t('community.post_comment')
+          }
           onPress={handleSubmit}
           disabled={!canSubmit}
           loading={createCommentMutation.isPending}
@@ -88,14 +97,6 @@ export function CommentInput({
           testID={`${testID}-submit`}
         />
       </View>
-      {isOverLimit && (
-        <Text
-          className="text-xs text-danger-600 dark:text-danger-400"
-          testID={`${testID}-error`}
-        >
-          Comment exceeds maximum length of 500 characters
-        </Text>
-      )}
     </View>
   );
 }

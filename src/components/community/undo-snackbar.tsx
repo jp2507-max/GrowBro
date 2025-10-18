@@ -16,7 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Button, Pressable, Text, View } from '@/components/ui';
-import { translate } from '@/lib/i18n';
+import { translateDynamic } from '@/lib/i18n';
 
 interface UndoSnackbarProps {
   visible: boolean;
@@ -36,6 +36,7 @@ export function UndoSnackbar({
   testID = 'undo-snackbar',
 }: UndoSnackbarProps): React.ReactElement | null {
   const [remainingSeconds, setRemainingSeconds] = React.useState(0);
+  const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
 
   React.useEffect(() => {
     if (!visible) return;
@@ -48,14 +49,23 @@ export function UndoSnackbar({
       setRemainingSeconds(seconds);
 
       if (seconds === 0) {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
         onDismiss();
       }
     };
 
     updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
+    intervalRef.current = setInterval(updateCountdown, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
   }, [visible, expiresAt, onDismiss]);
 
   if (!visible) return null;
@@ -82,7 +92,9 @@ export function UndoSnackbar({
             className="mt-1 text-xs text-neutral-400 dark:text-neutral-500"
             testID={`${testID}-countdown`}
           >
-            {translate('community.undo_expires', { seconds: remainingSeconds })}
+            {translateDynamic('community.undo_expires', {
+              seconds: remainingSeconds,
+            })}
           </Text>
         </View>
 

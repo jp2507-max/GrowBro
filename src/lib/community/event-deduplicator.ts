@@ -92,8 +92,8 @@ type CacheOperations<T> = {
 };
 
 type OutboxOperations = {
-  has: (clientTxId: string) => boolean;
-  confirm: (clientTxId: string) => void;
+  has: (clientTxId: string) => boolean | Promise<boolean>;
+  confirm: (clientTxId: string) => void | Promise<void>;
 };
 
 export type EventHandlerOptions<T> = {
@@ -113,10 +113,10 @@ export type EventHandlerOptions<T> = {
  * - 3.5: Drop events where updated_at <= local.updated_at
  * - 3.6: Self-echo detection using client_tx_id matching
  */
-export function handleRealtimeEvent<T>(
+export async function handleRealtimeEvent<T>(
   event: RealtimeEvent<T>,
   options: EventHandlerOptions<T>
-): void {
+): Promise<void> {
   const {
     eventType,
     new: newRow,
@@ -142,7 +142,7 @@ export function handleRealtimeEvent<T>(
   // INSERT/DELETE on post_likes should be treated as toggle operations
   // (apply/remove) instead of relying on an `id` + `updated_at` LWW check.
   if (table === 'post_likes') {
-    handlePostLikeEvent({ event, key, cache, outbox, onInvalidate });
+    await handlePostLikeEvent({ event, key, cache, outbox, onInvalidate });
     return;
   }
 
@@ -168,13 +168,13 @@ export function handleRealtimeEvent<T>(
   }
 
   // Handle self-echo confirmation (Requirements: 3.6)
-  if (client_tx_id && outbox.has(client_tx_id)) {
+  if (client_tx_id && (await outbox.has(client_tx_id))) {
     // Ensure we record the commit timestamp for this key before confirming
     // the outbox entry. This prevents later, older events from overwriting
     // our just-applied state due to missing timestamp bookkeeping.
     if (commit_timestamp) recordAppliedTimestamp(key, commit_timestamp);
 
-    outbox.confirm(client_tx_id);
+    await outbox.confirm(client_tx_id);
     console.log('Confirmed outbox entry:', client_tx_id);
     return; // Don't re-apply our own change
   }
@@ -197,13 +197,13 @@ export function handleRealtimeEvent<T>(
 /**
  * Handle post_likes events specially (composite key + commit_timestamp)
  */
-function handlePostLikeEvent<T>(params: {
+async function handlePostLikeEvent<T>(params: {
   event: RealtimeEvent<T>;
   key: string;
   cache: CacheOperations<T>;
   outbox: OutboxOperations;
   onInvalidate?: () => void;
-}): void {
+}): Promise<void> {
   const { event, key, cache, outbox, onInvalidate } = params;
   const { eventType, new: newRow, commit_timestamp, client_tx_id } = event;
   const local = cache.get(key);
@@ -226,7 +226,7 @@ function handlePostLikeEvent<T>(params: {
   }
 
   // Handle self-echo confirmation
-  if (client_tx_id && outbox.has(client_tx_id)) {
+  if (client_tx_id && (await outbox.has(client_tx_id))) {
     // Preserve timestamp bookkeeping for this composite key before
     // confirming our own outbox entry. Use the event commit timestamp
     // (or the row's commit timestamp if present) so later stale events
@@ -234,7 +234,7 @@ function handlePostLikeEvent<T>(params: {
     const commitTs = commit_timestamp || (newRow as any)?.commit_timestamp;
     if (commitTs) recordAppliedTimestamp(key, commitTs);
 
-    outbox.confirm(client_tx_id);
+    await outbox.confirm(client_tx_id);
     console.log('Confirmed outbox entry:', client_tx_id);
     return;
   }

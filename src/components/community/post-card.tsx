@@ -19,13 +19,14 @@ import { useDeletePost } from '@/api/community';
 import type { Post as ApiPost } from '@/api/posts';
 import { Image, Pressable, Text, View } from '@/components/ui';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth/user-utils';
+import { normalizePostUserId } from '@/lib/community/post-utils';
 import { translate } from '@/lib/i18n';
 
 import { LikeButton } from './like-button';
 
 interface PostCardProps {
   post: ApiPost;
-  onDelete?: (postId: string, undoExpiresAt: string) => void;
+  onDelete?: (postId: number | string, undoExpiresAt: string) => void;
   testID?: string;
 }
 
@@ -36,14 +37,14 @@ function PostCardComponent({
 }: PostCardProps): React.ReactElement {
   const router = useRouter();
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
-  const deleteMutation = useDeletePost();
 
   React.useEffect(() => {
     getOptionalAuthenticatedUserId().then(setCurrentUserId);
   }, []);
 
-  const postUserId = post.user_id || String(post.userId || '');
-  const postId = String(post.id);
+  const normalizedPost = React.useMemo(() => normalizePostUserId(post), [post]);
+  const postUserId = String(normalizedPost.userId || '');
+  const postId = normalizedPost.id;
   const isOwnPost = currentUserId && postUserId === currentUserId;
 
   const handleCommentPress = React.useCallback(
@@ -53,20 +54,6 @@ function PostCardComponent({
       router.push(`/feed/${postId}`);
     },
     [router, postId]
-  );
-
-  const handleDeletePress = React.useCallback(
-    async (e: any) => {
-      e.stopPropagation();
-      e.preventDefault();
-      try {
-        const result = await deleteMutation.mutateAsync({ postId });
-        onDelete?.(postId, result.undo_expires_at);
-      } catch (error) {
-        console.error('Delete post failed:', error);
-      }
-    },
-    [deleteMutation, postId, onDelete]
   );
 
   const compositeLabel = React.useMemo(() => {
@@ -84,6 +71,43 @@ function PostCardComponent({
     [router, postUserId]
   );
 
+  return (
+    <PostCardView
+      post={post}
+      postId={postId}
+      postUserId={postUserId}
+      isOwnPost={!!isOwnPost}
+      compositeLabel={compositeLabel}
+      onDelete={onDelete}
+      testID={testID}
+      handleAuthorPress={handleAuthorPress}
+      handleCommentPress={handleCommentPress}
+    />
+  );
+}
+
+// Post card view component to satisfy max-lines-per-function
+function PostCardView({
+  post,
+  postId,
+  postUserId,
+  isOwnPost,
+  compositeLabel,
+  onDelete,
+  testID,
+  handleAuthorPress,
+  handleCommentPress,
+}: {
+  post: ApiPost;
+  postId: number | string;
+  postUserId: string;
+  isOwnPost: boolean;
+  compositeLabel: string;
+  onDelete?: (postId: number | string, undoExpiresAt: string) => void;
+  testID: string;
+  handleAuthorPress: (e: any) => void;
+  handleCommentPress: (e: any) => void;
+}) {
   return (
     <Link href={`/feed/${postId}`} asChild>
       <Pressable
@@ -112,7 +136,6 @@ function PostCardComponent({
               testID={`${testID}-image`}
             />
           )}
-
           <View className="p-4">
             <Pressable
               accessibilityRole="button"
@@ -141,83 +164,124 @@ function PostCardComponent({
             >
               {post.body}
             </Text>
-
-            <View
-              className="mt-4 flex-row items-center justify-between"
-              testID={`${testID}-actions`}
-            >
-              <View className="flex-row items-center gap-3">
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={(e) => e.stopPropagation()}
-                >
-                  <LikeButton
-                    postId={postId}
-                    likeCount={post.like_count ?? 0}
-                    userHasLiked={post.user_has_liked ?? false}
-                    testID={`${testID}-like-button`}
-                  />
-                </Pressable>
-
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={translate(
-                    'accessibility.community.view_comments',
-                    { count: post.comment_count ?? 0 }
-                  )}
-                  accessibilityHint={translate(
-                    'accessibility.community.view_comments_hint'
-                  )}
-                  onPress={handleCommentPress}
-                  className="min-h-11 min-w-11 justify-center"
-                >
-                  <View className="flex-row items-center gap-1.5">
-                    <Text className="text-sm text-neutral-700 dark:text-neutral-300">
-                      💬
-                    </Text>
-                    <Text
-                      className="text-sm text-neutral-700 dark:text-neutral-300"
-                      testID={`${testID}-comment-count`}
-                    >
-                      {post.comment_count ?? 0}
-                    </Text>
-                  </View>
-                </Pressable>
-              </View>
-
-              {isOwnPost && (
-                <Pressable
-                  onPress={handleDeletePress}
-                  disabled={deleteMutation.isPending}
-                  accessibilityRole="button"
-                  accessibilityLabel={translate(
-                    'accessibility.community.delete_post'
-                  )}
-                  accessibilityHint={translate(
-                    'accessibility.community.delete_post_hint'
-                  )}
-                  accessibilityState={{ disabled: deleteMutation.isPending }}
-                  className="min-h-11 justify-center px-2"
-                  testID={`${testID}-delete-button`}
-                >
-                  <Text
-                    className={`text-sm ${
-                      deleteMutation.isPending
-                        ? 'text-neutral-400 dark:text-neutral-600'
-                        : 'text-danger-600 dark:text-danger-400'
-                    }`}
-                  >
-                    {deleteMutation.isPending
-                      ? translate('common.loading')
-                      : `🗑️ ${translate('accessibility.community.delete')}`}
-                  </Text>
-                </Pressable>
-              )}
-            </View>
+            <PostCardActions
+              post={post}
+              postId={postId}
+              _postUserId={postUserId}
+              isOwnPost={isOwnPost}
+              onDelete={onDelete}
+              testID={testID}
+              handleCommentPress={handleCommentPress}
+            />
           </View>
         </View>
       </Pressable>
     </Link>
+  );
+}
+
+// Small child component extracted to satisfy max-lines-per-function
+// and to make the actions area easier to test in isolation.
+function PostCardActions({
+  post,
+  postId,
+  _postUserId,
+  isOwnPost,
+  onDelete,
+  testID,
+  handleCommentPress,
+}: {
+  post: ApiPost;
+  postId: number | string;
+  _postUserId: string;
+  isOwnPost: boolean;
+  onDelete?: (postId: number | string, undoExpiresAt: string) => void;
+  testID: string;
+  handleCommentPress: (e: any) => void;
+}) {
+  const deleteMutation = useDeletePost();
+
+  const handleDeletePress = React.useCallback(
+    async (e: any) => {
+      e.stopPropagation();
+      e.preventDefault();
+      try {
+        const result = await deleteMutation.mutateAsync({ postId });
+        onDelete?.(postId, result.undo_expires_at);
+      } catch (error) {
+        console.error('Delete post failed:', error);
+      }
+    },
+    [deleteMutation, postId, onDelete]
+  );
+
+  return (
+    <View
+      className="mt-4 flex-row items-center justify-between"
+      testID={`${testID}-actions`}
+    >
+      <View className="flex-row items-center gap-3">
+        <Pressable
+          accessibilityRole="button"
+          onPress={(e) => e.stopPropagation()}
+        >
+          <LikeButton
+            postId={postId}
+            likeCount={post.like_count ?? 0}
+            userHasLiked={post.user_has_liked ?? false}
+            testID={`${testID}-like-button`}
+          />
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={translate(
+            'accessibility.community.view_comments',
+            { count: post.comment_count ?? 0 }
+          )}
+          accessibilityHint={translate(
+            'accessibility.community.view_comments_hint'
+          )}
+          onPress={handleCommentPress}
+          className="min-h-11 min-w-11 justify-center"
+        >
+          <View className="flex-row items-center gap-1.5">
+            <Text className="text-sm text-neutral-700 dark:text-neutral-300">
+              💬
+            </Text>
+            <Text
+              className="text-sm text-neutral-700 dark:text-neutral-300"
+              testID={`${testID}-comment-count`}
+            >
+              {post.comment_count ?? 0}
+            </Text>
+          </View>
+        </Pressable>
+      </View>
+
+      {isOwnPost && (
+        <Pressable
+          onPress={handleDeletePress}
+          disabled={deleteMutation.isPending}
+          accessibilityRole="button"
+          accessibilityLabel={translate('accessibility.community.delete_post')}
+          accessibilityHint={translate(
+            'accessibility.community.delete_post_hint'
+          )}
+          accessibilityState={{ disabled: deleteMutation.isPending }}
+          className="min-h-11 justify-center px-2"
+          testID={`${testID}-delete-button`}
+        >
+          <Text
+            className={`text-sm ${deleteMutation.isPending ? 'text-neutral-400 dark:text-neutral-600' : 'text-danger-600 dark:text-danger-400'}`}
+          >
+            {deleteMutation.isPending
+              ? translate('common.loading')
+              : `🗑️ ${translate('accessibility.community.delete')}`}
+          </Text>
+        </Pressable>
+      )}
+    </View>
   );
 }
 

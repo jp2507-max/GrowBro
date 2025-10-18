@@ -12,6 +12,10 @@ ADD COLUMN IF NOT EXISTS response_payload JSONB,
 ADD COLUMN IF NOT EXISTS client_tx_id TEXT,
 ADD COLUMN IF NOT EXISTS error_details JSONB;
 
+-- Backfill endpoint column with empty string for existing rows and make it NOT NULL
+UPDATE public.idempotency_keys SET endpoint = '' WHERE endpoint IS NULL;
+ALTER TABLE public.idempotency_keys ALTER COLUMN endpoint SET NOT NULL;
+
 -- Drop the old unique constraint
 DROP INDEX IF EXISTS public.idx_idempotency_keys_user_key;
 ALTER TABLE public.idempotency_keys DROP CONSTRAINT IF EXISTS idempotency_keys_user_id_idempotency_key_key;

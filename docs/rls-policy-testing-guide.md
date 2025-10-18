@@ -159,16 +159,17 @@ WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 -- Expected: Error - "new row violates row-level security policy" (WITH CHECK fails)
 ```
 
-#### Test 1.7: Regular user can delete their own post
+#### Test 1.7: Regular user can soft-delete their own post
 
 **Requirement:** 10.2
 
 ```sql
 -- As regular user
-DELETE FROM public.posts
+UPDATE public.posts
+SET deleted_at = now()
 WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 
--- Expected: Success (soft delete via trigger or application logic)
+-- Expected: Success (soft delete via UPDATE - direct DELETE statements risk hard deletion)
 ```
 
 ### 2. Posts Table - Moderator Tests

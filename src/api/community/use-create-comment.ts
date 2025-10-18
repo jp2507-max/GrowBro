@@ -42,6 +42,18 @@ function validateCommentBody(body: string): void {
   }
 }
 
+const OUTBOX_QUEUE_FAILED = 'OUTBOX_QUEUE_FAILED' as const;
+type ErrorWithCode = Error & { code?: string };
+
+function hasErrorCode(e: unknown, code: string): e is ErrorWithCode {
+  return (
+    !!e &&
+    typeof e === 'object' &&
+    'code' in (e as any) &&
+    (e as any).code === code
+  );
+}
+
 // Outbox creation utility
 async function queueCommentInOutbox(payload: {
   postId: string;
@@ -50,18 +62,24 @@ async function queueCommentInOutbox(payload: {
   idempotencyKey: string;
 }): Promise<void> {
   const { postId, body, clientTxId, idempotencyKey } = payload;
-  await database.write(async () => {
-    const outboxCollection = database.get<OutboxModel>('outbox');
-    await outboxCollection.create((record) => {
-      record.op = 'COMMENT';
-      record.payload = { post_id: postId, body };
-      record.clientTxId = clientTxId;
-      record.idempotencyKey = idempotencyKey;
-      record.createdAt = new Date();
-      record.retries = 0;
-      record.status = 'pending';
+  try {
+    await database.write(async () => {
+      const outboxCollection = database.get<OutboxModel>('outbox');
+      await outboxCollection.create((record) => {
+        record.op = 'COMMENT';
+        record.payload = { post_id: postId, body };
+        record.clientTxId = clientTxId;
+        record.idempotencyKey = idempotencyKey;
+        record.createdAt = new Date();
+        record.retries = 0;
+        record.status = 'pending';
+      });
     });
-  });
+  } catch {
+    const err = new Error('Failed to queue comment in outbox') as ErrorWithCode;
+    err.code = OUTBOX_QUEUE_FAILED;
+    throw err;
+  }
 }
 
 // Optimistic update utilities
@@ -219,6 +237,19 @@ export function useCreateComment() {
         handleValidationError(queryClient, variables.postId, {
           error,
           previousComments: context?.previousComments,
+        });
+      } else if (hasErrorCode(error, OUTBOX_QUEUE_FAILED)) {
+        if (context?.previousComments) {
+          queryClient.setQueryData(
+            ['comments', variables.postId],
+            context.previousComments
+          );
+        }
+        showMessage({
+          message: 'Could not save comment offline',
+          description: 'Please try again.',
+          type: 'danger',
+          duration: 3000,
         });
       } else {
         handleNetworkError();

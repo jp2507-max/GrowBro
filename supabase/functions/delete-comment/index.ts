@@ -69,23 +69,15 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Soft delete with 15-second undo window
-    const undoExpiresAt = new Date(Date.now() + 15 * 1000).toISOString();
-
+    // Soft delete with 15-second undo window using RPC
     const { data, error } = await supabase
-      .from('post_comments')
-      .update({
-        deleted_at: new Date().toISOString(),
-        undo_expires_at: undoExpiresAt,
-      })
-      .eq('id', commentId)
-      .eq('user_id', user.id) // Ensure user owns the comment
-      .is('deleted_at', null) // Only delete if not already deleted
-      .select('id, undo_expires_at')
-      .single();
+      .rpc('soft_delete_comment', {
+        comment_id: commentId,
+        user_id: user.id
+      });
 
     if (error) {
-      if (error.code === 'PGRST116') {
+      if (error.code === 'PGRST116' || error.code === 'P0002') {
         return new Response(
           JSON.stringify({ error: 'Comment not found or already deleted' }),
           {
@@ -103,7 +95,6 @@ Deno.serve(async (req: Request) => {
 
     return new Response(
       JSON.stringify({
-        id: data.id,
         undo_expires_at: data.undo_expires_at,
       }),
       {

@@ -155,6 +155,7 @@ describe('event-deduplicator', () => {
           commit_timestamp: '2024-01-01T00:00:00Z',
           new: {
             id: 'post1',
+            userId: 'user1',
             user_id: 'user1',
             body: 'Test post',
             created_at: '2024-01-01T00:00:00Z',
@@ -190,6 +191,7 @@ describe('event-deduplicator', () => {
           commit_timestamp: '2024-01-01T00:00:00Z',
           new: {
             id: 'post1',
+            userId: 'user1',
             user_id: 'user1',
             body: 'Test post',
             created_at: '2024-01-01T00:00:00Z',
@@ -226,6 +228,7 @@ describe('event-deduplicator', () => {
           commit_timestamp: '2024-01-02T00:00:00Z',
           new: {
             id: 'post1',
+            userId: 'user1',
             user_id: 'user1',
             body: 'Updated post',
             created_at: '2024-01-01T00:00:00Z',
@@ -291,6 +294,7 @@ describe('event-deduplicator', () => {
           commit_timestamp: '2024-01-01T00:00:00Z',
           new: {
             id: 'post1',
+            userId: 'user1',
             user_id: 'user1',
             body: 'Test post',
             created_at: '2024-01-01T00:00:00Z',

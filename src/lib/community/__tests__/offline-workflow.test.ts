@@ -18,16 +18,16 @@ import { ReconnectionHandler } from '@/lib/community/reconnection-handler';
 import type { OutboxModel } from '@/lib/watermelon-models/outbox';
 
 // Mock dependencies
+const mockDatabase = {
+  get: jest.fn(),
+  write: jest.fn((fn) => fn()),
+} as unknown as Database;
+
 jest.mock('@react-native-community/netinfo');
 jest.mock('@/api/community/client');
 jest.mock('@/lib/watermelon', () => ({
   database: mockDatabase,
 }));
-
-const mockDatabase = {
-  get: jest.fn(),
-  write: jest.fn((fn) => fn()),
-} as unknown as Database;
 
 const mockApiClient = {
   likePost: jest.fn(),

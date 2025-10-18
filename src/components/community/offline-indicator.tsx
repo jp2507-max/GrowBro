@@ -11,7 +11,6 @@ import NetInfo from '@react-native-community/netinfo';
 import React from 'react';
 
 import { Button, Text, View } from '@/components/ui';
-import { translate } from '@/lib/i18n';
 
 interface OfflineIndicatorProps {
   onRetrySync?: () => void;
@@ -44,20 +43,18 @@ export function OfflineIndicator({
           <Text
             className="text-sm font-semibold text-warning-900 dark:text-warning-200"
             testID={`${testID}-title`}
-          >
-            {translate('community.offline_title')}
-          </Text>
+            tx="community.offline_title"
+          />
           <Text
             className="mt-1 text-xs text-warning-800 dark:text-warning-300"
             testID={`${testID}-message`}
-          >
-            {translate('community.offline_message')}
-          </Text>
+            tx="community.offline_message"
+          />
         </View>
 
         {onRetrySync && (
           <Button
-            label={translate('community.retry_sync')}
+            tx="community.retry_sync"
             onPress={onRetrySync}
             size="sm"
             variant="secondary"

@@ -4,16 +4,29 @@
 
 -- Create function to send notification on post comment
 CREATE OR REPLACE FUNCTION notify_post_comment()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+AS $$
 DECLARE
+  _edge_url TEXT := current_setting('app.settings.edge_function_url', true);
+  _svc_key TEXT := current_setting('app.settings.service_role_key', true);
   post_author_id UUID;
   comment_preview TEXT;
   post_body TEXT;
 BEGIN
+  -- Ensure required settings exist
+  IF coalesce(_edge_url, '') = '' OR coalesce(_svc_key, '') = '' THEN
+    -- Do not block writes if misconfigured
+    RETURN NEW;
+  END IF;
   -- Get the post author's user ID and body
   SELECT user_id, body INTO post_author_id, post_body
   FROM posts
   WHERE id = NEW.post_id;
+
+  -- Skip notification if post or author not found
+  IF NOT FOUND OR post_author_id IS NULL THEN
+    RETURN NEW;
+  END IF;
 
   -- Don't send notification if user is commenting on their own post
   IF post_author_id = NEW.user_id THEN
@@ -28,43 +41,62 @@ BEGIN
 
   -- Call Edge Function to send push notification
   -- The Edge Function will handle user preferences, token retrieval, and delivery
-  PERFORM
-    net.http_post(
-      url := current_setting('app.settings.edge_function_url') || '/send-push-notification',
-      headers := jsonb_build_object(
-        'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key')
-      ),
-      body := jsonb_build_object(
-        'userId', post_author_id::text,
-        'type', 'community.reply',
-        'title', 'New comment on your post',
-        'body', comment_preview,
-        'deepLink', 'growbro://post/' || NEW.post_id::text || '/comment/' || NEW.id::text,
-        'metadata', jsonb_build_object(
-          'postId', NEW.post_id::text,
-          'commentId', NEW.id::text,
-          'commentAuthor', NEW.user_id::text
-        )
-      )::text
-    );
+  BEGIN
+    PERFORM
+      net.http_post(
+        url := _edge_url || '/send-push-notification',
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'Authorization', 'Bearer ' || _svc_key
+        ),
+        body := jsonb_build_object(
+          'userId', post_author_id::text,
+          'type', 'community.reply',
+          'title', 'New comment on your post',
+          'body', comment_preview,
+          'deepLink', 'growbro://post/' || NEW.post_id::text || '/comment/' || NEW.id::text,
+          'metadata', jsonb_build_object(
+            'postId', NEW.post_id::text,
+            'commentId', NEW.id::text,
+            'commentAuthor', NEW.user_id::text
+          )
+        )::text
+      );
+  EXCEPTION WHEN OTHERS THEN
+    -- Log and proceed; do not fail the original DML
+    RAISE WARNING 'notify_post_comment http_post failed: %', SQLERRM;
+  END;
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions;
 
 -- Create function to send notification on post like
 CREATE OR REPLACE FUNCTION notify_post_like()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+AS $$
 DECLARE
+  _edge_url TEXT := current_setting('app.settings.edge_function_url', true);
+  _svc_key TEXT := current_setting('app.settings.service_role_key', true);
   post_author_id UUID;
   post_body TEXT;
   like_count INTEGER;
 BEGIN
+  -- Ensure required settings exist
+  IF coalesce(_edge_url, '') = '' OR coalesce(_svc_key, '') = '' THEN
+    -- Do not block writes if misconfigured
+    RETURN NEW;
+  END IF;
   -- Get the post author's user ID
   SELECT user_id, body INTO post_author_id, post_body
   FROM posts
   WHERE id = NEW.post_id;
+
+  -- Skip notification if post or author not found
+  IF NOT FOUND OR post_author_id IS NULL THEN
+    RETURN NEW;
+  END IF;
 
   -- Don't send notification if user is liking their own post
   IF post_author_id = NEW.user_id THEN
@@ -78,34 +110,40 @@ BEGIN
 
   -- Call Edge Function to send push notification
   -- Uses collapse_key/thread-id per post for deduplication (rate limiting: max 1 per post per 5 min)
-  PERFORM
-    net.http_post(
-      url := current_setting('app.settings.edge_function_url') || '/send-push-notification',
-      headers := jsonb_build_object(
-        'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key')
-      ),
-      body := jsonb_build_object(
-        'userId', post_author_id::text,
-        'type', 'community.like',
-        'title', 'Someone liked your post',
-        'body', CASE
-          WHEN like_count = 1 THEN '1 person liked your post'
-          ELSE like_count::text || ' people liked your post'
-        END,
-        'deepLink', 'growbro://post/' || NEW.post_id::text,
-        'collapseKey', 'like_' || NEW.post_id::text,
-        'threadId', 'post_' || NEW.post_id::text,
-        'metadata', jsonb_build_object(
-          'postId', NEW.post_id::text,
-          'likeCount', like_count
-        )
-      )::text
-    );
+  BEGIN
+    PERFORM
+      net.http_post(
+        url := _edge_url || '/send-push-notification',
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'Authorization', 'Bearer ' || _svc_key
+        ),
+        body := jsonb_build_object(
+          'userId', post_author_id::text,
+          'type', 'community.like',
+          'title', 'Someone liked your post',
+          'body', CASE
+            WHEN like_count = 1 THEN '1 person liked your post'
+            ELSE like_count::text || ' people liked your post'
+          END,
+          'deepLink', 'growbro://post/' || NEW.post_id::text,
+          'collapseKey', 'like_' || NEW.post_id::text,
+          'threadId', 'post_' || NEW.post_id::text,
+          'metadata', jsonb_build_object(
+            'postId', NEW.post_id::text,
+            'likeCount', like_count
+          )
+        )::text
+      );
+  EXCEPTION WHEN OTHERS THEN
+    -- Log and proceed; do not fail the original DML
+    RAISE WARNING 'notify_post_like http_post failed: %', SQLERRM;
+  END;
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions;
 
 -- Create trigger for post comments
 -- Fires after a new comment is inserted
@@ -127,9 +165,6 @@ CREATE TRIGGER trigger_notify_post_like
 CREATE INDEX IF NOT EXISTS idx_post_comments_post_id ON post_comments(post_id);
 CREATE INDEX IF NOT EXISTS idx_post_likes_post_id ON post_likes(post_id);
 
--- Grant necessary permissions
-GRANT EXECUTE ON FUNCTION notify_post_comment() TO authenticated;
-GRANT EXECUTE ON FUNCTION notify_post_like() TO authenticated;
 
 COMMENT ON FUNCTION notify_post_comment() IS 'Sends push notification to post author when someone comments';
 COMMENT ON FUNCTION notify_post_like() IS 'Sends push notification to post author when someone likes their post';

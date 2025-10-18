@@ -29,7 +29,7 @@ export const Card = ({
   const compositeLabel = React.useMemo(() => {
     const badgeText = translate('cannabis.educational_badge');
     const previewText = body?.slice(0, 100) || '';
-    return `${badgeText}. ${title}. ${previewText}`;
+    return `${badgeText}. ${title || ''}. ${previewText}`;
   }, [title, body]);
 
   // Prevent like button from triggering navigation
@@ -58,7 +58,7 @@ export const Card = ({
             <Text className="w-fit rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
               {translate('cannabis.educational_badge')}
             </Text>
-            <Text className="py-3 text-2xl ">{title}</Text>
+            <Text className="py-3 text-2xl ">{title || 'Untitled'}</Text>
             <Text numberOfLines={3} className="leading-snug text-gray-600">
               {body}
             </Text>

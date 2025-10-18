@@ -15,7 +15,7 @@ afterEach(() => {
 
 const createMockMessage = () => ({
   data: {
-    type: 'community_interaction',
+    type: 'community.interaction',
     messageId: 'msg-123',
     postId: 'post-456',
     userId: 'user-789',
@@ -49,7 +49,7 @@ function testHandleBackgroundMessage() {
     expect(mockSave).toHaveBeenCalledWith([
       expect.objectContaining({
         id: 'msg-123',
-        type: 'community_interaction',
+        type: 'community.interaction',
         messageId: 'msg-123',
       }),
     ]);
@@ -65,7 +65,7 @@ function testHandleBackgroundMessage() {
     expect(mockSave).toHaveBeenCalledWith([
       expect.objectContaining({
         id: 'msg-123',
-        type: 'community_interaction',
+        type: 'community.interaction',
         messageId: 'msg-123',
       }),
     ]);

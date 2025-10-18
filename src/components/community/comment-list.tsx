@@ -36,9 +36,10 @@ export function CommentList({
     return (
       <View className="items-center py-8" testID={`${testID}-loading`}>
         <ActivityIndicator />
-        <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-          Loading comments...
-        </Text>
+        <Text
+          className="mt-2 text-sm text-neutral-500 dark:text-neutral-400"
+          tx="community.commentList.loading"
+        />
       </View>
     );
   }
@@ -46,9 +47,10 @@ export function CommentList({
   if (comments.length === 0) {
     return (
       <View className="items-center py-8" testID={`${testID}-empty`}>
-        <Text className="text-sm text-neutral-500 dark:text-neutral-400">
-          No comments yet. Be the first to comment!
-        </Text>
+        <Text
+          className="text-sm text-neutral-500 dark:text-neutral-400"
+          tx="community.commentList.empty"
+        />
       </View>
     );
   }
