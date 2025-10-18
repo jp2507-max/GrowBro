@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 // lightweight runtime import of Node scripts
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+
 const dataSafety = require('../../../scripts/lib/data-safety');
 
 const repoRoot = path.resolve(__dirname, '../../..');

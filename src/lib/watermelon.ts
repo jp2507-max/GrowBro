@@ -21,10 +21,14 @@ import { NotificationModel } from './watermelon-models/notification';
 import { NotificationPreferenceModel } from './watermelon-models/notification-preference';
 import { NotificationQueueModel } from './watermelon-models/notification-queue';
 import { OccurrenceOverrideModel } from './watermelon-models/occurrence-override';
+import { OutboxModel } from './watermelon-models/outbox';
 import { OutboxNotificationActionModel } from './watermelon-models/outbox-notification-action';
 import { PhEcReadingModel } from './watermelon-models/ph-ec-reading';
 import { PlaybookModel } from './watermelon-models/playbook';
 import { PlaybookApplicationModel } from './watermelon-models/playbook-application';
+import { PostModel } from './watermelon-models/post';
+import { PostCommentModel } from './watermelon-models/post-comment';
+import { PostLikeModel } from './watermelon-models/post-like';
 import { ReservoirModel } from './watermelon-models/reservoir';
 import { ReservoirEventModel } from './watermelon-models/reservoir-event';
 import { SeriesModel } from './watermelon-models/series';
@@ -81,5 +85,10 @@ export const database = new Database({
     CalibrationModel,
     DiagnosticResultModel,
     DeviationAlertModel,
+    // Community feed models
+    PostModel,
+    PostCommentModel,
+    PostLikeModel,
+    OutboxModel,
   ],
 });

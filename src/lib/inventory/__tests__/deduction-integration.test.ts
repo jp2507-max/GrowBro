@@ -25,7 +25,6 @@ import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item'
 import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
 
 jest.mock('@nozbe/watermelondb/adapters/sqlite', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const LokiJSAdapter = require('@nozbe/watermelondb/adapters/lokijs').default;
 
   // Return a class that wraps LokiJSAdapter

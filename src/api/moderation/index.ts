@@ -5,6 +5,9 @@ export type ReportPayload = { contentId: string | number; reason: string };
 export type SimpleUserPayload = { userId: string | number };
 export type DeletePayload = { contentId: string | number };
 
+export { useHideContent } from './use-hide-content';
+export { useUnhideContent } from './use-unhide-content';
+
 export async function apiReportContent(payload: ReportPayload): Promise<void> {
   const endpoint = '/moderation/report';
   const contextId = `contentId: ${payload.contentId}`;

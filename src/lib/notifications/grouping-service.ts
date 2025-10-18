@@ -1,12 +1,13 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+import { translate } from '@/lib/i18n';
 import { getAndroidChannelId } from '@/lib/notifications/android-channels';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
 type CommunityNotification = {
   notification: any; // Expo notification object
-  type: 'community_interaction' | 'community_like';
+  type: 'community.interaction' | 'community.reply' | 'community.like';
   postId: string;
   threadId?: string;
 };
@@ -42,19 +43,20 @@ async function handleAndroidGrouping(
     const currentCount = (groupCounts.get(groupKey) || 0) + 1;
     groupCounts.set(groupKey, currentCount);
 
-    const channelId =
-      communityNotification.type === 'community_interaction'
-        ? getAndroidChannelId('community.interactions')
-        : getAndroidChannelId('community.likes');
+    const t = communityNotification.type;
+    const isLike = t === 'community.like';
+    const channelId = getAndroidChannelId(
+      isLike ? 'community.likes' : 'community.interactions'
+    );
 
     // Create or update group summary
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'Community Activity',
+        title: translate('community.community_activity'),
         body: `${currentCount} new ${currentCount > 1 ? 'interactions' : 'interaction'}`,
-        data: { groupKey, type: 'summary', channelId },
+        data: { groupKey, type: 'summary' },
       },
-      trigger: null as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
+      trigger: { channelId } as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
     });
 
     // Present individual notification
@@ -63,9 +65,9 @@ async function handleAndroidGrouping(
       content: {
         title: content.title || '',
         body: content.body || '',
-        data: { ...content.data, groupKey, channelId },
+        data: { ...content.data, groupKey },
       },
-      trigger: null as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
+      trigger: { channelId } as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
     });
   } catch (error) {
     captureCategorizedErrorSync(error, {
@@ -87,11 +89,11 @@ async function handleiOSThreading(
       content: {
         title: content.title || '',
         body: content.body || '',
+        threadIdentifier:
+          communityNotification.threadId ||
+          `post_${communityNotification.postId}`,
         data: {
           ...content.data,
-          threadIdentifier:
-            communityNotification.threadId ||
-            `post_${communityNotification.postId}`,
         },
       },
       trigger: null as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)

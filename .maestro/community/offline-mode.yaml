@@ -1,0 +1,62 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'test@growbro.app'
+  PASSWORD: 'Test1234!'
+---
+# Community Feed - Offline Mode E2E Test
+# Tests: Cached content display, action queuing, sync on reconnect
+
+- launchApp
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Navigate to community and load feed
+- tapOn:
+    id: 'community-tab'
+- assertVisible:
+    id: 'community-screen'
+- waitForAnimationToEnd
+
+# Enable offline mode (requires manual device settings access)
+# Note: Maestro cannot control device network settings directly
+- runFlow: ../utils/offline-enable.yaml
+
+# Verify offline indicator appears
+- waitForAnimationToEnd
+- assertVisible:
+    text: 'Offline'
+
+# Verify cached posts are still visible
+- assertVisible:
+    idMatches: 'post-card-.*'
+
+# Attempt to like a post (should queue action)
+- tapOn:
+    idMatches: 'like-button-.*'
+- assertVisible: 'liked'
+
+# Open post and attempt to comment
+- tapOn:
+    idMatches: 'post-card-.*'
+- tapOn:
+    id: 'comment-input'
+- inputText: 'Queued comment while offline'
+- tapOn:
+    id: 'submit-comment-button'
+
+# Verify comment shows pending state
+- assertVisible: 'pending'
+
+# Disable offline mode (requires manual device settings access)
+# Note: Maestro cannot control device network settings directly
+- runFlow: ../utils/offline-disable.yaml
+
+# Wait for sync to complete
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Verify offline indicator disappears
+- assertNotVisible:
+    text: 'Offline'
+
+# Verify queued actions are synced
+- assertNotVisible: 'pending'

@@ -1,0 +1,54 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'test@growbro.app'
+  PASSWORD: 'Test1234!'
+---
+# Community Feed - Like and Comment Interactions E2E Test
+# Tests: Browse feed, like/unlike posts, add comments, verify real-time updates
+
+- launchApp
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Navigate to community tab
+- assertVisible: 'Community'
+- tapOn:
+    id: 'community-tab'
+- assertVisible:
+    id: 'community-screen'
+
+# Wait for feed to load
+- waitForAnimationToEnd
+
+# Test Like functionality
+- assertVisible:
+    id: 'post-card-*'
+- tapOn:
+    id: 'like-button-*'
+- assertVisible: 'liked'
+
+# Test Unlike functionality
+- tapOn:
+    id: 'like-button-*'
+- assertNotVisible: 'liked'
+
+# Open post detail
+- tapOn:
+    id: 'post-card-*'
+- assertVisible: 'Comments'
+
+# Add a comment
+- tapOn:
+    id: 'comment-input'
+- inputText: 'Great grow! Looking forward to seeing your harvest results.'
+- tapOn:
+    id: 'submit-comment-button'
+
+# Verify comment appears
+- waitForAnimationToEnd
+- assertVisible: 'Great grow!'
+
+# Navigate back to feed
+- tapOn:
+    id: 'back-button'
+- assertVisible:
+    id: 'community-screen'

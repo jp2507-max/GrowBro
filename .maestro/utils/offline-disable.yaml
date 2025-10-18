@@ -1,0 +1,16 @@
+appId: ${APP_ID}
+tags:
+  - util
+---
+# Disable offline mode using platform-specific flows
+# Note: Actual network control requires manual device settings access
+# These flows serve as placeholders for future app-level offline simulation
+
+- runFlow:
+    when:
+      platform: iOS
+    file: ./offline-disable-ios.yaml
+- runFlow:
+    when:
+      platform: Android
+    file: ./offline-disable-android.yaml

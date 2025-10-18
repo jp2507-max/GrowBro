@@ -26,7 +26,7 @@ function createMockNotification() {
         },
       },
     },
-    type: 'community_interaction' as const,
+    type: 'community.interaction' as const,
     postId: '123',
     threadId: 'thread_123',
   };
@@ -65,29 +65,29 @@ function testAndroidGrouping() {
     expect(mockSchedule).toHaveBeenCalledTimes(2);
 
     const summaryCall = mockSchedule.mock.calls.find(
-      (call) => call[0].groupSummary === true
+      (call) => call[0].content.data?.type === 'summary'
     );
     expect(summaryCall).toBeDefined();
     expect(summaryCall[0]).toMatchObject({
       content: {
         title: 'Community Activity',
         body: '1 new interaction',
+        data: { groupKey: 'post_123', type: 'summary' },
       },
-      trigger: null,
-      groupKey: 'post_123',
-      groupSummary: true,
+      trigger: { channelId: 'community.interactions.v1' },
     });
 
     const individualCall = mockSchedule.mock.calls.find(
-      (call) => !call[0].groupSummary
+      (call) => !call[0].content.data?.type
     );
     expect(individualCall).toBeDefined();
     expect(individualCall[0]).toMatchObject({
       content: {
         title: 'New Reply',
         body: 'Someone replied to your post',
+        data: { postId: '123', groupKey: 'post_123' },
       },
-      groupKey: 'post_123',
+      trigger: { channelId: 'community.interactions.v1' },
     });
   });
 
@@ -97,7 +97,7 @@ function testAndroidGrouping() {
 
     const likeNotification = {
       ...mockNotification,
-      type: 'community_like' as const,
+      type: 'community.like' as const,
     };
 
     await NotificationGroupingService.handleCommunityNotification(
@@ -106,7 +106,7 @@ function testAndroidGrouping() {
 
     expect(mockSchedule).toHaveBeenCalledWith(
       expect.objectContaining({
-        channelId: 'community.likes.v1',
+        trigger: { channelId: 'community.likes.v1' },
       })
     );
   });
@@ -174,7 +174,7 @@ function testGroupCountManagement() {
       notification: {
         request: { content: { title: 'Test', body: 'Test', data: {} } },
       },
-      type: 'community_interaction' as const,
+      type: 'community.interaction' as const,
       postId: '123',
     };
 

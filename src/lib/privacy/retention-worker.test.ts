@@ -54,7 +54,6 @@ describe('RetentionWorker: images', () => {
     let inf = 0;
     let trn = 0;
     jest.isolateModules(() => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { setDeletionAdapter } = require('@/lib/privacy/deletion-adapter');
       setDeletionAdapter({
         async purgeInferenceImages() {

@@ -1,0 +1,58 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'test@growbro.app'
+  PASSWORD: 'Test1234!'
+---
+# Community Feed - Infinite Scroll and Performance E2E Test
+# Tests: Pagination, loading states, scroll performance
+
+- launchApp
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Navigate to community tab
+- tapOn:
+    id: 'community-tab'
+- assertVisible:
+    id: 'community-screen'
+
+# Wait for initial load
+- waitForAnimationToEnd
+
+# Verify posts counter is shown
+- assertVisible:
+    id: 'community-posts-count'
+
+# Scroll through multiple pages
+- repeat:
+    times: 5
+    commands:
+      - scroll:
+          direction: 'down'
+          duration: 1000
+      - waitForAnimationToEnd
+
+# Verify footer loader appears during pagination
+- scroll:
+    direction: 'down'
+- assertVisible:
+    id: 'community-footer-loader'
+
+# Wait for next page to load
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Verify no frame drops or crashes
+- assertVisible:
+    id: 'community-screen'
+
+# Test pull-to-refresh
+- scroll:
+    direction: 'up'
+    duration: 2000
+- swipe:
+    direction: 'down'
+- waitForAnimationToEnd
+
+# Verify posts are refreshed
+- assertVisible:
+    id: 'post-card-*'

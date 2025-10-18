@@ -10,7 +10,7 @@ declare module 'expo-notifications' {
     title: string;
     body: string;
     data?: Record<string, unknown>;
-    threadId?: string;
+    threadIdentifier?: string;
     sound?: boolean | string;
   };
 

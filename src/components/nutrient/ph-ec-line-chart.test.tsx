@@ -12,9 +12,8 @@ import { PhEcLineChart } from './ph-ec-line-chart';
 
 // Mock react-native-gifted-charts
 jest.mock('react-native-gifted-charts', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const ReactModule = require('react');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+
   const { View, Text } = require('react-native');
 
   return {

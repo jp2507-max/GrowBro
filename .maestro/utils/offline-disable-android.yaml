@@ -1,0 +1,14 @@
+appId: ${APP_ID}
+tags:
+  - util
+---
+# Disable airplane mode on Android by navigating to Settings
+# NOTE: This is a best-effort approach as device Settings UI can vary
+# and may require user interaction or fail on locked devices
+
+# Note: Maestro cannot directly access device settings from within an app
+# This flow serves as a placeholder for manual testing or future app-level offline simulation
+# For now, this flow will simply wait - actual offline mode must be disabled manually
+
+- waitForAnimationToEnd:
+    timeout: 1000

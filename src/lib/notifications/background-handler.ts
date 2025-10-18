@@ -201,7 +201,7 @@ async function syncNotificationData(message: BackgroundMessage): Promise<void> {
     await saveNotifications([
       {
         id: message.data.messageId || message.messageId || `bg_${Date.now()}`,
-        type: message.data.type || 'system_update',
+        type: message.data.type || 'system.update',
         title,
         body,
         data: message.data,

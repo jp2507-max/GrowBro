@@ -1,0 +1,44 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'test@growbro.app'
+  PASSWORD: 'Test1234!'
+---
+# Community Feed - Profile Navigation E2E Test
+# Tests: Navigate from feed → user profile → back to feed
+
+- launchApp
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Navigate to community tab
+- tapOn:
+    id: 'community-tab'
+- assertVisible:
+    id: 'community-screen'
+
+# Wait for posts to load
+- waitForAnimationToEnd
+
+# Tap on user avatar to open profile
+- tapOn:
+    id: 'post-author-avatar-*'
+- assertVisible:
+    text: 'Profile'
+
+# Verify profile content loads
+- assertVisible:
+    id: 'user-profile-header'
+- assertVisible: 'Recent Posts'
+
+# Scroll through user's posts
+- scroll:
+    direction: 'down'
+
+# Navigate back to feed
+- tapOn:
+    id: 'back-button'
+- assertVisible:
+    id: 'community-screen'
+
+# Verify feed state is preserved
+- assertVisible:
+    id: 'post-card-*'

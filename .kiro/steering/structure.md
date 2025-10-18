@@ -139,8 +139,6 @@ Node.js scripts for:
 - One component per file
 - Co-locate tests with components
 - Export named exports (not default exports preferred)
-- Keep components under 70 lines (enforced by ESLint)
-- Max 3 function parameters (enforced by ESLint)
 
 ### State Management
 
