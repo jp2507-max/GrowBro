@@ -12,9 +12,6 @@ declare module 'expo-notifications' {
     data?: Record<string, unknown>;
     threadIdentifier?: string;
     sound?: boolean | string;
-    android?: {
-      [key: string]: unknown;
-    };
   };
 
   export function scheduleNotificationAsync(options: {

@@ -55,9 +55,8 @@ async function handleAndroidGrouping(
         title: translate('community.community_activity'),
         body: `${currentCount} new ${currentCount > 1 ? 'interactions' : 'interaction'}`,
         data: { groupKey, type: 'summary' },
-        android: { channelId },
       },
-      trigger: null as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
+      trigger: { channelId } as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
     });
 
     // Present individual notification
@@ -67,9 +66,8 @@ async function handleAndroidGrouping(
         title: content.title || '',
         body: content.body || '',
         data: { ...content.data, groupKey },
-        android: { channelId },
       },
-      trigger: null as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
+      trigger: { channelId } as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
     });
   } catch (error) {
     captureCategorizedErrorSync(error, {

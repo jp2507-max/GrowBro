@@ -301,7 +301,7 @@ export default function CommunityScreen(): React.ReactElement {
         expiresAt={undoState?.undoExpiresAt ?? ''}
         onUndo={handleUndo}
         onDismiss={handleDismissUndo}
-        disabled={undoMutation.isLoading}
+        disabled={undoMutation.isPending}
       />
     </>
   );

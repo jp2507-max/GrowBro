@@ -17,21 +17,65 @@ function disableNetworkLinkConditioner() {
 
     // Use AppleScript to disable Network Link Conditioner
     const appleScript = `
-      tell application "System Preferences"
-        activate
-        reveal pane "Network Link Conditioner"
-        delay 1
+      tell application "System Events"
+        set frontApp to name of first application process whose frontmost is true
       end tell
+      set appName to frontApp
+
+      if appName contains "System Preferences" then
+        tell application "System Preferences"
+          activate
+          reveal pane "Network Link Conditioner"
+          delay 2
+        end tell
+      else if appName contains "System Settings" then
+        tell application "System Settings"
+          activate
+          delay 1
+          tell application "System Events"
+            tell process "System Settings"
+              click menu item "Developer" of menu "View" of menu bar 1
+              delay 1
+              click menu item "Network Link Conditioner" of menu "Developer" of menu bar 1
+              delay 2
+            end tell
+          end tell
+        end tell
+      end if
 
       tell application "System Events"
-        tell process "System Preferences"
+        tell process appName
+          repeat 10 times
+            if exists window "Network Link Conditioner" then
+              exit repeat
+            end if
+            delay 0.5
+          end repeat
           tell window "Network Link Conditioner"
-            click button "Off"
+            repeat 3 times
+              try
+                click button "Off"
+                exit repeat
+              on error
+                try
+                  click checkbox 1
+                  exit repeat
+                on error
+                  try
+                    set theToggle to first UI element whose (role is "AXCheckBox" or (role is "AXButton" and name is "Off"))
+                    click theToggle
+                    exit repeat
+                  on error
+                    delay 0.5
+                  end try
+                end try
+              end try
+            end repeat
           end tell
         end tell
       end tell
 
-      tell application "System Preferences" to quit
+      tell application appName to quit
     `;
 
     // Try to open prefPane first to normalize UI across macOS versions
@@ -91,19 +135,27 @@ function disableAirplaneMode() {
       }
     } else {
       console.log('Disabling airplane mode on Android emulator...');
-      execSync('adb shell svc wifi enable && adb shell svc data enable', {
-        stdio: 'inherit',
-      });
+      const deviceId = process.env.ANDROID_SERIAL || '';
+      const deviceArg = deviceId ? `-s ${deviceId}` : '';
+      execSync(
+        `adb ${deviceArg} shell svc wifi enable && adb ${deviceArg} shell svc data enable`,
+        {
+          stdio: 'inherit',
+          timeout: 5000,
+        }
+      );
       console.log('Android airplane mode disabled');
     }
+    return true;
   } catch (error) {
     console.error('Failed to disable airplane mode:', error.message);
-    process.exit(1);
+    return false;
   }
 }
 
 if (require.main === module) {
-  disableAirplaneMode();
+  const success = disableAirplaneMode();
+  if (!success) process.exit(1);
 }
 
 module.exports = { disableAirplaneMode };

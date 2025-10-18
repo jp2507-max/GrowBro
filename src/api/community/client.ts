@@ -574,7 +574,7 @@ export class CommunityApiClient implements CommunityAPI {
       endpoint: '/api/moderate',
       payload: { contentType, contentId, action, reason },
       operation: async () => {
-        const { error } = await this.client.rpc('moderate_content', {
+        const { data, error } = await this.client.rpc('moderate_content', {
           p_content_type: contentType,
           p_content_id: contentId,
           p_action: action,
@@ -585,6 +585,19 @@ export class CommunityApiClient implements CommunityAPI {
         if (error) {
           throw new Error(
             `Failed to ${action} ${contentType}: ${error.message}`
+          );
+        }
+
+        // Check if RPC returned success: false (authorization/validation failures)
+        if (
+          data &&
+          typeof data === 'object' &&
+          'success' in data &&
+          data.success === false
+        ) {
+          const errorMessage = (data as any).error || 'Moderation failed';
+          throw new Error(
+            `Failed to ${action} ${contentType}: ${errorMessage}`
           );
         }
       },

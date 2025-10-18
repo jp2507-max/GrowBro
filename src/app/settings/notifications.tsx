@@ -102,6 +102,7 @@ export default function NotificationSettings() {
               accessibilityRole="button"
               className="rounded-md bg-primary-600 px-4 py-3"
               onPress={handleOpenSettings}
+              testID="open-system-settings-button"
             >
               <Text
                 className="text-center font-semibold text-white"
@@ -130,6 +131,7 @@ export default function NotificationSettings() {
                 />
               </View>
               <Switch
+                testID="community-interactions-switch"
                 value={communityInteractionsEnabled}
                 onValueChange={handleToggleCommunityInteractions}
                 disabled={loading || !userId}
@@ -158,6 +160,7 @@ export default function NotificationSettings() {
                 />
               </View>
               <Switch
+                testID="community-likes-switch"
                 value={communityLikesEnabled}
                 onValueChange={handleToggleCommunityLikes}
                 disabled={loading || !userId}

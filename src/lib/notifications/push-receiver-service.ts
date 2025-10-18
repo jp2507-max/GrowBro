@@ -167,10 +167,10 @@ async function handleForegroundNotification(
               }
             : {}),
         },
-        trigger: null, // Present immediately
-        ...(Platform.OS === 'android'
-          ? { channelId: mapToAndroidChannelId(notificationType) }
-          : {}),
+        trigger:
+          Platform.OS === 'android'
+            ? { channelId: mapToAndroidChannelId(notificationType) }
+            : null, // Present immediately
       });
     }
   } catch (error) {

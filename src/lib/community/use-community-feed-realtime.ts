@@ -133,7 +133,7 @@ function createRealtimeHandlers(
   );
   const likesCache = createQueryCacheAdapter<PostLike>(
     queryClient,
-    ['posts'],
+    ['post-likes'],
     (like) => getLikeKey(like)
   );
 

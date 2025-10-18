@@ -22,6 +22,7 @@ DECLARE
   v_now timestamptz := now();
   v_existing_audit moderation_audit%ROWTYPE;
   v_result jsonb;
+  updated_count integer := 0;
 BEGIN
   -- Force search_path to prevent search_path hijacking
   SET search_path = 'public';
@@ -81,9 +82,14 @@ BEGIN
     EXECUTE format('
       UPDATE %I
       SET hidden_at = $1, moderation_reason = $2, updated_at = $1
-      WHERE id = $3
+      WHERE id = $3 AND hidden_at IS NULL
     ', v_table_name)
     USING v_now, p_reason, p_content_id;
+
+    GET DIAGNOSTICS updated_count = ROW_COUNT;
+    IF updated_count = 0 THEN
+      RAISE EXCEPTION 'Target not found or already in desired state' USING ERRCODE = 'P0002';
+    END IF;
 
     -- Insert audit log
     INSERT INTO moderation_audit (
@@ -107,9 +113,14 @@ BEGIN
     EXECUTE format('
       UPDATE %I
       SET hidden_at = NULL, moderation_reason = NULL, updated_at = $1
-      WHERE id = $2
+      WHERE id = $2 AND hidden_at IS NOT NULL
     ', v_table_name)
     USING v_now, p_content_id;
+
+    GET DIAGNOSTICS updated_count = ROW_COUNT;
+    IF updated_count = 0 THEN
+      RAISE EXCEPTION 'Target not found or already in desired state' USING ERRCODE = 'P0002';
+    END IF;
 
     -- Insert audit log
     INSERT INTO moderation_audit (

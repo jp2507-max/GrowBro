@@ -16,7 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Button, Pressable, Text, View } from '@/components/ui';
-import { translateDynamic } from '@/lib/i18n';
+import { translate, translateDynamic } from '@/lib/i18n';
 
 interface UndoSnackbarProps {
   visible: boolean;
@@ -102,7 +102,7 @@ export function UndoSnackbar({
 
         <View className="ml-3 flex-row items-center gap-2">
           <Button
-            label="Undo"
+            tx="common.undo"
             onPress={onUndo}
             size="sm"
             variant="secondary"
@@ -112,8 +112,8 @@ export function UndoSnackbar({
           <Pressable
             onPress={onDismiss}
             accessibilityRole="button"
-            accessibilityLabel="Dismiss"
-            accessibilityHint="Dismiss the undo snackbar and cancel the action"
+            accessibilityLabel={translate('common.dismiss')}
+            accessibilityHint={translate('community.undo_dismiss_hint')}
             testID={`${testID}-dismiss-button`}
           >
             <Text className="text-sm text-neutral-400 dark:text-neutral-500">

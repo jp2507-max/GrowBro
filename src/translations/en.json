@@ -36,6 +36,7 @@
       "post_image_hint": "Part of the post content.",
       "retry_comment_hint": "Retries posting this comment.",
       "retry_sync": "Retry sync",
+      "undo_dismiss_hint": "Dismiss the undo snackbar and cancel the action",
       "undo_expires": "Undo expires in {{seconds}}s",
       "view_author_profile": "View profile of @{{author}}",
       "view_author_profile_hint": "Double-tap to open this user's profile.",

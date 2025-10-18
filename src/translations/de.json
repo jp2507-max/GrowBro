@@ -36,6 +36,7 @@
       "post_image_hint": "Teil des Beitragsinhalts.",
       "retry_comment_hint": "Versucht erneut, diesen Kommentar zu posten.",
       "retry_sync": "Synchronisation wiederholen",
+      "undo_dismiss_hint": "Die Rückgängig-Snackbar schließen und die Aktion abbrechen",
       "undo_expires": "Rückgängigmachen läuft in {{seconds}}s ab",
       "view_author_profile": "Profil von @{{author}} anzeigen",
       "view_author_profile_hint": "Doppeltippen, um das Profil dieses Benutzers zu öffnen.",
