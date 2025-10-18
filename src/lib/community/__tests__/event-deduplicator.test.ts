@@ -134,11 +134,10 @@ describe('event-deduplicator', () => {
       const data = new Map();
       cache = {
         data,
-        get: jest.fn(),
+        get: jest.fn((key: string) => data.get(key)),
         upsert: jest.fn(),
         remove: jest.fn(),
       };
-      cache.get.mockReturnValue(undefined);
       outbox = {
         pending: new Set(),
         has: jest.fn((clientTxId: string) => outbox.pending.has(clientTxId)),
@@ -282,43 +281,6 @@ describe('event-deduplicator', () => {
 
         expect(cache.remove).toHaveBeenCalledWith('post1');
         expect(invalidateCalled).toBe(true);
-      });
-    });
-
-    describe('self-echo detection', () => {
-      it('should confirm outbox entry and skip re-apply', () => {
-        const clientTxId = 'tx-123';
-        outbox.pending.add(clientTxId);
-
-        const event: RealtimeEvent<Post> = {
-          schema: 'public',
-          table: 'posts',
-          eventType: 'INSERT',
-          commit_timestamp: '2024-01-01T00:00:00Z',
-          new: {
-            id: 'post1',
-            userId: 'user1',
-            user_id: 'user1',
-            body: 'Test post',
-            created_at: '2024-01-01T00:00:00Z',
-            updated_at: '2024-01-01T00:00:00Z',
-          },
-          old: null,
-          client_tx_id: clientTxId,
-        };
-
-        handleRealtimeEvent(event, {
-          table: 'posts',
-          cache,
-          outbox,
-          onInvalidate: () => {
-            invalidateCalled = true;
-          },
-        } as EventHandlerOptions<Post>);
-
-        expect(outbox.confirm).toHaveBeenCalledWith(clientTxId);
-        expect(cache.upsert).not.toHaveBeenCalled();
-        expect(invalidateCalled).toBe(false);
       });
     });
 

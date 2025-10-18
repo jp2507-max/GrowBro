@@ -124,31 +124,6 @@ function extractEventKey<T>(
 }
 
 /**
- * Handle self-echo confirmation for realtime events
- */
-async function handleSelfEchoConfirmation(params: {
-  client_tx_id: string | undefined;
-  commit_timestamp: string | undefined;
-  key: string;
-  outbox: OutboxOperations;
-}): Promise<boolean> {
-  const { client_tx_id, commit_timestamp, key, outbox } = params;
-
-  if (!client_tx_id || !(await outbox.has(client_tx_id))) {
-    return false;
-  }
-
-  // Ensure we record the commit timestamp for this key before confirming
-  // the outbox entry. This prevents later, older events from overwriting
-  // our just-applied state due to missing timestamp bookkeeping.
-  if (commit_timestamp) recordAppliedTimestamp(key, commit_timestamp);
-
-  await outbox.confirm(client_tx_id);
-  console.log('Confirmed outbox entry:', client_tx_id);
-  return true; // Don't re-apply our own change
-}
-
-/**
  * Apply event change to cache
  */
 function applyEventToCache<T>(params: {
@@ -185,7 +160,7 @@ export async function handleRealtimeEvent<T>(
     eventType,
     new: newRow,
     old: oldRow,
-    client_tx_id,
+    client_tx_id: _client_tx_id,
     commit_timestamp,
   } = event;
 
@@ -231,27 +206,8 @@ export async function handleRealtimeEvent<T>(
     return;
   }
 
-  // Handle self-echo confirmation (Requirements: 3.6)
-  // NOTE: This logic assumes realtime events include client_tx_id for outbox confirmation,
-  // but the current database schema for posts/post_comments/post_likes tables does NOT
-  // persist the client_tx_id column. The API client inserts only include user_id, body,
-  // and other core fields, so realtime payloads arrive with client_tx_id undefined.
-  // This causes outbox entries to never be confirmed, leading to permanently growing
-  // outbox and reconnection timeouts.
-  //
-  // P1 FIX REQUIRED: Either:
-  // 1. Add client_tx_id column to posts/post_comments/post_likes tables and emit it in realtime
-  // 2. Remove this confirmation logic and rely on timestamp-based deduplication only
-  if (
-    await handleSelfEchoConfirmation({
-      client_tx_id,
-      commit_timestamp,
-      key,
-      outbox,
-    })
-  ) {
-    return; // Don't re-apply our own change
-  }
+  // Self-echo confirmation removed: client_tx_id is not persisted in database tables,
+  // so realtime events never include it. Timestamp-based deduplication handles stale event prevention.
 
   applyEventToCache({ eventType, newRow, key, cache });
 
@@ -269,8 +225,13 @@ async function handlePostLikeEvent(params: {
   outbox: OutboxOperations;
   onInvalidate?: () => void;
 }): Promise<void> {
-  const { event, key, cache, outbox, onInvalidate } = params;
-  const { eventType, new: newRow, commit_timestamp, client_tx_id } = event;
+  const { event, key, cache, outbox: _outbox, onInvalidate } = params;
+  const {
+    eventType,
+    new: newRow,
+    commit_timestamp,
+    client_tx_id: _client_tx_id,
+  } = event;
   const local = cache.get(key);
 
   // Use commit_timestamp for ordering when available
@@ -290,19 +251,8 @@ async function handlePostLikeEvent(params: {
     return;
   }
 
-  // Handle self-echo confirmation
-  if (client_tx_id && (await outbox.has(client_tx_id))) {
-    // Preserve timestamp bookkeeping for this composite key before
-    // confirming our own outbox entry. Use the event commit timestamp
-    // (or the row's commit timestamp if present) so later stale events
-    // won't be applied out of order.
-    const commitTs = commit_timestamp || (newRow as any)?.commit_timestamp;
-    if (commitTs) recordAppliedTimestamp(key, commitTs);
-
-    await outbox.confirm(client_tx_id);
-    console.log('Confirmed outbox entry:', client_tx_id);
-    return;
-  }
+  // Self-echo confirmation removed: client_tx_id is not persisted in database tables,
+  // so realtime events never include it. Timestamp-based deduplication handles stale event prevention.
 
   // Treat INSERT as a "like" (add) and DELETE as an "unlike" (remove).
   // If an INSERT arrives but the local cache already has the like, ignore it.
