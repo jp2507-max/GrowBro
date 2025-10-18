@@ -1,14 +1,20 @@
-declare module 'react-native-keyboard-controller/jest';
 declare module 'expo-notifications' {
-  interface NotificationContentInput {
-    threadIdentifier?: string;
-    subtitle?: string;
+  type NotificationContentInput = {
+    title?: string | null;
+    subtitle?: string | null;
+    body?: string | null;
+    data?: Record<string, unknown>;
     badge?: number;
+    sound?: boolean | string;
+    launchImageName?: string;
+    vibrate?: number[];
+    priority?: string;
     color?: string;
-    priority?: 'min' | 'low' | 'default' | 'high' | 'max';
-  }
-
-  interface NotificationTriggerInput {
-    channelId?: string;
-  }
+    autoDismiss?: boolean;
+    categoryIdentifier?: string;
+    sticky?: boolean;
+    attachments?: any[]; // NotificationContentAttachmentIos[]
+    interruptionLevel?: 'passive' | 'active' | 'timeSensitive' | 'critical';
+    threadIdentifier?: string;
+  };
 }

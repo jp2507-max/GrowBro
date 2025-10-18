@@ -72,12 +72,17 @@ function createQueryCacheAdapter<TStored, TCache = TStored>(
   return {
     get: (key: string) => {
       const data = queryClient.getQueryData<TStored[]>(queryKey);
-      if (!data || !fromStored) return undefined;
+      if (!data) return undefined;
       const storedItem = data.find((item) => {
-        const cached = fromStored(item, key);
+        const cached = fromStored
+          ? fromStored(item, key)
+          : (item as unknown as TCache);
         return keySelector(cached) === key;
       });
-      return storedItem ? fromStored(storedItem, key) : undefined;
+      if (!storedItem) return undefined;
+      return fromStored
+        ? fromStored(storedItem, key)
+        : (storedItem as unknown as TCache);
     },
     upsert: (row: TCache) => {
       const storedRow = toStored ? toStored(row) : (row as unknown as TStored);

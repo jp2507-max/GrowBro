@@ -58,6 +58,16 @@ interface TimestampedEvent {
   count: number;
 }
 
+interface UndoActionEvent {
+  timestamp: number;
+  success: boolean;
+}
+
+interface MutationFailureEvent {
+  timestamp: number;
+  failed: boolean;
+}
+
 class CommunityMetricsTracker {
   private storage: MMKV;
 
@@ -129,7 +139,7 @@ class CommunityMetricsTracker {
     const actions = this.getUndoActions();
     actions.push({
       timestamp: Date.now(),
-      count: success ? 1 : 0,
+      success,
     });
 
     // Keep only last 24 hours
@@ -147,7 +157,7 @@ class CommunityMetricsTracker {
     const failures = this.getMutationFailures();
     failures.push({
       timestamp: Date.now(),
-      count: failed ? 1 : 0,
+      failed,
     });
 
     // Keep only last 24 hours
@@ -184,12 +194,16 @@ class CommunityMetricsTracker {
     const dedupeDrops = this.getDedupeDrops();
     const dropsPerMin = this.calculateRatePerMinute(dedupeDrops);
 
-    const outbox =
-      this.storage.getString(OUTBOX_METRICS_KEY) !== undefined
-        ? (JSON.parse(
-            this.storage.getString(OUTBOX_METRICS_KEY) as string
-          ) as OutboxMetrics)
+    const rawOutboxMetrics =
+      this.storage.getString(OUTBOX_METRICS_KEY) ?? undefined;
+    let outbox: OutboxMetrics;
+    try {
+      outbox = rawOutboxMetrics
+        ? (JSON.parse(rawOutboxMetrics) as OutboxMetrics)
         : { depth: 0, pending: 0, failed: 0, confirmed: 0 };
+    } catch {
+      outbox = { depth: 0, pending: 0, failed: 0, confirmed: 0 };
+    }
 
     const undoActions = this.getUndoActions();
     const undoRate = this.calculateSuccessRate(undoActions);
@@ -226,8 +240,14 @@ class CommunityMetricsTracker {
   private getLatencySamples(): LatencySample[] {
     const data = this.storage.getString(LATENCY_SAMPLES_KEY);
     if (data !== undefined) {
-      const parsed = JSON.parse(data);
-      return Array.isArray(parsed) ? parsed : [];
+      try {
+        const parsed = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        console.error('Failed to parse latency samples:', error);
+        this.storage.delete(LATENCY_SAMPLES_KEY);
+        return [];
+      }
     }
     return [];
   }
@@ -235,26 +255,44 @@ class CommunityMetricsTracker {
   private getDedupeDrops(): TimestampedEvent[] {
     const data = this.storage.getString(DEDUPE_DROPS_KEY);
     if (data !== undefined) {
-      const parsed = JSON.parse(data);
-      return Array.isArray(parsed) ? parsed : [];
+      try {
+        const parsed = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        console.error('Failed to parse dedupe drops:', error);
+        this.storage.delete(DEDUPE_DROPS_KEY);
+        return [];
+      }
     }
     return [];
   }
 
-  private getUndoActions(): TimestampedEvent[] {
+  private getUndoActions(): UndoActionEvent[] {
     const data = this.storage.getString(UNDO_ACTIONS_KEY);
     if (data !== undefined) {
-      const parsed = JSON.parse(data);
-      return Array.isArray(parsed) ? parsed : [];
+      try {
+        const parsed = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        console.error('Failed to parse undo actions:', error);
+        this.storage.delete(UNDO_ACTIONS_KEY);
+        return [];
+      }
     }
     return [];
   }
 
-  private getMutationFailures(): TimestampedEvent[] {
+  private getMutationFailures(): MutationFailureEvent[] {
     const data = this.storage.getString(MUTATION_FAILURES_KEY);
     if (data !== undefined) {
-      const parsed = JSON.parse(data);
-      return Array.isArray(parsed) ? parsed : [];
+      try {
+        const parsed = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        console.error('Failed to parse mutation failures:', error);
+        this.storage.delete(MUTATION_FAILURES_KEY);
+        return [];
+      }
     }
     return [];
   }
@@ -277,17 +315,17 @@ class CommunityMetricsTracker {
     return recentEvents.reduce((sum, e) => sum + e.count, 0);
   }
 
-  private calculateSuccessRate(events: TimestampedEvent[]): number {
+  private calculateSuccessRate(events: UndoActionEvent[]): number {
     if (events.length === 0) return 0;
 
-    const successful = events.reduce((sum, e) => sum + e.count, 0);
+    const successful = events.filter((e) => e.success).length;
     return successful / events.length;
   }
 
-  private calculateFailureRate(events: TimestampedEvent[]): number {
+  private calculateFailureRate(events: MutationFailureEvent[]): number {
     if (events.length === 0) return 0;
 
-    const failed = events.filter((e) => e.count === 1).length;
+    const failed = events.filter((e) => e.failed).length;
     return failed / events.length;
   }
 }

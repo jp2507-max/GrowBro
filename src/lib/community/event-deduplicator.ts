@@ -41,9 +41,9 @@ export function shouldApply<T>(params: ShouldApplyParams<T>): boolean {
     usePersistentTimestamps = false,
   } = params;
 
-  if (!local) return true;
-
   const key = getKey(incoming);
+
+  if (!local && !usePersistentTimestamps) return true;
 
   let incomingTs: Date;
   let localTs: Date;
@@ -156,13 +156,7 @@ export async function handleRealtimeEvent<T>(
   event: RealtimeEvent<T>,
   options: EventHandlerOptions<T>
 ): Promise<void> {
-  const {
-    eventType,
-    new: newRow,
-    old: oldRow,
-    client_tx_id: _client_tx_id,
-    commit_timestamp,
-  } = event;
+  const { eventType, new: newRow, old: oldRow, commit_timestamp } = event;
 
   if (!newRow && eventType !== 'DELETE') return;
 
@@ -225,18 +219,13 @@ async function handlePostLikeEvent(params: {
   outbox: OutboxOperations;
   onInvalidate?: () => void;
 }): Promise<void> {
-  const { event, key, cache, outbox: _outbox, onInvalidate } = params;
-  const {
-    eventType,
-    new: newRow,
-    commit_timestamp,
-    client_tx_id: _client_tx_id,
-  } = event;
+  const { event, key, cache, onInvalidate } = params;
+  const { eventType, new: newRow, commit_timestamp } = event;
   const local = cache.get(key);
 
   // Use commit_timestamp for ordering when available
   const should = shouldApply({
-    incoming: newRow as T,
+    incoming: newRow as PostLike,
     local,
     getKey: () => key,
     timestampField: 'commit_timestamp',

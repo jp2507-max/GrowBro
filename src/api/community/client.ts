@@ -2,6 +2,7 @@ import { type SupabaseClient } from '@supabase/supabase-js';
 
 import { createIdempotencyHeaders } from '@/lib/community/headers';
 import { getIdempotencyService } from '@/lib/community/idempotency-service';
+import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 import { supabase } from '@/lib/supabase';
 
 import type {
@@ -44,6 +45,13 @@ export class ValidationError extends Error {
     super(message);
     this.name = 'ValidationError';
   }
+}
+
+/**
+ * Utility function for delays in retry logic
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -214,6 +222,75 @@ export class CommunityApiClient implements CommunityAPI {
     });
   }
 
+  /**
+   * Fetch a post with retry logic for handling replication lag after restore
+   */
+  private async fetchPostWithRetry(
+    postId: string,
+    maxRetries: number = 3,
+    retryDelay: number = 500
+  ): Promise<Post> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const query = this.client.from('posts').select('*').eq('id', postId);
+        const posts = await this.getPostsWithCounts(query, true);
+
+        if (posts.length > 0) {
+          return posts[0];
+        }
+
+        if (attempt < maxRetries) {
+          await sleep(retryDelay);
+        }
+      } catch (error) {
+        if (attempt < maxRetries) {
+          await sleep(retryDelay);
+        } else {
+          throw error;
+        }
+      }
+    }
+    throw new Error('Post not found after retries');
+  }
+
+  /**
+   * Run diagnostic queries for a post to determine visibility issues
+   */
+  private async runPostDiagnostic(postId: string): Promise<{
+    diagnosticPost: any;
+    diagnosticError: any;
+  }> {
+    const { data: diagnosticPost, error: diagnosticError } = await this.client
+      .from('posts')
+      .select('id, deleted_at, created_at, updated_at')
+      .eq('id', postId)
+      .single();
+
+    return { diagnosticPost, diagnosticError };
+  }
+
+  /**
+   * Determine specific error message based on diagnostic results
+   */
+  private determinePostError(
+    diagnosticPost: any,
+    _lastError: Error | null
+  ): Error {
+    if (diagnosticPost && diagnosticPost.deleted_at) {
+      return new Error(
+        'Post restored but not yet visible - possible replication delay'
+      );
+    } else if (diagnosticPost) {
+      return new Error(
+        'Post exists but not visible - possible RLS policy blocking access'
+      );
+    } else {
+      return new Error(
+        'Post not found - undo may have failed or post was permanently deleted'
+      );
+    }
+  }
+
   async undoDeletePost(
     postId: string,
     idempotencyKey?: string,
@@ -262,16 +339,42 @@ export class CommunityApiClient implements CommunityAPI {
           throw new Error('Invalid response from undo-delete-post function');
         }
 
-        // Fetch the full post data after restore
-        const query = this.client.from('posts').select('*').eq('id', postId);
+        try {
+          return await this.fetchPostWithRetry(postId);
+        } catch (fetchError) {
+          // Run diagnostics and throw appropriate error
+          const { diagnosticPost, diagnosticError } =
+            await this.runPostDiagnostic(postId);
 
-        const posts = await this.getPostsWithCounts(query, true);
+          const diagnosticInfo = {
+            postId,
+            userId,
+            attemptCount: 3,
+            lastError:
+              fetchError instanceof Error
+                ? fetchError.message
+                : String(fetchError),
+            diagnosticQueryResult: diagnosticPost,
+            diagnosticError: diagnosticError?.message,
+            queryTimestamp: new Date().toISOString(),
+          };
 
-        if (posts.length === 0) {
-          throw new Error('Failed to fetch restored post');
+          captureCategorizedErrorSync(
+            fetchError instanceof Error
+              ? fetchError
+              : new Error('Post fetch failed after retries'),
+            {
+              category: 'replication_lag',
+              operation: 'undo_delete_post',
+              ...diagnosticInfo,
+            }
+          );
+
+          throw this.determinePostError(
+            diagnosticPost,
+            fetchError instanceof Error ? fetchError : null
+          );
         }
-
-        return posts[0];
       },
     });
   }
@@ -486,6 +589,79 @@ export class CommunityApiClient implements CommunityAPI {
     });
   }
 
+  /**
+   * Fetch a comment with retry logic for handling replication lag after restore
+   */
+  private async fetchCommentWithRetry(
+    commentId: string,
+    maxRetries: number = 3,
+    retryDelay: number = 500
+  ): Promise<PostComment> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const { data: fetchedComment, error: fetchError } = await this.client
+          .from('post_comments')
+          .select()
+          .eq('id', commentId)
+          .single();
+
+        if (!fetchError && fetchedComment) {
+          return fetchedComment;
+        }
+
+        if (attempt < maxRetries) {
+          await sleep(retryDelay);
+        }
+      } catch (error) {
+        if (attempt < maxRetries) {
+          await sleep(retryDelay);
+        } else {
+          throw error;
+        }
+      }
+    }
+    throw new Error('Comment not found after retries');
+  }
+
+  /**
+   * Run diagnostic queries for a comment to determine visibility issues
+   */
+  private async runCommentDiagnostic(commentId: string): Promise<{
+    diagnosticComment: any;
+    diagnosticError: any;
+  }> {
+    const { data: diagnosticComment, error: diagnosticError } =
+      await this.client
+        .from('post_comments')
+        .select('id, deleted_at, created_at, updated_at')
+        .eq('id', commentId)
+        .single();
+
+    return { diagnosticComment, diagnosticError };
+  }
+
+  /**
+   * Determine specific error message based on diagnostic results for comments
+   */
+  private determineCommentError(
+    diagnosticComment: any,
+    _lastError: Error | null
+  ): Error {
+    if (diagnosticComment && diagnosticComment.deleted_at) {
+      return new Error(
+        'Comment restored but not yet visible - possible replication delay'
+      );
+    } else if (diagnosticComment) {
+      return new Error(
+        'Comment exists but not visible - possible RLS policy blocking access'
+      );
+    } else {
+      return new Error(
+        'Comment not found - undo may have failed or comment was permanently deleted'
+      );
+    }
+  }
+
   async undoDeleteComment(
     commentId: string,
     idempotencyKey?: string,
@@ -533,18 +709,42 @@ export class CommunityApiClient implements CommunityAPI {
           throw new Error('Invalid response from undo-delete-comment function');
         }
 
-        // Fetch the full comment data after restore
-        const { data: comment, error: fetchError } = await this.client
-          .from('post_comments')
-          .select()
-          .eq('id', commentId)
-          .single();
+        try {
+          return await this.fetchCommentWithRetry(commentId);
+        } catch (fetchError) {
+          // Run diagnostics and throw appropriate error
+          const { diagnosticComment, diagnosticError } =
+            await this.runCommentDiagnostic(commentId);
 
-        if (fetchError || !comment) {
-          throw new Error('Failed to fetch restored comment');
+          const diagnosticInfo = {
+            commentId,
+            userId,
+            attemptCount: 3,
+            lastError:
+              fetchError instanceof Error
+                ? fetchError.message
+                : String(fetchError),
+            diagnosticQueryResult: diagnosticComment,
+            diagnosticError: diagnosticError?.message,
+            queryTimestamp: new Date().toISOString(),
+          };
+
+          captureCategorizedErrorSync(
+            fetchError instanceof Error
+              ? fetchError
+              : new Error('Comment fetch failed after retries'),
+            {
+              category: 'replication_lag',
+              operation: 'undo_delete_comment',
+              ...diagnosticInfo,
+            }
+          );
+
+          throw this.determineCommentError(
+            diagnosticComment,
+            fetchError instanceof Error ? fetchError : null
+          );
         }
-
-        return comment;
       },
     });
   }

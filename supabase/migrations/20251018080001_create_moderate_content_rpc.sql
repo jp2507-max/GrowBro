@@ -3,7 +3,7 @@
 
 BEGIN;
 
-CREATE OR REPLACE FUNCTION moderate_content(
+CREATE OR REPLACE FUNCTION public.moderate_content(
   p_content_type text,
   p_content_id uuid,
   p_action text,
@@ -13,6 +13,7 @@ CREATE OR REPLACE FUNCTION moderate_content(
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = 'public'
 AS $$
 DECLARE
   v_table_name text;
@@ -20,6 +21,7 @@ DECLARE
   v_now timestamptz := now();
   v_existing_audit moderation_audit%ROWTYPE;
   v_result jsonb;
+  v_row_count integer;
 BEGIN
   -- Validate inputs
   IF p_content_type NOT IN ('post', 'comment') THEN
@@ -71,56 +73,78 @@ BEGIN
 
   -- Perform the moderation action atomically
   IF p_action = 'hide' THEN
-    -- Hide content
+    -- Hide content (idempotent: only hide if not already hidden)
     EXECUTE format('
-      UPDATE %I
+      UPDATE public.%I
       SET hidden_at = $1, moderation_reason = $2, updated_at = $1
-      WHERE id = $3
+      WHERE id = $3 AND hidden_at IS NULL
     ', v_table_name)
     USING v_now, p_reason, p_content_id;
 
-    -- Insert audit log
-    INSERT INTO moderation_audit (
-      actor_id,
-      action,
-      target_type,
-      target_id,
-      reason,
-      idempotency_key
-    ) VALUES (
-      v_moderator_id,
-      'hide',
-      p_content_type,
-      p_content_id,
-      p_reason,
-      p_idempotency_key
-    );
+    -- Check if any rows were affected
+    GET DIAGNOSTICS v_row_count = ROW_COUNT;
+
+    -- Only insert audit log if content was actually hidden
+    IF v_row_count > 0 THEN
+      INSERT INTO public.moderation_audit (
+        actor_id,
+        action,
+        target_type,
+        target_id,
+        reason,
+        idempotency_key
+      ) VALUES (
+        v_moderator_id,
+        'hide',
+        p_content_type,
+        p_content_id,
+        p_reason,
+        p_idempotency_key
+      );
+    ELSE
+      -- Return early if no rows were affected (already hidden)
+      RETURN jsonb_build_object(
+        'success', false,
+        'error', 'Content is already hidden'
+      );
+    END IF;
 
   ELSIF p_action = 'unhide' THEN
-    -- Unhide content
+    -- Unhide content (idempotent: only unhide if currently hidden)
     EXECUTE format('
-      UPDATE %I
+      UPDATE public.%I
       SET hidden_at = NULL, moderation_reason = NULL, updated_at = $1
-      WHERE id = $2
+      WHERE id = $2 AND hidden_at IS NOT NULL
     ', v_table_name)
     USING v_now, p_content_id;
 
-    -- Insert audit log
-    INSERT INTO moderation_audit (
-      actor_id,
-      action,
-      target_type,
-      target_id,
-      reason,
-      idempotency_key
-    ) VALUES (
-      v_moderator_id,
-      'unhide',
-      p_content_type,
-      p_content_id,
-      p_reason,
-      p_idempotency_key
-    );
+    -- Check if any rows were affected
+    GET DIAGNOSTICS v_row_count = ROW_COUNT;
+
+    -- Only insert audit log if content was actually unhidden
+    IF v_row_count > 0 THEN
+      INSERT INTO public.moderation_audit (
+        actor_id,
+        action,
+        target_type,
+        target_id,
+        reason,
+        idempotency_key
+      ) VALUES (
+        v_moderator_id,
+        'unhide',
+        p_content_type,
+        p_content_id,
+        p_reason,
+        p_idempotency_key
+      );
+    ELSE
+      -- Return early if no rows were affected (not hidden)
+      RETURN jsonb_build_object(
+        'success', false,
+        'error', 'Content is not hidden'
+      );
+    END IF;
   END IF;
 
   -- Return success
@@ -140,6 +164,6 @@ END;
 $$;
 
 -- Grant execute permission to authenticated users
-GRANT EXECUTE ON FUNCTION moderate_content(text, uuid, text, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.moderate_content(text, uuid, text, text, text) TO authenticated;
 
 COMMIT;
