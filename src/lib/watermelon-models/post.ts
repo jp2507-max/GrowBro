@@ -28,18 +28,18 @@ export class PostModel extends Model {
   // Computed properties for UI - not persisted in DB
   @lazy
   likeCount = this.likes
-    .extend(Q.where('deleted_at', Q.eq(null)))
+    .extend(Q.where('deleted_at', null))
     .observeCount(false);
 
   @lazy
   commentCount = this.comments
-    .extend(Q.where('deleted_at', Q.eq(null)), Q.where('hidden_at', Q.eq(null)))
+    .extend(Q.where('deleted_at', null), Q.where('hidden_at', null))
     .observeCount(false);
 
   // Check if current user has liked this post
   async hasUserLiked(userId: string): Promise<boolean> {
     const count = await this.likes
-      .extend(Q.where('user_id', Q.eq(userId)))
+      .extend(Q.where('user_id', userId))
       .fetchCount();
     return count > 0;
   }
@@ -47,8 +47,8 @@ export class PostModel extends Model {
   // Get visible comments (not deleted or hidden)
   get visibleComments(): Query<PostCommentModel> {
     return this.comments.extend(
-      Q.where('deleted_at', Q.eq(null)),
-      Q.where('hidden_at', Q.eq(null)),
+      Q.where('deleted_at', null),
+      Q.where('hidden_at', null),
       Q.sortBy('created_at', Q.asc)
     );
   }

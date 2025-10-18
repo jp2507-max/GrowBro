@@ -1,39 +1,8 @@
 // Community feed API types
+import type { Post, PostComment, PostLike } from '@/types/community';
 
-export type Post = {
-  id: string;
-  user_id: string;
-  body: string;
-  media_uri?: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
-  hidden_at?: string;
-  moderation_reason?: string;
-  undo_expires_at?: string;
-  // Derived fields (client-side only, not stored in DB)
-  like_count?: number;
-  comment_count?: number;
-  user_has_liked?: boolean;
-};
-
-export type PostComment = {
-  id: string;
-  post_id: string;
-  user_id: string;
-  body: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
-  hidden_at?: string;
-  undo_expires_at?: string;
-};
-
-export type PostLike = {
-  post_id: string;
-  user_id: string;
-  created_at: string;
-};
+// Re-export for convenience
+export type { Post, PostComment, PostLike };
 
 export type OutboxEntry = {
   id: string;

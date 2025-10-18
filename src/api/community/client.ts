@@ -65,28 +65,36 @@ export class CommunityApiClient implements CommunityAPI {
   // ==================== Posts ====================
 
   async getPost(postId: string): Promise<Post> {
-    const { data, error } = await this.client
+    const query = this.client
       .from('posts')
       .select('*')
       .eq('id', postId)
       .is('deleted_at', null)
-      .is('hidden_at', null)
-      .single();
+      .is('hidden_at', null);
 
-    if (error) {
-      throw new Error(`Failed to fetch post: ${error.message}`);
+    const posts = await this.getPostsWithCounts(query, true);
+
+    if (posts.length === 0) {
+      throw new Error('Post not found');
     }
 
-    return this.enrichPost(data);
+    return posts[0];
   }
 
   async getPosts(
     cursor?: string,
     limit: number = 20
   ): Promise<PaginatedResponse<Post>> {
+    // Get the exact count separately since subqueries don't support count
+    const { count } = await this.client
+      .from('posts')
+      .select('*', { count: 'exact', head: true })
+      .eq('deleted_at', null)
+      .eq('hidden_at', null);
+
     let query = this.client
       .from('posts')
-      .select('*', { count: 'exact' })
+      .select('*')
       .is('deleted_at', null)
       .is('hidden_at', null)
       .order('created_at', { ascending: false })
@@ -96,15 +104,7 @@ export class CommunityApiClient implements CommunityAPI {
       query = query.lt('created_at', cursor);
     }
 
-    const { data, error, count } = await query;
-
-    if (error) {
-      throw new Error(`Failed to fetch posts: ${error.message}`);
-    }
-
-    const posts = await Promise.all(
-      (data || []).map((post) => this.enrichPost(post))
-    );
+    const posts = await this.getPostsWithCounts(query);
     const next =
       posts.length === limit ? posts[posts.length - 1].created_at : null;
 
@@ -160,7 +160,13 @@ export class CommunityApiClient implements CommunityAPI {
           throw new Error(`Failed to create post: ${error.message}`);
         }
 
-        return this.enrichPost(data);
+        // For newly created posts, counts are 0 and user hasn't liked their own post
+        return {
+          ...data,
+          like_count: 0,
+          comment_count: 0,
+          user_has_liked: false,
+        };
       },
     });
   }
@@ -178,7 +184,6 @@ export class CommunityApiClient implements CommunityAPI {
     }
 
     const userId = session.session.user.id;
-    const undoExpiresAt = new Date(Date.now() + 15000).toISOString(); // 15 seconds
 
     return this.idempotencyService.processWithIdempotency({
       key: headers['Idempotency-Key'],
@@ -187,20 +192,22 @@ export class CommunityApiClient implements CommunityAPI {
       endpoint: `/api/posts/${postId}/delete`,
       payload: { postId },
       operation: async () => {
-        const { error } = await this.client
-          .from('posts')
-          .update({
-            deleted_at: new Date().toISOString(),
-            undo_expires_at: undoExpiresAt,
-          })
-          .eq('id', postId)
-          .eq('user_id', userId);
+        const { data, error } = await this.client.functions.invoke(
+          'delete-post',
+          {
+            body: { postId },
+          }
+        );
 
         if (error) {
           throw new Error(`Failed to delete post: ${error.message}`);
         }
 
-        return { undo_expires_at: undoExpiresAt };
+        if (!data || !data.undo_expires_at) {
+          throw new Error('Invalid response from delete-post function');
+        }
+
+        return { undo_expires_at: data.undo_expires_at };
       },
     });
   }
@@ -252,17 +259,15 @@ export class CommunityApiClient implements CommunityAPI {
         }
 
         // Fetch the full post data after restore
-        const { data: post, error: fetchError } = await this.client
-          .from('posts')
-          .select()
-          .eq('id', postId)
-          .single();
+        const query = this.client.from('posts').select('*').eq('id', postId);
 
-        if (fetchError || !post) {
+        const posts = await this.getPostsWithCounts(query, true);
+
+        if (posts.length === 0) {
           throw new Error('Failed to fetch restored post');
         }
 
-        return this.enrichPost(post);
+        return posts[0];
       },
     });
   }
@@ -558,9 +563,17 @@ export class CommunityApiClient implements CommunityAPI {
     cursor?: string,
     limit: number = 20
   ): Promise<PaginatedResponse<Post>> {
+    // Get the exact count separately since subqueries don't support count
+    const { count } = await this.client
+      .from('posts')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('deleted_at', null)
+      .eq('hidden_at', null);
+
     let query = this.client
       .from('posts')
-      .select('*', { count: 'exact' })
+      .select('*')
       .eq('user_id', userId)
       .is('deleted_at', null)
       .is('hidden_at', null)
@@ -571,15 +584,7 @@ export class CommunityApiClient implements CommunityAPI {
       query = query.lt('created_at', cursor);
     }
 
-    const { data, error, count } = await query;
-
-    if (error) {
-      throw new Error(`Failed to fetch user posts: ${error.message}`);
-    }
-
-    const posts = await Promise.all(
-      (data || []).map((post) => this.enrichPost(post))
-    );
+    const posts = await this.getPostsWithCounts(query);
     const next =
       posts.length === limit ? posts[posts.length - 1].created_at : null;
 
@@ -594,7 +599,61 @@ export class CommunityApiClient implements CommunityAPI {
   // ==================== Helper Methods ====================
 
   /**
+   * Get posts with like/comment counts and user like status in a single optimized query
+   */
+  private async getPostsWithCounts(
+    query: any,
+    includeUserLikes: boolean = true
+  ): Promise<Post[]> {
+    const { data: session } = await this.client.auth.getSession();
+    const userId = session?.session?.user?.id;
+
+    // Build the select query with subqueries for counts
+    const selectQuery = query.select(`
+      *,
+      like_count: post_likes(count),
+      comment_count: post_comments!inner(count)
+    `);
+
+    const { data: posts, error } = await selectQuery;
+
+    if (error) {
+      throw new Error(`Failed to fetch posts with counts: ${error.message}`);
+    }
+
+    if (!posts || posts.length === 0) {
+      return [];
+    }
+
+    // If user is authenticated and we need user like status, fetch all likes for these posts in one query
+    let userLikesMap = new Map<string, boolean>();
+    if (userId && includeUserLikes) {
+      const postIds = posts.map((post: any) => post.id);
+      const { data: likes } = await this.client
+        .from('post_likes')
+        .select('post_id')
+        .eq('user_id', userId)
+        .in('post_id', postIds);
+
+      if (likes) {
+        likes.forEach((like: any) => {
+          userLikesMap.set(like.post_id, true);
+        });
+      }
+    }
+
+    // Map the results to include user_has_liked
+    return posts.map((post: any) => ({
+      ...post,
+      like_count: post.like_count || 0,
+      comment_count: post.comment_count || 0,
+      user_has_liked: userLikesMap.get(post.id) || false,
+    }));
+  }
+
+  /**
    * Enrich post with derived fields (like_count, comment_count, user_has_liked)
+   * @deprecated Use getPostsWithCounts for bulk operations to avoid N+1 queries
    */
   private async enrichPost(post: any): Promise<Post> {
     const { data: session } = await this.client.auth.getSession();

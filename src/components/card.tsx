@@ -2,6 +2,7 @@ import { Link } from 'expo-router';
 import React from 'react';
 
 import type { Post } from '@/api';
+import { LikeButton } from '@/components/community/like-button';
 import { ModerationActions } from '@/components/moderation-actions';
 import { Image, Pressable, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
@@ -16,12 +17,26 @@ const images = [
   'https://images.unsplash.com/photo-1587974928442-77dc3e0dba72?auto=format&fit=crop&w=800&q=80',
 ];
 
-export const Card = ({ title, body, id, userId }: Props) => {
+export const Card = ({
+  title,
+  body,
+  id,
+  userId,
+  like_count = 0,
+  comment_count = 0,
+  user_has_liked = false,
+}: Props) => {
   const compositeLabel = React.useMemo(() => {
     const badgeText = translate('cannabis.educational_badge');
     const previewText = body?.slice(0, 100) || '';
     return `${badgeText}. ${title}. ${previewText}`;
   }, [title, body]);
+
+  // Prevent like button from triggering navigation
+  const handleLikePress = React.useCallback((e: any) => {
+    e.stopPropagation();
+    e.preventDefault();
+  }, []);
 
   return (
     <Link href={`/feed/${id}`} asChild>
@@ -47,6 +62,27 @@ export const Card = ({ title, body, id, userId }: Props) => {
             <Text numberOfLines={3} className="leading-snug text-gray-600">
               {body}
             </Text>
+            <View
+              className="mt-3 flex-row items-center justify-between"
+              testID={`post-actions-${id}`}
+            >
+              <Pressable accessibilityRole="button" onPress={handleLikePress}>
+                <LikeButton
+                  postId={String(id)}
+                  likeCount={like_count}
+                  userHasLiked={user_has_liked}
+                  testID={`like-button-${id}`}
+                />
+              </Pressable>
+              {comment_count > 0 && (
+                <Text
+                  className="text-sm text-neutral-600 dark:text-neutral-400"
+                  testID={`comment-count-${id}`}
+                >
+                  {comment_count} {comment_count === 1 ? 'comment' : 'comments'}
+                </Text>
+              )}
+            </View>
             <View className="mt-3" testID={`moderation-actions-post-${id}`}>
               <ModerationActions contentId={id} authorId={userId} />
             </View>

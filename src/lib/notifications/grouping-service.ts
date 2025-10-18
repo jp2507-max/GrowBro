@@ -6,7 +6,12 @@ import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
 type CommunityNotification = {
   notification: any; // Expo notification object
-  type: 'community_interaction' | 'community_like';
+  type:
+    | 'community_interaction'
+    | 'community.interaction'
+    | 'community.reply'
+    | 'community_like'
+    | 'community.like';
   postId: string;
   threadId?: string;
 };

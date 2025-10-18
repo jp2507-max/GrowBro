@@ -8,6 +8,8 @@ import type {
   RealtimeEvent,
 } from '@/types/community';
 
+import { communityMetrics } from './metrics-tracker';
+
 type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
 
 type RealtimeCallbacks = {
@@ -29,8 +31,8 @@ export class RealtimeConnectionManager {
   private callbacks: RealtimeCallbacks = {};
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 3;
-  private reconnectTimer: NodeJS.Timeout | null = null;
-  private pollingTimer: NodeJS.Timeout | null = null;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private pollingTimer: ReturnType<typeof setTimeout> | null = null;
   private isPolling = false;
   private postIdFilter?: string;
 
@@ -59,6 +61,14 @@ export class RealtimeConnectionManager {
    * @param postId Optional post ID to filter comments subscription
    */
   subscribe(callbacks: RealtimeCallbacks, postId?: string): void {
+    // If already connected or connecting, perform clean re-subscribe
+    if (
+      this.connectionState === 'connected' ||
+      this.connectionState === 'connecting'
+    ) {
+      this.unsubscribe();
+    }
+
     this.callbacks = callbacks;
     this.postIdFilter = postId;
     this.connect();
@@ -82,18 +92,21 @@ export class RealtimeConnectionManager {
 
     this.channel = supabase.channel(channelName);
 
-    // Subscribe to posts table
-    this.channel.on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'posts',
-      },
-      (payload) => {
-        this.handlePostChange(payload);
-      }
-    );
+    // Subscribe to posts table with optional post filter
+    const postConfig: any = {
+      event: '*',
+      schema: 'public',
+      table: 'posts',
+    };
+
+    // Apply post filter for scoped subscriptions
+    if (this.postIdFilter) {
+      postConfig.filter = `id=eq.${this.postIdFilter}`;
+    }
+
+    this.channel.on('postgres_changes', postConfig, (payload) => {
+      this.handlePostChange(payload);
+    });
 
     // Subscribe to comments table with optional post filter
     const commentConfig: any = {
@@ -111,18 +124,21 @@ export class RealtimeConnectionManager {
       this.handleCommentChange(payload);
     });
 
-    // Subscribe to likes table
-    this.channel.on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'post_likes',
-      },
-      (payload) => {
-        this.handleLikeChange(payload);
-      }
-    );
+    // Subscribe to likes table with optional post filter
+    const likeConfig: any = {
+      event: '*',
+      schema: 'public',
+      table: 'post_likes',
+    };
+
+    // Apply post filter for scoped subscriptions
+    if (this.postIdFilter) {
+      likeConfig.filter = `post_id=eq.${this.postIdFilter}`;
+    }
+
+    this.channel.on('postgres_changes', likeConfig, (payload) => {
+      this.handleLikeChange(payload);
+    });
 
     // Subscribe with status callback
     this.channel.subscribe((status) => {
@@ -134,14 +150,17 @@ export class RealtimeConnectionManager {
       } else if (status === 'CHANNEL_ERROR') {
         this.setConnectionState('error');
         console.error('Realtime subscription error');
+        communityMetrics.recordReconnect();
         this.handleConnectionError();
       } else if (status === 'TIMED_OUT') {
         this.setConnectionState('error');
         console.error('Realtime subscription timed out');
+        communityMetrics.recordReconnect();
         this.handleConnectionError();
       } else if (status === 'CLOSED') {
         this.setConnectionState('disconnected');
         console.log('Realtime connection closed');
+        communityMetrics.recordReconnect();
         this.handleConnectionError();
       }
     });
@@ -227,6 +246,12 @@ export class RealtimeConnectionManager {
   private handlePostChange(payload: any): void {
     const event = this.transformPayload<Post>(payload, 'posts');
     if (event && this.callbacks.onPostChange) {
+      // Track latency: commit_timestamp → UI update
+      if (event.commit_timestamp) {
+        const commitTime = new Date(event.commit_timestamp).getTime();
+        const latency = Date.now() - commitTime;
+        communityMetrics.addLatencySample(latency);
+      }
       this.callbacks.onPostChange(event);
     }
   }
@@ -237,6 +262,12 @@ export class RealtimeConnectionManager {
   private handleCommentChange(payload: any): void {
     const event = this.transformPayload<PostComment>(payload, 'post_comments');
     if (event && this.callbacks.onCommentChange) {
+      // Track latency: commit_timestamp → UI update
+      if (event.commit_timestamp) {
+        const commitTime = new Date(event.commit_timestamp).getTime();
+        const latency = Date.now() - commitTime;
+        communityMetrics.addLatencySample(latency);
+      }
       this.callbacks.onCommentChange(event);
     }
   }
@@ -247,6 +278,12 @@ export class RealtimeConnectionManager {
   private handleLikeChange(payload: any): void {
     const event = this.transformPayload<PostLike>(payload, 'post_likes');
     if (event && this.callbacks.onLikeChange) {
+      // Track latency: commit_timestamp → UI update
+      if (event.commit_timestamp) {
+        const commitTime = new Date(event.commit_timestamp).getTime();
+        const latency = Date.now() - commitTime;
+        communityMetrics.addLatencySample(latency);
+      }
       this.callbacks.onLikeChange(event);
     }
   }
@@ -300,6 +337,7 @@ export class RealtimeConnectionManager {
     this.setConnectionState('disconnected');
     this.reconnectAttempts = 0;
     this.callbacks = {};
+    this.postIdFilter = undefined;
     console.log('Unsubscribed from community feed realtime');
   }
 

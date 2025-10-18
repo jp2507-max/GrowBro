@@ -8,19 +8,33 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 
 Deno.serve(async (req: Request) => {
   try {
-    // Verify cron secret for security (optional but recommended)
+    // Verify cron secret for security (required)
     const authHeader = req.headers.get('Authorization');
     const cronSecret = Deno.env.get('CRON_SECRET');
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    // Check for required environment variables
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(
+        JSON.stringify({
+          error: 'Missing required environment variables',
+          details: 'SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
     // Use service role key for cleanup operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);

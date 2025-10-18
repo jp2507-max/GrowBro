@@ -13,10 +13,11 @@ import {
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
 type NotificationType =
-  | 'community_interaction'
-  | 'community_like'
-  | 'cultivation_reminder'
-  | 'system_update';
+  | 'community.interaction'
+  | 'community.reply'
+  | 'community.like'
+  | 'cultivation.reminder'
+  | 'system.update';
 
 type NotificationData = {
   type?: NotificationType;
@@ -96,7 +97,7 @@ async function handleForegroundNotification(
 ): Promise<void> {
   try {
     const data = extractNotificationData(event.notification);
-    const notificationType = data.type || 'system_update';
+    const notificationType = data.type || 'system.update';
 
     // Track delivery to device
     if (data.messageId) {
@@ -105,8 +106,9 @@ async function handleForegroundNotification(
 
     // Apply grouping logic for community notifications
     if (
-      notificationType === 'community_interaction' ||
-      notificationType === 'community_like'
+      notificationType === 'community.interaction' ||
+      notificationType === 'community.reply' ||
+      notificationType === 'community.like'
     ) {
       await NotificationGroupingService.handleCommunityNotification({
         notification: event.notification,
@@ -197,20 +199,22 @@ function mapToAndroidChannelId(type: NotificationType): string {
     | 'cultivation.reminders'
     | 'system.updates'
   > = {
-    community_interaction: 'community.interactions',
-    community_like: 'community.likes',
-    cultivation_reminder: 'cultivation.reminders',
-    system_update: 'system.updates',
+    'community.interaction': 'community.interactions',
+    'community.reply': 'community.interactions',
+    'community.like': 'community.likes',
+    'cultivation.reminder': 'cultivation.reminders',
+    'system.update': 'system.updates',
   };
   return getAndroidChannelId(channelKeyMap[type]);
 }
 
 function getIOSCategoryId(type: NotificationType): string {
   const categoryMap: Record<NotificationType, string> = {
-    community_interaction: 'COMMUNITY_INTERACTIONS',
-    community_like: 'COMMUNITY_LIKES',
-    cultivation_reminder: 'CULTIVATION_REMINDERS',
-    system_update: 'SYSTEM_UPDATES',
+    'community.interaction': 'COMMUNITY_INTERACTIONS',
+    'community.reply': 'COMMUNITY_INTERACTIONS',
+    'community.like': 'COMMUNITY_LIKES',
+    'cultivation.reminder': 'CULTIVATION_REMINDERS',
+    'system.update': 'SYSTEM_UPDATES',
   };
   return categoryMap[type];
 }

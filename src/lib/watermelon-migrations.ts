@@ -890,6 +890,10 @@ export const migrations = schemaMigrations({
           ]),
         },
         {
+          type: 'sql',
+          sql: 'CREATE UNIQUE INDEX post_likes_post_id_user_id_unique ON post_likes(post_id, user_id)',
+        },
+        {
           type: 'create_table',
           schema: createTableSchema('outbox', [
             { name: 'op', type: 'string' },

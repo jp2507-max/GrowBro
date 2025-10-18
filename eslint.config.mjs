@@ -41,6 +41,8 @@ export default defineConfig([
     'package/dist/',
     // Ignore Deno test files in Supabase functions
     'supabase/functions/**/*.test.ts',
+    // Ignore all Supabase functions as they run in Deno, not React Native
+    'supabase/functions/**/*.ts',
   ]),
   expoConfig,
   eslintPluginPrettierRecommended,

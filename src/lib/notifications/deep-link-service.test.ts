@@ -72,4 +72,31 @@ describe('DeepLinkService.handle', () => {
     expect(result).toEqual({ ok: true, path: '/login' });
     expect(router.push).toHaveBeenCalledWith('/login');
   });
+
+  test('handles post deep link without comment', async () => {
+    const { DeepLinkService, router } = await loadService();
+    await loadGate();
+
+    const result = await DeepLinkService.handle('growbro://post/abc123');
+
+    expect(result).toEqual({ ok: true, path: '/post/abc123' });
+    expect(router.push).toHaveBeenCalledWith('/post/abc123');
+  });
+
+  test('handles post deep link with comment scrolling', async () => {
+    const { DeepLinkService, router } = await loadService();
+    await loadGate();
+
+    const result = await DeepLinkService.handle(
+      'growbro://post/post-123/comment/comment-456'
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      path: '/post/post-123?commentId=comment-456',
+    });
+    expect(router.push).toHaveBeenCalledWith(
+      '/post/post-123?commentId=comment-456'
+    );
+  });
 });

@@ -13,10 +13,23 @@
       "toggle_hint": "Doppeltippen, um diese Einstellung umzuschalten."
     },
     "community": {
+      "cancel_comment_hint": "Bricht das Posten dieses Kommentars ab.",
+      "comment_input_hint": "Gib hier deinen Kommentar ein. Maximal 500 Zeichen.",
       "compose_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
       "create_post_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
+      "delete": "Löschen",
+      "delete_post": "Beitrag löschen",
+      "delete_post_hint": "Doppeltippen, um diesen Beitrag zu löschen. Du hast 15 Sekunden Zeit zum Rückgängig machen.",
       "error_card_hint": "Informiert, dass der Community-Feed nicht geladen werden konnte.",
-      "open_post_hint": "Öffnet die Beitragsdetails."
+      "like_button_hint": "Doppeltippen, um den Gefällt-mir-Status für diesen Beitrag umzuschalten.",
+      "open_post_hint": "Öffnet die Beitragsdetails.",
+      "post_image": "Bild von @{{author}}",
+      "post_image_hint": "Teil des Beitragsinhalts.",
+      "retry_comment_hint": "Versucht erneut, diesen Kommentar zu posten.",
+      "view_author_profile": "Profil von @{{author}} anzeigen",
+      "view_author_profile_hint": "Doppeltippen, um das Profil dieses Benutzers zu öffnen.",
+      "view_comments": "{{count}} Kommentare",
+      "view_comments_hint": "Doppeltippen, um Kommentare zu diesem Beitrag anzuzeigen."
     },
     "home": {
       "open_settings_hint": "Öffnet die Einstellungen.",
@@ -97,6 +110,7 @@
     "back": "Zurück",
     "cancel": "Abbrechen",
     "dismiss": "Schließen",
+    "go_back": "Zurück gehen",
     "loading": "Lädt...",
     "notSelected": "nicht ausgewählt",
     "null": "null",
@@ -106,8 +120,19 @@
     "selected": "ausgewählt"
   },
   "community": {
+    "cancel": "Abbrechen",
+    "cancel_comment": "Kommentar abbrechen",
+    "characters_over": "Zeichen über dem Limit",
+    "comment_count_one": "Kommentar",
+    "comment_count_other": "Kommentare",
+    "comment_input_label": "Kommentar schreiben",
+    "comment_placeholder": "Teile deine Gedanken...",
+    "comment_too_long": "Kommentar überschreitet die maximale Länge von 500 Zeichen",
     "create_post": "Beitrag erstellen",
     "empty_state": "Noch keine Beiträge. Sei die oder der Erste!",
+    "like": "Gefällt mir",
+    "like_count_one": "Gefällt mir",
+    "like_count_other": "Gefällt mir",
     "list_empty_body": "Wir zeigen hier Updates, sobald sie verfügbar sind.",
     "list_empty_title": "Hier ist noch nichts",
     "list_error_body": "Bitte überprüfe deine Verbindung und versuche es erneut.",
@@ -115,10 +140,17 @@
     "list_retry": "Erneut versuchen",
     "load_error": "Beiträge konnten nicht geladen werden. Zum Wiederholen tippen.",
     "loading": "Beiträge werden geladen...",
+    "loading_comments": "Kommentare werden geladen...",
+    "no_comments": "Noch keine Kommentare. Sei die oder der Erste!",
+    "post_comment": "Posten",
+    "posting": "Wird gepostet...",
     "posts_count": "{{count}} Beiträge",
     "posts_count_one": "{{count}} Beitrag",
     "posts_count_other": "{{count}} Beiträge",
-    "posts_count_zero": "Keine Beiträge"
+    "posts_count_zero": "Keine Beiträge",
+    "retry": "Wiederholen",
+    "retry_comment": "Kommentar erneut posten",
+    "unlike": "Gefällt mir nicht mehr"
   },
   "consent": {
     "accept_all": "Alle akzeptieren",
@@ -703,6 +735,16 @@
       "success": "Foto erfolgreich hinzugefügt",
       "title": "Foto hinzufügen"
     },
+    "profile": {
+      "no_posts": "Noch keine Beiträge",
+      "restricted": {
+        "blocked": "Du kannst dieses Profil nicht ansehen.",
+        "deleted": "Dieses Benutzerkonto wurde gelöscht.",
+        "not_found": "Dieses Benutzerprofil wurde nicht gefunden.",
+        "private": "Dieses Profil ist privat.",
+        "title": "Profil nicht verfügbar"
+      }
+    },
     "security": {
       "cascade_deletion": "Alle Ernte-Daten werden dauerhaft gelöscht, wenn du dein Konto löschst",
       "data_isolation": "Deine Ernte-Daten sind privat und nur für dich zugänglich",
@@ -790,6 +832,26 @@
     "block_failed": "Benutzer konnte nicht blockiert werden. Bitte versuche es erneut.",
     "delete": "Löschen",
     "delete_failed": "Löschen des Inhalts fehlgeschlagen. Bitte versuche es erneut.",
+    "hide": "Verbergen",
+    "moderator_modal": {
+      "audit_notice": "Diese Aktion wird im Moderationsprotokoll mit deiner Benutzer-ID und Zeitstempel aufgezeichnet.",
+      "cancel": "Abbrechen",
+      "hide_failed": "Fehler beim Verbergen des Inhalts. Bitte versuche es erneut.",
+      "hide_submit": "Inhalt verbergen",
+      "hide_subtitle": "Dies verbirgt den Inhalt vor allen Benutzern. Du musst einen Grund angeben, der im Moderationsprotokoll gespeichert wird.",
+      "hide_success": "Inhalt erfolgreich verborgen",
+      "hide_title": "Inhalt verbergen",
+      "reason_accessibility": "Gib den Grund für diese Moderationsaktion ein. Maximal 500 Zeichen.",
+      "reason_label": "Grund (erforderlich)",
+      "reason_placeholder": "Erkläre, warum du diesen Inhalt verbirgst/wiederherstellst...",
+      "reason_required": "Bitte gib einen Grund für diese Moderationsaktion an",
+      "submitting": "Wird verarbeitet...",
+      "unhide_failed": "Fehler beim Wiederherstellen des Inhalts. Bitte versuche es erneut.",
+      "unhide_submit": "Inhalt wiederherstellen",
+      "unhide_subtitle": "Dies stellt den Inhalt wieder her und macht ihn für alle Benutzer sichtbar. Gib einen Grund für diese Aktion an.",
+      "unhide_success": "Inhalt erfolgreich wiederhergestellt",
+      "unhide_title": "Inhalt wiederherstellen"
+    },
     "mute": "Stummschalten",
     "mute_failed": "Benutzer konnte nicht stummgeschaltet werden. Bitte versuche es erneut.",
     "queue": {
@@ -800,11 +862,32 @@
       "title": "Moderationswarteschlange"
     },
     "report": "Melden",
-    "report_failed": "Inhalt konnte nicht gemeldet werden. Bitte versuche es erneut."
+    "report_failed": "Inhalt konnte nicht gemeldet werden. Bitte versuche es erneut.",
+    "report_modal": {
+      "cancel": "Abbrechen",
+      "queued": "Meldung in Warteschlange. Sie wird gesendet, sobald du wieder online bist.",
+      "reason_harassment": "Belästigung",
+      "reason_harassment_desc": "Mobbing, Drohungen oder gezielte Beleidigungen",
+      "reason_illegal": "Illegaler Inhalt",
+      "reason_illegal_desc": "Inhalte, die gegen Gesetze oder Vorschriften verstoßen",
+      "reason_other": "Sonstiges",
+      "reason_other_desc": "Andere Verstöße gegen Community-Richtlinien",
+      "reason_spam": "Spam",
+      "reason_spam_desc": "Unerwünschte Werbung, wiederholte Beiträge oder Betrug",
+      "select_reason": "Bitte wähle einen Meldegrund aus",
+      "submit": "Meldung absenden",
+      "submitting": "Wird gesendet...",
+      "subtitle": "Hilf uns, die Community sicher zu halten, indem du Inhalte meldest, die gegen unsere Richtlinien verstoßen.",
+      "success": "Inhalt erfolgreich gemeldet. Vielen Dank, dass du hilfst, unsere Community sicher zu halten.",
+      "title": "Inhalt melden"
+    },
+    "unhide": "Wiederherstellen"
   },
   "nav": {
+    "back": "Zurück",
     "feed": "Feed",
-    "post": "Beitrag"
+    "post": "Beitrag",
+    "profile": "Profil"
   },
   "notifications": {
     "actions": {
@@ -1512,6 +1595,16 @@
     "webPortalIntro": "Nutze diese Seite, wenn du die mobile App nicht öffnen kannst und dennoch eine Kontolöschung oder einen Datenexport anstoßen musst.",
     "webPortalLogin": "Anmeldung öffnen",
     "webPortalTitle": "GrowBro-Löschportal"
+  },
+  "profile": {
+    "no_posts": "Noch keine Beiträge",
+    "restricted": {
+      "blocked": "Du kannst dieses Profil nicht ansehen.",
+      "deleted": "Dieses Benutzerkonto wurde gelöscht.",
+      "not_found": "Dieses Benutzerprofil wurde nicht gefunden.",
+      "private": "Dieses Profil ist privat.",
+      "title": "Profil nicht verfügbar"
+    }
   },
   "settings": {
     "about": "Über",

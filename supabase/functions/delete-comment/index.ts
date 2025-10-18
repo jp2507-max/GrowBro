@@ -26,6 +26,23 @@ Deno.serve(async (req: Request) => {
     const authHeader = req.headers.get('Authorization') ?? '';
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+
+    if (!supabaseUrl) {
+      console.error('SUPABASE_URL environment variable is missing or empty');
+      return new Response(JSON.stringify({ error: 'Server misconfiguration: SUPABASE_URL is missing' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+
+    if (!supabaseKey) {
+      console.error('SUPABASE_ANON_KEY environment variable is missing or empty');
+      return new Response(JSON.stringify({ error: 'Server misconfiguration: SUPABASE_ANON_KEY is missing' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey, {
       global: { headers: { Authorization: authHeader } },
     });

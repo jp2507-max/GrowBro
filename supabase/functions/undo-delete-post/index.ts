@@ -1,7 +1,14 @@
-// @ts-nocheck
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import type {
+  AuthError,
+  createClient,
+  PostgrestError,
+  type SupabaseClient,
+  User,
+} from 'jsr:@supabase/supabase-js@2';
+
+type EdgeFunctionHandler = (req: Request) => Response | Promise<Response>;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,7 +17,67 @@ const corsHeaders = {
     'Content-Type, Authorization, Idempotency-Key, X-Client-Tx-Id',
 };
 
-Deno.serve(async (req: Request) => {
+interface AuthResult {
+  user: User | null;
+  error: AuthError | null;
+}
+
+async function getAuthenticatedUser(
+  supabase: SupabaseClient
+): Promise<AuthResult> {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  return { user, error };
+}
+
+interface PostData {
+  id: string;
+  deleted_at: string | null;
+  undo_expires_at: string | null;
+  user_id: string;
+}
+
+interface PostQueryResult {
+  data: PostData | null;
+  error: PostgrestError | null;
+}
+
+async function fetchPostById(
+  supabase: SupabaseClient,
+  postId: string
+): Promise<PostQueryResult> {
+  return await supabase
+    .from('posts')
+    .select('id, deleted_at, undo_expires_at, user_id')
+    .eq('id', postId)
+    .single();
+}
+
+interface RestoreResult {
+  data: { id: string } | null;
+  error: PostgrestError | null;
+}
+
+async function restorePostById(
+  supabase: SupabaseClient,
+  postId: string
+): Promise<RestoreResult> {
+  return await supabase
+    .from('posts')
+    .update({ deleted_at: null, undo_expires_at: null })
+    .eq('id', postId)
+    .select('id')
+    .single();
+}
+
+interface RequestBody {
+  postId: string;
+}
+
+async function handleRequest(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
@@ -31,10 +98,7 @@ Deno.serve(async (req: Request) => {
     });
 
     // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, error: authError } = await getAuthenticatedUser(supabase);
 
     if (authError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -43,7 +107,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { postId } = (await req.json()) as { postId: string };
+    const { postId } = (await req.json()) as RequestBody;
 
     if (!postId) {
       return new Response(JSON.stringify({ error: 'postId is required' }), {
@@ -53,11 +117,10 @@ Deno.serve(async (req: Request) => {
     }
 
     // Check if post exists and is soft-deleted
-    const { data: post, error: fetchError } = await supabase
-      .from('posts')
-      .select('id, deleted_at, undo_expires_at, user_id')
-      .eq('id', postId)
-      .single();
+    const { data: post, error: fetchError } = await fetchPostById(
+      supabase,
+      postId
+    );
 
     if (fetchError || !post) {
       return new Response(JSON.stringify({ error: 'Post not found' }), {
@@ -97,15 +160,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Restore the post
-    const { data, error } = await supabase
-      .from('posts')
-      .update({
-        deleted_at: null,
-        undo_expires_at: null,
-      })
-      .eq('id', postId)
-      .select('id')
-      .single();
+    const { data, error } = await restorePostById(supabase, postId);
 
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), {
@@ -114,17 +169,18 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    return new Response(JSON.stringify({ id: data.id, restored: true }), {
+    return new Response(JSON.stringify({ id: data!.id, restored: true }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: error?.message ?? 'Internal server error' }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      }
-    );
+    const errorMessage =
+      error instanceof Error ? error.message : 'Internal server error';
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
   }
-});
+}
+
+Deno.serve(handleRequest as EdgeFunctionHandler);

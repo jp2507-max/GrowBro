@@ -1,7 +1,10 @@
-// @ts-nocheck
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createClient, SupabaseClient, PostgrestSingleResponse, PostgrestError } from 'npm:@supabase/supabase-js@2';
+
+interface DeletePostPayload {
+  postId: string;
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,7 +13,7 @@ const corsHeaders = {
     'Content-Type, Authorization, Idempotency-Key, X-Client-Tx-Id',
 };
 
-Deno.serve(async (req: Request) => {
+Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
@@ -26,7 +29,7 @@ Deno.serve(async (req: Request) => {
     const authHeader = req.headers.get('Authorization') ?? '';
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-    const supabase = createClient(supabaseUrl, supabaseKey, {
+    const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
@@ -43,10 +46,17 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { postId } = (await req.json()) as { postId: string };
-
-    if (!postId) {
+    const body = await req.json();
+    if (typeof body !== 'object' || body === null || !('postId' in body)) {
       return new Response(JSON.stringify({ error: 'postId is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+
+    const payload: DeletePostPayload = body as DeletePostPayload;
+    if (!payload.postId || typeof payload.postId !== 'string') {
+      return new Response(JSON.stringify({ error: 'postId must be a non-empty string' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
@@ -55,13 +65,13 @@ Deno.serve(async (req: Request) => {
     // Soft delete with 15-second undo window
     const undoExpiresAt = new Date(Date.now() + 15 * 1000).toISOString();
 
-    const { data, error } = await supabase
+    const { data, error }: PostgrestSingleResponse<{ id: string; undo_expires_at: string }> = await supabase
       .from('posts')
       .update({
         deleted_at: new Date().toISOString(),
         undo_expires_at: undoExpiresAt,
       })
-      .eq('id', postId)
+      .eq('id', payload.postId)
       .eq('user_id', user.id) // Ensure user owns the post
       .is('deleted_at', null) // Only delete if not already deleted
       .select('id, undo_expires_at')
@@ -94,9 +104,10 @@ Deno.serve(async (req: Request) => {
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       }
     );
-  } catch (error) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return new Response(
-      JSON.stringify({ error: error?.message ?? 'Internal server error' }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 500,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },

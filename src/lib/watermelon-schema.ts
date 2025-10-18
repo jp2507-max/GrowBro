@@ -684,7 +684,7 @@ export const appSchema = createSchema({
         { name: 'op', type: 'string' },
         { name: 'payload', type: 'string' },
         { name: 'client_tx_id', type: 'string' },
-        { name: 'idempotency_key', type: 'string' },
+        { name: 'idempotency_key', type: 'string', isIndexed: true },
         { name: 'created_at', type: 'number', isIndexed: true },
         { name: 'retries', type: 'number' },
         { name: 'next_retry_at', type: 'number', isOptional: true },

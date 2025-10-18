@@ -47,7 +47,7 @@ Create test posts and comments:
 
 ```sql
 -- Create a post by regular user
-INSERT INTO public.posts (id, user_id, content)
+INSERT INTO public.posts (id, user_id, body)
 VALUES (
   'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
   '11111111-1111-1111-1111-111111111111',
@@ -55,7 +55,7 @@ VALUES (
 );
 
 -- Create a post by moderator (for ownership tests)
-INSERT INTO public.posts (id, user_id, content)
+INSERT INTO public.posts (id, user_id, body)
 VALUES (
   'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
   '22222222-2222-2222-2222-222222222222',
@@ -96,7 +96,7 @@ WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 
 ```sql
 -- As regular user
-INSERT INTO public.posts (user_id, content)
+INSERT INTO public.posts (user_id, body)
 VALUES (
   '11111111-1111-1111-1111-111111111111',
   'New post by regular user'
@@ -111,7 +111,7 @@ VALUES (
 
 ```sql
 -- As regular user (11111111-1111-1111-1111-111111111111)
-INSERT INTO public.posts (user_id, content)
+INSERT INTO public.posts (user_id, body)
 VALUES (
   '22222222-2222-2222-2222-222222222222',
   'Trying to impersonate moderator'
@@ -127,7 +127,7 @@ VALUES (
 ```sql
 -- As regular user
 UPDATE public.posts
-SET content = 'Updated content'
+SET body = 'Updated content'
 WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 
 -- Expected: Success
@@ -140,7 +140,7 @@ WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 ```sql
 -- As regular user (11111111-1111-1111-1111-111111111111)
 UPDATE public.posts
-SET content = 'Trying to update moderator post'
+SET body = 'Trying to update moderator post'
 WHERE id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 
 -- Expected: Error - no rows updated (USING clause fails)
@@ -205,9 +205,9 @@ WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 **Requirement:** 10.3
 
 ```sql
--- As moderator (trying to use moderation policy to update content)
+-- As moderator (trying to use moderation policy to update body)
 UPDATE public.posts
-SET content = 'Modified by moderator'
+SET body = 'Modified by moderator'
 WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 
 -- Expected: Depends on implementation - either uses owner policy (if mod owns post) or fails

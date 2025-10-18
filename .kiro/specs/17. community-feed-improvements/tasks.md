@@ -291,8 +291,8 @@
       ```
     - _Requirements: 3.4, 3.5, 3.6, 3.8_
 
-- [ ] 6. Create offline-first outbox system
-  - [ ] 6.1 Implement outbox queue manager
+- [x] 6. Create offline-first outbox system
+  - [x] 6.1 Implement outbox queue manager
     - Create OutboxProcessor class with FIFO queue management
     - Enforce backoff 1→32s, max 5 retries, mark as failed with manual retry UI
     - Add outbox entry status tracking (pending, failed, confirmed)
@@ -316,7 +316,7 @@
       ```
     - _Requirements: 6.6, 6.7, 6.8_
 
-  - [ ] 6.2 Build optimistic UI update system
+  - [x] 6.2 Build optimistic UI update system
     - Implement React Query optimistic like/unlike with rollback on failure
     - Example pattern:
       ```typescript
@@ -340,8 +340,8 @@
     - Implement UI indicators for pending, failed, and confirmed states
     - _Requirements: 1.1, 1.2, 2.1, 2.2, 6.2, 6.3_
 
-- [ ] 7. Create community feed UI components
-  - [ ] 7.1 Build main feed container component
+- [x] 7. Create community feed UI components
+  - [x] 7.1 Build main feed container component
     - Create CommunityFeed container with infinite scroll using FlashList
     - Provide getItemType for FlashList performance, test in release builds (not dev)
     - Implement feed pagination with proper loading states
@@ -350,7 +350,7 @@
     - Add error boundaries and retry mechanisms
     - _Requirements: 9.1, 6.1_
 
-  - [ ] 7.2 Implement Post component with interactions
+  - [x] 7.2 Implement Post component with interactions
     - Create Post component with like button and optimistic updates
     - Add comment count display and navigation to comment thread
     - Implement author profile linking and avatar display
@@ -359,7 +359,7 @@
     - Undo UX: global snackbar with countdown, works cross-device during 15s window
     - _Requirements: 1.1, 1.2, 1.3, 4.1, 4.2, 5.1, 5.2_
 
-  - [ ] 7.3 Build comment system components
+  - [x] 7.3 Build comment system components
     - Create CommentList component with pagination
     - Implement CommentItem with reply threading support
     - Add comment creation form with character limit validation (500 chars)
@@ -367,8 +367,8 @@
     - Implement comment deletion with undo for own comments
     - _Requirements: 2.1, 2.2, 2.3, 2.8, 4.1, 4.2_
 
-- [ ] 8. Implement user profiles and navigation
-  - [ ] 8.1 Create user profile screen
+- [x] 8. Implement user profiles and navigation
+  - [x] 8.1 Create user profile screen
     - Build UserProfile component with avatar and username display
     - Implement user's recent posts list with pagination (created_at DESC)
     - Apply visibility filter (deleted_at/hidden_at IS NULL) for profile posts
@@ -376,28 +376,28 @@
     - Create restricted profile messaging for private accounts
     - _Requirements: 5.1, 5.2, 5.3, 5.5, 5.6_
 
-  - [ ] 8.2 Add profile navigation and linking
+  - [x] 8.2 Add profile navigation and linking
     - Implement navigation from post author to profile screen
     - Add deep linking support for user profiles
     - Create profile caching for offline viewing
     - _Requirements: 5.1, 5.7_
 
-- [ ] 9. Build content moderation system
-  - [ ] 9.1 Implement reporting functionality
+- [x] 9. Build content moderation system
+  - [x] 9.1 Implement reporting functionality
     - Create report content modal with reason selection
     - Implement report submission with proper validation
     - Add report status tracking and user feedback
     - _Requirements: 7.1, 7.5_
 
-  - [ ] 9.2 Add moderation tools for authorized users
+  - [x] 9.2 Add moderation tools for authorized users
     - Create moderation UI for hiding/unhiding content
     - Implement role checks via JWT claims in RLS (only mod/admin can set hidden_at + moderation_reason)
     - Add moderation audit logging for all actions (every moderation action writes to moderation_audit)
     - Create moderation reason input and tracking
     - _Requirements: 7.2, 7.3, 7.6, 7.7, 10.3_
 
-- [ ] 10. Implement push notifications system
-  - [ ] 10.1 Create notification service
+- [x] 10. Implement push notifications system
+  - [x] 10.1 Create notification service
     - Implement push notification setup and permission handling
     - Create notification preferences management UI
     - Add notification payload handling and deep linking
@@ -405,7 +405,7 @@
     - Add Android Doze/App Standby note: delivery can be delayed, implement "Missed activity" in-app surface
     - _Requirements: 8.1, 8.2, 8.5, 8.6_
 
-  - [ ] 10.2 Build notification triggers and delivery
+  - [x] 10.2 Build notification triggers and delivery
     - Deploy database migration for community notification triggers (see `supabase/migrations/20250930000001_add_community_notification_triggers.sql`)
       - Migration creates `notify_post_reply()` and `notify_post_like()` database functions
       - Triggers automatically call Edge Function `send-push-notification` via pg_net
@@ -417,23 +417,23 @@
     - Create notification history and management
     - _Requirements: 8.3, 8.4, 8.7, 8.8_
 
-- [ ] 11. Implement performance monitoring and health checks
-  - [ ] 11.1 Create metrics tracking system
+- [x] 11. Implement performance monitoring and health checks
+  - [x] 11.1 Create metrics tracking system
     - Track P50/P95 WS event latency (commit_timestamp → UI update)
     - Monitor WebSocket reconnects/session, outbox depth, dedupe drops/min
     - Track undo usage rate and mutation failure rate (<2%/day)
     - Add alerting when P95 latency >3s or outbox depth >50
     - _Requirements: 9.6, 10.5_
 
-  - [ ] 11.2 Build health monitoring and alerting
+  - [x] 11.2 Build health monitoring and alerting
     - Create health check endpoints for system status
     - Implement Sentry integration for error tracking and alerts
     - Add performance threshold alerting with lightweight, privacy-safe context
     - Create periodic reconciliation job for counter drift detection
     - _Requirements: 10.6_
 
-- [ ] 12. Write comprehensive tests
-  - [ ] 12.1 Create unit tests for core functionality
+- [x] 12. Write comprehensive tests
+  - [x] 12.1 Create unit tests for core functionality
     - Write tests for API service methods with mock responses
     - Test outbox processor with various failure scenarios
     - Create tests for realtime event handling and deduplication
@@ -450,7 +450,7 @@
     - Test idempotency across network failures and retries
     - _Requirements: All requirements validation_
 
-  - [ ] 12.2 Build integration tests for offline scenarios
+  - [x] 12.2 Build integration tests for offline scenarios
     - Test complete offline workflow (like, comment, sync on reconnect)
     - Create multi-device conflict resolution tests
     - Test large dataset performance (1000+ posts)
@@ -458,25 +458,25 @@
     - Implement flight-mode end-to-end testing with Maestro
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.8, 6.9_
 
-- [ ] 13. Performance optimization and accessibility
-  - [ ] 13.1 Optimize list rendering and memory usage
+- [x] 13. Performance optimization and accessibility
+  - [x] 13.1 Optimize list rendering and memory usage
     - Implement FlashList with proper getItemType for performance
     - Add image lazy loading and caching for media content (thumbnails in lists, lazy-load originals)
     - Optimize WatermelonDB queries to avoid N+1 problems
     - Implement proper component memoization and re-render prevention
     - _Requirements: 9.1, 9.5, 9.6_
 
-  - [ ] 13.2 Add accessibility and internationalization
+  - [x] 13.2 Add accessibility and internationalization
     - Add accessibility labels and proper focus management (44pt tap targets)
     - Implement keyboard navigation for all interactive elements
     - Add screen reader support for dynamic content updates (announce new comments via live region)
     - Create internationalization keys for all user-facing text
     - _Requirements: Accessibility compliance_
 
-- [ ] 14. Final integration and testing
-  - Integrate all components into main app navigation
-  - Test complete user flows from feed to profile to interactions
-  - Perform load testing with realistic data volumes
-  - Validate all requirements against implemented functionality
-  - Create deployment checklist and rollout plan
+- [x] 14. Final integration and testing
+  - [x] Integrate all components into main app navigation
+  - [x] Test complete user flows from feed to profile to interactions
+  - [x] Perform load testing with realistic data volumes
+  - [x] Validate all requirements against implemented functionality
+  - [x] Create deployment checklist and rollout plan
   - _Requirements: All requirements final validation_

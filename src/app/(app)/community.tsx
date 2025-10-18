@@ -6,13 +6,17 @@ import Animated from 'react-native-reanimated';
 
 import type { Post } from '@/api';
 import { usePostsInfinite } from '@/api';
+import { useUndoDeletePost } from '@/api/community';
 import { CannabisEducationalBanner } from '@/components/cannabis-educational-banner';
-import { Card } from '@/components/card';
 import {
   CommunityEmptyState,
+  CommunityErrorBoundary,
   CommunityErrorCard,
   CommunityFooterLoader,
   CommunitySkeletonList,
+  OfflineIndicator,
+  PostCard,
+  UndoSnackbar,
 } from '@/components/community';
 import { ComposeBtn } from '@/components/compose-btn';
 import { FocusAwareStatusBar, Text, View } from '@/components/ui';
@@ -39,10 +43,21 @@ function useCommunityData() {
     refetch,
   } = usePostsInfinite();
 
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+
   const posts = React.useMemo<Post[]>(() => {
     if (!data?.pages?.length) return [];
     return data.pages.flatMap((page: any) => page.results as Post[]);
   }, [data?.pages]);
+
+  const handleRefresh = React.useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetch]);
 
   return {
     posts,
@@ -53,6 +68,8 @@ function useCommunityData() {
     isFetchingNextPage,
     refetch,
     error,
+    isRefreshing,
+    handleRefresh,
   } as const;
 }
 
@@ -94,6 +111,12 @@ export default function CommunityScreen(): React.ReactElement {
   useScrollToTop(listRef);
   const { grossHeight } = useBottomTabBarHeight();
   const analytics = useAnalytics();
+  const undoMutation = useUndoDeletePost();
+
+  const [undoState, setUndoState] = React.useState<{
+    postId: string;
+    expiresAt: string;
+  } | null>(null);
 
   const {
     posts,
@@ -104,6 +127,8 @@ export default function CommunityScreen(): React.ReactElement {
     hasNextPage,
     isFetchingNextPage,
     refetch,
+    isRefreshing,
+    handleRefresh,
   } = useCommunityData();
 
   const isSkeletonVisible = useSkeletonVisibility(isLoading, posts.length);
@@ -174,9 +199,34 @@ export default function CommunityScreen(): React.ReactElement {
     router.push('/add-post');
   }, [router]);
 
+  const handlePostDelete = React.useCallback(
+    (postId: string, undoExpiresAt: string) => {
+      setUndoState({ postId, expiresAt: undoExpiresAt });
+      void refetch();
+    },
+    [refetch]
+  );
+
+  const handleUndo = React.useCallback(async () => {
+    if (!undoState) return;
+    try {
+      await undoMutation.mutateAsync({ postId: undoState.postId });
+      setUndoState(null);
+      void refetch();
+    } catch (error) {
+      console.error('Undo delete failed:', error);
+    }
+  }, [undoState, undoMutation, refetch]);
+
+  const handleDismissUndo = React.useCallback(() => {
+    setUndoState(null);
+  }, []);
+
   const renderItem = React.useCallback(
-    ({ item }: { item: Post }) => <Card {...item} />,
-    []
+    ({ item }: { item: Post }) => (
+      <PostCard post={item} onDelete={handlePostDelete} />
+    ),
+    [handlePostDelete]
   );
 
   const listEmpty = React.useCallback(() => {
@@ -206,39 +256,53 @@ export default function CommunityScreen(): React.ReactElement {
   });
 
   return (
-    <CommunityListView
-      listRef={listRef}
-      posts={posts}
-      renderItem={renderItem}
-      onEndReached={onEndReached}
-      scrollHandler={scrollHandler}
-      grossHeight={grossHeight}
-      listHeader={
-        <View className="px-4 pb-4">
-          <CannabisEducationalBanner />
-          {showPostsCount ? (
-            <Text
-              className="pt-4 text-sm text-neutral-600 dark:text-neutral-300"
-              accessibilityRole="text"
-              testID="community-posts-count"
-            >
-              {postsCountLabel}
-            </Text>
-          ) : null}
-          {posts.length > 0 && isError ? (
-            <View className="pt-4">
-              <CommunityErrorCard
-                onRetry={onRetry}
-                testID="community-inline-error"
-              />
+    <>
+      <CommunityErrorBoundary>
+        <CommunityListView
+          listRef={listRef}
+          posts={posts}
+          renderItem={renderItem}
+          onEndReached={onEndReached}
+          scrollHandler={scrollHandler}
+          grossHeight={grossHeight}
+          isRefreshing={isRefreshing}
+          onRefresh={handleRefresh}
+          listHeader={
+            <View className="px-4 pb-4">
+              <CannabisEducationalBanner />
+              <OfflineIndicator onRetrySync={refetch} />
+              {showPostsCount ? (
+                <Text
+                  className="pt-4 text-sm text-neutral-600 dark:text-neutral-300"
+                  accessibilityRole="text"
+                  testID="community-posts-count"
+                >
+                  {postsCountLabel}
+                </Text>
+              ) : null}
+              {posts.length > 0 && isError ? (
+                <View className="pt-4">
+                  <CommunityErrorCard
+                    onRetry={onRetry}
+                    testID="community-inline-error"
+                  />
+                </View>
+              ) : null}
             </View>
-          ) : null}
-        </View>
-      }
-      listEmpty={listEmpty}
-      listFooter={listFooter}
-      onCreatePress={onCreatePress}
-    />
+          }
+          listEmpty={listEmpty}
+          listFooter={listFooter}
+          onCreatePress={onCreatePress}
+        />
+      </CommunityErrorBoundary>
+      <UndoSnackbar
+        visible={!!undoState}
+        message={translate('community.post_deleted')}
+        expiresAt={undoState?.expiresAt ?? ''}
+        onUndo={handleUndo}
+        onDismiss={handleDismissUndo}
+      />
+    </>
   );
 }
 
@@ -249,6 +313,8 @@ function CommunityListView({
   onEndReached,
   scrollHandler,
   grossHeight,
+  isRefreshing,
+  onRefresh,
   listHeader,
   listEmpty,
   listFooter,
@@ -260,11 +326,18 @@ function CommunityListView({
   onEndReached: () => void;
   scrollHandler: any;
   grossHeight: number;
+  isRefreshing: boolean;
+  onRefresh: () => void;
   listHeader: React.ReactNode;
   listEmpty: React.ReactNode | (() => React.ReactElement);
   listFooter: React.ReactNode | (() => React.ReactElement);
   onCreatePress: () => void;
 }): React.ReactElement {
+  const getItemType = React.useCallback((item: Post) => {
+    // Differentiate posts with media from text-only for FlashList performance
+    return item.media_uri ? 'post-with-media' : 'post-text-only';
+  }, []);
+
   return (
     <View className="flex-1" testID="community-screen">
       <FocusAwareStatusBar />
@@ -272,11 +345,14 @@ function CommunityListView({
         ref={listRef as React.RefObject<any>}
         data={posts}
         renderItem={renderItem}
+        getItemType={getItemType}
         keyExtractor={(item: Post) => String(item.id)}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.4}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
+        refreshing={isRefreshing}
+        onRefresh={onRefresh}
         contentContainerStyle={{ paddingBottom: grossHeight + 16 }}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}

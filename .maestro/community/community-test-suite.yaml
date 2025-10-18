@@ -1,0 +1,22 @@
+appId: ${APP_ID}
+---
+# Community Feed - Complete Test Suite
+# Runs all community feature E2E tests in sequence
+
+- runFlow:
+    file: feed-interactions.yaml
+
+- runFlow:
+    file: profile-navigation.yaml
+
+- runFlow:
+    file: ../app/create-post.yaml
+
+- runFlow:
+    file: delete-undo-workflow.yaml
+
+- runFlow:
+    file: infinite-scroll.yaml
+
+- runFlow:
+    file: offline-mode.yaml

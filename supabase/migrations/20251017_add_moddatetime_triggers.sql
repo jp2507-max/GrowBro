@@ -14,19 +14,11 @@ CREATE TRIGGER handle_updated_at
 
 -- Add trigger for post_comments table
 DROP TRIGGER IF EXISTS handle_updated_at ON public.post_comments;
-CREATE TRIGGER handle_updated_at 
+CREATE TRIGGER handle_updated_at
   BEFORE UPDATE ON public.post_comments
-  FOR EACH ROW 
-  EXECUTE PROCEDURE extensions.moddatetime(updated_at);
-
--- Add trigger for post_likes table
-DROP TRIGGER IF EXISTS handle_updated_at ON public.post_likes;
-CREATE TRIGGER handle_updated_at 
-  BEFORE UPDATE ON public.post_likes
-  FOR EACH ROW 
+  FOR EACH ROW
   EXECUTE PROCEDURE extensions.moddatetime(updated_at);
 
 -- Add comments for documentation
 COMMENT ON TRIGGER handle_updated_at ON public.posts IS 'Auto-updates updated_at for LWW conflict resolution';
 COMMENT ON TRIGGER handle_updated_at ON public.post_comments IS 'Auto-updates updated_at for LWW conflict resolution';
-COMMENT ON TRIGGER handle_updated_at ON public.post_likes IS 'Auto-updates updated_at for LWW conflict resolution';

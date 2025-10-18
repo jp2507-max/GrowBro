@@ -13,10 +13,23 @@
       "toggle_hint": "Double-tap to toggle this setting."
     },
     "community": {
+      "cancel_comment_hint": "Cancels posting this comment.",
+      "comment_input_hint": "Type your comment here. Maximum 500 characters.",
       "compose_hint": "Opens the Create Post screen.",
       "create_post_hint": "Opens the Create Post screen.",
+      "delete": "Delete",
+      "delete_post": "Delete post",
+      "delete_post_hint": "Double-tap to delete this post. You will have 15 seconds to undo.",
       "error_card_hint": "Informs that the community feed failed to load.",
-      "open_post_hint": "Opens the post details screen."
+      "like_button_hint": "Double-tap to toggle like status for this post.",
+      "open_post_hint": "Opens the post details screen.",
+      "post_image": "Image from @{{author}}",
+      "post_image_hint": "Part of the post content.",
+      "retry_comment_hint": "Retries posting this comment.",
+      "view_author_profile": "View profile of @{{author}}",
+      "view_author_profile_hint": "Double-tap to open this user's profile.",
+      "view_comments": "{{count}} comments",
+      "view_comments_hint": "Double-tap to view comments for this post."
     },
     "home": {
       "open_settings_hint": "Opens the Settings screen.",
@@ -97,6 +110,7 @@
     "back": "Back",
     "cancel": "Cancel",
     "dismiss": "Dismiss",
+    "go_back": "Go back",
     "loading": "Loading...",
     "notSelected": "not selected",
     "null": "null",
@@ -106,19 +120,37 @@
     "selected": "selected"
   },
   "community": {
+    "cancel": "Cancel",
+    "cancel_comment": "Cancel comment",
+    "characters_over": "Characters over limit",
+    "comment_count_one": "comment",
+    "comment_count_other": "comments",
+    "comment_input_label": "Write a comment",
+    "comment_placeholder": "Share your thoughts...",
+    "comment_too_long": "Comment exceeds maximum length of 500 characters",
     "create_post": "Create Post",
     "empty_state": "No posts yet. Be the first to share!",
-    "list_empty_body": "We’ll show updates once they’re available.",
+    "like": "Like",
+    "like_count_one": "Like",
+    "like_count_other": "Likes",
+    "list_empty_body": "We'll show updates once they're available.",
     "list_empty_title": "Nothing here yet",
     "list_error_body": "Please check your connection and try again.",
-    "list_error_title": "We couldn’t load this",
+    "list_error_title": "We couldn't load this",
     "list_retry": "Try again",
     "load_error": "Failed to load posts. Tap to retry.",
     "loading": "Loading posts...",
+    "loading_comments": "Loading comments...",
+    "no_comments": "No comments yet. Be the first to share!",
+    "post_comment": "Post",
+    "posting": "Posting...",
     "posts_count": "{{count}} posts",
     "posts_count_one": "{{count}} post",
     "posts_count_other": "{{count}} posts",
-    "posts_count_zero": "No posts yet"
+    "posts_count_zero": "No posts yet",
+    "retry": "Retry",
+    "retry_comment": "Retry comment",
+    "unlike": "Unlike"
   },
   "consent": {
     "accept_all": "Accept all",
@@ -703,6 +735,16 @@
       "success": "Photo added successfully",
       "title": "Add Photo"
     },
+    "profile": {
+      "no_posts": "No posts yet",
+      "restricted": {
+        "blocked": "You cannot view this profile.",
+        "deleted": "This account has been deleted.",
+        "not_found": "This user profile was not found.",
+        "private": "This profile is private.",
+        "title": "Profile not available"
+      }
+    },
     "security": {
       "cascade_deletion": "All harvest data will be permanently deleted when you delete your account",
       "data_isolation": "Your harvest data is private and only accessible by you",
@@ -790,6 +832,26 @@
     "block_failed": "Failed to block user. Please try again.",
     "delete": "Delete",
     "delete_failed": "Failed to delete content. Please try again.",
+    "hide": "Hide",
+    "moderator_modal": {
+      "audit_notice": "This action will be recorded in the moderation audit trail with your user ID and timestamp.",
+      "cancel": "Cancel",
+      "hide_failed": "Failed to hide content. Please try again.",
+      "hide_submit": "Hide Content",
+      "hide_subtitle": "This will hide the content from all users. You must provide a reason that will be logged in the moderation audit trail.",
+      "hide_success": "Content hidden successfully",
+      "hide_title": "Hide Content",
+      "reason_accessibility": "Enter the reason for this moderation action. Maximum 500 characters.",
+      "reason_label": "Reason (required)",
+      "reason_placeholder": "Explain why you are hiding/unhiding this content...",
+      "reason_required": "Please provide a reason for this moderation action",
+      "submitting": "Processing...",
+      "unhide_failed": "Failed to unhide content. Please try again.",
+      "unhide_submit": "Unhide Content",
+      "unhide_subtitle": "This will restore the content and make it visible to all users. Provide a reason for this action.",
+      "unhide_success": "Content restored successfully",
+      "unhide_title": "Unhide Content"
+    },
     "mute": "Mute",
     "mute_failed": "Failed to mute user. Please try again.",
     "queue": {
@@ -800,11 +862,32 @@
       "title": "Moderation Queue"
     },
     "report": "Report",
-    "report_failed": "Failed to report content. Please try again."
+    "report_failed": "Failed to report content. Please try again.",
+    "report_modal": {
+      "cancel": "Cancel",
+      "queued": "Report queued. It will be submitted when you're back online.",
+      "reason_harassment": "Harassment",
+      "reason_harassment_desc": "Bullying, threats, or targeted abuse",
+      "reason_illegal": "Illegal Content",
+      "reason_illegal_desc": "Content that violates laws or regulations",
+      "reason_other": "Other",
+      "reason_other_desc": "Other violations of community guidelines",
+      "reason_spam": "Spam",
+      "reason_spam_desc": "Unwanted promotional content, repetitive posts, or scams",
+      "select_reason": "Please select a reason for reporting",
+      "submit": "Submit Report",
+      "submitting": "Submitting...",
+      "subtitle": "Help us keep the community safe by reporting content that violates our guidelines.",
+      "success": "Content reported successfully. Thank you for helping keep our community safe.",
+      "title": "Report Content"
+    },
+    "unhide": "Unhide"
   },
   "nav": {
+    "back": "Back",
     "feed": "Feed",
-    "post": "Post"
+    "post": "Post",
+    "profile": "Profile"
   },
   "notifications": {
     "actions": {
@@ -1512,6 +1595,16 @@
     "webPortalIntro": "Use this page to request account deletion or a data export if you cannot open the mobile app.",
     "webPortalLogin": "Open sign-in",
     "webPortalTitle": "GrowBro account deletion portal"
+  },
+  "profile": {
+    "no_posts": "No posts yet",
+    "restricted": {
+      "blocked": "You cannot view this profile.",
+      "deleted": "This user account has been deleted.",
+      "not_found": "This user profile could not be found.",
+      "private": "This profile is private.",
+      "title": "Profile Unavailable"
+    }
   },
   "settings": {
     "about": "About",

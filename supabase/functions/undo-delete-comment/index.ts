@@ -9,8 +9,27 @@ const corsHeaders = {
   'Access-Control-Allow-Headers':
     'Content-Type, Authorization, Idempotency-Key, X-Client-Tx-Id',
 };
+async function getAuthenticatedUser(supabase) {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
-Deno.serve(async (req: Request) => {
+  return { user, error };
+}
+
+async function restoreCommentById(supabase, commentId, userId) {
+  return await supabase
+    .from('post_comments')
+    .update({ deleted_at: null, undo_expires_at: null })
+    .eq('id', commentId)
+    .eq('user_id', userId)
+    .not('deleted_at', 'is', null)
+    .gt('undo_expires_at', new Date().toISOString())
+    .select('id');
+}
+
+async function handleRequest(req: Request) {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
@@ -26,15 +45,30 @@ Deno.serve(async (req: Request) => {
     const authHeader = req.headers.get('Authorization') ?? '';
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+
+    // Validate required environment variables
+    const missingVars = [];
+    if (!supabaseUrl) missingVars.push('SUPABASE_URL');
+    if (!supabaseKey) missingVars.push('SUPABASE_ANON_KEY');
+
+    if (missingVars.length > 0) {
+      return new Response(
+        JSON.stringify({
+          error: `Missing required environment variables: ${missingVars.join(', ')}`,
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
     // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, error: authError } = await getAuthenticatedUser(supabase);
 
     if (authError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -52,63 +86,23 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Check if comment exists and is soft-deleted
-    const { data: comment, error: fetchError } = await supabase
-      .from('post_comments')
-      .select('id, deleted_at, undo_expires_at, user_id')
-      .eq('id', commentId)
-      .single();
+    // Atomically restore the comment with all preconditions checked
+    const { data, error } = await restoreCommentById(
+      supabase,
+      commentId,
+      user.id
+    );
 
-    if (fetchError || !comment) {
-      return new Response(JSON.stringify({ error: 'Comment not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
-    }
-
-    // Verify user owns the comment
-    if (comment.user_id !== user.id) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 403,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
-    }
-
-    // Check if comment is deleted
-    if (!comment.deleted_at) {
-      return new Response(JSON.stringify({ error: 'Comment is not deleted' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
-    }
-
-    // Check if undo window has expired
-    if (
-      !comment.undo_expires_at ||
-      new Date(comment.undo_expires_at) < new Date()
-    ) {
+    // Check if the update affected any rows (409 if preconditions not met)
+    if (!error && (!data || data.length === 0)) {
       return new Response(
-        JSON.stringify({
-          error: 'Undo window has expired',
-          canonical_state: { id: comment.id, deleted_at: comment.deleted_at },
-        }),
+        JSON.stringify({ error: 'Undo conditions not met' }),
         {
           status: 409,
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
         }
       );
     }
-
-    // Restore the comment
-    const { data, error } = await supabase
-      .from('post_comments')
-      .update({
-        deleted_at: null,
-        undo_expires_at: null,
-      })
-      .eq('id', commentId)
-      .select('id')
-      .single();
 
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), {
@@ -117,7 +111,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    return new Response(JSON.stringify({ id: data.id, restored: true }), {
+    return new Response(JSON.stringify({ id: data[0].id, restored: true }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
@@ -130,4 +124,6 @@ Deno.serve(async (req: Request) => {
       }
     );
   }
-});
+}
+
+Deno.serve((req: Request) => handleRequest(req));

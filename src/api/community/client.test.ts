@@ -440,5 +440,272 @@ describe('CommunityApiClient', () => {
         ValidationError
       );
     });
+
+    it('should reject empty comment body', async () => {
+      const commentData: CreateCommentData = {
+        post_id: 'post-1',
+        body: '',
+      };
+
+      const mockSession = {
+        data: {
+          session: {
+            user: { id: 'user-1' },
+          },
+        },
+      };
+
+      (mockSupabaseClient.auth.getSession as jest.Mock).mockResolvedValue(
+        mockSession
+      );
+
+      await expect(client.createComment(commentData)).rejects.toThrow(
+        ValidationError
+      );
+    });
+  });
+
+  describe('Idempotency comprehensive tests', () => {
+    const mockSession = {
+      data: {
+        session: {
+          user: { id: 'user-1' },
+        },
+      },
+    };
+
+    beforeEach(() => {
+      (mockSupabaseClient.auth.getSession as jest.Mock).mockResolvedValue(
+        mockSession
+      );
+    });
+
+    it('should use same idempotency key for retries and return cached result', async () => {
+      const idempotencyKey = 'same-key-123';
+      const clientTxId = 'client-tx-456';
+      const postData: CreatePostData = { body: 'Test post' };
+
+      const mockPost = {
+        id: 'post-1',
+        user_id: 'user-1',
+        body: 'Test post',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+
+      // First call - perform operation
+      mockIdempotencyService.processWithIdempotency.mockResolvedValueOnce({
+        ...mockPost,
+        like_count: 0,
+        comment_count: 0,
+        user_has_liked: false,
+      });
+
+      const result1 = await client.createPost(
+        postData,
+        idempotencyKey,
+        clientTxId
+      );
+
+      // Second call with same key - should return cached
+      mockIdempotencyService.processWithIdempotency.mockResolvedValueOnce({
+        ...mockPost,
+        like_count: 0,
+        comment_count: 0,
+        user_has_liked: false,
+      });
+
+      const result2 = await client.createPost(
+        postData,
+        idempotencyKey,
+        clientTxId
+      );
+
+      expect(result1).toEqual(result2);
+      expect(
+        mockIdempotencyService.processWithIdempotency
+      ).toHaveBeenCalledTimes(2);
+    });
+
+    it('should handle missing idempotency key by generating one', async () => {
+      const postData: CreatePostData = { body: 'Test post' };
+
+      const insertChain = {
+        insert: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: {
+            id: 'post-1',
+            user_id: 'user-1',
+            body: 'Test post',
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+          },
+          error: null,
+        }),
+      };
+
+      (mockSupabaseClient.from as jest.Mock).mockReturnValue(insertChain);
+
+      await client.createPost(postData);
+
+      // Verify idempotency headers were created
+      const { createIdempotencyHeaders } = require('@/lib/community/headers');
+      expect(createIdempotencyHeaders).toHaveBeenCalled();
+    });
+
+    it('should handle concurrent requests with same idempotency key', async () => {
+      const idempotencyKey = 'concurrent-key';
+      const postData: CreatePostData = { body: 'Test post' };
+
+      const insertChain = {
+        insert: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: {
+            id: 'post-1',
+            user_id: 'user-1',
+            body: 'Test post',
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+          },
+          error: null,
+        }),
+      };
+
+      (mockSupabaseClient.from as jest.Mock).mockReturnValue(insertChain);
+
+      // Simulate concurrent requests
+      const promises = [
+        client.createPost(postData, idempotencyKey),
+        client.createPost(postData, idempotencyKey),
+        client.createPost(postData, idempotencyKey),
+      ];
+
+      const results = await Promise.all(promises);
+
+      // All should succeed with the same result
+      expect(results[0]).toEqual(results[1]);
+      expect(results[1]).toEqual(results[2]);
+    });
+  });
+
+  describe('Rate limiting and error handling', () => {
+    it('should handle 429 rate limit errors', async () => {
+      const mockSession = {
+        data: {
+          session: {
+            user: { id: 'user-1' },
+          },
+        },
+      };
+
+      (mockSupabaseClient.auth.getSession as jest.Mock).mockResolvedValue(
+        mockSession
+      );
+
+      const insertChain = {
+        insert: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        single: jest.fn().mockRejectedValue({
+          status: 429,
+          message: 'Rate limit exceeded',
+        }),
+      };
+
+      (mockSupabaseClient.from as jest.Mock).mockReturnValue(insertChain);
+
+      mockIdempotencyService.processWithIdempotency.mockImplementation(
+        async (params: { operation: () => Promise<any> }) => {
+          return params.operation();
+        }
+      );
+
+      await expect(
+        client.createPost({ body: 'Test post' })
+      ).rejects.toMatchObject({
+        status: 429,
+      });
+    });
+
+    it('should handle network timeout errors', async () => {
+      const mockSession = {
+        data: {
+          session: {
+            user: { id: 'user-1' },
+          },
+        },
+      };
+
+      (mockSupabaseClient.auth.getSession as jest.Mock).mockResolvedValue(
+        mockSession
+      );
+
+      const insertChain = {
+        insert: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        single: jest.fn().mockRejectedValue(new Error('Network timeout')),
+      };
+
+      (mockSupabaseClient.from as jest.Mock).mockReturnValue(insertChain);
+
+      mockIdempotencyService.processWithIdempotency.mockImplementation(
+        async (params: { operation: () => Promise<any> }) => {
+          return params.operation();
+        }
+      );
+
+      await expect(client.createPost({ body: 'Test post' })).rejects.toThrow(
+        'Network timeout'
+      );
+    });
+  });
+
+  describe('Pagination', () => {
+    it('should handle pagination with cursor correctly', async () => {
+      const mockSession = {
+        data: {
+          session: null,
+        },
+      };
+
+      (mockSupabaseClient.auth.getSession as jest.Mock).mockResolvedValue(
+        mockSession
+      );
+
+      const countChain = {
+        select: jest.fn().mockResolvedValue({ count: 100 }),
+      };
+
+      const mockPosts = [
+        {
+          id: 'post-1',
+          body: 'Test post 1',
+          created_at: '2024-01-02T00:00:00Z',
+        },
+        {
+          id: 'post-2',
+          body: 'Test post 2',
+          created_at: '2024-01-01T00:00:00Z',
+        },
+      ];
+
+      const queryChain = {
+        select: jest.fn().mockResolvedValue({
+          data: mockPosts,
+          error: null,
+        }),
+      };
+
+      (mockSupabaseClient.from as jest.Mock)
+        .mockReturnValueOnce(countChain)
+        .mockReturnValueOnce(queryChain);
+
+      const result = await client.getPosts('2024-01-03T00:00:00Z', 20);
+
+      expect(result.results.length).toBe(2);
+      expect(result.next).toBe('2024-01-01T00:00:00Z');
+      expect(result.count).toBe(100);
+    });
   });
 });

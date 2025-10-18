@@ -1,5 +1,7 @@
 import type { PostLike, RealtimeEvent } from '@/types/community';
 
+import { communityMetrics } from './metrics-tracker';
+
 type KeyExtractor<T> = (row: T) => string;
 
 // Timestamp store for tracking last-applied commit_timestamp per composite key
@@ -160,6 +162,8 @@ export function handleRealtimeEvent<T>(
     })
   ) {
     console.log('Dropping stale event:', key);
+    // Track dedupe drop (Requirement 10.5)
+    communityMetrics.recordDedupeDrop();
     return;
   }
 
@@ -216,6 +220,8 @@ function handlePostLikeEvent<T>(params: {
 
   if (!should) {
     console.log('Dropping stale event (post_likes):', key);
+    // Track dedupe drop (Requirement 10.5)
+    communityMetrics.recordDedupeDrop();
     return;
   }
 

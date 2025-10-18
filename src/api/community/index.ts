@@ -1,9 +1,9 @@
+import { useQuery } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import { createMutation, createQuery } from 'react-query-kit';
 
 import { type ConflictError, getCommunityApiClient } from './client';
 import type {
-  CreateCommentData,
   CreatePostData,
   DeleteResponse,
   PaginatedResponse,
@@ -14,24 +14,29 @@ import type {
 
 export * from './client';
 export * from './types';
+export * from './use-create-comment';
+export * from './use-delete-comment';
+export * from './use-like-post';
+export * from './use-unlike-post';
 
 const apiClient = getCommunityApiClient();
 
 // ==================== Post Queries ====================
 
 export const usePost = createQuery<Post, { postId: string }, AxiosError>({
-  queryKey: ['post'],
+  queryKey: ['post', 'postId'],
   fetcher: ({ postId }) => apiClient.getPost(postId),
 });
 
-export const usePosts = createQuery<
-  PaginatedResponse<Post>,
-  { cursor?: string; limit?: number },
-  AxiosError
->({
-  queryKey: ['posts'],
-  fetcher: ({ cursor, limit }) => apiClient.getPosts(cursor, limit),
-});
+export const usePosts = ({
+  cursor,
+  limit,
+}: { cursor?: string; limit?: number } = {}) => {
+  return useQuery<PaginatedResponse<Post>, AxiosError>({
+    queryKey: ['posts', cursor, limit],
+    queryFn: () => apiClient.getPosts(cursor, limit),
+  });
+};
 
 export const useUserProfile = createQuery<
   UserProfile,
@@ -42,27 +47,37 @@ export const useUserProfile = createQuery<
   fetcher: ({ userId }) => apiClient.getUserProfile(userId),
 });
 
-export const useUserPosts = createQuery<
-  PaginatedResponse<Post>,
-  { userId: string; cursor?: string; limit?: number },
-  AxiosError
->({
-  queryKey: ['user-posts'],
-  fetcher: ({ userId, cursor, limit }) =>
-    apiClient.getUserPosts(userId, cursor, limit),
-});
+export const useUserPosts = ({
+  userId,
+  cursor,
+  limit,
+}: {
+  userId: string;
+  cursor?: string;
+  limit?: number;
+}) => {
+  return useQuery<PaginatedResponse<Post>, AxiosError>({
+    queryKey: ['user-posts', userId, cursor, limit],
+    queryFn: () => apiClient.getUserPosts(userId, cursor, limit),
+  });
+};
 
 // ==================== Comment Queries ====================
 
-export const useComments = createQuery<
-  PaginatedResponse<PostComment>,
-  { postId: string; cursor?: string; limit?: number },
-  AxiosError
->({
-  queryKey: ['comments'],
-  fetcher: ({ postId, cursor, limit }) =>
-    apiClient.getComments(postId, cursor, limit),
-});
+export const useComments = ({
+  postId,
+  cursor,
+  limit,
+}: {
+  postId: string;
+  cursor?: string;
+  limit?: number;
+}) => {
+  return useQuery<PaginatedResponse<PostComment>, AxiosError>({
+    queryKey: ['comments', postId, cursor, limit],
+    queryFn: () => apiClient.getComments(postId, cursor, limit),
+  });
+};
 
 // ==================== Post Mutations ====================
 
@@ -106,60 +121,10 @@ export const useUndoDeletePost = createMutation<
 });
 
 // ==================== Like Mutations ====================
-
-export const useLikePost = createMutation<
-  void,
-  {
-    postId: string;
-    idempotencyKey?: string;
-    clientTxId?: string;
-  },
-  AxiosError
->({
-  mutationFn: ({ postId, idempotencyKey, clientTxId }) =>
-    apiClient.likePost(postId, idempotencyKey, clientTxId),
-});
-
-export const useUnlikePost = createMutation<
-  void,
-  {
-    postId: string;
-    idempotencyKey?: string;
-    clientTxId?: string;
-  },
-  AxiosError
->({
-  mutationFn: ({ postId, idempotencyKey, clientTxId }) =>
-    apiClient.unlikePost(postId, idempotencyKey, clientTxId),
-});
+// NOTE: useLikePost and useUnlikePost are exported from ./use-like-post and ./use-unlike-post with optimistic updates
 
 // ==================== Comment Mutations ====================
-
-export const useCreateComment = createMutation<
-  PostComment,
-  {
-    data: CreateCommentData;
-    idempotencyKey?: string;
-    clientTxId?: string;
-  },
-  AxiosError
->({
-  mutationFn: ({ data, idempotencyKey, clientTxId }) =>
-    apiClient.createComment(data, idempotencyKey, clientTxId),
-});
-
-export const useDeleteComment = createMutation<
-  DeleteResponse,
-  {
-    commentId: string;
-    idempotencyKey?: string;
-    clientTxId?: string;
-  },
-  AxiosError
->({
-  mutationFn: ({ commentId, idempotencyKey, clientTxId }) =>
-    apiClient.deleteComment(commentId, idempotencyKey, clientTxId),
-});
+// NOTE: useCreateComment and useDeleteComment are exported from their respective files with optimistic updates
 
 export const useUndoDeleteComment = createMutation<
   PostComment,

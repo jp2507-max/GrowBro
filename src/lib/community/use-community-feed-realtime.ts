@@ -52,19 +52,19 @@ type OutboxAdapter = {
  */
 function createQueryCacheAdapter<T>(
   queryClient: ReturnType<typeof useQueryClient>,
-  queryKey: string[]
+  queryKey: string[],
+  keySelector: (row: T) => string
 ): CacheAdapter<T> {
   return {
     get: (key: string) => {
       const data = queryClient.getQueryData<T[]>(queryKey);
-      return data?.find((item: any) => item.id === key);
+      return data?.find((item) => keySelector(item) === key);
     },
     upsert: (row: T) => {
       queryClient.setQueryData<T[]>(queryKey, (old) => {
         if (!old) return [row];
-        const index = old.findIndex(
-          (item: any) => (item as any).id === (row as any).id
-        );
+        const rowKey = keySelector(row);
+        const index = old.findIndex((item) => keySelector(item) === rowKey);
         if (index >= 0) {
           const updated = [...old];
           updated[index] = row;
@@ -76,7 +76,7 @@ function createQueryCacheAdapter<T>(
     remove: (key: string) => {
       queryClient.setQueryData<T[]>(queryKey, (old) => {
         if (!old) return [];
-        return old.filter((item: any) => item.id !== key);
+        return old.filter((item) => keySelector(item) !== key);
       });
     },
   };
@@ -105,13 +105,21 @@ function createRealtimeHandlers(
   queryClient: ReturnType<typeof useQueryClient>,
   outbox: OutboxAdapter
 ) {
-  const postsCache = createQueryCacheAdapter<Post>(queryClient, ['posts']);
-  const commentsCache = createQueryCacheAdapter<PostComment>(queryClient, [
-    'post-comments',
-  ]);
-  const likesCache = createQueryCacheAdapter<PostLike>(queryClient, [
-    'post-likes',
-  ]);
+  const postsCache = createQueryCacheAdapter<Post>(
+    queryClient,
+    ['posts'],
+    (post) => post.id
+  );
+  const commentsCache = createQueryCacheAdapter<PostComment>(
+    queryClient,
+    ['post-comments'],
+    (comment) => comment.id
+  );
+  const likesCache = createQueryCacheAdapter<PostLike>(
+    queryClient,
+    ['post-likes'],
+    (like) => `${like.post_id}-${like.user_id}`
+  );
 
   return {
     onPostChange: (event: RealtimeEvent<Post>) => {
@@ -186,19 +194,9 @@ function setupPollingMonitor(
  * }
  * ```
  */
-export function useCommunityFeedRealtime(options: RealtimeOptions = {}) {
-  const { postId, onConnectionStateChange, enabled = true } = options;
-
-  const queryClient = useQueryClient();
-  const managerRef = React.useRef<RealtimeConnectionManager | null>(null);
-  const outboxRef = React.useRef<OutboxAdapter>(createOutboxAdapter());
-
-  const [connectionState, setConnectionState] = React.useState<
-    'disconnected' | 'connecting' | 'connected' | 'error'
-  >('disconnected');
-  const [isPolling, setIsPolling] = React.useState(false);
-
-  // 30s reconciliation timer (Requirement: 3.8)
+function useReconciliationTimer(
+  queryClient: ReturnType<typeof useQueryClient>
+) {
   const reconciliationTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const reconcile = React.useCallback(() => {
@@ -220,6 +218,71 @@ export function useCommunityFeedRealtime(options: RealtimeOptions = {}) {
       reconciliationTimerRef.current = null;
     }
   }, []);
+
+  React.useEffect(() => {
+    return () => {
+      if (reconciliationTimerRef.current) {
+        clearInterval(reconciliationTimerRef.current);
+      }
+    };
+  }, []);
+
+  return { startReconciliation, stopReconciliation };
+}
+
+function usePollingEffect(
+  isPolling: boolean,
+  queryClient: ReturnType<typeof useQueryClient>
+) {
+  const pollingIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  React.useEffect(() => {
+    if (isPolling) {
+      // Clear any existing polling interval before creating a new one
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+
+      // Start new 30s polling interval
+      pollingIntervalRef.current = setInterval(() => {
+        console.log('Polling: Invalidating queries...');
+        queryClient.invalidateQueries({ queryKey: ['posts'] });
+        queryClient.invalidateQueries({ queryKey: ['post-comments'] });
+        queryClient.invalidateQueries({ queryKey: ['post-likes'] });
+      }, 30000);
+    } else {
+      // Clear polling interval when not polling
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    }
+
+    // Cleanup on unmount or when isPolling changes
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, [isPolling, queryClient]);
+}
+
+export function useCommunityFeedRealtime(options: RealtimeOptions = {}) {
+  const { postId, onConnectionStateChange, enabled = true } = options;
+
+  const queryClient = useQueryClient();
+  const managerRef = React.useRef<RealtimeConnectionManager | null>(null);
+  const outboxRef = React.useRef<OutboxAdapter>(createOutboxAdapter());
+
+  const [connectionState, setConnectionState] = React.useState<
+    'disconnected' | 'connecting' | 'connected' | 'error'
+  >('disconnected');
+  const [isPolling, setIsPolling] = React.useState(false);
+
+  const { startReconciliation, stopReconciliation } =
+    useReconciliationTimer(queryClient);
+  usePollingEffect(isPolling, queryClient);
 
   React.useEffect(() => {
     if (!enabled) return;
