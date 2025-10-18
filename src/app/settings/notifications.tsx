@@ -12,7 +12,7 @@ import colors from '@/components/ui/colors';
 
 import { useCommunityNotifications } from './hooks/use-community-notifications';
 
-function CategoryList() {
+function CategoryList(): JSX.Element {
   return (
     <View className="mb-4">
       <Text
@@ -41,7 +41,7 @@ function CategoryList() {
   );
 }
 
-function PlatformHelp() {
+function PlatformHelp(): JSX.Element {
   if (Platform.OS === 'android') {
     return (
       <View className="mb-6">
@@ -63,7 +63,7 @@ function PlatformHelp() {
   );
 }
 
-export default function NotificationSettings() {
+export default function NotificationSettings(): JSX.Element {
   const {
     userId,
     communityInteractionsEnabled,
@@ -73,7 +73,7 @@ export default function NotificationSettings() {
     handleToggleCommunityLikes,
   } = useCommunityNotifications();
 
-  const handleOpenSettings = async () => {
+  const handleOpenSettings = async (): Promise<void> => {
     await Linking.openSettings();
   };
 

@@ -103,12 +103,9 @@ export function UndoSnackbar({
             className="mt-1 text-xs text-neutral-400 dark:text-neutral-500"
             testID={`${testID}-countdown`}
           >
-            {translate(
-              'accessibility.community.undo_expires' as any,
-              {
-                seconds: remainingSeconds,
-              } as any
-            )}
+            {translate('community.undo_expires', {
+              seconds: remainingSeconds,
+            })}
           </Text>
         </View>
 

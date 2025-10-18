@@ -16,6 +16,7 @@ const de = JSON.parse(deContent);
 // Function to reorder object keys to match template
 function reorderObject(source, template) {
   const result = {};
+  const droppedKeys = [];
 
   for (const key of Object.keys(template)) {
     if (key in source) {
@@ -34,6 +35,17 @@ function reorderObject(source, template) {
     }
   }
 
+  // Track keys in source but not in template
+  for (const key of Object.keys(source)) {
+    if (!(key in template)) {
+      droppedKeys.push(key);
+    }
+  }
+
+  if (droppedKeys.length > 0) {
+    console.warn(`⚠️  Dropped keys: ${droppedKeys.join(', ')}`);
+  }
+
   return result;
 }
 
@@ -41,8 +53,13 @@ function reorderObject(source, template) {
 const reordered = reorderObject(de, en);
 
 // Write back without BOM
-fs.writeFileSync(dePath, JSON.stringify(reordered, null, 2) + '\n', {
-  encoding: 'utf8',
-});
+try {
+  fs.writeFileSync(dePath, JSON.stringify(reordered, null, 2) + '\n', {
+    encoding: 'utf8',
+  });
+} catch (error) {
+  console.error(`Failed to write reordered JSON to ${dePath}:`, error);
+  process.exit(1);
+}
 
 console.log('✅ Fixed de.json key order to match en.json');

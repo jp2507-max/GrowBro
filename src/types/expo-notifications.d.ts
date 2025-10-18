@@ -14,7 +14,7 @@ declare module 'expo-notifications' {
     sound?: boolean | string;
     // iOS specific fields
     subtitle?: string;
-    badge?: number | string;
+    badge?: number; // numeric value for app icon badge; iOS uses badgeCount, Android support is limited
     // Android specific fields
     color?: string;
     priority?: 'min' | 'low' | 'default' | 'high' | 'max';

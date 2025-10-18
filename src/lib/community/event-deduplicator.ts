@@ -106,6 +106,66 @@ export type EventHandlerOptions<T> = {
 };
 
 /**
+ * Extract key from event row based on table type
+ */
+function extractEventKey<T>(
+  keyRow: T,
+  table: string | undefined,
+  getKey: KeyExtractor<T>
+): string {
+  if (table === 'post_likes') {
+    return getLikeKey(keyRow as unknown as PostLike);
+  }
+  return getKey(keyRow);
+}
+
+/**
+ * Handle self-echo confirmation for realtime events
+ */
+async function handleSelfEchoConfirmation(params: {
+  client_tx_id: string | undefined;
+  commit_timestamp: string | undefined;
+  key: string;
+  outbox: OutboxOperations;
+}): Promise<boolean> {
+  const { client_tx_id, commit_timestamp, key, outbox } = params;
+
+  if (!client_tx_id || !(await outbox.has(client_tx_id))) {
+    return false;
+  }
+
+  // Ensure we record the commit timestamp for this key before confirming
+  // the outbox entry. This prevents later, older events from overwriting
+  // our just-applied state due to missing timestamp bookkeeping.
+  if (commit_timestamp) recordAppliedTimestamp(key, commit_timestamp);
+
+  await outbox.confirm(client_tx_id);
+  console.log('Confirmed outbox entry:', client_tx_id);
+  return true; // Don't re-apply our own change
+}
+
+/**
+ * Apply event change to cache
+ */
+function applyEventToCache<T>(params: {
+  eventType: string;
+  newRow: T | undefined;
+  key: string;
+  cache: CacheOperations<T>;
+}): void {
+  const { eventType, newRow, key, cache } = params;
+  switch (eventType) {
+    case 'INSERT':
+    case 'UPDATE':
+      if (newRow) cache.upsert(newRow);
+      break;
+    case 'DELETE':
+      cache.remove(key);
+      break;
+  }
+}
+
+/**
  * Handle real-time event with deduplication and self-echo detection
  *
  * Requirements:
@@ -136,13 +196,7 @@ export async function handleRealtimeEvent<T>(
   const keyRow = (newRow ?? oldRow) as T;
   if (!keyRow) return;
 
-  // Determine the key based on table type
-  let key: string;
-  if (table === 'post_likes') {
-    key = getLikeKey(keyRow as unknown as PostLike);
-  } else {
-    key = getKey(keyRow);
-  }
+  const key = extractEventKey(keyRow, table, getKey);
 
   // Special-case: post_likes uses a composite key and commit_timestamp.
   // INSERT/DELETE on post_likes should be treated as toggle operations
@@ -174,27 +228,28 @@ export async function handleRealtimeEvent<T>(
   }
 
   // Handle self-echo confirmation (Requirements: 3.6)
-  if (client_tx_id && (await outbox.has(client_tx_id))) {
-    // Ensure we record the commit timestamp for this key before confirming
-    // the outbox entry. This prevents later, older events from overwriting
-    // our just-applied state due to missing timestamp bookkeeping.
-    if (commit_timestamp) recordAppliedTimestamp(key, commit_timestamp);
-
-    await outbox.confirm(client_tx_id);
-    console.log('Confirmed outbox entry:', client_tx_id);
+  // NOTE: This logic assumes realtime events include client_tx_id for outbox confirmation,
+  // but the current database schema for posts/post_comments/post_likes tables does NOT
+  // persist the client_tx_id column. The API client inserts only include user_id, body,
+  // and other core fields, so realtime payloads arrive with client_tx_id undefined.
+  // This causes outbox entries to never be confirmed, leading to permanently growing
+  // outbox and reconnection timeouts.
+  //
+  // P1 FIX REQUIRED: Either:
+  // 1. Add client_tx_id column to posts/post_comments/post_likes tables and emit it in realtime
+  // 2. Remove this confirmation logic and rely on timestamp-based deduplication only
+  if (
+    await handleSelfEchoConfirmation({
+      client_tx_id,
+      commit_timestamp,
+      key,
+      outbox,
+    })
+  ) {
     return; // Don't re-apply our own change
   }
 
-  // Apply the change
-  switch (eventType) {
-    case 'INSERT':
-    case 'UPDATE':
-      if (newRow) cache.upsert(newRow);
-      break;
-    case 'DELETE':
-      cache.remove(key);
-      break;
-  }
+  applyEventToCache({ eventType, newRow, key, cache });
 
   // Trigger UI update
   onInvalidate?.();
