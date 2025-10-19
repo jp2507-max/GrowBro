@@ -644,9 +644,9 @@
         "lowConfidenceNote": "Begrenzte Daten verfügbar. Die Vorhersagegenauigkeit verbessert sich mit mehr Nutzungsverlauf.",
         "mediumConfidence": "Mittel",
         "recommendedQuantity": "Empfohlene Menge",
-        "reorderNow": "Jetzt nachbestellen",
-        "reorderRecommendation": "Nachbestellempfehlung",
-        "timeToReorder": "Zeit bis zur Nachbestellung"
+        "reorderNow": "Jetzt auffüllen",
+        "reorderRecommendation": "Auffüllempfehlung",
+        "timeToReorder": "Zeit bis zur Auffüllung"
       },
       "form": {
         "barcode": "Barcode",
@@ -676,7 +676,7 @@
       "no_batches": "Keine Chargen verfügbar",
       "offline_description": "Zwischengespeicherte Daten werden angezeigt. Änderungen werden synchronisiert, wenn du wieder online bist.",
       "permissions": {
-        "exact_alarm_benefits": "Aktiviere präzise Niedrigbestandswarnungen, um Nachschub rechtzeitig zu bestellen und Engpässe zu vermeiden.",
+        "exact_alarm_benefits": "Aktiviere präzise Niedrigbestandswarnungen, um Nachschub rechtzeitig aufzufüllen und Engpässe zu vermeiden.",
         "exact_alarm_description": "GrowBro benötigt die Berechtigung, exakte Alarme für rechtzeitige Niedrigbestandsbenachrichtigungen zu planen. Dies stellt sicher, dass du benachrichtigt wirst, wenn Vorräte zur Neige gehen.",
         "exact_alarm_title": "Präzise Benachrichtigungen aktivieren",
         "grant_permission": "Berechtigung erteilen"
@@ -748,7 +748,7 @@
         "ifDeniedTitle": "Wenn du dies überspringst",
         "openSettings": "Einstellungen öffnen",
         "title": "Rechtzeitige Benachrichtigungen aktivieren",
-        "whyNeededBody": "Exakte Alarme stellen sicher, dass du sofort benachrichtigt wirst, wenn Vorräte zur Neige gehen, damit du rechtzeitig nachbestellen kannst.",
+        "whyNeededBody": "Exakte Alarme stellen sicher, dass du sofort benachrichtigt wirst, wenn Vorräte zur Neige gehen, damit du rechtzeitig auffüllen kannst.",
         "whyNeededTitle": "Warum das wichtig ist"
       }
     },

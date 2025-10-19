@@ -19,13 +19,24 @@ type ScheduleRequest = {
 export const LocalNotificationService = {
   async scheduleExactNotification(request: ScheduleRequest): Promise<string> {
     await enforceIosPendingLimit(request.triggerDate);
-    const triggerSeconds = Math.floor(
-      (request.triggerDate.getTime() - Date.now()) / 1000
-    );
-    const trigger: Notifications.NotificationTriggerInput = {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: triggerSeconds > 0 ? triggerSeconds : 1,
-    };
+    let trigger: Notifications.NotificationTriggerInput;
+    if (Platform.OS === 'ios') {
+      const triggerDate = new Date(
+        Math.max(request.triggerDate.getTime(), Date.now() + 1000)
+      );
+      trigger = {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: triggerDate,
+      };
+    } else {
+      const triggerSeconds = Math.floor(
+        (request.triggerDate.getTime() - Date.now()) / 1000
+      );
+      trigger = {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: triggerSeconds > 0 ? triggerSeconds : 1,
+      };
+    }
     if (Platform.OS === 'android' && request.androidChannelKey) {
       (trigger as any).channelId = getAndroidChannelId(
         request.androidChannelKey
@@ -34,17 +45,15 @@ export const LocalNotificationService = {
     const content: Notifications.NotificationContentInput = {
       title: request.title,
       body: request.body,
-      data: {
-        ...(request.data ?? {}),
-        ...(Platform.OS === 'ios' && request.threadId
-          ? { threadId: request.threadId }
-          : {}),
-      },
+      data: request.data ?? {},
       sound:
         request.androidChannelKey === 'cultivation.reminders'
           ? 'default'
           : undefined,
-    } as any;
+      ...(Platform.OS === 'ios' && request.threadId
+        ? { threadIdentifier: request.threadId }
+        : {}),
+    };
     const id = await Notifications.scheduleNotificationAsync({
       content,
       trigger,

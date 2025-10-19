@@ -532,13 +532,13 @@ export class CommunityApiClient implements CommunityAPI {
       key: headers['Idempotency-Key'],
       clientTxId: headers['X-Client-Tx-Id'],
       userId,
-      endpoint: `/api/posts/${commentData.post_id}/comments`,
+      endpoint: `/api/posts/${commentData.postId}/comments`,
       payload: commentData,
       operation: async () => {
         const { data, error } = await this.client
           .from('post_comments')
           .insert({
-            post_id: commentData.post_id,
+            post_id: commentData.postId,
             user_id: userId,
             body: commentData.body,
             client_tx_id: headers['X-Client-Tx-Id'],

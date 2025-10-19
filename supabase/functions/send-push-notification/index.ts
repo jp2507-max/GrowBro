@@ -239,7 +239,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (!configuredSecret) {
       // Fail fast: refuse to run without a configured secret to avoid accepting
       // unauthenticated requests
-      throw new Error('EDGE_FUNCTION_SECRET is not configured');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Service unavailable' }),
+        {
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          status: 503,
+        }
+      );
     }
 
     // Validate incoming request header 'X-Function-Secret' matches configured secret
@@ -278,7 +284,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Supabase environment variables not configured');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Service unavailable' }),
+        {
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          status: 503,
+        }
+      );
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -291,7 +303,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .eq('is_active', true);
 
     if (tokensError) {
-      throw new Error(`Failed to fetch push tokens: ${tokensError.message}`);
+      console.error('Failed to fetch push tokens:', tokensError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Service unavailable' }),
+        {
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          status: 503,
+        }
+      );
     }
 
     if (!tokens || tokens.length === 0) {

@@ -5,7 +5,9 @@ import { cleanup } from '@/lib/test-utils';
 
 import { NotificationGroupingService } from './grouping-service';
 
-jest.mock('expo-notifications');
+jest.mock('expo-notifications', () => ({
+  scheduleNotificationAsync: jest.fn(),
+}));
 jest.mock('@/lib/notifications/android-channels');
 jest.mock('@/lib/sentry-utils');
 

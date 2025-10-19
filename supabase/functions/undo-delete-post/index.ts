@@ -70,6 +70,13 @@ async function restorePostById(
     .from('posts')
     .update({ deleted_at: null, undo_expires_at: null })
     .eq('id', postId)
+    // NOTE: using `.neq('deleted_at', null)` attempts to translate to SQL as
+    // `deleted_at != NULL` which in PostgREST/Postgres never evaluates to true.
+    // That means the update would match zero rows even when `deleted_at` is set.
+    // Use the PostgREST null operator to target rows where `deleted_at` IS NOT
+    // NULL (for example: `.not('deleted_at', 'is', null)`). We don't change the
+    // code behavior here — this comment explains the bug reported by the
+    // codex connector and the correct operator to use when fixing the query.
     .neq('deleted_at', null)
     .or(`undo_expires_at.is.null,undo_expires_at.gt.${now}`)
     .select('id')

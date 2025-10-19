@@ -107,7 +107,7 @@ function createTargetNotificationContent(
   stage: HarvestStage,
   config: StageConfig,
   harvestId: string
-) {
+): Notifications.NotificationContentInput {
   return {
     title: translate('harvest.notifications.target.title', {
       stage: config.name,
@@ -117,7 +117,7 @@ function createTargetNotificationContent(
       days: config.target_duration_days,
     }),
     data: { harvestId, stage, type: 'harvest_stage_target' },
-    sound: true,
+    sound: 'default',
   };
 }
 
@@ -128,7 +128,7 @@ function createOverdueNotificationContent(
   stage: HarvestStage,
   config: StageConfig,
   harvestId: string
-) {
+): Notifications.NotificationContentInput {
   return {
     title: translate('harvest.notifications.overdue.title', {
       stage: config.name,
@@ -138,7 +138,7 @@ function createOverdueNotificationContent(
       days: config.max_duration_days,
     }),
     data: { harvestId, stage, type: 'harvest_stage_overdue' },
-    sound: true,
+    sound: 'default',
   };
 }
 
@@ -212,10 +212,10 @@ type NotificationErrorContext = {
 /**
  * Handle notification scheduling error
  */
-function handleScheduleError(
+async function handleScheduleError(
   error: unknown,
   context: NotificationErrorContext
-): NotificationScheduleResult {
+): Promise<NotificationScheduleResult> {
   captureCategorizedErrorSync(error, {
     category: 'notification',
     message: context.message,
@@ -229,7 +229,7 @@ function handleScheduleError(
   };
 
   recordScheduleAttempt(false);
-  trackNotificationSchedule({
+  await trackNotificationSchedule({
     type: context.notificationType,
     result,
     harvestId: context.harvestId,
@@ -290,7 +290,7 @@ export async function scheduleStageReminder(
       contentCreator: createTargetNotificationContent,
     });
   } catch (error) {
-    return handleScheduleError(error, {
+    return await handleScheduleError(error, {
       harvestId,
       stage,
       notificationType: 'target',
@@ -351,7 +351,7 @@ export async function scheduleOverdueReminder(
       contentCreator: createOverdueNotificationContent,
     });
   } catch (error) {
-    return handleScheduleError(error, {
+    return await handleScheduleError(error, {
       harvestId,
       stage,
       notificationType: 'overdue',

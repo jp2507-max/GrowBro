@@ -67,7 +67,7 @@ async function queueCommentInOutbox(payload: {
       const outboxCollection = database.get<OutboxModel>('outbox');
       await outboxCollection.create((record) => {
         record.op = 'COMMENT';
-        record.payload = { post_id: postId, body };
+        record.payload = { postId, body };
         record.clientTxId = clientTxId;
         record.idempotencyKey = idempotencyKey;
         record.createdAt = new Date();

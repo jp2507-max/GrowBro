@@ -151,7 +151,7 @@ export const ModeratorToolsModal = React.forwardRef<
   }));
 
   const handleSubmit = async () => {
-    if (!reason.trim()) {
+    if (!isHidden && !reason.trim()) {
       setError(t('moderation.moderator_modal.reason_required'));
       return;
     }

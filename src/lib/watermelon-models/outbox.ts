@@ -1,6 +1,7 @@
 import { Model } from '@nozbe/watermelondb';
 import { date, field, json, text } from '@nozbe/watermelondb/decorators';
 
+import { calculateBackoffDelay } from '@/lib/utils/backoff';
 import type {
   OutboxOperation,
   OutboxPayload,
@@ -47,10 +48,7 @@ export class OutboxModel extends Model {
 
   // Calculate next retry delay (exponential backoff: 1s, 2s, 4s, 8s, 16s, 32s max)
   getNextRetryDelay(): number {
-    const baseDelay = 1000; // 1 second
-    const maxDelay = 32000; // 32 seconds
-    const delay = Math.min(baseDelay * Math.pow(2, this.retries), maxDelay);
-    return delay;
+    return calculateBackoffDelay(this.retries);
   }
 
   // Check if max retries exceeded (5 attempts)

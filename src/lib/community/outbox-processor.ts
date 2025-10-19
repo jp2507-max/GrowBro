@@ -12,6 +12,7 @@
 import { type Database, Q } from '@nozbe/watermelondb';
 
 import { getCommunityApiClient } from '@/api/community/client';
+import { calculateBackoffDelay } from '@/lib/utils/backoff';
 import type { OutboxModel } from '@/lib/watermelon-models/outbox';
 import type { OutboxOperation } from '@/types/community';
 
@@ -272,7 +273,7 @@ export class OutboxProcessor {
 
       // Increment retry count and calculate next retry time
       const nextRetries = entry.retries + 1;
-      const nextRetryDelay = this.calculateBackoff(nextRetries);
+      const nextRetryDelay = this.calculateBackoff(entry.retries);
       const nextRetryAt = new Date(Date.now() + nextRetryDelay);
 
       await this.database.write(async () => {
@@ -320,7 +321,7 @@ export class OutboxProcessor {
       case 'COMMENT':
         await this.apiClient.createComment(
           {
-            post_id: payload.post_id,
+            postId: payload.postId,
             body: payload.body,
           },
           idempotencyKey,
@@ -380,7 +381,7 @@ export class OutboxProcessor {
    * Calculate exponential backoff delay
    */
   private calculateBackoff(retries: number): number {
-    return Math.min(this.BASE_DELAY * Math.pow(2, retries), this.MAX_DELAY);
+    return calculateBackoffDelay(retries, this.BASE_DELAY, this.MAX_DELAY);
   }
 
   /**

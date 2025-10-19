@@ -74,7 +74,7 @@ describe('OutboxProcessor', () => {
         createMockEntry(
           '2',
           'COMMENT',
-          { post_id: 'post-1', body: 'Test' },
+          { postId: 'post-1', body: 'Test' },
           0,
           'pending'
         ),
@@ -112,7 +112,7 @@ describe('OutboxProcessor', () => {
       // Then the COMMENT call should have been made with the second
       // entry's payload and idempotency information.
       expect(mockApiClient.createComment).toHaveBeenCalledWith(
-        { post_id: 'post-1', body: 'Test' },
+        { postId: 'post-1', body: 'Test' },
         mockEntries[1].idempotencyKey,
         mockEntries[1].clientTxId
       );
@@ -213,10 +213,10 @@ describe('OutboxProcessor', () => {
       };
       updateFn(rec);
 
-      // 1st failure => 2000ms delay
+      // 1st failure => 1000ms delay
       expect(rec.retries).toBe(1);
       const delta = rec.nextRetryAt.getTime() - before;
-      expect(delta).toBe(2000);
+      expect(delta).toBe(1000);
 
       jest.useRealTimers();
     });
@@ -366,7 +366,7 @@ function createMockEntry(
     isProcessed: status === 'processed',
     shouldRetry: status === 'pending' || status === 'failed',
     hasExceededMaxRetries: retries >= 5,
-    getNextRetryDelay: () => Math.min(1000 * Math.pow(2, retries), 32000),
+    getNextRetryDelay: () => Math.min(1000 * Math.pow(2, retries), 32000), // Note: this should match calculateBackoffDelay(retries)
     update: jest.fn(),
     destroyPermanently: jest.fn(),
   } as any;

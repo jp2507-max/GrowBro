@@ -36,16 +36,30 @@ function PostCardComponent({
   testID = 'post-card',
 }: PostCardProps): React.ReactElement {
   const router = useRouter();
-  const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = React.useState<
+    string | null | undefined
+  >(undefined);
 
   React.useEffect(() => {
     getOptionalAuthenticatedUserId().then(setCurrentUserId);
   }, []);
 
   const normalizedPost = React.useMemo(() => normalizePostUserId(post), [post]);
-  const postUserId = String(normalizedPost.userId || '');
+  // Runtime validation: ensure userId is present and valid
+  if (!normalizedPost.userId || normalizedPost.userId === 'invalid-user-id') {
+    console.warn('Post has invalid userId, using fallback', {
+      postId: normalizedPost.id,
+    });
+  }
+  const postUserId =
+    normalizedPost.userId === 'invalid-user-id'
+      ? `unknown-user-${normalizedPost.id}`
+      : String(normalizedPost.userId);
   const postId = normalizedPost.id;
-  const isOwnPost = currentUserId && postUserId === currentUserId;
+  const isOwnPost =
+    currentUserId !== undefined &&
+    currentUserId !== null &&
+    postUserId === currentUserId;
 
   const handleCommentPress = React.useCallback(
     (e: any) => {

@@ -37,7 +37,7 @@ export type CreatePostData = {
 };
 
 export type CreateCommentData = {
-  post_id: string;
+  postId: string;
   body: string;
 };
 
