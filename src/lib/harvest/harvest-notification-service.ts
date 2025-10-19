@@ -165,27 +165,63 @@ type NotificationScheduleContext = {
 async function scheduleNotificationWithTracking(
   context: NotificationScheduleContext
 ): Promise<NotificationScheduleResult> {
-  const notificationId = await Notifications.scheduleNotificationAsync({
-    content: context.contentCreator(
-      context.stage,
-      context.config,
-      context.harvestId
-    ),
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: Math.max(
-        1,
-        Math.floor((context.triggerDate.getTime() - Date.now()) / 1000)
+  let notificationId: string | undefined;
+
+  try {
+    notificationId = await Notifications.scheduleNotificationAsync({
+      content: context.contentCreator(
+        context.stage,
+        context.config,
+        context.harvestId
       ),
-    },
-  });
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: Math.max(
+          1,
+          Math.floor((context.triggerDate.getTime() - Date.now()) / 1000)
+        ),
+      },
+    });
 
-  await updateHarvestNotificationId(
-    context.harvestId,
-    context.notificationIdField,
-    notificationId
-  );
+    // Attempt to update the database with the notification ID
+    await updateHarvestNotificationId(
+      context.harvestId,
+      context.notificationIdField,
+      notificationId
+    );
+  } catch (error) {
+    // If scheduling or DB update fails, cancel any scheduled notification
+    if (notificationId !== undefined) {
+      try {
+        await Notifications.cancelScheduledNotificationAsync(notificationId);
+      } catch (cancelError) {
+        console.warn(
+          '[HarvestNotificationService] Failed to cancel orphaned notification:',
+          cancelError
+        );
+      }
+    }
 
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+    const result: NotificationScheduleResult = {
+      notificationId: null,
+      scheduled: false,
+      error: errorMessage,
+    };
+
+    recordScheduleAttempt(false);
+    await trackNotificationSchedule({
+      type: context.notificationType,
+      result,
+      harvestId: context.harvestId,
+      stage: context.stage,
+    });
+
+    throw error;
+  }
+
+  // Only mark as successful after both scheduling and DB update succeed
   const result = { notificationId, scheduled: true };
 
   recordScheduleAttempt(true);

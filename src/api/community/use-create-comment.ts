@@ -12,12 +12,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { showMessage } from 'react-native-flash-message';
 import { v4 as uuidv4 } from 'uuid';
 
+import type { PaginateQuery } from '@/api/types';
 import { database } from '@/lib/watermelon';
 import type { OutboxModel } from '@/lib/watermelon-models/outbox';
 import type { PostComment } from '@/types/community';
 
 import { getCommunityApiClient, ValidationError } from './client';
-import type { PaginatedResponse } from './types';
 
 const apiClient = getCommunityApiClient();
 
@@ -27,7 +27,7 @@ interface CreateCommentVariables {
 }
 
 interface CreateCommentContext {
-  previousComments?: PaginatedResponse<PostComment>;
+  previousComments?: PaginateQuery<PostComment>;
   tempComment: PostComment;
 }
 
@@ -100,29 +100,23 @@ function optimisticallyAddComment(
   postId: string,
   tempComment: PostComment
 ): void {
-  const previousComments = queryClient.getQueryData<
-    PaginatedResponse<PostComment>
-  >(['comments', postId]);
+  const previousComments = queryClient.getQueryData<PaginateQuery<PostComment>>(
+    ['comments', postId]
+  );
 
   if (previousComments) {
-    queryClient.setQueryData<PaginatedResponse<PostComment>>(
-      ['comments', postId],
-      {
-        ...previousComments,
-        results: [...previousComments.results, tempComment],
-        count: (previousComments.count || 0) + 1,
-      }
-    );
+    queryClient.setQueryData<PaginateQuery<PostComment>>(['comments', postId], {
+      ...previousComments,
+      results: [...previousComments.results, tempComment],
+      count: (previousComments.count || 0) + 1,
+    });
   } else {
-    queryClient.setQueryData<PaginatedResponse<PostComment>>(
-      ['comments', postId],
-      {
-        results: [tempComment],
-        count: 1,
-        next: null,
-        previous: null,
-      }
-    );
+    queryClient.setQueryData<PaginateQuery<PostComment>>(['comments', postId], {
+      results: [tempComment],
+      count: 1,
+      next: null,
+      previous: null,
+    });
   }
 }
 
@@ -133,20 +127,18 @@ function replaceTempCommentWithServerComment(
   context: { tempComment: PostComment; newComment: PostComment }
 ): void {
   const { tempComment, newComment } = context;
-  const currentComments = queryClient.getQueryData<
-    PaginatedResponse<PostComment>
-  >(['comments', postId]);
+  const currentComments = queryClient.getQueryData<PaginateQuery<PostComment>>([
+    'comments',
+    postId,
+  ]);
 
   if (currentComments) {
-    queryClient.setQueryData<PaginatedResponse<PostComment>>(
-      ['comments', postId],
-      {
-        ...currentComments,
-        results: currentComments.results.map((comment) =>
-          comment.id === tempComment.id ? newComment : comment
-        ),
-      }
-    );
+    queryClient.setQueryData<PaginateQuery<PostComment>>(['comments', postId], {
+      ...currentComments,
+      results: currentComments.results.map((comment) =>
+        comment.id === tempComment.id ? newComment : comment
+      ),
+    });
   }
 }
 
@@ -156,7 +148,7 @@ function handleValidationError(
   postId: string,
   context: {
     error: ValidationError;
-    previousComments?: PaginatedResponse<PostComment>;
+    previousComments?: PaginateQuery<PostComment>;
   }
 ): void {
   const { error, previousComments } = context;
@@ -202,7 +194,7 @@ export function useCreateComment() {
       await queueCommentInOutbox({ postId, body, clientTxId, idempotencyKey });
 
       const comment = await apiClient.createComment(
-        { post_id: postId, body },
+        { postId, body },
         idempotencyKey,
         clientTxId
       );
@@ -214,7 +206,7 @@ export function useCreateComment() {
       await queryClient.cancelQueries({ queryKey: ['comments', postId] });
 
       const previousComments = queryClient.getQueryData<
-        PaginatedResponse<PostComment>
+        PaginateQuery<PostComment>
       >(['comments', postId]);
       const tempComment = createTempComment(postId, body);
 

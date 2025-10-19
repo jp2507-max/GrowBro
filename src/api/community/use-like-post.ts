@@ -13,12 +13,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { showMessage } from 'react-native-flash-message';
 import { v4 as uuidv4 } from 'uuid';
 
+import type { PaginateQuery } from '@/api/types';
 import { database } from '@/lib/watermelon';
 import type { OutboxModel } from '@/lib/watermelon-models/outbox';
 import type { Post } from '@/types/community';
 
 import { ConflictError, getCommunityApiClient } from './client';
-import type { PaginatedResponse } from './types';
 
 const apiClient = getCommunityApiClient();
 
@@ -27,7 +27,7 @@ interface LikePostVariables {
 }
 
 interface LikePostContext {
-  previousPosts?: PaginatedResponse<Post>;
+  previousPosts?: PaginateQuery<Post>;
 }
 
 async function queueLikeAction(
@@ -61,11 +61,11 @@ function handleLikeError(
   if (error instanceof ConflictError) {
     const canonicalState = error.canonicalState;
     if (canonicalState) {
-      const currentData = queryClient.getQueryData<PaginatedResponse<Post>>([
+      const currentData = queryClient.getQueryData<PaginateQuery<Post>>([
         'posts',
       ]);
       if (currentData) {
-        queryClient.setQueryData<PaginatedResponse<Post>>(['posts'], {
+        queryClient.setQueryData<PaginateQuery<Post>>(['posts'], {
           ...currentData,
           results: currentData.results.map((post) =>
             post.id === canonicalState.post_id
@@ -102,12 +102,12 @@ export function useLikePost() {
 
     onMutate: async ({ postId }) => {
       await queryClient.cancelQueries({ queryKey: ['posts'] });
-      const previousPosts = queryClient.getQueryData<PaginatedResponse<Post>>([
+      const previousPosts = queryClient.getQueryData<PaginateQuery<Post>>([
         'posts',
       ]);
 
       if (previousPosts) {
-        queryClient.setQueryData<PaginatedResponse<Post>>(['posts'], {
+        queryClient.setQueryData<PaginateQuery<Post>>(['posts'], {
           ...previousPosts,
           results: previousPosts.results.map((post) =>
             post.id === postId

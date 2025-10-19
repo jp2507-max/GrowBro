@@ -1,3 +1,6 @@
+/// <reference path="../../types/expo-notifications.d.ts" />
+
+import type { Notification } from 'expo-notifications';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
@@ -6,9 +9,9 @@ import { getAndroidChannelId } from '@/lib/notifications/android-channels';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
 type CommunityNotification = {
-  notification: any; // Expo notification object
+  notification: Notification; // Expo notification object
   type: 'community.interaction' | 'community.reply' | 'community.like';
-  postId: string;
+  postId?: string;
   threadId?: string;
 };
 
@@ -108,17 +111,21 @@ async function handleiOSThreading(
     // We just present the notification; iOS handles visual grouping automatically
     const content = communityNotification.notification.request?.content || {};
 
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: content.title || '',
-        body: content.body || '',
-        threadIdentifier:
-          communityNotification.threadId ||
-          `post_${communityNotification.postId}`,
-        data: {
-          ...content.data,
-        },
+    const notificationContent: Notifications.NotificationContentInput & {
+      threadIdentifier?: string;
+    } = {
+      title: content.title || '',
+      body: content.body || '',
+      data: {
+        ...content.data,
       },
+      threadIdentifier:
+        communityNotification.threadId ||
+        `post_${communityNotification.postId}`,
+    };
+
+    await Notifications.scheduleNotificationAsync({
+      content: notificationContent,
       trigger: null as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
     });
   } catch (error) {

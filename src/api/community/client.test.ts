@@ -407,7 +407,7 @@ describe('CommunityApiClient', () => {
   describe('createComment', () => {
     it('should create a comment with idempotency', async () => {
       const commentData: CreateCommentData = {
-        post_id: 'post-1',
+        postId: 'post-1',
         body: 'Test comment',
       };
 
@@ -448,7 +448,7 @@ describe('CommunityApiClient', () => {
 
     it('should reject comments exceeding 500 characters', async () => {
       const commentData: CreateCommentData = {
-        post_id: 'post-1',
+        postId: 'post-1',
         body: 'a'.repeat(501),
       };
 
@@ -471,7 +471,7 @@ describe('CommunityApiClient', () => {
 
     it('should reject empty comment body', async () => {
       const commentData: CreateCommentData = {
-        post_id: 'post-1',
+        postId: 'post-1',
         body: '',
       };
 

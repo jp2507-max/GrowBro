@@ -98,7 +98,7 @@ export interface CreatePostData {
 }
 
 export interface CreateCommentData {
-  post_id: string;
+  postId: string;
   body: string;
 }
 

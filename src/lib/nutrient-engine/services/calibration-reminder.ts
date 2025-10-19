@@ -421,9 +421,23 @@ export async function getScheduledCalibrationReminders(): Promise<
         id: notif.identifier,
         calibrationId:
           ((notif as any).content?.data?.calibrationId as string) || 'unknown',
-        scheduledFor: (notif as any).trigger
-          ? new Date(((notif as any).trigger as any).value * 1000)
-          : new Date(),
+        scheduledFor: (() => {
+          const t = (notif as any).trigger;
+          if (!t) return new Date();
+          if (
+            t.type === Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL
+          ) {
+            const secs = Number((t as any).seconds ?? 0);
+            return new Date(Date.now() + Math.max(0, secs) * 1000);
+          }
+          if ('timestamp' in (t as any)) {
+            return new Date((t as any).timestamp);
+          }
+          if ('date' in (t as any)) {
+            return new Date((t as any).date);
+          }
+          return new Date();
+        })(),
       }));
   } catch (error) {
     console.error('Error getting scheduled reminders:', error);

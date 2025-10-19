@@ -1,5 +1,11 @@
 // Community feed API types
-import type { Post, PostComment, PostLike } from '@/types/community';
+import type { PaginateQuery } from '@/api/types';
+import type {
+  CreatePostData,
+  Post,
+  PostComment,
+  PostLike,
+} from '@/types/community';
 
 // Re-export for convenience
 export type { Post, PostComment, PostLike };
@@ -22,18 +28,6 @@ export type UserProfile = {
   avatar_url?: string;
   bio?: string;
   created_at: string;
-};
-
-export type PaginatedResponse<T> = {
-  results: T[];
-  count: number;
-  next: string | null;
-  previous: string | null;
-};
-
-export type CreatePostData = {
-  body: string;
-  media_uri?: string;
 };
 
 export type CreateCommentData = {
@@ -81,7 +75,7 @@ export type IdempotencyKey = {
 export interface CommunityAPI {
   // Posts
   getPost(postId: string): Promise<Post>;
-  getPosts(cursor?: string, limit?: number): Promise<PaginatedResponse<Post>>;
+  getPosts(cursor?: string, limit?: number): Promise<PaginateQuery<Post>>;
   createPost(
     data: CreatePostData,
     idempotencyKey?: string,
@@ -115,7 +109,7 @@ export interface CommunityAPI {
     postId: string,
     cursor?: string,
     limit?: number
-  ): Promise<PaginatedResponse<PostComment>>;
+  ): Promise<PaginateQuery<PostComment>>;
   createComment(
     data: CreateCommentData,
     idempotencyKey?: string,
@@ -138,5 +132,5 @@ export interface CommunityAPI {
     userId: string,
     cursor?: string,
     limit?: number
-  ): Promise<PaginatedResponse<Post>>;
+  ): Promise<PaginateQuery<Post>>;
 }

@@ -2,11 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import { createMutation, createQuery } from 'react-query-kit';
 
+import type { PaginateQuery } from '@/api/types';
+
 import { type ConflictError, getCommunityApiClient } from './client';
 import type {
   CreatePostData,
   DeleteResponse,
-  PaginatedResponse,
   Post,
   PostComment,
   UserProfile,
@@ -33,7 +34,7 @@ export const usePosts = ({
   cursor,
   limit,
 }: { cursor?: string; limit?: number } = {}) => {
-  return useQuery<PaginatedResponse<Post>, AxiosError>({
+  return useQuery<PaginateQuery<Post>, AxiosError>({
     queryKey: ['posts', cursor, limit],
     queryFn: () => getCommunityApiClient().getPosts(cursor, limit),
   });
@@ -59,7 +60,7 @@ export const useComments = ({
   cursor?: string;
   limit?: number;
 }) => {
-  return useQuery<PaginatedResponse<PostComment>, AxiosError>({
+  return useQuery<PaginateQuery<PostComment>, AxiosError>({
     queryKey: ['comments', postId, cursor, limit],
     queryFn: () => getCommunityApiClient().getComments(postId, cursor, limit),
   });

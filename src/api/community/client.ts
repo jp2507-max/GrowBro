@@ -1,5 +1,6 @@
 import { type SupabaseClient } from '@supabase/supabase-js';
 
+import type { PaginateQuery } from '@/api/types';
 import { createIdempotencyHeaders } from '@/lib/community/headers';
 import { getIdempotencyService } from '@/lib/community/idempotency-service';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
@@ -11,7 +12,6 @@ import type {
   CreateCommentData,
   CreatePostData,
   DeleteResponse,
-  PaginatedResponse,
   Post,
   PostComment,
   UserProfile,
@@ -92,7 +92,7 @@ export class CommunityApiClient implements CommunityAPI {
   async getPosts(
     cursor?: string,
     limit: number = 20
-  ): Promise<PaginatedResponse<Post>> {
+  ): Promise<PaginateQuery<Post>> {
     // Get the exact count separately since subqueries don't support count
     const { count } = await this.client
       .from('posts')
@@ -471,7 +471,7 @@ export class CommunityApiClient implements CommunityAPI {
     postId: string,
     cursor?: string,
     limit: number = 20
-  ): Promise<PaginatedResponse<PostComment>> {
+  ): Promise<PaginateQuery<PostComment>> {
     let query = this.client
       .from('post_comments')
       .select('*', { count: 'exact' })
@@ -841,7 +841,7 @@ export class CommunityApiClient implements CommunityAPI {
     userId: string,
     cursor?: string,
     limit: number = 20
-  ): Promise<PaginatedResponse<Post>> {
+  ): Promise<PaginateQuery<Post>> {
     // Get the exact count separately since subqueries don't support count
     const { count } = await this.client
       .from('posts')

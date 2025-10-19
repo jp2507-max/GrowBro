@@ -169,7 +169,7 @@
     "interaction": "Community-Interaktion",
     "interactions": "Community-Interaktionen",
     "like": "Gefällt mir",
-    "likes": "Likes",
+    "likes": "Gefällt mir-Angaben",
     "likesDescription": "Benachrichtigt dich, wenn jemand deine Beiträge liked (max. 1 pro Beitrag alle 5 Min).",
     "list_empty_body": "Wir zeigen hier Updates, sobald sie verfügbar sind.",
     "list_empty_title": "Hier ist noch nichts",
@@ -1649,7 +1649,7 @@
         "title": "Verfügbare Kategorien:"
       },
       "community": {
-        "likes": "Likes",
+        "likes": "Gefällt mir-Angaben",
         "likesDescription": "Benachrichtigt dich, wenn jemand deine Beiträge liked (max. 1 pro Beitrag alle 5 Min).",
         "repliesAndComments": "Antworten & Kommentare",
         "repliesAndCommentsDescription": "Benachrichtigt dich, wenn jemand auf deine Beiträge antwortet.",

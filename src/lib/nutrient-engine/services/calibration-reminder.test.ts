@@ -71,7 +71,7 @@ describe('Calibration Reminder Service', () => {
 
     // Mock utility functions
     (calculateDaysUntilExpiry as jest.Mock).mockReturnValue(7);
-    (getCalibrationQualityStatus as jest.Mock).mockReturnValue('good');
+    (getCalibrationQualityStatus as jest.Mock).mockReturnValue('valid');
   });
 
   afterEach(() => {

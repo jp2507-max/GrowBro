@@ -1,10 +1,12 @@
 import { createInfiniteQuery } from 'react-query-kit';
 
+import type { PaginateQuery } from '@/api/types';
+
 import { getCommunityApiClient } from './client';
-import type { PaginatedResponse, Post } from './types';
+import type { Post } from './types';
 
 type Variables = { userId: string; limit?: number };
-type Response = PaginatedResponse<Post>;
+type Response = PaginateQuery<Post>;
 
 export const useUserPosts = createInfiniteQuery<
   Response,

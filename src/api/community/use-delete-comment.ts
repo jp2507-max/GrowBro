@@ -12,12 +12,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { showMessage } from 'react-native-flash-message';
 import { v4 as uuidv4 } from 'uuid';
 
+import type { PaginateQuery } from '@/api/types';
 import { database } from '@/lib/watermelon';
 import type { OutboxModel } from '@/lib/watermelon-models/outbox';
 import type { PostComment } from '@/types/community';
 
 import { getCommunityApiClient } from './client';
-import type { DeleteResponse, PaginatedResponse } from './types';
+import type { DeleteResponse } from './types';
 
 const apiClient = getCommunityApiClient();
 
@@ -27,7 +28,7 @@ interface DeleteCommentVariables {
 }
 
 interface DeleteCommentContext {
-  previousComments?: PaginatedResponse<PostComment>;
+  previousComments?: PaginateQuery<PostComment>;
 }
 
 // Outbox creation utility
@@ -55,22 +56,19 @@ function optimisticallyRemoveComment(
   queryClient: ReturnType<typeof useQueryClient>,
   postId: string,
   commentId: string
-): PaginatedResponse<PostComment> | undefined {
-  const previousComments = queryClient.getQueryData<
-    PaginatedResponse<PostComment>
-  >(['comments', postId]);
+): PaginateQuery<PostComment> | undefined {
+  const previousComments = queryClient.getQueryData<PaginateQuery<PostComment>>(
+    ['comments', postId]
+  );
 
   if (previousComments) {
-    queryClient.setQueryData<PaginatedResponse<PostComment>>(
-      ['comments', postId],
-      {
-        ...previousComments,
-        results: previousComments.results.filter(
-          (comment) => comment.id !== commentId
-        ),
-        count: Math.max((previousComments.count || 0) - 1, 0),
-      }
-    );
+    queryClient.setQueryData<PaginateQuery<PostComment>>(['comments', postId], {
+      ...previousComments,
+      results: previousComments.results.filter(
+        (comment) => comment.id !== commentId
+      ),
+      count: Math.max((previousComments.count || 0) - 1, 0),
+    });
   }
 
   return previousComments;
@@ -94,7 +92,7 @@ function showDeleteSuccessMessage(undoExpiresAt: string): void {
 function handleDeleteError(
   queryClient: ReturnType<typeof useQueryClient>,
   postId: string,
-  context: { error: Error; previousComments?: PaginatedResponse<PostComment> }
+  context: { error: Error; previousComments?: PaginateQuery<PostComment> }
 ): void {
   const { error, previousComments } = context;
   if (previousComments) {

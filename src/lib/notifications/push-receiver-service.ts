@@ -149,7 +149,7 @@ async function handleForegroundNotification(
       await NotificationGroupingService.handleCommunityNotification({
         notification: event.notification,
         type: notificationType,
-        postId: data.postId || '',
+        postId: data.postId,
         threadId: data.threadId,
       });
     } else {

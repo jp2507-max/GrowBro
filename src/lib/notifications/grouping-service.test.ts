@@ -119,7 +119,7 @@ function testAndroidGrouping() {
 
     const notificationWithoutIds = {
       ...mockNotification,
-      postId: undefined as any,
+      postId: undefined,
       threadId: undefined,
     };
 

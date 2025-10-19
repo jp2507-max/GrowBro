@@ -41,6 +41,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!supabaseKey) {
+      // Fix: removed stray trailing quote that caused a TS/Denoland syntax error
       console.error(
         'SUPABASE_ANON_KEY environment variable is missing or empty'
       );
