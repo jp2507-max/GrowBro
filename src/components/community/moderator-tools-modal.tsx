@@ -164,7 +164,6 @@ export const ModeratorToolsModal = React.forwardRef<
         await unhideContentMutation.mutateAsync({
           contentType,
           contentId,
-          reason: reason.trim(),
         });
 
         showMessage({

@@ -242,9 +242,9 @@ describe('CommunityMetricsTracker', () => {
 
   describe('mutation failure tracking', () => {
     test('should record mutation failures', () => {
-      tracker.recordMutationFailure(true);
-      tracker.recordMutationFailure(false);
-      tracker.recordMutationFailure(false);
+      tracker.recordMutationFailure();
+      tracker.recordMutationSuccess();
+      tracker.recordMutationSuccess();
 
       expect(mockStorage.set).toHaveBeenCalledWith(
         'mutation_failures',

@@ -29,6 +29,7 @@ jest.mock('@/api/community/client', () => ({
 jest.mock('@/lib/community/metrics-tracker', () => ({
   communityMetrics: {
     recordMutationFailure: jest.fn(),
+    recordMutationSuccess: jest.fn(),
     updateOutboxMetrics: jest.fn(),
   },
 }));

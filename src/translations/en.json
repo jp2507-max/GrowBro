@@ -13,10 +13,30 @@
       "toggle_hint": "Double-tap to toggle this setting."
     },
     "community": {
+      "cancel_comment_hint": "Cancels posting this comment.",
+      "comment_input_hint": "Type your comment here. Maximum 500 characters.",
+      "comments": "Comments",
       "compose_hint": "Opens the Create Post screen.",
       "create_post_hint": "Opens the Create Post screen.",
+      "delete": "Delete",
+      "delete_post": "Delete post",
+      "delete_post_hint": "Double-tap to delete this post. You will have 15 seconds to undo.",
       "error_card_hint": "Informs that the community feed failed to load.",
-      "open_post_hint": "Opens the post details screen."
+      "like_button_hint": "Double-tap to toggle like status for this post.",
+      "offline_message": "You're offline. Changes will sync when you're back online.",
+      "offline_title": "Offline Mode",
+      "open_post_hint": "Opens the post details screen.",
+      "post_deleted": "Post deleted",
+      "post_image": "Image from @{{author}}",
+      "post_image_hint": "Part of the post content.",
+      "retry_comment_hint": "Retries posting this comment.",
+      "retry_sync": "Retry sync",
+      "undo_dismiss_hint": "Dismiss the undo snackbar and cancel the action",
+      "undo_expires": "Undo expires in {{seconds}}s",
+      "view_author_profile": "View profile of @{{author}}",
+      "view_author_profile_hint": "Double-tap to open this user's profile.",
+      "view_comments": "{{count}} comments",
+      "view_comments_hint": "Double-tap to view comments for this post."
     },
     "home": {
       "open_settings_hint": "Opens the Settings screen.",
@@ -93,21 +113,64 @@
     "educational_banner_body": "GrowBro does not facilitate any commerce or transactions. All features remain educational and policy compliant.",
     "educational_banner_title": "Educational cannabis guidance only"
   },
+  "card": {
+    "comment_plural": "comments",
+    "comment_singular": "comment",
+    "untitled": "Untitled"
+  },
   "common": {
     "back": "Back",
     "cancel": "Cancel",
     "dismiss": "Dismiss",
+    "go_back": "Go back",
     "loading": "Loading...",
     "notSelected": "not selected",
     "null": "null",
     "offline_mode": "Offline Mode",
     "ok": "OK",
     "retry": "Retry",
-    "selected": "selected"
+    "selected": "selected",
+    "undo": "Undo"
   },
   "community": {
+    "adopt": {
+      "adoptions_one": "{{count}} adoption",
+      "adoptions_other": "{{count}} adoptions",
+      "author": "By {{author}}",
+      "ratings_one": "{{count}} rating",
+      "ratings_other": "{{count}} ratings"
+    },
+    "cancel_comment_hint": "Cancels posting this comment.",
+    "characters_over": "characters over limit",
+    "classification": "Issue detected",
+    "commentList": {
+      "empty": "No comments yet. Be the first to comment!",
+      "loading": "Loading comments..."
+    },
+    "comment_input_hint": "Type your comment here. Maximum 500 characters.",
+    "comment_input_label": "Write a comment",
+    "comment_placeholder": "Share your thoughts...",
+    "comment_too_long": "Comment exceeds maximum length of 500 characters",
+    "comments": "Comments",
+    "community_activity": "Community activity",
+    "compose_hint": "Opens the Create Post screen.",
+    "confidence": "Confidence",
     "create_post": "Create Post",
+    "create_post_hint": "Opens the Create Post screen.",
+    "delete": "Delete",
+    "delete_post": "Delete post",
+    "delete_post_hint": "Double-tap to delete this post. You will have 15 seconds to undo.",
     "empty_state": "No posts yet. Be the first to share!",
+    "error_card_hint": "Informs that the community feed failed to load.",
+    "footer": "What do you think? Any advice appreciated!",
+    "header": "🌱 Need help with plant diagnosis",
+    "health": "Community health",
+    "https": "https://growbro.app/feed",
+    "interaction": "Community interaction",
+    "interactions": "Community interactions",
+    "like": "Like",
+    "likes": "Likes",
+    "likesDescription": "Get notified when someone likes your posts (max 1 per post per 5 min)",
     "list_empty_body": "We’ll show updates once they’re available.",
     "list_empty_title": "Nothing here yet",
     "list_error_body": "Please check your connection and try again.",
@@ -115,10 +178,46 @@
     "list_retry": "Try again",
     "load_error": "Failed to load posts. Tap to retry.",
     "loading": "Loading posts...",
+    "offline_message": "You're offline. Changes will sync when you're back online.",
+    "offline_title": "Offline Mode",
+    "open_post_hint": "Opens the post details screen.",
+    "phases": "Phases",
+    "playbooks": {
+      "accessibility": "Opens community playbook templates.",
+      "community": "Community templates",
+      "schedule": {
+        "shift": "Shift schedule"
+      },
+      "selection": "Template selection",
+      "subtitle": "Discover and share successful grow schedules",
+      "title": "Community Templates",
+      "trichome": "Trichome helper"
+    },
+    "post_comment": "Post comment",
+    "post_deleted": "Post deleted",
+    "post_image": "Image from @{{author}}",
+    "post_image_hint": "Part of the post content.",
+    "posting": "Posting…",
     "posts_count": "{{count}} posts",
     "posts_count_one": "{{count}} post",
     "posts_count_other": "{{count}} posts",
-    "posts_count_zero": "No posts yet"
+    "posts_count_zero": "No posts yet",
+    "recommendations": "Suggested actions:",
+    "repliesAndComments": "Replies & Comments",
+    "repliesAndCommentsDescription": "Get notified when someone replies to your posts",
+    "reply": "Reply",
+    "retry_comment_hint": "Retries posting this comment.",
+    "retry_sync": "Retry sync",
+    "scheme": "growbro://feed",
+    "subtitle": "Discover the latest grow updates from the community.",
+    "symptoms": "Symptoms:",
+    "title": "Community",
+    "undo_dismiss_hint": "Dismiss the undo snackbar and cancel the action",
+    "undo_expires": "Undo expires in {{seconds}}s",
+    "view_author_profile": "View profile of @{{author}}",
+    "view_author_profile_hint": "Double-tap to open this user's profile.",
+    "view_comments": "{{count}} comments",
+    "view_comments_hint": "Double-tap to view comments for this post."
   },
   "consent": {
     "accept_all": "Accept all",
@@ -790,6 +889,7 @@
     "block_failed": "Failed to block user. Please try again.",
     "delete": "Delete",
     "delete_failed": "Failed to delete content. Please try again.",
+    "hide": "Hide",
     "mute": "Mute",
     "mute_failed": "Failed to mute user. Please try again.",
     "queue": {
@@ -800,11 +900,14 @@
       "title": "Moderation Queue"
     },
     "report": "Report",
-    "report_failed": "Failed to report content. Please try again."
+    "report_failed": "Failed to report content. Please try again.",
+    "unhide": "Unhide"
   },
   "nav": {
+    "back": "Back",
     "feed": "Feed",
-    "post": "Post"
+    "post": "Post",
+    "profile": "Profile"
   },
   "notifications": {
     "actions": {
@@ -1513,6 +1616,17 @@
     "webPortalLogin": "Open sign-in",
     "webPortalTitle": "GrowBro account deletion portal"
   },
+  "profile": {
+    "label": "Profile",
+    "no_posts": "This user hasn't posted yet.",
+    "restricted": {
+      "blocked": "You can't view this profile because they have blocked you.",
+      "deleted": "This profile is no longer available.",
+      "not_found": "We couldn't find this profile.",
+      "private": "This profile is private. Follow requests must be approved before you can view it.",
+      "title": "Profile unavailable"
+    }
+  },
   "settings": {
     "about": "About",
     "app_name": "App Name",
@@ -1526,7 +1640,33 @@
     "links": "Links",
     "logout": "Logout",
     "more": "More",
-    "notifications": "Notifications",
+    "notifications": {
+      "categories": {
+        "communityInteractions": "• Community Interactions (replies to your posts)",
+        "communityLikes": "• Community Likes (likes on your posts)",
+        "cultivationReminders": "• Cultivation Reminders (task and grow reminders)",
+        "systemUpdates": "• System Updates (important app updates)",
+        "title": "Available Categories:"
+      },
+      "community": {
+        "likes": "Likes",
+        "likesDescription": "Get notified when someone likes your posts (max 1 per post per 5 min)",
+        "repliesAndComments": "Replies & Comments",
+        "repliesAndCommentsDescription": "Get notified when someone replies to your posts",
+        "title": "Community Notifications"
+      },
+      "label": "Notifications",
+      "platformHelp": {
+        "android": "On Android, you can manage individual notification channels in system settings. Each category can be customized with different sounds, importance levels, and behaviors.",
+        "ios": "On iOS, you can customize notification settings including sounds, badges, and banners in system settings."
+      },
+      "systemPermissions": {
+        "description": "Control which notifications you receive from GrowBro. You can enable or disable notifications for community interactions, task reminders, and system updates.",
+        "openSettings": "Open System Settings",
+        "title": "System Notification Permissions"
+      },
+      "title": "Notification Settings"
+    },
     "privacy": "Privacy Policy",
     "privacy_and_data": "Privacy & data controls",
     "privacy_policy": "Privacy Policy",

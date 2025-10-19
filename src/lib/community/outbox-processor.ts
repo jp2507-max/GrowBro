@@ -249,7 +249,7 @@ export class OutboxProcessor {
       console.log(`[OutboxProcessor] Entry ${entry.id} processed`);
 
       // Track successful mutation (Requirement 10.5)
-      communityMetrics.recordMutationFailure(false);
+      communityMetrics.recordMutationSuccess();
     } catch (error: any) {
       console.error(
         `[OutboxProcessor] Entry ${entry.id} failed:`,
@@ -257,7 +257,7 @@ export class OutboxProcessor {
       );
 
       // Track mutation failure (Requirement 10.5)
-      communityMetrics.recordMutationFailure(true);
+      communityMetrics.recordMutationFailure();
 
       // Handle specific error cases
       if (error.response?.status === 404) {

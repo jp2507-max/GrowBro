@@ -45,7 +45,7 @@ type PendingActionBadgeProps = {
 export function PendingActionBadge({
   status,
   className,
-}: PendingActionBadgeProps): JSX.Element {
+}: PendingActionBadgeProps) {
   const { t } = useTranslation();
   const styles = badgeVariants({ status });
 

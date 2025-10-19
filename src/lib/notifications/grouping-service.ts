@@ -112,11 +112,11 @@ async function handleiOSThreading(
       content: {
         title: content.title || '',
         body: content.body || '',
-        threadIdentifier:
-          communityNotification.threadId ||
-          `post_${communityNotification.postId}`,
         data: {
           ...content.data,
+          threadIdentifier:
+            communityNotification.threadId ||
+            `post_${communityNotification.postId}`,
         },
       },
       trigger: null as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)

@@ -309,6 +309,37 @@ describe('CommunityApiClient', () => {
       );
       (mockSupabaseClient.from as jest.Mock).mockReturnValue(selectChain);
 
+      // Override functions.invoke to return 409 for undo-delete-post
+      (mockSupabaseClient.functions.invoke as jest.Mock).mockImplementation(
+        (functionName: string) => {
+          if (functionName === 'undo-delete-post') {
+            return Promise.resolve({
+              data: null,
+              error: { context: { status: 409 }, message: 'Conflict' },
+            });
+          }
+          // Fall back to default mock behavior for other functions
+          if (
+            functionName === 'delete-post' ||
+            functionName === 'delete-comment'
+          ) {
+            return Promise.resolve({
+              data: {
+                undo_expires_at: new Date(Date.now() + 15000).toISOString(),
+              },
+              error: null,
+            });
+          }
+          if (functionName === 'undo-delete-comment') {
+            return Promise.resolve({
+              data: { id: 'restored-id' },
+              error: null,
+            });
+          }
+          return Promise.resolve({ data: null, error: null });
+        }
+      );
+
       // Override the operation to actually throw
       mockIdempotencyService.processWithIdempotency.mockImplementation(
         async (params: { operation: () => Promise<any> }) => {

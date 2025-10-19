@@ -1,4 +1,3 @@
-// @ts-nocheck
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -69,16 +68,28 @@ function isNotificationAllowed(
  * Sends push notification to a single device via Expo Push API
  */
 
-async function sendToDevice(
-  tokenData: PushToken,
-  type: string,
-  title: string,
-  body: string,
-  data: Record<string, any>,
-  deepLink?: string,
-  collapseKey?: string,
-  threadId?: string
-): Promise<SendResult> {
+type SendToDeviceOptions = {
+  tokenData: PushToken;
+  type: string;
+  title: string;
+  body: string;
+  data: Record<string, any>;
+  deepLink?: string;
+  collapseKey?: string;
+  threadId?: string;
+};
+
+async function sendToDevice(options: SendToDeviceOptions): Promise<SendResult> {
+  const {
+    tokenData,
+    type,
+    title,
+    body,
+    data,
+    deepLink,
+    collapseKey,
+    threadId,
+  } = options;
   const messageId = `msg_${crypto.randomUUID()}`;
 
   // Construct Expo Push message
@@ -167,16 +178,20 @@ async function sendToDevice(
  * Expo supports up to 100 messages per request
  */
 
-async function sendBatch(
-  tokens: PushToken[],
-  type: string,
-  title: string,
-  body: string,
-  data: Record<string, any>,
-  deepLink?: string,
-  collapseKey?: string,
-  threadId?: string
-): Promise<SendResult[]> {
+type SendBatchOptions = {
+  tokens: PushToken[];
+  type: string;
+  title: string;
+  body: string;
+  data: Record<string, any>;
+  deepLink?: string;
+  collapseKey?: string;
+  threadId?: string;
+};
+
+async function sendBatch(options: SendBatchOptions): Promise<SendResult[]> {
+  const { tokens, type, title, body, data, deepLink, collapseKey, threadId } =
+    options;
   const BATCH_SIZE = 100;
   const results: SendResult[] = [];
 
@@ -184,16 +199,16 @@ async function sendBatch(
     const batch = tokens.slice(i, i + BATCH_SIZE);
     const batchResults = await Promise.all(
       batch.map((token) =>
-        sendToDevice(
-          token,
+        sendToDevice({
+          tokenData: token,
           type,
           title,
           body,
           data,
           deepLink,
           collapseKey,
-          threadId
-        )
+          threadId,
+        })
       )
     );
     results.push(...batchResults);
@@ -202,7 +217,7 @@ async function sendBatch(
   return results;
 }
 
-Deno.serve(async (req: Request) => {
+Deno.serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -319,16 +334,16 @@ Deno.serve(async (req: Request) => {
     }
 
     // Send notifications to all user's devices
-    const results = await sendBatch(
-      tokens as PushToken[],
+    const results = await sendBatch({
+      tokens: tokens as PushToken[],
       type,
       title,
       body,
-      data || {},
+      data: data || {},
       deepLink,
       collapseKey,
-      threadId
-    );
+      threadId,
+    });
 
     // Persist one row per device/send result for precise delivery tracking
     const rows: NotificationQueueRow[] = results.map((res, i) => ({

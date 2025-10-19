@@ -152,7 +152,7 @@ function applyEventToCache<T>(params: {
  * - 3.5: Drop events where updated_at <= local.updated_at
  * - 3.6: Self-echo detection using client_tx_id matching
  */
-export async function handleRealtimeEvent<T>(
+export async function handleRealtimeEvent<T extends Record<string, any>>(
   event: RealtimeEvent<T>,
   options: EventHandlerOptions<T>
 ): Promise<void> {
@@ -178,7 +178,7 @@ export async function handleRealtimeEvent<T>(
     await handlePostLikeEvent({
       event: event as RealtimeEvent<PostLike>,
       key,
-      cache,
+      cache: cache as unknown as CacheOperations<CachedPostLike>,
       outbox,
       onInvalidate,
     });
@@ -215,7 +215,12 @@ export async function handleRealtimeEvent<T>(
     }
   }
 
-  applyEventToCache({ eventType, newRow, key, cache });
+  applyEventToCache({
+    eventType,
+    newRow,
+    key,
+    cache: cache as CacheOperations<T | null>,
+  });
 
   // Trigger UI update
   onInvalidate?.();
@@ -231,7 +236,7 @@ async function handlePostLikeEvent(params: {
   outbox: OutboxOperations;
   onInvalidate?: () => void;
 }): Promise<void> {
-  const { event, key, cache, onInvalidate } = params;
+  const { event, key, cache, outbox, onInvalidate } = params;
   const { eventType, new: newRow, commit_timestamp } = event;
   const local = cache.get(key);
 

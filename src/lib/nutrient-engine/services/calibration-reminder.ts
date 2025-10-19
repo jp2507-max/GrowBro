@@ -245,8 +245,6 @@ export async function notifyStaleCalibration(
   daysExpired: number
 ): Promise<void> {
   try {
-    const immediateDate = new Date(Date.now() + 1000); // 1 second from now for immediate delivery
-
     await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Stale Meter Calibration Detected',
@@ -257,7 +255,7 @@ export async function notifyStaleCalibration(
           daysExpired,
         },
       },
-      trigger: { type: 'date' as const, date: immediateDate },
+      trigger: null, // Immediate delivery
     });
   } catch (error) {
     console.error('Error sending stale calibration notification:', error);
@@ -300,7 +298,13 @@ async function scheduleNotification(options: {
         },
         sound: true,
       },
-      trigger: { type: 'date' as const, date: triggerDate },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: Math.max(
+          1,
+          Math.floor((triggerDate.getTime() - Date.now()) / 1000)
+        ),
+      },
     });
 
     return notificationId;

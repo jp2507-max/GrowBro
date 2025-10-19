@@ -206,7 +206,9 @@ function PostCardActions({
       e.stopPropagation();
       e.preventDefault();
       try {
-        const result = await deleteMutation.mutateAsync({ postId });
+        const result = await deleteMutation.mutateAsync({
+          postId: String(postId),
+        });
         onDelete?.(postId, result.undo_expires_at);
       } catch (error) {
         console.error('Delete post failed:', error);
@@ -226,7 +228,7 @@ function PostCardActions({
           onPress={(e) => e.stopPropagation()}
         >
           <LikeButton
-            postId={postId}
+            postId={String(postId)}
             likeCount={post.like_count ?? 0}
             userHasLiked={post.user_has_liked ?? false}
             testID={`${testID}-like-button`}

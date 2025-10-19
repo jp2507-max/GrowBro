@@ -9,11 +9,10 @@ import {
   Text,
   View,
 } from '@/components/ui';
-import colors from '@/components/ui/colors';
 
 import { useCommunityNotifications } from './hooks/use-community-notifications';
 
-function CategoryList(): JSX.Element {
+function CategoryList() {
   return (
     <View className="mb-4">
       <Text
@@ -42,7 +41,7 @@ function CategoryList(): JSX.Element {
   );
 }
 
-function PlatformHelp(): JSX.Element {
+function PlatformHelp() {
   if (Platform.OS === 'android') {
     return (
       <View className="mb-6">
@@ -64,7 +63,7 @@ function PlatformHelp(): JSX.Element {
   );
 }
 
-export default function NotificationSettings(): JSX.Element {
+export default function NotificationSettings() {
   const {
     userId,
     communityInteractionsEnabled,
@@ -135,16 +134,10 @@ export default function NotificationSettings(): JSX.Element {
                 testID="community-interactions-switch"
                 value={communityInteractionsEnabled}
                 onValueChange={handleToggleCommunityInteractions}
+                onChange={handleToggleCommunityInteractions}
+                accessibilityLabel="Toggle community interactions notifications"
+                accessibilityHint="Enables or disables notifications for replies and comments on your posts"
                 disabled={loading || !userId}
-                trackColor={{
-                  false: colors.neutral[300],
-                  true: colors.indigo[600],
-                }}
-                thumbColor={
-                  communityInteractionsEnabled
-                    ? colors.white
-                    : colors.neutral[50]
-                }
               />
             </View>
 
@@ -164,14 +157,10 @@ export default function NotificationSettings(): JSX.Element {
                 testID="community-likes-switch"
                 value={communityLikesEnabled}
                 onValueChange={handleToggleCommunityLikes}
+                onChange={handleToggleCommunityLikes}
+                accessibilityLabel="Toggle community likes notifications"
+                accessibilityHint="Enables or disables notifications when someone likes your posts"
                 disabled={loading || !userId}
-                trackColor={{
-                  false: colors.neutral[300],
-                  true: colors.indigo[600],
-                }}
-                thumbColor={
-                  communityLikesEnabled ? colors.white : colors.neutral[50]
-                }
               />
             </View>
           </View>

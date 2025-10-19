@@ -34,12 +34,7 @@ CREATE POLICY "Users can update their own posts" ON public.posts
   FOR UPDATE
   TO authenticated
   USING (auth.uid() = user_id)
-  WITH CHECK (
-    auth.uid() = user_id
-    -- Ensure users cannot set moderation fields via this policy
-    AND hidden_at IS NULL
-    AND moderation_reason IS NULL
-  );
+  WITH CHECK (auth.uid() = user_id);
 
 -- Users can soft-delete their own posts
 -- This sets deleted_at and undo_expires_at, but doesn't hard delete
@@ -98,11 +93,7 @@ CREATE POLICY "Users can update their own comments" ON public.post_comments
   FOR UPDATE
   TO authenticated
   USING (auth.uid() = user_id)
-  WITH CHECK (
-    auth.uid() = user_id
-    -- Ensure users cannot set moderation fields
-    AND hidden_at IS NULL
-  );
+  WITH CHECK (auth.uid() = user_id);
 
 -- Users can soft-delete their own comments
 CREATE POLICY "Users can delete their own comments" ON public.post_comments
@@ -240,6 +231,57 @@ CREATE POLICY "Moderators can create audit logs" ON public.moderation_audit
   );
 
 -- ============================================================================
+-- MODERATION FIELD PROTECTION TRIGGERS
+-- ============================================================================
+
+-- Function to check if non-moderators are trying to change moderation fields on posts
+CREATE OR REPLACE FUNCTION check_post_moderation_fields()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- If hidden_at or moderation_reason is being changed
+  IF (OLD.hidden_at IS DISTINCT FROM NEW.hidden_at) OR (OLD.moderation_reason IS DISTINCT FROM NEW.moderation_reason) THEN
+    -- Check if user is moderator or admin
+    IF NOT (
+      auth.jwt() ->> 'role' IN ('admin', 'moderator')
+      OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'moderator'
+      OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'admin'
+    ) THEN
+      RAISE EXCEPTION 'Only moderators can change moderation fields on posts';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to check if non-moderators are trying to change moderation fields on comments
+CREATE OR REPLACE FUNCTION check_comment_moderation_fields()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- If hidden_at is being changed
+  IF OLD.hidden_at IS DISTINCT FROM NEW.hidden_at THEN
+    -- Check if user is moderator or admin
+    IF NOT (
+      auth.jwt() ->> 'role' IN ('admin', 'moderator')
+      OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'moderator'
+      OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'admin'
+    ) THEN
+      RAISE EXCEPTION 'Only moderators can change moderation fields on comments';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Triggers to enforce moderation field protection
+CREATE TRIGGER check_post_moderation_fields_trigger
+  BEFORE UPDATE ON public.posts
+  FOR EACH ROW EXECUTE FUNCTION check_post_moderation_fields();
+
+CREATE TRIGGER check_comment_moderation_fields_trigger
+  BEFORE UPDATE ON public.post_comments
+  FOR EACH ROW EXECUTE FUNCTION check_comment_moderation_fields();
+
+-- ============================================================================
 -- POLICY DOCUMENTATION AND NOTES
 -- ============================================================================
 
@@ -252,6 +294,7 @@ CREATE POLICY "Moderators can create audit logs" ON public.moderation_audit
 -- 4. Soft delete filtering (deleted_at IS NULL AND hidden_at IS NULL) in SELECT policies
 -- 5. Owner policies use USING and WITH CHECK to prevent impersonation
 -- 6. Moderation policies have separate WITH CHECK to prevent accidental field changes
+-- 7. Triggers enforce that only moderators can change moderation fields (hidden_at, moderation_reason)
 
 -- Performance Notes:
 -- 1. Policies leverage existing indexes on user_id, deleted_at, hidden_at
@@ -262,7 +305,8 @@ CREATE POLICY "Moderators can create audit logs" ON public.moderation_audit
 -- [ ] Regular user can read non-deleted posts
 -- [ ] Regular user can create/update/delete own posts
 -- [ ] Regular user cannot modify other users' posts
--- [ ] Regular user cannot set hidden_at or moderation_reason
+-- [ ] Regular user cannot set hidden_at or moderation_reason (trigger blocks)
+-- [ ] Regular user can update own posts even if hidden_at is set (as long as not changing moderation fields)
 -- [ ] Moderator can set hidden_at and moderation_reason on any post
 -- [ ] Moderator can view all reports
 -- [ ] User can only see own idempotency keys

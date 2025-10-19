@@ -68,7 +68,7 @@ function testAndroidGrouping() {
       (call) => call[0].content.data?.type === 'summary'
     );
     expect(summaryCall).toBeDefined();
-    expect(summaryCall[0]).toMatchObject({
+    expect(summaryCall![0]).toMatchObject({
       content: {
         title: 'Community Activity',
         body: '1 new interaction',
@@ -81,7 +81,7 @@ function testAndroidGrouping() {
       (call) => !call[0].content.data?.type
     );
     expect(individualCall).toBeDefined();
-    expect(individualCall[0]).toMatchObject({
+    expect(individualCall![0]).toMatchObject({
       content: {
         title: 'New Reply',
         body: 'Someone replied to your post',

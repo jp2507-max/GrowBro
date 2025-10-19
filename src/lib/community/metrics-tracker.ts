@@ -150,10 +150,24 @@ class CommunityMetricsTracker {
   }
 
   /**
-   * Record a mutation failure
+   * Record a mutation failure event
    * Requirement 10.5: Track failed mutations/day (<2%)
    */
-  recordMutationFailure(failed: boolean): void {
+  recordMutationFailure(): void {
+    this.recordMutationResult(true);
+  }
+
+  /**
+   * Record a successful mutation event
+   */
+  recordMutationSuccess(): void {
+    this.recordMutationResult(false);
+  }
+
+  /**
+   * Internal helper to append a mutation result (failed = true for failure)
+   */
+  private recordMutationResult(failed: boolean): void {
     const failures = this.getMutationFailures();
     failures.push({
       timestamp: Date.now(),
