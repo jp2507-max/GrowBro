@@ -202,14 +202,6 @@ async function scheduleNotificationWithTracking(
       }
     }
 
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error';
-    const _result: NotificationScheduleResult = {
-      notificationId: null,
-      scheduled: false,
-      error: errorMessage,
-    };
-
     throw error;
   }
 

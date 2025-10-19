@@ -8,7 +8,7 @@ import { translate } from '@/lib/i18n';
 import { getAndroidChannelId } from '@/lib/notifications/android-channels';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
-type CommunityNotification = {
+export type CommunityNotification = {
   notification: Notification; // Expo notification object
   type: 'community.interaction' | 'community.reply' | 'community.like';
   postId?: string;

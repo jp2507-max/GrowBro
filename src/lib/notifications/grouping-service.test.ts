@@ -3,7 +3,10 @@ import { Platform } from 'react-native';
 
 import { cleanup } from '@/lib/test-utils';
 
-import { NotificationGroupingService } from './grouping-service';
+import {
+  type CommunityNotification,
+  NotificationGroupingService,
+} from './grouping-service';
 
 jest.mock('expo-notifications', () => ({
   scheduleNotificationAsync: jest.fn(),
@@ -19,7 +22,7 @@ afterEach(() => {
   NotificationGroupingService.resetGroupCount('thread_123');
 });
 
-function createMockNotification() {
+function createMockNotification(): CommunityNotification {
   return {
     notification: {
       date: Date.now(),
@@ -42,13 +45,15 @@ function createMockNotification() {
   };
 }
 
-function setupMockScheduler() {
+function setupMockScheduler(): jest.MockedFunction<
+  typeof Notifications.scheduleNotificationAsync
+> {
   const mockSchedule = jest.mocked(Notifications.scheduleNotificationAsync);
   mockSchedule.mockResolvedValue('notif-id');
   return mockSchedule;
 }
 
-function setupMockChannelId(channelId: string) {
+function setupMockChannelId(channelId: string): void {
   const {
     getAndroidChannelId,
   } = require('@/lib/notifications/android-channels');
@@ -173,13 +178,9 @@ function testIOSThreading() {
   it('should fallback to post ID if threadId not provided', async () => {
     const mockSchedule = setupMockScheduler();
 
-    const notificationWithoutThread = {
-      ...mockNotification,
-      threadId: undefined,
-    };
-
+    const { threadId: _t, ...notificationWithoutThread } = mockNotification;
     await NotificationGroupingService.handleCommunityNotification(
-      notificationWithoutThread
+      notificationWithoutThread as unknown as CommunityNotification
     );
 
     expect(mockSchedule).toHaveBeenCalledWith({
@@ -191,7 +192,7 @@ function testIOSThreading() {
   });
 }
 
-function testGroupCountManagement() {
+function testGroupCountManagement(): void {
   it('should reset count for specific group', async () => {
     Platform.OS = 'android';
 

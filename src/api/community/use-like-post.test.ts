@@ -57,7 +57,6 @@ jest.mock('react-native-flash-message', () => ({
 describe('useLikePost', () => {
   let queryClient: QueryClient;
   let wrapper: ({ children }: { children: ReactNode }) => React.ReactElement;
-  let mockApiClient: any;
 
   const mockPosts: PaginateQuery<Post> = {
     results: [
@@ -110,7 +109,6 @@ describe('useLikePost', () => {
     queryClient.setQueryData(['posts'], mockPosts);
 
     // Mock API client
-    mockApiClient = mockApiClient; // Use shared mock client
     mockLikePost.mockResolvedValue(undefined);
   });
 
@@ -238,7 +236,6 @@ describe('useLikePost', () => {
 describe('useUnlikePost', () => {
   let queryClient: QueryClient;
   let wrapper: ({ children }: { children: ReactNode }) => React.ReactElement;
-  let mockApiClient: any;
 
   const mockPosts: PaginateQuery<Post> = {
     results: [
@@ -278,7 +275,6 @@ describe('useUnlikePost', () => {
 
     queryClient.setQueryData(['posts'], mockPosts);
 
-    mockApiClient = mockApiClient; // Use shared mock client
     mockUnlikePost.mockResolvedValue(undefined);
   });
 

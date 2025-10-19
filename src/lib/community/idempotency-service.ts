@@ -94,6 +94,25 @@ export class IdempotencyService {
     payloadHash: string;
   }): Promise<void> {
     const { key, clientTxId, userId, endpoint, payloadHash } = params;
+    // IMPORTANT: This UPSERT is not atomic for the purpose of claiming a
+    // processing lock. Under concurrent requests two clients can both
+    // observe no existing row and then both succeed here, because UPSERT
+    // will update an existing row instead of failing on conflict. That
+    // allows duplicate processing and defeats idempotency guarantees.
+    //
+    // Recommended fixes (choose one):
+    // 1) Attempt an INSERT with ON CONFLICT DO NOTHING and check the
+    //    returned row count (only one caller will insert). Example:
+    //      INSERT INTO idempotency_keys(...) VALUES(...) ON CONFLICT DO NOTHING
+    //      -- then check rows affected; if 0, another worker holds the key.
+    // 2) Perform the claim inside a single DB transaction or stored
+    //    procedure that checks and inserts/returns an error atomically.
+    // 3) Use a SELECT ... FOR UPDATE locking query inside a transaction to
+    //    ensure only one caller proceeds.
+    //
+    // See the issue tracker note: concurrent upserts here can lead to
+    // duplicate side-effects (duplicate posts/comments). Replace this
+    // UPSERT with an atomic claim strategy when possible.
     const { error } = await supabase.from('idempotency_keys').upsert(
       {
         idempotency_key: key,
