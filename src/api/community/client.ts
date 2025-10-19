@@ -160,6 +160,7 @@ export class CommunityApiClient implements CommunityAPI {
             user_id: userId,
             body: postData.body,
             media_uri: postData.media_uri,
+            client_tx_id: headers['X-Client-Tx-Id'],
           })
           .select()
           .single();
@@ -232,7 +233,12 @@ export class CommunityApiClient implements CommunityAPI {
   ): Promise<Post> {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const query = this.client.from('posts').select('*').eq('id', postId);
+        const query = this.client
+          .from('posts')
+          .select('*')
+          .eq('id', postId)
+          .is('deleted_at', null)
+          .is('hidden_at', null);
         const posts = await this.getPostsWithCounts(query, true);
 
         if (posts.length > 0) {
@@ -407,6 +413,7 @@ export class CommunityApiClient implements CommunityAPI {
             post_id: postId,
             user_id: userId,
             created_at: new Date().toISOString(),
+            client_tx_id: headers['X-Client-Tx-Id'],
           },
           {
             onConflict: 'post_id,user_id',
@@ -534,6 +541,7 @@ export class CommunityApiClient implements CommunityAPI {
             post_id: commentData.post_id,
             user_id: userId,
             body: commentData.body,
+            client_tx_id: headers['X-Client-Tx-Id'],
           })
           .select()
           .single();
@@ -603,6 +611,8 @@ export class CommunityApiClient implements CommunityAPI {
           .from('post_comments')
           .select()
           .eq('id', commentId)
+          .is('deleted_at', null)
+          .is('hidden_at', null)
           .single();
 
         if (!fetchError && fetchedComment) {

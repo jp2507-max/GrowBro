@@ -68,7 +68,7 @@ function isNotificationAllowed(
 /**
  * Sends push notification to a single device via Expo Push API
  */
-// eslint-disable-next-line max-params
+
 async function sendToDevice(
   tokenData: PushToken,
   type: string,
@@ -166,7 +166,7 @@ async function sendToDevice(
  * Sends push notifications to multiple devices in batch
  * Expo supports up to 100 messages per request
  */
-// eslint-disable-next-line max-params
+
 async function sendBatch(
   tokens: PushToken[],
   type: string,
@@ -202,7 +202,6 @@ async function sendBatch(
   return results;
 }
 
-// eslint-disable-next-line max-lines-per-function
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {

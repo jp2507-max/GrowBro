@@ -305,7 +305,7 @@ describe('OutboxProcessor', () => {
       Object.defineProperty(mockEntries[0], 'isPending', { value: true });
       Object.defineProperty(mockEntries[1], 'isPending', { value: true });
       Object.defineProperty(mockEntries[2], 'hasFailed', { value: true });
-      Object.defineProperty(mockEntries[3], 'isConfirmed', { value: true });
+      Object.defineProperty(mockEntries[3], 'isProcessed', { value: true });
 
       mockOutboxCollection.query.mockReturnValue({
         fetch: jest.fn().mockResolvedValue(mockEntries),

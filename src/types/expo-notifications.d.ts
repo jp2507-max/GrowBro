@@ -7,14 +7,16 @@ declare module 'expo-notifications' {
     badge?: number;
     sound?: boolean | string;
     launchImageName?: string;
-    vibrate?: number[];
-    priority?: string;
     color?: string;
     autoDismiss?: boolean;
     categoryIdentifier?: string;
     sticky?: boolean;
-    attachments?: any[]; // NotificationContentAttachmentIos[]
+    attachments?: NotificationContentAttachmentIos[];
     interruptionLevel?: 'passive' | 'active' | 'timeSensitive' | 'critical';
     threadIdentifier?: string;
+  }
+
+  interface NotificationContentAndroid {
+    priority?: AndroidNotificationPriority;
   }
 }

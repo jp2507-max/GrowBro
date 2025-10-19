@@ -360,10 +360,10 @@ describe('CommunityApiClient', () => {
         mockSession
       );
 
-      const deleteChain = {
+      const deleteChain = Object.assign(Promise.resolve({ error: null }), {
         delete: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ error: null }),
-      };
+        eq: jest.fn().mockReturnThis(),
+      });
 
       (mockSupabaseClient.from as jest.Mock).mockReturnValue(deleteChain);
 

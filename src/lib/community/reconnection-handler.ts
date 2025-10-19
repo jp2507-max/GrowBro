@@ -97,7 +97,7 @@ export class ReconnectionHandler {
 
       // Invalidate queries to trigger refetch
       await this.queryClient.invalidateQueries({ queryKey: ['posts'] });
-      await this.queryClient.invalidateQueries({ queryKey: ['post-comments'] });
+      await this.queryClient.invalidateQueries({ queryKey: ['comments'] });
       await this.queryClient.invalidateQueries({ queryKey: ['post-likes'] });
 
       console.log(

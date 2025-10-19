@@ -380,7 +380,7 @@ export class OutboxProcessor {
    * Calculate exponential backoff delay
    */
   private calculateBackoff(retries: number): number {
-    return Math.min(this.BASE_DELAY * Math.pow(2, retries - 1), this.MAX_DELAY);
+    return Math.min(this.BASE_DELAY * Math.pow(2, retries), this.MAX_DELAY);
   }
 
   /**

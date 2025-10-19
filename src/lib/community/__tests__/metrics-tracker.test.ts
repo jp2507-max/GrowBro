@@ -224,10 +224,10 @@ describe('CommunityMetricsTracker', () => {
 
     test('should calculate undo success rate', () => {
       const actions = [
-        { timestamp: Date.now(), count: 1 }, // success
-        { timestamp: Date.now(), count: 1 }, // success
-        { timestamp: Date.now(), count: 0 }, // failure
-        { timestamp: Date.now(), count: 1 }, // success
+        { timestamp: Date.now(), success: true }, // success
+        { timestamp: Date.now(), success: true }, // success
+        { timestamp: Date.now(), success: false }, // failure
+        { timestamp: Date.now(), success: true }, // success
       ];
       mockStorage.getString.mockImplementation((key: string) =>
         key === 'undo_actions' ? JSON.stringify(actions) : undefined
@@ -254,11 +254,11 @@ describe('CommunityMetricsTracker', () => {
 
     test('should calculate failure rate correctly', () => {
       const failures = [
-        { timestamp: Date.now(), count: 1 }, // failed
-        { timestamp: Date.now(), count: 0 }, // success
-        { timestamp: Date.now(), count: 0 }, // success
-        { timestamp: Date.now(), count: 1 }, // failed
-        { timestamp: Date.now(), count: 0 }, // success
+        { timestamp: Date.now(), failed: true }, // failed
+        { timestamp: Date.now(), failed: false }, // success
+        { timestamp: Date.now(), failed: false }, // success
+        { timestamp: Date.now(), failed: true }, // failed
+        { timestamp: Date.now(), failed: false }, // success
       ];
       mockStorage.getString.mockImplementation((key: string) =>
         key === 'mutation_failures' ? JSON.stringify(failures) : undefined
@@ -273,8 +273,8 @@ describe('CommunityMetricsTracker', () => {
     test('should meet <2% failure rate requirement', () => {
       // Simulate 98 successes and 2 failures
       const failures = [
-        ...Array(98).fill({ timestamp: Date.now(), count: 0 }),
-        ...Array(2).fill({ timestamp: Date.now(), count: 1 }),
+        ...Array(98).fill({ timestamp: Date.now(), failed: false }),
+        ...Array(2).fill({ timestamp: Date.now(), failed: true }),
       ];
       mockStorage.getString.mockImplementation((key: string) =>
         key === 'mutation_failures' ? JSON.stringify(failures) : undefined

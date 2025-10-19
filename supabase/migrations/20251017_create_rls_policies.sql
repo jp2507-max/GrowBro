@@ -7,6 +7,15 @@
 -- POSTS TABLE POLICIES
 -- ============================================================================
 
+-- Drop existing policies to prevent conflicts
+DROP POLICY IF EXISTS "Users can view visible posts" ON public.posts;
+DROP POLICY IF EXISTS "Users can create their own posts" ON public.posts;
+DROP POLICY IF EXISTS "Users can update their own posts" ON public.posts;
+DROP POLICY IF EXISTS "Users can delete their own posts" ON public.posts;
+DROP POLICY IF EXISTS "Posts are viewable by everyone" ON public.posts;
+DROP POLICY IF EXISTS "Users can insert their own posts" ON public.posts;
+DROP POLICY IF EXISTS "Moderators can hide posts" ON public.posts;
+
 -- Public read access for non-deleted, non-hidden posts
 CREATE POLICY "Posts are viewable by everyone" ON public.posts
   FOR SELECT
@@ -65,6 +74,13 @@ CREATE POLICY "Moderators can hide posts" ON public.posts
 -- POST_COMMENTS TABLE POLICIES
 -- ============================================================================
 
+-- Drop existing policies to prevent conflicts
+DROP POLICY IF EXISTS "Comments are viewable by everyone" ON public.post_comments;
+DROP POLICY IF EXISTS "Users can insert their own comments" ON public.post_comments;
+DROP POLICY IF EXISTS "Users can update their own comments" ON public.post_comments;
+DROP POLICY IF EXISTS "Users can delete their own comments" ON public.post_comments;
+DROP POLICY IF EXISTS "Moderators can hide comments" ON public.post_comments;
+
 -- Public read access for non-deleted, non-hidden comments
 CREATE POLICY "Comments are viewable by everyone" ON public.post_comments
   FOR SELECT
@@ -116,6 +132,9 @@ CREATE POLICY "Moderators can hide comments" ON public.post_comments
 -- POST_LIKES TABLE POLICIES
 -- ============================================================================
 
+-- Drop existing policies to prevent conflicts
+DROP POLICY IF EXISTS "Users can manage their own likes" ON public.post_likes;
+
 -- Users can only manage their own likes
 -- Single policy covers all operations (SELECT, INSERT, DELETE)
 -- Requirement 10.1: UNIQUE (post_id, user_id) constraint enforced at DB level
@@ -128,6 +147,10 @@ CREATE POLICY "Users can manage their own likes" ON public.post_likes
 -- ============================================================================
 -- IDEMPOTENCY_KEYS TABLE POLICIES
 -- ============================================================================
+
+-- Drop existing policies to prevent conflicts
+DROP POLICY IF EXISTS "Users can manage own idempotency keys" ON public.idempotency_keys;
+DROP POLICY IF EXISTS "Service role can manage all idempotency keys" ON public.idempotency_keys;
 
 -- Users can only see and manage their own idempotency keys
 CREATE POLICY "Users can manage own idempotency keys" ON public.idempotency_keys
@@ -147,6 +170,12 @@ CREATE POLICY "Service role can manage all idempotency keys" ON public.idempoten
 -- ============================================================================
 -- REPORTS TABLE POLICIES
 -- ============================================================================
+
+-- Drop existing policies to prevent conflicts
+DROP POLICY IF EXISTS "Users can report content" ON public.reports;
+DROP POLICY IF EXISTS "Users can view own reports" ON public.reports;
+DROP POLICY IF EXISTS "Moderators can view all reports" ON public.reports;
+DROP POLICY IF EXISTS "Moderators can update reports" ON public.reports;
 
 -- Any authenticated user can report content
 CREATE POLICY "Users can report content" ON public.reports
@@ -183,6 +212,10 @@ CREATE POLICY "Moderators can update reports" ON public.reports
 -- ============================================================================
 -- MODERATION_AUDIT TABLE POLICIES
 -- ============================================================================
+
+-- Drop existing policies to prevent conflicts
+DROP POLICY IF EXISTS "Moderators can view audit logs" ON public.moderation_audit;
+DROP POLICY IF EXISTS "Moderators can create audit logs" ON public.moderation_audit;
 
 -- Moderators and admins can view audit logs
 CREATE POLICY "Moderators can view audit logs" ON public.moderation_audit
