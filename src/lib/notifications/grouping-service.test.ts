@@ -22,14 +22,20 @@ afterEach(() => {
 function createMockNotification() {
   return {
     notification: {
+      date: Date.now(),
       request: {
+        identifier: 'test-notification-id',
         content: {
           title: 'New Reply',
+          subtitle: '',
           body: 'Someone replied to your post',
           data: { postId: '123' },
+          categoryIdentifier: '',
+          sound: 'default' as const,
         },
+        trigger: null,
       },
-    },
+    } as Notifications.Notification,
     type: 'community.interaction' as const,
     postId: '123',
     threadId: 'thread_123',
@@ -199,8 +205,20 @@ function testGroupCountManagement() {
 
     const notification = {
       notification: {
-        request: { content: { title: 'Test', body: 'Test', data: {} } },
-      },
+        date: Date.now(),
+        request: {
+          identifier: 'test-notification-id',
+          content: {
+            title: 'Test',
+            subtitle: '',
+            body: 'Test',
+            data: {},
+            categoryIdentifier: '',
+            sound: 'default' as const,
+          },
+          trigger: null,
+        },
+      } as Notifications.Notification,
       type: 'community.interaction' as const,
       postId: '123',
     };

@@ -15,7 +15,7 @@ import React from 'react';
 import * as flashMessage from 'react-native-flash-message';
 
 import { ConflictError } from './client';
-import type { PaginatedResponse, Post } from './types';
+import type { PaginateQuery, Post } from './types';
 import { useLikePost } from './use-like-post';
 import { useUnlikePost } from './use-unlike-post';
 
@@ -59,7 +59,7 @@ describe('useLikePost', () => {
   let wrapper: ({ children }: { children: ReactNode }) => React.ReactElement;
   let mockApiClient: any;
 
-  const mockPosts: PaginatedResponse<Post> = {
+  const mockPosts: PaginateQuery<Post> = {
     results: [
       {
         id: 'post-1',
@@ -123,7 +123,7 @@ describe('useLikePost', () => {
     });
 
     // Check optimistic update
-    const updatedData = queryClient.getQueryData<PaginatedResponse<Post>>([
+    const updatedData = queryClient.getQueryData<PaginateQuery<Post>>([
       'posts',
     ]);
 
@@ -145,7 +145,7 @@ describe('useLikePost', () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
 
     // Check rollback
-    const rolledBackData = queryClient.getQueryData<PaginatedResponse<Post>>([
+    const rolledBackData = queryClient.getQueryData<PaginateQuery<Post>>([
       'posts',
     ]);
 
@@ -181,7 +181,7 @@ describe('useLikePost', () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
 
     // Check reconciliation to server state
-    const reconciledData = queryClient.getQueryData<PaginatedResponse<Post>>([
+    const reconciledData = queryClient.getQueryData<PaginateQuery<Post>>([
       'posts',
     ]);
 
@@ -226,7 +226,7 @@ describe('useLikePost', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    const updatedData = queryClient.getQueryData<PaginatedResponse<Post>>([
+    const updatedData = queryClient.getQueryData<PaginateQuery<Post>>([
       'posts',
     ]);
 
@@ -240,7 +240,7 @@ describe('useUnlikePost', () => {
   let wrapper: ({ children }: { children: ReactNode }) => React.ReactElement;
   let mockApiClient: any;
 
-  const mockPosts: PaginatedResponse<Post> = {
+  const mockPosts: PaginateQuery<Post> = {
     results: [
       {
         id: 'post-1',
@@ -289,7 +289,7 @@ describe('useUnlikePost', () => {
       result.current.mutate({ postId: 'post-1' });
     });
 
-    const updatedData = queryClient.getQueryData<PaginatedResponse<Post>>([
+    const updatedData = queryClient.getQueryData<PaginateQuery<Post>>([
       'posts',
     ]);
 
@@ -310,7 +310,7 @@ describe('useUnlikePost', () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
 
-    const rolledBackData = queryClient.getQueryData<PaginatedResponse<Post>>([
+    const rolledBackData = queryClient.getQueryData<PaginateQuery<Post>>([
       'posts',
     ]);
 

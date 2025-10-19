@@ -16,12 +16,3 @@ declare module 'expo-notifications' {
     priority?: AndroidNotificationPriority;
   }
 }
-
-export interface NotificationContentInput {
-  title?: string;
-  body?: string;
-  data?: Record<string, unknown>;
-  sound?: string | boolean;
-  interruptionLevel?: 'passive' | 'active' | 'timeSensitive' | 'critical';
-  threadIdentifier?: string;
-}

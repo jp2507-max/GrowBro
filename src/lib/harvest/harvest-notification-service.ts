@@ -204,19 +204,11 @@ async function scheduleNotificationWithTracking(
 
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
-    const result: NotificationScheduleResult = {
+    const _result: NotificationScheduleResult = {
       notificationId: null,
       scheduled: false,
       error: errorMessage,
     };
-
-    recordScheduleAttempt(false);
-    await trackNotificationSchedule({
-      type: context.notificationType,
-      result,
-      harvestId: context.harvestId,
-      stage: context.stage,
-    });
 
     throw error;
   }

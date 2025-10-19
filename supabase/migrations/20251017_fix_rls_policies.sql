@@ -45,9 +45,9 @@ CREATE POLICY "Moderators can update moderation fields on posts" ON public.posts
     OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'admin'
   )
   WITH CHECK (
-    -- Only allow updates that modify moderation fields
-    (OLD.hidden_at IS DISTINCT FROM NEW.hidden_at)
-    OR (OLD.moderation_reason IS DISTINCT FROM NEW.moderation_reason)
+    auth.jwt() ->> 'role' IN ('admin', 'moderator')
+    OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'moderator'
+    OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'admin'
   );
 
 -- Create separate policy for general moderator updates on posts (non-moderation fields)
@@ -60,9 +60,9 @@ CREATE POLICY "Moderators can update posts" ON public.posts
     OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'admin'
   )
   WITH CHECK (
-    -- Allow updates to any fields except moderation fields
-    (OLD.hidden_at IS NOT DISTINCT FROM NEW.hidden_at)
-    AND (OLD.moderation_reason IS NOT DISTINCT FROM NEW.moderation_reason)
+    auth.jwt() ->> 'role' IN ('admin', 'moderator')
+    OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'moderator'
+    OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'admin'
   );
 
 -- Create separate policy for moderation field updates on comments
@@ -75,8 +75,9 @@ CREATE POLICY "Moderators can update moderation fields on comments" ON public.po
     OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'admin'
   )
   WITH CHECK (
-    -- Only allow updates that modify the hidden_at field
-    (OLD.hidden_at IS DISTINCT FROM NEW.hidden_at)
+    auth.jwt() ->> 'role' IN ('admin', 'moderator')
+    OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'moderator'
+    OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'admin'
   );
 
 -- Create separate policy for general moderator updates on comments (non-moderation fields)
@@ -89,8 +90,9 @@ CREATE POLICY "Moderators can update comments" ON public.post_comments
     OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'admin'
   )
   WITH CHECK (
-    -- Allow updates to any fields except the hidden_at field
-    (OLD.hidden_at IS NOT DISTINCT FROM NEW.hidden_at)
+    auth.jwt() ->> 'role' IN ('admin', 'moderator')
+    OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'moderator'
+    OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'admin'
   );
 
 -- ============================================================================
@@ -163,16 +165,9 @@ CREATE POLICY "Moderators can create audit logs" ON public.moderation_audit
 CREATE OR REPLACE FUNCTION public.is_moderator()
 RETURNS boolean AS $$
 BEGIN
-  RETURN EXISTS (
-    SELECT 1
-    FROM auth.users
-    WHERE id = auth.uid()
-    AND (
-      auth.jwt() ->> 'role' IN ('admin', 'moderator')
-      OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'moderator'
-      OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'admin'
-    )
-  );
+  RETURN auth.jwt() ->> 'role' IN ('admin', 'moderator')
+    OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'moderator'
+    OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'admin';
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -183,6 +178,11 @@ BEGIN
   -- If hidden_at is being changed and user is not a moderator, prevent the change
   IF OLD.hidden_at IS DISTINCT FROM NEW.hidden_at AND NOT public.is_moderator() THEN
     RAISE EXCEPTION 'Only moderators can change the hidden_at field';
+  END IF;
+
+  -- If moderation_reason is being changed and user is not a moderator, prevent the change (for posts table)
+  IF TG_TABLE_NAME = 'posts' AND OLD.moderation_reason IS DISTINCT FROM NEW.moderation_reason AND NOT public.is_moderator() THEN
+    RAISE EXCEPTION 'Only moderators can change the moderation_reason field';
   END IF;
 
   -- Allow the change if user is moderator or field is not being changed
@@ -210,28 +210,26 @@ CREATE TRIGGER prevent_hidden_at_changes_comments_trigger
 
 -- Key Changes:
 -- 1. Removed moderation field checks from WITH CHECK constraints to allow users to update posts/comments after moderation
--- 2. Split moderator policies into separate policies: one for moderation field updates and one for general updates
--- 3. Moderation field updates require actually changing moderation fields (hidden_at, moderation_reason)
--- 4. General moderator updates allow changes to any fields except moderation fields
--- 5. Changed all moderator role checks from 'user_metadata' to 'app_metadata' for consistency
--- 6. All moderator policies now use both 'role' claim and 'app_metadata.roles' array for flexibility
--- 7. Added database triggers to enforce field-level protection for hidden_at field
--- 8. Users can now update their own content even after moderation, but cannot change moderation fields
+-- 2. Split moderator policies into separate policies: one for moderation field updates and one for general updates (both allow moderators to update any fields)
+-- 3. Changed all moderator role checks from 'user_metadata' to 'app_metadata' for consistency
+-- 4. All moderator policies now use both 'role' claim and 'app_metadata.roles' array for flexibility
+-- 5. Added database triggers to enforce field-level protection for hidden_at and moderation_reason fields
+-- 6. Users can update their own content even after moderation, but cannot change moderation fields
 
 COMMENT ON POLICY "Users can update their own posts" ON public.posts IS
   'Users can update their own posts. Moderation fields are protected by separate moderator policies.';
 
 COMMENT ON POLICY "Moderators can update moderation fields on posts" ON public.posts IS
-  'Moderators/admins can modify hidden_at and moderation_reason fields. Requires actual field changes.';
+  'Moderators/admins can update posts, including moderation fields. Checks role via JWT claim and app_metadata.roles';
 
 COMMENT ON POLICY "Moderators can update posts" ON public.posts IS
-  'Moderators/admins can update posts but cannot modify moderation fields. Checks role via JWT claim and app_metadata.roles';
+  'Moderators/admins can update posts. Checks role via JWT claim and app_metadata.roles';
 
 COMMENT ON POLICY "Users can update their own comments" ON public.post_comments IS
   'Users can update their own comments. Moderation fields are protected by separate moderator policies.';
 
 COMMENT ON POLICY "Moderators can update moderation fields on comments" ON public.post_comments IS
-  'Moderators/admins can modify hidden_at field on comments. Requires actual field changes.';
+  'Moderators/admins can update comments, including moderation fields. Requires actual field changes.';
 
 COMMENT ON POLICY "Moderators can update comments" ON public.post_comments IS
-  'Moderators/admins can update comments but cannot modify hidden_at field. Checks role via JWT claim and app_metadata.roles';
+  'Moderators/admins can update comments. Checks role via JWT claim and app_metadata.roles';

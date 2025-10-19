@@ -1,6 +1,7 @@
 // Community feed API types
 import type { PaginateQuery } from '@/api/types';
 import type {
+  CreateCommentData,
   CreatePostData,
   Post,
   PostComment,
@@ -8,7 +9,16 @@ import type {
 } from '@/types/community';
 
 // Re-export for convenience
-export type { Post, PostComment, PostLike };
+export type { PaginateQuery };
+
+// Backwards-compatible alias: some code/tests expect "PaginatedResponse<T>"
+// Historically this project used the name `PaginatedResponse`; provide a
+// lightweight alias to avoid widespread changes.
+export type PaginatedResponse<T> = PaginateQuery<T>;
+
+// Re-export other community types for convenience
+// Re-export other community types for convenience
+export type { CreateCommentData, CreatePostData, Post, PostComment, PostLike };
 
 export type OutboxEntry = {
   id: string;
@@ -28,11 +38,6 @@ export type UserProfile = {
   avatar_url?: string;
   bio?: string;
   created_at: string;
-};
-
-export type CreateCommentData = {
-  postId: string;
-  body: string;
 };
 
 export type DeleteResponse = {
