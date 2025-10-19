@@ -175,7 +175,13 @@ export async function handleRealtimeEvent<T>(
   // INSERT/DELETE on post_likes should be treated as toggle operations
   // (apply/remove) instead of relying on an `id` + `updated_at` LWW check.
   if (table === 'post_likes') {
-    await handlePostLikeEvent({ event, key, cache, outbox, onInvalidate });
+    await handlePostLikeEvent({
+      event: event as RealtimeEvent<PostLike>,
+      key,
+      cache,
+      outbox,
+      onInvalidate,
+    });
     return;
   }
 
@@ -200,8 +206,14 @@ export async function handleRealtimeEvent<T>(
     return;
   }
 
-  // Self-echo confirmation removed: client_tx_id is not persisted in database tables,
-  // so realtime events never include it. Timestamp-based deduplication handles stale event prevention.
+  // Self-echo confirmation: confirm outbox entries when client_tx_id is present
+  if (event.client_tx_id) {
+    try {
+      await outbox.confirm(event.client_tx_id);
+    } catch (error) {
+      console.error('Failed to confirm outbox for event:', key, error);
+    }
+  }
 
   applyEventToCache({ eventType, newRow, key, cache });
 
@@ -240,8 +252,14 @@ async function handlePostLikeEvent(params: {
     return;
   }
 
-  // Self-echo confirmation removed: client_tx_id is not persisted in database tables,
-  // so realtime events never include it. Timestamp-based deduplication handles stale event prevention.
+  // Self-echo confirmation: confirm outbox entries when client_tx_id is present
+  if (event.client_tx_id) {
+    try {
+      await outbox.confirm(event.client_tx_id);
+    } catch (error) {
+      console.error('Failed to confirm outbox for like event:', key, error);
+    }
+  }
 
   // Treat INSERT as a "like" (add) and DELETE as an "unlike" (remove).
   // If an INSERT arrives but the local cache already has the like, ignore it.

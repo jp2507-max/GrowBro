@@ -273,20 +273,10 @@ describe('CommunityApiClient', () => {
         }),
       };
 
-      // Mock enrichPost
-      const countChain = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        is: jest.fn().mockReturnThis(),
-        maybeSingle: jest.fn().mockResolvedValue({ data: null }),
-      };
-
       (mockSupabaseClient.auth.getSession as jest.Mock).mockResolvedValue(
         mockSession
       );
-      (mockSupabaseClient.from as jest.Mock)
-        .mockReturnValueOnce(selectChain)
-        .mockReturnValue(countChain);
+      (mockSupabaseClient.from as jest.Mock).mockReturnValueOnce(selectChain);
 
       const post = await client.undoDeletePost('post-1');
 

@@ -281,11 +281,11 @@ describe('Offline Workflow Integration', () => {
 
       expect(mockEntry.update).toHaveBeenCalledWith(expect.any(Function));
 
-      // Verify status was set to confirmed
+      // Verify status was set to processed
       const updateFn = (mockEntry.update as jest.Mock).mock.calls[0][0];
       const mockRecord = { status: 'pending' };
       updateFn(mockRecord);
-      expect(mockRecord.status).toBe('confirmed');
+      expect(mockRecord.status).toBe('processed');
     });
   });
 
@@ -352,7 +352,7 @@ function createMockEntry(
     status,
     isPending: status === 'pending',
     hasFailed: status === 'failed',
-    isConfirmed: status === 'confirmed',
+    isProcessed: status === 'processed',
     shouldRetry: true,
     hasExceededMaxRetries: retries >= 5,
     getNextRetryDelay: () => Math.min(1000 * Math.pow(2, retries), 32000),

@@ -12,7 +12,12 @@ export type OutboxOperation =
   | 'UNDO_DELETE_COMMENT'
   | 'MODERATE_CONTENT';
 
-export type OutboxStatus = 'pending' | 'failed' | 'confirmed';
+export type OutboxStatus =
+  | 'pending'
+  | 'in_progress'
+  | 'processed'
+  | 'failed'
+  | 'expired';
 
 export interface Post {
   id: string;

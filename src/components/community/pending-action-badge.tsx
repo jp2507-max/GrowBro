@@ -26,7 +26,7 @@ const badgeVariants = tv({
         container: 'bg-danger-200 dark:bg-danger-900',
         text: 'text-danger-800 dark:text-danger-100',
       },
-      confirmed: {
+      processed: {
         container: 'bg-success-200 dark:bg-success-900',
         text: 'text-success-800 dark:text-success-100',
       },
@@ -38,7 +38,7 @@ const badgeVariants = tv({
 });
 
 type PendingActionBadgeProps = {
-  status: 'pending' | 'failed' | 'confirmed';
+  status: 'pending' | 'failed' | 'processed';
   className?: string;
 };
 
@@ -49,8 +49,8 @@ export function PendingActionBadge({
   const { t } = useTranslation();
   const styles = badgeVariants({ status });
 
-  // Don't show badge for confirmed actions
-  if (status === 'confirmed') {
+  // Don't show badge for processed actions
+  if (status === 'processed') {
     return null;
   }
 

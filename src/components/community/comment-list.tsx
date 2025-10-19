@@ -18,7 +18,7 @@ import { CommentItem } from './comment-item';
 interface CommentListProps {
   comments: PostComment[];
   isLoading?: boolean;
-  commentStatuses?: Record<string, 'pending' | 'failed' | 'confirmed'>;
+  commentStatuses?: Record<string, 'pending' | 'failed' | 'processed'>;
   onRetryComment?: (commentId: string) => void;
   onCancelComment?: (commentId: string) => void;
   testID?: string;
@@ -58,10 +58,10 @@ export function CommentList({
   return (
     <View className="gap-2" testID={testID}>
       {comments.map((comment) => {
-        // Determine status: use provided status map, fallback to temp- check, default to confirmed
+        // Determine status: use provided status map, fallback to temp- check, default to processed
         const status =
           commentStatuses[comment.id] ||
-          (comment.id.startsWith('temp-') ? 'pending' : 'confirmed');
+          (comment.id.startsWith('temp-') ? 'pending' : 'processed');
 
         const isFailed = status === 'failed';
 

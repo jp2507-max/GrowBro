@@ -13,7 +13,7 @@ export type OutboxEntry = {
   created_at: string;
   retries: number;
   next_retry_at?: string;
-  status: 'pending' | 'failed' | 'confirmed';
+  status: 'pending' | 'failed' | 'processed';
 };
 
 export type UserProfile = {

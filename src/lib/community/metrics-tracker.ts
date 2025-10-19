@@ -50,7 +50,7 @@ interface OutboxMetrics {
   depth: number;
   pending: number;
   failed: number;
-  confirmed: number;
+  processed: number;
 }
 
 interface TimestampedEvent {
@@ -200,9 +200,9 @@ class CommunityMetricsTracker {
     try {
       outbox = rawOutboxMetrics
         ? (JSON.parse(rawOutboxMetrics) as OutboxMetrics)
-        : { depth: 0, pending: 0, failed: 0, confirmed: 0 };
+        : { depth: 0, pending: 0, failed: 0, processed: 0 };
     } catch {
-      outbox = { depth: 0, pending: 0, failed: 0, confirmed: 0 };
+      outbox = { depth: 0, pending: 0, failed: 0, processed: 0 };
     }
 
     const undoActions = this.getUndoActions();

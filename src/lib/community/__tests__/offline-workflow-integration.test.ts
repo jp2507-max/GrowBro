@@ -549,7 +549,7 @@ function createMockEntry(
     status,
     isPending: status === 'pending',
     hasFailed: status === 'failed',
-    isConfirmed: status === 'confirmed',
+    isProcessed: status === 'processed',
     shouldRetry: true,
     hasExceededMaxRetries: retries >= 5,
     getNextRetryDelay: () => Math.min(1000 * Math.pow(2, retries), 32000),

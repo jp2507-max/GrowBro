@@ -20,7 +20,7 @@ import type { PostComment } from '@/types/community';
 
 interface CommentItemProps {
   comment: PostComment;
-  status?: 'pending' | 'failed' | 'confirmed';
+  status?: 'pending' | 'failed' | 'processed';
   onRetry?: () => void;
   onCancel?: () => void;
   testID?: string;
@@ -84,7 +84,7 @@ function FailedActions({ onRetry, onCancel, testID }: FailedActionsProps) {
 
 function CommentItemComponent({
   comment,
-  status = 'confirmed',
+  status = 'processed',
   onRetry,
   onCancel,
   testID = 'comment-item',

@@ -298,7 +298,7 @@ describe('OutboxProcessor', () => {
         createMockEntry('1', 'LIKE', { postId: 'post-1' }, 0, 'pending'),
         createMockEntry('2', 'COMMENT', { post_id: 'post-1' }, 0, 'pending'),
         createMockEntry('3', 'LIKE', { postId: 'post-2' }, 5, 'failed'),
-        createMockEntry('4', 'UNLIKE', { postId: 'post-3' }, 0, 'confirmed'),
+        createMockEntry('4', 'UNLIKE', { postId: 'post-3' }, 0, 'processed'),
       ];
 
       // Set status flags
@@ -316,24 +316,24 @@ describe('OutboxProcessor', () => {
       expect(status).toEqual({
         pending: 2,
         failed: 1,
-        confirmed: 1,
+        processed: 1,
         total: 4,
       });
     });
   });
 
-  describe('clearConfirmed', () => {
-    it('should delete all confirmed entries', async () => {
+  describe('clearProcessed', () => {
+    it('should delete all processed entries', async () => {
       mockEntries = [
-        createMockEntry('1', 'LIKE', { postId: 'post-1' }, 0, 'confirmed'),
-        createMockEntry('2', 'COMMENT', { post_id: 'post-1' }, 0, 'confirmed'),
+        createMockEntry('1', 'LIKE', { postId: 'post-1' }, 0, 'processed'),
+        createMockEntry('2', 'COMMENT', { post_id: 'post-1' }, 0, 'processed'),
       ];
 
       mockOutboxCollection.query.mockReturnValue({
         fetch: jest.fn().mockResolvedValue(mockEntries),
       });
 
-      const count = await processor.clearConfirmed();
+      const count = await processor.clearProcessed();
 
       expect(count).toBe(2);
       expect(mockEntries[0].destroyPermanently).toHaveBeenCalled();
@@ -363,7 +363,7 @@ function createMockEntry(
     status,
     isPending: status === 'pending',
     hasFailed: status === 'failed',
-    isConfirmed: status === 'confirmed',
+    isProcessed: status === 'processed',
     shouldRetry: status === 'pending' || status === 'failed',
     hasExceededMaxRetries: retries >= 5,
     getNextRetryDelay: () => Math.min(1000 * Math.pow(2, retries), 32000),

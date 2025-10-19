@@ -920,49 +920,6 @@ export class CommunityApiClient implements CommunityAPI {
       user_has_liked: userLikesMap.get(post.id) ?? false,
     }));
   }
-
-  /**
-   * Enrich post with derived fields (like_count, comment_count, user_has_liked)
-   * @deprecated Use getPostsWithCounts for bulk operations to avoid N+1 queries
-   */
-  private async enrichPost(post: any): Promise<Post> {
-    const { data: session } = await this.client.auth.getSession();
-    const userId = session?.session?.user?.id;
-
-    // Fetch like count
-    const { count: likeCount } = await this.client
-      .from('post_likes')
-      .select('*', { count: 'exact', head: true })
-      .eq('post_id', post.id);
-
-    // Fetch comment count
-    const { count: commentCount } = await this.client
-      .from('post_comments')
-      .select('*', { count: 'exact', head: true })
-      .eq('post_id', post.id)
-      .is('deleted_at', null)
-      .is('hidden_at', null);
-
-    // Check if current user has liked
-    let userHasLiked = false;
-    if (userId) {
-      const { data: like } = await this.client
-        .from('post_likes')
-        .select('*')
-        .eq('post_id', post.id)
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      userHasLiked = !!like;
-    }
-
-    return {
-      ...post,
-      like_count: likeCount || 0,
-      comment_count: commentCount || 0,
-      user_has_liked: userHasLiked,
-    };
-  }
 }
 
 // Singleton instance

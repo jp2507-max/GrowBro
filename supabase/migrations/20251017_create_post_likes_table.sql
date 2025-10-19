@@ -16,6 +16,28 @@ CREATE TABLE IF NOT EXISTS public.post_likes (
 -- Enable Row Level Security
 ALTER TABLE public.post_likes ENABLE ROW LEVEL SECURITY;
 
+-- ============================================================================
+-- POST_LIKES TABLE POLICIES
+-- ============================================================================
+
+-- Public read access for all likes
+CREATE POLICY "Likes are viewable by everyone" ON public.post_likes
+  FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- Users can insert their own likes
+CREATE POLICY "Users can insert their own likes" ON public.post_likes
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+-- Users can delete their own likes
+CREATE POLICY "Users can delete their own likes" ON public.post_likes
+  FOR DELETE
+  TO authenticated
+  USING (auth.uid() = user_id);
+
 -- Add comments for documentation
 COMMENT ON TABLE public.post_likes IS 'User likes for posts with unique constraint per user per post';
 COMMENT ON CONSTRAINT post_likes_pkey ON public.post_likes IS 'Ensures one like per user per post - enforces Requirement 1.7';

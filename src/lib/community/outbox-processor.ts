@@ -27,7 +27,7 @@ export interface OutboxProcessorOptions {
 export interface OutboxCounts {
   pending: number;
   failed: number;
-  confirmed: number;
+  processed: number;
   total: number;
 }
 
@@ -160,13 +160,13 @@ export class OutboxProcessor {
     await this.database.write(async () => {
       for (const entry of entries) {
         await entry.update((record) => {
-          record.status = 'confirmed';
+          record.status = 'processed';
         });
       }
     });
 
     console.log(
-      `[OutboxProcessor] Confirmed ${entries.length} entries with client_tx_id: ${clientTxId}`
+      `[OutboxProcessor] Processed ${entries.length} entries with client_tx_id: ${clientTxId}`
     );
   }
 
@@ -180,14 +180,14 @@ export class OutboxProcessor {
     const status: OutboxCounts = {
       pending: 0,
       failed: 0,
-      confirmed: 0,
+      processed: 0,
       total: allEntries.length,
     };
 
     for (const entry of allEntries) {
       if (entry.isPending) status.pending++;
       else if (entry.hasFailed) status.failed++;
-      else if (entry.isConfirmed) status.confirmed++;
+      else if (entry.isProcessed) status.processed++;
     }
 
     // Update metrics tracker (Requirement 10.5)
@@ -195,28 +195,28 @@ export class OutboxProcessor {
       depth: allEntries.length,
       pending: status.pending,
       failed: status.failed,
-      confirmed: status.confirmed,
+      processed: status.processed,
     });
 
     return status;
   }
 
   /**
-   * Clear confirmed entries (cleanup)
+   * Clear processed entries (cleanup)
    */
-  async clearConfirmed(): Promise<number> {
+  async clearProcessed(): Promise<number> {
     const outboxCollection = this.database.get<OutboxModel>('outbox');
-    const confirmedEntries = await outboxCollection
-      .query(Q.where('status', 'confirmed'))
+    const processedEntries = await outboxCollection
+      .query(Q.where('status', 'processed'))
       .fetch();
 
     await this.database.write(async () => {
-      for (const entry of confirmedEntries) {
+      for (const entry of processedEntries) {
         await entry.destroyPermanently();
       }
     });
 
-    return confirmedEntries.length;
+    return processedEntries.length;
   }
 
   /**
@@ -239,14 +239,14 @@ export class OutboxProcessor {
         clientTxId: entry.clientTxId,
       });
 
-      // Mark as confirmed on success
+      // Mark as processed on success
       await this.database.write(async () => {
         await entry.update((record) => {
-          record.status = 'confirmed';
+          record.status = 'processed';
         });
       });
 
-      console.log(`[OutboxProcessor] Entry ${entry.id} confirmed`);
+      console.log(`[OutboxProcessor] Entry ${entry.id} processed`);
 
       // Track successful mutation (Requirement 10.5)
       communityMetrics.recordMutationFailure(false);

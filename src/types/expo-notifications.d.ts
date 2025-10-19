@@ -1,5 +1,5 @@
 declare module 'expo-notifications' {
-  type NotificationContentInput = {
+  interface NotificationContentInput {
     title?: string | null;
     subtitle?: string | null;
     body?: string | null;
@@ -16,5 +16,5 @@ declare module 'expo-notifications' {
     attachments?: any[]; // NotificationContentAttachmentIos[]
     interruptionLevel?: 'passive' | 'active' | 'timeSensitive' | 'critical';
     threadIdentifier?: string;
-  };
+  }
 }

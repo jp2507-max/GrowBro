@@ -180,7 +180,7 @@ describe('CommunityMetricsTracker', () => {
         depth: 10,
         pending: 5,
         failed: 2,
-        confirmed: 3,
+        processed: 3,
       };
 
       tracker.updateOutboxMetrics(metrics);

@@ -29,9 +29,9 @@ export class OutboxModel extends Model {
     return this.status === 'failed';
   }
 
-  // Check if entry is confirmed
-  get isConfirmed(): boolean {
-    return this.status === 'confirmed';
+  // Check if entry is processed
+  get isProcessed(): boolean {
+    return this.status === 'processed';
   }
 
   // Check if entry should be retried

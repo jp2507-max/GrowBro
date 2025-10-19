@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
 
 import type {
+  CachedPostLike,
   Post,
   PostComment,
   PostLike,
@@ -56,63 +57,89 @@ type OutboxAdapter = {
 };
 
 /**
- * Create a cache adapter for React Query
+ * Create a cache adapter for React Query that works with query key prefixes
+ * This handles paginated queries where the cache key includes parameters like ['posts', cursor, limit]
  */
-function createQueryCacheAdapter<TStored, TCache = TStored>(
+export function createQueryCacheAdapter<TStored, TCache = TStored>(
   queryClient: ReturnType<typeof useQueryClient>,
   options: {
-    queryKey: string[];
+    queryKeyPrefix: string[];
     keySelector: (row: TCache) => string;
     toStored?: (cached: TCache) => TStored;
     fromStored?: (stored: TStored, id: string) => TCache;
   }
 ): CacheAdapter<TCache> {
-  const { queryKey, keySelector, toStored, fromStored } = options;
+  const { queryKeyPrefix, keySelector, toStored, fromStored } = options;
+
+  // Helper to check if a query key starts with our prefix
+  const matchesPrefix = (queryKey: readonly unknown[]): boolean => {
+    if (queryKey.length < queryKeyPrefix.length) return false;
+    return queryKeyPrefix.every(
+      (prefixPart, index) => queryKey[index] === prefixPart
+    );
+  };
 
   return {
     get: (key: string) => {
-      const data = queryClient.getQueryData<TStored[]>(queryKey);
-      if (!data) return undefined;
-      const storedItem = data.find((item) => {
-        const cached = fromStored
-          ? fromStored(item, key)
-          : (item as unknown as TCache);
-        return keySelector(cached) === key;
+      // Find the first matching query that has data
+      const queries = queryClient.getQueriesData<TStored[]>({
+        predicate: (query) => matchesPrefix(query.queryKey),
       });
-      if (!storedItem) return undefined;
-      return fromStored
-        ? fromStored(storedItem, key)
-        : (storedItem as unknown as TCache);
-    },
-    upsert: (row: TCache) => {
-      const storedRow = toStored ? toStored(row) : (row as unknown as TStored);
-      queryClient.setQueryData<TStored[]>(queryKey, (old) => {
-        if (!old) return [storedRow];
-        const rowKey = keySelector(row);
-        const index = old.findIndex((item) => {
-          const cached = fromStored
-            ? fromStored(item, rowKey)
-            : (item as unknown as TCache);
-          return keySelector(cached) === rowKey;
-        });
-        if (index >= 0) {
-          const updated = [...old];
-          updated[index] = storedRow;
-          return updated;
-        }
-        return [...old, storedRow];
-      });
-    },
-    remove: (key: string) => {
-      queryClient.setQueryData<TStored[]>(queryKey, (old) => {
-        if (!old) return [];
-        return old.filter((item) => {
+
+      for (const [, data] of queries) {
+        if (!data) continue;
+        const storedItem = data.find((item) => {
           const cached = fromStored
             ? fromStored(item, key)
             : (item as unknown as TCache);
-          return keySelector(cached) !== key;
+          return keySelector(cached) === key;
         });
-      });
+        if (storedItem) {
+          return fromStored
+            ? fromStored(storedItem, key)
+            : (storedItem as unknown as TCache);
+        }
+      }
+      return undefined;
+    },
+    upsert: (row: TCache) => {
+      const storedRow = toStored ? toStored(row) : (row as unknown as TStored);
+      const rowKey = keySelector(row);
+
+      // Update all queries that match our prefix
+      queryClient.setQueriesData<TStored[]>(
+        { predicate: (query) => matchesPrefix(query.queryKey) },
+        (old) => {
+          if (!old) return [storedRow];
+          const index = old.findIndex((item) => {
+            const cached = fromStored
+              ? fromStored(item, rowKey)
+              : (item as unknown as TCache);
+            return keySelector(cached) === rowKey;
+          });
+          if (index >= 0) {
+            const updated = [...old];
+            updated[index] = storedRow;
+            return updated;
+          }
+          return [...old, storedRow];
+        }
+      );
+    },
+    remove: (key: string) => {
+      // Remove from all queries that match our prefix
+      queryClient.setQueriesData<TStored[]>(
+        { predicate: (query) => matchesPrefix(query.queryKey) },
+        (old) => {
+          if (!old) return [];
+          return old.filter((item) => {
+            const cached = fromStored
+              ? fromStored(item, key)
+              : (item as unknown as TCache);
+            return keySelector(cached) !== key;
+          });
+        }
+      );
     },
   };
 }
@@ -130,7 +157,16 @@ export function createOutboxAdapter(database: Database): OutboxAdapter {
       const entries = await outboxCollection
         .query(
           Q.where('client_tx_id', clientTxId),
-          Q.or(Q.where('status', 'pending'), Q.where('status', 'failed'))
+          Q.where(
+            'status',
+            Q.oneOf([
+              'pending',
+              'in_progress',
+              'processed',
+              'failed',
+              'expired',
+            ])
+          )
         )
         .fetch();
       return entries.length > 0;
@@ -149,17 +185,31 @@ function createRealtimeHandlers(
   outbox: OutboxAdapter
 ) {
   const postsCache = createQueryCacheAdapter<Post>(queryClient, {
-    queryKey: ['posts'],
+    queryKeyPrefix: ['posts'],
     keySelector: (post) => post.id,
   });
   const commentsCache = createQueryCacheAdapter<PostComment>(queryClient, {
-    queryKey: ['comments'],
+    queryKeyPrefix: ['comments'],
     keySelector: (comment) => comment.id,
   });
-  const likesCache = createQueryCacheAdapter<PostLike>(queryClient, {
-    queryKey: ['post-likes'],
-    keySelector: (like) => `${like.post_id}:${like.user_id}`,
-  });
+  const likesCache = createQueryCacheAdapter<PostLike, CachedPostLike>(
+    queryClient,
+    {
+      queryKeyPrefix: ['post-likes'],
+      keySelector: (like) => like.id,
+      toStored: (cached) => ({
+        post_id: cached.post_id,
+        user_id: cached.user_id,
+        created_at: cached.created_at,
+      }),
+      fromStored: (stored, id) => ({
+        id,
+        post_id: stored.post_id,
+        user_id: stored.user_id,
+        created_at: stored.created_at,
+      }),
+    }
+  );
 
   return {
     onPostChange: async (event: RealtimeEvent<Post>) => {
@@ -167,8 +217,10 @@ function createRealtimeHandlers(
         table: 'posts',
         cache: postsCache,
         outbox,
-        onInvalidate: () =>
-          queryClient.invalidateQueries({ queryKey: ['posts'] }),
+        onInvalidate: () => {
+          queryClient.invalidateQueries({ queryKey: ['posts'] });
+          queryClient.invalidateQueries({ queryKey: ['posts-infinite'] });
+        },
       } as EventHandlerOptions<Post>);
     },
     onCommentChange: async (event: RealtimeEvent<PostComment>) => {
@@ -186,8 +238,10 @@ function createRealtimeHandlers(
         getKey: getLikeKey,
         cache: likesCache,
         outbox,
-        onInvalidate: () =>
-          queryClient.invalidateQueries({ queryKey: ['posts'] }),
+        onInvalidate: () => {
+          queryClient.invalidateQueries({ queryKey: ['posts'] });
+          queryClient.invalidateQueries({ queryKey: ['posts-infinite'] });
+        },
       } as EventHandlerOptions<PostLike>);
     },
   };
@@ -220,8 +274,14 @@ function setupPollingMonitor(
  *
  * @example
  * ```tsx
+ * import { database } from '@/lib/watermelon';
+ * import { createOutboxAdapter } from './use-community-feed-realtime';
+ *
  * function CommunityFeed() {
+ *   const outboxAdapter = React.useMemo(() => createOutboxAdapter(database), []);
+ *
  *   const { connectionState, isPolling } = useCommunityFeedRealtime({
+ *     outboxAdapter,
  *     onConnectionStateChange: (state) => console.log('Connection:', state),
  *   });
  *
@@ -242,6 +302,7 @@ function useReconciliationTimer(
   const reconcile = React.useCallback(() => {
     console.log('Reconciling counters with server...');
     queryClient.invalidateQueries({ queryKey: ['posts'] });
+    queryClient.invalidateQueries({ queryKey: ['posts-infinite'] });
     queryClient.invalidateQueries({ queryKey: ['comments'] });
   }, [queryClient]);
 
@@ -286,6 +347,7 @@ function usePollingEffect(
       pollingIntervalRef.current = setInterval(() => {
         console.log('Polling: Invalidating queries...');
         queryClient.invalidateQueries({ queryKey: ['posts'] });
+        queryClient.invalidateQueries({ queryKey: ['posts-infinite'] });
         queryClient.invalidateQueries({ queryKey: ['comments'] });
       }, 30000);
     } else {
