@@ -1,8 +1,12 @@
 import React from 'react';
 import type { PressableProps, View } from 'react-native';
-import { ActivityIndicator, Pressable, Text } from 'react-native';
+import { ActivityIndicator, Pressable } from 'react-native';
 import type { VariantProps } from 'tailwind-variants';
 import { tv } from 'tailwind-variants';
+
+import type { TxKeyPath } from '@/lib/i18n';
+
+import { Text } from './text';
 
 const button = tv({
   slots: {
@@ -87,6 +91,7 @@ const button = tv({
 type ButtonVariants = VariantProps<typeof button>;
 interface Props extends ButtonVariants, Omit<PressableProps, 'disabled'> {
   label?: string;
+  tx?: TxKeyPath;
   loading?: boolean;
   className?: string;
   textClassName?: string;
@@ -96,6 +101,7 @@ export const Button = React.forwardRef<View, Props>(
   (
     {
       label: text,
+      tx,
       loading = false,
       variant = 'default',
       disabled = false,
@@ -136,6 +142,7 @@ export const Button = React.forwardRef<View, Props>(
               <Text
                 testID={testID ? `${testID}-label` : undefined}
                 className={styles.label({ className: textClassName })}
+                tx={tx}
               >
                 {text}
               </Text>

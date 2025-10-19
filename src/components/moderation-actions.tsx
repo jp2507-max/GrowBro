@@ -1,15 +1,26 @@
 import React from 'react';
 
+import {
+  ModeratorToolsModal,
+  type ModeratorToolsModalRef,
+} from '@/components/community/moderator-tools-modal';
+import {
+  ReportContentModal,
+  type ReportContentModalRef,
+} from '@/components/community/report-content-modal';
 import { Button, View } from '@/components/ui';
 import { showErrorMessage } from '@/components/ui/utils';
 import { translate } from '@/lib';
 import { AuthenticationError, getAuthenticatedUserId } from '@/lib/auth';
+import { useIsModerator } from '@/lib/auth/use-is-moderator';
 import { moderationManager as modManager } from '@/lib/moderation/moderation-manager';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
 type Props = {
   contentId: string | number;
   authorId: string | number;
+  contentType?: 'post' | 'comment';
+  isHidden?: boolean;
   onDeleteSuccess?: () => void;
 };
 
@@ -45,15 +56,20 @@ const ModerationButton = ({
 export function ModerationActions({
   contentId,
   authorId,
+  contentType = 'post',
+  isHidden = false,
   onDeleteSuccess,
 }: Props) {
-  const reportContent = async () => {
-    try {
-      const userId = await getAuthenticatedUserId();
-      await modManager.reportContent(contentId, 'other', userId);
-    } catch (error) {
-      handleError(error, translate('moderation.report_failed'));
-    }
+  const reportModalRef = React.useRef<ReportContentModalRef>(null);
+  const moderatorModalRef = React.useRef<ModeratorToolsModalRef>(null);
+  const isModerator = useIsModerator();
+
+  const handleReportPress = async () => {
+    reportModalRef.current?.present();
+  };
+
+  const handleModeratorToolsPress = async () => {
+    moderatorModalRef.current?.present();
   };
 
   const blockUser = async () => {
@@ -85,29 +101,52 @@ export function ModerationActions({
   };
 
   return (
-    <View className="flex-row flex-wrap gap-2" testID="moderation-actions">
-      <ModerationButton
-        label={translate('moderation.report')}
-        testId="moderation-report-btn"
-        onPress={reportContent}
-      />
-      <ModerationButton
-        label={translate('moderation.block')}
-        testId="moderation-block-btn"
-        onPress={blockUser}
-      />
-      <ModerationButton
-        label={translate('moderation.mute')}
-        testId="moderation-mute-btn"
-        onPress={muteUser}
-      />
-      <ModerationButton
-        label={translate('moderation.delete')}
-        testId="moderation-delete-btn"
-        variant="destructive"
-        onPress={deleteContent}
-      />
-    </View>
+    <>
+      <View className="flex-row flex-wrap gap-2" testID="moderation-actions">
+        <ModerationButton
+          label={translate('moderation.report')}
+          testId="moderation-report-btn"
+          onPress={handleReportPress}
+        />
+        <ModerationButton
+          label={translate('moderation.block')}
+          testId="moderation-block-btn"
+          onPress={blockUser}
+        />
+        <ModerationButton
+          label={translate('moderation.mute')}
+          testId="moderation-mute-btn"
+          onPress={muteUser}
+        />
+        <ModerationButton
+          label={translate('moderation.delete')}
+          testId="moderation-delete-btn"
+          variant="destructive"
+          onPress={deleteContent}
+        />
+        {isModerator && (
+          <ModerationButton
+            label={
+              isHidden
+                ? translate('moderation.unhide')
+                : translate('moderation.hide')
+            }
+            testId="moderation-tools-btn"
+            variant={isHidden ? 'default' : 'destructive'}
+            onPress={handleModeratorToolsPress}
+          />
+        )}
+      </View>
+      <ReportContentModal ref={reportModalRef} contentId={contentId} />
+      {isModerator && (
+        <ModeratorToolsModal
+          ref={moderatorModalRef}
+          contentType={contentType}
+          contentId={String(contentId)}
+          isHidden={isHidden}
+        />
+      )}
+    </>
   );
 }
 

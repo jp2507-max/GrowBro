@@ -29,7 +29,6 @@ describe('AIAdjustmentService', () => {
 
   describe('shouldSuggestAdjustments', () => {
     test('returns false when feature is disabled', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { getFeatureFlags } = require('@/lib/feature-flags');
       getFeatureFlags.mockReturnValueOnce({
         aiAdjustmentsEnabled: false,
@@ -209,7 +208,6 @@ describe('AIAdjustmentService', () => {
 
   describe('generateSuggestions', () => {
     test('returns null when should not suggest', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { getFeatureFlags } = require('@/lib/feature-flags');
       getFeatureFlags.mockReturnValueOnce({
         aiAdjustmentsEnabled: false,

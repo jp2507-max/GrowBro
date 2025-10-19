@@ -1,12 +1,12 @@
-TASK_ID: {18} with subtasks (make sure task with sub task is fully implemented)
+TASK_ID: {14} with subtasks (make sure task with sub task is fully implemented)
 AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the plan
 
 CONTEXT
 
-- Feature: 16. inventory-and-consumables
-- Task index: .kiro\specs\16. inventory-and-consumables\tasks.md
-- Design spec: .kiro\specs\16. inventory-and-consumables\design.md
-- Requirements spec: .kiro\specs\16. inventory-and-consumables\requirements.md
+- Feature: 17. community-feed-improvements
+- Task index: .kiro\specs\17. community-feed-improvements\tasks.md
+- Design spec: .kiro\specs\17. community-feed-improvements\design.md
+- Requirements spec: .kiro\specs\17. community-feed-improvements\requirements.md
 
 CONTRACT (outputs)
 

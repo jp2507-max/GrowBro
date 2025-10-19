@@ -19,22 +19,41 @@ type ScheduleRequest = {
 export const LocalNotificationService = {
   async scheduleExactNotification(request: ScheduleRequest): Promise<string> {
     await enforceIosPendingLimit(request.triggerDate);
-    const trigger: Notifications.NotificationTriggerInput = {
-      type: 'date',
-      date: request.triggerDate,
-    };
+    let trigger: Notifications.NotificationTriggerInput;
+    if (Platform.OS === 'ios') {
+      const triggerDate = new Date(
+        Math.max(request.triggerDate.getTime(), Date.now() + 1000)
+      );
+      trigger = {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: triggerDate,
+      };
+    } else {
+      const triggerSeconds = Math.floor(
+        (request.triggerDate.getTime() - Date.now()) / 1000
+      );
+      trigger = {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: triggerSeconds > 0 ? triggerSeconds : 1,
+      };
+    }
     if (Platform.OS === 'android' && request.androidChannelKey) {
-      trigger.channelId = getAndroidChannelId(request.androidChannelKey);
+      (trigger as any).channelId = getAndroidChannelId(
+        request.androidChannelKey
+      );
     }
     const content: Notifications.NotificationContentInput = {
       title: request.title,
       body: request.body,
       data: request.data ?? {},
-      threadId: request.threadId,
+      sound:
+        request.androidChannelKey === 'cultivation.reminders'
+          ? 'default'
+          : undefined,
+      ...(Platform.OS === 'ios' && request.threadId
+        ? { threadIdentifier: request.threadId }
+        : {}),
     };
-    if (request.androidChannelKey === 'cultivation.reminders') {
-      content.sound = 'default';
-    }
     const id = await Notifications.scheduleNotificationAsync({
       content,
       trigger,

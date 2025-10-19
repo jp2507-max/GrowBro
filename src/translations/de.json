@@ -13,10 +13,30 @@
       "toggle_hint": "Doppeltippen, um diese Einstellung umzuschalten."
     },
     "community": {
+      "cancel_comment_hint": "Bricht das Posten dieses Kommentars ab.",
+      "comment_input_hint": "Gib hier deinen Kommentar ein. Maximal 500 Zeichen.",
+      "comments": "Kommentare",
       "compose_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
       "create_post_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
+      "delete": "Löschen",
+      "delete_post": "Beitrag löschen",
+      "delete_post_hint": "Doppeltippen, um diesen Beitrag zu löschen. Du hast 15 Sekunden Zeit zum Rückgängig machen.",
       "error_card_hint": "Informiert, dass der Community-Feed nicht geladen werden konnte.",
-      "open_post_hint": "Öffnet die Beitragsdetails."
+      "like_button_hint": "Doppeltippen, um den Gefällt-mir-Status für diesen Beitrag umzuschalten.",
+      "offline_message": "Du bist offline. Änderungen werden synchronisiert, sobald du wieder online bist.",
+      "offline_title": "Offline-Modus",
+      "open_post_hint": "Öffnet die Beitragsdetails.",
+      "post_deleted": "Beitrag gelöscht",
+      "post_image": "Bild von @{{author}}",
+      "post_image_hint": "Teil des Beitragsinhalts.",
+      "retry_comment_hint": "Versucht erneut, diesen Kommentar zu posten.",
+      "retry_sync": "Synchronisation wiederholen",
+      "undo_dismiss_hint": "Die Rückgängig-Snackbar schließen und die Aktion abbrechen",
+      "undo_expires": "Rückgängigmachen läuft in {{seconds}}s ab",
+      "view_author_profile": "Profil von @{{author}} anzeigen",
+      "view_author_profile_hint": "Doppeltippen, um das Profil dieses Benutzers zu öffnen.",
+      "view_comments": "{{count}} Kommentare",
+      "view_comments_hint": "Doppeltippen, um Kommentare zu diesem Beitrag anzuzeigen."
     },
     "home": {
       "open_settings_hint": "Öffnet die Einstellungen.",
@@ -93,21 +113,64 @@
     "educational_banner_body": "GrowBro unterstuetzt weder Verkauf noch Anbieter-Links, Abholung oder Lieferung. Alle Funktionen bleiben bildungsorientiert und richtlinienkonform.",
     "educational_banner_title": "Reine Bildungsinhalte zum Thema Cannabis"
   },
+  "card": {
+    "comment_plural": "Kommentare",
+    "comment_singular": "Kommentar",
+    "untitled": "Unbenannt"
+  },
   "common": {
     "back": "Zurück",
     "cancel": "Abbrechen",
     "dismiss": "Schließen",
+    "go_back": "Zurück",
     "loading": "Lädt...",
     "notSelected": "nicht ausgewählt",
     "null": "null",
     "offline_mode": "Offline-Modus",
     "ok": "OK",
     "retry": "Erneut versuchen",
-    "selected": "ausgewählt"
+    "selected": "ausgewählt",
+    "undo": "Rückgängig"
   },
   "community": {
+    "adopt": {
+      "adoptions_one": "{{count}} Übernahme",
+      "adoptions_other": "{{count}} Übernahmen",
+      "author": "Von {{author}}",
+      "ratings_one": "{{count}} Bewertung",
+      "ratings_other": "{{count}} Bewertungen"
+    },
+    "cancel_comment_hint": "Bricht das Posten dieses Kommentars ab.",
+    "characters_over": "Zeichen über dem Limit",
+    "classification": "Erkanntes Problem",
+    "commentList": {
+      "empty": "Noch keine Kommentare. Sei die oder der Erste!",
+      "loading": "Kommentare werden geladen..."
+    },
+    "comment_input_hint": "Gib hier deinen Kommentar ein. Maximal 500 Zeichen.",
+    "comment_input_label": "Einen Kommentar schreiben",
+    "comment_placeholder": "Teile deine Gedanken...",
+    "comment_too_long": "Kommentar überschreitet die maximale Länge von 500 Zeichen",
+    "comments": "Kommentare",
+    "community_activity": "Community-Aktivität",
+    "compose_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
+    "confidence": "Vertrauen",
     "create_post": "Beitrag erstellen",
+    "create_post_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
+    "delete": "Löschen",
+    "delete_post": "Beitrag löschen",
+    "delete_post_hint": "Doppeltippen, um diesen Beitrag zu löschen. Du hast 15 Sekunden Zeit zum Rückgängig machen.",
     "empty_state": "Noch keine Beiträge. Sei die oder der Erste!",
+    "error_card_hint": "Informiert, dass der Community-Feed nicht geladen werden konnte.",
+    "footer": "Was meinst du? Jeder Rat ist willkommen!",
+    "header": "🌱 Hilfe bei Pflanzendiagnose benötigt",
+    "health": "Community-Gesundheit",
+    "https": "https://growbro.app/feed",
+    "interaction": "Community-Interaktion",
+    "interactions": "Community-Interaktionen",
+    "like": "Gefällt mir",
+    "likes": "Gefällt mir-Angaben",
+    "likesDescription": "Benachrichtigt dich, wenn jemand deine Beiträge liked (max. 1 pro Beitrag alle 5 Min).",
     "list_empty_body": "Wir zeigen hier Updates, sobald sie verfügbar sind.",
     "list_empty_title": "Hier ist noch nichts",
     "list_error_body": "Bitte überprüfe deine Verbindung und versuche es erneut.",
@@ -115,10 +178,46 @@
     "list_retry": "Erneut versuchen",
     "load_error": "Beiträge konnten nicht geladen werden. Zum Wiederholen tippen.",
     "loading": "Beiträge werden geladen...",
+    "offline_message": "Du bist offline. Änderungen werden synchronisiert, sobald du wieder online bist.",
+    "offline_title": "Offline-Modus",
+    "open_post_hint": "Öffnet die Beitragsdetails.",
+    "phases": "Phasen",
+    "playbooks": {
+      "accessibility": "Öffnet die Community-Playbook-Vorlagen.",
+      "community": "Community-Vorlagen",
+      "schedule": {
+        "shift": "Zeitplan anpassen"
+      },
+      "selection": "Vorlagenauswahl",
+      "subtitle": "Erfolgreiche Anbaupläne entdecken und teilen",
+      "title": "Community-Vorlagen",
+      "trichome": "Trichom-Helfer"
+    },
+    "post_comment": "Kommentar posten",
+    "post_deleted": "Beitrag gelöscht",
+    "post_image": "Bild von @{{author}}",
+    "post_image_hint": "Teil des Beitragsinhalts.",
+    "posting": "Wird gepostet…",
     "posts_count": "{{count}} Beiträge",
     "posts_count_one": "{{count}} Beitrag",
     "posts_count_other": "{{count}} Beiträge",
-    "posts_count_zero": "Keine Beiträge"
+    "posts_count_zero": "Keine Beiträge",
+    "recommendations": "Empfohlene Maßnahmen:",
+    "repliesAndComments": "Antworten & Kommentare",
+    "repliesAndCommentsDescription": "Benachrichtigt dich, wenn jemand auf deine Beiträge antwortet.",
+    "reply": "Antwort",
+    "retry_comment_hint": "Versucht erneut, diesen Kommentar zu posten.",
+    "retry_sync": "Synchronisation wiederholen",
+    "scheme": "growbro://feed",
+    "subtitle": "Entdecke die neuesten Updates aus der Community.",
+    "symptoms": "Symptome:",
+    "title": "Community",
+    "undo_dismiss_hint": "Die Rückgängig-Snackbar schließen und die Aktion abbrechen",
+    "undo_expires": "Rückgängigmachen läuft in {{seconds}}s ab",
+    "view_author_profile": "Profil von @{{author}} anzeigen",
+    "view_author_profile_hint": "Doppeltippen, um das Profil dieses Benutzers zu öffnen.",
+    "view_comments": "{{count}} Kommentare",
+    "view_comments_hint": "Doppeltippen, um Kommentare zu diesem Beitrag anzuzeigen."
   },
   "consent": {
     "accept_all": "Alle akzeptieren",
@@ -545,9 +644,9 @@
         "lowConfidenceNote": "Begrenzte Daten verfügbar. Die Vorhersagegenauigkeit verbessert sich mit mehr Nutzungsverlauf.",
         "mediumConfidence": "Mittel",
         "recommendedQuantity": "Empfohlene Menge",
-        "reorderNow": "Jetzt nachbestellen",
-        "reorderRecommendation": "Nachbestellempfehlung",
-        "timeToReorder": "Zeit bis zur Nachbestellung"
+        "reorderNow": "Jetzt auffüllen",
+        "reorderRecommendation": "Auffüllempfehlung",
+        "timeToReorder": "Zeit bis zur Auffüllung"
       },
       "form": {
         "barcode": "Barcode",
@@ -577,7 +676,7 @@
       "no_batches": "Keine Chargen verfügbar",
       "offline_description": "Zwischengespeicherte Daten werden angezeigt. Änderungen werden synchronisiert, wenn du wieder online bist.",
       "permissions": {
-        "exact_alarm_benefits": "Aktiviere präzise Niedrigbestandswarnungen, um Nachschub rechtzeitig zu bestellen und Engpässe zu vermeiden.",
+        "exact_alarm_benefits": "Aktiviere präzise Niedrigbestandswarnungen, um Nachschub rechtzeitig aufzufüllen und Engpässe zu vermeiden.",
         "exact_alarm_description": "GrowBro benötigt die Berechtigung, exakte Alarme für rechtzeitige Niedrigbestandsbenachrichtigungen zu planen. Dies stellt sicher, dass du benachrichtigt wirst, wenn Vorräte zur Neige gehen.",
         "exact_alarm_title": "Präzise Benachrichtigungen aktivieren",
         "grant_permission": "Berechtigung erteilen"
@@ -649,7 +748,7 @@
         "ifDeniedTitle": "Wenn du dies überspringst",
         "openSettings": "Einstellungen öffnen",
         "title": "Rechtzeitige Benachrichtigungen aktivieren",
-        "whyNeededBody": "Exakte Alarme stellen sicher, dass du sofort benachrichtigt wirst, wenn Vorräte zur Neige gehen, damit du rechtzeitig nachbestellen kannst.",
+        "whyNeededBody": "Exakte Alarme stellen sicher, dass du sofort benachrichtigt wirst, wenn Vorräte zur Neige gehen, damit du rechtzeitig auffüllen kannst.",
         "whyNeededTitle": "Warum das wichtig ist"
       }
     },
@@ -790,6 +889,7 @@
     "block_failed": "Benutzer konnte nicht blockiert werden. Bitte versuche es erneut.",
     "delete": "Löschen",
     "delete_failed": "Löschen des Inhalts fehlgeschlagen. Bitte versuche es erneut.",
+    "hide": "Ausblenden",
     "mute": "Stummschalten",
     "mute_failed": "Benutzer konnte nicht stummgeschaltet werden. Bitte versuche es erneut.",
     "queue": {
@@ -800,11 +900,14 @@
       "title": "Moderationswarteschlange"
     },
     "report": "Melden",
-    "report_failed": "Inhalt konnte nicht gemeldet werden. Bitte versuche es erneut."
+    "report_failed": "Inhalt konnte nicht gemeldet werden. Bitte versuche es erneut.",
+    "unhide": "Einblenden"
   },
   "nav": {
+    "back": "Zurück",
     "feed": "Feed",
-    "post": "Beitrag"
+    "post": "Beitrag",
+    "profile": "Profil"
   },
   "notifications": {
     "actions": {
@@ -1513,6 +1616,17 @@
     "webPortalLogin": "Anmeldung öffnen",
     "webPortalTitle": "GrowBro-Löschportal"
   },
+  "profile": {
+    "label": "Profil",
+    "no_posts": "Dieser Nutzer hat noch nichts gepostet.",
+    "restricted": {
+      "blocked": "Du kannst dieses Profil nicht sehen, da du blockiert wurdest.",
+      "deleted": "Dieses Profil ist nicht mehr verfügbar.",
+      "not_found": "Wir konnten dieses Profil nicht finden.",
+      "private": "Dieses Profil ist privat. Folgeanfragen müssen erst bestätigt werden.",
+      "title": "Profil nicht verfügbar"
+    }
+  },
   "settings": {
     "about": "Über",
     "app_name": "App-Name",
@@ -1526,7 +1640,33 @@
     "links": "Links",
     "logout": "Abmelden",
     "more": "Mehr",
-    "notifications": "Benachrichtigungen",
+    "notifications": {
+      "categories": {
+        "communityInteractions": "• Community-Interaktionen (Antworten auf deine Beiträge)",
+        "communityLikes": "• Community-Likes (Likes auf deine Beiträge)",
+        "cultivationReminders": "• Anbau-Erinnerungen (Aufgaben- und Grow-Erinnerungen)",
+        "systemUpdates": "• System-Updates (wichtige App-Aktualisierungen)",
+        "title": "Verfügbare Kategorien:"
+      },
+      "community": {
+        "likes": "Gefällt mir-Angaben",
+        "likesDescription": "Benachrichtigt dich, wenn jemand deine Beiträge liked (max. 1 pro Beitrag alle 5 Min).",
+        "repliesAndComments": "Antworten & Kommentare",
+        "repliesAndCommentsDescription": "Benachrichtigt dich, wenn jemand auf deine Beiträge antwortet.",
+        "title": "Community-Benachrichtigungen"
+      },
+      "label": "Benachrichtigungen",
+      "platformHelp": {
+        "android": "Unter Android kannst du einzelne Benachrichtigungskanäle in den Systemeinstellungen verwalten. Jede Kategorie lässt sich mit eigenen Tönen, Wichtigkeitsstufen und Verhalten anpassen.",
+        "ios": "Unter iOS kannst du Benachrichtigungseinstellungen wie Töne, Badges und Banner in den Systemeinstellungen anpassen."
+      },
+      "systemPermissions": {
+        "description": "Steuere, welche Benachrichtigungen du von GrowBro erhältst. Du kannst Community-Interaktionen, Aufgaben-Erinnerungen und System-Updates aktivieren oder deaktivieren.",
+        "openSettings": "Systemeinstellungen öffnen",
+        "title": "Systembenachrichtigungs-Berechtigungen"
+      },
+      "title": "Benachrichtigungseinstellungen"
+    },
     "privacy": "Datenschutzrichtlinie",
     "privacy_and_data": "Datenschutz- und Datenkontrollen",
     "privacy_policy": "Datenschutzerklärung",

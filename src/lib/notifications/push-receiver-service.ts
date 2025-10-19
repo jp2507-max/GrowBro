@@ -13,10 +13,11 @@ import {
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
 type NotificationType =
-  | 'community_interaction'
-  | 'community_like'
-  | 'cultivation_reminder'
-  | 'system_update';
+  | 'community.interaction'
+  | 'community.reply'
+  | 'community.like'
+  | 'cultivation.reminder'
+  | 'system.update';
 
 type NotificationData = {
   type?: NotificationType;
@@ -35,6 +36,40 @@ type NotificationResponse = {
   notification: any; // Expo notification object
   actionIdentifier: string;
 };
+
+const ANDROID_CHANNEL_KEY_MAP: Record<
+  NotificationType,
+  | 'community.interactions'
+  | 'community.likes'
+  | 'cultivation.reminders'
+  | 'system.updates'
+> = {
+  'community.interaction': 'community.interactions',
+  'community.reply': 'community.interactions',
+  'community.like': 'community.likes',
+  'cultivation.reminder': 'cultivation.reminders',
+  'system.update': 'system.updates',
+};
+
+const IOS_CATEGORY_MAP: Record<NotificationType, string> = {
+  'community.interaction': 'COMMUNITY_INTERACTIONS',
+  'community.reply': 'COMMUNITY_INTERACTIONS',
+  'community.like': 'COMMUNITY_LIKES',
+  'cultivation.reminder': 'CULTIVATION_REMINDERS',
+  'system.update': 'SYSTEM_UPDATES',
+};
+
+const NOTIFICATION_TYPES = new Set<NotificationType>([
+  'community.interaction',
+  'community.reply',
+  'community.like',
+  'cultivation.reminder',
+  'system.update',
+]);
+
+function isNotificationType(v: unknown): v is NotificationType {
+  return typeof v === 'string' && NOTIFICATION_TYPES.has(v as NotificationType);
+}
 
 let foregroundSubscription: any = null;
 let responseSubscription: any = null;
@@ -61,8 +96,8 @@ export const PushReceiverService = {
     const anyNotifications: any = Notifications as any;
     anyNotifications.setNotificationHandler({
       handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
+        shouldShowAlert: false,
+        shouldPlaySound: false,
         shouldSetBadge: true,
       }),
     });
@@ -96,7 +131,9 @@ async function handleForegroundNotification(
 ): Promise<void> {
   try {
     const data = extractNotificationData(event.notification);
-    const notificationType = data.type || 'system_update';
+    const notificationType: NotificationType = isNotificationType(data.type)
+      ? data.type
+      : 'system.update';
 
     // Track delivery to device
     if (data.messageId) {
@@ -105,13 +142,14 @@ async function handleForegroundNotification(
 
     // Apply grouping logic for community notifications
     if (
-      notificationType === 'community_interaction' ||
-      notificationType === 'community_like'
+      notificationType === 'community.interaction' ||
+      notificationType === 'community.reply' ||
+      notificationType === 'community.like'
     ) {
       await NotificationGroupingService.handleCommunityNotification({
         notification: event.notification,
         type: notificationType,
-        postId: data.postId || '',
+        postId: data.postId,
         threadId: data.threadId,
       });
     } else {
@@ -129,10 +167,10 @@ async function handleForegroundNotification(
               }
             : {}),
         },
-        trigger: null, // Present immediately
-        ...(Platform.OS === 'android'
-          ? { channelId: mapToAndroidChannelId(notificationType) }
-          : {}),
+        trigger:
+          Platform.OS === 'android'
+            ? { channelId: mapToAndroidChannelId(notificationType) }
+            : null, // Present immediately
       });
     }
   } catch (error) {
@@ -190,27 +228,9 @@ function extractNotificationData(notification: any): NotificationData {
 }
 
 function mapToAndroidChannelId(type: NotificationType): string {
-  const channelKeyMap: Record<
-    NotificationType,
-    | 'community.interactions'
-    | 'community.likes'
-    | 'cultivation.reminders'
-    | 'system.updates'
-  > = {
-    community_interaction: 'community.interactions',
-    community_like: 'community.likes',
-    cultivation_reminder: 'cultivation.reminders',
-    system_update: 'system.updates',
-  };
-  return getAndroidChannelId(channelKeyMap[type]);
+  return getAndroidChannelId(ANDROID_CHANNEL_KEY_MAP[type]);
 }
 
 function getIOSCategoryId(type: NotificationType): string {
-  const categoryMap: Record<NotificationType, string> = {
-    community_interaction: 'COMMUNITY_INTERACTIONS',
-    community_like: 'COMMUNITY_LIKES',
-    cultivation_reminder: 'CULTIVATION_REMINDERS',
-    system_update: 'SYSTEM_UPDATES',
-  };
-  return categoryMap[type];
+  return IOS_CATEGORY_MAP[type];
 }

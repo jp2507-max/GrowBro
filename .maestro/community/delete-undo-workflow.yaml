@@ -1,0 +1,85 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'test@growbro.app'
+  PASSWORD: 'Test1234!'
+  POST_CONTENT: 'This is a test post that will be deleted and undone to verify the 15-second undo functionality works correctly.'
+---
+# Community Feed - Delete and Undo Workflow E2E Test
+# Tests: Create post, delete with undo option, verify 15s timer
+
+- launchApp
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Navigate to community and create a test post
+- tapOn:
+    id: 'community-tab'
+- assertVisible:
+    id: 'community-screen'
+
+# Create new post
+- tapOn:
+    id: 'community-header-create'
+- assertVisible: 'Add Post'
+- tapOn:
+    id: 'body-input'
+- inputText: ${POST_CONTENT}
+- runFlow: ../utils/hide-keyboard.yaml
+- tapOn:
+    id: 'add-post-button'
+- assertVisible: 'Post added successfully'
+
+# Wait for navigation back to feed
+- waitForAnimationToEnd
+
+# Refresh feed to see new post
+- swipe:
+    direction: 'down'
+- waitForAnimationToEnd
+
+# Find and open the new post
+- assertVisible:
+    text: 'test post'
+- tapOn:
+    text: 'test post'
+
+# Delete the post
+- tapOn:
+    id: 'delete-post-button'
+- assertVisible: 'Are you sure?'
+- tapOn: 'Delete'
+
+# Verify undo snackbar appears
+- assertVisible:
+    text: 'Post deleted'
+- assertVisible: 'Undo'
+
+# Verify countdown timer is shown
+- assertVisible:
+    text: '*s'
+
+# Test undo within 15 seconds
+- tapOn: 'Undo'
+- waitForAnimationToEnd
+
+# Verify post is restored
+- assertVisible:
+    text: 'test post'
+- assertNotVisible: 'Post deleted'
+
+# Delete again to test expiry
+- tapOn:
+    id: 'delete-post-button'
+- tapOn: 'Delete'
+- assertVisible: 'Post deleted'
+
+# Wait for undo timer to expire
+- wait: 16000
+
+# Verify snackbar disappears after expiry
+- assertNotVisible: 'Undo'
+
+# Navigate back and verify post is gone
+- tapOn:
+    id: 'back-button'
+- assertNotVisible:
+    text: 'test post'

@@ -90,7 +90,6 @@ trigger: always_on
 - **ESLint** with comprehensive rule set including:
   - Import sorting and unused import removal
   - Tailwind class ordering
-  - Maximum function length (70 lines) and parameters (3)
   - Filename case enforcement
 - **Prettier** for code formatting
 - **Husky** git hooks for pre-commit quality checks

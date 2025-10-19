@@ -107,7 +107,7 @@ function createTargetNotificationContent(
   stage: HarvestStage,
   config: StageConfig,
   harvestId: string
-) {
+): Notifications.NotificationContentInput {
   return {
     title: translate('harvest.notifications.target.title', {
       stage: config.name,
@@ -117,7 +117,7 @@ function createTargetNotificationContent(
       days: config.target_duration_days,
     }),
     data: { harvestId, stage, type: 'harvest_stage_target' },
-    sound: true,
+    sound: 'default',
   };
 }
 
@@ -128,7 +128,7 @@ function createOverdueNotificationContent(
   stage: HarvestStage,
   config: StageConfig,
   harvestId: string
-) {
+): Notifications.NotificationContentInput {
   return {
     title: translate('harvest.notifications.overdue.title', {
       stage: config.name,
@@ -138,15 +138,131 @@ function createOverdueNotificationContent(
       days: config.max_duration_days,
     }),
     data: { harvestId, stage, type: 'harvest_stage_overdue' },
-    sound: true,
+    sound: 'default',
   };
+}
+
+/**
+ * Context for notification scheduling
+ */
+type NotificationScheduleContext = {
+  harvestId: string;
+  stage: HarvestStage;
+  config: StageConfig;
+  triggerDate: Date;
+  notificationType: 'target' | 'overdue';
+  notificationIdField: 'notificationId' | 'overdueNotificationId';
+  contentCreator: (
+    stage: HarvestStage,
+    config: StageConfig,
+    harvestId: string
+  ) => Notifications.NotificationContentInput;
+};
+
+/**
+ * Schedule notification with tracking
+ */
+async function scheduleNotificationWithTracking(
+  context: NotificationScheduleContext
+): Promise<NotificationScheduleResult> {
+  let notificationId: string | undefined;
+
+  try {
+    notificationId = await Notifications.scheduleNotificationAsync({
+      content: context.contentCreator(
+        context.stage,
+        context.config,
+        context.harvestId
+      ),
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: Math.max(
+          1,
+          Math.floor((context.triggerDate.getTime() - Date.now()) / 1000)
+        ),
+      },
+    });
+
+    // Attempt to update the database with the notification ID
+    await updateHarvestNotificationId(
+      context.harvestId,
+      context.notificationIdField,
+      notificationId
+    );
+  } catch (error) {
+    // If scheduling or DB update fails, cancel any scheduled notification
+    if (notificationId !== undefined) {
+      try {
+        await Notifications.cancelScheduledNotificationAsync(notificationId);
+      } catch (cancelError) {
+        console.warn(
+          '[HarvestNotificationService] Failed to cancel orphaned notification:',
+          cancelError
+        );
+      }
+    }
+
+    throw error;
+  }
+
+  // Only mark as successful after both scheduling and DB update succeed
+  const result = { notificationId, scheduled: true };
+
+  recordScheduleAttempt(true);
+  await trackNotificationSchedule({
+    type: context.notificationType,
+    result,
+    harvestId: context.harvestId,
+    stage: context.stage,
+  });
+
+  return result;
+}
+
+/**
+ * Context for notification scheduling errors
+ */
+type NotificationErrorContext = {
+  harvestId: string;
+  stage: HarvestStage;
+  notificationType: 'target' | 'overdue';
+  message: string;
+};
+
+/**
+ * Handle notification scheduling error
+ */
+async function handleScheduleError(
+  error: unknown,
+  context: NotificationErrorContext
+): Promise<NotificationScheduleResult> {
+  captureCategorizedErrorSync(error, {
+    category: 'notification',
+    message: context.message,
+    context: { harvestId: context.harvestId, stage: context.stage },
+  });
+
+  const result = {
+    notificationId: null,
+    scheduled: false,
+    error: error instanceof Error ? error.message : 'unknown_error',
+  };
+
+  recordScheduleAttempt(false);
+  await trackNotificationSchedule({
+    type: context.notificationType,
+    result,
+    harvestId: context.harvestId,
+    stage: context.stage,
+  });
+
+  return result;
 }
 
 /**
  * Schedule target duration notification for a harvest stage
  * Requirement 14.1: Schedule local notification for target duration
  */
-
 export async function scheduleStageReminder(
   harvestId: string,
   stage: HarvestStage,
@@ -184,55 +300,22 @@ export async function scheduleStageReminder(
       };
     }
 
-    const notificationId = await Notifications.scheduleNotificationAsync({
-      content: createTargetNotificationContent(stage, config, harvestId),
-      trigger: { type: 'date' as const, date: triggerDate },
-    });
-
-    await updateHarvestNotificationId(
-      harvestId,
-      'notificationId',
-      notificationId
-    );
-
-    const result = {
-      notificationId,
-      scheduled: true,
-    };
-
-    // Track success
-    recordScheduleAttempt(true);
-    await trackNotificationSchedule({
-      type: 'target',
-      result,
+    return await scheduleNotificationWithTracking({
       harvestId,
       stage,
+      config,
+      triggerDate,
+      notificationType: 'target',
+      notificationIdField: 'notificationId',
+      contentCreator: createTargetNotificationContent,
     });
-
-    return result;
   } catch (error) {
-    captureCategorizedErrorSync(error, {
-      category: 'notification',
-      message: 'Failed to schedule harvest stage reminder',
-      context: { harvestId, stage },
-    });
-
-    const result = {
-      notificationId: null,
-      scheduled: false,
-      error: error instanceof Error ? error.message : 'unknown_error',
-    };
-
-    // Track failure
-    recordScheduleAttempt(false);
-    await trackNotificationSchedule({
-      type: 'target',
-      result,
+    return await handleScheduleError(error, {
       harvestId,
       stage,
+      notificationType: 'target',
+      message: 'Failed to schedule harvest stage reminder',
     });
-
-    return result;
   }
 }
 
@@ -241,7 +324,6 @@ export async function scheduleStageReminder(
  * Requirement 14.2: Send gentle reminder when duration exceeds recommendation
  * Requirement 5.2: Provide gentle notifications with guidance
  */
-
 export async function scheduleOverdueReminder(
   harvestId: string,
   stage: HarvestStage,
@@ -279,55 +361,22 @@ export async function scheduleOverdueReminder(
       };
     }
 
-    const notificationId = await Notifications.scheduleNotificationAsync({
-      content: createOverdueNotificationContent(stage, config, harvestId),
-      trigger: { type: 'date' as const, date: triggerDate },
-    });
-
-    await updateHarvestNotificationId(
-      harvestId,
-      'overdueNotificationId',
-      notificationId
-    );
-
-    const result = {
-      notificationId,
-      scheduled: true,
-    };
-
-    // Track success
-    recordScheduleAttempt(true);
-    await trackNotificationSchedule({
-      type: 'overdue',
-      result,
+    return await scheduleNotificationWithTracking({
       harvestId,
       stage,
+      config,
+      triggerDate,
+      notificationType: 'overdue',
+      notificationIdField: 'overdueNotificationId',
+      contentCreator: createOverdueNotificationContent,
     });
-
-    return result;
   } catch (error) {
-    captureCategorizedErrorSync(error, {
-      category: 'notification',
-      message: 'Failed to schedule harvest overdue reminder',
-      context: { harvestId, stage },
-    });
-
-    const result = {
-      notificationId: null,
-      scheduled: false,
-      error: error instanceof Error ? error.message : 'unknown_error',
-    };
-
-    // Track failure
-    recordScheduleAttempt(false);
-    await trackNotificationSchedule({
-      type: 'overdue',
-      result,
+    return await handleScheduleError(error, {
       harvestId,
       stage,
+      notificationType: 'overdue',
+      message: 'Failed to schedule harvest overdue reminder',
     });
-
-    return result;
   }
 }
 

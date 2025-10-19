@@ -1,34 +1,18 @@
-declare module 'react-native-keyboard-controller/jest';
+import type { AndroidNotificationPriority } from 'expo-notifications';
+
 declare module 'expo-notifications' {
-  export type NotificationTriggerInput = {
-    type: 'date';
-    date: Date;
-    channelId?: string;
-  };
-
-  export type NotificationContentInput = {
-    title: string;
-    body: string;
+  interface NotificationContentInput {
+    // Common fields used by the app when scheduling local notifications
+    title?: string;
+    body?: string;
     data?: Record<string, unknown>;
-    threadId?: string;
-    sound?: boolean | string;
-  };
+    // Expo supports either a string or boolean for the sound field across platforms
+    sound?: string | boolean;
+    interruptionLevel?: 'passive' | 'active' | 'timeSensitive' | 'critical';
+    threadIdentifier?: string;
+  }
 
-  export function scheduleNotificationAsync(options: {
-    content: NotificationContentInput;
-    trigger: NotificationTriggerInput;
-  }): Promise<string>;
-
-  export function getAllScheduledNotificationsAsync(): Promise<
-    {
-      identifier: string;
-      trigger: unknown;
-    }[]
-  >;
-
-  export function cancelScheduledNotificationAsync(
-    identifier: string
-  ): Promise<void>;
-
-  export function cancelAllScheduledNotificationsAsync(): Promise<void>;
+  interface NotificationContentAndroid {
+    priority?: AndroidNotificationPriority;
+  }
 }

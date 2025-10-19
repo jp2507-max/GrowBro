@@ -54,7 +54,20 @@ function resolvePath(url: string): string {
     const host = parsed.hostname ?? '';
     const pathname = parsed.pathname.replace(/^\/*/, '');
     const combined = pathname ? `${host}/${pathname}` : host;
-    return combined.startsWith('/') ? combined : `/${combined}`;
+    const path = combined.startsWith('/') ? combined : `/${combined}`;
+
+    // Handle post deep links with optional comment scrolling
+    // Format: growbro://post/:id or growbro://post/:id/comment/:commentId
+    const postMatch = path.match(/^\/post\/([^/]+)(?:\/comment\/([^/]+))?/);
+    if (postMatch) {
+      const [, postId, commentId] = postMatch;
+      if (commentId) {
+        return `/post/${encodeURIComponent(postId)}?commentId=${encodeURIComponent(commentId)}`;
+      }
+      return `/post/${encodeURIComponent(postId)}`;
+    }
+
+    return path;
   }
   return parsed.pathname + parsed.search + parsed.hash;
 }

@@ -283,7 +283,7 @@ async function fetchFromApi(
 /**
  * Main request handler
  */
-/* eslint-disable max-lines-per-function */
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {

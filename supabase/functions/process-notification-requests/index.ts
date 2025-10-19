@@ -82,7 +82,6 @@ async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// eslint-disable-next-line max-params
 async function sendWithRetry(
   request: NotificationRequestEntry,
   edgeFunctionSecret: string,
@@ -125,7 +124,6 @@ async function sendWithRetry(
   return { success: false, error: lastError };
 }
 
-// eslint-disable-next-line max-lines-per-function
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {

@@ -2,6 +2,7 @@ import React from 'react';
 import { ActivityIndicator } from 'react-native';
 
 import { Text, View } from '@/components/ui';
+import colors from '@/components/ui/colors';
 import { useSyncState } from '@/lib/sync/sync-state';
 
 type SyncStatusIndicatorProps = {
@@ -23,7 +24,7 @@ export function SyncStatusIndicator({
     <View className="flex-row items-center gap-2">
       <ActivityIndicator
         size={size}
-        color="#3B82F6"
+        color={colors.primary[600]}
         testID="sync-status-indicator"
       />
       {showLabel && (

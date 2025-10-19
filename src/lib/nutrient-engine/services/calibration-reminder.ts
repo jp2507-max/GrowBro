@@ -8,6 +8,7 @@
  */
 
 import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 
 import type { CalibrationModel } from '@/lib/watermelon-models/calibration';
 
@@ -35,6 +36,57 @@ const NOTIFICATION_ID_PREFIX = {
   CALIBRATION_WARNING: 'calibration-warning-',
   CALIBRATION_EXPIRED: 'calibration-expired-',
 } as const;
+
+/**
+ * Platform-specific notification scheduling limits (in seconds)
+ * iOS TIME_INTERVAL notifications cannot exceed ~64 weeks
+ * Android has longer limits but we use conservative values
+ */
+const NOTIFICATION_TIME_LIMITS = {
+  IOS_MAX_SECONDS: 60 * 60 * 24 * 7 * 64, // 64 weeks in seconds
+  ANDROID_MAX_SECONDS: 60 * 60 * 24 * 365 * 2, // 2 years (conservative)
+  CASCADE_INTERVAL_SECONDS: 60 * 60 * 24 * 30, // 30 days for cascading reminders
+} as const;
+
+// ============================================================================
+// Platform Detection & Validation
+// ============================================================================
+
+/**
+ * Gets the maximum allowed seconds for TIME_INTERVAL notifications on current platform
+ */
+function getMaxNotificationSeconds(): number {
+  return Platform.OS === 'ios'
+    ? NOTIFICATION_TIME_LIMITS.IOS_MAX_SECONDS
+    : NOTIFICATION_TIME_LIMITS.ANDROID_MAX_SECONDS;
+}
+
+/**
+ * Checks if the requested seconds exceed platform limits
+ */
+function exceedsNotificationLimit(seconds: number): boolean {
+  return seconds > getMaxNotificationSeconds();
+}
+
+/**
+ * Calculates a safe interval for cascading reminders
+ */
+function getSafeCascadeInterval(targetDate: Date): number {
+  const now = Date.now();
+  const totalSeconds = Math.floor((targetDate.getTime() - now) / 1000);
+  const maxInterval = getMaxNotificationSeconds();
+
+  // If total time is within platform limit, use the full interval
+  if (totalSeconds <= maxInterval) {
+    return totalSeconds;
+  }
+
+  // Otherwise, use the maximum safe interval
+  return Math.min(
+    maxInterval,
+    NOTIFICATION_TIME_LIMITS.CASCADE_INTERVAL_SECONDS
+  );
+}
 
 // ============================================================================
 // Reminder Scheduling
@@ -245,8 +297,6 @@ export async function notifyStaleCalibration(
   daysExpired: number
 ): Promise<void> {
   try {
-    const immediateDate = new Date(Date.now() + 1000); // 1 second from now for immediate delivery
-
     await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Stale Meter Calibration Detected',
@@ -257,7 +307,7 @@ export async function notifyStaleCalibration(
           daysExpired,
         },
       },
-      trigger: { type: 'date' as const, date: immediateDate },
+      trigger: null, // Immediate delivery
     });
   } catch (error) {
     console.error('Error sending stale calibration notification:', error);
@@ -288,9 +338,41 @@ async function scheduleNotification(options: {
 
     // Prepare trigger
     const triggerDate = options.trigger || new Date(Date.now() + 1000); // Immediate if no trigger specified
+    const totalSeconds = Math.floor(
+      (triggerDate.getTime() - Date.now()) / 1000
+    );
 
-    // Schedule notification
+    // Validate against platform limits and implement cascading strategy
+    if (exceedsNotificationLimit(totalSeconds)) {
+      // Use cascading reminder strategy for long-future dates
+      const safeSeconds = getSafeCascadeInterval(triggerDate);
+
+      // Store the original target date in notification data for cascading
+      const cascadeData = {
+        ...options.data,
+        identifier: options.identifier,
+        cascadeTargetDate: triggerDate.toISOString(),
+        cascadeStep: 1,
+      };
+
+      return await Notifications.scheduleNotificationAsync({
+        identifier: options.identifier,
+        content: {
+          title: options.title,
+          body: options.body,
+          data: cascadeData,
+          sound: true,
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: Math.max(1, safeSeconds),
+        },
+      });
+    }
+
+    // Standard scheduling for dates within platform limits
     const notificationId = await Notifications.scheduleNotificationAsync({
+      identifier: options.identifier,
       content: {
         title: options.title,
         body: options.body,
@@ -300,7 +382,10 @@ async function scheduleNotification(options: {
         },
         sound: true,
       },
-      trigger: { type: 'date' as const, date: triggerDate },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: Math.max(1, totalSeconds),
+      },
     });
 
     return notificationId;
@@ -336,12 +421,100 @@ export async function getScheduledCalibrationReminders(): Promise<
         id: notif.identifier,
         calibrationId:
           ((notif as any).content?.data?.calibrationId as string) || 'unknown',
-        scheduledFor: (notif as any).trigger
-          ? new Date(((notif as any).trigger as any).value * 1000)
-          : new Date(),
+        scheduledFor: (() => {
+          const t = (notif as any).trigger;
+          if (!t) return new Date();
+          if (
+            t.type === Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL
+          ) {
+            const secs = Number((t as any).seconds ?? 0);
+            return new Date(Date.now() + Math.max(0, secs) * 1000);
+          }
+          if ('timestamp' in (t as any)) {
+            return new Date((t as any).timestamp);
+          }
+          if ('date' in (t as any)) {
+            return new Date((t as any).date);
+          }
+          return new Date();
+        })(),
       }));
   } catch (error) {
     console.error('Error getting scheduled reminders:', error);
     return [];
+  }
+}
+
+/**
+ * Handles cascading reminders by scheduling the next reminder in the chain
+ * Should be called when a cascading notification fires
+ *
+ * @param notificationData - The data from the fired notification
+ * @returns Promise<boolean> - Whether a new reminder was scheduled
+ */
+export async function handleCascadingReminder(
+  notificationData: Record<string, any>
+): Promise<boolean> {
+  try {
+    const { cascadeTargetDate, cascadeStep, identifier } = notificationData;
+
+    if (!cascadeTargetDate || !identifier) {
+      console.warn(
+        'Cascading reminder missing required data:',
+        notificationData
+      );
+      return false;
+    }
+
+    const targetDate = new Date(cascadeTargetDate);
+    const now = Date.now();
+
+    // Check if the target date is valid
+    if (isNaN(targetDate.getTime())) {
+      console.warn('Invalid cascade target date:', cascadeTargetDate);
+      return false;
+    }
+
+    // Check if we've reached or passed the target date
+    if (targetDate.getTime() <= now) {
+      console.log('Cascading reminder reached target date');
+      return false; // No more reminders needed
+    }
+
+    // Calculate remaining time and schedule next reminder
+    const remainingSeconds = Math.floor((targetDate.getTime() - now) / 1000);
+
+    if (remainingSeconds <= 0) {
+      return false; // Target date reached
+    }
+
+    // Schedule the next reminder in the cascade
+    const nextStep = (cascadeStep || 1) + 1;
+    const safeInterval = getSafeCascadeInterval(targetDate);
+
+    const nextNotificationId = `${identifier}-cascade-${nextStep}`;
+
+    const result = await Notifications.scheduleNotificationAsync({
+      identifier: nextNotificationId,
+      content: {
+        title: 'Calibration Reminder', // Generic title for cascading reminders
+        body: 'Time to check your calibration!',
+        data: {
+          ...notificationData,
+          identifier: nextNotificationId,
+          cascadeStep: nextStep,
+        },
+        sound: true,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: Math.max(1, Math.min(safeInterval, remainingSeconds)),
+      },
+    });
+
+    return !!result;
+  } catch (error) {
+    console.error('Error handling cascading reminder:', error);
+    return false;
   }
 }

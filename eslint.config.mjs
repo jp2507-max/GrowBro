@@ -109,8 +109,18 @@ export default defineConfig([
       // (removed custom no-flatlist rule)
     },
   },
+  // Deno Edge Functions - must come BEFORE TypeScript config to avoid parser issues
+  {
+    files: ['supabase/functions/**/*.{ts,tsx}'],
+    rules: {
+      'import/no-unresolved': 'off',
+      'max-lines-per-function': 'off',
+      'max-params': 'off',
+    },
+  },
   {
     files: ['**/*.ts', '**/*.tsx'],
+    ignores: ['supabase/functions/**/*.{ts,tsx}'],
     languageOptions: {
       parser: parser,
       parserOptions: {
@@ -210,20 +220,15 @@ export default defineConfig([
       'max-lines-per-function': ['error', 90],
     },
   },
-  // Test files - exempt from max-lines-per-function (must come after stricter rules)
+  // Test files - exempt from max-lines-per-function and max-params (must come after stricter rules)
   {
     files: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
     plugins: { 'testing-library': testingLibrary },
     rules: {
       ...testingLibrary.configs.react.rules,
       'max-lines-per-function': 'off',
-    },
-  },
-  // Deno Edge Functions use jsr:/npm: specifiers that Node import resolver can't resolve
-  {
-    files: ['supabase/functions/**/*.{ts,tsx}'],
-    rules: {
-      'import/no-unresolved': 'off',
+      'max-params': 'off',
+      '@typescript-eslint/no-require-imports': 'off', // Jest dynamic mocking requires require()
     },
   },
   // Scripts and generated packages run in Node; allow __dirname/Buffer and relax length

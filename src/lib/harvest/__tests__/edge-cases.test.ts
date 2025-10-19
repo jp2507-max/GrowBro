@@ -83,7 +83,6 @@ describe('Overlap Detection', () => {
   // Note: Actual database queries tested in integration tests
   describe('checkOverlappingHarvests (unit)', () => {
     it('should handle query errors gracefully', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { database } = require('../../watermelon');
       database.get.mockReturnValue({
         query: jest.fn().mockReturnValue({
@@ -172,7 +171,6 @@ describe('Stage Edit Handler', () => {
     });
 
     it('should accept valid past timestamps', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { database } = require('../../watermelon');
       const mockHarvest: any = {
         id: 'test-harvest',

@@ -18,7 +18,7 @@ const corsHeaders = {
 /**
  * Deactivates a push token due to delivery failure
  */
-// eslint-disable-next-line max-params
+
 async function deactivateToken(
   supabase: any,
   token: string,
@@ -163,7 +163,6 @@ async function processReceipts(
   return { delivered, failed, tokensDeactivated };
 }
 
-// eslint-disable-next-line max-lines-per-function
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
