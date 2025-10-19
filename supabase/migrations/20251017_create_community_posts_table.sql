@@ -48,8 +48,12 @@ CREATE POLICY "Users can update their own posts" ON public.posts
   FOR UPDATE USING ((select auth.uid()) IS NOT NULL AND user_id = (select auth.uid()));
 
 -- Allow DELETE only for the post owner
-CREATE POLICY "Users can delete their own posts" ON public.posts
-  FOR DELETE USING ((select auth.uid()) IS NOT NULL AND user_id = (select auth.uid()));
+-- NOTE: Prevent hard DELETEs by owners to enforce soft-delete and undo workflow.
+-- The previous policy allowed authenticated owners to perform SQL DELETE which would
+-- permanently remove the row and cascade to comments/likes, bypassing undo/audit triggers.
+-- We intentionally do NOT create a DELETE policy that allows owners to hard-delete rows.
+-- Owners should use an RPC (e.g., `posts.force_delete`) for intentional permanent deletes
+-- or set `deleted_at`/`undo_expires_at` to perform a soft-delete with undo.
 
 -- Ensure updated_at trigger is created idempotently
 DROP TRIGGER IF EXISTS trg_posts_updated_at ON public.posts;

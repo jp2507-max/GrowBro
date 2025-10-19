@@ -65,11 +65,7 @@ CREATE POLICY "Users can update their own comments" ON public.post_comments
     AND hidden_at IS NULL
   );
 
--- Users can soft-delete their own comments
-CREATE POLICY "Users can delete their own comments" ON public.post_comments
-  FOR DELETE
-  TO authenticated
-  USING (auth.uid() = user_id);
+-- Note: DELETE operations are not allowed. Use soft_delete_comment RPC function instead.
 
 -- Moderators can hide comments
 CREATE POLICY "Moderators can hide comments" ON public.post_comments

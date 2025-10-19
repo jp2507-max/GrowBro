@@ -7,7 +7,7 @@ export type IdempotencyParams<T> = {
   clientTxId: string;
   userId: string;
   endpoint: string;
-  payload: any;
+  payload: unknown;
   operation: () => Promise<T>;
 };
 
@@ -94,41 +94,29 @@ export class IdempotencyService {
     payloadHash: string;
   }): Promise<void> {
     const { key, clientTxId, userId, endpoint, payloadHash } = params;
-    // IMPORTANT: This UPSERT is not atomic for the purpose of claiming a
-    // processing lock. Under concurrent requests two clients can both
-    // observe no existing row and then both succeed here, because UPSERT
-    // will update an existing row instead of failing on conflict. That
-    // allows duplicate processing and defeats idempotency guarantees.
-    //
-    // Recommended fixes (choose one):
-    // 1) Attempt an INSERT with ON CONFLICT DO NOTHING and check the
-    //    returned row count (only one caller will insert). Example:
-    //      INSERT INTO idempotency_keys(...) VALUES(...) ON CONFLICT DO NOTHING
-    //      -- then check rows affected; if 0, another worker holds the key.
-    // 2) Perform the claim inside a single DB transaction or stored
-    //    procedure that checks and inserts/returns an error atomically.
-    // 3) Use a SELECT ... FOR UPDATE locking query inside a transaction to
-    //    ensure only one caller proceeds.
-    //
-    // See the issue tracker note: concurrent upserts here can lead to
-    // duplicate side-effects (duplicate posts/comments). Replace this
-    // UPSERT with an atomic claim strategy when possible.
-    const { error } = await supabase.from('idempotency_keys').upsert(
-      {
-        idempotency_key: key,
-        client_tx_id: clientTxId,
-        user_id: userId,
-        endpoint,
-        payload_hash: payloadHash,
-        status: 'processing',
-        created_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      },
-      { onConflict: 'idempotency_key,user_id,endpoint' }
-    );
+
+    // Use atomic RPC function to claim the idempotency key
+    // This prevents race conditions where multiple concurrent requests
+    // could both observe no existing key and proceed with processing
+    const { data, error } = await supabase.rpc('claim_idempotency_key', {
+      p_user_id: userId,
+      p_idempotency_key: key,
+      p_endpoint: endpoint,
+      p_client_tx_id: clientTxId,
+      p_payload_hash: payloadHash,
+    });
 
     if (error) {
-      throw new Error(`Failed to insert idempotency key: ${error.message}`);
+      throw new Error(`Failed to claim idempotency key: ${error.message}`);
+    }
+
+    if (!data?.success) {
+      // Key was already claimed by another request
+      if (data?.existing_key?.status === 'processing') {
+        throw new Error('Request already being processed');
+      }
+      // Handle other failure cases
+      throw new Error(data?.error || 'Failed to claim idempotency key');
     }
   }
 
@@ -189,7 +177,7 @@ export class IdempotencyService {
    * Compute SHA-256 hash of payload for deduplication
    * Uses deterministic JSON serialization to ensure consistent hashes
    */
-  private async computeHash(payload: any): Promise<string> {
+  private async computeHash(payload: unknown): Promise<string> {
     // Deterministic JSON serialization with sorted keys
     const normalized = this.deterministicStringify(payload);
 
@@ -206,8 +194,9 @@ export class IdempotencyService {
   /**
    * Deterministically stringify a value by recursively sorting object keys
    */
-  private deterministicStringify(value: any): string {
+  private deterministicStringify(value: unknown): string {
     if (value === null) return 'null';
+    if (value === undefined) return '';
 
     const t = typeof value;
 
@@ -222,20 +211,41 @@ export class IdempotencyService {
     if (t === 'boolean') return String(value);
 
     if (Array.isArray(value)) {
-      const items = value.map((v) => this.deterministicStringify(v));
-      return `[${items.join(',')}]`;
+      try {
+        const items = value.map((v) => this.deterministicStringify(v));
+        return `[${items.join(',')}]`;
+      } catch (error) {
+        throw new Error(
+          `Failed to serialize array: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+      }
     }
 
     if (t === 'object') {
-      const keys = Object.keys(value).sort();
-      const pairs = keys.map(
-        (k) => `"${k}":${this.deterministicStringify(value[k])}`
-      );
-      return `{${pairs.join(',')}}`;
+      try {
+        const keys = Object.keys(value).sort();
+        const pairs = keys.map(
+          (k) =>
+            `"${k}":${this.deterministicStringify((value as Record<string, unknown>)[k])}`
+        );
+        return `{${pairs.join(',')}}`;
+      } catch (error) {
+        throw new Error(
+          `Failed to serialize object: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+      }
     }
 
-    // Undefined, functions, symbols -> treat as undefined
-    return 'undefined';
+    if (t === 'function') {
+      throw new Error('Payload cannot contain functions');
+    }
+
+    if (t === 'symbol') {
+      throw new Error('Payload cannot contain symbols');
+    }
+
+    // Other types like bigint, etc.
+    throw new Error(`Unsupported payload type: ${t}`);
   }
 
   /**

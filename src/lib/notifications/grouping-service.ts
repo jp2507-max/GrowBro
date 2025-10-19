@@ -111,6 +111,13 @@ async function handleiOSThreading(
     // We just present the notification; iOS handles visual grouping automatically
     const content = communityNotification.notification.request?.content || {};
 
+    // Compute threadId value: prefer threadId, else build from postId if present
+    const threadId =
+      communityNotification.threadId ||
+      (communityNotification.postId
+        ? `post_${communityNotification.postId}`
+        : undefined);
+
     const notificationContent: Notifications.NotificationContentInput & {
       threadIdentifier?: string;
     } = {
@@ -119,9 +126,7 @@ async function handleiOSThreading(
       data: {
         ...content.data,
       },
-      threadIdentifier:
-        communityNotification.threadId ||
-        `post_${communityNotification.postId}`,
+      ...(threadId && { threadIdentifier: threadId }),
     };
 
     await Notifications.scheduleNotificationAsync({
