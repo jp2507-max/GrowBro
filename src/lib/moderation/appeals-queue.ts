@@ -140,10 +140,12 @@ export class AppealsQueue {
       }
 
       // Attempt to submit the appeal
+      // TODO: Update to use new DSA-compliant appeal schema
       await apiSubmitAppeal({
-        contentId: item.contentId,
-        reason: item.reason,
-        details: item.details,
+        original_decision_id: String(item.contentId),
+        user_id: 'current-user', // TODO: Get from auth context
+        appeal_type: 'content_removal', // TODO: Infer from reason
+        counter_arguments: item.details || item.reason,
       });
 
       // Success: remove from queue

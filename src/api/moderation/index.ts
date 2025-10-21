@@ -8,6 +8,14 @@ export type DeletePayload = { contentId: string | number };
 export { useHideContent } from './use-hide-content';
 export { useUnhideContent } from './use-unhide-content';
 
+// DSA-compliant reporting service (Art. 16)
+export {
+  getReportStatus,
+  getUserReports,
+  submitContentReport,
+  validateReport,
+} from './reporting-service';
+
 export async function apiReportContent(payload: ReportPayload): Promise<void> {
   const endpoint = '/moderation/report';
   const contextId = `contentId: ${payload.contentId}`;

@@ -1,0 +1,72 @@
+/**
+ * Queue Filters Component
+ * Filter controls for moderator queue (priority, category, SLA status)
+ * Requirements: 2.1, 2.2
+ */
+
+import React from 'react';
+
+import { ScrollView, Text, TouchableOpacity, View } from '@/components/ui';
+
+type FilterOption = {
+  label: string;
+  value: string;
+};
+
+type Props = {
+  activeFilter: string;
+  onFilterChange: (filter: string) => void;
+  testID?: string;
+};
+
+const PRIORITY_FILTERS: FilterOption[] = [
+  { label: 'All', value: 'all' },
+  { label: 'Immediate', value: 'immediate' },
+  { label: 'Illegal', value: 'illegal' },
+  { label: 'Trusted', value: 'trusted' },
+  { label: 'Standard', value: 'standard' },
+];
+
+export function QueueFilters({
+  activeFilter,
+  onFilterChange,
+  testID = 'queue-filters',
+}: Props) {
+  return (
+    <View className="mb-4" testID={testID}>
+      <Text className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+        Filter by Priority
+      </Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View className="flex-row gap-2">
+          {PRIORITY_FILTERS.map((filter) => {
+            const isActive = activeFilter === filter.value;
+            return (
+              <TouchableOpacity
+                accessibilityRole="button"
+                key={filter.value}
+                onPress={() => onFilterChange(filter.value)}
+                className={`rounded-full px-4 py-2 ${
+                  isActive
+                    ? 'bg-primary-600'
+                    : 'border border-neutral-300 bg-white dark:border-neutral-600 dark:bg-charcoal-800'
+                }`}
+                testID={`filter-${filter.value}`}
+              >
+                <Text
+                  className={`text-sm font-medium ${
+                    isActive
+                      ? 'text-white'
+                      : 'text-neutral-700 dark:text-neutral-300'
+                  }`}
+                >
+                  {filter.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </ScrollView>
+    </View>
+  );
+}

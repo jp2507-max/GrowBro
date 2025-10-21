@@ -1,0 +1,412 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Records of Processing Activities (RoPA) - Community Moderation System",
+  "version": "1.0.0",
+  "dateCreated": "2025-10-19",
+  "lastUpdated": "2025-10-19",
+  "controller": {
+    "name": "GrowBro",
+    "address": "[To be filled]",
+    "dpoContact": "[To be filled]",
+    "representativeEU": "[To be filled if non-EU controller]"
+  },
+  "entries": [
+    {
+      "id": "ROPA-MOD-001",
+      "processingActivity": "Content Moderation and Reporting",
+      "controller": "GrowBro",
+      "processor": null,
+      "jointControllers": null,
+      "dpoContact": "[To be filled]",
+      "purposes": [
+        "DSA Notice-and-Action compliance (Art. 16, 17)",
+        "Platform safety and harmful content prevention",
+        "Community guidelines enforcement",
+        "Transparency reporting (DSA Art. 24, 15)"
+      ],
+      "legalBasis": {
+        "gdprArticle6": [
+          "Art. 6(1)(c) - Legal obligation (DSA compliance)",
+          "Art. 6(1)(f) - Legitimate interests (platform safety, user protection)"
+        ],
+        "legitimateInterestsAssessment": {
+          "purpose": "Maintain safe platform environment free from harmful content",
+          "necessity": "No viable alternative to systematic content moderation for platform safety",
+          "balancingTest": "Platform safety interests outweigh minimal data processing; users retain appeal rights",
+          "documentLocation": "compliance/lia-content-moderation.md"
+        }
+      },
+      "dataCategories": [
+        "User identifiers (reporter ID, reported user ID, moderator ID)",
+        "Content reports (reported content snapshot/hash, explanation, evidence, category)",
+        "Contact information (reporter name and email per DSA Art. 16, with exceptions)",
+        "Moderation decisions (action taken, policy violations, reasoning, timestamp)",
+        "Statement of Reasons (facts, legal/ToS grounds, automation usage, redress options)",
+        "Audit trails (IP addresses, user agents, action metadata, cryptographic signatures)"
+      ],
+      "specialCategoriesData": {
+        "processed": false,
+        "categories": null,
+        "legalBasis": null
+      },
+      "dataSubjects": [
+        "Content reporters (platform users reporting violations)",
+        "Reported content authors (users whose content is reported)",
+        "Content moderators (internal staff and contractors)",
+        "Platform administrators (compliance and audit personnel)"
+      ],
+      "recipients": [
+        "Internal moderators (access to reports and content snapshots)",
+        "Supervisors (access to SLA monitoring and escalations)",
+        "Audit personnel (access to audit trails for compliance reporting)",
+        "European Commission (redacted SoR submissions to DSA Transparency Database)",
+        "Certified ODS bodies (appeal case data when escalated per DSA Art. 21)",
+        "Law enforcement (upon valid legal requests with documented basis)"
+      ],
+      "transfersOutsideEEA": {
+        "occurs": false,
+        "countries": null,
+        "safeguards": null,
+        "adequacyDecision": null
+      },
+      "retentionPeriod": {
+        "general": "12 months for active content reports (abuse prevention and security)",
+        "pii": "30 days for personal identifiers in moderation decisions",
+        "auditTrails": "7 years for anonymized audit events (legal defense and regulatory compliance)",
+        "legalHold": "Extended retention for active investigations or legal proceedings; quarterly review required",
+        "deletionProcedure": "Automated deletion workflows with legal hold exception handling; quarterly retention audits"
+      },
+      "technicalOrganizationalMeasures": [
+        "Encryption at rest (AES-256) for all moderation data",
+        "Encryption in transit (TLS 1.3) for all API communications",
+        "Role-based access control (RBAC) with principle of least privilege",
+        "Multi-factor authentication (MFA) for moderator and admin accounts",
+        "Cryptographic signatures for audit trail integrity verification",
+        "Append-only (WORM) storage for audit events with tamper detection",
+        "Regular security audits and penetration testing (annual minimum)",
+        "Data minimization (content hashes instead of full duplication, PII scrubbing for transparency reports)",
+        "Incident response plan with GDPR breach notification procedures"
+      ],
+      "dataSubjectRights": {
+        "rightToAccess": "Users can request access to their reports, moderation decisions, and appeals via data export API",
+        "rightToErasure": "Honored after retention period expiry or if lawful basis ceases; limited by legal obligation (DSA audit requirements) and legitimate interests (fraud prevention)",
+        "rightToRectification": "Users can update contact information; immutable audit trails cannot be modified",
+        "rightToPortability": "Structured JSON export available for user-generated reports and appeals",
+        "rightToObject": "Users can object to automated profiling; cannot object to legal obligation processing (DSA compliance)",
+        "rightToRestriction": "Processing restriction available during appeals; not applicable to legal obligation processing"
+      },
+      "dpiaRequired": true,
+      "dpiaReference": "compliance/dpia-moderation-system.json (processing operation: moderation-001)",
+      "notes": "DSA-specific processing with strict SLA requirements; see compliance/dsa-compliance-mapping.json for article-by-article mapping"
+    },
+    {
+      "id": "ROPA-AGE-001",
+      "processingActivity": "Age Verification and Minor Protection",
+      "controller": "GrowBro",
+      "processor": "[Third-party age verification provider if applicable]",
+      "jointControllers": null,
+      "dpoContact": "[To be filled]",
+      "purposes": [
+        "DSA Art. 28 compliance (protection of minors)",
+        "Prevent minors from accessing age-restricted content",
+        "Implement safer defaults for minor accounts (no profiling ads)"
+      ],
+      "legalBasis": {
+        "gdprArticle6": [
+          "Art. 6(1)(c) - Legal obligation (DSA Art. 28)",
+          "Art. 6(1)(f) - Legitimate interests (minor protection, content safety)"
+        ],
+        "legitimateInterestsAssessment": {
+          "purpose": "Protect minors from age-inappropriate content and implement safety-by-design principles",
+          "necessity": "Privacy-preserving age verification required to comply with DSA Art. 28 and EU Age-Verification Blueprint",
+          "balancingTest": "Minor protection interests justify minimal data processing (boolean attribute only); no persistent ID storage",
+          "documentLocation": "compliance/lia-age-verification.md"
+        }
+      },
+      "dataCategories": [
+        "Age attribute (over-18 boolean, no raw birthdate stored)",
+        "One-time verification token (session-based, cryptographically random)",
+        "Verification metadata (timestamp, IP address for fraud prevention only)"
+      ],
+      "specialCategoriesData": {
+        "processed": false,
+        "categories": null,
+        "legalBasis": null
+      },
+      "dataSubjects": [
+        "Platform users undergoing age verification",
+        "Minors attempting to access age-restricted content"
+      ],
+      "recipients": [
+        "Internal systems (age-gating enforcement engine)",
+        "Third-party age verification provider (one-time verification only, no persistent data sharing)"
+      ],
+      "transfersOutsideEEA": {
+        "occurs": false,
+        "countries": null,
+        "safeguards": "If third-party processor outside EEA: EU Standard Contractual Clauses (SCCs) required",
+        "adequacyDecision": null
+      },
+      "retentionPeriod": {
+        "general": "Session-based tokens (expire on logout); age attribute valid until user disputes or account deletion",
+        "pii": "No persistent storage of raw ID documents; verification metadata retained 30 days for fraud prevention",
+        "deletionProcedure": "Tokens deleted on session termination; age attribute deleted on account deletion or user request"
+      },
+      "technicalOrganizationalMeasures": [
+        "Privacy-preserving age attribute verification per EU Age-Verification Blueprint (boolean only, no raw ID)",
+        "One-time verification with reusable age token (no repeated ID checks)",
+        "No device fingerprinting without explicit ePrivacy Directive Art. 5(3) consent",
+        "Safer defaults for unverified users (restrict age-restricted content, no profiling ads to minors)",
+        "Encryption at rest for age attributes",
+        "Token replay prevention mechanisms (cryptographic randomness, expiry timestamps)",
+        "Rate limiting on verification attempts (prevent brute force)",
+        "Secure token generation (CSPRNG with sufficient entropy)",
+        "Regular audits of third-party verification provider compliance"
+      ],
+      "dataSubjectRights": {
+        "rightToAccess": "Users can request verification status and timestamp",
+        "rightToErasure": "Age attribute deleted on account deletion; cannot delete during active session without re-verification",
+        "rightToRectification": "Users can request re-verification if age attribute incorrect",
+        "rightToPortability": "Minimal data (boolean attribute, verification timestamp) included in data export",
+        "rightToObject": "Users cannot object to legal obligation processing (DSA Art. 28 compliance)",
+        "rightToRestriction": "Not applicable to legal obligation processing"
+      },
+      "dpiaRequired": true,
+      "dpiaReference": "compliance/dpia-moderation-system.json (processing operation: age-verification-001)",
+      "notes": "Privacy-preserving design per EU Age-Verification Blueprint; no raw ID storage; EUDI wallet compatibility planned for future integration"
+    },
+    {
+      "id": "ROPA-GEO-001",
+      "processingActivity": "Geo-Location and Regional Content Restrictions",
+      "controller": "GrowBro",
+      "processor": null,
+      "jointControllers": null,
+      "dpoContact": "[To be filled]",
+      "purposes": [
+        "Compliance with regional legal requirements (geo-blocking per moderation decisions)",
+        "Cultural sensitivity and localized content controls",
+        "Legal compliance (prevent distribution of illegal content in restricted jurisdictions)"
+      ],
+      "legalBasis": {
+        "gdprArticle6": [
+          "Art. 6(1)(c) - Legal obligation (regional laws requiring geo-blocking)",
+          "Art. 6(1)(f) - Legitimate interests (legal compliance, regional restrictions)"
+        ],
+        "legitimateInterestsAssessment": {
+          "purpose": "Comply with regional laws and prevent distribution of illegal content in restricted jurisdictions",
+          "necessity": "IP geolocation necessary to enforce geo-blocking; GPS optional with consent for enhanced accuracy",
+          "balancingTest": "Legal compliance interests justify minimal IP processing; GPS requires explicit consent",
+          "documentLocation": "compliance/lia-geo-location.md"
+        }
+      },
+      "dataCategories": [
+        "IP address (for server-side geolocation, session-based only)",
+        "GPS coordinates (only with explicit ePrivacy consent, for enhanced accuracy)",
+        "Derived country/region (cached with 1-hour TTL for performance)"
+      ],
+      "specialCategoriesData": {
+        "processed": false,
+        "categories": null,
+        "legalBasis": null
+      },
+      "dataSubjects": [
+        "All platform users accessing content (automated geo-detection on content load)"
+      ],
+      "recipients": [
+        "Internal systems (geo-blocking enforcement engine)",
+        "Content authors (notifications when geo-restrictions applied to their content)"
+      ],
+      "transfersOutsideEEA": {
+        "occurs": false,
+        "countries": null,
+        "safeguards": null,
+        "adequacyDecision": null
+      },
+      "retentionPeriod": {
+        "general": "IP addresses not persistently stored; cached location decisions 1 hour TTL; re-check on app start",
+        "pii": "No long-term location storage; IP addresses used only for session-based geolocation",
+        "deletionProcedure": "Automatic cache expiry (1 hour); no persistent location data"
+      },
+      "technicalOrganizationalMeasures": [
+        "Default to server-side IP geolocation (no ePrivacy consent required per EDPB guidance)",
+        "GPS location requested only with explicit consent and clear user benefit",
+        "No device fingerprinting without ePrivacy Directive Art. 5(3) consent",
+        "Cached location decisions with 1-hour TTL; re-check on app start",
+        "Apply most restrictive setting when signals mismatch (IP vs GPS region)",
+        "No persistent storage of raw GPS coordinates",
+        "Encrypted transmission of location data (TLS 1.3)",
+        "Access controls for geo-blocking rule configuration (admin-only)",
+        "Audit logging for geo-blocking decisions (who, what, when, why)"
+      ],
+      "dataSubjectRights": {
+        "rightToAccess": "Users can request current detected location and geo-blocking status",
+        "rightToErasure": "Minimal persistent data (cached decisions expire automatically after 1 hour)",
+        "rightToRectification": "Users can dispute location detection via appeal process",
+        "rightToPortability": "Minimal data (no persistent location storage)",
+        "rightToObject": "Users can object to GPS tracking; cannot object to IP geolocation (legal obligation)",
+        "rightToRestriction": "Not applicable to legal obligation processing"
+      },
+      "dpiaRequired": true,
+      "dpiaReference": "compliance/dpia-moderation-system.json (processing operation: geo-location-001)",
+      "notes": "IP geolocation default (no consent required per ePrivacy); GPS requires explicit consent; VPN detection configurable with appeal flow for false positives"
+    },
+    {
+      "id": "ROPA-AUDIT-001",
+      "processingActivity": "Audit Trail and Compliance Logging",
+      "controller": "GrowBro",
+      "processor": null,
+      "jointControllers": null,
+      "dpoContact": "[To be filled]",
+      "purposes": [
+        "DSA transparency reporting (Art. 15, 24)",
+        "Regulatory compliance (GDPR audit trail, DSA SoR database submissions)",
+        "Security incident investigation and forensic analysis",
+        "Legal defense and dispute resolution"
+      ],
+      "legalBasis": {
+        "gdprArticle6": [
+          "Art. 6(1)(c) - Legal obligation (DSA transparency reporting, GDPR accountability)",
+          "Art. 6(1)(f) - Legitimate interests (security, legal defense)"
+        ],
+        "legitimateInterestsAssessment": {
+          "purpose": "Maintain comprehensive audit trails for regulatory compliance and security investigations",
+          "necessity": "Cryptographically signed audit trails required for DSA transparency reporting and GDPR accountability",
+          "balancingTest": "Compliance and security interests justify minimal data processing; PII anonymized after 30 days",
+          "documentLocation": "compliance/lia-audit-trails.md"
+        }
+      },
+      "dataCategories": [
+        "Audit events (event type, timestamp, actor ID, resource ID, action metadata)",
+        "Cryptographic signatures (per-event hash, chain hash, signer key ID)",
+        "Access logs (who accessed audit trails, when, why)",
+        "SoR export queue (decision ID, redacted payload, submission status, EC Transparency DB ID)"
+      ],
+      "specialCategoriesData": {
+        "processed": false,
+        "categories": null,
+        "legalBasis": null
+      },
+      "dataSubjects": [
+        "Content moderators (actors generating audit events)",
+        "Reported users (subjects of moderation decisions)",
+        "Audit trail viewers (compliance and legal personnel)"
+      ],
+      "recipients": [
+        "Internal audit personnel (compliance and security teams)",
+        "Supervisory authorities (upon valid data protection authority requests)",
+        "European Commission (redacted SoR submissions to DSA Transparency Database)",
+        "External auditors (for annual compliance audits, under NDA)"
+      ],
+      "transfersOutsideEEA": {
+        "occurs": false,
+        "countries": null,
+        "safeguards": null,
+        "adequacyDecision": null
+      },
+      "retentionPeriod": {
+        "general": "7 years for cryptographically signed audit events (legal defense and regulatory compliance)",
+        "pii": "30 days for personal identifiers in audit events; anonymized after 30 days while preserving aggregate metrics",
+        "deletionProcedure": "Automated PII anonymization after 30 days; full audit trail deletion after 7 years unless legal hold"
+      },
+      "technicalOrganizationalMeasures": [
+        "Append-only (WORM) storage for audit events with database-level UPDATE/DELETE prevention",
+        "Per-row cryptographic signatures with documented key rotation procedure",
+        "Monthly partitioning with checksum manifest per partition (signed) for tamper detection",
+        "Periodic offsite immutable snapshots (object storage with versioning/immutability)",
+        "Role-based access control for audit trail access (need-to-know basis)",
+        "Access logging for all audit trail queries (audit the auditors)",
+        "Encryption at rest (AES-256) and in transit (TLS 1.3)",
+        "Regular integrity verification (hash chain validation, checksum manifest checks)"
+      ],
+      "dataSubjectRights": {
+        "rightToAccess": "Users can request access to audit events involving their data via structured export",
+        "rightToErasure": "Limited by legal obligation (DSA/GDPR audit requirements); honored after 7-year retention period",
+        "rightToRectification": "Immutable audit trails cannot be modified (integrity requirement)",
+        "rightToPortability": "Structured JSON export available for user-related audit events",
+        "rightToObject": "Cannot object to legal obligation processing (DSA/GDPR compliance)",
+        "rightToRestriction": "Not applicable to legal obligation processing"
+      },
+      "dpiaRequired": true,
+      "dpiaReference": "compliance/dpia-moderation-system.json (processing operation: moderation-001, audit components)",
+      "notes": "Append-only WORM storage with cryptographic integrity verification; PII anonymized after 30 days; 7-year retention for legal defense"
+    },
+    {
+      "id": "ROPA-TRANS-001",
+      "processingActivity": "Transparency Reporting and SoR Database Submissions",
+      "controller": "GrowBro",
+      "processor": null,
+      "jointControllers": null,
+      "dpoContact": "[To be filled]",
+      "purposes": [
+        "DSA Art. 24(5) compliance (SoR submissions to Commission Transparency Database)",
+        "DSA Art. 15 & 24 transparency reporting (annual reports)",
+        "Public transparency and accountability"
+      ],
+      "legalBasis": {
+        "gdprArticle6": [
+          "Art. 6(1)(c) - Legal obligation (DSA Art. 24(5) SoR database submissions)"
+        ]
+      },
+      "dataCategories": [
+        "Redacted Statement of Reasons (no personal data per DSA Art. 24(5))",
+        "Aggregated moderation metrics (notices by category, handling times, appeal outcomes)",
+        "Pseudonymized actor identifiers (reporter/moderator/user IDs replaced with HMAC-SHA256 hashes)",
+        "Content age categories (new/recent/archived, no exact timestamps)",
+        "Jurisdiction counts (affected territories count, no IP/GPS data)"
+      ],
+      "specialCategoriesData": {
+        "processed": false,
+        "categories": null,
+        "legalBasis": null
+      },
+      "dataSubjects": [
+        "Reported users (subjects of moderation decisions, pseudonymized in exports)",
+        "Content reporters (pseudonymized in exports)",
+        "Content moderators (pseudonymized in exports)"
+      ],
+      "recipients": [
+        "European Commission DSA Transparency Database (redacted SoR submissions)",
+        "General public (annual transparency reports with aggregated metrics)",
+        "Supervisory authorities (upon valid requests)"
+      ],
+      "transfersOutsideEEA": {
+        "occurs": false,
+        "countries": null,
+        "safeguards": "EU Commission DSA Transparency Database hosted within EEA",
+        "adequacyDecision": null
+      },
+      "retentionPeriod": {
+        "general": "Indefinite retention of aggregated/anonymized transparency metrics (no personal data)",
+        "pii": "No personal data in transparency reports or SoR exports (redacted before submission)",
+        "deletionProcedure": "Not applicable (no personal data retained)"
+      },
+      "technicalOrganizationalMeasures": [
+        "Deterministic PII scrubbing pipeline before SoR export (HMAC-SHA256 pseudonymization)",
+        "Golden tests to verify no personal data in redacted payloads",
+        "Environment-specific pseudonymization salts (cross-environment unlinkability)",
+        "Aggregation strategy (counts, categories, boolean flags instead of raw data)",
+        "Audit trail for scrubbing (timestamp, algorithm version, redacted fields list, salt version)",
+        "DLQ handling for failed submissions with exponential backoff",
+        "Circuit breaker pattern to prevent cascading failures",
+        "Idempotency by decision_id to prevent duplicate submissions"
+      ],
+      "dataSubjectRights": {
+        "rightToAccess": "Not applicable (no personal data in transparency reports)",
+        "rightToErasure": "Not applicable (no personal data retained)",
+        "rightToRectification": "Not applicable (no personal data)",
+        "rightToPortability": "Not applicable (no personal data)",
+        "rightToObject": "Not applicable (no personal data processing)",
+        "rightToRestriction": "Not applicable (no personal data)"
+      },
+      "dpiaRequired": false,
+      "dpiaReference": "Not required (no personal data processing in transparency exports)",
+      "notes": "DSA Art. 24(5) compliance with strict no-personal-data requirement; deterministic PII scrubbing with golden tests; pseudonymized identifiers only"
+    }
+  ],
+  "metadata": {
+    "reviewSchedule": "Quarterly reviews of all RoPA entries; immediate updates upon processing changes",
+    "responsiblePerson": "[Data Protection Officer]",
+    "lastAudit": null,
+    "nextAudit": "2026-01-19"
+  }
+}

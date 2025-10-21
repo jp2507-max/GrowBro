@@ -1,0 +1,318 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Data Retention Schedule - Community Moderation System",
+  "version": "1.0.0",
+  "dateCreated": "2025-10-19",
+  "lastUpdated": "2025-10-19",
+  "scope": "Purpose-bound retention periods per GDPR Art. 5(1)(e) storage limitation principle",
+  "retentionPolicies": [
+    {
+      "dataCategory": "Content Reports",
+      "ropaReference": "ROPA-MOD-001",
+      "dataElements": [
+        "Reporter identity (user ID, contact if provided)",
+        "Reported content snapshot/hash",
+        "Report explanation and evidence",
+        "Report metadata (timestamp, category, priority)"
+      ],
+      "retentionPeriod": "12 months",
+      "lawfulBasis": "Legitimate interests (abuse prevention, security, pattern detection for repeat reporters)",
+      "purposeLimitation": "Retained to detect manifestly unfounded reporters, prevent abuse of reporting system, and support ongoing investigations",
+      "deletionTriggers": [
+        "12 months after report submission (default)",
+        "Extended for active moderation investigations (documented need)",
+        "Extended for legal hold (quarterly review required)",
+        "Immediate deletion if reporter requests erasure and no ongoing investigation"
+      ],
+      "exceptions": {
+        "legalHold": "Reports under legal hold retained beyond 12 months with documented lawful need; quarterly review to assess necessity; automatic expiry after legal proceeding conclusion",
+        "activeInvestigations": "Reports part of ongoing abuse investigations retained until investigation closes; maximum extension 6 months with supervisor approval"
+      },
+      "automatedDeletion": true,
+      "deletionWorkflow": "Monthly batch job deletes reports older than 12 months; legal hold flag prevents deletion; audit log entry created per deletion batch"
+    },
+    {
+      "dataCategory": "Moderation Decisions",
+      "ropaReference": "ROPA-MOD-001",
+      "dataElements": [
+        "Decision ID and timestamp",
+        "Moderator ID (pseudonymized after 30 days)",
+        "Reported user ID (pseudonymized after 30 days)",
+        "Action taken and policy violations",
+        "Statement of Reasons (user-facing copy)",
+        "Decision reasoning and evidence links"
+      ],
+      "retentionPeriod": "30 days for PII; 7 years for anonymized audit trail",
+      "lawfulBasis": "Legal obligation (DSA transparency reporting, GDPR accountability) + Legitimate interests (legal defense)",
+      "purposeLimitation": "PII retained 30 days for user appeals and transparency; anonymized decisions retained 7 years for legal defense and regulatory compliance",
+      "deletionTriggers": [
+        "30 days after decision: PII anonymized (user/moderator IDs replaced with pseudonyms)",
+        "7 years after decision: Full deletion of anonymized audit trail",
+        "Extended for legal hold (documented need, quarterly review)"
+      ],
+      "anonymizationProcess": {
+        "atDay30": "Replace user/moderator IDs with HMAC-SHA256 pseudonyms; remove free-text fields with potential PII; retain policy codes, action types, timestamps, aggregated metrics",
+        "preservedMetrics": "Action type, policy violation category, appeal outcome, handling time, trusted flagger involvement (boolean)"
+      },
+      "exceptions": {
+        "legalHold": "Decisions under legal hold retained with full PII beyond 30 days; quarterly review required; automatic expiry after legal proceeding conclusion",
+        "activeAppeals": "Decisions under active appeal retain PII until appeal resolution + 30 days"
+      },
+      "automatedDeletion": true,
+      "deletionWorkflow": "Daily job anonymizes decisions at 30-day mark; monthly job deletes anonymized records at 7-year mark; legal hold flag prevents anonymization/deletion"
+    },
+    {
+      "dataCategory": "Appeals",
+      "ropaReference": "ROPA-MOD-001",
+      "dataElements": [
+        "Appeal ID and timestamp",
+        "Appellant user ID",
+        "Original decision reference",
+        "Counter-arguments and evidence",
+        "Reviewer ID and decision",
+        "Appeal outcome and reasoning"
+      ],
+      "retentionPeriod": "30 days after resolution",
+      "lawfulBasis": "Legitimate interests (user rights fulfillment, decision quality monitoring)",
+      "purposeLimitation": "Retained to support user rights (access to appeal history), monitor decision quality, and detect patterns requiring policy updates",
+      "deletionTriggers": [
+        "30 days after appeal resolution (default)",
+        "Extended for legal hold (documented need, quarterly review)",
+        "Aggregate metrics (appeal count, reversal rate) retained indefinitely after PII deletion"
+      ],
+      "anonymizationProcess": {
+        "atDeletion": "Before deletion, extract aggregate metrics (appeal type, outcome, reversal rate, handling time); pseudonymize user/reviewer IDs in aggregated data"
+      },
+      "exceptions": {
+        "legalHold": "Appeals under legal hold retained beyond 30 days with documented need; quarterly review required; automatic expiry after legal proceeding conclusion",
+        "escalatedToODS": "Appeals escalated to ODS retained until ODS resolution + 30 days (Art. 21 compliance)"
+      },
+      "automatedDeletion": true,
+      "deletionWorkflow": "Daily job deletes resolved appeals at 30-day mark; legal hold flag prevents deletion; aggregate metrics extracted before deletion"
+    },
+    {
+      "dataCategory": "Age Verification Data",
+      "ropaReference": "ROPA-AGE-001",
+      "dataElements": [
+        "Age attribute (over-18 boolean)",
+        "One-time verification token (session-based)",
+        "Verification metadata (timestamp, IP for fraud prevention)"
+      ],
+      "retentionPeriod": "Session-based tokens: expire on logout; Age attribute: valid until user disputes or account deletion; Verification metadata: 30 days",
+      "lawfulBasis": "Legal obligation (DSA Art. 28) + Legitimate interests (fraud prevention)",
+      "purposeLimitation": "Tokens retained only for active session; age attribute retained for age-gating enforcement; verification metadata retained 30 days for fraud detection",
+      "deletionTriggers": [
+        "Tokens: automatic deletion on session termination (logout, timeout)",
+        "Age attribute: deleted on account deletion or user dispute (with re-verification requirement)",
+        "Verification metadata: 30 days after verification event"
+      ],
+      "exceptions": {
+        "fraudInvestigation": "Verification metadata retained beyond 30 days if part of active fraud investigation; maximum extension 90 days with supervisor approval"
+      },
+      "automatedDeletion": true,
+      "deletionWorkflow": "Real-time token deletion on session end; daily job deletes verification metadata at 30-day mark; age attribute deleted on account deletion trigger"
+    },
+    {
+      "dataCategory": "Geo-Location Data",
+      "ropaReference": "ROPA-GEO-001",
+      "dataElements": [
+        "IP address (session-based geolocation)",
+        "GPS coordinates (optional, with consent)",
+        "Derived country/region (cached)"
+      ],
+      "retentionPeriod": "IP addresses: not persistently stored; Cached location decisions: 1 hour TTL; GPS coordinates: not persistently stored",
+      "lawfulBasis": "Legal obligation (regional geo-blocking laws) + Legitimate interests (legal compliance) + Consent (GPS only)",
+      "purposeLimitation": "IP addresses used only for session-based geolocation; cached decisions retained 1 hour for performance; GPS coordinates processed in-memory only (no persistent storage)",
+      "deletionTriggers": [
+        "IP addresses: automatic expiry at session end (no persistent storage)",
+        "Cached location decisions: 1-hour TTL with automatic cache expiry",
+        "GPS coordinates: processed in-memory only, never persisted to disk"
+      ],
+      "exceptions": {
+        "none": "No exceptions; location data not retained beyond session/cache TTL"
+      },
+      "automatedDeletion": true,
+      "deletionWorkflow": "Cache eviction policy auto-expires cached decisions at 1-hour mark; GPS coordinates never written to persistent storage"
+    },
+    {
+      "dataCategory": "Audit Events",
+      "ropaReference": "ROPA-AUDIT-001",
+      "dataElements": [
+        "Event type and timestamp",
+        "Actor ID (moderator, user, admin)",
+        "Resource ID (report, decision, content)",
+        "Action metadata (before/after state, IP, user agent)",
+        "Cryptographic signatures (event hash, chain hash)"
+      ],
+      "retentionPeriod": "7 years for cryptographically signed audit events; 30 days for PII in event metadata",
+      "lawfulBasis": "Legal obligation (GDPR accountability, DSA transparency reporting) + Legitimate interests (security, legal defense)",
+      "purposeLimitation": "Full audit events retained 7 years for legal defense and regulatory compliance; PII anonymized after 30 days to minimize privacy impact",
+      "deletionTriggers": [
+        "30 days after event: PII anonymization (user/moderator IDs replaced with pseudonyms, IP addresses removed)",
+        "7 years after event: Full deletion of anonymized audit trail",
+        "Extended for legal hold (documented need, quarterly review)"
+      ],
+      "anonymizationProcess": {
+        "atDay30": "Replace actor IDs with HMAC-SHA256 pseudonyms; remove IP addresses and user agents; retain event type, timestamp, resource ID, action type, cryptographic signatures",
+        "preservedMetrics": "Event counts, action types, resource types, timestamps (for temporal analysis), cryptographic integrity chain"
+      },
+      "exceptions": {
+        "legalHold": "Audit events under legal hold retained with full PII beyond 30 days; quarterly review required; automatic expiry after legal proceeding conclusion",
+        "securityIncidents": "Audit events part of active security investigation retained with full PII until investigation closes; maximum extension 6 months with CISO approval"
+      },
+      "automatedDeletion": true,
+      "deletionWorkflow": "Daily job anonymizes audit events at 30-day mark; monthly job deletes anonymized events at 7-year mark; legal hold flag prevents anonymization/deletion; cryptographic integrity verification before deletion"
+    },
+    {
+      "dataCategory": "Transparency Reports and SoR Exports",
+      "ropaReference": "ROPA-TRANS-001",
+      "dataElements": [
+        "Redacted Statement of Reasons (no personal data)",
+        "Aggregated moderation metrics",
+        "Pseudonymized actor identifiers (HMAC-SHA256)",
+        "Content age categories",
+        "Jurisdiction counts"
+      ],
+      "retentionPeriod": "Indefinite (no personal data retained)",
+      "lawfulBasis": "Legal obligation (DSA Art. 24(5) SoR database submissions, Art. 15 & 24 transparency reporting)",
+      "purposeLimitation": "Transparency reports and SoR exports contain only anonymized/aggregated data; no personal data processing per DSA Art. 24(5) requirement",
+      "deletionTriggers": [
+        "None (no personal data retained; indefinite retention permitted per GDPR Art. 5(1)(e) exception for anonymized data)"
+      ],
+      "exceptions": {
+        "none": "No exceptions; data is anonymized/aggregated (not personal data)"
+      },
+      "automatedDeletion": false,
+      "deletionWorkflow": "Not applicable; no personal data retained"
+    },
+    {
+      "dataCategory": "Statement of Reasons (User-Facing)",
+      "ropaReference": "ROPA-MOD-001",
+      "dataElements": [
+        "Decision ID reference",
+        "Facts and circumstances",
+        "Legal/ToS ground with references",
+        "Automation usage disclosure",
+        "Redress options (appeals, ODS, court)",
+        "Territorial scope"
+      ],
+      "retentionPeriod": "Follows moderation decision retention (30 days PII, 7 years anonymized)",
+      "lawfulBasis": "Legal obligation (DSA Art. 17) + Legitimate interests (legal defense)",
+      "purposeLimitation": "User-facing SoR retained to support appeals process and transparency; anonymized after 30 days; retained 7 years for legal defense",
+      "deletionTriggers": [
+        "Follows moderation decision deletion schedule (see Moderation Decisions category)"
+      ],
+      "exceptions": {
+        "sameAsDecisions": "Follows same legal hold and exception rules as moderation decisions"
+      },
+      "automatedDeletion": true,
+      "deletionWorkflow": "Follows moderation decision deletion workflow (linked by decision ID)"
+    },
+    {
+      "dataCategory": "Trusted Flagger Records",
+      "ropaReference": "ROPA-MOD-001",
+      "dataElements": [
+        "Flagger ID and certification details",
+        "Quality analytics (accuracy, handling times)",
+        "Badge status and privileges",
+        "Periodic review outcomes"
+      ],
+      "retentionPeriod": "Duration of trusted flagger status + 12 months",
+      "lawfulBasis": "Legal obligation (DSA Art. 22 trusted flagger program) + Legitimate interests (quality monitoring)",
+      "purposeLimitation": "Retained to maintain trusted flagger program, monitor quality, and support periodic reviews",
+      "deletionTriggers": [
+        "12 months after trusted flagger status revoked or expired",
+        "Immediate deletion if flagger requests erasure (with certification termination)"
+      ],
+      "exceptions": {
+        "legalHold": "Trusted flagger records under legal hold retained beyond 12 months with documented need; quarterly review required"
+      },
+      "automatedDeletion": true,
+      "deletionWorkflow": "Monthly job deletes revoked/expired trusted flagger records at 12-month mark; legal hold flag prevents deletion"
+    },
+    {
+      "dataCategory": "Repeat Offender Records",
+      "ropaReference": "ROPA-MOD-001",
+      "dataElements": [
+        "User ID (pseudonymized after 30 days)",
+        "Violation history (counts, categories)",
+        "Enforcement actions taken",
+        "Current suspension/restriction status"
+      ],
+      "retentionPeriod": "12 months after last violation; 30 days for user ID",
+      "lawfulBasis": "Legal obligation (DSA Art. 23 measures against misuse) + Legitimate interests (abuse prevention)",
+      "purposeLimitation": "Retained to detect repeat offenders, apply graduated enforcement, and prevent abuse of platform",
+      "deletionTriggers": [
+        "30 days after last violation: User ID pseudonymized",
+        "12 months after last violation: Full deletion of repeat offender record",
+        "Extended for active enforcement actions (e.g., ongoing suspension)"
+      ],
+      "anonymizationProcess": {
+        "atDay30": "Replace user ID with HMAC-SHA256 pseudonym; retain violation counts and categories (no free-text)"
+      },
+      "exceptions": {
+        "activeEnforcement": "Records for users under active suspension/restriction retained until enforcement action expires + 30 days"
+      },
+      "automatedDeletion": true,
+      "deletionWorkflow": "Daily job pseudonymizes user IDs at 30-day mark; monthly job deletes pseudonymized records at 12-month mark"
+    }
+  ],
+  "legalHoldProcedures": {
+    "triggerEvents": [
+      "Active legal proceedings involving moderation decisions",
+      "Regulatory investigation by supervisory authority",
+      "Internal investigation of serious policy violations",
+      "Law enforcement request with valid legal basis"
+    ],
+    "approvalProcess": "Legal hold requests require Legal Counsel approval with documented lawful need; DPO review for GDPR compliance; quarterly review of all active holds",
+    "flaggingMechanism": "Database-level legal_hold flag prevents automated deletion; audit log entry required for legal hold activation and removal",
+    "reviewSchedule": "Quarterly review of all active legal holds; automatic expiry flag set upon legal proceeding conclusion; manual removal requires Legal Counsel approval",
+    "maxDuration": "No hard maximum; must be proportionate to legal need; quarterly review ensures necessity; automatic expiry upon conclusion of legal proceeding or investigation"
+  },
+  "automatedDeletionWorkflows": {
+    "dailyJobs": [
+      "Delete resolved appeals at 30-day mark",
+      "Delete age verification metadata at 30-day mark",
+      "Anonymize moderation decisions at 30-day mark",
+      "Anonymize audit events at 30-day mark",
+      "Delete age verification tokens on session end",
+      "Pseudonymize repeat offender user IDs at 30-day mark"
+    ],
+    "monthlyJobs": [
+      "Delete content reports at 12-month mark",
+      "Delete anonymized moderation decisions at 7-year mark",
+      "Delete anonymized audit events at 7-year mark",
+      "Delete trusted flagger records 12 months after revocation"
+    ],
+    "auditLogging": "All automated deletions logged in audit trail with: (1) deletion trigger (retention expiry, legal hold release); (2) record count; (3) timestamp; (4) job executor ID",
+    "errorHandling": "Failed deletions logged as errors; retry with exponential backoff; manual intervention required after 3 failed attempts; DPO notification for persistent failures"
+  },
+  "userRights": {
+    "rightToErasure": {
+      "process": "Users can request erasure via data export/deletion flow in app settings; manual review required for legal hold or ongoing investigations",
+      "timeline": "Erasure honored within 30 days unless legal hold or ongoing investigation; user notified of delay with justification",
+      "exceptions": "Legal obligation processing (DSA audit, GDPR accountability) cannot be erased before retention expiry; legitimate interests erasure honored unless overriding grounds (fraud prevention, legal defense)"
+    },
+    "dataExport": {
+      "process": "Users can request structured JSON export of all personal data via app settings",
+      "timeline": "Export generated within 7 days of request; download link valid 30 days",
+      "includedData": "All user-generated content reports, moderation decisions (with SoR), appeal history, age verification status, current geo-blocking status"
+    }
+  },
+  "complianceMonitoring": {
+    "quarterlyAudits": "Quarterly retention audits verify: (1) automated deletion compliance; (2) legal hold necessity; (3) anonymization process correctness; (4) user erasure request handling",
+    "annualReview": "Annual review of all retention periods and lawful bases; update retention schedule if processing purposes change",
+    "metrics": [
+      "Deletion workflow success rate (target: >99%)",
+      "User erasure request handling time (target: <30 days)",
+      "Legal hold review completion rate (target: 100% quarterly)",
+      "Anonymization correctness (golden tests: 100% pass rate)"
+    ]
+  },
+  "metadata": {
+    "reviewSchedule": "Annual review of all retention periods; immediate updates upon processing changes or legal requirement updates",
+    "responsiblePerson": "[Data Protection Officer]",
+    "lastReview": null,
+    "nextReview": "2026-10-19"
+  }
+}

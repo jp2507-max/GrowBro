@@ -1,0 +1,69 @@
+/**
+ * Queue List Component
+ * Renders list of queued reports with priority lanes
+ * Requirements: 2.1, 2.2, 2.3
+ */
+
+import { FlashList } from '@shopify/flash-list';
+import React from 'react';
+
+import { ActivityIndicator, Text, View } from '@/components/ui';
+import type { QueuedReport } from '@/types/moderation';
+
+import { QueueItem } from './queue-item';
+
+type Props = {
+  reports: QueuedReport[];
+  isLoading?: boolean;
+  onRefresh?: () => void;
+  testID?: string;
+};
+
+export function QueueList({
+  reports,
+  isLoading = false,
+  onRefresh,
+  testID = 'queue-list',
+}: Props) {
+  if (isLoading && reports.length === 0) {
+    return (
+      <View
+        className="flex-1 items-center justify-center"
+        testID={`${testID}-loading`}
+      >
+        <ActivityIndicator size="large" />
+        <Text className="mt-4 text-neutral-600 dark:text-neutral-400">
+          Loading queue...
+        </Text>
+      </View>
+    );
+  }
+
+  if (reports.length === 0) {
+    return (
+      <View
+        className="flex-1 items-center justify-center p-6"
+        testID={`${testID}-empty`}
+      >
+        <Text className="text-center text-lg font-medium text-neutral-700 dark:text-neutral-300">
+          No reports in queue
+        </Text>
+        <Text className="mt-2 text-center text-sm text-neutral-600 dark:text-neutral-400">
+          All caught up! Check back later.
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <FlashList
+      data={reports}
+      renderItem={({ item }) => <QueueItem report={item} />}
+      keyExtractor={(item) => item.id}
+      contentContainerClassName="px-4 py-2"
+      onRefresh={onRefresh}
+      refreshing={isLoading}
+      testID={testID}
+    />
+  );
+}

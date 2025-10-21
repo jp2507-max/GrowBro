@@ -1,0 +1,350 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "DSA Compliance Mapping - Community Moderation System",
+  "version": "1.0.0",
+  "dateCreated": "2025-10-19",
+  "lastUpdated": "2025-10-19",
+  "scope": "Comprehensive mapping of DSA articles to system components and implementation details",
+  "dsaArticles": [
+    {
+      "article": "Art. 16 - Notice-and-Action Mechanisms",
+      "requirement": "Electronic notice submission with mandatory fields; sufficiently substantiated explanation; exact content locator; reporter contact (with exceptions); good-faith declaration",
+      "systemComponents": [
+        "Reporting Service (report intake API)",
+        "Content Report UI (mobile app form)",
+        "Duplicate Detection Engine"
+      ],
+      "implementation": {
+        "twoTrackSystem": "Separate intake for 'illegal content' vs 'policy/terms breach'; illegal track requires jurisdiction selector",
+        "mandatoryFields": {
+          "explanation": "Free-text field requiring substantiated explanation of illegality/policy violation",
+          "contentLocator": "Exact deep link, content ID, or URL to reported content",
+          "reporterContact": "Name and email with contextual exceptions (e.g., illegal content reports may waive contact for safety)",
+          "goodFaithDeclaration": "Checkbox with legal text confirming good-faith submission"
+        },
+        "validation": "Server-side validation with actionable error messages; reject incomplete notices",
+        "acknowledgment": "Unique report ID generated within 2 seconds; confirmation message to reporter"
+      },
+      "acceptanceCriteria": [
+        "Report form displays clearly accessible 'Report' option on all community content",
+        "Two-track system (illegal vs policy) with jurisdiction selector for illegal",
+        "Mandatory Art. 16 fields validated server-side with actionable errors",
+        "Unique report ID and confirmation within 2 seconds",
+        "Data minimization (only necessary fields collected with documented legal basis)"
+      ],
+      "testStrategy": "Unit tests for field validation; integration tests for two-track flow; E2E tests for report submission; compliance tests for mandatory field presence",
+      "complianceStatus": "Not implemented",
+      "blockers": null
+    },
+    {
+      "article": "Art. 17 - Statement of Reasons",
+      "requirement": "Automated Statement of Reasons (SoR) to users including facts/circumstances, legal or T&Cs ground, automation usage details, and redress options",
+      "systemComponents": [
+        "Moderation Service (SoR generator)",
+        "Notification System (user delivery)",
+        "Transparency Service (Commission DB submission)"
+      ],
+      "implementation": {
+        "mandatoryFields": {
+          "factsAndCircumstances": "Clear description of reported content and violation",
+          "legalGround": "Reference to specific law (if illegal) or Terms/Guidelines (if policy breach)",
+          "automationUsage": "Disclosure of whether automated systems detected/identified content or assisted decision",
+          "actionTaken": "Specific action (content removal, geo-block, suspension, etc.) with scope",
+          "territorialScope": "Geographic scope of restriction (if applicable)",
+          "redressOptions": "Internal appeals (Art. 20), ODS (Art. 21), judicial remedy with deadlines"
+        },
+        "deliveryTimeline": "SoR sent to user within 15 minutes of decision; delivered via in-app notification and email",
+        "audit": "Immutable audit trail entry for SoR generation and delivery with delivery timestamp"
+      },
+      "acceptanceCriteria": [
+        "SoR generated for all restrictive moderation decisions",
+        "SoR includes all mandatory Art. 17 fields with clear, non-technical language",
+        "SoR delivered to user within 15 minutes via in-app notification",
+        "Redress options clearly stated with deadlines (14 days content removal, 30 days account action)"
+      ],
+      "testStrategy": "Unit tests for SoR generation logic; integration tests for SoR delivery; compliance tests for mandatory field presence; golden tests for SoR template correctness",
+      "complianceStatus": "Not implemented",
+      "blockers": null
+    },
+    {
+      "article": "Art. 20 - Internal Complaint-Handling",
+      "requirement": "Timely, non-discriminatory, free human review of moderation decisions; ≥7 day appeal window; different reviewer than original moderator",
+      "systemComponents": [
+        "Appeals Service (intake, assignment, decision)",
+        "Reviewer Assignment Engine (conflict-of-interest prevention)",
+        "Decision Reversal Engine"
+      ],
+      "implementation": {
+        "appealWindow": "14 days for content removal decisions; 30 days for account action decisions (both exceed ≥7 day minimum)",
+        "humanReview": "Guaranteed human review by different moderator; conflict-of-interest checks prevent original decision-maker review",
+        "freeOfCharge": "No fees for appeal submission or review",
+        "nonDiscriminatory": "All users have equal appeal rights; no preferential treatment based on account status",
+        "timelyReview": "Appeals processed within 72 hours; SLA monitoring with escalation at 90% threshold"
+      },
+      "acceptanceCriteria": [
+        "SoR includes clear appeal instructions and deadlines (≥14 days)",
+        "Appeal form requires detailed counter-arguments with evidence upload",
+        "Appeals assigned to different moderators with conflict-of-interest prevention",
+        "Appeal decisions include detailed explanations and final determination",
+        "Upheld appeals automatically reverse original actions within 15 minutes"
+      ],
+      "testStrategy": "Unit tests for conflict-of-interest prevention; integration tests for appeal assignment; E2E tests for full appeal flow; compliance tests for ≥7 day window enforcement",
+      "complianceStatus": "Not implemented",
+      "blockers": null
+    },
+    {
+      "article": "Art. 21 - Out-of-Court Dispute Settlement",
+      "requirement": "Integration with certified ODS bodies for escalated disputes; ≤90 day target resolution",
+      "systemComponents": [
+        "Appeals Service (ODS escalation integration)",
+        "ODS API Client"
+      ],
+      "implementation": {
+        "escalationPath": "After internal appeal exhaustion, users can escalate to certified ODS bodies",
+        "odsIntegration": "API integration with certified ODS bodies; case data export in structured format",
+        "resolutionTarget": "90-day target resolution communicated to users; outcome tracking for transparency reporting",
+        "binding": "ODS outcomes are binding; automatic action reversal if ODS upholds user appeal"
+      },
+      "acceptanceCriteria": [
+        "SoR includes ODS escalation option after internal appeal exhaustion",
+        "ODS escalation flow exports case data to certified ODS body",
+        "ODS outcomes tracked with resolution timestamp and result",
+        "Binding ODS outcomes automatically reverse actions within 24 hours"
+      ],
+      "testStrategy": "Integration tests for ODS API; E2E tests for escalation flow; compliance tests for 90-day tracking",
+      "complianceStatus": "Not implemented",
+      "blockers": "Certified ODS body selection pending legal review"
+    },
+    {
+      "article": "Art. 22 - Trusted Flaggers",
+      "requirement": "Priority intake lane for trusted flaggers with distinct badges and quality analytics; periodic quality review",
+      "systemComponents": [
+        "Moderation Service (priority lane, quality analytics)",
+        "Trusted Flagger Management System",
+        "Moderation Queue (priority sorting)"
+      ],
+      "implementation": {
+        "priorityLane": "Trusted flagger reports routed to dedicated high-priority queue; distinct visual badge in moderator console",
+        "qualityAnalytics": "Track accuracy (false positive rate), handling time, appeal reversal rate per trusted flagger",
+        "periodicReview": "Quarterly quality review; revocation for consistent low accuracy or policy violations",
+        "certification": "Trusted flagger status granted by compliance team after vetting; documented certification criteria"
+      },
+      "acceptanceCriteria": [
+        "Trusted flagger reports display distinct badge in moderator console",
+        "Trusted flagger lane processes reports within 1 hour (faster SLA than general queue)",
+        "Quality analytics dashboard shows per-flagger accuracy and handling times",
+        "Quarterly review workflow with revocation procedures"
+      ],
+      "testStrategy": "Unit tests for priority sorting; integration tests for quality analytics; E2E tests for trusted flagger certification flow",
+      "complianceStatus": "Not implemented",
+      "blockers": "Trusted flagger certification criteria pending definition"
+    },
+    {
+      "article": "Art. 23 - Measures Against Misuse",
+      "requirement": "Detect and penalize repeat offenders (content posters) and manifestly unfounded reporters; graduated enforcement",
+      "systemComponents": [
+        "Repeat Offender Detection Engine",
+        "Graduated Enforcement Engine",
+        "Manifestly Unfounded Reporter Tracking"
+      ],
+      "implementation": {
+        "repeatOffenderDetection": "Track violation history per user; pattern detection triggers graduated enforcement",
+        "graduatedEnforcement": "Warning → temporary suspension → permanent ban based on violation severity and frequency",
+        "manifestlyUnfoundedTracking": "Track reporter accuracy; suspend reporting privileges for consistent false reports",
+        "appealPath": "Users can appeal repeat offender status and request manual review"
+      },
+      "acceptanceCriteria": [
+        "Violation tracking system with pattern detection (3 violations in 30 days triggers review)",
+        "Graduated enforcement engine applies warnings → suspensions → bans based on severity",
+        "Manifestly unfounded reporters suspended after 5 false reports in 90 days",
+        "Appeal path for repeat offender status with manual review"
+      ],
+      "testStrategy": "Unit tests for pattern detection; integration tests for graduated enforcement; compliance tests for appeal path availability",
+      "complianceStatus": "Not implemented",
+      "blockers": null
+    },
+    {
+      "article": "Art. 24(5) - SoR Database Submission",
+      "requirement": "Submit redacted SoR to Commission Transparency Database 'without undue delay'; ensure no personal data in submissions",
+      "systemComponents": [
+        "Transparency Service (SoR export queue, PII scrubbing)",
+        "Commission DB API Client",
+        "Dead Letter Queue (failed submissions)"
+      ],
+      "implementation": {
+        "piiScrubbing": "Deterministic PII scrubbing pipeline before export; HMAC-SHA256 pseudonymization for user/moderator IDs",
+        "redactionMap": "Free-text fields, direct PII, actor identifiers, content locators, evidence data, location/IP redacted",
+        "idempotency": "Idempotent submissions by decision_id; prevent duplicate exports",
+        "batchAPI": "Use batch API (1-100 SoRs per call) with fallback to single submission",
+        "dlq": "Dead letter queue for failed submissions; exponential backoff retry; circuit breaker pattern",
+        "audit": "Track p95 time-to-submit as SLI; audit trail for scrubbing (timestamp, algorithm version, redacted fields, salt version)"
+      },
+      "acceptanceCriteria": [
+        "SoR export queue triggers on every restrictive moderation decision",
+        "PII scrubbing pipeline deterministically redacts all personal data (golden tests)",
+        "Commission DB API client submits redacted SoR 'without undue delay' (target: <1 hour)",
+        "DLQ handles failed submissions with exponential backoff (max 3 retries)",
+        "Audit trail logs scrubbing timestamp, algorithm version, and EC DB submission ID"
+      ],
+      "testStrategy": "Golden tests for PII scrubbing correctness; contract tests for Commission DB API; integration tests for export queue; DLQ resilience tests",
+      "complianceStatus": "Not implemented",
+      "blockers": "Commission DB API credentials pending"
+    },
+    {
+      "article": "Art. 28 - Protection of Minors",
+      "requirement": "Privacy-preserving age verification; age-gating for restricted content; safer defaults for minors",
+      "systemComponents": [
+        "Age Verification Service (privacy-preserving attribute)",
+        "Content Age-Gating Engine",
+        "One-time Verification Token Manager"
+      ],
+      "implementation": {
+        "privacyPreserving": "Store only over-18 boolean attribute per EU Age-Verification Blueprint; no raw ID or birthdate storage",
+        "oneTimeVerification": "One-time verification with reusable age token; no repeated ID checks",
+        "saferDefaults": "Unverified users default to age-restricted content blocked; no profiling ads to minors",
+        "noFingerprinting": "Avoid device fingerprinting as enforcement fallback unless explicit ePrivacy consent",
+        "eudiWalletReady": "Design compatible with future EUDI wallet integration"
+      },
+      "acceptanceCriteria": [
+        "Age verification flow uses privacy-preserving over-18 attribute (no raw ID stored)",
+        "One-time verification generates reusable age token (session-based expiry)",
+        "Age-restricted content filtered based on verified user age status",
+        "Unverified users blocked from age-restricted content with clear verification prompt",
+        "No device fingerprinting without explicit consent (ePrivacy compliance)"
+      ],
+      "testStrategy": "Unit tests for age attribute verification; integration tests for age-gating enforcement; security tests for token replay prevention; compliance tests for no-raw-ID storage",
+      "complianceStatus": "Not implemented",
+      "blockers": "Third-party age verification provider selection pending"
+    },
+    {
+      "article": "Art. 15 & 24 - Transparency Reporting",
+      "requirement": "Annual transparency reports with DSA-specific metrics; real-time SoR database submissions",
+      "systemComponents": [
+        "Transparency Service (report generator)",
+        "Metrics Dashboard",
+        "Authority Export System"
+      ],
+      "implementation": {
+        "annualReport": "Generate annual transparency report with: notices by category, handling times, internal complaints (Art. 20), ODS outcomes (Art. 21), repeat-offender actions (Art. 23), trusted flagger metrics (Art. 22)",
+        "realTimeSoR": "Real-time SoR submissions to Commission DB per Art. 24(5); track submission count and latency",
+        "metricsTracking": "Track false-positive rate, appeal reversal rate, trusted-flagger handling time, SoR submission latency",
+        "structuredExport": "Structured JSON/CSV export for authority requests with legal compliance metadata"
+      },
+      "acceptanceCriteria": [
+        "Annual transparency report generator with all DSA-required metrics",
+        "Real-time metrics dashboard for supervisors (SLA compliance, queue depth, handling times)",
+        "Structured export formats for authority requests (JSON, CSV)",
+        "ODS case tracking with outcome reporting"
+      ],
+      "testStrategy": "Unit tests for metrics aggregation; integration tests for report generation; compliance tests for DSA metric presence",
+      "complianceStatus": "Not implemented",
+      "blockers": null
+    }
+  ],
+  "crossCuttingRequirements": {
+    "dataMinimization": {
+      "requirement": "GDPR Art. 5(1)(c) - collect only necessary data for DSA compliance and platform safety",
+      "implementation": [
+        "Content snapshots stored as hashes (not full duplication)",
+        "Reporter contact collected only when DSA-required (with exceptions)",
+        "Device fingerprinting avoided unless explicit consent (ePrivacy compliance)",
+        "Age verification stores boolean only (no raw ID or birthdate)",
+        "IP geolocation session-based (no persistent storage)"
+      ]
+    },
+    "storageLimitation": {
+      "requirement": "GDPR Art. 5(1)(e) - retain personal data no longer than necessary",
+      "implementation": [
+        "12-month default retention for content reports",
+        "30-day PII retention for moderation decisions; 7-year anonymized audit trail",
+        "Session-based age verification tokens (expire on logout)",
+        "1-hour TTL for cached location decisions",
+        "Automated deletion workflows with legal hold exception handling"
+      ]
+    },
+    "accountability": {
+      "requirement": "GDPR Art. 5(2) - demonstrate compliance with data protection principles",
+      "implementation": [
+        "Comprehensive audit trails with cryptographic signatures",
+        "Append-only WORM storage for audit events",
+        "DPIA for moderation, age verification, and geo-location processing",
+        "RoPA entries for all processing operations",
+        "Documented lawful bases and retention schedules"
+      ]
+    },
+    "security": {
+      "requirement": "GDPR Art. 32 - appropriate technical and organizational measures",
+      "implementation": [
+        "Encryption at rest (AES-256) and in transit (TLS 1.3)",
+        "Role-based access control with principle of least privilege",
+        "Multi-factor authentication for moderators and admins",
+        "Cryptographic signatures for audit trail integrity",
+        "Regular security audits and penetration testing"
+      ]
+    }
+  },
+  "featureFlagRequirements": {
+    "sorExport": {
+      "flag": "FEATURE_SOR_EXPORT_ENABLED",
+      "default": false,
+      "enablementCriteria": [
+        "Commission DB API credentials configured and tested",
+        "PII scrubbing golden tests passing (100% pass rate)",
+        "Legal review approval for redacted SoR template",
+        "DLQ monitoring and alerting configured"
+      ],
+      "blockers": "Commission DB API credentials pending"
+    },
+    "ageVerification": {
+      "flag": "FEATURE_AGE_VERIFICATION_ENABLED",
+      "default": false,
+      "enablementCriteria": [
+        "DPIA approved by DPO",
+        "Third-party age verification provider contract signed",
+        "Privacy-preserving age attribute implementation tested",
+        "No-raw-ID storage verified (compliance tests passing)"
+      ],
+      "blockers": "Third-party provider selection pending"
+    },
+    "geoBlocking": {
+      "flag": "FEATURE_GEO_BLOCKING_ENABLED",
+      "default": false,
+      "enablementCriteria": [
+        "IP geolocation accuracy validated (>95% correct country detection)",
+        "ePrivacy compliance verified (no GPS without consent)",
+        "Appeal flow tested and documented",
+        "Legal review approval for geo-blocking rules"
+      ],
+      "blockers": null
+    },
+    "trustedFlaggers": {
+      "flag": "FEATURE_TRUSTED_FLAGGERS_ENABLED",
+      "default": false,
+      "enablementCriteria": [
+        "Trusted flagger certification criteria documented",
+        "Priority queue SLA monitoring configured",
+        "Quality analytics dashboard operational",
+        "Quarterly review workflow implemented"
+      ],
+      "blockers": "Certification criteria pending definition"
+    }
+  },
+  "deploymentStrategy": {
+    "phase1": "Ship dark - all features feature-flagged off; legal review and compliance validation",
+    "phase2": "Internal testing - enable features in staging environment; compliance team validation",
+    "phase3": "Gradual rollout - enable features for 10% users; monitor metrics and compliance",
+    "phase4": "Full activation - enable features for all users after successful gradual rollout"
+  },
+  "complianceValidation": {
+    "legalReview": "All DSA article implementations require legal counsel approval before production deployment",
+    "dpoApproval": "DPIA approval required for age verification and geo-location features",
+    "securityAudit": "External security audit of moderation infrastructure before full activation",
+    "penetrationTesting": "Annual penetration testing of all moderation and compliance systems"
+  },
+  "metadata": {
+    "reviewSchedule": "Quarterly reviews of DSA compliance mapping; immediate updates upon regulation changes",
+    "responsiblePerson": "[Compliance Officer]",
+    "lastReview": null,
+    "nextReview": "2026-01-19"
+  }
+}
