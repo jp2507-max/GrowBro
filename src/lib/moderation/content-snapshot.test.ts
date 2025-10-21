@@ -4,6 +4,8 @@
  * Tests cryptographic hashing and snapshot integrity verification
  */
 
+import stringify from 'fast-json-stable-stringify';
+
 import {
   createContentSnapshot,
   extractMinimalSnapshotData,
@@ -106,9 +108,7 @@ describe('createContentSnapshot', () => {
       contentData: mockContentData,
     });
 
-    const expectedHash = await generateContentHash(
-      JSON.stringify(mockContentData)
-    );
+    const expectedHash = await generateContentHash(stringify(mockContentData));
 
     expect(snapshot.snapshot_hash).toBe(expectedHash);
   });
@@ -125,7 +125,7 @@ describe('verifySnapshotIntegrity', () => {
       id: 'snapshot-1',
       content_id: '123',
       content_type: 'post',
-      snapshot_hash: await generateContentHash(JSON.stringify(mockContentData)),
+      snapshot_hash: await generateContentHash(stringify(mockContentData)),
       snapshot_data: mockContentData,
       captured_at: new Date(),
       created_at: new Date(),
@@ -151,7 +151,7 @@ describe('verifySnapshotIntegrity', () => {
       id: 'snapshot-1',
       content_id: '123',
       content_type: 'post',
-      snapshot_hash: await generateContentHash(JSON.stringify(originalData)),
+      snapshot_hash: await generateContentHash(stringify(originalData)),
       snapshot_data: tamperedData, // Data doesn't match hash!
       captured_at: new Date(),
       created_at: new Date(),

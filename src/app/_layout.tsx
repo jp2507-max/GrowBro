@@ -28,6 +28,7 @@ import {
   useIsFirstTime,
 } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
+import { updateActivity } from '@/lib/auth/session-timeout';
 import { useRootStartup } from '@/lib/hooks/use-root-startup';
 import { initializeJanitor } from '@/lib/media/photo-janitor';
 import { getReferencedPhotoUris } from '@/lib/media/photo-storage-helpers';
@@ -220,7 +221,12 @@ function BootSplash(): React.ReactElement {
 
 function AppStack(): React.ReactElement {
   return (
-    <Stack>
+    <Stack
+      onStateChange={() => {
+        // Update activity on navigation changes
+        updateActivity();
+      }}
+    >
       <Stack.Screen name="(app)" options={{ headerShown: false }} />
       <Stack.Screen name="(modals)" options={{ headerShown: false }} />
       <Stack.Screen name="age-gate" options={{ headerShown: false }} />

@@ -54,3 +54,25 @@ jobs:
         with:
           name: siwa-guard-report
           path: build/reports/compliance/siwa-guard.json
+
+  lawful-bases-matrix-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Validate lawful bases matrix
+        run: pnpm run compliance:lawful-bases-matrix
+      - name: Upload lawful bases matrix validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lawful-bases-matrix-validation-report
+          path: build/reports/compliance/lawful-bases-matrix-validation.json

@@ -11,6 +11,7 @@ src/api/moderation/
 ├── policy-catalog.ts         # Policy catalog hooks
 ├── similar-decisions.ts      # Similar decisions and COI hooks
 ├── trusted-flaggers.ts       # Trusted flagger analytics hooks
+├── appeals.ts                # Appeals API hooks
 └── README.md                # This file
 ```
 
@@ -179,5 +180,5 @@ staleTime: 10000, // 10 seconds
 - Types: `src/types/moderation.ts`
 - Services: `src/lib/moderation/` (policy-catalog, similar-decisions, conflict-of-interest, trusted-flagger-analytics)
 - SLA Utilities: `src/lib/moderation/sla-calculator.ts`
-- UI Components: `src/components/moderation/` (pending)
+- UI Components: `src/components/moderation/` (queue-filters.tsx, appeal-status-tracker.tsx, jurisdiction-selector.tsx)
 - Documentation: `docs/moderator-console-setup.md`

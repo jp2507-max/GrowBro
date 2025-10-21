@@ -11,7 +11,7 @@
  * Requirements: 3.3
  */
 
-import { DateTime } from 'luxon';
+import { randomUUID } from 'expo-crypto';
 
 import type { ModerationAction } from '@/types/moderation';
 
@@ -40,16 +40,9 @@ export interface ActionExecutionResult {
   notification_triggered?: boolean;
 }
 
-interface ExecutionRecord {
+export interface ActionExecutionRow {
+  id: string;
   decision_id: string;
-  action: ModerationAction;
-  content_id: string;
-  user_id: string;
-  reason_code: string;
-  duration_days?: number;
-  expires_at?: string;
-  territorial_scope?: string[];
-  executed_by: string;
   executed_at: string;
 }
 
@@ -76,52 +69,31 @@ export class ActionExecutor {
         };
       }
 
-      // Calculate expiration for time-boxed actions
-      const expiresAt = input.duration_days
-        ? DateTime.now().plus({ days: input.duration_days }).toJSDate()
-        : undefined;
+      // Generate idempotency key for safe retries
+      const idempotencyKey = randomUUID();
 
-      // Perform the specific action (delegated)
-      const executionResult = await this.performAction(input, expiresAt);
-
-      if (!executionResult.success) {
-        return { success: false, error: executionResult.error };
-      }
-
-      // Record execution and update decision status
-      const execution = await this.recordExecution({
-        decision_id: input.decision_id,
-        action: input.action,
-        content_id: input.content_id,
-        user_id: input.user_id,
-        reason_code: input.reason_code,
-        duration_days: input.duration_days,
-        expires_at: expiresAt?.toISOString(),
-        territorial_scope: input.territorial_scope,
-        executed_by: input.moderator_id,
-        executed_at: new Date().toISOString(),
+      // Execute action via RPC (atomic transaction)
+      const { data, error } = await supabase.rpc('execute_moderation_action', {
+        p_decision_id: input.decision_id,
+        p_idempotency_key: idempotencyKey,
+        p_executed_by: input.moderator_id,
       });
 
-      if (!execution || !execution.id) {
+      if (error) {
         return {
           success: false,
-          error: 'Failed to record action execution',
+          error: `RPC execution failed: ${error.message}`,
         };
       }
 
-      const updateOk = await this.updateDecisionStatus(input.decision_id);
+      // Parse RPC response (JSONB)
+      const result: ActionExecutionRow = data as ActionExecutionRow;
 
-      if (!updateOk) {
-        return { success: false, error: 'Failed to update decision status' };
-      }
-
-      // Trigger notification (async, non-blocking)
-      const notificationTriggered = await this.triggerNotification(input);
-
+      // RPC returns execution details on success
       return {
         success: true,
-        execution_id: execution.id,
-        notification_triggered: notificationTriggered,
+        execution_id: result.id,
+        notification_triggered: true, // RPC always queues notification
       };
     } catch (error) {
       return {
@@ -131,74 +103,6 @@ export class ActionExecutor {
         }`,
       };
     }
-  }
-
-  /**
-   * Delegates action execution to specific handlers
-   */
-  private async performAction(
-    input: ActionExecutionInput,
-    expiresAt?: Date
-  ): Promise<{ success: boolean; error?: string }> {
-    switch (input.action) {
-      case 'no_action':
-        return this.executeNoAction(input);
-      case 'quarantine':
-        return this.executeQuarantine(input);
-      case 'geo_block':
-        return this.executeGeoBlock(input);
-      case 'rate_limit':
-        return this.executeRateLimit(input, expiresAt!);
-      case 'shadow_ban':
-        return this.executeShadowBan(input, expiresAt!);
-      case 'suspend_user':
-        return this.executeSuspension(input, expiresAt!);
-      case 'remove':
-        return this.executeRemoval(input);
-      default:
-        return {
-          success: false,
-          error: `Unknown action type: ${input.action}`,
-        };
-    }
-  }
-
-  /**
-   * Insert execution record into DB and return the inserted row
-   */
-  private async recordExecution(record: ExecutionRecord): Promise<any> {
-    const { data, error } = await supabase
-      .from('action_executions')
-      .insert(record)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('recordExecution error:', error);
-      return null;
-    }
-
-    return data;
-  }
-
-  /**
-   * Update moderation_decisions status to executed
-   */
-  private async updateDecisionStatus(decisionId: string): Promise<boolean> {
-    const { error } = await supabase
-      .from('moderation_decisions')
-      .update({
-        status: 'executed',
-        executed_at: new Date().toISOString(),
-      })
-      .eq('id', decisionId);
-
-    if (error) {
-      console.error('updateDecisionStatus error:', error);
-      return false;
-    }
-
-    return true;
   }
 
   /**
@@ -231,6 +135,13 @@ export class ActionExecutor {
     ) {
       errors.push(`Duration (days) is required for ${input.action}`);
     }
+    if (
+      durationRequiredActions.includes(input.action) &&
+      input.duration_days &&
+      !(typeof input.duration_days === 'number' && input.duration_days > 0)
+    ) {
+      errors.push(`Duration (days) must be greater than 0 for ${input.action}`);
+    }
 
     // Validate territorial scope for geo_block
     if (
@@ -244,209 +155,6 @@ export class ActionExecutor {
       is_valid: errors.length === 0,
       errors,
     };
-  }
-
-  /**
-   * No action - mark as reviewed
-   */
-  private async executeNoAction(
-    input: ActionExecutionInput
-  ): Promise<{ success: boolean; error?: string }> {
-    // Simply mark report as resolved
-    const { error } = await supabase
-      .from('content_reports')
-      .update({
-        status: 'resolved',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', input.report_id);
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    return { success: true };
-  }
-
-  /**
-   * Quarantine - reduce content visibility
-   */
-  private async executeQuarantine(
-    input: ActionExecutionInput
-  ): Promise<{ success: boolean; error?: string }> {
-    // Update content visibility flag
-    const { error } = await supabase
-      .from('posts')
-      .update({
-        quarantined: true,
-        visibility: 'limited',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', input.content_id);
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    return { success: true };
-  }
-
-  /**
-   * Geo-block - block content in specific territories
-   */
-  private async executeGeoBlock(
-    input: ActionExecutionInput
-  ): Promise<{ success: boolean; error?: string }> {
-    // Insert geo-block records
-    const geoBlockRecords = input.territorial_scope!.map((territory) => ({
-      content_id: input.content_id,
-      territory_code: territory,
-      reason_code: input.reason_code,
-      created_at: new Date().toISOString(),
-    }));
-
-    const { error } = await supabase
-      .from('content_geo_blocks')
-      .insert(geoBlockRecords);
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    return { success: true };
-  }
-
-  /**
-   * Rate limit - throttle user posting
-   */
-  private async executeRateLimit(
-    input: ActionExecutionInput,
-    expiresAt: Date
-  ): Promise<{ success: boolean; error?: string }> {
-    const { error } = await supabase.from('user_rate_limits').insert({
-      user_id: input.user_id,
-      reason_code: input.reason_code,
-      expires_at: expiresAt.toISOString(),
-      posts_per_hour: 1, // Restrictive rate
-      created_at: new Date().toISOString(),
-    });
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    return { success: true };
-  }
-
-  /**
-   * Shadow ban - make user posts invisible to others
-   */
-  private async executeShadowBan(
-    input: ActionExecutionInput,
-    expiresAt: Date
-  ): Promise<{ success: boolean; error?: string }> {
-    const { error } = await supabase.from('user_shadow_bans').insert({
-      user_id: input.user_id,
-      reason_code: input.reason_code,
-      expires_at: expiresAt.toISOString(),
-      created_at: new Date().toISOString(),
-    });
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    return { success: true };
-  }
-
-  /**
-   * Suspend user - temporary account suspension
-   */
-  private async executeSuspension(
-    input: ActionExecutionInput,
-    expiresAt: Date
-  ): Promise<{ success: boolean; error?: string }> {
-    const { error } = await supabase.from('user_suspensions').insert({
-      user_id: input.user_id,
-      reason_code: input.reason_code,
-      expires_at: expiresAt.toISOString(),
-      suspended_at: new Date().toISOString(),
-    });
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    // Deactivate user account
-    const { error: userError } = await supabase
-      .from('users')
-      .update({
-        suspended: true,
-        suspension_expires_at: expiresAt.toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', input.user_id);
-
-    if (userError) {
-      return { success: false, error: userError.message };
-    }
-
-    return { success: true };
-  }
-
-  /**
-   * Remove content - permanent deletion
-   */
-  private async executeRemoval(
-    input: ActionExecutionInput
-  ): Promise<{ success: boolean; error?: string }> {
-    // Soft delete content
-    const { error } = await supabase
-      .from('posts')
-      .update({
-        deleted_at: new Date().toISOString(),
-        deleted_by: input.moderator_id,
-        deletion_reason: input.reason_code,
-      })
-      .eq('id', input.content_id);
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    return { success: true };
-  }
-
-  /**
-   * Triggers user notification with Statement of Reasons
-   *
-   * Requirements: 3.3 (within 15 minutes)
-   */
-  private async triggerNotification(
-    input: ActionExecutionInput
-  ): Promise<boolean> {
-    try {
-      // Queue notification for delivery
-      // This would integrate with the notification system
-      // For now, we'll create a placeholder record
-      const { error } = await supabase.from('moderation_notifications').insert({
-        user_id: input.user_id,
-        decision_id: input.decision_id,
-        action: input.action,
-        scheduled_for: DateTime.now()
-          .plus({ minutes: 1 })
-          .toJSDate()
-          .toISOString(),
-        status: 'pending',
-        created_at: new Date().toISOString(),
-      });
-
-      return !error;
-    } catch (error) {
-      // Non-critical error, log but don't fail the execution
-      console.error('Failed to trigger notification:', error);
-      return false;
-    }
   }
 
   /**

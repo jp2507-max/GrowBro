@@ -12,6 +12,7 @@
  */
 
 import { Env } from '@env';
+import * as Crypto from 'expo-crypto';
 
 import type { RedactedSoR } from '@/types/moderation';
 
@@ -56,6 +57,7 @@ export interface RetryConfig {
   base_delay_ms: number;
   max_delay_ms: number;
   backoff_multiplier: number;
+  request_timeout_ms: number;
 }
 
 // ============================================================================
@@ -67,6 +69,7 @@ const DEFAULT_RETRY_CONFIG: RetryConfig = {
   base_delay_ms: 1000,
   max_delay_ms: 30000,
   backoff_multiplier: 2,
+  request_timeout_ms: 30000,
 };
 
 const BATCH_SIZE_MAX = 100;
@@ -156,7 +159,10 @@ export class DSATransparencyClient {
     } catch (error) {
       // If batch fails, fall back to single submissions
       if (statements.length > 1) {
-        return await this.fallbackToSingleSubmissions(statements);
+        return await this.fallbackToSingleSubmissions(
+          statements,
+          idempotencyKey
+        );
       }
 
       // Single statement batch failed, throw error
@@ -246,13 +252,24 @@ export class DSATransparencyClient {
       headers['Idempotency-Key'] = request.idempotency_key;
     }
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        statements: request.statements,
-      }),
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(
+      () => controller.abort(),
+      this.retryConfig.request_timeout_ms
+    );
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          statements: request.statements,
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     // Handle non-OK responses
     if (!response.ok) {
@@ -304,15 +321,32 @@ export class DSATransparencyClient {
    * Fallback to single submissions when batch fails.
    */
   private async fallbackToSingleSubmissions(
-    statements: RedactedSoR[]
+    statements: RedactedSoR[],
+    idempotencyKey?: string
   ): Promise<DSASubmissionResponse> {
     const results: DSASubmissionResult[] = [];
     let submittedCount = 0;
     let failedCount = 0;
 
-    for (const statement of statements) {
+    for (let i = 0; i < statements.length; i++) {
+      const statement = statements[i];
+
+      // Derive stable per-statement idempotency key
+      let statementIdempotencyKey: string | undefined;
+      if (idempotencyKey) {
+        const keyInput = `${idempotencyKey}:${statement.decision_id}:${i}`;
+        statementIdempotencyKey = await Crypto.digestStringAsync(
+          Crypto.CryptoDigestAlgorithm.SHA256,
+          keyInput,
+          { encoding: Crypto.CryptoEncoding.HEX }
+        );
+      }
+
       try {
-        const result = await this.submitSingle(statement);
+        const result = await this.submitSingle(
+          statement,
+          statementIdempotencyKey
+        );
         results.push(result);
 
         if (result.status === 'submitted') {

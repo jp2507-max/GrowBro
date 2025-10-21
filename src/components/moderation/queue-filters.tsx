@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { ScrollView, Text, TouchableOpacity, View } from '@/components/ui';
 
@@ -19,23 +20,24 @@ type Props = {
   testID?: string;
 };
 
-const PRIORITY_FILTERS: FilterOption[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Immediate', value: 'immediate' },
-  { label: 'Illegal', value: 'illegal' },
-  { label: 'Trusted', value: 'trusted' },
-  { label: 'Standard', value: 'standard' },
-];
-
 export function QueueFilters({
   activeFilter,
   onFilterChange,
   testID = 'queue-filters',
 }: Props) {
+  const { t } = useTranslation();
+
+  const PRIORITY_FILTERS: FilterOption[] = [
+    { label: t('moderation.filters.priority.all'), value: 'all' },
+    { label: t('moderation.filters.priority.immediate'), value: 'immediate' },
+    { label: t('moderation.filters.priority.illegal'), value: 'illegal' },
+    { label: t('moderation.filters.priority.trusted'), value: 'trusted' },
+    { label: t('moderation.filters.priority.standard'), value: 'standard' },
+  ];
   return (
     <View className="mb-4" testID={testID}>
       <Text className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
-        Filter by Priority
+        {t('moderation.filterPriority')}
       </Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View className="flex-row gap-2">

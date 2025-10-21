@@ -98,16 +98,17 @@
         "One-time verification token (session-based)",
         "Verification metadata (timestamp, IP for fraud prevention)"
       ],
-      "retentionPeriod": "Session-based tokens: expire on logout; Age attribute: valid until user disputes or account deletion; Verification metadata: 30 days",
+      "retentionPeriod": "Session-based tokens: expire on logout, idle timeout (2 hours), or manual revocation; Age attribute: valid until user disputes or account deletion; Verification metadata: 30 days",
       "lawfulBasis": "Legal obligation (DSA Art. 28) + Legitimate interests (fraud prevention)",
       "purposeLimitation": "Tokens retained only for active session; age attribute retained for age-gating enforcement; verification metadata retained 30 days for fraud detection",
       "deletionTriggers": [
-        "Tokens: automatic deletion on session termination (logout, timeout)",
+        "Tokens: automatic deletion on session termination (logout, idle timeout, manual revocation)",
         "Age attribute: deleted on account deletion or user dispute (with re-verification requirement)",
         "Verification metadata: 30 days after verification event"
       ],
       "exceptions": {
-        "fraudInvestigation": "Verification metadata retained beyond 30 days if part of active fraud investigation; maximum extension 90 days with supervisor approval"
+        "fraudInvestigation": "Verification metadata retained beyond 30 days if part of active fraud investigation; maximum extension 90 days with supervisor approval",
+        "serverSideRevocation": "Server-side token validation/revocation endpoint (Supabase Edge Function) should be implemented to ensure tokens are invalidated server-side on logout or security events"
       },
       "automatedDeletion": true,
       "deletionWorkflow": "Real-time token deletion on session end; daily job deletes verification metadata at 30-day mark; age attribute deleted on account deletion trigger"
@@ -311,7 +312,7 @@
   },
   "metadata": {
     "reviewSchedule": "Annual review of all retention periods; immediate updates upon processing changes or legal requirement updates",
-    "responsiblePerson": "[Data Protection Officer]",
+    "responsiblePerson": "${DPO_NAME}",
     "lastReview": null,
     "nextReview": "2026-10-19"
   }

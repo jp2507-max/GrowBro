@@ -86,7 +86,7 @@ export async function apiGetAppealStatus(
     const response = await client.get<Appeal>(
       `/moderation/appeals/${appealId}`
     );
-    return response.data;
+    return mapAppealDates(response.data);
   } catch (error) {
     console.error('[AppealsAPI] Failed to fetch appeal status:', error);
     return null;
@@ -105,7 +105,11 @@ export async function apiGetAppealContext(
     const response = await client.get<AppealContextResponse>(
       `/moderation/appeals/${appealId}/context`
     );
-    return response.data;
+    return {
+      ...response.data,
+      appeal: mapAppealDates(response.data.appeal),
+      originalDecision: mapDecisionDates(response.data.originalDecision),
+    };
   } catch (error) {
     console.error('[AppealsAPI] Failed to fetch appeal context:', error);
     return null;
@@ -170,4 +174,37 @@ export async function apiGetODSBodies(filters?: {
     console.error('[AppealsAPI] Failed to fetch ODS bodies:', error);
     return [];
   }
+}
+
+// ============================================================================
+// Date Mapping Utilities
+// ============================================================================
+
+function mapAppealDates(a: Appeal): Appeal {
+  return {
+    ...a,
+    submitted_at: new Date(a.submitted_at),
+    deadline: new Date(a.deadline),
+    resolved_at: a.resolved_at ? new Date(a.resolved_at) : undefined,
+    ods_submitted_at: a.ods_submitted_at
+      ? new Date(a.ods_submitted_at)
+      : undefined,
+    ods_resolved_at: a.ods_resolved_at
+      ? new Date(a.ods_resolved_at)
+      : undefined,
+    created_at: new Date(a.created_at),
+    updated_at: new Date(a.updated_at),
+    deleted_at: a.deleted_at ? new Date(a.deleted_at) : undefined,
+  };
+}
+
+function mapDecisionDates(d: ModerationDecision): ModerationDecision {
+  return {
+    ...d,
+    executed_at: d.executed_at ? new Date(d.executed_at) : undefined,
+    reversed_at: d.reversed_at ? new Date(d.reversed_at) : undefined,
+    created_at: new Date(d.created_at),
+    updated_at: new Date(d.updated_at),
+    deleted_at: d.deleted_at ? new Date(d.deleted_at) : undefined,
+  };
 }

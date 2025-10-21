@@ -99,12 +99,18 @@ export function validateNoPII(redacted: RedactedSoR): {
   });
 
   // Check for pseudonymized fields
-  if (!redacted.pseudonymized_reporter_id?.startsWith('pseudo_')) {
-    warnings.push('Reporter ID should be pseudonymized');
+  const hex16Regex = /^[a-f0-9]{16}$/i;
+  if (
+    redacted.pseudonymized_reporter_id &&
+    !hex16Regex.test(redacted.pseudonymized_reporter_id)
+  ) {
+    warnings.push('Reporter ID should be pseudonymized (16-char hex string)');
   }
-
-  if (!redacted.pseudonymized_moderator_id?.startsWith('pseudo_')) {
-    warnings.push('Moderator ID should be pseudonymized');
+  if (
+    redacted.pseudonymized_moderator_id &&
+    !hex16Regex.test(redacted.pseudonymized_moderator_id)
+  ) {
+    warnings.push('Moderator ID should be pseudonymized (16-char hex string)');
   }
 
   return {

@@ -11,8 +11,9 @@ import { supabase } from '@/lib/supabase';
 
 type UserRole = 'user' | 'moderator' | 'admin';
 
-export function useIsModerator(): boolean {
+export function useIsModerator(): { isModerator: boolean; isLoading: boolean } {
   const [isModerator, setIsModerator] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkRole = async () => {
@@ -47,11 +48,13 @@ export function useIsModerator(): boolean {
       } catch (error) {
         console.error('Error checking moderator role:', error);
         setIsModerator(false);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     void checkRole();
   }, []);
 
-  return isModerator;
+  return { isModerator, isLoading };
 }

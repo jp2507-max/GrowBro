@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Text, View } from '@/components/ui';
 import {
@@ -18,8 +19,9 @@ type Props = {
 };
 
 export function PriorityBadge({ priority, testID = 'priority-badge' }: Props) {
+  const { t } = useTranslation();
   const { bg, text } = getPriorityColors(priority);
-  const label = getPriorityLabel(priority);
+  const label = getPriorityLabel(priority, t);
 
   return (
     <View

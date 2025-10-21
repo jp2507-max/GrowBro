@@ -32,9 +32,10 @@ export function QueueList({
         testID={`${testID}-loading`}
       >
         <ActivityIndicator size="large" />
-        <Text className="mt-4 text-neutral-600 dark:text-neutral-400">
-          Loading queue...
-        </Text>
+        <Text
+          className="mt-4 text-neutral-600 dark:text-neutral-400"
+          tx="moderation.queue.loading"
+        />
       </View>
     );
   }
@@ -45,12 +46,14 @@ export function QueueList({
         className="flex-1 items-center justify-center p-6"
         testID={`${testID}-empty`}
       >
-        <Text className="text-center text-lg font-medium text-neutral-700 dark:text-neutral-300">
-          No reports in queue
-        </Text>
-        <Text className="mt-2 text-center text-sm text-neutral-600 dark:text-neutral-400">
-          All caught up! Check back later.
-        </Text>
+        <Text
+          className="text-center text-lg font-medium text-neutral-700 dark:text-neutral-300"
+          tx="moderation.queue.empty.title"
+        />
+        <Text
+          className="mt-2 text-center text-sm text-neutral-600 dark:text-neutral-400"
+          tx="moderation.queue.empty.subtitle"
+        />
       </View>
     );
   }

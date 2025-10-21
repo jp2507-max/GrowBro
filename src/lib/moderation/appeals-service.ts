@@ -22,11 +22,14 @@ import type {
 
 import { validateAppeal } from '../schemas/moderation-schemas';
 import { supabase } from '../supabase';
+import { accountRestorationService } from './account-restoration-service';
 import { logAppealsAudit } from './appeals-audit';
 import {
   scheduleDeadlineWarning,
   sendAppealNotification,
 } from './appeals-notifications';
+import { contentRestorationService } from './content-restoration-service';
+import { moderationMetrics } from './moderation-metrics';
 
 // ============================================================================
 // Constants
@@ -394,18 +397,68 @@ export async function assignReviewer(
  *
  * Requirement: 4.5
  */
-async function findEligibleReviewer(_criteria: {
+async function findEligibleReviewer(criteria: {
   appealId: string;
   originalModeratorId: string;
   originalSupervisorId?: string;
   appealType: AppealType;
 }): Promise<{ id: string; name: string } | null> {
-  // TODO: Implement Supabase query
-  // - Exclude original moderator and supervisor
-  // - Exclude reviewers with related decision history
-  // - Prioritize by workload and expertise
-  // - Return available reviewer with lowest conflict score
-  return null;
+  try {
+    // Get all moderators with reviewer role
+    const { data: reviewers, error } = await supabase
+      .from('moderator_sessions')
+      .select('moderator_id, email')
+      .in('role', ['moderator', 'senior_moderator', 'supervisor'])
+      .neq('moderator_id', criteria.originalModeratorId);
+
+    if (error) throw error;
+    if (!reviewers || reviewers.length === 0) return null;
+
+    // Filter out original supervisor if present
+    let eligibleReviewers = reviewers.filter(
+      (r) => r.moderator_id !== criteria.originalSupervisorId
+    );
+
+    if (eligibleReviewers.length === 0) return null;
+
+    // Get reviewer workloads (active appeals assigned)
+    const { data: workloads } = await supabase
+      .from('appeals')
+      .select('reviewer_id')
+      .in('status', ['in_review'])
+      .in(
+        'reviewer_id',
+        eligibleReviewers.map((r) => r.moderator_id)
+      );
+
+    // Calculate workload scores
+    const workloadMap = new Map<string, number>();
+    workloads?.forEach((w) => {
+      if (w.reviewer_id) {
+        workloadMap.set(
+          w.reviewer_id,
+          (workloadMap.get(w.reviewer_id) || 0) + 1
+        );
+      }
+    });
+
+    // Sort by workload (lowest first)
+    eligibleReviewers.sort((a, b) => {
+      const workloadA = workloadMap.get(a.moderator_id) || 0;
+      const workloadB = workloadMap.get(b.moderator_id) || 0;
+      return workloadA - workloadB;
+    });
+
+    // Return reviewer with lowest workload
+    const selected = eligibleReviewers[0];
+    return {
+      id: selected.moderator_id,
+      name: selected.email.split('@')[0], // Use email prefix as name
+    };
+  } catch (error) {
+    console.error('[AppealsService] Failed to find eligible reviewer:', error);
+    return null;
+  }
 }
 
 /**
@@ -477,6 +530,111 @@ export async function checkReviewerConflict(
  *
  * Requirement: 4.2, 4.8
  */
+
+async function validateAppealForDecision(
+  appealId: string,
+  reviewerId: string
+): Promise<{ appeal?: any; error?: string }> {
+  const appeal = await getAppealStatus(appealId);
+  if (!appeal) {
+    return { error: 'Appeal not found' };
+  }
+
+  // Verify reviewer assignment
+  if (appeal.reviewer_id !== reviewerId) {
+    return { error: 'Reviewer mismatch - not assigned to this appeal' };
+  }
+
+  // Verify appeal is in review
+  if (appeal.status !== 'in_review') {
+    return { error: `Cannot process appeal in status: ${appeal.status}` };
+  }
+
+  return { appeal };
+}
+
+async function executeAppealDecision(
+  appeal: any,
+  decisionData: {
+    decision: AppealDecision;
+    reasoning: string;
+    appealId: string;
+  }
+): Promise<void> {
+  // Update appeal with decision
+  await updateAppealDecision(decisionData.appealId, {
+    decision: decisionData.decision,
+    reasoning: decisionData.reasoning,
+    status: 'resolved',
+    resolvedAt: new Date(),
+  });
+
+  // If upheld, reverse original decision
+  if (decisionData.decision === 'upheld') {
+    await reverseOriginalDecision(
+      appeal.original_decision_id,
+      decisionData.appealId,
+      decisionData.reasoning
+    );
+  }
+}
+
+async function handleAppealPostProcessing(
+  appeal: any,
+  processingData: {
+    decision: AppealDecision;
+    reasoning: string;
+    appealId: string;
+    reviewerId: string;
+  }
+): Promise<void> {
+  // Send notification to user
+  await sendAppealNotification({
+    appealId: processingData.appealId,
+    userId: appeal.user_id,
+    type: 'appeal_decision',
+    decision: processingData.decision,
+    status: 'resolved',
+  });
+
+  // Log audit event
+  await logAppealsAudit({
+    appealId: processingData.appealId,
+    action: 'appeal-decision',
+    userId: appeal.user_id,
+    reviewerId: processingData.reviewerId,
+    decision: processingData.decision,
+    metadata: {
+      reasoning: processingData.reasoning,
+    },
+  });
+
+  // Update metrics (appeal reversal rate)
+  if (processingData.decision === 'upheld') {
+    const timeToResolution = appeal.resolved_at
+      ? (appeal.resolved_at.getTime() - appeal.submitted_at.getTime()) /
+        (1000 * 60 * 60)
+      : 0;
+
+    const originalDecision = await fetchModerationDecision(
+      appeal.original_decision_id
+    );
+    if (originalDecision) {
+      trackAppealDecision(processingData.appealId, processingData.decision, {
+        originalAction: originalDecision.action,
+        timeToResolutionHours: timeToResolution,
+      });
+
+      // Track false positive
+      moderationMetrics.trackFalsePositive(
+        originalDecision.id,
+        originalDecision.action,
+        true
+      );
+    }
+  }
+}
+
 export async function processAppealDecision(decision: {
   appealId: string;
   reviewerId: string;
@@ -484,70 +642,29 @@ export async function processAppealDecision(decision: {
   reasoning: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const appeal = await getAppealStatus(decision.appealId);
-    if (!appeal) {
-      return { success: false, error: 'Appeal not found' };
+    // Validate appeal and reviewer
+    const validation = await validateAppealForDecision(
+      decision.appealId,
+      decision.reviewerId
+    );
+    if (validation.error || !validation.appeal) {
+      return { success: false, error: validation.error };
     }
 
-    // Verify reviewer assignment
-    if (appeal.reviewer_id !== decision.reviewerId) {
-      return {
-        success: false,
-        error: 'Reviewer mismatch - not assigned to this appeal',
-      };
-    }
-
-    // Verify appeal is in review
-    if (appeal.status !== 'in_review') {
-      return {
-        success: false,
-        error: `Cannot process appeal in status: ${appeal.status}`,
-      };
-    }
-
-    // Update appeal with decision
-    await updateAppealDecision(decision.appealId, {
+    // Execute the decision
+    await executeAppealDecision(validation.appeal, {
       decision: decision.decision,
       reasoning: decision.reasoning,
-      status: 'resolved',
-      resolvedAt: new Date(),
+      appealId: decision.appealId,
     });
 
-    // If upheld, reverse original decision
-    if (decision.decision === 'upheld') {
-      await reverseOriginalDecision(
-        appeal.original_decision_id,
-        decision.appealId,
-        decision.reasoning
-      );
-    }
-
-    // Send notification to user
-    await sendAppealNotification({
-      appealId: decision.appealId,
-      userId: appeal.user_id,
-      type: 'appeal_decision',
+    // Handle post-processing (notifications, audit, metrics)
+    await handleAppealPostProcessing(validation.appeal, {
       decision: decision.decision,
-      status: 'resolved',
-    });
-
-    // Log audit event
-    await logAppealsAudit({
+      reasoning: decision.reasoning,
       appealId: decision.appealId,
-      action: 'appeal-decision',
-      userId: appeal.user_id,
       reviewerId: decision.reviewerId,
-      decision: decision.decision,
-      metadata: {
-        reasoning: decision.reasoning,
-      },
     });
-
-    // Update metrics (appeal reversal rate)
-    // This could be tracked via a metrics service if available
-    if (decision.decision === 'upheld') {
-      console.log('[AppealsMetrics] Appeal upheld - reversal rate updated');
-    }
 
     return { success: true };
   } catch (error) {
@@ -587,32 +704,40 @@ async function reverseOriginalDecision(
   // Execute reversal based on action type
   switch (decision.action) {
     case 'remove':
-      // Restore content visibility
-      console.log(
-        '[AppealsService] Restoring content visibility for decision:',
-        decisionId
-      );
-      break;
-    case 'suspend_user':
-      // Restore account status
-      console.log(
-        '[AppealsService] Restoring account status for user:',
-        decision.user_id
-      );
-      break;
-    case 'geo_block':
-      // Remove geo-restrictions
-      console.log(
-        '[AppealsService] Removing geo-restrictions for decision:',
-        decisionId
-      );
-      break;
     case 'quarantine':
+    case 'geo_block': {
+      // Restore content visibility
+      const { data: report } = await supabase
+        .from('content_reports')
+        .select('content_id, content_type')
+        .eq('id', decision.report_id)
+        .single();
+
+      if (report) {
+        const contentType = report.content_type as 'post' | 'comment';
+        await contentRestorationService.restoreContent(
+          report.content_id,
+          contentType,
+          {
+            originalAction: decision.action,
+            restorationData: { reversalReason: reason, appealId },
+          }
+        );
+      }
+      break;
+    }
+
+    case 'suspend_user':
     case 'rate_limit':
     case 'shadow_ban':
-      // Remove restrictions
-      console.log('[AppealsService] Removing restrictions:', decision.action);
+      // Restore account status
+      await accountRestorationService.restoreAccount(
+        decision.report_id,
+        decision.action,
+        { reversalReason: reason, appealId }
+      );
       break;
+
     default:
       console.warn(
         `[AppealsService] No reversal action for type: ${decision.action}`
@@ -679,9 +804,19 @@ async function checkExistingAppeal(
 }
 
 async function createAppealRecord(appeal: Partial<Appeal>): Promise<Appeal> {
-  // TODO: Implement Supabase insert
-  // Return created appeal with generated ID
-  return appeal as Appeal;
+  try {
+    const { data, error } = await supabase
+      .from('appeals')
+      .insert(appeal)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as Appeal;
+  } catch (error) {
+    console.error('[AppealsService] Failed to create appeal record:', error);
+    throw error;
+  }
 }
 
 async function updateAppealReviewer(

@@ -192,7 +192,7 @@ export async function getReportStatus(
       throw new Error(`Failed to get report status: HTTP ${response.status}`);
     }
 
-    return response.data as ContentReport;
+    return mapReportDates(response.data as ContentReport);
   } catch (error) {
     const categorizedError = categorizeError(error);
     console.error(`Reporting API Error [${endpoint}]`, {
@@ -223,7 +223,7 @@ export async function getUserReports(): Promise<ContentReport[]> {
       throw new Error(`Failed to get user reports: HTTP ${response.status}`);
     }
 
-    return response.data.reports as ContentReport[];
+    return (response.data.reports as ContentReport[]).map(mapReportDates);
   } catch (error) {
     const categorizedError = categorizeError(error);
     console.error(`Reporting API Error [${endpoint}]`, {
@@ -249,4 +249,18 @@ export async function getUserReports(): Promise<ContentReport[]> {
  */
 export function validateReport(input: ContentReportInput): ValidationResult {
   return validateContentReportInput(input);
+}
+
+// ============================================================================
+// Date Mapping Utilities
+// ============================================================================
+
+function mapReportDates(r: ContentReport): ContentReport {
+  return {
+    ...r,
+    sla_deadline: new Date(r.sla_deadline),
+    created_at: new Date(r.created_at),
+    updated_at: new Date(r.updated_at),
+    deleted_at: r.deleted_at ? new Date(r.deleted_at) : undefined,
+  };
 }

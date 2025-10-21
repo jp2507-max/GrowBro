@@ -425,8 +425,11 @@
     "lastReview": null,
     "nextReview": "2026-10-19",
     "translations": {
-      "required": ["English (en)", "German (de)"],
-      "status": "Not translated - templates in English only"
+      "required": ["en", "de"],
+      "namespace": "privacyNotices",
+      "keys": ["title", "audience", "deliveryContext"],
+      "status": "English templates present. i18next entries available under src/translations/{en,de}.json -> privacyNotices. German translations must be completed before enabling EU deployment.",
+      "notes": "Translation entries follow i18next structure: namespace -> key (noticeId.fields) with language values in src/translations/*.json. CI validation ensures presence and non-empty values for required languages."
     }
   }
 }

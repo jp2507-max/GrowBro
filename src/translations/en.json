@@ -889,13 +889,33 @@
     "block_failed": "Failed to block user. Please try again.",
     "delete": "Delete",
     "delete_failed": "Failed to delete content. Please try again.",
+    "filterPriority": "Filter by Priority",
+    "filters": {
+      "priority": {
+        "all": "All",
+        "illegal": "Illegal",
+        "immediate": "Immediate",
+        "standard": "Standard",
+        "trusted": "Trusted"
+      }
+    },
     "hide": "Hide",
     "mute": "Mute",
     "mute_failed": "Failed to mute user. Please try again.",
+    "priority": {
+      "illegal": "Illegal Content",
+      "immediate": "IMMEDIATE",
+      "standard": "Standard",
+      "trusted": "Trusted Flagger"
+    },
     "queue": {
       "appeal": "Appeal",
-      "empty": "Empty",
+      "empty": {
+        "subtitle": "All caught up! Check back later.",
+        "title": "No reports in queue"
+      },
       "escalate": "Escalate",
+      "loading": "Loading queue...",
       "processAll": "Process All",
       "title": "Moderation Queue"
     },
@@ -915,6 +935,7 @@
       "explanation_required": "Please provide a detailed explanation",
       "explanation_too_long": "Explanation must be less than 5000 characters",
       "explanation_too_short": "Explanation must be at least 50 characters to be sufficiently substantiated",
+      "good_faith_accessibility_hint": "Confirm you are submitting this report in good faith",
       "good_faith_declaration_label": "I declare in good faith that the information in this report is accurate and complete to the best of my knowledge.",
       "good_faith_required": "You must accept the good faith declaration to submit this report",
       "jurisdiction_label": "Jurisdiction",
@@ -933,12 +954,15 @@
       "reason_spam": "Spam or Scam",
       "reason_spam_desc": "Unwanted promotional content, deceptive schemes, or manipulative posts",
       "remove_evidence": "Remove",
+      "report_reason_accessibility_hint": "Select this reason for reporting",
+      "report_type_accessibility_hint": "Select this report type",
       "report_type_illegal": "Illegal Content",
       "report_type_illegal_desc": "Content that violates laws in your jurisdiction",
       "report_type_label": "What type of violation is this?",
       "report_type_policy": "Policy/Terms Breach",
       "report_type_policy_desc": "Content that violates GrowBro community guidelines or terms of service",
       "reporter_contact_label": "Your Contact Information",
+      "reporter_email_invalid": "Please enter a valid email address",
       "reporter_email_label": "Email",
       "reporter_email_placeholder": "your.email@example.com",
       "reporter_email_required": "Email is required for follow-up",
@@ -952,6 +976,15 @@
       "subtitle": "Help us maintain a safe and educational community by reporting content that violates our guidelines or applicable laws.",
       "success": "Report submitted successfully. Thank you for helping keep our community safe.",
       "title": "Report Content"
+    },
+    "sla": {
+      "status": {
+        "critical": "OVERDUE",
+        "green": "On Track",
+        "orange": "At Risk",
+        "red": "Urgent",
+        "yellow": "Approaching"
+      }
     },
     "unhide": "Unhide"
   },
@@ -1667,6 +1700,28 @@
     "webPortalIntro": "Use this page to request account deletion or a data export if you cannot open the mobile app.",
     "webPortalLogin": "Open sign-in",
     "webPortalTitle": "GrowBro account deletion portal"
+  },
+  "privacyNotices": {
+    "PRIVACY-AGE-001": {
+      "audience": "All users undergoing age verification",
+      "deliveryContext": "Displayed before age verification process begins",
+      "title": "Age Verification Privacy Notice"
+    },
+    "PRIVACY-GEO-001": {
+      "audience": "All users accessing content",
+      "deliveryContext": "Displayed in app privacy policy and when geo-blocking applied",
+      "title": "Geo-Location and Regional Restrictions Privacy Notice"
+    },
+    "PRIVACY-MOD-001": {
+      "audience": "Content reporters and reported users",
+      "deliveryContext": "Displayed when user submits content report or receives moderation decision",
+      "title": "Content Moderation and Reporting Privacy Notice"
+    },
+    "PRIVACY-MOD-STAFF-001": {
+      "audience": "Content moderators and compliance personnel",
+      "deliveryContext": "Displayed during moderator onboarding and in moderator console",
+      "title": "Moderator Privacy Notice"
+    }
   },
   "profile": {
     "label": "Profile",

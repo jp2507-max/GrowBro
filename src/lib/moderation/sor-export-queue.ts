@@ -82,7 +82,7 @@ export class SoRExportQueueManager {
         .from('sor_export_queue')
         .select('id, status')
         .eq('statement_id', statementId)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         return {

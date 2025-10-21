@@ -484,25 +484,136 @@ VALUES (
 
 **When**: Annual rotation, suspected compromise, compliance requirement
 
+**Overview**: Signing keys are rotated to maintain cryptographic security and comply with key management best practices. The system supports per-event key versioning, key history tracking, and dual-key verification during rotation overlap periods.
+
+**Key Components**:
+
+- `audit_signing_keys` table: Tracks key lifecycle, versions, and metadata
+- `signing_key_version` column: Added to `audit_events` and `partition_manifests`
+- Dual-key verification: Both old and new keys trusted during overlap window
+- Automated key deactivation after overlap expires
+
 **Process**:
 
-1. **Generate new key**: Strong random key (256-bit minimum)
-2. **Store in vault**: Update `app.audit_signing_key` in Supabase secrets
-3. **Seal current partitions**: Run `seal_audit_partition()` for all active partitions
-4. **Deploy new key**: Update environment configuration
-5. **Document rotation**: Update `partition_manifests` with key version
+1. **Preparation (Pre-rotation)**:
+   - Generate new 256-bit HMAC-SHA256 key
+   - Store new key securely in Supabase vault
+   - Record public key hash and fingerprint in `audit_signing_keys`
 
-**SQL**:
+2. **Activation (Rotation execution)**:
+   - Call `activate_signing_key()` to activate new key and rotate previous
+   - Update application configuration to use new key version (e.g., 'v2.0')
+   - Seal current active partitions with old key version
+
+3. **Overlap Period (30 days default)**:
+   - Both old and new keys remain valid for verification
+   - New events signed with new key
+   - Old events verifiable with either key
+
+4. **Cleanup (Post-overlap)**:
+   - Run `deactivate_expired_signing_keys()` to deactivate old keys
+   - Update partition manifests with correct key versions
+
+**Dual-Key Verification During Overlap**:
+
+During the overlap window, events can be verified using either the old or new key. The verification algorithm:
+
+1. Extract `signing_key_version` from audit event
+2. Query `get_valid_signing_keys_for_verification(event_timestamp)`
+3. Try verification with each valid key until success
+4. Record which key version was used for verification
+
+**SQL Examples**:
 
 ```sql
--- Update signing key version in manifests
-ALTER TABLE partition_manifests ADD COLUMN IF NOT EXISTS signing_key_version TEXT DEFAULT 'v1.0';
+-- Activate new signing key (v2.0) with 30-day overlap
+SELECT activate_signing_key(
+  'audit-key-v2.0',
+  'v2.0',
+  'sha256_hash_of_new_public_key',
+  'fingerprint_of_new_key',
+  'annual_rotation',
+  INTERVAL '30 days'
+);
 
--- Mark partitions with old key version before rotation
-UPDATE partition_manifests SET signing_key_version = 'v1.0' WHERE signing_key_version IS NULL;
+-- Seal partition with specific key version
+SELECT seal_audit_partition('audit_events_202410', 'v1.0');
 
--- After rotation, new events will use v2.0 (set in app config)
+-- Verify event with key versioning support
+SELECT * FROM verify_audit_event_with_key_versioning('event-uuid-here');
+
+-- Deactivate expired keys after overlap
+SELECT deactivate_expired_signing_keys();
 ```
+
+**Rollback Steps** (if new key compromised or issues detected):
+
+1. **Immediate rollback**: Mark new key inactive, re-enable previous key
+2. **Data cleanup**: No data loss - old key still valid for existing signatures
+3. **Verification**: Confirm all events still verifiable with rolled-back key
+
+```sql
+-- Rollback: Deactivate new key, reactivate previous
+UPDATE audit_signing_keys
+SET is_active = FALSE, deactivated_at = NOW()
+WHERE version = 'v2.0' AND is_active = TRUE;
+
+UPDATE audit_signing_keys
+SET is_active = TRUE, rotated_at = NULL, deactivated_at = NULL
+WHERE version = 'v1.0';
+```
+
+**Sample Verification Algorithm**:
+
+```sql
+-- Function: verify_event_signature(event_id, event_data, signature, key_version)
+-- Returns: (is_valid, used_key_version, verification_method)
+
+CREATE OR REPLACE FUNCTION verify_event_signature(
+  p_event_id UUID,
+  p_event_data JSONB,
+  p_signature TEXT,
+  p_key_version TEXT
+)
+RETURNS TABLE (is_valid BOOLEAN, used_key_version TEXT, method TEXT) AS $$
+DECLARE
+  v_valid_keys RECORD;
+  v_expected_sig TEXT;
+  v_key_hash TEXT;
+BEGIN
+  -- Get all valid keys for this event's timestamp
+  FOR v_valid_keys IN
+    SELECT * FROM get_valid_signing_keys_for_verification(
+      (p_event_data->>'timestamp')::TIMESTAMPTZ
+    )
+  LOOP
+    -- Generate expected signature with this key
+    v_expected_sig := generate_hmac_signature(p_event_data, v_valid_keys.key_id);
+
+    IF v_expected_sig = p_signature THEN
+      RETURN QUERY SELECT
+        TRUE,
+        v_valid_keys.version,
+        CASE WHEN v_valid_keys.is_active THEN 'active' ELSE 'overlap' END;
+      RETURN;
+    END IF;
+  END LOOP;
+
+  -- No valid key found
+  RETURN QUERY SELECT FALSE, NULL::TEXT, 'no_valid_key';
+END;
+$$ LANGUAGE plpgsql;
+```
+
+**Migration Updates Required**:
+
+The following database changes are implemented in migration `20251022_add_signing_key_versioning.sql`:
+
+- Add `signing_key_version` column to `audit_events` and `partition_manifests`
+- Create `audit_signing_keys` table with key lifecycle tracking
+- Update `seal_audit_partition()` to accept key version parameter
+- Add helper functions: `activate_signing_key()`, `deactivate_expired_signing_keys()`
+- Enhanced verification with `verify_audit_event_with_key_versioning()`
 
 ---
 

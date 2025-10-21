@@ -6,9 +6,9 @@
   "lastUpdated": "2025-10-19",
   "controller": {
     "name": "GrowBro",
-    "address": "[To be filled]",
-    "dpoContact": "[To be filled]",
-    "representativeEU": "[To be filled if non-EU controller]"
+    "address": "${LEGAL_ENTITY_ADDRESS}",
+    "dpoContact": "${DPO_EMAIL}",
+    "representativeEU": "${EU_REPRESENTATIVE_ADDRESS}"
   },
   "entries": [
     {
@@ -17,7 +17,7 @@
       "controller": "GrowBro",
       "processor": null,
       "jointControllers": null,
-      "dpoContact": "[To be filled]",
+      "dpoContact": "${DPO_EMAIL}",
       "purposes": [
         "DSA Notice-and-Action compliance (Art. 16, 17)",
         "Platform safety and harmful content prevention",
@@ -105,7 +105,7 @@
       "controller": "GrowBro",
       "processor": "[Third-party age verification provider if applicable]",
       "jointControllers": null,
-      "dpoContact": "[To be filled]",
+      "dpoContact": "${DPO_EMAIL}",
       "purposes": [
         "DSA Art. 28 compliance (protection of minors)",
         "Prevent minors from accessing age-restricted content",
@@ -181,7 +181,7 @@
       "controller": "GrowBro",
       "processor": null,
       "jointControllers": null,
-      "dpoContact": "[To be filled]",
+      "dpoContact": "${DPO_EMAIL}",
       "purposes": [
         "Compliance with regional legal requirements (geo-blocking per moderation decisions)",
         "Cultural sensitivity and localized content controls",
@@ -256,7 +256,7 @@
       "controller": "GrowBro",
       "processor": null,
       "jointControllers": null,
-      "dpoContact": "[To be filled]",
+      "dpoContact": "${DPO_EMAIL}",
       "purposes": [
         "DSA transparency reporting (Art. 15, 24)",
         "Regulatory compliance (GDPR audit trail, DSA SoR database submissions)",
@@ -336,7 +336,7 @@
       "controller": "GrowBro",
       "processor": null,
       "jointControllers": null,
-      "dpoContact": "[To be filled]",
+      "dpoContact": "${DPO_EMAIL}",
       "purposes": [
         "DSA Art. 24(5) compliance (SoR submissions to Commission Transparency Database)",
         "DSA Art. 15 & 24 transparency reporting (annual reports)",
@@ -405,7 +405,7 @@
   ],
   "metadata": {
     "reviewSchedule": "Quarterly reviews of all RoPA entries; immediate updates upon processing changes",
-    "responsiblePerson": "[Data Protection Officer]",
+    "responsiblePerson": "${DPO_NAME}",
     "lastAudit": null,
     "nextAudit": "2026-01-19"
   }

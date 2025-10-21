@@ -30,11 +30,12 @@ import {
   useModal,
   View,
 } from '@/components/ui';
-import { showErrorMessage } from '@/components/ui/utils';
+import { showErrorMessage, showSuccessMessage } from '@/components/ui/utils';
 import { AuthenticationError, getAuthenticatedUserId } from '@/lib/auth';
 import type { ModerationReason } from '@/lib/moderation/moderation-manager';
 import { moderationManager } from '@/lib/moderation/moderation-manager';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
+import type { ReportType } from '@/types/moderation';
 
 type ReportContentModalProps = {
   contentId: string | number;
@@ -47,13 +48,11 @@ export type ReportContentModalRef = {
   dismiss: () => void;
 };
 
-type ReportType = 'illegal' | 'policy';
-
 // DSA Art. 16 compliant form schema
 const createReportSchema = (t: any) =>
   z
     .object({
-      reportType: z.enum(['illegal', 'policy'], {
+      reportType: z.enum(['illegal', 'policy_violation'], {
         required_error: t('moderation.report_modal.select_reason'),
       }),
       reason: z.enum(['spam', 'harassment', 'illegal', 'other'] as const, {
@@ -67,7 +66,7 @@ const createReportSchema = (t: any) =>
         .max(5000, t('moderation.report_modal.explanation_too_long')),
       reporterEmail: z
         .string()
-        .email(t('moderation.report_modal.evidence_url_invalid'))
+        .email(t('moderation.report_modal.reporter_email_invalid'))
         .optional()
         .or(z.literal('')),
       goodFaithDeclaration: z.literal(true, {
@@ -121,7 +120,7 @@ function useReportContentForm(
   } = useForm<ReportFormData>({
     resolver: zodResolver(createReportSchema(t)),
     defaultValues: {
-      reportType: 'policy',
+      reportType: 'policy_violation',
       reason: undefined,
       jurisdiction: undefined,
       legalReference: '',
@@ -140,13 +139,13 @@ function useReportContentForm(
       value: 'spam',
       label: t('moderation.report_modal.reason_spam'),
       description: t('moderation.report_modal.reason_spam_desc'),
-      reportType: 'policy',
+      reportType: 'policy_violation',
     },
     {
       value: 'harassment',
       label: t('moderation.report_modal.reason_harassment'),
       description: t('moderation.report_modal.reason_harassment_desc'),
-      reportType: 'policy',
+      reportType: 'policy_violation',
     },
     {
       value: 'illegal',
@@ -158,7 +157,7 @@ function useReportContentForm(
       value: 'other',
       label: t('moderation.report_modal.reason_other'),
       description: t('moderation.report_modal.reason_other_desc'),
-      reportType: 'policy',
+      reportType: 'policy_violation',
     },
   ];
 
@@ -188,7 +187,7 @@ function useReportContentForm(
 
         // Show toast after a short delay
         setTimeout(() => {
-          console.log(message);
+          showSuccessMessage(message);
         }, 300);
       }
     } catch (err) {
@@ -222,6 +221,285 @@ function useReportContentForm(
   };
 }
 
+/**
+ * Report Type Selection Component
+ */
+function ReportTypeSelection({
+  control,
+  t,
+}: {
+  control: any;
+  t: (key: string) => string;
+}) {
+  return (
+    <View className="mb-6">
+      <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-100">
+        {t('moderation.report_modal.report_type_label')}
+      </Text>
+      <Controller
+        control={control}
+        name="reportType"
+        render={({ field: { value, onChange } }) => (
+          <View className="gap-3">
+            <ReportTypeOption
+              type="policy_violation"
+              label={t('moderation.report_modal.report_type_policy')}
+              description={t('moderation.report_modal.report_type_policy_desc')}
+              selected={value === 'policy_violation'}
+              onSelect={() => onChange('policy_violation')}
+              testID="report-type-policy"
+            />
+            <ReportTypeOption
+              type="illegal"
+              label={t('moderation.report_modal.report_type_illegal')}
+              description={t(
+                'moderation.report_modal.report_type_illegal_desc'
+              )}
+              selected={value === 'illegal'}
+              onSelect={() => onChange('illegal')}
+              testID="report-type-illegal"
+            />
+          </View>
+        )}
+      />
+    </View>
+  );
+}
+
+/**
+ * Reason Selection Component
+ */
+function ReasonSelection({
+  control,
+  errors,
+  reportType,
+  reasons,
+  t,
+}: {
+  control: any;
+  errors: any;
+  reportType: ReportType;
+  reasons: ReasonOption[];
+  t: (key: string) => string;
+}) {
+  // Filter reasons based on report type
+  const filteredReasons = reasons.filter((r) => {
+    if (reportType === 'illegal') return r.value === 'illegal';
+    return r.value !== 'illegal';
+  });
+
+  return (
+    <View className="mb-6">
+      <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-100">
+        {t('moderation.report_modal.select_reason')}
+      </Text>
+      <Controller
+        control={control}
+        name="reason"
+        render={({ field: { value, onChange } }) => (
+          <View>
+            {filteredReasons.map((r) => (
+              <ReasonOptionComponent
+                key={r.value}
+                option={r}
+                selected={value === r.value}
+                onSelect={() => onChange(r.value)}
+                testID={`report-reason-${r.value}`}
+              />
+            ))}
+          </View>
+        )}
+      />
+      {errors.reason && (
+        <Text className="mt-2 text-sm text-danger-600 dark:text-danger-400">
+          {errors.reason.message as string}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+/**
+ * Illegal Report Fields Component
+ */
+function IllegalReportFields({
+  control,
+  errors,
+  t,
+}: {
+  control: any;
+  errors: any;
+  t: (key: string) => string;
+}) {
+  return (
+    <>
+      <View className="mb-6">
+        <JurisdictionSelector
+          control={control}
+          name="jurisdiction"
+          errors={errors}
+          testID="jurisdiction-selector"
+        />
+      </View>
+      <View className="mb-6">
+        <ControlledInput
+          control={control}
+          name="legalReference"
+          label={t('moderation.report_modal.legal_reference_label')}
+          placeholder={t('moderation.report_modal.legal_reference_placeholder')}
+          error={errors.legalReference?.message as string}
+          testID="legal-reference-input"
+        />
+      </View>
+    </>
+  );
+}
+
+/**
+ * Explanation Section Component
+ */
+function ExplanationSection({
+  control,
+  errors,
+  charCount,
+  t,
+}: {
+  control: any;
+  errors: any;
+  charCount: number;
+  t: (key: string) => string;
+}) {
+  return (
+    <View className="mb-6">
+      <ControlledInput
+        control={control}
+        name="explanation"
+        label={t('moderation.report_modal.explanation_label')}
+        placeholder={t('moderation.report_modal.explanation_placeholder')}
+        multiline
+        numberOfLines={6}
+        error={errors.explanation?.message as string}
+        testID="explanation-input"
+      />
+      <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+        {t('moderation.report_modal.char_count', {
+          count: charCount,
+          max: 5000,
+        })}
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * Reporter Email Section Component
+ */
+function ReporterEmailSection({
+  control,
+  errors,
+  t,
+}: {
+  control: any;
+  errors: any;
+  t: (key: string) => string;
+}) {
+  return (
+    <View className="mb-6">
+      <ControlledInput
+        control={control}
+        name="reporterEmail"
+        label={t('moderation.report_modal.reporter_email_label')}
+        placeholder={t('moderation.report_modal.reporter_email_placeholder')}
+        keyboardType="email-address"
+        error={errors.reporterEmail?.message as string}
+        testID="reporter-email-input"
+      />
+    </View>
+  );
+}
+
+/**
+ * Good Faith Declaration Component
+ */
+function GoodFaithDeclaration({
+  control,
+  errors,
+  t,
+}: {
+  control: any;
+  errors: any;
+  t: (key: string) => string;
+}) {
+  return (
+    <View className="mb-6">
+      <Controller
+        control={control}
+        name="goodFaithDeclaration"
+        render={({ field: { value, onChange } }) => (
+          <Checkbox
+            checked={value === true}
+            onChange={onChange}
+            label={t('moderation.report_modal.good_faith_declaration_label')}
+            accessibilityLabel={t(
+              'moderation.report_modal.good_faith_declaration_label'
+            )}
+            accessibilityHint={t(
+              'moderation.report_modal.good_faith_accessibility_hint'
+            )}
+            testID="good-faith-checkbox"
+          />
+        )}
+      />
+      {errors.goodFaithDeclaration && (
+        <Text className="mt-2 text-sm text-danger-600 dark:text-danger-400">
+          {errors.goodFaithDeclaration.message as string}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+/**
+ * Form Actions Component
+ */
+function FormActions({
+  onSubmit,
+  onCancel,
+  isSubmitting,
+  t,
+}: {
+  onSubmit: () => void;
+  onCancel: () => void;
+  isSubmitting: boolean;
+  t: (key: string) => string;
+}) {
+  return (
+    <View className="mb-4 flex-row gap-3">
+      <View className="flex-1">
+        <Button
+          label={t('moderation.report_modal.cancel')}
+          variant="outline"
+          onPress={onCancel}
+          disabled={isSubmitting}
+          testID="report-cancel-btn"
+        />
+      </View>
+      <View className="flex-1">
+        <Button
+          label={
+            isSubmitting
+              ? t('moderation.report_modal.submitting')
+              : t('moderation.report_modal.submit')
+          }
+          onPress={onSubmit}
+          disabled={isSubmitting}
+          testID="report-submit-btn"
+        />
+      </View>
+    </View>
+  );
+}
+
 function ReportContentForm({
   control,
   errors,
@@ -245,12 +523,6 @@ function ReportContentForm({
 }) {
   const { t } = useTranslation();
 
-  // Filter reasons based on report type
-  const filteredReasons = reasons.filter((r) => {
-    if (reportType === 'illegal') return r.value === 'illegal';
-    return r.value !== 'illegal';
-  });
-
   return (
     <ScrollView className="flex-1 px-4">
       {/* Subtitle */}
@@ -261,179 +533,43 @@ function ReportContentForm({
       </View>
 
       {/* Report Type Selection */}
-      <View className="mb-6">
-        <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-100">
-          {t('moderation.report_modal.report_type_label')}
-        </Text>
-        <Controller
-          control={control}
-          name="reportType"
-          render={({ field: { value, onChange } }) => (
-            <View className="gap-3">
-              <ReportTypeOption
-                type="policy"
-                label={t('moderation.report_modal.report_type_policy')}
-                description={t(
-                  'moderation.report_modal.report_type_policy_desc'
-                )}
-                selected={value === 'policy'}
-                onSelect={() => onChange('policy')}
-                testID="report-type-policy"
-              />
-              <ReportTypeOption
-                type="illegal"
-                label={t('moderation.report_modal.report_type_illegal')}
-                description={t(
-                  'moderation.report_modal.report_type_illegal_desc'
-                )}
-                selected={value === 'illegal'}
-                onSelect={() => onChange('illegal')}
-                testID="report-type-illegal"
-              />
-            </View>
-          )}
-        />
-      </View>
+      <ReportTypeSelection control={control} t={t} />
 
       {/* Reason Selection */}
-      <View className="mb-6">
-        <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-100">
-          {t('moderation.report_modal.select_reason')}
-        </Text>
-        <Controller
-          control={control}
-          name="reason"
-          render={({ field: { value, onChange } }) => (
-            <View>
-              {filteredReasons.map((r) => (
-                <ReasonOptionComponent
-                  key={r.value}
-                  option={r}
-                  selected={value === r.value}
-                  onSelect={() => onChange(r.value)}
-                  testID={`report-reason-${r.value}`}
-                />
-              ))}
-            </View>
-          )}
-        />
-        {errors.reason && (
-          <Text className="mt-2 text-sm text-danger-600 dark:text-danger-400">
-            {errors.reason.message as string}
-          </Text>
-        )}
-      </View>
+      <ReasonSelection
+        control={control}
+        errors={errors}
+        reportType={reportType}
+        reasons={reasons}
+        t={t}
+      />
 
-      {/* Jurisdiction (illegal reports only) */}
+      {/* Jurisdiction and Legal Reference (illegal reports only) */}
       {reportType === 'illegal' && (
-        <View className="mb-6">
-          <JurisdictionSelector
-            control={control}
-            name="jurisdiction"
-            errors={errors}
-            testID="jurisdiction-selector"
-          />
-        </View>
-      )}
-
-      {/* Legal Reference (illegal reports only) */}
-      {reportType === 'illegal' && (
-        <View className="mb-6">
-          <ControlledInput
-            control={control}
-            name="legalReference"
-            label={t('moderation.report_modal.legal_reference_label')}
-            placeholder={t(
-              'moderation.report_modal.legal_reference_placeholder'
-            )}
-            error={errors.legalReference?.message as string}
-            testID="legal-reference-input"
-          />
-        </View>
+        <IllegalReportFields control={control} errors={errors} t={t} />
       )}
 
       {/* Explanation */}
-      <View className="mb-6">
-        <ControlledInput
-          control={control}
-          name="explanation"
-          label={t('moderation.report_modal.explanation_label')}
-          placeholder={t('moderation.report_modal.explanation_placeholder')}
-          multiline
-          numberOfLines={6}
-          error={errors.explanation?.message as string}
-          testID="explanation-input"
-        />
-        <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-          {t('moderation.report_modal.char_count', {
-            count: charCount,
-            max: 5000,
-          })}
-        </Text>
-      </View>
+      <ExplanationSection
+        control={control}
+        errors={errors}
+        charCount={charCount}
+        t={t}
+      />
 
       {/* Reporter Email (optional) */}
-      <View className="mb-6">
-        <ControlledInput
-          control={control}
-          name="reporterEmail"
-          label={t('moderation.report_modal.reporter_email_label')}
-          placeholder={t('moderation.report_modal.reporter_email_placeholder')}
-          keyboardType="email-address"
-          error={errors.reporterEmail?.message as string}
-          testID="reporter-email-input"
-        />
-      </View>
+      <ReporterEmailSection control={control} errors={errors} t={t} />
 
       {/* Good Faith Declaration */}
-      <View className="mb-6">
-        <Controller
-          control={control}
-          name="goodFaithDeclaration"
-          render={({ field: { value, onChange } }) => (
-            <Checkbox
-              checked={value === true}
-              onChange={onChange}
-              label={t('moderation.report_modal.good_faith_declaration_label')}
-              accessibilityLabel={t(
-                'moderation.report_modal.good_faith_declaration_label'
-              )}
-              accessibilityHint="Check this box to confirm you are submitting this report in good faith"
-              testID="good-faith-checkbox"
-            />
-          )}
-        />
-        {errors.goodFaithDeclaration && (
-          <Text className="mt-2 text-sm text-danger-600 dark:text-danger-400">
-            {errors.goodFaithDeclaration.message as string}
-          </Text>
-        )}
-      </View>
+      <GoodFaithDeclaration control={control} errors={errors} t={t} />
 
       {/* Actions */}
-      <View className="mb-4 flex-row gap-3">
-        <View className="flex-1">
-          <Button
-            label={t('moderation.report_modal.cancel')}
-            variant="outline"
-            onPress={onCancel}
-            disabled={isSubmitting}
-            testID="report-cancel-btn"
-          />
-        </View>
-        <View className="flex-1">
-          <Button
-            label={
-              isSubmitting
-                ? t('moderation.report_modal.submitting')
-                : t('moderation.report_modal.submit')
-            }
-            onPress={onSubmit}
-            disabled={isSubmitting}
-            testID="report-submit-btn"
-          />
-        </View>
-      </View>
+      <FormActions
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+        isSubmitting={isSubmitting}
+        t={t}
+      />
     </ScrollView>
   );
 }
@@ -525,7 +661,9 @@ function ReportTypeOption({
       accessibilityRole="radio"
       accessibilityState={{ checked: selected }}
       accessibilityLabel={`${label}. ${description}`}
-      accessibilityHint="Double tap to select this report type"
+      accessibilityHint={t(
+        'moderation.report_modal.report_type_accessibility_hint'
+      )}
       testID={testID}
     >
       <View className="mb-2 flex-row items-center">
@@ -574,7 +712,9 @@ function ReasonOptionComponent({
       accessibilityRole="radio"
       accessibilityState={{ checked: selected }}
       accessibilityLabel={`${option.label}. ${option.description}`}
-      accessibilityHint="Double tap to select this reason for reporting"
+      accessibilityHint={t(
+        'moderation.report_modal.report_reason_accessibility_hint'
+      )}
       testID={testID}
     >
       <View className="mb-2 flex-row items-center">

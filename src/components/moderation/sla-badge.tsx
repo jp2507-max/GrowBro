@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Animated, {
   useAnimatedStyle,
   withRepeat,
@@ -29,6 +30,7 @@ type Props = {
 };
 
 export function SLABadge({ status, deadline, testID = 'sla-badge' }: Props) {
+  const { t } = useTranslation();
   const colors = SLA_COLORS[status];
   const timeRemaining = formatTimeRemaining(deadline.getTime() - Date.now());
   const shouldAnimate = shouldAnimateIndicator(status);
@@ -50,7 +52,7 @@ export function SLABadge({ status, deadline, testID = 'sla-badge' }: Props) {
   return (
     <Animated.View
       style={animatedStyle}
-      accessibilityLabel={getSLAAccessibilityLabel(status, timeRemaining)}
+      accessibilityLabel={getSLAAccessibilityLabel(status, timeRemaining, t)}
       accessibilityHint="Service level agreement status"
       testID={testID}
     >
@@ -58,7 +60,7 @@ export function SLABadge({ status, deadline, testID = 'sla-badge' }: Props) {
         className={`rounded-lg border px-3 py-1.5 ${colors.bg} ${colors.border}`}
       >
         <Text className={`text-xs font-semibold ${colors.text}`}>
-          {getSLAStatusLabel(status)}
+          {getSLAStatusLabel(status, t)}
         </Text>
         <Text className={`text-xs ${colors.text}`}>{timeRemaining}</Text>
       </View>

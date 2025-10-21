@@ -243,6 +243,24 @@ const client = z.object({
   EXPO_PUBLIC_PII_SCRUBBING_SALT: z.string().optional(),
 
   EXPO_PUBLIC_PII_SALT_VERSION: z.string().optional(),
+
+  // Legal/Compliance Contact Information
+
+  LEGAL_ENTITY_ADDRESS: z.string().optional(),
+
+  DPO_EMAIL: z.string().email().optional(),
+
+  DPO_NAME: z.string().optional(),
+
+  EU_REPRESENTATIVE_ADDRESS: z.string().optional(),
+
+  EXPO_PUBLIC_LEGAL_ENTITY_ADDRESS: z.string().optional(),
+
+  EXPO_PUBLIC_DPO_EMAIL: z.string().email().optional(),
+
+  EXPO_PUBLIC_DPO_NAME: z.string().optional(),
+
+  EXPO_PUBLIC_EU_REPRESENTATIVE_ADDRESS: z.string().optional(),
 });
 
 const buildTime = z.object({
@@ -355,6 +373,16 @@ const piiScrubbingSalt = readEnv(
 const piiSaltVersion = readEnv(
   'PII_SALT_VERSION',
   'EXPO_PUBLIC_PII_SALT_VERSION'
+);
+const legalEntityAddress = readEnv(
+  'LEGAL_ENTITY_ADDRESS',
+  'EXPO_PUBLIC_LEGAL_ENTITY_ADDRESS'
+);
+const dpoEmail = readEnv('DPO_EMAIL', 'EXPO_PUBLIC_DPO_EMAIL');
+const dpoName = readEnv('DPO_NAME', 'EXPO_PUBLIC_DPO_NAME');
+const euRepresentativeAddress = readEnv(
+  'EU_REPRESENTATIVE_ADDRESS',
+  'EXPO_PUBLIC_EU_REPRESENTATIVE_ADDRESS'
 );
 
 const _clientEnv = {
@@ -471,6 +499,16 @@ const _clientEnv = {
   PII_SCRUBBING_SALT: piiScrubbingSalt,
 
   PII_SALT_VERSION: piiSaltVersion,
+
+  // Legal/Compliance Contact Information
+
+  LEGAL_ENTITY_ADDRESS: legalEntityAddress,
+
+  DPO_EMAIL: dpoEmail,
+
+  DPO_NAME: dpoName || 'Jan-Peter Blohm',
+
+  EU_REPRESENTATIVE_ADDRESS: euRepresentativeAddress,
 };
 
 /**

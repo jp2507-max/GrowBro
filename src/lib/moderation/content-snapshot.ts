@@ -10,6 +10,7 @@
 // Use React Native compatible crypto if available, otherwise use a polyfill
 // Note: In production, this should use expo-crypto for native SHA-256 hashing
 import * as Crypto from 'expo-crypto';
+import stringify from 'fast-json-stable-stringify';
 
 import type { ContentSnapshot, ContentType } from '@/types/moderation';
 
@@ -57,8 +58,8 @@ export async function createContentSnapshot(
   options: CreateSnapshotOptions
 ): Promise<ContentSnapshot> {
   const { contentId, contentType, contentData, reportId } = options;
-  // Serialize content data for hashing
-  const serializedContent = JSON.stringify(contentData);
+  // Serialize content data for hashing using canonical JSON
+  const serializedContent = stringify(contentData);
 
   // Generate cryptographic hash
   const hash = await generateContentHash(serializedContent);
@@ -87,8 +88,8 @@ export async function verifySnapshotIntegrity(
   snapshot: ContentSnapshot
 ): Promise<boolean> {
   try {
-    // Recalculate hash from snapshot data
-    const serializedContent = JSON.stringify(snapshot.snapshot_data);
+    // Recalculate hash from snapshot data using canonical JSON
+    const serializedContent = stringify(snapshot.snapshot_data);
     const recalculatedHash = await generateContentHash(serializedContent);
 
     // Compare with stored hash

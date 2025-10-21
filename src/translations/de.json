@@ -889,13 +889,33 @@
     "block_failed": "Benutzer konnte nicht blockiert werden. Bitte versuche es erneut.",
     "delete": "Löschen",
     "delete_failed": "Löschen des Inhalts fehlgeschlagen. Bitte versuche es erneut.",
+    "filterPriority": "Nach Priorität filtern",
+    "filters": {
+      "priority": {
+        "all": "Alle",
+        "illegal": "Illegal",
+        "immediate": "Sofort",
+        "standard": "Standard",
+        "trusted": "Vertrauenswürdig"
+      }
+    },
     "hide": "Ausblenden",
     "mute": "Stummschalten",
     "mute_failed": "Benutzer konnte nicht stummgeschaltet werden. Bitte versuche es erneut.",
+    "priority": {
+      "illegal": "Illegaler Inhalt",
+      "immediate": "SOFORT",
+      "standard": "Standard",
+      "trusted": "Vertrauenswürdiger Melder"
+    },
     "queue": {
       "appeal": "Einspruch",
-      "empty": "Leer",
+      "empty": {
+        "subtitle": "Alles erledigt! Schau später nochmal vorbei.",
+        "title": "Keine Meldungen in der Warteschlange"
+      },
       "escalate": "Eskalieren",
+      "loading": "Warteschlange wird geladen...",
       "processAll": "Alle verarbeiten",
       "title": "Moderationswarteschlange"
     },
@@ -915,6 +935,7 @@
       "explanation_required": "Bitte gib eine detaillierte Erklärung ab",
       "explanation_too_long": "Die Erklärung darf maximal 5000 Zeichen lang sein",
       "explanation_too_short": "Die Erklärung muss mindestens 50 Zeichen lang sein, um ausreichend begründet zu sein",
+      "good_faith_accessibility_hint": "Bestätige, dass du diese Meldung in gutem Glauben einreichst",
       "good_faith_declaration_label": "Ich erkläre in gutem Glauben, dass die Informationen in dieser Meldung nach bestem Wissen korrekt und vollständig sind.",
       "good_faith_required": "Du musst die Erklärung in gutem Glauben akzeptieren, um diese Meldung einzureichen",
       "jurisdiction_label": "Gerichtsbarkeit",
@@ -933,12 +954,15 @@
       "reason_spam": "Spam oder Betrug",
       "reason_spam_desc": "Unerwünschte Werbeinhalte, betrügerische Systeme oder manipulative Beiträge",
       "remove_evidence": "Entfernen",
+      "report_reason_accessibility_hint": "Diesen Grund für die Meldung auswählen",
+      "report_type_accessibility_hint": "Diese Meldungsart auswählen",
       "report_type_illegal": "Illegaler Inhalt",
       "report_type_illegal_desc": "Inhalt, der gegen Gesetze in deiner Gerichtsbarkeit verstößt",
       "report_type_label": "Um welche Art von Verstoß handelt es sich?",
       "report_type_policy": "Richtlinien-/Nutzungsbedingungsverstoß",
       "report_type_policy_desc": "Inhalt, der gegen GrowBro-Community-Richtlinien oder Nutzungsbedingungen verstößt",
       "reporter_contact_label": "Deine Kontaktinformationen",
+      "reporter_email_invalid": "Bitte gib eine gültige E-Mail-Adresse ein",
       "reporter_email_label": "E-Mail",
       "reporter_email_placeholder": "deine.email@beispiel.de",
       "reporter_email_required": "E-Mail ist für Rückfragen erforderlich",
@@ -952,6 +976,15 @@
       "subtitle": "Hilf uns, eine sichere und lehrreiche Community zu erhalten, indem du Inhalte meldest, die gegen unsere Richtlinien oder geltende Gesetze verstoßen.",
       "success": "Meldung erfolgreich eingereicht. Danke, dass du unsere Community sicher hältst.",
       "title": "Inhalt melden"
+    },
+    "sla": {
+      "status": {
+        "critical": "ÜBERFÄLLIG",
+        "green": "Im Zeitplan",
+        "orange": "Gefährdet",
+        "red": "Dringend",
+        "yellow": "Annähernd"
+      }
     },
     "unhide": "Einblenden"
   },
@@ -1667,6 +1700,28 @@
     "webPortalIntro": "Nutze diese Seite, wenn du die mobile App nicht öffnen kannst und dennoch eine Kontolöschung oder einen Datenexport anstoßen musst.",
     "webPortalLogin": "Anmeldung öffnen",
     "webPortalTitle": "GrowBro-Löschportal"
+  },
+  "privacyNotices": {
+    "PRIVACY-AGE-001": {
+      "audience": "Alle Nutzer, die einer Altersüberprüfung unterzogen werden",
+      "deliveryContext": "Angezeigt, bevor der Altersverifizierungsprozess beginnt",
+      "title": "Hinweis zum Datenschutz bei Altersverifikation"
+    },
+    "PRIVACY-GEO-001": {
+      "audience": "Alle Nutzer beim Zugriff auf Inhalte",
+      "deliveryContext": "Im Datenschutzbereich der App und bei Anwendung von Geo-Blocking angezeigt",
+      "title": "Hinweis zum Datenschutz bei Geostandort und regionalen Beschränkungen"
+    },
+    "PRIVACY-MOD-001": {
+      "audience": "Personen, die Inhalte melden, und gemeldete Nutzer",
+      "deliveryContext": "Angezeigt, wenn ein Nutzer eine Meldung einreicht oder eine Moderationsentscheidung erhält",
+      "title": "Hinweis zum Datenschutz bei Inhaltsmoderation und Meldungen"
+    },
+    "PRIVACY-MOD-STAFF-001": {
+      "audience": "Content-Moderatoren und Compliance-Personal",
+      "deliveryContext": "Während des Moderator-Onboardings und in der Moderatorenkonsole angezeigt",
+      "title": "Hinweis zum Datenschutz für Moderatoren"
+    }
   },
   "profile": {
     "label": "Profil",

@@ -1,7 +1,9 @@
 import { nanoid } from 'nanoid/non-secure';
+import { showMessage } from 'react-native-flash-message';
 
 import { apiSubmitAppeal } from '@/api/moderation/appeals';
 import { getItem, removeItem, setItem } from '@/lib/storage';
+import type { AppealType } from '@/types/moderation';
 
 export type Appeal = {
   id: string;
@@ -18,6 +20,37 @@ const KEY = 'moderation.appeals.queue.v1';
 
 function now(): number {
   return Date.now();
+}
+
+/**
+ * Infers appeal type from the reason string
+ * Maps common reason keywords to appropriate appeal types
+ */
+function inferAppealType(reason: string): AppealType {
+  const lowerReason = reason.toLowerCase();
+
+  // Check for account-related reasons (suspension, ban, etc.)
+  if (
+    lowerReason.includes('account') ||
+    lowerReason.includes('ban') ||
+    lowerReason.includes('suspend') ||
+    lowerReason.includes('user')
+  ) {
+    return 'account_action';
+  }
+
+  // Check for geo-restriction reasons
+  if (
+    lowerReason.includes('geo') ||
+    lowerReason.includes('location') ||
+    lowerReason.includes('region') ||
+    lowerReason.includes('country')
+  ) {
+    return 'geo_restriction';
+  }
+
+  // Default to content removal for all other cases
+  return 'content_removal';
 }
 
 // Simple mutex for coordinating access to the appeals queue
@@ -140,13 +173,29 @@ export class AppealsQueue {
       }
 
       // Attempt to submit the appeal
-      // TODO: Update to use new DSA-compliant appeal schema
-      await apiSubmitAppeal({
+      const appealType = inferAppealType(item.reason);
+
+      const result = await apiSubmitAppeal({
         original_decision_id: String(item.contentId),
-        user_id: 'current-user', // TODO: Get from auth context
-        appeal_type: 'content_removal', // TODO: Infer from reason
+        appeal_type: appealType,
         counter_arguments: item.details || item.reason,
       });
+
+      if (!result.success) {
+        // API call failed - show error to user and throw to trigger retry logic
+        console.error(
+          `[AppealsQueue] Failed to submit appeal ${item.id}:`,
+          result.error
+        );
+        showMessage({
+          message: 'Appeal Submission Failed',
+          description:
+            result.error || 'Unable to submit appeal. Please try again.',
+          type: 'danger',
+          duration: 5000,
+        });
+        throw new Error(result.error || 'Appeal submission failed');
+      }
 
       // Success: remove from queue
       const updatedItems = items.filter((x) => x.id !== item.id);

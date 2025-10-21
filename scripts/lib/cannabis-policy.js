@@ -206,8 +206,13 @@ function scanDocumentation(repoRoot, config) {
     const baseDir = path.join(repoRoot, descriptor.path);
     if (!fs.existsSync(baseDir)) continue;
     const extensions = new Set(toArray(descriptor.extensions));
+    const excludePatterns = new Set(toArray(descriptor.excludePatterns));
 
     walkDir(baseDir, (filePath) => {
+      // Check if file should be excluded
+      const relativePath = path.relative(repoRoot, filePath);
+      if (excludePatterns.has(relativePath)) return;
+
       if (extensions.size > 0) {
         const ext = path.extname(filePath);
         if (!extensions.has(ext)) return;

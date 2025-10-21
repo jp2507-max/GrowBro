@@ -7,10 +7,15 @@
 import { Redirect, Stack } from 'expo-router';
 import React from 'react';
 
+import { success } from '@/components/ui/colors';
 import { useIsModerator } from '@/lib/auth/use-is-moderator';
 
 export default function ModeratorLayout() {
-  const isModerator = useIsModerator();
+  const { isModerator, isLoading } = useIsModerator();
+
+  if (isLoading) {
+    return null; // Or render a loading UI
+  }
 
   if (!isModerator) {
     return <Redirect href="/feed" />;
@@ -18,19 +23,22 @@ export default function ModeratorLayout() {
 
   return (
     <Stack
+      testID="moderator-stack"
       screenOptions={{
         headerShown: true,
         headerBackTitle: 'Back',
-        headerTintColor: '#059669',
+        headerTintColor: success['700'],
       }}
     >
       <Stack.Screen
+        testID="screen-moderation-queue"
         name="queue/index"
         options={{
           title: 'Moderation Queue',
         }}
       />
       <Stack.Screen
+        testID="screen-review-report"
         name="report/[id]"
         options={{
           title: 'Review Report',

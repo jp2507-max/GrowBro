@@ -53,7 +53,7 @@ export interface SoRGenerationResult {
 /**
  * Default redress options per action severity
  *
- * All users get internal_appeal (DSA Art. 20)
+ * Users subject to moderation actions get internal_appeal (DSA Art. 20)
  * Severe actions also offer ODS (DSA Art. 21)
  * All can pursue court action
  */
@@ -119,10 +119,10 @@ export class SoRGenerator {
         user_id: input.user_id,
       };
 
-      // Insert into database
+      // Insert into database (upsert for idempotency on decision_id)
       const { data, error } = await supabase
         .from('statements_of_reasons')
-        .insert(sor)
+        .upsert(sor, { onConflict: 'decision_id' })
         .select()
         .single();
 
@@ -275,9 +275,9 @@ export class SoRGenerator {
     legalReference?: string
   ): string {
     if (ground === 'illegal') {
-      return `This content was removed because it violates ${legalReference || 'applicable law'}.`;
+      return `This decision was taken because the content violates ${legalReference || 'applicable law'}.`;
     }
-    return 'This content was removed because it violates our Terms & Conditions and Community Guidelines.';
+    return 'This decision was taken because the content violates our Terms & Conditions and Community Guidelines.';
   }
 
   /**

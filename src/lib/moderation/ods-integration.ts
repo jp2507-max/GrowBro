@@ -14,6 +14,7 @@ import { supabase } from '../supabase';
 import { logAppealsAudit } from './appeals-audit';
 import { sendAppealNotification } from './appeals-notifications';
 import { getAppealStatus } from './appeals-service';
+import { moderationMetrics } from './moderation-metrics';
 
 // ============================================================================
 // Constants
@@ -209,6 +210,9 @@ export async function getODSBody(id: string): Promise<ODSBody | null> {
  * - Eligible ODS bodies exist for user's jurisdiction
  *
  * Requirement: 4.8, 13.1
+ *
+ * TODO: Implement user profile fetching for jurisdiction and preferred language
+ * Currently assumes no jurisdiction/language filters for ODS body eligibility
  */
 export async function checkODSEligibility(
   appealId: string
@@ -222,16 +226,9 @@ export async function checkODSEligibility(
       eligibleBodies: [],
     };
   }
-  // Satisfying TypeScript's return type requirement
-  return {
-    eligible: false,
-    reasons: ['Unexpected state'],
-    eligibleBodies: [],
-  };
 
-  // The code below is unreachable until appeal fetching is implemented
-  // but is kept for reference when implementing the full logic
-  /*
+  const reasons: string[] = [];
+
   try {
     // Check if internal appeal is exhausted
     if (appeal.status !== 'resolved') {
@@ -270,16 +267,17 @@ export async function checkODSEligibility(
     }
 
     // Get eligible ODS bodies
+    // TODO: Fetch user profile for jurisdiction and preferred language
+    // const userProfile = await getUserProfile(appeal.user_id);
     const eligibleBodies = await getODSBodies({
-      // TODO: Get user jurisdiction from profile
-      // jurisdiction: user.jurisdiction,
-      // language: user.preferredLanguage,
+      // jurisdiction: userProfile?.jurisdiction,
+      // language: userProfile?.preferredLanguage,
       appealType: appeal.appeal_type,
       activeOnly: true,
     });
 
     if (eligibleBodies.length === 0) {
-      reasons.push('No certified ODS bodies available for your jurisdiction');
+      reasons.push('No certified ODS bodies available for this appeal type');
     }
 
     return {
@@ -295,7 +293,6 @@ export async function checkODSEligibility(
       eligibleBodies: [],
     };
   }
-  */
 }
 
 // ============================================================================
@@ -372,8 +369,6 @@ export async function escalateToODS(
       userId: appeal?.user_id,
       metadata: { odsBodyId, odsBodyName: odsBody.name, targetResolutionDate },
     });
-
-    console.log('[ODSMetrics] ODS escalation tracked');
 
     return { success: true, escalation: createdEscalation, odsBody };
   } catch (error) {
@@ -549,7 +544,20 @@ export async function recordODSOutcome(
     });
 
     // Update metrics (ODS outcomes for transparency reporting)
-    console.log('[ODSMetrics] ODS outcome recorded:', outcome.outcome);
+    const resolutionDays = escalation.actualResolutionDate
+      ? Math.floor(
+          (escalation.actualResolutionDate.getTime() -
+            escalation.submittedAt.getTime()) /
+            (1000 * 60 * 60 * 24)
+        )
+      : 0;
+
+    moderationMetrics.trackODSOutcome(
+      escalationId,
+      outcome.outcome,
+      escalation.odsBodyId,
+      resolutionDays
+    );
 
     return { success: true };
   } catch (error) {

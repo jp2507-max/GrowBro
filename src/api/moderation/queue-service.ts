@@ -4,6 +4,7 @@
  * Requirements: 2.1, 2.2, 2.3
  */
 
+import { groupByContent } from '@/lib/moderation/utils';
 import type {
   ClaimResult,
   ConflictOfInterest,
@@ -248,17 +249,7 @@ export function filterQueue(
 export function groupReportsByContent(
   reports: QueuedReport[]
 ): Map<string, QueuedReport[]> {
-  const grouped = new Map<string, QueuedReport[]>();
-
-  for (const report of reports) {
-    const hash = report.content_hash;
-    if (!grouped.has(hash)) {
-      grouped.set(hash, []);
-    }
-    grouped.get(hash)!.push(report);
-  }
-
-  return grouped;
+  return groupByContent(reports);
 }
 
 /**

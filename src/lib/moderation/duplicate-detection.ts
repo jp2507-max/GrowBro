@@ -9,6 +9,8 @@
 
 import type { ContentReport, ReportType } from '@/types/moderation';
 
+import { groupByContent } from './utils';
+
 // ============================================================================
 // Duplicate Detection Configuration
 // ============================================================================
@@ -155,15 +157,7 @@ export function shouldGroupReports(reports: ContentReport[]): boolean {
 export function groupReportsByContent(
   reports: ContentReport[]
 ): Map<string, ContentReport[]> {
-  const grouped = new Map<string, ContentReport[]>();
-
-  for (const report of reports) {
-    const existing = grouped.get(report.content_hash) || [];
-    existing.push(report);
-    grouped.set(report.content_hash, existing);
-  }
-
-  return grouped;
+  return groupByContent(reports);
 }
 
 /**

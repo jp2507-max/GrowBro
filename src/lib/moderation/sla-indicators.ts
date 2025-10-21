@@ -53,28 +53,25 @@ export const SLA_COLORS: Record<
 /**
  * Get display label for SLA status
  */
-export function getSLAStatusLabel(status: SLAStatus): string {
-  const labels: Record<SLAStatus, string> = {
-    green: 'On Track',
-    yellow: 'Approaching',
-    orange: 'At Risk',
-    red: 'Urgent',
-    critical: 'OVERDUE',
-  };
-  return labels[status];
+export function getSLAStatusLabel(
+  status: SLAStatus,
+  t: (key: string) => string
+): string {
+  return t(`moderation.sla.status.${status}`);
 }
 
 /**
  * Get priority level display name
  */
-export function getPriorityLabel(priority: string): string {
-  const labels: Record<string, string> = {
-    immediate: 'IMMEDIATE',
-    illegal: 'Illegal Content',
-    trusted: 'Trusted Flagger',
-    standard: 'Standard',
-  };
-  return labels[priority] || priority;
+export function getPriorityLabel(
+  priority: string,
+  t: (key: string) => string
+): string {
+  const translated = t(`moderation.priority.${priority}`);
+  // Fall back to the original priority value if translation key doesn't exist
+  return translated !== `moderation.priority.${priority}`
+    ? translated
+    : priority;
 }
 
 /**
@@ -106,9 +103,10 @@ export function shouldAnimateIndicator(status: SLAStatus): boolean {
  */
 export function getSLAAccessibilityLabel(
   status: SLAStatus,
-  timeRemaining: string
+  timeRemaining: string,
+  t: (key: string) => string
 ): string {
-  const statusLabel = getSLAStatusLabel(status);
+  const statusLabel = getSLAStatusLabel(status, t);
   return `SLA Status: ${statusLabel}. Time remaining: ${timeRemaining}`;
 }
 

@@ -115,26 +115,56 @@
   - Add optional ODS escalation and store outcomes for transparency metrics
   - Create ODS integration for external dispute resolution
   - _Requirements: 4.1, 4.2, 4.5, 4.8, 13.1_
-  - **Status**: ✅ COMPLETE (2025-10-20) - **ALL TODOs IMPLEMENTED**
+  - **Status**: ✅ COMPLETE (2025-10-21) - **Core implementation complete with remaining integration work**
     - ✅ Appeals Service core with eligibility validation (`src/lib/moderation/appeals-service.ts`)
     - ✅ ODS Integration for Art. 21 external dispute resolution (`src/lib/moderation/ods-integration.ts`)
     - ✅ Appeals API endpoints (`src/api/moderation/appeals.ts`)
     - ✅ React Native UI components:
       - `src/components/moderation/appeal-submission-form.tsx` - with evidence URL management
       - `src/components/moderation/appeal-status-tracker.tsx`
-    - ✅ Comprehensive test suite (`src/lib/moderation/appeals-service.test.ts`)
-    - ✅ All tests passing (23/23 tests)
+    - ✅ Comprehensive test suite (`src/lib/moderation/appeals-service.test.ts`) - **UPDATED (2025-10-21)**
+      - ✅ Real assertions for appeal validation and eligibility
+      - ✅ Conflict-of-interest prevention tests with logic verification
+      - ✅ Decision reversal tests with restoration flow validation
+      - ✅ All tests passing (23/23 tests)
     - ✅ TypeScript compilation successful
-    - ✅ **NEW**: Audit logging service (`src/lib/moderation/appeals-audit.ts`)
-    - ✅ **NEW**: Notification service (`src/lib/moderation/appeals-notifications.ts`)
-    - ✅ **IMPLEMENTED**: All Supabase database operations (8 query/update functions)
-    - ✅ **IMPLEMENTED**: Notification integration for all appeal lifecycle events
-    - ✅ **IMPLEMENTED**: Audit logging for all appeal actions
-    - ✅ **IMPLEMENTED**: Evidence URL management with add/remove functionality (max 5 URLs)
+    - ✅ Audit logging service (`src/lib/moderation/appeals-audit.ts`)
+    - ✅ Notification service (`src/lib/moderation/appeals-notifications.ts`)
+    - ✅ All Supabase database operations (8 query/update functions)
+    - ✅ Notification integration for all appeal lifecycle events
+    - ✅ Audit logging for all appeal actions
+    - ✅ Evidence URL management with add/remove functionality (max 5 URLs)
+    - ✅ **COMPLETED (2025-10-21)**: Database migrations applied to Supabase:
+      - `supabase/migrations/20251021_create_ods_bodies_table.sql`
+      - `supabase/migrations/20251021_create_ods_escalations_table.sql`
+      - Migration status: Applied successfully to project `mgbekkpswaizzthgefbc`
+    - ✅ **COMPLETED (2025-10-21)**: Content restoration service integration:
+      - `src/lib/moderation/content-restoration-service.ts`
+      - Handles post/comment visibility restoration
+      - Removes quarantine and geo-block restrictions
+      - Integrated into appeals-service.ts reversal logic
+    - ✅ **COMPLETED (2025-10-21)**: Account restoration service integration:
+      - `src/lib/moderation/account-restoration-service.ts`
+      - Restores account status after suspension reversal
+      - Removes rate limiting and shadow ban restrictions
+      - Integrated into appeals-service.ts reversal logic
+    - ✅ **COMPLETED (2025-10-21)**: Metrics tracking service:
+      - `src/lib/moderation/moderation-metrics.ts`
+      - Tracks appeal reversal rates, false positives
+      - Tracks ODS outcomes and resolution times
+      - Tracks SLA breaches and trusted flagger handling times
+      - Integrated into appeals-service.ts and ods-integration.ts
+    - ✅ **COMPLETED (2025-10-21)**: findEligibleReviewer implementation:
+      - Query logic implemented with Supabase
+      - Excludes original moderator and supervisor
+      - Prioritizes reviewers by workload (active appeals count)
+      - Returns reviewer with lowest current workload
     - ⚠️ Note: Function length warnings in UI components (acceptable for complex forms)
-    - 📝 Production: Create `ods_bodies` and `ods_escalations` table migrations
-    - 📝 Production: Integrate with content/account restoration services
-    - 📝 Production: Replace console.log metrics with actual metrics service
+    - 📝 **Production considerations**:
+      - Metrics service currently logs to console; integrate with observability platform (DataDog/Prometheus/CloudWatch)
+      - Consider implementing moderator_sessions table or use existing user roles
+      - Add monitoring for ODS escalation deadlines (90-day target)
+      - Implement automated alerts for high appeal reversal rates (>20%)
 
 - [ ] 9. Implement Age Verification Service (Art. 28 + 2025 blueprint)
   - Replace "ID/credit card" with privacy-preserving over-18 attribute per EU Age-Verification Blueprint
@@ -263,6 +293,22 @@
   - Build operator runbooks for incident response
   - Conduct final security audit and penetration testing
   - _Requirements: All DSA compliance requirements_
+
+- [ ] 25. **Populate all compliance environment variables before production**
+  - **BLOCKING FOR PRODUCTION**: Verify and populate all environment variables in `compliance/ropa-entries.json`
+  - Update `.env.production` with real values for:
+    - `LEGAL_ENTITY_ADDRESS` - Complete legal address of GrowBro entity
+    - `DPO_EMAIL` - Currently set to `jan-blohm@gmx.de` (verify this is correct for production)
+    - `DPO_NAME` - Full name of the Data Protection Officer
+    - `EU_REPRESENTATIVE_ADDRESS` - EU representative address if controller is outside EU (empty if not applicable)
+  - Verify no placeholder values remain in processed compliance documents
+  - Run validation script to ensure all `${VAR_NAME}` placeholders are replaced
+  - Legal review and sign-off on all populated values
+  - Document audit trail for when values were set and by whom
+  - Update CI/CD pipelines to inject values from secrets during deployment
+  - _Requirements: 14.1, 14.2, 14.4, 14.5_
+  - _Documentation: `compliance/README-env-variables.md`_
+  - _Status: TODO - Must complete before enabling moderation features in production_
 
 ## Additional Implementation Notes
 

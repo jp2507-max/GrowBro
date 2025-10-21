@@ -10,6 +10,7 @@
  * Requirements: 3.3 (DSA Art. 24(5))
  */
 
+import { Env } from '@env';
 import crypto from 'crypto';
 
 import type { RedactedSoR, StatementOfReasons } from '@/types/moderation';
@@ -22,6 +23,7 @@ interface ScrubConfig {
   environment: string;
   saltVersion: string;
   kAnonymityThreshold: number;
+  baseSalt: string;
 }
 
 // ============================================================================
@@ -74,6 +76,10 @@ export class PIIScrubber {
       saltVersion: config?.saltVersion || '1',
       kAnonymityThreshold:
         config?.kAnonymityThreshold || DEFAULT_K_ANONYMITY_THRESHOLD,
+      baseSalt:
+        config?.baseSalt ||
+        Env.PII_SCRUBBING_SALT ||
+        'default-salt-change-in-production',
     };
   }
 
@@ -196,9 +202,7 @@ export class PIIScrubber {
    * Salt composition: ${environment}-${context}-${base_salt}
    */
   private getSalt(context: string): string {
-    // TODO: Add PII_SCRUBBING_SALT to env.js for production
-    const baseSalt = 'default-salt-change-in-production';
-    return `${this.config.environment}-${context}-${baseSalt}-v${this.config.saltVersion}`;
+    return `${this.config.environment}-${context}-${this.config.baseSalt}-v${this.config.saltVersion}`;
   }
 
   /**

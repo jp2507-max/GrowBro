@@ -52,7 +52,7 @@ Add the following environment variables:
 ```env
 # Moderator Console
 MODERATOR_CONSOLE_ENABLED=true
-MODERATOR_ROLE_IDS=moderator,senior_moderator,supervisor,admin
+MODERATOR_ROLE_IDS=moderator,admin
 
 # SLA Configuration
 SLA_IMMEDIATE_WINDOW_MS=0
@@ -85,7 +85,9 @@ CREATE POLICY "moderators_read_reports" ON content_reports
   FOR SELECT
   TO authenticated
   USING (
-    auth.jwt() ->> 'role' IN ('moderator', 'senior_moderator', 'supervisor', 'admin')
+    auth.jwt() ->> 'role' IN ('admin', 'moderator')
+    OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'moderator'
+    OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'admin'
   );
 
 -- Allow moderators to claim reports
@@ -93,9 +95,21 @@ CREATE POLICY "moderators_claim_reports" ON content_reports
   FOR UPDATE
   TO authenticated
   USING (
-    auth.jwt() ->> 'role' IN ('moderator', 'senior_moderator', 'supervisor', 'admin')
+    auth.jwt() ->> 'role' IN ('admin', 'moderator')
+    OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'moderator'
+    OR (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? 'admin'
   );
 ```
+
+#### Security Considerations
+
+**Rate Limiting**: Implement aggressive rate limiting on all moderator console endpoints (10 requests/minute per IP, 50 requests/hour per user).
+
+**Multi-Factor Authentication**: Require MFA for all moderator accounts. Consider hardware security keys for production environments.
+
+**IP Allowlisting**: Restrict moderator console access to approved IP ranges or VPN connections only.
+
+**Session Management**: Enforce short session timeouts (30 minutes) with automatic logout on inactivity.
 
 ### 4. API Endpoints
 
