@@ -4,66 +4,40 @@
  * Requirements: 2.1, 2.2, 2.3
  */
 
+import { checkConflictOfInterest } from '@/lib/moderation/conflict-of-interest';
+import {
+  calculateSLAStatus,
+  determinePriority,
+} from '@/lib/moderation/sla-calculator';
 import { groupByContent } from '@/lib/moderation/utils';
 import type {
   ClaimResult,
-  ConflictOfInterest,
   ModerationQueue,
   ModerationQueueItem,
   QueuedReport,
   QueueFilters,
-  SLAStatus,
 } from '@/types/moderation';
 
 /**
  * Transform ModerationQueueItem to QueuedReport for UI consumption
  */
 export function transformQueueItem(item: ModerationQueueItem): QueuedReport {
+  const priority = determinePriority(
+    item.report.report_type,
+    item.report.trusted_flagger
+  );
   return {
     ...item.report,
     report_age_ms: Date.now() - new Date(item.report.created_at).getTime(),
-    sla_status: calculateSLAStatus(item.report.sla_deadline),
+    sla_status: calculateSLAStatus(
+      item.report.created_at,
+      item.report.sla_deadline,
+      priority
+    ),
     content_snapshot: item.content_snapshot,
     policy_links: [], // TODO: Fetch from policy catalog
-    similar_decisions:
-      item.similar_decisions?.map((d) => ({
-        id: d.decision_id,
-        content_id: '',
-        category: '',
-        action: d.action,
-        reason_code: d.policy_violations.join(', '),
-        decided_at: d.created_at,
-        moderator_id: '',
-        outcome: 'upheld' as const,
-        similarity: 0.8,
-      })) || [],
+    similar_decisions: [],
   };
-}
-
-/**
- * Calculate SLA status based on time remaining until deadline
- */
-export function calculateSLAStatus(slaDeadline: Date): SLAStatus {
-  const now = new Date();
-  const deadline = new Date(slaDeadline);
-  const totalTime = deadline.getTime() - now.getTime();
-
-  // Already breached
-  if (totalTime <= 0) {
-    return 'critical';
-  }
-
-  // Calculate original SLA window based on deadline
-  // We'll use a heuristic: illegal content = 24h, trusted = 48h, standard = 72h
-  // For now, assume a standard window and calculate percentage
-  const standardWindow = 72 * 60 * 60 * 1000; // 72 hours in ms
-  const elapsed = standardWindow - totalTime;
-  const percentUsed = (elapsed / standardWindow) * 100;
-
-  if (percentUsed >= 90) return 'red';
-  if (percentUsed >= 75) return 'orange';
-  if (percentUsed >= 50) return 'yellow';
-  return 'green';
 }
 
 /**
@@ -89,6 +63,9 @@ export async function getModeratorQueue(
   return response.json();
 }
 
+// CRITICAL: Replace fetch with Axios client (violates API guidelines)
+// TODO: Implement actual Supabase mutation instead of stub endpoint
+// TODO: Normalize Date fields (created_at, sla_deadline) to Date objects for type safety
 /**
  * Claim a report for review (exclusive 4-hour lock)
  */
@@ -116,11 +93,18 @@ export async function claimReport(
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    let errorMessage = 'Failed to claim report';
+    try {
+      const error = await response.json();
+      errorMessage = error.message || errorMessage;
+    } catch {
+      const textBody = await response.text();
+      errorMessage = textBody || errorMessage;
+    }
     return {
       success: false,
       report_id: reportId,
-      error: error.message || 'Failed to claim report',
+      error: errorMessage,
     };
   }
 
@@ -149,55 +133,34 @@ export async function releaseReport(
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    let errorMessage = 'Failed to release report';
+    try {
+      const error = await response.json();
+      errorMessage = error.message || errorMessage;
+    } catch {
+      const textBody = await response.text();
+      errorMessage = textBody || errorMessage;
+    }
     return {
       success: false,
-      error: error.message || 'Failed to release report',
+      error: errorMessage,
     };
   }
 
   return { success: true };
 }
 
-/**
- * Check for conflict of interest
- * Prevents moderators from reviewing content they previously decided on
- */
-async function checkConflictOfInterest(
-  reportId: string,
-  moderatorId: string
-): Promise<ConflictOfInterest> {
-  // TODO: Replace with actual Supabase query
-  const response = await fetch(
-    `/api/moderation/reports/${reportId}/conflict-check?moderator_id=${moderatorId}`
-  );
-
-  if (!response.ok) {
-    return {
-      has_conflict: false,
-      reasons: [],
-    };
-  }
-
-  return response.json();
-}
+// Removed: use shared implementation from @/lib/moderation/conflict-of-interest
 
 /**
  * Sort queue reports by priority
- * Order: immediate > illegal > trusted > standard
+ * Order: higher numeric priority first (100 > 75 > 50 > 25 > 10)
  * Within each priority: older reports first (FIFO)
  */
 export function sortQueueByPriority(reports: QueuedReport[]): QueuedReport[] {
-  const priorityOrder: Record<string, number> = {
-    immediate: 0,
-    illegal: 1,
-    trusted: 2,
-    standard: 3,
-  };
-
   return [...reports].sort((a, b) => {
-    // First sort by priority level
-    const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+    // First sort by priority level (higher numeric values = higher priority)
+    const priorityDiff = b.priority - a.priority;
     if (priorityDiff !== 0) return priorityDiff;
 
     // Then by age (older first)

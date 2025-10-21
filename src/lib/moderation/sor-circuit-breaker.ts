@@ -18,7 +18,7 @@ export type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
 export interface CircuitBreakerConfig {
   failureThreshold: number; // Number of failures before opening circuit
   successThreshold: number; // Number of successes in HALF_OPEN before closing
-  timeout: number; // Milliseconds to wait before attempting HALF_OPEN
+  timeout: number; // Milliseconds timeout for individual operations
   resetTimeout: number; // Milliseconds to wait in OPEN state before HALF_OPEN
 }
 
@@ -89,8 +89,24 @@ export class CircuitBreaker {
       }
     }
 
+    const timed = (p: Promise<T>) =>
+      Promise.race<T>([
+        p,
+        new Promise<T>((_, reject) =>
+          setTimeout(
+            () =>
+              reject(
+                new Error(
+                  `Circuit operation timed out after ${this.config.timeout}ms`
+                )
+              ),
+            this.config.timeout
+          )
+        ),
+      ]);
+
     try {
-      const result = await operation();
+      const result = await timed(operation());
       this.onSuccess();
       return result;
     } catch (error) {

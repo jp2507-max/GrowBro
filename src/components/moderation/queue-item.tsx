@@ -59,7 +59,17 @@ export function QueueItem({ report, testID = 'queue-item' }: Props) {
       </Text>
 
       <View className="flex-row items-center justify-between">
-        <PriorityBadge priority={report.priority.toString()} />
+        <PriorityBadge
+          priority={
+            report.priority >= 90
+              ? 'immediate'
+              : report.priority >= 70
+                ? 'illegal'
+                : report.priority >= 50
+                  ? 'trusted'
+                  : 'standard'
+          }
+        />
         {report.similar_decisions.length > 0 && (
           <Text className="text-xs text-primary-600 dark:text-primary-400">
             {report.similar_decisions.length} similar

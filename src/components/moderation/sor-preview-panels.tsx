@@ -60,11 +60,12 @@ function ValidationBanner({
             ? 'text-success-800 dark:text-success-200'
             : 'text-danger-800 dark:text-danger-200'
         }`}
-      >
-        {validationStatus.no_pii_detected
-          ? '✓ No PII Detected'
-          : '✗ PII Validation Failed'}
-      </Text>
+        tx={
+          validationStatus.no_pii_detected
+            ? 'moderation.sorPreview.validation.noPiiDetected'
+            : 'moderation.sorPreview.validation.piiValidationFailed'
+        }
+      />
       {validationStatus.errors.length > 0 && (
         <View className="mb-2">
           {validationStatus.errors.map((error, idx) => (
@@ -237,12 +238,14 @@ export function SoRPreviewPanels({
         {/* User-Facing SoR Panel */}
         <View className="flex-1 rounded-xl border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-charcoal-800">
           <View className="border-b border-neutral-200 p-4 dark:border-neutral-700">
-            <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-              User-Facing SoR
-            </Text>
-            <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-              Delivered to user (DSA Art. 17)
-            </Text>
+            <Text
+              tx="moderation.sorPreview.userFacingTitle"
+              className="text-base font-semibold text-neutral-900 dark:text-neutral-100"
+            />
+            <Text
+              tx="moderation.sorPreview.userFacingSubtitle"
+              className="text-xs text-neutral-600 dark:text-neutral-400"
+            />
           </View>
           <ScrollView className="flex-1 p-4">
             {userFacingData.map((item, idx) => (
@@ -254,12 +257,14 @@ export function SoRPreviewPanels({
         {/* Redacted SoR Panel */}
         <View className="flex-1 rounded-xl border border-primary-200 bg-primary-50 dark:border-primary-700 dark:bg-primary-900/10">
           <View className="border-b border-primary-200 p-4 dark:border-primary-700">
-            <Text className="text-base font-semibold text-primary-900 dark:text-primary-100">
-              Redacted SoR (EC Submission)
-            </Text>
-            <Text className="text-xs text-primary-700 dark:text-primary-300">
-              PII-scrubbed for Transparency DB (DSA Art. 24(5))
-            </Text>
+            <Text
+              tx="moderation.sorPreview.redactedTitle"
+              className="text-base font-semibold text-primary-900 dark:text-primary-100"
+            />
+            <Text
+              tx="moderation.sorPreview.redactedSubtitle"
+              className="text-xs text-primary-700 dark:text-primary-300"
+            />
           </View>
           <ScrollView className="flex-1 p-4">
             {redactedData.map((item, idx) => (

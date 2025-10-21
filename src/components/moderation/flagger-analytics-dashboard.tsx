@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 
 import { Text, View } from '@/components/ui';
@@ -24,6 +25,7 @@ export function FlaggerAnalyticsDashboard({
   onFlaggerPress,
   testID = 'flagger-analytics',
 }: Props) {
+  const { t } = useTranslation('moderation');
   // Main render: a vertically scrollable layout. The structure is two-level:
   // 1) A small row of summary cards showing aggregate metrics for all flaggers.
   // 2) A list of individual flagger cards that show per-flagger metrics and
@@ -35,20 +37,20 @@ export function FlaggerAnalyticsDashboard({
         {/* Total Flaggers: shows total and number currently active. */}
         <View className="flex-1 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-charcoal-800">
           <Text className="mb-1 text-xs text-neutral-600 dark:text-neutral-400">
-            Total Flaggers
+            {t('totalFlaggers')}
           </Text>
           <Text className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
             {analytics.total_flaggers}
           </Text>
           <Text className="text-xs text-success-600 dark:text-success-400">
-            {analytics.active_flaggers} active
+            {analytics.active_flaggers} {t('active')}
           </Text>
         </View>
 
         {/* Average accuracy across all flaggers (displayed as percent). */}
         <View className="flex-1 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-charcoal-800">
           <Text className="mb-1 text-xs text-neutral-600 dark:text-neutral-400">
-            Avg Accuracy
+            {t('avgAccuracy')}
           </Text>
           <Text className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
             {(analytics.aggregate_metrics.average_accuracy * 100).toFixed(1)}%
@@ -58,7 +60,7 @@ export function FlaggerAnalyticsDashboard({
         {/* Average response time formatted via helper. */}
         <View className="flex-1 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-charcoal-800">
           <Text className="mb-1 text-xs text-neutral-600 dark:text-neutral-400">
-            Avg Response
+            {t('avgResponse')}
           </Text>
           <Text className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
             {formatResponseTime(
@@ -70,7 +72,7 @@ export function FlaggerAnalyticsDashboard({
         {/* Reports per month – useful for volume-tracking and trend detection. */}
         <View className="flex-1 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-charcoal-800">
           <Text className="mb-1 text-xs text-neutral-600 dark:text-neutral-400">
-            Reports/Month
+            {t('reportsPerMonth')}
           </Text>
           <Text className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
             {analytics.aggregate_metrics.total_reports_this_month}

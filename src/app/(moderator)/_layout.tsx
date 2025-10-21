@@ -23,7 +23,6 @@ export default function ModeratorLayout() {
 
   return (
     <Stack
-      testID="moderator-stack"
       screenOptions={{
         headerShown: true,
         headerBackTitle: 'Back',
@@ -31,14 +30,12 @@ export default function ModeratorLayout() {
       }}
     >
       <Stack.Screen
-        testID="screen-moderation-queue"
         name="queue/index"
         options={{
           title: 'Moderation Queue',
         }}
       />
       <Stack.Screen
-        testID="screen-review-report"
         name="report/[id]"
         options={{
           title: 'Review Report',

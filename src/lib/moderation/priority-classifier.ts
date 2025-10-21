@@ -242,8 +242,14 @@ export function getSlaAlertLevel(
   slaDeadline: Date,
   slaHours: number
 ): 'none' | 'warning_75' | 'warning_90' | 'breached' {
-  const totalMs = slaHours * 60 * 60 * 1000;
   const remainingMs = calculateTimeRemaining(slaDeadline);
+
+  // Handle immediate SLA (0 hours or less) to avoid divide-by-zero
+  if (slaHours <= 0) {
+    return remainingMs === 0 ? 'breached' : 'warning_90';
+  }
+
+  const totalMs = slaHours * 60 * 60 * 1000;
 
   if (remainingMs === 0) {
     return 'breached';

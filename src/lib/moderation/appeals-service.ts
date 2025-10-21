@@ -29,7 +29,7 @@ import {
   sendAppealNotification,
 } from './appeals-notifications';
 import { contentRestorationService } from './content-restoration-service';
-import { moderationMetrics } from './moderation-metrics';
+import { moderationMetrics, trackAppealDecision } from './moderation-metrics';
 
 // ============================================================================
 // Constants
@@ -45,11 +45,6 @@ export const APPEAL_DEADLINES = {
   geo_restriction: 14, // days
   minimum: 7, // DSA minimum requirement
 } as const;
-
-/**
- * ODS resolution target per DSA Art. 21
- */
-export const ODS_RESOLUTION_TARGET_DAYS = 90;
 
 // ============================================================================
 // Appeal Intake

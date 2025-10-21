@@ -19,7 +19,13 @@ import {
   calculateAppealDeadline,
   checkAppealEligibility,
   checkReviewerConflict,
+  submitAppeal,
 } from './appeals-service';
+
+// Mock external dependencies
+jest.mock('../supabase');
+jest.mock('./appeals-notifications');
+jest.mock('./appeals-audit');
 
 describe('AppealsService', () => {
   describe('Appeal Validation', () => {
@@ -209,47 +215,85 @@ describe('AppealsService', () => {
     };
 
     test('generates unique appeal ID on submission', async () => {
-      // Mock Supabase client
-      const mockSupabase = {
-        from: jest.fn().mockReturnValue({
+      // Import the mocked supabase
+      const { supabase } = require('../supabase');
+
+      // Create fluent mock chain for moderation_decisions query
+      const mockDecisionQuery = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        is: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: {
+            id: 'decision123',
+            action: 'remove',
+            status: 'executed',
+            created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+          },
+          error: null,
+        }),
+      };
+
+      // Create fluent mock chain for appeals queries
+      const mockAppealsQuery = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        is: jest.fn().mockReturnThis(),
+        maybeSingle: jest.fn().mockResolvedValue({
+          data: null, // No existing appeal
+          error: null,
+        }),
+        insert: jest.fn().mockReturnValue({
           select: jest.fn().mockReturnValue({
-            eq: jest.fn().mockReturnValue({
-              is: jest.fn().mockReturnValue({
-                single: jest.fn().mockResolvedValue({
-                  data: {
-                    id: 'decision123',
-                    action: 'remove',
-                    status: 'executed',
-                    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-                  },
-                  error: null,
-                }),
-                maybeSingle: jest.fn().mockResolvedValue({
-                  data: null, // No existing appeal
-                  error: null,
-                }),
-              }),
-            }),
-          }),
-          insert: jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: {
-                  id: 'appeal123',
-                  ...mockAppealInput,
-                  deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-                  created_at: new Date(),
-                },
-                error: null,
-              }),
+            single: jest.fn().mockResolvedValue({
+              data: {
+                id: 'appeal123',
+                ...mockAppealInput,
+                deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+                created_at: new Date(),
+              },
+              error: null,
             }),
           }),
         }),
       };
 
-      // Inject mock (in real test, would use jest.mock)
-      expect(mockSupabase.from).toBeDefined();
-      expect(mockSupabase.from('appeals').insert).toBeDefined();
+      // Setup mock responses
+      supabase.from.mockImplementation((table: string) => {
+        if (table === 'moderation_decisions') {
+          return mockDecisionQuery;
+        }
+        if (table === 'appeals') {
+          return mockAppealsQuery;
+        }
+        return {};
+      });
+
+      // Call the submit function
+      const result = await submitAppeal(mockAppealInput);
+
+      // Verify the result
+      expect(result.success).toBe(true);
+      expect(result.appeal_id).toBe('appeal123');
+      expect(result.deadline).toBeInstanceOf(Date);
+
+      // Verify database interactions
+      expect(supabase.from).toHaveBeenCalledWith('moderation_decisions');
+      expect(supabase.from).toHaveBeenCalledWith('appeals');
+
+      // Verify the insert was called with correct data
+      expect(mockAppealsQuery.insert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          original_decision_id: mockAppealInput.original_decision_id,
+          user_id: mockAppealInput.user_id,
+          appeal_type: mockAppealInput.appeal_type,
+          counter_arguments: mockAppealInput.counter_arguments,
+          supporting_evidence: mockAppealInput.supporting_evidence,
+          status: 'pending',
+          deadline: expect.any(Date),
+          submitted_at: expect.any(Date),
+        })
+      );
     });
 
     test('assigns correct deadline based on appeal type', () => {

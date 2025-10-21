@@ -31,15 +31,17 @@ export async function logAppealsAudit(
 ): Promise<void> {
   try {
     await appendAudit({
-      action: 'retention-delete', // Using existing type, can be extended
+      action: 'appeal-event',
       dataType: 'appeals',
       details: {
-        appealAction: details.action,
-        appealId: details.appealId,
-        userId: details.userId,
-        reviewerId: details.reviewerId,
-        decision: details.decision,
-        ...details.metadata,
+        appeal: {
+          id: details.appealId,
+          action: details.action,
+          decision: details.decision,
+          userId: details.userId,
+          reviewerId: details.reviewerId,
+        },
+        metadata: details.metadata ?? {},
       },
     });
   } catch (error) {

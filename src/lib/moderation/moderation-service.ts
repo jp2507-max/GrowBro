@@ -13,6 +13,7 @@
 import { DateTime } from 'luxon';
 
 import type {
+  ClaimResult,
   ContentReport,
   ModerationQueue,
   ModerationQueueItem,
@@ -25,12 +26,6 @@ import { supabase } from '../supabase';
 // ============================================================================
 // Types
 // ============================================================================
-
-interface ClaimResult {
-  success: boolean;
-  error?: string;
-  claim_expires_at?: Date;
-}
 
 interface ReleaseClaimResult {
   success: boolean;
@@ -132,7 +127,22 @@ export class ModerationService {
     }
   }
 
-  private buildBaseQueueQuery() {
+  /**
+   * Build the base Supabase query for retrieving moderation queue items.
+   *
+   * Notes:
+   * - Selects the core `content_reports` fields plus a single `content_snapshots`
+   *   entry (snapshot metadata) and a join against `users` (reporter metadata).
+   * - Uses `is('deleted_at', null)` to exclude soft-deleted reports at the DB
+   *   level so downstream logic doesn't need to filter them again.
+   * - Return type is `any` to avoid coupling this service to PostgREST types in
+   *   this file; callers treat the result as a query builder and execute it.
+   */
+  private buildBaseQueueQuery(): any {
+    // Base query: content_reports with snapshot and reporter info
+    // Keep the selected fields compact to avoid transferring large blob
+    // `snapshot_data` when not needed; callers may adjust the select if
+    // additional fields are required.
     return supabase
       .from('content_reports')
       .select(
@@ -153,28 +163,49 @@ export class ModerationService {
       )
       .is('deleted_at', null);
   }
-
-  private applyFiltersToQuery(query: any, filters: QueueFilters) {
+  /**
+   * Apply filtering parameters to an existing query builder.
+   *
+   * This method mutates and returns the provided Supabase query builder so it
+   * can be chained by the caller. Filters are translated to PostgREST queries
+   * and intentionally mirror UI filter options. Defaults:
+   * - If no `status` filter is provided, we only return `pending` and
+   *   `in_review` items (the active moderation queue).
+   *
+   * Warning: callers should execute the returned query (e.g. with `await query`)
+   * to run the request. The query type is `any` to keep this utility focused on
+   * behavior rather than on exact PostgREST generic types.
+   */
+  private applyFiltersToQuery(query: any, filters: QueueFilters): any {
     let q = query;
 
+    // Status filter: if provided, use the explicit list. Otherwise limit to
+    // active queue statuses to avoid returning closed/archived reports.
     if (filters.status && filters.status.length > 0) {
       q = q.in('status', filters.status);
     } else {
       q = q.in('status', ['pending', 'in_review']);
     }
 
+    // Minimum priority: use greater-than-or-equal when supplied
     if (filters.priority_min !== undefined) {
       q = q.gte('priority', filters.priority_min);
     }
 
+    // Report type(s): allow filtering by one or more report_type values
     if (filters.report_type && filters.report_type.length > 0) {
       q = q.in('report_type', filters.report_type);
     }
 
+    // Trusted flagger: this is joined from the `users` relation in the
+    // base select; PostgREST allows filtering on joined columns if aliased
+    // appropriately in the select. Here we rely on a flat `trusted_flagger`
+    // column being available on the selected result rows.
     if (filters.trusted_flagger !== undefined) {
       q = q.eq('trusted_flagger', filters.trusted_flagger);
     }
 
+    // Overdue only: compare SLA deadline to now to return only overdue items
     if (filters.overdue_only) {
       q = q.lt('sla_deadline', new Date().toISOString());
     }
@@ -191,7 +222,7 @@ export class ModerationService {
 
     if (activeClaims && activeClaims.length > 0) {
       const claimedReportIds = activeClaims.map((c) => c.report_id);
-      return query.not('id', 'in', `(${claimedReportIds.join(',')})`);
+      return query.not('id', 'in', claimedReportIds);
     }
 
     return query;
@@ -212,7 +243,21 @@ export class ModerationService {
         DateTime.fromJSDate(new Date(report.created_at)),
         'hours'
       ).hours;
-      const slaProgress = 1 - timeRemaining / totalSlaTime;
+
+      let slaProgress: number;
+      if (totalSlaTime <= 0) {
+        // SLA window has elapsed or is invalid
+        slaProgress = 1;
+      } else {
+        // Clamp timeRemaining between 0 and totalSlaTime
+        const clampedTimeRemaining = Math.max(
+          0,
+          Math.min(timeRemaining, totalSlaTime)
+        );
+        slaProgress = 1 - clampedTimeRemaining / totalSlaTime;
+        // Ensure slaProgress is bounded between 0 and 1
+        slaProgress = Math.max(0, Math.min(slaProgress, 1));
+      }
 
       if (slaProgress >= SLA_WARNING_THRESHOLD_90) {
         enhancedPriority += 20;
@@ -255,36 +300,49 @@ export class ModerationService {
     try {
       const report = await this.fetchReport(reportId);
       if (!report) {
-        return { success: false, error: 'Report not found' };
+        return {
+          success: false,
+          report_id: reportId,
+          error: 'Report not found',
+        };
       }
 
       // Conflict-of-interest check
       if (report.reporter_id === moderatorId) {
         return {
           success: false,
+          report_id: reportId,
           error: 'Cannot claim reports you submitted (conflict of interest)',
+          conflict_of_interest: {
+            has_conflict: true,
+            reasons: [
+              'Cannot claim reports you submitted (conflict of interest)',
+            ],
+            conflict_type: 'relationship',
+          },
         };
       }
 
-      const existingClaim = await this.getActiveClaim(reportId);
-      if (existingClaim) {
-        return {
-          success: false,
-          error: `Report already claimed by another moderator until ${existingClaim.expires_at}`,
-        };
-      }
-
+      // Atomic claim operation: rely on database unique constraint to prevent race conditions
+      // The unique index on (report_id) WHERE expires_at > NOW() ensures only one active claim per report
       const expiresAt = DateTime.now()
         .plus({ hours: CLAIM_TIMEOUT_HOURS })
         .toJSDate();
 
-      const created = await this.createClaimRecord(
+      const claimResult = await this.createClaimRecord(
         reportId,
         moderatorId,
         expiresAt
       );
-      if (!created) {
-        return { success: false, error: 'Failed to claim report' };
+      if (!claimResult.success) {
+        return {
+          success: false,
+          report_id: reportId,
+          error: claimResult.error || 'Failed to claim report',
+          ...(claimResult.conflictingExpiry && {
+            conflicting_expiry: claimResult.conflictingExpiry,
+          }),
+        };
       }
 
       const updated = await this.updateReportStatusToInReview(reportId);
@@ -298,14 +356,21 @@ export class ModerationService {
 
         return {
           success: false,
+          report_id: reportId,
           error: 'Failed to update report status',
         };
       }
 
-      return { success: true, claim_expires_at: expiresAt };
+      return {
+        success: true,
+        report_id: reportId,
+        claimed_by: moderatorId,
+        claim_expires_at: expiresAt,
+      };
     } catch (error) {
       return {
         success: false,
+        report_id: reportId,
         error: `Claim operation failed: ${
           error instanceof Error ? error.message : 'Unknown error'
         }`,
@@ -340,7 +405,7 @@ export class ModerationService {
     reportId: string,
     moderatorId: string,
     expiresAt: Date
-  ) {
+  ): Promise<{ success: boolean; error?: string; conflictingExpiry?: string }> {
     const now = new Date();
     const { error } = await supabase.from('moderation_claims').insert({
       report_id: reportId,
@@ -349,7 +414,28 @@ export class ModerationService {
       expires_at: expiresAt.toISOString(),
     });
 
-    return !error;
+    if (!error) {
+      return { success: true };
+    }
+
+    // Handle unique constraint violation (race condition: report already claimed)
+    if (
+      error.code === '23505' &&
+      error.message?.includes('uniq_active_moderation_claim')
+    ) {
+      // Try to get the conflicting claim's expiry time for better error message
+      const conflictingClaim = await this.getActiveClaim(reportId);
+      return {
+        success: false,
+        error: 'Report already claimed by another moderator',
+        conflictingExpiry: conflictingClaim?.expires_at?.toString(),
+      };
+    }
+
+    return {
+      success: false,
+      error: `Failed to create claim record: ${error.message}`,
+    };
   }
 
   private async updateReportStatusToInReview(reportId: string) {
@@ -375,7 +461,34 @@ export class ModerationService {
     moderatorId: string
   ): Promise<ReleaseClaimResult> {
     try {
-      // Delete claim
+      // First, update report status to pending with guard (only if currently in_review)
+      // This ensures we don't overwrite a status change that happened concurrently
+      const { error: statusUpdateError, count } = await supabase
+        .from('content_reports')
+        .update({
+          status: 'pending' as ReportStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', reportId)
+        .eq('status', 'in_review');
+
+      if (statusUpdateError) {
+        return {
+          success: false,
+          error: `Failed to update report status: ${statusUpdateError.message}`,
+        };
+      }
+
+      // If no rows were updated, the report was not in 'in_review' status
+      // This could mean it was already processed or claimed by someone else
+      if (count === 0) {
+        return {
+          success: false,
+          error: 'Report is not in review status or was already processed',
+        };
+      }
+
+      // Now delete the claim - this should succeed since we verified the report was in_review
       const { error: deleteError } = await supabase
         .from('moderation_claims')
         .delete()
@@ -383,25 +496,27 @@ export class ModerationService {
         .eq('moderator_id', moderatorId);
 
       if (deleteError) {
+        // Claim deletion failed - revert the status update to prevent orphaned reports
+        const { error: revertError } = await supabase
+          .from('content_reports')
+          .update({
+            status: 'in_review' as ReportStatus,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', reportId)
+          .eq('status', 'pending'); // Only revert if it's still pending
+
+        if (revertError) {
+          // Log the revert failure but still return the original error
+          console.error(
+            'Failed to revert report status after claim deletion failure:',
+            revertError
+          );
+        }
+
         return {
           success: false,
           error: `Failed to release claim: ${deleteError.message}`,
-        };
-      }
-
-      // Update report status back to pending
-      const { error: updateError } = await supabase
-        .from('content_reports')
-        .update({
-          status: 'pending' as ReportStatus,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', reportId);
-
-      if (updateError) {
-        return {
-          success: false,
-          error: `Failed to update report status: ${updateError.message}`,
         };
       }
 

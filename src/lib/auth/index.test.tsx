@@ -33,7 +33,7 @@ describe('Auth', () => {
       // Sign in first
       useAuth
         .getState()
-        .signIn({ access_token: 'test-token', user: { id: '123' } });
+        .signIn({ access: 'test-token', refresh: 'test-refresh' });
 
       // Sign out
       signOut();
@@ -46,7 +46,7 @@ describe('Auth', () => {
       // Sign in first
       useAuth
         .getState()
-        .signIn({ access_token: 'test-token', user: { id: '123' } });
+        .signIn({ access: 'test-token', refresh: 'test-refresh' });
 
       // Verify token is stored
       expect(mockStorage.get('auth.token')).toBeTruthy();
@@ -62,7 +62,7 @@ describe('Auth', () => {
       // Sign in first
       useAuth
         .getState()
-        .signIn({ access_token: 'test-token', user: { id: '123' } });
+        .signIn({ access: 'test-token', refresh: 'test-refresh' });
 
       // Verify status is signIn
       expect(useAuth.getState().status).toBe('signIn');
@@ -78,11 +78,11 @@ describe('Auth', () => {
       // Sign in first
       useAuth
         .getState()
-        .signIn({ access_token: 'test-token', user: { id: '123' } });
+        .signIn({ access: 'test-token', refresh: 'test-refresh' });
 
       // Verify token exists
       expect(useAuth.getState().token).toEqual({
-        access_token: 'test-token',
+        access: 'test-token',
         user: { id: '123' },
       });
 

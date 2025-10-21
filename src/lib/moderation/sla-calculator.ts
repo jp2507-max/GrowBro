@@ -61,6 +61,11 @@ export function calculateSLAStatus(
     return 'critical';
   }
 
+  // Guard against zero-length SLA windows
+  if (totalWindow <= 0) {
+    return 'red';
+  }
+
   // Calculate percentage of time used
   const percentUsed = (timeElapsed / totalWindow) * 100;
 
@@ -142,6 +147,17 @@ export function shouldTriggerSLAAlert(
 
   const totalWindow = deadline - created;
   const timeElapsed = current - created;
+
+  // Guard against zero-length SLA windows
+  if (totalWindow <= 0) {
+    // Immediate expiry: alert at 90 unless already alerted at 90 or higher
+    if (!lastAlertLevel || lastAlertLevel < 90) {
+      return { shouldAlert: true, alertLevel: 90 };
+    } else {
+      return { shouldAlert: false, alertLevel: null };
+    }
+  }
+
   const percentUsed = (timeElapsed / totalWindow) * 100;
 
   // Check 90% threshold

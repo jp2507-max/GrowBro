@@ -13,13 +13,16 @@ export async function getPolicyCatalogEntry(
   category: string
 ): Promise<PolicyCatalogEntry> {
   // TODO: Replace with actual Supabase query
-  const response = await fetch(`/api/moderation/policy-catalog/${category}`);
+  const response = await fetch(
+    `/api/moderation/policy-catalog/${encodeURIComponent(category)}`
+  );
 
   if (!response.ok) {
     throw new Error(`Failed to fetch policy: ${response.statusText}`);
   }
 
-  return response.json();
+  const data = (await response.json()) as PolicyCatalogEntry;
+  return data;
 }
 
 /**

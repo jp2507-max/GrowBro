@@ -29,6 +29,7 @@ export interface SubmissionContext {
   hasTrustedFlagger?: boolean;
   evidenceUrls?: string[];
   contentCreatedAt?: Date;
+  moderator_id?: string;
 }
 
 export interface SubmissionResult {
@@ -95,6 +96,7 @@ export class SoRSubmissionOrchestrator {
       ),
       jurisdiction_count: sor.territorial_scope?.length || 0,
       has_trusted_flagger: context.hasTrustedFlagger || false,
+      moderator_id: context.moderator_id,
     };
 
     const redactedSoR = await piiScrubber.scrubStatementOfReasons(
@@ -130,6 +132,8 @@ export class SoRSubmissionOrchestrator {
     queueId: string,
     startTime: number
   ): Promise<SubmissionResult> {
+    let capturedTransparencyDbId: string | undefined;
+
     try {
       await dsaCircuitBreaker.execute(async () => {
         const submissionResult = await dsaTransparencyClient.submitSingle(
@@ -142,6 +146,7 @@ export class SoRSubmissionOrchestrator {
             queueId,
             submissionResult.transparency_db_id!
           );
+          capturedTransparencyDbId = submissionResult.transparency_db_id;
           const duration = Date.now() - startTime;
           sorMetrics.recordSubmission(duration, true);
           return submissionResult;
@@ -157,6 +162,7 @@ export class SoRSubmissionOrchestrator {
         queueId,
         wasQueued: true,
         gracefullyDegraded: false,
+        transparencyDbId: capturedTransparencyDbId,
       };
     } catch (circuitError) {
       await sorExportQueueManager.updateStatus({
@@ -173,7 +179,7 @@ export class SoRSubmissionOrchestrator {
       sorMetrics.recordSubmission(duration, false);
 
       return {
-        success: true,
+        success: false,
         queueId,
         wasQueued: true,
         gracefullyDegraded: true,

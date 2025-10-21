@@ -73,6 +73,7 @@ describe('SoRSubmissionOrchestrator', () => {
       explanation: 'Content violates community guidelines',
       user_id: 'user-123',
       created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
     const mockRedactedSoR = {
@@ -145,7 +146,7 @@ describe('SoRSubmissionOrchestrator', () => {
         success: true,
       });
 
-      const result = await orchestrator.submit(mockSoR, {
+      const result = await orchestrator.submit(mockSoR as any, {
         reports: [{ id: 'report-1' } as any],
         hasTrustedFlagger: false,
         evidenceUrls: ['text-evidence'],
@@ -156,6 +157,7 @@ describe('SoRSubmissionOrchestrator', () => {
       expect(result.queueId).toBe('queue-123');
       expect(result.wasQueued).toBe(true);
       expect(result.gracefullyDegraded).toBe(false);
+      expect(result.transparencyDbId).toBe('transparency-456');
 
       // Verify PII scrubbing was called with correct context
       expect(piiScrubber.scrubStatementOfReasons).toHaveBeenCalledWith(
@@ -166,6 +168,7 @@ describe('SoRSubmissionOrchestrator', () => {
           content_age: 'new',
           jurisdiction_count: 2, // EU.length
           has_trusted_flagger: false,
+          moderator_id: undefined,
         }
       );
 
@@ -209,7 +212,7 @@ describe('SoRSubmissionOrchestrator', () => {
         violations: ['PII field still present'],
       });
 
-      const result = await orchestrator.submit(mockSoR);
+      const result = await orchestrator.submit(mockSoR as any);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('PII validation failed');
@@ -236,7 +239,7 @@ describe('SoRSubmissionOrchestrator', () => {
         error: 'Database connection failed',
       });
 
-      const result = await orchestrator.submit(mockSoR);
+      const result = await orchestrator.submit(mockSoR as any);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Failed to enqueue SoR');
@@ -268,12 +271,12 @@ describe('SoRSubmissionOrchestrator', () => {
         success: true,
       });
 
-      const result = await orchestrator.submit(mockSoR);
+      const result = await orchestrator.submit(mockSoR as any);
 
-      expect(result.success).toBe(true); // Still success - gracefully degraded
+      expect(result.success).toBe(false); // Degraded failure - gracefully handled
       expect(result.wasQueued).toBe(true);
       expect(result.gracefullyDegraded).toBe(true);
-      expect(result.error).toContain('Circuit breaker protection activated');
+      expect(result.error).toContain('Circuit breaker is OPEN');
 
       // Verify status update was called with failure
       expect(sorExportQueueManager.updateStatus).toHaveBeenCalledWith({
@@ -319,9 +322,9 @@ describe('SoRSubmissionOrchestrator', () => {
         success: true,
       });
 
-      const result = await orchestrator.submit(mockSoR);
+      const result = await orchestrator.submit(mockSoR as any);
 
-      expect(result.success).toBe(true); // Still success - gracefully degraded
+      expect(result.success).toBe(false); // Degraded failure - gracefully handled
       expect(result.wasQueued).toBe(true);
       expect(result.gracefullyDegraded).toBe(true);
       expect(result.error).toContain('Submission failed');

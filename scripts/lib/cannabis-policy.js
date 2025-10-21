@@ -206,11 +206,17 @@ function scanDocumentation(repoRoot, config) {
     const baseDir = path.join(repoRoot, descriptor.path);
     if (!fs.existsSync(baseDir)) continue;
     const extensions = new Set(toArray(descriptor.extensions));
-    const excludePatterns = new Set(toArray(descriptor.excludePatterns));
+    const excludePatterns = new Set(
+      toArray(descriptor.excludePatterns).map((pattern) =>
+        pattern.replace(/\\/g, '/')
+      )
+    );
 
     walkDir(baseDir, (filePath) => {
       // Check if file should be excluded
-      const relativePath = path.relative(repoRoot, filePath);
+      const relativePath = path.posix.normalize(
+        path.relative(repoRoot, filePath).replace(/\\/g, '/')
+      );
       if (excludePatterns.has(relativePath)) return;
 
       if (extensions.size > 0) {

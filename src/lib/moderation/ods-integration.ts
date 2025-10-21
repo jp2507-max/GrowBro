@@ -350,7 +350,11 @@ export async function escalateToODS(
       targetResolutionDate,
     });
 
-    await updateAppealODSEscalation(appealId, createdEscalation.id, odsBodyId);
+    await updateAppealODSEscalation(
+      appealId,
+      createdEscalation.id,
+      odsBody.name
+    );
 
     const appeal = await getAppealStatus(appealId);
     if (appeal) {
@@ -552,12 +556,10 @@ export async function recordODSOutcome(
         )
       : 0;
 
-    moderationMetrics.trackODSOutcome(
-      escalationId,
-      outcome.outcome,
-      escalation.odsBodyId,
-      resolutionDays
-    );
+    moderationMetrics.trackODSOutcome(escalationId, outcome.outcome, {
+      odsBodyId: escalation.odsBodyId,
+      resolutionDays,
+    });
 
     return { success: true };
   } catch (error) {

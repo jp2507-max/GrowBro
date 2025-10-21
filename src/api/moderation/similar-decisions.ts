@@ -5,12 +5,12 @@
 
 import { createQuery } from 'react-query-kit';
 
-import { checkConflictOfInterest } from '@/lib/moderation/conflict-of-interest';
+import { apiCheckConflictOfInterest } from './conflict-of-interest-api';
 import {
-  findSimilarDecisions,
-  getModeratorConsistency,
-  getUserViolationPattern,
-} from '@/lib/moderation/similar-decisions';
+  apiFindSimilarDecisions,
+  apiGetModeratorConsistency,
+  apiGetUserViolationPattern,
+} from './similar-decisions-api';
 
 /**
  * Find similar decisions for context
@@ -22,7 +22,7 @@ export const useSimilarDecisions = createQuery({
     category: string;
     limit?: number;
   }) =>
-    findSimilarDecisions(
+    apiFindSimilarDecisions(
       variables.contentId,
       variables.category,
       variables.limit || 5
@@ -35,7 +35,7 @@ export const useSimilarDecisions = createQuery({
 export const useConflictOfInterest = createQuery({
   queryKey: ['moderation', 'conflict-of-interest'],
   fetcher: (variables: { reportId: string; moderatorId: string }) =>
-    checkConflictOfInterest(variables.reportId, variables.moderatorId),
+    apiCheckConflictOfInterest(variables.reportId, variables.moderatorId),
 });
 
 /**
@@ -44,7 +44,7 @@ export const useConflictOfInterest = createQuery({
 export const useModeratorConsistency = createQuery({
   queryKey: ['moderation', 'moderator-consistency'],
   fetcher: (variables: { moderatorId: string }) =>
-    getModeratorConsistency(variables.moderatorId),
+    apiGetModeratorConsistency(variables.moderatorId),
   staleTime: 60 * 1000, // 1 minute
 });
 
@@ -54,6 +54,6 @@ export const useModeratorConsistency = createQuery({
 export const useUserViolationPattern = createQuery({
   queryKey: ['moderation', 'user-violation-pattern'],
   fetcher: (variables: { userId: string }) =>
-    getUserViolationPattern(variables.userId),
+    apiGetUserViolationPattern(variables.userId),
   staleTime: 5 * 60 * 1000, // 5 minutes
 });

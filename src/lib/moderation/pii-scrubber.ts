@@ -71,15 +71,22 @@ export class PIIScrubber {
   private config: ScrubConfig;
 
   constructor(config?: Partial<ScrubConfig>) {
+    const environment = config?.environment || 'production';
+    let salt = Env.PII_SCRUBBING_SALT;
+    if (!salt) {
+      if (environment === 'production') {
+        throw new Error(
+          'PII_SCRUBBING_SALT environment variable is required in production'
+        );
+      }
+      salt = 'default-salt-change-in-development';
+    }
     this.config = {
-      environment: config?.environment || 'production',
+      environment,
       saltVersion: config?.saltVersion || '1',
       kAnonymityThreshold:
         config?.kAnonymityThreshold || DEFAULT_K_ANONYMITY_THRESHOLD,
-      baseSalt:
-        config?.baseSalt ||
-        Env.PII_SCRUBBING_SALT ||
-        'default-salt-change-in-production',
+      baseSalt: salt,
     };
   }
 
@@ -96,6 +103,7 @@ export class PIIScrubber {
       content_age: 'new' | 'recent' | 'archived';
       jurisdiction_count: number;
       has_trusted_flagger: boolean;
+      moderator_id?: string;
     }
   ): Promise<RedactedSoR> {
     const scrubbedAt = new Date();
@@ -107,7 +115,7 @@ export class PIIScrubber {
     );
     const pseudonymizedModeratorId = this.pseudonymize(
       'moderator',
-      'moderator-id' // Would come from decision
+      context.moderator_id || 'unknown'
     );
     const pseudonymizedDecisionId = this.pseudonymize(
       'decision',

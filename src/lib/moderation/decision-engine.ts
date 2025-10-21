@@ -121,48 +121,14 @@ export class DecisionEngine {
     const errors: string[] = [];
     const actionMeta = ACTION_METADATA[decision.action];
 
-    // Validate report_id
-    if (!decision.report_id || decision.report_id.trim().length === 0) {
-      errors.push('Report ID is required');
-    }
+    this._validateRequiredFields(decision, errors);
+    this._validatePolicyViolations(decision, errors);
+    this._validateReasoning(decision, errors);
 
-    // Validate moderator_id
-    if (!decision.moderator_id || decision.moderator_id.trim().length === 0) {
-      errors.push('Moderator ID is required');
-    }
-
-    // Validate policy violations (required for all actions except no_action)
-    if (decision.action !== 'no_action') {
-      if (
-        !decision.policy_violations ||
-        decision.policy_violations.length === 0
-      ) {
-        errors.push(
-          'At least one policy violation must be specified (link to prohibited content catalog)'
-        );
-      }
-    }
-
-    // Validate reasoning
-    if (!decision.reasoning || decision.reasoning.trim().length === 0) {
-      errors.push('Reasoning is required');
-    } else if (decision.reasoning.trim().length < 50) {
-      errors.push(
-        'Reasoning must be sufficiently detailed (minimum 50 characters)'
-      );
-    }
-
-    // Validate action-specific requirements
-    if (actionMeta.requires_duration) {
-      // Check if duration fields exist (would be in decision metadata)
-      // For now, we'll add a note that duration must be provided separately
-      // This will be enforced at the API level
-    }
-
-    if (actionMeta.requires_territorial_scope) {
-      // Check if territorial scope exists (would be in decision metadata)
-      // For now, we'll add a note that territorial scope must be provided
-    }
+    if (actionMeta.requires_duration)
+      this._validateDuration(decision, actionMeta, errors);
+    if (actionMeta.requires_territorial_scope)
+      this._validateTerritorialScope(decision, errors);
 
     // Validate supervisor approval requirement for illegal content
     if (
@@ -175,10 +141,124 @@ export class DecisionEngine {
       );
     }
 
-    return {
-      is_valid: errors.length === 0,
-      errors,
-    };
+    return { is_valid: errors.length === 0, errors };
+  }
+
+  // Helper validators split out to reduce method length
+  private _validateRequiredFields(
+    decision: ModerationDecisionInput,
+    errors: string[]
+  ): void {
+    if (!decision.report_id || decision.report_id.trim().length === 0)
+      errors.push('Report ID is required');
+    if (!decision.moderator_id || decision.moderator_id.trim().length === 0)
+      errors.push('Moderator ID is required');
+  }
+
+  private _validatePolicyViolations(
+    decision: ModerationDecisionInput,
+    errors: string[]
+  ): void {
+    if (decision.action === 'no_action') return;
+    if (
+      !decision.policy_violations ||
+      decision.policy_violations.length === 0
+    ) {
+      errors.push(
+        'At least one policy violation must be specified (link to prohibited content catalog)'
+      );
+    }
+  }
+
+  private _validateReasoning(
+    decision: ModerationDecisionInput,
+    errors: string[]
+  ): void {
+    if (!decision.reasoning || decision.reasoning.trim().length === 0) {
+      errors.push('Reasoning is required');
+    } else if (decision.reasoning.trim().length < 50) {
+      errors.push(
+        'Reasoning must be sufficiently detailed (minimum 50 characters)'
+      );
+    }
+  }
+
+  private _validateDuration(
+    decision: ModerationDecisionInput,
+    actionMeta: ActionMetadata,
+    errors: string[]
+  ): void {
+    if (!decision.metadata?.duration) {
+      errors.push(
+        `Action "${decision.action}" requires a duration to be specified`
+      );
+      return;
+    }
+
+    const duration = decision.metadata.duration;
+    if (typeof duration === 'string') {
+      if (!/^P/.test(duration)) {
+        errors.push(
+          "Duration must be a valid ISO duration string (starting with 'P') or a structured duration object"
+        );
+      }
+      return;
+    }
+
+    if (typeof duration === 'object') {
+      if (typeof duration.value !== 'number' || duration.value <= 0)
+        errors.push('Duration value must be a positive number');
+      if (!duration.unit || typeof duration.unit !== 'string')
+        errors.push('Duration unit must be a non-empty string');
+
+      if (
+        actionMeta.max_duration_days &&
+        typeof duration.value === 'number' &&
+        typeof duration.unit === 'string'
+      ) {
+        const valueInDays = convertToDays(duration.value, duration.unit);
+        if (valueInDays > actionMeta.max_duration_days) {
+          errors.push(
+            `Duration cannot exceed ${actionMeta.max_duration_days} days for action "${decision.action}"`
+          );
+        }
+      }
+      return;
+    }
+
+    errors.push(
+      'Duration must be either an ISO duration string or a structured duration object'
+    );
+  }
+
+  private _validateTerritorialScope(
+    decision: ModerationDecisionInput,
+    errors: string[]
+  ): void {
+    if (!decision.metadata?.territorial_scope) {
+      errors.push(
+        `Action "${decision.action}" requires a territorial scope to be specified`
+      );
+      return;
+    }
+
+    const scope = decision.metadata.territorial_scope;
+    if (typeof scope === 'string') {
+      if (scope.trim().length === 0)
+        errors.push('Territorial scope cannot be empty');
+      return;
+    }
+
+    if (Array.isArray(scope)) {
+      if (scope.length === 0)
+        errors.push('Territorial scope array cannot be empty');
+      const hasEmptyScope = scope.some((s) => !s || s.trim().length === 0);
+      if (hasEmptyScope)
+        errors.push('Territorial scope array cannot contain empty values');
+      return;
+    }
+
+    errors.push('Territorial scope must be a string or array of strings');
   }
 
   /**
@@ -299,6 +379,47 @@ export class DecisionEngine {
       requires_territorial_scope: meta.requires_territorial_scope,
       max_duration_days: meta.max_duration_days,
     };
+  }
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Converts a duration value and unit to days for validation
+ */
+function convertToDays(value: number, unit: string): number {
+  const normalizedUnit = unit.toLowerCase().trim();
+
+  switch (normalizedUnit) {
+    case 'days':
+    case 'day':
+    case 'd':
+      return value;
+    case 'weeks':
+    case 'week':
+    case 'w':
+      return value * 7;
+    case 'months':
+    case 'month':
+    case 'm':
+      return value * 30; // Approximate
+    case 'years':
+    case 'year':
+    case 'y':
+      return value * 365; // Approximate
+    case 'hours':
+    case 'hour':
+    case 'h':
+      return value / 24;
+    case 'minutes':
+    case 'minute':
+    case 'min':
+      return value / (24 * 60);
+    default:
+      // Unknown unit, assume days
+      return value;
   }
 }
 

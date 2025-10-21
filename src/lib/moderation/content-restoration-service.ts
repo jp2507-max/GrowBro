@@ -17,6 +17,7 @@ import { supabase } from '../supabase';
 
 export interface ContentRestoration {
   contentId: string;
+  // Only 'post' and 'comment' are currently implemented; 'image' and 'profile' reserved for future expansion
   contentType: 'post' | 'comment' | 'image' | 'profile';
   originalAction: ModerationAction;
   restoredAt: Date;
@@ -218,11 +219,11 @@ export async function restoreContent(
 
     default:
       console.warn(
-        `[ContentRestoration] No restoration handler for action: ${originalAction}`
+        `[ContentRestoration] No restoration handler for action: ${options.originalAction}`
       );
       return {
         success: false,
-        error: `Unsupported restoration action: ${originalAction}`,
+        error: `Unsupported restoration action: ${options.originalAction}`,
       };
   }
 }

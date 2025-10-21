@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import React from 'react';
 
 import { Text, View } from '@/components/ui';
@@ -66,7 +67,17 @@ function getStatusBadge(status: 'active' | 'warning' | 'suspended'): string {
 // Helper to format the last reviewed date.
 function formatDate(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('en-US', {
+
+  // Map i18n language codes to locale strings
+  const localeMap: Record<string, string> = {
+    en: 'en-US',
+    de: 'de-DE',
+  };
+
+  const currentLanguage = i18n.language || 'en';
+  const locale = localeMap[currentLanguage] || 'en-US';
+
+  return d.toLocaleDateString(locale, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -81,16 +92,19 @@ function FlaggerCardHeader({ flagger }: { flagger: TrustedFlaggerMetrics }) {
         <Text className="mb-1 text-base font-semibold text-neutral-900 dark:text-neutral-100">
           {flagger.flagger_name}
         </Text>
-        <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-          ID: {flagger.flagger_id.slice(0, 8)}
-        </Text>
+        <Text
+          className="text-xs text-neutral-600 dark:text-neutral-400"
+          tx="moderation.flagger.idLabel"
+          txOptions={{ id: flagger.flagger_id.slice(0, 8) }}
+        />
       </View>
       <View
         className={`rounded-full px-3 py-1 ${getStatusBadge(flagger.status)}`}
       >
-        <Text className="text-xs font-medium">
-          {flagger.status.toUpperCase()}
-        </Text>
+        <Text
+          className="text-xs font-medium"
+          tx={`moderation.flagger.status.${flagger.status}`}
+        />
       </View>
     </View>
   );
@@ -101,9 +115,10 @@ function FlaggerCardMetrics({ flagger }: { flagger: TrustedFlaggerMetrics }) {
   return (
     <View className="mb-3 flex-row gap-4">
       <View className="flex-1">
-        <Text className="mb-1 text-xs text-neutral-600 dark:text-neutral-400">
-          Accuracy
-        </Text>
+        <Text
+          className="mb-1 text-xs text-neutral-600 dark:text-neutral-400"
+          tx="moderation.flagger.accuracy"
+        />
         <View
           className={`rounded-md px-2 py-1 ${getBadgeColor(flagger.accuracy_rate)}`}
         >
@@ -114,27 +129,30 @@ function FlaggerCardMetrics({ flagger }: { flagger: TrustedFlaggerMetrics }) {
       </View>
 
       <View className="flex-1">
-        <Text className="mb-1 text-xs text-neutral-600 dark:text-neutral-400">
-          False Positive
-        </Text>
+        <Text
+          className="mb-1 text-xs text-neutral-600 dark:text-neutral-400"
+          tx="moderation.flagger.falsePositive"
+        />
         <Text className="text-center text-sm font-semibold text-neutral-900 dark:text-neutral-100">
           {(flagger.false_positive_rate * 100).toFixed(1)}%
         </Text>
       </View>
 
       <View className="flex-1">
-        <Text className="mb-1 text-xs text-neutral-600 dark:text-neutral-400">
-          Avg Response
-        </Text>
+        <Text
+          className="mb-1 text-xs text-neutral-600 dark:text-neutral-400"
+          tx="moderation.flagger.avgResponse"
+        />
         <Text className="text-center text-sm font-semibold text-neutral-900 dark:text-neutral-100">
           {formatResponseTime(flagger.average_response_time_ms)}
         </Text>
       </View>
 
       <View className="flex-1">
-        <Text className="mb-1 text-xs text-neutral-600 dark:text-neutral-400">
-          Trend
-        </Text>
+        <Text
+          className="mb-1 text-xs text-neutral-600 dark:text-neutral-400"
+          tx="moderation.flagger.trend"
+        />
         <Text
           className={`text-center text-xl ${getTrendColor(flagger.quality_trend)}`}
         >
@@ -154,25 +172,28 @@ function FlaggerCardReportVolume({
   return (
     <View className="mb-3 flex-row gap-4">
       <View className="flex-1">
-        <Text className="mb-1 text-xs text-neutral-600 dark:text-neutral-400">
-          Total Reports
-        </Text>
+        <Text
+          className="mb-1 text-xs text-neutral-600 dark:text-neutral-400"
+          tx="moderation.flagger.totalReports"
+        />
         <Text className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
           {flagger.report_volume.total}
         </Text>
       </View>
       <View className="flex-1">
-        <Text className="mb-1 text-xs text-neutral-600 dark:text-neutral-400">
-          This Week
-        </Text>
+        <Text
+          className="mb-1 text-xs text-neutral-600 dark:text-neutral-400"
+          tx="moderation.flagger.thisWeek"
+        />
         <Text className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
           {flagger.report_volume.this_week}
         </Text>
       </View>
       <View className="flex-1">
-        <Text className="mb-1 text-xs text-neutral-600 dark:text-neutral-400">
-          This Month
-        </Text>
+        <Text
+          className="mb-1 text-xs text-neutral-600 dark:text-neutral-400"
+          tx="moderation.flagger.thisMonth"
+        />
         <Text className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
           {flagger.report_volume.this_month}
         </Text>
@@ -191,16 +212,17 @@ function FlaggerCardFooter({
 }) {
   return (
     <View className="flex-row items-center justify-between border-t border-neutral-200 pt-3 dark:border-neutral-700">
-      <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-        Last reviewed: {formatDate(flagger.last_reviewed_at)}
-      </Text>
+      <Text
+        className="text-xs text-neutral-600 dark:text-neutral-400"
+        tx="moderation.flagger.lastReviewed"
+        txOptions={{ date: formatDate(flagger.last_reviewed_at) }}
+      />
       {onFlaggerPress && (
         <Text
           onPress={() => onFlaggerPress(flagger.flagger_id)}
           className="text-xs font-medium text-primary-600 dark:text-primary-400"
-        >
-          View Details →
-        </Text>
+          tx="moderation.flagger.viewDetails"
+        />
       )}
     </View>
   );

@@ -23,7 +23,19 @@ export async function getTrustedFlaggerAnalytics(): Promise<TrustedFlaggerAnalyt
     );
   }
 
-  return response.json();
+  const rawData = await response.json();
+
+  // Convert date strings to Date objects in flaggers array
+  if (rawData.flaggers && Array.isArray(rawData.flaggers)) {
+    rawData.flaggers = rawData.flaggers.map((flagger: any) => ({
+      ...flagger,
+      last_reviewed_at: flagger.last_reviewed_at
+        ? new Date(flagger.last_reviewed_at)
+        : undefined,
+    }));
+  }
+
+  return rawData as TrustedFlaggerAnalytics;
 }
 
 /**
@@ -43,7 +55,15 @@ export async function getTrustedFlaggerMetrics(
     );
   }
 
-  return response.json();
+  const rawData = await response.json();
+
+  // Convert date string to Date object
+  return {
+    ...rawData,
+    last_reviewed_at: rawData.last_reviewed_at
+      ? new Date(rawData.last_reviewed_at)
+      : undefined,
+  } as TrustedFlaggerMetrics;
 }
 
 /**
@@ -63,7 +83,17 @@ export async function getTrustedFlaggers(
     throw new Error(`Failed to fetch trusted flaggers: ${response.statusText}`);
   }
 
-  return response.json();
+  const rawData = await response.json();
+
+  // Convert date strings to Date objects for each flagger
+  return rawData.map((flagger: any) => ({
+    ...flagger,
+    certification_date: new Date(flagger.certification_date),
+    review_date: new Date(flagger.review_date),
+    created_at: new Date(flagger.created_at),
+    updated_at: new Date(flagger.updated_at),
+    deleted_at: flagger.deleted_at ? new Date(flagger.deleted_at) : undefined,
+  })) as TrustedFlagger[];
 }
 
 /**
@@ -73,7 +103,7 @@ export function calculateQualityTrend(
   recentAccuracy: number[],
   currentAccuracy: number
 ): 'improving' | 'stable' | 'degrading' {
-  if (recentAccuracy.length < 2) return 'stable';
+  if (recentAccuracy.length === 0) return 'stable';
 
   const avgRecent =
     recentAccuracy.reduce((sum, acc) => sum + acc, 0) / recentAccuracy.length;
@@ -171,7 +201,7 @@ export function formatResponseTime(ms: number): string {
   const hours = Math.floor(ms / (1000 * 60 * 60));
   const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
 
-  if (hours > 24) {
+  if (hours >= 24) {
     const days = Math.floor(hours / 24);
     return `${days}d ${hours % 24}h`;
   }

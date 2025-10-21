@@ -422,5 +422,23 @@ COMMENT ON FUNCTION get_signing_key_by_version(TEXT) IS 'Retrieves active signin
 COMMENT ON FUNCTION get_valid_signing_keys_for_verification(TIMESTAMPTZ) IS 'Returns all keys valid for verification at given timestamp (supports dual-key overlap)';
 COMMENT ON FUNCTION activate_signing_key(TEXT, TEXT, TEXT, TEXT, TEXT, INTERVAL) IS 'Activates new signing key and rotates previous key with overlap window';
 COMMENT ON FUNCTION deactivate_expired_signing_keys() IS 'Deactivates keys that have exceeded their overlap window';
-COMMENT ON FUNCTION verify_audit_event_with_key_versioning(UUID) IS 'Verifies audit event signature using appropriate key version with dual-key support';</content>
+COMMENT ON FUNCTION verify_audit_event_with_key_versioning(UUID) IS 'Verifies audit event signature using appropriate key version with dual-key support';
+
+-- ============================================================================
+-- DOWN MIGRATION: Rollback signing key versioning
+-- ============================================================================
+
+-- Drop helper functions in reverse order of creation
+DROP FUNCTION IF EXISTS verify_audit_event_with_key_versioning(UUID);
+DROP FUNCTION IF EXISTS deactivate_expired_signing_keys();
+DROP FUNCTION IF EXISTS activate_signing_key(TEXT, TEXT, TEXT, TEXT, TEXT, INTERVAL);
+DROP FUNCTION IF EXISTS get_valid_signing_keys_for_verification(TIMESTAMPTZ);
+DROP FUNCTION IF EXISTS get_signing_key_by_version(TEXT);
+
+-- Drop the audit_signing_keys table
+DROP TABLE IF EXISTS public.audit_signing_keys;
+
+-- Remove signing_key_version columns
+ALTER TABLE public.audit_events DROP COLUMN IF EXISTS signing_key_version;
+ALTER TABLE public.partition_manifests DROP COLUMN IF EXISTS signing_key_version;</content>
 <parameter name="filePath">c:\Users\Peter\GrowBro\supabase\migrations\20251022_add_signing_key_versioning.sql

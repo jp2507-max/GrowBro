@@ -32,7 +32,10 @@ type Props = {
 export function SLABadge({ status, deadline, testID = 'sla-badge' }: Props) {
   const { t } = useTranslation();
   const colors = SLA_COLORS[status];
-  const timeRemaining = formatTimeRemaining(deadline.getTime() - Date.now());
+  const rawDelta = deadline.getTime() - Date.now();
+  const nonNegDelta = Math.max(0, rawDelta);
+  const timeRemaining = formatTimeRemaining(nonNegDelta);
+  const isOverdue = rawDelta <= 0;
   const shouldAnimate = shouldAnimateIndicator(status);
 
   const animatedStyle = useAnimatedStyle(() => {
@@ -60,7 +63,9 @@ export function SLABadge({ status, deadline, testID = 'sla-badge' }: Props) {
         className={`rounded-lg border px-3 py-1.5 ${colors.bg} ${colors.border}`}
       >
         <Text className={`text-xs font-semibold ${colors.text}`}>
-          {getSLAStatusLabel(status, t)}
+          {isOverdue
+            ? t('moderation.sla.status.overdue')
+            : getSLAStatusLabel(status, t)}
         </Text>
         <Text className={`text-xs ${colors.text}`}>{timeRemaining}</Text>
       </View>

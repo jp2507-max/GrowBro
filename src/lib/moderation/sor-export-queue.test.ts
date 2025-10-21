@@ -52,7 +52,7 @@ describe('SoRExportQueueManager', () => {
 
       const result = await sorExportQueueManager.enqueue(
         'test-statement-id',
-        mockRedactedSoR
+        mockRedactedSoR as any
       );
 
       expect(result.success).toBe(true);
@@ -73,7 +73,7 @@ describe('SoRExportQueueManager', () => {
 
       const result = await sorExportQueueManager.enqueue(
         'test-statement-id',
-        mockRedactedSoR
+        mockRedactedSoR as any
       );
 
       expect(result.success).toBe(true);
@@ -89,7 +89,7 @@ describe('SoRExportQueueManager', () => {
 
       const result = await sorExportQueueManager.enqueue(
         'test-statement-id',
-        invalidSoR
+        invalidSoR as any
       );
 
       expect(result.success).toBe(false);

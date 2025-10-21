@@ -2,6 +2,7 @@ import { nanoid } from 'nanoid/non-secure';
 import { showMessage } from 'react-native-flash-message';
 
 import { apiSubmitAppeal } from '@/api/moderation/appeals';
+import { getAuthenticatedUserId } from '@/lib/auth/user-utils';
 import { getItem, removeItem, setItem } from '@/lib/storage';
 import type { AppealType } from '@/types/moderation';
 
@@ -29,17 +30,7 @@ function now(): number {
 function inferAppealType(reason: string): AppealType {
   const lowerReason = reason.toLowerCase();
 
-  // Check for account-related reasons (suspension, ban, etc.)
-  if (
-    lowerReason.includes('account') ||
-    lowerReason.includes('ban') ||
-    lowerReason.includes('suspend') ||
-    lowerReason.includes('user')
-  ) {
-    return 'account_action';
-  }
-
-  // Check for geo-restriction reasons
+  // Check for geo-restriction reasons first (highest priority)
   if (
     lowerReason.includes('geo') ||
     lowerReason.includes('location') ||
@@ -47,6 +38,28 @@ function inferAppealType(reason: string): AppealType {
     lowerReason.includes('country')
   ) {
     return 'geo_restriction';
+  }
+
+  // Check for content-removal indicators (higher priority than account keywords)
+  if (
+    lowerReason.includes('posted') ||
+    lowerReason.includes('shared') ||
+    lowerReason.includes('private') ||
+    lowerReason.includes('information') ||
+    lowerReason.includes('details') ||
+    lowerReason.includes('data')
+  ) {
+    return 'content_removal';
+  }
+
+  // Check for account-related reasons (suspension, ban, etc.) - lowest priority
+  if (
+    lowerReason.includes('account') ||
+    lowerReason.includes('ban') ||
+    lowerReason.includes('suspend') ||
+    lowerReason.includes('user')
+  ) {
+    return 'account_action';
   }
 
   // Default to content removal for all other cases
@@ -174,9 +187,11 @@ export class AppealsQueue {
 
       // Attempt to submit the appeal
       const appealType = inferAppealType(item.reason);
+      const userId = await getAuthenticatedUserId();
 
       const result = await apiSubmitAppeal({
         original_decision_id: String(item.contentId),
+        user_id: userId,
         appeal_type: appealType,
         counter_arguments: item.details || item.reason,
       });

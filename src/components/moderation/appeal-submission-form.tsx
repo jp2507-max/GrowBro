@@ -46,7 +46,6 @@ export interface AppealFormProps {
 
 export function AppealSubmissionForm({
   originalDecision,
-  appealType: _appealType,
   deadline,
   onSubmit,
   onCancel,
@@ -97,7 +96,7 @@ export function AppealSubmissionForm({
 
   const handleSubmit = async () => {
     // Validate counter-arguments length (min 50 chars per schema)
-    if (counterArguments.length < 50) {
+    if ((counterArguments?.trim().length ?? 0) < 50) {
       setError(t('appeals.error.counterArgumentsTooShort'));
       return;
     }

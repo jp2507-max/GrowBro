@@ -5,96 +5,8 @@
  * Requirements: 1.3, 1.4
  */
 
-import { z } from 'zod';
-
+import { contentReportInputSchema } from '@/lib/schemas/moderation-schemas';
 import type { ReportType } from '@/types/moderation';
-
-// ============================================================================
-// Validation Schemas
-// ============================================================================
-
-const reporterContactSchema = z.object({
-  name: z.string().min(1, 'Reporter name is required').optional(),
-  email: z
-    .string()
-    .email('Invalid email format')
-    .min(1, 'Reporter email is required')
-    .optional(),
-  pseudonym: z.string().min(1, 'Pseudonym is required').optional(),
-});
-
-const contentReportInputSchema = z
-  .object({
-    content_id: z.string().min(1, 'Content ID is required'),
-    content_type: z.enum(['post', 'comment', 'image', 'profile', 'other'], {
-      errorMap: () => ({ message: 'Invalid content type' }),
-    }),
-    content_locator: z
-      .string()
-      .min(1, 'Content locator (permalink/deep link) is required')
-      .url('Content locator must be a valid URL'),
-    report_type: z.enum(['illegal', 'policy_violation'], {
-      errorMap: () => ({
-        message: 'Report type must be "illegal" or "policy_violation"',
-      }),
-    }),
-    jurisdiction: z
-      .string()
-      .length(2, 'Jurisdiction must be ISO 3166-1 alpha-2 code (e.g., "DE")')
-      .optional(),
-    legal_reference: z
-      .string()
-      .min(1, 'Legal reference is required for illegal content reports')
-      .optional(),
-    explanation: z
-      .string()
-      .min(
-        50,
-        'Explanation must be sufficiently substantiated (minimum 50 characters)'
-      )
-      .max(5000, 'Explanation is too long (maximum 5000 characters)'),
-    reporter_contact: reporterContactSchema,
-    good_faith_declaration: z.literal(true, {
-      errorMap: () => ({
-        message: 'Good faith declaration must be accepted',
-      }),
-    }),
-    evidence_urls: z
-      .array(z.string().url('Evidence URL must be valid'))
-      .max(10, 'Maximum 10 evidence URLs allowed')
-      .optional(),
-  })
-  .superRefine((data, ctx) => {
-    // DSA Art. 16 requirement: illegal content reports must include jurisdiction
-    if (data.report_type === 'illegal') {
-      if (!data.jurisdiction) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['jurisdiction'],
-          message: 'Jurisdiction is required for illegal content reports',
-        });
-      }
-      if (!data.legal_reference) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['legal_reference'],
-          message:
-            'Legal reference (e.g., "DE StGB §130") is required for illegal content reports',
-        });
-      }
-    }
-
-    // Reporter contact: at least one contact method required
-    const contact = data.reporter_contact;
-    if (!contact.email && !contact.pseudonym && !contact.name) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['reporter_contact'],
-        message:
-          'Reporter contact must include at least email, pseudonym, or name',
-      });
-    }
-  });
 
 // ============================================================================
 // Validation Functions
@@ -106,7 +18,7 @@ export interface ValidationError {
   code: string;
 }
 
-export interface ValidationResult {
+export interface DetailedValidationResult {
   is_valid: boolean;
   errors: ValidationError[];
 }
@@ -117,7 +29,9 @@ export interface ValidationResult {
  * @param input - Content report input payload
  * @returns Validation result with actionable error messages
  */
-export function validateContentReportInput(input: unknown): ValidationResult {
+export function validateContentReportInput(
+  input: unknown
+): DetailedValidationResult {
   const result = contentReportInputSchema.safeParse(input);
 
   if (result.success) {

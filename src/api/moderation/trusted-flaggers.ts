@@ -24,8 +24,12 @@ export const useTrustedFlaggerAnalytics = createQuery({
 /**
  * Get metrics for specific trusted flagger
  */
-export const useTrustedFlaggerMetrics = createQuery({
-  queryKey: ['moderation', 'trusted-flaggers', 'metrics'],
+export const useTrustedFlaggerMetrics = createQuery<
+  ReturnType<typeof getTrustedFlaggerMetrics>,
+  { flaggerId: string },
+  Error
+>({
+  queryKey: ['moderation', 'trusted-flaggers', 'metrics', 'flaggerId'],
   fetcher: (variables: { flaggerId: string }) =>
     getTrustedFlaggerMetrics(variables.flaggerId),
   staleTime: 60 * 1000, // 1 minute
@@ -34,9 +38,13 @@ export const useTrustedFlaggerMetrics = createQuery({
 /**
  * Get all trusted flaggers with optional status filter
  */
-export const useTrustedFlaggers = createQuery({
-  queryKey: ['moderation', 'trusted-flaggers'],
-  fetcher: (variables?: { status?: 'active' | 'warning' | 'suspended' }) =>
+export const useTrustedFlaggers = createQuery<
+  ReturnType<typeof getTrustedFlaggers>,
+  { status?: 'active' | 'warning' | 'suspended' },
+  Error
+>({
+  queryKey: ['moderation', 'trusted-flaggers', 'status'],
+  fetcher: (variables: { status?: 'active' | 'warning' | 'suspended' }) =>
     getTrustedFlaggers(variables?.status),
   staleTime: 5 * 60 * 1000, // 5 minutes
 });

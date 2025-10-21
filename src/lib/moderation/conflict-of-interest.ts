@@ -21,10 +21,13 @@ export async function checkConflictOfInterest(
   );
 
   if (!response.ok) {
-    // If check fails, err on side of caution
+    console.error(
+      `[COI] Conflict check failed for report ${reportId}, moderator ${moderatorId}: ${response.status} ${response.statusText}`
+    );
+    // Err on side of caution
     return {
-      has_conflict: false,
-      reasons: [],
+      has_conflict: true,
+      reasons: ['moderation_check_failed'],
     };
   }
 
@@ -83,51 +86,61 @@ export async function hasBiasIndicators(
   moderatorId: string,
   userId: string
 ): Promise<{ hasBias: boolean; indicators: string[] }> {
-  const decisions = await getDecisionsByModerator(moderatorId, userId);
+  try {
+    const decisions = await getDecisionsByModerator(moderatorId, userId);
 
-  if (decisions.length === 0) {
+    if (decisions.length === 0) {
+      return { hasBias: false, indicators: [] };
+    }
+
+    const indicators: string[] = [];
+
+    // Check for unusual patterns
+    const reversalCount = decisions.filter(
+      (d) => d.reversed_at !== undefined
+    ).length;
+    const reversalRate = reversalCount / decisions.length;
+
+    if (reversalRate > 0.5) {
+      indicators.push(
+        `High reversal rate (${Math.round(reversalRate * 100)}%) for this user`
+      );
+    }
+
+    // Check for decision time anomalies
+    const avgDecisionTimes = decisions
+      .map((d) => {
+        if (!d.executed_at) return null;
+        return (
+          new Date(d.executed_at).getTime() - new Date(d.created_at).getTime()
+        );
+      })
+      .filter((t): t is number => t !== null);
+
+    if (avgDecisionTimes.length > 0) {
+      const avgTime =
+        avgDecisionTimes.reduce((sum, t) => sum + t, 0) /
+        avgDecisionTimes.length;
+
+      // Unusually fast decisions might indicate bias
+      if (avgTime < 60 * 1000) {
+        // Less than 1 minute
+        indicators.push('Unusually fast decision times for this user');
+      }
+    }
+
+    return {
+      hasBias: indicators.length > 0,
+      indicators,
+    };
+  } catch (error) {
+    console.error(
+      `[COI] Failed to fetch decision history for moderator ${moderatorId}, user ${userId}:`,
+      error
+    );
+    // Return safe degraded response
     return { hasBias: false, indicators: [] };
   }
-
-  const indicators: string[] = [];
-
-  // Check for unusual patterns
-  const reversalCount = decisions.filter(
-    (d) => d.reversed_at !== undefined
-  ).length;
-  const reversalRate = reversalCount / decisions.length;
-
-  if (reversalRate > 0.5) {
-    indicators.push(
-      `High reversal rate (${Math.round(reversalRate * 100)}%) for this user`
-    );
-  }
-
-  // Check for decision time anomalies
-  const avgDecisionTimes = decisions
-    .map((d) => {
-      if (!d.executed_at) return null;
-      return (
-        new Date(d.executed_at).getTime() - new Date(d.created_at).getTime()
-      );
-    })
-    .filter((t): t is number => t !== null);
-
-  if (avgDecisionTimes.length > 0) {
-    const avgTime =
-      avgDecisionTimes.reduce((sum, t) => sum + t, 0) / avgDecisionTimes.length;
-
-    // Unusually fast decisions might indicate bias
-    if (avgTime < 60 * 1000) {
-      // Less than 1 minute
-      indicators.push('Unusually fast decision times for this user');
-    }
-  }
-
-  return {
-    hasBias: indicators.length > 0,
-    indicators,
-  };
 }
 
 /**

@@ -46,8 +46,8 @@ export interface AccountRestorationResult {
  */
 export async function restoreAccountStatus(
   userId: string,
-  _reversalReason: string,
-  _appealId: string
+  reversalReason: string,
+  appealId: string
 ): Promise<AccountRestorationResult> {
   try {
     // Check if user has repeat offender record
@@ -64,8 +64,8 @@ export async function restoreAccountStatus(
       const updatedHistory = suspensionHistory.map((suspension: any) => ({
         ...suspension,
         reversed: true,
-        reversal_reason: restorationData.reversalReason,
-        reversal_appeal_id: restorationData.appealId,
+        reversal_reason: reversalReason,
+        reversal_appeal_id: appealId,
         reversal_date: new Date().toISOString(),
       }));
 
@@ -79,11 +79,13 @@ export async function restoreAccountStatus(
         .eq('user_id', userId);
     }
 
-    // Note: In a full implementation, this would also update user profile table
+    // TODO: Implement user profile table updates
     // to remove account restrictions, rate limits, shadow bans, etc.
     // For now, we log the restoration event
 
     console.log('[AccountRestoration] Restored account status:', userId);
+    console.log('[AccountRestoration] Reversal reason:', reversalReason);
+    console.log('[AccountRestoration] Appeal ID:', appealId);
 
     return {
       success: true,
@@ -103,6 +105,7 @@ export async function restoreAccountStatus(
  *
  * Requirement: 4.2
  */
+// TODO: Implement Redis cache layer for rate limit removal
 export async function removeRateLimit(
   userId: string,
   reversalReason: string
@@ -132,6 +135,7 @@ export async function removeRateLimit(
  *
  * Requirement: 4.2
  */
+// TODO: Implement shadow ban removal in user profile/cache
 export async function removeShadowBan(
   userId: string,
   reversalReason: string

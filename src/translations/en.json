@@ -880,11 +880,14 @@
     "retry": "Retry"
   },
   "moderation": {
+    "active": "active",
     "audit": {
       "empty": "Empty",
       "title": "Audit Trail"
     },
     "authentication_required": "Authentication required to perform this action",
+    "avgAccuracy": "Avg Accuracy",
+    "avgResponse": "Avg Response",
     "block": "Block",
     "block_failed": "Failed to block user. Please try again.",
     "delete": "Delete",
@@ -898,6 +901,23 @@
         "standard": "Standard",
         "trusted": "Trusted"
       }
+    },
+    "flagger": {
+      "accuracy": "Accuracy",
+      "avgResponse": "Avg Response",
+      "falsePositive": "False Positive",
+      "idLabel": "ID:",
+      "lastReviewed": "Last reviewed: {{date}}",
+      "status": {
+        "active": "ACTIVE",
+        "suspended": "SUSPENDED",
+        "warning": "WARNING"
+      },
+      "thisMonth": "This Month",
+      "thisWeek": "This Week",
+      "totalReports": "Total Reports",
+      "trend": "Trend",
+      "viewDetails": "View Details →"
     },
     "hide": "Hide",
     "mute": "Mute",
@@ -944,6 +964,7 @@
       "legal_reference_label": "Legal Reference",
       "legal_reference_placeholder": "e.g., DE StGB §130, UK Communications Act 2003",
       "legal_reference_required": "Please cite the specific law or regulation that is violated",
+      "legal_reference_too_long": "Legal reference is too long (maximum 500 characters)",
       "queued": "Report queued for review. Thank you for your submission.",
       "reason_harassment": "Harassment or Bullying",
       "reason_harassment_desc": "Targeted harassment, threats, or intimidating behavior toward individuals",
@@ -977,15 +998,28 @@
       "success": "Report submitted successfully. Thank you for helping keep our community safe.",
       "title": "Report Content"
     },
+    "reportsPerMonth": "Reports/Month",
     "sla": {
       "status": {
         "critical": "OVERDUE",
         "green": "On Track",
         "orange": "At Risk",
+        "overdue": "Overdue",
         "red": "Urgent",
         "yellow": "Approaching"
       }
     },
+    "sorPreview": {
+      "redactedSubtitle": "PII-scrubbed for Transparency DB (DSA Art. 24(5))",
+      "redactedTitle": "Redacted SoR (EC Submission)",
+      "userFacingSubtitle": "Delivered to user (DSA Art. 17)",
+      "userFacingTitle": "User-Facing SoR",
+      "validation": {
+        "noPiiDetected": "✓ No PII Detected",
+        "piiValidationFailed": "✗ PII Validation Failed"
+      }
+    },
+    "totalFlaggers": "Total Flaggers",
     "unhide": "Unhide"
   },
   "nav": {

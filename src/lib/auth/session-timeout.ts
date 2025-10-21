@@ -5,8 +5,10 @@ const IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
 const ACTIVITY_CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
 
 let lastActivityTime = Date.now();
-let timeoutId: NodeJS.Timeout | null = null;
-let activityCheckId: NodeJS.Timeout | null = null;
+let timeoutId: ReturnType<typeof setTimeout> | null = null;
+let activityCheckId: ReturnType<typeof setInterval> | null = null;
+let appStateSubscription: ReturnType<typeof AppState.addEventListener> | null =
+  null;
 let isInitialized = false;
 
 /**
@@ -46,27 +48,35 @@ export function startIdleTimeout(signOutCallback: () => void): void {
   );
 
   // Listen to app state changes
-  AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
-    if (nextAppState === 'active') {
-      // App became active, update activity time
-      updateActivity();
-    } else if (nextAppState === 'background') {
-      // App went to background, schedule a timeout check
-      // This ensures we catch idle timeouts even when app is backgrounded
-      timeoutId = setTimeout(() => {
-        checkIdleTimeout(signOutCallback);
-      }, IDLE_TIMEOUT_MS);
-    } else if (nextAppState === 'inactive') {
-      // Clear any pending background timeout when app becomes inactive
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        timeoutId = null;
+  appStateSubscription = AppState.addEventListener(
+    'change',
+    (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        // Clear any pending background timeout and update activity time
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+        updateActivity();
+      } else if (nextAppState === 'background') {
+        // Clear any existing timeout before scheduling a new one
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        // App went to background, schedule a timeout check
+        // This ensures we catch idle timeouts even when app is backgrounded
+        timeoutId = setTimeout(() => {
+          checkIdleTimeout(signOutCallback);
+        }, IDLE_TIMEOUT_MS);
+      } else if (nextAppState === 'inactive') {
+        // Clear any pending background timeout when app becomes inactive
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
       }
     }
-  });
-
-  // Store subscription for cleanup (though we don't expose cleanup in this simple implementation)
-  // In a more complex setup, we'd return a cleanup function
+  );
 }
 
 /**
@@ -80,6 +90,10 @@ export function stopIdleTimeout(): void {
   if (timeoutId) {
     clearTimeout(timeoutId);
     timeoutId = null;
+  }
+  if (appStateSubscription) {
+    appStateSubscription.remove();
+    appStateSubscription = null;
   }
   isInitialized = false;
 }

@@ -23,9 +23,13 @@ import type { ValidationResult } from '@/types/moderation';
  * Supports pseudonymous reporting with contextual exceptions
  */
 export const reporterContactSchema = z.object({
-  name: z.string().min(1).max(200).optional(),
-  email: z.string().email().max(255).optional(),
-  pseudonym: z.string().min(3).max(100).optional(),
+  name: z.string().min(1, 'Reporter name is required').optional(),
+  email: z
+    .string()
+    .email('Invalid email format')
+    .min(1, 'Reporter email is required')
+    .optional(),
+  pseudonym: z.string().min(1, 'Pseudonym is required').optional(),
 });
 
 /**
@@ -40,67 +44,76 @@ export const reporterContactSchema = z.object({
  */
 export const contentReportInputSchema = z
   .object({
-    content_id: z.string().min(1).max(100),
-    content_type: z.enum(['post', 'comment', 'image', 'profile', 'other']),
-    content_locator: z.string().url('Content locator must be a valid URL'),
+    content_id: z.string().min(1, 'Content ID is required'),
+    content_type: z.enum(['post', 'comment', 'image', 'profile', 'other'], {
+      errorMap: () => ({ message: 'Invalid content type' }),
+    }),
+    content_locator: z
+      .string()
+      .min(1, 'Content locator (permalink/deep link) is required')
+      .url('Content locator must be a valid URL'),
     report_type: z.enum(['illegal', 'policy_violation'], {
       errorMap: () => ({
-        message: 'Report type must be either "illegal" or "policy_violation"',
+        message: 'Report type must be "illegal" or "policy_violation"',
       }),
     }),
     jurisdiction: z
       .string()
-      .length(2, 'Jurisdiction must be a 2-letter ISO country code')
-      .toUpperCase()
+      .length(2, 'Jurisdiction must be ISO 3166-1 alpha-2 code (e.g., "DE")')
       .optional(),
     legal_reference: z
       .string()
-      .min(1)
-      .max(500, 'Legal reference is too long')
+      .min(1, 'Legal reference is required for illegal content reports')
       .optional(),
     explanation: z
       .string()
-      .min(50, 'Explanation must be at least 50 characters for substantiation')
-      .max(5000, 'Explanation is too long'),
+      .min(
+        50,
+        'Explanation must be sufficiently substantiated (minimum 50 characters)'
+      )
+      .max(5000, 'Explanation is too long (maximum 5000 characters)'),
     reporter_contact: reporterContactSchema,
     good_faith_declaration: z.literal(true, {
       errorMap: () => ({
-        message: 'Good faith declaration is required (must be checked)',
+        message: 'Good faith declaration must be accepted',
       }),
     }),
     evidence_urls: z
-      .array(z.string().url('Each evidence URL must be valid'))
+      .array(z.string().url('Evidence URL must be valid'))
       .max(10, 'Maximum 10 evidence URLs allowed')
       .optional(),
   })
-  .refine(
-    (data) => {
-      // For illegal reports, jurisdiction is mandatory
-      if (data.report_type === 'illegal' && !data.jurisdiction) {
-        return false;
+  .superRefine((data, ctx) => {
+    // DSA Art. 16 requirement: illegal content reports must include jurisdiction
+    if (data.report_type === 'illegal') {
+      if (!data.jurisdiction) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['jurisdiction'],
+          message: 'Jurisdiction is required for illegal content reports',
+        });
       }
-      return true;
-    },
-    {
-      message:
-        'Jurisdiction is required for illegal content reports (2-letter ISO country code)',
-      path: ['jurisdiction'],
+      if (!data.legal_reference) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['legal_reference'],
+          message:
+            'Legal reference (e.g., "DE StGB §130") is required for illegal content reports',
+        });
+      }
     }
-  )
-  .refine(
-    (data) => {
-      // Reporter contact must have at least name+email or pseudonym
-      const contact = data.reporter_contact;
-      const hasNameAndEmail = contact.name && contact.email;
-      const hasPseudonym = contact.pseudonym;
-      return hasNameAndEmail || hasPseudonym;
-    },
-    {
-      message:
-        'Reporter contact must include name & email, or a pseudonym for privacy-preserving reports',
-      path: ['reporter_contact'],
+
+    // Reporter contact: at least one contact method required
+    const contact = data.reporter_contact;
+    if (!contact.email && !contact.pseudonym && !contact.name) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['reporter_contact'],
+        message:
+          'Reporter contact must include at least email, pseudonym, or name',
+      });
     }
-  );
+  });
 
 /**
  * Validate content report input with actionable error messages

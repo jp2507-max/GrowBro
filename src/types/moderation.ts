@@ -89,6 +89,8 @@ export interface ContentReportInput {
   reporter_contact: ReporterContact;
   good_faith_declaration: boolean;
   evidence_urls?: string[];
+  content?: string; // Optional pre-fetched content string for hash generation
+  content_hash?: string; // Optional pre-computed content hash
 }
 
 export interface ReportSubmissionResult {
@@ -158,6 +160,15 @@ export interface ModerationDecisionInput {
   reasoning: string;
   evidence?: string[];
   requires_supervisor_approval?: boolean;
+  metadata?: {
+    duration?:
+      | {
+          value: number;
+          unit: string;
+        }
+      | string; // ISO duration string or structured duration
+    territorial_scope?: string | string[]; // Single territory or array of territories
+  };
 }
 
 export interface DecisionResult {

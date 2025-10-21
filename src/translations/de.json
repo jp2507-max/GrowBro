@@ -880,11 +880,14 @@
     "retry": "Erneut versuchen"
   },
   "moderation": {
+    "active": "aktiv",
     "audit": {
       "empty": "Leer",
       "title": "Audit-Protokoll"
     },
     "authentication_required": "Authentifizierung erforderlich für diese Aktion",
+    "avgAccuracy": "Durchschn. Genauigkeit",
+    "avgResponse": "Durchschn. Antwort",
     "block": "Blockieren",
     "block_failed": "Benutzer konnte nicht blockiert werden. Bitte versuche es erneut.",
     "delete": "Löschen",
@@ -898,6 +901,23 @@
         "standard": "Standard",
         "trusted": "Vertrauenswürdig"
       }
+    },
+    "flagger": {
+      "accuracy": "Genauigkeit",
+      "avgResponse": "Durchschn. Antwort",
+      "falsePositive": "Falsch Positiv",
+      "idLabel": "ID:",
+      "lastReviewed": "Zuletzt geprüft: {{date}}",
+      "status": {
+        "active": "AKTIV",
+        "suspended": "SUSPENDIERT",
+        "warning": "WARNUNG"
+      },
+      "thisMonth": "Dieser Monat",
+      "thisWeek": "Diese Woche",
+      "totalReports": "Gesamt Meldungen",
+      "trend": "Trend",
+      "viewDetails": "Details anzeigen →"
     },
     "hide": "Ausblenden",
     "mute": "Stummschalten",
@@ -944,6 +964,7 @@
       "legal_reference_label": "Rechtsgrundlage",
       "legal_reference_placeholder": "z.B. DE StGB §130, UK Communications Act 2003",
       "legal_reference_required": "Bitte zitiere das spezifische Gesetz oder die Verordnung, gegen die verstoßen wird",
+      "legal_reference_too_long": "Rechtsgrundlage ist zu lang (maximal 500 Zeichen)",
       "queued": "Meldung zur Prüfung eingereiht. Vielen Dank für deine Meldung.",
       "reason_harassment": "Belästigung oder Mobbing",
       "reason_harassment_desc": "Gezielte Belästigung, Drohungen oder einschüchterndes Verhalten gegenüber Einzelpersonen",
@@ -977,15 +998,28 @@
       "success": "Meldung erfolgreich eingereicht. Danke, dass du unsere Community sicher hältst.",
       "title": "Inhalt melden"
     },
+    "reportsPerMonth": "Meldungen/Monat",
     "sla": {
       "status": {
         "critical": "ÜBERFÄLLIG",
         "green": "Im Zeitplan",
         "orange": "Gefährdet",
+        "overdue": "Überfällig",
         "red": "Dringend",
         "yellow": "Annähernd"
       }
     },
+    "sorPreview": {
+      "redactedSubtitle": "PII-gesäubert für Transparenz-DB (DSA Art. 24(5))",
+      "redactedTitle": "Redigierte SoR (EC-Einreichung)",
+      "userFacingSubtitle": "An Benutzer geliefert (DSA Art. 17)",
+      "userFacingTitle": "Benutzerseitige SoR",
+      "validation": {
+        "noPiiDetected": "✓ Keine PII erkannt",
+        "piiValidationFailed": "✗ PII-Validierung fehlgeschlagen"
+      }
+    },
+    "totalFlaggers": "Gesamt Melder",
     "unhide": "Einblenden"
   },
   "nav": {

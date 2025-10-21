@@ -20,7 +20,12 @@ export async function findSimilarDecisions(
 ): Promise<PriorDecision[]> {
   // TODO: Replace with actual Supabase query using vector similarity or content hash matching
   const response = await fetch(
-    `/api/moderation/similar-decisions?content_id=${contentId}&category=${category}&limit=${limit}`
+    `/api/moderation/similar-decisions?content_id=${encodeURIComponent(contentId)}&category=${encodeURIComponent(category)}&limit=${limit}`,
+    {
+      headers: {
+        Accept: 'application/json',
+      },
+    }
   );
 
   if (!response.ok) {
@@ -29,7 +34,8 @@ export async function findSimilarDecisions(
     );
   }
 
-  return response.json();
+  const data: PriorDecision[] = await response.json();
+  return data;
 }
 
 /**
@@ -41,7 +47,12 @@ export async function getDecisionsByModerator(
 ): Promise<ModerationDecision[]> {
   // TODO: Replace with actual Supabase query
   const response = await fetch(
-    `/api/moderation/decisions?moderator_id=${moderatorId}&user_id=${contentUserId}`
+    `/api/moderation/decisions?moderator_id=${encodeURIComponent(moderatorId)}&user_id=${encodeURIComponent(contentUserId)}`,
+    {
+      headers: {
+        Accept: 'application/json',
+      },
+    }
   );
 
   if (!response.ok) {
@@ -50,7 +61,8 @@ export async function getDecisionsByModerator(
     );
   }
 
-  return response.json();
+  const data: ModerationDecision[] = await response.json();
+  return data;
 }
 
 /**

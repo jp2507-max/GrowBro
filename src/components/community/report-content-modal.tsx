@@ -14,6 +14,7 @@
  */
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { t } from 'i18next';
 import React, { useImperativeHandle, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -59,7 +60,11 @@ const createReportSchema = (t: any) =>
         required_error: t('moderation.report_modal.select_reason'),
       }),
       jurisdiction: z.string().optional(),
-      legalReference: z.string().optional(),
+      legalReference: z
+        .string()
+        .min(1)
+        .max(500, t('moderation.report_modal.legal_reference_too_long'))
+        .optional(),
       explanation: z
         .string()
         .min(50, t('moderation.report_modal.explanation_too_short'))
@@ -382,10 +387,7 @@ function ExplanationSection({
         testID="explanation-input"
       />
       <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-        {t('moderation.report_modal.char_count', {
-          count: charCount,
-          max: 5000,
-        })}
+        {charCount}/5000
       </Text>
     </View>
   );
@@ -650,6 +652,8 @@ function ReportTypeOption({
   onSelect: () => void;
   testID: string;
 }) {
+  const { t } = useTranslation();
+
   return (
     <Pressable
       onPress={onSelect}

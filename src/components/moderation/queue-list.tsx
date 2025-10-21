@@ -4,10 +4,9 @@
  * Requirements: 2.1, 2.2, 2.3
  */
 
-import { FlashList } from '@shopify/flash-list';
 import React from 'react';
 
-import { ActivityIndicator, Text, View } from '@/components/ui';
+import { ActivityIndicator, FlashList, Text, View } from '@/components/ui';
 import type { QueuedReport } from '@/types/moderation';
 
 import { QueueItem } from './queue-item';
@@ -60,9 +59,11 @@ export function QueueList({
 
   return (
     <FlashList
-      data={reports}
-      renderItem={({ item }) => <QueueItem report={item} />}
-      keyExtractor={(item) => item.id}
+      data={reports as unknown[]}
+      renderItem={({ item }: { item: unknown }) => (
+        <QueueItem report={item as QueuedReport} />
+      )}
+      keyExtractor={(item: unknown) => (item as QueuedReport).id}
       contentContainerClassName="px-4 py-2"
       onRefresh={onRefresh}
       refreshing={isLoading}

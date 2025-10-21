@@ -1,9 +1,6 @@
-/**
- * Statement of Reasons (SoR) preview service
- * Generates user-facing and redacted SoR with diff visualization
- * Requirements: 2.2, 3.3, 3.4
- */
+import { Env } from '@env';
 
+import { supabase } from '@/lib/supabase';
 import type {
   RedactedSoR,
   RedactionDiff,
@@ -18,9 +15,21 @@ import type {
 export async function generateSoRPreview(
   decisionId: string
 ): Promise<SoRPreview> {
-  // TODO: Fetch from Supabase
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error('Authentication required to fetch SoR preview');
+  }
+
   const response = await fetch(
-    `/api/moderation/decisions/${decisionId}/sor-preview`
+    `${Env.API_URL}/api/moderation/decisions/${decisionId}/sor-preview`,
+    {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+    }
   );
 
   if (!response.ok) {

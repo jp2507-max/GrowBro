@@ -63,8 +63,7 @@ export async function scheduleDeadlineWarning(
 ): Promise<void> {
   try {
     // Schedule notification 24 hours before deadline
-    const warningDate = new Date(deadlineDate);
-    warningDate.setHours(warningDate.getHours() - 24);
+    const warningDate = new Date(deadlineDate.getTime() - 24 * 60 * 60 * 1000);
 
     if (warningDate < new Date()) {
       return; // Deadline is less than 24 hours away, skip scheduling
@@ -83,9 +82,9 @@ export async function scheduleDeadlineWarning(
         priority: Notifications.AndroidNotificationPriority.HIGH,
       },
       trigger: {
-        type: 'date',
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
         date: warningDate,
-      } as any,
+      },
     });
   } catch (error) {
     console.error(

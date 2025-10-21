@@ -34,7 +34,8 @@ describe('Session Timeout', () => {
 
   describe('startIdleTimeout', () => {
     test('should initialize idle timeout monitoring', () => {
-      startIdleTimeout();
+      const mockSignOutCallback = jest.fn();
+      startIdleTimeout(mockSignOutCallback);
 
       // Should add AppState listener
       expect(AppState.addEventListener).toHaveBeenCalledWith(

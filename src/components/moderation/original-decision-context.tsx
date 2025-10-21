@@ -10,36 +10,64 @@ type OriginalDecisionContextProps = {
 
 export function OriginalDecisionContext({
   originalDecision,
-}: OriginalDecisionContextProps) {
+}: OriginalDecisionContextProps): React.JSX.Element {
   const { t } = useTranslation();
 
   return (
-    <View className="mb-6 rounded-lg bg-neutral-100 p-4 dark:bg-charcoal-900">
-      <Text className="mb-2 text-sm font-bold text-charcoal-950 dark:text-neutral-100">
+    <View
+      testID="original-decision-container"
+      className="mb-6 rounded-lg bg-neutral-100 p-4 dark:bg-charcoal-900"
+    >
+      <Text
+        testID="original-decision-title"
+        className="mb-2 text-sm font-bold text-charcoal-950 dark:text-neutral-100"
+      >
         {t('appeals.label.originalDecision')}
       </Text>
       <View className="mb-2">
-        <Text className="text-xs text-neutral-600 dark:text-neutral-400">
+        <Text
+          testID="original-decision-action-label"
+          className="text-xs text-neutral-600 dark:text-neutral-400"
+        >
           {t('appeals.label.action')}
         </Text>
-        <Text className="text-sm text-charcoal-950 dark:text-neutral-100">
+        <Text
+          testID="original-decision-action-value"
+          className="text-sm text-charcoal-950 dark:text-neutral-100"
+        >
           {originalDecision.action}
         </Text>
       </View>
       <View className="mb-2">
-        <Text className="text-xs text-neutral-600 dark:text-neutral-400">
+        <Text
+          testID="original-decision-reasoning-label"
+          className="text-xs text-neutral-600 dark:text-neutral-400"
+        >
           {t('appeals.label.reasoning')}
         </Text>
-        <Text className="text-sm text-charcoal-950 dark:text-neutral-100">
+        <Text
+          testID="original-decision-reasoning-value"
+          className="text-sm text-charcoal-950 dark:text-neutral-100"
+        >
           {originalDecision.reasoning}
         </Text>
       </View>
       <View>
-        <Text className="text-xs text-neutral-600 dark:text-neutral-400">
+        <Text
+          testID="original-decision-policy-violations-label"
+          className="text-xs text-neutral-600 dark:text-neutral-400"
+        >
           {t('appeals.label.policyViolations')}
         </Text>
-        <Text className="text-sm text-charcoal-950 dark:text-neutral-100">
-          {originalDecision.policy_violations.join(', ')}
+        <Text
+          testID="original-decision-policy-violations-value"
+          className="text-sm text-charcoal-950 dark:text-neutral-100"
+        >
+          {originalDecision.policy_violations.length === 0
+            ? t('appeals.label.noPolicyViolations')
+            : originalDecision.policy_violations
+                .map((id) => t(`policies.${id}`, { defaultValue: id }))
+                .join(', ')}
         </Text>
       </View>
     </View>

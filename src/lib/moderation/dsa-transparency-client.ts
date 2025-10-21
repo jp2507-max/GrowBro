@@ -32,6 +32,11 @@ export interface DSASubmissionResponse {
   results: DSASubmissionResult[];
 }
 
+export interface DSASubmissionResponseWithDuration
+  extends DSASubmissionResponse {
+  duration_ms: number;
+}
+
 export interface DSASubmissionResult {
   decision_id: string;
   transparency_db_id?: string;
@@ -126,7 +131,7 @@ export class DSATransparencyClient {
   async submitBatch(
     statements: RedactedSoR[],
     idempotencyKey?: string
-  ): Promise<DSASubmissionResponse> {
+  ): Promise<DSASubmissionResponseWithDuration> {
     const startTime = Date.now();
 
     // Validate batch size
@@ -155,13 +160,14 @@ export class DSATransparencyClient {
         ...response,
         // Add duration to response (for metrics)
         duration_ms: duration,
-      } as DSASubmissionResponse & { duration_ms: number };
+      };
     } catch (error) {
       // If batch fails, fall back to single submissions
       if (statements.length > 1) {
         return await this.fallbackToSingleSubmissions(
           statements,
-          idempotencyKey
+          idempotencyKey,
+          startTime
         );
       }
 
@@ -322,8 +328,9 @@ export class DSATransparencyClient {
    */
   private async fallbackToSingleSubmissions(
     statements: RedactedSoR[],
-    idempotencyKey?: string
-  ): Promise<DSASubmissionResponse> {
+    idempotencyKey?: string,
+    startTime: number = Date.now()
+  ): Promise<DSASubmissionResponseWithDuration> {
     const results: DSASubmissionResult[] = [];
     let submittedCount = 0;
     let failedCount = 0;
@@ -373,6 +380,7 @@ export class DSATransparencyClient {
       submitted_count: submittedCount,
       failed_count: failedCount,
       results,
+      duration_ms: Date.now() - startTime,
     };
   }
 

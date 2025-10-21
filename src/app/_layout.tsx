@@ -6,9 +6,9 @@ import { Env } from '@env';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import FlashMessage from 'react-native-flash-message';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -220,13 +220,14 @@ function BootSplash(): React.ReactElement {
 }
 
 function AppStack(): React.ReactElement {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    updateActivity();
+  }, [pathname]);
+
   return (
-    <Stack
-      onStateChange={() => {
-        // Update activity on navigation changes
-        updateActivity();
-      }}
-    >
+    <Stack>
       <Stack.Screen name="(app)" options={{ headerShown: false }} />
       <Stack.Screen name="(modals)" options={{ headerShown: false }} />
       <Stack.Screen name="age-gate" options={{ headerShown: false }} />

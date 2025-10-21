@@ -66,7 +66,7 @@ describe('PIIScrubber', () => {
         },
       };
 
-      const result = scrubber.validateRedaction(validRedactedSoR);
+      const result = scrubber.validateRedaction(validRedactedSoR as any);
 
       expect(result.is_valid).toBe(true);
       expect(result.violations).toHaveLength(0);
@@ -130,7 +130,7 @@ describe('PIIScrubber', () => {
         },
       };
 
-      const result = scrubber.validateRedaction(invalidRedactedSoR);
+      const result = scrubber.validateRedaction(invalidRedactedSoR as any);
 
       expect(result.is_valid).toBe(false);
       expect(result.violations).toContain(
@@ -180,7 +180,7 @@ describe('PIIScrubber', () => {
         },
       };
 
-      const result = scrubber.validateRedaction(invalidRedactedSoR);
+      const result = scrubber.validateRedaction(invalidRedactedSoR as any);
 
       expect(result.is_valid).toBe(false);
       expect(result.violations).toContain(
@@ -213,7 +213,7 @@ describe('PIIScrubber', () => {
         // Missing scrubbing_metadata
       };
 
-      const result = scrubber.validateRedaction(invalidRedactedSoR);
+      const result = scrubber.validateRedaction(invalidRedactedSoR as any);
 
       expect(result.is_valid).toBe(false);
       expect(result.violations).toContain('Scrubbing metadata is missing');
@@ -254,7 +254,7 @@ describe('PIIScrubber', () => {
         },
       };
 
-      const result = scrubber.validateRedaction(invalidRedactedSoR);
+      const result = scrubber.validateRedaction(invalidRedactedSoR as any);
 
       expect(result.is_valid).toBe(false);
       expect(result.violations).toContain('Scrubbing timestamp is missing');
@@ -295,7 +295,7 @@ describe('PIIScrubber', () => {
         },
       };
 
-      const result = scrubber.validateRedaction(invalidRedactedSoR);
+      const result = scrubber.validateRedaction(invalidRedactedSoR as any);
 
       expect(result.is_valid).toBe(false);
       expect(result.violations).toContain('Scrubbing version is missing');
@@ -336,7 +336,7 @@ describe('PIIScrubber', () => {
         },
       };
 
-      const result = scrubber.validateRedaction(invalidRedactedSoR);
+      const result = scrubber.validateRedaction(invalidRedactedSoR as any);
 
       expect(result.is_valid).toBe(false);
       expect(result.violations).toContain(
@@ -379,7 +379,9 @@ describe('PIIScrubber', () => {
         },
       };
 
-      const result = scrubber.validateRedaction(redactedSoRWithSuppression);
+      const result = scrubber.validateRedaction(
+        redactedSoRWithSuppression as any
+      );
 
       expect(result.is_valid).toBe(true);
       expect(result.violations).toHaveLength(0);
