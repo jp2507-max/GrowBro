@@ -64,10 +64,10 @@ export async function apiCheckConflictOfInterest(
     return response.data;
   } catch (error) {
     console.error('[COIAPI] Failed to check conflict of interest:', error);
-    // Err on side of caution - return no conflict if check fails
+    // Safety requirement: block assignments when conflict check fails
     return {
-      has_conflict: false,
-      reasons: [],
+      has_conflict: true,
+      reasons: ['conflict_check_unavailable'],
     };
   }
 }
@@ -96,7 +96,9 @@ export async function apiHasPreviousDecision(
     };
   } catch (error) {
     console.error('[COIAPI] Failed to check previous decisions:', error);
-    return { hasDecision: false, decisionIds: [] };
+    throw new Error(
+      `Failed to check previous decisions for moderator ${moderatorId} and content ${contentId}: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -119,7 +121,9 @@ export async function apiHasRelationship(
     return response.data;
   } catch (error) {
     console.error('[COIAPI] Failed to check relationships:', error);
-    return { hasRelationship: false };
+    throw new Error(
+      `Failed to check relationship between moderator ${moderatorId} and user ${userId}: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -144,7 +148,9 @@ export async function apiGetAlternativeModerators(
     return response.data;
   } catch (error) {
     console.error('[COIAPI] Failed to get alternative moderators:', error);
-    return [];
+    throw new Error(
+      `Failed to get alternative moderators for report ${reportId}: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 

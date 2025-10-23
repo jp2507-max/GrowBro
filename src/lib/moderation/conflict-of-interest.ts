@@ -152,58 +152,74 @@ export async function performComprehensiveCOICheck(params: {
   contentId: string;
   userId: string;
 }): Promise<ConflictOfInterest> {
-  const { moderatorId, contentId, userId } = params;
-  const reasons: string[] = [];
-  const relatedDecisionIds: string[] = [];
+  try {
+    const { moderatorId, contentId, userId } = params;
+    const reasons: string[] = [];
+    const relatedDecisionIds: string[] = [];
 
-  // Check previous decisions
-  const { hasDecision, decisionIds } = await hasPreviousDecision(
-    moderatorId,
-    contentId
-  );
-
-  if (hasDecision) {
-    reasons.push(
-      'Moderator previously made a decision on this content or related content'
+    // Check previous decisions
+    const { hasDecision, decisionIds } = await hasPreviousDecision(
+      moderatorId,
+      contentId
     );
-    relatedDecisionIds.push(...decisionIds);
+
+    if (hasDecision) {
+      reasons.push(
+        'Moderator previously made a decision on this content or related content'
+      );
+      relatedDecisionIds.push(...decisionIds);
+    }
+
+    // Check relationships
+    const { hasRelationship: hasRel, relationshipType } = await hasRelationship(
+      moderatorId,
+      userId
+    );
+
+    if (hasRel) {
+      reasons.push(`Moderator has relationship with user: ${relationshipType}`);
+    }
+
+    // Check bias indicators
+    const { hasBias, indicators } = await hasBiasIndicators(
+      moderatorId,
+      userId
+    );
+
+    if (hasBias) {
+      reasons.push(...indicators);
+    }
+
+    // Determine conflict type
+    let conflictType: ConflictOfInterest['conflict_type'] | undefined;
+
+    if (hasDecision) {
+      conflictType = 'previous_decision';
+    } else if (hasRel) {
+      conflictType = 'relationship';
+    } else if (hasBias) {
+      conflictType = 'bias_indicator';
+    }
+
+    return {
+      has_conflict: reasons.length > 0,
+      reasons,
+      conflict_type: conflictType,
+      related_decision_ids:
+        relatedDecisionIds.length > 0 ? relatedDecisionIds : undefined,
+    };
+  } catch (error) {
+    console.error(
+      `[COI] Comprehensive COI check failed for moderator ${params.moderatorId}:`,
+      error
+    );
+    return {
+      has_conflict: false,
+      reasons: ['conflict_check_error'],
+      conflict_type: undefined,
+      related_decision_ids: undefined,
+    };
   }
-
-  // Check relationships
-  const { hasRelationship: hasRel, relationshipType } = await hasRelationship(
-    moderatorId,
-    userId
-  );
-
-  if (hasRel) {
-    reasons.push(`Moderator has relationship with user: ${relationshipType}`);
-  }
-
-  // Check bias indicators
-  const { hasBias, indicators } = await hasBiasIndicators(moderatorId, userId);
-
-  if (hasBias) {
-    reasons.push(...indicators);
-  }
-
-  // Determine conflict type
-  let conflictType: ConflictOfInterest['conflict_type'] | undefined;
-
-  if (hasDecision) {
-    conflictType = 'previous_decision';
-  } else if (hasRel) {
-    conflictType = 'relationship';
-  } else if (hasBias) {
-    conflictType = 'bias_indicator';
-  }
-
-  return {
-    has_conflict: reasons.length > 0,
-    reasons,
-    conflict_type: conflictType,
-    related_decision_ids:
-      relatedDecisionIds.length > 0 ? relatedDecisionIds : undefined,
-  };
 }
 
 /**

@@ -59,7 +59,9 @@ export async function restoreContentVisibility(
       .update({
         deleted_at: null,
         moderation_status: 'active',
-        moderation_reason: `Restored via appeal ${restorationData.appealId}: ${restorationData.reversalReason}`,
+        moderation_reason: restorationData.appealId
+          ? `Restored via appeal ${restorationData.appealId}: ${restorationData.reversalReason}`
+          : `Restored: ${restorationData.reversalReason}`,
         updated_at: new Date().toISOString(),
       })
       .eq('id', contentId)

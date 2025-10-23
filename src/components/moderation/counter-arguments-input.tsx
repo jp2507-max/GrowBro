@@ -6,20 +6,28 @@ import { Input, Text, View } from '@/components/ui';
 type CounterArgumentsInputProps = {
   value: string;
   onChange: (value: string) => void;
+  testID?: string;
 };
 
 export function CounterArgumentsInput({
   value,
   onChange,
-}: CounterArgumentsInputProps) {
+  testID,
+}: CounterArgumentsInputProps): React.ReactElement {
   const { t } = useTranslation();
 
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-neutral-100">
+      <Text
+        className="mb-2 text-sm font-medium text-charcoal-950 dark:text-neutral-100"
+        testID={testID ? `${testID}-label` : undefined}
+      >
         {t('appeals.label.counterArguments')} *
       </Text>
-      <Text className="mb-2 text-xs text-neutral-600 dark:text-neutral-400">
+      <Text
+        className="mb-2 text-xs text-neutral-600 dark:text-neutral-400"
+        testID={testID ? `${testID}-hint` : undefined}
+      >
         {t('appeals.hint.counterArguments')}
       </Text>
       <Input
@@ -30,9 +38,17 @@ export function CounterArgumentsInput({
         numberOfLines={6}
         className="min-h-[120px]"
         maxLength={5000}
+        testID={testID ? `${testID}-input` : undefined}
       />
-      <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
-        {value.length} / 5000 characters (minimum 50)
+      <Text
+        className="mt-1 text-xs text-neutral-500 dark:text-neutral-500"
+        testID={testID ? `${testID}-counter` : undefined}
+      >
+        {t('appeals.counter.characterCount', {
+          current: value.length,
+          max: 5000,
+          minimum: 50,
+        })}
       </Text>
     </View>
   );

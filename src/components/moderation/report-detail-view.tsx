@@ -179,7 +179,7 @@ function ContentDetails({ report }: { report: QueuedReport }) {
               Snapshot ID:
             </Text>
             <Text className="flex-1 text-xs font-medium text-neutral-900 dark:text-neutral-100">
-              {report.content_snapshot_id?.slice(0, 8)}
+              {report.content_snapshot?.id?.slice(0, 8)}
             </Text>
           </View>
         )}

@@ -1,6 +1,27 @@
+import { supabase } from '@/lib/supabase';
 import type { AppealDecision, ModerationAction } from '@/types/moderation';
 
 import type { ModerationMetric } from './moderation-metrics-types';
+
+/**
+ * Persist a metric to the database for observability
+ */
+async function persistMetric(metric: ModerationMetric): Promise<void> {
+  try {
+    const { error } = await supabase.from('moderation_metrics').insert({
+      metric_name: metric.metricName,
+      value: metric.value,
+      timestamp: metric.timestamp.toISOString(),
+      metadata: metric.metadata || {},
+    });
+
+    if (error) {
+      console.error('[ModerationMetrics] Failed to persist metric:', error);
+    }
+  } catch (err) {
+    console.error('[ModerationMetrics] Error persisting metric:', err);
+  }
+}
 
 /**
  * Track appeal decision outcome
@@ -26,6 +47,7 @@ export function trackAppealDecision(
   };
 
   console.log('[ModerationMetrics] Appeal decision tracked:', metric);
+  void persistMetric(metric);
 
   if (decision === 'upheld') {
     const reversalMetric: ModerationMetric = {
@@ -38,6 +60,7 @@ export function trackAppealDecision(
       },
     };
     console.log('[ModerationMetrics] Reversal rate updated:', reversalMetric);
+    void persistMetric(reversalMetric);
   }
 }
 
@@ -62,6 +85,7 @@ export function trackODSOutcome(
   };
 
   console.log('[ModerationMetrics] ODS outcome tracked:', metric);
+  void persistMetric(metric);
 }
 
 /**
@@ -84,6 +108,7 @@ export function trackSoRSubmissionLatency(
   };
 
   console.log('[ModerationMetrics] SoR submission latency tracked:', metric);
+  void persistMetric(metric);
 }
 
 /**
@@ -106,6 +131,7 @@ export function trackTrustedFlaggerHandling(
   };
 
   console.log('[ModerationMetrics] Trusted flagger handling tracked:', metric);
+  void persistMetric(metric);
 }
 
 /**
@@ -128,6 +154,7 @@ export function trackFalsePositive(
     };
 
     console.log('[ModerationMetrics] False positive tracked:', metric);
+    void persistMetric(metric);
   }
 }
 
@@ -151,4 +178,5 @@ export function trackSLABreach(
   };
 
   console.log('[ModerationMetrics] SLA breach tracked:', metric);
+  void persistMetric(metric);
 }

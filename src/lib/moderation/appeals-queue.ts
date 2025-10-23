@@ -1,5 +1,4 @@
 import { nanoid } from 'nanoid/non-secure';
-import { showMessage } from 'react-native-flash-message';
 
 import { apiSubmitAppeal } from '@/api/moderation/appeals';
 import { getAuthenticatedUserId } from '@/lib/auth/user-utils';
@@ -172,52 +171,47 @@ export class AppealsQueue {
   }
 
   private async attemptSubmit(item: Appeal): Promise<Appeal> {
-    // Acquire lock for the critical section
-    const release = await queueMutex.acquire();
-
+    // 1) Acquire to snapshot state, then release before network call
+    let release = await queueMutex.acquire();
     try {
-      // Load current state
       const items = this.load();
-
-      // Check if item still exists and is in expected state
       const currentItem = items.find((x) => x.id === item.id);
       if (!currentItem || currentItem.status !== 'queued') {
         return currentItem || item;
       }
+    } finally {
+      release();
+    }
 
-      // Attempt to submit the appeal
-      const appealType = inferAppealType(item.reason);
-      const userId = await getAuthenticatedUserId();
+    // 2) Network call outside lock
+    const appealType = inferAppealType(item.reason);
+    const userId = await getAuthenticatedUserId();
+    const result = await apiSubmitAppeal({
+      original_decision_id: String(item.contentId),
+      appeal_type: appealType,
+      counter_arguments: item.details || item.reason,
+      user_id: userId,
+    });
+    if (!result.success) {
+      console.error(
+        `[AppealsQueue] Failed to submit appeal ${item.id}:`,
+        result.error
+      );
+      throw new Error(result.error || 'Appeal submission failed');
+    }
 
-      const result = await apiSubmitAppeal({
-        original_decision_id: String(item.contentId),
-        user_id: userId,
-        appeal_type: appealType,
-        counter_arguments: item.details || item.reason,
-      });
-
-      if (!result.success) {
-        // API call failed - show error to user and throw to trigger retry logic
-        console.error(
-          `[AppealsQueue] Failed to submit appeal ${item.id}:`,
-          result.error
-        );
-        showMessage({
-          message: 'Appeal Submission Failed',
-          description:
-            result.error || 'Unable to submit appeal. Please try again.',
-          type: 'danger',
-          duration: 5000,
-        });
-        throw new Error(result.error || 'Appeal submission failed');
+    // 3) Reacquire to mutate persisted queue
+    release = await queueMutex.acquire();
+    try {
+      const itemsAfter = this.load();
+      if (!itemsAfter.find((x) => x.id === item.id)) {
+        // Already removed by another worker
+        return { ...item, status: 'sent', attempts: item.attempts + 1 };
       }
-
-      // Success: remove from queue
-      const updatedItems = items.filter((x) => x.id !== item.id);
+      const updatedItems = itemsAfter.filter((x) => x.id !== item.id);
       this.save(updatedItems);
       return { ...item, status: 'sent', attempts: item.attempts + 1 };
     } finally {
-      // Always release the lock
       release();
     }
   }

@@ -83,7 +83,7 @@ describe('Auth', () => {
       // Verify token exists
       expect(useAuth.getState().token).toEqual({
         access: 'test-token',
-        user: { id: '123' },
+        refresh: 'test-refresh',
       });
 
       // Sign out

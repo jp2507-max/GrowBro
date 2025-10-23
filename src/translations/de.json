@@ -1,5 +1,12 @@
 {
   "accessibility": {
+    "appeals": {
+      "counterArguments": {
+        "hint": "Geben Sie spezifische Gründe an, warum Sie glauben, dass dieser Inhalt nicht moderiert werden sollte. Fügen Sie relevante Kontexte oder Beweise hinzu.",
+        "label": "Gegenargumente",
+        "placeholder": "Erklären Sie Ihre Gegenargumente hier..."
+      }
+    },
     "calendar": {
       "needs_review_hint": "Kennzeichnet diese Aufgabe als konfliktbehaftet und prüfungsbedürftig.",
       "out_of_range_hint": "Zeigt an, dass der letzte Messwert außerhalb des Zielbereichs liegt.",
@@ -78,6 +85,90 @@
       "home_hint": "Doppeltippen, um die Startseite zu öffnen.",
       "plants_hint": "Doppeltippen, um das Pflanzeninventar zu öffnen.",
       "strains_hint": "Doppeltippen, um Sorten zu durchsuchen."
+    }
+  },
+  "appeals": {
+    "action": {
+      "submit": "Beschwerde einreichen"
+    },
+    "counter": {
+      "characterCount": "{{current}} / {{max}} Zeichen (Mindestanzahl {{minimum}})"
+    },
+    "decision": {
+      "partial": "Entscheidung teilweise bestätigt",
+      "rejected": "Entscheidung abgelehnt",
+      "upheld": "Entscheidung bestätigt"
+    },
+    "error": {
+      "counterArgumentsTooShort": "Gegenargumente müssen mindestens {{min}} Zeichen lang sein",
+      "duplicateUrl": "Diese URL wurde bereits hinzugefügt",
+      "invalidUrl": "Bitte geben Sie eine gültige URL ein",
+      "maxEvidenceReached": "Maximal 5 Beweis-URLs erlaubt",
+      "submitFailed": "Beschwerde konnte nicht eingereicht werden. Bitte versuchen Sie es erneut."
+    },
+    "hint": {
+      "counterArguments": "Geben Sie spezifische Gründe an, warum Sie glauben, dass dieser Inhalt nicht moderiert werden sollte. Fügen Sie relevante Kontexte oder Beweise hinzu.",
+      "evidence": "Fügen Sie URLs zu Beweisen für Ihre Beschwerde hinzu"
+    },
+    "label": {
+      "action": "Aktion",
+      "appealId": "Beschwerde-ID",
+      "counterArguments": "Gegenargumente",
+      "deadline": "Frist",
+      "evidence": "Unterstützende Beweise",
+      "noPolicyViolations": "Keine Richtlinienverstöße gefunden",
+      "originalDecision": "Ursprüngliche Entscheidung",
+      "policyViolations": "Richtlinienverstöße",
+      "reasoning": "Begründung",
+      "resolvedAt": "Gelöst am",
+      "reviewer": "Prüfer",
+      "submittedAt": "Eingereicht am"
+    },
+    "legal": {
+      "freeOfCharge": "Beschwerden sind kostenlos",
+      "humanReviewGuarantee": "Alle Beschwerden werden von Menschen geprüft"
+    },
+    "notice": {
+      "deadline": "Sie haben noch {{days}} Tage Zeit, um Ihre Beschwerde einzureichen",
+      "evidenceOptional": "Beweise sind optional"
+    },
+    "ods": {
+      "action": {
+        "escalate": "An außergerichtliche Streitbeilegung eskalieren"
+      },
+      "description": "Wenn Sie mit diesem Beschwerdeergebnis nicht zufrieden sind, können Sie an eine unabhängige außergerichtliche Streitbeilegungsstelle eskalieren.",
+      "label": {
+        "body": "Eskalationsantrag",
+        "submittedAt": "Eingereicht am",
+        "targetResolution": "Zielauflösung"
+      },
+      "status": {
+        "escalated": "An ODS eskaliert"
+      },
+      "title": "Unabhängige Streitbeilegung",
+      "value": {
+        "withinDays": "Innerhalb von {{days}} Tagen"
+      }
+    },
+    "placeholder": {
+      "counterArguments": "Erklären Sie hier Ihre Gegenargumente..."
+    },
+    "status": {
+      "escalated_to_ods": "An ODS eskaliert",
+      "in_review": "Wird geprüft",
+      "pending": "Warten auf Überprüfung",
+      "resolved": "Gelöst"
+    },
+    "subtitle": {
+      "humanReview": "Ihre Beschwerde wird innerhalb von 7 Tagen von einem menschlichen Moderator geprüft",
+      "trackProgress": "Verfolgen Sie den Fortschritt Ihrer Beschwerde und sehen Sie die endgültige Entscheidung"
+    },
+    "title": {
+      "appealStatus": "Beschwerde-Status",
+      "submitAppeal": "Beschwerde einreichen"
+    },
+    "value": {
+      "assignedToReviewer": "Dem Prüfer zugewiesen"
     }
   },
   "calendar": {

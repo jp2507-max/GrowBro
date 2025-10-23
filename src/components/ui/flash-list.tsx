@@ -5,4 +5,4 @@ export const FlashList = cssInterop(FlashListComponent, {
   contentContainerClassName: {
     target: 'contentContainerStyle',
   },
-});
+}) as typeof FlashListComponent;

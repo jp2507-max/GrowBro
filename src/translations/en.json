@@ -1,5 +1,12 @@
 {
   "accessibility": {
+    "appeals": {
+      "counterArguments": {
+        "hint": "Provide specific reasons why you believe this content should not be moderated. Include any relevant context or evidence.",
+        "label": "Counter Arguments",
+        "placeholder": "Explain your counter arguments here..."
+      }
+    },
     "calendar": {
       "needs_review_hint": "Marks this task as needing review due to a conflict.",
       "out_of_range_hint": "Indicates the latest reading is outside the target range.",
@@ -78,6 +85,90 @@
       "home_hint": "Double-tap to view the Home overview.",
       "plants_hint": "Double-tap to open the Plants inventory.",
       "strains_hint": "Double-tap to browse strains."
+    }
+  },
+  "appeals": {
+    "action": {
+      "submit": "Submit Appeal"
+    },
+    "counter": {
+      "characterCount": "{{current}} / {{max}} characters (minimum {{minimum}})"
+    },
+    "decision": {
+      "partial": "Decision Partially Upheld",
+      "rejected": "Decision Rejected",
+      "upheld": "Decision Upheld"
+    },
+    "error": {
+      "counterArgumentsTooShort": "Counter arguments must be at least {{min}} characters",
+      "duplicateUrl": "This URL has already been added",
+      "invalidUrl": "Please enter a valid URL",
+      "maxEvidenceReached": "Maximum of 5 evidence URLs allowed",
+      "submitFailed": "Failed to submit appeal. Please try again."
+    },
+    "hint": {
+      "counterArguments": "Provide specific reasons why you believe this content should not be moderated. Include any relevant context or evidence.",
+      "evidence": "Add URLs to supporting evidence for your appeal"
+    },
+    "label": {
+      "action": "Action",
+      "appealId": "Appeal ID",
+      "counterArguments": "Counter Arguments",
+      "deadline": "Deadline",
+      "evidence": "Supporting Evidence",
+      "noPolicyViolations": "No policy violations found",
+      "originalDecision": "Original Decision",
+      "policyViolations": "Policy Violations",
+      "reasoning": "Reasoning",
+      "resolvedAt": "Resolved At",
+      "reviewer": "Reviewer",
+      "submittedAt": "Submitted At"
+    },
+    "legal": {
+      "freeOfCharge": "Appeals are free of charge",
+      "humanReviewGuarantee": "All appeals receive human review"
+    },
+    "notice": {
+      "deadline": "You have {{days}} days remaining to submit your appeal",
+      "evidenceOptional": "Evidence is optional"
+    },
+    "ods": {
+      "action": {
+        "escalate": "Escalate to Out-of-Court Dispute Settlement"
+      },
+      "description": "If you're not satisfied with this appeal outcome, you can escalate to an independent out-of-court dispute settlement body.",
+      "label": {
+        "body": "Escalation Request",
+        "submittedAt": "Submitted At",
+        "targetResolution": "Target Resolution"
+      },
+      "status": {
+        "escalated": "Escalated to ODS"
+      },
+      "title": "Independent Dispute Resolution",
+      "value": {
+        "withinDays": "Within {{days}} days"
+      }
+    },
+    "placeholder": {
+      "counterArguments": "Explain your counter arguments here..."
+    },
+    "status": {
+      "escalated_to_ods": "Escalated to ODS",
+      "in_review": "Under Review",
+      "pending": "Pending Review",
+      "resolved": "Resolved"
+    },
+    "subtitle": {
+      "humanReview": "Your appeal will be reviewed by a human moderator within 7 days",
+      "trackProgress": "Track the progress of your appeal and view the final decision"
+    },
+    "title": {
+      "appealStatus": "Appeal Status",
+      "submitAppeal": "Submit Appeal"
+    },
+    "value": {
+      "assignedToReviewer": "Assigned to reviewer"
     }
   },
   "calendar": {

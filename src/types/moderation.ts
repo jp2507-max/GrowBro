@@ -500,7 +500,12 @@ export type AuditEventType =
   | 'signature_verified'
   | 'audit_integrity_check'
   | 'legal_hold_applied'
-  | 'court_order_received';
+  | 'legal_hold_released'
+  | 'court_order_received'
+  | 'audit_access'
+  | 'pii_anonymization'
+  | 'deletion_scheduled'
+  | 'retention_enforced';
 
 export interface AuditEvent {
   id: string;

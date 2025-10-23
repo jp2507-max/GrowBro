@@ -14,7 +14,6 @@
  */
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { t } from 'i18next';
 import React, { useImperativeHandle, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -705,6 +704,7 @@ function ReasonOptionComponent({
   onSelect: () => void;
   testID: string;
 }) {
+  const { t } = useTranslation();
   return (
     <Pressable
       onPress={onSelect}

@@ -5,6 +5,7 @@
  */
 
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 
 import { Text, View } from '@/components/ui';
@@ -28,9 +29,9 @@ type FieldData = {
   highlight?: boolean;
 };
 
-function formatDate(date: Date | string) {
+function formatDate(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('en-US', {
+  return d.toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -43,7 +44,7 @@ function ValidationBanner({
   validationStatus,
 }: {
   validationStatus?: Props['validationStatus'];
-}) {
+}): React.ReactElement | null {
   if (!validationStatus) return null;
 
   return (
@@ -94,7 +95,8 @@ function ValidationBanner({
   );
 }
 
-function SoRField({ item }: { item: FieldData }) {
+function SoRField({ item }: { item: FieldData }): React.ReactElement {
+  const { t } = useTranslation();
   return (
     <View
       className={`mb-4 ${
@@ -111,7 +113,7 @@ function SoRField({ item }: { item: FieldData }) {
         }`}
       >
         {item.label}
-        {item.highlight && ' (Transformed)'}
+        {item.highlight && ` ${t('moderation.transformed')}`}
       </Text>
       <Text
         className={`text-sm ${item.multiline ? 'leading-5' : ''} ${
@@ -225,7 +227,7 @@ export function SoRPreviewPanels({
   redacted,
   validationStatus,
   testID = 'sor-preview',
-}: Props) {
+}: Props): React.ReactElement {
   const userFacingData = useUserFacingData(userFacing);
   const redactedData = useRedactedData(redacted);
 
