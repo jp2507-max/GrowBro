@@ -38,19 +38,31 @@ describe('AgeVerificationService', () => {
     jest.clearAllMocks();
 
     // Create mock query builder that works with (as any) casting
-    const createMockQueryBuilder = () => ({
-      insert: jest.fn().mockReturnThis(),
-      update: jest.fn().mockReturnThis(),
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      single: jest.fn(),
-      upsert: jest.fn().mockReturnThis(),
-      gt: jest.fn().mockReturnThis(),
-      is: jest.fn().mockReturnThis(),
-      order: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockReturnThis(),
-      in: jest.fn().mockReturnThis(),
-    });
+    const createMockQueryBuilder = () => {
+      const builder = {
+        insert: jest.fn(),
+        update: jest.fn(),
+        select: jest.fn(),
+        eq: jest.fn(),
+        lt: jest.fn(),
+        single: jest.fn(),
+        upsert: jest.fn(),
+        gt: jest.fn(),
+        is: jest.fn(),
+        order: jest.fn(),
+        limit: jest.fn(),
+        in: jest.fn(),
+      };
+
+      // Make all methods return the builder for chaining, except single
+      Object.keys(builder).forEach((key) => {
+        if (key !== 'single') {
+          builder[key as keyof typeof builder].mockReturnValue(builder);
+        }
+      });
+
+      return builder;
+    };
 
     const mockQueryBuilder = createMockQueryBuilder();
 
@@ -210,8 +222,15 @@ describe('AgeVerificationService', () => {
         error: null,
       });
 
-      // Mock token update
-      mockSupabase.update.mockResolvedValueOnce({
+      // Mock the conditional update to succeed (token available)
+      const mockQueryBuilder = mockSupabase.from();
+      mockQueryBuilder.single.mockResolvedValueOnce({
+        data: {
+          id: tokenId,
+          user_id: userId,
+          use_count: 1,
+          // ... other updated fields
+        },
         error: null,
       });
 
@@ -222,7 +241,8 @@ describe('AgeVerificationService', () => {
 
       expect(result.isValid).toBe(true);
       expect(result.error).toBeNull();
-      expect(mockSupabase.update).toHaveBeenCalledWith(
+      expect(mockQueryBuilder.lt).toHaveBeenCalledWith('use_count', 1); // Conditional check
+      expect(mockQueryBuilder.update).toHaveBeenCalledWith(
         expect.objectContaining({
           use_count: 1,
         })

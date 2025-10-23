@@ -9,13 +9,14 @@ import { usePostsInfinite } from '@/api';
 import { useUndoDeletePost } from '@/api/community';
 import { CannabisEducationalBanner } from '@/components/cannabis-educational-banner';
 import {
+  AgeGatedPostCard,
+  AgeVerificationPrompt,
   CommunityEmptyState,
   CommunityErrorBoundary,
   CommunityErrorCard,
   CommunityFooterLoader,
   CommunitySkeletonList,
   OfflineIndicator,
-  PostCard,
   UndoSnackbar,
 } from '@/components/community';
 import { ComposeBtn } from '@/components/compose-btn';
@@ -26,6 +27,7 @@ import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-pro
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import { useScreenErrorLogger } from '@/lib/hooks';
 import type { TxKeyPath } from '@/lib/i18n';
+import { useAgeGatedFeed } from '@/lib/moderation/use-age-gated-feed';
 
 const AnimatedFlashList: any = Animated.createAnimatedComponent(
   FlashList as any
@@ -118,6 +120,8 @@ export default function CommunityScreen(): React.ReactElement {
     undoExpiresAt: string;
   } | null>(null);
 
+  const [showAgePrompt, setShowAgePrompt] = React.useState(false);
+
   const {
     posts,
     isLoading,
@@ -130,6 +134,21 @@ export default function CommunityScreen(): React.ReactElement {
     isRefreshing,
     handleRefresh,
   } = useCommunityData();
+
+  const {
+    filterPosts,
+    isAgeVerified,
+    isLoading: isAgeCheckLoading,
+    requiresVerification,
+  } = useAgeGatedFeed({
+    enabled: true,
+    onVerificationRequired: () => setShowAgePrompt(true),
+  });
+
+  const filteredPosts = React.useMemo(
+    () => filterPosts(posts),
+    [filterPosts, posts]
+  );
 
   const isSkeletonVisible = useSkeletonVisibility(isLoading, posts.length);
   const hasTrackedViewRef = React.useRef(false);
@@ -222,11 +241,21 @@ export default function CommunityScreen(): React.ReactElement {
     setUndoState(null);
   }, []);
 
+  const handleVerifyPress = React.useCallback(() => {
+    setShowAgePrompt(false);
+    router.push('/age-gate');
+  }, [router]);
+
   const renderItem = React.useCallback(
     ({ item }: { item: Post }) => (
-      <PostCard post={item} onDelete={handlePostDelete} />
+      <AgeGatedPostCard
+        post={item}
+        isAgeVerified={isAgeVerified}
+        onDelete={handlePostDelete}
+        onVerifyPress={handleVerifyPress}
+      />
     ),
-    [handlePostDelete]
+    [handlePostDelete, isAgeVerified, handleVerifyPress]
   );
 
   const listEmpty = React.useCallback(() => {
@@ -260,7 +289,7 @@ export default function CommunityScreen(): React.ReactElement {
       <CommunityErrorBoundary>
         <CommunityListView
           listRef={listRef}
-          posts={posts}
+          posts={filteredPosts}
           renderItem={renderItem}
           onEndReached={onEndReached}
           scrollHandler={scrollHandler}
@@ -271,6 +300,13 @@ export default function CommunityScreen(): React.ReactElement {
             <View className="px-4 pb-4">
               <CannabisEducationalBanner />
               <OfflineIndicator onRetrySync={refetch} />
+              {requiresVerification && !isAgeCheckLoading && (
+                <AgeVerificationPrompt
+                  visible={showAgePrompt}
+                  onDismiss={() => setShowAgePrompt(false)}
+                  contentType="feed"
+                />
+              )}
               {showPostsCount ? (
                 <Text
                   className="pt-4 text-sm text-neutral-600 dark:text-neutral-300"

@@ -284,70 +284,64 @@ describe('AuditRetentionManager', () => {
 
   describe('getRetentionStatistics', () => {
     it('should retrieve retention statistics', async () => {
-      // Mock multiple queries for statistics
-      let callCount = 0;
+      // Create a query-builder style mock that handles Supabase's chained query shape
+      const createAuditEventsMock = () => {
+        return {
+          select: (
+            _columns: string | string[],
+            options?: { count?: string; head?: boolean }
+          ) => {
+            const isCountQuery =
+              options?.count === 'exact' && options?.head === true;
+
+            // Create a query builder that can be chained and also resolved as a count
+            const queryBuilder = {
+              // For count queries, this will be resolved directly
+              count: isCountQuery ? 1000 : undefined,
+              error: isCountQuery ? null : undefined,
+
+              lte: (_field: string, _value: any) => {
+                // Expired count query
+                return {
+                  count: 50,
+                  error: null,
+                };
+              },
+              eq: (_field: string, _value: any) => {
+                // PII count query
+                return {
+                  count: 100,
+                  error: null,
+                };
+              },
+              order: (_field: string, options?: { ascending?: boolean }) => {
+                return {
+                  limit: (_count: number) => {
+                    return {
+                      single: () => {
+                        const isAscending = options?.ascending ?? true;
+                        const data = isAscending
+                          ? { timestamp: '2023-01-01T00:00:00Z' } // Oldest
+                          : { timestamp: '2024-10-26T00:00:00Z' }; // Newest
+                        return Promise.resolve({
+                          data,
+                          error: null,
+                        });
+                      },
+                    };
+                  },
+                };
+              },
+            };
+
+            return queryBuilder;
+          },
+        };
+      };
 
       mockSupabase.from.mockImplementation((table: string) => {
         if (table === 'audit_events') {
-          callCount++;
-
-          if (callCount === 1) {
-            // Total count
-            return {
-              select: jest.fn().mockResolvedValue({
-                count: 1000,
-                error: null,
-              }),
-            };
-          } else if (callCount === 2) {
-            // Expired count
-            return {
-              select: jest.fn().mockReturnValue({
-                lte: jest.fn().mockResolvedValue({
-                  count: 50,
-                  error: null,
-                }),
-              }),
-            };
-          } else if (callCount === 3) {
-            // PII count
-            return {
-              select: jest.fn().mockReturnValue({
-                eq: jest.fn().mockResolvedValue({
-                  count: 100,
-                  error: null,
-                }),
-              }),
-            };
-          } else if (callCount === 4) {
-            // Oldest event
-            return {
-              select: jest.fn().mockReturnValue({
-                order: jest.fn().mockReturnValue({
-                  limit: jest.fn().mockReturnValue({
-                    single: jest.fn().mockResolvedValue({
-                      data: { timestamp: '2023-01-01T00:00:00Z' },
-                      error: null,
-                    }),
-                  }),
-                }),
-              }),
-            };
-          } else {
-            // Newest event
-            return {
-              select: jest.fn().mockReturnValue({
-                order: jest.fn().mockReturnValue({
-                  limit: jest.fn().mockReturnValue({
-                    single: jest.fn().mockResolvedValue({
-                      data: { timestamp: '2024-10-26T00:00:00Z' },
-                      error: null,
-                    }),
-                  }),
-                }),
-              }),
-            };
-          }
+          return createAuditEventsMock();
         }
         return {};
       });
@@ -362,33 +356,63 @@ describe('AuditRetentionManager', () => {
     });
 
     it('should handle null date ranges', async () => {
-      let callCount = 0;
+      // Create a query-builder style mock for null date scenarios
+      const createAuditEventsMock = () => {
+        return {
+          select: (
+            _columns: string | string[],
+            options?: { count?: string; head?: boolean }
+          ) => {
+            const isCountQuery =
+              options?.count === 'exact' && options?.head === true;
 
-      mockSupabase.from.mockImplementation(() => {
-        callCount++;
+            // Create a query builder that can be chained and also resolved as a count
+            const queryBuilder: any = {
+              // For count queries, this will be resolved directly
+              count: isCountQuery ? 0 : undefined,
+              error: isCountQuery ? null : undefined,
 
-        if (callCount <= 3) {
-          return {
-            select: jest.fn().mockReturnValue({
-              lte: jest.fn().mockResolvedValue({ count: 0, error: null }),
-              eq: jest.fn().mockResolvedValue({ count: 0, error: null }),
-            }),
-          };
-        } else {
-          // Return null for date queries
-          return {
-            select: jest.fn().mockReturnValue({
-              order: jest.fn().mockReturnValue({
-                limit: jest.fn().mockReturnValue({
-                  single: jest.fn().mockResolvedValue({
-                    data: null,
-                    error: null,
-                  }),
-                }),
-              }),
-            }),
-          };
+              lte: (_field: string, _value: any) => {
+                // Expired count query - no events
+                return {
+                  count: 0,
+                  error: null,
+                };
+              },
+              eq: (_field: string, _value: any) => {
+                // PII count query - no events
+                return {
+                  count: 0,
+                  error: null,
+                };
+              },
+              order: (_field: string, _options?: { ascending?: boolean }) => {
+                return {
+                  limit: (_count: number) => {
+                    return {
+                      single: () => {
+                        // Return null data for date queries when no events exist
+                        return Promise.resolve({
+                          data: null,
+                          error: null,
+                        });
+                      },
+                    };
+                  },
+                };
+              },
+            };
+
+            return queryBuilder;
+          },
+        };
+      };
+
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'audit_events') {
+          return createAuditEventsMock();
         }
+        return {};
       });
 
       const stats = await retentionManager.getRetentionStatistics();

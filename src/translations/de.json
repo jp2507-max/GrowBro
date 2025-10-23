@@ -231,6 +231,19 @@
       "ratings_one": "{{count}} Bewertung",
       "ratings_other": "{{count}} Bewertungen"
     },
+    "age_restricted": {
+      "message": "Dieser {{contentType}} enthält altersbeschränkte Inhalte und ist nur für verifizierte Nutzer ab 18 Jahren verfügbar.",
+      "privacy_notice": "Die Altersverifikation ist datenschutzfreundlich und entspricht DSA Art. 28.",
+      "title": "Altersbeschränkter Inhalt",
+      "verify_age_button": "Alter verifizieren"
+    },
+    "age_verification": {
+      "feed_message": "Einige Inhalte in diesem Feed sind altersbeschränkt und erfordern eine Altersverifikation.",
+      "feed_title": "Altersverifikation erforderlich",
+      "post_message": "Dieser Beitrag enthält altersbeschränkte Inhalte und erfordert eine Altersverifikation.",
+      "post_title": "Altersbeschränkter Beitrag",
+      "verify_button": "Alter verifizieren"
+    },
     "cancel_comment_hint": "Bricht das Posten dieses Kommentars ab.",
     "characters_over": "Zeichen über dem Limit",
     "classification": "Erkanntes Problem",
@@ -246,6 +259,11 @@
     "community_activity": "Community-Aktivität",
     "compose_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
     "confidence": "Vertrauen",
+    "content_type": {
+      "comment": "Kommentar",
+      "image": "Bild",
+      "post": "Beitrag"
+    },
     "create_post": "Beitrag erstellen",
     "create_post_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
     "delete": "Löschen",
@@ -1010,6 +1028,7 @@
       "trend": "Trend",
       "viewDetails": "Details anzeigen →"
     },
+    "geo_restriction_notice": "{{count}} Beiträge sind in {{country}} aufgrund regionaler Beschränkungen nicht verfügbar.",
     "hide": "Ausblenden",
     "mute": "Stummschalten",
     "mute_failed": "Benutzer konnte nicht stummgeschaltet werden. Bitte versuche es erneut.",
@@ -1031,6 +1050,10 @@
       "title": "Moderationswarteschlange"
     },
     "report": "Melden",
+    "report_comment": "Kommentar melden",
+    "report_comment_hint": "Diesen Kommentar wegen Verstoßes gegen Community-Richtlinien melden",
+    "report_content": "Inhalt melden",
+    "report_content_hint": "Diesen Inhalt wegen Verstoßes gegen Community-Richtlinien melden",
     "report_failed": "Inhalt konnte nicht gemeldet werden. Bitte versuche es erneut.",
     "report_modal": {
       "add_evidence": "Beweis-URL hinzufügen",
@@ -1101,6 +1124,29 @@
       }
     },
     "sorPreview": {
+      "fields": {
+        "aggregatedReportCount": "Aggregierte Meldungsanzahl",
+        "aggregatedReportCountSuppressed": "Unterdrückt (k-Anonymität)",
+        "automatedDecision": "Automatisierte Entscheidung",
+        "automatedDetection": "Automatisierte Erkennung",
+        "contentAge": "Inhaltsalter",
+        "contentType": "Inhaltstyp",
+        "createdAt": "Erstellt am",
+        "decisionGround": "Entscheidungsgrundlage",
+        "evidenceType": "Beweistyp",
+        "factsAndCircumstances": "Fakten & Umstände",
+        "legalReference": "Rechtsgrundlage",
+        "legalReferenceNA": "N/A",
+        "no": "Nein",
+        "pseudonymizedModerator": "Pseudonymisierter Moderator",
+        "pseudonymizedReporter": "Pseudonymisierter Melder",
+        "redressOptions": "Rechtsbehelfsmöglichkeiten",
+        "scrubbedAt": "Gesäubert am",
+        "scrubbingVersion": "Säuberungsversion",
+        "territorialScope": "Territorialer Geltungsbereich",
+        "territorialScopeGlobal": "Global",
+        "yes": "Ja"
+      },
       "redactedSubtitle": "PII-gesäubert für Transparenz-DB (DSA Art. 24(5))",
       "redactedTitle": "Redigierte SoR (EC-Einreichung)",
       "userFacingSubtitle": "An Benutzer geliefert (DSA Art. 17)",
@@ -1111,6 +1157,7 @@
       }
     },
     "totalFlaggers": "Gesamt Melder",
+    "transformed": "(transformiert)",
     "unhide": "Einblenden"
   },
   "nav": {

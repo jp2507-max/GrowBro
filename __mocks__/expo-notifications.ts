@@ -87,3 +87,20 @@ export async function getPermissionsAsync(): Promise<{
 }> {
   return { status: 'granted', canAskAgain: false, granted: true };
 }
+
+export const AndroidNotificationPriority = {
+  MIN: -2,
+  LOW: -1,
+  DEFAULT: 0,
+  HIGH: 1,
+  MAX: 2,
+} as const;
+
+export const SchedulableTriggerInputTypes = {
+  DATE: 'date',
+  TIME_INTERVAL: 'timeInterval',
+  DAILY: 'daily',
+  WEEKLY: 'weekly',
+  YEARLY: 'yearly',
+  CALENDAR: 'calendar',
+} as const;

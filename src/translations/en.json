@@ -231,6 +231,19 @@
       "ratings_one": "{{count}} rating",
       "ratings_other": "{{count}} ratings"
     },
+    "age_restricted": {
+      "message": "This {{contentType}} contains age-restricted content and is only available to verified users 18+.",
+      "privacy_notice": "Age verification is privacy-preserving and complies with DSA Art. 28.",
+      "title": "Age-Restricted Content",
+      "verify_age_button": "Verify Your Age"
+    },
+    "age_verification": {
+      "feed_message": "Some content in this feed is age-restricted and requires age verification to view.",
+      "feed_title": "Age Verification Required",
+      "post_message": "This post contains age-restricted content and requires age verification to view.",
+      "post_title": "Age-Restricted Post",
+      "verify_button": "Verify Age"
+    },
     "cancel_comment_hint": "Cancels posting this comment.",
     "characters_over": "characters over limit",
     "classification": "Issue detected",
@@ -246,6 +259,11 @@
     "community_activity": "Community Activity",
     "compose_hint": "Opens the Create Post screen.",
     "confidence": "Confidence",
+    "content_type": {
+      "comment": "comment",
+      "image": "image",
+      "post": "post"
+    },
     "create_post": "Create Post",
     "create_post_hint": "Opens the Create Post screen.",
     "delete": "Delete",
@@ -1010,6 +1028,7 @@
       "trend": "Trend",
       "viewDetails": "View Details →"
     },
+    "geo_restriction_notice": "{{count}} posts are not available in {{country}} due to regional restrictions.",
     "hide": "Hide",
     "mute": "Mute",
     "mute_failed": "Failed to mute user. Please try again.",
@@ -1031,6 +1050,10 @@
       "title": "Moderation Queue"
     },
     "report": "Report",
+    "report_comment": "Report Comment",
+    "report_comment_hint": "Report this comment for violating community guidelines",
+    "report_content": "Report Content",
+    "report_content_hint": "Report this content for violating community guidelines",
     "report_failed": "Failed to report content. Please try again.",
     "report_modal": {
       "add_evidence": "Add Evidence URL",
@@ -1101,6 +1124,29 @@
       }
     },
     "sorPreview": {
+      "fields": {
+        "aggregatedReportCount": "Aggregated Report Count",
+        "aggregatedReportCountSuppressed": "Suppressed (k-anonymity)",
+        "automatedDecision": "Automated Decision",
+        "automatedDetection": "Automated Detection",
+        "contentAge": "Content Age",
+        "contentType": "Content Type",
+        "createdAt": "Created At",
+        "decisionGround": "Decision Ground",
+        "evidenceType": "Evidence Type",
+        "factsAndCircumstances": "Facts & Circumstances",
+        "legalReference": "Legal Reference",
+        "legalReferenceNA": "N/A",
+        "no": "No",
+        "pseudonymizedModerator": "Pseudonymized Moderator",
+        "pseudonymizedReporter": "Pseudonymized Reporter",
+        "redressOptions": "Redress Options",
+        "scrubbedAt": "Scrubbed At",
+        "scrubbingVersion": "Scrubbing Version",
+        "territorialScope": "Territorial Scope",
+        "territorialScopeGlobal": "Global",
+        "yes": "Yes"
+      },
       "redactedSubtitle": "PII-scrubbed for Transparency DB (DSA Art. 24(5))",
       "redactedTitle": "Redacted SoR (EC Submission)",
       "userFacingSubtitle": "Delivered to user (DSA Art. 17)",
@@ -1111,6 +1157,7 @@
       }
     },
     "totalFlaggers": "Total Flaggers",
+    "transformed": "(transformed)",
     "unhide": "Unhide"
   },
   "nav": {

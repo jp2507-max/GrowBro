@@ -2,20 +2,25 @@
  * Mock for expo-location
  */
 
-export enum PermissionStatus {
-  UNDETERMINED = 'undetermined',
-  GRANTED = 'granted',
-  DENIED = 'denied',
-}
+export const PermissionStatus = {
+  UNDETERMINED: 'undetermined',
+  GRANTED: 'granted',
+  DENIED: 'denied',
+} as const;
 
-export enum Accuracy {
-  Lowest = 1,
-  Low = 2,
-  Balanced = 3,
-  High = 4,
-  Highest = 5,
-  BestForNavigation = 6,
-}
+export type PermissionStatus =
+  (typeof PermissionStatus)[keyof typeof PermissionStatus];
+
+export const Accuracy = {
+  Lowest: 1,
+  Low: 2,
+  Balanced: 3,
+  High: 4,
+  Highest: 5,
+  BestForNavigation: 6,
+} as const;
+
+export type Accuracy = (typeof Accuracy)[keyof typeof Accuracy];
 
 export const requestForegroundPermissionsAsync = jest.fn();
 export const getForegroundPermissionsAsync = jest.fn();

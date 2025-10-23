@@ -169,11 +169,28 @@ export class AgeVerificationService {
    * Validate an existing verification token
    * Prevents replay attacks through use_count tracking
    *
+   * ⚠️ CRITICAL SECURITY ISSUE: Race Condition Vulnerability
+   * This implementation has a race condition where concurrent validations
+   * can both pass the usability check and increment use_count, allowing
+   * tokens to be used more times than intended (e.g., single-use tokens
+   * could be used multiple times).
+   *
+   * Problem Flow:
+   * 1. Request A fetches token (use_count = 0, max_uses = 1)
+   * 2. Request B fetches token (use_count = 0, max_uses = 1)
+   * 3. Both pass isTokenUsable() check (0 < 1)
+   * 4. Both increment use_count to 1
+   * 5. Both succeed validation when only one should
+   *
+   * Recommended Fix: Use atomic conditional update
+   * .update({ use_count: tokenData.use_count + 1 })
+   * .eq('id', tokenId)
+   * .lt('use_count', token.maxUses) // Only update if still under limit
+   *
    * @param tokenId - Token UUID to validate
    * @returns Token validation result with error details
    */
   async validateToken(tokenId: string): Promise<TokenValidationResult> {
-    // Fetch token from database
     const { data: token, error } = await this.supabase
       .from('age_verification_tokens')
       .select('*')
@@ -181,54 +198,33 @@ export class AgeVerificationService {
       .single();
 
     if (error || !token) {
-      return {
-        isValid: false,
-        error: 'token_not_found',
-        token: null,
-      };
+      return { isValid: false, error: 'token_not_found', token: null };
     }
 
     const tokenData = token as any;
     const verificationToken = this.mapDbTokenToType(tokenData);
 
-    // Check token usability
     if (!isTokenUsable(verificationToken)) {
-      const error = this.determineTokenError(verificationToken);
-
-      await this.logAuditEvent({
-        eventType: 'token_validated',
-        userId: tokenData.user_id,
+      return await this.handleInvalidToken(
+        tokenData,
         tokenId,
-        result: 'failure',
-        failureReason: error,
-        legalBasis: 'GDPR Art. 6(1)(c) - Legal obligation (DSA Art. 28)',
-      });
-
-      return {
-        isValid: false,
-        error,
-        token: verificationToken,
-      };
-    }
-
-    // Increment use count (single-use enforcement)
-    const { error: updateError } = (await (
-      this.supabase.from('age_verification_tokens').update as any
-    )({
-      use_count: tokenData.use_count + 1,
-      used_at:
-        tokenData.use_count === 0
-          ? new Date().toISOString()
-          : tokenData.used_at,
-    }).eq('id', tokenId)) as any;
-
-    if (updateError) {
-      throw new Error(
-        `Failed to update token use count: ${updateError.message}`
+        verificationToken
       );
     }
 
-    // Log successful validation
+    const updateResult = await this.atomicTokenUpdate(
+      tokenId,
+      tokenData,
+      verificationToken
+    );
+    if (!updateResult.success) {
+      return await this.handleConcurrentUsage(
+        tokenData,
+        tokenId,
+        verificationToken
+      );
+    }
+
     await this.logAuditEvent({
       eventType: 'token_validated',
       userId: tokenData.user_id,
@@ -240,10 +236,66 @@ export class AgeVerificationService {
     return {
       isValid: true,
       error: null,
-      token: {
-        ...verificationToken,
-        useCount: verificationToken.useCount + 1,
-      },
+      token: { ...verificationToken, useCount: verificationToken.useCount + 1 },
+    };
+  }
+
+  private async handleInvalidToken(
+    tokenData: any,
+    tokenId: string,
+    verificationToken: AgeVerificationToken
+  ): Promise<TokenValidationResult> {
+    const error = this.determineTokenError(verificationToken);
+    await this.logAuditEvent({
+      eventType: 'token_validated',
+      userId: tokenData.user_id,
+      tokenId,
+      result: 'failure',
+      failureReason: error,
+      legalBasis: 'GDPR Art. 6(1)(c) - Legal obligation (DSA Art. 28)',
+    });
+    return { isValid: false, error, token: verificationToken };
+  }
+
+  private async atomicTokenUpdate(
+    tokenId: string,
+    tokenData: any,
+    verificationToken: AgeVerificationToken
+  ): Promise<{ success: boolean }> {
+    const { data, error } = (await (
+      this.supabase.from('age_verification_tokens').update as any
+    )({
+      use_count: tokenData.use_count + 1,
+      used_at:
+        tokenData.use_count === 0
+          ? new Date().toISOString()
+          : tokenData.used_at,
+    })
+      .eq('id', tokenId)
+      .lt('use_count', verificationToken.maxUses)
+      .select()
+      .single()) as any;
+
+    return { success: !error && !!data };
+  }
+
+  private async handleConcurrentUsage(
+    tokenData: any,
+    tokenId: string,
+    verificationToken: AgeVerificationToken
+  ): Promise<TokenValidationResult> {
+    await this.logAuditEvent({
+      eventType: 'token_validated',
+      userId: tokenData.user_id,
+      tokenId,
+      result: 'failure',
+      failureReason: 'concurrent_usage_detected',
+      legalBasis: 'GDPR Art. 6(1)(c) - Legal obligation (DSA Art. 28)',
+    });
+    return {
+      isValid: false,
+      error: 'token_already_used',
+      token: verificationToken,
     };
   }
 

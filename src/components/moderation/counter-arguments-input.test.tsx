@@ -69,16 +69,18 @@ describe('CounterArgumentsInput', () => {
       );
 
       const input = screen.getByTestId('counter-arguments-input-input');
-      await user.type(input, 'test input');
+      await user.paste(input, 'test input');
 
       expect(mockOnChange).toHaveBeenCalledWith('test input');
     });
 
     test('displays updated character count when typing', async () => {
-      const mockOnChange = jest.fn();
-      const { user } = setup(
-        <CounterArgumentsInput value="" onChange={mockOnChange} />
-      );
+      const StatefulWrapper = () => {
+        const [value, setValue] = React.useState('');
+        return <CounterArgumentsInput value={value} onChange={setValue} />;
+      };
+
+      const { user } = setup(<StatefulWrapper />);
 
       const input = screen.getByTestId('counter-arguments-input-input');
       await user.type(input, 'hello world');

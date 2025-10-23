@@ -128,97 +128,140 @@ function SoRField({ item }: { item: FieldData }): React.ReactElement {
   );
 }
 
-function useUserFacingData(userFacing: StatementOfReasons): FieldData[] {
+function useUserFacingData(
+  userFacing: StatementOfReasons,
+  t: (key: string) => string
+): FieldData[] {
   return useMemo(
     () => [
-      { label: 'Decision Ground', value: userFacing.decision_ground },
       {
-        label: 'Legal Reference',
-        value: userFacing.legal_reference || 'N/A',
+        label: t('moderation.sorPreview.fields.decisionGround'),
+        value: userFacing.decision_ground,
       },
-      { label: 'Content Type', value: userFacing.content_type },
       {
-        label: 'Facts & Circumstances',
+        label: t('moderation.sorPreview.fields.legalReference'),
+        value:
+          userFacing.legal_reference ||
+          t('moderation.sorPreview.fields.legalReferenceNA'),
+      },
+      {
+        label: t('moderation.sorPreview.fields.contentType'),
+        value: userFacing.content_type,
+      },
+      {
+        label: t('moderation.sorPreview.fields.factsAndCircumstances'),
         value: userFacing.facts_and_circumstances,
         multiline: true,
       },
       {
-        label: 'Automated Detection',
-        value: userFacing.automated_detection ? 'Yes' : 'No',
+        label: t('moderation.sorPreview.fields.automatedDetection'),
+        value: userFacing.automated_detection
+          ? t('moderation.sorPreview.fields.yes')
+          : t('moderation.sorPreview.fields.no'),
       },
       {
-        label: 'Automated Decision',
-        value: userFacing.automated_decision ? 'Yes' : 'No',
+        label: t('moderation.sorPreview.fields.automatedDecision'),
+        value: userFacing.automated_decision
+          ? t('moderation.sorPreview.fields.yes')
+          : t('moderation.sorPreview.fields.no'),
       },
       {
-        label: 'Territorial Scope',
-        value: userFacing.territorial_scope?.join(', ') || 'Global',
+        label: t('moderation.sorPreview.fields.territorialScope'),
+        value:
+          userFacing.territorial_scope?.join(', ') ||
+          t('moderation.sorPreview.fields.territorialScopeGlobal'),
       },
-      { label: 'Redress Options', value: userFacing.redress.join(', ') },
-      { label: 'Created At', value: formatDate(userFacing.created_at) },
+      {
+        label: t('moderation.sorPreview.fields.redressOptions'),
+        value: userFacing.redress.join(', '),
+      },
+      {
+        label: t('moderation.sorPreview.fields.createdAt'),
+        value: formatDate(userFacing.created_at),
+      },
     ],
-    [userFacing]
+    [userFacing, t]
   );
 }
 
-function useRedactedData(redacted: RedactedSoR): FieldData[] {
+function useRedactedData(
+  redacted: RedactedSoR,
+  t: (key: string) => string
+): FieldData[] {
   return useMemo(
     () => [
-      { label: 'Decision Ground', value: redacted.decision_ground },
       {
-        label: 'Legal Reference',
-        value: redacted.legal_reference || 'N/A',
-      },
-      { label: 'Content Type', value: redacted.content_type },
-      {
-        label: 'Automated Detection',
-        value: redacted.automated_detection ? 'Yes' : 'No',
+        label: t('moderation.sorPreview.fields.decisionGround'),
+        value: redacted.decision_ground,
       },
       {
-        label: 'Automated Decision',
-        value: redacted.automated_decision ? 'Yes' : 'No',
+        label: t('moderation.sorPreview.fields.legalReference'),
+        value:
+          redacted.legal_reference ||
+          t('moderation.sorPreview.fields.legalReferenceNA'),
       },
       {
-        label: 'Territorial Scope',
-        value: redacted.territorial_scope?.join(', ') || 'Global',
+        label: t('moderation.sorPreview.fields.contentType'),
+        value: redacted.content_type,
       },
-      { label: 'Redress Options', value: redacted.redress.join(', ') },
       {
-        label: 'Pseudonymized Reporter',
+        label: t('moderation.sorPreview.fields.automatedDetection'),
+        value: redacted.automated_detection
+          ? t('moderation.sorPreview.fields.yes')
+          : t('moderation.sorPreview.fields.no'),
+      },
+      {
+        label: t('moderation.sorPreview.fields.automatedDecision'),
+        value: redacted.automated_decision
+          ? t('moderation.sorPreview.fields.yes')
+          : t('moderation.sorPreview.fields.no'),
+      },
+      {
+        label: t('moderation.sorPreview.fields.territorialScope'),
+        value:
+          redacted.territorial_scope?.join(', ') ||
+          t('moderation.sorPreview.fields.territorialScopeGlobal'),
+      },
+      {
+        label: t('moderation.sorPreview.fields.redressOptions'),
+        value: redacted.redress.join(', '),
+      },
+      {
+        label: t('moderation.sorPreview.fields.pseudonymizedReporter'),
         value: redacted.pseudonymized_reporter_id,
         highlight: true,
       },
       {
-        label: 'Pseudonymized Moderator',
+        label: t('moderation.sorPreview.fields.pseudonymizedModerator'),
         value: redacted.pseudonymized_moderator_id,
         highlight: true,
       },
       {
-        label: 'Aggregated Report Count',
+        label: t('moderation.sorPreview.fields.aggregatedReportCount'),
         value:
           redacted.aggregated_data.report_count === 'suppressed'
-            ? 'Suppressed (k-anonymity)'
+            ? t('moderation.sorPreview.fields.aggregatedReportCountSuppressed')
             : String(redacted.aggregated_data.report_count),
         highlight: true,
       },
       {
-        label: 'Evidence Type',
+        label: t('moderation.sorPreview.fields.evidenceType'),
         value: redacted.aggregated_data.evidence_type,
       },
       {
-        label: 'Content Age',
+        label: t('moderation.sorPreview.fields.contentAge'),
         value: redacted.aggregated_data.content_age,
       },
       {
-        label: 'Scrubbed At',
+        label: t('moderation.sorPreview.fields.scrubbedAt'),
         value: formatDate(redacted.scrubbing_metadata.scrubbed_at),
       },
       {
-        label: 'Scrubbing Version',
+        label: t('moderation.sorPreview.fields.scrubbingVersion'),
         value: redacted.scrubbing_metadata.scrubbing_version,
       },
     ],
-    [redacted]
+    [redacted, t]
   );
 }
 
@@ -228,8 +271,9 @@ export function SoRPreviewPanels({
   validationStatus,
   testID = 'sor-preview',
 }: Props): React.ReactElement {
-  const userFacingData = useUserFacingData(userFacing);
-  const redactedData = useRedactedData(redacted);
+  const { t } = useTranslation();
+  const userFacingData = useUserFacingData(userFacing, t);
+  const redactedData = useRedactedData(redacted, t);
 
   return (
     <View className="flex-1" testID={testID}>

@@ -1,5 +1,6 @@
 import { resetAgeGate } from '../compliance/age-gate';
 import { signOut, useAuth } from './index';
+import { stopIdleTimeout } from './session-timeout';
 
 // Mock dependencies
 jest.mock('../compliance/age-gate', () => ({
@@ -20,6 +21,16 @@ jest.mock('@/lib/storage', () => ({
     set: jest.fn((key: string, value: string) => mockStorage.set(key, value)),
     delete: jest.fn((key: string) => mockStorage.delete(key)),
   },
+  getItem: jest.fn((key: string) => {
+    const value = mockStorage.get(key);
+    return value ? JSON.parse(value) : null;
+  }),
+  setItem: jest.fn((key: string, value: any) => {
+    mockStorage.set(key, JSON.stringify(value));
+  }),
+  removeItem: jest.fn((key: string) => {
+    mockStorage.delete(key);
+  }),
 }));
 
 describe('Auth', () => {
@@ -49,13 +60,13 @@ describe('Auth', () => {
         .signIn({ access: 'test-token', refresh: 'test-refresh' });
 
       // Verify token is stored
-      expect(mockStorage.get('auth.token')).toBeTruthy();
+      expect(mockStorage.get('token')).toBeTruthy();
 
       // Sign out
       signOut();
 
       // Verify token is removed from storage
-      expect(mockStorage.get('auth.token')).toBeUndefined();
+      expect(mockStorage.get('token')).toBeUndefined();
     });
 
     test('should update auth status to signOut', () => {
@@ -91,6 +102,19 @@ describe('Auth', () => {
 
       // Verify token is null
       expect(useAuth.getState().token).toBeNull();
+    });
+
+    test('should call stopIdleTimeout when signing out', () => {
+      // Sign in first
+      useAuth
+        .getState()
+        .signIn({ access: 'test-token', refresh: 'test-refresh' });
+
+      // Sign out
+      signOut();
+
+      // Verify stopIdleTimeout was called
+      expect(stopIdleTimeout).toHaveBeenCalledTimes(1);
     });
   });
 });

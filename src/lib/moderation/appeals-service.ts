@@ -43,6 +43,7 @@ export const APPEAL_DEADLINES = {
   content_removal: 14, // days
   account_action: 30, // days
   geo_restriction: 14, // days
+  repeat_offender_status: 30, // days - same as account_action
   minimum: 7, // DSA minimum requirement
 } as const;
 
@@ -906,6 +907,89 @@ async function updateDecisionReversal(
 }
 
 // ============================================================================
+// Repeat Offender Status Appeals (DSA Art. 20, Req 12.2, 12.4)
+// ============================================================================
+
+/**
+ * Process repeat offender status appeal
+ *
+ * Handles appeals where users contest their repeat offender classification
+ * or escalation level. Allows correction of false positives.
+ *
+ * Requirements: 12.2, 12.4
+ */
+async function processRepeatOffenderAppeal(params: {
+  appeal: Appeal;
+  decision: AppealDecision;
+  reasoning: string;
+  reviewerId: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const { appeal, decision, reasoning, reviewerId } = params;
+
+  try {
+    // Import here to avoid circular dependency
+    const { RepeatOffenderService } = await import('./repeat-offender-service');
+    const repeatOffenderService = new RepeatOffenderService();
+
+    if (decision === 'upheld') {
+      // Appeal upheld - correct the violation record
+      const userId = appeal.user_id;
+      const violationType = 'general_policy_violation'; // Default type for status appeals
+
+      // Determine correction action based on appeal reasoning
+      const correctResult = await repeatOffenderService.correctViolation({
+        user_id: userId,
+        violation_type: violationType,
+        reason: reasoning,
+        moderator_id: reviewerId,
+        reduce_count_by: 1, // Reduce by 1 violation
+      });
+
+      if (!correctResult.success) {
+        return {
+          success: false,
+          error: `Failed to correct violation: ${correctResult.error}`,
+        };
+      }
+
+      // Log the correction
+      await logAppealsAudit({
+        appealId: appeal.id,
+        action: 'decision-reversed',
+        userId: userId,
+        reviewerId,
+        metadata: {
+          appeal_type: 'repeat_offender_status',
+          violation_type: violationType,
+          previous_state: correctResult.previous_state,
+          new_record: correctResult.record,
+        },
+      });
+    } else {
+      // Appeal rejected - log for transparency
+      await logAppealsAudit({
+        appealId: appeal.id,
+        action: 'appeal-decision',
+        userId: appeal.user_id,
+        reviewerId,
+        decision: 'rejected',
+        metadata: {
+          appeal_type: 'repeat_offender_status',
+          reasoning,
+        },
+      });
+    }
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
+}
+
+// ============================================================================
 // Exports
 // ============================================================================
 
@@ -918,4 +1002,5 @@ export const appealsService = {
   assignReviewer,
   checkReviewerConflict,
   processAppealDecision,
+  processRepeatOffenderAppeal,
 };

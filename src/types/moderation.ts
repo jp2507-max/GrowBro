@@ -267,7 +267,8 @@ export interface RedactedSoR {
 export type AppealType =
   | 'content_removal'
   | 'account_action'
-  | 'geo_restriction';
+  | 'geo_restriction'
+  | 'repeat_offender_status';
 
 export type AppealStatus =
   | 'pending'
@@ -367,7 +368,7 @@ export interface TrustedFlagger {
   quality_metrics: QualityMetrics;
 
   // Certification
-  certification_date: Date;
+  certification_date: Date | null; // Null until certified
   review_date: Date; // Next periodic review
 
   // Metadata
@@ -505,7 +506,24 @@ export type AuditEventType =
   | 'audit_access'
   | 'pii_anonymization'
   | 'deletion_scheduled'
-  | 'retention_enforced';
+  | 'retention_enforced'
+  | 'sla_breach'
+  | 'sla_alert_created'
+  | 'sla_alert_acknowledged'
+  | 'sla_breach_escalated'
+  | 'incident_rca_completed'
+  | 'incident_resolved'
+  | 'trusted_flagger_registered'
+  | 'trusted_flagger_certified'
+  | 'trusted_flagger_status_updated'
+  | 'trusted_flagger_warning_issued'
+  | 'trusted_flagger_suspended'
+  | 'trusted_flagger_revoked'
+  | 'trusted_flagger_reviewed'
+  | 'repeat_offender_violation_recorded'
+  | 'repeat_offender_violation_corrected'
+  | 'repeat_offender_immediate_ban'
+  | 'manifestly_unfounded_report_tracked';
 
 export interface AuditEvent {
   id: string;
@@ -798,4 +816,88 @@ export interface QueueActionEvent {
   moderator_id: string;
   timestamp: Date;
   metadata: Record<string, unknown>;
+}
+
+// ============================================================================
+// Notification Types (Task 16)
+// ============================================================================
+
+export type ModerationNotificationType =
+  | 'decision_made'
+  | 'sor_delivered'
+  | 'appeal_deadline'
+  | 'appeal_deadline_reminder'
+  | 'sla_breach'
+  | 'sla_warning';
+
+export type ModeratorAlertType =
+  | 'sla_breach'
+  | 'sla_warning'
+  | 'escalation_required';
+
+export type NotificationPriority = 'low' | 'medium' | 'high' | 'critical';
+
+export type NotificationStatus = 'delivered' | 'failed' | 'pending';
+
+export interface NotificationDeliveryLog {
+  id: string;
+  user_id: string;
+  notification_type: ModerationNotificationType;
+  decision_id?: string;
+  statement_id?: string;
+  delivered_at: Date;
+  status: NotificationStatus;
+  error_message?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ModeratorAlertLog {
+  id: string;
+  moderator_id: string;
+  alert_type: ModeratorAlertType;
+  report_id: string;
+  priority: NotificationPriority;
+  sla_percentage?: number;
+  deadline_date?: Date;
+  acknowledged_at?: Date;
+  created_at: Date;
+}
+
+export interface ModerationNotificationData {
+  userId: string;
+  type: ModerationNotificationType;
+  decision?: ModerationDecision;
+  statementOfReasons?: StatementOfReasons;
+  action?: ModerationAction;
+  deadlineDate?: Date;
+  reportId?: string;
+  slaPercentage?: number;
+}
+
+export interface ModeratorAlertData {
+  moderatorId: string;
+  type: ModeratorAlertType;
+  reportId: string;
+  priority: NotificationPriority;
+  slaPercentage?: number;
+  deadlineDate?: Date;
+}
+
+export interface SoRDeliveryCompliance {
+  decision_id: string;
+  decision_created_at: Date;
+  sor_delivered_at: Date | null;
+  delivery_time_minutes: number | null;
+  is_compliant: boolean;
+}
+
+export interface UnacknowledgedAlert {
+  id: string;
+  alert_type: ModeratorAlertType;
+  report_id: string;
+  priority: NotificationPriority;
+  sla_percentage: number | null;
+  created_at: Date;
+  age_minutes: number;
 }

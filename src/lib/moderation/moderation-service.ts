@@ -15,6 +15,8 @@ import { DateTime } from 'luxon';
 import type {
   ClaimResult,
   ContentReport,
+  ModerationAction,
+  ModerationDecisionInput,
   ModerationQueue,
   ModerationQueueItem,
   QueueFilters,
@@ -22,6 +24,7 @@ import type {
 } from '@/types/moderation';
 
 import { supabase } from '../supabase';
+import { RepeatOffenderService } from './repeat-offender-service';
 
 // ============================================================================
 // Types
@@ -46,6 +49,12 @@ const SLA_WARNING_THRESHOLD_90 = 0.9;
 // ============================================================================
 
 export class ModerationService {
+  private repeatOffenderService: RepeatOffenderService;
+
+  constructor() {
+    this.repeatOffenderService = new RepeatOffenderService();
+  }
+
   /**
    * Retrieves moderation queue with priority sorting and filtering
    *
@@ -594,6 +603,85 @@ export class ModerationService {
         `Expired claim release failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
+  }
+
+  /**
+   * Record enforcement action and track repeat offenders
+   *
+   * Integrates with RepeatOffenderService to automatically track violations
+   * when restrictive moderation actions are taken.
+   *
+   * Requirements: 12.1, 12.3
+   */
+  async recordEnforcementAction(
+    decision: ModerationDecisionInput,
+    decisionId: string,
+    contentReport: ContentReport
+  ): Promise<void> {
+    // Only track violations for actions that indicate policy violations
+    const restrictiveActions: ModerationAction[] = [
+      'quarantine',
+      'geo_block',
+      'remove',
+      'suspend_user',
+      'rate_limit',
+      'shadow_ban',
+    ];
+
+    if (!restrictiveActions.includes(decision.action)) {
+      return;
+    }
+
+    // Get user_id from content report
+    const userId = contentReport.user_id;
+    if (!userId) {
+      return; // Cannot track violations without user ID
+    }
+
+    // Determine violation type from policy violations
+    const violationType =
+      decision.policy_violations && decision.policy_violations.length > 0
+        ? decision.policy_violations[0] // Use primary policy violation
+        : 'general_policy_violation';
+
+    // Record violation
+    await this.repeatOffenderService.recordViolation({
+      user_id: userId,
+      violation_type: violationType,
+      decision_id: decisionId,
+      reasoning: decision.reasoning,
+    });
+  }
+
+  /**
+   * Track manifestly unfounded report
+   *
+   * Called when a report is determined to be baseless or in bad faith
+   *
+   * Requirements: 12.1, 12.3
+   */
+  async trackManifestlyUnfounded(params: {
+    reportId: string;
+    reporterId: string;
+    decisionId: string;
+    reasoning: string;
+  }): Promise<void> {
+    const { reportId, reporterId, decisionId, reasoning } = params;
+    await this.repeatOffenderService.trackManifestlyUnfounded({
+      reporter_id: reporterId,
+      report_id: reportId,
+      decision_id: decisionId,
+      reasoning,
+    });
+  }
+
+  /**
+   * Get repeat offender records for a user
+   *
+   * Requirements: 12.5
+   */
+  async getRepeatOffenderRecords(userId: string) {
+    return await this.repeatOffenderService.getAllRecordsForUser(userId);
   }
 }
 

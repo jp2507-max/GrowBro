@@ -224,7 +224,7 @@ describe('Trusted Flagger Analytics', () => {
 
       // Check first flagger
       expect(result[0].certification_date).toBeInstanceOf(Date);
-      expect(result[0].certification_date.toISOString()).toBe(
+      expect(result[0].certification_date?.toISOString()).toBe(
         '2023-06-01T00:00:00.000Z'
       );
       expect(result[0].review_date).toBeInstanceOf(Date);

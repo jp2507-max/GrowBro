@@ -17,16 +17,16 @@ export function CounterArgumentsInput({
   const { t } = useTranslation();
 
   return (
-    <View className="mb-4">
+    <View className="mb-4" testID={testID ?? 'counter-arguments-input'}>
       <Text
         className="mb-2 text-sm font-medium text-charcoal-950 dark:text-neutral-100"
-        testID={testID ? `${testID}-label` : undefined}
+        testID={testID ? `${testID}-label` : 'counter-arguments-input-label'}
       >
         {t('appeals.label.counterArguments')} *
       </Text>
       <Text
         className="mb-2 text-xs text-neutral-600 dark:text-neutral-400"
-        testID={testID ? `${testID}-hint` : undefined}
+        testID={testID ? `${testID}-hint` : 'counter-arguments-input-hint'}
       >
         {t('appeals.hint.counterArguments')}
       </Text>
@@ -38,11 +38,13 @@ export function CounterArgumentsInput({
         numberOfLines={6}
         className="min-h-[120px]"
         maxLength={5000}
-        testID={testID ? `${testID}-input` : undefined}
+        testID={testID ? `${testID}-input` : 'counter-arguments-input-input'}
       />
       <Text
         className="mt-1 text-xs text-neutral-500 dark:text-neutral-500"
-        testID={testID ? `${testID}-counter` : undefined}
+        testID={
+          testID ? `${testID}-counter` : 'counter-arguments-input-counter'
+        }
       >
         {t('appeals.counter.characterCount', {
           current: value.length,
