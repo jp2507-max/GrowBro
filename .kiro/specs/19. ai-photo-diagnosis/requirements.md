@@ -17,6 +17,7 @@ The AI Photo Assessment feature enables home cannabis growers to quickly identif
 3. WHEN multiple shots are needed THEN the system SHALL allow capture of up to 3 photos per assessment case
 4. WHEN photos have quality_score below threshold THEN the system SHALL block submission and show reasoned feedback (blur/exposure/white balance) with retake option
 5. WHEN photos are captured THEN the system SHALL store them locally with content-addressable naming and strip EXIF data including GPS before any sharing
+6. WHEN device capabilities allow (frame processors) THEN the system SHALL provide real-time quality feedback during capture; OTHERWISE the system SHALL run post-capture quality checks with equivalent gating
 
 ### Requirement 2
 
@@ -141,8 +142,10 @@ The AI Photo Assessment feature enables home cannabis growers to quickly identif
 
 #### Acceptance Criteria
 
-1. WHEN shipping models THEN the system SHALL deliver quantized TFLite/ONNX models (<20MB) with checksum validation and version tracking
+1. WHEN shipping models THEN the system SHALL deliver quantized ONNX (ORT) models (<20MB) with checksum validation and version tracking
 2. WHEN updating models THEN the system SHALL use remote config with staged rollout and automatic rollback on error rates
 3. WHEN handling edge cases THEN the system SHALL detect non-plant images, extreme close-ups, and heavy LED color cast with retake guidance
 4. WHEN processing fails THEN the system SHALL gracefully degrade on low memory (skip device → cloud) and handle network errors with idempotency
 5. WHEN warming up THEN the system SHALL initialize models off UI thread, cache interpreters, and release resources on app background
+6. Cloud inference architecture: Supabase Edge Functions SHALL act as the authenticated, idempotent gateway and SHALL proxy requests to a Node/Container microservice running onnxruntime-node for heavy inference; heavy inference SHALL NOT run inside Edge isolates
+7. On-device inference engine: the app SHALL use onnxruntime-react-native with XNNPACK as the default execution provider and SHALL attempt NNAPI (Android) or CoreML (iOS) when available; the active provider SHALL be logged for telemetry

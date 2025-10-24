@@ -86,6 +86,7 @@ graph TB
   - Real-time quality feedback (lighting, focus, framing)
   - Support for up to 3 photos per assessment case
 - EXIF data stripping for privacy
+- Implementation note: Prefer react-native-vision-camera with frame processors for live quality guidance; use expo-camera as MVP fallback when live processing is unavailable.
 
 **Interface**:
 
@@ -135,6 +136,7 @@ type PhotoMetadata = {
 - **White Balance**: Color temperature estimation and deviation check from neutral
 - **Composition**: Plant matter detection and framing validation
 - **Batch Rule**: Multiple photos → per-image predictions → majority vote; ties → highest calibrated confidence; all <0.70 → set `is_ood = true` and show CTA
+- **Real-time implementation**: Use react-native-vision-camera frame processors for quality gating where supported; fallback to post-capture checks when real-time processing is not available.
 
 **Interface**:
 
@@ -177,9 +179,9 @@ interface BatchQualityResult {
 **Model Architecture**:
 
 - **On-Device**: EfficientNet-Lite0/1 or MobileNetV3-Small/Large INT8 quantized (<20MB)
+- On-device framework: onnxruntime-react-native (ORT) with XNNPACK (CPU default), NNAPI (Android), and CoreML (iOS) execution providers as available.
 - **Cloud**: EfficientNet-B4/ResNet-50 full-precision for complex cases
 - **Classes (Assessment Classes — canonical list):**
-
   1.  Healthy
   2.  Unknown / Out-of-Distribution (OOD)
   3.  Nitrogen deficiency
@@ -193,8 +195,10 @@ interface BatchQualityResult {
   11. Spider mites (pest)
   12. Powdery mildew (pathogen)
 
-- **Delegates**: NNAPI/GPU acceleration where available with CPU fallback
+- **Delegates**: ONNX Runtime Execution Providers — XNNPACK (CPU default), NNAPI (Android), CoreML (iOS) with CPU fallback
 - **SLOs**: p95 ≤ 3.5s (device) / ≤ 5s (cloud) on Pixel 6a & Galaxy A54
+
+- Cloud inference implementation: Supabase Edge Functions act as the authenticated, idempotent gateway; heavy inference runs in a Node/Container microservice using onnxruntime-node. Edge proxies requests, enforces timeouts, and returns results.
 
 **Interface**:
 
@@ -262,6 +266,53 @@ interface AssessmentClass {
   isOod: boolean; // Indicates out-of-distribution; defaults to false
 }
 ```
+
+### Cloud Inference Implementation
+
+- Supabase Edge Functions are used as the authenticated, idempotent gateway (JWT/RLS).
+- The actual inference runs in a Node/Container microservice using onnxruntime-node.
+- Edge proxies the request, enforces timeouts, and returns results.
+- This avoids WASM size/memory constraints in Edge isolates and enables warm container caching.
+
+### Cloud Inference API (Contract)
+
+```typescript
+// Headers
+//  Authorization: Bearer <JWT>
+//  X-Idempotency-Key: <uuid-v4>
+//  Content-Type: application/json
+
+type CloudInferenceRequest = {
+  idempotencyKey: string;
+  assessmentId: string;
+  modelVersion?: string; // optional hint; server may override to default/active
+  images: Array<{
+    id: string; // matches CapturedPhoto.id
+    url: string; // signed storage URL (recommended)
+    sha256: string; // integrity of original bytes
+    contentType: 'image/jpeg' | 'image/png';
+  }>;
+  plantContext: PlantContext;
+  client: {
+    appVersion: string;
+    platform: 'android' | 'ios';
+    deviceModel?: string;
+  };
+};
+
+type CloudInferenceResponse = {
+  success: boolean;
+  mode: 'cloud';
+  modelVersion: string;
+  processingTimeMs: number;
+  result?: AssessmentResult; // present when success
+  error?: { code: string; message: string };
+};
+```
+
+- Timeouts: Edge enforces an overall timeout targeting ≤ 5s p95; requests exceeding budget return 504.
+- Idempotency: Same `X-Idempotency-Key` MUST return the previously computed response.
+- Auth: `Authorization: Bearer <JWT>` is required; RLS is enforced in any downstream DB operations.
 
 ### 4. Action Plan Generator
 
@@ -659,29 +710,28 @@ app_documents/
 │   └── cache/
 │       └── temp_captures/
 └── models/
-    ├── plant_classifier_v1.tflite
+    ├── plant_classifier_v1.ort
     ├── plant_classifier_v1.json (metadata)
     └── checksums.json
 ```
+
+Note: ORT format is recommended for on-device ONNX Runtime React Native.
 
 ## Error Handling
 
 ### Error Categories and Responses
 
 1. **Capture Errors**
-
    - Camera permission denied → Permission request flow
    - Storage full → Cleanup suggestions and retry
    - Camera hardware failure → Fallback to gallery selection
 
 2. **Quality Assessment Errors**
-
    - Poor image quality → Specific feedback and retake guidance
    - Non-plant images → Educational prompt about proper subjects
    - Extreme lighting conditions → Lighting adjustment tips
 
 3. **Inference Errors**
-
    - Model loading failure → Cloud fallback or retry
    - Out of memory → Reduce image resolution and retry
    - Network timeout → Queue for offline processing
@@ -761,13 +811,11 @@ interface SyncError extends TypedError {
 ### Unit Testing
 
 1. **Quality Assessment Engine**
-
    - Test blur detection with synthetic blur levels
    - Validate exposure assessment with over/under-exposed samples
    - Test white balance detection with color-cast images
 
 2. **ML Inference Engine**
-
    - Mock model responses for consistent testing
    - Test aggregation logic with multiple photo scenarios
    - Validate confidence thresholding and fallback logic
@@ -795,7 +843,6 @@ interface SyncError extends TypedError {
 ### Performance Testing
 
 1. **Inference Latency**
-
    - Device inference: p95 ≤ 3.5s on target devices
    - Cloud inference: p95 ≤ 5s end-to-end
    - Memory usage monitoring during inference
@@ -825,13 +872,11 @@ interface SyncError extends TypedError {
 ### Accessibility Features
 
 1. **Screen Reader Support**
-
    - Descriptive labels for camera controls and guidance
    - Result announcements with confidence levels
    - Action plan step-by-step navigation
 
 2. **Visual Accessibility**
-
    - High contrast mode support for camera UI
    - Large touch targets (≥44pt) for all interactive elements
 
@@ -851,7 +896,6 @@ interface SyncError extends TypedError {
 - Error messages and guidance text externalized
 
 2. **Dynamic Content**
-
    - Server-delivered action plans with locale support
    - Confidence level descriptions adapted to cultural context
    - Legal disclaimers per jurisdiction (DE/EU compliance)
@@ -866,13 +910,11 @@ interface SyncError extends TypedError {
 ### Data Protection
 
 1. **Image Privacy**
-
    - EXIF stripping including GPS coordinates
    - Local-first storage with opt-in cloud backup
    - Automatic cleanup with configurable retention
 
 2. **Model Privacy**
-
    - On-device inference preferred for sensitive data
    - Federated learning considerations for model improvement
    - User consent for data contribution
@@ -885,7 +927,6 @@ interface SyncError extends TypedError {
 ### Security Measures
 
 1. **Model Integrity**
-
    - Cryptographic signatures for model files
    - Checksum validation on download and load
    - Secure model delivery via CDN
@@ -900,7 +941,6 @@ interface SyncError extends TypedError {
 ### Confidence Calibration
 
 1. **Temperature Scaling**
-
    - Calibrate softmax outputs offline using temperature scaling
    - Store both raw_confidence and calibrated_confidence
    - UI displays calibrated confidence for user-facing decisions
@@ -908,10 +948,10 @@ interface SyncError extends TypedError {
 
 2. **Model Versioning**
 
-   - Ship quantized TFLite/ONNX models with checksum validation
-   - Remote config for staged rollout and A/B testing
-   - Shadow mode testing before flipping default model
-   - Automatic rollback on error rate increases
+- Ship quantized ONNX (ORT) models with checksum validation
+- Remote config for staged rollout and A/B testing
+- Shadow mode testing before flipping default model
+- Automatic rollback on error rate increases
 
 3. **Edge Function Authentication**
 
@@ -924,7 +964,6 @@ interface SyncError extends TypedError {
 ### Model Optimization
 
 1. **On-Device Models**
-
    - Quantization to INT8 for size reduction
    - Pruning for inference speed improvement
    - Hardware acceleration (GPU/NPU) where available
@@ -937,7 +976,6 @@ interface SyncError extends TypedError {
 ### Image Processing Optimization
 
 1. **Capture Optimization**
-
    - Progressive JPEG encoding for faster uploads
    - Automatic resolution adjustment based on network
    - Thumbnail generation with efficient algorithms
@@ -951,12 +989,30 @@ interface SyncError extends TypedError {
 
 1. **Request Optimization**
 
-   - Image compression before cloud upload
-   - Request batching and deduplication
-   - Intelligent retry with circuit breaker pattern
+- Image compression before cloud upload
+- Request batching and deduplication
+- Intelligent retry with circuit breaker pattern
 
 2. **Sync Optimization**
 
 - Delta sync for assessment updates
 - Compression for large payloads
 - Background sync scheduling
+
+## Dependencies & Setup (Implementation Notes)
+
+- On-device inference: `onnxruntime-react-native` (ORT). Use XNNPACK by default; enable NNAPI (Android) and CoreML (iOS) when available.
+- Camera & real-time quality: `react-native-vision-camera` with Frame Processors; `react-native-worklets-core` as required by frame processors.
+- MVP fallback: `expo-camera` with post-capture quality checks.
+- Crypto: `crypto-js` for HMAC-SHA256 (expo-crypto lacks HMAC APIs).
+- Storage/processing: `expo-file-system`, `expo-image-manipulator`.
+- Build: Expo Dev Client + prebuild; enable VisionCamera plugin with `enableFrameProcessors`.
+- Telemetry: log active execution provider (XNNPACK/NNAPI/CoreML), latency, and modelVersion.
+
+## References
+
+- ONNX Runtime React Native: https://onnxruntime.ai/docs/get-started/with-javascript/react-native.html
+- Execution Providers: https://onnxruntime.ai/docs/execution-providers/
+- Deploy on Mobile (ORT): https://onnxruntime.ai/docs/tutorials/mobile/
+- VisionCamera Frame Processors: https://react-native-vision-camera.com/docs/guides/frame-processors
+- Supabase Edge Functions: https://supabase.com/docs/guides/functions

@@ -1,7 +1,6 @@
 # Implementation Plan
 
 - [ ] 1. Set up core data models and database schema
-
   - Create WatermelonDB schema for assessments table with all required fields (status, inference_mode, model_version, raw_confidence, calibrated_confidence, quality_scores, etc.)
   - Implement AssessmentRecord model with proper relationships to plants table
   - Add database indexes for (user_id, created_at) and (status) for efficient querying
@@ -18,28 +17,25 @@
   - _Requirements: 6.1, 6.4, 9.1, 9.2_
 
 - [ ] 2. Implement image capture and quality assessment system
-
   - [ ] 2.1 Create guided camera capture component with multi-shot support
-
     - Build CaptureComponent with guided prompts for leaf positioning (top/bottom views)
     - Implement real-time quality feedback UI for lighting, focus, and framing guidance
 
   - Add support for capturing up to 3 photos per assessment case with progress indicators
-
-    - Integrate camera support using the Expo Camera module (`expo-camera`) for
-      cross-platform photo capture, ensuring permission handling and camera
-      lifecycle management. Use of `expo-camera` satisfies requirements 1.1–1.3.
-      Prefer the Expo-managed workflow for smoother compatibility, while
-      still validating behavior in a bare/native workflow where required.
+    - Prefer `react-native-vision-camera` for guided capture with Frame Processors to enable live quality feedback.
+      If dev client or device constraints preclude Frame Processors, integrate `expo-camera` as an MVP fallback
+      for post-capture quality checks. Ensure permission handling and camera lifecycle management in both cases.
+      Both approaches satisfy requirements 1.1–1.3; VisionCamera is recommended for real-time guidance.
     - _Requirements: 1.1, 1.2, 1.3_
 
   - [ ] 2.2 Build automated image quality assessment engine
-
     - Implement blur detection using variance of Laplacian with tuned kernel size (threshold >100 as baseline)
     - Create exposure assessment using histogram analysis for over/under-exposure detection
     - Add white balance validation with color temperature estimation and deviation checks
     - Build composition validation for plant matter detection and framing
     - Make quality thresholds remote-configurable and device-tuned via Remote Config
+    - When VisionCamera is available, compute quality metrics (blur, exposure, WB, composition) in a Frame Processor
+      for live guidance; otherwise run checks immediately after capture as a fallback.
     - Show specific failure reason (blur/exposure/WB/composition) with one-tap "Retake" CTA
     - _Requirements: 1.4, 2.1, 2.3_
 
@@ -53,26 +49,25 @@
     - _Requirements: 1.5, 8.1, 8.5_
 
 - [ ] 2.5. Milestone: Calibration and thresholding baseline
-
   - Implement temperature scaling for confidence calibration with offline validation
   - Deploy calibrated thresholds per class/locale/device to Remote Config
   - Validate that device vs cloud inference + confidence calibration works before Action Plans
   - _Requirements: 2.2, 2.3_
 
 - [ ] 3. Build ML inference engine with dual-mode support
-
   - [ ] 3.1 Implement on-device ML inference with ONNX Runtime React Native
-
     - Integrate ONNX Runtime React Native with EfficientNet-Lite0/1 or MobileNetV3-Small models (<20MB)
     - Implement model loading with checksum validation, cryptographic signatures, and version tracking
-    - Add NNAPI/Metal execution providers with CPU fallback and log active delegate for telemetry
+    - Add XNNPACK (CPU default), NNAPI (Android), and CoreML (iOS) execution providers with CPU fallback;
+      log the active execution provider for telemetry
     - Create model warm-up system off UI thread with tensor caching and memory management
     - Implement deadline budget (3.5s total) with cloud fallback using same idempotency key
     - _Requirements: 2.2, 2.4, 10.1, 10.5_
 
   - [ ] 3.2 Create cloud-based ML inference fallback system
-
-    - Build Supabase Edge Function for cloud inference using EfficientNet-B4/ResNet-50 via ONNX Runtime
+    - Implement Supabase Edge Function as authenticated gateway (idempotency, JWT) that proxies to a
+      Node/Container inference microservice using onnxruntime-node (e.g., EfficientNet-B4/ResNet-50 for complex cases).
+    - Keep heavy inference out of Edge isolates to avoid WASM size/memory constraints; enable warm containers and model caching.
     - Always use getUser() from JWT bearer token and enforce RLS on all tables (never service key)
     - Add request batching and deduplication for network optimization
     - Create idempotency handling with exponential backoff retry logic
@@ -89,16 +84,13 @@
     - _Requirements: 2.2, 2.3, 6.4, 6.5_
 
 - [ ] 4. Create action plan generation and task integration system
-
   - [ ] 4.1 Build action plan generator with safety guardrails
 
   - Create ActionPlanGenerator that maps assessment classes to specific action templates
-
     - Implement immediate steps (0-24h) and short-term actions (24-48h) generation
 
   - Enforce "measure-before-change" preconditions (pH/EC, light PPFD) as blocking steps for corrective actions
   - Add safety rails that block potentially harmful actions unless preceded by assessments with unit tests per class
-
     - Build generic, product-agnostic guidance with JSON templates and placeholders (no hardcoded dosages)
     - _Requirements: 3.1, 3.2, 3.3, 3.5_
 
@@ -111,16 +103,13 @@
     - _Requirements: 3.4, 9.2_
 
 - [ ] 5. Build offline queue management and sync system
-
   - [ ] 5.1 Create offline assessment request queue
 
   - Implement AssessmentRequest model with job state machine (pending → processing → completed/failed)
-
     - Build request queuing system that stores photos, plant context, and timestamps locally
     - Create queue status tracking with user-visible indicators and manual retry options
 
   - Use per-install/user salted `filename_key` for on-disk/object filenames and for cross-session deduplication where appropriate. Use `integrity_sha256` for intra-device deduplication and integrity verification when you need raw-image equivalence (note: using raw sha256 as an identifier across users is disallowed because it enables cross-user correlation).
-
     - Add queue size limits and cleanup policies for storage management
     - _Requirements: 7.1, 7.3, 7.4_
 
@@ -137,32 +126,22 @@
 - Rationale: using raw SHA-256(imageBytes) as a filename/key enables cross-user correlation when images are uploaded or synced. To protect privacy, compute on-disk/object filenames using a per-install or per-user secret salt (keyed HMAC). Keep an unsalted `integrity_sha256` column if you need to detect exact duplicate images on a single device or verify integrity.
 
 - Steps to implement and migrate:
-
   1. Generate and persist a per-install or per-user secret:
-
   - Generate a 32-byte (or longer) random secret on first run/first use of the assessment feature.
   - Persist the secret using a secure on-device keystore: prefer platform secure storage (iOS Keychain, Android Keystore) or a managed secure store (Expo SecureStore, react-native-keychain, or MMKV with encryption). Document storage choice and threat model.
-
   2. Compute filename keys at time-of-capture/upload:
-
   - filename_key MUST be computed as HMAC-SHA256(secret, imageBytes).
   - Use `filename_key` for all filenames and object keys (e.g. `images/{filename_key}.jpg`). This prevents the same image from being linkable across installs/users.
-
   3. Continue storing raw SHA-256(imageBytes) in `integrity_sha256`:
-
   - Compute `integrity_sha256 = SHA256(imageBytes)` and store it in the record for integrity checks and local deduplication only.
   - Do NOT expose `integrity_sha256` in any cross-user or server-side index unless explicitly required and privacy-reviewed.
-
   4. Migration strategy for existing data:
-
   - Add new columns (`filename_key`, `integrity_sha256`) via a migration script.
   - Backfill `integrity_sha256` from existing blobs where possible by reading the image bytes and hashing them.
   - Backfilling `filename_key` requires the device secret; if the secret cannot be recovered (e.g., reinstall), you cannot reliably compute prior filename keys. In that case:
   - Keep existing raw filenames in a temporary mapping table and reingest blobs under new keys when they are next accessed/uploaded.
   - Or mark old records as needing rekeying; when user next opens/edits the image, compute the new `filename_key` and store it.
-
   5. Tests and examples to update:
-
   - Update unit tests that assert filenames equal raw SHA256(image) to instead expect the HMAC-derived `filename_key` and verify `integrity_sha256` separately.
   - Add tests for secret generation, persistence, and migration edge cases (missing secret, secret rotation, rekeying on reinstall).
   - Update any example upload code or Supabase/Edge Function examples to use `filename_key` for object keys and to send `integrity_sha256` as metadata if the server needs to verify payload integrity.
@@ -192,15 +171,12 @@ When implementing the HMAC, be aware that expo-crypto does not provide a built-i
 Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output to be a stable hex string (lowercase) or base64 string; pick one format (hex is recommended) and document it across clients. Treat the HMAC secret as a credential (store it in secure storage / Keychain / Android Keystore / SecureStore) and, if you support secret rotation, provide an explicit rekey strategy (on-access rekeying or a background re-encryption job that rewrites blobs under the new key while preserving `integrity_sha256`).
 
 - [ ] 6. Implement user feedback and telemetry system
-
   - [ ] 6.1 Create user feedback collection interface
-
     - Build feedback UI for "Was this helpful?" and "Issue resolved?" collection
     - Implement optional feedback notes collection with character limits
     - Create feedback submission system that respects user privacy preferences
 
   - Add feedback tracking to assessment records for model improvement analytics
-
     - Implement feedback aggregation for per-class accuracy and helpfulness metrics
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
@@ -213,9 +189,7 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - _Requirements: 9.1, 9.3, 9.4, 9.5_
 
 - [ ] 7. Create model lifecycle management and remote configuration
-
   - [ ] 7.1 Implement model delivery and update system
-
     - Build remote config system for model version management and staged rollouts
     - Create secure model download with checksum validation and cryptographic signatures
     - Implement A/B testing framework for model updates with shadow mode testing
@@ -232,9 +206,7 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - _Requirements: 10.3, 10.4_
 
 - [ ] 8. Implement privacy controls and data management
-
   - [ ] 8.1 Create privacy settings and consent management
-
     - Build settings toggle for "Improve the model with my images" (default off)
     - Implement explicit opt-in flow for photo sharing with clear retention policies
     - Create data retention management (90 days raw images opt-in only, 12 months metrics)
@@ -251,9 +223,7 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - _Requirements: 8.4, 8.5_
 
 - [ ] 9. Create community integration and uncertainty handling
-
   - [ ] 9.1 Build community CTA and post creation system
-
     - Implement automatic community CTA triggering for confidence <70% or Unknown class
 
   - Create prefilled community post generation with assessment images and context
@@ -261,7 +231,6 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
 
   - Add deep-linking from assessment results to community post creation flow
   - Implement community post tracking for assessment follow-up and resolution
-
     - _Requirements: 4.1, 4.2, 4.3, 8.3_
 
   - [ ] 9.2 Create uncertainty and "not confident" result handling
@@ -273,17 +242,14 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - _Requirements: 4.4, 2.3_
 
 - [ ] 10. Build comprehensive testing and quality assurance
-
   - [ ] 10.1 Create unit tests for core ML and quality assessment components
-
     - Write tests for quality assessment engine with synthetic blur, exposure, and white balance samples
     - Create ML inference engine tests with mock model responses and aggregation logic validation
 
   - Build action plan generator tests for each assessment class and safety guardrail validation
-
     - Add golden-set test that validates temperature scaling improves ECE without accuracy loss
     - Add model download integrity tests that verify checksums and signatures before loading
-    - Create delegate/execution provider coverage tests that assert NNAPI/Metal vs CPU fallback works and logs correctly
+    - Create delegate/execution provider coverage tests that assert NNAPI/CoreML vs CPU fallback works and logs correctly
     - Add automated EXIF stripping test that confirms metadata removal after manipulator steps
     - _Requirements: 6.4, 2.1, 3.1, 10.1_
 
@@ -296,9 +262,7 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - _Requirements: 2.1, 7.1, 3.4, 9.4_
 
 - [ ] 11. Implement accessibility and localization support
-
   - [ ] 11.1 Add comprehensive accessibility features
-
     - Implement screen reader support with descriptive labels for camera controls and guidance
     - Create result announcements with confidence levels and action plan navigation
     - Add high contrast mode support for camera UI and result displays
@@ -315,9 +279,7 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - _Requirements: All requirements (localization compliance)_
 
 - [ ] 12. Final integration and polish
-
   - [ ] 12.1 Integrate AI assessment with existing app features
-
     - Connect assessment results to plant records in existing database schema
     - Integrate with existing calendar system for seamless task creation and scheduling
     - Link assessment history to plant profiles with timeline and progress tracking
@@ -332,3 +294,13 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - Run security audit for data handling, privacy controls, and authentication flows
     - Complete localization testing for EN/DE with native speaker validation
     - _Requirements: All requirements (final validation)_
+
+## Dependencies & Setup (Implementation Notes)
+
+- On-device inference: `onnxruntime-react-native` (ORT). Default to XNNPACK; enable NNAPI (Android) and CoreML (iOS) when available.
+- Camera & real-time quality: `react-native-vision-camera` with Frame Processors; `react-native-worklets-core` as required by frame processors.
+- MVP fallback: `expo-camera` with post-capture quality checks.
+- Crypto: `crypto-js` for HMAC-SHA256 (expo-crypto lacks HMAC APIs).
+- Storage/processing: `expo-file-system`, `expo-image-manipulator`.
+- Build: Expo Dev Client + prebuild; enable VisionCamera config plugin with `enableFrameProcessors`.
+- Telemetry: log active execution provider (XNNPACK/NNAPI/CoreML), latency, and modelVersion.

@@ -1,12 +1,12 @@
-TASK_ID: {25} with subtasks (make sure task with sub task is fully implemented)
+TASK_ID: {0} with subtasks (make sure task with sub task is fully implemented)
 AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the plan
 
 CONTEXT
 
-- Feature: 18. community-moderation-dsa-notice-action
-- Task index: .kiro\specs\18. community-moderation-dsa-notice-action\tasks.md
-- Design spec: .kiro\specs\18. community-moderation-dsa-notice-action\design.md
-- Requirements spec: .kiro\specs\18. community-moderation-dsa-notice-action\requirements.md
+- Feature: 19. ai-photo-diagnosis
+- Task index: .kiro\specs\19. ai-photo-diagnosis\tasks.md
+- Design spec: .kiro\specs\19. ai-photo-diagnosis\design.md
+- Requirements spec: .kiro\specs\19. ai-photo-diagnosis\requirements.md
 
 CONTRACT (outputs)
 
