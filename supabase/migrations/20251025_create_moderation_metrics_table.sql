@@ -42,5 +42,4 @@ CREATE POLICY "Authenticated users can read metrics" ON public.moderation_metric
 COMMENT ON TABLE public.moderation_metrics IS 'Persistent storage for moderation system metrics and analytics data';
 COMMENT ON COLUMN public.moderation_metrics.metric_name IS 'Name of the metric (e.g., appeal_decision, false_positive_rate)';
 COMMENT ON COLUMN public.moderation_metrics.value IS 'Numeric value of the metric';
-COMMENT ON COLUMN public.moderation_metrics.metadata IS 'Additional context data as JSON';</content>
-<parameter name="filePath">c:\Users\Peter\GrowBro\supabase\migrations\20251025_create_moderation_metrics_table.sql
+COMMENT ON COLUMN public.moderation_metrics.metadata IS 'Additional context data as JSON';

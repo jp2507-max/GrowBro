@@ -37,9 +37,21 @@ Database schema changes are managed through Supabase migrations located in `supa
 - **20251026**: Create SOR submission trail view
 - **20251025**: Create moderation metrics table
 - **20251024**: Create moderation claims table
-- **20251023**: Create monitoring, notification logging, privacy retention schemas
-- **20251022**: Create age verification and geo-location schemas
-- **20251021**: Add operational tooling, ODS bodies, escalations
+- **20251024**: add_unique_index_active_moderation_claims
+- **20251023**: sla_alerts_incidents
+- **20251023**: privacy_retention_schema
+- **20251023**: notification_logging_tables
+- **20251023**: monitoring_tables
+- **20251022**: moderation_action_tables
+- **20251022**: geo_location_schema
+- **20251022**: age_verification_schema
+- **20251022**: signing_key_versioning
+- **20251021**: operational_tooling
+- **20251021**: ods_bodies
+- **20251021**: ods_escalations
+- **20251021**: rpc updates
+- **20251021**: export queue fix
+- **20251021**: rls audit
 - **20251019**: Create content reports, snapshots, moderation core schema
 - **20251017**: Create community posts, comments, likes tables
 - **20251015**: Create inventory tables
