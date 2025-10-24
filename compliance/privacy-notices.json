@@ -1,0 +1,435 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Privacy Notices - Community Moderation System",
+  "version": "1.0.0",
+  "dateCreated": "2025-10-19",
+  "lastUpdated": "2025-10-19",
+  "scope": "User-facing privacy notices per GDPR Art. 13/14 for all moderation processing operations",
+  "notices": [
+    {
+      "noticeId": "PRIVACY-MOD-001",
+      "title": "Content Moderation and Reporting Privacy Notice",
+      "audience": "Content reporters and reported users",
+      "deliveryContext": "Displayed when user submits content report or receives moderation decision",
+      "content": {
+        "controller": {
+          "name": "GrowBro",
+          "address": "Grubenstrasse 13 a, 18055 Rostock, Germany",
+          "dpoContact": "Jan-Peter Blohm <jan-blohm@gmx.de>"
+        },
+        "processingPurposes": [
+          "Process content reports to maintain platform safety and comply with Digital Services Act (DSA) Notice-and-Action requirements (Art. 16, 17)",
+          "Make moderation decisions to enforce community guidelines and legal requirements",
+          "Generate Statement of Reasons to inform users of moderation actions (DSA Art. 17)",
+          "Maintain audit trails for regulatory compliance and transparency reporting (DSA Art. 15, 24)"
+        ],
+        "dataCategories": [
+          "Your user ID and account information",
+          "Content you report or content reported about you (snapshot/hash at report time)",
+          "Your explanation and evidence for reports you submit",
+          "Your contact information (name and email, only when required by DSA for illegal content reports)",
+          "Moderation decisions affecting your content or account",
+          "Statement of Reasons provided to you",
+          "Audit trail metadata (timestamps, IP addresses for security)"
+        ],
+        "legalBases": [
+          {
+            "basis": "Legal obligation (GDPR Art. 6(1)(c))",
+            "explanation": "We are legally required to process content reports and moderation decisions under the EU Digital Services Act (Regulation 2022/2065), specifically Articles 16 (Notice-and-Action), 17 (Statement of Reasons), and 24 (Transparency Reporting)."
+          },
+          {
+            "basis": "Legitimate interests (GDPR Art. 6(1)(f))",
+            "explanation": "We process moderation data to maintain a safe platform environment and protect users from harmful content. Our legitimate interests are: platform safety, user protection, and fraud prevention. We have balanced these interests against your privacy rights through data minimization (content hashes instead of full copies, limited reporter contact collection) and retention limits (12 months for reports, 30 days for personal data in decisions)."
+          }
+        ],
+        "recipients": [
+          "Internal content moderators (access to reports and content snapshots)",
+          "Supervisors (access to SLA monitoring and escalations)",
+          "Audit personnel (access to audit trails for compliance reporting)",
+          "European Commission DSA Transparency Database (redacted, anonymized Statement of Reasons with no personal data)",
+          "Certified Out-of-Court Dispute Settlement bodies (if you escalate your appeal per DSA Art. 21)",
+          "Law enforcement (only upon valid legal requests with documented basis)"
+        ],
+        "transfersOutsideEEA": {
+          "occurs": false,
+          "explanation": "All moderation data is stored and processed within the European Economic Area (EEA). No transfers outside the EEA occur."
+        },
+        "retentionPeriods": [
+          {
+            "category": "Content reports",
+            "period": "12 months after submission (default)",
+            "extensions": "Extended for active investigations or legal proceedings; quarterly review of necessity"
+          },
+          {
+            "category": "Moderation decisions (personal data)",
+            "period": "30 days after decision",
+            "extensions": "Extended for active appeals or legal proceedings; anonymized audit trail retained 7 years"
+          },
+          {
+            "category": "Appeals",
+            "period": "30 days after resolution",
+            "extensions": "Extended if escalated to Out-of-Court Dispute Settlement body"
+          },
+          {
+            "category": "Audit trails (anonymized)",
+            "period": "7 years for legal defense and regulatory compliance",
+            "extensions": "Personal data anonymized after 30 days; only aggregate metrics retained long-term"
+          }
+        ],
+        "yourRights": [
+          {
+            "right": "Right to access",
+            "explanation": "You can request access to all your content reports, moderation decisions (with Statement of Reasons), and appeal history. We will provide a structured JSON export within 7 days."
+          },
+          {
+            "right": "Right to erasure",
+            "explanation": "You can request deletion of your personal data after retention periods expire. We cannot delete data required for legal compliance (DSA audit requirements) or legitimate interests (fraud prevention, legal defense) before retention periods end."
+          },
+          {
+            "right": "Right to rectification",
+            "explanation": "You can update your contact information. Immutable audit trails cannot be modified to ensure integrity."
+          },
+          {
+            "right": "Right to data portability",
+            "explanation": "You can download a structured export (JSON format) of your content reports and appeals."
+          },
+          {
+            "right": "Right to object",
+            "explanation": "You can object to automated profiling. You cannot object to processing required by legal obligation (DSA compliance)."
+          },
+          {
+            "right": "Right to restriction",
+            "explanation": "You can request processing restriction during active appeals. Not applicable to legal obligation processing."
+          },
+          {
+            "right": "Right to lodge a complaint",
+            "explanation": "You can lodge a complaint with your national data protection authority if you believe we have violated your data protection rights."
+          }
+        ],
+        "automatedDecisionMaking": {
+          "present": true,
+          "explanation": "We use automated systems to classify content priority and detect policy violations. All moderation decisions are reviewed by human moderators. You have the right to contest automated classifications through our appeals process (DSA Art. 20)."
+        },
+        "contact": {
+          "dataAccess": "Use the 'Export My Data' feature in app settings or email data-access@growbro.app",
+          "dataDeletion": "Use the 'Delete My Account' feature in app settings or email data-deletion@growbro.app",
+          "dpo": "Contact our Data Protection Officer, Jan-Peter Blohm, at jan-blohm@gmx.de",
+          "supervisoryAuthority": "Contact your national data protection authority: https://edpb.europa.eu/about-edpb/about-edpb/members_en"
+        }
+      }
+    },
+    {
+      "noticeId": "PRIVACY-AGE-001",
+      "title": "Age Verification Privacy Notice",
+      "audience": "All users undergoing age verification",
+      "deliveryContext": "Displayed before age verification process begins",
+      "content": {
+        "controller": {
+          "name": "GrowBro",
+          "address": "Grubenstrasse 13 a, 18055 Rostock, Germany",
+          "dpoContact": "Jan-Peter Blohm <jan-blohm@gmx.de>"
+        },
+        "processingPurposes": [
+          "Verify you are over 18 years old to comply with Digital Services Act (DSA) minor protection requirements (Art. 28)",
+          "Enforce age-gating for age-restricted content to protect minors",
+          "Implement safer defaults for minor accounts (no profiling ads, restricted content visibility)"
+        ],
+        "dataCategories": [
+          "Age attribute (over-18 boolean only - we do NOT store your birthdate or ID documents)",
+          "One-time verification token (session-based, expires on logout)",
+          "Verification metadata (timestamp, IP address for fraud prevention only)"
+        ],
+        "legalBases": [
+          {
+            "basis": "Legal obligation (GDPR Art. 6(1)(c))",
+            "explanation": "We are legally required to verify user age under the EU Digital Services Act (Regulation 2022/2065), Article 28 (Protection of minors)."
+          },
+          {
+            "basis": "Legitimate interests (GDPR Art. 6(1)(f))",
+            "explanation": "We process minimal age verification data to protect minors from age-inappropriate content. Our legitimate interests are: minor protection and content safety. We have designed a privacy-preserving system per EU Age-Verification Blueprint: we store only a boolean attribute (over-18), not your raw ID or birthdate."
+          }
+        ],
+        "privacyPreserving": {
+          "noBirthdate": "We do NOT store your birthdate. We only store whether you are over 18 (true/false).",
+          "noIDStorage": "We do NOT store copies of your ID documents. Verification is one-time only.",
+          "reusableToken": "After successful verification, you receive a reusable age token. You will not be asked to verify again unless you dispute your age.",
+          "noFingerprinting": "We do NOT use device fingerprinting to enforce age verification without your explicit consent (ePrivacy Directive compliance)."
+        },
+        "recipients": [
+          "Internal systems (age-gating enforcement engine)",
+          "Third-party age verification provider (one-time verification only; provider does NOT receive persistent data; EU Standard Contractual Clauses apply if processor outside EEA)"
+        ],
+        "transfersOutsideEEA": {
+          "occurs": false,
+          "explanation": "Age verification data is stored within the European Economic Area (EEA). If our third-party age verification provider is outside the EEA, we use EU Standard Contractual Clauses to ensure adequate protection."
+        },
+        "retentionPeriods": [
+          {
+            "category": "Verification tokens",
+            "period": "Session-based (expire on logout or session timeout)",
+            "extensions": "None - tokens are deleted immediately upon session end"
+          },
+          {
+            "category": "Age attribute (over-18 boolean)",
+            "period": "Valid until you dispute your age or delete your account",
+            "extensions": "Deleted immediately upon account deletion"
+          },
+          {
+            "category": "Verification metadata",
+            "period": "30 days after verification event (fraud prevention only)",
+            "extensions": "Extended up to 90 days only for active fraud investigations with supervisor approval"
+          }
+        ],
+        "yourRights": [
+          {
+            "right": "Right to access",
+            "explanation": "You can request your current age verification status and timestamp."
+          },
+          {
+            "right": "Right to erasure",
+            "explanation": "Your age attribute is deleted immediately when you delete your account. During active session, you cannot delete your age attribute without re-verification (required for age-gating enforcement)."
+          },
+          {
+            "right": "Right to rectification",
+            "explanation": "If your age attribute is incorrect, you can request re-verification through app settings."
+          },
+          {
+            "right": "Right to data portability",
+            "explanation": "Minimal data is collected (boolean attribute only); included in your data export if requested."
+          },
+          {
+            "right": "Right to object",
+            "explanation": "You cannot object to age verification processing required by legal obligation (DSA Art. 28 compliance)."
+          },
+          {
+            "right": "Right to lodge a complaint",
+            "explanation": "You can lodge a complaint with your national data protection authority if you believe we have violated your data protection rights."
+          }
+        ],
+        "automatedDecisionMaking": {
+          "present": true,
+          "explanation": "Age-gating is automatically enforced based on your verified age status. You can appeal age verification failures and provide alternative verification methods."
+        },
+        "contact": {
+          "reVerification": "Use the 'Re-verify Age' feature in app settings",
+          "dataAccess": "Use the 'Export My Data' feature in app settings or email [data-access@growbro.app]",
+          "dpo": "Contact our Data Protection Officer at [data-protection@growbro.app]"
+        }
+      }
+    },
+    {
+      "noticeId": "PRIVACY-GEO-001",
+      "title": "Geo-Location and Regional Restrictions Privacy Notice",
+      "audience": "All users accessing content",
+      "deliveryContext": "Displayed in app privacy policy and when geo-blocking applied",
+      "content": {
+        "controller": {
+          "name": "GrowBro",
+          "address": "Grubenstrasse 13 a, 18055 Rostock, Germany",
+          "dpoContact": "Jan-Peter Blohm <jan-blohm@gmx.de>"
+        },
+        "processingPurposes": [
+          "Detect your geographic location to enforce regional content restrictions and comply with local laws",
+          "Apply geo-blocking per moderation decisions (DSA Art. 17 Statement of Reasons includes territorial scope)",
+          "Prevent distribution of illegal content in jurisdictions where it is prohibited"
+        ],
+        "dataCategories": [
+          "IP address (for server-side geolocation; session-based only, NOT persistently stored)",
+          "GPS coordinates (ONLY if you explicitly consent; used for enhanced accuracy)",
+          "Derived country/region (cached for 1 hour for performance)"
+        ],
+        "legalBases": [
+          {
+            "basis": "Legal obligation (GDPR Art. 6(1)(c))",
+            "explanation": "We are legally required to enforce geo-blocking for certain content under regional laws and moderation decisions."
+          },
+          {
+            "basis": "Legitimate interests (GDPR Art. 6(1)(f))",
+            "explanation": "We process IP addresses to comply with regional laws and prevent illegal content distribution. Our legitimate interests are: legal compliance and regional content restrictions. IP geolocation does not require consent per ePrivacy Directive guidance (server-side processing, no terminal equipment access). We cache location decisions for 1 hour only (no long-term tracking)."
+          },
+          {
+            "basis": "Consent (GDPR Art. 6(1)(a)) - GPS only",
+            "explanation": "GPS location processing requires your explicit consent per ePrivacy Directive Art. 5(3). We will ask for consent with a clear explanation of GPS usage (more accurate geo-blocking). You can deny consent and use IP-based location instead without losing platform access."
+          }
+        ],
+        "ipGeolocation": {
+          "default": "We use IP-based geolocation by default (no consent required per EDPB guidance).",
+          "accuracy": "IP geolocation detects your country with >95% accuracy. It may be less accurate for specific cities.",
+          "sessionBased": "Your IP address is used only for session-based geolocation. We do NOT persistently store your IP address.",
+          "noTracking": "We do NOT track your location over time. Cached location decisions expire after 1 hour and are re-checked on app start."
+        },
+        "gpsLocation": {
+          "optional": "GPS location is OPTIONAL. We will ask for your explicit consent before accessing GPS data.",
+          "benefit": "GPS provides more accurate geo-blocking (e.g., for city-specific restrictions).",
+          "noStorage": "We do NOT persistently store GPS coordinates. GPS data is processed in-memory only.",
+          "withdrawable": "You can withdraw GPS consent at any time via app settings. IP-based geolocation will be used instead."
+        },
+        "noFingerprinting": "We do NOT use device fingerprinting to detect location without your explicit consent (ePrivacy Directive Art. 5(3) compliance).",
+        "recipients": [
+          "Internal systems (geo-blocking enforcement engine)",
+          "Content authors (notified when geo-restrictions applied to their content with affected regions)"
+        ],
+        "transfersOutsideEEA": {
+          "occurs": false,
+          "explanation": "Location data is processed within the European Economic Area (EEA). No transfers outside the EEA occur."
+        },
+        "retentionPeriods": [
+          {
+            "category": "IP addresses",
+            "period": "NOT persistently stored (session-based geolocation only)",
+            "extensions": "None - IP addresses are not written to disk"
+          },
+          {
+            "category": "GPS coordinates",
+            "period": "NOT persistently stored (processed in-memory only)",
+            "extensions": "None - GPS coordinates are never written to disk"
+          },
+          {
+            "category": "Cached location decisions",
+            "period": "1 hour TTL (automatic cache expiry)",
+            "extensions": "None - cache eviction policy auto-expires after 1 hour"
+          }
+        ],
+        "yourRights": [
+          {
+            "right": "Right to access",
+            "explanation": "You can request your current detected location and geo-blocking status via app settings."
+          },
+          {
+            "right": "Right to erasure",
+            "explanation": "Minimal persistent data (cached decisions expire automatically after 1 hour). No long-term location storage."
+          },
+          {
+            "right": "Right to rectification",
+            "explanation": "If location detection is incorrect, you can dispute it via our appeal process (manual review by moderators)."
+          },
+          {
+            "right": "Right to data portability",
+            "explanation": "Minimal data (no persistent location storage); not applicable."
+          },
+          {
+            "right": "Right to object",
+            "explanation": "You can object to GPS tracking (withdraw consent). You cannot object to IP geolocation (required for legal compliance)."
+          },
+          {
+            "right": "Right to lodge a complaint",
+            "explanation": "You can lodge a complaint with your national data protection authority if you believe we have violated your data protection rights."
+          }
+        ],
+        "automatedDecisionMaking": {
+          "present": true,
+          "explanation": "Geo-blocking is automatically applied based on detected location. You can appeal geo-blocking decisions via our appeal process (manual review with 'why can't I see this?' explainer)."
+        },
+        "contact": {
+          "gpsConsent": "Manage GPS consent via app settings (Privacy → Location)",
+          "disputeLocation": "Use the 'Appeal Geo-Block' feature or email [geo-appeals@growbro.app]",
+          "dpo": "Contact our Data Protection Officer at [data-protection@growbro.app]"
+        }
+      }
+    },
+    {
+      "noticeId": "PRIVACY-MOD-STAFF-001",
+      "title": "Moderator Privacy Notice",
+      "audience": "Content moderators and compliance personnel",
+      "deliveryContext": "Displayed during moderator onboarding and in moderator console",
+      "content": {
+        "controller": {
+          "name": "GrowBro",
+          "address": "[To be filled - registered office address]",
+          "dpoContact": "[To be filled - data-protection@growbro.app]"
+        },
+        "processingPurposes": [
+          "Track moderator actions for audit trail and compliance reporting (GDPR accountability, DSA transparency)",
+          "Monitor moderation quality and decision consistency",
+          "Assign reports and appeals with conflict-of-interest prevention",
+          "Generate performance analytics for training and quality improvement"
+        ],
+        "dataCategories": [
+          "Your moderator ID and account information",
+          "Reports and appeals assigned to you",
+          "Moderation decisions you make (action taken, reasoning, policy violations)",
+          "Performance metrics (handling time, appeal reversal rate, accuracy)",
+          "Access logs (timestamps, IP addresses for security)"
+        ],
+        "legalBases": [
+          {
+            "basis": "Legal obligation (GDPR Art. 6(1)(c))",
+            "explanation": "We are legally required to maintain audit trails for moderation actions under GDPR accountability principle (Art. 5(2)) and DSA transparency reporting (Art. 15, 24)."
+          },
+          {
+            "basis": "Legitimate interests (GDPR Art. 6(1)(f)) - if contractor/external moderator",
+            "explanation": "We process moderator performance data to ensure moderation quality and consistency. Our legitimate interests are: platform safety, user protection, and regulatory compliance. Your moderator ID is pseudonymized in public transparency reports (HMAC-SHA256 hash)."
+          },
+          {
+            "basis": "Contract performance (GDPR Art. 6(1)(b)) - if employee",
+            "explanation": "Processing moderator performance data is necessary to fulfill your employment/contractor agreement and provide required training and feedback."
+          }
+        ],
+        "recipients": [
+          "Moderation supervisors (access to performance metrics and SLA monitoring)",
+          "Compliance and audit personnel (access to audit trails for regulatory reporting)",
+          "European Commission DSA Transparency Database (pseudonymized moderator IDs in redacted SoR submissions; no direct identifiers)"
+        ],
+        "transfersOutsideEEA": {
+          "occurs": false,
+          "explanation": "All moderator data is stored and processed within the European Economic Area (EEA). No transfers outside the EEA occur."
+        },
+        "retentionPeriods": [
+          {
+            "category": "Moderator actions (audit trail)",
+            "period": "7 years for anonymized audit events; 30 days for moderator ID linkage",
+            "extensions": "Moderator IDs pseudonymized after 30 days; only aggregate performance metrics retained long-term"
+          },
+          {
+            "category": "Performance metrics",
+            "period": "Duration of employment/contract + 12 months",
+            "extensions": "Anonymized aggregate metrics retained indefinitely for quality trend analysis"
+          }
+        ],
+        "yourRights": [
+          {
+            "right": "Right to access",
+            "explanation": "You can request access to all audit events involving your moderator actions and performance metrics."
+          },
+          {
+            "right": "Right to erasure",
+            "explanation": "Personal data is anonymized after 30 days (audit trail retention requirement). Full erasure honored 12 months after employment/contract end unless legal hold."
+          },
+          {
+            "right": "Right to rectification",
+            "explanation": "You can correct inaccurate moderator profile information. Immutable audit trails cannot be modified."
+          },
+          {
+            "right": "Right to data portability",
+            "explanation": "You can download a structured export of your moderator performance metrics."
+          },
+          {
+            "right": "Right to object",
+            "explanation": "You cannot object to processing required by legal obligation (GDPR accountability, DSA transparency). You can object to performance profiling not required for employment/contract."
+          },
+          {
+            "right": "Right to lodge a complaint",
+            "explanation": "You can lodge a complaint with your national data protection authority if you believe we have violated your data protection rights."
+          }
+        ],
+        "contact": {
+          "dataAccess": "Email [data-access@growbro.app] with subject 'Moderator Data Access'",
+          "dpo": "Contact our Data Protection Officer at [data-protection@growbro.app]"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "reviewSchedule": "Annual review of all privacy notices; immediate updates upon processing changes or legal requirement updates",
+    "responsiblePerson": "[Data Protection Officer]",
+    "lastReview": null,
+    "nextReview": "2026-10-19",
+    "translations": {
+      "required": ["en", "de"],
+      "namespace": "privacyNotices",
+      "keys": ["title", "audience", "deliveryContext"],
+      "status": "English templates present. i18next entries available under src/translations/{en,de}.json -> privacyNotices. German translations must be completed before enabling EU deployment.",
+      "notes": "Translation entries follow i18next structure: namespace -> key (noticeId.fields) with language values in src/translations/*.json. CI validation ensures presence and non-empty values for required languages."
+    }
+  }
+}

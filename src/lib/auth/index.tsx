@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 
+import { resetAgeGate } from '../compliance/age-gate';
 import { createSelectors } from '../utils';
+import { startIdleTimeout, stopIdleTimeout } from './session-timeout';
 import type { TokenType } from './utils';
 import { getStableSessionId, getToken, removeToken, setToken } from './utils';
 
@@ -18,10 +20,13 @@ const _useAuth = create<AuthState>((set, get) => ({
   token: null,
   signIn: (token) => {
     setToken(token);
+    startIdleTimeout(() => _useAuth.getState().signOut());
     set({ status: 'signIn', token });
   },
   signOut: () => {
     removeToken();
+    resetAgeGate();
+    stopIdleTimeout();
     set({ status: 'signOut', token: null });
   },
   hydrate: () => {

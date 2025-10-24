@@ -1,5 +1,12 @@
 {
   "accessibility": {
+    "appeals": {
+      "counterArguments": {
+        "hint": "Geben Sie spezifische Gründe an, warum Sie glauben, dass dieser Inhalt nicht moderiert werden sollte. Fügen Sie relevante Kontexte oder Beweise hinzu.",
+        "label": "Gegenargumente",
+        "placeholder": "Erklären Sie Ihre Gegenargumente hier..."
+      }
+    },
     "calendar": {
       "needs_review_hint": "Kennzeichnet diese Aufgabe als konfliktbehaftet und prüfungsbedürftig.",
       "out_of_range_hint": "Zeigt an, dass der letzte Messwert außerhalb des Zielbereichs liegt.",
@@ -80,6 +87,90 @@
       "strains_hint": "Doppeltippen, um Sorten zu durchsuchen."
     }
   },
+  "appeals": {
+    "action": {
+      "submit": "Beschwerde einreichen"
+    },
+    "counter": {
+      "characterCount": "{{current}} / {{max}} Zeichen (Mindestanzahl {{minimum}})"
+    },
+    "decision": {
+      "partial": "Entscheidung teilweise bestätigt",
+      "rejected": "Entscheidung abgelehnt",
+      "upheld": "Entscheidung bestätigt"
+    },
+    "error": {
+      "counterArgumentsTooShort": "Gegenargumente müssen mindestens {{min}} Zeichen lang sein",
+      "duplicateUrl": "Diese URL wurde bereits hinzugefügt",
+      "invalidUrl": "Bitte geben Sie eine gültige URL ein",
+      "maxEvidenceReached": "Maximal 5 Beweis-URLs erlaubt",
+      "submitFailed": "Beschwerde konnte nicht eingereicht werden. Bitte versuchen Sie es erneut."
+    },
+    "hint": {
+      "counterArguments": "Geben Sie spezifische Gründe an, warum Sie glauben, dass dieser Inhalt nicht moderiert werden sollte. Fügen Sie relevante Kontexte oder Beweise hinzu.",
+      "evidence": "Fügen Sie URLs zu Beweisen für Ihre Beschwerde hinzu"
+    },
+    "label": {
+      "action": "Aktion",
+      "appealId": "Beschwerde-ID",
+      "counterArguments": "Gegenargumente",
+      "deadline": "Frist",
+      "evidence": "Unterstützende Beweise",
+      "noPolicyViolations": "Keine Richtlinienverstöße gefunden",
+      "originalDecision": "Ursprüngliche Entscheidung",
+      "policyViolations": "Richtlinienverstöße",
+      "reasoning": "Begründung",
+      "resolvedAt": "Gelöst am",
+      "reviewer": "Prüfer",
+      "submittedAt": "Eingereicht am"
+    },
+    "legal": {
+      "freeOfCharge": "Beschwerden sind kostenlos",
+      "humanReviewGuarantee": "Alle Beschwerden werden von Menschen geprüft"
+    },
+    "notice": {
+      "deadline": "Sie haben noch {{days}} Tage Zeit, um Ihre Beschwerde einzureichen",
+      "evidenceOptional": "Beweise sind optional"
+    },
+    "ods": {
+      "action": {
+        "escalate": "An außergerichtliche Streitbeilegung eskalieren"
+      },
+      "description": "Wenn Sie mit diesem Beschwerdeergebnis nicht zufrieden sind, können Sie an eine unabhängige außergerichtliche Streitbeilegungsstelle eskalieren.",
+      "label": {
+        "body": "Eskalationsantrag",
+        "submittedAt": "Eingereicht am",
+        "targetResolution": "Zielauflösung"
+      },
+      "status": {
+        "escalated": "An ODS eskaliert"
+      },
+      "title": "Unabhängige Streitbeilegung",
+      "value": {
+        "withinDays": "Innerhalb von {{days}} Tagen"
+      }
+    },
+    "placeholder": {
+      "counterArguments": "Erklären Sie hier Ihre Gegenargumente..."
+    },
+    "status": {
+      "escalated_to_ods": "An ODS eskaliert",
+      "in_review": "Wird geprüft",
+      "pending": "Warten auf Überprüfung",
+      "resolved": "Gelöst"
+    },
+    "subtitle": {
+      "humanReview": "Ihre Beschwerde wird innerhalb von 7 Tagen von einem menschlichen Moderator geprüft",
+      "trackProgress": "Verfolgen Sie den Fortschritt Ihrer Beschwerde und sehen Sie die endgültige Entscheidung"
+    },
+    "title": {
+      "appealStatus": "Beschwerde-Status",
+      "submitAppeal": "Beschwerde einreichen"
+    },
+    "value": {
+      "assignedToReviewer": "Dem Prüfer zugewiesen"
+    }
+  },
   "calendar": {
     "drag_item_hint": "Lange drücken und ziehen, um neu zu planen. Doppeltippen für Menü.",
     "drag_item_label": "Ziehen {{title}}",
@@ -140,6 +231,19 @@
       "ratings_one": "{{count}} Bewertung",
       "ratings_other": "{{count}} Bewertungen"
     },
+    "age_restricted": {
+      "message": "Dieser {{contentType}} enthält altersbeschränkte Inhalte und ist nur für verifizierte Nutzer ab 18 Jahren verfügbar.",
+      "privacy_notice": "Die Altersverifikation ist datenschutzfreundlich und entspricht DSA Art. 28.",
+      "title": "Altersbeschränkter Inhalt",
+      "verify_age_button": "Alter verifizieren"
+    },
+    "age_verification": {
+      "feed_message": "Einige Inhalte in diesem Feed sind altersbeschränkt und erfordern eine Altersverifikation.",
+      "feed_title": "Altersverifikation erforderlich",
+      "post_message": "Dieser Beitrag enthält altersbeschränkte Inhalte und erfordert eine Altersverifikation.",
+      "post_title": "Altersbeschränkter Beitrag",
+      "verify_button": "Alter verifizieren"
+    },
     "cancel_comment_hint": "Bricht das Posten dieses Kommentars ab.",
     "characters_over": "Zeichen über dem Limit",
     "classification": "Erkanntes Problem",
@@ -155,6 +259,11 @@
     "community_activity": "Community-Aktivität",
     "compose_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
     "confidence": "Vertrauen",
+    "content_type": {
+      "comment": "Kommentar",
+      "image": "Bild",
+      "post": "Beitrag"
+    },
     "create_post": "Beitrag erstellen",
     "create_post_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
     "delete": "Löschen",
@@ -880,27 +989,175 @@
     "retry": "Erneut versuchen"
   },
   "moderation": {
+    "active": "aktiv",
     "audit": {
       "empty": "Leer",
       "title": "Audit-Protokoll"
     },
     "authentication_required": "Authentifizierung erforderlich für diese Aktion",
+    "avgAccuracy": "Durchschn. Genauigkeit",
+    "avgResponse": "Durchschn. Antwort",
     "block": "Blockieren",
     "block_failed": "Benutzer konnte nicht blockiert werden. Bitte versuche es erneut.",
     "delete": "Löschen",
     "delete_failed": "Löschen des Inhalts fehlgeschlagen. Bitte versuche es erneut.",
+    "filterPriority": "Nach Priorität filtern",
+    "filters": {
+      "priority": {
+        "all": "Alle",
+        "illegal": "Illegal",
+        "immediate": "Sofort",
+        "standard": "Standard",
+        "trusted": "Vertrauenswürdig"
+      }
+    },
+    "flagger": {
+      "accuracy": "Genauigkeit",
+      "avgResponse": "Durchschn. Antwort",
+      "falsePositive": "Falsch Positiv",
+      "idLabel": "ID:",
+      "lastReviewed": "Zuletzt geprüft: {{date}}",
+      "status": {
+        "active": "AKTIV",
+        "suspended": "SUSPENDIERT",
+        "warning": "WARNUNG"
+      },
+      "thisMonth": "Dieser Monat",
+      "thisWeek": "Diese Woche",
+      "totalReports": "Gesamt Meldungen",
+      "trend": "Trend",
+      "viewDetails": "Details anzeigen →"
+    },
+    "geo_restriction_notice": "{{count}} Beiträge sind in {{country}} aufgrund regionaler Beschränkungen nicht verfügbar.",
     "hide": "Ausblenden",
     "mute": "Stummschalten",
     "mute_failed": "Benutzer konnte nicht stummgeschaltet werden. Bitte versuche es erneut.",
+    "priority": {
+      "illegal": "Illegaler Inhalt",
+      "immediate": "SOFORT",
+      "standard": "Standard",
+      "trusted": "Vertrauenswürdiger Melder"
+    },
     "queue": {
       "appeal": "Einspruch",
-      "empty": "Leer",
+      "empty": {
+        "subtitle": "Alles erledigt! Schau später nochmal vorbei.",
+        "title": "Keine Meldungen in der Warteschlange"
+      },
       "escalate": "Eskalieren",
+      "loading": "Warteschlange wird geladen...",
       "processAll": "Alle verarbeiten",
       "title": "Moderationswarteschlange"
     },
     "report": "Melden",
+    "report_comment": "Kommentar melden",
+    "report_comment_hint": "Diesen Kommentar wegen Verstoßes gegen Community-Richtlinien melden",
+    "report_content": "Inhalt melden",
+    "report_content_hint": "Diesen Inhalt wegen Verstoßes gegen Community-Richtlinien melden",
     "report_failed": "Inhalt konnte nicht gemeldet werden. Bitte versuche es erneut.",
+    "report_modal": {
+      "add_evidence": "Beweis-URL hinzufügen",
+      "cancel": "Abbrechen",
+      "char_count": "{{count}} / {{max}} Zeichen",
+      "content_locator_label": "Inhalts-Standort",
+      "content_locator_placeholder": "Link zum spezifischen Inhalt",
+      "evidence_url_invalid": "Bitte gib eine gültige URL ein",
+      "evidence_urls_label": "Unterstützende Beweise (Optional)",
+      "evidence_urls_placeholder": "Füge bis zu 10 URLs als Beweise hinzu",
+      "explanation_label": "Erklärung",
+      "explanation_placeholder": "Bitte gib eine detaillierte Erklärung ab, warum dieser Inhalt gegen Gesetze oder Richtlinien verstößt (mindestens 50 Zeichen)...",
+      "explanation_required": "Bitte gib eine detaillierte Erklärung ab",
+      "explanation_too_long": "Die Erklärung darf maximal 5000 Zeichen lang sein",
+      "explanation_too_short": "Die Erklärung muss mindestens 50 Zeichen lang sein, um ausreichend begründet zu sein",
+      "good_faith_accessibility_hint": "Bestätige, dass du diese Meldung in gutem Glauben einreichst",
+      "good_faith_declaration_label": "Ich erkläre in gutem Glauben, dass die Informationen in dieser Meldung nach bestem Wissen korrekt und vollständig sind.",
+      "good_faith_required": "Du musst die Erklärung in gutem Glauben akzeptieren, um diese Meldung einzureichen",
+      "jurisdiction_label": "Gerichtsbarkeit",
+      "jurisdiction_placeholder": "Land auswählen",
+      "jurisdiction_required": "Bitte wähle die Gerichtsbarkeit, in der dieser Inhalt illegal ist",
+      "legal_reference_label": "Rechtsgrundlage",
+      "legal_reference_placeholder": "z.B. DE StGB §130, UK Communications Act 2003",
+      "legal_reference_required": "Bitte zitiere das spezifische Gesetz oder die Verordnung, gegen die verstoßen wird",
+      "legal_reference_too_long": "Rechtsgrundlage ist zu lang (maximal 500 Zeichen)",
+      "queued": "Meldung zur Prüfung eingereiht. Vielen Dank für deine Meldung.",
+      "reason_harassment": "Belästigung oder Mobbing",
+      "reason_harassment_desc": "Gezielte Belästigung, Drohungen oder einschüchterndes Verhalten gegenüber Einzelpersonen",
+      "reason_illegal": "Illegaler Inhalt",
+      "reason_illegal_desc": "Inhalt, der gegen Gesetze in deiner Gerichtsbarkeit verstößt",
+      "reason_other": "Sonstiger Richtlinienverstoß",
+      "reason_other_desc": "Inhalt, der gegen Community-Richtlinien verstößt, aber nicht in andere Kategorien passt",
+      "reason_spam": "Spam oder Betrug",
+      "reason_spam_desc": "Unerwünschte Werbeinhalte, betrügerische Systeme oder manipulative Beiträge",
+      "remove_evidence": "Entfernen",
+      "report_reason_accessibility_hint": "Diesen Grund für die Meldung auswählen",
+      "report_type_accessibility_hint": "Diese Meldungsart auswählen",
+      "report_type_illegal": "Illegaler Inhalt",
+      "report_type_illegal_desc": "Inhalt, der gegen Gesetze in deiner Gerichtsbarkeit verstößt",
+      "report_type_label": "Um welche Art von Verstoß handelt es sich?",
+      "report_type_policy": "Richtlinien-/Nutzungsbedingungsverstoß",
+      "report_type_policy_desc": "Inhalt, der gegen GrowBro-Community-Richtlinien oder Nutzungsbedingungen verstößt",
+      "reporter_contact_label": "Deine Kontaktinformationen",
+      "reporter_email_invalid": "Bitte gib eine gültige E-Mail-Adresse ein",
+      "reporter_email_label": "E-Mail",
+      "reporter_email_placeholder": "deine.email@beispiel.de",
+      "reporter_email_required": "E-Mail ist für Rückfragen erforderlich",
+      "reporter_name_label": "Name",
+      "reporter_name_placeholder": "Dein vollständiger Name (optional)",
+      "reporter_pseudonym_label": "Pseudonym",
+      "reporter_pseudonym_placeholder": "Dein Benutzername oder Pseudonym (optional)",
+      "select_reason": "Bitte wähle einen Grund für die Meldung",
+      "submit": "Meldung absenden",
+      "submitting": "Wird gesendet...",
+      "subtitle": "Hilf uns, eine sichere und lehrreiche Community zu erhalten, indem du Inhalte meldest, die gegen unsere Richtlinien oder geltende Gesetze verstoßen.",
+      "success": "Meldung erfolgreich eingereicht. Danke, dass du unsere Community sicher hältst.",
+      "title": "Inhalt melden"
+    },
+    "reportsPerMonth": "Meldungen/Monat",
+    "sla": {
+      "status": {
+        "critical": "ÜBERFÄLLIG",
+        "green": "Im Zeitplan",
+        "orange": "Gefährdet",
+        "overdue": "Überfällig",
+        "red": "Dringend",
+        "yellow": "Annähernd"
+      }
+    },
+    "sorPreview": {
+      "fields": {
+        "aggregatedReportCount": "Aggregierte Meldungsanzahl",
+        "aggregatedReportCountSuppressed": "Unterdrückt (k-Anonymität)",
+        "automatedDecision": "Automatisierte Entscheidung",
+        "automatedDetection": "Automatisierte Erkennung",
+        "contentAge": "Inhaltsalter",
+        "contentType": "Inhaltstyp",
+        "createdAt": "Erstellt am",
+        "decisionGround": "Entscheidungsgrundlage",
+        "evidenceType": "Beweistyp",
+        "factsAndCircumstances": "Fakten & Umstände",
+        "legalReference": "Rechtsgrundlage",
+        "legalReferenceNA": "N/A",
+        "no": "Nein",
+        "pseudonymizedModerator": "Pseudonymisierter Moderator",
+        "pseudonymizedReporter": "Pseudonymisierter Melder",
+        "redressOptions": "Rechtsbehelfsmöglichkeiten",
+        "scrubbedAt": "Gesäubert am",
+        "scrubbingVersion": "Säuberungsversion",
+        "territorialScope": "Territorialer Geltungsbereich",
+        "territorialScopeGlobal": "Global",
+        "yes": "Ja"
+      },
+      "redactedSubtitle": "PII-gesäubert für Transparenz-DB (DSA Art. 24(5))",
+      "redactedTitle": "Redigierte SoR (EC-Einreichung)",
+      "userFacingSubtitle": "An Benutzer geliefert (DSA Art. 17)",
+      "userFacingTitle": "Benutzerseitige SoR",
+      "validation": {
+        "noPiiDetected": "✓ Keine PII erkannt",
+        "piiValidationFailed": "✗ PII-Validierung fehlgeschlagen"
+      }
+    },
+    "totalFlaggers": "Gesamt Melder",
+    "transformed": "(transformiert)",
     "unhide": "Einblenden"
   },
   "nav": {
@@ -1615,6 +1872,28 @@
     "webPortalIntro": "Nutze diese Seite, wenn du die mobile App nicht öffnen kannst und dennoch eine Kontolöschung oder einen Datenexport anstoßen musst.",
     "webPortalLogin": "Anmeldung öffnen",
     "webPortalTitle": "GrowBro-Löschportal"
+  },
+  "privacyNotices": {
+    "PRIVACY-AGE-001": {
+      "audience": "Alle Nutzer, die einer Altersüberprüfung unterzogen werden",
+      "deliveryContext": "Angezeigt, bevor der Altersverifizierungsprozess beginnt",
+      "title": "Hinweis zum Datenschutz bei Altersverifikation"
+    },
+    "PRIVACY-GEO-001": {
+      "audience": "Alle Nutzer beim Zugriff auf Inhalte",
+      "deliveryContext": "Im Datenschutzbereich der App und bei Anwendung von Geo-Blocking angezeigt",
+      "title": "Hinweis zum Datenschutz bei Geostandort und regionalen Beschränkungen"
+    },
+    "PRIVACY-MOD-001": {
+      "audience": "Personen, die Inhalte melden, und gemeldete Nutzer",
+      "deliveryContext": "Angezeigt, wenn ein Nutzer eine Meldung einreicht oder eine Moderationsentscheidung erhält",
+      "title": "Hinweis zum Datenschutz bei Inhaltsmoderation und Meldungen"
+    },
+    "PRIVACY-MOD-STAFF-001": {
+      "audience": "Content-Moderatoren und Compliance-Personal",
+      "deliveryContext": "Während des Moderator-Onboardings und in der Moderatorenkonsole angezeigt",
+      "title": "Hinweis zum Datenschutz für Moderatoren"
+    }
   },
   "profile": {
     "label": "Profil",

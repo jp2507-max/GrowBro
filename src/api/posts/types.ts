@@ -17,4 +17,6 @@ export type Post = {
   like_count?: number;
   comment_count?: number;
   user_has_liked?: boolean;
+  // Age-gating fields (DSA Art. 28)
+  is_age_restricted?: boolean;
 };

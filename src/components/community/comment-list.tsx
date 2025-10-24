@@ -13,7 +13,7 @@ import React from 'react';
 import { ActivityIndicator, Text, View } from '@/components/ui';
 import type { PostComment } from '@/types/community';
 
-import { CommentItem } from './comment-item';
+import { ModeratedCommentItem } from './moderated-comment-item';
 
 interface CommentListProps {
   comments: PostComment[];
@@ -66,7 +66,7 @@ export function CommentList({
         const isFailed = status === 'failed';
 
         return (
-          <CommentItem
+          <ModeratedCommentItem
             key={comment.id}
             comment={comment}
             status={status}

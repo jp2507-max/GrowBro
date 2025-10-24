@@ -1,0 +1,408 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Lawful Bases Matrix - Community Moderation System",
+  "version": "1.0.0",
+  "dateCreated": "2025-10-19",
+  "lastUpdated": "2025-10-19",
+  "scope": "Comprehensive lawful basis documentation for all personal data processing operations per GDPR Art. 6(1)",
+  "processingOperations": [
+    {
+      "operation": "Content Moderation and Reporting",
+      "ropaReference": "ROPA-MOD-001",
+      "dataCategories": [
+        "User identifiers",
+        "Content reports",
+        "Contact information",
+        "Moderation decisions",
+        "Statement of Reasons",
+        "Audit trails"
+      ],
+      "gdprArticle6Basis": [
+        {
+          "article": "Art. 6(1)(c) - Legal obligation",
+          "justification": "DSA Notice-and-Action compliance (Art. 16, 17) requires processing of content reports, moderation decisions, and Statement of Reasons",
+          "legalReference": "Regulation (EU) 2022/2065 (Digital Services Act), Art. 16 (Notice-and-Action), Art. 17 (Statement of Reasons), Art. 24(5) (SoR Database Submissions)",
+          "appliesToCategories": [
+            "Content reports (mandatory Art. 16 fields)",
+            "Statement of Reasons (mandatory Art. 17 fields)",
+            "Audit trails (DSA transparency reporting requirement)"
+          ]
+        },
+        {
+          "article": "Art. 6(1)(f) - Legitimate interests",
+          "justification": "Platform safety and user protection require content moderation to prevent harmful content distribution",
+          "legitimateInterest": "Maintain safe, trustworthy platform environment free from illegal and harmful content",
+          "necessityTest": "No viable alternative to systematic content moderation for platform safety; user reports are essential to identify policy violations",
+          "balancingTest": {
+            "interests": "Platform safety and user protection",
+            "dataSubjectRights": "Users retain appeal rights, access to moderation decisions, and erasure after retention period",
+            "dataMinimization": "Content snapshots stored as hashes; PII scrubbed from transparency reports; reporter contact collected only when DSA-required",
+            "conclusion": "Platform safety interests outweigh minimal data processing; safeguards in place via appeals, data minimization, and retention limits"
+          },
+          "liaDocumentReference": "compliance/lia-content-moderation.md",
+          "appliesToCategories": [
+            "User identifiers (reporter/moderator tracking)",
+            "Moderation decisions (policy enforcement)",
+            "Audit trails (security and fraud prevention)"
+          ]
+        }
+      ],
+      "specialCategories": {
+        "article9Processing": false,
+        "justification": "No intentional processing of special category data; content moderation focuses on policy violations, not sensitive attributes"
+      }
+    },
+    {
+      "operation": "Age Verification and Minor Protection",
+      "ropaReference": "ROPA-AGE-001",
+      "dataCategories": [
+        "Age attribute (over-18 boolean)",
+        "One-time verification token",
+        "Verification metadata"
+      ],
+      "gdprArticle6Basis": [
+        {
+          "article": "Art. 6(1)(c) - Legal obligation",
+          "justification": "DSA Art. 28 requires age verification to protect minors from age-inappropriate content",
+          "legalReference": "Regulation (EU) 2022/2065 (Digital Services Act), Art. 28 (Protection of minors); EU Age-Verification Blueprint (2025)",
+          "appliesToCategories": [
+            "Age attribute (over-18 boolean)",
+            "One-time verification token"
+          ]
+        },
+        {
+          "article": "Art. 6(1)(f) - Legitimate interests",
+          "justification": "Minor protection and content safety require age verification to prevent minors from accessing harmful content",
+          "legitimateInterest": "Protect minors from age-inappropriate content and implement safety-by-design principles",
+          "necessityTest": "Privacy-preserving age verification (boolean attribute only) necessary to comply with DSA Art. 28 and prevent minor exposure to harmful content",
+          "balancingTest": {
+            "interests": "Minor protection and content safety",
+            "dataSubjectRights": "Minimal data processing (boolean only); no persistent ID storage; users can dispute verification",
+            "dataMinimization": "Store only over-18 boolean, not raw birthdate or ID documents; one-time verification with reusable token",
+            "conclusion": "Minor protection interests justify minimal data processing; privacy-preserving design per EU Age-Verification Blueprint"
+          },
+          "liaDocumentReference": "compliance/lia-age-verification.md",
+          "appliesToCategories": [
+            "Age attribute (over-18 boolean)",
+            "Verification metadata (fraud prevention)"
+          ]
+        }
+      ],
+      "specialCategories": {
+        "article9Processing": false,
+        "justification": "Age attribute is not special category data under GDPR Art. 9; minimal processing (boolean only)"
+      },
+      "ePrivacyCompliance": {
+        "article5_3": "No device fingerprinting without explicit consent; one-time verification avoids persistent terminal equipment access"
+      }
+    },
+    {
+      "operation": "Geo-Location and Regional Content Restrictions",
+      "ropaReference": "ROPA-GEO-001",
+      "dataCategories": [
+        "IP address (session-based geolocation)",
+        "GPS coordinates (optional, with consent)",
+        "Derived country/region (cached)"
+      ],
+      "gdprArticle6Basis": [
+        {
+          "article": "Art. 6(1)(c) - Legal obligation",
+          "justification": "Regional laws require geo-blocking of certain content; moderation decisions may mandate geographic restrictions",
+          "legalReference": "Various regional laws requiring geo-blocking (e.g., German NetzDG, French hate speech laws); DSA Art. 17 Statement of Reasons includes territorial scope",
+          "appliesToCategories": [
+            "IP address (for geo-blocking enforcement)",
+            "Derived country/region (cached for enforcement)"
+          ]
+        },
+        {
+          "article": "Art. 6(1)(f) - Legitimate interests",
+          "justification": "Legal compliance and regional content restrictions require location detection to enforce geo-blocking",
+          "legitimateInterest": "Comply with regional laws and prevent distribution of illegal content in restricted jurisdictions",
+          "necessityTest": "IP geolocation necessary to enforce geo-blocking; GPS optional with consent for enhanced accuracy",
+          "balancingTest": {
+            "interests": "Legal compliance and regional content restrictions",
+            "dataSubjectRights": "Users can appeal geo-blocking decisions; minimal data processing (IP session-based only, no persistent storage)",
+            "dataMinimization": "Default to server-side IP geolocation; GPS only with consent; cached decisions 1-hour TTL; no long-term location tracking",
+            "conclusion": "Legal compliance interests justify minimal IP processing; GPS requires explicit consent; appeal process for false positives"
+          },
+          "liaDocumentReference": "compliance/lia-geo-location.md",
+          "appliesToCategories": [
+            "IP address (session-based geolocation)",
+            "Derived country/region (cached)"
+          ]
+        },
+        {
+          "article": "Art. 6(1)(a) - Consent",
+          "justification": "GPS location processing requires explicit user consent per ePrivacy Directive",
+          "consentRequirements": {
+            "freely_given": true,
+            "specific": true,
+            "informed": true,
+            "unambiguous": true,
+            "withdrawable": true
+          },
+          "consentMechanism": "Explicit opt-in dialog with clear explanation of GPS usage for geo-blocking accuracy; users can deny without platform access loss",
+          "appliesToCategories": [
+            "GPS coordinates (optional, enhanced accuracy)"
+          ]
+        }
+      ],
+      "specialCategories": {
+        "article9Processing": false,
+        "justification": "Location data is not special category data under GDPR Art. 9"
+      },
+      "ePrivacyCompliance": {
+        "article5_3": "IP geolocation does not require consent per EDPB guidance (server-side processing, no terminal equipment access); GPS requires explicit consent (terminal equipment access); no device fingerprinting without consent"
+      }
+    },
+    {
+      "operation": "Audit Trail and Compliance Logging",
+      "ropaReference": "ROPA-AUDIT-001",
+      "dataCategories": [
+        "Audit events",
+        "Cryptographic signatures",
+        "Access logs",
+        "SoR export queue"
+      ],
+      "gdprArticle6Basis": [
+        {
+          "article": "Art. 6(1)(c) - Legal obligation",
+          "justification": "GDPR accountability principle (Art. 5(2)) and DSA transparency reporting (Art. 15, 24) require comprehensive audit trails",
+          "legalReference": "GDPR Art. 5(2) (accountability), Art. 32 (security), Art. 33-34 (breach notification); DSA Art. 15 & 24 (transparency reporting)",
+          "appliesToCategories": [
+            "Audit events (accountability and transparency)",
+            "Cryptographic signatures (integrity verification)",
+            "SoR export queue (DSA Art. 24(5) submissions)"
+          ]
+        },
+        {
+          "article": "Art. 6(1)(f) - Legitimate interests",
+          "justification": "Security incident investigation, legal defense, and dispute resolution require comprehensive audit trails",
+          "legitimateInterest": "Maintain audit trails for security investigations, legal defense, and regulatory compliance",
+          "necessityTest": "Cryptographically signed audit trails required for DSA transparency reporting, GDPR accountability, and security forensics",
+          "balancingTest": {
+            "interests": "Security, legal defense, regulatory compliance",
+            "dataSubjectRights": "Users can access audit events involving their data; erasure honored after 7-year retention period",
+            "dataMinimization": "PII anonymized after 30 days; only aggregate metrics retained long-term; append-only storage prevents tampering",
+            "conclusion": "Compliance and security interests justify 7-year audit retention; PII anonymized after 30 days to minimize privacy impact"
+          },
+          "liaDocumentReference": "compliance/lia-audit-trails.md",
+          "appliesToCategories": [
+            "Audit events (security and legal defense)",
+            "Access logs (security monitoring)",
+            "Cryptographic signatures (integrity verification)"
+          ]
+        }
+      ],
+      "specialCategories": {
+        "article9Processing": false,
+        "justification": "Audit trails do not intentionally process special category data; focus on action metadata, not sensitive attributes"
+      }
+    },
+    {
+      "operation": "Transparency Reporting and SoR Database Submissions",
+      "ropaReference": "ROPA-TRANS-001",
+      "dataCategories": [
+        "Redacted Statement of Reasons",
+        "Aggregated moderation metrics",
+        "Pseudonymized actor identifiers"
+      ],
+      "gdprArticle6Basis": [
+        {
+          "article": "Art. 6(1)(c) - Legal obligation",
+          "justification": "DSA Art. 24(5) mandates SoR submissions to Commission Transparency Database; Art. 15 & 24 require annual transparency reports",
+          "legalReference": "Regulation (EU) 2022/2065 (Digital Services Act), Art. 24(5) (SoR Database Submissions), Art. 15 & 24 (Transparency Reporting)",
+          "appliesToCategories": [
+            "Redacted Statement of Reasons (no personal data per Art. 24(5))",
+            "Aggregated moderation metrics (transparency reporting)"
+          ]
+        }
+      ],
+      "specialCategories": {
+        "article9Processing": false,
+        "justification": "No personal data processing in transparency reports or SoR exports (deterministic PII scrubbing before submission)"
+      },
+      "dataMinimizationNote": "Strict no-personal-data requirement per DSA Art. 24(5); deterministic PII scrubbing with golden tests; pseudonymized identifiers (HMAC-SHA256) with environment-specific salts"
+    }
+  ],
+  "legitimateInterestsAssessments": [
+    {
+      "liaId": "LIA-MOD-001",
+      "processingOperation": "Content Moderation and Reporting",
+      "documentLocation": "compliance/lia-content-moderation.md",
+      "purpose": "Maintain safe, trustworthy platform environment free from illegal and harmful content",
+      "legitimateInterest": "Platform safety and user protection",
+      "necessityTest": {
+        "question": "Is content moderation necessary for platform safety?",
+        "answer": "Yes. No viable alternative to systematic content moderation for identifying and removing harmful content. User reports are essential to detect policy violations.",
+        "alternatives": "Considered: (1) No moderation (unacceptable, exposes users to harm); (2) Fully automated moderation (insufficient, lacks context and appeals); (3) Human-only moderation (selected, with automated priority scoring)"
+      },
+      "balancingTest": {
+        "controllerInterests": "Maintain safe platform, comply with DSA, protect users from harmful content",
+        "dataSubjectInterests": "Privacy, data minimization, fairness in moderation decisions",
+        "dataSubjectRights": "Users retain appeal rights, access to moderation decisions, erasure after retention period",
+        "safeguards": [
+          "Content snapshots stored as hashes (not full duplication)",
+          "PII scrubbed from transparency reports (pseudonymized identifiers)",
+          "Reporter contact collected only when DSA-required (exceptions documented)",
+          "12-month default retention (not indefinite)",
+          "Appeals process with different reviewers (conflict-of-interest prevention)"
+        ],
+        "conclusion": "Platform safety interests outweigh minimal data processing. Safeguards in place via data minimization, retention limits, and appeals process."
+      },
+      "status": "approved",
+      "approvedBy": "[DPO Name]",
+      "approvalDate": null
+    },
+    {
+      "liaId": "LIA-AGE-001",
+      "processingOperation": "Age Verification and Minor Protection",
+      "documentLocation": "compliance/lia-age-verification.md",
+      "purpose": "Protect minors from age-inappropriate content and implement safety-by-design principles",
+      "legitimateInterest": "Minor protection and content safety",
+      "necessityTest": {
+        "question": "Is age verification necessary for minor protection?",
+        "answer": "Yes. Privacy-preserving age verification (boolean attribute only) necessary to comply with DSA Art. 28 and prevent minor exposure to harmful content.",
+        "alternatives": "Considered: (1) No age verification (unacceptable, violates DSA Art. 28); (2) Full ID verification with storage (excessive, violates data minimization); (3) Privacy-preserving age attribute (selected, per EU Age-Verification Blueprint)"
+      },
+      "balancingTest": {
+        "controllerInterests": "Comply with DSA Art. 28, protect minors from harmful content, implement safety-by-design",
+        "dataSubjectInterests": "Privacy, data minimization, no persistent ID storage",
+        "dataSubjectRights": "Users can dispute verification, request re-verification, delete age attribute on account deletion",
+        "safeguards": [
+          "Store only over-18 boolean, not raw birthdate or ID documents",
+          "One-time verification with reusable token (no repeated ID checks)",
+          "No device fingerprinting without explicit consent (ePrivacy compliance)",
+          "Safer defaults for unverified users (restrict age-restricted content, no profiling ads to minors)"
+        ],
+        "conclusion": "Minor protection interests justify minimal data processing. Privacy-preserving design per EU Age-Verification Blueprint; no persistent ID storage."
+      },
+      "status": "approved",
+      "approvedBy": "[DPO Name]",
+      "approvalDate": null
+    },
+    {
+      "liaId": "LIA-GEO-001",
+      "processingOperation": "Geo-Location and Regional Content Restrictions",
+      "documentLocation": "compliance/lia-geo-location.md",
+      "purpose": "Comply with regional laws and prevent distribution of illegal content in restricted jurisdictions",
+      "legitimateInterest": "Legal compliance and regional content restrictions",
+      "necessityTest": {
+        "question": "Is IP geolocation necessary for geo-blocking enforcement?",
+        "answer": "Yes. IP geolocation necessary to enforce geo-blocking per regional laws and moderation decisions. GPS optional with consent for enhanced accuracy.",
+        "alternatives": "Considered: (1) No geo-blocking (unacceptable, violates regional laws); (2) User-declared location (unreliable, easily circumvented); (3) IP geolocation (selected, EDPB-compliant, no consent required)"
+      },
+      "balancingTest": {
+        "controllerInterests": "Legal compliance, regional content restrictions, prevent illegal content distribution",
+        "dataSubjectInterests": "Privacy, data minimization, no persistent location tracking",
+        "dataSubjectRights": "Users can appeal geo-blocking decisions, dispute location detection, access current detected location",
+        "safeguards": [
+          "Default to server-side IP geolocation (no consent required per ePrivacy)",
+          "GPS only with explicit consent and clear user benefit",
+          "No device fingerprinting without consent",
+          "Cached decisions 1-hour TTL (no long-term location storage)",
+          "Appeal process for false positives with manual review"
+        ],
+        "conclusion": "Legal compliance interests justify minimal IP processing. GPS requires explicit consent. Appeal process mitigates false positive risks."
+      },
+      "status": "approved",
+      "approvedBy": "[DPO Name]",
+      "approvalDate": null
+    },
+    {
+      "liaId": "LIA-AUDIT-001",
+      "processingOperation": "Audit Trail and Compliance Logging",
+      "documentLocation": "compliance/lia-audit-trails.md",
+      "purpose": "Maintain comprehensive audit trails for regulatory compliance, security investigations, and legal defense",
+      "legitimateInterest": "Security, legal defense, regulatory compliance",
+      "necessityTest": {
+        "question": "Are 7-year audit trails necessary for compliance and legal defense?",
+        "answer": "Yes. Cryptographically signed audit trails required for DSA transparency reporting, GDPR accountability, and security forensics. 7-year retention aligns with legal defense statute of limitations.",
+        "alternatives": "Considered: (1) Shorter retention (insufficient for legal defense); (2) Indefinite retention (violates storage limitation); (3) 7-year retention with PII anonymization after 30 days (selected, balances compliance and privacy)"
+      },
+      "balancingTest": {
+        "controllerInterests": "Regulatory compliance, security investigations, legal defense",
+        "dataSubjectInterests": "Privacy, data minimization, storage limitation",
+        "dataSubjectRights": "Users can access audit events involving their data, erasure honored after 7-year retention period",
+        "safeguards": [
+          "PII anonymized after 30 days (only aggregate metrics retained long-term)",
+          "Append-only storage prevents tampering (cryptographic integrity verification)",
+          "Access controls with comprehensive logging (audit the auditors)",
+          "Automated deletion workflows after retention expiry"
+        ],
+        "conclusion": "Compliance and security interests justify 7-year audit retention. PII anonymized after 30 days to minimize privacy impact."
+      },
+      "status": "approved",
+      "approvedBy": "[DPO Name]",
+      "approvalDate": null
+    }
+  ],
+  "consentMechanisms": [
+    {
+      "processingOperation": "GPS Location for Geo-Blocking Accuracy",
+      "ropaReference": "ROPA-GEO-001",
+      "consentType": "Explicit opt-in (ePrivacy Directive Art. 5(3))",
+      "consentMechanism": "In-app dialog with clear explanation of GPS usage, benefits (more accurate geo-blocking), and alternatives (IP geolocation)",
+      "consentText": "We'd like to use your device's GPS location to provide more accurate geographic content filtering. This helps us comply with regional laws. You can also use IP-based location detection if you prefer not to share GPS data.",
+      "consentStorage": "User preference stored as boolean flag; withdrawable at any time via app settings",
+      "withdrawalMechanism": "App settings toggle with immediate effect; GPS data not collected if consent withdrawn",
+      "gdprCompliance": {
+        "freely_given": "Yes - users can use platform with IP geolocation only; no disadvantage if GPS consent denied",
+        "specific": "Yes - GPS consent separate from other processing; clear purpose (geo-blocking accuracy)",
+        "informed": "Yes - clear explanation of GPS usage, benefits, and alternatives",
+        "unambiguous": "Yes - explicit opt-in action required (not pre-checked)",
+        "withdrawable": "Yes - app settings toggle with immediate effect"
+      }
+    }
+  ],
+  "legalObligations": [
+    {
+      "obligation": "DSA Notice-and-Action (Art. 16, 17)",
+      "legalReference": "Regulation (EU) 2022/2065, Art. 16 (Notice-and-Action), Art. 17 (Statement of Reasons)",
+      "processingRequirements": [
+        "Process content reports with mandatory Art. 16 fields (explanation, locator, contact, good-faith)",
+        "Generate Statement of Reasons with mandatory Art. 17 fields (facts, legal/ToS ground, automation usage, redress options)",
+        "Store content snapshots for evidence preservation"
+      ],
+      "appliesToOperations": ["Content Moderation and Reporting"]
+    },
+    {
+      "obligation": "DSA SoR Database Submissions (Art. 24(5))",
+      "legalReference": "Regulation (EU) 2022/2065, Art. 24(5)",
+      "processingRequirements": [
+        "Submit redacted SoR to Commission Transparency Database without undue delay",
+        "Ensure no personal data in SoR submissions (deterministic PII scrubbing)",
+        "Maintain audit trail of submissions (timestamp, EC DB ID, payload hash)"
+      ],
+      "appliesToOperations": [
+        "Transparency Reporting and SoR Database Submissions"
+      ]
+    },
+    {
+      "obligation": "DSA Protection of Minors (Art. 28)",
+      "legalReference": "Regulation (EU) 2022/2065, Art. 28; EU Age-Verification Blueprint (2025)",
+      "processingRequirements": [
+        "Implement privacy-preserving age verification (over-18 boolean attribute)",
+        "Enforce age-gating for age-restricted content",
+        "Implement safer defaults for minors (no profiling ads)"
+      ],
+      "appliesToOperations": ["Age Verification and Minor Protection"]
+    },
+    {
+      "obligation": "GDPR Accountability (Art. 5(2))",
+      "legalReference": "GDPR Art. 5(2) (accountability), Art. 24 (responsibility of controller)",
+      "processingRequirements": [
+        "Maintain comprehensive audit trails for all processing operations",
+        "Document lawful bases and retention schedules",
+        "Implement technical and organizational measures (encryption, access controls)"
+      ],
+      "appliesToOperations": ["Audit Trail and Compliance Logging"]
+    }
+  ],
+  "metadata": {
+    "reviewSchedule": "Annual review of all lawful bases and LIAs; immediate updates upon processing changes",
+    "responsiblePerson": "[Data Protection Officer]",
+    "lastReview": null,
+    "nextReview": "2026-10-19"
+  }
+}

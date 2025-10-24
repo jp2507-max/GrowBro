@@ -1,0 +1,22 @@
+# Lifeguard Custom Rules
+# Replace these examples with rules specific to your project
+# Each rule should have a clear name and detailed description
+
+rules:
+  - name: 'Localize user-visible strings'
+    description: 'Flag JSX/Text nodes containing literal strings that are not wrapped with the translation utilities (t, useTranslation) to enforce bilingual UI coverage.'
+
+  - name: 'Prefer absolute imports'
+    description: 'Detect relative imports within src/ that could use the @/ alias so module paths stay consistent across the monorepo and test environments.'
+
+  - name: 'Avoid default exports'
+    description: 'Warn when components, hooks, or utilities are exported via `export default`; require named exports to align with project conventions and improve tree shaking.'
+
+  - name: 'Screen length budget'
+    description: 'Alert when Expo Router screen or modal files exceed 150 lines, or when services/hooks/utilities exceed 90 lines, matching our ESLint complexity thresholds.'
+
+  - name: 'Effect cleanup required'
+    description: 'Ensure every useEffect that registers listeners, subscriptions, timers, or async side effects returns a cleanup function to prevent memory leaks.'
+
+  - name: 'Typed service contracts'
+    description: 'Report functions exported from api/ or lib/ that omit explicit return types or use any so that React Query, Supabase, and consumers retain strict TypeScript guarantees.'

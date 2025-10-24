@@ -223,6 +223,44 @@ const client = z.object({
   EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL: z.string().optional(),
 
   EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD: z.string().optional(),
+
+  // DSA Transparency Database Configuration
+
+  DSA_TRANSPARENCY_DB_URL: z.string().url().optional(),
+
+  DSA_TRANSPARENCY_DB_API_KEY: z.string().optional(),
+
+  EXPO_PUBLIC_DSA_TRANSPARENCY_DB_URL: z.string().url().optional(),
+
+  EXPO_PUBLIC_DSA_TRANSPARENCY_DB_API_KEY: z.string().optional(),
+
+  // PII Scrubbing Configuration
+
+  PII_SCRUBBING_SALT: z.string().optional(),
+
+  PII_SALT_VERSION: z.string().optional(),
+
+  EXPO_PUBLIC_PII_SCRUBBING_SALT: z.string().optional(),
+
+  EXPO_PUBLIC_PII_SALT_VERSION: z.string().optional(),
+
+  // Legal/Compliance Contact Information
+
+  LEGAL_ENTITY_ADDRESS: z.string().optional(),
+
+  DPO_EMAIL: z.string().email().optional(),
+
+  DPO_NAME: z.string().optional(),
+
+  EU_REPRESENTATIVE_ADDRESS: z.string().optional(),
+
+  EXPO_PUBLIC_LEGAL_ENTITY_ADDRESS: z.string().optional(),
+
+  EXPO_PUBLIC_DPO_EMAIL: z.string().email().optional(),
+
+  EXPO_PUBLIC_DPO_NAME: z.string().optional(),
+
+  EXPO_PUBLIC_EU_REPRESENTATIVE_ADDRESS: z.string().optional(),
 });
 
 const buildTime = z.object({
@@ -319,6 +357,32 @@ const appAccessReviewerEmail = readEnv(
 const appAccessReviewerPassword = readEnv(
   'APP_ACCESS_REVIEWER_PASSWORD',
   'EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD'
+);
+const dsaTransparencyDbUrl = readEnv(
+  'DSA_TRANSPARENCY_DB_URL',
+  'EXPO_PUBLIC_DSA_TRANSPARENCY_DB_URL'
+);
+const dsaTransparencyDbApiKey = readEnv(
+  'DSA_TRANSPARENCY_DB_API_KEY',
+  'EXPO_PUBLIC_DSA_TRANSPARENCY_DB_API_KEY'
+);
+const piiScrubbingSalt = readEnv(
+  'PII_SCRUBBING_SALT',
+  'EXPO_PUBLIC_PII_SCRUBBING_SALT'
+);
+const piiSaltVersion = readEnv(
+  'PII_SALT_VERSION',
+  'EXPO_PUBLIC_PII_SALT_VERSION'
+);
+const legalEntityAddress = readEnv(
+  'LEGAL_ENTITY_ADDRESS',
+  'EXPO_PUBLIC_LEGAL_ENTITY_ADDRESS'
+);
+const dpoEmail = readEnv('DPO_EMAIL', 'EXPO_PUBLIC_DPO_EMAIL');
+const dpoName = readEnv('DPO_NAME', 'EXPO_PUBLIC_DPO_NAME');
+const euRepresentativeAddress = readEnv(
+  'EU_REPRESENTATIVE_ADDRESS',
+  'EXPO_PUBLIC_EU_REPRESENTATIVE_ADDRESS'
 );
 
 const _clientEnv = {
@@ -423,6 +487,28 @@ const _clientEnv = {
   APP_ACCESS_REVIEWER_EMAIL: appAccessReviewerEmail,
 
   APP_ACCESS_REVIEWER_PASSWORD: appAccessReviewerPassword,
+
+  // DSA Transparency Database Configuration
+
+  DSA_TRANSPARENCY_DB_URL: dsaTransparencyDbUrl,
+
+  DSA_TRANSPARENCY_DB_API_KEY: dsaTransparencyDbApiKey,
+
+  // PII Scrubbing Configuration
+
+  PII_SCRUBBING_SALT: piiScrubbingSalt,
+
+  PII_SALT_VERSION: piiSaltVersion,
+
+  // Legal/Compliance Contact Information
+
+  LEGAL_ENTITY_ADDRESS: legalEntityAddress,
+
+  DPO_EMAIL: dpoEmail,
+
+  DPO_NAME: dpoName || 'Jan-Peter Blohm',
+
+  EU_REPRESENTATIVE_ADDRESS: euRepresentativeAddress,
 };
 
 /**

@@ -1,7 +1,9 @@
 import { nanoid } from 'nanoid/non-secure';
 
 import { apiSubmitAppeal } from '@/api/moderation/appeals';
+import { getAuthenticatedUserId } from '@/lib/auth/user-utils';
 import { getItem, removeItem, setItem } from '@/lib/storage';
+import type { AppealType } from '@/types/moderation';
 
 export type Appeal = {
   id: string;
@@ -18,6 +20,49 @@ const KEY = 'moderation.appeals.queue.v1';
 
 function now(): number {
   return Date.now();
+}
+
+/**
+ * Infers appeal type from the reason string
+ * Maps common reason keywords to appropriate appeal types
+ */
+function inferAppealType(reason: string): AppealType {
+  const lowerReason = reason.toLowerCase();
+
+  // Check for geo-restriction reasons first (highest priority)
+  if (
+    lowerReason.includes('geo') ||
+    lowerReason.includes('location') ||
+    lowerReason.includes('region') ||
+    lowerReason.includes('country')
+  ) {
+    return 'geo_restriction';
+  }
+
+  // Check for content-removal indicators (higher priority than account keywords)
+  if (
+    lowerReason.includes('posted') ||
+    lowerReason.includes('shared') ||
+    lowerReason.includes('private') ||
+    lowerReason.includes('information') ||
+    lowerReason.includes('details') ||
+    lowerReason.includes('data')
+  ) {
+    return 'content_removal';
+  }
+
+  // Check for account-related reasons (suspension, ban, etc.) - lowest priority
+  if (
+    lowerReason.includes('account') ||
+    lowerReason.includes('ban') ||
+    lowerReason.includes('suspend') ||
+    lowerReason.includes('user')
+  ) {
+    return 'account_action';
+  }
+
+  // Default to content removal for all other cases
+  return 'content_removal';
 }
 
 // Simple mutex for coordinating access to the appeals queue
@@ -126,32 +171,47 @@ export class AppealsQueue {
   }
 
   private async attemptSubmit(item: Appeal): Promise<Appeal> {
-    // Acquire lock for the critical section
-    const release = await queueMutex.acquire();
-
+    // 1) Acquire to snapshot state, then release before network call
+    let release = await queueMutex.acquire();
     try {
-      // Load current state
       const items = this.load();
-
-      // Check if item still exists and is in expected state
       const currentItem = items.find((x) => x.id === item.id);
       if (!currentItem || currentItem.status !== 'queued') {
         return currentItem || item;
       }
+    } finally {
+      release();
+    }
 
-      // Attempt to submit the appeal
-      await apiSubmitAppeal({
-        contentId: item.contentId,
-        reason: item.reason,
-        details: item.details,
-      });
+    // 2) Network call outside lock
+    const appealType = inferAppealType(item.reason);
+    const userId = await getAuthenticatedUserId();
+    const result = await apiSubmitAppeal({
+      original_decision_id: String(item.contentId),
+      appeal_type: appealType,
+      counter_arguments: item.details || item.reason,
+      user_id: userId,
+    });
+    if (!result.success) {
+      console.error(
+        `[AppealsQueue] Failed to submit appeal ${item.id}:`,
+        result.error
+      );
+      throw new Error(result.error || 'Appeal submission failed');
+    }
 
-      // Success: remove from queue
-      const updatedItems = items.filter((x) => x.id !== item.id);
+    // 3) Reacquire to mutate persisted queue
+    release = await queueMutex.acquire();
+    try {
+      const itemsAfter = this.load();
+      if (!itemsAfter.find((x) => x.id === item.id)) {
+        // Already removed by another worker
+        return { ...item, status: 'sent', attempts: item.attempts + 1 };
+      }
+      const updatedItems = itemsAfter.filter((x) => x.id !== item.id);
       this.save(updatedItems);
       return { ...item, status: 'sent', attempts: item.attempts + 1 };
     } finally {
-      // Always release the lock
       release();
     }
   }

@@ -6,9 +6,9 @@ import { Env } from '@env';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import FlashMessage from 'react-native-flash-message';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -28,6 +28,7 @@ import {
   useIsFirstTime,
 } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
+import { updateActivity } from '@/lib/auth/session-timeout';
 import { useRootStartup } from '@/lib/hooks/use-root-startup';
 import { initializeJanitor } from '@/lib/media/photo-janitor';
 import { getReferencedPhotoUris } from '@/lib/media/photo-storage-helpers';
@@ -219,6 +220,12 @@ function BootSplash(): React.ReactElement {
 }
 
 function AppStack(): React.ReactElement {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    updateActivity();
+  }, [pathname]);
+
   return (
     <Stack>
       <Stack.Screen name="(app)" options={{ headerShown: false }} />

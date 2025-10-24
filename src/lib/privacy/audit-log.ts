@@ -8,7 +8,8 @@ export type AuditAction =
   | 'retention-aggregate'
   | 'retention-anonymize'
   | 'account-delete-request'
-  | 'consent-block';
+  | 'consent-block'
+  | 'appeal-event';
 
 export type AuditEntry = {
   id: string;

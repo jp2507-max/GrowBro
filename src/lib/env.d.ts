@@ -55,6 +55,14 @@ declare module '@env' {
     SENTRY_REPLAYS_SESSION_SAMPLE_RATE?: number;
     SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE?: number;
     SENTRY_ENABLE_REPLAY?: boolean;
+
+    // DSA Transparency Database
+    DSA_TRANSPARENCY_DB_URL?: string;
+    DSA_TRANSPARENCY_DB_API_KEY?: string;
+
+    // PII Scrubbing
+    PII_SCRUBBING_SALT?: string;
+    PII_SALT_VERSION?: string;
   };
 
   // The module exports a single named object `Env` with the above shape.

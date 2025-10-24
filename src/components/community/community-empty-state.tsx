@@ -4,7 +4,7 @@ import { Button, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
 
 type Props = {
-  onCreatePress: () => void;
+  onCreatePress?: () => void;
 };
 
 export function CommunityEmptyState({
@@ -20,15 +20,17 @@ export function CommunityEmptyState({
           {translate('community.empty_state')}
         </Text>
       </View>
-      <Button
-        label={translate('community.create_post')}
-        onPress={onCreatePress}
-        accessibilityHint={translate(
-          'accessibility.community.create_post_hint'
-        )}
-        accessibilityRole="button"
-        testID="community-empty-state-create"
-      />
+      {onCreatePress && (
+        <Button
+          label={translate('community.create_post')}
+          onPress={onCreatePress}
+          accessibilityHint={translate(
+            'accessibility.community.create_post_hint'
+          )}
+          accessibilityRole="button"
+          testID="community-empty-state-create"
+        />
+      )}
     </View>
   );
 }

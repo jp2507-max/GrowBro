@@ -46,7 +46,23 @@ export function relation(
   return noopDecorator();
 }
 
-export default { text, field, date, json, readonly, children, relation };
+export function immutableRelation(
+  _table?: string,
+  _columnName?: string
+): PropertyDecoratorFn {
+  return noopDecorator();
+}
+
+export default {
+  text,
+  field,
+  date,
+  json,
+  readonly,
+  children,
+  relation,
+  immutableRelation,
+};
 
 // Ensure CommonJS interop for Jest/ts-jest transpilation
 const __decoratorsCJS__: Record<string, unknown> = {
@@ -57,6 +73,7 @@ const __decoratorsCJS__: Record<string, unknown> = {
   readonly,
   children,
   relation,
+  immutableRelation,
 };
 // @ts-ignore
 if (typeof module !== 'undefined' && (module as any).exports) {

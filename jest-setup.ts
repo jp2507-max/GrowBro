@@ -272,42 +272,24 @@ jest.mock('@sentry/react-native', () => {
 // mock: react-native-restart to avoid trying to reload the app during tests
 jest.mock('react-native-restart', () => ({ restart: jest.fn() }));
 
+// Mock WatermelonDB database to prevent model imports and decorator application
+jest.mock('@/lib/watermelon', () => ({
+  database: {
+    get: jest.fn((_collectionName: string) => ({
+      create: jest.fn().mockResolvedValue({ id: 'mock-id' }),
+      query: jest.fn(() => ({
+        fetch: jest.fn().mockResolvedValue([]),
+      })),
+      find: jest.fn().mockResolvedValue({ id: 'mock-id' }),
+    })),
+    write: jest.fn().mockImplementation(async (fn: any) => fn()),
+  },
+}));
+
 // Prefer the dedicated manual mock file for Watermelon sync (automock)
 jest.mock('@nozbe/watermelondb/sync');
 
-// mock: WatermelonDB decorators as no-op to avoid runtime decoration side effects
-jest.mock('@nozbe/watermelondb/decorators', () => {
-  // For decorators that are used as factories like @text('col'), return a
-  // function that accepts the column name and returns an actual decorator
-  // function. For plain decorators like @readonly, return a decorator
-  // function directly. The decorator functions simply return the descriptor
-  // unchanged which is sufficient for tests that only need to import the
-  // models without runtime DB wiring.
-  const makeFactory = () => {
-    return (_name?: any) => {
-      return (_target: any, _propertyKey: any, descriptor?: any) => descriptor;
-    };
-  };
-
-  const relationFactory = () => {
-    return (_tableName: string, _columnName: string) => {
-      return (_target: any, _propertyKey: any, descriptor?: any) => descriptor;
-    };
-  };
-
-  const makeDecorator = () => {
-    return (_target: any, _propertyKey: any, descriptor?: any) => descriptor;
-  };
-
-  return {
-    text: makeFactory(),
-    date: makeFactory(),
-    json: makeFactory(),
-    field: makeFactory(),
-    relation: relationFactory(),
-    readonly: makeDecorator(),
-  };
-});
+// WatermelonDB decorators are mocked via moduleNameMapper and dedicated mock file
 
 // mock: @dev-plugins/react-query (ES module issue in Jest)
 jest.mock('@dev-plugins/react-query', () => ({

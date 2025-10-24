@@ -62,7 +62,7 @@ export function ModerationActions({
 }: Props) {
   const reportModalRef = React.useRef<ReportContentModalRef>(null);
   const moderatorModalRef = React.useRef<ModeratorToolsModalRef>(null);
-  const isModerator = useIsModerator();
+  const { isModerator, isLoading } = useIsModerator();
 
   const handleReportPress = async () => {
     reportModalRef.current?.present();
@@ -124,7 +124,7 @@ export function ModerationActions({
           variant="destructive"
           onPress={deleteContent}
         />
-        {isModerator && (
+        {!isLoading && isModerator && (
           <ModerationButton
             label={
               isHidden
@@ -138,7 +138,7 @@ export function ModerationActions({
         )}
       </View>
       <ReportContentModal ref={reportModalRef} contentId={contentId} />
-      {isModerator && (
+      {!isLoading && isModerator && (
         <ModeratorToolsModal
           ref={moderatorModalRef}
           contentType={contentType}
