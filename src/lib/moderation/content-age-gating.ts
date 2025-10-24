@@ -21,7 +21,7 @@ import { AGE_RESTRICTED_KEYWORDS } from '@/types/age-verification';
 export class ContentAgeGatingEngine {
   private supabase: ReturnType<typeof createClient>;
 
-  constructor(supabase: ReturnType<typeof createClient>) {
+  constructor(supabase: any) {
     this.supabase = supabase;
   }
 

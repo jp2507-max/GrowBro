@@ -109,7 +109,8 @@ class CommunityIntegrationService {
       if (userId) {
         const ageGatingResult = await contentAgeGatingEngine.checkAgeGating(
           userId,
-          contentId
+          contentId,
+          'post' // Default to 'post', or pass contentType as parameter if available
         );
 
         if (!ageGatingResult.granted) {
@@ -232,11 +233,15 @@ class CommunityIntegrationService {
 
       // If age-restricted content, flag it
       if (decision.requiresAgeVerification) {
-        await contentAgeGatingEngine.flagAgeRestrictedContent(
+        await contentAgeGatingEngine.flagAgeRestrictedContent({
           contentId,
-          'moderator',
-          decision.reasoning
-        );
+          contentType: 'post', // Default type, could be passed as parameter
+          flaggedBySystem: false,
+          flaggedByAuthor: false,
+          flaggedByModerator: true,
+          minAge: 18,
+          restrictionReason: decision.reasoning,
+        });
       }
     } catch (error) {
       console.error('Error applying moderation decision:', error);
@@ -258,8 +263,8 @@ class CommunityIntegrationService {
       });
 
       return {
-        country: location.countryCode || 'UNKNOWN',
-        region: location.regionCode,
+        country: location.location.country || 'UNKNOWN',
+        region: location.location.region,
       };
     } catch (error) {
       console.error('Error getting current location:', error);
@@ -288,12 +293,52 @@ class CommunityIntegrationService {
    * Get moderation status for content
    */
   private async getModerationStatus(
-    _contentId: string,
-    _contentType: 'post' | 'comment'
+    contentId: string,
+    contentType: 'post' | 'comment'
   ): Promise<'active' | 'removed' | 'quarantined' | 'under_review'> {
-    // TODO: Query moderation_decisions table
-    // For now, return active as default
-    return 'active';
+    try {
+      // Query moderation_decisions for this content
+      const { data: reports, error: reportsError } = await supabase
+        .from('content_reports')
+        .select('id')
+        .eq('content_id', contentId)
+        .eq('content_type', contentType)
+        .eq('status', 'resolved')
+        .limit(1);
+
+      if (reportsError || !reports || reports.length === 0) {
+        return 'active';
+      }
+
+      // Get the latest decision for this content
+      const { data: decision, error: decisionError } = await supabase
+        .from('moderation_decisions')
+        .select('action, status')
+        .eq('report_id', reports[0].id)
+        .eq('status', 'executed')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (decisionError || !decision) {
+        return 'active';
+      }
+
+      // Map action to moderation status
+      switch (decision.action) {
+        case 'remove':
+          return 'removed';
+        case 'quarantine':
+          return 'quarantined';
+        case 'no_action':
+          return 'active';
+        default:
+          return 'under_review';
+      }
+    } catch (error) {
+      console.error('Error getting moderation status:', error);
+      return 'active';
+    }
   }
 
   /**
@@ -304,12 +349,45 @@ class CommunityIntegrationService {
     contentType: 'post' | 'comment',
     action: string
   ): Promise<void> {
-    // TODO: Update posts/comments table with moderation status
-    console.log('Updating moderation status:', {
-      contentId,
-      contentType,
-      action,
-    });
+    try {
+      const tableName = contentType === 'post' ? 'posts' : 'post_comments';
+      const now = new Date().toISOString();
+
+      // Update based on action type
+      const updates: Record<string, any> = {};
+
+      switch (action) {
+        case 'remove':
+          updates.deleted_at = now;
+          updates.moderation_reason = 'Content removed by moderation';
+          break;
+        case 'quarantine':
+          updates.hidden_at = now;
+          updates.moderation_reason = 'Content under review';
+          break;
+        case 'no_action':
+          // Clear any previous moderation flags
+          updates.deleted_at = null;
+          updates.hidden_at = null;
+          updates.moderation_reason = null;
+          break;
+        default:
+          updates.moderation_reason = `Action: ${action}`;
+      }
+
+      const { error } = await supabase
+        .from(tableName)
+        .update(updates)
+        .eq('id', contentId);
+
+      if (error) {
+        console.error('Error updating content moderation status:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error updating moderation status:', error);
+      throw error;
+    }
   }
 
   /**
@@ -325,15 +403,54 @@ class CommunityIntegrationService {
   /**
    * Check if user can report content
    *
-   * Prevents manifestly unfounded reporters from submitting reports
+   * Prevents manifestly unfounded reporters from submitting reports (DSA Art. 23)
    */
-  async canUserReportContent(_userId: string): Promise<{
+  async canUserReportContent(userId: string): Promise<{
     allowed: boolean;
     reason?: string;
   }> {
-    // TODO: Check repeat_offender_records for manifestly unfounded reports
-    // For now, allow all users to report
-    return { allowed: true };
+    try {
+      // Check repeat_offender_records for manifestly unfounded reports
+      const { data, error } = await supabase
+        .from('repeat_offender_records')
+        .select('manifestly_unfounded_reports, status')
+        .eq('user_id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        // PGRST116 = no rows found, which is fine
+        console.error('Error checking repeat offender status:', error);
+        return { allowed: true }; // Default to allowing on error
+      }
+
+      // If no record found, user can report
+      if (!data) {
+        return { allowed: true };
+      }
+
+      // Check if user is suspended for manifestly unfounded reports
+      if (data.status === 'suspended' || data.status === 'banned') {
+        return {
+          allowed: false,
+          reason:
+            'Your reporting privileges have been suspended due to repeated manifestly unfounded reports',
+        };
+      }
+
+      // Warn if approaching threshold (e.g., 3+ unfounded reports)
+      if (data.manifestly_unfounded_reports >= 3) {
+        return {
+          allowed: true,
+          reason:
+            'Warning: Multiple unfounded reports may result in reporting restrictions',
+        };
+      }
+
+      return { allowed: true };
+    } catch (error) {
+      console.error('Error checking report permission:', error);
+      return { allowed: true }; // Default to allowing on error
+    }
   }
 
   /**
@@ -355,9 +472,13 @@ class CommunityIntegrationService {
   async isContentAgeRestricted(contentId: string): Promise<boolean> {
     try {
       // Check content_age_restrictions table
-      const restrictions =
-        await contentAgeGatingEngine.getContentRestrictions(contentId);
-      return restrictions !== null;
+      const { data, error } = await supabase
+        .from('content_age_restrictions')
+        .select('id')
+        .eq('content_id', contentId)
+        .single();
+
+      return !error && data !== null;
     } catch (error) {
       console.error('Error checking age restrictions:', error);
       return false;

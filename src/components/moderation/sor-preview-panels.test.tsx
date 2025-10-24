@@ -49,35 +49,50 @@ jest.mock('react-i18next', () => ({
 }));
 
 const mockUserFacing = {
-  decision_ground: 'Violation of community guidelines',
+  id: 'sor-1',
+  decision_id: 'dec-1',
+  decision_ground: 'Violation of community guidelines' as any,
   legal_reference: 'Community Guidelines §3.1',
-  content_type: 'Text Post',
+  content_type: 'Text Post' as any,
   facts_and_circumstances: 'User posted inappropriate content',
   automated_detection: true,
   automated_decision: false,
   territorial_scope: ['US', 'EU'],
-  redress: ['Appeal', 'Contact Support'],
+  redress: ['Appeal', 'Contact Support'] as any,
   created_at: new Date('2024-01-01T00:00:00Z'),
+  updated_at: new Date('2024-01-01T00:00:00Z'),
 };
 
 const mockRedacted = {
-  decision_ground: 'Violation of community guidelines',
+  decision_id: 'dec-1',
+  decision_ground: 'Violation of community guidelines' as any,
   legal_reference: 'Community Guidelines §3.1',
-  content_type: 'Text Post',
+  content_type: 'Text Post' as any,
   automated_detection: true,
   automated_decision: false,
   territorial_scope: ['US', 'EU'],
-  redress: ['Appeal', 'Contact Support'],
+  redress: ['Appeal', 'Contact Support'] as any,
   pseudonymized_reporter_id: 'user_123',
   pseudonymized_moderator_id: 'mod_456',
+  pseudonymized_decision_id: 'pdec_789',
+  created_at: new Date('2024-01-01T00:00:00Z'),
   aggregated_data: {
     report_count: 5,
-    evidence_type: 'Screenshot',
-    content_age: '2 days',
+    evidence_type: 'Screenshot' as any,
+    content_age: '2 days' as any,
+    jurisdiction_count: 2,
+    has_trusted_flagger: false,
   },
   scrubbing_metadata: {
     scrubbed_at: new Date('2024-01-01T01:00:00Z'),
     scrubbing_version: '1.0.0',
+    redacted_fields: ['user_id'],
+    environment_salt_version: 'v1',
+    aggregation_suppression: {
+      report_count: false,
+      jurisdiction_count: false,
+      k: 5,
+    },
   },
 };
 
@@ -86,6 +101,14 @@ const mockRedactedSuppressed = {
   aggregated_data: {
     ...mockRedacted.aggregated_data,
     report_count: 'suppressed' as const,
+  },
+  scrubbing_metadata: {
+    ...mockRedacted.scrubbing_metadata,
+    aggregation_suppression: {
+      report_count: true,
+      jurisdiction_count: false,
+      k: 5,
+    },
   },
 };
 

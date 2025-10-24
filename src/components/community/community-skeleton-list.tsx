@@ -4,9 +4,15 @@ import { View } from '@/components/ui';
 
 const PLACEHOLDER_ITEMS = Array.from({ length: 4 });
 
-export function CommunitySkeletonList(): React.ReactElement {
+interface CommunitySkeletonListProps {
+  testID?: string;
+}
+
+export function CommunitySkeletonList({
+  testID = 'community-skeleton-list',
+}: CommunitySkeletonListProps): React.ReactElement {
   return (
-    <View className="gap-4 px-4" testID="community-skeleton-list">
+    <View className="gap-4 px-4" testID={testID}>
       {PLACEHOLDER_ITEMS.map((_, index) => (
         <View
           key={index}

@@ -33,7 +33,7 @@ export function AgeGatedPostCard({
   testID = 'age-gated-post-card',
 }: AgeGatedPostCardProps): React.ReactElement {
   // Check if post is age-restricted
-  const isAgeRestricted = (post as any).is_age_restricted ?? false;
+  const isAgeRestricted = post.is_age_restricted ?? false;
 
   // If not age-restricted or user is verified, show normal post
   if (!isAgeRestricted || isAgeVerified) {

@@ -142,16 +142,27 @@ function loadConfigFromEnv(): Partial<ModerationConfig> {
       enabled: process.env.FEATURE_SOR_EXPORT_ENABLED === 'true',
       apiUrl: process.env.DSA_TRANSPARENCY_DB_URL,
       apiKey: process.env.DSA_TRANSPARENCY_DB_API_KEY,
+      retryDelay: 5000,
+      batchSize: 100,
+      retryAttempts: 3,
+      circuitBreakerThreshold: 5,
+      circuitBreakerTimeout: 60000,
     },
     pii: {
       salt: process.env.PII_SCRUBBING_SALT,
       saltVersion: process.env.PII_SALT_VERSION || 'v1.0',
+      kAnonymity: 5,
     },
     ageVerification: {
       enabled: process.env.FEATURE_AGE_VERIFICATION_ENABLED === 'true',
+      tokenExpiryDays: 90,
+      appealWindowDays: 30,
     },
     geoLocation: {
       enabled: process.env.FEATURE_GEO_BLOCKING_ENABLED === 'true',
+      ipGeolocationProvider: 'ipinfo',
+      vpnBlockingEnabled: false,
+      decisionCacheTtl: 3600000,
     },
   };
 }
@@ -323,9 +334,9 @@ function deepMerge<T extends Record<string, any>>(
           typeof targetValue === 'object' &&
           !Array.isArray(targetValue)
         ) {
-          result[key] = deepMerge(targetValue, sourceValue);
+          result[key] = deepMerge(targetValue, sourceValue) as any;
         } else if (sourceValue !== undefined) {
-          result[key] = sourceValue;
+          result[key] = sourceValue as any;
         }
       }
     }

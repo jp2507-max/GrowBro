@@ -49,8 +49,8 @@ export function useIntegratedGeoRestrictions(): UseIntegratedGeoRestrictionsResu
         ipAddress,
       });
 
-      setUserCountry(location.countryCode || 'UNKNOWN');
-      setUserRegion(location.regionCode || null);
+      setUserCountry(location.location.country || 'UNKNOWN');
+      setUserRegion(location.location.region || null);
     } catch (error) {
       console.error('Error detecting location:', error);
       // Default to no restrictions on error

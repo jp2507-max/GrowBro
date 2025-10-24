@@ -213,14 +213,21 @@ function checkHealth(url) {
     });
 
     if (response) {
-      const health = JSON.parse(response);
+      try {
+        const health = JSON.parse(response);
 
-      if (health.status === 'healthy') {
-        log('✅ System is healthy', 'green');
-        return true;
-      } else {
-        log(`⚠️  System status: ${health.status}`, 'yellow');
-        log(JSON.stringify(health, null, 2), 'yellow');
+        if (health.status === 'healthy') {
+          log('✅ System is healthy', 'green');
+          return true;
+        } else {
+          log(`⚠️  System status: ${health.status}`, 'yellow');
+          log(JSON.stringify(health, null, 2), 'yellow');
+          return false;
+        }
+      } catch (error) {
+        log('❌ Failed to parse health response', 'red');
+        log(`Raw response: ${response}`, 'red');
+        log(`Parse error: ${error.message}`, 'red');
         return false;
       }
     } else {

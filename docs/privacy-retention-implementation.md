@@ -502,9 +502,60 @@ DATA_RETENTION_GRACE_PERIOD_DAYS=30
 DATA_RETENTION_AUDIT_DAYS=2555
 
 # PII scrubbing (for transparency reporting)
-PII_SCRUBBING_SALT=<generate-secure-random-salt>
+PII_SCRUBBING_SALT=<generate-cryptographically-secure-salt>
 PII_SALT_VERSION=v1.0
 ```
+
+#### PII Scrubbing Salt Security Requirements
+
+The `PII_SCRUBBING_SALT` must be a cryptographically strong random value of at least 32 bytes (256 bits) to ensure adequate entropy for PII anonymization. This salt is used in HMAC-based hashing to create irreversible anonymized identifiers for transparency reporting.
+
+**Generation Commands:**
+
+Generate using OpenSSL (Linux/macOS):
+
+```bash
+openssl rand -hex 32
+```
+
+Generate using PowerShell (Windows):
+
+```powershell
+[System.Web.Security.Membership]::GeneratePassword(64, 0)
+```
+
+Generate using Node.js (cross-platform):
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+**Storage Requirements:**
+
+- **Never store in version control** - even encrypted repositories
+- Store in a secrets manager (AWS Secrets Manager, Azure Key Vault, HashiCorp Vault) or encrypted environment variables
+- Implement strict access controls - only application runtime should have read access
+- Use separate salts per environment (development, staging, production)
+
+**Salt Rotation Strategy:**
+
+- **Periodic Rotation**: Rotate salts every 90-180 days or annually based on risk assessment
+- **Compromise Response**: Immediately rotate on suspected key compromise
+- **Migration Approach**:
+  - Generate new salt and increment `PII_SALT_VERSION` (e.g., v1.0 → v1.1)
+  - Maintain old salts in secure storage for verification of historical data
+  - Re-scrub existing anonymized data with new salt during low-traffic windows
+  - Update application code to use new salt version for future scrubbing
+  - Archive old salts with timestamps for compliance audit trails
+
+**PII_SALT_VERSION Tracking:**
+
+The `PII_SALT_VERSION` is tracked separately to enable deterministic algorithm and salt upgrades. This versioning allows:
+
+- **Reprocessing**: Historical data can be re-anonymized with newer algorithms/salts
+- **Migration Safety**: Prevents ambiguous salt usage during deployment rollouts
+- **Audit Compliance**: Maintains chain of custody for data transformations
+- **Rollback Capability**: Applications can revert to previous salt versions if needed
 
 ### Database Migration
 

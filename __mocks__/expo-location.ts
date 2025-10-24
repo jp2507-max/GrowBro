@@ -8,7 +8,7 @@ export const PermissionStatus = {
   DENIED: 'denied',
 } as const;
 
-export type PermissionStatus =
+export type PermissionStatusType =
   (typeof PermissionStatus)[keyof typeof PermissionStatus];
 
 export const Accuracy = {
@@ -20,7 +20,7 @@ export const Accuracy = {
   BestForNavigation: 6,
 } as const;
 
-export type Accuracy = (typeof Accuracy)[keyof typeof Accuracy];
+export type AccuracyType = (typeof Accuracy)[keyof typeof Accuracy];
 
 export const requestForegroundPermissionsAsync = jest.fn();
 export const getForegroundPermissionsAsync = jest.fn();

@@ -6,12 +6,12 @@
   "lastUpdated": "2025-10-19",
   "controller": {
     "name": "GrowBro GmbH",
-    "address": "Musterstrasse 123, 10115 Berlin, Germany",
+    "address": "Grubenstrasse 13 a, 18055 Rostock, Germany",
     "dpoContact": {
-      "name": "Jan Blohm",
-      "email": "data-protection@growbro.app",
+      "name": "Jan-Peter Blohm",
+      "email": "jan-blohm@gmx.de",
       "phone": "+49 30 12345678",
-      "address": "Musterstrasse 123, 10115 Berlin, Germany"
+      "address": "Grubenstrasse 13 a, 18055 Rostock, Germany"
     },
     "representativeEU": "Not applicable - Controller is established within the European Union"
   },
@@ -23,10 +23,10 @@
       "processor": null,
       "jointControllers": null,
       "dpoContact": {
-        "name": "Jan Blohm",
-        "email": "data-protection@growbro.app",
+        "name": "Jan-Peter Blohm",
+        "email": "jan-blohm@gmx.de",
         "phone": "+49 30 12345678",
-        "address": "Musterstrasse 123, 10115 Berlin, Germany"
+        "address": "Grubenstrasse 13 a, 18055 Rostock, Germany"
       },
       "purposes": [
         "DSA Notice-and-Action compliance (Art. 16, 17)",
@@ -116,10 +116,10 @@
       "processor": "[Third-party age verification provider if applicable]",
       "jointControllers": null,
       "dpoContact": {
-        "name": "Jan Blohm",
-        "email": "data-protection@growbro.app",
+        "name": "Jan-Peter Blohm",
+        "email": "jan-blohm@gmx.de",
         "phone": "+49 30 12345678",
-        "address": "Musterstrasse 123, 10115 Berlin, Germany"
+        "address": "Grubenstrasse 13 a, 18055 Rostock, Germany"
       },
       "purposes": [
         "DSA Art. 28 compliance (protection of minors)",
@@ -197,10 +197,10 @@
       "processor": null,
       "jointControllers": null,
       "dpoContact": {
-        "name": "Jan Blohm",
-        "email": "data-protection@growbro.app",
+        "name": "Jan-Peter Blohm",
+        "email": "jan-blohm@gmx.de",
         "phone": "+49 30 12345678",
-        "address": "Musterstrasse 123, 10115 Berlin, Germany"
+        "address": "Grubenstrasse 13 a, 18055 Rostock, Germany"
       },
       "purposes": [
         "Compliance with regional legal requirements (geo-blocking per moderation decisions)",
@@ -277,10 +277,10 @@
       "processor": null,
       "jointControllers": null,
       "dpoContact": {
-        "name": "Jan Blohm",
-        "email": "data-protection@growbro.app",
+        "name": "Jan-Peter Blohm",
+        "email": "jan-blohm@gmx.de",
         "phone": "+49 30 12345678",
-        "address": "Musterstrasse 123, 10115 Berlin, Germany"
+        "address": "Grubenstrasse 13 a, 18055 Rostock, Germany"
       },
       "purposes": [
         "DSA transparency reporting (Art. 15, 24)",
@@ -362,10 +362,10 @@
       "processor": null,
       "jointControllers": null,
       "dpoContact": {
-        "name": "Jan Blohm",
-        "email": "data-protection@growbro.app",
+        "name": "Jan-Peter Blohm",
+        "email": "jan-blohm@gmx.de",
         "phone": "+49 30 12345678",
-        "address": "Musterstrasse 123, 10115 Berlin, Germany"
+        "address": "Grubenstrasse 13 a, 18055 Rostock, Germany"
       },
       "purposes": [
         "DSA Art. 24(5) compliance (SoR submissions to Commission Transparency Database)",

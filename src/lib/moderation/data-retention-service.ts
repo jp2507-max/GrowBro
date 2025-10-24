@@ -321,12 +321,12 @@ export class DataRetentionService {
         }
 
         // Perform logical deletion first
-        await this.logicalDelete(
+        await this.logicalDelete({
           tableName,
-          record.id,
-          'system',
-          'Retention policy expiry'
-        );
+          recordId: record.id,
+          deletedBy: 'system',
+          reason: 'Retention policy expiry',
+        });
 
         deleted++;
       } catch (error) {
@@ -375,12 +375,12 @@ export class DataRetentionService {
 
     for (const record of tombstoned || []) {
       try {
-        await this.physicalDelete(
+        await this.physicalDelete({
           tableName,
-          record.id,
-          'system',
-          'Tombstone period expired'
-        );
+          recordId: record.id,
+          deletedBy: 'system',
+          reason: 'Tombstone period expired',
+        });
         deleted++;
       } catch (error) {
         errors.push(
@@ -399,8 +399,13 @@ export class DataRetentionService {
   /**
    * Get target type from table name
    */
-  private getTargetTypeFromTable(tableName: string): string {
-    const mapping: Record<string, string> = {
+  private getTargetTypeFromTable(
+    tableName: string
+  ): 'user' | 'content' | 'report' | 'decision' | 'appeal' | 'audit' {
+    const mapping: Record<
+      string,
+      'user' | 'content' | 'report' | 'decision' | 'appeal' | 'audit'
+    > = {
       users: 'user',
       posts: 'content',
       comments: 'content',
@@ -410,7 +415,7 @@ export class DataRetentionService {
       audit_events: 'audit',
     };
 
-    return mapping[tableName] || tableName;
+    return mapping[tableName] || 'content'; // Default fallback
   }
 
   /**

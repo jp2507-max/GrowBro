@@ -516,7 +516,12 @@ export class ManualFallbackManager {
    * Check if manual fallback is required based on error and context.
    */
   shouldTriggerFallback(error: Error, context: FallbackContext): boolean {
-    const classified = errorClassifier.classify(error, context);
+    const classified = errorClassifier.classify(error, {
+      operation: context.procedure,
+      reportId: context.reportId,
+      contentId: context.contentId,
+      userId: context.userId,
+    });
 
     // Always trigger for critical operations
     if (context.priority === 'immediate') {

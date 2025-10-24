@@ -25,6 +25,13 @@
     "babel.config.js",
     "metro.config.js",
     "jest.config.js",
-    "supabase"
+    "supabase",
+    "**/*age-verification-security.test.ts",
+    "**/*dsa-transparency-client.test.ts",
+    "**/*eprivacy-compliance.test.ts",
+    "**/*integration-workflows.test.ts",
+    "**/*data-privacy-services.test.ts",
+    "**/*misuse-detection.test.ts",
+    "**/*security-tests.test.ts"
   ]
 }

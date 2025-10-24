@@ -151,7 +151,7 @@ describe('MonitoringService', () => {
         { event_type: 'dsa_submission_failed', metadata: {} },
       ];
 
-      mockSupabase.from.mockImplementation((table) => {
+      mockSupabase.from.mockImplementation((table: string) => {
         if (table === 'audit_events') {
           return {
             select: jest.fn().mockReturnThis(),
@@ -222,7 +222,7 @@ describe('MonitoringService', () => {
 
   describe('getCapacityMetrics', () => {
     it('should calculate queue depths', async () => {
-      mockSupabase.from.mockImplementation((table) => {
+      mockSupabase.from.mockImplementation((table: string) => {
         const counts: Record<string, number> = {
           reports: 50,
           appeals: 10,
@@ -250,7 +250,7 @@ describe('MonitoringService', () => {
     }, 10000);
 
     it('should calculate moderator utilization', async () => {
-      mockSupabase.from.mockImplementation((table) => {
+      mockSupabase.from.mockImplementation((table: string) => {
         if (table === 'moderation_sessions') {
           return {
             select: jest.fn().mockReturnThis(),

@@ -11,6 +11,22 @@
  * Requirements: 10.3, 10.4, 10.6
  */
 
+// Import for use in executeWithResilience function
+import {
+  type FeatureFlag,
+  gracefulDegradationManager,
+} from './graceful-degradation';
+import {
+  type FallbackContext,
+  manualFallbackManager,
+} from './manual-fallback-procedures';
+import {
+  conservativeRetryStrategy,
+  criticalRetryStrategy,
+  standardRetryStrategy,
+} from './retry-strategy';
+import { dsaCircuitBreaker } from './sor-circuit-breaker';
+
 export {
   type ClassifiedError,
   type ErrorCategory,

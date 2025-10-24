@@ -34,7 +34,7 @@ export class AgeVerificationService {
   private tokenSecret: string;
 
   constructor(
-    supabase: ReturnType<typeof createClient>,
+    supabase: any,
     tokenSecret: string = process.env.AGE_TOKEN_SECRET || 'default-secret'
   ) {
     this.supabase = supabase;
@@ -243,7 +243,7 @@ export class AgeVerificationService {
   private async handleInvalidToken(
     tokenData: any,
     tokenId: string,
-    verificationToken: AgeVerificationToken
+    verificationToken: VerificationToken
   ): Promise<TokenValidationResult> {
     const error = this.determineTokenError(verificationToken);
     await this.logAuditEvent({
@@ -260,7 +260,7 @@ export class AgeVerificationService {
   private async atomicTokenUpdate(
     tokenId: string,
     tokenData: any,
-    verificationToken: AgeVerificationToken
+    verificationToken: VerificationToken
   ): Promise<{ success: boolean }> {
     const { data, error } = (await (
       this.supabase.from('age_verification_tokens').update as any
@@ -282,7 +282,7 @@ export class AgeVerificationService {
   private async handleConcurrentUsage(
     tokenData: any,
     tokenId: string,
-    verificationToken: AgeVerificationToken
+    verificationToken: VerificationToken
   ): Promise<TokenValidationResult> {
     await this.logAuditEvent({
       eventType: 'token_validated',

@@ -282,7 +282,7 @@ jest.mock('@/lib/watermelon', () => ({
       })),
       find: jest.fn().mockResolvedValue({ id: 'mock-id' }),
     })),
-    write: jest.fn().mockImplementation(async (fn: any) => fn({})),
+    write: jest.fn().mockImplementation(async (fn: any) => fn()),
   },
 }));
 

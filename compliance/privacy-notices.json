@@ -14,8 +14,8 @@
       "content": {
         "controller": {
           "name": "GrowBro",
-          "address": "[To be filled - registered office address]",
-          "dpoContact": "[To be filled - data-protection@growbro.app]"
+          "address": "Grubenstrasse 13 a, 18055 Rostock, Germany",
+          "dpoContact": "Jan-Peter Blohm <jan-blohm@gmx.de>"
         },
         "processingPurposes": [
           "Process content reports to maintain platform safety and comply with Digital Services Act (DSA) Notice-and-Action requirements (Art. 16, 17)",
@@ -111,9 +111,9 @@
           "explanation": "We use automated systems to classify content priority and detect policy violations. All moderation decisions are reviewed by human moderators. You have the right to contest automated classifications through our appeals process (DSA Art. 20)."
         },
         "contact": {
-          "dataAccess": "Use the 'Export My Data' feature in app settings or email [data-access@growbro.app]",
-          "dataDeletion": "Use the 'Delete My Account' feature in app settings or email [data-deletion@growbro.app]",
-          "dpo": "Contact our Data Protection Officer at [data-protection@growbro.app]",
+          "dataAccess": "Use the 'Export My Data' feature in app settings or email data-access@growbro.app",
+          "dataDeletion": "Use the 'Delete My Account' feature in app settings or email data-deletion@growbro.app",
+          "dpo": "Contact our Data Protection Officer, Jan-Peter Blohm, at jan-blohm@gmx.de",
           "supervisoryAuthority": "Contact your national data protection authority: https://edpb.europa.eu/about-edpb/about-edpb/members_en"
         }
       }
@@ -126,8 +126,8 @@
       "content": {
         "controller": {
           "name": "GrowBro",
-          "address": "[To be filled - registered office address]",
-          "dpoContact": "[To be filled - data-protection@growbro.app]"
+          "address": "Grubenstrasse 13 a, 18055 Rostock, Germany",
+          "dpoContact": "Jan-Peter Blohm <jan-blohm@gmx.de>"
         },
         "processingPurposes": [
           "Verify you are over 18 years old to comply with Digital Services Act (DSA) minor protection requirements (Art. 28)",
@@ -225,8 +225,8 @@
       "content": {
         "controller": {
           "name": "GrowBro",
-          "address": "[To be filled - registered office address]",
-          "dpoContact": "[To be filled - data-protection@growbro.app]"
+          "address": "Grubenstrasse 13 a, 18055 Rostock, Germany",
+          "dpoContact": "Jan-Peter Blohm <jan-blohm@gmx.de>"
         },
         "processingPurposes": [
           "Detect your geographic location to enforce regional content restrictions and comply with local laws",

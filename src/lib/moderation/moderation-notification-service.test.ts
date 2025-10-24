@@ -27,11 +27,11 @@ jest.mock('expo-notifications', () => ({
     .fn()
     .mockResolvedValue('mock-notification-id'),
   AndroidNotificationPriority: {
-    MIN: -2,
-    LOW: -1,
-    DEFAULT: 0,
-    HIGH: 1,
-    MAX: 2,
+    MIN: 'min',
+    LOW: 'low',
+    DEFAULT: 'default',
+    HIGH: 'high',
+    MAX: 'max',
   },
   SchedulableTriggerInputTypes: {
     DATE: 'date',

@@ -113,11 +113,15 @@ export class DSATransparencyClient {
       ...retryConfig,
     };
 
-    if (!this.baseUrl) {
-      throw new Error(
-        'DSA_TRANSPARENCY_DB_URL environment variable is required'
-      );
-    }
+    // NOTE: Validation moved to individual methods to avoid throwing at import time
+    // The singleton instance (exported below) would cause app startup failures in
+    // dev/test environments where DSA env vars are intentionally unset.
+    // Instead, validate configuration lazily when methods are actually called.
+    // if (!this.baseUrl) {
+    //   throw new Error(
+    //     'DSA_TRANSPARENCY_DB_URL environment variable is required'
+    //   );
+    // }
   }
 
   /**
@@ -132,6 +136,13 @@ export class DSATransparencyClient {
     statements: RedactedSoR[],
     idempotencyKey?: string
   ): Promise<DSASubmissionResponseWithDuration> {
+    // Lazy validation - only check config when actually making API calls
+    if (!this.baseUrl) {
+      throw new Error(
+        'DSA_TRANSPARENCY_DB_URL environment variable is required'
+      );
+    }
+
     const startTime = Date.now();
 
     // Validate batch size

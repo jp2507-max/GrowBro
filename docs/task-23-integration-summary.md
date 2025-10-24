@@ -357,20 +357,26 @@ Replace `CommentItem` with `ModeratedCommentItem`:
 
 ## Files Created
 
-1. `src/lib/moderation/community-integration.ts` - Core integration service
+1. `src/lib/moderation/community-integration.ts` - Core integration service (✅ Updated with database queries)
 2. `src/components/community/moderated-post-card.tsx` - Enhanced post card
 3. `src/components/community/moderated-comment-item.tsx` - Enhanced comment item
 4. `src/lib/moderation/use-integrated-age-verification.ts` - Age verification hook
 5. `src/lib/moderation/use-integrated-geo-restrictions.ts` - Geo-restrictions hook
 6. `src/components/community/integrated-feed.tsx` - Integrated feed component
-7. `docs/community-moderation-integration.md` - Comprehensive documentation
-8. `docs/task-23-integration-summary.md` - This summary document
+7. `src/lib/auth/use-age-verification-status.ts` - Age verification status hook for auth integration
+8. `src/lib/moderation/content-visibility-service.ts` - Content visibility management service
+9. `src/lib/moderation/use-content-visibility.ts` - React hook for content visibility checks
+10. `src/lib/moderation/__tests__/community-integration.test.ts` - Integration tests
+11. `docs/community-moderation-integration.md` - Comprehensive documentation
+12. `docs/task-23-integration-summary.md` - This summary document
 
 ## Files Modified
 
-1. `src/translations/en.json` - Added moderation translation keys
-2. `src/translations/de.json` - Added moderation translation keys (German)
-3. `src/components/community/index.ts` - Added new component exports
+1. `src/lib/moderation/community-integration.ts` - Completed TODO items with database queries
+2. `src/components/community/comment-list.tsx` - Updated to use ModeratedCommentItem
+3. `src/translations/en.json` - Added moderation translation keys
+4. `src/translations/de.json` - Added moderation translation keys (German)
+5. `src/components/community/index.ts` - Added new component exports
 
 ## Conclusion
 
