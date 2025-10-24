@@ -8,8 +8,8 @@
 
 import { supabase } from '@/lib/supabase';
 import type {
-  ContactInfo,
   QualityMetrics,
+  RegisterFlaggerInput,
   TrustedFlagger,
   TrustedFlaggerStatus,
 } from '@/types/moderation';
@@ -22,12 +22,6 @@ const auditService = new AuditService(supabase);
 // ============================================================================
 // Types
 // ============================================================================
-
-export interface RegisterFlaggerInput {
-  organizationName: string;
-  contactInfo: ContactInfo;
-  specialization: string[];
-}
 
 export interface CertifyFlaggerInput {
   flaggerId: string;
@@ -60,6 +54,10 @@ export async function registerFlagger(
   input: RegisterFlaggerInput
 ): Promise<{ flaggerId: string }> {
   // Validate input
+  if (!input.user_id?.trim()) {
+    throw new Error('User ID is required');
+  }
+
   if (!input.organizationName?.trim()) {
     throw new Error('Organization name is required');
   }
@@ -79,6 +77,7 @@ export async function registerFlagger(
   const { data, error } = await supabase
     .from('trusted_flaggers')
     .insert({
+      user_id: input.user_id,
       organization_name: input.organizationName,
       contact_info: input.contactInfo,
       specialization: input.specialization,
@@ -102,8 +101,8 @@ export async function registerFlagger(
   // Log registration event
   await auditService.logEvent({
     event_type: 'trusted_flagger_registered',
-    actor_id: 'system',
-    actor_type: 'system',
+    actor_id: input.user_id,
+    actor_type: 'user',
     target_id: data.id,
     target_type: 'trusted_flagger',
     action: 'register',
@@ -306,7 +305,7 @@ export async function isUserTrustedFlagger(userId: string): Promise<boolean> {
   const { data, error } = await supabase
     .from('trusted_flaggers')
     .select('id')
-    .eq('id', userId)
+    .eq('user_id', userId)
     .eq('status', 'active')
     .is('deleted_at', null)
     .single();
@@ -331,6 +330,7 @@ export async function isUserTrustedFlagger(userId: string): Promise<boolean> {
 function mapDatabaseRowToFlagger(row: any): TrustedFlagger {
   return {
     id: row.id,
+    user_id: row.user_id,
     organization_name: row.organization_name,
     contact_info: row.contact_info,
     specialization: row.specialization,

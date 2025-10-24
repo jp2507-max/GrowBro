@@ -331,7 +331,7 @@ pnpm tsx scripts/export-transparency-metrics.ts --metric=sla_performance
 
 **Notification Template**:
 
-```
+```text
 Subject: SLA Performance Report - [PERIOD]
 
 To: [Digital Service Coordinator]

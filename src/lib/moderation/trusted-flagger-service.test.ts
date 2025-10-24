@@ -68,6 +68,7 @@ describe('Trusted Flagger Service', () => {
       });
 
       const input = {
+        user_id: 'user-123',
         organizationName: 'Test Org',
         contactInfo: { email: 'test@example.com' },
         specialization: ['hate_speech', 'csam'],
@@ -82,6 +83,7 @@ describe('Trusted Flagger Service', () => {
 
     it('should throw error if organization name is missing', async () => {
       const input = {
+        user_id: 'user-123',
         organizationName: '',
         contactInfo: { email: 'test@example.com' },
         specialization: ['hate_speech'],
@@ -94,6 +96,7 @@ describe('Trusted Flagger Service', () => {
 
     it('should throw error if email is missing', async () => {
       const input = {
+        user_id: 'user-123',
         organizationName: 'Test Org',
         contactInfo: { email: '' },
         specialization: ['hate_speech'],
@@ -106,6 +109,7 @@ describe('Trusted Flagger Service', () => {
 
     it('should throw error if specialization is empty', async () => {
       const input = {
+        user_id: 'user-123',
         organizationName: 'Test Org',
         contactInfo: { email: 'test@example.com' },
         specialization: [],
@@ -113,6 +117,19 @@ describe('Trusted Flagger Service', () => {
 
       await expect(registerFlagger(input)).rejects.toThrow(
         'At least one specialization is required'
+      );
+    });
+
+    it('should throw error if user_id is missing', async () => {
+      const input = {
+        user_id: '',
+        organizationName: 'Test Org',
+        contactInfo: { email: 'test@example.com' },
+        specialization: ['hate_speech'],
+      };
+
+      await expect(registerFlagger(input)).rejects.toThrow(
+        'User ID is required'
       );
     });
   });
@@ -200,6 +217,7 @@ describe('Trusted Flagger Service', () => {
     it('should return flagger by id', async () => {
       const mockFlagger = {
         id: 'flagger-123',
+        user_id: 'user-123',
         organization_name: 'Test Org',
         contact_info: { email: 'test@example.com' },
         specialization: ['hate_speech'],
@@ -246,6 +264,7 @@ describe('Trusted Flagger Service', () => {
       const mockFlaggers = [
         {
           id: 'flagger-1',
+          user_id: 'user-1',
           organization_name: 'Org 1',
           status: 'active',
           certification_date: '2025-01-01T00:00:00Z',
@@ -277,9 +296,10 @@ describe('Trusted Flagger Service', () => {
         error: null,
       });
 
-      const result = await isUserTrustedFlagger('flagger-123');
+      const result = await isUserTrustedFlagger('user-123');
 
       expect(result).toBe(true);
+      expect(mockSupabaseChain.eq).toHaveBeenCalledWith('user_id', 'user-123');
     });
 
     it('should return false for non-flagger', async () => {
@@ -291,6 +311,7 @@ describe('Trusted Flagger Service', () => {
       const result = await isUserTrustedFlagger('user-456');
 
       expect(result).toBe(false);
+      expect(mockSupabaseChain.eq).toHaveBeenCalledWith('user_id', 'user-456');
     });
   });
 
@@ -334,6 +355,7 @@ describe('Trusted Flagger Service', () => {
       const mockFlaggers = [
         {
           id: 'flagger-1',
+          user_id: 'user-1',
           status: 'active',
           review_date: new Date(Date.now() - 1000).toISOString(),
           certification_date: '2025-01-01T00:00:00Z',

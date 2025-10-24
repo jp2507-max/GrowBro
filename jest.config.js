@@ -2,17 +2,7 @@ module.exports = {
   preset: 'jest-expo',
   setupFilesAfterEnv: ['<rootDir>/jest-setup.ts'],
   testMatch: ['**/?(*.)+(spec|test).ts?(x)'],
-  testPathIgnorePatterns: [
-    '/node_modules/',
-    // Disabled tests with API mismatches - need complete rewrites
-    'age-verification-security\\.test\\.ts$',
-    'dsa-transparency-client\\.test\\.ts$',
-    'eprivacy-compliance\\.test\\.ts$',
-    'integration-workflows\\.test\\.ts$',
-    'data-privacy-services\\.test\\.ts$',
-    'misuse-detection\\.test\\.ts$',
-    'security-tests\\.test\\.ts$',
-  ],
+  testPathIgnorePatterns: ['/node_modules/'],
   fakeTimers: {
     timers: 'modern',
   },

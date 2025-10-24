@@ -8,27 +8,27 @@ This runbook provides step-by-step procedures for responding to incidents in the
 
 ### Severity Levels
 
-**P0 - Critical**
+#### P0 - Critical
 
 - Complete system outage
 - Data breach or security incident
 - Regulatory compliance violation
 - SLA breach affecting >100 users
 
-**P1 - High**
+#### P1 - High
 
 - Partial system degradation
 - SLA breach affecting 10-100 users
 - Failed SoR submissions to Commission DB
 - Audit trail integrity issues
 
-**P2 - Medium**
+#### P2 - Medium
 
 - Performance degradation
 - Non-critical feature failures
 - Individual SLA breaches (<10 users)
 
-**P3 - Low**
+#### P3 - Low
 
 - Minor bugs
 - Documentation issues
@@ -38,28 +38,28 @@ This runbook provides step-by-step procedures for responding to incidents in the
 
 ### Roles and Responsibilities
 
-**Incident Commander (IC)**
+#### Incident Commander (IC)
 
 - Overall incident coordination
 - Communication with stakeholders
 - Decision-making authority
 - Post-incident review lead
 
-**Technical Lead**
+#### Technical Lead
 
 - Technical investigation
 - Root cause analysis
 - Implementation of fixes
 - System recovery
 
-**Communications Lead**
+#### Communications Lead
 
 - User communications
 - Regulatory notifications (if required)
 - Status updates
 - Documentation
 
-**Compliance Officer**
+#### Compliance Officer
 
 - Regulatory impact assessment
 - Legal consultation coordination
@@ -81,14 +81,14 @@ Legal Counsel: [CONTACT]
 
 ### Phase 1: Detection and Triage (0-15 minutes)
 
-**1. Incident Detection**
+#### 1. Incident Detection
 
 - Automated alerts (Sentry, monitoring dashboards)
 - User reports
 - Manual discovery
 - Regulatory authority notification
 
-**2. Initial Assessment**
+#### 2. Initial Assessment
 
 ```bash
 # Check system health
@@ -101,13 +101,13 @@ pnpm tsx scripts/check-sla-status.ts
 pnpm tsx scripts/verify-audit-integrity.ts
 ```
 
-**3. Severity Classification**
+#### 3. Severity Classification
 
 - Determine severity level (P0-P3)
 - Identify affected systems and users
 - Assess regulatory impact
 
-**4. Incident Declaration**
+#### 4. Incident Declaration
 
 - Create incident ticket
 - Notify incident response team
@@ -115,9 +115,9 @@ pnpm tsx scripts/verify-audit-integrity.ts
 
 ### Phase 2: Containment (15-60 minutes)
 
-**1. Immediate Actions**
+#### 1. Immediate Actions
 
-For **System Outage**:
+##### System Outage
 
 ```bash
 # Check service status
@@ -130,7 +130,7 @@ psql -h [SUPABASE_HOST] -U postgres -c "SELECT 1"
 curl -I https://transparency-database.ec.europa.eu/api/health
 ```
 
-For **Data Breach**:
+##### Data Breach
 
 ```bash
 # Isolate affected systems
@@ -139,7 +139,7 @@ For **Data Breach**:
 # Begin breach assessment
 ```
 
-For **SLA Breach**:
+##### SLA Breach
 
 ```bash
 # Identify affected reports
@@ -149,7 +149,7 @@ pnpm tsx scripts/get-sla-breaches.ts
 pnpm tsx scripts/escalate-reports.ts --priority=critical
 ```
 
-**2. Communication**
+#### 2. Communication
 
 - Notify affected users (if applicable)
 - Update status page
@@ -157,14 +157,14 @@ pnpm tsx scripts/escalate-reports.ts --priority=critical
 
 ### Phase 3: Investigation (1-4 hours)
 
-**1. Root Cause Analysis**
+#### 1. Root Cause Analysis
 
 - Review logs and metrics
 - Analyze audit trails
 - Identify failure points
 - Document findings
 
-**2. Data Collection**
+#### 2. Data Collection
 
 ```bash
 # Export relevant logs
@@ -177,7 +177,7 @@ pnpm tsx scripts/snapshot-system-state.ts
 pnpm tsx scripts/export-audit-trail.ts --start=[TIME] --end=[TIME]
 ```
 
-**3. Impact Assessment**
+#### 3. Impact Assessment
 
 - Count affected users
 - Identify failed operations
@@ -186,14 +186,14 @@ pnpm tsx scripts/export-audit-trail.ts --start=[TIME] --end=[TIME]
 
 ### Phase 4: Resolution (4-24 hours)
 
-**1. Implement Fix**
+#### 1. Implement Fix
 
 - Deploy hotfix (if applicable)
 - Manual intervention (if required)
 - System recovery procedures
 - Data restoration (if needed)
 
-**2. Verification**
+#### 2. Verification
 
 ```bash
 # Verify system health
@@ -206,9 +206,9 @@ pnpm tsx scripts/validate-dsa-compliance.ts
 pnpm tsx scripts/verify-audit-integrity.ts
 ```
 
-**3. Recovery Actions**
+#### 3. Recovery Actions
 
-For **Failed SoR Submissions**:
+##### Failed SoR Submissions
 
 ```bash
 # Retry failed submissions
@@ -218,7 +218,7 @@ pnpm tsx scripts/retry-sor-submissions.ts --queue-status=failed
 pnpm tsx scripts/test-dsa-api-connection.ts
 ```
 
-For **Audit Trail Issues**:
+##### Audit Trail Issues
 
 ```bash
 # Verify partition integrity
@@ -230,35 +230,35 @@ pnpm tsx scripts/restore-audit-partition.ts --partition=[MONTH]
 
 ### Phase 5: Post-Incident (24-72 hours)
 
-**1. Post-Incident Review**
+#### 1. Post-Incident Review
 
 - Schedule review meeting (within 48 hours)
 - Document timeline
 - Identify lessons learned
 - Create action items
 
-**2. Regulatory Notifications**
+#### 2. Regulatory Notifications
 
-For **Data Breach** (GDPR Art. 33/34):
+##### Data Breach (GDPR Art. 33/34)
 
 - Notify supervisory authority within 72 hours
 - Notify affected users (if high risk)
 - Document breach details
 
-For **DSA Compliance Violation**:
+##### DSA Compliance Violation
 
 - Assess notification requirements
 - Consult legal counsel
 - Prepare authority report
 
-**3. Documentation**
+#### 3. Documentation
 
 - Complete incident report
 - Update runbooks
 - Document preventive measures
 - Archive evidence
 
-**4. Follow-up Actions**
+#### 4. Follow-up Actions
 
 - Implement preventive measures
 - Update monitoring and alerts

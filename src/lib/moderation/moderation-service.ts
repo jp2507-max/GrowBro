@@ -479,7 +479,8 @@ export class ModerationService {
           updated_at: new Date().toISOString(),
         })
         .eq('id', reportId)
-        .eq('status', 'in_review');
+        .eq('status', 'in_review')
+        .select('id', { count: 'exact', head: true });
 
       if (statusUpdateError) {
         return {

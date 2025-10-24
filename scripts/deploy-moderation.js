@@ -10,6 +10,7 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const dotenv = require('dotenv');
 
 // ANSI color codes
 const colors = {
@@ -77,12 +78,14 @@ function validateEnvVars(env) {
 
   const envPath = path.join(process.cwd(), `.env.${env}`);
   const envContent = fs.readFileSync(envPath, 'utf-8');
+  const parsed = dotenv.parse(envContent);
 
   const missing = [];
 
-  // Check required vars
+  // Check required vars (non-empty)
   for (const varName of requiredVars) {
-    if (!envContent.includes(`${varName}=`)) {
+    const val = parsed[varName];
+    if (typeof val !== 'string' || val.trim() === '') {
       missing.push(varName);
     }
   }
@@ -90,7 +93,8 @@ function validateEnvVars(env) {
   // Check production-specific vars
   if (env === 'production') {
     for (const varName of productionVars) {
-      if (!envContent.includes(`${varName}=`)) {
+      const val = parsed[varName];
+      if (typeof val !== 'string' || val.trim() === '') {
         missing.push(varName);
       }
     }
@@ -252,14 +256,13 @@ function createBackup(env) {
 
     exec(`pnpm backup:create ${backupName}`, {
       silent: false,
-      ignoreError: true,
     });
 
     log(`✅ Backup created: ${backupName}`, 'green');
     return backupName;
-  } catch (_error) {
-    log('⚠️  Backup creation failed (continuing anyway)', 'yellow');
-    return null;
+  } catch (error) {
+    log(`❌ Backup creation failed: ${error.message}`, 'red');
+    throw error;
   }
 }
 
@@ -340,6 +343,7 @@ function deploy(env, options = {}) {
   }
 
   // Health check
+  let healthCheckPassed = true;
   if (!options.skipHealthCheck) {
     const urls = {
       development: 'http://localhost:3000',
@@ -353,7 +357,8 @@ function deploy(env, options = {}) {
       log('\n⏳ Waiting for deployment to stabilize...', 'blue');
       exec('sleep 10', { silent: true });
 
-      if (!checkHealth(url)) {
+      healthCheckPassed = checkHealth(url);
+      if (!healthCheckPassed) {
         log('\n⚠️  Health check failed after deployment', 'yellow');
         log('Please investigate and consider rollback if needed', 'yellow');
       }
@@ -361,8 +366,28 @@ function deploy(env, options = {}) {
   }
 
   log(`\n${'='.repeat(60)}`, 'bright');
-  log(`✅ Deployment to ${env.toUpperCase()} completed successfully!`, 'green');
-  log(`${'='.repeat(60)}\n`, 'bright');
+  if (!healthCheckPassed) {
+    if (env === 'production') {
+      log(
+        `❌ Deployment to ${env.toUpperCase()} completed but health check failed!`,
+        'red'
+      );
+      log(`${'='.repeat(60)}\n`, 'bright');
+      process.exit(1);
+    } else {
+      log(
+        `⚠️  Deployment to ${env.toUpperCase()} completed with warnings (health check failed)!`,
+        'yellow'
+      );
+      log(`${'='.repeat(60)}\n`, 'bright');
+    }
+  } else {
+    log(
+      `✅ Deployment to ${env.toUpperCase()} completed successfully!`,
+      'green'
+    );
+    log(`${'='.repeat(60)}\n`, 'bright');
+  }
 }
 
 /**

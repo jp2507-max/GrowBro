@@ -356,6 +356,9 @@ export interface QualityMetrics {
 export interface TrustedFlagger {
   id: string;
 
+  // User account association (moderator who registered)
+  user_id?: string;
+
   // Organization
   organization_name: string;
   contact_info: ContactInfo;
@@ -375,6 +378,13 @@ export interface TrustedFlagger {
   created_at: Date;
   updated_at: Date;
   deleted_at?: Date;
+}
+
+export interface RegisterFlaggerInput {
+  user_id: string; // Moderator account that owns this trusted flagger record
+  organizationName: string;
+  contactInfo: ContactInfo;
+  specialization: string[];
 }
 
 // ============================================================================
