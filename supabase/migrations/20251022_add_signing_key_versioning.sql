@@ -440,5 +440,4 @@ DROP TABLE IF EXISTS public.audit_signing_keys;
 
 -- Remove signing_key_version columns
 ALTER TABLE public.audit_events DROP COLUMN IF EXISTS signing_key_version;
-ALTER TABLE public.partition_manifests DROP COLUMN IF EXISTS signing_key_version;</content>
-<parameter name="filePath">c:\Users\Peter\GrowBro\supabase\migrations\20251022_add_signing_key_versioning.sql
+ALTER TABLE public.partition_manifests DROP COLUMN IF EXISTS signing_key_version;
