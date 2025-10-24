@@ -460,6 +460,54 @@ export class ModerationService {
     return !error;
   }
 
+  private async verifyClaimOwnershipForRelease(
+    reportId: string,
+    moderatorId: string
+  ): Promise<ReleaseClaimResult> {
+    const nowIso = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('moderation_claims')
+      .select('moderator_id, expires_at')
+      .eq('report_id', reportId)
+      .eq('moderator_id', moderatorId)
+      .gt('expires_at', nowIso)
+      .maybeSingle();
+
+    if (error) {
+      return {
+        success: false,
+        error: `Failed to verify claim ownership: ${error.message}`,
+      };
+    }
+
+    if (!data) {
+      return {
+        success: false,
+        error: 'No active claim found for this moderator',
+      };
+    }
+
+    return { success: true };
+  }
+
+  private async revertReportStatusToInReview(
+    reportId: string,
+    logContext: string
+  ): Promise<void> {
+    const { error } = await supabase
+      .from('content_reports')
+      .update({
+        status: 'in_review' as ReportStatus,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', reportId)
+      .eq('status', 'pending');
+
+    if (error) {
+      console.error(logContext, error);
+    }
+  }
+
   /**
    * Releases a claim on a report, returning it to the general queue
    *
@@ -470,9 +518,18 @@ export class ModerationService {
     moderatorId: string
   ): Promise<ReleaseClaimResult> {
     try {
+      const ownershipResult = await this.verifyClaimOwnershipForRelease(
+        reportId,
+        moderatorId
+      );
+
+      if (!ownershipResult.success) {
+        return ownershipResult;
+      }
+
       // First, update report status to pending with guard (only if currently in_review)
       // This ensures we don't overwrite a status change that happened concurrently
-      const { error: statusUpdateError, count } = await supabase
+      const { data: statusRows, error: statusUpdateError } = await supabase
         .from('content_reports')
         .update({
           status: 'pending' as ReportStatus,
@@ -480,7 +537,7 @@ export class ModerationService {
         })
         .eq('id', reportId)
         .eq('status', 'in_review')
-        .select('id', { count: 'exact', head: true });
+        .select('id');
 
       if (statusUpdateError) {
         return {
@@ -491,7 +548,7 @@ export class ModerationService {
 
       // If no rows were updated, the report was not in 'in_review' status
       // This could mean it was already processed or claimed by someone else
-      if (count === 0) {
+      if (!statusRows || statusRows.length === 0) {
         return {
           success: false,
           error: 'Report is not in review status or was already processed',
@@ -499,34 +556,36 @@ export class ModerationService {
       }
 
       // Now delete the claim - this should succeed since we verified the report was in_review
-      const { error: deleteError } = await supabase
+      const { data: deletedClaims, error: deleteError } = await supabase
         .from('moderation_claims')
         .delete()
         .eq('report_id', reportId)
-        .eq('moderator_id', moderatorId);
+        .eq('moderator_id', moderatorId)
+        .select('report_id');
 
       if (deleteError) {
         // Claim deletion failed - revert the status update to prevent orphaned reports
-        const { error: revertError } = await supabase
-          .from('content_reports')
-          .update({
-            status: 'in_review' as ReportStatus,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', reportId)
-          .eq('status', 'pending'); // Only revert if it's still pending
-
-        if (revertError) {
-          // Log the revert failure but still return the original error
-          console.error(
-            'Failed to revert report status after claim deletion failure:',
-            revertError
-          );
-        }
+        await this.revertReportStatusToInReview(
+          reportId,
+          'Failed to revert report status after claim deletion failure:'
+        );
 
         return {
           success: false,
           error: `Failed to release claim: ${deleteError.message}`,
+        };
+      }
+
+      if (!deletedClaims || deletedClaims.length === 0) {
+        await this.revertReportStatusToInReview(
+          reportId,
+          'Failed to revert report status after missing claim deletion:'
+        );
+
+        return {
+          success: false,
+          error:
+            'Failed to release claim: no matching claim found for moderator',
         };
       }
 
