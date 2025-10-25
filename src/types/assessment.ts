@@ -19,7 +19,7 @@ export type QualityIssueType =
 export type QualityIssueSeverity = 'low' | 'medium' | 'high';
 
 export type QualityIssue = {
-  type: QualityIssueType | string;
+  type: QualityIssueType;
   severity: QualityIssueSeverity;
   suggestion?: string;
 };
@@ -77,8 +77,7 @@ export type AssessmentClassCategory =
   | 'pathogen'
   | 'pest'
   | 'healthy'
-  | 'unknown'
-  | string;
+  | 'unknown';
 
 export type AssessmentClassRecord = {
   id: string;
@@ -181,7 +180,8 @@ export type CameraError = {
   message: string;
   category: 'capture' | 'permission' | 'storage' | 'hardware';
   retryable: boolean;
-  fallbackAction?: () => void;
+  fallbackAction?: 'retry' | 'openSettings' | 'useGallery' | 'contactSupport';
+  actionPayload?: Record<string, any>;
 };
 
 // ML Inference Types
@@ -237,4 +237,38 @@ export type InferenceOptions = {
   deadlineMs?: number;
   fallbackToCloud?: boolean;
   batchSize?: number;
+};
+
+// Offline Queue Types
+
+export type QueueStatus = {
+  pending: number;
+  processing: number;
+  completed: number;
+  failed: number;
+  stalled?: number;
+  lastUpdated?: number;
+};
+
+export type ProcessingResult = {
+  requestId: string;
+  success: boolean;
+  error?: string;
+  processedAt: number;
+  details?: any;
+};
+
+export type AssessmentRequestData = {
+  id: string;
+  plantId: string;
+  userId: string;
+  photos: CapturedPhoto[];
+  plantContext: AssessmentPlantContext;
+  status: AssessmentStatus;
+  retryCount: number;
+  lastError?: string;
+  nextAttemptAt?: number;
+  originalTimestamp: number;
+  createdAt: number;
+  updatedAt: number;
 };

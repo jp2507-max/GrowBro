@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Text, View } from '@/components/ui';
@@ -13,7 +14,7 @@ export function CaptureGuidance({
   mode,
   photoCount,
   maxPhotos,
-}: CaptureGuidanceProps) {
+}: CaptureGuidanceProps): JSX.Element {
   const { t } = useTranslation();
 
   const getGuidanceText = () => {

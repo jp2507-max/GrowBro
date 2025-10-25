@@ -8,6 +8,7 @@ import {
   computeFilenameKey,
   computeIntegritySha256,
   deleteAssessmentImages,
+  getAssessmentStorageSize,
   storeImage,
   storeThumbnail,
 } from '../image-storage';
@@ -28,6 +29,12 @@ describe('Image Storage', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Ensure the mocked expo-crypto exposes CryptoDigestAlgorithm.SHA256
+    // Some test environments fully mock expo-crypto and may not include
+    // the CryptoDigestAlgorithm constant; define a stable value so
+    // tests that reference it (expectations) will not fail.
+    (Crypto as any).CryptoDigestAlgorithm = { SHA256: 'sha256' };
 
     // Mock FileSystem.documentDirectory
     Object.defineProperty(FileSystem, 'documentDirectory', {
@@ -79,7 +86,7 @@ describe('Image Storage', () => {
       );
 
       await expect(computeFilenameKey(mockImageUri)).rejects.toThrow(
-        'Failed to initialize secure storage'
+        'Secure store error'
       );
     });
   });
@@ -164,6 +171,18 @@ describe('Image Storage', () => {
       expect(result).toHaveProperty('storedUri');
     });
 
+    it('should sanitize assessmentId to prevent path traversal', async () => {
+      const maliciousId = '../../../etc/passwd';
+      const sanitizedId = '_________etc_passwd';
+
+      await storeImage(mockImageUri, maliciousId);
+
+      expect(FileSystem.makeDirectoryAsync).toHaveBeenCalledWith(
+        `file:///documents/assessments/${sanitizedId}/`,
+        { intermediates: true }
+      );
+    });
+
     it('should add image to cache manager', async () => {
       const createdAt = Date.now();
       await storeImage(mockImageUri, mockAssessmentId, createdAt);
@@ -204,6 +223,24 @@ describe('Image Storage', () => {
       });
 
       expect(result).toContain('_thumb.jpg');
+    });
+
+    it('should sanitize assessmentId to prevent path traversal', async () => {
+      const maliciousId = '../malicious';
+      const sanitizedId = '___malicious';
+      const thumbnailUri = 'file:///test/thumbnail.jpg';
+      const filenameKey = 'abc123';
+
+      await storeThumbnail({
+        thumbnailUri,
+        assessmentId: maliciousId,
+        filenameKey,
+      });
+
+      expect(FileSystem.makeDirectoryAsync).toHaveBeenCalledWith(
+        `file:///documents/assessments/${sanitizedId}/`,
+        { intermediates: true }
+      );
     });
 
     it('should add thumbnail to cache manager', async () => {
@@ -259,6 +296,20 @@ describe('Image Storage', () => {
       );
     });
 
+    it('should sanitize assessmentId to prevent path traversal', async () => {
+      const maliciousId = '../../root';
+      const sanitizedId = '______root';
+      (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({
+        exists: true,
+      });
+
+      await deleteAssessmentImages(maliciousId);
+
+      expect(FileSystem.getInfoAsync).toHaveBeenCalledWith(
+        `file:///documents/assessments/${sanitizedId}/`
+      );
+    });
+
     it('should not throw if directory does not exist', async () => {
       (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({
         exists: false,
@@ -282,7 +333,9 @@ describe('Image Storage', () => {
 
   describe('cleanupOldAssessments', () => {
     it('should delete assessments older than retention period', async () => {
-      const oldTime = Date.now() / 1000 - 100 * 24 * 60 * 60; // 100 days ago
+      const oldTime = Math.floor(
+        (Date.now() - 120 * 24 * 60 * 60 * 1000) / 1000
+      ); // 120 days ago in seconds
       (FileSystem.getInfoAsync as jest.Mock)
         .mockResolvedValueOnce({ exists: true })
         .mockResolvedValueOnce({
@@ -290,20 +343,46 @@ describe('Image Storage', () => {
           modificationTime: oldTime,
         });
       (FileSystem.readDirectoryAsync as jest.Mock).mockResolvedValue([
-        'old-assessment',
+        'old_assessment',
       ]);
 
       const result = await cleanupOldAssessments(90);
 
       expect(FileSystem.deleteAsync).toHaveBeenCalledWith(
-        expect.stringContaining('old-assessment'),
+        expect.stringContaining('old_assessment'),
         { idempotent: true }
       );
       expect(result).toBe(1);
     });
 
+    it('should sanitize assessmentId to prevent path traversal', async () => {
+      const maliciousId = '../escape';
+      const sanitizedId = '___escape';
+      const oldTime = Math.floor(
+        (Date.now() - 100 * 24 * 60 * 60 * 1000) / 1000
+      ); // 100 days ago in seconds
+      (FileSystem.getInfoAsync as jest.Mock)
+        .mockResolvedValueOnce({ exists: true })
+        .mockResolvedValueOnce({
+          exists: true,
+          modificationTime: oldTime,
+        });
+      (FileSystem.readDirectoryAsync as jest.Mock).mockResolvedValue([
+        maliciousId,
+      ]);
+
+      await cleanupOldAssessments(90);
+
+      expect(FileSystem.getInfoAsync).toHaveBeenNthCalledWith(
+        2,
+        `file:///documents/assessments/${sanitizedId}/`
+      );
+    });
+
     it('should not delete recent assessments', async () => {
-      const recentTime = Date.now() / 1000 - 30 * 24 * 60 * 60; // 30 days ago
+      const recentTime = Math.floor(
+        (Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000
+      ); // 30 days ago in seconds
       (FileSystem.getInfoAsync as jest.Mock)
         .mockResolvedValueOnce({ exists: true })
         .mockResolvedValueOnce({
@@ -326,8 +405,40 @@ describe('Image Storage', () => {
       });
 
       const result = await cleanupOldAssessments(90);
+      expect(FileSystem.deleteAsync).not.toHaveBeenCalled();
+      expect(result).toBe(0);
+    });
+  });
+
+  describe('getAssessmentStorageSize', () => {
+    it('should return 0 if assessments directory does not exist', async () => {
+      (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({
+        exists: false,
+      });
+
+      const result = await getAssessmentStorageSize();
 
       expect(result).toBe(0);
+    });
+
+    it('should recursively calculate total size of all files in subdirectories', async () => {
+      // Mock assessments directory exists
+      (FileSystem.getInfoAsync as jest.Mock)
+        .mockResolvedValueOnce({ exists: true }) // for ASSESSMENT_DIR
+        .mockResolvedValueOnce({ exists: true, isDirectory: true }) // for assessment1
+        .mockResolvedValueOnce({ exists: true, size: 1000 }) // for image1.jpg
+        .mockResolvedValueOnce({ exists: true, size: 2000 }) // for image2.jpg
+        .mockResolvedValueOnce({ exists: true, isDirectory: true }) // for assessment2
+        .mockResolvedValueOnce({ exists: true, size: 1500 }); // for image3.jpg
+
+      (FileSystem.readDirectoryAsync as jest.Mock)
+        .mockResolvedValueOnce(['assessment1', 'assessment2']) // top level
+        .mockResolvedValueOnce(['image1.jpg', 'image2.jpg']) // assessment1
+        .mockResolvedValueOnce(['image3.jpg']); // assessment2
+
+      const result = await getAssessmentStorageSize();
+
+      expect(result).toBe(4500); // 1000 + 2000 + 1500
     });
   });
 });

@@ -946,8 +946,8 @@ export const migrations = schemaMigrations({
             { name: 'issue_resolved', type: 'boolean', isOptional: true },
             { name: 'feedback_notes', type: 'string', isOptional: true },
             { name: 'images', type: 'string' },
-            { name: 'integrity_sha256', type: 'string' },
-            { name: 'filename_keys', type: 'string' },
+            { name: 'integrity_sha256_json', type: 'string' },
+            { name: 'filename_keys_json', type: 'string' },
             { name: 'plant_context', type: 'string' },
             { name: 'quality_scores', type: 'string' },
             { name: 'action_plan', type: 'string', isOptional: true },
@@ -962,8 +962,80 @@ export const migrations = schemaMigrations({
               isOptional: true,
             },
             { name: 'resolved_at', type: 'number', isOptional: true },
+            {
+              name: 'deleted_at',
+              type: 'number',
+              isOptional: true,
+              isIndexed: true,
+            },
             { name: 'created_at', type: 'number', isIndexed: true },
             { name: 'updated_at', type: 'number' },
+          ]),
+        },
+      ],
+    },
+    // Migration from version 24 to 25: Add assessment_requests table for offline queue
+    {
+      toVersion: 25,
+      steps: [
+        {
+          type: 'create_table',
+          schema: createTableSchema('assessment_requests', [
+            { name: 'plant_id', type: 'string', isIndexed: true },
+            { name: 'user_id', type: 'string', isIndexed: true },
+            { name: 'status', type: 'string', isIndexed: true },
+            { name: 'photos', type: 'string' }, // JSON array of CapturedPhoto
+            { name: 'plant_context', type: 'string' }, // JSON PlantContext
+            { name: 'retry_count', type: 'number' },
+            { name: 'last_error', type: 'string', isOptional: true },
+            {
+              name: 'next_attempt_at',
+              type: 'number',
+              isOptional: true,
+              isIndexed: true,
+            },
+            { name: 'original_timestamp', type: 'number' },
+            { name: 'created_at', type: 'number', isIndexed: true },
+            { name: 'updated_at', type: 'number' },
+          ]),
+        },
+      ],
+    },
+    // Migration from version 25 to 26: Add assessment feedback and telemetry tables
+    {
+      toVersion: 26,
+      steps: [
+        {
+          type: 'create_table',
+          schema: createTableSchema('assessment_feedback', [
+            { name: 'assessment_id', type: 'string', isIndexed: true },
+            { name: 'helpful', type: 'boolean' },
+            { name: 'issue_resolved', type: 'string', isOptional: true },
+            { name: 'notes', type: 'string', isOptional: true },
+            { name: 'created_at', type: 'number', isIndexed: true },
+          ]),
+        },
+        {
+          type: 'create_table',
+          schema: createTableSchema('assessment_telemetry', [
+            { name: 'assessment_id', type: 'string', isIndexed: true },
+            { name: 'event_type', type: 'string', isIndexed: true },
+            { name: 'mode', type: 'string', isOptional: true },
+            { name: 'latency_ms', type: 'number', isOptional: true },
+            { name: 'model_version', type: 'string', isOptional: true },
+            { name: 'raw_confidence', type: 'number', isOptional: true },
+            {
+              name: 'calibrated_confidence',
+              type: 'number',
+              isOptional: true,
+            },
+            { name: 'quality_score', type: 'number', isOptional: true },
+            { name: 'predicted_class', type: 'string', isOptional: true },
+            { name: 'execution_provider', type: 'string', isOptional: true },
+            { name: 'error_code', type: 'string', isOptional: true },
+            { name: 'fallback_reason', type: 'string', isOptional: true },
+            { name: 'metadata', type: 'string' }, // JSON
+            { name: 'created_at', type: 'number', isIndexed: true },
           ]),
         },
       ],

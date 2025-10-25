@@ -36,13 +36,13 @@ describe('confidence-calibration', () => {
       expect(applyTemperatureScaling(0.7, 1)).toBeCloseTo(0.7, 5);
     });
 
-    test('temperature > 1 reduces confidence', () => {
+    test('temperature > 1 increases confidence', () => {
       const raw = 0.8;
       const calibrated = applyTemperatureScaling(raw, 2);
       expect(calibrated).toBeGreaterThan(raw);
     });
 
-    test('temperature < 1 increases confidence', () => {
+    test('temperature < 1 reduces confidence', () => {
       const raw = 0.6;
       const calibrated = applyTemperatureScaling(raw, 0.5);
       expect(calibrated).toBeLessThan(raw);
@@ -142,6 +142,12 @@ describe('confidence-calibration', () => {
       const config = getCalibrationConfig();
       expect(config.classThresholds.healthy).toBe(0.8);
       expect(config.classThresholds.nitrogen_deficiency).toBe(0.68);
+    });
+
+    test('throws error for invalid configuration', () => {
+      expect(() => setCalibrationConfig({ temperature: 0 })).toThrow(
+        'Invalid calibration configuration'
+      );
     });
   });
 

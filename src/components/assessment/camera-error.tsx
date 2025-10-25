@@ -7,12 +7,19 @@ type CameraErrorProps = {
   error: CameraError;
   onRetry?: () => void;
   onCancel?: () => void;
+  onFallbackAction?: {
+    retry?: () => void;
+    openSettings?: () => void;
+    useGallery?: () => void;
+    contactSupport?: () => void;
+  };
 };
 
 export function CameraErrorView({
   error,
   onRetry,
   onCancel,
+  onFallbackAction,
 }: CameraErrorProps) {
   const { t } = useTranslation();
 
@@ -41,7 +48,7 @@ export function CameraErrorView({
         <Text className="text-center text-xl font-bold text-neutral-100">
           {error.category === 'permission'
             ? t('assessment.camera.permissionDenied.title')
-            : 'Error'}
+            : t('assessment.camera.errors.title')}
         </Text>
 
         <Text className="text-center text-base text-neutral-300">
@@ -57,10 +64,13 @@ export function CameraErrorView({
             </Button>
           )}
 
-          {error.fallbackAction && (
-            <Button onPress={error.fallbackAction} variant="outline">
+          {error.fallbackAction && onFallbackAction?.[error.fallbackAction] && (
+            <Button
+              onPress={() => onFallbackAction[error.fallbackAction]?.()}
+              variant="outline"
+            >
               <Text className="font-semibold text-neutral-100">
-                Use Alternative
+                {t('assessment.camera.useAlternative')}
               </Text>
             </Button>
           )}

@@ -500,9 +500,15 @@ export function getInferenceEngine(): MLInferenceEngine {
 /**
  * Reset inference engine (useful for testing)
  */
-export function resetInferenceEngine(): void {
+export async function resetInferenceEngine(): Promise<void> {
   if (inferenceEngineInstance) {
-    inferenceEngineInstance.dispose();
-    inferenceEngineInstance = null;
+    try {
+      await inferenceEngineInstance.dispose();
+    } catch (err) {
+      // Log disposal errors but don't fail the reset operation
+      console.error('Error disposing inference engine:', err);
+    } finally {
+      inferenceEngineInstance = null;
+    }
   }
 }

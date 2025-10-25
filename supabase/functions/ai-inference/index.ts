@@ -118,17 +118,17 @@ Deno.serve(async (req) => {
     // Check for existing response (idempotency)
     const { data: existingResponse } = await supabaseClient
       .from('idempotency_keys')
-      .select('response')
-      .eq('key', idempotencyKey)
+      .select('response_payload')
+      .eq('idempotency_key', idempotencyKey)
       .eq('user_id', user.id)
       .single();
 
-    if (existingResponse?.response) {
+    if (existingResponse?.response_payload) {
       console.log(
         '[ai-inference] Returning cached response for',
         idempotencyKey
       );
-      return new Response(JSON.stringify(existingResponse.response), {
+      return new Response(JSON.stringify(existingResponse.response_payload), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -136,6 +136,23 @@ Deno.serve(async (req) => {
 
     // Parse request body
     const requestBody: CloudInferenceRequest = await req.json();
+
+    // Validate idempotency key consistency
+    if (
+      !requestBody.idempotencyKey ||
+      requestBody.idempotencyKey !== idempotencyKey
+    ) {
+      return new Response(
+        JSON.stringify({
+          error: 'Idempotency key mismatch',
+          code: 'IDEMPOTENCY_MISMATCH',
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
     // Validate request
     if (!requestBody.assessmentId || !requestBody.images?.length) {
@@ -223,7 +240,7 @@ Deno.serve(async (req) => {
 
     const totalProcessingTime = Date.now() - startTime;
     console.log(
-      `[ai-inference] Completed in ${totalProcessingTime}ms for user ${user.id}`
+      `[ai-inference] Completed in ${totalProcessingTime}ms for user ${user.id.slice(0, 8)}...`
     );
 
     return new Response(JSON.stringify(inferenceResponse), {

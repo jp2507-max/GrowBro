@@ -120,7 +120,10 @@ export default defineConfig([
   },
   {
     files: ['**/*.ts', '**/*.tsx'],
-    ignores: ['supabase/functions/**/*.{ts,tsx}'],
+    ignores: [
+      'supabase/functions/**/*.{ts,tsx}',
+      'src/lib/moderation/__tests__/**/*.{ts,tsx}',
+    ],
     languageOptions: {
       parser: parser,
       parserOptions: {

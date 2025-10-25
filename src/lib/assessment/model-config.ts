@@ -40,7 +40,7 @@ export const MODEL_CONFIG = {
 
   // Execution provider preferences (in order of preference)
   EXECUTION_PROVIDERS: {
-    ios: ['coreml', 'xnnpack', 'cpu'] as ExecutionProvider[],
+    ios: ['coreml', 'cpu'] as ExecutionProvider[], // XNNPACK not guaranteed on iOS
     android: ['nnapi', 'xnnpack', 'cpu'] as ExecutionProvider[],
     default: ['xnnpack', 'cpu'] as ExecutionProvider[],
   },
@@ -147,12 +147,26 @@ export function getExecutionProvidersForPlatform(): ExecutionProvider[] {
 /**
  * Get model file paths
  */
-export function getModelPaths() {
+export async function getModelPaths(): Promise<{
+  baseDir: string;
+  modelPath: string;
+  metadataPath: string;
+  checksumsPath: string;
+}> {
   // Models are stored in app documents directory
   if (!safeFileSystem.documentDirectory) {
     throw new Error('Document directory is not available');
   }
   const baseDir = `${safeFileSystem.documentDirectory}models/`;
+
+  // Ensure the models directory exists
+  try {
+    await safeFileSystem.makeDirectoryAsync(baseDir, { intermediates: true });
+  } catch (error) {
+    throw new Error(
+      `Failed to create models directory: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
 
   return {
     baseDir,

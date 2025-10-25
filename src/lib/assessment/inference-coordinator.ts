@@ -112,11 +112,8 @@ async function runDeviceInference(
 ): Promise<AssessmentResult> {
   const engine = getInferenceEngine();
 
-  // Initialize if not already initialized
-  const isInitialized = await checkEngineInitialized(engine);
-  if (!isInitialized) {
-    await engine.initialize({ warmup: true });
-  }
+  // Initialize engine (idempotent)
+  await engine.initialize({ warmup: true });
 
   // Run inference with deadline
   return await engine.predict(photos, options);
@@ -160,20 +157,6 @@ async function runCloudInference(
   } catch (error) {
     console.error('[InferenceCoordinator] Cloud inference failed:', error);
     throw error;
-  }
-}
-
-/**
- * Check if inference engine is initialized
- */
-async function checkEngineInitialized(
-  engine: ReturnType<typeof getInferenceEngine>
-): Promise<boolean> {
-  try {
-    const modelInfo = engine.getModelInfo();
-    return modelInfo !== null;
-  } catch {
-    return false;
   }
 }
 

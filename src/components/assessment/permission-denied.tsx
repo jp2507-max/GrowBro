@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Linking, Platform } from 'react-native';
+import { showMessage } from 'react-native-flash-message';
 
 import { Button, Text, View } from '@/components/ui';
 
@@ -12,10 +13,18 @@ export function PermissionDenied({ onRetry, onCancel }: PermissionDeniedProps) {
   const { t } = useTranslation();
 
   const openSettings = async () => {
-    if (Platform.OS === 'ios') {
-      await Linking.openURL('app-settings:');
-    } else {
-      await Linking.openSettings();
+    try {
+      if (Platform.OS === 'ios') {
+        await Linking.openURL('app-settings:');
+      } else {
+        await Linking.openSettings();
+      }
+    } catch (error) {
+      console.warn('[PermissionDenied] Failed to open settings:', error);
+      showMessage({
+        message: t('assessment.camera.permissionDenied.openSettingsFailed'),
+        type: 'warning',
+      });
     }
   };
 
@@ -30,14 +39,22 @@ export function PermissionDenied({ onRetry, onCancel }: PermissionDeniedProps) {
         </Text>
 
         <View className="mt-6 w-full gap-3">
-          <Button onPress={openSettings} variant="default">
+          <Button
+            onPress={openSettings}
+            variant="default"
+            testID="permissionDenied.openSettings"
+          >
             <Text className="font-semibold text-neutral-100">
               {t('assessment.camera.permissionDenied.openSettings')}
             </Text>
           </Button>
 
           {onRetry && (
-            <Button onPress={onRetry} variant="outline">
+            <Button
+              onPress={onRetry}
+              variant="outline"
+              testID="permissionDenied.retry"
+            >
               <Text className="font-semibold text-neutral-100">
                 {t('assessment.camera.permissionDenied.retry')}
               </Text>
@@ -45,7 +62,11 @@ export function PermissionDenied({ onRetry, onCancel }: PermissionDeniedProps) {
           )}
 
           {onCancel && (
-            <Button onPress={onCancel} variant="ghost">
+            <Button
+              onPress={onCancel}
+              variant="ghost"
+              testID="permissionDenied.cancel"
+            >
               <Text className="font-semibold text-neutral-300">
                 {t('common.cancel')}
               </Text>

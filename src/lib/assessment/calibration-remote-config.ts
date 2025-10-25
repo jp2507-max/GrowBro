@@ -63,6 +63,28 @@ type FetchResult = {
   source: Exclude<CalibrationConfigSource, 'default'>;
 };
 
+/**
+ * Extract only CalibrationConfig fields from RemoteResponse or RemoteCacheEntry
+ */
+function pickCalibrationConfig(
+  source: RemoteResponse | RemoteCacheEntry
+): CalibrationConfig {
+  const {
+    temperature,
+    classThresholds,
+    globalThreshold,
+    version,
+    calibratedAt,
+  } = source;
+  return {
+    temperature,
+    classThresholds,
+    globalThreshold,
+    version,
+    calibratedAt,
+  };
+}
+
 const REMOTE_CACHE_STORAGE_KEY = 'assessment.calibration-config.cache.v1';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -166,7 +188,7 @@ async function performRefresh({
       locale,
     });
 
-    const config = result.payload;
+    const config = pickCalibrationConfig(result.payload);
 
     // Validate before applying
     if (!validateCalibrationConfig(config)) {
@@ -251,9 +273,10 @@ function handleRefreshError(options: {
   const message = error instanceof Error ? error.message : 'Unknown error';
 
   if (cached) {
-    setCalibrationConfig(cached);
+    const config = pickCalibrationConfig(cached);
+    setCalibrationConfig(config);
     useCalibrationConfigStore.setState({
-      config: cached,
+      config,
       status: 'ready',
       error: message,
       metadata: {
@@ -267,7 +290,7 @@ function handleRefreshError(options: {
         locale: cached.locale,
       },
     });
-    return cached;
+    return config;
   }
 
   const fallback = getCalibrationConfig();

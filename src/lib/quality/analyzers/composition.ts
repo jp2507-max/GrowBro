@@ -17,6 +17,10 @@ function computeCoverage(data: ImageLumaData) {
   const centerStartY = Math.floor(height * 0.25);
   const centerEndY = Math.ceil(height * 0.75);
 
+  const centerWidth = centerEndX - centerStartX;
+  const centerHeight = centerEndY - centerStartY;
+  const centerArea = centerWidth * centerHeight;
+
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const idx = (y * width + x) * 4;
@@ -43,7 +47,7 @@ function computeCoverage(data: ImageLumaData) {
 
   return {
     coverage: plantPixels / totalPixels,
-    centerCoverage: centerPlantPixels / totalPixels,
+    centerCoverage: centerPlantPixels / centerArea,
   };
 }
 

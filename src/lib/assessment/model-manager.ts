@@ -47,7 +47,7 @@ export class ModelManager {
    * Check if model is available locally
    */
   async isModelAvailable(): Promise<boolean> {
-    const { modelPath } = getModelPaths();
+    const { modelPath } = await getModelPaths();
     const fileInfo = await FileSystem.getInfoAsync(modelPath);
     return fileInfo.exists;
   }
@@ -58,7 +58,7 @@ export class ModelManager {
   async validateModelChecksum(
     expectedChecksum?: string
   ): Promise<{ valid: boolean; actualChecksum: string }> {
-    const { modelPath, checksumsPath } = getModelPaths();
+    const { modelPath, checksumsPath } = await getModelPaths();
 
     try {
       // Read model file
@@ -99,7 +99,7 @@ export class ModelManager {
    * Load model metadata from disk
    */
   async loadModelMetadata(): Promise<ModelInfo | null> {
-    const { metadataPath } = getModelPaths();
+    const { metadataPath } = await getModelPaths();
 
     try {
       const fileInfo = await FileSystem.getInfoAsync(metadataPath);
@@ -128,7 +128,7 @@ export class ModelManager {
    * Save model metadata to disk
    */
   async saveModelMetadata(metadata: ModelInfo): Promise<void> {
-    const { metadataPath } = getModelPaths();
+    const { metadataPath } = await getModelPaths();
 
     try {
       await FileSystem.writeAsStringAsync(
@@ -213,7 +213,7 @@ export class ModelManager {
    * Delete model and metadata
    */
   async deleteModel(): Promise<void> {
-    const { modelPath, metadataPath, checksumsPath } = getModelPaths();
+    const { modelPath, metadataPath, checksumsPath } = await getModelPaths();
 
     try {
       // Delete model file
@@ -246,7 +246,7 @@ export class ModelManager {
    * Ensure model directory exists
    */
   private async ensureModelDirectory(): Promise<void> {
-    const { baseDir } = getModelPaths();
+    const { baseDir } = await getModelPaths();
 
     try {
       const dirInfo = await FileSystem.getInfoAsync(baseDir);
@@ -264,7 +264,7 @@ export class ModelManager {
    * Get model file size in MB
    */
   async getModelSize(): Promise<number> {
-    const { modelPath } = getModelPaths();
+    const { modelPath } = await getModelPaths();
 
     try {
       const fileInfo = await FileSystem.getInfoAsync(modelPath);

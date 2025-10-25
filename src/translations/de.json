@@ -173,11 +173,16 @@
   },
   "assessment": {
     "camera": {
+      "actions": {
+        "capture": "Foto aufnehmen",
+        "captureHint": "Doppeltippen, um ein Diagnosefoto zu machen"
+      },
       "errors": {
         "cameraFailed": "Kamera konnte nicht initialisiert werden. Bitte versuchen Sie es erneut.",
         "captureFailed": "Foto konnte nicht aufgenommen werden. Bitte versuchen Sie es erneut.",
         "processingFailed": "Bild konnte nicht verarbeitet werden. Bitte versuchen Sie es erneut.",
-        "storageFull": "Speicher ist voll. Bitte geben Sie Speicherplatz frei und versuchen Sie es erneut."
+        "storageFull": "Speicher ist voll. Bitte geben Sie Speicherplatz frei und versuchen Sie es erneut.",
+        "title": "Fehler"
       },
       "guidance": {
         "focus": "Halten Sie die Kamera ruhig und warten Sie auf den Fokus",
@@ -190,6 +195,7 @@
       "permissionDenied": {
         "description": "GrowBro benötigt Kamerazugriff, um Fotos für die Pflanzengesundheitsbewertung aufzunehmen. Bitte aktivieren Sie die Kameraberechtigungen in Ihren Geräteeinstellungen.",
         "openSettings": "Einstellungen öffnen",
+        "openSettingsFailed": "Einstellungen konnten nicht geöffnet werden. Bitte navigieren Sie manuell zu den Geräteeinstellungen.",
         "retry": "Erneut versuchen",
         "title": "Kamerazugriff erforderlich"
       },
@@ -204,7 +210,11 @@
         "composition": "Nicht genug Pflanzenmaterial im Bild. Gehen Sie näher heran oder passen Sie den Bildausschnitt an.",
         "exposure": "Das Bild ist über- oder unterbelichtet. Passen Sie die Lichtverhältnisse an.",
         "whiteBalance": "Die Farbtemperatur ist nicht korrekt. Verwenden Sie neutrale Beleuchtung ohne starke Farbstiche."
-      }
+      },
+      "status": {
+        "capturing": "Foto wird aufgenommen…"
+      },
+      "useAlternative": "Alternative verwenden"
     }
   },
   "calendar": {

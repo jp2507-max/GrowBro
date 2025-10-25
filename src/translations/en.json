@@ -173,11 +173,16 @@
   },
   "assessment": {
     "camera": {
+      "actions": {
+        "capture": "Capture photo",
+        "captureHint": "Double-tap to take a diagnostic photo"
+      },
       "errors": {
         "cameraFailed": "Camera failed to initialize. Please try again.",
         "captureFailed": "Failed to capture photo. Please try again.",
         "processingFailed": "Failed to process image. Please try again.",
-        "storageFull": "Storage is full. Please free up space and try again."
+        "storageFull": "Storage is full. Please free up space and try again.",
+        "title": "Error"
       },
       "guidance": {
         "focus": "Keep the camera steady and wait for focus",
@@ -190,6 +195,7 @@
       "permissionDenied": {
         "description": "GrowBro needs camera access to capture photos for plant health assessment. Please enable camera permissions in your device settings.",
         "openSettings": "Open Settings",
+        "openSettingsFailed": "Unable to open settings. Please navigate to device settings manually.",
         "retry": "Try Again",
         "title": "Camera Access Required"
       },
@@ -204,7 +210,11 @@
         "composition": "Not enough plant matter in frame. Get closer or adjust framing.",
         "exposure": "Image is over or under-exposed. Adjust lighting conditions.",
         "whiteBalance": "Color temperature is off. Use neutral lighting without strong color casts."
-      }
+      },
+      "status": {
+        "capturing": "Capturing photo…"
+      },
+      "useAlternative": "Use Alternative"
     }
   },
   "calendar": {

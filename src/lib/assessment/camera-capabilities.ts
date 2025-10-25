@@ -15,10 +15,19 @@ export function detectCameraCapabilities(): CameraCapabilities {
   // Frame Processors are enabled in app.config.cjs
   // They require native build (dev client) and are available on both iOS and Android
   const supportsFrameProcessors =
-    __DEV__ || Platform.OS === 'ios' || Platform.OS === 'android';
+    Platform.OS === 'ios' || Platform.OS === 'android';
 
-  // VisionCamera is available when Frame Processors are supported
-  const supportsVisionCamera = supportsFrameProcessors;
+  // VisionCamera is available when Frame Processors are supported and module is available
+  let visionCameraAvailable = false;
+  try {
+    // We detect module availability at runtime without bundling it eagerly.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('react-native-vision-camera');
+    visionCameraAvailable = true;
+  } catch {
+    // Module not available
+  }
+  const supportsVisionCamera = supportsFrameProcessors && visionCameraAvailable;
 
   // Prefer VisionCamera when available for better UX
   const recommendedMode: 'vision-camera' | 'expo-camera' = supportsVisionCamera

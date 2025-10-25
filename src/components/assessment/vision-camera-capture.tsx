@@ -5,10 +5,7 @@ import { Camera, useCameraDevice } from 'react-native-vision-camera';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Button, Text, View } from '@/components/ui';
-import {
-  generateThumbnail,
-  stripExifData,
-} from '@/lib/assessment/image-processing';
+import { stripExifData } from '@/lib/assessment/image-processing';
 import { useCameraLifecycle } from '@/lib/assessment/use-camera-lifecycle';
 import { qualityAssessmentEngine } from '@/lib/quality/engine';
 import type {
@@ -50,9 +47,6 @@ export function VisionCameraCapture({
 
       // Strip EXIF data
       const processed = await stripExifData(`file://${photo.path}`);
-
-      // Generate thumbnail
-      await generateThumbnail(processed.uri);
 
       const qualityResult: QualityResult =
         await qualityAssessmentEngine.assessPhoto(processed.uri);

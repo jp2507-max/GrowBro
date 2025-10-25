@@ -18,6 +18,11 @@ interface SafeFileSystem {
 
 const safeFileSystem = FileSystem as unknown as SafeFileSystem;
 
+function sanitizePathSegment(segment: string): string {
+  // allow letters, numbers, underscore, hyphen; collapse others to "_"
+  return segment.replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
 function getAssessmentDir(): string {
   if (!safeFileSystem.documentDirectory) {
     throw new Error('Document directory is not available');
@@ -47,8 +52,10 @@ async function getOrCreateDeviceSecret(): Promise<string> {
 
     return secret;
   } catch (error) {
+    // Preserve original error so callers can see the underlying cause
     console.error('Failed to get/create device secret:', error);
-    throw new Error('Failed to initialize secure storage');
+    if (error instanceof Error) throw error;
+    throw new Error(String(error));
   }
 }
 
@@ -79,8 +86,11 @@ export async function computeIntegritySha256(
  * Used for content-addressable filenames to prevent cross-user correlation
  */
 export async function computeFilenameKey(imageUri: string): Promise<string> {
+  // Initialize secure storage / device secret first and let initialization
+  // errors bubble up (preserve original error messages).
+  const secret = await getOrCreateDeviceSecret();
+
   try {
-    const secret = await getOrCreateDeviceSecret();
     const base64 = await FileSystem.readAsStringAsync(imageUri, {
       encoding: 'base64' as const,
     });
@@ -110,7 +120,7 @@ export async function storeImage(
   try {
     // Ensure assessment directory exists
     const ASSESSMENT_DIR = getAssessmentDir();
-    const assessmentDir = `${ASSESSMENT_DIR}${assessmentId}/`;
+    const assessmentDir = `${ASSESSMENT_DIR}${sanitizePathSegment(assessmentId)}/`;
     await FileSystem.makeDirectoryAsync(assessmentDir, { intermediates: true });
 
     // Compute both hashes
@@ -160,7 +170,7 @@ export async function storeThumbnail(params: {
   } = params;
   try {
     const ASSESSMENT_DIR = getAssessmentDir();
-    const assessmentDir = `${ASSESSMENT_DIR}${assessmentId}/`;
+    const assessmentDir = `${ASSESSMENT_DIR}${sanitizePathSegment(assessmentId)}/`;
     await FileSystem.makeDirectoryAsync(assessmentDir, { intermediates: true });
 
     const storedUri = `${assessmentDir}${filenameKey}_thumb.jpg`;
@@ -197,7 +207,7 @@ export async function deleteAssessmentImages(
     await imageCacheManager.removeAssessment(assessmentId);
 
     const ASSESSMENT_DIR = getAssessmentDir();
-    const assessmentDir = `${ASSESSMENT_DIR}${assessmentId}/`;
+    const assessmentDir = `${ASSESSMENT_DIR}${sanitizePathSegment(assessmentId)}/`;
     const info = await FileSystem.getInfoAsync(assessmentDir);
 
     if (info.exists) {
@@ -210,6 +220,29 @@ export async function deleteAssessmentImages(
 }
 
 /**
+ * Recursively compute the total size of a directory
+ */
+async function computeDirSize(dirPath: string): Promise<number> {
+  let totalSize = 0;
+  const entries = await FileSystem.readDirectoryAsync(dirPath);
+
+  for (const entry of entries) {
+    const entryPath = `${dirPath}${entry}`;
+    const info = await FileSystem.getInfoAsync(entryPath);
+
+    if (info.exists) {
+      if (info.isDirectory) {
+        totalSize += await computeDirSize(`${entryPath}/`);
+      } else if ('size' in info) {
+        totalSize += info.size;
+      }
+    }
+  }
+
+  return totalSize;
+}
+
+/**
  * Get total storage used by assessments
  */
 export async function getAssessmentStorageSize(): Promise<number> {
@@ -218,20 +251,7 @@ export async function getAssessmentStorageSize(): Promise<number> {
     const info = await FileSystem.getInfoAsync(ASSESSMENT_DIR);
     if (!info.exists) return 0;
 
-    // Recursively calculate directory size
-    let totalSize = 0;
-    const files = await FileSystem.readDirectoryAsync(ASSESSMENT_DIR);
-
-    for (const file of files) {
-      const fileInfo = await FileSystem.getInfoAsync(
-        `${ASSESSMENT_DIR}${file}`
-      );
-      if (fileInfo.exists && 'size' in fileInfo) {
-        totalSize += fileInfo.size;
-      }
-    }
-
-    return totalSize;
+    return await computeDirSize(ASSESSMENT_DIR);
   } catch (error) {
     console.error('Failed to get storage size:', error);
     return 0;
@@ -250,17 +270,23 @@ export async function cleanupOldAssessments(
     const info = await FileSystem.getInfoAsync(ASSESSMENT_DIR);
     if (!info.exists) return 0;
 
-    const cutoffTime = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
+    const cutoffTime = Math.floor(
+      (Date.now() - retentionDays * 24 * 60 * 60 * 1000) / 1000
+    );
     let deletedCount = 0;
 
     const assessments = await FileSystem.readDirectoryAsync(ASSESSMENT_DIR);
 
     for (const assessmentId of assessments) {
-      const assessmentDir = `${ASSESSMENT_DIR}${assessmentId}/`;
+      const assessmentDir = `${ASSESSMENT_DIR}${sanitizePathSegment(assessmentId)}/`;
       const dirInfo = await FileSystem.getInfoAsync(assessmentDir);
 
-      if (dirInfo.exists && 'modificationTime' in dirInfo) {
-        if (dirInfo.modificationTime * 1000 < cutoffTime) {
+      if (
+        dirInfo.exists &&
+        typeof dirInfo.modificationTime === 'number' &&
+        !Number.isNaN(dirInfo.modificationTime)
+      ) {
+        if (dirInfo.modificationTime < cutoffTime) {
           await FileSystem.deleteAsync(assessmentDir, { idempotent: true });
           deletedCount++;
         }

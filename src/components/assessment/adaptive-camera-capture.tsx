@@ -1,3 +1,5 @@
+import * as React from 'react';
+
 import { getRecommendedCameraMode } from '@/lib/assessment/camera-capabilities';
 import type { CapturedPhoto, GuidanceMode } from '@/types/assessment';
 
@@ -9,6 +11,7 @@ type AdaptiveCameraCaptureProps = {
   guidanceMode: GuidanceMode;
   photoCount: number;
   maxPhotos: number;
+  onError: (err: Error) => void;
 };
 
 /**
@@ -16,7 +19,9 @@ type AdaptiveCameraCaptureProps = {
  * - VisionCamera with Frame Processors (preferred for real-time quality feedback)
  * - expo-camera (fallback for post-capture quality checks)
  */
-export function AdaptiveCameraCapture(props: AdaptiveCameraCaptureProps) {
+export function AdaptiveCameraCapture(
+  props: AdaptiveCameraCaptureProps
+): React.ReactElement {
   const cameraMode = getRecommendedCameraMode();
 
   if (cameraMode === 'vision-camera') {

@@ -270,7 +270,7 @@ async function fetchRemoteConfig({
     if (tierMatches) {
       return { payload: toRemoteResponse(cached), source: 'cache' };
     }
-    return { payload: toRemoteResponse(cached), source: 'cache' };
+    // Cache is invalid due to tier mismatch, fall through to remote fetch
   }
 
   const headers: Record<string, string> = {

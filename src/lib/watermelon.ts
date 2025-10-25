@@ -3,6 +3,13 @@ import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
 
 import { migrations } from './watermelon-migrations';
 import { AISuggestionModel } from './watermelon-models/ai-suggestion';
+import {
+  AssessmentClassModel,
+  AssessmentModel,
+} from './watermelon-models/assessment';
+import { AssessmentFeedbackModel } from './watermelon-models/assessment-feedback';
+import { AssessmentRequestModel } from './watermelon-models/assessment-request';
+import { AssessmentTelemetryModel } from './watermelon-models/assessment-telemetry';
 import { CachedStrainModel } from './watermelon-models/cached-strain';
 import { CalibrationModel } from './watermelon-models/calibration';
 import { DeviationAlertModel } from './watermelon-models/deviation-alert';
@@ -85,6 +92,12 @@ export const database = new Database({
     CalibrationModel,
     DiagnosticResultModel,
     DeviationAlertModel,
+    // AI Photo Diagnosis models
+    AssessmentClassModel,
+    AssessmentModel,
+    AssessmentRequestModel,
+    AssessmentFeedbackModel,
+    AssessmentTelemetryModel,
     // Community feed models
     PostModel,
     PostCommentModel,

@@ -48,6 +48,20 @@ export function analyzeWhiteBalance(
   data: ImageLumaData,
   thresholds: QualityThresholds
 ): QualityMetricScore {
+  const pixelCount = data.pixels.length / 4;
+
+  // Validate pixel buffer before computing means
+  if (pixelCount === 0 || data.pixels.length % 4 !== 0) {
+    return {
+      score: 0,
+      issue: buildIssue({
+        type: 'white_balance',
+        severity: 'high',
+        suggestion: 'assessment.camera.quality.whiteBalance',
+      }),
+    };
+  }
+
   const means = computeChannelMeans(data.pixels);
   const { deviation } = computeChromaticityDeviation(means);
 
@@ -64,7 +78,7 @@ export function analyzeWhiteBalance(
   return {
     score,
     issue: buildIssue({
-      type: 'white-balance',
+      type: 'white_balance',
       severity,
       suggestion: 'assessment.camera.quality.whiteBalance',
     }),

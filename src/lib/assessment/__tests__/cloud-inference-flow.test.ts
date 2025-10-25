@@ -156,7 +156,8 @@ describe('cloud inference integration', () => {
     expect(computeIntegritySha256Mock).toHaveBeenCalledTimes(photos.length);
     expect(functionsInvokeMock).toHaveBeenCalledTimes(1);
 
-    const [{ body }] = functionsInvokeMock.mock.calls as [
+    const [, { body }] = functionsInvokeMock.mock.calls[0] as [
+      string,
       { body: { assessmentId: string } },
     ];
     expect(body.assessmentId).toBe('assessment-123');

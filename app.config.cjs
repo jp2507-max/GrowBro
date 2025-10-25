@@ -188,9 +188,6 @@ function createExpoConfig(config) {
         {
           enableFrameProcessors: true,
           cameraPermissionText: '$(PRODUCT_NAME) needs access to your camera.',
-          enableMicrophonePermission: true,
-          microphonePermissionText:
-            '$(PRODUCT_NAME) needs access to your microphone for video capture.',
         },
       ],
       'onnxruntime-react-native',

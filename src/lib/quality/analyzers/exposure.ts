@@ -81,12 +81,7 @@ export function analyzeExposure(
     issue: buildIssue({
       type: 'exposure',
       severity,
-      suggestion:
-        underRatio > underExposureMaxRatio
-          ? 'assessment.camera.quality.exposure'
-          : overRatio > overExposureMaxRatio
-            ? 'assessment.camera.quality.exposure'
-            : 'assessment.camera.quality.exposure',
+      suggestion: 'assessment.camera.quality.exposure',
     }),
   };
 }

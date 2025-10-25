@@ -42,7 +42,10 @@ async function validateModelPath(resolvedPath: string): Promise<void> {
     if (!stats.isFile()) {
       throw new Error(`MODEL_PATH does not point to a file: ${resolvedPath}`);
     }
-  } catch {
-    throw new Error(`MODEL_PATH not found: ${resolvedPath}`);
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      throw new Error(`MODEL_PATH not found: ${resolvedPath}`);
+    }
+    throw error;
   }
 }

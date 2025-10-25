@@ -68,6 +68,11 @@ export class ImageCacheManager {
     const metadata = await this.getMetadata();
     const now = Date.now();
 
+    if (metadata.entries[uri]) {
+      metadata.totalSize -= metadata.entries[uri].size;
+    }
+
+    metadata.totalSize += size;
     metadata.entries[uri] = {
       uri,
       size,
@@ -75,7 +80,7 @@ export class ImageCacheManager {
       assessmentId,
       createdAt,
     };
-    metadata.totalSize += size;
+    metadata.totalSize = Math.max(0, metadata.totalSize);
 
     await this.saveMetadata(metadata);
 
@@ -132,9 +137,11 @@ export class ImageCacheManager {
       const info = await FileSystem.getInfoAsync(entry.uri);
       if (!info.exists) {
         // File already deleted, just remove from metadata
+        const size = entry.size;
+        metadata.totalSize -= size;
+        metadata.totalSize = Math.max(0, metadata.totalSize);
         delete metadata.entries[entry.uri];
-        metadata.totalSize -= entry.size;
-        freedBytes += entry.size;
+        freedBytes += size;
         continue;
       }
 
@@ -154,8 +161,9 @@ export class ImageCacheManager {
 
     // Update metadata
     for (const uri of toDelete) {
+      const entrySize = metadata.entries[uri]?.size ?? 0;
+      metadata.totalSize -= entrySize;
       delete metadata.entries[uri];
-      metadata.totalSize -= metadata.entries[uri]?.size ?? 0;
     }
 
     await this.saveMetadata(metadata);
@@ -193,9 +201,11 @@ export class ImageCacheManager {
     for (const entry of toDelete) {
       try {
         await FileSystem.deleteAsync(entry.uri, { idempotent: true });
+        const size = metadata.entries[entry.uri]?.size ?? 0;
+        metadata.totalSize -= size;
+        metadata.totalSize = Math.max(0, metadata.totalSize);
         delete metadata.entries[entry.uri];
-        metadata.totalSize -= entry.size;
-        freedBytes += entry.size;
+        freedBytes += size;
       } catch (error) {
         console.error('Failed to delete assessment image:', error);
       }

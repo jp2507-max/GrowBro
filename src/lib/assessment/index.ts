@@ -126,3 +126,95 @@ export {
   storeImage,
   storeThumbnail,
 } from './image-storage';
+
+// Action plan generation and task integration
+export {
+  ActionPlanGenerator,
+  actionPlanGenerator,
+  generateActionPlan,
+} from './action-plan-generator';
+export {
+  CORRECTIVE_ACTION_WARNINGS,
+  DIAGNOSTIC_CHECKS,
+  getActionPlanTemplate,
+  hasActionPlanTemplate,
+  STANDARD_DISCLAIMERS,
+} from './action-plan-templates';
+export type {
+  AssessmentActionEvent,
+  AssessmentActionType,
+  PlaybookAdjustmentMetadata,
+  TaskCreationMetadata,
+} from './action-tracking';
+export {
+  ActionTrackingService,
+  actionTrackingService,
+  trackCommunityCTA,
+  trackHelpfulVote,
+  trackIssueResolution,
+  trackPlaybookAdjustment,
+  trackRetake,
+  trackTaskCreation,
+} from './action-tracking';
+export type {
+  PlaybookAdjustment,
+  PlaybookAdjustmentOptions,
+  PlaybookAdjustmentResult,
+} from './playbook-integration';
+export {
+  PlaybookIntegrationService,
+  playbookIntegrationService,
+  suggestPlaybookAdjustments,
+} from './playbook-integration';
+export type {
+  TaskCreationOptions,
+  TaskCreationResult,
+} from './task-integration';
+export {
+  createTasksFromActionPlan,
+  TaskIntegrationService,
+  taskIntegrationService,
+} from './task-integration';
+
+// Feedback and telemetry services
+export type {
+  InferenceMetrics,
+  PerClassMetrics,
+  UserActionMetrics,
+} from './assessment-analytics';
+export {
+  getAssessmentSummary,
+  getExecutionProviderDistribution,
+  getInferenceMetrics,
+  getModelVersionDistribution,
+  getPerClassMetrics,
+  getUserActionMetrics,
+} from './assessment-analytics';
+export type { SubmitFeedbackOptions } from './assessment-feedback-service';
+export {
+  getAssessmentFeedback,
+  getFeedbackStats,
+  hasAssessmentFeedback,
+  submitFeedback,
+} from './assessment-feedback-service';
+export {
+  addAssessmentCreatedBreadcrumb,
+  addCloudFallbackBreadcrumb,
+  addExecutionProviderBreadcrumb,
+  addFeedbackBreadcrumb,
+  addInferenceSuccessBreadcrumb,
+  addModelLoadBreadcrumb,
+  addUserActionBreadcrumb,
+  captureChecksumValidationError,
+  captureInferenceError,
+} from './assessment-sentry';
+export {
+  getAssessmentTelemetry,
+  logCloudFallback as logAssessmentCloudFallback,
+  logAssessmentCreated,
+  logExecutionProvider as logAssessmentExecutionProvider,
+  logInferenceFailure as logAssessmentInferenceFailure,
+  logFeedbackSubmitted,
+  logInferenceCompleted,
+  logUserAction,
+} from './assessment-telemetry-service';

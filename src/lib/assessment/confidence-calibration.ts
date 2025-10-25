@@ -206,7 +206,7 @@ export function calibrateMultiplePredictions(
  * @param config - New calibration configuration
  */
 export function setCalibrationConfig(config: Partial<CalibrationConfig>): void {
-  currentConfig = {
+  const mergedConfig = {
     ...currentConfig,
     ...config,
     classThresholds: {
@@ -214,13 +214,17 @@ export function setCalibrationConfig(config: Partial<CalibrationConfig>): void {
       ...(config.classThresholds ?? {}),
     },
   };
+  if (!validateCalibrationConfig(mergedConfig)) {
+    throw new Error('Invalid calibration configuration');
+  }
+  currentConfig = mergedConfig;
 }
 
 /**
  * Get current calibration configuration
  */
 export function getCalibrationConfig(): CalibrationConfig {
-  return { ...currentConfig };
+  return structuredClone(currentConfig);
 }
 
 /**

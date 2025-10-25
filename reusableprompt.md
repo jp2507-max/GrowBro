@@ -1,4 +1,4 @@
-TASK_ID: {3.3} with subtasks (make sure task with sub task is fully implemented)
+TASK_ID: {6} with subtasks (make sure task with sub task is fully implemented)
 AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the plan
 
 CONTEXT

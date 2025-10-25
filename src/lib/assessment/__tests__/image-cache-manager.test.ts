@@ -10,17 +10,28 @@ jest.mock('@/lib/storage');
 
 describe('ImageCacheManager', () => {
   let cacheManager: ImageCacheManager;
+  let mockMetadata: any;
   const mockUri = 'file:///test/image.jpg';
   const mockAssessmentId = 'assessment-123';
   const mockSize = 1024000; // 1MB
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockMetadata = { entries: {}, totalSize: 0 };
     cacheManager = new ImageCacheManager(10 * 1024 * 1024); // 10MB limit
 
     // Default mocks
-    (storage.getString as jest.Mock).mockReturnValue(null);
-    (storage.set as jest.Mock).mockImplementation(() => {});
+    (storage.getString as jest.Mock).mockImplementation((key) => {
+      if (key === 'assessment_cache_metadata') {
+        return JSON.stringify(mockMetadata);
+      }
+      return null;
+    });
+    (storage.set as jest.Mock).mockImplementation((key, value) => {
+      if (key === 'assessment_cache_metadata') {
+        mockMetadata = JSON.parse(value);
+      }
+    });
     (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({
       exists: true,
       size: mockSize,

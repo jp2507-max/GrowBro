@@ -25,8 +25,12 @@ export function isExecutionProviderAvailable(
 
   switch (provider) {
     case 'xnnpack':
-      // XNNPACK is always available as CPU default
-      return true;
+      // XNNPACK availability depends on platform and build configuration
+      // - Android: Generally available in prebuilt packages
+      // - iOS: Only available if explicitly enabled at build time
+      // Since we can't detect runtime availability, assume available on Android
+      // but conservatively return false on iOS to avoid runtime failures
+      return platform === 'android';
 
     case 'cpu':
       // CPU fallback is always available

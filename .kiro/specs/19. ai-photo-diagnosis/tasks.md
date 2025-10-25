@@ -83,8 +83,7 @@
     - Add per-image result tracking with quality scores and class predictions
     - _Requirements: 2.2, 2.3, 6.4, 6.5_
 
-- [ ] 4. Create action plan generation and task integration system
-  - [ ] 4.1 Build action plan generator with safety guardrails
+  - [x] 4.1 Build action plan generator with safety guardrails
 
   - Create ActionPlanGenerator that maps assessment classes to specific action templates
     - Implement immediate steps (0-24h) and short-term actions (24-48h) generation
@@ -94,7 +93,7 @@
     - Build generic, product-agnostic guidance with JSON templates and placeholders (no hardcoded dosages)
     - _Requirements: 3.1, 3.2, 3.3, 3.5_
 
-  - [ ] 4.2 Implement task creation and playbook integration
+  - [x] 4.2 Implement task creation and playbook integration
   - Build one-tap task creation from assessment results with prefilled details
   - Create task templates for common assessment-driven actions (pH measurement, light adjustment)
     - Implement playbook shift suggestions based on AI findings and user acceptance
@@ -103,7 +102,7 @@
     - _Requirements: 3.4, 9.2_
 
 - [ ] 5. Build offline queue management and sync system
-  - [ ] 5.1 Create offline assessment request queue
+  - [x] 5.1 Create offline assessment request queue
 
   - Implement AssessmentRequest model with job state machine (pending → processing → completed/failed)
     - Build request queuing system that stores photos, plant context, and timestamps locally
@@ -113,7 +112,7 @@
     - Add queue size limits and cleanup policies for storage management
     - _Requirements: 7.1, 7.3, 7.4_
 
-  - [ ] 5.2 Implement intelligent sync and retry logic
+  - [x] 5.2 Implement intelligent sync and retry logic
     - Build exponential backoff with jitter for failed request retries
     - Create batch processing system for efficient network usage when online
     - Implement sync conflict resolution using last-write-wins with server timestamps

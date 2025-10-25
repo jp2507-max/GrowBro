@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
+import { StyleSheet } from 'react-native';
 
 import { Button, Text, View } from '@/components/ui';
 import type { CapturedPhoto, QualityIssue } from '@/types/assessment';
@@ -25,7 +26,6 @@ export function PhotoPreview({
         return t('assessment.camera.quality.blur');
       case 'exposure':
         return t('assessment.camera.quality.exposure');
-      case 'white-balance':
       case 'white_balance':
         return t('assessment.camera.quality.whiteBalance');
       case 'composition':
@@ -35,13 +35,22 @@ export function PhotoPreview({
     }
   };
 
+  const styles = StyleSheet.create({
+    image: {
+      width: '100%',
+      height: '70%',
+    },
+  });
+
   return (
     <View className="flex-1 bg-charcoal-950">
       <View className="flex-1 items-center justify-center">
         <Image
           source={{ uri: photo.uri }}
-          style={{ width: '100%', height: '70%' }}
+          style={styles.image}
           contentFit="contain"
+          testID="photo-image"
+          accessibilityIgnoresInvertColors
         />
       </View>
 

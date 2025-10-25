@@ -6,6 +6,7 @@ import { AdaptiveCameraCapture } from '@/components/assessment/adaptive-camera-c
 import { PermissionDenied } from '@/components/assessment/permission-denied';
 import { PhotoPreview } from '@/components/assessment/photo-preview';
 import { View } from '@/components/ui';
+import colors from '@/components/ui/colors';
 import { generateThumbnail } from '@/lib/assessment/image-processing';
 import { storeImage, storeThumbnail } from '@/lib/assessment/image-storage';
 import { useCameraPermission } from '@/lib/assessment/use-camera-permission';
@@ -78,11 +79,16 @@ export default function AssessmentCaptureScreen() {
     router.back();
   };
 
+  const handleCameraError = (error: Error) => {
+    console.error('Camera error:', error);
+    // TODO: Show error message to user
+  };
+
   // Loading state
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-charcoal-950">
-        <ActivityIndicator size="large" color="#fff" />
+        <ActivityIndicator size="large" color={colors.white} />
       </View>
     );
   }
@@ -101,7 +107,7 @@ export default function AssessmentCaptureScreen() {
   if (status !== 'granted') {
     return (
       <View className="flex-1 items-center justify-center bg-charcoal-950">
-        <ActivityIndicator size="large" color="#fff" />
+        <ActivityIndicator size="large" color={colors.white} />
       </View>
     );
   }
@@ -125,7 +131,7 @@ export default function AssessmentCaptureScreen() {
   if (isProcessing) {
     return (
       <View className="flex-1 items-center justify-center bg-charcoal-950">
-        <ActivityIndicator size="large" color="#fff" />
+        <ActivityIndicator size="large" color={colors.white} />
       </View>
     );
   }
@@ -139,6 +145,7 @@ export default function AssessmentCaptureScreen() {
         guidanceMode={guidanceMode}
         photoCount={capturedPhotos.length}
         maxPhotos={maxPhotos}
+        onError={handleCameraError}
       />
     </>
   );

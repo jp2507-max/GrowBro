@@ -26,6 +26,9 @@ BEGIN
   END IF;
 END $$;
 
+-- Ensure pgcrypto extension exists for gen_random_uuid()
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 CREATE TABLE IF NOT EXISTS quality_thresholds (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   platform quality_platform_enum NOT NULL DEFAULT 'universal',

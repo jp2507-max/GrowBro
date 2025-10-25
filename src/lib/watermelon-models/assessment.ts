@@ -241,10 +241,10 @@ export class AssessmentModel extends Model {
   @json('images', sanitizeImages)
   images!: string[];
 
-  @json('integrity_sha256', sanitizeHashes)
+  @json('integrity_sha256_json', sanitizeHashes)
   integritySha256!: string[];
 
-  @json('filename_keys', sanitizeHashes)
+  @json('filename_keys_json', sanitizeHashes)
   filenameKeys!: string[];
 
   @json('plant_context', sanitizePlantContext)
