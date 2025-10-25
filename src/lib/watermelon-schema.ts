@@ -1,7 +1,7 @@
 import { appSchema as createSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const appSchema = createSchema({
-  version: 23,
+  version: 24,
   tables: [
     tableSchema({
       name: 'series',
@@ -640,6 +640,53 @@ export const appSchema = createSchema({
         { name: 'external_key', type: 'string', isOptional: true },
         { name: 'user_id', type: 'string', isOptional: true },
         { name: 'created_at', type: 'number', isIndexed: true },
+      ],
+    }),
+    // AI Photo Diagnosis tables
+    tableSchema({
+      name: 'assessment_classes',
+      columns: [
+        { name: 'name', type: 'string' },
+        { name: 'category', type: 'string', isIndexed: true },
+        { name: 'description', type: 'string' },
+        { name: 'is_ood', type: 'boolean' },
+        { name: 'visual_cues', type: 'string' },
+        { name: 'action_template', type: 'string' },
+        { name: 'created_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'assessments',
+      columns: [
+        { name: 'plant_id', type: 'string', isIndexed: true },
+        { name: 'user_id', type: 'string', isIndexed: true },
+        { name: 'status', type: 'string', isIndexed: true },
+        { name: 'inference_mode', type: 'string' },
+        { name: 'model_version', type: 'string' },
+        {
+          name: 'predicted_class',
+          type: 'string',
+          isOptional: true,
+          isIndexed: true,
+        },
+        { name: 'raw_confidence', type: 'number', isOptional: true },
+        { name: 'calibrated_confidence', type: 'number', isOptional: true },
+        { name: 'aggregation_rule', type: 'string', isOptional: true },
+        { name: 'latency_ms', type: 'number', isOptional: true },
+        { name: 'helpful_vote', type: 'boolean', isOptional: true },
+        { name: 'issue_resolved', type: 'boolean', isOptional: true },
+        { name: 'feedback_notes', type: 'string', isOptional: true },
+        { name: 'images', type: 'string' },
+        { name: 'integrity_sha256', type: 'string' },
+        { name: 'filename_keys', type: 'string' },
+        { name: 'plant_context', type: 'string' },
+        { name: 'quality_scores', type: 'string' },
+        { name: 'action_plan', type: 'string', isOptional: true },
+        { name: 'processing_started_at', type: 'number', isOptional: true },
+        { name: 'processing_completed_at', type: 'number', isOptional: true },
+        { name: 'resolved_at', type: 'number', isOptional: true },
+        { name: 'created_at', type: 'number', isIndexed: true },
+        { name: 'updated_at', type: 'number' },
       ],
     }),
     // Community feed tables
