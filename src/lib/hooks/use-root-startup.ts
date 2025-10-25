@@ -9,6 +9,7 @@ import { startUiResponsivenessMonitor } from '@/lib/perf/ui-responsiveness-monit
 import { consentManager } from '@/lib/privacy/consent-manager';
 import { setDeletionAdapter } from '@/lib/privacy/deletion-adapter';
 import { createSupabaseDeletionAdapter } from '@/lib/privacy/deletion-adapter-supabase';
+import { refreshQualityThresholds } from '@/lib/quality/remote-config';
 import { registerBackgroundTask } from '@/lib/sync/background-sync';
 import { setupSyncTriggers } from '@/lib/sync/sync-triggers';
 import { TaskNotificationService } from '@/lib/task-notifications';
@@ -152,6 +153,9 @@ function startRootInitialization(
     let applyRTLIfNeeded: (() => void) | undefined;
     let refreshIsRTL: (() => void) | undefined;
     let i18nInitSucceeded = false;
+    void refreshQualityThresholds().catch((error) => {
+      console.warn('[RootStartup] Failed to refresh quality thresholds', error);
+    });
     try {
       const i18nModule = await import('@/lib/i18n');
       await i18nModule.initI18n();

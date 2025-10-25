@@ -171,6 +171,42 @@
       "assignedToReviewer": "Assigned to reviewer"
     }
   },
+  "assessment": {
+    "camera": {
+      "errors": {
+        "cameraFailed": "Camera failed to initialize. Please try again.",
+        "captureFailed": "Failed to capture photo. Please try again.",
+        "processingFailed": "Failed to process image. Please try again.",
+        "storageFull": "Storage is full. Please free up space and try again."
+      },
+      "guidance": {
+        "focus": "Keep the camera steady and wait for focus",
+        "framing": "Fill the frame with the plant matter",
+        "leafBottom": "Position the camera below the leaf, showing the underside clearly",
+        "leafTop": "Position the camera above the leaf, showing the top surface clearly",
+        "lighting": "Ensure neutral lighting without strong shadows",
+        "wholePlant": "Capture the entire plant in frame with good lighting"
+      },
+      "permissionDenied": {
+        "description": "GrowBro needs camera access to capture photos for plant health assessment. Please enable camera permissions in your device settings.",
+        "openSettings": "Open Settings",
+        "retry": "Try Again",
+        "title": "Camera Access Required"
+      },
+      "progress": {
+        "done": "Done",
+        "next": "Next Photo",
+        "photoCount": "Photo {{current}} of {{total}}",
+        "retake": "Retake"
+      },
+      "quality": {
+        "blur": "Image is too blurry. Hold the camera steady and wait for focus.",
+        "composition": "Not enough plant matter in frame. Get closer or adjust framing.",
+        "exposure": "Image is over or under-exposed. Adjust lighting conditions.",
+        "whiteBalance": "Color temperature is off. Use neutral lighting without strong color casts."
+      }
+    }
+  },
   "calendar": {
     "drag_item_hint": "Long-press then drag to reschedule. Double-tap to open move menu.",
     "drag_item_label": "Drag {{title}}",

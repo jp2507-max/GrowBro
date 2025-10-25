@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Set up core data models and database schema
+- [x] 1. Set up core data models and database schema
   - Create WatermelonDB schema for assessments table with all required fields (status, inference_mode, model_version, raw_confidence, calibrated_confidence, quality_scores, etc.)
   - Implement AssessmentRecord model with proper relationships to plants table
   - Add database indexes for (user_id, created_at) and (status) for efficient querying
@@ -16,8 +16,8 @@
   - Create dev-client smoke test to validate WatermelonDB integration
   - _Requirements: 6.1, 6.4, 9.1, 9.2_
 
-- [ ] 2. Implement image capture and quality assessment system
-  - [ ] 2.1 Create guided camera capture component with multi-shot support
+- [x] 2. Implement image capture and quality assessment system
+  - [x] 2.1 Create guided camera capture component with multi-shot support
     - Build CaptureComponent with guided prompts for leaf positioning (top/bottom views)
     - Implement real-time quality feedback UI for lighting, focus, and framing guidance
 
@@ -28,7 +28,7 @@
       Both approaches satisfy requirements 1.1–1.3; VisionCamera is recommended for real-time guidance.
     - _Requirements: 1.1, 1.2, 1.3_
 
-  - [ ] 2.2 Build automated image quality assessment engine
+  - [x] 2.2 Build automated image quality assessment engine
     - Implement blur detection using variance of Laplacian with tuned kernel size (threshold >100 as baseline)
     - Create exposure assessment using histogram analysis for over/under-exposure detection
     - Add white balance validation with color temperature estimation and deviation checks
@@ -39,7 +39,7 @@
     - Show specific failure reason (blur/exposure/WB/composition) with one-tap "Retake" CTA
     - _Requirements: 1.4, 2.1, 2.3_
 
-  - [ ] 2.3 Implement EXIF data stripping and secure image storage
+  - [x] 2.3 Implement EXIF data stripping and secure image storage
     - Use expo-camera for managed workflow compatibility and validate supported params on target devices
     - Add explicit EXIF stripping step after capture using expo-image-manipulator with automated test validation
   - Create content-addressable file naming using per-install/user salted keys computed with HMAC-SHA256(secret, imageBytes) using an implementation of HMAC-SHA256 (for example, crypto-js or a native binding) — expo-crypto does not provide an HMAC API and therefore cannot be used for this purpose.
@@ -48,14 +48,14 @@
     - Build LRU cache management for local images with configurable storage limits
     - _Requirements: 1.5, 8.1, 8.5_
 
-- [ ] 2.5. Milestone: Calibration and thresholding baseline
+- [x] 2.5. Milestone: Calibration and thresholding baseline
   - Implement temperature scaling for confidence calibration with offline validation
   - Deploy calibrated thresholds per class/locale/device to Remote Config
   - Validate that device vs cloud inference + confidence calibration works before Action Plans
   - _Requirements: 2.2, 2.3_
 
-- [ ] 3. Build ML inference engine with dual-mode support
-  - [ ] 3.1 Implement on-device ML inference with ONNX Runtime React Native
+- [x] 3. Build ML inference engine with dual-mode support
+  - [x] 3.1 Implement on-device ML inference with ONNX Runtime React Native
     - Integrate ONNX Runtime React Native with EfficientNet-Lite0/1 or MobileNetV3-Small models (<20MB)
     - Implement model loading with checksum validation, cryptographic signatures, and version tracking
     - Add XNNPACK (CPU default), NNAPI (Android), and CoreML (iOS) execution providers with CPU fallback;
@@ -64,7 +64,7 @@
     - Implement deadline budget (3.5s total) with cloud fallback using same idempotency key
     - _Requirements: 2.2, 2.4, 10.1, 10.5_
 
-  - [ ] 3.2 Create cloud-based ML inference fallback system
+  - [x] 3.2 Create cloud-based ML inference fallback system
     - Implement Supabase Edge Function as authenticated gateway (idempotency, JWT) that proxies to a
       Node/Container inference microservice using onnxruntime-node (e.g., EfficientNet-B4/ResNet-50 for complex cases).
     - Keep heavy inference out of Edge isolates to avoid WASM size/memory constraints; enable warm containers and model caching.
@@ -75,7 +75,7 @@
     - Add auth failure test to validate JWT handling and RLS enforcement
     - _Requirements: 2.2, 2.4, 10.4_
 
-  - [ ] 3.3 Implement confidence calibration and result aggregation
+  - [x] 3.3 Implement confidence calibration and result aggregation
     - Build temperature scaling system for confidence calibration (offline training)
     - Store both raw_confidence and calibrated_confidence in results
     - Implement multi-photo aggregation: majority vote → highest confidence → Unknown if all <0.70

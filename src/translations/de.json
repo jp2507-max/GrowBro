@@ -171,6 +171,42 @@
       "assignedToReviewer": "Dem Prüfer zugewiesen"
     }
   },
+  "assessment": {
+    "camera": {
+      "errors": {
+        "cameraFailed": "Kamera konnte nicht initialisiert werden. Bitte versuchen Sie es erneut.",
+        "captureFailed": "Foto konnte nicht aufgenommen werden. Bitte versuchen Sie es erneut.",
+        "processingFailed": "Bild konnte nicht verarbeitet werden. Bitte versuchen Sie es erneut.",
+        "storageFull": "Speicher ist voll. Bitte geben Sie Speicherplatz frei und versuchen Sie es erneut."
+      },
+      "guidance": {
+        "focus": "Halten Sie die Kamera ruhig und warten Sie auf den Fokus",
+        "framing": "Füllen Sie den Rahmen mit der Pflanze",
+        "leafBottom": "Positionieren Sie die Kamera unter dem Blatt und zeigen Sie die Unterseite deutlich",
+        "leafTop": "Positionieren Sie die Kamera über dem Blatt und zeigen Sie die Oberseite deutlich",
+        "lighting": "Sorgen Sie für neutrale Beleuchtung ohne starke Schatten",
+        "wholePlant": "Erfassen Sie die gesamte Pflanze im Bild mit guter Beleuchtung"
+      },
+      "permissionDenied": {
+        "description": "GrowBro benötigt Kamerazugriff, um Fotos für die Pflanzengesundheitsbewertung aufzunehmen. Bitte aktivieren Sie die Kameraberechtigungen in Ihren Geräteeinstellungen.",
+        "openSettings": "Einstellungen öffnen",
+        "retry": "Erneut versuchen",
+        "title": "Kamerazugriff erforderlich"
+      },
+      "progress": {
+        "done": "Fertig",
+        "next": "Nächstes Foto",
+        "photoCount": "Foto {{current}} von {{total}}",
+        "retake": "Wiederholen"
+      },
+      "quality": {
+        "blur": "Das Bild ist zu unscharf. Halten Sie die Kamera ruhig und warten Sie auf den Fokus.",
+        "composition": "Nicht genug Pflanzenmaterial im Bild. Gehen Sie näher heran oder passen Sie den Bildausschnitt an.",
+        "exposure": "Das Bild ist über- oder unterbelichtet. Passen Sie die Lichtverhältnisse an.",
+        "whiteBalance": "Die Farbtemperatur ist nicht korrekt. Verwenden Sie neutrale Beleuchtung ohne starke Farbstiche."
+      }
+    }
+  },
   "calendar": {
     "drag_item_hint": "Lange drücken und ziehen, um neu zu planen. Doppeltippen für Menü.",
     "drag_item_label": "Ziehen {{title}}",
