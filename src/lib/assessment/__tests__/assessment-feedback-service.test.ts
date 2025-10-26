@@ -9,6 +9,9 @@ import * as telemetryService from '../assessment-telemetry-service';
 jest.mock('../assessment-sentry');
 jest.mock('../assessment-telemetry-service');
 
+// Track assessment IDs created by these tests so cleanup is scoped and safe
+const CREATED_ASSESSMENT_IDS = new Set<string>();
+
 describe('AssessmentFeedbackService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -24,6 +27,7 @@ describe('AssessmentFeedbackService', () => {
       };
 
       const feedback = await feedbackService.submitFeedback(options);
+      CREATED_ASSESSMENT_IDS.add(options.assessmentId);
 
       expect(feedback).toBeDefined();
       expect(feedback.assessmentId).toBe(options.assessmentId);
@@ -53,12 +57,13 @@ describe('AssessmentFeedbackService', () => {
       };
 
       const feedback = await feedbackService.submitFeedback(options);
+      CREATED_ASSESSMENT_IDS.add(options.assessmentId);
 
       expect(feedback).toBeDefined();
       expect(feedback.assessmentId).toBe(options.assessmentId);
       expect(feedback.helpful).toBe(false);
-      expect(feedback.issueResolved).toBeUndefined();
-      expect(feedback.notes).toBeUndefined();
+      expect(feedback.issueResolved).toBeNull();
+      expect(feedback.notes).toBeNull();
     });
 
     it('should truncate notes to 500 characters', async () => {
@@ -70,6 +75,7 @@ describe('AssessmentFeedbackService', () => {
       };
 
       const feedback = await feedbackService.submitFeedback(options);
+      CREATED_ASSESSMENT_IDS.add(options.assessmentId);
 
       expect(feedback.notes?.length).toBe(500);
     });
@@ -82,6 +88,7 @@ describe('AssessmentFeedbackService', () => {
       };
 
       const feedback = await feedbackService.submitFeedback(options);
+      CREATED_ASSESSMENT_IDS.add(options.assessmentId);
 
       expect(feedback.notes).toBe('Test notes with spaces');
     });
@@ -95,6 +102,7 @@ describe('AssessmentFeedbackService', () => {
         helpful: true,
         issueResolved: 'yes',
       });
+      CREATED_ASSESSMENT_IDS.add('test-assessment-5');
 
       const feedback =
         await feedbackService.getAssessmentFeedback('test-assessment-5');
@@ -117,6 +125,7 @@ describe('AssessmentFeedbackService', () => {
         assessmentId: 'test-assessment-6',
         helpful: true,
       });
+      CREATED_ASSESSMENT_IDS.add('test-assessment-6');
 
       const hasFeedback =
         await feedbackService.hasAssessmentFeedback('test-assessment-6');
@@ -140,20 +149,24 @@ describe('AssessmentFeedbackService', () => {
         helpful: true,
         issueResolved: 'yes',
       });
+      CREATED_ASSESSMENT_IDS.add('stats-1');
       await feedbackService.submitFeedback({
         assessmentId: 'stats-2',
         helpful: true,
         issueResolved: 'no',
       });
+      CREATED_ASSESSMENT_IDS.add('stats-2');
       await feedbackService.submitFeedback({
         assessmentId: 'stats-3',
         helpful: false,
         issueResolved: 'too_early',
       });
+      CREATED_ASSESSMENT_IDS.add('stats-3');
       await feedbackService.submitFeedback({
         assessmentId: 'stats-4',
         helpful: true,
       });
+      CREATED_ASSESSMENT_IDS.add('stats-4');
     });
 
     it('should calculate correct feedback statistics', async () => {
@@ -169,14 +182,15 @@ describe('AssessmentFeedbackService', () => {
   });
 
   afterAll(async () => {
-    // Clean up test data
-    const allFeedback = await database
-      .get<AssessmentFeedbackModel>('assessment_feedback')
-      .query()
-      .fetch();
-
+    const { Q } = await import('@nozbe/watermelondb');
     await database.write(async () => {
-      for (const feedback of allFeedback) {
+      const toDelete = await database
+        .get<AssessmentFeedbackModel>('assessment_feedback')
+        .query(
+          Q.where('assessment_id', Q.oneOf(Array.from(CREATED_ASSESSMENT_IDS)))
+        )
+        .fetch();
+      for (const feedback of toDelete) {
         await feedback.destroyPermanently();
       }
     });

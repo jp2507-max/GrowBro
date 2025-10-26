@@ -1,24 +1,27 @@
+import type { AssessmentRequestModel } from '@/lib/watermelon-models/assessment-request';
+
 import { BatchProcessor } from '../batch-processor';
 
 // Mock AssessmentRequestModel
-const createMockRequest = (id: string) => ({
-  id,
-  plantId: 'plant-1',
-  userId: 'user-1',
-  status: 'pending' as const,
-  photos: [],
-  plantContext: { id: 'plant-1' },
-  retryCount: 0,
-  originalTimestamp: Date.now(),
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  isPending: true,
-  isProcessing: false,
-  isCompleted: false,
-  hasFailed: false,
-  shouldRetry: true,
-  hasExceededMaxRetries: false,
-});
+const createMockRequest = (id: string): AssessmentRequestModel =>
+  ({
+    id,
+    plantId: 'plant-1',
+    userId: 'user-1',
+    status: 'pending' as const,
+    photos: [],
+    plantContext: { id: 'plant-1' },
+    retryCount: 0,
+    originalTimestamp: Date.now(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isPending: true,
+    isProcessing: false,
+    isCompleted: false,
+    hasFailed: false,
+    shouldRetry: true,
+    hasExceededMaxRetries: false,
+  }) as unknown as AssessmentRequestModel;
 
 describe('BatchProcessor', () => {
   describe('processBatch', () => {

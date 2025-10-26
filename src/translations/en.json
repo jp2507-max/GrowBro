@@ -215,6 +215,23 @@
         "capturing": "Capturing photo…"
       },
       "useAlternative": "Use Alternative"
+    },
+    "feedback": {
+      "helpful_question": "Was this assessment helpful?",
+      "no": "No",
+      "notes_description": "Your feedback helps us improve the AI model for everyone. This information is anonymous and will not be shared.",
+      "notes_placeholder": "Tell us more about your experience (optional)",
+      "notes_question": "Any additional feedback?",
+      "privacy_note": "Your feedback is anonymous and helps improve the service.",
+      "resolved_no": "No, issue persists",
+      "resolved_question": "Did the suggested actions resolve the issue?",
+      "resolved_too_early": "Too early to tell",
+      "resolved_yes": "Yes, issue resolved",
+      "skip": "Skip",
+      "submit": "Submit Feedback",
+      "thanks": "Thank you for your feedback! Your input helps us improve the AI assessment for all growers.",
+      "title": "Assessment Feedback",
+      "yes": "Yes"
     }
   },
   "calendar": {

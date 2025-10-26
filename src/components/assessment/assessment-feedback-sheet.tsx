@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Text, View } from '@/components/ui';
@@ -20,10 +20,19 @@ type AssessmentFeedbackSheetProps = {
 };
 
 export const AssessmentFeedbackSheet = React.forwardRef<
-  any,
+  unknown,
   AssessmentFeedbackSheetProps
 >(({ onSubmit, assessmentId: _assessmentId }, ref) => {
   const { t } = useTranslation();
+  const internalRef = useRef<any>(null);
+  const setRefs = useCallback(
+    (node: any) => {
+      internalRef.current = node;
+      if (typeof ref === 'function') ref(node);
+      else if (ref && 'current' in (ref as any)) (ref as any).current = node;
+    },
+    [ref]
+  );
   const [step, setStep] = useState<'helpful' | 'resolved' | 'notes'>('helpful');
   const [helpful, setHelpful] = useState<boolean | null>(null);
   const [issueResolved, setIssueResolved] =
@@ -58,6 +67,8 @@ export const AssessmentFeedbackSheet = React.forwardRef<
   };
 
   const handleClose = () => {
+    // Dismiss the sheet then reset local state
+    internalRef.current?.dismiss?.();
     setStep('helpful');
     setHelpful(null);
     setIssueResolved(null);
@@ -66,7 +77,7 @@ export const AssessmentFeedbackSheet = React.forwardRef<
 
   return (
     <Modal
-      ref={ref}
+      ref={setRefs}
       title={t('assessment.feedback.title')}
       snapPoints={['70%']}
     >
@@ -78,6 +89,7 @@ export const AssessmentFeedbackSheet = React.forwardRef<
             </Text>
             <View className="flex-row gap-3">
               <Button
+                testID="feedback-helpful-yes"
                 variant="outline"
                 onPress={() => handleHelpfulResponse(true)}
                 className="flex-1"
@@ -85,6 +97,7 @@ export const AssessmentFeedbackSheet = React.forwardRef<
                 {t('assessment.feedback.yes')}
               </Button>
               <Button
+                testID="feedback-helpful-no"
                 variant="outline"
                 onPress={() => handleHelpfulResponse(false)}
                 className="flex-1"
@@ -102,18 +115,21 @@ export const AssessmentFeedbackSheet = React.forwardRef<
             </Text>
             <View className="gap-3">
               <Button
+                testID="feedback-resolved-yes"
                 variant="outline"
                 onPress={() => handleResolvedResponse('yes')}
               >
                 {t('assessment.feedback.resolved_yes')}
               </Button>
               <Button
+                testID="feedback-resolved-no"
                 variant="outline"
                 onPress={() => handleResolvedResponse('no')}
               >
                 {t('assessment.feedback.resolved_no')}
               </Button>
               <Button
+                testID="feedback-resolved-too-early"
                 variant="outline"
                 onPress={() => handleResolvedResponse('too_early')}
               >
@@ -132,6 +148,7 @@ export const AssessmentFeedbackSheet = React.forwardRef<
               {t('assessment.feedback.notes_description')}
             </Text>
             <Input
+              testID="feedback-notes"
               value={notes}
               onChangeText={setNotes}
               placeholder={t('assessment.feedback.notes_placeholder')}
@@ -144,13 +161,18 @@ export const AssessmentFeedbackSheet = React.forwardRef<
             </Text>
             <View className="flex-row gap-3">
               <Button
+                testID="feedback-skip"
                 variant="outline"
                 onPress={handleSubmit}
                 className="flex-1"
               >
                 {t('assessment.feedback.skip')}
               </Button>
-              <Button onPress={handleSubmit} className="flex-1">
+              <Button
+                testID="feedback-submit"
+                onPress={handleSubmit}
+                className="flex-1"
+              >
                 {t('assessment.feedback.submit')}
               </Button>
             </View>

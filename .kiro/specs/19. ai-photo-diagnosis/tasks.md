@@ -169,8 +169,8 @@ When implementing the HMAC, be aware that expo-crypto does not provide a built-i
 
 Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output to be a stable hex string (lowercase) or base64 string; pick one format (hex is recommended) and document it across clients. Treat the HMAC secret as a credential (store it in secure storage / Keychain / Android Keystore / SecureStore) and, if you support secret rotation, provide an explicit rekey strategy (on-access rekeying or a background re-encryption job that rewrites blobs under the new key while preserving `integrity_sha256`).
 
-- [ ] 6. Implement user feedback and telemetry system
-  - [ ] 6.1 Create user feedback collection interface
+- [x] 6. Implement user feedback and telemetry system
+  - [x] 6.1 Create user feedback collection interface
     - Build feedback UI for "Was this helpful?" and "Issue resolved?" collection
     - Implement optional feedback notes collection with character limits
     - Create feedback submission system that respects user privacy preferences
@@ -179,7 +179,7 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - Implement feedback aggregation for per-class accuracy and helpfulness metrics
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
-  - [ ] 6.2 Build comprehensive telemetry and analytics system
+  - [x] 6.2 Build comprehensive telemetry and analytics system
     - Implement privacy-safe telemetry logging (device vs cloud mode, latency, model version, confidence)
     - Create user action tracking (task creation, playbook shifts, community CTA usage)
   - Add Sentry integration with assessment_id breadcrumbs (no PII) for error debugging
@@ -187,8 +187,8 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - Implement model performance monitoring with per-class accuracy tracking
     - _Requirements: 9.1, 9.3, 9.4, 9.5_
 
-- [ ] 7. Create model lifecycle management and remote configuration
-  - [ ] 7.1 Implement model delivery and update system
+- [x] 7. Create model lifecycle management and remote configuration
+  - [x] 7.1 Implement model delivery and update system
     - Build remote config system for model version management and staged rollouts
     - Create secure model download with checksum validation and cryptographic signatures
     - Implement A/B testing framework for model updates with shadow mode testing
@@ -196,7 +196,7 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - Create model caching system with efficient storage and cleanup
     - _Requirements: 10.1, 10.2, 9.3_
 
-  - [ ] 7.2 Build edge case handling and graceful degradation
+  - [x] 7.2 Build edge case handling and graceful degradation
     - Implement non-plant image detection with educational prompts and retake guidance
     - Create extreme close-up and heavy LED color cast detection with specific feedback
     - Add low memory handling with graceful degradation (skip device → cloud inference)

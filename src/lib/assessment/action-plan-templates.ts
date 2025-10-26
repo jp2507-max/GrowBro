@@ -753,7 +753,6 @@ export function getActionPlanTemplate(classId: string): AssessmentActionPlan {
 export function hasActionPlanTemplate(classId: string): boolean {
   const templateIds = [
     'healthy',
-    'unknown',
     'nitrogen_deficiency',
     'phosphorus_deficiency',
     'potassium_deficiency',

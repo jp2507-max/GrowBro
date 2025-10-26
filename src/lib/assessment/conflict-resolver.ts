@@ -164,7 +164,7 @@ function isEqual(a: any, b: any): boolean {
  */
 export function mergePartialUpdate<T extends Record<string, any>>(
   localData: T,
-  serverUpdate: Partial<T>,
+  serverUpdate: Partial<T> & Record<string, unknown>,
   preserveLocalFields: string[] = []
 ): T {
   const merged = { ...localData };

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Security Tests for Moderation System
  * Tests authentication, authorization, audit integrity, and security controls

@@ -52,14 +52,17 @@ export async function getPerClassMetrics(): Promise<PerClassMetrics[]> {
     .query(Q.where('status', 'completed'))
     .fetch();
 
-  const feedbackMap = new Map<string, AssessmentFeedbackModel>();
+  const feedbackMap = new Map<string, AssessmentFeedbackModel[]>();
   const allFeedback = await database
     .get<AssessmentFeedbackModel>('assessment_feedback')
     .query()
     .fetch();
 
   for (const feedback of allFeedback) {
-    feedbackMap.set(feedback.assessmentId, feedback);
+    if (!feedbackMap.has(feedback.assessmentId)) {
+      feedbackMap.set(feedback.assessmentId, []);
+    }
+    feedbackMap.get(feedback.assessmentId)!.push(feedback);
   }
 
   // Group by predicted class
@@ -84,10 +87,8 @@ export async function getPerClassMetrics(): Promise<PerClassMetrics[]> {
     const group = classGroups.get(assessment.predictedClass)!;
     group.assessments.push(assessment);
 
-    const feedback = feedbackMap.get(assessment.id);
-    if (feedback) {
-      group.feedback.push(feedback);
-    }
+    const feedbacks = feedbackMap.get(assessment.id) || [];
+    group.feedback.push(...feedbacks);
   }
 
   // Calculate metrics per class
@@ -213,7 +214,7 @@ export async function getUserActionMetrics(): Promise<UserActionMetrics> {
     (t) => t.eventType === 'task_created'
   ).length;
   const playbookShiftedCount = telemetry.filter(
-    (t) => t.eventType === 'playbook_shifted'
+    (t) => t.eventType === 'playbook_adjustment'
   ).length;
   const communityCtaCount = telemetry.filter(
     (t) => t.eventType === 'community_cta_tapped'

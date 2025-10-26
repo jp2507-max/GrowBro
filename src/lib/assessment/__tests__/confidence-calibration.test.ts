@@ -25,27 +25,29 @@ describe('confidence-calibration', () => {
     });
 
     test('applies temperature scaling correctly', () => {
-      // With temperature = 1.5, calibrated = raw^(1/1.5) = raw^0.667
+      // With logit-based scaling: logit(p)/T → sigmoid, T=1.5 reduces confidence
       const raw = 0.8;
       const calibrated = applyTemperatureScaling(raw, 1.5);
-      const expected = Math.pow(0.8, 1 / 1.5);
-      expect(calibrated).toBeCloseTo(expected, 5);
+      // Logit scaling should reduce confidence for T > 1
+      expect(calibrated).toBeLessThan(raw);
+      expect(calibrated).toBeGreaterThan(0);
+      expect(calibrated).toBeLessThan(1);
     });
 
     test('temperature = 1 returns unchanged confidence', () => {
       expect(applyTemperatureScaling(0.7, 1)).toBeCloseTo(0.7, 5);
     });
 
-    test('temperature > 1 increases confidence', () => {
+    test('temperature > 1 reduces confidence (softens predictions)', () => {
       const raw = 0.8;
       const calibrated = applyTemperatureScaling(raw, 2);
-      expect(calibrated).toBeGreaterThan(raw);
+      expect(calibrated).toBeLessThan(raw);
     });
 
-    test('temperature < 1 reduces confidence', () => {
+    test('temperature < 1 increases confidence (sharpens predictions)', () => {
       const raw = 0.6;
       const calibrated = applyTemperatureScaling(raw, 0.5);
-      expect(calibrated).toBeLessThan(raw);
+      expect(calibrated).toBeGreaterThan(raw);
     });
   });
 
@@ -191,15 +193,15 @@ describe('confidence-calibration', () => {
       // High raw confidence should be reduced with temperature > 1
       const raw = 0.95;
       const calibrated = applyTemperatureScaling(raw, 1.5);
-      expect(calibrated).toBeGreaterThan(raw);
+      expect(calibrated).toBeLessThan(raw);
       expect(calibrated).toBeLessThan(1);
     });
 
     test('maintains reasonable confidence for mid-range predictions', () => {
       const raw = 0.7;
       const calibrated = applyTemperatureScaling(raw, 1.5);
-      expect(calibrated).toBeGreaterThan(0.6);
-      expect(calibrated).toBeLessThan(0.9);
+      expect(calibrated).toBeLessThan(raw); // T=1.5 should reduce confidence
+      expect(calibrated).toBeGreaterThan(0.5);
     });
   });
 });

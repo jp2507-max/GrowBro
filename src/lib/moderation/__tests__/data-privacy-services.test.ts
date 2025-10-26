@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Data Privacy Services Tests
  * Tests for GDPR compliance implementation

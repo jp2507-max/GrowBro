@@ -35,6 +35,7 @@ export type PlaybookAdjustmentOptions = {
   plan: AssessmentActionPlan;
   playbook?: Playbook;
   context: AssessmentPlantContext;
+  assessmentId?: string; // Optional assessment ID to include in metadata
 };
 
 /**
@@ -43,7 +44,7 @@ export type PlaybookAdjustmentOptions = {
 export type PlaybookAdjustmentResult = {
   adjustments: PlaybookAdjustment[];
   metadata: {
-    assessmentId: string;
+    assessmentId?: string; // Optional - will be empty string if not provided
     classId: string;
     confidence: number;
     suggestedCount: number;
@@ -66,7 +67,7 @@ export class PlaybookIntegrationService {
   suggestAdjustments(
     options: PlaybookAdjustmentOptions
   ): PlaybookAdjustmentResult {
-    const { assessment, context } = options;
+    const { assessment, context, assessmentId } = options;
     const classId = assessment.topClass.id;
     const confidence = assessment.calibratedConfidence;
     const adjustments: PlaybookAdjustment[] = [];
@@ -76,7 +77,7 @@ export class PlaybookIntegrationService {
       return {
         adjustments: [],
         metadata: {
-          assessmentId: '', // Will be set by caller
+          assessmentId: assessmentId || '',
           classId,
           confidence,
           suggestedCount: 0,
@@ -106,7 +107,7 @@ export class PlaybookIntegrationService {
     return {
       adjustments,
       metadata: {
-        assessmentId: '', // Will be set by caller
+        assessmentId: assessmentId || '',
         classId,
         confidence,
         suggestedCount: adjustments.length,

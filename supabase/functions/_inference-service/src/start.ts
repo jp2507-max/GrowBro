@@ -11,8 +11,6 @@ import {
 
 const MAX_BODY_BYTES = 5 * 1024 * 1024; // 5MB
 
-type ParsedRequest = ReturnType<typeof cloudInferenceRequestSchema.parse>;
-
 class HttpError extends Error {
   constructor(
     public readonly status: number,
@@ -22,6 +20,32 @@ class HttpError extends Error {
   ) {
     super(message);
   }
+}
+
+function authenticateServiceRequest(
+  req: IncomingMessage,
+  serviceToken: string
+): void {
+  // Check for Authorization header with Bearer token
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.slice(7); // Remove 'Bearer ' prefix
+    if (token === serviceToken) {
+      return; // Valid Bearer token
+    }
+  }
+
+  // Check for X-Service-Token header
+  const serviceTokenHeader = req.headers['x-service-token'];
+  if (
+    typeof serviceTokenHeader === 'string' &&
+    serviceTokenHeader === serviceToken
+  ) {
+    return; // Valid service token header
+  }
+
+  // No valid authentication found
+  throw new HttpError(401, 'UNAUTHORIZED', 'Invalid or missing service token');
 }
 
 function buildSuccessEnvelope(
@@ -99,7 +123,10 @@ function sendJson(res: ServerResponse, status: number, payload: unknown): void {
   res.setHeader('Content-Length', Buffer.byteLength(body));
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-User-Id');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, X-User-Id, Authorization, X-Service-Token'
+  );
   res.end(body);
 }
 
@@ -145,6 +172,9 @@ async function handleInference(
   res: ServerResponse
 ): Promise<void> {
   const startedAt = Date.now();
+
+  // Authenticate service request before trusting any headers
+  authenticateServiceRequest(req, config.SERVICE_TOKEN);
 
   const userId = req.headers['x-user-id'];
   if (typeof userId !== 'string' || userId.length === 0) {
@@ -204,7 +234,10 @@ async function routeRequest(
     res.statusCode = 204;
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-User-Id');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Content-Type, X-User-Id, Authorization, X-Service-Token'
+    );
     res.end();
     return;
   }

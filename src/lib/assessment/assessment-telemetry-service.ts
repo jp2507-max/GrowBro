@@ -113,8 +113,9 @@ export async function logInferenceFailure(options: {
         record.errorCode = error.code;
         record.metadata = {
           errorCategory: error.category,
-          errorMessage: error.message,
           retryable: error.retryable,
+          // Avoid raw messages; store a bounded, sanitized summary
+          errorSummary: (error.message ?? '').slice(0, 120),
         };
       });
   });
@@ -208,7 +209,7 @@ export async function logExecutionProvider(options: {
  */
 export async function logUserAction(options: {
   assessmentId: string;
-  action: 'task_created' | 'playbook_shifted' | 'community_cta_tapped';
+  action: 'task_created' | 'playbook_adjustment' | 'community_cta_tapped';
   metadata?: Record<string, unknown>;
 }): Promise<void> {
   const { assessmentId, action, metadata = {} } = options;

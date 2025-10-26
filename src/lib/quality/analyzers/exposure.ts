@@ -53,10 +53,33 @@ export function analyzeExposure(
   const { underExposureMaxRatio, overExposureMaxRatio, acceptableRange } =
     thresholds.exposure;
 
+  // Runtime validation to prevent division by zero
+  if (underExposureMaxRatio <= 0 || overExposureMaxRatio <= 0) {
+    return {
+      score: 0,
+      issue: buildIssue({
+        type: 'exposure',
+        severity: 'high',
+        suggestion: 'assessment.camera.quality.exposure',
+      }),
+    };
+  }
+
+  const rangeHalf = acceptableRange[1] - acceptableRange[0];
+  if (rangeHalf <= 0) {
+    return {
+      score: 0,
+      issue: buildIssue({
+        type: 'exposure',
+        severity: 'high',
+        suggestion: 'assessment.camera.quality.exposure',
+      }),
+    };
+  }
+
   const underScore = Math.max(0, 1 - underRatio / underExposureMaxRatio);
   const overScore = Math.max(0, 1 - overRatio / overExposureMaxRatio);
   const rangeCenter = (acceptableRange[0] + acceptableRange[1]) / 2;
-  const rangeHalf = (acceptableRange[1] - acceptableRange[0]) / 2;
   const deviation = Math.abs(averageLuma / 255 - rangeCenter);
   const balanceScore = Math.max(0, 1 - deviation / rangeHalf);
 

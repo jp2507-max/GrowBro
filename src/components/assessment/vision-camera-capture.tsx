@@ -21,6 +21,7 @@ type VisionCameraCaptureProps = {
   guidanceMode: GuidanceMode;
   photoCount: number;
   maxPhotos: number;
+  onError?: (err: Error) => void;
 };
 
 export function VisionCameraCapture({
@@ -28,6 +29,7 @@ export function VisionCameraCapture({
   guidanceMode,
   photoCount,
   maxPhotos,
+  onError,
 }: VisionCameraCaptureProps) {
   const { t } = useTranslation();
   const camera = useRef<Camera>(null);
@@ -61,7 +63,7 @@ export function VisionCameraCapture({
 
       onPhotoCapture(capturedPhoto);
     } catch (error) {
-      console.error('Failed to capture photo:', error);
+      onError?.(error as Error);
     } finally {
       setIsCapturing(false);
     }

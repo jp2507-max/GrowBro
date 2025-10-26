@@ -79,7 +79,16 @@ export function captureInferenceError(options: {
   });
 
   // Capture the error for tracking
-  Sentry.captureException(new Error(`Inference failed: ${error.code}`), {
+  let exception: Error;
+  if (error instanceof Error) {
+    exception = error;
+  } else {
+    exception = new Error(`Inference failed: ${error.message || error.code}`, {
+      cause: error,
+    });
+  }
+
+  Sentry.captureException(exception, {
     level: 'error',
     tags: {
       assessment_id: assessmentId,
@@ -92,6 +101,10 @@ export function captureInferenceError(options: {
       retryable: error.retryable,
       fallbackToCloud: error.fallbackToCloud,
       latencyMs,
+      originalError: error,
+      ...(error instanceof Error && error.stack
+        ? { originalStack: error.stack }
+        : {}),
     },
   });
 }
@@ -181,7 +194,7 @@ export function captureChecksumValidationError(options: {
  */
 export function addUserActionBreadcrumb(options: {
   assessmentId: string;
-  action: 'task_created' | 'playbook_shifted' | 'community_cta_tapped';
+  action: 'task_created' | 'playbook_adjustment' | 'community_cta_tapped';
 }): void {
   Sentry.addBreadcrumb({
     category: 'user_action',

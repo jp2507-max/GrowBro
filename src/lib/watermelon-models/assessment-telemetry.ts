@@ -17,7 +17,7 @@ export type TelemetryEventType =
   | 'assessment_completed'
   | 'feedback_submitted'
   | 'task_created'
-  | 'playbook_shifted'
+  | 'playbook_adjustment'
   | 'community_cta_tapped'
   | 'inference_started'
   | 'inference_failed'

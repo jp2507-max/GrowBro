@@ -215,6 +215,23 @@
         "capturing": "Foto wird aufgenommen…"
       },
       "useAlternative": "Alternative verwenden"
+    },
+    "feedback": {
+      "helpful_question": "War diese Bewertung hilfreich?",
+      "no": "Nein",
+      "notes_description": "Ihr Feedback hilft uns, das KI-Modell für alle zu verbessern. Diese Informationen sind anonym und werden nicht weitergegeben.",
+      "notes_placeholder": "Erzählen Sie uns mehr über Ihre Erfahrung (optional)",
+      "notes_question": "Weiteres Feedback?",
+      "privacy_note": "Ihr Feedback ist anonym und hilft, den Service zu verbessern.",
+      "resolved_no": "Nein, Problem besteht weiterhin",
+      "resolved_question": "Haben die vorgeschlagenen Maßnahmen das Problem gelöst?",
+      "resolved_too_early": "Zu früh, um das zu sagen",
+      "resolved_yes": "Ja, Problem gelöst",
+      "skip": "Überspringen",
+      "submit": "Feedback senden",
+      "thanks": "Vielen Dank für Ihr Feedback! Ihre Rückmeldung hilft uns, die KI-Bewertung für alle Grower zu verbessern.",
+      "title": "Bewertungs-Feedback",
+      "yes": "Ja"
     }
   },
   "calendar": {

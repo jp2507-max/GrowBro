@@ -14,7 +14,8 @@ export type QualityIssueType =
   | 'non_cannabis_subject'
   | 'lighting'
   | 'focus'
-  | 'frame';
+  | 'frame'
+  | 'unknown';
 
 export type QualityIssueSeverity = 'low' | 'medium' | 'high';
 
@@ -181,7 +182,7 @@ export type CameraError = {
   category: 'capture' | 'permission' | 'storage' | 'hardware';
   retryable: boolean;
   fallbackAction?: 'retry' | 'openSettings' | 'useGallery' | 'contactSupport';
-  actionPayload?: Record<string, any>;
+  actionPayload?: Record<string, unknown>;
 };
 
 // ML Inference Types
@@ -255,7 +256,7 @@ export type ProcessingResult = {
   success: boolean;
   error?: string;
   processedAt: number;
-  details?: any;
+  details?: unknown;
 };
 
 export type AssessmentRequestData = {

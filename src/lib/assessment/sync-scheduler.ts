@@ -6,10 +6,11 @@ import {
   notifySyncStarted,
 } from './use-sync-notifications';
 
-let syncInterval: NodeJS.Timeout | null = null;
+let syncInterval: ReturnType<typeof setInterval> | null = null;
 let connectivityUnsubscribe: (() => void) | null = null;
 let isRunning = false;
 let wasOffline = false;
+let isProcessing = false;
 
 const SYNC_INTERVAL_MS = 30 * 1000; // 30 seconds
 
@@ -71,6 +72,15 @@ export function stopSyncScheduler(): void {
  * Process queue with error handling
  */
 async function processQueueSafely(): Promise<void> {
+  if (isProcessing) {
+    console.log(
+      '[SyncScheduler] Queue processing already in progress, skipping.'
+    );
+    return;
+  }
+
+  isProcessing = true;
+
   try {
     // Get queue status before processing
     const statusBefore = await offlineQueueManager.getQueueStatus();
@@ -83,6 +93,8 @@ async function processQueueSafely(): Promise<void> {
     await offlineQueueManager.processQueue();
   } catch (error) {
     console.error('[SyncScheduler] Failed to process queue:', error);
+  } finally {
+    isProcessing = false;
   }
 }
 

@@ -174,16 +174,23 @@ export class CloudInferenceClient {
     }, CLOUD_INFERENCE_TIMEOUT_MS);
 
     try {
-      const { data, error } =
-        await supabase.functions.invoke<CloudInferenceResponse>(
-          EDGE_FUNCTION_NAME,
-          {
-            body: request,
-            headers: {
-              'X-Idempotency-Key': idempotencyKey,
-            },
-          }
-        );
+      const fetchPromise = supabase.functions.invoke<CloudInferenceResponse>(
+        EDGE_FUNCTION_NAME,
+        {
+          body: request,
+          headers: {
+            'X-Idempotency-Key': idempotencyKey,
+          },
+        }
+      );
+
+      const abortPromise = new Promise<never>((_, reject) => {
+        controller.signal.addEventListener('abort', () => {
+          reject(new DOMException('Aborted', 'AbortError'));
+        });
+      });
+
+      const { data, error } = await Promise.race([fetchPromise, abortPromise]);
 
       if (error) {
         // Check if timeout

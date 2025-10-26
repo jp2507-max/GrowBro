@@ -30,6 +30,14 @@ export {
 } from './inference-coordinator';
 
 // Model management
+export type { DownloadProgress, DownloadResult } from './model-downloader';
+export {
+  checkModelExists,
+  downloadModelFromStorage,
+  downloadModelMetadata,
+  getModelSize,
+} from './model-downloader';
+export { deleteModel, downloadModel, updateModel } from './model-lifecycle';
 export { getModelManager, ModelManager } from './model-manager';
 
 // Model configuration
@@ -39,6 +47,76 @@ export {
   isValidModelVersion,
   MODEL_CONFIG,
 } from './model-config';
+
+// Model remote config and rollout
+export type { ModelRemoteConfig } from './model-remote-config';
+export {
+  getActiveModelVersion,
+  getModelConfigState,
+  refreshModelConfig,
+  shouldUseShadowModel,
+  useModelConfig,
+} from './model-remote-config';
+
+// Rollback monitoring
+export {
+  calculateErrorRate,
+  clearMetrics,
+  getAllModelMetrics,
+  getErrorBreakdown,
+  recordModelError,
+  recordModelSuccess,
+  shouldRollback,
+} from './rollback-monitor';
+
+// Edge case detection
+export type { EdgeCaseDetectionResult } from './edge-case-detector';
+export {
+  detectAllEdgeCases,
+  detectExtremeCloseUp,
+  detectHeavyLEDCast,
+  detectNonPlantImage,
+} from './edge-case-detector';
+
+// Graceful degradation
+export type {
+  DegradationDecision,
+  DegradationStrategy,
+} from './graceful-degradation';
+export {
+  calculateBackoffDelay,
+  canHandleInference,
+  checkMemoryAvailability,
+  createRetryableError,
+  delay,
+  determineDegradationStrategy,
+  estimateMemoryRequirement,
+} from './graceful-degradation';
+
+// Duplicate detection
+export type { DuplicateDetectionResult } from './duplicate-detector';
+export {
+  calculateHammingDistance,
+  detectDuplicates,
+  findAllDuplicates,
+  generatePerceptualHash,
+  getUniquePhotos,
+  hammingDistanceToSimilarity,
+} from './duplicate-detector';
+
+// Timeout handling
+export type {
+  TimeoutOptions,
+  TimeoutProgress,
+  TimeoutState,
+} from './timeout-handler';
+export {
+  createCancellableTimeout,
+  formatRemainingTime,
+  getTimeoutConfig,
+  TimeoutHandler,
+  withTimeout,
+} from './timeout-handler';
 
 // Execution providers
 export type { ExecutionProviderConfig } from './execution-providers';
@@ -55,13 +133,10 @@ export {
 export {
   getTelemetrySummary,
   logChecksumValidation,
-  logCloudFallback,
   logCloudInferenceRequest,
   logCloudInferenceTimeout,
-  logExecutionProvider,
   logIdempotencyCacheHit,
   logImageUpload,
-  logInferenceFailure,
   logInferenceSuccess,
   logModelLoad,
   logModelWarmup,

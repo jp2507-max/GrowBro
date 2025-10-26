@@ -54,9 +54,14 @@ const responseSchema = z.object({
       weight: z.number(),
     }),
     exposure: z.object({
-      underExposureMaxRatio: z.number(),
-      overExposureMaxRatio: z.number(),
-      acceptableRange: z.tuple([z.number(), z.number()]),
+      underExposureMaxRatio: z.number().positive(),
+      overExposureMaxRatio: z.number().positive(),
+      acceptableRange: z
+        .tuple([z.number(), z.number()])
+        .refine(
+          ([min, max]) => min < max,
+          'acceptableRange must be an increasing tuple (min < max)'
+        ),
       weight: z.number(),
     }),
     whiteBalance: z.object({

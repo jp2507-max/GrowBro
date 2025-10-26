@@ -51,7 +51,7 @@ function combineScore(weights: number[], scores: number[]): number {
   return weightSum === 0 ? 0 : weighted / weightSum;
 }
 
-async function assessData(data: ImageLumaData): Promise<QualityResult> {
+export async function assessData(data: ImageLumaData): Promise<QualityResult> {
   const thresholds = getQualityThresholds();
   const scores: number[] = [];
   const weights: number[] = [];
@@ -66,6 +66,8 @@ async function assessData(data: ImageLumaData): Promise<QualityResult> {
     }
   }
 
+  // Combine individual analyzer scores (0-100) using weighted average
+  // Result is also in 0-100 range, matching threshold scales
   const aggregate = combineScore(weights, scores);
   const acceptable = aggregate >= thresholds.acceptableScore;
   const borderline = !acceptable && aggregate >= thresholds.borderlineScore;

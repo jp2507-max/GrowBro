@@ -101,6 +101,7 @@ export function QueueStatusSheet({ onClose }: QueueStatusSheetProps) {
             onPress={handleSyncNow}
             disabled={isSyncing}
             variant="default"
+            testID="sync-now-button"
           />
         )}
         {status.failed > 0 && (
@@ -109,10 +110,16 @@ export function QueueStatusSheet({ onClose }: QueueStatusSheetProps) {
             onPress={handleRetryFailed}
             disabled={isRetrying}
             variant="secondary"
+            testID="retry-failed-button"
           />
         )}
         {onClose && (
-          <Button label="Close" onPress={onClose} variant="outline" />
+          <Button
+            label="Close"
+            onPress={onClose}
+            variant="outline"
+            testID="close-button"
+          />
         )}
       </View>
 

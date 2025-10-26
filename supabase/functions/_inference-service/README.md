@@ -21,6 +21,7 @@ This service is deployed as a separate Node.js container (e.g., Cloud Run, Fly.i
 
 - `Content-Type: application/json`
 - `X-User-Id: <user-id>` (from Edge Function)
+- `Authorization: Bearer <service-token>` OR `X-Service-Token: <service-token>` (service authentication)
 
 **Body**: Same as Edge Function request (CloudInferenceRequest)
 
@@ -60,6 +61,7 @@ gcloud run deploy inference-service \
 - `MODEL_PATH`: Path to ONNX model file
 - `MODEL_VERSION`: Model version string
 - `PORT`: HTTP server port (default: 8080)
+- `SERVICE_TOKEN`: Secret token for service authentication (required)
 
 ## TODO
 

@@ -22,4 +22,7 @@ export const deleteItemAsync = jest.fn(async (key: string): Promise<void> => {
 
 export function __reset(): void {
   store.clear();
+  getItemAsync.mockReset();
+  setItemAsync.mockReset();
+  deleteItemAsync.mockReset();
 }

@@ -26,6 +26,10 @@ import type {
 import { supabase } from '../supabase';
 import { RepeatOffenderService } from './repeat-offender-service';
 
+function notImplemented(name: string): never {
+  throw new Error(`${name} not implemented`);
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -742,6 +746,48 @@ export class ModerationService {
    */
   async getRepeatOffenderRecords(userId: string) {
     return await this.repeatOffenderService.getAllRecordsForUser(userId);
+  }
+
+  // Temporary stubs for not-yet-built API surface referenced in tests
+  // TODO: replace with real implementations once moderation workflows land
+  async makeDecision(): Promise<any> {
+    return notImplemented('makeDecision');
+  }
+
+  async generateStatementOfReasons(): Promise<any> {
+    return notImplemented('generateStatementOfReasons');
+  }
+
+  async submitSoRToTransparencyDB(): Promise<any> {
+    return notImplemented('submitSoRToTransparencyDB');
+  }
+
+  async notifyUser(): Promise<any> {
+    return notImplemented('notifyUser');
+  }
+
+  async getAllReports(): Promise<any> {
+    return notImplemented('getAllReports');
+  }
+
+  async getAllDecisions(): Promise<any> {
+    return notImplemented('getAllDecisions');
+  }
+
+  async getModeratorQueueForUser(): Promise<any> {
+    return notImplemented('getModeratorQueueForUser');
+  }
+
+  async getConfiguration(): Promise<any> {
+    return notImplemented('getConfiguration');
+  }
+
+  async cleanupExpiredSessions(): Promise<any> {
+    return notImplemented('cleanupExpiredSessions');
+  }
+
+  async getReportDetails(): Promise<any> {
+    return notImplemented('getReportDetails');
   }
 }
 

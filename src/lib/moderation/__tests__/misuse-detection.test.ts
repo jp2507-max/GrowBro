@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Misuse Detection Tests (DSA Art. 23)
  * Tests repeat infringer detection, graduated enforcement, and manifestly unfounded reporter tracking

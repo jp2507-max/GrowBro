@@ -78,7 +78,7 @@ describe('ActionTrackingService', () => {
 
       const events = service.getEvents();
       expect(events.length).toBe(1);
-      expect(events[0].actionType).toBe('playbook_adjusted');
+      expect(events[0].actionType).toBe('playbook_adjustment');
       expect(events[0].metadata?.accepted).toBe(true);
       expect(events[0].metadata?.adjustmentCount).toBe(2);
     });
@@ -101,7 +101,7 @@ describe('ActionTrackingService', () => {
 
       const events = service.getEvents();
       expect(events.length).toBe(1);
-      expect(events[0].actionType).toBe('community_cta_clicked');
+      expect(events[0].actionType).toBe('community_cta_tapped');
       expect(events[0].assessmentId).toBe('assessment-1');
     });
   });
@@ -167,7 +167,7 @@ describe('ActionTrackingService', () => {
       service.trackCommunityCTA('assessment-3', mockAssessment);
 
       expect(service.getEventCount('task_created')).toBe(2);
-      expect(service.getEventCount('community_cta_clicked')).toBe(1);
+      expect(service.getEventCount('community_cta_tapped')).toBe(1);
       expect(service.getEventCount('helpful_vote')).toBe(0);
     });
   });
@@ -233,7 +233,7 @@ describe('ActionTrackingService', () => {
 
       const events = actionTrackingService.getEvents();
       expect(events.length).toBe(1);
-      expect(events[0].actionType).toBe('playbook_adjusted');
+      expect(events[0].actionType).toBe('playbook_adjustment');
     });
 
     it('should track community CTA via convenience function', () => {
@@ -243,7 +243,7 @@ describe('ActionTrackingService', () => {
 
       const events = actionTrackingService.getEvents();
       expect(events.length).toBe(1);
-      expect(events[0].actionType).toBe('community_cta_clicked');
+      expect(events[0].actionType).toBe('community_cta_tapped');
     });
 
     it('should track retake via convenience function', () => {

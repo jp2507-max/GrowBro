@@ -34,18 +34,20 @@ export type BackoffOptions = {
  * @returns The calculated delay with jitter in milliseconds
  *
  * Examples with jitter:
- * - retryCount = 0: ~2000ms ± 20% = 1600-2400ms
- * - retryCount = 1: ~4000ms ± 20% = 3200-4800ms
- * - retryCount = 2: ~8000ms ± 20% = 6400-9600ms
+ * - retryCount = 0: ~1000ms ± 20% = 800-1200ms
+ * - retryCount = 1: ~2000ms ± 20% = 1600-2400ms
+ * - retryCount = 2: ~4000ms ± 20% = 3200-4800ms
  * - etc., up to maxDelayMs
  */
 export function calculateBackoffDelayWithJitter(
   retryCount: number,
   options: BackoffOptions = {}
 ): number {
+  if (!Number.isFinite(retryCount) || retryCount < 0) retryCount = 0;
+
   const {
-    baseDelayMs = 2000,
-    maxDelayMs = 60000,
+    baseDelayMs = 1000, // align with calculateBackoffDelay
+    maxDelayMs = 32000, // align with calculateBackoffDelay
     jitterFactor = 0.2,
   } = options;
 
@@ -59,6 +61,7 @@ export function calculateBackoffDelayWithJitter(
   const jitterRange = exponentialDelay * jitterFactor;
   const jitter = (Math.random() * 2 - 1) * jitterRange;
 
-  // Ensure result is positive and within bounds
-  return Math.max(0, Math.min(exponentialDelay + jitter, maxDelayMs));
+  // Ensure result is positive and within bounds, round to avoid fractional delays
+  const value = Math.max(0, Math.min(exponentialDelay + jitter, maxDelayMs));
+  return Math.round(value);
 }

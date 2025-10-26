@@ -20,18 +20,36 @@ function sanitizePhotos(photos: CapturedPhoto[] | undefined): CapturedPhoto[] {
     return [];
   }
 
-  return photos.slice(0, MAX_PHOTOS).map((photo) => ({
-    id: String(photo?.id ?? ''),
-    uri: String(photo?.uri ?? ''),
-    timestamp:
-      typeof photo?.timestamp === 'number' ? photo.timestamp : Date.now(),
-    qualityScore: photo?.qualityScore ?? {
-      score: 0,
-      acceptable: false,
-      issues: [],
-    },
-    metadata: photo?.metadata ?? { width: 0, height: 0 },
-  }));
+  return photos
+    .filter((photo) => {
+      // Filter out any photo missing a non-empty string id or uri
+      return (
+        typeof photo?.id === 'string' &&
+        photo.id.trim() !== '' &&
+        typeof photo?.uri === 'string' &&
+        photo.uri.trim() !== ''
+      );
+    })
+    .slice(0, MAX_PHOTOS)
+    .map((photo) => ({
+      id: photo.id,
+      uri: photo.uri,
+      timestamp:
+        typeof photo.timestamp === 'number' ? photo.timestamp : Date.now(),
+      qualityScore: photo.qualityScore ?? {
+        score: 0,
+        acceptable: false,
+        issues: [],
+      },
+      metadata: {
+        width:
+          typeof photo.metadata?.width === 'number' ? photo.metadata.width : 0,
+        height:
+          typeof photo.metadata?.height === 'number'
+            ? photo.metadata.height
+            : 0,
+      },
+    }));
 }
 
 function sanitizePlantContext(
@@ -93,6 +111,10 @@ export class AssessmentRequestModel extends Model {
 
   get shouldRetry(): boolean {
     if (this.status !== 'pending' && this.status !== 'failed') {
+      return false;
+    }
+    // Terminal failure: failed status with no retry scheduled
+    if (this.status === 'failed' && !this.nextAttemptAt) {
       return false;
     }
     if (!this.nextAttemptAt) {

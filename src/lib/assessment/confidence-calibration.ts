@@ -33,6 +33,8 @@ const DEFAULT_GLOBAL_THRESHOLD = 0.7;
  * Default calibration configuration
  * Temperature > 1.0 makes the model less confident (softens probabilities)
  * Temperature < 1.0 makes the model more confident (sharpens probabilities)
+ *
+ * Uses logit-based temperature scaling: logit(p)/T → sigmoid
  */
 const DEFAULT_CALIBRATION_CONFIG: CalibrationConfig = {
   temperature: DEFAULT_TEMPERATURE,
@@ -60,8 +62,12 @@ let currentConfig: CalibrationConfig = DEFAULT_CALIBRATION_CONFIG;
 /**
  * Apply temperature scaling to raw confidence score
  *
- * Temperature scaling formula: calibrated = raw^(1/T)
- * where T is the temperature parameter
+ * Uses logit-based temperature scaling:
+ * 1. Clamp p into (eps, 1-eps) to avoid division by zero/inf
+ * 2. Compute logit = ln(p/(1-p))
+ * 3. Scale logit by dividing by T
+ * 4. Convert back via sigmoid: 1 / (1 + exp(-logit/T))
+ * 5. Clamp final output to [0,1]
  *
  * @param rawConfidence - Raw model output confidence (0-1)
  * @param temperature - Temperature parameter (default from config)
@@ -75,10 +81,20 @@ export function applyTemperatureScaling(
   if (rawConfidence >= 1) return 1;
   if (temperature <= 0) return rawConfidence;
 
-  // Apply temperature scaling: calibrated = raw^(1/T)
-  const calibrated = Math.pow(rawConfidence, 1 / temperature);
+  // Small epsilon to avoid division by zero or infinity
+  const eps = 1e-12;
+  const clamped = Math.max(eps, Math.min(1 - eps, rawConfidence));
 
-  // Clamp to [0, 1] range
+  // Compute logit: ln(p/(1-p))
+  const logit = Math.log(clamped / (1 - clamped));
+
+  // Scale logit by temperature: logit/T
+  const scaledLogit = logit / temperature;
+
+  // Convert back via sigmoid: 1 / (1 + exp(-scaledLogit))
+  const calibrated = 1 / (1 + Math.exp(-scaledLogit));
+
+  // Clamp to [0, 1] range (additional safety check)
   return Math.max(0, Math.min(1, calibrated));
 }
 

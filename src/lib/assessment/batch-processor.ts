@@ -46,15 +46,19 @@ export class BatchProcessor {
     const { isMetered = false } = options;
 
     // Adjust batch size for metered connections
-    const effectiveBatchSize =
+    const effectiveBatchSize = Math.max(
+      1,
       this.respectMeteredConnection && isMetered
         ? Math.min(this.maxBatchSize, 3)
-        : this.maxBatchSize;
+        : this.maxBatchSize
+    );
 
-    const effectiveConcurrent =
+    const effectiveConcurrent = Math.max(
+      1,
       this.respectMeteredConnection && isMetered
         ? Math.min(this.maxConcurrent, 1)
-        : this.maxConcurrent;
+        : this.maxConcurrent
+    );
 
     const results: ProcessingResult[] = [];
     const batches = this.createBatches(requests, effectiveBatchSize);
@@ -84,6 +88,9 @@ export class BatchProcessor {
     processFn: ProcessRequestFn,
     maxConcurrent: number
   ): Promise<ProcessingResult[]> {
+    // Ensure maxConcurrent is at least 1 to prevent infinite loops
+    const effectiveMaxConcurrent = Math.max(1, maxConcurrent);
+
     const results: ProcessingResult[] = [];
     const executing: Promise<void>[] = [];
 
@@ -112,7 +119,7 @@ export class BatchProcessor {
       executing.push(promise);
 
       // Wait if we've reached max concurrency
-      if (executing.length >= maxConcurrent) {
+      if (executing.length >= effectiveMaxConcurrent) {
         await Promise.race(executing);
       }
     }
@@ -150,20 +157,27 @@ export class BatchProcessor {
    * Estimate processing time for a batch
    */
   estimateProcessingTime(requestCount: number, isMetered: boolean): number {
-    const effectiveBatchSize =
+    const effectiveBatchSize = Math.max(
+      1,
       this.respectMeteredConnection && isMetered
         ? Math.min(this.maxBatchSize, 3)
-        : this.maxBatchSize;
+        : this.maxBatchSize
+    );
 
-    const effectiveConcurrent =
+    const effectiveConcurrent = Math.max(
+      1,
       this.respectMeteredConnection && isMetered
         ? Math.min(this.maxConcurrent, 1)
-        : this.maxConcurrent;
+        : this.maxConcurrent
+    );
 
     const batchCount = Math.ceil(requestCount / effectiveBatchSize);
     const avgProcessingTimePerRequest = 5000; // 5s average per request
     const timePerBatch =
-      (effectiveBatchSize / effectiveConcurrent) * avgProcessingTimePerRequest;
+      effectiveConcurrent > 0
+        ? (effectiveBatchSize / effectiveConcurrent) *
+          avgProcessingTimePerRequest
+        : effectiveBatchSize * avgProcessingTimePerRequest; // fallback when concurrent is 0
     const totalTime = batchCount * (timePerBatch + this.processingDelayMs);
 
     return totalTime;

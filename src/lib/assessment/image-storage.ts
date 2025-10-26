@@ -1,9 +1,12 @@
-import HmacSHA256 from 'crypto-js/hmac-sha256';
+import * as CryptoJS from 'crypto-js';
 import * as Crypto from 'expo-crypto';
 import * as FileSystem from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
 
 import { imageCacheManager } from '@/lib/assessment/image-cache-manager';
+
+// Maximum image size to prevent memory spikes (10MB)
+const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 
 // Type-safe interface for FileSystem with proper null handling
 interface SafeFileSystem {
@@ -66,19 +69,21 @@ async function getOrCreateDeviceSecret(): Promise<string> {
 export async function computeIntegritySha256(
   imageUri: string
 ): Promise<string> {
-  try {
-    const base64 = await FileSystem.readAsStringAsync(imageUri, {
-      encoding: 'base64' as const,
-    });
-    const digest = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      base64
+  const info = await FileSystem.getInfoAsync(imageUri);
+  if (!info.exists || !('size' in info) || info.size > MAX_IMAGE_SIZE_BYTES) {
+    throw new Error(
+      `Image too large or does not exist: max ${MAX_IMAGE_SIZE_BYTES} bytes`
     );
-    return digest;
-  } catch (error) {
-    console.error('Failed to compute integrity hash:', error);
-    throw new Error('Failed to compute integrity hash');
   }
+
+  const base64 = await FileSystem.readAsStringAsync(imageUri, {
+    encoding: 'base64' as const,
+  });
+  const digest = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    base64
+  );
+  return digest;
 }
 
 /**
@@ -90,18 +95,22 @@ export async function computeFilenameKey(imageUri: string): Promise<string> {
   // errors bubble up (preserve original error messages).
   const secret = await getOrCreateDeviceSecret();
 
-  try {
-    const base64 = await FileSystem.readAsStringAsync(imageUri, {
-      encoding: 'base64' as const,
-    });
-
-    // Compute HMAC-SHA256(secret, imageBytes)
-    const hmac = HmacSHA256(base64, secret);
-    return hmac.toString();
-  } catch (error) {
-    console.error('Failed to compute filename key:', error);
-    throw new Error('Failed to compute filename key');
+  const info = await FileSystem.getInfoAsync(imageUri);
+  if (!info.exists || !('size' in info) || info.size > MAX_IMAGE_SIZE_BYTES) {
+    throw new Error(
+      `Image too large or does not exist: max ${MAX_IMAGE_SIZE_BYTES} bytes`
+    );
   }
+
+  const base64 = await FileSystem.readAsStringAsync(imageUri, {
+    encoding: 'base64' as const,
+  });
+
+  // Compute HMAC-SHA256(secret, imageBytes) using incremental API for future streaming
+  const hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA256, secret)
+    .update(base64)
+    .finalize();
+  return hmac.toString();
 }
 
 /**

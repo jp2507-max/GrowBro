@@ -372,8 +372,7 @@ async function fetchRemoteConfig({
     if (tierMatches) {
       return { payload: toRemoteResponse(cached), source: 'cache' };
     }
-    // Device tier changed, but cache is still fresh - use it
-    return { payload: toRemoteResponse(cached), source: 'cache' };
+    // Device tier changed, cache is still fresh but tier mismatch triggers remote fetch
   }
 
   const headers: Record<string, string> = {

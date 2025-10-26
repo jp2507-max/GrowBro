@@ -946,8 +946,8 @@ export const migrations = schemaMigrations({
             { name: 'issue_resolved', type: 'boolean', isOptional: true },
             { name: 'feedback_notes', type: 'string', isOptional: true },
             { name: 'images', type: 'string' },
-            { name: 'integrity_sha256_json', type: 'string' },
-            { name: 'filename_keys_json', type: 'string' },
+            { name: 'integrity_sha256', type: 'string' },
+            { name: 'filename_keys', type: 'string' },
             { name: 'plant_context', type: 'string' },
             { name: 'quality_scores', type: 'string' },
             { name: 'action_plan', type: 'string', isOptional: true },
@@ -962,12 +962,6 @@ export const migrations = schemaMigrations({
               isOptional: true,
             },
             { name: 'resolved_at', type: 'number', isOptional: true },
-            {
-              name: 'deleted_at',
-              type: 'number',
-              isOptional: true,
-              isIndexed: true,
-            },
             { name: 'created_at', type: 'number', isIndexed: true },
             { name: 'updated_at', type: 'number' },
           ]),
@@ -1039,6 +1033,33 @@ export const migrations = schemaMigrations({
           ]),
         },
       ],
+    },
+    // Migration from version 26 to 27: Add soft-delete and timestamp fields to assessment_classes
+    {
+      toVersion: 27,
+      steps: [
+        addColumns({
+          table: 'assessment_classes',
+          columns: [
+            {
+              name: 'deleted_at',
+              type: 'number',
+              isOptional: true,
+              isIndexed: true,
+            },
+            { name: 'updated_at', type: 'number', isOptional: true },
+          ],
+        }),
+      ],
+      // Down migration: Remove deleted_at and updated_at columns from assessment_classes
+      // Note: WatermelonDB migrations are typically forward-only, but for rollback purposes:
+      // down: [
+      //   {
+      //     type: 'remove_columns',
+      //     table: 'assessment_classes',
+      //     columns: ['deleted_at', 'updated_at'],
+      //   },
+      // ],
     },
   ],
 });

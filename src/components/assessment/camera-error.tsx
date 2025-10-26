@@ -23,6 +23,10 @@ export function CameraErrorView({
 }: CameraErrorProps) {
   const { t } = useTranslation();
 
+  const fallbackHandler = error.fallbackAction
+    ? onFallbackAction?.[error.fallbackAction]
+    : undefined;
+
   const getErrorMessage = () => {
     switch (error.category) {
       case 'capture':
@@ -64,11 +68,8 @@ export function CameraErrorView({
             </Button>
           )}
 
-          {error.fallbackAction && onFallbackAction?.[error.fallbackAction] && (
-            <Button
-              onPress={() => onFallbackAction[error.fallbackAction]?.()}
-              variant="outline"
-            >
+          {fallbackHandler && (
+            <Button onPress={() => fallbackHandler()} variant="outline">
               <Text className="font-semibold text-neutral-100">
                 {t('assessment.camera.useAlternative')}
               </Text>

@@ -38,6 +38,7 @@ export class OfflineQueueManager {
   private readonly maxQueueSize: number;
   private readonly completedRetentionMs: number;
   private readonly failedRetentionMs: number;
+  private _processing = false;
 
   constructor(config: OfflineQueueConfig = {}) {
     this.maxQueueSize = config.maxQueueSize ?? DEFAULT_MAX_QUEUE_SIZE;
@@ -87,46 +88,57 @@ export class OfflineQueueManager {
    * Returns array of processing results
    */
   async processQueue(): Promise<ProcessingResult[]> {
+    // Re-entry guard
+    if (this._processing) {
+      return [];
+    }
+
     // Check network connectivity first
     const online = await isOnline();
     if (!online) {
       return [];
     }
 
-    const collection = database.get<AssessmentRequestModel>(
-      'assessment_requests'
-    );
+    this._processing = true;
 
-    // Get all pending or failed requests that are ready to retry
-    const requests = await collection
-      .query(
-        Q.or(Q.where('status', 'pending'), Q.where('status', 'failed')),
-        Q.sortBy('created_at', Q.asc)
-      )
-      .fetch();
+    try {
+      const collection = database.get<AssessmentRequestModel>(
+        'assessment_requests'
+      );
 
-    // Filter requests that are ready to retry
-    const readyRequests = requests.filter(
-      (req) => req.shouldRetry && !req.hasExceededMaxRetries
-    );
+      // Get all pending or failed requests that are ready to retry
+      const requests = await collection
+        .query(
+          Q.or(Q.where('status', 'pending'), Q.where('status', 'failed')),
+          Q.sortBy('created_at', Q.asc)
+        )
+        .fetch();
 
-    if (readyRequests.length === 0) {
-      return [];
+      // Filter requests that are ready to retry
+      const readyRequests = requests.filter(
+        (req) => req.shouldRetry && !req.hasExceededMaxRetries
+      );
+
+      if (readyRequests.length === 0) {
+        return [];
+      }
+
+      // Check if connection is metered
+      const metered = await isMetered();
+
+      // Process requests in batches
+      const results = await batchProcessor.processBatch(
+        readyRequests,
+        (request) => this.processRequest(request),
+        { isMetered: metered }
+      );
+
+      await this.cleanupStoragePolicy();
+
+      return results;
+    } finally {
+      this._processing = false;
     }
-
-    // Check if connection is metered
-    const metered = await isMetered();
-
-    // Process requests in batches
-    const results = await batchProcessor.processBatch(
-      readyRequests,
-      (request) => this.processRequest(request),
-      { isMetered: metered }
-    );
-
-    await this.cleanupStoragePolicy();
-
-    return results;
   }
 
   /**
@@ -174,17 +186,23 @@ export class OfflineQueueManager {
 
       await database.write(async () => {
         await request.update((record) => {
-          record.status = 'failed';
-          record.retryCount = request.retryCount + 1;
+          // Compute next retry count first
+          const nextRetryCount = request.retryCount + 1;
+          record.retryCount = nextRetryCount;
           record.lastError = errorMessage;
 
-          // Calculate next retry time with jitter if error is retryable
-          if (classification.shouldRetry && !request.hasExceededMaxRetries) {
-            const delay = calculateBackoffDelayWithJitter(record.retryCount);
+          // Check if we should retry based on error classification and retry limits
+          const shouldRetry = classification.shouldRetry && nextRetryCount < 5;
+
+          if (shouldRetry) {
+            // Schedule next retry attempt with backoff
+            const delay = calculateBackoffDelayWithJitter(nextRetryCount);
             record.nextAttemptAt = Date.now() + delay;
+            record.status = 'failed'; // Keep as failed but with retry scheduled
           } else {
-            // Don't set next attempt for non-retryable errors
+            // Terminal failure - no more retries
             record.nextAttemptAt = undefined;
+            record.status = 'failed';
           }
         });
       });

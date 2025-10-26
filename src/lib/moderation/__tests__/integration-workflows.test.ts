@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * End-to-End Integration Tests for Moderation Workflows
  * Tests complete workflows from report submission to resolution

@@ -16,8 +16,8 @@ import type { AssessmentResult } from '@/types/assessment';
  */
 export type AssessmentActionType =
   | 'task_created'
-  | 'playbook_adjusted'
-  | 'community_cta_clicked'
+  | 'playbook_adjustment'
+  | 'community_cta_tapped'
   | 'retake_initiated'
   | 'helpful_vote'
   | 'not_helpful_vote'
@@ -103,7 +103,7 @@ export class ActionTrackingService {
   ): void {
     this.logEvent({
       assessmentId,
-      actionType: 'playbook_adjusted',
+      actionType: 'playbook_adjustment',
       classId: assessment.topClass.id,
       confidence: assessment.calibratedConfidence,
       inferenceMode: assessment.mode,
@@ -117,7 +117,7 @@ export class ActionTrackingService {
   }
 
   /**
-   * Track community CTA click
+   * Track community CTA tap
    *
    * @param assessmentId - Assessment ID
    * @param assessment - Assessment result
@@ -125,7 +125,7 @@ export class ActionTrackingService {
   trackCommunityCTA(assessmentId: string, assessment: AssessmentResult): void {
     this.logEvent({
       assessmentId,
-      actionType: 'community_cta_clicked',
+      actionType: 'community_cta_tapped',
       classId: assessment.topClass.id,
       confidence: assessment.calibratedConfidence,
       inferenceMode: assessment.mode,

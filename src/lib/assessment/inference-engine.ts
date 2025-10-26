@@ -14,8 +14,40 @@ import {
   getBestExecutionProvider,
   logExecutionProviderInfo,
 } from './execution-providers';
+import {
+  canHandleInference,
+  determineDegradationStrategy,
+} from './graceful-degradation';
 import { MODEL_CONFIG } from './model-config';
 import { getModelManager } from './model-manager';
+import { getActiveModelVersion } from './model-remote-config';
+import { recordModelError, recordModelSuccess } from './rollback-monitor';
+
+/**
+ * Custom error class for inference engine errors
+ * Provides proper Error inheritance with additional metadata
+ */
+class InferenceEngineError extends Error {
+  code: string;
+  category: InferenceError['category'];
+  retryable: boolean;
+  fallbackToCloud: boolean;
+
+  constructor(opts: {
+    code: string;
+    message: string;
+    category: InferenceError['category'];
+    retryable: boolean;
+    fallbackToCloud?: boolean;
+  }) {
+    super(opts.message);
+    this.name = 'InferenceEngineError';
+    this.code = opts.code;
+    this.category = opts.category;
+    this.retryable = opts.retryable;
+    this.fallbackToCloud = !!opts.fallbackToCloud;
+  }
+}
 
 /**
  * ML Inference Engine
@@ -38,8 +70,24 @@ export class MLInferenceEngine {
     }
 
     try {
+      // Check if device can handle inference
+      const memoryCheck = canHandleInference(MODEL_CONFIG.MAX_MODEL_SIZE_MB);
+      if (!memoryCheck.canHandle) {
+        throw this.createError({
+          code: 'INSUFFICIENT_MEMORY',
+          message: memoryCheck.reason || 'Insufficient memory for inference',
+          category: 'memory',
+          retryable: false,
+          fallbackToCloud: true,
+        });
+      }
+
       const modelManager = getModelManager();
       await modelManager.initialize();
+
+      // Get active model version from remote config
+      const activeVersion = getActiveModelVersion();
+      this.modelVersion = activeVersion;
 
       // Check if model is available
       const isAvailable = await modelManager.isModelAvailable();
@@ -135,78 +183,127 @@ export class MLInferenceEngine {
     photos: CapturedPhoto[],
     options?: InferenceOptions
   ): Promise<AssessmentResult> {
-    if (!this.isInitialized) {
-      throw this.createError({
-        code: 'NOT_INITIALIZED',
-        message: 'Inference engine not initialized',
-        category: 'model',
-        retryable: false,
-      });
-    }
+    this.assertInitialized();
 
     const startTime = Date.now();
     const deadlineMs =
-      options?.deadlineMs || MODEL_CONFIG.DEVICE_INFERENCE_DEADLINE_MS;
+      options?.deadlineMs ?? MODEL_CONFIG.DEVICE_INFERENCE_DEADLINE_MS;
 
     try {
-      // Check deadline before starting
-      if (Date.now() - startTime > deadlineMs) {
-        throw this.createError({
-          code: 'DEADLINE_EXCEEDED',
-          message: 'Inference deadline exceeded before starting',
-          category: 'timeout',
-          retryable: false,
-          fallbackToCloud: true,
-        });
-      }
+      this.assertWithinDeadline(startTime, deadlineMs, 'start');
 
-      // Run inference on each photo
-      const perImageResults: PerImageResult[] = [];
-
-      for (const photo of photos) {
-        // Check deadline before each photo
-        if (Date.now() - startTime > deadlineMs) {
-          throw this.createError({
-            code: 'DEADLINE_EXCEEDED',
-            message: 'Inference deadline exceeded during processing',
-            category: 'timeout',
-            retryable: false,
-            fallbackToCloud: true,
-          });
-        }
-
-        const result = await this.predictSingleImage(photo);
-        perImageResults.push(result);
-      }
-
-      // Aggregate results
-      const aggregated = this.aggregateResults(perImageResults);
-
-      const processingTimeMs = Date.now() - startTime;
-
-      console.log(
-        `[MLInferenceEngine] Inference completed in ${processingTimeMs}ms`
+      const perImageResults = await this.runPerImageInference(
+        photos,
+        startTime,
+        deadlineMs
       );
 
-      return {
-        topClass: aggregated.topClass,
-        rawConfidence: aggregated.rawConfidence,
-        calibratedConfidence: aggregated.calibratedConfidence,
-        perImage: perImageResults,
-        aggregationMethod: aggregated.method,
-        processingTimeMs,
-        mode: 'device',
-        modelVersion: this.modelVersion || MODEL_CONFIG.CURRENT_VERSION,
-        executionProvider: this.activeProvider || undefined,
-      };
+      return this.createAssessmentResult(perImageResults, startTime);
     } catch (error) {
-      const processingTimeMs = Date.now() - startTime;
-      console.error(
-        `[MLInferenceEngine] Inference failed after ${processingTimeMs}ms:`,
-        error
-      );
-      throw error;
+      return this.handlePredictFailure(error, startTime);
     }
+  }
+
+  private assertInitialized(): void {
+    if (this.isInitialized) {
+      return;
+    }
+
+    throw this.createError({
+      code: 'NOT_INITIALIZED',
+      message: 'Inference engine not initialized',
+      category: 'model',
+      retryable: false,
+    });
+  }
+
+  private assertWithinDeadline(
+    startTime: number,
+    deadlineMs: number,
+    phase: 'start' | 'processing'
+  ): void {
+    if (Date.now() - startTime <= deadlineMs) {
+      return;
+    }
+
+    const message =
+      phase === 'start'
+        ? 'Inference deadline exceeded before starting'
+        : 'Inference deadline exceeded during processing';
+
+    throw this.createError({
+      code: 'DEADLINE_EXCEEDED',
+      message,
+      category: 'timeout',
+      retryable: false,
+      fallbackToCloud: true,
+    });
+  }
+
+  private async runPerImageInference(
+    photos: CapturedPhoto[],
+    startTime: number,
+    deadlineMs: number
+  ): Promise<PerImageResult[]> {
+    const perImageResults: PerImageResult[] = [];
+
+    for (const photo of photos) {
+      this.assertWithinDeadline(startTime, deadlineMs, 'processing');
+      const result = await this.predictSingleImage(photo);
+      perImageResults.push(result);
+    }
+
+    return perImageResults;
+  }
+
+  private createAssessmentResult(
+    perImageResults: PerImageResult[],
+    startTime: number
+  ): AssessmentResult {
+    const aggregated = this.aggregateResults(perImageResults);
+    const processingTimeMs = Date.now() - startTime;
+
+    console.log(
+      `[MLInferenceEngine] Inference completed in ${processingTimeMs}ms`
+    );
+
+    const modelVersion = this.modelVersion || MODEL_CONFIG.CURRENT_VERSION;
+    recordModelSuccess(modelVersion);
+
+    return {
+      topClass: aggregated.topClass,
+      rawConfidence: aggregated.rawConfidence,
+      calibratedConfidence: aggregated.calibratedConfidence,
+      perImage: perImageResults,
+      aggregationMethod: aggregated.method,
+      processingTimeMs,
+      mode: 'device',
+      modelVersion,
+      executionProvider: this.activeProvider || undefined,
+    };
+  }
+
+  private handlePredictFailure(error: unknown, startTime: number): never {
+    const processingTimeMs = Date.now() - startTime;
+    console.error(
+      `[MLInferenceEngine] Inference failed after ${processingTimeMs}ms:`,
+      error
+    );
+
+    const modelVersion = this.modelVersion || MODEL_CONFIG.CURRENT_VERSION;
+    const inferenceError = error as InferenceError;
+    recordModelError(
+      modelVersion,
+      inferenceError.code || 'UNKNOWN_ERROR',
+      inferenceError.category || 'unknown'
+    );
+
+    const degradation = determineDegradationStrategy(error as Error);
+    console.log(
+      `[MLInferenceEngine] Degradation strategy: ${degradation.strategy} - ${degradation.reason}`
+    );
+
+    throw error;
   }
 
   /**
@@ -270,8 +367,10 @@ export class MLInferenceEngine {
     // Calculate average confidence for top class
     const topClassConfidences = confidences.get(topClassId) || [];
     const rawConfidence =
-      topClassConfidences.reduce((sum, conf) => sum + conf, 0) /
-      topClassConfidences.length;
+      topClassConfidences.length > 0
+        ? topClassConfidences.reduce((sum, conf) => sum + conf, 0) /
+          topClassConfidences.length
+        : 0;
 
     // Apply confidence calibration
     const calibratedConfidence = applyTemperatureScaling(rawConfidence);
@@ -373,8 +472,10 @@ export class MLInferenceEngine {
     for (const classId of classes) {
       const classConfidences = confidences.get(classId) || [];
       const avgConfidence =
-        classConfidences.reduce((sum, conf) => sum + conf, 0) /
-        classConfidences.length;
+        classConfidences.length > 0
+          ? classConfidences.reduce((sum, conf) => sum + conf, 0) /
+            classConfidences.length
+          : 0;
 
       if (avgConfidence > maxConfidence) {
         maxConfidence = avgConfidence;
@@ -473,14 +574,8 @@ export class MLInferenceEngine {
     category: InferenceError['category'];
     retryable: boolean;
     fallbackToCloud?: boolean;
-  }): InferenceError {
-    return {
-      code: options.code,
-      message: options.message,
-      category: options.category,
-      retryable: options.retryable,
-      fallbackToCloud: options.fallbackToCloud || false,
-    };
+  }): Error {
+    return new InferenceEngineError(options);
   }
 }
 
