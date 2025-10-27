@@ -240,7 +240,9 @@ export function setCalibrationConfig(config: Partial<CalibrationConfig>): void {
  * Get current calibration configuration
  */
 export function getCalibrationConfig(): CalibrationConfig {
-  return structuredClone(currentConfig);
+  return typeof structuredClone === 'function'
+    ? structuredClone(currentConfig)
+    : { ...currentConfig };
 }
 
 /**

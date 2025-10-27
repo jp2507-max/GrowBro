@@ -7,6 +7,59 @@
         "placeholder": "Explain your counter arguments here..."
       }
     },
+    "assessment": {
+      "action_plan": {
+        "ready": "Action plan ready. Immediate steps: {{immediateCount}}. Short-term actions: {{shortTermCount}}. Diagnostic checks: {{diagnosticCount}}."
+      },
+      "action_step": {
+        "hint_with_task": "Double-tap to create a task for this step.",
+        "label": "Step {{index}} of {{total}}: {{title}}. {{description}}. Timeframe: {{timeframe}}. Priority: {{priority}}."
+      },
+      "camera": {
+        "cancel_hint": "Double-tap to cancel and return.",
+        "cancel_label": "Cancel photo capture",
+        "capture_hint": "Double-tap to take a photo of your plant.",
+        "capture_label": "Capture photo {{photoCount}} of {{maxPhotos}}",
+        "confirm_hint": "Double-tap to proceed with captured photos.",
+        "confirm_label": "Confirm {{count}} {{count, plural, one {photo} other {photos}}}",
+        "retake_hint": "Double-tap to retake the current photo.",
+        "retake_label": "Retake photo {{count}}"
+      },
+      "community_cta": {
+        "hint": "Double-tap to create a community post with your assessment photos.",
+        "label": "Ask community for help. AI confidence was {{percent}} percent."
+      },
+      "confidence": {
+        "hint": "Double-tap to learn what confidence means.",
+        "label": "{{type}} confidence: {{percent}} percent",
+        "type_calibrated": "Calibrated",
+        "type_raw": "Raw"
+      },
+      "diagnostic": {
+        "label_with_time": "{{name}}, estimated time {{minutes}} minutes"
+      },
+      "quality": {
+        "acceptable": "Photo quality acceptable, score {{score}} out of 100.",
+        "good": "Photo quality is good.",
+        "issue_detected": "{{type}} detected. {{suggestion}}.",
+        "needs_improvement": "Photo quality needs improvement, score {{score}} out of 100. Issues: {{issues}}.",
+        "needs_improvement_short": "Photo quality needs improvement."
+      },
+      "queue": {
+        "empty": "No pending assessments.",
+        "status": "{{pendingCount}} pending, {{processingCount}} processing"
+      },
+      "result": {
+        "low_confidence": "Assessment complete. Not confident enough to identify the issue. Confidence {{confidence}} percent. {{count, plural, one {One photo analyzed.} other {# photos analyzed.}}}",
+        "mode_cloud": "in the cloud",
+        "mode_device": "on device",
+        "success": "Assessment complete. Detected {{className}} with {{confidence}} percent confidence. Analysis ran {{mode}}. {{count, plural, one {One photo analyzed.} other {# photos analyzed.}}}"
+      },
+      "taxonomy": {
+        "hint": "Double-tap to see visual cues and description.",
+        "label": "Learn more about {{className}}"
+      }
+    },
     "calendar": {
       "needs_review_hint": "Marks this task as needing review due to a conflict.",
       "out_of_range_hint": "Indicates the latest reading is outside the target range.",
@@ -216,6 +269,31 @@
       },
       "useAlternative": "Use Alternative"
     },
+    "close": "Close",
+    "community": {
+      "askCommunity": "Ask the community",
+      "ctaHint": "Get a second opinion from experienced growers",
+      "getSecondOpinion": "Get a second opinion"
+    },
+    "diagnostics": {
+      "createTask": "Create task",
+      "description": "Run these basic checks to help identify the issue:",
+      "ecCheck": "Check EC/TDS",
+      "ecInstructions": "Measure nutrient strength (EC/TDS) to ensure proper feeding levels",
+      "estimatedTime": "~{{minutes}} min",
+      "lightCheck": "Measure light intensity",
+      "lightInstructions": "Check PPFD at canopy level to ensure adequate light without stress",
+      "pestCheck": "Inspect for pests",
+      "pestInstructions": "Check underside of leaves for spider mites, aphids, or other pests",
+      "phCheck": "Check pH",
+      "phInstructions": "Test pH level (soil: 6.0-7.0, hydro: 5.5-6.5) to rule out nutrient lockout",
+      "title": "Diagnostic Checklist",
+      "wateringCheck": "Check soil moisture",
+      "wateringInstructions": "Verify soil moisture level and watering schedule to rule out over/under-watering"
+    },
+    "errors": {
+      "analysisFailed": "We couldn't analyze your photos. Please check your connection and try again."
+    },
     "feedback": {
       "helpful_question": "Was this assessment helpful?",
       "no": "No",
@@ -232,6 +310,42 @@
       "thanks": "Thank you for your feedback! Your input helps us improve the AI assessment for all growers.",
       "title": "Assessment Feedback",
       "yes": "Yes"
+    },
+    "lastUpdated": "Last updated: {{time}}",
+    "loading": "Loading...",
+    "queue": {
+      "retryError": "Failed to retry failed assessments. Please try again.",
+      "syncError": "Failed to sync assessments. Please try again."
+    },
+    "retake": {
+      "cancel": "Cancel",
+      "primaryIssue": "Main Issue",
+      "retakeNow": "Retake photo now",
+      "subtitle": "Here are some tips to improve your photo quality:",
+      "tipsTitle": "Tips for Better Photos",
+      "title": "Improve Photo Quality"
+    },
+    "retryFailed": "Retry Failed",
+    "status": {
+      "completed": "Completed",
+      "failed": "Failed",
+      "pending": "Pending",
+      "processing": "Processing",
+      "stalled": "Stalled"
+    },
+    "syncNow": "Sync Now",
+    "title": "Assessment Queue",
+    "uncertainty": {
+      "confidenceLabel": "AI Confidence",
+      "confidenceThreshold": "We recommend at least 70% confidence for reliable results",
+      "educationalNote": "\ud83d\udca1 When uncertain, it's always best to consult experienced growers or run basic diagnostic checks.",
+      "hideChecklist": "Hide checklist",
+      "lowConfidenceExplanation": "The AI is not confident enough in this classification. Consider retaking photos with better quality or asking the community for help.",
+      "notConfident": "Not confident enough",
+      "oodExplanation": "The AI couldn't classify this issue with confidence. This might be an uncommon problem or the photos need improvement.",
+      "retakePhoto": "Retake photo",
+      "showChecklist": "Show diagnostic checklist",
+      "unableToClassify": "Unable to classify"
     }
   },
   "calendar": {
@@ -1873,6 +1987,11 @@
     "whatYouGet": "What You'll Get"
   },
   "privacy": {
+    "aiModelImprovement": {
+      "body": "Allow anonymous photos and assessment results to improve AI accuracy. Images are stored for up to 90 days and automatically deleted. You can withdraw consent at any time.",
+      "subtitle": "Help improve AI plant health detection",
+      "title": "Improve the model with my images"
+    },
     "analytics": {
       "body": "Help us improve the app with usage analytics.",
       "subtitle": "Help us improve the app with usage analytics",

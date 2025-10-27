@@ -11,6 +11,7 @@ export interface PrivacyConsent {
   crashReporting: boolean;
   personalizedData: boolean; // For sendDefaultPii
   sessionReplay: boolean;
+  aiModelImprovement: boolean; // For AI photo assessment training
   lastUpdated: number;
 }
 
@@ -24,6 +25,7 @@ const DEFAULT_CONSENT: PrivacyConsent = {
   crashReporting: true,
   personalizedData: false,
   sessionReplay: false,
+  aiModelImprovement: false,
   lastUpdated: Date.now(),
 };
 

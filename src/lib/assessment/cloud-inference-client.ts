@@ -91,74 +91,134 @@ export class CloudInferenceClient {
     photos: CapturedPhoto[],
     assessmentId: string
   ): Promise<UploadedImage[]> {
-    const uploadPromises = photos.map(async (photo) => {
-      try {
-        // Read image file
-        const response = await fetch(photo.uri);
-        const blob = await response.blob();
-        const arrayBuffer = await blob.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
+    return Promise.all(
+      photos.map((photo) => this.prepareImageForUpload(photo, assessmentId))
+    );
+  }
 
-        // Compute integrity hash from URI
-        const sha256 = await computeIntegritySha256(photo.uri);
+  private async prepareImageForUpload(
+    photo: CapturedPhoto,
+    assessmentId: string
+  ): Promise<UploadedImage> {
+    try {
+      const preparedPhoto = await this.readPhotoContent(photo, assessmentId);
+      const uploadRefs = await this.uploadPhotoToStorage(
+        photo,
+        preparedPhoto,
+        assessmentId
+      );
 
-        // Generate storage path
-        const fileExtension = photo.uri.endsWith('.png') ? 'png' : 'jpg';
-        const contentType: 'image/jpeg' | 'image/png' =
-          fileExtension === 'png' ? 'image/png' : 'image/jpeg';
-        const storagePath = `${assessmentId}/${photo.id}.${fileExtension}`;
+      return {
+        id: photo.id,
+        localUri: photo.uri,
+        storageUrl: uploadRefs.storageUrl,
+        signedUrl: uploadRefs.signedUrl,
+        sha256: preparedPhoto.sha256,
+        contentType: preparedPhoto.contentType,
+      };
+    } catch (error) {
+      console.error(
+        `[CloudInferenceClient] Upload failed for ${photo.id}:`,
+        error
+      );
+      throw error;
+    }
+  }
 
-        // Upload to storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from(STORAGE_BUCKET)
-          .upload(storagePath, uint8Array, {
-            contentType,
-            upsert: false,
-          });
+  private async readPhotoContent(
+    photo: CapturedPhoto,
+    assessmentId: string
+  ): Promise<{
+    body: Uint8Array;
+    contentType: 'image/jpeg' | 'image/png';
+    storagePath: string;
+    sha256: string;
+  }> {
+    const response = await fetch(photo.uri);
+    const blob = await response.blob();
+    const arrayBuffer = await blob.arrayBuffer();
+    const body = new Uint8Array(arrayBuffer);
+    const sha256 = await computeIntegritySha256(photo.uri);
 
-        if (uploadError) {
-          throw this.createError({
-            code: 'UPLOAD_FAILED',
-            message: `Failed to upload image: ${uploadError.message}`,
-            category: 'network',
-            retryable: true,
-            details: { photoId: photo.id, error: uploadError },
-          });
-        }
+    const fileExtension = photo.uri.endsWith('.png') ? 'png' : 'jpg';
+    const contentType: 'image/jpeg' | 'image/png' =
+      fileExtension === 'png' ? 'image/png' : 'image/jpeg';
+    const storagePath = `${assessmentId}/${photo.id}.${fileExtension}`;
 
-        // Generate signed URL (valid for 1 hour)
-        const { data: signedData, error: signedError } = await supabase.storage
-          .from(STORAGE_BUCKET)
-          .createSignedUrl(storagePath, 3600);
+    return { body, contentType, storagePath, sha256 };
+  }
 
-        if (signedError || !signedData?.signedUrl) {
-          throw this.createError({
-            code: 'SIGNED_URL_FAILED',
-            message: 'Failed to generate signed URL',
-            category: 'server',
-            retryable: true,
-            details: { photoId: photo.id, error: signedError },
-          });
-        }
+  private async uploadPhotoToStorage(
+    photo: CapturedPhoto,
+    prepared: {
+      body: Uint8Array;
+      contentType: 'image/jpeg' | 'image/png';
+      storagePath: string;
+    },
+    assessmentId: string
+  ): Promise<{ storageUrl: string; signedUrl: string }> {
+    const { body, contentType, storagePath } = prepared;
 
-        return {
-          id: photo.id,
-          localUri: photo.uri,
-          storageUrl: uploadData.path,
-          signedUrl: signedData.signedUrl,
-          sha256,
-          contentType,
-        };
-      } catch (error) {
-        console.error(
-          `[CloudInferenceClient] Upload failed for ${photo.id}:`,
-          error
-        );
-        throw error;
-      }
-    });
+    // NOTE: Offline retries will fail if we unconditionally use `upsert: false`.
+    // If an earlier attempt uploaded the same file successfully but the
+    // inference request later times out (for example the edge function
+    // times out), a queued retry that attempts to upload the same
+    // `assessmentId/photo.id` path will receive a 409 Conflict from
+    // Supabase and the retry will be marked as failed permanently.
+    //
+    // Two safe remediation options:
+    // 1) Use `upsert: true` here to make the upload idempotent so retries
+    //    can re-upload the same path without failing (recommended for
+    //    offline retry scenarios). This will overwrite any existing file
+    //    at the same path.
+    // 2) Keep `upsert: false` but treat a 409 response from Supabase as a
+    //    successful no-op (the file already exists), allowing the retry to
+    //    continue. This preserves the guarantee that existing files are not
+    //    overwritten but adds special-case handling for the 409 status.
+    //
+    // Current code keeps `upsert: false` to preserve previous behaviour,
+    // but either approach is acceptable depending on product/storage
+    // expectations. If you want offline retries to progress reliably,
+    // switch to `upsert: true` or handle 409 as success.
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(storagePath, body, {
+        contentType,
+        upsert: false,
+      });
 
-    return Promise.all(uploadPromises);
+    if (uploadError) {
+      throw this.createError({
+        code: 'UPLOAD_FAILED',
+        message: `Failed to upload image: ${uploadError.message}`,
+        category: 'network',
+        retryable: true,
+        details: {
+          photoId: photo.id,
+          error: uploadError,
+          assessmentId,
+        },
+      });
+    }
+
+    const { data: signedData, error: signedError } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .createSignedUrl(storagePath, 3600);
+
+    if (signedError || !signedData?.signedUrl) {
+      throw this.createError({
+        code: 'SIGNED_URL_FAILED',
+        message: 'Failed to generate signed URL',
+        category: 'server',
+        retryable: true,
+        details: { photoId: photo.id, error: signedError, assessmentId },
+      });
+    }
+
+    return {
+      storageUrl: uploadData.path,
+      signedUrl: signedData.signedUrl,
+    };
   }
 
   /**

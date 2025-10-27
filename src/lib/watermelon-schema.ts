@@ -1,7 +1,7 @@
 import { appSchema as createSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const appSchema = createSchema({
-  version: 26,
+  version: 27,
   tables: [
     tableSchema({
       name: 'series',
@@ -676,6 +676,7 @@ export const appSchema = createSchema({
         { name: 'helpful_vote', type: 'boolean', isOptional: true },
         { name: 'issue_resolved', type: 'boolean', isOptional: true },
         { name: 'feedback_notes', type: 'string', isOptional: true },
+        { name: 'consented_for_training', type: 'boolean' },
         { name: 'images', type: 'string' },
         { name: 'integrity_sha256', type: 'string' },
         { name: 'filename_keys', type: 'string' },

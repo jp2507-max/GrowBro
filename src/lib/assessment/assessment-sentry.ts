@@ -59,7 +59,7 @@ export function addInferenceSuccessBreadcrumb(
  */
 export function captureInferenceError(options: {
   assessmentId: string;
-  error: InferenceError;
+  error: InferenceError | Error;
   mode: AssessmentInferenceMode;
   latencyMs?: number;
 }): void {
@@ -72,8 +72,9 @@ export function captureInferenceError(options: {
     data: {
       assessmentId,
       mode,
-      errorCode: error.code,
-      errorCategory: error.category,
+      // Use type assertion since error can be InferenceError or Error
+      errorCode: (error as any)?.code,
+      errorCategory: (error as any)?.category,
       latencyMs,
     },
   });
@@ -83,26 +84,31 @@ export function captureInferenceError(options: {
   if (error instanceof Error) {
     exception = error;
   } else {
-    exception = new Error(`Inference failed: ${error.message || error.code}`, {
-      cause: error,
-    });
+    // Handle InferenceError case - create a new Error with details
+    const e = error as any;
+    exception = new Error(
+      `Inference failed: ${e?.message || e?.code || 'Unknown'}`
+    );
   }
 
   Sentry.captureException(exception, {
     level: 'error',
     tags: {
       assessment_id: assessmentId,
-      error_code: error.code,
-      error_category: error.category,
+      // Use type assertion for InferenceError properties
+      error_code: (error as any)?.code,
+      error_category: (error as any)?.category,
       inference_mode: mode,
     },
     extra: {
-      errorMessage: error.message,
-      retryable: error.retryable,
-      fallbackToCloud: error.fallbackToCloud,
+      // Use type assertion for InferenceError properties
+      errorMessage: (error as any)?.message,
+      retryable: (error as any)?.retryable,
+      fallbackToCloud: (error as any)?.fallbackToCloud,
       latencyMs,
       originalError: error,
-      ...(error instanceof Error && error.stack
+      // Include stack trace if available from Error instance
+      ...(error instanceof Error && (error as Error).stack
         ? { originalStack: error.stack }
         : {}),
     },

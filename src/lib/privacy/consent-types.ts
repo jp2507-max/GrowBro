@@ -3,6 +3,7 @@ export type ConsentPurpose =
   | 'experiments'
   | 'cloudProcessing'
   | 'aiTraining'
+  | 'aiModelImprovement'
   | 'crashDiagnostics';
 
 export const LAWFUL_BASIS = {
@@ -17,6 +18,7 @@ export const LAWFUL_BASIS_BY_PURPOSE: Record<ConsentPurpose, LawfulBasis> = {
   experiments: LAWFUL_BASIS.CONSENT,
   cloudProcessing: LAWFUL_BASIS.CONSENT,
   aiTraining: LAWFUL_BASIS.CONSENT,
+  aiModelImprovement: LAWFUL_BASIS.CONSENT,
   crashDiagnostics: LAWFUL_BASIS.CONSENT,
 };
 
@@ -34,6 +36,7 @@ export type ConsentState = {
   experiments: boolean;
   cloudProcessing: boolean;
   aiTraining: boolean;
+  aiModelImprovement: boolean;
   crashDiagnostics: boolean;
   version: string;
   timestamp: string; // ISO string

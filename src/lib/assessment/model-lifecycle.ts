@@ -29,9 +29,10 @@ export async function downloadModel(
     );
   }
 
-  const expectedChecksum = metadataResult.metadata.checksumSha256 as
-    | string
-    | undefined;
+  const expectedChecksum =
+    typeof metadataResult.metadata.checksumSha256 === 'string'
+      ? metadataResult.metadata.checksumSha256
+      : undefined;
 
   // Download model file
   const downloadResult = await downloadModelFromStorage(version, {
@@ -42,6 +43,12 @@ export async function downloadModel(
     throw new Error(`Failed to download model: ${downloadResult.error}`);
   }
 
+  if (options?.validateChecksum && !expectedChecksum) {
+    console.warn(
+      `[model-lifecycle] Checksum validation requested but checksumSha256 is missing or not a string in metadata for version ${version}`
+    );
+  }
+
   console.log(
     `[model-lifecycle] Model ${version} downloaded successfully (checksum valid: ${downloadResult.checksumValid})`
   );
@@ -50,10 +57,8 @@ export async function downloadModel(
 /**
  * Load model metadata from a JSON file in the model directory
  */
-async function loadModelMetadataFromFile(
-  modelPath: string
-): Promise<Partial<ModelInfo> | null> {
-  const metadataPath = modelPath.replace(/\.[^.]+$/, '.metadata.json');
+async function loadModelMetadataFromFile(): Promise<Partial<ModelInfo> | null> {
+  const { metadataPath } = await getModelPaths();
 
   try {
     const fileInfo = await FileSystem.getInfoAsync(metadataPath);
@@ -127,13 +132,10 @@ export async function updateModel(
     // Download new model
     await downloadModel(version, options);
 
-    // Get model paths to locate potential metadata file
-    const { modelPath } = await getModelPaths();
-
     // Try to load metadata from file if none provided
     let loadedMetadata: Partial<ModelInfo> | null = null;
     if (!metadata) {
-      loadedMetadata = await loadModelMetadataFromFile(modelPath);
+      loadedMetadata = await loadModelMetadataFromFile();
     }
 
     // Merge and validate metadata

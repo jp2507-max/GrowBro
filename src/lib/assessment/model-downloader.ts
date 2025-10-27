@@ -14,10 +14,14 @@
 
 import * as Crypto from 'expo-crypto';
 import * as FileSystem from 'expo-file-system';
+import type { FileSystemDownloadResult } from 'expo-file-system/legacy';
 
 import { supabase } from '@/lib/supabase';
 
 import { getModelPaths } from './model-config';
+
+const MODEL_BUCKET = 'assessment-models';
+const DOWNLOAD_URL_EXPIRY_SECONDS = 3600;
 
 export type DownloadProgress = {
   bytesDownloaded: number;
@@ -43,59 +47,23 @@ export async function downloadModelFromStorage(
   }
 ): Promise<DownloadResult> {
   const { modelPath } = await getModelPaths();
-  const bucketName = 'assessment-models';
-  const objectPath = `models/plant_classifier_${version}.ort`;
+  const objectPath = buildModelObjectPath(version);
 
   try {
-    // Get signed URL for download
-    const { data: urlData, error: urlError } = await supabase.storage
-      .from(bucketName)
-      .createSignedUrl(objectPath, 3600); // 1 hour expiry
+    const signedUrl = await createModelSignedUrl(objectPath);
+    await ensureDestinationDirectory(modelPath);
 
-    if (urlError || !urlData?.signedUrl) {
-      throw new Error(`Failed to get download URL: ${urlError?.message}`);
-    }
-
-    // Download file
-    const downloadResumable = FileSystem.createDownloadResumable(
-      urlData.signedUrl,
+    const downloadResult = await downloadModelFile(
+      signedUrl,
       modelPath,
-      {},
-      (downloadProgress) => {
-        if (options?.onProgress) {
-          const { totalBytesWritten, totalBytesExpectedToWrite } =
-            downloadProgress;
-          options.onProgress({
-            bytesDownloaded: totalBytesWritten,
-            totalBytes: totalBytesExpectedToWrite,
-            percentage:
-              totalBytesExpectedToWrite > 0
-                ? (totalBytesWritten / totalBytesExpectedToWrite) * 100
-                : 0,
-          });
-        }
-      }
+      options?.onProgress
     );
+    validateDownloadResponse(downloadResult);
 
-    const result = await downloadResumable.downloadAsync();
-
-    if (!result) {
-      throw new Error('Download failed: no result returned');
-    }
-
-    // Validate checksum if provided
-    let checksumValid = true;
-    if (options?.expectedChecksum) {
-      checksumValid = await validateChecksum(
-        modelPath,
-        options.expectedChecksum
-      );
-      if (!checksumValid) {
-        // Clean up invalid file
-        await FileSystem.deleteAsync(modelPath, { idempotent: true });
-        throw new Error('Checksum validation failed');
-      }
-    }
+    const checksumValid = await validateChecksumIfNeeded(
+      modelPath,
+      options?.expectedChecksum
+    );
 
     return {
       success: true,
@@ -103,12 +71,7 @@ export async function downloadModelFromStorage(
       checksumValid,
     };
   } catch (error) {
-    // Clean up on failure
-    try {
-      await FileSystem.deleteAsync(modelPath, { idempotent: true });
-    } catch (cleanupError) {
-      console.warn('[ModelDownloader] Failed to clean up:', cleanupError);
-    }
+    await cleanupCorruptDownload(modelPath);
 
     return {
       success: false,
@@ -116,6 +79,119 @@ export async function downloadModelFromStorage(
       checksumValid: false,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
+  }
+}
+
+function buildModelObjectPath(version: string): string {
+  return `models/plant_classifier_${version}.ort`;
+}
+
+async function createModelSignedUrl(objectPath: string): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from(MODEL_BUCKET)
+    .createSignedUrl(objectPath, DOWNLOAD_URL_EXPIRY_SECONDS);
+
+  if (error || !data?.signedUrl) {
+    throw new Error(`Failed to get download URL: ${error?.message}`);
+  }
+
+  return data.signedUrl;
+}
+
+async function ensureDestinationDirectory(modelPath: string): Promise<void> {
+  const directoryPath = modelPath.substring(0, modelPath.lastIndexOf('/'));
+  if (!directoryPath) {
+    return;
+  }
+
+  try {
+    await FileSystem.makeDirectoryAsync(directoryPath, {
+      intermediates: true,
+    });
+  } catch (error) {
+    console.warn('[ModelDownloader] Failed to create directory:', error);
+  }
+}
+
+async function downloadModelFile(
+  signedUrl: string,
+  modelPath: string,
+  onProgress?: (progress: DownloadProgress) => void
+): Promise<FileSystemDownloadResult | undefined> {
+  const downloadResumable = FileSystem.createDownloadResumable(
+    signedUrl,
+    modelPath,
+    {},
+    (progress) => {
+      if (!onProgress) {
+        return;
+      }
+
+      const { totalBytesExpectedToWrite, totalBytesWritten } = progress;
+      onProgress({
+        bytesDownloaded: totalBytesWritten,
+        totalBytes: totalBytesExpectedToWrite,
+        percentage:
+          totalBytesExpectedToWrite > 0
+            ? (totalBytesWritten / totalBytesExpectedToWrite) * 100
+            : 0,
+      });
+    }
+  );
+
+  return downloadResumable.downloadAsync();
+}
+
+function validateDownloadResponse(
+  result: FileSystemDownloadResult | undefined
+): void {
+  if (!result) {
+    throw new Error('Download failed: no result returned');
+  }
+
+  if (result.status >= 200 && result.status < 300) {
+    return;
+  }
+
+  const statusText =
+    result.status === 403
+      ? 'Forbidden'
+      : result.status === 404
+        ? 'Not Found'
+        : result.status === 500
+          ? 'Internal Server Error'
+          : 'HTTP Error';
+  const contentType = result.headers?.['content-type'] || 'unknown';
+  const contentLength = result.headers?.['content-length'] || 'unknown';
+
+  throw new Error(
+    `Download failed with HTTP ${result.status} ${statusText}. ` +
+      `Content-Type: ${contentType}, Content-Length: ${contentLength}`
+  );
+}
+
+async function validateChecksumIfNeeded(
+  modelPath: string,
+  expectedChecksum?: string
+): Promise<boolean> {
+  if (!expectedChecksum) {
+    return true;
+  }
+
+  const checksumValid = await validateChecksum(modelPath, expectedChecksum);
+  if (!checksumValid) {
+    await FileSystem.deleteAsync(modelPath, { idempotent: true });
+    throw new Error('Checksum validation failed');
+  }
+
+  return true;
+}
+
+async function cleanupCorruptDownload(modelPath: string): Promise<void> {
+  try {
+    await FileSystem.deleteAsync(modelPath, { idempotent: true });
+  } catch (error) {
+    console.warn('[ModelDownloader] Failed to clean up:', error);
   }
 }
 
@@ -167,16 +243,25 @@ async function validateChecksum(
       return false;
     }
 
-    // Calculate SHA-256 checksum
-    // Read file as base64 and compute hash
+    // Calculate SHA-256 checksum over raw file bytes
+    // Read as base64 → decode to bytes → digest bytes
     const base64Content = await FileSystem.readAsStringAsync(filePath, {
       encoding: 'base64',
     });
-    const actualChecksum = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      base64Content,
-      { encoding: Crypto.CryptoEncoding.HEX }
+    const { toByteArray } = await import('react-native-quick-base64');
+    const rawBytes = toByteArray(base64Content);
+    const bytes = Uint8Array.from(rawBytes);
+    const arrayBuffer = bytes.buffer.slice(
+      bytes.byteOffset,
+      bytes.byteOffset + bytes.byteLength
     );
+    const digestBuffer = await Crypto.digest(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      arrayBuffer
+    );
+    const actualChecksum = Array.from(new Uint8Array(digestBuffer))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
 
     return actualChecksum.toLowerCase() === expectedChecksum.toLowerCase();
   } catch (error) {

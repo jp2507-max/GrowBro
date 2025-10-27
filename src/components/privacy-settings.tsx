@@ -80,6 +80,14 @@ function showSessionReplayInfo(): void {
   );
 }
 
+function showAiModelImprovementInfo(): void {
+  Alert.alert(
+    translate('privacy.aiModelImprovement.title'),
+    translate('privacy.aiModelImprovement.body'),
+    [{ text: translate('common.ok') }]
+  );
+}
+
 function showAnalyticsInfo(): void {
   Alert.alert(
     translate('privacy.analytics.title'),
@@ -211,6 +219,15 @@ function PrivacyToggles({
         onChange={(value) => updateConsent('sessionReplay', value)}
         onInfoPress={showSessionReplayInfo}
         testID="toggle-sessionReplay"
+      />
+
+      <ToggleRow
+        title={translate('privacy.aiModelImprovement.title')}
+        subtitle={translate('privacy.aiModelImprovement.subtitle')}
+        value={consent.aiModelImprovement}
+        onChange={(value) => updateConsent('aiModelImprovement', value)}
+        onInfoPress={showAiModelImprovementInfo}
+        testID="toggle-aiModelImprovement"
       />
     </View>
   );

@@ -7,6 +7,59 @@
         "placeholder": "Erklären Sie Ihre Gegenargumente hier..."
       }
     },
+    "assessment": {
+      "action_plan": {
+        "ready": "Maßnahmenplan bereit. Sofortmaßnahmen: {{immediateCount}}. Kurzfristige Aktionen: {{shortTermCount}}. Diagnostische Prüfungen: {{diagnosticCount}}."
+      },
+      "action_step": {
+        "hint_with_task": "Doppeltippen, um für diesen Schritt eine Aufgabe zu erstellen.",
+        "label": "Schritt {{index}} von {{total}}: {{title}}. {{description}}. Zeitrahmen: {{timeframe}}. Priorität: {{priority}}."
+      },
+      "camera": {
+        "cancel_hint": "Doppeltippen, um abzubrechen und zurückzukehren.",
+        "cancel_label": "Fotoaufnahme abbrechen",
+        "capture_hint": "Doppeltippen, um ein Foto deiner Pflanze aufzunehmen.",
+        "capture_label": "Foto {{photoCount}} von {{maxPhotos}} aufnehmen",
+        "confirm_hint": "Doppeltippen, um mit den aufgenommenen Fotos fortzufahren.",
+        "confirm_label": "{{count}} {{count, plural, one {Foto bestätigen} other {Fotos bestätigen}}}",
+        "retake_hint": "Doppeltippen, um das aktuelle Foto erneut aufzunehmen.",
+        "retake_label": "Foto {{count}} erneut aufnehmen"
+      },
+      "community_cta": {
+        "hint": "Doppeltippen, um einen Community-Beitrag mit deinen Analysefotos zu erstellen.",
+        "label": "Community um Hilfe bitten. KI-Vertrauen lag bei {{percent}} Prozent."
+      },
+      "confidence": {
+        "hint": "Doppeltippen, um zu erfahren, was der Vertrauenswert bedeutet.",
+        "label": "{{type}}-Konfidenz: {{percent}} Prozent",
+        "type_calibrated": "Kalibriert",
+        "type_raw": "Roh"
+      },
+      "diagnostic": {
+        "label_with_time": "{{name}}, geschätzte Dauer {{minutes}} Minuten"
+      },
+      "quality": {
+        "acceptable": "Fotoqualität akzeptabel, Wert {{score}} von 100.",
+        "good": "Fotoqualität ist gut.",
+        "issue_detected": "{{type}} erkannt. {{suggestion}}.",
+        "needs_improvement": "Fotoqualität verbesserungswürdig, Wert {{score}} von 100. Probleme: {{issues}}.",
+        "needs_improvement_short": "Fotoqualität verbesserungswürdig."
+      },
+      "queue": {
+        "empty": "Keine ausstehenden Analysen.",
+        "status": "{{pendingCount}} ausstehend, {{processingCount}} in Bearbeitung"
+      },
+      "result": {
+        "low_confidence": "Analyse abgeschlossen. Zu geringe Sicherheit zur Identifikation. Vertrauen {{confidence}} Prozent. {{count, plural, one {Ein Foto analysiert.} other {# Fotos analysiert.}}}",
+        "mode_cloud": "in der Cloud",
+        "mode_device": "auf dem Gerät",
+        "success": "Analyse abgeschlossen. {{className}} mit {{confidence}} Prozent Vertrauen erkannt. Analyse lief {{mode}}. {{count, plural, one {Ein Foto analysiert.} other {# Fotos analysiert.}}}"
+      },
+      "taxonomy": {
+        "hint": "Doppeltippen, um visuelle Merkmale und Beschreibung anzuzeigen.",
+        "label": "Mehr über {{className}} erfahren"
+      }
+    },
     "calendar": {
       "needs_review_hint": "Kennzeichnet diese Aufgabe als konfliktbehaftet und prüfungsbedürftig.",
       "out_of_range_hint": "Zeigt an, dass der letzte Messwert außerhalb des Zielbereichs liegt.",
@@ -216,6 +269,31 @@
       },
       "useAlternative": "Alternative verwenden"
     },
+    "close": "Schließen",
+    "community": {
+      "askCommunity": "Community fragen",
+      "ctaHint": "Holen Sie sich eine zweite Meinung von erfahrenen Growern",
+      "getSecondOpinion": "Zweite Meinung einholen"
+    },
+    "diagnostics": {
+      "createTask": "Aufgabe erstellen",
+      "description": "Führen Sie diese grundlegenden Checks durch, um das Problem zu identifizieren:",
+      "ecCheck": "EC/TDS prüfen",
+      "ecInstructions": "Nährstoffstärke (EC/TDS) messen, um korrekte Düngung sicherzustellen",
+      "estimatedTime": "~{{minutes}} Min.",
+      "lightCheck": "Lichtintensität messen",
+      "lightInstructions": "PPFD auf Kronenhöhe prüfen, um ausreichend Licht ohne Stress zu gewährleisten",
+      "pestCheck": "Auf Schädlinge prüfen",
+      "pestInstructions": "Blattunterseiten auf Spinnmilben, Blattläuse oder andere Schädlinge untersuchen",
+      "phCheck": "pH-Wert prüfen",
+      "phInstructions": "pH-Wert testen (Erde: 6.0-7.0, Hydro: 5.5-6.5), um Nährstoffblockade auszuschließen",
+      "title": "Diagnose-Checkliste",
+      "wateringCheck": "Bodenfeuchtigkeit prüfen",
+      "wateringInstructions": "Bodenfeuchtigkeit und Bewässerungsplan überprüfen, um Über-/Unterwässerung auszuschließen"
+    },
+    "errors": {
+      "analysisFailed": "Wir konnten Ihre Fotos nicht analysieren. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut."
+    },
     "feedback": {
       "helpful_question": "War diese Bewertung hilfreich?",
       "no": "Nein",
@@ -232,6 +310,42 @@
       "thanks": "Vielen Dank für Ihr Feedback! Ihre Rückmeldung hilft uns, die KI-Bewertung für alle Grower zu verbessern.",
       "title": "Bewertungs-Feedback",
       "yes": "Ja"
+    },
+    "lastUpdated": "Zuletzt aktualisiert: {{time}}",
+    "loading": "Lädt...",
+    "queue": {
+      "retryError": "Fehler beim erneuten Versuch fehlgeschlagener Bewertungen. Bitte versuchen Sie es erneut.",
+      "syncError": "Fehler beim Synchronisieren der Bewertungen. Bitte versuchen Sie es erneut."
+    },
+    "retake": {
+      "cancel": "Abbrechen",
+      "primaryIssue": "Hauptproblem",
+      "retakeNow": "Foto jetzt wiederholen",
+      "subtitle": "Hier sind einige Tipps zur Verbesserung Ihrer Fotoqualität:",
+      "tipsTitle": "Tipps für bessere Fotos",
+      "title": "Fotoqualität verbessern"
+    },
+    "retryFailed": "Fehlgeschlagene wiederholen",
+    "status": {
+      "completed": "Abgeschlossen",
+      "failed": "Fehlgeschlagen",
+      "pending": "Ausstehend",
+      "processing": "Wird verarbeitet",
+      "stalled": "Stecken geblieben"
+    },
+    "syncNow": "Jetzt synchronisieren",
+    "title": "Bewertungswarteschlange",
+    "uncertainty": {
+      "confidenceLabel": "KI-Konfidenz",
+      "confidenceThreshold": "Wir empfehlen mindestens 70% Konfidenz für zuverlässige Ergebnisse",
+      "educationalNote": "💡 Bei Unsicherheit ist es immer am besten, erfahrene Grower zu konsultieren oder grundlegende Diagnose-Checks durchzuführen.",
+      "hideChecklist": "Checkliste ausblenden",
+      "lowConfidenceExplanation": "Die KI ist bei dieser Klassifizierung nicht sicher genug. Erwägen Sie, Fotos mit besserer Qualität aufzunehmen oder die Community um Hilfe zu bitten.",
+      "notConfident": "Nicht sicher genug",
+      "oodExplanation": "Die KI konnte dieses Problem nicht mit Sicherheit klassifizieren. Dies könnte ein ungewöhnliches Problem sein oder die Fotos müssen verbessert werden.",
+      "retakePhoto": "Foto wiederholen",
+      "showChecklist": "Diagnose-Checkliste anzeigen",
+      "unableToClassify": "Klassifizierung nicht möglich"
     }
   },
   "calendar": {
@@ -1873,6 +1987,11 @@
     "whatYouGet": "Was du bekommst"
   },
   "privacy": {
+    "aiModelImprovement": {
+      "body": "Erlaube anonyme Fotos und Bewertungsergebnisse zur Verbesserung der KI-Genauigkeit. Bilder werden bis zu 90 Tage gespeichert und automatisch gelöscht. Du kannst die Einwilligung jederzeit widerrufen.",
+      "subtitle": "Hilf mit, die KI-Pflanzengesundheitserkennung zu verbessern",
+      "title": "Modell mit meinen Bildern verbessern"
+    },
     "analytics": {
       "body": "Hilf uns, die App mit Nutzungsanalysen zu verbessern.",
       "subtitle": "Hilf uns, die App mit Nutzungsanalysen zu verbessern",

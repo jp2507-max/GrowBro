@@ -205,11 +205,18 @@ export async function logExecutionProvider(options: {
 }
 
 /**
- * Log user action (task created, playbook shifted, community CTA)
+ * Log user action (task created, playbook shifted, community CTA, retake, etc.)
  */
 export async function logUserAction(options: {
   assessmentId: string;
-  action: 'task_created' | 'playbook_adjustment' | 'community_cta_tapped';
+  action:
+    | 'task_created'
+    | 'playbook_adjustment'
+    | 'community_cta_tapped'
+    | 'community_cta_shown'
+    | 'community_post_created'
+    | 'retake_initiated'
+    | 'diagnostic_checklist_shown';
   metadata?: Record<string, unknown>;
 }): Promise<void> {
   const { assessmentId, action, metadata = {} } = options;

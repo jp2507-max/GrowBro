@@ -237,6 +237,7 @@ export class AssessmentModel extends Model {
   @field('helpful_vote') helpfulVote?: boolean;
   @field('issue_resolved') issueResolved?: boolean;
   @text('feedback_notes') feedbackNotes?: string;
+  @field('consented_for_training') consentedForTraining!: boolean;
 
   @json('images', sanitizeImages)
   images!: string[];

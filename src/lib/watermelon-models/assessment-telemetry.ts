@@ -19,6 +19,10 @@ export type TelemetryEventType =
   | 'task_created'
   | 'playbook_adjustment'
   | 'community_cta_tapped'
+  | 'community_cta_shown'
+  | 'community_post_created'
+  | 'retake_initiated'
+  | 'diagnostic_checklist_shown'
   | 'inference_started'
   | 'inference_failed'
   | 'cloud_fallback';

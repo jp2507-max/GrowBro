@@ -1034,7 +1034,7 @@ export const migrations = schemaMigrations({
         },
       ],
     },
-    // Migration from version 26 to 27: Add soft-delete and timestamp fields to assessment_classes
+    // Migration from version 26 to 27: Add soft-delete and timestamp fields to assessment_classes, add privacy consent to assessments
     {
       toVersion: 27,
       steps: [
@@ -1050,14 +1050,23 @@ export const migrations = schemaMigrations({
             { name: 'updated_at', type: 'number', isOptional: true },
           ],
         }),
+        addColumns({
+          table: 'assessments',
+          columns: [{ name: 'consented_for_training', type: 'boolean' }],
+        }),
       ],
-      // Down migration: Remove deleted_at and updated_at columns from assessment_classes
+      // Down migration: Remove deleted_at and updated_at columns from assessment_classes, remove consented_for_training from assessments
       // Note: WatermelonDB migrations are typically forward-only, but for rollback purposes:
       // down: [
       //   {
       //     type: 'remove_columns',
       //     table: 'assessment_classes',
       //     columns: ['deleted_at', 'updated_at'],
+      //   },
+      //   {
+      //     type: 'remove_columns',
+      //     table: 'assessments',
+      //     columns: ['consented_for_training'],
       //   },
       // ],
     },

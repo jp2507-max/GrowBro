@@ -12,6 +12,7 @@
  * - 10.5: Release resources on app background
  */
 
+import { calculateBackoffDelayWithJitter } from '@/lib/utils/backoff';
 import type { InferenceError } from '@/types/assessment';
 
 export type DegradationStrategy =
@@ -260,19 +261,18 @@ export function createRetryableError(
 }
 
 /**
- * Apply exponential backoff with jitter
+ * Apply exponential backoff with jitter (±25%)
  */
 export function calculateBackoffDelay(
   retryCount: number,
   baseDelayMs: number = 1000,
   maxDelayMs: number = 10000
 ): number {
-  const exponentialDelay = baseDelayMs * Math.pow(2, retryCount);
-  const cappedDelay = Math.min(exponentialDelay, maxDelayMs);
-
-  // Add jitter (±25%)
-  const jitter = cappedDelay * 0.25 * (Math.random() - 0.5);
-  return Math.round(cappedDelay + jitter);
+  return calculateBackoffDelayWithJitter(retryCount, {
+    baseDelayMs,
+    maxDelayMs,
+    jitterFactor: 0.25,
+  });
 }
 
 /**

@@ -1,90 +1,203 @@
-import { Stack, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
+import { v4 as uuidv4 } from 'uuid';
 
 import { AdaptiveCameraCapture } from '@/components/assessment/adaptive-camera-capture';
 import { PermissionDenied } from '@/components/assessment/permission-denied';
 import { PhotoPreview } from '@/components/assessment/photo-preview';
-import { View } from '@/components/ui';
+import { showErrorMessage, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
-import { generateThumbnail } from '@/lib/assessment/image-processing';
+import { runInference } from '@/lib/assessment';
+import {
+  logAssessmentCreated,
+  logInferenceCompleted,
+  logInferenceFailure,
+} from '@/lib/assessment/assessment-telemetry-service';
+import { setAssessmentSession } from '@/lib/assessment/current-assessment-store';
+import {
+  generateThumbnail,
+  stripExifData,
+} from '@/lib/assessment/image-processing';
 import { storeImage, storeThumbnail } from '@/lib/assessment/image-storage';
 import { useCameraPermission } from '@/lib/assessment/use-camera-permission';
-import type { CapturedPhoto, GuidanceMode } from '@/types/assessment';
+import { translateDynamic } from '@/lib/i18n/utils';
+import type {
+  AssessmentPlantContext,
+  AssessmentResult,
+  CapturedPhoto,
+  GuidanceMode,
+  InferenceError,
+} from '@/types/assessment';
+
+type PersistedPhotoParams = {
+  photo: CapturedPhoto;
+  assessmentId: string;
+};
+
+async function persistPhoto({
+  photo,
+  assessmentId,
+}: PersistedPhotoParams): Promise<CapturedPhoto> {
+  const processed = await stripExifData(photo.uri);
+  const { filenameKey, storedUri } = await storeImage(
+    processed.uri,
+    assessmentId
+  );
+  const thumbnailUri = await generateThumbnail(processed.uri);
+
+  await storeThumbnail({
+    thumbnailUri,
+    assessmentId,
+    filenameKey,
+  });
+
+  return {
+    ...photo,
+    uri: storedUri,
+  };
+}
+
+type AssessmentPipelineParams = {
+  photos: CapturedPhoto[];
+  assessmentId: string;
+  plantContext: AssessmentPlantContext;
+};
+
+async function runAssessmentPipeline({
+  photos,
+  assessmentId,
+  plantContext,
+}: AssessmentPipelineParams): Promise<AssessmentResult> {
+  await logAssessmentCreated({
+    assessmentId,
+    mode: 'device',
+    photoCount: photos.length,
+  });
+
+  try {
+    const result = await runInference(photos, {
+      mode: 'auto',
+      plantContext,
+      assessmentId,
+    });
+
+    await logInferenceCompleted(assessmentId, result);
+    return result;
+  } catch (error) {
+    const inferenceError = error as InferenceError;
+
+    await logInferenceFailure({
+      assessmentId,
+      error: inferenceError,
+      mode: inferenceError.fallbackToCloud ? 'cloud' : 'device',
+    });
+
+    throw inferenceError;
+  }
+}
+
+const MAX_PHOTOS = 3;
+
+function useAssessmentSession() {
+  const params = useLocalSearchParams();
+  const assessmentIdRef = useRef<string | null>(null);
+  if (!assessmentIdRef.current) {
+    assessmentIdRef.current = uuidv4();
+  }
+  const assessmentId = assessmentIdRef.current!;
+
+  const plantIdParam = params.plantId;
+  const plantId =
+    typeof plantIdParam === 'string' && plantIdParam.length > 0
+      ? plantIdParam
+      : 'unknown';
+  const plantContext = useMemo(() => ({ id: plantId }), [plantId]);
+
+  return { assessmentId, plantContext };
+}
 
 export default function AssessmentCaptureScreen() {
   const router = useRouter();
   const { status, isLoading, requestPermission } = useCameraPermission();
+  const { assessmentId, plantContext } = useAssessmentSession();
 
   const [capturedPhotos, setCapturedPhotos] = useState<CapturedPhoto[]>([]);
   const [currentPhoto, setCurrentPhoto] = useState<CapturedPhoto | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const guidanceMode: GuidanceMode = 'leaf-top';
 
-  const maxPhotos = 3;
-  const guidanceMode: GuidanceMode = 'leaf-top'; // TODO: Make this configurable
+  const finalizeAssessment = useCallback(
+    async (photos: CapturedPhoto[]) => {
+      try {
+        const result = await runAssessmentPipeline({
+          photos,
+          assessmentId,
+          plantContext,
+        });
 
-  const handlePhotoCapture = async (photo: CapturedPhoto) => {
+        setAssessmentSession(assessmentId, {
+          result,
+          plantContext,
+          photos,
+          createdAt: Date.now(),
+        });
+
+        setCapturedPhotos([]);
+
+        router.push({
+          pathname: '/assessment/result',
+          params: { assessmentId },
+        });
+      } catch (error) {
+        console.error('Assessment inference failed:', error);
+        setCapturedPhotos([]);
+        showErrorMessage(translateDynamic('assessment.errors.analysisFailed'));
+      }
+    },
+    [assessmentId, plantContext, router]
+  );
+
+  const handlePhotoCapture = useCallback((photo: CapturedPhoto) => {
     setCurrentPhoto(photo);
-  };
+  }, []);
 
-  const handleRetake = () => {
+  const handleRetake = useCallback(() => {
     setCurrentPhoto(null);
-  };
+  }, []);
 
-  const handleAccept = async () => {
+  const handleAccept = useCallback(async () => {
     if (!currentPhoto) return;
 
     setIsProcessing(true);
     try {
-      // Store the photo with content-addressable filename
-      const assessmentId = 'temp_' + Date.now(); // TODO: Get actual assessment ID
-      const { filenameKey, storedUri } = await storeImage(
-        currentPhoto.uri,
-        assessmentId
-      );
-
-      // Generate and store thumbnail
-      const thumbnailUri = await generateThumbnail(currentPhoto.uri);
-      await storeThumbnail({
-        thumbnailUri,
+      const persistedPhoto = await persistPhoto({
+        photo: currentPhoto,
         assessmentId,
-        filenameKey,
       });
 
-      // Add to captured photos
-      const photoWithStorage: CapturedPhoto = {
-        ...currentPhoto,
-        uri: storedUri,
-      };
-
-      const updatedPhotos = [...capturedPhotos, photoWithStorage];
+      const updatedPhotos = [...capturedPhotos, persistedPhoto];
       setCapturedPhotos(updatedPhotos);
       setCurrentPhoto(null);
 
-      // If we've captured all photos, navigate to results
-      if (updatedPhotos.length >= maxPhotos) {
-        // TODO: Navigate to assessment results screen
-        // For now, just go back
-        router.back();
+      if (updatedPhotos.length >= MAX_PHOTOS) {
+        await finalizeAssessment(updatedPhotos);
       }
     } catch (error) {
       console.error('Failed to store photo:', error);
-      // TODO: Show error message
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [assessmentId, capturedPhotos, currentPhoto, finalizeAssessment]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     router.back();
-  };
+  }, [router]);
 
-  const handleCameraError = (error: Error) => {
+  const handleCameraError = useCallback((error: Error) => {
     console.error('Camera error:', error);
-    // TODO: Show error message to user
-  };
+  }, []);
 
-  // Loading state
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-charcoal-950">
@@ -93,7 +206,6 @@ export default function AssessmentCaptureScreen() {
     );
   }
 
-  // Permission denied state
   if (status === 'denied' || status === 'restricted') {
     return (
       <>
@@ -103,7 +215,6 @@ export default function AssessmentCaptureScreen() {
     );
   }
 
-  // Permission not granted yet
   if (status !== 'granted') {
     return (
       <View className="flex-1 items-center justify-center bg-charcoal-950">
@@ -112,7 +223,6 @@ export default function AssessmentCaptureScreen() {
     );
   }
 
-  // Show photo preview if we have a current photo
   if (currentPhoto) {
     return (
       <>
@@ -121,13 +231,12 @@ export default function AssessmentCaptureScreen() {
           photo={currentPhoto}
           onRetake={handleRetake}
           onAccept={handleAccept}
-          isLastPhoto={capturedPhotos.length + 1 >= maxPhotos}
+          isLastPhoto={capturedPhotos.length + 1 >= MAX_PHOTOS}
         />
       </>
     );
   }
 
-  // Show processing overlay
   if (isProcessing) {
     return (
       <View className="flex-1 items-center justify-center bg-charcoal-950">
@@ -136,7 +245,6 @@ export default function AssessmentCaptureScreen() {
     );
   }
 
-  // Show camera capture
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -144,7 +252,7 @@ export default function AssessmentCaptureScreen() {
         onPhotoCapture={handlePhotoCapture}
         guidanceMode={guidanceMode}
         photoCount={capturedPhotos.length}
-        maxPhotos={maxPhotos}
+        maxPhotos={MAX_PHOTOS}
         onError={handleCameraError}
       />
     </>

@@ -3,8 +3,6 @@ import * as FileSystem from 'expo-file-system';
 
 import { getModelPaths, MODEL_CONFIG } from './model-config';
 
-const CHUNK_SIZE_BYTES = 1024 * 1024; // 1MB
-
 export async function validateModelChecksum(
   expectedChecksum?: string
 ): Promise<{ valid: boolean; actualChecksum: string }> {
@@ -16,27 +14,19 @@ export async function validateModelChecksum(
       throw new Error('Model file not found or size unavailable');
     }
 
-    const hasher = CryptoJS.algo.SHA256.create();
-    let offset = 0;
+    // Read the entire file in base64 encoding
+    const fileData = await FileSystem.readAsStringAsync(modelPath, {
+      encoding: 'base64',
+    });
 
-    while (offset < fileInfo.size) {
-      const length = Math.min(CHUNK_SIZE_BYTES, fileInfo.size - offset);
-
-      const chunk = await FileSystem.readAsStringAsync(modelPath, {
-        encoding: 'base64',
-        position: offset,
-        length,
-      });
-
-      if (!chunk) {
-        throw new Error('Failed to read model chunk for checksum');
-      }
-
-      hasher.update(CryptoJS.enc.Base64.parse(chunk));
-      offset += length;
+    if (!fileData) {
+      throw new Error('Failed to read model file for checksum');
     }
 
-    const actualChecksum = hasher.finalize().toString(CryptoJS.enc.Hex);
+    // Compute SHA-256 hash over the entire file data
+    const actualChecksum = CryptoJS.SHA256(
+      CryptoJS.enc.Base64.parse(fileData)
+    ).toString(CryptoJS.enc.Hex);
 
     // If no expected checksum provided, try to load from checksums file
     let checksumToValidate = expectedChecksum;

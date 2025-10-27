@@ -1,3 +1,4 @@
+export * from './plant-assessment-history-section';
 export * from './plants-card';
 export * from './plants-empty-state';
 export * from './plants-error-card';

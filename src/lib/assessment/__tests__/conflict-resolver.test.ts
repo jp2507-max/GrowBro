@@ -1,8 +1,5 @@
-import {
-  mergePartialUpdate,
-  needsSync,
-  resolveConflict,
-} from '../conflict-resolver';
+import { resolveConflict } from '../conflict-resolver';
+import { mergePartialUpdate, needsSync } from '../sync-utils';
 
 describe('resolveConflict', () => {
   describe('last-write-wins strategy', () => {

@@ -156,7 +156,19 @@ export function hammingDistanceToSimilarity(
   distance: number,
   hashLength: number
 ): number {
-  return 1 - distance / hashLength;
+  // Ensure inputs are numbers
+  const numDistance = Number(distance);
+  const numHashLength = Number(hashLength);
+
+  // Guard against zero or non-positive hashLength
+  if (numHashLength <= 0) {
+    return 0; // Return 0 similarity for invalid hash length
+  }
+
+  // Clamp distance to valid range [0, hashLength]
+  const clampedDistance = Math.max(0, Math.min(numDistance, numHashLength));
+
+  return 1 - clampedDistance / numHashLength;
 }
 
 /**

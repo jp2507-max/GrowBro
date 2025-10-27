@@ -1,0 +1,168 @@
+appId: com.growbro.app
+---
+# AI Photo Assessment E2E Flow
+# Tests: capture → quality → inference → results → actions
+# Requirements: 2.1, 3.4, 7.1
+
+- launchApp:
+    clearState: true
+
+- tapOn: "Plants"
+- assertVisible: "My Plants"
+
+# Navigate to a plant detail
+- tapOn:
+    id: "plant-card-0"
+- assertVisible: "Plant Details"
+
+# Open AI Assessment
+- tapOn: "AI Assessment"
+- assertVisible: "Capture Photos"
+
+# Test camera permissions
+- runFlow:
+    when:
+      visible: "Camera Permission Required"
+    commands:
+      - tapOn: "Grant Permission"
+      - assertVisible: "Capture Photos"
+
+# Capture first photo
+- tapOn: "Capture"
+- waitForAnimationToEnd
+- assertVisible: "Quality Check"
+
+# Verify quality feedback
+- runFlow:
+    when:
+      visible: "Retake"
+    commands:
+      - assertVisible:
+          text: ".*blur.*|.*exposure.*|.*lighting.*"
+          regex: true
+      - tapOn: "Retake"
+      - tapOn: "Capture"
+
+# Accept photo
+- tapOn: "Accept"
+- assertVisible: "1 of 3 photos"
+
+# Capture second photo (optional)
+- tapOn: "Capture"
+- waitForAnimationToEnd
+- tapOn: "Accept"
+- assertVisible: "2 of 3 photos"
+
+# Submit for analysis
+- tapOn: "Analyze"
+- assertVisible: "Analyzing..."
+
+# Wait for results (max 10s)
+- waitForAnimationToEnd:
+    timeout: 10000
+
+# Verify results screen
+- assertVisible: "Assessment Results"
+- assertVisible:
+    text: "Confidence:.*%"
+    regex: true
+
+# Verify action plan
+- assertVisible: "Next Steps"
+- assertVisible: "Immediate Actions"
+
+# Test task creation
+- tapOn: "Create Tasks"
+- assertVisible: "Tasks Created"
+
+# Verify navigation back
+- tapOn: "Done"
+- assertVisible: "Plant Details"
+
+# Verify assessment history
+- scrollUntilVisible:
+    element: "Assessment History"
+    direction: DOWN
+- assertVisible: "Assessment History"
+- assertVisible:
+    text: ".*ago"
+    regex: true
+
+---
+# Test low confidence flow with community CTA
+- launchApp
+- tapOn: "Plants"
+- tapOn:
+    id: "plant-card-0"
+- tapOn: "AI Assessment"
+- tapOn: "Capture"
+- waitForAnimationToEnd
+- tapOn: "Accept"
+- tapOn: "Analyze"
+- waitForAnimationToEnd:
+    timeout: 10000
+
+# If low confidence, verify community CTA
+- runFlow:
+    when:
+      visible: "Not Confident Enough"
+    commands:
+      - assertVisible: "Ask Community"
+      - tapOn: "Ask Community"
+      - assertVisible: "Create Post"
+      - assertVisible: "Assessment photos attached"
+
+---
+# Test offline queue
+- launchApp
+- tapOn: "Settings"
+- tapOn: "Developer Options"
+- tapOn: "Simulate Offline Mode"
+
+- tapOn: "Plants"
+- tapOn:
+    id: "plant-card-0"
+- tapOn: "AI Assessment"
+- tapOn: "Capture"
+- waitForAnimationToEnd
+- tapOn: "Accept"
+- tapOn: "Analyze"
+
+# Verify queued message
+- assertVisible: "Queued for Analysis"
+- assertVisible: "Will process when online"
+
+# Go back online
+- tapOn: "Back"
+- tapOn: "Settings"
+- tapOn: "Developer Options"
+- tapOn: "Simulate Offline Mode"
+
+# Verify auto-sync
+- waitForAnimationToEnd:
+    timeout: 5000
+- assertVisible: "Syncing..."
+
+---
+# Test accessibility
+- launchApp
+- tapOn: "Plants"
+- tapOn:
+    id: "plant-card-0"
+- tapOn: "AI Assessment"
+
+# Verify screen reader labels
+- assertVisible:
+    id: "camera-capture-button"
+    accessibilityLabel: "Capture photo"
+
+- assertVisible:
+    id: "quality-feedback"
+    accessibilityLabel: ".*quality.*"
+    regex: true
+
+# Verify minimum touch targets (44pt)
+- assertVisible:
+    id: "camera-capture-button"
+    width: ">= 44"
+    height: ">= 44"

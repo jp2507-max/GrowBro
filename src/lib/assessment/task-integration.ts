@@ -212,3 +212,13 @@ export function createTasksFromActionPlan(
 ): TaskCreationResult {
   return taskIntegrationService.createTasksFromPlan(options);
 }
+
+/**
+ * Count tasks that can be created from action plan (convenience function)
+ *
+ * @param plan - Action plan
+ * @returns Number of tasks with templates
+ */
+export function countCreatableTasks(plan: AssessmentActionPlan): number {
+  return taskIntegrationService.countCreatableTasks(plan);
+}

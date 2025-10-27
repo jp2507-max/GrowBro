@@ -41,6 +41,13 @@ export async function saveModelMetadata(
   const { metadataPath } = await getModelPaths();
 
   try {
+    // Ensure the directory exists before writing
+    const metadataDir = metadataPath.substring(
+      0,
+      metadataPath.lastIndexOf('/')
+    );
+    await FileSystem.makeDirectoryAsync(metadataDir, { intermediates: true });
+
     await FileSystem.writeAsStringAsync(
       metadataPath,
       JSON.stringify(metadata, null, 2)

@@ -1,4 +1,5 @@
 import * as FileSystem from 'expo-file-system';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 import {
   getAssessmentDir,
@@ -24,16 +25,28 @@ export async function storeImage(
     const assessmentDir = `${assessmentsRoot}${sanitizePathSegment(assessmentId)}/`;
     await FileSystem.makeDirectoryAsync(assessmentDir, { intermediates: true });
 
-    const [filenameKey, integritySha256] = await Promise.all([
-      computeFilenameKey(imageUri),
-      computeIntegritySha256(imageUri),
-    ]);
+    // Compute filename key from original image
+    const filenameKey = await computeFilenameKey(imageUri);
 
+    // Re-encode image to JPEG and strip EXIF data using ImageManipulator
     const storedUri = `${assessmentDir}${filenameKey}.jpg`;
-    await FileSystem.copyAsync({
-      from: imageUri,
+    const manipResult = await ImageManipulator.manipulateAsync(
+      imageUri,
+      [], // No transformations needed, just strip EXIF
+      {
+        compress: 0.9, // Slight compression to ensure quality
+        format: ImageManipulator.SaveFormat.JPEG,
+      }
+    );
+
+    // Move the manipulated image to the final destination
+    await FileSystem.moveAsync({
+      from: manipResult.uri,
       to: storedUri,
     });
+
+    // Compute integrity hash from the actual stored file contents (after manipulation)
+    const integritySha256 = await computeIntegritySha256(storedUri);
 
     const info = await FileSystem.getInfoAsync(storedUri);
     const size = info.exists && 'size' in info ? info.size : 0;
@@ -70,9 +83,20 @@ export async function storeThumbnail(params: {
     const assessmentDir = `${assessmentsRoot}${sanitizePathSegment(assessmentId)}/`;
     await FileSystem.makeDirectoryAsync(assessmentDir, { intermediates: true });
 
+    // Re-encode thumbnail to JPEG and strip EXIF data using ImageManipulator
     const storedUri = `${assessmentDir}${filenameKey}_thumb.jpg`;
-    await FileSystem.copyAsync({
-      from: thumbnailUri,
+    const manipResult = await ImageManipulator.manipulateAsync(
+      thumbnailUri,
+      [], // No transformations needed, just strip EXIF
+      {
+        compress: 0.9, // Slight compression to ensure quality
+        format: ImageManipulator.SaveFormat.JPEG,
+      }
+    );
+
+    // Move the manipulated image to the final destination
+    await FileSystem.moveAsync({
+      from: manipResult.uri,
       to: storedUri,
     });
 

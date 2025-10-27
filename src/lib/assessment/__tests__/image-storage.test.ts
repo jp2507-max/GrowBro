@@ -19,6 +19,64 @@ jest.mock('expo-file-system');
 jest.mock('expo-secure-store');
 jest.mock('../image-cache-manager');
 
+// Mock crypto-js
+const mockHmacInstances: any[] = [];
+
+type MockedHmacInstance = {
+  updateData: any;
+  update: jest.Mock<MockedHmacInstance, [any]>;
+  finalize: jest.Mock<
+    {
+      toString: jest.Mock<string, []>;
+    },
+    []
+  >;
+};
+
+jest.mock('crypto-js', () => ({
+  enc: {
+    Hex: {
+      parse: jest.fn((hex: string) => ({ hex, type: 'hex' })),
+    },
+    Base64: {
+      parse: jest.fn((base64: string) => ({ base64, type: 'base64' })),
+    },
+  },
+  algo: {
+    HMAC: {
+      create: jest.fn(() => {
+        const instance: MockedHmacInstance = {
+          updateData: null as any,
+          update: jest.fn<MockedHmacInstance, [any]>((data: any) => {
+            instance.updateData = data;
+            return instance;
+          }),
+          finalize: jest.fn<
+            {
+              toString: jest.Mock<string, []>;
+            },
+            []
+          >(() => ({
+            toString: jest.fn<string, []>(() => {
+              // Return different hashes based on the base64 data
+              if (instance.updateData?.base64 === 'base64data1') {
+                return 'hash1abc123def456';
+              }
+              if (instance.updateData?.base64 === 'base64data2') {
+                return 'hash2def789ghi012';
+              }
+              return 'b5697411e1c36d5824669b00849a9b558f19d171fd73f21639599512ce4a3bfa';
+            }),
+          })),
+        };
+        mockHmacInstances.push(instance);
+        return instance;
+      }),
+    },
+    SHA256: 'sha256',
+  },
+}));
+
 describe('Image Storage', () => {
   const mockImageUri = 'file:///test/image.jpg';
   const mockAssessmentId = 'assessment-123';
