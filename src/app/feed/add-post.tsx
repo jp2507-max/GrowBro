@@ -37,13 +37,14 @@ type PrefillHookOptions = {
   setSourceAssessmentId: React.Dispatch<
     React.SetStateAction<string | undefined>
   >;
+  translatedHint: string;
 };
 
-function appendAssessmentHint(body: string): string {
+function appendAssessmentHint(body: string, hint: string): string {
   return `${body}
 
 ---
-${translateDynamic('assessment.community.ctaHint')}`;
+${hint}`;
 }
 
 function parsePrefillImages(
@@ -74,8 +75,10 @@ function useAssessmentPrefill({
   setValue,
   setAttachments,
   setSourceAssessmentId,
+  translatedHint,
 }: PrefillHookOptions): void {
   const [applied, setApplied] = React.useState(false);
+  const mountedRef = React.useRef(true);
 
   useEffect(() => {
     if (applied) return;
@@ -96,23 +99,31 @@ function useAssessmentPrefill({
     const hasPrefillParams =
       typeof titleParam === 'string' && typeof bodyParam === 'string';
 
-    const applyPrefill = async () => {
+    const applyPrefill = async (): Promise<void> => {
       if (hasPrefillParams) {
         const title = titleParam as string;
-        const bodyWithHint = appendAssessmentHint(bodyParam as string);
+        const bodyWithHint = appendAssessmentHint(
+          bodyParam as string,
+          translatedHint
+        );
 
+        if (!mountedRef.current) return;
         setValue('title', title as FormType['title']);
+        if (!mountedRef.current) return;
         setValue('body', bodyWithHint as FormType['body']);
 
         const parsedImages = parsePrefillImages(imagesParam);
         if (parsedImages?.length) {
+          if (!mountedRef.current) return;
           setAttachments(parsedImages);
         }
 
         if (assessmentId) {
+          if (!mountedRef.current) return;
           setSourceAssessmentId(assessmentId);
         }
 
+        if (!mountedRef.current) return;
         setApplied(true);
         return;
       }
@@ -134,22 +145,41 @@ function useAssessmentPrefill({
         capturedPhotos,
       });
 
-      const bodyWithHint = appendAssessmentHint(prefill.body);
+      if (!mountedRef.current) return;
 
+      const bodyWithHint = appendAssessmentHint(prefill.body, translatedHint);
+
+      if (!mountedRef.current) return;
       setValue('title', prefill.title as FormType['title']);
+      if (!mountedRef.current) return;
       setValue('body', bodyWithHint as FormType['body']);
+      if (!mountedRef.current) return;
       setAttachments(prefill.images);
+      if (!mountedRef.current) return;
       setSourceAssessmentId(assessmentId);
+      if (!mountedRef.current) return;
       setApplied(true);
     };
 
     void applyPrefill();
-  }, [applied, params, setAttachments, setSourceAssessmentId, setValue]);
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [
+    applied,
+    params,
+    setAttachments,
+    setSourceAssessmentId,
+    setValue,
+    translatedHint,
+  ]);
 }
 
-export default function AddPost(): JSX.Element {
+export default function AddPost(): React.JSX.Element {
   const { t } = useTranslation();
   const params = useLocalSearchParams();
+  const translatedHint = translateDynamic('assessment.community.ctaHint');
   const { control, handleSubmit, setValue } = useForm<FormType>({
     resolver: zodResolver(schema),
   });
@@ -163,6 +193,7 @@ export default function AddPost(): JSX.Element {
     setValue,
     setAttachments,
     setSourceAssessmentId,
+    translatedHint,
   });
 
   const onSubmit = (data: FormType) => {
@@ -225,6 +256,9 @@ export default function AddPost(): JSX.Element {
                     key={image.filename}
                     accessibilityIgnoresInvertColors
                     accessibilityLabel={image.filename || 'attachment image'}
+                    accessibilityHint={translateDynamic(
+                      'feed.attachmentImageHint'
+                    )}
                     accessibilityRole="image"
                     className="mr-3 rounded-xl"
                     source={{ uri: image.uri }}

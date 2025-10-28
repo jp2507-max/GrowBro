@@ -1,3 +1,4 @@
+import { Buffer } from 'buffer';
 import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
@@ -250,6 +251,7 @@ export class CloudInferenceClient {
           headers: {
             'X-Idempotency-Key': idempotencyKey,
           },
+          signal: controller.signal,
         }
       );
 

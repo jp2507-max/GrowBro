@@ -48,7 +48,7 @@ export function TaskCreationModal({
   actionPlan,
   timezone,
   testID = 'task-creation-modal',
-}: TaskCreationModalProps) {
+}: TaskCreationModalProps): React.ReactElement {
   const { t } = useTranslation();
   const bottomSheetRef = React.useRef<BottomSheetModal>(null);
   const [creating, setCreating] = React.useState(false);
@@ -189,7 +189,10 @@ type TaskSummaryCardProps = {
   tasks: { id: string; label: string }[];
 };
 
-function TaskSummaryCard({ title, tasks }: TaskSummaryCardProps) {
+function TaskSummaryCard({
+  title,
+  tasks,
+}: TaskSummaryCardProps): React.ReactElement {
   return (
     <View className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-700 dark:bg-neutral-900">
       <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
@@ -229,7 +232,7 @@ function TaskCreationFooter({
   cancelLabel,
   confirmLabel,
   creatingLabel,
-}: TaskCreationFooterProps) {
+}: TaskCreationFooterProps): React.ReactElement {
   return (
     <View className="mt-6 flex-row gap-3">
       <Button

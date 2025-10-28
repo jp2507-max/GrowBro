@@ -109,9 +109,18 @@ export function VisionCameraCapture({
           onPress={handleCapture}
           disabled={isCapturing}
           className="size-20 rounded-full bg-neutral-100"
+          testID="capture-button"
+          accessibilityRole="button"
+          accessibilityLabel={t('assessment.camera.actions.capture')}
+          accessibilityHint={t('assessment.camera.actions.captureHint')}
         >
           {isCapturing ? (
-            <ActivityIndicator size="small" color={colors.black} />
+            <ActivityIndicator
+              size="small"
+              color={colors.black}
+              accessibilityLabel={t('assessment.camera.status.capturing')}
+              accessibilityHint={t('assessment.camera.status.capturingHint')}
+            />
           ) : (
             <View className="size-16 rounded-full border-4 border-charcoal-950 bg-neutral-100" />
           )}

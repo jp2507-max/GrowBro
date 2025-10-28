@@ -70,7 +70,7 @@ function PlaybookAdjustmentItem({
   onAccept,
   testID,
   className,
-}: PlaybookAdjustmentItemProps) {
+}: PlaybookAdjustmentItemProps): React.JSX.Element {
   const { t } = useTranslation();
 
   return (
@@ -132,7 +132,7 @@ export function PlaybookAdjustmentCard({
   adjustments,
   onAccept,
   testID = 'playbook-adjustment-card',
-}: PlaybookAdjustmentCardProps) {
+}: PlaybookAdjustmentCardProps): React.JSX.Element {
   const { t } = useTranslation();
   const [expanded, setExpanded] = React.useState(false);
   const hasAdjustments = adjustments.length > 0;

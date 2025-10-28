@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { memo, useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Text, View } from '@/components/ui';
@@ -20,93 +20,96 @@ type AssessmentFeedbackSheetProps = {
   assessmentId: string;
 };
 
-export const AssessmentFeedbackSheet = React.forwardRef<
-  unknown,
-  AssessmentFeedbackSheetProps
->(({ onSubmit, assessmentId }, ref) => {
-  const { t } = useTranslation();
-  const internalRef = useRef<any>(null);
-  const setRefs = useCallback(
-    (node: any) => {
-      internalRef.current = node;
-      if (typeof ref === 'function') ref(node);
-      else if (ref && 'current' in (ref as any)) (ref as any).current = node;
-    },
-    [ref]
-  );
-  const [step, setStep] = useState<'helpful' | 'resolved' | 'notes'>('helpful');
-  const [helpful, setHelpful] = useState<boolean | null>(null);
-  const [issueResolved, setIssueResolved] =
-    useState<FeedbackIssueResolved | null>(null);
-  const [notes, setNotes] = useState('');
+export const AssessmentFeedbackSheet: React.ForwardRefExoticComponent<
+  AssessmentFeedbackSheetProps & React.RefAttributes<unknown>
+> = React.forwardRef<unknown, AssessmentFeedbackSheetProps>(
+  ({ onSubmit, assessmentId }, ref) => {
+    const { t } = useTranslation();
+    const internalRef = useRef<any>(null);
+    const setRefs = useCallback(
+      (node: any) => {
+        internalRef.current = node;
+        if (typeof ref === 'function') ref(node);
+        else if (ref && 'current' in (ref as any)) (ref as any).current = node;
+      },
+      [ref]
+    );
+    const [step, setStep] = useState<'helpful' | 'resolved' | 'notes'>(
+      'helpful'
+    );
+    const [helpful, setHelpful] = useState<boolean | null>(null);
+    const [issueResolved, setIssueResolved] =
+      useState<FeedbackIssueResolved | null>(null);
+    const [notes, setNotes] = useState('');
 
-  const handleHelpfulResponse = (isHelpful: boolean) => {
-    setHelpful(isHelpful);
-    if (isHelpful) {
-      setStep('resolved');
-    } else {
-      setStep('notes');
-    }
-  };
-
-  const handleResolvedResponse = (resolved: FeedbackIssueResolved) => {
-    setIssueResolved(resolved);
-    setStep('notes');
-  };
-
-  const handleSubmit = () => {
-    if (helpful === null) return;
-
-    const feedback: AssessmentFeedbackData = {
-      assessmentId,
-      helpful,
-      issueResolved: issueResolved ?? undefined,
-      notes: notes.trim() || undefined,
+    const handleHelpfulResponse = (isHelpful: boolean) => {
+      setHelpful(isHelpful);
+      if (isHelpful) {
+        setStep('resolved');
+      } else {
+        setStep('notes');
+      }
     };
 
-    onSubmit(feedback);
-    handleClose();
-  };
+    const handleResolvedResponse = (resolved: FeedbackIssueResolved) => {
+      setIssueResolved(resolved);
+      setStep('notes');
+    };
 
-  const handleClose = () => {
-    // Dismiss the sheet then reset local state
-    internalRef.current?.dismiss?.();
-    setStep('helpful');
-    setHelpful(null);
-    setIssueResolved(null);
-    setNotes('');
-  };
+    const handleSubmit = () => {
+      if (helpful === null) return;
 
-  return (
-    <Modal
-      ref={setRefs}
-      title={t('assessment.feedback.title')}
-      snapPoints={['70%']}
-    >
-      <View className="gap-6 p-6">
-        {step === 'helpful' && (
-          <HelpfulStep t={t} onHelpful={handleHelpfulResponse} />
-        )}
+      const feedback: AssessmentFeedbackData = {
+        assessmentId,
+        helpful,
+        issueResolved: issueResolved ?? undefined,
+        notes: notes.trim() || undefined,
+      };
 
-        {step === 'resolved' && (
-          <ResolvedStep t={t} onResolved={handleResolvedResponse} />
-        )}
+      onSubmit(feedback);
+      handleClose();
+    };
 
-        {step === 'notes' && (
-          <NotesStep
-            t={t}
-            notes={notes}
-            onChangeNotes={setNotes}
-            onSkip={handleSubmit}
-            onSubmit={handleSubmit}
-          />
-        )}
+    const handleClose = () => {
+      // Dismiss the sheet then reset local state
+      internalRef.current?.dismiss?.();
+      setStep('helpful');
+      setHelpful(null);
+      setIssueResolved(null);
+      setNotes('');
+    };
 
-        {step !== 'helpful' && <PrivacyNote t={t} />}
-      </View>
-    </Modal>
-  );
-});
+    return (
+      <Modal
+        ref={setRefs}
+        title={t('assessment.feedback.title')}
+        snapPoints={['70%']}
+      >
+        <View className="gap-6 p-6">
+          {step === 'helpful' && (
+            <HelpfulStep t={t} onHelpful={handleHelpfulResponse} />
+          )}
+
+          {step === 'resolved' && (
+            <ResolvedStep t={t} onResolved={handleResolvedResponse} />
+          )}
+
+          {step === 'notes' && (
+            <NotesStep
+              t={t}
+              notes={notes}
+              onChangeNotes={setNotes}
+              onSkip={handleSubmit}
+              onSubmit={handleSubmit}
+            />
+          )}
+
+          {step !== 'helpful' && <PrivacyNote t={t} />}
+        </View>
+      </Modal>
+    );
+  }
+);
 
 AssessmentFeedbackSheet.displayName = 'AssessmentFeedbackSheet';
 
@@ -117,7 +120,7 @@ type HelpfulStepProps = {
   onHelpful: (isHelpful: boolean) => void;
 };
 
-function HelpfulStep({ t, onHelpful }: HelpfulStepProps) {
+const HelpfulStep: React.FC<HelpfulStepProps> = ({ t, onHelpful }) => {
   return (
     <View className="gap-4">
       <Text className="text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
@@ -143,7 +146,9 @@ function HelpfulStep({ t, onHelpful }: HelpfulStepProps) {
       </View>
     </View>
   );
-}
+};
+
+export const HelpfulStepMemo = React.memo(HelpfulStep);
 
 type ResolvedStepProps = {
   t: TFunction;
@@ -182,6 +187,8 @@ function ResolvedStep({ t, onResolved }: ResolvedStepProps) {
     </View>
   );
 }
+
+export const ResolvedStepMemo = memo(ResolvedStep);
 
 type NotesStepProps = {
   t: TFunction;
@@ -235,6 +242,8 @@ function NotesStep({
   );
 }
 
+export const NotesStepMemo = memo(NotesStep);
+
 type PrivacyNoteProps = {
   t: TFunction;
 };
@@ -246,3 +255,5 @@ function PrivacyNote({ t }: PrivacyNoteProps) {
     </Text>
   );
 }
+
+export const PrivacyNoteMemo = memo(PrivacyNote);
