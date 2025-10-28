@@ -275,7 +275,7 @@ export default function AddPost(): React.JSX.Element {
 
           <Button
             className="mt-6"
-            label={t('feed:addPost')}
+            label={t('feed.addPost')}
             loading={isPending}
             onPress={handleSubmit(onSubmit)}
             testID="add-post-button"

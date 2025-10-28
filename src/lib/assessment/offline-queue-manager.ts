@@ -162,6 +162,7 @@ export class OfflineQueueManager {
         photos: request.photos,
         plantContext: request.plantContext,
         assessmentId: request.id,
+        idempotencyKey: request.id,
       });
 
       // Mark as completed

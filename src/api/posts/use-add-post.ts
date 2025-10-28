@@ -2,8 +2,8 @@ import type { AxiosError } from 'axios';
 import { createMutation } from 'react-query-kit';
 import { z } from 'zod';
 
-import { client } from '../common';
-import type { Post } from './types';
+import { client } from '@/api/common';
+import type { Post } from '@/api/posts/types';
 
 export const attachmentInputSchema = z
   .object({

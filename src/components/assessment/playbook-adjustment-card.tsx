@@ -98,7 +98,12 @@ function PlaybookAdjustmentItem({
       {adjustment.suggestedDaysDelta !== undefined ? (
         <Text className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
           {t('assessment.playbook.suggestedTimingAdjustment', {
-            sign: adjustment.suggestedDaysDelta > 0 ? '+' : '',
+            sign:
+              adjustment.suggestedDaysDelta > 0
+                ? '+'
+                : adjustment.suggestedDaysDelta < 0
+                  ? '\u2212'
+                  : '',
             count: Math.abs(adjustment.suggestedDaysDelta),
           })}
         </Text>
