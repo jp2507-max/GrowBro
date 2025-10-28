@@ -166,10 +166,8 @@ export default function AddPost() {
   });
 
   const onSubmit = (data: FormType) => {
-    console.log(data);
     const payload = {
       ...data,
-      userId: 1,
       attachments,
       sourceAssessmentId,
     };
@@ -192,8 +190,8 @@ export default function AddPost() {
     <>
       <Stack.Screen
         options={{
-          title: 'Add Post',
-          headerBackTitle: 'Feed',
+          title: translateDynamic('feed.addPost.title'),
+          headerBackTitle: translateDynamic('feed.title'),
         }}
       />
       <ScrollView
@@ -204,13 +202,13 @@ export default function AddPost() {
         <View className="p-4">
           <ControlledInput
             name="title"
-            label="Title"
+            label={translateDynamic('feed.addPost.titleLabel')}
             control={control}
             testID="title"
           />
           <ControlledInput
             name="body"
-            label="Content"
+            label={translateDynamic('feed.addPost.contentLabel')}
             control={control}
             multiline
             testID="body-input"

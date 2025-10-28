@@ -3,6 +3,8 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
+import { withRateLimit } from '../_shared/rate-limit.ts';
+
 const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -98,6 +100,25 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
+    }
+
+    // Check rate limit: 10 assessments per hour
+    const rateLimitResponse = await withRateLimit(
+      supabaseClient,
+      user.id,
+      {
+        endpoint: 'assessments',
+        limit: 10,
+        windowSeconds: 3600,
+      },
+      corsHeaders
+    );
+
+    if (rateLimitResponse) {
+      console.log(
+        `[ai-inference] Rate limit exceeded for user ${user.id.slice(0, 8)}...`
+      );
+      return rateLimitResponse;
     }
 
     // Get idempotency key

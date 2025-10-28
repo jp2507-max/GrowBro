@@ -10,6 +10,7 @@ import { DiagnosticChecklist } from './diagnostic-checklist';
 type UncertaintyResultCardProps = {
   assessment: AssessmentResult;
   assessmentId: string;
+  plantId: string;
   onRetake?: () => void;
   testID?: string;
 };
@@ -21,6 +22,7 @@ type UncertaintyResultCardProps = {
 export function UncertaintyResultCard({
   assessment,
   assessmentId,
+  plantId,
   onRetake,
   testID = 'uncertainty-result-card',
 }: UncertaintyResultCardProps) {
@@ -104,7 +106,7 @@ export function UncertaintyResultCard({
       {showChecklist && (
         <View className="mt-4">
           <DiagnosticChecklist
-            plantId={assessment.perImage[0]?.id || ''}
+            plantId={plantId}
             testID={`${testID}-checklist`}
           />
         </View>

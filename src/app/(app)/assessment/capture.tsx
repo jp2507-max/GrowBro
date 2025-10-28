@@ -1,12 +1,12 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 
 import { AdaptiveCameraCapture } from '@/components/assessment/adaptive-camera-capture';
 import { PermissionDenied } from '@/components/assessment/permission-denied';
 import { PhotoPreview } from '@/components/assessment/photo-preview';
-import { showErrorMessage, View } from '@/components/ui';
+import { Button, showErrorMessage, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { runInference } from '@/lib/assessment';
 import {
@@ -98,6 +98,106 @@ async function runAssessmentPipeline({
 }
 
 const MAX_PHOTOS = 3;
+const DEFAULT_GUIDANCE_MODE: GuidanceMode = 'leaf-top';
+
+function HiddenHeader(): ReactNode {
+  return <Stack.Screen options={{ headerShown: false }} />;
+}
+
+function LoadingScreen(): ReactNode {
+  return (
+    <View className="flex-1 items-center justify-center bg-charcoal-950">
+      <ActivityIndicator size="large" color={colors.white} />
+    </View>
+  );
+}
+
+type PermissionDeniedStageProps = {
+  onRetry: () => void;
+  onCancel: () => void;
+};
+
+function PermissionDeniedStage({
+  onRetry,
+  onCancel,
+}: PermissionDeniedStageProps) {
+  return (
+    <>
+      <HiddenHeader />
+      <PermissionDenied onRetry={onRetry} onCancel={onCancel} />
+    </>
+  );
+}
+
+type PhotoPreviewStageProps = {
+  photo: CapturedPhoto;
+  onRetake: () => void;
+  onAccept: () => Promise<void>;
+  isLastPhoto: boolean;
+};
+
+function PhotoPreviewStage({
+  photo,
+  onRetake,
+  onAccept,
+  isLastPhoto,
+}: PhotoPreviewStageProps) {
+  return (
+    <>
+      <HiddenHeader />
+      <PhotoPreview
+        photo={photo}
+        onRetake={onRetake}
+        onAccept={onAccept}
+        isLastPhoto={isLastPhoto}
+      />
+    </>
+  );
+}
+
+type CameraCaptureStageProps = {
+  photoError: string | null;
+  onClearError: () => void;
+  guidanceMode: GuidanceMode;
+  capturedCount: number;
+  onPhotoCapture: (photo: CapturedPhoto) => void;
+  onCameraError: (error: Error) => void;
+};
+
+function CameraCaptureStage({
+  photoError,
+  onClearError,
+  guidanceMode,
+  capturedCount,
+  onPhotoCapture,
+  onCameraError,
+}: CameraCaptureStageProps) {
+  return (
+    <>
+      <HiddenHeader />
+      {photoError && (
+        <View className="flex-row items-center justify-between bg-danger-500 px-4 py-3">
+          <Text className="flex-1 text-sm text-white">{photoError}</Text>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={onClearError}
+            className="ml-2 p-1"
+          >
+            <Text className="text-lg text-white">×</Text>
+          </Button>
+        </View>
+      )}
+      <AdaptiveCameraCapture
+        onPhotoCapture={onPhotoCapture}
+        guidanceMode={guidanceMode}
+        photoCount={capturedCount}
+        maxPhotos={MAX_PHOTOS}
+        onError={onCameraError}
+      />
+    </>
+  );
+}
 
 function useAssessmentSession() {
   const params = useLocalSearchParams();
@@ -125,7 +225,8 @@ export default function AssessmentCaptureScreen() {
   const [capturedPhotos, setCapturedPhotos] = useState<CapturedPhoto[]>([]);
   const [currentPhoto, setCurrentPhoto] = useState<CapturedPhoto | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const guidanceMode: GuidanceMode = 'leaf-top';
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const guidanceMode: GuidanceMode = DEFAULT_GUIDANCE_MODE;
 
   const finalizeAssessment = useCallback(
     async (photos: CapturedPhoto[]) => {
@@ -170,6 +271,7 @@ export default function AssessmentCaptureScreen() {
     if (!currentPhoto) return;
 
     setIsProcessing(true);
+    setPhotoError(null); // Clear any previous errors
     try {
       const persistedPhoto = await persistPhoto({
         photo: currentPhoto,
@@ -185,6 +287,10 @@ export default function AssessmentCaptureScreen() {
       }
     } catch (error) {
       console.error('Failed to store photo:', error);
+      setPhotoError(translateDynamic('assessment.errors.photoStorageFailed'));
+      showErrorMessage(
+        translateDynamic('assessment.errors.photoStorageFailed')
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -199,62 +305,45 @@ export default function AssessmentCaptureScreen() {
   }, []);
 
   if (isLoading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-charcoal-950">
-        <ActivityIndicator size="large" color={colors.white} />
-      </View>
-    );
+    return <LoadingScreen />;
   }
 
   if (status === 'denied' || status === 'restricted') {
     return (
-      <>
-        <Stack.Screen options={{ headerShown: false }} />
-        <PermissionDenied onRetry={requestPermission} onCancel={handleCancel} />
-      </>
+      <PermissionDeniedStage
+        onRetry={requestPermission}
+        onCancel={handleCancel}
+      />
     );
   }
 
   if (status !== 'granted') {
-    return (
-      <View className="flex-1 items-center justify-center bg-charcoal-950">
-        <ActivityIndicator size="large" color={colors.white} />
-      </View>
-    );
+    return <LoadingScreen />;
   }
 
   if (currentPhoto) {
     return (
-      <>
-        <Stack.Screen options={{ headerShown: false }} />
-        <PhotoPreview
-          photo={currentPhoto}
-          onRetake={handleRetake}
-          onAccept={handleAccept}
-          isLastPhoto={capturedPhotos.length + 1 >= MAX_PHOTOS}
-        />
-      </>
+      <PhotoPreviewStage
+        photo={currentPhoto}
+        onRetake={handleRetake}
+        onAccept={handleAccept}
+        isLastPhoto={capturedPhotos.length + 1 >= MAX_PHOTOS}
+      />
     );
   }
 
   if (isProcessing) {
-    return (
-      <View className="flex-1 items-center justify-center bg-charcoal-950">
-        <ActivityIndicator size="large" color={colors.white} />
-      </View>
-    );
+    return <LoadingScreen />;
   }
 
   return (
-    <>
-      <Stack.Screen options={{ headerShown: false }} />
-      <AdaptiveCameraCapture
-        onPhotoCapture={handlePhotoCapture}
-        guidanceMode={guidanceMode}
-        photoCount={capturedPhotos.length}
-        maxPhotos={MAX_PHOTOS}
-        onError={handleCameraError}
-      />
-    </>
+    <CameraCaptureStage
+      photoError={photoError}
+      onClearError={() => setPhotoError(null)}
+      guidanceMode={guidanceMode}
+      capturedCount={capturedPhotos.length}
+      onPhotoCapture={handlePhotoCapture}
+      onCameraError={handleCameraError}
+    />
   );
 }

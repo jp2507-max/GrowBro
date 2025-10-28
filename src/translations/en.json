@@ -50,10 +50,22 @@
         "status": "{{pendingCount}} pending, {{processingCount}} processing"
       },
       "result": {
+        "backToHome": "Back to home",
+        "confidence": "Confidence: {{confidencePercent}}%",
+        "dataUnavailable": "Assessment data is no longer available.",
+        "details": "Assessment details",
         "low_confidence": "Assessment complete. Not confident enough to identify the issue. Confidence {{confidence}} percent. {{count, plural, one {One photo analyzed.} other {# photos analyzed.}}}",
         "mode_cloud": "in the cloud",
         "mode_device": "on device",
-        "success": "Assessment complete. Detected {{className}} with {{confidence}} percent confidence. Analysis ran {{mode}}. {{count, plural, one {One photo analyzed.} other {# photos analyzed.}}}"
+        "modelVersion": "Model version: {{modelVersion}}",
+        "noDescription": "No additional description available.",
+        "photoQualityTitle": "Photo quality could be improved",
+        "plantId": "Plant ID: {{plantId}}",
+        "processingTime": "Processing time: {{processingTimeMs}} ms",
+        "retakePhotos": "Retake photos",
+        "success": "Assessment complete. Detected {{className}} with {{confidence}} percent confidence. Analysis ran {{mode}}. {{count, plural, one {One photo analyzed.} other {# photos analyzed.}}}",
+        "unknown": "Unknown",
+        "viewPhotoTips": "View photo tips"
       },
       "taxonomy": {
         "hint": "Double-tap to see visual cues and description.",
@@ -103,6 +115,10 @@
       "share_update_hint": "Opens the Create Post screen."
     },
     "plants": {
+      "assessmentHistory": {
+        "empty": "No assessments yet",
+        "emptyDescription": "Use the AI assessment tool to analyze plant health"
+      },
       "error_card_hint": "Informs that plants failed to load.",
       "offline_banner_hint": "Shows saved plants while offline.",
       "open_detail_hint": "Opens plant details.",
@@ -292,7 +308,8 @@
       "wateringInstructions": "Verify soil moisture level and watering schedule to rule out over/under-watering"
     },
     "errors": {
-      "analysisFailed": "We couldn't analyze your photos. Please check your connection and try again."
+      "analysisFailed": "We couldn't analyze your photos. Please check your connection and try again.",
+      "photoStorageFailed": "We couldn't save your photo. Please check your storage space and try again."
     },
     "feedback": {
       "helpful_question": "Was this assessment helpful?",
@@ -313,9 +330,24 @@
     },
     "lastUpdated": "Last updated: {{time}}",
     "loading": "Loading...",
+    "playbook": {
+      "affects": "Affects: {{phases}}",
+      "applyAdjustment": "Apply Adjustment",
+      "suggestedTimingAdjustment": "Suggested timing adjustment: {{sign}}{{count}} day",
+      "suggestedTimingAdjustment_plural": "Suggested timing adjustment: {{sign}}{{count}} days",
+      "suggestionCount": "{{count}} suggestion based on assessment",
+      "suggestionCount_plural": "{{count}} suggestions based on assessment",
+      "title": "Playbook Adjustments Suggested"
+    },
     "queue": {
       "retryError": "Failed to retry failed assessments. Please try again.",
       "syncError": "Failed to sync assessments. Please try again."
+    },
+    "result": {
+      "askCommunity": "Ask Community",
+      "createTasks": "Create Tasks",
+      "retake": "Retake",
+      "viewHistory": "View History"
     },
     "retake": {
       "cancel": "Cancel",
@@ -334,11 +366,21 @@
       "stalled": "Stalled"
     },
     "syncNow": "Sync Now",
+    "taskCreation": {
+      "createTasksButton": "Create Tasks",
+      "createTasks_one": "Create 1 task from this assessment?",
+      "createTasks_other": "Create {{count}} tasks from this assessment?",
+      "creating": "Creating...",
+      "failed": "Failed to create tasks. Please try again.",
+      "noTasks": "No tasks to create from this action plan.",
+      "tasksToCreate": "Tasks to create:",
+      "title": "Create Tasks"
+    },
     "title": "Assessment Queue",
     "uncertainty": {
       "confidenceLabel": "AI Confidence",
       "confidenceThreshold": "We recommend at least 70% confidence for reliable results",
-      "educationalNote": "\ud83d\udca1 When uncertain, it's always best to consult experienced growers or run basic diagnostic checks.",
+      "educationalNote": "💡 When uncertain, it's always best to consult experienced growers or run basic diagnostic checks.",
       "hideChecklist": "Hide checklist",
       "lowConfidenceExplanation": "The AI is not confident enough in this classification. Consider retaking photos with better quality or asking the community for help.",
       "notConfident": "Not confident enough",
@@ -390,6 +432,7 @@
     "back": "Back",
     "cancel": "Cancel",
     "dismiss": "Dismiss",
+    "error": "Error",
     "go_back": "Go back",
     "loading": "Loading...",
     "notSelected": "not selected",
@@ -504,6 +547,10 @@
     "view_author_profile_hint": "Double-tap to open this user's profile.",
     "view_comments": "{{count}} comments",
     "view_comments_hint": "Double-tap to view comments for this post."
+  },
+  "communityPost": {
+    "errorDescription": "Failed to create community post. Please try again.",
+    "errorTitle": "Error"
   },
   "consent": {
     "accept_all": "Accept all",
@@ -1658,6 +1705,14 @@
     "veg": "Vegetative"
   },
   "plants": {
+    "assessmentHistory": {
+      "count_one": "{{count}} assessment",
+      "count_other": "{{count}} assessments",
+      "count_zero": "No assessments yet",
+      "empty": "No assessments yet",
+      "emptyDescription": "Use the AI assessment tool to analyze plant health",
+      "title": "Assessment History"
+    },
     "empty_state": "No plants in your inventory",
     "error": "Failed to load plants. Try again.",
     "no_results": "No plants found",

@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import React, { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -83,107 +84,24 @@ export const AssessmentFeedbackSheet = React.forwardRef<
     >
       <View className="gap-6 p-6">
         {step === 'helpful' && (
-          <View className="gap-4">
-            <Text className="text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
-              {t('assessment.feedback.helpful_question')}
-            </Text>
-            <View className="flex-row gap-3">
-              <Button
-                testID="feedback-helpful-yes"
-                variant="outline"
-                onPress={() => handleHelpfulResponse(true)}
-                className="flex-1"
-              >
-                {t('assessment.feedback.yes')}
-              </Button>
-              <Button
-                testID="feedback-helpful-no"
-                variant="outline"
-                onPress={() => handleHelpfulResponse(false)}
-                className="flex-1"
-              >
-                {t('assessment.feedback.no')}
-              </Button>
-            </View>
-          </View>
+          <HelpfulStep t={t} onHelpful={handleHelpfulResponse} />
         )}
 
         {step === 'resolved' && (
-          <View className="gap-4">
-            <Text className="text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
-              {t('assessment.feedback.resolved_question')}
-            </Text>
-            <View className="gap-3">
-              <Button
-                testID="feedback-resolved-yes"
-                variant="outline"
-                onPress={() => handleResolvedResponse('yes')}
-              >
-                {t('assessment.feedback.resolved_yes')}
-              </Button>
-              <Button
-                testID="feedback-resolved-no"
-                variant="outline"
-                onPress={() => handleResolvedResponse('no')}
-              >
-                {t('assessment.feedback.resolved_no')}
-              </Button>
-              <Button
-                testID="feedback-resolved-too-early"
-                variant="outline"
-                onPress={() => handleResolvedResponse('too_early')}
-              >
-                {t('assessment.feedback.resolved_too_early')}
-              </Button>
-            </View>
-          </View>
+          <ResolvedStep t={t} onResolved={handleResolvedResponse} />
         )}
 
         {step === 'notes' && (
-          <View className="gap-4">
-            <Text className="text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
-              {t('assessment.feedback.notes_question')}
-            </Text>
-            <Text className="text-sm text-charcoal-600 dark:text-neutral-400">
-              {t('assessment.feedback.notes_description')}
-            </Text>
-            <Input
-              testID="feedback-notes"
-              value={notes}
-              onChangeText={setNotes}
-              placeholder={t('assessment.feedback.notes_placeholder')}
-              multiline
-              numberOfLines={4}
-              maxLength={500}
-            />
-            <Text className="text-xs text-charcoal-500 dark:text-neutral-500">
-              {notes.length}/500
-            </Text>
-            <View className="flex-row gap-3">
-              <Button
-                testID="feedback-skip"
-                variant="outline"
-                onPress={handleSubmit}
-                className="flex-1"
-              >
-                {t('assessment.feedback.skip')}
-              </Button>
-              <Button
-                testID="feedback-submit"
-                onPress={handleSubmit}
-                className="flex-1"
-              >
-                {t('assessment.feedback.submit')}
-              </Button>
-            </View>
-          </View>
+          <NotesStep
+            t={t}
+            notes={notes}
+            onChangeNotes={setNotes}
+            onSkip={handleSubmit}
+            onSubmit={handleSubmit}
+          />
         )}
 
-        {step !== 'helpful' && (
-          <Text className="text-center text-xs text-charcoal-500 dark:text-neutral-500">
-            {t('assessment.feedback.privacy_note')}
-          </Text>
-        )}
+        {step !== 'helpful' && <PrivacyNote t={t} />}
       </View>
     </Modal>
   );
@@ -192,3 +110,138 @@ export const AssessmentFeedbackSheet = React.forwardRef<
 AssessmentFeedbackSheet.displayName = 'AssessmentFeedbackSheet';
 
 export { useModal as useFeedbackModal };
+
+type HelpfulStepProps = {
+  t: TFunction;
+  onHelpful: (isHelpful: boolean) => void;
+};
+
+function HelpfulStep({ t, onHelpful }: HelpfulStepProps) {
+  return (
+    <View className="gap-4">
+      <Text className="text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
+        {t('assessment.feedback.helpful_question')}
+      </Text>
+      <View className="flex-row gap-3">
+        <Button
+          testID="feedback-helpful-yes"
+          variant="outline"
+          onPress={() => onHelpful(true)}
+          className="flex-1"
+        >
+          {t('assessment.feedback.yes')}
+        </Button>
+        <Button
+          testID="feedback-helpful-no"
+          variant="outline"
+          onPress={() => onHelpful(false)}
+          className="flex-1"
+        >
+          {t('assessment.feedback.no')}
+        </Button>
+      </View>
+    </View>
+  );
+}
+
+type ResolvedStepProps = {
+  t: TFunction;
+  onResolved: (value: FeedbackIssueResolved) => void;
+};
+
+function ResolvedStep({ t, onResolved }: ResolvedStepProps) {
+  return (
+    <View className="gap-4">
+      <Text className="text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
+        {t('assessment.feedback.resolved_question')}
+      </Text>
+      <View className="gap-3">
+        <Button
+          testID="feedback-resolved-yes"
+          variant="outline"
+          onPress={() => onResolved('yes')}
+        >
+          {t('assessment.feedback.resolved_yes')}
+        </Button>
+        <Button
+          testID="feedback-resolved-no"
+          variant="outline"
+          onPress={() => onResolved('no')}
+        >
+          {t('assessment.feedback.resolved_no')}
+        </Button>
+        <Button
+          testID="feedback-resolved-too-early"
+          variant="outline"
+          onPress={() => onResolved('too_early')}
+        >
+          {t('assessment.feedback.resolved_too_early')}
+        </Button>
+      </View>
+    </View>
+  );
+}
+
+type NotesStepProps = {
+  t: TFunction;
+  notes: string;
+  onChangeNotes: (value: string) => void;
+  onSkip: () => void;
+  onSubmit: () => void;
+};
+
+function NotesStep({
+  t,
+  notes,
+  onChangeNotes,
+  onSkip,
+  onSubmit,
+}: NotesStepProps) {
+  return (
+    <View className="gap-4">
+      <Text className="text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
+        {t('assessment.feedback.notes_question')}
+      </Text>
+      <Text className="text-sm text-charcoal-600 dark:text-neutral-400">
+        {t('assessment.feedback.notes_description')}
+      </Text>
+      <Input
+        testID="feedback-notes"
+        value={notes}
+        onChangeText={onChangeNotes}
+        placeholder={t('assessment.feedback.notes_placeholder')}
+        multiline
+        numberOfLines={4}
+        maxLength={500}
+      />
+      <Text className="text-xs text-charcoal-500 dark:text-neutral-500">
+        {notes.length}/500
+      </Text>
+      <View className="flex-row gap-3">
+        <Button
+          testID="feedback-skip"
+          variant="outline"
+          onPress={onSkip}
+          className="flex-1"
+        >
+          {t('assessment.feedback.skip')}
+        </Button>
+        <Button testID="feedback-submit" onPress={onSubmit} className="flex-1">
+          {t('assessment.feedback.submit')}
+        </Button>
+      </View>
+    </View>
+  );
+}
+
+type PrivacyNoteProps = {
+  t: TFunction;
+};
+
+function PrivacyNote({ t }: PrivacyNoteProps) {
+  return (
+    <Text className="text-center text-xs text-charcoal-500 dark:text-neutral-500">
+      {t('assessment.feedback.privacy_note')}
+    </Text>
+  );
+}

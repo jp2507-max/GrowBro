@@ -273,16 +273,130 @@ jest.mock('@sentry/react-native', () => {
 jest.mock('react-native-restart', () => ({ restart: jest.fn() }));
 
 // Mock WatermelonDB database to prevent model imports and decorator application
+type QueryCondition = {
+  key?: string;
+  value?: unknown;
+  $notEq?: unknown;
+  $sortBy?: { key: string; direction: 'asc' | 'desc' };
+  $take?: number;
+};
+
+const assessmentStore: any[] = [];
+
+const mapAssessmentField = (field: string): string => {
+  switch (field) {
+    case 'plant_id':
+      return 'plantId';
+    case 'user_id':
+      return 'userId';
+    case 'created_at':
+      return 'createdAt';
+    case 'updated_at':
+      return 'updatedAt';
+    case 'issue_resolved':
+      return 'issueResolved';
+    case 'status':
+      return 'status';
+    default:
+      return field;
+  }
+};
+
+const applyAssessmentConditions = (
+  conditions: QueryCondition[],
+  records: any[]
+) => {
+  let results = [...records];
+
+  for (const condition of conditions) {
+    if (condition.key && condition.value !== undefined) {
+      const propName = mapAssessmentField(condition.key);
+      results = results.filter(
+        (record) => record[propName] === condition.value
+      );
+    }
+    if (condition.key && condition.$notEq !== undefined) {
+      const propName = mapAssessmentField(condition.key);
+      results = results.filter(
+        (record) => record[propName] !== condition.$notEq
+      );
+    }
+    if (condition.$sortBy) {
+      const { key, direction } = condition.$sortBy;
+      const propName = mapAssessmentField(key);
+      results.sort((a, b) => {
+        const aVal = a[propName];
+        const bVal = b[propName];
+        const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+        return direction === 'desc' ? -cmp : cmp;
+      });
+    }
+    if (condition.$take) {
+      results = results.slice(0, condition.$take);
+    }
+  }
+
+  return results;
+};
+
+const createAssessmentRecord = async (cb: any) => {
+  const record: any = {
+    id: `assessment-${Date.now()}-${Math.random()}`,
+    _raw: {},
+  };
+  if (cb) await cb(record);
+  record.createdAt = record.createdAt ?? new Date();
+  record.updatedAt = record.updatedAt ?? new Date();
+  assessmentStore.push(record);
+  return record;
+};
+
+const createAssessmentQuery = (conditions: QueryCondition[]) => {
+  const execute = () => applyAssessmentConditions(conditions, assessmentStore);
+  return {
+    fetch: jest.fn().mockImplementation(async () => execute()),
+    fetchCount: jest.fn().mockImplementation(async () => execute().length),
+  };
+};
+
+const createAssessmentCollection = () => ({
+  create: jest.fn().mockImplementation(createAssessmentRecord),
+  query: jest.fn((...conditions: QueryCondition[]) =>
+    createAssessmentQuery(conditions)
+  ),
+  find: jest.fn().mockImplementation(async (id: string) => {
+    const record = assessmentStore.find((item) => item.id === id);
+    if (!record) {
+      throw new Error('Record not found');
+    }
+    return record;
+  }),
+});
+
+const createDefaultCollection = () => ({
+  create: jest.fn().mockResolvedValue({ id: 'mock-id' }),
+  query: jest.fn(() => ({
+    fetch: jest.fn().mockResolvedValue([]),
+    fetchCount: jest.fn().mockResolvedValue(0),
+  })),
+  find: jest.fn().mockResolvedValue({ id: 'mock-id' }),
+});
+
 jest.mock('@/lib/watermelon', () => ({
   database: {
-    get: jest.fn((_collectionName: string) => ({
-      create: jest.fn().mockResolvedValue({ id: 'mock-id' }),
-      query: jest.fn(() => ({
-        fetch: jest.fn().mockResolvedValue([]),
-      })),
-      find: jest.fn().mockResolvedValue({ id: 'mock-id' }),
-    })),
-    write: jest.fn().mockImplementation(async (fn: any) => fn()),
+    collections: {
+      get: jest.fn((collectionName: string) =>
+        collectionName === 'assessments'
+          ? createAssessmentCollection()
+          : createDefaultCollection()
+      ),
+    },
+    get: jest.fn((_collectionName: string) => createDefaultCollection()),
+    write: jest.fn().mockImplementation(async (fn: any) => {
+      // Clear store before each test
+      assessmentStore.length = 0;
+      return fn();
+    }),
   },
 }));
 

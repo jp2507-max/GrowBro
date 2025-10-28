@@ -159,45 +159,49 @@ export class CloudInferenceClient {
   ): Promise<{ storageUrl: string; signedUrl: string }> {
     const { body, contentType, storagePath } = prepared;
 
-    // NOTE: Offline retries will fail if we unconditionally use `upsert: false`.
-    // If an earlier attempt uploaded the same file successfully but the
-    // inference request later times out (for example the edge function
-    // times out), a queued retry that attempts to upload the same
-    // `assessmentId/photo.id` path will receive a 409 Conflict from
-    // Supabase and the retry will be marked as failed permanently.
-    //
-    // Two safe remediation options:
-    // 1) Use `upsert: true` here to make the upload idempotent so retries
-    //    can re-upload the same path without failing (recommended for
-    //    offline retry scenarios). This will overwrite any existing file
-    //    at the same path.
-    // 2) Keep `upsert: false` but treat a 409 response from Supabase as a
-    //    successful no-op (the file already exists), allowing the retry to
-    //    continue. This preserves the guarantee that existing files are not
-    //    overwritten but adds special-case handling for the 409 status.
-    //
-    // Current code keeps `upsert: false` to preserve previous behaviour,
-    // but either approach is acceptable depending on product/storage
-    // expectations. If you want offline retries to progress reliably,
-    // switch to `upsert: true` or handle 409 as success.
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    // NOTE: retries can hit 409 when `upsert: false`. Either enable
+    // `upsert` for idempotency or treat the 409 as success so queued
+    // uploads can continue. We keep the latter behaviour here.
+    const { data: uploadDataRaw, error: uploadError } = await supabase.storage
       .from(STORAGE_BUCKET)
       .upload(storagePath, body, {
         contentType,
         upsert: false,
       });
 
+    let uploadedPath = uploadDataRaw?.path ?? null;
+
     if (uploadError) {
+      // Check if file already exists (409 Conflict) - treat as success for retries
+      if (
+        typeof (uploadError as { statusCode?: string }).statusCode ===
+          'string' &&
+        (uploadError as { statusCode?: string }).statusCode === '409'
+      ) {
+        // File already exists, proceed with existing file
+        uploadedPath = storagePath;
+      } else {
+        throw this.createError({
+          code: 'UPLOAD_FAILED',
+          message: `Failed to upload image: ${uploadError.message}`,
+          category: 'network',
+          retryable: true,
+          details: {
+            photoId: photo.id,
+            error: uploadError,
+            assessmentId,
+          },
+        });
+      }
+    }
+
+    if (!uploadedPath) {
       throw this.createError({
         code: 'UPLOAD_FAILED',
-        message: `Failed to upload image: ${uploadError.message}`,
+        message: 'Upload succeeded without returning storage path',
         category: 'network',
         retryable: true,
-        details: {
-          photoId: photo.id,
-          error: uploadError,
-          assessmentId,
-        },
+        details: { photoId: photo.id, assessmentId },
       });
     }
 
@@ -216,7 +220,7 @@ export class CloudInferenceClient {
     }
 
     return {
-      storageUrl: uploadData.path,
+      storageUrl: uploadedPath,
       signedUrl: signedData.signedUrl,
     };
   }
@@ -244,13 +248,14 @@ export class CloudInferenceClient {
         }
       );
 
-      const abortPromise = new Promise<never>((_, reject) => {
-        controller.signal.addEventListener('abort', () => {
-          reject(new DOMException('Aborted', 'AbortError'));
-        });
-      });
-
-      const { data, error } = await Promise.race([fetchPromise, abortPromise]);
+      const { data, error } = await Promise.race([
+        fetchPromise,
+        new Promise<never>((_, reject) => {
+          controller.signal.addEventListener('abort', () => {
+            reject(new DOMException('Aborted', 'AbortError'));
+          });
+        }),
+      ]);
 
       if (error) {
         // Check if timeout

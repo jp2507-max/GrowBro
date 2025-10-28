@@ -14,6 +14,7 @@
 
 import { useRouter } from 'expo-router';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, View } from '@/components/ui';
 import type { AssessmentActionPlan } from '@/types/assessment';
@@ -36,6 +37,7 @@ export function ResultActionPanel({
   testID = 'result-action-panel',
 }: ResultActionPanelProps) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleViewHistory = React.useCallback(() => {
     // Navigate to plant profile with assessment history
@@ -55,7 +57,7 @@ export function ResultActionPanel({
       {/* Primary Actions */}
       {hasActionPlan && onCreateTasks && (
         <Button
-          label="Create Tasks"
+          label={t('assessment.result.createTasks')}
           onPress={onCreateTasks}
           variant="default"
           testID={`${testID}-create-tasks`}
@@ -64,7 +66,7 @@ export function ResultActionPanel({
 
       {onAskCommunity && (
         <Button
-          label="Ask Community"
+          label={t('assessment.result.askCommunity')}
           onPress={onAskCommunity}
           variant="outline"
           testID={`${testID}-ask-community`}
@@ -74,7 +76,7 @@ export function ResultActionPanel({
       {/* Secondary Actions */}
       <View className="flex-row gap-3">
         <Button
-          label="View History"
+          label={t('assessment.result.viewHistory')}
           onPress={handleViewHistory}
           variant="ghost"
           className="flex-1"
@@ -82,7 +84,7 @@ export function ResultActionPanel({
         />
         {onRetake && (
           <Button
-            label="Retake"
+            label={t('assessment.result.retake')}
             onPress={onRetake}
             variant="ghost"
             className="flex-1"

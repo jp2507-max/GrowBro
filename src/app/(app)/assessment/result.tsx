@@ -1,5 +1,6 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 
 import {
@@ -9,6 +10,7 @@ import {
 } from '@/components/assessment';
 import { Button, Text, View } from '@/components/ui';
 import { shouldShowCommunityCTA } from '@/lib/assessment/community-cta';
+import type { AssessmentSession } from '@/lib/assessment/current-assessment-store';
 import {
   clearAssessmentSession,
   getAssessmentSession,
@@ -66,6 +68,7 @@ export default function AssessmentResultScreen() {
   }, [qualityScores]);
 
   const handleRetake = React.useCallback(() => {
+    setShowRetakeModal(false);
     if (assessmentId && session?.plantContext?.id) {
       clearAssessmentSession(assessmentId);
       router.replace({
@@ -77,25 +80,74 @@ export default function AssessmentResultScreen() {
     }
   }, [assessmentId, router, session?.plantContext?.id]);
 
+  const handleOpenRetakeModal = React.useCallback(() => {
+    setShowRetakeModal(true);
+  }, []);
+
+  const handleCloseRetakeModal = React.useCallback(() => {
+    setShowRetakeModal(false);
+  }, []);
+
   const handleDismiss = React.useCallback(() => {
     router.replace('/');
   }, [router]);
 
   if (!assessmentId || !session) {
-    return (
-      <View className="flex-1 items-center justify-center bg-charcoal-950 px-6">
-        <Stack.Screen options={{ title: 'Assessment Result' }} />
-        <Text className="mb-6 text-center text-lg text-neutral-100">
-          Assessment data is no longer available.
-        </Text>
-        <Button label="Back to home" onPress={handleDismiss} />
-      </View>
-    );
+    return <MissingAssessmentSession onDismiss={handleDismiss} />;
   }
 
   const { result, plantContext } = session;
   const uncertain = shouldShowCommunityCTA(result);
   const confidencePercent = Math.round(result.calibratedConfidence * 100);
+
+  return (
+    <AssessmentResultLayout
+      assessmentId={assessmentId}
+      result={result}
+      plantContext={plantContext}
+      uncertain={uncertain}
+      confidencePercent={confidencePercent}
+      onRetake={handleRetake}
+      onOpenRetakeModal={handleOpenRetakeModal}
+      onCloseRetakeModal={handleCloseRetakeModal}
+      showRetakeModal={showRetakeModal}
+      retakeRecommended={retakeRecommended}
+      guidance={guidance}
+      qualityScores={qualityScores}
+    />
+  );
+}
+
+type AssessmentResultLayoutProps = {
+  assessmentId: string;
+  result: AssessmentResult;
+  plantContext: AssessmentSession['plantContext'];
+  uncertain: boolean;
+  confidencePercent: number;
+  onRetake: () => void;
+  onOpenRetakeModal: () => void;
+  onCloseRetakeModal: () => void;
+  showRetakeModal: boolean;
+  retakeRecommended: boolean;
+  guidance: ReturnType<typeof generateRetakeGuidance> | null;
+  qualityScores: QualityResult[];
+};
+
+function AssessmentResultLayout({
+  assessmentId,
+  result,
+  plantContext,
+  uncertain,
+  confidencePercent,
+  onRetake,
+  onOpenRetakeModal,
+  onCloseRetakeModal,
+  showRetakeModal,
+  retakeRecommended,
+  guidance,
+  qualityScores,
+}: AssessmentResultLayoutProps) {
+  const { t } = useTranslation();
 
   return (
     <>
@@ -109,7 +161,8 @@ export default function AssessmentResultScreen() {
             <UncertaintyResultCard
               assessment={result}
               assessmentId={assessmentId}
-              onRetake={handleRetake}
+              plantId={plantContext.id}
+              onRetake={onRetake}
             />
           ) : (
             <View className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
@@ -117,11 +170,11 @@ export default function AssessmentResultScreen() {
                 {result.topClass.name}
               </Text>
               <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-                Confidence: {confidencePercent}%
+                {t('assessment.result.confidence', { confidencePercent })}
               </Text>
               <Text className="mt-3 text-sm text-neutral-700 dark:text-neutral-300">
                 {result.topClass.description ||
-                  'No additional description available.'}
+                  t('assessment.result.noDescription')}
               </Text>
               <CommunityCTAButton
                 assessment={result}
@@ -130,8 +183,8 @@ export default function AssessmentResultScreen() {
               />
               <Button
                 className="mt-4"
-                label="Retake photos"
-                onPress={handleRetake}
+                label={t('assessment.result.retakePhotos')}
+                onPress={onRetake}
                 variant="outline"
               />
             </View>
@@ -139,31 +192,37 @@ export default function AssessmentResultScreen() {
 
           <View className="mt-6 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900">
             <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-              Assessment details
+              {t('assessment.result.details')}
             </Text>
             <Text className="mt-2 text-sm text-neutral-700 dark:text-neutral-300">
-              Model version: {result.modelVersion}
+              {t('assessment.result.modelVersion', {
+                modelVersion: result.modelVersion,
+              })}
             </Text>
             <Text className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
-              Processing time: {result.processingTimeMs} ms
+              {t('assessment.result.processingTime', {
+                processingTimeMs: result.processingTimeMs,
+              })}
             </Text>
             <Text className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
-              Plant ID: {plantContext.id || 'Unknown'}
+              {t('assessment.result.plantId', {
+                plantId: plantContext.id || t('assessment.result.unknown'),
+              })}
             </Text>
           </View>
 
           {retakeRecommended && guidance && (
             <View className="dark:bg-warning-950 mt-6 rounded-xl border border-warning-400 bg-warning-50 p-4 dark:border-warning-500">
               <Text className="text-lg font-semibold text-warning-900 dark:text-warning-100">
-                Photo quality could be improved
+                {t('assessment.result.photoQualityTitle')}
               </Text>
               <Text className="mt-1 text-sm text-warning-800 dark:text-warning-200">
                 {guidance.tips[0]}
               </Text>
               <Button
                 className="mt-4"
-                label="View photo tips"
-                onPress={() => setShowRetakeModal(true)}
+                label={t('assessment.result.viewPhotoTips')}
+                onPress={onOpenRetakeModal}
                 variant="outline"
               />
             </View>
@@ -173,11 +232,31 @@ export default function AssessmentResultScreen() {
 
       <RetakeGuidanceModal
         visible={showRetakeModal}
-        onClose={() => setShowRetakeModal(false)}
-        onRetake={handleRetake}
+        onClose={onCloseRetakeModal}
+        onRetake={onRetake}
         qualityScores={qualityScores}
         plantContext={plantContext}
       />
     </>
+  );
+}
+
+type MissingAssessmentSessionProps = {
+  onDismiss: () => void;
+};
+
+function MissingAssessmentSession({
+  onDismiss,
+}: MissingAssessmentSessionProps) {
+  const { t } = useTranslation();
+
+  return (
+    <View className="flex-1 items-center justify-center bg-charcoal-950 px-6">
+      <Stack.Screen options={{ title: 'Assessment Result' }} />
+      <Text className="mb-6 text-center text-lg text-neutral-100">
+        {t('assessment.result.dataUnavailable')}
+      </Text>
+      <Button label={t('assessment.result.backToHome')} onPress={onDismiss} />
+    </View>
   );
 }

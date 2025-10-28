@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import type { TFunction } from 'i18next';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { showMessage } from 'react-native-flash-message';
@@ -23,13 +24,14 @@ type CommunityCTAButtonProps = {
  */
 async function navigateToPostCreation(
   assessmentId: string,
-  assessment: AssessmentResult
+  assessment: AssessmentResult,
+  t: TFunction
 ): Promise<void> {
   const session = getAssessmentSession(assessmentId);
   if (!session) {
     showMessage({
-      message: 'Error',
-      description: 'Assessment data is no longer available.',
+      message: t('common.error'),
+      description: t('assessment.errors.sessionNotFound'),
       type: 'danger',
       duration: 3000,
     });
@@ -123,12 +125,12 @@ export function CommunityCTAButton({
       }
 
       // Navigate with prefilled data
-      await navigateToPostCreation(assessmentId, assessment);
+      await navigateToPostCreation(assessmentId, assessment, t);
     } catch (error) {
       console.error('Failed to navigate to community post:', error);
       showMessage({
-        message: 'Error',
-        description: 'Failed to prepare community post. Please try again.',
+        message: t('communityPost.errorTitle'),
+        description: t('communityPost.errorDescription'),
         type: 'danger',
         duration: 3000,
       });

@@ -184,24 +184,24 @@ describe('CloudInferenceClient', () => {
     });
   });
 
-  test('throws when invoke returns transport error', async () => {
-    functionsInvokeMock.mockResolvedValueOnce({
+  test('handles 409 conflict by treating as successful upload', async () => {
+    storageUploadMock.mockResolvedValueOnce({
       data: null,
-      error: { message: 'Edge function unavailable' },
-    });
+      error: { message: 'File already exists', statusCode: '409' },
+    } as any);
 
     const client = createClient();
 
-    await expect(
-      client.predict({
-        photos: mockPhotos,
-        plantContext: { id: 'plant-1' },
-        assessmentId: 'assessment-1',
-      })
-    ).rejects.toMatchObject({
-      code: 'EDGE_FUNCTION_ERROR',
-      message: 'Edge function unavailable',
-      retryable: true,
+    const result = await client.predict({
+      photos: mockPhotos,
+      plantContext: { id: 'plant-1' },
+      assessmentId: 'assessment-1',
+      modelVersion: 'v1.0.0',
     });
+
+    expect(result).toEqual(baseAssessmentResult);
+    expect(storageFromMock).toHaveBeenCalledWith('assessment-images');
+    expect(storageUploadMock).toHaveBeenCalledTimes(mockPhotos.length);
+    expect(storageCreateSignedUrlMock).toHaveBeenCalledTimes(mockPhotos.length);
   });
 });

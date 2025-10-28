@@ -11,6 +11,8 @@
 
 import { FlashList } from '@shopify/flash-list';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
+import { StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/ui';
 import type { AssessmentQueryResult } from '@/lib/assessment/assessment-queries';
@@ -31,6 +33,8 @@ export function AssessmentHistoryList({
   onAssessmentPress,
   testID,
 }: AssessmentHistoryListProps) {
+  const { t } = useTranslation();
+  const listTestID = testID ?? 'assessment-history-list';
   const [assessments, setAssessments] = React.useState<AssessmentQueryResult[]>(
     []
   );
@@ -52,7 +56,7 @@ export function AssessmentHistoryList({
       } catch (err) {
         if (mounted) {
           setError(
-            err instanceof Error ? err.message : 'Failed to load assessments'
+            err instanceof Error ? err.message : t('assessment.history.error')
           );
         }
       } finally {
@@ -67,7 +71,7 @@ export function AssessmentHistoryList({
     return () => {
       mounted = false;
     };
-  }, [plantId, limit]);
+  }, [plantId, limit, t]);
 
   const renderItem = React.useCallback(
     ({ item }: { item: AssessmentQueryResult }) => (
@@ -75,19 +79,19 @@ export function AssessmentHistoryList({
         <AssessmentHistoryCard
           assessment={item}
           onPress={onAssessmentPress}
-          testID={`${testID}-card-${item.id}`}
+          testID={`${listTestID}-card-${item.id}`}
         />
       </View>
     ),
-    [onAssessmentPress, testID]
+    [listTestID, onAssessmentPress]
   );
 
   const renderEmpty = React.useCallback(() => {
     if (loading) {
       return (
-        <View className="items-center py-8" testID={`${testID}-loading`}>
+        <View className="items-center py-8" testID={`${listTestID}-loading`}>
           <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-            Loading assessments...
+            {t('assessment.history.loading')}
           </Text>
         </View>
       );
@@ -95,25 +99,25 @@ export function AssessmentHistoryList({
 
     if (error) {
       return (
-        <View className="items-center py-8" testID={`${testID}-error`}>
+        <View className="items-center py-8" testID={`${listTestID}-error`}>
           <Text className="text-sm text-danger-600 dark:text-danger-400">
-            {error}
+            {error || t('assessment.history.error')}
           </Text>
         </View>
       );
     }
 
     return (
-      <View className="items-center py-8" testID={`${testID}-empty`}>
+      <View className="items-center py-8" testID={`${listTestID}-empty`}>
         <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-          No assessments yet
+          {t('assessment.history.empty')}
         </Text>
         <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
-          Use the AI assessment tool to analyze plant health
+          {t('assessment.history.emptyHint')}
         </Text>
       </View>
     );
-  }, [loading, error, testID]);
+  }, [loading, error, listTestID, t]);
 
   if (loading || error || assessments.length === 0) {
     return renderEmpty();
@@ -124,8 +128,14 @@ export function AssessmentHistoryList({
       data={assessments}
       renderItem={renderItem}
       keyExtractor={(item) => item.id}
-      testID={testID}
-      contentContainerStyle={{ paddingBottom: 16 }}
+      testID={listTestID}
+      contentContainerStyle={styles.contentContainer}
     />
   );
 }
+
+const styles = StyleSheet.create({
+  contentContainer: {
+    paddingBottom: 16,
+  },
+});

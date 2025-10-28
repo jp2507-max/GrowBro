@@ -5,15 +5,14 @@
  * Requirements: 2.1, 3.4, 7.1, 9.4
  */
 
+import { ActionPlanGenerator } from '@/lib/assessment/action-plan-generator';
+import { getAssessmentClass } from '@/lib/assessment/assessment-classes';
+import { calibrateMultiplePredictions } from '@/lib/assessment/confidence-calibration';
 import type {
   AssessmentPlantContext,
   AssessmentResult,
   CapturedPhoto,
 } from '@/types/assessment';
-
-import { ActionPlanGenerator } from '../../action-plan-generator';
-import { getAssessmentClass } from '../../assessment-classes';
-import { calibrateMultiplePredictions } from '../../confidence-calibration';
 
 // Mock quality assessment
 jest.mock('@/lib/quality/engine', () => ({

@@ -3,6 +3,8 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
+import { withRateLimit } from '../_shared/rate-limit.ts';
+
 /**
  * Recursively canonicalizes a value for consistent JSON serialization.
  * Sorts object keys recursively and preserves array structure.
@@ -151,12 +153,55 @@ async function parseAndValidatePayload(
   return { lastPulledAt, changes };
 }
 
+/**
+ * Count the number of tasks being created in a sync push
+ */
+function countTasksInChanges(changes: Record<string, unknown>): number {
+  try {
+    const tasks = changes?.tasks as Record<string, unknown> | undefined;
+    if (!tasks) return 0;
+
+    const created = tasks.created as unknown[] | undefined;
+    return Array.isArray(created) ? created.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
 async function applySyncPush(
   client: any,
   payload: { lastPulledAt: number | null; changes: Record<string, unknown> },
-  idemKey: string
+  idemKey: string,
+  userId: string,
+  corsHeaders: Record<string, string>
 ): Promise<Response> {
   const { lastPulledAt, changes } = payload;
+
+  // Check rate limit for tasks: 50 tasks per hour
+  // Count only new tasks being created
+  const taskCount = countTasksInChanges(changes);
+
+  if (taskCount > 0) {
+    const rateLimitResponse = await withRateLimit(
+      client,
+      userId,
+      {
+        endpoint: 'tasks',
+        limit: 50,
+        windowSeconds: 3600,
+        increment: taskCount, // Increment by batch size
+      },
+      corsHeaders
+    );
+
+    if (rateLimitResponse) {
+      console.log(
+        `[sync-push] Rate limit exceeded for user ${userId.slice(0, 8)}... (${taskCount} tasks)`
+      );
+      return rateLimitResponse;
+    }
+  }
+
   const { data, error } = await client.rpc('apply_sync_push', {
     last_pulled_at_ms: lastPulledAt ?? 0,
     changes,
@@ -241,9 +286,26 @@ async function performSync(params: {
     global: { headers: { Authorization: authHeader } },
   });
 
+  // Get user ID for rate limiting
+  const {
+    data: { user },
+    error: authError,
+  } = await client.auth.getUser();
+
+  if (authError || !user) {
+    return new Response(JSON.stringify({ error: 'Authentication failed' }), {
+      status: 401,
+      headers: {
+        'Content-Type': 'application/json',
+        'Idempotency-Key': idemKey,
+        ...corsHeaders,
+      },
+    });
+  }
+
   const parsed = await parseAndValidatePayload(req, idemKey);
   if (parsed instanceof Response) return parsed;
-  return await applySyncPush(client, parsed, idemKey);
+  return await applySyncPush(client, parsed, idemKey, user.id, corsHeaders);
 }
 
 async function handleSyncPush(req: Request): Promise<Response> {

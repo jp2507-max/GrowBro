@@ -50,10 +50,22 @@
         "status": "{{pendingCount}} ausstehend, {{processingCount}} in Bearbeitung"
       },
       "result": {
+        "backToHome": "Zurück zur Startseite",
+        "confidence": "Vertrauen: {{confidencePercent}}%",
+        "dataUnavailable": "Analyse-Daten sind nicht mehr verfügbar.",
+        "details": "Analyse-Details",
         "low_confidence": "Analyse abgeschlossen. Zu geringe Sicherheit zur Identifikation. Vertrauen {{confidence}} Prozent. {{count, plural, one {Ein Foto analysiert.} other {# Fotos analysiert.}}}",
         "mode_cloud": "in der Cloud",
         "mode_device": "auf dem Gerät",
-        "success": "Analyse abgeschlossen. {{className}} mit {{confidence}} Prozent Vertrauen erkannt. Analyse lief {{mode}}. {{count, plural, one {Ein Foto analysiert.} other {# Fotos analysiert.}}}"
+        "modelVersion": "Modell-Version: {{modelVersion}}",
+        "noDescription": "Keine zusätzliche Beschreibung verfügbar.",
+        "photoQualityTitle": "Foto-Qualität könnte verbessert werden",
+        "plantId": "Pflanzen-ID: {{plantId}}",
+        "processingTime": "Verarbeitungszeit: {{processingTimeMs}} ms",
+        "retakePhotos": "Fotos erneut aufnehmen",
+        "success": "Analyse abgeschlossen. {{className}} mit {{confidence}} Prozent Vertrauen erkannt. Analyse lief {{mode}}. {{count, plural, one {Ein Foto analysiert.} other {# Fotos analysiert.}}}",
+        "unknown": "Unbekannt",
+        "viewPhotoTips": "Foto-Tipps anzeigen"
       },
       "taxonomy": {
         "hint": "Doppeltippen, um visuelle Merkmale und Beschreibung anzuzeigen.",
@@ -103,6 +115,10 @@
       "share_update_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags."
     },
     "plants": {
+      "assessmentHistory": {
+        "empty": "Noch keine Bewertungen",
+        "emptyDescription": "Verwende das KI-Bewertungstool, um die Pflanzengesundheit zu analysieren"
+      },
       "error_card_hint": "Informiert, dass Pflanzen nicht geladen werden konnten.",
       "offline_banner_hint": "Zeigt gespeicherte Pflanzen im Offline-Modus an.",
       "open_detail_hint": "Öffnet die Pflanzendetails.",
@@ -292,7 +308,8 @@
       "wateringInstructions": "Bodenfeuchtigkeit und Bewässerungsplan überprüfen, um Über-/Unterwässerung auszuschließen"
     },
     "errors": {
-      "analysisFailed": "Wir konnten Ihre Fotos nicht analysieren. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut."
+      "analysisFailed": "Wir konnten Ihre Fotos nicht analysieren. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+      "photoStorageFailed": "Wir konnten Ihr Foto nicht speichern. Bitte überprüfen Sie Ihren Speicherplatz und versuchen Sie es erneut."
     },
     "feedback": {
       "helpful_question": "War diese Bewertung hilfreich?",
@@ -313,9 +330,24 @@
     },
     "lastUpdated": "Zuletzt aktualisiert: {{time}}",
     "loading": "Lädt...",
+    "playbook": {
+      "affects": "Betroffen: {{phases}}",
+      "applyAdjustment": "Anpassung anwenden",
+      "suggestedTimingAdjustment": "Vorgeschlagene Zeitplananpassung: {{sign}}{{count}} Tag",
+      "suggestedTimingAdjustment_plural": "Vorgeschlagene Zeitplananpassung: {{sign}}{{count}} Tage",
+      "suggestionCount": "{{count}} Vorschlag basierend auf Bewertung",
+      "suggestionCount_plural": "{{count}} Vorschläge basierend auf Bewertung",
+      "title": "Playbook-Anpassungen vorgeschlagen"
+    },
     "queue": {
       "retryError": "Fehler beim erneuten Versuch fehlgeschlagener Bewertungen. Bitte versuchen Sie es erneut.",
       "syncError": "Fehler beim Synchronisieren der Bewertungen. Bitte versuchen Sie es erneut."
+    },
+    "result": {
+      "askCommunity": "Community fragen",
+      "createTasks": "Aufgaben erstellen",
+      "retake": "Wiederholen",
+      "viewHistory": "Verlauf anzeigen"
     },
     "retake": {
       "cancel": "Abbrechen",
@@ -334,6 +366,16 @@
       "stalled": "Stecken geblieben"
     },
     "syncNow": "Jetzt synchronisieren",
+    "taskCreation": {
+      "createTasksButton": "Aufgaben erstellen",
+      "createTasks_one": "1 Aufgabe aus dieser Bewertung erstellen?",
+      "createTasks_other": "{{count}} Aufgaben aus dieser Bewertung erstellen?",
+      "creating": "Wird erstellt...",
+      "failed": "Aufgaben konnten nicht erstellt werden. Bitte versuche es erneut.",
+      "noTasks": "Keine Aufgaben aus diesem Maßnahmenplan zu erstellen.",
+      "tasksToCreate": "Zu erstellende Aufgaben:",
+      "title": "Aufgaben erstellen"
+    },
     "title": "Bewertungswarteschlange",
     "uncertainty": {
       "confidenceLabel": "KI-Konfidenz",
@@ -390,6 +432,7 @@
     "back": "Zurück",
     "cancel": "Abbrechen",
     "dismiss": "Schließen",
+    "error": "Fehler",
     "go_back": "Zurück",
     "loading": "Lädt...",
     "notSelected": "nicht ausgewählt",
@@ -504,6 +547,10 @@
     "view_author_profile_hint": "Doppeltippen, um das Profil dieses Benutzers zu öffnen.",
     "view_comments": "{{count}} Kommentare",
     "view_comments_hint": "Doppeltippen, um Kommentare zu diesem Beitrag anzuzeigen."
+  },
+  "communityPost": {
+    "errorDescription": "Community-Beitrag konnte nicht erstellt werden. Bitte versuche es erneut.",
+    "errorTitle": "Fehler"
   },
   "consent": {
     "accept_all": "Alle akzeptieren",
@@ -1658,6 +1705,14 @@
     "veg": "Vegetative Phase"
   },
   "plants": {
+    "assessmentHistory": {
+      "count_one": "{{count}} Bewertung",
+      "count_other": "{{count}} Bewertungen",
+      "count_zero": "Noch keine Bewertungen",
+      "empty": "Noch keine Bewertungen",
+      "emptyDescription": "Verwende das KI-Bewertungstool, um die Pflanzengesundheit zu analysieren",
+      "title": "Bewertungsverlauf"
+    },
     "empty_state": "Keine Pflanzen in deinem Inventar",
     "error": "Pflanzen konnten nicht geladen werden. Bitte erneut versuchen.",
     "no_results": "Keine Pflanzen gefunden",

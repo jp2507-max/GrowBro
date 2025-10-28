@@ -660,6 +660,30 @@ function buildInventoryMovementsCollection() {
   return col;
 }
 
+function buildAssessmentsCollection() {
+  const col = makeCollection();
+  const originalCreate = col.create.bind(col);
+  col.create = async (cb: any) => {
+    return originalCreate(async (rec: any) => {
+      rec.plantId = 'mock-plant-id';
+      rec.userId = 'mock-user-id';
+      rec.status = 'completed';
+      rec.inferenceMode = 'device';
+      rec.modelVersion = '1.0.0';
+      rec.consentedForTraining = false;
+      rec.images = [];
+      rec.integritySha256 = [];
+      rec.filenameKeys = [];
+      rec.plantContext = { id: 'mock-plant-id' };
+      rec.qualityScores = [];
+      rec.createdAt = new Date();
+      rec.updatedAt = new Date();
+      await cb?.(rec);
+    });
+  };
+  return col;
+}
+
 // Mock Database class
 class DatabaseMock {
   collections: Map<string, any> = new Map();
@@ -690,6 +714,7 @@ class DatabaseMock {
       'inventory_movements',
       buildInventoryMovementsCollection()
     );
+    this.collections.set('assessments', buildAssessmentsCollection());
   }
 
   write = jest

@@ -253,6 +253,7 @@ function PrivacyActions({
     updateConsent('analytics', false);
     updateConsent('personalizedData', false);
     updateConsent('sessionReplay', false);
+    updateConsent('aiModelImprovement', false);
   };
 
   const handleAcceptAll = (): void => {
@@ -260,6 +261,7 @@ function PrivacyActions({
     updateConsent('analytics', true);
     updateConsent('personalizedData', true);
     updateConsent('sessionReplay', true);
+    updateConsent('aiModelImprovement', true);
   };
 
   const handleDeleteAccount = (): void => {

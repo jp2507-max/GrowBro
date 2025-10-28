@@ -15,6 +15,7 @@ import { Pressable } from 'react-native';
 import { AssessmentHistoryList } from '@/components/assessment';
 import { Text, View } from '@/components/ui';
 import { getAssessmentCount } from '@/lib/assessment/assessment-queries';
+import { translate } from '@/lib/i18n';
 
 type PlantAssessmentHistorySectionProps = {
   plantId: string;
@@ -68,13 +69,19 @@ export function PlantAssessmentHistorySection({
       >
         <View className="flex-1">
           <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-            Assessment History
+            {translate('plants.assessmentHistory.title')}
           </Text>
           {count !== null && (
             <Text className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-400">
               {count === 0
-                ? 'No assessments yet'
-                : `${count} assessment${count === 1 ? '' : 's'}`}
+                ? translate('plants.assessmentHistory.count_zero')
+                : count === 1
+                  ? translate('plants.assessmentHistory.count_one', {
+                      count,
+                    })
+                  : translate('plants.assessmentHistory.count_other', {
+                      count,
+                    })}
             </Text>
           )}
         </View>
@@ -88,14 +95,14 @@ export function PlantAssessmentHistorySection({
           {count === 0 ? (
             <View className="items-center py-6">
               <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-                No assessments yet
+                {translate('plants.assessmentHistory.count_zero')}
               </Text>
               <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
-                Use the AI assessment tool to analyze plant health
+                {translate('plants.assessmentHistory.emptyDescription')}
               </Text>
             </View>
           ) : (
-            <View style={{ height: 300 }}>
+            <View className="h-[300px]">
               <AssessmentHistoryList
                 plantId={plantId}
                 testID={`${testID}-list`}

@@ -10,6 +10,7 @@
  */
 
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable } from 'react-native';
 
 import { Text, View } from '@/components/ui';
@@ -21,7 +22,7 @@ type PlaybookAdjustmentCardProps = {
   testID?: string;
 };
 
-function getImpactColor(impact: PlaybookAdjustment['impact']) {
+function getImpactColor(impact: PlaybookAdjustment['impact']): string {
   switch (impact) {
     case 'schedule':
       return 'text-primary-600 dark:text-primary-400';
@@ -36,7 +37,7 @@ function getImpactColor(impact: PlaybookAdjustment['impact']) {
   }
 }
 
-function getImpactLabel(impact: PlaybookAdjustment['impact']) {
+function getImpactLabel(impact: PlaybookAdjustment['impact']): string {
   switch (impact) {
     case 'schedule':
       return '📅 Schedule';
@@ -64,6 +65,8 @@ function PlaybookAdjustmentItem({
   onAccept,
   testID,
 }: PlaybookAdjustmentItemProps) {
+  const { t } = useTranslation();
+
   return (
     <View
       className="rounded-lg border border-neutral-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-900"
@@ -88,16 +91,18 @@ function PlaybookAdjustmentItem({
 
       {adjustment.suggestedDaysDelta !== undefined ? (
         <Text className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
-          Suggested timing adjustment:{' '}
-          {adjustment.suggestedDaysDelta > 0 ? '+' : ''}
-          {adjustment.suggestedDaysDelta} day
-          {Math.abs(adjustment.suggestedDaysDelta) === 1 ? '' : 's'}
+          {t('assessment.playbook.suggestedTimingAdjustment', {
+            sign: adjustment.suggestedDaysDelta > 0 ? '+' : '',
+            count: Math.abs(adjustment.suggestedDaysDelta),
+          })}
         </Text>
       ) : null}
 
       {adjustment.affectedPhases && adjustment.affectedPhases.length > 0 ? (
         <Text className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
-          Affects: {adjustment.affectedPhases.join(', ')}
+          {t('assessment.playbook.affects', {
+            phases: adjustment.affectedPhases.join(', '),
+          })}
         </Text>
       ) : null}
 
@@ -109,7 +114,7 @@ function PlaybookAdjustmentItem({
           testID={`${testID}-accept-${index}`}
         >
           <Text className="text-center text-sm font-medium text-white">
-            Apply Adjustment
+            {t('assessment.playbook.applyAdjustment')}
           </Text>
         </Pressable>
       ) : null}
@@ -122,6 +127,7 @@ export function PlaybookAdjustmentCard({
   onAccept,
   testID = 'playbook-adjustment-card',
 }: PlaybookAdjustmentCardProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = React.useState(false);
   const hasAdjustments = adjustments.length > 0;
 
@@ -144,11 +150,12 @@ export function PlaybookAdjustmentCard({
         <View className="flex-row items-center justify-between">
           <View className="flex-1">
             <Text className="text-base font-semibold text-primary-900 dark:text-primary-100">
-              Playbook Adjustments Suggested
+              {t('assessment.playbook.title')}
             </Text>
             <Text className="mt-0.5 text-sm text-primary-700 dark:text-primary-300">
-              {adjustments.length} suggestion
-              {adjustments.length === 1 ? '' : 's'} based on assessment
+              {t('assessment.playbook.suggestionCount', {
+                count: adjustments.length,
+              })}
             </Text>
           </View>
           <Text className="text-xl text-primary-600 dark:text-primary-400">

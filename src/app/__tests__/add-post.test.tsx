@@ -1,7 +1,11 @@
 import React from 'react';
 
 import AddPost from '@/app/feed/add-post';
-import type { AssessmentSession } from '@/lib/assessment/current-assessment-store';
+import { generateCommunityPostPrefill } from '@/lib/assessment/community-post-prefill';
+import {
+  type AssessmentSession,
+  getAssessmentSession,
+} from '@/lib/assessment/current-assessment-store';
 import { cleanup, render, screen, waitFor } from '@/lib/test-utils';
 
 const mockUseLocalSearchParams = jest.fn();
@@ -24,19 +28,10 @@ jest.mock('@/lib/assessment/current-assessment-store', () => ({
   getAssessmentSession: jest.fn(),
 }));
 
-const { generateCommunityPostPrefill } =
-  require('@/lib/assessment/community-post-prefill') as {
-    generateCommunityPostPrefill: jest.MockedFunction<
-      typeof import('@/lib/assessment/community-post-prefill').generateCommunityPostPrefill
-    >;
-  };
-
-const { getAssessmentSession } =
-  require('@/lib/assessment/current-assessment-store') as {
-    getAssessmentSession: jest.MockedFunction<
-      typeof import('@/lib/assessment/current-assessment-store').getAssessmentSession
-    >;
-  };
+const generateCommunityPostPrefillMock = jest.mocked(
+  generateCommunityPostPrefill
+);
+const getAssessmentSessionMock = jest.mocked(getAssessmentSession);
 
 describe('AddPost screen assessment prefill', () => {
   const originalConsoleWarn = console.warn;
@@ -46,7 +41,8 @@ describe('AddPost screen assessment prefill', () => {
     mutateMock.mockReset();
     mockUseLocalSearchParams.mockReset();
     mockUseLocalSearchParams.mockReturnValue({});
-    getAssessmentSession.mockReset();
+    generateCommunityPostPrefillMock.mockReset();
+    getAssessmentSessionMock.mockReset();
     console.warn = jest.fn();
   });
 
@@ -77,7 +73,7 @@ describe('AddPost screen assessment prefill', () => {
     render(<AddPost />);
 
     await screen.findByDisplayValue(title);
-    expect(generateCommunityPostPrefill).not.toHaveBeenCalled();
+    expect(generateCommunityPostPrefillMock).not.toHaveBeenCalled();
 
     const bodyInput = await screen.findByDisplayValue(
       /Lower leaves are turning yellow/
@@ -128,9 +124,9 @@ describe('AddPost screen assessment prefill', () => {
       createdAt: Date.now(),
     };
 
-    getAssessmentSession.mockReturnValue(mockedSession);
+    getAssessmentSessionMock.mockReturnValue(mockedSession);
 
-    generateCommunityPostPrefill.mockResolvedValue({
+    generateCommunityPostPrefillMock.mockResolvedValue({
       title: 'Assessment fallback post',
       body: 'Generated body from fallback prefill.',
       images: [
@@ -147,9 +143,9 @@ describe('AddPost screen assessment prefill', () => {
     render(<AddPost />);
 
     await waitFor(() =>
-      expect(generateCommunityPostPrefill).toHaveBeenCalled()
+      expect(generateCommunityPostPrefillMock).toHaveBeenCalled()
     );
-    expect(generateCommunityPostPrefill).toHaveBeenCalledWith({
+    expect(generateCommunityPostPrefillMock).toHaveBeenCalledWith({
       assessment: mockedSession.result,
       assessmentId,
       plantContext: mockedSession.plantContext,

@@ -8,12 +8,11 @@
  * - 9.1: Track task creation rates
  */
 
+import { trackTaskCreation } from '@/lib/assessment/action-tracking';
+import { handleTaskCreation } from '@/lib/assessment/task-creation-handler';
+import { createTasksFromActionPlan } from '@/lib/assessment/task-integration';
 import { createTask } from '@/lib/task-manager';
 import type { AssessmentResult } from '@/types/assessment';
-
-import { trackTaskCreation } from '../../action-tracking';
-import { handleTaskCreation } from '../../task-creation-handler';
-import { createTasksFromActionPlan } from '../../task-integration';
 
 // Mock dependencies
 jest.mock('@/lib/task-manager', () => ({

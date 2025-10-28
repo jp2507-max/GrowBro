@@ -20,7 +20,7 @@ type QueueStatusSheetProps = {
 export function QueueStatusSheet({
   onClose,
   status: statusProp,
-}: QueueStatusSheetProps) {
+}: QueueStatusSheetProps): React.ReactElement {
   const [status, setStatus] = React.useState<QueueStatus | null>(
     statusProp ?? null
   );
@@ -28,7 +28,7 @@ export function QueueStatusSheet({
   const [isSyncing, setIsSyncing] = React.useState(false);
   const isControlled = statusProp !== undefined;
 
-  const loadStatus = React.useCallback(async () => {
+  const loadStatus = React.useCallback(async (): Promise<void> => {
     try {
       const queueStatus = await offlineQueueManager.getQueueStatus();
       setStatus(queueStatus);
@@ -55,7 +55,7 @@ export function QueueStatusSheet({
     };
   }, [isControlled, loadStatus, statusProp]);
 
-  const handleRetryFailed = async () => {
+  const handleRetryFailed = async (): Promise<void> => {
     setIsRetrying(true);
     try {
       await offlineQueueManager.retryFailed();
@@ -72,7 +72,7 @@ export function QueueStatusSheet({
     }
   };
 
-  const handleSyncNow = async () => {
+  const handleSyncNow = async (): Promise<void> => {
     setIsSyncing(true);
     try {
       await triggerSync();
@@ -92,7 +92,11 @@ export function QueueStatusSheet({
   if (!status) {
     return (
       <View className="p-4">
-        <Text tx="assessment.loading" className="text-neutral-500" />
+        <Text
+          tx="assessment.loading"
+          className="text-neutral-500"
+          testID="queue-status.loading"
+        />
       </View>
     );
   }
@@ -103,6 +107,7 @@ export function QueueStatusSheet({
         <Text
           tx="assessment.title"
           className="text-xl font-bold text-neutral-900 dark:text-neutral-100"
+          testID="queue-status.title"
         />
       </View>
 
@@ -124,6 +129,7 @@ export function QueueStatusSheet({
             time: new Date(status.lastUpdated).toLocaleTimeString(),
           }}
           className="mt-4 text-xs text-neutral-500"
+          testID="queue-status.last-updated"
         />
       )}
     </View>
@@ -131,12 +137,13 @@ export function QueueStatusSheet({
 }
 
 type StatusRowProps = {
+  id: string;
   tx: TxKeyPath;
   count: number;
   color: 'primary' | 'success' | 'warning' | 'danger';
 };
 
-function StatusRow({ tx, count, color }: StatusRowProps) {
+function StatusRow({ id, tx, count, color }: StatusRowProps) {
   const colorClasses = {
     primary:
       'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300',
@@ -149,7 +156,10 @@ function StatusRow({ tx, count, color }: StatusRowProps) {
   };
 
   return (
-    <View className="flex-row items-center justify-between rounded-lg bg-neutral-100 p-3 dark:bg-neutral-800">
+    <View
+      className="flex-row items-center justify-between rounded-lg bg-neutral-100 p-3 dark:bg-neutral-800"
+      testID={`queue-status-row-${id}`}
+    >
       <Text
         tx={tx}
         className="font-medium text-neutral-900 dark:text-neutral-100"
@@ -164,21 +174,25 @@ function StatusRow({ tx, count, color }: StatusRowProps) {
 function StatusBreakdown({ status }: { status: QueueStatus }) {
   const rows: StatusRowProps[] = [
     {
+      id: 'pending',
       tx: 'assessment.status.pending' as TxKeyPath,
       count: status.pending,
       color: 'warning',
     },
     {
+      id: 'processing',
       tx: 'assessment.status.processing' as TxKeyPath,
       count: status.processing,
       color: 'primary',
     },
     {
+      id: 'completed',
       tx: 'assessment.status.completed' as TxKeyPath,
       count: status.completed,
       color: 'success',
     },
     {
+      id: 'failed',
       tx: 'assessment.status.failed' as TxKeyPath,
       count: status.failed,
       color: 'danger',
@@ -187,6 +201,7 @@ function StatusBreakdown({ status }: { status: QueueStatus }) {
 
   if (typeof status.stalled === 'number' && status.stalled > 0) {
     rows.push({
+      id: 'stalled',
       tx: 'assessment.status.stalled' as TxKeyPath,
       count: status.stalled,
       color: 'danger',
@@ -196,7 +211,7 @@ function StatusBreakdown({ status }: { status: QueueStatus }) {
   return (
     <View className="mb-6 gap-3">
       {rows.map((row) => (
-        <StatusRow key={row.tx} {...row} />
+        <StatusRow key={row.id} {...row} />
       ))}
     </View>
   );

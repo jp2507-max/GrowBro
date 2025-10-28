@@ -67,7 +67,7 @@ export function VisionCameraCapture({
     } finally {
       setIsCapturing(false);
     }
-  }, [isCapturing, onPhotoCapture]);
+  }, [isCapturing, onError, onPhotoCapture]);
 
   if (!device) {
     return (
