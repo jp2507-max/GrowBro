@@ -146,11 +146,17 @@ async function runCloudInference(
   const cloudClient = getCloudInferenceClient();
 
   try {
+    // TODO: Enforce remaining timeout when falling back to cloud
+    // runInference computes remainingMs before calling runCloudInference,
+    // but CloudInferenceClient.predict always uses hard-coded CLOUD_INFERENCE_TIMEOUT_MS = 8000.
+    // If device inference consumed time, cloud call can exceed MODEL_CONFIG.HARD_TIMEOUT_MS.
+    // Forward remaining deadline to cloud client and cancel early when budget expires.
     const result = await cloudClient.predict({
       photos,
       plantContext: options.plantContext,
       assessmentId: options.assessmentId,
       modelVersion: options.modelVersion,
+      idempotencyKey: options.idempotencyKey,
     });
 
     return result;

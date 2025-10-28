@@ -251,15 +251,19 @@ export default function AddPost(): React.JSX.Element {
                 {translateDynamic('feed.prefilledImages')}
               </Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {attachments.map((image) => (
+                {attachments.map((image, index) => (
                   <Image
                     key={image.filename}
                     accessibilityIgnoresInvertColors
-                    accessibilityLabel={image.filename || 'attachment image'}
+                    accessibilityLabel={
+                      image.filename ||
+                      translateDynamic('feed.attachmentImageFallback')
+                    }
                     accessibilityHint={translateDynamic(
                       'feed.attachmentImageHint'
                     )}
                     accessibilityRole="image"
+                    testID={`attachment-image-${image.filename || index}`}
                     className="mr-3 rounded-xl"
                     source={{ uri: image.uri }}
                     style={styles.attachmentImage}

@@ -115,12 +115,14 @@ export function VisionCameraCapture({
           accessibilityHint={t('assessment.camera.actions.captureHint')}
         >
           {isCapturing ? (
-            <ActivityIndicator
-              size="small"
-              color={colors.black}
+            <View
+              accessible={true}
               accessibilityLabel={t('assessment.camera.status.capturing')}
               accessibilityHint={t('assessment.camera.status.capturingHint')}
-            />
+              accessibilityRole="progressbar"
+            >
+              <ActivityIndicator size="small" color={colors.black} />
+            </View>
           ) : (
             <View className="size-16 rounded-full border-4 border-charcoal-950 bg-neutral-100" />
           )}

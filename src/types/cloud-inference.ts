@@ -66,4 +66,5 @@ export type CloudInferencePredictOptions = {
   plantContext: AssessmentPlantContext;
   assessmentId: string;
   modelVersion?: string;
+  idempotencyKey?: string;
 };

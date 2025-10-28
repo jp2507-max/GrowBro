@@ -5,14 +5,18 @@ import { z } from 'zod';
 import { client } from '../common';
 import type { Post } from './types';
 
-export const attachmentInputSchema = z.object({
-  id: z.string().optional(),
-  filename: z.string(),
-  uri: z.string().optional(),
-  mimeType: z.string().optional(),
-  size: z.number().optional(),
-  metadata: z.record(z.unknown()).optional(),
-});
+export const attachmentInputSchema = z
+  .object({
+    id: z.string().optional(),
+    filename: z.string(),
+    uri: z.string().optional(),
+    mimeType: z.string().optional(),
+    size: z.number().optional(),
+    metadata: z.record(z.unknown()).optional(),
+  })
+  .refine((obj) => Boolean(obj.id || obj.uri), {
+    message: 'Either id or uri must be provided',
+  });
 
 // Derive TypeScript type from schema for single source of truth
 export type AttachmentInput = z.infer<typeof attachmentInputSchema>;

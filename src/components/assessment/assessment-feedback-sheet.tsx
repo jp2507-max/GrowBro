@@ -42,7 +42,7 @@ export const AssessmentFeedbackSheet: React.ForwardRefExoticComponent<
       useState<FeedbackIssueResolved | null>(null);
     const [notes, setNotes] = useState('');
 
-    const handleHelpfulResponse = (isHelpful: boolean) => {
+    const handleHelpfulResponse = (isHelpful: boolean): void => {
       setHelpful(isHelpful);
       if (isHelpful) {
         setStep('resolved');
@@ -51,12 +51,12 @@ export const AssessmentFeedbackSheet: React.ForwardRefExoticComponent<
       }
     };
 
-    const handleResolvedResponse = (resolved: FeedbackIssueResolved) => {
+    const handleResolvedResponse = (resolved: FeedbackIssueResolved): void => {
       setIssueResolved(resolved);
       setStep('notes');
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = (): void => {
       if (helpful === null) return;
 
       const feedback: AssessmentFeedbackData = {
@@ -70,7 +70,7 @@ export const AssessmentFeedbackSheet: React.ForwardRefExoticComponent<
       handleClose();
     };
 
-    const handleClose = () => {
+    const handleClose = (): void => {
       // Dismiss the sheet then reset local state
       internalRef.current?.dismiss?.();
       setStep('helpful');

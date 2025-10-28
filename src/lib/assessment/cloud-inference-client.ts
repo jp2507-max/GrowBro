@@ -33,19 +33,20 @@ export class CloudInferenceClient {
   async predict(
     options: CloudInferencePredictOptions
   ): Promise<AssessmentResult> {
-    const { photos, plantContext, assessmentId, modelVersion } = options;
+    const { photos, plantContext, assessmentId, modelVersion, idempotencyKey } =
+      options;
     const startTime = Date.now();
 
     try {
-      // Generate idempotency key
-      const idempotencyKey = uuidv4();
+      // Use provided idempotency key or generate new one
+      const requestIdempotencyKey = idempotencyKey || uuidv4();
 
       // Upload images to storage and get signed URLs
       const uploadedImages = await this.uploadImages(photos, assessmentId);
 
       // Build request payload
       const request: CloudInferenceRequest = {
-        idempotencyKey,
+        idempotencyKey: requestIdempotencyKey,
         assessmentId,
         modelVersion,
         images: uploadedImages.map((img) => ({
@@ -59,7 +60,10 @@ export class CloudInferenceClient {
       };
 
       // Call Edge Function
-      const response = await this.callEdgeFunction(request, idempotencyKey);
+      const response = await this.callEdgeFunction(
+        request,
+        requestIdempotencyKey
+      );
 
       if (!response.success || !response.result) {
         throw this.createError({

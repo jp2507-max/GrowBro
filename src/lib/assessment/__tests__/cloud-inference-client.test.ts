@@ -184,6 +184,27 @@ describe('CloudInferenceClient', () => {
     });
   });
 
+  test('uses provided idempotency key instead of generating new one', async () => {
+    const client = createClient();
+    const providedIdempotencyKey = 'custom-idempotency-key-123';
+
+    await client.predict({
+      photos: mockPhotos,
+      plantContext: { id: 'plant-1' },
+      assessmentId: 'assessment-1',
+      modelVersion: 'v1.0.0',
+      idempotencyKey: providedIdempotencyKey,
+    });
+
+    expect(functionsInvokeMock).toHaveBeenCalledTimes(1);
+    const mockCall = functionsInvokeMock.mock.calls[0] as [string, any];
+    const [functionName, invokeArgs] = mockCall;
+    expect(functionName).toBe('ai-inference');
+    expect(invokeArgs.headers['X-Idempotency-Key']).toBe(
+      providedIdempotencyKey
+    );
+  });
+
   test('handles 409 conflict by treating as successful upload', async () => {
     storageUploadMock.mockResolvedValueOnce({
       data: null,
