@@ -281,7 +281,8 @@
         "whiteBalance": "Die Farbtemperatur ist nicht korrekt. Verwenden Sie neutrale Beleuchtung ohne starke Farbstiche."
       },
       "status": {
-        "capturing": "Foto wird aufgenommen…"
+        "capturing": "Foto wird aufgenommen…",
+        "capturingHint": "Foto wird aufgenommen, bitte warten"
       },
       "useAlternative": "Alternative verwenden"
     },
@@ -333,6 +334,12 @@
     "playbook": {
       "affects": "Betroffen: {{phases}}",
       "applyAdjustment": "Anpassung anwenden",
+      "impact": {
+        "instructions": "📝 Anweisungen",
+        "priority": "⚡ Priorität",
+        "resource": "🔧 Ressource",
+        "schedule": "📅 Zeitplan"
+      },
       "suggestedTimingAdjustment": "Vorgeschlagene Zeitplananpassung: {{sign}}{{count}} Tag",
       "suggestedTimingAdjustment_plural": "Vorgeschlagene Zeitplananpassung: {{sign}}{{count}} Tage",
       "suggestionCount": "{{count}} Vorschlag basierend auf Bewertung",

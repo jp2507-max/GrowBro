@@ -7,7 +7,7 @@ import { Image, ScrollView, StyleSheet } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 import { z } from 'zod';
 
-import { useAddPost } from '@/api';
+import { type AttachmentInput, useAddPost } from '@/api';
 import {
   Button,
   ControlledInput,
@@ -27,12 +27,12 @@ const schema = z.object({
 
 type FormType = z.infer<typeof schema>;
 
-type PrefillImage = { uri: string; filename: string };
+type PrefillImage = Pick<AttachmentInput, 'uri' | 'filename'>;
 
 type PrefillHookOptions = {
   params: ReturnType<typeof useLocalSearchParams>;
   setValue: UseFormSetValue<FormType>;
-  setAttachments: React.Dispatch<React.SetStateAction<PrefillImage[]>>;
+  setAttachments: React.Dispatch<React.SetStateAction<AttachmentInput[]>>;
   setSourceAssessmentId: React.Dispatch<
     React.SetStateAction<string | undefined>
   >;
@@ -47,7 +47,7 @@ ${translateDynamic('assessment.community.ctaHint')}`;
 
 function parsePrefillImages(
   value: string | string[] | undefined
-): PrefillImage[] | null {
+): AttachmentInput[] | null {
   if (typeof value !== 'string') {
     return null;
   }
@@ -59,7 +59,7 @@ function parsePrefillImages(
     }
 
     return parsed.filter(
-      (item): item is PrefillImage =>
+      (item): item is AttachmentInput =>
         typeof item?.uri === 'string' && typeof item?.filename === 'string'
     );
   } catch (error) {
@@ -153,9 +153,7 @@ export default function AddPost() {
   });
   const { mutate: addPost, isPending } = useAddPost();
 
-  const [attachments, setAttachments] = React.useState<
-    { uri: string; filename: string }[]
-  >([]);
+  const [attachments, setAttachments] = React.useState<AttachmentInput[]>([]);
   const [sourceAssessmentId, setSourceAssessmentId] = React.useState<string>();
 
   useAssessmentPrefill({

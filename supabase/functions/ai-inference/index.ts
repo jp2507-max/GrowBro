@@ -12,7 +12,11 @@ const corsHeaders: Record<string, string> = {
     'Content-Type, Authorization, X-Idempotency-Key',
 };
 
-const INFERENCE_SERVICE_URL = Deno.env.get('INFERENCE_SERVICE_URL') || '';
+const INFERENCE_SERVICE_URL = Deno.env.get('INFERENCE_SERVICE_URL');
+
+if (!INFERENCE_SERVICE_URL) {
+  throw new Error('INFERENCE_SERVICE_URL environment variable is required');
+}
 const INFERENCE_TIMEOUT_MS = 5000; // 5s p95 target
 
 interface CloudInferenceImage {

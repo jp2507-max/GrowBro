@@ -281,9 +281,30 @@ type QueryCondition = {
   $take?: number;
 };
 
-const assessmentStore: any[] = [];
+interface Assessment {
+  id: string;
+  plantId?: string;
+  userId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  issueResolved?: boolean;
+  status?: string;
+  _raw?: any;
+}
 
-const mapAssessmentField = (field: string): string => {
+type AssessmentSourceFields =
+  | 'plant_id'
+  | 'user_id'
+  | 'created_at'
+  | 'updated_at'
+  | 'issue_resolved'
+  | 'status';
+
+const assessmentStore: Assessment[] = [];
+
+const mapAssessmentField = (
+  field: AssessmentSourceFields | string
+): keyof Assessment | string => {
   switch (field) {
     case 'plant_id':
       return 'plantId';
@@ -304,9 +325,9 @@ const mapAssessmentField = (field: string): string => {
 
 const applyAssessmentConditions = (
   conditions: QueryCondition[],
-  records: any[]
-) => {
-  let results = [...records];
+  records: Assessment[]
+): Assessment[] => {
+  let results: Assessment[] = [...records];
 
   for (const condition of conditions) {
     if (condition.key && condition.value !== undefined) {
@@ -339,19 +360,42 @@ const applyAssessmentConditions = (
   return results;
 };
 
-const createAssessmentRecord = async (cb: any) => {
-  const record: any = {
+const createAssessmentRecord = async (cb: any): Promise<Assessment> => {
+  const now = new Date();
+  const record: Assessment = {
     id: `assessment-${Date.now()}-${Math.random()}`,
+    createdAt: now,
+    updatedAt: now,
     _raw: {},
   };
   if (cb) await cb(record);
-  record.createdAt = record.createdAt ?? new Date();
-  record.updatedAt = record.updatedAt ?? new Date();
+  record.createdAt = record.createdAt ?? now;
+  record.updatedAt = record.updatedAt ?? now;
   assessmentStore.push(record);
   return record;
 };
 
-const createAssessmentQuery = (conditions: QueryCondition[]) => {
+// Mock interfaces for WatermelonDB collection and query types
+interface MockQuery {
+  fetch: jest.MockedFunction<() => Promise<Assessment[]>>;
+  fetchCount: jest.MockedFunction<() => Promise<number>>;
+}
+
+interface MockCollection {
+  create: jest.MockedFunction<
+    (cb?: (record: Assessment) => Promise<void> | void) => Promise<Assessment>
+  >;
+  query: jest.MockedFunction<(...conditions: QueryCondition[]) => MockQuery>;
+  find: jest.MockedFunction<(id: string) => Promise<Assessment>>;
+}
+
+interface MockDefaultCollection {
+  create: jest.MockedFunction<() => Promise<{ id: string }>>;
+  query: jest.MockedFunction<() => MockQuery>;
+  find: jest.MockedFunction<() => Promise<{ id: string }>>;
+}
+
+const createAssessmentQuery = (conditions: QueryCondition[]): MockQuery => {
   const execute = () => applyAssessmentConditions(conditions, assessmentStore);
   return {
     fetch: jest.fn().mockImplementation(async () => execute()),
@@ -359,7 +403,7 @@ const createAssessmentQuery = (conditions: QueryCondition[]) => {
   };
 };
 
-const createAssessmentCollection = () => ({
+const createAssessmentCollection = (): MockCollection => ({
   create: jest.fn().mockImplementation(createAssessmentRecord),
   query: jest.fn((...conditions: QueryCondition[]) =>
     createAssessmentQuery(conditions)
@@ -373,7 +417,7 @@ const createAssessmentCollection = () => ({
   }),
 });
 
-const createDefaultCollection = () => ({
+const createDefaultCollection = (): MockDefaultCollection => ({
   create: jest.fn().mockResolvedValue({ id: 'mock-id' }),
   query: jest.fn(() => ({
     fetch: jest.fn().mockResolvedValue([]),

@@ -86,7 +86,7 @@ Deno.serve(async (req: Request) => {
     const images = assessment.images as string[];
     if (images && images.length > 0) {
       const { error: storageError } = await supabaseClient.storage
-        .from('assessments')
+        .from('assessment-images')
         .remove(images);
 
       if (storageError) {

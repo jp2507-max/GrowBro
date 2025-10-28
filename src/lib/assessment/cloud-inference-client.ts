@@ -248,14 +248,7 @@ export class CloudInferenceClient {
         }
       );
 
-      const { data, error } = await Promise.race([
-        fetchPromise,
-        new Promise<never>((_, reject) => {
-          controller.signal.addEventListener('abort', () => {
-            reject(new DOMException('Aborted', 'AbortError'));
-          });
-        }),
-      ]);
+      const { data, error } = await fetchPromise;
 
       if (error) {
         // Check if timeout

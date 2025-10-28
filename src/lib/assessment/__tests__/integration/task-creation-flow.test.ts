@@ -19,7 +19,7 @@ jest.mock('@/lib/task-manager', () => ({
   createTask: jest.fn(),
 }));
 
-jest.mock('../../action-tracking', () => ({
+jest.mock('@/lib/action-tracking', () => ({
   trackTaskCreation: jest.fn(),
 }));
 

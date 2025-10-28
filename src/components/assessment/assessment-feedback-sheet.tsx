@@ -6,8 +6,7 @@ import { Text, View } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal, useModal } from '@/components/ui/modal';
-
-export type FeedbackIssueResolved = 'yes' | 'no' | 'too_early';
+import type { FeedbackIssueResolved } from '@/lib/watermelon-models/assessment-feedback';
 
 export type AssessmentFeedbackData = {
   helpful: boolean;

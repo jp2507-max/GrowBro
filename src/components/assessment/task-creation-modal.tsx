@@ -61,14 +61,14 @@ export function TaskCreationModal({
   const taskLabels = React.useMemo(() => {
     const immediateTasks = actionPlan.immediateSteps
       .filter((step) => step.taskTemplate)
-      .map((step, index) => ({
-        id: `immediate-${index}`,
+      .map((step) => ({
+        id: `immediate-${step.title}|${step.description}`,
         label: step.taskTemplate?.name ?? step.title,
       }));
     const shortTermTasks = actionPlan.shortTermActions
       .filter((step) => step.taskTemplate)
-      .map((step, index) => ({
-        id: `shortterm-${index}`,
+      .map((step) => ({
+        id: `shortterm-${step.title}|${step.description}`,
         label: step.taskTemplate?.name ?? step.title,
       }));
     return [...immediateTasks, ...shortTermTasks];

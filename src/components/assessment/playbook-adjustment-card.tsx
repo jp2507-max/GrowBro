@@ -9,6 +9,7 @@
  * - 9.1: Track playbook adjustment rates for analytics
  */
 
+import type { TFunction } from 'i18next';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable } from 'react-native';
@@ -37,16 +38,19 @@ function getImpactColor(impact: PlaybookAdjustment['impact']): string {
   }
 }
 
-function getImpactLabel(impact: PlaybookAdjustment['impact']): string {
+function getImpactLabel(
+  impact: PlaybookAdjustment['impact'],
+  t: TFunction
+): string {
   switch (impact) {
     case 'schedule':
-      return '📅 Schedule';
+      return t('assessment.playbook.impact.schedule');
     case 'resource':
-      return '🔧 Resource';
+      return t('assessment.playbook.impact.resource');
     case 'instructions':
-      return '📝 Instructions';
+      return t('assessment.playbook.impact.instructions');
     case 'priority':
-      return '⚡ Priority';
+      return t('assessment.playbook.impact.priority');
     default:
       return impact;
   }
@@ -80,7 +84,7 @@ function PlaybookAdjustmentItem({
           <Text
             className={`mt-1 text-xs font-medium ${getImpactColor(adjustment.impact)}`}
           >
-            {getImpactLabel(adjustment.impact)}
+            {getImpactLabel(adjustment.impact, t)}
           </Text>
         </View>
       </View>

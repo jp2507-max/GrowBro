@@ -1,10 +1,11 @@
-import { useCallback, useRef, useState } from 'react';
+import { type JSX, useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 import { Camera, useCameraDevice } from 'react-native-vision-camera';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Button, Text, View } from '@/components/ui';
+import { colors } from '@/components/ui/colors';
 import { stripExifData } from '@/lib/assessment/image-processing';
 import { useCameraLifecycle } from '@/lib/assessment/use-camera-lifecycle';
 import { qualityAssessmentEngine } from '@/lib/quality/engine';
@@ -30,7 +31,7 @@ export function VisionCameraCapture({
   photoCount,
   maxPhotos,
   onError,
-}: VisionCameraCaptureProps) {
+}: VisionCameraCaptureProps): JSX.Element {
   const { t } = useTranslation();
   const camera = useRef<Camera>(null);
   const device = useCameraDevice('back');
@@ -72,7 +73,7 @@ export function VisionCameraCapture({
   if (!device) {
     return (
       <View className="flex-1 items-center justify-center bg-charcoal-950">
-        <ActivityIndicator size="large" color="#fff" />
+        <ActivityIndicator size="large" color={colors.white} />
         <Text className="mt-4 text-neutral-300">
           {t('assessment.camera.errors.cameraFailed')}
         </Text>
@@ -104,7 +105,7 @@ export function VisionCameraCapture({
           className="size-20 rounded-full bg-neutral-100"
         >
           {isCapturing ? (
-            <ActivityIndicator size="small" color="#000" />
+            <ActivityIndicator size="small" color={colors.black} />
           ) : (
             <View className="size-16 rounded-full border-4 border-charcoal-950 bg-neutral-100" />
           )}

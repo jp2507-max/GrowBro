@@ -1,4 +1,5 @@
 import { CameraView } from 'expo-camera';
+import * as FileSystem from 'expo-file-system';
 import type { JSX } from 'react';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -53,6 +54,14 @@ export function ExpoCameraCapture({
 
       // Strip EXIF data
       const processed = await stripExifData(photo.uri);
+
+      // Delete original file with EXIF data for security
+      try {
+        await FileSystem.deleteAsync(photo.uri, { idempotent: true });
+      } catch (deleteError) {
+        console.warn('Failed to delete original camera file:', deleteError);
+        // Continue with processed image even if deletion fails
+      }
 
       const qualityResult: QualityResult =
         await qualityAssessmentEngine.assessPhoto(processed.uri);

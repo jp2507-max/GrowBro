@@ -274,7 +274,7 @@ LIMIT 20;
 
 ## 📚 Documentation
 
-- **Implementation Guide**: `docs/api/rate-limiting-implementation.md`
+- **Implementation Guide**: `docs/rate-limiting/implementation.md`
 - **Security Audit**: `docs/testing/security-audit.md` (updated checklist)
 - **Database Schema**: Migration `20251028_create_rate_limits_table.sql`
 
@@ -319,7 +319,7 @@ For issues or questions:
 
 - Check logs in Supabase Dashboard → Edge Functions → Logs
 - Review rate limit entries in database
-- Consult implementation guide: `docs/api/rate-limiting-implementation.md`
+- Consult implementation guide: `docs/rate-limiting/implementation.md`
 
 ---
 

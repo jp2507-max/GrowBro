@@ -281,7 +281,8 @@
         "whiteBalance": "Color temperature is off. Use neutral lighting without strong color casts."
       },
       "status": {
-        "capturing": "Capturing photo…"
+        "capturing": "Capturing photo…",
+        "capturingHint": "Photo is being captured, please wait"
       },
       "useAlternative": "Use Alternative"
     },
@@ -333,6 +334,12 @@
     "playbook": {
       "affects": "Affects: {{phases}}",
       "applyAdjustment": "Apply Adjustment",
+      "impact": {
+        "instructions": "📝 Instructions",
+        "priority": "⚡ Priority",
+        "resource": "🔧 Resource",
+        "schedule": "📅 Schedule"
+      },
       "suggestedTimingAdjustment": "Suggested timing adjustment: {{sign}}{{count}} day",
       "suggestedTimingAdjustment_plural": "Suggested timing adjustment: {{sign}}{{count}} days",
       "suggestionCount": "{{count}} suggestion based on assessment",
