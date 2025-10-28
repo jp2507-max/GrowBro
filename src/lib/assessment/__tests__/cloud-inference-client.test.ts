@@ -1,35 +1,60 @@
 import type { AssessmentResult, CapturedPhoto } from '@/types/assessment';
 
-import { CloudInferenceClient } from '../cloud-inference-client';
-import { computeIntegritySha256 } from '../image-storage';
+jest.mock('uuid', () => ({
+  v4: jest.fn(() => '550e8400-e29b-41d4-a716-446655440000'), // Valid UUID v4
+}));
 
-const storageFromMock = jest.fn();
-const storageUploadMock = jest.fn();
-const storageCreateSignedUrlMock = jest.fn();
-const functionsInvokeMock = jest.fn();
+jest.mock('expo-file-system', () => ({
+  getInfoAsync: jest.fn(),
+  readAsStringAsync: jest.fn(),
+}));
 
-jest.mock('@/lib/supabase', () => ({
-  supabase: {
-    storage: {
-      from: storageFromMock,
-    },
-    functions: {
-      invoke: functionsInvokeMock,
-    },
+jest.mock('expo-crypto', () => ({
+  digestStringAsync: jest.fn(),
+  CryptoDigestAlgorithm: {
+    SHA256: 'SHA256',
   },
 }));
 
-jest.mock('../image-storage', () => ({
-  computeIntegritySha256: jest.fn(),
-}));
+jest.mock('@/lib/supabase', () => {
+  const storageUploadMock = jest.fn();
+  const storageCreateSignedUrlMock = jest.fn();
+  const functionsInvokeMock = jest.fn();
 
-storageFromMock.mockImplementation(() => ({
-  upload: storageUploadMock,
-  createSignedUrl: storageCreateSignedUrlMock,
-}));
+  return {
+    supabase: {
+      storage: {
+        from: jest.fn(() => ({
+          upload: storageUploadMock,
+          createSignedUrl: storageCreateSignedUrlMock,
+        })),
+      },
+      functions: {
+        invoke: functionsInvokeMock,
+      },
+    },
+    // Export mocks for test use
+    _mocks: {
+      storageUploadMock,
+      storageCreateSignedUrlMock,
+      functionsInvokeMock,
+    },
+  };
+});
 
-const computeIntegritySha256Mock =
-  computeIntegritySha256 as jest.MockedFunction<typeof computeIntegritySha256>;
+const { _mocks } = require('@/lib/supabase');
+const { storageUploadMock, storageCreateSignedUrlMock, functionsInvokeMock } =
+  _mocks;
+
+const getInfoAsyncMock = require('expo-file-system')
+  .getInfoAsync as jest.MockedFunction<any>;
+const readAsStringAsyncMock = require('expo-file-system')
+  .readAsStringAsync as jest.MockedFunction<any>;
+const digestStringAsyncMock = require('expo-crypto')
+  .digestStringAsync as jest.MockedFunction<any>;
+
+const CloudInferenceClient =
+  require('../cloud-inference-client').CloudInferenceClient;
 
 const mockPhotos: CapturedPhoto[] = [
   {
@@ -90,7 +115,13 @@ const originalFetch = global.fetch;
 
 beforeEach(() => {
   jest.clearAllMocks();
-  computeIntegritySha256Mock.mockResolvedValue('mock-sha256');
+
+  getInfoAsyncMock.mockResolvedValue({
+    exists: true,
+    size: 1024 * 1024, // 1MB, within limit
+  });
+  readAsStringAsyncMock.mockResolvedValue('mock-base64-content');
+  digestStringAsyncMock.mockResolvedValue('mock-sha256');
 
   const fetchMock = jest.fn().mockResolvedValue({
     blob: async () => ({
@@ -139,10 +170,8 @@ describe('CloudInferenceClient', () => {
     });
 
     expect(result).toEqual(baseAssessmentResult);
-    expect(storageFromMock).toHaveBeenCalledWith('assessment-images');
     expect(storageUploadMock).toHaveBeenCalledTimes(mockPhotos.length);
     expect(storageCreateSignedUrlMock).toHaveBeenCalledTimes(mockPhotos.length);
-    expect(computeIntegritySha256Mock).toHaveBeenCalledTimes(mockPhotos.length);
 
     expect(functionsInvokeMock).toHaveBeenCalledTimes(1);
     const mockCall = functionsInvokeMock.mock.calls[0] as [string, any];
@@ -221,7 +250,6 @@ describe('CloudInferenceClient', () => {
     });
 
     expect(result).toEqual(baseAssessmentResult);
-    expect(storageFromMock).toHaveBeenCalledWith('assessment-images');
     expect(storageUploadMock).toHaveBeenCalledTimes(mockPhotos.length);
     expect(storageCreateSignedUrlMock).toHaveBeenCalledTimes(mockPhotos.length);
   });

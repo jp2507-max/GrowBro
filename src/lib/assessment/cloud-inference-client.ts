@@ -1,5 +1,6 @@
 import { Buffer } from 'buffer';
 import Constants from 'expo-constants';
+import * as Crypto from 'expo-crypto';
 import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,7 +16,7 @@ import type {
   UploadedImage,
 } from '@/types/cloud-inference';
 
-import { computeIntegritySha256 } from './image-storage';
+import { MAX_IMAGE_SIZE_BYTES } from './image-storage';
 
 /**
  * Cloud Inference Client
@@ -140,6 +141,16 @@ export class CloudInferenceClient {
     storagePath: string;
     sha256: string;
   }> {
+    // Check file size before reading to prevent loading huge images into memory
+    const info = await FileSystem.getInfoAsync(photo.uri);
+    if (!info.exists || !('size' in info) || info.size > MAX_IMAGE_SIZE_BYTES) {
+      throw new Error(
+        `Image too large: max ${MAX_IMAGE_SIZE_BYTES} bytes, got ${
+          info.exists && 'size' in info ? info.size : 'unknown'
+        } bytes`
+      );
+    }
+
     // Read file as base64 using expo-file-system for cross-platform compatibility
     const base64 = await FileSystem.readAsStringAsync(photo.uri, {
       encoding: 'base64',
@@ -148,7 +159,11 @@ export class CloudInferenceClient {
     // Convert base64 to Uint8Array
     const body = new Uint8Array(Buffer.from(base64, 'base64'));
 
-    const sha256 = await computeIntegritySha256(photo.uri);
+    // Compute SHA256 from base64 string directly (avoids re-reading the file)
+    const sha256 = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      base64
+    );
 
     const fileExtension = photo.uri.endsWith('.png') ? 'png' : 'jpg';
     const contentType: 'image/jpeg' | 'image/png' =

@@ -6,7 +6,7 @@ import * as SecureStore from 'expo-secure-store';
 import { imageCacheManager } from '@/lib/assessment/image-cache-manager';
 
 // Maximum image size to prevent memory spikes (10MB)
-const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
+export const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 
 // Type-safe interface for FileSystem with proper null handling
 interface SafeFileSystem {
