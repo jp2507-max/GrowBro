@@ -11,10 +11,11 @@ let runtimeConsent: ConsentState = {
   experiments: false,
   cloudProcessing: true,
   aiTraining: false,
-  crashDiagnostics: true,
+  aiModelImprovement: false,
+  crashDiagnostics: false,
   version: '2025-09-01',
-  timestamp: '2025-10-13T12:00:00.000Z',
-  locale: 'en-US',
+  timestamp: '2025-01-01T00:00:00.000Z',
+  locale: 'en',
 };
 
 let privacyConsent: PrivacyConsent = {
@@ -22,6 +23,7 @@ let privacyConsent: PrivacyConsent = {
   crashReporting: true,
   personalizedData: false,
   sessionReplay: false,
+  aiModelImprovement: false,
   lastUpdated: 0,
 };
 
@@ -111,6 +113,7 @@ describe('ConsentManager', () => {
       experiments: false,
       cloudProcessing: true,
       aiTraining: false,
+      aiModelImprovement: false,
       crashDiagnostics: true,
       version: '2025-09-01',
       timestamp: '2025-10-13T12:00:00.000Z',
@@ -121,6 +124,7 @@ describe('ConsentManager', () => {
       crashReporting: true,
       personalizedData: false,
       sessionReplay: false,
+      aiModelImprovement: false,
       lastUpdated: 0,
     };
   });
@@ -163,6 +167,7 @@ describe('ConsentManager', () => {
       crashReporting: false,
       personalizedData: false,
       sessionReplay: false,
+      aiModelImprovement: false,
     });
   });
 });

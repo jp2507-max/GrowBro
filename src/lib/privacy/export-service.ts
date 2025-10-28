@@ -15,6 +15,7 @@ import {
   type TelemetryEvent,
 } from '@/lib/privacy/telemetry-client';
 import { getPrivacyConsent } from '@/lib/privacy-consent';
+import { database } from '@/lib/watermelon';
 
 export type ConsentExport = {
   current: ConsentState;
@@ -32,11 +33,29 @@ export type TelemetryExport = {
   bufferedEvents: TelemetryEvent[];
 };
 
+export type AssessmentExportRecord = {
+  id: string;
+  plantId: string;
+  status: string;
+  modelVersion: string;
+  predictedClass?: string;
+  confidence?: number;
+  consentedForTraining: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AssessmentExport = {
+  records: AssessmentExportRecord[];
+  totalCount: number;
+};
+
 export type PrivacyExportBundle = {
   generatedAt: string;
   consent: ConsentExport;
   retention: RetentionExport;
   telemetry: TelemetryExport;
+  assessments: AssessmentExport;
 };
 
 export async function generatePrivacyExport(): Promise<PrivacyExportBundle> {
@@ -63,11 +82,29 @@ export async function generatePrivacyExport(): Promise<PrivacyExportBundle> {
     bufferedEvents: telemetryClient.getBufferedEventsForExport(),
   };
 
+  // Export assessment data (sanitized)
+  const assessmentRecords = await database.get('assessments').query().fetch();
+  const assessments: AssessmentExport = {
+    records: assessmentRecords.map((a: any) => ({
+      id: a.id,
+      plantId: a.plantId,
+      status: a.status,
+      modelVersion: a.modelVersion,
+      predictedClass: a.predictedClass,
+      confidence: a.calibratedConfidence ?? a.rawConfidence,
+      consentedForTraining: a.consentedForTraining,
+      createdAt: a.createdAt.toISOString(),
+      updatedAt: a.updatedAt.toISOString(),
+    })),
+    totalCount: assessmentRecords.length,
+  };
+
   return {
     generatedAt: new Date().toISOString(),
     consent,
     retention,
     telemetry,
+    assessments,
   };
 }
 

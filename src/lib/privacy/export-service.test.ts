@@ -8,10 +8,11 @@ const mockConsentState = {
   experiments: false,
   cloudProcessing: true,
   aiTraining: false,
+  aiModelImprovement: false,
   crashDiagnostics: true,
   version: '2025-09-01',
-  timestamp: '2025-10-13T12:00:00.000Z',
-  locale: 'en-US',
+  timestamp: '2025-01-01T00:00:00.000Z',
+  locale: 'en',
 };
 
 const mockPrivacyConsent = {
@@ -19,6 +20,7 @@ const mockPrivacyConsent = {
   crashReporting: false,
   personalizedData: false,
   sessionReplay: false,
+  aiModelImprovement: false,
   lastUpdated: 1,
 };
 
@@ -84,7 +86,7 @@ jest.mock('@/lib/privacy/telemetry-client', () => ({
 }));
 
 describe('generatePrivacyExport', () => {
-  it('aggregates consent, retention, and telemetry data', async () => {
+  it('aggregates consent, retention, telemetry, and assessment data', async () => {
     const bundle = await generatePrivacyExport();
     expect(bundle.consent.current).toEqual(mockConsentState);
     expect(bundle.consent.privacyPreferences).toEqual(mockPrivacyConsent);
@@ -93,6 +95,8 @@ describe('generatePrivacyExport', () => {
     expect(bundle.retention.records).toEqual(mockRecords);
     expect(bundle.retention.lastReport).toEqual(mockReport);
     expect(bundle.telemetry.bufferedEvents).toEqual(mockEvents);
+    expect(bundle.assessments).toBeDefined();
+    expect(bundle.assessments.totalCount).toBeGreaterThanOrEqual(0);
     expect(new Date(bundle.generatedAt).getTime()).not.toBeNaN();
   });
 

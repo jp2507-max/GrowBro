@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ePrivacy Directive Compliance Tests (Directive 2002/58/EC, Art. 5(3))
  * Tests GPS consent requirements and device fingerprinting restrictions

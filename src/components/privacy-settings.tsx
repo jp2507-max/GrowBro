@@ -80,6 +80,14 @@ function showSessionReplayInfo(): void {
   );
 }
 
+function showAiModelImprovementInfo(): void {
+  Alert.alert(
+    translate('privacy.aiModelImprovement.title'),
+    translate('privacy.aiModelImprovement.body'),
+    [{ text: translate('common.ok') }]
+  );
+}
+
 function showAnalyticsInfo(): void {
   Alert.alert(
     translate('privacy.analytics.title'),
@@ -212,6 +220,15 @@ function PrivacyToggles({
         onInfoPress={showSessionReplayInfo}
         testID="toggle-sessionReplay"
       />
+
+      <ToggleRow
+        title={translate('privacy.aiModelImprovement.title')}
+        subtitle={translate('privacy.aiModelImprovement.subtitle')}
+        value={consent.aiModelImprovement}
+        onChange={(value) => updateConsent('aiModelImprovement', value)}
+        onInfoPress={showAiModelImprovementInfo}
+        testID="toggle-aiModelImprovement"
+      />
     </View>
   );
 }
@@ -236,6 +253,7 @@ function PrivacyActions({
     updateConsent('analytics', false);
     updateConsent('personalizedData', false);
     updateConsent('sessionReplay', false);
+    updateConsent('aiModelImprovement', false);
   };
 
   const handleAcceptAll = (): void => {
@@ -243,6 +261,7 @@ function PrivacyActions({
     updateConsent('analytics', true);
     updateConsent('personalizedData', true);
     updateConsent('sessionReplay', true);
+    updateConsent('aiModelImprovement', true);
   };
 
   const handleDeleteAccount = (): void => {

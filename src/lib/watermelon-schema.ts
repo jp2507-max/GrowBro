@@ -1,7 +1,7 @@
 import { appSchema as createSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const appSchema = createSchema({
-  version: 23,
+  version: 27,
   tables: [
     tableSchema({
       name: 'series',
@@ -642,6 +642,75 @@ export const appSchema = createSchema({
         { name: 'created_at', type: 'number', isIndexed: true },
       ],
     }),
+    // AI Photo Diagnosis tables
+    tableSchema({
+      name: 'assessment_classes',
+      columns: [
+        { name: 'name', type: 'string' },
+        { name: 'category', type: 'string', isIndexed: true },
+        { name: 'description', type: 'string' },
+        { name: 'is_ood', type: 'boolean' },
+        { name: 'visual_cues', type: 'string' },
+        { name: 'action_template', type: 'string' },
+        { name: 'created_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'assessments',
+      columns: [
+        { name: 'plant_id', type: 'string', isIndexed: true },
+        { name: 'user_id', type: 'string', isIndexed: true },
+        { name: 'status', type: 'string', isIndexed: true },
+        { name: 'inference_mode', type: 'string' },
+        { name: 'model_version', type: 'string' },
+        {
+          name: 'predicted_class',
+          type: 'string',
+          isOptional: true,
+          isIndexed: true,
+        },
+        { name: 'raw_confidence', type: 'number', isOptional: true },
+        { name: 'calibrated_confidence', type: 'number', isOptional: true },
+        { name: 'aggregation_rule', type: 'string', isOptional: true },
+        { name: 'latency_ms', type: 'number', isOptional: true },
+        { name: 'helpful_vote', type: 'boolean', isOptional: true },
+        { name: 'issue_resolved', type: 'boolean', isOptional: true },
+        { name: 'feedback_notes', type: 'string', isOptional: true },
+        { name: 'consented_for_training', type: 'boolean' },
+        { name: 'images', type: 'string' },
+        { name: 'integrity_sha256', type: 'string' },
+        { name: 'filename_keys', type: 'string' },
+        { name: 'plant_context', type: 'string' },
+        { name: 'quality_scores', type: 'string' },
+        { name: 'action_plan', type: 'string', isOptional: true },
+        { name: 'processing_started_at', type: 'number', isOptional: true },
+        { name: 'processing_completed_at', type: 'number', isOptional: true },
+        { name: 'resolved_at', type: 'number', isOptional: true },
+        { name: 'created_at', type: 'number', isIndexed: true },
+        { name: 'updated_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'assessment_requests',
+      columns: [
+        { name: 'plant_id', type: 'string', isIndexed: true },
+        { name: 'user_id', type: 'string', isIndexed: true },
+        { name: 'status', type: 'string', isIndexed: true },
+        { name: 'photos', type: 'string' }, // JSON array of CapturedPhoto
+        { name: 'plant_context', type: 'string' }, // JSON PlantContext
+        { name: 'retry_count', type: 'number' },
+        { name: 'last_error', type: 'string', isOptional: true },
+        {
+          name: 'next_attempt_at',
+          type: 'number',
+          isOptional: true,
+          isIndexed: true,
+        },
+        { name: 'original_timestamp', type: 'number' },
+        { name: 'created_at', type: 'number', isIndexed: true },
+        { name: 'updated_at', type: 'number' },
+      ],
+    }),
     // Community feed tables
     tableSchema({
       name: 'posts',
@@ -689,6 +758,35 @@ export const appSchema = createSchema({
         { name: 'retries', type: 'number' },
         { name: 'next_retry_at', type: 'number', isOptional: true },
         { name: 'status', type: 'string', isIndexed: true },
+      ],
+    }),
+    tableSchema({
+      name: 'assessment_feedback',
+      columns: [
+        { name: 'assessment_id', type: 'string', isIndexed: true },
+        { name: 'helpful', type: 'boolean' },
+        { name: 'issue_resolved', type: 'string', isOptional: true },
+        { name: 'notes', type: 'string', isOptional: true },
+        { name: 'created_at', type: 'number', isIndexed: true },
+      ],
+    }),
+    tableSchema({
+      name: 'assessment_telemetry',
+      columns: [
+        { name: 'assessment_id', type: 'string', isIndexed: true },
+        { name: 'event_type', type: 'string', isIndexed: true },
+        { name: 'mode', type: 'string', isOptional: true },
+        { name: 'latency_ms', type: 'number', isOptional: true },
+        { name: 'model_version', type: 'string', isOptional: true },
+        { name: 'raw_confidence', type: 'number', isOptional: true },
+        { name: 'calibrated_confidence', type: 'number', isOptional: true },
+        { name: 'quality_score', type: 'number', isOptional: true },
+        { name: 'predicted_class', type: 'string', isOptional: true },
+        { name: 'execution_provider', type: 'string', isOptional: true },
+        { name: 'error_code', type: 'string', isOptional: true },
+        { name: 'fallback_reason', type: 'string', isOptional: true },
+        { name: 'metadata', type: 'string' },
+        { name: 'created_at', type: 'number', isIndexed: true },
       ],
     }),
   ],

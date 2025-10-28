@@ -9,7 +9,9 @@ export type AuditAction =
   | 'retention-anonymize'
   | 'account-delete-request'
   | 'consent-block'
-  | 'appeal-event';
+  | 'appeal-event'
+  | 'assessment-delete-local'
+  | 'assessment-delete-remote';
 
 export type AuditEntry = {
   id: string;

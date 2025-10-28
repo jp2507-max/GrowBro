@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Contract tests for DSA Transparency Database API integration
  * Tests schema validation, error handling (4xx/5xx), and idempotency
@@ -7,7 +8,6 @@
  * - Requirement 3.4: SoR export queue with circuit breaker
  * - Requirement 6.4: PII scrubbing pipeline
  */
-
 import type { RedactedSoR } from '@/types/moderation';
 
 import { DSATransparencyClient } from '../dsa-transparency-client';

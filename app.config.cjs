@@ -184,6 +184,14 @@ function createExpoConfig(config) {
       ['app-icon-badge', appIconBadgeConfig],
       ['react-native-edge-to-edge'],
       [
+        'react-native-vision-camera',
+        {
+          enableFrameProcessors: true,
+          cameraPermissionText: '$(PRODUCT_NAME) needs access to your camera.',
+        },
+      ],
+      'onnxruntime-react-native',
+      [
         '@sentry/react-native/expo',
         {
           url: 'https://sentry.io/',

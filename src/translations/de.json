@@ -7,6 +7,71 @@
         "placeholder": "Erklären Sie Ihre Gegenargumente hier..."
       }
     },
+    "assessment": {
+      "action_plan": {
+        "ready": "Maßnahmenplan bereit. Sofortmaßnahmen: {{immediateCount}}. Kurzfristige Aktionen: {{shortTermCount}}. Diagnostische Prüfungen: {{diagnosticCount}}."
+      },
+      "action_step": {
+        "hint_with_task": "Doppeltippen, um für diesen Schritt eine Aufgabe zu erstellen.",
+        "label": "Schritt {{index}} von {{total}}: {{title}}. {{description}}. Zeitrahmen: {{timeframe}}. Priorität: {{priority}}."
+      },
+      "camera": {
+        "cancel_hint": "Doppeltippen, um abzubrechen und zurückzukehren.",
+        "cancel_label": "Fotoaufnahme abbrechen",
+        "capture_hint": "Doppeltippen, um ein Foto deiner Pflanze aufzunehmen.",
+        "capture_label": "Foto {{photoCount}} von {{maxPhotos}} aufnehmen",
+        "confirm_hint": "Doppeltippen, um mit den aufgenommenen Fotos fortzufahren.",
+        "confirm_label": "{{count}} {{count, plural, one {Foto bestätigen} other {Fotos bestätigen}}}",
+        "retake_hint": "Doppeltippen, um das aktuelle Foto erneut aufzunehmen.",
+        "retake_label": "Foto {{count}} erneut aufnehmen"
+      },
+      "community_cta": {
+        "hint": "Doppeltippen, um einen Community-Beitrag mit deinen Analysefotos zu erstellen.",
+        "label": "Community um Hilfe bitten. KI-Vertrauen lag bei {{percent}} Prozent."
+      },
+      "confidence": {
+        "hint": "Doppeltippen, um zu erfahren, was der Vertrauenswert bedeutet.",
+        "label": "{{type}}-Konfidenz: {{percent}} Prozent",
+        "type_calibrated": "Kalibriert",
+        "type_raw": "Roh"
+      },
+      "diagnostic": {
+        "label_with_time": "{{name}}, geschätzte Dauer {{minutes}} Minuten"
+      },
+      "quality": {
+        "acceptable": "Fotoqualität akzeptabel, Wert {{score}} von 100.",
+        "good": "Fotoqualität ist gut.",
+        "issue_detected": "{{type}} erkannt. {{suggestion}}.",
+        "needs_improvement": "Fotoqualität verbesserungswürdig, Wert {{score}} von 100. Probleme: {{issues}}.",
+        "needs_improvement_short": "Fotoqualität verbesserungswürdig."
+      },
+      "queue": {
+        "empty": "Keine ausstehenden Analysen.",
+        "status": "{{pendingCount}} ausstehend, {{processingCount}} in Bearbeitung"
+      },
+      "result": {
+        "backToHome": "Zurück zur Startseite",
+        "confidence": "Vertrauen: {{confidencePercent}}%",
+        "dataUnavailable": "Analyse-Daten sind nicht mehr verfügbar.",
+        "details": "Analyse-Details",
+        "low_confidence": "Analyse abgeschlossen. Zu geringe Sicherheit zur Identifikation. Vertrauen {{confidence}} Prozent. {{count, plural, one {Ein Foto analysiert.} other {# Fotos analysiert.}}}",
+        "mode_cloud": "in der Cloud",
+        "mode_device": "auf dem Gerät",
+        "modelVersion": "Modell-Version: {{modelVersion}}",
+        "noDescription": "Keine zusätzliche Beschreibung verfügbar.",
+        "photoQualityTitle": "Foto-Qualität könnte verbessert werden",
+        "plantId": "Pflanzen-ID: {{plantId}}",
+        "processingTime": "Verarbeitungszeit: {{processingTimeMs}} ms",
+        "retakePhotos": "Fotos erneut aufnehmen",
+        "success": "Analyse abgeschlossen. {{className}} mit {{confidence}} Prozent Vertrauen erkannt. Analyse lief {{mode}}. {{count, plural, one {Ein Foto analysiert.} other {# Fotos analysiert.}}}",
+        "unknown": "Unbekannt",
+        "viewPhotoTips": "Foto-Tipps anzeigen"
+      },
+      "taxonomy": {
+        "hint": "Doppeltippen, um visuelle Merkmale und Beschreibung anzuzeigen.",
+        "label": "Mehr über {{className}} erfahren"
+      }
+    },
     "calendar": {
       "needs_review_hint": "Kennzeichnet diese Aufgabe als konfliktbehaftet und prüfungsbedürftig.",
       "out_of_range_hint": "Zeigt an, dass der letzte Messwert außerhalb des Zielbereichs liegt.",
@@ -50,6 +115,10 @@
       "share_update_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags."
     },
     "plants": {
+      "assessmentHistory": {
+        "empty": "Noch keine Bewertungen",
+        "emptyDescription": "Verwende das KI-Bewertungstool, um die Pflanzengesundheit zu analysieren"
+      },
       "error_card_hint": "Informiert, dass Pflanzen nicht geladen werden konnten.",
       "offline_banner_hint": "Zeigt gespeicherte Pflanzen im Offline-Modus an.",
       "open_detail_hint": "Öffnet die Pflanzendetails.",
@@ -171,6 +240,163 @@
       "assignedToReviewer": "Dem Prüfer zugewiesen"
     }
   },
+  "assessment": {
+    "camera": {
+      "actions": {
+        "capture": "Foto aufnehmen",
+        "captureHint": "Doppeltippen, um ein Diagnosefoto zu machen"
+      },
+      "errors": {
+        "cameraFailed": "Kamera konnte nicht initialisiert werden. Bitte versuchen Sie es erneut.",
+        "captureFailed": "Foto konnte nicht aufgenommen werden. Bitte versuchen Sie es erneut.",
+        "processingFailed": "Bild konnte nicht verarbeitet werden. Bitte versuchen Sie es erneut.",
+        "storageFull": "Speicher ist voll. Bitte geben Sie Speicherplatz frei und versuchen Sie es erneut.",
+        "title": "Fehler"
+      },
+      "guidance": {
+        "focus": "Halten Sie die Kamera ruhig und warten Sie auf den Fokus",
+        "framing": "Füllen Sie den Rahmen mit der Pflanze",
+        "leafBottom": "Positionieren Sie die Kamera unter dem Blatt und zeigen Sie die Unterseite deutlich",
+        "leafTop": "Positionieren Sie die Kamera über dem Blatt und zeigen Sie die Oberseite deutlich",
+        "lighting": "Sorgen Sie für neutrale Beleuchtung ohne starke Schatten",
+        "wholePlant": "Erfassen Sie die gesamte Pflanze im Bild mit guter Beleuchtung"
+      },
+      "permissionDenied": {
+        "description": "GrowBro benötigt Kamerazugriff, um Fotos für die Pflanzengesundheitsbewertung aufzunehmen. Bitte aktivieren Sie die Kameraberechtigungen in Ihren Geräteeinstellungen.",
+        "openSettings": "Einstellungen öffnen",
+        "openSettingsFailed": "Einstellungen konnten nicht geöffnet werden. Bitte navigieren Sie manuell zu den Geräteeinstellungen.",
+        "retry": "Erneut versuchen",
+        "title": "Kamerazugriff erforderlich"
+      },
+      "progress": {
+        "done": "Fertig",
+        "next": "Nächstes Foto",
+        "photoCount": "Foto {{current}} von {{total}}",
+        "retake": "Wiederholen"
+      },
+      "quality": {
+        "blur": "Das Bild ist zu unscharf. Halten Sie die Kamera ruhig und warten Sie auf den Fokus.",
+        "composition": "Nicht genug Pflanzenmaterial im Bild. Gehen Sie näher heran oder passen Sie den Bildausschnitt an.",
+        "exposure": "Das Bild ist über- oder unterbelichtet. Passen Sie die Lichtverhältnisse an.",
+        "whiteBalance": "Die Farbtemperatur ist nicht korrekt. Verwenden Sie neutrale Beleuchtung ohne starke Farbstiche."
+      },
+      "status": {
+        "capturing": "Foto wird aufgenommen…",
+        "capturingHint": "Foto wird aufgenommen, bitte warten"
+      },
+      "useAlternative": "Alternative verwenden"
+    },
+    "close": "Schließen",
+    "community": {
+      "askCommunity": "Community fragen",
+      "ctaHint": "Holen Sie sich eine zweite Meinung von erfahrenen Growern",
+      "getSecondOpinion": "Zweite Meinung einholen"
+    },
+    "diagnostics": {
+      "createTask": "Aufgabe erstellen",
+      "description": "Führen Sie diese grundlegenden Checks durch, um das Problem zu identifizieren:",
+      "ecCheck": "EC/TDS prüfen",
+      "ecInstructions": "Nährstoffstärke (EC/TDS) messen, um korrekte Düngung sicherzustellen",
+      "estimatedTime": "~{{minutes}} Min.",
+      "lightCheck": "Lichtintensität messen",
+      "lightInstructions": "PPFD auf Kronenhöhe prüfen, um ausreichend Licht ohne Stress zu gewährleisten",
+      "pestCheck": "Auf Schädlinge prüfen",
+      "pestInstructions": "Blattunterseiten auf Spinnmilben, Blattläuse oder andere Schädlinge untersuchen",
+      "phCheck": "pH-Wert prüfen",
+      "phInstructions": "pH-Wert testen (Erde: 6.0-7.0, Hydro: 5.5-6.5), um Nährstoffblockade auszuschließen",
+      "title": "Diagnose-Checkliste",
+      "wateringCheck": "Bodenfeuchtigkeit prüfen",
+      "wateringInstructions": "Bodenfeuchtigkeit und Bewässerungsplan überprüfen, um Über-/Unterwässerung auszuschließen"
+    },
+    "errors": {
+      "analysisFailed": "Wir konnten Ihre Fotos nicht analysieren. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+      "photoStorageFailed": "Wir konnten Ihr Foto nicht speichern. Bitte überprüfen Sie Ihren Speicherplatz und versuchen Sie es erneut."
+    },
+    "feedback": {
+      "helpful_question": "War diese Bewertung hilfreich?",
+      "no": "Nein",
+      "notes_description": "Ihr Feedback hilft uns, das KI-Modell für alle zu verbessern. Diese Informationen sind anonym und werden nicht weitergegeben.",
+      "notes_placeholder": "Erzählen Sie uns mehr über Ihre Erfahrung (optional)",
+      "notes_question": "Weiteres Feedback?",
+      "privacy_note": "Ihr Feedback ist anonym und hilft, den Service zu verbessern.",
+      "resolved_no": "Nein, Problem besteht weiterhin",
+      "resolved_question": "Haben die vorgeschlagenen Maßnahmen das Problem gelöst?",
+      "resolved_too_early": "Zu früh, um das zu sagen",
+      "resolved_yes": "Ja, Problem gelöst",
+      "skip": "Überspringen",
+      "submit": "Feedback senden",
+      "thanks": "Vielen Dank für Ihr Feedback! Ihre Rückmeldung hilft uns, die KI-Bewertung für alle Grower zu verbessern.",
+      "title": "Bewertungs-Feedback",
+      "yes": "Ja"
+    },
+    "lastUpdated": "Zuletzt aktualisiert: {{time}}",
+    "loading": "Lädt...",
+    "playbook": {
+      "affects": "Betroffen: {{phases}}",
+      "applyAdjustment": "Anpassung anwenden",
+      "impact": {
+        "instructions": "📝 Anweisungen",
+        "priority": "⚡ Priorität",
+        "resource": "🔧 Ressource",
+        "schedule": "📅 Zeitplan"
+      },
+      "suggestedTimingAdjustment": "Vorgeschlagene Zeitplananpassung: {{sign}}{{count}} Tag",
+      "suggestedTimingAdjustment_plural": "Vorgeschlagene Zeitplananpassung: {{sign}}{{count}} Tage",
+      "suggestionCount": "{{count}} Vorschlag basierend auf Bewertung",
+      "suggestionCount_plural": "{{count}} Vorschläge basierend auf Bewertung",
+      "title": "Playbook-Anpassungen vorgeschlagen"
+    },
+    "queue": {
+      "retryError": "Fehler beim erneuten Versuch fehlgeschlagener Bewertungen. Bitte versuchen Sie es erneut.",
+      "syncError": "Fehler beim Synchronisieren der Bewertungen. Bitte versuchen Sie es erneut."
+    },
+    "result": {
+      "askCommunity": "Community fragen",
+      "createTasks": "Aufgaben erstellen",
+      "retake": "Wiederholen",
+      "viewHistory": "Verlauf anzeigen"
+    },
+    "retake": {
+      "cancel": "Abbrechen",
+      "primaryIssue": "Hauptproblem",
+      "retakeNow": "Foto jetzt wiederholen",
+      "subtitle": "Hier sind einige Tipps zur Verbesserung Ihrer Fotoqualität:",
+      "tipsTitle": "Tipps für bessere Fotos",
+      "title": "Fotoqualität verbessern"
+    },
+    "retryFailed": "Fehlgeschlagene wiederholen",
+    "status": {
+      "completed": "Abgeschlossen",
+      "failed": "Fehlgeschlagen",
+      "pending": "Ausstehend",
+      "processing": "Wird verarbeitet",
+      "stalled": "Stecken geblieben"
+    },
+    "syncNow": "Jetzt synchronisieren",
+    "taskCreation": {
+      "createTasksButton": "Aufgaben erstellen",
+      "createTasks_one": "1 Aufgabe aus dieser Bewertung erstellen?",
+      "createTasks_other": "{{count}} Aufgaben aus dieser Bewertung erstellen?",
+      "creating": "Wird erstellt...",
+      "failed": "Aufgaben konnten nicht erstellt werden. Bitte versuche es erneut.",
+      "noTasks": "Keine Aufgaben aus diesem Maßnahmenplan zu erstellen.",
+      "tasksToCreate": "Zu erstellende Aufgaben:",
+      "title": "Aufgaben erstellen"
+    },
+    "title": "Bewertungswarteschlange",
+    "uncertainty": {
+      "confidenceLabel": "KI-Konfidenz",
+      "confidenceThreshold": "Wir empfehlen mindestens 70% Konfidenz für zuverlässige Ergebnisse",
+      "educationalNote": "💡 Bei Unsicherheit ist es immer am besten, erfahrene Grower zu konsultieren oder grundlegende Diagnose-Checks durchzuführen.",
+      "hideChecklist": "Checkliste ausblenden",
+      "lowConfidenceExplanation": "Die KI ist bei dieser Klassifizierung nicht sicher genug. Erwägen Sie, Fotos mit besserer Qualität aufzunehmen oder die Community um Hilfe zu bitten.",
+      "notConfident": "Nicht sicher genug",
+      "oodExplanation": "Die KI konnte dieses Problem nicht mit Sicherheit klassifizieren. Dies könnte ein ungewöhnliches Problem sein oder die Fotos müssen verbessert werden.",
+      "retakePhoto": "Foto wiederholen",
+      "showChecklist": "Diagnose-Checkliste anzeigen",
+      "unableToClassify": "Klassifizierung nicht möglich"
+    }
+  },
   "calendar": {
     "drag_item_hint": "Lange drücken und ziehen, um neu zu planen. Doppeltippen für Menü.",
     "drag_item_label": "Ziehen {{title}}",
@@ -213,6 +439,7 @@
     "back": "Zurück",
     "cancel": "Abbrechen",
     "dismiss": "Schließen",
+    "error": "Fehler",
     "go_back": "Zurück",
     "loading": "Lädt...",
     "notSelected": "nicht ausgewählt",
@@ -327,6 +554,12 @@
     "view_author_profile_hint": "Doppeltippen, um das Profil dieses Benutzers zu öffnen.",
     "view_comments": "{{count}} Kommentare",
     "view_comments_hint": "Doppeltippen, um Kommentare zu diesem Beitrag anzuzeigen."
+  },
+  "communityPost": {
+    "errorDescription": "Community-Beitrag konnte nicht erstellt werden. Bitte versuche es erneut.",
+    "errorTitle": "Fehler",
+    "postAddError": "Fehler beim Hinzufügen des Beitrags",
+    "postAdded": "Beitrag erfolgreich hinzugefügt"
   },
   "consent": {
     "accept_all": "Alle akzeptieren",
@@ -493,6 +726,15 @@
     "unknown": "Ein unerwarteter Fehler ist aufgetreten",
     "unknown_description": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
     "unknown_title": "Fehler"
+  },
+  "feed": {
+    "addPost": {
+      "contentLabel": "Inhalt",
+      "title": "Beitrag erstellen",
+      "titleLabel": "Titel"
+    },
+    "prefilledImages": "Vorgefüllte Bilder",
+    "title": "Feed"
   },
   "harvest": {
     "accessibility": {
@@ -1481,6 +1723,14 @@
     "veg": "Vegetative Phase"
   },
   "plants": {
+    "assessmentHistory": {
+      "count_one": "{{count}} Bewertung",
+      "count_other": "{{count}} Bewertungen",
+      "count_zero": "Noch keine Bewertungen",
+      "empty": "Noch keine Bewertungen",
+      "emptyDescription": "Verwende das KI-Bewertungstool, um die Pflanzengesundheit zu analysieren",
+      "title": "Bewertungsverlauf"
+    },
     "empty_state": "Keine Pflanzen in deinem Inventar",
     "error": "Pflanzen konnten nicht geladen werden. Bitte erneut versuchen.",
     "no_results": "Keine Pflanzen gefunden",
@@ -1810,6 +2060,11 @@
     "whatYouGet": "Was du bekommst"
   },
   "privacy": {
+    "aiModelImprovement": {
+      "body": "Erlaube anonyme Fotos und Bewertungsergebnisse zur Verbesserung der KI-Genauigkeit. Bilder werden bis zu 90 Tage gespeichert und automatisch gelöscht. Du kannst die Einwilligung jederzeit widerrufen.",
+      "subtitle": "Hilf mit, die KI-Pflanzengesundheitserkennung zu verbessern",
+      "title": "Modell mit meinen Bildern verbessern"
+    },
     "analytics": {
       "body": "Hilf uns, die App mit Nutzungsanalysen zu verbessern.",
       "subtitle": "Hilf uns, die App mit Nutzungsanalysen zu verbessern",

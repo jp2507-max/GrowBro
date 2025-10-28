@@ -273,16 +273,174 @@ jest.mock('@sentry/react-native', () => {
 jest.mock('react-native-restart', () => ({ restart: jest.fn() }));
 
 // Mock WatermelonDB database to prevent model imports and decorator application
+type QueryCondition = {
+  key?: string;
+  value?: unknown;
+  $notEq?: unknown;
+  $sortBy?: { key: string; direction: 'asc' | 'desc' };
+  $take?: number;
+};
+
+interface Assessment {
+  id: string;
+  plantId?: string;
+  userId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  issueResolved?: boolean;
+  status?: string;
+  _raw?: any;
+}
+
+type AssessmentSourceFields =
+  | 'plant_id'
+  | 'user_id'
+  | 'created_at'
+  | 'updated_at'
+  | 'issue_resolved'
+  | 'status';
+
+const assessmentStore: Assessment[] = [];
+
+const mapAssessmentField = (
+  field: AssessmentSourceFields | string
+): keyof Assessment | string => {
+  switch (field) {
+    case 'plant_id':
+      return 'plantId';
+    case 'user_id':
+      return 'userId';
+    case 'created_at':
+      return 'createdAt';
+    case 'updated_at':
+      return 'updatedAt';
+    case 'issue_resolved':
+      return 'issueResolved';
+    case 'status':
+      return 'status';
+    default:
+      return field;
+  }
+};
+
+const applyAssessmentConditions = (
+  conditions: QueryCondition[],
+  records: Assessment[]
+): Assessment[] => {
+  let results: Assessment[] = [...records];
+
+  for (const condition of conditions) {
+    if (condition.key && condition.value !== undefined) {
+      const propName = mapAssessmentField(condition.key);
+      results = results.filter(
+        (record) => record[propName] === condition.value
+      );
+    }
+    if (condition.key && condition.$notEq !== undefined) {
+      const propName = mapAssessmentField(condition.key);
+      results = results.filter(
+        (record) => record[propName] !== condition.$notEq
+      );
+    }
+    if (condition.$sortBy) {
+      const { key, direction } = condition.$sortBy;
+      const propName = mapAssessmentField(key);
+      results.sort((a, b) => {
+        const aVal = a[propName];
+        const bVal = b[propName];
+        const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+        return direction === 'desc' ? -cmp : cmp;
+      });
+    }
+    if (condition.$take) {
+      results = results.slice(0, condition.$take);
+    }
+  }
+
+  return results;
+};
+
+const createAssessmentRecord = async (cb: any): Promise<Assessment> => {
+  const now = new Date();
+  const record: Assessment = {
+    id: `assessment-${Date.now()}-${Math.random()}`,
+    createdAt: now,
+    updatedAt: now,
+    _raw: {},
+  };
+  if (cb) await cb(record);
+  record.createdAt = record.createdAt ?? now;
+  record.updatedAt = record.updatedAt ?? now;
+  assessmentStore.push(record);
+  return record;
+};
+
+// Mock interfaces for WatermelonDB collection and query types
+interface MockQuery {
+  fetch: jest.MockedFunction<() => Promise<Assessment[]>>;
+  fetchCount: jest.MockedFunction<() => Promise<number>>;
+}
+
+interface MockCollection {
+  create: jest.MockedFunction<
+    (cb?: (record: Assessment) => Promise<void> | void) => Promise<Assessment>
+  >;
+  query: jest.MockedFunction<(...conditions: QueryCondition[]) => MockQuery>;
+  find: jest.MockedFunction<(id: string) => Promise<Assessment>>;
+}
+
+interface MockDefaultCollection {
+  create: jest.MockedFunction<() => Promise<{ id: string }>>;
+  query: jest.MockedFunction<() => MockQuery>;
+  find: jest.MockedFunction<() => Promise<{ id: string }>>;
+}
+
+const createAssessmentQuery = (conditions: QueryCondition[]): MockQuery => {
+  const execute = () => applyAssessmentConditions(conditions, assessmentStore);
+  return {
+    fetch: jest.fn().mockImplementation(async () => execute()),
+    fetchCount: jest.fn().mockImplementation(async () => execute().length),
+  };
+};
+
+const createAssessmentCollection = (): MockCollection => ({
+  create: jest.fn().mockImplementation(createAssessmentRecord),
+  query: jest.fn((...conditions: QueryCondition[]) =>
+    createAssessmentQuery(conditions)
+  ),
+  find: jest.fn().mockImplementation(async (id: string) => {
+    const record = assessmentStore.find((item) => item.id === id);
+    if (!record) {
+      throw new Error('Record not found');
+    }
+    return record;
+  }),
+});
+
+const createDefaultCollection = (): MockDefaultCollection => ({
+  create: jest.fn().mockResolvedValue({ id: 'mock-id' }),
+  query: jest.fn(() => ({
+    fetch: jest.fn().mockResolvedValue([]),
+    fetchCount: jest.fn().mockResolvedValue(0),
+  })),
+  find: jest.fn().mockResolvedValue({ id: 'mock-id' }),
+});
+
 jest.mock('@/lib/watermelon', () => ({
   database: {
-    get: jest.fn((_collectionName: string) => ({
-      create: jest.fn().mockResolvedValue({ id: 'mock-id' }),
-      query: jest.fn(() => ({
-        fetch: jest.fn().mockResolvedValue([]),
-      })),
-      find: jest.fn().mockResolvedValue({ id: 'mock-id' }),
-    })),
-    write: jest.fn().mockImplementation(async (fn: any) => fn()),
+    collections: {
+      get: jest.fn((collectionName: string) =>
+        collectionName === 'assessments'
+          ? createAssessmentCollection()
+          : createDefaultCollection()
+      ),
+    },
+    get: jest.fn((_collectionName: string) => createDefaultCollection()),
+    write: jest.fn().mockImplementation(async (fn: any) => {
+      // Clear store before each test
+      assessmentStore.length = 0;
+      return fn();
+    }),
   },
 }));
 

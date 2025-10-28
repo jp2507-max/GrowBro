@@ -1,0 +1,178 @@
+{
+  "de": {
+    "assessmentClasses": {
+      "calcium_deficiency": {
+        "description": "Kalziummangel erscheint als braune Flecken auf neuem Wachstum und Blattspitzenverbrennung",
+        "name": "Kalziummangel",
+        "visualCue_0": "Braune Flecken auf neuem Wachstum",
+        "visualCue_1": "Blattspitzenverbrennung",
+        "visualCue_2": "Verformte Blätter"
+      },
+      "healthy": {
+        "description": "Die Pflanze erscheint gesund ohne sichtbare Probleme",
+        "name": "Gesund",
+        "visualCue_0": "Lebendige grüne Farbe",
+        "visualCue_1": "Keine Verfärbungen",
+        "visualCue_2": "Gesunde Blattstruktur"
+      },
+      "light_burn": {
+        "description": "Lichtverbrennung erscheint als Bleichen oder Gelbfärbung der Blätter, die der Lichtquelle am nächsten sind",
+        "name": "Lichtverbrennung",
+        "visualCue_0": "Gebleichte Blätter",
+        "visualCue_1": "Gelbfärbung in Lichtnähe",
+        "visualCue_2": "Aufwärtskräuselung"
+      },
+      "magnesium_deficiency": {
+        "description": "Magnesiummangel verursacht Gelbfärbung zwischen den Blattadern, während die Adern grün bleiben",
+        "name": "Magnesiummangel",
+        "visualCue_0": "Interkostale Chlorose",
+        "visualCue_1": "Gelb zwischen den Adern",
+        "visualCue_2": "Grüne Adern"
+      },
+      "nitrogen_deficiency": {
+        "description": "Stickstoffmangel zeigt sich typischerweise als Gelbfärbung älterer Blätter, beginnend an den Spitzen",
+        "name": "Stickstoffmangel",
+        "visualCue_0": "Vergilbende ältere Blätter",
+        "visualCue_1": "Blassgrüne Farbe",
+        "visualCue_2": "Langsames Wachstum"
+      },
+      "overwatering": {
+        "description": "Überwässerungssymptome umfassen hängende Blätter, Gelbfärbung und Wurzelprobleme",
+        "name": "Überwässerung",
+        "visualCue_0": "Hängende Blätter",
+        "visualCue_1": "Gelbfärbung",
+        "visualCue_2": "Weiche Stängel",
+        "visualCue_3": "Wurzelfäulegeruch"
+      },
+      "phosphorus_deficiency": {
+        "description": "Phosphormangel erscheint als dunkelgrüne oder violette Verfärbung, oft mit braunen Flecken",
+        "name": "Phosphormangel",
+        "visualCue_0": "Dunkelgrüne oder violette Blätter",
+        "visualCue_1": "Braune Flecken",
+        "visualCue_2": "Verkümmertes Wachstum"
+      },
+      "potassium_deficiency": {
+        "description": "Kaliummangel zeigt sich als Gelbfärbung oder Bräunung an Blatträndern und Spitzen",
+        "name": "Kaliummangel",
+        "visualCue_0": "Braune Blattränder",
+        "visualCue_1": "Vergilbende Spitzen",
+        "visualCue_2": "Schwache Stängel"
+      },
+      "powdery_mildew": {
+        "description": "Echter Mehltau erscheint als weiße, pudrige Flecken auf Blättern und Stängeln",
+        "name": "Echter Mehltau",
+        "visualCue_0": "Weißer pudriger Belag",
+        "visualCue_1": "Flecken auf Blättern",
+        "visualCue_2": "Breitet sich schnell aus"
+      },
+      "spider_mites": {
+        "description": "Spinnmilben verursachen winzige gelbe oder weiße Flecken auf Blättern mit möglichen Gespinsten",
+        "name": "Spinnmilben",
+        "visualCue_0": "Winzige Flecken auf Blättern",
+        "visualCue_1": "Gespinste",
+        "visualCue_2": "Punktmuster",
+        "visualCue_3": "Blattverfärbung"
+      },
+      "underwatering": {
+        "description": "Unterwässerung zeigt sich als Welken, trockene Erde und eingerollte Blattränder",
+        "name": "Unterwässerung",
+        "visualCue_0": "Welken",
+        "visualCue_1": "Trockene Erde",
+        "visualCue_2": "Eingerollte Blätter",
+        "visualCue_3": "Knusprige Ränder"
+      },
+      "unknown": {
+        "description": "Das Problem kann nicht sicher identifiziert werden. Erwägen Sie, die Community zu konsultieren oder Fotos mit besserer Beleuchtung erneut aufzunehmen.",
+        "name": "Unbekannt / Außerhalb der Verteilung"
+      }
+    }
+  },
+  "en": {
+    "assessmentClasses": {
+      "calcium_deficiency": {
+        "description": "Calcium deficiency appears as brown spots on new growth and leaf tip burn",
+        "name": "Calcium Deficiency",
+        "visualCue_0": "Brown spots on new growth",
+        "visualCue_1": "Leaf tip burn",
+        "visualCue_2": "Distorted leaves"
+      },
+      "healthy": {
+        "description": "Plant appears healthy with no visible issues",
+        "name": "Healthy",
+        "visualCue_0": "Vibrant green color",
+        "visualCue_1": "No discoloration",
+        "visualCue_2": "Healthy leaf structure"
+      },
+      "light_burn": {
+        "description": "Light burn appears as bleaching or yellowing of leaves closest to the light source",
+        "name": "Light Burn",
+        "visualCue_0": "Bleached leaves",
+        "visualCue_1": "Yellowing near light",
+        "visualCue_2": "Upward curling"
+      },
+      "magnesium_deficiency": {
+        "description": "Magnesium deficiency causes yellowing between leaf veins while veins remain green",
+        "name": "Magnesium Deficiency",
+        "visualCue_0": "Interveinal chlorosis",
+        "visualCue_1": "Yellow between veins",
+        "visualCue_2": "Green veins"
+      },
+      "nitrogen_deficiency": {
+        "description": "Nitrogen deficiency typically shows as yellowing of older leaves starting from the tips",
+        "name": "Nitrogen Deficiency",
+        "visualCue_0": "Yellowing older leaves",
+        "visualCue_1": "Pale green color",
+        "visualCue_2": "Slow growth"
+      },
+      "overwatering": {
+        "description": "Overwatering symptoms include drooping leaves, yellowing, and root issues",
+        "name": "Overwatering",
+        "visualCue_0": "Drooping leaves",
+        "visualCue_1": "Yellowing",
+        "visualCue_2": "Soft stems",
+        "visualCue_3": "Root rot smell"
+      },
+      "phosphorus_deficiency": {
+        "description": "Phosphorus deficiency appears as dark green or purple discoloration, often with brown spots",
+        "name": "Phosphorus Deficiency",
+        "visualCue_0": "Dark green or purple leaves",
+        "visualCue_1": "Brown spots",
+        "visualCue_2": "Stunted growth"
+      },
+      "potassium_deficiency": {
+        "description": "Potassium deficiency shows as yellowing or browning at leaf edges and tips",
+        "name": "Potassium Deficiency",
+        "visualCue_0": "Brown leaf edges",
+        "visualCue_1": "Yellowing tips",
+        "visualCue_2": "Weak stems"
+      },
+      "powdery_mildew": {
+        "description": "Powdery mildew appears as white powdery spots on leaves and stems",
+        "name": "Powdery Mildew",
+        "visualCue_0": "White powdery coating",
+        "visualCue_1": "Spots on leaves",
+        "visualCue_2": "Spreads quickly"
+      },
+      "spider_mites": {
+        "description": "Spider mites cause tiny yellow or white spots on leaves with possible webbing",
+        "name": "Spider Mites",
+        "visualCue_0": "Tiny spots on leaves",
+        "visualCue_1": "Webbing",
+        "visualCue_2": "Stippling pattern",
+        "visualCue_3": "Leaf discoloration"
+      },
+      "underwatering": {
+        "description": "Underwatering shows as wilting, dry soil, and curling leaf edges",
+        "name": "Underwatering",
+        "visualCue_0": "Wilting",
+        "visualCue_1": "Dry soil",
+        "visualCue_2": "Curling leaves",
+        "visualCue_3": "Crispy edges"
+      },
+      "unknown": {
+        "description": "Unable to confidently identify the issue. Consider consulting the community or retaking photos with better lighting.",
+        "name": "Unknown / Out-of-Distribution"
+      }
+    }
+  }
+}

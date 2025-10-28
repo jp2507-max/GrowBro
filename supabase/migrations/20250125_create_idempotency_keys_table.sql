@@ -1,0 +1,28 @@
+-- Cloud Inference Idempotency Support
+-- NOTE: The idempotency_keys table already exists in the database with the following schema:
+--
+-- Columns:
+--   - id: UUID PRIMARY KEY
+--   - idempotency_key: TEXT NOT NULL (note: column name is 'idempotency_key', not 'key')
+--   - user_id: UUID NOT NULL REFERENCES auth.users(id)
+--   - endpoint: TEXT NOT NULL (e.g., 'ai-inference')
+--   - status: TEXT NOT NULL (e.g., 'completed', 'failed', 'pending')
+--   - request_payload: JSONB
+--   - response_payload: JSONB
+--   - created_at: TIMESTAMPTZ NOT NULL DEFAULT NOW()
+--   - expires_at: TIMESTAMPTZ NOT NULL
+--   - client_tx_id: TEXT
+--   - payload_hash: TEXT
+--   - error_details: JSONB
+--
+-- Existing Policies:
+--   - "Service role can manage all idempotency keys"
+--   - "Users can insert their own idempotency keys"
+--   - "Users can manage own idempotency keys"
+--   - "Users can update their own idempotency keys"
+--   - "Users can view their own idempotency keys"
+--
+-- No migration needed - table already exists and is compatible with cloud inference requirements.
+-- The Edge Function uses: idempotency_key, user_id, endpoint, status, request_payload, response_payload, expires_at
+
+-- This file is kept for documentation purposes only.

@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Set up core data models and database schema
+- [x] 1. Set up core data models and database schema
   - Create WatermelonDB schema for assessments table with all required fields (status, inference_mode, model_version, raw_confidence, calibrated_confidence, quality_scores, etc.)
   - Implement AssessmentRecord model with proper relationships to plants table
   - Add database indexes for (user_id, created_at) and (status) for efficient querying
@@ -16,8 +16,8 @@
   - Create dev-client smoke test to validate WatermelonDB integration
   - _Requirements: 6.1, 6.4, 9.1, 9.2_
 
-- [ ] 2. Implement image capture and quality assessment system
-  - [ ] 2.1 Create guided camera capture component with multi-shot support
+- [x] 2. Implement image capture and quality assessment system
+  - [x] 2.1 Create guided camera capture component with multi-shot support
     - Build CaptureComponent with guided prompts for leaf positioning (top/bottom views)
     - Implement real-time quality feedback UI for lighting, focus, and framing guidance
 
@@ -28,7 +28,7 @@
       Both approaches satisfy requirements 1.1–1.3; VisionCamera is recommended for real-time guidance.
     - _Requirements: 1.1, 1.2, 1.3_
 
-  - [ ] 2.2 Build automated image quality assessment engine
+  - [x] 2.2 Build automated image quality assessment engine
     - Implement blur detection using variance of Laplacian with tuned kernel size (threshold >100 as baseline)
     - Create exposure assessment using histogram analysis for over/under-exposure detection
     - Add white balance validation with color temperature estimation and deviation checks
@@ -39,7 +39,7 @@
     - Show specific failure reason (blur/exposure/WB/composition) with one-tap "Retake" CTA
     - _Requirements: 1.4, 2.1, 2.3_
 
-  - [ ] 2.3 Implement EXIF data stripping and secure image storage
+  - [x] 2.3 Implement EXIF data stripping and secure image storage
     - Use expo-camera for managed workflow compatibility and validate supported params on target devices
     - Add explicit EXIF stripping step after capture using expo-image-manipulator with automated test validation
   - Create content-addressable file naming using per-install/user salted keys computed with HMAC-SHA256(secret, imageBytes) using an implementation of HMAC-SHA256 (for example, crypto-js or a native binding) — expo-crypto does not provide an HMAC API and therefore cannot be used for this purpose.
@@ -48,14 +48,14 @@
     - Build LRU cache management for local images with configurable storage limits
     - _Requirements: 1.5, 8.1, 8.5_
 
-- [ ] 2.5. Milestone: Calibration and thresholding baseline
+- [x] 2.5. Milestone: Calibration and thresholding baseline
   - Implement temperature scaling for confidence calibration with offline validation
   - Deploy calibrated thresholds per class/locale/device to Remote Config
   - Validate that device vs cloud inference + confidence calibration works before Action Plans
   - _Requirements: 2.2, 2.3_
 
-- [ ] 3. Build ML inference engine with dual-mode support
-  - [ ] 3.1 Implement on-device ML inference with ONNX Runtime React Native
+- [x] 3. Build ML inference engine with dual-mode support
+  - [x] 3.1 Implement on-device ML inference with ONNX Runtime React Native
     - Integrate ONNX Runtime React Native with EfficientNet-Lite0/1 or MobileNetV3-Small models (<20MB)
     - Implement model loading with checksum validation, cryptographic signatures, and version tracking
     - Add XNNPACK (CPU default), NNAPI (Android), and CoreML (iOS) execution providers with CPU fallback;
@@ -64,7 +64,7 @@
     - Implement deadline budget (3.5s total) with cloud fallback using same idempotency key
     - _Requirements: 2.2, 2.4, 10.1, 10.5_
 
-  - [ ] 3.2 Create cloud-based ML inference fallback system
+  - [x] 3.2 Create cloud-based ML inference fallback system
     - Implement Supabase Edge Function as authenticated gateway (idempotency, JWT) that proxies to a
       Node/Container inference microservice using onnxruntime-node (e.g., EfficientNet-B4/ResNet-50 for complex cases).
     - Keep heavy inference out of Edge isolates to avoid WASM size/memory constraints; enable warm containers and model caching.
@@ -75,7 +75,7 @@
     - Add auth failure test to validate JWT handling and RLS enforcement
     - _Requirements: 2.2, 2.4, 10.4_
 
-  - [ ] 3.3 Implement confidence calibration and result aggregation
+  - [x] 3.3 Implement confidence calibration and result aggregation
     - Build temperature scaling system for confidence calibration (offline training)
     - Store both raw_confidence and calibrated_confidence in results
     - Implement multi-photo aggregation: majority vote → highest confidence → Unknown if all <0.70
@@ -83,8 +83,7 @@
     - Add per-image result tracking with quality scores and class predictions
     - _Requirements: 2.2, 2.3, 6.4, 6.5_
 
-- [ ] 4. Create action plan generation and task integration system
-  - [ ] 4.1 Build action plan generator with safety guardrails
+  - [x] 4.1 Build action plan generator with safety guardrails
 
   - Create ActionPlanGenerator that maps assessment classes to specific action templates
     - Implement immediate steps (0-24h) and short-term actions (24-48h) generation
@@ -94,7 +93,7 @@
     - Build generic, product-agnostic guidance with JSON templates and placeholders (no hardcoded dosages)
     - _Requirements: 3.1, 3.2, 3.3, 3.5_
 
-  - [ ] 4.2 Implement task creation and playbook integration
+  - [x] 4.2 Implement task creation and playbook integration
   - Build one-tap task creation from assessment results with prefilled details
   - Create task templates for common assessment-driven actions (pH measurement, light adjustment)
     - Implement playbook shift suggestions based on AI findings and user acceptance
@@ -103,7 +102,7 @@
     - _Requirements: 3.4, 9.2_
 
 - [ ] 5. Build offline queue management and sync system
-  - [ ] 5.1 Create offline assessment request queue
+  - [x] 5.1 Create offline assessment request queue
 
   - Implement AssessmentRequest model with job state machine (pending → processing → completed/failed)
     - Build request queuing system that stores photos, plant context, and timestamps locally
@@ -113,7 +112,7 @@
     - Add queue size limits and cleanup policies for storage management
     - _Requirements: 7.1, 7.3, 7.4_
 
-  - [ ] 5.2 Implement intelligent sync and retry logic
+  - [x] 5.2 Implement intelligent sync and retry logic
     - Build exponential backoff with jitter for failed request retries
     - Create batch processing system for efficient network usage when online
     - Implement sync conflict resolution using last-write-wins with server timestamps
@@ -170,8 +169,8 @@ When implementing the HMAC, be aware that expo-crypto does not provide a built-i
 
 Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output to be a stable hex string (lowercase) or base64 string; pick one format (hex is recommended) and document it across clients. Treat the HMAC secret as a credential (store it in secure storage / Keychain / Android Keystore / SecureStore) and, if you support secret rotation, provide an explicit rekey strategy (on-access rekeying or a background re-encryption job that rewrites blobs under the new key while preserving `integrity_sha256`).
 
-- [ ] 6. Implement user feedback and telemetry system
-  - [ ] 6.1 Create user feedback collection interface
+- [x] 6. Implement user feedback and telemetry system
+  - [x] 6.1 Create user feedback collection interface
     - Build feedback UI for "Was this helpful?" and "Issue resolved?" collection
     - Implement optional feedback notes collection with character limits
     - Create feedback submission system that respects user privacy preferences
@@ -180,7 +179,7 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - Implement feedback aggregation for per-class accuracy and helpfulness metrics
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
-  - [ ] 6.2 Build comprehensive telemetry and analytics system
+  - [x] 6.2 Build comprehensive telemetry and analytics system
     - Implement privacy-safe telemetry logging (device vs cloud mode, latency, model version, confidence)
     - Create user action tracking (task creation, playbook shifts, community CTA usage)
   - Add Sentry integration with assessment_id breadcrumbs (no PII) for error debugging
@@ -188,8 +187,8 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - Implement model performance monitoring with per-class accuracy tracking
     - _Requirements: 9.1, 9.3, 9.4, 9.5_
 
-- [ ] 7. Create model lifecycle management and remote configuration
-  - [ ] 7.1 Implement model delivery and update system
+- [x] 7. Create model lifecycle management and remote configuration
+  - [x] 7.1 Implement model delivery and update system
     - Build remote config system for model version management and staged rollouts
     - Create secure model download with checksum validation and cryptographic signatures
     - Implement A/B testing framework for model updates with shadow mode testing
@@ -197,7 +196,7 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - Create model caching system with efficient storage and cleanup
     - _Requirements: 10.1, 10.2, 9.3_
 
-  - [ ] 7.2 Build edge case handling and graceful degradation
+  - [x] 7.2 Build edge case handling and graceful degradation
     - Implement non-plant image detection with educational prompts and retake guidance
     - Create extreme close-up and heavy LED color cast detection with specific feedback
     - Add low memory handling with graceful degradation (skip device → cloud inference)
@@ -205,8 +204,8 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - Build timeout handling with user-visible countdown and cancellation options
     - _Requirements: 10.3, 10.4_
 
-- [ ] 8. Implement privacy controls and data management
-  - [ ] 8.1 Create privacy settings and consent management
+- [x] 8. Implement privacy controls and data management
+  - [x] 8.1 Create privacy settings and consent management
     - Build settings toggle for "Improve the model with my images" (default off)
     - Implement explicit opt-in flow for photo sharing with clear retention policies
     - Create data retention management (90 days raw images opt-in only, 12 months metrics)
@@ -214,26 +213,24 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - Implement consent tracking and withdrawal mechanisms
     - _Requirements: 8.1, 8.2, 8.5_
 
-  - [ ] 8.2 Build data deletion and GDPR compliance system
+  - [x] 8.2 Build data deletion and GDPR compliance system
     - Implement comprehensive deletion that purges local files, remote blobs, and telemetry
-  - Create delete cascade system keyed by assessment_id across all storage systems
+    - Create delete cascade system keyed by assessment_id across all storage systems
     - Add deletion confirmation system with 30-day completion guarantee
     - Build audit trail for deletion requests and completion status
     - Implement "right to be forgotten" compliance with proper data removal verification
     - _Requirements: 8.4, 8.5_
 
-- [ ] 9. Create community integration and uncertainty handling
-  - [ ] 9.1 Build community CTA and post creation system
+- [x] 9. Create community integration and uncertainty handling
+  - [x] 9.1 Build community CTA and post creation system
     - Implement automatic community CTA triggering for confidence <70% or Unknown class
-
   - Create prefilled community post generation with assessment images and context
   - Build redacted post creation that removes sensitive metadata and writes a re-encoded copy under a random, non-linkable filename (never reuse filename_key)
-
   - Add deep-linking from assessment results to community post creation flow
   - Implement community post tracking for assessment follow-up and resolution
     - _Requirements: 4.1, 4.2, 4.3, 8.3_
 
-  - [ ] 9.2 Create uncertainty and "not confident" result handling
+  - [x] 9.2 Create uncertainty and "not confident" result handling
     - Build neutral result card UI for low confidence or Unknown classifications
     - Implement retake guidance with specific tips for improving photo quality
   - Create generic assessment checklist (pH, EC, light height) for uncertain cases
@@ -241,28 +238,22 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - Implement result card that balances uncertainty communication with actionable next steps
     - _Requirements: 4.4, 2.3_
 
-- [ ] 10. Build comprehensive testing and quality assurance
-  - [ ] 10.1 Create unit tests for core ML and quality assessment components
+- [x] 10. Build comprehensive testing and quality assurance
+  - [x] 10.1 Create unit tests for core ML and quality assessment components
     - Write tests for quality assessment engine with synthetic blur, exposure, and white balance samples
     - Create ML inference engine tests with mock model responses and aggregation logic validation
 
-  - Build action plan generator tests for each assessment class and safety guardrail validation
-    - Add golden-set test that validates temperature scaling improves ECE without accuracy loss
-    - Add model download integrity tests that verify checksums and signatures before loading
-    - Create delegate/execution provider coverage tests that assert NNAPI/CoreML vs CPU fallback works and logs correctly
+  - [x] 10.2 Implement integration and end-to-end testing
+    - Create end-to-end assessment flow tests (capture → quality → inference → results → actions)
     - Add automated EXIF stripping test that confirms metadata removal after manipulator steps
-    - _Requirements: 6.4, 2.1, 3.1, 10.1_
-
-  - [ ] 10.2 Implement integration and end-to-end testing
-  - Create end-to-end assessment flow tests (capture → quality → inference → results → actions)
     - Build offline queue and sync testing with flight-mode simulation
     - Implement cross-feature integration tests (task creation, playbook adjustments, community posts)
     - Add performance testing for p95 latency SLOs on target devices (Pixel 6a, Galaxy A54)
     - Create device matrix testing with various Android/iOS versions and hardware configurations
-    - _Requirements: 2.1, 7.1, 3.4, 9.4_
+    - _Requirements: 2.1, 6.4, 2.1, 3.1, 3.4, 7.1, 9.4, 10.1_
 
-- [ ] 11. Implement accessibility and localization support
-  - [ ] 11.1 Add comprehensive accessibility features
+- [x] 11. Implement accessibility and localization support
+  - [x] 11.1 Add comprehensive accessibility features
     - Implement screen reader support with descriptive labels for camera controls and guidance
     - Create result announcements with confidence levels and action plan navigation
     - Add high contrast mode support for camera UI and result displays
@@ -270,7 +261,7 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - Build voice-over support for camera capture and alternative gesture controls
     - _Requirements: All requirements (accessibility compliance)_
 
-  - [ ] 11.2 Create localization infrastructure for assessment content
+  - [x] 11.2 Create localization infrastructure for assessment content
     - Externalize all assessment class names, descriptions, and action plan templates to JSON/YAML
     - Implement server-delivered action plans with locale support (EN/DE)
     - Create legal disclaimer management per jurisdiction with proper legal review
@@ -278,8 +269,8 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - Add error message and guidance text localization with validation scripts
     - _Requirements: All requirements (localization compliance)_
 
-- [ ] 12. Final integration and polish
-  - [ ] 12.1 Integrate AI assessment with existing app features
+- [x] 12. Final integration and polish
+  - [x] 12.1 Integrate AI assessment with existing app features
     - Connect assessment results to plant records in existing database schema
     - Integrate with existing calendar system for seamless task creation and scheduling
     - Link assessment history to plant profiles with timeline and progress tracking
@@ -287,7 +278,7 @@ Expect HMAC input to be raw binary (Uint8Array) for image blobs and the output t
     - Ensure consistent UI/UX with existing app design system and navigation patterns
     - _Requirements: 3.4, 4.3, 9.1_
 
-  - [ ] 12.2 Implement final testing, optimization, and release preparation
+  - [x] 12.2 Implement final testing, optimization, and release preparation
     - Conduct comprehensive device testing on target hardware with real plant images
     - Perform load testing for cloud inference endpoints with concurrent user simulation
     - Execute accessibility audit with screen reader testing and contrast validation

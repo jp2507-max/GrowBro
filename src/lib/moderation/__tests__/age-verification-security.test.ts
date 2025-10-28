@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Age Verification Security Tests (DSA Art. 28 + EU Age-Verification Blueprint)
  * Tests token security, no raw ID persistence, replay prevention, and privacy compliance

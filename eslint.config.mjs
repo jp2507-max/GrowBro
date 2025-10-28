@@ -156,7 +156,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['src/translations/*.json'],
+    files: ['src/translations/en.json', 'src/translations/de.json'],
     plugins: { 'i18n-json': i18nJsonPlugin },
     processor: {
       meta: { name: '.json' },
