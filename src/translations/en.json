@@ -557,7 +557,9 @@
   },
   "communityPost": {
     "errorDescription": "Failed to create community post. Please try again.",
-    "errorTitle": "Error"
+    "errorTitle": "Error",
+    "postAddError": "Error adding post",
+    "postAdded": "Post added successfully"
   },
   "consent": {
     "accept_all": "Accept all",
@@ -724,6 +726,15 @@
     "unknown": "An unexpected error occurred",
     "unknown_description": "An unexpected error occurred. Please try again.",
     "unknown_title": "Error"
+  },
+  "feed": {
+    "addPost": {
+      "contentLabel": "Content",
+      "title": "Create Post",
+      "titleLabel": "Title"
+    },
+    "prefilledImages": "Prefilled images",
+    "title": "Feed"
   },
   "harvest": {
     "accessibility": {

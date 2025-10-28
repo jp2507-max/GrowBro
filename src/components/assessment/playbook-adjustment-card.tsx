@@ -61,6 +61,7 @@ type PlaybookAdjustmentItemProps = {
   index: number;
   onAccept?: (adjustment: PlaybookAdjustment) => void;
   testID: string;
+  className?: string;
 };
 
 function PlaybookAdjustmentItem({
@@ -68,12 +69,13 @@ function PlaybookAdjustmentItem({
   index,
   onAccept,
   testID,
+  className,
 }: PlaybookAdjustmentItemProps) {
   const { t } = useTranslation();
 
   return (
     <View
-      className="rounded-lg border border-neutral-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-900"
+      className={`rounded-lg border border-neutral-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-900 ${className || ''}`}
       testID={`${testID}-item-${index}`}
     >
       <View className="flex-row items-start justify-between">
@@ -169,7 +171,7 @@ export function PlaybookAdjustmentCard({
       </Pressable>
 
       {expanded && (
-        <View className="mt-2 space-y-2">
+        <View className="mt-2">
           {adjustments.map((adjustment, index) => (
             <PlaybookAdjustmentItem
               key={index}
@@ -177,6 +179,7 @@ export function PlaybookAdjustmentCard({
               index={index}
               onAccept={onAccept}
               testID={testID}
+              className={index < adjustments.length - 1 ? 'mb-2' : ''}
             />
           ))}
         </View>

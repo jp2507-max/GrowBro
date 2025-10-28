@@ -3,6 +3,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm, type UseFormSetValue } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Image, ScrollView, StyleSheet } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 import { z } from 'zod';
@@ -73,7 +74,7 @@ function useAssessmentPrefill({
   setValue,
   setAttachments,
   setSourceAssessmentId,
-}: PrefillHookOptions) {
+}: PrefillHookOptions): void {
   const [applied, setApplied] = React.useState(false);
 
   useEffect(() => {
@@ -146,7 +147,8 @@ function useAssessmentPrefill({
   }, [applied, params, setAttachments, setSourceAssessmentId, setValue]);
 }
 
-export default function AddPost() {
+export default function AddPost(): JSX.Element {
+  const { t } = useTranslation();
   const params = useLocalSearchParams();
   const { control, handleSubmit, setValue } = useForm<FormType>({
     resolver: zodResolver(schema),
@@ -172,14 +174,14 @@ export default function AddPost() {
     addPost(payload, {
       onSuccess: () => {
         showMessage({
-          message: 'Post added successfully',
+          message: t('communityPost.postAdded'),
           type: 'success',
         });
         // here you can navigate to the post list and refresh the list data
         //queryClient.invalidateQueries(usePosts.getKey());
       },
       onError: () => {
-        showErrorMessage('Error adding post');
+        showErrorMessage(t('communityPost.postAddError'));
       },
     });
   };
@@ -215,13 +217,15 @@ export default function AddPost() {
           {attachments.length > 0 && (
             <View className="mt-4">
               <Text className="mb-2 text-sm font-semibold text-neutral-700 dark:text-neutral-200">
-                Prefilled images
+                {translateDynamic('feed.prefilledImages')}
               </Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {attachments.map((image) => (
                   <Image
                     key={image.filename}
                     accessibilityIgnoresInvertColors
+                    accessibilityLabel={image.filename || 'attachment image'}
+                    accessibilityRole="image"
                     className="mr-3 rounded-xl"
                     source={{ uri: image.uri }}
                     style={styles.attachmentImage}
@@ -233,7 +237,7 @@ export default function AddPost() {
 
           <Button
             className="mt-6"
-            label="Add Post"
+            label={t('feed:addPost')}
             loading={isPending}
             onPress={handleSubmit(onSubmit)}
             testID="add-post-button"

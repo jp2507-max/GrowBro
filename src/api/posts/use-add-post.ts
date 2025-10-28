@@ -34,7 +34,7 @@ type Variables = {
 type Response = Post;
 
 export const useAddPost = createMutation<Response, Variables, AxiosError>({
-  mutationFn: async (variables) =>
+  mutationFn: async (variables): Promise<Response> =>
     client({
       url: 'posts/add',
       method: 'POST',

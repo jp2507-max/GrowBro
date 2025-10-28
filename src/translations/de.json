@@ -557,7 +557,9 @@
   },
   "communityPost": {
     "errorDescription": "Community-Beitrag konnte nicht erstellt werden. Bitte versuche es erneut.",
-    "errorTitle": "Fehler"
+    "errorTitle": "Fehler",
+    "postAddError": "Fehler beim Hinzufügen des Beitrags",
+    "postAdded": "Beitrag erfolgreich hinzugefügt"
   },
   "consent": {
     "accept_all": "Alle akzeptieren",
@@ -724,6 +726,15 @@
     "unknown": "Ein unerwarteter Fehler ist aufgetreten",
     "unknown_description": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
     "unknown_title": "Fehler"
+  },
+  "feed": {
+    "addPost": {
+      "contentLabel": "Inhalt",
+      "title": "Beitrag erstellen",
+      "titleLabel": "Titel"
+    },
+    "prefilledImages": "Vorgefüllte Bilder",
+    "title": "Feed"
   },
   "harvest": {
     "accessibility": {

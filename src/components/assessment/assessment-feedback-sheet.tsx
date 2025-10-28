@@ -9,6 +9,7 @@ import { Modal, useModal } from '@/components/ui/modal';
 import type { FeedbackIssueResolved } from '@/lib/watermelon-models/assessment-feedback';
 
 export type AssessmentFeedbackData = {
+  assessmentId: string;
   helpful: boolean;
   issueResolved?: FeedbackIssueResolved;
   notes?: string;
@@ -22,7 +23,7 @@ type AssessmentFeedbackSheetProps = {
 export const AssessmentFeedbackSheet = React.forwardRef<
   unknown,
   AssessmentFeedbackSheetProps
->(({ onSubmit, assessmentId: _assessmentId }, ref) => {
+>(({ onSubmit, assessmentId }, ref) => {
   const { t } = useTranslation();
   const internalRef = useRef<any>(null);
   const setRefs = useCallback(
@@ -57,6 +58,7 @@ export const AssessmentFeedbackSheet = React.forwardRef<
     if (helpful === null) return;
 
     const feedback: AssessmentFeedbackData = {
+      assessmentId,
       helpful,
       issueResolved: issueResolved ?? undefined,
       notes: notes.trim() || undefined,

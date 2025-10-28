@@ -72,7 +72,7 @@ export function TaskCreationModal({
         label: step.taskTemplate?.name ?? step.title,
       }));
     return [...immediateTasks, ...shortTermTasks];
-  }, [actionPlan.immediateSteps, actionPlan.shortTermActions]);
+  }, [actionPlan]);
 
   // Sync visibility with bottom sheet
   React.useEffect(() => {

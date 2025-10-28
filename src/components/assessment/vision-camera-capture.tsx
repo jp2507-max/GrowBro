@@ -5,10 +5,11 @@ import { Camera, useCameraDevice } from 'react-native-vision-camera';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Button, Text, View } from '@/components/ui';
-import { colors } from '@/components/ui/colors';
+import colors from '@/components/ui/colors';
 import { stripExifData } from '@/lib/assessment/image-processing';
 import { useCameraLifecycle } from '@/lib/assessment/use-camera-lifecycle';
 import { qualityAssessmentEngine } from '@/lib/quality/engine';
+import { deleteFile } from '@/lib/utils/filesystem';
 import type {
   CapturedPhoto,
   GuidanceMode,
@@ -37,10 +38,12 @@ export function VisionCameraCapture({
   const device = useCameraDevice('back');
   const { isActive } = useCameraLifecycle();
   const [isCapturing, setIsCapturing] = useState(false);
+  const isCapturingRef = useRef(false);
 
-  const handleCapture = useCallback(async () => {
-    if (!camera.current || isCapturing) return;
+  const handleCapture = useCallback(async (): Promise<void> => {
+    if (!camera.current || isCapturingRef.current) return;
 
+    isCapturingRef.current = true;
     setIsCapturing(true);
     try {
       const photo = await camera.current.takePhoto({
@@ -50,6 +53,8 @@ export function VisionCameraCapture({
 
       // Strip EXIF data
       const processed = await stripExifData(`file://${photo.path}`);
+      // Delete original file to remove EXIF metadata
+      await deleteFile(`file://${photo.path}`);
 
       const qualityResult: QualityResult =
         await qualityAssessmentEngine.assessPhoto(processed.uri);
@@ -66,9 +71,10 @@ export function VisionCameraCapture({
     } catch (error) {
       onError?.(error as Error);
     } finally {
+      isCapturingRef.current = false;
       setIsCapturing(false);
     }
-  }, [isCapturing, onError, onPhotoCapture]);
+  }, [onError, onPhotoCapture]);
 
   if (!device) {
     return (

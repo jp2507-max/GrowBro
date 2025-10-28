@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -134,10 +135,14 @@ export class CloudInferenceClient {
     storagePath: string;
     sha256: string;
   }> {
-    const response = await fetch(photo.uri);
-    const blob = await response.blob();
-    const arrayBuffer = await blob.arrayBuffer();
-    const body = new Uint8Array(arrayBuffer);
+    // Read file as base64 using expo-file-system for cross-platform compatibility
+    const base64 = await FileSystem.readAsStringAsync(photo.uri, {
+      encoding: 'base64',
+    });
+
+    // Convert base64 to Uint8Array
+    const body = new Uint8Array(Buffer.from(base64, 'base64'));
+
     const sha256 = await computeIntegritySha256(photo.uri);
 
     const fileExtension = photo.uri.endsWith('.png') ? 'png' : 'jpg';
