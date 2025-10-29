@@ -4,13 +4,13 @@ This document outlines the implementation tasks for the Authentication & Account
 
 ## Task List
 
-- [ ] 1. Foundation: Auth Store & Session Management
+- [x] 1. Foundation: Auth Store & Session Management
   - Extend Zustand auth store with user, session, offline mode fields
   - Implement MMKV storage adapter for Supabase Auth
   - Create session manager for offline handling and validation
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 7.1, 7.2, 7.3, 7.4, 7.6, 14.1, 14.2, 14.3, 14.4, 14.5_
 
-- [ ] 1.1 Extend Zustand auth store
+- [x] 1.1 Extend Zustand auth store
   - Add `user`, `session`, `lastValidatedAt`, `offlineMode` fields to AuthState interface
   - Subscribe to `supabase.auth.onAuthStateChange` to mirror session/user into Zustand
   - Update `signIn` action to accept Session and User objects
@@ -27,7 +27,7 @@ This document outlines the implementation tasks for the Authentication & Account
   - Note: MMKV is recommended over AsyncStorage for auth storage (encrypted-at-rest on Android, OS-level encryption on iOS)
   - _Requirements: 5.1, 5.2_
 
-- [ ] 1.3 Create session manager
+- [x] 1.3 Create session manager
   - Implement `validateSession()` to determine offline mode based on lastValidatedAt
   - Rely on supabase-js `autoRefreshToken` instead of custom refresh timers
   - Update lastValidatedAt on successful refresh or explicit validation
@@ -36,7 +36,7 @@ This document outlines the implementation tasks for the Authentication & Account
   - Add logic for 0-7 days (full), 7-30 days (readonly), 30+ days (blocked)
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.6_
 
-- [ ]\* 1.4 Write unit tests for auth store and session manager
+- [x]\* 1.4 Write unit tests for auth store and session manager
   - Test state transitions (idle → signIn → signOut)
   - Test MMKV persistence and hydration
   - Test offline mode transitions
@@ -49,7 +49,7 @@ This document outlines the implementation tasks for the Authentication & Account
   - Set up RLS policies for security
   - _Requirements: 6.1, 6.7, 8.1, 8.2, 8.3, 8.4, 8.5, 8.7_
 
-- [ ] 2.1 Create user_sessions table migration
+- [x] 2.1 Create user_sessions table migration
   - Create migration file with user_sessions table schema
   - Add columns: id, user_id, session_key (SHA-256 hash of refresh token), device_name, device_os, app_version, truncated_ip (not full IP), user_agent, created_at, last_active_at, revoked_at
   - Add UNIQUE constraint on session_key
@@ -57,7 +57,7 @@ This document outlines the implementation tasks for the Authentication & Account
   - Add RLS policies for user access (SELECT, UPDATE own sessions)
   - _Requirements: 6.1, 6.2, 6.7_
 
-- [ ] 2.2 Create auth_lockouts table migration
+- [x] 2.2 Create auth_lockouts table migration
   - Create migration file with auth_lockouts table schema
   - Add columns: id, email_hash (salted hash), failed_attempts, locked_until, created_at, updated_at
   - Add UNIQUE index on email_hash
@@ -65,14 +65,14 @@ This document outlines the implementation tasks for the Authentication & Account
   - Document salt management strategy (rotation, storage)
   - _Requirements: 8.1, 8.2, 8.3, 8.4_
 
-- [ ] 2.3 Create auth_audit_log table migration
+- [x] 2.3 Create auth_audit_log table migration
   - Create migration file with auth_audit_log table schema
   - Add columns: id, user_id, event_type, truncated_ip, user_agent, metadata, created_at
   - Add indexes on user_id, event_type, created_at
   - Add RLS policy for service-role only access (no mobile app access)
   - _Requirements: 8.7_
 
-- [ ] 2.4 Implement capture-device-metadata Edge Function
+- [x] 2.4 Implement capture-device-metadata Edge Function
   - Create Edge Function to capture device metadata on sign in
   - Extract user agent, IP address, app version from request headers
   - Parse device info from user agent (device name, OS)
@@ -81,7 +81,7 @@ This document outlines the implementation tasks for the Authentication & Account
   - Handle errors gracefully (don't block sign in)
   - _Requirements: 6.1, 6.7_
 
-- [ ] 2.5 Implement lockout enforcement Edge Function
+- [x] 2.5 Implement lockout enforcement Edge Function
   - Create Edge Function wrapper for ALL email/password sign-ins (to avoid bypass)
   - Query auth_lockouts table by email_hash (salted)
   - If locked, return error with remaining time
@@ -91,14 +91,14 @@ This document outlines the implementation tasks for the Authentication & Account
   - Add time-bound client-side caching (60s) for lockout status to reduce load
   - _Requirements: 8.1, 8.2, 8.3, 8.4_
 
-- [ ] 2.6 Implement send-lockout-notification Edge Function
+- [x] 2.6 Implement send-lockout-notification Edge Function
   - Create Edge Function to send lockout email notifications
   - Integrate with external email provider (Resend/Mailgun/SMTP)
   - Send email with lockout details (timestamp, truncated IP)
   - Log to auth_audit_log table
   - _Requirements: 8.5, 8.7_
 
-- [ ] 2.7 Implement session revocation Edge Functions
+- [x] 2.7 Implement session revocation Edge Functions
   - Create revoke-session Edge Function using GoTrue Admin API with service role
   - Revoke specific refresh token by session_key
   - Create revoke-all-sessions-except Edge Function to revoke all except current
@@ -106,20 +106,20 @@ This document outlines the implementation tasks for the Authentication & Account
   - Return success/error response
   - _Requirements: 6.3, 6.4, 6.5_
 
-- [ ]\* 2.8 Write integration tests for Edge Functions
+- [x]\* 2.8 Write integration tests for Edge Functions
   - Test device metadata capture on sign in
   - Test lockout enforcement after 5 failed attempts
   - Test lockout notification email sent
   - Test session revocation via Admin API
   - _Requirements: 6.1, 8.1, 8.5_
 
-- [ ] 3. Core Auth API Hooks
+- [x] 3. Core Auth API Hooks
   - Implement React Query Kit hooks for authentication operations
   - Add error handling and mapping to i18n keys
   - Integrate with Zustand auth store
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7, 15.8_
 
-- [ ] 3.1 Implement useSignIn hook
+- [x] 3.1 Implement useSignIn hook
   - Create mutation hook for email/password sign in
   - Call lockout enforcement Edge Function wrapper (NOT direct signInWithPassword to avoid bypass)
   - On success, rely on supabase-js session persistence with MMKV, then update Zustand
@@ -127,7 +127,7 @@ This document outlines the implementation tasks for the Authentication & Account
   - Map errors to i18n keys (pattern-based, never reveal account existence)
   - _Requirements: 1.1, 1.2, 1.3, 8.1, 8.6, 11.1, 15.1, 15.6, 15.7, 15.8_
 
-- [ ] 3.2 Implement useSignUp hook
+- [x] 3.2 Implement useSignUp hook
   - Create mutation hook for email/password sign up
   - Validate password requirements with Zod schema
   - On success, send verification email
@@ -135,7 +135,7 @@ This document outlines the implementation tasks for the Authentication & Account
   - Map errors to i18n keys
   - _Requirements: 1.1, 1.4, 1.5, 4.1, 15.4, 15.5_
 
-- [ ] 3.3 Implement OAuth hooks
+- [x] 3.3 Implement OAuth hooks
   - Create useSignInWithOAuth hook to initiate OAuth flow (redirects to provider)
   - Create useExchangeOAuthCode hook to exchange authorization code for session after redirect
   - Create useSignInWithIdToken hook for native OAuth (Apple/Google) - better UX on native
@@ -143,21 +143,21 @@ This document outlines the implementation tasks for the Authentication & Account
   - Link existing accounts if email matches and verified
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
 
-- [ ] 3.4 Implement password reset hooks
+- [x] 3.4 Implement password reset hooks
   - Create useResetPassword hook to request reset email
   - Create useConfirmPasswordReset hook: parse token_hash and type, call verifyOtp({ type: 'recovery', token_hash }), then updateUser({ password }) during temporary session
   - Always show success message (don't reveal if email exists)
   - Handle expired tokens gracefully with i18n error
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-- [ ] 3.5 Implement email verification hooks
+- [x] 3.5 Implement email verification hooks
   - Create useVerifyEmail hook to verify OTP with token_hash
   - Create useResendVerificationEmail hook to resend verification
   - Update user.email_verified in auth store on success
   - Track analytics event if consent granted
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
 
-- [ ] 3.6 Implement sign out hooks
+- [x] 3.6 Implement sign out hooks
   - Create useSignOut hook with scope: 'local' (current device only)
   - Create useSignOutGlobal hook with scope: 'global' (revoke all sessions)
   - Clear MMKV storage and Zustand state
@@ -165,7 +165,7 @@ This document outlines the implementation tasks for the Authentication & Account
   - Track analytics event if consent granted
   - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5_
 
-- [ ] 3.7 Implement error mapper
+- [x] 3.7 Implement error mapper
   - Create mapAuthError function with HTTP status + safe message pattern matching
   - Map Supabase errors to i18n keys (codes are not always stable)
   - Never reveal account existence (use generic errors)
@@ -173,7 +173,7 @@ This document outlines the implementation tasks for the Authentication & Account
   - Fallback to 'auth.error_generic' for unknown errors
   - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.8_
 
-- [ ]\* 3.8 Write unit tests for auth hooks
+- [x]\* 3.8 Write unit tests for auth hooks
   - Test successful sign in flow
   - Test invalid credentials error
   - Test account lockout after 5 attempts
@@ -189,7 +189,7 @@ This document outlines the implementation tasks for the Authentication & Account
   - Implement accessibility features
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4, 13.1, 13.2, 15.1, 15.2, 15.3, 15.4, 15.5_
 
-- [ ] 4.1 Extend login screen
+- [x] 4.1 Extend login screen
   - Add OAuth buttons (Sign in with Apple, Sign in with Google)
   - Add "Forgot Password?" link
   - Add loading states and error display
@@ -197,7 +197,7 @@ This document outlines the implementation tasks for the Authentication & Account
   - Ensure 44pt touch targets and proper labels
   - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 3.1, 15.1, 15.2_
 
-- [ ] 4.2 Create sign up screen
+- [x] 4.2 Create sign up screen
   - Create sign up form with email and password inputs
   - Add real-time password validation and strength indicator
   - Add OAuth buttons (Sign up with Apple, Sign up with Google)
@@ -206,7 +206,7 @@ This document outlines the implementation tasks for the Authentication & Account
   - Add "Already have an account? Sign in" link
   - _Requirements: 1.1, 1.4, 1.5, 2.1, 2.2, 15.4, 15.5_
 
-- [ ] 4.3 Create password reset screens
+- [x] 4.3 Create password reset screens
   - Create reset-password screen with email input
   - Create reset-password-confirm screen with new password input
   - Add password strength indicator
@@ -214,21 +214,21 @@ This document outlines the implementation tasks for the Authentication & Account
   - Handle deep link navigation
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-- [ ] 4.4 Create email verification banner
+- [x] 4.4 Create email verification banner
   - Create dismissible banner component
   - Add "Verify your email" message
   - Add "Resend verification email" button with countdown timer
   - Show success message when verified
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
 
-- [ ] 4.5 Create security settings screen
+- [x] 4.5 Create security settings screen
   - Add change password section
   - Add active sessions list link
   - Add MFA section (marked as "Coming Soon")
   - Add account deletion section
   - _Requirements: 9.1, 10.1, 10.2_
 
-- [ ] 4.6 Create active sessions screen
+- [x] 4.6 Create active sessions screen
   - Display list of sessions with device details
   - Show current session badge
   - Add "Revoke" button for each session
@@ -237,14 +237,14 @@ This document outlines the implementation tasks for the Authentication & Account
   - Add swipe-to-revoke gesture
   - _Requirements: 6.2, 6.3, 6.4, 6.6_
 
-- [ ] 4.7 Create offline mode banner
+- [x] 4.7 Create offline mode banner
   - Create banner for read-only mode ("Offline - changes will sync later")
   - Create banner for blocked mode ("Session expired - please reconnect")
   - Add "Reconnect" button
   - Make dismissible but reappear on next screen
   - _Requirements: 7.2, 7.3_
 
-- [ ]\* 4.8 Write component tests for UI screens
+- [x]\* 4.8 Write component tests for UI screens
   - Test login form submission and validation
   - Test sign up form with password strength
   - Test OAuth button interactions

@@ -7,7 +7,7 @@ import { ActivityIndicator, StyleSheet } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Button, View } from '@/components/ui';
-import { colors } from '@/components/ui/colors';
+import colors from '@/components/ui/colors';
 import { stripExifData } from '@/lib/assessment/image-processing';
 import { qualityAssessmentEngine } from '@/lib/quality/engine';
 import type {
@@ -111,7 +111,7 @@ export function ExpoCameraCapture({
           {isCapturing ? (
             <ActivityIndicator
               size="small"
-              color={colors.light.charcoal[950]}
+              color={colors.charcoal[950]}
               accessibilityLabel={t('assessment.camera.status.capturing')}
               accessibilityHint={t('assessment.camera.status.capturingHint')}
             />

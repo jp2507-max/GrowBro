@@ -28,7 +28,9 @@ import {
   useIsFirstTime,
 } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
+import { initAuthStorage } from '@/lib/auth/auth-storage';
 import { updateActivity } from '@/lib/auth/session-timeout';
+import { useDeepLinking } from '@/lib/auth/use-deep-linking';
 import { useRootStartup } from '@/lib/hooks/use-root-startup';
 import { initializeJanitor } from '@/lib/media/photo-janitor';
 import { getReferencedPhotoUris } from '@/lib/media/photo-storage-helpers';
@@ -118,6 +120,9 @@ if (Env.SENTRY_DSN && hasConsent('crashReporting') && !sentryInitialized) {
   void SDKGate.initializeSDK('sentry');
 }
 
+// Initialize auth storage before hydrating auth state
+void initAuthStorage();
+
 hydrateAuth();
 hydrateAgeGate();
 loadSelectedTheme();
@@ -135,6 +140,9 @@ function RootLayout(): React.ReactElement {
   const [isI18nReady, setIsI18nReady] = React.useState(false);
   const [showConsent, setShowConsent] = React.useState(false);
   useRootStartup(setIsI18nReady, isFirstTime);
+
+  // Initialize deep linking for auth flows
+  useDeepLinking();
 
   React.useEffect(() => {
     if (ageGateStatus === 'verified' && !sessionId) {

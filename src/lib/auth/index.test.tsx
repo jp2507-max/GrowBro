@@ -1,3 +1,5 @@
+import type { Session, User } from '@supabase/supabase-js';
+
 import { resetAgeGate } from '../compliance/age-gate';
 import { signOut, useAuth } from './index';
 import { stopIdleTimeout } from './session-timeout';
@@ -11,6 +13,17 @@ jest.mock('./session-timeout', () => ({
   startIdleTimeout: jest.fn(),
   stopIdleTimeout: jest.fn(),
   updateActivity: jest.fn(),
+}));
+
+// Mock Supabase auth state listener
+jest.mock('../supabase', () => ({
+  supabase: {
+    auth: {
+      onAuthStateChange: jest.fn(() => ({
+        data: { subscription: { unsubscribe: jest.fn() } },
+      })),
+    },
+  },
 }));
 
 // Mock storage for testing
@@ -34,9 +47,186 @@ jest.mock('@/lib/storage', () => ({
 }));
 
 describe('Auth', () => {
+  const mockUser: User = {
+    id: 'mock-user-id',
+    aud: 'authenticated',
+    role: 'authenticated',
+    email: 'test@example.com',
+    email_confirmed_at: new Date().toISOString(),
+    phone: '',
+    confirmed_at: new Date().toISOString(),
+    last_sign_in_at: new Date().toISOString(),
+    app_metadata: {},
+    user_metadata: {},
+    identities: [],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const mockSession: Session = {
+    access_token: 'test-access-token',
+    refresh_token: 'test-refresh-token',
+    expires_at: Math.floor(Date.now() / 1000) + 3600,
+    expires_in: 3600,
+    token_type: 'bearer',
+    user: mockUser,
+  };
+
   beforeEach(() => {
     mockStorage.clear();
     jest.clearAllMocks();
+  });
+
+  describe('state transitions', () => {
+    test('should start with idle status', () => {
+      expect(useAuth.getState().status).toBe('idle');
+      expect(useAuth.getState().token).toBeNull();
+      expect(useAuth.getState().user).toBeNull();
+      expect(useAuth.getState().session).toBeNull();
+    });
+
+    test('should transition from idle to signIn with legacy token', () => {
+      const token = { access: 'test-token', refresh: 'test-refresh' };
+      useAuth.getState().signIn(token);
+
+      expect(useAuth.getState().status).toBe('signIn');
+      expect(useAuth.getState().token).toEqual(token);
+    });
+
+    test('should transition from idle to signIn with session and user', () => {
+      useAuth.getState().signIn({ session: mockSession, user: mockUser });
+
+      const state = useAuth.getState();
+      expect(state.status).toBe('signIn');
+      expect(state.session).toEqual(mockSession);
+      expect(state.user).toEqual(mockUser);
+      expect(state.token).toEqual({
+        access: mockSession.access_token,
+        refresh: mockSession.refresh_token,
+      });
+      expect(state.lastValidatedAt).toBeTruthy();
+      expect(state.offlineMode).toBe('full');
+    });
+
+    test('should transition from signIn to signOut', () => {
+      useAuth
+        .getState()
+        .signIn({ access: 'test-token', refresh: 'test-refresh' });
+      expect(useAuth.getState().status).toBe('signIn');
+
+      signOut();
+
+      const state = useAuth.getState();
+      expect(state.status).toBe('signOut');
+      expect(state.token).toBeNull();
+      expect(state.user).toBeNull();
+      expect(state.session).toBeNull();
+      expect(state.lastValidatedAt).toBeNull();
+      expect(state.offlineMode).toBe('full');
+    });
+  });
+
+  describe('session management', () => {
+    test('should update session with updateSession action', () => {
+      // Sign in first
+      useAuth.getState().signIn({ session: mockSession, user: mockUser });
+
+      // Update session with new token
+      const newSession: Session = {
+        ...mockSession,
+        access_token: 'new-access-token',
+        refresh_token: 'new-refresh-token',
+      };
+
+      useAuth.getState().updateSession(newSession);
+
+      const state = useAuth.getState();
+      expect(state.session).toEqual(newSession);
+      expect(state.token).toEqual({
+        access: 'new-access-token',
+        refresh: 'new-refresh-token',
+      });
+      expect(state.lastValidatedAt).toBeTruthy();
+    });
+
+    test('should update user with updateUser action', () => {
+      // Sign in first
+      useAuth.getState().signIn({ session: mockSession, user: mockUser });
+
+      // Update user data
+      const updatedUser: User = {
+        ...mockUser,
+        email: 'updated@example.com',
+        user_metadata: { name: 'Updated Name' },
+      };
+
+      useAuth.getState().updateUser(updatedUser);
+
+      expect(useAuth.getState().user).toEqual(updatedUser);
+    });
+
+    test('should set offline mode with setOfflineMode action', () => {
+      expect(useAuth.getState().offlineMode).toBe('full');
+
+      useAuth.getState().setOfflineMode('readonly');
+      expect(useAuth.getState().offlineMode).toBe('readonly');
+
+      useAuth.getState().setOfflineMode('blocked');
+      expect(useAuth.getState().offlineMode).toBe('blocked');
+
+      useAuth.getState().setOfflineMode('full');
+      expect(useAuth.getState().offlineMode).toBe('full');
+    });
+  });
+
+  describe('session persistence', () => {
+    test('should persist session to storage on signIn', () => {
+      useAuth.getState().signIn({ session: mockSession, user: mockUser });
+
+      // Verify token is stored in legacy format
+      const storedToken = mockStorage.get('token');
+      expect(storedToken).toBeTruthy();
+      expect(JSON.parse(storedToken!)).toEqual({
+        access: mockSession.access_token,
+        refresh: mockSession.refresh_token,
+      });
+    });
+
+    test('should hydrate session from storage', () => {
+      // Store token first
+      const token = { access: 'stored-token', refresh: 'stored-refresh' };
+      mockStorage.set('token', JSON.stringify(token));
+
+      // Hydrate
+      useAuth.getState().hydrate();
+
+      const state = useAuth.getState();
+      expect(state.status).toBe('signIn');
+      expect(state.token).toEqual(token);
+    });
+
+    test('should sign out if hydration fails', () => {
+      // Store invalid token
+      mockStorage.set('token', 'invalid-json');
+
+      // Hydrate
+      useAuth.getState().hydrate();
+
+      const state = useAuth.getState();
+      expect(state.status).toBe('signOut');
+      expect(state.token).toBeNull();
+    });
+
+    test('should clear storage on signOut', () => {
+      useAuth
+        .getState()
+        .signIn({ access: 'test-token', refresh: 'test-refresh' });
+      expect(mockStorage.get('token')).toBeTruthy();
+
+      signOut();
+
+      expect(mockStorage.get('token')).toBeUndefined();
+    });
   });
 
   describe('signOut', () => {

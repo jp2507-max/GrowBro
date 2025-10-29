@@ -1,12 +1,12 @@
-TASK_ID: {12} with subtasks (make sure task with sub task is fully implemented)
+TASK_ID: {5} with subtasks (make sure task with sub task is fully implemented)
 AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the plan
 
 CONTEXT
 
-- Feature: 19. ai-photo-diagnosis
-- Task index: .kiro\specs\19. ai-photo-diagnosis\tasks.md
-- Design spec: .kiro\specs\19. ai-photo-diagnosis\design.md
-- Requirements spec: .kiro\specs\19. ai-photo-diagnosis\requirements.md
+- Feature: 23. authentication-account-lifecycle
+- Task index: .kiro\specs\23. authentication-account-lifecycle\tasks.md
+- Design spec: .kiro\specs\23. authentication-account-lifecycle\design.md
+- Requirements spec: .kiro\specs\23. authentication-account-lifecycle\requirements.md
 
 CONTRACT (outputs)
 

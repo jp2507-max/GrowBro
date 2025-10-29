@@ -1,8 +1,10 @@
 import { Q } from '@nozbe/watermelondb';
 
-import type { FeedbackIssueResolved } from '@/components/assessment/assessment-feedback-sheet';
 import { database } from '@/lib/watermelon';
-import type { AssessmentFeedbackModel } from '@/lib/watermelon-models/assessment-feedback';
+import type {
+  AssessmentFeedbackModel,
+  FeedbackIssueResolved,
+} from '@/lib/watermelon-models/assessment-feedback';
 
 import { addFeedbackBreadcrumb } from './assessment-sentry';
 import { logFeedbackSubmitted } from './assessment-telemetry-service';
