@@ -95,7 +95,7 @@ const EXPO_ACCOUNT_OWNER = 'jan_100'; // expo account owner
 
 const EAS_PROJECT_ID = '0ce1e1fc-7b61-4a2f-ae2b-790c097ced82'; // eas project id
 
-const SCHEME = 'GrowBro'; // app scheme
+const SCHEME = 'growbro'; // app scheme
 
 /**
 
@@ -271,6 +271,9 @@ const buildTime = z.object({
   // ADD YOUR BUILD TIME ENV VARS HERE
 
   SECRET_KEY: z.string(),
+
+  // Email hashing salt for audit log privacy
+  EMAIL_HASH_SALT: z.string().min(1),
 
   // Sentry Configuration (Build-time)
 
@@ -525,6 +528,9 @@ const _buildTimeEnv = {
   // ADD YOUR ENV VARS HERE TOO
 
   SECRET_KEY: process.env.SECRET_KEY,
+
+  // Email hashing salt for audit log privacy
+  EMAIL_HASH_SALT: process.env.EMAIL_HASH_SALT,
 
   // Sentry Configuration (Build-time)
 

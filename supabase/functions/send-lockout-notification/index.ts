@@ -35,15 +35,91 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // Check shared secret
+    const sharedSecret = req.headers.get('x-shared-secret');
+    const expectedSecret = Deno.env.get('PROCESS_SHARED_SECRET');
+    if (!expectedSecret || sharedSecret !== expectedSecret) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate required environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseUrl || !supabaseKey) {
+      const missing = [];
+      if (!supabaseUrl) missing.push('SUPABASE_URL');
+      if (!supabaseKey) missing.push('SUPABASE_SERVICE_ROLE_KEY');
+      console.error(
+        `[send-lockout-notification] Missing environment variables: ${missing.join(', ')}`
+      );
+      return new Response(JSON.stringify({ error: 'Internal server error' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Parse request body
     const body: LockoutNotificationRequest = await req.json();
     const { email, lockedUntil, ipAddress, userAgent, failedAttempts } = body;
 
-    // Validate required fields
-    if (!email || !lockedUntil || !ipAddress) {
+    // Validate required fields and formats
+    if (!email) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required field: email' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return new Response(JSON.stringify({ error: 'Invalid email format' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (!lockedUntil) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required field: lockedUntil' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+    const lockedUntilDate = new Date(lockedUntil);
+    if (isNaN(lockedUntilDate.getTime())) {
       return new Response(
         JSON.stringify({
-          error: 'Missing required fields: email, lockedUntil, ipAddress',
+          error: 'Invalid lockedUntil date, must be a valid ISO date string',
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+    if (!ipAddress) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required field: ipAddress' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+    const validatedFailedAttempts = Number(failedAttempts);
+    if (
+      failedAttempts === undefined ||
+      failedAttempts === null ||
+      !Number.isFinite(validatedFailedAttempts)
+    ) {
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid failedAttempts, must be a finite number',
         }),
         {
           status: 400,
@@ -53,8 +129,6 @@ Deno.serve(async (req: Request) => {
     }
 
     // Initialize Supabase client with service role
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get user by email to retrieve user_id and preferred language
@@ -64,14 +138,29 @@ Deno.serve(async (req: Request) => {
       .eq('email', email)
       .maybeSingle();
 
+    // Handle profile lookup errors
+    if (_userError) {
+      console.error(
+        '[send-lockout-notification] Error retrieving user profile:',
+        _userError
+      );
+      return new Response(
+        JSON.stringify({ error: 'Failed to retrieve user profile' }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     const userId = users?.id || null;
     const language = users?.preferred_language || 'en';
 
     // Format lockout timestamp
-    const lockedUntilDate = new Date(lockedUntil);
     const now = new Date();
-    const minutesRemaining = Math.ceil(
-      (lockedUntilDate.getTime() - now.getTime()) / 60000
+    const minutesRemaining = Math.max(
+      0,
+      Math.ceil((lockedUntilDate.getTime() - now.getTime()) / 60000)
     );
 
     // Format email content
@@ -79,12 +168,13 @@ Deno.serve(async (req: Request) => {
       language,
       lockedUntilDate,
       minutesRemaining,
-      ipAddress,
-      failedAttempts
+      truncateIp(ipAddress),
+      validatedFailedAttempts
     );
 
     // Send email via Resend API
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    let emailSent = false;
     if (!resendApiKey) {
       console.error(
         '[send-lockout-notification] RESEND_API_KEY not configured'
@@ -92,7 +182,7 @@ Deno.serve(async (req: Request) => {
       // Log error but continue to audit log
     } else {
       try {
-        const emailSent = await sendEmailViaResend(
+        emailSent = await sendEmailViaResend(
           resendApiKey,
           email,
           emailContent.subject,
@@ -117,14 +207,14 @@ Deno.serve(async (req: Request) => {
       await supabase.rpc('log_auth_event', {
         p_user_id: userId,
         p_event_type: 'lockout',
-        p_ip_address: ipAddress,
+        p_ip_address: truncateIpAddress(ipAddress),
         p_user_agent: userAgent || 'Unknown',
         p_metadata: {
           email_hash: await hashEmail(email),
           locked_until: lockedUntil,
-          minutes_remaining: minutesRemaining,
-          failed_attempts: failedAttempts,
-          notification_sent: !!resendApiKey,
+          minutes_remaining: Math.max(0, minutesRemaining),
+          failed_attempts: validatedFailedAttempts,
+          notification_sent: emailSent,
         },
       });
     } catch (auditError) {
@@ -139,7 +229,7 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({
         success: true,
         message: 'Lockout notification sent successfully',
-        email_sent: !!resendApiKey,
+        email_sent: emailSent,
       }),
       {
         status: 200,
@@ -184,6 +274,9 @@ function formatLockoutEmail(
     }
   );
 
+  // Clamp minutesRemaining to ensure non-negative display
+  const clampedMinutesRemaining = Math.max(0, minutesRemaining);
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -221,7 +314,7 @@ function formatLockoutEmail(
             </div>
             <div class="info-row">
               <span class="info-label">${translations.minutesRemainingLabel}:</span>
-              <span class="warning">${minutesRemaining} ${translations.minutes}</span>
+              <span class="warning">${clampedMinutesRemaining} ${translations.minutes}</span>
             </div>
             <div class="info-row">
               <span class="info-label">${translations.ipAddressLabel}:</span>
@@ -270,7 +363,7 @@ ${translations.title}
 ${translations.intro}
 
 ${translations.lockedUntilLabel}: ${formattedDate}
-${translations.minutesRemainingLabel}: ${minutesRemaining} ${translations.minutes}
+${translations.minutesRemainingLabel}: ${clampedMinutesRemaining} ${translations.minutes}
 ${translations.ipAddressLabel}: ${ipAddress}
 ${translations.failedAttemptsLabel}: ${failedAttempts}
 
@@ -402,12 +495,69 @@ async function sendEmailViaResend(
 }
 
 /**
- * Hash email with SHA-256 for privacy in audit logs
+ * Hash email with SHA-256 and salt for privacy in audit logs
+ * Uses HMAC-SHA256 for stronger security against dictionary attacks
+ *
+ * Security improvement: Previously used unsalted SHA-256 which was vulnerable
+ * to rainbow table attacks. Now uses HMAC-SHA256 with EMAIL_HASH_SALT env var.
+ *
+ * BREAKING CHANGE: This change will produce different hashes for existing emails.
+ * Old audit logs will have different email_hash values than new ones for the same email.
+ * This is intentional for security but means old and new audit logs cannot be correlated
+ * by email hash alone.
  */
 async function hashEmail(email: string): Promise<string> {
+  const salt = Deno.env.get('EMAIL_HASH_SALT');
+  if (!salt) {
+    throw new Error('EMAIL_HASH_SALT environment variable is required');
+  }
+
   const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(salt),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
   const data = encoder.encode(email.toLowerCase().trim());
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashBuffer = await crypto.subtle.sign('HMAC', key, data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Truncate IP address per spec 8.5 for privacy in audit logs
+ * Removes the last octet of IPv4 addresses
+ */
+function truncateIpAddress(ipAddress: string): string {
+  // Handle IPv4 addresses
+  if (ipAddress.includes('.')) {
+    const parts = ipAddress.split('.');
+    if (parts.length === 4) {
+      return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
+    }
+  }
+  // For IPv6 or other formats, return as-is for now
+  return ipAddress;
+}
+
+/**
+ * Truncate IP address for email content per spec 8.5
+ * Masks the last octet of IPv4 addresses or truncates IPv6 addresses
+ */
+function truncateIp(ip: string): string {
+  try {
+    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) {
+      const parts = ip.split('.');
+      parts[3] = 'xxx';
+      return parts.join('.');
+    }
+    if (ip.includes(':')) {
+      const parts = ip.split(':');
+      return `${parts.slice(0, 4).join(':')}::xxxx`;
+    }
+  } catch (_) {}
+  return 'unknown';
 }
