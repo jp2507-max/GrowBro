@@ -30,6 +30,16 @@ const WRONG_PASSWORD = 'WrongPassword123!';
 
 let supabase: SupabaseClient;
 
+// Helper to hash email for database operations
+async function hashEmailForLookup(email: string): Promise<string> {
+  const salt = 'growbro_auth_lockout_salt_v1';
+  const encoder = new TextEncoder();
+  const data = encoder.encode(salt + email.toLowerCase().trim());
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 // Helper to clean up test data
 async function cleanupTestData() {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -46,8 +56,9 @@ async function cleanupTestData() {
     // Delete user sessions
     await supabase.from('user_sessions').delete().eq('user_id', userId);
 
-    // Delete lockout records
-    await supabase.from('auth_lockouts').delete().eq('email', TEST_EMAIL);
+    // Delete lockout records (use email hash)
+    const emailHash = await hashEmailForLookup(TEST_EMAIL);
+    await supabase.from('auth_lockouts').delete().eq('email_hash', emailHash);
 
     // Delete audit logs
     await supabase.from('auth_audit_log').delete().eq('user_id', userId);
@@ -105,7 +116,7 @@ Deno.test('Edge Function: capture-device-metadata - captures device info on sign
       },
       body: JSON.stringify({
         userId: signUpData.user.id,
-        refreshToken: signInData.session.refresh_token,
+        sessionKey: await deriveSessionKey(signInData.session.refresh_token),
         userAgent: 'Test-Agent/1.0 (iOS 17.0; iPhone 14 Pro)',
         appVersion: '1.0.0',
       }),
@@ -175,10 +186,11 @@ Deno.test('Edge Function: enforce-auth-lockout - locks account after 5 failed at
   }
 
   // Verify lockout record exists in database
+  const emailHash = await hashEmailForLookup(TEST_EMAIL);
   const { data: lockout, error: lockoutError } = await supabase
     .from('auth_lockouts')
     .select('*')
-    .eq('email', TEST_EMAIL)
+    .eq('email_hash', emailHash)
     .single();
 
   assertEquals(lockoutError, null);
@@ -367,7 +379,7 @@ Deno.test('Edge Function: revoke-all-sessions-except - revokes all but current',
       },
       body: JSON.stringify({
         userId: testUser.id,
-        refreshToken: signInData.session.refresh_token,
+        sessionKey: await deriveSessionKey(signInData.session.refresh_token),
         appVersion: '1.0.0',
       }),
     });

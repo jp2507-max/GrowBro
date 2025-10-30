@@ -533,13 +533,18 @@ async function hashEmail(email: string): Promise<string> {
  */
 function truncateIpAddress(ipAddress: string): string {
   // Handle IPv4 addresses
-  if (ipAddress.includes('.')) {
+  if (ipAddress.includes('.') && !ipAddress.includes(':')) {
     const parts = ipAddress.split('.');
     if (parts.length === 4) {
       return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
     }
   }
-  // For IPv6 or other formats, return as-is for now
+  // Handle IPv6 addresses
+  if (ipAddress.includes(':')) {
+    const parts = ipAddress.split(':');
+    return `${parts.slice(0, 4).join(':')}::xxxx`;
+  }
+  // For other formats, return as-is
   return ipAddress;
 }
 
@@ -558,6 +563,8 @@ function truncateIp(ip: string): string {
       const parts = ip.split(':');
       return `${parts.slice(0, 4).join(':')}::xxxx`;
     }
-  } catch (_) {}
+  } catch {
+    // Ignore parsing errors
+  }
   return 'unknown';
 }

@@ -1,14 +1,16 @@
 /**
  * Supabase Edge Function: Revoke Session
  *
- * Revokes a specific user session by revoking the refresh token via GoTrue Admin API.
- * Updates the revoked_at timestamp in user_sessions table.
+ * Marks a specific user session as revoked in the database by setting the revoked_at timestamp.
+ * Due to GoTrue API limitations, there is no direct way to revoke a specific refresh token;
+ * the refresh token remains valid until it naturally expires. The app should validate sessions
+ * against the revoked_at timestamp on startup to enforce revocation.
  *
  * Requirements:
- * - 6.3: Revoke specific refresh token via GoTrue Admin API
+ * - 6.3: Revoke specific refresh token via GoTrue Admin API (not implemented due to API limitations)
  * - 6.5: Force affected device to sign out on next app start
  *
- * Note: This function requires service role key to access GoTrue Admin API.
+ * Note: This function requires service role key for database operations.
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
@@ -131,11 +133,29 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Note: GoTrue doesn't have a direct "revoke refresh token by hash" endpoint
-    // We mark the session as revoked in our database, and the app will check this on startup
-    // The refresh token will naturally expire or be invalidated when user logs out globally
+    // CRITICAL SECURITY ISSUE: GoTrue doesn't have a direct "revoke refresh token by hash" endpoint
+    // This creates a security vulnerability where revoked sessions can still be used until token expiry.
+    // The refresh token remains valid and can continue accessing protected resources until it naturally expires.
+    //
+    // IMPACT: "Revoke session" in the UI does NOT truly terminate active sessions.
+    // Affected devices can refresh tokens and maintain access for hours/days.
+    //
+    // WORKAROUNDS IMPLEMENTED:
+    // - Mark session as revoked in database with revoked_at timestamp
+    // - App validates sessions against revoked_at on startup (requirement 6.5)
+    // - Force affected device to sign out on next app start
+    //
+    // REQUIRED FIXES (Priority: HIGH):
+    // 1. Implement true token revocation via Supabase Admin API when available
+    // 2. Set shorter JWT expiry times (5 minutes minimum) in Auth settings
+    // 3. Add immediate token invalidation via global logout for critical revocations
+    // 4. Implement real-time session validation in app middleware
+    // 5. Document this limitation for security audits and compliance
+    //
+    // Note: Same pattern exists in "revoke all sessions except current" - fix both endpoints
 
-    // Update session record to mark as revoked
+    // TODO: Replace with actual token revocation once GoTrue Admin API supports it
+    // Update session record to mark as revoked (current workaround)
     const { error: updateError } = await adminSupabase
       .from('user_sessions')
       .update({

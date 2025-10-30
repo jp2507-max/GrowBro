@@ -6,7 +6,7 @@
 import { createMutation } from 'react-query-kit';
 
 import { useAuth } from '@/lib/auth';
-import { hasConsent } from '@/lib/privacy-consent';
+import { logAuthError, trackAuthEvent } from '@/lib/auth/auth-telemetry';
 import { supabase } from '@/lib/supabase';
 
 import { mapAuthError } from './error-mapper';
@@ -62,8 +62,12 @@ export const useSignInWithOAuth = createMutation<
     };
   },
 
-  onError: (error: Error) => {
-    console.error('[Auth] OAuth initiation failed:', error.message);
+  onError: async (error: Error, variables) => {
+    await logAuthError(error, {
+      errorKey: error.message,
+      flow: 'oauth_initiate',
+      provider: variables.provider,
+    });
   },
 });
 
@@ -103,7 +107,7 @@ export const useExchangeOAuthCode = createMutation<
     };
   },
 
-  onSuccess: (data) => {
+  onSuccess: async (data) => {
     // Update Zustand auth store
     const { signIn: storeSignIn } = useAuth.getState();
     storeSignIn({
@@ -111,16 +115,21 @@ export const useExchangeOAuthCode = createMutation<
       user: data.user,
     });
 
-    // Track analytics event if consent granted
-    if (hasConsent('analytics')) {
-      // TODO: Integrate with analytics client once available
-      // trackAuthEvent('auth.sign_in', { method: 'oauth' });
-      console.log('[Auth] OAuth sign in successful (analytics consented)');
-    }
+    // Track analytics event with consent checking and PII sanitization
+    await trackAuthEvent('auth.sign_in', {
+      method: 'oauth',
+      provider: 'web', // Will be determined by the OAuth provider used
+      email: data.user.email,
+      user_id: data.user.id,
+    });
   },
 
-  onError: (error: Error) => {
-    console.error('[Auth] OAuth code exchange failed:', error.message);
+  onError: async (error: Error) => {
+    await logAuthError(error, {
+      errorKey: error.message,
+      flow: 'oauth_code_exchange',
+      method: 'oauth',
+    });
   },
 });
 
@@ -169,7 +178,7 @@ export const useSignInWithIdToken = createMutation<
     };
   },
 
-  onSuccess: (data, variables) => {
+  onSuccess: async (data, variables) => {
     // Update Zustand auth store
     const { signIn: storeSignIn } = useAuth.getState();
     storeSignIn({
@@ -177,17 +186,21 @@ export const useSignInWithIdToken = createMutation<
       user: data.user,
     });
 
-    // Track analytics event if consent granted
-    if (hasConsent('analytics')) {
-      // TODO: Integrate with analytics client once available
-      // trackAuthEvent('auth.sign_in', { method: `${variables.provider}_native` });
-      console.log(
-        `[Auth] ${variables.provider} native sign in successful (analytics consented)`
-      );
-    }
+    // Track analytics event with consent checking and PII sanitization
+    await trackAuthEvent('auth.sign_in', {
+      method: `${variables.provider}_native`,
+      provider: variables.provider,
+      email: data.user.email,
+      user_id: data.user.id,
+    });
   },
 
-  onError: (error: Error) => {
-    console.error('[Auth] Native OAuth sign in failed:', error.message);
+  onError: async (error: Error, variables) => {
+    await logAuthError(error, {
+      errorKey: error.message,
+      flow: 'oauth_native',
+      method: `${variables.provider}_native`,
+      provider: variables.provider,
+    });
   },
 });

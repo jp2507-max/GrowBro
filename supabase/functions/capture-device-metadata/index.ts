@@ -16,7 +16,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 interface CaptureDeviceMetadataRequest {
   userId: string;
-  refreshToken: string;
+  sessionKey: string;
   userAgent?: string;
   appVersion?: string;
 }
@@ -38,13 +38,13 @@ Deno.serve(async (req: Request) => {
 
     // Parse request body
     const body: CaptureDeviceMetadataRequest = await req.json();
-    const { userId, refreshToken, userAgent, appVersion } = body;
+    const { userId, sessionKey, userAgent, appVersion } = body;
 
     // Validate required fields
-    if (!userId || !refreshToken) {
+    if (!userId || !sessionKey) {
       return new Response(
         JSON.stringify({
-          error: 'Missing required fields: userId, refreshToken',
+          error: 'Missing required fields: userId, sessionKey',
         }),
         {
           status: 400,
@@ -68,9 +68,6 @@ Deno.serve(async (req: Request) => {
 
     // Parse device info from user agent
     const deviceInfo = parseUserAgent(finalUserAgent);
-
-    // Derive session key from refresh token (SHA-256 hash)
-    const sessionKey = await deriveSessionKey(refreshToken);
 
     // Insert or update session record
     const { data: existingSession, error: checkError } = await supabase
@@ -139,10 +136,11 @@ Deno.serve(async (req: Request) => {
 
       // Log to audit log
       try {
+        const ipParam = isValidInet(truncatedIp) ? truncatedIp : null;
         await supabase.rpc('log_auth_event', {
           p_user_id: userId,
           p_event_type: 'sign_in',
-          p_ip_address: truncatedIp,
+          p_ip_address: ipParam,
           p_user_agent: finalUserAgent,
           p_metadata: {
             device_name: deviceInfo.deviceName,
@@ -287,15 +285,22 @@ function extractAndroidDevice(userAgent: string): string {
 }
 
 /**
- * Derive stable session key from refresh token using SHA-256 hash
+ * Check if a string is a valid INET (IPv4 or IPv6)
  */
-async function deriveSessionKey(refreshToken: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(refreshToken);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-  return hashHex;
+function isValidInet(ip: string): boolean {
+  if (ip === 'unknown') return false;
+
+  // IPv4 validation
+  const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+  if (ipv4Regex.test(ip)) {
+    return ip.split('.').every((octet) => {
+      const num = parseInt(octet, 10);
+      return num >= 0 && num <= 255;
+    });
+  }
+
+  // IPv6 validation (simplified)
+  const ipv6Regex =
+    /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::1$|^::$|^([0-9a-fA-F]{1,4}:)*:[0-9a-fA-F]{1,4}$/;
+  return ipv6Regex.test(ip);
 }

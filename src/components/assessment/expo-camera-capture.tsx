@@ -6,8 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Button, View } from '@/components/ui';
-import colors from '@/components/ui/colors';
+import { Button, colors, View } from '@/components/ui';
 import { stripExifData } from '@/lib/assessment/image-processing';
 import { qualityAssessmentEngine } from '@/lib/quality/engine';
 import type {

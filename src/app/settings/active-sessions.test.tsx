@@ -16,7 +16,7 @@ jest.spyOn(Alert, 'alert');
 jest.mock('@/lib/auth', () => ({
   useAuth: {
     use: {
-      getStableSessionId: jest.fn(() => () => 'current-session-key'),
+      getStableSessionId: jest.fn(() => 'current-session-key'),
     },
   },
 }));

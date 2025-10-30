@@ -23,9 +23,9 @@ CREATE TABLE IF NOT EXISTS auth_audit_log (
 );
 
 -- Create indexes for performance
-CREATE INDEX idx_auth_audit_log_user_id ON auth_audit_log(user_id);
-CREATE INDEX idx_auth_audit_log_event_type ON auth_audit_log(event_type);
-CREATE INDEX idx_auth_audit_log_created_at ON auth_audit_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_auth_audit_log_user_id ON auth_audit_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_auth_audit_log_event_type ON auth_audit_log(event_type);
+CREATE INDEX IF NOT EXISTS idx_auth_audit_log_created_at ON auth_audit_log(created_at DESC);
 
 -- Add comments for documentation
 COMMENT ON TABLE auth_audit_log IS 'Audit log for authentication events. Service-role only access for security and compliance.';
@@ -39,10 +39,19 @@ COMMENT ON COLUMN auth_audit_log.metadata IS 'Additional event context (device i
 ALTER TABLE auth_audit_log ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policy: Service role only (no direct mobile app access)
-CREATE POLICY "Only service role can access audit logs"
-  ON auth_audit_log
-  USING (auth.jwt() ->> 'role' = 'service_role')
-  WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'auth_audit_log' 
+    AND policyname = 'Only service role can access audit logs'
+  ) THEN
+    CREATE POLICY "Only service role can access audit logs"
+      ON auth_audit_log
+      USING (auth.jwt() ->> 'role' = 'service_role')
+      WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
+  END IF;
+END $$;
 
 -- Helper function to log auth events (callable by Edge Functions with service role)
 CREATE OR REPLACE FUNCTION log_auth_event(
@@ -56,7 +65,10 @@ RETURNS UUID AS $$
 DECLARE
   v_log_id UUID;
 BEGIN
-  INSERT INTO auth_audit_log (
+  -- Set safe search_path to prevent hijacking
+  PERFORM set_config('search_path', 'pg_catalog,auth', true);
+  
+  INSERT INTO auth.auth_audit_log (
     user_id,
     event_type,
     ip_address,

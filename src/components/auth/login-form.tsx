@@ -26,7 +26,9 @@ export type LoginFormProps = {
   onSuccess?: () => void;
 };
 
-export const LoginForm = ({ onSuccess }: LoginFormProps) => {
+export const LoginForm: React.FC<LoginFormProps> = ({
+  onSuccess,
+}: LoginFormProps) => {
   const { t } = useTranslation();
   const { handleSubmit, control } = useForm<LoginFormData>({
     resolver: zodResolver(schema),

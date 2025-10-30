@@ -1,6 +1,8 @@
 import type { Session, User } from '@supabase/supabase-js';
 
 import { resetAgeGate } from '../compliance/age-gate';
+import * as storage from '../storage';
+import { supabase } from '../supabase';
 import { signOut, useAuth } from './index';
 import { stopIdleTimeout } from './session-timeout';
 
@@ -19,6 +21,8 @@ jest.mock('./session-timeout', () => ({
 jest.mock('../supabase', () => ({
   supabase: {
     auth: {
+      signOut: jest.fn(),
+      setSession: jest.fn().mockResolvedValue({}),
       onAuthStateChange: jest.fn(() => ({
         data: { subscription: { unsubscribe: jest.fn() } },
       })),
@@ -28,23 +32,24 @@ jest.mock('../supabase', () => ({
 
 // Mock storage for testing
 const mockStorage = new Map<string, string>();
-jest.mock('@/lib/storage', () => ({
-  storage: {
-    getString: jest.fn((key: string) => mockStorage.get(key)),
-    set: jest.fn((key: string, value: string) => mockStorage.set(key, value)),
-    delete: jest.fn((key: string) => mockStorage.delete(key)),
-  },
-  getItem: jest.fn((key: string) => {
+
+// Spy on storage functions
+const setItemSpy = jest
+  .spyOn(storage, 'setItem')
+  .mockImplementation((key: string, value: any) => {
+    mockStorage.set(key, JSON.stringify(value));
+  });
+const _getItemSpy = jest
+  .spyOn(storage, 'getItem')
+  .mockImplementation((key: string) => {
     const value = mockStorage.get(key);
     return value ? JSON.parse(value) : null;
-  }),
-  setItem: jest.fn((key: string, value: any) => {
-    mockStorage.set(key, JSON.stringify(value));
-  }),
-  removeItem: jest.fn((key: string) => {
+  });
+const _removeItemSpy = jest
+  .spyOn(storage, 'removeItem')
+  .mockImplementation((key: string) => {
     mockStorage.delete(key);
-  }),
-}));
+  });
 
 describe('Auth', () => {
   const mockUser: User = {
@@ -85,16 +90,16 @@ describe('Auth', () => {
       expect(useAuth.getState().session).toBeNull();
     });
 
-    test('should transition from idle to signIn with legacy token', () => {
+    test('should transition from idle to signIn with legacy token', async () => {
       const token = { access: 'test-token', refresh: 'test-refresh' };
-      useAuth.getState().signIn(token);
+      await useAuth.getState().signIn(token);
 
       expect(useAuth.getState().status).toBe('signIn');
       expect(useAuth.getState().token).toEqual(token);
     });
 
-    test('should transition from idle to signIn with session and user', () => {
-      useAuth.getState().signIn({ session: mockSession, user: mockUser });
+    test('should transition from idle to signIn with session and user', async () => {
+      await useAuth.getState().signIn({ session: mockSession, user: mockUser });
 
       const state = useAuth.getState();
       expect(state.status).toBe('signIn');
@@ -108,13 +113,13 @@ describe('Auth', () => {
       expect(state.offlineMode).toBe('full');
     });
 
-    test('should transition from signIn to signOut', () => {
-      useAuth
+    test('should transition from signIn to signOut', async () => {
+      await useAuth
         .getState()
         .signIn({ access: 'test-token', refresh: 'test-refresh' });
       expect(useAuth.getState().status).toBe('signIn');
 
-      signOut();
+      await signOut();
 
       const state = useAuth.getState();
       expect(state.status).toBe('signOut');
@@ -180,8 +185,14 @@ describe('Auth', () => {
   });
 
   describe('session persistence', () => {
-    test('should persist session to storage on signIn', () => {
-      useAuth.getState().signIn({ session: mockSession, user: mockUser });
+    test('should persist session to storage on signIn', async () => {
+      await useAuth.getState().signIn({ session: mockSession, user: mockUser });
+
+      // Verify setItem was called
+      expect(setItemSpy).toHaveBeenCalledWith('token', {
+        access: mockSession.access_token,
+        refresh: mockSession.refresh_token,
+      });
 
       // Verify token is stored in legacy format
       const storedToken = mockStorage.get('token');
@@ -192,60 +203,60 @@ describe('Auth', () => {
       });
     });
 
-    test('should hydrate session from storage', () => {
+    test('should hydrate session from storage', async () => {
       // Store token first
       const token = { access: 'stored-token', refresh: 'stored-refresh' };
       mockStorage.set('token', JSON.stringify(token));
 
       // Hydrate
-      useAuth.getState().hydrate();
+      await useAuth.getState().hydrate();
 
       const state = useAuth.getState();
       expect(state.status).toBe('signIn');
       expect(state.token).toEqual(token);
     });
 
-    test('should sign out if hydration fails', () => {
+    test('should sign out if hydration fails', async () => {
       // Store invalid token
       mockStorage.set('token', 'invalid-json');
 
       // Hydrate
-      useAuth.getState().hydrate();
+      await useAuth.getState().hydrate();
 
       const state = useAuth.getState();
       expect(state.status).toBe('signOut');
       expect(state.token).toBeNull();
     });
 
-    test('should clear storage on signOut', () => {
-      useAuth
+    test('should clear storage on signOut', async () => {
+      await useAuth
         .getState()
         .signIn({ access: 'test-token', refresh: 'test-refresh' });
       expect(mockStorage.get('token')).toBeTruthy();
 
-      signOut();
+      await signOut();
 
       expect(mockStorage.get('token')).toBeUndefined();
     });
   });
 
   describe('signOut', () => {
-    test('should call resetAgeGate when signing out', () => {
+    test('should call resetAgeGate when signing out', async () => {
       // Sign in first
-      useAuth
+      await useAuth
         .getState()
         .signIn({ access: 'test-token', refresh: 'test-refresh' });
 
       // Sign out
-      signOut();
+      await signOut();
 
       // Verify resetAgeGate was called
       expect(resetAgeGate).toHaveBeenCalledTimes(1);
     });
 
-    test('should clear auth token from storage on signOut', () => {
+    test('should clear auth token from storage on signOut', async () => {
       // Sign in first
-      useAuth
+      await useAuth
         .getState()
         .signIn({ access: 'test-token', refresh: 'test-refresh' });
 
@@ -253,15 +264,15 @@ describe('Auth', () => {
       expect(mockStorage.get('token')).toBeTruthy();
 
       // Sign out
-      signOut();
+      await signOut();
 
       // Verify token is removed from storage
       expect(mockStorage.get('token')).toBeUndefined();
     });
 
-    test('should update auth status to signOut', () => {
+    test('should update auth status to signOut', async () => {
       // Sign in first
-      useAuth
+      await useAuth
         .getState()
         .signIn({ access: 'test-token', refresh: 'test-refresh' });
 
@@ -269,15 +280,15 @@ describe('Auth', () => {
       expect(useAuth.getState().status).toBe('signIn');
 
       // Sign out
-      signOut();
+      await signOut();
 
       // Verify status is signOut
       expect(useAuth.getState().status).toBe('signOut');
     });
 
-    test('should clear token from state on signOut', () => {
+    test('should clear token from state on signOut', async () => {
       // Sign in first
-      useAuth
+      await useAuth
         .getState()
         .signIn({ access: 'test-token', refresh: 'test-refresh' });
 
@@ -288,23 +299,36 @@ describe('Auth', () => {
       });
 
       // Sign out
-      signOut();
+      await signOut();
 
       // Verify token is null
       expect(useAuth.getState().token).toBeNull();
     });
 
-    test('should call stopIdleTimeout when signing out', () => {
+    test('should call stopIdleTimeout when signing out', async () => {
       // Sign in first
-      useAuth
+      await useAuth
         .getState()
         .signIn({ access: 'test-token', refresh: 'test-refresh' });
 
       // Sign out
-      signOut();
+      await signOut();
 
       // Verify stopIdleTimeout was called
       expect(stopIdleTimeout).toHaveBeenCalledTimes(1);
+    });
+
+    test('should call supabase.auth.signOut when signing out', async () => {
+      // Sign in first
+      await useAuth
+        .getState()
+        .signIn({ access: 'test-token', refresh: 'test-refresh' });
+
+      // Sign out
+      await signOut();
+
+      // Verify supabase.auth.signOut was called
+      expect(supabase.auth.signOut).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -6,6 +6,7 @@ import type {
   RegisterOptions,
 } from 'react-hook-form';
 import { useController } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import type { TextInputProps } from 'react-native';
 import {
   I18nManager,
@@ -55,6 +56,7 @@ export interface NInputProps extends TextInputProps {
   label?: string;
   disabled?: boolean;
   error?: string;
+  errorTx?: string;
 }
 
 type TRule<T extends FieldValues> =
@@ -76,19 +78,20 @@ interface ControlledInputProps<T extends FieldValues>
     InputControllerType<T> {}
 
 export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
-  const { label, error, testID, ...inputProps } = props;
+  const { label, error, errorTx, testID, ...inputProps } = props;
   const [isFocussed, setIsFocussed] = React.useState(false);
+  const { t } = useTranslation();
   const onBlur = React.useCallback(() => setIsFocussed(false), []);
   const onFocus = React.useCallback(() => setIsFocussed(true), []);
 
   const styles = React.useMemo(
     () =>
       inputTv({
-        error: Boolean(error),
+        error: Boolean(errorTx || error),
         focused: isFocussed,
         disabled: Boolean(props.disabled),
       }),
-    [error, isFocussed, props.disabled]
+    [error, errorTx, isFocussed, props.disabled]
   );
 
   return (
@@ -115,12 +118,12 @@ export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
           inputProps.style,
         ])}
       />
-      {error && (
+      {(errorTx || error) && (
         <Text
           testID={testID ? `${testID}-error` : undefined}
           className="text-sm text-danger-400 dark:text-danger-600"
         >
-          {error}
+          {errorTx ? t(errorTx) : error}
         </Text>
       )}
     </View>
@@ -141,7 +144,7 @@ export function ControlledInput<T extends FieldValues>(
       onChangeText={field.onChange}
       value={(field.value as string) || ''}
       {...inputProps}
-      error={fieldState.error?.message}
+      errorTx={fieldState.error?.message}
     />
   );
 }

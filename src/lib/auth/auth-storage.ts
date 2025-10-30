@@ -1,4 +1,5 @@
 import * as Crypto from 'expo-crypto';
+import * as SecureStore from 'expo-secure-store';
 import { MMKV } from 'react-native-mmkv';
 
 /**
@@ -11,8 +12,7 @@ import { MMKV } from 'react-native-mmkv';
  */
 
 // Generate or retrieve encryption key
-// In production, this should be stored in Keychain (iOS) / Keystore (Android)
-// For now, we use a deterministic key derivation from device-specific data
+// Stored securely in Keychain (iOS) / Keystore (Android) for persistence across app sessions
 let encryptionKey: string | undefined;
 
 async function getOrCreateEncryptionKey(): Promise<string> {
@@ -20,17 +20,37 @@ async function getOrCreateEncryptionKey(): Promise<string> {
     return encryptionKey;
   }
 
-  // In a real implementation, you'd want to:
-  // 1. Try to load key from SecureStore/Keychain
-  // 2. If not found, generate a new one and store it securely
-  // 3. Use device-specific entropy for key generation
-  //
-  // For now, we generate a stable key using Expo's random bytes
-  // This is a placeholder - replace with proper key management
+  const ENCRYPTION_KEY_STORAGE_KEY = 'auth-encryption-key';
+
+  try {
+    // Try to load existing key from secure storage
+    const storedKey = await SecureStore.getItemAsync(
+      ENCRYPTION_KEY_STORAGE_KEY
+    );
+    if (storedKey) {
+      encryptionKey = storedKey;
+      return encryptionKey;
+    }
+  } catch (error) {
+    console.warn('Failed to load encryption key from secure storage:', error);
+    // Continue to generate a new key if loading fails
+  }
+
+  // Generate new key if not found or loading failed
   const randomBytes = await Crypto.getRandomBytesAsync(32);
   encryptionKey = Array.from(randomBytes)
     .map((byte) => byte.toString(16).padStart(2, '0'))
     .join('');
+
+  // Store the new key securely
+  try {
+    await SecureStore.setItemAsync(ENCRYPTION_KEY_STORAGE_KEY, encryptionKey, {
+      keychainAccessible: SecureStore.WHEN_UNLOCKED,
+    });
+  } catch (error) {
+    console.error('Failed to store encryption key securely:', error);
+    // Continue anyway - the key will work for this session
+  }
 
   return encryptionKey;
 }

@@ -1,19 +1,27 @@
+import * as Crypto from 'expo-crypto';
 import { createMutation, createQuery } from 'react-query-kit';
 
+import type { UserSession } from '@/api/auth';
 import { supabase } from '@/lib/supabase';
 
-// Session from user_sessions table
-export interface UserSession {
-  id: string;
-  user_id: string;
-  session_key: string;
-  device_name: string;
-  device_os: string;
-  app_version: string;
-  ip_address_truncated: string;
-  last_active_at: string;
-  created_at: string;
-  revoked_at: string | null;
+/**
+ * Derives a stable session key from a refresh token.
+ * Uses SHA-256 hash to create a consistent identifier.
+ *
+ * @param refreshToken - The refresh token to hash
+ * @returns SHA-256 hash of the refresh token
+ */
+export async function deriveSessionKey(
+  refreshToken: string | undefined
+): Promise<string> {
+  if (!refreshToken) return '';
+
+  // Use SHA-256 to create a stable, non-reversible identifier
+  const hash = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    refreshToken
+  );
+  return hash;
 }
 
 // Fetch active sessions for current user
@@ -48,7 +56,7 @@ export const useRevokeSession = createMutation<
 
     // Call Edge Function via Supabase functions.invoke
     const { error } = await supabase.functions.invoke('revoke-session', {
-      body: { session_key: sessionKey },
+      body: { sessionKey },
     });
 
     if (error) {
@@ -65,13 +73,68 @@ export const useRevokeAllOtherSessions = createMutation<void, void, Error>({
       throw new Error('No active session');
     }
 
+    // Derive current session key from refresh token
+    const currentSessionKey = await deriveSessionKey(
+      sessionData.session.refresh_token
+    );
+    if (!currentSessionKey) {
+      throw new Error('Unable to derive session key');
+    }
+
     // Call Edge Function via Supabase functions.invoke
-    const { error } = await supabase.functions.invoke('revoke-all-sessions', {
-      body: {},
-    });
+    const { error } = await supabase.functions.invoke(
+      'revoke-all-sessions-except',
+      {
+        body: { currentSessionKey },
+      }
+    );
 
     if (error) {
       throw new Error(error.message || 'Failed to revoke all sessions');
     }
   },
+});
+
+/**
+ * Check if the current session has been revoked.
+ * Used on app startup to force sign-out if session is revoked.
+ *
+ * @returns Query hook that checks if current session is revoked
+ */
+export const useCheckSessionRevocation = createQuery<boolean, void, Error>({
+  queryKey: ['auth', 'session-revocation-check'],
+  fetcher: async () => {
+    // Get current session
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session?.refresh_token) {
+      // No session to check
+      return false;
+    }
+
+    // Derive session key from current refresh token
+    const sessionKey = await deriveSessionKey(
+      sessionData.session.refresh_token
+    );
+    if (!sessionKey) {
+      return false;
+    }
+
+    // Check if this session key is revoked in user_sessions table
+    const { data, error } = await supabase
+      .from('user_sessions')
+      .select('revoked_at')
+      .eq('session_key', sessionKey)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Session revocation check error:', error);
+      // Don't block user on error
+      return false;
+    }
+
+    // Session is revoked if data exists and revoked_at is not null
+    return !!data?.revoked_at;
+  },
+  // Don't run automatically, only when explicitly called
+  enabled: false,
 });

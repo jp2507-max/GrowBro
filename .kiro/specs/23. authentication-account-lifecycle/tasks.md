@@ -253,27 +253,27 @@ This document outlines the implementation tasks for the Authentication & Account
   - Test session list and revocation
   - _Requirements: 1.1, 1.4, 2.1, 3.1, 4.1, 6.2, 6.3_
 
-- [ ] 5. Deep Link Handling
+- [x] 5. Deep Link Handling
   - Implement deep link handler for auth flows
   - Add redirect validation
   - Handle email verification and password reset links
   - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7_
 
-- [ ] 5.1 Create deep link handler
+- [x] 5.1 Create deep link handler
   - Implement handleEmailVerification: parse token_hash and type, call verifyOtp({ type, token_hash })
   - Implement handlePasswordReset: parse token_hash, call verifyOtp({ type: 'recovery', token_hash }), navigate to confirm screen
   - Implement handleOAuthCallback: parse code, call exchangeCodeForSession(code)
   - Add error handling for invalid/expired tokens with i18n messages
   - _Requirements: 12.1, 12.2, 12.3, 12.7_
 
-- [ ] 5.2 Create redirect allowlist
+- [x] 5.2 Create redirect allowlist
   - Create deep-link-allowlist.ts with allowed paths
   - Implement isAllowedRedirect validation function
   - Add patterns for /settings/_, /plants/_, /feed/\*, etc.
   - Reject external domains and unrecognized paths
   - _Requirements: 12.6_
 
-- [ ] 5.3 Integrate with Expo Linking
+- [x] 5.3 Integrate with Expo Linking
   - Add Linking.addEventListener for warm start links
   - Handle cold start links via Linking.getInitialURL
   - Store pending deep link if user not authenticated
@@ -282,7 +282,7 @@ This document outlines the implementation tasks for the Authentication & Account
   - Add telemetry-sparse logging only if analytics consent is on
   - _Requirements: 12.4, 12.5_
 
-- [ ]\* 5.4 Write tests for deep link handler
+- [x]\* 5.4 Write tests for deep link handler
   - Test email verification link parsing
   - Test password reset link parsing
   - Test OAuth callback handling
@@ -296,14 +296,14 @@ This document outlines the implementation tasks for the Authentication & Account
   - Add session revocation functionality
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
-- [ ] 6.1 Implement useSessions query hook
+- [x] 6.1 Implement useSessions query hook
   - Create query hook to fetch user_sessions from Supabase
   - Order by last_active_at descending
   - Parse device info and format timestamps
   - Handle loading and error states
   - _Requirements: 6.2, 6.6_
 
-- [ ] 6.2 Implement session revocation hooks
+- [x] 6.2 Implement session revocation hooks
   - Create useRevokeSession mutation to call Edge Function with session_key
   - Create useRevokeAllOtherSessions mutation
   - Derive session_key locally by hashing current refresh token (SHA-256)
@@ -311,13 +311,13 @@ This document outlines the implementation tasks for the Authentication & Account
   - Invalidate sessions query on success
   - _Requirements: 6.3, 6.4_
 
-- [ ] 6.3 Add session revocation check on app start
+- [x] 6.3 Add session revocation check on app start
   - Check if current session_key is revoked in user_sessions table
   - Force sign out if revoked
   - Show message "Your session was revoked from another device"
   - _Requirements: 6.5_
 
-- [ ]\* 6.4 Write tests for session tracking
+- [x]\* 6.4 Write tests for session tracking
   - Test sessions query fetches and displays correctly
   - Test session revocation updates table
   - Test revoke all sessions except current
@@ -330,14 +330,14 @@ This document outlines the implementation tasks for the Authentication & Account
   - Implement consent-aware analytics
   - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7, 11.8_
 
-- [ ] 7.1 Implement trackAuthEvent helper
+- [x] 7.1 Implement trackAuthEvent helper
   - Create helper function to track auth events
   - Check `analytics` consent before logging (align with privacy-consent.ts naming)
   - Use NoopAnalytics if consent not granted
   - Sanitize PII (hash email with SHA-256, truncate IP to /24, use session ID instead of device ID)
   - _Requirements: 11.1, 11.2, 11.3, 11.6_
 
-- [ ] 7.2 Implement logAuthError helper
+- [x] 7.2 Implement logAuthError helper
   - Create helper function to log auth errors to Sentry
   - Check `crashReporting` consent before logging
   - Return null from beforeSend if consent is false (drop event)
@@ -345,53 +345,53 @@ This document outlines the implementation tasks for the Authentication & Account
   - Gate sendDefaultPii-like behavior by `personalizedData` consent
   - _Requirements: 11.5, 11.7, 15.6_
 
-- [ ] 7.3 Add analytics events to auth hooks
+- [x] 7.3 Add analytics events to auth hooks
   - Add trackAuthEvent calls to sign in, sign up, sign out
   - Add events for password reset, email verification
   - Add events for session revocation, lockout
   - Include method (email, apple, google) in properties
   - _Requirements: 11.1, 11.3, 11.4_
 
-- [ ] 7.4 Update SDK initialization
+- [x] 7.4 Update SDK initialization
   - Initialize analytics SDK only if consent granted
   - Shutdown SDK when consent revoked
   - Emit events on consent state changes
   - _Requirements: 11.3, 11.4, 11.8_
 
-- [ ]\* 7.5 Write tests for consent integration
+- [x]\* 7.5 Write tests for consent integration
   - Test analytics events only logged if consent granted
   - Test Sentry errors only logged if consent granted
   - Test PII sanitization in analytics and Sentry
   - Test SDK initialization on consent grant
   - _Requirements: 11.1, 11.2, 11.5, 11.6, 11.7_
 
-- [ ] 8. Offline Mode & Read-Only Enforcement
+- [x] 8. Offline Mode & Read-Only Enforcement
   - Implement offline mode detection and UI
   - Add read-only mode enforcement at API layer
   - Handle connectivity restoration
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.6_
 
-- [ ] 8.1 Implement offline mode detection
+- [x] 8.1 Implement offline mode detection
   - Add logic to session manager to determine mode based on lastValidatedAt
   - Update offlineMode in Zustand store
   - Show appropriate banner based on mode
   - _Requirements: 7.1, 7.2, 7.3_
 
-- [ ] 8.2 Add read-only mode enforcement
+- [x] 8.2 Add read-only mode enforcement
   - Add guards in API mutations to check offlineMode (enforce at API layer, not just UI)
   - Disable mutation buttons in UI when in read-only mode
   - Show tooltip "Reconnect to make changes"
   - Exclude sensitive ops (password/email changes) from queuing - require connectivity
   - _Requirements: 7.2, 7.6_
 
-- [ ] 8.3 Handle connectivity restoration
+- [x] 8.3 Handle connectivity restoration
   - Listen for network state changes
   - Validate session with server when online
   - Refresh tokens if needed
   - Flush queued operations (non-sensitive only)
   - _Requirements: 7.4_
 
-- [ ]\* 8.4 Write tests for offline mode
+- [x]\* 8.4 Write tests for offline mode
   - Test offline mode detection based on session age
   - Test read-only mode disables mutations
   - Test connectivity restoration validates session

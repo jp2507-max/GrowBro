@@ -82,46 +82,5 @@ export async function hasAssessmentFeedback(
   return feedback !== null;
 }
 
-/**
- * Get feedback statistics for analytics
- */
-export async function getFeedbackStats(): Promise<{
-  total: number;
-  helpful: number;
-  notHelpful: number;
-  resolved: number;
-  notResolved: number;
-  tooEarly: number;
-}> {
-  const allFeedback = await database
-    .get<AssessmentFeedbackModel>('assessment_feedback')
-    .query()
-    .fetch();
-
-  const stats = {
-    total: allFeedback.length,
-    helpful: 0,
-    notHelpful: 0,
-    resolved: 0,
-    notResolved: 0,
-    tooEarly: 0,
-  };
-
-  for (const feedback of allFeedback) {
-    if (feedback.helpful) {
-      stats.helpful++;
-    } else {
-      stats.notHelpful++;
-    }
-
-    if (feedback.issueResolved === 'yes') {
-      stats.resolved++;
-    } else if (feedback.issueResolved === 'no') {
-      stats.notResolved++;
-    } else if (feedback.issueResolved === 'too_early') {
-      stats.tooEarly++;
-    }
-  }
-
-  return stats;
-}
+// Re-export analytics function for backward compatibility
+export { getFeedbackStats } from './assessment-analytics';

@@ -36,7 +36,7 @@ try {
   Env = {
     APP_ENV,
     NAME: process.env.NAME ?? 'GrowBro',
-    SCHEME: process.env.SCHEME ?? 'GrowBro',
+    SCHEME: process.env.SCHEME ?? 'growbro',
     BUNDLE_ID: withEnvSuffix(process.env.BUNDLE_ID ?? 'com.growbro'),
     PACKAGE: withEnvSuffix(process.env.PACKAGE ?? 'com.growbro'),
     VERSION: packageJSON.version,

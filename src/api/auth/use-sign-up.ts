@@ -6,7 +6,7 @@
 import { createMutation } from 'react-query-kit';
 import { z } from 'zod';
 
-import { hasConsent } from '@/lib/privacy-consent';
+import { logAuthError, trackAuthEvent } from '@/lib/auth/auth-telemetry';
 import { supabase } from '@/lib/supabase';
 
 import { mapAuthError } from './error-mapper';
@@ -69,21 +69,28 @@ export const useSignUp = createMutation<SignUpResponse, SignUpVariables, Error>(
       };
     },
 
-    onSuccess: () => {
-      // Track analytics event if consent granted
-      if (hasConsent('analytics')) {
-        // TODO: Integrate with analytics client once available
-        // trackAuthEvent('auth.sign_up', { method: 'email' });
-        console.log('[Auth] Sign up successful (analytics consented)');
-      }
+    onSuccess: async (data, variables) => {
+      // Track analytics event with consent checking and PII sanitization
+      await trackAuthEvent('auth.sign_up', {
+        method: 'email',
+        email: variables.email,
+        user_id: data.user?.id,
+        email_verification_sent: !!data.user,
+      });
 
       // Note: We don't call signIn here because the user needs to verify email first
       // The session will be established after email verification
       console.log('[Auth] Sign up successful - verification email sent');
     },
-    onError: (error: Error) => {
-      // Log error for debugging (non-PII)
-      console.error('[Auth] Sign up failed:', error.message);
+
+    onError: async (error: Error, variables) => {
+      // Log error for debugging with consent checking
+      await logAuthError(error, {
+        errorKey: error.message,
+        flow: 'sign_up',
+        method: 'email',
+        email: variables.email,
+      });
     },
   }
 );

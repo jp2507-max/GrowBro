@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS user_sessions (
 
 -- Create indexes for performance
 CREATE INDEX idx_user_sessions_user_id ON user_sessions(user_id);
-CREATE INDEX idx_user_sessions_session_key ON user_sessions(session_key);
+CREATE UNIQUE INDEX idx_user_sessions_session_key ON user_sessions(session_key);
 
 -- Add comments for documentation
 COMMENT ON TABLE user_sessions IS 'Tracks active user sessions across devices with device metadata';
@@ -25,7 +25,7 @@ COMMENT ON COLUMN user_sessions.ip_address IS 'Truncated IP address (last octet 
 COMMENT ON COLUMN user_sessions.revoked_at IS 'Timestamp when session was revoked (NULL = active)';
 
 -- Enable Row Level Security
-ALTER TABLE user_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_sessions FORCE ROW LEVEL SECURITY;
 
 -- RLS Policy: Users can view their own sessions
 CREATE POLICY "Users can view their own sessions"
@@ -41,10 +41,10 @@ CREATE POLICY "Users can revoke their own sessions"
 -- RLS Policy: Service role can insert sessions (via Edge Functions)
 CREATE POLICY "Service role can insert sessions"
   ON user_sessions FOR INSERT
-  WITH CHECK (true);
+  WITH CHECK (auth.role() = 'service_role');
 
 -- RLS Policy: Service role can update sessions (via Edge Functions)
 CREATE POLICY "Service role can update all sessions"
   ON user_sessions FOR UPDATE
-  USING (true)
-  WITH CHECK (true);
+  USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');

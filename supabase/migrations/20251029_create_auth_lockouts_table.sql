@@ -3,18 +3,37 @@
 
 CREATE TABLE IF NOT EXISTS auth_lockouts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT NOT NULL,
+  email_hash TEXT NOT NULL,
   failed_attempts INTEGER NOT NULL DEFAULT 0,
   locked_until TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Create unique index on email
-CREATE UNIQUE INDEX idx_auth_lockouts_email ON auth_lockouts(email);
+-- Create unique index on email_hash
+CREATE UNIQUE INDEX idx_auth_lockouts_email_hash ON auth_lockouts(email_hash);
+
+-- Function to hash email addresses for privacy
+CREATE OR REPLACE FUNCTION hash_email(p_email TEXT)
+RETURNS TEXT AS $$
+DECLARE
+  v_salt CONSTANT TEXT := 'growbro_auth_lockout_salt_v1';
+BEGIN
+  -- Validate input: email must not be null or empty
+  IF p_email IS NULL OR trim(p_email) = '' THEN
+    RAISE EXCEPTION 'Email parameter cannot be null or empty';
+  END IF;
+
+  -- Use SHA-256 hash of salted lowercase trimmed email
+  RETURN encode(digest(v_salt || lower(trim(p_email)), 'sha256'), 'hex');
+END;
+$$ LANGUAGE plpgsql IMMUTABLE SECURITY DEFINER;
+
+COMMENT ON FUNCTION hash_email(TEXT) IS 'Hashes email addresses using SHA-256 for privacy protection against enumeration attacks';
 
 -- Add comments for documentation
 COMMENT ON TABLE auth_lockouts IS 'Tracks failed login attempts and account lockout status for brute-force protection';
+COMMENT ON COLUMN auth_lockouts.email_hash IS 'SHA-256 hash of email address for privacy protection against enumeration attacks';
 COMMENT ON COLUMN auth_lockouts.failed_attempts IS 'Number of consecutive failed login attempts';
 COMMENT ON COLUMN auth_lockouts.locked_until IS 'Timestamp until which account is locked (NULL = not locked)';
 
@@ -28,11 +47,15 @@ DECLARE
   v_lockout_window CONSTANT INTERVAL := '15 minutes';
   v_lockout_duration INTERVAL;
   v_locked_until TIMESTAMPTZ;
+  v_email_hash TEXT;
 BEGIN
+  -- Hash the email for privacy
+  v_email_hash := hash_email(p_email);
+
   -- Get or create lockout record
-  INSERT INTO auth_lockouts (email, failed_attempts, created_at, updated_at)
-  VALUES (p_email, 0, NOW(), NOW())
-  ON CONFLICT (email) 
+  INSERT INTO auth_lockouts (email_hash, failed_attempts, created_at, updated_at)
+  VALUES (v_email_hash, 0, NOW(), NOW())
+  ON CONFLICT (email_hash)
   DO UPDATE SET updated_at = NOW()
   RETURNING * INTO v_lockout;
 
@@ -51,7 +74,7 @@ BEGIN
     SET failed_attempts = 1,
         locked_until = NULL,
         updated_at = NOW()
-    WHERE email = p_email;
+    WHERE email_hash = v_email_hash;
     
     RETURN jsonb_build_object(
       'is_locked', false,
@@ -64,7 +87,7 @@ BEGIN
   UPDATE auth_lockouts
   SET failed_attempts = failed_attempts + 1,
       updated_at = NOW()
-  WHERE email = p_email
+  WHERE email_hash = v_email_hash
   RETURNING * INTO v_lockout;
 
   -- Check if we need to lock the account
@@ -82,7 +105,7 @@ BEGIN
     UPDATE auth_lockouts
     SET locked_until = v_locked_until,
         updated_at = NOW()
-    WHERE email = p_email;
+    WHERE email_hash = v_email_hash;
     
     RETURN jsonb_build_object(
       'is_locked', true,
@@ -104,12 +127,17 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Called after successful authentication
 CREATE OR REPLACE FUNCTION reset_lockout_counter(p_email TEXT)
 RETURNS VOID AS $$
+DECLARE
+  v_email_hash TEXT;
 BEGIN
+  -- Hash the email for privacy
+  v_email_hash := hash_email(p_email);
+
   UPDATE auth_lockouts
   SET failed_attempts = 0,
       locked_until = NULL,
       updated_at = NOW()
-  WHERE email = p_email;
+  WHERE email_hash = v_email_hash;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

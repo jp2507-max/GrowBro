@@ -9,6 +9,7 @@
 import { createMutation } from 'react-query-kit';
 
 import { useAuth } from '@/lib/auth';
+import { logAuthError, trackAuthEvent } from '@/lib/auth/auth-telemetry';
 import { supabase } from '@/lib/supabase';
 
 import { mapAuthError } from './error-mapper';
@@ -38,11 +39,27 @@ export const useSignOut = createMutation({
       throw new Error(mapAuthError(error));
     }
 
+    // Get current user info before clearing auth state
+    const currentUser = useAuth.getState().user;
+
     // Clear local auth state
     // This also clears MMKV storage and resets age gate
     useAuth.getState().signOut();
 
-    // TODO: Task 7.3 - Add trackAuthEvent('sign_out') when analytics helper is implemented
+    // Track analytics event with consent checking and PII sanitization
+    await trackAuthEvent('auth.sign_out', {
+      scope: 'local',
+      email: currentUser?.email,
+      user_id: currentUser?.id,
+    });
+  },
+  onError: async (error: Error) => {
+    // Log error for debugging with consent checking
+    await logAuthError(error, {
+      errorKey: error.message,
+      flow: 'sign_out',
+      scope: 'local',
+    });
   },
 });
 
@@ -76,10 +93,26 @@ export const useSignOutGlobal = createMutation({
       throw new Error(mapAuthError(error));
     }
 
+    // Get current user info before clearing auth state
+    const currentUser = useAuth.getState().user;
+
     // Clear local auth state
     // This also clears MMKV storage and resets age gate
     useAuth.getState().signOut();
 
-    // TODO: Task 7.3 - Add trackAuthEvent('sign_out_global') when analytics helper is implemented
+    // Track analytics event with consent checking and PII sanitization
+    await trackAuthEvent('auth.sign_out_global', {
+      scope: 'global',
+      email: currentUser?.email,
+      user_id: currentUser?.id,
+    });
+  },
+  onError: async (error: Error) => {
+    // Log error for debugging with consent checking
+    await logAuthError(error, {
+      errorKey: error.message,
+      flow: 'sign_out',
+      scope: 'global',
+    });
   },
 });

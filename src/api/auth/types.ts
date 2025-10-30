@@ -55,7 +55,7 @@ export interface ResetPasswordVariables {
 }
 
 export interface ConfirmPasswordResetVariables {
-  tokenHash: string;
+  tokenHash?: string;
   newPassword: string;
 }
 

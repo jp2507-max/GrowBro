@@ -100,7 +100,7 @@ export function SessionListItem({
             accessibilityLabel={translate('auth.sessions.revoke_hint', {
               device: session.device_name,
             })}
-            accessibilityHint="Confirms revocation with a dialog"
+            accessibilityHint={translate('auth.sessions.revoke_dialog_hint')}
           />
         )}
       </View>

@@ -41,7 +41,7 @@ type FormData = z.infer<typeof schema>;
 export default function ResetPasswordConfirm() {
   const { t } = useTranslation();
   const router = useRouter();
-  const params = useLocalSearchParams<{ token_hash?: string }>();
+  const _params = useLocalSearchParams<{ token_hash?: string }>();
   const { handleSubmit, control } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
@@ -60,15 +60,7 @@ export default function ResetPasswordConfirm() {
   });
 
   const onSubmit: SubmitHandler<FormData> = (data) => {
-    const tokenHash = params.token_hash;
-
-    if (!tokenHash) {
-      showErrorMessage(t('auth.error_invalid_token'));
-      return;
-    }
-
     confirmMutation.mutate({
-      tokenHash,
       newPassword: data.password,
     });
   };
@@ -103,7 +95,8 @@ export default function ResetPasswordConfirm() {
             placeholder={t('auth.new_password_placeholder')}
             secureTextEntry={true}
             autoCapitalize="none"
-            autoComplete="password-new"
+            autoComplete="new-password"
+            textContentType="newPassword"
           />
 
           <ControlledInput
@@ -114,7 +107,8 @@ export default function ResetPasswordConfirm() {
             placeholder={t('auth.confirm_password_placeholder')}
             secureTextEntry={true}
             autoCapitalize="none"
-            autoComplete="password-new"
+            autoComplete="new-password"
+            textContentType="newPassword"
           />
 
           <Text className="mb-4 text-xs text-neutral-500">

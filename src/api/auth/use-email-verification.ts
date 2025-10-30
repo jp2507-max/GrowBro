@@ -9,6 +9,7 @@
 import { createMutation } from 'react-query-kit';
 
 import { useAuth } from '@/lib/auth';
+import { logAuthError, trackAuthEvent } from '@/lib/auth/auth-telemetry';
 import { supabase } from '@/lib/supabase';
 
 import { mapAuthError } from './error-mapper';
@@ -30,32 +31,47 @@ import type {
  *   type: 'signup'
  * });
  */
-export const useVerifyEmail = createMutation({
-  mutationKey: ['auth', 'verify-email'],
-  mutationFn: async (variables: VerifyEmailVariables) => {
-    const { tokenHash, type } = variables;
+export const useVerifyEmail = createMutation<void, VerifyEmailVariables, Error>(
+  {
+    mutationKey: ['auth', 'verify-email'],
+    mutationFn: async (variables: VerifyEmailVariables): Promise<void> => {
+      const { tokenHash, type } = variables;
 
-    const { error } = await supabase.auth.verifyOtp({
-      type,
-      token_hash: tokenHash,
-    });
-
-    if (error) {
-      throw new Error(mapAuthError(error));
-    }
-
-    // Update user state to mark email as verified
-    const user = useAuth.getState().user;
-    if (user) {
-      useAuth.getState().updateUser({
-        ...user,
-        email_confirmed_at: new Date().toISOString(),
+      const { error } = await supabase.auth.verifyOtp({
+        type,
+        token_hash: tokenHash,
       });
-    }
 
-    // TODO: Task 7.3 - Add trackAuthEvent('email_verified') when analytics helper is implemented
-  },
-});
+      if (error) {
+        throw new Error(mapAuthError(error));
+      }
+
+      // Update user state to mark email as verified
+      const user = useAuth.getState().user;
+      if (user) {
+        useAuth.getState().updateUser({
+          ...user,
+          email_confirmed_at: new Date().toISOString(),
+        });
+      }
+    },
+    onSuccess: async (_, variables) => {
+      // Track analytics event with consent checking and PII sanitization
+      await trackAuthEvent('auth.email_verified', {
+        type: variables.type,
+        email: useAuth.getState().user?.email,
+        user_id: useAuth.getState().user?.id,
+      });
+    },
+    onError: async (error: Error, variables) => {
+      await logAuthError(error, {
+        errorKey: error.message,
+        flow: 'email_verify',
+        type: variables.type,
+      });
+    },
+  }
+);
 
 /**
  * Resend verification email
@@ -67,9 +83,13 @@ export const useVerifyEmail = createMutation({
  * const resendEmail = useResendVerificationEmail();
  * await resendEmail.mutateAsync({ email: 'user@example.com' });
  */
-export const useResendVerificationEmail = createMutation({
+export const useResendVerificationEmail = createMutation<
+  void,
+  ResendVerificationVariables,
+  Error
+>({
   mutationKey: ['auth', 'resend-verification'],
-  mutationFn: async (variables: ResendVerificationVariables) => {
+  mutationFn: async (variables: ResendVerificationVariables): Promise<void> => {
     const { email } = variables;
 
     const { error } = await supabase.auth.resend({
@@ -80,5 +100,18 @@ export const useResendVerificationEmail = createMutation({
     if (error) {
       throw new Error(mapAuthError(error));
     }
+  },
+  onSuccess: async (_, variables) => {
+    // Track analytics event with consent checking and PII sanitization
+    await trackAuthEvent('auth.email_verification_resent', {
+      email: variables.email,
+    });
+  },
+  onError: async (error: Error, variables) => {
+    await logAuthError(error, {
+      errorKey: error.message,
+      flow: 'email_resend',
+      email: variables.email,
+    });
   },
 });

@@ -3,10 +3,21 @@ import Svg, { Path } from 'react-native-svg';
 type IconProps = {
   color?: string;
   size?: number;
+  testID?: string;
 };
 
-export const Trash = ({ color = '#737373', size = 24 }: IconProps) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+export const Trash = ({
+  color = '#737373',
+  size = 24,
+  testID,
+}: IconProps): JSX.Element => (
+  <Svg
+    testID={testID}
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+  >
     <Path
       d="M3 6H5H21"
       stroke={color}

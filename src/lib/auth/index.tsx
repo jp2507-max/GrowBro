@@ -22,13 +22,77 @@ interface AuthState {
   offlineMode: OfflineMode;
 
   // Actions
-  signIn: (data: TokenType | { session: Session; user: User }) => void;
-  signOut: () => void;
-  hydrate: () => void;
+  signIn: (data: TokenType | { session: Session; user: User }) => Promise<void>;
+  signOut: () => Promise<void>;
+  hydrate: () => Promise<void>;
   updateSession: (session: Session) => void;
   updateUser: (user: User) => void;
   setOfflineMode: (mode: OfflineMode) => void;
   getStableSessionId: () => string | null;
+}
+
+async function handleSignInWithSession(
+  session: Session,
+  user: User,
+  set: (state: Partial<AuthState>) => void
+) {
+  await supabase.auth.setSession({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+  });
+  const token: TokenType = {
+    access: session.access_token,
+    refresh: session.refresh_token,
+  };
+  setToken(token);
+  startIdleTimeout(() => _useAuth.getState().signOut());
+  set({
+    status: 'signIn',
+    token,
+    session,
+    user,
+    lastValidatedAt: Date.now(),
+    offlineMode: 'full',
+  });
+}
+
+async function handleSignInWithToken(
+  token: TokenType,
+  set: (state: Partial<AuthState>) => void
+) {
+  await supabase.auth.setSession({
+    access_token: token.access,
+    refresh_token: token.refresh,
+  });
+  setToken(token);
+  startIdleTimeout(() => _useAuth.getState().signOut());
+  set({
+    status: 'signIn',
+    token,
+    session: null,
+    user: null,
+    lastValidatedAt: null,
+    offlineMode: 'full',
+  });
+}
+
+async function handleSignOut(set: (state: Partial<AuthState>) => void) {
+  try {
+    await supabase.auth.signOut();
+  } catch (error) {
+    console.error('Failed to revoke remote session:', error);
+  }
+  removeToken();
+  resetAgeGate();
+  stopIdleTimeout();
+  set({
+    status: 'signOut',
+    token: null,
+    user: null,
+    session: null,
+    lastValidatedAt: null,
+    offlineMode: 'full',
+  });
 }
 
 const _useAuth = create<AuthState>((set, get) => ({
@@ -39,58 +103,33 @@ const _useAuth = create<AuthState>((set, get) => ({
   lastValidatedAt: null,
   offlineMode: 'full',
 
-  signIn: (data) => {
-    // Handle both legacy TokenType and new Session/User format
-    if ('session' in data && 'user' in data) {
-      const { session, user } = data;
-      // Convert session to legacy token format for backward compatibility
-      const token: TokenType = {
-        access: session.access_token,
-        refresh: session.refresh_token,
-      };
-      setToken(token);
-      startIdleTimeout(() => _useAuth.getState().signOut());
-      set({
-        status: 'signIn',
-        token,
-        session,
-        user,
-        lastValidatedAt: Date.now(),
-        offlineMode: 'full',
-      });
-    } else {
-      // Legacy path - just token
-      setToken(data as TokenType);
-      startIdleTimeout(() => _useAuth.getState().signOut());
-      set({ status: 'signIn', token: data as TokenType });
+  signIn: async (data) => {
+    try {
+      if ('session' in data && 'user' in data) {
+        await handleSignInWithSession(data.session, data.user, set);
+      } else {
+        await handleSignInWithToken(data as TokenType, set);
+      }
+    } catch (error) {
+      console.error('Failed to set Supabase session:', error);
+      throw error;
     }
   },
 
-  signOut: () => {
-    removeToken();
-    resetAgeGate();
-    stopIdleTimeout();
-    set({
-      status: 'signOut',
-      token: null,
-      user: null,
-      session: null,
-      lastValidatedAt: null,
-      offlineMode: 'full',
-    });
+  signOut: async () => {
+    await handleSignOut(set);
   },
 
-  hydrate: () => {
+  hydrate: async () => {
     try {
       const userToken = getToken();
       if (userToken !== null) {
-        get().signIn(userToken);
+        await get().signIn(userToken);
       } else {
         get().signOut();
       }
     } catch (e) {
       console.error('Auth hydration error:', e);
-      // On error, sign out to ensure clean state
       get().signOut();
     }
   },
@@ -129,7 +168,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     });
   } else if (event === 'SIGNED_OUT') {
     // Clear store on sign out
-    store.signOut();
+    await store.signOut();
   } else if (event === 'TOKEN_REFRESHED' && session) {
     // Update session on token refresh
     store.updateSession(session);
@@ -144,7 +183,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 
 export const useAuth = createSelectors(_useAuth);
 
-export const signOut = () => _useAuth.getState().signOut();
+export const signOut = async () => await _useAuth.getState().signOut();
 export const signIn = (token: TokenType) => _useAuth.getState().signIn(token);
 export const hydrateAuth = () => _useAuth.getState().hydrate();
 

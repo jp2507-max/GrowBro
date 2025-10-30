@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'expo-router';
+import type { JSX } from 'react';
 import React from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
@@ -27,7 +28,7 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export default function ResetPassword() {
+export default function ResetPassword(): JSX.Element {
   const { t } = useTranslation();
   const { handleSubmit, control } = useForm<FormData>({
     resolver: zodResolver(schema),

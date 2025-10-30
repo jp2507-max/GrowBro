@@ -80,10 +80,13 @@ export async function handleEmailVerification(
     return;
   }
 
+  // Map deprecated 'signup' type to 'email'
+  const verifyType = type === 'signup' ? 'email' : type;
+
   try {
     // Verify email using Supabase Auth
     const { error } = await supabase.auth.verifyOtp({
-      type,
+      type: verifyType,
       token_hash: tokenHash,
     });
 
@@ -114,7 +117,7 @@ export async function handleEmailVerification(
     if (hasConsent('crashReporting')) {
       Sentry.captureException(error, {
         tags: { context: 'email_verification' },
-        extra: { type },
+        extra: { type: verifyType },
       });
     }
 

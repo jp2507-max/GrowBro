@@ -91,6 +91,9 @@ function createWrapper() {
 }
 
 describe('Auth Hooks', () => {
+  // Store original fetch to restore after tests
+  const originalFetch = global.fetch;
+
   // Mock auth store
   const mockSignIn = jest.fn();
   const mockUpdateUser = jest.fn();
@@ -114,6 +117,7 @@ describe('Auth Hooks', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+    global.fetch = originalFetch;
   });
 
   describe('useSignIn', () => {
@@ -751,6 +755,35 @@ describe('Auth Hooks', () => {
           type: 'recovery',
           token_hash: 'valid-token-hash',
         });
+
+        expect(supabase.auth.updateUser).toHaveBeenCalledWith({
+          password: 'NewSecure123!',
+        });
+      });
+
+      it('should confirm password reset using existing session when tokenHash not provided', async () => {
+        // Arrange
+        supabase.auth.updateUser.mockResolvedValueOnce({
+          data: { user: {} },
+          error: null,
+        });
+
+        // Act
+        const { result } = renderHook(() => useConfirmPasswordReset(), {
+          wrapper: createWrapper(),
+        });
+
+        result.current.mutate({
+          newPassword: 'NewSecure123!',
+        });
+
+        // Assert
+        await waitFor(() => {
+          expect(result.current.isSuccess).toBe(true);
+        });
+
+        // Should not call verifyOtp when tokenHash is not provided
+        expect(supabase.auth.verifyOtp).not.toHaveBeenCalled();
 
         expect(supabase.auth.updateUser).toHaveBeenCalledWith({
           password: 'NewSecure123!',

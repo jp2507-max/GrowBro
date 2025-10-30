@@ -84,6 +84,17 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Revoke other refresh tokens at Auth level (does not revoke current)
+    const { error: signOutError } = await userSupabase.auth.signOut({
+      scope: 'others',
+    });
+    if (signOutError) {
+      console.warn(
+        '[revoke-all-sessions-except] signOut(others) failed:',
+        signOutError
+      );
+    }
+
     // Create service role client for admin operations
     const adminSupabase = createClient(supabaseUrl, supabaseKey);
 

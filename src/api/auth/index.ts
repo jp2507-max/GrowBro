@@ -37,6 +37,8 @@ export { useSignOut, useSignOutGlobal } from './use-sign-out';
 
 // Session Management
 export {
+  deriveSessionKey,
+  useCheckSessionRevocation,
   useRevokeAllOtherSessions,
   useRevokeSession,
   useSessions,

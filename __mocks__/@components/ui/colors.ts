@@ -32,6 +32,13 @@ export const colors = {
     500: '#f97316',
     600: '#ea580c',
   },
+  warning: {
+    100: '#fef3c7',
+    300: '#fbbf24',
+    500: '#f59e0b',
+    700: '#d97706',
+    900: '#78350f',
+  },
   white: '#ffffff',
   danger: {
     600: '#dc2626',

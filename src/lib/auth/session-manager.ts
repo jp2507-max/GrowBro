@@ -1,6 +1,8 @@
 import type { Session } from '@supabase/supabase-js';
 import { useEffect } from 'react';
 
+import { deriveSessionKey } from '@/api/auth';
+
 import { supabase } from '../supabase';
 import type { OfflineMode } from './index';
 import { useAuth } from './index';
@@ -53,6 +55,7 @@ export interface SessionManager {
   /**
    * Forces a session validation with the Supabase server.
    * Used when connectivity is restored to validate the cached session.
+   * Also checks if the session has been revoked remotely.
    *
    * @returns True if session is valid, false otherwise
    */
@@ -174,6 +177,17 @@ function createSessionManager(): SessionManager {
           return false;
         }
 
+        // Check if session has been revoked remotely
+        // This ensures that session revocation from other devices forces sign-out
+        const isRevoked = await checkSessionRevocation(session.refresh_token);
+
+        if (isRevoked) {
+          console.log('[SessionManager] Session has been revoked, signing out');
+          const { signOut } = useAuth.getState();
+          signOut();
+          return false;
+        }
+
         // Session is valid, update store
         const { updateSession } = useAuth.getState();
         updateSession(session);
@@ -261,4 +275,46 @@ export function useOfflineModeMonitor(checkInterval: number = 60 * 1000): void {
       clearInterval(intervalId);
     };
   }, [checkInterval]);
+}
+
+/**
+ * Check if a session has been revoked remotely.
+ * Used during session validation to force sign-out if session is revoked.
+ *
+ * @param refreshToken - The refresh token to check
+ * @returns True if session is revoked, false otherwise
+ */
+async function checkSessionRevocation(
+  refreshToken: string | undefined
+): Promise<boolean> {
+  if (!refreshToken) {
+    return false;
+  }
+
+  try {
+    // Derive session key from refresh token
+    const sessionKey = await deriveSessionKey(refreshToken);
+    if (!sessionKey) {
+      return false;
+    }
+
+    // Check if this session is revoked in user_sessions table
+    const { data, error } = await supabase
+      .from('user_sessions')
+      .select('revoked_at')
+      .eq('session_key', sessionKey)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Session revocation check error:', error);
+      // Don't block user on error
+      return false;
+    }
+
+    // Session is revoked if revoked_at is not null
+    return data?.revoked_at !== null;
+  } catch (error) {
+    console.error('Session revocation check exception:', error);
+    return false;
+  }
 }

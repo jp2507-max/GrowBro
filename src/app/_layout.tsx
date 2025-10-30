@@ -118,6 +118,11 @@ if (Env.SENTRY_DSN && hasConsent('crashReporting') && !sentryInitialized) {
 
   // Update registry; this is a no-op pre-consent
   void SDKGate.initializeSDK('sentry');
+
+  // Configure auth-specific Sentry filtering for consent-aware error handling
+  import('@/lib/auth/auth-telemetry').then(({ configureSentryAuthFilter }) => {
+    configureSentryAuthFilter();
+  });
 }
 
 // Initialize auth storage before hydrating auth state

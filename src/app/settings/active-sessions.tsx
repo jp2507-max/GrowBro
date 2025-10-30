@@ -21,8 +21,7 @@ import { translate, useAuth } from '@/lib';
 
 export default function ActiveSessionsScreen() {
   const queryClient = useQueryClient();
-  const getStableSessionId = useAuth.use.getStableSessionId();
-  const currentSessionId = getStableSessionId();
+  const currentSessionId = useAuth.use.getStableSessionId();
 
   // Fetch sessions
   const { data: sessions, isLoading, error } = useSessions();

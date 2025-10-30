@@ -69,9 +69,10 @@ Deno.serve(async (req: Request) => {
     const userAgent = req.headers.get('user-agent') || 'Unknown';
 
     // Check lockout status BEFORE attempting sign in
+    const emailHash = await hashEmailForLookup(email);
     const { data: lockoutData, error: lockoutError } = await supabase.rpc(
       'check_and_increment_lockout',
-      { p_email: email }
+      { p_email_hash: emailHash }
     );
 
     if (lockoutError) {
@@ -98,34 +99,45 @@ Deno.serve(async (req: Request) => {
     if (lockoutStatus.is_locked) {
       const lockedUntil = new Date(lockoutStatus.locked_until!);
       const now = new Date();
-      const minutesRemaining = Math.ceil(
-        (lockedUntil.getTime() - now.getTime()) / 60000
+      const minutesRemaining = Math.max(
+        0,
+        Math.ceil((lockedUntil.getTime() - now.getTime()) / 60000)
       );
 
-      // Send lockout notification email (non-blocking)
-      try {
-        const notificationUrl = `${supabaseUrl}/functions/v1/send-lockout-notification`;
-        await fetch(notificationUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${supabaseKey}`,
-          },
-          body: JSON.stringify({
-            email,
-            lockedUntil: lockoutStatus.locked_until,
-            ipAddress: truncatedIp,
-            userAgent,
-            failedAttempts: 5,
-          }),
-        });
-      } catch (notificationError) {
-        console.error(
-          '[enforce-auth-lockout] Error sending lockout notification:',
-          notificationError
-        );
-        // Don't block on notification failure
-      }
+      // Send lockout notification email (fire-and-forget with timeout)
+      const notificationController = new AbortController();
+      const notificationTimeoutId = setTimeout(
+        () => notificationController.abort(),
+        500
+      );
+      fetch(`${supabaseUrl}/functions/v1/send-lockout-notification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({
+          email,
+          lockedUntil: lockoutStatus.locked_until,
+          ipAddress: truncatedIp,
+          userAgent,
+          failedAttempts: 5,
+        }),
+        signal: notificationController.signal,
+      })
+        .catch((error) => {
+          if (error.name === 'AbortError') {
+            console.log(
+              '[enforce-auth-lockout] Lockout notification fetch aborted due to timeout'
+            );
+          } else {
+            console.error(
+              '[enforce-auth-lockout] Error sending lockout notification:',
+              error
+            );
+          }
+        })
+        .finally(() => clearTimeout(notificationTimeoutId));
 
       // Return generic error (don't reveal lockout state to prevent timing attacks)
       return new Response(
@@ -168,7 +180,10 @@ Deno.serve(async (req: Request) => {
             email_hash: await hashEmail(email),
             success: false,
             error: authError?.message || 'Invalid credentials',
-            attempts_remaining: lockoutStatus.attempts_remaining - 1,
+            attempts_remaining: Math.max(
+              0,
+              lockoutStatus.attempts_remaining - 1
+            ),
           },
         });
       } catch (auditError) {
@@ -199,7 +214,7 @@ Deno.serve(async (req: Request) => {
 
     // Sign in successful - reset lockout counter
     try {
-      await supabase.rpc('reset_lockout_counter', { p_email: email });
+      await supabase.rpc('reset_lockout_counter', { p_email_hash: emailHash });
     } catch (resetError) {
       console.error(
         '[enforce-auth-lockout] Error resetting lockout counter:',
@@ -227,31 +242,36 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Capture device metadata (non-blocking)
-    // This could be called asynchronously or via a separate webhook
-    // For simplicity, we call it here but don't block on errors
-    try {
-      const captureUrl = `${supabaseUrl}/functions/v1/capture-device-metadata`;
-      await fetch(captureUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${supabaseKey}`,
-        },
-        body: JSON.stringify({
-          userId: authData.user.id,
-          refreshToken: authData.session.refresh_token,
-          userAgent,
-          appVersion,
-        }),
-      });
-    } catch (captureError) {
-      console.error(
-        '[enforce-auth-lockout] Error capturing device metadata:',
-        captureError
-      );
-      // Don't block sign in on metadata capture failure
-    }
+    // Capture device metadata (fire-and-forget with timeout)
+    const captureController = new AbortController();
+    const captureTimeoutId = setTimeout(() => captureController.abort(), 500);
+    fetch(`${supabaseUrl}/functions/v1/capture-device-metadata`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${supabaseKey}`,
+      },
+      body: JSON.stringify({
+        userId: authData.user.id,
+        sessionKey: await deriveSessionKey(authData.session.refresh_token),
+        userAgent,
+        appVersion,
+      }),
+      signal: captureController.signal,
+    })
+      .catch((error) => {
+        if (error.name === 'AbortError') {
+          console.log(
+            '[enforce-auth-lockout] Device metadata capture fetch aborted due to timeout'
+          );
+        } else {
+          console.error(
+            '[enforce-auth-lockout] Error capturing device metadata:',
+            error
+          );
+        }
+      })
+      .finally(() => clearTimeout(captureTimeoutId));
 
     // Return successful sign in with session
     return new Response(
@@ -292,6 +312,20 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
+
+/**
+ * Derive stable session key from refresh token using SHA-256 hash
+ */
+async function deriveSessionKey(refreshToken: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(refreshToken);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+  return hashHex;
+}
 
 /**
  * Extract IP address from request headers
@@ -341,7 +375,20 @@ function truncateIpAddress(ip: string): string {
 }
 
 /**
- * Hash email with SHA-256 for privacy in audit logs
+ * Hash email with SHA-256 and salt for privacy in database lookups
+ * Matches the database hash_email function for consistency
+ */
+async function hashEmailForLookup(email: string): Promise<string> {
+  const salt = 'growbro_auth_lockout_salt_v1';
+  const encoder = new TextEncoder();
+  const data = encoder.encode(salt + email.toLowerCase().trim());
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Hash email with SHA-256 for privacy in audit logs (no salt)
  */
 async function hashEmail(email: string): Promise<string> {
   const encoder = new TextEncoder();

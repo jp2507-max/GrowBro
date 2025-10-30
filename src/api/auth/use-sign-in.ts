@@ -8,7 +8,7 @@ import Constants from 'expo-constants';
 import { createMutation } from 'react-query-kit';
 
 import { useAuth } from '@/lib/auth';
-import { hasConsent } from '@/lib/privacy-consent';
+import { logAuthError, trackAuthEvent } from '@/lib/auth/auth-telemetry';
 
 import { mapAuthError } from './error-mapper';
 import type { SignInResponse, SignInVariables } from './types';
@@ -96,28 +96,31 @@ export const useSignIn = createMutation<SignInResponse, SignInVariables, Error>(
       };
     },
 
-    onSuccess: (data) => {
-      // Update Zustand auth store
+    onSuccess: async (data) => {
+      // Update Zustand auth store (which handles Supabase client session)
       const { signIn: storeSignIn } = useAuth.getState();
       storeSignIn({
         session: data.session,
         user: data.user,
       });
 
-      // Track analytics event if consent granted
-      if (hasConsent('analytics')) {
-        // TODO: Integrate with analytics client once available
-        // trackAuthEvent('auth.sign_in', { method: 'email' });
-        console.log('[Auth] Sign in successful (analytics consented)');
-      }
+      // Track analytics event with consent checking and PII sanitization
+      await trackAuthEvent('auth.sign_in', {
+        method: 'email',
+        email: data.user.email,
+        user_id: data.user.id,
+        ip_address: null, // Will be populated by Edge Function if available
+      });
     },
 
-    onError: (error: Error & { code?: string; metadata?: any }) => {
-      // Log error for debugging (non-PII)
-      console.error('[Auth] Sign in failed:', {
+    onError: async (error: Error & { code?: string; metadata?: any }) => {
+      // Log error for debugging with consent checking
+      await logAuthError(error, {
         errorKey: error.message,
         code: error.code,
         hasLockout: error.metadata?.lockout,
+        flow: 'sign_in',
+        method: 'email',
       });
     },
   }

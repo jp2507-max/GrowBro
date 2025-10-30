@@ -10,7 +10,7 @@ $SUPABASE_URL = Read-Host "Supabase URL (e.g., https://abc123.supabase.co)"
 $SERVICE_ROLE_KEY = Read-Host "Service Role Key (from Supabase Dashboard → Settings → API)" -AsSecureString
 $SERVICE_ROLE_KEY = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($SERVICE_ROLE_KEY))
 
-$TEST_EMAIL = "jan-blohm@gmx.de"
+$TEST_EMAIL = "test.user@example.com"
 
 Write-Host ""
 Write-Host "Testing with email: $TEST_EMAIL" -ForegroundColor Green
@@ -78,7 +78,8 @@ foreach ($func in $functions) {
             Write-Host "  ✓ $func is deployed" -ForegroundColor Green
         }
     }
-    catch {
+catch {
+    if ($_.Exception.Response) {
         $statusCode = $_.Exception.Response.StatusCode.value__
         
         if ($statusCode -eq 405) {
@@ -91,6 +92,10 @@ foreach ($func in $functions) {
             Write-Host "  ? $func - Status: $statusCode" -ForegroundColor Yellow
         }
     }
+    else {
+        Write-Host "  ✗ $func - ERROR: No response received - $($_.Exception.Message)" -ForegroundColor Red
+    }
+}
 }
 
 Write-Host ""
@@ -113,7 +118,7 @@ Write-Host ""
 Write-Host "=== Test Summary ===" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Next Steps:" -ForegroundColor Yellow
-Write-Host "  1. Check your email inbox (jan-blohm@gmx.de) for lockout notification" -ForegroundColor White
+Write-Host "  1. Check your email inbox (test.user@example.com) for lockout notification" -ForegroundColor White
 Write-Host "  2. Verify audit logs in Supabase Dashboard" -ForegroundColor White
 Write-Host "  3. If functions not deployed, run:" -ForegroundColor White
 Write-Host "     npx supabase functions deploy" -ForegroundColor Gray
