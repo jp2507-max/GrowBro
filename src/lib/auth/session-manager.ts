@@ -86,6 +86,9 @@ function createSessionManager(): SessionManager {
 
       // If never validated, assume full access (new session)
       if (!lastValidatedAt) {
+        // Update validation timestamp for new sessions
+        const { updateLastValidatedAt } = useAuth.getState();
+        updateLastValidatedAt();
         return 'full';
       }
 
@@ -94,6 +97,9 @@ function createSessionManager(): SessionManager {
 
       // Determine offline mode based on session age
       if (sessionAge < SESSION_AGE_THRESHOLDS.FULL_ACCESS) {
+        // Update validation timestamp for active sessions
+        const { updateLastValidatedAt } = useAuth.getState();
+        updateLastValidatedAt();
         return 'full';
       } else if (sessionAge < SESSION_AGE_THRESHOLDS.READONLY_ACCESS) {
         return 'readonly';
@@ -103,6 +109,12 @@ function createSessionManager(): SessionManager {
     },
 
     async refreshSession(): Promise<Session | null> {
+      // Get the current session before refresh to identify which record to update
+      const { session: currentSession } = useAuth.getState();
+      const oldSessionKey = currentSession
+        ? await deriveSessionKey(currentSession.refresh_token)
+        : null;
+
       try {
         const { data, error } = await supabase.auth.refreshSession();
 
@@ -112,6 +124,40 @@ function createSessionManager(): SessionManager {
         }
 
         if (data.session) {
+          // Update session record with new refresh token hash to prevent revocation bypass
+          try {
+            const newSessionKey = await deriveSessionKey(
+              data.session.refresh_token
+            );
+            if (newSessionKey && oldSessionKey) {
+              // Update the specific session record that matches the old session key
+              // This ensures we update the correct record even with multiple active sessions
+              const { error: updateError } = await supabase
+                .from('user_sessions')
+                .update({
+                  session_key: newSessionKey,
+                  last_active_at: new Date().toISOString(),
+                })
+                .eq('user_id', data.session.user.id)
+                .eq('session_key', oldSessionKey) // Match the old session key
+                .is('revoked_at', null); // Only update non-revoked sessions
+
+              if (updateError) {
+                console.warn(
+                  'Failed to update session record after refresh:',
+                  updateError
+                );
+                // Don't block refresh on update failure - graceful degradation
+              }
+            }
+          } catch (updateError) {
+            console.warn(
+              'Error updating session record after refresh:',
+              updateError
+            );
+            // Don't block refresh on update failure - graceful degradation
+          }
+
           // Update store with refreshed session
           const { updateSession } = useAuth.getState();
           updateSession(data.session);

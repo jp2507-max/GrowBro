@@ -41,7 +41,7 @@ type FormData = z.infer<typeof schema>;
 export default function ResetPasswordConfirm() {
   const { t } = useTranslation();
   const router = useRouter();
-  const _params = useLocalSearchParams<{ token_hash?: string }>();
+  useLocalSearchParams<{ token_hash?: string }>();
   const { handleSubmit, control } = useForm<FormData>({
     resolver: zodResolver(schema),
   });

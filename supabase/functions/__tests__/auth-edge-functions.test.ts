@@ -229,10 +229,11 @@ Deno.test('Edge Function: enforce-auth-lockout - locks account after 5 failed at
  */
 Deno.test('Edge Function: send-lockout-notification - sends email on lockout', async () => {
   // Get lockout record
+  const emailHash = await hashEmailForLookup(TEST_EMAIL);
   const { data: lockout } = await supabase
     .from('auth_lockouts')
     .select('*')
-    .eq('email', TEST_EMAIL)
+    .eq('email_hash', emailHash)
     .single();
 
   assertExists(lockout);

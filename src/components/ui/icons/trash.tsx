@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import Svg, { Path } from 'react-native-svg';
 
 type IconProps = {
@@ -10,7 +11,7 @@ export const Trash = ({
   color = '#737373',
   size = 24,
   testID,
-}: IconProps): JSX.Element => (
+}: IconProps): ReactElement => (
   <Svg
     testID={testID}
     width={size}

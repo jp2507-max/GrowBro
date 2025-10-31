@@ -79,6 +79,7 @@ export function shouldBlockMutation(
   offlineMode: 'full' | 'readonly' | 'blocked',
   _isSensitiveOp: boolean = false
 ): boolean {
+  void _isSensitiveOp;
   // Block all mutations in blocked mode
   if (offlineMode === 'blocked') {
     return true;

@@ -1,8 +1,15 @@
 import type { Session } from '@supabase/supabase-js';
 
+import { deriveSessionKey } from '@/api/auth';
+
 import { supabase } from '../supabase';
 import { useAuth } from './index';
 import { sessionManager } from './session-manager';
+
+// Mock deriveSessionKey
+jest.mock('@/api/auth', () => ({
+  deriveSessionKey: jest.fn(),
+}));
 
 // Mock Supabase client
 jest.mock('../supabase', () => ({
@@ -14,6 +21,13 @@ jest.mock('../supabase', () => ({
         data: { subscription: { unsubscribe: jest.fn() } },
       })),
     },
+    from: jest.fn(() => ({
+      update: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          is: jest.fn(() => Promise.resolve({ error: null })),
+        })),
+      })),
+    })),
   },
 }));
 
@@ -124,12 +138,14 @@ describe('SessionManager', () => {
     it('should refresh session successfully and update store', async () => {
       const updateSession = jest.fn();
       (useAuth.getState as jest.Mock).mockReturnValue({
+        session: mockSession,
         updateSession,
       });
 
       const refreshedSession = {
         ...mockSession,
         access_token: 'new-access-token',
+        refresh_token: 'new-refresh-token',
       };
 
       (supabase.auth.refreshSession as jest.Mock).mockResolvedValue({
@@ -137,14 +153,22 @@ describe('SessionManager', () => {
         error: null,
       });
 
+      (deriveSessionKey as jest.Mock).mockResolvedValueOnce('old-session-key');
+      (deriveSessionKey as jest.Mock).mockResolvedValueOnce('new-session-key');
+
       const result = await sessionManager.refreshSession();
 
       expect(result).toEqual(refreshedSession);
       expect(updateSession).toHaveBeenCalledWith(refreshedSession);
+      expect(deriveSessionKey).toHaveBeenCalledWith(mockSession.refresh_token);
+      expect(deriveSessionKey).toHaveBeenCalledWith(
+        refreshedSession.refresh_token
+      );
     });
 
     it('should return null when refresh fails with error', async () => {
       (useAuth.getState as jest.Mock).mockReturnValue({
+        session: mockSession,
         updateSession: jest.fn(),
       });
 
@@ -160,6 +184,7 @@ describe('SessionManager', () => {
 
     it('should return null when refresh throws exception', async () => {
       (useAuth.getState as jest.Mock).mockReturnValue({
+        session: mockSession,
         updateSession: jest.fn(),
       });
 

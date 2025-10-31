@@ -4,6 +4,7 @@ import '../../global.css';
 import { Env } from '@env';
 /* eslint-disable react-compiler/react-compiler */
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
 import { Stack, usePathname } from 'expo-router';
@@ -145,6 +146,19 @@ function RootLayout(): React.ReactElement {
   const [isI18nReady, setIsI18nReady] = React.useState(false);
   const [showConsent, setShowConsent] = React.useState(false);
   useRootStartup(setIsI18nReady, isFirstTime);
+
+  React.useEffect(() => {
+    if (!Env.GOOGLE_WEB_CLIENT_ID) {
+      return;
+    }
+
+    GoogleSignin.configure({
+      webClientId: Env.GOOGLE_WEB_CLIENT_ID,
+      ...(Env.GOOGLE_IOS_CLIENT_ID
+        ? { iosClientId: Env.GOOGLE_IOS_CLIENT_ID }
+        : {}),
+    });
+  }, []);
 
   // Initialize deep linking for auth flows
   useDeepLinking();

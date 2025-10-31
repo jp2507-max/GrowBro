@@ -5,6 +5,8 @@ import { Button, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
 import type { OfflineMode } from '@/lib/auth';
 import { sessionManager } from '@/lib/auth/session-manager';
+import { showErrorMessage } from '@/lib/flash-message';
+import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
 interface OfflineModeBannerProps {
   mode: OfflineMode;
@@ -34,6 +36,15 @@ export function OfflineModeBanner({
       if (isValid && onReconnect) {
         onReconnect();
       }
+    } catch (error) {
+      // Log the error
+      captureCategorizedErrorSync(error, {
+        source: 'component',
+        component: 'OfflineModeBanner',
+        action: 'handleReconnect',
+      });
+      // Show user-friendly error message
+      showErrorMessage(translate('auth.offline_reconnect_error'));
     } finally {
       setIsReconnecting(false);
     }

@@ -18,10 +18,15 @@ import {
   View,
 } from '@/components/ui';
 import { translate, useAuth } from '@/lib';
+import { generateStableHash } from '@/lib/auth/utils';
 
 export default function ActiveSessionsScreen() {
   const queryClient = useQueryClient();
-  const currentSessionId = useAuth.use.getStableSessionId();
+  const refreshToken = useAuth((state) => state.token?.refresh ?? null);
+  const currentSessionId = React.useMemo(
+    () => (refreshToken ? generateStableHash(refreshToken) : null),
+    [refreshToken]
+  );
 
   // Fetch sessions
   const { data: sessions, isLoading, error } = useSessions();
@@ -84,7 +89,9 @@ export default function ActiveSessionsScreen() {
   };
 
   const otherSessionsCount =
-    sessions?.filter((s) => s.session_key !== currentSessionId).length || 0;
+    sessions?.filter((s) =>
+      currentSessionId ? s.session_key !== currentSessionId : true
+    ).length || 0;
 
   return (
     <>

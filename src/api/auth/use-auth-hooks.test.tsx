@@ -670,6 +670,55 @@ describe('Auth Hooks', () => {
           nonce: 'nonce-123',
         });
       });
+
+      it('should sign in with Google ID token', async () => {
+        // Arrange
+        const mockSession = {
+          access_token: 'google-token',
+          refresh_token: 'google-refresh',
+          expires_in: 3600,
+          expires_at: Date.now() + 3600000,
+          token_type: 'bearer' as const,
+          user: {
+            id: 'user-456',
+            email: 'google@example.com',
+          },
+        };
+
+        supabase.auth.signInWithIdToken.mockResolvedValueOnce({
+          data: {
+            session: mockSession,
+            user: mockSession.user,
+          },
+          error: null,
+        });
+
+        // Act
+        const { result } = renderHook(() => useSignInWithIdToken(), {
+          wrapper: createWrapper(),
+        });
+
+        result.current.mutate({
+          provider: 'google',
+          idToken: 'google-id-token',
+        });
+
+        // Assert
+        await waitFor(() => {
+          expect(result.current.isSuccess).toBe(true);
+        });
+
+        expect(supabase.auth.signInWithIdToken).toHaveBeenCalledWith({
+          provider: 'google',
+          token: 'google-id-token',
+          nonce: undefined,
+        });
+
+        expect(mockSignIn).toHaveBeenCalledWith({
+          session: mockSession,
+          user: mockSession.user,
+        });
+      });
     });
   });
 

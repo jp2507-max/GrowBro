@@ -2,14 +2,36 @@ import { Stack, useRouter } from 'expo-router';
 import * as React from 'react';
 import { Alert } from 'react-native';
 
+import { useDeleteAccount } from '@/api/auth';
+import { ReAuthModal, useReAuthModal } from '@/components/auth/re-auth-modal';
 import { Item } from '@/components/settings/item';
 import { ItemsContainer } from '@/components/settings/items-container';
 import { FocusAwareStatusBar, ScrollView, Text, View } from '@/components/ui';
 import { Lock, Shield, Trash } from '@/components/ui/icons';
-import { translate } from '@/lib';
+import {
+  showErrorMessage,
+  showSuccessMessage,
+  translate,
+  translateDynamic,
+} from '@/lib';
 
 export default function SecuritySettingsScreen() {
   const router = useRouter();
+  const { ref: reAuthModalRef, present: presentReAuthModal } = useReAuthModal();
+
+  const deleteAccountMutation = useDeleteAccount({
+    onSuccess: () => {
+      // Show success message and redirect to login
+      showSuccessMessage(translate('auth.account_deleted_success'));
+      // Navigation will be handled by auth state change
+      router.replace('/login');
+    },
+    onError: (error) => {
+      const translatedError = translateDynamic(error.message);
+      const fallback = translate('auth.delete_account_error');
+      showErrorMessage(translatedError ?? fallback);
+    },
+  });
 
   const handleChangePassword = () => {
     // TODO: Implement change password flow (future task)
@@ -33,15 +55,17 @@ export default function SecuritySettingsScreen() {
           text: translate('auth.security.delete_account'),
           style: 'destructive',
           onPress: () => {
-            // TODO: Implement delete account flow (future task)
-            Alert.alert(
-              translate('auth.security.delete_account_title'),
-              translate('auth.security.delete_account_coming_soon')
-            );
+            // Show re-authentication modal
+            presentReAuthModal();
           },
         },
       ]
     );
+  };
+
+  const handleReAuthSuccess = () => {
+    // User successfully re-authenticated, proceed with deletion
+    deleteAccountMutation.mutate();
   };
 
   return (
@@ -105,6 +129,14 @@ export default function SecuritySettingsScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Re-authentication Modal */}
+      <ReAuthModal
+        ref={reAuthModalRef}
+        onSuccess={handleReAuthSuccess}
+        title={translate('auth.security.confirm_deletion_title')}
+        description={translate('auth.security.confirm_deletion_description')}
+      />
     </>
   );
 }

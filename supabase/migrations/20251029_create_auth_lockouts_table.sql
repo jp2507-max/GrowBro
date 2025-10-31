@@ -17,17 +17,21 @@ CREATE UNIQUE INDEX idx_auth_lockouts_email_hash ON auth_lockouts(email_hash);
 CREATE OR REPLACE FUNCTION hash_email(p_email TEXT)
 RETURNS TEXT AS $$
 DECLARE
-  v_salt CONSTANT TEXT := 'growbro_auth_lockout_salt_v1';
+  v_salt TEXT;
 BEGIN
-  -- Validate input: email must not be null or empty
-  IF p_email IS NULL OR trim(p_email) = '' THEN
-    RAISE EXCEPTION 'Email parameter cannot be null or empty';
+  -- Get salt from database setting (required)
+  v_salt := current_setting('app.email_hash_salt', true);
+
+  -- Validate that salt is not null or empty
+  IF v_salt IS NULL OR v_salt = '' THEN
+    RAISE EXCEPTION 'app.email_hash_salt database setting is required but not configured';
   END IF;
 
   -- Use SHA-256 hash of salted lowercase trimmed email
   RETURN encode(digest(v_salt || lower(trim(p_email)), 'sha256'), 'hex');
 END;
-$$ LANGUAGE plpgsql IMMUTABLE SECURITY DEFINER;
+$$ LANGUAGE plpgsql IMMUTABLE SECURITY DEFINER
+SET search_path = public, pg_catalog;
 
 COMMENT ON FUNCTION hash_email(TEXT) IS 'Hashes email addresses using SHA-256 for privacy protection against enumeration attacks';
 
@@ -121,7 +125,8 @@ BEGIN
     'attempts_remaining', v_max_attempts - v_lockout.failed_attempts
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_catalog;
 
 -- RPC function to reset lockout counter
 -- Called after successful authentication
@@ -139,7 +144,8 @@ BEGIN
       updated_at = NOW()
   WHERE email_hash = v_email_hash;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_catalog;
 
 -- Add comments for RPC functions
 COMMENT ON FUNCTION check_and_increment_lockout(TEXT) IS 'Checks lockout status and increments failed attempt counter. Returns lockout state.';

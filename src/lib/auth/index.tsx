@@ -27,6 +27,7 @@ interface AuthState {
   hydrate: () => Promise<void>;
   updateSession: (session: Session) => void;
   updateUser: (user: User) => void;
+  updateLastValidatedAt: () => void;
   setOfflineMode: (mode: OfflineMode) => void;
   getStableSessionId: () => string | null;
 }
@@ -147,6 +148,10 @@ const _useAuth = create<AuthState>((set, get) => ({
     set({ user });
   },
 
+  updateLastValidatedAt: () => {
+    set({ lastValidatedAt: Date.now() });
+  },
+
   setOfflineMode: (mode) => {
     set({ offlineMode: mode });
   },
@@ -162,10 +167,10 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 
   if (event === 'SIGNED_IN' && session) {
     // Update store with new session
-    store.signIn({
-      session,
-      user: session.user,
-    });
+    store.updateSession(session);
+    if (session.user) {
+      store.updateUser(session.user);
+    }
   } else if (event === 'SIGNED_OUT') {
     // Clear store on sign out
     await store.signOut();

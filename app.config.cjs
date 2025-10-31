@@ -112,6 +112,7 @@ function createExpoConfig(config) {
     assetBundlePatterns: ['**/*'],
     ios: {
       supportsTablet: true,
+      usesAppleSignIn: true,
       bundleIdentifier: Env.BUNDLE_ID,
       privacyManifests: applePrivacyManifest,
       infoPlist: {
@@ -166,6 +167,14 @@ function createExpoConfig(config) {
       'expo-localization',
       'expo-system-ui',
       'expo-router',
+      'expo-apple-authentication',
+      [
+        '@react-native-google-signin/google-signin',
+        {
+          iosUrlScheme:
+            'com.googleusercontent.apps.706160531301-45q4did3e81681uhhq046642r3voumt2',
+        },
+      ],
       [
         'expo-build-properties',
         {

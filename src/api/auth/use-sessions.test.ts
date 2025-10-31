@@ -11,12 +11,13 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 import * as Crypto from 'expo-crypto';
 import React from 'react';
 
+import type { UserSession } from '@/api/auth';
+
 import {
   deriveSessionKey,
   useCheckSessionRevocation,
   useRevokeAllOtherSessions,
   useRevokeSession,
-  type UserSession,
   useSessions,
 } from './use-sessions';
 

@@ -893,7 +893,15 @@ function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(
       payload as AnalyticsEventPayload<'community_error'>
     ) as unknown as AnalyticsEventPayload<N>;
   }
+
   if (name === 'home_view') return sanitizeHomeViewPayload(payload);
+  if (name === 'strain_detail_viewed')
+    return sanitizeStrainDetailPayload(payload);
+  if (name === 'nutrient_feature_usage')
+    return sanitizeNutrientPayload(payload);
+
+  if (name.startsWith('auth_')) return sanitizeAuthPayload(payload);
+
   if (
     name.startsWith('playbook_') ||
     name.startsWith('ai_adjustment_') ||
@@ -902,11 +910,7 @@ function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(
   ) {
     return sanitizePlaybookPayload(payload);
   }
-  if (name === 'strain_detail_viewed')
-    return sanitizeStrainDetailPayload(payload);
-  if (name === 'nutrient_feature_usage')
-    return sanitizeNutrientPayload(payload);
-  if (name.startsWith('auth_')) return sanitizeAuthPayload(payload);
+
   return payload;
 }
 

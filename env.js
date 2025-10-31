@@ -198,6 +198,10 @@ const client = z.object({
 
   SUPABASE_ANON_KEY: z.string().min(1),
 
+  GOOGLE_WEB_CLIENT_ID: z.string().min(1),
+
+  GOOGLE_IOS_CLIENT_ID: z.string().optional(),
+
   // Account deletion portal
 
   ACCOUNT_DELETION_URL: z.string().url().optional(),
@@ -332,6 +336,14 @@ const supabaseAnonKey = readEnv(
   'SUPABASE_ANON_KEY',
   'EXPO_PUBLIC_SUPABASE_ANON_KEY'
 );
+const googleWebClientId = readEnv(
+  'GOOGLE_WEB_CLIENT_ID',
+  'EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID'
+);
+const googleIosClientId = readEnv(
+  'GOOGLE_IOS_CLIENT_ID',
+  'EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID'
+);
 const accountDeletionUrl = readEnv(
   'ACCOUNT_DELETION_URL',
   'EXPO_PUBLIC_ACCOUNT_DELETION_URL'
@@ -456,6 +468,10 @@ const _clientEnv = {
   SUPABASE_URL: supabaseUrl,
 
   SUPABASE_ANON_KEY: supabaseAnonKey,
+
+  GOOGLE_WEB_CLIENT_ID: googleWebClientId,
+
+  GOOGLE_IOS_CLIENT_ID: googleIosClientId,
 
   // Account deletion portal
 

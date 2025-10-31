@@ -41,6 +41,7 @@ jest.mock('@/lib/supabase', () => ({
   supabase: {
     auth: {
       verifyOtp: jest.fn(),
+      getUser: jest.fn(),
       exchangeCodeForSession: jest.fn(),
     },
   },
@@ -55,6 +56,34 @@ jest.mock('@/lib/auth', () => ({
 jest.mock('@/lib/navigation/deep-link-gate', () => ({
   isProtectedDeepLinkPath: jest.fn(),
   stashPendingDeepLink: jest.fn(),
+}));
+
+jest.mock('@/lib/navigation/deep-link-allowlist', () => ({
+  isAllowedAuthHost: jest.fn((host: string) =>
+    ['auth', 'verify-email', 'reset-password'].includes(host)
+  ),
+  isAllowedRedirect: jest.fn((path: string) => {
+    // Mock implementation that matches test expectations
+    const allowedPaths = [
+      '/settings/profile',
+      '/plants/123',
+      '/feed',
+      '/settings',
+    ];
+    return allowedPaths.includes(path);
+  }),
+  sanitizeDeepLinkUrl: jest.fn((url: string) => url),
+}));
+
+jest.mock('minimatch', () => ({
+  minimatch: jest.fn((path: string, pattern: string) => {
+    // Simple mock implementation - check if pattern ends with /* and path starts with pattern without /*
+    if (pattern.endsWith('/*')) {
+      const basePattern = pattern.slice(0, -2);
+      return path.startsWith(basePattern);
+    }
+    return path === pattern;
+  }),
 }));
 
 jest.mock('@/lib/privacy-consent', () => ({
@@ -131,11 +160,55 @@ describe('handleEmailVerification', () => {
     (privacyConsent.hasConsent as jest.Mock).mockReturnValue(false);
   });
 
-  test('verifies email and shows success message', async () => {
+  test('verifies email, refetches user data, and shows success message', async () => {
+    const mockUpdateUser = jest.fn();
     (supabase.auth.verifyOtp as jest.Mock).mockResolvedValue({ error: null });
+    (supabase.auth.getUser as jest.Mock).mockResolvedValue({
+      data: {
+        user: {
+          id: '123',
+          email: 'user@example.com',
+          email_confirmed_at: '2024-01-01T00:00:00.000Z',
+        },
+      },
+      error: null,
+    });
     (useAuth.getState as jest.Mock).mockReturnValue({
       user: { id: '123', email: 'user@example.com' },
-      updateUser: jest.fn(),
+      updateUser: mockUpdateUser,
+    });
+
+    await handleEmailVerification('valid-token', 'signup');
+
+    expect(supabase.auth.verifyOtp).toHaveBeenCalledWith({
+      type: 'email',
+      token_hash: 'valid-token',
+    });
+    expect(supabase.auth.getUser).toHaveBeenCalled();
+    expect(mockUpdateUser).toHaveBeenCalledWith({
+      id: '123',
+      email: 'user@example.com',
+      email_confirmed_at: '2024-01-01T00:00:00.000Z',
+    });
+    expect(showMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'success',
+      })
+    );
+    expect(router.replace).toHaveBeenCalledWith('/(app)');
+  });
+
+  test('continues on getUser error after successful verification', async () => {
+    const mockUpdateUser = jest.fn();
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    (supabase.auth.verifyOtp as jest.Mock).mockResolvedValue({ error: null });
+    (supabase.auth.getUser as jest.Mock).mockResolvedValue({
+      data: null,
+      error: { message: 'Failed to get user' },
+    });
+    (useAuth.getState as jest.Mock).mockReturnValue({
+      user: { id: '123', email: 'user@example.com' },
+      updateUser: mockUpdateUser,
     });
 
     await handleEmailVerification('valid-token', 'signup');
@@ -144,12 +217,20 @@ describe('handleEmailVerification', () => {
       type: 'signup',
       token_hash: 'valid-token',
     });
+    expect(supabase.auth.getUser).toHaveBeenCalled();
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      'Failed to refetch user after email verification:',
+      { message: 'Failed to get user' }
+    );
+    expect(mockUpdateUser).not.toHaveBeenCalled();
     expect(showMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'success',
       })
     );
     expect(router.replace).toHaveBeenCalledWith('/(app)');
+
+    consoleWarnSpy.mockRestore();
   });
 
   test('shows error for invalid token', async () => {
@@ -303,8 +384,17 @@ describe('handleDeepLink', () => {
     jest.clearAllMocks();
     (privacyConsent.hasConsent as jest.Mock).mockReturnValue(false);
     (supabase.auth.verifyOtp as jest.Mock).mockResolvedValue({ error: null });
+    (supabase.auth.getUser as jest.Mock).mockResolvedValue({
+      data: { user: { id: '123', email: 'user@example.com' } },
+      error: null,
+    });
     (supabase.auth.exchangeCodeForSession as jest.Mock).mockResolvedValue({
       error: null,
+    });
+    (useAuth.getState as jest.Mock).mockReturnValue({
+      status: 'signIn',
+      user: { id: '123', email: 'user@example.com' },
+      updateUser: jest.fn(),
     });
   });
 
@@ -314,7 +404,7 @@ describe('handleDeepLink', () => {
     await handleDeepLink(url);
 
     expect(supabase.auth.verifyOtp).toHaveBeenCalledWith({
-      type: 'signup',
+      type: 'email',
       token_hash: 'abc123',
     });
   });

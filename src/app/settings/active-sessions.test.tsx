@@ -48,6 +48,64 @@ const mockSessions: UserSession[] = [
   },
 ];
 
+type UseSessionsResult = ReturnType<typeof authApi.useSessions>;
+type UseRevokeSessionResult = ReturnType<typeof authApi.useRevokeSession>;
+type UseRevokeAllOtherSessionsResult = ReturnType<
+  typeof authApi.useRevokeAllOtherSessions
+>;
+
+const createSessionsResult = (
+  overrides: Partial<UseSessionsResult> = {}
+): UseSessionsResult => {
+  const base = {
+    data: undefined,
+    isLoading: false,
+    isError: false,
+    isSuccess: false,
+    isPending: false,
+    error: null,
+    refetch: jest.fn(),
+  } as unknown as UseSessionsResult;
+
+  return Object.assign(base, overrides);
+};
+
+const createRevokeSessionResult = (
+  mutate: jest.Mock = jest.fn(),
+  overrides: Partial<UseRevokeSessionResult> = {}
+): UseRevokeSessionResult => {
+  const base = {
+    mutate,
+    isPending: false,
+    isError: false,
+    isSuccess: false,
+    data: undefined,
+    error: null,
+    variables: undefined,
+    reset: jest.fn(),
+  } as unknown as UseRevokeSessionResult;
+
+  return Object.assign(base, overrides);
+};
+
+const createRevokeAllOtherSessionsResult = (
+  mutate: jest.Mock = jest.fn(),
+  overrides: Partial<UseRevokeAllOtherSessionsResult> = {}
+): UseRevokeAllOtherSessionsResult => {
+  const base = {
+    mutate,
+    isPending: false,
+    isError: false,
+    isSuccess: false,
+    data: undefined,
+    error: null,
+    variables: undefined,
+    reset: jest.fn(),
+  } as unknown as UseRevokeAllOtherSessionsResult;
+
+  return Object.assign(base, overrides);
+};
+
 afterEach(() => {
   cleanup();
   jest.clearAllMocks();
@@ -56,19 +114,15 @@ afterEach(() => {
 describe('ActiveSessionsScreen', () => {
   describe('Rendering', () => {
     test('displays loading state initially', () => {
-      jest.mocked(authApi.useSessions).mockReturnValue({
-        data: undefined,
-        isLoading: true,
-        error: null,
-      } as any);
-      jest.mocked(authApi.useRevokeSession).mockReturnValue({
-        mutate: jest.fn(),
-        isPending: false,
-      });
-      jest.mocked(authApi.useRevokeAllOtherSessions).mockReturnValue({
-        mutate: jest.fn(),
-        isPending: false,
-      });
+      jest
+        .mocked(authApi.useSessions)
+        .mockReturnValue(createSessionsResult({ isLoading: true }));
+      jest
+        .mocked(authApi.useRevokeSession)
+        .mockReturnValue(createRevokeSessionResult());
+      jest
+        .mocked(authApi.useRevokeAllOtherSessions)
+        .mockReturnValue(createRevokeAllOtherSessionsResult());
 
       render(<ActiveSessionsScreen />);
 
@@ -76,19 +130,15 @@ describe('ActiveSessionsScreen', () => {
     });
 
     test('displays sessions list when loaded', async () => {
-      jest.mocked(authApi.useSessions).mockReturnValue({
-        data: mockSessions,
-        isLoading: false,
-        error: null,
-      });
-      jest.mocked(authApi.useRevokeSession).mockReturnValue({
-        mutate: jest.fn(),
-        isPending: false,
-      });
-      jest.mocked(authApi.useRevokeAllOtherSessions).mockReturnValue({
-        mutate: jest.fn(),
-        isPending: false,
-      });
+      jest
+        .mocked(authApi.useSessions)
+        .mockReturnValue(createSessionsResult({ data: mockSessions }));
+      jest
+        .mocked(authApi.useRevokeSession)
+        .mockReturnValue(createRevokeSessionResult());
+      jest
+        .mocked(authApi.useRevokeAllOtherSessions)
+        .mockReturnValue(createRevokeAllOtherSessionsResult());
 
       render(<ActiveSessionsScreen />);
 
@@ -99,19 +149,15 @@ describe('ActiveSessionsScreen', () => {
     });
 
     test('highlights current session', async () => {
-      jest.mocked(authApi.useSessions).mockReturnValue({
-        data: mockSessions,
-        isLoading: false,
-        error: null,
-      });
-      jest.mocked(authApi.useRevokeSession).mockReturnValue({
-        mutate: jest.fn(),
-        isPending: false,
-      });
-      jest.mocked(authApi.useRevokeAllOtherSessions).mockReturnValue({
-        mutate: jest.fn(),
-        isPending: false,
-      });
+      jest
+        .mocked(authApi.useSessions)
+        .mockReturnValue(createSessionsResult({ data: mockSessions }));
+      jest
+        .mocked(authApi.useRevokeSession)
+        .mockReturnValue(createRevokeSessionResult());
+      jest
+        .mocked(authApi.useRevokeAllOtherSessions)
+        .mockReturnValue(createRevokeAllOtherSessionsResult());
 
       render(<ActiveSessionsScreen />);
 
@@ -121,11 +167,12 @@ describe('ActiveSessionsScreen', () => {
     });
 
     test('displays error state when fetch fails', () => {
-      jest.mocked(authApi.useSessions).mockReturnValue({
-        data: undefined,
-        isLoading: false,
-        error: new Error('Network error'),
-      });
+      jest.mocked(authApi.useSessions).mockReturnValue(
+        createSessionsResult({
+          isError: true,
+          error: new Error('Network error'),
+        })
+      );
 
       render(<ActiveSessionsScreen />);
 
@@ -135,19 +182,15 @@ describe('ActiveSessionsScreen', () => {
     });
 
     test('displays empty state when no sessions', () => {
-      jest.mocked(authApi.useSessions).mockReturnValue({
-        data: [],
-        isLoading: false,
-        error: null,
-      });
-      jest.mocked(authApi.useRevokeSession).mockReturnValue({
-        mutate: jest.fn(),
-        isPending: false,
-      });
-      jest.mocked(authApi.useRevokeAllOtherSessions).mockReturnValue({
-        mutate: jest.fn(),
-        isPending: false,
-      });
+      jest
+        .mocked(authApi.useSessions)
+        .mockReturnValue(createSessionsResult({ data: [] }));
+      jest
+        .mocked(authApi.useRevokeSession)
+        .mockReturnValue(createRevokeSessionResult());
+      jest
+        .mocked(authApi.useRevokeAllOtherSessions)
+        .mockReturnValue(createRevokeAllOtherSessionsResult());
 
       render(<ActiveSessionsScreen />);
 
@@ -158,19 +201,15 @@ describe('ActiveSessionsScreen', () => {
   describe('Interactions', () => {
     test('shows confirmation when revoking a session', async () => {
       const mockRevoke = jest.fn();
-      jest.mocked(authApi.useSessions).mockReturnValue({
-        data: mockSessions,
-        isLoading: false,
-        error: null,
-      });
-      jest.mocked(authApi.useRevokeSession).mockReturnValue({
-        mutate: mockRevoke,
-        isPending: false,
-      });
-      jest.mocked(authApi.useRevokeAllOtherSessions).mockReturnValue({
-        mutate: jest.fn(),
-        isPending: false,
-      });
+      jest
+        .mocked(authApi.useSessions)
+        .mockReturnValue(createSessionsResult({ data: mockSessions }));
+      jest
+        .mocked(authApi.useRevokeSession)
+        .mockReturnValue(createRevokeSessionResult(mockRevoke));
+      jest
+        .mocked(authApi.useRevokeAllOtherSessions)
+        .mockReturnValue(createRevokeAllOtherSessionsResult());
 
       const user = userEvent.setup();
       render(<ActiveSessionsScreen />);
@@ -195,19 +234,15 @@ describe('ActiveSessionsScreen', () => {
 
     test('shows confirmation when revoking all other sessions', async () => {
       const mockRevokeAll = jest.fn();
-      jest.mocked(authApi.useSessions).mockReturnValue({
-        data: mockSessions,
-        isLoading: false,
-        error: null,
-      });
-      jest.mocked(authApi.useRevokeSession).mockReturnValue({
-        mutate: jest.fn(),
-        isPending: false,
-      });
-      jest.mocked(authApi.useRevokeAllOtherSessions).mockReturnValue({
-        mutate: mockRevokeAll,
-        isPending: false,
-      });
+      jest
+        .mocked(authApi.useSessions)
+        .mockReturnValue(createSessionsResult({ data: mockSessions }));
+      jest
+        .mocked(authApi.useRevokeSession)
+        .mockReturnValue(createRevokeSessionResult());
+      jest
+        .mocked(authApi.useRevokeAllOtherSessions)
+        .mockReturnValue(createRevokeAllOtherSessionsResult(mockRevokeAll));
 
       const user = userEvent.setup();
       render(<ActiveSessionsScreen />);
@@ -233,19 +268,15 @@ describe('ActiveSessionsScreen', () => {
     });
 
     test('does not show revoke all button when only current session exists', () => {
-      jest.mocked(authApi.useSessions).mockReturnValue({
-        data: [mockSessions[0]], // Only current session
-        isLoading: false,
-        error: null,
-      });
-      jest.mocked(authApi.useRevokeSession).mockReturnValue({
-        mutate: jest.fn(),
-        isPending: false,
-      });
-      jest.mocked(authApi.useRevokeAllOtherSessions).mockReturnValue({
-        mutate: jest.fn(),
-        isPending: false,
-      });
+      jest
+        .mocked(authApi.useSessions)
+        .mockReturnValue(createSessionsResult({ data: [mockSessions[0]] }));
+      jest
+        .mocked(authApi.useRevokeSession)
+        .mockReturnValue(createRevokeSessionResult());
+      jest
+        .mocked(authApi.useRevokeAllOtherSessions)
+        .mockReturnValue(createRevokeAllOtherSessionsResult());
 
       render(<ActiveSessionsScreen />);
 

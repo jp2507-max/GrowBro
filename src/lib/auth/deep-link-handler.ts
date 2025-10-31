@@ -24,6 +24,36 @@ import { hasConsent } from '@/lib/privacy-consent';
 import { supabase } from '@/lib/supabase';
 
 /**
+ * Valid deep link routes that can be navigated to from external links
+ * These correspond to actual routes in the app structure
+ */
+const VALID_DEEP_LINK_ROUTES = new Set([
+  '/calendar',
+  '/community',
+  '/settings',
+  '/plants',
+  '/strains',
+  '/playbooks',
+  '/inventory',
+  '/assessment/capture',
+  '/harvest/history',
+  '/nutrient',
+  '/moderation-dashboard',
+  '/sync-diagnostics',
+  '/notifications',
+] as const);
+
+type ValidDeepLinkRoute =
+  typeof VALID_DEEP_LINK_ROUTES extends Set<infer T> ? T : never;
+
+/**
+ * Type guard to check if a path is a valid deep link route
+ */
+function isValidDeepLinkRoute(path: string): path is ValidDeepLinkRoute {
+  return VALID_DEEP_LINK_ROUTES.has(path as ValidDeepLinkRoute);
+}
+
+/**
  * Parse deep link URL and extract parameters
  *
  * @param url - Deep link URL (e.g., growbro://verify-email?token_hash=abc)
@@ -69,15 +99,16 @@ export function parseDeepLink(url: string): {
  */
 export async function handleEmailVerification(
   tokenHash: string,
-  type: 'signup' | 'invite' | 'email_change'
-): Promise<void> {
+  type: 'signup' | 'invite' | 'email_change',
+  redirect?: string
+): Promise<boolean> {
   if (!tokenHash || typeof tokenHash !== 'string') {
     showMessage({
       message: translate('auth.error_invalid_token'),
       type: 'danger',
       duration: 5000,
     });
-    return;
+    return false;
   }
 
   // Map deprecated 'signup' type to 'email'
@@ -94,13 +125,18 @@ export async function handleEmailVerification(
       throw error;
     }
 
-    // Update user state to mark email as verified
-    const user = useAuth.getState().user;
-    if (user) {
-      useAuth.getState().updateUser({
-        ...user,
-        email_confirmed_at: new Date().toISOString(),
-      });
+    // Refetch the current user from Supabase to get canonical server state
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError) {
+      // Log the error but don't fail the verification - the onAuthStateChange listener
+      // should still update the user state with the correct data
+      console.warn(
+        'Failed to refetch user after email verification:',
+        userError
+      );
+    } else if (userData?.user) {
+      // Update the auth store with the fresh user data from server
+      useAuth.getState().updateUser(userData.user);
     }
 
     // Show success message
@@ -110,8 +146,14 @@ export async function handleEmailVerification(
       duration: 5000,
     });
 
-    // Navigate to main app
-    router.replace('/(app)');
+    // Navigate to redirect if provided, otherwise main app
+    if (redirect) {
+      router.replace(redirect);
+    } else {
+      router.replace('/(app)');
+    }
+
+    return true;
   } catch (error: any) {
     // Log error to Sentry if consent granted
     if (hasConsent('crashReporting')) {
@@ -133,6 +175,8 @@ export async function handleEmailVerification(
       type: 'danger',
       duration: 5000,
     });
+
+    return false;
   }
 }
 
@@ -144,14 +188,17 @@ export async function handleEmailVerification(
  *
  * @param tokenHash - Token hash from reset email
  */
-export async function handlePasswordReset(tokenHash: string): Promise<void> {
+export async function handlePasswordReset(
+  tokenHash: string,
+  redirect?: string
+): Promise<boolean> {
   if (!tokenHash || typeof tokenHash !== 'string') {
     showMessage({
       message: translate('auth.error_invalid_token'),
       type: 'danger',
       duration: 5000,
     });
-    return;
+    return false;
   }
 
   try {
@@ -166,9 +213,15 @@ export async function handlePasswordReset(tokenHash: string): Promise<void> {
       throw error;
     }
 
-    // Navigate to password reset confirmation screen
+    // Navigate to redirect if provided, otherwise password reset confirmation screen
     // User will enter new password there
-    router.push('/reset-password-confirm');
+    if (redirect) {
+      router.push(redirect);
+    } else {
+      router.push('/reset-password-confirm');
+    }
+
+    return true;
   } catch (error: any) {
     // Log error to Sentry if consent granted
     if (hasConsent('crashReporting')) {
@@ -192,6 +245,8 @@ export async function handlePasswordReset(tokenHash: string): Promise<void> {
 
     // Navigate back to reset request screen
     router.replace('/reset-password');
+
+    return false;
   }
 }
 
@@ -203,7 +258,10 @@ export async function handlePasswordReset(tokenHash: string): Promise<void> {
  *
  * @param code - Authorization code from OAuth provider
  */
-export async function handleOAuthCallback(code: string): Promise<void> {
+export async function handleOAuthCallback(
+  code: string,
+  redirect?: string
+): Promise<boolean> {
   if (!code || typeof code !== 'string') {
     showMessage({
       message: translate('auth.error_oauth_failed', {
@@ -212,7 +270,7 @@ export async function handleOAuthCallback(code: string): Promise<void> {
       type: 'danger',
       duration: 5000,
     });
-    return;
+    return false;
   }
 
   try {
@@ -224,8 +282,14 @@ export async function handleOAuthCallback(code: string): Promise<void> {
     }
 
     // Session is established, auth state will be updated via onAuthStateChange
-    // Navigate to main app
-    router.replace('/(app)');
+    // Navigate to redirect if provided, otherwise main app
+    if (redirect) {
+      router.replace(redirect);
+    } else {
+      router.replace('/(app)');
+    }
+
+    return true;
   } catch (error: any) {
     // Log error to Sentry if consent granted
     if (hasConsent('crashReporting')) {
@@ -245,6 +309,8 @@ export async function handleOAuthCallback(code: string): Promise<void> {
 
     // Navigate back to login
     router.replace('/login');
+
+    return false;
   }
 }
 
@@ -284,7 +350,10 @@ function validateDeepLinkComponents(
 
   const { host, params } = parsed;
 
-  if (!isAllowedAuthHost(host)) {
+  // Only validate auth hosts for auth-related flows
+  // Allow any host for potential protected route handling
+  const isAuthFlow = ['verify-email', 'reset-password', 'auth'].includes(host);
+  if (isAuthFlow && !isAllowedAuthHost(host)) {
     if (hasConsent('crashReporting')) {
       Sentry.captureMessage('Disallowed deep link host', {
         level: 'warning',
@@ -323,9 +392,12 @@ function validateDeepLinkComponents(
 /**
  * Handle deep link routing based on host
  */
+// eslint-disable-next-line max-params
 async function handleDeepLinkRoute(
   host: string,
-  params: URLSearchParams
+  params: URLSearchParams,
+  url?: string,
+  redirect?: string
 ): Promise<void> {
   switch (host) {
     case 'verify-email': {
@@ -334,33 +406,53 @@ async function handleDeepLinkRoute(
         (params.get('type') as 'signup' | 'invite' | 'email_change') ||
         'signup';
       if (tokenHash) {
-        await handleEmailVerification(tokenHash, type);
+        await handleEmailVerification(tokenHash, type, redirect);
       }
       break;
     }
     case 'reset-password': {
       const tokenHash = params.get('token_hash');
       if (tokenHash) {
-        await handlePasswordReset(tokenHash);
+        await handlePasswordReset(tokenHash, redirect);
       }
       break;
     }
     case 'auth': {
       const code = params.get('code');
       if (code) {
-        await handleOAuthCallback(code);
+        await handleOAuthCallback(code, redirect);
       }
       break;
     }
     default: {
       const path = `/${host}`;
       if (isProtectedDeepLinkPath(path)) {
-        const isSignedIn = useAuth.getState().status === 'signIn';
-        if (!isSignedIn) {
-          stashPendingDeepLink(path);
-          router.replace('/login');
+        if (isValidDeepLinkRoute(path)) {
+          const isSignedIn = useAuth.getState().status === 'signIn';
+          if (!isSignedIn) {
+            stashPendingDeepLink(path);
+            router.replace('/login');
+          } else {
+            // Navigate to redirect if provided, otherwise the requested path
+            if (redirect) {
+              router.push(redirect);
+            } else {
+              router.push(path);
+            }
+          }
         } else {
-          router.push(path as any);
+          // Log invalid deep link route attempts for security monitoring
+          if (hasConsent('crashReporting')) {
+            Sentry.captureMessage('Invalid deep link route', {
+              level: 'warning',
+              tags: { context: 'deep_link_validation' },
+              extra: {
+                host,
+                path,
+                url: url ? sanitizeDeepLinkUrl(url) : '',
+              },
+            });
+          }
         }
       }
     }
@@ -387,10 +479,15 @@ export async function handleDeepLink(url: string): Promise<void> {
   }
 
   const { host, params } = parsed;
-  await handleDeepLinkRoute(host, params);
 
-  const redirect = params.get('redirect');
-  if (redirect && validateRedirect(redirect)) {
-    router.push(redirect as any);
-  }
+  // Validate redirect parameter early
+  const redirectParam = params.get('redirect');
+  const validatedRedirect =
+    redirectParam &&
+    validateRedirect(redirectParam) &&
+    isValidDeepLinkRoute(redirectParam)
+      ? redirectParam
+      : undefined;
+
+  await handleDeepLinkRoute(host, params, url, validatedRedirect);
 }

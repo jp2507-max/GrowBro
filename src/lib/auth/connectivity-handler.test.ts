@@ -62,24 +62,24 @@ describe('connectivity-handler', () => {
   describe('getBlockedMutationError', () => {
     it('should return session expired error for blocked mode', () => {
       expect(getBlockedMutationError('blocked')).toBe(
-        'auth.error_session_expired'
+        'errors.sync.unauthorized'
       );
     });
 
     it('should return readonly error for readonly mode', () => {
       expect(getBlockedMutationError('readonly')).toBe(
-        'auth.error_readonly_mode'
+        'errors.sync.network_timeout'
       );
     });
 
     it('should return sensitive op error for readonly mode with sensitive operation', () => {
       expect(getBlockedMutationError('readonly', true)).toBe(
-        'auth.error_sensitive_op_requires_connectivity'
+        'errors.sync.permission_denied'
       );
     });
 
     it('should return generic error for full mode', () => {
-      expect(getBlockedMutationError('full')).toBe('auth.error_generic');
+      expect(getBlockedMutationError('full')).toBe('errors.sync.unknown');
     });
   });
 

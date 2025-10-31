@@ -3,6 +3,7 @@
  * Implements consent-aware tracking and PII sanitization for auth events
  */
 
+import { Env } from '@env';
 import * as Sentry from '@sentry/react-native';
 import * as Crypto from 'expo-crypto';
 
@@ -69,16 +70,24 @@ onPrivacyConsentChange((consent) => {
 });
 
 /**
- * Hash email address using SHA-256 for PII-safe analytics
+ * Hash email address using SHA-256 with salt for PII-safe analytics
  */
 async function hashEmail(email: string): Promise<string> {
+  const salt = Env.EMAIL_HASH_SALT;
+  if (!salt) {
+    console.warn('EMAIL_HASH_SALT environment variable is not configured');
+    return '[hash_unavailable]';
+  }
+
   try {
+    const normalizedEmail = email.toLowerCase().trim();
+    const saltedEmail = salt + normalizedEmail;
     return await Crypto.digestStringAsync(
       Crypto.CryptoDigestAlgorithm.SHA256,
-      email.toLowerCase().trim()
+      saltedEmail
     );
-  } catch (error) {
-    console.warn('Failed to hash email:', error);
+  } catch {
+    console.warn('Failed to hash email');
     return '[hash_failed]';
   }
 }

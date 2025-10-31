@@ -284,12 +284,12 @@ function createReservoirSchema() {
       if (data.targetPhMin >= data.targetPhMax) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Minimum pH must be less than maximum pH',
+          message: 'nutrient.validation.phMinLessThanMax',
           path: ['targetPhMin'],
         });
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Maximum pH must be greater than minimum pH',
+          message: 'nutrient.validation.phMaxGreaterThanMin',
           path: ['targetPhMax'],
         });
       }
@@ -297,12 +297,12 @@ function createReservoirSchema() {
       if (data.targetEcMin25c >= data.targetEcMax25c) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Minimum EC must be less than maximum EC',
+          message: 'nutrient.validation.ecMinLessThanMax',
           path: ['targetEcMin25c'],
         });
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Maximum EC must be greater than minimum EC',
+          message: 'nutrient.validation.ecMaxGreaterThanMin',
           path: ['targetEcMax25c'],
         });
       }

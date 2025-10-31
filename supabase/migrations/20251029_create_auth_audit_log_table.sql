@@ -1,7 +1,7 @@
 -- Create auth_audit_log table for authentication event logging
 -- Service-role only access for security and compliance (GDPR Art. 30 ROPA)
 
-CREATE TABLE IF NOT EXISTS auth_audit_log (
+CREATE TABLE IF NOT EXISTS public.auth_audit_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   event_type TEXT NOT NULL CHECK (event_type IN (
@@ -23,31 +23,31 @@ CREATE TABLE IF NOT EXISTS auth_audit_log (
 );
 
 -- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_auth_audit_log_user_id ON auth_audit_log(user_id);
-CREATE INDEX IF NOT EXISTS idx_auth_audit_log_event_type ON auth_audit_log(event_type);
-CREATE INDEX IF NOT EXISTS idx_auth_audit_log_created_at ON auth_audit_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_auth_audit_log_user_id ON public.auth_audit_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_auth_audit_log_event_type ON public.auth_audit_log(event_type);
+CREATE INDEX IF NOT EXISTS idx_auth_audit_log_created_at ON public.auth_audit_log(created_at DESC);
 
 -- Add comments for documentation
-COMMENT ON TABLE auth_audit_log IS 'Audit log for authentication events. Service-role only access for security and compliance.';
-COMMENT ON COLUMN auth_audit_log.user_id IS 'User ID (NULL if user deleted or anonymous event)';
-COMMENT ON COLUMN auth_audit_log.event_type IS 'Type of authentication event';
-COMMENT ON COLUMN auth_audit_log.ip_address IS 'Source IP address (may be truncated for privacy)';
-COMMENT ON COLUMN auth_audit_log.user_agent IS 'User agent string from request headers';
-COMMENT ON COLUMN auth_audit_log.metadata IS 'Additional event context (device info, error codes, etc.)';
+COMMENT ON TABLE public.auth_audit_log IS 'Audit log for authentication events. Service-role only access for security and compliance.';
+COMMENT ON COLUMN public.auth_audit_log.user_id IS 'User ID (NULL if user deleted or anonymous event)';
+COMMENT ON COLUMN public.auth_audit_log.event_type IS 'Type of authentication event';
+COMMENT ON COLUMN public.auth_audit_log.ip_address IS 'Source IP address (may be truncated for privacy)';
+COMMENT ON COLUMN public.auth_audit_log.user_agent IS 'User agent string from request headers';
+COMMENT ON COLUMN public.auth_audit_log.metadata IS 'Additional event context (device info, error codes, etc.)';
 
 -- Enable Row Level Security
-ALTER TABLE auth_audit_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.auth_audit_log ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policy: Service role only (no direct mobile app access)
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE tablename = 'auth_audit_log' 
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'auth_audit_log'
     AND policyname = 'Only service role can access audit logs'
   ) THEN
     CREATE POLICY "Only service role can access audit logs"
-      ON auth_audit_log
+      ON public.auth_audit_log
       USING (auth.jwt() ->> 'role' = 'service_role')
       WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
   END IF;
@@ -66,9 +66,9 @@ DECLARE
   v_log_id UUID;
 BEGIN
   -- Set safe search_path to prevent hijacking
-  PERFORM set_config('search_path', 'pg_catalog,auth', true);
-  
-  INSERT INTO auth.auth_audit_log (
+  PERFORM set_config('search_path', 'pg_catalog,auth,public', true);
+
+  INSERT INTO public.auth_audit_log (
     user_id,
     event_type,
     ip_address,

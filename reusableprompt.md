@@ -1,4 +1,4 @@
-TASK_ID: {8} with subtasks (make sure task with sub task is fully implemented)
+TASK_ID: {12} with subtasks (make sure task with sub task is fully implemented)
 AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the plan
 
 CONTEXT
@@ -45,6 +45,7 @@ VERIFICATION (local)
 
 - pnpm -s tsc --noEmit
 - pnpm -s lint
+- (optional) pnpm eslint <paths to files touched in this task>
 - pnpm -s test
 
 GUARDRAILS (must follow)

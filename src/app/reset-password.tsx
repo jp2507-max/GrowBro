@@ -34,18 +34,21 @@ export default function ResetPassword(): JSX.Element {
     resolver: zodResolver(schema),
   });
 
-  const resetMutation = useResetPassword({
-    onSuccess: () => {
-      showSuccessMessage(t('auth.reset_password_success'));
-      // Keep user on screen to see success message
-    },
-    onError: (error) => {
-      showErrorMessage(t(error.message));
-    },
-  });
+  const resetMutation = useResetPassword();
 
-  const onSubmit: SubmitHandler<FormData> = (data) => {
-    resetMutation.mutate({ email: data.email });
+  const onSubmit: SubmitHandler<FormData> = async (data) => {
+    await resetMutation.mutateAsync(
+      { email: data.email },
+      {
+        onSuccess: () => {
+          showSuccessMessage(t('auth.reset_password_success'));
+          // Keep user on screen to see success message
+        },
+        onError: (error) => {
+          showErrorMessage(t(error.message));
+        },
+      }
+    );
   };
 
   return (

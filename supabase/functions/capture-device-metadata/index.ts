@@ -61,6 +61,7 @@ Deno.serve(async (req: Request) => {
     // Extract IP address from request headers
     const ipAddress = extractIpAddress(req);
     const truncatedIp = truncateIpAddress(ipAddress);
+    const sanitizedIp = isValidInet(truncatedIp) ? truncatedIp : null;
 
     // Extract user agent from headers or body
     const finalUserAgent =
@@ -110,7 +111,7 @@ Deno.serve(async (req: Request) => {
           device_name: deviceInfo.deviceName,
           os: deviceInfo.os,
           app_version: appVersion || 'Unknown',
-          ip_address: truncatedIp,
+          ip_address: sanitizedIp,
           created_at: new Date().toISOString(),
           last_active_at: new Date().toISOString(),
         });
@@ -136,7 +137,7 @@ Deno.serve(async (req: Request) => {
 
       // Log to audit log
       try {
-        const ipParam = isValidInet(truncatedIp) ? truncatedIp : null;
+        const ipParam = sanitizedIp;
         await supabase.rpc('log_auth_event', {
           p_user_id: userId,
           p_event_type: 'sign_in',

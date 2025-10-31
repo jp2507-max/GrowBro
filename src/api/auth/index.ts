@@ -35,6 +35,9 @@ export {
 // Sign Out
 export { useSignOut, useSignOutGlobal } from './use-sign-out';
 
+// Account Deletion
+export { useDeleteAccount } from './use-delete-account';
+
 // Session Management
 export {
   deriveSessionKey,

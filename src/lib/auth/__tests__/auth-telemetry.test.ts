@@ -1,5 +1,15 @@
 import type { PrivacyConsent } from '@/lib/privacy-consent';
 
+import type {
+  logAuthError as logAuthErrorFn,
+  trackAuthEvent as trackAuthEventFn,
+} from '../auth-telemetry';
+
+type AuthTelemetryModule = {
+  logAuthError: typeof logAuthErrorFn;
+  trackAuthEvent: typeof trackAuthEventFn;
+};
+
 const mockTrack = jest.fn();
 const mockCreateConsentGatedAnalytics = jest.fn(() => ({
   track: mockTrack,
@@ -75,7 +85,7 @@ async function loadTelemetryModule(overrides: Partial<PrivacyConsent> = {}) {
     }
   );
   mockDigest.mockImplementation(async (_algorithm: string, value: string) => {
-    return `hashed:${value.toLowerCase().trim()}`;
+    return `hashed:${value}`;
   });
   mockCreateConsentGatedAnalytics.mockImplementation(() => ({
     track: mockTrack,
@@ -118,7 +128,13 @@ async function loadTelemetryModule(overrides: Partial<PrivacyConsent> = {}) {
     beforeSendHook: mockBeforeSendHook,
   }));
 
-  let telemetryModule: Awaited<typeof import('../auth-telemetry')>;
+  jest.doMock('@env', () => ({
+    Env: {
+      EMAIL_HASH_SALT: 'test-salt',
+    },
+  }));
+
+  let telemetryModule: AuthTelemetryModule;
   jest.isolateModules(() => {
     telemetryModule = require('../auth-telemetry');
   });
@@ -155,7 +171,7 @@ describe('auth telemetry helpers', () => {
     expect(eventName).toBe('auth.sign_in');
     expect(payload).toEqual(
       expect.objectContaining({
-        email: 'hashed:user@example.com',
+        email: 'hashed:test-saltuser@example.com',
         ip_address: '203.0.113.0',
         user_id: 'user-123',
         session_id: 'user-123',
@@ -198,7 +214,7 @@ describe('auth telemetry helpers', () => {
     expect(scopeSetContext).toHaveBeenCalledWith(
       'auth_context',
       expect.objectContaining({
-        email: 'hashed:sensitive@example.com',
+        email: 'hashed:test-saltsensitive@example.com',
         ip_address: '10.0.0.0',
         password: '[REDACTED]',
         user_id: 'user-99',

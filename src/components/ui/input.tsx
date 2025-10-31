@@ -133,7 +133,7 @@ export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
 // only used with react-hook-form
 export function ControlledInput<T extends FieldValues>(
   props: ControlledInputProps<T>
-) {
+): React.ReactElement {
   const { name, control, rules, ...inputProps } = props;
 
   const { field, fieldState } = useController({ control, name, rules });

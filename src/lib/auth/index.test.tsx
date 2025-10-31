@@ -39,17 +39,13 @@ const setItemSpy = jest
   .mockImplementation((key: string, value: any) => {
     mockStorage.set(key, JSON.stringify(value));
   });
-const _getItemSpy = jest
-  .spyOn(storage, 'getItem')
-  .mockImplementation((key: string) => {
-    const value = mockStorage.get(key);
-    return value ? JSON.parse(value) : null;
-  });
-const _removeItemSpy = jest
-  .spyOn(storage, 'removeItem')
-  .mockImplementation((key: string) => {
-    mockStorage.delete(key);
-  });
+jest.spyOn(storage, 'getItem').mockImplementation((key: string) => {
+  const value = mockStorage.get(key);
+  return value ? JSON.parse(value) : null;
+});
+jest.spyOn(storage, 'removeItem').mockImplementation((key: string) => {
+  mockStorage.delete(key);
+});
 
 describe('Auth', () => {
   const mockUser: User = {

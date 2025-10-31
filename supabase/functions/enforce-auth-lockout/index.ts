@@ -379,7 +379,8 @@ function truncateIpAddress(ip: string): string {
  * Matches the database hash_email function for consistency
  */
 async function hashEmailForLookup(email: string): Promise<string> {
-  const salt = 'growbro_auth_lockout_salt_v1';
+  const salt =
+    Deno.env.get('EMAIL_HASH_SALT') || 'growbro_auth_lockout_salt_v1';
   const encoder = new TextEncoder();
   const data = encoder.encode(salt + email.toLowerCase().trim());
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
