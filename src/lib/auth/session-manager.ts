@@ -86,9 +86,6 @@ function createSessionManager(): SessionManager {
 
       // If never validated, assume full access (new session)
       if (!lastValidatedAt) {
-        // Update validation timestamp for new sessions
-        const { updateLastValidatedAt } = useAuth.getState();
-        updateLastValidatedAt();
         return 'full';
       }
 
@@ -97,9 +94,6 @@ function createSessionManager(): SessionManager {
 
       // Determine offline mode based on session age
       if (sessionAge < SESSION_AGE_THRESHOLDS.FULL_ACCESS) {
-        // Update validation timestamp for active sessions
-        const { updateLastValidatedAt } = useAuth.getState();
-        updateLastValidatedAt();
         return 'full';
       } else if (sessionAge < SESSION_AGE_THRESHOLDS.READONLY_ACCESS) {
         return 'readonly';
@@ -159,8 +153,9 @@ function createSessionManager(): SessionManager {
           }
 
           // Update store with refreshed session
-          const { updateSession } = useAuth.getState();
+          const { updateSession, updateLastValidatedAt } = useAuth.getState();
           updateSession(data.session);
+          updateLastValidatedAt();
           return data.session;
         }
 
@@ -235,8 +230,9 @@ function createSessionManager(): SessionManager {
         }
 
         // Session is valid, update store
-        const { updateSession } = useAuth.getState();
+        const { updateSession, updateLastValidatedAt } = useAuth.getState();
         updateSession(session);
+        updateLastValidatedAt();
 
         return true;
       } catch (error) {

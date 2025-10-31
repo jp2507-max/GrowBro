@@ -51,12 +51,6 @@ describe('connectivity-handler', () => {
     it('should allow mutations in full mode', () => {
       expect(shouldBlockMutation('full')).toBe(false);
     });
-
-    it('should handle sensitive operations parameter', () => {
-      // Currently doesn't affect behavior, but parameter is accepted
-      expect(shouldBlockMutation('full', true)).toBe(false);
-      expect(shouldBlockMutation('readonly', true)).toBe(true);
-    });
   });
 
   describe('getBlockedMutationError', () => {

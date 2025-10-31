@@ -14,6 +14,50 @@ interface OfflineModeBannerProps {
   onReconnect?: () => void;
 }
 
+function getBannerStyles(mode: OfflineMode) {
+  const isReadonly = mode === 'readonly';
+  return {
+    bannerClassName: `mx-4 my-2 rounded-lg p-4 ${
+      isReadonly
+        ? 'bg-warning-100 dark:bg-warning-900'
+        : 'bg-danger-100 dark:bg-danger-900'
+    }`,
+    titleClassName: `font-semibold ${
+      isReadonly
+        ? 'text-warning-900 dark:text-warning-100'
+        : 'text-danger-900 dark:text-danger-100'
+    }`,
+    messageClassName: `mt-1 text-sm ${
+      isReadonly
+        ? 'text-warning-800 dark:text-warning-200'
+        : 'text-danger-800 dark:text-danger-200'
+    }`,
+    isReadonly,
+    isBlocked: mode === 'blocked',
+  };
+}
+
+function DismissButton({ onDismiss }: { onDismiss?: () => void }) {
+  if (!onDismiss) return null;
+  return (
+    <Pressable
+      testID="offline-mode-banner-dismiss"
+      onPress={onDismiss}
+      className="ml-3 rounded-full p-2"
+      accessibilityRole="button"
+      accessibilityLabel={translate('common.dismiss')}
+      accessibilityHint={translate('auth.offline_dismiss_hint')}
+    >
+      <Text
+        testID="offline-mode-banner-dismiss-icon"
+        className="text-xl text-warning-900 dark:text-warning-100"
+      >
+        ×
+      </Text>
+    </Pressable>
+  );
+}
+
 export function OfflineModeBanner({
   mode,
   onDismiss,
@@ -21,29 +65,27 @@ export function OfflineModeBanner({
 }: OfflineModeBannerProps): React.JSX.Element | null {
   const [isReconnecting, setIsReconnecting] = React.useState(false);
 
-  // Don't show banner for full access mode
-  if (mode === 'full') {
-    return null;
-  }
+  if (mode === 'full') return null;
 
-  const isReadonly = mode === 'readonly';
-  const isBlocked = mode === 'blocked';
+  const {
+    bannerClassName,
+    titleClassName,
+    messageClassName,
+    isReadonly,
+    isBlocked,
+  } = getBannerStyles(mode);
 
   const handleReconnect = async () => {
     setIsReconnecting(true);
     try {
       const isValid = await sessionManager.forceValidation();
-      if (isValid && onReconnect) {
-        onReconnect();
-      }
+      if (isValid && onReconnect) onReconnect();
     } catch (error) {
-      // Log the error
       captureCategorizedErrorSync(error, {
         source: 'component',
         component: 'OfflineModeBanner',
         action: 'handleReconnect',
       });
-      // Show user-friendly error message
       showErrorMessage(translate('auth.offline_reconnect_error'));
     } finally {
       setIsReconnecting(false);
@@ -53,24 +95,13 @@ export function OfflineModeBanner({
   return (
     <View
       testID="offline-mode-banner"
-      className={`mx-4 my-2 rounded-lg p-4 ${
-        isReadonly
-          ? 'bg-warning-100 dark:bg-warning-900'
-          : 'bg-danger-100 dark:bg-danger-900'
-      }`}
+      className={bannerClassName}
       accessibilityRole="alert"
       accessibilityLiveRegion="polite"
     >
       <View className="flex-row items-center justify-between">
         <View className="flex-1">
-          <Text
-            testID="offline-mode-banner-title"
-            className={`font-semibold ${
-              isReadonly
-                ? 'text-warning-900 dark:text-warning-100'
-                : 'text-danger-900 dark:text-danger-100'
-            }`}
-          >
+          <Text testID="offline-mode-banner-title" className={titleClassName}>
             {translate(
               isReadonly
                 ? 'auth.offline_readonly_title'
@@ -79,11 +110,7 @@ export function OfflineModeBanner({
           </Text>
           <Text
             testID="offline-mode-banner-message"
-            className={`mt-1 text-sm ${
-              isReadonly
-                ? 'text-warning-800 dark:text-warning-200'
-                : 'text-danger-800 dark:text-danger-200'
-            }`}
+            className={messageClassName}
           >
             {translate(
               isReadonly
@@ -106,23 +133,7 @@ export function OfflineModeBanner({
           )}
         </View>
 
-        {isReadonly && onDismiss && (
-          <Pressable
-            testID="offline-mode-banner-dismiss"
-            onPress={onDismiss}
-            className="ml-3 rounded-full p-2"
-            accessibilityRole="button"
-            accessibilityLabel={translate('common.dismiss')}
-            accessibilityHint={translate('auth.offline_dismiss_hint')}
-          >
-            <Text
-              testID="offline-mode-banner-dismiss-icon"
-              className="text-xl text-warning-900 dark:text-warning-100"
-            >
-              ×
-            </Text>
-          </Pressable>
-        )}
+        {isReadonly ? <DismissButton onDismiss={onDismiss} /> : null}
       </View>
     </View>
   );

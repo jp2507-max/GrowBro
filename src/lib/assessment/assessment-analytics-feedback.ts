@@ -6,7 +6,7 @@ import type { AssessmentFeedbackModel } from '@/lib/watermelon-models/assessment
 /**
  * Get feedback statistics for analytics
  *
- * @param days - Number of days to look back (default: 30). Use 0 for all historical data.
+ * @param days - Number of days to look back (default: 30). Use 0 for recent historical data (limited to 50,000 records for performance).
  */
 export async function getFeedbackStats(days: number = 30): Promise<{
   total: number;
@@ -26,10 +26,16 @@ export async function getFeedbackStats(days: number = 30): Promise<{
     conditions.push(Q.where('created_at', Q.gte(cutoffDate.getTime())));
   }
 
-  const allFeedback = await database
+  let query = database
     .get<AssessmentFeedbackModel>('assessment_feedback')
-    .query(...conditions)
-    .fetch();
+    .query(...conditions);
+
+  // Add reasonable limit when fetching all historical data to prevent performance issues
+  if (days === 0) {
+    query = query.limit(50000);
+  }
+
+  const allFeedback = await query.fetch();
 
   const stats = {
     total: allFeedback.length,

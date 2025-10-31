@@ -3,6 +3,7 @@
  * Supports Apple and Google sign-in via web flow and native ID token flow
  */
 
+import Env from '@env';
 import { createMutation } from 'react-query-kit';
 
 import { useAuth } from '@/lib/auth';
@@ -41,7 +42,7 @@ export const useSignInWithOAuth = createMutation<
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: 'growbro://auth/callback',
+        redirectTo: `${Env.SCHEME}://auth/callback`,
         // For production, you may want to add scopes
         // scopes: 'email profile',
       },

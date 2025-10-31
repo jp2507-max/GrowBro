@@ -37,10 +37,13 @@ async function handleSignInWithSession(
   user: User,
   set: (state: Partial<AuthState>) => void
 ) {
-  await supabase.auth.setSession({
+  const { error } = await supabase.auth.setSession({
     access_token: session.access_token,
     refresh_token: session.refresh_token,
   });
+  if (error) {
+    throw error;
+  }
   const token: TokenType = {
     access: session.access_token,
     refresh: session.refresh_token,
@@ -61,10 +64,13 @@ async function handleSignInWithToken(
   token: TokenType,
   set: (state: Partial<AuthState>) => void
 ) {
-  await supabase.auth.setSession({
+  const { error } = await supabase.auth.setSession({
     access_token: token.access,
     refresh_token: token.refresh,
   });
+  if (error) {
+    throw error;
+  }
   setToken(token);
   startIdleTimeout(() => _useAuth.getState().signOut());
   set({

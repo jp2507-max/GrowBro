@@ -31,7 +31,7 @@ export function useOfflineGuard(isSensitiveOp: boolean = false) {
   const offlineMode = useAuth.use.offlineMode();
 
   return (): boolean => {
-    const isBlocked = shouldBlockMutation(offlineMode, isSensitiveOp);
+    const isBlocked = shouldBlockMutation(offlineMode);
 
     if (isBlocked) {
       const errorKey = getBlockedMutationError(

@@ -20,7 +20,7 @@ enable_confirmations = true
 
 [auth.external.apple]
 enabled = true
-client_id = "com.growbro.app"
+client_id = "env(APPLE_CLIENT_ID)"
 secret = "env(APPLE_CLIENT_SECRET)"
 
 [auth.external.google]

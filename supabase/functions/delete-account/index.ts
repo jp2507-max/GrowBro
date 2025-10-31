@@ -16,6 +16,20 @@ interface DeleteAccountResponse {
   error?: string;
 }
 
+/**
+ * Hash email with SHA-256 and salt for privacy in database lookups
+ * Matches the database hash_email function for consistency
+ */
+async function hashEmailForLookup(email: string): Promise<string> {
+  const salt =
+    Deno.env.get('EMAIL_HASH_SALT') || 'growbro_auth_lockout_salt_v1';
+  const encoder = new TextEncoder();
+  const data = encoder.encode(salt + email.toLowerCase().trim());
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 serve(async (req) => {
   try {
     // Only allow POST requests
@@ -35,6 +49,66 @@ serve(async (req) => {
       });
     }
 
+    // Extract Authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({
+          error: 'Authorization header with Bearer token required',
+        }),
+        {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const jwt = authHeader.substring(7); // Remove 'Bearer '
+
+    // Create Supabase client with the incoming JWT for user verification
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!, // Use anon key for auth operations
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        },
+      }
+    );
+
+    // Verify the user
+    const {
+      data: { user: verifiedUser },
+      error: authError,
+    } = await supabaseAuth.auth.getUser();
+
+    if (authError || !verifiedUser) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired token' }),
+        {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Check if the body-supplied user_id matches the verified user ID
+    if (user_id !== verifiedUser.id) {
+      return new Response(
+        JSON.stringify({
+          error: 'Forbidden: user_id does not match authenticated user',
+        }),
+        {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const userId = verifiedUser.id; // Use verified user ID for all operations
+
     // Create Supabase client with service role key for admin access
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -49,7 +123,7 @@ serve(async (req) => {
 
     // Log deletion event to audit log before deleting user (GDPR compliance)
     await supabase.from('auth_audit_log').insert({
-      user_id,
+      user_id: userId,
       event_type: 'account_deleted',
       metadata: {
         timestamp: new Date().toISOString(),
@@ -61,7 +135,7 @@ serve(async (req) => {
     const { error: sessionsError, count: sessionsCount } = await supabase
       .from('user_sessions')
       .delete()
-      .eq('user_id', user_id);
+      .eq('user_id', userId);
 
     if (sessionsError) {
       console.error('Failed to delete user_sessions:', sessionsError);
@@ -72,12 +146,13 @@ serve(async (req) => {
 
     // Delete auth lockouts
     // Note: This deletes by email_hash, so we need to get user email first
-    const { data: userData } = await supabase.auth.admin.getUserById(user_id);
+    const { data: userData } = await supabase.auth.admin.getUserById(userId);
     if (userData?.user?.email) {
+      const emailHash = await hashEmailForLookup(userData.user.email);
       const { error: lockoutsError, count: lockoutsCount } = await supabase
         .from('auth_lockouts')
         .delete()
-        .eq('email', userData.user.email);
+        .eq('email_hash', emailHash);
 
       if (lockoutsError) {
         console.error('Failed to delete auth_lockouts:', lockoutsError);
@@ -90,7 +165,7 @@ serve(async (req) => {
     const { error: auditError, count: auditCount } = await supabase
       .from('auth_audit_log')
       .delete()
-      .eq('user_id', user_id)
+      .eq('user_id', userId)
       .neq('event_type', 'account_deleted');
 
     if (auditError) {
@@ -110,7 +185,7 @@ serve(async (req) => {
 
     // Delete user from auth.users (triggers cascading deletes)
     const { error: deleteUserError } =
-      await supabase.auth.admin.deleteUser(user_id);
+      await supabase.auth.admin.deleteUser(userId);
 
     if (deleteUserError) {
       console.error('Failed to delete user from auth:', deleteUserError);
@@ -127,7 +202,7 @@ serve(async (req) => {
     }
 
     console.log(
-      `Successfully deleted account for user ${user_id}. Counts:`,
+      `Successfully deleted account for user ${userId}. Counts:`,
       deletedCounts
     );
 

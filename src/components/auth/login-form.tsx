@@ -144,13 +144,37 @@ export type LoginFormProps = {
 export const LoginForm: React.FC<LoginFormProps> = ({
   onSuccess,
 }: LoginFormProps) => {
-  const { t } = useTranslation();
   const { handleSubmit, control } = useForm<LoginFormData>({
     resolver: zodResolver(schema),
   });
-  const [isAppleAvailable, setIsAppleAvailable] = React.useState(false);
 
-  const signInMutation = useSignIn({
+  const { handleCredentialsSubmit, isSubmitting } =
+    useEmailPasswordSignIn(onSuccess);
+  const {
+    handleAppleSignIn,
+    handleGoogleSignIn,
+    isAppleAvailable,
+    isOauthLoading,
+  } = useNativeOAuthSignIn(onSuccess);
+
+  const handleFormSubmit = handleSubmit(handleCredentialsSubmit);
+
+  return (
+    <LoginFormContent
+      control={control}
+      isSubmitting={isSubmitting}
+      onSubmit={handleFormSubmit}
+      onApplePress={handleAppleSignIn}
+      onGooglePress={handleGoogleSignIn}
+      isAppleAvailable={isAppleAvailable}
+      isOauthLoading={isOauthLoading}
+    />
+  );
+};
+
+function useEmailPasswordSignIn(onSuccess?: () => void) {
+  const { t } = useTranslation();
+  const { mutate, isPending } = useSignIn({
     onSuccess: () => {
       onSuccess?.();
     },
@@ -159,14 +183,37 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     },
   });
 
-  const onSubmit: SubmitHandler<LoginFormData> = (data) => {
-    signInMutation.mutate({
-      email: data.email,
-      password: data.password,
-    });
+  const handleCredentialsSubmit = React.useCallback<
+    SubmitHandler<LoginFormData>
+  >(
+    (data) => {
+      mutate({
+        email: data.email,
+        password: data.password,
+      });
+    },
+    [mutate]
+  );
+
+  return {
+    handleCredentialsSubmit,
+    isSubmitting: isPending,
   };
+}
 
-  const signInWithIdToken = useSignInWithIdToken({
+// Helper to check Apple Sign-In availability. Extracted to keep hook small.
+async function checkAppleAvailable(): Promise<boolean> {
+  try {
+    return await AppleAuthentication.isAvailableAsync();
+  } catch {
+    return false;
+  }
+}
+
+function useNativeOAuthSignIn(onSuccess?: () => void) {
+  const { t } = useTranslation();
+  const [isAppleAvailable, setIsAppleAvailable] = React.useState(false);
+  const { mutate, isPending } = useSignInWithIdToken({
     onSuccess: () => {
       onSuccess?.();
     },
@@ -174,6 +221,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       showErrorMessage(t(error.message));
     },
   });
+
+  React.useEffect(() => {
+    let isMounted = true;
+    checkAppleAvailable().then((available) => {
+      if (isMounted) setIsAppleAvailable(available);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleAppleSignIn = React.useCallback(async () => {
     try {
@@ -191,7 +248,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         return;
       }
 
-      signInWithIdToken.mutate({
+      mutate({
         provider: 'apple',
         idToken: credential.identityToken,
         nonce: rawNonce,
@@ -202,7 +259,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       }
       showErrorMessage(t('auth.error_oauth_failed', { provider: 'Apple' }));
     }
-  }, [signInWithIdToken, t]);
+  }, [mutate, t]);
 
   const handleGoogleSignIn = React.useCallback(async () => {
     try {
@@ -223,7 +280,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         return;
       }
 
-      signInWithIdToken.mutate({
+      mutate({
         provider: 'google',
         idToken,
       });
@@ -246,42 +303,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
       showErrorMessage(t('auth.error_oauth_failed', { provider: 'Google' }));
     }
-  }, [signInWithIdToken, t]);
+  }, [mutate, t]);
 
-  React.useEffect(() => {
-    let isMounted = true;
-
-    AppleAuthentication.isAvailableAsync()
-      .then((available) => {
-        if (isMounted) {
-          setIsAppleAvailable(available);
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setIsAppleAvailable(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const handleFormSubmit = handleSubmit(onSubmit);
-
-  return (
-    <LoginFormContent
-      control={control}
-      isSubmitting={signInMutation.isPending}
-      onSubmit={handleFormSubmit}
-      onApplePress={handleAppleSignIn}
-      onGooglePress={handleGoogleSignIn}
-      isAppleAvailable={isAppleAvailable}
-      isOauthLoading={signInWithIdToken.isPending}
-    />
-  );
-};
+  return {
+    handleAppleSignIn,
+    handleGoogleSignIn,
+    isAppleAvailable,
+    isOauthLoading: isPending,
+  };
+}
 
 const styles = StyleSheet.create({
   keyboardAvoider: {

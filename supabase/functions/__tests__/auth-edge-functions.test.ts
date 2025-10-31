@@ -68,11 +68,10 @@ async function cleanupTestData() {
   }
 }
 
-// Setup before tests
-Deno.test('Setup: Initialize Supabase client', () => {
-  supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  assertExists(supabase);
-});
+const supabase: SupabaseClient = createClient(
+  SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY
+);
 
 // Cleanup before running tests
 Deno.test('Setup: Clean up test data', async () => {

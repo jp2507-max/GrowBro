@@ -400,12 +400,14 @@ const euRepresentativeAddress = readEnv(
   'EXPO_PUBLIC_EU_REPRESENTATIVE_ADDRESS'
 );
 
+const scheme = readEnv('SCHEME', 'EXPO_PUBLIC_SCHEME') || SCHEME;
+
 const _clientEnv = {
   APP_ENV,
 
   NAME: NAME,
 
-  SCHEME: SCHEME,
+  SCHEME: scheme,
 
   BUNDLE_ID: withEnvSuffix(BUNDLE_ID),
 

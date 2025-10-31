@@ -5,7 +5,15 @@ env:
 ---
 # Session revocation flow test
 # Tests: sign in → settings → security → sessions → revoke → verify removal
-# Note: This test requires at least 2 active sessions to revoke one
+#
+# PREREQUISITE (Manual Setup Required):
+# This test requires at least 2 active sessions for the test account to function properly.
+# Before running this test, ensure the account has multiple active sessions by:
+# 1. Signing in on multiple devices (e.g., mobile + web)
+# 2. Using incognito/private browsing mode for additional sessions
+# 3. Opening the app on different emulators/simulators
+#
+# If only 1 session exists, the revocation steps will be skipped automatically.
 
 - launchApp
 

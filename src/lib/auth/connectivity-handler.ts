@@ -72,14 +72,11 @@ export function useConnectivityHandler(): void {
  * Check if a mutation should be blocked based on offline mode
  *
  * @param offlineMode - Current offline mode
- * @param _isSensitiveOp - Whether this is a sensitive operation (password/email change, account deletion)
  * @returns True if mutation should be blocked, false otherwise
  */
 export function shouldBlockMutation(
-  offlineMode: 'full' | 'readonly' | 'blocked',
-  _isSensitiveOp: boolean = false
+  offlineMode: 'full' | 'readonly' | 'blocked'
 ): boolean {
-  void _isSensitiveOp;
   // Block all mutations in blocked mode
   if (offlineMode === 'blocked') {
     return true;

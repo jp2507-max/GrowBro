@@ -8,7 +8,12 @@
 
 import { createMutation } from 'react-query-kit';
 
-import { useAuth } from '@/lib/auth';
+import {
+  removeToken,
+  resetAgeGate,
+  stopIdleTimeout,
+  useAuth,
+} from '@/lib/auth';
 import { logAuthError, trackAuthEvent } from '@/lib/auth/auth-telemetry';
 import { supabase } from '@/lib/supabase';
 
@@ -42,9 +47,20 @@ export const useSignOut = createMutation({
     // Get current user info before clearing auth state
     const currentUser = useAuth.getState().user;
 
-    // Clear local auth state
-    // This also clears MMKV storage and resets age gate
-    useAuth.getState().signOut();
+    // Clear local auth state (MMKV storage, age gate, idle timeout)
+    removeToken();
+    resetAgeGate();
+    stopIdleTimeout();
+
+    // Clear Zustand auth state
+    useAuth.setState({
+      status: 'signOut',
+      token: null,
+      user: null,
+      session: null,
+      lastValidatedAt: null,
+      offlineMode: 'full',
+    });
 
     // Track analytics event with consent checking and PII sanitization
     await trackAuthEvent('auth.sign_out', {

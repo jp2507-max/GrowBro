@@ -284,12 +284,12 @@ function createReservoirSchema() {
       if (data.targetPhMin >= data.targetPhMax) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'nutrient.validation.phMinLessThanMax',
+          message: 'nutrient.reservoir.validation.phMinLessThanMax',
           path: ['targetPhMin'],
         });
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'nutrient.validation.phMaxGreaterThanMin',
+          message: 'nutrient.reservoir.validation.phMaxGreaterThanMin',
           path: ['targetPhMax'],
         });
       }
@@ -297,12 +297,12 @@ function createReservoirSchema() {
       if (data.targetEcMin25c >= data.targetEcMax25c) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'nutrient.validation.ecMinLessThanMax',
+          message: 'nutrient.reservoir.validation.ecMinLessThanMax',
           path: ['targetEcMin25c'],
         });
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'nutrient.validation.ecMaxGreaterThanMin',
+          message: 'nutrient.reservoir.validation.ecMaxGreaterThanMin',
           path: ['targetEcMax25c'],
         });
       }

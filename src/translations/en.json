@@ -1818,7 +1818,11 @@
       "targetEc": "Target EC Range",
       "targetPh": "Target pH Range",
       "validation": {
-        "nameRequired": "Reservoir name is required"
+        "ecMaxGreaterThanMin": "Maximum EC must be greater than minimum EC",
+        "ecMinLessThanMax": "Minimum EC must be less than maximum EC",
+        "nameRequired": "Reservoir name is required",
+        "phMaxGreaterThanMin": "Maximum pH must be greater than minimum pH",
+        "phMinLessThanMax": "Minimum pH must be less than maximum pH"
       },
       "volume": "Volume (L)"
     },
