@@ -326,5 +326,37 @@ describe('Auth', () => {
       // Verify supabase.auth.signOut was called
       expect(supabase.auth.signOut).toHaveBeenCalledTimes(1);
     });
+
+    test('should skip supabase.auth.signOut when signOut is called with skipRemote=true', async () => {
+      // Sign in first
+      await useAuth
+        .getState()
+        .signIn({ access: 'test-token', refresh: 'test-refresh' });
+
+      // Clear the mock to start fresh
+      (supabase.auth.signOut as jest.Mock).mockClear();
+
+      // Sign out with skipRemote=true
+      await useAuth.getState().signOut(true);
+
+      // Verify supabase.auth.signOut was NOT called
+      expect(supabase.auth.signOut).not.toHaveBeenCalled();
+    });
+
+    test('should call supabase.auth.signOut when signOut is called with skipRemote=false or default', async () => {
+      // Sign in first
+      await useAuth
+        .getState()
+        .signIn({ access: 'test-token', refresh: 'test-refresh' });
+
+      // Clear the mock to start fresh
+      (supabase.auth.signOut as jest.Mock).mockClear();
+
+      // Sign out with skipRemote=false
+      await useAuth.getState().signOut(false);
+
+      // Verify supabase.auth.signOut was called
+      expect(supabase.auth.signOut).toHaveBeenCalledTimes(1);
+    });
   });
 });

@@ -23,22 +23,18 @@ export async function getModelVersionDistribution(options?: {
 
   // Date range filtering
   if (options?.since) {
-    queryConditions.push(
-      Q.where('created_at', { gte: options.since.getTime() })
-    );
+    queryConditions.push(Q.where('created_at', Q.gte(options.since.getTime())));
   }
   if (options?.until) {
-    queryConditions.push(
-      Q.where('created_at', { lte: options.until.getTime() })
-    );
+    queryConditions.push(Q.where('created_at', Q.lte(options.until.getTime())));
   }
-
-  // Apply ordering for consistent limit behavior (most recent first)
-  queryConditions.push(Q.sortBy('created_at', Q.desc));
 
   let assessmentsQuery = database
     .get<AssessmentModel>('assessments')
     .query(...queryConditions);
+
+  // Apply ordering for consistent limit behavior (most recent first)
+  assessmentsQuery = assessmentsQuery.extend(Q.sortBy('created_at', Q.desc));
 
   if (options?.limit) {
     assessmentsQuery = assessmentsQuery.extend(Q.take(options.limit));
@@ -83,17 +79,14 @@ export async function getExecutionProviderDistribution(options?: {
   const queryConditions = [Q.where('event_type', 'inference_started')];
 
   // Date range filtering
-  queryConditions.push(Q.where('created_at', { gte: since.getTime() }));
+  queryConditions.push(Q.where('created_at', Q.gte(since.getTime())));
   if (until) {
-    queryConditions.push(Q.where('created_at', { lte: until.getTime() }));
+    queryConditions.push(Q.where('created_at', Q.lte(until.getTime())));
   }
-
-  // Apply ordering for consistent limit behavior (most recent first)
-  queryConditions.push(Q.sortBy('created_at', Q.desc));
 
   const telemetryQuery = database
     .get<AssessmentTelemetryModel>('assessment_telemetry')
-    .query(...queryConditions)
+    .query(...queryConditions, Q.sortBy('created_at', Q.desc))
     .extend(Q.take(limit));
 
   const telemetry = await telemetryQuery.fetch();

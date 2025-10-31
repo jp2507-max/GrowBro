@@ -68,7 +68,7 @@ export async function getUserActionMetrics(
       .query(...dateRangeQuery, Q.where('event_type', 'community_cta_tapped'))
       .fetchCount(),
 
-    // Count completed assessments within date range (using processing_completed_at if available, fallback to created_at)
+    // Count completed assessments within date range (using created_at)
     database
       .get('assessments')
       .query(

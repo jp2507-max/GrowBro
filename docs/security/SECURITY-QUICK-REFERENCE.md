@@ -24,8 +24,8 @@
 
 ```bash
 # Attempt to bypass Edge Function (should fail)
-curl -X POST "https://mgbekkpswaizzthgefbc.supabase.co/auth/v1/signup" \
-  -H "apikey: ANON_KEY" \
+curl -X POST "https://<your-project>.supabase.co/auth/v1/signup" \
+  -H "apikey: SUPABASE_ANON_KEY" \
   -d '{"email":"locked@example.com","password":"test123"}'
 ```
 

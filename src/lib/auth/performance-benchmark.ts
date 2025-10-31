@@ -15,7 +15,7 @@ const PERFORMANCE_THRESHOLDS = {
  * Performance benchmark utility
  * Run with: RUN_PERFORMANCE_TESTS=true pnpm test performance.test.ts --verbose
  */
-export function runPerformanceBenchmark() {
+export function runPerformanceBenchmark(): void {
   console.log('\n=== Authentication Performance Benchmark ===\n');
   console.log('Thresholds:');
   Object.entries(PERFORMANCE_THRESHOLDS).forEach(([key, value]) => {

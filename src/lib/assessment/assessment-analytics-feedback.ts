@@ -32,7 +32,8 @@ export async function getFeedbackStats(days: number = 30): Promise<{
 
   // Add reasonable limit when fetching all historical data to prevent performance issues
   if (days === 0) {
-    query = query.limit(50000);
+    // WatermelonDB Query doesn't have `.limit` — use `Q.take` via `extend`
+    query = query.extend(Q.take(50000));
   }
 
   const allFeedback = await query.fetch();

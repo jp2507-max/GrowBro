@@ -39,10 +39,10 @@ function buildAssessmentQuery(filters?: InferenceMetricsFilters): Q.Where[] {
 function buildTelemetryQuery(filters?: InferenceMetricsFilters): Q.Where[] {
   const query = [];
   if (filters?.dateFrom) {
-    query.push(Q.where('timestamp', Q.gte(filters.dateFrom.getTime())));
+    query.push(Q.where('created_at', Q.gte(filters.dateFrom.getTime())));
   }
   if (filters?.dateTo) {
-    query.push(Q.where('timestamp', Q.lte(filters.dateTo.getTime())));
+    query.push(Q.where('created_at', Q.lte(filters.dateTo.getTime())));
   }
   return query;
 }

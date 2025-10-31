@@ -226,6 +226,8 @@ function createExpoConfig(config) {
       ...(Env.ACCOUNT_DELETION_URL && {
         EXPO_PUBLIC_ACCOUNT_DELETION_URL: Env.ACCOUNT_DELETION_URL,
       }),
+      // App scheme for OAuth redirects
+      SCHEME: Env.SCHEME,
       // App Access Reviewer Credentials for Play Store compliance
       // Only expose in non-production builds to prevent secrets in production bundles
       ...(Env.APP_ENV !== 'production' && {

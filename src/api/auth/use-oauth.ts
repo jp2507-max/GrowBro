@@ -3,7 +3,7 @@
  * Supports Apple and Google sign-in via web flow and native ID token flow
  */
 
-import Env from '@env';
+import { Env } from '@env';
 import { createMutation } from 'react-query-kit';
 
 import { useAuth } from '@/lib/auth';
@@ -119,7 +119,7 @@ export const useExchangeOAuthCode = createMutation<
     // Track analytics event with consent checking and PII sanitization
     await trackAuthEvent('auth.sign_in', {
       method: 'oauth',
-      provider: 'web', // Will be determined by the OAuth provider used
+      provider: data.user.app_metadata?.provider || 'unknown',
       email: data.user.email,
       user_id: data.user.id,
     });

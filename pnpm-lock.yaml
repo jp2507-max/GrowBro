@@ -68,6 +68,9 @@ importers:
       expo-apple-authentication:
         specifier: ~8.0.7
         version: 8.0.7(expo@54.0.21)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))
+      expo-background-fetch:
+        specifier: ~14.0.7
+        version: 14.0.7(expo@54.0.21)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))
       expo-background-task:
         specifier: ~1.0.8
         version: 1.0.8(expo@54.0.21)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))
@@ -4862,6 +4865,11 @@ packages:
   expo-atlas@0.4.3:
     resolution: {integrity: sha512-nN2bouxFvMsqZqLl0ka+eI9Ofida0PcuoE4v+7fHlgyp95X2cCL8Acf0nRKXmmIBEYazdw0d7BAOZfC0b41oxA==}
     hasBin: true
+    peerDependencies:
+      expo: '*'
+
+  expo-background-fetch@14.0.7:
+    resolution: {integrity: sha512-vq/2w/I9OYkYbKn2YmMTzWEZm+Ddl8ObRtKR8s5kpfyGEIHz4rsIuHF1kpqHXuxI/DNZEhAN8fIO2nh+jNW5uQ==}
     peerDependencies:
       expo: '*'
 
@@ -14767,6 +14775,13 @@ snapshots:
       stream-json: 1.9.1
     transitivePeerDependencies:
       - supports-color
+
+  expo-background-fetch@14.0.7(expo@54.0.21)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0)):
+    dependencies:
+      expo: 54.0.21(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.14)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
+      expo-task-manager: 14.0.8(expo@54.0.21)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))
+    transitivePeerDependencies:
+      - react-native
 
   expo-background-task@1.0.8(expo@54.0.21)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0)):
     dependencies:

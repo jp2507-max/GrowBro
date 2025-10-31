@@ -81,11 +81,16 @@ export async function checkKeyRotationStatus(): Promise<KeyRotationStatus> {
     // Update last check timestamp
     await setLastRotationCheck(new Date());
 
+    const isDataValid = Array.isArray(data) && data.length > 0;
     const status: KeyRotationStatus = {
-      needsRotation: data[0]?.needs_rotation || false,
-      currentVersion: data[0]?.current_version || 1,
-      daysUntilExpiry: data[0]?.days_until_expiry || ROTATION_INTERVAL_DAYS,
-      expiresAt: data[0]?.expires_at || new Date().toISOString(),
+      needsRotation: isDataValid ? data[0]?.needs_rotation || false : false,
+      currentVersion: isDataValid ? data[0]?.current_version || 1 : 1,
+      daysUntilExpiry: isDataValid
+        ? data[0]?.days_until_expiry || ROTATION_INTERVAL_DAYS
+        : ROTATION_INTERVAL_DAYS,
+      expiresAt: isDataValid
+        ? data[0]?.expires_at || new Date().toISOString()
+        : new Date().toISOString(),
       lastChecked: new Date().toISOString(),
     };
 

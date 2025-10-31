@@ -23,7 +23,7 @@ interface AuthState {
 
   // Actions
   signIn: (data: TokenType | { session: Session; user: User }) => Promise<void>;
-  signOut: () => Promise<void>;
+  signOut: (skipRemote?: boolean) => Promise<void>;
   hydrate: () => Promise<void>;
   updateSession: (session: Session) => void;
   updateUser: (user: User) => void;
@@ -83,11 +83,16 @@ async function handleSignInWithToken(
   });
 }
 
-async function handleSignOut(set: (state: Partial<AuthState>) => void) {
-  try {
-    await supabase.auth.signOut();
-  } catch (error) {
-    console.error('Failed to revoke remote session:', error);
+async function handleSignOut(
+  set: (state: Partial<AuthState>) => void,
+  skipRemote = false
+) {
+  if (!skipRemote) {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Failed to revoke remote session:', error);
+    }
   }
   removeToken();
   resetAgeGate();
@@ -123,8 +128,8 @@ const _useAuth = create<AuthState>((set, get) => ({
     }
   },
 
-  signOut: async () => {
-    await handleSignOut(set);
+  signOut: async (skipRemote = false) => {
+    await handleSignOut(set, skipRemote);
   },
 
   hydrate: async () => {
@@ -179,7 +184,17 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     }
   } else if (event === 'SIGNED_OUT') {
     // Clear store on sign out
-    await store.signOut();
+    removeToken();
+    resetAgeGate();
+    stopIdleTimeout();
+    _useAuth.setState({
+      status: 'signOut',
+      token: null,
+      user: null,
+      session: null,
+      lastValidatedAt: null,
+      offlineMode: 'full',
+    });
   } else if (event === 'TOKEN_REFRESHED' && session) {
     // Update session on token refresh
     store.updateSession(session);
@@ -215,3 +230,8 @@ export {
   getOptionalAuthenticatedUserId,
   validateAuthenticatedUserId,
 } from './user-utils';
+
+// Export functions used by sign-out hooks
+export { resetAgeGate } from '../compliance/age-gate';
+export { stopIdleTimeout } from './session-timeout';
+export { removeToken } from './utils';

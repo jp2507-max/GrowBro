@@ -12,27 +12,43 @@ export async function getAssessmentSummary(): Promise<{
   helpfulnessRate: number;
   resolutionRate: number;
 }> {
+  // Helper to run a single SQL via the adapter. The adapter exposes
+  // `unsafeExecute(work, cb)` which is callback-based; wrap it in a Promise
+  // and return the results array (matching the previous unsafeExecuteSql shape).
+  async function runSql(sql: string, params: any[] = []): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      const work = { sqls: [[sql, params]] } as any;
+      // Adapter uses a callback-style API
+      (database.adapter as any).unsafeExecute(work, (result: any) => {
+        if (result && result.error) {
+          reject(result.error);
+          return;
+        }
+        // result.results is expected to be an array of result objects
+        resolve(result?.results || []);
+      });
+    });
+  }
+
   // Get status counts using targeted queries
-  const [completedResult] = await database.adapter.unsafeExecuteSql(
+  const [completedResult] = await runSql(
     'SELECT COUNT(*) as count FROM assessments WHERE status = ?',
     ['completed']
   );
-  const [failedResult] = await database.adapter.unsafeExecuteSql(
+  const [failedResult] = await runSql(
     'SELECT COUNT(*) as count FROM assessments WHERE status = ?',
     ['failed']
   );
-  const [pendingResult] = await database.adapter.unsafeExecuteSql(
+  const [pendingResult] = await runSql(
     'SELECT COUNT(*) as count FROM assessments WHERE status = ?',
     ['pending']
   );
-
-  const completed = completedResult.rows._array[0].count;
-  const failed = failedResult.rows._array[0].count;
-  const pending = pendingResult.rows._array[0].count;
+  const completed = Number(completedResult?.rows?._array?.[0]?.count ?? 0);
+  const failed = Number(failedResult?.rows?._array?.[0]?.count ?? 0);
+  const pending = Number(pendingResult?.rows?._array?.[0]?.count ?? 0);
   const total = completed + failed + pending;
-
   // Get average confidence for completed assessments
-  const [avgResult] = await database.adapter.unsafeExecuteSql(
+  const [avgResult] = await runSql(
     'SELECT AVG(calibrated_confidence) as avg FROM assessments WHERE status = ? AND calibrated_confidence IS NOT NULL',
     ['completed']
   );
@@ -42,13 +58,13 @@ export async function getAssessmentSummary(): Promise<{
   const roundedAvgConfidence = Math.round(avgConfidence * 100) / 100;
 
   // Get feedback counts using targeted queries
-  const [totalFeedbackResult] = await database.adapter.unsafeExecuteSql(
+  const [totalFeedbackResult] = await runSql(
     'SELECT COUNT(*) as count FROM assessment_feedback'
   );
-  const [helpfulResult] = await database.adapter.unsafeExecuteSql(
+  const [helpfulResult] = await runSql(
     'SELECT COUNT(*) as count FROM assessment_feedback WHERE helpful = 1'
   );
-  const [resolvedResult] = await database.adapter.unsafeExecuteSql(
+  const [resolvedResult] = await runSql(
     'SELECT COUNT(*) as count FROM assessment_feedback WHERE issue_resolved = ?',
     ['yes']
   );
