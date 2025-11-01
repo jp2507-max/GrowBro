@@ -242,44 +242,43 @@ authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
     } catch (error) {
       console.error('Error in SIGNED_IN handler:', error, {
         event,
-        sessionId: session?.id,
+        sessionId: session.user.id,
       });
     } finally {
       _useAuth.setState({ _authOperationInProgress: false });
     }
   } else if (event === 'SIGNED_OUT') {
     // Clear store on sign out
-    _useAuth.setState({ _authOperationInProgress: true });
-    try {
-      removeToken();
-      resetAgeGate();
-      stopIdleTimeout();
-      _useAuth.setState({
-        status: 'signOut',
-        token: null,
-        user: null,
-        session: null,
-        lastValidatedAt: null,
-        offlineMode: 'full',
-        _authOperationInProgress: false,
-      });
-    } finally {
-      _useAuth.setState({ _authOperationInProgress: false });
-    }
+    const _result = await withAuthMutex(
+      async () => {
+        removeToken();
+        resetAgeGate();
+        stopIdleTimeout();
+        _useAuth.setState({
+          status: 'signOut',
+          token: null,
+          user: null,
+          session: null,
+          lastValidatedAt: null,
+          offlineMode: 'full',
+          _authOperationInProgress: false,
+        });
+      },
+      _useAuth.getState,
+      _useAuth.setState
+    );
   } else if (event === 'TOKEN_REFRESHED' && session) {
     // Update session on token refresh
-    if (_useAuth.getState()._authOperationInProgress) {
-      return;
-    }
-    _useAuth.setState({ _authOperationInProgress: true });
-    try {
-      store.updateSession(session);
-      if (session.user) {
-        store.updateUser(session.user);
-      }
-    } finally {
-      _useAuth.setState({ _authOperationInProgress: false });
-    }
+    const _result = await withAuthMutex(
+      async () => {
+        store.updateSession(session);
+        if (session.user) {
+          store.updateUser(session.user);
+        }
+      },
+      _useAuth.getState,
+      _useAuth.setState
+    );
   } else if (event === 'USER_UPDATED' && session?.user) {
     // Update user data
     if (_useAuth.getState()._authOperationInProgress) {
