@@ -193,38 +193,18 @@ const _useAuth = create<AuthState>((set, get) => ({
     }
   },
 
-  updateSession: async (session) => {
+  updateSession: (session) => {
     const token: TokenType = {
       access: session.access_token,
       refresh: session.refresh_token,
     };
 
-    const result = await withAuthMutex(
-      async () => {
-        setToken(token);
-        set({ session, token, lastValidatedAt: Date.now() });
-      },
-      get,
-      set
-    );
-
-    if (result === null) {
-      return; // Operation was skipped due to concurrent execution
-    }
+    setToken(token);
+    set({ session, token, lastValidatedAt: Date.now() });
   },
 
-  updateUser: async (user) => {
-    const result = await withAuthMutex(
-      async () => {
-        set({ user });
-      },
-      get,
-      set
-    );
-
-    if (result === null) {
-      return; // Operation was skipped due to concurrent execution
-    }
+  updateUser: (user) => {
+    set({ user });
   },
 
   updateLastValidatedAt: () => {

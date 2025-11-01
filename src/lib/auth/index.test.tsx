@@ -1,24 +1,24 @@
 import type { Session, User } from '@supabase/supabase-js';
 
-import { resetAgeGate } from '../compliance/age-gate';
-import * as storage from '../storage';
-import { supabase } from '../supabase';
-import { signOut, useAuth } from './index';
-import { stopIdleTimeout } from './session-timeout';
+import { signOut, useAuth } from '@/lib/auth/index';
+import { stopIdleTimeout } from '@/lib/auth/session-timeout';
+import { resetAgeGate } from '@/lib/compliance/age-gate';
+import * as storage from '@/lib/storage';
+import { supabase } from '@/lib/supabase';
 
 // Mock dependencies
-jest.mock('../compliance/age-gate', () => ({
+jest.mock('@/lib/compliance/age-gate', () => ({
   resetAgeGate: jest.fn(),
 }));
 
-jest.mock('./session-timeout', () => ({
+jest.mock('@/lib/auth/session-timeout', () => ({
   startIdleTimeout: jest.fn(),
   stopIdleTimeout: jest.fn(),
   updateActivity: jest.fn(),
 }));
 
 // Mock Supabase auth state listener
-jest.mock('../supabase', () => ({
+jest.mock('@/lib/supabase', () => ({
   supabase: {
     auth: {
       signOut: jest.fn(),
