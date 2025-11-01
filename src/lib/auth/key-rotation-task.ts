@@ -9,7 +9,6 @@
 
 // The background fetch module is provided by Expo native runtime. In test/node
 // environments it may not be resolvable; silence the unresolved import lint rule.
-// eslint-disable-next-line import/no-unresolved
 import * as BackgroundFetch from 'expo-background-fetch';
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';

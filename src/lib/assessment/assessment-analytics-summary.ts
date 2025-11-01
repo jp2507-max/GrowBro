@@ -1,6 +1,50 @@
 import { database } from '@/lib/watermelon';
 
 /**
+ * Interface for database adapters that support unsafe SQL execution.
+ * Expected adapter shape: { unsafeExecute(work, callback): void }
+ */
+interface UnsafeExecuteAdapter {
+  unsafeExecute(
+    work: { sqls: [string, any[]][] },
+    callback: (result: any) => void
+  ): void;
+}
+
+/**
+ * Type predicate to check if an adapter implements the UnsafeExecuteAdapter interface
+ */
+function hasUnsafeExecute(adapter: any): adapter is UnsafeExecuteAdapter {
+  return typeof adapter?.unsafeExecute === 'function';
+}
+
+// Helper to run a single SQL via the adapter. The adapter exposes
+// `unsafeExecute(work, cb)` which is callback-based; wrap it in a Promise
+// and return the results array (matching the previous unsafeExecuteSql shape).
+async function runSql(sql: string, params: any[] = []): Promise<any[]> {
+  return new Promise((resolve, reject) => {
+    // Verify adapter supports unsafeExecute at runtime
+    if (!hasUnsafeExecute(database.adapter)) {
+      reject(
+        new Error('Database adapter does not support unsafeExecute method')
+      );
+      return;
+    }
+
+    const work = { sqls: [[sql, params]] };
+    // Adapter uses a callback-style API
+    database.adapter.unsafeExecute(work, (result: any) => {
+      if (result && result.error) {
+        reject(result.error);
+        return;
+      }
+      // result.results is expected to be an array of result objects
+      resolve(result?.results || []);
+    });
+  });
+}
+
+/**
  * Get overall assessment summary
  */
 export async function getAssessmentSummary(): Promise<{
@@ -12,24 +56,6 @@ export async function getAssessmentSummary(): Promise<{
   helpfulnessRate: number;
   resolutionRate: number;
 }> {
-  // Helper to run a single SQL via the adapter. The adapter exposes
-  // `unsafeExecute(work, cb)` which is callback-based; wrap it in a Promise
-  // and return the results array (matching the previous unsafeExecuteSql shape).
-  async function runSql(sql: string, params: any[] = []): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      const work = { sqls: [[sql, params]] } as any;
-      // Adapter uses a callback-style API
-      (database.adapter as any).unsafeExecute(work, (result: any) => {
-        if (result && result.error) {
-          reject(result.error);
-          return;
-        }
-        // result.results is expected to be an array of result objects
-        resolve(result?.results || []);
-      });
-    });
-  }
-
   // Get status counts using targeted queries
   const [completedResult] = await runSql(
     'SELECT COUNT(*) as count FROM assessments WHERE status = ?',
@@ -52,7 +78,7 @@ export async function getAssessmentSummary(): Promise<{
     'SELECT AVG(calibrated_confidence) as avg FROM assessments WHERE status = ? AND calibrated_confidence IS NOT NULL',
     ['completed']
   );
-  const avgConfidence = avgResult.rows._array[0].avg || 0;
+  const avgConfidence = avgResult?.rows?._array?.[0]?.avg ?? 0;
 
   // Round to 2 decimal places
   const roundedAvgConfidence = Math.round(avgConfidence * 100) / 100;
@@ -69,9 +95,9 @@ export async function getAssessmentSummary(): Promise<{
     ['yes']
   );
 
-  const totalFeedback = totalFeedbackResult.rows._array[0].count;
-  const helpfulCount = helpfulResult.rows._array[0].count;
-  const resolvedCount = resolvedResult.rows._array[0].count;
+  const totalFeedback = totalFeedbackResult?.rows?._array?.[0]?.count ?? 0;
+  const helpfulCount = helpfulResult?.rows?._array?.[0]?.count ?? 0;
+  const resolvedCount = resolvedResult?.rows?._array?.[0]?.count ?? 0;
 
   const helpfulnessRate = totalFeedback > 0 ? helpfulCount / totalFeedback : 0;
   const resolutionRate = totalFeedback > 0 ? resolvedCount / totalFeedback : 0;

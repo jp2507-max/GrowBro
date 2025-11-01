@@ -11,26 +11,6 @@ jest.mock('@/api/auth', () => ({
   deriveSessionKey: jest.fn(),
 }));
 
-// Mock Supabase client
-jest.mock('../supabase', () => ({
-  supabase: {
-    auth: {
-      getSession: jest.fn(),
-      refreshSession: jest.fn(),
-      onAuthStateChange: jest.fn(() => ({
-        data: { subscription: { unsubscribe: jest.fn() } },
-      })),
-    },
-    from: jest.fn(() => ({
-      update: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          is: jest.fn(() => Promise.resolve({ error: null })),
-        })),
-      })),
-    })),
-  },
-}));
-
 // Mock auth store
 jest.mock('./index', () => {
   const actual = jest.requireActual('./index');
@@ -44,6 +24,28 @@ jest.mock('./index', () => {
     },
   };
 });
+
+// Mock supabase more comprehensively
+jest.mock('../supabase', () => ({
+  supabase: {
+    auth: {
+      getSession: jest.fn(),
+      refreshSession: jest.fn(),
+      onAuthStateChange: jest.fn(() => ({
+        data: { subscription: { unsubscribe: jest.fn() } },
+      })),
+    },
+    from: jest.fn(() => ({
+      update: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          eq: jest.fn(() => ({
+            is: jest.fn(() => Promise.resolve({ error: null })),
+          })),
+        })),
+      })),
+    })),
+  },
+}));
 
 describe('SessionManager', () => {
   const mockSession: Session = {
@@ -137,9 +139,11 @@ describe('SessionManager', () => {
   describe('refreshSession', () => {
     it('should refresh session successfully and update store', async () => {
       const updateSession = jest.fn();
+      const updateLastValidatedAt = jest.fn();
       (useAuth.getState as jest.Mock).mockReturnValue({
         session: mockSession,
         updateSession,
+        updateLastValidatedAt,
       });
 
       const refreshedSession = {
@@ -170,6 +174,7 @@ describe('SessionManager', () => {
       (useAuth.getState as jest.Mock).mockReturnValue({
         session: mockSession,
         updateSession: jest.fn(),
+        updateLastValidatedAt: jest.fn(),
       });
 
       (supabase.auth.refreshSession as jest.Mock).mockResolvedValue({
@@ -186,6 +191,7 @@ describe('SessionManager', () => {
       (useAuth.getState as jest.Mock).mockReturnValue({
         session: mockSession,
         updateSession: jest.fn(),
+        updateLastValidatedAt: jest.fn(),
       });
 
       (supabase.auth.refreshSession as jest.Mock).mockRejectedValue(
@@ -287,8 +293,10 @@ describe('SessionManager', () => {
   describe('forceValidation', () => {
     it('should validate session successfully and update store', async () => {
       const updateSession = jest.fn();
+      const updateLastValidatedAt = jest.fn();
       (useAuth.getState as jest.Mock).mockReturnValue({
         updateSession,
+        updateLastValidatedAt,
       });
 
       (supabase.auth.getSession as jest.Mock).mockResolvedValue({
@@ -307,6 +315,7 @@ describe('SessionManager', () => {
       (useAuth.getState as jest.Mock).mockReturnValue({
         signOut,
         updateSession: jest.fn(),
+        updateLastValidatedAt: jest.fn(),
       });
 
       (supabase.auth.getSession as jest.Mock).mockResolvedValue({
@@ -324,6 +333,7 @@ describe('SessionManager', () => {
       (useAuth.getState as jest.Mock).mockReturnValue({
         signOut: jest.fn(),
         updateSession: jest.fn(),
+        updateLastValidatedAt: jest.fn(),
       });
 
       (supabase.auth.getSession as jest.Mock).mockResolvedValue({
@@ -340,6 +350,7 @@ describe('SessionManager', () => {
       (useAuth.getState as jest.Mock).mockReturnValue({
         signOut: jest.fn(),
         updateSession: jest.fn(),
+        updateLastValidatedAt: jest.fn(),
       });
 
       (supabase.auth.getSession as jest.Mock).mockRejectedValue(

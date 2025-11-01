@@ -210,7 +210,8 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 export const useAuth = createSelectors(_useAuth);
 
 export const signOut = async () => await _useAuth.getState().signOut();
-export const signIn = (token: TokenType) => _useAuth.getState().signIn(token);
+export const signIn = (data: TokenType | { session: Session; user: User }) =>
+  _useAuth.getState().signIn(data);
 export const hydrateAuth = () => _useAuth.getState().hydrate();
 
 // Export new session management actions

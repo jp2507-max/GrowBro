@@ -268,14 +268,25 @@ export function useSessionAutoRefresh(
     const timeUntilExpiry = sessionManager.getTimeUntilExpiry();
     if (timeUntilExpiry === null) return undefined;
 
-    const timeUntilRefresh = Math.max(0, timeUntilExpiry - refreshBeforeExpiry);
-
-    if (timeUntilRefresh <= 0 || timeUntilRefresh >= 24 * 60 * 60 * 1000) {
-      // Skip if expired or refresh is more than 24 hours away
+    // Check if session is already expired
+    if (timeUntilExpiry <= 0) {
       return undefined;
     }
 
-    // Only set timer if refresh is within 24 hours
+    // If session expires soon (within threshold), refresh immediately
+    if (timeUntilExpiry <= refreshBeforeExpiry) {
+      sessionManager.refreshSession();
+      return undefined;
+    }
+
+    const timeUntilRefresh = timeUntilExpiry - refreshBeforeExpiry;
+
+    // Skip if refresh is more than 24 hours away
+    if (timeUntilRefresh >= 24 * 60 * 60 * 1000) {
+      return undefined;
+    }
+
+    // Set timer for future refresh
     const timerId = setTimeout(async () => {
       await sessionManager.refreshSession();
     }, timeUntilRefresh);

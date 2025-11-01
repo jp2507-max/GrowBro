@@ -112,6 +112,51 @@ export async function checkKeyRotationStatus(): Promise<KeyRotationStatus> {
  * Perform encryption key rotation
  * Creates new key, migrates data, and updates version
  */
+async function createAndRegisterNewKey(
+  oldVersion: number,
+  newVersion: number
+): Promise<{ newKey: string; newKeyStorageKey: string }> {
+  const newKey = await generateEncryptionKey();
+  const newKeyHash = await hashKey(newKey);
+
+  // Store new key in SecureStore first so it's available for migration after DB confirms
+  const newKeyStorageKey = `${ENCRYPTION_KEY_PREFIX}${newVersion}`;
+  await SecureStore.setItemAsync(newKeyStorageKey, newKey, {
+    keychainAccessible: SecureStore.WHEN_UNLOCKED,
+  });
+
+  // Update key version in database first (confirm rotation server-side)
+  const { error: rotationError } = await supabase.rpc('rotate_encryption_key', {
+    p_old_version: oldVersion,
+    p_new_version: newVersion,
+    p_new_key_hash: newKeyHash,
+    p_metadata: {
+      device_platform: 'mobile',
+      rotation_timestamp: new Date().toISOString(),
+    },
+  });
+
+  if (rotationError) {
+    console.error('[key-rotation] Database rotation failed:', rotationError);
+    // Rollback local state: remove the newly stored key so local doesn't drift
+    try {
+      await SecureStore.deleteItemAsync(newKeyStorageKey);
+    } catch (e) {
+      console.error(
+        '[key-rotation] Failed to delete new key during rollback:',
+        e
+      );
+    }
+    throw rotationError;
+  }
+
+  return { newKey, newKeyStorageKey };
+}
+
+/**
+ * Perform encryption key rotation
+ * Creates new key, migrates data, and updates version
+ */
 export async function rotateEncryptionKey(): Promise<KeyRotationResult> {
   try {
     const oldVersion = await getCurrentKeyVersion();
@@ -121,47 +166,52 @@ export async function rotateEncryptionKey(): Promise<KeyRotationResult> {
       `[key-rotation] Starting rotation from v${oldVersion} to v${newVersion}`
     );
 
-    // Generate new encryption key
-    const newKey = await generateEncryptionKey();
-    const newKeyHash = await hashKey(newKey);
+    // Create and register new key (generate, store locally, and register with server)
+    const { newKey, newKeyStorageKey } = await createAndRegisterNewKey(
+      oldVersion,
+      newVersion
+    );
 
-    // Store new key in SecureStore
-    const newKeyStorageKey = `${ENCRYPTION_KEY_PREFIX}${newVersion}`;
-    await SecureStore.setItemAsync(newKeyStorageKey, newKey, {
-      keychainAccessible: SecureStore.WHEN_UNLOCKED,
-    });
-
+    // After DB confirms rotation, perform data migration
     // Get old key for data migration
     const oldKeyStorageKey = `${ENCRYPTION_KEY_PREFIX}${oldVersion}`;
     const oldKey = await SecureStore.getItemAsync(oldKeyStorageKey);
 
     if (!oldKey) {
+      // Attempt to remove the new key to avoid inconsistent local state
+      try {
+        await SecureStore.deleteItemAsync(newKeyStorageKey);
+      } catch (e) {
+        console.error(
+          '[key-rotation] Failed to delete new key after missing old key:',
+          e
+        );
+      }
       throw new Error('Old encryption key not found for migration');
     }
 
-    // Migrate data from old key to new key
-    await migrateStorageData(oldKey, newKey, oldVersion, newVersion);
-
-    // Update key version in database
-    const { error: rotationError } = await supabase.rpc(
-      'rotate_encryption_key',
-      {
-        p_old_version: oldVersion,
-        p_new_version: newVersion,
-        p_new_key_hash: newKeyHash,
-        p_metadata: {
-          device_platform: 'mobile',
-          rotation_timestamp: new Date().toISOString(),
-        },
+    // Migrate data from old key to new key (only after DB rotation confirmed)
+    try {
+      await migrateStorageData(oldKey, newKey, oldVersion, newVersion);
+    } catch (migrationError) {
+      console.error(
+        '[key-rotation] Migration failed after DB rotation:',
+        migrationError
+      );
+      // Attempt to cleanup the new key locally to keep local state consistent with DB
+      try {
+        await SecureStore.deleteItemAsync(newKeyStorageKey);
+      } catch (e) {
+        console.error(
+          '[key-rotation] Failed to delete new key after migration error:',
+          e
+        );
       }
-    );
-
-    if (rotationError) {
-      console.error('[key-rotation] Database rotation failed:', rotationError);
-      throw rotationError;
+      // Surface the error to caller so they know rotation did not fully complete locally
+      throw migrationError;
     }
 
-    // Update local version tracker
+    // Update local version tracker only after successful DB update and migration
     await setCurrentKeyVersion(newVersion);
 
     // Keep old key for 30 days for emergency recovery
@@ -189,6 +239,36 @@ export async function rotateEncryptionKey(): Promise<KeyRotationResult> {
 /**
  * Migrate storage data from old key to new key
  */
+async function verifyFinalMatches(
+  tempStorage: MMKV,
+  finalStorage: MMKV,
+  keys: string[]
+): Promise<void> {
+  // Verify counts
+  const finalKeys = finalStorage.getAllKeys();
+  if (finalKeys.length !== keys.length) {
+    throw new Error(
+      `Final storage verification failed (key count): ${finalKeys.length} vs ${keys.length}`
+    );
+  }
+
+  // Verify values match for every key
+  for (const key of keys) {
+    const tempVal = tempStorage.getString(key);
+    const finalVal = finalStorage.getString(key);
+    if (
+      tempVal === undefined ||
+      finalVal === undefined ||
+      tempVal !== finalVal
+    ) {
+      throw new Error(`Final storage verification failed for key: ${key}`);
+    }
+  }
+}
+
+/**
+ * Migrate storage data from old key to new key
+ */
 // eslint-disable-next-line max-params
 async function migrateStorageData(
   oldKey: string,
@@ -197,7 +277,9 @@ async function migrateStorageData(
   _newVersion: number
 ): Promise<void> {
   try {
-    console.log('[key-rotation] Starting data migration...');
+    console.log(
+      `[key-rotation] Starting data migration from v${_oldVersion} to v${_newVersion}...`
+    );
 
     // Create MMKV instances with old and new keys
     const oldStorage = new MMKV({
@@ -205,49 +287,69 @@ async function migrateStorageData(
       encryptionKey: oldKey,
     });
 
-    const newStorage = new MMKV({
+    const tempStorage = new MMKV({
       id: 'auth-storage-temp',
       encryptionKey: newKey,
     });
 
     // Get all keys from old storage
     const allKeys = oldStorage.getAllKeys();
-    console.log(`[key-rotation] Migrating ${allKeys.length} keys...`);
+    console.log(
+      `[key-rotation] Migrating ${allKeys.length} keys to temp storage...`
+    );
 
-    // Migrate each key-value pair
+    // Migrate each key-value pair into tempStorage
     for (const key of allKeys) {
       const value = oldStorage.getString(key);
       if (value !== undefined) {
-        newStorage.set(key, value);
+        tempStorage.set(key, value);
       }
     }
 
-    // Verify migration
-    const migratedKeys = newStorage.getAllKeys();
+    // Verify migration into tempStorage - counts must match
+    const migratedKeys = tempStorage.getAllKeys();
     if (migratedKeys.length !== allKeys.length) {
       throw new Error(
-        `Migration verification failed: ${migratedKeys.length} vs ${allKeys.length} keys`
+        `Temp migration verification failed: ${migratedKeys.length} vs ${allKeys.length} keys`
       );
     }
 
-    // Replace old storage with new storage
-    // This is done by clearing old and copying from temp
-    oldStorage.clearAll();
-
+    // Instantiate final storage (using new key) and copy from tempStorage into it
     const finalStorage = new MMKV({
       id: 'auth-storage',
       encryptionKey: newKey,
     });
 
+    console.log('[key-rotation] Copying temp storage into final storage...');
     for (const key of migratedKeys) {
-      const value = newStorage.getString(key);
+      const value = tempStorage.getString(key);
       if (value !== undefined) {
         finalStorage.set(key, value);
       }
     }
 
-    // Clean up temp storage
-    newStorage.clearAll();
+    // Durable verification: ensure finalStorage contains same keys and values
+    await verifyFinalMatches(tempStorage, finalStorage, migratedKeys);
+
+    // Only after final verification succeeded, clear old and temp storage
+    try {
+      oldStorage.clearAll();
+    } catch (e) {
+      console.warn(
+        '[key-rotation] Failed to clear old storage after migration:',
+        e
+      );
+      // Do not abort - data already in finalStorage; but surface warning
+    }
+
+    try {
+      tempStorage.clearAll();
+    } catch (e) {
+      console.warn(
+        '[key-rotation] Failed to clear temp storage after migration:',
+        e
+      );
+    }
 
     console.log('[key-rotation] Data migration completed successfully');
   } catch (error) {
