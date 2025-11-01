@@ -4,6 +4,7 @@ import '../../global.css';
 import { Env } from '@env';
 /* eslint-disable react-compiler/react-compiler */
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
 import { Stack, usePathname } from 'expo-router';
@@ -28,7 +29,9 @@ import {
   useIsFirstTime,
 } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
+import { initAuthStorage } from '@/lib/auth/auth-storage';
 import { updateActivity } from '@/lib/auth/session-timeout';
+import { useDeepLinking } from '@/lib/auth/use-deep-linking';
 import { useRootStartup } from '@/lib/hooks/use-root-startup';
 import { initializeJanitor } from '@/lib/media/photo-janitor';
 import { getReferencedPhotoUris } from '@/lib/media/photo-storage-helpers';
@@ -116,7 +119,15 @@ if (Env.SENTRY_DSN && hasConsent('crashReporting') && !sentryInitialized) {
 
   // Update registry; this is a no-op pre-consent
   void SDKGate.initializeSDK('sentry');
+
+  // Configure auth-specific Sentry filtering for consent-aware error handling
+  import('@/lib/auth/auth-telemetry').then(({ configureSentryAuthFilter }) => {
+    configureSentryAuthFilter();
+  });
 }
+
+// Initialize auth storage before hydrating auth state
+void initAuthStorage();
 
 hydrateAuth();
 hydrateAgeGate();
@@ -135,6 +146,22 @@ function RootLayout(): React.ReactElement {
   const [isI18nReady, setIsI18nReady] = React.useState(false);
   const [showConsent, setShowConsent] = React.useState(false);
   useRootStartup(setIsI18nReady, isFirstTime);
+
+  React.useEffect(() => {
+    if (!Env.GOOGLE_WEB_CLIENT_ID) {
+      return;
+    }
+
+    GoogleSignin.configure({
+      webClientId: Env.GOOGLE_WEB_CLIENT_ID,
+      ...(Env.GOOGLE_IOS_CLIENT_ID
+        ? { iosClientId: Env.GOOGLE_IOS_CLIENT_ID }
+        : {}),
+    });
+  }, []);
+
+  // Initialize deep linking for auth flows
+  useDeepLinking();
 
   React.useEffect(() => {
     if (ageGateStatus === 'verified' && !sessionId) {

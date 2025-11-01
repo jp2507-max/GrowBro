@@ -64,6 +64,10 @@ function PrivacySettings({ router }: { router: any }): ReactElement {
   return (
     <ItemsContainer title="settings.privacy_section">
       <Item
+        text="settings.security"
+        onPress={() => router.push('/(app)/settings/security')}
+      />
+      <Item
         text="settings.privacy_and_data"
         onPress={() => router.push('/(app)/settings/privacy-and-data')}
       />

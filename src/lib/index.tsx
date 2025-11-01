@@ -7,6 +7,7 @@ export {
 export * from './analytics';
 export { getAnalyticsClient, setAnalyticsClient } from './analytics-registry';
 export * from './auth';
+export * from './flash-message';
 export * from './hooks';
 export * from './i18n';
 export {

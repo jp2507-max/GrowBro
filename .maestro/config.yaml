@@ -10,3 +10,7 @@ executionOrder:
     flowsOrder:
         - onboarding
         - login-with-validation
+        - sign-up
+        - sign-in
+        - password-reset
+        - revoke-session

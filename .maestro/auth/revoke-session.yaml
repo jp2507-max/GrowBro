@@ -1,0 +1,64 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'test+maestro@growbro.app'
+  PASSWORD: 'TestPass123'
+---
+# Session revocation flow test
+# Tests: sign in → settings → security → sessions → revoke → verify removal
+#
+# PREREQUISITE (Manual Setup Required):
+# This test requires at least 2 active sessions for the test account to function properly.
+# Before running this test, ensure the account has multiple active sessions by:
+# 1. Signing in on multiple devices (e.g., mobile + web)
+# 2. Using incognito/private browsing mode for additional sessions
+# 3. Opening the app on different emulators/simulators
+#
+# If only 1 session exists, the revocation steps will be skipped automatically.
+
+- launchApp
+
+# Sign in first (prerequisite)
+- runFlow:
+    when:
+      visible:
+        id: 'login-title'
+    file: ../utils/login.yaml
+
+# Navigate to Settings tab
+- tapOn: 'Settings'
+
+# Navigate to Security settings
+- tapOn: 'Security'
+
+# Navigate to Active Sessions
+- tapOn: 'Active Sessions'
+
+# Wait for sessions to load
+- assertVisible: 'Active Sessions'
+
+# Verify at least one session is visible
+# Note: The current session should always be visible
+- assertVisible: 'Current Session'
+
+# If there are other sessions, test revocation
+# This part may need manual setup with multiple devices/sessions
+- runFlow:
+    when:
+      visible: 'Revoke All Other Sessions'
+    commands:
+      # Tap the "Revoke All Other Sessions" button
+      - tapOn: 'Revoke All Other Sessions'
+      
+      # Confirm the alert
+      - tapOn: 'Revoke All'
+      
+      # Wait for success message
+      - assertVisible: 'All other sessions revoked'
+
+# Navigate back to verify
+- back
+- back
+- back
+
+# Verify we're back at Settings
+- assertVisible: 'Settings'

@@ -1,11 +1,47 @@
 import React from 'react';
+import { Pressable, Text } from 'react-native';
 
 import { cleanup, screen, setup, waitFor } from '@/lib/test-utils';
 
 import type { LoginFormProps } from './login-form';
 import { LoginForm } from './login-form';
 
-afterEach(cleanup);
+const hasPlayServicesMock = jest.fn().mockResolvedValue(true);
+const googleSignInMock = jest.fn();
+
+jest.mock('@react-native-google-signin/google-signin', () => ({
+  __esModule: true,
+  GoogleSignin: {
+    hasPlayServices: hasPlayServicesMock,
+    signIn: googleSignInMock,
+  },
+  GoogleSigninButton: ({ onPress, testID }: any) => (
+    <Pressable onPress={onPress} testID={testID} accessibilityRole="button">
+      <Text>Google Sign-In</Text>
+    </Pressable>
+  ),
+  statusCodes: {
+    SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED',
+    IN_PROGRESS: 'IN_PROGRESS',
+    PLAY_SERVICES_NOT_AVAILABLE: 'PLAY_SERVICES_NOT_AVAILABLE',
+  },
+  isErrorWithCode: jest.fn(() => false),
+}));
+
+let showErrorMessageSpy: jest.SpyInstance;
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  const lib = require('@/lib');
+  showErrorMessageSpy = jest
+    .spyOn(lib, 'showErrorMessage')
+    .mockImplementation(jest.fn());
+});
+
+afterEach(() => {
+  cleanup();
+  showErrorMessageSpy.mockRestore();
+});
 
 const onSubmitMock: jest.Mock<LoginFormProps['onSubmit']> = jest.fn();
 
@@ -61,5 +97,29 @@ describe('LoginForm Form ', () => {
       },
       expect.objectContaining({})
     );
+  });
+
+  it('should start Google sign-in and show error on missing token', async () => {
+    googleSignInMock.mockResolvedValueOnce({
+      type: 'success',
+      data: { idToken: null },
+    });
+
+    const { user } = setup(<LoginForm />);
+
+    const googleButton = screen.getByTestId('google-sign-in-button');
+
+    await user.press(googleButton);
+
+    await waitFor(() => {
+      expect(showErrorMessageSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Google')
+      );
+    });
+
+    expect(hasPlayServicesMock).toHaveBeenCalledWith({
+      showPlayServicesUpdateDialog: true,
+    });
+    expect(googleSignInMock).toHaveBeenCalled();
   });
 });

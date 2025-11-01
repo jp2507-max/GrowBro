@@ -1,0 +1,45 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'test+maestro-signup@growbro.app'
+  PASSWORD: 'TestPass123'
+---
+# Complete sign-up flow test
+# Tests: sign-up form → submit → success message → email verification banner
+
+- launchApp
+  
+# Navigate to sign-up screen from login
+- assertVisible:
+    id: 'login-title'
+- tapOn: 'Sign Up'
+
+# Verify sign-up screen loaded
+- assertVisible:
+    id: 'signup-title'
+
+# Fill out sign-up form
+- tapOn:
+    id: 'email-input'
+- inputText: ${EMAIL}
+- runFlow: ../utils/hide-keyboard.yaml
+
+- tapOn:
+    id: 'password-input'
+- inputText: ${PASSWORD}
+- runFlow: ../utils/hide-keyboard.yaml
+
+- tapOn:
+    id: 'confirm-password-input'
+- inputText: ${PASSWORD}
+- runFlow: ../utils/hide-keyboard.yaml
+
+# Submit form
+- tapOn:
+    id: 'signup-button'
+
+# Wait for success message
+- assertVisible: 'Email verification sent'
+
+# Verify redirected to login screen
+- assertVisible:
+    id: 'login-title'

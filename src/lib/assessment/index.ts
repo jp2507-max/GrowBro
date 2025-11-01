@@ -254,6 +254,7 @@ export {
 // Feedback and telemetry services
 export type {
   InferenceMetrics,
+  InferenceMetricsFilters,
   PerClassMetrics,
   UserActionMetrics,
 } from './assessment-analytics';

@@ -542,6 +542,40 @@ export type AnalyticsEvents = {
     size_kb?: number;
   };
 
+  // Authentication events (Requirement 11.1)
+  auth_sign_in: {
+    method: 'email' | 'oauth' | 'apple_native' | 'google_native';
+    provider?: string;
+    user_id: string;
+    email?: string;
+  };
+  auth_sign_up: {
+    method: 'email' | 'oauth' | 'apple_native' | 'google_native';
+    provider?: string;
+    user_id?: string;
+    email?: string;
+    email_verification_sent: boolean;
+  };
+  auth_sign_out: {
+    scope: 'local' | 'global';
+    user_id: string;
+    email?: string;
+  };
+  auth_password_reset_requested: {
+    email: string;
+  };
+  auth_password_reset_completed: {
+    has_token: boolean;
+  };
+  auth_email_verified: {
+    type: 'signup' | 'email_change';
+    user_id: string;
+    email?: string;
+  };
+  auth_email_verification_resent: {
+    email: string;
+  };
+
   // Add future events below
   // example_event: { foo: string; bar?: number };
 };
@@ -602,7 +636,8 @@ export function createConsentGatedAnalytics(
         name.startsWith('ai_adjustment_') ||
         name.startsWith('trichome_') ||
         name.startsWith('shift_') ||
-        name.startsWith('nutrient_');
+        name.startsWith('nutrient_') ||
+        name.startsWith('auth_');
 
       if (requiresConsent && !hasConsent('analytics')) return;
 
@@ -789,40 +824,84 @@ function sanitizeContextString(context: string): string | undefined {
   return cleaned;
 }
 
+function sanitizeHomeViewPayload<N extends AnalyticsEventName>(
+  payload: AnalyticsEventPayload<N>
+): AnalyticsEventPayload<N> {
+  const sanitized = { ...(payload as AnalyticsEventPayload<'home_view'>) };
+  sanitized.widgets_shown = Array.isArray(sanitized.widgets_shown)
+    ? sanitized.widgets_shown
+        .filter((widget): widget is string => typeof widget === 'string')
+        .slice(0, 10)
+        .map((widget) =>
+          sanitizeSearchQuery(widget)
+            .toLowerCase()
+            .replace(/[^a-z0-9._-]/g, '')
+            .slice(0, 32)
+        )
+        .filter(Boolean)
+    : [];
+  return sanitized as unknown as AnalyticsEventPayload<N>;
+}
+
+function sanitizeStrainDetailPayload<N extends AnalyticsEventName>(
+  payload: AnalyticsEventPayload<N>
+): AnalyticsEventPayload<N> {
+  const sanitized = {
+    ...(payload as AnalyticsEventPayload<'strain_detail_viewed'>),
+  };
+  if (sanitized.strain_name) {
+    sanitized.strain_name = sanitized.strain_name.substring(0, 50);
+  }
+  return sanitized as unknown as AnalyticsEventPayload<N>;
+}
+
+function sanitizeNutrientPayload<N extends AnalyticsEventName>(
+  payload: AnalyticsEventPayload<N>
+): AnalyticsEventPayload<N> {
+  const sanitized = {
+    ...(payload as AnalyticsEventPayload<'nutrient_feature_usage'>),
+  };
+  if (sanitized.context !== undefined) {
+    sanitized.context = sanitizeContextString(sanitized.context);
+  }
+  return sanitized as unknown as AnalyticsEventPayload<N>;
+}
+
+function sanitizeAuthPayload<N extends AnalyticsEventName>(
+  payload: AnalyticsEventPayload<N>
+): AnalyticsEventPayload<N> {
+  const sanitized = { ...payload } as any;
+  if (sanitized.email && typeof sanitized.email === 'string') {
+    sanitized.email = '[email_hashed]';
+  }
+  const sensitiveFields = ['password', 'token', 'secret', 'key', 'ip_address'];
+  sensitiveFields.forEach((field) => {
+    if (field in sanitized) {
+      sanitized[field] = '[REDACTED]';
+    }
+  });
+  return sanitized as AnalyticsEventPayload<N>;
+}
+
 function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(
   name: N,
   payload: AnalyticsEventPayload<N>
 ): AnalyticsEventPayload<N> {
-  // Sanitize strain search queries to prevent PII leakage
-  if (name === 'strain_search') {
-    return sanitizeStrainSearchPayload(payload);
-  }
-
-  // Sanitize community error types to prevent PII leakage
+  if (name === 'strain_search') return sanitizeStrainSearchPayload(payload);
   if (name === 'community_error') {
     return sanitizeCommunityErrorPayload(
       payload as AnalyticsEventPayload<'community_error'>
     ) as unknown as AnalyticsEventPayload<N>;
   }
 
-  if (name === 'home_view') {
-    const sanitized = { ...(payload as AnalyticsEventPayload<'home_view'>) };
-    sanitized.widgets_shown = Array.isArray(sanitized.widgets_shown)
-      ? sanitized.widgets_shown
-          .filter((widget): widget is string => typeof widget === 'string')
-          .slice(0, 10)
-          .map((widget) =>
-            sanitizeSearchQuery(widget)
-              .toLowerCase()
-              .replace(/[^a-z0-9._-]/g, '')
-              .slice(0, 32)
-          )
-          .filter(Boolean)
-      : [];
-    return sanitized as unknown as AnalyticsEventPayload<N>;
-  }
+  if (name === 'home_view') return sanitizeHomeViewPayload(payload);
+  if (name === 'strain_detail_viewed')
+    return sanitizeStrainDetailPayload(payload);
+  if (name === 'nutrient_feature_usage')
+    return sanitizeNutrientPayload(payload);
 
-  // For guided grow playbook events, ensure minimal identifiers
+  if (name.startsWith('auth_')) return sanitizeAuthPayload(payload);
+
   if (
     name.startsWith('playbook_') ||
     name.startsWith('ai_adjustment_') ||
@@ -832,31 +911,6 @@ function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(
     return sanitizePlaybookPayload(payload);
   }
 
-  // Sanitize strain detail viewed events to remove PII
-  if (name === 'strain_detail_viewed') {
-    const sanitized = {
-      ...(payload as AnalyticsEventPayload<'strain_detail_viewed'>),
-    };
-    // Keep strain_id as-is (should be non-identifiable UUID)
-    // Remove strain_name if it could contain PII (keep it for now as it's public data)
-    if (sanitized.strain_name) {
-      sanitized.strain_name = sanitized.strain_name.substring(0, 50);
-    }
-    return sanitized as unknown as AnalyticsEventPayload<N>;
-  }
-
-  // Sanitize nutrient feature usage context field
-  if (name === 'nutrient_feature_usage') {
-    const sanitized = {
-      ...(payload as AnalyticsEventPayload<'nutrient_feature_usage'>),
-    };
-    if (sanitized.context !== undefined) {
-      sanitized.context = sanitizeContextString(sanitized.context);
-    }
-    return sanitized as unknown as AnalyticsEventPayload<N>;
-  }
-
-  // For non-playbook events, return as-is (they should already be PII-free per existing schema)
   return payload;
 }
 

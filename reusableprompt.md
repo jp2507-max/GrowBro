@@ -3,10 +3,10 @@ AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the
 
 CONTEXT
 
-- Feature: 19. ai-photo-diagnosis
-- Task index: .kiro\specs\19. ai-photo-diagnosis\tasks.md
-- Design spec: .kiro\specs\19. ai-photo-diagnosis\design.md
-- Requirements spec: .kiro\specs\19. ai-photo-diagnosis\requirements.md
+- Feature: 23. authentication-account-lifecycle
+- Task index: .kiro\specs\23. authentication-account-lifecycle\tasks.md
+- Design spec: .kiro\specs\23. authentication-account-lifecycle\design.md
+- Requirements spec: .kiro\specs\23. authentication-account-lifecycle\requirements.md
 
 CONTRACT (outputs)
 
@@ -45,6 +45,7 @@ VERIFICATION (local)
 
 - pnpm -s tsc --noEmit
 - pnpm -s lint
+- (optional) pnpm eslint <paths to files touched in this task>
 - pnpm -s test
 
 GUARDRAILS (must follow)

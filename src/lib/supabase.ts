@@ -6,9 +6,10 @@ import 'react-native-url-polyfill/auto';
 // convention (for example `@env/client`), adjust this import accordingly and ensure
 // your bundler alias for `@env` resolves to the client-only export.
 import { Env } from '@env';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
+
+import { mmkvAuthStorage } from './auth/auth-storage';
 
 // Determine if we're running in a test environment
 const isTestEnvironment =
@@ -76,7 +77,7 @@ if (isTestEnvironment) {
 // Create Supabase client with latest best practices
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
+    storage: mmkvAuthStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,

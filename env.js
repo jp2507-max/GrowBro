@@ -95,7 +95,7 @@ const EXPO_ACCOUNT_OWNER = 'jan_100'; // expo account owner
 
 const EAS_PROJECT_ID = '0ce1e1fc-7b61-4a2f-ae2b-790c097ced82'; // eas project id
 
-const SCHEME = 'GrowBro'; // app scheme
+const SCHEME = 'growbro'; // app scheme
 
 /**
 
@@ -198,6 +198,10 @@ const client = z.object({
 
   SUPABASE_ANON_KEY: z.string().min(1),
 
+  GOOGLE_WEB_CLIENT_ID: z.string().min(1),
+
+  GOOGLE_IOS_CLIENT_ID: z.string().optional(),
+
   // Account deletion portal
 
   ACCOUNT_DELETION_URL: z.string().url().optional(),
@@ -272,6 +276,9 @@ const buildTime = z.object({
 
   SECRET_KEY: z.string(),
 
+  // Email hashing salt for audit log privacy
+  EMAIL_HASH_SALT: z.string().min(1),
+
   // Sentry Configuration (Build-time)
 
   SENTRY_PROJECT: z.string().optional(),
@@ -329,6 +336,14 @@ const supabaseAnonKey = readEnv(
   'SUPABASE_ANON_KEY',
   'EXPO_PUBLIC_SUPABASE_ANON_KEY'
 );
+const googleWebClientId = readEnv(
+  'GOOGLE_WEB_CLIENT_ID',
+  'EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID'
+);
+const googleIosClientId = readEnv(
+  'GOOGLE_IOS_CLIENT_ID',
+  'EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID'
+);
 const accountDeletionUrl = readEnv(
   'ACCOUNT_DELETION_URL',
   'EXPO_PUBLIC_ACCOUNT_DELETION_URL'
@@ -385,12 +400,14 @@ const euRepresentativeAddress = readEnv(
   'EXPO_PUBLIC_EU_REPRESENTATIVE_ADDRESS'
 );
 
+const scheme = readEnv('SCHEME', 'EXPO_PUBLIC_SCHEME') || SCHEME;
+
 const _clientEnv = {
   APP_ENV,
 
   NAME: NAME,
 
-  SCHEME: SCHEME,
+  SCHEME: scheme,
 
   BUNDLE_ID: withEnvSuffix(BUNDLE_ID),
 
@@ -453,6 +470,10 @@ const _clientEnv = {
   SUPABASE_URL: supabaseUrl,
 
   SUPABASE_ANON_KEY: supabaseAnonKey,
+
+  GOOGLE_WEB_CLIENT_ID: googleWebClientId,
+
+  GOOGLE_IOS_CLIENT_ID: googleIosClientId,
 
   // Account deletion portal
 
@@ -525,6 +546,9 @@ const _buildTimeEnv = {
   // ADD YOUR ENV VARS HERE TOO
 
   SECRET_KEY: process.env.SECRET_KEY,
+
+  // Email hashing salt for audit log privacy
+  EMAIL_HASH_SALT: process.env.EMAIL_HASH_SALT,
 
   // Sentry Configuration (Build-time)
 

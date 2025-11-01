@@ -17,6 +17,7 @@ import { z } from 'zod';
 
 import {
   Button,
+  ControlledInput,
   FocusAwareStatusBar,
   Input,
   Text,
@@ -49,9 +50,9 @@ function FormHeader({ onCancel }: { onCancel: () => void }) {
 
 function NameField({
   control,
-  errors,
+  errors: _errors,
   isSubmitting,
-  serverValidationErrors,
+  serverValidationErrors: _serverValidationErrors,
 }: {
   control: any;
   errors: FieldErrors<AddItemFormData>;
@@ -65,34 +66,23 @@ function NameField({
       <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
         {t('inventory.form.name')}
       </Text>
-      <Controller
+      <ControlledInput
         control={control}
         name="name"
-        rules={{
-          required: 'Name is required',
-          minLength: { value: 1, message: 'Name is required' },
-          maxLength: {
-            value: 100,
-            message: 'Name must be less than 100 characters',
-          },
-        }}
-        render={({ field: { onChange, onBlur, value, ref } }) => (
-          <Input
-            ref={ref}
-            value={value}
-            placeholder={t('inventory.form.name_placeholder')}
-            onChangeText={onChange}
-            onBlur={onBlur}
-            editable={!isSubmitting}
-            testID="name-input"
-          />
-        )}
+        rules={
+          {
+            required: 'Name is required',
+            minLength: { value: 1, message: 'Name is required' },
+            maxLength: {
+              value: 100,
+              message: 'Name must be less than 100 characters',
+            },
+          } as any
+        }
+        placeholder={t('inventory.form.name_placeholder')}
+        editable={!isSubmitting}
+        testID="name-input"
       />
-      {(errors.name || serverValidationErrors.name) && (
-        <Text className="mt-1 text-xs text-danger-600 dark:text-danger-400">
-          {serverValidationErrors.name || errors.name?.message}
-        </Text>
-      )}
     </View>
   );
 }
@@ -131,9 +121,9 @@ function CategoryField({ control }: { control: any }) {
 
 function UnitField({
   control,
-  errors,
+  errors: _errors,
   isSubmitting,
-  serverValidationErrors,
+  serverValidationErrors: _serverValidationErrors,
 }: {
   control: any;
   errors: FieldErrors<AddItemFormData>;
@@ -147,35 +137,23 @@ function UnitField({
       <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
         {t('inventory.form.unit')}
       </Text>
-      <Controller
+      <ControlledInput
         control={control}
         name="unitOfMeasure"
-        rules={{
-          required: 'Unit is required',
-          minLength: { value: 1, message: 'Unit is required' },
-          maxLength: {
-            value: 20,
-            message: 'Unit must be less than 20 characters',
-          },
-        }}
-        render={({ field: { onChange, onBlur, value, ref } }) => (
-          <Input
-            ref={ref}
-            value={value}
-            placeholder={t('inventory.form.unit_placeholder')}
-            onChangeText={onChange}
-            onBlur={onBlur}
-            editable={!isSubmitting}
-            testID="unit-input"
-          />
-        )}
+        rules={
+          {
+            required: 'Unit is required',
+            minLength: { value: 1, message: 'Unit is required' },
+            maxLength: {
+              value: 20,
+              message: 'Unit must be less than 20 characters',
+            },
+          } as any
+        }
+        placeholder={t('inventory.form.unit_placeholder')}
+        editable={!isSubmitting}
+        testID="unit-input"
       />
-      {(errors.unitOfMeasure || serverValidationErrors.unitOfMeasure) && (
-        <Text className="mt-1 text-xs text-danger-600 dark:text-danger-400">
-          {serverValidationErrors.unitOfMeasure ||
-            errors.unitOfMeasure?.message}
-        </Text>
-      )}
     </View>
   );
 }
@@ -215,7 +193,7 @@ function TrackingModeField({ control }: { control: any }) {
 
 function MinStockField({
   control,
-  errors,
+  errors: _errors,
   isSubmitting,
 }: {
   control: any;
@@ -233,10 +211,10 @@ function MinStockField({
         control={control}
         name="minStock"
         rules={{
-          required: 'Minimum stock is required',
-          min: { value: 0, message: 'Minimum stock must be positive' },
+          required: 'inventory.validation.minStockRequired',
+          min: { value: 0, message: 'inventory.validation.minStockPositive' },
         }}
-        render={({ field: { onChange, onBlur, value, ref } }) => (
+        render={({ field: { onChange, onBlur, value, ref }, fieldState }) => (
           <Input
             ref={ref}
             value={value?.toString() || ''}
@@ -256,21 +234,17 @@ function MinStockField({
             onBlur={onBlur}
             editable={!isSubmitting}
             testID="min-stock-input"
+            errorTx={fieldState.error?.message}
           />
         )}
       />
-      {errors.minStock && (
-        <Text className="mt-1 text-xs text-danger-600 dark:text-danger-400">
-          {errors.minStock.message}
-        </Text>
-      )}
     </View>
   );
 }
 
 function ReorderMultipleField({
   control,
-  errors,
+  errors: _errors,
   isSubmitting,
 }: {
   control: any;
@@ -288,10 +262,10 @@ function ReorderMultipleField({
         control={control}
         name="reorderMultiple"
         rules={{
-          required: 'Reorder multiple is required',
-          min: { value: 1, message: 'Reorder multiple must be at least 1' },
+          required: 'inventory.validation.reorderMultipleRequired',
+          min: { value: 1, message: 'inventory.validation.reorderMultipleMin' },
         }}
-        render={({ field: { onChange, onBlur, value, ref } }) => (
+        render={({ field: { onChange, onBlur, value, ref }, fieldState }) => (
           <Input
             ref={ref}
             value={value?.toString() || ''}
@@ -311,14 +285,10 @@ function ReorderMultipleField({
             onBlur={onBlur}
             editable={!isSubmitting}
             testID="reorder-multiple-input"
+            errorTx={fieldState.error?.message}
           />
         )}
       />
-      {errors.reorderMultiple && (
-        <Text className="mt-1 text-xs text-danger-600 dark:text-danger-400">
-          {errors.reorderMultiple.message}
-        </Text>
-      )}
     </View>
   );
 }
@@ -341,9 +311,9 @@ function LeadTimeField({
         control={control}
         name="leadTimeDays"
         rules={{
-          min: { value: 0, message: 'Lead time must be positive' },
+          min: { value: 0, message: 'inventory.validation.leadTimePositive' },
         }}
-        render={({ field: { onChange, onBlur, value, ref } }) => (
+        render={({ field: { onChange, onBlur, value, ref }, fieldState }) => (
           <Input
             ref={ref}
             value={value?.toString() || ''}
@@ -363,6 +333,7 @@ function LeadTimeField({
             onBlur={onBlur}
             editable={!isSubmitting}
             testID="lead-time-input"
+            errorTx={fieldState.error?.message}
           />
         )}
       />

@@ -333,21 +333,21 @@ const applyAssessmentConditions = (
     if (condition.key && condition.value !== undefined) {
       const propName = mapAssessmentField(condition.key);
       results = results.filter(
-        (record) => record[propName] === condition.value
+        (record) => (record as any)[propName] === condition.value
       );
     }
     if (condition.key && condition.$notEq !== undefined) {
       const propName = mapAssessmentField(condition.key);
       results = results.filter(
-        (record) => record[propName] !== condition.$notEq
+        (record) => (record as any)[propName] !== condition.$notEq
       );
     }
     if (condition.$sortBy) {
       const { key, direction } = condition.$sortBy;
       const propName = mapAssessmentField(key);
       results.sort((a, b) => {
-        const aVal = a[propName];
-        const bVal = b[propName];
+        const aVal = (a as any)[propName];
+        const bVal = (b as any)[propName];
         const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
         return direction === 'desc' ? -cmp : cmp;
       });
