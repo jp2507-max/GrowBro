@@ -1,19 +1,14 @@
 import { database } from '@/lib/watermelon';
 
-/**
- * Interface for database adapters that support unsafe SQL execution.
- * Updated adapter shape: { unsafeExecute(work): Promise<any> }
- */
-interface UnsafeExecuteAdapter {
-  unsafeExecute(work: { sqls: [string, any[]][] }): Promise<any>;
-}
+// SQLiteQuery type is not directly exported, so we define it inline
+type SQLiteQuery = [string, any[]];
 
 /**
- * Type predicate to check if an adapter implements the UnsafeExecuteAdapter interface
+ * Type predicate to check if an adapter implements unsafeExecute
  */
-function hasUnsafeExecute(adapter: any): adapter is UnsafeExecuteAdapter {
-  // At runtime we can only verify that unsafeExecute is a function. The
-  // Promise-returning behavior is enforced by the adapter implementation.
+function hasUnsafeExecute(
+  adapter: any
+): adapter is { unsafeExecute: Function } {
   return typeof adapter?.unsafeExecute === 'function';
 }
 
@@ -26,18 +21,19 @@ async function runSql(sql: string, params: any[] = []): Promise<any[]> {
     throw new Error('Database adapter does not support unsafeExecute method');
   }
 
-  const work = { sqls: [[sql, params]] };
+  const work = { sqls: [[sql, params]] as SQLiteQuery[] };
 
-  // Call the Promise-based unsafeExecute and await the result
-  const result = await database.adapter.unsafeExecute(work);
-
-  // If adapter reports an error, throw it so caller receives a rejected Promise
-  if (result && result.error) {
-    throw result.error;
-  }
-
-  // result.results is expected to be an array of result objects
-  return result?.results || [];
+  // Wrap the callback-based unsafeExecute in a Promise
+  return new Promise((resolve, reject) => {
+    (database.adapter as any).unsafeExecute(work, (result: any) => {
+      if (result && result.error) {
+        reject(result.error);
+        return;
+      }
+      // result.results is expected to be an array of result objects
+      resolve(result?.results || []);
+    });
+  });
 }
 
 /**

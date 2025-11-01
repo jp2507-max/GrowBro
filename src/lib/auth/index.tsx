@@ -21,6 +21,9 @@ interface AuthState {
   lastValidatedAt: number | null;
   offlineMode: OfflineMode;
 
+  // Prevent concurrent auth operations
+  _authOperationInProgress: boolean;
+
   // Actions
   signIn: (data: TokenType | { session: Session; user: User }) => Promise<void>;
   signOut: (skipRemote?: boolean) => Promise<void>;
@@ -57,6 +60,7 @@ async function handleSignInWithSession(
     user,
     lastValidatedAt: Date.now(),
     offlineMode: 'full',
+    _authOperationInProgress: false,
   });
 }
 
@@ -80,6 +84,7 @@ async function handleSignInWithToken(
     user: null,
     lastValidatedAt: null,
     offlineMode: 'full',
+    _authOperationInProgress: false,
   });
 }
 
@@ -104,7 +109,27 @@ async function handleSignOut(
     session: null,
     lastValidatedAt: null,
     offlineMode: 'full',
+    _authOperationInProgress: false,
   });
+}
+
+async function withAuthMutex<T>(
+  operation: () => Promise<T>,
+  get: () => AuthState,
+  set: (state: Partial<AuthState>) => void
+): Promise<T | null> {
+  const state = get();
+  if (state._authOperationInProgress) {
+    console.warn('Auth operation already in progress, skipping');
+    return null;
+  }
+
+  set({ _authOperationInProgress: true });
+  try {
+    return await operation();
+  } finally {
+    set({ _authOperationInProgress: false });
+  }
 }
 
 const _useAuth = create<AuthState>((set, get) => ({
@@ -114,22 +139,38 @@ const _useAuth = create<AuthState>((set, get) => ({
   session: null,
   lastValidatedAt: null,
   offlineMode: 'full',
+  _authOperationInProgress: false,
 
   signIn: async (data) => {
-    try {
-      if ('session' in data && 'user' in data) {
-        await handleSignInWithSession(data.session, data.user, set);
-      } else {
-        await handleSignInWithToken(data as TokenType, set);
-      }
-    } catch (error) {
-      console.error('Failed to set Supabase session:', error);
-      throw error;
+    const result = await withAuthMutex(
+      async () => {
+        if ('session' in data && 'user' in data) {
+          await handleSignInWithSession(data.session, data.user, set);
+        } else {
+          await handleSignInWithToken(data as TokenType, set);
+        }
+      },
+      get,
+      set
+    );
+
+    if (result === null) {
+      return; // Operation was skipped due to concurrent execution
     }
   },
 
   signOut: async (skipRemote = false) => {
-    await handleSignOut(set, skipRemote);
+    const result = await withAuthMutex(
+      async () => {
+        await handleSignOut(set, skipRemote);
+      },
+      get,
+      set
+    );
+
+    if (result === null) {
+      return; // Operation was skipped due to concurrent execution
+    }
   },
 
   hydrate: async () => {
@@ -176,33 +217,50 @@ const _useAuth = create<AuthState>((set, get) => ({
 supabase.auth.onAuthStateChange(async (event, session) => {
   const store = _useAuth.getState();
 
+  // Skip if another auth operation is already in progress
+  if (store._authOperationInProgress) {
+    console.warn(`Skipping ${event} event due to concurrent auth operation`);
+    return;
+  }
+
   if (event === 'SIGNED_IN' && session) {
     // Update store with new session
-    store.updateSession(session);
-    if (session.user) {
-      store.updateUser(session.user);
+    _useAuth.setState({ _authOperationInProgress: true });
+    try {
+      store.updateSession(session);
+      if (session.user) {
+        store.updateUser(session.user);
+      }
+    } finally {
+      _useAuth.setState({ _authOperationInProgress: false });
     }
   } else if (event === 'SIGNED_OUT') {
     // Clear store on sign out
-    removeToken();
-    resetAgeGate();
-    stopIdleTimeout();
-    _useAuth.setState({
-      status: 'signOut',
-      token: null,
-      user: null,
-      session: null,
-      lastValidatedAt: null,
-      offlineMode: 'full',
-    });
+    _useAuth.setState({ _authOperationInProgress: true });
+    try {
+      removeToken();
+      resetAgeGate();
+      stopIdleTimeout();
+      _useAuth.setState({
+        status: 'signOut',
+        token: null,
+        user: null,
+        session: null,
+        lastValidatedAt: null,
+        offlineMode: 'full',
+        _authOperationInProgress: false,
+      });
+    } finally {
+      _useAuth.setState({ _authOperationInProgress: false });
+    }
   } else if (event === 'TOKEN_REFRESHED' && session) {
-    // Update session on token refresh
+    // Update session on token refresh (these are usually automatic, so allow concurrent)
     store.updateSession(session);
     if (session.user) {
       store.updateUser(session.user);
     }
   } else if (event === 'USER_UPDATED' && session?.user) {
-    // Update user data
+    // Update user data (these are usually non-conflicting)
     store.updateUser(session.user);
   }
 });

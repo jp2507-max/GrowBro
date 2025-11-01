@@ -115,6 +115,7 @@ Deno.serve(async (req: Request) => {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${supabaseKey}`,
+          'x-shared-secret': Deno.env.get('PROCESS_SHARED_SECRET')!,
         },
         body: JSON.stringify({
           email,
