@@ -111,7 +111,7 @@ export const useExchangeOAuthCode = createMutation<
   onSuccess: async (data) => {
     // Update Zustand auth store
     const { signIn: storeSignIn } = useAuth.getState();
-    storeSignIn({
+    await storeSignIn({
       session: data.session,
       user: data.user,
     });
@@ -182,7 +182,7 @@ export const useSignInWithIdToken = createMutation<
   onSuccess: async (data, variables) => {
     // Update Zustand auth store
     const { signIn: storeSignIn } = useAuth.getState();
-    storeSignIn({
+    await storeSignIn({
       session: data.session,
       user: data.user,
     });

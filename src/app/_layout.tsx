@@ -30,6 +30,7 @@ import {
 } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
 import { initAuthStorage } from '@/lib/auth/auth-storage';
+import { useRealtimeSessionRevocation } from '@/lib/auth/session-manager';
 import { updateActivity } from '@/lib/auth/session-timeout';
 import { useDeepLinking } from '@/lib/auth/use-deep-linking';
 import { useRootStartup } from '@/lib/hooks/use-root-startup';
@@ -163,6 +164,9 @@ function RootLayout(): React.ReactElement {
 
   // Initialize deep linking for auth flows
   useDeepLinking();
+
+  // Real-time session revocation monitoring
+  useRealtimeSessionRevocation();
 
   React.useEffect(() => {
     if (ageGateStatus === 'verified' && !sessionId) {

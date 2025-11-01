@@ -144,12 +144,13 @@ Deno.serve(async (req: Request) => {
     // - Mark session as revoked in database with revoked_at timestamp
     // - App validates sessions against revoked_at on startup (requirement 6.5)
     // - Force affected device to sign out on next app start
+    // - Real-time session revocation monitoring via Supabase realtime subscriptions (immediate sign-out when online)
     //
     // REQUIRED FIXES (Priority: HIGH):
     // 1. Implement true token revocation via Supabase Admin API when available
     // 2. Set shorter JWT expiry times (5 minutes minimum) in Auth settings
     // 3. Add immediate token invalidation via global logout for critical revocations
-    // 4. Implement real-time session validation in app middleware
+    // 4. Implement real-time session validation in app middleware - DONE
     // 5. Document this limitation for security audits and compliance
     //
     // Note: Same pattern exists in "revoke all sessions except current" - fix both endpoints

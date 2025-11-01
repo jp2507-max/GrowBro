@@ -331,43 +331,64 @@ export function useOfflineModeMonitor(checkInterval: number = 60 * 1000): void {
 }
 
 /**
- * Check if a session has been revoked remotely.
- * Used during session validation to force sign-out if session is revoked.
+ * Hook for real-time session revocation monitoring
  *
- * @param refreshToken - The refresh token to check
- * @returns True if session is revoked, false otherwise
+ * Subscribes to changes in user_sessions table and signs out if current session is revoked.
+ * Provides immediate revocation enforcement when the app is online.
  */
-async function checkSessionRevocation(
-  refreshToken: string | undefined
-): Promise<boolean> {
-  if (!refreshToken) {
-    return false;
-  }
+export function useRealtimeSessionRevocation(): void {
+  const session = useAuth.use.session();
 
-  try {
-    // Derive session key from refresh token
-    const sessionKey = await deriveSessionKey(refreshToken);
-    if (!sessionKey) {
-      return false;
-    }
+  useEffect(() => {
+    if (!session) return undefined;
 
-    // Check if this session is revoked in user_sessions table
-    const { data, error } = await supabase
-      .from('user_sessions')
-      .select('revoked_at')
-      .eq('session_key', sessionKey)
-      .maybeSingle();
+    const getSessionKey = async () => {
+      try {
+        return await deriveSessionKey(session.refresh_token);
+      } catch {
+        return null;
+      }
+    };
 
-    if (error) {
-      console.error('Session revocation check error:', error);
-      // Don't block user on error
-      return false;
-    }
+    const setupSubscription = async () => {
+      const sessionKey = await getSessionKey();
+      if (!sessionKey) return;
 
-    // Session is revoked if revoked_at is not null
-    return data?.revoked_at !== null;
-  } catch (error) {
-    console.error('Session revocation check exception:', error);
-    return false;
-  }
+      const channel = supabase
+        .channel(`session-revocation-${session.user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'user_sessions',
+            filter: `user_id=eq.${session.user.id}`,
+          },
+          (payload: any) => {
+            if (
+              payload.new.session_key === sessionKey &&
+              payload.new.revoked_at &&
+              !payload.old.revoked_at
+            ) {
+              console.log(
+                '[RealtimeSessionRevocation] Session revoked, signing out'
+              );
+              const { signOut } = useAuth.getState();
+              signOut();
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
+
+    const cleanup = setupSubscription();
+
+    return () => {
+      cleanup?.then((fn) => fn?.());
+    };
+  }, [session]);
 }
