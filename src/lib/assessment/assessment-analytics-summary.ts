@@ -1,23 +1,16 @@
 import { database } from '@/lib/watermelon';
 
+import { getFeedbackMetrics } from './assessment-analytics-feedback-summary';
+
 // SQLiteQuery type is not directly exported, so we define it inline
 type SQLiteQuery = [string, any[]];
-
-/**
- * Type predicate to check if an adapter implements unsafeExecute
- */
-function hasUnsafeExecute(
-  adapter: any
-): adapter is { unsafeExecute: Function } {
-  return typeof adapter?.unsafeExecute === 'function';
-}
 
 // Helper to run a single SQL via the adapter. The adapter exposes
 // `unsafeExecute(work, cb)` which is callback-based; wrap it in a Promise
 // and return the results array (matching the previous unsafeExecuteSql shape).
 async function runSql(sql: string, params: any[] = []): Promise<any[]> {
   // Verify adapter supports unsafeExecute at runtime
-  if (!hasUnsafeExecute(database.adapter)) {
+  if (typeof database.adapter?.unsafeExecute !== 'function') {
     throw new Error('Database adapter does not support unsafeExecute method');
   }
 
@@ -26,11 +19,14 @@ async function runSql(sql: string, params: any[] = []): Promise<any[]> {
   // Wrap the callback-based unsafeExecute in a Promise
   return new Promise((resolve, reject) => {
     (database.adapter as any).unsafeExecute(work, (result: any) => {
-      if (result && result.error) {
-        reject(result.error);
+      // adapter is dynamically typed and unsafeExecute is not on the declared type
+      if (result?.error) {
+        console.error('Database adapter error:', result.error);
+        reject(
+          new Error('Failed to execute SQL query', { cause: result.error })
+        );
         return;
       }
-      // result.results is expected to be an array of result objects
       resolve(result?.results || []);
     });
   });
@@ -75,24 +71,7 @@ export async function getAssessmentSummary(): Promise<{
   // Round to 2 decimal places
   const roundedAvgConfidence = Math.round(avgConfidence * 100) / 100;
 
-  // Get feedback counts using targeted queries
-  const [totalFeedbackResult] = await runSql(
-    'SELECT COUNT(*) as count FROM assessment_feedback'
-  );
-  const [helpfulResult] = await runSql(
-    'SELECT COUNT(*) as count FROM assessment_feedback WHERE helpful = 1'
-  );
-  const [resolvedResult] = await runSql(
-    'SELECT COUNT(*) as count FROM assessment_feedback WHERE issue_resolved = ?',
-    ['yes']
-  );
-
-  const totalFeedback = totalFeedbackResult?.rows?._array?.[0]?.count ?? 0;
-  const helpfulCount = helpfulResult?.rows?._array?.[0]?.count ?? 0;
-  const resolvedCount = resolvedResult?.rows?._array?.[0]?.count ?? 0;
-
-  const helpfulnessRate = totalFeedback > 0 ? helpfulCount / totalFeedback : 0;
-  const resolutionRate = totalFeedback > 0 ? resolvedCount / totalFeedback : 0;
+  const { helpfulnessRate, resolutionRate } = await getFeedbackMetrics();
 
   return {
     total,

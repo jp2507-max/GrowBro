@@ -250,7 +250,7 @@ describe('Key Rotation', () => {
       expect(shouldShowRotationWarning(status)).toBe(false);
     });
 
-    it('should return false when already expired', () => {
+    it('should return true when already expired', () => {
       const status = {
         needsRotation: true,
         currentVersion: 1,
@@ -259,7 +259,7 @@ describe('Key Rotation', () => {
         lastChecked: new Date().toISOString(),
       };
 
-      expect(shouldShowRotationWarning(status)).toBe(false);
+      expect(shouldShowRotationWarning(status)).toBe(true);
     });
   });
 

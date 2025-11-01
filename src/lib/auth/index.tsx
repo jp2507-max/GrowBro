@@ -213,24 +213,37 @@ const _useAuth = create<AuthState>((set, get) => ({
   },
 }));
 
+// Store auth listener subscription for cleanup
+let authSubscription: {
+  data: { subscription: { unsubscribe: () => void } };
+} | null = null;
+
 // Subscribe to Supabase auth state changes
-supabase.auth.onAuthStateChange(async (event, session) => {
+authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
   const store = _useAuth.getState();
 
-  // Skip if another auth operation is already in progress
-  if (store._authOperationInProgress) {
-    console.warn(`Skipping ${event} event due to concurrent auth operation`);
-    return;
-  }
-
   if (event === 'SIGNED_IN' && session) {
-    // Update store with new session
-    _useAuth.setState({ _authOperationInProgress: true });
     try {
-      store.updateSession(session);
-      if (session.user) {
-        store.updateUser(session.user);
+      // Use mutex to prevent race with direct signIn calls
+      const result = await withAuthMutex(
+        async () => {
+          store.updateSession(session);
+          if (session.user) {
+            store.updateUser(session.user);
+          }
+        },
+        _useAuth.getState,
+        _useAuth.setState
+      );
+
+      if (result === null) {
+        return; // Operation was skipped due to concurrent execution
       }
+    } catch (error) {
+      console.error('Error in SIGNED_IN handler:', error, {
+        event,
+        sessionId: session?.id,
+      });
     } finally {
       _useAuth.setState({ _authOperationInProgress: false });
     }
@@ -254,23 +267,40 @@ supabase.auth.onAuthStateChange(async (event, session) => {
       _useAuth.setState({ _authOperationInProgress: false });
     }
   } else if (event === 'TOKEN_REFRESHED' && session) {
-    // Update session on token refresh (these are usually automatic, so allow concurrent)
-    store.updateSession(session);
-    if (session.user) {
-      store.updateUser(session.user);
+    // Update session on token refresh
+    if (_useAuth.getState()._authOperationInProgress) {
+      return;
+    }
+    _useAuth.setState({ _authOperationInProgress: true });
+    try {
+      store.updateSession(session);
+      if (session.user) {
+        store.updateUser(session.user);
+      }
+    } finally {
+      _useAuth.setState({ _authOperationInProgress: false });
     }
   } else if (event === 'USER_UPDATED' && session?.user) {
-    // Update user data (these are usually non-conflicting)
-    store.updateUser(session.user);
+    // Update user data
+    if (_useAuth.getState()._authOperationInProgress) {
+      return;
+    }
+    _useAuth.setState({ _authOperationInProgress: true });
+    try {
+      store.updateUser(session.user);
+    } finally {
+      _useAuth.setState({ _authOperationInProgress: false });
+    }
   }
 });
 
 export const useAuth = createSelectors(_useAuth);
 
 export const signOut = async () => await _useAuth.getState().signOut();
-export const signIn = (data: TokenType | { session: Session; user: User }) =>
-  _useAuth.getState().signIn(data);
-export const hydrateAuth = () => _useAuth.getState().hydrate();
+export const signIn = async (
+  data: TokenType | { session: Session; user: User }
+) => await _useAuth.getState().signIn(data);
+export const hydrateAuth = async () => await _useAuth.getState().hydrate();
 
 // Export new session management actions
 export const updateSession = (session: Session) =>
@@ -289,6 +319,12 @@ export {
   getOptionalAuthenticatedUserId,
   validateAuthenticatedUserId,
 } from './user-utils';
+
+// Export cleanup function for testing/unmount scenarios
+export const cleanupAuthListener = () => {
+  authSubscription?.data.subscription.unsubscribe();
+  authSubscription = null;
+};
 
 // Export functions used by sign-out hooks
 export { resetAgeGate } from '../compliance/age-gate';

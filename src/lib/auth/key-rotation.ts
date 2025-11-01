@@ -537,10 +537,7 @@ export async function initializeEncryptionKey(): Promise<string> {
  * Check if rotation warning should be shown
  */
 export function shouldShowRotationWarning(status: KeyRotationStatus): boolean {
-  return (
-    status.daysUntilExpiry <= ROTATION_WARNING_DAYS &&
-    status.daysUntilExpiry > 0
-  );
+  return status.daysUntilExpiry <= ROTATION_WARNING_DAYS;
 }
 
 /**

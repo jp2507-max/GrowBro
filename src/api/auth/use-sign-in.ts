@@ -49,6 +49,7 @@ export const useSignIn = createMutation<SignInResponse, SignInVariables, Error>(
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            apikey: Env?.SUPABASE_ANON_KEY || '',
           },
           body: JSON.stringify({
             email,
