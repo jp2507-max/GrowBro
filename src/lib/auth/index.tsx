@@ -68,7 +68,7 @@ async function handleSignInWithToken(
   token: TokenType,
   set: (state: Partial<AuthState>) => void
 ) {
-  const { error } = await supabase.auth.setSession({
+  const { data, error } = await supabase.auth.setSession({
     access_token: token.access,
     refresh_token: token.refresh,
   });
@@ -80,9 +80,9 @@ async function handleSignInWithToken(
   set({
     status: 'signIn',
     token,
-    session: null,
-    user: null,
-    lastValidatedAt: null,
+    session: data.session,
+    user: data.session?.user ?? null,
+    lastValidatedAt: Date.now(),
     offlineMode: 'full',
     _authOperationInProgress: false,
   });
@@ -132,6 +132,28 @@ async function withAuthMutex<T>(
   }
 }
 
+async function performSignIn(
+  data: TokenType | { session: Session; user: User },
+  get: () => AuthState,
+  set: (state: Partial<AuthState>) => void
+): Promise<void> {
+  const result = await withAuthMutex(
+    async () => {
+      if ('session' in data && 'user' in data) {
+        await handleSignInWithSession(data.session, data.user, set);
+      } else {
+        await handleSignInWithToken(data as TokenType, set);
+      }
+    },
+    get,
+    set
+  );
+
+  if (result === null) {
+    return; // Operation was skipped due to concurrent execution
+  }
+}
+
 const _useAuth = create<AuthState>((set, get) => ({
   status: 'idle',
   token: null,
@@ -141,23 +163,7 @@ const _useAuth = create<AuthState>((set, get) => ({
   offlineMode: 'full',
   _authOperationInProgress: false,
 
-  signIn: async (data) => {
-    const result = await withAuthMutex(
-      async () => {
-        if ('session' in data && 'user' in data) {
-          await handleSignInWithSession(data.session, data.user, set);
-        } else {
-          await handleSignInWithToken(data as TokenType, set);
-        }
-      },
-      get,
-      set
-    );
-
-    if (result === null) {
-      return; // Operation was skipped due to concurrent execution
-    }
-  },
+  signIn: async (data) => performSignIn(data, get, set),
 
   signOut: async (skipRemote = false) => {
     const result = await withAuthMutex(
@@ -187,17 +193,38 @@ const _useAuth = create<AuthState>((set, get) => ({
     }
   },
 
-  updateSession: (session) => {
+  updateSession: async (session) => {
     const token: TokenType = {
       access: session.access_token,
       refresh: session.refresh_token,
     };
-    setToken(token);
-    set({ session, token, lastValidatedAt: Date.now() });
+
+    const result = await withAuthMutex(
+      async () => {
+        setToken(token);
+        set({ session, token, lastValidatedAt: Date.now() });
+      },
+      get,
+      set
+    );
+
+    if (result === null) {
+      return; // Operation was skipped due to concurrent execution
+    }
   },
 
-  updateUser: (user) => {
-    set({ user });
+  updateUser: async (user) => {
+    const result = await withAuthMutex(
+      async () => {
+        set({ user });
+      },
+      get,
+      set
+    );
+
+    if (result === null) {
+      return; // Operation was skipped due to concurrent execution
+    }
   },
 
   updateLastValidatedAt: () => {
@@ -219,6 +246,16 @@ let authSubscription: {
 } | null = null;
 
 // Subscribe to Supabase auth state changes
+// FIXED: Auth hydration race condition resolved
+// Previously during hydration, hydrate() would load cached tokens and call signIn,
+// which set _authOperationInProgress=true before supabase.auth.setSession(). The
+// SIGNED_IN listener would then skip updating session/user state due to the mutex,
+// leaving the store with status='signIn' but session=null/user=null. This broke
+// downstream features that depend on hydrated auth state.
+//
+// SOLUTION: Modified handleSignInWithToken to populate session and user directly
+// from the supabase.auth.setSession() response instead of relying on the auth
+// state change listener, ensuring complete auth state during hydration.
 authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
   const store = _useAuth.getState();
 
@@ -244,12 +281,10 @@ authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
         event,
         sessionId: session.user.id,
       });
-    } finally {
-      _useAuth.setState({ _authOperationInProgress: false });
     }
   } else if (event === 'SIGNED_OUT') {
     // Clear store on sign out
-    const _result = await withAuthMutex(
+    await withAuthMutex(
       async () => {
         removeToken();
         resetAgeGate();
@@ -269,7 +304,7 @@ authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
     );
   } else if (event === 'TOKEN_REFRESHED' && session) {
     // Update session on token refresh
-    const _result = await withAuthMutex(
+    await withAuthMutex(
       async () => {
         store.updateSession(session);
         if (session.user) {
@@ -302,9 +337,10 @@ export const signIn = async (
 export const hydrateAuth = async () => await _useAuth.getState().hydrate();
 
 // Export new session management actions
-export const updateSession = (session: Session) =>
-  _useAuth.getState().updateSession(session);
-export const updateUser = (user: User) => _useAuth.getState().updateUser(user);
+export const updateSession = async (session: Session) =>
+  await _useAuth.getState().updateSession(session);
+export const updateUser = async (user: User) =>
+  await _useAuth.getState().updateUser(user);
 export const setOfflineMode = (mode: OfflineMode) =>
   _useAuth.getState().setOfflineMode(mode);
 

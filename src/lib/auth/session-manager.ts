@@ -154,7 +154,7 @@ function createSessionManager(): SessionManager {
 
           // Update store with refreshed session
           const { updateSession, updateLastValidatedAt } = useAuth.getState();
-          updateSession(data.session);
+          await updateSession(data.session);
           updateLastValidatedAt();
           return data.session;
         }
@@ -231,7 +231,7 @@ function createSessionManager(): SessionManager {
 
         // Session is valid, update store
         const { updateSession, updateLastValidatedAt } = useAuth.getState();
-        updateSession(session);
+        await updateSession(session);
         updateLastValidatedAt();
 
         return true;

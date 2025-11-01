@@ -22,7 +22,48 @@ jest.mock('../supabase', () => ({
   supabase: {
     auth: {
       signOut: jest.fn(),
-      setSession: jest.fn().mockResolvedValue({}),
+      setSession: jest.fn().mockResolvedValue({
+        data: {
+          session: {
+            access_token: 'test-access-token',
+            refresh_token: 'test-refresh-token',
+            expires_at: Math.floor(Date.now() / 1000) + 3600,
+            expires_in: 3600,
+            token_type: 'bearer',
+            user: {
+              id: 'mock-user-id',
+              aud: 'authenticated',
+              role: 'authenticated',
+              email: 'test@example.com',
+              email_confirmed_at: new Date().toISOString(),
+              phone: '',
+              confirmed_at: new Date().toISOString(),
+              last_sign_in_at: new Date().toISOString(),
+              app_metadata: {},
+              user_metadata: {},
+              identities: [],
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          },
+          user: {
+            id: 'mock-user-id',
+            aud: 'authenticated',
+            role: 'authenticated',
+            email: 'test@example.com',
+            email_confirmed_at: new Date().toISOString(),
+            phone: '',
+            confirmed_at: new Date().toISOString(),
+            last_sign_in_at: new Date().toISOString(),
+            app_metadata: {},
+            user_metadata: {},
+            identities: [],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        },
+        error: null,
+      }),
       onAuthStateChange: jest.fn(() => ({
         data: { subscription: { unsubscribe: jest.fn() } },
       })),
@@ -128,9 +169,9 @@ describe('Auth', () => {
   });
 
   describe('session management', () => {
-    test('should update session with updateSession action', () => {
+    test('should update session with updateSession action', async () => {
       // Sign in first
-      useAuth.getState().signIn({ session: mockSession, user: mockUser });
+      await useAuth.getState().signIn({ session: mockSession, user: mockUser });
 
       // Update session with new token
       const newSession: Session = {
@@ -139,7 +180,7 @@ describe('Auth', () => {
         refresh_token: 'new-refresh-token',
       };
 
-      useAuth.getState().updateSession(newSession);
+      await useAuth.getState().updateSession(newSession);
 
       const state = useAuth.getState();
       expect(state.session).toEqual(newSession);
@@ -150,9 +191,9 @@ describe('Auth', () => {
       expect(state.lastValidatedAt).toBeTruthy();
     });
 
-    test('should update user with updateUser action', () => {
+    test('should update user with updateUser action', async () => {
       // Sign in first
-      useAuth.getState().signIn({ session: mockSession, user: mockUser });
+      await useAuth.getState().signIn({ session: mockSession, user: mockUser });
 
       // Update user data
       const updatedUser: User = {
@@ -161,7 +202,7 @@ describe('Auth', () => {
         user_metadata: { name: 'Updated Name' },
       };
 
-      useAuth.getState().updateUser(updatedUser);
+      await useAuth.getState().updateUser(updatedUser);
 
       expect(useAuth.getState().user).toEqual(updatedUser);
     });

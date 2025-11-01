@@ -49,7 +49,7 @@ export const useVerifyEmail = createMutation<void, VerifyEmailVariables, Error>(
       // Update user state to mark email as verified
       const user = useAuth.getState().user;
       if (user) {
-        useAuth.getState().updateUser({
+        await useAuth.getState().updateUser({
           ...user,
           email_confirmed_at: new Date().toISOString(),
         });

@@ -136,7 +136,7 @@ export async function handleEmailVerification(
       );
     } else if (userData?.user) {
       // Update the auth store with the fresh user data from server
-      useAuth.getState().updateUser(userData.user);
+      await useAuth.getState().updateUser(userData.user);
     }
 
     // Show success message
