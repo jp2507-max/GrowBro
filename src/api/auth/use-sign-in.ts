@@ -100,7 +100,7 @@ export const useSignIn = createMutation<SignInResponse, SignInVariables, Error>(
     onSuccess: async (data) => {
       // Update Zustand auth store (which handles Supabase client session)
       const { signIn: storeSignIn } = useAuth.getState();
-      storeSignIn({
+      await storeSignIn({
         session: data.session,
         user: data.user,
       });

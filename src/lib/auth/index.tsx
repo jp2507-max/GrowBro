@@ -278,15 +278,13 @@ authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
     );
   } else if (event === 'USER_UPDATED' && session?.user) {
     // Update user data
-    if (_useAuth.getState()._authOperationInProgress) {
-      return;
-    }
-    _useAuth.setState({ _authOperationInProgress: true });
-    try {
-      store.updateUser(session.user);
-    } finally {
-      _useAuth.setState({ _authOperationInProgress: false });
-    }
+    await withAuthMutex(
+      async () => {
+        store.updateUser(session.user);
+      },
+      _useAuth.getState,
+      _useAuth.setState
+    );
   }
 });
 
