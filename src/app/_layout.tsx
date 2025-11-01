@@ -127,10 +127,11 @@ if (Env.SENTRY_DSN && hasConsent('crashReporting') && !sentryInitialized) {
 }
 
 // Initialize auth storage before hydrating auth state
-void initAuthStorage();
-
-hydrateAuth();
-hydrateAgeGate();
+(async () => {
+  await initAuthStorage();
+  hydrateAuth();
+  hydrateAgeGate();
+})();
 loadSelectedTheme();
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();

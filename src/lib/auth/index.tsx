@@ -176,7 +176,11 @@ const _useAuth = create<AuthState>((set, get) => ({
       }
     } catch (e) {
       console.error('Auth hydration error:', e);
-      await get().signOut();
+      try {
+        await get().signOut();
+      } catch (innerErr) {
+        console.error('Auth hydration fallback signOut error:', innerErr);
+      }
     }
   },
 
@@ -319,6 +323,11 @@ export const cleanupAuthListener = () => {
   authSubscription?.data.subscription.unsubscribe();
   authSubscription = null;
 };
+
+// HMR cleanup in development - automatically dispose listeners on module replacement
+if (import.meta.hot) {
+  import.meta.hot.dispose(cleanupAuthListener);
+}
 
 // Export functions used by sign-out hooks
 export { resetAgeGate } from '../compliance/age-gate';
