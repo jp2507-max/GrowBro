@@ -106,6 +106,7 @@ describe('parseDeepLink', () => {
 
     expect(result).toBeTruthy();
     expect(result?.host).toBe('verify-email');
+    expect(result?.path).toBe('');
     expect(result?.params.get('token_hash')).toBe('abc123');
     expect(result?.params.get('type')).toBe('signup');
   });
@@ -116,6 +117,7 @@ describe('parseDeepLink', () => {
 
     expect(result).toBeTruthy();
     expect(result?.host).toBe('reset-password');
+    expect(result?.path).toBe('');
     expect(result?.params.get('token_hash')).toBe('xyz789');
   });
 
@@ -125,7 +127,18 @@ describe('parseDeepLink', () => {
 
     expect(result).toBeTruthy();
     expect(result?.host).toBe('auth');
+    expect(result?.path).toBe('');
     expect(result?.params.get('code')).toBe('oauth123');
+  });
+
+  test('parses navigation deep link with path', () => {
+    const url = 'growbro://(app)/settings/profile?param=value';
+    const result = parseDeepLink(url);
+
+    expect(result).toBeTruthy();
+    expect(result?.host).toBe('(app)');
+    expect(result?.path).toBe('/settings/profile');
+    expect(result?.params.get('param')).toBe('value');
   });
 
   test('returns null for invalid URL', () => {
@@ -178,8 +191,9 @@ describe('handleEmailVerification', () => {
       updateUser: mockUpdateUser,
     });
 
-    await handleEmailVerification('valid-token', 'signup');
+    const result = await handleEmailVerification('valid-token', 'signup');
 
+    expect(result).toBe(true);
     expect(supabase.auth.verifyOtp).toHaveBeenCalledWith({
       type: 'email',
       token_hash: 'valid-token',
@@ -195,7 +209,6 @@ describe('handleEmailVerification', () => {
         type: 'success',
       })
     );
-    expect(router.replace).toHaveBeenCalledWith('/(app)');
   });
 
   test('continues on getUser error after successful verification', async () => {
@@ -211,10 +224,11 @@ describe('handleEmailVerification', () => {
       updateUser: mockUpdateUser,
     });
 
-    await handleEmailVerification('valid-token', 'signup');
+    const result = await handleEmailVerification('valid-token', 'signup');
 
+    expect(result).toBe(true);
     expect(supabase.auth.verifyOtp).toHaveBeenCalledWith({
-      type: 'signup',
+      type: 'email',
       token_hash: 'valid-token',
     });
     expect(supabase.auth.getUser).toHaveBeenCalled();
@@ -228,7 +242,6 @@ describe('handleEmailVerification', () => {
         type: 'success',
       })
     );
-    expect(router.replace).toHaveBeenCalledWith('/(app)');
 
     consoleWarnSpy.mockRestore();
   });
@@ -238,8 +251,9 @@ describe('handleEmailVerification', () => {
       error: { message: 'Invalid token' },
     });
 
-    await handleEmailVerification('invalid-token', 'signup');
+    const result = await handleEmailVerification('invalid-token', 'signup');
 
+    expect(result).toBe(false);
     expect(showMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'danger',
@@ -248,8 +262,9 @@ describe('handleEmailVerification', () => {
   });
 
   test('shows error for missing token', async () => {
-    await handleEmailVerification('', 'signup');
+    const result = await handleEmailVerification('', 'signup');
 
+    expect(result).toBe(false);
     expect(showMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'danger',
@@ -264,8 +279,9 @@ describe('handleEmailVerification', () => {
       error: { message: 'Invalid token' },
     });
 
-    await handleEmailVerification('invalid-token', 'signup');
+    const result = await handleEmailVerification('invalid-token', 'signup');
 
+    expect(result).toBe(false);
     expect(Sentry.captureException).toHaveBeenCalled();
   });
 });

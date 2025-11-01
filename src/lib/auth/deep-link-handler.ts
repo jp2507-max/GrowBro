@@ -27,6 +27,7 @@ import { supabase } from '@/lib/supabase';
  */
 export type ParsedDeepLink = {
   host: string;
+  path: string;
   params: URLSearchParams;
 } | null;
 
@@ -61,6 +62,7 @@ export function parseDeepLink(url: string): ParsedDeepLink {
 
     return {
       host: parsed.hostname,
+      path: parsed.pathname,
       params: parsed.searchParams,
     };
   } catch (error) {
@@ -102,14 +104,14 @@ export function validateRedirect(path: string | null): boolean {
 export async function handleEmailVerification(
   tokenHash: string,
   type: string
-): Promise<void> {
+): Promise<boolean> {
   if (!tokenHash) {
     showMessage({
       message: 'Verification Error',
       description: 'Invalid verification link. Please request a new one.',
       type: 'danger',
     });
-    return;
+    return false;
   }
 
   try {
@@ -132,7 +134,7 @@ export async function handleEmailVerification(
           'Email verification failed. Please try again or request a new link.',
         type: 'danger',
       });
-      return;
+      return false;
     }
 
     // Refetch user data after verification
@@ -155,7 +157,7 @@ export async function handleEmailVerification(
       type: 'success',
     });
 
-    router.replace('/(app)');
+    return true;
   } catch (error) {
     if (privacyConsent.hasConsent('crashReporting')) {
       Sentry.captureException(error, {
@@ -169,6 +171,7 @@ export async function handleEmailVerification(
       description: 'An unexpected error occurred. Please try again.',
       type: 'danger',
     });
+    return false;
   }
 }
 
@@ -358,10 +361,13 @@ async function handleAuthDeepLinks(
     case 'verify-email': {
       const tokenHash = params.get('token_hash');
       const type = params.get('type') || 'email';
-      await handleEmailVerification(tokenHash || '', type);
+      const verificationSuccess = await handleEmailVerification(
+        tokenHash || '',
+        type
+      );
 
-      // Handle redirect after successful auth operation
-      if (redirect && validateRedirect(redirect)) {
+      // Handle redirect only after successful verification
+      if (verificationSuccess && redirect && validateRedirect(redirect)) {
         router.push(redirect);
       }
       break;
@@ -435,7 +441,7 @@ export async function handleDeepLink(url: string): Promise<void> {
     return;
   }
 
-  const { host, params } = parsed;
+  const { host, path, params } = parsed;
   const redirect = params.get('redirect');
 
   // Route to appropriate handler based on host
@@ -443,7 +449,7 @@ export async function handleDeepLink(url: string): Promise<void> {
     await handleAuthDeepLinks(host, params, redirect);
   } else {
     // Handle non-auth deep links (navigation)
-    const fullPath = `/${host}${params.toString() ? `?${params.toString()}` : ''}`;
+    const fullPath = `/${host}${path}${params.toString() ? `?${params.toString()}` : ''}`;
     handleNavigationDeepLink(fullPath);
   }
 }

@@ -297,10 +297,9 @@ export const signIn = async (
 export const hydrateAuth = async () => await _useAuth.getState().hydrate();
 
 // Export new session management actions
-export const updateSession = async (session: Session) =>
-  await _useAuth.getState().updateSession(session);
-export const updateUser = async (user: User) =>
-  await _useAuth.getState().updateUser(user);
+export const updateSession = (session: Session) =>
+  _useAuth.getState().updateSession(session);
+export const updateUser = (user: User) => _useAuth.getState().updateUser(user);
 export const setOfflineMode = (mode: OfflineMode) =>
   _useAuth.getState().setOfflineMode(mode);
 

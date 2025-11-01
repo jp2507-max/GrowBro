@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { onConnectivityChange } from '../sync/network-manager';
+import { isOnline, onConnectivityChange } from '../sync/network-manager';
 import { useAuth } from './index';
 import { sessionManager } from './session-manager';
 
@@ -27,43 +27,49 @@ export function useConnectivityHandler(): void {
   const offlineMode = useAuth.use.offlineMode();
 
   useEffect(() => {
-    let previouslyOnline = true;
+    let unsubscribe: (() => void) | null = null;
 
-    const unsubscribe = onConnectivityChange(async (networkState) => {
-      const isOnline =
-        networkState.isConnected && (networkState.isInternetReachable ?? true);
+    (async () => {
+      const initialOnline = await isOnline();
+      let previouslyOnline = initialOnline;
 
-      // Detect transition from offline to online
-      if (!previouslyOnline && isOnline) {
-        console.log(
-          '[ConnectivityHandler] Connectivity restored, validating session...'
-        );
+      unsubscribe = onConnectivityChange(async (networkState) => {
+        const isOnline =
+          networkState.isConnected &&
+          (networkState.isInternetReachable ?? true);
 
-        // Force session validation with server
-        const isValid = await sessionManager.forceValidation();
-
-        if (isValid) {
-          console.log('[ConnectivityHandler] Session validated successfully');
-
-          // Update offline mode to full access
-          const { setOfflineMode } = useAuth.getState();
-          setOfflineMode('full');
-
-          // Note: WatermelonDB sync queue flush is handled by the sync engine
-          // which listens to connectivity changes independently
-        } else {
+        // Detect transition from offline to online
+        if (!previouslyOnline && isOnline) {
           console.log(
-            '[ConnectivityHandler] Session validation failed, user signed out'
+            '[ConnectivityHandler] Connectivity restored, validating session...'
           );
-          // Session is invalid or expired, user has been signed out by forceValidation
-        }
-      }
 
-      previouslyOnline = isOnline;
-    });
+          // Force session validation with server
+          const isValid = await sessionManager.forceValidation();
+
+          if (isValid) {
+            console.log('[ConnectivityHandler] Session validated successfully');
+
+            // Update offline mode to full access
+            const { setOfflineMode } = useAuth.getState();
+            setOfflineMode('full');
+
+            // Note: WatermelonDB sync queue flush is handled by the sync engine
+            // which listens to connectivity changes independently
+          } else {
+            console.log(
+              '[ConnectivityHandler] Session validation failed, user signed out'
+            );
+            // Session is invalid or expired, user has been signed out by forceValidation
+          }
+        }
+
+        previouslyOnline = isOnline;
+      });
+    })();
 
     return () => {
-      unsubscribe();
+      if (unsubscribe) unsubscribe();
     };
   }, [offlineMode]);
 }
