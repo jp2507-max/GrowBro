@@ -2,19 +2,18 @@ import { database } from '@/lib/watermelon';
 
 /**
  * Interface for database adapters that support unsafe SQL execution.
- * Expected adapter shape: { unsafeExecute(work, callback): void }
+ * Updated adapter shape: { unsafeExecute(work): Promise<any> }
  */
 interface UnsafeExecuteAdapter {
-  unsafeExecute(
-    work: { sqls: [string, any[]][] },
-    callback: (result: any) => void
-  ): void;
+  unsafeExecute(work: { sqls: [string, any[]][] }): Promise<any>;
 }
 
 /**
  * Type predicate to check if an adapter implements the UnsafeExecuteAdapter interface
  */
 function hasUnsafeExecute(adapter: any): adapter is UnsafeExecuteAdapter {
+  // At runtime we can only verify that unsafeExecute is a function. The
+  // Promise-returning behavior is enforced by the adapter implementation.
   return typeof adapter?.unsafeExecute === 'function';
 }
 
@@ -22,26 +21,23 @@ function hasUnsafeExecute(adapter: any): adapter is UnsafeExecuteAdapter {
 // `unsafeExecute(work, cb)` which is callback-based; wrap it in a Promise
 // and return the results array (matching the previous unsafeExecuteSql shape).
 async function runSql(sql: string, params: any[] = []): Promise<any[]> {
-  return new Promise((resolve, reject) => {
-    // Verify adapter supports unsafeExecute at runtime
-    if (!hasUnsafeExecute(database.adapter)) {
-      reject(
-        new Error('Database adapter does not support unsafeExecute method')
-      );
-      return;
-    }
+  // Verify adapter supports unsafeExecute at runtime
+  if (!hasUnsafeExecute(database.adapter)) {
+    throw new Error('Database adapter does not support unsafeExecute method');
+  }
 
-    const work = { sqls: [[sql, params]] };
-    // Adapter uses a callback-style API
-    database.adapter.unsafeExecute(work, (result: any) => {
-      if (result && result.error) {
-        reject(result.error);
-        return;
-      }
-      // result.results is expected to be an array of result objects
-      resolve(result?.results || []);
-    });
-  });
+  const work = { sqls: [[sql, params]] };
+
+  // Call the Promise-based unsafeExecute and await the result
+  const result = await database.adapter.unsafeExecute(work);
+
+  // If adapter reports an error, throw it so caller receives a rejected Promise
+  if (result && result.error) {
+    throw result.error;
+  }
+
+  // result.results is expected to be an array of result objects
+  return result?.results || [];
 }
 
 /**

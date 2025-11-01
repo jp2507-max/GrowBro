@@ -3,7 +3,10 @@ import type { AssessmentTelemetryModel } from '@/lib/watermelon-models/assessmen
 
 import { calculateP95 } from './assessment-analytics-utils';
 
-export function separateAssessmentsByMode(assessments: AssessmentModel[]) {
+export function separateAssessmentsByMode(assessments: AssessmentModel[]): {
+  deviceAssessments: AssessmentModel[];
+  cloudAssessments: AssessmentModel[];
+} {
   const deviceAssessments = assessments.filter(
     (a) => a.inferenceMode === 'device'
   );
@@ -22,7 +25,7 @@ export function extractLatencies(assessments: AssessmentModel[]): number[] {
 export function calculateAverageLatencies(
   deviceLatencies: number[],
   cloudLatencies: number[]
-) {
+): { avgDeviceLatencyMs: number; avgCloudLatencyMs: number } {
   const avgDeviceLatencyMs =
     deviceLatencies.length > 0
       ? deviceLatencies.reduce((sum, l) => sum + l, 0) / deviceLatencies.length
@@ -39,13 +42,16 @@ export function calculateAverageLatencies(
 export function calculatePercentileLatencies(
   deviceLatencies: number[],
   cloudLatencies: number[]
-) {
+): { p95DeviceLatencyMs: number; p95CloudLatencyMs: number } {
   const p95DeviceLatencyMs = calculateP95(deviceLatencies);
   const p95CloudLatencyMs = calculateP95(cloudLatencies);
   return { p95DeviceLatencyMs, p95CloudLatencyMs };
 }
 
-export function countTelemetryEvents(telemetry: AssessmentTelemetryModel[]) {
+export function countTelemetryEvents(telemetry: AssessmentTelemetryModel[]): {
+  failureCount: number;
+  fallbackCount: number;
+} {
   const failureCount = telemetry.filter(
     (t) => t.eventType === 'inference_failed'
   ).length;

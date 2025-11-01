@@ -138,11 +138,11 @@ const _useAuth = create<AuthState>((set, get) => ({
       if (userToken !== null) {
         await get().signIn(userToken);
       } else {
-        get().signOut();
+        await get().signOut();
       }
     } catch (e) {
       console.error('Auth hydration error:', e);
-      get().signOut();
+      await get().signOut();
     }
   },
 

@@ -192,7 +192,7 @@ export async function rotateEncryptionKey(): Promise<KeyRotationResult> {
 
     // Migrate data from old key to new key (only after DB rotation confirmed)
     try {
-      await migrateStorageData(oldKey, newKey, oldVersion, newVersion);
+      await migrateStorageData(oldKey, newKey);
     } catch (migrationError) {
       console.error(
         '[key-rotation] Migration failed after DB rotation:',
@@ -267,89 +267,143 @@ async function verifyFinalMatches(
 }
 
 /**
- * Migrate storage data from old key to new key
+ * Create MMKV instances for migration
  */
-// eslint-disable-next-line max-params
-async function migrateStorageData(
+function createMigrationStorages(
   oldKey: string,
-  newKey: string,
-  _oldVersion: number,
-  _newVersion: number
-): Promise<void> {
-  try {
-    console.log(
-      `[key-rotation] Starting data migration from v${_oldVersion} to v${_newVersion}...`
-    );
-
-    // Create MMKV instances with old and new keys
-    const oldStorage = new MMKV({
+  newKey: string
+): {
+  oldStorage: MMKV;
+  tempStorage: MMKV;
+} {
+  return {
+    oldStorage: new MMKV({
       id: 'auth-storage',
       encryptionKey: oldKey,
-    });
-
-    const tempStorage = new MMKV({
+    }),
+    tempStorage: new MMKV({
       id: 'auth-storage-temp',
       encryptionKey: newKey,
-    });
+    }),
+  };
+}
 
-    // Get all keys from old storage
-    const allKeys = oldStorage.getAllKeys();
-    console.log(
-      `[key-rotation] Migrating ${allKeys.length} keys to temp storage...`
+/**
+ * Migrate data from old storage to temp storage
+ */
+function migrateToTempStorage(oldStorage: MMKV, tempStorage: MMKV): string[] {
+  const allKeys = oldStorage.getAllKeys();
+  console.log(
+    `[key-rotation] Migrating ${allKeys.length} keys to temp storage...`
+  );
+
+  for (const key of allKeys) {
+    const value = oldStorage.getString(key);
+    if (value !== undefined) {
+      tempStorage.set(key, value);
+    }
+  }
+
+  return allKeys;
+}
+
+/**
+ * Verify migration into temp storage
+ */
+function verifyTempMigration(tempStorage: MMKV, allKeys: string[]): string[] {
+  const migratedKeys = tempStorage.getAllKeys();
+  if (migratedKeys.length !== allKeys.length) {
+    throw new Error(
+      `Temp migration verification failed: ${migratedKeys.length} vs ${allKeys.length} keys`
     );
+  }
+  return migratedKeys;
+}
 
-    // Migrate each key-value pair into tempStorage
-    for (const key of allKeys) {
-      const value = oldStorage.getString(key);
-      if (value !== undefined) {
-        tempStorage.set(key, value);
-      }
+/**
+ * Create final storage and clear old storage
+ */
+function createFinalStorage(oldStorage: MMKV, newKey: string): MMKV {
+  // Clear the old storage file BEFORE instantiating final storage with the
+  // same id so MMKV won't attempt to open an existing file encrypted with
+  // the old key when we create `finalStorage` with the new key.
+  try {
+    oldStorage.clearAll();
+    console.log('[key-rotation] Cleared old storage to avoid key mismatch');
+  } catch (e) {
+    console.warn(
+      '[key-rotation] Failed to clear old storage before creating final storage:',
+      e
+    );
+  }
+
+  return new MMKV({
+    id: 'auth-storage',
+    encryptionKey: newKey,
+  });
+}
+
+/**
+ * Copy data from temp storage to final storage
+ */
+function copyToFinalStorage(
+  tempStorage: MMKV,
+  finalStorage: MMKV,
+  migratedKeys: string[]
+): void {
+  console.log('[key-rotation] Copying temp storage into final storage...');
+  for (const key of migratedKeys) {
+    const value = tempStorage.getString(key);
+    if (value !== undefined) {
+      finalStorage.set(key, value);
     }
+  }
+}
 
-    // Verify migration into tempStorage - counts must match
-    const migratedKeys = tempStorage.getAllKeys();
-    if (migratedKeys.length !== allKeys.length) {
-      throw new Error(
-        `Temp migration verification failed: ${migratedKeys.length} vs ${allKeys.length} keys`
-      );
-    }
+/**
+ * Clear temp storage after successful migration
+ */
+function cleanupTempStorage(tempStorage: MMKV): void {
+  try {
+    tempStorage.clearAll();
+  } catch (e) {
+    console.warn(
+      '[key-rotation] Failed to clear temp storage after migration:',
+      e
+    );
+  }
+}
 
-    // Instantiate final storage (using new key) and copy from tempStorage into it
-    const finalStorage = new MMKV({
-      id: 'auth-storage',
-      encryptionKey: newKey,
-    });
+/**
+ * Migrate storage data from old key to new key
+ */
+async function migrateStorageData(
+  oldKey: string,
+  newKey: string
+): Promise<void> {
+  try {
+    console.log('[key-rotation] Starting data migration...');
 
-    console.log('[key-rotation] Copying temp storage into final storage...');
-    for (const key of migratedKeys) {
-      const value = tempStorage.getString(key);
-      if (value !== undefined) {
-        finalStorage.set(key, value);
-      }
-    }
+    // Create MMKV instances for migration
+    const { oldStorage, tempStorage } = createMigrationStorages(oldKey, newKey);
 
-    // Durable verification: ensure finalStorage contains same keys and values
+    // Migrate data from old to temp storage
+    const allKeys = migrateToTempStorage(oldStorage, tempStorage);
+
+    // Verify temp migration
+    const migratedKeys = verifyTempMigration(tempStorage, allKeys);
+
+    // Create final storage and clear old
+    const finalStorage = createFinalStorage(oldStorage, newKey);
+
+    // Copy to final storage
+    copyToFinalStorage(tempStorage, finalStorage, migratedKeys);
+
+    // Verify final storage matches temp
     await verifyFinalMatches(tempStorage, finalStorage, migratedKeys);
 
-    // Only after final verification succeeded, clear old and temp storage
-    try {
-      oldStorage.clearAll();
-    } catch (e) {
-      console.warn(
-        '[key-rotation] Failed to clear old storage after migration:',
-        e
-      );
-      // Do not abort - data already in finalStorage; but surface warning
-    }
-
-    try {
-      tempStorage.clearAll();
-    } catch (e) {
-      console.warn(
-        '[key-rotation] Failed to clear temp storage after migration:',
-        e
-      );
-    }
+    // Cleanup temp storage
+    cleanupTempStorage(tempStorage);
 
     console.log('[key-rotation] Data migration completed successfully');
   } catch (error) {
