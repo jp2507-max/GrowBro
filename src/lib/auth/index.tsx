@@ -60,7 +60,6 @@ async function handleSignInWithSession(
     user,
     lastValidatedAt: Date.now(),
     offlineMode: 'full',
-    _authOperationInProgress: false,
   });
 }
 
@@ -84,7 +83,6 @@ async function handleSignInWithToken(
     user: data.session?.user ?? null,
     lastValidatedAt: Date.now(),
     offlineMode: 'full',
-    _authOperationInProgress: false,
   });
 }
 
@@ -109,7 +107,6 @@ async function handleSignOut(
     session: null,
     lastValidatedAt: null,
     offlineMode: 'full',
-    _authOperationInProgress: false,
   });
 }
 
@@ -117,11 +114,9 @@ async function withAuthMutex<T>(
   operation: () => Promise<T>,
   get: () => AuthState,
   set: (state: Partial<AuthState>) => void
-): Promise<T | null> {
-  const state = get();
-  if (state._authOperationInProgress) {
-    console.warn('Auth operation already in progress, skipping');
-    return null;
+): Promise<T> {
+  while (get()._authOperationInProgress) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
 
   set({ _authOperationInProgress: true });
@@ -137,7 +132,7 @@ async function performSignIn(
   get: () => AuthState,
   set: (state: Partial<AuthState>) => void
 ): Promise<void> {
-  const result = await withAuthMutex(
+  await withAuthMutex(
     async () => {
       if ('session' in data && 'user' in data) {
         await handleSignInWithSession(data.session, data.user, set);
@@ -148,10 +143,6 @@ async function performSignIn(
     get,
     set
   );
-
-  if (result === null) {
-    return; // Operation was skipped due to concurrent execution
-  }
 }
 
 const _useAuth = create<AuthState>((set, get) => ({
@@ -166,17 +157,13 @@ const _useAuth = create<AuthState>((set, get) => ({
   signIn: async (data) => performSignIn(data, get, set),
 
   signOut: async (skipRemote = false) => {
-    const result = await withAuthMutex(
+    await withAuthMutex(
       async () => {
         await handleSignOut(set, skipRemote);
       },
       get,
       set
     );
-
-    if (result === null) {
-      return; // Operation was skipped due to concurrent execution
-    }
   },
 
   hydrate: async () => {
@@ -242,7 +229,7 @@ authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' && session) {
     try {
       // Use mutex to prevent race with direct signIn calls
-      const result = await withAuthMutex(
+      await withAuthMutex(
         async () => {
           store.updateSession(session);
           if (session.user) {
@@ -252,10 +239,6 @@ authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
         _useAuth.getState,
         _useAuth.setState
       );
-
-      if (result === null) {
-        return; // Operation was skipped due to concurrent execution
-      }
     } catch (error) {
       console.error('Error in SIGNED_IN handler:', error, {
         event,
@@ -276,7 +259,6 @@ authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
           session: null,
           lastValidatedAt: null,
           offlineMode: 'full',
-          _authOperationInProgress: false,
         });
       },
       _useAuth.getState,
