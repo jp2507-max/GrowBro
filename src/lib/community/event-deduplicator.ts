@@ -176,7 +176,7 @@ export async function handleRealtimeEvent<T extends Record<string, any>>(
   // (apply/remove) instead of relying on an `id` + `updated_at` LWW check.
   if (table === 'post_likes') {
     await handlePostLikeEvent({
-      event: event as RealtimeEvent<PostLike>,
+      event: event as unknown as RealtimeEvent<PostLike>,
       key,
       cache: cache as unknown as CacheOperations<CachedPostLike>,
       outbox,

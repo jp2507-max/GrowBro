@@ -36,7 +36,7 @@ try {
   Env = {
     APP_ENV,
     NAME: process.env.NAME ?? 'GrowBro',
-    SCHEME: process.env.SCHEME ?? 'GrowBro',
+    SCHEME: process.env.SCHEME ?? 'growbro',
     BUNDLE_ID: withEnvSuffix(process.env.BUNDLE_ID ?? 'com.growbro'),
     PACKAGE: withEnvSuffix(process.env.PACKAGE ?? 'com.growbro'),
     VERSION: packageJSON.version,
@@ -112,6 +112,7 @@ function createExpoConfig(config) {
     assetBundlePatterns: ['**/*'],
     ios: {
       supportsTablet: true,
+      usesAppleSignIn: true,
       bundleIdentifier: Env.BUNDLE_ID,
       privacyManifests: applePrivacyManifest,
       infoPlist: {
@@ -166,6 +167,14 @@ function createExpoConfig(config) {
       'expo-localization',
       'expo-system-ui',
       'expo-router',
+      'expo-apple-authentication',
+      [
+        '@react-native-google-signin/google-signin',
+        {
+          iosUrlScheme:
+            'com.googleusercontent.apps.706160531301-45q4did3e81681uhhq046642r3voumt2',
+        },
+      ],
       [
         'expo-build-properties',
         {
@@ -217,6 +226,8 @@ function createExpoConfig(config) {
       ...(Env.ACCOUNT_DELETION_URL && {
         EXPO_PUBLIC_ACCOUNT_DELETION_URL: Env.ACCOUNT_DELETION_URL,
       }),
+      // App scheme for OAuth redirects
+      SCHEME: Env.SCHEME,
       // App Access Reviewer Credentials for Play Store compliance
       // Only expose in non-production builds to prevent secrets in production bundles
       ...(Env.APP_ENV !== 'production' && {

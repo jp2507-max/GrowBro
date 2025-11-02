@@ -3,11 +3,40 @@
  * Provides TTI/TTFD measurement and render pass reporting
  */
 
-import { PerformanceMeasureView } from '@shopify/react-native-performance';
 import React from 'react';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 
 import type { RNPerformanceReport } from './types';
+
+type PerformanceMeasureModule = {
+  PerformanceMeasureView: React.ComponentType<{
+    screenName: string;
+    onReportPrepared?: (report: any) => void;
+    interactive?: boolean;
+    children: React.ReactNode;
+  }>;
+};
+
+function loadPerformanceModule(): PerformanceMeasureModule | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('@shopify/react-native-performance') as PerformanceMeasureModule;
+  } catch (error) {
+    if (__DEV__) {
+      console.warn(
+        '[Performance] @shopify/react-native-performance not installed. Performance metrics are disabled.',
+        error
+      );
+    }
+    return null;
+  }
+}
+
+const performanceModule = loadPerformanceModule();
+
+const PerformanceMeasureView:
+  | PerformanceMeasureModule['PerformanceMeasureView']
+  | null = performanceModule?.PerformanceMeasureView ?? null;
 
 /**
  * Track screen time-to-interactive (TTI) and time-to-first-display (TTFD)
@@ -31,6 +60,8 @@ export function PerformanceTracker({
   children: React.ReactNode;
   onReportPrepared?: (report: Partial<RNPerformanceReport>) => void;
 }): React.ReactElement {
+  const hasPerformanceModule = Boolean(PerformanceMeasureView);
+
   const handleReportPrepared = React.useCallback(
     (report: any) => {
       const performanceReport: Partial<RNPerformanceReport> = {
@@ -51,6 +82,24 @@ export function PerformanceTracker({
     },
     [screenName, onReportPrepared]
   );
+
+  React.useEffect(() => {
+    if (!hasPerformanceModule && __DEV__) {
+      console.warn(
+        `[Performance] Rendering ${screenName} without PerformanceMeasureView fallback.`
+      );
+    }
+  }, [hasPerformanceModule, screenName]);
+
+  React.useEffect(() => {
+    if (!hasPerformanceModule && onReportPrepared) {
+      onReportPrepared({ screenName });
+    }
+  }, [hasPerformanceModule, onReportPrepared, screenName]);
+
+  if (!hasPerformanceModule) {
+    return React.createElement(View, null, children);
+  }
 
   return React.createElement(
     PerformanceMeasureView as any,

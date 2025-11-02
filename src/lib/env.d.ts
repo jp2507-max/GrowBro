@@ -42,6 +42,10 @@ declare module '@env' {
     EXPO_PUBLIC_SUPABASE_URL?: string;
     EXPO_PUBLIC_SUPABASE_ANON_KEY?: string;
 
+    // Google OAuth
+    GOOGLE_WEB_CLIENT_ID: string;
+    GOOGLE_IOS_CLIENT_ID?: string;
+
     // Optional public URL for self-serve deletion portal
     ACCOUNT_DELETION_URL?: string;
 
@@ -63,6 +67,9 @@ declare module '@env' {
     // PII Scrubbing
     PII_SCRUBBING_SALT?: string;
     PII_SALT_VERSION?: string;
+
+    // Email Hashing
+    EMAIL_HASH_SALT?: string;
   };
 
   // The module exports a single named object `Env` with the above shape.

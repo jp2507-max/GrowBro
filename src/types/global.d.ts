@@ -20,4 +20,12 @@ declare global {
       __DEV__: boolean;
     }
   }
+
+  // HMR (Hot Module Replacement) support for development
+  interface ImportMeta {
+    hot?: {
+      dispose: (callback: () => void) => void;
+      accept: (callback?: () => void) => void;
+    };
+  }
 }

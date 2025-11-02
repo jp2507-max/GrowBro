@@ -4,6 +4,7 @@ import '../../global.css';
 import { Env } from '@env';
 /* eslint-disable react-compiler/react-compiler */
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
 import { Stack, usePathname } from 'expo-router';
@@ -28,7 +29,10 @@ import {
   useIsFirstTime,
 } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
+import { initAuthStorage } from '@/lib/auth/auth-storage';
+import { useRealtimeSessionRevocation } from '@/lib/auth/session-manager';
 import { updateActivity } from '@/lib/auth/session-timeout';
+import { useDeepLinking } from '@/lib/auth/use-deep-linking';
 import { useRootStartup } from '@/lib/hooks/use-root-startup';
 import { initializeJanitor } from '@/lib/media/photo-janitor';
 import { getReferencedPhotoUris } from '@/lib/media/photo-storage-helpers';
@@ -116,10 +120,20 @@ if (Env.SENTRY_DSN && hasConsent('crashReporting') && !sentryInitialized) {
 
   // Update registry; this is a no-op pre-consent
   void SDKGate.initializeSDK('sentry');
+
+  // Configure auth-specific Sentry filtering for consent-aware error handling
+  import('@/lib/auth/auth-telemetry')
+    .then(({ configureSentryAuthFilter }) => {
+      configureSentryAuthFilter();
+    })
+    .catch((error) => {
+      console.error('auth telemetry configuration failed:', error);
+      Sentry.captureException(error);
+    });
 }
 
-hydrateAuth();
-hydrateAgeGate();
+// Initialize auth storage before hydrating auth state
+// Moved to RootLayout component to prevent module-level side effects
 loadSelectedTheme();
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -133,8 +147,49 @@ function RootLayout(): React.ReactElement {
   const ageGateStatus = useAgeGate.status();
   const sessionId = useAgeGate.sessionId();
   const [isI18nReady, setIsI18nReady] = React.useState(false);
+  const [isAuthReady, setIsAuthReady] = React.useState(false);
   const [showConsent, setShowConsent] = React.useState(false);
   useRootStartup(setIsI18nReady, isFirstTime);
+
+  React.useEffect(() => {
+    if (!Env.GOOGLE_WEB_CLIENT_ID) {
+      return;
+    }
+
+    GoogleSignin.configure({
+      webClientId: Env.GOOGLE_WEB_CLIENT_ID,
+      ...(Env.GOOGLE_IOS_CLIENT_ID
+        ? { iosClientId: Env.GOOGLE_IOS_CLIENT_ID }
+        : {}),
+    });
+  }, []);
+
+  // Initialize auth storage and hydrate auth state
+  React.useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        await initAuthStorage();
+        hydrateAuth();
+        hydrateAgeGate();
+        setIsAuthReady(true);
+      } catch (error) {
+        console.error(
+          '[RootLayout] Auth storage initialization failed:',
+          error
+        );
+        // Set ready to true even on error to prevent blocking the app
+        setIsAuthReady(true);
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
+  // Initialize deep linking for auth flows
+  useDeepLinking();
+
+  // Real-time session revocation monitoring
+  useRealtimeSessionRevocation();
 
   React.useEffect(() => {
     if (ageGateStatus === 'verified' && !sessionId) {
@@ -159,7 +214,7 @@ function RootLayout(): React.ReactElement {
     }
   }, [isI18nReady]);
 
-  if (!isI18nReady) return <BootSplash />;
+  if (!isI18nReady || !isAuthReady) return <BootSplash />;
 
   return (
     <Providers>

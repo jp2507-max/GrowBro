@@ -1,0 +1,42 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'test+maestro@growbro.app'
+  PASSWORD: 'TestPass123'
+---
+# Complete sign-in flow test
+# Tests: login screen → credentials → submit → redirect to home → auth state persisted
+
+- launchApp
+- clearState
+
+# Verify login screen loaded
+- assertVisible:
+    id: 'login-title'
+
+# Fill in credentials
+- tapOn:
+    id: 'email-input'
+- inputText: ${EMAIL}
+- runFlow: ../utils/hide-keyboard.yaml
+
+- tapOn:
+    id: 'password-input'
+- inputText: ${PASSWORD}
+- runFlow: ../utils/hide-keyboard.yaml
+
+# Submit login form
+- tapOn:
+    id: 'login-button'
+
+# Wait for navigation to home screen (Feed tab)
+# Note: Adjust this assertion based on your actual home screen
+- assertVisible: 'Feed'
+
+# Verify auth state persisted by restarting app
+- stopApp
+- launchApp
+
+# Should remain logged in (not see login screen)
+- assertNotVisible:
+    id: 'login-title'
+    timeout: 3000

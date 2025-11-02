@@ -270,7 +270,6 @@ export class CloudInferenceClient {
           headers: {
             'X-Idempotency-Key': idempotencyKey,
           },
-          signal: controller.signal,
         }
       );
 

@@ -1,0 +1,29 @@
+# Supabase configuration for GrowBro auth setup
+[auth]
+site_url = "https://growbro.app"
+additional_redirect_urls = [
+  "growbro://auth/callback",
+  "growbro://verify-email",
+  "growbro://reset-password",
+  "growbro-dev://auth/callback",
+  "growbro-dev://verify-email",
+  "growbro-dev://reset-password"
+]
+enable_signup = true
+email_confirm_required = true
+password_min_length = 8
+
+[auth.email]
+enable_signup = true
+double_confirm_changes_enabled = true
+enable_confirmations = true
+
+[auth.external.apple]
+enabled = true
+client_id = "env(APPLE_CLIENT_ID)"
+secret = "env(APPLE_CLIENT_SECRET)"
+
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_CLIENT_ID)"
+secret = "env(GOOGLE_CLIENT_SECRET)"
