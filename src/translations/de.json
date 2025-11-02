@@ -552,6 +552,8 @@
     "verifying_email": "E-Mail wird verifiziert..."
   },
   "calendar": {
+    "drag_handle_hint": "Lange drücken und ziehen, um Aufgaben innerhalb dieses Tages neu anzuordnen.",
+    "drag_handle_label": "Ziehgriff zum Neuanordnen",
     "drag_item_hint": "Lange drücken und ziehen, um neu zu planen. Doppeltippen für Menü.",
     "drag_item_label": "Ziehen {{title}}",
     "ec_range": "EC@25°C‑Ziel: {{min}}–{{max}} mS/cm",
@@ -582,7 +584,19 @@
     "age_gate_year": "Jahr",
     "educational_badge": "Nur Bildung",
     "educational_banner_body": "GrowBro unterstuetzt weder Verkauf noch Anbieter-Links, Abholung oder Lieferung. Alle Funktionen bleiben bildungsorientiert und richtlinienkonform.",
-    "educational_banner_title": "Reine Bildungsinhalte zum Thema Cannabis"
+    "educational_banner_title": "Reine Bildungsinhalte zum Thema Cannabis",
+    "legal_confirmation_accept_all": "Ich stimme allen zu",
+    "legal_confirmation_all_required": "Bitte akzeptiere alle Vereinbarungen, um fortzufahren",
+    "legal_confirmation_cannabis_label": "Ich verstehe und stimme der Erklärung zur Verantwortung beim Cannabis-Anbau zu",
+    "legal_confirmation_cannabis_summary": "Nur zu Bildungszwecken. Du bist dafür verantwortlich, die örtlichen Gesetze zum Cannabis-Anbau zu kennen und einzuhalten.",
+    "legal_confirmation_decline": "Ablehnen",
+    "legal_confirmation_privacy_label": "Ich akzeptiere die Datenschutzerklärung",
+    "legal_confirmation_privacy_summary": "Wie wir deine persönlichen Daten gemäß DSGVO und ePrivacy-Richtlinien erfassen, verwenden und schützen.",
+    "legal_confirmation_subtitle": "Bitte prüfe und akzeptiere die folgenden Dokumente, um fortzufahren",
+    "legal_confirmation_terms_label": "Ich akzeptiere die Nutzungsbedingungen",
+    "legal_confirmation_terms_summary": "Bedingungen für die Nutzung von GrowBro, einschließlich akzeptabler Nutzung, Inhaltsrichtlinien und Kontoverwaltung.",
+    "legal_confirmation_title": "Rechtliche Vereinbarungen",
+    "legal_confirmation_view_full": "Vollständiges Dokument anzeigen"
   },
   "card": {
     "comment_plural": "Kommentare",
@@ -2319,14 +2333,59 @@
     }
   },
   "profile": {
+    "avatar": {
+      "chooseLibrary": "Aus Galerie wählen",
+      "label": "Profilbild",
+      "permissionDenied": "Berechtigung verweigert",
+      "permissionMessage": "Kamera-Berechtigung ist erforderlich, um Fotos aufzunehmen.",
+      "placeholder": "👤",
+      "remove": "Bild entfernen",
+      "subtitle": "Wähle ein neues Profilbild",
+      "takePhoto": "Foto aufnehmen",
+      "tapToChange": "Tippen zum Ändern",
+      "title": "Avatar ändern",
+      "uploadFailed": "Upload fehlgeschlagen",
+      "uploadFailedMessage": "Fehler beim Hochladen des Avatars. Bitte versuche es erneut."
+    },
+    "bio": {
+      "label": "Bio",
+      "placeholder": "Erzähle uns über dich (optional)"
+    },
+    "displayName": {
+      "label": "Anzeigename",
+      "placeholder": "Gib deinen Anzeigenamen ein"
+    },
     "label": "Profil",
-    "no_posts": "Dieser Nutzer hat noch nichts gepostet.",
+    "location": {
+      "label": "Standort",
+      "placeholder": "Stadt oder Region (optional)"
+    },
+    "no_posts": "Noch keine Beiträge",
+    "privacy": {
+      "allowDMs": "Direktnachrichten erlauben",
+      "complianceNotice": "Diese Option ist aufgrund deiner Region oder Altersverifizierung eingeschränkt.",
+      "showProfile": "Profil der Community zeigen",
+      "title": "Datenschutzeinstellungen"
+    },
     "restricted": {
-      "blocked": "Du kannst dieses Profil nicht sehen, da du blockiert wurdest.",
-      "deleted": "Dieses Profil ist nicht mehr verfügbar.",
-      "not_found": "Wir konnten dieses Profil nicht finden.",
-      "private": "Dieses Profil ist privat. Folgeanfragen müssen erst bestätigt werden.",
-      "title": "Profil nicht verfügbar"
+      "blocked": "Dieses Profil wurde blockiert",
+      "deleted": "Dieses Profil wurde gelöscht",
+      "not_found": "Profil nicht gefunden",
+      "private": "Dieses Profil ist privat",
+      "title": "Eingeschränktes Profil"
+    },
+    "save": "Profil speichern",
+    "saveFailed": "Speichern fehlgeschlagen",
+    "saveFailedMessage": "Fehler beim Speichern des Profils. Bitte versuche es erneut.",
+    "saveSuccess": "Profil gespeichert",
+    "saveSuccessMessage": "Dein Profil wurde erfolgreich aktualisiert.",
+    "statistics": {
+      "harvests": "Ernten",
+      "likes": "Likes",
+      "plants": "Pflanzen",
+      "posts": "Beiträge",
+      "syncing": "Statistiken werden synchronisiert...",
+      "title": "Kontostatistiken"
     }
   },
   "settings": {
@@ -2337,65 +2396,72 @@
     "english": "Englisch",
     "general": "Allgemein",
     "german": "Deutsch",
-    "github": "Github",
+    "github": "GitHub",
     "language": "Sprache",
     "links": "Links",
     "logout": "Abmelden",
     "more": "Mehr",
     "notifications": {
       "categories": {
-        "communityInteractions": "• Community-Interaktionen (Antworten auf deine Beiträge)",
-        "communityLikes": "• Community-Likes (Likes auf deine Beiträge)",
-        "cultivationReminders": "• Anbau-Erinnerungen (Aufgaben- und Grow-Erinnerungen)",
-        "systemUpdates": "• System-Updates (wichtige App-Aktualisierungen)",
+        "communityInteractions": "• Community-Interaktionen (Antworten auf Ihre Beiträge)",
+        "communityLikes": "• Community-Likes (Likes auf Ihre Beiträge)",
+        "cultivationReminders": "• Anbau-Erinnerungen (Aufgaben- und Wachstumserinnerungen)",
+        "systemUpdates": "• System-Updates (wichtige App-Updates)",
         "title": "Verfügbare Kategorien:"
       },
       "community": {
-        "likes": "Gefällt mir-Angaben",
-        "likesDescription": "Benachrichtigt dich, wenn jemand deine Beiträge liked (max. 1 pro Beitrag alle 5 Min).",
+        "likes": "Likes",
+        "likesDescription": "Benachrichtigungen erhalten, wenn jemand Ihre Beiträge liked (max. 1 pro Beitrag pro 5 Min.)",
         "repliesAndComments": "Antworten & Kommentare",
-        "repliesAndCommentsDescription": "Benachrichtigt dich, wenn jemand auf deine Beiträge antwortet.",
+        "repliesAndCommentsDescription": "Benachrichtigungen erhalten, wenn jemand auf Ihre Beiträge antwortet",
         "title": "Community-Benachrichtigungen"
       },
       "label": "Benachrichtigungen",
       "platformHelp": {
-        "android": "Unter Android kannst du einzelne Benachrichtigungskanäle in den Systemeinstellungen verwalten. Jede Kategorie lässt sich mit eigenen Tönen, Wichtigkeitsstufen und Verhalten anpassen.",
-        "ios": "Unter iOS kannst du Benachrichtigungseinstellungen wie Töne, Badges und Banner in den Systemeinstellungen anpassen."
+        "android": "Auf Android können Sie einzelne Benachrichtigungskanäle in den Systemeinstellungen verwalten. Jede Kategorie kann mit unterschiedlichen Tönen, Wichtigkeitsstufen und Verhaltensweisen angepasst werden.",
+        "ios": "Auf iOS können Sie Benachrichtigungseinstellungen einschließlich Töne, Abzeichen und Banner in den Systemeinstellungen anpassen."
       },
       "systemPermissions": {
-        "description": "Steuere, welche Benachrichtigungen du von GrowBro erhältst. Du kannst Community-Interaktionen, Aufgaben-Erinnerungen und System-Updates aktivieren oder deaktivieren.",
+        "description": "Steuern Sie, welche Benachrichtigungen Sie von GrowBro erhalten. Sie können Benachrichtigungen für Community-Interaktionen, Aufgabenerinnerungen und System-Updates aktivieren oder deaktivieren.",
         "openSettings": "Systemeinstellungen öffnen",
-        "title": "Systembenachrichtigungs-Berechtigungen"
+        "title": "System-Benachrichtigungsberechtigungen"
       },
       "title": "Benachrichtigungseinstellungen"
     },
     "privacy": "Datenschutzrichtlinie",
-    "privacy_and_data": "Datenschutz- und Datenkontrollen",
-    "privacy_policy": "Datenschutzerklärung",
+    "privacy_and_data": "Datenschutz & Datenkontrolle",
+    "privacy_policy": "Datenschutzrichtlinie",
     "privacy_section": "Datenschutz & Daten",
     "rate": "Bewerten",
     "save_changes": "Änderungen speichern",
     "security": "Sicherheit",
-    "share": "Teilen",
-    "support": "Support",
-    "support_us": "Unterstütze uns",
+    "status": {
+      "all_off": "Alle aus",
+      "all_on": "Alle an",
+      "biometrics_off": "Biometrie aus",
+      "biometrics_on": "Biometrie an",
+      "off": "AUS",
+      "on": "AN",
+      "partial": "Teilweise"
+    },
+    "support_us": "Unterstützen Sie uns",
     "sync": {
-      "auto_sync": "Auto-Sync (Vordergrund/Verbindung)",
+      "auto_sync": "Auto-Sync (Vordergrund/Konnektivität)",
       "background": "Hintergrund-Sync",
       "charging_only": "Nur beim Laden",
       "reset_local": "Lokalen Cache zurücksetzen",
-      "reset_local_body": "Dies löscht die lokale Datenbank dauerhaft. Deine Cloud-Daten bleiben erhalten.",
+      "reset_local_body": "Dies leert die lokale Datenbank dauerhaft. Ihre Cloud-Daten bleiben intakt.",
       "reset_local_title": "Lokalen Cache zurücksetzen?",
-      "staleness_hours": "Veraltet ab (Stunden)",
+      "staleness_hours": "Veraltungsschwelle (Stunden)",
       "title": "Sync",
-      "wifi_only": "Nur Wi‑Fi"
+      "wifi_only": "Nur WLAN"
     },
     "terms": "Nutzungsbedingungen",
     "theme": {
       "dark": "Dunkel",
       "light": "Hell",
       "system": "System",
-      "title": "Thema"
+      "title": "Design"
     },
     "title": "Einstellungen",
     "version": "Version",

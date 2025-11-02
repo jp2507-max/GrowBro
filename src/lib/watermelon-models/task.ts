@@ -16,6 +16,7 @@ export class TaskModel extends Model {
   @text('reminder_at_utc') reminderAtUtc?: string;
   @text('plant_id') plantId?: string;
   @text('status') status!: TaskStatus;
+  @field('position') position?: number;
   @date('completed_at') completedAt?: Date;
   @json('metadata', (raw) => raw as TaskMetadata)
   metadata!: TaskMetadata;

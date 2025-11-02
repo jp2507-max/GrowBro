@@ -6,114 +6,114 @@ This implementation plan breaks down the User Profile & Settings Shell feature i
 
 ## Task List
 
-- [ ] 1. Set up data models and database schema
-- [ ] 1.1 Create Supabase migration for profiles, notification_preferences, legal_acceptances, account_deletion_requests, bug_reports, feedback, and audit_logs tables
+- [x] 1. Set up data models and database schema
+- [x] 1.1 Create Supabase migration for profiles, notification_preferences, legal_acceptances, account_deletion_requests, bug_reports, feedback, and audit_logs tables
   - Write SQL migration file with proper constraints, indexes, and RLS policies
   - Test migration on local Supabase instance
   - _Requirements: 1.7, 2.1, 3.1, 4.1, 5.1, 6.1, 7.1, 8.1, 9.1, 10.1, 11.1, 12.6_
 
-- [ ] 1.2 Add WatermelonDB schema for profiles and notification_preferences models
+- [x] 1.2 Add WatermelonDB schema for profiles and notification_preferences models
   - Extend `src/lib/watermelon-schema.ts` with new table definitions
   - Create WatermelonDB model classes in `src/lib/watermelon-models/`
   - Add migration for existing databases
   - _Requirements: 9.6, 4.7_
 
-- [ ] 1.3 Create TypeScript interfaces for all settings-related data structures
+- [x] 1.3 Create TypeScript interfaces for all settings-related data structures
   - Define interfaces in `src/types/settings.ts`
   - Include UserProfile, NotificationPreferences, SecuritySettings, LegalDocument, BugReport, Feedback, AuditLogEntry
   - _Requirements: 2.1, 3.1, 4.1, 5.1, 6.1, 7.1, 8.1, 9.1, 10.1, 11.1_
 
-- [ ] 1.4 Add RLS policies, indexes, and storage rules
+- [x] 1.4 Add RLS policies, indexes, and storage rules
   - Enable RLS on all new tables (profiles, notification_preferences, legal_acceptances, account_deletion_requests, bug_reports, feedback, audit_logs)
   - Write row filters: `user_id = auth.uid()` where applicable; allow INSERT/SELECT/UPDATE only for owner; audit_logs INSERT allowed for service role only
   - Create indexes: notification_preferences (user_id, device_id) UNIQUE + idx on last_updated; legal_acceptances (user_id, document_type, version) UNIQUE; bug_reports idx on created_at + status; audit_logs idx on user_id + created_at + event_type
   - Supabase Storage: create bucket `avatars` with RLS policy restricting path `avatars/{auth.uid()}/*` to owner; signed URL expiry ≤ 15m
   - _Requirements: 12.6, 5.4, 9.5, 11.6_
 
-- [ ] 1.5 Implement server-side rate limiting
+- [x] 1.5 Implement server-side rate limiting
   - Deletion requests: limit 1 pending per user; reject new until status != 'pending' OR scheduled_for < now
   - Bug reports/feedback: throttle by (user_id, 5/min) and (ip, 20/min) via Edge Function guard
   - _Requirements: 6.11, 7.8_
 
-- [ ] 1.6 Add schema hardening with constraints
+- [x] 1.6 Add schema hardening with constraints
   - CHECK constraints: notification_preferences.custom_reminder_minutes BETWEEN 1 AND 1440 when timing = 'custom'
   - Enforce lowercase locale via trigger
   - Validate version as semver pattern
   - _Requirements: 4.5, 8.3_
 
-- [ ] 2. Implement onboarding flow enhancements
-- [ ] 2.1 Create LegalConfirmationModal component
+- [x] 2. Implement onboarding flow enhancements
+- [x] 2.1 Create LegalConfirmationModal component
   - Build modal UI with scrollable legal documents and checkboxes
   - Implement checkbox state management
   - Add "I Agree" button with disabled state until all checked
   - _Requirements: 1.5, 1.6, 1.9_
 
-- [ ] 2.2 Create Zustand store for legal acceptances
+- [x] 2.2 Create Zustand store for legal acceptances
   - Implement store in `src/lib/compliance/legal-acceptances.ts`
   - Add persistence to MMKV storage
   - Include version tracking and re-acceptance logic
   - _Requirements: 1.7, 1.9, 1.11, 8.7_
 
-- [ ] 2.3 Implement onboarding resume logic
+- [x] 2.3 Implement onboarding resume logic
   - Track current onboarding step in storage
   - Resume from last incomplete step on app launch
   - Handle interruptions gracefully
   - _Requirements: 1.10_
 
-- [ ] 2.4 Add age policy fallback for unknown regions
+- [x] 2.4 Add age policy fallback for unknown regions
   - Implement region detection logic
   - Apply strictest threshold (21+) when region unknown
   - _Requirements: 1.8_
 
-- [ ] 2.5 Implement onboarding re-acceptance on major legal version bump
+- [x] 2.5 Implement onboarding re-acceptance on major legal version bump
   - At app start: compare accepted versions vs current
   - Present blocking modal for major bump; banner for minor/patch
   - Persist accepted versions in Zustand + backend
   - _Requirements: 1.9, 8.7_
 
-- [ ] 2.6 Add onboarding resume state persistence
+- [x] 2.6 Add onboarding resume state persistence
   - Persist current step in MMKV
   - Resume exactly where left off if app quits/crashes
   - _Requirements: 1.10_
 
-- [ ] 3. Enhance main settings hub
-- [ ] 3.1 Create ProfileHeader component
+- [x] 3. Enhance main settings hub
+- [x] 3.1 Create ProfileHeader component
   - Display avatar, display name, and statistics
   - Implement tap navigation to profile edit
   - Add loading and error states
   - _Requirements: 9.1, 10.1, 10.2_
 
-- [ ] 3.2 Add section status previews to settings hub
+- [x] 3.2 Add section status previews to settings hub
   - Show notification summary (ON/OFF, quiet hours)
   - Show privacy summary (All off/Partial/All on)
   - Show current language in native form
   - Show security status (biometrics, last password change)
   - _Requirements: 2.5, 3.1, 4.1, 5.2, 11.1_
 
-- [ ] 3.3 Implement inline error surfaces for sync failures
+- [x] 3.3 Implement inline error surfaces for sync failures
   - Display non-blocking error rows
   - Add "Retry" action button
   - Show last sync attempt timestamp
   - _Requirements: 2.8_
 
-- [ ] 3.4 Add offline badges for network-dependent features
+- [x] 3.4 Add offline badges for network-dependent features
   - Detect online/offline status
   - Display "Offline" badge on relevant items
   - Disable server-side actions when offline
   - _Requirements: 2.6, 2.9_
 
-- [ ] 3.5 Implement deep linking support
+- [x] 3.5 Implement deep linking support
   - Add route handlers for all settings deep links
   - Preserve back navigation to main hub
   - Test all deep link routes
   - _Requirements: 2.7_
 
-- [ ]\* 3.6 Write integration tests for deep links
+- [x]\* 3.6 Write integration tests for deep links
   - Test each settings deep link routing
   - Ensure back navigation returns to hub
   - _Requirements: 2.7_
 
-- [ ] 3.7 Implement section status summaries
+- [x] 3.7 Implement section status summaries
   - Notifications: Show ON/OFF + quiet hours window
   - Privacy: Show "All off" | "Partial" | "All on"
   - Security: Show "Biometrics on/off" + last password change

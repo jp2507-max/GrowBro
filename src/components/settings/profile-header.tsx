@@ -1,0 +1,118 @@
+/**
+ * ProfileHeader component
+ *
+ * Displays user profile summary with avatar, display name, and key statistics
+ * in the settings hub. Requirements: 9.1, 10.1, 10.2
+ */
+
+import { useRouter } from 'expo-router';
+import React from 'react';
+
+import type { ProfileStatistics } from '@/types/settings';
+
+import { Image, Pressable, Text, View } from '../ui';
+
+interface ProfileHeaderProps {
+  displayName?: string;
+  avatarUrl?: string;
+  statistics?: ProfileStatistics;
+  isLoading?: boolean;
+  testID?: string;
+}
+
+export function ProfileHeader({
+  displayName,
+  avatarUrl,
+  statistics,
+  isLoading = false,
+  testID = 'profile-header',
+}: ProfileHeaderProps): React.ReactElement {
+  const router = useRouter();
+
+  const handlePress = () => {
+    router.push('/settings/profile');
+  };
+
+  if (isLoading) {
+    return (
+      <View className="px-4 py-3" testID={`${testID}-loading`}>
+        <View className="flex-row items-center gap-4">
+          <View className="size-16 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+          <View className="flex-1 gap-2">
+            <View className="h-5 w-32 rounded bg-neutral-200 dark:bg-neutral-700" />
+            <View className="h-4 w-48 rounded bg-neutral-200 dark:bg-neutral-700" />
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  const initials = displayName
+    ? displayName
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+    : '?';
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={handlePress}
+      className="px-4 py-3 active:opacity-70"
+      testID={testID}
+    >
+      <View className="flex-row items-center gap-4">
+        {avatarUrl ? (
+          <Image
+            source={{ uri: avatarUrl }}
+            className="size-16 rounded-full"
+            contentFit="cover"
+            testID={`${testID}-avatar`}
+          />
+        ) : (
+          <View
+            className="size-16 items-center justify-center rounded-full bg-primary-200 dark:bg-primary-800"
+            testID={`${testID}-avatar-placeholder`}
+          >
+            <Text className="text-2xl font-bold text-primary-700 dark:text-primary-300">
+              {initials}
+            </Text>
+          </View>
+        )}
+
+        <View className="flex-1">
+          <Text
+            className="text-lg font-semibold text-neutral-900 dark:text-neutral-100"
+            testID={`${testID}-display-name`}
+          >
+            {displayName || 'Set your profile'}
+          </Text>
+
+          {statistics && (
+            <View className="mt-1 flex-row gap-4" testID={`${testID}-stats`}>
+              <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+                {statistics.plantsCount}{' '}
+                {statistics.plantsCount === 1 ? 'plant' : 'plants'}
+              </Text>
+              <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+                {statistics.harvestsCount}{' '}
+                {statistics.harvestsCount === 1 ? 'harvest' : 'harvests'}
+              </Text>
+              <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+                {statistics.postsCount}{' '}
+                {statistics.postsCount === 1 ? 'post' : 'posts'}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Chevron indicator */}
+        <View className="ml-auto">
+          <Text className="text-neutral-400 dark:text-neutral-500">›</Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+}

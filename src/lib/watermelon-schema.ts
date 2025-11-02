@@ -1,7 +1,7 @@
 import { appSchema as createSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const appSchema = createSchema({
-  version: 27,
+  version: 29,
   tables: [
     tableSchema({
       name: 'series',
@@ -54,6 +54,7 @@ export const appSchema = createSchema({
         { name: 'reminder_at_utc', type: 'string', isOptional: true },
         { name: 'plant_id', type: 'string', isOptional: true },
         { name: 'status', type: 'string' },
+        { name: 'position', type: 'number', isOptional: true, isIndexed: true },
         { name: 'completed_at', type: 'number', isOptional: true },
         { name: 'metadata', type: 'string' },
         { name: 'playbook_id', type: 'string', isOptional: true },
@@ -787,6 +788,38 @@ export const appSchema = createSchema({
         { name: 'fallback_reason', type: 'string', isOptional: true },
         { name: 'metadata', type: 'string' },
         { name: 'created_at', type: 'number', isIndexed: true },
+      ],
+    }),
+    tableSchema({
+      name: 'profiles',
+      columns: [
+        { name: 'user_id', type: 'string', isIndexed: true },
+        { name: 'display_name', type: 'string' },
+        { name: 'bio', type: 'string', isOptional: true },
+        { name: 'avatar_url', type: 'string', isOptional: true },
+        { name: 'location', type: 'string', isOptional: true },
+        { name: 'show_profile_to_community', type: 'boolean' },
+        { name: 'allow_direct_messages', type: 'boolean' },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'notification_preferences',
+      columns: [
+        { name: 'user_id', type: 'string', isIndexed: true },
+        { name: 'task_reminders', type: 'boolean' },
+        { name: 'task_reminder_timing', type: 'string' },
+        { name: 'custom_reminder_minutes', type: 'number', isOptional: true },
+        { name: 'harvest_alerts', type: 'boolean' },
+        { name: 'community_activity', type: 'boolean' },
+        { name: 'system_updates', type: 'boolean' },
+        { name: 'marketing', type: 'boolean' },
+        { name: 'quiet_hours_enabled', type: 'boolean' },
+        { name: 'quiet_hours_start', type: 'string', isOptional: true },
+        { name: 'quiet_hours_end', type: 'string', isOptional: true },
+        { name: 'last_updated', type: 'number' },
+        { name: 'device_id', type: 'string' },
       ],
     }),
   ],

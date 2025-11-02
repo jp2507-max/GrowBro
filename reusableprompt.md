@@ -1,12 +1,12 @@
-TASK_ID: {12} with subtasks (make sure task with sub task is fully implemented)
+TASK_ID: {4} with subtasks (make sure task with sub task is fully implemented)
 AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the plan
 
 CONTEXT
 
-- Feature: 23. authentication-account-lifecycle
-- Task index: .kiro\specs\23. authentication-account-lifecycle\tasks.md
-- Design spec: .kiro\specs\23. authentication-account-lifecycle\design.md
-- Requirements spec: .kiro\specs\23. authentication-account-lifecycle\requirements.md
+- Feature: 24. user-profile-settings-shell
+- Task index: .kiro\specs\24. user-profile-settings-shell\tasks.md
+- Design spec: .kiro\specs\24. user-profile-settings-shell\design.md
+- Requirements spec: .kiro\specs\24. user-profile-settings-shell\requirements.md
 
 CONTRACT (outputs)
 
@@ -44,9 +44,8 @@ AUTO-CONTINUE
 VERIFICATION (local)
 
 - pnpm -s tsc --noEmit
-- pnpm -s lint
-- (optional) pnpm eslint <paths to files touched in this task>
-- pnpm -s test
+- pnpm -s lint <paths to files touched in this task>
+- pnpm -s test <paths to files touched in this task>
 
 GUARDRAILS (must follow)
 

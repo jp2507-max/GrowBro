@@ -50,6 +50,7 @@ export type Task = {
   reminderAtUtc?: string; // ISO UTC
   plantId?: string;
   status: TaskStatus;
+  position?: number;
   completedAt?: string; // ISO timestamptz
   metadata: TaskMetadata;
   serverRevision?: number; // Monotonic int for conflict resolution

@@ -33,6 +33,11 @@ import { initAuthStorage } from '@/lib/auth/auth-storage';
 import { useRealtimeSessionRevocation } from '@/lib/auth/session-manager';
 import { updateActivity } from '@/lib/auth/session-timeout';
 import { useDeepLinking } from '@/lib/auth/use-deep-linking';
+import {
+  checkLegalVersionBumps,
+  hydrateLegalAcceptances,
+} from '@/lib/compliance/legal-acceptances';
+import { hydrateOnboardingState } from '@/lib/compliance/onboarding-state';
 import { useRootStartup } from '@/lib/hooks/use-root-startup';
 import { initializeJanitor } from '@/lib/media/photo-janitor';
 import { getReferencedPhotoUris } from '@/lib/media/photo-storage-helpers';
@@ -171,6 +176,8 @@ function RootLayout(): React.ReactElement {
         await initAuthStorage();
         hydrateAuth();
         hydrateAgeGate();
+        hydrateLegalAcceptances();
+        hydrateOnboardingState();
         setIsAuthReady(true);
       } catch (error) {
         console.error(
@@ -184,6 +191,21 @@ function RootLayout(): React.ReactElement {
 
     initializeAuth();
   }, []);
+
+  // Check for legal version bumps and redirect to age-gate if needed
+  React.useEffect(() => {
+    if (!isAuthReady) return;
+
+    const versionCheck = checkLegalVersionBumps();
+    if (versionCheck.needsBlocking) {
+      // Force user to re-accept legal documents by redirecting to age-gate
+      // The age-gate flow will show the legal confirmation modal
+      console.log(
+        '[RootLayout] Legal version bump detected, requiring re-acceptance'
+      );
+      // This will be handled by the routing logic below
+    }
+  }, [isAuthReady]);
 
   // Initialize deep linking for auth flows
   useDeepLinking();

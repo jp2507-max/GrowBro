@@ -552,6 +552,8 @@
     "verifying_email": "Verifying email..."
   },
   "calendar": {
+    "drag_handle_hint": "Long-press and drag to reorder tasks within this day.",
+    "drag_handle_label": "Drag handle for reordering",
     "drag_item_hint": "Long-press then drag to reschedule. Double-tap to open move menu.",
     "drag_item_label": "Drag {{title}}",
     "ec_range": "EC@25°C target: {{min}}–{{max}} mS/cm",
@@ -582,7 +584,19 @@
     "age_gate_year": "Year",
     "educational_badge": "Educational only",
     "educational_banner_body": "GrowBro does not facilitate any commerce or transactions. All features remain educational and policy compliant.",
-    "educational_banner_title": "Educational cannabis guidance only"
+    "educational_banner_title": "Educational cannabis guidance only",
+    "legal_confirmation_accept_all": "I Agree to All",
+    "legal_confirmation_all_required": "Please accept all agreements to continue",
+    "legal_confirmation_cannabis_label": "I understand and agree to the Cannabis Cultivation Responsibility Statement",
+    "legal_confirmation_cannabis_summary": "Educational guidance only. You are responsible for knowing and following local laws regarding cannabis cultivation.",
+    "legal_confirmation_decline": "Decline",
+    "legal_confirmation_privacy_label": "I accept the Privacy Policy",
+    "legal_confirmation_privacy_summary": "How we collect, use, and protect your personal information in compliance with GDPR and ePrivacy regulations.",
+    "legal_confirmation_subtitle": "Please review and accept the following documents to continue",
+    "legal_confirmation_terms_label": "I accept the Terms of Service",
+    "legal_confirmation_terms_summary": "Terms governing your use of GrowBro, including acceptable use, content policies, and account management.",
+    "legal_confirmation_title": "Legal Agreements",
+    "legal_confirmation_view_full": "View full document"
   },
   "card": {
     "comment_plural": "comments",
@@ -2319,14 +2333,59 @@
     }
   },
   "profile": {
+    "avatar": {
+      "chooseLibrary": "Choose from Library",
+      "label": "Profile Avatar",
+      "permissionDenied": "Permission Denied",
+      "permissionMessage": "Camera permission is required to take photos.",
+      "placeholder": "👤",
+      "remove": "Remove Picture",
+      "subtitle": "Select a new profile picture",
+      "takePhoto": "Take Photo",
+      "tapToChange": "Tap to change",
+      "title": "Change Avatar",
+      "uploadFailed": "Upload Failed",
+      "uploadFailedMessage": "Failed to upload avatar. Please try again."
+    },
+    "bio": {
+      "label": "Bio",
+      "placeholder": "Tell us about yourself (optional)"
+    },
+    "displayName": {
+      "label": "Display Name",
+      "placeholder": "Enter your display name"
+    },
     "label": "Profile",
-    "no_posts": "This user hasn't posted yet.",
+    "location": {
+      "label": "Location",
+      "placeholder": "City or region (optional)"
+    },
+    "no_posts": "No posts yet",
+    "privacy": {
+      "allowDMs": "Allow direct messages",
+      "complianceNotice": "This option is restricted based on your region or age verification.",
+      "showProfile": "Show profile to community",
+      "title": "Privacy Settings"
+    },
     "restricted": {
-      "blocked": "You can't view this profile because they have blocked you.",
-      "deleted": "This profile is no longer available.",
-      "not_found": "We couldn't find this profile.",
-      "private": "This profile is private. Follow requests must be approved before you can view it.",
-      "title": "Profile unavailable"
+      "blocked": "This profile has been blocked",
+      "deleted": "This profile has been deleted",
+      "not_found": "Profile not found",
+      "private": "This profile is private",
+      "title": "Restricted Profile"
+    },
+    "save": "Save Profile",
+    "saveFailed": "Save Failed",
+    "saveFailedMessage": "Failed to save profile. Please try again.",
+    "saveSuccess": "Profile Saved",
+    "saveSuccessMessage": "Your profile has been updated successfully.",
+    "statistics": {
+      "harvests": "Harvests",
+      "likes": "Likes",
+      "plants": "Plants",
+      "posts": "Posts",
+      "syncing": "Syncing statistics...",
+      "title": "Account Statistics"
     }
   },
   "settings": {
@@ -2376,8 +2435,15 @@
     "rate": "Rate",
     "save_changes": "Save Changes",
     "security": "Security",
-    "share": "Share",
-    "support": "Support",
+    "status": {
+      "all_off": "All off",
+      "all_on": "All on",
+      "biometrics_off": "Biometrics off",
+      "biometrics_on": "Biometrics on",
+      "off": "OFF",
+      "on": "ON",
+      "partial": "Partial"
+    },
     "support_us": "Support Us",
     "sync": {
       "auto_sync": "Auto-sync (foreground/connectivity)",

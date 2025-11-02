@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import * as React from 'react';
 import { StyleSheet } from 'react-native';
 
+import LegalConfirmationModal from '@/components/legal-confirmation-modal';
 import {
   Button,
   FocusAwareStatusBar,
@@ -16,6 +17,10 @@ import {
   useAgeGate,
   verifyAgeGate,
 } from '@/lib/compliance/age-gate';
+import {
+  completeOnboardingStep,
+  useOnboardingState,
+} from '@/lib/compliance/onboarding-state';
 import { translate } from '@/lib/i18n';
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -32,15 +37,20 @@ type BirthDateInputsProps = {
 function useAgeGateForm() {
   const router = useRouter();
   const status = useAgeGate.status();
+  const currentStep = useOnboardingState.currentStep();
   const [birthDay, setBirthDay] = React.useState('');
   const [birthMonth, setBirthMonth] = React.useState('');
   const [birthYear, setBirthYear] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
+  const [showLegalModal, setShowLegalModal] = React.useState(false);
 
   React.useEffect(() => {
-    if (status === 'verified') router.replace('/(app)');
-  }, [router, status]);
+    // If age is verified and legal confirmation is completed, navigate to app
+    if (status === 'verified' && currentStep === 'consent-modal') {
+      router.replace('/(app)');
+    }
+  }, [router, status, currentStep]);
 
   const handleSubmit = React.useCallback(async () => {
     if (submitting) return;
@@ -61,11 +71,26 @@ function useAgeGateForm() {
       }
       setError(null);
       startAgeGateSession();
-      router.replace('/(app)');
+      completeOnboardingStep('age-gate');
+      // Show legal confirmation modal instead of navigating directly
+      setShowLegalModal(true);
     } finally {
       setSubmitting(false);
     }
-  }, [birthDay, birthMonth, birthYear, router, submitting]);
+  }, [birthDay, birthMonth, birthYear, submitting]);
+
+  const handleLegalAccept = React.useCallback(() => {
+    completeOnboardingStep('legal-confirmation');
+    setShowLegalModal(false);
+    // User will see consent modal next or app if consent already given
+    router.replace('/(app)');
+  }, [router]);
+
+  const handleLegalDecline = React.useCallback(() => {
+    // Reset age gate and close legal modal
+    setShowLegalModal(false);
+    setError(translate('cannabis.legal_confirmation_all_required'));
+  }, []);
 
   return {
     birthDay,
@@ -73,10 +98,13 @@ function useAgeGateForm() {
     birthYear,
     error,
     submitting,
+    showLegalModal,
     setBirthDay,
     setBirthMonth,
     setBirthYear,
     handleSubmit,
+    handleLegalAccept,
+    handleLegalDecline,
   };
 }
 
@@ -87,11 +115,25 @@ export default function AgeGateScreen(): React.ReactElement {
     birthYear,
     error,
     submitting,
+    showLegalModal,
     setBirthDay,
     setBirthMonth,
     setBirthYear,
     handleSubmit,
+    handleLegalAccept,
+    handleLegalDecline,
   } = useAgeGateForm();
+
+  // Show legal confirmation modal if age verification passed
+  if (showLegalModal) {
+    return (
+      <LegalConfirmationModal
+        isVisible={showLegalModal}
+        onAccept={handleLegalAccept}
+        onDecline={handleLegalDecline}
+      />
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900">

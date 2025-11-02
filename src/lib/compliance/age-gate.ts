@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { getDetectedRegion } from '@/lib/compliance/regional-compliance';
 import { storage } from '@/lib/storage';
 import { createSelectors } from '@/lib/utils';
 
@@ -7,6 +8,14 @@ const AGE_GATE_STATE_KEY = 'compliance.ageGate.state';
 const AGE_GATE_AUDIT_KEY = 'compliance.ageGate.audit';
 const MAX_AUDIT_EVENTS = 100;
 const RE_VERIFICATION_MONTHS = 12;
+
+// Age thresholds by region (default 18+, some regions require 21+)
+const AGE_THRESHOLDS: Record<string, number> = {
+  US: 21, // United States - conservative approach
+  CA: 19, // Canada - varies by province, using conservative
+  DEFAULT: 18, // Default for most regions
+  UNKNOWN: 21, // Strictest when region unknown
+};
 
 export type AgeGateMethod = 'self-certification' | 'document';
 export type AgeGateStatus = 'unknown' | 'verified' | 'blocked';
@@ -215,11 +224,18 @@ function createVerifyFunction(
     }
 
     const age = computeAge(birthDate, now);
-    if (age < 18) {
+
+    // Determine age threshold based on region
+    const region = input.region || getDetectedRegion();
+    const requiredAge = region
+      ? AGE_THRESHOLDS[region.toUpperCase()] || AGE_THRESHOLDS.DEFAULT
+      : AGE_THRESHOLDS.UNKNOWN; // Apply strictest when region unknown
+
+    if (age < requiredAge) {
       appendAudit({
         timestamp,
         type: 'verify-denied',
-        detail: `age:${age}`,
+        detail: `age:${age},required:${requiredAge},region:${region || 'unknown'}`,
       });
       set({
         status: 'blocked',
@@ -360,4 +376,11 @@ export function getAgeGateState(): AgeGateStoreState {
 
 export function checkAgeGateExpiration(): boolean {
   return ageGateStore.getState().checkExpiration();
+}
+
+export function getRequiredAge(region?: string): number {
+  const detectedRegion = region || getDetectedRegion();
+  return detectedRegion
+    ? AGE_THRESHOLDS[detectedRegion.toUpperCase()] || AGE_THRESHOLDS.DEFAULT
+    : AGE_THRESHOLDS.UNKNOWN;
 }
