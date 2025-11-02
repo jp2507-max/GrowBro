@@ -40,12 +40,14 @@ export { useDeleteAccount } from './use-delete-account';
 
 // Session Management
 export {
-  deriveSessionKey,
   useCheckSessionRevocation,
   useRevokeAllOtherSessions,
   useRevokeSession,
   useSessions,
 } from './use-sessions';
+
+// Utility functions
+export { deriveSessionKey } from '@/lib/auth/utils';
 
 // Error handling
 export {

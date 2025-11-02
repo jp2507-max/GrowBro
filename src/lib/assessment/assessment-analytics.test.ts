@@ -25,7 +25,7 @@ describe('AssessmentAnalytics', () => {
 
   describe('getPerClassMetrics', () => {
     test('aggregates metrics correctly with multiple feedbacks per assessment', async () => {
-      const mockAssessments: AssessmentModel[] = [
+      const mockAssessments: Partial<AssessmentModel>[] = [
         {
           id: '1',
           status: 'completed',
@@ -96,7 +96,7 @@ describe('AssessmentAnalytics', () => {
     });
 
     test('handles no feedbacks', async () => {
-      const mockAssessments: AssessmentModel[] = [
+      const mockAssessments: Partial<AssessmentModel>[] = [
         {
           id: '1',
           status: 'completed',
@@ -130,7 +130,7 @@ describe('AssessmentAnalytics', () => {
       const startDate = new Date('2024-01-01');
       const endDate = new Date('2024-01-31');
 
-      const mockAssessments: AssessmentModel[] = [
+      const mockAssessments: Partial<AssessmentModel>[] = [
         {
           id: '1',
           status: 'completed',
@@ -184,7 +184,7 @@ describe('AssessmentAnalytics', () => {
     });
 
     test('applies pagination limits', async () => {
-      const mockAssessments: AssessmentModel[] = [
+      const mockAssessments: Partial<AssessmentModel>[] = [
         {
           id: '1',
           status: 'completed',
@@ -217,7 +217,7 @@ describe('AssessmentAnalytics', () => {
     });
 
     test('enforces maximum limit cap', async () => {
-      const mockAssessments: AssessmentModel[] = [];
+      const mockAssessments: Partial<AssessmentModel>[] = [];
 
       const mockAssessmentCollection = {
         query: jest.fn().mockReturnThis(),
@@ -244,7 +244,7 @@ describe('AssessmentAnalytics', () => {
 
     test('filters feedback by assessment IDs and date range', async () => {
       const startDate = new Date('2024-01-01');
-      const mockAssessments: AssessmentModel[] = [
+      const mockAssessments: Partial<AssessmentModel>[] = [
         {
           id: '1',
           status: 'completed',
@@ -299,7 +299,7 @@ describe('AssessmentAnalytics', () => {
 
   describe('getModelVersionDistribution', () => {
     test('returns version distribution for all completed assessments', async () => {
-      const mockAssessments: AssessmentModel[] = [
+      const mockAssessments: Partial<AssessmentModel>[] = [
         {
           id: '1',
           status: 'completed',
@@ -318,8 +318,8 @@ describe('AssessmentAnalytics', () => {
         {
           id: '4',
           status: 'completed',
-          modelVersion: null, // Should be counted as 'unknown'
-        } as AssessmentModel,
+          modelVersion: undefined, // Should be counted as 'unknown'
+        } as Partial<AssessmentModel>,
       ];
 
       const mockCollection = {
@@ -344,19 +344,19 @@ describe('AssessmentAnalytics', () => {
     });
 
     test('applies limit when specified', async () => {
-      const mockAssessments: AssessmentModel[] = [
+      const mockAssessments: Partial<AssessmentModel>[] = [
         {
           id: '1',
           status: 'completed',
           modelVersion: 'v1.0',
           created_at: 1000,
-        } as AssessmentModel,
+        } as Partial<AssessmentModel>,
         {
           id: '2',
           status: 'completed',
           modelVersion: 'v2.0',
           created_at: 2000,
-        } as AssessmentModel,
+        } as Partial<AssessmentModel>,
       ];
 
       const mockCollection = {
@@ -408,7 +408,7 @@ describe('AssessmentAnalytics', () => {
 
   describe('getExecutionProviderDistribution', () => {
     test('returns provider distribution with default filters', async () => {
-      const mockTelemetry: AssessmentTelemetryModel[] = [
+      const mockTelemetry: Partial<AssessmentTelemetryModel>[] = [
         {
           id: '1',
           eventType: 'inference_started',
@@ -430,9 +430,9 @@ describe('AssessmentAnalytics', () => {
         {
           id: '4',
           eventType: 'inference_started',
-          executionProvider: null, // Should be counted as 'unknown'
+          executionProvider: undefined, // Should be counted as 'unknown'
           createdAt: new Date(),
-        } as AssessmentTelemetryModel,
+        } as Partial<AssessmentTelemetryModel>,
       ];
 
       const mockCollection = {
@@ -456,7 +456,7 @@ describe('AssessmentAnalytics', () => {
     });
 
     test('applies limit when specified', async () => {
-      const mockTelemetry: AssessmentTelemetryModel[] = [
+      const mockTelemetry: Partial<AssessmentTelemetryModel>[] = [
         {
           id: '1',
           eventType: 'inference_started',
@@ -534,7 +534,7 @@ describe('AssessmentAnalytics', () => {
     });
 
     test('filters non-inference_started events', async () => {
-      const mockTelemetry: AssessmentTelemetryModel[] = [
+      const mockTelemetry: Partial<AssessmentTelemetryModel>[] = [
         {
           id: '1',
           eventType: 'inference_started',

@@ -12,9 +12,9 @@ import * as Crypto from 'expo-crypto';
 import React from 'react';
 
 import type { UserSession } from '@/api/auth';
+import { deriveSessionKey } from '@/lib/auth/utils';
 
 import {
-  deriveSessionKey,
   useCheckSessionRevocation,
   useRevokeAllOtherSessions,
   useRevokeSession,
@@ -53,8 +53,13 @@ function createWrapper() {
     },
   });
 
-  return ({ children }: { children: React.ReactNode }) =>
-    React.createElement(QueryClientProvider, { client: queryClient }, children);
+  function Wrapper({ children }: { children: React.ReactNode }) {
+    return (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+  }
+
+  return Wrapper;
 }
 
 describe('Session Tracking Hooks', () => {
@@ -485,15 +490,11 @@ describe('Session Tracking Hooks', () => {
         wrapper: createWrapper(),
       });
 
-      // Manually trigger the query
-      await result.current.refetch();
+      // Manually trigger the query and wait for it to complete
+      const refetchResult = await result.current.refetch();
 
       // Assert
-      await waitFor(() => {
-        expect(result.current.isSuccess).toBe(true);
-      });
-
-      expect(result.current.data).toBe(true); // Session is revoked
+      expect(refetchResult.data).toBe(true);
       expect(supabase.from).toHaveBeenCalledWith('user_sessions');
       expect(mockSelect).toHaveBeenCalledWith('revoked_at');
       expect(mockEq).toHaveBeenCalledWith('session_key', sessionKey);
@@ -539,14 +540,11 @@ describe('Session Tracking Hooks', () => {
         wrapper: createWrapper(),
       });
 
-      await result.current.refetch();
+      // Manually trigger the query and wait for it to complete
+      const refetchResult = await result.current.refetch();
 
       // Assert
-      await waitFor(() => {
-        expect(result.current.isSuccess).toBe(true);
-      });
-
-      expect(result.current.data).toBe(false); // Session is active
+      expect(refetchResult.data).toBe(false);
     });
 
     it('should return false when no session exists', async () => {
@@ -561,14 +559,11 @@ describe('Session Tracking Hooks', () => {
         wrapper: createWrapper(),
       });
 
-      await result.current.refetch();
+      // Manually trigger the query and wait for it to complete
+      const refetchResult = await result.current.refetch();
 
       // Assert
-      await waitFor(() => {
-        expect(result.current.isSuccess).toBe(true);
-      });
-
-      expect(result.current.data).toBe(false);
+      expect(refetchResult.data).toBe(false);
       expect(Crypto.digestStringAsync).not.toHaveBeenCalled();
     });
 
@@ -612,14 +607,11 @@ describe('Session Tracking Hooks', () => {
         wrapper: createWrapper(),
       });
 
-      await result.current.refetch();
+      // Manually trigger the query and wait for it to complete
+      const refetchResult = await result.current.refetch();
 
       // Assert
-      await waitFor(() => {
-        expect(result.current.isSuccess).toBe(true);
-      });
-
-      expect(result.current.data).toBe(false);
+      expect(refetchResult.data).toBe(false);
     });
 
     it('should handle database error gracefully', async () => {
@@ -664,14 +656,11 @@ describe('Session Tracking Hooks', () => {
         wrapper: createWrapper(),
       });
 
-      await result.current.refetch();
+      // Manually trigger the query and wait for it to complete
+      const refetchResult = await result.current.refetch();
 
       // Assert
-      await waitFor(() => {
-        expect(result.current.isSuccess).toBe(true);
-      });
-
-      expect(result.current.data).toBe(false); // Don't block user on error
+      expect(refetchResult.data).toBe(false); // Don't block user on error
       expect(consoleSpy).toHaveBeenCalledWith(
         'Session revocation check error:',
         expect.any(Error)

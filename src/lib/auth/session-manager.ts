@@ -1,11 +1,10 @@
 import type { Session } from '@supabase/supabase-js';
 import { useEffect } from 'react';
 
-import { deriveSessionKey } from '@/api/auth';
-
 import { supabase } from '../supabase';
 import type { OfflineMode } from './index';
 import { useAuth } from './index';
+import { deriveSessionKey } from './utils';
 
 /**
  * Session Manager
@@ -220,7 +219,15 @@ function createSessionManager(): SessionManager {
 
         // Check if session has been revoked remotely
         // This ensures that session revocation from other devices forces sign-out
-        const isRevoked = await checkSessionRevocation(session.refresh_token);
+        const sessionKey = await deriveSessionKey(session.refresh_token);
+
+        const { data } = await supabase
+          .from('user_sessions')
+          .select('revoked_at')
+          .eq('session_key', sessionKey)
+          .maybeSingle();
+
+        const isRevoked = !!data?.revoked_at;
 
         if (isRevoked) {
           console.log('[SessionManager] Session has been revoked, signing out');

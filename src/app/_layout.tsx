@@ -122,17 +122,18 @@ if (Env.SENTRY_DSN && hasConsent('crashReporting') && !sentryInitialized) {
   void SDKGate.initializeSDK('sentry');
 
   // Configure auth-specific Sentry filtering for consent-aware error handling
-  import('@/lib/auth/auth-telemetry').then(({ configureSentryAuthFilter }) => {
-    configureSentryAuthFilter();
-  });
+  import('@/lib/auth/auth-telemetry')
+    .then(({ configureSentryAuthFilter }) => {
+      configureSentryAuthFilter();
+    })
+    .catch((error) => {
+      console.error('auth telemetry configuration failed:', error);
+      Sentry.captureException(error);
+    });
 }
 
 // Initialize auth storage before hydrating auth state
-(async () => {
-  await initAuthStorage();
-  hydrateAuth();
-  hydrateAgeGate();
-})();
+// Moved to RootLayout component to prevent module-level side effects
 loadSelectedTheme();
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -146,6 +147,7 @@ function RootLayout(): React.ReactElement {
   const ageGateStatus = useAgeGate.status();
   const sessionId = useAgeGate.sessionId();
   const [isI18nReady, setIsI18nReady] = React.useState(false);
+  const [isAuthReady, setIsAuthReady] = React.useState(false);
   const [showConsent, setShowConsent] = React.useState(false);
   useRootStartup(setIsI18nReady, isFirstTime);
 
@@ -160,6 +162,27 @@ function RootLayout(): React.ReactElement {
         ? { iosClientId: Env.GOOGLE_IOS_CLIENT_ID }
         : {}),
     });
+  }, []);
+
+  // Initialize auth storage and hydrate auth state
+  React.useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        await initAuthStorage();
+        hydrateAuth();
+        hydrateAgeGate();
+        setIsAuthReady(true);
+      } catch (error) {
+        console.error(
+          '[RootLayout] Auth storage initialization failed:',
+          error
+        );
+        // Set ready to true even on error to prevent blocking the app
+        setIsAuthReady(true);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
   // Initialize deep linking for auth flows
@@ -191,7 +214,7 @@ function RootLayout(): React.ReactElement {
     }
   }, [isI18nReady]);
 
-  if (!isI18nReady) return <BootSplash />;
+  if (!isI18nReady || !isAuthReady) return <BootSplash />;
 
   return (
     <Providers>

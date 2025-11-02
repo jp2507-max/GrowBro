@@ -1,28 +1,8 @@
-import * as Crypto from 'expo-crypto';
 import { createMutation, createQuery } from 'react-query-kit';
 
 import type { UserSession } from '@/api/auth';
+import { checkSessionRevocation, deriveSessionKey } from '@/lib/auth/utils';
 import { supabase } from '@/lib/supabase';
-
-/**
- * Derives a stable session key from a refresh token.
- * Uses SHA-256 hash to create a consistent identifier.
- *
- * @param refreshToken - The refresh token to hash
- * @returns SHA-256 hash of the refresh token
- */
-export async function deriveSessionKey(
-  refreshToken: string | undefined
-): Promise<string> {
-  if (!refreshToken) return '';
-
-  // Use SHA-256 to create a stable, non-reversible identifier
-  const hash = await Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    refreshToken
-  );
-  return hash;
-}
 
 // Fetch active sessions for current user
 export const useSessions = createQuery<UserSession[], void, Error>({
@@ -111,29 +91,8 @@ export const useCheckSessionRevocation = createQuery<boolean, void, Error>({
       return false;
     }
 
-    // Derive session key from current refresh token
-    const sessionKey = await deriveSessionKey(
-      sessionData.session.refresh_token
-    );
-    if (!sessionKey) {
-      return false;
-    }
-
-    // Check if this session key is revoked in user_sessions table
-    const { data, error } = await supabase
-      .from('user_sessions')
-      .select('revoked_at')
-      .eq('session_key', sessionKey)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Session revocation check error:', error);
-      // Don't block user on error
-      return false;
-    }
-
-    // Session is revoked if data exists and revoked_at is not null
-    return !!data?.revoked_at;
+    // Use shared revocation checking logic
+    return await checkSessionRevocation(sessionData.session.refresh_token);
   },
   // Don't run automatically, only when explicitly called
   enabled: false,
