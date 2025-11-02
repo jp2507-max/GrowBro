@@ -118,7 +118,7 @@ Deno.serve(async (req: Request) => {
           'x-shared-secret': Deno.env.get('PROCESS_SHARED_SECRET')!,
         },
         body: JSON.stringify({
-          emailHash,
+          email,
           lockedUntil: lockoutStatus.locked_until,
           ipAddress: truncatedIp,
           userAgent,
