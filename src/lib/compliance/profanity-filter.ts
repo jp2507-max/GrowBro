@@ -16,6 +16,10 @@ export interface ProfanityCheckResult {
  * This is a minimal list for demonstration. In production,
  * consider using a dedicated library like 'bad-words' or
  * server-side filtering for comprehensive coverage.
+ *
+ * Note: The client-side profanity filter is easily bypassable and provides minimal protection.
+ * This should be complemented with server-side validation in the Supabase RLS policies or edge functions.
+ * The current implementation serves more as a UX helper than actual content moderation.
  */
 const PROFANITY_PATTERNS = [
   /\b(fuck|shit|bitch|ass|cunt|dick|piss|bastard)\b/i,

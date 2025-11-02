@@ -8,6 +8,7 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 
+import { translate } from '@/lib';
 import type { ProfileStatistics } from '@/types/settings';
 
 import { Image, Pressable, Text, View } from '../ui';
@@ -87,22 +88,49 @@ export function ProfileHeader({
             className="text-lg font-semibold text-neutral-900 dark:text-neutral-100"
             testID={`${testID}-display-name`}
           >
-            {displayName || 'Set your profile'}
+            {displayName || translate('profile.setProfilePrompt')}
           </Text>
 
           {statistics && (
             <View className="mt-1 flex-row gap-4" testID={`${testID}-stats`}>
               <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-                {statistics.plantsCount}{' '}
-                {statistics.plantsCount === 1 ? 'plant' : 'plants'}
+                {statistics.plantsCount === 0
+                  ? translate('profile.statistics.plantsCount_zero', {
+                      count: statistics.plantsCount,
+                    })
+                  : statistics.plantsCount === 1
+                    ? translate('profile.statistics.plantsCount_one', {
+                        count: statistics.plantsCount,
+                      })
+                    : translate('profile.statistics.plantsCount_other', {
+                        count: statistics.plantsCount,
+                      })}
               </Text>
               <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-                {statistics.harvestsCount}{' '}
-                {statistics.harvestsCount === 1 ? 'harvest' : 'harvests'}
+                {statistics.harvestsCount === 0
+                  ? translate('profile.statistics.harvestsCount_zero', {
+                      count: statistics.harvestsCount,
+                    })
+                  : statistics.harvestsCount === 1
+                    ? translate('profile.statistics.harvestsCount_one', {
+                        count: statistics.harvestsCount,
+                      })
+                    : translate('profile.statistics.harvestsCount_other', {
+                        count: statistics.harvestsCount,
+                      })}
               </Text>
               <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-                {statistics.postsCount}{' '}
-                {statistics.postsCount === 1 ? 'post' : 'posts'}
+                {statistics.postsCount === 0
+                  ? translate('profile.statistics.postsCount_zero', {
+                      count: statistics.postsCount,
+                    })
+                  : statistics.postsCount === 1
+                    ? translate('profile.statistics.postsCount_one', {
+                        count: statistics.postsCount,
+                      })
+                    : translate('profile.statistics.postsCount_other', {
+                        count: statistics.postsCount,
+                      })}
               </Text>
             </View>
           )}
@@ -110,7 +138,9 @@ export function ProfileHeader({
 
         {/* Chevron indicator */}
         <View className="ml-auto">
-          <Text className="text-neutral-400 dark:text-neutral-500">›</Text>
+          <Text className="text-neutral-400 dark:text-neutral-500">
+            {translate('profile.chevron')}
+          </Text>
         </View>
       </View>
     </Pressable>

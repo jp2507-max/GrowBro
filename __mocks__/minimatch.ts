@@ -5,9 +5,11 @@
 
 export function minimatch(path: string, pattern: string): boolean {
   // Convert glob pattern to regex
+  // First escape all regex special characters, then convert glob wildcards
   const regexPattern = pattern
-    .replace(/\*/g, '.*') // Replace * with .*
-    .replace(/\?/g, '.'); // Replace ? with .
+    .replace(/[.+^${}()|[\]\\\/]/g, '\\$&') // Escape regex special characters
+    .replace(/\\\*/g, '.*') // Replace escaped * with .*
+    .replace(/\\\?/g, '.'); // Replace escaped ? with .
 
   const regex = new RegExp(`^${regexPattern}$`);
   return regex.test(path);

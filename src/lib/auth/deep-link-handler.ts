@@ -62,7 +62,7 @@ export function parseDeepLink(url: string): ParsedDeepLink {
 
     return {
       host: parsed.hostname,
-      path: parsed.pathname,
+      path: parsed.pathname === '/' ? '' : parsed.pathname,
       params: parsed.searchParams,
     };
   } catch (error) {
@@ -393,22 +393,25 @@ async function handleAuthDeepLinks(
  * @param fullPath - The full navigation path
  */
 function handleNavigationDeepLink(fullPath: string): void {
+  // Normalize path by removing trailing slash (except for root path)
+  const normalizedPath = fullPath === '/' ? '/' : fullPath.replace(/\/$/, '');
+
   const authState = useAuth.getState();
 
   // Check if user is signed in
   if (authState.status === 'signOut') {
     // User not signed in - check if path requires auth
-    if (isProtectedDeepLinkPath(fullPath)) {
+    if (isProtectedDeepLinkPath(normalizedPath)) {
       // Stash the link for after sign in
-      stashPendingDeepLink(fullPath);
+      stashPendingDeepLink(normalizedPath);
       router.replace('/login');
     } else {
       // Navigate directly to public route
-      router.push(fullPath);
+      router.push(normalizedPath);
     }
   } else {
     // User is signed in - navigate directly
-    router.push(fullPath);
+    router.push(normalizedPath);
   }
 }
 

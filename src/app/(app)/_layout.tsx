@@ -3,7 +3,9 @@ import React from 'react';
 
 import { CustomTabBar } from '@/components/navigation/custom-tab-bar';
 import { SharedHeader } from '@/components/navigation/shared-header';
-import { Pressable, Text } from '@/components/ui';
+import { LegalUpdateBanner } from '@/components/settings/legal-update-banner';
+import { RestoreAccountBanner } from '@/components/settings/restore-account-banner';
+import { Pressable, Text, View } from '@/components/ui';
 import {
   Calendar as CalendarIcon,
   Feed as FeedIcon,
@@ -15,6 +17,8 @@ import {
 } from '@/components/ui/icons';
 import { useAgeGate, useAuth, useIsFirstTime } from '@/lib';
 import { AnimatedScrollListProvider } from '@/lib/animations/animated-scroll-list-provider';
+import { checkLegalVersionBumps } from '@/lib/compliance/legal-acceptances';
+import { usePendingDeletion } from '@/lib/hooks/use-pending-deletion';
 import { translate } from '@/lib/i18n';
 import { useInventoryLowStockCount } from '@/lib/inventory/use-inventory-low-stock-count';
 import { useThemeConfig } from '@/lib/use-theme-config';
@@ -107,69 +111,110 @@ export default function TabLayout() {
   const tabScreenOptions = useTabScreenOptions(theme);
   const redirectTo = useTabLayoutRedirects();
   const { count: lowStockCount } = useInventoryLowStockCount();
+  const { pendingDeletion, hasPendingDeletion } = usePendingDeletion();
   useSplashScreenHide();
+
+  // Check for legal version bumps that need notification (minor/patch updates)
+  const legalVersionCheck = checkLegalVersionBumps();
+  const [showLegalBanner, setShowLegalBanner] = React.useState(false);
+  const [showRestoreBanner, setShowRestoreBanner] = React.useState(false);
+
+  React.useEffect(() => {
+    // Only show banner for non-blocking updates (minor/patch bumps)
+    // Blocking updates (major bumps) are handled in root _layout
+    if (
+      legalVersionCheck.needsNotification &&
+      !legalVersionCheck.needsBlocking
+    ) {
+      setShowLegalBanner(true);
+    }
+  }, [legalVersionCheck.needsBlocking, legalVersionCheck.needsNotification]);
+
+  React.useEffect(() => {
+    // Show restore banner when pending deletion is detected
+    if (hasPendingDeletion) {
+      setShowRestoreBanner(true);
+    } else {
+      setShowRestoreBanner(false);
+    }
+  }, [hasPendingDeletion]);
 
   if (redirectTo) return <Redirect href={redirectTo} />;
 
   return (
     <AnimatedScrollListProvider>
-      <Tabs
-        initialRouteName="index"
-        screenOptions={tabScreenOptions}
-        tabBar={(p) => <CustomTabBar {...p} />}
-      >
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: translate('tabs.home'),
-            tabBarIcon: ({ color }) => <HomeIcon color={color} />,
-            headerRight: () => <SettingsLink />,
-            tabBarButtonTestID: 'home-tab',
-          }}
-        />
-        <Tabs.Screen
-          name="calendar"
-          options={{
-            title: translate('tabs.calendar'),
-            tabBarIcon: ({ color }) => <CalendarIcon color={color} />,
-            tabBarButtonTestID: 'calendar-tab',
-          }}
-        />
-        <Tabs.Screen
-          name="community"
-          options={{
-            title: translate('tabs.community'),
-            tabBarIcon: ({ color }) => <FeedIcon color={color} />,
-            headerRight: () => <CreateNewPostLink />,
-            tabBarButtonTestID: 'community-tab',
-          }}
-        />
-        <Tabs.Screen
-          name="plants"
-          options={{
-            title: translate('tabs.plants'),
-            tabBarIcon: ({ color }) => <PlantsIcon color={color} />,
-            tabBarButtonTestID: 'plants-tab',
-          }}
-        />
-        <Tabs.Screen
-          name="inventory"
-          options={{
-            title: translate('tabs.inventory'),
-            tabBarIcon: ({ color }) => <InventoryIcon color={color} />,
-            tabBarBadge: lowStockCount > 0 ? lowStockCount : undefined,
-            tabBarButtonTestID: 'inventory-tab',
-          }}
-        />
-        <Tabs.Screen
-          name="strains"
-          options={{
-            title: translate('tabs.strains'),
-            tabBarIcon: ({ color }) => <StyleIcon color={color} />,
-            tabBarButtonTestID: 'strains-tab',
-          }}
-        />
-      </Tabs>
+      <View className="flex-1">
+        {showRestoreBanner && pendingDeletion && (
+          <RestoreAccountBanner
+            daysRemaining={pendingDeletion.daysRemaining}
+            requestId={pendingDeletion.requestId}
+            onDismiss={() => setShowRestoreBanner(false)}
+          />
+        )}
+        {showLegalBanner && (
+          <LegalUpdateBanner
+            documents={legalVersionCheck.documents}
+            onDismiss={() => setShowLegalBanner(false)}
+          />
+        )}
+        <Tabs
+          initialRouteName="index"
+          screenOptions={tabScreenOptions}
+          tabBar={(p) => <CustomTabBar {...p} />}
+        >
+          <Tabs.Screen
+            name="index"
+            options={{
+              title: translate('tabs.home'),
+              tabBarIcon: ({ color }) => <HomeIcon color={color} />,
+              headerRight: () => <SettingsLink />,
+              tabBarButtonTestID: 'home-tab',
+            }}
+          />
+          <Tabs.Screen
+            name="calendar"
+            options={{
+              title: translate('tabs.calendar'),
+              tabBarIcon: ({ color }) => <CalendarIcon color={color} />,
+              tabBarButtonTestID: 'calendar-tab',
+            }}
+          />
+          <Tabs.Screen
+            name="community"
+            options={{
+              title: translate('tabs.community'),
+              tabBarIcon: ({ color }) => <FeedIcon color={color} />,
+              headerRight: () => <CreateNewPostLink />,
+              tabBarButtonTestID: 'community-tab',
+            }}
+          />
+          <Tabs.Screen
+            name="plants"
+            options={{
+              title: translate('tabs.plants'),
+              tabBarIcon: ({ color }) => <PlantsIcon color={color} />,
+              tabBarButtonTestID: 'plants-tab',
+            }}
+          />
+          <Tabs.Screen
+            name="inventory"
+            options={{
+              title: translate('tabs.inventory'),
+              tabBarIcon: ({ color }) => <InventoryIcon color={color} />,
+              tabBarBadge: lowStockCount > 0 ? lowStockCount : undefined,
+              tabBarButtonTestID: 'inventory-tab',
+            }}
+          />
+          <Tabs.Screen
+            name="strains"
+            options={{
+              title: translate('tabs.strains'),
+              tabBarIcon: ({ color }) => <StyleIcon color={color} />,
+              tabBarButtonTestID: 'strains-tab',
+            }}
+          />
+        </Tabs>
+      </View>
     </AnimatedScrollListProvider>
   );
 }

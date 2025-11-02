@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import * as React from 'react';
 import { StyleSheet } from 'react-native';
 
-import LegalConfirmationModal from '@/components/legal-confirmation-modal';
+import { LegalConfirmationModal } from '@/components/legal-confirmation-modal';
 import {
   Button,
   FocusAwareStatusBar,
@@ -22,6 +22,7 @@ import {
   useOnboardingState,
 } from '@/lib/compliance/onboarding-state';
 import { translate } from '@/lib/i18n';
+import type { LegalAcceptances } from '@/types/settings';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -79,12 +80,15 @@ function useAgeGateForm() {
     }
   }, [birthDay, birthMonth, birthYear, submitting]);
 
-  const handleLegalAccept = React.useCallback(() => {
-    completeOnboardingStep('legal-confirmation');
-    setShowLegalModal(false);
-    // User will see consent modal next or app if consent already given
-    router.replace('/(app)');
-  }, [router]);
+  const handleLegalAccept = React.useCallback(
+    (_acceptances: LegalAcceptances) => {
+      completeOnboardingStep('legal-confirmation');
+      setShowLegalModal(false);
+      // User will see consent modal next or app if consent already given
+      router.replace('/(app)');
+    },
+    [router]
+  );
 
   const handleLegalDecline = React.useCallback(() => {
     // Reset age gate and close legal modal

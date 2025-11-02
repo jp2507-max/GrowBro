@@ -119,52 +119,52 @@ This implementation plan breaks down the User Profile & Settings Shell feature i
   - Security: Show "Biometrics on/off" + last password change
   - _Requirements: 2.5_
 
-- [ ] 4. Build profile management screen
-- [ ] 4.1 Create ProfileScreen component with form
+- [x] 4. Build profile management screen
+- [x] 4.1 Create ProfileScreen component with form
   - Build form with display name, bio, location fields
   - Implement React Hook Form with Zod validation
   - Add character counters for bio (500 chars)
   - _Requirements: 9.1, 9.2, 9.3_
 
-- [ ] 4.2 Implement avatar upload with EXIF removal
+- [x] 4.2 Implement avatar upload with EXIF removal
   - Add image picker (camera/library options)
   - Strip EXIF metadata using `expo-image-manipulator`
   - Crop to 1:1, resize to 512x512, compress <200KB
   - Show upload progress bar
   - _Requirements: 9.4, 9.5, 9.9_
 
-- [ ] 4.3 Add avatar status tracking
+- [x] 4.3 Add avatar status tracking
   - Implement state machine: idle → uploading → pending → failed
   - Update WatermelonDB with avatar status
   - Handle upload failures with retry
   - _Requirements: 9.5, 9.9_
 
-- [ ] 4.4 Implement profile visibility toggles
+- [x] 4.4 Implement profile visibility toggles
   - Add "Show profile to community" toggle
   - Add "Allow direct messages" toggle (disabled placeholder)
   - Show compliance notice for restricted regions
   - _Requirements: 9.8, 9.11_
 
-- [ ] 4.5 Add client-side profanity filtering
+- [x] 4.5 Add client-side profanity filtering
   - Integrate profanity filter library
   - Apply to display name and bio fields
   - Show inline feedback without revealing blocked terms
   - _Requirements: 9.10_
 
-- [ ] 4.6 Implement profile sync with queue-and-retry
+- [x] 4.6 Implement profile sync with queue-and-retry
   - Queue changes when offline
   - Sync to Supabase when online
   - Update local WatermelonDB cache
   - _Requirements: 9.6, 9.7_
 
-- [ ] 4.7 Add account statistics display
+- [x] 4.7 Add account statistics display
   - Query WatermelonDB for stats (plants, harvests, posts)
   - Implement diff-based updates with 500ms throttle
   - Add tap navigation to relevant sections
   - Show "Syncing..." indicator when offline
   - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.7, 10.8_
 
-- [ ] 4.8 Implement avatar storage security
+- [x] 4.8 Implement avatar storage security
   - Use temporary file during upload
   - Only update avatarUrl after upload success
   - Strip EXIF, center-crop 1:1, 512×512, <200KB
@@ -172,69 +172,69 @@ This implementation plan breaks down the User Profile & Settings Shell feature i
   - Retry with exponential backoff
   - _Requirements: 9.5, 9.9_
 
-- [ ] 4.9 Add profanity filtering (client + server)
+- [x] 4.9 Add profanity filtering (client + server)
   - Client-side filter for immediate UX feedback
   - Server-side validation in Edge Function to enforce
   - _Requirements: 9.10_
 
-- [ ] 5. Enhance notification settings screen
-- [ ] 5.1 Add notification category toggles
+- [x] 5. Enhance notification settings screen
+- [x] 5.1 Add notification category toggles
   - Implement toggles for Task Reminders, Harvest Alerts, Community Activity, System Updates, Marketing
   - Default marketing to OFF (opt-in only)
   - Persist preferences to WatermelonDB and Supabase
   - _Requirements: 4.1, 4.2, 4.8_
 
-- [ ] 5.2 Implement task reminder timing options
+- [x] 5.2 Implement task reminder timing options
   - Add timing selector (hour before, day before, custom)
   - Show custom minutes input when selected
   - Validate custom timing input
   - _Requirements: 4.5_
 
-- [ ] 5.3 Add quiet hours configuration
+- [x] 5.3 Add quiet hours configuration
   - Implement quiet hours toggle
   - Add time pickers for start and end times
   - Handle DST transitions correctly
   - Suppress non-critical notifications during quiet hours
   - _Requirements: 4.9_
 
-- [ ] 5.4 Implement platform-specific notification handling
+- [x] 5.4 Implement platform-specific notification handling
   - Android: Check per-channel enablement, show "Manage in system settings" CTA
   - iOS: Check global permission status, show "Enable in Settings" link
   - Display current permission status
   - _Requirements: 4.3, 4.4, 4.10_
 
-- [ ] 5.5 Add multi-device sync with conflict resolution
+- [x] 5.5 Add multi-device sync with conflict resolution
   - Include deviceId and lastUpdated in preferences
   - Implement last-write-wins per key
   - Merge preferences on sync
   - _Requirements: 4.7, 4.11_
 
-- [ ] 5.6 Implement Android notification channels
+- [x] 5.6 Implement Android notification channels
   - Create channels per category at app start
   - Reflect OS-disabled state in UI
   - Add "Manage in system settings" CTA
   - _Requirements: 4.3, 4.4, 4.10_
 
-- [ ] 5.7 Add quiet hours across midnight and DST
+- [x] 5.7 Add quiet hours across midnight and DST
   - Implement window logic tolerant to cross-midnight
   - Add tests around DST transitions
   - Suppress non-critical local notifications
   - _Requirements: 4.9_
 
-- [ ] 6. Build security settings screen
-- [ ] 6.1 Create SecurityScreen component
+- [x] 6. Build security settings screen
+- [x] 6.1 Create SecurityScreen component
   - Build UI with sections for password, biometric, sessions
   - Add navigation to detail screens
   - _Requirements: 11.1_
 
-- [ ] 6.2 Implement password change flow
+- [x] 6.2 Implement password change flow
   - Create form with current password, new password, confirmation
   - Add password strength validation (8+ chars, uppercase, lowercase, number, special)
   - Integrate with Supabase Auth API
   - Show validation rules and strength indicator
   - _Requirements: 11.2_
 
-- [ ] 6.3 Add biometric login setup
+- [x] 6.3 Add biometric login setup
   - Check device capability via `expo-local-authentication`
   - Request permission if not granted
   - Verify with test authentication
@@ -243,7 +243,7 @@ This implementation plan breaks down the User Profile & Settings Shell feature i
   - Implement fallback to PIN/password
   - _Requirements: 11.3, 11.4, 11.8_
 
-- [ ] 6.4 Implement active sessions management
+- [x] 6.4 Implement active sessions management
   - Query Supabase auth.sessions table
   - Display list with device name, platform, last active, location
   - Add "Log Out Other Sessions" button
@@ -252,36 +252,36 @@ This implementation plan breaks down the User Profile & Settings Shell feature i
   - Update session list within 10 seconds
   - _Requirements: 11.5, 11.6, 11.9, 11.10_
 
-- [ ] 6.5 Add security notification emails
+- [x] 6.5 Add security notification emails
   - Send email on password change
   - Send email on session revocation
   - Debounce emails (10-minute window)
   - _Requirements: 11.7, 11.10_
 
-- [ ] 6.6 Implement step-up auth for data export
+- [x] 6.6 Implement step-up auth for data export
   - Require re-auth (password/biometric) before export
   - Expire step-up after 5 minutes
   - _Requirements: 12.7, 5.5_
 
-- [ ] 7. Create support screen
-- [ ] 7.1 Build SupportScreen component
+- [x] 7. Create support screen
+- [x] 7.1 Build SupportScreen component
   - Add links for Help Center, Contact Support, Report Bug, Send Feedback, Community Guidelines
   - Implement navigation and external link handling
   - _Requirements: 7.1, 7.2, 7.6_
 
-- [ ] 7.2 Implement Help Center link
+- [x] 7.2 Implement Help Center link
   - Open in-app browser to help documentation
   - Fallback to external browser if in-app fails
   - _Requirements: 7.2_
 
-- [ ] 7.3 Add Contact Support email integration
+- [x] 7.3 Add Contact Support email integration
   - Open device email client
   - Pre-fill support email address
   - Include environment metadata in body (app version, device model, OS, user ID)
   - Respect privacy consents
   - _Requirements: 7.3, 7.7_
 
-- [ ] 7.4 Create bug report form
+- [x] 7.4 Create bug report form
   - Build form with title, description, category selector
   - Add optional screenshot attachment
   - Collect diagnostics automatically (app version, build, device, OS, locale, storage, sync time, network status)
@@ -290,14 +290,14 @@ This implementation plan breaks down the User Profile & Settings Shell feature i
   - Allow user to deselect diagnostics
   - _Requirements: 7.4, 7.8, 7.9_
 
-- [ ] 7.5 Implement bug report submission with offline queue
+- [x] 7.5 Implement bug report submission with offline queue
   - Submit to Supabase Edge Function `/bug-reports`
   - Show success confirmation with ticket ID
   - Queue for retry when offline
   - Implement exponential backoff retry logic
   - _Requirements: 7.4, 7.8_
 
-- [ ] 7.6 Create feedback form
+- [x] 7.6 Create feedback form
   - Build form with category selector and message field
   - Add optional email field for follow-up
   - Enforce 1000 character limit
@@ -305,19 +305,19 @@ This implementation plan breaks down the User Profile & Settings Shell feature i
   - Queue for retry when offline
   - _Requirements: 7.5_
 
-- [ ] 7.7 Add diagnostics redaction toggle
+- [x] 7.7 Add diagnostics redaction toggle
   - In Report Bug form: "Include Diagnostics" toggle ON by default (if consent)
   - Redact secrets consistently
   - Allow deselect per field
   - _Requirements: 7.4, 7.8_
 
 - [ ] 8. Build legal documents screen
-- [ ] 8.1 Create LegalScreen component
+- [x] 8.1 Create LegalScreen component
   - Add navigation to Terms, Privacy Policy, Cannabis Policy, Licenses
   - Display document version and last updated date
   - _Requirements: 8.1, 8.3_
 
-- [ ] 8.2 Implement legal document rendering
+- [x] 8.2 Implement legal document rendering
   - Use `react-native-markdown-display` for formatted content
   - Support headings, lists, links, bold, italic
   - Make scrollable with proper spacing
@@ -325,13 +325,13 @@ This implementation plan breaks down the User Profile & Settings Shell feature i
   - Display "May be outdated" badge when offline
   - _Requirements: 8.2, 8.10_
 
-- [ ] 8.3 Add legal document version tracking
+- [x] 8.3 Add legal document version tracking
   - Store documents with semantic versioning
   - Track user's last accepted versions
   - Compare on app launch
   - _Requirements: 8.3, 8.7_
 
-- [ ] 8.4 Implement re-acceptance flow
+- [x] 8.4 Implement re-acceptance flow
   - Block app access on major version bump
   - Show modal with updated document
   - Require explicit re-acceptance
@@ -339,53 +339,53 @@ This implementation plan breaks down the User Profile & Settings Shell feature i
   - Show notification banner for minor/patch bumps
   - _Requirements: 8.7, 8.11_
 
-- [ ] 8.5 Create licenses screen
+- [x] 8.5 Create licenses screen
   - Generate license list at build time using script
   - Display package name, version, license type
   - Show full license text on tap
   - Implement search and filter by license type
   - _Requirements: 8.6, 8.8_
 
-- [ ] 8.6 Build license generation script
+- [x] 8.6 Build license generation script
   - Use `npm list` or `pnpm list` to extract dependencies
   - Generate JSON with name, version, license type, full text
   - Integrate into EAS build process
   - _Requirements: 8.6, 8.8_
 
-- [ ] 8.7 Implement legal offline cache
+- [x] 8.7 Implement legal offline cache
   - Cache docs by version and locale
   - Show "Last synced" timestamp
   - Display "May be outdated" when offline
   - _Requirements: 8.2, 8.10_
 
-- [ ] 8.8 Create license JSON generator
+- [x] 8.8 Create license JSON generator
   - Build-time script outputs name, version, license type, full text
   - Bundle as JSON
   - Searchable UI with filter by license type
   - _Requirements: 8.6, 8.8_
 
-- [ ] 9. Create about screen
-- [ ] 9.1 Build AboutScreen component
+- [x] 9. Create about screen
+- [x] 9.1 Build AboutScreen component
   - Display app name, version, build number, environment
   - Show copyright and website links
   - Add social media links (Twitter, Instagram, GitHub)
   - _Requirements: 8.4_
 
-- [ ] 9.2 Implement OTA update checking
+- [x] 9.2 Implement OTA update checking
   - Use `expo-updates` API to check for updates
   - Compare with current version
   - Show "Update Available" badge if newer version exists
   - Display release notes
   - _Requirements: 8.5, 8.9_
 
-- [ ] 9.3 Add update download and apply flow
+- [x] 9.3 Add update download and apply flow
   - Implement "Download Update" button with progress indicator
   - Show "Restart to Apply" after download completes
   - Handle download failures with retry
   - Link to App Store/Play Store if OTA disabled
   - _Requirements: 8.5, 8.9_
 
-- [ ] 9.4 Implement OTA updates fallback
+- [x] 9.4 Implement OTA updates fallback
   - If expo-updates disabled, "Check for Updates" opens store listing
   - Otherwise show release notes and download/restart path
   - _Requirements: 8.5, 8.9_

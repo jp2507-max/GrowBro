@@ -19,9 +19,6 @@ import type { Task } from '@/types/calendar';
 export default function SortableCalendarTestScreen() {
   const { date } = useLocalSearchParams<{ date?: string }>();
 
-  // Use provided date or default to today
-  const targetDate = date ? new Date(date) : new Date();
-
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -30,6 +27,8 @@ export default function SortableCalendarTestScreen() {
     const loadTasks = async () => {
       try {
         setIsLoading(true);
+        // Create targetDate inside the effect to avoid unstable dependencies
+        const targetDate = date ? new Date(date) : new Date();
         const startOfDay = DateTime.fromJSDate(targetDate).startOf('day');
         const endOfDay = DateTime.fromJSDate(targetDate).endOf('day');
 
@@ -48,7 +47,13 @@ export default function SortableCalendarTestScreen() {
     };
 
     void loadTasks();
-  }, [targetDate]);
+  }, [date]);
+
+  // Create targetDate for the component (must be before early returns)
+  const displayDate = React.useMemo(
+    () => (date ? new Date(date) : new Date()),
+    [date]
+  );
 
   if (isLoading) {
     return (
@@ -68,7 +73,7 @@ export default function SortableCalendarTestScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
-      <SortableDayView date={targetDate} tasks={tasks} />
+      <SortableDayView date={displayDate} tasks={tasks} />
     </SafeAreaView>
   );
 }

@@ -1,6 +1,18 @@
 import type { Database } from '@nozbe/watermelondb';
 import { Model, Q } from '@nozbe/watermelondb';
-import { date, field } from '@nozbe/watermelondb/decorators';
+
+/**
+ * Editable profile fields - excludes WatermelonDB internals and auto-managed fields
+ */
+export type EditableProfileFields = Pick<
+  ProfileModel,
+  | 'displayName'
+  | 'bio'
+  | 'avatarUrl'
+  | 'location'
+  | 'showProfileToCommunity'
+  | 'allowDirectMessages'
+>;
 
 /**
  * Profile WatermelonDB model
@@ -10,18 +22,6 @@ import { date, field } from '@nozbe/watermelondb/decorators';
  * One-to-one mapping between users and profiles.
  */
 export class ProfileModel extends Model {
-  static table = 'profiles';
-
-  @field('user_id') userId!: string;
-  @field('display_name') displayName!: string;
-  @field('bio') bio?: string;
-  @field('avatar_url') avatarUrl?: string;
-  @field('location') location?: string;
-  @field('show_profile_to_community') showProfileToCommunity!: boolean;
-  @field('allow_direct_messages') allowDirectMessages!: boolean;
-  @date('created_at') createdAt!: Date;
-  @date('updated_at') updatedAt!: Date;
-
   /**
    * Finds an existing profile record for the given user_id,
    * or creates a new one if none exists. This ensures one-to-one mapping
@@ -35,9 +35,7 @@ export class ProfileModel extends Model {
   static async findOrCreate(
     database: Database,
     userId: string,
-    defaults: Partial<
-      Omit<ProfileModel, 'userId' | 'createdAt' | 'updatedAt'>
-    > = {}
+    defaults: Partial<EditableProfileFields> = {}
   ): Promise<ProfileModel> {
     return database.write(async () => {
       const collection = database.collections.get<ProfileModel>('profiles');
@@ -73,9 +71,7 @@ export class ProfileModel extends Model {
   static async upsert(
     database: Database,
     userId: string,
-    defaults: Partial<
-      Omit<ProfileModel, 'userId' | 'createdAt' | 'updatedAt'>
-    > = {}
+    defaults: Partial<EditableProfileFields> = {}
   ): Promise<ProfileModel> {
     return this.findOrCreate(database, userId, defaults);
   }
@@ -84,19 +80,7 @@ export class ProfileModel extends Model {
    * Updates the profile with new values
    * @param updates - Partial profile updates
    */
-  async updateProfile(
-    updates: Partial<
-      Pick<
-        ProfileModel,
-        | 'displayName'
-        | 'bio'
-        | 'avatarUrl'
-        | 'location'
-        | 'showProfileToCommunity'
-        | 'allowDirectMessages'
-      >
-    >
-  ): Promise<void> {
+  async updateProfile(updates: Partial<EditableProfileFields>): Promise<void> {
     await this.update((record) => {
       if (updates.displayName !== undefined)
         record.displayName = updates.displayName;

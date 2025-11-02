@@ -3,10 +3,9 @@ import { create } from 'zustand';
 
 import { storage } from '@/lib/storage';
 import { createSelectors } from '@/lib/utils';
+import type { LegalDocumentType } from '@/types/settings';
 
 const LEGAL_ACCEPTANCES_KEY = 'compliance.legal.acceptances';
-
-export type LegalDocumentType = 'terms' | 'privacy' | 'cannabis';
 
 export type LegalDocumentVersion = {
   version: string;
@@ -21,16 +20,16 @@ export type LegalAcceptance = {
   ipAddress?: string; // Server-side only, with consent
 };
 
-export type LegalAcceptanceRecord = {
+type PersistedLegalState = {
+  acceptances: Record<LegalDocumentType, LegalAcceptance>;
+  lastUpdated: string;
+};
+
+type LegalAcceptanceSnapshot = {
   userId: string | null;
   acceptances: Record<LegalDocumentType, LegalAcceptance>;
   appVersion: string;
   locale: string;
-  lastUpdated: string;
-};
-
-type PersistedLegalState = {
-  acceptances: Record<LegalDocumentType, LegalAcceptance>;
   lastUpdated: string;
 };
 
@@ -329,7 +328,7 @@ export function getCurrentLegalVersions(): Record<
   return CURRENT_VERSIONS;
 }
 
-export function getLegalAcceptanceRecord(): LegalAcceptanceRecord {
+export function getLegalAcceptanceSnapshot(): LegalAcceptanceSnapshot {
   const state = legalAcceptancesStore.getState();
   return {
     userId: null, // Will be set by auth system if available

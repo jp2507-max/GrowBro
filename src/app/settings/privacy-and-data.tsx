@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, Linking } from 'react-native';
 
+import { ReAuthModal, useReAuthModal } from '@/components/auth/re-auth-modal';
 import { PrivacySettings } from '@/components/privacy-settings';
 import {
   Button,
@@ -28,36 +29,44 @@ function extractErrorMessage(error: unknown): string {
   return String(error);
 }
 
-function useDataExport(): { queueExport: () => void; isExporting: boolean } {
+function useDataExport(onRequestExport: () => void): {
+  queueExport: () => void;
+  isExporting: boolean;
+  performExport: () => Promise<void>;
+} {
   const [isExporting, setIsExporting] = useState(false);
 
   const queueExport = useCallback(() => {
     if (isExporting) return;
+    // Trigger re-authentication first
+    onRequestExport();
+  }, [isExporting, onRequestExport]);
+
+  const performExport = useCallback(async () => {
+    if (isExporting) return;
     setIsExporting(true);
-    (async () => {
-      try {
-        const result = await requestDataExport();
-        const eta = formatEta(result.estimatedCompletion);
-        Alert.alert(
-          translate('privacy.exportQueuedTitle'),
-          eta
-            ? translate('privacy.exportQueuedBody', { eta })
-            : translate('privacy.exportQueuedBodyNoEta')
-        );
-      } catch (error) {
-        Alert.alert(
-          translate('privacy.exportErrorTitle'),
-          translate('privacy.exportErrorBody', {
-            message: extractErrorMessage(error),
-          })
-        );
-      } finally {
-        setIsExporting(false);
-      }
-    })();
+    try {
+      const result = await requestDataExport();
+      const eta = formatEta(result.estimatedCompletion);
+      Alert.alert(
+        translate('privacy.exportQueuedTitle'),
+        eta
+          ? translate('privacy.exportQueuedBody', { eta })
+          : translate('privacy.exportQueuedBodyNoEta')
+      );
+    } catch (error) {
+      Alert.alert(
+        translate('privacy.exportErrorTitle'),
+        translate('privacy.exportErrorBody', {
+          message: extractErrorMessage(error),
+        })
+      );
+    } finally {
+      setIsExporting(false);
+    }
   }, [isExporting]);
 
-  return { queueExport, isExporting };
+  return { queueExport, isExporting, performExport };
 }
 
 function useAccountDeletion(signOut: () => void): {
@@ -176,7 +185,28 @@ function WebDeletionSection(): React.ReactElement | null {
 
 export default function PrivacyAndDataScreen(): React.ReactElement {
   const signOut = useAuth.use.signOut();
-  const { queueExport } = useDataExport();
+  const { ref: reAuthModalRef, present: presentReAuthModal } = useReAuthModal();
+
+  // Create a ref to store the performExport function
+  const performExportRef = React.useRef<() => Promise<void>>();
+
+  const { queueExport, performExport } = useDataExport(() => {
+    // Request re-authentication before export
+    presentReAuthModal();
+  });
+
+  // Store the performExport function in the ref
+  React.useEffect(() => {
+    performExportRef.current = performExport;
+  }, [performExport]);
+
+  const handleReAuthSuccess = () => {
+    // User successfully re-authenticated, proceed with export
+    if (performExportRef.current) {
+      void performExportRef.current();
+    }
+  };
+
   const { confirmDeletion } = useAccountDeletion(signOut);
 
   return (
@@ -201,6 +231,14 @@ export default function PrivacyAndDataScreen(): React.ReactElement {
           <WebDeletionSection />
         </View>
       </ScrollView>
+
+      {/* Re-authentication Modal for Data Export */}
+      <ReAuthModal
+        ref={reAuthModalRef}
+        onSuccess={handleReAuthSuccess}
+        title={translate('auth.security.confirm_export_title')}
+        description={translate('auth.security.confirm_export_description')}
+      />
     </>
   );
 }

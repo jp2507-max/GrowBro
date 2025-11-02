@@ -8,18 +8,10 @@ import {
   type LegalDocumentType,
 } from '@/lib/compliance/legal-acceptances';
 import { translate } from '@/lib/i18n';
-
-type LegalConfirmationModalProps = {
-  isVisible: boolean;
-  onAccept: () => void;
-  onDecline: () => void;
-};
-
-type LegalAcceptances = {
-  terms: boolean;
-  privacy: boolean;
-  cannabis: boolean;
-};
+import type {
+  LegalAcceptances,
+  LegalConfirmationModalProps,
+} from '@/types/settings';
 
 type LegalDocumentSectionProps = {
   documentType: LegalDocumentType;
@@ -31,26 +23,28 @@ type LegalDocumentSectionProps = {
 
 function useLegalAcceptanceState() {
   const [acceptances, setAcceptances] = useState<LegalAcceptances>({
-    terms: false,
-    privacy: false,
-    cannabis: false,
+    termsOfService: false,
+    privacyPolicy: false,
+    cannabisPolicy: false,
   });
 
-  const setTerms = (value: boolean) =>
-    setAcceptances((prev) => ({ ...prev, terms: value }));
-  const setPrivacy = (value: boolean) =>
-    setAcceptances((prev) => ({ ...prev, privacy: value }));
-  const setCannabis = (value: boolean) =>
-    setAcceptances((prev) => ({ ...prev, cannabis: value }));
+  const setTermsOfService = (value: boolean) =>
+    setAcceptances((prev) => ({ ...prev, termsOfService: value }));
+  const setPrivacyPolicy = (value: boolean) =>
+    setAcceptances((prev) => ({ ...prev, privacyPolicy: value }));
+  const setCannabisPolicy = (value: boolean) =>
+    setAcceptances((prev) => ({ ...prev, cannabisPolicy: value }));
 
   const isAllAccepted =
-    acceptances.terms && acceptances.privacy && acceptances.cannabis;
+    acceptances.termsOfService &&
+    acceptances.privacyPolicy &&
+    acceptances.cannabisPolicy;
 
   return {
     acceptances,
-    setTerms,
-    setPrivacy,
-    setCannabis,
+    setTermsOfService,
+    setPrivacyPolicy,
+    setCannabisPolicy,
     isAllAccepted,
   };
 }
@@ -139,8 +133,13 @@ export function LegalConfirmationModal({
   onAccept,
   onDecline,
 }: LegalConfirmationModalProps): React.ReactElement | null {
-  const { acceptances, setTerms, setPrivacy, setCannabis, isAllAccepted } =
-    useLegalAcceptanceState();
+  const {
+    acceptances,
+    setTermsOfService,
+    setPrivacyPolicy,
+    setCannabisPolicy,
+    isAllAccepted,
+  } = useLegalAcceptanceState();
 
   const handleAccept = React.useCallback(() => {
     if (!isAllAccepted) return;
@@ -152,8 +151,8 @@ export function LegalConfirmationModal({
       cannabis: versions.cannabis.version,
     });
 
-    onAccept();
-  }, [isAllAccepted, onAccept]);
+    onAccept(acceptances);
+  }, [isAllAccepted, onAccept, acceptances]);
 
   if (!isVisible) return null;
 
@@ -173,24 +172,24 @@ export function LegalConfirmationModal({
             documentType="terms"
             title={translate('cannabis.legal_confirmation_terms_label')}
             summary={translate('cannabis.legal_confirmation_terms_summary')}
-            accepted={acceptances.terms}
-            onChange={setTerms}
+            accepted={acceptances.termsOfService}
+            onChange={setTermsOfService}
           />
 
           <LegalDocumentSection
             documentType="privacy"
             title={translate('cannabis.legal_confirmation_privacy_label')}
             summary={translate('cannabis.legal_confirmation_privacy_summary')}
-            accepted={acceptances.privacy}
-            onChange={setPrivacy}
+            accepted={acceptances.privacyPolicy}
+            onChange={setPrivacyPolicy}
           />
 
           <LegalDocumentSection
             documentType="cannabis"
             title={translate('cannabis.legal_confirmation_cannabis_label')}
             summary={translate('cannabis.legal_confirmation_cannabis_summary')}
-            accepted={acceptances.cannabis}
-            onChange={setCannabis}
+            accepted={acceptances.cannabisPolicy}
+            onChange={setCannabisPolicy}
           />
 
           <LegalConfirmationActions

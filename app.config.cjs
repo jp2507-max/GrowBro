@@ -151,6 +151,12 @@ function createExpoConfig(config) {
       // Added from app.json (merged into this config)
       'expo-secure-store',
       [
+        'expo-local-authentication',
+        {
+          faceIDPermission: 'Allow $(PRODUCT_NAME) to use Face ID.',
+        },
+      ],
+      [
         'expo-splash-screen',
         {
           backgroundColor: '#2E3C4B',

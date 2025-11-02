@@ -37,21 +37,45 @@ const STEP_ORDER: OnboardingStep[] = [
   'completed',
 ];
 
-function loadPersistedState(): PersistedOnboardingState {
+export const LEGACY_STEP_MAPPING: Record<string, OnboardingStep> = {
+  age_gate: 'age-gate',
+  legal_confirmation: 'legal-confirmation',
+  consent: 'consent-modal',
+  complete: 'completed',
+};
+
+export function normalizeStepId(stepId: string): OnboardingStep | null {
+  // First check if it's already a valid current step ID
+  if (STEP_ORDER.includes(stepId as OnboardingStep)) {
+    return stepId as OnboardingStep;
+  }
+  // Then check legacy mappings
+  return LEGACY_STEP_MAPPING[stepId] || null;
+}
+
+export function loadPersistedState(): PersistedOnboardingState {
   try {
     const raw = storage.getString(ONBOARDING_STATE_KEY);
     if (!raw) {
       return createInitialState();
     }
     const parsed = JSON.parse(raw) as PersistedOnboardingState;
+
+    // Normalize currentStep
+    const normalizedCurrentStep = normalizeStepId(parsed?.currentStep || '');
+    const currentStep = normalizedCurrentStep || 'age-gate';
+
+    // Normalize and dedupe completedSteps
+    const normalizedCompletedSteps = Array.isArray(parsed?.completedSteps)
+      ? parsed.completedSteps
+          .map((step) => normalizeStepId(step))
+          .filter((step): step is OnboardingStep => step !== null)
+      : [];
+    const completedSteps = [...new Set(normalizedCompletedSteps)];
+
     return {
-      currentStep:
-        typeof parsed?.currentStep === 'string'
-          ? (parsed.currentStep as OnboardingStep)
-          : 'age-gate',
-      completedSteps: Array.isArray(parsed?.completedSteps)
-        ? parsed.completedSteps
-        : [],
+      currentStep,
+      completedSteps,
       lastUpdated:
         typeof parsed?.lastUpdated === 'string'
           ? parsed.lastUpdated

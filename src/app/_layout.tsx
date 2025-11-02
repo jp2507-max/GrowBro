@@ -7,7 +7,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
-import { Stack, usePathname } from 'expo-router';
+import { Stack, usePathname, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -22,6 +22,7 @@ import {
   hydrateAgeGate,
   hydrateAuth,
   loadSelectedTheme,
+  resetAgeGate,
   SDKGate,
   setAnalyticsClient,
   startAgeGateSession,
@@ -36,8 +37,12 @@ import { useDeepLinking } from '@/lib/auth/use-deep-linking';
 import {
   checkLegalVersionBumps,
   hydrateLegalAcceptances,
+  resetLegalAcceptances,
 } from '@/lib/compliance/legal-acceptances';
-import { hydrateOnboardingState } from '@/lib/compliance/onboarding-state';
+import {
+  hydrateOnboardingState,
+  resetOnboardingState,
+} from '@/lib/compliance/onboarding-state';
 import { useRootStartup } from '@/lib/hooks/use-root-startup';
 import { initializeJanitor } from '@/lib/media/photo-janitor';
 import { getReferencedPhotoUris } from '@/lib/media/photo-storage-helpers';
@@ -154,6 +159,8 @@ function RootLayout(): React.ReactElement {
   const [isI18nReady, setIsI18nReady] = React.useState(false);
   const [isAuthReady, setIsAuthReady] = React.useState(false);
   const [showConsent, setShowConsent] = React.useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
   useRootStartup(setIsI18nReady, isFirstTime);
 
   React.useEffect(() => {
@@ -198,14 +205,20 @@ function RootLayout(): React.ReactElement {
 
     const versionCheck = checkLegalVersionBumps();
     if (versionCheck.needsBlocking) {
-      // Force user to re-accept legal documents by redirecting to age-gate
-      // The age-gate flow will show the legal confirmation modal
+      // Force user to re-accept legal documents by resetting onboarding state
+      // This will redirect them to age-gate where they must verify age and accept updated legal documents
       console.log(
-        '[RootLayout] Legal version bump detected, requiring re-acceptance'
+        '[RootLayout] Legal version bump detected, resetting onboarding to require re-acceptance'
       );
-      // This will be handled by the routing logic below
+      resetAgeGate();
+      resetLegalAcceptances();
+      resetOnboardingState();
+      // Navigate to age-gate to force re-acceptance flow, but avoid redirect loops
+      if (pathname !== '/age-gate') {
+        router.replace('/age-gate');
+      }
     }
-  }, [isAuthReady]);
+  }, [isAuthReady, router, pathname]);
 
   // Initialize deep linking for auth flows
   useDeepLinking();

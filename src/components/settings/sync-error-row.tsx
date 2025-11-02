@@ -31,22 +31,25 @@ export function SyncErrorRow({
     >
       <View className="flex-row items-start justify-between">
         <View className="flex-1">
-          <Text className="text-sm font-medium text-danger-800 dark:text-danger-200">
-            Sync Failed
-          </Text>
+          <Text
+            className="text-sm font-medium text-danger-800 dark:text-danger-200"
+            tx="settings.sync.syncFailed"
+          />
           <Text className="mt-1 text-xs text-danger-700 dark:text-danger-300">
             {error.message}
           </Text>
           {lastSyncAttempt && (
-            <Text className="mt-1 text-xs text-danger-600 dark:text-danger-400">
-              Last attempt: {lastSyncAttempt}
-            </Text>
+            <Text
+              className="mt-1 text-xs text-danger-600 dark:text-danger-400"
+              tx="settings.sync.lastAttempt"
+              txOptions={{ attempt: lastSyncAttempt }}
+            />
           )}
         </View>
 
         {error.canRetry && onRetry && (
           <Button
-            label="Retry"
+            tx="common.retry"
             onPress={onRetry}
             size="sm"
             variant="outline"

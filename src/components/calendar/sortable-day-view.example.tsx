@@ -12,6 +12,7 @@
 
 import { Env } from '@env';
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import type { SortableGridRenderItem } from 'react-native-sortables';
@@ -38,6 +39,7 @@ export function SortableDayView({
 }: Props): React.ReactElement {
   const scrollRef = React.useRef<any>(null);
   const { handleTaskReorder } = useTaskReorder();
+  const { t } = useTranslation();
 
   // Render each task with drag handle enabled
   const renderItem = useCallback<SortableGridRenderItem<Task>>(
@@ -109,7 +111,7 @@ export function SortableDayView({
       <View style={styles.header}>
         <Text className="text-lg font-semibold">{dateString}</Text>
         <Text className="text-xs text-neutral-500">
-          {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
+          {t('calendar.taskCount', { count: tasks.length })}
         </Text>
       </View>
 
@@ -125,7 +127,9 @@ export function SortableDayView({
         />
       ) : (
         <View style={styles.emptyState}>
-          <Text className="text-neutral-500">No tasks for this day</Text>
+          <Text className="text-neutral-500">
+            {t('calendar.noTasksForDay')}
+          </Text>
         </View>
       )}
     </Animated.ScrollView>

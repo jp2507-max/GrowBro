@@ -20,7 +20,7 @@ interface RetryState {
 }
 
 const MAX_RETRIES = 6;
-const BACKOFF_DELAYS_MS = [1000, 2000, 4000, 8000, 16000, 30000]; // 1s, 2s, 4s, 8s, 16s, 30s (cap)
+const BACKOFF_DELAYS_MS = [1000, 2000, 4000, 8000, 16000, 60000]; // 1s, 2s, 4s, 8s, 16s, 60s (cap)
 
 const retryStates = new Map<string, RetryState>();
 

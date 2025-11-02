@@ -12,9 +12,10 @@ import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
 import { useCallback, useEffect, useState } from 'react';
 
+import type { PostModel } from '@/lib/watermelon-models/post';
 import type { ProfileStatistics } from '@/types/settings';
 
-const THROTTLE_MS = 500;
+const THROTTLE_MS = 250;
 
 export interface UseProfileStatisticsResult extends ProfileStatistics {
   isLoading: boolean;
@@ -44,7 +45,7 @@ export function useProfileStatistics(
     }
 
     try {
-      // Throttle updates to avoid jank (max once per 500ms) - Requirement 10.7
+      // Throttle updates to avoid jank (max once per 250ms) - Requirement 10.7
       const now = Date.now();
       if (now - lastUpdate < THROTTLE_MS) {
         return;
@@ -70,13 +71,21 @@ export function useProfileStatistics(
         // Table doesn't exist yet, keep posts at 0
       }
 
-      // Query likes received (if table exists)
+      // Query likes received (count likes on user's posts)
       let likesReceived = 0;
       try {
-        const likesCollection = database.collections.get('likes');
-        likesReceived = await likesCollection.query().fetchCount();
+        const postsCollection = database.collections.get('posts');
+        const userPosts = await postsCollection
+          .query(Q.where('user_id', userId))
+          .fetch();
+
+        // Count likes for each post
+        for (const post of userPosts) {
+          const postLikesCount = await (post as PostModel).likes.fetchCount();
+          likesReceived += postLikesCount;
+        }
       } catch {
-        // Table doesn't exist yet, keep likes at 0
+        // Table doesn't exist yet or query failed, keep likes at 0
       }
 
       setStatistics({
@@ -130,6 +139,20 @@ export function useProfileStatistics(
           void fetchStatistics();
         });
       subscriptions.push(() => harvestsSubscription.unsubscribe());
+    } catch {
+      // Table doesn't exist yet
+    }
+
+    try {
+      // Observe post_likes changes (affects likes received count)
+      const postLikesCollection = database.collections.get('post_likes');
+      const postLikesSubscription = postLikesCollection
+        .query()
+        .observe()
+        .subscribe(() => {
+          void fetchStatistics();
+        });
+      subscriptions.push(() => postLikesSubscription.unsubscribe());
     } catch {
       // Table doesn't exist yet
     }

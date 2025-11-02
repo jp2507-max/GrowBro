@@ -21,9 +21,10 @@ export function OfflineBadge({
       className="rounded-full bg-warning-100 px-2 py-0.5 dark:bg-warning-900"
       testID={testID}
     >
-      <Text className="text-xs font-medium text-warning-700 dark:text-warning-300">
-        Offline
-      </Text>
+      <Text
+        className="text-xs font-medium text-warning-700 dark:text-warning-300"
+        tx="settings.offline"
+      />
     </View>
   );
 }

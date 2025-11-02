@@ -1,4 +1,3 @@
-import { Env } from '@env';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React, { type ReactElement } from 'react';
@@ -114,11 +113,44 @@ function PrivacySettings({
   );
 }
 
-function AboutSection(): ReactElement {
+function SupportSection({
+  router,
+  isOffline,
+}: {
+  router: any;
+  isOffline: boolean;
+}): ReactElement {
   return (
-    <ItemsContainer title="settings.about">
-      <Item text="settings.app_name" value={Env.NAME} />
-      <Item text="settings.version" value={Env.VERSION} />
+    <ItemsContainer title="settings.support.title">
+      <Item
+        text="settings.support.help_center"
+        onPress={() => router.push('/settings/support')}
+        rightElement={isOffline ? <OfflineBadge /> : undefined}
+        disabled={isOffline}
+      />
+    </ItemsContainer>
+  );
+}
+
+function LegalSection({ router }: { router: any }): ReactElement {
+  return (
+    <ItemsContainer title="settings.legal.title">
+      <Item
+        text="settings.legal.title"
+        onPress={() => router.push('/settings/legal')}
+      />
+    </ItemsContainer>
+  );
+}
+
+function AboutSection(): ReactElement {
+  const router = useRouter();
+  return (
+    <ItemsContainer title="settings.about.title">
+      <Item
+        text="settings.about.title"
+        onPress={() => router.push('/settings/about')}
+      />
     </ItemsContainer>
   );
 }
@@ -179,10 +211,18 @@ export default function Settings() {
           {user && (
             <View className="mt-4">
               <ProfileHeader
-                userId={userId}
                 displayName={user.user_metadata?.display_name}
                 avatarUrl={user.user_metadata?.avatar_url}
-                statistics={profileStats.isLoading ? undefined : profileStats}
+                statistics={
+                  profileStats.isLoading
+                    ? undefined
+                    : {
+                        plantsCount: profileStats.plantsCount,
+                        harvestsCount: profileStats.harvestsCount,
+                        postsCount: profileStats.postsCount,
+                        likesReceived: profileStats.likesReceived,
+                      }
+                }
                 isLoading={profileStats.isLoading}
               />
             </View>
@@ -197,6 +237,10 @@ export default function Settings() {
             isOffline={isOffline}
             privacyStatus={privacyStatus}
           />
+
+          <SupportSection router={router} isOffline={isOffline} />
+
+          <LegalSection router={router} />
 
           <AboutSection />
 

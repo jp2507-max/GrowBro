@@ -5,7 +5,11 @@
 
 import { useEffect, useState } from 'react';
 
-import { getPrivacyConsent } from '@/lib/privacy-consent';
+import {
+  getPrivacyConsent,
+  hydrateFromSecureStore,
+  onPrivacyConsentChange,
+} from '@/lib/privacy-consent';
 
 interface PrivacySummary {
   status: 'all_on' | 'all_off' | 'partial';
@@ -19,9 +23,29 @@ export function usePrivacySummary(): PrivacySummary {
   });
 
   useEffect(() => {
-    async function fetchSettings() {
+    async function initializeAndSubscribe() {
       try {
-        const settings = await getPrivacyConsent();
+        // Ensure hydration is complete before proceeding
+        await hydrateFromSecureStore();
+
+        // Set initial summary after hydration
+        updateSummaryFromConsent();
+
+        // Subscribe to consent changes
+        const unsubscribe = onPrivacyConsentChange(() => {
+          updateSummaryFromConsent();
+        });
+
+        return unsubscribe;
+      } catch (error) {
+        console.error('Failed to initialize privacy settings:', error);
+        setSummary({ status: 'all_off', isLoading: false });
+      }
+    }
+
+    function updateSummaryFromConsent() {
+      try {
+        const settings = getPrivacyConsent();
 
         const allOn =
           settings.crashReporting &&
@@ -43,12 +67,18 @@ export function usePrivacySummary(): PrivacySummary {
           setSummary({ status: 'partial', isLoading: false });
         }
       } catch (error) {
-        console.error('Failed to fetch privacy settings:', error);
+        console.error('Failed to update privacy summary:', error);
         setSummary({ status: 'all_off', isLoading: false });
       }
     }
 
-    void fetchSettings();
+    const cleanupPromise = initializeAndSubscribe();
+
+    return () => {
+      cleanupPromise.then((unsubscribe) => {
+        if (unsubscribe) unsubscribe();
+      });
+    };
   }, []);
 
   return summary;

@@ -1,6 +1,8 @@
 -- Migration: User Profile & Settings Shell
 -- Description: Creates tables for user profiles, notification preferences, legal acceptances,
 --              account deletion requests, bug reports, feedback, and audit logs.
+-- Purpose: Initial schema creation for user profile and settings features.
+-- When to run: Run this migration once during the initial database setup. This is an immutable creation migration.
 -- Requirements: 1.7, 2.1, 3.1, 4.1, 5.1, 6.1, 7.1, 8.1, 9.1, 10.1, 11.1, 12.6
 
 -- ======================================================================================
@@ -8,7 +10,7 @@
 -- ======================================================================================
 
 -- User profiles table
-CREATE TABLE IF NOT EXISTS profiles (
+CREATE TABLE profiles (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   display_name TEXT NOT NULL CHECK (char_length(display_name) >= 3 AND char_length(display_name) <= 30),
@@ -23,7 +25,7 @@ CREATE TABLE IF NOT EXISTS profiles (
 );
 
 -- Add index for efficient user lookups
-CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON profiles(user_id);
+CREATE INDEX idx_profiles_user_id ON profiles(user_id);
 
 -- Add trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_profiles_updated_at()
@@ -34,13 +36,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_profiles_updated_at
+CREATE OR REPLACE TRIGGER trigger_profiles_updated_at
   BEFORE UPDATE ON profiles
   FOR EACH ROW
   EXECUTE FUNCTION update_profiles_updated_at();
 
 -- Notification preferences table
-CREATE TABLE IF NOT EXISTS notification_preferences (
+CREATE TABLE notification_preferences (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   task_reminders BOOLEAN NOT NULL DEFAULT true,
@@ -67,28 +69,8 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
 );
 
 -- Add indexes for efficient queries
-CREATE INDEX IF NOT EXISTS idx_notification_preferences_user_id ON notification_preferences(user_id);
--- Ensure columns exist for older schemas: add missing columns if table pre-exists with fewer columns
-ALTER TABLE notification_preferences
-  ADD COLUMN IF NOT EXISTS marketing BOOLEAN NOT NULL DEFAULT false,
-  ADD COLUMN IF NOT EXISTS quiet_hours_enabled BOOLEAN NOT NULL DEFAULT false,
-  ADD COLUMN IF NOT EXISTS quiet_hours_start TIME,
-  ADD COLUMN IF NOT EXISTS quiet_hours_end TIME,
-  ADD COLUMN IF NOT EXISTS last_updated TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  ADD COLUMN IF NOT EXISTS device_id TEXT;
-
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_attribute
-    WHERE attrelid = 'notification_preferences'::regclass AND attname = 'last_updated'
-  ) AND NOT EXISTS (
-    SELECT 1 FROM pg_class WHERE relname = 'idx_notification_preferences_last_updated'
-  ) THEN
-    EXECUTE 'CREATE INDEX idx_notification_preferences_last_updated ON notification_preferences(last_updated)';
-  END IF;
-END;
-$$;
+CREATE INDEX idx_notification_preferences_user_id ON notification_preferences(user_id);
+CREATE INDEX idx_notification_preferences_last_updated ON notification_preferences(last_updated);
 
 -- Add trigger to update last_updated timestamp
 CREATE OR REPLACE FUNCTION update_notification_preferences_last_updated()
@@ -99,13 +81,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_notification_preferences_last_updated
+CREATE OR REPLACE TRIGGER trigger_notification_preferences_last_updated
   BEFORE UPDATE ON notification_preferences
   FOR EACH ROW
   EXECUTE FUNCTION update_notification_preferences_last_updated();
 
 -- Legal acceptances table
-CREATE TABLE IF NOT EXISTS legal_acceptances (
+CREATE TABLE legal_acceptances (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   document_type TEXT NOT NULL CHECK (document_type IN ('terms', 'privacy', 'cannabis')),
@@ -118,12 +100,12 @@ CREATE TABLE IF NOT EXISTS legal_acceptances (
 );
 
 -- Add indexes for efficient queries
-CREATE INDEX IF NOT EXISTS idx_legal_acceptances_user_id ON legal_acceptances(user_id);
-CREATE INDEX IF NOT EXISTS idx_legal_acceptances_document_type ON legal_acceptances(document_type);
-CREATE INDEX IF NOT EXISTS idx_legal_acceptances_accepted_at ON legal_acceptances(accepted_at);
+CREATE INDEX idx_legal_acceptances_user_id ON legal_acceptances(user_id);
+CREATE INDEX idx_legal_acceptances_document_type ON legal_acceptances(document_type);
+CREATE INDEX idx_legal_acceptances_accepted_at ON legal_acceptances(accepted_at);
 
 -- Account deletion requests table
-CREATE TABLE IF NOT EXISTS account_deletion_requests (
+CREATE TABLE account_deletion_requests (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   request_id TEXT NOT NULL UNIQUE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -141,17 +123,17 @@ CREATE TABLE IF NOT EXISTS account_deletion_requests (
 );
 
 -- Add indexes for efficient queries
-CREATE INDEX IF NOT EXISTS idx_account_deletion_requests_user_id ON account_deletion_requests(user_id);
-CREATE INDEX IF NOT EXISTS idx_account_deletion_requests_status ON account_deletion_requests(status);
-CREATE INDEX IF NOT EXISTS idx_account_deletion_requests_scheduled_for ON account_deletion_requests(scheduled_for);
+CREATE INDEX idx_account_deletion_requests_user_id ON account_deletion_requests(user_id);
+CREATE INDEX idx_account_deletion_requests_status ON account_deletion_requests(status);
+CREATE INDEX idx_account_deletion_requests_scheduled_for ON account_deletion_requests(scheduled_for);
 
 -- Add constraint to prevent duplicate pending requests per user
-CREATE UNIQUE INDEX IF NOT EXISTS idx_account_deletion_requests_pending_user 
+CREATE UNIQUE INDEX idx_account_deletion_requests_pending_user 
   ON account_deletion_requests(user_id) 
   WHERE status = 'pending';
 
 -- Bug reports table
-CREATE TABLE IF NOT EXISTS bug_reports (
+CREATE TABLE bug_reports (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   ticket_id TEXT NOT NULL UNIQUE,
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
@@ -167,10 +149,10 @@ CREATE TABLE IF NOT EXISTS bug_reports (
 );
 
 -- Add indexes for efficient queries
-CREATE INDEX IF NOT EXISTS idx_bug_reports_user_id ON bug_reports(user_id);
-CREATE INDEX IF NOT EXISTS idx_bug_reports_status ON bug_reports(status);
-CREATE INDEX IF NOT EXISTS idx_bug_reports_created_at ON bug_reports(created_at);
-CREATE INDEX IF NOT EXISTS idx_bug_reports_category ON bug_reports(category);
+CREATE INDEX idx_bug_reports_user_id ON bug_reports(user_id);
+CREATE INDEX idx_bug_reports_status ON bug_reports(status);
+CREATE INDEX idx_bug_reports_created_at ON bug_reports(created_at);
+CREATE INDEX idx_bug_reports_category ON bug_reports(category);
 
 -- Add trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_bug_reports_updated_at()
@@ -181,28 +163,28 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_bug_reports_updated_at
+CREATE OR REPLACE TRIGGER trigger_bug_reports_updated_at
   BEFORE UPDATE ON bug_reports
   FOR EACH ROW
   EXECUTE FUNCTION update_bug_reports_updated_at();
 
 -- Feedback table
-CREATE TABLE IF NOT EXISTS feedback (
+CREATE TABLE feedback (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   category TEXT NOT NULL CHECK (category IN ('feature_request', 'improvement', 'compliment', 'other')),
   message TEXT NOT NULL CHECK (char_length(message) >= 10 AND char_length(message) <= 1000),
-  email TEXT CHECK (email IS NULL OR email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
+  email TEXT CHECK (email IS NULL OR email ~* '^[a-zA-Z0-9.!#$%&''*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Add indexes for efficient queries
-CREATE INDEX IF NOT EXISTS idx_feedback_user_id ON feedback(user_id);
-CREATE INDEX IF NOT EXISTS idx_feedback_created_at ON feedback(created_at);
-CREATE INDEX IF NOT EXISTS idx_feedback_category ON feedback(category);
+CREATE INDEX idx_feedback_user_id ON feedback(user_id);
+CREATE INDEX idx_feedback_created_at ON feedback(created_at);
+CREATE INDEX idx_feedback_category ON feedback(category);
 
 -- Audit logs table
-CREATE TABLE IF NOT EXISTS audit_logs (
+CREATE TABLE audit_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   event_type TEXT NOT NULL CHECK (char_length(event_type) > 0),
@@ -213,9 +195,9 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 
 -- Add indexes for efficient queries
-CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_event_type ON audit_logs(event_type);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
+CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
+CREATE INDEX idx_audit_logs_event_type ON audit_logs(event_type);
+CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
 
 -- ======================================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
@@ -231,96 +213,172 @@ ALTER TABLE feedback ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Profiles RLS policies
-CREATE POLICY "Users can view their own profile"
-  ON profiles FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Users can view their own profile') THEN
+    CREATE POLICY "Users can view their own profile"
+      ON profiles FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can view public profiles"
-  ON profiles FOR SELECT
-  USING (show_profile_to_community = true);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Users can view public profiles') THEN
+    CREATE POLICY "Users can view public profiles"
+      ON profiles FOR SELECT
+      USING (show_profile_to_community = true);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can insert their own profile"
-  ON profiles FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Users can insert their own profile') THEN
+    CREATE POLICY "Users can insert their own profile"
+      ON profiles FOR INSERT
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can update their own profile"
-  ON profiles FOR UPDATE
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Users can update their own profile') THEN
+    CREATE POLICY "Users can update their own profile"
+      ON profiles FOR UPDATE
+      USING (auth.uid() = user_id)
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can delete their own profile"
-  ON profiles FOR DELETE
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Users can delete their own profile') THEN
+    CREATE POLICY "Users can delete their own profile"
+      ON profiles FOR DELETE
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Notification preferences RLS policies
-CREATE POLICY "Users can view their own notification preferences"
-  ON notification_preferences FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'notification_preferences' AND policyname = 'Users can view their own notification preferences') THEN
+    CREATE POLICY "Users can view their own notification preferences"
+      ON notification_preferences FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can insert their own notification preferences"
-  ON notification_preferences FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'notification_preferences' AND policyname = 'Users can insert their own notification preferences') THEN
+    CREATE POLICY "Users can insert their own notification preferences"
+      ON notification_preferences FOR INSERT
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can update their own notification preferences"
-  ON notification_preferences FOR UPDATE
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'notification_preferences' AND policyname = 'Users can update their own notification preferences') THEN
+    CREATE POLICY "Users can update their own notification preferences"
+      ON notification_preferences FOR UPDATE
+      USING (auth.uid() = user_id)
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can delete their own notification preferences"
-  ON notification_preferences FOR DELETE
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'notification_preferences' AND policyname = 'Users can delete their own notification preferences') THEN
+    CREATE POLICY "Users can delete their own notification preferences"
+      ON notification_preferences FOR DELETE
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Legal acceptances RLS policies
-CREATE POLICY "Users can view their own legal acceptances"
-  ON legal_acceptances FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'legal_acceptances' AND policyname = 'Users can view their own legal acceptances') THEN
+    CREATE POLICY "Users can view their own legal acceptances"
+      ON legal_acceptances FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can insert their own legal acceptances"
-  ON legal_acceptances FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'legal_acceptances' AND policyname = 'Users can insert their own legal acceptances') THEN
+    CREATE POLICY "Users can insert their own legal acceptances"
+      ON legal_acceptances FOR INSERT
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Note: Legal acceptances should not be updated or deleted for audit trail
 
 -- Account deletion requests RLS policies
-CREATE POLICY "Users can view their own deletion requests"
-  ON account_deletion_requests FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'account_deletion_requests' AND policyname = 'Users can view their own deletion requests') THEN
+    CREATE POLICY "Users can view their own deletion requests"
+      ON account_deletion_requests FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can insert their own deletion requests"
-  ON account_deletion_requests FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'account_deletion_requests' AND policyname = 'Users can insert their own deletion requests') THEN
+    CREATE POLICY "Users can insert their own deletion requests"
+      ON account_deletion_requests FOR INSERT
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can update their own deletion requests"
-  ON account_deletion_requests FOR UPDATE
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'account_deletion_requests' AND policyname = 'Users can update their own deletion requests') THEN
+    CREATE POLICY "Users can update their own deletion requests"
+      ON account_deletion_requests FOR UPDATE
+      USING (auth.uid() = user_id)
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Bug reports RLS policies
-CREATE POLICY "Users can view their own bug reports"
-  ON bug_reports FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'bug_reports' AND policyname = 'Users can view their own bug reports') THEN
+    CREATE POLICY "Users can view their own bug reports"
+      ON bug_reports FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can insert their own bug reports"
-  ON bug_reports FOR INSERT
-  WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'bug_reports' AND policyname = 'Users can insert their own bug reports') THEN
+    CREATE POLICY "Users can insert their own bug reports"
+      ON bug_reports FOR INSERT
+      WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+  END IF;
+END $$;
 
 -- Note: Bug reports cannot be updated or deleted by users
 
 -- Feedback RLS policies
-CREATE POLICY "Users can view their own feedback"
-  ON feedback FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'feedback' AND policyname = 'Users can view their own feedback') THEN
+    CREATE POLICY "Users can view their own feedback"
+      ON feedback FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can insert their own feedback"
-  ON feedback FOR INSERT
-  WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'feedback' AND policyname = 'Users can insert their own feedback') THEN
+    CREATE POLICY "Users can insert their own feedback"
+      ON feedback FOR INSERT
+      WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+  END IF;
+END $$;
 
 -- Note: Feedback cannot be updated or deleted by users
 
 -- Audit logs RLS policies
-CREATE POLICY "Users can view their own audit logs"
-  ON audit_logs FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'audit_logs' AND policyname = 'Users can view their own audit logs') THEN
+    CREATE POLICY "Users can view their own audit logs"
+      ON audit_logs FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Note: Audit logs can only be inserted via backend functions
 
@@ -334,39 +392,55 @@ VALUES ('avatars', 'avatars', false)
 ON CONFLICT (id) DO NOTHING;
 
 -- Storage policies for avatars bucket
-CREATE POLICY "Users can view their own avatars"
-  ON storage.objects FOR SELECT
-  USING (
-    bucket_id = 'avatars' AND
-    (storage.foldername(name))[1] = auth.uid()::text
-  );
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Users can view their own avatars') THEN
+    CREATE POLICY "Users can view their own avatars"
+      ON storage.objects FOR SELECT
+      USING (
+        bucket_id = 'avatars' AND
+        (storage.foldername(name))[1] = auth.uid()::text
+      );
+  END IF;
+END $$;
 
-CREATE POLICY "Users can upload their own avatars"
-  ON storage.objects FOR INSERT
-  WITH CHECK (
-    bucket_id = 'avatars' AND
-    (storage.foldername(name))[1] = auth.uid()::text AND
-    -- Limit file size to 5MB
-    OCTET_LENGTH(metadata->>'size') <= 5242880
-  );
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Users can upload their own avatars') THEN
+    CREATE POLICY "Users can upload their own avatars"
+      ON storage.objects FOR INSERT
+      WITH CHECK (
+        bucket_id = 'avatars' AND
+        (storage.foldername(name))[1] = auth.uid()::text AND
+        -- Limit file size to 5MB
+        (metadata->>'size')::bigint <= 5242880
+      );
+  END IF;
+END $$;
 
-CREATE POLICY "Users can update their own avatars"
-  ON storage.objects FOR UPDATE
-  USING (
-    bucket_id = 'avatars' AND
-    (storage.foldername(name))[1] = auth.uid()::text
-  )
-  WITH CHECK (
-    bucket_id = 'avatars' AND
-    (storage.foldername(name))[1] = auth.uid()::text
-  );
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Users can update their own avatars') THEN
+    CREATE POLICY "Users can update their own avatars"
+      ON storage.objects FOR UPDATE
+      USING (
+        bucket_id = 'avatars' AND
+        (storage.foldername(name))[1] = auth.uid()::text
+      )
+      WITH CHECK (
+        bucket_id = 'avatars' AND
+        (storage.foldername(name))[1] = auth.uid()::text
+      );
+  END IF;
+END $$;
 
-CREATE POLICY "Users can delete their own avatars"
-  ON storage.objects FOR DELETE
-  USING (
-    bucket_id = 'avatars' AND
-    (storage.foldername(name))[1] = auth.uid()::text
-  );
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Users can delete their own avatars') THEN
+    CREATE POLICY "Users can delete their own avatars"
+      ON storage.objects FOR DELETE
+      USING (
+        bucket_id = 'avatars' AND
+        (storage.foldername(name))[1] = auth.uid()::text
+      );
+  END IF;
+END $$;
 
 -- ======================================================================================
 -- HELPER FUNCTIONS
