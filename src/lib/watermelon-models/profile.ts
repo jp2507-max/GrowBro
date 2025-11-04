@@ -1,18 +1,6 @@
 import type { Database } from '@nozbe/watermelondb';
 import { Model, Q } from '@nozbe/watermelondb';
-
-/**
- * Editable profile fields - excludes WatermelonDB internals and auto-managed fields
- */
-export type EditableProfileFields = Pick<
-  ProfileModel,
-  | 'displayName'
-  | 'bio'
-  | 'avatarUrl'
-  | 'location'
-  | 'showProfileToCommunity'
-  | 'allowDirectMessages'
->;
+import { date, field } from '@nozbe/watermelondb/decorators';
 
 /**
  * Profile WatermelonDB model
@@ -22,6 +10,19 @@ export type EditableProfileFields = Pick<
  * One-to-one mapping between users and profiles.
  */
 export class ProfileModel extends Model {
+  static table = 'profiles';
+
+  @field('user_id') userId!: string;
+  @field('display_name') displayName!: string;
+  @field('bio') bio?: string;
+  @field('avatar_url') avatarUrl?: string | null;
+  @field('avatar_status') avatarStatus?: string | null;
+  @field('location') location?: string;
+  @field('show_profile_to_community') showProfileToCommunity!: boolean;
+  @field('allow_direct_messages') allowDirectMessages!: boolean;
+  @date('created_at') createdAt!: Date;
+  @date('updated_at') updatedAt!: Date;
+
   /**
    * Finds an existing profile record for the given user_id,
    * or creates a new one if none exists. This ensures one-to-one mapping
@@ -51,17 +52,18 @@ export class ProfileModel extends Model {
 
       // Create new record if none exists
       const now = new Date();
-      return collection.create((record) => {
+      return collection.create((record: any) => {
         record.userId = userId;
         record.displayName = defaults.displayName ?? 'User';
         record.bio = defaults.bio;
         record.avatarUrl = defaults.avatarUrl;
+        record.avatarStatus = defaults.avatarStatus ?? 'idle';
         record.location = defaults.location;
         record.showProfileToCommunity = defaults.showProfileToCommunity ?? true;
         record.allowDirectMessages = defaults.allowDirectMessages ?? true;
         record.createdAt = now;
         record.updatedAt = now;
-      });
+      }) as unknown as ProfileModel;
     });
   }
 
@@ -81,11 +83,13 @@ export class ProfileModel extends Model {
    * @param updates - Partial profile updates
    */
   async updateProfile(updates: Partial<EditableProfileFields>): Promise<void> {
-    await this.update((record) => {
+    await this.update((record: any) => {
       if (updates.displayName !== undefined)
         record.displayName = updates.displayName;
       if (updates.bio !== undefined) record.bio = updates.bio;
       if (updates.avatarUrl !== undefined) record.avatarUrl = updates.avatarUrl;
+      if (updates.avatarStatus !== undefined)
+        record.avatarStatus = updates.avatarStatus;
       if (updates.location !== undefined) record.location = updates.location;
       if (updates.showProfileToCommunity !== undefined)
         record.showProfileToCommunity = updates.showProfileToCommunity;
@@ -95,3 +99,16 @@ export class ProfileModel extends Model {
     });
   }
 }
+
+/**
+ * Editable profile fields - excludes WatermelonDB internals and auto-managed fields
+ */
+export type EditableProfileFields = {
+  displayName?: string;
+  bio?: string;
+  avatarUrl?: string | null;
+  avatarStatus?: string | null;
+  location?: string;
+  showProfileToCommunity?: boolean;
+  allowDirectMessages?: boolean;
+};

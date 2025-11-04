@@ -9,7 +9,7 @@
  * - 30-day grace period information
  * - Anonymous user handling
  *
- * eslint-disable-next-line max-lines-per-function -- Complex multi-step deletion flow
+ *
  */
 
 import { Stack, useRouter } from 'expo-router';
@@ -23,8 +23,8 @@ import { useRequestAccountDeletion } from '@/api/auth/use-request-account-deleti
 import { ReAuthModal, useReAuthModal } from '@/components/auth/re-auth-modal';
 import {
   Button,
-  ControlledInput,
   FocusAwareStatusBar,
+  Input,
   Text,
   View,
 } from '@/components/ui';
@@ -35,19 +35,60 @@ import { database } from '@/lib/watermelon';
 /**
  * Clear all local data
  * Requirements: 6.6
+ *
+ * Local Data Clearing Strategy:
+ * =============================
+ *
+ * This function executes three distinct cleanup operations to ensure
+ * complete removal of user data from the device. Order matters due to
+ * dependencies and potential failures.
+ *
+ * Step 1: WatermelonDB Reset
+ * - Deletes all local database records (plants, tasks, harvests, etc.)
+ * - Uses unsafeResetDatabase() to clear all tables atomically
+ * - Wrapped in write transaction for consistency
+ * - Critical: Must happen first as other steps may depend on auth state
+ *
+ * Step 2: MMKV Storage Clear
+ * - Removes all key-value pairs from auth storage
+ * - Includes tokens, preferences, cached settings
+ * - Uses clearAll() for atomic operation
+ *
+ * Step 3: SecureStore Keys Deletion
+ * - Removes sensitive keys from iOS Keychain / Android Keystore
+ * - Keys cleared:
+ *   - auth-encryption-key: Database encryption key
+ *   - privacy-consent.v1: User consent records
+ *   - age-gate-verified: Age verification status
+ * - Uses Promise.allSettled to continue even if some keys don't exist
+ *
+ * Error Handling:
+ * - Failures are logged but don't throw
+ * - Sign out proceeds even if cleanup fails
+ * - Rationale: User intent to delete takes priority
+ *   - Worst case: some local data remains but account is gone
+ *   - Better than blocking deletion due to cleanup errors
+ *
+ * Privacy Implications:
+ * - This is immediate local deletion (Requirement 6.6)
+ * - Backend deletion happens after grace period
+ * - User cannot access app after this point
+ * - Local data is not recoverable after this function
+ *
+ * @throws Never - Errors are caught and logged, function always completes
  */
 async function clearLocalData(): Promise<void> {
   try {
-    // 1. Reset WatermelonDB
+    // 1. Reset WatermelonDB (most critical - contains all user content)
     await database.write(async () => {
       await database.unsafeResetDatabase();
     });
 
-    // 2. Clear MMKV storage
+    // 2. Clear MMKV storage (auth state, preferences, cached settings)
     const mmkvStorage = new MMKV({ id: 'auth-storage' });
     mmkvStorage.clearAll();
 
-    // 3. Clear SecureStore keys
+    // 3. Clear SecureStore keys (sensitive credentials and encryption keys)
     const secureStoreKeys = [
       'auth-encryption-key',
       'privacy-consent.v1',
@@ -65,6 +106,7 @@ async function clearLocalData(): Promise<void> {
 
 type DeletionStep = 'explanation' | 'auth' | 'confirmation';
 
+// eslint-disable-next-line max-lines-per-function -- Complex multi-step deletion flow
 export default function DeleteAccountScreen() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -76,7 +118,44 @@ export default function DeleteAccountScreen() {
 
   const isAnonymous = !user;
 
-  // Mutation for requesting account deletion
+  // Mutation for requesting account deletion with grace period
+  // Requirements: 6.5, 6.6, 6.12
+  //
+  // Grace Period Deletion Flow:
+  // ===========================
+  //
+  // Backend Processing:
+  // 1. Creates deletion request record with requestId and scheduledFor timestamp
+  // 2. scheduledFor = now + 30 days (configurable grace period)
+  // 3. Marks request as 'pending' status
+  // 4. Schedules background job for permanent deletion
+  // 5. Returns success to client
+  //
+  // Client Processing (onSuccess):
+  // 1. Clear all local data immediately (see clearLocalData)
+  // 2. Sign out user (prevents further app access)
+  // 3. Show success message with grace period info
+  // 4. Navigate to login screen
+  //
+  // Grace Period Mechanics:
+  // - User can cancel deletion by logging in within 30 days
+  // - Login checks for pending deletion and shows "Restore Account" banner
+  // - Restore cancels deletion request and resumes normal access
+  // - After 30 days, backend cascade job executes permanent deletion:
+  //   - Deletes from Supabase tables (profiles, plants, harvests, etc.)
+  //   - Deletes from blob storage (avatars, photos)
+  //   - Notifies third-party processors (analytics, crash reporting)
+  //   - Creates audit log entry
+  //   - Sends confirmation email
+  //
+  // Rate Limiting:
+  // - Server enforces 1 pending request per user (Requirement 6.11)
+  // - Rejects new requests while status = 'pending' AND scheduledFor > now
+  //
+  // Error Handling:
+  // - Server errors trigger toast notification
+  // - User remains on confirmation screen for retry
+  // - Local data not cleared until backend confirms success
   const requestDeletion = useRequestAccountDeletion({
     onSuccess: async (_data) => {
       // Clear local data and sign out
@@ -95,7 +174,9 @@ export default function DeleteAccountScreen() {
     },
   });
 
-  // Handle anonymous user deletion
+  // Handle anonymous user deletion (Requirement 6.10)
+  // Anonymous users don't have backend accounts, so we only clear local data
+  // No grace period or backend deletion needed
   const handleAnonymousDelete = async () => {
     Alert.alert(
       t('settings.delete_account.anonymous_title'),
@@ -124,18 +205,49 @@ export default function DeleteAccountScreen() {
     );
   };
 
-  // Handle authenticated user deletion - step 1: explanation
+  // Handle authenticated user deletion - step 1: explanation (Requirement 6.1)
+  // Shows consequences and grace period information
   const handleContinueToAuth = () => {
     setCurrentStep('auth');
     presentReAuthModal();
   };
 
-  // Handle re-authentication success - step 2: auth
+  // Handle re-authentication success - step 2: auth (Requirement 6.3)
+  // Prevents accidental deletion by requiring password/biometric verification
   const handleReAuthSuccess = () => {
     setCurrentStep('confirmation');
   };
 
-  // Handle final deletion - step 3: confirmation
+  // Handle final deletion - step 3: confirmation (Requirement 6.4)
+  //
+  // Final Confirmation Safeguard:
+  // ============================
+  //
+  // Text Input Validation:
+  // - User must type "DELETE" (case-insensitive) to proceed
+  // - Button disabled until valid input entered
+  // - Prevents accidental confirmation from muscle memory taps
+  //
+  // Double Confirmation:
+  // - Native Alert shown after valid text input
+  // - Provides one final chance to cancel
+  // - Alert emphasizes 30-day grace period and permanence
+  //
+  // Flow on Confirm:
+  // 1. Trigger requestDeletion mutation
+  // 2. Backend creates deletion request (scheduledFor = now + 30 days)
+  // 3. onSuccess: clearLocalData() + signOut() + navigate to login
+  // 4. User sees success message with grace period info
+  //
+  // Audit Trail:
+  // - Backend logs requestId, userId, requestedAt, policyVersion
+  // - Deletion request stored in account_deletion_requests table
+  // - Status: 'pending' until grace period expires or user restores
+  //
+  // Cancellation Options:
+  // - User can cancel in this alert
+  // - User can restore account by logging in within 30 days
+  // - After 30 days, deletion is permanent and cannot be undone
   const handleConfirmDeletion = async () => {
     if (deleteConfirmText.toLowerCase() !== 'delete') {
       return;
@@ -383,9 +495,7 @@ function FinalConfirmationSection({
           {t('settings.delete_account.type_delete_instruction')}
         </Text>
         <View className="relative">
-          <ControlledInput
-            name="deleteConfirm"
-            control={undefined as any}
+          <Input
             placeholder="DELETE"
             value={deleteConfirmText}
             onChangeText={onChangeText}

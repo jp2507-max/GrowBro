@@ -36,6 +36,7 @@ import { PlaybookApplicationModel } from './watermelon-models/playbook-applicati
 import { PostModel } from './watermelon-models/post';
 import { PostCommentModel } from './watermelon-models/post-comment';
 import { PostLikeModel } from './watermelon-models/post-like';
+import { ProfileModel } from './watermelon-models/profile';
 import { ReservoirModel } from './watermelon-models/reservoir';
 import { ReservoirEventModel } from './watermelon-models/reservoir-event';
 import { SeriesModel } from './watermelon-models/series';
@@ -103,5 +104,7 @@ export const database = new Database({
     PostCommentModel,
     PostLikeModel,
     OutboxModel,
+    // User profile model
+    ProfileModel,
   ],
 });

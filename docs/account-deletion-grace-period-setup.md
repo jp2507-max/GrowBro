@@ -19,7 +19,6 @@ GrowBro implements a 30-day grace period for account deletions (GDPR requirement
   - `scheduled_for`: Deletion date (created_at + 30 days)
 - **Helper functions**:
   - `check_pending_deletion(user_id)`: Returns pending request with days remaining
-  - `process_expired_deletion_requests()`: Finds and processes expired requests
 
 ### 2. Edge Functions
 

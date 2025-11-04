@@ -55,7 +55,6 @@ Successfully implemented a GDPR-compliant account deletion feature with a 30-day
   - RLS policy: Prevents multiple pending requests per user
   - Helper functions:
     - `check_pending_deletion(user_id)` - Returns pending request with days remaining
-    - `process_expired_deletion_requests()` - Finds and processes expired requests
 
 - **6.8**: Scheduled permanent deletion after grace period
   - Edge Function: `supabase/functions/process-expired-deletions/index.ts`

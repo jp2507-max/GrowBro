@@ -29,6 +29,7 @@ interface License {
 
 const ALL_LICENSES: License[] = licensesData.packages as License[];
 
+// eslint-disable-next-line max-lines-per-function -- License list + detail view
 export default function LicensesScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLicense, setSelectedLicense] = useState<License | null>(null);
@@ -48,6 +49,7 @@ export default function LicensesScreen() {
           <View className="border-b border-neutral-200 bg-white px-4 py-3 dark:border-neutral-700 dark:bg-neutral-900">
             <Pressable
               accessibilityRole="button"
+              accessibilityHint="Go back"
               onPress={() => setSelectedLicense(null)}
               className="flex-row items-center"
             >
@@ -98,6 +100,7 @@ export default function LicensesScreen() {
         <View className="border-b border-neutral-200 bg-white px-4 py-3 dark:border-neutral-700 dark:bg-neutral-900">
           <TextInput
             accessibilityLabel={translate('settings.legal.licenses.search')}
+            accessibilityHint="Filter licenses by name or package"
             accessibilityRole="search"
             placeholder={translate('settings.legal.licenses.search')}
             placeholderTextColor={colors.neutral[400]}
@@ -127,6 +130,7 @@ export default function LicensesScreen() {
             {licenseTypes.map((type) => (
               <Pressable
                 accessibilityRole="button"
+                accessibilityHint="Filter licenses by type"
                 key={type}
                 onPress={() => setSearchQuery(type)}
                 className="rounded-full border border-neutral-300 bg-white px-4 py-2 dark:border-neutral-600 dark:bg-neutral-800"
@@ -146,6 +150,7 @@ export default function LicensesScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`${license.name} version ${license.version}, ${license.license} license`}
+                accessibilityHint={`Open details for ${license.name}`}
                 key={`${license.name}-${index}`}
                 onPress={() => setSelectedLicense(license)}
                 className="mb-2 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800"

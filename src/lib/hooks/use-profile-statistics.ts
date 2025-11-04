@@ -54,11 +54,15 @@ export function useProfileStatistics(
 
       // Query plants count (filter by user_id if available)
       const plantsCollection = database.collections.get('plants');
-      const plants = await plantsCollection.query().fetchCount();
+      const plants = await plantsCollection
+        .query(Q.where('user_id', userId))
+        .fetchCount();
 
       // Query harvests count
       const harvestsCollection = database.collections.get('harvests');
-      const harvests = await harvestsCollection.query().fetchCount();
+      const harvests = await harvestsCollection
+        .query(Q.where('user_id', userId))
+        .fetchCount();
 
       // Query posts count (if table exists)
       let posts = 0;
@@ -144,6 +148,20 @@ export function useProfileStatistics(
     }
 
     try {
+      // Observe posts changes
+      const postsCollection = database.collections.get('posts');
+      const postsSubscription = postsCollection
+        .query(Q.where('user_id', userId))
+        .observe()
+        .subscribe(() => {
+          void fetchStatistics();
+        });
+      subscriptions.push(() => postsSubscription.unsubscribe());
+    } catch {
+      // Table doesn't exist yet
+    }
+
+    try {
       // Observe post_likes changes (affects likes received count)
       const postLikesCollection = database.collections.get('post_likes');
       const postLikesSubscription = postLikesCollection
@@ -160,7 +178,7 @@ export function useProfileStatistics(
     return () => {
       subscriptions.forEach((unsubscribe) => unsubscribe());
     };
-  }, [database, fetchStatistics]);
+  }, [database, fetchStatistics, userId]);
 
   return {
     ...statistics,

@@ -4,7 +4,9 @@
  */
 
 import * as Notifications from 'expo-notifications';
-import { Linking, Platform } from 'react-native';
+import { Alert, Linking, Platform } from 'react-native';
+
+import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
 export type NotificationChannelId =
   | 'task_reminders'
@@ -48,8 +50,17 @@ export async function getNotificationPermissionStatus(): Promise<NotificationPer
  * Requests notification permissions
  */
 export async function requestNotificationPermissions(): Promise<boolean> {
-  const { status } = await Notifications.requestPermissionsAsync();
-  return status === 'granted';
+  try {
+    const { status } = await Notifications.requestPermissionsAsync();
+    return status === 'granted';
+  } catch (error) {
+    captureCategorizedErrorSync(error, {
+      source: 'notifications',
+      feature: 'permissions',
+      action: 'request',
+    });
+    return false;
+  }
 }
 
 /**
@@ -57,7 +68,21 @@ export async function requestNotificationPermissions(): Promise<boolean> {
  * Requirements: 4.3, 4.4, 4.10
  */
 export async function openNotificationSettings(): Promise<void> {
-  await Linking.openSettings();
+  try {
+    await Linking.openSettings();
+  } catch (error) {
+    captureCategorizedErrorSync(error, {
+      source: 'notifications',
+      feature: 'settings',
+      action: 'open',
+    });
+    // Show user-friendly fallback message
+    Alert.alert(
+      'Unable to Open Settings',
+      'Please manually open your device settings to enable notifications.',
+      [{ text: 'OK' }]
+    );
+  }
 }
 
 /**
@@ -105,22 +130,24 @@ async function getAndroidChannelStatus(): Promise<
           ? channel.importance !== Notifications.AndroidImportance.NONE
           : false;
       } catch (error) {
-        console.warn(`Failed to check channel ${channelId}:`, error);
+        captureCategorizedErrorSync(error, {
+          source: 'notifications',
+          feature: 'channels',
+          action: 'check',
+          channelId,
+        });
         statusMap[channelId] = false;
       }
     }
 
     return statusMap;
   } catch (error) {
-    console.error('Failed to get Android channel status:', error);
-    // Return all channels as enabled on error to avoid blocking UI
-    return {
-      task_reminders: true,
-      harvest_alerts: true,
-      community_activity: true,
-      system_updates: true,
-      marketing: true,
-    };
+    captureCategorizedErrorSync(error, {
+      source: 'notifications',
+      feature: 'channels',
+      action: 'get_status',
+    });
+    throw error;
   }
 }
 
@@ -128,10 +155,16 @@ async function getAndroidChannelStatus(): Promise<
  * Creates Android notification channels
  * Requirements: 4.10
  */
-export async function createAndroidNotificationChannels(): Promise<void> {
+export async function createAndroidNotificationChannels(): Promise<{
+  succeeded: string[];
+  failed: string[];
+}> {
   if (Platform.OS !== 'android') {
-    return;
+    return { succeeded: [], failed: [] };
   }
+
+  const succeeded: string[] = [];
+  const failed: string[] = [];
 
   const channels: {
     id: NotificationChannelId;
@@ -189,11 +222,17 @@ export async function createAndroidNotificationChannels(): Promise<void> {
         vibrationPattern: channelConfig.vibrationPattern,
         enableVibrate: !!channelConfig.vibrationPattern,
       });
+      succeeded.push(channelConfig.id);
     } catch (error) {
-      console.error(
-        `Failed to create notification channel ${channelConfig.id}:`,
-        error
-      );
+      failed.push(channelConfig.id);
+      captureCategorizedErrorSync(error, {
+        source: 'notifications',
+        feature: 'channels',
+        action: 'create',
+        channelId: channelConfig.id,
+      });
     }
   }
+
+  return { succeeded, failed };
 }

@@ -21,6 +21,7 @@ interface ProfileHeaderProps {
   testID?: string;
 }
 
+// eslint-disable-next-line max-lines-per-function -- Presentational header component
 export function ProfileHeader({
   displayName,
   avatarUrl,

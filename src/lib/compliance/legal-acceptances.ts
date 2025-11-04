@@ -1,9 +1,22 @@
 import { Env } from '@env';
+import { getLocales } from 'expo-localization';
 import { create } from 'zustand';
 
+import { useAuth } from '@/lib/auth';
 import { storage } from '@/lib/storage';
 import { createSelectors } from '@/lib/utils';
 import type { LegalDocumentType } from '@/types/settings';
+
+export type { LegalDocumentType } from '@/types/settings';
+
+function getLocale(): string {
+  try {
+    const first = getLocales?.()[0];
+    if (first && typeof first.languageTag === 'string')
+      return first.languageTag;
+  } catch {}
+  return 'en';
+}
 
 const LEGAL_ACCEPTANCES_KEY = 'compliance.legal.acceptances';
 
@@ -104,8 +117,17 @@ function createEmptyState(): PersistedLegalState {
   };
 }
 
-function savePersistedAcceptances(state: PersistedLegalState): void {
-  storage.set(LEGAL_ACCEPTANCES_KEY, JSON.stringify(state));
+function savePersistedAcceptances(state: PersistedLegalState): boolean {
+  try {
+    storage.set(LEGAL_ACCEPTANCES_KEY, JSON.stringify(state));
+    return true;
+  } catch (error) {
+    console.error(
+      `Failed to save legal acceptances for key "${LEGAL_ACCEPTANCES_KEY}":`,
+      error
+    );
+    return false;
+  }
 }
 
 function parseVersion(version: string): {
@@ -171,10 +193,14 @@ function createAcceptDocumentFunction(
       acceptances: updatedAcceptances,
       lastUpdated: timestamp,
     });
-    savePersistedAcceptances({
+    const saved = savePersistedAcceptances({
       acceptances: updatedAcceptances,
       lastUpdated: timestamp,
     });
+    if (!saved) {
+      // Storage failure - could surface to user via toast/error state
+      console.warn('Failed to persist legal document acceptance locally');
+    }
   };
 }
 
@@ -207,10 +233,14 @@ function createAcceptAllFunction(
       acceptances,
       lastUpdated: timestamp,
     });
-    savePersistedAcceptances({
+    const saved = savePersistedAcceptances({
       acceptances,
       lastUpdated: timestamp,
     });
+    if (!saved) {
+      // Storage failure - could surface to user via toast/error state
+      console.warn('Failed to persist all legal document acceptances locally');
+    }
   };
 }
 
@@ -280,6 +310,7 @@ const _useLegalAcceptances = create<LegalAcceptancesStoreState>((set, get) =>
 const legalAcceptancesStore = createSelectors(_useLegalAcceptances);
 
 export const useLegalAcceptances = legalAcceptancesStore.use;
+export { legalAcceptancesStore };
 
 export function hydrateLegalAcceptances(): void {
   legalAcceptancesStore.getState().hydrate();
@@ -331,10 +362,10 @@ export function getCurrentLegalVersions(): Record<
 export function getLegalAcceptanceSnapshot(): LegalAcceptanceSnapshot {
   const state = legalAcceptancesStore.getState();
   return {
-    userId: null, // Will be set by auth system if available
+    userId: useAuth.getState().user?.id ?? null,
     acceptances: state.acceptances,
     appVersion: Env.VERSION,
-    locale: 'en', // Will be set by i18n system
+    locale: getLocale(),
     lastUpdated: state.lastUpdated ?? new Date().toISOString(),
   };
 }

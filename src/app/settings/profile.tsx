@@ -5,7 +5,7 @@
  * Allows users to edit profile information, manage avatar, control visibility,
  * and view account statistics.
  *
- * eslint-disable-next-line max-lines-per-function -- Complex JSX-heavy screen component
+ *
  */
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,23 +14,28 @@ import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Pressable, ScrollView } from 'react-native';
+import { Alert, Pressable } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { z } from 'zod';
 
 import { AvatarPicker } from '@/components/settings/avatar-picker';
+import { ValidationError } from '@/components/settings/validation-feedback';
 import {
   Button,
   ControlledInput,
   FocusAwareStatusBar,
+  ProfileStatsSkeleton,
   Text,
   View,
 } from '@/components/ui';
+import { motion, withRM } from '@/lib/animations/motion';
 import { useAuth } from '@/lib/auth';
 import { checkProfanity } from '@/lib/compliance/profanity-filter';
 import { useProfileStatistics } from '@/lib/hooks/use-profile-statistics';
 import type { AvatarUploadProgress } from '@/lib/media/avatar-upload';
 import { uploadAvatar } from '@/lib/media/avatar-upload';
 import { requestSelectedPhotos } from '@/lib/media/photo-access';
+import { showErrorToast, showSuccessToast } from '@/lib/settings/toast-utils';
 import {
   fetchProfileFromBackend,
   syncProfileToBackend,
@@ -97,38 +102,51 @@ function ProfileFormFields({
 }) {
   if (isProfileLoading) {
     return (
-      <View className="items-center py-8">
-        <ActivityIndicator size="large" />
-        <Text className="mt-2 text-neutral-600 dark:text-neutral-400">
-          {t('profile.loading')}
-        </Text>
+      <View className="py-4">
+        <View className="mb-4">
+          <ProfileStatsSkeleton testID="profile-form-skeleton" />
+        </View>
       </View>
     );
   }
 
   return (
     <>
-      <ControlledInput
-        control={control}
-        name="displayName"
-        label={t('profile.displayName.label')}
-        placeholder={t('profile.displayName.placeholder')}
-        error={errors.displayName?.message}
-        maxLength={30}
-        testID="profile-display-name"
-      />
+      <View>
+        <ControlledInput
+          control={control}
+          name="displayName"
+          label={t('profile.displayName.label')}
+          placeholder={t('profile.displayName.placeholder')}
+          error={errors.displayName?.message}
+          maxLength={30}
+          testID="profile-display-name"
+        />
+        <ValidationError
+          error={errors.displayName}
+          fieldName="Display name"
+          testID="display-name-error"
+        />
+      </View>
 
-      <ControlledInput
-        control={control}
-        name="bio"
-        label={t('profile.bio.label')}
-        placeholder={t('profile.bio.placeholder')}
-        error={errors.bio?.message}
-        maxLength={500}
-        multiline
-        numberOfLines={4}
-        testID="profile-bio"
-      />
+      <View>
+        <ControlledInput
+          control={control}
+          name="bio"
+          label={t('profile.bio.label')}
+          placeholder={t('profile.bio.placeholder')}
+          error={errors.bio?.message}
+          maxLength={500}
+          multiline
+          numberOfLines={4}
+          testID="profile-bio"
+        />
+        <ValidationError
+          error={errors.bio}
+          fieldName="Bio"
+          testID="bio-error"
+        />
+      </View>
 
       <ControlledInput
         control={control}
@@ -193,7 +211,7 @@ function StatisticsPanel({
       </Text>
 
       {statistics.isLoading ? (
-        <ActivityIndicator />
+        <ProfileStatsSkeleton testID="stats-skeleton" />
       ) : (
         <View className="flex-row flex-wrap gap-3">
           <Pressable
@@ -251,6 +269,7 @@ function StatisticsPanel({
   );
 }
 
+// eslint-disable-next-line max-lines-per-function -- Complex JSX-heavy screen component
 export default function ProfileScreen() {
   // ProfileScreen: main settings screen for editing user profile.
   // Responsibilities:
@@ -268,6 +287,7 @@ export default function ProfileScreen() {
   // Requirements mapping (for auditors/developers):
   // 9.x -> Avatar, privacy, form validation and save flow
   // 10.x -> Statistics and navigation to related screens
+
   const router = useRouter();
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -367,7 +387,7 @@ export default function ProfileScreen() {
       } catch (error) {
         console.error('Avatar upload failed:', error);
         setAvatarStatus('failed');
-        Alert.alert(
+        showErrorToast(
           t('profile.avatar.uploadFailed'),
           t('profile.avatar.uploadFailedMessage')
         );
@@ -467,23 +487,23 @@ export default function ProfileScreen() {
           displayName: data.displayName,
           bio: data.bio || undefined,
           location: data.location || undefined,
-          avatarUrl: avatarUrl || undefined,
+          avatarUrl: avatarUrl,
           showProfileToCommunity,
           allowDirectMessages,
         });
 
         if (syncResult.success) {
-          Alert.alert(
+          showSuccessToast(
             t('profile.saveSuccess'),
             t('profile.saveSuccessMessage')
           );
           router.back();
         } else {
-          Alert.alert(t('profile.saveFailed'), syncResult.error);
+          showErrorToast(t('profile.saveFailed'), syncResult.error);
         }
       } catch (error) {
         console.error('Profile save failed:', error);
-        Alert.alert(t('profile.saveFailed'), t('profile.saveFailedMessage'));
+        showErrorToast(t('profile.saveFailed'), t('profile.saveFailedMessage'));
       }
     },
     [
@@ -509,7 +529,10 @@ export default function ProfileScreen() {
   return (
     <>
       <FocusAwareStatusBar />
-      <ScrollView className="flex-1 bg-white dark:bg-charcoal-950">
+      <Animated.ScrollView
+        entering={withRM(FadeIn.duration(motion.dur.md))}
+        className="flex-1 bg-white dark:bg-charcoal-950"
+      >
         <View className="p-4">
           {/* Avatar Section - Requirements: 9.4, 9.5 */}
           {/*
@@ -565,7 +588,7 @@ export default function ProfileScreen() {
             testID="profile-save-button"
           />
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </>
   );
 }

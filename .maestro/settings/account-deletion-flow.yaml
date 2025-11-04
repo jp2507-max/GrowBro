@@ -1,0 +1,196 @@
+appId: ${APP_ID}
+name: Account Deletion Flow Test
+tags:
+  - settings
+  - account
+  - deletion
+  - critical
+---
+# Test account deletion flow: initiate → re-auth → confirm → verify grace period
+
+- launchApp
+
+# Navigate to Settings
+- tapOn:
+    id: 'settings-tab'
+
+- assertVisible:
+    id: 'settings-screen'
+    timeout: 3000
+
+# Scroll to Account section at bottom
+- scrollUntilVisible:
+    element:
+      id: 'delete-account-option'
+    direction: DOWN
+
+# Navigate to Delete Account
+- tapOn:
+    id: 'delete-account-option'
+
+- assertVisible:
+    id: 'delete-account-screen'
+    timeout: 3000
+
+- assertVisible: 'Delete Account'
+
+# Step 1: Explanation Screen
+- assertVisible: 'Permanent data loss'
+
+- assertVisible: '30-day grace period'
+
+- assertVisible: 'What will be deleted'
+
+# Verify consequences list
+- assertVisible: 'Profile and account info'
+- assertVisible: 'Plants and tasks'
+- assertVisible: 'Harvests and inventory'
+- assertVisible: 'Community posts'
+
+# Cancel first time
+- tapOn: 'Cancel'
+
+- assertVisible:
+    id: 'settings-screen'
+
+# Try again
+- scrollUntilVisible:
+    element:
+      id: 'delete-account-option'
+    direction: DOWN
+
+- tapOn:
+    id: 'delete-account-option'
+
+# Proceed to next step
+- tapOn: 'Continue'
+
+# Step 2: Re-Authentication
+- assertVisible:
+    id: 're-auth-screen'
+    timeout: 3000
+
+- assertVisible: 'Verify Your Identity'
+
+# Test wrong password
+- tapOn:
+    id: 'password-input'
+
+- inputText: 'wrongpassword123'
+
+- tapOn: 'Verify'
+
+- assertVisible:
+    text: 'Incorrect password|Authentication failed'
+    timeout: 3000
+
+# Enter correct password
+- tapOn:
+    id: 'password-input'
+
+- clearKeychain
+
+- inputText: '${TEST_USER_PASSWORD}'
+
+- tapOn: 'Verify'
+
+# Step 3: Final Confirmation
+- assertVisible:
+    id: 'final-confirmation-screen'
+    timeout: 3000
+
+- assertVisible: 'Type DELETE to confirm'
+
+# Try to proceed without typing DELETE
+- tapOn:
+    id: 'confirm-delete-button'
+
+# Button should be disabled - verify via text
+- assertVisible: 'Please type DELETE'
+
+# Type incorrect text
+- tapOn:
+    id: 'delete-confirmation-input'
+
+- inputText: 'delete'
+
+# Button still disabled (case-insensitive but wrong)
+- tapOn:
+    id: 'confirm-delete-button'
+
+# Clear and type correct text
+- tapOn:
+    id: 'delete-confirmation-input'
+
+- clearKeychain
+
+- inputText: 'DELETE'
+
+# Verify countdown message
+- assertVisible: 'This action will be final in 30 days'
+
+# Confirm deletion
+- tapOn:
+    id: 'confirm-delete-button'
+
+# Step 4: Verify Deletion Initiated
+- assertVisible:
+    text: 'Account scheduled for deletion|Deletion request created'
+    timeout: 10000
+
+# Verify grace period information
+- assertVisible: '30 days to restore'
+
+# Should be logged out automatically
+- assertVisible:
+    id: 'login-screen|age-gate-screen'
+    timeout: 5000
+
+# Test Grace Period Restore Flow
+# Log back in
+- runFlow:
+    when:
+      visible:
+        id: 'login-screen'
+    commands:
+      - tapOn:
+          id: 'email-input'
+      - inputText: '${TEST_USER_EMAIL}'
+      - tapOn:
+          id: 'password-input'
+      - inputText: '${TEST_USER_PASSWORD}'
+      - tapOn: 'Sign In'
+
+# Should see restore banner
+- assertVisible:
+    text: 'Your account is scheduled for deletion|Restore your account'
+    timeout: 5000
+
+# Verify restore button
+- assertVisible:
+    id: 'restore-account-button'
+
+# Click restore
+- tapOn:
+    id: 'restore-account-button'
+
+# Verify restoration success
+- assertVisible:
+    text: 'Account restored|Deletion cancelled'
+    timeout: 5000
+
+# Verify we're back in the app
+- assertVisible:
+    id: 'home-screen|calendar-screen'
+    timeout: 3000
+
+# Verify settings are accessible again
+- tapOn:
+    id: 'settings-tab'
+
+- assertVisible:
+    id: 'settings-screen'
+
+# Verify no deletion banner
+- assertNotVisible:
+    text: 'scheduled for deletion'

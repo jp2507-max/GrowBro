@@ -45,6 +45,7 @@ const bugReportSchema = z.object({
 
 type BugReportFormData = z.infer<typeof bugReportSchema>;
 
+// eslint-disable-next-line max-lines-per-function -- Complex form screen
 export default function ReportBugScreen() {
   const router = useRouter();
   const user = useAuth.use.user();
@@ -113,7 +114,9 @@ export default function ReportBugScreen() {
         Alert.alert(
           translate('settings.support.report_bug.success_title'),
           translate('settings.support.report_bug.success_message', {
-            ticketId: result.ticketId || 'N/A',
+            ticketId:
+              result.ticketId ||
+              translate('settings.support.report_bug.ticket_id_fallback'),
           }),
           [
             {

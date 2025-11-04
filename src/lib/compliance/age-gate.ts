@@ -7,6 +7,7 @@ import { createSelectors } from '@/lib/utils';
 const AGE_GATE_STATE_KEY = 'compliance.ageGate.state';
 const AGE_GATE_AUDIT_KEY = 'compliance.ageGate.audit';
 const MAX_AUDIT_EVENTS = 100;
+const RE_VERIFICATION_MONTHS = 12;
 // Age thresholds by region (default 18+, some regions require 21+)
 // Note: These thresholds are simplified country-level defaults and do not account for
 // state/province-level variations (e.g., Canada has different legal ages by province:

@@ -28,7 +28,7 @@ export default function SecuritySettingsScreen() {
   // Initialize biometric settings on mount
   React.useEffect(() => {
     void biometricSettings.initialize();
-  }, []);
+  }, [biometricSettings]);
 
   const handleChangePassword = () => {
     presentChangePasswordModal();
@@ -110,11 +110,13 @@ export default function SecuritySettingsScreen() {
                     {biometricSettings.biometricType && (
                       <Text className="text-xs text-neutral-500 dark:text-neutral-400">
                         {biometricSettings.biometricType === 'face' &&
-                          'Face ID'}
+                          translate('settings.security.biometric.face' as any)}
                         {biometricSettings.biometricType === 'fingerprint' &&
-                          'Fingerprint'}
+                          translate(
+                            'settings.security.biometric.fingerprint' as any
+                          )}
                         {biometricSettings.biometricType === 'iris' &&
-                          'Iris Scanner'}
+                          translate('settings.security.biometric.iris' as any)}
                       </Text>
                     )}
                   </View>

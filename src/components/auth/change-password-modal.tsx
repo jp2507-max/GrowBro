@@ -166,7 +166,7 @@ export const ChangePasswordModal = React.forwardRef<
         {/* Warning */}
         <View className="mt-4 rounded-lg bg-warning-100 p-3 dark:bg-warning-900">
           <Text className="text-xs text-warning-900 dark:text-warning-100">
-            Changing your password will sign you out of all other devices.
+            {translate('auth.security.change_password_warning')}
           </Text>
         </View>
       </View>

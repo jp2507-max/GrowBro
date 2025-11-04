@@ -1070,5 +1070,28 @@ export const migrations = schemaMigrations({
       //   },
       // ],
     },
+    // Migration from version 27 to 28: No changes
+    {
+      toVersion: 28,
+      steps: [],
+    },
+    // Migration from version 28 to 29: No changes
+    {
+      toVersion: 29,
+      steps: [],
+    },
+    // Migration from version 29 to 30: Add avatar_status column to profiles
+    // Requirement 1.2: WatermelonDB schema migration for avatarStatus
+    {
+      toVersion: 30,
+      steps: [
+        addColumns({
+          table: 'profiles',
+          columns: [
+            { name: 'avatar_status', type: 'string', isOptional: true },
+          ],
+        }),
+      ],
+    },
   ],
 });

@@ -87,17 +87,26 @@ export const changeLanguage = (lang: Language) => {
   // determine direction from i18next for the selected language
   // use the named `dir` export to avoid `import/no-named-as-default-member` lint warning
   const isRtl = dir(lang) === 'rtl';
-  // Ensure the app is allowed to change layout direction at runtime on platforms
-  // that require permission before forcing RTL. Call allowRTL before forceRTL
-  // so the runtime will accept the change without requiring a restart.
-  I18nManager.allowRTL(isRtl);
-  I18nManager.forceRTL(isRtl);
-  if (Platform.OS === 'ios' || Platform.OS === 'android') {
-    if (__DEV__) NativeModules.DevSettings.reload();
-    else RNRestart.restart();
-  } else if (Platform.OS === 'web') {
-    window.location.reload();
+
+  // Update RTL setting if needed
+  const currentRTL = I18nManager.isRTL;
+  if (currentRTL !== isRtl) {
+    // RTL change requires app restart on native platforms
+    // Ensure the app is allowed to change layout direction at runtime on platforms
+    // that require permission before forcing RTL. Call allowRTL before forceRTL
+    // so the runtime will accept the change without requiring a restart.
+    I18nManager.allowRTL(isRtl);
+    I18nManager.forceRTL(isRtl);
+
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      if (__DEV__) NativeModules.DevSettings.reload();
+      else RNRestart.restart();
+    } else if (Platform.OS === 'web') {
+      window.location.reload();
+    }
   }
+  // If only language changed (not RTL direction), components using useTranslation()
+  // will automatically re-render with new translations. Requirement 3.2, 3.7
 };
 
 export const useSelectedLanguage = () => {

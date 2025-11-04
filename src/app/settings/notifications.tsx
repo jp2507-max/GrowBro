@@ -3,6 +3,7 @@ import { Linking, Platform } from 'react-native';
 
 import {
   FocusAwareStatusBar,
+  Input,
   Pressable,
   ScrollView,
   Switch,
@@ -16,6 +17,7 @@ import {
   type NotificationChannelId,
   openNotificationSettings,
 } from '@/lib/notifications/platform-permissions';
+import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 import type { TaskReminderTiming } from '@/types/settings';
 
 import { useCommunityNotifications } from './hooks/use-community-notifications';
@@ -72,8 +74,8 @@ function PlatformHelp() {
 }
 
 interface CategoryToggleProps {
-  title: string;
-  description: string;
+  txTitle: string;
+  txDescription: string;
   value: boolean;
   onValueChange: (value: boolean) => void;
   disabled?: boolean;
@@ -82,8 +84,8 @@ interface CategoryToggleProps {
 }
 
 function CategoryToggle({
-  title,
-  description,
+  txTitle,
+  txDescription,
   value,
   onValueChange,
   disabled,
@@ -94,12 +96,14 @@ function CategoryToggle({
     <View className="mb-4">
       <View className="flex-row items-center justify-between">
         <View className="flex-1 pr-4">
-          <Text className="mb-1 text-sm font-medium text-charcoal-950 dark:text-neutral-100">
-            {title}
-          </Text>
-          <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-            {description}
-          </Text>
+          <Text
+            className="mb-1 text-sm font-medium text-charcoal-950 dark:text-neutral-100"
+            tx={txTitle as any}
+          />
+          <Text
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tx={txDescription as any}
+          />
           {isChannelDisabled && (
             <Text
               className="mt-1 text-xs text-warning-600 dark:text-warning-400"
@@ -109,7 +113,8 @@ function CategoryToggle({
         </View>
         <Switch
           testID={testID}
-          accessibilityLabel={`Toggle ${title}`}
+          accessibilityLabel={`Toggle ${txTitle}`}
+          accessibilityHint="Toggle this setting"
           value={value}
           onValueChange={onValueChange}
           onChange={onValueChange}
@@ -162,7 +167,14 @@ export default function NotificationSettings() {
     system_updates: true,
     marketing: true,
   });
-  const [customMinutes] = useState<string>('30');
+  const [customMinutes, setCustomMinutes] = useState<string>('30');
+
+  // Initialize custom minutes from preferences when loaded
+  useEffect(() => {
+    if (preferences?.customReminderMinutes) {
+      setCustomMinutes(preferences.customReminderMinutes.toString());
+    }
+  }, [preferences?.customReminderMinutes]);
 
   // Check permissions on mount
   useEffect(() => {
@@ -177,7 +189,13 @@ export default function NotificationSettings() {
 
     // Create Android notification channels
     if (Platform.OS === 'android') {
-      createAndroidNotificationChannels();
+      createAndroidNotificationChannels().catch((error) => {
+        captureCategorizedErrorSync(error, {
+          source: 'notifications',
+          feature: 'settings',
+          action: 'create_channels',
+        });
+      });
     }
   }, []);
 
@@ -233,6 +251,7 @@ export default function NotificationSettings() {
 
             <Pressable
               accessibilityRole="button"
+              accessibilityHint="Open system notification settings"
               className="rounded-md bg-primary-600 px-4 py-3"
               onPress={handleOpenSettings}
               testID="open-system-settings-button"
@@ -247,13 +266,14 @@ export default function NotificationSettings() {
           {/* Notification Categories */}
           {permissionGranted && preferences && (
             <View className="mb-6 rounded-lg bg-neutral-100 p-4 dark:bg-charcoal-800">
-              <Text className="mb-4 text-base font-semibold text-charcoal-950 dark:text-neutral-100">
-                Notification Categories
-              </Text>
+              <Text
+                className="mb-4 text-base font-semibold text-charcoal-950 dark:text-neutral-100"
+                tx="settings.notifications.categories.sectionTitle"
+              />
 
               <CategoryToggle
-                title="Task Reminders"
-                description="Get reminders for upcoming cultivation tasks"
+                txTitle="settings.notifications.categories.taskReminders"
+                txDescription="settings.notifications.categories.taskRemindersDescription"
                 value={preferences.taskReminders}
                 onValueChange={(value) =>
                   toggleCategory('taskReminders', value)
@@ -265,9 +285,10 @@ export default function NotificationSettings() {
 
               {preferences.taskReminders && (
                 <View className="mb-4 ml-4 rounded-lg bg-neutral-200 p-3 dark:bg-charcoal-700">
-                  <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-neutral-100">
-                    Reminder Timing
-                  </Text>
+                  <Text
+                    className="mb-2 text-sm font-medium text-charcoal-950 dark:text-neutral-100"
+                    tx="settings.notifications.taskReminderTiming.title"
+                  />
                   <View className="space-y-2">
                     {(['hour_before', 'day_before', 'custom'] as const).map(
                       (timing) => (
@@ -289,20 +310,60 @@ export default function NotificationSettings() {
                             )}
                           </View>
                           <Text className="text-sm text-charcoal-950 dark:text-neutral-100">
-                            {timing === 'hour_before' && 'Hour before'}
-                            {timing === 'day_before' && 'Day before'}
-                            {timing === 'custom' && 'Custom'}
+                            {timing === 'hour_before' && (
+                              <Text tx="settings.notifications.taskReminderTiming.hourBefore" />
+                            )}
+                            {timing === 'day_before' && (
+                              <Text tx="settings.notifications.taskReminderTiming.dayBefore" />
+                            )}
+                            {timing === 'custom' && (
+                              <Text tx="settings.notifications.taskReminderTiming.custom" />
+                            )}
                           </Text>
                         </Pressable>
                       )
                     )}
                   </View>
+
+                  {preferences.taskReminderTiming === 'custom' && (
+                    <View className="mt-3">
+                      <Text
+                        className="mb-2 text-xs text-neutral-600 dark:text-neutral-400"
+                        tx="settings.notifications.taskReminderTiming.customMinutes"
+                      />
+                      <Input
+                        testID="custom-minutes-input"
+                        placeholder="30"
+                        value={customMinutes}
+                        onChangeText={(text) => {
+                          // Only allow numeric input
+                          const numericValue = text.replace(/[^0-9]/g, '');
+                          if (
+                            numericValue === '' ||
+                            (parseInt(numericValue, 10) >= 1 &&
+                              parseInt(numericValue, 10) <= 1440)
+                          ) {
+                            setCustomMinutes(numericValue);
+                          }
+                        }}
+                        keyboardType="numeric"
+                        maxLength={4}
+                        className="text-sm"
+                        accessibilityLabel="Custom reminder minutes"
+                        accessibilityHint="Enter the number of minutes before task to send reminder (1-1440)"
+                      />
+                      <Text
+                        className="mt-1 text-xs text-neutral-500 dark:text-neutral-500"
+                        tx="settings.notifications.taskReminderTiming.customMinutesHelp"
+                      />
+                    </View>
+                  )}
                 </View>
               )}
 
               <CategoryToggle
-                title="Harvest Alerts"
-                description="Get notified about harvest timing and important harvest-related updates"
+                txTitle="settings.notifications.categories.harvestAlerts"
+                txDescription="settings.notifications.categories.harvestAlertsDescription"
                 value={preferences.harvestAlerts}
                 onValueChange={(value) =>
                   toggleCategory('harvestAlerts', value)
@@ -313,8 +374,8 @@ export default function NotificationSettings() {
               />
 
               <CategoryToggle
-                title="Community Activity"
-                description="Get notified about community interactions, replies, and likes"
+                txTitle="settings.notifications.categories.communityActivity"
+                txDescription="settings.notifications.categories.communityActivityDescription"
                 value={preferences.communityActivity}
                 onValueChange={(value) =>
                   toggleCategory('communityActivity', value)
@@ -325,8 +386,8 @@ export default function NotificationSettings() {
               />
 
               <CategoryToggle
-                title="System Updates"
-                description="Important app updates and announcements"
+                txTitle="settings.notifications.categories.systemUpdatesCategory"
+                txDescription="settings.notifications.categories.systemUpdatesDescription"
                 value={preferences.systemUpdates}
                 onValueChange={(value) =>
                   toggleCategory('systemUpdates', value)
@@ -337,8 +398,8 @@ export default function NotificationSettings() {
               />
 
               <CategoryToggle
-                title="Marketing & Tips"
-                description="Optional growing tips and feature announcements (opt-in only)"
+                txTitle="settings.notifications.categories.marketing"
+                txDescription="settings.notifications.categories.marketingDescription"
                 value={preferences.marketing}
                 onValueChange={(value) => toggleCategory('marketing', value)}
                 disabled={isLoading}
@@ -365,6 +426,7 @@ export default function NotificationSettings() {
                 <Switch
                   testID="quiet-hours-switch"
                   accessibilityLabel="Toggle quiet hours"
+                  accessibilityHint="Enable or disable quiet hours for notifications"
                   value={preferences.quietHoursEnabled}
                   onValueChange={handleQuietHoursToggle}
                   onChange={handleQuietHoursToggle}

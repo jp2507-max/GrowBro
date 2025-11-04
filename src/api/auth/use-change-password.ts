@@ -67,8 +67,8 @@ export const useChangePassword = createMutation({
       throw new Error(mapAuthError(updateError));
     }
 
-    // Note: The re-auth from step 2 will invalidate other sessions automatically
-    // when Supabase sees a password update with a fresh sign-in
+    // Step 4: Explicitly revoke other sessions for security
+    await supabase.auth.signOut({ scope: 'others' });
   },
   onSuccess: async () => {
     // Track analytics event with consent checking

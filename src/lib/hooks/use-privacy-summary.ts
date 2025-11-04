@@ -72,12 +72,19 @@ export function usePrivacySummary(): PrivacySummary {
       }
     }
 
-    const cleanupPromise = initializeAndSubscribe();
+    let unsubscribe: (() => void) | undefined;
+    const initPromise = initializeAndSubscribe().then((u) => {
+      if (typeof u === 'function') unsubscribe = u;
+    });
 
     return () => {
-      cleanupPromise.then((unsubscribe) => {
-        if (unsubscribe) unsubscribe();
-      });
+      if (unsubscribe) {
+        unsubscribe();
+      } else {
+        initPromise.then(() => {
+          if (unsubscribe) unsubscribe();
+        });
+      }
     };
   }, []);
 

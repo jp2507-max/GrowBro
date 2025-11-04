@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { Button, ScrollView, Switch, Text, View } from '@/components/ui';
+import type { LegalDocumentType } from '@/lib/compliance/legal-acceptances';
 import {
   acceptAllLegalDocuments,
   getCurrentLegalVersions,
-  type LegalDocumentType,
 } from '@/lib/compliance/legal-acceptances';
 import { translate } from '@/lib/i18n';
 import type {

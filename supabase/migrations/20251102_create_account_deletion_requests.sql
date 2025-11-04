@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS public.account_deletion_requests (
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   scheduled_for TIMESTAMPTZ NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('pending', 'cancelled', 'completed')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'cancelled', 'completed')),
+  completed_at TIMESTAMPTZ,
   reason TEXT,
   policy_version TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -22,6 +23,9 @@ CREATE INDEX IF NOT EXISTS idx_account_deletion_requests_scheduled_for ON public
 
 -- Create composite index for rate limiting queries
 CREATE INDEX IF NOT EXISTS idx_account_deletion_requests_user_status ON public.account_deletion_requests(user_id, status);
+
+-- Create partial unique index to enforce single pending deletion request per user
+CREATE UNIQUE INDEX IF NOT EXISTS idx_account_deletion_requests_pending_user ON public.account_deletion_requests(user_id) WHERE status = 'pending';
 
 -- Enable Row Level Security
 ALTER TABLE public.account_deletion_requests ENABLE ROW LEVEL SECURITY;
@@ -91,7 +95,7 @@ BEGIN
     adr.request_id,
     adr.scheduled_for,
     adr.requested_at,
-    GREATEST(0, EXTRACT(DAY FROM (adr.scheduled_for - NOW()))::INTEGER) as days_remaining
+    GREATEST(0, (adr.scheduled_for::date - NOW()::date))::integer as days_remaining
   FROM public.account_deletion_requests adr
   WHERE adr.user_id = p_user_id
     AND adr.status = 'pending'
@@ -104,73 +108,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Grant execute permission to authenticated users
 GRANT EXECUTE ON FUNCTION check_pending_deletion(UUID) TO authenticated;
 
--- Create function to process expired deletion requests (called by scheduled job)
--- Requirement: 6.8 - Permanent deletion after grace period
-CREATE OR REPLACE FUNCTION process_expired_deletion_requests()
-RETURNS TABLE (
-  processed_count INTEGER,
-  failed_count INTEGER
-) AS $$
-DECLARE
-  v_processed_count INTEGER := 0;
-  v_failed_count INTEGER := 0;
-  v_request RECORD;
-BEGIN
-  -- Find all pending deletion requests that have expired
-  FOR v_request IN
-    SELECT 
-      adr.request_id,
-      adr.user_id,
-      adr.scheduled_for
-    FROM public.account_deletion_requests adr
-    WHERE adr.status = 'pending'
-      AND adr.scheduled_for <= NOW()
-    ORDER BY adr.scheduled_for ASC
-    FOR UPDATE SKIP LOCKED -- Prevent concurrent processing
-  LOOP
-    BEGIN
-      -- Mark as completed before deletion to prevent reprocessing
-      UPDATE public.account_deletion_requests
-      SET status = 'completed'
-      WHERE request_id = v_request.request_id;
-
-      -- Log completion to audit log
-      INSERT INTO public.audit_logs (
-        user_id,
-        event_type,
-        payload,
-        created_at
-      ) VALUES (
-        v_request.user_id,
-        'account_deleted',
-        jsonb_build_object(
-          'request_id', v_request.request_id,
-          'scheduled_for', v_request.scheduled_for,
-          'deleted_at', NOW()
-        ),
-        NOW()
-      );
-
-      -- The actual user deletion will be handled by the delete-account Edge Function
-      -- or by auth.users ON DELETE CASCADE policies
-      -- This function just marks the request as completed
-
-      v_processed_count := v_processed_count + 1;
-
-      RAISE NOTICE 'Processed deletion request % for user %', v_request.request_id, v_request.user_id;
-
-    EXCEPTION WHEN OTHERS THEN
-      v_failed_count := v_failed_count + 1;
-      RAISE WARNING 'Failed to process deletion request %: %', v_request.request_id, SQLERRM;
-    END;
-  END LOOP;
-
-  RETURN QUERY SELECT v_processed_count, v_failed_count;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Grant execute permission to service role only
-GRANT EXECUTE ON FUNCTION process_expired_deletion_requests() TO service_role;
+-- Note: The process_expired_deletion_requests() function has been removed.
+-- Account deletion is handled entirely by the process-expired-deletions Edge Function
+-- which provides complete deletion workflow, proper audit logging, and email notifications.
 
 -- Add comment to table
 COMMENT ON TABLE public.account_deletion_requests IS 'Stores account deletion requests with 30-day grace period. Requirement: 6.5, 6.7, 6.8, 6.9, 6.11, 6.12';

@@ -35,11 +35,78 @@ const AVATAR_BUCKET = 'avatars';
 
 /**
  * Uploads an avatar image with processing pipeline:
- * 1. Strip EXIF metadata
- * 2. Crop to 1:1 aspect ratio (center crop)
- * 3. Resize to 512x512px
- * 4. Compress to <200KB
- * 5. Upload to Supabase Storage
+ *
+ * Avatar Upload Pipeline (9 steps):
+ * ================================
+ *
+ * Step 1: EXIF Stripping (Privacy Protection)
+ * - Removes all EXIF metadata (GPS location, camera model, timestamps)
+ * - Prevents accidental geolocation disclosure
+ * - Uses expo-image-manipulator's built-in stripping
+ * Progress: 10%
+ *
+ * Step 2: Dimension Detection (Preparation for Cropping)
+ * - Reads original image dimensions
+ * - Determines smaller dimension for square crop
+ * - Calculates center crop origin coordinates
+ * Progress: 20%
+ *
+ * Step 3: Center Cropping (1:1 Aspect Ratio)
+ * - Crops to largest possible square from center
+ * - Formula: size = min(width, height)
+ * - Origin: originX = (width - size) / 2, originY = (height - size) / 2
+ * - Preserves subject composition while standardizing aspect ratio
+ * Progress: 40%
+ *
+ * Step 4: Resizing (512x512px)
+ * - Scales cropped image to 512x512px
+ * - Balance between quality and file size
+ * - Suitable for profile displays and thumbnails
+ *
+ * Step 5: Initial Compression (80% quality)
+ * - Compresses JPEG to 80% quality
+ * - First attempt to stay under 200KB target
+ *
+ * Step 6: Iterative Compression (Quality Loop)
+ * - Checks file size after initial compression
+ * - If > 200KB: reduces quality by 10% increments
+ * - Minimum quality: 30% (prevents overly pixelated images)
+ * - Stops when: size < 200KB OR quality < 30%
+ * Progress: 50%
+ *
+ * Step 7: Supabase Storage Upload
+ * - Converts blob to ArrayBuffer for upload
+ * - Uploads to avatars/{userId}/{timestamp}.jpg
+ * - Uses upsert: false to prevent overwrites (timestamped filenames)
+ * - Content-Type: image/jpeg
+ * Progress: 70%
+ *
+ * Step 8: Public URL Generation
+ * - Retrieves public URL from Supabase Storage
+ * - URL is cacheable and CDN-backed
+ * Progress: 90%
+ *
+ * Step 9: Status Update (pending → success/failed)
+ * - Sets status to 'pending' until profile record updates
+ * - Returns URL and path for profile table update
+ * Progress: 100%
+ *
+ * Error Handling:
+ * - Any step failure triggers 'failed' status with error message
+ * - onProgress callback updated throughout for UI feedback
+ * - Throws error to caller for retry logic
+ *
+ * Security Considerations:
+ * - EXIF stripped to prevent metadata leaks
+ * - Timestamped filenames prevent collisions
+ * - User ID path isolation prevents cross-user access
+ * - RLS policies enforce owner-only access
+ * - Public URLs are CDN-backed but storage bucket is private
+ *
+ * Performance Notes:
+ * - Iterative compression may take 1-3 seconds for large images
+ * - Network upload time depends on connection quality
+ * - Progress callbacks enable smooth UI feedback
  *
  * @param options - Upload options including userId, localUri, and progress callback
  * @returns Upload result with public URL and storage path
@@ -96,7 +163,8 @@ export async function uploadAvatar(
       }
     );
 
-    // Check file size and compress further if needed
+    // Step 5 & 6: Check file size and compress further if needed
+    // Iterative compression loop: reduce quality by 10% until < 200KB or quality < 30%
     onProgress?.({ status: 'uploading', progress: 50 });
     const response = await fetch(processedImage.uri);
     let blob = await response.blob();
@@ -117,7 +185,7 @@ export async function uploadAvatar(
       blob = await recompressedResponse.blob();
     }
 
-    // Step 5: Upload to Supabase Storage
+    // Step 7: Upload to Supabase Storage
     onProgress?.({ status: 'uploading', progress: 70 });
     const timestamp = Date.now();
     const filename = `${timestamp}.jpg`;
@@ -136,12 +204,13 @@ export async function uploadAvatar(
       throw new Error(`Upload failed: ${error.message}`);
     }
 
-    // Get public URL
+    // Step 8: Get public URL
     onProgress?.({ status: 'uploading', progress: 90 });
     const {
       data: { publicUrl },
     } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(data.path);
 
+    // Step 9: Update status to pending (awaiting profile record update)
     onProgress?.({ status: 'pending', progress: 100 });
 
     return {

@@ -13,24 +13,58 @@ import { storage } from '@/lib/storage';
 
 const DEVICE_ID_KEY = 'device_id';
 
+// Module-scoped promise cache to prevent race conditions
+let deviceIdPromise: Promise<string> | null = null;
+
 /**
  * Gets or creates a stable device identifier
  * @returns A stable UUID for this device installation
  */
 export async function getDeviceId(): Promise<string> {
-  // Check if we already have a device ID
+  // If there's already a promise in progress, await it
+  if (deviceIdPromise) {
+    return deviceIdPromise;
+  }
+
+  // Check if we already have a device ID (after potential race)
   const existing = storage.getString(DEVICE_ID_KEY);
   if (existing) {
     return existing;
   }
 
-  // Generate a new UUID v4
-  const deviceId = Crypto.randomUUID();
+  // Create a promise that generates and persists the UUID
+  deviceIdPromise = (async (): Promise<string> => {
+    try {
+      // Double-check storage in case another context set it while we were creating the promise
+      const doubleCheck = storage.getString(DEVICE_ID_KEY);
+      if (doubleCheck) {
+        return doubleCheck;
+      }
 
-  // Persist it
-  storage.set(DEVICE_ID_KEY, deviceId);
+      // Generate a new UUID v4
+      const deviceId = Crypto.randomUUID();
 
-  return deviceId;
+      // Persist it
+      storage.set(DEVICE_ID_KEY, deviceId);
+
+      return deviceId;
+    } catch (error) {
+      // Clear the promise on failure so future calls can retry
+      deviceIdPromise = null;
+      throw error;
+    }
+  })();
+
+  try {
+    const result = await deviceIdPromise;
+    // Clear the promise after successful resolution
+    deviceIdPromise = null;
+    return result;
+  } catch (error) {
+    // Clear the promise on failure
+    deviceIdPromise = null;
+    throw error;
+  }
 }
 
 /**
@@ -44,6 +78,11 @@ export function getDeviceIdSync(): string {
     return existing;
   }
 
-  // Return a temporary ID that will be replaced on next async call
-  return 'temp-' + Date.now();
+  // Trigger async generation in background to avoid data consistency issues
+  getDeviceId().catch(() => {
+    // Silently fail - temp ID will be used if generation fails
+  });
+
+  // Return a temporary ID with better uniqueness to prevent collisions
+  return 'temp-' + Crypto.randomUUID();
 }

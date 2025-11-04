@@ -27,6 +27,21 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
+/**
+ * Constant-time string comparison to prevent timing attacks
+ */
+function constantTimeEquals(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 interface ProcessedResult {
   success: boolean;
   processed_count: number;
@@ -49,15 +64,30 @@ Deno.serve(async (req: Request) => {
     }
 
     // Verify service role authorization
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!serviceRoleKey) {
+      console.error('Service role key not configured');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const authHeader = req.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized: Service role required' }),
-        {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const providedToken = authHeader.slice(7); // Remove 'Bearer ' prefix
+    if (!constantTimeEquals(providedToken, serviceRoleKey)) {
+      console.error('Invalid authorization token');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Initialize Supabase client with service role

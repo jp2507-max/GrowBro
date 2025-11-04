@@ -16,6 +16,7 @@ import {
   provideWebDeletionUrl,
   requestDataExport,
 } from '@/lib/privacy/deletion-manager';
+import { presentExportViaShareSheet } from '@/lib/settings/export-share';
 
 function formatEta(iso?: string | null): string | null {
   if (!iso) return null;
@@ -46,14 +47,27 @@ function useDataExport(onRequestExport: () => void): {
     if (isExporting) return;
     setIsExporting(true);
     try {
+      // First, request the export from the backend
       const result = await requestDataExport();
       const eta = formatEta(result.estimatedCompletion);
-      Alert.alert(
-        translate('privacy.exportQueuedTitle'),
-        eta
-          ? translate('privacy.exportQueuedBody', { eta })
-          : translate('privacy.exportQueuedBodyNoEta')
-      );
+
+      // Then, present the export via share sheet
+      const shareResult = await presentExportViaShareSheet();
+
+      if (shareResult.success) {
+        Alert.alert(
+          translate('privacy.exportReadyTitle' as any),
+          translate('privacy.exportReadyBody' as any)
+        );
+      } else {
+        // Fallback to old behavior if share sheet fails
+        Alert.alert(
+          translate('privacy.exportQueuedTitle'),
+          eta
+            ? translate('privacy.exportQueuedBody', { eta })
+            : translate('privacy.exportQueuedBodyNoEta')
+        );
+      }
     } catch (error) {
       Alert.alert(
         translate('privacy.exportErrorTitle'),
@@ -188,7 +202,7 @@ export default function PrivacyAndDataScreen(): React.ReactElement {
   const { ref: reAuthModalRef, present: presentReAuthModal } = useReAuthModal();
 
   // Create a ref to store the performExport function
-  const performExportRef = React.useRef<() => Promise<void>>();
+  const performExportRef = React.useRef<(() => Promise<void>) | null>(null);
 
   const { queueExport, performExport } = useDataExport(() => {
     // Request re-authentication before export

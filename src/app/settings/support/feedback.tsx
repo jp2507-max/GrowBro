@@ -39,6 +39,7 @@ const feedbackSchema = z.object({
 
 type FeedbackFormData = z.infer<typeof feedbackSchema>;
 
+// eslint-disable-next-line max-lines-per-function -- Complex form screen
 export default function FeedbackScreen() {
   const router = useRouter();
   const user = useAuth.use.user();
@@ -201,6 +202,9 @@ export default function FeedbackScreen() {
               error={errors.email?.message}
               accessibilityLabel={translate(
                 'settings.support.feedback.email_label'
+              )}
+              accessibilityHint={translate(
+                'settings.support.feedback.email_hint'
               )}
             />
             <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">

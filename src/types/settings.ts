@@ -12,7 +12,7 @@ export interface UserProfile {
   userId: string;
   displayName: string;
   bio?: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   location?: string;
   showProfileToCommunity: boolean;
   allowDirectMessages: boolean;

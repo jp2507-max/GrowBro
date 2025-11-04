@@ -226,6 +226,7 @@ export default defineConfig([
     plugins: { 'testing-library': testingLibrary },
     rules: {
       ...testingLibrary.configs.react.rules,
+      'testing-library/no-wait-for-multiple-assertions': 'off',
       'max-lines-per-function': 'off',
       'max-params': 'off',
       '@typescript-eslint/no-require-imports': 'off', // Jest dynamic mocking requires require()

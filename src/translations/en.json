@@ -2433,6 +2433,18 @@
     }
   },
   "settings": {
+    "a11y": {
+      "about_hint": "Opens About screen with app information and version details",
+      "legal_hint": "Opens Legal screen with terms, privacy policy, and licenses",
+      "logout_hint": "Double-tap to sign out of your account",
+      "notifications_hint": "Opens Notification settings to manage your alerts",
+      "privacy_hint": "Opens Privacy & Data settings to manage your data controls",
+      "profile_edit_hint": "Double-tap to edit your profile information and avatar",
+      "profile_stat_hint": "{{count}} {{type}}. Double-tap to view details",
+      "security_hint": "Opens Security settings to manage passwords and sessions",
+      "support_hint": "Opens Support screen with help resources and contact options",
+      "toggle_privacy_hint": "Double-tap to {{action}} {{setting}}. Currently {{state}}"
+    },
     "about": {
       "app_info": "App Information",
       "app_name": "App Name",
@@ -2557,6 +2569,7 @@
         "harvestAlertsDescription": "Get notified about harvest timing and important harvest-related updates",
         "marketing": "Marketing & Tips",
         "marketingDescription": "Optional growing tips and feature announcements (opt-in only)",
+        "sectionTitle": "Notification Categories",
         "systemUpdates": "• System Updates (important app updates)",
         "systemUpdatesCategory": "System Updates",
         "systemUpdatesDescription": "Important app updates and announcements",
@@ -2595,6 +2608,7 @@
       "taskReminderTiming": {
         "custom": "Custom",
         "customMinutes": "Minutes before task",
+        "customMinutesHelp": "1-1440 minutes (up to 24 hours)",
         "dayBefore": "Day before",
         "hourBefore": "Hour before",
         "invalidCustom": "Custom reminder minutes must be between 1 and 1440 (24 hours)",
@@ -2607,6 +2621,63 @@
     "privacy_and_data": "Privacy & data controls",
     "privacy_policy": "Privacy Policy",
     "privacy_section": "Privacy & data",
+    "profile": {
+      "avatar": {
+        "chooseLibrary": "Choose from Library",
+        "permissionDenied": "Permission Denied",
+        "permissionMessage": "Camera access is required to take photos. Please enable it in your device settings.",
+        "remove": "Remove Photo",
+        "subtitle": "Choose a photo source",
+        "takePhoto": "Take Photo",
+        "title": "Change Avatar",
+        "uploadFailed": "Upload Failed",
+        "uploadFailedMessage": "We couldn't upload your avatar. Please try again."
+      },
+      "bio": {
+        "label": "Bio",
+        "placeholder": "Tell the community about yourself..."
+      },
+      "chevron": "›",
+      "displayName": {
+        "label": "Display Name",
+        "placeholder": "Enter your display name"
+      },
+      "loading": "Loading profile...",
+      "location": {
+        "label": "Location",
+        "placeholder": "City, Country (optional)"
+      },
+      "open_profile_hint": "Double-tap to edit your profile",
+      "privacy": {
+        "allowDMs": "Allow Direct Messages",
+        "showProfile": "Show Profile to Community",
+        "title": "Privacy Settings"
+      },
+      "save": "Save Changes",
+      "saveFailed": "Save Failed",
+      "saveFailedMessage": "We couldn't save your profile changes. Please try again.",
+      "saveSuccess": "Profile Updated",
+      "saveSuccessMessage": "Your profile has been updated successfully.",
+      "setProfilePrompt": "Set up your profile",
+      "statistics": {
+        "harvests": "Harvests",
+        "harvestsCount_one": "{{count}} harvest",
+        "harvestsCount_other": "{{count}} harvests",
+        "harvestsCount_zero": "No harvests",
+        "likes": "Likes Received",
+        "plants": "Plants",
+        "plantsCount_one": "{{count}} plant",
+        "plantsCount_other": "{{count}} plants",
+        "plantsCount_zero": "No plants",
+        "posts": "Posts",
+        "postsCount_one": "{{count}} post",
+        "postsCount_other": "{{count}} posts",
+        "postsCount_zero": "No posts",
+        "syncing": "Refreshing statistics...",
+        "title": "Your Statistics"
+      },
+      "title": "Edit Profile"
+    },
     "rate": "Rate",
     "save_changes": "Save Changes",
     "security": "Security",
@@ -2685,6 +2756,7 @@
         "submit_hint": "Submits your bug report",
         "success_message": "Thank you! Your bug report has been submitted.\n\nTicket ID: {{ticketId}}",
         "success_title": "Report Submitted",
+        "ticket_id_fallback": "N/A",
         "title": "Report a Bug",
         "title_label": "Title",
         "title_placeholder": "Brief description of the issue",
@@ -2718,6 +2790,32 @@
       "title": "Theme"
     },
     "title": "Settings",
+    "about": {
+      "app_info": "App Information",
+      "app_name": "App Name",
+      "build_number": "Build Number",
+      "check_updates": "Check for Updates",
+      "check_updates_offline": "Connect to internet to check for updates",
+      "checking": "Checking...",
+      "download_progress": "Downloading: {{progress}}%",
+      "download_update": "Download Update",
+      "downloading": "Downloading...",
+      "educational_purpose": "For educational purposes only",
+      "environment": "Environment",
+      "error_checking": "Failed to check for updates",
+      "github": "GitHub Repository",
+      "links": "Links",
+      "ota_disabled": "Updates managed through app store",
+      "restart_to_apply": "Restart to Apply",
+      "retry": "Retry",
+      "title": "About",
+      "up_to_date": "You're Up to Date",
+      "up_to_date_message": "You have the latest version installed.",
+      "update_available": "Update Available",
+      "updates": "Updates",
+      "version": "Version",
+      "website": "Visit Website"
+    },
     "version": "Version",
     "web_deletion": "Web deletion portal",
     "website": "Website"
@@ -2994,6 +3092,13 @@
     "retry_button": "Retry",
     "retry_sync_hint": "Tap to retry syncing favorites",
     "retry_sync_label": "Retry sync",
+    "security": {
+      "biometric": {
+        "face": "Face ID",
+        "fingerprint": "Fingerprint",
+        "iris": "Iris Scanner"
+      }
+    },
     "status": {
       "active": "Current",
       "completed": "✓ Completed",

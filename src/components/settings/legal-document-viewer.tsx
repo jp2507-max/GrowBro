@@ -20,6 +20,7 @@ import {
 } from '@/components/ui';
 import { translate } from '@/lib';
 import { useNetworkStatus } from '@/lib/hooks/use-network-status';
+import i18n from '@/lib/i18n';
 import {
   getLastSyncTimestamp,
   getLegalDocument,
@@ -40,7 +41,8 @@ export function LegalDocumentViewer({
   const [loading, setLoading] = useState(true);
   const [lastSynced, setLastSynced] = useState<string | undefined>();
 
-  const locale = translate('settings.locale') === 'de' ? 'de' : 'en';
+  const languageCode = i18n.language || 'en';
+  const locale = languageCode === 'de' ? 'de' : 'en';
 
   useEffect(() => {
     async function loadDocument() {
@@ -58,7 +60,7 @@ export function LegalDocumentViewer({
     }
 
     void loadDocument();
-  }, [documentType, locale]);
+  }, [documentType, languageCode, locale]);
 
   if (loading) {
     return (

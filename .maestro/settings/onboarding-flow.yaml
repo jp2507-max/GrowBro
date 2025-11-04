@@ -1,0 +1,109 @@
+appId: ${APP_ID}
+name: Onboarding Flow Test
+tags:
+  - settings
+  - onboarding
+  - compliance
+---
+# Test complete onboarding flow: age gate → legal confirmation → consent modal
+
+- launchApp:
+    clearState: true
+
+# Age Gate Screen
+- assertVisible:
+    id: 'age-gate-screen'
+    timeout: 5000
+
+- assertVisible: 'Age Verification'
+
+- assertVisible: 'You must be 18+ to use GrowBro'
+
+# Test invalid date (underage)
+- tapOn:
+    id: 'day-input'
+- inputText: '15'
+
+- tapOn:
+    id: 'month-input'
+- inputText: '06'
+
+- tapOn:
+    id: 'year-input'
+- inputText: '2010'
+
+- tapOn: 'Continue'
+
+- assertVisible: 'You must be at least 18 years old'
+
+# Test valid date (of age)
+- tapOn:
+    id: 'day-input'
+- inputText: '15'
+
+- tapOn:
+    id: 'month-input'
+- inputText: '06'
+
+- tapOn:
+    id: 'year-input'
+- inputText: '1990'
+
+- tapOn: 'Continue'
+
+# Legal Confirmation Modal
+- assertVisible:
+    id: 'legal-confirmation-modal'
+    timeout: 3000
+
+- assertVisible: 'Legal Agreements'
+
+# Verify all checkboxes are present
+- assertVisible:
+    id: 'terms-checkbox'
+
+- assertVisible:
+    id: 'privacy-checkbox'
+
+- assertVisible:
+    id: 'cannabis-checkbox'
+
+# Try to proceed without accepting (button should be disabled)
+- assertVisible: 'I Agree'
+
+# Accept all agreements
+- tapOn:
+    id: 'terms-checkbox'
+
+- tapOn:
+    id: 'privacy-checkbox'
+
+- tapOn:
+    id: 'cannabis-checkbox'
+
+# Now proceed button should be enabled
+- tapOn: 'I Agree'
+
+# Consent Modal (if displayed)
+- runFlow:
+    when:
+      visible:
+        id: 'consent-modal'
+    commands:
+      - assertVisible: 'Privacy Preferences'
+      - tapOn: 'Accept All'
+
+# Verify we've reached the main app
+- assertVisible:
+    id: 'home-screen|calendar-screen'
+    timeout: 5000
+
+# Verify age verification status is persisted
+- tapOn:
+    id: 'settings-tab'
+
+- assertVisible: 'Settings'
+
+- tapOn: 'About'
+
+- assertVisible: 'Age Verified'

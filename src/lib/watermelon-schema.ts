@@ -1,7 +1,7 @@
 import { appSchema as createSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const appSchema = createSchema({
-  version: 29,
+  version: 30,
   tables: [
     tableSchema({
       name: 'series',
@@ -804,6 +804,7 @@ export const appSchema = createSchema({
         { name: 'display_name', type: 'string' },
         { name: 'bio', type: 'string', isOptional: true },
         { name: 'avatar_url', type: 'string', isOptional: true },
+        { name: 'avatar_status', type: 'string', isOptional: true },
         { name: 'location', type: 'string', isOptional: true },
         { name: 'show_profile_to_community', type: 'boolean' },
         { name: 'allow_direct_messages', type: 'boolean' },

@@ -8,6 +8,8 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 
+import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
+
 const BIOMETRIC_TOKEN_KEY = 'biometric_auth_token';
 const BIOMETRIC_ENABLED_KEY = 'biometric_auth_enabled';
 
@@ -110,7 +112,9 @@ export async function authenticateWithBiometrics(): Promise<BiometricAuthResult>
 
     return { success: false, error: 'failed' };
   } catch (error) {
-    console.error('Biometric authentication error:', error);
+    captureCategorizedErrorSync(error, {
+      context: 'Biometric authentication error',
+    });
     return { success: false, error: 'failed' };
   }
 }
@@ -136,7 +140,9 @@ export async function enableBiometricLogin(): Promise<BiometricAuthResult> {
 
     return authResult;
   } catch (error) {
-    console.error('Failed to enable biometric login:', error);
+    captureCategorizedErrorSync(error, {
+      context: 'Failed to enable biometric login',
+    });
     return { success: false, error: 'failed' };
   }
 }
@@ -150,7 +156,10 @@ export async function disableBiometricLogin(): Promise<void> {
     await SecureStore.deleteItemAsync(BIOMETRIC_TOKEN_KEY);
     await SecureStore.deleteItemAsync(BIOMETRIC_ENABLED_KEY);
   } catch (error) {
-    console.error('Failed to disable biometric login:', error);
+    captureCategorizedErrorSync(error, {
+      context: 'Failed to disable biometric login',
+      key: BIOMETRIC_TOKEN_KEY,
+    });
     throw error;
   }
 }
@@ -163,7 +172,9 @@ export async function isBiometricLoginEnabled(): Promise<boolean> {
     const enabled = await SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY);
     return enabled === 'true';
   } catch (error) {
-    console.error('Failed to check biometric status:', error);
+    captureCategorizedErrorSync(error, {
+      context: 'Failed to get biometric token',
+    });
     return false;
   }
 }
@@ -175,7 +186,9 @@ export async function getBiometricToken(): Promise<string | null> {
   try {
     return await SecureStore.getItemAsync(BIOMETRIC_TOKEN_KEY);
   } catch (error) {
-    console.error('Failed to get biometric token:', error);
+    captureCategorizedErrorSync(error, {
+      context: 'Failed to get biometric token',
+    });
     return null;
   }
 }

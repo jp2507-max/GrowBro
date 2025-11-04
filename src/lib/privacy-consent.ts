@@ -34,7 +34,7 @@ let cachedConsent: PrivacyConsent = { ...DEFAULT_CONSENT };
 let hydrated = false;
 let hydrationPromise: Promise<void> | null = null;
 
-async function hydrateFromSecureStore(): Promise<void> {
+export async function hydrateFromSecureStore(): Promise<void> {
   if (hydrationPromise) return hydrationPromise;
   hydrationPromise = (async () => {
     try {

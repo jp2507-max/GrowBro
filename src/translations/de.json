@@ -2433,6 +2433,18 @@
     }
   },
   "settings": {
+    "a11y": {
+      "about_hint": "Öffnet Info-Bildschirm mit App-Informationen und Versionsdetails",
+      "legal_hint": "Öffnet Rechtliches-Bildschirm mit Nutzungsbedingungen, Datenschutzrichtlinie und Lizenzen",
+      "logout_hint": "Doppeltippen, um sich von Ihrem Konto abzumelden",
+      "notifications_hint": "Öffnet Benachrichtigungseinstellungen zur Verwaltung Ihrer Warnungen",
+      "privacy_hint": "Öffnet Datenschutz- & Dateneinstellungen zur Verwaltung Ihrer Datenkontrollen",
+      "profile_edit_hint": "Doppeltippen, um Ihre Profilinformationen und Ihren Avatar zu bearbeiten",
+      "profile_stat_hint": "{{count}} {{type}}. Doppeltippen, um Details anzuzeigen",
+      "security_hint": "Öffnet Sicherheitseinstellungen zur Verwaltung von Passwörtern und Sitzungen",
+      "support_hint": "Öffnet Support-Bildschirm mit Hilferessourcen und Kontaktoptionen",
+      "toggle_privacy_hint": "Doppeltippen, um {{setting}} zu {{action}}. Derzeit {{state}}"
+    },
     "about": {
       "app_info": "App-Informationen",
       "app_name": "App-Name",
@@ -2557,6 +2569,7 @@
         "harvestAlertsDescription": "Benachrichtigungen über Erntezeitpunkt und wichtige erntebezogene Updates erhalten",
         "marketing": "Marketing & Tipps",
         "marketingDescription": "Optionale Anbautipps und Funktionsankündigungen (nur mit Zustimmung)",
+        "sectionTitle": "Benachrichtigungskategorien",
         "systemUpdates": "• System-Updates (wichtige App-Updates)",
         "systemUpdatesCategory": "System-Updates",
         "systemUpdatesDescription": "Wichtige App-Updates und Ankündigungen",
@@ -2595,6 +2608,7 @@
       "taskReminderTiming": {
         "custom": "Benutzerdefiniert",
         "customMinutes": "Minuten vor Aufgabe",
+        "customMinutesHelp": "1-1440 Minuten (bis zu 24 Stunden)",
         "dayBefore": "Tag zuvor",
         "hourBefore": "Stunde zuvor",
         "invalidCustom": "Benutzerdefinierte Erinnerungsminuten müssen zwischen 1 und 1440 (24 Stunden) liegen",
@@ -2607,6 +2621,63 @@
     "privacy_and_data": "Datenschutz & Datenkontrolle",
     "privacy_policy": "Datenschutzrichtlinie",
     "privacy_section": "Datenschutz & Daten",
+    "profile": {
+      "avatar": {
+        "chooseLibrary": "Aus Bibliothek wählen",
+        "permissionDenied": "Berechtigung verweigert",
+        "permissionMessage": "Kamerazugriff ist erforderlich, um Fotos aufzunehmen. Bitte aktivieren Sie ihn in Ihren Geräteeinstellungen.",
+        "remove": "Foto entfernen",
+        "subtitle": "Wählen Sie eine Fotoquelle",
+        "takePhoto": "Foto aufnehmen",
+        "title": "Avatar ändern",
+        "uploadFailed": "Upload fehlgeschlagen",
+        "uploadFailedMessage": "Wir konnten Ihren Avatar nicht hochladen. Bitte versuchen Sie es erneut."
+      },
+      "bio": {
+        "label": "Biografie",
+        "placeholder": "Erzählen Sie der Community etwas über sich..."
+      },
+      "chevron": "›",
+      "displayName": {
+        "label": "Anzeigename",
+        "placeholder": "Geben Sie Ihren Anzeigenamen ein"
+      },
+      "loading": "Profil wird geladen...",
+      "location": {
+        "label": "Standort",
+        "placeholder": "Stadt, Land (optional)"
+      },
+      "open_profile_hint": "Doppeltippen, um Ihr Profil zu bearbeiten",
+      "privacy": {
+        "allowDMs": "Direktnachrichten zulassen",
+        "showProfile": "Profil der Community zeigen",
+        "title": "Datenschutzeinstellungen"
+      },
+      "save": "Änderungen speichern",
+      "saveFailed": "Speichern fehlgeschlagen",
+      "saveFailedMessage": "Wir konnten Ihre Profiländerungen nicht speichern. Bitte versuchen Sie es erneut.",
+      "saveSuccess": "Profil aktualisiert",
+      "saveSuccessMessage": "Ihr Profil wurde erfolgreich aktualisiert.",
+      "setProfilePrompt": "Richten Sie Ihr Profil ein",
+      "statistics": {
+        "harvests": "Ernten",
+        "harvestsCount_one": "{{count}} Ernte",
+        "harvestsCount_other": "{{count}} Ernten",
+        "harvestsCount_zero": "Keine Ernten",
+        "likes": "Erhaltene Likes",
+        "plants": "Pflanzen",
+        "plantsCount_one": "{{count}} Pflanze",
+        "plantsCount_other": "{{count}} Pflanzen",
+        "plantsCount_zero": "Keine Pflanzen",
+        "posts": "Beiträge",
+        "postsCount_one": "{{count}} Beitrag",
+        "postsCount_other": "{{count}} Beiträge",
+        "postsCount_zero": "Keine Beiträge",
+        "syncing": "Statistiken werden aktualisiert...",
+        "title": "Ihre Statistiken"
+      },
+      "title": "Profil bearbeiten"
+    },
     "rate": "Bewerten",
     "save_changes": "Änderungen speichern",
     "security": "Sicherheit",
@@ -2685,6 +2756,7 @@
         "submit_hint": "Sendet Ihren Fehlerbericht",
         "success_message": "Vielen Dank! Ihr Fehlerbericht wurde übermittelt.\n\nTicket-ID: {{ticketId}}",
         "success_title": "Bericht gesendet",
+        "ticket_id_fallback": "Nicht verfügbar",
         "title": "Fehler melden",
         "title_label": "Titel",
         "title_placeholder": "Kurze Beschreibung des Problems",
@@ -2718,6 +2790,32 @@
       "title": "Design"
     },
     "title": "Einstellungen",
+    "about": {
+      "app_info": "App-Informationen",
+      "app_name": "App-Name",
+      "build_number": "Build-Nummer",
+      "check_updates": "Nach Updates suchen",
+      "check_updates_offline": "Mit dem Internet verbinden, um nach Updates zu suchen",
+      "checking": "Prüfe...",
+      "download_progress": "Lädt herunter: {{progress}}%",
+      "download_update": "Update herunterladen",
+      "downloading": "Lädt herunter...",
+      "educational_purpose": "Nur für Bildungszwecke",
+      "environment": "Umgebung",
+      "error_checking": "Fehler beim Suchen nach Updates",
+      "github": "GitHub-Repository",
+      "links": "Links",
+      "ota_disabled": "Updates werden über den App Store verwaltet",
+      "restart_to_apply": "Neu starten zum Anwenden",
+      "retry": "Erneut versuchen",
+      "title": "Über",
+      "up_to_date": "Sie sind auf dem neuesten Stand",
+      "up_to_date_message": "Sie haben die neueste Version installiert.",
+      "update_available": "Update verfügbar",
+      "updates": "Updates",
+      "version": "Version",
+      "website": "Webseite besuchen"
+    },
     "version": "Version",
     "web_deletion": "Web-Löschportal",
     "website": "Website"
@@ -2994,6 +3092,13 @@
     "retry_button": "Erneut versuchen",
     "retry_sync_hint": "Tippen, um Favoriten-Synchronisierung zu wiederholen",
     "retry_sync_label": "Sync wiederholen",
+    "security": {
+      "biometric": {
+        "face": "Face ID",
+        "fingerprint": "Fingerabdruck",
+        "iris": "Iris-Scanner"
+      }
+    },
     "status": {
       "active": "Aktuell",
       "completed": "✓ Abgeschlossen",

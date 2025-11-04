@@ -74,17 +74,16 @@ export const useRequestAccountDeletion = createMutation({
     const policyVersion = envData?.policy_version || '1.0.0';
 
     // Create deletion request record
-    const deletionRequest: Omit<
-      AccountDeletionRequest,
-      'id' | 'createdAt' | 'updatedAt'
-    > = {
-      requestId,
-      userId: user.id,
-      requestedAt: new Date().toISOString(),
-      scheduledFor: scheduledFor.toISOString(),
+    // Note: Using snake_case column names to match the database schema
+    // Supabase maps object property names directly to column names
+    const deletionRequest: any = {
+      request_id: requestId,
+      user_id: user.id,
+      requested_at: new Date().toISOString(),
+      scheduled_for: scheduledFor.toISOString(),
       status: 'pending',
       reason: variables.reason,
-      policyVersion,
+      policy_version: policyVersion,
     };
 
     const { error: insertError } = await supabase
@@ -97,15 +96,15 @@ export const useRequestAccountDeletion = createMutation({
 
     // Log audit entry
     await supabase.from('audit_logs').insert({
-      userId: user.id,
-      eventType: 'account_deletion_requested',
+      user_id: user.id,
+      event_type: 'account_deletion_requested',
       payload: {
         requestId,
         scheduledFor: scheduledFor.toISOString(),
         reason: variables.reason || 'Not provided',
       },
-      policyVersion,
-      appVersion: process.env.EXPO_PUBLIC_VERSION || '1.0.0',
+      policy_version: policyVersion,
+      app_version: process.env.EXPO_PUBLIC_VERSION || '1.0.0',
     });
 
     // Track analytics event
@@ -141,7 +140,7 @@ export async function checkPendingDeletion(
   const { data, error } = await supabase
     .from('account_deletion_requests')
     .select('*')
-    .eq('userId', userId)
+    .eq('user_id', userId)
     .eq('status', 'pending')
     .single();
 
@@ -171,7 +170,7 @@ export const useCancelAccountDeletion = createMutation({
     const { data: deletionRequest, error: fetchError } = await supabase
       .from('account_deletion_requests')
       .select('*')
-      .eq('userId', user.id)
+      .eq('user_id', user.id)
       .eq('status', 'pending')
       .single();
 
@@ -183,7 +182,7 @@ export const useCancelAccountDeletion = createMutation({
     const { error: updateError } = await supabase
       .from('account_deletion_requests')
       .update({ status: 'cancelled' })
-      .eq('requestId', deletionRequest.requestId);
+      .eq('request_id', deletionRequest.request_id);
 
     if (updateError) {
       throw new Error('settings.delete_account.error_cancel_request');
@@ -191,19 +190,19 @@ export const useCancelAccountDeletion = createMutation({
 
     // Log audit entry
     await supabase.from('audit_logs').insert({
-      userId: user.id,
-      eventType: 'account_deletion_cancelled',
+      user_id: user.id,
+      event_type: 'account_deletion_cancelled',
       payload: {
-        requestId: deletionRequest.requestId,
+        requestId: deletionRequest.request_id,
         cancelledAt: new Date().toISOString(),
       },
-      policyVersion: deletionRequest.policyVersion,
-      appVersion: process.env.EXPO_PUBLIC_VERSION || '1.0.0',
+      policy_version: deletionRequest.policy_version,
+      app_version: process.env.EXPO_PUBLIC_VERSION || '1.0.0',
     });
 
     // Track analytics event
     await trackAuthEvent('account_deletion_cancelled', {
-      requestId: deletionRequest.requestId,
+      requestId: deletionRequest.request_id,
       userId: user.id,
     });
 

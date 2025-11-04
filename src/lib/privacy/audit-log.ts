@@ -11,7 +11,10 @@ export type AuditAction =
   | 'consent-block'
   | 'appeal-event'
   | 'assessment-delete-local'
-  | 'assessment-delete-remote';
+  | 'assessment-delete-remote'
+  | 'consent-change'
+  | 'data-export-request'
+  | 'account-deletion-request';
 
 export type AuditEntry = {
   id: string;

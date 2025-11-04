@@ -34,7 +34,7 @@ interface UpdateState {
 }
 
 const APP_STORE_URL = Platform.select({
-  ios: `https://apps.apple.com/app/id${Constants.expoConfig?.ios?.appStoreUrl || ''}`,
+  ios: Constants.expoConfig?.ios?.appStoreUrl || 'https://growbro.app',
   android: `https://play.google.com/store/apps/details?id=${Env.PACKAGE}`,
   default: 'https://growbro.app',
 });
