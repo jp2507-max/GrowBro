@@ -2477,6 +2477,8 @@
       "error_checking": "Failed to check for updates",
       "github": "GitHub Repository",
       "links": "Links",
+      "openStoreErrorMessage": "Failed to open app store. Please try again or check your device settings.",
+      "openStoreErrorTitle": "Error",
       "ota_disabled": "Updates managed through app store",
       "restart_to_apply": "Restart to Apply",
       "retry": "Retry",
@@ -2827,7 +2829,8 @@
       "formErrors_plural": "Form has {{count}} errors",
       "hint": "This field has a validation error that needs to be fixed",
       "pleaseFixErrors": "Please fix the following errors:",
-      "reviewAndFixErrors": "Review and fix all form errors before submitting"
+      "reviewAndFixErrors": "Review and fix all form errors before submitting",
+      "successLabel": "Success: {{message}}"
     },
     "version": "Version",
     "web_deletion": "Web deletion portal",

@@ -1,68 +1,25 @@
 import { Stack, useRouter } from 'expo-router';
 import * as React from 'react';
-import { Switch } from 'react-native';
 
 import {
   ChangePasswordModal,
   useChangePasswordModal,
 } from '@/components/auth/change-password-modal';
+import { BiometricToggleSection } from '@/components/settings/biometric-toggle-section';
+import { DangerZoneWarning } from '@/components/settings/danger-zone-warning';
 import { Item } from '@/components/settings/item';
 import { ItemsContainer } from '@/components/settings/items-container';
 import { FocusAwareStatusBar, ScrollView, Text, View } from '@/components/ui';
 import { Lock, Shield, Trash } from '@/components/ui/icons';
-import {
-  showErrorMessage,
-  showSuccessMessage,
-  translate,
-  translateDynamic,
-} from '@/lib';
-import { useBiometricSettings } from '@/lib/auth/use-biometric-settings';
+import { translate } from '@/lib';
 
 export default function SecuritySettingsScreen() {
   const router = useRouter();
   const { ref: changePasswordModalRef, present: presentChangePasswordModal } =
     useChangePasswordModal();
 
-  const biometricSettings = useBiometricSettings();
-  const { initialize } = biometricSettings;
-
-  // Initialize biometric settings on mount
-  React.useEffect(() => {
-    void initialize();
-  }, [initialize]);
-
   const handleChangePassword = () => {
     presentChangePasswordModal();
-  };
-
-  const handleToggleBiometric = async () => {
-    if (biometricSettings.isEnabled) {
-      // Disable biometric
-      const result = await biometricSettings.disable();
-      if (result.success) {
-        showSuccessMessage(
-          translate('auth.security.biometric_disabled_success')
-        );
-      } else {
-        const translatedError = translateDynamic(result.error);
-        showErrorMessage(
-          translatedError ?? translate('auth.security.biometric_disable_error')
-        );
-      }
-    } else {
-      // Enable biometric
-      const result = await biometricSettings.enable();
-      if (result.success) {
-        showSuccessMessage(
-          translate('auth.security.biometric_enabled_success')
-        );
-      } else {
-        const translatedError = translateDynamic(result.error);
-        showErrorMessage(
-          translatedError ?? translate('auth.security.biometric_enable_error')
-        );
-      }
-    }
   };
 
   const handleDeleteAccount = () => {
@@ -99,38 +56,7 @@ export default function SecuritySettingsScreen() {
           </ItemsContainer>
 
           {/* Biometric Section */}
-          {biometricSettings.isAvailable && (
-            <ItemsContainer title="auth.security.biometric_section">
-              <View className="flex-row items-center justify-between px-4 py-2">
-                <View className="flex-1 flex-row items-center">
-                  <View className="pr-2">
-                    <Shield />
-                  </View>
-                  <View className="flex-1">
-                    <Text>{translate('auth.security.biometric_login')}</Text>
-                    {biometricSettings.biometricType && (
-                      <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-                        {biometricSettings.biometricType === 'face' &&
-                          translate('settings.security.biometric.face' as any)}
-                        {biometricSettings.biometricType === 'fingerprint' &&
-                          translate(
-                            'settings.security.biometric.fingerprint' as any
-                          )}
-                        {biometricSettings.biometricType === 'iris' &&
-                          translate('settings.security.biometric.iris' as any)}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-                <Switch
-                  value={biometricSettings.isEnabled}
-                  onValueChange={handleToggleBiometric}
-                  disabled={biometricSettings.isLoading}
-                  testID="biometric-toggle"
-                />
-              </View>
-            </ItemsContainer>
-          )}
+          <BiometricToggleSection />
 
           {/* MFA Section */}
           <ItemsContainer title="auth.security.mfa_section">
@@ -158,11 +84,7 @@ export default function SecuritySettingsScreen() {
             />
           </ItemsContainer>
 
-          <View className="mt-4 rounded-lg bg-warning-100 p-4 dark:bg-warning-900">
-            <Text className="text-sm text-warning-900 dark:text-warning-100">
-              {translate('auth.security.danger_zone_warning')}
-            </Text>
-          </View>
+          <DangerZoneWarning />
         </View>
       </ScrollView>
 

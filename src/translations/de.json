@@ -2477,6 +2477,8 @@
       "error_checking": "Fehler beim Suchen nach Updates",
       "github": "GitHub-Repository",
       "links": "Links",
+      "openStoreErrorMessage": "Fehler beim Öffnen des App Stores. Bitte versuchen Sie es erneut oder überprüfen Sie Ihre Geräteeinstellungen.",
+      "openStoreErrorTitle": "Fehler",
       "ota_disabled": "Updates werden über den App Store verwaltet",
       "restart_to_apply": "Neu starten zum Anwenden",
       "retry": "Erneut versuchen",
@@ -2827,7 +2829,8 @@
       "formErrors_plural": "Formular hat {{count}} Fehler",
       "hint": "Dieses Feld hat einen Validierungsfehler, der behoben werden muss",
       "pleaseFixErrors": "Bitte beheben Sie die folgenden Fehler:",
-      "reviewAndFixErrors": "Überprüfen und beheben Sie alle Formularfehler, bevor Sie absenden"
+      "reviewAndFixErrors": "Überprüfen und beheben Sie alle Formularfehler, bevor Sie absenden",
+      "successLabel": "Erfolg: {{message}}"
     },
     "version": "Version",
     "web_deletion": "Web-Löschportal",

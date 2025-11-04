@@ -67,8 +67,8 @@ export default function AboutScreen() {
             error instanceof Error ? error.message : 'Failed to open app store',
         });
         Alert.alert(
-          'Error',
-          'Failed to open app store. Please try again or check your device settings.'
+          translate('settings.openStoreErrorTitle'),
+          translate('settings.openStoreErrorMessage')
         );
         return;
       }
@@ -232,7 +232,7 @@ export default function AboutScreen() {
                   <View className="mb-3 flex-row items-center justify-center rounded-lg bg-primary-50 p-3 dark:bg-primary-900/20">
                     <ActivityIndicator size="small" className="mr-2" />
                     <Text className="text-sm text-primary-700 dark:text-primary-300">
-                      Downloading update...
+                      {translate('settings.about.downloading_message')}
                     </Text>
                   </View>
                 )}

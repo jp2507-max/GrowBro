@@ -59,7 +59,7 @@ export const useRequestAccountDeletion = createMutation({
     }
 
     // Generate request ID
-    const requestId = crypto.randomUUID();
+    const requestId = Crypto.randomUUID();
 
     // Calculate scheduled deletion date (30 days from now)
     const scheduledFor = new Date();
@@ -95,7 +95,7 @@ export const useRequestAccountDeletion = createMutation({
     }
 
     // Log audit entry
-    await supabase.from('audit_logs').insert({
+    const { error: auditError } = await supabase.from('audit_logs').insert({
       user_id: user.id,
       event_type: 'account_deletion_requested',
       payload: {
@@ -106,6 +106,22 @@ export const useRequestAccountDeletion = createMutation({
       policy_version: policyVersion,
       app_version: process.env.EXPO_PUBLIC_VERSION || '1.0.0',
     });
+
+    if (auditError) {
+      await logAuthError(
+        new Error(
+          `settings.delete_account.error_audit_log_failed: ${auditError.message}`
+        ),
+        {
+          errorKey: 'settings.delete_account.error_audit_log_failed',
+          flow: 'request_account_deletion',
+          requestId,
+          userId: user.id,
+          auditError: auditError.message,
+        }
+      );
+      throw new Error('settings.delete_account.error_audit_log_failed');
+    }
 
     // Track analytics event
     await trackAuthEvent('account_deletion_requested', {
@@ -197,7 +213,7 @@ export const useCancelAccountDeletion = createMutation({
     }
 
     // Log audit entry
-    await supabase.from('audit_logs').insert({
+    const { error: auditError } = await supabase.from('audit_logs').insert({
       user_id: user.id,
       event_type: 'account_deletion_cancelled',
       payload: {
@@ -207,6 +223,22 @@ export const useCancelAccountDeletion = createMutation({
       policy_version: deletionRequest.policy_version,
       app_version: process.env.EXPO_PUBLIC_VERSION || '1.0.0',
     });
+
+    if (auditError) {
+      await logAuthError(
+        new Error(
+          `settings.delete_account.error_audit_log_failed: ${auditError.message}`
+        ),
+        {
+          errorKey: 'settings.delete_account.error_audit_log_failed',
+          flow: 'cancel_account_deletion',
+          requestId: deletionRequest.request_id,
+          userId: user.id,
+          auditError: auditError.message,
+        }
+      );
+      throw new Error('settings.delete_account.error_audit_log_failed');
+    }
 
     // Track analytics event
     await trackAuthEvent('account_deletion_cancelled', {

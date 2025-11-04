@@ -346,6 +346,38 @@ export default function NotificationSettings() {
                             setCustomMinutes(numericValue);
                           }
                         }}
+                        onBlur={async () => {
+                          const parsedMinutes = parseInt(customMinutes, 10);
+                          if (
+                            !isNaN(parsedMinutes) &&
+                            parsedMinutes >= 1 &&
+                            parsedMinutes <= 1440
+                          ) {
+                            // Only update if the value has actually changed to avoid unnecessary API calls
+                            if (
+                              parsedMinutes !==
+                              preferences?.customReminderMinutes
+                            ) {
+                              await updateTaskReminderTiming(
+                                'custom',
+                                parsedMinutes
+                              );
+                            }
+                          } else if (
+                            customMinutes === '' ||
+                            isNaN(parsedMinutes)
+                          ) {
+                            // Revert to previous valid value or default
+                            const fallbackMinutes =
+                              preferences?.customReminderMinutes || 30;
+                            setCustomMinutes(fallbackMinutes.toString());
+                          } else {
+                            // Invalid range - revert to previous valid value
+                            const fallbackMinutes =
+                              preferences?.customReminderMinutes || 30;
+                            setCustomMinutes(fallbackMinutes.toString());
+                          }
+                        }}
                         keyboardType="numeric"
                         maxLength={4}
                         className="text-sm"

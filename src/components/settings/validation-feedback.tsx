@@ -6,7 +6,6 @@
  * and screen reader announcements.
  */
 
-import React from 'react';
 import * as React from 'react';
 import type { FieldError } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -119,7 +118,7 @@ export function SuccessMessage({
       testID={testID}
       accessibilityRole="alert"
       accessibilityLiveRegion="polite"
-      accessibilityLabel={`Success: ${message}`}
+      accessibilityLabel={t('settings.validation.successLabel', { message })}
       accessibilityHint={t('settings.successHint')}
     >
       <Text className="mr-2 text-lg">✓</Text>

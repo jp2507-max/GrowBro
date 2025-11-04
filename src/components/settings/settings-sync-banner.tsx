@@ -45,6 +45,8 @@ export function SettingsSyncBanner({
 
   // Load stats on mount and refresh periodically
   useEffect(() => {
+    isMountedRef.current = true;
+
     const loadStats = async () => {
       if (!isMountedRef.current) return;
       const current = await getSyncStats();

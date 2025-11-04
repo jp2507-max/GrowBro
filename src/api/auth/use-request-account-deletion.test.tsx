@@ -20,6 +20,10 @@ import {
 } from './use-request-account-deletion';
 
 // Mock dependencies
+jest.mock('expo-crypto', () => ({
+  randomUUID: jest.fn(() => 'mock-uuid-123'),
+}));
+
 jest.mock('@/lib/supabase', () => ({
   supabase: {
     from: jest.fn(() => ({
@@ -46,7 +50,9 @@ jest.mock('@/lib/auth/auth-telemetry', () => ({
 }));
 
 jest.mock('@/lib/auth', () => ({
-  useAuth: jest.fn(),
+  useAuth: {
+    getState: jest.fn(),
+  },
 }));
 
 // Create wrapper for React Query
@@ -79,12 +85,22 @@ describe('useRequestAccountDeletion', () => {
 
       // Mock the auth state
       const mockUseAuth = jest.mocked(useAuth);
-      mockUseAuth.mockReturnValue({
+      mockUseAuth.getState.mockReturnValue({
         user: mockUser,
-        isAuthenticated: true,
-        isLoading: false,
-        signOut: jest.fn(),
         session: null,
+        status: 'signIn',
+        token: null,
+        lastValidatedAt: null,
+        offlineMode: 'full',
+        _authOperationInProgress: false,
+        signIn: jest.fn(),
+        signOut: jest.fn(),
+        hydrate: jest.fn(),
+        updateSession: jest.fn(),
+        updateUser: jest.fn(),
+        updateLastValidatedAt: jest.fn(),
+        setOfflineMode: jest.fn(),
+        getStableSessionId: jest.fn(),
       });
 
       // Mock app_config query
@@ -239,12 +255,22 @@ describe('useRequestAccountDeletion', () => {
 
       // Mock the auth state
       const mockUseAuth = jest.mocked(useAuth);
-      mockUseAuth.mockReturnValue({
+      mockUseAuth.getState.mockReturnValue({
         user: mockUser,
-        isAuthenticated: true,
-        isLoading: false,
-        signOut: jest.fn(),
         session: null,
+        status: 'signIn',
+        token: null,
+        lastValidatedAt: null,
+        offlineMode: 'full',
+        _authOperationInProgress: false,
+        signIn: jest.fn(),
+        signOut: jest.fn(),
+        hydrate: jest.fn(),
+        updateSession: jest.fn(),
+        updateUser: jest.fn(),
+        updateLastValidatedAt: jest.fn(),
+        setOfflineMode: jest.fn(),
+        getStableSessionId: jest.fn(),
       });
 
       // Mock the fetch query
