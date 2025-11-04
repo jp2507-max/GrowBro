@@ -1,6 +1,7 @@
 // @ts-nocheck
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
+import { timingSafeEqual } from 'https://deno.land/std@0.208.0/crypto/timing_safe_equal.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 /**
@@ -66,8 +67,29 @@ Deno.serve(async (req: Request) => {
     const authHeader = req.headers.get('Authorization');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
+    // Fail fast if service role key is not configured
+    if (!serviceRoleKey) {
+      console.error(
+        '[deletion-cascade] SUPABASE_SERVICE_ROLE_KEY not configured'
+      );
+      return new Response(
+        JSON.stringify({ error: 'Service misconfigured. Contact support.' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     // Verify service role authorization
-    if (!authHeader || !authHeader.includes(serviceRoleKey ?? '')) {
+    if (
+      !authHeader ||
+      !authHeader.startsWith('Bearer ') ||
+      !timingSafeEqual(
+        new TextEncoder().encode(authHeader.slice(7)),
+        new TextEncoder().encode(serviceRoleKey)
+      )
+    ) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized. Service role required.' }),
         {

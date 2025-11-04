@@ -189,13 +189,14 @@ describe('useBiometricSettings', () => {
 
       const { result } = renderHook(() => useBiometricSettings());
 
-      let success: boolean;
+      let resultValue: { success: boolean; error: string | null };
       await act(async () => {
-        success = await result.current.enable();
+        resultValue = await result.current.enable();
       });
 
       await waitFor(() => {
-        expect(success).toBe(true);
+        expect(resultValue.success).toBe(true);
+        expect(resultValue.error).toBeNull();
         expect(result.current.isEnabled).toBe(true);
         expect(result.current.biometricType).toBe('fingerprint');
         expect(result.current.isLoading).toBe(false);
@@ -230,13 +231,14 @@ describe('useBiometricSettings', () => {
 
       const { result } = renderHook(() => useBiometricSettings());
 
-      let success: boolean;
+      let resultValue: { success: boolean; error: string | null };
       await act(async () => {
-        success = await result.current.enable();
+        resultValue = await result.current.enable();
       });
 
       await waitFor(() => {
-        expect(success).toBe(false);
+        expect(resultValue.success).toBe(false);
+        expect(resultValue.error).toBe('auth.security.biometric_not_available');
         expect(result.current.isEnabled).toBe(false);
         expect(result.current.error).toBe(
           'auth.security.biometric_not_available'
@@ -253,13 +255,14 @@ describe('useBiometricSettings', () => {
 
       const { result } = renderHook(() => useBiometricSettings());
 
-      let success: boolean;
+      let resultValue: { success: boolean; error: string | null };
       await act(async () => {
-        success = await result.current.enable();
+        resultValue = await result.current.enable();
       });
 
       await waitFor(() => {
-        expect(success).toBe(false);
+        expect(resultValue.success).toBe(false);
+        expect(resultValue.error).toBe('auth.security.biometric_not_enrolled');
         expect(result.current.error).toBe(
           'auth.security.biometric_not_enrolled'
         );
@@ -274,13 +277,16 @@ describe('useBiometricSettings', () => {
 
       const { result } = renderHook(() => useBiometricSettings());
 
-      let success: boolean;
+      let resultValue: { success: boolean; error: string | null };
       await act(async () => {
-        success = await result.current.enable();
+        resultValue = await result.current.enable();
       });
 
       await waitFor(() => {
-        expect(success).toBe(false);
+        expect(resultValue.success).toBe(false);
+        expect(resultValue.error).toBe(
+          'Biometric authentication was cancelled'
+        );
         expect(result.current.error).toBe(
           'Biometric authentication was cancelled'
         );
@@ -295,13 +301,14 @@ describe('useBiometricSettings', () => {
 
       const { result } = renderHook(() => useBiometricSettings());
 
-      let success: boolean;
+      let resultValue: { success: boolean; error: string | null };
       await act(async () => {
-        success = await result.current.enable();
+        resultValue = await result.current.enable();
       });
 
       await waitFor(() => {
-        expect(success).toBe(false);
+        expect(resultValue.success).toBe(false);
+        expect(resultValue.error).toBe('Failed to enable biometric login');
         expect(result.current.error).toBe('Failed to enable biometric login');
       });
     });
@@ -311,13 +318,14 @@ describe('useBiometricSettings', () => {
 
       const { result } = renderHook(() => useBiometricSettings());
 
-      let success: boolean;
+      let resultValue: { success: boolean; error: string | null };
       await act(async () => {
-        success = await result.current.enable();
+        resultValue = await result.current.enable();
       });
 
       await waitFor(() => {
-        expect(success).toBe(false);
+        expect(resultValue.success).toBe(false);
+        expect(resultValue.error).toBe('auth.security.biometric_enable_error');
         expect(result.current.error).toBe(
           'auth.security.biometric_enable_error'
         );
@@ -360,13 +368,14 @@ describe('useBiometricSettings', () => {
         result.current.biometricType = 'fingerprint';
       });
 
-      let success: boolean;
+      let resultValue: { success: boolean; error: string | null };
       await act(async () => {
-        success = await result.current.disable();
+        resultValue = await result.current.disable();
       });
 
       await waitFor(() => {
-        expect(success).toBe(true);
+        expect(resultValue.success).toBe(true);
+        expect(resultValue.error).toBeNull();
         expect(result.current.isEnabled).toBe(false);
         expect(result.current.biometricType).toBeUndefined();
         expect(result.current.isLoading).toBe(false);
@@ -395,13 +404,14 @@ describe('useBiometricSettings', () => {
 
       const { result } = renderHook(() => useBiometricSettings());
 
-      let success: boolean;
+      let resultValue: { success: boolean; error: string | null };
       await act(async () => {
-        success = await result.current.disable();
+        resultValue = await result.current.disable();
       });
 
       await waitFor(() => {
-        expect(success).toBe(false);
+        expect(resultValue.success).toBe(false);
+        expect(resultValue.error).toBe('auth.security.biometric_disable_error');
         expect(result.current.error).toBe(
           'auth.security.biometric_disable_error'
         );

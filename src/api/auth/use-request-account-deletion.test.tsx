@@ -45,6 +45,10 @@ jest.mock('@/lib/auth/auth-telemetry', () => ({
   trackAuthEvent: jest.fn(),
 }));
 
+jest.mock('@/lib/auth', () => ({
+  useAuth: jest.fn(),
+}));
+
 // Create wrapper for React Query
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -74,7 +78,8 @@ describe('useRequestAccountDeletion', () => {
       const mockSupabase = require('@/lib/supabase').supabase;
 
       // Mock the auth state
-      jest.mocked(useAuth).mockReturnValue({
+      const mockUseAuth = jest.mocked(useAuth);
+      mockUseAuth.mockReturnValue({
         user: mockUser,
         isAuthenticated: true,
         isLoading: false,
@@ -122,7 +127,16 @@ describe('useRequestAccountDeletion', () => {
       expect(mockSupabase.from).toHaveBeenCalledWith(
         'account_deletion_requests'
       );
-      const insertCall = mockSupabase.from('account_deletion_requests').insert;
+
+      // Find the actual insert mock that was called during hook execution
+      const accountDeletionResult = mockSupabase.from.mock.results.find(
+        (result: any) =>
+          result.value &&
+          mockSupabase.from.mock.calls[result.index][0] ===
+            'account_deletion_requests'
+      );
+      expect(accountDeletionResult).toBeDefined();
+      const insertCall = accountDeletionResult.value.insert;
       expect(insertCall).toHaveBeenCalledWith(
         expect.objectContaining({
           request_id: expect.any(String),
@@ -136,7 +150,13 @@ describe('useRequestAccountDeletion', () => {
       );
 
       // Verify audit_logs also uses snake_case
-      const auditInsertCall = mockSupabase.from('audit_logs').insert;
+      const auditLogsResult = mockSupabase.from.mock.results.find(
+        (result: any) =>
+          result.value &&
+          mockSupabase.from.mock.calls[result.index][0] === 'audit_logs'
+      );
+      expect(auditLogsResult).toBeDefined();
+      const auditInsertCall = auditLogsResult.value.insert;
       expect(auditInsertCall).toHaveBeenCalledWith(
         expect.objectContaining({
           user_id: 'user-123',
@@ -161,7 +181,11 @@ describe('useRequestAccountDeletion', () => {
                   data: {
                     request_id: 'req-123',
                     user_id: 'user-123',
+                    requested_at: '2023-01-01T00:00:00Z',
+                    scheduled_for: '2023-01-31T00:00:00Z',
                     status: 'pending',
+                    reason: 'Test reason',
+                    policy_version: '1.0.0',
                   },
                   error: null,
                 })
@@ -171,7 +195,7 @@ describe('useRequestAccountDeletion', () => {
         })),
       });
 
-      await checkPendingDeletion('user-123');
+      const result = await checkPendingDeletion('user-123');
 
       expect(mockSupabase.from).toHaveBeenCalledWith(
         'account_deletion_requests'
@@ -180,9 +204,27 @@ describe('useRequestAccountDeletion', () => {
       expect(selectChain).toHaveBeenCalledWith('*');
 
       // Verify the eq calls use snake_case
-      const eqCalls = selectChain('*').eq;
-      expect(eqCalls).toHaveBeenNthCalledWith(1, 'user_id', 'user-123');
-      expect(eqCalls).toHaveBeenNthCalledWith(2, 'status', 'pending');
+      const firstEqResult =
+        mockSupabase.from.mock.results[0].value.select.mock.results[0].value;
+      expect(firstEqResult.eq).toHaveBeenNthCalledWith(
+        1,
+        'user_id',
+        'user-123'
+      );
+
+      const secondEqResult = firstEqResult.eq.mock.results[0].value;
+      expect(secondEqResult.eq).toHaveBeenNthCalledWith(1, 'status', 'pending');
+
+      // Verify the return value is mapped to camelCase
+      expect(result).toEqual({
+        requestId: 'req-123',
+        userId: 'user-123',
+        requestedAt: '2023-01-01T00:00:00Z',
+        scheduledFor: '2023-01-31T00:00:00Z',
+        status: 'pending',
+        reason: 'Test reason',
+        policyVersion: '1.0.0',
+      });
     });
   });
 
@@ -196,7 +238,8 @@ describe('useRequestAccountDeletion', () => {
       const mockSupabase = require('@/lib/supabase').supabase;
 
       // Mock the auth state
-      jest.mocked(useAuth).mockReturnValue({
+      const mockUseAuth = jest.mocked(useAuth);
+      mockUseAuth.mockReturnValue({
         user: mockUser,
         isAuthenticated: true,
         isLoading: false,

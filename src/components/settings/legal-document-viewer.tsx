@@ -42,25 +42,33 @@ export function LegalDocumentViewer({
   const [lastSynced, setLastSynced] = useState<string | undefined>();
 
   const languageCode = i18n.language || 'en';
-  const locale = languageCode === 'de' ? 'de' : 'en';
 
   useEffect(() => {
+    let isMounted = true;
+    const locale = languageCode === 'de' ? 'de' : 'en';
+
     async function loadDocument() {
       setLoading(true);
       try {
         const doc = await getLegalDocument(documentType, locale);
+        if (!isMounted) return;
         setDocument(doc);
         const timestamp = getLastSyncTimestamp();
         setLastSynced(timestamp);
       } catch (error) {
         console.error('Failed to load legal document:', error);
       } finally {
+        if (!isMounted) return;
         setLoading(false);
       }
     }
 
     void loadDocument();
-  }, [documentType, languageCode, locale]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [documentType, languageCode]);
 
   if (loading) {
     return (

@@ -91,11 +91,11 @@ describe('Settings Screens Accessibility Audit', () => {
     test('form inputs have accessibility labels and hints', () => {
       render(<ProfileScreen />);
 
-      const displayNameInput = screen.getByTestId('display-name-input');
+      const displayNameInput = screen.getByTestId('profile-display-name');
       expect(displayNameInput.props.accessibilityLabel).toBeTruthy();
       expect(displayNameInput.props.accessibilityHint).toBeTruthy();
 
-      const bioInput = screen.getByTestId('bio-input');
+      const bioInput = screen.getByTestId('profile-bio');
       expect(bioInput.props.accessibilityLabel).toBeTruthy();
       expect(bioInput.props.accessibilityHint).toBeTruthy();
     });
@@ -103,7 +103,7 @@ describe('Settings Screens Accessibility Audit', () => {
     test('toggles have proper state announcements', () => {
       render(<ProfileScreen />);
 
-      const visibilityToggle = screen.getByTestId('show-profile-toggle');
+      const visibilityToggle = screen.getByTestId('profile-show-toggle');
 
       expect(visibilityToggle.props.accessibilityRole).toBe('switch');
       expect(visibilityToggle.props.accessibilityState).toBeDefined();
@@ -113,7 +113,7 @@ describe('Settings Screens Accessibility Audit', () => {
     test('save button meets touch target requirements', () => {
       render(<ProfileScreen />);
 
-      const saveButton = screen.getByTestId('save-profile-button');
+      const saveButton = screen.getByTestId('profile-save-button');
 
       const result = checkTouchTargetSize(saveButton);
       expect(result.passes).toBe(true);

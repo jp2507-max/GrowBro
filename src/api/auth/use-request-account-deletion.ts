@@ -148,7 +148,15 @@ export async function checkPendingDeletion(
     return null;
   }
 
-  return data as AccountDeletionRequest;
+  return {
+    requestId: data.request_id,
+    userId: data.user_id,
+    requestedAt: data.requested_at,
+    scheduledFor: data.scheduled_for,
+    status: data.status,
+    reason: data.reason ?? undefined,
+    policyVersion: data.policy_version,
+  };
 }
 
 /**

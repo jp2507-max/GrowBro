@@ -7,6 +7,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -17,6 +18,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { motion } from '@/lib/animations/motion';
+import type { TxKeyPath } from '@/lib/i18n';
 
 type SkeletonProps = {
   width?: number | string;
@@ -24,6 +26,8 @@ type SkeletonProps = {
   borderRadius?: number;
   className?: string;
   testID?: string;
+  txLabel?: TxKeyPath;
+  txHint?: TxKeyPath;
 };
 
 /**
@@ -35,7 +39,10 @@ export function Skeleton({
   borderRadius = 4,
   className,
   testID,
+  txLabel,
+  txHint,
 }: SkeletonProps) {
+  const { t } = useTranslation();
   const opacity = useSharedValue(1);
 
   React.useEffect(() => {
@@ -66,8 +73,8 @@ export function Skeleton({
       ]}
       className={`bg-neutral-200 dark:bg-neutral-800 ${className ?? ''}`}
       testID={testID}
-      accessibilityLabel="Loading"
-      accessibilityHint="Content is loading, please wait"
+      accessibilityLabel={txLabel ? t(txLabel) : 'Loading'}
+      accessibilityHint={txHint ? t(txHint) : 'Content is loading, please wait'}
       accessibilityRole="progressbar"
     />
   );

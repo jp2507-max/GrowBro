@@ -78,7 +78,7 @@ tags:
 - tapOn:
     id: 'display-name-input'
 
-- clearKeychain
+- eraseText: 100
 
 - inputText: 'AB'
 

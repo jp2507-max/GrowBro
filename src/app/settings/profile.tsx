@@ -124,7 +124,7 @@ function ProfileFormFields({
         />
         <ValidationError
           error={errors.displayName}
-          fieldName="Display name"
+          fieldLabel={t('profile.displayName.label')}
           testID="display-name-error"
         />
       </View>
@@ -143,7 +143,7 @@ function ProfileFormFields({
         />
         <ValidationError
           error={errors.bio}
-          fieldName="Bio"
+          fieldLabel={t('profile.bio.label')}
           testID="bio-error"
         />
       </View>
@@ -164,7 +164,8 @@ function ProfileFormFields({
         </Text>
 
         <Pressable
-          accessibilityRole="button"
+          accessibilityRole="switch"
+          accessibilityState={{ checked: showProfileToCommunity }}
           className="mb-3 flex-row items-center justify-between rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800"
           onPress={() => setShowProfileToCommunity(!showProfileToCommunity)}
         >
@@ -177,7 +178,8 @@ function ProfileFormFields({
         </Pressable>
 
         <Pressable
-          accessibilityRole="button"
+          accessibilityRole="switch"
+          accessibilityState={{ checked: allowDirectMessages }}
           className="flex-row items-center justify-between rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800"
           onPress={() => setAllowDirectMessages(!allowDirectMessages)}
         >
@@ -482,11 +484,19 @@ export default function ProfileScreen() {
         }
 
         // Sync to backend - Requirements: 9.6, 9.7
+        const trimmedBio =
+          typeof data.bio === 'string' ? data.bio.trim() : data.bio;
+        const bioToSend = trimmedBio === '' ? null : trimmedBio;
+        const trimmedLocation =
+          typeof data.location === 'string'
+            ? data.location.trim()
+            : data.location;
+        const locationToSend = trimmedLocation === '' ? null : trimmedLocation;
         const syncResult = await syncProfileToBackend({
           userId,
           displayName: data.displayName,
-          bio: data.bio || undefined,
-          location: data.location || undefined,
+          bio: bioToSend,
+          location: locationToSend,
           avatarUrl: avatarUrl,
           showProfileToCommunity,
           allowDirectMessages,

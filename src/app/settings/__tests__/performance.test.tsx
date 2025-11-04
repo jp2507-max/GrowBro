@@ -264,7 +264,7 @@ describe('Settings Screen Performance', () => {
       await user.type(bioInput, 'New bio');
 
       // Trigger save
-      const saveButton = screen.getByTestId('save-profile-button');
+      const saveButton = screen.getByTestId('profile-save-button');
       await user.press(saveButton);
 
       await waitFor(() => {

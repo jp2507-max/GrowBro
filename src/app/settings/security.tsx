@@ -24,11 +24,12 @@ export default function SecuritySettingsScreen() {
     useChangePasswordModal();
 
   const biometricSettings = useBiometricSettings();
+  const { initialize } = biometricSettings;
 
   // Initialize biometric settings on mount
   React.useEffect(() => {
-    void biometricSettings.initialize();
-  }, [biometricSettings]);
+    void initialize();
+  }, [initialize]);
 
   const handleChangePassword = () => {
     presentChangePasswordModal();
@@ -37,26 +38,26 @@ export default function SecuritySettingsScreen() {
   const handleToggleBiometric = async () => {
     if (biometricSettings.isEnabled) {
       // Disable biometric
-      const success = await biometricSettings.disable();
-      if (success) {
+      const result = await biometricSettings.disable();
+      if (result.success) {
         showSuccessMessage(
           translate('auth.security.biometric_disabled_success')
         );
-      } else if (biometricSettings.error) {
-        const translatedError = translateDynamic(biometricSettings.error);
+      } else {
+        const translatedError = translateDynamic(result.error);
         showErrorMessage(
           translatedError ?? translate('auth.security.biometric_disable_error')
         );
       }
     } else {
       // Enable biometric
-      const success = await biometricSettings.enable();
-      if (success) {
+      const result = await biometricSettings.enable();
+      if (result.success) {
         showSuccessMessage(
           translate('auth.security.biometric_enabled_success')
         );
-      } else if (biometricSettings.error) {
-        const translatedError = translateDynamic(biometricSettings.error);
+      } else {
+        const translatedError = translateDynamic(result.error);
         showErrorMessage(
           translatedError ?? translate('auth.security.biometric_enable_error')
         );

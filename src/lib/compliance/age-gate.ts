@@ -33,7 +33,6 @@ export type AgeGateVerifyInput = {
   birthYear: number;
   birthMonth?: number;
   birthDay?: number;
-  region?: string;
   method?: AgeGateMethod;
 };
 
@@ -229,16 +228,13 @@ function createVerifyFunction(
     const age = computeAge(birthDate, now);
 
     // Determine age threshold based on region
-    const region = input.region || getDetectedRegion();
-    const requiredAge = region
-      ? AGE_THRESHOLDS[region.toUpperCase()] || AGE_THRESHOLDS.DEFAULT
-      : AGE_THRESHOLDS.UNKNOWN; // Apply strictest when region unknown
+    const requiredAge = getRequiredAge();
 
     if (age < requiredAge) {
       appendAudit({
         timestamp,
         type: 'verify-denied',
-        detail: `age:${age},required:${requiredAge},region:${region || 'unknown'}`,
+        detail: `age:${age},required:${requiredAge}`,
       });
       set({
         status: 'blocked',

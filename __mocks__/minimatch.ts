@@ -5,11 +5,13 @@
 
 export function minimatch(path: string, pattern: string): boolean {
   // Convert glob pattern to regex
-  // First convert glob wildcards to regex, then escape remaining special characters
+  // First replace wildcards with placeholders, then escape special chars, then convert placeholders to regex
   const regexPattern = pattern
-    .replace(/\*/g, '.*') // Replace * with .*
-    .replace(/\?/g, '.') // Replace ? with .
-    .replace(/[.+^${}()|[\]\\\/]/g, '\\$&'); // Escape remaining regex special characters
+    .replace(/\*/g, '__STAR__') // Replace * with placeholder
+    .replace(/\?/g, '__QMARK__') // Replace ? with placeholder
+    .replace(/[.+^${}()|[\]\\\/]/g, '\\$&') // Escape regex special characters
+    .replace(/__STAR__/g, '.*') // Convert placeholder back to .*
+    .replace(/__QMARK__/g, '.'); // Convert placeholder back to .
 
   const regex = new RegExp(`^${regexPattern}$`);
   return regex.test(path);

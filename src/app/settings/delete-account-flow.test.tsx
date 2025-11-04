@@ -17,7 +17,6 @@ import { MMKV } from 'react-native-mmkv';
 
 import { useRequestAccountDeletion } from '@/api/auth/use-request-account-deletion';
 import { cleanup, screen, setup, waitFor } from '@/lib/test-utils';
-import { database } from '@/lib/watermelon';
 
 import DeleteAccountScreen from './delete-account';
 
@@ -36,7 +35,16 @@ jest.mock('expo-router', () => ({
 jest.mock('expo-secure-store');
 jest.mock('react-native-mmkv');
 jest.mock('@/api/auth/use-request-account-deletion');
-jest.mock('@/lib/watermelon');
+
+const mockDatabase = {
+  write: jest.fn(),
+  unsafeResetDatabase: jest.fn(),
+};
+
+jest.mock('@/lib/watermelon', () => ({
+  database: mockDatabase,
+}));
+
 jest.mock('@/lib', () => ({
   ...jest.requireActual('@/lib'),
   showErrorMessage: jest.fn(),
@@ -49,11 +57,6 @@ jest.mock('@/lib', () => ({
 
 const mockMmkvStorage = {
   clearAll: jest.fn(),
-};
-
-const mockDatabase = {
-  write: jest.fn(),
-  unsafeResetDatabase: jest.fn(),
 };
 
 const mockRequestDeletion = {
@@ -71,8 +74,8 @@ describe('Account Deletion Flow Integration', () => {
     jest.clearAllMocks();
 
     (MMKV as unknown as jest.Mock).mockImplementation(() => mockMmkvStorage);
-    (database.write as jest.Mock).mockImplementation((fn) => fn());
-    (database.unsafeResetDatabase as jest.Mock).mockResolvedValue(undefined);
+    mockDatabase.write.mockImplementation((fn) => fn());
+    mockDatabase.unsafeResetDatabase.mockResolvedValue(undefined);
     (useRequestAccountDeletion as any).mockReturnValue(mockRequestDeletion);
     (SecureStore.deleteItemAsync as jest.Mock).mockResolvedValue(undefined);
 
@@ -408,9 +411,7 @@ describe('Account Deletion Flow Integration', () => {
       });
 
       // Make cleanup fail
-      (database.unsafeResetDatabase as jest.Mock).mockRejectedValue(
-        new Error('DB error')
-      );
+      mockDatabase.unsafeResetDatabase.mockRejectedValue(new Error('DB error'));
 
       (useRequestAccountDeletion as any).mockImplementation(
         ({ onSuccess }: any) => {

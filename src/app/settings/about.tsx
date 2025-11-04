@@ -2,7 +2,7 @@ import { Env } from '@env';
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
 import React, { useState } from 'react';
-import { Linking, Platform } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform } from 'react-native';
 
 import { Item } from '@/components/settings/item';
 import { ItemsContainer } from '@/components/settings/items-container';
@@ -28,7 +28,6 @@ type UpdateStatus =
 
 interface UpdateState {
   status: UpdateStatus;
-  downloadProgress?: number;
   errorMessage?: string;
   manifest?: Updates.Manifest;
 }
@@ -57,8 +56,22 @@ export default function AboutScreen() {
   const checkForUpdates = async () => {
     if (!isOTAEnabled) {
       // If OTA is disabled, open the app store listing
-      await Linking.openURL(APP_STORE_URL);
-      return;
+      try {
+        await Linking.openURL(APP_STORE_URL);
+        return;
+      } catch (error) {
+        console.error('Failed to open app store:', error);
+        setUpdateState({
+          status: 'error',
+          errorMessage:
+            error instanceof Error ? error.message : 'Failed to open app store',
+        });
+        Alert.alert(
+          'Error',
+          'Failed to open app store. Please try again or check your device settings.'
+        );
+        return;
+      }
     }
 
     if (isOffline) {
@@ -88,7 +101,7 @@ export default function AboutScreen() {
   };
 
   const downloadAndApplyUpdate = async () => {
-    setUpdateState({ status: 'downloading', downloadProgress: 0 });
+    setUpdateState({ status: 'downloading' });
 
     try {
       await Updates.fetchUpdateAsync();
@@ -215,26 +228,14 @@ export default function AboutScreen() {
                   </View>
                 )}
 
-                {updateState.status === 'downloading' &&
-                  updateState.downloadProgress !== undefined && (
-                    <View className="mb-3">
-                      <Text className="mb-2 text-center text-sm text-neutral-600 dark:text-neutral-400">
-                        {translate('settings.about.download_progress', {
-                          progress: Math.round(
-                            updateState.downloadProgress * 100
-                          ),
-                        })}
-                      </Text>
-                      <View className="h-2 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
-                        <View
-                          className="h-full bg-primary-600"
-                          style={{
-                            width: `${updateState.downloadProgress * 100}%`,
-                          }}
-                        />
-                      </View>
-                    </View>
-                  )}
+                {updateState.status === 'downloading' && (
+                  <View className="mb-3 flex-row items-center justify-center rounded-lg bg-primary-50 p-3 dark:bg-primary-900/20">
+                    <ActivityIndicator size="small" className="mr-2" />
+                    <Text className="text-sm text-primary-700 dark:text-primary-300">
+                      Downloading update...
+                    </Text>
+                  </View>
+                )}
 
                 <Button
                   label={getUpdateButtonText()}

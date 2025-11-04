@@ -370,12 +370,15 @@ export function getLegalAcceptanceSnapshot(): LegalAcceptanceSnapshot {
   };
 }
 
-export function checkLegalVersionBumps(): {
+export function checkLegalVersionBumps(
+  currentVersionsOverride?: Record<LegalDocumentType, LegalDocumentVersion>
+): {
   needsBlocking: boolean;
   needsNotification: boolean;
   documents: LegalDocumentType[];
 } {
   const state = legalAcceptancesStore.getState();
+  const currentVersions = currentVersionsOverride || getCurrentLegalVersions();
   const types: LegalDocumentType[] = ['terms', 'privacy', 'cannabis'];
 
   const blocking: LegalDocumentType[] = [];
@@ -383,7 +386,7 @@ export function checkLegalVersionBumps(): {
 
   for (const type of types) {
     const acceptance = state.acceptances[type];
-    const currentVersion = CURRENT_VERSIONS[type].version;
+    const currentVersion = currentVersions[type].version;
 
     if (!acceptance?.accepted || !acceptance.acceptedVersion) {
       blocking.push(type);

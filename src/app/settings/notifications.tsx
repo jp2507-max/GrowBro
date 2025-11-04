@@ -11,6 +11,7 @@ import {
   View,
 } from '@/components/ui';
 import { useNotificationPreferences } from '@/lib/hooks/use-notification-preferences';
+import { translate } from '@/lib/i18n';
 import {
   createAndroidNotificationChannels,
   getNotificationPermissionStatus,
@@ -117,7 +118,6 @@ function CategoryToggle({
           accessibilityHint="Toggle this setting"
           value={value}
           onValueChange={onValueChange}
-          onChange={onValueChange}
           disabled={disabled || isChannelDisabled}
         />
       </View>
@@ -413,23 +413,26 @@ export default function NotificationSettings() {
           {permissionGranted && preferences && (
             <View className="mb-6 rounded-lg bg-neutral-100 p-4 dark:bg-charcoal-800">
               <Text className="mb-4 text-base font-semibold text-charcoal-950 dark:text-neutral-100">
-                Quiet Hours
+                {translate('notifications.quietHours.title')}
               </Text>
               <Text className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
-                Suppress non-critical notifications during quiet hours
+                {translate('notifications.quietHours.description')}
               </Text>
 
               <View className="flex-row items-center justify-between">
                 <Text className="text-sm font-medium text-charcoal-950 dark:text-neutral-100">
-                  Enabled
+                  {translate('notifications.quietHours.enabled')}
                 </Text>
                 <Switch
                   testID="quiet-hours-switch"
-                  accessibilityLabel="Toggle quiet hours"
-                  accessibilityHint="Enable or disable quiet hours for notifications"
+                  accessibilityLabel={translate(
+                    'notifications.quietHours.toggleLabel'
+                  )}
+                  accessibilityHint={translate(
+                    'notifications.quietHours.toggleHint'
+                  )}
                   value={preferences.quietHoursEnabled}
                   onValueChange={handleQuietHoursToggle}
-                  onChange={handleQuietHoursToggle}
                   disabled={isLoading}
                 />
               </View>
@@ -437,10 +440,14 @@ export default function NotificationSettings() {
               {preferences.quietHoursEnabled && (
                 <View className="mt-4 space-y-2">
                   <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-                    Start: {preferences.quietHoursStart || '22:00'}
+                    {translate('notifications.quietHours.startLabel', {
+                      time: preferences.quietHoursStart || '22:00',
+                    })}
                   </Text>
                   <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-                    End: {preferences.quietHoursEnd || '07:00'}
+                    {translate('notifications.quietHours.endLabel', {
+                      time: preferences.quietHoursEnd || '07:00',
+                    })}
                   </Text>
                 </View>
               )}
@@ -470,7 +477,6 @@ export default function NotificationSettings() {
                 testID="community-interactions-switch"
                 value={communityInteractionsEnabled}
                 onValueChange={handleToggleCommunityInteractions}
-                onChange={handleToggleCommunityInteractions}
                 accessibilityLabel="Toggle community interactions notifications"
                 accessibilityHint="Enables or disables notifications for replies and comments on your posts"
                 disabled={communityLoading || !communityUserId}
@@ -493,7 +499,6 @@ export default function NotificationSettings() {
                 testID="community-likes-switch"
                 value={communityLikesEnabled}
                 onValueChange={handleToggleCommunityLikes}
-                onChange={handleToggleCommunityLikes}
                 accessibilityLabel="Toggle community likes notifications"
                 accessibilityHint="Enables or disables notifications when someone likes your posts"
                 disabled={communityLoading || !communityUserId}

@@ -277,6 +277,8 @@ describe('ProfileScreen Integration Tests', () => {
 
       fetchProfileFromBackend.mockResolvedValue({
         displayName: 'OldName',
+        showProfileToCommunity: true,
+        allowDirectMessages: true,
       });
 
       syncProfileToBackend.mockResolvedValue({ success: true });
@@ -301,11 +303,11 @@ describe('ProfileScreen Integration Tests', () => {
         expect(syncProfileToBackend).toHaveBeenCalledWith({
           userId: 'test-user-id',
           displayName: 'NewName',
-          bio: undefined,
-          location: undefined,
+          bio: null,
+          location: null,
           avatarUrl: null,
-          showProfileToCommunity: undefined,
-          allowDirectMessages: undefined,
+          showProfileToCommunity: true,
+          allowDirectMessages: true,
         });
       });
 

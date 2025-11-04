@@ -116,6 +116,8 @@ export default function DeleteAccountScreen() {
   const [currentStep, setCurrentStep] = useState<DeletionStep>('explanation');
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
+  const deleteKeyword = t('settings.delete_account.confirm_keyword').trim();
+
   const isAnonymous = !user;
 
   // Mutation for requesting account deletion with grace period
@@ -249,7 +251,9 @@ export default function DeleteAccountScreen() {
   // - User can restore account by logging in within 30 days
   // - After 30 days, deletion is permanent and cannot be undone
   const handleConfirmDeletion = async () => {
-    if (deleteConfirmText.toLowerCase() !== 'delete') {
+    if (
+      deleteConfirmText.trim().toLowerCase() !== deleteKeyword.toLowerCase()
+    ) {
       return;
     }
 
@@ -270,7 +274,8 @@ export default function DeleteAccountScreen() {
     );
   };
 
-  const isDeleteConfirmValid = deleteConfirmText.toLowerCase() === 'delete';
+  const isDeleteConfirmValid =
+    deleteConfirmText.trim().toLowerCase() === deleteKeyword.toLowerCase();
 
   return (
     <>
@@ -341,6 +346,7 @@ export default function DeleteAccountScreen() {
                     onConfirm={handleConfirmDeletion}
                     onCancel={() => router.back()}
                     isDeleting={requestDeletion.isPending}
+                    deleteKeyword={deleteKeyword}
                   />
                 </View>
               )}
@@ -455,6 +461,7 @@ interface FinalConfirmationSectionProps {
   onConfirm: () => void;
   onCancel: () => void;
   isDeleting: boolean;
+  deleteKeyword: string;
 }
 
 function FinalConfirmationSection({
@@ -464,6 +471,7 @@ function FinalConfirmationSection({
   onConfirm,
   onCancel,
   isDeleting,
+  deleteKeyword,
 }: FinalConfirmationSectionProps) {
   const { t } = useTranslation();
 
@@ -492,11 +500,13 @@ function FinalConfirmationSection({
       {/* Type DELETE Confirmation */}
       <View className="mb-6">
         <Text className="mb-3 text-base text-neutral-700 dark:text-neutral-300">
-          {t('settings.delete_account.type_delete_instruction')}
+          {t('settings.delete_account.type_delete_instruction', {
+            keyword: deleteKeyword,
+          })}
         </Text>
         <View className="relative">
           <Input
-            placeholder="DELETE"
+            placeholder={deleteKeyword}
             value={deleteConfirmText}
             onChangeText={onChangeText}
             className="font-mono text-lg"

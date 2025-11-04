@@ -7,15 +7,17 @@
  */
 
 import React from 'react';
+import * as React from 'react';
 import type { FieldError } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import { Text, View } from '@/components/ui';
 
-interface ValidationErrorProps {
+type ValidationErrorProps = {
   error?: FieldError;
-  fieldName: string;
+  fieldLabel: string;
   testID?: string;
-}
+};
 
 /**
  * Inline validation error message
@@ -23,9 +25,11 @@ interface ValidationErrorProps {
  */
 export function ValidationError({
   error,
-  fieldName,
+  fieldLabel,
   testID,
-}: ValidationErrorProps) {
+}: ValidationErrorProps): React.ReactElement | null {
+  const { t } = useTranslation();
+
   if (!error) return null;
 
   return (
@@ -34,26 +38,33 @@ export function ValidationError({
       testID={testID}
       accessibilityRole="alert"
       accessibilityLiveRegion="assertive"
-      accessibilityLabel={`${fieldName} error: ${error.message}`}
-      accessibilityHint="This field has a validation error that needs to be fixed"
+      accessibilityLabel={t('validation.fieldError', {
+        fieldLabel,
+        message: error.message,
+      })}
+      accessibilityHint={t('validation.hint')}
     >
       <Text className="text-sm text-danger-600 dark:text-danger-400">
-        ⚠ {error.message}
+        {t('validation.errorMessage', { message: error.message })}
       </Text>
     </View>
   );
 }
 
-interface FormErrorSummaryProps {
+type FormErrorSummaryProps = {
   errors: Record<string, FieldError>;
   testID?: string;
-}
+};
 
 /**
  * Form-level error summary
  * Requirements: 12.1, 12.5
  */
-export function FormErrorSummary({ errors, testID }: FormErrorSummaryProps) {
+export function FormErrorSummary({
+  errors,
+  testID,
+}: FormErrorSummaryProps): React.ReactElement | null {
+  const { t } = useTranslation();
   const errorEntries = Object.entries(errors);
 
   if (errorEntries.length === 0) return null;
@@ -64,34 +75,44 @@ export function FormErrorSummary({ errors, testID }: FormErrorSummaryProps) {
       testID={testID}
       accessibilityRole="alert"
       accessibilityLiveRegion="assertive"
-      accessibilityLabel={`Form has ${errorEntries.length} error${errorEntries.length > 1 ? 's' : ''}`}
-      accessibilityHint="Review and fix all form errors before submitting"
+      accessibilityLabel={t('validation.formErrors', {
+        count: errorEntries.length,
+      })}
+      accessibilityHint={t('validation.reviewAndFixErrors')}
     >
       <Text className="mb-2 font-semibold text-danger-800 dark:text-danger-200">
-        Please fix the following errors:
+        {t('validation.pleaseFixErrors')}
       </Text>
       {errorEntries.map(([field, error]) => (
         <Text
           key={field}
           className="mb-1 text-sm text-danger-700 dark:text-danger-300"
         >
-          • {error.message}
+          •{' '}
+          {t('validation.fieldErrorItem', {
+            field: t(`fields.${field}`),
+            message: error.message,
+          })}
         </Text>
       ))}
     </View>
   );
 }
 
-interface SuccessMessageProps {
+type SuccessMessageProps = {
   message: string;
   testID?: string;
-}
+};
 
 /**
  * Success feedback message
  * Requirements: 12.1, 12.2
  */
-export function SuccessMessage({ message, testID }: SuccessMessageProps) {
+export function SuccessMessage({
+  message,
+  testID,
+}: SuccessMessageProps): React.ReactElement {
+  const { t } = useTranslation();
   return (
     <View
       className="dark:bg-success-950 mb-4 flex-row items-center rounded-lg bg-success-50 p-4"
@@ -99,7 +120,7 @@ export function SuccessMessage({ message, testID }: SuccessMessageProps) {
       accessibilityRole="alert"
       accessibilityLiveRegion="polite"
       accessibilityLabel={`Success: ${message}`}
-      accessibilityHint="Operation completed successfully"
+      accessibilityHint={t('settings.successHint')}
     >
       <Text className="mr-2 text-lg">✓</Text>
       <Text className="flex-1 text-success-800 dark:text-success-200">

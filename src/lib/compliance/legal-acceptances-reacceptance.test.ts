@@ -46,6 +46,7 @@ describe('Legal Re-Acceptance Integration', () => {
 
   afterEach(() => {
     resetLegalAcceptances();
+    jest.restoreAllMocks();
   });
 
   describe('Initial Acceptance', () => {
@@ -111,18 +112,13 @@ describe('Legal Re-Acceptance Integration', () => {
       });
 
       // Mock current versions with minor bump
-      jest
-        .spyOn(
-          require('@/lib/compliance/legal-acceptances'),
-          'getCurrentLegalVersions'
-        )
-        .mockReturnValue({
-          terms: { version: '1.1.0', lastUpdated: new Date().toISOString() },
-          privacy: { version: '1.0.0', lastUpdated: new Date().toISOString() },
-          cannabis: { version: '1.0.0', lastUpdated: new Date().toISOString() },
-        });
+      const mockCurrentVersions = {
+        terms: { version: '1.1.0', lastUpdated: new Date().toISOString() },
+        privacy: { version: '1.0.0', lastUpdated: new Date().toISOString() },
+        cannabis: { version: '1.0.0', lastUpdated: new Date().toISOString() },
+      };
 
-      const bumps = checkLegalVersionBumps();
+      const bumps = checkLegalVersionBumps(mockCurrentVersions);
       expect(bumps.needsBlocking).toBe(false);
       expect(bumps.needsNotification).toBe(true);
     });
@@ -162,18 +158,13 @@ describe('Legal Re-Acceptance Integration', () => {
       });
 
       // Mock current versions with major bumps
-      jest
-        .spyOn(
-          require('@/lib/compliance/legal-acceptances'),
-          'getCurrentLegalVersions'
-        )
-        .mockReturnValue({
-          terms: { version: '2.0.0', lastUpdated: new Date().toISOString() },
-          privacy: { version: '2.0.0', lastUpdated: new Date().toISOString() },
-          cannabis: { version: '1.0.0', lastUpdated: new Date().toISOString() },
-        });
+      const mockCurrentVersions = {
+        terms: { version: '2.0.0', lastUpdated: new Date().toISOString() },
+        privacy: { version: '2.0.0', lastUpdated: new Date().toISOString() },
+        cannabis: { version: '1.0.0', lastUpdated: new Date().toISOString() },
+      };
 
-      const bumps = checkLegalVersionBumps();
+      const bumps = checkLegalVersionBumps(mockCurrentVersions);
       expect(bumps.needsBlocking).toBe(true);
       expect(bumps.documents).toContain('terms');
       expect(bumps.documents).toContain('privacy');
@@ -187,22 +178,29 @@ describe('Legal Re-Acceptance Integration', () => {
         cannabis: '1.0.0',
       });
 
+      // Mock current versions with major bumps
+      const mockCurrentVersions = {
+        terms: { version: '2.0.0', lastUpdated: new Date().toISOString() },
+        privacy: { version: '2.0.0', lastUpdated: new Date().toISOString() },
+        cannabis: { version: '1.0.0', lastUpdated: new Date().toISOString() },
+      };
+
       // Check before accepting new versions
-      const beforeBumps = checkLegalVersionBumps();
+      const beforeBumps = checkLegalVersionBumps(mockCurrentVersions);
       expect(beforeBumps.needsBlocking).toBe(true);
 
       // Accept updated terms but not privacy
       acceptLegalDocument('terms', '2.0.0');
 
       // Should still block due to privacy
-      const afterTermsBumps = checkLegalVersionBumps();
+      const afterTermsBumps = checkLegalVersionBumps(mockCurrentVersions);
       expect(afterTermsBumps.needsBlocking).toBe(true);
 
       // Accept all updated versions
       acceptLegalDocument('privacy', '2.0.0');
 
       // Should no longer block
-      const finalBumps = checkLegalVersionBumps();
+      const finalBumps = checkLegalVersionBumps(mockCurrentVersions);
       expect(finalBumps.needsBlocking).toBe(false);
     });
   });
@@ -216,18 +214,13 @@ describe('Legal Re-Acceptance Integration', () => {
       });
 
       // Mock minor bump
-      jest
-        .spyOn(
-          require('@/lib/compliance/legal-acceptances'),
-          'getCurrentLegalVersions'
-        )
-        .mockReturnValue({
-          terms: { version: '1.1.0', lastUpdated: new Date().toISOString() },
-          privacy: { version: '1.0.0', lastUpdated: new Date().toISOString() },
-          cannabis: { version: '1.0.0', lastUpdated: new Date().toISOString() },
-        });
+      const mockCurrentVersions = {
+        terms: { version: '1.1.0', lastUpdated: new Date().toISOString() },
+        privacy: { version: '1.0.0', lastUpdated: new Date().toISOString() },
+        cannabis: { version: '1.0.0', lastUpdated: new Date().toISOString() },
+      };
 
-      const bumps = checkLegalVersionBumps();
+      const bumps = checkLegalVersionBumps(mockCurrentVersions);
       expect(bumps.needsBlocking).toBe(false);
       expect(bumps.needsNotification).toBe(true);
       expect(bumps.documents).toContain('terms');

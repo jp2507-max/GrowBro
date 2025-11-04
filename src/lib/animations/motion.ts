@@ -20,19 +20,17 @@ export const motion = {
   },
   ease: {
     standard: Easing.bezier(0.2, 0, 0, 1), // Standard easing
-    emphasized: Easing.bezier(0.2, 0, 0, 1), // Emphasized motion
+    emphasized: Easing.bezier(0.4, 0, 0.2, 1), // Emphasized motion
     decel: Easing.bezier(0, 0, 0.2, 1), // Deceleration
   },
-};
+} as const;
 
 /**
  * Ensures animation respects system Reduced Motion preference
  * Usage: entering={withRM(FadeInUp.duration(motion.dur.md))}
  */
-export const withRM = <
+export function withRM<
   T extends { reduceMotion?: (v: typeof ReduceMotion.System) => T },
->(
-  anim: T
-): T => {
+>(anim: T): T {
   return anim.reduceMotion?.(ReduceMotion.System) ?? anim;
-};
+}
