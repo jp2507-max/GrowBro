@@ -21,7 +21,7 @@ const THUMB_WIDTH = 22;
 const THUMB_OFFSET = 4;
 
 export interface RootProps extends Omit<PressableProps, 'onPress'> {
-  onChange: (checked: boolean) => void;
+  onChange?: (checked: boolean) => void;
   checked?: boolean;
   className?: string;
   accessibilityLabel: string;
@@ -45,7 +45,7 @@ export const Root = ({
 }: RootProps) => {
   const handleChange = useCallback(() => {
     const next = !checked;
-    onChange(next);
+    onChange?.(next);
     // If caller passed RN-like onValueChange, call it too
     // @ts-ignore – optional prop for compatibility
     props?.onValueChange?.(next);

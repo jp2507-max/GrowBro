@@ -1,0 +1,151 @@
+appId: ${APP_ID}
+name: Bug Report Submission Flow Test
+tags:
+  - settings
+  - support
+  - bug-report
+---
+# Test bug report submission: navigate → fill form → submit → verify success
+
+- launchApp
+
+# Navigate to Settings
+- tapOn:
+    id: 'settings-tab'
+
+- assertVisible:
+    id: 'settings-screen'
+    timeout: 3000
+
+# Navigate to Support
+- tapOn:
+    id: 'support-section'
+
+- assertVisible:
+    id: 'support-screen'
+    timeout: 3000
+
+- assertVisible: 'Support'
+
+# Navigate to Report a Bug
+- tapOn:
+    id: 'report-bug-option'
+
+- assertVisible:
+    id: 'bug-report-screen'
+    timeout: 3000
+
+- assertVisible: 'Report a Bug'
+
+# Verify form fields are present
+- assertVisible:
+    id: 'bug-title-input'
+
+- assertVisible:
+    id: 'bug-description-input'
+
+- assertVisible:
+    id: 'bug-category-select'
+
+# Test form validation - empty submission
+- tapOn:
+    id: 'submit-bug-report-button'
+
+# Should show validation errors
+- assertVisible:
+    text: 'Title is required|Description is required'
+    timeout: 2000
+
+# Fill bug title
+- tapOn:
+    id: 'bug-title-input'
+
+- inputText: 'Test Bug Report'
+
+# Fill bug description
+- tapOn:
+    id: 'bug-description-input'
+
+- inputText: 'This is a detailed description of the bug for E2E testing purposes. It includes multiple lines and sufficient detail.'
+
+# Select bug category
+- tapOn:
+    id: 'bug-category-select'
+
+- tapOn: 'UI Issue'
+
+# Verify diagnostics toggle is present
+- assertVisible:
+    id: 'include-diagnostics-toggle'
+
+# Ensure diagnostics are included
+- runFlow:
+    when:
+      visible:
+        id: 'include-diagnostics-toggle'
+      enabled: false
+    commands:
+      - tapOn:
+          id: 'include-diagnostics-toggle'
+
+# Submit bug report
+- tapOn:
+    id: 'submit-bug-report-button'
+
+# Verify submission success
+- assertVisible:
+    text: 'Bug report submitted|Thank you for your report|Success'
+    timeout: 10000
+
+# Verify ticket ID or reference is shown
+- assertVisible:
+    text: 'Ticket|Reference|ID'
+    timeout: 2000
+
+# Verify we can go back
+- tapOn:
+    id: 'close-button|back-button'
+
+- assertVisible:
+    id: 'support-screen'
+    timeout: 2000
+
+# Test screenshot attachment flow (if available)
+- tapOn:
+    id: 'report-bug-option'
+
+- assertVisible:
+    id: 'bug-report-screen'
+
+- runFlow:
+    when:
+      visible:
+        id: 'attach-screenshot-button'
+    commands:
+      - tapOn:
+          id: 'attach-screenshot-button'
+      - assertVisible: 'Choose from Library|Take Screenshot'
+
+# Test offline behavior
+- setAirplaneMode:
+    enabled: true
+
+- runFlow:
+    when:
+      visible:
+        id: 'offline-badge'
+    commands:
+      - tapOn:
+          id: 'bug-title-input'
+      - inputText: 'Offline Bug Report'
+      - tapOn:
+          id: 'bug-description-input'
+      - inputText: 'Testing offline submission'
+      - tapOn:
+          id: 'submit-bug-report-button'
+      - assertVisible:
+          text: 'Queued|Will be sent when online|Saved locally'
+          timeout: 3000
+
+- setAirplaneMode:
+    enabled: false

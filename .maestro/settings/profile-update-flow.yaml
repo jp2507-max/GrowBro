@@ -1,0 +1,130 @@
+appId: ${APP_ID}
+name: Profile Update Flow Test
+tags:
+  - settings
+  - profile
+  - sync
+---
+# Test profile update flow: navigate → edit display name → save → verify sync
+
+- launchApp
+
+# Navigate to Settings
+- tapOn:
+    id: 'settings-tab'
+
+- assertVisible:
+    id: 'settings-screen'
+    timeout: 3000
+
+# Navigate to Profile
+- tapOn:
+    id: 'profile-section'
+
+- assertVisible:
+    id: 'profile-screen'
+    timeout: 3000
+
+- assertVisible: 'Profile'
+
+# Verify profile form is loaded
+- assertVisible:
+    id: 'display-name-input'
+
+- assertVisible:
+    id: 'bio-input'
+
+# Edit display name
+- tapOn:
+    id: 'display-name-input'
+
+- inputText: 'TestUser'
+
+# Edit bio
+- tapOn:
+    id: 'bio-input'
+
+- inputText: 'This is my test bio for E2E testing'
+
+# Save changes
+- tapOn:
+    id: 'save-profile-button'
+
+# Verify success message
+- assertVisible:
+    text: 'Profile updated|Saved successfully'
+    timeout: 5000
+
+# Verify changes are persisted - navigate away and back
+- tapOn:
+    id: 'back-button'
+
+- assertVisible:
+    id: 'settings-screen'
+
+- tapOn:
+    id: 'profile-section'
+
+- assertVisible:
+    id: 'profile-screen'
+
+# Verify display name was saved
+- assertVisible: 'TestUser'
+
+# Verify bio was saved
+- assertVisible: 'This is my test bio for E2E testing'
+
+# Test validation - too short display name
+- tapOn:
+    id: 'display-name-input'
+
+- eraseText: 100
+
+- inputText: 'AB'
+
+- tapOn:
+    id: 'save-profile-button'
+
+# Should show validation error
+- assertVisible:
+    text: 'Display name must be at least 3 characters|Must be 3-30 characters'
+    timeout: 2000
+
+# Fix validation error
+- tapOn:
+    id: 'display-name-input'
+
+- inputText: 'ABC'
+
+- tapOn:
+    id: 'save-profile-button'
+
+# Should succeed now
+- assertVisible:
+    text: 'Profile updated|Saved successfully'
+    timeout: 5000
+
+# Test profile statistics display
+- assertVisible:
+    id: 'profile-stats'
+
+- assertVisible:
+    text: 'Plants|Harvests|Posts'
+
+# Test profile visibility toggle
+- tapOn:
+    id: 'show-profile-toggle'
+
+- assertVisible:
+    text: 'Profile visibility updated|Saved'
+    timeout: 3000
+
+# Test avatar selection (simulate)
+- runFlow:
+    when:
+      visible:
+        id: 'avatar-picker'
+    commands:
+      - tapOn:
+          id: 'avatar-picker'
+      - assertVisible: 'Choose from Library|Take Photo'

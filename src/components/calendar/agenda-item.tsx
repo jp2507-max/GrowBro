@@ -1,6 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 
+import { DragHandle } from '@/components/calendar/drag-handle';
 import type { EventType } from '@/components/calendar/event-type-icon';
 import { EventTypeIcon } from '@/components/calendar/event-type-icon';
 import { Text } from '@/components/ui/text';
@@ -13,9 +14,17 @@ type Props = {
     'title' | 'description' | 'dueAtLocal' | 'status' | 'reminderAtLocal'
   > & { id: string };
   now?: Date;
+  /**
+   * Whether to show the drag handle for reordering
+   */
+  showDragHandle?: boolean;
 };
 
-export function AgendaItemRow({ task, now }: Props): React.ReactElement {
+export function AgendaItemRow({
+  task,
+  now,
+  showDragHandle = false,
+}: Props): React.ReactElement {
   const isOverdue = React.useMemo(() => {
     if (task.status !== 'pending') return false;
     const reference = now ?? new Date();
@@ -39,6 +48,7 @@ export function AgendaItemRow({ task, now }: Props): React.ReactElement {
   return (
     <View className="px-4 py-3">
       <View className="flex-row items-center gap-2">
+        {showDragHandle ? <DragHandle /> : null}
         {eventType ? (
           <EventTypeIcon
             type={eventType}

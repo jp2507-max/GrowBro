@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, Linking } from 'react-native';
 
+import { ReAuthModal, useReAuthModal } from '@/components/auth/re-auth-modal';
 import { PrivacySettings } from '@/components/privacy-settings';
 import {
   Button,
@@ -15,6 +16,7 @@ import {
   provideWebDeletionUrl,
   requestDataExport,
 } from '@/lib/privacy/deletion-manager';
+import { presentExportViaShareSheet } from '@/lib/settings/export-share';
 
 function formatEta(iso?: string | null): string | null {
   if (!iso) return null;
@@ -28,36 +30,57 @@ function extractErrorMessage(error: unknown): string {
   return String(error);
 }
 
-function useDataExport(): { queueExport: () => void; isExporting: boolean } {
+function useDataExport(onRequestExport: () => void): {
+  queueExport: () => void;
+  isExporting: boolean;
+  performExport: () => Promise<void>;
+} {
   const [isExporting, setIsExporting] = useState(false);
 
   const queueExport = useCallback(() => {
     if (isExporting) return;
+    // Trigger re-authentication first
+    onRequestExport();
+  }, [isExporting, onRequestExport]);
+
+  const performExport = useCallback(async () => {
+    if (isExporting) return;
     setIsExporting(true);
-    (async () => {
-      try {
-        const result = await requestDataExport();
-        const eta = formatEta(result.estimatedCompletion);
+    try {
+      // First, request the export from the backend
+      const result = await requestDataExport();
+      const eta = formatEta(result.estimatedCompletion);
+
+      // Then, present the export via share sheet
+      const shareResult = await presentExportViaShareSheet();
+
+      if (shareResult.success) {
+        Alert.alert(
+          translate('privacy.exportReadyTitle' as any),
+          translate('privacy.exportReadyBody' as any)
+        );
+      } else {
+        // Fallback to old behavior if share sheet fails
         Alert.alert(
           translate('privacy.exportQueuedTitle'),
           eta
             ? translate('privacy.exportQueuedBody', { eta })
             : translate('privacy.exportQueuedBodyNoEta')
         );
-      } catch (error) {
-        Alert.alert(
-          translate('privacy.exportErrorTitle'),
-          translate('privacy.exportErrorBody', {
-            message: extractErrorMessage(error),
-          })
-        );
-      } finally {
-        setIsExporting(false);
       }
-    })();
+    } catch (error) {
+      Alert.alert(
+        translate('privacy.exportErrorTitle'),
+        translate('privacy.exportErrorBody', {
+          message: extractErrorMessage(error),
+        })
+      );
+    } finally {
+      setIsExporting(false);
+    }
   }, [isExporting]);
 
-  return { queueExport, isExporting };
+  return { queueExport, isExporting, performExport };
 }
 
 function useAccountDeletion(signOut: () => void): {
@@ -176,7 +199,28 @@ function WebDeletionSection(): React.ReactElement | null {
 
 export default function PrivacyAndDataScreen(): React.ReactElement {
   const signOut = useAuth.use.signOut();
-  const { queueExport } = useDataExport();
+  const { ref: reAuthModalRef, present: presentReAuthModal } = useReAuthModal();
+
+  // Create a ref to store the performExport function
+  const performExportRef = React.useRef<(() => Promise<void>) | null>(null);
+
+  const { queueExport, performExport } = useDataExport(() => {
+    // Request re-authentication before export
+    presentReAuthModal();
+  });
+
+  // Store the performExport function in the ref
+  React.useEffect(() => {
+    performExportRef.current = performExport;
+  }, [performExport]);
+
+  const handleReAuthSuccess = () => {
+    // User successfully re-authenticated, proceed with export
+    if (performExportRef.current) {
+      void performExportRef.current();
+    }
+  };
+
   const { confirmDeletion } = useAccountDeletion(signOut);
 
   return (
@@ -201,6 +245,14 @@ export default function PrivacyAndDataScreen(): React.ReactElement {
           <WebDeletionSection />
         </View>
       </ScrollView>
+
+      {/* Re-authentication Modal for Data Export */}
+      <ReAuthModal
+        ref={reAuthModalRef}
+        onSuccess={handleReAuthSuccess}
+        title={translate('auth.security.confirm_export_title')}
+        description={translate('auth.security.confirm_export_description')}
+      />
     </>
   );
 }

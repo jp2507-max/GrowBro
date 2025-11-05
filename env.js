@@ -192,6 +192,8 @@ const client = z.object({
 
   FEATURE_AI_ADJUSTMENTS_MIN_CONFIDENCE: z.number().optional(),
 
+  ENABLE_SORTABLES_CALENDAR: z.boolean().optional(),
+
   // Supabase Configuration
 
   SUPABASE_URL: z.string().url(),
@@ -331,6 +333,10 @@ const featureAiAdjustmentsMinConfidenceRaw = readEnv(
   'FEATURE_AI_ADJUSTMENTS_MIN_CONFIDENCE',
   'EXPO_PUBLIC_FEATURE_AI_ADJUSTMENTS_MIN_CONFIDENCE'
 );
+const enableSortablesCalendarRaw = readEnv(
+  'ENABLE_SORTABLES_CALENDAR',
+  'EXPO_PUBLIC_ENABLE_SORTABLES_CALENDAR'
+);
 const supabaseUrl = readEnv('SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_URL');
 const supabaseAnonKey = readEnv(
   'SUPABASE_ANON_KEY',
@@ -464,6 +470,11 @@ const _clientEnv = {
     featureAiAdjustmentsMinConfidenceRaw !== undefined
       ? Number(featureAiAdjustmentsMinConfidenceRaw)
       : 0.7,
+
+  ENABLE_SORTABLES_CALENDAR:
+    enableSortablesCalendarRaw !== undefined
+      ? enableSortablesCalendarRaw === 'true'
+      : false,
 
   // Supabase Configuration
 

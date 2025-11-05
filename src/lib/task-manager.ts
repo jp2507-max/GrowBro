@@ -36,6 +36,7 @@ export type CreateTaskInput = {
 export type UpdateTaskInput = Partial<Omit<CreateTaskInput, 'seriesId'>> & {
   status?: Task['status'];
   completedAt?: string | null; // ISO timestamptz
+  position?: number;
 };
 
 export type DateRange = { start: Date; end: Date; timezone: string };
@@ -150,6 +151,7 @@ function toTaskFromModel(model: TaskModel): Task {
     reminderAtUtc: m.reminderAtUtc,
     plantId: m.plantId,
     status: m.status as Task['status'],
+    position: m.position,
     completedAt: m.completedAt?.toISOString(),
     metadata: m.metadata,
     createdAt: m.createdAt.toISOString(),
@@ -403,6 +405,9 @@ function applyTaskUpdates(
     r.completedAt = updates.completedAt
       ? new Date(updates.completedAt)
       : undefined;
+  }
+  if (updates.position !== undefined) {
+    r.position = updates.position;
   }
 
   r.updatedAt = new Date();

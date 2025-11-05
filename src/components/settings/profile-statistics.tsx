@@ -1,0 +1,98 @@
+/**
+ * Profile statistics display component
+ * Requirements: 10.1, 10.2, 10.3
+ */
+
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Pressable } from 'react-native';
+
+import { Text, View } from '@/components/ui';
+
+interface ProfileStatisticsProps {
+  plantsCount: number;
+  harvestsCount: number;
+  postsCount: number;
+  likesReceived: number;
+  isLoading: boolean;
+  isSyncing: boolean;
+  onPlantsPress: () => void;
+  onHarvestsPress: () => void;
+}
+
+export function ProfileStatistics({
+  plantsCount,
+  harvestsCount,
+  postsCount,
+  likesReceived,
+  isLoading,
+  isSyncing,
+  onPlantsPress,
+  onHarvestsPress,
+}: ProfileStatisticsProps) {
+  const { t } = useTranslation();
+
+  return (
+    <View className="my-4">
+      <Text className="mb-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+        {t('profile.statistics.title')}
+      </Text>
+
+      {isLoading ? (
+        <ActivityIndicator />
+      ) : (
+        <View className="flex-row flex-wrap gap-3">
+          <Pressable
+            accessibilityRole="button"
+            className="flex-1 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800"
+            onPress={onPlantsPress}
+          >
+            <Text className="text-2xl font-bold text-primary-600">
+              {plantsCount}
+            </Text>
+            <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+              {t('profile.statistics.plants')}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            className="flex-1 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800"
+            onPress={onHarvestsPress}
+          >
+            <Text className="text-2xl font-bold text-primary-600">
+              {harvestsCount}
+            </Text>
+            <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+              {t('profile.statistics.harvests')}
+            </Text>
+          </Pressable>
+
+          <View className="flex-1 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800">
+            <Text className="text-2xl font-bold text-primary-600">
+              {postsCount}
+            </Text>
+            <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+              {t('profile.statistics.posts')}
+            </Text>
+          </View>
+
+          <View className="flex-1 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800">
+            <Text className="text-2xl font-bold text-primary-600">
+              {likesReceived}
+            </Text>
+            <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+              {t('profile.statistics.likes')}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {isSyncing && (
+        <Text className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
+          {t('profile.statistics.syncing')}
+        </Text>
+      )}
+    </View>
+  );
+}

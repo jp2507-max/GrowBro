@@ -1,71 +1,30 @@
 import { Stack, useRouter } from 'expo-router';
 import * as React from 'react';
-import { Alert } from 'react-native';
 
-import { useDeleteAccount } from '@/api/auth';
-import { ReAuthModal, useReAuthModal } from '@/components/auth/re-auth-modal';
+import {
+  ChangePasswordModal,
+  useChangePasswordModal,
+} from '@/components/auth/change-password-modal';
+import { BiometricToggleSection } from '@/components/settings/biometric-toggle-section';
+import { DangerZoneWarning } from '@/components/settings/danger-zone-warning';
 import { Item } from '@/components/settings/item';
 import { ItemsContainer } from '@/components/settings/items-container';
 import { FocusAwareStatusBar, ScrollView, Text, View } from '@/components/ui';
 import { Lock, Shield, Trash } from '@/components/ui/icons';
-import {
-  showErrorMessage,
-  showSuccessMessage,
-  translate,
-  translateDynamic,
-} from '@/lib';
+import { translate } from '@/lib';
 
-export default function SecuritySettingsScreen() {
+export default function SecuritySettingsScreen(): JSX.Element {
   const router = useRouter();
-  const { ref: reAuthModalRef, present: presentReAuthModal } = useReAuthModal();
-
-  const deleteAccountMutation = useDeleteAccount({
-    onSuccess: () => {
-      // Show success message and redirect to login
-      showSuccessMessage(translate('auth.account_deleted_success'));
-      // Navigation will be handled by auth state change
-      router.replace('/login');
-    },
-    onError: (error) => {
-      const translatedError = translateDynamic(error.message);
-      const fallback = translate('auth.delete_account_error');
-      showErrorMessage(translatedError ?? fallback);
-    },
-  });
+  const { ref: changePasswordModalRef, present: presentChangePasswordModal } =
+    useChangePasswordModal();
 
   const handleChangePassword = () => {
-    // TODO: Implement change password flow (future task)
-    Alert.alert(
-      translate('auth.security.change_password_title'),
-      translate('auth.security.change_password_coming_soon')
-    );
+    presentChangePasswordModal();
   };
 
   const handleDeleteAccount = () => {
-    // Show confirmation dialog
-    Alert.alert(
-      translate('auth.security.delete_account_title'),
-      translate('auth.security.delete_account_warning'),
-      [
-        {
-          text: translate('common.cancel'),
-          style: 'cancel',
-        },
-        {
-          text: translate('auth.security.delete_account'),
-          style: 'destructive',
-          onPress: () => {
-            // Show re-authentication modal
-            presentReAuthModal();
-          },
-        },
-      ]
-    );
-  };
-
-  const handleReAuthSuccess = () => {
-    // User successfully re-authenticated, proceed with deletion
-    deleteAccountMutation.mutate();
+    // Navigate to dedicated delete account screen
+    router.push('/settings/delete-account');
   };
 
   return (
@@ -93,8 +52,12 @@ export default function SecuritySettingsScreen() {
               text="auth.security.change_password"
               icon={<Lock />}
               onPress={handleChangePassword}
+              testID="change-password-item"
             />
           </ItemsContainer>
+
+          {/* Biometric Section */}
+          <BiometricToggleSection />
 
           {/* MFA Section */}
           <ItemsContainer title="auth.security.mfa_section">
@@ -102,6 +65,7 @@ export default function SecuritySettingsScreen() {
               text="auth.security.two_factor_auth"
               value={translate('auth.security.coming_soon')}
               icon={<Shield />}
+              testID="two-factor-item"
             />
           </ItemsContainer>
 
@@ -110,6 +74,7 @@ export default function SecuritySettingsScreen() {
             <Item
               text="auth.security.active_sessions"
               onPress={() => router.push('/settings/active-sessions')}
+              testID="active-sessions-item"
             />
           </ItemsContainer>
 
@@ -119,24 +84,16 @@ export default function SecuritySettingsScreen() {
               text="auth.security.delete_account"
               icon={<Trash />}
               onPress={handleDeleteAccount}
+              testID="delete-account-item"
             />
           </ItemsContainer>
 
-          <View className="mt-4 rounded-lg bg-warning-100 p-4 dark:bg-warning-900">
-            <Text className="text-sm text-warning-900 dark:text-warning-100">
-              {translate('auth.security.danger_zone_warning')}
-            </Text>
-          </View>
+          <DangerZoneWarning />
         </View>
       </ScrollView>
 
-      {/* Re-authentication Modal */}
-      <ReAuthModal
-        ref={reAuthModalRef}
-        onSuccess={handleReAuthSuccess}
-        title={translate('auth.security.confirm_deletion_title')}
-        description={translate('auth.security.confirm_deletion_description')}
-      />
+      {/* Change Password Modal */}
+      <ChangePasswordModal ref={changePasswordModalRef} />
     </>
   );
 }

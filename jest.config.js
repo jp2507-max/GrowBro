@@ -56,6 +56,7 @@ module.exports = {
     '^@nozbe/watermelondb$': '<rootDir>/__mocks__/@nozbe/watermelondb',
     '^@nozbe/watermelondb/Schema/migrations$':
       '<rootDir>/__mocks__/@nozbe/watermelondb',
+    '^minimatch$': '<rootDir>/__mocks__/minimatch.ts',
     '^react-native-gesture-handler$':
       '<rootDir>/__mocks__/react-native-gesture-handler.ts',
   },

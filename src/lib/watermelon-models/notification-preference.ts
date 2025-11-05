@@ -10,10 +10,17 @@ export class NotificationPreferenceModel extends Model {
   @field('community_likes') communityLikes!: boolean;
   @field('cultivation_reminders') cultivationReminders!: boolean;
   @field('system_updates') systemUpdates!: boolean;
+  @field('task_reminders') taskReminders!: boolean;
+  @field('task_reminder_timing') taskReminderTiming!: string;
+  @field('custom_reminder_minutes') customReminderMinutes?: number;
+  @field('harvest_alerts') harvestAlerts!: boolean;
+  @field('community_activity') communityActivity!: boolean;
+  @field('marketing') marketing!: boolean;
   @field('quiet_hours_enabled') quietHoursEnabled!: boolean;
   @field('quiet_hours_start') quietHoursStart?: string;
   @field('quiet_hours_end') quietHoursEnd?: string;
-  @date('updated_at') updatedAt!: Date;
+  @date('last_updated') lastUpdated!: Date;
+  @field('device_id') deviceId!: string;
 
   /**
    * Finds an existing notification preference record for the given user_id,
@@ -29,7 +36,7 @@ export class NotificationPreferenceModel extends Model {
     database: Database,
     userId: string,
     defaults: Partial<
-      Omit<NotificationPreferenceModel, 'userId' | 'updatedAt'>
+      Omit<NotificationPreferenceModel, 'userId' | 'lastUpdated'>
     > = {}
   ): Promise<NotificationPreferenceModel> {
     return database.write(async () => {
@@ -52,10 +59,18 @@ export class NotificationPreferenceModel extends Model {
         record.communityLikes = defaults.communityLikes ?? true;
         record.cultivationReminders = defaults.cultivationReminders ?? true;
         record.systemUpdates = defaults.systemUpdates ?? true;
+        record.taskReminders = defaults.taskReminders ?? true;
+        record.taskReminderTiming =
+          defaults.taskReminderTiming ?? 'hour_before';
+        record.customReminderMinutes = defaults.customReminderMinutes;
+        record.harvestAlerts = defaults.harvestAlerts ?? true;
+        record.communityActivity = defaults.communityActivity ?? true;
+        record.marketing = defaults.marketing ?? false; // Default OFF per requirement 4.8
         record.quietHoursEnabled = defaults.quietHoursEnabled ?? false;
         record.quietHoursStart = defaults.quietHoursStart;
         record.quietHoursEnd = defaults.quietHoursEnd;
-        record.updatedAt = now;
+        record.lastUpdated = now;
+        record.deviceId = defaults.deviceId ?? '';
       }) as Promise<NotificationPreferenceModel>;
     });
   }
@@ -67,7 +82,7 @@ export class NotificationPreferenceModel extends Model {
     database: Database,
     userId: string,
     defaults: Partial<
-      Omit<NotificationPreferenceModel, 'userId' | 'updatedAt'>
+      Omit<NotificationPreferenceModel, 'userId' | 'lastUpdated'>
     > = {}
   ): Promise<NotificationPreferenceModel> {
     return this.findOrCreate(database, userId, defaults);

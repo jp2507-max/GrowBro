@@ -62,6 +62,7 @@ src
 - Luxon (date/time utilities) (luxon@^3.7.2)
 - tailwind-variants (variant utilities for Nativewind) (tailwind-variants@^0.2.1)
 - Charts: react-native-gifted-charts (react-native-gifted-charts@^1.4.64)
+- Drag-and-drop: react-native sortables
 - Expo modules: Image, Font, Constants, System UI, Updates, Linking, Localization, Notifications, Blur, Document Picker, Sharing, Image Manipulator, Background Task, Task Manager, Dev Client (expo-image@~3.0.9, expo-font@~14.0.9, expo-constants@~18.0.9, expo-system-ui@~6.0.7, expo-updates@~29.0.12, expo-linking@~8.0.8, expo-localization@~17.0.7, expo-notifications@~0.32.12, expo-blur@~15.0.7, expo-document-picker@~14.0.7, expo-sharing@~14.0.7, expo-image-manipulator@~14.0.7, expo-background-task@~1.0.8, expo-task-manager@~14.0.7, expo-dev-client@~6.0.15)
 - Sentry (@sentry/react-native) for error and performance monitoring (@sentry/react-native@^7.2.0)
 

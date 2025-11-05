@@ -31,6 +31,7 @@ declare module '@env' {
     FEATURE_AI_ADJUSTMENTS_ENABLED?: boolean;
     FEATURE_AI_ADJUSTMENTS_MIN_SKIPPED_TASKS?: number;
     FEATURE_AI_ADJUSTMENTS_MIN_CONFIDENCE?: number;
+    ENABLE_SORTABLES_CALENDAR?: boolean;
 
     // Misc
     VAR_NUMBER: number;

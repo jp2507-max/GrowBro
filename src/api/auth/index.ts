@@ -26,6 +26,10 @@ export {
   useResetPassword,
 } from './use-password-reset';
 
+// Password Change
+export type { ChangePasswordVariables } from './use-change-password';
+export { useChangePassword } from './use-change-password';
+
 // Email Verification
 export {
   useResendVerificationEmail,
@@ -37,6 +41,11 @@ export { useSignOut, useSignOutGlobal } from './use-sign-out';
 
 // Account Deletion
 export { useDeleteAccount } from './use-delete-account';
+export {
+  checkPendingDeletion,
+  useCancelAccountDeletion,
+  useRequestAccountDeletion,
+} from './use-request-account-deletion';
 
 // Session Management
 export {

@@ -13,7 +13,17 @@ import { minimatch } from 'minimatch';
  * Uses glob patterns for flexible matching (e.g., /settings/* matches any settings subpath)
  */
 export const ALLOWED_REDIRECT_PATHS = [
+  '/settings',
   '/settings/*',
+  '/settings/profile',
+  '/settings/notifications',
+  '/settings/privacy-and-data',
+  '/settings/security',
+  '/settings/support',
+  '/settings/legal',
+  '/settings/about',
+  '/settings/storage',
+  '/settings/active-sessions',
   '/plants/*',
   '/feed/*',
   '/calendar/*',
