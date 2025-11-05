@@ -27,10 +27,10 @@ export const Item = ({
   return (
     <Pressable
       onPress={onPress}
-      pointerEvents={isPressable ? 'auto' : 'none'}
+      pointerEvents={disabled ? 'none' : 'auto'}
       className="flex-1 flex-row items-center justify-between px-4 py-2"
-      accessibilityRole={isPressable ? 'button' : undefined}
-      accessibilityState={{ disabled: !isPressable }}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityState={{ disabled }}
       disabled={disabled}
       testID={testID}
     >

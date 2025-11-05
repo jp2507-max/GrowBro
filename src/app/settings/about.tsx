@@ -14,6 +14,7 @@ import {
   Text,
   View,
 } from '@/components/ui';
+import { showErrorMessage } from '@/lib/flash-message';
 import { useNetworkStatus } from '@/lib/hooks/use-network-status';
 import { translate } from '@/lib/i18n';
 
@@ -170,6 +171,24 @@ export default function AboutScreen() {
     updateState.status === 'up-to-date' ||
     (isOffline && isOTAEnabled);
 
+  const handleWebsiteLink = async (): Promise<void> => {
+    try {
+      await Linking.openURL(WEBSITE_URL);
+    } catch (error) {
+      console.error('Failed to open website:', error);
+      showErrorMessage(translate('settings.about.openLinkError'));
+    }
+  };
+
+  const handleGitHubLink = async (): Promise<void> => {
+    try {
+      await Linking.openURL(GITHUB_URL);
+    } catch (error) {
+      console.error('Failed to open GitHub:', error);
+      showErrorMessage(translate('settings.about.openLinkError'));
+    }
+  };
+
   return (
     <>
       <FocusAwareStatusBar />
@@ -294,14 +313,14 @@ export default function AboutScreen() {
           >
             <Item
               text="settings.about.website"
-              onPress={() => Linking.openURL(WEBSITE_URL)}
+              onPress={handleWebsiteLink}
               rightElement={isOffline ? <OfflineBadge /> : undefined}
               disabled={isOffline}
               testID="about.link.website"
             />
             <Item
               text="settings.about.github"
-              onPress={() => Linking.openURL(GITHUB_URL)}
+              onPress={handleGitHubLink}
               rightElement={isOffline ? <OfflineBadge /> : undefined}
               disabled={isOffline}
               testID="about.link.github"

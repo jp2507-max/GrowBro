@@ -16,6 +16,7 @@
 import * as Crypto from 'expo-crypto';
 import { createMutation } from 'react-query-kit';
 
+import { getCurrentPolicyVersion } from '@/api/auth/account-deletion-helpers';
 import { useAuth } from '@/lib/auth';
 import { logAuthError, trackAuthEvent } from '@/lib/auth/auth-telemetry';
 import { supabase } from '@/lib/supabase';
@@ -48,15 +49,6 @@ interface RequestAccountDeletionResponse {
  * - 6.5: Initiate deletion process with request ID and timestamp
  * - 6.12: Create audit log entry
  */
-// Helper function to get current policy version
-async function getCurrentPolicyVersion(): Promise<string> {
-  const { data: envData } = await supabase
-    .from('app_config')
-    .select('policy_version')
-    .single();
-
-  return envData?.policy_version || '1.0.0';
-}
 
 // Helper function to create deletion request record
 async function createDeletionRequest({

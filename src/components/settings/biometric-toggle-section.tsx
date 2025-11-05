@@ -12,7 +12,7 @@ import {
 } from '@/lib';
 import { useBiometricSettings } from '@/lib/auth/use-biometric-settings';
 
-export function BiometricToggleSection() {
+export function BiometricToggleSection(): JSX.Element | null {
   const biometricSettings = useBiometricSettings();
   const { initialize } = biometricSettings;
 

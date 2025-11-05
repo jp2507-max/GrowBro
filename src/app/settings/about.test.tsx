@@ -1,6 +1,6 @@
 import * as Updates from 'expo-updates';
 import React from 'react';
-import { Linking } from 'react-native';
+import { Alert, Linking } from 'react-native';
 
 import { showErrorMessage } from '@/lib/flash-message';
 import { translate } from '@/lib/i18n';
@@ -278,19 +278,51 @@ describe('AboutScreen', () => {
       await user.press(button);
 
       await waitFor(() => {
-        expect(openURLSpy).toHaveBeenCalled();
+        expect(openURLSpy).toHaveBeenCalledWith(
+          'https://play.google.com/store/apps/details?id=com.growbro.app'
+        );
       });
+    });
+
+    test('shows error when opening app store fails', async () => {
+      const openURLMock = jest
+        .spyOn(Linking, 'openURL')
+        .mockRejectedValue(new Error('Cannot open URL'));
+      const alertSpy = jest.spyOn(Alert, 'alert');
+
+      const { user } = setup(<AboutScreen />);
+
+      const button = await screen.findByText(/check for updates/i);
+      await user.press(button);
+
+      await waitFor(() => {
+        expect(openURLMock).toHaveBeenCalledWith(
+          'https://play.google.com/store/apps/details?id=com.growbro.app'
+        );
+        expect(alertSpy).toHaveBeenCalledWith(
+          'Error',
+          'Failed to open app store. Please try again or check your device settings.'
+        );
+      });
+
+      // Restore mocks
+      openURLMock.mockRestore();
+      alertSpy.mockRestore();
     });
   });
 
   describe('Offline Behavior', () => {
     test('shows offline badge when offline', async () => {
-      // Mock network status to offline
+      // Mock network status to offline before importing AboutScreen
+      jest.resetModules();
       jest.doMock('@/lib/hooks/use-network-status', () => ({
         useNetworkStatus: () => ({
           isInternetReachable: false,
         }),
       }));
+
+      // Import AboutScreen after mocking
+      const AboutScreen = (await import('./about')).default;
 
       render(<AboutScreen />);
 

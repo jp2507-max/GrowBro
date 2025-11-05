@@ -293,6 +293,19 @@ Deno.serve(async (req: Request) => {
           // Continue even if storage deletion fails
         }
 
+        // Delete the user from Supabase Auth
+        const { error: authDeleteError } =
+          await supabaseAdmin.auth.admin.deleteUser(request.user_id);
+
+        if (authDeleteError) {
+          console.error(
+            '[deletion-cascade] Failed to delete auth user:',
+            authDeleteError
+          );
+          // Continue with status update even if auth deletion fails
+          // This prevents orphaned auth records while still marking the request complete
+        }
+
         // Update deletion request status
         const { error: updateError } = await supabaseAdmin
           .from('account_deletion_requests')
@@ -320,6 +333,8 @@ Deno.serve(async (req: Request) => {
             metadata: {
               request_id: request.request_id,
               deleted_records: result.deleted_records,
+              auth_user_deleted: !authDeleteError,
+              auth_deletion_error: authDeleteError?.message,
             },
           });
 
