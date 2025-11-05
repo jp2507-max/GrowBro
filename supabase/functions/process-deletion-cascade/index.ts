@@ -82,11 +82,14 @@ Deno.serve(async (req: Request) => {
     }
 
     // Verify service role authorization
+    const token = authHeader?.slice(7);
     if (
       !authHeader ||
       !authHeader.startsWith('Bearer ') ||
+      !token ||
+      token.length !== serviceRoleKey.length ||
       !timingSafeEqual(
-        new TextEncoder().encode(authHeader.slice(7)),
+        new TextEncoder().encode(token),
         new TextEncoder().encode(serviceRoleKey)
       )
     ) {
