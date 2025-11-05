@@ -297,20 +297,28 @@ Deno.serve(async (req: Request) => {
         const { error: authDeleteError } =
           await supabaseAdmin.auth.admin.deleteUser(request.user_id);
 
+        // Determine final status and handle auth deletion failure
+        const isAuthDeletionSuccessful = !authDeleteError;
+        const finalStatus = isAuthDeletionSuccessful ? 'completed' : 'pending';
+
         if (authDeleteError) {
           console.error(
             '[deletion-cascade] Failed to delete auth user:',
             authDeleteError
           );
-          // Continue with status update even if auth deletion fails
-          // This prevents orphaned auth records while still marking the request complete
+          // SECURITY ISSUE: Auth user deletion failed, but all user data has been deleted.
+          // We cannot mark this as 'completed' because the user's auth credentials remain active.
+          // Instead, mark as 'pending' so the scheduler can retry the auth deletion.
+          // The schema only supports 'pending', 'cancelled', 'completed' - no 'failed' status exists.
+          result.status = 'failed';
+          result.error = `Auth user deletion failed: ${authDeleteError.message}`;
         }
 
         // Update deletion request status
         const { error: updateError } = await supabaseAdmin
           .from('account_deletion_requests')
           .update({
-            status: 'completed',
+            status: finalStatus, // 'completed' only if auth deletion succeeded
             completed_at: new Date().toISOString(),
           })
           .eq('request_id', request.request_id);
@@ -323,18 +331,24 @@ Deno.serve(async (req: Request) => {
         }
 
         // Create audit log entry
+        const auditAction = isAuthDeletionSuccessful
+          ? 'account_deletion_completed'
+          : 'account_deletion_partial';
+
         const { error: auditError } = await supabaseAdmin
           .from('audit_logs')
           .insert({
             user_id: request.user_id,
-            action: 'account_deletion_completed',
+            action: auditAction,
             resource_type: 'account',
             resource_id: request.user_id,
             metadata: {
               request_id: request.request_id,
               deleted_records: result.deleted_records,
-              auth_user_deleted: !authDeleteError,
+              auth_user_deleted: isAuthDeletionSuccessful,
               auth_deletion_error: authDeleteError?.message,
+              user_data_deleted: true, // All user data was successfully deleted
+              final_status: finalStatus, // 'completed' or 'pending' based on auth deletion success
             },
           });
 
@@ -345,9 +359,11 @@ Deno.serve(async (req: Request) => {
           );
         }
 
-        console.log(
-          `[deletion-cascade] Successfully deleted account for user ${request.user_id.slice(0, 8)}...`
-        );
+        const logMessage = isAuthDeletionSuccessful
+          ? `[deletion-cascade] Successfully deleted account for user ${request.user_id.slice(0, 8)}...`
+          : `[deletion-cascade] Partially completed deletion for user ${request.user_id.slice(0, 8)}... (auth deletion failed, marked as pending for retry)`;
+
+        console.log(logMessage);
 
         results.push(result);
       } catch (error) {

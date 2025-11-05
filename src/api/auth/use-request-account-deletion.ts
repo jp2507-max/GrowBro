@@ -32,6 +32,16 @@ interface RequestAccountDeletionResponse {
   scheduledFor: string;
 }
 
+interface DeletionRequestRecord {
+  request_id: string;
+  user_id: string;
+  requested_at: string;
+  scheduled_for: string;
+  status: 'pending';
+  reason?: string;
+  policy_version: string;
+}
+
 /**
  * Request account deletion with 30-day grace period
  *
@@ -64,7 +74,7 @@ async function createDeletionRequest({
   policyVersion: string;
   reason?: string;
 }): Promise<void> {
-  const deletionRequest: any = {
+  const deletionRequest: DeletionRequestRecord = {
     request_id: requestId,
     user_id: userId,
     requested_at: new Date().toISOString(),
@@ -121,10 +131,17 @@ async function handleAuditLogFailure(
   auditError: any
 ): Promise<void> {
   // Clean up the deletion request since audit logging failed
-  await supabase
+  const { error: cleanupError } = await supabase
     .from('account_deletion_requests')
     .delete()
     .eq('request_id', requestId);
+
+  if (cleanupError) {
+    console.warn(
+      '[handleAuditLogFailure] Failed to clean up deletion request:',
+      cleanupError
+    );
+  }
 
   await logAuthError(
     new Error(
@@ -284,10 +301,17 @@ export const useCancelAccountDeletion = createMutation({
 
     if (auditError) {
       // Rollback status to pending since audit logging failed
-      await supabase
+      const { error: rollbackError } = await supabase
         .from('account_deletion_requests')
         .update({ status: 'pending' })
         .eq('request_id', deletionRequest.request_id);
+
+      if (rollbackError) {
+        console.warn(
+          '[useCancelAccountDeletion] Failed to rollback status:',
+          rollbackError
+        );
+      }
 
       await logAuthError(
         new Error(
