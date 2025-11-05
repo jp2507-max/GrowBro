@@ -53,7 +53,7 @@ export default function AboutScreen() {
 
   const isOTAEnabled = Updates.isEnabled;
 
-  const checkForUpdates = async () => {
+  const checkForUpdates = async (): Promise<void> => {
     if (!isOTAEnabled) {
       // If OTA is disabled, open the app store listing
       try {
@@ -67,8 +67,8 @@ export default function AboutScreen() {
             error instanceof Error ? error.message : 'Failed to open app store',
         });
         Alert.alert(
-          translate('settings.openStoreErrorTitle'),
-          translate('settings.openStoreErrorMessage')
+          translate('settings.about.openStoreErrorTitle'),
+          translate('settings.about.openStoreErrorMessage')
         );
         return;
       }
@@ -100,7 +100,7 @@ export default function AboutScreen() {
     }
   };
 
-  const downloadAndApplyUpdate = async () => {
+  const downloadAndApplyUpdate = async (): Promise<void> => {
     setUpdateState({ status: 'downloading' });
 
     try {
@@ -115,7 +115,7 @@ export default function AboutScreen() {
     }
   };
 
-  const restartToApply = async () => {
+  const restartToApply = async (): Promise<void> => {
     try {
       await Updates.reloadAsync();
     } catch (error) {
@@ -147,7 +147,7 @@ export default function AboutScreen() {
     }
   };
 
-  const handleUpdateAction = async () => {
+  const handleUpdateAction = async (): Promise<void> => {
     switch (updateState.status) {
       case 'idle':
       case 'error':
@@ -173,10 +173,13 @@ export default function AboutScreen() {
   return (
     <>
       <FocusAwareStatusBar />
-      <ScrollView>
+      <ScrollView testID="about.main">
         <View className="flex-1 px-4 pt-4">
           {/* App Information Section */}
-          <ItemsContainer title="settings.about.app_info">
+          <ItemsContainer
+            title="settings.about.app_info"
+            testID="about.section.app_info"
+          >
             <Item text="settings.about.app_name" value={Env.NAME} disabled />
             <Item text="settings.about.version" value={Env.VERSION} disabled />
             <Item
@@ -197,10 +200,16 @@ export default function AboutScreen() {
 
           {/* Update Section */}
           <View className="mt-4">
-            <ItemsContainer title="settings.about.updates">
+            <ItemsContainer
+              title="settings.about.updates"
+              testID="about.section.updates"
+            >
               <View className="px-4 py-3">
                 {updateState.status === 'up-to-date' && (
-                  <View className="mb-3 rounded-lg bg-success-50 p-3 dark:bg-success-900/20">
+                  <View
+                    className="mb-3 rounded-lg bg-success-50 p-3 dark:bg-success-900/20"
+                    testID="about.status.up_to_date"
+                  >
                     <Text className="text-center text-sm text-success-700 dark:text-success-300">
                       {translate('settings.about.up_to_date_message')}
                     </Text>
@@ -208,7 +217,10 @@ export default function AboutScreen() {
                 )}
 
                 {updateState.status === 'available' && updateState.manifest && (
-                  <View className="mb-3 rounded-lg bg-primary-50 p-3 dark:bg-primary-900/20">
+                  <View
+                    className="mb-3 rounded-lg bg-primary-50 p-3 dark:bg-primary-900/20"
+                    testID="about.status.available"
+                  >
                     <Text className="text-sm font-semibold text-primary-700 dark:text-primary-300">
                       {translate('settings.about.update_available')}
                     </Text>
@@ -216,7 +228,10 @@ export default function AboutScreen() {
                 )}
 
                 {updateState.status === 'error' && (
-                  <View className="mb-3 rounded-lg bg-danger-50 p-3 dark:bg-danger-900/20">
+                  <View
+                    className="mb-3 rounded-lg bg-danger-50 p-3 dark:bg-danger-900/20"
+                    testID="about.status.error"
+                  >
                     <Text className="text-sm text-danger-700 dark:text-danger-300">
                       {translate('settings.about.error_checking')}
                     </Text>
@@ -229,7 +244,10 @@ export default function AboutScreen() {
                 )}
 
                 {updateState.status === 'downloading' && (
-                  <View className="mb-3 flex-row items-center justify-center rounded-lg bg-primary-50 p-3 dark:bg-primary-900/20">
+                  <View
+                    className="mb-3 flex-row items-center justify-center rounded-lg bg-primary-50 p-3 dark:bg-primary-900/20"
+                    testID="about.status.downloading"
+                  >
                     <ActivityIndicator size="small" className="mr-2" />
                     <Text className="text-sm text-primary-700 dark:text-primary-300">
                       {translate('settings.about.downloading_message')}
@@ -248,6 +266,7 @@ export default function AboutScreen() {
                   variant={
                     updateState.status === 'ready' ? 'default' : 'outline'
                   }
+                  testID="about.update.button"
                 />
 
                 {isOffline && isOTAEnabled && (
@@ -269,18 +288,23 @@ export default function AboutScreen() {
           </View>
 
           {/* Links Section */}
-          <ItemsContainer title="settings.about.links">
+          <ItemsContainer
+            title="settings.about.links"
+            testID="about.section.links"
+          >
             <Item
               text="settings.about.website"
               onPress={() => Linking.openURL(WEBSITE_URL)}
               rightElement={isOffline ? <OfflineBadge /> : undefined}
               disabled={isOffline}
+              testID="about.link.website"
             />
             <Item
               text="settings.about.github"
               onPress={() => Linking.openURL(GITHUB_URL)}
               rightElement={isOffline ? <OfflineBadge /> : undefined}
               disabled={isOffline}
+              testID="about.link.github"
             />
           </ItemsContainer>
 

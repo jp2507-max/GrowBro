@@ -2472,11 +2472,13 @@
       "download_progress": "Lädt herunter: {{progress}}%",
       "download_update": "Update herunterladen",
       "downloading": "Lädt herunter...",
+      "downloading_message": "Update wird heruntergeladen...",
       "educational_purpose": "Nur für Bildungszwecke",
       "environment": "Umgebung",
       "error_checking": "Fehler beim Suchen nach Updates",
       "github": "GitHub-Repository",
       "links": "Links",
+      "openLinkError": "Fehler beim Öffnen des Links. Bitte versuchen Sie es erneut oder überprüfen Sie Ihre Geräteeinstellungen.",
       "openStoreErrorMessage": "Fehler beim Öffnen des App Stores. Bitte versuchen Sie es erneut oder überprüfen Sie Ihre Geräteeinstellungen.",
       "openStoreErrorTitle": "Fehler",
       "ota_disabled": "Updates werden über den App Store verwaltet",
@@ -2710,7 +2712,13 @@
     },
     "rate": "Bewerten",
     "save_changes": "Änderungen speichern",
-    "security": "Sicherheit",
+    "security": {
+      "biometric": {
+        "face": "Face ID",
+        "fingerprint": "Fingerabdruck",
+        "iris": "Iris-Scanner"
+      }
+    },
     "status": {
       "all_off": "Alle aus",
       "all_on": "Alle an",

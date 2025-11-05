@@ -2,6 +2,8 @@ import * as Updates from 'expo-updates';
 import React from 'react';
 import { Linking } from 'react-native';
 
+import { showErrorMessage } from '@/lib/flash-message';
+import { translate } from '@/lib/i18n';
 import { cleanup, render, screen, setup, waitFor } from '@/lib/test-utils';
 
 // Import component after mocks
@@ -9,6 +11,9 @@ import AboutScreen from './about';
 
 // Mock dependencies before import
 jest.mock('expo-updates');
+jest.mock('@/lib/flash-message', () => ({
+  showErrorMessage: jest.fn(),
+}));
 jest.mock('expo-constants', () => ({
   default: {
     expoConfig: {
@@ -296,7 +301,9 @@ describe('AboutScreen', () => {
 
   describe('Links', () => {
     test('opens website when website link pressed', async () => {
-      const openURLSpy = jest.spyOn(Linking, 'openURL');
+      const openURLSpy = jest
+        .spyOn(Linking, 'openURL')
+        .mockResolvedValue(undefined);
 
       const { user } = setup(<AboutScreen />);
 
@@ -309,7 +316,9 @@ describe('AboutScreen', () => {
     });
 
     test('opens github when github link pressed', async () => {
-      const openURLSpy = jest.spyOn(Linking, 'openURL');
+      const openURLSpy = jest
+        .spyOn(Linking, 'openURL')
+        .mockResolvedValue(undefined);
 
       const { user } = setup(<AboutScreen />);
 
@@ -321,6 +330,58 @@ describe('AboutScreen', () => {
           'https://github.com/jp2507-max/GrowBro'
         );
       });
+    });
+
+    test('handles website link error gracefully', async () => {
+      const consoleErrorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      jest
+        .spyOn(Linking, 'openURL')
+        .mockRejectedValue(new Error('Link failed'));
+
+      const { user } = setup(<AboutScreen />);
+
+      const websiteItem = await screen.findByText(/website/i);
+      await user.press(websiteItem);
+
+      await waitFor(() => {
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          'Failed to open website:',
+          expect.any(Error)
+        );
+        expect(showErrorMessage).toHaveBeenCalledWith(
+          translate('settings.about.openLinkError')
+        );
+      });
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    test('handles github link error gracefully', async () => {
+      const consoleErrorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      jest
+        .spyOn(Linking, 'openURL')
+        .mockRejectedValue(new Error('Link failed'));
+
+      const { user } = setup(<AboutScreen />);
+
+      const githubItem = await screen.findByText(/github/i);
+      await user.press(githubItem);
+
+      await waitFor(() => {
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          'Failed to open GitHub:',
+          expect.any(Error)
+        );
+        expect(showErrorMessage).toHaveBeenCalledWith(
+          translate('settings.about.openLinkError')
+        );
+      });
+
+      consoleErrorSpy.mockRestore();
     });
   });
 });

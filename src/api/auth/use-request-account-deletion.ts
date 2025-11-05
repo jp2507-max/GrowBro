@@ -13,6 +13,7 @@
  * await requestDeletion.mutateAsync();
  */
 
+import * as Crypto from 'expo-crypto';
 import { createMutation } from 'react-query-kit';
 
 import { useAuth } from '@/lib/auth';
@@ -47,6 +48,107 @@ interface RequestAccountDeletionResponse {
  * - 6.5: Initiate deletion process with request ID and timestamp
  * - 6.12: Create audit log entry
  */
+// Helper function to get current policy version
+async function getCurrentPolicyVersion(): Promise<string> {
+  const { data: envData } = await supabase
+    .from('app_config')
+    .select('policy_version')
+    .single();
+
+  return envData?.policy_version || '1.0.0';
+}
+
+// Helper function to create deletion request record
+async function createDeletionRequest({
+  requestId,
+  userId,
+  scheduledFor,
+  policyVersion,
+  reason,
+}: {
+  requestId: string;
+  userId: string;
+  scheduledFor: Date;
+  policyVersion: string;
+  reason?: string;
+}): Promise<void> {
+  const deletionRequest: any = {
+    request_id: requestId,
+    user_id: userId,
+    requested_at: new Date().toISOString(),
+    scheduled_for: scheduledFor.toISOString(),
+    status: 'pending',
+    reason,
+    policy_version: policyVersion,
+  };
+
+  const { error: insertError } = await supabase
+    .from('account_deletion_requests')
+    .insert(deletionRequest);
+
+  if (insertError) {
+    throw new Error(`settings.delete_account.error_create_request`);
+  }
+}
+
+// Helper function to log audit entry
+async function logDeletionAudit({
+  userId,
+  requestId,
+  scheduledFor,
+  policyVersion,
+  reason,
+}: {
+  userId: string;
+  requestId: string;
+  scheduledFor: Date;
+  policyVersion: string;
+  reason?: string;
+}): Promise<void> {
+  const { error: auditError } = await supabase.from('audit_logs').insert({
+    user_id: userId,
+    event_type: 'account_deletion_requested',
+    payload: {
+      requestId,
+      scheduledFor: scheduledFor.toISOString(),
+      reason: reason || 'Not provided',
+    },
+    policy_version: policyVersion,
+    app_version: process.env.EXPO_PUBLIC_VERSION || '1.0.0',
+  });
+
+  if (auditError) {
+    throw auditError;
+  }
+}
+
+// Helper function to handle audit logging failure
+async function handleAuditLogFailure(
+  requestId: string,
+  userId: string,
+  auditError: any
+): Promise<void> {
+  // Clean up the deletion request since audit logging failed
+  await supabase
+    .from('account_deletion_requests')
+    .delete()
+    .eq('request_id', requestId);
+
+  await logAuthError(
+    new Error(
+      `settings.delete_account.error_audit_log_failed: ${auditError.message}`
+    ),
+    {
+      errorKey: 'settings.delete_account.error_audit_log_failed',
+      flow: 'request_account_deletion',
+      requestId,
+      userId,
+      auditError: auditError.message,
+    }
+  );
+  throw new Error('settings.delete_account.error_audit_log_failed');
+}
+
 export const useRequestAccountDeletion = createMutation({
   mutationKey: ['settings', 'request-account-deletion'],
   mutationFn: async (
@@ -58,69 +160,33 @@ export const useRequestAccountDeletion = createMutation({
       throw new Error('auth.error_not_authenticated');
     }
 
-    // Generate request ID
+    // Generate request ID and scheduled date
     const requestId = Crypto.randomUUID();
-
-    // Calculate scheduled deletion date (30 days from now)
     const scheduledFor = new Date();
     scheduledFor.setDate(scheduledFor.getDate() + 30);
 
-    // Get current policy version
-    const { data: envData } = await supabase
-      .from('app_config')
-      .select('policy_version')
-      .single();
+    // Get policy version and create request
+    const policyVersion = await getCurrentPolicyVersion();
 
-    const policyVersion = envData?.policy_version || '1.0.0';
-
-    // Create deletion request record
-    // Note: Using snake_case column names to match the database schema
-    // Supabase maps object property names directly to column names
-    const deletionRequest: any = {
-      request_id: requestId,
-      user_id: user.id,
-      requested_at: new Date().toISOString(),
-      scheduled_for: scheduledFor.toISOString(),
-      status: 'pending',
+    await createDeletionRequest({
+      requestId,
+      userId: user.id,
+      scheduledFor,
+      policyVersion,
       reason: variables.reason,
-      policy_version: policyVersion,
-    };
-
-    const { error: insertError } = await supabase
-      .from('account_deletion_requests')
-      .insert(deletionRequest);
-
-    if (insertError) {
-      throw new Error(`settings.delete_account.error_create_request`);
-    }
-
-    // Log audit entry
-    const { error: auditError } = await supabase.from('audit_logs').insert({
-      user_id: user.id,
-      event_type: 'account_deletion_requested',
-      payload: {
-        requestId,
-        scheduledFor: scheduledFor.toISOString(),
-        reason: variables.reason || 'Not provided',
-      },
-      policy_version: policyVersion,
-      app_version: process.env.EXPO_PUBLIC_VERSION || '1.0.0',
     });
 
-    if (auditError) {
-      await logAuthError(
-        new Error(
-          `settings.delete_account.error_audit_log_failed: ${auditError.message}`
-        ),
-        {
-          errorKey: 'settings.delete_account.error_audit_log_failed',
-          flow: 'request_account_deletion',
-          requestId,
-          userId: user.id,
-          auditError: auditError.message,
-        }
-      );
-      throw new Error('settings.delete_account.error_audit_log_failed');
+    // Log audit entry with error handling
+    try {
+      await logDeletionAudit({
+        userId: user.id,
+        requestId,
+        scheduledFor,
+        policyVersion,
+        reason: variables.reason,
+      });
+    } catch (auditError) {
+      await handleAuditLogFailure(requestId, user.id, auditError);
     }
 
     // Track analytics event

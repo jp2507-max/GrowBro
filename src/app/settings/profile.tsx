@@ -486,12 +486,13 @@ export default function ProfileScreen() {
         // Sync to backend - Requirements: 9.6, 9.7
         const trimmedBio =
           typeof data.bio === 'string' ? data.bio.trim() : data.bio;
-        const bioToSend = trimmedBio === '' ? null : trimmedBio;
+        const bioToSend = trimmedBio === '' ? undefined : trimmedBio;
         const trimmedLocation =
           typeof data.location === 'string'
             ? data.location.trim()
             : data.location;
-        const locationToSend = trimmedLocation === '' ? null : trimmedLocation;
+        const locationToSend =
+          trimmedLocation === '' ? undefined : trimmedLocation;
         const syncResult = await syncProfileToBackend({
           userId,
           displayName: data.displayName,

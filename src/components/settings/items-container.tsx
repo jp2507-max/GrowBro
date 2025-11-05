@@ -6,14 +6,18 @@ import type { TxKeyPath } from '@/lib';
 type Props = {
   children: React.ReactNode;
   title?: TxKeyPath;
+  testID?: string;
 };
 
-export const ItemsContainer = ({ children, title }: Props) => {
+export const ItemsContainer = ({ children, title, testID }: Props) => {
   return (
     <>
       {title && <Text className="pb-2 pt-4 text-lg" tx={title} />}
       {
-        <View className=" rounded-md border border-neutral-200 dark:border-neutral-700 dark:bg-neutral-800">
+        <View
+          testID={testID}
+          className=" rounded-md border border-neutral-200 dark:border-neutral-700 dark:bg-neutral-800"
+        >
           {children}
         </View>
       }

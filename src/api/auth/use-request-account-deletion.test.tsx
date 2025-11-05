@@ -7,6 +7,7 @@
  * Requirements: 6.5, 6.6, 6.7, 6.9, 6.12
  */
 
+import type { User } from '@supabase/supabase-js';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react-native';
 import React from 'react';
@@ -18,6 +19,23 @@ import {
   useCancelAccountDeletion,
   useRequestAccountDeletion,
 } from './use-request-account-deletion';
+
+// Centralized mock user for both test suites
+const mockUser: User = {
+  id: 'user-123',
+  aud: 'authenticated',
+  role: 'authenticated',
+  email: 'test@example.com',
+  email_confirmed_at: new Date().toISOString(),
+  phone: '',
+  confirmed_at: new Date().toISOString(),
+  last_sign_in_at: new Date().toISOString(),
+  app_metadata: {},
+  user_metadata: {},
+  identities: [],
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
 
 // Mock dependencies
 jest.mock('expo-crypto', () => ({
@@ -80,7 +98,6 @@ describe('useRequestAccountDeletion', () => {
     });
 
     test('uses snake_case column names for database operations', async () => {
-      const mockUser = { id: 'user-123' };
       const mockSupabase = require('@/lib/supabase').supabase;
 
       // Mock the auth state
@@ -145,14 +162,12 @@ describe('useRequestAccountDeletion', () => {
       );
 
       // Find the actual insert mock that was called during hook execution
-      const accountDeletionResult = mockSupabase.from.mock.results.find(
-        (result: any) =>
-          result.value &&
-          mockSupabase.from.mock.calls[result.index][0] ===
-            'account_deletion_requests'
+      const accountDeletionIndex = mockSupabase.from.mock.calls.findIndex(
+        (call: any) => call[0] === 'account_deletion_requests'
       );
-      expect(accountDeletionResult).toBeDefined();
-      const insertCall = accountDeletionResult.value.insert;
+      expect(accountDeletionIndex).toBeGreaterThanOrEqual(0);
+      const insertCall =
+        mockSupabase.from.mock.results[accountDeletionIndex].value.insert;
       expect(insertCall).toHaveBeenCalledWith(
         expect.objectContaining({
           request_id: expect.any(String),
@@ -166,13 +181,12 @@ describe('useRequestAccountDeletion', () => {
       );
 
       // Verify audit_logs also uses snake_case
-      const auditLogsResult = mockSupabase.from.mock.results.find(
-        (result: any) =>
-          result.value &&
-          mockSupabase.from.mock.calls[result.index][0] === 'audit_logs'
+      const auditLogsIndex = mockSupabase.from.mock.calls.findIndex(
+        (call: any) => call[0] === 'audit_logs'
       );
-      expect(auditLogsResult).toBeDefined();
-      const auditInsertCall = auditLogsResult.value.insert;
+      expect(auditLogsIndex).toBeGreaterThanOrEqual(0);
+      const auditInsertCall =
+        mockSupabase.from.mock.results[auditLogsIndex].value.insert;
       expect(auditInsertCall).toHaveBeenCalledWith(
         expect.objectContaining({
           user_id: 'user-123',
@@ -188,27 +202,36 @@ describe('useRequestAccountDeletion', () => {
     test('uses snake_case column names in queries', async () => {
       const mockSupabase = require('@/lib/supabase').supabase;
 
+      // Create individual mocks for the chain
+      const singleMock = jest.fn(() =>
+        Promise.resolve({
+          data: {
+            request_id: 'req-123',
+            user_id: 'user-123',
+            requested_at: '2023-01-01T00:00:00Z',
+            scheduled_for: '2023-01-31T00:00:00Z',
+            status: 'pending',
+            reason: 'Test reason',
+            policy_version: '1.0.0',
+          },
+          error: null,
+        })
+      );
+
+      const secondEqMock = jest.fn(() => ({
+        single: singleMock,
+      }));
+
+      const firstEqMock = jest.fn(() => ({
+        eq: secondEqMock,
+      }));
+
+      const selectMock = jest.fn(() => ({
+        eq: firstEqMock,
+      }));
+
       mockSupabase.from.mockReturnValue({
-        select: jest.fn(() => ({
-          eq: jest.fn(() => ({
-            eq: jest.fn(() => ({
-              single: jest.fn(() =>
-                Promise.resolve({
-                  data: {
-                    request_id: 'req-123',
-                    user_id: 'user-123',
-                    requested_at: '2023-01-01T00:00:00Z',
-                    scheduled_for: '2023-01-31T00:00:00Z',
-                    status: 'pending',
-                    reason: 'Test reason',
-                    policy_version: '1.0.0',
-                  },
-                  error: null,
-                })
-              ),
-            })),
-          })),
-        })),
+        select: selectMock,
       });
 
       const result = await checkPendingDeletion('user-123');
@@ -216,20 +239,11 @@ describe('useRequestAccountDeletion', () => {
       expect(mockSupabase.from).toHaveBeenCalledWith(
         'account_deletion_requests'
       );
-      const selectChain = mockSupabase.from('account_deletion_requests').select;
-      expect(selectChain).toHaveBeenCalledWith('*');
+      expect(selectMock).toHaveBeenCalledWith('*');
 
       // Verify the eq calls use snake_case
-      const firstEqResult =
-        mockSupabase.from.mock.results[0].value.select.mock.results[0].value;
-      expect(firstEqResult.eq).toHaveBeenNthCalledWith(
-        1,
-        'user_id',
-        'user-123'
-      );
-
-      const secondEqResult = firstEqResult.eq.mock.results[0].value;
-      expect(secondEqResult.eq).toHaveBeenNthCalledWith(1, 'status', 'pending');
+      expect(firstEqMock).toHaveBeenNthCalledWith(1, 'user_id', 'user-123');
+      expect(secondEqMock).toHaveBeenNthCalledWith(1, 'status', 'pending');
 
       // Verify the return value is mapped to camelCase
       expect(result).toEqual({
@@ -250,7 +264,6 @@ describe('useRequestAccountDeletion', () => {
     });
 
     test('uses snake_case column names in update operations', async () => {
-      const mockUser = { id: 'user-123' };
       const mockSupabase = require('@/lib/supabase').supabase;
 
       // Mock the auth state
@@ -273,36 +286,52 @@ describe('useRequestAccountDeletion', () => {
         getStableSessionId: jest.fn(),
       });
 
-      // Mock the fetch query
+      // Mock the select chain
+      const selectSingleMock = jest.fn(() =>
+        Promise.resolve({
+          data: {
+            request_id: 'req-123',
+            user_id: 'user-123',
+            status: 'pending',
+            policy_version: '1.0.0',
+          },
+          error: null,
+        })
+      );
+
+      const selectSecondEqMock = jest.fn(() => ({
+        single: selectSingleMock,
+      }));
+
+      const selectFirstEqMock = jest.fn(() => ({
+        eq: selectSecondEqMock,
+      }));
+
+      const selectMock = jest.fn(() => ({
+        eq: selectFirstEqMock,
+      }));
+
+      // Mock the update chain
+      const updateEqMock = jest.fn(() => Promise.resolve({ error: null }));
+
+      const updateMock = jest.fn(() => ({
+        eq: updateEqMock,
+      }));
+
+      // Mock the audit insert
+      const auditInsertMock = jest.fn(() => Promise.resolve({ error: null }));
+
       mockSupabase.from.mockImplementation((table: string) => {
         if (table === 'account_deletion_requests') {
           return {
-            select: jest.fn(() => ({
-              eq: jest.fn(() => ({
-                eq: jest.fn(() => ({
-                  single: jest.fn(() =>
-                    Promise.resolve({
-                      data: {
-                        request_id: 'req-123',
-                        user_id: 'user-123',
-                        status: 'pending',
-                        policy_version: '1.0.0',
-                      },
-                      error: null,
-                    })
-                  ),
-                })),
-              })),
-            })),
-            update: jest.fn(() => ({
-              eq: jest.fn(() => Promise.resolve({ error: null })),
-            })),
+            select: selectMock,
+            update: updateMock,
           };
         }
 
         if (table === 'audit_logs') {
           return {
-            insert: jest.fn(() => Promise.resolve({ error: null })),
+            insert: auditInsertMock,
           };
         }
 
@@ -315,17 +344,22 @@ describe('useRequestAccountDeletion', () => {
 
       await result.current.mutateAsync();
 
+      // Find the builder returned for account_deletion_requests
+      const accountDeletionCallIndex = mockSupabase.from.mock.calls.findIndex(
+        (call: any) => call[0] === 'account_deletion_requests'
+      );
+      expect(accountDeletionCallIndex).toBeGreaterThanOrEqual(0);
+      const builder =
+        mockSupabase.from.mock.results[accountDeletionCallIndex].value;
+
       // Verify the select query uses snake_case
-      const selectChain = mockSupabase.from('account_deletion_requests').select;
-      const eqCalls = selectChain('*').eq;
-      expect(eqCalls).toHaveBeenNthCalledWith(1, 'user_id', 'user-123');
-      expect(eqCalls).toHaveBeenNthCalledWith(2, 'status', 'pending');
+      expect(builder.select).toHaveBeenCalledWith('*');
+      expect(selectFirstEqMock).toHaveBeenCalledWith('user_id', 'user-123');
+      expect(selectSecondEqMock).toHaveBeenCalledWith('status', 'pending');
 
       // Verify the update uses snake_case
-      const updateCall = mockSupabase.from('account_deletion_requests').update;
-      expect(updateCall).toHaveBeenCalledWith({ status: 'cancelled' });
-      const updateEqCall = updateCall({ status: 'cancelled' }).eq;
-      expect(updateEqCall).toHaveBeenCalledWith('request_id', 'req-123');
+      expect(builder.update).toHaveBeenCalledWith({ status: 'cancelled' });
+      expect(updateEqMock).toHaveBeenCalledWith('request_id', 'req-123');
     });
   });
 });

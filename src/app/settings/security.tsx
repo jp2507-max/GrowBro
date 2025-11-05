@@ -52,6 +52,7 @@ export default function SecuritySettingsScreen() {
               text="auth.security.change_password"
               icon={<Lock />}
               onPress={handleChangePassword}
+              testID="change-password-item"
             />
           </ItemsContainer>
 
@@ -64,6 +65,7 @@ export default function SecuritySettingsScreen() {
               text="auth.security.two_factor_auth"
               value={translate('auth.security.coming_soon')}
               icon={<Shield />}
+              testID="two-factor-item"
             />
           </ItemsContainer>
 
@@ -72,6 +74,7 @@ export default function SecuritySettingsScreen() {
             <Item
               text="auth.security.active_sessions"
               onPress={() => router.push('/settings/active-sessions')}
+              testID="active-sessions-item"
             />
           </ItemsContainer>
 
@@ -81,6 +84,7 @@ export default function SecuritySettingsScreen() {
               text="auth.security.delete_account"
               icon={<Trash />}
               onPress={handleDeleteAccount}
+              testID="delete-account-item"
             />
           </ItemsContainer>
 

@@ -93,8 +93,8 @@ importers:
         specifier: ~15.0.7
         version: 15.0.7(expo@54.0.22)
       expo-dev-client:
-        specifier: ~6.0.16
-        version: 6.0.16(expo@54.0.22)
+        specifier: ~6.0.17
+        version: 6.0.17(expo@54.0.22)
       expo-document-picker:
         specifier: ~14.0.7
         version: 14.0.7(expo@54.0.22)
@@ -4943,13 +4943,13 @@ packages:
     peerDependencies:
       expo: '*'
 
-  expo-dev-client@6.0.16:
-    resolution: {integrity: sha512-8GLud/dtNteqChL9pNGqLBSHd7of2scFmsgN5WwWgtt2dET7+EJM/K1zp0FYUzfmIF5NLsf5xUDg6AjDldOLqg==}
+  expo-dev-client@6.0.17:
+    resolution: {integrity: sha512-zVilIum3sqXFbhYhPT6TuxR3ddH/IfHL82FiOTqJUiYaTQqun1I6ogSvU1djhY1eXUYhfYIBieQNWMVjXPxMvw==}
     peerDependencies:
       expo: '*'
 
-  expo-dev-launcher@6.0.16:
-    resolution: {integrity: sha512-OVg5T5ip7evh8zHJeIj2IYgtvTeY8EOiwNQYlmN0JHAw8wlUxYHnSf08RcevVgYTKcIryCyeLG5UHxsQQWbycA==}
+  expo-dev-launcher@6.0.17:
+    resolution: {integrity: sha512-riLxFXaw6Nvgb27TiQtUvoHkW/zTz0aO7M+qxDBBaEbJMJSFl51KSwOJJBTItVQIE9f9jB8x5L1CfLw81/McZw==}
     peerDependencies:
       expo: '*'
 
@@ -14911,10 +14911,10 @@ snapshots:
       base64-js: 1.5.1
       expo: 54.0.22(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.14)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
 
-  expo-dev-client@6.0.16(expo@54.0.22):
+  expo-dev-client@6.0.17(expo@54.0.22):
     dependencies:
       expo: 54.0.22(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.14)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
-      expo-dev-launcher: 6.0.16(expo@54.0.22)
+      expo-dev-launcher: 6.0.17(expo@54.0.22)
       expo-dev-menu: 7.0.10(expo@54.0.22)
       expo-dev-menu-interface: 2.0.0(expo@54.0.22)
       expo-manifests: 1.0.8(expo@54.0.22)
@@ -14922,7 +14922,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  expo-dev-launcher@6.0.16(expo@54.0.22):
+  expo-dev-launcher@6.0.17(expo@54.0.22):
     dependencies:
       expo: 54.0.22(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.14)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
       expo-dev-menu: 7.0.10(expo@54.0.22)

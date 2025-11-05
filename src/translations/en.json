@@ -2472,11 +2472,13 @@
       "download_progress": "Downloading: {{progress}}%",
       "download_update": "Download Update",
       "downloading": "Downloading...",
+      "downloading_message": "Downloading update...",
       "educational_purpose": "For educational purposes only",
       "environment": "Environment",
       "error_checking": "Failed to check for updates",
       "github": "GitHub Repository",
       "links": "Links",
+      "openLinkError": "Failed to open link. Please try again or check your device settings.",
       "openStoreErrorMessage": "Failed to open app store. Please try again or check your device settings.",
       "openStoreErrorTitle": "Error",
       "ota_disabled": "Updates managed through app store",
@@ -2710,7 +2712,13 @@
     },
     "rate": "Rate",
     "save_changes": "Save Changes",
-    "security": "Security",
+    "security": {
+      "biometric": {
+        "face": "Face ID",
+        "fingerprint": "Fingerprint",
+        "iris": "Iris Scanner"
+      }
+    },
     "status": {
       "all_off": "All off",
       "all_on": "All on",

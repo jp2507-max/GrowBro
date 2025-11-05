@@ -30,7 +30,9 @@ export function BiometricToggleSection() {
           translate('auth.security.biometric_disabled_success')
         );
       } else {
-        const translatedError = translateDynamic(result.error);
+        const translatedError = result.error
+          ? translateDynamic(result.error)
+          : null;
         showErrorMessage(
           translatedError ?? translate('auth.security.biometric_disable_error')
         );
@@ -43,7 +45,9 @@ export function BiometricToggleSection() {
           translate('auth.security.biometric_enabled_success')
         );
       } else {
-        const translatedError = translateDynamic(result.error);
+        const translatedError = result.error
+          ? translateDynamic(result.error)
+          : null;
         showErrorMessage(
           translatedError ?? translate('auth.security.biometric_enable_error')
         );
@@ -67,11 +71,11 @@ export function BiometricToggleSection() {
             {biometricSettings.biometricType && (
               <Text className="text-xs text-neutral-500 dark:text-neutral-400">
                 {biometricSettings.biometricType === 'face' &&
-                  translate('settings.security.biometric.face' as any)}
+                  translate('settings.security.biometric.face')}
                 {biometricSettings.biometricType === 'fingerprint' &&
-                  translate('settings.security.biometric.fingerprint' as any)}
+                  translate('settings.security.biometric.fingerprint')}
                 {biometricSettings.biometricType === 'iris' &&
-                  translate('settings.security.biometric.iris' as any)}
+                  translate('settings.security.biometric.iris')}
               </Text>
             )}
           </View>
@@ -81,6 +85,8 @@ export function BiometricToggleSection() {
           onValueChange={handleToggleBiometric}
           disabled={biometricSettings.isLoading}
           testID="biometric-toggle"
+          accessibilityLabel="Toggle biometric login"
+          accessibilityHint="Enable or disable biometric authentication for faster login"
         />
       </View>
     </ItemsContainer>

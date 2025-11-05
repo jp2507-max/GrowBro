@@ -4,8 +4,6 @@ import { cleanup, screen, setup, waitFor } from '@/lib/test-utils';
 
 import { LegalDocumentViewer } from './legal-document-viewer';
 
-afterEach(cleanup);
-
 const mockGetLegalDocument = jest.fn();
 const mockGetLastSyncTimestamp = jest.fn();
 
@@ -14,24 +12,37 @@ jest.mock('@/lib/legal/legal-documents-service', () => ({
   getLastSyncTimestamp: mockGetLastSyncTimestamp,
 }));
 
+let mockNetworkStatus = { isInternetReachable: true };
 jest.mock('@/lib/hooks/use-network-status', () => ({
-  useNetworkStatus: () => ({
-    isInternetReachable: true,
-  }),
+  useNetworkStatus: () => mockNetworkStatus,
 }));
 
-jest.mock('@/lib/i18n', () => ({
-  language: 'en',
-}));
+const mockI18n = { language: 'en' };
+jest.mock('@/lib/i18n', () => ({ default: mockI18n }));
 
 jest.mock('@/lib', () => ({
   translate: (key: string) => key,
 }));
 
+afterEach(cleanup);
+
 describe('LegalDocumentViewer', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockNetworkStatus = { isInternetReachable: true };
+    mockI18n.language = 'en';
     mockGetLastSyncTimestamp.mockReturnValue('2024-01-01T00:00:00.000Z');
+    // Set default successful mock for getLegalDocument
+    mockGetLegalDocument.mockResolvedValue({
+      type: 'privacy',
+      version: '1.0.0',
+      lastUpdated: '2024-01-01T00:00:00.000Z',
+      content: {
+        en: '# Privacy Policy\n\nThis is the privacy policy content.',
+        de: '# Datenschutz\n\nDies ist der Datenschutz-Inhalt.',
+      },
+      requiresReAcceptance: false,
+    });
   });
 
   describe('Rendering', () => {
@@ -87,13 +98,7 @@ describe('LegalDocumentViewer', () => {
       };
 
       mockGetLegalDocument.mockResolvedValue(mockDocument);
-
-      // Mock offline status
-      jest.mock('@/lib/hooks/use-network-status', () => ({
-        useNetworkStatus: () => ({
-          isInternetReachable: false,
-        }),
-      }));
+      mockNetworkStatus = { isInternetReachable: false };
 
       setup(<LegalDocumentViewer documentType="terms" />);
 
@@ -130,10 +135,9 @@ describe('LegalDocumentViewer', () => {
     });
 
     test('handles German locale correctly', async () => {
-      // Mock German language
-      jest.mock('@/lib/i18n', () => ({
-        language: 'de',
-      }));
+      // Override the already-mocked i18n module's language before rendering
+      const i18nMock = require('@/lib/i18n').default;
+      i18nMock.language = 'de';
 
       const mockDocument = {
         version: '1.1.0',

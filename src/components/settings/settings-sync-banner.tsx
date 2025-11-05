@@ -9,6 +9,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 
 import { Button, Text, View } from '@/components/ui';
+import colors from '@/components/ui/colors';
+import { translate } from '@/lib/i18n';
 import {
   getPermanentErrorCount,
   getSyncStats,
@@ -99,18 +101,21 @@ export function SettingsSyncBanner({
         className="flex-row items-center gap-3 bg-primary-50 px-4 py-3"
         testID={testID}
       >
-        <ActivityIndicator size="small" color="#0066CC" />
+        <ActivityIndicator
+          size="small"
+          color={colors.primary?.[600] ?? '#0066CC'}
+        />
         {/* Sync progress indicator and text */}
         <View className="flex-1">
-          <Text
-            className="text-sm font-medium text-primary-900"
-            tx="settings.sync.banner.syncing_title"
-          />
-          <Text
-            className="text-xs text-primary-700"
-            tx={`settings.sync.banner.syncing_progress_${stats.syncing === 1 ? 'one' : 'other'}`}
-            txOptions={{ count: stats.syncing }}
-          />
+          <Text className="text-sm font-medium text-primary-900">
+            {translate(`settings.sync.banner.syncing_title` as any)}
+          </Text>
+          <Text className="text-xs text-primary-700">
+            {translate(
+              `settings.sync.banner.syncing_progress_${stats.syncing === 1 ? 'one' : 'other'}` as any,
+              { count: stats.syncing }
+            )}
+          </Text>
         </View>
       </View>
     );
@@ -123,29 +128,30 @@ export function SettingsSyncBanner({
         {/* Error message content */}
         <View className="flex-row items-start gap-3">
           <View className="flex-1">
-            <Text
-              className="text-sm font-medium text-danger-900"
-              tx="settings.sync.banner.error_title"
-            />
-            <Text
-              className="text-xs text-danger-700"
-              tx={`settings.sync.banner.error_message_${stats.error === 1 ? 'one' : 'other'}`}
-              txOptions={{ count: stats.error }}
-            />
+            <Text className="text-sm font-medium text-danger-900">
+              {translate('settings.sync.banner.error_title' as any)}
+            </Text>
+            <Text className="text-xs text-danger-700">
+              {translate(
+                `settings.sync.banner.error_message_${stats.error === 1 ? 'one' : 'other'}` as any,
+                { count: stats.error }
+              )}
+            </Text>
             {/* Additional info for permanent errors */}
             {permanentErrors > 0 && (
-              <Text
-                className="mt-1 text-xs text-danger-700"
-                tx={`settings.sync.banner.error_permanent_${permanentErrors === 1 ? 'one' : 'other'}`}
-                txOptions={{ count: permanentErrors }}
-              />
+              <Text className="mt-1 text-xs text-danger-700">
+                {translate(
+                  `settings.sync.banner.error_permanent_${permanentErrors === 1 ? 'one' : 'other'}` as any,
+                  { count: permanentErrors }
+                )}
+              </Text>
             )}
           </View>
         </View>
         {/* Retry action button */}
         <View className="flex-row gap-2">
           <Button
-            tx="common.retry"
+            label={translate('common.retry' as any)}
             onPress={handleRetry}
             size="sm"
             variant="secondary"
@@ -168,15 +174,15 @@ export function SettingsSyncBanner({
       >
         {/* Offline notification content */}
         <View className="flex-1">
-          <Text
-            className="text-sm font-medium text-warning-900"
-            tx="settings.sync.banner.offline_title"
-          />
-          <Text
-            className="text-xs text-warning-700"
-            tx={`settings.sync.banner.offline_message_${stats.pending === 1 ? 'one' : 'other'}`}
-            txOptions={{ count: stats.pending }}
-          />
+          <Text className="text-sm font-medium text-warning-900">
+            {translate('settings.sync.banner.offline_title' as any)}
+          </Text>
+          <Text className="text-xs text-warning-700">
+            {translate(
+              `settings.sync.banner.offline_message_${stats.pending === 1 ? 'one' : 'other'}` as any,
+              { count: stats.pending }
+            )}
+          </Text>
         </View>
       </View>
     );
@@ -208,14 +214,18 @@ export function SyncStatusIndicator({
       return (
         <View className="flex-row items-center gap-1" testID={testID}>
           <ActivityIndicator size="small" color="#D97706" />
-          <Text className="text-xs text-warning-700" tx={tx?.('pending')} />
+          <Text className="text-xs text-warning-700">
+            {tx?.('pending') as any}
+          </Text>
         </View>
       );
 
     case 'error':
       return (
         <View className="flex-row items-center gap-1" testID={testID}>
-          <Text className="text-xs text-danger-700" tx={tx?.('error')} />
+          <Text className="text-xs text-danger-700">
+            {tx?.('error') as any}
+          </Text>
         </View>
       );
 

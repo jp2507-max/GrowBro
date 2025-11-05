@@ -11,6 +11,7 @@ type ItemProps = {
   icon?: React.ReactNode;
   rightElement?: React.ReactNode;
   disabled?: boolean;
+  testID?: string;
 };
 
 export const Item = ({
@@ -20,6 +21,7 @@ export const Item = ({
   onPress,
   rightElement,
   disabled = false,
+  testID,
 }: ItemProps) => {
   const isPressable = onPress !== undefined && !disabled;
   return (
@@ -30,6 +32,7 @@ export const Item = ({
       accessibilityRole={isPressable ? 'button' : undefined}
       accessibilityState={{ disabled: !isPressable }}
       disabled={disabled}
+      testID={testID}
     >
       <View className="flex-row items-center">
         {icon && <View className="pr-2">{icon}</View>}
