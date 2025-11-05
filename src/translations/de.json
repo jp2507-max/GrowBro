@@ -2469,6 +2469,7 @@
       "check_updates": "Nach Updates suchen",
       "check_updates_offline": "Mit dem Internet verbinden, um nach Updates zu suchen",
       "checking": "Prüfe...",
+      "copyright": "© {{year}} GrowBro",
       "download_progress": "Lädt herunter: {{progress}}%",
       "download_update": "Update herunterladen",
       "downloading": "Lädt herunter...",

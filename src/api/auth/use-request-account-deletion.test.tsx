@@ -361,5 +361,126 @@ describe('useRequestAccountDeletion', () => {
       expect(builder.update).toHaveBeenCalledWith({ status: 'cancelled' });
       expect(updateEqMock).toHaveBeenCalledWith('request_id', 'req-123');
     });
+
+    test('rolls back status to pending when audit log fails', async () => {
+      const mockSupabase = require('@/lib/supabase').supabase;
+      const mockLogAuthError =
+        require('@/lib/auth/auth-telemetry').logAuthError;
+
+      // Mock the auth state
+      const mockUseAuth = jest.mocked(useAuth);
+      mockUseAuth.getState.mockReturnValue({
+        user: mockUser,
+        session: null,
+        status: 'signIn',
+        token: null,
+        lastValidatedAt: null,
+        offlineMode: 'full',
+        _authOperationInProgress: false,
+        signIn: jest.fn(),
+        signOut: jest.fn(),
+        hydrate: jest.fn(),
+        updateSession: jest.fn(),
+        updateUser: jest.fn(),
+        updateLastValidatedAt: jest.fn(),
+        setOfflineMode: jest.fn(),
+        getStableSessionId: jest.fn(),
+      });
+
+      // Mock the select chain
+      const selectSingleMock = jest.fn(() =>
+        Promise.resolve({
+          data: {
+            request_id: 'req-123',
+            user_id: 'user-123',
+            status: 'pending',
+            policy_version: '1.0.0',
+          },
+          error: null,
+        })
+      );
+
+      const selectSecondEqMock = jest.fn(() => ({
+        single: selectSingleMock,
+      }));
+
+      const selectFirstEqMock = jest.fn(() => ({
+        eq: selectSecondEqMock,
+      }));
+
+      const selectMock = jest.fn(() => ({
+        eq: selectFirstEqMock,
+      }));
+
+      // Mock the update chains - first for status update, second for rollback
+      let updateCallCount = 0;
+      const updateMock = jest.fn(() => ({
+        eq: jest.fn(() => {
+          updateCallCount++;
+          return Promise.resolve({ error: null });
+        }),
+      }));
+
+      // Mock the audit insert to fail
+      const auditInsertMock = jest.fn(() =>
+        Promise.resolve({
+          error: { message: 'Database connection failed' },
+        })
+      );
+
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'account_deletion_requests') {
+          return {
+            select: selectMock,
+            update: updateMock,
+          };
+        }
+
+        if (table === 'audit_logs') {
+          return {
+            insert: auditInsertMock,
+          };
+        }
+
+        return {} as any;
+      });
+
+      const { result } = renderHook(() => useCancelAccountDeletion(), {
+        wrapper: createWrapper(),
+      });
+
+      // The mutation should fail due to audit log error
+      await expect(result.current.mutateAsync()).rejects.toThrow(
+        'settings.delete_account.error_audit_log_failed'
+      );
+
+      // Find the builder returned for account_deletion_requests
+      const accountDeletionCallIndex = mockSupabase.from.mock.calls.findIndex(
+        (call: any) => call[0] === 'account_deletion_requests'
+      );
+      expect(accountDeletionCallIndex).toBeGreaterThanOrEqual(0);
+      const builder =
+        mockSupabase.from.mock.results[accountDeletionCallIndex].value;
+
+      // Verify the initial update to 'cancelled' was called
+      expect(builder.update).toHaveBeenCalledWith({ status: 'cancelled' });
+
+      // Verify the rollback update to 'pending' was called
+      expect(builder.update).toHaveBeenCalledWith({ status: 'pending' });
+
+      // Verify both update calls were made with the correct request_id
+      expect(updateCallCount).toBe(2);
+
+      // Verify error was logged
+      expect(mockLogAuthError).toHaveBeenCalledWith(
+        expect.any(Error),
+        expect.objectContaining({
+          errorKey: 'settings.delete_account.error_audit_log_failed',
+          flow: 'cancel_account_deletion',
+          requestId: 'req-123',
+          userId: 'user-123',
+        })
+      );
+    });
   });
 });

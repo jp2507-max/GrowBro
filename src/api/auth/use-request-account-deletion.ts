@@ -283,6 +283,12 @@ export const useCancelAccountDeletion = createMutation({
     });
 
     if (auditError) {
+      // Rollback status to pending since audit logging failed
+      await supabase
+        .from('account_deletion_requests')
+        .update({ status: 'pending' })
+        .eq('request_id', deletionRequest.request_id);
+
       await logAuthError(
         new Error(
           `settings.delete_account.error_audit_log_failed: ${auditError.message}`

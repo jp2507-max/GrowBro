@@ -41,7 +41,6 @@ const APP_STORE_URL = Platform.select({
 
 const WEBSITE_URL = 'https://growbro.app';
 const GITHUB_URL = 'https://github.com/jp2507-max/GrowBro';
-const COPYRIGHT_TEXT = `© ${new Date().getFullYear()} GrowBro`;
 
 // eslint-disable-next-line max-lines-per-function
 export default function AboutScreen() {
@@ -330,7 +329,9 @@ export default function AboutScreen() {
           {/* Copyright Section */}
           <View className="my-8">
             <Text className="text-center text-sm text-neutral-500 dark:text-neutral-400">
-              {COPYRIGHT_TEXT}
+              {translate('settings.about.copyright', {
+                year: new Date().getFullYear(),
+              })}
             </Text>
             <Text className="mt-1 text-center text-xs text-neutral-400 dark:text-neutral-500">
               {translate('settings.about.educational_purpose')}

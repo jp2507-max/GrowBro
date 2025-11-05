@@ -2469,6 +2469,7 @@
       "check_updates": "Check for Updates",
       "check_updates_offline": "Connect to internet to check for updates",
       "checking": "Checking...",
+      "copyright": "© {{year}} GrowBro",
       "download_progress": "Downloading: {{progress}}%",
       "download_update": "Download Update",
       "downloading": "Downloading...",
