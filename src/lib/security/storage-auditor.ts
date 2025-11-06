@@ -113,8 +113,30 @@ async function scanUnencryptedMMKV(): Promise<string[]> {
     const leakedKeys: string[] = [];
 
     for (const domain of domains) {
-      // Create unencrypted instance with same ID to check if data is accessible without encryption
-      // Note: This may conflict with existing encrypted instances, but we need to detect leaks
+      /*
+       * WARNING (P0): Do NOT construct an unencrypted MMKV instance using the
+       * same `id` as an existing encrypted instance. Opening an MMKV file
+       * without the correct encryption key causes the library to treat the
+       * file as corrupted and it will reset the store to an empty file. That
+       * behavior can destroy encrypted state (auth tokens, preferences, etc.)
+       * and turn this audit into a destructive operation.
+       *
+       * Instead of creating a new unencrypted MMKV here, use one of the
+       * following non-destructive approaches:
+       *  - Use the already-initialized, encrypted instances returned by
+       *    `getAllInstances()` or `getInitializedDomains()` and inspect their
+       *    keys (these won't trigger a reset).
+       *  - Check for leaks via metadata or by attempting safe reads using the
+       *    provided secure API that won't open the underlying file without
+       *    the key.
+       *  - If a filesystem-level check is required, read the file bytes and
+       *    inspect headers without initializing MMKV.
+       *
+       * The current code historically attempted to instantiate an unencrypted
+       * MMKV to detect accessible keys; that approach is destructive and must
+       * be avoided. If an audit needs to detect unencrypted data, implement a
+       * non-destructive scan or rely on already-initialized instances.
+       */
       const unencryptedInstance = new MMKV({
         id: domain,
       });
