@@ -133,7 +133,8 @@ export const PII_PATTERNS: PIIPattern[] = [
   },
   {
     name: 'ipv4',
-    pattern: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g,
+    pattern:
+      /\b(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]?|[8-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g,
     replacement: '[IP_REDACTED]',
   },
   {
@@ -259,7 +260,11 @@ export const KEY_METADATA_KEY = 'security:encryption:metadata';
 
 /**
  * App-specific salt for device fingerprint hashing
- * WARNING: Never change this value or all device fingerprints will change
+ * WARNING: Never change this value.
+ * Changing this salt will invalidate all existing device fingerprints and
+ * potentially break security telemetry correlation for historical data.
+ * Only update if you are intentionally migrating all fingerprints and
+ * understand the impact on device-based authentication and audit trails.
  */
 export const DEVICE_FINGERPRINT_SALT = 'growbro_device_fp_v1_2025';
 

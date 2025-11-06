@@ -18,6 +18,10 @@ import * as Crypto from 'expo-crypto';
 import { Platform } from 'react-native';
 
 import { DEVICE_FINGERPRINT_SALT } from './constants';
+import {
+  initializeSecureStorage,
+  securityCacheStorage,
+} from './secure-storage';
 import type { DeviceFingerprint, DeviceFingerprintGenerator } from './types';
 
 // Module-scoped promise cache to prevent race conditions
@@ -50,15 +54,54 @@ export function getDeviceCategory(): string {
  * This ID is unique per installation and persists across app restarts
  */
 async function generateInstallId(): Promise<string> {
-  // TODO: Replace with encrypted storage in Task 2
-  // For now, use a simple in-memory cache
+  const INSTALL_ID_KEY = 'security:device:install-id';
+
+  // Check in-memory cache first
   if (cachedFingerprint?.installId) {
     return cachedFingerprint.installId;
   }
 
+  // Ensure secure storage is initialized
+  try {
+    await initializeSecureStorage();
+  } catch (error) {
+    console.warn(
+      '[DeviceFingerprint] Failed to initialize secure storage:',
+      error
+    );
+    // Continue anyway - storage might still work
+  }
+
+  try {
+    // Try to retrieve existing install ID from encrypted storage
+    const storedInstallId = securityCacheStorage.get(INSTALL_ID_KEY);
+    if (storedInstallId && typeof storedInstallId === 'string') {
+      return storedInstallId;
+    }
+  } catch (error) {
+    console.warn(
+      '[DeviceFingerprint] Failed to read install ID from storage:',
+      error
+    );
+    // Continue to generate a new one if storage read fails
+  }
+
   // Generate a new UUID v4 for this installation
-  const installId = Crypto.randomUUID();
-  return installId;
+  const newInstallId = Crypto.randomUUID();
+
+  try {
+    // Store the new install ID in encrypted storage
+    securityCacheStorage.set(INSTALL_ID_KEY, newInstallId);
+  } catch (error) {
+    console.error(
+      '[DeviceFingerprint] Failed to persist install ID to storage:',
+      error
+    );
+    // Continue anyway - the ID will work for this session
+    // This is "fail closed" - we don't want to break the app if storage fails
+  }
+
+  return newInstallId;
 }
 
 /**
@@ -70,12 +113,10 @@ async function hashInstallId(installId: string): Promise<string> {
   const saltedValue = `${installId}:${DEVICE_FINGERPRINT_SALT}`;
 
   // Generate SHA-256 hash
-  const hash = await Crypto.digestStringAsync(
+  return await Crypto.digestStringAsync(
     Crypto.CryptoDigestAlgorithm.SHA256,
     saltedValue
   );
-
-  return hash;
 }
 
 /**

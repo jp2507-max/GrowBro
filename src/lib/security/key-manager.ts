@@ -4,6 +4,7 @@
  * Uses expo-secure-store (iOS Keychain / Android Keystore)
  */
 
+import { Buffer } from 'buffer';
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';

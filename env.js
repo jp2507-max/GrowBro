@@ -270,45 +270,81 @@ const client = z.object({
 
   // Security Feature Flags
 
-  FEATURE_SECURITY_ENCRYPTION: z.string().optional(),
+  FEATURE_SECURITY_ENCRYPTION: z.union([z.string(), z.boolean()]).optional(),
 
-  FEATURE_SECURITY_INTEGRITY_DETECTION: z.string().optional(),
+  FEATURE_SECURITY_INTEGRITY_DETECTION: z
+    .union([z.string(), z.boolean()])
+    .optional(),
 
-  FEATURE_SECURITY_ATTESTATION: z.string().optional(),
+  FEATURE_SECURITY_ATTESTATION: z.union([z.string(), z.boolean()]).optional(),
 
-  FEATURE_SECURITY_CERTIFICATE_PINNING: z.string().optional(),
+  FEATURE_SECURITY_CERTIFICATE_PINNING: z
+    .union([z.string(), z.boolean()])
+    .optional(),
 
-  FEATURE_SECURITY_BLOCK_ON_COMPROMISE: z.string().optional(),
+  FEATURE_SECURITY_BLOCK_ON_COMPROMISE: z
+    .union([z.string(), z.boolean()])
+    .optional(),
 
-  FEATURE_SECURITY_THREAT_MONITORING: z.string().optional(),
+  FEATURE_SECURITY_THREAT_MONITORING: z
+    .union([z.string(), z.boolean()])
+    .optional(),
 
-  FEATURE_SECURITY_SENTRY_SAMPLING_RATE: z.string().optional(),
+  FEATURE_SECURITY_SENTRY_SAMPLING_RATE: z
+    .union([z.string(), z.number()])
+    .optional(),
 
-  FEATURE_SECURITY_VULNERABILITY_SCANNING: z.string().optional(),
+  FEATURE_SECURITY_VULNERABILITY_SCANNING: z
+    .union([z.string(), z.boolean()])
+    .optional(),
 
-  FEATURE_SECURITY_AUTO_ISSUE_CREATION: z.string().optional(),
+  FEATURE_SECURITY_AUTO_ISSUE_CREATION: z
+    .union([z.string(), z.boolean()])
+    .optional(),
 
-  FEATURE_SECURITY_BYPASS_PINNING: z.string().optional(),
+  FEATURE_SECURITY_BYPASS_PINNING: z
+    .union([z.string(), z.boolean()])
+    .optional(),
 
-  EXPO_PUBLIC_FEATURE_SECURITY_ENCRYPTION: z.string().optional(),
+  EXPO_PUBLIC_FEATURE_SECURITY_ENCRYPTION: z
+    .union([z.string(), z.boolean()])
+    .optional(),
 
-  EXPO_PUBLIC_FEATURE_SECURITY_INTEGRITY_DETECTION: z.string().optional(),
+  EXPO_PUBLIC_FEATURE_SECURITY_INTEGRITY_DETECTION: z
+    .union([z.string(), z.boolean()])
+    .optional(),
 
-  EXPO_PUBLIC_FEATURE_SECURITY_ATTESTATION: z.string().optional(),
+  EXPO_PUBLIC_FEATURE_SECURITY_ATTESTATION: z
+    .union([z.string(), z.boolean()])
+    .optional(),
 
-  EXPO_PUBLIC_FEATURE_SECURITY_CERTIFICATE_PINNING: z.string().optional(),
+  EXPO_PUBLIC_FEATURE_SECURITY_CERTIFICATE_PINNING: z
+    .union([z.string(), z.boolean()])
+    .optional(),
 
-  EXPO_PUBLIC_FEATURE_SECURITY_BLOCK_ON_COMPROMISE: z.string().optional(),
+  EXPO_PUBLIC_FEATURE_SECURITY_BLOCK_ON_COMPROMISE: z
+    .union([z.string(), z.boolean()])
+    .optional(),
 
-  EXPO_PUBLIC_FEATURE_SECURITY_THREAT_MONITORING: z.string().optional(),
+  EXPO_PUBLIC_FEATURE_SECURITY_THREAT_MONITORING: z
+    .union([z.string(), z.boolean()])
+    .optional(),
 
-  EXPO_PUBLIC_FEATURE_SECURITY_SENTRY_SAMPLING_RATE: z.string().optional(),
+  EXPO_PUBLIC_FEATURE_SECURITY_SENTRY_SAMPLING_RATE: z
+    .union([z.string(), z.number()])
+    .optional(),
 
-  EXPO_PUBLIC_FEATURE_SECURITY_VULNERABILITY_SCANNING: z.string().optional(),
+  EXPO_PUBLIC_FEATURE_SECURITY_VULNERABILITY_SCANNING: z
+    .union([z.string(), z.boolean()])
+    .optional(),
 
-  EXPO_PUBLIC_FEATURE_SECURITY_AUTO_ISSUE_CREATION: z.string().optional(),
+  EXPO_PUBLIC_FEATURE_SECURITY_AUTO_ISSUE_CREATION: z
+    .union([z.string(), z.boolean()])
+    .optional(),
 
-  EXPO_PUBLIC_FEATURE_SECURITY_BYPASS_PINNING: z.string().optional(),
+  EXPO_PUBLIC_FEATURE_SECURITY_BYPASS_PINNING: z
+    .union([z.string(), z.boolean()])
+    .optional(),
 });
 
 const buildTime = z.object({
@@ -620,7 +656,7 @@ const _clientEnv = {
 
   DPO_EMAIL: dpoEmail,
 
-  DPO_NAME: dpoName,
+  DPO_NAME: dpoName || 'Jan-Peter Blohm',
 
   EU_REPRESENTATIVE_ADDRESS: euRepresentativeAddress,
 

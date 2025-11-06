@@ -33,7 +33,7 @@ The following PII patterns are automatically scrubbed from all Sentry events and
 - **IPv6 addresses**: `2001:0db8:85a3::` → `[IP_REDACTED]`
 - **JWT tokens**: `eyJhbGciOi...` → `[JWT_REDACTED]`
 - **UUIDs**: `550e8400-e29b-41d4-a716-446655440000` → `[UUID_REDACTED]`
-- **API keys**: `sk_live_abc123` → `[API_KEY_REDACTED]`
+- **API keys**: `sk_live_<REDACTED>` → `[API_KEY_REDACTED]`
 - **Credit cards**: `1234-5678-9012-3456` → `[CARD_REDACTED]`
 - **SSN**: `123-45-6789` → `[SSN_REDACTED]`
 - **Addresses**: `123 Main Street` → `[ADDRESS_REDACTED]`
@@ -222,7 +222,7 @@ Legend:
 
    # Or use Sentry API
    curl -X DELETE \
-     -H "Authorization: Bearer YOUR_AUTH_TOKEN" \
+   -H "Authorization: Bearer [REDACTED_AUTH_TOKEN]" \
      "https://sentry.io/api/0/projects/ORG/PROJECT/events/EVENT_ID/"
    ```
 

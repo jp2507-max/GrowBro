@@ -3,6 +3,19 @@ import { getPrivacyConsentSync } from './privacy-consent';
 type ErrorContext = Record<string, unknown>;
 
 /**
+ * Auth endpoint patterns for redacting sensitive request bodies
+ */
+const AUTH_ENDPOINT_PATTERNS = [
+  '/auth/',
+  '/login',
+  '/signup',
+  '/register',
+  '/profile',
+  '/user',
+  '/password',
+];
+
+/**
  * Regex patterns for detecting sensitive information
  */
 const SENSITIVE_PATTERNS = {
@@ -261,7 +274,11 @@ function _scrubObjectData(obj: any, ctx: ScrubContext): any {
 /**
  * Redacts sensitive HTTP headers
  */
-function redactSensitiveHeaders(headers: any): void {
+function redactSensitiveHeaders(
+  headers: Record<string, unknown> | undefined
+): void {
+  if (!headers || typeof headers !== 'object') return;
+
   const sensitiveHeaders = [
     'authorization',
     'cookie',
@@ -270,15 +287,24 @@ function redactSensitiveHeaders(headers: any): void {
     'api-key',
   ];
 
-  // Get all header keys and check each one
-  const headerKeys = Object.keys(headers);
-
-  for (const headerKey of headerKeys) {
+  // Normalize all header keys to lowercase, removing duplicates. Last value wins.
+  const normalizedHeaders: Record<string, unknown> = {};
+  for (const headerKey of Object.keys(headers)) {
     const lowerKey = headerKey.toLowerCase();
+    // prefer the last occurrence if duplicates exist
+    normalizedHeaders[lowerKey] = (headers as any)[headerKey];
+  }
+
+  // Redact sensitive headers
+  for (const lowerKey of Object.keys(normalizedHeaders)) {
     if (sensitiveHeaders.includes(lowerKey)) {
-      headers[headerKey] = '[REDACTED]';
+      normalizedHeaders[lowerKey] = '[REDACTED]';
     }
   }
+
+  // Replace original headers with normalized ones
+  for (const key of Object.keys(headers)) delete (headers as any)[key];
+  Object.assign(headers, normalizedHeaders);
 }
 
 /**
@@ -287,17 +313,7 @@ function redactSensitiveHeaders(headers: any): void {
 function redactAuthEndpointBody(request: any): void {
   if (!request.url) return;
 
-  const authEndpointPatterns = [
-    '/auth/',
-    '/login',
-    '/signup',
-    '/register',
-    '/profile',
-    '/user',
-    '/password',
-  ];
-
-  const isAuthEndpoint = authEndpointPatterns.some((pattern) =>
+  const isAuthEndpoint = AUTH_ENDPOINT_PATTERNS.some((pattern) =>
     request.url.includes(pattern)
   );
 
@@ -336,12 +352,10 @@ export const beforeSendHook = (event: any, _hint?: any): any | null => {
       event.user.email = '[EMAIL_REDACTED]';
     }
 
-    // If user hasn't consented to personalized data, remove user info (except redacted email)
+    // If user hasn't consented to personalized data, remove user info (except id)
     if (!effectiveConsent.personalizedData && event.user) {
-      const redactedEmail = event.user.email;
       event.user = {
         id: event.user.id ? '[USER_ID_REDACTED]' : undefined,
-        ...(redactedEmail ? { email: redactedEmail } : {}),
       };
     }
 
@@ -434,17 +448,7 @@ export const beforeBreadcrumbHook = (
 
       // Drop request bodies for auth/profile endpoints
       if (breadcrumb.data?.url) {
-        const authEndpointPatterns = [
-          '/auth/',
-          '/login',
-          '/signup',
-          '/register',
-          '/profile',
-          '/user',
-          '/password',
-        ];
-
-        const isAuthEndpoint = authEndpointPatterns.some((pattern) =>
+        const isAuthEndpoint = AUTH_ENDPOINT_PATTERNS.some((pattern) =>
           breadcrumb.data.url.includes(pattern)
         );
 
@@ -536,12 +540,10 @@ async function hashUserId(userId: string): Promise<string> {
     );
 
     const saltedValue = `${userId}:${DEVICE_FINGERPRINT_SALT}`;
-    const hash = await cryptoMod.digestStringAsync(
+    return await cryptoMod.digestStringAsync(
       cryptoMod.CryptoDigestAlgorithm.SHA256,
       saltedValue
     );
-
-    return hash;
   } catch {
     return '[HASH_FAILED]';
   }

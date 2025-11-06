@@ -166,12 +166,14 @@ describe('KeyManager', () => {
       await keyManager.rotateKey(keyId);
 
       // Verify metadata store was called with incremented rotation count
-      const metadataCall = mockSecureStore.setItemAsync.mock.calls.find(
+      // Find the last metadata call since rotateKey calls storeKey which also stores metadata
+      const metadataCalls = mockSecureStore.setItemAsync.mock.calls.filter(
         (call) => call[0].includes('metadata')
       );
+      const lastMetadataCall = metadataCalls[metadataCalls.length - 1];
 
-      if (metadataCall) {
-        const storedMetadata = JSON.parse(metadataCall[1] as string);
+      if (lastMetadataCall) {
+        const storedMetadata = JSON.parse(lastMetadataCall[1] as string);
         expect(storedMetadata.rotationCount).toBe(6);
       }
     });

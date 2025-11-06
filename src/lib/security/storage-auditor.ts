@@ -113,23 +113,23 @@ async function scanUnencryptedMMKV(): Promise<string[]> {
     const leakedKeys: string[] = [];
 
     for (const domain of domains) {
-      // Create unencrypted instance with different ID
+      // Create unencrypted instance with same ID to check if data is accessible without encryption
       const unencryptedInstance = new MMKV({
-        id: `${domain}.audit.unencrypted`,
+        id: domain,
       });
 
       const keys = unencryptedInstance.getAllKeys();
 
       // Check if any keys exist (should be empty if encryption is working)
       if (keys.length > 0) {
-        log.error(`Found keys in unencrypted MMKV for domain: ${domain}`, {
-          keys,
-        });
+        log.error(
+          `Found keys accessible without encryption for domain: ${domain}`,
+          {
+            keys,
+          }
+        );
         leakedKeys.push(...keys.map((k) => `${domain}:${k}`));
       }
-
-      // Clean up test instance
-      unencryptedInstance.clearAll();
     }
 
     return leakedKeys;
@@ -388,14 +388,13 @@ async function generateReport(): Promise<StorageAuditReport> {
     const keyId = `mmkv.${domain}`;
     const metadata = await keyManager.getKeyMetadata(keyId);
 
-    if (metadata) {
+    if (
+      metadata &&
+      (keyMetadata.createdAt === 0 ||
+        metadata.createdAt < keyMetadata.createdAt)
+    ) {
       // Use oldest key's metadata
-      if (
-        keyMetadata.createdAt === 0 ||
-        metadata.createdAt < keyMetadata.createdAt
-      ) {
-        keyMetadata = metadata;
-      }
+      keyMetadata = metadata;
     }
   }
 

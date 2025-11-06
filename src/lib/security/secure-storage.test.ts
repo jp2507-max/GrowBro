@@ -3,7 +3,7 @@
  * Covers MMKV initialization, encryption, and recrypt operations
  */
 
-import { MMKV } from 'react-native-mmkv';
+import { type MMKV } from 'react-native-mmkv';
 
 import {
   ENCRYPTION_SENTINEL_KEY,
@@ -24,7 +24,25 @@ import {
 } from './secure-storage';
 
 // Mock dependencies
-jest.mock('react-native-mmkv');
+jest.mock('react-native-mmkv', () => {
+  const fn: any = jest.fn((config = {} as { id?: string }) => {
+    const inst = {
+      set: jest.fn(),
+      getString: jest.fn(),
+      getNumber: jest.fn(),
+      getBoolean: jest.fn(),
+      delete: jest.fn(),
+      clearAll: jest.fn(),
+      getAllKeys: jest.fn(() => []),
+      recrypt: jest.fn(),
+      id: config.id ?? 'unknown',
+    };
+    fn._instances = fn._instances || [];
+    fn._instances.push(inst);
+    return inst;
+  });
+  return { MMKV: fn };
+});
 jest.mock('./key-manager');
 
 const mockGetOrCreateKey = getOrCreateKey as jest.MockedFunction<
@@ -32,28 +50,11 @@ const mockGetOrCreateKey = getOrCreateKey as jest.MockedFunction<
 >;
 
 describe('SecureStorage', () => {
-  let mockMMKVInstances: Map<string, jest.Mocked<MMKV>>;
+  // We'll use the module's getAllInstances() to access created MMKV instances
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockMMKVInstances = new Map();
-
-    // Mock MMKV constructor
-    (MMKV as jest.MockedClass<typeof MMKV>).mockImplementation((config) => {
-      const mockInstance = {
-        set: jest.fn(),
-        getString: jest.fn(),
-        getNumber: jest.fn(),
-        getBoolean: jest.fn(),
-        delete: jest.fn(),
-        clearAll: jest.fn(),
-        getAllKeys: jest.fn(() => []),
-        recrypt: jest.fn(),
-      } as unknown as jest.Mocked<MMKV>;
-
-      mockMMKVInstances.set(config.id!, mockInstance);
-      return mockInstance;
-    });
+    // reset mocks
 
     // Mock key generation
     mockGetOrCreateKey.mockImplementation(async (domain) => {
@@ -66,19 +67,20 @@ describe('SecureStorage', () => {
       await initializeSecureStorage();
 
       expect(isSecureStorageInitialized()).toBe(true);
-      expect(mockMMKVInstances.size).toBe(5);
-      expect(mockMMKVInstances.has(STORAGE_DOMAINS.AUTH)).toBe(true);
-      expect(mockMMKVInstances.has(STORAGE_DOMAINS.USER_DATA)).toBe(true);
-      expect(mockMMKVInstances.has(STORAGE_DOMAINS.SYNC_METADATA)).toBe(true);
-      expect(mockMMKVInstances.has(STORAGE_DOMAINS.SECURITY_CACHE)).toBe(true);
-      expect(mockMMKVInstances.has(STORAGE_DOMAINS.FEATURE_FLAGS)).toBe(true);
+      const instances = getAllInstances();
+      expect(instances.size).toBe(5);
+      expect(instances.has(STORAGE_DOMAINS.AUTH)).toBe(true);
+      expect(instances.has(STORAGE_DOMAINS.USER_DATA)).toBe(true);
+      expect(instances.has(STORAGE_DOMAINS.SYNC_METADATA)).toBe(true);
+      expect(instances.has(STORAGE_DOMAINS.SECURITY_CACHE)).toBe(true);
+      expect(instances.has(STORAGE_DOMAINS.FEATURE_FLAGS)).toBe(true);
     });
 
     it('should write sentinel value to each instance', async () => {
       await initializeSecureStorage();
 
-      for (const [_domain, instance] of mockMMKVInstances) {
-        expect(instance.set).toHaveBeenCalledWith(
+      for (const [_domain, instance] of getAllInstances()) {
+        expect((instance as jest.Mocked<MMKV>).set).toHaveBeenCalledWith(
           ENCRYPTION_SENTINEL_KEY,
           ENCRYPTION_SENTINEL_VALUE
         );
@@ -113,7 +115,9 @@ describe('SecureStorage', () => {
       it('should store string values', () => {
         authStorage.set('token', 'test-token-123');
 
-        const authInstance = mockMMKVInstances.get(STORAGE_DOMAINS.AUTH);
+        const authInstance = getAllInstances().get(STORAGE_DOMAINS.AUTH) as
+          | jest.Mocked<MMKV>
+          | undefined;
         expect(authInstance?.set).toHaveBeenCalledWith(
           'token',
           'test-token-123'
@@ -123,16 +127,18 @@ describe('SecureStorage', () => {
       it('should store number values', () => {
         userDataStorage.set('count', 42);
 
-        const userInstance = mockMMKVInstances.get(STORAGE_DOMAINS.USER_DATA);
+        const userInstance = getAllInstances().get(
+          STORAGE_DOMAINS.USER_DATA
+        ) as jest.Mocked<MMKV> | undefined;
         expect(userInstance?.set).toHaveBeenCalledWith('count', 42);
       });
 
       it('should store boolean values', () => {
         featureFlagsStorage.set('enabled', true);
 
-        const flagsInstance = mockMMKVInstances.get(
+        const flagsInstance = getAllInstances().get(
           STORAGE_DOMAINS.FEATURE_FLAGS
-        );
+        ) as jest.Mocked<MMKV> | undefined;
         expect(flagsInstance?.set).toHaveBeenCalledWith('enabled', true);
       });
 
@@ -148,7 +154,9 @@ describe('SecureStorage', () => {
 
     describe('get', () => {
       it('should retrieve string values', () => {
-        const authInstance = mockMMKVInstances.get(STORAGE_DOMAINS.AUTH);
+        const authInstance = getAllInstances().get(STORAGE_DOMAINS.AUTH) as
+          | jest.Mocked<MMKV>
+          | undefined;
         authInstance?.getString.mockReturnValue('test-token');
 
         const value = authStorage.get('token');
@@ -158,7 +166,9 @@ describe('SecureStorage', () => {
       });
 
       it('should retrieve number values', () => {
-        const userInstance = mockMMKVInstances.get(STORAGE_DOMAINS.USER_DATA);
+        const userInstance = getAllInstances().get(
+          STORAGE_DOMAINS.USER_DATA
+        ) as jest.Mocked<MMKV> | undefined;
         userInstance?.getNumber.mockReturnValue(42);
 
         const value = userDataStorage.get('count');
@@ -167,7 +177,9 @@ describe('SecureStorage', () => {
       });
 
       it('should return undefined if key not found', () => {
-        const authInstance = mockMMKVInstances.get(STORAGE_DOMAINS.AUTH);
+        const authInstance = getAllInstances().get(STORAGE_DOMAINS.AUTH) as
+          | jest.Mocked<MMKV>
+          | undefined;
         authInstance?.getString.mockReturnValue(undefined);
         authInstance?.getNumber.mockReturnValue(undefined);
         authInstance?.getBoolean.mockReturnValue(undefined);
@@ -182,7 +194,9 @@ describe('SecureStorage', () => {
       it('should delete key from storage', () => {
         authStorage.delete('token');
 
-        const authInstance = mockMMKVInstances.get(STORAGE_DOMAINS.AUTH);
+        const authInstance = getAllInstances().get(STORAGE_DOMAINS.AUTH) as
+          | jest.Mocked<MMKV>
+          | undefined;
         expect(authInstance?.delete).toHaveBeenCalledWith('token');
       });
     });
@@ -191,7 +205,9 @@ describe('SecureStorage', () => {
       it('should clear all data and restore sentinel', () => {
         authStorage.clearAll();
 
-        const authInstance = mockMMKVInstances.get(STORAGE_DOMAINS.AUTH);
+        const authInstance = getAllInstances().get(STORAGE_DOMAINS.AUTH) as
+          | jest.Mocked<MMKV>
+          | undefined;
         expect(authInstance?.clearAll).toHaveBeenCalled();
         // Sentinel should be restored after clear
         expect(authInstance?.set).toHaveBeenCalledWith(
@@ -203,7 +219,9 @@ describe('SecureStorage', () => {
 
     describe('getAllKeys', () => {
       it('should return all keys from storage', () => {
-        const authInstance = mockMMKVInstances.get(STORAGE_DOMAINS.AUTH);
+        const authInstance = getAllInstances().get(STORAGE_DOMAINS.AUTH) as
+          | jest.Mocked<MMKV>
+          | undefined;
         authInstance?.getAllKeys.mockReturnValue([
           'token',
           'session',
@@ -224,7 +242,9 @@ describe('SecureStorage', () => {
 
     it('should recrypt storage with new key', async () => {
       const newKey = 'new-encryption-key';
-      const authInstance = mockMMKVInstances.get(STORAGE_DOMAINS.AUTH);
+      const authInstance = getAllInstances().get(STORAGE_DOMAINS.AUTH) as
+        | jest.Mocked<MMKV>
+        | undefined;
 
       // Mock sentinel verification
       authInstance?.getString.mockReturnValue(ENCRYPTION_SENTINEL_VALUE);
@@ -239,7 +259,9 @@ describe('SecureStorage', () => {
 
     it('should throw error if sentinel verification fails', async () => {
       const newKey = 'new-encryption-key';
-      const authInstance = mockMMKVInstances.get(STORAGE_DOMAINS.AUTH);
+      const authInstance = getAllInstances().get(STORAGE_DOMAINS.AUTH) as
+        | jest.Mocked<MMKV>
+        | undefined;
 
       // Mock sentinel verification failure
       authInstance?.getString.mockReturnValue('wrong-value');
@@ -251,7 +273,9 @@ describe('SecureStorage', () => {
 
     it('should pause writes during recrypt', async () => {
       const newKey = 'new-encryption-key';
-      const authInstance = mockMMKVInstances.get(STORAGE_DOMAINS.AUTH);
+      const authInstance = getAllInstances().get(STORAGE_DOMAINS.AUTH) as
+        | jest.Mocked<MMKV>
+        | undefined;
 
       authInstance?.getString.mockReturnValue(ENCRYPTION_SENTINEL_VALUE);
 
@@ -274,7 +298,7 @@ describe('SecureStorage', () => {
     });
 
     it('should recrypt all storage domains', async () => {
-      const newKeys = {
+      const newKeys: Record<string, string> = {
         [STORAGE_DOMAINS.AUTH]: 'new-key-auth',
         [STORAGE_DOMAINS.USER_DATA]: 'new-key-user',
         [STORAGE_DOMAINS.SYNC_METADATA]: 'new-key-sync',
@@ -283,15 +307,19 @@ describe('SecureStorage', () => {
       };
 
       // Mock sentinel verification for all instances
-      for (const instance of mockMMKVInstances.values()) {
-        instance.getString.mockReturnValue(ENCRYPTION_SENTINEL_VALUE);
+      for (const instance of getAllInstances().values()) {
+        (instance as jest.Mocked<MMKV>).getString.mockReturnValue(
+          ENCRYPTION_SENTINEL_VALUE
+        );
       }
 
       await recryptAllDomains(newKeys);
 
       // Verify each instance was recrypted
-      for (const [domain, instance] of mockMMKVInstances) {
-        expect(instance.recrypt).toHaveBeenCalledWith(newKeys[domain]);
+      for (const [domain, instance] of getAllInstances()) {
+        expect((instance as jest.Mocked<MMKV>).recrypt).toHaveBeenCalledWith(
+          (newKeys as Record<string, string>)[domain]
+        );
       }
     });
 
@@ -329,15 +357,17 @@ describe('SecureStorage', () => {
       }));
 
       // Mock sentinel verification
-      for (const instance of mockMMKVInstances.values()) {
-        instance.getString.mockReturnValue(ENCRYPTION_SENTINEL_VALUE);
+      for (const instance of getAllInstances().values()) {
+        (instance as jest.Mocked<MMKV>).getString.mockReturnValue(
+          ENCRYPTION_SENTINEL_VALUE
+        );
       }
 
       await rekeyOnCompromise();
 
       // Verify all instances were recrypted
-      for (const instance of mockMMKVInstances.values()) {
-        expect(instance.recrypt).toHaveBeenCalled();
+      for (const instance of getAllInstances().values()) {
+        expect((instance as jest.Mocked<MMKV>).recrypt).toHaveBeenCalled();
       }
     });
   });
