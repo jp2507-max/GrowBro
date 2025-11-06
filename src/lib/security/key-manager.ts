@@ -191,11 +191,12 @@ async function rotateKey(keyId: string): Promise<string> {
     // Store new key
     await storeKey(keyId, newKey);
 
-    // Update metadata with rotation count
+    // Update metadata with rotation count and fresh hardware backing check
+    const hardwareBacking = await checkHardwareBackedStorage();
     const metadata: KeyMetadata = {
       createdAt: existingMetadata?.createdAt ?? Date.now(),
       rotationCount: (existingMetadata?.rotationCount ?? 0) + 1,
-      isHardwareBacked: existingMetadata?.isHardwareBacked ?? false,
+      isHardwareBacked: hardwareBacking === 'hardware',
       lastRotationAt: Date.now(),
     };
 
