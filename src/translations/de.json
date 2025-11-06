@@ -3015,6 +3015,121 @@
     },
     "thc": "THC {{value}}"
   },
+  "support": {
+    "article": {
+      "contactCta": "Brauchst du mehr Hilfe? Support kontaktieren",
+      "lastUpdated": "Zuletzt aktualisiert {{date}}",
+      "rate": {
+        "feedbackPlaceholder": "Optionales Feedback...",
+        "feedbackPrompt": "Was fehlte oder war unklar?",
+        "helpful": "Ja, hilfreich",
+        "notHelpful": "Nicht hilfreich",
+        "thanks": "Danke für dein Feedback!",
+        "title": "War das hilfreich?"
+      }
+    },
+    "contact": {
+      "attachments": {
+        "add": "Screenshot hinzufügen",
+        "exifWarning": "Standortdaten können in Fotos vorhanden sein",
+        "limit": "Maximal {{max}} Anhänge ({{maxSize}}MB gesamt)",
+        "remove": "Entfernen",
+        "stripExif": {
+          "cancel": "Nein, behalten",
+          "confirm": "Ja, entfernen",
+          "message": "Deine Fotos können Standortinformationen enthalten. Vor dem Hochladen entfernen?",
+          "title": "Standortdaten entfernen?"
+        }
+      },
+      "category": {
+        "accountProblem": "Kontoproblem",
+        "aiAssessmentQuestion": "KI-Bewertungsfrage",
+        "featureRequest": "Feature-Anfrage",
+        "label": "Problemkategorie",
+        "other": "Sonstiges",
+        "technicalIssue": "Technisches Problem"
+      },
+      "description": {
+        "label": "Beschreibung",
+        "placeholder": "Bitte gib Details zu deinem Problem an..."
+      },
+      "error": {
+        "dismiss": "Abbrechen",
+        "message": "{{error}}",
+        "retry": "Erneut versuchen",
+        "title": "Senden fehlgeschlagen"
+      },
+      "metadata": {
+        "description": "Dies hilft uns, dein Problem schneller zu debuggen",
+        "optOut": "{{field}} nicht einbeziehen",
+        "title": "Diagnoseinformationen"
+      },
+      "queued": {
+        "dismiss": "OK",
+        "message": "Deine Anfrage wird gesendet, wenn du wieder online bist.",
+        "title": "Anfrage in Warteschlange"
+      },
+      "subject": {
+        "label": "Betreff",
+        "placeholder": "Kurze Beschreibung deines Problems"
+      },
+      "submit": "Anfrage senden",
+      "submitting": "Sende...",
+      "success": {
+        "dismiss": "OK",
+        "message": "Deine Ticket-Referenz ist {{reference}}. Wir antworten innerhalb von {{hours}} Stunden.",
+        "title": "Anfrage gesendet"
+      },
+      "title": "Support kontaktieren"
+    },
+    "help": {
+      "categories": {
+        "accountSettings": "Konto & Einstellungen",
+        "aiAssessment": "KI-Bewertung",
+        "calendarTasks": "Kalender & Aufgaben",
+        "community": "Community",
+        "gettingStarted": "Erste Schritte",
+        "plantsHarvest": "Pflanzen & Ernte",
+        "troubleshooting": "Fehlerbehebung"
+      },
+      "offlineBanner": "Offline-Modus - Zeige zwischengespeicherte Inhalte",
+      "search": {
+        "noResults": "Keine Artikel gefunden",
+        "offlineResults": "Offline-Ergebnisse",
+        "placeholder": "Hilfeartikel durchsuchen..."
+      },
+      "title": "Hilfecenter"
+    },
+    "history": {
+      "empty": "Noch keine Support-Anfragen",
+      "status": {
+        "inProgress": "In Bearbeitung",
+        "open": "Offen",
+        "resolved": "Gelöst"
+      },
+      "title": "Support-Verlauf"
+    },
+    "rating": {
+      "later": "Vielleicht später",
+      "message": "Bewerte uns im {{store}}!",
+      "optOut": {
+        "confirm": "Bist du sicher, dass du keine Bewertungsaufforderungen mehr sehen möchtest?",
+        "label": "Nicht mehr fragen"
+      },
+      "rate": "Jetzt bewerten",
+      "thanks": "Danke für dein Feedback!",
+      "title": "Gefällt dir GrowBro?"
+    },
+    "status": {
+      "banner": {
+        "critical": "Dienstausfall",
+        "degraded": "Dienst beeinträchtigt",
+        "informational": "Hinweis"
+      },
+      "dismissed": "Dienst wiederhergestellt",
+      "viewDetails": "Details anzeigen"
+    }
+  },
   "sync": {
     "conflict": {
       "acceptButton": "Server akzeptieren",
