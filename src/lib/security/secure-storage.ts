@@ -390,7 +390,11 @@ export async function rekeyOnCompromise(): Promise<void> {
     const { rekeyAllDomains: generateNewKeys } = await import('./key-manager');
 
     // Generate new keys for all domains
-    const _newKeys = await generateNewKeys(recryptAllDomains);
+    // The returned keys are not needed directly here because
+    // `generateNewKeys` invokes the provided callback (`recryptAllDomains`)
+    // which performs the re-encryption. Await the call to ensure
+    // the rekey procedure completes before proceeding.
+    await generateNewKeys(recryptAllDomains);
 
     // Note: `generateNewKeys` calls the provided callback (recryptAllDomains)
     // so re-encryption is performed there. Do not call it again here or

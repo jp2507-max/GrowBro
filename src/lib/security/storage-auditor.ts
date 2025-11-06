@@ -132,8 +132,8 @@ async function scanUnencryptedMMKV(): Promise<string[]> {
         leakedKeys.push(...keys.map((k) => `${domain}:${k}`));
       }
 
-      // Clean up the temporary unencrypted instance
-      unencryptedInstance.clearAll();
+      // Note: Do not clear the temporary instance as MMKV instances with the same ID
+      // share the same underlying storage file. Clearing here would wipe encrypted data.
     }
 
     return leakedKeys;
