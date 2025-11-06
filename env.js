@@ -267,6 +267,84 @@ const client = z.object({
   EXPO_PUBLIC_DPO_NAME: z.string().optional(),
 
   EXPO_PUBLIC_EU_REPRESENTATIVE_ADDRESS: z.string().optional(),
+
+  // Security Feature Flags
+
+  FEATURE_SECURITY_ENCRYPTION: z.union([z.string(), z.boolean()]).optional(),
+
+  FEATURE_SECURITY_INTEGRITY_DETECTION: z
+    .union([z.string(), z.boolean()])
+    .optional(),
+
+  FEATURE_SECURITY_ATTESTATION: z.union([z.string(), z.boolean()]).optional(),
+
+  FEATURE_SECURITY_CERTIFICATE_PINNING: z
+    .union([z.string(), z.boolean()])
+    .optional(),
+
+  FEATURE_SECURITY_BLOCK_ON_COMPROMISE: z
+    .union([z.string(), z.boolean()])
+    .optional(),
+
+  FEATURE_SECURITY_THREAT_MONITORING: z
+    .union([z.string(), z.boolean()])
+    .optional(),
+
+  FEATURE_SECURITY_SENTRY_SAMPLING_RATE: z
+    .union([z.string(), z.number()])
+    .optional(),
+
+  FEATURE_SECURITY_VULNERABILITY_SCANNING: z
+    .union([z.string(), z.boolean()])
+    .optional(),
+
+  FEATURE_SECURITY_AUTO_ISSUE_CREATION: z
+    .union([z.string(), z.boolean()])
+    .optional(),
+
+  FEATURE_SECURITY_BYPASS_PINNING: z
+    .union([z.string(), z.boolean()])
+    .optional(),
+
+  EXPO_PUBLIC_FEATURE_SECURITY_ENCRYPTION: z
+    .union([z.string(), z.boolean()])
+    .optional(),
+
+  EXPO_PUBLIC_FEATURE_SECURITY_INTEGRITY_DETECTION: z
+    .union([z.string(), z.boolean()])
+    .optional(),
+
+  EXPO_PUBLIC_FEATURE_SECURITY_ATTESTATION: z
+    .union([z.string(), z.boolean()])
+    .optional(),
+
+  EXPO_PUBLIC_FEATURE_SECURITY_CERTIFICATE_PINNING: z
+    .union([z.string(), z.boolean()])
+    .optional(),
+
+  EXPO_PUBLIC_FEATURE_SECURITY_BLOCK_ON_COMPROMISE: z
+    .union([z.string(), z.boolean()])
+    .optional(),
+
+  EXPO_PUBLIC_FEATURE_SECURITY_THREAT_MONITORING: z
+    .union([z.string(), z.boolean()])
+    .optional(),
+
+  EXPO_PUBLIC_FEATURE_SECURITY_SENTRY_SAMPLING_RATE: z
+    .union([z.string(), z.number()])
+    .optional(),
+
+  EXPO_PUBLIC_FEATURE_SECURITY_VULNERABILITY_SCANNING: z
+    .union([z.string(), z.boolean()])
+    .optional(),
+
+  EXPO_PUBLIC_FEATURE_SECURITY_AUTO_ISSUE_CREATION: z
+    .union([z.string(), z.boolean()])
+    .optional(),
+
+  EXPO_PUBLIC_FEATURE_SECURITY_BYPASS_PINNING: z
+    .union([z.string(), z.boolean()])
+    .optional(),
 });
 
 const buildTime = z.object({
@@ -398,6 +476,46 @@ const piiSaltVersion = readEnv(
 const legalEntityAddress = readEnv(
   'LEGAL_ENTITY_ADDRESS',
   'EXPO_PUBLIC_LEGAL_ENTITY_ADDRESS'
+);
+const featureSecurityEncryptionRaw = readEnv(
+  'FEATURE_SECURITY_ENCRYPTION',
+  'EXPO_PUBLIC_FEATURE_SECURITY_ENCRYPTION'
+);
+const featureSecurityIntegrityDetectionRaw = readEnv(
+  'FEATURE_SECURITY_INTEGRITY_DETECTION',
+  'EXPO_PUBLIC_FEATURE_SECURITY_INTEGRITY_DETECTION'
+);
+const featureSecurityAttestationRaw = readEnv(
+  'FEATURE_SECURITY_ATTESTATION',
+  'EXPO_PUBLIC_FEATURE_SECURITY_ATTESTATION'
+);
+const featureSecurityCertificatePinningRaw = readEnv(
+  'FEATURE_SECURITY_CERTIFICATE_PINNING',
+  'EXPO_PUBLIC_FEATURE_SECURITY_CERTIFICATE_PINNING'
+);
+const featureSecurityBlockOnCompromiseRaw = readEnv(
+  'FEATURE_SECURITY_BLOCK_ON_COMPROMISE',
+  'EXPO_PUBLIC_FEATURE_SECURITY_BLOCK_ON_COMPROMISE'
+);
+const featureSecurityThreatMonitoringRaw = readEnv(
+  'FEATURE_SECURITY_THREAT_MONITORING',
+  'EXPO_PUBLIC_FEATURE_SECURITY_THREAT_MONITORING'
+);
+const featureSecuritySentrySamplingRateRaw = readEnv(
+  'FEATURE_SECURITY_SENTRY_SAMPLING_RATE',
+  'EXPO_PUBLIC_FEATURE_SECURITY_SENTRY_SAMPLING_RATE'
+);
+const featureSecurityVulnerabilityScanningRaw = readEnv(
+  'FEATURE_SECURITY_VULNERABILITY_SCANNING',
+  'EXPO_PUBLIC_FEATURE_SECURITY_VULNERABILITY_SCANNING'
+);
+const featureSecurityAutoIssueCreationRaw = readEnv(
+  'FEATURE_SECURITY_AUTO_ISSUE_CREATION',
+  'EXPO_PUBLIC_FEATURE_SECURITY_AUTO_ISSUE_CREATION'
+);
+const featureSecurityBypassPinningRaw = readEnv(
+  'FEATURE_SECURITY_BYPASS_PINNING',
+  'EXPO_PUBLIC_FEATURE_SECURITY_BYPASS_PINNING'
 );
 const dpoEmail = readEnv('DPO_EMAIL', 'EXPO_PUBLIC_DPO_EMAIL');
 const dpoName = readEnv('DPO_NAME', 'EXPO_PUBLIC_DPO_NAME');
@@ -541,6 +659,58 @@ const _clientEnv = {
   DPO_NAME: dpoName || 'Jan-Peter Blohm',
 
   EU_REPRESENTATIVE_ADDRESS: euRepresentativeAddress,
+
+  // Security Feature Flags
+
+  FEATURE_SECURITY_ENCRYPTION:
+    featureSecurityEncryptionRaw !== undefined
+      ? featureSecurityEncryptionRaw === 'true'
+      : undefined,
+
+  FEATURE_SECURITY_INTEGRITY_DETECTION:
+    featureSecurityIntegrityDetectionRaw !== undefined
+      ? featureSecurityIntegrityDetectionRaw === 'true'
+      : undefined,
+
+  FEATURE_SECURITY_ATTESTATION:
+    featureSecurityAttestationRaw !== undefined
+      ? featureSecurityAttestationRaw === 'true'
+      : undefined,
+
+  FEATURE_SECURITY_CERTIFICATE_PINNING:
+    featureSecurityCertificatePinningRaw !== undefined
+      ? featureSecurityCertificatePinningRaw === 'true'
+      : undefined,
+
+  FEATURE_SECURITY_BLOCK_ON_COMPROMISE:
+    featureSecurityBlockOnCompromiseRaw !== undefined
+      ? featureSecurityBlockOnCompromiseRaw === 'true'
+      : undefined,
+
+  FEATURE_SECURITY_THREAT_MONITORING:
+    featureSecurityThreatMonitoringRaw !== undefined
+      ? featureSecurityThreatMonitoringRaw === 'true'
+      : undefined,
+
+  FEATURE_SECURITY_SENTRY_SAMPLING_RATE:
+    featureSecuritySentrySamplingRateRaw !== undefined
+      ? Number(featureSecuritySentrySamplingRateRaw)
+      : undefined,
+
+  FEATURE_SECURITY_VULNERABILITY_SCANNING:
+    featureSecurityVulnerabilityScanningRaw !== undefined
+      ? featureSecurityVulnerabilityScanningRaw === 'true'
+      : undefined,
+
+  FEATURE_SECURITY_AUTO_ISSUE_CREATION:
+    featureSecurityAutoIssueCreationRaw !== undefined
+      ? featureSecurityAutoIssueCreationRaw === 'true'
+      : undefined,
+
+  FEATURE_SECURITY_BYPASS_PINNING:
+    featureSecurityBypassPinningRaw !== undefined
+      ? featureSecurityBypassPinningRaw === 'true'
+      : undefined,
 };
 
 /**

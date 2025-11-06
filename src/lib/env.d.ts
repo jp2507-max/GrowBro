@@ -71,6 +71,18 @@ declare module '@env' {
 
     // Email Hashing
     EMAIL_HASH_SALT?: string;
+
+    // Security Feature Flags
+    FEATURE_SECURITY_ENCRYPTION?: boolean;
+    FEATURE_SECURITY_INTEGRITY_DETECTION?: boolean;
+    FEATURE_SECURITY_ATTESTATION?: boolean;
+    FEATURE_SECURITY_CERTIFICATE_PINNING?: boolean;
+    FEATURE_SECURITY_BLOCK_ON_COMPROMISE?: boolean;
+    FEATURE_SECURITY_THREAT_MONITORING?: boolean;
+    FEATURE_SECURITY_SENTRY_SAMPLING_RATE?: number;
+    FEATURE_SECURITY_VULNERABILITY_SCANNING?: boolean;
+    FEATURE_SECURITY_AUTO_ISSUE_CREATION?: boolean;
+    FEATURE_SECURITY_BYPASS_PINNING?: boolean;
   };
 
   // The module exports a single named object `Env` with the above shape.

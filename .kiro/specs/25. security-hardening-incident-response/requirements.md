@@ -1,4 +1,16 @@
-# Requirements Document
+# Requirements Document — Minimal App Review Baseline
+
+## Scope Update
+
+This feature is scoped to the minimum necessary to pass Apple and Google app review. For clarity, the in-scope tasks for this milestone are Tasks 1, 2, and 6 from the original plan.
+
+In-scope now:
+
+- Task 1 / Requirement 1: Secure Storage baseline — ensure MMKV encrypted instances and runtime checks
+- Task 2: Security infra foundation pieces already present (interfaces, feature-flag wiring as needed)
+- Task 6 / Requirement 5: Sentry PII scrubbing baseline — set sendDefaultPii=false, attachScreenshot=false, implement beforeSend and beforeBreadcrumb scrubbing, and add a CI leak sentinel test
+
+Deferred now: Device Integrity Detection, TLS Certificate Pinning, Threat Monitoring & Anomaly Detection, Vulnerability Management, Security Audit & Reporting, and advanced incident tooling.
 
 ## Introduction
 
@@ -31,7 +43,7 @@ This feature implements comprehensive security hardening measures and incident r
 11. WHEN unit tests run THEN they SHALL verify encryption key generation path, recrypt call, and fallback behavior
 12. WHEN audit evidence is requested THEN a one-click audit script SHALL output JSON proving encrypted instances are used for auth tokens, session, and sync metadata
 
-### Requirement 2: Device Integrity Detection (Jailbreak/Root)
+### Requirement 2: Device Integrity Detection (Deferred)
 
 **User Story:** As a platform operator, I want to detect compromised devices, so that I can warn users about security risks and optionally restrict sensitive features.
 
@@ -48,7 +60,7 @@ This feature implements comprehensive security hardening measures and incident r
 9. WHEN a feature flag determines behavior THEN the system SHALL either hard-block sensitive actions (export, account linking) or warn-only based on configuration
 10. WHEN unit tests run THEN they SHALL mock compromised and clean states, ensure state persistence, and verify re-check scheduling
 
-### Requirement 3: TLS Certificate Pinning
+### Requirement 3: TLS Certificate Pinning (Deferred)
 
 **User Story:** As a security engineer, I want to prevent man-in-the-middle attacks on API communications, so that user data cannot be intercepted during transmission.
 
@@ -67,7 +79,7 @@ This feature implements comprehensive security hardening measures and incident r
 11. WHEN E2E tests run THEN a lab MITM attack SHALL lead to blocked requests and a Sentry event
 12. WHEN pins are updated via remote-config THEN the update SHALL take effect without an app update, and fallback SHALL still allow connections when hashes match bundle pins
 
-### Requirement 4: Threat Monitoring & Anomaly Detection
+### Requirement 4: Threat Monitoring & Anomaly Detection (Deferred)
 
 **User Story:** As a security operations team member, I want to monitor security-related events in real-time, so that I can detect and respond to potential threats quickly.
 
@@ -84,7 +96,7 @@ This feature implements comprehensive security hardening measures and incident r
 9. WHEN critical security events occur THEN Sentry alerting SHALL trigger notifications to Slack or PagerDuty (configured externally)
 10. WHEN unit tests run THEN they SHALL verify backoff logic and event payload redaction
 
-### Requirement 5: Sentry PII Scrubbing Validation
+### Requirement 5: Sentry PII Scrubbing Validation (Baseline only)
 
 **User Story:** As a privacy officer, I want to ensure that no personally identifiable information is sent to error tracking services, so that we remain GDPR compliant.
 
@@ -102,7 +114,7 @@ This feature implements comprehensive security hardening measures and incident r
 10. WHEN the app sends error reports THEN it SHALL include a privacy-safe device fingerprint for debugging without exposing user identity
 11. WHEN audit evidence is requested THEN the system SHALL provide configuration snapshots and passing test results
 
-### Requirement 6: Vulnerability Management Workflow
+### Requirement 6: Vulnerability Management Workflow (Deferred)
 
 **User Story:** As a development team lead, I want a structured process for identifying and remediating security vulnerabilities, so that we can maintain a secure codebase.
 
@@ -119,7 +131,7 @@ This feature implements comprehensive security hardening measures and incident r
 9. WHEN vulnerability scans complete THEN CI SHALL produce an audit report JSON and SBOM stored under build/reports/security with commit hash
 10. WHEN a release is prepared THEN the release checklist SHALL include a "security delta" section documenting vulnerability changes
 
-### Requirement 7: Breach Escalation Playbook
+### Requirement 7: Breach Escalation Playbook (Docs only)
 
 **User Story:** As an incident response coordinator, I want a clear playbook for handling security breaches, so that we can respond quickly and minimize user impact.
 
@@ -140,7 +152,7 @@ This feature implements comprehensive security hardening measures and incident r
 13. WHEN the playbook is maintained THEN the runbook document SHALL be stored in the repository with an executable table-top checklist
 14. WHEN playbook readiness is verified THEN the team SHALL conduct drills at least annually
 
-### Requirement 8: Security Audit & Compliance Reporting
+### Requirement 8: Security Audit & Compliance Reporting (Deferred)
 
 **User Story:** As a compliance auditor, I want to generate security audit reports, so that I can verify adherence to security policies and regulatory requirements.
 

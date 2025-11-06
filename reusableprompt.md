@@ -1,12 +1,12 @@
-TASK_ID: {16} with subtasks (make sure task with sub task is fully implemented)
+TASK_ID: {6} with subtasks (make sure task with sub task is fully implemented)
 AUTO_CONTINUE: auto # set to "auto" to let the agent implement changes after the plan
 
 CONTEXT
 
-- Feature: 24. user-profile-settings-shell
-- Task index: .kiro\specs\24. user-profile-settings-shell\tasks.md
-- Design spec: .kiro\specs\24. user-profile-settings-shell\design.md
-- Requirements spec: .kiro\specs\24. user-profile-settings-shell\requirements.md
+- Feature: 25. security-hardening-incident-response
+- Task index: .kiro\specs\25. security-hardening-incident-response\tasks.md
+- Design spec: .kiro\specs\25. security-hardening-incident-response\design.md
+- Requirements spec: .kiro\specs\25. security-hardening-incident-response\requirements.md
 
 CONTRACT (outputs)
 

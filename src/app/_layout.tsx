@@ -51,7 +51,7 @@ import {
   initializePrivacyConsent,
   setPrivacyConsent,
 } from '@/lib/privacy-consent';
-import { beforeSendHook } from '@/lib/sentry-utils';
+import { beforeBreadcrumbHook, beforeSendHook } from '@/lib/sentry-utils';
 // Install AI consent hooks to handle withdrawal cascades
 import { installAiConsentHooks } from '@/lib/uploads/ai-images';
 import { useThemeConfig } from '@/lib/use-theme-config';
@@ -107,12 +107,15 @@ if (Env.SENTRY_DSN && hasConsent('crashReporting') && !sentryInitialized) {
     dsn: Env.SENTRY_DSN,
     // Privacy-focused: only send PII if explicitly enabled via environment
     sendDefaultPii: Env.SENTRY_SEND_DEFAULT_PII ?? false,
+    // Privacy-focused: prevent PII leakage via screenshots
+    attachScreenshot: false,
     // Privacy-focused: default to 0 for replay sampling, only enable via environment
     replaysSessionSampleRate: Env.SENTRY_REPLAYS_SESSION_SAMPLE_RATE ?? 0,
     replaysOnErrorSampleRate: Env.SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE ?? 0,
     integrations,
     // Scrub sensitive data before sending to Sentry
     beforeSend: beforeSendHook,
+    beforeBreadcrumb: beforeBreadcrumbHook,
     // Explicitly set environment and release so Sentry groups events by deployment and app version.
     // Prefer CI-provided env vars, fall back to the runtime Env values.
     // Use Env.VERSION (set from app.config) as the app version/release.
