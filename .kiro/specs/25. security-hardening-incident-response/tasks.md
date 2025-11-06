@@ -1,28 +1,76 @@
-# Implementation Plan
+# Implementation Plan — Minimal Scope (App Review Only)
 
-This implementation plan breaks down the Security Hardening & Incident Response feature into discrete, actionable coding tasks. Each task builds incrementally on previous work, prioritizes core functionality, and includes references to specific requirements from the requirements document.
+This trims the original plan to the minimum needed to pass Apple App Store and Google Play review, avoiding over‑engineering. Everything not strictly required for review is deferred to a future "Security v2" milestone.
 
-## Global Requirements
+Scope rules applied: "Minimum viable for review", "Defer advanced controls", "Keep what’s already implemented".
 
-- **Internationalization**: All user-visible strings must be internationalized (EN/DE) and accessibility-labeled
-- **Expo/EAS Requirements**: Certificate pinning requires EAS prebuild + custom dev client (not compatible with Expo Go)
-- **Code Style**: Use functional modules over classes to match project conventions
-- **Privacy**: Use privacy-safe device fingerprint (stable random install ID, salted hash, no hardware IDs)
+## Global Requirements (kept, lightweight)
 
-## Task List
+- Internationalization: user‑visible security strings continue to use EN/DE
+- Code style: functional modules, match existing project conventions
+- Privacy: privacy‑safe device fingerprint (already implemented)
 
-- [ ] 1. Set up security infrastructure and core types
-  - [ ] 1.1 Create base directory structure and interfaces
+## Minimal Task List (to ship now)
+
+In-scope for this milestone: Tasks 1, 2, and 6 from the original plan (security infra/foundations, encrypted storage, and Sentry PII scrubbing). All other tasks are explicitly deferred to Security v2.
+
+- [x] A. Storage encryption baseline (already done)
+  - Verified MMKV encrypted stores and key management via Secure Storage
+  - Runtime self‑check before first sensitive write
+  - Non‑PII Sentry event on irrecoverable init failure with user‑facing retry
+  - Acceptance: requirement 1 items 1,2,4,5,9,10,11,12
+
+-- [x] B. Sentry privacy baseline (keep — corresponds to original Task 6: PII scrubbing)
+
+- Sentry initialized with sendDefaultPii=false; attachScreenshot=false
+- Minimal beforeSend/beforeBreadcrumb to redact Authorization and cookies
+- IP collection disabled in Sentry project settings (tracked in ops checklist)
+- Acceptance: requirement 5 items 1,2,4,5,6,7 (core)
+
+- [ ] C. App review compliance checks (add lightweight verification)
+  - Confirm all API endpoints use HTTPS (ATS on iOS; no cleartext traffic on Android)
+  - Verify Privacy Policy and Data Safety/Privacy Manifest entries are current
+  - Verify in‑app account deletion flow is present and functional
+  - Add security contact email in store metadata (docs only)
+  - Acceptance: review passes without security/privacy flags
+
+- [ ] D. Minimal incident response readiness (docs only)
+  - Keep a single breach response doc with roles and contact email references
+  - No in‑app tooling; templates live in docs/compliance
+  - Acceptance: linkable documentation exists for reviewer questions
+
+## Deferred to Security v2 (explicitly out of scope for review)
+
+- Device Integrity Detection (root/jailbreak checks, attestation)
+- TLS Certificate Pinning and OTA pin rotation
+- Threat monitoring taxonomy, client backoff UI, anomaly workflows
+- Vulnerability management automation, SBOM, CI gates
+- Security audit/reporting framework and signed reports
+- Security dashboards and in‑app status surfaces
+- Extensive E2E/lab MITM and tabletop exercises
+
+Rationale: Not required by Apple/Google for approval; increases risk, time, and maintenance without impacting initial review outcome. We keep encryption at rest and privacy‑safe telemetry which reviewers commonly scrutinize.
+
+---
+
+## Original Detailed Plan (Deferred)
+
+Note: Sections below are kept for reference. Implementation in this milestone MUST be limited to Tasks 1, 2, and 6 only.
+
+The following sections are preserved for reference but are explicitly deferred. Do not implement as part of the current milestone.
+
+- [x] 1. Set up security infrastructure and core types
+  - [x] 1.1 Create base directory structure and interfaces
     - Create base directory structure under `src/lib/security/`
     - Define TypeScript interfaces for all security components (export narrow interfaces and concrete implementations separately for testing)
     - Create security constants (Sentry category "security", event types, backoff constants)
     - _Requirements: All requirements (foundation)_
-  - [ ] 1.2 Implement feature flags system
+  - [x] 1.2 Implement feature flags system
     - Create `src/lib/security/feature-flags.ts` with typed flags
     - Wire flags to environment configuration (dev/stage/prod)
     - Add flags: ENABLE_ENCRYPTION, ENABLE_INTEGRITY_DETECTION, ENABLE_ATTESTATION, ENABLE_CERTIFICATE_PINNING, BLOCK_ON_COMPROMISE, ENABLE_THREAT_MONITORING, SENTRY_SAMPLING_RATE
     - _Requirements: Cross-cutting concerns_
-  - [ ] 1.3 Implement privacy-safe device fingerprint utility
+  - [x] 1.3 Implement privacy-safe device fingerprint utility
     - Create `src/lib/security/device-fingerprint.ts`
     - Generate stable random install ID on first launch
     - Store in SecureStorage (encrypted)
@@ -30,15 +78,15 @@ This implementation plan breaks down the Security Hardening & Incident Response 
     - Never log salt or expose hardware IDs
     - _Requirements: 4.1, 5.10_
 
-- [ ] 2. Implement encrypted storage layer with MMKV
-  - [ ] 2.1 Install and configure react-native-keychain dependency
-    - Add react-native-keychain to package.json
+- [x] 2. Implement encrypted storage layer with MMKV
+  - [x] 2.1 Install and configure react-native-keychain dependency
+    - ~~Add react-native-keychain to package.json~~ **Used expo-secure-store instead (already installed)**
     - Configure iOS Keychain accessibility settings (AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY)
     - Configure Android Keystore settings with TEE detection
     - Add EAS config/entitlements notes for iOS Keychain access group if needed
     - Record HW-backed mode vs SW fallback for audit
     - _Requirements: 1.2, 1.3, 1.4_
-  - [ ] 2.2 Implement KeyManager for encryption key management
+  - [x] 2.2 Implement KeyManager for encryption key management
     - Implement as functional module (not class) to match repo style
     - Create key generation with 32-byte CSPRNG (algorithm-agnostic)
     - Implement key storage in platform keychain with HW-backed preference
@@ -47,14 +95,14 @@ This implementation plan breaks down the Security Hardening & Incident Response 
     - Add key aging metadata (createdAt) and rotation counter
     - Never log key material
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.7, 1.12_
-  - [ ] 2.3 Create SecureStorage wrapper around MMKV
+  - [x] 2.3 Create SecureStorage wrapper around MMKV
     - Initialize five MMKV instances with separate IDs: auth, user-data, sync-metadata, security-cache, feature-flags
     - Implement get/set/delete operations with encryption
     - Add recrypt sequencing (pause → recrypt → verify sentinel → resume)
     - Implement rekey on suspected compromise
     - Add rekey sequencing test hook
     - _Requirements: 1.1, 1.5, 1.6, 1.7_
-  - [ ] 2.4 Implement StorageAuditor for encryption verification
+  - [x] 2.4 Implement StorageAuditor for encryption verification
     - Create sentinel write tests to assert encryption
     - Implement scan for unencrypted data in AsyncStorage
     - Add static scan for AsyncStorage keys in codebase (grep patterns)
@@ -62,7 +110,7 @@ This implementation plan breaks down the Security Hardening & Incident Response 
     - Generate storage audit report with encryption mode and key age
     - Generate evidence JSON with instance list, encryptionMode (HW/SW), keyAgeDays
     - _Requirements: 1.9, 1.10, 1.12_
-  - [ ]\* 2.5 Write unit tests for encrypted storage
+  - [x] 2.5 Write unit tests for encrypted storage
     - Test key generation produces 32-byte keys
     - Test key storage/retrieval from keychain
     - Test MMKV initialization with encryption
@@ -71,7 +119,7 @@ This implementation plan breaks down the Security Hardening & Incident Response 
     - Test sentinel unencrypted instance does not contain sensitive keys
     - _Requirements: 1.11_
 
-- [ ] 3. Implement device integrity detection
+- [ ] 3. Implement device integrity detection (Deferred)
   - [ ] 3.1 Install and configure react-native-root-detection
     - Add react-native-root-detection dependency
     - Configure detection for iOS and Android
@@ -109,7 +157,7 @@ This implementation plan breaks down the Security Hardening & Incident Response 
     - Test feature-flag behavior (warn-only vs block)
     - _Requirements: 2.10_
 
-- [ ] 4. Implement certificate pinning layer
+- [ ] 4. Implement certificate pinning layer (Deferred)
   - [ ] 4.1 Research and select certificate pinning library
     - Evaluate libraries compatible with Expo SDK 54, RN 0.81, Hermes
     - Verify Expo config plugin support and RN 0.81/Hermes compatibility
@@ -166,7 +214,7 @@ This implementation plan breaks down the Security Hardening & Incident Response 
     - E2E: MITM test in lab environment (requires custom dev client and MITM infra, mark as "manual/lab")
     - _Requirements: 3.11, 3.12_
 
-- [ ] 5. Implement threat monitoring and event system
+- [ ] 5. Implement threat monitoring and event system (Deferred)
   - [ ] 5.1 Create SecurityEventLogger with standardized taxonomy
     - Define SecurityEventType enum (auth_failed, integrity_compromised, etc.)
     - Implement event logging with severity levels
@@ -200,46 +248,46 @@ This implementation plan breaks down the Security Hardening & Incident Response 
     - Test event sampling behavior
     - _Requirements: 4.10_
 
-- [ ] 6. Implement Sentry PII scrubbing system
-  - [ ] 6.1 Configure Sentry initialization with PII protection
+- [x] 6. Implement Sentry PII scrubbing system (Keep baseline only; advanced testing deferred)
+  - [x] 6.1 Configure Sentry initialization with PII protection
     - Set sendDefaultPii to false
     - Set attachScreenshot to false
     - Disable IP address collection in project settings
     - _Requirements: 5.1, 5.2, 5.6_
-  - [ ] 6.1b Create project-level checklist
+  - [x] 6.1b Create project-level checklist
     - Confirm Sentry IP collection disabled (manual step tracked in audit)
     - Track in audit report
     - _Requirements: 5.1, 5.2, 5.6_
-  - [ ] 6.2 Implement PIIScrubber with beforeSend hook
+  - [x] 6.2 Implement PIIScrubber with beforeSend hook
     - Create scrubbing patterns (email, IP, JWT, UUID, phone)
     - Implement beforeSend hook to scrub events (pure/deterministic and fast)
     - Redact Authorization headers, cookies, and Set-Cookie
     - Drop request bodies for auth/profile endpoints
     - _Requirements: 5.3, 5.4_
-  - [ ] 6.3 Implement beforeBreadcrumb hook
+  - [x] 6.3 Implement beforeBreadcrumb hook
     - Scrub breadcrumbs using same patterns (pure/deterministic and fast)
     - Ensure EXIF data removed from image contexts
     - _Requirements: 5.3_
-  - [ ] 6.4 Configure user context with non-PII only
+  - [x] 6.4 Configure user context with non-PII only
     - Include only hashedId (salted with app-specific salt) and deviceCategory
     - Remove email, name, IP from context
     - Store salt in code, not config
     - Do not log salt
     - _Requirements: 5.5, 5.10_
-  - [ ] 6.5 Create CI leak sentinel test
+  - [x] 6.5 Create CI leak sentinel test
     - Implement PII pattern detection tests
     - Test for emails, IPs, JWTs, UUIDs, phone numbers
     - Fail CI if patterns detected in events
     - Run for all changes touching src/lib/security or src/lib/sentry
     - _Requirements: 5.8_
-  - [ ]\* 6.6 Write unit tests for PII scrubbing
+  - [x] 6.6 Write unit tests for PII scrubbing
     - Test beforeSend scrubs all PII patterns
     - Test beforeBreadcrumb scrubs breadcrumbs
     - Test header and cookie masking
     - Generate synthetic event to assert scrubbing (synthetic event generation)
     - _Requirements: 5.7, 5.9, 5.11_
 
-- [ ] 7. Implement vulnerability management automation
+- [ ] 7. Implement vulnerability management automation (Deferred)
   - [ ] 7.1 Create vulnerability scanner script
     - Implement pnpm audit integration
     - Add optional OSV scanner integration
@@ -279,7 +327,7 @@ This implementation plan breaks down the Security Hardening & Incident Response 
     - Generate "security delta" section from scan results
     - _Requirements: 6.10_
 
-- [ ] 8. Create breach response playbook and tooling
+- [ ] 8. Create breach response playbook and tooling (Docs only; tooling deferred)
   - [ ] 8.1 Document breach response playbook
     - Define roles (Incident Commander, Technical Lead, Communications Lead) with deputies
     - Document Phase 1-5 procedures (Detection, Containment, Investigation, Notification, Remediation)
@@ -322,7 +370,7 @@ This implementation plan breaks down the Security Hardening & Incident Response 
     - Schedule via calendar/integration (out-of-scope to automate here)
     - _Requirements: 7.14_
 
-- [ ] 9. Implement security audit and reporting system
+- [ ] 9. Implement security audit and reporting system (Deferred)
   - [ ] 9.1 Create SecurityAuditor with comprehensive checks
     - Implement encryption status check (MMKV instances)
     - Add certificate pinning configuration check
@@ -366,7 +414,7 @@ This implementation plan breaks down the Security Hardening & Incident Response 
     - Upload audit reports as artifacts
     - _Requirements: 9.6_
 
-- [ ] 10. Integrate security initialization into app startup
+- [ ] 10. Integrate security initialization into app startup (Keep basic init already present; advanced flows deferred)
   - [ ] 10.1 Create SecurityInitializer orchestrator
     - Implement initialization sequence (Storage → Integrity → Network → Sentry)
     - Add error handling for each component
@@ -394,7 +442,7 @@ This implementation plan breaks down the Security Hardening & Incident Response 
     - Show integrity status, pin expiry warnings, last audit summary
     - _Requirements: Cross-cutting concerns_
 
-- [ ] 11. Create documentation and compliance artifacts
+- [ ] 11. Create documentation and compliance artifacts (Keep minimal docs for reviewers)
   - [ ] 11.1 Write developer documentation
     - Document security architecture overview
     - Create component integration guides
@@ -416,7 +464,7 @@ This implementation plan breaks down the Security Hardening & Incident Response 
     - Create GDPR compliance evidence
     - _Requirements: Cross-cutting concerns_
 
-- [ ] 12. Conduct security validation and testing
+- [ ] 12. Conduct security validation and testing (Limit to unit tests already present; lab/E2E deferred)
   - [ ] 12.1 Run comprehensive security audit
     - Execute audit script
     - Review all check results

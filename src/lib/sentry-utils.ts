@@ -16,6 +16,14 @@ const SENSITIVE_PATTERNS = {
   creditCard: /\b(?:\d{4}[-\s]?){3}\d{4}\b/g,
   // Social Security Numbers
   ssn: /\b\d{3}-?\d{2}-?\d{4}\b/g,
+  // IPv4 addresses
+  ipv4: /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g,
+  // IPv6 addresses (simplified pattern)
+  ipv6: /\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b|\b(?:[0-9a-fA-F]{1,4}:){1,7}:\b|\b(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}\b/g,
+  // JWT tokens (three base64 segments separated by dots)
+  jwt: /\beyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g,
+  // UUIDs (various formats)
+  uuid: /\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b/g,
   // API keys and tokens - various common patterns (with optional separators)
   apiKey:
     /\b(?:sk|pk|api_key|x-api-key|x-rapidapi-key|bearer|token)[-_]?\w*(?:[:=]\s*['"]?)?([a-zA-Z0-9_-]{20,})['"]?\b/gi,
@@ -63,6 +71,19 @@ function scrubSensitiveData(text: string): string {
 
   // Replace SSNs
   scrubbedText = scrubbedText.replace(SENSITIVE_PATTERNS.ssn, '[SSN_REDACTED]');
+
+  // Replace IP addresses
+  scrubbedText = scrubbedText.replace(SENSITIVE_PATTERNS.ipv4, '[IP_REDACTED]');
+  scrubbedText = scrubbedText.replace(SENSITIVE_PATTERNS.ipv6, '[IP_REDACTED]');
+
+  // Replace JWT tokens
+  scrubbedText = scrubbedText.replace(SENSITIVE_PATTERNS.jwt, '[JWT_REDACTED]');
+
+  // Replace UUIDs
+  scrubbedText = scrubbedText.replace(
+    SENSITIVE_PATTERNS.uuid,
+    '[UUID_REDACTED]'
+  );
 
   // Replace API keys and tokens
   scrubbedText = scrubbedText.replace(
@@ -237,29 +258,90 @@ function _scrubObjectData(obj: any, ctx: ScrubContext): any {
  * Sentry beforeSend hook to scrub sensitive information and respect user consent
  */
 
-export const beforeSendHook = (event: any, _hint?: any): any | null => {
-  try {
-    // Check user consent using synchronous cache
-    const consent = getPrivacyConsentSync();
+/**
+ * Redacts sensitive HTTP headers
+ */
+function redactSensitiveHeaders(headers: any): void {
+  const sensitiveHeaders = [
+    'authorization',
+    'cookie',
+    'set-cookie',
+    'x-api-key',
+    'api-key',
+  ];
 
-    // If cache is not populated yet, fall back to default consent (crash reporting enabled)
-    const effectiveConsent = consent || {
+  // Get all header keys and check each one
+  const headerKeys = Object.keys(headers);
+
+  for (const headerKey of headerKeys) {
+    const lowerKey = headerKey.toLowerCase();
+    if (sensitiveHeaders.includes(lowerKey)) {
+      headers[headerKey] = '[REDACTED]';
+    }
+  }
+}
+
+/**
+ * Checks if URL is an auth endpoint and redacts body if true
+ */
+function redactAuthEndpointBody(request: any): void {
+  if (!request.url) return;
+
+  const authEndpointPatterns = [
+    '/auth/',
+    '/login',
+    '/signup',
+    '/register',
+    '/profile',
+    '/user',
+    '/password',
+  ];
+
+  const isAuthEndpoint = authEndpointPatterns.some((pattern) =>
+    request.url.includes(pattern)
+  );
+
+  if (isAuthEndpoint && request.data) {
+    request.data = '[REDACTED_AUTH_ENDPOINT]';
+  }
+}
+
+/**
+ * Get effective consent with fallback
+ */
+function getEffectiveConsent() {
+  const consent = getPrivacyConsentSync();
+  return (
+    consent || {
       analytics: false,
-      crashReporting: true, // Default to enabled for crash reporting
+      crashReporting: true,
       personalizedData: false,
       sessionReplay: false,
       lastUpdated: Date.now(),
-    };
+    }
+  );
+}
+
+export const beforeSendHook = (event: any, _hint?: any): any | null => {
+  try {
+    const effectiveConsent = getEffectiveConsent();
 
     // If user hasn't consented to crash reporting, don't send the event
     if (!effectiveConsent.crashReporting) {
       return null;
     }
 
-    // If user hasn't consented to personalized data, remove user info
+    // Always redact email addresses from user data first (before other processing)
+    if (event.user?.email) {
+      event.user.email = '[EMAIL_REDACTED]';
+    }
+
+    // If user hasn't consented to personalized data, remove user info (except redacted email)
     if (!effectiveConsent.personalizedData && event.user) {
+      const redactedEmail = event.user.email;
       event.user = {
         id: event.user.id ? '[USER_ID_REDACTED]' : undefined,
+        ...(redactedEmail ? { email: redactedEmail } : {}),
       };
     }
 
@@ -297,9 +379,20 @@ export const beforeSendHook = (event: any, _hint?: any): any | null => {
       event.contexts = scrubObjectData(event.contexts);
     }
 
-    // Always redact email addresses from user data
-    if (event.user?.email) {
-      event.user.email = '[EMAIL_REDACTED]';
+    // Scrub HTTP request/response headers and bodies
+    if (event.request) {
+      // Redact sensitive headers
+      if (event.request.headers) {
+        redactSensitiveHeaders(event.request.headers);
+      }
+
+      // Drop request bodies for auth/profile endpoints
+      redactAuthEndpointBody(event.request);
+    }
+
+    // Scrub contexts for HTTP data
+    if (event.contexts?.response?.headers) {
+      redactSensitiveHeaders(event.contexts.response.headers);
     }
 
     return event;
@@ -308,6 +401,64 @@ export const beforeSendHook = (event: any, _hint?: any): any | null => {
     // We return null to signal Sentry to discard the event.
     if (process.env.NODE_ENV !== 'production') {
       console.warn('Sentry scrubber failed; dropping event.');
+    }
+    return null;
+  }
+};
+
+/**
+ * Sentry beforeBreadcrumb hook to scrub PII from breadcrumbs
+ * This hook is called for every breadcrumb before it's added to the event
+ */
+export const beforeBreadcrumbHook = (
+  breadcrumb: any,
+  _hint?: any
+): any | null => {
+  try {
+    // Scrub message if present
+    if (breadcrumb.message) {
+      breadcrumb.message = scrubSensitiveData(breadcrumb.message);
+    }
+
+    // Scrub data object if present
+    if (breadcrumb.data) {
+      breadcrumb.data = scrubObjectData(breadcrumb.data);
+    }
+
+    // Scrub HTTP request data in breadcrumbs
+    if (breadcrumb.type === 'http') {
+      // Redact sensitive headers
+      if (breadcrumb.data?.headers) {
+        redactSensitiveHeaders(breadcrumb.data.headers);
+      }
+
+      // Drop request bodies for auth/profile endpoints
+      if (breadcrumb.data?.url) {
+        const authEndpointPatterns = [
+          '/auth/',
+          '/login',
+          '/signup',
+          '/register',
+          '/profile',
+          '/user',
+          '/password',
+        ];
+
+        const isAuthEndpoint = authEndpointPatterns.some((pattern) =>
+          breadcrumb.data.url.includes(pattern)
+        );
+
+        if (isAuthEndpoint && breadcrumb.data.body) {
+          breadcrumb.data.body = '[REDACTED_AUTH_ENDPOINT]';
+        }
+      }
+    }
+
+    return breadcrumb;
+  } catch {
+    // If scrubbing fails, drop the breadcrumb to prevent PII leakage
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Breadcrumb scrubber failed; dropping breadcrumb.');
     }
     return null;
   }
@@ -334,6 +485,65 @@ export function sanitizeObjectPII<T = unknown>(value: T, maxDepth = 6): T {
     return scrubObjectData(value, { maxDepth }) as T;
   } catch {
     return value;
+  }
+}
+
+/**
+ * Set privacy-safe user context for Sentry
+ * Only includes hashedId and deviceCategory (no PII)
+ *
+ * Requirement: 5.5 - Custom user context with non-PII only
+ */
+export async function setPrivacySafeUserContext(
+  userId?: string
+): Promise<void> {
+  try {
+    // Dynamic import to avoid circular dependencies
+    const [sentryMod, fingerprintMod] = await Promise.all([
+      import('@sentry/react-native'),
+      import('@/lib/security/device-fingerprint'),
+    ]);
+
+    const Sentry = sentryMod.default ?? sentryMod;
+    const { getHashedDeviceId, getDeviceCategorySync } = fingerprintMod;
+
+    // Get hashedId for device
+    const hashedId = await getHashedDeviceId();
+    const deviceCategory = getDeviceCategorySync();
+
+    // Set user context with only non-PII fields
+    Sentry.setUser({
+      id: userId ? await hashUserId(userId) : hashedId,
+      // Include device category for debugging without PII
+      deviceCategory,
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Failed to set privacy-safe user context:', error);
+    }
+  }
+}
+
+/**
+ * Hash a user ID using the same salt as device fingerprints
+ * Creates a non-reversible hash for privacy-safe user identification
+ */
+async function hashUserId(userId: string): Promise<string> {
+  try {
+    const cryptoMod = await import('expo-crypto');
+    const { DEVICE_FINGERPRINT_SALT } = await import(
+      '@/lib/security/constants'
+    );
+
+    const saltedValue = `${userId}:${DEVICE_FINGERPRINT_SALT}`;
+    const hash = await cryptoMod.digestStringAsync(
+      cryptoMod.CryptoDigestAlgorithm.SHA256,
+      saltedValue
+    );
+
+    return hash;
+  } catch {
+    return '[HASH_FAILED]';
   }
 }
 

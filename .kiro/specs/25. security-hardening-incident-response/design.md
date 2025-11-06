@@ -1,4 +1,18 @@
-# Design Document
+# Design Document — Minimal Scope (App Review)
+
+## Scope Reduction (App Review Minimum)
+
+This spec is scoped to the minimum needed to satisfy Apple/Google review while avoiding over‑engineering.
+
+In-scope now: Tasks 1, 2 and 6 from the original plan:
+
+- Task 1: Security infrastructure and core types (foundation pieces already implemented)
+- Task 2: Encrypted storage at rest using MMKV (already implemented)
+- Task 6: Sentry PII scrubbing and privacy baseline (implement beforeSend, beforeBreadcrumb, CI leak sentinel)
+
+Deferred to Security v2: device integrity detection and attestation, certificate pinning and OTA rotation, threat monitoring taxonomy and client UI, vulnerability automation and SBOM, comprehensive audit/reporting, security dashboards, E2E MITM/lab exercises.
+
+The detailed architecture below is retained for future work; items marked "Deferred" are not part of the current milestone.
 
 ## Overview
 
@@ -14,7 +28,7 @@ The design prioritizes:
 
 ## Architecture
 
-**Environment Constraints**: TLS certificate pinning requires EAS prebuild or custom dev client; it is not available in Expo Go.
+**Environment Constraints**: TLS certificate pinning requires EAS prebuild or custom dev client; it is not available in Expo Go. Pinning is Deferred in this milestone.
 
 **Internationalization**: All user-visible security messages (warnings, errors, notifications) must originate from the i18n layer with EN/DE translations.
 
@@ -48,7 +62,7 @@ The following decisions require resolution before implementation:
 - Key-to-domain map to detect drift
 - Log encryption mode and key age (never key material)
 
-#### 2. Device Integrity Monitor
+#### 2. Device Integrity Monitor (Deferred)
 
 - Library: react-native-root-detection (note false positives on OEM debug builds)
 - Attestation flow: nonce request → token via Play Integrity/App Attest → backend verification
@@ -59,7 +73,7 @@ The following decisions require resolution before implementation:
 - Sentry event: detectionMethod, indicators count, platform, osVersion (100% sampling for compromised)
 - BLOCK_ON_COMPROMISE feature flag
 
-#### 3. Certificate Pinning Layer
+#### 3. Certificate Pinning Layer (Deferred)
 
 **OPEN DECISION**: Library choice for Expo 54 + RN 0.81 + Hermes compatibility
 
@@ -74,7 +88,7 @@ The following decisions require resolution before implementation:
 
 **OPEN DECISION**: Remote-config signature scheme (ed25519 vs RSA) and key management location
 
-#### 4. Threat Monitoring & Event System
+#### 4. Threat Monitoring & Event System (Deferred)
 
 - Fixed event fields: type, severity, ts, deviceFingerprint, metadata (pre-scrubbed)
 - Persist attempt counters to survive app restart
@@ -95,7 +109,7 @@ The following decisions require resolution before implementation:
 - Run for all changes touching src/lib/security or src/lib/sentry
 - Generate synthetic event in test mode to assert scrubbing
 
-#### 6. Vulnerability Management System
+#### 6. Vulnerability Management System (Deferred)
 
 - pnpm audit + optional OSV scanner
 - CycloneDX SBOM
@@ -104,7 +118,7 @@ The following decisions require resolution before implementation:
 - Auto-create issues for Critical/High with labels: security, CVE, severity
 - Include remediation suggestions and fixedIn versions
 
-#### 7. Breach Response Playbook
+#### 7. Breach Response Playbook (Docs only; tooling Deferred)
 
 - Define deputies for each role
 - Contact escalation matrix in ops doc (not in binary)
@@ -113,7 +127,7 @@ The following decisions require resolution before implementation:
 - DPA submission metadata (jurisdiction, timestamp, reference)
 - Track CWEs, map to control updates, require sign-off
 
-#### 8. Security Audit & Reporting System
+#### 8. Security Audit & Reporting System (Deferred)
 
 - Sign report with SHA-256, embed commit hash
 - Include environment and security lib versions
