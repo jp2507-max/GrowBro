@@ -390,7 +390,7 @@ export async function rekeyOnCompromise(): Promise<void> {
     const { rekeyAllDomains: generateNewKeys } = await import('./key-manager');
 
     // Generate new keys for all domains
-    const newKeys = await generateNewKeys();
+    const newKeys = await generateNewKeys(recryptAllDomains);
 
     // Recrypt all domains with new keys
     await recryptAllDomains(newKeys);

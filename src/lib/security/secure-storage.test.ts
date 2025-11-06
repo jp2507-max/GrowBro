@@ -79,7 +79,7 @@ describe('SecureStorage', () => {
     it('should write sentinel value to each instance', async () => {
       await initializeSecureStorage();
 
-      for (const [_domain, instance] of getAllInstances()) {
+      for (const [, instance] of getAllInstances()) {
         expect((instance as jest.Mocked<MMKV>).set).toHaveBeenCalledWith(
           ENCRYPTION_SENTINEL_KEY,
           ENCRYPTION_SENTINEL_VALUE

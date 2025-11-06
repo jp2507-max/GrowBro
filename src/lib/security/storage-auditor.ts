@@ -110,9 +110,15 @@ async function scanAsyncStorage(): Promise<string[]> {
 async function scanUnencryptedMMKV(): Promise<string[]> {
   try {
     const domains = Object.values(STORAGE_DOMAINS);
+    const initializedDomains = getInitializedDomains();
     const leakedKeys: string[] = [];
 
     for (const domain of domains) {
+      // Skip domains that are already initialized (encrypted)
+      if (initializedDomains.includes(domain)) {
+        continue;
+      }
+
       // Create unencrypted instance with same ID to check if data is accessible without encryption
       const unencryptedInstance = new MMKV({
         id: domain,

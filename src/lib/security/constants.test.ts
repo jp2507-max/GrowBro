@@ -105,7 +105,7 @@ describe('PII_PATTERNS', () => {
       const jwtPattern = PII_PATTERNS.find((p) => p.name === 'jwt')!.pattern;
 
       const sampleJwt =
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZXN0Ijoic2FtcGxlLWp3dCIsInB1cnBvc2UiOiJzZWN1cml0eS10ZXN0aW5nIn0.dGVzdC1zaWduYXR1cmU';
       expect(sampleJwt.replace(jwtPattern, '[JWT_REDACTED]')).toBe(
         '[JWT_REDACTED]'
       );

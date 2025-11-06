@@ -18,9 +18,17 @@ import {
 // Mock dependencies
 jest.mock('expo-secure-store');
 jest.mock('expo-crypto');
+jest.mock('./secure-storage', () => ({
+  recryptAllDomains: jest.fn(),
+}));
 
 const mockSecureStore = SecureStore as jest.Mocked<typeof SecureStore>;
 const mockCrypto = Crypto as jest.Mocked<typeof Crypto>;
+
+// Import the mocked recryptAllDomains
+const {
+  recryptAllDomains: mockRecryptAllDomains,
+} = require('./secure-storage');
 
 describe('KeyManager', () => {
   beforeEach(() => {
@@ -251,7 +259,11 @@ describe('KeyManager', () => {
   });
 
   describe('rekeyAllDomains', () => {
-    it('should rotate keys for all domains', async () => {
+    beforeEach(() => {
+      mockRecryptAllDomains.mockClear();
+    });
+
+    it('should perform safe rekey with backup and re-encryption', async () => {
       // Mock existing metadata for all domains
       mockSecureStore.getItemAsync.mockResolvedValue(
         JSON.stringify({
@@ -263,16 +275,61 @@ describe('KeyManager', () => {
 
       const mockRandomBytes = new Uint8Array(ENCRYPTION_KEY_LENGTH);
       mockCrypto.getRandomBytesAsync.mockResolvedValue(mockRandomBytes);
-
       mockSecureStore.setItemAsync.mockResolvedValue(undefined);
 
-      const newKeys = await rekeyAllDomains();
+      // Mock recryptAllDomains to succeed
+      mockRecryptAllDomains.mockResolvedValue(undefined);
+
+      const newKeys = await rekeyAllDomains(mockRecryptAllDomains);
 
       expect(Object.keys(newKeys)).toHaveLength(
         Object.values(STORAGE_DOMAINS).length
       );
       expect(mockCrypto.getRandomBytesAsync).toHaveBeenCalledTimes(
         Object.values(STORAGE_DOMAINS).length
+      );
+      expect(mockRecryptAllDomains).toHaveBeenCalledWith(newKeys);
+    });
+
+    it('should rollback keys on re-encryption failure', async () => {
+      // Mock existing keys and metadata for all domains
+      const originalKey = 'original-key-data';
+      mockSecureStore.getItemAsync.mockImplementation((key: string) => {
+        if (key.startsWith('mmkv.')) {
+          // Return the actual key for key retrieval
+          return Promise.resolve(originalKey);
+        } else if (key.startsWith('security:encryption:metadata:')) {
+          // Return metadata for metadata retrieval
+          return Promise.resolve(
+            JSON.stringify({
+              createdAt: Date.now() - 1000,
+              rotationCount: 0,
+              isHardwareBacked: true,
+            })
+          );
+        }
+        return Promise.resolve(null);
+      });
+
+      const mockRandomBytes = new Uint8Array(ENCRYPTION_KEY_LENGTH);
+      mockCrypto.getRandomBytesAsync.mockResolvedValue(mockRandomBytes);
+      mockSecureStore.setItemAsync.mockResolvedValue(undefined);
+
+      // Mock recryptAllDomains to fail
+      mockRecryptAllDomains.mockRejectedValue(new Error('Recrypt failed'));
+
+      await expect(rekeyAllDomains(mockRecryptAllDomains)).rejects.toThrow(
+        'fully rolled back'
+      );
+
+      // Verify rollback was attempted - should have called setItemAsync to restore original keys
+      const setItemCalls = mockSecureStore.setItemAsync.mock.calls;
+      const rollbackCalls = setItemCalls.filter(
+        ([key]) => key.startsWith('mmkv.') && key.endsWith('auth')
+      );
+      expect(rollbackCalls.length).toBeGreaterThan(0);
+      expect(rollbackCalls.some(([, value]) => value === originalKey)).toBe(
+        true
       );
     });
   });
