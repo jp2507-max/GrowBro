@@ -1093,7 +1093,7 @@ export const migrations = schemaMigrations({
         }),
       ],
     },
-    // Migration from version 30 to 31: Add help_articles_cache and support_tickets_queue tables for customer support
+    // Migration from version 30 to 31: Add help_articles_cache, support_tickets_queue, and ai_second_opinions_queue tables for customer support
     {
       toVersion: 31,
       steps: [
@@ -1129,6 +1129,25 @@ export const migrations = schemaMigrations({
             { name: 'retry_count', type: 'number' },
             { name: 'last_retry_at', type: 'number', isOptional: true },
             { name: 'resolved_at', type: 'number', isOptional: true },
+            { name: 'client_request_id', type: 'string', isIndexed: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+          ]),
+        },
+        {
+          type: 'create_table',
+          schema: createTableSchema('ai_second_opinions_queue', [
+            { name: 'assessment_id', type: 'string', isIndexed: true },
+            { name: 'photo_uri', type: 'string' },
+            { name: 'ai_assessment', type: 'string' }, // JSON object
+            { name: 'user_notes', type: 'string', isOptional: true },
+            { name: 'consent_human_review', type: 'boolean' },
+            { name: 'consent_training_use', type: 'boolean' },
+            { name: 'status', type: 'string', isIndexed: true },
+            { name: 'expert_review', type: 'string', isOptional: true }, // JSON object
+            { name: 'queue_position', type: 'number', isOptional: true },
+            { name: 'estimated_completion', type: 'number', isOptional: true },
+            { name: 'reviewed_at', type: 'number', isOptional: true },
             { name: 'client_request_id', type: 'string', isIndexed: true },
             { name: 'created_at', type: 'number' },
             { name: 'updated_at', type: 'number' },

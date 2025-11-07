@@ -63,7 +63,9 @@ describe('help-article-cache', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockDatabase.get.mockReturnValue(mockCollection as any);
-    mockDatabase.write.mockImplementation((callback) => callback());
+    mockDatabase.write.mockImplementation(async (callback) => {
+      return callback(undefined);
+    });
   });
 
   describe('getCachedArticles', () => {
@@ -82,7 +84,7 @@ describe('help-article-cache', () => {
           article_id: 'test-id',
           title: 'Test Title',
           body_markdown: 'Test content',
-          category: 'test-category',
+          category: 'getting-started',
           locale: 'en',
           tags: '["tag1", "tag2"]',
           view_count: 10,
@@ -102,7 +104,7 @@ describe('help-article-cache', () => {
           id: 'test-id',
           title: 'Test Title',
           bodyMarkdown: 'Test content',
-          category: 'test-category',
+          category: 'getting-started',
           locale: 'en',
           tags: ['tag1', 'tag2'],
           viewCount: 10,
@@ -120,7 +122,7 @@ describe('help-article-cache', () => {
           article_id: 'test-id',
           title: 'Test Title',
           body_markdown: 'Test content',
-          category: 'test-category',
+          category: 'getting-started',
           locale: 'en',
           tags: 'invalid-json',
           view_count: 10,
@@ -141,11 +143,11 @@ describe('help-article-cache', () => {
     test('filters by category when provided', async () => {
       mockCollection.fetch.mockResolvedValue([]);
 
-      await getCachedArticles('en', 'test-category');
+      await getCachedArticles('en', 'getting-started');
 
       expect(mockCollection.query).toHaveBeenCalledWith(
         Q.where('locale', 'en'),
-        Q.where('category', 'test-category')
+        Q.where('category', 'getting-started')
       );
     });
   });
@@ -165,7 +167,7 @@ describe('help-article-cache', () => {
           article_id: 'test-id',
           title: 'Test Title',
           body_markdown: 'Test content',
-          category: 'test-category',
+          category: 'getting-started',
           locale: 'en',
           tags: '["tag1"]',
           view_count: 10,
@@ -184,7 +186,7 @@ describe('help-article-cache', () => {
         id: 'test-id',
         title: 'Test Title',
         bodyMarkdown: 'Test content',
-        category: 'test-category',
+        category: 'getting-started',
         locale: 'en',
         tags: ['tag1'],
         viewCount: 10,
@@ -201,7 +203,7 @@ describe('help-article-cache', () => {
       id: 'test-id',
       title: 'Test Title',
       bodyMarkdown: 'Test content',
-      category: 'test-category',
+      category: 'getting-started',
       locale: 'en',
       tags: ['tag1', 'tag2'],
       viewCount: 10,
@@ -266,7 +268,7 @@ describe('help-article-cache', () => {
 
   describe('getCacheMetadata', () => {
     test('returns null when no metadata stored', () => {
-      mockStorage.getString.mockReturnValue(null);
+      mockStorage.getString.mockReturnValue(undefined);
 
       const result = getCacheMetadata();
 
@@ -297,7 +299,7 @@ describe('help-article-cache', () => {
 
   describe('recordArticleView', () => {
     test('increments view count for new article', () => {
-      mockStorage.getString.mockReturnValue(null);
+      mockStorage.getString.mockReturnValue(undefined);
 
       recordArticleView('test-id');
 

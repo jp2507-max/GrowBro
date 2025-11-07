@@ -2,10 +2,37 @@ import { Q } from '@nozbe/watermelondb';
 
 import { storage, SUPPORT_STORAGE_KEYS } from '@/lib/storage';
 import { database } from '@/lib/watermelon';
-import type { HelpArticle } from '@/types/support';
+import type { HelpArticle, HelpCategory } from '@/types/support';
 
 const CACHE_SIZE_LIMIT = 100; // Maximum number of articles to cache
 const CACHE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+/**
+ * Validate and cast category to HelpCategory with fallback
+ */
+function validateHelpCategory(category: unknown): HelpCategory {
+  const validCategories: HelpCategory[] = [
+    'getting-started',
+    'calendar-tasks',
+    'plants-harvest',
+    'community',
+    'ai-assessment',
+    'account-settings',
+    'troubleshooting',
+  ];
+
+  if (
+    typeof category === 'string' &&
+    validCategories.includes(category as HelpCategory)
+  ) {
+    return category as HelpCategory;
+  }
+
+  console.warn(
+    `Invalid help category: ${category}, defaulting to 'getting-started'`
+  );
+  return 'getting-started';
+}
 
 interface CacheMetadata {
   totalArticles: number;
@@ -37,7 +64,7 @@ export async function getCachedArticles(
       id: record._raw.article_id as string,
       title: record._raw.title as string,
       bodyMarkdown: record._raw.body_markdown as string,
-      category: record._raw.category as string,
+      category: validateHelpCategory(record._raw.category),
       locale: record._raw.locale as string,
       tags: (() => {
         try {
@@ -81,7 +108,7 @@ export async function getCachedArticle(
       id: record._raw.article_id as string,
       title: record._raw.title as string,
       bodyMarkdown: record._raw.body_markdown as string,
-      category: record._raw.category as string,
+      category: validateHelpCategory(record._raw.category),
       locale: record._raw.locale as string,
       tags: JSON.parse(record._raw.tags as string) as string[],
       viewCount: record._raw.view_count as number,

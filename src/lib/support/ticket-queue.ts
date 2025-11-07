@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid/non-secure';
 
 import { storage, SUPPORT_STORAGE_KEYS } from '@/lib/storage';
 import { database } from '@/lib/watermelon';
+import { SupportTicketQueueModel } from '@/lib/watermelon-models/support-ticket-queue';
 import type { Attachment, DeviceContext, SupportTicket } from '@/types/support';
 
 const MAX_QUEUE_SIZE = 50;
@@ -306,14 +307,49 @@ export async function cleanupOldTickets(retentionDays = 90): Promise<void> {
 /**
  * Convert WatermelonDB record to SupportTicket
  */
-function recordToTicket(record: any): SupportTicket {
+function recordToTicket(record: SupportTicketQueueModel | any): SupportTicket {
+  // Check if record is a SupportTicketQueueModel instance
+  if (record instanceof SupportTicketQueueModel) {
+    return {
+      id: record.id,
+      category: record.category,
+      subject: record.subject,
+      description: record.description,
+      deviceContext: record.deviceContext,
+      attachments: record.attachments,
+      status: record.status,
+      priority: record.priority,
+      ticketReference: record.ticketReference || undefined,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+      resolvedAt: record.resolvedAt || undefined,
+      retryCount: record.retryCount,
+      lastRetryAt: record.lastRetryAt || undefined,
+    };
+  }
+
+  // Fallback for raw records (with safe JSON parsing)
+  const parseJson = <T>(jsonString: string, defaultValue: T): T => {
+    try {
+      return JSON.parse(jsonString) as T;
+    } catch (error) {
+      console.warn('Failed to parse JSON in recordToTicket:', error);
+      return defaultValue;
+    }
+  };
+
   return {
     id: record.id,
     category: record._raw.category,
     subject: record._raw.subject,
     description: record._raw.description,
-    deviceContext: JSON.parse(record._raw.device_context),
-    attachments: JSON.parse(record._raw.attachments),
+    deviceContext: parseJson(record._raw.device_context, {
+      appVersion: 'unknown',
+      osVersion: 'unknown',
+      deviceModel: 'unknown',
+      locale: 'en',
+    }),
+    attachments: parseJson(record._raw.attachments, []),
     status: record._raw.status,
     priority: record._raw.priority,
     ticketReference: record._raw.ticket_reference,
