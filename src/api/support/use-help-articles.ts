@@ -13,6 +13,7 @@ import {
   loadSearchIndex,
   recordSearch,
   searchHelpArticles,
+  updateSearchIndex,
 } from '@/lib/support/help-search-index';
 import type {
   HelpArticle,
@@ -93,6 +94,20 @@ export function useHelpSearch() {
     // Try to load cached index
     const cached = loadSearchIndex(locale);
     if (cached) {
+      // Ensure cached index is kept in sync with the freshest cached articles.
+      // If articles have changed since the serialized index was written, update
+      // the in-memory index and persist the updated index back to storage.
+      try {
+        updateSearchIndex(cached, articles, locale);
+      } catch (error) {
+        // If updating fails for any reason, fall back to the cached index
+        // (we still prefer returning an index over none).
+        console.error(
+          'Failed to update cached search index with new articles:',
+          error
+        );
+      }
+
       return cached;
     }
 
