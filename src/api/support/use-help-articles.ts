@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { getItem, setItem, SUPPORT_STORAGE_KEYS } from '@/lib/storage';
 import {
   cacheArticles,
   getCachedArticle,
@@ -151,20 +152,95 @@ export function useHelpSearch() {
  */
 export function useSubmitArticleRating() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (rating: HelpArticleRating) => {
       // TODO: Submit to backend when online
-      // For now, just store locally
-      return rating;
+      // For now, persist rating locally (MMKV) keyed by articleId. Replace
+      // with backend sync later.
+      try {
+        const key = SUPPORT_STORAGE_KEYS.HELP_ARTICLE_RATINGS;
+
+        // Read existing ratings map from storage
+        const existing =
+          getItem<Record<string, HelpArticleRating[]>>(key) || {};
+
+        const list = existing[rating.articleId] || [];
+        list.push(rating);
+        existing[rating.articleId] = list;
+
+        // Persist to MMKV (synchronous under the hood). We `await` a resolved
+        // promise so callers treating this as async will receive a settled
+        // promise and we can catch/throw consistently.
+        setItem(key, existing);
+        await Promise.resolve();
+
+        return rating;
+      } catch (err: any) {
+        // Bubble up storage errors so the mutation reports failure
+        throw new Error(
+          `Failed to save article rating locally: ${err?.message ?? String(err)}`
+        );
+      }
     },
     onSuccess: (rating) => {
-      // Invalidate article query to refresh counts
+      // Patch the in-memory react-query cache for immediate UI update.
+      try {
+        patchHelpArticleCache(queryClient, rating);
+      } catch (e) {
+        console.warn('Failed to patch help article cache:', e);
+      }
+
+      // Ensure server/list/detail queries are re-fetched when online
       queryClient.invalidateQueries({
         queryKey: [HELP_ARTICLE_QUERY_KEY, rating.articleId],
       });
+      queryClient.invalidateQueries({ queryKey: [HELP_ARTICLES_QUERY_KEY] });
     },
   });
+}
+
+// Extracted helper to keep the mutation hook small and satisfy lint rules.
+function patchHelpArticleCache(queryClient: any, rating: HelpArticleRating) {
+  // Update detail queries (may include locale in key)
+  const qc: any = queryClient.getQueryCache?.()
+    ? queryClient.getQueryCache().getAll()
+    : [];
+
+  // Iterate through queries and patch matching help article/list cache
+  for (const q of qc) {
+    const qKey = q.queryKey as unknown as unknown[];
+    if (!Array.isArray(qKey) || qKey.length === 0) continue;
+
+    // Help article detail queries: ['helpArticle', articleId, locale]
+    if (qKey[0] === HELP_ARTICLE_QUERY_KEY && qKey[1] === rating.articleId) {
+      const current = queryClient.getQueryData<HelpArticle>(qKey);
+      if (current) {
+        queryClient.setQueryData<HelpArticle>(qKey, {
+          ...current,
+          helpfulCount: current.helpfulCount + (rating.helpful ? 1 : 0),
+          notHelpfulCount: current.notHelpfulCount + (rating.helpful ? 0 : 1),
+        });
+      }
+    }
+
+    // Help articles list queries: ['helpArticles', locale?, category?]
+    if (qKey[0] === HELP_ARTICLES_QUERY_KEY) {
+      const list = queryClient.getQueryData<HelpArticle[]>(qKey);
+      if (list) {
+        queryClient.setQueryData<HelpArticle[]>(qKey, (list) =>
+          list.map((a) =>
+            a.id === rating.articleId
+              ? {
+                  ...a,
+                  helpfulCount: a.helpfulCount + (rating.helpful ? 1 : 0),
+                  notHelpfulCount: a.notHelpfulCount + (rating.helpful ? 0 : 1),
+                }
+              : a
+          )
+        );
+      }
+    }
+  }
 }
 
 /**

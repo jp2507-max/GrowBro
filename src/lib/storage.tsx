@@ -38,6 +38,8 @@ export const SUPPORT_STORAGE_KEYS = {
   RATING_LAST_PROMPT: 'rating.lastPrompt',
   RATING_OPT_OUT: 'rating.optOut',
   RATING_HISTORY: 'rating.history',
+  // Help article ratings (local cache before backend sync)
+  HELP_ARTICLE_RATINGS: 'help.articleRatings',
 
   // Status
   SYSTEM_STATUS_CACHE: 'status.cache',
