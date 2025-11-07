@@ -1,7 +1,7 @@
 import { appSchema as createSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const appSchema = createSchema({
-  version: 30,
+  version: 31,
   tables: [
     tableSchema({
       name: 'series',
@@ -808,6 +808,62 @@ export const appSchema = createSchema({
         { name: 'location', type: 'string', isOptional: true },
         { name: 'show_profile_to_community', type: 'boolean' },
         { name: 'allow_direct_messages', type: 'boolean' },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'help_articles_cache',
+      columns: [
+        { name: 'article_id', type: 'string', isIndexed: true },
+        { name: 'title', type: 'string' },
+        { name: 'body_markdown', type: 'string' },
+        { name: 'category', type: 'string', isIndexed: true },
+        { name: 'locale', type: 'string', isIndexed: true },
+        { name: 'tags', type: 'string' }, // JSON array
+        { name: 'view_count', type: 'number' },
+        { name: 'helpful_count', type: 'number' },
+        { name: 'not_helpful_count', type: 'number' },
+        { name: 'last_updated', type: 'number' },
+        { name: 'expires_at', type: 'number', isOptional: true },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'support_tickets_queue',
+      columns: [
+        { name: 'category', type: 'string' },
+        { name: 'subject', type: 'string' },
+        { name: 'description', type: 'string' },
+        { name: 'device_context', type: 'string' }, // JSON object
+        { name: 'attachments', type: 'string' }, // JSON array
+        { name: 'status', type: 'string', isIndexed: true },
+        { name: 'priority', type: 'string' },
+        { name: 'ticket_reference', type: 'string', isOptional: true },
+        { name: 'retry_count', type: 'number' },
+        { name: 'last_retry_at', type: 'number', isOptional: true },
+        { name: 'resolved_at', type: 'number', isOptional: true },
+        { name: 'client_request_id', type: 'string', isIndexed: true },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'ai_second_opinions_queue',
+      columns: [
+        { name: 'assessment_id', type: 'string', isIndexed: true },
+        { name: 'photo_uri', type: 'string' },
+        { name: 'ai_assessment', type: 'string' }, // JSON object
+        { name: 'user_notes', type: 'string', isOptional: true },
+        { name: 'consent_human_review', type: 'boolean' },
+        { name: 'consent_training_use', type: 'boolean' },
+        { name: 'status', type: 'string', isIndexed: true },
+        { name: 'expert_review', type: 'string', isOptional: true }, // JSON object
+        { name: 'queue_position', type: 'number', isOptional: true },
+        { name: 'estimated_completion', type: 'number', isOptional: true },
+        { name: 'reviewed_at', type: 'number', isOptional: true },
+        { name: 'client_request_id', type: 'string', isIndexed: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
       ],

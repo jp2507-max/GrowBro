@@ -2,6 +2,7 @@ import { Database } from '@nozbe/watermelondb';
 import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
 
 import { migrations } from './watermelon-migrations';
+import { AiSecondOpinionsQueueModel } from './watermelon-models/ai-second-opinions-queue';
 import { AISuggestionModel } from './watermelon-models/ai-suggestion';
 import {
   AssessmentClassModel,
@@ -19,6 +20,7 @@ import { FavoriteModel } from './watermelon-models/favorite';
 import { FeedingTemplateModel } from './watermelon-models/feeding-template';
 import { HarvestModel } from './watermelon-models/harvest';
 import { HarvestAuditModel } from './watermelon-models/harvest-audit';
+import { HelpArticleCacheModel } from './watermelon-models/help-article-cache';
 import { ImageUploadQueueModel } from './watermelon-models/image-upload-queue';
 import { InventoryModel } from './watermelon-models/inventory';
 import { InventoryBatchModel } from './watermelon-models/inventory-batch';
@@ -41,6 +43,7 @@ import { ReservoirModel } from './watermelon-models/reservoir';
 import { ReservoirEventModel } from './watermelon-models/reservoir-event';
 import { SeriesModel } from './watermelon-models/series';
 import { SourceWaterProfileModel } from './watermelon-models/source-water-profile';
+import { SupportTicketQueueModel } from './watermelon-models/support-ticket-queue';
 import { TaskModel } from './watermelon-models/task';
 import { TrichomeAssessmentModel } from './watermelon-models/trichome-assessment';
 import { UndoDescriptorModel } from './watermelon-models/undo-descriptor';
@@ -104,6 +107,10 @@ export const database = new Database({
     PostCommentModel,
     PostLikeModel,
     OutboxModel,
+    // Customer support models
+    HelpArticleCacheModel,
+    SupportTicketQueueModel,
+    AiSecondOpinionsQueueModel,
     // User profile model
     ProfileModel,
   ],

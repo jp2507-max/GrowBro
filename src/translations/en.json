@@ -3015,6 +3015,121 @@
     },
     "thc": "THC {{value}}"
   },
+  "support": {
+    "article": {
+      "contactCta": "Need more help? Contact Support",
+      "lastUpdated": "Last updated {{date}}",
+      "rate": {
+        "feedbackPlaceholder": "Optional feedback...",
+        "feedbackPrompt": "What was missing or unclear?",
+        "helpful": "Yes, helpful",
+        "notHelpful": "Not helpful",
+        "thanks": "Thanks for your feedback!",
+        "title": "Was this helpful?"
+      }
+    },
+    "contact": {
+      "attachments": {
+        "add": "Add Screenshot",
+        "exifWarning": "Location data may be present in photos",
+        "limit": "Maximum {{max}} attachments ({{maxSize}}MB total)",
+        "remove": "Remove",
+        "stripExif": {
+          "cancel": "No, keep",
+          "confirm": "Yes, remove",
+          "message": "Your photos may contain location information. Remove it before uploading?",
+          "title": "Strip Location Data?"
+        }
+      },
+      "category": {
+        "account-problem": "Account Problem",
+        "ai-assessment-question": "AI Assessment Question",
+        "feature-request": "Feature Request",
+        "label": "Issue Category",
+        "other": "Other",
+        "technical-issue": "Technical Issue"
+      },
+      "description": {
+        "label": "Description",
+        "placeholder": "Please provide details about your issue..."
+      },
+      "error": {
+        "dismiss": "Cancel",
+        "message": "{{error}}",
+        "retry": "Retry",
+        "title": "Submission Failed"
+      },
+      "metadata": {
+        "description": "This helps us debug your issue faster",
+        "optOut": "Don't include {{field}}",
+        "title": "Diagnostic Information"
+      },
+      "queued": {
+        "dismiss": "OK",
+        "message": "Your request will be sent when you're back online.",
+        "title": "Request Queued"
+      },
+      "subject": {
+        "label": "Subject",
+        "placeholder": "Brief description of your issue"
+      },
+      "submit": "Submit Request",
+      "submitting": "Submitting...",
+      "success": {
+        "dismiss": "OK",
+        "message": "Your ticket reference is {{reference}}. We'll respond within {{hours}} hours.",
+        "title": "Request Submitted"
+      },
+      "title": "Contact Support"
+    },
+    "help": {
+      "categories": {
+        "account-settings": "Account & Settings",
+        "ai-assessment": "AI Assessment",
+        "calendar-tasks": "Calendar & Tasks",
+        "community": "Community",
+        "getting-started": "Getting Started",
+        "plants-harvest": "Plants & Harvest",
+        "troubleshooting": "Troubleshooting"
+      },
+      "offlineBanner": "Offline Mode - Showing cached content",
+      "search": {
+        "noResults": "No articles found",
+        "offlineResults": "Offline results",
+        "placeholder": "Search help articles..."
+      },
+      "title": "Help Center"
+    },
+    "history": {
+      "empty": "No support requests yet",
+      "status": {
+        "in-progress": "In Progress",
+        "open": "Open",
+        "resolved": "Resolved"
+      },
+      "title": "Support History"
+    },
+    "rating": {
+      "later": "Maybe Later",
+      "message": "Rate us on the {{store}}!",
+      "optOut": {
+        "confirm": "Are you sure you don't want to see rating prompts?",
+        "label": "Don't ask again"
+      },
+      "rate": "Rate Now",
+      "thanks": "Thanks for your feedback!",
+      "title": "Enjoying GrowBro?"
+    },
+    "status": {
+      "banner": {
+        "critical": "Service Outage",
+        "degraded": "Service Degraded",
+        "informational": "Notice"
+      },
+      "dismissed": "Service Restored",
+      "viewDetails": "View Details"
+    }
+  },
   "sync": {
     "conflict": {
       "acceptButton": "Accept Server",

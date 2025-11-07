@@ -9,11 +9,7 @@ type Props = {
   testID?: string;
 };
 
-export const ItemsContainer = ({
-  children,
-  title,
-  testID,
-}: Props): JSX.Element => {
+export const ItemsContainer = ({ children, title, testID }: Props) => {
   return (
     <>
       {title && <Text className="pb-2 pt-4 text-lg" tx={title} />}
