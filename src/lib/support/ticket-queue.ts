@@ -42,16 +42,19 @@ export async function queueTicket(params: QueueTicketParams): Promise<string> {
     const clientRequestId = nanoid();
 
     await database.write(async () => {
-      await collection.create((record) => {
-        record._raw.category = category;
-        record._raw.subject = subject;
-        record._raw.description = description;
-        record._raw.device_context = JSON.stringify(deviceContext);
-        record._raw.attachments = JSON.stringify(attachments);
-        record._raw.status = 'open';
-        record._raw.priority = 'medium';
-        record._raw.retry_count = 0;
-        record._raw.client_request_id = clientRequestId;
+      await collection.create((record: any) => {
+        (record as any)._raw.category = category;
+        (record as any)._raw.subject = subject;
+        (record as any)._raw.description = description;
+        (record as any)._raw.device_context = JSON.stringify(deviceContext);
+        (record as any)._raw.attachments = JSON.stringify(attachments);
+        (record as any)._raw.status = 'open';
+        (record as any)._raw.priority = 'medium';
+        (record as any)._raw.retry_count = 0;
+        (record as any)._raw.client_request_id = clientRequestId;
+        // Ensure timestamps are set explicitly to numeric epoch ms so sorting queries work
+        (record as any)._raw.created_at = Date.now();
+        (record as any)._raw.updated_at = Date.now();
       });
     });
 
@@ -119,10 +122,10 @@ export async function markTicketSent(
     }
 
     await database.write(async () => {
-      await records[0].update((record) => {
-        record._raw.status = 'resolved';
-        record._raw.ticket_reference = ticketReference;
-        record._raw.resolved_at = Date.now();
+      await records[0].update((record: any) => {
+        (record as any)._raw.status = 'resolved';
+        (record as any)._raw.ticket_reference = ticketReference;
+        (record as any)._raw.resolved_at = Date.now();
       });
     });
 
@@ -149,23 +152,26 @@ export async function markTicketForRetry(
     }
 
     const record = records[0];
-    const currentRetryCount = (record._raw.retry_count as number) || 0;
+    const currentRetryCount = ((record._raw as any).retry_count as number) || 0;
 
     if (currentRetryCount >= MAX_RETRY_COUNT) {
-      // Max retries exceeded, mark as failed
+      // Max retries exceeded — this is a permanent failure. Mark the ticket
+      // as 'failed' (distinct from 'resolved') so analytics, debug tools,
+      // and any consumers can tell permanent failures apart from successful
+      // resolutions. Do not treat this as a successful resolution.
       await database.write(async () => {
-        await record.update((r) => {
-          r._raw.status = 'resolved'; // Remove from queue
-          r._raw.resolved_at = Date.now();
+        await record.update((r: any) => {
+          (r as any)._raw.status = 'failed'; // Remove from retryable queue
+          (r as any)._raw.resolved_at = Date.now();
         });
       });
       return;
     }
 
     await database.write(async () => {
-      await record.update((r) => {
-        r._raw.retry_count = currentRetryCount + 1;
-        r._raw.last_retry_at = Date.now();
+      await record.update((r: any) => {
+        (r as any)._raw.retry_count = currentRetryCount + 1;
+        (r as any)._raw.last_retry_at = Date.now();
       });
     });
   } catch (error) {
@@ -196,7 +202,27 @@ export function isReadyForRetry(ticket: SupportTicket): boolean {
 }
 
 /**
+ * Safe attachment parser used across the module
+ */
+const safeParseAttachmentsGlobal = (attachments: unknown): Attachment[] => {
+  if (!attachments) return [];
+  if (Array.isArray(attachments)) return attachments as Attachment[];
+  if (typeof attachments === 'string') {
+    try {
+      const parsed = JSON.parse(attachments);
+      return Array.isArray(parsed) ? (parsed as Attachment[]) : [];
+    } catch (error) {
+      console.warn('Failed to parse attachments JSON:', error);
+      return [];
+    }
+  }
+  return [];
+};
+
+/**
  * Check queue size limits
+ * Note: This check is not atomic and concurrent calls may allow slight overage
+ * of queue limits, which is acceptable for an offline queue to avoid complexity.
  */
 async function checkQueueLimits(attachments: Attachment[]): Promise<boolean> {
   try {
@@ -214,10 +240,10 @@ async function checkQueueLimits(attachments: Attachment[]): Promise<boolean> {
       0
     );
     const currentSize = records.reduce((sum, record) => {
-      const atts = JSON.parse(
-        record._raw.attachments as string
-      ) as Attachment[];
-      return sum + atts.reduce((s, a) => s + a.sizeBytes, 0);
+      const atts = safeParseAttachmentsGlobal((record._raw as any).attachments);
+      return (
+        sum + atts.reduce((s: number, a: Attachment) => s + a.sizeBytes, 0)
+      );
     }, 0);
 
     const totalSize = currentSize + attachmentSize;
@@ -239,10 +265,10 @@ async function updateQueueMetadata(): Promise<void> {
     const records = await collection.query().fetch();
 
     const totalSizeBytes = records.reduce((sum, record) => {
-      const atts = JSON.parse(
-        record._raw.attachments as string
-      ) as Attachment[];
-      return sum + atts.reduce((s, a) => s + a.sizeBytes, 0);
+      const atts = safeParseAttachmentsGlobal((record._raw as any).attachments);
+      return (
+        sum + atts.reduce((s: number, a: Attachment) => s + a.sizeBytes, 0)
+      );
     }, 0);
 
     const metadata: QueueMetadata = {
@@ -309,9 +335,16 @@ export async function cleanupOldTickets(retentionDays = 90): Promise<void> {
  */
 function recordToTicket(record: SupportTicketQueueModel | any): SupportTicket {
   // Check if record is a SupportTicketQueueModel instance
+  // NOTE: Queued tickets are stored with a generated client_request_id and all mutation helpers
+  // (markTicketSent, markTicketForRetry) look up records by that value, but recordToTicket
+  // exposes the Watermelon record ID instead (id: record.id). Hooks such as usePendingSupportTickets
+  // then pass ticket.id into markTicketSent, so the query Q.where('client_request_id', clientRequestId)
+  // never finds a match and the ticket remains stuck in the queue even after a successful upload.
+  // Any sync loop will keep retrying indefinitely. The returned ticket identifier should be the
+  // client_request_id, not the internal row ID, in both branches of recordToTicket.
   if (record instanceof SupportTicketQueueModel) {
     return {
-      id: record.id,
+      id: record.clientRequestId,
       category: record.category,
       subject: record.subject,
       description: record.description,
@@ -338,25 +371,27 @@ function recordToTicket(record: SupportTicketQueueModel | any): SupportTicket {
     }
   };
 
+  const raw = record._raw as any;
+
   return {
-    id: record.id,
-    category: record._raw.category,
-    subject: record._raw.subject,
-    description: record._raw.description,
-    deviceContext: parseJson(record._raw.device_context, {
+    id: raw.client_request_id,
+    category: raw.category,
+    subject: raw.subject,
+    description: raw.description,
+    deviceContext: parseJson(raw.device_context, {
       appVersion: 'unknown',
       osVersion: 'unknown',
       deviceModel: 'unknown',
       locale: 'en',
     }),
-    attachments: parseJson(record._raw.attachments, []),
-    status: record._raw.status,
-    priority: record._raw.priority,
-    ticketReference: record._raw.ticket_reference,
-    createdAt: record._raw.created_at,
-    updatedAt: record._raw.updated_at,
-    resolvedAt: record._raw.resolved_at,
-    retryCount: record._raw.retry_count,
-    lastRetryAt: record._raw.last_retry_at,
+    attachments: parseJson(raw.attachments, []),
+    status: raw.status,
+    priority: raw.priority,
+    ticketReference: raw.ticket_reference,
+    createdAt: raw.created_at,
+    updatedAt: raw.updated_at,
+    resolvedAt: raw.resolved_at,
+    retryCount: raw.retry_count,
+    lastRetryAt: raw.last_retry_at,
   };
 }

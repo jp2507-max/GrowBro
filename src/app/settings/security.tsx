@@ -13,7 +13,7 @@ import { FocusAwareStatusBar, ScrollView, Text, View } from '@/components/ui';
 import { Lock, Shield, Trash } from '@/components/ui/icons';
 import { translate } from '@/lib';
 
-export default function SecuritySettingsScreen(): JSX.Element {
+export default function SecuritySettingsScreen() {
   const router = useRouter();
   const { ref: changePasswordModalRef, present: presentChangePasswordModal } =
     useChangePasswordModal();

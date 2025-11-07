@@ -64,7 +64,7 @@ describe('help-article-cache', () => {
     jest.clearAllMocks();
     mockDatabase.get.mockReturnValue(mockCollection as any);
     mockDatabase.write.mockImplementation(async (callback) => {
-      return callback(undefined);
+      return callback(undefined as any);
     });
   });
 

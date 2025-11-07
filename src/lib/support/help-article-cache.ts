@@ -60,25 +60,18 @@ export async function getCachedArticles(
 
     const records = await query.fetch();
 
-    return records.map((record) => ({
-      id: record._raw.article_id as string,
-      title: record._raw.title as string,
-      bodyMarkdown: record._raw.body_markdown as string,
-      category: validateHelpCategory(record._raw.category),
-      locale: record._raw.locale as string,
-      tags: (() => {
-        try {
-          return JSON.parse(record._raw.tags as string) as string[];
-        } catch (e) {
-          console.warn('Failed to parse tags JSON:', record._raw.tags, e);
-          return [];
-        }
-      })(),
-      viewCount: record._raw.view_count as number,
-      helpfulCount: record._raw.helpful_count as number,
-      notHelpfulCount: record._raw.not_helpful_count as number,
-      lastUpdated: record._raw.last_updated as number,
-      expiresAt: record._raw.expires_at as number | undefined,
+    return records.map((record: any) => ({
+      id: record.articleId,
+      title: record.title,
+      bodyMarkdown: record.bodyMarkdown,
+      category: validateHelpCategory(record.category),
+      locale: record.locale,
+      tags: record.tags,
+      viewCount: record.viewCount,
+      helpfulCount: record.helpfulCount,
+      notHelpfulCount: record.notHelpfulCount,
+      lastUpdated: record.lastUpdated,
+      expiresAt: record.expiresAt,
     }));
   } catch (error) {
     console.error('Failed to get cached articles:', error);
@@ -103,19 +96,32 @@ export async function getCachedArticle(
       return null;
     }
 
-    const record = records[0];
+    const record = records[0] as any;
+
+    // Parse tags with error handling
+    let tags: string[];
+    try {
+      tags = JSON.parse(record._raw.tagsJson) as string[];
+      if (!Array.isArray(tags)) {
+        tags = [];
+      }
+    } catch (error) {
+      console.error('Failed to parse tags for cached article:', error);
+      return null;
+    }
+
     return {
-      id: record._raw.article_id as string,
-      title: record._raw.title as string,
-      bodyMarkdown: record._raw.body_markdown as string,
-      category: validateHelpCategory(record._raw.category),
-      locale: record._raw.locale as string,
-      tags: JSON.parse(record._raw.tags as string) as string[],
-      viewCount: record._raw.view_count as number,
-      helpfulCount: record._raw.helpful_count as number,
-      notHelpfulCount: record._raw.not_helpful_count as number,
-      lastUpdated: record._raw.last_updated as number,
-      expiresAt: record._raw.expires_at as number | undefined,
+      id: record.articleId,
+      title: record.title,
+      bodyMarkdown: record.bodyMarkdown,
+      category: validateHelpCategory(record.category),
+      locale: record.locale,
+      tags,
+      viewCount: record.viewCount,
+      helpfulCount: record.helpfulCount,
+      notHelpfulCount: record.notHelpfulCount,
+      lastUpdated: record.lastUpdated,
+      expiresAt: record.expiresAt,
     };
   } catch (error) {
     console.error('Failed to get cached article:', error);
@@ -145,31 +151,31 @@ export async function cacheArticles(
 
         if (existing.length > 0) {
           // Update existing
-          await existing[0].update((record) => {
-            record._raw.title = article.title;
-            record._raw.body_markdown = article.bodyMarkdown;
-            record._raw.category = article.category;
-            record._raw.tags = JSON.stringify(article.tags);
-            record._raw.view_count = article.viewCount;
-            record._raw.helpful_count = article.helpfulCount;
-            record._raw.not_helpful_count = article.notHelpfulCount;
-            record._raw.last_updated = article.lastUpdated;
-            record._raw.expires_at = article.expiresAt;
+          await existing[0].update((record: any) => {
+            record.title = article.title;
+            record.bodyMarkdown = article.bodyMarkdown;
+            record.category = article.category;
+            record.setTags(article.tags);
+            record.viewCount = article.viewCount;
+            record.helpfulCount = article.helpfulCount;
+            record.notHelpfulCount = article.notHelpfulCount;
+            record.lastUpdated = article.lastUpdated;
+            record.expiresAt = article.expiresAt;
           });
         } else {
           // Create new
-          await collection.create((record) => {
-            record._raw.article_id = article.id;
-            record._raw.title = article.title;
-            record._raw.body_markdown = article.bodyMarkdown;
-            record._raw.category = article.category;
-            record._raw.locale = locale;
-            record._raw.tags = JSON.stringify(article.tags);
-            record._raw.view_count = article.viewCount;
-            record._raw.helpful_count = article.helpfulCount;
-            record._raw.not_helpful_count = article.notHelpfulCount;
-            record._raw.last_updated = article.lastUpdated;
-            record._raw.expires_at = article.expiresAt;
+          await collection.create((record: any) => {
+            record.articleId = article.id;
+            record.title = article.title;
+            record.bodyMarkdown = article.bodyMarkdown;
+            record.category = article.category;
+            record.locale = locale;
+            record.setTags(article.tags);
+            record.viewCount = article.viewCount;
+            record.helpfulCount = article.helpfulCount;
+            record.notHelpfulCount = article.notHelpfulCount;
+            record.lastUpdated = article.lastUpdated;
+            record.expiresAt = article.expiresAt;
           });
         }
       }

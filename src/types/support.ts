@@ -14,7 +14,9 @@ export type SupportCategory =
   | 'ai-assessment-question'
   | 'other';
 
-export type SupportStatus = 'open' | 'in-progress' | 'resolved';
+// 'failed' represents permanent failures (e.g. max retry exceeded) and is
+// distinct from 'resolved' which represents successful delivery/handling.
+export type SupportStatus = 'open' | 'in-progress' | 'resolved' | 'failed';
 
 export type SupportPriority = 'low' | 'medium' | 'high' | 'urgent';
 
