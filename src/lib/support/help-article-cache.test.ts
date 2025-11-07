@@ -80,18 +80,24 @@ describe('help-article-cache', () => {
 
     test('returns articles with correct structure', async () => {
       const mockRecord = {
-        _raw: {
-          article_id: 'test-id',
-          title: 'Test Title',
-          body_markdown: 'Test content',
-          category: 'getting-started',
-          locale: 'en',
-          tags: '["tag1", "tag2"]',
-          view_count: 10,
-          helpful_count: 5,
-          not_helpful_count: 1,
-          last_updated: 1234567890,
-          expires_at: 1234567890,
+        articleId: 'test-id',
+        title: 'Test Title',
+        bodyMarkdown: 'Test content',
+        category: 'getting-started',
+        locale: 'en',
+        tagsJson: '["tag1", "tag2"]',
+        viewCount: 10,
+        helpfulCount: 5,
+        notHelpfulCount: 1,
+        lastUpdated: 1234567890,
+        expiresAt: 1234567890,
+        get tags() {
+          try {
+            const parsed = JSON.parse(this.tagsJson) as string[] | undefined;
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
         },
       };
 
@@ -118,18 +124,24 @@ describe('help-article-cache', () => {
 
     test('handles invalid tags JSON gracefully', async () => {
       const mockRecord = {
-        _raw: {
-          article_id: 'test-id',
-          title: 'Test Title',
-          body_markdown: 'Test content',
-          category: 'getting-started',
-          locale: 'en',
-          tags: 'invalid-json',
-          view_count: 10,
-          helpful_count: 5,
-          not_helpful_count: 1,
-          last_updated: 1234567890,
-          expires_at: 1234567890,
+        articleId: 'test-id',
+        title: 'Test Title',
+        bodyMarkdown: 'Test content',
+        category: 'getting-started',
+        locale: 'en',
+        tagsJson: 'invalid-json',
+        viewCount: 10,
+        helpfulCount: 5,
+        notHelpfulCount: 1,
+        lastUpdated: 1234567890,
+        expiresAt: 1234567890,
+        get tags() {
+          try {
+            const parsed = JSON.parse(this.tagsJson) as string[] | undefined;
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
         },
       };
 
@@ -163,18 +175,24 @@ describe('help-article-cache', () => {
 
     test('returns article when found', async () => {
       const mockRecord = {
-        _raw: {
-          article_id: 'test-id',
-          title: 'Test Title',
-          body_markdown: 'Test content',
-          category: 'getting-started',
-          locale: 'en',
-          tags: '["tag1"]',
-          view_count: 10,
-          helpful_count: 5,
-          not_helpful_count: 1,
-          last_updated: 1234567890,
-          expires_at: 1234567890,
+        articleId: 'test-id',
+        title: 'Test Title',
+        bodyMarkdown: 'Test content',
+        category: 'getting-started',
+        locale: 'en',
+        tagsJson: '["tag1"]',
+        viewCount: 10,
+        helpfulCount: 5,
+        notHelpfulCount: 1,
+        lastUpdated: 1234567890,
+        expiresAt: 1234567890,
+        get tags() {
+          try {
+            const parsed = JSON.parse(this.tagsJson) as string[] | undefined;
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
         },
       };
 

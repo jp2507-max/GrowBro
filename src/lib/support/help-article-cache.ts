@@ -2,6 +2,7 @@ import { Q } from '@nozbe/watermelondb';
 
 import { storage, SUPPORT_STORAGE_KEYS } from '@/lib/storage';
 import { database } from '@/lib/watermelon';
+import { type HelpArticleCacheModel } from '@/lib/watermelon-models/help-article-cache';
 import type { HelpArticle, HelpCategory } from '@/types/support';
 
 const CACHE_SIZE_LIMIT = 100; // Maximum number of articles to cache
@@ -86,47 +87,33 @@ export async function getCachedArticle(
   articleId: string,
   locale: string
 ): Promise<HelpArticle | null> {
-  try {
-    const collection = database.get('help_articles_cache');
-    const records = await collection
-      .query(Q.where('article_id', articleId), Q.where('locale', locale))
-      .fetch();
+  const collection = database.get('help_articles_cache');
+  const records = await collection
+    .query(Q.where('article_id', articleId), Q.where('locale', locale))
+    .fetch();
 
-    if (records.length === 0) {
-      return null;
-    }
-
-    const record = records[0] as any;
-
-    // Parse tags with error handling
-    let tags: string[];
-    try {
-      tags = JSON.parse(record._raw.tagsJson) as string[];
-      if (!Array.isArray(tags)) {
-        tags = [];
-      }
-    } catch (error) {
-      console.error('Failed to parse tags for cached article:', error);
-      return null;
-    }
-
-    return {
-      id: record.articleId,
-      title: record.title,
-      bodyMarkdown: record.bodyMarkdown,
-      category: validateHelpCategory(record.category),
-      locale: record.locale,
-      tags,
-      viewCount: record.viewCount,
-      helpfulCount: record.helpfulCount,
-      notHelpfulCount: record.notHelpfulCount,
-      lastUpdated: record.lastUpdated,
-      expiresAt: record.expiresAt,
-    };
-  } catch (error) {
-    console.error('Failed to get cached article:', error);
+  if (records.length === 0) {
     return null;
   }
+
+  const record = records[0] as HelpArticleCacheModel;
+
+  // Get tags using the model's getter (handles JSON parsing with fallback)
+  const tags = record.tags || [];
+
+  return {
+    id: record.articleId,
+    title: record.title,
+    bodyMarkdown: record.bodyMarkdown,
+    category: validateHelpCategory(record.category),
+    locale: record.locale,
+    tags,
+    viewCount: record.viewCount,
+    helpfulCount: record.helpfulCount,
+    notHelpfulCount: record.notHelpfulCount,
+    lastUpdated: record.lastUpdated,
+    expiresAt: record.expiresAt,
+  };
 }
 
 /**
