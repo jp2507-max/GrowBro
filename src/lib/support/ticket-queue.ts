@@ -54,7 +54,7 @@ export async function queueTicket(params: QueueTicketParams): Promise<string> {
       });
     });
 
-    updateQueueMetadata();
+    await updateQueueMetadata();
     return clientRequestId;
   } catch (error) {
     console.error('Failed to queue ticket:', error);
@@ -125,7 +125,7 @@ export async function markTicketSent(
       });
     });
 
-    updateQueueMetadata();
+    await updateQueueMetadata();
   } catch (error) {
     console.error('Failed to mark ticket as sent:', error);
   }
@@ -189,7 +189,7 @@ export function isReadyForRetry(ticket: SupportTicket): boolean {
   }
 
   const delay = calculateBackoffDelay(ticket.retryCount);
-  const timeSinceLastRetry = Date.now() - (ticket.updatedAt || 0);
+  const timeSinceLastRetry = Date.now() - (ticket.lastRetryAt || 0);
 
   return timeSinceLastRetry >= delay;
 }
@@ -297,7 +297,7 @@ export async function cleanupOldTickets(retentionDays = 90): Promise<void> {
       }
     });
 
-    updateQueueMetadata();
+    await updateQueueMetadata();
   } catch (error) {
     console.error('Failed to cleanup old tickets:', error);
   }
@@ -321,5 +321,6 @@ function recordToTicket(record: any): SupportTicket {
     updatedAt: record._raw.updated_at,
     resolvedAt: record._raw.resolved_at,
     retryCount: record._raw.retry_count,
+    lastRetryAt: record._raw.last_retry_at,
   };
 }

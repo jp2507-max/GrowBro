@@ -78,6 +78,7 @@ export interface SupportTicket {
   updatedAt: number;
   resolvedAt?: number;
   retryCount: number;
+  lastRetryAt?: number;
 }
 
 export interface AIAssessmentPayload {

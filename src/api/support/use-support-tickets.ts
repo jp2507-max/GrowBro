@@ -45,13 +45,13 @@ export function useSubmitSupportTicket() {
       }
 
       // Queue ticket
-      const clientRequestId = await queueTicket(
-        data.category,
-        data.subject,
-        data.description,
+      const clientRequestId = await queueTicket({
+        category: data.category,
+        subject: data.subject,
+        description: data.description,
         deviceContext,
-        result.attachments || []
-      );
+        attachments: result.attachments || [],
+      });
 
       return { clientRequestId };
     },

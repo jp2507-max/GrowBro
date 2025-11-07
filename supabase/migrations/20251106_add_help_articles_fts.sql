@@ -1,5 +1,6 @@
 -- Migration: Add locale-aware full-text search for help_articles
 -- This fixes the issue where German content is tokenized with wrong stemming rules
+-- Updated to use plainto_tsquery() for safer user input handling
 
 -- Create help_articles table if not exists
 CREATE TABLE IF NOT EXISTS help_articles (
@@ -86,9 +87,9 @@ DECLARE
 BEGIN
   -- Build the query based on locale
   CASE search_locale
-    WHEN 'de' THEN query := to_tsquery('german', search_query);
-    WHEN 'en' THEN query := to_tsquery('english', search_query);
-    ELSE query := to_tsquery('simple', search_query);
+    WHEN 'de' THEN query := plainto_tsquery('german', search_query);
+    WHEN 'en' THEN query := plainto_tsquery('english', search_query);
+    ELSE query := plainto_tsquery('simple', search_query);
   END CASE;
 
   RETURN QUERY

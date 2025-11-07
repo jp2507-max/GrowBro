@@ -39,7 +39,14 @@ export async function getCachedArticles(
       bodyMarkdown: record._raw.body_markdown as string,
       category: record._raw.category as string,
       locale: record._raw.locale as string,
-      tags: JSON.parse(record._raw.tags as string) as string[],
+      tags: (() => {
+        try {
+          return JSON.parse(record._raw.tags as string) as string[];
+        } catch (e) {
+          console.warn('Failed to parse tags JSON:', record._raw.tags, e);
+          return [];
+        }
+      })(),
       viewCount: record._raw.view_count as number,
       helpfulCount: record._raw.helpful_count as number,
       notHelpfulCount: record._raw.not_helpful_count as number,
@@ -99,13 +106,10 @@ export async function cacheArticles(
   try {
     const collection = database.get('help_articles_cache');
 
+    // Remove expired articles first
+    await evictExpiredArticles();
+
     await database.write(async () => {
-      // Remove expired articles
-      await evictExpiredArticles();
-
-      // Enforce cache size limit
-      await enforceCacheSizeLimit(locale);
-
       // Upsert articles
       for (const article of articles) {
         const existing = await collection
@@ -142,7 +146,16 @@ export async function cacheArticles(
           });
         }
       }
+
+      // NOTE: enforceCacheSizeLimit() was moved outside the write transaction
+      // because it performs its own queries and write operations, which can conflict
+      // with the ongoing write transaction. WatermelonDB doesn't allow nested writes
+      // or queries within writes that might affect the same tables.
+      // await enforceCacheSizeLimit(locale);
     });
+
+    // Enforce cache size limit after the main write transaction completes
+    await enforceCacheSizeLimit(locale);
 
     // Update cache metadata
     updateCacheMetadata(articles.length);
@@ -166,18 +179,20 @@ async function evictExpiredArticles(): Promise<void> {
       )
       .fetch();
 
-    for (const record of expiredRecords) {
-      await record.markAsDeleted();
-    }
-
     // Also remove articles older than CACHE_EXPIRY_MS
     const oldRecords = await collection
       .query(Q.where('last_updated', Q.lt(now - CACHE_EXPIRY_MS)))
       .fetch();
 
-    for (const record of oldRecords) {
-      await record.markAsDeleted();
-    }
+    await database.write(async () => {
+      for (const record of expiredRecords) {
+        await record.markAsDeleted();
+      }
+
+      for (const record of oldRecords) {
+        await record.markAsDeleted();
+      }
+    });
   } catch (error) {
     console.error('Failed to evict expired articles:', error);
   }
@@ -195,6 +210,7 @@ async function enforceCacheSizeLimit(locale: string): Promise<void> {
 
     if (records.length > CACHE_SIZE_LIMIT) {
       const toDelete = records.slice(0, records.length - CACHE_SIZE_LIMIT);
+
       await database.write(async () => {
         for (const record of toDelete) {
           await record.markAsDeleted();

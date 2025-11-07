@@ -29,8 +29,7 @@ export async function captureDeviceContext(
  */
 async function getDeviceModel(): Promise<string> {
   try {
-    const modelName = await Device.modelName;
-    const deviceType = Device.deviceType;
+    const { modelName, deviceType } = Device;
 
     // Return generic device type instead of specific model for privacy
     if (Platform.OS === 'ios') {

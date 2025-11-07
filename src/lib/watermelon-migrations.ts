@@ -1093,5 +1093,48 @@ export const migrations = schemaMigrations({
         }),
       ],
     },
+    // Migration from version 30 to 31: Add help_articles_cache and support_tickets_queue tables for customer support
+    {
+      toVersion: 31,
+      steps: [
+        {
+          type: 'create_table',
+          schema: createTableSchema('help_articles_cache', [
+            { name: 'article_id', type: 'string', isIndexed: true },
+            { name: 'title', type: 'string' },
+            { name: 'body_markdown', type: 'string' },
+            { name: 'category', type: 'string', isIndexed: true },
+            { name: 'locale', type: 'string', isIndexed: true },
+            { name: 'tags', type: 'string' }, // JSON array
+            { name: 'view_count', type: 'number' },
+            { name: 'helpful_count', type: 'number' },
+            { name: 'not_helpful_count', type: 'number' },
+            { name: 'last_updated', type: 'number' },
+            { name: 'expires_at', type: 'number', isOptional: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+          ]),
+        },
+        {
+          type: 'create_table',
+          schema: createTableSchema('support_tickets_queue', [
+            { name: 'category', type: 'string' },
+            { name: 'subject', type: 'string' },
+            { name: 'description', type: 'string' },
+            { name: 'device_context', type: 'string' }, // JSON object
+            { name: 'attachments', type: 'string' }, // JSON array
+            { name: 'status', type: 'string', isIndexed: true },
+            { name: 'priority', type: 'string' },
+            { name: 'ticket_reference', type: 'string', isOptional: true },
+            { name: 'retry_count', type: 'number' },
+            { name: 'last_retry_at', type: 'number', isOptional: true },
+            { name: 'resolved_at', type: 'number', isOptional: true },
+            { name: 'client_request_id', type: 'string', isIndexed: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+          ]),
+        },
+      ],
+    },
   ],
 });

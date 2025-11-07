@@ -28,9 +28,11 @@ interface CachedFlags {
 
 /**
  * Get feature flags from cache or fetch from remote config
+ * NOTE: This function cannot be a worklet because it performs storage I/O operations.
+ * Worklets should avoid side effects and heavy operations like storage access,
+ * which must be performed on the JS thread.
  */
 export function getSupportFeatureFlags(): SupportFeatureFlags {
-  'worklet';
   const cached = storage.getString(FEATURE_FLAG_CACHE_KEY);
 
   if (cached) {
@@ -66,7 +68,9 @@ export function updateSupportFeatureFlags(flags: SupportFeatureFlags): void {
 export function isFeatureEnabled(
   feature: keyof Omit<SupportFeatureFlags, 'killSwitch'>
 ): boolean {
-  'worklet';
+  // NOTE: This function cannot be a worklet because it performs storage I/O operations
+  // via getSupportFeatureFlags(). Worklets should avoid side effects and heavy operations
+  // like storage access, which must be performed on the JS thread.
   const flags = getSupportFeatureFlags();
   return flags[feature];
 }
@@ -75,7 +79,9 @@ export function isFeatureEnabled(
  * Check if uploads are disabled by kill switch
  */
 export function areUploadsDisabled(): boolean {
-  'worklet';
+  // NOTE: This function cannot be a worklet because it performs storage I/O operations
+  // via getSupportFeatureFlags(). Worklets should avoid side effects and heavy operations
+  // like storage access, which must be performed on the JS thread.
   const flags = getSupportFeatureFlags();
   return flags.killSwitch.uploads;
 }

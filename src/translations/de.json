@@ -3042,12 +3042,12 @@
         }
       },
       "category": {
-        "accountProblem": "Kontoproblem",
-        "aiAssessmentQuestion": "KI-Bewertungsfrage",
-        "featureRequest": "Feature-Anfrage",
+        "account-problem": "Kontoproblem",
+        "ai-assessment-question": "KI-Bewertungsfrage",
+        "feature-request": "Feature-Anfrage",
         "label": "Problemkategorie",
         "other": "Sonstiges",
-        "technicalIssue": "Technisches Problem"
+        "technical-issue": "Technisches Problem"
       },
       "description": {
         "label": "Beschreibung",
@@ -3084,12 +3084,12 @@
     },
     "help": {
       "categories": {
-        "accountSettings": "Konto & Einstellungen",
-        "aiAssessment": "KI-Bewertung",
-        "calendarTasks": "Kalender & Aufgaben",
+        "account-settings": "Konto & Einstellungen",
+        "ai-assessment": "KI-Bewertung",
+        "calendar-tasks": "Kalender & Aufgaben",
         "community": "Community",
-        "gettingStarted": "Erste Schritte",
-        "plantsHarvest": "Pflanzen & Ernte",
+        "getting-started": "Erste Schritte",
+        "plants-harvest": "Pflanzen & Ernte",
         "troubleshooting": "Fehlerbehebung"
       },
       "offlineBanner": "Offline-Modus - Zeige zwischengespeicherte Inhalte",
@@ -3103,7 +3103,7 @@
     "history": {
       "empty": "Noch keine Support-Anfragen",
       "status": {
-        "inProgress": "In Bearbeitung",
+        "in-progress": "In Bearbeitung",
         "open": "Offen",
         "resolved": "Gelöst"
       },

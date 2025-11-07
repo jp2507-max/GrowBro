@@ -92,8 +92,19 @@ async function processImage(uri: string): Promise<Attachment | null> {
     const processedInfo = await FileSystem.getInfoAsync(manipulated.uri);
     const sizeBytes = processedInfo.exists ? processedInfo.size || 0 : 0;
 
-    // Extract filename from URI
-    const fileName = uri.split('/').pop() || 'attachment.jpg';
+    // Extract filename from URI robustly
+    let fileName = 'attachment.jpg';
+    try {
+      // Try using the URL API for standard URIs
+      const url = new URL(uri);
+      fileName = url.pathname.split('/').pop() || fileName;
+    } catch {
+      // Fallback for non-standard/file URIs
+      const match = uri.match(/([^\/\\]+)$/);
+      if (match && match[1]) {
+        fileName = match[1];
+      }
+    }
 
     return {
       localUri: manipulated.uri,
@@ -110,6 +121,13 @@ async function processImage(uri: string): Promise<Attachment | null> {
 
 /**
  * Check if image contains EXIF location data
+ *
+ * @param _uri - Image URI (currently unused, reserved for future EXIF reading implementation)
+ * @returns Promise<boolean> - Always returns false as EXIF reading is not implemented
+ *
+ * @todo Implement actual EXIF location data detection when expo-image-manipulator
+ * or alternative libraries provide EXIF access. Currently returns false as a
+ * security precaution to ensure location data is stripped.
  */
 export async function hasLocationData(_uri: string): Promise<boolean> {
   // Note: expo-image-manipulator doesn't expose EXIF reading

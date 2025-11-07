@@ -3042,12 +3042,12 @@
         }
       },
       "category": {
-        "accountProblem": "Account Problem",
-        "aiAssessmentQuestion": "AI Assessment Question",
-        "featureRequest": "Feature Request",
+        "account-problem": "Account Problem",
+        "ai-assessment-question": "AI Assessment Question",
+        "feature-request": "Feature Request",
         "label": "Issue Category",
         "other": "Other",
-        "technicalIssue": "Technical Issue"
+        "technical-issue": "Technical Issue"
       },
       "description": {
         "label": "Description",
@@ -3084,12 +3084,12 @@
     },
     "help": {
       "categories": {
-        "accountSettings": "Account & Settings",
-        "aiAssessment": "AI Assessment",
-        "calendarTasks": "Calendar & Tasks",
+        "account-settings": "Account & Settings",
+        "ai-assessment": "AI Assessment",
+        "calendar-tasks": "Calendar & Tasks",
         "community": "Community",
-        "gettingStarted": "Getting Started",
-        "plantsHarvest": "Plants & Harvest",
+        "getting-started": "Getting Started",
+        "plants-harvest": "Plants & Harvest",
         "troubleshooting": "Troubleshooting"
       },
       "offlineBanner": "Offline Mode - Showing cached content",
@@ -3103,7 +3103,7 @@
     "history": {
       "empty": "No support requests yet",
       "status": {
-        "inProgress": "In Progress",
+        "in-progress": "In Progress",
         "open": "Open",
         "resolved": "Resolved"
       },

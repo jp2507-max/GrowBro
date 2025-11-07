@@ -69,15 +69,10 @@ export function loadSearchIndex(
       return null;
     }
 
-    const index = MiniSearch.loadJS<SearchableArticle>(
-      JSON.parse(serialized.index),
-      {
-        fields: ['title', 'bodyMarkdown', 'category', 'tags'],
-        storeFields: ['title', 'category'],
-      }
-    );
-
-    return index;
+    return MiniSearch.loadJS<SearchableArticle>(JSON.parse(serialized.index), {
+      fields: ['title', 'bodyMarkdown', 'category', 'tags'],
+      storeFields: ['title', 'category'],
+    });
   } catch (error) {
     console.error('Failed to load search index:', error);
     return null;

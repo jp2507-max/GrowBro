@@ -22,7 +22,6 @@ interface RatingHistory {
  * Check if rating prompt should be shown
  */
 export function shouldShowRatingPrompt(_trigger: string): boolean {
-  'worklet';
   // Check opt-out
   if (isOptedOut()) {
     return false;
@@ -45,7 +44,6 @@ export function shouldShowRatingPrompt(_trigger: string): boolean {
  * Check if user opted out of rating prompts
  */
 export function isOptedOut(): boolean {
-  'worklet';
   const optOut = storage.getBoolean(SUPPORT_STORAGE_KEYS.RATING_OPT_OUT);
   return optOut === true;
 }
@@ -61,7 +59,6 @@ export function setOptOut(optOut: boolean): void {
  * Check if throttle period has expired
  */
 function isThrottleExpired(): boolean {
-  'worklet';
   const lastPrompt = storage.getNumber(SUPPORT_STORAGE_KEYS.RATING_LAST_PROMPT);
 
   if (!lastPrompt) {
@@ -76,9 +73,11 @@ function isThrottleExpired(): boolean {
  * Check if Apple quota allows showing prompt
  */
 function hasAppleQuota(): boolean {
-  'worklet';
   const historyJson = storage.getString(SUPPORT_STORAGE_KEYS.RATING_HISTORY);
 
+  // NOTE: This function performs storage I/O operations and cannot be marked as a 'worklet'
+  // according to Reanimated best practices. Worklets should avoid side effects and heavy
+  // operations like storage access, which must be performed on the JS thread.
   if (!historyJson) {
     return true;
   }
