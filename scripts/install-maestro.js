@@ -9,7 +9,6 @@ const MAESTRO_VERSION = process.env.MAESTRO_VERSION || 'latest';
 
 function installMaestro() {
   const platform = os.platform();
-  const _arch = os.arch();
 
   if (platform !== 'linux' && platform !== 'darwin') {
     console.error('Unsupported platform:', platform);
@@ -111,9 +110,11 @@ function installMaestro() {
       }
 
       const maestroPath = findMaestro(binDir);
-      if (maestroPath) {
-        fs.chmodSync(maestroPath, '755');
+      if (!maestroPath) {
+        console.error('Error: Maestro binary not found after installation.');
+        process.exit(1);
       }
+      fs.chmodSync(maestroPath, '755');
 
       console.log(`Maestro ${MAESTRO_VERSION} installed successfully!`);
     } finally {

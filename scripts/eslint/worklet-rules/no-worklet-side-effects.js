@@ -68,6 +68,7 @@ function isInsideWorklet(node) {
       if (
         current.parent &&
         current.parent.type === 'CallExpression' &&
+        current.parent.callee &&
         current.parent.callee.type === 'Identifier' &&
         (current.parent.callee.name === 'useAnimatedStyle' ||
           current.parent.callee.name === 'useDerivedValue' ||

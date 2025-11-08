@@ -153,15 +153,7 @@ export function useWorkletExecutionMonitor() {
     if (startTime.value === 0) return;
 
     const duration = performance.now() - startTime.value;
-    const times = executionTimes.value;
-    times.push(duration);
-
-    // Keep only last 50 samples
-    if (times.length > 50) {
-      times.shift();
-    }
-
-    executionTimes.value = times;
+    executionTimes.value = [...executionTimes.value, duration].slice(-50);
     startTime.value = 0;
   }, [executionTimes, startTime]);
 

@@ -29,6 +29,20 @@ export const attachmentInputSchema = z
 // Derive TypeScript type from schema for single source of truth
 export type AttachmentInput = z.infer<typeof attachmentInputSchema>;
 
+// Type for remote attachment metadata
+interface RemoteAttachmentMetadata {
+  width?: number;
+  height?: number;
+  bytes?: number;
+  aspectRatio?: number;
+  dimensions?: {
+    width: number;
+    height: number;
+  };
+  resizedPath?: string;
+  thumbnailPath?: string;
+}
+
 // Media payload interface for post attachments
 export interface MediaPayload {
   originalPath: string;
@@ -48,12 +62,92 @@ type Variables = {
 };
 type Response = Post;
 
+// Helper function to process local file attachments
+const processLocalAttachment = async (
+  attachment: AttachmentInput,
+  uploadedPaths: string[]
+): Promise<MediaPayload> => {
+  // Validate file size before processing
+  const validation = await validateFileSize(attachment.uri!);
+  if (!validation.isValid) {
+    throw new Error(validation.error || 'Invalid file size');
+  }
+
+  // Get current user ID
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User must be authenticated to upload media');
+  }
+
+  // Generate photo variants (original, resized, thumbnail)
+  const variants = await captureAndStore(attachment.uri!);
+
+  // Hash the original for content-addressable storage
+  const contentHash = await hashFileContent(variants.original);
+
+  // Upload variants to Supabase Storage
+  const uploadResult = await uploadCommunityMediaVariants(
+    user.id,
+    variants,
+    contentHash
+  );
+
+  // Track uploaded paths for rollback
+  uploadedPaths.push(
+    uploadResult.originalPath,
+    uploadResult.resizedPath,
+    uploadResult.thumbnailPath
+  );
+
+  // Build media payload for server
+  return {
+    originalPath: uploadResult.originalPath,
+    resizedPath: uploadResult.resizedPath,
+    thumbnailPath: uploadResult.thumbnailPath,
+    width: uploadResult.metadata.width,
+    height: uploadResult.metadata.height,
+    aspectRatio: uploadResult.metadata.aspectRatio,
+    bytes: uploadResult.metadata.bytes,
+  };
+};
+
+// Helper function to process remote attachments
+const processRemoteAttachment = (attachment: AttachmentInput): MediaPayload => {
+  const metadata = attachment.metadata as RemoteAttachmentMetadata | undefined;
+  const width = Number(metadata?.width ?? metadata?.dimensions?.width ?? 0);
+  const height = Number(metadata?.height ?? metadata?.dimensions?.height ?? 0);
+  const bytes = Number(metadata?.bytes ?? attachment.size ?? 0);
+
+  if (!width || !height || !bytes) {
+    throw new Error(
+      'Remote attachments must include width, height, and byte size metadata'
+    );
+  }
+
+  const aspectRatio = metadata?.aspectRatio ?? width / height;
+  const resizedPath = metadata?.resizedPath ?? attachment.uri;
+  const thumbnailPath = metadata?.thumbnailPath ?? attachment.uri;
+
+  return {
+    originalPath: attachment.uri!,
+    resizedPath,
+    thumbnailPath,
+    width,
+    height,
+    aspectRatio,
+    bytes,
+  };
+};
+
 // Helper function to process attachments
 const processAttachments = async (
   attachments: AttachmentInput[]
 ): Promise<{ mediaPayloads: MediaPayload[]; uploadedPaths: string[] }> => {
   const mediaPayloads: MediaPayload[] = [];
   const uploadedPaths: string[] = [];
+
   for (const attachment of attachments) {
     if (attachment.uri) {
       const isLocalFile =
@@ -62,67 +156,20 @@ const processAttachments = async (
 
       if (isLocalFile) {
         // Local file - validate and process
-        // Validate file size before processing
-        const validation = await validateFileSize(attachment.uri);
-        if (!validation.isValid) {
-          throw new Error(validation.error || 'Invalid file size');
-        }
-
-        // Get current user ID
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) {
-          throw new Error('User must be authenticated to upload media');
-        }
-
-        // Generate photo variants (original, resized, thumbnail)
-        const variants = await captureAndStore(attachment.uri);
-
-        // Hash the original for content-addressable storage
-        const contentHash = await hashFileContent(variants.original);
-
-        // Upload variants to Supabase Storage
-        const uploadResult = await uploadCommunityMediaVariants(
-          user.id,
-          variants,
-          contentHash
+        const mediaPayload = await processLocalAttachment(
+          attachment,
+          uploadedPaths
         );
-
-        // Track uploaded paths for rollback
-        uploadedPaths.push(
-          uploadResult.originalPath,
-          uploadResult.resizedPath,
-          uploadResult.thumbnailPath
-        );
-
-        // Build media payload for server
-        const mediaPayload: MediaPayload = {
-          originalPath: uploadResult.originalPath,
-          resizedPath: uploadResult.resizedPath,
-          thumbnailPath: uploadResult.thumbnailPath,
-          width: uploadResult.metadata.width,
-          height: uploadResult.metadata.height,
-          aspectRatio: uploadResult.metadata.aspectRatio,
-          bytes: uploadResult.metadata.bytes,
-        };
         mediaPayloads.push(mediaPayload);
       } else {
         // Remote prefill attachment - already uploaded asset
         // Skip client-side processing and pass through untouched
-        const mediaPayload: MediaPayload = {
-          originalPath: attachment.uri,
-          resizedPath: attachment.uri, // Use same URL for all variants
-          thumbnailPath: attachment.uri, // Use same URL for all variants
-          width: 0, // Server will determine dimensions
-          height: 0, // Server will determine dimensions
-          aspectRatio: 1, // Default square aspect ratio
-          bytes: attachment.size || 0,
-        };
+        const mediaPayload = processRemoteAttachment(attachment);
         mediaPayloads.push(mediaPayload);
       }
     }
   }
+
   return { mediaPayloads, uploadedPaths };
 };
 
