@@ -4,6 +4,11 @@ import { z } from 'zod';
 
 import { client } from '@/api/common';
 import type { Post } from '@/api/posts/types';
+import { uploadCommunityMediaVariants } from '@/lib/media/community-media-upload-service';
+import { validateFileSize } from '@/lib/media/file-validation';
+import { hashFileContent } from '@/lib/media/photo-hash';
+import { captureAndStore } from '@/lib/media/photo-storage-service';
+import { supabase } from '@/lib/supabase';
 
 export const attachmentInputSchema = z
   .object({
@@ -44,10 +49,62 @@ export const useAddPost = createMutation<Response, Variables, AxiosError>({
       }
     }
 
+    // Process photo attachments if present
+    let mediaPayload: any = undefined;
+    if (variables.attachments && variables.attachments.length > 0) {
+      // Take first attachment (currently only support single photo)
+      const attachment = variables.attachments[0];
+
+      if (attachment.uri) {
+        // Validate file size before processing
+        const validation = await validateFileSize(attachment.uri);
+        if (!validation.isValid) {
+          throw new Error(validation.error || 'Invalid file size');
+        }
+
+        // Get current user ID
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error('User must be authenticated to upload media');
+        }
+
+        // Generate photo variants (original, resized, thumbnail)
+        const variants = await captureAndStore(attachment.uri);
+
+        // Hash the original for content-addressable storage
+        const contentHash = await hashFileContent(variants.original);
+
+        // Upload variants to Supabase Storage
+        const uploadResult = await uploadCommunityMediaVariants(
+          user.id,
+          variants,
+          contentHash
+        );
+
+        // Build media payload for server
+        mediaPayload = {
+          originalPath: uploadResult.originalPath,
+          resizedPath: uploadResult.resizedPath,
+          thumbnailPath: uploadResult.thumbnailPath,
+          width: uploadResult.metadata.width,
+          height: uploadResult.metadata.height,
+          aspectRatio: uploadResult.metadata.aspectRatio,
+          bytes: uploadResult.metadata.bytes,
+        };
+      }
+    }
+
     return client({
       url: 'posts/add',
       method: 'POST',
-      data: variables,
+      data: {
+        title: variables.title,
+        body: variables.body,
+        media: mediaPayload,
+        sourceAssessmentId: variables.sourceAssessmentId,
+      },
     }).then((response) => response.data);
   },
 });

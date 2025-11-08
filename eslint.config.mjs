@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -19,6 +20,8 @@ import { configs, parser, plugin } from 'typescript-eslint';
 import growbroDesignTokens from './scripts/eslint/design-tokens/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
+const workletRules = require('./scripts/eslint/worklet-rules/index.js');
 
 export default defineConfig([
   globalIgnores([
@@ -54,10 +57,12 @@ export default defineConfig([
       'react-native': reactNative,
       'react-native-a11y': reactNativeA11y,
       'growbro-design-tokens': growbroDesignTokens,
+      'worklet-rules': workletRules,
     },
     rules: {
       'max-params': ['error', 3],
       'max-lines-per-function': ['warn', 110],
+      'worklet-rules/no-worklet-side-effects': 'error',
       'tailwindcss/classnames-order': [
         'warn',
         {

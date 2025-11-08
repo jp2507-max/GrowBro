@@ -77,6 +77,14 @@ export default function TemplateListScreen(): React.JSX.Element {
     ),
     [handleTemplatePress]
   );
+  const keyExtractor = React.useCallback(
+    (item: FeedingTemplate) => item.id,
+    []
+  );
+  const getItemType = React.useCallback(
+    (item: FeedingTemplate) => `template-${item.medium}`,
+    []
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
@@ -103,6 +111,8 @@ export default function TemplateListScreen(): React.JSX.Element {
           <FlashList
             data={templates}
             renderItem={renderTemplate}
+            keyExtractor={keyExtractor}
+            getItemType={getItemType}
             contentContainerClassName="p-4"
           />
         )}

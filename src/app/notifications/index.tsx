@@ -409,11 +409,16 @@ function NotificationListView({
     },
     [onMarkAsRead, onOpen]
   );
+  const getItemType = React.useCallback(
+    (item: NotificationListItem) => item.type,
+    []
+  );
 
   return (
     <FlashList
       data={items}
       keyExtractor={(item) => item.key}
+      getItemType={getItemType}
       refreshControl={
         <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
       }

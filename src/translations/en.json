@@ -1746,6 +1746,7 @@
       "noData": "No readings yet",
       "startLogging": "Start logging pH/EC measurements to see trends"
     },
+    "createTemplate": "Create Template",
     "diagnostics": {
       "actions": {
         "N_DEFICIENCY_FEED": "Increase nitrogen feed",
@@ -1847,6 +1848,7 @@
       "phDown": "pH Down",
       "phUp": "pH Up"
     },
+    "feedingTemplates": "Feeding Templates",
     "loading_readings": "Loading readings...",
     "medium": {
       "coco": "Coco",
@@ -1861,6 +1863,7 @@
       "soil": "Soil",
       "soilless": "Soilless"
     },
+    "noTemplatesFound": "No templates found",
     "no_atc_warning": "No ATC (Automatic Temperature Compensation)",
     "no_events_description": "Start logging reservoir events to track your changes",
     "no_events_title": "No Events Recorded",
@@ -1896,6 +1899,7 @@
     "targetRange": "Target",
     "targetRanges": "Target Ranges",
     "temp_high_warning": "Temperature too high",
+    "templatesDescription": "Manage and create feeding templates for your nutrient schedules",
     "timeRange": {
       "30days": "30 Days",
       "7days": "7 Days",
@@ -1968,6 +1972,14 @@
     "offline_notice": "Showing saved plants",
     "retry": "Retry",
     "search_placeholder": "Search plants…"
+  },
+  "playbook": {
+    "noTasks": "No tasks in this phase",
+    "status": {
+      "completed": "Completed",
+      "current": "Current",
+      "upcoming": "Upcoming"
+    }
   },
   "playbooks": {
     "accessibility": {
@@ -2087,6 +2099,7 @@
     "loadError": "Failed to load playbooks. Please try again.",
     "manuallyEdited": "Manually Edited",
     "noPlants": "You don't have any plants yet. Create one to apply this playbook.",
+    "noTasks": "No tasks in this phase",
     "noTemplates": "No community templates available yet",
     "notFound": "Playbook not found",
     "onboarding": {
@@ -2195,6 +2208,11 @@
       "undoInfo": "ℹ️ You'll have 30 seconds to undo this change after applying",
       "willBeExcluded": "will be excluded from this shift",
       "willBeShifted": "will be shifted (you opted in)"
+    },
+    "status": {
+      "completed": "Completed",
+      "current": "Current",
+      "upcoming": "Upcoming"
     },
     "subtitle": "Guided grow schedules for your plants",
     "tags": "Tags",
@@ -2449,6 +2467,7 @@
       "title": "Account Statistics"
     }
   },
+  "retry": "Retry",
   "settings": {
     "a11y": {
       "about_hint": "Opens About screen with app information and version details",
@@ -2539,8 +2558,8 @@
       },
       "scheduled_success": "Account deletion scheduled. You have {{days}} days to cancel by logging in.",
       "title": "Delete Account",
-      "type_delete_instruction": "To confirm, type {{keyword}} in all capital letters:",
-      "warning_message": "Account deletion is permanent and cannot be undone. Please read the information below carefully before proceeding.",
+      "type_delete_instruction": "To confirm, type {{keyword}} in uppercase:",
+      "warning_message": "Account deletion is permanent and cannot be undone. Please read the following information carefully before continuing.",
       "warning_title": "⚠️ Warning: Permanent Action"
     },
     "english": "English",
@@ -2553,7 +2572,7 @@
     },
     "general": "General",
     "german": "German",
-    "github": "Github",
+    "github": "GitHub",
     "language": "Language",
     "legal": {
       "cannabis_policy": "Cannabis Policy",

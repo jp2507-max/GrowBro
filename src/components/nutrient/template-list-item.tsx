@@ -20,7 +20,7 @@ interface TemplateListItemProps {
   testID?: string;
 }
 
-export function TemplateListItem({
+export const TemplateListItem = React.memo(function TemplateListItem({
   template,
   onPress,
   testID = 'template-list-item',
@@ -57,4 +57,6 @@ export function TemplateListItem({
       </View>
     </Pressable>
   );
-}
+});
+
+TemplateListItem.displayName = 'TemplateListItem';

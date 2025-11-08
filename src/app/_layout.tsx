@@ -47,17 +47,16 @@ import { useRootStartup } from '@/lib/hooks/use-root-startup';
 import { initializeJanitor } from '@/lib/media/photo-janitor';
 import { getReferencedPhotoUris } from '@/lib/media/photo-storage-helpers';
 import {
-  hasConsent,
+  initializeSentryPerformance,
+  isSentryPerformanceInitialized,
+} from '@/lib/performance';
+import {
   initializePrivacyConsent,
   setPrivacyConsent,
 } from '@/lib/privacy-consent';
-import { beforeBreadcrumbHook, beforeSendHook } from '@/lib/sentry-utils';
 // Install AI consent hooks to handle withdrawal cascades
 import { installAiConsentHooks } from '@/lib/uploads/ai-images';
 import { useThemeConfig } from '@/lib/use-theme-config';
-
-// Module-scoped flag to prevent multiple Sentry initializations
-let sentryInitialized = false;
 
 // Type definitions for Localization API
 // Timezone and startup helpers live in `use-root-startup.ts`
@@ -90,47 +89,10 @@ setAnalyticsClient(NoopAnalytics);
 // i18n initialization moved to RootLayout component to prevent race conditions
 // where components render with untranslated keys before i18n completes
 
-// Only initialize Sentry if DSN is provided and user has consented to crash reporting
-// Also guard against multiple initializations
-if (Env.SENTRY_DSN && hasConsent('crashReporting') && !sentryInitialized) {
-  sentryInitialized = true; // Set flag to prevent re-initialization
+// Initialize Sentry with performance monitoring
+const sentryInitialized = initializeSentryPerformance();
 
-  const integrations: any[] = [];
-
-  // Only add replay/feedback if enabled AND user consented to session replay
-  if (Env.SENTRY_ENABLE_REPLAY && hasConsent('sessionReplay')) {
-    integrations.push(Sentry.mobileReplayIntegration());
-    integrations.push(Sentry.feedbackIntegration());
-  }
-
-  Sentry.init({
-    dsn: Env.SENTRY_DSN,
-    // Privacy-focused: only send PII if explicitly enabled via environment
-    sendDefaultPii: Env.SENTRY_SEND_DEFAULT_PII ?? false,
-    // Privacy-focused: prevent PII leakage via screenshots
-    attachScreenshot: false,
-    // Privacy-focused: default to 0 for replay sampling, only enable via environment
-    replaysSessionSampleRate: Env.SENTRY_REPLAYS_SESSION_SAMPLE_RATE ?? 0,
-    replaysOnErrorSampleRate: Env.SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE ?? 0,
-    integrations,
-    // Scrub sensitive data before sending to Sentry
-    beforeSend: beforeSendHook,
-    beforeBreadcrumb: beforeBreadcrumbHook,
-    // Explicitly set environment and release so Sentry groups events by deployment and app version.
-    // Prefer CI-provided env vars, fall back to the runtime Env values.
-    // Use Env.VERSION (set from app.config) as the app version/release.
-    environment: process.env.SENTRY_ENV || Env.APP_ENV || process.env.NODE_ENV,
-    release: process.env.SENTRY_RELEASE || String(Env.VERSION),
-    // Dist helps Sentry distinguish build variants within the same release.
-    // Prefer CI-provided SENTRY_DIST; can be set to EAS_BUILD_ID in CI.
-    dist: process.env.SENTRY_DIST,
-    // Performance & profiling sampling (env-aware)
-    tracesSampleRate: Env.APP_ENV === 'production' ? 0.2 : 1.0,
-    profilesSampleRate: Env.APP_ENV === 'production' ? 0.1 : 1.0,
-    // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-    // spotlight: __DEV__,
-  });
-
+if (sentryInitialized) {
   // Update registry; this is a no-op pre-consent
   void SDKGate.initializeSDK('sentry');
 
@@ -331,7 +293,9 @@ function AppStack(): React.ReactElement {
 }
 
 // Avoid wrapping with Sentry when Sentry is not initialized to prevent warnings
-export default sentryInitialized ? Sentry.wrap(RootLayout) : RootLayout;
+export default isSentryPerformanceInitialized()
+  ? Sentry.wrap(RootLayout)
+  : RootLayout;
 
 interface ProvidersProps {
   children: React.ReactNode;

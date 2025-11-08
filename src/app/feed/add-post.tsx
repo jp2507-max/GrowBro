@@ -1,10 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm, type UseFormSetValue } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Image, ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 import { z } from 'zod';
 
@@ -12,6 +13,7 @@ import { type AttachmentInput, useAddPost } from '@/api';
 import {
   Button,
   ControlledInput,
+  Image,
   showErrorMessage,
   Text,
   View,
@@ -178,6 +180,7 @@ function useAssessmentPrefill({
 
 export default function AddPost(): React.JSX.Element {
   const { t } = useTranslation();
+  const router = useRouter();
   const params = useLocalSearchParams();
   const translatedHint = translateDynamic('assessment.community.ctaHint');
   const { control, handleSubmit, setValue } = useForm<FormType>({
@@ -196,6 +199,64 @@ export default function AddPost(): React.JSX.Element {
     translatedHint,
   });
 
+  const handleCapturePhoto = React.useCallback(async () => {
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        showErrorMessage(t('harvest.photo.errors.camera_permission_denied'));
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+        allowsEditing: false,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const photo = result.assets[0];
+        setAttachments([
+          {
+            uri: photo.uri,
+            filename: photo.fileName || `photo-${Date.now()}.jpg`,
+            mimeType: 'image/jpeg',
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error('Failed to capture photo:', error);
+      showErrorMessage(t('harvest.photo.errors.capture_failed'));
+    }
+  }, [t]);
+
+  const handleSelectPhoto = React.useCallback(async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+        allowsMultipleSelection: false,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const photo = result.assets[0];
+        setAttachments([
+          {
+            uri: photo.uri,
+            filename: photo.fileName || `photo-${Date.now()}.jpg`,
+            mimeType: 'image/jpeg',
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error('Failed to select photo:', error);
+      showErrorMessage(t('harvest.photo.errors.selection_failed'));
+    }
+  }, [t]);
+
+  const handleRemovePhoto = React.useCallback(() => {
+    setAttachments([]);
+  }, []);
+
   const onSubmit = (data: FormType) => {
     const payload = {
       ...data,
@@ -208,11 +269,11 @@ export default function AddPost(): React.JSX.Element {
           message: t('communityPost.postAdded'),
           type: 'success',
         });
-        // here you can navigate to the post list and refresh the list data
-        //queryClient.invalidateQueries(usePosts.getKey());
+        router.back();
       },
-      onError: () => {
-        showErrorMessage(t('communityPost.postAddError'));
+      onError: (error) => {
+        console.error('Failed to create post:', error);
+        showErrorMessage(error?.message || t('communityPost.postAddError'));
       },
     });
   };
@@ -245,33 +306,75 @@ export default function AddPost(): React.JSX.Element {
             testID="body-input"
           />
 
-          {attachments.length > 0 && (
-            <View className="mt-4">
-              <Text className="mb-2 text-sm font-semibold text-neutral-700 dark:text-neutral-200">
-                {translateDynamic('feed.prefilledImages')}
-              </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {attachments.map((image, index) => (
-                  <Image
-                    key={image.filename}
-                    accessibilityIgnoresInvertColors
-                    accessibilityLabel={
-                      image.filename ||
-                      translateDynamic('feed.attachmentImageFallback')
-                    }
-                    accessibilityHint={translateDynamic(
-                      'feed.attachmentImageHint'
+          {/* Photo attachment section */}
+          <View className="mt-4">
+            {attachments.length === 0 ? (
+              <View className="flex-row gap-3">
+                <Button
+                  onPress={handleCapturePhoto}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  testID="capture-photo-button"
+                >
+                  <Text className="text-sm">
+                    {translateDynamic('feed.addPost.capturePhoto')}
+                  </Text>
+                </Button>
+                <Button
+                  onPress={handleSelectPhoto}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  testID="select-photo-button"
+                >
+                  <Text className="text-sm">
+                    {translateDynamic('feed.addPost.selectPhoto')}
+                  </Text>
+                </Button>
+              </View>
+            ) : (
+              <View>
+                <View className="mb-2 flex-row items-center justify-between">
+                  <Text className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">
+                    {translateDynamic('feed.prefilledImages')}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={handleRemovePhoto}
+                    testID="remove-photo-button"
+                    accessibilityRole="button"
+                    accessibilityLabel={translateDynamic(
+                      'feed.addPost.removePhoto'
                     )}
-                    accessibilityRole="image"
-                    testID={`attachment-image-${image.filename || index}`}
-                    className="mr-3 rounded-xl"
-                    source={{ uri: image.uri }}
-                    style={styles.attachmentImage}
-                  />
-                ))}
-              </ScrollView>
-            </View>
-          )}
+                  >
+                    <Text className="text-sm text-danger-600">
+                      {translateDynamic('feed.addPost.removePhoto')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {attachments.map((image, index) => (
+                    <Image
+                      key={image.filename}
+                      accessibilityIgnoresInvertColors
+                      accessibilityLabel={
+                        image.filename ||
+                        translateDynamic('feed.attachmentImageFallback')
+                      }
+                      accessibilityHint={translateDynamic(
+                        'feed.attachmentImageHint'
+                      )}
+                      accessibilityRole="image"
+                      testID={`attachment-image-${image.filename || index}`}
+                      className="mr-3 rounded-xl"
+                      source={{ uri: image.uri }}
+                      style={styles.attachmentImage}
+                    />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+          </View>
 
           <Button
             className="mt-6"

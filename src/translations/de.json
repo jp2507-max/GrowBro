@@ -1742,10 +1742,11 @@
     "atc_label": "Temperaturkompensiert (ATC)",
     "cal_stale_warning": "Kalibrierung möglicherweise veraltet",
     "chart": {
-      "eventMarkersNote": "{{count}} Ereignis-Marker angezeigt",
+      "eventMarkersNote": "{{count}} Ereignismarker angezeigt",
       "noData": "Noch keine Messwerte",
-      "startLogging": "Beginne mit pH/EC-Messungen, um Trends zu sehen"
+      "startLogging": "Beginne pH-/EC-Messungen zu protokollieren, um Trends zu sehen"
     },
+    "createTemplate": "Vorlage erstellen",
     "diagnostics": {
       "actions": {
         "N_DEFICIENCY_FEED": "Stickstoffgabe erhöhen",
@@ -1847,6 +1848,7 @@
       "phDown": "pH senken",
       "phUp": "pH erhöhen"
     },
+    "feedingTemplates": "Fütterungsvorlagen",
     "loading_readings": "Lade Messwerte...",
     "medium": {
       "coco": "Coco",
@@ -1861,6 +1863,7 @@
       "soil": "Erde",
       "soilless": "Erdlos"
     },
+    "noTemplatesFound": "Keine Vorlagen gefunden",
     "no_atc_warning": "Keine ATC (automatische Temperaturkompensation)",
     "no_events_description": "Beginne Reservoir-Ereignisse zu protokollieren, um deine Änderungen zu verfolgen",
     "no_events_title": "Keine Ereignisse aufgezeichnet",
@@ -1896,6 +1899,7 @@
     "targetRange": "Zielbereich",
     "targetRanges": "Zielbereiche",
     "temp_high_warning": "Temperatur zu hoch",
+    "templatesDescription": "Fütterungsvorlagen für Ihre Nährstoffpläne verwalten und erstellen",
     "timeRange": {
       "30days": "30 Tage",
       "7days": "7 Tage",
@@ -1968,6 +1972,14 @@
     "offline_notice": "Gespeicherte Pflanzen werden angezeigt",
     "retry": "Erneut versuchen",
     "search_placeholder": "Pflanzen suchen…"
+  },
+  "playbook": {
+    "noTasks": "Keine Aufgaben in dieser Phase",
+    "status": {
+      "completed": "Abgeschlossen",
+      "current": "Aktuell",
+      "upcoming": "Bevorstehend"
+    }
   },
   "playbooks": {
     "accessibility": {
@@ -2087,6 +2099,7 @@
     "loadError": "Playbooks konnten nicht geladen werden. Bitte versuche es erneut.",
     "manuallyEdited": "Manuell bearbeitet",
     "noPlants": "Du hast noch keine Pflanzen. Erstelle eine, um dieses Playbook anzuwenden.",
+    "noTasks": "Keine Aufgaben in dieser Phase",
     "noTemplates": "Noch keine Community-Vorlagen verfügbar",
     "notFound": "Playbook nicht gefunden",
     "onboarding": {
@@ -2195,6 +2208,11 @@
       "undoInfo": "ℹ️ Sie haben 30 Sekunden Zeit, diese Änderung nach dem Anwenden rückgängig zu machen",
       "willBeExcluded": "werden von dieser Verschiebung ausgeschlossen",
       "willBeShifted": "werden verschoben (Sie haben sich dafür entschieden)"
+    },
+    "status": {
+      "completed": "Abgeschlossen",
+      "current": "Aktuell",
+      "upcoming": "Bevorstehend"
     },
     "subtitle": "Geführte Anbaupläne für deine Pflanzen",
     "tags": "Tags",
@@ -2449,6 +2467,7 @@
       "title": "Kontostatistiken"
     }
   },
+  "retry": "Erneut versuchen",
   "settings": {
     "a11y": {
       "about_hint": "Öffnet Info-Bildschirm mit App-Informationen und Versionsdetails",

@@ -68,7 +68,10 @@
     "compliance:audit": "node scripts/ci-compliance-audit.js",
     "compliance:lawful-bases-matrix": "node scripts/ci-validate-lawful-bases-matrix.js",
     "accessibility:check": "node scripts/ci-accessibility-check.js",
-    "design-tokens:coverage": "node scripts/generate-token-report.js"
+    "design-tokens:coverage": "node scripts/generate-token-report.js",
+    "perf:profile": "bash scripts/perf-profile.sh",
+    "perf:gesture": "bash scripts/performance/test-gesture-performance.sh",
+    "perf:gesture:trace": "node scripts/performance/collect-perfetto-trace.js"
   },
   "sentry": {
     "notes": "Set SENTRY_ENV and SENTRY_RELEASE in your CI before building. For EAS builds you can set SENTRY_RELEASE to the package.json version. Ensure source maps/dSYMs are uploaded from the build step or use the Expo Sentry plugin to handle this."
@@ -86,6 +89,7 @@
     "@react-navigation/native": "^7.1.8",
     "@sentry/react-native": "^7.2.0",
     "@shopify/flash-list": "2.0.2",
+    "@shopify/react-native-performance": "^4.1.2",
     "@supabase/supabase-js": "^2.57.4",
     "@tanstack/react-query": "^5.90.1",
     "app-icon-badge": "^0.1.2",
@@ -234,7 +238,7 @@
     "type": "git",
     "url": "git+https://github.com/user/repo-name.git"
   },
-  "packageManager": "pnpm@10.17.0",
+  "packageManager": "pnpm@10.20.0",
   "expo": {
     "doctor": {
       "reactNativeDirectoryCheck": {

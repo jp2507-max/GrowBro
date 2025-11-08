@@ -1,5 +1,11 @@
 import { Model, Q, type Query } from '@nozbe/watermelondb';
-import { children, date, lazy, text } from '@nozbe/watermelondb/decorators';
+import {
+  children,
+  date,
+  field,
+  lazy,
+  text,
+} from '@nozbe/watermelondb/decorators';
 
 import type { PostCommentModel } from './post-comment';
 import type { PostLikeModel } from './post-like';
@@ -15,6 +21,14 @@ export class PostModel extends Model {
   @text('user_id') userId!: string;
   @text('body') body!: string;
   @text('media_uri') mediaUri?: string;
+  @text('media_resized_uri') mediaResizedUri?: string;
+  @text('media_thumbnail_uri') mediaThumbnailUri?: string;
+  @text('media_blurhash') mediaBlurhash?: string;
+  @text('media_thumbhash') mediaThumbhash?: string;
+  @field('media_width') mediaWidth?: number;
+  @field('media_height') mediaHeight?: number;
+  @field('media_aspect_ratio') mediaAspectRatio?: number;
+  @field('media_bytes') mediaBytes?: number;
   @date('created_at') createdAt!: Date;
   @date('updated_at') updatedAt!: Date;
   @date('deleted_at') deletedAt?: Date;

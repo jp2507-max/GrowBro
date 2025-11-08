@@ -112,8 +112,8 @@ function MyComponent() {
 Run the performance profiling script to collect detailed metrics:
 
 ```bash
-# Profile Android
-pnpm perf:profile android
+# Profile Android (default)
+pnpm perf:profile
 
 # Profile iOS
 pnpm perf:profile ios
@@ -122,9 +122,28 @@ pnpm perf:profile ios
 This command:
 
 1. Launches a release build with performance monitoring enabled
-2. Enables Sentry tracing
-3. Provides instructions for collecting Perfetto traces (Android) or Instruments data (iOS)
-4. Outputs performance artifacts to `performance-artifacts/` directory
+2. Enables Sentry tracing (10% sampling in production, 100% in development)
+3. Activates @shopify/react-native-performance for TTI/TTFD measurement
+4. Provides instructions for collecting Perfetto traces (Android) or Instruments data (iOS)
+5. Outputs performance artifacts to `performance-artifacts/` directory
+
+### Collecting Perfetto Traces (Android 12+)
+
+1. Open Chrome and navigate to [ui.perfetto.dev](https://ui.perfetto.dev)
+2. Click "Record new trace"
+3. Select your device
+4. Choose "Frame Timeline" preset
+5. Start recording and interact with the app
+6. Stop recording and save the trace to `performance-artifacts/`
+
+### Collecting Instruments Data (iOS)
+
+1. Open Xcode
+2. Go to Xcode > Open Developer Tool > Instruments
+3. Select "Time Profiler" or "System Trace"
+4. Choose your device and app
+5. Start recording and interact with the app
+6. Stop recording and save the trace to `performance-artifacts/`
 
 ## Performance Budgets
 
@@ -171,10 +190,47 @@ src/lib/performance/
 
 Performance metrics are automatically collected in CI/CD:
 
-- RN Performance JSON reports attached to artifacts
-- Sentry transaction URLs logged
-- Perfetto traces collected on Android
-- Performance budgets enforced with automatic failure on violations
+- **RN Performance JSON reports**: Exported via `exportPerformanceReportJSON()` and attached to CI artifacts
+- **Sentry transaction URLs**: Logged via `logSentryTransactionUrl()` for easy access to performance data
+- **Perfetto traces**: Collected on Android devices for frame-level analysis
+- **Performance budgets**: Enforced with automatic failure on violations (see Performance Budgets section)
+
+### CI Artifact Export
+
+Use the CI export utilities to collect performance data:
+
+```typescript
+import {
+  exportPerformanceReportJSON,
+  logPerformanceArtifact,
+  logSentryTransactionUrl,
+  createPerformanceArtifact,
+} from '@/lib/performance';
+
+// Export RN Performance reports
+const jsonReport = exportPerformanceReportJSON(reports);
+fs.writeFileSync('performance-report.json', jsonReport);
+
+// Log Sentry transaction URL for CI collection
+logSentryTransactionUrl('https://sentry.io/transaction/abc123');
+
+// Create and log performance artifact
+const artifact = createPerformanceArtifact({
+  type: 'perfetto',
+  filePath: 'trace.perfetto',
+  metadata: { device: 'Pixel 6a', buildHash: 'abc123' },
+});
+logPerformanceArtifact(artifact);
+```
+
+### Performance Budget Enforcement
+
+CI will fail if any of the following budgets are exceeded:
+
+- **Startup TTI**: Pixel 6a ≤ 1.8s, iPhone 12 ≤ 1.3s
+- **Navigation**: P95 transition ≤ 250ms
+- **Scrolling**: P95 frame time ≤ 16.7ms, dropped frames ≤ 1%, avg FPS ≥ 58
+- **Sync**: 500 items P95 ≤ 2.5s on LTE simulation
 
 ## Best Practices
 

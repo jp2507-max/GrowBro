@@ -17,7 +17,7 @@ import React from 'react';
 
 import { useDeletePost } from '@/api/community';
 import type { Post as ApiPost } from '@/api/posts';
-import { Image, Pressable, Text, View } from '@/components/ui';
+import { OptimizedImage, Pressable, Text, View } from '@/components/ui';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth/user-utils';
 import { normalizePostUserId } from '@/lib/community/post-utils';
 import { translate } from '@/lib/i18n';
@@ -132,13 +132,14 @@ function PostCardView({
       >
         <View className="m-2 overflow-hidden rounded-xl border border-neutral-300 bg-white dark:border-neutral-700 dark:bg-neutral-900">
           {post.media_uri && (
-            <Image
+            <OptimizedImage
               className="h-56 w-full overflow-hidden rounded-t-xl"
-              contentFit="cover"
-              source={{ uri: post.media_uri }}
-              cachePolicy="memory-disk"
-              priority="normal"
-              transition={200}
+              uri={post.media_uri}
+              thumbnailUri={post.media_thumbnail_uri}
+              resizedUri={post.media_resized_uri}
+              blurhash={post.media_blurhash}
+              thumbhash={post.media_thumbhash}
+              recyclingKey={post.media_thumbnail_uri || post.media_uri}
               accessibilityIgnoresInvertColors
               accessibilityLabel={translate(
                 'accessibility.community.post_image',
