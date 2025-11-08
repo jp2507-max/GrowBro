@@ -71,6 +71,7 @@ function isInsideWorklet(node) {
         current.parent.callee &&
         current.parent.callee.type === 'Identifier' &&
         (current.parent.callee.name === 'useAnimatedStyle' ||
+          current.parent.callee.name === 'useAnimatedProps' ||
           current.parent.callee.name === 'useDerivedValue' ||
           current.parent.callee.name === 'useAnimatedScrollHandler' ||
           current.parent.callee.name === 'useAnimatedReaction' ||

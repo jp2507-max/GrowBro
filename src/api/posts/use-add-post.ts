@@ -200,7 +200,7 @@ export const useAddPost = createMutation<Response, Variables, AxiosError>({
         data: {
           title: variables.title,
           body: variables.body,
-          media: mediaPayloads.length > 0 ? mediaPayloads : undefined,
+          media: mediaPayloads.length > 0 ? mediaPayloads[0] : undefined,
           sourceAssessmentId: variables.sourceAssessmentId,
         },
       }).then((response) => response.data);

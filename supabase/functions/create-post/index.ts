@@ -282,9 +282,16 @@ Deno.serve(async (req: Request) => {
     };
 
     if (mediaProcessingResult) {
-      insertPayload.media_uri = mediaProcessingResult.originalPath;
-      insertPayload.media_resized_uri = mediaProcessingResult.resizedPath;
-      insertPayload.media_thumbnail_uri = mediaProcessingResult.thumbnailPath;
+      // Generate signed URLs for media variants to enable client access
+      const signedUrls = await generateSignedMediaUrls(supabaseClient, {
+        originalPath: mediaProcessingResult.originalPath,
+        resizedPath: mediaProcessingResult.resizedPath,
+        thumbnailPath: mediaProcessingResult.thumbnailPath,
+      });
+
+      insertPayload.media_uri = signedUrls.media_uri;
+      insertPayload.media_resized_uri = signedUrls.media_resized_uri;
+      insertPayload.media_thumbnail_uri = signedUrls.media_thumbnail_uri;
       insertPayload.media_blurhash = mediaProcessingResult.blurhash;
       insertPayload.media_thumbhash = mediaProcessingResult.thumbhash;
       insertPayload.media_width = mediaProcessingResult.width;
@@ -342,6 +349,49 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
+
+/**
+ * Generate signed URLs for community media variants
+ * @param supabaseClient - Supabase client
+ * @param mediaProcessingResult - Result from media processing with storage paths
+ * @returns Object with signed URLs for each variant
+ */
+async function generateSignedMediaUrls(
+  supabaseClient: SupabaseClient,
+  mediaProcessingResult: {
+    originalPath: string;
+    resizedPath: string;
+    thumbnailPath: string;
+  }
+) {
+  // Signed URLs expire in 1 year (31536000 seconds) for community media
+  const expiresIn = 31536000;
+
+  const [originalUrl, resizedUrl, thumbnailUrl] = await Promise.all([
+    supabaseClient.storage
+      .from(COMMUNITY_MEDIA_BUCKET)
+      .createSignedUrl(mediaProcessingResult.originalPath, expiresIn),
+    supabaseClient.storage
+      .from(COMMUNITY_MEDIA_BUCKET)
+      .createSignedUrl(mediaProcessingResult.resizedPath, expiresIn),
+    supabaseClient.storage
+      .from(COMMUNITY_MEDIA_BUCKET)
+      .createSignedUrl(mediaProcessingResult.thumbnailPath, expiresIn),
+  ]);
+
+  if (originalUrl.error || resizedUrl.error || thumbnailUrl.error) {
+    throw createHttpError(
+      500,
+      `Failed to generate signed URLs for media: ${originalUrl.error?.message || resizedUrl.error?.message || thumbnailUrl.error?.message}`
+    );
+  }
+
+  return {
+    media_uri: originalUrl.data.signedUrl,
+    media_resized_uri: resizedUrl.data.signedUrl,
+    media_thumbnail_uri: thumbnailUrl.data.signedUrl,
+  };
+}
 
 async function handleOptionalMediaUpload(
   supabaseClient: SupabaseClient,
