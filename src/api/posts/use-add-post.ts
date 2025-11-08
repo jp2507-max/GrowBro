@@ -22,8 +22,9 @@ export const attachmentInputSchema = z
     size: z.number().optional(),
     metadata: z.record(z.unknown()).optional(),
   })
-  .refine((obj) => Boolean(obj.id || obj.uri), {
-    message: 'Either id or uri must be provided',
+  .refine((obj) => Boolean(obj.uri), {
+    message:
+      'URI is required for attachments. ID-based attachments are not currently supported.',
   });
 
 // Derive TypeScript type from schema for single source of truth
@@ -188,10 +189,11 @@ export const useAddPost = createMutation<Response, Variables, AxiosError>({
       }
     }
 
-    // Process photo attachments if present
-    const { mediaPayloads, uploadedPaths } = variables.attachments
-      ? await processAttachments(variables.attachments)
-      : { mediaPayloads: [], uploadedPaths: [] };
+    // Process first photo attachment if present (backend only supports single media)
+    const { mediaPayloads, uploadedPaths } =
+      variables.attachments && variables.attachments.length > 0
+        ? await processAttachments([variables.attachments[0]])
+        : { mediaPayloads: [], uploadedPaths: [] };
 
     try {
       return await client({

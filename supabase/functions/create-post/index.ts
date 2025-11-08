@@ -981,7 +981,7 @@ async function uploadVariant({
     uploadedPaths.push(uploadData.path);
   }
 
-  const storedPath = `${bucket}/${path}`;
+  const storedPath = path;
 
   return {
     storedPath,
