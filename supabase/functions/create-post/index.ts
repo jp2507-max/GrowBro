@@ -28,22 +28,37 @@ interface CreatePostRequest {
   body: string;
   media_uri?: string;
   client_tx_id?: string;
-  media?: {
-    // Server-side processing (web/legacy)
-    source_url?: string;
-    filename?: string;
-    mime_type?: string;
-    // Mobile pre-uploaded variants
-    originalPath?: string;
-    resizedPath?: string;
-    thumbnailPath?: string;
-    width?: number;
-    height?: number;
-    aspectRatio?: number;
-    bytes?: number;
-    blurhash?: string;
-    thumbhash?: string;
-  };
+  title?: string;
+  sourceAssessmentId?: string;
+  media?:
+    | {
+        // Server-side processing (web/legacy)
+        source_url?: string;
+        filename?: string;
+        mime_type?: string;
+        // Mobile pre-uploaded variants
+        originalPath?: string;
+        resizedPath?: string;
+        thumbnailPath?: string;
+        width?: number;
+        height?: number;
+        aspectRatio?: number;
+        bytes?: number;
+        blurhash?: string;
+        thumbhash?: string;
+      }
+    | {
+        // Mobile pre-uploaded variants (array format for multiple attachments)
+        originalPath?: string;
+        resizedPath?: string;
+        thumbnailPath?: string;
+        width?: number;
+        height?: number;
+        aspectRatio?: number;
+        bytes?: number;
+        blurhash?: string;
+        thumbhash?: string;
+      }[];
 }
 
 Deno.serve(async (req: Request) => {
@@ -142,14 +157,25 @@ Deno.serve(async (req: Request) => {
     let mediaProcessingResult = null;
 
     // Check if mobile client already uploaded variants
+    // Handle both single media object and media array formats
+    let mediaItem = null;
+
+    if (Array.isArray(requestBody.media)) {
+      // Mobile client sent array - use first item for now (maintains single media compatibility)
+      mediaItem = requestBody.media.length > 0 ? requestBody.media[0] : null;
+    } else {
+      // Legacy single media object format
+      mediaItem = requestBody.media;
+    }
+
     const hasMobileVariants =
-      requestBody.media?.originalPath &&
-      requestBody.media?.resizedPath &&
-      requestBody.media?.thumbnailPath;
+      mediaItem?.originalPath &&
+      mediaItem?.resizedPath &&
+      mediaItem?.thumbnailPath;
 
     if (hasMobileVariants) {
       // Mobile client pre-uploaded variants, validate metadata before use
-      const { width, height, aspectRatio, bytes } = requestBody.media!;
+      const { width, height, aspectRatio, bytes } = mediaItem!;
 
       // Validate required dimensions
       if (!width || width <= 0) {
@@ -209,15 +235,15 @@ Deno.serve(async (req: Request) => {
       }
 
       mediaProcessingResult = {
-        originalPath: requestBody.media!.originalPath!,
-        resizedPath: requestBody.media!.resizedPath!,
-        thumbnailPath: requestBody.media!.thumbnailPath!,
+        originalPath: mediaItem!.originalPath!,
+        resizedPath: mediaItem!.resizedPath!,
+        thumbnailPath: mediaItem!.thumbnailPath!,
         width,
         height,
         aspectRatio: finalAspectRatio,
         bytes,
-        blurhash: requestBody.media!.blurhash,
-        thumbhash: requestBody.media!.thumbhash,
+        blurhash: mediaItem!.blurhash,
+        thumbhash: mediaItem!.thumbhash,
       };
     } else {
       // Server-side processing for web/legacy clients

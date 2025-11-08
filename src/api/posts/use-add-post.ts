@@ -51,8 +51,9 @@ type Response = Post;
 // Helper function to process attachments
 const processAttachments = async (
   attachments: AttachmentInput[]
-): Promise<MediaPayload[]> => {
+): Promise<{ mediaPayloads: MediaPayload[]; uploadedPaths: string[] }> => {
   const mediaPayloads: MediaPayload[] = [];
+  const uploadedPaths: string[] = [];
   for (const attachment of attachments) {
     if (attachment.uri) {
       const isLocalFile =
@@ -88,6 +89,13 @@ const processAttachments = async (
           contentHash
         );
 
+        // Track uploaded paths for rollback
+        uploadedPaths.push(
+          uploadResult.originalPath,
+          uploadResult.resizedPath,
+          uploadResult.thumbnailPath
+        );
+
         // Build media payload for server
         const mediaPayload: MediaPayload = {
           originalPath: uploadResult.originalPath,
@@ -115,7 +123,7 @@ const processAttachments = async (
       }
     }
   }
-  return mediaPayloads;
+  return { mediaPayloads, uploadedPaths };
 };
 
 export const useAddPost = createMutation<Response, Variables, AxiosError>({
@@ -134,17 +142,9 @@ export const useAddPost = createMutation<Response, Variables, AxiosError>({
     }
 
     // Process photo attachments if present
-    const mediaPayloads = variables.attachments
+    const { mediaPayloads, uploadedPaths } = variables.attachments
       ? await processAttachments(variables.attachments)
-      : [];
-
-    // Track uploaded paths for rollback on failure
-    const uploadedPaths: string[] = [];
-    mediaPayloads.forEach((media) => {
-      if (media.originalPath) uploadedPaths.push(media.originalPath);
-      if (media.resizedPath) uploadedPaths.push(media.resizedPath);
-      if (media.thumbnailPath) uploadedPaths.push(media.thumbnailPath);
-    });
+      : { mediaPayloads: [], uploadedPaths: [] };
 
     try {
       return await client({

@@ -64,22 +64,18 @@ function isInsideWorklet(node) {
       }
 
       // Check for auto-workletized functions (Reanimated hooks that run callbacks on UI thread)
-      // Walk up from current function to find if it's passed to a Reanimated hook
-      let checkNode = current;
-      while (checkNode && checkNode !== node) {
-        if (
-          checkNode.type === 'CallExpression' &&
-          checkNode.callee.type === 'Identifier' &&
-          // These Reanimated hooks automatically workletize their callback functions
-          (checkNode.callee.name === 'useAnimatedStyle' ||
-            checkNode.callee.name === 'useDerivedValue' ||
-            checkNode.callee.name === 'useAnimatedScrollHandler' ||
-            checkNode.callee.name === 'useAnimatedReaction' ||
-            checkNode.callee.name === 'runOnUI')
-        ) {
-          return true; // Found auto-workletized function
-        }
-        checkNode = checkNode.parent;
+      // Check if the function's immediate parent is a CallExpression with a Reanimated hook
+      if (
+        current.parent &&
+        current.parent.type === 'CallExpression' &&
+        current.parent.callee.type === 'Identifier' &&
+        (current.parent.callee.name === 'useAnimatedStyle' ||
+          current.parent.callee.name === 'useDerivedValue' ||
+          current.parent.callee.name === 'useAnimatedScrollHandler' ||
+          current.parent.callee.name === 'useAnimatedReaction' ||
+          current.parent.callee.name === 'runOnUI')
+      ) {
+        return true; // Found auto-workletized function
       }
     }
     current = current.parent; // Move up the AST tree

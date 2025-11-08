@@ -70,29 +70,49 @@ function installMaestro() {
         process.exit(1);
       }
 
-      const maestroDirExtracted = path.join(extractDir, extractedFiles[0]);
+      // Skip macOS __MACOSX folders and find the actual Maestro payload directory
+      const maestroDirName = extractedFiles.find((dir) => {
+        if (dir === '__MACOSX') return false;
+        const fullPath = path.join(extractDir, dir);
+        return fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory();
+      });
 
-      if (
-        !fs.existsSync(maestroDirExtracted) ||
-        !fs.statSync(maestroDirExtracted).isDirectory()
-      ) {
+      if (!maestroDirName) {
         console.error(
-          `Error: Expected directory ${maestroDirExtracted} does not exist or is not a directory.`
+          'Error: Could not find Maestro payload directory in extracted files.'
         );
         process.exit(1);
       }
+
+      const maestroDirExtracted = path.join(extractDir, maestroDirName);
 
       // Copy all files from the extracted maestro directory to .maestro/bin
       const sourceFiles = fs.readdirSync(maestroDirExtracted);
       for (const file of sourceFiles) {
         const sourcePath = path.join(maestroDirExtracted, file);
         const destPath = path.join(binDir, file);
-        if (fs.statSync(sourcePath).isFile()) {
-          fs.copyFileSync(sourcePath, destPath);
-          if (file === 'maestro') {
-            fs.chmodSync(destPath, '755');
+        fs.cpSync(sourcePath, destPath, { recursive: true, force: true });
+      }
+
+      // Find and set executable permissions for the maestro binary
+      function findMaestro(dir) {
+        const files = fs.readdirSync(dir);
+        for (const file of files) {
+          const fullPath = path.join(dir, file);
+          const stat = fs.statSync(fullPath);
+          if (stat.isFile() && file === 'maestro') {
+            return fullPath;
+          } else if (stat.isDirectory()) {
+            const found = findMaestro(fullPath);
+            if (found) return found;
           }
         }
+        return null;
+      }
+
+      const maestroPath = findMaestro(binDir);
+      if (maestroPath) {
+        fs.chmodSync(maestroPath, '755');
       }
 
       console.log(`Maestro ${MAESTRO_VERSION} installed successfully!`);

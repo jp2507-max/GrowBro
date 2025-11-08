@@ -11,7 +11,7 @@ import { useCallback, useRef } from 'react';
 import type { SharedValue } from 'react-native-reanimated';
 import { runOnJS, useSharedValue } from 'react-native-reanimated';
 
-import type { WorkletPerformanceMetrics } from './types';
+import type { WorkletPerformanceMetrics } from '@/lib/performance/types';
 
 export interface GestureLatencyMetrics {
   startTime: number;
