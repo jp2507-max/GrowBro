@@ -139,13 +139,30 @@ function parseMemoryMetrics():
 
   try {
     const data = JSON.parse(fs.readFileSync(config.memoryMetricsPath, 'utf8'));
-    const deltaMB = data.peakRSS - data.baselineRSS;
-    const postGCDeltaMB = data.postGCRSS - data.baselineRSS;
+
+    const validateNumber = (value: any, fieldName: string): number => {
+      const num = Number(value);
+      if (!Number.isFinite(num) || typeof value !== 'number') {
+        log(
+          `Invalid or missing ${fieldName}: ${value}, using 0 as fallback`,
+          'WARN'
+        );
+        return 0;
+      }
+      return num;
+    };
+
+    const baselineRSS = validateNumber(data.baselineRSS, 'baselineRSS');
+    const peakRSS = validateNumber(data.peakRSS, 'peakRSS');
+    const postGCRSS = validateNumber(data.postGCRSS, 'postGCRSS');
+
+    const deltaMB = peakRSS - baselineRSS;
+    const postGCDeltaMB = postGCRSS - baselineRSS;
 
     return {
-      baselineRSS: data.baselineRSS,
-      peakRSS: data.peakRSS,
-      postGCRSS: data.postGCRSS,
+      baselineRSS,
+      peakRSS,
+      postGCRSS,
       deltaMB,
       postGCDeltaMB,
     };

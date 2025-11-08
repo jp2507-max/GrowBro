@@ -2596,6 +2596,7 @@
       "title": "Legal",
       "update_banner": {
         "description": "{{count}} legal {{count, plural, one {document has} other {documents have}}} been updated. Tap to review.",
+        "dismiss_hint": "Dismiss this legal update notification",
         "hint": "Double-tap to view updated legal documents",
         "label": "Legal documents updated",
         "title": "Legal Documents Updated"
@@ -2776,6 +2777,7 @@
         "error_message": "We couldn't submit your feedback. Please try again or contact support directly.",
         "error_title": "Submission Failed",
         "invalid_email": "Please enter a valid email address",
+        "message_hint": "Enter your feedback message here",
         "message_label": "Message",
         "message_placeholder": "Tell us what you think...",
         "message_too_long": "Message must be less than 1000 characters",
@@ -2801,6 +2803,7 @@
         "category_label": "Category",
         "category_placeholder": "Select a category",
         "description": "Help us improve GrowBro by reporting issues",
+        "description_hint": "Describe the issue in detail, including steps to reproduce",
         "description_label": "Description",
         "description_placeholder": "Describe the issue in detail...",
         "description_too_long": "Description must be less than 5000 characters",
@@ -2817,6 +2820,7 @@
         "success_title": "Report Submitted",
         "ticket_id_fallback": "N/A",
         "title": "Report a Bug",
+        "title_hint": "Enter a brief title for your bug report",
         "title_label": "Title",
         "title_placeholder": "Brief description of the issue",
         "title_too_long": "Title must be less than 100 characters",

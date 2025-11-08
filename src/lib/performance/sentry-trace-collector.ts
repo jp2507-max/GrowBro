@@ -3,6 +3,7 @@
  * Captures and emits Sentry transaction URLs for CI artifact collection
  */
 
+import { Env } from '@env';
 import * as Sentry from '@sentry/react-native';
 
 import { logSentryTransactionUrl } from './ci-export';
@@ -20,8 +21,8 @@ export function generateSentryTransactionUrl(
   projectSlug?: string,
   orgSlug?: string
 ): string {
-  const org = orgSlug || process.env.SENTRY_ORG || 'unknown';
-  const project = projectSlug || process.env.SENTRY_PROJECT || 'unknown';
+  const org = orgSlug || Env.SENTRY_ORG || 'unknown';
+  const project = projectSlug || Env.SENTRY_PROJECT || 'unknown';
 
   return `https://sentry.io/organizations/${org}/${project}/events/${transactionId}/`;
 }

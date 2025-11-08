@@ -71,6 +71,9 @@ export function LegalUpdateBanner({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={translate('common.dismiss')}
+          accessibilityHint={translate(
+            'settings.legal.update_banner.dismiss_hint'
+          )}
           onPress={handleDismiss}
           className="ml-2 p-2"
         >

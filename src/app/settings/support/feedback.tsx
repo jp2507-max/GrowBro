@@ -176,6 +176,9 @@ export default function FeedbackScreen() {
               accessibilityLabel={translate(
                 'settings.support.feedback.message_label'
               )}
+              accessibilityHint={translate(
+                'settings.support.feedback.message_hint'
+              )}
             />
             <Text
               className={`mt-1 text-right text-xs ${

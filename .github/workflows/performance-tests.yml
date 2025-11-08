@@ -336,6 +336,13 @@ jobs:
         run: |
           xcrun simctl install booted ios/build/Build/Products/Release-iphonesimulator/GrowBro.app
 
+      - name: Collect RN Performance Metrics
+        if: always()
+        run: |
+          # Pull RN performance JSON from iOS simulator
+          APP_DATA_PATH=$(xcrun simctl get_app_container booted com.growbro.app data)
+          cp "$APP_DATA_PATH/Documents/performance.json" ./rn-performance.json || true
+
       - name: Seed Test Database
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -358,6 +365,20 @@ jobs:
             --format junit \
             --output maestro-results/performance-results.xml
 
+      - name: Run Memory Leak Detection Test
+        env:
+          APP_ID: com.growbro.app
+          BUILD_TYPE: release
+          PLATFORM: ios
+          DEVICE_MODEL: iPhone 12 Simulator
+          OS_VERSION: iOS 17
+          BUILD_HASH: ${{ github.sha }}
+          DATASET_SIZE: 1000
+        run: |
+          maestro test .maestro/performance/memory-scroll.yaml \
+            --format junit \
+            --output maestro-results/memory-test-results.xml
+
       - name: Validate Performance Budgets
         if: always()
         env:
@@ -372,12 +393,102 @@ jobs:
         run: |
           node scripts/ci/performance-validation.js
 
+      - name: Collect Performance Artifacts
+        if: always()
+        env:
+          BUILD_HASH: ${{ github.sha }}
+          COMMIT: ${{ github.sha }}
+          PLATFORM: ios
+          DEVICE_MODEL: iPhone 12 Simulator
+          OS_VERSION: iOS 17
+          DATASET_SIZE: 1000
+          OUTPUT_DIR: performance-artifacts
+          RN_PERF_JSON_PATH: rn-performance.json
+          MEMORY_METRICS_PATH: maestro-results/memory-metrics.json
+        run: |
+          pnpm tsx scripts/ci/artifact-collector.ts
+
+      - name: Generate Performance Report
+        if: always()
+        env:
+          BUILD_HASH: ${{ github.sha }}
+          COMMIT: ${{ github.sha }}
+          PLATFORM: ios
+          DEVICE_MODEL: iPhone 12 Simulator
+          OS_VERSION: iOS 17
+          DATASET_SIZE: 1000
+          OUTPUT_DIR: performance-artifacts
+          RN_PERF_JSON_PATH: rn-performance.json
+          MEMORY_METRICS_PATH: maestro-results/memory-metrics.json
+        run: |
+          pnpm tsx scripts/ci/generate-performance-report.ts
+
       - name: Upload Performance Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ios-performance-artifacts
           path: |
+            performance-artifacts/
             maestro-results/
             rn-performance.json
           retention-days: 30
+
+      - name: Comment PR with Performance Results
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let report = { passed: false };
+
+            try {
+              if (fs.existsSync('maestro-results/performance-report.json')) {
+                report = JSON.parse(fs.readFileSync('maestro-results/performance-report.json', 'utf8'));
+              }
+            } catch (error) {
+              console.error('Failed to read performance report:', error);
+            }
+
+            const status = report.passed ? '✅ PASSED' : '❌ FAILED';
+
+            // Safe metric extraction with null coalescing
+            const avgFps = report.metrics?.fps?.avgFps ?? null;
+            const p95 = report.metrics?.fps?.p95FrameTime ?? null;
+            const dropped = report.metrics?.fps?.droppedFramesPct ?? null;
+            const memoryDelta = (report.metrics?.memory?.peakRSS != null && report.metrics?.memory?.baselineRSS != null)
+              ? report.metrics.memory.peakRSS - report.metrics.memory.baselineRSS
+              : null;
+
+            const body = `## Performance Test Results (iOS) ${status}
+
+            **Build**: \`${context.sha.substring(0, 7)}\`
+            **Platform**: iOS (iPhone 12 Simulator)
+            **Dataset**: 1000 posts
+
+            ### Metrics
+
+            | Metric | Value | Budget | Status |
+            |--------|-------|--------|--------|
+            | Avg FPS | ${avgFps ?? 'N/A'} | ≥58 | ${avgFps !== null ? (avgFps >= 58 ? '✅' : '❌') : 'N/A'} |
+            | P95 Frame Time | ${p95 ?? 'N/A'} ms | ≤16.7ms | ${p95 !== null ? (p95 <= 16.7 ? '✅' : '❌') : 'N/A'} |
+            | Dropped Frames | ${dropped ?? 'N/A'}% | ≤1% | ${dropped !== null ? (dropped <= 1 ? '✅' : '❌') : 'N/A'} |
+            | Memory Delta | ${memoryDelta ?? 'N/A'} MB | ≤50MB | ${memoryDelta !== null ? (memoryDelta <= 50 ? '✅' : '❌') : 'N/A'} |
+
+            ### Artifacts
+
+            - [Maestro Results](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+            - [RN Performance JSON](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+
+            ---
+            *Performance tests run on release builds only. See [Performance Testing Guide](../docs/performance/image-optimization-visual-qa.md) for manual QA checklist.*
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: Comment PR with Performance Results

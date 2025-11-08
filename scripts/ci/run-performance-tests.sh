@@ -100,7 +100,7 @@ elif [ "$PLATFORM" = "ios" ]; then
 
   # Create temporary directory to extract IPA contents
   TEMP_DIR=$(mktemp -d)
-  trap "rm -rf $TEMP_DIR" EXIT
+  trap 'rm -rf $TEMP_DIR' EXIT
 
   # Extract IPA (which is a zip file)
   if ! unzip -q "$IOS_IPA_PATH" -d "$TEMP_DIR"; then

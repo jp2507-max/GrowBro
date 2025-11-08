@@ -2596,6 +2596,7 @@
       "title": "Rechtliches",
       "update_banner": {
         "description": "{{count}} rechtliche {{count, plural, one {Dokument wurde} other {Dokumente wurden}}} aktualisiert. Tippen Sie zum Überprüfen.",
+        "dismiss_hint": "Diese rechtliche Update-Benachrichtigung verwerfen",
         "hint": "Doppeltippen, um aktualisierte rechtliche Dokumente anzuzeigen",
         "label": "Rechtliche Dokumente aktualisiert",
         "title": "Rechtliche Dokumente aktualisiert"
@@ -2776,6 +2777,7 @@
         "error_message": "Wir konnten Ihr Feedback nicht senden. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support direkt.",
         "error_title": "Übermittlung fehlgeschlagen",
         "invalid_email": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+        "message_hint": "Geben Sie Ihre Feedback-Nachricht hier ein",
         "message_label": "Nachricht",
         "message_placeholder": "Sagen Sie uns, was Sie denken...",
         "message_too_long": "Nachricht muss kürzer als 1000 Zeichen sein",
@@ -2801,6 +2803,7 @@
         "category_label": "Kategorie",
         "category_placeholder": "Kategorie auswählen",
         "description": "Helfen Sie uns, GrowBro zu verbessern, indem Sie Probleme melden",
+        "description_hint": "Beschreiben Sie das Problem im Detail, einschließlich Schritte zur Reproduktion",
         "description_label": "Beschreibung",
         "description_placeholder": "Beschreiben Sie das Problem im Detail...",
         "description_too_long": "Beschreibung muss kürzer als 5000 Zeichen sein",
@@ -2817,6 +2820,7 @@
         "success_title": "Bericht gesendet",
         "ticket_id_fallback": "Nicht verfügbar",
         "title": "Fehler melden",
+        "title_hint": "Geben Sie einen kurzen Titel für Ihren Fehlerbericht ein",
         "title_label": "Titel",
         "title_placeholder": "Kurze Beschreibung des Problems",
         "title_too_long": "Titel muss kürzer als 100 Zeichen sein",

@@ -220,6 +220,10 @@ const client = z.object({
 
   SENTRY_ENABLE_REPLAY: z.boolean().optional(),
 
+  SENTRY_ORG: z.string().optional(),
+
+  SENTRY_PROJECT: z.string().optional(),
+
   // App Access Reviewer Credentials
 
   APP_ACCESS_REVIEWER_EMAIL: z.string().optional(),
@@ -358,12 +362,6 @@ const buildTime = z.object({
 
   // Email hashing salt for audit log privacy
   EMAIL_HASH_SALT: z.string().min(1),
-
-  // Sentry Configuration (Build-time)
-
-  SENTRY_PROJECT: z.string().optional(),
-
-  SENTRY_ORG: z.string().optional(),
 });
 
 /**
@@ -449,6 +447,8 @@ const sentryEnableReplayRaw = readEnv(
   'SENTRY_ENABLE_REPLAY',
   'EXPO_PUBLIC_SENTRY_ENABLE_REPLAY'
 );
+const sentryOrg = readEnv('SENTRY_ORG', 'EXPO_PUBLIC_SENTRY_ORG');
+const sentryProject = readEnv('SENTRY_PROJECT', 'EXPO_PUBLIC_SENTRY_PROJECT');
 const appAccessReviewerEmail = readEnv(
   'APP_ACCESS_REVIEWER_EMAIL',
   'EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL'
@@ -632,6 +632,10 @@ const _clientEnv = {
       ? sentryEnableReplayRaw === 'true'
       : undefined,
 
+  SENTRY_ORG: sentryOrg,
+
+  SENTRY_PROJECT: sentryProject,
+
   // App Access Reviewer Credentials
 
   APP_ACCESS_REVIEWER_EMAIL: appAccessReviewerEmail,
@@ -730,12 +734,6 @@ const _buildTimeEnv = {
 
   // Email hashing salt for audit log privacy
   EMAIL_HASH_SALT: process.env.EMAIL_HASH_SALT,
-
-  // Sentry Configuration (Build-time)
-
-  SENTRY_PROJECT: process.env.SENTRY_PROJECT,
-
-  SENTRY_ORG: process.env.SENTRY_ORG,
 };
 
 /**

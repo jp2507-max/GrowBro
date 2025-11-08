@@ -145,7 +145,10 @@ function validateReleaseBuild() {
 /**
  * Parse RN Performance JSON report
  */
-function parseRNPerformanceReport(jsonPath) {
+function parseRNPerformanceReport(
+  jsonPath,
+  failOnMissingBudgetedMetrics = false
+) {
   if (!jsonPath || !fs.existsSync(jsonPath)) {
     failCI(
       `RN Performance JSON not found at ${jsonPath}. Required RN metrics are missing.`
@@ -164,7 +167,41 @@ function parseRNPerformanceReport(jsonPath) {
       p95FrameTime: data.p95FrameTime || null,
       droppedFramesPct: data.droppedFramesPct || null,
       renderSpans: data.renderSpans || [],
+      tti: data.tti || null,
+      navigationP95: data.navigationP95 || null,
+      syncP95: data.syncP95 || null,
+      syncItemCount: data.syncItemCount || null,
+      jankCount: data.jankCount || null,
     };
+
+    // Check for missing budgeted metrics if requested
+    if (failOnMissingBudgetedMetrics) {
+      const missingMetrics = [];
+
+      // Check metrics that have budgets defined
+      if (metrics.tti === null && BUDGETS.startup) {
+        missingMetrics.push('tti');
+      }
+      if (metrics.navigationP95 === null && BUDGETS.navigation) {
+        missingMetrics.push('navigationP95');
+      }
+      if (metrics.syncP95 === null && BUDGETS.sync) {
+        missingMetrics.push('syncP95');
+      }
+      if (
+        metrics.jankCount === null &&
+        BUDGETS.scroll &&
+        BUDGETS.scroll.jankCount !== undefined
+      ) {
+        missingMetrics.push('jankCount');
+      }
+
+      if (missingMetrics.length > 0) {
+        failCI(
+          `Budgeted RN Performance metrics are missing from report: ${missingMetrics.join(', ')}. Expected metrics are required for validation.`
+        );
+      }
+    }
 
     log(`RN Performance metrics: ${JSON.stringify(metrics, null, 2)}`, 'DEBUG');
     return metrics;

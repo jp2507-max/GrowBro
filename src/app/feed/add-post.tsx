@@ -178,6 +178,90 @@ function useAssessmentPrefill({
   ]);
 }
 
+type PhotoAttachmentSectionProps = {
+  attachments: AttachmentInput[];
+  onCapturePhoto: () => void;
+  onSelectPhoto: () => void;
+  onRemovePhoto: () => void;
+};
+
+function PhotoAttachmentSection({
+  attachments,
+  onCapturePhoto,
+  onSelectPhoto,
+  onRemovePhoto,
+}: PhotoAttachmentSectionProps): React.JSX.Element {
+  return (
+    <View className="mt-4">
+      {attachments.length === 0 ? (
+        <View className="flex-row gap-3">
+          <Button
+            onPress={onCapturePhoto}
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            testID="capture-photo-button"
+          >
+            <Text className="text-sm">
+              {translateDynamic('feed.addPost.capturePhoto')}
+            </Text>
+          </Button>
+          <Button
+            onPress={onSelectPhoto}
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            testID="select-photo-button"
+          >
+            <Text className="text-sm">
+              {translateDynamic('feed.addPost.selectPhoto')}
+            </Text>
+          </Button>
+        </View>
+      ) : (
+        <View>
+          <View className="mb-2 flex-row items-center justify-between">
+            <Text className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">
+              {translateDynamic('feed.prefilledImages')}
+            </Text>
+            <TouchableOpacity
+              onPress={onRemovePhoto}
+              testID="remove-photo-button"
+              accessibilityRole="button"
+              accessibilityLabel={translateDynamic('feed.addPost.removePhoto')}
+              accessibilityHint={translateDynamic(
+                'feed.addPost.removePhotoHint'
+              )}
+            >
+              <Text className="text-sm text-danger-600">
+                {translateDynamic('feed.addPost.removePhoto')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {attachments.map((image, index) => (
+              <Image
+                key={image.filename}
+                accessibilityIgnoresInvertColors
+                accessibilityLabel={
+                  image.filename ||
+                  translateDynamic('feed.attachmentImageFallback')
+                }
+                accessibilityHint={translateDynamic('feed.attachmentImageHint')}
+                accessibilityRole="image"
+                testID={`attachment-image-${image.filename || index}`}
+                className="mr-3 rounded-xl"
+                source={{ uri: image.uri }}
+                style={styles.attachmentImage}
+              />
+            ))}
+          </ScrollView>
+        </View>
+      )}
+    </View>
+  );
+}
+
 export default function AddPost(): React.JSX.Element {
   const { t } = useTranslation();
   const router = useRouter();
@@ -306,75 +390,12 @@ export default function AddPost(): React.JSX.Element {
             testID="body-input"
           />
 
-          {/* Photo attachment section */}
-          <View className="mt-4">
-            {attachments.length === 0 ? (
-              <View className="flex-row gap-3">
-                <Button
-                  onPress={handleCapturePhoto}
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  testID="capture-photo-button"
-                >
-                  <Text className="text-sm">
-                    {translateDynamic('feed.addPost.capturePhoto')}
-                  </Text>
-                </Button>
-                <Button
-                  onPress={handleSelectPhoto}
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  testID="select-photo-button"
-                >
-                  <Text className="text-sm">
-                    {translateDynamic('feed.addPost.selectPhoto')}
-                  </Text>
-                </Button>
-              </View>
-            ) : (
-              <View>
-                <View className="mb-2 flex-row items-center justify-between">
-                  <Text className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">
-                    {translateDynamic('feed.prefilledImages')}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={handleRemovePhoto}
-                    testID="remove-photo-button"
-                    accessibilityRole="button"
-                    accessibilityLabel={translateDynamic(
-                      'feed.addPost.removePhoto'
-                    )}
-                  >
-                    <Text className="text-sm text-danger-600">
-                      {translateDynamic('feed.addPost.removePhoto')}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {attachments.map((image, index) => (
-                    <Image
-                      key={image.filename}
-                      accessibilityIgnoresInvertColors
-                      accessibilityLabel={
-                        image.filename ||
-                        translateDynamic('feed.attachmentImageFallback')
-                      }
-                      accessibilityHint={translateDynamic(
-                        'feed.attachmentImageHint'
-                      )}
-                      accessibilityRole="image"
-                      testID={`attachment-image-${image.filename || index}`}
-                      className="mr-3 rounded-xl"
-                      source={{ uri: image.uri }}
-                      style={styles.attachmentImage}
-                    />
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-          </View>
+          <PhotoAttachmentSection
+            attachments={attachments}
+            onCapturePhoto={handleCapturePhoto}
+            onSelectPhoto={handleSelectPhoto}
+            onRemovePhoto={handleRemovePhoto}
+          />
 
           <Button
             className="mt-6"
