@@ -32,13 +32,11 @@ const mockSentryIntegration = SentryIntegration as jest.Mocked<
 describe('createTimeSeriesPoint', () => {
   test('creates time series point with current timestamp', () => {
     const before = Date.now();
-    const point = createTimeSeriesPoint(
-      'startup.tti',
-      1500,
-      'abc123',
-      'Pixel 6a',
-      'android'
-    );
+    const point = createTimeSeriesPoint('startup.tti', 1500, {
+      buildHash: 'abc123',
+      device: 'Pixel 6a',
+      platform: 'android',
+    });
     const after = Date.now();
 
     expect(point.metric).toBe('startup.tti');
@@ -54,6 +52,10 @@ describe('createTimeSeriesPoint', () => {
 describe('uploadMetricPoint', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset mock implementations
+    mockSentry.setMeasurement.mockImplementation(() => {});
+    mockSentry.setTag.mockImplementation(() => {});
+    mockSentry.setContext.mockImplementation(() => {});
   });
 
   test('uploads metric when Sentry is initialized', () => {
@@ -124,6 +126,10 @@ describe('uploadMetricPoint', () => {
 describe('uploadTimeSeriesBatch', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset mock implementations
+    mockSentry.setMeasurement.mockImplementation(() => {});
+    mockSentry.setTag.mockImplementation(() => {});
+    mockSentry.setContext.mockImplementation(() => {});
   });
 
   test('uploads batch of metrics successfully', async () => {
@@ -206,6 +212,10 @@ describe('uploadTimeSeriesBatch', () => {
 describe('uploadCIMetrics', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset mock implementations
+    mockSentry.setMeasurement.mockImplementation(() => {});
+    mockSentry.setTag.mockImplementation(() => {});
+    mockSentry.setContext.mockImplementation(() => {});
   });
 
   test('uploads CI metrics from map', async () => {
@@ -217,12 +227,11 @@ describe('uploadCIMetrics', () => {
       ['navigation.p95', 200],
     ]);
 
-    const result = await uploadCIMetrics(
-      metrics,
-      'abc123',
-      'Pixel 6a',
-      'android'
-    );
+    const result = await uploadCIMetrics(metrics, {
+      buildHash: 'abc123',
+      device: 'Pixel 6a',
+      platform: 'android',
+    });
 
     expect(result.success).toBe(true);
     expect(result.pointsUploaded).toBe(3);
@@ -232,6 +241,11 @@ describe('uploadCIMetrics', () => {
 describe('uploadWithTransaction', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset mock implementations
+    mockSentry.setMeasurement.mockImplementation(() => {});
+    mockSentry.setTag.mockImplementation(() => {});
+    mockSentry.setContext.mockImplementation(() => {});
+    mockSentry.startSpan.mockImplementation(() => {});
   });
 
   test('uploads metrics within transaction', async () => {

@@ -55,4 +55,4 @@ env:
 
 # Verify posts are refreshed
 - assertVisible:
-    id: 'post-card-*'
+    id: 'post-card-.*'

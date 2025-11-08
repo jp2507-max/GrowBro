@@ -3,7 +3,7 @@
  * Tracks RSS, heap usage, and detects memory leaks during scroll tests
  */
 
-import { Platform } from 'react-native';
+import { NativeModules, Platform } from 'react-native';
 
 import type { MemoryMetrics } from './types';
 
@@ -32,15 +32,33 @@ export function getMemoryMetrics(): MemoryMetrics {
     heapTotal = performance.memory.totalJSHeapSize;
   }
 
-  // Platform-specific memory APIs
-  if (Platform.OS === 'android') {
-    // Android: Use Debug.getNativeHeapAllocatedSize() if available
-    // Note: This requires native module integration for production use
-    // For now, we rely on performance.memory as baseline
-    rssMemory = heapTotal;
-  } else if (Platform.OS === 'ios') {
-    // iOS: performance.memory provides heap metrics
-    rssMemory = heapTotal;
+  // Set rssMemory to actual live heap usage (usedJSHeapSize) when available
+  // Falls back to platform-specific RSS native APIs if usedJSHeapSize is unavailable
+  // Finally falls back to heapTotal (heap capacity) if native APIs are unavailable
+  if (performance?.memory?.usedJSHeapSize) {
+    rssMemory = performance.memory.usedJSHeapSize;
+  } else {
+    // Platform-specific memory APIs
+    if (Platform.OS === 'android') {
+      // Android: Attempt to use Debug.getNativeHeapAllocatedSize()
+      // Requires native module integration (e.g., via NativeModules.Debug)
+      try {
+        rssMemory =
+          NativeModules.Debug?.getNativeHeapAllocatedSize?.() ?? heapTotal;
+      } catch {
+        rssMemory = heapTotal;
+      }
+    } else if (Platform.OS === 'ios') {
+      // iOS: Attempt to use mach/task_info hook via native module
+      // Requires native module integration for task_info
+      try {
+        rssMemory = NativeModules.MemoryModule?.getTaskInfoRSS?.() ?? heapTotal;
+      } catch {
+        rssMemory = heapTotal;
+      }
+    } else {
+      rssMemory = heapTotal;
+    }
   }
 
   return {

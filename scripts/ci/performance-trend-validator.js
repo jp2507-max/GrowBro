@@ -170,11 +170,17 @@ async function fetchHistoricalMetrics(metricName, days = 7) {
       project: config.sentryProject,
       start: new Date(startTime * 1000).toISOString(),
       end: new Date(endTime * 1000).toISOString(),
-      field: ['timestamp', metricName, 'device', 'platform', 'release'],
       query: `device:${config.deviceModel} platform:${config.platform}`,
       sort: '-timestamp',
       per_page: '100',
     });
+
+    // Append each field as a separate query parameter
+    params.append('field', 'timestamp');
+    params.append('field', metricName);
+    params.append('field', 'device');
+    params.append('field', 'platform');
+    params.append('field', 'release');
 
     const response = await sentryApiRequest(`${query}?${params.toString()}`);
 

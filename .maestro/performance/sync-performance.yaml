@@ -30,9 +30,9 @@ appId: com.growbro.app
     direction: DOWN
     distance: 200
 
-# Wait for sync to complete
+# Wait for sync to complete (wait for sync status indicator to disappear)
 - extendedWaitUntil:
-    visible: '.*'
+    notVisible: 'sync-status-indicator'
     timeout: 5000
 
 # Navigate to calendar to trigger calendar sync

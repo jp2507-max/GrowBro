@@ -66,6 +66,17 @@ interface PerformanceReport {
   passed: boolean;
 }
 
+const VALID_PLATFORMS = ['ios', 'android'] as const;
+type Platform = (typeof VALID_PLATFORMS)[number];
+
+function validatePlatform(value: string | undefined): Platform {
+  const platform = value?.toLowerCase();
+  if (!platform || !VALID_PLATFORMS.includes(platform as Platform)) {
+    throw new Error(`Invalid PLATFORM: ${value}. Must be 'ios' or 'android'`);
+  }
+  return platform as Platform;
+}
+
 // Configuration
 const config = {
   outputDir: process.env.OUTPUT_DIR || './performance-artifacts',
@@ -77,7 +88,7 @@ const config = {
     'unknown',
   device: process.env.DEVICE_MODEL || 'unknown',
   os: process.env.OS_VERSION || 'unknown',
-  platform: (process.env.PLATFORM as 'ios' | 'android') || 'android',
+  platform: validatePlatform(process.env.PLATFORM),
   datasetSize: parseInt(process.env.DATASET_SIZE || '0', 10),
   rnPerfJsonPath: process.env.RN_PERF_JSON_PATH,
   memoryMetricsPath: process.env.MEMORY_METRICS_PATH,

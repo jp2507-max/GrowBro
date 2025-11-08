@@ -2,8 +2,8 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
-import { processImageVariants } from '../_shared/image-processing.ts';
-import { withRateLimit } from '../_shared/rate-limit.ts';
+import { processImageVariants } from './_shared/image-processing.ts';
+import { withRateLimit } from './_shared/rate-limit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -285,6 +285,40 @@ async function handleOptionalMediaUpload(
 
     // Block private/internal IP ranges
     const hostname = url.hostname.toLowerCase();
+
+    // Try to resolve the hostname to IP addresses using a trusted DNS-over-HTTPS
+    // resolver (fallbacks if the resolver fails). We validate the resolved IPs
+    // to ensure they are not in private or link-local ranges. This defends
+    // against DNS rebinding where the hostname string looks public but resolves
+    // to internal addresses (e.g., 127.0.0.1, cloud metadata service).
+    try {
+      let resolvedIps: string[] = [];
+      try {
+        resolvedIps = await resolveHostnameToIps(hostname);
+      } catch (dnsErr) {
+        // If DNS resolution fails for some reason, we don't want to silently
+        // allow a potential SSRF. Log and continue to the hostname checks
+        // below as a conservative fallback.
+        console.warn('[create-post] DNS resolution failed:', dnsErr);
+        resolvedIps = [];
+      }
+
+      for (const ip of resolvedIps) {
+        if (isIpPrivate(ip)) {
+          throw createHttpError(
+            400,
+            'Cannot fetch from private IP addresses or local domains.'
+          );
+        }
+      }
+    } catch (err) {
+      if (err?.status === 400) throw err;
+      // Any unexpected error in the DNS check should result in a 400 to be
+      // conservative about reaching internal hosts.
+      throw createHttpError(400, 'Invalid media source URL format.');
+    }
+
+    // Additional hostname string checks (kept for extra defense-in-depth)
     if (
       hostname === 'localhost' ||
       hostname.startsWith('127.') ||
@@ -577,4 +611,102 @@ async function hashBytes(data: Uint8Array): Promise<string> {
 
 function createHttpError(status: number, message: string) {
   return Object.assign(new Error(message), { status });
+}
+
+// Resolve a hostname to A and AAAA records using a trusted DNS-over-HTTPS
+// resolver (Google DNS). Returns an array of IP strings. This gives us the
+// ability to validate the actual IPs the hostname resolves to (defending
+// against DNS rebinding attacks).
+async function resolveHostnameToIps(hostname: string): Promise<string[]> {
+  const records: string[] = [];
+
+  // Query A records
+  try {
+    const aResp = await fetch(
+      `https://dns.google/resolve?name=${encodeURIComponent(hostname)}&type=A`
+    );
+    if (aResp.ok) {
+      const aJson = await aResp.json();
+      if (Array.isArray(aJson.Answer)) {
+        for (const ans of aJson.Answer) {
+          if (ans && ans.data) records.push(String(ans.data));
+        }
+      }
+    }
+  } catch (e) {
+    // propagate to caller to decide fallback behavior
+    throw e;
+  }
+
+  // Query AAAA records
+  try {
+    const aaaaResp = await fetch(
+      `https://dns.google/resolve?name=${encodeURIComponent(hostname)}&type=AAAA`
+    );
+    if (aaaaResp.ok) {
+      const aaaaJson = await aaaaResp.json();
+      if (Array.isArray(aaaaJson.Answer)) {
+        for (const ans of aaaaJson.Answer) {
+          if (ans && ans.data) records.push(String(ans.data).toLowerCase());
+        }
+      }
+    }
+  } catch (e) {
+    throw e;
+  }
+
+  return records;
+}
+
+// Return true if the provided IP (IPv4 or IPv6) is in a private/loopback/link-local
+// or otherwise reserved range that should not be fetched from.
+function isIpPrivate(ip: string): boolean {
+  if (!ip) return false;
+
+  const lower = ip.toLowerCase();
+
+  // Handle IPv4 mapped in IPv6 like ::ffff:127.0.0.1
+  const lastColon = lower.lastIndexOf(':');
+  if (lastColon !== -1 && lower.includes('.')) {
+    const potentialIpv4 = lower.slice(lastColon + 1);
+    if (potentialIpv4.split('.').length === 4) {
+      return isIpv4Private(potentialIpv4);
+    }
+  }
+
+  // If it contains dots, treat as IPv4
+  if (lower.includes('.')) return isIpv4Private(lower);
+
+  // IPv6 checks
+  if (lower === '::1' || lower === '0:0:0:0:0:0:0:1') return true;
+  if (lower === '::' || lower === '0:0:0:0:0:0:0:0') return true;
+  // Unique local addresses (fc00::/7 -> fc00 or fd00)
+  if (lower.startsWith('fc') || lower.startsWith('fd')) return true;
+  // Link-local fe80::/10
+  if (lower.startsWith('fe80')) return true;
+
+  return false;
+}
+
+function isIpv4Private(ipv4: string): boolean {
+  const parts = ipv4.split('.').map((p) => parseInt(p, 10));
+  if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) return false;
+  const [a, b] = parts;
+
+  // 0.0.0.0/8 unspecified
+  if (a === 0) return true;
+  // 10.0.0.0/8
+  if (a === 10) return true;
+  // 127.0.0.0/8 loopback
+  if (a === 127) return true;
+  // 169.254.0.0/16 link-local
+  if (a === 169 && b === 254) return true;
+  // 172.16.0.0/12 (172.16.0.0 - 172.31.255.255)
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  // 192.168.0.0/16
+  if (a === 192 && b === 168) return true;
+  // Carrier-grade NAT 100.64.0.0/10
+  if (a === 100 && b >= 64 && b <= 127) return true;
+
+  return false;
 }

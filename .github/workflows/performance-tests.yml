@@ -243,6 +243,15 @@ jobs:
             }
 
             const status = report.passed ? '✅ PASSED' : '❌ FAILED';
+
+            // Safe metric extraction with null coalescing
+            const avgFps = report.metrics?.fps?.avgFps ?? null;
+            const p95 = report.metrics?.fps?.p95FrameTime ?? null;
+            const dropped = report.metrics?.fps?.droppedFramesPct ?? null;
+            const memoryDelta = (report.metrics?.memory?.peakRSS != null && report.metrics?.memory?.baselineRSS != null)
+              ? report.metrics.memory.peakRSS - report.metrics.memory.baselineRSS
+              : null;
+
             const body = `## Performance Test Results (Android) ${status}
 
             **Build**: \`${context.sha.substring(0, 7)}\`
@@ -253,10 +262,10 @@ jobs:
 
             | Metric | Value | Budget | Status |
             |--------|-------|--------|--------|
-            | Avg FPS | ${report.metrics?.fps?.avgFps || 'N/A'} | ≥58 | ${report.metrics?.fps?.avgFps >= 58 ? '✅' : '❌'} |
-            | P95 Frame Time | ${report.metrics?.fps?.p95FrameTime || 'N/A'} ms | ≤16.7ms | ${report.metrics?.fps?.p95FrameTime <= 16.7 ? '✅' : '❌'} |
-            | Dropped Frames | ${report.metrics?.fps?.droppedFramesPct || 'N/A'}% | ≤1% | ${report.metrics?.fps?.droppedFramesPct <= 1 ? '✅' : '❌'} |
-            | Memory Delta | ${report.metrics?.memory?.peakRSS - report.metrics?.memory?.baselineRSS || 'N/A'} MB | ≤50MB | ${(report.metrics?.memory?.peakRSS - report.metrics?.memory?.baselineRSS) <= 50 ? '✅' : '❌'} |
+            | Avg FPS | ${avgFps ?? 'N/A'} | ≥58 | ${avgFps !== null ? (avgFps >= 58 ? '✅' : '❌') : 'N/A'} |
+            | P95 Frame Time | ${p95 ?? 'N/A'} ms | ≤16.7ms | ${p95 !== null ? (p95 <= 16.7 ? '✅' : '❌') : 'N/A'} |
+            | Dropped Frames | ${dropped ?? 'N/A'}% | ≤1% | ${dropped !== null ? (dropped <= 1 ? '✅' : '❌') : 'N/A'} |
+            | Memory Delta | ${memoryDelta ?? 'N/A'} MB | ≤50MB | ${memoryDelta !== null ? (memoryDelta <= 50 ? '✅' : '❌') : 'N/A'} |
 
             ### Artifacts
 

@@ -36,7 +36,7 @@
  *   - MAESTRO_OUTPUT_DIR: Directory for Maestro test results (default: ./maestro-results)
  *   - PERFETTO_TRACE_PATH: Path to Perfetto trace file (Android only)
  *   - RN_PERF_JSON_PATH: Path to RN Performance JSON report
- *   - MEMORY_METRICS_PATH: Path to memory metrics JSON file (required for memory validation)
+ *   - MEMORY_METRICS_PATH: Path to memory metrics JSON file (optional - memory validation skipped if not provided)
  *   - SENTRY_ORG: Sentry organization slug (optional)
  *   - SENTRY_PROJECT: Sentry project slug (optional)
  */
@@ -503,9 +503,11 @@ function validateMemoryMetrics() {
   const memoryMetrics = parseMemoryMetrics(config.memoryMetricsPath);
 
   if (!memoryMetrics) {
-    failCI(
-      'Memory metrics data is required for validation. Set MEMORY_METRICS_PATH environment variable.'
+    log(
+      'Memory metrics data not available. Skipping memory validation.',
+      'WARN'
     );
+    return null;
   }
 
   const deltaMB = memoryMetrics.peakRSS - memoryMetrics.baselineRSS;

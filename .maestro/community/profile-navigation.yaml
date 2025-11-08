@@ -41,4 +41,4 @@ env:
 
 # Verify feed state is preserved
 - assertVisible:
-    id: 'post-card-*'
+    id: 'post-card-.*'

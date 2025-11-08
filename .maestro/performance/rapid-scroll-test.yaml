@@ -40,7 +40,7 @@ tags:
 
 # Verify feed has loaded
 - assertVisible:
-    id: 'post-card-*'
+    id: 'post-card-.*'
 
 # === RAPID SCROLL STRESS TEST ===
 # 10 iterations of rapid top-to-bottom-to-top scrolls
@@ -61,7 +61,7 @@ tags:
 
       # Verify no blank cells after rapid scroll
       - assertVisible:
-          id: 'post-card-*'
+          id: 'post-card-.*'
       - assertNotVisible: 'Blank Cell'
 
       # Rapid scroll back to top
@@ -76,18 +76,18 @@ tags:
 
       # Verify no blank cells after rapid scroll
       - assertVisible:
-          id: 'post-card-*'
+          id: 'post-card-.*'
       - assertNotVisible: 'Blank Cell'
 
 # Final verification: feed still functional
 - assertVisible:
     id: 'community-screen'
 - assertVisible:
-    id: 'post-card-*'
+    id: 'post-card-.*'
 
 # Test interaction after stress test
 - tapOn:
-    id: 'post-card-*'
+    id: 'post-card-.*'
 - assertVisible: 'Comments'
 - tapOn:
     id: 'back-button'

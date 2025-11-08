@@ -31,7 +31,7 @@ appId: com.growbro.app
     commands:
       # Long press to activate drag (180ms activation)
       - longPressOn:
-          id: 'agenda-item-row-*'
+          id: 'agenda-item-row-.*'
           duration: 200
 
       # Drag vertically (simulates moving task to different date)

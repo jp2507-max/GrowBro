@@ -23,7 +23,7 @@ export function generateSentryTransactionUrl(
   const org = orgSlug || process.env.SENTRY_ORG || 'unknown';
   const project = projectSlug || process.env.SENTRY_PROJECT || 'unknown';
 
-  return `https://sentry.io/organizations/${org}/performance/${project}:${transactionId}/`;
+  return `https://sentry.io/organizations/${org}/${project}/events/${transactionId}/`;
 }
 
 /**

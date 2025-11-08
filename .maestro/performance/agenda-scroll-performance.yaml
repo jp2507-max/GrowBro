@@ -49,7 +49,7 @@ tags:
 
 # Verify agenda has loaded with content
 - assertVisible:
-    id: 'agenda-item-*'
+    id: 'agenda-item-.*'
 
 # === 30-SECOND CONTINUOUS SCROLL TEST ===
 # Scroll pattern: slow continuous scroll to stress-test rendering pipeline
@@ -75,7 +75,7 @@ tags:
 
 # Quick verification: no blank cells visible
 - assertVisible:
-    id: 'agenda-item-*'
+    id: 'agenda-item-.*'
 - assertNotVisible: 'Blank Cell'
 - assertNotVisible: 'Error Loading'
 
@@ -102,11 +102,11 @@ tags:
 - assertVisible:
     id: 'agenda-screen'
 - assertVisible:
-    id: 'agenda-item-*'
+    id: 'agenda-item-.*'
 
 # Test interaction after heavy scrolling
 - tapOn:
-    id: 'agenda-item-*'
+    id: 'agenda-item-.*'
 - assertVisible: 'Task Details'
 - tapOn:
     id: 'back-button'

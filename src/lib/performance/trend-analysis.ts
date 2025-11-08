@@ -100,20 +100,31 @@ export function calculateDelta(currentValue: number, baseline: number): number {
  *
  * @param dataPoints - Historical time series data (sorted by timestamp, oldest first)
  * @param currentValue - Current metric value to compare
- * @param config - Trend analysis configuration
+ * @param metricNameOrConfig - Metric name (legacy) or trend analysis configuration
  * @returns Trend analysis result
  */
 export function analyzeTrend(
   dataPoints: PerformanceTimeSeriesPoint[],
   currentValue: number,
-  config: TrendAnalysisConfig = SENTRY_DASHBOARD_CONFIG.trendAnalysis
+  metricNameOrConfig?: string | TrendAnalysisConfig
 ): TrendAnalysisResult {
+  // Handle legacy signature where third param is metricName string
+  let metricName: string | undefined;
+  let config: TrendAnalysisConfig;
+
+  if (typeof metricNameOrConfig === 'string') {
+    metricName = metricNameOrConfig;
+    config = SENTRY_DASHBOARD_CONFIG.trendAnalysis;
+  } else {
+    config = metricNameOrConfig ?? SENTRY_DASHBOARD_CONFIG.trendAnalysis;
+  }
+
   const minDataPoints = config.minDataPoints ?? 3;
 
   // Require minimum data points for reliable analysis
   if (dataPoints.length < minDataPoints) {
     return {
-      metric: dataPoints[0]?.metric || 'unknown',
+      metric: dataPoints[0]?.metric || metricName || 'unknown',
       currentValue,
       movingAverage: currentValue,
       delta: 0,
@@ -128,7 +139,7 @@ export function analyzeTrend(
 
   if (movingAverage === null) {
     return {
-      metric: dataPoints[0]?.metric || 'unknown',
+      metric: dataPoints[0]?.metric || metricName || 'unknown',
       currentValue,
       movingAverage: currentValue,
       delta: 0,
@@ -143,7 +154,7 @@ export function analyzeTrend(
   const exceedsThreshold = Math.abs(delta) > config.deltaThreshold;
 
   return {
-    metric: dataPoints[0]?.metric || 'unknown',
+    metric: dataPoints[0]?.metric || metricName || 'unknown',
     currentValue,
     movingAverage,
     delta,

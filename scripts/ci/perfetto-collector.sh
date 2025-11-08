@@ -170,11 +170,11 @@ start_collection() {
     # Start Perfetto in background
     log_info "Starting Perfetto with ${PERFETTO_DURATION_MS}ms duration..."
     
-    # Use adb shell to start perfetto in background
-    echo "$config" | adb shell "perfetto -c - --txt -o ${DEVICE_TRACE_PATH}" &
-    perfetto_pid=$!
-    
-    # Save PID for later cleanup
+    # Use adb shell to start perfetto in background and capture device PID
+    device_pid=$(echo "$config" | adb shell "perfetto -c - --txt -o ${DEVICE_TRACE_PATH} & echo \$!")
+    perfetto_pid=$device_pid
+
+    # Save device PID for later cleanup
     echo "$perfetto_pid" > "$PERFETTO_PID_FILE"
     
     log_info "Perfetto started (PID: $perfetto_pid)"
@@ -192,11 +192,11 @@ stop_collection() {
     
     check_adb
     
-    # Kill Perfetto process if PID file exists
+    # Kill Perfetto process on device if PID file exists
     if [ -f "$PERFETTO_PID_FILE" ]; then
-        perfetto_pid=$(cat "$PERFETTO_PID_FILE")
-        log_info "Stopping Perfetto process (PID: $perfetto_pid)..."
-        kill "$perfetto_pid" 2>/dev/null || log_warn "Perfetto process already stopped"
+        device_pid=$(cat "$PERFETTO_PID_FILE")
+        log_info "Stopping Perfetto process on device (PID: $device_pid)..."
+        adb shell "kill $device_pid" 2>/dev/null || log_warn "Perfetto process already stopped or invalid PID"
         rm "$PERFETTO_PID_FILE"
     else
         log_warn "No PID file found, Perfetto may have already stopped"

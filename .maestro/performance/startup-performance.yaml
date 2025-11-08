@@ -82,7 +82,7 @@ tags:
 
 # Verify content loads quickly
 - assertVisible:
-    id: 'post-card-*'
+    id: 'post-card-.*'
     timeout: 2000
 # === SUCCESS CRITERIA (verified in CI) ===
 # These metrics are captured via @shopify/react-native-performance and Sentry:

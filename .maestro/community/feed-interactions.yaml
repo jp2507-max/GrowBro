@@ -21,7 +21,7 @@ env:
 
 # Test Like functionality
 - assertVisible:
-    id: 'post-card-*'
+    id: 'post-card-.*'
 - tapOn:
     id: 'like-button-*'
 - assertVisible: 'liked'
@@ -33,7 +33,7 @@ env:
 
 # Open post detail
 - tapOn:
-    id: 'post-card-*'
+    id: 'post-card-.*'
 - assertVisible: 'Comments'
 
 # Add a comment
