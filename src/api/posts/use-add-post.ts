@@ -67,10 +67,17 @@ export const useAddPost = createMutation<Response, Variables, AxiosError>({
       const attachment = variables.attachments[0];
 
       if (attachment.uri) {
-        // Validate file size before processing
-        const validation = await validateFileSize(attachment.uri);
-        if (!validation.isValid) {
-          throw new Error(validation.error || 'Invalid file size');
+        // Skip client media processing for remote prefill attachments (already uploaded assets)
+        const isLocalFile =
+          attachment.uri.startsWith('file:///') ||
+          attachment.uri.startsWith('content://');
+
+        if (isLocalFile) {
+          // Validate file size before processing local files
+          const validation = await validateFileSize(attachment.uri);
+          if (!validation.isValid) {
+            throw new Error(validation.error || 'Invalid file size');
+          }
         }
 
         // Get current user ID

@@ -491,4 +491,3 @@ jobs:
               body: body
             });
 
-      - name: Comment PR with Performance Results

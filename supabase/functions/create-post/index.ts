@@ -1,6 +1,15 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
+import {
+  ImageMagick,
+  initializeImageMagick,
+  MagickFormat,
+  MagickGeometry,
+  type MagickImage,
+} from 'npm:@imagemagick/magick-wasm@0.0.30';
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2';
+import { encode as encodeBlurhash } from 'npm:blurhash@2.0.5';
+import { rgbaToThumbHash } from 'npm:thumbhash@0.1.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -139,15 +148,74 @@ Deno.serve(async (req: Request) => {
       requestBody.media?.thumbnailPath;
 
     if (hasMobileVariants) {
-      // Mobile client pre-uploaded variants, use them directly
+      // Mobile client pre-uploaded variants, validate metadata before use
+      const { width, height, aspectRatio, bytes } = requestBody.media!;
+
+      // Validate required dimensions
+      if (!width || width <= 0) {
+        return new Response(
+          JSON.stringify({
+            error:
+              'Invalid media metadata: width must be present and greater than 0',
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      if (!height || height <= 0) {
+        return new Response(
+          JSON.stringify({
+            error:
+              'Invalid media metadata: height must be present and greater than 0',
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      // Validate file size
+      if (!bytes || bytes <= 0) {
+        return new Response(
+          JSON.stringify({
+            error:
+              'Invalid media metadata: bytes must be present and greater than 0',
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      // Compute aspectRatio if missing, otherwise validate it's reasonable
+      let finalAspectRatio = aspectRatio;
+      if (aspectRatio === undefined || aspectRatio === null) {
+        finalAspectRatio = width / height;
+      } else if (aspectRatio <= 0) {
+        return new Response(
+          JSON.stringify({
+            error: 'Invalid media metadata: aspectRatio must be greater than 0',
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
       mediaProcessingResult = {
         originalPath: requestBody.media!.originalPath!,
         resizedPath: requestBody.media!.resizedPath!,
         thumbnailPath: requestBody.media!.thumbnailPath!,
-        width: requestBody.media!.width ?? 0,
-        height: requestBody.media!.height ?? 0,
-        aspectRatio: requestBody.media!.aspectRatio ?? 1,
-        bytes: requestBody.media!.bytes ?? 0,
+        width,
+        height,
+        aspectRatio: finalAspectRatio,
+        bytes,
         blurhash: requestBody.media!.blurhash,
         thumbhash: requestBody.media!.thumbhash,
       };
@@ -289,16 +357,7 @@ async function handleOptionalMediaUpload(
     // against DNS rebinding where the hostname string looks public but resolves
     // to internal addresses (e.g., 127.0.0.1, cloud metadata service).
     try {
-      let resolvedIps: string[] = [];
-      try {
-        resolvedIps = await resolveHostnameToIps(hostname);
-      } catch (dnsErr) {
-        // If DNS resolution fails for some reason, we don't want to silently
-        // allow a potential SSRF. Log and continue to the hostname checks
-        // below as a conservative fallback.
-        console.warn('[create-post] DNS resolution failed:', dnsErr);
-        resolvedIps = [];
-      }
+      const resolvedIps = await resolveHostnameToIps(hostname);
 
       for (const ip of resolvedIps) {
         if (isIpPrivate(ip)) {
@@ -365,6 +424,262 @@ async function handleOptionalMediaUpload(
     console.error('[create-post] Failed to process media:', error);
     throw createHttpError(500, 'Failed to process media uploads.');
   }
+}
+
+// Image processing constants and types (inlined from _shared/image-processing.ts)
+const RESIZED_LONG_EDGE = 1280;
+const RESIZED_QUALITY = 85;
+const THUMBNAIL_LONG_EDGE = 200;
+const THUMBNAIL_QUALITY = 70;
+const HASH_SAMPLE_LONG_EDGE = 64;
+const BLURHASH_COMPONENT_X = 4;
+const BLURHASH_COMPONENT_Y = 3;
+const DEFAULT_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
+
+let magickReadyPromise: Promise<void> | undefined;
+
+type ImageVariant = {
+  data: Uint8Array;
+  width: number;
+  height: number;
+  bytes: number;
+  contentType: 'image/jpeg';
+};
+
+type ProcessedImageMetadata = {
+  width: number;
+  height: number;
+  aspectRatio: number;
+  bytes: number;
+  gpsStripped: boolean;
+};
+
+type ProcessedImage = {
+  original: ImageVariant;
+  resized: ImageVariant;
+  thumbnail: ImageVariant;
+  blurhash: string;
+  thumbhash: string | null;
+  metadata: ProcessedImageMetadata;
+};
+
+async function ensureMagickInitialized(): Promise<void> {
+  if (!magickReadyPromise) {
+    magickReadyPromise = (async () => {
+      const wasmUrl = new URL(
+        'magick.wasm',
+        import.meta.resolve('npm:@imagemagick/magick-wasm@0.0.30')
+      );
+      const wasmBytes = await Deno.readFile(wasmUrl);
+      await initializeImageMagick(wasmBytes);
+    })();
+  }
+
+  await magickReadyPromise;
+}
+
+async function processImageVariants(
+  input: Uint8Array
+): Promise<ProcessedImage> {
+  await ensureMagickInitialized();
+
+  let result: ProcessedImage | undefined;
+
+  ImageMagick.read(input, (image: MagickImage) => {
+    image.autoOrient();
+    image.strip();
+    image.quality = RESIZED_QUALITY;
+
+    const sanitizedBytes = image.write(
+      (data: Uint8Array) => data,
+      MagickFormat.Jpeg
+    );
+
+    const originalVariant = createVariant(
+      sanitizedBytes,
+      image.width,
+      image.height
+    );
+
+    const resizedVariant = createResizedVariant(image, originalVariant);
+    const thumbnailVariant = createThumbnailVariant(image);
+
+    const { blurhash, thumbhash } = generatePlaceholders(image);
+
+    result = {
+      original: originalVariant,
+      resized: resizedVariant,
+      thumbnail: thumbnailVariant,
+      blurhash,
+      thumbhash,
+      metadata: buildMetadata(originalVariant),
+    };
+  });
+
+  if (!result) {
+    throw new Error('Failed to process image. No result produced.');
+  }
+
+  return result;
+}
+
+function createVariant(
+  data: Uint8Array,
+  width: number,
+  height: number
+): ImageVariant {
+  return {
+    data: new Uint8Array(data),
+    width,
+    height,
+    bytes: data.byteLength,
+    contentType: 'image/jpeg',
+  };
+}
+
+function createResizedVariant(
+  baseImage: MagickImage,
+  fallback: ImageVariant
+): ImageVariant {
+  const { width, height } = fallback;
+  const { width: targetWidth, height: targetHeight } =
+    calculateResizeDimensions(width, height, RESIZED_LONG_EDGE);
+
+  if (targetWidth === width && targetHeight === height) {
+    return fallback;
+  }
+
+  const resizedImage = baseImage.clone();
+  resizedImage.resize(new MagickGeometry(targetWidth, targetHeight));
+  resizedImage.quality = RESIZED_QUALITY;
+  const resizedBytes = resizedImage.write(
+    (data: Uint8Array) => data,
+    MagickFormat.Jpeg
+  );
+
+  const variant = createVariant(
+    resizedBytes,
+    resizedImage.width,
+    resizedImage.height
+  );
+
+  resizedImage.dispose();
+  return variant;
+}
+
+function createThumbnailVariant(baseImage: MagickImage): ImageVariant {
+  const { width, height } = calculateResizeDimensions(
+    baseImage.width,
+    baseImage.height,
+    THUMBNAIL_LONG_EDGE
+  );
+
+  const thumbnailImage = baseImage.clone();
+  thumbnailImage.resize(new MagickGeometry(width, height));
+  thumbnailImage.quality = THUMBNAIL_QUALITY;
+  const thumbnailBytes = thumbnailImage.write(
+    (data: Uint8Array) => data,
+    MagickFormat.Jpeg
+  );
+
+  const variant = createVariant(
+    thumbnailBytes,
+    thumbnailImage.width,
+    thumbnailImage.height
+  );
+
+  thumbnailImage.dispose();
+  return variant;
+}
+
+function calculateResizeDimensions(
+  width: number,
+  height: number,
+  maxLongEdge: number
+): { width: number; height: number } {
+  const longEdge = Math.max(width, height);
+
+  if (longEdge <= maxLongEdge) {
+    return { width, height };
+  }
+
+  const scale = maxLongEdge / longEdge;
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  };
+}
+
+function generatePlaceholders(image: MagickImage): {
+  blurhash: string;
+  thumbhash: string | null;
+} {
+  let blurhash = DEFAULT_BLURHASH;
+  let thumbhash: string | null = null;
+
+  const hashImage = image.clone();
+  const { width, height } = calculateResizeDimensions(
+    hashImage.width,
+    hashImage.height,
+    HASH_SAMPLE_LONG_EDGE
+  );
+  hashImage.resize(new MagickGeometry(width, height));
+
+  const rgbaBytes = hashImage.write(
+    (data: Uint8Array) => data,
+    MagickFormat.Rgba
+  );
+  const pixels = new Uint8ClampedArray(
+    rgbaBytes.buffer,
+    rgbaBytes.byteOffset,
+    rgbaBytes.byteLength
+  );
+
+  try {
+    blurhash = encodeBlurhash(
+      pixels,
+      hashImage.width,
+      hashImage.height,
+      BLURHASH_COMPONENT_X,
+      BLURHASH_COMPONENT_Y
+    );
+  } catch (error) {
+    console.warn('[image-processing] Failed to generate BlurHash:', error);
+  }
+
+  try {
+    const thumbhashBytes = rgbaToThumbHash(
+      hashImage.width,
+      hashImage.height,
+      new Uint8Array(rgbaBytes)
+    );
+    thumbhash = toBase64(thumbhashBytes);
+  } catch (error) {
+    console.warn('[image-processing] Failed to generate ThumbHash:', error);
+  }
+
+  hashImage.dispose();
+
+  return { blurhash, thumbhash };
+}
+
+function toBase64(data: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < data.length; i += 1) {
+    binary += String.fromCharCode(data[i] ?? 0);
+  }
+  return btoa(binary);
+}
+
+function buildMetadata(variant: ImageVariant): ProcessedImageMetadata {
+  const aspectRatio = variant.height > 0 ? variant.width / variant.height : 1;
+  return {
+    width: variant.width,
+    height: variant.height,
+    aspectRatio,
+    bytes: variant.bytes,
+    gpsStripped: true,
+  };
 }
 
 async function processAndUploadMedia({
@@ -604,7 +919,7 @@ function buildBasePath(userId: string, hash: string): string {
 }
 
 function sanitizePathSegment(value: string): string {
-  return value.replace(/[^a-zA-Z0-9_-]/g, '');
+  return value.replace(/[^a-zA-Z0-9_-]/g, '_');
 }
 
 async function hashBytes(data: Uint8Array): Promise<string> {
@@ -780,71 +1095,22 @@ async function withRateLimit(
   return null;
 }
 
-// Image processing functionality (inlined from shared module)
-interface ImageVariant {
-  data: Uint8Array;
-  width: number;
-  height: number;
-  bytes: number;
-  contentType: 'image/jpeg';
-}
+// Helper function to fetch with timeout using AbortController
+async function fetchWithTimeout(
+  url: string,
+  timeoutMs: number = 2000
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-interface ProcessedImageMetadata {
-  width: number;
-  height: number;
-  aspectRatio: number;
-  bytes: number;
-  gpsStripped: boolean;
-}
-
-interface ProcessedImage {
-  original: ImageVariant;
-  resized: ImageVariant;
-  thumbnail: ImageVariant;
-  blurhash: string;
-  thumbhash: string | null;
-  metadata: ProcessedImageMetadata;
-}
-
-async function processImageVariants(
-  input: Uint8Array
-): Promise<ProcessedImage> {
-  // For now, return a minimal processed image structure
-  // This would need the full ImageMagick implementation
-  const mockImage: ProcessedImage = {
-    original: {
-      data: input,
-      width: 800,
-      height: 600,
-      bytes: input.length,
-      contentType: 'image/jpeg',
-    },
-    resized: {
-      data: input,
-      width: 800,
-      height: 600,
-      bytes: input.length,
-      contentType: 'image/jpeg',
-    },
-    thumbnail: {
-      data: input.slice(0, Math.min(1000, input.length)),
-      width: 200,
-      height: 150,
-      bytes: Math.min(1000, input.length),
-      contentType: 'image/jpeg',
-    },
-    blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4',
-    thumbhash: null,
-    metadata: {
-      width: 800,
-      height: 600,
-      aspectRatio: 800 / 600,
-      bytes: input.length,
-      gpsStripped: true,
-    },
-  };
-
-  return mockImage;
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (e) {
+    clearTimeout(timeoutId);
+    throw e;
+  }
 }
 
 // Resolve a hostname to A and AAAA records using a trusted DNS-over-HTTPS
@@ -856,7 +1122,7 @@ async function resolveHostnameToIps(hostname: string): Promise<string[]> {
 
   // Query A records
   try {
-    const aResp = await fetch(
+    const aResp = await fetchWithTimeout(
       `https://dns.google/resolve?name=${encodeURIComponent(hostname)}&type=A`
     );
     if (aResp.ok) {
@@ -874,7 +1140,7 @@ async function resolveHostnameToIps(hostname: string): Promise<string[]> {
 
   // Query AAAA records
   try {
-    const aaaaResp = await fetch(
+    const aaaaResp = await fetchWithTimeout(
       `https://dns.google/resolve?name=${encodeURIComponent(hostname)}&type=AAAA`
     );
     if (aaaaResp.ok) {
