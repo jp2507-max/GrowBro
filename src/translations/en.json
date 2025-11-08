@@ -1973,14 +1973,6 @@
     "retry": "Retry",
     "search_placeholder": "Search plants…"
   },
-  "playbook": {
-    "noTasks": "No tasks in this phase",
-    "status": {
-      "completed": "Completed",
-      "current": "Current",
-      "upcoming": "Upcoming"
-    }
-  },
   "playbooks": {
     "accessibility": {
       "adoptTemplate": "Adopt community template",

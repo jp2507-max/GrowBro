@@ -34,19 +34,20 @@ const BANNED_METHODS = new Set([
 
 /**
  * Check if a node is inside a worklet function
+ * Worklets are functions that run on the UI thread in React Native Reanimated
  */
-function isInsideWorklet(node, context) {
-  const sourceCode = context.sourceCode || context.getSourceCode();
+function isInsideWorklet(node) {
   let current = node;
 
+  // Walk up the AST from the given node to find worklet boundaries
   while (current) {
-    // Check for arrow functions or function expressions
+    // Check for explicit worklet functions (marked with 'worklet' directive)
     if (
       current.type === 'ArrowFunctionExpression' ||
       current.type === 'FunctionExpression' ||
       current.type === 'FunctionDeclaration'
     ) {
-      // Check if function body contains 'worklet' directive
+      // Check if function body starts with 'worklet' string literal directive
       if (current.body && current.body.type === 'BlockStatement') {
         const firstStatement = current.body.body[0];
         if (
@@ -55,31 +56,32 @@ function isInsideWorklet(node, context) {
           firstStatement.expression.type === 'Literal' &&
           firstStatement.expression.value === 'worklet'
         ) {
-          return true;
+          return true; // Found explicit worklet function
         }
       }
 
-      // Check for useAnimatedStyle, useDerivedValue, etc. (auto-workletized)
-      const ancestors = sourceCode.getAncestors(node);
-      const parent = ancestors.find((ancestor) => {
-        return (
-          ancestor.type === 'CallExpression' &&
-          ancestor.callee.type === 'Identifier' &&
-          (ancestor.callee.name === 'useAnimatedStyle' ||
-            ancestor.callee.name === 'useDerivedValue' ||
-            ancestor.callee.name === 'useAnimatedScrollHandler' ||
-            ancestor.callee.name === 'useAnimatedReaction' ||
-            ancestor.callee.name === 'runOnUI')
-        );
-      });
-
-      if (parent) {
-        return true;
+      // Check for auto-workletized functions (Reanimated hooks that run callbacks on UI thread)
+      // Walk up from current function to find if it's passed to a Reanimated hook
+      let checkNode = current;
+      while (checkNode && checkNode !== node) {
+        if (
+          checkNode.type === 'CallExpression' &&
+          checkNode.callee.type === 'Identifier' &&
+          // These Reanimated hooks automatically workletize their callback functions
+          (checkNode.callee.name === 'useAnimatedStyle' ||
+            checkNode.callee.name === 'useDerivedValue' ||
+            checkNode.callee.name === 'useAnimatedScrollHandler' ||
+            checkNode.callee.name === 'useAnimatedReaction' ||
+            checkNode.callee.name === 'runOnUI')
+        ) {
+          return true; // Found auto-workletized function
+        }
+        checkNode = checkNode.parent;
       }
     }
-    current = current.parent;
+    current = current.parent; // Move up the AST tree
   }
-  return false;
+  return false; // Not inside a worklet
 }
 
 module.exports = {
@@ -108,7 +110,7 @@ module.exports = {
     return {
       // Check for console.log, console.warn, etc.
       MemberExpression(node) {
-        if (!isInsideWorklet(node, context)) {
+        if (!isInsideWorklet(node)) {
           return;
         }
 
@@ -157,7 +159,7 @@ module.exports = {
 
       // Check for direct fetch() calls
       CallExpression(node) {
-        if (!isInsideWorklet(node, context)) {
+        if (!isInsideWorklet(node)) {
           return;
         }
 

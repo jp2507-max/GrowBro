@@ -27,6 +27,7 @@ env:
   NODE_VERSION: '20'
   PNPM_VERSION: '9'
   JAVA_VERSION: '17'
+  MAESTRO_VERSION: '1.40.0'
 
 jobs:
   # ============================================================================
@@ -56,7 +57,7 @@ jobs:
 
       - name: Install Maestro
         run: |
-          curl -Ls "https://get.maestro.mobile.dev" | bash
+          pnpm run install-maestro
           echo "$HOME/.maestro/bin" >> $GITHUB_PATH
 
       - name: Build Android Release APK
@@ -307,8 +308,8 @@ jobs:
 
       - name: Install Maestro
         run: |
-          brew tap mobile-dev-inc/tap
-          brew install maestro
+          pnpm run install-maestro
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
 
       - name: Install CocoaPods dependencies
         run: |
@@ -335,13 +336,6 @@ jobs:
       - name: Install App on Simulator
         run: |
           xcrun simctl install booted ios/build/Build/Products/Release-iphonesimulator/GrowBro.app
-
-      - name: Collect RN Performance Metrics
-        if: always()
-        run: |
-          # Pull RN performance JSON from iOS simulator
-          APP_DATA_PATH=$(xcrun simctl get_app_container booted com.growbro.app data)
-          cp "$APP_DATA_PATH/Documents/performance.json" ./rn-performance.json || true
 
       - name: Seed Test Database
         env:
@@ -378,6 +372,13 @@ jobs:
           maestro test .maestro/performance/memory-scroll.yaml \
             --format junit \
             --output maestro-results/memory-test-results.xml
+
+      - name: Collect RN Performance Metrics
+        if: always()
+        run: |
+          # Pull RN performance JSON from iOS simulator
+          APP_DATA_PATH=$(xcrun simctl get_app_container booted com.growbro.app data)
+          cp "$APP_DATA_PATH/Documents/performance.json" ./rn-performance.json || true
 
       - name: Validate Performance Budgets
         if: always()

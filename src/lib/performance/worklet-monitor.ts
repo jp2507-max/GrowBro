@@ -68,7 +68,7 @@ function calculatePerformanceMetrics(
  * Target: P95 latency ≤50ms, dropped frames <1%
  */
 export function useGesturePerformanceTracker() {
-  const startTimeRef = useRef<number>(0);
+  const startTimeShared = useSharedValue<number>(0);
   const latenciesRef = useRef<number[]>([]);
   const frameCountShared = useSharedValue<number>(0);
   const droppedFramesShared = useSharedValue<number>(0);
@@ -76,17 +76,17 @@ export function useGesturePerformanceTracker() {
   const trackGestureStart = useCallback(() => {
     'worklet';
     const now = performance.now();
-    startTimeRef.current = now;
+    startTimeShared.value = now;
     frameCountShared.value = 0;
     droppedFramesShared.value = 0;
-  }, [frameCountShared, droppedFramesShared]);
+  }, [startTimeShared, frameCountShared, droppedFramesShared]);
 
   const trackGestureUpdate = useCallback(() => {
     'worklet';
-    if (startTimeRef.current === 0) return;
+    if (startTimeShared.value === 0) return;
 
     const now = performance.now();
-    const latency = now - startTimeRef.current;
+    const latency = now - startTimeShared.value;
 
     frameCountShared.value += 1;
 
@@ -103,13 +103,13 @@ export function useGesturePerformanceTracker() {
       }
     })(latency);
 
-    startTimeRef.current = now;
-  }, [frameCountShared, droppedFramesShared]);
+    startTimeShared.value = now;
+  }, [startTimeShared, frameCountShared, droppedFramesShared]);
 
   const trackGestureEnd = useCallback(() => {
     'worklet';
-    startTimeRef.current = 0;
-  }, []);
+    startTimeShared.value = 0;
+  }, [startTimeShared]);
 
   const getLatencyMetrics = useCallback((): GestureLatencyMetrics | null => {
     if (latenciesRef.current.length === 0) {
@@ -140,8 +140,8 @@ export function useGesturePerformanceTracker() {
     latenciesRef.current = [];
     frameCountShared.value = 0;
     droppedFramesShared.value = 0;
-    startTimeRef.current = 0;
-  }, [frameCountShared, droppedFramesShared]);
+    startTimeShared.value = 0;
+  }, [startTimeShared, frameCountShared, droppedFramesShared]);
 
   return {
     trackGestureStart,

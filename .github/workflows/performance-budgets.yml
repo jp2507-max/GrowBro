@@ -26,6 +26,7 @@ env:
   NODE_VERSION: '20'
   PNPM_VERSION: '9'
   JAVA_VERSION: '17'
+  MAESTRO_VERSION: '1.40.0'
 
 jobs:
   # ============================================================================
@@ -72,7 +73,7 @@ jobs:
 
       - name: Install Maestro
         run: |
-          curl -Ls "https://get.maestro.mobile.dev" | bash
+          pnpm run install-maestro
           echo "$HOME/.maestro/bin" >> $GITHUB_PATH
 
       - name: Build Android Release APK
@@ -246,8 +247,8 @@ jobs:
 
       - name: Install Maestro
         run: |
-          brew tap mobile-dev-inc/tap
-          brew install maestro
+          pnpm run install-maestro
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
 
       - name: Install CocoaPods dependencies
         run: |

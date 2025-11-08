@@ -41,7 +41,7 @@
     "check-all": "pnpm run lint && pnpm run type-check && pnpm run lint:translations && pnpm run i18n:validate && pnpm run schemas:validate && pnpm run compliance:docs:validate && pnpm run compliance:lawful-bases-matrix && pnpm run privacy:validate && pnpm run privacy-policy:validate && pnpm run data-safety:generate && pnpm run data-safety:validate && pnpm run compliance:att-guard && pnpm run compliance:siwa-guard && pnpm run compliance:watermelondb-guard && pnpm run compliance:cannabis && pnpm run compliance:target-api && pnpm run compliance:media-audit && pnpm run compliance:audit && pnpm run test",
     "test:ci": "pnpm run test --coverage",
     "test:watch": "pnpm run test --watch",
-    "install-maestro": "curl -Ls 'https://get.maestro.mobile.dev' | bash",
+    "install-maestro": "node scripts/install-maestro.js",
     "e2e-test": "maestro test .maestro/ -e APP_ID=com.obytes.development",
     "privacy:snapshot": "node scripts/snapshot-privacy-deps.js",
     "privacy:validate": "node scripts/validate-privacy-manifest.js",

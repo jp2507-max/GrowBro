@@ -69,15 +69,20 @@ export const useAddPost = createMutation<Response, Variables, AxiosError>({
       if (attachment.uri) {
         // Skip client media processing for remote prefill attachments (already uploaded assets)
         const isLocalFile =
-          attachment.uri.startsWith('file:///') ||
+          attachment.uri.startsWith('file://') ||
           attachment.uri.startsWith('content://');
 
-        if (isLocalFile) {
-          // Validate file size before processing local files
-          const validation = await validateFileSize(attachment.uri);
-          if (!validation.isValid) {
-            throw new Error(validation.error || 'Invalid file size');
-          }
+        if (!isLocalFile) {
+          // Remote prefill attachment - skip all client-side processing
+          // The server will use the pre-uploaded paths directly
+          throw new Error('Remote attachments are not currently supported');
+        }
+
+        // Local file - validate and process
+        // Validate file size before processing
+        const validation = await validateFileSize(attachment.uri);
+        if (!validation.isValid) {
+          throw new Error(validation.error || 'Invalid file size');
         }
 
         // Get current user ID

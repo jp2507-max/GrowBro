@@ -1973,14 +1973,6 @@
     "retry": "Erneut versuchen",
     "search_placeholder": "Pflanzen suchen…"
   },
-  "playbook": {
-    "noTasks": "Keine Aufgaben in dieser Phase",
-    "status": {
-      "completed": "Abgeschlossen",
-      "current": "Aktuell",
-      "upcoming": "Bevorstehend"
-    }
-  },
   "playbooks": {
     "accessibility": {
       "adoptTemplate": "Community-Vorlage übernehmen",
