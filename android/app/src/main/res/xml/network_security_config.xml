@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+  <domain-config cleartextTrafficPermitted="false">
+    <domain includeSubdomains="true">mgbekkpswaizzthgefbc.supabase.co</domain>
+    <pin-set expiration="2026-12-31">
+      <pin digest="SHA-256">sha256/ckmVX7roOyrjNR9KuTogh+Z42iOeDbEmDBSvAeky8p4=</pin>
+      <pin digest="SHA-256">sha256/i1cBCUTQtLssEK4TU86Q71tPpIr2wd0K/SiKEOKzV4k=</pin>
+    </pin-set>
+  </domain-config>
+  <domain-config cleartextTrafficPermitted="false">
+    <domain includeSubdomains="true">.supabase.co</domain>
+    <pin-set expiration="2026-12-31">
+      <pin digest="SHA-256">sha256/ckmVX7roOyrjNR9KuTogh+Z42iOeDbEmDBSvAeky8p4=</pin>
+      <pin digest="SHA-256">sha256/i1cBCUTQtLssEK4TU86Q71tPpIr2wd0K/SiKEOKzV4k=</pin>
+    </pin-set>
+  </domain-config>
+</network-security-config>
