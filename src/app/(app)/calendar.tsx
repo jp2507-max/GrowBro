@@ -93,7 +93,12 @@ export default function CalendarScreen(): React.ReactElement {
       );
     }
     if (item.type === 'task' && item.task) {
-      return <DraggableAgendaItem task={item.task as any} />;
+      return (
+        <DraggableAgendaItem
+          task={item.task as any}
+          testID={`agenda-item-row-${item.task.id}`}
+        />
+      );
     }
     return null;
   }, []);

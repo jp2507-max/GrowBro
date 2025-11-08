@@ -53,9 +53,9 @@ export function OptimizedImage({
     return FALLBACK_BLURHASH;
   }, [blurhash, thumbhash, thumbnailUri]);
 
-  // Prefer thumbnail for lists, fallback to resized, then original
+  // Prefer resized for quality, fallback to original, then thumbnail
   const source = React.useMemo(() => {
-    const sourceUri = thumbnailUri || resizedUri || uri;
+    const sourceUri = resizedUri || uri || thumbnailUri;
     if (!sourceUri) {
       return undefined;
     }

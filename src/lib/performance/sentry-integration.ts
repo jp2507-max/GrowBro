@@ -95,39 +95,66 @@ export function isSentryPerformanceInitialized(): boolean {
 export function startPerformanceTransaction(
   name: string,
   operation: string
-): void {
+): { finish: () => void } {
   if (!sentryInitialized) {
-    return;
+    return { finish: () => {} };
   }
 
-  Sentry.startSpan(
-    {
-      op: operation,
-      name,
+  const span = Sentry.startInactiveSpan({
+    op: operation,
+    name,
+  });
+
+  return {
+    finish: () => {
+      span?.end();
     },
-    () => {
-      // Span will be automatically finished when the callback completes
-    }
-  );
+  };
 }
 
 /**
- * Track app startup performance
+ * Creates a promise-based latch that can be resolved externally with timeout protection
  */
-export function trackAppStartup(): void {
-  if (!sentryInitialized) {
-    return;
-  }
+function createFinishPromise(): {
+  finishPromise: Promise<void>;
+  resolveFinish: () => void;
+  cleanup: () => void;
+} {
+  let resolveFinish: (() => void) | null = null;
+  let timeoutId: NodeJS.Timeout | null = null;
 
-  Sentry.startSpan(
-    {
-      op: 'app.startup',
-      name: PERFORMANCE_TRANSACTIONS.APP_STARTUP,
+  const finishPromise = new Promise<void>((resolve) => {
+    resolveFinish = resolve;
+  });
+
+  // Add timeout to ensure promise always resolves
+  const timeoutPromise = new Promise<void>((resolve) => {
+    timeoutId = setTimeout(resolve, SENTRY_PERFORMANCE_CONFIG.SPAN_TIMEOUT_MS);
+  });
+
+  // Race between finish being called and timeout
+  const finalPromise = Promise.race([finishPromise, timeoutPromise]);
+
+  return {
+    finishPromise: finalPromise,
+    resolveFinish: () => {
+      if (resolveFinish) {
+        resolveFinish();
+        resolveFinish = null;
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
     },
-    () => {
-      // This will be automatically tracked by Sentry's app start instrumentation
-    }
-  );
+    cleanup: () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      resolveFinish = null;
+    },
+  };
 }
 
 /**
@@ -148,7 +175,7 @@ export function trackSyncOperation(
       ? PERFORMANCE_TRANSACTIONS.SYNC_PULL
       : PERFORMANCE_TRANSACTIONS.SYNC_PUSH;
 
-  let finished = false;
+  const { finishPromise, resolveFinish, cleanup } = createFinishPromise();
 
   void Sentry.startSpan(
     {
@@ -157,21 +184,18 @@ export function trackSyncOperation(
       attributes: itemCount ? { itemCount } : undefined,
     },
     async () => {
-      // Wait for finish to be called
-      await new Promise<void>((resolve) => {
-        const checkInterval = setInterval(() => {
-          if (finished) {
-            clearInterval(checkInterval);
-            resolve();
-          }
-        }, 100);
-      });
+      await finishPromise;
     }
   );
 
+  let finished = false;
   return {
     finish: () => {
-      finished = true;
+      if (!finished) {
+        finished = true;
+        resolveFinish();
+        cleanup();
+      }
     },
   };
 }
@@ -186,7 +210,7 @@ export function trackAIInference(modelName?: string): {
     return { finish: () => {} };
   }
 
-  let finished = false;
+  const { finishPromise, resolveFinish, cleanup } = createFinishPromise();
 
   void Sentry.startSpan(
     {
@@ -195,21 +219,18 @@ export function trackAIInference(modelName?: string): {
       attributes: modelName ? { modelName } : undefined,
     },
     async () => {
-      // Wait for finish to be called
-      await new Promise<void>((resolve) => {
-        const checkInterval = setInterval(() => {
-          if (finished) {
-            clearInterval(checkInterval);
-            resolve();
-          }
-        }, 100);
-      });
+      await finishPromise;
     }
   );
 
+  let finished = false;
   return {
     finish: () => {
-      finished = true;
+      if (!finished) {
+        finished = true;
+        resolveFinish();
+        cleanup();
+      }
     },
   };
 }
@@ -224,7 +245,7 @@ export function trackListScroll(listName: string): {
     return { finish: () => {} };
   }
 
-  let finished = false;
+  const { finishPromise, resolveFinish, cleanup } = createFinishPromise();
 
   void Sentry.startSpan(
     {
@@ -232,21 +253,18 @@ export function trackListScroll(listName: string): {
       name: `${PERFORMANCE_TRANSACTIONS.AGENDA_SCROLL}:${listName}`,
     },
     async () => {
-      // Wait for finish to be called
-      await new Promise<void>((resolve) => {
-        const checkInterval = setInterval(() => {
-          if (finished) {
-            clearInterval(checkInterval);
-            resolve();
-          }
-        }, 100);
-      });
+      await finishPromise;
     }
   );
 
+  let finished = false;
   return {
     finish: () => {
-      finished = true;
+      if (!finished) {
+        finished = true;
+        resolveFinish();
+        cleanup();
+      }
     },
   };
 }

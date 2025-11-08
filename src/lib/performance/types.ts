@@ -83,8 +83,44 @@ export interface WorkletPerformanceMetrics {
  * Performance artifact for CI/CD
  */
 export interface PerformanceArtifact {
-  type: 'perfetto' | 'sentry' | 'rnperformance' | 'reassure';
+  type: 'perfetto' | 'sentry' | 'rnperformance' | 'reassure' | 'memory';
   filePath?: string;
   url?: string;
   metadata: Record<string, unknown>;
+}
+
+/**
+ * Memory metrics snapshot
+ */
+export interface MemoryMetrics {
+  timestamp: number;
+  heapUsed: number;
+  heapTotal: number;
+  rssMemory: number;
+  imageMemoryUsage?: number;
+  cacheMemoryUsage?: number;
+}
+
+/**
+ * Memory leak detection result
+ */
+export interface MemoryLeakDetectionResult {
+  testName: string;
+  duration: number;
+  baseline: MemoryMetrics;
+  peak: MemoryMetrics;
+  postGC: MemoryMetrics;
+  rssDelta: number;
+  postGCDelta: number;
+  passed: boolean;
+  violations: string[];
+}
+
+/**
+ * Memory budget thresholds
+ */
+export interface MemoryBudget {
+  maxRSSDeltaMB: number;
+  maxPostGCDeltaMB: number;
+  testDurationSeconds: number;
 }

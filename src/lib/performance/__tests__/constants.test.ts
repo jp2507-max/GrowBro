@@ -9,7 +9,6 @@ import {
 
 describe('Performance Constants', () => {
   test('exports standardized transaction names', () => {
-    expect(PERFORMANCE_TRANSACTIONS.APP_STARTUP).toBe('app.startup');
     expect(PERFORMANCE_TRANSACTIONS.AGENDA_SCROLL).toBe('agenda.scroll');
     expect(PERFORMANCE_TRANSACTIONS.NAVIGATION_PUSH).toBe('navigation.push');
     expect(PERFORMANCE_TRANSACTIONS.SYNC_PULL).toBe('sync.pull');

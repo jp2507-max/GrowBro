@@ -311,6 +311,11 @@ export const PostCard = React.memo(
       prevProps.post.id === nextProps.post.id &&
       prevProps.post.body === nextProps.post.body &&
       prevProps.post.media_uri === nextProps.post.media_uri &&
+      prevProps.post.media_resized_uri === nextProps.post.media_resized_uri &&
+      prevProps.post.media_thumbnail_uri ===
+        nextProps.post.media_thumbnail_uri &&
+      prevProps.post.media_blurhash === nextProps.post.media_blurhash &&
+      prevProps.post.media_thumbhash === nextProps.post.media_thumbhash &&
       prevProps.post.like_count === nextProps.post.like_count &&
       prevProps.post.comment_count === nextProps.post.comment_count &&
       prevProps.post.user_has_liked === nextProps.post.user_has_liked &&

@@ -126,7 +126,7 @@ function startTrace() {
     // Start trace using perfetto command
     console.log('⏳ Collecting trace data...');
     execSync(
-      `adb shell perfetto -c - --txt -o /data/misc/perfetto-traces/trace < "${configPath}"`,
+      `adb shell perfetto -c - --json -o /data/misc/perfetto-traces/trace < "${configPath}"`,
       { stdio: 'inherit', timeout: (TRACE_DURATION_SECONDS + 10) * 1000 }
     );
 

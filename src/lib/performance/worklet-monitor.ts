@@ -70,16 +70,16 @@ function calculatePerformanceMetrics(
 export function useGesturePerformanceTracker() {
   const startTimeRef = useRef<number>(0);
   const latenciesRef = useRef<number[]>([]);
-  const frameCountRef = useRef<number>(0);
-  const droppedFramesRef = useRef<number>(0);
+  const frameCountShared = useSharedValue<number>(0);
+  const droppedFramesShared = useSharedValue<number>(0);
 
   const trackGestureStart = useCallback(() => {
     'worklet';
     const now = performance.now();
     startTimeRef.current = now;
-    frameCountRef.current = 0;
-    droppedFramesRef.current = 0;
-  }, []);
+    frameCountShared.value = 0;
+    droppedFramesShared.value = 0;
+  }, [frameCountShared, droppedFramesShared]);
 
   const trackGestureUpdate = useCallback(() => {
     'worklet';
@@ -88,11 +88,11 @@ export function useGesturePerformanceTracker() {
     const now = performance.now();
     const latency = now - startTimeRef.current;
 
-    frameCountRef.current += 1;
+    frameCountShared.value += 1;
 
     // Frame budget is 16.7ms (60 FPS)
     if (latency > 16.7) {
-      droppedFramesRef.current += 1;
+      droppedFramesShared.value += 1;
     }
 
     runOnJS((lat: number) => {
@@ -104,7 +104,7 @@ export function useGesturePerformanceTracker() {
     })(latency);
 
     startTimeRef.current = now;
-  }, []);
+  }, [frameCountShared, droppedFramesShared]);
 
   const trackGestureEnd = useCallback(() => {
     'worklet';
@@ -124,24 +124,24 @@ export function useGesturePerformanceTracker() {
       startTime: 0,
       endTime: 0,
       latency: avgLatency,
-      droppedFrames: droppedFramesRef.current,
+      droppedFrames: droppedFramesShared.value,
     };
-  }, []);
+  }, [droppedFramesShared]);
 
   const getMetrics = useCallback((): WorkletPerformanceMetrics => {
     return calculatePerformanceMetrics(
       [...latenciesRef.current],
-      frameCountRef.current,
-      droppedFramesRef.current
+      frameCountShared.value,
+      droppedFramesShared.value
     );
-  }, []);
+  }, [frameCountShared, droppedFramesShared]);
 
   const reset = useCallback(() => {
     latenciesRef.current = [];
-    frameCountRef.current = 0;
-    droppedFramesRef.current = 0;
+    frameCountShared.value = 0;
+    droppedFramesShared.value = 0;
     startTimeRef.current = 0;
-  }, []);
+  }, [frameCountShared, droppedFramesShared]);
 
   return {
     trackGestureStart,

@@ -7,6 +7,8 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
+// Setup Buffer polyfill for React Native
+import { Buffer } from 'buffer';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
@@ -57,6 +59,7 @@ import {
 // Install AI consent hooks to handle withdrawal cascades
 import { installAiConsentHooks } from '@/lib/uploads/ai-images';
 import { useThemeConfig } from '@/lib/use-theme-config';
+global.Buffer = global.Buffer ?? Buffer;
 
 // Type definitions for Localization API
 // Timezone and startup helpers live in `use-root-startup.ts`

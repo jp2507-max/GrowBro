@@ -54,7 +54,7 @@
   - Add Perfetto FrameTimeline trace collection for gesture performance proof
   - _Requirements: 2.3, 2.4_
 
-- [ ] 8. Create Performance Testing Infrastructure
+- [x] 8. Create Performance Testing Infrastructure
   - Set up Maestro/Detox scripts for deterministic performance testing
   - Create synthetic data factory for 1k+ items + images and 30s scripted scroll
   - Implement automated scroll performance tests (30-second continuous scroll)
@@ -62,7 +62,7 @@
   - Consider pairing Maestro with Flashlight to automate FPS capture
   - _Requirements: 4.2, 4.4_
 
-- [ ] 9. Implement CI Performance Budgets (CI FAIL if exceeded)
+- [x] 9. Implement CI Performance Budgets (CI FAIL if exceeded)
   - Startup TTI: Pixel 6a ≤1.8s, iPhone 12 ≤1.3s
   - Navigation: P95 transition ≤250ms
   - Scroll: P95 frame time ≤16.7ms, dropped frames ≤1%, avg FPS ≥58
@@ -84,7 +84,7 @@
   - Add component performance tests to CI pipeline
   - _Requirements: 4.4_
 
-- [ ] 12. Setup Performance Trend Analysis
+- [x] 12. Setup Performance Trend Analysis
   - Pin Sentry Performance dashboards for Startup/Navigation/Scroll/Sync metrics
   - Implement 7-day moving average performance trend analysis
   - Gate merges on 7-day moving average delta >10% (triggers investigation)
@@ -99,7 +99,7 @@
   - Add documentation on opening FrameTimeline in Perfetto UI
   - _Requirements: 5.1, 5.5_
 
-- [ ] 14. Implement Memory Management Optimization
+- [x] 14. Implement Memory Management Optimization
   - Add memory usage monitoring during list scrolling scenarios
   - Implement memory leak detection for 60-second scroll tests
   - Create memory budget enforcement (≤50MB RSS increase, ≤10MB post-GC)

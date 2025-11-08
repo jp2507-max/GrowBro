@@ -1,7 +1,6 @@
-// @ts-nocheck
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 import { processImageVariants } from '../_shared/image-processing.ts';
 import { withRateLimit } from '../_shared/rate-limit.ts';
@@ -14,6 +13,10 @@ const corsHeaders = {
 };
 
 const COMMUNITY_MEDIA_BUCKET = 'community-posts';
+
+// Fetch configuration constants
+const MAX_BYTES = 50 * 1024 * 1024; // 50MB limit
+const FETCH_TIMEOUT_MS = 30000; // 30 seconds timeout
 
 interface CreatePostRequest {
   body: string;
@@ -250,7 +253,7 @@ Deno.serve(async (req: Request) => {
 });
 
 async function handleOptionalMediaUpload(
-  supabaseClient: any,
+  supabaseClient: SupabaseClient,
   userId: string,
   media: CreatePostRequest['media']
 ) {
@@ -266,6 +269,59 @@ async function handleOptionalMediaUpload(
       400,
       'Invalid media payload: media.source_url must be a non-empty string.'
     );
+  }
+
+  // Validate URL to prevent SSRF attacks
+  try {
+    const url = new URL(media.source_url);
+
+    // Only allow HTTPS
+    if (url.protocol !== 'https:') {
+      throw createHttpError(
+        400,
+        'Only HTTPS URLs are allowed for media sources.'
+      );
+    }
+
+    // Block private/internal IP ranges
+    const hostname = url.hostname.toLowerCase();
+    if (
+      hostname === 'localhost' ||
+      hostname.startsWith('127.') ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('169.254.') ||
+      hostname.startsWith('172.16.') ||
+      hostname.startsWith('172.17.') ||
+      hostname.startsWith('172.18.') ||
+      hostname.startsWith('172.19.') ||
+      hostname.startsWith('172.20.') ||
+      hostname.startsWith('172.21.') ||
+      hostname.startsWith('172.22.') ||
+      hostname.startsWith('172.23.') ||
+      hostname.startsWith('172.24.') ||
+      hostname.startsWith('172.25.') ||
+      hostname.startsWith('172.26.') ||
+      hostname.startsWith('172.27.') ||
+      hostname.startsWith('172.28.') ||
+      hostname.startsWith('172.29.') ||
+      hostname.startsWith('172.30.') ||
+      hostname.startsWith('172.31.') ||
+      hostname === '::1' ||
+      hostname === '0.0.0.0' ||
+      hostname === '[::]' ||
+      hostname.includes('local')
+    ) {
+      throw createHttpError(
+        400,
+        'Cannot fetch from private IP addresses or local domains.'
+      );
+    }
+  } catch (error) {
+    if (error?.status === 400) {
+      throw error;
+    }
+    throw createHttpError(400, 'Invalid media source URL format.');
   }
 
   try {
@@ -285,18 +341,111 @@ async function processAndUploadMedia({
   userId,
   sourceUrl,
 }: {
-  supabaseClient: any;
+  supabaseClient: SupabaseClient;
   userId: string;
   sourceUrl: string;
 }) {
-  const response = await fetch(sourceUrl);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch media source. Status: ${response.status}`);
+  let response: Response;
+
+  try {
+    response = await fetch(sourceUrl, {
+      signal: controller.signal,
+    });
+  } catch (error) {
+    clearTimeout(timeoutId);
+    controller.abort();
+    if (error.name === 'AbortError') {
+      throw createHttpError(
+        408,
+        'Request timeout while fetching media source.'
+      );
+    }
+    throw createHttpError(
+      500,
+      `Failed to fetch media source: ${error.message}`
+    );
   }
 
-  const arrayBuffer = await response.arrayBuffer();
-  const inputBytes = new Uint8Array(arrayBuffer);
+  clearTimeout(timeoutId);
+
+  if (!response.ok) {
+    controller.abort();
+    throw createHttpError(
+      response.status,
+      `Failed to fetch media source. Status: ${response.status}`
+    );
+  }
+
+  // Check content-length header if present
+  const contentLength = response.headers.get('content-length');
+  if (contentLength && parseInt(contentLength, 10) > MAX_BYTES) {
+    controller.abort();
+    throw createHttpError(
+      413,
+      `Media source too large: ${contentLength} bytes exceeds limit of ${MAX_BYTES} bytes.`
+    );
+  }
+
+  let inputBytes: Uint8Array;
+
+  try {
+    if (contentLength) {
+      // If content-length is present and within limits, use arrayBuffer
+      const arrayBuffer = await response.arrayBuffer();
+      inputBytes = new Uint8Array(arrayBuffer);
+    } else {
+      // Stream and accumulate with size limit
+      const reader = response.body?.getReader();
+      if (!reader) {
+        controller.abort();
+        throw createHttpError(500, 'Unable to read response body.');
+      }
+
+      const chunks: Uint8Array[] = [];
+      let totalSize = 0;
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          totalSize += value.length;
+          if (totalSize > MAX_BYTES) {
+            controller.abort();
+            reader.cancel();
+            throw createHttpError(
+              413,
+              `Media source too large: exceeded limit of ${MAX_BYTES} bytes while streaming.`
+            );
+          }
+
+          chunks.push(value);
+        }
+      } finally {
+        reader.releaseLock();
+      }
+
+      // Concatenate all chunks
+      inputBytes = new Uint8Array(totalSize);
+      let offset = 0;
+      for (const chunk of chunks) {
+        inputBytes.set(chunk, offset);
+        offset += chunk.length;
+      }
+    }
+  } catch (error) {
+    controller.abort();
+    if (error?.status) {
+      throw error; // Re-throw HTTP errors we created
+    }
+    throw createHttpError(
+      500,
+      `Failed to process media response: ${error.message}`
+    );
+  }
 
   const processed = await processImageVariants(inputBytes);
   const hash = await hashBytes(processed.original.data);

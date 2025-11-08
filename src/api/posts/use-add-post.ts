@@ -26,6 +26,17 @@ export const attachmentInputSchema = z
 // Derive TypeScript type from schema for single source of truth
 export type AttachmentInput = z.infer<typeof attachmentInputSchema>;
 
+// Media payload interface for post attachments
+export interface MediaPayload {
+  originalPath: string;
+  resizedPath: string;
+  thumbnailPath: string;
+  width: number;
+  height: number;
+  aspectRatio: number;
+  bytes: number;
+}
+
 type Variables = {
   title: string;
   body: string;
@@ -50,7 +61,7 @@ export const useAddPost = createMutation<Response, Variables, AxiosError>({
     }
 
     // Process photo attachments if present
-    let mediaPayload: any = undefined;
+    let mediaPayload: MediaPayload | undefined = undefined;
     if (variables.attachments && variables.attachments.length > 0) {
       // Take first attachment (currently only support single photo)
       const attachment = variables.attachments[0];

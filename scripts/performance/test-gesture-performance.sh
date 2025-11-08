@@ -18,8 +18,30 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Parse CLI flags
+DEVICE_ID=""
+while [ $# -gt 0 ]; do
+  case $1 in
+    --device|-d)
+      if [ $# -lt 2 ]; then
+        echo -e "${RED}❌ --device/-d flag requires a device ID argument${NC}"
+        exit 1
+      fi
+      DEVICE_ID="$2"
+      shift 2
+      ;;
+    *)
+      # Unknown flag, break to preserve positional args
+      break
+      ;;
+  esac
+done
+
 # Configuration
-DEVICE_ID=${1:-""}
+# If no device flag was provided, use first remaining positional arg
+if [ -z "$DEVICE_ID" ]; then
+  DEVICE_ID=${1:-""}
+fi
 OUTPUT_DIR="./performance-artifacts"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 TEST_NAME="gesture-performance-${TIMESTAMP}"

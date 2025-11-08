@@ -10,7 +10,7 @@
 
 ```bash
 # 1. Build release
-pnpm run build:android:release
+pnpm run build:production:android
 
 # 2. Install
 adb install android/app/build/outputs/apk/release/app-release.apk

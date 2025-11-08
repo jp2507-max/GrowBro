@@ -18,12 +18,14 @@ type Props = {
    * Whether to show the drag handle for reordering
    */
   showDragHandle?: boolean;
+  testID?: string;
 };
 
 export function AgendaItemRow({
   task,
   now,
   showDragHandle = false,
+  testID,
 }: Props): React.ReactElement {
   const isOverdue = React.useMemo(() => {
     if (task.status !== 'pending') return false;
@@ -46,7 +48,7 @@ export function AgendaItemRow({
   }, [task]);
 
   return (
-    <View className="px-4 py-3">
+    <View className="px-4 py-3" testID={testID}>
       <View className="flex-row items-center gap-2">
         {showDragHandle ? <DragHandle /> : null}
         {eventType ? (

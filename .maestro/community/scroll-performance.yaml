@@ -50,7 +50,7 @@ tags:
 
 # Verify feed has loaded with content
 - assertVisible:
-    id: 'post-card-*'
+    id: 'post-card-.*'
 
 # Record baseline memory (if supported by Maestro Cloud)
 # Note: Memory metrics require Maestro Cloud or custom JS integration
@@ -85,7 +85,7 @@ tags:
 # - Loading spinner
 # But NEVER a blank/white rectangle
 - assertVisible:
-    id: 'post-card-*'
+    id: 'post-card-.*'
 - assertNotVisible: 'Blank Cell'
 - assertNotVisible: 'Error Loading'
 
@@ -112,11 +112,11 @@ tags:
 - assertVisible:
     id: 'community-screen'
 - assertVisible:
-    id: 'post-card-*'
+    id: 'post-card-.*'
 
 # Test interaction after heavy scrolling
 - tapOn:
-    id: 'post-card-*'
+    id: 'post-card-.*'
 - assertVisible: 'Comments'
 - tapOn:
     id: 'back-button'

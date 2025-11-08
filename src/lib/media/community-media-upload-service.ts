@@ -6,6 +6,7 @@
  * - Guard against large originals and implement retryable upload logic
  */
 
+import { Buffer } from 'buffer';
 import * as FileSystem from 'expo-file-system';
 
 import { supabase } from '@/lib/supabase';
@@ -147,12 +148,9 @@ async function uploadVariant(options: UploadVariantOptions): Promise<string> {
     encoding: 'base64',
   });
 
-  // Convert base64 to ArrayBuffer
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
+  // Convert base64 to Uint8Array using Buffer
+  const buf = Buffer.from(base64, 'base64');
+  const bytes = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
 
   // Upload to Supabase Storage
   const { data, error } = await supabase.storage

@@ -3,9 +3,18 @@
  * Exports performance metrics and reports for CI pipeline consumption
  */
 
+import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
 
 import type { PerformanceArtifact, RNPerformanceReport } from './types';
+
+// Type-safe interface for FileSystem module
+type FileSystemWithDocumentDirectory = typeof FileSystem & {
+  documentDirectory: string | null | undefined;
+  writeAsStringAsync: (fileUri: string, contents: string) => Promise<void>;
+};
+
+const safeFileSystem = FileSystem as FileSystemWithDocumentDirectory;
 
 /**
  * Export RN Performance report to JSON for CI artifacts
@@ -102,4 +111,42 @@ export function logPerformanceMetrics(metrics: {
 }): void {
   const logMessage = `[PERFORMANCE_METRIC] ${JSON.stringify(metrics)}`;
   console.log(logMessage);
+}
+
+/**
+ * Write RN Performance report to file system (for CI collection)
+ * On Android: writes to /sdcard/Android/data/<package>/files/performance.json
+ * On iOS: writes to app documents directory
+ */
+export async function writePerformanceReportToFile(
+  reports: RNPerformanceReport[],
+  fileName: string = 'performance.json'
+): Promise<string | null> {
+  try {
+    const { documentDirectory, writeAsStringAsync } = safeFileSystem;
+
+    if (!documentDirectory) {
+      throw new Error('Document directory is not available');
+    }
+
+    const json = exportPerformanceReportJSON(reports);
+    const filePath = `${documentDirectory}${fileName}`;
+
+    await writeAsStringAsync(filePath, json);
+
+    console.log(`[PERFORMANCE_REPORT_FILE] ${filePath}`);
+    return filePath;
+  } catch (error) {
+    console.error('[PERFORMANCE_REPORT_FILE_ERROR]', error);
+    return null;
+  }
+}
+
+/**
+ * Get the file path where performance reports should be written
+ * This path is accessible by adb pull on Android
+ */
+export function getPerformanceReportPath(): string {
+  const { documentDirectory } = safeFileSystem;
+  return `${documentDirectory}performance.json`;
 }

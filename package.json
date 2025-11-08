@@ -71,7 +71,17 @@
     "design-tokens:coverage": "node scripts/generate-token-report.js",
     "perf:profile": "bash scripts/perf-profile.sh",
     "perf:gesture": "bash scripts/performance/test-gesture-performance.sh",
-    "perf:gesture:trace": "node scripts/performance/collect-perfetto-trace.js"
+    "perf:gesture:trace": "node scripts/performance/collect-perfetto-trace.js",
+    "perf:test": "bash scripts/ci/run-performance-tests.sh",
+    "perf:test:android": "bash scripts/ci/run-performance-tests.sh android pixel6a",
+    "perf:test:ios": "bash scripts/ci/run-performance-tests.sh ios iphone12",
+    "perf:maestro": "maestro test .maestro/performance/ -e APP_ID=com.obytes.production",
+    "perf:maestro:scroll": "maestro test .maestro/performance/agenda-scroll-performance.yaml -e APP_ID=com.obytes.production",
+    "perf:maestro:startup": "maestro test .maestro/performance/startup-performance.yaml -e APP_ID=com.obytes.production",
+    "perf:maestro:navigation": "maestro test .maestro/performance/navigation-performance.yaml -e APP_ID=com.obytes.production",
+    "perf:maestro:sync": "maestro test .maestro/performance/sync-performance.yaml -e APP_ID=com.obytes.production",
+    "perf:validate": "node scripts/ci/performance-validation.js",
+    "perf:budgets": "pnpm run perf:maestro && pnpm run perf:validate"
   },
   "sentry": {
     "notes": "Set SENTRY_ENV and SENTRY_RELEASE in your CI before building. For EAS builds you can set SENTRY_RELEASE to the package.json version. Ensure source maps/dSYMs are uploaded from the build step or use the Expo Sentry plugin to handle this."
@@ -227,7 +237,8 @@
     "tailwindcss": "3.4.4",
     "ts-jest": "^29.4.4",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.44.1"
+    "typescript-eslint": "^8.44.1",
+    "xml2js": "^0.6.2"
   },
   "pnpm": {
     "overrides": {

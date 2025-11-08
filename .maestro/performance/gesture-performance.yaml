@@ -13,7 +13,7 @@ appId: com.growbro.app
 
 # Navigate to calendar (has draggable agenda items)
 - tapOn:
-    id: 'tab-calendar'
+    id: 'calendar-tab'
 - waitForAnimationToEnd
 
 # Scroll down to ensure we have agenda items
@@ -31,7 +31,7 @@ appId: com.growbro.app
     commands:
       # Long press to activate drag (180ms activation)
       - longPressOn:
-          id: 'agenda-item-row'
+          id: 'agenda-item-row-*'
           duration: 200
 
       # Drag vertically (simulates moving task to different date)
@@ -62,7 +62,7 @@ appId: com.growbro.app
 # Test 3: Pinch/zoom gestures (if applicable)
 # Navigate to community feed which may have image interactions
 - tapOn:
-    id: 'tab-community'
+    id: 'community-tab'
 - waitForAnimationToEnd
 
 # Perform continuous scroll on feed
@@ -76,7 +76,7 @@ appId: com.growbro.app
 
 # Final validation - ensure app is still responsive
 - tapOn:
-    id: 'tab-calendar'
+    id: 'calendar-tab'
 - waitForAnimationToEnd
 # Success criteria:
 # - No crashes during gesture operations

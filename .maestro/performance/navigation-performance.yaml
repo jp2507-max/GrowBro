@@ -1,0 +1,85 @@
+appId: com.growbro.app
+---
+# Navigation Performance Test
+# Requirements: Spec 21, Task 9 - Navigation P95 transition ≤250ms
+#
+# This test measures screen transition performance across the app.
+# Validates that P95 navigation transitions meet the 250ms budget.
+#
+# Expected metrics:
+# - P95 transition time: ≤250ms
+# - All transitions complete without errors
+# - No frame drops during transitions
+
+- launchApp:
+    clearState: false
+
+- assertVisible: 'Home'
+
+# Test navigation to all major screens
+# Each transition should be measured by RN Performance instrumentation
+
+- tapOn: 'Calendar'
+- assertVisible: 'Calendar'
+- extendedWaitUntil:
+    visible: 'Calendar'
+    timeout: 2000
+
+- tapOn: 'Community'
+- assertVisible: 'Community'
+- extendedWaitUntil:
+    visible: 'Community'
+    timeout: 2000
+
+- tapOn: 'Settings'
+- assertVisible: 'Settings'
+- extendedWaitUntil:
+    visible: 'Settings'
+    timeout: 2000
+
+# Navigate to nested screens
+- tapOn: 'Profile'
+- assertVisible: 'Profile'
+- extendedWaitUntil:
+    visible: 'Profile'
+    timeout: 2000
+
+- back
+
+# Test modal navigation
+- tapOn: 'Add Plant'
+- assertVisible: 'Add Plant'
+- extendedWaitUntil:
+    visible: 'Add Plant'
+    timeout: 2000
+
+- back
+
+# Test deep navigation stack
+- tapOn: 'Calendar'
+- tapOn:
+    text: '.*'
+    index: 0
+- extendedWaitUntil:
+    visible: '.*'
+    timeout: 2000
+
+- back
+- back
+
+# Return to home
+- tapOn: 'Home'
+- assertVisible: 'Home'
+
+# Repeat navigation cycle 10 times to collect P95 data
+- repeat:
+    times: 10
+    commands:
+      - tapOn: 'Calendar'
+      - assertVisible: 'Calendar'
+      - tapOn: 'Community'
+      - assertVisible: 'Community'
+      - tapOn: 'Settings'
+      - assertVisible: 'Settings'
+      - tapOn: 'Home'
+      - assertVisible: 'Home'

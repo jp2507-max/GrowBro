@@ -35,7 +35,7 @@ jobs:
   android-performance:
     name: Android Performance Tests
     runs-on: ubuntu-latest
-    if: github.event.inputs.platform == 'android' || github.event.inputs.platform == 'both' || github.event.inputs.platform == ''
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.platform == 'android' || github.event.inputs.platform == 'both' || github.event.inputs.platform == ''
     timeout-minutes: 45
 
     steps:
@@ -90,10 +90,13 @@ jobs:
           echo "Database seeding would happen here"
 
       - name: Start Perfetto Trace Collection
+        env:
+          PERFETTO_TRACE_PATH: perfetto-trace.pb
+          PERFETTO_DURATION_MS: 30000
+          APP_PACKAGE: com.growbro.app
         run: |
-          adb shell "perfetto -c - --txt -o /data/misc/perfetto-traces/trace" > perfetto-config.txt &
-          echo $! > perfetto-pid.txt
-          sleep 2
+          chmod +x scripts/ci/perfetto-collector.sh
+          ./scripts/ci/perfetto-collector.sh start
 
       - name: Run Maestro Performance Tests
         env:
@@ -109,14 +112,26 @@ jobs:
             --format junit \
             --output maestro-results/performance-results.xml
 
+      - name: Run Memory Leak Detection Test
+        env:
+          APP_ID: com.growbro.app
+          BUILD_TYPE: release
+          PLATFORM: android
+          DEVICE_MODEL: Pixel 6a Emulator
+          OS_VERSION: Android 13
+          BUILD_HASH: ${{ github.sha }}
+          DATASET_SIZE: 1000
+        run: |
+          maestro test .maestro/performance/memory-scroll-test.yaml \
+            --format junit \
+            --output maestro-results/memory-test-results.xml
+
       - name: Stop Perfetto Trace Collection
         if: always()
+        env:
+          PERFETTO_TRACE_PATH: perfetto-trace.pb
         run: |
-          if [ -f perfetto-pid.txt ]; then
-            kill $(cat perfetto-pid.txt) || true
-            sleep 2
-            adb pull /data/misc/perfetto-traces/trace perfetto-trace.pb || true
-          fi
+          ./scripts/ci/perfetto-collector.sh stop || true
 
       - name: Collect RN Performance Metrics
         if: always()
@@ -142,12 +157,64 @@ jobs:
         run: |
           node scripts/ci/performance-validation.js
 
+      - name: Validate Memory Budgets
+        if: always()
+        env:
+          BUILD_TYPE: release
+          PLATFORM: android
+          DEVICE_MODEL: Pixel 6a Emulator
+          OS_VERSION: Android 13
+          BUILD_HASH: ${{ github.sha }}
+          MEMORY_REPORT_PATH: maestro-results/memory-report.json
+        run: |
+          if [ -f "$MEMORY_REPORT_PATH" ]; then
+            node scripts/ci/memory-budget-validator.js "$MEMORY_REPORT_PATH"
+          else
+            echo "Warning: Memory report not found at $MEMORY_REPORT_PATH"
+            echo "Skipping memory budget validation"
+          fi
+
+      - name: Collect Performance Artifacts
+        if: always()
+        env:
+          BUILD_HASH: ${{ github.sha }}
+          COMMIT: ${{ github.sha }}
+          PLATFORM: android
+          DEVICE_MODEL: Pixel 6a Emulator
+          OS_VERSION: Android 13
+          DATASET_SIZE: 1000
+          OUTPUT_DIR: performance-artifacts
+          PERFETTO_TRACE_PATH: perfetto-trace.pb
+          RN_PERF_JSON_PATH: rn-performance.json
+          MEMORY_METRICS_PATH: maestro-results/memory-metrics.json
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          pnpm tsx scripts/ci/artifact-collector.ts
+
+      - name: Generate Performance Report
+        if: always()
+        env:
+          BUILD_HASH: ${{ github.sha }}
+          COMMIT: ${{ github.sha }}
+          PLATFORM: android
+          DEVICE_MODEL: Pixel 6a Emulator
+          OS_VERSION: Android 13
+          DATASET_SIZE: 1000
+          OUTPUT_DIR: performance-artifacts
+          RN_PERF_JSON_PATH: rn-performance.json
+          MEMORY_METRICS_PATH: maestro-results/memory-metrics.json
+          PERFETTO_TRACE_PATH: perfetto-trace.pb
+        run: |
+          pnpm tsx scripts/ci/generate-performance-report.ts
+
       - name: Upload Performance Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: android-performance-artifacts
           path: |
+            performance-artifacts/
             maestro-results/
             perfetto-trace.pb
             rn-performance.json
@@ -214,7 +281,7 @@ jobs:
   ios-performance:
     name: iOS Performance Tests
     runs-on: macos-14
-    if: github.event.inputs.platform == 'ios' || github.event.inputs.platform == 'both'
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.platform == 'ios' || github.event.inputs.platform == 'both'
     timeout-minutes: 60
 
     steps:

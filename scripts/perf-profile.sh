@@ -6,6 +6,7 @@ set -e
 
 PLATFORM=${1:-android}
 OUTPUT_DIR="performance-artifacts"
+export OUTPUT_DIR
 
 echo "🚀 Starting performance profiling for $PLATFORM..."
 
@@ -41,7 +42,7 @@ case "$PLATFORM" in
     echo "  6. Stop recording and save the trace to: $OUTPUT_DIR/"
     echo ""
     echo "Sentry transaction URLs will be logged to the console."
-    echo "RN Performance JSON reports will be exported to: $OUTPUT_DIR/"
+    echo "⚠️  Note: No automated export runs. Manually save traces/reports to: $OUTPUT_DIR/"
     ;;
     
   ios)
@@ -52,10 +53,10 @@ case "$PLATFORM" in
     echo "   2. Trust the development certificate"
     echo "   3. Select your device in Xcode"
     echo ""
-    
+
     # Build and run release build
     pnpm run ios:production
-    
+
     echo ""
     echo "📊 Performance monitoring is active!"
     echo ""
@@ -68,7 +69,7 @@ case "$PLATFORM" in
     echo "  6. Stop recording and save the trace to: $OUTPUT_DIR/"
     echo ""
     echo "Sentry transaction URLs will be logged to the console."
-    echo "RN Performance JSON reports will be exported to: $OUTPUT_DIR/"
+    echo "⚠️  Note: No automated export runs. Manually save traces/reports to: $OUTPUT_DIR/"
     ;;
     
   *)
