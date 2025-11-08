@@ -106,7 +106,7 @@
     "axios": "^1.12.2",
     "buffer": "^6.0.3",
     "crypto-js": "^4.2.0",
-    "expo": "~54.0.22",
+    "expo": "~54.0.23",
     "expo-apple-authentication": "~8.0.7",
     "expo-background-fetch": "~14.0.7",
     "expo-background-task": "~1.0.8",
@@ -179,9 +179,9 @@
     "rrule": "^2.8.1",
     "tailwind-variants": "^0.2.1",
     "uuid": "^13.0.0",
+    "xml2js": "^0.6.2",
     "zod": "^3.25.76",
-    "zustand": "^5.0.8",
-    "xml2js": "^0.6.2"
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@babel/core": "^7.28.4",

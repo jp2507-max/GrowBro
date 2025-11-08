@@ -64,7 +64,23 @@ function installMaestro() {
 
       // Find the extracted binary
       const extractedFiles = fs.readdirSync(extractDir);
+
+      if (extractedFiles.length === 0) {
+        console.error('Error: No files were extracted from the ZIP archive.');
+        process.exit(1);
+      }
+
       const maestroDirExtracted = path.join(extractDir, extractedFiles[0]);
+
+      if (
+        !fs.existsSync(maestroDirExtracted) ||
+        !fs.statSync(maestroDirExtracted).isDirectory()
+      ) {
+        console.error(
+          `Error: Expected directory ${maestroDirExtracted} does not exist or is not a directory.`
+        );
+        process.exit(1);
+      }
 
       // Copy all files from the extracted maestro directory to .maestro/bin
       const sourceFiles = fs.readdirSync(maestroDirExtracted);

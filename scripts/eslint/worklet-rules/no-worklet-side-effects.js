@@ -17,13 +17,16 @@ const BANNED_IDENTIFIERS = new Set([
   'prompt',
 ]);
 
-const BANNED_METHODS = new Set([
+const CONSOLE_METHODS = new Set([
   'log',
   'warn',
   'error',
   'info',
   'debug',
   'trace',
+]);
+
+const NETWORK_METHODS = new Set([
   'get',
   'post',
   'put',
@@ -96,8 +99,6 @@ module.exports = {
     messages: {
       bannedIdentifier:
         'Worklet contains banned identifier "{{name}}". Worklets must be pure and side-effect free. Use runOnJS to schedule side effects on the JS thread.',
-      bannedMethod:
-        'Worklet contains banned method call "{{name}}". Worklets must be pure and side-effect free. Use runOnJS to schedule side effects on the JS thread.',
       networkCall:
         'Network calls are not allowed in worklets. Use runOnJS to schedule network requests on the JS thread.',
       consoleLog:
@@ -121,14 +122,19 @@ module.exports = {
 
         // Check for banned identifiers (console, fetch, etc.)
         if (objectName && BANNED_IDENTIFIERS.has(objectName)) {
-          if (objectName === 'console' && propertyName) {
+          if (
+            objectName === 'console' &&
+            propertyName &&
+            CONSOLE_METHODS.has(propertyName)
+          ) {
             context.report({
               node,
               messageId: 'consoleLog',
             });
           } else if (
             (objectName === 'fetch' || objectName === 'axios') &&
-            propertyName
+            propertyName &&
+            NETWORK_METHODS.has(propertyName)
           ) {
             context.report({
               node,
@@ -141,19 +147,6 @@ module.exports = {
               data: { name: objectName },
             });
           }
-        }
-
-        // Check for banned methods
-        if (propertyName && BANNED_METHODS.has(propertyName)) {
-          if (objectName && BANNED_IDENTIFIERS.has(objectName)) {
-            // Already reported above
-            return;
-          }
-          context.report({
-            node,
-            messageId: 'bannedMethod',
-            data: { name: propertyName },
-          });
         }
       },
 

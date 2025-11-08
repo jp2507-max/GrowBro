@@ -275,7 +275,7 @@ jobs:
             - [RN Performance JSON](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
 
             ---
-            *Performance tests run on release builds only. See [Performance Testing Guide](../docs/performance/image-optimization-visual-qa.md) for manual QA checklist.*
+            *Performance tests run on release builds only. See [Performance Testing Guide](/docs/performance/image-optimization-visual-qa.md) for manual QA checklist.*
             `;
 
             github.rest.issues.createComment({
@@ -482,7 +482,7 @@ jobs:
             - [RN Performance JSON](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
 
             ---
-            *Performance tests run on release builds only. See [Performance Testing Guide](../docs/performance/image-optimization-visual-qa.md) for manual QA checklist.*
+            *Performance tests run on release builds only. See [Performance Testing Guide](/docs/performance/image-optimization-visual-qa.md) for manual QA checklist.*
             `;
 
             github.rest.issues.createComment({

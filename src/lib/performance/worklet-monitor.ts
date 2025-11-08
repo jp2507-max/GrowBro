@@ -11,14 +11,7 @@ import { useCallback, useRef } from 'react';
 import type { SharedValue } from 'react-native-reanimated';
 import { runOnJS, useSharedValue } from 'react-native-reanimated';
 
-export interface WorkletPerformanceMetrics {
-  inputToRenderLatency: number;
-  frameDropPercentage: number;
-  workletExecutionTimes: number[];
-  gestureResponseTimes: number[];
-  averageLatency: number;
-  p95Latency: number;
-}
+import type { WorkletPerformanceMetrics } from './types';
 
 export interface GestureLatencyMetrics {
   startTime: number;
@@ -35,29 +28,16 @@ function calculatePerformanceMetrics(
   frameCount: number,
   droppedFrames: number
 ): WorkletPerformanceMetrics {
-  const sorted = [...latencies].sort((a, b) => a - b);
-  const p95Index = Math.floor(sorted.length * 0.95);
-
   const avgLatency =
     latencies.length > 0
       ? latencies.reduce((sum, lat) => sum + lat, 0) / latencies.length
       : 0;
 
-  const p95Latency =
-    sorted.length > 0
-      ? (sorted[p95Index] ?? sorted[sorted.length - 1] ?? 0)
-      : 0;
-
-  const frameDropPercentage =
-    frameCount > 0 ? (droppedFrames / frameCount) * 100 : 0;
-
   return {
     inputToRenderLatency: avgLatency,
-    frameDropPercentage,
-    workletExecutionTimes: latencies,
+    workletExecutionTime: avgLatency,
+    droppedFrames,
     gestureResponseTimes: latencies,
-    averageLatency: avgLatency,
-    p95Latency,
   };
 }
 

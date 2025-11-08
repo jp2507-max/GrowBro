@@ -191,6 +191,26 @@ async function cleanupUploadedFiles(paths: string[]): Promise<void> {
 }
 
 /**
+ * Public cleanup function for rollback on post creation failure
+ * Removes uploaded media variants from storage
+ *
+ * @param paths - Array of storage paths to delete (format: 'bucket/path')
+ */
+export async function cleanupCommunityMedia(paths: string[]): Promise<void> {
+  if (!paths || paths.length === 0) return;
+
+  // Extract just the path part (remove bucket prefix if present)
+  const cleanPaths = paths.map((p) => {
+    if (p.startsWith(`${COMMUNITY_MEDIA_BUCKET}/`)) {
+      return p.substring(COMMUNITY_MEDIA_BUCKET.length + 1);
+    }
+    return p;
+  });
+
+  await cleanupUploadedFiles(cleanPaths);
+}
+
+/**
  * Build storage path for user and content hash
  */
 function buildBasePath(userId: string, hash: string): string {
