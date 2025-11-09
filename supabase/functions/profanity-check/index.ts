@@ -3,7 +3,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-import { withRateLimit } from './_shared/rate-limit.ts';
+import { withRateLimit } from '../_shared/rate-limit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

@@ -115,24 +115,55 @@ const processLocalAttachment = async (
 };
 
 // Helper function to process remote attachments
-const processRemoteAttachment = (attachment: AttachmentInput): MediaPayload => {
+export const processRemoteAttachment = (
+  attachment: AttachmentInput
+): MediaPayload => {
   const metadata = attachment.metadata as RemoteAttachmentMetadata | undefined;
   const width = Number(metadata?.width ?? metadata?.dimensions?.width ?? 0);
   const height = Number(metadata?.height ?? metadata?.dimensions?.height ?? 0);
   const bytes = Number(metadata?.bytes ?? attachment.size ?? 0);
 
-  if (!width || !height || !bytes) {
+  // Handle prefill attachments that may lack metadata (P1 BUG FIX)
+  // Prefill images from assessments only contain uri/filename, so we provide defaults
+  // Only provide defaults when NO metadata is present (true prefill scenario)
+  const hasAnyMetadata =
+    metadata && (metadata.width || metadata.height || metadata.bytes);
+  const hasCompleteMetadata = width > 0 && height > 0 && bytes > 0;
+
+  if (!hasAnyMetadata && !hasCompleteMetadata) {
+    // For true prefill attachments without ANY metadata, use reasonable defaults
+    // These will be validated/updated by the backend
+    console.warn(
+      'Remote attachment missing metadata, using defaults for prefill:',
+      attachment.uri
+    );
+    return {
+      originalPath: attachment.uri!,
+      resizedPath: attachment.uri!,
+      thumbnailPath: attachment.uri!,
+      width: 800, // Default width for prefill images
+      height: 600, // Default height for prefill images
+      aspectRatio: 4 / 3, // Default aspect ratio
+      bytes: 102400, // Default ~100KB for prefill images
+    };
+  }
+
+  // If partial metadata exists but is incomplete, still require complete metadata
+  if (!hasCompleteMetadata) {
     throw new Error(
       'Remote attachments must include width, height, and byte size metadata'
     );
   }
 
+  // At this point we know uri exists due to processAttachments validation
+  const uri = attachment.uri!;
+
   const aspectRatio = metadata?.aspectRatio ?? width / height;
-  const resizedPath = metadata?.resizedPath ?? attachment.uri;
-  const thumbnailPath = metadata?.thumbnailPath ?? attachment.uri;
+  const resizedPath = metadata?.resizedPath ?? uri;
+  const thumbnailPath = metadata?.thumbnailPath ?? uri;
 
   return {
-    originalPath: attachment.uri!,
+    originalPath: uri,
     resizedPath,
     thumbnailPath,
     width,

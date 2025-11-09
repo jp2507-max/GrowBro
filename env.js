@@ -310,6 +310,11 @@ const client = z.object({
     .union([z.string(), z.boolean()])
     .optional(),
 
+  SECURITY_PIN_DOMAINS: z.string().optional(),
+  SECURITY_PIN_HASHES: z.string().optional(),
+  EXPO_PUBLIC_SECURITY_PIN_DOMAINS: z.string().optional(),
+  EXPO_PUBLIC_SECURITY_PIN_HASHES: z.string().optional(),
+
   EXPO_PUBLIC_FEATURE_SECURITY_ENCRYPTION: z
     .union([z.string(), z.boolean()])
     .optional(),
@@ -362,6 +367,10 @@ const buildTime = z.object({
 
   // Email hashing salt for audit log privacy
   EMAIL_HASH_SALT: z.string().min(1),
+
+  CODE_SIGNING_CERT_PATH: z.string().optional(),
+  CODE_SIGNING_KEY_ID: z.string().optional(),
+  CODE_SIGNING_ALG: z.string().optional(),
 });
 
 /**
@@ -517,6 +526,17 @@ const featureSecurityBypassPinningRaw = readEnv(
   'FEATURE_SECURITY_BYPASS_PINNING',
   'EXPO_PUBLIC_FEATURE_SECURITY_BYPASS_PINNING'
 );
+const securityPinnedDomainsRaw = readEnv(
+  'SECURITY_PIN_DOMAINS',
+  'EXPO_PUBLIC_SECURITY_PIN_DOMAINS'
+);
+const securityPinnedHashesRaw = readEnv(
+  'SECURITY_PIN_HASHES',
+  'EXPO_PUBLIC_SECURITY_PIN_HASHES'
+);
+const codeSigningCertPath = readEnv('CODE_SIGNING_CERT_PATH');
+const codeSigningKeyId = readEnv('CODE_SIGNING_KEY_ID');
+const codeSigningAlg = readEnv('CODE_SIGNING_ALG');
 const dpoEmail = readEnv('DPO_EMAIL', 'EXPO_PUBLIC_DPO_EMAIL');
 const dpoName = readEnv('DPO_NAME', 'EXPO_PUBLIC_DPO_NAME');
 const euRepresentativeAddress = readEnv(
@@ -715,6 +735,9 @@ const _clientEnv = {
     featureSecurityBypassPinningRaw !== undefined
       ? featureSecurityBypassPinningRaw === 'true'
       : undefined,
+
+  SECURITY_PIN_DOMAINS: securityPinnedDomainsRaw,
+  SECURITY_PIN_HASHES: securityPinnedHashesRaw,
 };
 
 /**
@@ -734,6 +757,10 @@ const _buildTimeEnv = {
 
   // Email hashing salt for audit log privacy
   EMAIL_HASH_SALT: process.env.EMAIL_HASH_SALT,
+
+  CODE_SIGNING_CERT_PATH: codeSigningCertPath,
+  CODE_SIGNING_KEY_ID: codeSigningKeyId,
+  CODE_SIGNING_ALG: codeSigningAlg,
 };
 
 /**

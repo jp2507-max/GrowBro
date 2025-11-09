@@ -380,15 +380,11 @@ function truncateIpAddress(ip: string): string {
  * Matches the database hash_email function for consistency
  */
 async function hashEmailForLookup(email: string): Promise<string> {
-  let salt = Deno.env.get('EMAIL_HASH_SALT');
+  const salt = Deno.env.get('EMAIL_HASH_SALT');
   if (!salt) {
-    const nodeEnv = Deno.env.get('NODE_ENV');
-    if (nodeEnv === 'production') {
-      throw new Error(
-        'EMAIL_HASH_SALT environment variable is required in production'
-      );
-    }
-    salt = 'growbro_auth_lockout_salt_v1';
+    throw new Error(
+      'EMAIL_HASH_SALT environment variable is required for hashEmailForLookup'
+    );
   }
   const encoder = new TextEncoder();
   const data = encoder.encode(salt + email.toLowerCase().trim());

@@ -33,7 +33,12 @@ import {
 } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
 import { initAuthStorage } from '@/lib/auth/auth-storage';
-import { useRealtimeSessionRevocation } from '@/lib/auth/session-manager';
+import { registerKeyRotationTask } from '@/lib/auth/key-rotation-task';
+import {
+  useOfflineModeMonitor,
+  useRealtimeSessionRevocation,
+  useSessionAutoRefresh,
+} from '@/lib/auth/session-manager';
 import { updateActivity } from '@/lib/auth/session-timeout';
 import { useDeepLinking } from '@/lib/auth/use-deep-linking';
 import {
@@ -130,6 +135,16 @@ function RootLayout(): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
   useRootStartup(setIsI18nReady, isFirstTime);
+  useSessionAutoRefresh();
+  useOfflineModeMonitor();
+  React.useEffect(() => {
+    registerKeyRotationTask().catch((error) => {
+      console.warn(
+        '[RootLayout] Key rotation task registration failed:',
+        error
+      );
+    });
+  }, []);
 
   React.useEffect(() => {
     if (!Env.GOOGLE_WEB_CLIENT_ID) {

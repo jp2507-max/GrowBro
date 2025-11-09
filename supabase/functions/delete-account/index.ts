@@ -21,8 +21,12 @@ interface DeleteAccountResponse {
  * Matches the database hash_email function for consistency
  */
 async function hashEmailForLookup(email: string): Promise<string> {
-  const salt =
-    Deno.env.get('EMAIL_HASH_SALT') || 'growbro_auth_lockout_salt_v1';
+  const salt = Deno.env.get('EMAIL_HASH_SALT');
+  if (!salt) {
+    throw new Error(
+      'EMAIL_HASH_SALT environment variable is required for delete-account'
+    );
+  }
   const encoder = new TextEncoder();
   const data = encoder.encode(salt + email.toLowerCase().trim());
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);

@@ -5,7 +5,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "prebuild": "node scripts/generate-licenses.js && cross-env EXPO_NO_DOTENV=1 pnpm expo prebuild",
+    "prebuild": "node scripts/generate-network-security-config.js && node scripts/generate-licenses.js && cross-env EXPO_NO_DOTENV=1 pnpm expo prebuild",
     "android": "cross-env EXPO_NO_DOTENV=1 expo run:android",
     "ios": "cross-env EXPO_NO_DOTENV=1 expo run:ios",
     "web": "cross-env EXPO_NO_DOTENV=1 expo start --web",
@@ -59,6 +59,7 @@
     "data-safety:generate": "node scripts/generate-data-safety-draft.js",
     "data-safety:validate": "node scripts/ci-data-safety-validate.js",
     "privacy-policy:validate": "node scripts/validate-privacy-policy.js",
+    "security:pinning": "node scripts/generate-network-security-config.js",
     "privacy:deletion-gate": "pnpm run test -- deletion-gate.test.ts",
     "compliance:app-access": "pnpm run test -- app-access-gate.test.ts",
     "compliance:cannabis": "node scripts/ci-cannabis-policy-scan.js",
