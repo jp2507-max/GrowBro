@@ -1,4 +1,5 @@
 import type { AxiosError } from 'axios';
+import * as FileSystem from 'expo-file-system';
 import { createMutation } from 'react-query-kit';
 import { z } from 'zod';
 
@@ -10,7 +11,10 @@ import {
 } from '@/lib/media/community-media-upload-service';
 import { validateFileSize } from '@/lib/media/file-validation';
 import { hashFileContent } from '@/lib/media/photo-hash';
-import { captureAndStore } from '@/lib/media/photo-storage-service';
+import {
+  captureAndStore,
+  downloadRemoteImage,
+} from '@/lib/media/photo-storage-service';
 import { supabase } from '@/lib/supabase';
 
 export const attachmentInputSchema = z
@@ -114,10 +118,67 @@ const processLocalAttachment = async (
   };
 };
 
-// Helper function to process remote attachments
-export const processRemoteAttachment = (
+// Helper function to process remote attachments without metadata
+const processRemoteAttachmentWithoutMetadata = async (
   attachment: AttachmentInput
-): MediaPayload => {
+): Promise<MediaPayload> => {
+  // For true prefill attachments without ANY metadata, download the remote image
+  // and process it like a local file to get proper Supabase Storage paths
+  console.warn(
+    'Remote attachment missing metadata, downloading prefill image:',
+    attachment.uri
+  );
+
+  try {
+    // Download the remote image to local storage
+    const localUri = await downloadRemoteImage(attachment.uri!);
+
+    // Process it like a local file to get storage paths
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) {
+      throw new Error('User must be authenticated to upload media');
+    }
+
+    // Generate photo variants (original, resized, thumbnail)
+    const variants = await captureAndStore(localUri);
+
+    // Hash the original for content-addressable storage
+    const contentHash = await hashFileContent(variants.original);
+
+    // Upload variants to Supabase Storage
+    const uploadResult = await uploadCommunityMediaVariants(
+      user.id,
+      variants,
+      contentHash
+    );
+
+    // Clean up the temporary downloaded file
+    try {
+      await FileSystem.deleteAsync(localUri, { idempotent: true });
+    } catch (cleanupError) {
+      console.warn('Failed to cleanup temporary file:', cleanupError);
+    }
+
+    // Build media payload for server
+    return {
+      originalPath: uploadResult.originalPath,
+      resizedPath: uploadResult.resizedPath,
+      thumbnailPath: uploadResult.thumbnailPath,
+      width: uploadResult.metadata.width,
+      height: uploadResult.metadata.height,
+      aspectRatio: uploadResult.metadata.aspectRatio,
+      bytes: uploadResult.metadata.bytes,
+    };
+  } catch (error) {
+    console.error('Failed to process prefill attachment:', error);
+    throw new Error(`Failed to process prefill attachment: ${error}`);
+  }
+};
+
+// Helper function to process remote attachments
+export const processRemoteAttachment = async (
+  attachment: AttachmentInput
+): Promise<MediaPayload> => {
   const metadata = attachment.metadata as RemoteAttachmentMetadata | undefined;
   const width = Number(metadata?.width ?? metadata?.dimensions?.width ?? 0);
   const height = Number(metadata?.height ?? metadata?.dimensions?.height ?? 0);
@@ -131,21 +192,7 @@ export const processRemoteAttachment = (
   const hasCompleteMetadata = width > 0 && height > 0 && bytes > 0;
 
   if (!hasAnyMetadata && !hasCompleteMetadata) {
-    // For true prefill attachments without ANY metadata, use reasonable defaults
-    // These will be validated/updated by the backend
-    console.warn(
-      'Remote attachment missing metadata, using defaults for prefill:',
-      attachment.uri
-    );
-    return {
-      originalPath: attachment.uri!,
-      resizedPath: attachment.uri!,
-      thumbnailPath: attachment.uri!,
-      width: 800, // Default width for prefill images
-      height: 600, // Default height for prefill images
-      aspectRatio: 4 / 3, // Default aspect ratio
-      bytes: 102400, // Default ~100KB for prefill images
-    };
+    return processRemoteAttachmentWithoutMetadata(attachment);
   }
 
   // If partial metadata exists but is incomplete, still require complete metadata
@@ -194,9 +241,9 @@ const processAttachments = async (
         );
         mediaPayloads.push(mediaPayload);
       } else {
-        // Remote prefill attachment - already uploaded asset
-        // Skip client-side processing and pass through untouched
-        const mediaPayload = processRemoteAttachment(attachment);
+        // Remote prefill attachment - may need downloading if no metadata
+        // Process through our attachment handler which will download if needed
+        const mediaPayload = await processRemoteAttachment(attachment);
         mediaPayloads.push(mediaPayload);
       }
     }

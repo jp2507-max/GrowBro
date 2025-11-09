@@ -50,6 +50,25 @@ const xmlDir = path.join(
 fs.mkdirSync(xmlDir, { recursive: true });
 const targetPath = path.join(xmlDir, 'network_security_config.xml');
 
+const getCertificatePinExpiration = () => {
+  const envExpiration =
+    process.env.CERT_PIN_EXPIRATION ||
+    process.env.EXPO_PUBLIC_CERT_PIN_EXPIRATION;
+
+  if (envExpiration) {
+    const envDate = new Date(envExpiration);
+    // Validate that the date is valid and in the future
+    if (!isNaN(envDate.getTime()) && envDate > new Date()) {
+      return envDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    }
+  }
+
+  // Fallback: current year + 2 years
+  const fallbackDate = new Date();
+  fallbackDate.setFullYear(fallbackDate.getFullYear() + 2);
+  return fallbackDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+};
+
 const buildPinSet = () => {
   if (!hashes.length) {
     return '';
@@ -57,9 +76,12 @@ const buildPinSet = () => {
   const pins = hashes
     .map((hash) => `      <pin digest="SHA-256">${hash}</pin>`)
     .join('\n');
-  return ['    <pin-set expiration="2026-12-31">', pins, '    </pin-set>'].join(
-    '\n'
-  );
+  const expirationDate = getCertificatePinExpiration();
+  return [
+    `    <pin-set expiration="${expirationDate}">`,
+    pins,
+    '    </pin-set>',
+  ].join('\n');
 };
 
 let xml;

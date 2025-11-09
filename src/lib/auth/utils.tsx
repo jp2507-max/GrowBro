@@ -66,7 +66,14 @@ function readToken(): TokenType | null {
     return JSON.parse(serialized) as TokenType;
   } catch (error) {
     console.warn('[auth] Failed to parse stored token, clearing value.', error);
-    mmkvAuthStorageSync.removeItem(TOKEN);
+    try {
+      mmkvAuthStorageSync.removeItem(TOKEN);
+    } catch (removeError) {
+      console.warn(
+        '[auth] Failed to remove corrupted token from storage.',
+        removeError
+      );
+    }
     return null;
   }
 }

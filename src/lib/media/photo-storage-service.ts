@@ -25,6 +25,64 @@ import { generatePhotoVariants } from './photo-variants';
  * - 13.2: Generate original, resized, thumbnail variants
  */
 
+/**
+ * Download a remote image to local storage
+ * Used for prefill attachments that come from remote URLs
+ */
+export async function downloadRemoteImage(remoteUri: string): Promise<string> {
+  try {
+    console.log('[downloadRemoteImage] Downloading:', remoteUri);
+
+    // Fetch the remote image
+    const response = await fetch(remoteUri);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch image: ${response.status} ${response.statusText}`
+      );
+    }
+
+    // Convert to blob and then to base64 for expo-file-system
+    const blob = await response.blob();
+    const base64 = await blobToBase64(blob);
+
+    // Create temporary file in cache directory
+    const dir = getPhotoDirectory();
+    const tempFilename = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
+    const tempFile = new File(dir, tempFilename);
+
+    // Write base64 data to file
+    await tempFile.write(base64, { encoding: 'base64' });
+
+    const localUri = tempFile.uri;
+    console.log('[downloadRemoteImage] Downloaded to:', localUri);
+
+    return localUri;
+  } catch (error) {
+    console.error('[downloadRemoteImage] Failed to download image:', error);
+    throw new Error(`Failed to download remote image: ${error}`);
+  }
+}
+
+/**
+ * Convert blob to base64 string
+ */
+async function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
+        const base64 = reader.result.split(',')[1];
+        resolve(base64);
+      } else {
+        reject(new Error('Failed to convert blob to base64'));
+      }
+    };
+    reader.onerror = () => reject(new Error('FileReader error'));
+    reader.readAsDataURL(blob);
+  });
+}
+
 // Photo storage directory in cache
 const PHOTO_DIR_NAME = 'harvest-photos';
 

@@ -1,6 +1,6 @@
 import { Stack, useRouter } from 'expo-router';
 import * as React from 'react';
-import { Alert, Modal } from 'react-native';
+import { Alert } from 'react-native';
 
 import {
   useMfaChallengeAndVerify,
@@ -16,10 +16,10 @@ import { BiometricToggleSection } from '@/components/settings/biometric-toggle-s
 import { DangerZoneWarning } from '@/components/settings/danger-zone-warning';
 import { Item } from '@/components/settings/item';
 import { ItemsContainer } from '@/components/settings/items-container';
+import { MfaSetupModal } from '@/components/settings/mfa-setup-modal';
 import {
   Button,
   FocusAwareStatusBar,
-  Input,
   ScrollView,
   Text,
   View,
@@ -28,7 +28,6 @@ import { Lock, Shield, Trash } from '@/components/ui/icons';
 import { translate } from '@/lib';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
-import { openLinkInBrowser } from '@/lib/utils';
 
 type PendingMfaEnrollment = {
   factorId: string;
@@ -54,7 +53,10 @@ export default function SecuritySettingsScreen() {
     React.useState<PendingMfaEnrollment | null>(null);
   const [verificationCode, setVerificationCode] = React.useState('');
 
-  const totpFactors = mfaFactors?.totp ?? [];
+  const allFactors = mfaFactors?.factors ?? [];
+  const totpFactors = allFactors.filter(
+    (factor) => factor.factor_type === 'totp'
+  );
   const activeFactor = totpFactors[0];
   const isMfaEnabled = totpFactors.length > 0;
 
@@ -260,67 +262,15 @@ export default function SecuritySettingsScreen() {
       {/* Change Password Modal */}
       <ChangePasswordModal ref={changePasswordModalRef} />
 
-      <Modal
+      <MfaSetupModal
         visible={mfaModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCloseMfaModal}
-      >
-        <View className="flex-1 bg-black/60">
-          <View className="flex-1 items-center justify-center px-4 py-10">
-            <View className="w-full rounded-2xl bg-white p-5 dark:bg-charcoal-900">
-              <Text className="mb-2 text-xl font-bold">
-                {translate('auth.security.mfa_setup_title')}
-              </Text>
-              <Text className="mb-4 text-neutral-600 dark:text-neutral-300">
-                {translate('auth.security.mfa_setup_description')}
-              </Text>
-              {pendingEnrollment ? (
-                <>
-                  <Text className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">
-                    {translate('auth.security.mfa_secret_label')}
-                  </Text>
-                  <View className="my-2 rounded-lg border border-dashed border-neutral-400 p-3">
-                    <Text selectable className="font-mono text-lg">
-                      {pendingEnrollment.secret}
-                    </Text>
-                  </View>
-                  <Button
-                    variant="outline"
-                    label={translate('auth.security.mfa_open_authenticator')}
-                    onPress={() => openLinkInBrowser(pendingEnrollment.uri)}
-                    className="mt-2"
-                  />
-                </>
-              ) : null}
-              <Input
-                className="mt-4"
-                value={verificationCode}
-                onChangeText={setVerificationCode}
-                placeholder={translate('auth.security.mfa_code_placeholder')}
-                keyboardType="number-pad"
-                maxLength={6}
-                autoFocus
-                testID="mfa-code-input"
-              />
-              <View className="mt-6 flex-row gap-3">
-                <Button
-                  variant="outline"
-                  label={translate('common.cancel')}
-                  onPress={handleCloseMfaModal}
-                  className="flex-1"
-                />
-                <Button
-                  label={translate('common.confirm')}
-                  onPress={handleVerifyMfa}
-                  loading={verifyTotp.isPending}
-                  className="flex-1"
-                />
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        pendingEnrollment={pendingEnrollment}
+        verificationCode={verificationCode}
+        onVerificationCodeChange={setVerificationCode}
+        onVerify={handleVerifyMfa}
+        onClose={handleCloseMfaModal}
+        isVerifying={verifyTotp.isPending}
+      />
     </>
   );
 }

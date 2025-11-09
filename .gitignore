@@ -40,3 +40,10 @@ build/reports/
 
 # Backup files
 *.bak
+
+# Code signing certificates and keys (never commit these!)
+certs/
+*.pem
+*.crt
+*.cer
+*.der

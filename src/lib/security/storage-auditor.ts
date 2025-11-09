@@ -107,17 +107,32 @@ async function scanAsyncStorage(): Promise<string[]> {
 async function detectUnprotectedDomains(): Promise<string[]> {
   const instances = getAllInstances();
   const initializedDomains = new Set(instances.keys());
+  const allowedDomains = new Set(Object.values(STORAGE_DOMAINS));
   const suspicious: string[] = [];
 
+  // Check expected domains for initialization and metadata
   for (const domain of Object.values(STORAGE_DOMAINS)) {
     if (!initializedDomains.has(domain)) {
       suspicious.push(`${domain}:not_initialized`);
       continue;
     }
 
-    const metadata = await keyManager.getKeyMetadata(`mmkv.${domain}`);
-    if (!metadata) {
-      suspicious.push(`${domain}:missing_key_metadata`);
+    try {
+      const metadata = await keyManager.getKeyMetadata(`mmkv.${domain}`);
+      if (!metadata) {
+        suspicious.push(`${domain}:missing_key_metadata`);
+      }
+    } catch (error) {
+      suspicious.push(
+        `${domain}:metadata_error - ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  // Check for unauthorized initialized domains
+  for (const domain of instances.keys()) {
+    if (!allowedDomains.has(domain)) {
+      suspicious.push(`${domain}:unauthorized_initialized`);
     }
   }
 
