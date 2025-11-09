@@ -282,6 +282,30 @@ Deno.serve(async (req: Request) => {
     };
 
     if (mediaProcessingResult) {
+      // Validate that all provided paths belong to the authenticated user
+      // to prevent malicious users from obtaining signed URLs for other users' media
+      const userPrefix = `${sanitizePathSegment(user.id)}/`;
+      const pathsToValidate = [
+        mediaProcessingResult.originalPath,
+        mediaProcessingResult.resizedPath,
+        mediaProcessingResult.thumbnailPath,
+      ];
+
+      for (const path of pathsToValidate) {
+        if (!path.startsWith(userPrefix)) {
+          return new Response(
+            JSON.stringify({
+              error:
+                'Access denied: Media path does not belong to authenticated user',
+            }),
+            {
+              status: 403,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+      }
+
       // Generate signed URLs for media variants to enable client access
       const signedUrls = await generateSignedMediaUrls(supabaseClient, {
         originalPath: mediaProcessingResult.originalPath,

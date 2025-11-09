@@ -10,12 +10,10 @@ import React from 'react';
 
 import { useUserProfile } from '@/api/community';
 import { useUserPosts } from '@/api/community/use-user-posts';
-import {
-  ProfileSkeleton,
-  RestrictedProfileMessage,
-  UserPostsList,
-  UserProfileHeader,
-} from '@/components/community';
+import { ProfileSkeleton } from '@/components/community/profile-skeleton';
+import { RestrictedProfileMessage } from '@/components/community/restricted-profile-message';
+import { UserPostsList } from '@/components/community/user-posts-list';
+import { UserProfileHeader } from '@/components/community/user-profile-header';
 import { FocusAwareStatusBar, View } from '@/components/ui';
 import { translate } from '@/lib/i18n';
 

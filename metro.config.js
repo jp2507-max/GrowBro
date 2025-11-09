@@ -1,5 +1,6 @@
-const { withNativeWind } = require('nativewind/metro');
 const { getDefaultConfig } = require('expo/metro-config');
+const { withExpoAtlas } = require('expo-atlas/metro');
+const { withNativeWind } = require('nativewind/metro');
 const { getSentryExpoConfig } = require('@sentry/react-native/metro');
 
 let config = getDefaultConfig(__dirname);
@@ -15,4 +16,9 @@ config.resolver.blockList = [
 ];
 
 // NativeWind CSS support
-module.exports = withNativeWind(config, { input: './global.css' });
+config = withNativeWind(config, { input: './global.css' });
+
+// Collect Metro graph statistics for bundle analysis
+config = withExpoAtlas(config);
+
+module.exports = config;

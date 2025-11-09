@@ -1,5 +1,4 @@
 import { Env } from '@env';
-import Constants from 'expo-constants';
 import { Directory, File, Paths } from 'expo-file-system';
 
 import type {
@@ -35,6 +34,7 @@ type DownloadedRemoteImage = {
   cleanup: () => Promise<void>;
 };
 
+const supabaseStorageHostname = resolveSupabaseHostname();
 const allowedRemoteImageHosts = createAllowedRemoteImageHostSet();
 
 /**
@@ -224,7 +224,11 @@ function assertAllowedRemoteUri(remoteUri: string): URL {
     throw new Error(`Remote image host "${host}" is not allowlisted`);
   }
 
-  if (!parsed.pathname.startsWith(STORAGE_OBJECT_PATH_PREFIX)) {
+  if (
+    supabaseStorageHostname &&
+    host === supabaseStorageHostname &&
+    !parsed.pathname.startsWith(STORAGE_OBJECT_PATH_PREFIX)
+  ) {
     throw new Error('Remote image path is not allowlisted');
   }
 
@@ -295,17 +299,8 @@ function isIpAddress(host: string): boolean {
 function createAllowedRemoteImageHostSet(): Set<string> {
   const hosts = new Set<string>();
 
-  const supabaseUrl = resolveSupabaseUrl();
-
-  if (supabaseUrl) {
-    try {
-      const parsed = new URL(supabaseUrl);
-      if (parsed.protocol === 'https:' && parsed.hostname) {
-        hosts.add(parsed.hostname.toLowerCase());
-      }
-    } catch {
-      // Ignore malformed env configuration
-    }
+  if (supabaseStorageHostname) {
+    hosts.add(supabaseStorageHostname);
   }
 
   const extraHosts = getExtraAllowedHostsFromEnv();
@@ -316,34 +311,27 @@ function createAllowedRemoteImageHostSet(): Set<string> {
   return hosts;
 }
 
-function resolveSupabaseUrl(): string | undefined {
-  const pickFirstString = (...candidates: unknown[]): string | undefined => {
-    for (const candidate of candidates) {
-      if (typeof candidate === 'string' && candidate.length > 0) {
-        return candidate;
-      }
-    }
+function resolveSupabaseHostname(): string | undefined {
+  const supabaseUrl = resolveSupabaseUrl();
+
+  if (!supabaseUrl) {
     return undefined;
-  };
+  }
 
-  const runtimeEnv =
-    typeof process !== 'undefined' && process.env
-      ? process.env
-      : ({} as Record<string, string | undefined>);
+  try {
+    const parsed = new URL(supabaseUrl);
+    if (parsed.protocol === 'https:' && parsed.hostname) {
+      return parsed.hostname.toLowerCase();
+    }
+  } catch {
+    // Ignore malformed env configuration
+  }
 
-  const expoExtra =
-    (Constants.expoConfig?.extra as Record<string, unknown> | undefined) ??
-    (Constants.manifest2?.extra as Record<string, unknown> | undefined) ??
-    {};
+  return undefined;
+}
 
-  return pickFirstString(
-    Env?.SUPABASE_URL,
-    Env?.EXPO_PUBLIC_SUPABASE_URL,
-    expoExtra?.SUPABASE_URL,
-    expoExtra?.EXPO_PUBLIC_SUPABASE_URL,
-    runtimeEnv?.EXPO_PUBLIC_SUPABASE_URL,
-    runtimeEnv?.SUPABASE_URL
-  );
+function resolveSupabaseUrl(): string | undefined {
+  return Env.SUPABASE_URL;
 }
 
 function getExtraAllowedHostsFromEnv(): string[] {

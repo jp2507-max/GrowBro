@@ -10,6 +10,7 @@ import * as Sentry from '@sentry/react-native';
 // Setup Buffer polyfill for React Native
 import { Buffer } from 'buffer';
 import { Stack, usePathname, useRouter } from 'expo-router';
+import * as ScreenCapture from 'expo-screen-capture';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -217,6 +218,19 @@ function RootLayout(): React.ReactElement {
 
   React.useEffect(() => {
     if (ConsentService.isConsentRequired()) setShowConsent(true);
+  }, []);
+
+  React.useEffect(() => {
+    // Prevent screenshots/screen recordings on iOS to mirror Android FLAG_SECURE
+    ScreenCapture.preventScreenCaptureAsync().catch((error) => {
+      console.warn('[RootLayout] Failed to prevent screen capture:', error);
+    });
+
+    return () => {
+      ScreenCapture.allowScreenCaptureAsync().catch((error) => {
+        console.warn('[RootLayout] Failed to re-enable screen capture:', error);
+      });
+    };
   }, []);
 
   // Initialize photo storage janitor on app start

@@ -91,6 +91,23 @@ export default defineConfig([
           caughtErrorsIgnorePattern: '^_',
         },
       ],
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@/components/community',
+              message:
+                'Import community modules directly (e.g., "@/components/community/post-card") to keep Metro bundles lean.',
+            },
+            {
+              name: '@/components/auth',
+              message:
+                'Import auth modules directly (e.g., "@/components/auth/login-form") to minimize bundle size.',
+            },
+          ],
+        },
+      ],
       'import/prefer-default-export': 'off',
       'import/no-cycle': ['error', { maxDepth: Infinity }],
       'prettier/prettier': ['error'],

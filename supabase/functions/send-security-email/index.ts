@@ -103,25 +103,66 @@ async function getUserEmail(
   return data.user.email;
 }
 
-/**
- * Send email (placeholder - integrate with actual email service)
- * In production, use Resend, SendGrid, or similar
- */
+function maskEmailForLogs(address: string): string {
+  if (!address || typeof address !== 'string') {
+    return '[REDACTED]';
+  }
+  const [local, domain] = address.split('@');
+  if (!domain) {
+    return '[REDACTED]';
+  }
+  const visibleLocal = local ? local.slice(0, Math.min(2, local.length)) : '*';
+  return `${visibleLocal || '*'}***@${domain}`;
+}
+
 async function sendEmail(
   to: string,
   subject: string,
   body: string
 ): Promise<boolean> {
-  // TODO: Integrate with actual email service
-  // For now, just log the email
-  console.log('[security-email] Email to send:');
-  console.log(`To: ${to}`);
-  console.log(`Subject: ${subject}`);
-  console.log(`Body: ${body}`);
+  const endpoint = Deno.env.get('SECURITY_EMAIL_WEBHOOK');
+  const token = Deno.env.get('SECURITY_EMAIL_TOKEN');
 
-  // Placeholder: Return success
-  // In production, call email service API here
-  return true;
+  if (!endpoint || !token) {
+    console.error(
+      '[security-email] Email service not configured (missing SECURITY_EMAIL_WEBHOOK or SECURITY_EMAIL_TOKEN)'
+    );
+    return false;
+  }
+
+  const payload = {
+    to,
+    subject,
+    body,
+  };
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      console.error('[security-email] Email service responded with error', {
+        status: response.status,
+        statusText: response.statusText,
+      });
+      return false;
+    }
+
+    console.log('[security-email] Email dispatched', {
+      to: maskEmailForLogs(to),
+      template: subject.split(':')[0] ?? 'security-notice',
+    });
+    return true;
+  } catch (error) {
+    console.error('[security-email] Failed to call email service', error);
+    return false;
+  }
 }
 
 /**

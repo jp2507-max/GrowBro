@@ -8,17 +8,15 @@ import type { Post } from '@/api';
 import { usePostsInfinite } from '@/api';
 import { useUndoDeletePost } from '@/api/community';
 import { CannabisEducationalBanner } from '@/components/cannabis-educational-banner';
-import {
-  AgeGatedPostCard,
-  AgeVerificationPrompt,
-  CommunityEmptyState,
-  CommunityErrorBoundary,
-  CommunityErrorCard,
-  CommunityFooterLoader,
-  CommunitySkeletonList,
-  OfflineIndicator,
-  UndoSnackbar,
-} from '@/components/community';
+import { AgeGatedPostCard } from '@/components/community/age-gated-post-card';
+import { AgeVerificationPrompt } from '@/components/community/age-verification-prompt';
+import { CommunityEmptyState } from '@/components/community/community-empty-state';
+import { CommunityErrorBoundary } from '@/components/community/community-error-boundary';
+import { CommunityErrorCard } from '@/components/community/community-error-card';
+import { CommunityFooterLoader } from '@/components/community/community-footer-loader';
+import { CommunitySkeletonList } from '@/components/community/community-skeleton-list';
+import { OfflineIndicator } from '@/components/community/offline-indicator';
+import { UndoSnackbar } from '@/components/community/undo-snackbar';
 import { ComposeBtn } from '@/components/compose-btn';
 import { FocusAwareStatusBar, Text, View } from '@/components/ui';
 import { translate, useAnalytics } from '@/lib';

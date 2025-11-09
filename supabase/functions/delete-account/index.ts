@@ -34,6 +34,18 @@ async function hashEmailForLookup(email: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const [, payload] = token.split('.');
+    if (!payload) return null;
+    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(decoded);
+  } catch (error) {
+    console.error('[delete-account] Failed to decode JWT payload:', error);
+    return null;
+  }
+}
+
 serve(async (req) => {
   try {
     // Only allow POST requests
@@ -93,6 +105,23 @@ serve(async (req) => {
         JSON.stringify({ error: 'Invalid or expired token' }),
         {
           status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Enforce MFA/aal2 requirement before permitting self-service deletion
+    const jwtPayload = decodeJwtPayload(jwt);
+    const aal =
+      typeof jwtPayload?.aal === 'string' ? jwtPayload.aal : undefined;
+    if (aal !== '2') {
+      return new Response(
+        JSON.stringify({
+          error: 'Multi-factor authentication required',
+          message: 'Complete MFA before deleting your account.',
+        }),
+        {
+          status: 403,
           headers: { 'Content-Type': 'application/json' },
         }
       );
