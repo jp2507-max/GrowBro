@@ -367,16 +367,32 @@ async function generateSignedMediaUrls(
   // Signed URLs expire in 1 year (31536000 seconds) for community media
   const expiresIn = 31536000;
 
+  // Remove bucket prefix from paths since .from() already specifies the bucket
+  const bucketPrefix = `${COMMUNITY_MEDIA_BUCKET}/`;
+  const originalPath = mediaProcessingResult.originalPath.startsWith(
+    bucketPrefix
+  )
+    ? mediaProcessingResult.originalPath.slice(bucketPrefix.length)
+    : mediaProcessingResult.originalPath;
+  const resizedPath = mediaProcessingResult.resizedPath.startsWith(bucketPrefix)
+    ? mediaProcessingResult.resizedPath.slice(bucketPrefix.length)
+    : mediaProcessingResult.resizedPath;
+  const thumbnailPath = mediaProcessingResult.thumbnailPath.startsWith(
+    bucketPrefix
+  )
+    ? mediaProcessingResult.thumbnailPath.slice(bucketPrefix.length)
+    : mediaProcessingResult.thumbnailPath;
+
   const [originalUrl, resizedUrl, thumbnailUrl] = await Promise.all([
     supabaseClient.storage
       .from(COMMUNITY_MEDIA_BUCKET)
-      .createSignedUrl(mediaProcessingResult.originalPath, expiresIn),
+      .createSignedUrl(originalPath, expiresIn),
     supabaseClient.storage
       .from(COMMUNITY_MEDIA_BUCKET)
-      .createSignedUrl(mediaProcessingResult.resizedPath, expiresIn),
+      .createSignedUrl(resizedPath, expiresIn),
     supabaseClient.storage
       .from(COMMUNITY_MEDIA_BUCKET)
-      .createSignedUrl(mediaProcessingResult.thumbnailPath, expiresIn),
+      .createSignedUrl(thumbnailPath, expiresIn),
   ]);
 
   if (originalUrl.error || resizedUrl.error || thumbnailUrl.error) {

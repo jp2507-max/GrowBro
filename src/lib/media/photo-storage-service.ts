@@ -1,3 +1,5 @@
+import { Env } from '@env';
+import Constants from 'expo-constants';
 import { Directory, File, Paths } from 'expo-file-system';
 
 import type {
@@ -25,41 +27,90 @@ import { generatePhotoVariants } from './photo-variants';
  * - 13.2: Generate original, resized, thumbnail variants
  */
 
+const DOWNLOAD_TIMEOUT_MS = 10_000;
+const STORAGE_OBJECT_PATH_PREFIX = '/storage/v1/object/';
+
+type DownloadedRemoteImage = {
+  localUri: string;
+  cleanup: () => Promise<void>;
+};
+
+const allowedRemoteImageHosts = createAllowedRemoteImageHostSet();
+
 /**
  * Download a remote image to local storage
  * Used for prefill attachments that come from remote URLs
  */
-export async function downloadRemoteImage(remoteUri: string): Promise<string> {
-  try {
-    console.log('[downloadRemoteImage] Downloading:', remoteUri);
+export async function downloadRemoteImage(
+  remoteUri: string
+): Promise<DownloadedRemoteImage> {
+  const parsedUrl = assertAllowedRemoteUri(remoteUri);
 
-    // Fetch the remote image
-    const response = await fetch(remoteUri);
-    if (!response.ok) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(parsedUrl.toString(), {
+      signal: controller.signal,
+    });
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
       throw new Error(
-        `Failed to fetch image: ${response.status} ${response.statusText}`
+        `Remote image download timed out after ${DOWNLOAD_TIMEOUT_MS}ms`
       );
     }
+    throw new Error(
+      `Failed to fetch remote image: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
 
-    // Convert to blob and then to base64 for expo-file-system
-    const blob = await response.blob();
-    const base64 = await blobToBase64(blob);
+  clearTimeout(timeoutId);
 
-    // Create temporary file in cache directory
-    const dir = getPhotoDirectory();
-    const tempFilename = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
-    const tempFile = new File(dir, tempFilename);
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch image: ${response.status} ${response.statusText}`
+    );
+  }
 
-    // Write base64 data to file
+  const rawContentType =
+    response.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase() ??
+    null;
+
+  if (rawContentType && !rawContentType.startsWith('image/')) {
+    throw new Error(
+      `Remote file is not an image (received Content-Type: ${rawContentType})`
+    );
+  }
+
+  const blob = await response.blob();
+  const base64 = await blobToBase64(blob);
+
+  const dir = getPhotoDirectory();
+  const extension = determineImageExtension(rawContentType, parsedUrl.pathname);
+  const tempFilename = `remote_${Date.now()}_${Math.random()
+    .toString(36)
+    .slice(2)}.${extension}`;
+
+  const tempFile = new File(dir, tempFilename);
+
+  let tempFileUri: string | null = null;
+  try {
     await tempFile.write(base64, { encoding: 'base64' });
+    tempFileUri = tempFile.uri;
 
-    const localUri = tempFile.uri;
-    console.log('[downloadRemoteImage] Downloaded to:', localUri);
-
-    return localUri;
+    return createDownloadedRemoteImage(tempFileUri);
   } catch (error) {
-    console.error('[downloadRemoteImage] Failed to download image:', error);
-    throw new Error(`Failed to download remote image: ${error}`);
+    if (tempFileUri) {
+      await cleanupTempFile(tempFileUri, 'partial remote image file');
+    }
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(
+      `Failed to persist downloaded remote image: ${String(error)}`
+    );
   }
 }
 
@@ -81,6 +132,235 @@ async function blobToBase64(blob: Blob): Promise<string> {
     reader.onerror = () => reject(new Error('FileReader error'));
     reader.readAsDataURL(blob);
   });
+}
+
+function createDownloadedRemoteImage(uri: string): DownloadedRemoteImage {
+  let cleaned = false;
+
+  return {
+    localUri: uri,
+    cleanup: async () => {
+      if (cleaned) {
+        return;
+      }
+      cleaned = true;
+      await cleanupTempFile(uri, 'downloaded remote image');
+    },
+  };
+}
+
+function determineImageExtension(
+  contentType: string | null,
+  pathname: string
+): string {
+  const map: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
+    'image/heic': 'heic',
+    'image/heif': 'heif',
+    'image/avif': 'avif',
+  };
+
+  if (contentType) {
+    if (map[contentType]) {
+      return map[contentType];
+    }
+
+    if (contentType.startsWith('image/')) {
+      const candidate = sanitizeExtension(contentType.slice(6));
+      if (candidate) {
+        return candidate;
+      }
+    }
+  }
+
+  const fallback = sanitizeExtension(extractExtension(pathname));
+  return fallback ?? 'jpg';
+}
+
+function sanitizeExtension(ext: string | null | undefined): string | null {
+  if (!ext) {
+    return null;
+  }
+
+  const normalized = ext.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  if (normalized.length === 0 || normalized.length > 5) {
+    return null;
+  }
+
+  return normalized;
+}
+
+function assertAllowedRemoteUri(remoteUri: string): URL {
+  if (!remoteUri) {
+    throw new Error('Remote image URL is required');
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(remoteUri);
+  } catch {
+    throw new Error('Remote image URL must be an absolute HTTPS URL');
+  }
+
+  if (parsed.protocol !== 'https:') {
+    throw new Error('Remote image URL must use HTTPS');
+  }
+
+  if (parsed.username || parsed.password) {
+    throw new Error('Remote image URL must not include credentials');
+  }
+
+  const host = parsed.hostname.toLowerCase();
+
+  if (isLocalHost(host) || isIpAddress(host)) {
+    throw new Error(`Remote image host "${host}" is not permitted`);
+  }
+
+  if (!allowedRemoteImageHosts.has(host)) {
+    throw new Error(`Remote image host "${host}" is not allowlisted`);
+  }
+
+  if (!parsed.pathname.startsWith(STORAGE_OBJECT_PATH_PREFIX)) {
+    throw new Error('Remote image path is not allowlisted');
+  }
+
+  return parsed;
+}
+
+function isLocalHost(host: string): boolean {
+  return (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '::1' ||
+    host.endsWith('.localhost') ||
+    host.endsWith('.local')
+  );
+}
+
+function isIpAddress(host: string): boolean {
+  if (host.includes(':')) {
+    // Treat IPv6 hosts as disallowed (covers private ranges like fd00::/8)
+    return true;
+  }
+
+  const parts = host.split('.');
+  if (parts.length !== 4) {
+    return false;
+  }
+
+  const octets = parts.map((part) => {
+    if (!/^\d{1,3}$/.test(part)) {
+      return NaN;
+    }
+    return Number(part);
+  });
+
+  if (octets.some((value) => Number.isNaN(value) || value < 0 || value > 255)) {
+    return true;
+  }
+
+  const [a, b] = octets;
+
+  if (a === 10 || a === 127) {
+    return true;
+  }
+
+  if (a === 172 && b >= 16 && b <= 31) {
+    return true;
+  }
+
+  if (a === 192 && b === 168) {
+    return true;
+  }
+
+  if (a === 169 && b === 254) {
+    return true;
+  }
+
+  if (a === 100 && b >= 64 && b <= 127) {
+    return true;
+  }
+
+  if (a === 0 || a === 255) {
+    return true;
+  }
+
+  return false;
+}
+
+function createAllowedRemoteImageHostSet(): Set<string> {
+  const hosts = new Set<string>();
+
+  const supabaseUrl = resolveSupabaseUrl();
+
+  if (supabaseUrl) {
+    try {
+      const parsed = new URL(supabaseUrl);
+      if (parsed.protocol === 'https:' && parsed.hostname) {
+        hosts.add(parsed.hostname.toLowerCase());
+      }
+    } catch {
+      // Ignore malformed env configuration
+    }
+  }
+
+  const extraHosts = getExtraAllowedHostsFromEnv();
+  for (const host of extraHosts) {
+    hosts.add(host);
+  }
+
+  return hosts;
+}
+
+function resolveSupabaseUrl(): string | undefined {
+  const pickFirstString = (...candidates: unknown[]): string | undefined => {
+    for (const candidate of candidates) {
+      if (typeof candidate === 'string' && candidate.length > 0) {
+        return candidate;
+      }
+    }
+    return undefined;
+  };
+
+  const runtimeEnv =
+    typeof process !== 'undefined' && process.env
+      ? process.env
+      : ({} as Record<string, string | undefined>);
+
+  const expoExtra =
+    (Constants.expoConfig?.extra as Record<string, unknown> | undefined) ??
+    (Constants.manifest2?.extra as Record<string, unknown> | undefined) ??
+    {};
+
+  return pickFirstString(
+    Env?.SUPABASE_URL,
+    Env?.EXPO_PUBLIC_SUPABASE_URL,
+    expoExtra?.SUPABASE_URL,
+    expoExtra?.EXPO_PUBLIC_SUPABASE_URL,
+    runtimeEnv?.EXPO_PUBLIC_SUPABASE_URL,
+    runtimeEnv?.SUPABASE_URL
+  );
+}
+
+function getExtraAllowedHostsFromEnv(): string[] {
+  const raw = getEnvValue('EXPO_PUBLIC_ALLOWED_REMOTE_IMAGE_HOSTS');
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split(',')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter((entry) => entry.length > 0);
+}
+
+function getEnvValue(key: string): string | undefined {
+  const envRecord = Env as unknown as Record<string, string | undefined>;
+  return envRecord?.[key];
 }
 
 // Photo storage directory in cache

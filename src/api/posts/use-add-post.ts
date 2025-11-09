@@ -1,5 +1,4 @@
 import type { AxiosError } from 'axios';
-import * as FileSystem from 'expo-file-system';
 import { createMutation } from 'react-query-kit';
 import { z } from 'zod';
 
@@ -46,6 +45,22 @@ interface RemoteAttachmentMetadata {
   };
   resizedPath?: string;
   thumbnailPath?: string;
+}
+
+const SUPABASE_STORAGE_BUCKET = 'community-posts/';
+
+function isSupabaseStorageUri(uri: string | undefined): boolean {
+  if (!uri) {
+    return false;
+  }
+
+  if (uri.startsWith(SUPABASE_STORAGE_BUCKET)) {
+    return true;
+  }
+
+  return (
+    uri.includes('/storage/v1/object/') && uri.includes('/community-posts/')
+  );
 }
 
 // Media payload interface for post attachments
@@ -120,7 +135,8 @@ const processLocalAttachment = async (
 
 // Helper function to process remote attachments without metadata
 const processRemoteAttachmentWithoutMetadata = async (
-  attachment: AttachmentInput
+  attachment: AttachmentInput,
+  uploadedPaths: string[]
 ): Promise<MediaPayload> => {
   // For true prefill attachments without ANY metadata, download the remote image
   // and process it like a local file to get proper Supabase Storage paths
@@ -129,9 +145,12 @@ const processRemoteAttachmentWithoutMetadata = async (
     attachment.uri
   );
 
+  let downloadedRemote: Awaited<ReturnType<typeof downloadRemoteImage>> | null =
+    null;
+
   try {
-    // Download the remote image to local storage
-    const localUri = await downloadRemoteImage(attachment.uri!);
+    downloadedRemote = await downloadRemoteImage(attachment.uri!);
+    const localUri = downloadedRemote.localUri;
 
     // Process it like a local file to get storage paths
     const user = (await supabase.auth.getUser()).data.user;
@@ -152,12 +171,12 @@ const processRemoteAttachmentWithoutMetadata = async (
       contentHash
     );
 
-    // Clean up the temporary downloaded file
-    try {
-      await FileSystem.deleteAsync(localUri, { idempotent: true });
-    } catch (cleanupError) {
-      console.warn('Failed to cleanup temporary file:', cleanupError);
-    }
+    // Track uploaded paths for rollback
+    uploadedPaths.push(
+      uploadResult.originalPath,
+      uploadResult.resizedPath,
+      uploadResult.thumbnailPath
+    );
 
     // Build media payload for server
     return {
@@ -172,42 +191,50 @@ const processRemoteAttachmentWithoutMetadata = async (
   } catch (error) {
     console.error('Failed to process prefill attachment:', error);
     throw new Error(`Failed to process prefill attachment: ${error}`);
+  } finally {
+    if (downloadedRemote) {
+      try {
+        await downloadedRemote.cleanup();
+      } catch (cleanupError) {
+        console.warn(
+          'Failed to cleanup downloaded remote image:',
+          cleanupError
+        );
+      }
+    }
   }
 };
 
 // Helper function to process remote attachments
 export const processRemoteAttachment = async (
-  attachment: AttachmentInput
+  attachment: AttachmentInput,
+  uploadedPaths: string[] = []
 ): Promise<MediaPayload> => {
   const metadata = attachment.metadata as RemoteAttachmentMetadata | undefined;
+  const uri = attachment.uri!;
+
+  if (!isSupabaseStorageUri(uri)) {
+    return processRemoteAttachmentWithoutMetadata(attachment, uploadedPaths);
+  }
+
   const width = Number(metadata?.width ?? metadata?.dimensions?.width ?? 0);
   const height = Number(metadata?.height ?? metadata?.dimensions?.height ?? 0);
   const bytes = Number(metadata?.bytes ?? attachment.size ?? 0);
-
-  // Handle prefill attachments that may lack metadata (P1 BUG FIX)
-  // Prefill images from assessments only contain uri/filename, so we provide defaults
-  // Only provide defaults when NO metadata is present (true prefill scenario)
-  const hasAnyMetadata =
-    metadata && (metadata.width || metadata.height || metadata.bytes);
   const hasCompleteMetadata = width > 0 && height > 0 && bytes > 0;
 
-  if (!hasAnyMetadata && !hasCompleteMetadata) {
-    return processRemoteAttachmentWithoutMetadata(attachment);
-  }
-
-  // If partial metadata exists but is incomplete, still require complete metadata
   if (!hasCompleteMetadata) {
     throw new Error(
-      'Remote attachments must include width, height, and byte size metadata'
+      'Storage path attachments must include width, height, and byte size metadata'
     );
   }
 
-  // At this point we know uri exists due to processAttachments validation
-  const uri = attachment.uri!;
-
   const aspectRatio = metadata?.aspectRatio ?? width / height;
-  const resizedPath = metadata?.resizedPath ?? uri;
-  const thumbnailPath = metadata?.thumbnailPath ?? uri;
+  const resizedPath = isSupabaseStorageUri(metadata?.resizedPath)
+    ? metadata!.resizedPath!
+    : uri;
+  const thumbnailPath = isSupabaseStorageUri(metadata?.thumbnailPath)
+    ? metadata!.thumbnailPath!
+    : uri;
 
   return {
     originalPath: uri,
@@ -243,7 +270,10 @@ const processAttachments = async (
       } else {
         // Remote prefill attachment - may need downloading if no metadata
         // Process through our attachment handler which will download if needed
-        const mediaPayload = await processRemoteAttachment(attachment);
+        const mediaPayload = await processRemoteAttachment(
+          attachment,
+          uploadedPaths
+        );
         mediaPayloads.push(mediaPayload);
       }
     }
