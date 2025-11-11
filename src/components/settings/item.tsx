@@ -42,7 +42,10 @@ export const Item = ({
           <Text tx={text} className={disabled ? 'opacity-50' : undefined} />
         </View>
         {description && (
-          <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+          <Text
+            className="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
+            testID={`${testID}-description`}
+          >
             {description}
           </Text>
         )}

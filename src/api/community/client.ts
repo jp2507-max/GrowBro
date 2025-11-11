@@ -904,10 +904,34 @@ export class CommunityApiClient implements CommunityAPI {
       return [];
     }
 
+    // Transform storage paths to signed URLs for all media variants
+    const postsWithSignedUrls = await Promise.all(
+      posts.map(async (post: any) => {
+        return {
+          ...post,
+          media_uri: post.media_uri
+            ? await this.generateSignedUrl(post.media_uri, 'community-posts')
+            : undefined,
+          media_resized_uri: post.media_resized_uri
+            ? await this.generateSignedUrl(
+                post.media_resized_uri,
+                'community-posts'
+              )
+            : undefined,
+          media_thumbnail_uri: post.media_thumbnail_uri
+            ? await this.generateSignedUrl(
+                post.media_thumbnail_uri,
+                'community-posts'
+              )
+            : undefined,
+        };
+      })
+    );
+
     // If user is authenticated and we need user like status, fetch all likes for these posts in one query
     let userLikesMap = new Map<string, boolean>();
     if (userId && includeUserLikes) {
-      const postIds = posts.map((post: any) => post.id);
+      const postIds = postsWithSignedUrls.map((post: any) => post.id);
       const { data: likes } = await this.client
         .from('post_likes')
         .select('post_id')
@@ -922,13 +946,46 @@ export class CommunityApiClient implements CommunityAPI {
     }
 
     // Map the results to include user_has_liked
-    return posts.map((post: any) => ({
+    return postsWithSignedUrls.map((post: any) => ({
       ...post,
       userId: post.user_id,
       like_count: post.like_count ?? 0,
       comment_count: post.comment_count ?? 0,
       user_has_liked: userLikesMap.get(post.id) ?? false,
     }));
+  }
+
+  /**
+   * Generate a signed URL from a storage path
+   * @param storagePath - Full storage path (e.g., "community-posts/user-id/hash/original.jpg" or "user-id/hash/original.jpg")
+   * @param bucket - Bucket name (default: "community-posts")
+   * @returns Signed URL with 7-day expiration
+   */
+  private async generateSignedUrl(
+    storagePath: string,
+    bucket: string = 'community-posts'
+  ): Promise<string> {
+    // Remove bucket prefix if it's included in the path
+    const bucketPrefix = `${bucket}/`;
+    const cleanPath = storagePath.startsWith(bucketPrefix)
+      ? storagePath.slice(bucketPrefix.length)
+      : storagePath;
+
+    // Generate signed URL with 7-day expiration (maximum allowed)
+    const { data, error } = await this.client.storage
+      .from(bucket)
+      .createSignedUrl(cleanPath, 604800); // 7 days in seconds
+
+    if (error) {
+      console.error(
+        `[CommunityApiClient] Failed to generate signed URL for ${cleanPath}:`,
+        error
+      );
+      // Return the original path as fallback (will likely fail to load, but better than breaking)
+      return storagePath;
+    }
+
+    return data.signedUrl;
   }
 }
 

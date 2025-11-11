@@ -9,9 +9,9 @@ export const documentDirectory = 'file:///documents/';
 export const Directory = jest
   .fn()
   .mockImplementation(
-    (parent: { uri?: string } | null | undefined, name: string) => ({
+    (parent: { uri: string } | null | undefined, name: string) => ({
       uri:
-        typeof parent === 'object' && parent !== null && 'uri' in parent
+        parent && typeof parent.uri === 'string'
           ? `${parent.uri}${name}/`
           : `file:///${name}/`,
       exists: true,
@@ -20,13 +20,20 @@ export const Directory = jest
     })
   ) as any;
 
+type DirectoryLike = {
+  uri: string;
+  exists: boolean;
+  create: jest.Mock;
+  list: jest.Mock;
+};
+
 export class File {
   uri: string;
   exists: boolean;
   name: string;
   size: number;
 
-  constructor(parent: typeof Directory | string, name?: string) {
+  constructor(parent: DirectoryLike | string, name?: string) {
     if (typeof parent === 'string') {
       this.uri = parent;
       this.name = parent.split('/').pop() || '';

@@ -306,17 +306,10 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      // Store permanent storage paths as per database schema requirements
-      // Database columns are defined as "Storage URI" per migration comments
-      const signedUrls = await generateSignedMediaUrls(supabaseClient, {
-        originalPath: mediaProcessingResult.originalPath,
-        resizedPath: mediaProcessingResult.resizedPath,
-        thumbnailPath: mediaProcessingResult.thumbnailPath,
-      });
-
-      // Store signed URL for original media (expires in 7 days)
-      insertPayload.media_uri = signedUrls.media_uri;
-      // Store permanent storage paths for variants (as per schema requirements)
+      // Store permanent storage paths for ALL media variants
+      // These paths will be transformed to signed URLs when posts are fetched
+      // This prevents URL expiration issues (7-day signed URL limit)
+      insertPayload.media_uri = mediaProcessingResult.originalPath;
       insertPayload.media_resized_uri = mediaProcessingResult.resizedPath;
       insertPayload.media_thumbnail_uri = mediaProcessingResult.thumbnailPath;
       insertPayload.media_blurhash = mediaProcessingResult.blurhash;
@@ -376,65 +369,6 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
-
-/**
- * Generate signed URLs for community media variants
- * @param supabaseClient - Supabase client
- * @param mediaProcessingResult - Result from media processing with storage paths
- * @returns Object with signed URLs for each variant
- */
-async function generateSignedMediaUrls(
-  supabaseClient: SupabaseClient,
-  mediaProcessingResult: {
-    originalPath: string;
-    resizedPath: string;
-    thumbnailPath: string;
-  }
-) {
-  // Signed URLs expire in 7 days (604800 seconds) - maximum allowed by Supabase Storage
-  const expiresIn = 604800;
-
-  // Remove bucket prefix from paths since .from() already specifies the bucket
-  const bucketPrefix = `${COMMUNITY_MEDIA_BUCKET}/`;
-  const originalPath = mediaProcessingResult.originalPath.startsWith(
-    bucketPrefix
-  )
-    ? mediaProcessingResult.originalPath.slice(bucketPrefix.length)
-    : mediaProcessingResult.originalPath;
-  const resizedPath = mediaProcessingResult.resizedPath.startsWith(bucketPrefix)
-    ? mediaProcessingResult.resizedPath.slice(bucketPrefix.length)
-    : mediaProcessingResult.resizedPath;
-  const thumbnailPath = mediaProcessingResult.thumbnailPath.startsWith(
-    bucketPrefix
-  )
-    ? mediaProcessingResult.thumbnailPath.slice(bucketPrefix.length)
-    : mediaProcessingResult.thumbnailPath;
-
-  const [originalUrl, resizedUrl, thumbnailUrl] = await Promise.all([
-    supabaseClient.storage
-      .from(COMMUNITY_MEDIA_BUCKET)
-      .createSignedUrl(originalPath, expiresIn),
-    supabaseClient.storage
-      .from(COMMUNITY_MEDIA_BUCKET)
-      .createSignedUrl(resizedPath, expiresIn),
-    supabaseClient.storage
-      .from(COMMUNITY_MEDIA_BUCKET)
-      .createSignedUrl(thumbnailPath, expiresIn),
-  ]);
-
-  if (originalUrl.error || resizedUrl.error || thumbnailUrl.error) {
-    throw createHttpError(
-      500,
-      `Failed to generate signed URLs for media: ${originalUrl.error?.message || resizedUrl.error?.message || thumbnailUrl.error?.message}`
-    );
-  }
-
-  return {
-    media_uri: originalUrl.data.signedUrl,
-    media_resized_uri: resizedUrl.data.signedUrl,
-    media_thumbnail_uri: thumbnailUrl.data.signedUrl,
-  };
-}
 
 async function handleOptionalMediaUpload(
   supabaseClient: SupabaseClient,
