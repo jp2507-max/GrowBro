@@ -915,16 +915,23 @@ export class CommunityApiClient implements CommunityAPI {
     // Generate signed URLs for all media in one batch request
     const signedUrlMap = await this.generateSignedUrls(mediaPaths);
 
+    // Helper to strip bucket prefix from path for map lookup
+    // Edge function returns keys without the 'community-posts/' prefix
+    const BUCKET_PREFIX = 'community-posts/';
+    const getSignedUrl = (path: string | undefined): string | undefined => {
+      if (!path) return undefined;
+      const lookupKey = path.startsWith(BUCKET_PREFIX)
+        ? path.slice(BUCKET_PREFIX.length)
+        : path;
+      return signedUrlMap[lookupKey];
+    };
+
     // Transform storage paths to signed URLs
     const postsWithSignedUrls = posts.map((post: any) => ({
       ...post,
-      media_uri: post.media_uri ? signedUrlMap[post.media_uri] : undefined,
-      media_resized_uri: post.media_resized_uri
-        ? signedUrlMap[post.media_resized_uri]
-        : undefined,
-      media_thumbnail_uri: post.media_thumbnail_uri
-        ? signedUrlMap[post.media_thumbnail_uri]
-        : undefined,
+      media_uri: getSignedUrl(post.media_uri),
+      media_resized_uri: getSignedUrl(post.media_resized_uri),
+      media_thumbnail_uri: getSignedUrl(post.media_thumbnail_uri),
     }));
 
     // If user is authenticated and we need user like status, fetch all likes for these posts in one query
