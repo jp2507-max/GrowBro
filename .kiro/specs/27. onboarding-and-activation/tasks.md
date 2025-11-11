@@ -1,5 +1,14 @@
 # Implementation Plan
 
+- [ ] 0. Entry conditions & routing (first-run only)
+  - Show onboarding once on first app open after Age Gate + Legal acceptance
+  - Use `useIsFirstTime()` and `onboarding-state` to decide: `not-started → '/onboarding'`, else skip
+  - Persist completion in `onboarding-state` with `{ status: 'completed', completedAt, version }`
+  - Re‑show policy: only on major onboarding version bump (e.g., `ONBOARDING_VERSION` env or const)
+  - Settings entry point: `Settings → About → Rewatch onboarding` (manual trigger; does not flip first‑run flag)
+  - Telemetry: `onboarding_start`, `onboarding_complete`, `onboarding_skipped` (guarded by consent)
+  - Tests: gating, completion persistence, no repeat on next launch, re‑show on version bump
+
 - [x] 1. Age gate + legal acceptance wiring
   - Reuse `src/app/age-gate.tsx` and `LegalConfirmationModal`
   - Verify integration tests: `src/app/__tests__/onboarding-flow.test.tsx`

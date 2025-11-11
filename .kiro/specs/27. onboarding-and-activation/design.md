@@ -100,6 +100,191 @@ GrowBro adaptation guidelines
 - Always provide Reduced Motion variants; fall back to non-animated state changes.
 - Maintain 60fps budget: one shared-value write per frame; no console/logging inside worklets.
 
+Pattern gallery (examples to achieve the native feel)
+
+These short, self-contained examples show how to reproduce the “cards + chips + copy” feel in GrowBro using our primitives and Reduced Motion. Copy the style, not the visuals.
+
+1. Pager skeleton + shared activeIndex
+
+```tsx
+// src/app/onboarding.tsx (skeleton)
+import React from 'react';
+import { useWindowDimensions } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+} from 'react-native-reanimated';
+import { AnimatedIndexContext } from '@/lib/animations/index-context'; // create as in mapping doc
+
+export default function Onboarding() {
+  const { width } = useWindowDimensions();
+  const activeIndex = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((e) => {
+    const x = e.contentOffset.x;
+    activeIndex.set(x / width);
+  });
+  return (
+    <AnimatedIndexContext.Provider value={{ activeIndex }}>
+      <Animated.ScrollView
+        horizontal
+        pagingEnabled
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        showsHorizontalScrollIndicator={false}
+      >
+        {/* Slides go here */}
+      </Animated.ScrollView>
+    </AnimatedIndexContext.Provider>
+  );
+}
+```
+
+2. Card transform (translateX + rotate + scale)
+
+```tsx
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import {
+  SPRING,
+  indexDrivenTranslateX,
+  indexDrivenRotate,
+  indexDrivenScale,
+} from '@/lib/animations';
+
+export function Card({
+  index,
+  activeIndex,
+}: {
+  index: number;
+  activeIndex: SharedValue<number>;
+}) {
+  const rStyle = useAnimatedStyle(() => {
+    const tx = indexDrivenTranslateX(
+      activeIndex,
+      [index, index + 1],
+      [0, -300],
+      { springConfig: SPRING }
+    );
+    const rot = indexDrivenRotate(activeIndex, [index, index + 0.5], [-6, 0]);
+    const sc = indexDrivenScale(activeIndex, [index, index + 0.5], [1, 0.98]);
+    return {
+      transform: [{ translateX: tx }, { rotate: `${rot}deg` }, { scale: sc }],
+    };
+  });
+  return (
+    <Animated.View
+      style={rStyle}
+      className="rounded-3xl bg-primary-600 aspect-[1/1.2]"
+    />
+  );
+}
+```
+
+3. Staggered text chips (Reduced Motion aware)
+
+```tsx
+import Animated, { FadeInUp, ReduceMotion } from 'react-native-reanimated';
+import { Text } from '@/components/ui';
+
+export function TextChip({
+  label,
+  delay = 40,
+}: {
+  label: string;
+  delay?: number;
+}) {
+  return (
+    <Animated.View
+      entering={FadeInUp.delay(delay)
+        .duration(160)
+        .reduceMotion(ReduceMotion.System)}
+    >
+      <Text className="text-white text-sm rounded-full px-3 py-2 bg-neutral-900/40">
+        {label}
+      </Text>
+    </Animated.View>
+  );
+}
+```
+
+4. Pagination dots (color around active index)
+
+```tsx
+import Animated, {
+  useAnimatedStyle,
+  interpolateColor,
+} from 'react-native-reanimated';
+
+function Dot({
+  i,
+  activeIndex,
+}: {
+  i: number;
+  activeIndex: SharedValue<number>;
+}) {
+  const r = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      activeIndex.get(),
+      [i - 1, i, i + 1],
+      ['#666', '#fff', '#666']
+    ),
+  }));
+  return <Animated.View style={r} className="size-2 rounded-full" />;
+}
+```
+
+5. CTA gating on last slide
+
+```tsx
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import { ctaGateToLastIndex } from '@/lib/animations';
+import { Button } from '@/components/ui';
+
+function FinalCTA({
+  total,
+  activeIndex,
+  onPress,
+}: {
+  total: number;
+  activeIndex: SharedValue<number>;
+  onPress: () => void;
+}) {
+  const last = total - 1;
+  const r = useAnimatedStyle(() => {
+    const { opacity } = ctaGateToLastIndex(activeIndex, last);
+    return { opacity };
+  });
+  const enabled = activeIndex.get() >= last - 0.001;
+  return (
+    <Animated.View style={r} pointerEvents={enabled ? 'auto' : 'none'}>
+      <Button label="Continue" onPress={onPress} />
+    </Animated.View>
+  );
+}
+```
+
+6. Background gradient placeholder (no Skia)
+
+```tsx
+import { View } from 'react-native';
+import { useThemeConfig } from '@/lib/use-theme-config';
+
+export function Background() {
+  const theme = useThemeConfig();
+  return (
+    <View
+      className={theme.dark ? 'bg-neutral-900' : 'bg-white'}
+      style={{ flex: 1 }}
+    />
+  );
+}
+```
+
+Notes
+
+- Keep className static and move motion into animated styles.
+- For motion-heavy slides, prefer index-driven transforms over timers.
+- Always provide Reduced Motion fallbacks (FadeIn/FadeInUp reduceMotion(System)).
+
 Navigation & deep link behavior
 
 - On first launch: AgeGate → Legal → Consent → Home (activation checklist visible)
