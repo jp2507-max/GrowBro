@@ -965,7 +965,7 @@ export class CommunityApiClient implements CommunityAPI {
    * Generate signed URLs from storage paths via Edge Function
    * Uses service-role key on backend to bypass RLS restrictions while maintaining security
    * @param storagePaths - Array of storage paths to generate signed URLs for
-   * @returns Map of path -> signed URL
+   * @returns Map of path (without prefix) -> signed URL
    */
   private async generateSignedUrls(
     storagePaths: string[]
@@ -974,14 +974,25 @@ export class CommunityApiClient implements CommunityAPI {
       return {};
     }
 
+    const BUCKET_PREFIX = 'community-posts/';
+
+    // Helper to normalize path by stripping bucket prefix for map keys
+    const normalizeKey = (path: string): string => {
+      return path.startsWith(BUCKET_PREFIX)
+        ? path.slice(BUCKET_PREFIX.length)
+        : path;
+    };
+
     try {
       const { data: session } = await this.client.auth.getSession();
       if (!session?.session?.access_token) {
         console.error(
           '[CommunityApiClient] No active session for signed URL generation'
         );
-        // Return identity map as fallback
-        return Object.fromEntries(storagePaths.map((path) => [path, path]));
+        // Return identity map with normalized keys to match getSignedUrl lookup
+        return Object.fromEntries(
+          storagePaths.map((path) => [normalizeKey(path), path])
+        );
       }
 
       const response = await this.client.functions.invoke('get-media-urls', {
@@ -993,8 +1004,10 @@ export class CommunityApiClient implements CommunityAPI {
           '[CommunityApiClient] Failed to generate signed URLs:',
           response.error
         );
-        // Return identity map as fallback
-        return Object.fromEntries(storagePaths.map((path) => [path, path]));
+        // Return identity map with normalized keys to match getSignedUrl lookup
+        return Object.fromEntries(
+          storagePaths.map((path) => [normalizeKey(path), path])
+        );
       }
 
       return response.data?.urls ?? {};
@@ -1003,8 +1016,10 @@ export class CommunityApiClient implements CommunityAPI {
         '[CommunityApiClient] Exception generating signed URLs:',
         error
       );
-      // Return identity map as fallback
-      return Object.fromEntries(storagePaths.map((path) => [path, path]));
+      // Return identity map with normalized keys to match getSignedUrl lookup
+      return Object.fromEntries(
+        storagePaths.map((path) => [normalizeKey(path), path])
+      );
     }
   }
 }
