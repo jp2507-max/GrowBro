@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import * as React from 'react';
 import { StyleSheet } from 'react-native';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 
 import { LegalConfirmationModal } from '@/components/legal-confirmation-modal';
 import {
@@ -147,7 +148,10 @@ export default function AgeGateScreen(): React.ReactElement {
         className="flex-1"
         contentContainerStyle={styles.scrollContent}
       >
-        <View className="flex-1 px-6 py-10">
+        <Animated.View
+          entering={FadeIn.duration(220).reduceMotion(ReduceMotion.System)}
+          className="flex-1 px-6 py-10"
+        >
           <AgeGateCopy />
           <BirthDateInputs
             day={birthDay}
@@ -172,7 +176,7 @@ export default function AgeGateScreen(): React.ReactElement {
             loading={submitting}
             testID="age-gate-submit"
           />
-        </View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

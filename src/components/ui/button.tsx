@@ -118,6 +118,9 @@ export const Button = React.forwardRef<View, Props>(
       [variant, disabled, size]
     );
 
+    // Derive a default accessibilityLabel if not provided
+    const defaultA11yLabel = tx ? (tx as unknown as string) : text;
+
     return (
       <Pressable
         disabled={disabled || loading}
@@ -127,6 +130,12 @@ export const Button = React.forwardRef<View, Props>(
         testID={testID}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole={props.accessibilityRole ?? 'button'}
+        accessibilityLabel={
+          (props as any).accessibilityLabel ?? defaultA11yLabel ?? undefined
+        }
+        accessibilityHint={
+          (props as any).accessibilityHint ?? 'Double tap to activate'
+        }
       >
         {props.children ? (
           props.children

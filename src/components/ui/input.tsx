@@ -111,6 +111,13 @@ export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
         className={styles.input()}
         onBlur={onBlur}
         onFocus={onFocus}
+        accessibilityLabel={
+          // Prefer explicit accessibilityLabel if caller provided it via props
+          (props as any).accessibilityLabel ?? label ?? undefined
+        }
+        accessibilityHint={
+          (props as any).accessibilityHint ?? 'Double tap to edit text'
+        }
         {...inputProps}
         style={StyleSheet.flatten([
           { writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr' },
