@@ -8,7 +8,7 @@
  */
 
 import { FlashList } from '@shopify/flash-list';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { PlaybookSelectionCard } from '@/components/playbooks/playbook-selection-card';
@@ -106,6 +106,22 @@ export function PlaybookSelectionList({
   onRetry,
   className = '',
 }: PlaybookSelectionListProps) {
+  const renderItem = useCallback(
+    ({ item }: { item: PlaybookPreview }) => (
+      <PlaybookSelectionCard preview={item} onPress={onSelectPlaybook} />
+    ),
+    [onSelectPlaybook]
+  );
+
+  const keyExtractor = useCallback(
+    (item: PlaybookPreview) => item.playbookId,
+    []
+  );
+  const getItemType = useCallback(
+    (item: PlaybookPreview) => `playbook-${item.setup}`,
+    []
+  );
+
   if (isLoading) {
     return (
       <View className={`flex-1 p-4 ${className}`}>
@@ -128,10 +144,9 @@ export function PlaybookSelectionList({
     <View className={`flex-1 ${className}`} testID="playbook-selection-list">
       <FlashList
         data={playbooks}
-        renderItem={({ item }) => (
-          <PlaybookSelectionCard preview={item} onPress={onSelectPlaybook} />
-        )}
-        keyExtractor={(item) => item.playbookId}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        getItemType={getItemType}
         contentContainerClassName="p-4"
       />
     </View>

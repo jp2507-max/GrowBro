@@ -56,10 +56,16 @@ declare module '@env' {
 
     // Sentry (client)
     SENTRY_DSN?: string;
+    SENTRY_ORG?: string;
+    SENTRY_PROJECT?: string;
     SENTRY_SEND_DEFAULT_PII?: boolean;
     SENTRY_REPLAYS_SESSION_SAMPLE_RATE?: number;
     SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE?: number;
     SENTRY_ENABLE_REPLAY?: boolean;
+    SENTRY_DASHBOARD_STARTUP?: string;
+    SENTRY_DASHBOARD_NAVIGATION?: string;
+    SENTRY_DASHBOARD_SCROLL?: string;
+    SENTRY_DASHBOARD_SYNC?: string;
 
     // DSA Transparency Database
     DSA_TRANSPARENCY_DB_URL?: string;
@@ -83,6 +89,10 @@ declare module '@env' {
     FEATURE_SECURITY_VULNERABILITY_SCANNING?: boolean;
     FEATURE_SECURITY_AUTO_ISSUE_CREATION?: boolean;
     FEATURE_SECURITY_BYPASS_PINNING?: boolean;
+
+    // Certificate Pinning
+    SECURITY_PIN_DOMAINS?: string;
+    SECURITY_PIN_HASHES?: string;
   };
 
   // The module exports a single named object `Env` with the above shape.

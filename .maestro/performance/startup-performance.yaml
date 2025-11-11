@@ -1,0 +1,106 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'test@growbro.app'
+  PASSWORD: 'Test1234!'
+tags:
+  - performance
+  - startup
+---
+# App Startup Performance Test
+# Requirements: TTI ≤1.8s (Pixel 6a), ≤1.3s (iPhone 12)
+# Measurement: @shopify/react-native-performance + Sentry app.startup transaction
+#
+# IMPORTANT: This test MUST run on RELEASE builds only
+#
+# This test validates cold start and warm start performance
+# Metrics are captured via RN Performance and Sentry instrumentation
+#
+# Run with:
+# maestro test .maestro/performance/startup-performance.yaml --format junit --output startup-performance.xml
+
+# === COLD START TEST ===
+# Force stop app to ensure cold start
+- runScript: |
+    if [[ "$PLATFORM" == "Android" ]]; then
+      adb shell am force-stop ${APP_ID}
+      sleep 2
+    elif [[ "$PLATFORM" == "iOS" ]]; then
+      xcrun simctl terminate booted ${APP_ID}
+      sleep 2
+    fi
+
+# Launch app and measure TTI
+- launchApp
+
+# Verify we're on a release build
+- assertNotVisible: 'Development Menu'
+
+# Wait for app to be interactive (splash screen gone, main UI visible)
+- assertVisible:
+    id: 'onboarding-screen'
+    timeout: 5000
+
+# Record cold start time (captured by RN Performance)
+# Expected: ≤1.8s on Pixel 6a, ≤1.3s on iPhone 12
+
+# === WARM START TEST ===
+# Background the app
+- pressKey: Home
+
+# Wait briefly
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Relaunch app
+- launchApp
+
+# Verify quick resume
+- assertVisible:
+    id: 'onboarding-screen'
+    timeout: 2000
+
+# Record warm start time (should be <500ms)
+
+# === LOGIN AND NAVIGATION TEST ===
+# Complete login flow
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Measure navigation to main screen
+- assertVisible: 'Agenda'
+- tapOn:
+    id: 'agenda-tab'
+- assertVisible:
+    id: 'agenda-screen'
+    timeout: 1000
+
+# Navigate to community (data-heavy screen)
+- tapOn:
+    id: 'community-tab'
+- assertVisible:
+    id: 'community-screen'
+    timeout: 1000
+
+# Verify content loads quickly
+- assertVisible:
+    id: 'post-card-.*'
+    timeout: 2000
+# === SUCCESS CRITERIA (verified in CI) ===
+# These metrics are captured via @shopify/react-native-performance and Sentry:
+#
+# 1. Cold Start TTI:
+#    - Pixel 6a: ≤1.8s
+#    - iPhone 12: ≤1.3s
+#    - Measured from app launch to first interactive frame
+#
+# 2. Warm Start:
+#    - Resume time: ≤500ms
+#    - No re-initialization delays
+#
+# 3. Navigation Performance:
+#    - Screen transitions: ≤250ms (P95)
+#    - Data-heavy screens load: ≤2s
+#
+# 4. Sentry Transactions:
+#    - app.startup transaction recorded
+#    - navigation.push:<Screen> spans recorded
+#    - All spans within budget thresholds

@@ -5,9 +5,9 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Image, Pressable } from 'react-native';
+import { ActivityIndicator, Pressable } from 'react-native';
 
-import { Text, View } from '@/components/ui';
+import { Image, Text, View } from '@/components/ui';
 
 interface AvatarPickerProps {
   avatarUrl: string | null;

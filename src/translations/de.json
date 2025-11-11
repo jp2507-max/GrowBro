@@ -84,7 +84,7 @@
       "retry_hint": "Wiederholt die letzte Aktion.",
       "select_open_hint": "Öffnet die Auswahl für {{label}}. Doppeltippen zum Auswählen.",
       "select_option_hint": "Wählt die Option {{label}}.",
-      "toggle_hint": "Doppeltippen, um diese Einstellung umzuschalten."
+      "toggleHint": "Schaltet die Einstellung ein oder aus."
     },
     "community": {
       "cancel_comment_hint": "Bricht das Posten dieses Kommentars ab.",
@@ -529,13 +529,31 @@
       "delete_account_title": "Konto löschen",
       "delete_account_warning": "Diese Aktion kann nicht rückgängig gemacht werden. Alle deine Pflanzen, Ernten, Beiträge und persönlichen Daten werden dauerhaft gelöscht. Bist du sicher, dass du fortfahren möchtest?",
       "description": "Verwalte deine Kontosicherheit, Sitzungen und Authentifizierungseinstellungen.",
+      "disable_mfa": "MFA deaktivieren",
+      "enable_mfa": "MFA aktivieren",
+      "mfa_code_placeholder": "6-stelligen Code eingeben",
+      "mfa_code_required": "Bitte gib den 6-stelligen Code aus deiner Authenticator-App ein.",
       "mfa_coming_soon": "Zwei-Faktor-Authentifizierung kommt bald",
+      "mfa_disable_confirm_message": "Dadurch entfällt der zusätzliche Verifizierungsschritt bei zukünftigen Anmeldungen.",
+      "mfa_disable_confirm_title": "Mehrfaktor-Authentifizierung deaktivieren?",
+      "mfa_disabled_hint": "Füge einen zweiten Bestätigungsschritt hinzu, um sensible Daten zu schützen.",
+      "mfa_disabled_toast": "Mehrfaktor-Authentifizierung deaktiviert.",
+      "mfa_enabled_hint": "MFA ist für dieses Konto aktiv. Bei der Anmeldung wird ein Code verlangt.",
+      "mfa_open_authenticator": "In Authenticator-App öffnen",
+      "mfa_secret_label": "Geheimcode",
       "mfa_section": "Zwei-Faktor-Authentifizierung",
+      "mfa_setup_description": "Scanne den QR-Code oder gib den Geheimcode manuell ein und tippe anschließend den 6-stelligen Code aus deiner Authenticator-App ein.",
+      "mfa_setup_title": "Mehrfaktor-Authentifizierung einrichten",
+      "mfa_status_disabled": "Nicht aktiviert",
+      "mfa_status_enabled": "Aktiv",
+      "mfa_verification_error": "Verifizierung fehlgeschlagen. Bitte Code prüfen und erneut versuchen.",
+      "mfa_verification_success": "Authenticator erfolgreich verknüpft. MFA wird nun bei der Anmeldung verlangt.",
       "new_password": "Neues Passwort",
       "new_password_placeholder": "Gib ein neues sicheres Passwort ein",
       "password_change_error": "Passwort konnte nicht geändert werden",
       "password_changed_success": "Passwort erfolgreich geändert",
       "password_section": "Passwort",
+      "primary_mfa_label": "Authenticator-App",
       "sessions_section": "Gerätesitzungen",
       "title": "Sicherheit",
       "two_factor_auth": "Zwei-Faktor-Authentifizierung"
@@ -1686,7 +1704,7 @@
       "archived": {
         "hide": "Archivierte ausblenden",
         "show": "Archivierte anzeigen",
-        "toggle_hint": "Schaltet archivierte Benachrichtigungen ein oder aus."
+        "toggleHint": "Schaltet archivierte Benachrichtigungen ein oder aus."
       },
       "empty": {
         "all": {
@@ -1742,10 +1760,11 @@
     "atc_label": "Temperaturkompensiert (ATC)",
     "cal_stale_warning": "Kalibrierung möglicherweise veraltet",
     "chart": {
-      "eventMarkersNote": "{{count}} Ereignis-Marker angezeigt",
+      "eventMarkersNote": "{{count}} Ereignismarker angezeigt",
       "noData": "Noch keine Messwerte",
-      "startLogging": "Beginne mit pH/EC-Messungen, um Trends zu sehen"
+      "startLogging": "Beginne pH-/EC-Messungen zu protokollieren, um Trends zu sehen"
     },
+    "createTemplate": "Vorlage erstellen",
     "diagnostics": {
       "actions": {
         "N_DEFICIENCY_FEED": "Stickstoffgabe erhöhen",
@@ -1847,6 +1866,7 @@
       "phDown": "pH senken",
       "phUp": "pH erhöhen"
     },
+    "feedingTemplates": "Fütterungsvorlagen",
     "loading_readings": "Lade Messwerte...",
     "medium": {
       "coco": "Coco",
@@ -1861,6 +1881,7 @@
       "soil": "Erde",
       "soilless": "Erdlos"
     },
+    "noTemplatesFound": "Keine Vorlagen gefunden",
     "no_atc_warning": "Keine ATC (automatische Temperaturkompensation)",
     "no_events_description": "Beginne Reservoir-Ereignisse zu protokollieren, um deine Änderungen zu verfolgen",
     "no_events_title": "Keine Ereignisse aufgezeichnet",
@@ -1896,6 +1917,7 @@
     "targetRange": "Zielbereich",
     "targetRanges": "Zielbereiche",
     "temp_high_warning": "Temperatur zu hoch",
+    "templatesDescription": "Fütterungsvorlagen für Ihre Nährstoffpläne verwalten und erstellen",
     "timeRange": {
       "30days": "30 Tage",
       "7days": "7 Tage",
@@ -2577,6 +2599,7 @@
       "title": "Rechtliches",
       "update_banner": {
         "description": "{{count}} rechtliche {{count, plural, one {Dokument wurde} other {Dokumente wurden}}} aktualisiert. Tippen Sie zum Überprüfen.",
+        "dismiss_hint": "Diese rechtliche Update-Benachrichtigung verwerfen",
         "hint": "Doppeltippen, um aktualisierte rechtliche Dokumente anzuzeigen",
         "label": "Rechtliche Dokumente aktualisiert",
         "title": "Rechtliche Dokumente aktualisiert"
@@ -2757,6 +2780,7 @@
         "error_message": "Wir konnten Ihr Feedback nicht senden. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support direkt.",
         "error_title": "Übermittlung fehlgeschlagen",
         "invalid_email": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+        "message_hint": "Geben Sie Ihre Feedback-Nachricht hier ein",
         "message_label": "Nachricht",
         "message_placeholder": "Sagen Sie uns, was Sie denken...",
         "message_too_long": "Nachricht muss kürzer als 1000 Zeichen sein",
@@ -2782,6 +2806,7 @@
         "category_label": "Kategorie",
         "category_placeholder": "Kategorie auswählen",
         "description": "Helfen Sie uns, GrowBro zu verbessern, indem Sie Probleme melden",
+        "description_hint": "Beschreiben Sie das Problem im Detail, einschließlich Schritte zur Reproduktion",
         "description_label": "Beschreibung",
         "description_placeholder": "Beschreiben Sie das Problem im Detail...",
         "description_too_long": "Beschreibung muss kürzer als 5000 Zeichen sein",
@@ -2798,6 +2823,7 @@
         "success_title": "Bericht gesendet",
         "ticket_id_fallback": "Nicht verfügbar",
         "title": "Fehler melden",
+        "title_hint": "Geben Sie einen kurzen Titel für Ihren Fehlerbericht ein",
         "title_label": "Titel",
         "title_placeholder": "Kurze Beschreibung des Problems",
         "title_too_long": "Titel muss kürzer als 100 Zeichen sein",

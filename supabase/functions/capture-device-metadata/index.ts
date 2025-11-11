@@ -36,15 +36,61 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Missing or invalid authorization header' }),
+        {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
+      console.error(
+        '[capture-device-metadata] Missing Supabase environment variables'
+      );
+      return new Response(JSON.stringify({ error: 'Internal server error' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Verify caller using anon client + user JWT
+    const userSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+        },
+      },
+    });
+
+    const {
+      data: { user },
+      error: authError,
+    } = await userSupabase.auth.getUser();
+
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Authentication failed' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Parse request body
     const body: CaptureDeviceMetadataRequest = await req.json();
     const { userId, sessionKey, userAgent, appVersion } = body;
 
     // Validate required fields
-    if (!userId || !sessionKey) {
+    if (!sessionKey) {
       return new Response(
         JSON.stringify({
-          error: 'Missing required fields: userId, sessionKey',
+          error: 'Missing required field: sessionKey',
         }),
         {
           status: 400,
@@ -53,10 +99,19 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Initialize Supabase client with service role
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    if (userId && userId !== user.id) {
+      return new Response(
+        JSON.stringify({
+          error: 'Forbidden: userId does not match authenticated user',
+        }),
+        {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Extract IP address from request headers
     const ipAddress = extractIpAddress(req);
@@ -75,6 +130,7 @@ Deno.serve(async (req: Request) => {
       .from('user_sessions')
       .select('id')
       .eq('session_key', sessionKey)
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (checkError) {
@@ -92,7 +148,8 @@ Deno.serve(async (req: Request) => {
         .update({
           last_active_at: new Date().toISOString(),
         })
-        .eq('id', existingSession.id);
+        .eq('id', existingSession.id)
+        .eq('user_id', user.id);
 
       if (updateError) {
         console.error(
@@ -106,7 +163,7 @@ Deno.serve(async (req: Request) => {
       const { error: insertError } = await supabase
         .from('user_sessions')
         .insert({
-          user_id: userId,
+          user_id: user.id,
           session_key: sessionKey,
           device_name: deviceInfo.deviceName,
           os: deviceInfo.os,
@@ -139,7 +196,7 @@ Deno.serve(async (req: Request) => {
       try {
         const ipParam = sanitizedIp;
         await supabase.rpc('log_auth_event', {
-          p_user_id: userId,
+          p_user_id: user.id,
           p_event_type: 'sign_in',
           p_ip_address: ipParam,
           p_user_agent: finalUserAgent,

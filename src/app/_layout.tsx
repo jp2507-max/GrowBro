@@ -7,10 +7,13 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
+// Setup Buffer polyfill for React Native
+import { Buffer } from 'buffer';
 import { Stack, usePathname, useRouter } from 'expo-router';
+import * as ScreenCapture from 'expo-screen-capture';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import FlashMessage from 'react-native-flash-message';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -31,7 +34,12 @@ import {
 } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
 import { initAuthStorage } from '@/lib/auth/auth-storage';
-import { useRealtimeSessionRevocation } from '@/lib/auth/session-manager';
+import { registerKeyRotationTask } from '@/lib/auth/key-rotation-task';
+import {
+  useOfflineModeMonitor,
+  useRealtimeSessionRevocation,
+  useSessionAutoRefresh,
+} from '@/lib/auth/session-manager';
 import { updateActivity } from '@/lib/auth/session-timeout';
 import { useDeepLinking } from '@/lib/auth/use-deep-linking';
 import {
@@ -47,17 +55,17 @@ import { useRootStartup } from '@/lib/hooks/use-root-startup';
 import { initializeJanitor } from '@/lib/media/photo-janitor';
 import { getReferencedPhotoUris } from '@/lib/media/photo-storage-helpers';
 import {
-  hasConsent,
+  initializeSentryPerformance,
+  isSentryPerformanceInitialized,
+} from '@/lib/performance';
+import {
   initializePrivacyConsent,
   setPrivacyConsent,
 } from '@/lib/privacy-consent';
-import { beforeBreadcrumbHook, beforeSendHook } from '@/lib/sentry-utils';
 // Install AI consent hooks to handle withdrawal cascades
 import { installAiConsentHooks } from '@/lib/uploads/ai-images';
 import { useThemeConfig } from '@/lib/use-theme-config';
-
-// Module-scoped flag to prevent multiple Sentry initializations
-let sentryInitialized = false;
+global.Buffer = global.Buffer ?? Buffer;
 
 // Type definitions for Localization API
 // Timezone and startup helpers live in `use-root-startup.ts`
@@ -90,47 +98,10 @@ setAnalyticsClient(NoopAnalytics);
 // i18n initialization moved to RootLayout component to prevent race conditions
 // where components render with untranslated keys before i18n completes
 
-// Only initialize Sentry if DSN is provided and user has consented to crash reporting
-// Also guard against multiple initializations
-if (Env.SENTRY_DSN && hasConsent('crashReporting') && !sentryInitialized) {
-  sentryInitialized = true; // Set flag to prevent re-initialization
+// Initialize Sentry with performance monitoring
+const sentryInitialized = initializeSentryPerformance();
 
-  const integrations: any[] = [];
-
-  // Only add replay/feedback if enabled AND user consented to session replay
-  if (Env.SENTRY_ENABLE_REPLAY && hasConsent('sessionReplay')) {
-    integrations.push(Sentry.mobileReplayIntegration());
-    integrations.push(Sentry.feedbackIntegration());
-  }
-
-  Sentry.init({
-    dsn: Env.SENTRY_DSN,
-    // Privacy-focused: only send PII if explicitly enabled via environment
-    sendDefaultPii: Env.SENTRY_SEND_DEFAULT_PII ?? false,
-    // Privacy-focused: prevent PII leakage via screenshots
-    attachScreenshot: false,
-    // Privacy-focused: default to 0 for replay sampling, only enable via environment
-    replaysSessionSampleRate: Env.SENTRY_REPLAYS_SESSION_SAMPLE_RATE ?? 0,
-    replaysOnErrorSampleRate: Env.SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE ?? 0,
-    integrations,
-    // Scrub sensitive data before sending to Sentry
-    beforeSend: beforeSendHook,
-    beforeBreadcrumb: beforeBreadcrumbHook,
-    // Explicitly set environment and release so Sentry groups events by deployment and app version.
-    // Prefer CI-provided env vars, fall back to the runtime Env values.
-    // Use Env.VERSION (set from app.config) as the app version/release.
-    environment: process.env.SENTRY_ENV || Env.APP_ENV || process.env.NODE_ENV,
-    release: process.env.SENTRY_RELEASE || String(Env.VERSION),
-    // Dist helps Sentry distinguish build variants within the same release.
-    // Prefer CI-provided SENTRY_DIST; can be set to EAS_BUILD_ID in CI.
-    dist: process.env.SENTRY_DIST,
-    // Performance & profiling sampling (env-aware)
-    tracesSampleRate: Env.APP_ENV === 'production' ? 0.2 : 1.0,
-    profilesSampleRate: Env.APP_ENV === 'production' ? 0.1 : 1.0,
-    // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-    // spotlight: __DEV__,
-  });
-
+if (sentryInitialized) {
   // Update registry; this is a no-op pre-consent
   void SDKGate.initializeSDK('sentry');
 
@@ -165,6 +136,16 @@ function RootLayout(): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
   useRootStartup(setIsI18nReady, isFirstTime);
+  useSessionAutoRefresh();
+  useOfflineModeMonitor();
+  React.useEffect(() => {
+    registerKeyRotationTask().catch((error) => {
+      console.warn(
+        '[RootLayout] Key rotation task registration failed:',
+        error
+      );
+    });
+  }, []);
 
   React.useEffect(() => {
     if (!Env.GOOGLE_WEB_CLIENT_ID) {
@@ -181,25 +162,15 @@ function RootLayout(): React.ReactElement {
 
   // Initialize auth storage and hydrate auth state
   React.useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        await initAuthStorage();
-        hydrateAuth();
-        hydrateAgeGate();
-        hydrateLegalAcceptances();
-        hydrateOnboardingState();
-        setIsAuthReady(true);
-      } catch (error) {
+    initializeAuthAndStates()
+      .then(() => setIsAuthReady(true))
+      .catch((error) => {
         console.error(
           '[RootLayout] Auth storage initialization failed:',
           error
         );
-        // Set ready to true even on error to prevent blocking the app
         setIsAuthReady(true);
-      }
-    };
-
-    initializeAuth();
+      });
   }, []);
 
   // Check for legal version bumps and redirect to age-gate if needed
@@ -237,6 +208,38 @@ function RootLayout(): React.ReactElement {
 
   React.useEffect(() => {
     if (ConsentService.isConsentRequired()) setShowConsent(true);
+  }, []);
+
+  React.useEffect(() => {
+    // Prevent screenshots/screen recordings on iOS to mirror Android FLAG_SECURE
+    const setupScreenCapture = async () => {
+      if (Platform.OS === 'ios') {
+        try {
+          await ScreenCapture.preventScreenCaptureAsync();
+        } catch (error) {
+          console.warn('[RootLayout] Failed to prevent screen capture:', error);
+        }
+      }
+    };
+
+    setupScreenCapture();
+
+    return () => {
+      const cleanupScreenCapture = async () => {
+        if (Platform.OS === 'ios') {
+          try {
+            await ScreenCapture.allowScreenCaptureAsync();
+          } catch (error) {
+            console.warn(
+              '[RootLayout] Failed to re-enable screen capture:',
+              error
+            );
+          }
+        }
+      };
+
+      cleanupScreenCapture();
+    };
   }, []);
 
   // Initialize photo storage janitor on app start
@@ -306,6 +309,15 @@ function persistConsents(
   });
 }
 
+// Helper to initialize auth storage and hydrate states
+async function initializeAuthAndStates(): Promise<void> {
+  await initAuthStorage();
+  await hydrateAuth();
+  hydrateAgeGate();
+  hydrateLegalAcceptances();
+  hydrateOnboardingState();
+}
+
 function BootSplash(): React.ReactElement {
   return (
     <View className="flex-1 items-center justify-center bg-white dark:bg-gray-900" />
@@ -331,7 +343,9 @@ function AppStack(): React.ReactElement {
 }
 
 // Avoid wrapping with Sentry when Sentry is not initialized to prevent warnings
-export default sentryInitialized ? Sentry.wrap(RootLayout) : RootLayout;
+export default isSentryPerformanceInitialized()
+  ? Sentry.wrap(RootLayout)
+  : RootLayout;
 
 interface ProvidersProps {
   children: React.ReactNode;

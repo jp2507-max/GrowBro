@@ -32,6 +32,7 @@ export function AgendaList({
 
   return (
     <List
+      testID="agenda-list"
       ref={listRef as any}
       data={data}
       renderItem={renderItem as ListRenderItem<unknown>}

@@ -165,6 +165,9 @@ export default function ReportBugScreen() {
               accessibilityLabel={translate(
                 'settings.support.report_bug.title_label'
               )}
+              accessibilityHint={translate(
+                'settings.support.report_bug.title_hint'
+              )}
             />
           </View>
 
@@ -234,6 +237,9 @@ export default function ReportBugScreen() {
               error={errors.description?.message}
               accessibilityLabel={translate(
                 'settings.support.report_bug.description_label'
+              )}
+              accessibilityHint={translate(
+                'settings.support.report_bug.description_hint'
               )}
             />
           </View>

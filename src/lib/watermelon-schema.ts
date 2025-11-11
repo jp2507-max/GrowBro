@@ -1,7 +1,7 @@
 import { appSchema as createSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const appSchema = createSchema({
-  version: 31,
+  version: 32,
   tables: [
     tableSchema({
       name: 'series',
@@ -726,6 +726,14 @@ export const appSchema = createSchema({
         { name: 'user_id', type: 'string' },
         { name: 'body', type: 'string' },
         { name: 'media_uri', type: 'string', isOptional: true },
+        { name: 'media_resized_uri', type: 'string', isOptional: true },
+        { name: 'media_thumbnail_uri', type: 'string', isOptional: true },
+        { name: 'media_blurhash', type: 'string', isOptional: true },
+        { name: 'media_thumbhash', type: 'string', isOptional: true },
+        { name: 'media_width', type: 'number', isOptional: true },
+        { name: 'media_height', type: 'number', isOptional: true },
+        { name: 'media_aspect_ratio', type: 'number', isOptional: true },
+        { name: 'media_bytes', type: 'number', isOptional: true },
         { name: 'created_at', type: 'number', isIndexed: true },
         { name: 'updated_at', type: 'number' },
         { name: 'deleted_at', type: 'number', isOptional: true },

@@ -4,7 +4,6 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MMKV } from 'react-native-mmkv';
 
 import {
   ENCRYPTION_SENTINEL_KEY,
@@ -102,67 +101,42 @@ async function scanAsyncStorage(): Promise<string[]> {
 }
 
 /**
- * Create a temporary unencrypted MMKV instance to check for leaks
- * If sensitive keys are found, encryption has failed
- *
- * @returns Promise<string[]> - List of sensitive keys found without encryption
+ * Detect unprotected MMKV domains without touching on-disk files.
+ * Returns domains that are missing encryption metadata or were never initialized.
  */
-async function scanUnencryptedMMKV(): Promise<string[]> {
-  try {
-    const domains = Object.values(STORAGE_DOMAINS);
-    const leakedKeys: string[] = [];
+async function detectUnprotectedDomains(): Promise<string[]> {
+  const instances = getAllInstances();
+  const initializedDomains = new Set(instances.keys());
+  const allowedDomains = new Set(Object.values(STORAGE_DOMAINS) as string[]);
+  const suspicious: string[] = [];
 
-    for (const domain of domains) {
-      /*
-       * WARNING (P0): Do NOT construct an unencrypted MMKV instance using the
-       * same `id` as an existing encrypted instance. Opening an MMKV file
-       * without the correct encryption key causes the library to treat the
-       * file as corrupted and it will reset the store to an empty file. That
-       * behavior can destroy encrypted state (auth tokens, preferences, etc.)
-       * and turn this audit into a destructive operation.
-       *
-       * Instead of creating a new unencrypted MMKV here, use one of the
-       * following non-destructive approaches:
-       *  - Use the already-initialized, encrypted instances returned by
-       *    `getAllInstances()` or `getInitializedDomains()` and inspect their
-       *    keys (these won't trigger a reset).
-       *  - Check for leaks via metadata or by attempting safe reads using the
-       *    provided secure API that won't open the underlying file without
-       *    the key.
-       *  - If a filesystem-level check is required, read the file bytes and
-       *    inspect headers without initializing MMKV.
-       *
-       * The current code historically attempted to instantiate an unencrypted
-       * MMKV to detect accessible keys; that approach is destructive and must
-       * be avoided. If an audit needs to detect unencrypted data, implement a
-       * non-destructive scan or rely on already-initialized instances.
-       */
-      const unencryptedInstance = new MMKV({
-        id: domain,
-      });
-
-      const keys = unencryptedInstance.getAllKeys();
-
-      // Check if any keys exist (should be empty if encryption is working)
-      if (keys.length > 0) {
-        log.error(
-          `Found keys accessible without encryption for domain: ${domain}`,
-          {
-            keys,
-          }
-        );
-        leakedKeys.push(...keys.map((k) => `${domain}:${k}`));
-      }
-
-      // Note: Do not clear the temporary instance as MMKV instances with the same ID
-      // share the same underlying storage file. Clearing here would wipe encrypted data.
+  // Check expected domains for initialization and metadata
+  for (const domain of Object.values(STORAGE_DOMAINS)) {
+    if (!initializedDomains.has(domain)) {
+      suspicious.push(`${domain}:not_initialized`);
+      continue;
     }
 
-    return leakedKeys;
-  } catch (error) {
-    log.error('Failed to scan unencrypted MMKV', error);
-    return [];
+    try {
+      const metadata = await keyManager.getKeyMetadata(`mmkv.${domain}`);
+      if (!metadata) {
+        suspicious.push(`${domain}:missing_key_metadata`);
+      }
+    } catch (error) {
+      suspicious.push(
+        `${domain}:metadata_error - ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
   }
+
+  // Check for unauthorized initialized domains
+  for (const domain of instances.keys()) {
+    if (!allowedDomains.has(domain)) {
+      suspicious.push(`${domain}:unauthorized_initialized`);
+    }
+  }
+
+  return suspicious;
 }
 
 // ==================== Key Domain Mapping Validation ====================
@@ -324,11 +298,11 @@ async function verifyEncryption(): Promise<StorageAuditResult> {
     );
   }
 
-  // Scan unencrypted MMKV
-  const unencryptedLeaks = await scanUnencryptedMMKV();
-  if (unencryptedLeaks.length > 0) {
+  // Detect missing encryption metadata / domains
+  const unprotectedDomains = await detectUnprotectedDomains();
+  if (unprotectedDomains.length > 0) {
     issues.push(
-      `Found ${unencryptedLeaks.length} keys in unencrypted MMKV: ${unencryptedLeaks.join(', ')}`
+      `Found ${unprotectedDomains.length} storage domains without verified encryption: ${unprotectedDomains.join(', ')}`
     );
   }
 
@@ -462,13 +436,19 @@ export async function generateAuditEvidence(): Promise<string> {
     issues: report.auditResults.issues,
     recommendations: report.recommendations,
     domains: {
-      auth: report.instanceList.includes(STORAGE_DOMAINS.AUTH),
-      userData: report.instanceList.includes(STORAGE_DOMAINS.USER_DATA),
-      syncMetadata: report.instanceList.includes(STORAGE_DOMAINS.SYNC_METADATA),
-      securityCache: report.instanceList.includes(
-        STORAGE_DOMAINS.SECURITY_CACHE
+      auth: report.instanceList.includes(STORAGE_DOMAINS.AUTH as string),
+      userData: report.instanceList.includes(
+        STORAGE_DOMAINS.USER_DATA as string
       ),
-      featureFlags: report.instanceList.includes(STORAGE_DOMAINS.FEATURE_FLAGS),
+      syncMetadata: report.instanceList.includes(
+        STORAGE_DOMAINS.SYNC_METADATA as string
+      ),
+      securityCache: report.instanceList.includes(
+        STORAGE_DOMAINS.SECURITY_CACHE as string
+      ),
+      featureFlags: report.instanceList.includes(
+        STORAGE_DOMAINS.FEATURE_FLAGS as string
+      ),
     },
   };
 

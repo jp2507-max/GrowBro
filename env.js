@@ -220,6 +220,10 @@ const client = z.object({
 
   SENTRY_ENABLE_REPLAY: z.boolean().optional(),
 
+  SENTRY_ORG: z.string().optional(),
+
+  SENTRY_PROJECT: z.string().optional(),
+
   // App Access Reviewer Credentials
 
   APP_ACCESS_REVIEWER_EMAIL: z.string().optional(),
@@ -306,6 +310,11 @@ const client = z.object({
     .union([z.string(), z.boolean()])
     .optional(),
 
+  SECURITY_PIN_DOMAINS: z.string().optional(),
+  SECURITY_PIN_HASHES: z.string().optional(),
+  EXPO_PUBLIC_SECURITY_PIN_DOMAINS: z.string().optional(),
+  EXPO_PUBLIC_SECURITY_PIN_HASHES: z.string().optional(),
+
   EXPO_PUBLIC_FEATURE_SECURITY_ENCRYPTION: z
     .union([z.string(), z.boolean()])
     .optional(),
@@ -359,11 +368,9 @@ const buildTime = z.object({
   // Email hashing salt for audit log privacy
   EMAIL_HASH_SALT: z.string().min(1),
 
-  // Sentry Configuration (Build-time)
-
-  SENTRY_PROJECT: z.string().optional(),
-
-  SENTRY_ORG: z.string().optional(),
+  CODE_SIGNING_CERT_PATH: z.string().optional(),
+  CODE_SIGNING_KEY_ID: z.string().optional(),
+  CODE_SIGNING_ALG: z.string().optional(),
 });
 
 /**
@@ -449,6 +456,8 @@ const sentryEnableReplayRaw = readEnv(
   'SENTRY_ENABLE_REPLAY',
   'EXPO_PUBLIC_SENTRY_ENABLE_REPLAY'
 );
+const sentryOrg = readEnv('SENTRY_ORG', 'EXPO_PUBLIC_SENTRY_ORG');
+const sentryProject = readEnv('SENTRY_PROJECT', 'EXPO_PUBLIC_SENTRY_PROJECT');
 const appAccessReviewerEmail = readEnv(
   'APP_ACCESS_REVIEWER_EMAIL',
   'EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL'
@@ -517,6 +526,17 @@ const featureSecurityBypassPinningRaw = readEnv(
   'FEATURE_SECURITY_BYPASS_PINNING',
   'EXPO_PUBLIC_FEATURE_SECURITY_BYPASS_PINNING'
 );
+const securityPinnedDomainsRaw = readEnv(
+  'SECURITY_PIN_DOMAINS',
+  'EXPO_PUBLIC_SECURITY_PIN_DOMAINS'
+);
+const securityPinnedHashesRaw = readEnv(
+  'SECURITY_PIN_HASHES',
+  'EXPO_PUBLIC_SECURITY_PIN_HASHES'
+);
+const codeSigningCertPath = readEnv('CODE_SIGNING_CERT_PATH');
+const codeSigningKeyId = readEnv('CODE_SIGNING_KEY_ID');
+const codeSigningAlg = readEnv('CODE_SIGNING_ALG');
 const dpoEmail = readEnv('DPO_EMAIL', 'EXPO_PUBLIC_DPO_EMAIL');
 const dpoName = readEnv('DPO_NAME', 'EXPO_PUBLIC_DPO_NAME');
 const euRepresentativeAddress = readEnv(
@@ -632,6 +652,10 @@ const _clientEnv = {
       ? sentryEnableReplayRaw === 'true'
       : undefined,
 
+  SENTRY_ORG: sentryOrg,
+
+  SENTRY_PROJECT: sentryProject,
+
   // App Access Reviewer Credentials
 
   APP_ACCESS_REVIEWER_EMAIL: appAccessReviewerEmail,
@@ -711,6 +735,9 @@ const _clientEnv = {
     featureSecurityBypassPinningRaw !== undefined
       ? featureSecurityBypassPinningRaw === 'true'
       : undefined,
+
+  SECURITY_PIN_DOMAINS: securityPinnedDomainsRaw,
+  SECURITY_PIN_HASHES: securityPinnedHashesRaw,
 };
 
 /**
@@ -731,11 +758,9 @@ const _buildTimeEnv = {
   // Email hashing salt for audit log privacy
   EMAIL_HASH_SALT: process.env.EMAIL_HASH_SALT,
 
-  // Sentry Configuration (Build-time)
-
-  SENTRY_PROJECT: process.env.SENTRY_PROJECT,
-
-  SENTRY_ORG: process.env.SENTRY_ORG,
+  CODE_SIGNING_CERT_PATH: codeSigningCertPath,
+  CODE_SIGNING_KEY_ID: codeSigningKeyId,
+  CODE_SIGNING_ALG: codeSigningAlg,
 };
 
 /**

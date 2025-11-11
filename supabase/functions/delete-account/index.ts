@@ -21,13 +21,29 @@ interface DeleteAccountResponse {
  * Matches the database hash_email function for consistency
  */
 async function hashEmailForLookup(email: string): Promise<string> {
-  const salt =
-    Deno.env.get('EMAIL_HASH_SALT') || 'growbro_auth_lockout_salt_v1';
+  const salt = Deno.env.get('EMAIL_HASH_SALT');
+  if (!salt) {
+    throw new Error(
+      'EMAIL_HASH_SALT environment variable is required for delete-account'
+    );
+  }
   const encoder = new TextEncoder();
   const data = encoder.encode(salt + email.toLowerCase().trim());
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const [, payload] = token.split('.');
+    if (!payload) return null;
+    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(decoded);
+  } catch (error) {
+    console.error('[delete-account] Failed to decode JWT payload:', error);
+    return null;
+  }
 }
 
 serve(async (req) => {
@@ -89,6 +105,23 @@ serve(async (req) => {
         JSON.stringify({ error: 'Invalid or expired token' }),
         {
           status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Enforce MFA/aal2 requirement before permitting self-service deletion
+    const jwtPayload = decodeJwtPayload(jwt);
+    const aal =
+      typeof jwtPayload?.aal === 'string' ? jwtPayload.aal : undefined;
+    if (aal !== '2') {
+      return new Response(
+        JSON.stringify({
+          error: 'Multi-factor authentication required',
+          message: 'Complete MFA before deleting your account.',
+        }),
+        {
+          status: 403,
           headers: { 'Content-Type': 'application/json' },
         }
       );

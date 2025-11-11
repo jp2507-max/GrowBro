@@ -13,7 +13,7 @@ type Props = {
   readonly onMarkAsRead: (notification: NotificationSnapshot) => void;
 };
 
-export function NotificationRow({
+export const NotificationRow = React.memo(function NotificationRow({
   notification,
   timestampLabel,
   markAsReadLabel,
@@ -80,7 +80,9 @@ export function NotificationRow({
       </View>
     </Pressable>
   );
-}
+});
+
+NotificationRow.displayName = 'NotificationRow';
 
 type AccessibilityLabelArgs = {
   isUnread: boolean;

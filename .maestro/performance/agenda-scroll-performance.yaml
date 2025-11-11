@@ -1,0 +1,138 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'test@growbro.app'
+  PASSWORD: 'Test1234!'
+tags:
+  - performance
+  - agenda
+  - scroll
+---
+# Agenda/Calendar Scroll Performance Test
+# Requirements: 30s continuous scroll over 1,000 tasks
+# SLA: avg FPS ≥58, P95 frame ≤16.7ms, dropped frames ≤1%, 0 blank cells
+#
+# IMPORTANT: This test MUST run on RELEASE builds only
+# CI will fail if __DEV__ is true during performance validation
+#
+# Prerequisites:
+# - Database seeded with 1000+ tasks across multiple dates
+# - Mix of pending, completed, and skipped tasks
+# - Tasks with and without reminders
+#
+# Run with:
+# maestro test .maestro/performance/agenda-scroll-performance.yaml --format junit --output agenda-performance.xml
+#
+# For Android Perfetto trace collection:
+# 1. Start trace: adb shell perfetto -c - --txt -o /data/misc/perfetto-traces/trace
+# 2. Run this test
+# 3. Stop trace and pull: adb pull /data/misc/perfetto-traces/trace perfetto-trace.pb
+# 4. Open in https://ui.perfetto.dev
+
+- launchApp
+
+# Verify we're on a release build (no dev menu)
+- assertNotVisible: 'Development Menu'
+
+# Login flow
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Navigate to agenda tab
+- assertVisible: 'Agenda'
+- tapOn:
+    id: 'agenda-tab'
+- assertVisible:
+    id: 'agenda-screen'
+
+# Wait for initial load
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Verify agenda has loaded with content
+- assertVisible:
+    id: 'agenda-item-.*'
+
+# === 30-SECOND CONTINUOUS SCROLL TEST ===
+# Scroll pattern: slow continuous scroll to stress-test rendering pipeline
+# This tests heterogeneous list performance (date headers + task rows)
+
+# Scroll 1: Top to bottom (0-10s)
+- scroll:
+    direction: DOWN
+    duration: 10000
+    speed: 40
+
+# Scroll 2: Continue down (10-20s)
+- scroll:
+    direction: DOWN
+    duration: 10000
+    speed: 40
+
+# Scroll 3: Continue down (20-30s)
+- scroll:
+    direction: DOWN
+    duration: 10000
+    speed: 40
+
+# Quick verification: no blank cells visible
+- assertVisible:
+    id: 'agenda-item-.*'
+- assertNotVisible: 'Blank Cell'
+- assertNotVisible: 'Error Loading'
+
+# Scroll back up to test bidirectional performance (30-40s)
+- scroll:
+    direction: UP
+    duration: 10000
+    speed: 40
+
+# Rapid scroll test: stress test FlashList recycling (40-50s)
+- repeat:
+    times: 5
+    commands:
+      - scroll:
+          direction: DOWN
+          duration: 1000
+          speed: 80
+      - scroll:
+          direction: UP
+          duration: 1000
+          speed: 80
+
+# Final verification: agenda still responsive
+- assertVisible:
+    id: 'agenda-screen'
+- assertVisible:
+    id: 'agenda-item-.*'
+
+# Test interaction after heavy scrolling
+- tapOn:
+    id: 'agenda-item-.*'
+- assertVisible: 'Task Details'
+- tapOn:
+    id: 'back-button'
+
+# Memory check: app should still be responsive
+- assertVisible:
+    id: 'agenda-screen'
+# === SUCCESS CRITERIA (verified in CI) ===
+# These metrics are captured via external tooling:
+#
+# 1. FPS Metrics (via RN Performance or Perfetto):
+#    - Average FPS ≥58 during 30s scroll
+#    - P95 frame time ≤16.7ms
+#    - Dropped frames ≤1%
+#    - Jank count ≤5 per 1k frames
+#
+# 2. Memory Metrics (via Android Profiler or Instruments):
+#    - RSS increase ≤50 MB during scroll
+#    - Post-GC memory within ≤10 MB of baseline
+#
+# 3. Visual Quality:
+#    - 0 blank cells observed
+#    - All task rows render immediately
+#    - No "Error Loading" states
+#
+# 4. Responsiveness:
+#    - App remains interactive after test
+#    - No ANR/freeze events
+#    - Tap interactions work immediately

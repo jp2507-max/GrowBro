@@ -1,4 +1,4 @@
-import { Directory, File, Paths } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system';
 
 import * as photoHash from '../photo-hash';
 import {
@@ -10,7 +10,18 @@ import {
   hashAndStore,
 } from '../photo-storage-service';
 
-jest.mock('expo-file-system');
+jest.mock('expo-file-system', () => ({
+  cacheDirectory: 'file:///cache/',
+  documentDirectory: 'file:///documents/',
+  getInfoAsync: jest.fn(),
+  makeDirectoryAsync: jest.fn(),
+  readDirectoryAsync: jest.fn(() => []),
+  writeAsStringAsync: jest.fn(),
+  copyAsync: jest.fn(),
+  getTotalDiskCapacityAsync: jest.fn(() => Promise.resolve(1000000000)),
+  getFreeDiskStorageAsync: jest.fn(() => Promise.resolve(500000000)),
+}));
+
 jest.mock('../exif', () => ({
   stripExifAndGeolocation: jest.fn((uri) =>
     Promise.resolve({ uri: `${uri}-stripped`, didStrip: true })
@@ -33,136 +44,197 @@ jest.mock('../photo-variants', () => ({
 }));
 
 describe('photo-storage-service', () => {
-  let mockDirectory: {
-    exists: boolean;
-    create: jest.Mock;
-    list: jest.Mock;
-    uri: string;
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockDirectory = {
-      exists: true,
-      create: jest.fn(),
-      list: jest.fn(() => []),
-      uri: 'file:///cache/harvest-photos',
-    };
-
-    (Directory as unknown as jest.Mock).mockImplementation(() => mockDirectory);
+    // Setup default mocks
+    (FileSystem.getInfoAsync as jest.Mock).mockImplementation((uri: string) =>
+      Promise.resolve({
+        exists: true,
+        uri,
+        size: 1000,
+        modificationTime: Date.now() / 1000,
+        isDirectory: uri.endsWith('/'),
+      })
+    );
+    (FileSystem.makeDirectoryAsync as jest.Mock).mockResolvedValue(undefined);
+    (FileSystem.writeAsStringAsync as jest.Mock).mockResolvedValue(undefined);
+    (FileSystem.copyAsync as jest.Mock).mockResolvedValue(undefined);
   });
 
   describe('captureAndStore', () => {
     it('should capture and store all three variants', async () => {
-      const mockFile = {
-        exists: false,
-        uri: 'file:///stored.jpg',
-        copy: jest.fn(),
-      };
-      (File as unknown as jest.Mock).mockImplementation(() => mockFile);
+      // Mock getInfoAsync to return exists: false for target files
+      (FileSystem.getInfoAsync as jest.Mock).mockImplementation(
+        (uri: string) => {
+          if (uri.includes('abc123hash.jpg')) {
+            return Promise.resolve({ exists: false });
+          }
+          return Promise.resolve({
+            exists: true,
+            isDirectory: uri.endsWith('/'),
+          });
+        }
+      );
 
       const result = await captureAndStore('file:///source.jpg');
 
       expect(result).toEqual({
-        original: 'file:///stored.jpg',
-        resized: 'file:///stored.jpg',
-        thumbnail: 'file:///stored.jpg',
+        original: 'file:///cache/harvest-photos/abc123hash.jpg',
+        resized: 'file:///cache/harvest-photos/abc123hash.jpg',
+        thumbnail: 'file:///cache/harvest-photos/abc123hash.jpg',
         metadata: { width: 4032, height: 3024, gpsStripped: true },
       });
     });
 
     it('should handle storage errors', async () => {
-      (File as unknown as jest.Mock).mockImplementation(() => {
-        throw new Error('Storage full');
-      });
+      // Ensure target files don't already exist so copyAsync is attempted
+      (FileSystem.getInfoAsync as jest.Mock).mockImplementation(
+        (uri: string) => {
+          if (uri.includes('abc123hash.jpg')) {
+            return Promise.resolve({ exists: false });
+          }
+          return Promise.resolve({
+            exists: true,
+            isDirectory: uri.endsWith('/'),
+          });
+        }
+      );
 
-      await expect(captureAndStore('file:///source.jpg')).rejects.toThrow();
+      (FileSystem.copyAsync as jest.Mock).mockRejectedValue(
+        new Error('Storage full')
+      );
+
+      await expect(captureAndStore('file:///source.jpg')).rejects.toThrow(
+        'Storage full'
+      );
     });
   });
 
   describe('hashAndStore', () => {
     it('should hash and store file with content-addressable name', async () => {
-      const mockFile = {
-        exists: false,
-        uri: 'file:///cache/harvest-photos/abc123hash.jpg',
-        copy: jest.fn(),
-      };
-      const mockSourceFile = {
-        copy: jest.fn(),
-      };
-      (File as unknown as jest.Mock)
-        .mockImplementationOnce(() => mockFile) // target file
-        .mockImplementationOnce(() => mockSourceFile); // source file
+      // Ensure target file does not exist to force copy
+      (FileSystem.getInfoAsync as jest.Mock).mockImplementation(
+        (uri: string) => {
+          if (uri === 'file:///cache/harvest-photos/abc123hash.jpg') {
+            return Promise.resolve({ exists: false });
+          }
+          return Promise.resolve({
+            exists: true,
+            isDirectory: uri.endsWith('/'),
+          });
+        }
+      );
 
       const result = await hashAndStore(
         'file:///source.jpg',
         'original',
-        mockDirectory as unknown as Directory
+        'file:///cache/harvest-photos/'
       );
 
       expect(result).toBe('file:///cache/harvest-photos/abc123hash.jpg');
-      expect(mockSourceFile.copy).toHaveBeenCalledWith(mockFile);
+      expect(FileSystem.copyAsync).toHaveBeenCalledWith({
+        from: 'file:///source.jpg',
+        to: 'file:///cache/harvest-photos/abc123hash.jpg',
+      });
     });
 
     it('should skip copy if file already exists (deduplication)', async () => {
-      const mockFile = {
-        exists: true,
-        uri: 'file:///cache/harvest-photos/abc123hash.jpg',
-      };
-      (File as unknown as jest.Mock).mockImplementation(() => mockFile);
+      // Mock getInfoAsync to return exists: true for target file
+      (FileSystem.getInfoAsync as jest.Mock).mockImplementation(
+        (uri: string) => {
+          if (uri.includes('abc123hash.jpg')) {
+            return Promise.resolve({ exists: true });
+          }
+          return Promise.resolve({
+            exists: true,
+            isDirectory: uri.endsWith('/'),
+          });
+        }
+      );
 
       const result = await hashAndStore(
         'file:///source.jpg',
         'original',
-        mockDirectory as unknown as Directory
+        'file:///cache/harvest-photos/'
       );
 
       expect(result).toBe('file:///cache/harvest-photos/abc123hash.jpg');
-      // copy should not be called since file exists
+      expect(FileSystem.copyAsync).not.toHaveBeenCalled();
     });
 
     it('should handle hash and store errors', async () => {
-      (File as unknown as jest.Mock).mockImplementation(() => {
-        throw new Error('Hash failed');
-      });
+      // Ensure target file does not exist so copy is attempted
+      (FileSystem.getInfoAsync as jest.Mock).mockImplementation(
+        (uri: string) => {
+          if (uri === 'file:///cache/harvest-photos/abc123hash.jpg') {
+            return Promise.resolve({ exists: false });
+          }
+          return Promise.resolve({
+            exists: true,
+            isDirectory: uri.endsWith('/'),
+          });
+        }
+      );
+
+      (FileSystem.copyAsync as jest.Mock).mockRejectedValue(
+        new Error('Copy failed')
+      );
 
       await expect(
         hashAndStore(
           'file:///source.jpg',
           'original',
-          mockDirectory as unknown as Directory
+          'file:///cache/harvest-photos/'
         )
-      ).rejects.toThrow();
+      ).rejects.toThrow('Copy failed');
     });
   });
 
   describe('getStorageInfo', () => {
     it('should return storage information', async () => {
-      const mockFile1 = { size: 1024 };
-      const mockFile2 = { size: 2048 };
-      mockDirectory.list = jest.fn(() => [mockFile1, mockFile2]);
-
-      (
-        Paths as { totalDiskSpace: number; availableDiskSpace: number }
-      ).totalDiskSpace = 100000;
-      (
-        Paths as { totalDiskSpace: number; availableDiskSpace: number }
-      ).availableDiskSpace = 50000;
+      // Mock readDirectoryAsync to return file names
+      (FileSystem.readDirectoryAsync as jest.Mock).mockResolvedValue([
+        'file1.jpg',
+        'file2.jpg',
+      ]);
+      // Mock getInfoAsync for individual files
+      (FileSystem.getInfoAsync as jest.Mock).mockImplementation(
+        (uri: string) => {
+          if (uri === 'file:///cache/harvest-photos/') {
+            return Promise.resolve({ exists: true, isDirectory: true });
+          }
+          if (uri.includes('file1.jpg')) {
+            return Promise.resolve({
+              exists: true,
+              isDirectory: false,
+              size: 1024,
+            });
+          }
+          if (uri.includes('file2.jpg')) {
+            return Promise.resolve({
+              exists: true,
+              isDirectory: false,
+              size: 2048,
+            });
+          }
+          return Promise.resolve({ exists: true, isDirectory: false, size: 0 });
+        }
+      );
 
       const info = await getStorageInfo();
 
       expect(info).toEqual({
-        totalBytes: 100000,
+        totalBytes: 1000000000,
         usedBytes: 3072,
-        availableBytes: 50000,
-        photoDirectory: 'file:///cache/harvest-photos',
+        availableBytes: 500000000,
+        photoDirectory: 'file:///cache/harvest-photos/',
         fileCount: 2,
       });
     });
 
     it('should handle empty directory', async () => {
-      mockDirectory.list = jest.fn(() => []);
+      (FileSystem.readDirectoryAsync as jest.Mock).mockResolvedValue([]);
 
       const info = await getStorageInfo();
 
@@ -171,7 +243,7 @@ describe('photo-storage-service', () => {
     });
 
     it('should handle directory access errors', async () => {
-      mockDirectory.list = jest.fn(() => {
+      (FileSystem.readDirectoryAsync as jest.Mock).mockImplementation(() => {
         throw new Error('Access denied');
       });
 
@@ -181,30 +253,70 @@ describe('photo-storage-service', () => {
 
   describe('detectOrphans', () => {
     it('should detect files not referenced in database', async () => {
-      const mockFile1 = { uri: 'file:///photo1.jpg' };
-      const mockFile2 = { uri: 'file:///photo2.jpg' };
-      const mockFile3 = { uri: 'file:///photo3.jpg' };
+      // Simulate directory contents as filenames (production uses names)
+      (FileSystem.readDirectoryAsync as jest.Mock).mockResolvedValue([
+        'photo1.jpg',
+        'photo2.jpg',
+        'photo3.jpg',
+      ]);
 
-      mockDirectory.list = jest.fn(() => [mockFile1, mockFile2, mockFile3]);
+      // Mock getInfoAsync for directory and files
+      (FileSystem.getInfoAsync as jest.Mock).mockImplementation(
+        (uri: string) => {
+          if (uri === 'file:///cache/harvest-photos/') {
+            return Promise.resolve({ exists: true, isDirectory: true });
+          }
+          if (
+            uri.endsWith('photo1.jpg') ||
+            uri.endsWith('photo2.jpg') ||
+            uri.endsWith('photo3.jpg')
+          ) {
+            return Promise.resolve({ exists: true, isDirectory: false });
+          }
+          return Promise.resolve({ exists: false });
+        }
+      );
 
-      const referencedUris = ['file:///photo1.jpg', 'file:///photo3.jpg'];
+      const dir = 'file:///cache/harvest-photos/';
+      const referencedUris = [dir + 'photo1.jpg', dir + 'photo3.jpg'];
 
       const orphans = await detectOrphans(referencedUris);
 
-      expect(orphans).toEqual(['file:///photo2.jpg']);
+      expect(orphans).toEqual([dir + 'photo2.jpg']);
     });
 
     it('should return empty array if no orphans', async () => {
-      const mockFile1 = { uri: 'file:///photo1.jpg' };
-      mockDirectory.list = jest.fn(() => [mockFile1]);
+      (FileSystem.readDirectoryAsync as jest.Mock).mockResolvedValue([
+        'photo1.jpg',
+      ]);
+      (FileSystem.getInfoAsync as jest.Mock).mockImplementation(
+        (uri: string) => {
+          if (uri === 'file:///cache/harvest-photos/') {
+            return Promise.resolve({ exists: true, isDirectory: true });
+          }
+          if (uri.endsWith('photo1.jpg')) {
+            return Promise.resolve({ exists: true, isDirectory: false });
+          }
+          return Promise.resolve({ exists: false });
+        }
+      );
 
-      const orphans = await detectOrphans(['file:///photo1.jpg']);
+      const dir = 'file:///cache/harvest-photos/';
+      const orphans = await detectOrphans([dir + 'photo1.jpg']);
 
       expect(orphans).toEqual([]);
     });
 
     it('should return empty array if directory does not exist', async () => {
-      mockDirectory.exists = false;
+      // Simulate directory missing
+      (FileSystem.getInfoAsync as jest.Mock).mockImplementation(
+        (uri: string) => {
+          if (uri === 'file:///cache/harvest-photos/') {
+            return Promise.resolve({ exists: false });
+          }
+          return Promise.resolve({ exists: false });
+        }
+      );
 
       const orphans = await detectOrphans([]);
 
@@ -212,7 +324,7 @@ describe('photo-storage-service', () => {
     });
 
     it('should handle detection errors gracefully', async () => {
-      mockDirectory.list = jest.fn(() => {
+      (FileSystem.readDirectoryAsync as jest.Mock).mockImplementation(() => {
         throw new Error('List failed');
       });
 
@@ -228,9 +340,10 @@ describe('photo-storage-service', () => {
       deleteFile.mockResolvedValue(true);
 
       const orphanPaths = ['file:///orphan1.jpg', 'file:///orphan2.jpg'];
-      const deleted = await cleanupOrphans(orphanPaths);
+      const result = await cleanupOrphans(orphanPaths);
 
-      expect(deleted).toBe(2);
+      expect(result.deletedCount).toBe(2);
+      expect(result.deletedPaths).toEqual(orphanPaths);
       expect(deleteFile).toHaveBeenCalledTimes(2);
     });
 
@@ -246,44 +359,64 @@ describe('photo-storage-service', () => {
         'file:///orphan2.jpg',
         'file:///orphan3.jpg',
       ];
-      const deleted = await cleanupOrphans(orphanPaths);
+      const result = await cleanupOrphans(orphanPaths);
 
-      expect(deleted).toBe(2);
+      expect(result.deletedCount).toBe(2);
+      expect(result.deletedPaths).toEqual([orphanPaths[0], orphanPaths[2]]);
     });
 
     it('should handle empty orphan list', async () => {
-      const deleted = await cleanupOrphans([]);
+      const result = await cleanupOrphans([]);
 
-      expect(deleted).toBe(0);
+      expect(result.deletedCount).toBe(0);
+      expect(result.deletedPaths).toEqual([]);
     });
   });
 
   describe('getAllPhotoFiles', () => {
     it('should return all photo files with metadata', async () => {
-      const mockFile1 = {
-        uri: 'file:///abc123.jpg',
-        name: 'abc123.jpg',
-        size: 1024,
-      };
-      const mockFile2 = {
-        uri: 'file:///def456.jpg',
-        name: 'def456.jpg',
-        size: 2048,
-      };
+      // Simulate directory with two files
+      (FileSystem.readDirectoryAsync as jest.Mock).mockResolvedValue([
+        'abc123.jpg',
+        'def456.jpg',
+      ]);
 
-      mockDirectory.list = jest.fn(() => [mockFile1, mockFile2]);
+      (FileSystem.getInfoAsync as jest.Mock).mockImplementation(
+        (uri: string) => {
+          if (uri === 'file:///cache/harvest-photos/') {
+            return Promise.resolve({ exists: true, isDirectory: true });
+          }
+          if (uri.endsWith('abc123.jpg')) {
+            return Promise.resolve({
+              exists: true,
+              isDirectory: false,
+              size: 1024,
+              modificationTime: Date.now() / 1000,
+            });
+          }
+          if (uri.endsWith('def456.jpg')) {
+            return Promise.resolve({
+              exists: true,
+              isDirectory: false,
+              size: 2048,
+              modificationTime: Date.now() / 1000,
+            });
+          }
+          return Promise.resolve({ exists: false });
+        }
+      );
 
       const files = await getAllPhotoFiles();
 
       expect(files).toHaveLength(2);
       expect(files[0]).toEqual({
-        path: 'file:///abc123.jpg',
+        path: 'file:///cache/harvest-photos/abc123.jpg',
         size: 1024,
         modifiedAt: expect.any(Number),
         hash: 'abc123',
       });
       expect(files[1]).toEqual({
-        path: 'file:///def456.jpg',
+        path: 'file:///cache/harvest-photos/def456.jpg',
         size: 2048,
         modifiedAt: expect.any(Number),
         hash: 'def456',
@@ -291,7 +424,14 @@ describe('photo-storage-service', () => {
     });
 
     it('should return empty array if directory does not exist', async () => {
-      mockDirectory.exists = false;
+      (FileSystem.getInfoAsync as jest.Mock).mockImplementation(
+        (uri: string) => {
+          if (uri === 'file:///cache/harvest-photos/') {
+            return Promise.resolve({ exists: false });
+          }
+          return Promise.resolve({ exists: false });
+        }
+      );
 
       const files = await getAllPhotoFiles();
 
@@ -299,7 +439,7 @@ describe('photo-storage-service', () => {
     });
 
     it('should handle errors gracefully', async () => {
-      mockDirectory.list = jest.fn(() => {
+      (FileSystem.readDirectoryAsync as jest.Mock).mockImplementation(() => {
         throw new Error('List failed');
       });
 

@@ -1,0 +1,99 @@
+appId: ${APP_ID}
+env:
+  EMAIL: 'test@growbro.app'
+  PASSWORD: 'Test1234!'
+tags:
+  - performance
+  - scroll
+  - stress
+---
+# Rapid Scroll Stress Test
+# Requirements: 10 rapid top↔bottom scrolls of 1,000-item datasets
+# SLA: 0 blank cells, avg FPS ≥58, dropped frames ≤1%
+#
+# IMPORTANT: This test MUST run on RELEASE builds only
+#
+# This test validates FlashList v2 cell recycling under extreme conditions
+# by performing rapid bidirectional scrolls that stress the rendering pipeline
+#
+# Run with:
+# maestro test .maestro/performance/rapid-scroll-test.yaml --format junit --output rapid-scroll-results.xml
+
+- launchApp
+
+# Verify we're on a release build
+- assertNotVisible: 'Development Menu'
+
+# Login flow
+- runFlow: ../utils/onboarding-and-login.yaml
+
+# Navigate to community tab (largest dataset)
+- assertVisible: 'Community'
+- tapOn:
+    id: 'community-tab'
+- assertVisible:
+    id: 'community-screen'
+
+# Wait for initial load
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Verify feed has loaded
+- assertVisible:
+    id: 'post-card-.*'
+
+# === RAPID SCROLL STRESS TEST ===
+# 10 iterations of rapid top-to-bottom-to-top scrolls
+# This maximizes cell recycling and tests for blank cells
+
+- repeat:
+    times: 10
+    commands:
+      # Rapid scroll to bottom
+      - scroll:
+          direction: DOWN
+          duration: 2000
+          speed: 100
+
+      # Brief pause to check rendering
+      - waitForAnimationToEnd:
+          timeout: 500
+
+      # Verify no blank cells after rapid scroll
+      - assertVisible:
+          id: 'post-card-.*'
+      - assertNotVisible: 'Blank Cell'
+
+      # Rapid scroll back to top
+      - scroll:
+          direction: UP
+          duration: 2000
+          speed: 100
+
+      # Brief pause to check rendering
+      - waitForAnimationToEnd:
+          timeout: 500
+
+      # Verify no blank cells after rapid scroll
+      - assertVisible:
+          id: 'post-card-.*'
+      - assertNotVisible: 'Blank Cell'
+
+# Final verification: feed still functional
+- assertVisible:
+    id: 'community-screen'
+- assertVisible:
+    id: 'post-card-.*'
+
+# Test interaction after stress test
+- tapOn:
+    id: 'post-card-.*'
+- assertVisible: 'Comments'
+- tapOn:
+    id: 'back-button'
+# === SUCCESS CRITERIA ===
+# 1. 0 blank cells observed during all 10 iterations
+# 2. All images show placeholder or loaded content
+# 3. App remains responsive after test
+# 4. No crashes or ANR events
+# 5. Average FPS ≥58 during rapid scrolls

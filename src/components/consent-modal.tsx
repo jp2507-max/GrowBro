@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 
 import { Button, Switch, Text } from '@/components/ui';
 import type { TxKeyPath } from '@/lib/i18n/utils';
@@ -56,7 +57,9 @@ function ToggleRow({
         onValueChange={onChange}
         testID={`${testID}-switch`}
         accessibilityLabel={title}
-        accessibilityHint={translate('accessibility.common.toggle_hint')}
+        accessibilityHint={translate(
+          'accessibility.common.toggleHint' as TxKeyPath
+        )}
       />
     </View>
   );
@@ -288,24 +291,44 @@ export function ConsentModal({ isVisible, onComplete, mode }: Props) {
   });
 
   return (
-    <View className="p-4" testID="consent-modal">
-      <ConsentHeader titleKey={titleKey} />
-      <ConsentSections
-        telemetry={telemetry}
-        setTelemetry={setTelemetry}
-        experiments={experiments}
-        setExperiments={setExperiments}
-        aiTraining={aiTraining}
-        setAiTraining={setAiTraining}
-        crashDiagnostics={crashDiagnostics}
-        setCrashDiagnostics={setCrashDiagnostics}
-      />
-      <Actions
-        onAcceptAll={acceptAll}
-        onRejectAll={rejectAll}
-        onSave={complete}
-      />
-    </View>
+    <Animated.View
+      entering={FadeIn.duration(200).reduceMotion(ReduceMotion.System)}
+      className="p-4"
+      testID="consent-modal"
+    >
+      <Animated.View
+        entering={FadeIn.duration(180).reduceMotion(ReduceMotion.System)}
+      >
+        <ConsentHeader titleKey={titleKey} />
+      </Animated.View>
+      <Animated.View
+        entering={FadeIn.delay(60)
+          .duration(200)
+          .reduceMotion(ReduceMotion.System)}
+      >
+        <ConsentSections
+          telemetry={telemetry}
+          setTelemetry={setTelemetry}
+          experiments={experiments}
+          setExperiments={setExperiments}
+          aiTraining={aiTraining}
+          setAiTraining={setAiTraining}
+          crashDiagnostics={crashDiagnostics}
+          setCrashDiagnostics={setCrashDiagnostics}
+        />
+      </Animated.View>
+      <Animated.View
+        entering={FadeIn.delay(120)
+          .duration(200)
+          .reduceMotion(ReduceMotion.System)}
+      >
+        <Actions
+          onAcceptAll={acceptAll}
+          onRejectAll={rejectAll}
+          onSave={complete}
+        />
+      </Animated.View>
+    </Animated.View>
   );
 }
 

@@ -9,7 +9,7 @@
 
 import { FlashList } from '@shopify/flash-list';
 import { DateTime } from 'luxon';
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Checkbox, Text, View } from '@/components/ui';
@@ -205,28 +205,31 @@ export function PhaseTimeline({
   const { t } = useTranslation();
   const timelineItems = useTimelineItems(tasks, timezone, t);
 
-  const renderItem = ({
-    item,
-    index,
-  }: {
-    item: TimelineItem;
-    index: number;
-  }) => {
-    if ('type' in item && item.type === 'section') {
-      return (
-        <SectionHeader section={item} currentPhaseIndex={currentPhaseIndex} />
-      );
-    }
+  const renderItem = useCallback(
+    ({ item, index }: { item: TimelineItem; index: number }) => {
+      if ('type' in item && item.type === 'section') {
+        return (
+          <SectionHeader section={item} currentPhaseIndex={currentPhaseIndex} />
+        );
+      }
 
-    return (
-      <TaskItem
-        task={item as TimelineTask}
-        onPress={onTaskPress}
-        currentPhaseIndex={currentPhaseIndex}
-        index={index}
-      />
-    );
-  };
+      return (
+        <TaskItem
+          task={item as TimelineTask}
+          onPress={onTaskPress}
+          currentPhaseIndex={currentPhaseIndex}
+          index={index}
+        />
+      );
+    },
+    [currentPhaseIndex, onTaskPress]
+  );
+
+  const keyExtractor = useCallback((item: TimelineItem) => item.id, []);
+  const getItemType = useCallback(
+    (item: TimelineItem) => ('type' in item ? item.type : 'task'),
+    []
+  );
 
   if (timelineItems.length === 0) {
     return (
@@ -243,7 +246,8 @@ export function PhaseTimeline({
       <FlashList
         data={timelineItems}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
+        getItemType={getItemType}
         contentContainerClassName="pb-4"
       />
     </View>

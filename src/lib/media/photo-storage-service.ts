@@ -1,4 +1,5 @@
-import { Directory, File, Paths } from 'expo-file-system';
+import { Env } from '@env';
+import * as FileSystem from 'expo-file-system';
 
 import type {
   PhotoFile,
@@ -15,6 +16,26 @@ import {
 } from './photo-hash';
 import { generatePhotoVariants } from './photo-variants';
 
+// Type-safe interface for FileSystem module with proper null handling
+interface SafeFileSystem {
+  documentDirectory: string | null | undefined;
+  cacheDirectory: string | null | undefined;
+  bundleDirectory: string | null | undefined;
+  getInfoAsync: typeof FileSystem.getInfoAsync;
+  makeDirectoryAsync: typeof FileSystem.makeDirectoryAsync;
+  readDirectoryAsync: typeof FileSystem.readDirectoryAsync;
+  writeAsStringAsync: typeof FileSystem.writeAsStringAsync;
+  readAsStringAsync: typeof FileSystem.readAsStringAsync;
+  copyAsync: typeof FileSystem.copyAsync;
+  deleteAsync: typeof FileSystem.deleteAsync;
+  moveAsync: typeof FileSystem.moveAsync;
+  getFreeDiskStorageAsync: typeof FileSystem.getFreeDiskStorageAsync;
+  getTotalDiskCapacityAsync: typeof FileSystem.getTotalDiskCapacityAsync;
+}
+
+// Cast to our safe interface to maintain type safety
+const safeFileSystem = FileSystem as unknown as SafeFileSystem;
+
 /**
  * Photo storage service for harvest workflow
  *
@@ -25,27 +46,368 @@ import { generatePhotoVariants } from './photo-variants';
  * - 13.2: Generate original, resized, thumbnail variants
  */
 
+const DOWNLOAD_TIMEOUT_MS = 10_000;
+const STORAGE_OBJECT_PATH_PREFIX = '/storage/v1/object/';
+
+type DownloadedRemoteImage = {
+  localUri: string;
+  cleanup: () => Promise<void>;
+};
+
+let supabaseStorageHostname: string | undefined;
+let allowedRemoteImageHosts: Set<string>;
+
+function ensureInitialized(): void {
+  if (allowedRemoteImageHosts === undefined) {
+    supabaseStorageHostname = resolveSupabaseHostname();
+    allowedRemoteImageHosts = createAllowedRemoteImageHostSet();
+  }
+}
+
+/**
+ * Download a remote image to local storage
+ * Used for prefill attachments that come from remote URLs
+ */
+export async function downloadRemoteImage(
+  remoteUri: string
+): Promise<DownloadedRemoteImage> {
+  ensureInitialized();
+  const parsedUrl = assertAllowedRemoteUri(remoteUri);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(parsedUrl.toString(), {
+      signal: controller.signal,
+    });
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(
+        `Remote image download timed out after ${DOWNLOAD_TIMEOUT_MS}ms`
+      );
+    }
+    throw new Error(
+      `Failed to fetch remote image: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+
+  clearTimeout(timeoutId);
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch image: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const rawContentType =
+    response.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase() ??
+    null;
+
+  if (rawContentType && !rawContentType.startsWith('image/')) {
+    throw new Error(
+      `Remote file is not an image (received Content-Type: ${rawContentType})`
+    );
+  }
+
+  const blob = await response.blob();
+  const base64 = await blobToBase64(blob);
+
+  const dirUri = await getPhotoDirectoryUri();
+  const extension = determineImageExtension(rawContentType, parsedUrl.pathname);
+  const tempFilename = `remote_${Date.now()}_${Math.random()
+    .toString(36)
+    .slice(2)}.${extension}`;
+
+  const tempFileUri = dirUri + tempFilename;
+
+  try {
+    await safeFileSystem.writeAsStringAsync(tempFileUri, base64, {
+      encoding: 'base64',
+    });
+
+    return createDownloadedRemoteImage(tempFileUri);
+  } catch (error) {
+    if (tempFileUri) {
+      await cleanupTempFile(tempFileUri, 'partial remote image file');
+    }
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(
+      `Failed to persist downloaded remote image: ${String(error)}`
+    );
+  }
+}
+
+/**
+ * Convert blob to base64 string
+ */
+async function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
+        const base64 = reader.result.split(',')[1];
+        resolve(base64);
+      } else {
+        reject(new Error('Failed to convert blob to base64'));
+      }
+    };
+    reader.onerror = () => reject(new Error('FileReader error'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function createDownloadedRemoteImage(uri: string): DownloadedRemoteImage {
+  let cleaned = false;
+
+  return {
+    localUri: uri,
+    cleanup: async () => {
+      if (cleaned) {
+        return;
+      }
+      cleaned = true;
+      await cleanupTempFile(uri, 'downloaded remote image');
+    },
+  };
+}
+
+function determineImageExtension(
+  contentType: string | null,
+  pathname: string
+): string {
+  const map: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
+    'image/heic': 'heic',
+    'image/heif': 'heif',
+    'image/avif': 'avif',
+  };
+
+  if (contentType) {
+    if (map[contentType]) {
+      return map[contentType];
+    }
+
+    if (contentType.startsWith('image/')) {
+      const candidate = sanitizeExtension(contentType.slice(6));
+      if (candidate) {
+        return candidate;
+      }
+    }
+  }
+
+  const fallback = sanitizeExtension(extractExtension(pathname));
+  return fallback ?? 'jpg';
+}
+
+function sanitizeExtension(ext: string | null | undefined): string | null {
+  if (!ext) {
+    return null;
+  }
+
+  const normalized = ext.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  if (normalized.length === 0 || normalized.length > 5) {
+    return null;
+  }
+
+  return normalized;
+}
+
+function assertAllowedRemoteUri(remoteUri: string): URL {
+  ensureInitialized();
+  if (!remoteUri) {
+    throw new Error('Remote image URL is required');
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(remoteUri);
+  } catch {
+    throw new Error('Remote image URL must be an absolute HTTPS URL');
+  }
+
+  if (parsed.protocol !== 'https:') {
+    throw new Error('Remote image URL must use HTTPS');
+  }
+
+  if (parsed.username || parsed.password) {
+    throw new Error('Remote image URL must not include credentials');
+  }
+
+  const host = parsed.hostname.toLowerCase();
+
+  if (isLocalHost(host) || isIpAddress(host)) {
+    throw new Error(`Remote image host "${host}" is not permitted`);
+  }
+
+  if (!allowedRemoteImageHosts.has(host)) {
+    throw new Error(`Remote image host "${host}" is not allowlisted`);
+  }
+
+  if (
+    supabaseStorageHostname &&
+    host === supabaseStorageHostname &&
+    !parsed.pathname.startsWith(STORAGE_OBJECT_PATH_PREFIX)
+  ) {
+    throw new Error('Remote image path is not allowlisted');
+  }
+
+  return parsed;
+}
+
+function isLocalHost(host: string): boolean {
+  return (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '::1' ||
+    host.endsWith('.localhost') ||
+    host.endsWith('.local')
+  );
+}
+
+function isIpAddress(host: string): boolean {
+  if (host.includes(':')) {
+    // Treat IPv6 hosts as disallowed (covers private ranges like fd00::/8)
+    return true;
+  }
+
+  const parts = host.split('.');
+  if (parts.length !== 4) {
+    return false;
+  }
+
+  const octets = parts.map((part) => {
+    if (!/^\d{1,3}$/.test(part)) {
+      return NaN;
+    }
+    return Number(part);
+  });
+
+  if (octets.some((value) => Number.isNaN(value) || value < 0 || value > 255)) {
+    return true;
+  }
+
+  const [a, b] = octets;
+
+  if (a === 10 || a === 127) {
+    return true;
+  }
+
+  if (a === 172 && b >= 16 && b <= 31) {
+    return true;
+  }
+
+  if (a === 192 && b === 168) {
+    return true;
+  }
+
+  if (a === 169 && b === 254) {
+    return true;
+  }
+
+  if (a === 100 && b >= 64 && b <= 127) {
+    return true;
+  }
+
+  if (a === 0 || a === 255) {
+    return true;
+  }
+
+  return false;
+}
+
+function createAllowedRemoteImageHostSet(): Set<string> {
+  const hosts = new Set<string>();
+
+  if (supabaseStorageHostname) {
+    hosts.add(supabaseStorageHostname);
+  }
+
+  const extraHosts = getExtraAllowedHostsFromEnv();
+  for (const host of extraHosts) {
+    hosts.add(host);
+  }
+
+  return hosts;
+}
+
+function resolveSupabaseHostname(): string | undefined {
+  const supabaseUrl = resolveSupabaseUrl();
+
+  if (!supabaseUrl) {
+    return undefined;
+  }
+
+  try {
+    const parsed = new URL(supabaseUrl);
+    if (parsed.protocol === 'https:' && parsed.hostname) {
+      return parsed.hostname.toLowerCase();
+    }
+  } catch {
+    // Ignore malformed env configuration
+  }
+
+  return undefined;
+}
+
+function resolveSupabaseUrl(): string | undefined {
+  return Env.SUPABASE_URL;
+}
+
+function getExtraAllowedHostsFromEnv(): string[] {
+  const raw = getEnvValue('EXPO_PUBLIC_ALLOWED_REMOTE_IMAGE_HOSTS');
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split(',')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter((entry) => entry.length > 0);
+}
+
+function getEnvValue(key: string): string | undefined {
+  const envRecord = Env as unknown as Record<string, string | undefined>;
+  return envRecord?.[key];
+}
+
 // Photo storage directory in cache
 const PHOTO_DIR_NAME = 'harvest-photos';
 
-let photoDirectory: Directory | null = null;
+let photoDirectoryUri: string | null = null;
 
 /**
- * Get or create photo storage directory
+ * Get or create photo storage directory URI
  */
-function getPhotoDirectory(): Directory {
-  if (!photoDirectory) {
-    photoDirectory = new Directory(Paths.cache, PHOTO_DIR_NAME);
+async function getPhotoDirectoryUri(): Promise<string> {
+  if (!photoDirectoryUri) {
+    if (!safeFileSystem.cacheDirectory) {
+      throw new Error('Cache directory not available');
+    }
+    photoDirectoryUri = `${safeFileSystem.cacheDirectory}${PHOTO_DIR_NAME}/`;
+
     try {
-      if (!photoDirectory.exists) {
-        photoDirectory.create();
+      const dirInfo = await safeFileSystem.getInfoAsync(photoDirectoryUri);
+      if (!dirInfo.exists) {
+        await safeFileSystem.makeDirectoryAsync(photoDirectoryUri, {
+          intermediates: true,
+        });
       }
     } catch (error) {
       console.error('Failed to create photo directory:', error);
       throw error;
     }
   }
-  return photoDirectory;
+  return photoDirectoryUri;
 }
 
 /**
@@ -69,7 +431,7 @@ export async function captureAndStore(
   sourceUri: string
 ): Promise<PhotoVariants> {
   try {
-    const dir = getPhotoDirectory();
+    const dirUri = await getPhotoDirectoryUri();
 
     // Strip EXIF from original to create sanitized version
     const { uri: sanitizedOriginal, didStrip } =
@@ -79,10 +441,14 @@ export async function captureAndStore(
     const variants = await generatePhotoVariants(sanitizedOriginal);
 
     // Hash and store sanitized original
-    const originalUri = await hashAndStore(sanitizedOriginal, 'original', dir);
+    const originalUri = await hashAndStore(
+      sanitizedOriginal,
+      'original',
+      dirUri
+    );
 
     // Hash and store resized variant
-    const resizedUri = await hashAndStore(variants.resized, 'resized', dir);
+    const resizedUri = await hashAndStore(variants.resized, 'resized', dirUri);
 
     // Clean up temporary resized file after successful hashAndStore (only if different from sanitized original)
     if (variants.resized !== sanitizedOriginal) {
@@ -93,7 +459,7 @@ export async function captureAndStore(
     const thumbnailUri = await hashAndStore(
       variants.thumbnail,
       'thumbnail',
-      dir
+      dirUri
     );
 
     // Clean up temporary thumbnail file after successful hashAndStore
@@ -122,13 +488,13 @@ export async function captureAndStore(
  *
  * @param uri - Source file URI
  * @param variant - Variant type for logging
- * @param directory - Target directory
+ * @param directoryUri - Target directory URI
  * @returns Stored file URI
  */
 export async function hashAndStore(
   uri: string,
   variant: string,
-  directory: Directory
+  directoryUri: string
 ): Promise<string> {
   try {
     // Generate content hash
@@ -136,19 +502,19 @@ export async function hashAndStore(
     const extension = extractExtension(uri);
     const filename = generateHashedFilename(hash, extension);
 
-    const targetFile = new File(directory, filename);
+    const targetFileUri = directoryUri + filename;
 
     // Check if file already exists (deduplication)
-    if (targetFile.exists) {
+    const targetFileInfo = await safeFileSystem.getInfoAsync(targetFileUri);
+    if (targetFileInfo.exists) {
       console.log(`Photo variant ${variant} already exists:`, filename);
-      return targetFile.uri;
+      return targetFileUri;
     }
 
     // Copy source to target with hashed name
-    const sourceFile = new File(uri);
-    sourceFile.copy(targetFile);
+    await safeFileSystem.copyAsync({ from: uri, to: targetFileUri });
 
-    return targetFile.uri;
+    return targetFileUri;
   } catch (error) {
     console.error(`Failed to hash and store ${variant}:`, error);
     throw error;
@@ -162,26 +528,34 @@ export async function hashAndStore(
  */
 export async function getStorageInfo(): Promise<StorageInfo> {
   try {
-    const dir = getPhotoDirectory();
+    const dirUri = await getPhotoDirectoryUri();
 
     let totalSize = 0;
     let fileCount = 0;
 
-    if (dir.exists) {
-      const items = dir.list();
-      for (const item of items) {
-        if (item instanceof File) {
-          totalSize += item.size;
+    const dirInfo = await safeFileSystem.getInfoAsync(dirUri);
+    if (dirInfo.exists && dirInfo.isDirectory) {
+      const itemNames = await safeFileSystem.readDirectoryAsync(dirUri);
+      for (const itemName of itemNames) {
+        const itemUri = dirUri + itemName;
+        const itemInfo = await safeFileSystem.getInfoAsync(itemUri);
+        if (itemInfo.exists && !itemInfo.isDirectory) {
+          totalSize += itemInfo.size || 0;
           fileCount++;
         }
       }
     }
 
+    const [totalBytes, availableBytes] = await Promise.all([
+      safeFileSystem.getTotalDiskCapacityAsync(),
+      safeFileSystem.getFreeDiskStorageAsync(),
+    ]);
+
     return {
-      totalBytes: Paths.totalDiskSpace,
+      totalBytes,
       usedBytes: totalSize,
-      availableBytes: Paths.availableDiskSpace,
-      photoDirectory: dir.uri,
+      availableBytes,
+      photoDirectory: dirUri,
       fileCount,
     };
   } catch (error) {
@@ -200,19 +574,26 @@ export async function detectOrphans(
   referencedUris: string[]
 ): Promise<string[]> {
   try {
-    const dir = getPhotoDirectory();
+    const dirUri = await getPhotoDirectoryUri();
     const orphans: string[] = [];
 
-    if (!dir.exists) {
+    const dirInfo = await safeFileSystem.getInfoAsync(dirUri);
+    if (!dirInfo.exists || !dirInfo.isDirectory) {
       return orphans;
     }
 
     const referencedSet = new Set(referencedUris);
-    const items = dir.list();
+    const itemNames = await safeFileSystem.readDirectoryAsync(dirUri);
 
-    for (const item of items) {
-      if (item instanceof File && !referencedSet.has(item.uri)) {
-        orphans.push(item.uri);
+    for (const itemName of itemNames) {
+      const itemUri = dirUri + itemName;
+      const itemInfo = await safeFileSystem.getInfoAsync(itemUri);
+      if (
+        itemInfo.exists &&
+        !itemInfo.isDirectory &&
+        !referencedSet.has(itemUri)
+      ) {
+        orphans.push(itemUri);
       }
     }
 
@@ -258,22 +639,27 @@ export async function cleanupOrphans(orphanPaths: string[]): Promise<{
  */
 export async function getAllPhotoFiles(): Promise<PhotoFile[]> {
   try {
-    const dir = getPhotoDirectory();
+    const dirUri = await getPhotoDirectoryUri();
     const files: PhotoFile[] = [];
 
-    if (!dir.exists) {
+    const dirInfo = await safeFileSystem.getInfoAsync(dirUri);
+    if (!dirInfo.exists || !dirInfo.isDirectory) {
       return files;
     }
 
-    const items = dir.list();
+    const itemNames = await safeFileSystem.readDirectoryAsync(dirUri);
 
-    for (const item of items) {
-      if (item instanceof File) {
-        const hash = item.name.split('.')[0] ?? '';
+    for (const itemName of itemNames) {
+      const itemUri = dirUri + itemName;
+      const itemInfo = await safeFileSystem.getInfoAsync(itemUri);
+      if (itemInfo.exists && !itemInfo.isDirectory) {
+        const hash = itemName.split('.')[0] ?? '';
         files.push({
-          path: item.uri,
-          size: item.size,
-          modifiedAt: Date.now(), // File API doesn't expose modification time
+          path: itemUri,
+          size: itemInfo.size || 0,
+          modifiedAt: itemInfo.modificationTime
+            ? itemInfo.modificationTime * 1000
+            : Date.now(),
           hash,
         });
       }

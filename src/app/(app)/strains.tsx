@@ -264,6 +264,7 @@ export default function StrainsScreen(): React.ReactElement {
   );
 
   const keyExtractor = React.useCallback((item: Strain) => item.id, []);
+  const getItemType = React.useCallback(() => 'strain', []);
 
   const listEmpty = React.useMemo(() => {
     if (isSkeletonVisible) return <StrainsSkeletonList />;
@@ -418,7 +419,7 @@ export default function StrainsScreen(): React.ReactElement {
         data={listData}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
-        getItemType={() => 'strain'}
+        getItemType={getItemType}
         estimatedItemSize={280}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.7}

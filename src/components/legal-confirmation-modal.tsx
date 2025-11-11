@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 
 import { Button, ScrollView, Switch, Text, View } from '@/components/ui';
 import type { LegalDocumentType } from '@/lib/compliance/legal-acceptances';
@@ -70,7 +71,9 @@ function LegalDocumentSection({
           onValueChange={onChange}
           testID={`legal-switch-${documentType}`}
           accessibilityLabel={title}
-          accessibilityHint={translate('accessibility.common.toggle_hint')}
+          accessibilityHint={translate(
+            'accessibility.common.toggleHint' as any
+          )}
         />
       </View>
       <Text className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -82,14 +85,17 @@ function LegalDocumentSection({
 
 function LegalConfirmationHeader(): React.ReactElement {
   return (
-    <View className="mb-6">
+    <Animated.View
+      entering={FadeIn.duration(200).reduceMotion(ReduceMotion.System)}
+      className="mb-6"
+    >
       <Text className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">
         {translate('cannabis.legal_confirmation_title')}
       </Text>
       <Text className="mt-2 text-base text-neutral-700 dark:text-neutral-300">
         {translate('cannabis.legal_confirmation_subtitle')}
       </Text>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -103,7 +109,12 @@ function LegalConfirmationActions({
   isAcceptDisabled: boolean;
 }): React.ReactElement {
   return (
-    <View className="mt-6 gap-3">
+    <Animated.View
+      entering={FadeIn.delay(80)
+        .duration(200)
+        .reduceMotion(ReduceMotion.System)}
+      className="mt-6 gap-3"
+    >
       <Button
         label={translate('cannabis.legal_confirmation_accept_all')}
         onPress={onAccept}
@@ -124,7 +135,7 @@ function LegalConfirmationActions({
           {translate('cannabis.legal_confirmation_all_required')}
         </Text>
       )}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -157,7 +168,8 @@ export function LegalConfirmationModal({
   if (!isVisible) return null;
 
   return (
-    <View
+    <Animated.View
+      entering={FadeIn.duration(200).reduceMotion(ReduceMotion.System)}
       className="flex-1 bg-white dark:bg-neutral-900"
       testID="legal-confirmation-modal"
     >
@@ -168,29 +180,49 @@ export function LegalConfirmationModal({
         <View className="flex-1 px-6 py-10">
           <LegalConfirmationHeader />
 
-          <LegalDocumentSection
-            documentType="terms"
-            title={translate('cannabis.legal_confirmation_terms_label')}
-            summary={translate('cannabis.legal_confirmation_terms_summary')}
-            accepted={acceptances.termsOfService}
-            onChange={setTermsOfService}
-          />
+          <Animated.View
+            entering={FadeIn.delay(40)
+              .duration(160)
+              .reduceMotion(ReduceMotion.System)}
+          >
+            <LegalDocumentSection
+              documentType="terms"
+              title={translate('cannabis.legal_confirmation_terms_label')}
+              summary={translate('cannabis.legal_confirmation_terms_summary')}
+              accepted={acceptances.termsOfService}
+              onChange={setTermsOfService}
+            />
+          </Animated.View>
 
-          <LegalDocumentSection
-            documentType="privacy"
-            title={translate('cannabis.legal_confirmation_privacy_label')}
-            summary={translate('cannabis.legal_confirmation_privacy_summary')}
-            accepted={acceptances.privacyPolicy}
-            onChange={setPrivacyPolicy}
-          />
+          <Animated.View
+            entering={FadeIn.delay(80)
+              .duration(160)
+              .reduceMotion(ReduceMotion.System)}
+          >
+            <LegalDocumentSection
+              documentType="privacy"
+              title={translate('cannabis.legal_confirmation_privacy_label')}
+              summary={translate('cannabis.legal_confirmation_privacy_summary')}
+              accepted={acceptances.privacyPolicy}
+              onChange={setPrivacyPolicy}
+            />
+          </Animated.View>
 
-          <LegalDocumentSection
-            documentType="cannabis"
-            title={translate('cannabis.legal_confirmation_cannabis_label')}
-            summary={translate('cannabis.legal_confirmation_cannabis_summary')}
-            accepted={acceptances.cannabisPolicy}
-            onChange={setCannabisPolicy}
-          />
+          <Animated.View
+            entering={FadeIn.delay(120)
+              .duration(160)
+              .reduceMotion(ReduceMotion.System)}
+          >
+            <LegalDocumentSection
+              documentType="cannabis"
+              title={translate('cannabis.legal_confirmation_cannabis_label')}
+              summary={translate(
+                'cannabis.legal_confirmation_cannabis_summary'
+              )}
+              accepted={acceptances.cannabisPolicy}
+              onChange={setCannabisPolicy}
+            />
+          </Animated.View>
 
           <LegalConfirmationActions
             onAccept={handleAccept}
@@ -199,7 +231,7 @@ export function LegalConfirmationModal({
           />
         </View>
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 }
 

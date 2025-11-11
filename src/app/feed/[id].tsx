@@ -5,7 +5,9 @@ import { ScrollView } from 'react-native';
 
 import { useComments, usePost } from '@/api/community';
 import { CannabisEducationalBanner } from '@/components/cannabis-educational-banner';
-import { CommentForm, CommentList, PostCard } from '@/components/community';
+import { CommentForm } from '@/components/community/comment-form';
+import { CommentList } from '@/components/community/comment-list';
+import { PostCard } from '@/components/community/post-card';
 import { ModerationActions } from '@/components/moderation-actions';
 import {
   ActivityIndicator,

@@ -1,0 +1,440 @@
+name: Performance Budgets
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - '.maestro/performance/**'
+      - 'scripts/ci/performance-validation.js'
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      device:
+        description: 'Device to test'
+        required: true
+        default: 'Pixel 6a Emulator'
+        type: choice
+        options:
+          - Pixel 6a Emulator
+          - iPhone 12 Simulator
+          - both
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9'
+  JAVA_VERSION: '17'
+  MAESTRO_VERSION: '1.40.0'
+
+jobs:
+  # ============================================================================
+  # Android Performance Budget Validation
+  # ============================================================================
+  android-budgets:
+    name: Android Performance Budgets
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.device == 'Pixel 6a Emulator' || github.event.inputs.device == 'both'
+    timeout-minutes: 60
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test-suite:
+          - name: startup
+            file: .maestro/performance/startup-performance.yaml
+            description: Startup TTI ≤1.8s
+          - name: navigation
+            file: .maestro/performance/navigation-performance.yaml
+            description: Navigation P95 ≤250ms
+          - name: scroll
+            file: .maestro/community/scroll-performance.yaml
+            description: Scroll P95 ≤16.7ms, FPS ≥58
+          - name: sync
+            file: .maestro/performance/sync-performance.yaml
+            description: Sync P95 ≤2.5s for 500 items
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm-install
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Maestro
+        run: |
+          pnpm run install-maestro
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+
+      - name: Build Android Release APK
+        env:
+          BUILD_TYPE: release
+        run: |
+          cd android
+          ./gradlew assembleRelease
+          cd ..
+
+      - name: Start Android Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6a
+          script: echo "Emulator started"
+
+      - name: Install APK on Emulator
+        run: |
+          adb install android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Seed Test Database
+        if: matrix.test-suite.name == 'sync' || matrix.test-suite.name == 'scroll'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          # TODO: Implement data seeding script
+          echo "Seeding database with test data for ${{ matrix.test-suite.name }}"
+          # pnpm run test:seed --posts=1000 --plants=50
+
+      - name: Start Perfetto Trace Collection
+        run: |
+          cat << 'EOF' | adb shell "perfetto -c - --txt -o /data/misc/perfetto-traces/trace-${{ matrix.test-suite.name }}" &
+          buffers: {
+            size_kb: 63488
+            fill_policy: RING_BUFFER
+          }
+          data_sources: {
+            config {
+              name: "linux.ftrace"
+              ftrace_config {
+                ftrace_events: "sched/sched_switch"
+                ftrace_events: "sched/sched_wakeup"
+                ftrace_events: "power/cpu_frequency"
+                ftrace_events: "kmem/rss_stat"
+              }
+            }
+          }
+          data_sources: {
+            config {
+              name: "android.surfaceflinger.frame"
+            }
+          }
+          duration_ms: 60000
+          EOF
+          echo $! > perfetto-pid-${{ matrix.test-suite.name }}.txt
+          sleep 2
+
+      - name: Run Maestro Performance Test - ${{ matrix.test-suite.name }}
+        env:
+          APP_ID: com.growbro.app
+          BUILD_TYPE: release
+          PLATFORM: android
+          DEVICE_MODEL: Pixel 6a Emulator
+          OS_VERSION: Android 13
+          BUILD_HASH: ${{ github.sha }}
+          DATASET_SIZE: ${{ matrix.test-suite.name == 'sync' && '500' || '1000' }}
+        run: |
+          mkdir -p maestro-results-${{ matrix.test-suite.name }}
+          maestro test ${{ matrix.test-suite.file }} \
+            --format junit \
+            --output maestro-results-${{ matrix.test-suite.name }}/results.xml
+
+      - name: Stop Perfetto Trace Collection
+        if: always()
+        run: |
+          if [ -f perfetto-pid-${{ matrix.test-suite.name }}.txt ]; then
+            kill $(cat perfetto-pid-${{ matrix.test-suite.name }}.txt) || true
+            sleep 2
+            adb pull /data/misc/perfetto-traces/trace-${{ matrix.test-suite.name }} perfetto-trace-${{ matrix.test-suite.name }}.pb || true
+          fi
+
+      - name: Collect RN Performance Metrics
+        if: always()
+        run: |
+          adb pull /sdcard/Android/data/com.growbro.app/files/performance-${{ matrix.test-suite.name }}.json rn-performance-${{ matrix.test-suite.name }}.json || true
+
+      - name: Validate Performance Budget - ${{ matrix.test-suite.name }}
+        if: always()
+        env:
+          BUILD_TYPE: release
+          PLATFORM: android
+          DEVICE_MODEL: Pixel 6a Emulator
+          OS_VERSION: Android 13
+          BUILD_HASH: ${{ github.sha }}
+          DATASET_SIZE: ${{ matrix.test-suite.name == 'sync' && '500' || '1000' }}
+          MAESTRO_OUTPUT_DIR: maestro-results-${{ matrix.test-suite.name }}
+          PERFETTO_TRACE_PATH: perfetto-trace-${{ matrix.test-suite.name }}.pb
+          RN_PERF_JSON_PATH: rn-performance-${{ matrix.test-suite.name }}.json
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          node scripts/ci/performance-validation.js
+
+      - name: Analyze Performance Trends - ${{ matrix.test-suite.name }}
+        if: always() && github.ref == 'refs/heads/main'
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          BUILD_HASH: ${{ github.sha }}
+          PLATFORM: android
+          DEVICE_MODEL: Pixel 6a Emulator
+          PERFORMANCE_REPORT_PATH: maestro-results-${{ matrix.test-suite.name }}/performance-report.json
+          TREND_WINDOW_DAYS: 7
+          TREND_THRESHOLD: 0.1
+        run: |
+          node scripts/ci/performance-trend-validator.js || echo "Trend analysis failed (non-blocking)"
+
+      - name: Upload Performance Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ matrix.test-suite.name }}-artifacts
+          path: |
+            maestro-results-${{ matrix.test-suite.name }}/
+            perfetto-trace-${{ matrix.test-suite.name }}.pb
+            rn-performance-${{ matrix.test-suite.name }}.json
+          retention-days: 30
+
+  # ============================================================================
+  # iOS Performance Budget Validation
+  # ============================================================================
+  ios-budgets:
+    name: iOS Performance Budgets
+    runs-on: macos-14
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.device == 'iPhone 12 Simulator' || github.event.inputs.device == 'both'
+    timeout-minutes: 90
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test-suite:
+          - name: startup
+            file: .maestro/performance/startup-performance.yaml
+            description: Startup TTI ≤1.3s
+          - name: navigation
+            file: .maestro/performance/navigation-performance.yaml
+            description: Navigation P95 ≤250ms
+          - name: scroll
+            file: .maestro/community/scroll-performance.yaml
+            description: Scroll P95 ≤16.7ms, FPS ≥58
+          - name: sync
+            file: .maestro/performance/sync-performance.yaml
+            description: Sync P95 ≤2.5s for 500 items
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm-install
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install Maestro
+        run: |
+          pnpm run install-maestro
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          pod install
+          cd ..
+
+      - name: Build iOS Release
+        env:
+          BUILD_TYPE: release
+        run: |
+          xcodebuild -workspace ios/GrowBro.xcworkspace \
+            -scheme GrowBro \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -derivedDataPath ios/build
+
+      - name: Start iOS Simulator
+        run: |
+          xcrun simctl boot "iPhone 12" || true
+          sleep 10
+
+      - name: Install App on Simulator
+        run: |
+          xcrun simctl install booted ios/build/Build/Products/Release-iphonesimulator/GrowBro.app
+
+      - name: Seed Test Database
+        if: matrix.test-suite.name == 'sync' || matrix.test-suite.name == 'scroll'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          echo "Seeding database with test data for ${{ matrix.test-suite.name }}"
+          # pnpm run test:seed --posts=1000 --plants=50
+
+      - name: Run Maestro Performance Test - ${{ matrix.test-suite.name }}
+        env:
+          APP_ID: com.growbro.app
+          BUILD_TYPE: release
+          PLATFORM: ios
+          DEVICE_MODEL: iPhone 12 Simulator
+          OS_VERSION: iOS 17
+          BUILD_HASH: ${{ github.sha }}
+          DATASET_SIZE: ${{ matrix.test-suite.name == 'sync' && '500' || '1000' }}
+        run: |
+          mkdir -p maestro-results-${{ matrix.test-suite.name }}
+          maestro test ${{ matrix.test-suite.file }} \
+            --format junit \
+            --output maestro-results-${{ matrix.test-suite.name }}/results.xml
+
+      - name: Validate Performance Budget - ${{ matrix.test-suite.name }}
+        if: always()
+        env:
+          BUILD_TYPE: release
+          PLATFORM: ios
+          DEVICE_MODEL: iPhone 12 Simulator
+          OS_VERSION: iOS 17
+          BUILD_HASH: ${{ github.sha }}
+          DATASET_SIZE: ${{ matrix.test-suite.name == 'sync' && '500' || '1000' }}
+          MAESTRO_OUTPUT_DIR: maestro-results-${{ matrix.test-suite.name }}
+          RN_PERF_JSON_PATH: rn-performance-${{ matrix.test-suite.name }}.json
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          node scripts/ci/performance-validation.js
+
+      - name: Analyze Performance Trends - ${{ matrix.test-suite.name }}
+        if: always() && github.ref == 'refs/heads/main'
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          BUILD_HASH: ${{ github.sha }}
+          PLATFORM: ios
+          DEVICE_MODEL: iPhone 12 Simulator
+          PERFORMANCE_REPORT_PATH: maestro-results-${{ matrix.test-suite.name }}/performance-report.json
+          TREND_WINDOW_DAYS: 7
+          TREND_THRESHOLD: 0.1
+        run: |
+          node scripts/ci/performance-trend-validator.js || echo "Trend analysis failed (non-blocking)"
+
+      - name: Upload Performance Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-${{ matrix.test-suite.name }}-artifacts
+          path: |
+            maestro-results-${{ matrix.test-suite.name }}/
+            rn-performance-${{ matrix.test-suite.name }}.json
+          retention-days: 30
+
+  # ============================================================================
+  # Performance Budget Summary
+  # ============================================================================
+  budget-summary:
+    name: Performance Budget Summary
+    runs-on: ubuntu-latest
+    needs: [android-budgets, ios-budgets]
+    if: always()
+
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Generate Summary Report
+        run: |
+          echo "# Performance Budget Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Budget Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Suite | Platform | Status | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|----------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+
+          for dir in artifacts/*/; do
+            if [ -f "$dir/performance-report.json" ]; then
+              report=$(cat "$dir/performance-report.json")
+              passed=$(echo "$report" | jq -r '.passed')
+              platform=$(echo "$report" | jq -r '.platform')
+              device=$(echo "$report" | jq -r '.device')
+              
+              status="❌ FAILED"
+              if [ "$passed" = "true" ]; then
+                status="✅ PASSED"
+              fi
+              
+              echo "| $(basename $dir) | $platform ($device) | $status | See artifacts |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Budget Thresholds" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Startup TTI**: Pixel 6a ≤1.8s, iPhone 12 ≤1.3s" >> $GITHUB_STEP_SUMMARY
+          echo "- **Navigation P95**: ≤250ms" >> $GITHUB_STEP_SUMMARY
+          echo "- **Scroll**: P95 ≤16.7ms, dropped frames ≤1%, avg FPS ≥58" >> $GITHUB_STEP_SUMMARY
+          echo "- **Sync P95**: ≤2.5s for 500 items on LTE" >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment PR with Budget Summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            let summary = '## 📊 Performance Budget Summary\n\n';
+            summary += '| Test Suite | Platform | Status | Metrics |\n';
+            summary += '|------------|----------|--------|----------|\n';
+
+            const artifactDirs = fs.readdirSync('artifacts');
+
+            for (const dir of artifactDirs) {
+              const reportPath = path.join('artifacts', dir, 'performance-report.json');
+              if (fs.existsSync(reportPath)) {
+                const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+                const status = report.passed ? '✅ PASSED' : '❌ FAILED';
+                const metrics = [];
+                
+                if (report.metrics.startup) {
+                  metrics.push(`TTI: ${report.metrics.startup.tti}ms`);
+                }
+                if (report.metrics.navigation) {
+                  metrics.push(`Nav P95: ${report.metrics.navigation.p95TransitionMs}ms`);
+                }
+                if (report.metrics.fps) {
+                  metrics.push(`FPS: ${report.metrics.fps.avgFps}`);
+                }
+                if (report.metrics.sync) {
+                  metrics.push(`Sync P95: ${report.metrics.sync.syncP95Ms}ms`);
+                }
+                
+                summary += `| ${dir} | ${report.platform} | ${status} | ${metrics.join(', ')} |\n`;
+              }
+            }
+
+            summary += '\n### Budget Thresholds\n';
+            summary += '- **Startup TTI**: Pixel 6a ≤1.8s, iPhone 12 ≤1.3s\n';
+            summary += '- **Navigation P95**: ≤250ms\n';
+            summary += '- **Scroll**: P95 ≤16.7ms, dropped frames ≤1%, avg FPS ≥58\n';
+            summary += '- **Sync P95**: ≤2.5s for 500 items on LTE\n';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });

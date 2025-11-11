@@ -1,7 +1,8 @@
 import * as Crypto from 'expo-crypto';
 
-import { getItem, removeItem, setItem } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
+
+import { mmkvAuthStorageSync } from './auth-storage';
 
 const TOKEN = 'token';
 
@@ -55,9 +56,51 @@ export function getStableSessionId(): string | null {
   return generateStableHash(token.refresh);
 }
 
-export const getToken = () => getItem<TokenType>(TOKEN);
-export const removeToken = () => removeItem(TOKEN);
-export const setToken = (value: TokenType) => setItem<TokenType>(TOKEN, value);
+function readToken(): TokenType | null {
+  const serialized = mmkvAuthStorageSync.getItem(TOKEN);
+  if (!serialized) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(serialized) as TokenType;
+  } catch (error) {
+    console.warn('[auth] Failed to parse stored token, clearing value.', error);
+    try {
+      mmkvAuthStorageSync.removeItem(TOKEN);
+    } catch (removeError) {
+      console.warn(
+        '[auth] Failed to remove corrupted token from storage.',
+        removeError
+      );
+    }
+    return null;
+  }
+}
+
+export const getToken = () => readToken();
+
+export const removeToken = () => {
+  try {
+    mmkvAuthStorageSync.removeItem(TOKEN);
+  } catch (error) {
+    console.error(
+      '[auth] Failed to clear auth token from secure storage:',
+      error
+    );
+  }
+};
+
+export const setToken = (value: TokenType) => {
+  try {
+    mmkvAuthStorageSync.setItem(TOKEN, JSON.stringify(value));
+  } catch (error) {
+    console.error(
+      '[auth] Failed to persist auth token to secure storage:',
+      error
+    );
+  }
+};
 
 /**
  * Checks if a session has been revoked remotely by its refresh token.

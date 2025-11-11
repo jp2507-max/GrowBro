@@ -15,7 +15,10 @@ interface TemplateListItemProps {
   onPress: (template: CommunityTemplate) => void;
 }
 
-export function TemplateListItem({ template, onPress }: TemplateListItemProps) {
+export const TemplateListItem = React.memo(function TemplateListItem({
+  template,
+  onPress,
+}: TemplateListItemProps) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -79,4 +82,6 @@ export function TemplateListItem({ template, onPress }: TemplateListItemProps) {
       </View>
     </Pressable>
   );
-}
+});
+
+TemplateListItem.displayName = 'TemplateListItem';

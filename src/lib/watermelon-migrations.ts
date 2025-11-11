@@ -1155,5 +1155,24 @@ export const migrations = schemaMigrations({
         },
       ],
     },
+    // Migration from version 31 to 32: Add media variant columns to posts table
+    {
+      toVersion: 32,
+      steps: [
+        addColumns({
+          table: 'posts',
+          columns: [
+            { name: 'media_resized_uri', type: 'string', isOptional: true },
+            { name: 'media_thumbnail_uri', type: 'string', isOptional: true },
+            { name: 'media_blurhash', type: 'string', isOptional: true },
+            { name: 'media_thumbhash', type: 'string', isOptional: true },
+            { name: 'media_width', type: 'number', isOptional: true },
+            { name: 'media_height', type: 'number', isOptional: true },
+            { name: 'media_aspect_ratio', type: 'number', isOptional: true },
+            { name: 'media_bytes', type: 'number', isOptional: true },
+          ],
+        }),
+      ],
+    },
   ],
 });

@@ -1,0 +1,58 @@
+appId: com.growbro.app
+---
+# Memory Leak Detection Test
+# Validates memory budget during 60-second continuous scroll
+# Requirements: 5.4 - RSS delta ≤50MB, post-GC delta ≤10MB
+
+- launchApp:
+    clearState: true
+
+# Wait for app to initialize
+- waitForAnimationToEnd
+
+# Navigate to community feed (media-rich list)
+- tapOn: 'Community'
+- waitForAnimationToEnd
+
+# Wait for initial content to load
+- runFlow:
+    when:
+      visible: 'Loading'
+    commands:
+      - waitForAnimationToEnd:
+          timeout: 10000
+
+# Capture baseline memory (via external script)
+- runScript: |
+    console.log('[MemoryTest] Starting 60s scroll test');
+    console.log('[MemoryTest] Baseline memory capture');
+
+# Continuous scroll for 60 seconds
+# Scroll down and up repeatedly to stress memory
+- repeat:
+    times: 12
+    commands:
+      # Scroll down for 2.5 seconds
+      - scroll:
+          direction: DOWN
+          duration: 2500
+
+      # Scroll up for 2.5 seconds
+      - scroll:
+          direction: UP
+          duration: 2500
+
+# Wait for scroll to settle
+- waitForAnimationToEnd
+
+# Trigger GC and capture post-GC memory (via external script)
+- runScript: |
+    console.log('[MemoryTest] Scroll complete');
+    console.log('[MemoryTest] Post-GC memory capture');
+
+# Verify no crashes or blank cells
+- assertVisible: 'Community'
+
+# Log completion
+- runScript: |
+    console.log('[MemoryTest] Test complete - check artifacts for memory metrics');

@@ -200,6 +200,10 @@ export default function Feed() {
     []
   );
   const keyExtractor = React.useCallback((item: Post) => String(item.id), []);
+  const getItemType = React.useCallback(
+    (item: Post) => (item.media_uri ? 'post-media' : 'post-text'),
+    []
+  );
   const onShareUpdatePress = React.useCallback(() => {
     router.push('/add-post');
   }, [router]);
@@ -226,6 +230,7 @@ export default function Feed() {
         data={listData}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
+        getItemType={getItemType}
         contentContainerStyle={contentPaddingBottom}
         ListHeaderComponent={
           <HomeListHeader onShareUpdatePress={onShareUpdatePress} />

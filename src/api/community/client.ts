@@ -904,10 +904,40 @@ export class CommunityApiClient implements CommunityAPI {
       return [];
     }
 
+    // Collect all media paths that need signed URLs
+    const mediaPaths: string[] = [];
+    posts.forEach((post: any) => {
+      if (post.media_uri) mediaPaths.push(post.media_uri);
+      if (post.media_resized_uri) mediaPaths.push(post.media_resized_uri);
+      if (post.media_thumbnail_uri) mediaPaths.push(post.media_thumbnail_uri);
+    });
+
+    // Generate signed URLs for all media in one batch request
+    const signedUrlMap = await this.generateSignedUrls(mediaPaths);
+
+    // Helper to strip bucket prefix from path for map lookup
+    // Edge function returns keys without the 'community-posts/' prefix
+    const BUCKET_PREFIX = 'community-posts/';
+    const getSignedUrl = (path: string | undefined): string | undefined => {
+      if (!path) return undefined;
+      const lookupKey = path.startsWith(BUCKET_PREFIX)
+        ? path.slice(BUCKET_PREFIX.length)
+        : path;
+      return signedUrlMap[lookupKey];
+    };
+
+    // Transform storage paths to signed URLs
+    const postsWithSignedUrls = posts.map((post: any) => ({
+      ...post,
+      media_uri: getSignedUrl(post.media_uri),
+      media_resized_uri: getSignedUrl(post.media_resized_uri),
+      media_thumbnail_uri: getSignedUrl(post.media_thumbnail_uri),
+    }));
+
     // If user is authenticated and we need user like status, fetch all likes for these posts in one query
     let userLikesMap = new Map<string, boolean>();
     if (userId && includeUserLikes) {
-      const postIds = posts.map((post: any) => post.id);
+      const postIds = postsWithSignedUrls.map((post: any) => post.id);
       const { data: likes } = await this.client
         .from('post_likes')
         .select('post_id')
@@ -922,13 +952,75 @@ export class CommunityApiClient implements CommunityAPI {
     }
 
     // Map the results to include user_has_liked
-    return posts.map((post: any) => ({
+    return postsWithSignedUrls.map((post: any) => ({
       ...post,
       userId: post.user_id,
       like_count: post.like_count ?? 0,
       comment_count: post.comment_count ?? 0,
       user_has_liked: userLikesMap.get(post.id) ?? false,
     }));
+  }
+
+  /**
+   * Generate signed URLs from storage paths via Edge Function
+   * Uses service-role key on backend to bypass RLS restrictions while maintaining security
+   * @param storagePaths - Array of storage paths to generate signed URLs for
+   * @returns Map of path (without prefix) -> signed URL
+   */
+  private async generateSignedUrls(
+    storagePaths: string[]
+  ): Promise<Record<string, string>> {
+    if (storagePaths.length === 0) {
+      return {};
+    }
+
+    const BUCKET_PREFIX = 'community-posts/';
+
+    // Helper to normalize path by stripping bucket prefix for map keys
+    const normalizeKey = (path: string): string => {
+      return path.startsWith(BUCKET_PREFIX)
+        ? path.slice(BUCKET_PREFIX.length)
+        : path;
+    };
+
+    try {
+      const { data: session } = await this.client.auth.getSession();
+      if (!session?.session?.access_token) {
+        console.error(
+          '[CommunityApiClient] No active session for signed URL generation'
+        );
+        // Return identity map with normalized keys to match getSignedUrl lookup
+        return Object.fromEntries(
+          storagePaths.map((path) => [normalizeKey(path), path])
+        );
+      }
+
+      const response = await this.client.functions.invoke('get-media-urls', {
+        body: { paths: storagePaths },
+      });
+
+      if (response.error) {
+        console.error(
+          '[CommunityApiClient] Failed to generate signed URLs:',
+          response.error
+        );
+        // Return identity map with normalized keys to match getSignedUrl lookup
+        return Object.fromEntries(
+          storagePaths.map((path) => [normalizeKey(path), path])
+        );
+      }
+
+      return response.data?.urls ?? {};
+    } catch (error) {
+      console.error(
+        '[CommunityApiClient] Exception generating signed URLs:',
+        error
+      );
+      // Return identity map with normalized keys to match getSignedUrl lookup
+      return Object.fromEntries(
+        storagePaths.map((path) => [normalizeKey(path), path])
+      );
+    }
   }
 }
 

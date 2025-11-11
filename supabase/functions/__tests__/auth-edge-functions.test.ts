@@ -104,13 +104,16 @@ Deno.test('Edge Function: capture-device-metadata - captures device info on sign
   assertExists(signInData.session);
 
   // Call capture-device-metadata Edge Function
+  const accessToken = signInData.session?.access_token;
+  assertExists(accessToken, 'Sign in should return access token');
+
   const response = await fetch(
     `${SUPABASE_URL}/functions/v1/capture-device-metadata`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        Authorization: `Bearer ${accessToken}`,
         'User-Agent': 'Test-Agent/1.0 (iOS 17.0; iPhone 14 Pro)',
       },
       body: JSON.stringify({

@@ -1,7 +1,7 @@
 import { useScrollToTop } from '@react-navigation/native';
 import { FlashList, type FlashListProps } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   type ListRenderItemInfo,
   StyleSheet,
@@ -192,6 +192,7 @@ export default function PlantsScreen(): React.ReactElement {
   );
 
   const keyExtractor = React.useCallback((item: Plant) => item.id, []);
+  const getItemType = useCallback(() => 'plant', []);
 
   const listEmpty = React.useMemo(() => {
     if (isSkeletonVisible) return <PlantsSkeletonList />;
@@ -244,6 +245,7 @@ export default function PlantsScreen(): React.ReactElement {
             React.PropsWithChildren<ViewProps>
           >
         }
+        getItemType={getItemType}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.4}
         onScroll={scrollHandler}

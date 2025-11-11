@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react-native';
 import React from 'react';
 
+import { DragDropProvider } from '@/components/calendar/drag-drop-provider';
 import { Text } from '@/components/ui';
 import type { AgendaItem } from '@/types/agenda';
 
@@ -23,11 +24,13 @@ describe('AgendaList', () => {
     ];
 
     render(
-      <AgendaList
-        data={data}
-        isLoading={false}
-        renderItem={({ item }) => <Text>{item.id}</Text>}
-      />
+      <DragDropProvider>
+        <AgendaList
+          data={data}
+          isLoading={false}
+          renderItem={({ item }) => <Text>{item.id}</Text>}
+        />
+      </DragDropProvider>
     );
 
     expect(screen.getByText('h-1')).toBeTruthy();
@@ -35,7 +38,12 @@ describe('AgendaList', () => {
   });
 
   it('shows empty state when no data and not loading', () => {
-    render(<AgendaList data={[]} isLoading={false} renderItem={() => null} />);
-    expect(screen.getByText('Sorry! No data found')).toBeTruthy();
+    render(
+      <DragDropProvider>
+        <AgendaList data={[]} isLoading={false} renderItem={() => null} />
+      </DragDropProvider>
+    );
+    expect(screen.getByText('No items')).toBeTruthy();
+    expect(screen.getByText('There are no items to display.')).toBeTruthy();
   });
 });

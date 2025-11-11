@@ -49,6 +49,12 @@ export {
 
 // Session Management
 export {
+  useMfaChallengeAndVerify,
+  useMfaEnrollTotp,
+  useMfaFactors,
+  useMfaUnenroll,
+} from './use-mfa';
+export {
   useCheckSessionRevocation,
   useRevokeAllOtherSessions,
   useRevokeSession,

@@ -23,6 +23,7 @@ import type { Task } from '@/types/calendar';
 
 type Props = {
   task: Task;
+  testID?: string;
 };
 
 type AgendaItemBodyProps = {
@@ -33,6 +34,7 @@ type AgendaItemBodyProps = {
   isOpen: boolean;
   onClose: () => void;
   onAction: (event: AccessibilityActionEvent) => void;
+  testID?: string;
 };
 
 function AgendaItemBody({
@@ -42,6 +44,7 @@ function AgendaItemBody({
   isOpen,
   onClose,
   onAction,
+  testID,
 }: AgendaItemBodyProps): React.ReactElement {
   const targets = extractTargets(task);
   // Pass handler directly; no need to wrap with useCallback
@@ -63,7 +66,7 @@ function AgendaItemBody({
           ]}
           onAccessibilityAction={onAction}
         >
-          <AgendaItemRow task={task} />
+          <AgendaItemRow task={task} testID={testID} />
         </Animated.View>
 
         <MoveToDateMenu
@@ -259,7 +262,10 @@ function useDragGesture(options: {
   return { pan, animatedStyle };
 }
 
-export function DraggableAgendaItem({ task }: Props): React.ReactElement {
+export function DraggableAgendaItem({
+  task,
+  testID,
+}: Props): React.ReactElement {
   const {
     startDrag,
     cancelDrag,
@@ -314,6 +320,7 @@ export function DraggableAgendaItem({ task }: Props): React.ReactElement {
       isOpen={isMoveMenuOpen}
       onClose={() => setIsMoveMenuOpen(false)}
       onAction={onAccessibilityAction}
+      testID={testID}
     />
   );
 }

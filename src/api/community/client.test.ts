@@ -56,6 +56,15 @@ describe('CommunityApiClient', () => {
               error: null,
             });
           }
+          if (functionName === 'get-media-urls') {
+            // Mock signed URL generation - return identity map
+            return Promise.resolve({
+              data: {
+                urls: {},
+              },
+              error: null,
+            });
+          }
           return Promise.resolve({ data: null, error: null });
         }),
       },
@@ -85,30 +94,40 @@ describe('CommunityApiClient', () => {
         body: 'Test post',
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
+        like_count: 0,
+        comment_count: 0,
       };
 
-      const mockChain = {
+      // Query chain for the main posts query (passed to getPostsWithCounts)
+      const queryChain = {
+        select: jest.fn().mockResolvedValue({ data: [mockPost], error: null }),
+      };
+
+      // Initial query builder
+      const initialChain = {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         is: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({ data: mockPost, error: null }),
       };
+      // Hook into the final .select() call to return our query chain
+      Object.assign(initialChain, queryChain);
 
-      const countChain = {
+      // User likes query
+      const likesChain = {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        count: jest.fn().mockResolvedValue({ count: 0 }),
+        in: jest.fn().mockResolvedValue({ data: [], error: null }),
       };
 
       (mockSupabaseClient.from as jest.Mock).mockImplementation(
         (table: string) => {
-          if (table === 'posts') return mockChain;
-          if (table === 'post_likes') return countChain;
+          if (table === 'posts') return initialChain;
+          if (table === 'post_likes') return likesChain;
           return {};
         }
       );
       (mockSupabaseClient.auth.getSession as jest.Mock).mockResolvedValue({
-        data: { session: null },
+        data: { session: { user: { id: 'user-1' } } },
       });
 
       const post = await client.getPost('post-1');
@@ -118,20 +137,34 @@ describe('CommunityApiClient', () => {
     });
 
     it('should throw error when post fetch fails', async () => {
-      const mockChain = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        is: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({
+      // Query chain for failed query
+      const queryChain = {
+        select: jest.fn().mockResolvedValue({
           data: null,
           error: { message: 'Post not found' },
         }),
       };
 
-      (mockSupabaseClient.from as jest.Mock).mockReturnValue(mockChain);
+      // Initial query builder
+      const initialChain = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        is: jest.fn().mockReturnThis(),
+      };
+      Object.assign(initialChain, queryChain);
+
+      (mockSupabaseClient.from as jest.Mock).mockImplementation(
+        (table: string) => {
+          if (table === 'posts') return initialChain;
+          return {};
+        }
+      );
+      (mockSupabaseClient.auth.getSession as jest.Mock).mockResolvedValue({
+        data: { session: { user: { id: 'user-1' } } },
+      });
 
       await expect(client.getPost('invalid-id')).rejects.toThrow(
-        'Failed to fetch post'
+        'Failed to fetch posts with counts'
       );
     });
   });
@@ -701,8 +734,22 @@ describe('CommunityApiClient', () => {
         mockSession
       );
 
+      // First from('posts') call - count query
       const countChain = {
-        select: jest.fn().mockResolvedValue({ count: 100 }),
+        select: jest.fn().mockReturnThis(),
+        is: jest.fn().mockReturnThis(),
+      };
+      (countChain as any).count = jest
+        .fn()
+        .mockResolvedValue({ count: 100, error: null });
+
+      // Second from('posts') call - data query builder
+      const dataQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        is: jest.fn().mockReturnThis(),
+        order: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        lt: jest.fn().mockReturnThis(),
       };
 
       const mockPosts = [
@@ -710,24 +757,37 @@ describe('CommunityApiClient', () => {
           id: 'post-1',
           body: 'Test post 1',
           created_at: '2024-01-02T00:00:00Z',
+          like_count: 0,
+          comment_count: 0,
         },
         {
           id: 'post-2',
           body: 'Test post 2',
           created_at: '2024-01-01T00:00:00Z',
+          like_count: 0,
+          comment_count: 0,
         },
       ];
 
-      const queryChain = {
-        select: jest.fn().mockResolvedValue({
-          data: mockPosts,
-          error: null,
-        }),
-      };
+      // Third from('posts') call - inside getPostsWithCounts, this query builder's select is called
+      // We need dataQueryBuilder.select() to return our mock data
+      (dataQueryBuilder.select as jest.Mock).mockResolvedValue({
+        data: mockPosts,
+        error: null,
+      });
 
-      (mockSupabaseClient.from as jest.Mock)
-        .mockReturnValueOnce(countChain)
-        .mockReturnValueOnce(queryChain);
+      let postCallCount = 0;
+      (mockSupabaseClient.from as jest.Mock).mockImplementation(
+        (table: string) => {
+          if (table === 'posts') {
+            postCallCount++;
+            // First call: count query
+            // Second call: data query builder (used in getPostsWithCounts)
+            return postCallCount === 1 ? countChain : dataQueryBuilder;
+          }
+          return {};
+        }
+      );
 
       const result = await client.getPosts('2024-01-03T00:00:00Z', 20);
 

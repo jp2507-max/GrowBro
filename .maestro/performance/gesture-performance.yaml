@@ -1,0 +1,86 @@
+appId: com.growbro.app
+---
+# Gesture Performance Test
+# Tests continuous pan/drag gestures to validate P95 input→render latency ≤50ms
+# Requirements: 2.3, 2.4
+
+- launchApp:
+    clearState: true
+
+# Wait for app to fully load
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Navigate to calendar (has draggable agenda items)
+- tapOn:
+    id: 'calendar-tab'
+- waitForAnimationToEnd
+
+# Scroll down to ensure we have agenda items
+- scrollUntilVisible:
+    element:
+      id: 'agenda-list'
+    direction: DOWN
+    timeout: 3000
+    visibilityPercentage: 50
+
+# Test 1: Continuous pan gestures on draggable items
+# Perform multiple long-press + drag operations
+- repeat:
+    times: 5
+    commands:
+      # Long press to activate drag (180ms activation)
+      - longPressOn:
+          id: 'agenda-item-row-.*'
+          duration: 200
+
+      # Drag vertically (simulates moving task to different date)
+      - swipe:
+          direction: DOWN
+          duration: 500
+
+      # Wait for animation to complete
+      - waitForAnimationToEnd:
+          timeout: 1000
+
+      # Small delay between gestures
+      - wait: 300
+
+# Test 2: Rapid scroll gestures
+- repeat:
+    times: 10
+    commands:
+      - swipe:
+          direction: DOWN
+          duration: 300
+      - wait: 100
+      - swipe:
+          direction: UP
+          duration: 300
+      - wait: 100
+
+# Test 3: Pinch/zoom gestures (if applicable)
+# Navigate to community feed which may have image interactions
+- tapOn:
+    id: 'community-tab'
+- waitForAnimationToEnd
+
+# Perform continuous scroll on feed
+- repeat:
+    times: 15
+    commands:
+      - swipe:
+          direction: DOWN
+          duration: 400
+      - wait: 50
+
+# Final validation - ensure app is still responsive
+- tapOn:
+    id: 'calendar-tab'
+- waitForAnimationToEnd
+# Success criteria:
+# - No crashes during gesture operations
+# - All animations complete smoothly
+# - App remains responsive throughout
+# - Perfetto trace shows P95 input→render ≤50ms
+# - Dropped frames ≤1%

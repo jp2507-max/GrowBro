@@ -122,6 +122,14 @@ export default function CommunityTemplatesScreen() {
     ),
     [handleTemplatePress]
   );
+  const keyExtractor = React.useCallback(
+    (item: CommunityTemplate) => item.id,
+    []
+  );
+  const getItemType = React.useCallback(
+    (item: CommunityTemplate) => `template-${item.setup}`,
+    []
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
@@ -135,6 +143,8 @@ export default function CommunityTemplatesScreen() {
           <FlashList
             data={templates}
             renderItem={renderTemplate}
+            keyExtractor={keyExtractor}
+            getItemType={getItemType}
             contentContainerClassName="px-4 pb-4"
           />
         )}

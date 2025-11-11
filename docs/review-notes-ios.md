@@ -1,6 +1,6 @@
 # iOS Reviewer Notes (GrowBro)
 
-Generated: 2025-09-23T15:17:49.486Z
+Generated: 2025-11-11T10:44:39.646Z
 
 > Purpose: Provide App Review with quick verification notes — demo login, age-gate, UGC safeguards, permissions, and account deletion. GrowBro is an educational app for home cannabis cultivation (no commerce).
 

@@ -10,6 +10,7 @@ export * from './image';
 export * from './input';
 export * from './list';
 export * from './modal';
+export * from './optimized-image';
 export * from './progress-bar';
 export * from './select';
 export * from './skeleton';

@@ -67,6 +67,27 @@ const appIconBadgeConfig = {
 
 // eslint-disable-next-line max-lines-per-function
 function createExpoConfig(config) {
+  const toList = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item).trim()).filter(Boolean);
+    }
+    return String(value)
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  };
+
+  const codeSigningCertificate = Env.CODE_SIGNING_CERT_PATH;
+  const codeSigningMetadata = codeSigningCertificate
+    ? {
+        keyId: Env.CODE_SIGNING_KEY_ID ?? 'growbro-main',
+        algorithm: Env.CODE_SIGNING_ALG ?? 'rsa-v1_5-sha256',
+      }
+    : undefined;
+
+  const pinningDomains = toList(Env.SECURITY_PIN_DOMAINS);
+  const pinningHashes = toList(Env.SECURITY_PIN_HASHES);
   const ALLOWED_PUBLIC_KEYS = new Set([
     'EXPO_PUBLIC_SUPABASE_URL',
     'EXPO_PUBLIC_SUPABASE_ANON_KEY',
@@ -108,6 +129,12 @@ function createExpoConfig(config) {
     newArchEnabled: true,
     updates: {
       fallbackToCacheTimeout: 0,
+      ...(codeSigningCertificate
+        ? {
+            codeSigningCertificate,
+            codeSigningMetadata,
+          }
+        : {}),
     },
     assetBundlePatterns: ['**/*'],
     ios: {
@@ -198,6 +225,13 @@ function createExpoConfig(config) {
       ],
       ['app-icon-badge', appIconBadgeConfig],
       ['react-native-edge-to-edge'],
+      [
+        './plugins/with-security-pinning.js',
+        {
+          domains: pinningDomains,
+          hashes: pinningHashes,
+        },
+      ],
       [
         'react-native-vision-camera',
         {

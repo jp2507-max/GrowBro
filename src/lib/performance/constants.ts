@@ -3,7 +3,6 @@
  * These names are used across Sentry and RN Performance for consistent tracking
  */
 export const PERFORMANCE_TRANSACTIONS = {
-  APP_STARTUP: 'app.startup',
   AGENDA_SCROLL: 'agenda.scroll',
   NAVIGATION_PUSH: 'navigation.push',
   SYNC_PULL: 'sync.pull',
@@ -57,6 +56,8 @@ export const SENTRY_PERFORMANCE_CONFIG = {
   ENABLE_NAVIGATION_INSTRUMENTATION: true,
   ENABLE_APP_START_INSTRUMENTATION: true,
   ENABLE_STALL_TRACKING: true,
+  // Maximum duration to wait for performance spans to complete (30 seconds)
+  SPAN_TIMEOUT_MS: 30000,
 } as const;
 
 export type PerformanceTransaction =

@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  type QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -200,7 +205,10 @@ export function useSubmitArticleRating() {
 }
 
 // Extracted helper to keep the mutation hook small and satisfy lint rules.
-function patchHelpArticleCache(queryClient: any, rating: HelpArticleRating) {
+function patchHelpArticleCache(
+  queryClient: QueryClient,
+  rating: HelpArticleRating
+) {
   // Update detail queries (may include locale in key)
   const qc: any = queryClient.getQueryCache?.()
     ? queryClient.getQueryCache().getAll()
@@ -227,16 +235,19 @@ function patchHelpArticleCache(queryClient: any, rating: HelpArticleRating) {
     if (qKey[0] === HELP_ARTICLES_QUERY_KEY) {
       const list = queryClient.getQueryData<HelpArticle[]>(qKey);
       if (list) {
-        queryClient.setQueryData<HelpArticle[]>(qKey, (list) =>
-          list.map((a) =>
-            a.id === rating.articleId
-              ? {
-                  ...a,
-                  helpfulCount: a.helpfulCount + (rating.helpful ? 1 : 0),
-                  notHelpfulCount: a.notHelpfulCount + (rating.helpful ? 0 : 1),
-                }
-              : a
-          )
+        queryClient.setQueryData<HelpArticle[]>(
+          qKey,
+          (list: HelpArticle[] | undefined) =>
+            list?.map((a: HelpArticle) =>
+              a.id === rating.articleId
+                ? {
+                    ...a,
+                    helpfulCount: a.helpfulCount + (rating.helpful ? 1 : 0),
+                    notHelpfulCount:
+                      a.notHelpfulCount + (rating.helpful ? 0 : 1),
+                  }
+                : a
+            )
         );
       }
     }

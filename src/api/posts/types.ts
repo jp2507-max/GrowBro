@@ -7,6 +7,14 @@ export type Post = {
   /** @deprecated Use userId instead. This field will be removed in a future version. */
   user_id?: string;
   media_uri?: string;
+  media_resized_uri?: string;
+  media_thumbnail_uri?: string;
+  media_blurhash?: string;
+  media_thumbhash?: string;
+  media_width?: number;
+  media_height?: number;
+  media_aspect_ratio?: number;
+  media_bytes?: number;
   created_at?: string;
   updated_at?: string;
   deleted_at?: string;

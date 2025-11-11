@@ -2,6 +2,7 @@ import { Env } from '@env';
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 
 import { categorizeError } from '@/lib/error-handling';
+import { registerCertificatePinningInterceptor } from '@/lib/security/certificate-pinner';
 import { computeBackoffMs } from '@/lib/sync/backoff';
 
 import type { GetStrainsParams, Strain, StrainsResponse } from './types';
@@ -52,6 +53,8 @@ export class StrainsApiClient {
           }),
       },
     });
+
+    registerCertificatePinningInterceptor(this.client);
 
     // Add security interceptors to strip sensitive headers from logs/serialization
     this.setupSecurityInterceptors();

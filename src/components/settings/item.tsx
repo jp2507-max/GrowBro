@@ -12,6 +12,7 @@ type ItemProps = {
   rightElement?: React.ReactNode;
   disabled?: boolean;
   testID?: string;
+  description?: string;
 };
 
 export const Item = ({
@@ -22,6 +23,7 @@ export const Item = ({
   rightElement,
   disabled = false,
   testID,
+  description,
 }: ItemProps) => {
   const isPressable = onPress !== undefined && !disabled;
   return (
@@ -34,9 +36,19 @@ export const Item = ({
       disabled={disabled}
       testID={testID}
     >
-      <View className="flex-row items-center">
-        {icon && <View className="pr-2">{icon}</View>}
-        <Text tx={text} className={disabled ? 'opacity-50' : undefined} />
+      <View className="flex-1">
+        <View className="flex-row items-center">
+          {icon && <View className="pr-2">{icon}</View>}
+          <Text tx={text} className={disabled ? 'opacity-50' : undefined} />
+        </View>
+        {description && (
+          <Text
+            className="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
+            testID={`${testID}-description`}
+          >
+            {description}
+          </Text>
+        )}
       </View>
       <View className="flex-row items-center gap-2">
         {rightElement}

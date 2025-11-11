@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -19,6 +20,8 @@ import { configs, parser, plugin } from 'typescript-eslint';
 import growbroDesignTokens from './scripts/eslint/design-tokens/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
+const workletRules = require('./scripts/eslint/worklet-rules/index.js');
 
 export default defineConfig([
   globalIgnores([
@@ -54,10 +57,12 @@ export default defineConfig([
       'react-native': reactNative,
       'react-native-a11y': reactNativeA11y,
       'growbro-design-tokens': growbroDesignTokens,
+      'worklet-rules': workletRules,
     },
     rules: {
       'max-params': ['error', 3],
       'max-lines-per-function': ['warn', 110],
+      'worklet-rules/no-worklet-side-effects': 'error',
       'tailwindcss/classnames-order': [
         'warn',
         {
@@ -84,6 +89,23 @@ export default defineConfig([
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
           caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@/components/community',
+              message:
+                'Import community modules directly (e.g., "@/components/community/post-card") to keep Metro bundles lean.',
+            },
+            {
+              name: '@/components/auth',
+              message:
+                'Import auth modules directly (e.g., "@/components/auth/login-form") to minimize bundle size.',
+            },
+          ],
         },
       ],
       'import/prefer-default-export': 'off',

@@ -1,6 +1,6 @@
 import { FlashList } from '@shopify/flash-list';
 import { DateTime } from 'luxon';
-import React from 'react';
+import React, { useCallback } from 'react';
 
 import { Text, View } from '@/components/ui';
 import { translate } from '@/lib';
@@ -15,7 +15,7 @@ export function ReservoirEventHistory({
   events,
   testID,
 }: Props): React.ReactElement {
-  const renderEvent = ({ item }: { item: ReservoirEvent }) => {
+  const renderEvent = useCallback(({ item }: { item: ReservoirEvent }) => {
     const dateTime = DateTime.fromMillis(item.createdAt);
     const dateStr = dateTime.toFormat('MMM dd, yyyy');
     const timeStr = dateTime.toFormat('HH:mm');
@@ -54,7 +54,7 @@ export function ReservoirEventHistory({
         </Text>
       </View>
     );
-  };
+  }, []);
 
   if (events.length === 0) {
     return (
@@ -73,6 +73,8 @@ export function ReservoirEventHistory({
     <FlashList
       data={events}
       renderItem={renderEvent}
+      keyExtractor={(item) => item.id}
+      getItemType={() => 'reservoir-event'}
       className="px-4"
       testID={testID}
     />

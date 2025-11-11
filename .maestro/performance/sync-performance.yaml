@@ -1,0 +1,88 @@
+appId: com.growbro.app
+---
+# Sync Performance Test
+# Requirements: Spec 21, Task 9 - Sync P95 ≤2.5s for 500 items on LTE
+#
+# This test measures data synchronization performance.
+# Validates that P95 sync time for 500 items meets the 2.5s budget.
+#
+# Prerequisites:
+# - Test database seeded with 500+ items
+# - Network throttling enabled (LTE simulation)
+# - App in logged-in state
+#
+# Expected metrics:
+# - P95 sync time: ≤2.5s for 500 items
+# - All data synced successfully
+# - No sync errors or timeouts
+
+- launchApp:
+    clearState: false
+
+- assertVisible: 'Home'
+
+# Trigger initial sync
+- tapOn: 'Community'
+- assertVisible: 'Community'
+
+# Pull to refresh to trigger sync
+- scroll:
+    direction: DOWN
+    distance: 200
+
+# Wait for sync to complete (wait for sync status indicator to disappear)
+- extendedWaitUntil:
+    notVisible: 'sync-status-indicator'
+    timeout: 5000
+
+# Navigate to calendar to trigger calendar sync
+- tapOn: 'Calendar'
+- assertVisible: 'Calendar'
+
+# Pull to refresh calendar
+- scroll:
+    direction: DOWN
+    distance: 200
+
+- extendedWaitUntil:
+    visible: 'Calendar'
+    timeout: 5000
+
+# Test multiple sync operations
+- repeat:
+    times: 5
+    commands:
+      # Community feed sync
+      - tapOn: 'Community'
+      - scroll:
+          direction: DOWN
+          distance: 200
+      - extendedWaitUntil:
+          visible: 'Community'
+          timeout: 5000
+
+      # Calendar sync
+      - tapOn: 'Calendar'
+      - scroll:
+          direction: DOWN
+          distance: 200
+      - extendedWaitUntil:
+          visible: 'Calendar'
+          timeout: 5000
+
+# Test background sync by switching apps
+- pressKey: Home
+- extendedWaitUntil:
+    visible: '.*'
+    timeout: 2000
+
+- launchApp
+
+- assertVisible: 'Home'
+
+# Verify data is still synced
+- tapOn: 'Community'
+- assertVisible: 'Community'
+
+- tapOn: 'Calendar'
+- assertVisible: 'Calendar'

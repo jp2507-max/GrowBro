@@ -2,12 +2,15 @@ import { Env } from '@env';
 import axios from 'axios';
 
 import { categorizeError } from '@/lib/error-handling';
+import { registerCertificatePinningInterceptor } from '@/lib/security/certificate-pinner';
 import { computeBackoffMs } from '@/lib/sync/backoff';
 
 export const client = axios.create({
   baseURL: Env.API_URL,
   timeout: 30000,
 });
+
+registerCertificatePinningInterceptor(client);
 
 // Lightweight retry/backoff without extra deps
 client.interceptors.response.use(
