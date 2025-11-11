@@ -33,6 +33,18 @@ interface MediaUrlResponse {
  * - Feed needs to display media from all users whose posts are visible
  * - Posts table RLS already enforces visibility rules (public/hidden/deleted)
  * - Signed URLs are time-limited (7 days) and require knowing the exact path
+ *
+ * Trust model:
+ * 1. Client queries posts table (RLS enforced - only visible posts returned)
+ * 2. Client extracts media paths from visible posts (see CommunityApiClient.getPostsWithCounts)
+ * 3. Client calls this function with those paths
+ * 4. Function trusts paths came from posts the user is allowed to see
+ *
+ * Path guessing risk:
+ * - Paths follow pattern: userId/contentHash/variant.jpg
+ * - Content hashes are UUIDs (non-sequential, hard to guess)
+ * - Even if guessed, signed URLs expire in 7 days
+ * - No sensitive data beyond feed images (which are public by design)
  */
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
@@ -168,12 +180,13 @@ Deno.serve(async (req: Request) => {
       })
     );
 
-    // Build response map
+    // Build response map - map back to validated paths, not original requestBody
     const urls: Record<string, string> = {};
     urlResults.forEach((result, index) => {
       if (result.status === 'fulfilled') {
-        const originalPath = requestBody.paths[index];
-        urls[originalPath] = result.value.url;
+        // Use validatedPaths[index] to match the signed URL generation order
+        const validatedPath = validatedPaths[index];
+        urls[validatedPath] = result.value.url;
       }
     });
 
