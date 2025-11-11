@@ -57,7 +57,9 @@ function ToggleRow({
         onValueChange={onChange}
         testID={`${testID}-switch`}
         accessibilityLabel={title}
-        accessibilityHint={translate('accessibility.common.toggleHint' as any)}
+        accessibilityHint={translate(
+          'accessibility.common.toggleHint' as TxKeyPath
+        )}
       />
     </View>
   );

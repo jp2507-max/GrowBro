@@ -55,7 +55,7 @@ function Card({
 
 Reduced Motion
 
-Pass `reduceMotionDisabled: true` in options to return target values without springing.
+Pass `reduceMotion: true` in options to return target values without springing.
 
 CTA gating
 

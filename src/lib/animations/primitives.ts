@@ -1,3 +1,4 @@
+import type { ColorValue } from 'react-native';
 import type { SharedValue } from 'react-native-reanimated';
 import Reanimated from 'react-native-reanimated';
 
@@ -12,7 +13,7 @@ export type InterpolateOptions = {
 export type SpringifyOptions = {
   spring?: boolean;
   springConfig?: WithSpringConfig;
-  reduceMotionDisabled?: boolean;
+  reduceMotion?: boolean;
 };
 
 type InterpolateParams = {
@@ -39,7 +40,7 @@ type CrossfadeParams = {
 function applySpring(value: number, opts?: SpringifyOptions): number {
   'worklet';
   const spring = opts?.spring ?? true;
-  if (!spring || opts?.reduceMotionDisabled) return value;
+  if (!spring || opts?.reduceMotion) return value;
   return Reanimated.withSpring(value, opts?.springConfig ?? SPRING);
 }
 
@@ -107,13 +108,13 @@ export function crossfadeAroundIndex(params: CrossfadeParams): number {
 export function hsvInterpolateColor(
   activeIndex: SharedValue<number>,
   inputRange: readonly number[],
-  colors: readonly (string | number)[]
+  colors: readonly (ColorValue | number)[]
 ): number {
   'worklet';
   return Reanimated.interpolateColor(
     activeIndex.value,
     inputRange,
-    colors as any,
+    colors,
     'HSV'
   );
 }

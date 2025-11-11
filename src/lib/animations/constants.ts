@@ -12,5 +12,5 @@ export const SPRING: WithSpringConfig = {
 export type SpringOptions = {
   enabled?: boolean;
   config?: WithSpringConfig;
-  reduceMotionDisabled?: boolean; // if true, bypass animation and return target values
+  reduceMotion?: boolean; // if true, bypass animation and return target values
 };

@@ -83,7 +83,8 @@
       "loading_label": "Lädt",
       "retry_hint": "Wiederholt die letzte Aktion.",
       "select_open_hint": "Öffnet die Auswahl für {{label}}. Doppeltippen zum Auswählen.",
-      "select_option_hint": "Wählt die Option {{label}}."
+      "select_option_hint": "Wählt die Option {{label}}.",
+      "toggleHint": "Schaltet die Einstellung ein oder aus."
     },
     "community": {
       "cancel_comment_hint": "Bricht das Posten dieses Kommentars ab.",

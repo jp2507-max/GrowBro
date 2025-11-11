@@ -904,29 +904,28 @@ export class CommunityApiClient implements CommunityAPI {
       return [];
     }
 
-    // Transform storage paths to signed URLs for all media variants
-    const postsWithSignedUrls = await Promise.all(
-      posts.map(async (post: any) => {
-        return {
-          ...post,
-          media_uri: post.media_uri
-            ? await this.generateSignedUrl(post.media_uri, 'community-posts')
-            : undefined,
-          media_resized_uri: post.media_resized_uri
-            ? await this.generateSignedUrl(
-                post.media_resized_uri,
-                'community-posts'
-              )
-            : undefined,
-          media_thumbnail_uri: post.media_thumbnail_uri
-            ? await this.generateSignedUrl(
-                post.media_thumbnail_uri,
-                'community-posts'
-              )
-            : undefined,
-        };
-      })
-    );
+    // Collect all media paths that need signed URLs
+    const mediaPaths: string[] = [];
+    posts.forEach((post: any) => {
+      if (post.media_uri) mediaPaths.push(post.media_uri);
+      if (post.media_resized_uri) mediaPaths.push(post.media_resized_uri);
+      if (post.media_thumbnail_uri) mediaPaths.push(post.media_thumbnail_uri);
+    });
+
+    // Generate signed URLs for all media in one batch request
+    const signedUrlMap = await this.generateSignedUrls(mediaPaths);
+
+    // Transform storage paths to signed URLs
+    const postsWithSignedUrls = posts.map((post: any) => ({
+      ...post,
+      media_uri: post.media_uri ? signedUrlMap[post.media_uri] : undefined,
+      media_resized_uri: post.media_resized_uri
+        ? signedUrlMap[post.media_resized_uri]
+        : undefined,
+      media_thumbnail_uri: post.media_thumbnail_uri
+        ? signedUrlMap[post.media_thumbnail_uri]
+        : undefined,
+    }));
 
     // If user is authenticated and we need user like status, fetch all likes for these posts in one query
     let userLikesMap = new Map<string, boolean>();
@@ -956,36 +955,50 @@ export class CommunityApiClient implements CommunityAPI {
   }
 
   /**
-   * Generate a signed URL from a storage path
-   * @param storagePath - Full storage path (e.g., "community-posts/user-id/hash/original.jpg" or "user-id/hash/original.jpg")
-   * @param bucket - Bucket name (default: "community-posts")
-   * @returns Signed URL with 7-day expiration
+   * Generate signed URLs from storage paths via Edge Function
+   * Uses service-role key on backend to bypass RLS restrictions while maintaining security
+   * @param storagePaths - Array of storage paths to generate signed URLs for
+   * @returns Map of path -> signed URL
    */
-  private async generateSignedUrl(
-    storagePath: string,
-    bucket: string = 'community-posts'
-  ): Promise<string> {
-    // Remove bucket prefix if it's included in the path
-    const bucketPrefix = `${bucket}/`;
-    const cleanPath = storagePath.startsWith(bucketPrefix)
-      ? storagePath.slice(bucketPrefix.length)
-      : storagePath;
-
-    // Generate signed URL with 7-day expiration (maximum allowed)
-    const { data, error } = await this.client.storage
-      .from(bucket)
-      .createSignedUrl(cleanPath, 604800); // 7 days in seconds
-
-    if (error) {
-      console.error(
-        `[CommunityApiClient] Failed to generate signed URL for ${cleanPath}:`,
-        error
-      );
-      // Return the original path as fallback (will likely fail to load, but better than breaking)
-      return storagePath;
+  private async generateSignedUrls(
+    storagePaths: string[]
+  ): Promise<Record<string, string>> {
+    if (storagePaths.length === 0) {
+      return {};
     }
 
-    return data.signedUrl;
+    try {
+      const { data: session } = await this.client.auth.getSession();
+      if (!session?.session?.access_token) {
+        console.error(
+          '[CommunityApiClient] No active session for signed URL generation'
+        );
+        // Return identity map as fallback
+        return Object.fromEntries(storagePaths.map((path) => [path, path]));
+      }
+
+      const response = await this.client.functions.invoke('get-media-urls', {
+        body: { paths: storagePaths },
+      });
+
+      if (response.error) {
+        console.error(
+          '[CommunityApiClient] Failed to generate signed URLs:',
+          response.error
+        );
+        // Return identity map as fallback
+        return Object.fromEntries(storagePaths.map((path) => [path, path]));
+      }
+
+      return response.data?.urls ?? {};
+    } catch (error) {
+      console.error(
+        '[CommunityApiClient] Exception generating signed URLs:',
+        error
+      );
+      // Return identity map as fallback
+      return Object.fromEntries(storagePaths.map((path) => [path, path]));
+    }
   }
 }
 

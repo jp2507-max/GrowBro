@@ -83,7 +83,8 @@
       "loading_label": "Loading",
       "retry_hint": "Retries the last action.",
       "select_open_hint": "Opens the {{label}} picker. Double-tap to choose.",
-      "select_option_hint": "Selects the {{label}} option."
+      "select_option_hint": "Selects the {{label}} option.",
+      "toggleHint": "Toggles the setting on or off."
     },
     "community": {
       "cancel_comment_hint": "Cancels posting this comment.",
