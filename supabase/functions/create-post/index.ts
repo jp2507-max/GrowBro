@@ -748,11 +748,116 @@ async function processAndUploadMedia({
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
   let response: Response;
+  let currentUrl = sourceUrl;
+  const maxRedirects = 5;
+  let redirectCount = 0;
 
   try {
-    response = await fetch(sourceUrl, {
+    // Disable automatic redirect following to prevent SSRF bypass
+    response = await fetch(currentUrl, {
       signal: controller.signal,
+      redirect: 'manual',
     });
+
+    // Manually handle redirects and validate each redirect location
+    while (
+      (response.status === 301 ||
+        response.status === 302 ||
+        response.status === 303 ||
+        response.status === 307 ||
+        response.status === 308) &&
+      redirectCount < maxRedirects
+    ) {
+      redirectCount++;
+
+      const location = response.headers.get('location');
+      if (!location) {
+        throw createHttpError(
+          502,
+          'Redirect response missing Location header.'
+        );
+      }
+
+      // Resolve relative URLs against the current URL
+      const redirectUrl = new URL(location, currentUrl);
+      const redirectUrlString = redirectUrl.toString();
+
+      // Validate the redirect target against SSRF protections
+      if (redirectUrl.protocol !== 'https:') {
+        throw createHttpError(
+          400,
+          'Redirects to non-HTTPS URLs are not allowed.'
+        );
+      }
+
+      const hostname = redirectUrl.hostname.toLowerCase();
+
+      // Resolve and validate redirect target IPs
+      try {
+        const resolvedIps = await resolveHostnameToIps(hostname);
+
+        for (const ip of resolvedIps) {
+          if (isIpPrivate(ip)) {
+            throw createHttpError(
+              400,
+              'Redirect target resolves to a private IP address.'
+            );
+          }
+        }
+      } catch (err) {
+        if (err?.status === 400) throw err;
+        throw createHttpError(400, 'Invalid redirect target URL.');
+      }
+
+      // Additional hostname string checks for redirect target
+      if (
+        hostname === 'localhost' ||
+        hostname.startsWith('127.') ||
+        hostname.startsWith('10.') ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('169.254.') ||
+        hostname.startsWith('172.16.') ||
+        hostname.startsWith('172.17.') ||
+        hostname.startsWith('172.18.') ||
+        hostname.startsWith('172.19.') ||
+        hostname.startsWith('172.20.') ||
+        hostname.startsWith('172.21.') ||
+        hostname.startsWith('172.22.') ||
+        hostname.startsWith('172.23.') ||
+        hostname.startsWith('172.24.') ||
+        hostname.startsWith('172.25.') ||
+        hostname.startsWith('172.26.') ||
+        hostname.startsWith('172.27.') ||
+        hostname.startsWith('172.28.') ||
+        hostname.startsWith('172.29.') ||
+        hostname.startsWith('172.30.') ||
+        hostname.startsWith('172.31.') ||
+        hostname === '::1' ||
+        hostname === '0.0.0.0' ||
+        hostname === '[::]' ||
+        hostname.includes('local')
+      ) {
+        throw createHttpError(
+          400,
+          'Redirect target is a private IP address or local domain.'
+        );
+      }
+
+      // Follow the validated redirect
+      currentUrl = redirectUrlString;
+      response = await fetch(currentUrl, {
+        signal: controller.signal,
+        redirect: 'manual',
+      });
+    }
+
+    // Check if we exceeded max redirects
+    if (redirectCount >= maxRedirects) {
+      throw createHttpError(
+        310,
+        'Too many redirects while fetching media source.'
+      );
+    }
   } catch (error) {
     clearTimeout(timeoutId);
     controller.abort();
@@ -761,6 +866,10 @@ async function processAndUploadMedia({
         408,
         'Request timeout while fetching media source.'
       );
+    }
+    // Re-throw HTTP errors created by our validation
+    if (error?.status) {
+      throw error;
     }
     throw createHttpError(
       500,
