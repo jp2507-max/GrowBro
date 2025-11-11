@@ -8,15 +8,17 @@ export const documentDirectory = 'file:///documents/';
 // Create a mock Directory constructor that can be used in tests
 export const Directory = jest
   .fn()
-  .mockImplementation((parent: any, name: string) => ({
-    uri:
-      typeof parent === 'object' && 'uri' in parent
-        ? `${parent.uri}${name}/`
-        : `file:///${name}/`,
-    exists: true,
-    create: jest.fn(),
-    list: jest.fn().mockReturnValue([]),
-  }));
+  .mockImplementation(
+    (parent: { uri?: string } | null | undefined, name: string) => ({
+      uri:
+        typeof parent === 'object' && parent !== null && 'uri' in parent
+          ? `${parent.uri}${name}/`
+          : `file:///${name}/`,
+      exists: true,
+      create: jest.fn(),
+      list: jest.fn().mockReturnValue([]),
+    })
+  );
 
 export class File {
   uri: string;
@@ -29,7 +31,9 @@ export class File {
       this.uri = parent;
       this.name = parent.split('/').pop() || '';
     } else {
-      this.uri = `${parent.uri}${name}`;
+      this.uri = name
+        ? `${parent.uri}${parent.uri.endsWith('/') ? '' : '/'}${name}`
+        : parent.uri;
       this.name = name || '';
     }
     this.exists = true;

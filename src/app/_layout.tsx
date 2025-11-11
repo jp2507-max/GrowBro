@@ -312,7 +312,7 @@ function persistConsents(
 // Helper to initialize auth storage and hydrate states
 async function initializeAuthAndStates(): Promise<void> {
   await initAuthStorage();
-  hydrateAuth();
+  await hydrateAuth();
   hydrateAgeGate();
   hydrateLegalAcceptances();
   hydrateOnboardingState();

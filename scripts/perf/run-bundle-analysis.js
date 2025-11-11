@@ -52,24 +52,40 @@ function validateOutputDir(dir) {
   // Reject empty values, root directory, or home directory
   if (!dir || dir === '/' || dir.startsWith('~')) {
     throw new Error(
-      `Invalid output directory: ${dir}. Cannot delete system root or home directory.`
+      `Invalid output directory: ${dir} (resolved to ${path.resolve(dir)}). Cannot delete system root or home directory.`
     );
   }
 
   const projectRoot = process.cwd();
   const resolvedDir = path.resolve(dir);
 
-  // Ensure the resolved path is within the project root or a safe build directory
-  const isInProjectRoot =
-    resolvedDir.startsWith(projectRoot + path.sep) ||
-    resolvedDir === projectRoot;
-  const isInBuildDir = resolvedDir.startsWith(
-    path.join(projectRoot, 'build') + path.sep
-  );
-
-  if (!isInProjectRoot && !isInBuildDir) {
+  // Reject if resolvedDir is the project root
+  if (resolvedDir === projectRoot) {
     throw new Error(
-      `Output directory ${resolvedDir} is outside the safe project directory. Only paths within the project root or build/ directory are allowed.`
+      `Invalid output directory: ${dir} (resolved to ${resolvedDir}). Cannot delete the project root.`
+    );
+  }
+
+  // Use path.relative to check if inside project root
+  const relative = path.relative(projectRoot, resolvedDir);
+  if (relative === '' || relative.startsWith('..')) {
+    throw new Error(
+      `Output directory ${resolvedDir} is outside the project root. Only paths strictly inside the project root are allowed.`
+    );
+  }
+
+  // Blacklist critical top-level folders/files
+  const blacklist = [
+    'node_modules',
+    '.git',
+    'src',
+    'package.json',
+    'yarn.lock',
+  ];
+  const firstSegment = relative.split(path.sep)[0];
+  if (blacklist.includes(firstSegment)) {
+    throw new Error(
+      `Invalid output directory: ${dir} (resolved to ${resolvedDir}). Cannot delete critical directory/file: ${firstSegment}.`
     );
   }
 }
