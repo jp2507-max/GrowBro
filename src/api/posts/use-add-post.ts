@@ -63,6 +63,41 @@ function isSupabaseStorageUri(uri: string | undefined): boolean {
   );
 }
 
+/**
+ * Extract the bucket-relative storage path from a Supabase signed or public URL
+ * @param url - Full Supabase storage URL (signed or public)
+ * @returns Bucket-relative path (e.g., "community-posts/user_id/hash/original.jpg") or null if not a Supabase URL
+ * @example
+ * extractSupabaseStoragePath("https://...supabase.co/storage/v1/object/sign/community-posts/user123/abc/original.jpg?token=...")
+ * // => "community-posts/user123/abc/original.jpg"
+ */
+function extractSupabaseStoragePath(url: string | undefined): string | null {
+  if (!url) {
+    return null;
+  }
+
+  // If it's already a storage path without full URL
+  if (url.startsWith(SUPABASE_STORAGE_BUCKET) && !url.includes('http')) {
+    return url;
+  }
+
+  // Pattern for signed URLs: /storage/v1/object/sign/{bucket}/{path}?token=...
+  // Pattern for public URLs: /storage/v1/object/public/{bucket}/{path}
+  const signedMatch = url.match(/\/storage\/v1\/object\/sign\/([^?]+)(?:\?|$)/);
+  if (signedMatch?.[1]) {
+    return signedMatch[1];
+  }
+
+  const publicMatch = url.match(
+    /\/storage\/v1\/object\/public\/([^?]+)(?:\?|$)/
+  );
+  if (publicMatch?.[1]) {
+    return publicMatch[1];
+  }
+
+  return null;
+}
+
 // Media payload interface for post attachments
 export interface MediaPayload {
   originalPath: string;
@@ -232,15 +267,22 @@ export const processRemoteAttachment = async (
   }
 
   const aspectRatio = metadata?.aspectRatio ?? width / height;
+
+  // Extract storage paths from signed URLs (if present) for edge function validation
+  // The edge function requires bucket-relative paths (e.g., "community-posts/user_id/hash/original.jpg")
+  // not full signed URLs
+  const originalPath = extractSupabaseStoragePath(uri) ?? uri;
   const resizedPath = isSupabaseStorageUri(metadata?.resizedPath)
-    ? metadata!.resizedPath!
-    : uri;
+    ? (extractSupabaseStoragePath(metadata!.resizedPath!) ??
+      metadata!.resizedPath!)
+    : originalPath;
   const thumbnailPath = isSupabaseStorageUri(metadata?.thumbnailPath)
-    ? metadata!.thumbnailPath!
-    : uri;
+    ? (extractSupabaseStoragePath(metadata!.thumbnailPath!) ??
+      metadata!.thumbnailPath!)
+    : originalPath;
 
   return {
-    originalPath: uri,
+    originalPath,
     resizedPath,
     thumbnailPath,
     width,
