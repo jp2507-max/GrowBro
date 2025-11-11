@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
-import Animated, {
-  FadeIn,
-  FadeInUp,
-  ReduceMotion,
-} from 'react-native-reanimated';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 
 import { Button, ScrollView, Switch, Text, View } from '@/components/ui';
 import type { LegalDocumentType } from '@/lib/compliance/legal-acceptances';
@@ -75,7 +71,9 @@ function LegalDocumentSection({
           onValueChange={onChange}
           testID={`legal-switch-${documentType}`}
           accessibilityLabel={title}
-          accessibilityHint={translate('accessibility.common.toggle_hint')}
+          accessibilityHint={translate(
+            'accessibility.common.toggleHint' as any
+          )}
         />
       </View>
       <Text className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -88,7 +86,7 @@ function LegalDocumentSection({
 function LegalConfirmationHeader(): React.ReactElement {
   return (
     <Animated.View
-      entering={FadeInUp.duration(200).reduceMotion(ReduceMotion.System)}
+      entering={FadeIn.duration(200).reduceMotion(ReduceMotion.System)}
       className="mb-6"
     >
       <Text className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">
@@ -112,7 +110,7 @@ function LegalConfirmationActions({
 }): React.ReactElement {
   return (
     <Animated.View
-      entering={FadeInUp.delay(80)
+      entering={FadeIn.delay(80)
         .duration(200)
         .reduceMotion(ReduceMotion.System)}
       className="mt-6 gap-3"
@@ -183,7 +181,7 @@ export function LegalConfirmationModal({
           <LegalConfirmationHeader />
 
           <Animated.View
-            entering={FadeInUp.delay(40)
+            entering={FadeIn.delay(40)
               .duration(160)
               .reduceMotion(ReduceMotion.System)}
           >
@@ -197,7 +195,7 @@ export function LegalConfirmationModal({
           </Animated.View>
 
           <Animated.View
-            entering={FadeInUp.delay(80)
+            entering={FadeIn.delay(80)
               .duration(160)
               .reduceMotion(ReduceMotion.System)}
           >
@@ -211,7 +209,7 @@ export function LegalConfirmationModal({
           </Animated.View>
 
           <Animated.View
-            entering={FadeInUp.delay(120)
+            entering={FadeIn.delay(120)
               .duration(160)
               .reduceMotion(ReduceMotion.System)}
           >

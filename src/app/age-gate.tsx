@@ -151,6 +151,7 @@ export default function AgeGateScreen(): React.ReactElement {
         <Animated.View
           entering={FadeIn.duration(220).reduceMotion(ReduceMotion.System)}
           className="flex-1 px-6 py-10"
+          testID="age-gate-root"
         >
           <AgeGateCopy />
           <BirthDateInputs

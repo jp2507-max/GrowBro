@@ -5,6 +5,7 @@ import type { VariantProps } from 'tailwind-variants';
 import { tv } from 'tailwind-variants';
 
 import type { TxKeyPath } from '@/lib/i18n';
+import { translate } from '@/lib/i18n';
 
 import { Text } from './text';
 
@@ -119,7 +120,7 @@ export const Button = React.forwardRef<View, Props>(
     );
 
     // Derive a default accessibilityLabel if not provided
-    const defaultA11yLabel = tx ? (tx as unknown as string) : text;
+    const defaultA11yLabel = tx ? translate(tx) : text;
 
     return (
       <Pressable
@@ -131,10 +132,11 @@ export const Button = React.forwardRef<View, Props>(
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole={props.accessibilityRole ?? 'button'}
         accessibilityLabel={
-          (props as any).accessibilityLabel ?? defaultA11yLabel ?? undefined
+          props.accessibilityLabel ?? defaultA11yLabel ?? undefined
         }
         accessibilityHint={
-          (props as any).accessibilityHint ?? 'Double tap to activate'
+          props.accessibilityHint ??
+          translate('accessibility.common.doubleTapHint' as any)
         }
       >
         {props.children ? (

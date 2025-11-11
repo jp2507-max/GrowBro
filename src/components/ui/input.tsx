@@ -79,6 +79,11 @@ interface ControlledInputProps<T extends FieldValues>
 
 export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
   const { label, error, errorTx, testID, ...inputProps } = props;
+  const {
+    accessibilityLabel: inputAccessibilityLabel,
+    accessibilityHint: inputAccessibilityHint,
+    ...restInputProps
+  } = inputProps;
   const [isFocussed, setIsFocussed] = React.useState(false);
   const { t } = useTranslation();
   const onBlur = React.useCallback(() => setIsFocussed(false), []);
@@ -112,17 +117,21 @@ export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
         onBlur={onBlur}
         onFocus={onFocus}
         accessibilityLabel={
-          // Prefer explicit accessibilityLabel if caller provided it via props
-          (props as any).accessibilityLabel ?? label ?? undefined
+          inputAccessibilityLabel ??
+          (props as any).accessibilityLabel ??
+          label ??
+          undefined
         }
         accessibilityHint={
-          (props as any).accessibilityHint ?? 'Double tap to edit text'
+          inputAccessibilityHint ??
+          (props as any).accessibilityHint ??
+          'Double tap to edit text'
         }
-        {...inputProps}
+        {...restInputProps}
         style={StyleSheet.flatten([
           { writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr' },
           { textAlign: I18nManager.isRTL ? 'right' : 'left' },
-          inputProps.style,
+          restInputProps.style,
         ])}
       />
       {(errorTx || error) && (

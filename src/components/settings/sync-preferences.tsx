@@ -70,7 +70,9 @@ function PreferencesToggles(): React.ReactElement {
           onChange={(v) => setAutoSyncEnabled(v)}
           testID="sync-auto"
           accessibilityLabel={translate('settings.sync.auto_sync')}
-          accessibilityHint={translate('accessibility.common.toggle_hint')}
+          accessibilityHint={translate(
+            'accessibility.common.toggleHint' as any
+          )}
         />
       </PrefRow>
       <PrefRow labelTx="settings.sync.background">
@@ -79,7 +81,9 @@ function PreferencesToggles(): React.ReactElement {
           onChange={(v) => setBackgroundSyncEnabled(v)}
           testID="sync-bg"
           accessibilityLabel={translate('settings.sync.background')}
-          accessibilityHint={translate('accessibility.common.toggle_hint')}
+          accessibilityHint={translate(
+            'accessibility.common.toggleHint' as any
+          )}
         />
       </PrefRow>
       <PrefRow labelTx="settings.sync.wifi_only">
@@ -88,7 +92,9 @@ function PreferencesToggles(): React.ReactElement {
           onChange={(v) => setRequiresWifi(v)}
           testID="sync-wifi"
           accessibilityLabel={translate('settings.sync.wifi_only')}
-          accessibilityHint={translate('accessibility.common.toggle_hint')}
+          accessibilityHint={translate(
+            'accessibility.common.toggleHint' as any
+          )}
         />
       </PrefRow>
       <PrefRow labelTx="settings.sync.charging_only">
@@ -97,7 +103,9 @@ function PreferencesToggles(): React.ReactElement {
           onChange={(v) => setRequiresCharging(v)}
           testID="sync-charging"
           accessibilityLabel={translate('settings.sync.charging_only')}
-          accessibilityHint={translate('accessibility.common.toggle_hint')}
+          accessibilityHint={translate(
+            'accessibility.common.toggleHint' as any
+          )}
         />
       </PrefRow>
     </>

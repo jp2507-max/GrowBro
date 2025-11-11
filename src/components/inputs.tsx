@@ -42,7 +42,7 @@ const CheckboxExample = () => {
       checked={checked}
       onChange={setChecked}
       accessibilityLabel={translate('inputs.accept_terms_label' as TxKeyPath)}
-      accessibilityHint={translate('accessibility.common.toggle_hint')}
+      accessibilityHint={translate('accessibility.common.toggleHint' as any)}
       className="pb-2"
       testID="checkbox-example"
     >
@@ -59,7 +59,7 @@ const RadioExample = () => {
       checked={selected}
       onChange={setSelected}
       accessibilityLabel="radio button"
-      accessibilityHint={translate('accessibility.common.toggle_hint')}
+      accessibilityHint={translate('accessibility.common.toggleHint' as any)}
       className="pb-2"
     >
       <Radio.Icon checked={selected} />
@@ -75,7 +75,7 @@ const SwitchExample = () => {
       checked={active}
       onChange={setActive}
       accessibilityLabel={translate('inputs.switch_label' as TxKeyPath)}
-      accessibilityHint={translate('accessibility.common.toggle_hint')}
+      accessibilityHint={translate('accessibility.common.toggleHint' as any)}
       className="pb-2"
     >
       <Switch.Icon checked={active} />

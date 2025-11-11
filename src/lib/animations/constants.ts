@@ -1,4 +1,6 @@
-import type { WithSpringConfig } from 'react-native-reanimated';
+import type Reanimated from 'react-native-reanimated';
+
+type WithSpringConfig = Parameters<typeof Reanimated.withSpring>[1];
 
 // Baseline spring config inspired by the reference onboarding
 export const SPRING: WithSpringConfig = {

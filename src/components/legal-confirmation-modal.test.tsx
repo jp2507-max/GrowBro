@@ -424,13 +424,13 @@ describe('LegalConfirmationModal', () => {
       const cannabisSwitch = screen.getByTestId('legal-switch-cannabis');
 
       expect(termsSwitch.props.accessibilityHint).toBe(
-        'accessibility.common.toggle_hint'
+        'accessibility.common.toggleHint'
       );
       expect(privacySwitch.props.accessibilityHint).toBe(
-        'accessibility.common.toggle_hint'
+        'accessibility.common.toggleHint'
       );
       expect(cannabisSwitch.props.accessibilityHint).toBe(
-        'accessibility.common.toggle_hint'
+        'accessibility.common.toggleHint'
       );
     });
 

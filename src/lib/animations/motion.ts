@@ -27,7 +27,7 @@ export const motion = {
 
 /**
  * Ensures animation respects system Reduced Motion preference
- * Usage: entering={withRM(FadeInUp.duration(motion.dur.md))}
+ * Usage: entering={withRM(FadeIn.duration(motion.dur.md))}
  */
 export function withRM<
   T extends { reduceMotion?: (v: typeof ReduceMotion.System) => T },

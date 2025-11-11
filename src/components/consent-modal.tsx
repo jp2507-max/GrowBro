@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import Animated, {
-  FadeIn,
-  FadeInUp,
-  ReduceMotion,
-} from 'react-native-reanimated';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 
 import { Button, Switch, Text } from '@/components/ui';
 import type { TxKeyPath } from '@/lib/i18n/utils';
@@ -61,7 +57,7 @@ function ToggleRow({
         onValueChange={onChange}
         testID={`${testID}-switch`}
         accessibilityLabel={title}
-        accessibilityHint={translate('accessibility.common.toggle_hint')}
+        accessibilityHint={translate('accessibility.common.toggleHint' as any)}
       />
     </View>
   );
@@ -299,12 +295,12 @@ export function ConsentModal({ isVisible, onComplete, mode }: Props) {
       testID="consent-modal"
     >
       <Animated.View
-        entering={FadeInUp.duration(180).reduceMotion(ReduceMotion.System)}
+        entering={FadeIn.duration(180).reduceMotion(ReduceMotion.System)}
       >
         <ConsentHeader titleKey={titleKey} />
       </Animated.View>
       <Animated.View
-        entering={FadeInUp.delay(60)
+        entering={FadeIn.delay(60)
           .duration(200)
           .reduceMotion(ReduceMotion.System)}
       >
@@ -320,7 +316,7 @@ export function ConsentModal({ isVisible, onComplete, mode }: Props) {
         />
       </Animated.View>
       <Animated.View
-        entering={FadeInUp.delay(120)
+        entering={FadeIn.delay(120)
           .duration(200)
           .reduceMotion(ReduceMotion.System)}
       >

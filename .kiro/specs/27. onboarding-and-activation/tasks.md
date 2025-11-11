@@ -35,11 +35,11 @@
   - Track: onboarding_start/complete, primer_shown/accepted, activation_action
   - Noop if telemetry consent = false
 
-- [x] 6. Accessibility pass
+- [x] 7. Accessibility pass
   - Inputs get `accessibilityLabel` from `label`
   - Buttons default `accessibilityLabel` from `label/tx`
 
-- [ ] 7. Documentation
+- [ ] 8. Documentation
   - Add onboarding playbook to Help Center
   - Reviewer notes (iOS) generated in docs
   - Add makeitanimated mapping reference and code links

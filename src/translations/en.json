@@ -83,8 +83,7 @@
       "loading_label": "Loading",
       "retry_hint": "Retries the last action.",
       "select_open_hint": "Opens the {{label}} picker. Double-tap to choose.",
-      "select_option_hint": "Selects the {{label}} option.",
-      "toggle_hint": "Double-tap to toggle this setting."
+      "select_option_hint": "Selects the {{label}} option."
     },
     "community": {
       "cancel_comment_hint": "Cancels posting this comment.",
@@ -1704,7 +1703,7 @@
       "archived": {
         "hide": "Hide archived",
         "show": "Show archived",
-        "toggle_hint": "Toggles whether archived notifications are shown."
+        "toggleHint": "Toggles whether archived notifications are shown."
       },
       "empty": {
         "all": {

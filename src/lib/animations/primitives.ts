@@ -1,13 +1,9 @@
-import type {
-  Extrapolation,
-  interpolate,
-  interpolateColor,
-  SharedValue,
-  withSpring,
-  type WithSpringConfig,
-} from 'react-native-reanimated';
+import type { SharedValue } from 'react-native-reanimated';
+import Reanimated from 'react-native-reanimated';
 
 import { SPRING } from './constants';
+
+type WithSpringConfig = Parameters<typeof Reanimated.withSpring>[1];
 
 export type InterpolateOptions = {
   clamp?: boolean;
@@ -44,17 +40,19 @@ function applySpring(value: number, opts?: SpringifyOptions): number {
   'worklet';
   const spring = opts?.spring ?? true;
   if (!spring || opts?.reduceMotionDisabled) return value;
-  return withSpring(value, opts?.springConfig ?? SPRING);
+  return Reanimated.withSpring(value, opts?.springConfig ?? SPRING);
 }
 
 export function indexInterpolate(params: InterpolateParams): number {
   'worklet';
   const { activeIndex, inputRange, outputRange, options } = params;
-  return interpolate(
-    activeIndex.get(),
+  return Reanimated.interpolate(
+    activeIndex.value,
     inputRange,
     outputRange,
-    options?.clamp === false ? Extrapolation.EXTEND : Extrapolation.CLAMP
+    options?.clamp === false
+      ? Reanimated.Extrapolation.EXTEND
+      : Reanimated.Extrapolation.CLAMP
   );
 }
 
@@ -97,11 +95,11 @@ export function indexDrivenScale(params: IndexDrivenParams): number {
 export function crossfadeAroundIndex(params: CrossfadeParams): number {
   'worklet';
   const { activeIndex, centerIndex, window = 0.5, opts } = params;
-  const v = interpolate(
-    activeIndex.get(),
+  const v = Reanimated.interpolate(
+    activeIndex.value,
     [centerIndex - window, centerIndex, centerIndex + window],
     [0, 1, 0],
-    Extrapolation.CLAMP
+    Reanimated.Extrapolation.CLAMP
   );
   return applySpring(v, opts);
 }
@@ -112,7 +110,12 @@ export function hsvInterpolateColor(
   colors: readonly (string | number)[]
 ): number {
   'worklet';
-  return interpolateColor(activeIndex.get(), inputRange, colors as any, 'HSV');
+  return Reanimated.interpolateColor(
+    activeIndex.value,
+    inputRange,
+    colors as any,
+    'HSV'
+  );
 }
 
 export function ctaGateToLastIndex(
@@ -121,13 +124,13 @@ export function ctaGateToLastIndex(
 ): { opacity: number; enabled: boolean } {
   'worklet';
   const before = Math.max(lastIndex - 1, 0);
-  const opacity = interpolate(
-    activeIndex.get(),
+  const opacity = Reanimated.interpolate(
+    activeIndex.value,
     [before, lastIndex],
     [0, 1],
-    Extrapolation.CLAMP
+    Reanimated.Extrapolation.CLAMP
   );
   // Enabled once the active index is at or beyond the last slide threshold
-  const enabled = activeIndex.get() >= lastIndex - 0.001;
+  const enabled = activeIndex.value >= lastIndex - 0.001;
   return { opacity, enabled };
 }
