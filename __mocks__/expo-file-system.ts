@@ -18,7 +18,7 @@ export const Directory = jest
       create: jest.fn(),
       list: jest.fn().mockReturnValue([]),
     })
-  );
+  ) as any;
 
 export class File {
   uri: string;
@@ -26,7 +26,7 @@ export class File {
   name: string;
   size: number;
 
-  constructor(parent: Directory | string, name?: string) {
+  constructor(parent: typeof Directory | string, name?: string) {
     if (typeof parent === 'string') {
       this.uri = parent;
       this.name = parent.split('/').pop() || '';

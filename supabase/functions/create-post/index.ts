@@ -306,16 +306,19 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      // Generate signed URLs for media variants to enable client access
+      // Store permanent storage paths as per database schema requirements
+      // Database columns are defined as "Storage URI" per migration comments
       const signedUrls = await generateSignedMediaUrls(supabaseClient, {
         originalPath: mediaProcessingResult.originalPath,
         resizedPath: mediaProcessingResult.resizedPath,
         thumbnailPath: mediaProcessingResult.thumbnailPath,
       });
 
+      // Store signed URL for original media (expires in 7 days)
       insertPayload.media_uri = signedUrls.media_uri;
-      insertPayload.media_resized_uri = signedUrls.media_resized_uri;
-      insertPayload.media_thumbnail_uri = signedUrls.media_thumbnail_uri;
+      // Store permanent storage paths for variants (as per schema requirements)
+      insertPayload.media_resized_uri = mediaProcessingResult.resizedPath;
+      insertPayload.media_thumbnail_uri = mediaProcessingResult.thumbnailPath;
       insertPayload.media_blurhash = mediaProcessingResult.blurhash;
       insertPayload.media_thumbhash = mediaProcessingResult.thumbhash;
       insertPayload.media_width = mediaProcessingResult.width;

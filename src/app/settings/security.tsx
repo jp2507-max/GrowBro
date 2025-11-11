@@ -53,9 +53,9 @@ export default function SecuritySettingsScreen() {
     React.useState<PendingMfaEnrollment | null>(null);
   const [verificationCode, setVerificationCode] = React.useState('');
 
-  const allFactors = mfaFactors?.factors ?? [];
+  const allFactors = mfaFactors?.all ?? [];
   const totpFactors = allFactors.filter(
-    (factor) => factor.factor_type === 'totp'
+    (factor: any) => factor.factor_type === 'totp'
   );
   const activeFactor = totpFactors[0];
   const isMfaEnabled = totpFactors.length > 0;
@@ -115,8 +115,8 @@ export default function SecuritySettingsScreen() {
       setVerificationCode('');
       setMfaModalVisible(false);
       Alert.alert(
-        translate('common.success'),
-        translate('auth.security.mfa_verification_success')
+        translate('auth.security.mfa_verification_success'),
+        undefined
       );
     } catch (error) {
       Alert.alert(
@@ -146,8 +146,8 @@ export default function SecuritySettingsScreen() {
               await unenrollTotp.mutateAsync({ factorId: activeFactor.id });
               await refetchMfaFactors();
               Alert.alert(
-                translate('common.success'),
-                translate('auth.security.mfa_disabled_toast')
+                translate('auth.security.mfa_disabled_toast'),
+                undefined
               );
             } catch (error) {
               Alert.alert(

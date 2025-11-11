@@ -89,6 +89,10 @@ declare module '@env' {
     FEATURE_SECURITY_VULNERABILITY_SCANNING?: boolean;
     FEATURE_SECURITY_AUTO_ISSUE_CREATION?: boolean;
     FEATURE_SECURITY_BYPASS_PINNING?: boolean;
+
+    // Certificate Pinning
+    SECURITY_PIN_DOMAINS?: string;
+    SECURITY_PIN_HASHES?: string;
   };
 
   // The module exports a single named object `Env` with the above shape.

@@ -107,7 +107,7 @@ async function scanAsyncStorage(): Promise<string[]> {
 async function detectUnprotectedDomains(): Promise<string[]> {
   const instances = getAllInstances();
   const initializedDomains = new Set(instances.keys());
-  const allowedDomains = new Set(Object.values(STORAGE_DOMAINS));
+  const allowedDomains = new Set(Object.values(STORAGE_DOMAINS) as string[]);
   const suspicious: string[] = [];
 
   // Check expected domains for initialization and metadata
@@ -436,13 +436,19 @@ export async function generateAuditEvidence(): Promise<string> {
     issues: report.auditResults.issues,
     recommendations: report.recommendations,
     domains: {
-      auth: report.instanceList.includes(STORAGE_DOMAINS.AUTH),
-      userData: report.instanceList.includes(STORAGE_DOMAINS.USER_DATA),
-      syncMetadata: report.instanceList.includes(STORAGE_DOMAINS.SYNC_METADATA),
-      securityCache: report.instanceList.includes(
-        STORAGE_DOMAINS.SECURITY_CACHE
+      auth: report.instanceList.includes(STORAGE_DOMAINS.AUTH as string),
+      userData: report.instanceList.includes(
+        STORAGE_DOMAINS.USER_DATA as string
       ),
-      featureFlags: report.instanceList.includes(STORAGE_DOMAINS.FEATURE_FLAGS),
+      syncMetadata: report.instanceList.includes(
+        STORAGE_DOMAINS.SYNC_METADATA as string
+      ),
+      securityCache: report.instanceList.includes(
+        STORAGE_DOMAINS.SECURITY_CACHE as string
+      ),
+      featureFlags: report.instanceList.includes(
+        STORAGE_DOMAINS.FEATURE_FLAGS as string
+      ),
     },
   };
 
