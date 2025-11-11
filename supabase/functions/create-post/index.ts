@@ -284,7 +284,7 @@ Deno.serve(async (req: Request) => {
     if (mediaProcessingResult) {
       // Validate that all provided paths belong to the authenticated user
       // to prevent malicious users from obtaining signed URLs for other users' media
-      const userPrefix = `${sanitizePathSegment(user.id)}/`;
+      const userPrefix = `${COMMUNITY_MEDIA_BUCKET}/${sanitizePathSegment(user.id)}/`;
       const pathsToValidate = [
         mediaProcessingResult.originalPath,
         mediaProcessingResult.resizedPath,

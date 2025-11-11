@@ -34,8 +34,15 @@ type DownloadedRemoteImage = {
   cleanup: () => Promise<void>;
 };
 
-const supabaseStorageHostname = resolveSupabaseHostname();
-const allowedRemoteImageHosts = createAllowedRemoteImageHostSet();
+let supabaseStorageHostname: string | undefined;
+let allowedRemoteImageHosts: Set<string>;
+
+function ensureInitialized(): void {
+  if (allowedRemoteImageHosts === undefined) {
+    supabaseStorageHostname = resolveSupabaseHostname();
+    allowedRemoteImageHosts = createAllowedRemoteImageHostSet();
+  }
+}
 
 /**
  * Download a remote image to local storage
@@ -44,6 +51,7 @@ const allowedRemoteImageHosts = createAllowedRemoteImageHostSet();
 export async function downloadRemoteImage(
   remoteUri: string
 ): Promise<DownloadedRemoteImage> {
+  ensureInitialized();
   const parsedUrl = assertAllowedRemoteUri(remoteUri);
 
   const controller = new AbortController();
@@ -195,6 +203,7 @@ function sanitizeExtension(ext: string | null | undefined): string | null {
 }
 
 function assertAllowedRemoteUri(remoteUri: string): URL {
+  ensureInitialized();
   if (!remoteUri) {
     throw new Error('Remote image URL is required');
   }

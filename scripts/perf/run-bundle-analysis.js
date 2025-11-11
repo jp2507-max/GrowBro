@@ -48,12 +48,41 @@ function ensureAtlasFile() {
   fs.rmSync(atlasFile, { force: true });
 }
 
+function validateOutputDir(dir) {
+  // Reject empty values, root directory, or home directory
+  if (!dir || dir === '/' || dir.startsWith('~')) {
+    throw new Error(
+      `Invalid output directory: ${dir}. Cannot delete system root or home directory.`
+    );
+  }
+
+  const projectRoot = process.cwd();
+  const resolvedDir = path.resolve(dir);
+
+  // Ensure the resolved path is within the project root or a safe build directory
+  const isInProjectRoot =
+    resolvedDir.startsWith(projectRoot + path.sep) ||
+    resolvedDir === projectRoot;
+  const isInBuildDir = resolvedDir.startsWith(
+    path.join(projectRoot, 'build') + path.sep
+  );
+
+  if (!isInProjectRoot && !isInBuildDir) {
+    throw new Error(
+      `Output directory ${resolvedDir} is outside the safe project directory. Only paths within the project root or build/ directory are allowed.`
+    );
+  }
+}
+
 function exportBundle() {
   const env = {
     ...process.env,
     APP_ENV: process.env.APP_ENV ?? 'production',
     EXPO_NO_DOTENV: process.env.EXPO_NO_DOTENV ?? '1',
   };
+
+  // Validate output directory before deletion
+  validateOutputDir(outputDir);
 
   fs.rmSync(outputDir, { recursive: true, force: true });
 

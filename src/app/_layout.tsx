@@ -13,7 +13,7 @@ import { Stack, usePathname, useRouter } from 'expo-router';
 import * as ScreenCapture from 'expo-screen-capture';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import FlashMessage from 'react-native-flash-message';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -162,25 +162,15 @@ function RootLayout(): React.ReactElement {
 
   // Initialize auth storage and hydrate auth state
   React.useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        await initAuthStorage();
-        hydrateAuth();
-        hydrateAgeGate();
-        hydrateLegalAcceptances();
-        hydrateOnboardingState();
-        setIsAuthReady(true);
-      } catch (error) {
+    initializeAuthAndStates()
+      .then(() => setIsAuthReady(true))
+      .catch((error) => {
         console.error(
           '[RootLayout] Auth storage initialization failed:',
           error
         );
-        // Set ready to true even on error to prevent blocking the app
         setIsAuthReady(true);
-      }
-    };
-
-    initializeAuth();
+      });
   }, []);
 
   // Check for legal version bumps and redirect to age-gate if needed
@@ -222,14 +212,33 @@ function RootLayout(): React.ReactElement {
 
   React.useEffect(() => {
     // Prevent screenshots/screen recordings on iOS to mirror Android FLAG_SECURE
-    ScreenCapture.preventScreenCaptureAsync().catch((error) => {
-      console.warn('[RootLayout] Failed to prevent screen capture:', error);
-    });
+    const setupScreenCapture = async () => {
+      if (Platform.OS === 'ios') {
+        try {
+          await ScreenCapture.preventScreenCaptureAsync();
+        } catch (error) {
+          console.warn('[RootLayout] Failed to prevent screen capture:', error);
+        }
+      }
+    };
+
+    setupScreenCapture();
 
     return () => {
-      ScreenCapture.allowScreenCaptureAsync().catch((error) => {
-        console.warn('[RootLayout] Failed to re-enable screen capture:', error);
-      });
+      const cleanupScreenCapture = async () => {
+        if (Platform.OS === 'ios') {
+          try {
+            await ScreenCapture.allowScreenCaptureAsync();
+          } catch (error) {
+            console.warn(
+              '[RootLayout] Failed to re-enable screen capture:',
+              error
+            );
+          }
+        }
+      };
+
+      cleanupScreenCapture();
     };
   }, []);
 
@@ -298,6 +307,15 @@ function persistConsents(
     personalizedData: false,
     sessionReplay: false,
   });
+}
+
+// Helper to initialize auth storage and hydrate states
+async function initializeAuthAndStates(): Promise<void> {
+  await initAuthStorage();
+  hydrateAuth();
+  hydrateAgeGate();
+  hydrateLegalAcceptances();
+  hydrateOnboardingState();
 }
 
 function BootSplash(): React.ReactElement {
