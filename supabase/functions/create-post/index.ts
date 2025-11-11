@@ -388,8 +388,8 @@ async function generateSignedMediaUrls(
     thumbnailPath: string;
   }
 ) {
-  // Signed URLs expire in 1 year (31536000 seconds) for community media
-  const expiresIn = 31536000;
+  // Signed URLs expire in 7 days (604800 seconds) - maximum allowed by Supabase Storage
+  const expiresIn = 604800;
 
   // Remove bucket prefix from paths since .from() already specifies the bucket
   const bucketPrefix = `${COMMUNITY_MEDIA_BUCKET}/`;

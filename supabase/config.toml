@@ -10,13 +10,10 @@ additional_redirect_urls = [
   "growbro-dev://reset-password"
 ]
 enable_signup = true
-email_confirm_required = true
-password_min_length = 8
 jwt_expiry = 300  # 5 minutes access-token lifetime to tighten session revocation window
 
 [auth.email]
 enable_signup = true
-double_confirm_changes_enabled = true
 enable_confirmations = true
 
 [auth.external.apple]
