@@ -3,7 +3,10 @@ import React, { useCallback } from 'react';
 
 import { CameraPermissionPrimer } from '@/components/onboarding';
 import { FocusAwareStatusBar } from '@/components/ui';
-import { completeOnboardingStep } from '@/lib/compliance/onboarding-state';
+import {
+  completeOnboardingStep,
+  markOnboardingAsCompleted,
+} from '@/lib/compliance/onboarding-state';
 
 /**
  * Camera/Photo permission primer screen
@@ -23,6 +26,9 @@ export default function CameraPrimerScreen(): React.ReactElement {
       // Mark this step as complete regardless of whether permission was granted
       // The app works fully without camera/photo permissions
       completeOnboardingStep('camera-primer');
+
+      // Mark entire onboarding as completed since this is the final step
+      markOnboardingAsCompleted();
 
       // Analytics: track permission decision
       console.log(

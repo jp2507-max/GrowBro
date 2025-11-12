@@ -27,7 +27,7 @@ import {
 
 import { FocusAwareStatusBar, View } from '@/components/ui';
 import { AnimatedIndexProvider } from '@/lib/animations/index-context';
-import { useOnboardingState } from '@/lib/compliance/onboarding-state';
+import { completeOnboardingStep } from '@/lib/compliance/onboarding-state';
 import {
   trackOnboardingComplete,
   trackOnboardingSkipped,
@@ -62,9 +62,14 @@ export function OnboardingPager({
   const scrollRef = React.useRef<ScrollView | null>(null);
   const activeIndex = useSharedValue(0);
   const lastIndex = slides.length - 1;
-  const markAsCompleted = useOnboardingState.markAsCompleted();
   const startTimeRef = React.useRef<number>(Date.now());
   const slideTimesRef = React.useRef<Record<number, number>>({});
+  const previousIndexRef = React.useRef<number>(0);
+
+  // Initialize the start time for the first slide when component mounts
+  React.useEffect(() => {
+    slideTimesRef.current[0] = Date.now();
+  }, []);
 
   // Track scroll position and update activeIndex
   const onScroll = useAnimatedScrollHandler({
@@ -86,11 +91,20 @@ export function OnboardingPager({
 
       // Track slide view with duration
       const now = Date.now();
-      const previousTime = slideTimesRef.current[index] ?? now;
-      const duration = now - previousTime;
-      slideTimesRef.current[index] = now;
 
-      trackOnboardingStepComplete(`slide_${index}`, duration);
+      // Close out the previous slide's duration before moving to new slide
+      const indexLeft = previousIndexRef.current;
+      if (
+        indexLeft !== index &&
+        slideTimesRef.current[indexLeft] !== undefined
+      ) {
+        const duration = now - slideTimesRef.current[indexLeft];
+        trackOnboardingStepComplete(`slide_${indexLeft}`, duration);
+      }
+
+      // Start timing the newly active slide
+      slideTimesRef.current[index] = now;
+      previousIndexRef.current = index;
     },
     [width]
   );
@@ -110,19 +124,44 @@ export function OnboardingPager({
   const [currentIndex, setCurrentIndex] = React.useState(0);
   const ctaEnabled = currentIndex >= lastIndex - 0.001;
 
+  // P1: Avoid marking onboarding complete before permission primers
+  // Both the Done and Skip actions call markAsCompleted() as soon as the slides finish.
+  // That sets the global onboarding status to completed even though the notification
+  // and camera primer screens have not yet run. Because _layout.tsx only routes users
+  // into onboarding when shouldShowOnboarding() is true, a user who closes the app
+  // after finishing the slides will be considered "completed" on the next launch and
+  // will never be redirected to the permission primers. Defer the markAsCompleted()
+  // call until the final permission step is finished so the gating logic still routes
+  // users to the primers on subsequent launches.
   const handleDone = React.useCallback(() => {
-    const totalDuration = Date.now() - startTimeRef.current;
+    // Close out the currently active slide before completion
+    const now = Date.now();
+    const currentSlideIndex = previousIndexRef.current;
+    if (slideTimesRef.current[currentSlideIndex] !== undefined) {
+      const duration = now - slideTimesRef.current[currentSlideIndex];
+      trackOnboardingStepComplete(`slide_${currentSlideIndex}`, duration);
+    }
+
+    const totalDuration = now - startTimeRef.current;
     trackOnboardingComplete(totalDuration, slides.length);
-    markAsCompleted();
+    completeOnboardingStep('consent-modal');
     onComplete();
-  }, [markAsCompleted, onComplete, slides.length]);
+  }, [onComplete, slides.length]);
 
   const handleSkip = React.useCallback(() => {
+    // Close out the currently active slide before skipping
+    const now = Date.now();
+    const currentSlideIndex = previousIndexRef.current;
+    if (slideTimesRef.current[currentSlideIndex] !== undefined) {
+      const duration = now - slideTimesRef.current[currentSlideIndex];
+      trackOnboardingStepComplete(`slide_${currentSlideIndex}`, duration);
+    }
+
     const currentSlide = Math.round(activeIndex.value);
     trackOnboardingSkipped(`slide_${currentSlide}`, 'user_skip');
-    markAsCompleted();
+    completeOnboardingStep('consent-modal');
     onComplete();
-  }, [markAsCompleted, onComplete, activeIndex]);
+  }, [onComplete, activeIndex]);
 
   return (
     <AnimatedIndexProvider activeIndex={activeIndex}>

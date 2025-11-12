@@ -18,9 +18,10 @@ import type { OnboardingSlideProps } from './onboarding-pager';
 import { OnboardingPager } from './onboarding-pager';
 
 jest.mock('@/lib/compliance/onboarding-state', () => ({
-  useOnboardingState: () => ({
+  useOnboardingState: {
     markAsCompleted: () => jest.fn(),
-  }),
+  },
+  completeOnboardingStep: jest.fn(),
 }));
 
 jest.mock('expo-router', () => ({
@@ -187,15 +188,13 @@ describe('OnboardingPager', () => {
 
   describe('Integration with onboarding-state', () => {
     test('marks onboarding as completed when skip is pressed', async () => {
-      const mockMarkAsCompleted = jest.fn();
+      const mockCompleteStep = jest.fn();
       jest
         .spyOn(
           require('@/lib/compliance/onboarding-state'),
-          'useOnboardingState'
+          'completeOnboardingStep'
         )
-        .mockReturnValue({
-          markAsCompleted: mockMarkAsCompleted,
-        });
+        .mockImplementation(mockCompleteStep);
 
       const onComplete = jest.fn();
       const { user } = setup(
@@ -206,21 +205,20 @@ describe('OnboardingPager', () => {
       await user.press(skipButton);
 
       await waitFor(() => {
-        expect(mockMarkAsCompleted).toHaveBeenCalledTimes(1);
+        expect(mockCompleteStep).toHaveBeenCalledTimes(1);
+        expect(mockCompleteStep).toHaveBeenCalledWith('consent-modal');
         expect(onComplete).toHaveBeenCalledTimes(1);
       });
     });
 
     test('marks onboarding as completed when done is pressed', async () => {
-      const mockMarkAsCompleted = jest.fn();
+      const mockCompleteStep = jest.fn();
       jest
         .spyOn(
           require('@/lib/compliance/onboarding-state'),
-          'useOnboardingState'
+          'completeOnboardingStep'
         )
-        .mockReturnValue({
-          markAsCompleted: mockMarkAsCompleted,
-        });
+        .mockImplementation(mockCompleteStep);
 
       const onComplete = jest.fn();
       const { user } = setup(
@@ -231,7 +229,8 @@ describe('OnboardingPager', () => {
       await user.press(doneButton);
 
       await waitFor(() => {
-        expect(mockMarkAsCompleted).toHaveBeenCalledTimes(1);
+        expect(mockCompleteStep).toHaveBeenCalledTimes(1);
+        expect(mockCompleteStep).toHaveBeenCalledWith('consent-modal');
         expect(onComplete).toHaveBeenCalledTimes(1);
       });
     });

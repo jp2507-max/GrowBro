@@ -30,7 +30,7 @@ export default function NotificationPrimerScreen(): React.ReactElement {
       );
 
       // Navigate to next step (camera primer) or complete onboarding
-      router.replace('/(app)');
+      router.replace('/camera-primer');
     },
     [router]
   );
