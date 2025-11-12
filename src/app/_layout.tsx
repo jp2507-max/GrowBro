@@ -9,7 +9,6 @@ import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
 // Setup Buffer polyfill for React Native
 import { Buffer } from 'buffer';
-import console from 'console';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import * as ScreenCapture from 'expo-screen-capture';
 import * as SplashScreen from 'expo-splash-screen';

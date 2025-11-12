@@ -155,6 +155,7 @@ export default defineConfig([
     },
     rules: {
       ...configs.recommended.rules,
+      '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/comma-dangle': 'off',
       '@typescript-eslint/consistent-type-imports': [
         'warn',

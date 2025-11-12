@@ -1,3 +1,5 @@
+import type { AuthMFAEnrollTOTPResponse } from '@supabase/auth-js';
+import type { UseMutationResult } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
 import * as React from 'react';
 import { Alert } from 'react-native';
@@ -32,8 +34,18 @@ import { supabase } from '@/lib/supabase';
 type MfaSectionProps = {
   isMfaEnabled: boolean;
   isMfaLoading: boolean;
-  enrollTotp: any;
-  unenrollTotp: any;
+  enrollTotp: UseMutationResult<
+    NonNullable<AuthMFAEnrollTOTPResponse['data']>,
+    Error,
+    { friendlyName?: string },
+    unknown
+  >;
+  unenrollTotp: UseMutationResult<
+    { id: string },
+    Error,
+    { factorId: string },
+    unknown
+  >;
   onStartEnableMfa: () => void;
   onDisableMfa: () => void;
   testID?: string;
