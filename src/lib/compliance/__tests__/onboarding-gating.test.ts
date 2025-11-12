@@ -273,8 +273,8 @@ describe('Onboarding Gating & Version Bump', () => {
 
       hydrateOnboardingState();
 
-      // In-progress with current version should not require onboarding again
-      expect(shouldShowOnboarding()).toBe(false);
+      // In-progress state should continue showing onboarding
+      expect(shouldShowOnboarding()).toBe(true);
       expect(getOnboardingStatus()).toBe('in-progress');
     });
 

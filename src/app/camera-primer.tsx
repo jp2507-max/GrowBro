@@ -27,6 +27,9 @@ export default function CameraPrimerScreen(): React.ReactElement {
       // The app works fully without camera/photo permissions
       completeOnboardingStep('camera-primer');
 
+      // Mark consent-modal step as completed now that all permission primers are done
+      completeOnboardingStep('consent-modal');
+
       // Mark entire onboarding as completed since this is the final step
       markOnboardingAsCompleted();
 

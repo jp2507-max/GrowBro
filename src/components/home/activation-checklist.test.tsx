@@ -27,6 +27,7 @@ jest.mock('@/lib', () => ({
 jest.mock('@/lib/privacy/consent-manager', () => ({
   consentManager: {
     hasConsented: jest.fn(() => true),
+    onConsentChanged: jest.fn(() => jest.fn()), // Return unsubscribe function
   },
 }));
 

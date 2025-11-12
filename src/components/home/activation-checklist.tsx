@@ -10,7 +10,6 @@ import type { ActivationAction } from '@/lib/compliance/activation-state';
 import {
   dismissActivationChecklist,
   getActivationCompletedCount,
-  shouldShowActivationChecklist,
   useActivationStore,
 } from '@/lib/compliance/activation-state';
 import { translate } from '@/lib/i18n';
@@ -138,7 +137,7 @@ export function ActivationChecklist({
 
   const actions = useActivationStore((state) => state.actions);
 
-  const shouldShow = shouldShowActivationChecklist();
+  const shouldShow = useActivationStore((state) => state.shouldShowChecklist());
   const completedCount = getActivationCompletedCount();
 
   const handleActionPress = React.useCallback(
