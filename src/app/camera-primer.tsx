@@ -22,7 +22,7 @@ export default function CameraPrimerScreen(): React.ReactElement {
   const router = useRouter();
 
   const handleComplete = useCallback(
-    (granted: boolean) => {
+    (_granted: boolean) => {
       // Mark this step as complete regardless of whether permission was granted
       // The app works fully without camera/photo permissions
       completeOnboardingStep('camera-primer');
@@ -32,11 +32,6 @@ export default function CameraPrimerScreen(): React.ReactElement {
 
       // Mark entire onboarding as completed since this is the final step
       markOnboardingAsCompleted();
-
-      // Analytics: track permission decision
-      console.log(
-        `[CameraPrimer] Permission ${granted ? 'granted' : 'denied or skipped'}`
-      );
 
       // Navigate to app - onboarding is complete
       router.replace('/(app)');

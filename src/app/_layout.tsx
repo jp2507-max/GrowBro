@@ -133,20 +133,8 @@ SplashScreen.setOptions({ duration: 500, fade: true });
 
 // Timezone and startup logic moved to `use-root-startup.ts`
 
-function RootLayout(): React.ReactElement {
-  const [isFirstTime] = useIsFirstTime();
-  const ageGateStatus = useAgeGate.status();
-  const sessionId = useAgeGate.sessionId();
-  const onboardingStatus = useOnboardingState.status();
-  const [isI18nReady, setIsI18nReady] = React.useState(false);
-  const [isAuthReady, setIsAuthReady] = React.useState(false);
-  const [showConsent, setShowConsent] = React.useState(false);
-  const router = useRouter();
-  const pathname = usePathname();
-  useRootStartup(setIsI18nReady, isFirstTime);
-  useSessionAutoRefresh();
-  useOfflineModeMonitor();
-
+// Custom hooks to reduce RootLayout function length
+function useKeyRotationSetup(): void {
   React.useEffect(() => {
     registerKeyRotationTask().catch((error) => {
       console.warn(
@@ -155,12 +143,11 @@ function RootLayout(): React.ReactElement {
       );
     });
   }, []);
+}
 
+function useGoogleSignInSetup(): void {
   React.useEffect(() => {
-    if (!Env.GOOGLE_WEB_CLIENT_ID) {
-      return;
-    }
-
+    if (!Env.GOOGLE_WEB_CLIENT_ID) return;
     GoogleSignin.configure({
       webClientId: Env.GOOGLE_WEB_CLIENT_ID,
       ...(Env.GOOGLE_IOS_CLIENT_ID
@@ -168,8 +155,9 @@ function RootLayout(): React.ReactElement {
         : {}),
     });
   }, []);
+}
 
-  // Initialize auth storage and hydrate auth state
+function useAuthInitialization(setIsAuthReady: (ready: boolean) => void): void {
   React.useEffect(() => {
     initializeAuthAndStates()
       .then(() => setIsAuthReady(true))
@@ -180,82 +168,91 @@ function RootLayout(): React.ReactElement {
         );
         setIsAuthReady(true);
       });
-  }, []);
+  }, [setIsAuthReady]);
+}
 
-  // Check for legal version bumps and redirect to age-gate if needed
+function useLegalVersionCheck(
+  isAuthReady: boolean,
+  router: ReturnType<typeof useRouter>,
+  pathname: string
+): void {
   React.useEffect(() => {
     if (!isAuthReady) return;
-
     const versionCheck = checkLegalVersionBumps();
     if (versionCheck.needsBlocking) {
-      // Force user to re-accept legal documents by resetting onboarding state
-      // This will redirect them to age-gate where they must verify age and accept updated legal documents
       console.log(
         '[RootLayout] Legal version bump detected, resetting onboarding to require re-acceptance'
       );
       resetAgeGate();
       resetLegalAcceptances();
       resetOnboardingState();
-      // Navigate to age-gate to force re-acceptance flow, but avoid redirect loops
       if (pathname !== '/age-gate') {
         router.replace('/age-gate');
       }
     }
   }, [isAuthReady, router, pathname]);
+}
 
-  // Onboarding entry guard: route first-time users and version bump re-shows
+function useOnboardingRouting(options: {
+  isI18nReady: boolean;
+  isAuthReady: boolean;
+  pathname: string;
+  router: ReturnType<typeof useRouter>;
+  onboardingStatus: string;
+}): void {
+  const { isI18nReady, isAuthReady, pathname, router, onboardingStatus } =
+    options;
   React.useEffect(() => {
     if (!isI18nReady || !isAuthReady) return;
-
-    // Skip onboarding routing if we're on excluded paths
-    const excludedPaths = ['/age-gate', '/login', '/sign-up'];
+    const excludedPaths = [
+      '/age-gate',
+      '/login',
+      '/sign-up',
+      '/notification-primer',
+      '/camera-primer',
+    ];
     if (excludedPaths.some((path) => pathname.startsWith(path))) return;
 
-    // Check if we should show onboarding
     const needsOnboarding = shouldShowOnboarding();
     const currentStatus = getOnboardingStatus();
 
     if (needsOnboarding) {
-      // Determine the source of onboarding trigger
       const source =
         currentStatus === 'not-started'
           ? 'first_run'
           : currentStatus === 'completed'
             ? 'version_bump'
             : 'first_run';
-
-      // Track onboarding start
       trackOnboardingStart(source);
-
       console.log(
         `[RootLayout] Onboarding needed (v${ONBOARDING_VERSION}), source: ${source}, status: ${currentStatus}`
       );
-
-      // Navigate to age-gate (first step of onboarding)
       if (pathname !== '/age-gate' && pathname !== '/onboarding') {
         router.replace('/age-gate');
       }
     }
   }, [isI18nReady, isAuthReady, pathname, router, onboardingStatus]);
+}
 
-  // Initialize deep linking for auth flows
-  useDeepLinking();
-
-  // Real-time session revocation monitoring
-  useRealtimeSessionRevocation();
-
+function useAgeGateSession(
+  ageGateStatus: string,
+  sessionId: string | null
+): void {
   React.useEffect(() => {
     if (ageGateStatus === 'verified' && !sessionId) {
       startAgeGateSession();
     }
   }, [ageGateStatus, sessionId]);
+}
 
+function useConsentCheck(setShowConsent: (show: boolean) => void): void {
   React.useEffect(() => {
     if (ConsentService.isConsentRequired()) setShowConsent(true);
-  }, []);
+  }, [setShowConsent]);
+}
 
+function useScreenCaptureSetup(): void {
   React.useEffect(() => {
-    // Prevent screenshots/screen recordings on iOS to mirror Android FLAG_SECURE
     const setupScreenCapture = async () => {
       if (Platform.OS === 'ios') {
         try {
@@ -265,9 +262,7 @@ function RootLayout(): React.ReactElement {
         }
       }
     };
-
     setupScreenCapture();
-
     return () => {
       const cleanupScreenCapture = async () => {
         if (Platform.OS === 'ios') {
@@ -281,12 +276,12 @@ function RootLayout(): React.ReactElement {
           }
         }
       };
-
       cleanupScreenCapture();
     };
   }, []);
+}
 
-  // Initialize photo storage janitor on app start
+function usePhotoJanitorSetup(isI18nReady: boolean): void {
   React.useEffect(() => {
     if (isI18nReady) {
       getReferencedPhotoUris()
@@ -298,6 +293,39 @@ function RootLayout(): React.ReactElement {
         });
     }
   }, [isI18nReady]);
+}
+
+function RootLayout(): React.ReactElement {
+  const [isFirstTime] = useIsFirstTime();
+  const ageGateStatus = useAgeGate.status();
+  const sessionId = useAgeGate.sessionId();
+  const onboardingStatus = useOnboardingState.status();
+  const [isI18nReady, setIsI18nReady] = React.useState(false);
+  const [isAuthReady, setIsAuthReady] = React.useState(false);
+  const [showConsent, setShowConsent] = React.useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useRootStartup(setIsI18nReady, isFirstTime);
+  useSessionAutoRefresh();
+  useOfflineModeMonitor();
+  useDeepLinking();
+  useRealtimeSessionRevocation();
+  useKeyRotationSetup();
+  useGoogleSignInSetup();
+  useAuthInitialization(setIsAuthReady);
+  useLegalVersionCheck(isAuthReady, router, pathname);
+  useOnboardingRouting({
+    isI18nReady,
+    isAuthReady,
+    pathname,
+    router,
+    onboardingStatus,
+  });
+  useAgeGateSession(ageGateStatus, sessionId);
+  useConsentCheck(setShowConsent);
+  useScreenCaptureSetup();
+  usePhotoJanitorSetup(isI18nReady);
 
   if (!isI18nReady || !isAuthReady) return <BootSplash />;
 
@@ -310,8 +338,6 @@ function RootLayout(): React.ReactElement {
           onComplete={(c) => {
             persistConsents(c, isFirstTime);
             setShowConsent(false);
-            // After consent during first-run, complete the consent step
-            // This will trigger navigation to permission primers
             if (isFirstTime) {
               completeOnboardingStep('consent-modal');
             }
