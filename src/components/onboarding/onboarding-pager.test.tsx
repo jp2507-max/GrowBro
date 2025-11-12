@@ -9,6 +9,7 @@
  * - Accessibility
  */
 
+// Mock colors before any imports
 import React from 'react';
 import { Text } from 'react-native';
 
@@ -16,6 +17,51 @@ import { cleanup, screen, setup, waitFor } from '@/lib/test-utils';
 
 import type { OnboardingSlideProps } from './onboarding-pager';
 import { OnboardingPager } from './onboarding-pager';
+
+jest.mock('@/components/ui/colors', () => ({
+  default: {
+    white: '#ffffff',
+    black: '#000000',
+    neutral: {
+      50: '#fafafa',
+      100: '#f5f5f5',
+      400: '#a3a3a3',
+      500: '#737373',
+      600: '#525252',
+      700: '#404040',
+      800: '#262626',
+      900: '#171717',
+    },
+    charcoal: {
+      100: '#f5f5f5',
+      400: '#a3a3a3',
+      700: '#404040',
+      850: '#262626',
+      950: '#0a0a0a',
+    },
+    ink: {
+      700: '#334155',
+      800: '#1e293b',
+    },
+    primary: {
+      300: '#93c5fd',
+      400: '#60a5fa',
+      600: '#2563eb',
+      700: '#1d4ed8',
+    },
+    terracotta: {
+      400: '#fb923c',
+      500: '#f97316',
+      600: '#ea580c',
+    },
+    sky: {
+      300: '#7dd3fc',
+      400: '#38bdf8',
+      600: '#0284c7',
+      700: '#0369a1',
+    },
+  },
+}));
 
 jest.mock('@/lib/compliance/onboarding-state', () => ({
   useOnboardingState: {

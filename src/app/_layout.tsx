@@ -342,9 +342,7 @@ function RootLayout(): React.ReactElement {
           onComplete={(c) => {
             persistConsents(c, isFirstTime);
             setShowConsent(false);
-            if (isFirstTime) {
-              completeOnboardingStep('consent-modal');
-            }
+            completeOnboardingStep('consent-modal');
           }}
         />
       )}
