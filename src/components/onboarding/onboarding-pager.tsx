@@ -79,6 +79,10 @@ export function OnboardingPager({
 
   const ctaStyle = useAnimatedStyle(() => {
     'worklet';
+    // Guard against collapsed inputRange when there's only one slide
+    if (lastIndex === 0) {
+      return { opacity: 1 };
+    }
     const opacity = interpolate(
       activeIndex.value,
       [Math.max(lastIndex - 1, 0), lastIndex],

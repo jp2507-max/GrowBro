@@ -50,6 +50,7 @@ import {
 } from '@/lib/compliance/legal-acceptances';
 import {
   completeOnboardingStep,
+  getCurrentOnboardingStep,
   getOnboardingStatus,
   hydrateOnboardingState,
   ONBOARDING_VERSION,
@@ -206,6 +207,7 @@ function useOnboardingRouting(options: {
     if (!isI18nReady || !isAuthReady) return;
     const excludedPaths = [
       '/age-gate',
+      '/onboarding',
       '/login',
       '/sign-up',
       '/notification-primer',
@@ -215,8 +217,10 @@ function useOnboardingRouting(options: {
 
     const needsOnboarding = shouldShowOnboarding();
     const currentStatus = getOnboardingStatus();
+    const currentStep = getCurrentOnboardingStep();
 
-    if (needsOnboarding) {
+    // Skip redirect when consent modal is pending to avoid loop with age-gate routing
+    if (needsOnboarding && currentStep !== 'consent-modal') {
       const source =
         currentStatus === 'not-started'
           ? 'first_run'
@@ -227,7 +231,7 @@ function useOnboardingRouting(options: {
       console.log(
         `[RootLayout] Onboarding needed (v${ONBOARDING_VERSION}), source: ${source}, status: ${currentStatus}`
       );
-      if (pathname !== '/age-gate' && pathname !== '/onboarding') {
+      if (pathname !== '/age-gate') {
         router.replace('/age-gate');
       }
     }
