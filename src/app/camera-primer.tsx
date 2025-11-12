@@ -7,6 +7,7 @@ import {
   completeOnboardingStep,
   markOnboardingAsCompleted,
 } from '@/lib/compliance/onboarding-state';
+import { useIsFirstTime } from '@/lib/hooks';
 
 /**
  * Camera/Photo permission primer screen
@@ -20,6 +21,7 @@ import {
  */
 export default function CameraPrimerScreen(): React.ReactElement {
   const router = useRouter();
+  const [, setIsFirstTime] = useIsFirstTime();
 
   const handleComplete = useCallback(
     (_granted: boolean) => {
@@ -33,10 +35,13 @@ export default function CameraPrimerScreen(): React.ReactElement {
       // Mark entire onboarding as completed since this is the final step
       markOnboardingAsCompleted();
 
+      // Clear the first-time flag to prevent redirect loops
+      setIsFirstTime(false);
+
       // Navigate to app - onboarding is complete
       router.replace('/(app)');
     },
-    [router]
+    [router, setIsFirstTime]
   );
 
   return (

@@ -29,32 +29,27 @@ import { translate } from '@/lib';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
-type PendingMfaEnrollment = {
-  factorId: string;
-  secret: string;
-  uri: string;
-  friendlyName?: string;
-};
-
 type MfaSectionProps = {
   isMfaEnabled: boolean;
   isMfaLoading: boolean;
-  onEnableMfa: () => void;
+  enrollTotp: any;
+  unenrollTotp: any;
+  onStartEnableMfa: () => void;
   onDisableMfa: () => void;
-  isEnrolling: boolean;
-  isUnenrolling: boolean;
+  testID?: string;
 };
 
 function MfaSection({
   isMfaEnabled,
   isMfaLoading,
-  onEnableMfa,
+  enrollTotp,
+  unenrollTotp,
+  onStartEnableMfa,
   onDisableMfa,
-  isEnrolling,
-  isUnenrolling,
+  testID,
 }: MfaSectionProps) {
   return (
-    <ItemsContainer title="auth.security.mfa_section">
+    <ItemsContainer title="auth.security.mfa_section" testID={testID}>
       <Item
         text="auth.security.two_factor_auth"
         value={translate(
@@ -75,16 +70,16 @@ function MfaSection({
           variant="outline"
           label={translate('auth.security.disable_mfa')}
           onPress={onDisableMfa}
-          disabled={isUnenrolling}
-          loading={isUnenrolling}
+          disabled={unenrollTotp.isPending}
+          loading={unenrollTotp.isPending}
           testID="disable-mfa-button"
         />
       ) : (
         <Button
           label={translate('auth.security.enable_mfa')}
-          onPress={onEnableMfa}
-          disabled={isEnrolling || isMfaLoading}
-          loading={isEnrolling}
+          onPress={onStartEnableMfa}
+          disabled={enrollTotp.isPending || isMfaLoading}
+          loading={enrollTotp.isPending}
           testID="enable-mfa-button"
         />
       )}
@@ -92,23 +87,34 @@ function MfaSection({
   );
 }
 
-type DangerZoneSectionProps = {
-  onDeleteAccount: () => void;
+type PendingMfaEnrollment = {
+  factorId: string;
+  secret: string;
+  uri: string;
+  friendlyName?: string;
 };
 
-function DangerZoneSection({ onDeleteAccount }: DangerZoneSectionProps) {
+type DangerZoneSectionProps = {
+  testID?: string;
+};
+
+function DangerZoneSection({ testID }: DangerZoneSectionProps) {
+  const router = useRouter();
+
+  const handleDeleteAccount = () => {
+    // Navigate to dedicated delete account screen
+    router.push('/settings/delete-account');
+  };
+
   return (
-    <>
-      <ItemsContainer title="auth.security.danger_zone">
-        <Item
-          text="auth.security.delete_account"
-          icon={<Trash />}
-          onPress={onDeleteAccount}
-          testID="delete-account-item"
-        />
-      </ItemsContainer>
-      <DangerZoneWarning />
-    </>
+    <ItemsContainer title="auth.security.danger_zone" testID={testID}>
+      <Item
+        text="auth.security.delete_account"
+        icon={<Trash />}
+        onPress={handleDeleteAccount}
+        testID="delete-account-item"
+      />
+    </ItemsContainer>
   );
 }
 
@@ -138,11 +144,6 @@ export default function SecuritySettingsScreen() {
 
   const handleChangePassword = () => {
     presentChangePasswordModal();
-  };
-
-  const handleDeleteAccount = () => {
-    // Navigate to dedicated delete account screen
-    router.push('/settings/delete-account');
   };
 
   const handleStartEnableMfa = async () => {
@@ -279,10 +280,11 @@ export default function SecuritySettingsScreen() {
           <MfaSection
             isMfaEnabled={isMfaEnabled}
             isMfaLoading={isMfaLoading}
-            onEnableMfa={handleStartEnableMfa}
+            enrollTotp={enrollTotp}
+            unenrollTotp={unenrollTotp}
+            onStartEnableMfa={handleStartEnableMfa}
             onDisableMfa={handleDisableMfa}
-            isEnrolling={enrollTotp.isPending}
-            isUnenrolling={unenrollTotp.isPending}
+            testID="mfa-section"
           />
 
           {/* Active Sessions Section */}
@@ -295,7 +297,9 @@ export default function SecuritySettingsScreen() {
           </ItemsContainer>
 
           {/* Danger Zone */}
-          <DangerZoneSection onDeleteAccount={handleDeleteAccount} />
+          <DangerZoneSection testID="danger-zone-section" />
+
+          <DangerZoneWarning />
         </View>
       </ScrollView>
 

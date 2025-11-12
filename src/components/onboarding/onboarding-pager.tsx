@@ -73,7 +73,9 @@ export function OnboardingPager({
   const onScroll = useAnimatedScrollHandler({
     onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       'worklet';
-      activeIndex.value = event.contentOffset.x / event.layoutMeasurement.width;
+      activeIndex.value =
+        event.nativeEvent.contentOffset.x /
+        event.nativeEvent.layoutMeasurement.width;
     },
   });
 
