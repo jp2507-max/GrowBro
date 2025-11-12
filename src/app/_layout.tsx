@@ -9,6 +9,7 @@ import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
 // Setup Buffer polyfill for React Native
 import { Buffer } from 'buffer';
+import console from 'console';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import * as ScreenCapture from 'expo-screen-capture';
 import * as SplashScreen from 'expo-splash-screen';
@@ -48,9 +49,15 @@ import {
   resetLegalAcceptances,
 } from '@/lib/compliance/legal-acceptances';
 import {
+  completeOnboardingStep,
+  getOnboardingStatus,
   hydrateOnboardingState,
+  ONBOARDING_VERSION,
   resetOnboardingState,
+  shouldShowOnboarding,
+  useOnboardingState,
 } from '@/lib/compliance/onboarding-state';
+import { trackOnboardingStart } from '@/lib/compliance/onboarding-telemetry';
 import { useRootStartup } from '@/lib/hooks/use-root-startup';
 import { initializeJanitor } from '@/lib/media/photo-janitor';
 import { getReferencedPhotoUris } from '@/lib/media/photo-storage-helpers';
@@ -130,6 +137,7 @@ function RootLayout(): React.ReactElement {
   const [isFirstTime] = useIsFirstTime();
   const ageGateStatus = useAgeGate.status();
   const sessionId = useAgeGate.sessionId();
+  const onboardingStatus = useOnboardingState.status();
   const [isI18nReady, setIsI18nReady] = React.useState(false);
   const [isAuthReady, setIsAuthReady] = React.useState(false);
   const [showConsent, setShowConsent] = React.useState(false);
@@ -138,6 +146,7 @@ function RootLayout(): React.ReactElement {
   useRootStartup(setIsI18nReady, isFirstTime);
   useSessionAutoRefresh();
   useOfflineModeMonitor();
+
   React.useEffect(() => {
     registerKeyRotationTask().catch((error) => {
       console.warn(
@@ -193,6 +202,41 @@ function RootLayout(): React.ReactElement {
       }
     }
   }, [isAuthReady, router, pathname]);
+
+  // Onboarding entry guard: route first-time users and version bump re-shows
+  React.useEffect(() => {
+    if (!isI18nReady || !isAuthReady) return;
+
+    // Skip onboarding routing if we're on excluded paths
+    const excludedPaths = ['/age-gate', '/login', '/sign-up'];
+    if (excludedPaths.some((path) => pathname.startsWith(path))) return;
+
+    // Check if we should show onboarding
+    const needsOnboarding = shouldShowOnboarding();
+    const currentStatus = getOnboardingStatus();
+
+    if (needsOnboarding) {
+      // Determine the source of onboarding trigger
+      const source =
+        currentStatus === 'not-started'
+          ? 'first_run'
+          : currentStatus === 'completed'
+            ? 'version_bump'
+            : 'first_run';
+
+      // Track onboarding start
+      trackOnboardingStart(source);
+
+      console.log(
+        `[RootLayout] Onboarding needed (v${ONBOARDING_VERSION}), source: ${source}, status: ${currentStatus}`
+      );
+
+      // Navigate to age-gate (first step of onboarding)
+      if (pathname !== '/age-gate' && pathname !== '/onboarding') {
+        router.replace('/age-gate');
+      }
+    }
+  }, [isI18nReady, isAuthReady, pathname, router, onboardingStatus]);
 
   // Initialize deep linking for auth flows
   useDeepLinking();
@@ -266,6 +310,11 @@ function RootLayout(): React.ReactElement {
           onComplete={(c) => {
             persistConsents(c, isFirstTime);
             setShowConsent(false);
+            // After consent during first-run, complete the consent step
+            // This will trigger navigation to permission primers
+            if (isFirstTime) {
+              completeOnboardingStep('consent-modal');
+            }
           }}
         />
       )}
@@ -337,6 +386,11 @@ function AppStack(): React.ReactElement {
       <Stack.Screen name="(modals)" options={{ headerShown: false }} />
       <Stack.Screen name="age-gate" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="notification-primer"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen name="camera-primer" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
     </Stack>
   );

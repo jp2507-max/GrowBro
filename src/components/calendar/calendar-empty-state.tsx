@@ -5,15 +5,15 @@ import { Button, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
 
 type Props = {
-  onCreatePress?: () => void;
+  onConvertToTask?: () => void;
 };
 
-export function CommunityEmptyState({
-  onCreatePress,
+export function CalendarEmptyState({
+  onConvertToTask,
 }: Props): React.ReactElement {
   return (
     <View
-      testID="community-empty-state"
+      testID="calendar-empty-state"
       className="flex-1 items-center justify-center gap-6 px-6 py-12"
     >
       <Animated.View
@@ -22,35 +22,35 @@ export function CommunityEmptyState({
       >
         <Text
           className="text-center text-xl font-semibold text-neutral-900 dark:text-neutral-50"
-          tx="community.empty_state_educational.title"
+          tx="calendar.empty_state.title"
         />
 
-        <View className="w-full gap-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-800">
+        <View className="w-full gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-800">
           <Text
-            className="text-sm font-medium text-neutral-700 dark:text-neutral-200"
-            tx="community.empty_state_educational.moderation_guidance"
+            className="text-base font-medium text-neutral-900 dark:text-neutral-50"
+            tx="calendar.empty_state.sample_title"
+          />
+          <Text
+            className="text-sm text-neutral-600 dark:text-neutral-300"
+            tx="calendar.empty_state.sample_description"
           />
         </View>
-
-        <Text className="text-center text-base text-neutral-600 dark:text-neutral-300">
-          {translate('community.empty_state')}
-        </Text>
       </Animated.View>
 
-      {onCreatePress && (
+      {onConvertToTask && (
         <Animated.View
           entering={FadeIn.duration(300)
             .delay(150)
             .reduceMotion(ReduceMotion.System)}
         >
           <Button
-            label={translate('community.empty_state_educational.share_cta')}
-            onPress={onCreatePress}
+            label={translate('calendar.empty_state.convert_to_task')}
+            onPress={onConvertToTask}
             accessibilityHint={translate(
-              'accessibility.community.create_post_hint'
+              'calendar.empty_state.sample_description'
             )}
             accessibilityRole="button"
-            testID="community-empty-state-create"
+            testID="calendar-empty-state-convert"
           />
         </Animated.View>
       )}

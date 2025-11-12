@@ -54,6 +54,7 @@ src
 - i18next + react-i18next (internationalization) (i18next@^23.16.8, react-i18next@^15.7.3)
 - @gorhom/bottom-sheet (bottom sheets) (@gorhom/bottom-sheet@^5.2.6)
 - @shopify/flash-list (high-performance lists) (@shopify/flash-list@2.0.2)
+- @shopify/react-native-skia ^2.3.10
 - react-native-flash-message (toast notifications) (react-native-flash-message@^0.4.2)
 - react-native-gesture-handler and react-native-reanimated (gestures and animations) (react-native-gesture-handler@~2.28.0, react-native-reanimated@~4.1.0)
 - react-native-screens and react-native-safe-area-context (navigation primitives) (react-native-screens@~4.16.0, react-native-safe-area-context@5.6.1)

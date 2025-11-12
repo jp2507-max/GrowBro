@@ -7,6 +7,7 @@ import type { Post } from '@/api';
 import { usePosts } from '@/api';
 import { CannabisEducationalBanner } from '@/components/cannabis-educational-banner';
 import { Card } from '@/components/card';
+import { ActivationChecklist } from '@/components/home/activation-checklist';
 import {
   ActivityIndicator,
   FocusAwareStatusBar,
@@ -18,6 +19,11 @@ import {
 import { useAnalytics } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
+import {
+  type ActivationAction,
+  completeActivationAction,
+  hydrateActivationState,
+} from '@/lib/compliance/activation-state';
 import { useScreenErrorLogger } from '@/lib/hooks';
 import { translate } from '@/lib/i18n';
 import { consentManager } from '@/lib/privacy/consent-manager';
@@ -87,11 +93,14 @@ function useHomeAnalyticsTracking(isPending: boolean, itemCount: number): void {
 
 const HomeListHeader = React.memo(function HomeListHeader({
   onShareUpdatePress,
+  onActivationActionComplete,
 }: {
   onShareUpdatePress: () => void;
+  onActivationActionComplete: (action: ActivationAction) => void;
 }) {
   return (
     <View className="gap-4 px-4 pb-4">
+      <ActivationChecklist onActionComplete={onActivationActionComplete} />
       <Pressable
         className="flex-row items-center justify-between rounded-2xl bg-primary-600 p-4"
         accessibilityRole="button"
@@ -177,9 +186,15 @@ function HomeErrorState({ onRetry }: { onRetry: () => void }) {
 export default function Feed() {
   const router = useRouter();
   const theme = useThemeConfig();
+  const analytics = useAnalytics();
   const { grossHeight } = useBottomTabBarHeight();
   const { data, isPending, isError, error, refetch } = usePosts();
   const listData = React.useMemo(() => data ?? [], [data]);
+
+  // Hydrate activation state on mount
+  React.useEffect(() => {
+    hydrateActivationState();
+  }, []);
 
   useScreenErrorLogger(isError ? error : null, {
     screen: 'home',
@@ -210,6 +225,22 @@ export default function Feed() {
   const onRetry = React.useCallback(() => {
     void refetch();
   }, [refetch]);
+  const onActivationActionComplete = React.useCallback(
+    (action: ActivationAction) => {
+      // Mark action as completed
+      completeActivationAction(action);
+
+      // Track telemetry if consented
+      const hasConsented = consentManager.hasConsented('analytics');
+      if (hasConsented && analytics !== NoopAnalytics) {
+        void analytics.track('activation_action_complete', {
+          action,
+          screen: 'home',
+        });
+      }
+    },
+    [analytics]
+  );
   const contentPaddingBottom = React.useMemo(
     () => ({ paddingBottom: grossHeight + BOTTOM_PADDING_EXTRA }),
     [grossHeight]
@@ -233,7 +264,10 @@ export default function Feed() {
         getItemType={getItemType}
         contentContainerStyle={contentPaddingBottom}
         ListHeaderComponent={
-          <HomeListHeader onShareUpdatePress={onShareUpdatePress} />
+          <HomeListHeader
+            onShareUpdatePress={onShareUpdatePress}
+            onActivationActionComplete={onActivationActionComplete}
+          />
         }
         ListFooterComponent={<View style={{ height: BOTTOM_PADDING_EXTRA }} />}
         ListEmptyComponent={<HomeListEmpty isLoading={isPending} />}

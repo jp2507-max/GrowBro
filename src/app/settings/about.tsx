@@ -1,5 +1,6 @@
 import { Env } from '@env';
 import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
 import * as Updates from 'expo-updates';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Platform } from 'react-native';
@@ -14,6 +15,9 @@ import {
   Text,
   View,
 } from '@/components/ui';
+import { Info } from '@/components/ui/icons';
+import { resetOnboardingState } from '@/lib/compliance/onboarding-state';
+import { trackOnboardingStart } from '@/lib/compliance/onboarding-telemetry';
 import { showErrorMessage } from '@/lib/flash-message';
 import { useNetworkStatus } from '@/lib/hooks/use-network-status';
 import { translate } from '@/lib/i18n';
@@ -44,6 +48,7 @@ const GITHUB_URL = 'https://github.com/jp2507-max/GrowBro';
 
 // eslint-disable-next-line max-lines-per-function
 export default function AboutScreen() {
+  const router = useRouter();
   const { isInternetReachable } = useNetworkStatus();
   const isOffline = !isInternetReachable;
 
@@ -188,6 +193,30 @@ export default function AboutScreen() {
     }
   };
 
+  const handleRewatchOnboarding = (): void => {
+    Alert.alert(
+      translate('settings.about.rewatch_onboarding_title'),
+      translate('settings.about.rewatch_onboarding_message'),
+      [
+        {
+          text: translate('common.cancel'),
+          style: 'cancel',
+        },
+        {
+          text: translate('settings.about.rewatch_onboarding_confirm'),
+          onPress: () => {
+            // Reset onboarding state (but don't reset first-time flag)
+            resetOnboardingState();
+            // Track telemetry
+            trackOnboardingStart('manual');
+            // Navigate to age-gate (start of onboarding)
+            router.push('/age-gate');
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <>
       <FocusAwareStatusBar />
@@ -323,6 +352,19 @@ export default function AboutScreen() {
               rightElement={isOffline ? <OfflineBadge /> : undefined}
               disabled={isOffline}
               testID="about.link.github"
+            />
+          </ItemsContainer>
+
+          {/* Onboarding Section */}
+          <ItemsContainer
+            title="settings.about.onboarding"
+            testID="about.section.onboarding"
+          >
+            <Item
+              text="settings.about.rewatch_onboarding"
+              icon={<Info />}
+              onPress={handleRewatchOnboarding}
+              testID="about.onboarding.rewatch"
             />
           </ItemsContainer>
 

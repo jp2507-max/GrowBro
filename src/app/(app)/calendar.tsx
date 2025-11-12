@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { AgendaList } from '@/components/calendar/agenda-list';
+import { CalendarEmptyState } from '@/components/calendar/calendar-empty-state';
 import { DragDropProvider } from '@/components/calendar/drag-drop-provider';
 import { DraggableAgendaItem } from '@/components/calendar/draggable-agenda-item';
 import { Button, FocusAwareStatusBar, Text, View } from '@/components/ui';
@@ -81,6 +82,11 @@ export default function CalendarScreen(): React.ReactElement {
     );
   }, []);
 
+  const onConvertToTask = React.useCallback(() => {
+    // TODO: Navigate to task creation screen or open task creation modal
+    console.log('Convert sample task to real task');
+  }, []);
+
   const renderItem = React.useCallback(({ item }: { item: AgendaItem }) => {
     if (item.type === 'date-header') {
       return (
@@ -103,16 +109,22 @@ export default function CalendarScreen(): React.ReactElement {
     return null;
   }, []);
 
+  const hasNoTasks = items.length === 1 && items[0].type === 'date-header';
+
   return (
     <DragDropProvider>
       <View className="flex-1" testID="calendar-screen">
         <FocusAwareStatusBar />
         <Header date={currentDate} onPrev={onPrev} onNext={onNext} />
-        <AgendaList
-          data={items}
-          isLoading={isLoading}
-          renderItem={renderItem}
-        />
+        {hasNoTasks && !isLoading ? (
+          <CalendarEmptyState onConvertToTask={onConvertToTask} />
+        ) : (
+          <AgendaList
+            data={items}
+            isLoading={isLoading}
+            renderItem={renderItem}
+          />
+        )}
       </View>
     </DragDropProvider>
   );
