@@ -225,6 +225,7 @@ export default defineConfig([
       'src/components/**/*-screen.tsx',
       'src/components/**/*-modal.tsx',
       'src/components/**/*-sheet.tsx',
+      'src/components/**/*-slide.tsx',
     ],
     rules: {
       'max-lines-per-function': ['warn', 150],

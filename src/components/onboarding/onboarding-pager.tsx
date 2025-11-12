@@ -18,7 +18,8 @@ import type {
   ScrollView,
 } from 'react-native';
 import { useWindowDimensions } from 'react-native';
-import Animated, {
+import {
+  interpolate,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
@@ -80,6 +81,9 @@ export function OnboardingPager({
       const x = event.nativeEvent.contentOffset.x;
       const index = Math.round(x / width);
 
+      // Update React state for CTA button enablement
+      setCurrentIndex(index);
+
       // Track slide view with duration
       const now = Date.now();
       const previousTime = slideTimesRef.current[index] ?? now;
@@ -94,7 +98,7 @@ export function OnboardingPager({
   // CTA button animated style (fades in on last slide)
   const ctaStyle = useAnimatedStyle(() => {
     'worklet';
-    const opacity = Animated.interpolate(
+    const opacity = interpolate(
       activeIndex.value,
       [Math.max(lastIndex - 1, 0), lastIndex],
       [0, 1]
@@ -102,10 +106,9 @@ export function OnboardingPager({
     return { opacity };
   });
 
-  const ctaEnabled = React.useMemo(
-    () => activeIndex.value >= lastIndex - 0.001,
-    [activeIndex.value, lastIndex]
-  );
+  // CTA button enabled state derived from React state
+  const [currentIndex, setCurrentIndex] = React.useState(0);
+  const ctaEnabled = currentIndex >= lastIndex - 0.001;
 
   const handleDone = React.useCallback(() => {
     const totalDuration = Date.now() - startTimeRef.current;

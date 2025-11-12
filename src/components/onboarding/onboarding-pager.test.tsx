@@ -19,7 +19,7 @@ import { OnboardingPager } from './onboarding-pager';
 
 jest.mock('@/lib/compliance/onboarding-state', () => ({
   useOnboardingState: () => ({
-    markAsCompleted: jest.fn(),
+    markAsCompleted: () => jest.fn(),
   }),
 }));
 
@@ -150,6 +150,14 @@ describe('OnboardingPager', () => {
       await waitFor(() => {
         expect(onComplete).toHaveBeenCalledTimes(1);
       });
+    });
+
+    test('done button is initially disabled', async () => {
+      const onComplete = jest.fn();
+      setup(<OnboardingPager slides={testSlides} onComplete={onComplete} />);
+
+      const doneButton = await screen.findByTestId('onboarding-done-button');
+      expect(doneButton).toBeDisabled();
     });
   });
 

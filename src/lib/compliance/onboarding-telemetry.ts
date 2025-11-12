@@ -4,6 +4,7 @@
  */
 
 import { getAnalyticsClient } from '@/lib/analytics-registry';
+import type { ActivationAction } from '@/lib/compliance/activation-state';
 import { ONBOARDING_VERSION } from '@/lib/compliance/onboarding-state';
 
 /**
@@ -73,12 +74,7 @@ export function trackPrimerAccepted(
 }
 
 export function trackActivationAction(
-  action:
-    | 'create_task'
-    | 'adopt_playbook'
-    | 'view_strain'
-    | 'bookmark_strain'
-    | 'capture_photo',
+  action: ActivationAction,
   completed: boolean,
   context?: string
 ): void {

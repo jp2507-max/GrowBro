@@ -19,9 +19,13 @@ export function CommunitySlide({
   index: _index,
 }: OnboardingSlideProps): React.ReactElement {
   return (
-    <View className="flex-1 items-center justify-center px-8">
+    <View
+      testID="community-slide"
+      className="flex-1 items-center justify-center px-8"
+    >
       {/* Icon */}
       <Animated.View
+        testID="community-header"
         entering={createStaggeredFadeIn(0, onboardingMotion.stagger.header)}
         className="mb-8"
       >
@@ -35,17 +39,24 @@ export function CommunitySlide({
         entering={createStaggeredFadeIn(1, onboardingMotion.stagger.header)}
         className="mb-4"
       >
-        <Text className="text-center text-4xl font-bold text-charcoal-950 dark:text-white">
+        <Text
+          testID="community-title"
+          className="text-center text-4xl font-bold text-charcoal-950 dark:text-white"
+        >
           {translate('onboarding.community.title')}
         </Text>
       </Animated.View>
 
       {/* Body */}
       <Animated.View
+        testID="community-content"
         entering={createStaggeredFadeIn(2, onboardingMotion.stagger.content)}
         className="mb-8"
       >
-        <Text className="text-center text-lg text-neutral-600 dark:text-neutral-400">
+        <Text
+          testID="community-body"
+          className="text-center text-lg text-neutral-600 dark:text-neutral-400"
+        >
           {translate('onboarding.community.body')}
         </Text>
       </Animated.View>
@@ -53,37 +64,58 @@ export function CommunitySlide({
       {/* Benefits */}
       <View className="w-full max-w-md space-y-3">
         <Animated.View
+          testID="community-list-0"
           entering={createStaggeredFadeIn(3, onboardingMotion.stagger.list)}
           className="rounded-xl bg-neutral-100 p-4 dark:bg-neutral-900"
         >
-          <Text className="font-semibold text-charcoal-950 dark:text-white">
+          <Text
+            testID="benefit-share-title"
+            className="font-semibold text-charcoal-950 dark:text-white"
+          >
             {translate('onboarding.community.benefit_share_title')}
           </Text>
-          <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+          <Text
+            testID="benefit-share-body"
+            className="text-sm text-neutral-600 dark:text-neutral-400"
+          >
             {translate('onboarding.community.benefit_share_body')}
           </Text>
         </Animated.View>
 
         <Animated.View
+          testID="community-list-1"
           entering={createStaggeredFadeIn(4, onboardingMotion.stagger.list)}
           className="rounded-xl bg-neutral-100 p-4 dark:bg-neutral-900"
         >
-          <Text className="font-semibold text-charcoal-950 dark:text-white">
+          <Text
+            testID="benefit-learn-title"
+            className="font-semibold text-charcoal-950 dark:text-white"
+          >
             {translate('onboarding.community.benefit_learn_title')}
           </Text>
-          <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+          <Text
+            testID="benefit-learn-body"
+            className="text-sm text-neutral-600 dark:text-neutral-400"
+          >
             {translate('onboarding.community.benefit_learn_body')}
           </Text>
         </Animated.View>
 
         <Animated.View
+          testID="community-list-2"
           entering={createStaggeredFadeIn(5, onboardingMotion.stagger.list)}
           className="rounded-xl bg-neutral-100 p-4 dark:bg-neutral-900"
         >
-          <Text className="font-semibold text-charcoal-950 dark:text-white">
+          <Text
+            testID="benefit-privacy-title"
+            className="font-semibold text-charcoal-950 dark:text-white"
+          >
             {translate('onboarding.community.benefit_privacy_title')}
           </Text>
-          <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+          <Text
+            testID="benefit-privacy-body"
+            className="text-sm text-neutral-600 dark:text-neutral-400"
+          >
             {translate('onboarding.community.benefit_privacy_body')}
           </Text>
         </Animated.View>

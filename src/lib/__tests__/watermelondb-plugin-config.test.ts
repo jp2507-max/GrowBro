@@ -34,64 +34,70 @@ describe('WatermelonDB Plugin Configuration', () => {
   });
 
   describe('Package Dependencies', () => {
-    test('WatermelonDB is installed', () => {
+    test('WatermelonDB core dependencies are installed', () => {
       expect(packageJson.dependencies).toHaveProperty('@nozbe/watermelondb');
+      expect(packageJson.dependencies).toHaveProperty('@nozbe/simdjson');
 
-      const version = packageJson.dependencies['@nozbe/watermelondb'];
-      expect(version).toBeTruthy();
-      expect(version).toContain('0.28.0'); // Current version: ^0.28.0
+      const dbVersion = packageJson.dependencies['@nozbe/watermelondb'];
+      const simdjsonVersion = packageJson.dependencies['@nozbe/simdjson'];
+
+      expect(dbVersion).toBeTruthy();
+      expect(simdjsonVersion).toBeTruthy();
     });
 
-    test('WatermelonDB Expo plugin is installed', () => {
-      expect(packageJson.dependencies).toHaveProperty(
+    test('Legacy WatermelonDB Expo plugin is not required', () => {
+      expect(packageJson.dependencies).not.toHaveProperty(
         '@morrowdigital/watermelondb-expo-plugin'
       );
-
-      const version =
-        packageJson.dependencies['@morrowdigital/watermelondb-expo-plugin'];
-      expect(version).toBeTruthy();
-      expect(version).toContain('2.3.3'); // Current version: ^2.3.3
     });
   });
 
   describe('Expo Config Plugin Setup', () => {
-    test('WatermelonDB plugin is configured in app.config.cjs', () => {
+    test('expo-build-properties config declares simdjson pod', () => {
       const config = appConfig;
 
-      expect(config.plugins).toBeDefined();
-      expect(Array.isArray(config.plugins)).toBe(true);
+      const buildPropsEntry = config.plugins.find((plugin: any) => {
+        if (Array.isArray(plugin)) {
+          return plugin[0] === 'expo-build-properties';
+        }
+        return plugin === 'expo-build-properties';
+      });
 
-      const watermelonPlugin = config.plugins.find(
-        (plugin: any) =>
-          plugin === '@morrowdigital/watermelondb-expo-plugin' ||
-          (Array.isArray(plugin) &&
-            plugin[0] === '@morrowdigital/watermelondb-expo-plugin')
+      expect(buildPropsEntry).toBeDefined();
+
+      const buildPropsConfig = Array.isArray(buildPropsEntry)
+        ? buildPropsEntry[1]
+        : {};
+
+      expect(buildPropsConfig?.ios?.extraPods).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: 'simdjson',
+            path: expect.stringContaining('@nozbe/simdjson'),
+          }),
+        ])
       );
-
-      expect(watermelonPlugin).toBeDefined();
     });
 
-    test('WatermelonDB plugin appears before other plugins', () => {
+    test('expo-build-properties config declares libc++ pickFirst', () => {
       const config = appConfig;
 
-      const pluginNames = config.plugins.map((plugin: any) =>
-        Array.isArray(plugin) ? plugin[0] : plugin
+      const buildPropsEntry = config.plugins.find((plugin: any) => {
+        if (Array.isArray(plugin)) {
+          return plugin[0] === 'expo-build-properties';
+        }
+        return plugin === 'expo-build-properties';
+      });
+
+      expect(buildPropsEntry).toBeDefined();
+
+      const buildPropsConfig = Array.isArray(buildPropsEntry)
+        ? buildPropsEntry[1]
+        : {};
+
+      expect(buildPropsConfig?.android?.packagingOptions?.pickFirst).toEqual(
+        expect.arrayContaining(['**/libc++_shared.so'])
       );
-
-      const watermelonIndex = pluginNames.indexOf(
-        '@morrowdigital/watermelondb-expo-plugin'
-      );
-
-      expect(watermelonIndex).toBeGreaterThanOrEqual(0);
-
-      // Should be configured early - informational only
-      // Plugin is at index 11 which is acceptable
-      if (watermelonIndex >= 10) {
-        console.warn(
-          `WatermelonDB plugin is at index ${watermelonIndex}. ` +
-            'Consider moving it earlier in the plugins array for consistency.'
-        );
-      }
     });
   });
 
@@ -277,26 +283,36 @@ describe('WatermelonDB Plugin Configuration', () => {
   });
 
   describe('CI/CD Guards', () => {
-    test('CI should fail if plugin is removed', () => {
-      // This test serves as documentation that removing the plugin
-      // will break the build. In CI, we should have a specific check.
-
+    test('CI should fail if build properties are missing', () => {
       const config = appConfig;
-      const hasPlugin = config.plugins.some(
-        (plugin: any) =>
-          plugin === '@morrowdigital/watermelondb-expo-plugin' ||
-          (Array.isArray(plugin) &&
-            plugin[0] === '@morrowdigital/watermelondb-expo-plugin')
-      );
+      const buildPropsEntry = config.plugins.find((plugin: any) => {
+        if (Array.isArray(plugin)) {
+          return plugin[0] === 'expo-build-properties';
+        }
+        return plugin === 'expo-build-properties';
+      });
 
-      // Guard against accidental removal
-      expect(hasPlugin).toBe(true);
+      const buildPropsConfig = Array.isArray(buildPropsEntry)
+        ? buildPropsEntry[1]
+        : null;
 
-      if (!hasPlugin) {
+      expect(buildPropsConfig).toBeTruthy();
+
+      if (!buildPropsConfig?.ios?.extraPods) {
         throw new Error(
-          'CRITICAL: WatermelonDB Expo plugin is missing from app.config.cjs! ' +
-            'This will break database functionality. ' +
-            'Add @morrowdigital/watermelondb-expo-plugin to expo.plugins array.'
+          'CRITICAL: expo-build-properties ios.extraPods missing simdjson. ' +
+            'WatermelonDB requires the simdjson pod to build on iOS.'
+        );
+      }
+
+      if (
+        !buildPropsConfig?.android?.packagingOptions?.pickFirst?.includes(
+          '**/libc++_shared.so'
+        )
+      ) {
+        throw new Error(
+          'CRITICAL: expo-build-properties android.packagingOptions.pickFirst missing libc++_shared. ' +
+            'WatermelonDB requires pickFirst "**/libc++_shared.so" to avoid duplicate library conflicts.'
         );
       }
     });

@@ -622,6 +622,7 @@
     "drag_item_label": "Drag {{title}}",
     "ec_range": "EC@25°C target: {{min}}–{{max}} mS/cm",
     "empty_state": {
+      "action_hint": "Converts the sample task into a real task that you can customize",
       "convert_to_task": "Convert to Real Task",
       "sample_description": "This is an example recurring task. Tap below to create your own tasks and build your grow schedule.",
       "sample_title": "💧 Water plants - Every 2 days",

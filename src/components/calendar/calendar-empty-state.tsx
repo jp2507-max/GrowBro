@@ -46,9 +46,7 @@ export function CalendarEmptyState({
           <Button
             label={translate('calendar.empty_state.convert_to_task')}
             onPress={onConvertToTask}
-            accessibilityHint={translate(
-              'calendar.empty_state.sample_description'
-            )}
+            accessibilityHint={translate('calendar.empty_state.action_hint')}
             accessibilityRole="button"
             testID="calendar-empty-state-convert"
           />

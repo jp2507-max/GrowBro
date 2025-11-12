@@ -314,59 +314,48 @@ describe('Onboarding Telemetry', () => {
       });
     });
 
-    it('should track create_task action', () => {
-      trackActivationAction('create_task', true, 'home');
+    it('should track create-task action', () => {
+      trackActivationAction('create-task', true, 'home');
 
       const events = metrics.getAll();
       expect(events).toHaveLength(1);
       expect(events[0]?.name).toBe('activation_action');
       expect(events[0]?.payload).toMatchObject({
-        action: 'create_task',
+        action: 'create-task',
         completed: true,
         context: 'home',
       });
     });
 
-    it('should track adopt_playbook action', () => {
-      trackActivationAction('adopt_playbook', true);
+    it('should track open-playbook action', () => {
+      trackActivationAction('open-playbook', true);
 
       const events = metrics.getAll();
       expect(events[0]?.payload).toMatchObject({
-        action: 'adopt_playbook',
+        action: 'open-playbook',
         completed: true,
         context: undefined,
       });
     });
 
-    it('should track view_strain action', () => {
-      trackActivationAction('view_strain', false, 'strains_list');
+    it('should track explore-strains action', () => {
+      trackActivationAction('explore-strains', false, 'strains_list');
 
       const events = metrics.getAll();
       expect(events[0]?.payload).toMatchObject({
-        action: 'view_strain',
+        action: 'explore-strains',
         completed: false,
         context: 'strains_list',
       });
     });
 
-    it('should track bookmark_strain action', () => {
-      trackActivationAction('bookmark_strain', true);
+    it('should track try-ai-diagnosis action', () => {
+      trackActivationAction('try-ai-diagnosis', true);
 
       const events = metrics.getAll();
       expect(events[0]?.payload).toMatchObject({
-        action: 'bookmark_strain',
+        action: 'try-ai-diagnosis',
         completed: true,
-      });
-    });
-
-    it('should track capture_photo action', () => {
-      trackActivationAction('capture_photo', true, 'assessment');
-
-      const events = metrics.getAll();
-      expect(events[0]?.payload).toMatchObject({
-        action: 'capture_photo',
-        completed: true,
-        context: 'assessment',
       });
     });
   });

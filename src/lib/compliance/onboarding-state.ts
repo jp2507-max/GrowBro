@@ -264,10 +264,9 @@ function createGetNextStepFunction(get: any): () => OnboardingStep | null {
 function createShouldShowOnboardingFunction(get: any): () => boolean {
   return () => {
     const state = get();
-    // Show if never started or if version has been bumped
-    if (state.status === 'not-started') return true;
+    // Show if not completed or if version has been bumped
+    if (state.status !== 'completed') return true;
     if (
-      state.status === 'completed' &&
       typeof state.version === 'number' &&
       state.version < ONBOARDING_VERSION
     ) {
@@ -361,7 +360,7 @@ export function shouldShowOnboarding(): boolean {
 }
 
 export function markOnboardingAsCompleted(): void {
-  return onboardingStateStore.getState().markAsCompleted();
+  onboardingStateStore.getState().markAsCompleted();
 }
 
 export function getOnboardingStatus(): OnboardingStatus {

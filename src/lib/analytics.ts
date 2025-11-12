@@ -1,5 +1,7 @@
 // Central analytics event schema and helper types
 // Add new events here to ensure strong typing across the app.
+import type { ActivationAction } from '@/lib/compliance/activation-state';
+
 import { hasConsent } from './privacy-consent';
 
 // Base payload that all analytics events should include
@@ -604,21 +606,12 @@ export type AnalyticsEvents = {
     permission_granted: boolean;
   };
   activation_action: {
-    action:
-      | 'create_task'
-      | 'adopt_playbook'
-      | 'view_strain'
-      | 'bookmark_strain'
-      | 'capture_photo';
+    action: ActivationAction;
     completed: boolean;
     context?: string;
   };
   activation_action_complete: {
-    action:
-      | 'create-task'
-      | 'open-playbook'
-      | 'try-ai-diagnosis'
-      | 'explore-strains';
+    action: ActivationAction;
     screen: string;
   };
   activation_checklist_dismissed: {

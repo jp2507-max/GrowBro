@@ -187,7 +187,7 @@ Fired when the user completes an activation action from the checklist.
 
 ```typescript
 {
-  action: 'create_task' | 'adopt_playbook' | 'view_strain' | 'bookmark_strain' | 'capture_photo';
+  action: 'create-task' | 'open-playbook' | 'try-ai-diagnosis' | 'explore-strains';
   completed: boolean;       // true if action completed successfully
   context?: string;         // Optional context (e.g., 'activation_checklist', 'home')
 }
@@ -204,7 +204,7 @@ Fired when the user completes an activation action from the checklist.
 **Example:**
 
 ```typescript
-trackActivationAction('create_task', true, 'activation_checklist');
+trackActivationAction('create-task', true, 'activation_checklist');
 ```
 
 ---

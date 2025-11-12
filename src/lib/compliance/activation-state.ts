@@ -153,17 +153,7 @@ function createCompleteActionFunction(
     savePersistedState(newState);
 
     // Track activation action completion
-    const actionMap: Record<ActivationAction, string> = {
-      'create-task': 'create_task',
-      'open-playbook': 'adopt_playbook',
-      'try-ai-diagnosis': 'capture_photo',
-      'explore-strains': 'view_strain',
-    };
-    trackActivationAction(
-      actionMap[action] as any,
-      true,
-      'activation_checklist'
-    );
+    trackActivationAction(action, true, 'activation_checklist');
   };
 }
 

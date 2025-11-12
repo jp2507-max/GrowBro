@@ -220,6 +220,13 @@ function createExpoConfig(config) {
           },
           ios: {
             newArchEnabled: true,
+            extraPods: [
+              {
+                name: 'simdjson',
+                path: '../node_modules/@nozbe/simdjson',
+                modular_headers: true,
+              },
+            ],
           },
         },
       ],
@@ -250,8 +257,6 @@ function createExpoConfig(config) {
       ],
       // Background tasks (BGTaskScheduler on iOS, WorkManager on Android)
       'expo-background-task',
-      // WatermelonDB config plugin to enable JSI adapter in Expo managed workflow
-      '@morrowdigital/watermelondb-expo-plugin',
     ],
     extra: {
       // Expose only public vars; keep secrets out of the bundle.

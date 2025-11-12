@@ -21,7 +21,8 @@ Dependencies are already configured in `package.json`:
 {
   "dependencies": {
     "@nozbe/watermelondb": "^0.28.0",
-    "@morrowdigital/watermelondb-expo-plugin": "^2.3.3"
+    "@nozbe/simdjson": "^3.9.4",
+    "expo-build-properties": "1.0.9"
   }
 }
 ```
@@ -29,24 +30,42 @@ Dependencies are already configured in `package.json`:
 If you need to reinstall:
 
 ```bash
-npx expo install @nozbe/watermelondb @morrowdigital/watermelondb-expo-plugin
+npx expo install @nozbe/watermelondb @nozbe/simdjson expo-build-properties
 ```
 
 ### 2. Expo Config Plugin
 
-The WatermelonDB plugin is configured in `app.config.cjs`:
+WatermelonDB native requirements are configured in `app.config.cjs`:
 
 ```javascript
 module.exports = ({ config }) => ({
   ...config,
   plugins: [
     // ... other plugins
-    '@morrowdigital/watermelondb-expo-plugin',
+    [
+      'expo-build-properties',
+      {
+        ios: {
+          extraPods: [
+            {
+              name: 'simdjson',
+              path: '../node_modules/@nozbe/simdjson',
+              modular_headers: true,
+            },
+          ],
+        },
+        android: {
+          packagingOptions: {
+            pickFirst: ['**/libc++_shared.so'],
+          },
+        },
+      },
+    ],
   ],
 });
 ```
 
-**IMPORTANT**: Do NOT remove this plugin. A CI guard (`scripts/ci-watermelondb-plugin-guard.js`) prevents accidental removal.
+**IMPORTANT**: A CI guard (`scripts/ci-watermelondb-plugin-guard.js`) validates this configuration and will fail if simdjson or the libc++ `pickFirst` entry is missing.
 
 ### 3. Create Development Build
 

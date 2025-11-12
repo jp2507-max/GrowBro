@@ -622,6 +622,7 @@
     "drag_item_label": "Ziehen {{title}}",
     "ec_range": "EC@25°C‑Ziel: {{min}}–{{max}} mS/cm",
     "empty_state": {
+      "action_hint": "Wandelt die Beispielaufgabe in eine echte Aufgabe um, die du anpassen kannst",
       "convert_to_task": "In echte Aufgabe umwandeln",
       "sample_description": "Dies ist eine Beispiel-Wiederholungsaufgabe. Tippe unten, um deine eigenen Aufgaben zu erstellen und deinen Anbauplan aufzubauen.",
       "sample_title": "💧 Pflanzen gießen - Alle 2 Tage",

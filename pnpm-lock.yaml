@@ -20,9 +20,6 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.63.0(react@19.1.0))
-      '@morrowdigital/watermelondb-expo-plugin':
-        specifier: ^2.3.3
-        version: 2.3.3
       '@nozbe/simdjson':
         specifier: ^3.9.4
         version: 3.9.4
@@ -2205,9 +2202,6 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
-
-  '@morrowdigital/watermelondb-expo-plugin@2.3.3':
-    resolution: {integrity: sha512-380NyK5fPEqBfWorqREc1zQkAuxITSN8cdf15TaOwAdbvIwjeF1TjvztUNC8eqJum0AHdU2xQLHMph3rndQtNQ==}
 
   '@motionone/animation@10.18.0':
     resolution: {integrity: sha512-9z2p5GFGCm0gBsZbi8rVMOAJCtw1WqBTIPw3ozk06gDvZInBPIsQcHgYogEJ4yuHJ+akuW8g1SEIOpTOvYs8hw==}
@@ -11813,8 +11807,6 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
-
-  '@morrowdigital/watermelondb-expo-plugin@2.3.3': {}
 
   '@motionone/animation@10.18.0':
     dependencies:
