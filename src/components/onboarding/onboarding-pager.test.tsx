@@ -70,6 +70,12 @@ jest.mock('@/lib/compliance/onboarding-state', () => ({
   completeOnboardingStep: jest.fn(),
 }));
 
+jest.mock('@/lib/telemetry/onboarding-telemetry', () => ({
+  trackOnboardingStepComplete: jest.fn(),
+  trackOnboardingComplete: jest.fn(),
+  trackOnboardingSkipped: jest.fn(),
+}));
+
 jest.mock('expo-router', () => ({
   useRouter: () => ({
     replace: jest.fn(),
@@ -252,9 +258,10 @@ describe('OnboardingPager', () => {
 
       await waitFor(() => {
         expect(mockCompleteStep).toHaveBeenCalledTimes(1);
-        expect(mockCompleteStep).toHaveBeenCalledWith('consent-modal');
-        expect(onComplete).toHaveBeenCalledTimes(1);
       });
+
+      expect(mockCompleteStep).toHaveBeenCalledWith('consent-modal');
+      expect(onComplete).toHaveBeenCalledTimes(1);
     });
 
     test('marks onboarding as completed when done is pressed', async () => {
@@ -276,9 +283,9 @@ describe('OnboardingPager', () => {
 
       await waitFor(() => {
         expect(mockCompleteStep).toHaveBeenCalledTimes(1);
-        expect(mockCompleteStep).toHaveBeenCalledWith('consent-modal');
-        expect(onComplete).toHaveBeenCalledTimes(1);
       });
+      expect(mockCompleteStep).toHaveBeenCalledWith('consent-modal');
+      expect(onComplete).toHaveBeenCalledTimes(1);
     });
   });
 

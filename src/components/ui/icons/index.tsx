@@ -9,6 +9,7 @@ export * from './file-text';
 export * from './github';
 export * from './help-circle';
 export * from './home';
+export * from './info';
 export * from './inventory';
 export * from './language';
 export * from './lock';

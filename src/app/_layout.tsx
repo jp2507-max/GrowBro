@@ -9,7 +9,6 @@ import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
 // Setup Buffer polyfill for React Native
 import { Buffer } from 'buffer';
-import console from 'console';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import * as ScreenCapture from 'expo-screen-capture';
 import * as SplashScreen from 'expo-splash-screen';
@@ -50,7 +49,6 @@ import {
 } from '@/lib/compliance/legal-acceptances';
 import {
   completeOnboardingStep,
-  getCurrentOnboardingStep,
   getOnboardingStatus,
   hydrateOnboardingState,
   ONBOARDING_VERSION,
@@ -200,9 +198,16 @@ function useOnboardingRouting(options: {
   pathname: string;
   router: ReturnType<typeof useRouter>;
   onboardingStatus: string;
+  currentStep: string;
 }): void {
-  const { isI18nReady, isAuthReady, pathname, router, onboardingStatus } =
-    options;
+  const {
+    isI18nReady,
+    isAuthReady,
+    pathname,
+    router,
+    onboardingStatus,
+    currentStep,
+  } = options;
   React.useEffect(() => {
     if (!isI18nReady || !isAuthReady) return;
     const excludedPaths = [
@@ -217,7 +222,6 @@ function useOnboardingRouting(options: {
 
     const needsOnboarding = shouldShowOnboarding();
     const currentStatus = getOnboardingStatus();
-    const currentStep = getCurrentOnboardingStep();
 
     // Skip redirect when consent modal is pending to avoid loop with age-gate routing
     if (needsOnboarding && currentStep !== 'consent-modal') {
@@ -235,7 +239,14 @@ function useOnboardingRouting(options: {
         router.replace('/age-gate');
       }
     }
-  }, [isI18nReady, isAuthReady, pathname, router, onboardingStatus]);
+  }, [
+    isI18nReady,
+    isAuthReady,
+    pathname,
+    router,
+    onboardingStatus,
+    currentStep,
+  ]);
 }
 
 function useAgeGateSession(
@@ -304,6 +315,7 @@ function RootLayout(): React.ReactElement {
   const ageGateStatus = useAgeGate.status();
   const sessionId = useAgeGate.sessionId();
   const onboardingStatus = useOnboardingState.status();
+  const currentOnboardingStep = useOnboardingState.currentStep();
   const [isI18nReady, setIsI18nReady] = React.useState(false);
   const [isAuthReady, setIsAuthReady] = React.useState(false);
   const [showConsent, setShowConsent] = React.useState(false);
@@ -325,6 +337,7 @@ function RootLayout(): React.ReactElement {
     pathname,
     router,
     onboardingStatus,
+    currentStep: currentOnboardingStep,
   });
   useAgeGateSession(ageGateStatus, sessionId);
   useConsentCheck(setShowConsent);

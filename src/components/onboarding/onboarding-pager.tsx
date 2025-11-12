@@ -18,8 +18,7 @@ import type {
   ScrollView,
 } from 'react-native';
 import { useWindowDimensions } from 'react-native';
-import {
-  interpolate,
+import Reanimated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
@@ -72,7 +71,7 @@ export function OnboardingPager({
   }, []);
 
   const onScroll = useAnimatedScrollHandler({
-    onScroll: (event: any) => {
+    onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       'worklet';
       activeIndex.value = event.contentOffset.x / event.layoutMeasurement.width;
     },
@@ -84,7 +83,7 @@ export function OnboardingPager({
     if (lastIndex === 0) {
       return { opacity: 1 };
     }
-    const opacity = interpolate(
+    const opacity = Reanimated.interpolate(
       activeIndex.value,
       [Math.max(lastIndex - 1, 0), lastIndex],
       [0, 1]

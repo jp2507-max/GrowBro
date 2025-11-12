@@ -36,6 +36,82 @@ type PendingMfaEnrollment = {
   friendlyName?: string;
 };
 
+type MfaSectionProps = {
+  isMfaEnabled: boolean;
+  isMfaLoading: boolean;
+  onEnableMfa: () => void;
+  onDisableMfa: () => void;
+  isEnrolling: boolean;
+  isUnenrolling: boolean;
+};
+
+function MfaSection({
+  isMfaEnabled,
+  isMfaLoading,
+  onEnableMfa,
+  onDisableMfa,
+  isEnrolling,
+  isUnenrolling,
+}: MfaSectionProps) {
+  return (
+    <ItemsContainer title="auth.security.mfa_section">
+      <Item
+        text="auth.security.two_factor_auth"
+        value={translate(
+          isMfaEnabled
+            ? 'auth.security.mfa_status_enabled'
+            : 'auth.security.mfa_status_disabled'
+        )}
+        icon={<Shield />}
+        testID="two-factor-item"
+        description={
+          isMfaEnabled
+            ? translate('auth.security.mfa_enabled_hint')
+            : translate('auth.security.mfa_disabled_hint')
+        }
+      />
+      {isMfaEnabled ? (
+        <Button
+          variant="outline"
+          label={translate('auth.security.disable_mfa')}
+          onPress={onDisableMfa}
+          disabled={isUnenrolling}
+          loading={isUnenrolling}
+          testID="disable-mfa-button"
+        />
+      ) : (
+        <Button
+          label={translate('auth.security.enable_mfa')}
+          onPress={onEnableMfa}
+          disabled={isEnrolling || isMfaLoading}
+          loading={isEnrolling}
+          testID="enable-mfa-button"
+        />
+      )}
+    </ItemsContainer>
+  );
+}
+
+type DangerZoneSectionProps = {
+  onDeleteAccount: () => void;
+};
+
+function DangerZoneSection({ onDeleteAccount }: DangerZoneSectionProps) {
+  return (
+    <>
+      <ItemsContainer title="auth.security.danger_zone">
+        <Item
+          text="auth.security.delete_account"
+          icon={<Trash />}
+          onPress={onDeleteAccount}
+          testID="delete-account-item"
+        />
+      </ItemsContainer>
+      <DangerZoneWarning />
+    </>
+  );
+}
+
 export default function SecuritySettingsScreen() {
   const router = useRouter();
   const { ref: changePasswordModalRef, present: presentChangePasswordModal } =
@@ -200,41 +276,14 @@ export default function SecuritySettingsScreen() {
           <BiometricToggleSection />
 
           {/* MFA Section */}
-          <ItemsContainer title="auth.security.mfa_section">
-            <Item
-              text="auth.security.two_factor_auth"
-              value={translate(
-                isMfaEnabled
-                  ? 'auth.security.mfa_status_enabled'
-                  : 'auth.security.mfa_status_disabled'
-              )}
-              icon={<Shield />}
-              testID="two-factor-item"
-              description={
-                isMfaEnabled
-                  ? translate('auth.security.mfa_enabled_hint')
-                  : translate('auth.security.mfa_disabled_hint')
-              }
-            />
-            {isMfaEnabled ? (
-              <Button
-                variant="outline"
-                label={translate('auth.security.disable_mfa')}
-                onPress={handleDisableMfa}
-                disabled={unenrollTotp.isPending}
-                loading={unenrollTotp.isPending}
-                testID="disable-mfa-button"
-              />
-            ) : (
-              <Button
-                label={translate('auth.security.enable_mfa')}
-                onPress={handleStartEnableMfa}
-                disabled={enrollTotp.isPending || isMfaLoading}
-                loading={enrollTotp.isPending}
-                testID="enable-mfa-button"
-              />
-            )}
-          </ItemsContainer>
+          <MfaSection
+            isMfaEnabled={isMfaEnabled}
+            isMfaLoading={isMfaLoading}
+            onEnableMfa={handleStartEnableMfa}
+            onDisableMfa={handleDisableMfa}
+            isEnrolling={enrollTotp.isPending}
+            isUnenrolling={unenrollTotp.isPending}
+          />
 
           {/* Active Sessions Section */}
           <ItemsContainer title="auth.security.sessions_section">
@@ -246,16 +295,7 @@ export default function SecuritySettingsScreen() {
           </ItemsContainer>
 
           {/* Danger Zone */}
-          <ItemsContainer title="auth.security.danger_zone">
-            <Item
-              text="auth.security.delete_account"
-              icon={<Trash />}
-              onPress={handleDeleteAccount}
-              testID="delete-account-item"
-            />
-          </ItemsContainer>
-
-          <DangerZoneWarning />
+          <DangerZoneSection onDeleteAccount={handleDeleteAccount} />
         </View>
       </ScrollView>
 

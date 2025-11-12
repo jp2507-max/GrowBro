@@ -103,7 +103,7 @@
     "@sentry/react-native": "^7.2.0",
     "@shopify/flash-list": "2.0.2",
     "@shopify/react-native-performance": "^4.1.2",
-    "@shopify/react-native-skia": "^2.3.10",
+    "@shopify/react-native-skia": "^2.2.12",
     "@supabase/supabase-js": "^2.57.4",
     "@tanstack/react-query": "^5.90.1",
     "app-icon-badge": "^0.1.2",
@@ -264,7 +264,8 @@
         "listUnknownPackages": false,
         "exclude": [
           "react-native-restart",
-          "@nozbe/watermelondb"
+          "@nozbe/watermelondb",
+          "@shopify/react-native-performance"
         ]
       }
     },
