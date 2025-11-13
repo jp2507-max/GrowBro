@@ -6,12 +6,15 @@
  */
 
 import React from 'react';
-import type { SharedValue } from 'react-native-reanimated';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
-import Reanimated from 'react-native-reanimated';
+import Reanimated, {
+  type SharedValue,
+  useAnimatedStyle,
+} from 'react-native-reanimated';
 
 import { View } from '@/components/ui';
 import colors from '@/components/ui/colors';
+
+const Animated = Reanimated;
 
 type PaginationDotsProps = {
   count: number;
@@ -26,7 +29,8 @@ type DotProps = {
 
 function Dot({ index, activeIndex }: DotProps): React.ReactElement {
   const rStyle = useAnimatedStyle(() => {
-    const backgroundColor = Reanimated.interpolate(
+    'worklet';
+    const backgroundColor = Reanimated.interpolateColor(
       activeIndex.value,
       [index - 1, index, index + 1],
       [colors.neutral[400], colors.primary[600], colors.neutral[400]]

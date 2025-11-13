@@ -3,10 +3,7 @@ import React, { useCallback } from 'react';
 
 import { CameraPermissionPrimer } from '@/components/onboarding';
 import { FocusAwareStatusBar } from '@/components/ui';
-import {
-  completeOnboardingStep,
-  markOnboardingAsCompleted,
-} from '@/lib/compliance/onboarding-state';
+import { completeOnboardingStep } from '@/lib/compliance/onboarding-state';
 import { useIsFirstTime } from '@/lib/hooks';
 
 /**
@@ -29,16 +26,14 @@ export default function CameraPrimerScreen(): React.ReactElement {
       // The app works fully without camera/photo permissions
       completeOnboardingStep('camera-primer');
 
-      // Mark consent-modal step as completed now that all permission primers are done
-      completeOnboardingStep('consent-modal');
-
-      // Mark entire onboarding as completed since this is the final step
-      markOnboardingAsCompleted();
+      // Note: Do not complete 'consent-modal' here as it would bypass the consent modal
+      // and corrupt the onboarding state. The consent modal handles its own completion
+      // in _layout.tsx when the user actually interacts with it.
 
       // Clear the first-time flag to prevent redirect loops
       setIsFirstTime(false);
 
-      // Navigate to app - onboarding is complete
+      // Navigate to app - consent modal will show if required
       router.replace('/(app)');
     },
     [router, setIsFirstTime]
