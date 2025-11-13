@@ -136,7 +136,7 @@ export class TaskGenerator {
               excludeFromBulkShift: false,
             },
           };
-          record.metadata = metadata as any;
+          record.metadata = metadata;
         });
 
         taskIds.push(task.id);

@@ -333,28 +333,41 @@ export class DSATransparencyClient {
       throw new Error('Invalid API response format');
     }
 
-    const results: DSASubmissionResult[] = (data.results || []).map(
-      (result: unknown) => {
-        const r = result as Record<string, unknown>;
-        const error = r.error as Record<string, unknown> | undefined;
+    const rawResults = Array.isArray(data.results) ? data.results : [];
+    const results: DSASubmissionResult[] = rawResults.map((result) => {
+      if (!result || typeof result !== 'object') {
         return {
-          decision_id: String(r.decision_id || ''),
-          transparency_db_id: r.transparency_db_id
-            ? String(r.transparency_db_id)
-            : undefined,
-          status: (r.status === 'submitted' ? 'submitted' : 'failed') as
-            | 'submitted'
-            | 'failed',
-          error: error
-            ? {
-                code: String(error.code || 'UNKNOWN'),
-                message: String(error.message || ''),
-                is_permanent: Boolean(error.is_permanent),
-              }
-            : undefined,
+          decision_id: '',
+          status: 'failed',
+          error: {
+            code: 'INVALID_RESULT_PAYLOAD',
+            message: 'Result entry was not an object',
+            is_permanent: false,
+          },
         };
       }
-    );
+      const r = result as Record<string, unknown>;
+      const error =
+        typeof r.error === 'object' && r.error !== null
+          ? (r.error as Record<string, unknown>)
+          : undefined;
+      return {
+        decision_id: String(r.decision_id || ''),
+        transparency_db_id: r.transparency_db_id
+          ? String(r.transparency_db_id)
+          : undefined,
+        status: (r.status === 'submitted' ? 'submitted' : 'failed') as
+          | 'submitted'
+          | 'failed',
+        error: error
+          ? {
+              code: String(error.code || 'UNKNOWN'),
+              message: String(error.message || ''),
+              is_permanent: Boolean(error.is_permanent),
+            }
+          : undefined,
+      };
+    });
 
     return {
       success: data.success || false,

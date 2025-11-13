@@ -96,34 +96,34 @@ Total warnings: **823**
 | `src/lib/moderation/community-integration.ts`                      |     0 | ✅ Replaced updates `Record<string, any>` with `Record<string, string                                                                                                                                                                                                                                                                                      | null>`                                                                                                                                          |
 | `src/lib/moderation/conflict-of-interest.ts`                       |     0 | ✅ Replaced decision `any` with type assertion `{ id: string }[]`                                                                                                                                                                                                                                                                                          |
 | `src/lib/moderation/graceful-degradation.ts`                       |     0 | ✅ Replaced fallbackImplementation `Promise<any>` with `Promise<unknown>`                                                                                                                                                                                                                                                                                  |
-| `src/lib/moderation/migrations/migration-manager.ts`               |     1 |
-| `src/lib/moderation/moderation-metrics-types.ts`                   |     1 |
-| `src/lib/moderation/moderation-notification-service.ts`            |     1 |
-| `src/lib/moderation/notification-integration.ts`                   |     1 |
-| `src/lib/moderation/pii-scrubber.ts`                               |     1 |
-| `src/lib/moderation/sor-export-queue.ts`                           |     1 |
-| `src/lib/moderation/trusted-flagger-review.ts`                     |     1 |
-| `src/lib/moderation/trusted-flagger-service.ts`                    |     1 |
-| `src/lib/notifications/background-handler.ts`                      |     1 |
-| `src/lib/notifications/community-notification-service.ts`          |     1 |
-| `src/lib/notifications/notification-preferences-service.ts`        |     1 |
-| `src/lib/notifications/notification-sync.ts`                       |     1 |
-| `src/lib/nutrient-engine/hooks/use-calibration.ts`                 |     1 |
-| `src/lib/nutrient-engine/services/alert-service.ts`                |     1 |
-| `src/lib/nutrient-engine/utils/performance-metrics.ts`             |     1 |
-| `src/lib/plant-telemetry.ts`                                       |     1 |
-| `src/lib/playbooks/outbox-worker.ts`                               |     1 |
-| `src/lib/playbooks/phase-notifications.ts`                         |     1 |
-| `src/lib/playbooks/sanitize-playbook.ts`                           |     1 |
-| `src/lib/playbooks/task-generator.ts`                              |     1 |
-| `src/lib/playbooks/use-phase-progress.ts`                          |     1 |
-| `src/lib/privacy/export-service.ts`                                |     1 |
-| `src/lib/privacy/telemetry-client.ts`                              |     1 |
-| `src/lib/sync/conflict-resolver.ts`                                |     1 |
-| `src/lib/sync/offline-queue.ts`                                    |     1 |
-| `src/lib/sync/sync-coordinator.ts`                                 |     1 |
-| `src/lib/sync/sync-performance-metrics.ts`                         |     1 |
-| `src/lib/sync/sync-triggers.ts`                                    |     1 |
+| `src/lib/moderation/migrations/migration-manager.ts`               |     0 | ✅ Created DbMigrationRecord interface for database record mapping                                                                                                                                                                                                                                                                                         |
+| `src/lib/moderation/moderation-metrics-types.ts`                   |     0 | ✅ Replaced metadata `Record<string, any>` with `Record<string, unknown>`                                                                                                                                                                                                                                                                                  |
+| `src/lib/moderation/moderation-notification-service.ts`            |     0 | ✅ Replaced error `any` with `unknown`, added Error type guard                                                                                                                                                                                                                                                                                             |
+| `src/lib/moderation/notification-integration.ts`                   |     0 | ✅ Replaced error `any` with `unknown`, added Error type guards for message and stack                                                                                                                                                                                                                                                                      |
+| `src/lib/moderation/pii-scrubber.ts`                               |     0 | ✅ Replaced `as any` with `as unknown as Record<string, unknown>` for dynamic field validation                                                                                                                                                                                                                                                             |
+| `src/lib/moderation/sor-export-queue.ts`                           |     0 | ✅ Replaced `any` with typed interface `{ status: SoRExportStatus }` for database row                                                                                                                                                                                                                                                                      |
+| `src/lib/moderation/trusted-flagger-review.ts`                     |     0 | ✅ Created DbTrustedFlaggerRow interface, added type assertions for ContactInfo, TrustedFlaggerStatus, QualityMetrics                                                                                                                                                                                                                                      |
+| `src/lib/moderation/trusted-flagger-service.ts`                    |     0 | ✅ Created DbTrustedFlaggerRow interface, added type assertions for complex types                                                                                                                                                                                                                                                                          |
+| `src/lib/notifications/background-handler.ts`                      |     0 | ✅ Replaced `as any` with proper Error extension type `Error & { originalErrors: Error[] }`                                                                                                                                                                                                                                                                |
+| `src/lib/notifications/community-notification-service.ts`          |     0 | ✅ Replaced `any` with NotificationPreferenceModel type in update callback                                                                                                                                                                                                                                                                                 |
+| `src/lib/notifications/notification-preferences-service.ts`        |     0 | ✅ Replaced `any` with NotificationPreferenceModel type in update callback                                                                                                                                                                                                                                                                                 |
+| `src/lib/notifications/notification-sync.ts`                       |     0 | ✅ Replaced `as any` with `Collection<NotificationModel>` type                                                                                                                                                                                                                                                                                             |
+| `src/lib/nutrient-engine/hooks/use-calibration.ts`                 |     0 | ✅ Replaced subscription `any` with `{ unsubscribe: () => void }                                                                                                                                                                                                                                                                                           | undefined`                                                                                                                                      |
+| `src/lib/nutrient-engine/services/alert-service.ts`                |     0 | ✅ Replaced return type `any` with `Observable<DeviationAlertModel[]>`                                                                                                                                                                                                                                                                                     |
+| `src/lib/nutrient-engine/utils/performance-metrics.ts`             |     0 | ✅ Replaced `as any` with proper alert type union                                                                                                                                                                                                                                                                                                          |
+| `src/lib/plant-telemetry.ts`                                       |     0 | ✅ Replaced `as any` with `NodeJS.ProcessEnv & { JEST_WORKER_ID?: string }`                                                                                                                                                                                                                                                                                |
+| `src/lib/playbooks/outbox-worker.ts`                               |     0 | ✅ Replaced notification data `Record<string, any>` with `Record<string, unknown>`                                                                                                                                                                                                                                                                         |
+| `src/lib/playbooks/phase-notifications.ts`                         |     0 | ✅ Replaced trigger `as any` with proper `Notifications.SchedulableTriggerInputTypes.DATE` enum                                                                                                                                                                                                                                                            |
+| `src/lib/playbooks/sanitize-playbook.ts`                           |     0 | ✅ Replaced metadata `Record<string, any>` with `Record<string, unknown>`                                                                                                                                                                                                                                                                                  |
+| `src/lib/playbooks/task-generator.ts`                              |     0 | ✅ Removed unnecessary `as any` cast - PlaybookTaskMetadata is compatible with TaskMetadata                                                                                                                                                                                                                                                                |
+| `src/lib/playbooks/use-phase-progress.ts`                          |     0 | ✅ Changed phase parameter from `string` to `GrowPhase`, removed `as any` cast                                                                                                                                                                                                                                                                             |
+| `src/lib/privacy/export-service.ts`                                |     0 | ✅ Replaced `any` with `AssessmentModel` type in map function                                                                                                                                                                                                                                                                                              |
+| `src/lib/privacy/telemetry-client.ts`                              |     0 | ✅ Replaced `as any` with proper type guards for number and boolean                                                                                                                                                                                                                                                                                        |
+| `src/lib/sync/conflict-resolver.ts`                                |     0 | ✅ Replaced index signature `[key: string]: any` with `[key: string]: unknown`                                                                                                                                                                                                                                                                             |
+| `src/lib/sync/offline-queue.ts`                                    |     0 | ✅ Replaced `record: any` with `Model` type, added type predicate for measured_at                                                                                                                                                                                                                                                                          |
+| `src/lib/sync/sync-coordinator.ts`                                 |     0 | ✅ Replaced `as any` with proper type guard for SyncErrorCode mapping                                                                                                                                                                                                                                                                                      |
+| `src/lib/sync/sync-performance-metrics.ts`                         |     0 | ✅ Replaced `as any` with proper `AnalyticsEvents['sync_metrics_snapshot']` type                                                                                                                                                                                                                                                                           |
+| `src/lib/sync/sync-triggers.ts`                                    |     0 | ✅ Replaced `as any` with proper type guard checking for 'remove' method                                                                                                                                                                                                                                                                                   |
 
 <details>
 <summary>Detailed warnings</summary>
@@ -660,53 +660,37 @@ Total warnings: **823**
 44:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
-#### `src/lib/moderation/migrations/migration-manager.ts` (1 warnings)
+#### `src/lib/moderation/migrations/migration-manager.ts` (0 warnings)
 
-```.text
-314:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Created DbMigrationRecord interface for database record mapping
 
-#### `src/lib/moderation/moderation-metrics-types.ts` (1 warnings)
+#### `src/lib/moderation/moderation-metrics-types.ts` (0 warnings)
 
-```.text
-12:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced metadata `Record<string, any>` with `Record<string, unknown>`
 
-#### `src/lib/moderation/moderation-notification-service.ts` (1 warnings)
+#### `src/lib/moderation/moderation-notification-service.ts` (0 warnings)
 
-```.text
-498:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced error `any` with `unknown`, added Error type guard
 
-#### `src/lib/moderation/notification-integration.ts` (1 warnings)
+#### `src/lib/moderation/notification-integration.ts` (0 warnings)
 
-```.text
-297:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced error `any` with `unknown`, added Error type guards for message and stack
 
-#### `src/lib/moderation/pii-scrubber.ts` (1 warnings)
+#### `src/lib/moderation/pii-scrubber.ts` (0 warnings)
 
-```.text
-228:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced `as any` with `as unknown as Record<string, unknown>` for dynamic field validation
 
-#### `src/lib/moderation/sor-export-queue.ts` (1 warnings)
+#### `src/lib/moderation/sor-export-queue.ts` (0 warnings)
 
-```.text
-436:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced `any` with typed interface `{ status: SoRExportStatus }` for database row
 
-#### `src/lib/moderation/trusted-flagger-review.ts` (1 warnings)
+#### `src/lib/moderation/trusted-flagger-review.ts` (0 warnings)
 
-```.text
-212:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Created DbTrustedFlaggerRow interface, added type assertions for ContactInfo, TrustedFlaggerStatus, QualityMetrics
 
-#### `src/lib/moderation/trusted-flagger-service.ts` (1 warnings)
+#### `src/lib/moderation/trusted-flagger-service.ts` (0 warnings)
 
-```.text
-330:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Created DbTrustedFlaggerRow interface, added type assertions for complex types
 
 #### `src/lib/notifications/background-handler.ts` (1 warnings)
 
@@ -762,71 +746,49 @@ Total warnings: **823**
 25:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
-#### `src/lib/playbooks/phase-notifications.ts` (1 warnings)
+#### `src/lib/playbooks/phase-notifications.ts` (0 warnings)
 
-```.text
-85:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced trigger `as any` with proper `Notifications.SchedulableTriggerInputTypes.DATE` enum for notification scheduling.
 
-#### `src/lib/playbooks/sanitize-playbook.ts` (1 warnings)
+#### `src/lib/playbooks/sanitize-playbook.ts` (0 warnings)
 
-```.text
-41:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced metadata `Record<string, any>` with `Record<string, unknown>` in Playbook interface.
 
-#### `src/lib/playbooks/task-generator.ts` (1 warnings)
+#### `src/lib/playbooks/task-generator.ts` (0 warnings)
 
-```.text
-139:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Removed unnecessary `as any` cast for metadata assignment - PlaybookTaskMetadata is compatible with TaskMetadata due to index signature.
 
-#### `src/lib/playbooks/use-phase-progress.ts` (1 warnings)
+#### `src/lib/playbooks/use-phase-progress.ts` (0 warnings)
 
-```.text
-134:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Changed phase parameter type from `string` to `GrowPhase` in UsePhaseSummaryOptions, removed unnecessary `as any` cast.
 
-#### `src/lib/privacy/export-service.ts` (1 warnings)
+#### `src/lib/privacy/export-service.ts` (0 warnings)
 
-```.text
-88:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced `any` with `AssessmentModel` type in assessment records map function.
 
-#### `src/lib/privacy/telemetry-client.ts` (1 warnings)
+#### `src/lib/privacy/telemetry-client.ts` (0 warnings)
 
-```.text
-354:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced `as any` with proper type guards (`typeof v === 'number' || typeof v === 'boolean'`) in sanitizeEvent method.
 
-#### `src/lib/sync/conflict-resolver.ts` (1 warnings)
+#### `src/lib/sync/conflict-resolver.ts` (0 warnings)
 
-```.text
-13:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced index signature `[key: string]: any` with `[key: string]: unknown` in ConflictRecord type.
 
-#### `src/lib/sync/offline-queue.ts` (1 warnings)
+#### `src/lib/sync/offline-queue.ts` (0 warnings)
 
-```.text
-150:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced `record: any` with `Model` type from WatermelonDB, added type predicate filter to ensure measured_at is defined.
 
-#### `src/lib/sync/sync-coordinator.ts` (1 warnings)
+#### `src/lib/sync/sync-coordinator.ts` (0 warnings)
 
-```.text
-108:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced `as any` with proper type guard to map error code to SyncErrorCode, defaulting to 'unknown' for invalid codes.
 
-#### `src/lib/sync/sync-performance-metrics.ts` (1 warnings)
+#### `src/lib/sync/sync-performance-metrics.ts` (0 warnings)
 
-```.text
-58:68  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced `as any` with proper `AnalyticsEvents['sync_metrics_snapshot']` type for snapshot object.
 
-#### `src/lib/sync/sync-triggers.ts` (1 warnings)
+#### `src/lib/sync/sync-triggers.ts` (0 warnings)
 
-```.text
-60:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced `as any` with proper type guard checking for 'remove' method in appStateSub cleanup.
 
 </details>
 

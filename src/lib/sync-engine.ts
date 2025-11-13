@@ -909,22 +909,22 @@ function applyPayloadToRecord(
     if (key === 'id') continue;
     // Map server fields to local properties where appropriate
     if (key === 'server_revision') {
-      if (value != null) {
+      if (value != null && target._raw) {
         const numericValue = Number(value);
         if (Number.isFinite(numericValue)) {
-          target.serverRevision = numericValue;
+          target._raw.server_revision = numericValue;
         }
       }
       continue;
     }
     if (key === 'server_updated_at_ms') {
-      if (value != null) {
+      if (value != null && target._raw) {
         const numericValue =
           typeof value === 'number'
             ? value
             : toMillis(value as Date | string | number | null | undefined);
         if (numericValue != null && Number.isFinite(numericValue)) {
-          target.serverUpdatedAtMs = numericValue;
+          target._raw.server_updated_at_ms = numericValue;
         }
       }
       continue;

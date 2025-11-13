@@ -17,37 +17,10 @@ import type {
   UserAgeStatus,
 } from '@/types/age-verification';
 import { AGE_RESTRICTED_KEYWORDS } from '@/types/age-verification';
-
-/**
- * Database record types for Supabase queries
- */
-type DbContentRestriction = {
-  id: string;
-  content_id: string;
-  content_type: string;
-  is_age_restricted: boolean;
-  min_age: number;
-  flagged_by_system: boolean;
-  flagged_by_author: boolean;
-  flagged_by_moderator: boolean;
-  moderator_id: string | null;
-  restriction_reason: string | null;
-  keywords_detected: string[] | null;
-  created_at: string;
-  updated_at: string;
-};
-
-type DbUserAgeStatus = {
-  user_id: string;
-  is_age_verified: boolean;
-  verified_at: string | null;
-  active_token_id: string | null;
-  is_minor: boolean;
-  minor_protections_enabled: boolean;
-  show_age_restricted_content: boolean;
-  created_at: string;
-  updated_at: string;
-};
+import type {
+  DbContentRestriction,
+  DbUserAgeStatus,
+} from '@/types/database-records';
 
 export class ContentAgeGatingEngine {
   private supabase: SupabaseClient;

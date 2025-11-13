@@ -101,7 +101,7 @@ export type AssessmentResultSummary = {
 export type AssessmentFeedback = {
   helpfulVote?: boolean;
   issueResolved?: boolean;
-  feedbackNotes?: string;
+  feedbackNotes?: string | null;
 };
 
 export type AssessmentRecord = {

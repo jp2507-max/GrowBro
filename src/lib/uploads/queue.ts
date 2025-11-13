@@ -215,8 +215,26 @@ async function fetchDueBatch(limit = 5): Promise<QueueItemRaw[]> {
     .fetch();
   const now = Date.now();
   const due: QueueItemRaw[] = rows
-    .map((r) => r._raw as unknown as QueueItemRaw)
-    .filter((r) => !r.nextAttemptAt || r.nextAttemptAt <= now);
+    .filter((row) => !row.nextAttemptAt || row.nextAttemptAt <= now)
+    .map((row) => ({
+      id: row.id,
+      localUri: row.localUri,
+      remotePath: row.remotePath ?? null,
+      taskId: row.taskId ?? null,
+      plantId: row.plantId ?? null,
+      harvestId: row.harvestId ?? null,
+      variant: row.variant as PhotoVariant | null,
+      hash: row.hash ?? null,
+      extension: row.extension ?? null,
+      filename: row.filename ?? null,
+      mimeType: row.mimeType ?? null,
+      status: row.status,
+      retryCount: row.retryCount ?? null,
+      lastError: row.lastError ?? null,
+      nextAttemptAt: row.nextAttemptAt ?? null,
+      createdAt: row.createdAt.getTime(),
+      updatedAt: row.updatedAt.getTime(),
+    }));
   return due;
 }
 

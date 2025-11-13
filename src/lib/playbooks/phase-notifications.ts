@@ -80,9 +80,9 @@ export async function schedulePhaseTransitionNotification(
         sound: true,
       },
       trigger: {
-        type: 'date',
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
         date: notificationDateTime.toJSDate(),
-      } as any,
+      },
     });
 
     // Store notification info

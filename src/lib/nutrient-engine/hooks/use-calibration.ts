@@ -35,7 +35,7 @@ export function useActiveCalibration(
   const [calibration, setCalibration] = useState<CalibrationModel | null>(null);
 
   useEffect(() => {
-    let subscription: any;
+    let subscription: { unsubscribe: () => void } | undefined;
 
     const loadAndObserve = async () => {
       // Load initial data

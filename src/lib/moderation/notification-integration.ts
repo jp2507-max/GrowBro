@@ -294,14 +294,14 @@ export class NotificationIntegration {
   private async logIntegrationError(
     context: string,
     entityId: string,
-    error: any
+    error: unknown
   ): Promise<void> {
     try {
       await supabase.from('notification_integration_errors').insert({
         context,
         entity_id: entityId,
-        error_message: error?.message || 'Unknown error',
-        error_stack: error?.stack,
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+        error_stack: error instanceof Error ? error.stack : undefined,
         created_at: new Date().toISOString(),
       });
     } catch (logError) {

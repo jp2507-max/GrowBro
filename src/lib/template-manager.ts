@@ -301,15 +301,17 @@ export async function previewBulkShift(
       reminderAtUtc: rec.reminderAtUtc ?? null,
     };
     const after = {
-      dueAtLocal: afterDueLocal.toISO()!,
-      dueAtUtc: afterDueLocal.toUTC().toISO()!,
+      dueAtLocal: afterDueLocal.toISO() ?? rec.dueAtLocal,
+      dueAtUtc: afterDueLocal.toUTC().toISO() ?? rec.dueAtUtc,
       reminderAtLocal: rec.reminderAtLocal
-        ? DateTime.fromISO(rec.reminderAtLocal, { zone: tz })
+        ? (DateTime.fromISO(rec.reminderAtLocal, { zone: tz })
             .plus({ days: dayOffset })
-            .toISO()!
+            .toISO() ?? null)
         : null,
       reminderAtUtc: rec.reminderAtUtc
-        ? DateTime.fromISO(rec.reminderAtUtc).plus({ days: dayOffset }).toISO()!
+        ? (DateTime.fromISO(rec.reminderAtUtc)
+            .plus({ days: dayOffset })
+            .toISO() ?? null)
         : null,
     };
     out.push({ id, before, after });

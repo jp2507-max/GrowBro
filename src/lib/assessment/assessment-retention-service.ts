@@ -167,7 +167,7 @@ async function anonymizeOldMetrics(
             delete context.customTags;
             record.plantContext = context as AssessmentPlantContext;
           }
-          record.feedbackNotes = undefined;
+          record.feedbackNotes = null;
         });
       });
       result.recordsAnonymized++;

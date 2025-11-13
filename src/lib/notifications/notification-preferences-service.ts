@@ -52,7 +52,7 @@ export class NotificationPreferencesService {
     const deviceId = await getDeviceId();
 
     await this.database.write(async () => {
-      await record.update((r: any) => {
+      await record.update((r: NotificationPreferenceModel) => {
         if (updates.taskReminders !== undefined) {
           r.taskReminders = updates.taskReminders;
         }

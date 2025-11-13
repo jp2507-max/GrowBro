@@ -433,9 +433,8 @@ export class SoRExportQueueManager {
       dlq: 0,
     };
 
-    data.forEach((item: any) => {
-      stats[item.status as SoRExportStatus] =
-        (stats[item.status as SoRExportStatus] || 0) + 1;
+    data.forEach((item: { status: SoRExportStatus }) => {
+      stats[item.status] = (stats[item.status] || 0) + 1;
     });
 
     return stats;

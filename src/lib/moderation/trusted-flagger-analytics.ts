@@ -18,7 +18,7 @@ type ReportWithDecision = {
 };
 
 type RawFlaggerData = {
-  certification_date: string;
+  certification_date: string | null;
   review_date: string;
   created_at: string;
   updated_at: string;
@@ -309,10 +309,18 @@ export async function getTrustedFlaggers(
         >
     ) => ({
       ...flagger,
-      certification_date: new Date(flagger.certification_date),
-      review_date: new Date(flagger.review_date),
-      created_at: new Date(flagger.created_at),
-      updated_at: new Date(flagger.updated_at),
+      certification_date: flagger.certification_date
+        ? new Date(flagger.certification_date)
+        : null,
+      review_date: flagger.review_date
+        ? new Date(flagger.review_date)
+        : new Date(),
+      created_at: flagger.created_at
+        ? new Date(flagger.created_at)
+        : new Date(),
+      updated_at: flagger.updated_at
+        ? new Date(flagger.updated_at)
+        : new Date(),
       deleted_at: flagger.deleted_at ? new Date(flagger.deleted_at) : undefined,
     })
   ) as TrustedFlagger[];

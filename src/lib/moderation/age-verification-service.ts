@@ -28,38 +28,9 @@ import {
   calculateExpiryDate,
   isTokenUsable,
 } from '@/types/age-verification';
+import type { DbTokenRecord, DbUserAgeStatus } from '@/types/database-records';
 
-// Database record types
-type DbTokenRecord = {
-  id: string;
-  user_id: string;
-  token_hash: string;
-  issued_at: string;
-  expires_at: string;
-  revoked_at: string | null;
-  revocation_reason: string | null;
-  used_at: string | null;
-  use_count: number;
-  max_uses: number;
-  verification_method: string;
-  verification_provider: string | null;
-  assurance_level: string | null;
-  age_attribute_verified: boolean;
-  created_at: string;
-  updated_at: string;
-};
-
-type DbUserStatusRecord = {
-  user_id: string;
-  is_age_verified: boolean;
-  verified_at: string | null;
-  active_token_id: string | null;
-  is_minor: boolean;
-  minor_protections_enabled: boolean;
-  show_age_restricted_content: boolean;
-  created_at: string;
-  updated_at: string;
-};
+// DbUserStatusRecord is now imported as DbUserAgeStatus from database-records
 
 type DbContentRestrictionRecord = {
   content_id: string;
@@ -445,7 +416,7 @@ export class AgeVerificationService {
       .eq('user_id', userId)
       .single();
 
-    const userStatusData = userStatus as DbUserStatusRecord | null;
+    const userStatusData = userStatus as DbUserAgeStatus | null;
 
     // User is age-verified
     if (userStatusData?.is_age_verified) {
@@ -560,7 +531,7 @@ export class AgeVerificationService {
       return null;
     }
 
-    const statusData = status as DbUserStatusRecord;
+    const statusData = status as DbUserAgeStatus;
 
     return {
       userId: statusData.user_id,

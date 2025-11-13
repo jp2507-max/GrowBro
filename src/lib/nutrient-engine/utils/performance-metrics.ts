@@ -268,7 +268,7 @@ export function analyzeDeviationPatterns(
     }
 
     patterns.push({
-      type: type as any,
+      type: type as 'ph_low' | 'ph_high' | 'ec_low' | 'ec_high',
       frequency,
       averageMagnitude,
       lastOccurrence: typeAlerts[typeAlerts.length - 1].triggeredAt,

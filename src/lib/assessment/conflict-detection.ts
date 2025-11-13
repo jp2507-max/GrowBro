@@ -50,6 +50,10 @@ export function isEqual(a: unknown, b: unknown): boolean {
       return a.every((item, index) => isEqual(item, b[index]));
     }
 
+    if (Array.isArray(a) || Array.isArray(b)) {
+      return false;
+    }
+
     const keysA = Object.keys(a);
     const keysB = Object.keys(b);
     if (keysA.length !== keysB.length) return false;

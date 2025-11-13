@@ -6,7 +6,7 @@
 
 import { showMessage } from 'react-native-flash-message';
 
-import { HarvestAuditStatuses } from '@/types/harvest';
+import { HarvestAuditActions, HarvestAuditStatuses } from '@/types/harvest';
 
 import { database } from '../watermelon';
 import type { HarvestModel } from '../watermelon-models/harvest';
@@ -71,10 +71,9 @@ export async function attachAuditNoteForRejection(
       const harvest = await harvestsCollection.find(rejection.recordId);
 
       // Create audit entry for the rejection
-      // Note: Using STAGE_REVERT as closest semantic match for sync rejection
       await auditsCollection.create((audit) => {
         audit.harvestId = rejection.recordId;
-        audit.action = 'stage_revert'; // Using STAGE_REVERT as closest semantic match
+        audit.action = HarvestAuditActions.SYNC_REJECTED;
         audit.status = HarvestAuditStatuses.BLOCKED;
         audit.reason = auditNote;
         audit.performedAt = rejection.timestamp;

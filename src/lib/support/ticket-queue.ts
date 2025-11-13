@@ -138,6 +138,7 @@ export async function markTicketSent(
         raw.status = 'resolved';
         raw.ticket_reference = ticketReference;
         raw.resolved_at = Date.now();
+        raw.updated_at = Date.now();
       });
     });
 
@@ -180,6 +181,7 @@ export async function markTicketForRetry(
           const raw = r._raw as any;
           raw.status = 'failed'; // Remove from retryable queue
           raw.resolved_at = Date.now();
+          raw.updated_at = Date.now();
         });
       });
       return;
@@ -191,6 +193,7 @@ export async function markTicketForRetry(
         const raw = r._raw as any;
         raw.retry_count = currentRetryCount + 1;
         raw.last_retry_at = Date.now();
+        raw.updated_at = Date.now();
       });
     });
   } catch (error) {

@@ -4,6 +4,7 @@
  * Requirements: 17.1, 17.2, 17.3, 17.4, 17.5
  */
 
+import type { TOptions } from 'i18next';
 import { showMessage } from 'react-native-flash-message';
 
 import type {
@@ -101,7 +102,7 @@ export function handleValidationError(
  */
 export function handleNetworkError(
   error: NetworkError,
-  t: (key: string, options?: Record<string, unknown>) => string
+  t: (key: string, options?: TOptions<any>) => string
 ): ErrorHandlerResult {
   // Transient errors: show toast
   if (error.retryable) {
@@ -136,7 +137,7 @@ export function handleNetworkError(
  */
 export function handleBusinessLogicError(
   error: BusinessLogicError,
-  t: (key: string, options?: Record<string, unknown>) => string
+  t: (key: string, options?: TOptions<any>) => string
 ): ErrorHandlerResult {
   return {
     shouldShowToast: false,
@@ -152,7 +153,7 @@ export function handleBusinessLogicError(
  */
 export function handleConsistencyError(
   error: ConsistencyError,
-  t: (key: string, options?: Record<string, unknown>) => string
+  t: (key: string, options?: TOptions<any>) => string
 ): ErrorHandlerResult {
   return {
     shouldShowToast: false,
@@ -403,7 +404,7 @@ function getBusinessLogicActions(
  */
 export function handleHarvestError(
   error: unknown,
-  t: (key: string, options?: Record<string, unknown>) => string
+  t: (key: string, options?: TOptions<any>) => string
 ): ErrorHandlerResult {
   const classified = classifyError(error);
 

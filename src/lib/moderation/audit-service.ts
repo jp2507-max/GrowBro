@@ -119,7 +119,7 @@ export class AuditService {
       throw new Error(`Failed to log audit event: ${error.message}`);
     }
 
-    return this.mapToAuditEvent(data);
+    return this.mapToAuditEvent(data as DbAuditEventRow);
   }
 
   /**
@@ -201,7 +201,9 @@ export class AuditService {
       throw new Error(`Failed to query audit trail: ${error.message}`);
     }
 
-    const events = (data ?? []).map((row) => this.mapToAuditEvent(row));
+    const events = ((data as DbAuditEventRow[]) ?? []).map((row) =>
+      this.mapToAuditEvent(row)
+    );
     const total_count = count ?? 0;
 
     return {
@@ -334,7 +336,9 @@ export class AuditService {
       throw new Error(`Failed to get target audit trail: ${error.message}`);
     }
 
-    return (data ?? []).map((row) => this.mapToAuditEvent(row));
+    return ((data as DbAuditEventRow[]) ?? []).map((row) =>
+      this.mapToAuditEvent(row)
+    );
   }
 
   /**

@@ -296,18 +296,13 @@ class NotificationManager {
     // If we already have a listener for the current user, nothing to do
     if (this.listenerUserId === this.currentUserId) return;
 
-    // If switching users, implement atomic handover:
-    // Start new listener first, then stop old one only if new one succeeds
+    // If switching users, start new listener (startTokenListener handles stopping old one internally)
     if (this.listenerUserId && this.listenerUserId !== this.currentUserId) {
       try {
-        // Start the new listener first
         await PushNotificationService.startTokenListener({
           userId: this.currentUserId,
           projectId: this.currentProjectId,
         });
-
-        // Only stop the old listener after confirming the new one is active
-        PushNotificationService.stopTokenListener();
         this.listenerUserId = this.currentUserId;
       } catch (error) {
         // On failure, keep the existing listener active and log the error
