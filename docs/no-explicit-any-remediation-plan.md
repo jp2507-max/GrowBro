@@ -2,9 +2,9 @@
 
 ## Lint Status
 
-- Command: `pnpm lint`
-- Result: ❌ blocked (request to `https://registry.npmjs.org/pnpm` failed with `getaddrinfo EAI_AGAIN`)
-- Next step: rerun once network access is allowed so ESLint can install the pinned `pnpm@10.20.0` shim and produce the full rule violation list.
+- Command: `pnpm lint` (run on host machine; log in `eslint-report.txt`)
+- Result: ✅ completed — **2376** `@typescript-eslint/no-explicit-any` warnings, **0** errors
+- Next step: work through the tiered plan below, using the aggregated counts to prioritize fixes.
 
 ## Hotspot Snapshot (via `rg -n '\bany\b' src`)
 
@@ -21,6 +21,22 @@
 | 🧪 Low      | Tests & fixtures             | ~420         | `src/lib/__tests__`, `app/settings/*.test.tsx`, `translations/en.json` etc.                   |
 
 _(Counts are approximate and derived from ripgrep to unblock planning while lint is unavailable.)_
+
+### Latest ESLint Run (host)
+
+Representative hotspots derived from `eslint-report.utf8.txt`:
+
+- **Top single files**
+  - `src/lib/task-manager.ts` (130 warnings) — scheduler payload types are entirely `any`.
+  - `src/lib/sync-engine.ts` (101) — sync job marshaling and handlers untyped.
+  - `__mocks__/@nozbe/watermelondb/index.ts` (81) — mock layer needs typed adapters to unblock tests.
+  - `src/lib/task-notifications.ts` (42), `src/lib/template-manager.ts` (37), `src/lib/uploads/queue.ts` (29), `src/lib/support/ticket-queue.ts` (27), `src/lib/notifications/push-service.ts` (27), `src/lib/sentry-utils.ts` (25).
+- **Top directories**
+  - `src/lib` overall (402 warnings) with concentration in `moderation` (144), `notifications` (116), `nutrient-engine/services` (99), `playbooks` (84), `privacy` (35).
+  - Testing/mocks clusters: `src/lib/__tests__` (135), `src/lib/inventory/__tests__` (66), `src/lib/playbooks/__tests__` (35), `__mocks__/@nozbe/watermelondb` (90).
+  - Support domains: `src/lib/support` (32), `src/lib/uploads` (33), `src/lib/compliance` (52).
+
+These concrete counts should drive backlog sizing per tier (e.g., dedicate separate epics for `task-manager`, `sync-engine`, `notifications`, `nutrient-engine`, `playbooks`, and the Watermelon mocks).
 
 ## Prioritized Remediation Strategy
 

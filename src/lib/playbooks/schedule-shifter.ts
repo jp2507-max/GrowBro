@@ -89,17 +89,20 @@ function isScheduleShiftPriorValues(
       'dueAtLocal' in task && typeof task.dueAtLocal === 'string';
     const hasDueAtUtc = 'dueAtUtc' in task && typeof task.dueAtUtc === 'string';
     const hasReminderAtLocal =
-      'reminderAtLocal' in task &&
-      (task.reminderAtLocal === undefined ||
-        typeof task.reminderAtLocal === 'string');
+      !('reminderAtLocal' in task) ||
+      task.reminderAtLocal === undefined ||
+      task.reminderAtLocal === null ||
+      typeof task.reminderAtLocal === 'string';
     const hasReminderAtUtc =
-      'reminderAtUtc' in task &&
-      (task.reminderAtUtc === undefined ||
-        typeof task.reminderAtUtc === 'string');
+      !('reminderAtUtc' in task) ||
+      task.reminderAtUtc === undefined ||
+      task.reminderAtUtc === null ||
+      typeof task.reminderAtUtc === 'string';
     const hasNotificationId =
-      'notificationId' in task &&
-      (task.notificationId === undefined ||
-        typeof task.notificationId === 'string');
+      !('notificationId' in task) ||
+      task.notificationId === undefined ||
+      task.notificationId === null ||
+      typeof task.notificationId === 'string';
 
     if (
       !hasDueAtLocal ||
@@ -508,7 +511,7 @@ export class ScheduleShifter {
                 record.payload = {
                   notificationId: priorTaskData.notificationId,
                   taskId: task.id,
-                  triggerTime: priorTaskData.reminderAtUtc,
+                  triggerTime: priorTaskData.reminderAtUtc as string,
                   title: task.title,
                   body: task.description || '',
                   data: { taskId: task.id },

@@ -14,6 +14,19 @@ jest.mock('expo-updates');
 jest.mock('@/lib/flash-message', () => ({
   showErrorMessage: jest.fn(),
 }));
+jest.mock('@/lib/storage', () => ({
+  storage: {
+    set: jest.fn(),
+    getString: jest.fn(),
+    delete: jest.fn(),
+  },
+}));
+jest.mock('@/lib/compliance/onboarding-state', () => ({
+  resetOnboardingState: jest.fn(),
+}));
+jest.mock('@/lib/compliance/onboarding-telemetry', () => ({
+  trackOnboardingStart: jest.fn(),
+}));
 jest.mock('expo-constants', () => ({
   default: {
     expoConfig: {
@@ -77,6 +90,61 @@ describe('AboutScreen', () => {
       expect(
         await screen.findByText(new RegExp(`© ${currentYear} GrowBro`, 'i'))
       ).toBeOnTheScreen();
+    });
+
+    test('renders onboarding section', async () => {
+      render(<AboutScreen />);
+
+      expect(await screen.findByText(/onboarding/i)).toBeOnTheScreen();
+      expect(screen.getByText(/rewatch onboarding/i)).toBeOnTheScreen();
+    });
+  });
+
+  describe('Onboarding', () => {
+    test('shows alert when rewatch onboarding pressed', async () => {
+      const alertSpy = jest.spyOn(Alert, 'alert');
+
+      const { user } = setup(<AboutScreen />);
+
+      const rewatchButton = await screen.findByText(/rewatch onboarding/i);
+      await user.press(rewatchButton);
+
+      expect(alertSpy).toHaveBeenCalledWith(
+        translate('settings.about.rewatch_onboarding_title'),
+        translate('settings.about.rewatch_onboarding_message'),
+        expect.any(Array)
+      );
+    });
+
+    test('resets onboarding state and navigates when confirm pressed', async () => {
+      const alertSpy = jest
+        .spyOn(Alert, 'alert')
+        .mockImplementation((title, message, buttons) => {
+          // Simulate pressing the confirm button
+          const confirmButton = buttons?.[1];
+          if (confirmButton && confirmButton.onPress) {
+            confirmButton.onPress();
+          }
+        });
+
+      const {
+        resetOnboardingState,
+      } = require('@/lib/compliance/onboarding-state');
+      const {
+        trackOnboardingStart,
+      } = require('@/lib/compliance/onboarding-telemetry');
+      const { storage } = require('@/lib/storage');
+
+      const { user } = setup(<AboutScreen />);
+
+      const rewatchButton = await screen.findByText(/rewatch onboarding/i);
+      await user.press(rewatchButton);
+
+      expect(resetOnboardingState).toHaveBeenCalled();
+      expect(storage.set).toHaveBeenCalledWith('IS_FIRST_TIME', true);
+      expect(trackOnboardingStart).toHaveBeenCalledWith('manual');
+
+      alertSpy.mockRestore();
     });
   });
 

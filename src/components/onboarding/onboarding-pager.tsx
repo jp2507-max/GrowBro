@@ -26,7 +26,6 @@ import Reanimated, {
 
 import { FocusAwareStatusBar, View } from '@/components/ui';
 import { AnimatedIndexProvider } from '@/lib/animations/index-context';
-import { completeOnboardingStep } from '@/lib/compliance/onboarding-state';
 import {
   trackOnboardingComplete,
   trackOnboardingSkipped,
@@ -121,7 +120,6 @@ export function OnboardingPager({
     }
     const totalDuration = now - startTimeRef.current;
     trackOnboardingComplete(totalDuration, slides.length);
-    completeOnboardingStep('consent-modal');
     onComplete();
   }, [onComplete, slides.length]);
 
@@ -134,7 +132,6 @@ export function OnboardingPager({
     }
     const currentSlide = Math.round(activeIndex.value);
     trackOnboardingSkipped(`slide_${currentSlide}`, 'user_skip');
-    completeOnboardingStep('consent-modal');
     onComplete();
   }, [onComplete, activeIndex]);
 

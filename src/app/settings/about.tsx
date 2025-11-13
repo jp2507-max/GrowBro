@@ -21,6 +21,7 @@ import { trackOnboardingStart } from '@/lib/compliance/onboarding-telemetry';
 import { showErrorMessage } from '@/lib/flash-message';
 import { useNetworkStatus } from '@/lib/hooks/use-network-status';
 import { translate } from '@/lib/i18n';
+import { storage } from '@/lib/storage';
 
 type UpdateStatus =
   | 'idle'
@@ -205,8 +206,9 @@ export default function AboutScreen() {
         {
           text: translate('settings.about.rewatch_onboarding_confirm'),
           onPress: () => {
-            // Reset onboarding state (but don't reset first-time flag)
+            // Reset onboarding state and first-time flag to replay full onboarding experience
             resetOnboardingState();
+            storage.set('IS_FIRST_TIME', true);
             // Track telemetry
             trackOnboardingStart('manual');
             // Navigate to age-gate (start of onboarding)
