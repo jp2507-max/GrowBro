@@ -220,15 +220,27 @@ function serializeRecord(model: ModelSnapshot): SerializedRecord {
   return out;
 }
 
-function _normalizeIncomingValue(_key: string, value: unknown): unknown {
+const ISO_DATE_PATTERN = /\d{4}-\d{2}-\d{2}T/;
+const DATE_FIELD_KEYS = new Set<keyof SerializedRecord>([
+  'createdAt',
+  'updatedAt',
+  'deletedAt',
+  'completedAt',
+]);
+
+function _normalizeIncomingValue(key: string, value: unknown): unknown {
   if (value == null) return value;
-  if (typeof value === 'string' && /\d{4}-\d{2}-\d{2}T/.test(value)) {
+  if (
+    typeof value === 'string' &&
+    DATE_FIELD_KEYS.has(key as keyof SerializedRecord) &&
+    ISO_DATE_PATTERN.test(value)
+  ) {
     const d = new Date(value);
     if (!isNaN(d.getTime())) return d;
   }
   // normalize server snake_case timestamps to camel where needed
-  if (_key === 'createdAt' && typeof value === 'number') return new Date(value);
-  if (_key === 'updatedAt' && typeof value === 'number') return new Date(value);
+  if (key === 'createdAt' && typeof value === 'number') return new Date(value);
+  if (key === 'updatedAt' && typeof value === 'number') return new Date(value);
   return value;
 }
 
@@ -464,6 +476,9 @@ function addUserIdToChanges(changes: ChangesByTable, userId: string): void {
   changes.inventory_batches.updated = enrich(changes.inventory_batches.updated);
   changes.inventory_movements.created = enrich(
     changes.inventory_movements.created
+  );
+  changes.inventory_movements.updated = enrich(
+    changes.inventory_movements.updated
   );
 }
 

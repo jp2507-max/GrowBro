@@ -266,12 +266,19 @@ async function materializeNextOccurrence(
     created = await repos.tasks.create((record) => {
       record.seriesId = series.id;
       record.title = series.title;
-      record.description = series.description ?? undefined;
-      record.plantId = series.plantId ?? undefined;
-      record.dueAtLocal = DateTime.fromJSDate(local, {
+      if (series.description != null) record.description = series.description;
+      if (series.plantId != null) record.plantId = series.plantId;
+      const dueAtLocal = DateTime.fromJSDate(local, {
         zone: series.timezone,
-      }).toISO()!;
-      record.dueAtUtc = DateTime.fromJSDate(utc, { zone: 'utc' }).toISO()!;
+      }).toISO();
+      const dueAtUtc = DateTime.fromJSDate(utc, { zone: 'utc' }).toISO();
+      if (!dueAtLocal || !dueAtUtc) {
+        throw new Error(
+          '[TaskManager] Failed to generate ISO timestamps while materializing series task'
+        );
+      }
+      record.dueAtLocal = dueAtLocal;
+      record.dueAtUtc = dueAtUtc;
       record.timezone = series.timezone;
       record.status = 'pending';
       record.metadata = {};
@@ -280,15 +287,21 @@ async function materializeNextOccurrence(
     });
   });
 
+  const createdTask: TaskModel | null = created;
+  if (!createdTask) {
+    return null;
+  }
+  const scheduledTask: TaskModel = createdTask;
+
   // Schedule notifications for newly materialized tasks
   // This ensures users get reminders for recurring tasks immediately
-  if (created?.dueAtUtc) {
-    const task = toTaskFromModel(created);
+  if (scheduledTask.dueAtUtc) {
+    const task = toTaskFromModel(scheduledTask);
     const notifier = new TaskNotificationService();
     await notifier.scheduleTaskReminder(toNotificationTaskPayload(task));
   }
 
-  return created ? toTaskFromModel(created) : null;
+  return toTaskFromModel(scheduledTask);
 }
 
 export async function createTask(input: CreateTaskInput): Promise<Task> {
@@ -301,13 +314,17 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
     created = await repos.tasks.create((record) => {
       record.seriesId = input.seriesId;
       record.title = input.title;
-      record.description = input.description ?? undefined;
+      if (input.description !== undefined) {
+        record.description = input.description ?? undefined;
+      }
       record.dueAtLocal = dueAtLocal;
       record.dueAtUtc = dueAtUtc;
       record.timezone = input.timezone;
       if (reminderAtLocal) record.reminderAtLocal = reminderAtLocal;
       if (reminderAtUtc) record.reminderAtUtc = reminderAtUtc;
-      record.plantId = input.plantId ?? undefined;
+      if (input.plantId !== undefined) {
+        record.plantId = input.plantId ?? undefined;
+      }
       record.status = 'pending';
       record.metadata = input.metadata ?? {};
       record.createdAt = new Date();
@@ -315,16 +332,17 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
     });
   });
   if (!created) throw new Error('Failed to create task');
+  const createdTask: TaskModel = created;
 
   // Schedule notifications for newly created tasks
   // This ensures users get reminders immediately without waiting for global rehydrate
-  if (created.reminderAtUtc || created.dueAtUtc) {
-    const task = toTaskFromModel(created);
+  if (createdTask.reminderAtUtc || createdTask.dueAtUtc) {
+    const task = toTaskFromModel(createdTask);
     const notifier = new TaskNotificationService();
     await notifier.scheduleTaskReminder(toNotificationTaskPayload(task));
   }
 
-  return toTaskFromModel(created);
+  return toTaskFromModel(createdTask);
 }
 
 function shouldUpdateDue(
@@ -363,12 +381,13 @@ function recalcDueTimestamps(
     const dt = DateTime.fromISO(record.dueAtUtc, { zone: 'utc' }).setZone(
       updates.timezone
     );
-    dueAtLocalInput = dt.toISO();
-    if (!dueAtLocalInput) {
+    const convertedLocal = dt.toISO();
+    if (!convertedLocal) {
       throw new Error(
         `Failed to convert timezone from ${originalTimezone} to ${updates.timezone} for: ${record.dueAtUtc}`
       );
     }
+    dueAtLocalInput = convertedLocal;
     dueAtUtcInput = record.dueAtUtc; // Preserve the original UTC timestamp
   }
 
@@ -417,12 +436,13 @@ function recalcReminderTimestamps(
     const dt = DateTime.fromISO(record.reminderAtUtc, { zone: 'utc' }).setZone(
       updates.timezone
     );
-    reminderAtLocalInput = dt.toISO();
-    if (!reminderAtLocalInput) {
+    const convertedReminder = dt.toISO();
+    if (!convertedReminder) {
       throw new Error(
         `Failed to convert timezone from ${originalTimezone} to ${updates.timezone} for reminder: ${record.reminderAtUtc}`
       );
     }
+    reminderAtLocalInput = convertedReminder;
     reminderAtUtcInput = record.reminderAtUtc; // Preserve the original UTC timestamp
   }
 
@@ -851,7 +871,11 @@ async function handleTaskInventoryDeduction(
   taskData: Task,
   taskId: string
 ): Promise<void> {
-  const metadata = taskData.metadata as TaskMetadataWithContext;
+  const metadata = taskData.metadata as TaskMetadataWithContext | undefined;
+  if (!metadata || metadata.deductionMap == null) {
+    return;
+  }
+
   const validation = validateDeductionMap(metadata.deductionMap);
 
   if (!validation.isValid) {
@@ -990,8 +1014,8 @@ async function findAndSoftDeleteTaskForOccurrence(
       // Soft-delete the task and clear nullable reminder fields
       await task.update((record) => {
         record.deletedAt = new Date();
-        record.reminderAtLocal = null as unknown as string;
-        record.reminderAtUtc = null as unknown as string;
+        record.reminderAtLocal = undefined;
+        record.reminderAtUtc = undefined;
         record.updatedAt = new Date();
       });
       return task;
@@ -1022,10 +1046,10 @@ export async function skipRecurringInstance(
     if (existing.length > 0) {
       await existing[0].update((record) => {
         record.status = 'skip';
-        record.dueAtLocal = null as unknown as string;
-        record.dueAtUtc = null as unknown as string;
-        record.reminderAtLocal = null as unknown as string;
-        record.reminderAtUtc = null as unknown as string;
+        record.dueAtLocal = undefined;
+        record.dueAtUtc = undefined;
+        record.reminderAtLocal = undefined;
+        record.reminderAtUtc = undefined;
         record.updatedAt = new Date();
       });
     } else {
@@ -1047,9 +1071,11 @@ export async function skipRecurringInstance(
   });
 
   // Cancel notifications for the task we just soft-deleted
-  if (taskToDelete) {
+  const toCancel: TaskModel | null = taskToDelete;
+  if (toCancel) {
+    const cancelTarget: TaskModel = toCancel;
     try {
-      await TaskNotificationService.cancelForTask(taskToDelete.id);
+      await TaskNotificationService.cancelForTask(cancelTarget.id);
     } catch (error) {
       console.warn(
         '[TaskManager] Failed to cancel notifications for skipped task',

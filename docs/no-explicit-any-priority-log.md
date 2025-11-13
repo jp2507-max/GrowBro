@@ -132,9 +132,13 @@ Total warnings: **823**
 
 ✅ Replaced Watermelon collections `any` casts with typed repositories and formalized inventory deduction/result types.
 
+- 🔁 Follow-up: tightened reminder resets and deduction guards per review feedback.
+
 #### `src/lib/sync-engine.ts` (101 warnings)
 
 ✅ Typed sync payload shapes, repository accessors, and conflict resolution helpers to replace legacy `any` usage.
+
+- 🔁 Follow-up: restricted ISO parsing to audited fields and aligned inventory movement enrichment.
 
 #### `src/lib/template-manager.ts` (37 warnings)
 
