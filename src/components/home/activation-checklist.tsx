@@ -22,7 +22,6 @@ type ActionConfig = {
   route: string;
 };
 
-// TODO: Fix assessment route - no index route exists, should point to capture screen
 const ACTION_CONFIGS: ActionConfig[] = [
   {
     action: 'create-task',

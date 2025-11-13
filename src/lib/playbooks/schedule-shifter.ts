@@ -31,6 +31,90 @@ export interface ShiftOptions {
   includeManuallyEdited?: boolean;
 }
 
+/**
+ * Prior field values for schedule shift undo operations
+ */
+interface ScheduleShiftPriorValues extends Record<string, unknown> {
+  shiftId: string;
+  plantId: string;
+  tasks: Record<
+    string,
+    {
+      dueAtLocal: string;
+      dueAtUtc: string;
+      reminderAtLocal?: string;
+      reminderAtUtc?: string;
+      notificationId?: string;
+    }
+  >;
+}
+
+/**
+ * Type guard to safely narrow priorFieldValues to ScheduleShiftPriorValues
+ */
+function isScheduleShiftPriorValues(
+  priorValues: Record<string, unknown>
+): priorValues is ScheduleShiftPriorValues {
+  if (typeof priorValues !== 'object' || priorValues === null) {
+    return false;
+  }
+
+  const data = priorValues as Record<string, unknown>;
+
+  // Check top-level properties
+  if (typeof data.shiftId !== 'string' || typeof data.plantId !== 'string') {
+    return false;
+  }
+
+  // Check tasks object
+  if (typeof data.tasks !== 'object' || data.tasks === null) {
+    return false;
+  }
+
+  const tasks = data.tasks as Record<string, unknown>;
+
+  // Check that all task entries have the expected shape
+  for (const taskId in tasks) {
+    if (typeof taskId !== 'string') continue;
+
+    const taskData = tasks[taskId];
+    if (typeof taskData !== 'object' || taskData === null) {
+      return false;
+    }
+
+    const task = taskData as Record<string, unknown>;
+
+    // Check each property exists and has correct type
+    const hasDueAtLocal =
+      'dueAtLocal' in task && typeof task.dueAtLocal === 'string';
+    const hasDueAtUtc = 'dueAtUtc' in task && typeof task.dueAtUtc === 'string';
+    const hasReminderAtLocal =
+      'reminderAtLocal' in task &&
+      (task.reminderAtLocal === undefined ||
+        typeof task.reminderAtLocal === 'string');
+    const hasReminderAtUtc =
+      'reminderAtUtc' in task &&
+      (task.reminderAtUtc === undefined ||
+        typeof task.reminderAtUtc === 'string');
+    const hasNotificationId =
+      'notificationId' in task &&
+      (task.notificationId === undefined ||
+        typeof task.notificationId === 'string');
+
+    if (
+      !hasDueAtLocal ||
+      !hasDueAtUtc ||
+      !hasReminderAtLocal ||
+      !hasReminderAtUtc ||
+      !hasNotificationId
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 const UNDO_WINDOW_MS = 30 * 1000; // 30 seconds
 
 export class ScheduleShifter {
@@ -354,8 +438,13 @@ export class ScheduleShifter {
       .fetch();
 
     const undoDescriptor = undoDescriptors.find((d) => {
-      const data = d.priorFieldValues as any;
-      return data.shiftId === shiftId && data.plantId === plantId;
+      if (!isScheduleShiftPriorValues(d.priorFieldValues)) {
+        return false;
+      }
+      return (
+        d.priorFieldValues.shiftId === shiftId &&
+        d.priorFieldValues.plantId === plantId
+      );
     });
 
     if (!undoDescriptor) {
@@ -364,6 +453,11 @@ export class ScheduleShifter {
 
     const affectedTaskIds = undoDescriptor.affectedTaskIds;
     const priorValues = undoDescriptor.priorFieldValues;
+
+    // Validate prior values structure
+    if (!isScheduleShiftPriorValues(priorValues)) {
+      throw new Error('Invalid undo descriptor data structure');
+    }
 
     // Restore tasks atomically
     await this.database.write(async () => {

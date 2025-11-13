@@ -353,7 +353,11 @@ function RootLayout(): React.ReactElement {
           onComplete={(c) => {
             persistConsents(c, isFirstTime);
             setShowConsent(false);
-            completeOnboardingStep('consent-modal');
+            // Only advance onboarding if we're currently in the consent-modal step
+            // This prevents rewinding onboarding when re-confirming consent from Settings
+            if (currentOnboardingStep === 'consent-modal') {
+              completeOnboardingStep('consent-modal');
+            }
           }}
         />
       )}
