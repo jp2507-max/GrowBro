@@ -1,3 +1,4 @@
+import type { Collection } from '@nozbe/watermelondb';
 import { Q } from '@nozbe/watermelondb';
 import { DateTime } from 'luxon';
 
@@ -6,7 +7,7 @@ import {
   onSeriesOccurrenceCompleted,
   onTaskCompleted,
 } from '@/lib/plant-telemetry';
-import type { RRuleConfig } from '@/lib/rrule';
+import type { RRuleConfig, RRuleParse } from '@/lib/rrule';
 import * as rrule from '@/lib/rrule';
 import { TaskNotificationService } from '@/lib/task-notifications';
 import { database } from '@/lib/watermelon';
@@ -19,6 +20,11 @@ import type {
   Task,
   TaskMetadata,
 } from '@/types/calendar';
+import type {
+  DeductionMapEntry,
+  DeductionResult,
+  InsufficientStockError,
+} from '@/types/inventory-deduction';
 
 export type CreateTaskInput = {
   title: string;
@@ -42,17 +48,66 @@ export type UpdateTaskInput = Partial<Omit<CreateTaskInput, 'seriesId'>> & {
 export type DateRange = { start: Date; end: Date; timezone: string };
 
 type TaskRepositories = {
-  tasks: any;
-  series: any;
-  overrides: any;
+  tasks: Collection<TaskModel>;
+  series: Collection<SeriesModel>;
+  overrides: Collection<OccurrenceOverrideModel>;
+};
+
+type NotificationTask = Parameters<
+  TaskNotificationService['scheduleTaskReminder']
+>[0];
+
+type DeductionSummaryEntry = Pick<
+  DeductionMapEntry,
+  'itemId' | 'unit' | 'perTaskQuantity' | 'perPlantQuantity' | 'scalingMode'
+>;
+
+type DeductionFailureDetails = {
+  timestamp: string;
+  error: string;
+  deductionMapSummary: DeductionSummaryEntry[];
+  plantCount: number | undefined;
+  insufficientItems?: InsufficientStockError[];
+  exception?: boolean;
+};
+
+type DeductionFailureLogContext = {
+  deductionMap: DeductionMapEntry[];
+  result: DeductionResult;
+  errorDetails?: string;
+};
+
+type TaskMetadataWithContext = TaskMetadata & {
+  deductionMap?: unknown;
+  plants?: unknown;
+  plantIds?: unknown;
+};
+
+type TaskWithPlantMetadata = Task & {
+  plants?: unknown;
+  metadata: TaskMetadataWithContext;
 };
 
 function getRepos(): TaskRepositories {
   return {
-    tasks: database.collections.get('tasks' as any),
-    series: database.collections.get('series' as any),
-    overrides: database.collections.get('occurrence_overrides' as any),
-  } as TaskRepositories;
+    tasks: database.get<TaskModel>('tasks'),
+    series: database.get<SeriesModel>('series'),
+    overrides: database.get<OccurrenceOverrideModel>('occurrence_overrides'),
+  };
+}
+
+function toNotificationTaskPayload(task: Task): NotificationTask {
+  return {
+    id: task.id,
+    plantId: task.plantId,
+    title: task.title,
+    description: task.description ?? '',
+    reminderAtUtc: task.reminderAtUtc ?? null,
+    reminderAtLocal: task.reminderAtLocal ?? null,
+    dueAtUtc: task.dueAtUtc,
+    dueAtLocal: task.dueAtLocal,
+    recurrenceRule: undefined,
+  };
 }
 
 function toUtcIso(isoWithZone: string): string {
@@ -123,58 +178,56 @@ async function getSeriesOverrides(
   const rows = await repos.overrides
     .query(Q.where('series_id', seriesId))
     .fetch();
-  return rows.map((r: any) => ({
-    id: r.id,
-    seriesId: r.seriesId,
-    occurrenceLocalDate: r.occurrenceLocalDate,
-    dueAtLocal: r.dueAtLocal,
-    dueAtUtc: r.dueAtUtc,
-    reminderAtLocal: r.reminderAtLocal,
-    reminderAtUtc: r.reminderAtUtc,
-    status: r.status as OccurrenceOverride['status'],
-    createdAt: r.createdAt.toISOString(),
-    updatedAt: r.updatedAt.toISOString(),
+  return rows.map((override) => ({
+    id: override.id,
+    seriesId: override.seriesId,
+    occurrenceLocalDate: override.occurrenceLocalDate,
+    dueAtLocal: override.dueAtLocal ?? undefined,
+    dueAtUtc: override.dueAtUtc ?? undefined,
+    reminderAtLocal: override.reminderAtLocal ?? undefined,
+    reminderAtUtc: override.reminderAtUtc ?? undefined,
+    status: override.status,
+    createdAt: override.createdAt.toISOString(),
+    updatedAt: override.updatedAt.toISOString(),
   }));
 }
 
 function toTaskFromModel(model: TaskModel): Task {
-  const m = model as any;
   return {
-    id: m.id,
-    seriesId: m.seriesId,
-    title: m.title,
-    description: m.description,
-    dueAtLocal: m.dueAtLocal,
-    dueAtUtc: m.dueAtUtc,
-    timezone: m.timezone,
-    reminderAtLocal: m.reminderAtLocal,
-    reminderAtUtc: m.reminderAtUtc,
-    plantId: m.plantId,
-    status: m.status as Task['status'],
-    position: m.position,
-    completedAt: m.completedAt?.toISOString(),
-    metadata: m.metadata,
-    createdAt: m.createdAt.toISOString(),
-    updatedAt: m.updatedAt.toISOString(),
-    deletedAt: m.deletedAt?.toISOString(),
+    id: model.id,
+    seriesId: model.seriesId ?? undefined,
+    title: model.title,
+    description: model.description ?? undefined,
+    dueAtLocal: model.dueAtLocal,
+    dueAtUtc: model.dueAtUtc,
+    timezone: model.timezone,
+    reminderAtLocal: model.reminderAtLocal ?? undefined,
+    reminderAtUtc: model.reminderAtUtc ?? undefined,
+    plantId: model.plantId ?? undefined,
+    status: model.status,
+    position: model.position ?? undefined,
+    completedAt: model.completedAt?.toISOString(),
+    metadata: model.metadata ?? {},
+    createdAt: model.createdAt.toISOString(),
+    updatedAt: model.updatedAt.toISOString(),
+    deletedAt: model.deletedAt?.toISOString(),
   };
 }
 
 function toSeriesFromModel(model: SeriesModel): Series {
-  const m = model as any;
   return {
-    id: m.id,
-    title: m.title,
-    description: m.description,
-    dtstartLocal: m.dtstartLocal,
-    dtstartUtc: m.dtstartUtc,
-    timezone: m.timezone,
-    rrule: m.rrule,
-    untilUtc: m.untilUtc,
-    plantId: m.plantId,
-    createdAt: m.createdAt.toISOString(),
-    updatedAt: m.updatedAt.toISOString(),
-    deletedAt: m.deletedAt?.toISOString(),
+    id: model.id,
+    title: model.title,
+    description: model.description ?? undefined,
+    dtstartLocal: model.dtstartLocal,
+    dtstartUtc: model.dtstartUtc,
+    timezone: model.timezone,
+    rrule: model.rrule,
+    untilUtc: model.untilUtc ?? undefined,
+    plantId: model.plantId ?? undefined,
+    createdAt: model.createdAt.toISOString(),
+    updatedAt: model.updatedAt.toISOString(),
+    deletedAt: model.deletedAt?.toISOString(),
   };
 }
 
@@ -187,14 +240,15 @@ async function materializeNextOccurrence(
   const end = DateTime.fromJSDate(start).plus({ years: 1 }).toJSDate();
 
   const parsed = rrule.parseRule(series.rrule, series.dtstartUtc);
-  const validated = rrule.validate(parsed as any);
+  const validationTarget = parsed as RRuleParse;
+  const validated = rrule.validate(validationTarget);
   if (!validated.ok) {
     console.warn(
       `[TaskManager] Skipping series ${series.id} due to invalid RRULE: ${validated.errors?.join(', ')}`
     );
     return null;
   }
-  const config = parsed as unknown as RRuleConfig;
+  const config = validationTarget as unknown as RRuleConfig;
   const iter = rrule
     .buildIterator({
       config,
@@ -209,30 +263,29 @@ async function materializeNextOccurrence(
   const repos = getRepos();
   let created: TaskModel | null = null;
   await database.write(async () => {
-    created = await (repos.tasks as any).create((rec: TaskModel) => {
-      const r = rec as any;
-      r.seriesId = series.id;
-      r.title = series.title;
-      r.description = series.description;
-      r.plantId = series.plantId;
-      r.dueAtLocal = DateTime.fromJSDate(local, {
+    created = await repos.tasks.create((record) => {
+      record.seriesId = series.id;
+      record.title = series.title;
+      record.description = series.description ?? undefined;
+      record.plantId = series.plantId ?? undefined;
+      record.dueAtLocal = DateTime.fromJSDate(local, {
         zone: series.timezone,
-      }).toISO();
-      r.dueAtUtc = DateTime.fromJSDate(utc, { zone: 'utc' }).toISO();
-      r.timezone = series.timezone;
-      r.status = 'pending' as Task['status'];
-      r.metadata = {};
-      r.createdAt = new Date();
-      r.updatedAt = new Date();
+      }).toISO()!;
+      record.dueAtUtc = DateTime.fromJSDate(utc, { zone: 'utc' }).toISO()!;
+      record.timezone = series.timezone;
+      record.status = 'pending';
+      record.metadata = {};
+      record.createdAt = new Date();
+      record.updatedAt = new Date();
     });
   });
 
   // Schedule notifications for newly materialized tasks
   // This ensures users get reminders for recurring tasks immediately
-  if (created && (created as any).dueAtUtc) {
+  if (created?.dueAtUtc) {
     const task = toTaskFromModel(created);
     const notifier = new TaskNotificationService();
-    await notifier.scheduleTaskReminder(task as any);
+    await notifier.scheduleTaskReminder(toNotificationTaskPayload(task));
   }
 
   return created ? toTaskFromModel(created) : null;
@@ -245,32 +298,30 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
 
   let created: TaskModel | null = null;
   await database.write(async () => {
-    created = await (repos.tasks as any).create((rec: TaskModel) => {
-      const r = rec as any;
-      r.seriesId = input.seriesId;
-      r.title = input.title;
-      r.description = input.description;
-      // Ensure plantId is set either from input or inherited via series on UI side
-      r.dueAtLocal = dueAtLocal;
-      r.dueAtUtc = dueAtUtc;
-      r.timezone = input.timezone;
-      r.reminderAtLocal = reminderAtLocal as any;
-      r.reminderAtUtc = reminderAtUtc as any;
-      r.plantId = input.plantId;
-      r.status = 'pending' as Task['status'];
-      r.metadata = input.metadata ?? {};
-      r.createdAt = new Date();
-      r.updatedAt = new Date();
+    created = await repos.tasks.create((record) => {
+      record.seriesId = input.seriesId;
+      record.title = input.title;
+      record.description = input.description ?? undefined;
+      record.dueAtLocal = dueAtLocal;
+      record.dueAtUtc = dueAtUtc;
+      record.timezone = input.timezone;
+      if (reminderAtLocal) record.reminderAtLocal = reminderAtLocal;
+      if (reminderAtUtc) record.reminderAtUtc = reminderAtUtc;
+      record.plantId = input.plantId ?? undefined;
+      record.status = 'pending';
+      record.metadata = input.metadata ?? {};
+      record.createdAt = new Date();
+      record.updatedAt = new Date();
     });
   });
   if (!created) throw new Error('Failed to create task');
 
   // Schedule notifications for newly created tasks
   // This ensures users get reminders immediately without waiting for global rehydrate
-  if ((created as any).reminderAtUtc || (created as any).dueAtUtc) {
+  if (created.reminderAtUtc || created.dueAtUtc) {
     const task = toTaskFromModel(created);
     const notifier = new TaskNotificationService();
-    await notifier.scheduleTaskReminder(task as any);
+    await notifier.scheduleTaskReminder(toNotificationTaskPayload(task));
   }
 
   return toTaskFromModel(created);
@@ -288,14 +339,14 @@ function shouldUpdateDue(
 }
 
 function recalcDueTimestamps(
-  r: any,
+  record: TaskModel,
   updates: UpdateTaskInput,
   originalTimezone: string
 ): void {
   if (!shouldUpdateDue(updates, originalTimezone)) return;
 
-  let dueAtLocalInput = updates.dueAtLocal ?? r.dueAtLocal;
-  let dueAtUtcInput = updates.dueAtUtc ?? r.dueAtUtc;
+  let dueAtLocalInput = updates.dueAtLocal ?? record.dueAtLocal;
+  let dueAtUtcInput = updates.dueAtUtc ?? record.dueAtUtc;
 
   const isTimezoneOnlyUpdate =
     updates.timezone !== undefined &&
@@ -303,31 +354,31 @@ function recalcDueTimestamps(
     updates.dueAtLocal === undefined &&
     updates.dueAtUtc === undefined;
 
-  if (isTimezoneOnlyUpdate && r.dueAtLocal && originalTimezone) {
-    if (!r.dueAtUtc) {
+  if (isTimezoneOnlyUpdate && record.dueAtLocal && originalTimezone) {
+    if (!record.dueAtUtc) {
       throw new Error(
         `Cannot perform timezone-only update: missing stored UTC timestamp for dueAt`
       );
     }
-    const dt = DateTime.fromISO(r.dueAtUtc, { zone: 'utc' }).setZone(
+    const dt = DateTime.fromISO(record.dueAtUtc, { zone: 'utc' }).setZone(
       updates.timezone
     );
     dueAtLocalInput = dt.toISO();
     if (!dueAtLocalInput) {
       throw new Error(
-        `Failed to convert timezone from ${originalTimezone} to ${updates.timezone} for: ${r.dueAtUtc}`
+        `Failed to convert timezone from ${originalTimezone} to ${updates.timezone} for: ${record.dueAtUtc}`
       );
     }
-    dueAtUtcInput = r.dueAtUtc; // Preserve the original UTC timestamp
+    dueAtUtcInput = record.dueAtUtc; // Preserve the original UTC timestamp
   }
 
   const dual = ensureDualTimestamps({
     dueAtLocal: dueAtLocalInput,
     dueAtUtc: dueAtUtcInput,
-    timezone: updates.timezone ?? r.timezone,
+    timezone: updates.timezone ?? record.timezone,
   });
-  r.dueAtLocal = dual.dueAtLocal;
-  r.dueAtUtc = dual.dueAtUtc;
+  record.dueAtLocal = dual.dueAtLocal;
+  record.dueAtUtc = dual.dueAtUtc;
 }
 
 function shouldUpdateReminder(
@@ -342,14 +393,14 @@ function shouldUpdateReminder(
 }
 
 function recalcReminderTimestamps(
-  r: any,
+  record: TaskModel,
   updates: UpdateTaskInput,
   originalTimezone: string
 ): void {
   if (!shouldUpdateReminder(updates, originalTimezone)) return;
 
-  let reminderAtLocalInput = updates.reminderAtLocal ?? r.reminderAtLocal;
-  let reminderAtUtcInput = updates.reminderAtUtc ?? r.reminderAtUtc;
+  let reminderAtLocalInput = updates.reminderAtLocal ?? record.reminderAtLocal;
+  let reminderAtUtcInput = updates.reminderAtUtc ?? record.reminderAtUtc;
 
   const isTimezoneOnlyUpdate =
     updates.timezone !== undefined &&
@@ -357,60 +408,60 @@ function recalcReminderTimestamps(
     updates.reminderAtLocal === undefined &&
     updates.reminderAtUtc === undefined;
 
-  if (isTimezoneOnlyUpdate && r.reminderAtLocal && originalTimezone) {
-    if (!r.reminderAtUtc) {
+  if (isTimezoneOnlyUpdate && record.reminderAtLocal && originalTimezone) {
+    if (!record.reminderAtUtc) {
       throw new Error(
         `Cannot perform timezone-only update: missing stored UTC timestamp for reminderAt`
       );
     }
-    const dt = DateTime.fromISO(r.reminderAtUtc, { zone: 'utc' }).setZone(
+    const dt = DateTime.fromISO(record.reminderAtUtc, { zone: 'utc' }).setZone(
       updates.timezone
     );
     reminderAtLocalInput = dt.toISO();
     if (!reminderAtLocalInput) {
       throw new Error(
-        `Failed to convert timezone from ${originalTimezone} to ${updates.timezone} for reminder: ${r.reminderAtUtc}`
+        `Failed to convert timezone from ${originalTimezone} to ${updates.timezone} for reminder: ${record.reminderAtUtc}`
       );
     }
-    reminderAtUtcInput = r.reminderAtUtc; // Preserve the original UTC timestamp
+    reminderAtUtcInput = record.reminderAtUtc; // Preserve the original UTC timestamp
   }
 
   const dual = maybeDualReminder({
     reminderAtLocal: reminderAtLocalInput,
     reminderAtUtc: reminderAtUtcInput,
-    timezone: updates.timezone ?? r.timezone,
+    timezone: updates.timezone ?? record.timezone,
   });
-  r.reminderAtLocal = dual.reminderAtLocal as any;
-  r.reminderAtUtc = dual.reminderAtUtc as any;
+  record.reminderAtLocal = dual.reminderAtLocal ?? undefined;
+  record.reminderAtUtc = dual.reminderAtUtc ?? undefined;
 }
 
 function applyTaskUpdates(
-  task: TaskModel,
+  record: TaskModel,
   updates: UpdateTaskInput,
   originalTimezone: string
 ): void {
-  const r = task as any;
-  if (updates.title !== undefined) r.title = updates.title;
-  if (updates.description !== undefined) r.description = updates.description;
+  if (updates.title !== undefined) record.title = updates.title;
+  if (updates.description !== undefined)
+    record.description = updates.description;
 
   if (updates.timezone !== undefined && updates.timezone !== originalTimezone) {
-    r.timezone = updates.timezone;
+    record.timezone = updates.timezone;
   }
 
-  recalcDueTimestamps(r, updates, originalTimezone);
-  recalcReminderTimestamps(r, updates, originalTimezone);
+  recalcDueTimestamps(record, updates, originalTimezone);
+  recalcReminderTimestamps(record, updates, originalTimezone);
 
-  if (updates.status) r.status = updates.status as Task['status'];
+  if (updates.status) record.status = updates.status;
   if (updates.completedAt !== undefined) {
-    r.completedAt = updates.completedAt
+    record.completedAt = updates.completedAt
       ? new Date(updates.completedAt)
       : undefined;
   }
   if (updates.position !== undefined) {
-    r.position = updates.position;
+    record.position = updates.position;
   }
 
-  r.updatedAt = new Date();
+  record.updatedAt = new Date();
 }
 
 // P1: FIXED - Notifications now properly rescheduled on timezone changes only
@@ -454,7 +505,9 @@ async function handleNotificationUpdates(params: {
         (updatedTask.reminderAtUtc || updatedTask.dueAtUtc)
       ) {
         const notifier = new TaskNotificationService();
-        await notifier.scheduleTaskReminder(updatedTask as any);
+        await notifier.scheduleTaskReminder(
+          toNotificationTaskPayload(updatedTask)
+        );
       }
     }
   }
@@ -465,15 +518,15 @@ export async function updateTask(
   updates: UpdateTaskInput
 ): Promise<Task> {
   const repos = getRepos();
-  const task = (await (repos.tasks as any).find(id)) as TaskModel;
+  const task = await repos.tasks.find(id);
 
   // Capture original timezone before applying updates to detect timezone-only changes
-  const originalTimezone = (task as any).timezone;
+  const originalTimezone = task.timezone;
 
   await database.write(async () => {
-    await (task as any).update(
-      applyTaskUpdates.bind(null, task, updates, originalTimezone)
-    );
+    await task.update((record) => {
+      applyTaskUpdates(record, updates, originalTimezone);
+    });
   });
 
   await handleNotificationUpdates({
@@ -487,15 +540,14 @@ export async function updateTask(
 
 export async function deleteTask(id: string): Promise<void> {
   const repos = getRepos();
-  const task = (await (repos.tasks as any).find(id)) as TaskModel;
+  const task = await repos.tasks.find(id);
   if (process.env.JEST_WORKER_ID === undefined) {
     await TaskNotificationService.cancelForTask(id);
   }
   await database.write(async () => {
-    await (task as any).update((rec: TaskModel) => {
-      const r = rec as any;
-      r.deletedAt = new Date();
-      r.updatedAt = new Date();
+    await task.update((record) => {
+      record.deletedAt = new Date();
+      record.updatedAt = new Date();
     });
   });
 }
@@ -505,17 +557,17 @@ export async function getTasksByDateRange(
   end: Date
 ): Promise<Task[]> {
   const repos = getRepos();
-  const allTasks = await (repos.tasks as any)
+  const allTasks = await repos.tasks
     .query(Q.where('status', 'pending'), Q.where('deleted_at', null))
     .fetch();
   const pendingInRange = allTasks
-    .filter((t: any) => {
-      const due = DateTime.fromISO((t as any).dueAtLocal);
+    .filter((taskModel) => {
+      const due = DateTime.fromISO(taskModel.dueAtLocal);
       return due.toJSDate() >= start && due.toJSDate() <= end;
     })
     .map(toTaskFromModel);
 
-  const allSeries = await (repos.series as any)
+  const allSeries = await repos.series
     .query(Q.where('deleted_at', null))
     .fetch();
   const visible: Task[] = [...pendingInRange];
@@ -528,13 +580,13 @@ export async function getTasksByDateRange(
   // occurrence from a different series when they fall on the same local
   // date. To fix, only forward the materialized tasks that belong to the
   // current series so deduplication happens per-series.
-  for (const s of allSeries as SeriesModel[]) {
-    const seriesId = (s as any).id as string;
+  for (const seriesModel of allSeries) {
+    const seriesId = seriesModel.id;
     const materializedForThisSeries = pendingInRange.filter(
       (t: Task) => t.seriesId === seriesId
     );
     const items = await buildVisibleForSeries({
-      s: s as any,
+      s: seriesModel,
       materializedForSeries: materializedForThisSeries,
       start,
       end,
@@ -545,105 +597,157 @@ export async function getTasksByDateRange(
   return visible.sort((a, b) => (a.dueAtLocal < b.dueAtLocal ? -1 : 1));
 }
 
-function validateDeductionMap(map: any): {
-  isValid: boolean;
-  errors: string[];
-} {
-  const errors: string[] = [];
+const DEDUCTION_SCALING_MODES: DeductionMapEntry['scalingMode'][] = [
+  'fixed',
+  'per-plant',
+  'ec-based',
+];
 
-  // Must be a non-empty array
-  if (!map || !Array.isArray(map) || map.length === 0) {
-    errors.push('deductionMap must be a non-empty array');
-    return { isValid: false, errors };
+function normalizeDeductionEntry(
+  entry: unknown,
+  index: number,
+  errors: string[]
+): DeductionMapEntry | null {
+  if (!entry || typeof entry !== 'object') {
+    errors.push(`Entry ${index}: must be an object`);
+    return null;
   }
 
-  // Validate each entry conforms to expected structure
+  const raw = entry as Record<string, unknown>;
+  const itemIdRaw = raw.itemId;
+  if (typeof itemIdRaw !== 'string' || !itemIdRaw.trim()) {
+    errors.push(`Entry ${index}: itemId must be a non-empty string`);
+    return null;
+  }
+
+  const unitRaw = raw.unit;
+  if (typeof unitRaw !== 'string' || !unitRaw.trim()) {
+    errors.push(`Entry ${index}: unit must be a non-empty string`);
+    return null;
+  }
+
+  const perTaskQuantityRaw = raw.perTaskQuantity;
+  const perPlantQuantityRaw = raw.perPlantQuantity;
+  const hasPerTaskQuantity =
+    typeof perTaskQuantityRaw === 'number' && perTaskQuantityRaw > 0;
+  const hasPerPlantQuantity =
+    typeof perPlantQuantityRaw === 'number' && perPlantQuantityRaw > 0;
+
+  if (!hasPerTaskQuantity && !hasPerPlantQuantity) {
+    errors.push(
+      `Entry ${index}: must have perTaskQuantity or perPlantQuantity > 0`
+    );
+    return null;
+  }
+
+  const scalingModeRaw = raw.scalingMode;
+  if (
+    scalingModeRaw !== undefined &&
+    (typeof scalingModeRaw !== 'string' ||
+      !DEDUCTION_SCALING_MODES.includes(
+        scalingModeRaw as DeductionMapEntry['scalingMode']
+      ))
+  ) {
+    errors.push(
+      `Entry ${index}: scalingMode must be one of ${DEDUCTION_SCALING_MODES.join(', ')}`
+    );
+    return null;
+  }
+
+  const normalized: DeductionMapEntry = {
+    itemId: itemIdRaw.trim(),
+    unit: unitRaw.trim(),
+  };
+
+  if (hasPerTaskQuantity) {
+    normalized.perTaskQuantity = perTaskQuantityRaw as number;
+  }
+  if (hasPerPlantQuantity) {
+    normalized.perPlantQuantity = perPlantQuantityRaw as number;
+  }
+  if (scalingModeRaw !== undefined) {
+    normalized.scalingMode = scalingModeRaw as DeductionMapEntry['scalingMode'];
+  }
+  if (typeof raw.label === 'string' && raw.label.trim()) {
+    normalized.label = raw.label;
+  }
+
+  return normalized;
+}
+
+function validateDeductionMap(map: unknown): {
+  isValid: boolean;
+  errors: string[];
+  entries: DeductionMapEntry[];
+} {
+  const errors: string[] = [];
+  if (!Array.isArray(map) || map.length === 0) {
+    errors.push('deductionMap must be a non-empty array');
+    return { isValid: false, errors, entries: [] };
+  }
+
+  const entries: DeductionMapEntry[] = [];
+
   map.forEach((entry, index) => {
-    if (!entry || typeof entry !== 'object') {
-      errors.push(`Entry ${index}: must be an object`);
-      return;
-    }
-
-    const e = entry as any;
-
-    // Required: itemId as non-empty string
-    if (typeof e.itemId !== 'string' || !e.itemId.trim()) {
-      errors.push(`Entry ${index}: itemId must be a non-empty string`);
-    }
-
-    // Required: unit as non-empty string
-    if (typeof e.unit !== 'string' || !e.unit.trim()) {
-      errors.push(`Entry ${index}: unit must be a non-empty string`);
-    }
-
-    // Must have at least one valid quantity field
-    const hasPerTaskQuantity =
-      typeof e.perTaskQuantity === 'number' && e.perTaskQuantity > 0;
-    const hasPerPlantQuantity =
-      typeof e.perPlantQuantity === 'number' && e.perPlantQuantity > 0;
-
-    if (!hasPerTaskQuantity && !hasPerPlantQuantity) {
-      errors.push(
-        `Entry ${index}: must have perTaskQuantity or perPlantQuantity > 0`
-      );
-    }
-
-    // Validate scaling mode if present
-    if (e.scalingMode !== undefined) {
-      const validModes = ['fixed', 'per-plant', 'ec-based'];
-      if (!validModes.includes(e.scalingMode)) {
-        errors.push(
-          `Entry ${index}: scalingMode must be one of ${validModes.join(', ')}`
-        );
-      }
+    const normalized = normalizeDeductionEntry(entry, index, errors);
+    if (normalized) {
+      entries.push(normalized);
     }
   });
 
-  return { isValid: errors.length === 0, errors };
+  return {
+    isValid: errors.length === 0,
+    errors,
+    entries: errors.length ? [] : entries,
+  };
 }
 
 function determinePlantCount(taskData: Task): number | undefined {
-  // Derive plantCount from taskData.plants or taskData.metadata.plants
-  const plantsArray =
-    (taskData as any).plants || (taskData.metadata as any)?.plants;
-  if (Array.isArray(plantsArray) && plantsArray.length > 0) {
-    // Multi-plant task - use plants array length
-    return plantsArray.length;
+  const taskWithMetadata = taskData as TaskWithPlantMetadata;
+
+  const directPlants = taskWithMetadata.plants;
+  if (Array.isArray(directPlants) && directPlants.length > 0) {
+    return directPlants.length;
   }
 
-  // TODO: Remove legacy plantIds support after migration
+  const metadataPlants = taskWithMetadata.metadata.plants;
+  if (Array.isArray(metadataPlants) && metadataPlants.length > 0) {
+    return metadataPlants.length;
+  }
+
+  const metadataPlantIds = taskWithMetadata.metadata.plantIds;
   if (
-    !plantsArray &&
-    taskData.metadata &&
-    typeof (taskData.metadata as any).plantIds === 'object' &&
-    Array.isArray((taskData.metadata as any).plantIds) &&
-    (taskData.metadata as any).plantIds.length > 0
+    Array.isArray(metadataPlantIds) &&
+    metadataPlantIds.length > 0 &&
+    metadataPlantIds.every((value) => typeof value === 'string' && value.trim())
   ) {
-    // Legacy multi-plant task support - use plantIds array length
-    return (taskData.metadata as any).plantIds.length;
+    return metadataPlantIds.length;
   }
 
-  // Single plant task or no plant association
   return taskData.plantId ? 1 : undefined;
 }
 
+function buildDeductionSummary(
+  deductionMap: DeductionMapEntry[]
+): DeductionSummaryEntry[] {
+  return deductionMap.map((entry) => ({
+    itemId: entry.itemId,
+    unit: entry.unit,
+    perTaskQuantity: entry.perTaskQuantity,
+    perPlantQuantity: entry.perPlantQuantity,
+    scalingMode: entry.scalingMode,
+  }));
+}
+
 function createDeductionFailureDetails(
-  taskId: string,
   plantCount: number | undefined,
-  result: any
-): any {
-  // Persist structured failure details in task metadata
-  const deductionMap = result.deductionMap || [];
+  result: DeductionResult,
+  deductionMap: DeductionMapEntry[]
+): DeductionFailureDetails {
   return {
     timestamp: new Date().toISOString(),
     error: result.error ?? 'Insufficient stock',
-    deductionMapSummary: deductionMap.map((entry: any) => ({
-      itemId: entry.itemId,
-      unit: entry.unit,
-      perTaskQuantity: entry.perTaskQuantity,
-      perPlantQuantity: entry.perPlantQuantity,
-      scalingMode: entry.scalingMode,
-    })),
+    deductionMapSummary: buildDeductionSummary(deductionMap),
     plantCount,
     insufficientItems: result.insufficientItems,
   };
@@ -651,14 +755,13 @@ function createDeductionFailureDetails(
 
 async function persistDeductionFailure(
   taskId: string,
-  failureDetails: any
+  failureDetails: DeductionFailureDetails
 ): Promise<void> {
-  // Update task metadata with failure details (non-blocking)
   try {
     await database.write(async () => {
-      const taskModel = await database.get('tasks').find(taskId);
-      await taskModel.update((record: any) => {
-        const metadata = { ...record.metadata };
+      const taskModel = await database.get<TaskModel>('tasks').find(taskId);
+      await taskModel.update((record) => {
+        const metadata = { ...record.metadata } as TaskMetadata;
         metadata.lastDeductionFailure = failureDetails;
         record.metadata = metadata;
         record.updatedAt = new Date();
@@ -675,14 +778,14 @@ async function persistDeductionFailure(
 function logDeductionFailure(
   taskId: string,
   plantCount: number | undefined,
-  context: { deductionMap: any[]; result: any; errorDetails?: string }
+  context: DeductionFailureLogContext
 ): void {
   const { deductionMap, result, errorDetails } = context;
   const mapSummary = deductionMap
-    .map(
-      (e: any) =>
-        `${e.itemId}(${e.perTaskQuantity || e.perPlantQuantity}${e.unit})`
-    )
+    .map((entry) => {
+      const quantity = entry.perTaskQuantity ?? entry.perPlantQuantity ?? 0;
+      return `${entry.itemId}(${quantity}${entry.unit})`;
+    })
     .join(', ');
 
   console.warn(
@@ -696,12 +799,11 @@ function logDeductionFailure(
 
 async function performInventoryDeduction(
   taskId: string,
-  deductionMap: any[],
+  deductionMap: DeductionMapEntry[],
   plantCount: number | undefined
-): Promise<any> {
-  let result;
+): Promise<DeductionResult | null> {
   try {
-    result = await deduceInventory(database, {
+    const result = await deduceInventory(database, {
       source: 'task',
       taskId,
       deductionMap,
@@ -710,38 +812,34 @@ async function performInventoryDeduction(
         plantCount,
       },
     });
+    return result;
   } catch (deductionError) {
-    // Handle unexpected exceptions as non-blocking failures
     console.warn(
       '[TaskManager] Inventory deduction threw exception:',
       `Task: ${taskId}, Plants: ${plantCount ?? 'unknown'}, Map entries: ${deductionMap.length}`,
-      `Map summary: ${deductionMap.map((e: any) => `${e.itemId}(${e.perTaskQuantity || e.perPlantQuantity})`).join(', ')}`,
+      `Map summary: ${deductionMap
+        .map((entry) => {
+          const quantity = entry.perTaskQuantity ?? entry.perPlantQuantity ?? 0;
+          return `${entry.itemId}(${quantity}${entry.unit})`;
+        })
+        .join(', ')}`,
       deductionError instanceof Error ? deductionError.message : deductionError
     );
 
-    // Persist structured failure details for exceptions
-    const failureDetails = {
+    const failureDetails: DeductionFailureDetails = {
       timestamp: new Date().toISOString(),
       error:
         deductionError instanceof Error
           ? deductionError.message
           : 'Unexpected deduction error',
-      deductionMapSummary: deductionMap.map((entry: any) => ({
-        itemId: entry.itemId,
-        unit: entry.unit,
-        perTaskQuantity: entry.perTaskQuantity,
-        perPlantQuantity: entry.perPlantQuantity,
-        scalingMode: entry.scalingMode,
-      })),
+      deductionMapSummary: buildDeductionSummary(deductionMap),
       plantCount,
       exception: true,
     };
 
     await persistDeductionFailure(taskId, failureDetails);
-    return null; // Indicate failure
+    return null;
   }
-
-  return result;
 }
 
 /**
@@ -753,15 +851,14 @@ async function handleTaskInventoryDeduction(
   taskData: Task,
   taskId: string
 ): Promise<void> {
-  const deductionMap = (taskData.metadata as any)?.deductionMap;
+  const metadata = taskData.metadata as TaskMetadataWithContext;
+  const validation = validateDeductionMap(metadata.deductionMap);
 
-  // Up-front validation of deduction map
-  const validation = validateDeductionMap(deductionMap);
   if (!validation.isValid) {
     console.warn(
       '[TaskManager] Invalid deduction map - skipping inventory deduction:',
       validation.errors.join('; '),
-      `Map entries: ${Array.isArray(deductionMap) ? deductionMap.length : 'N/A'}`
+      `Map entries: ${Array.isArray(metadata.deductionMap) ? metadata.deductionMap.length : 'N/A'}`
     );
     return; // Early return with clear warning
   }
@@ -771,7 +868,7 @@ async function handleTaskInventoryDeduction(
 
   const result = await performInventoryDeduction(
     taskId,
-    deductionMap,
+    validation.entries,
     plantCount
   );
 
@@ -781,10 +878,11 @@ async function handleTaskInventoryDeduction(
   }
 
   if (!result.success) {
-    const failureDetails = createDeductionFailureDetails(taskId, plantCount, {
-      ...result,
-      deductionMap,
-    });
+    const failureDetails = createDeductionFailureDetails(
+      plantCount,
+      result,
+      validation.entries
+    );
     await persistDeductionFailure(taskId, failureDetails);
 
     // Increment failure metric counter (simple console logging for now)
@@ -805,19 +903,13 @@ async function handleTaskInventoryDeduction(
 
     const errorDetails = result.insufficientItems
       ?.map(
-        (err: {
-          itemName?: string;
-          itemId: string;
-          required: number;
-          available: number;
-          unit: string;
-        }) =>
+        (err) =>
           `${err.itemName ?? err.itemId}: needed ${err.required} ${err.unit}, had ${err.available} ${err.unit}`
       )
       .join('; ');
 
     logDeductionFailure(taskId, plantCount, {
-      deductionMap,
+      deductionMap: validation.entries,
       result,
       errorDetails,
     });
@@ -831,31 +923,32 @@ async function handleTaskInventoryDeduction(
 
 export async function completeTask(id: string): Promise<Task> {
   const repos = getRepos();
-  const task = (await (repos.tasks as any).find(id)) as TaskModel;
-  const seriesId = (task as any).seriesId as string | undefined;
+  const task = await repos.tasks.find(id);
+  const seriesId = task.seriesId;
   let updated: TaskModel | null = null;
   await database.write(async () => {
-    updated = await (task as any).update((rec: TaskModel) => {
-      const r = rec as any;
-      r.status = 'completed' as Task['status'];
-      r.completedAt = new Date();
-      r.updatedAt = new Date();
+    updated = await task.update((record) => {
+      record.status = 'completed';
+      record.completedAt = new Date();
+      record.updatedAt = new Date();
     });
   });
 
   // Cancel associated notifications on completion
   await TaskNotificationService.cancelForTask(id);
 
+  const taskRecord = updated ?? task;
+
   // Non-blocking plant telemetry update (watering/feeding)
   try {
-    await onTaskCompleted(toTaskFromModel((updated as any) ?? task));
+    await onTaskCompleted(toTaskFromModel(taskRecord));
   } catch (error) {
     console.warn('[TaskManager] plant telemetry failed on completeTask', error);
   }
 
   // Non-blocking inventory deduction (if deduction map exists)
   try {
-    const taskData = toTaskFromModel((updated as any) ?? task);
+    const taskData = toTaskFromModel(taskRecord);
     await handleTaskInventoryDeduction(taskData, id);
   } catch (error) {
     console.error(
@@ -866,20 +959,18 @@ export async function completeTask(id: string): Promise<Task> {
 
   // Materialize the next occurrence for recurring tasks
   if (seriesId) {
-    const seriesModel = (await (repos.series as any).find(
-      seriesId
-    )) as SeriesModel;
+    const seriesModel = await repos.series.find(seriesId);
     await materializeNextOccurrence(
-      toSeriesFromModel(seriesModel as any),
-      (task as any).dueAtLocal
+      toSeriesFromModel(seriesModel),
+      task.dueAtLocal
     );
   }
 
-  return toTaskFromModel((updated as any) ?? task);
+  return toTaskFromModel(taskRecord);
 }
 
 async function findAndSoftDeleteTaskForOccurrence(
-  repos: any,
+  repos: TaskRepositories,
   seriesId: string,
   day: string
 ): Promise<TaskModel | null> {
@@ -890,18 +981,18 @@ async function findAndSoftDeleteTaskForOccurrence(
   // Find task that matches the occurrence local date
   for (const task of existingTasks) {
     // Use the task's own timezone when computing the start-of-day ISO
-    const taskZone = (task as any).timezone as string;
+    const taskZone = task.timezone;
     const dayStartIso = DateTime.fromISO(`${day}T00:00:00`, {
       zone: taskZone,
-    }).toISO()!;
-    if (sameLocalDay((task as any).dueAtLocal, dayStartIso)) {
+    }).toISO();
+    if (!dayStartIso) continue;
+    if (sameLocalDay(task.dueAtLocal, dayStartIso)) {
       // Soft-delete the task and clear nullable reminder fields
-      await task.update((rec: TaskModel) => {
-        const r = rec as any;
-        r.deletedAt = new Date();
-        r.reminderAtLocal = null as any;
-        r.reminderAtUtc = null as any;
-        r.updatedAt = new Date();
+      await task.update((record) => {
+        record.deletedAt = new Date();
+        record.reminderAtLocal = null as unknown as string;
+        record.reminderAtUtc = null as unknown as string;
+        record.updatedAt = new Date();
       });
       return task;
     }
@@ -915,37 +1006,35 @@ export async function skipRecurringInstance(
   occurrenceDate: Date
 ): Promise<void> {
   const repos = getRepos();
-  const series = (await (repos.series as any).find(seriesId)) as SeriesModel;
-  const zone = (series as any).timezone as string;
+  const series = await repos.series.find(seriesId);
+  const zone = series.timezone;
   const day = toOccurrenceLocalDate(occurrenceDate, zone);
   let taskToDelete: TaskModel | null = null;
 
   await database.write(async () => {
     // Upsert: ensure single override per (seriesId, day)
-    const existing = await (repos.overrides as any)
+    const existing = await repos.overrides
       .query(
         Q.where('series_id', seriesId),
         Q.where('occurrence_local_date', day)
       )
       .fetch();
     if (existing.length > 0) {
-      await (existing[0] as any).update((rec: OccurrenceOverrideModel) => {
-        const r = rec as any;
-        r.status = 'skip' as any;
-        r.dueAtLocal = null as any;
-        r.dueAtUtc = null as any;
-        r.reminderAtLocal = null as any;
-        r.reminderAtUtc = null as any;
-        r.updatedAt = new Date();
+      await existing[0].update((record) => {
+        record.status = 'skip';
+        record.dueAtLocal = null as unknown as string;
+        record.dueAtUtc = null as unknown as string;
+        record.reminderAtLocal = null as unknown as string;
+        record.reminderAtUtc = null as unknown as string;
+        record.updatedAt = new Date();
       });
     } else {
-      await (repos.overrides as any).create((rec: OccurrenceOverrideModel) => {
-        const r = rec as any;
-        r.seriesId = seriesId;
-        r.occurrenceLocalDate = day;
-        r.status = 'skip' as any;
-        r.createdAt = new Date();
-        r.updatedAt = new Date();
+      await repos.overrides.create((record) => {
+        record.seriesId = seriesId;
+        record.occurrenceLocalDate = day;
+        record.status = 'skip';
+        record.createdAt = new Date();
+        record.updatedAt = new Date();
       });
     }
 
@@ -960,7 +1049,7 @@ export async function skipRecurringInstance(
   // Cancel notifications for the task we just soft-deleted
   if (taskToDelete) {
     try {
-      await TaskNotificationService.cancelForTask((taskToDelete as any).id);
+      await TaskNotificationService.cancelForTask(taskToDelete.id);
     } catch (error) {
       console.warn(
         '[TaskManager] Failed to cancel notifications for skipped task',
@@ -989,7 +1078,7 @@ function calculateOccurrenceTimestamps(
 }
 
 async function findExistingTaskForOccurrence(
-  repos: any,
+  repos: TaskRepositories,
   seriesId: string,
   occurrenceLocalIso: string
 ): Promise<TaskModel | null> {
@@ -1012,7 +1101,7 @@ async function findExistingTaskForOccurrence(
 }
 
 async function updateOrCreateCompletedTask(params: {
-  repos: any;
+  repos: TaskRepositories;
   series: Series;
   existingTask: TaskModel | null;
   timestamps: { localIso: string; utcIso: string; zone: string };
@@ -1023,30 +1112,28 @@ async function updateOrCreateCompletedTask(params: {
     const taskId = params.existingTask.id;
 
     // Update existing pending task to completed
-    await params.existingTask.update((rec: TaskModel) => {
-      const r = rec as any;
-      r.status = 'completed' as Task['status'];
-      r.completedAt = new Date();
-      r.updatedAt = new Date();
+    await params.existingTask.update((record) => {
+      record.status = 'completed';
+      record.completedAt = new Date();
+      record.updatedAt = new Date();
     });
 
     // Return the task ID if it was previously pending (needs notification cancellation)
     return wasPending ? [taskId] : [];
   } else {
     // Create new completed materialized task
-    await params.repos.tasks.create((rec: TaskModel) => {
-      const r = rec as any;
-      r.seriesId = params.series.id;
-      r.title = params.series.title;
-      r.description = params.series.description;
-      r.dueAtLocal = params.timestamps.localIso;
-      r.dueAtUtc = params.timestamps.utcIso;
-      r.timezone = params.timestamps.zone;
-      r.status = 'completed' as Task['status'];
-      r.completedAt = new Date();
-      r.metadata = {};
-      r.createdAt = new Date();
-      r.updatedAt = new Date();
+    await params.repos.tasks.create((record) => {
+      record.seriesId = params.series.id;
+      record.title = params.series.title;
+      record.description = params.series.description ?? undefined;
+      record.dueAtLocal = params.timestamps.localIso;
+      record.dueAtUtc = params.timestamps.utcIso;
+      record.timezone = params.timestamps.zone;
+      record.status = 'completed';
+      record.completedAt = new Date();
+      record.metadata = {};
+      record.createdAt = new Date();
+      record.updatedAt = new Date();
     });
 
     // Return empty array for new completed tasks (no notifications to cancel)
@@ -1061,7 +1148,7 @@ function buildRescheduleOldLocalIso(
   day: string,
   zone: string
 ): string {
-  const dtstartLocal = DateTime.fromISO((series as any).dtstartLocal);
+  const dtstartLocal = DateTime.fromISO(series.dtstartLocal);
   return DateTime.fromISO(`${day}T${dtstartLocal.toFormat('HH:mm:ss')}`, {
     zone,
   }).toISO() as string;
@@ -1075,10 +1162,10 @@ export async function buildVisibleForSeries(params: {
   end: Date;
 }): Promise<Task[]> {
   const { s, materializedForSeries, start, end } = params;
-  const series = toSeriesFromModel(s as any);
+  const series = toSeriesFromModel(s);
   const overrides = await getSeriesOverrides(series.id);
   const parsed = rrule.parseRule(series.rrule, series.dtstartUtc);
-  const validated = rrule.validate(parsed as any);
+  const validated = rrule.validate(parsed as RRuleParse);
   if (!validated.ok) {
     console.warn(
       `[TaskManager] Skipping series ${series.id} due to invalid RRULE: ${validated.errors?.join(', ')}`
@@ -1097,8 +1184,9 @@ export async function buildVisibleForSeries(params: {
     const localIso = DateTime.fromJSDate(local, {
       zone: series.timezone,
     }).toISO();
+    if (!localIso) continue;
     const already = materializedForSeries.find((t: Task) =>
-      sameLocalDay(t.dueAtLocal!, localIso!)
+      sameLocalDay(t.dueAtLocal, localIso)
     );
     if (already) continue;
 
@@ -1106,62 +1194,63 @@ export async function buildVisibleForSeries(params: {
       local,
       series.timezone
     )}`;
-    out.push({
+    const dueAtUtcIso = DateTime.fromJSDate(utc, { zone: 'utc' }).toISO();
+    if (!dueAtUtcIso) continue;
+    const ephemeralTask: Task = {
       id: ephemeralId,
       seriesId: series.id,
       title: series.title,
       description: series.description,
       dueAtLocal: localIso,
-      dueAtUtc: DateTime.fromJSDate(utc, { zone: 'utc' }).toISO(),
+      dueAtUtc: dueAtUtcIso,
       timezone: series.timezone,
       status: 'pending',
       metadata: { ephemeral: true },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    } as unknown as Task);
+    };
+    out.push(ephemeralTask);
   }
 
   return out;
 }
 
 async function upsertRescheduleOverride(params: {
-  repos: any;
+  repos: TaskRepositories;
   seriesId: string;
   day: string;
   newLocalIso: string;
   newUtcIso: string;
 }): Promise<void> {
   const { repos, seriesId, day, newLocalIso, newUtcIso } = params;
-  const existing = await (repos.overrides as any)
+  const existing = await repos.overrides
     .query(
       Q.where('series_id', seriesId),
       Q.where('occurrence_local_date', day)
     )
     .fetch();
   if (existing.length > 0) {
-    await (existing[0] as any).update((rec: OccurrenceOverrideModel) => {
-      const r = rec as any;
-      r.status = 'reschedule' as any;
-      r.dueAtLocal = newLocalIso;
-      r.dueAtUtc = newUtcIso;
-      r.updatedAt = new Date();
+    await existing[0].update((record) => {
+      record.status = 'reschedule';
+      record.dueAtLocal = newLocalIso;
+      record.dueAtUtc = newUtcIso;
+      record.updatedAt = new Date();
     });
   } else {
-    await (repos.overrides as any).create((rec: OccurrenceOverrideModel) => {
-      const r = rec as any;
-      r.seriesId = seriesId;
-      r.occurrenceLocalDate = day;
-      r.status = 'reschedule' as any;
-      r.dueAtLocal = newLocalIso;
-      r.dueAtUtc = newUtcIso;
-      r.createdAt = new Date();
-      r.updatedAt = new Date();
+    await repos.overrides.create((record) => {
+      record.seriesId = seriesId;
+      record.occurrenceLocalDate = day;
+      record.status = 'reschedule';
+      record.dueAtLocal = newLocalIso;
+      record.dueAtUtc = newUtcIso;
+      record.createdAt = new Date();
+      record.updatedAt = new Date();
     });
   }
 }
 
 async function moveExistingMaterializedTask(params: {
-  repos: any;
+  repos: TaskRepositories;
   seriesId: string;
   oldLocalIso: string;
   newLocalIso: string;
@@ -1176,20 +1265,19 @@ async function moveExistingMaterializedTask(params: {
   if (!existingTask) return;
 
   if (process.env.JEST_WORKER_ID === undefined) {
-    await TaskNotificationService.cancelForTask((existingTask as any).id);
+    await TaskNotificationService.cancelForTask(existingTask.id);
   }
   await database.write(async () => {
-    await (existingTask as any).update((rec: TaskModel) => {
-      const r = rec as any;
-      r.dueAtLocal = newLocalIso;
-      r.dueAtUtc = newUtcIso;
-      r.updatedAt = new Date();
+    await existingTask.update((record) => {
+      record.dueAtLocal = newLocalIso;
+      record.dueAtUtc = newUtcIso;
+      record.updatedAt = new Date();
     });
   });
   if (process.env.JEST_WORKER_ID === undefined) {
     const updated = toTaskFromModel(existingTask);
     const notifier = new TaskNotificationService();
-    await notifier.scheduleTaskReminder(updated as any);
+    await notifier.scheduleTaskReminder(toNotificationTaskPayload(updated));
   }
 }
 
@@ -1199,8 +1287,8 @@ export async function rescheduleRecurringInstance(
   newLocalIso: string
 ): Promise<void> {
   const repos = getRepos();
-  const series = (await (repos.series as any).find(seriesId)) as SeriesModel;
-  const zone = (series as any).timezone as string;
+  const series = await repos.series.find(seriesId);
+  const zone = series.timezone;
   const day = toOccurrenceLocalDate(occurrenceDate, zone);
   const newUtcIso = toUtcIso(newLocalIso);
 
@@ -1229,8 +1317,8 @@ export async function completeRecurringInstance(
   occurrenceDate: Date
 ): Promise<void> {
   const repos = getRepos();
-  const seriesModel = (await repos.series.find(seriesId)) as SeriesModel;
-  const series = toSeriesFromModel(seriesModel as any);
+  const seriesModel = await repos.series.find(seriesId);
+  const series = toSeriesFromModel(seriesModel);
 
   const { occurrenceLocal, occurrenceUtc, day } = calculateOccurrenceTimestamps(
     series,
@@ -1267,19 +1355,17 @@ export async function completeRecurringInstance(
       )
       .fetch();
     if (existing.length > 0) {
-      await (existing[0] as any).update((rec: OccurrenceOverrideModel) => {
-        const r = rec as any;
-        r.status = 'completed' as any;
-        r.updatedAt = new Date();
+      await existing[0].update((record) => {
+        record.status = 'completed';
+        record.updatedAt = new Date();
       });
     } else {
-      await repos.overrides.create((rec: OccurrenceOverrideModel) => {
-        const r = rec as any;
-        r.seriesId = seriesId;
-        r.occurrenceLocalDate = day;
-        r.status = 'completed' as any;
-        r.createdAt = new Date();
-        r.updatedAt = new Date();
+      await repos.overrides.create((record) => {
+        record.seriesId = seriesId;
+        record.occurrenceLocalDate = day;
+        record.status = 'completed';
+        record.createdAt = new Date();
+        record.updatedAt = new Date();
       });
     }
   });
@@ -1332,18 +1418,21 @@ export async function createSeries(input: CreateSeriesInput): Promise<Series> {
   const repos = getRepos();
   let created: SeriesModel | null = null;
   await database.write(async () => {
-    created = await (repos.series as any).create((rec: SeriesModel) => {
-      const r = rec as any;
-      r.title = input.title;
-      r.description = input.description;
-      r.dtstartLocal = input.dtstartLocal;
-      r.dtstartUtc = input.dtstartUtc;
-      r.timezone = input.timezone;
-      r.rrule = input.rrule;
-      r.untilUtc = input.untilUtc as any;
-      r.plantId = input.plantId as any;
-      r.createdAt = new Date();
-      r.updatedAt = new Date();
+    created = await repos.series.create((record) => {
+      record.title = input.title;
+      record.description = input.description ?? undefined;
+      record.dtstartLocal = input.dtstartLocal;
+      record.dtstartUtc = input.dtstartUtc;
+      record.timezone = input.timezone;
+      record.rrule = input.rrule;
+      if (input.untilUtc !== undefined) {
+        record.untilUtc = input.untilUtc;
+      }
+      if (input.plantId !== undefined) {
+        record.plantId = input.plantId;
+      }
+      record.createdAt = new Date();
+      record.updatedAt = new Date();
     });
   });
   if (!created) throw new Error('Failed to create series');
@@ -1355,21 +1444,22 @@ export async function updateSeries(
   updates: Partial<CreateSeriesInput>
 ): Promise<Series> {
   const repos = getRepos();
-  const series = (await (repos.series as any).find(id)) as SeriesModel;
+  const series = await repos.series.find(id);
   await database.write(async () => {
-    await (series as any).update((rec: SeriesModel) => {
-      const r = rec as any;
-      if (updates.title !== undefined) r.title = updates.title;
+    await series.update((record) => {
+      if (updates.title !== undefined) record.title = updates.title;
       if (updates.description !== undefined)
-        r.description = updates.description;
+        record.description = updates.description ?? undefined;
       if (updates.dtstartLocal !== undefined)
-        r.dtstartLocal = updates.dtstartLocal;
-      if (updates.dtstartUtc !== undefined) r.dtstartUtc = updates.dtstartUtc;
-      if (updates.timezone !== undefined) r.timezone = updates.timezone;
-      if (updates.rrule !== undefined) r.rrule = updates.rrule;
-      if (updates.untilUtc !== undefined) r.untilUtc = updates.untilUtc as any;
-      if (updates.plantId !== undefined) r.plantId = updates.plantId as any;
-      r.updatedAt = new Date();
+        record.dtstartLocal = updates.dtstartLocal;
+      if (updates.dtstartUtc !== undefined)
+        record.dtstartUtc = updates.dtstartUtc;
+      if (updates.timezone !== undefined) record.timezone = updates.timezone;
+      if (updates.rrule !== undefined) record.rrule = updates.rrule;
+      if (updates.untilUtc !== undefined) record.untilUtc = updates.untilUtc;
+      if (updates.plantId !== undefined)
+        record.plantId = updates.plantId ?? undefined;
+      record.updatedAt = new Date();
     });
   });
   return toSeriesFromModel(series);
@@ -1377,12 +1467,11 @@ export async function updateSeries(
 
 export async function deleteSeries(id: string): Promise<void> {
   const repos = getRepos();
-  const series = (await (repos.series as any).find(id)) as SeriesModel;
+  const series = await repos.series.find(id);
   await database.write(async () => {
-    await (series as any).update((rec: SeriesModel) => {
-      const r = rec as any;
-      r.deletedAt = new Date();
-      r.updatedAt = new Date();
+    await series.update((record) => {
+      record.deletedAt = new Date();
+      record.updatedAt = new Date();
     });
   });
 }
