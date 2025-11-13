@@ -113,6 +113,8 @@
       "view_comments_hint": "Doppeltippen, um Kommentare zu diesem Beitrag anzuzeigen."
     },
     "home": {
+      "activation_action_hint": "Doppeltippen, um {{action}}",
+      "activation_dismiss_hint": "Doppeltippen, um die Aktivierungs-Checkliste auszublenden",
       "open_settings_hint": "Öffnet die Einstellungen.",
       "share_update_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags."
     },
@@ -619,6 +621,13 @@
     "drag_item_hint": "Lange drücken und ziehen, um neu zu planen. Doppeltippen für Menü.",
     "drag_item_label": "Ziehen {{title}}",
     "ec_range": "EC@25°C‑Ziel: {{min}}–{{max}} mS/cm",
+    "empty_state": {
+      "action_hint": "Wandelt die Beispielaufgabe in eine echte Aufgabe um, die du anpassen kannst",
+      "convert_to_task": "In echte Aufgabe umwandeln",
+      "sample_description": "Dies ist eine Beispiel-Wiederholungsaufgabe. Tippe unten, um deine eigenen Aufgaben zu erstellen und deinen Anbauplan aufzubauen.",
+      "sample_title": "💧 Pflanzen gießen - Alle 2 Tage",
+      "title": "Starte deinen Anbauplan"
+    },
     "log_ph_ec": "pH/EC protokollieren",
     "move": "Verschieben",
     "move_to_date": "Auf Datum verschieben",
@@ -689,6 +698,7 @@
     "offline_mode": "Offline-Modus",
     "ok": "OK",
     "on": "EIN",
+    "openSettings": "Einstellungen öffnen",
     "reconnect": "Verbinden",
     "remove": "Entfernen",
     "retry": "Erneut versuchen",
@@ -742,6 +752,11 @@
     "delete_post": "Beitrag löschen",
     "delete_post_hint": "Doppeltippen, um diesen Beitrag zu löschen. Du hast 15 Sekunden Zeit zum Rückgängig machen.",
     "empty_state": "Noch keine Beiträge. Sei die oder der Erste!",
+    "empty_state_educational": {
+      "moderation_guidance": "Alle Beiträge werden überprüft, um eine sichere, bildungsorientierte Community zu gewährleisten. Vermeide Handel, illegale Inhalte oder persönliche Angriffe.",
+      "share_cta": "Update teilen",
+      "title": "Willkommen in der Community"
+    },
     "error_card_hint": "Informiert, dass der Community-Feed nicht geladen werden konnte.",
     "footer": "Was meinst du? Jeder Rat ist willkommen!",
     "header": "🌱 Hilfe bei Pflanzendiagnose benötigt",
@@ -1453,6 +1468,19 @@
     }
   },
   "home": {
+    "activation": {
+      "action_create_task": "Erstelle deine erste Aufgabe",
+      "action_create_task_desc": "Bleib organisiert mit Aufgabenerinnerungen",
+      "action_explore_strains": "Sorten erkunden",
+      "action_explore_strains_desc": "Finde die perfekte Sorte für dein Setup",
+      "action_open_playbook": "Öffne ein Playbook",
+      "action_open_playbook_desc": "Erhalte Schritt-für-Schritt-Anleitung",
+      "action_try_ai_diagnosis": "KI-Diagnose testen",
+      "action_try_ai_diagnosis_desc": "Erkenne Pflanzengesundheitsprobleme",
+      "dismiss": "Ausblenden",
+      "progress": "{{completed}} von {{total}} abgeschlossen",
+      "title": "Erste Schritte mit GrowBro"
+    },
     "open_settings": "Einstellungen öffnen",
     "share_update_cta": "Update teilen",
     "share_update_subtitle": "Sag der Community, wie es deinen Pflanzen geht.",
@@ -1964,10 +1992,68 @@
   },
   "onboarding": {
     "allow_button": "Benachrichtigungen erlauben",
+    "community": {
+      "benefit_learn_body": "Erhalte Tipps und Ratschläge von erfahrenen Growern weltweit",
+      "benefit_learn_title": "Von anderen lernen",
+      "benefit_privacy_body": "Kontrolliere, was du teilst und wer deine Inhalte sehen kann",
+      "benefit_privacy_title": "Privatsphäre zuerst",
+      "benefit_share_body": "Vernetze dich mit anderen Growern und teile deine Erfahrungen",
+      "benefit_share_title": "Teile deine Reise",
+      "body": "Verbinde dich mit einer Community leidenschaftlicher Grower. Teile Updates, hole dir Rat und lerne gemeinsam.",
+      "title": "Tritt der Community bei"
+    },
     "continue_button": "Weiter",
+    "done": "Los geht's",
+    "guidance": {
+      "body": "Egal ob Anfänger oder Experte, wir haben für dich Schritt-für-Schritt-Anleitungen und hilfreiche Ressourcen.",
+      "feature_playbooks_body": "Vollständige Anbauanleitungen, angepasst an dein Setup und deine Sorte",
+      "feature_playbooks_title": "Geführte Anbau-Playbooks",
+      "feature_tasks_body": "Automatisierte Zeitpläne, die deinen Anbau auf Kurs halten",
+      "feature_tasks_title": "Intelligentes Aufgabenmanagement",
+      "feature_tips_body": "Kontextbezogene Ratschläge und Bildungsinhalte, wenn du sie brauchst",
+      "feature_tips_title": "Experten-Tipps & Anleitungen",
+      "title": "Lernen & Wachsen"
+    },
     "message": "Willkommen bei der GrowBro App",
     "notifications_body": "Erlaube Benachrichtigungen, um rechtzeitig an Aufgaben erinnert zu werden.",
-    "notifications_title": "Aufgaben-Erinnerungen"
+    "notifications_title": "Aufgaben-Erinnerungen",
+    "pager_accessibility_label": "Onboarding-Slides. Nach links wischen, um fortzufahren, oder Überspringen-Button verwenden.",
+    "permissions": {
+      "allow": "Erlauben",
+      "allowHint": "Erteilt die Berechtigung für diese Funktion",
+      "camera": {
+        "benefit1": "Nutze KI-Fotoanalyse zur Diagnose von Pflanzengesundheitsproblemen",
+        "benefit2": "Verfolge den Erntefortschritt mit Fotos während des Trocknens und Aushärtens",
+        "benefit3": "Teile Fotos mit der Community für Rat und Unterstützung",
+        "deniedMessage": "Um Fotofunktionen zu nutzen, aktiviere bitte den Kamera- und Fotobibliothekszugriff in den Einstellungen.",
+        "deniedTitle": "Berechtigung erforderlich",
+        "description": "GrowBro verwendet deine Kamera, um die Pflanzengesundheit zu verfolgen und deinen Grow zu dokumentieren.",
+        "title": "Fotos & Kamera"
+      },
+      "notNow": "Nicht jetzt",
+      "notNowHint": "Überspringt diese Berechtigung. Du kannst sie später in den Einstellungen aktivieren.",
+      "notifications": {
+        "benefit1": "Erhalte rechtzeitige Erinnerungen für Bewässerung, Düngung und andere Aufgaben",
+        "benefit2": "Verpasse nie kritische Erntezeitfenster",
+        "benefit3": "Erhalte Benachrichtigungen über Nährstoffmängel und Überwachungsbedarf",
+        "deniedMessage": "Um Aufgabenerinnerungen zu erhalten, aktiviere bitte Benachrichtigungen in den Einstellungen.",
+        "deniedTitle": "Benachrichtigungen deaktiviert",
+        "description": "Bleibe mit deinem Anbauplan auf Kurs. Die App funktioniert auch ohne Benachrichtigungen vollständig.",
+        "title": "Bleib im Zeitplan"
+      },
+      "privacyNote": "Du kannst diese Berechtigungen jederzeit in den Einstellungen ändern. Die App funktioniert auch ohne sie."
+    },
+    "skip": "Überspringen",
+    "welcome": {
+      "body": "Dein vollständiger Begleiter für die Planung, Verfolgung und Optimierung deiner heimischen Anbau-Reise.",
+      "feature_ai_body": "Diagnostiziere Pflanzengesundheitsprobleme mit KI-gestützter Fotoanalyse",
+      "feature_ai_title": "KI-Foto-Assessment",
+      "feature_calendar_body": "Bleib organisiert mit Aufgabenerinnerungen und Zeitplanung",
+      "feature_calendar_title": "Intelligenter Kalender",
+      "feature_tracking_body": "Verfolge alles von der Ernte bis zum Aushärten und zur Lagerung",
+      "feature_tracking_title": "Vollständige Nachverfolgung",
+      "title": "Willkommen bei GrowBro"
+    }
   },
   "phases": {
     "flower": "Blütenphase",
@@ -2501,12 +2587,17 @@
       "error_checking": "Fehler beim Suchen nach Updates",
       "github": "GitHub-Repository",
       "links": "Links",
+      "onboarding": "Onboarding",
       "openLinkError": "Fehler beim Öffnen des Links. Bitte versuchen Sie es erneut oder überprüfen Sie Ihre Geräteeinstellungen.",
       "openStoreErrorMessage": "Fehler beim Öffnen des App Stores. Bitte versuchen Sie es erneut oder überprüfen Sie Ihre Geräteeinstellungen.",
       "openStoreErrorTitle": "Fehler",
       "ota_disabled": "Updates werden über den App Store verwaltet",
       "restart_to_apply": "Neu starten zum Anwenden",
       "retry": "Erneut versuchen",
+      "rewatch_onboarding": "Onboarding erneut ansehen",
+      "rewatch_onboarding_confirm": "Onboarding starten",
+      "rewatch_onboarding_message": "Dies führt Sie erneut durch die Einführungstour der App. Sie können jederzeit abbrechen.",
+      "rewatch_onboarding_title": "Onboarding erneut ansehen?",
       "title": "Über",
       "up_to_date": "Sie sind auf dem neuesten Stand",
       "up_to_date_message": "Sie haben die neueste Version installiert.",
@@ -2957,6 +3048,13 @@
       "uplifted": "Aufgehoben"
     },
     "empty_state": "Keine Sorten verfügbar",
+    "empty_state_educational": {
+      "offline_banner": "Gespeicherte Sorten sind offline verfügbar zur schnellen Referenz",
+      "search_tip_1": "Versuche die Suche nach Sortennamen, Effekten oder Aromen",
+      "search_tip_2": "Nutze Filter, um nach THC/CBD-Werten oder Schwierigkeit einzugrenzen",
+      "search_tip_3": "Markiere deine Favoriten für schnellen Zugriff",
+      "title": "Entdecke die perfekte Sorte"
+    },
     "error": "Sorten konnten nicht geladen werden. Bitte erneut versuchen.",
     "favorites": {
       "bulk_remove": "Ausgewählte entfernen",

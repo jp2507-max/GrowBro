@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
-import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 
 import { Button, ScrollView, Switch, Text, View } from '@/components/ui';
+import { createStaggeredFadeInUp, onboardingMotion } from '@/lib/animations';
 import type { LegalDocumentType } from '@/lib/compliance/legal-acceptances';
 import {
   acceptAllLegalDocuments,
@@ -85,17 +86,22 @@ function LegalDocumentSection({
 
 function LegalConfirmationHeader(): React.ReactElement {
   return (
-    <Animated.View
-      entering={FadeIn.duration(200).reduceMotion(ReduceMotion.System)}
-      className="mb-6"
-    >
-      <Text className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">
-        {translate('cannabis.legal_confirmation_title')}
-      </Text>
-      <Text className="mt-2 text-base text-neutral-700 dark:text-neutral-300">
-        {translate('cannabis.legal_confirmation_subtitle')}
-      </Text>
-    </Animated.View>
+    <View className="mb-6">
+      <Animated.View
+        entering={createStaggeredFadeInUp(0, onboardingMotion.stagger.header)}
+      >
+        <Text className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">
+          {translate('cannabis.legal_confirmation_title')}
+        </Text>
+      </Animated.View>
+      <Animated.View
+        entering={createStaggeredFadeInUp(1, onboardingMotion.stagger.header)}
+      >
+        <Text className="mt-2 text-base text-neutral-700 dark:text-neutral-300">
+          {translate('cannabis.legal_confirmation_subtitle')}
+        </Text>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -109,33 +115,43 @@ function LegalConfirmationActions({
   isAcceptDisabled: boolean;
 }): React.ReactElement {
   return (
-    <Animated.View
-      entering={FadeIn.delay(80)
-        .duration(200)
-        .reduceMotion(ReduceMotion.System)}
-      className="mt-6 gap-3"
-    >
-      <Button
-        label={translate('cannabis.legal_confirmation_accept_all')}
-        onPress={onAccept}
-        disabled={isAcceptDisabled}
-        testID="legal-accept-btn"
-      />
-      <Button
-        label={translate('cannabis.legal_confirmation_decline')}
-        onPress={onDecline}
-        testID="legal-decline-btn"
-        variant="secondary"
-      />
+    <View className="mt-6 gap-3">
+      <Animated.View
+        entering={createStaggeredFadeInUp(0, onboardingMotion.stagger.actions)}
+      >
+        <Button
+          label={translate('cannabis.legal_confirmation_accept_all')}
+          onPress={onAccept}
+          disabled={isAcceptDisabled}
+          testID="legal-accept-btn"
+        />
+      </Animated.View>
+      <Animated.View
+        entering={createStaggeredFadeInUp(1, onboardingMotion.stagger.actions)}
+      >
+        <Button
+          label={translate('cannabis.legal_confirmation_decline')}
+          onPress={onDecline}
+          testID="legal-decline-btn"
+          variant="secondary"
+        />
+      </Animated.View>
       {isAcceptDisabled && (
-        <Text
-          className="text-center text-sm text-danger-500"
-          testID="legal-all-required-message"
+        <Animated.View
+          entering={createStaggeredFadeInUp(2, {
+            ...onboardingMotion.stagger.actions,
+            duration: onboardingMotion.durations.quick,
+          })}
         >
-          {translate('cannabis.legal_confirmation_all_required')}
-        </Text>
+          <Text
+            className="text-center text-sm text-danger-500"
+            testID="legal-all-required-message"
+          >
+            {translate('cannabis.legal_confirmation_all_required')}
+          </Text>
+        </Animated.View>
       )}
-    </Animated.View>
+    </View>
   );
 }
 
@@ -168,8 +184,7 @@ export function LegalConfirmationModal({
   if (!isVisible) return null;
 
   return (
-    <Animated.View
-      entering={FadeIn.duration(200).reduceMotion(ReduceMotion.System)}
+    <View
       className="flex-1 bg-white dark:bg-neutral-900"
       testID="legal-confirmation-modal"
     >
@@ -181,9 +196,7 @@ export function LegalConfirmationModal({
           <LegalConfirmationHeader />
 
           <Animated.View
-            entering={FadeIn.delay(40)
-              .duration(160)
-              .reduceMotion(ReduceMotion.System)}
+            entering={createStaggeredFadeInUp(0, onboardingMotion.stagger.list)}
           >
             <LegalDocumentSection
               documentType="terms"
@@ -195,9 +208,7 @@ export function LegalConfirmationModal({
           </Animated.View>
 
           <Animated.View
-            entering={FadeIn.delay(80)
-              .duration(160)
-              .reduceMotion(ReduceMotion.System)}
+            entering={createStaggeredFadeInUp(1, onboardingMotion.stagger.list)}
           >
             <LegalDocumentSection
               documentType="privacy"
@@ -209,9 +220,7 @@ export function LegalConfirmationModal({
           </Animated.View>
 
           <Animated.View
-            entering={FadeIn.delay(120)
-              .duration(160)
-              .reduceMotion(ReduceMotion.System)}
+            entering={createStaggeredFadeInUp(2, onboardingMotion.stagger.list)}
           >
             <LegalDocumentSection
               documentType="cannabis"
@@ -231,7 +240,7 @@ export function LegalConfirmationModal({
           />
         </View>
       </ScrollView>
-    </Animated.View>
+    </View>
   );
 }
 

@@ -113,6 +113,8 @@
       "view_comments_hint": "Double-tap to view comments for this post."
     },
     "home": {
+      "activation_action_hint": "Double-tap to {{action}}",
+      "activation_dismiss_hint": "Double-tap to dismiss the activation checklist",
       "open_settings_hint": "Opens the Settings screen.",
       "share_update_hint": "Opens the Create Post screen."
     },
@@ -619,6 +621,13 @@
     "drag_item_hint": "Long-press then drag to reschedule. Double-tap to open move menu.",
     "drag_item_label": "Drag {{title}}",
     "ec_range": "EC@25°C target: {{min}}–{{max}} mS/cm",
+    "empty_state": {
+      "action_hint": "Converts the sample task into a real task that you can customize",
+      "convert_to_task": "Convert to Real Task",
+      "sample_description": "This is an example recurring task. Tap below to create your own tasks and build your grow schedule.",
+      "sample_title": "💧 Water plants - Every 2 days",
+      "title": "Start Your Grow Schedule"
+    },
     "log_ph_ec": "Log pH/EC",
     "move": "Move",
     "move_to_date": "Move to date",
@@ -689,6 +698,7 @@
     "offline_mode": "Offline Mode",
     "ok": "OK",
     "on": "ON",
+    "openSettings": "Open Settings",
     "reconnect": "Reconnect",
     "remove": "Remove",
     "retry": "Retry",
@@ -742,6 +752,11 @@
     "delete_post": "Delete post",
     "delete_post_hint": "Double-tap to delete this post. You will have 15 seconds to undo.",
     "empty_state": "No posts yet. Be the first to share!",
+    "empty_state_educational": {
+      "moderation_guidance": "All posts are reviewed to ensure a safe, educational community. Avoid commerce, illegal content, or personal attacks.",
+      "share_cta": "Share an Update",
+      "title": "Welcome to the Community"
+    },
     "error_card_hint": "Informs that the community feed failed to load.",
     "footer": "What do you think? Any advice appreciated!",
     "header": "🌱 Need help with plant diagnosis",
@@ -1453,6 +1468,19 @@
     }
   },
   "home": {
+    "activation": {
+      "action_create_task": "Create your first task",
+      "action_create_task_desc": "Stay organized with task reminders",
+      "action_explore_strains": "Explore strains",
+      "action_explore_strains_desc": "Find the perfect strain for your setup",
+      "action_open_playbook": "Open a playbook",
+      "action_open_playbook_desc": "Get step-by-step grow guidance",
+      "action_try_ai_diagnosis": "Try AI diagnosis",
+      "action_try_ai_diagnosis_desc": "Identify plant health issues",
+      "dismiss": "Dismiss",
+      "progress": "{{completed}} of {{total}} completed",
+      "title": "Get started with GrowBro"
+    },
     "open_settings": "Open Settings",
     "share_update_cta": "Share update",
     "share_update_subtitle": "Let the community know how your plants are doing.",
@@ -1964,10 +1992,68 @@
   },
   "onboarding": {
     "allow_button": "Allow notifications",
+    "community": {
+      "benefit_learn_body": "Get tips and advice from experienced growers worldwide",
+      "benefit_learn_title": "Learn from Others",
+      "benefit_privacy_body": "Control what you share and who can see your content",
+      "benefit_privacy_title": "Privacy First",
+      "benefit_share_body": "Connect with fellow growers and share your experience",
+      "benefit_share_title": "Share Your Journey",
+      "body": "Connect with a community of passionate growers. Share updates, get advice, and learn together.",
+      "title": "Join the Community"
+    },
     "continue_button": "Continue",
+    "done": "Get Started",
+    "guidance": {
+      "body": "Whether you're a beginner or expert, we've got you covered with step-by-step guides and helpful resources.",
+      "feature_playbooks_body": "Complete cultivation guides tailored to your setup and strain",
+      "feature_playbooks_title": "Guided Grow Playbooks",
+      "feature_tasks_body": "Automated schedules that keep your grow on track",
+      "feature_tasks_title": "Smart Task Management",
+      "feature_tips_body": "Contextual advice and educational content when you need it",
+      "feature_tips_title": "Expert Tips & Guidance",
+      "title": "Learn & Grow"
+    },
     "message": "Welcome to GrowBro app site",
     "notifications_body": "Allow notifications to get timely task reminders.",
-    "notifications_title": "Task reminders"
+    "notifications_title": "Task reminders",
+    "pager_accessibility_label": "Onboarding slides. Swipe left to continue, or use Skip button to finish.",
+    "permissions": {
+      "allow": "Allow",
+      "allowHint": "Grants permission for this feature",
+      "camera": {
+        "benefit1": "Use AI photo assessment to diagnose plant health issues",
+        "benefit2": "Track harvest progress with photos during drying and curing",
+        "benefit3": "Share photos with the community for advice and support",
+        "deniedMessage": "To use photo features, please enable camera and photo library access in Settings.",
+        "deniedTitle": "Permission Required",
+        "description": "GrowBro uses your camera to help you track plant health and document your grow journey.",
+        "title": "Photos & Camera"
+      },
+      "notNow": "Not now",
+      "notNowHint": "Skips this permission. You can enable it later in settings.",
+      "notifications": {
+        "benefit1": "Get timely reminders for watering, feeding, and other tasks",
+        "benefit2": "Never miss critical harvest timing windows",
+        "benefit3": "Receive alerts for nutrient deficiencies and monitoring needs",
+        "deniedMessage": "To receive task reminders, please enable notifications in Settings.",
+        "deniedTitle": "Notifications Disabled",
+        "description": "Stay on track with your grow schedule. The app remains fully functional without notifications.",
+        "title": "Stay on Schedule"
+      },
+      "privacyNote": "You can change these permissions anytime in Settings. The app works without them."
+    },
+    "skip": "Skip",
+    "welcome": {
+      "body": "Your complete companion for planning, tracking, and optimizing your home grow journey.",
+      "feature_ai_body": "Diagnose plant health issues with AI-powered photo analysis",
+      "feature_ai_title": "AI Photo Assessment",
+      "feature_calendar_body": "Stay organized with task reminders and scheduling",
+      "feature_calendar_title": "Smart Calendar",
+      "feature_tracking_body": "Track everything from harvest to curing and storage",
+      "feature_tracking_title": "Complete Tracking",
+      "title": "Welcome to GrowBro"
+    }
   },
   "phases": {
     "flower": "Flowering",
@@ -2501,12 +2587,17 @@
       "error_checking": "Failed to check for updates",
       "github": "GitHub Repository",
       "links": "Links",
+      "onboarding": "Onboarding",
       "openLinkError": "Failed to open link. Please try again or check your device settings.",
       "openStoreErrorMessage": "Failed to open app store. Please try again or check your device settings.",
       "openStoreErrorTitle": "Error",
       "ota_disabled": "Updates managed through app store",
       "restart_to_apply": "Restart to Apply",
       "retry": "Retry",
+      "rewatch_onboarding": "Rewatch Onboarding",
+      "rewatch_onboarding_confirm": "Start Onboarding",
+      "rewatch_onboarding_message": "This will take you through the app's introductory tour again. You can exit at any time.",
+      "rewatch_onboarding_title": "Rewatch Onboarding?",
       "title": "About",
       "up_to_date": "You're Up to Date",
       "up_to_date_message": "You have the latest version installed.",
@@ -2957,6 +3048,13 @@
       "uplifted": "Uplifted"
     },
     "empty_state": "No strains available",
+    "empty_state_educational": {
+      "offline_banner": "Saved strains are available offline for quick reference",
+      "search_tip_1": "Try searching by strain name, effects, or flavors",
+      "search_tip_2": "Use filters to narrow down by THC/CBD levels or difficulty",
+      "search_tip_3": "Bookmark your favorites for quick access",
+      "title": "Discover the Perfect Strain"
+    },
     "error": "Failed to load strains. Try again.",
     "favorites": {
       "bulk_remove": "Remove Selected",

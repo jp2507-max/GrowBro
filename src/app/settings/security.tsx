@@ -1,3 +1,5 @@
+import type { AuthMFAEnrollTOTPResponse } from '@supabase/auth-js';
+import type { UseMutationResult } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
 import * as React from 'react';
 import { Alert } from 'react-native';
@@ -29,12 +31,104 @@ import { translate } from '@/lib';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
+type MfaSectionProps = {
+  isMfaEnabled: boolean;
+  isMfaLoading: boolean;
+  enrollTotp: UseMutationResult<
+    NonNullable<AuthMFAEnrollTOTPResponse['data']>,
+    Error,
+    { friendlyName?: string },
+    unknown
+  >;
+  unenrollTotp: UseMutationResult<
+    { id: string },
+    Error,
+    { factorId: string },
+    unknown
+  >;
+  onStartEnableMfa: () => void;
+  onDisableMfa: () => void;
+  testID?: string;
+};
+
+function MfaSection({
+  isMfaEnabled,
+  isMfaLoading,
+  enrollTotp,
+  unenrollTotp,
+  onStartEnableMfa,
+  onDisableMfa,
+  testID,
+}: MfaSectionProps) {
+  return (
+    <ItemsContainer title="auth.security.mfa_section" testID={testID}>
+      <Item
+        text="auth.security.two_factor_auth"
+        value={translate(
+          isMfaEnabled
+            ? 'auth.security.mfa_status_enabled'
+            : 'auth.security.mfa_status_disabled'
+        )}
+        icon={<Shield />}
+        testID="two-factor-item"
+        description={
+          isMfaEnabled
+            ? translate('auth.security.mfa_enabled_hint')
+            : translate('auth.security.mfa_disabled_hint')
+        }
+      />
+      {isMfaEnabled ? (
+        <Button
+          variant="outline"
+          label={translate('auth.security.disable_mfa')}
+          onPress={onDisableMfa}
+          disabled={unenrollTotp.isPending}
+          loading={unenrollTotp.isPending}
+          testID="disable-mfa-button"
+        />
+      ) : (
+        <Button
+          label={translate('auth.security.enable_mfa')}
+          onPress={onStartEnableMfa}
+          disabled={enrollTotp.isPending || isMfaLoading}
+          loading={enrollTotp.isPending}
+          testID="enable-mfa-button"
+        />
+      )}
+    </ItemsContainer>
+  );
+}
+
 type PendingMfaEnrollment = {
   factorId: string;
   secret: string;
   uri: string;
   friendlyName?: string;
 };
+
+type DangerZoneSectionProps = {
+  testID?: string;
+};
+
+function DangerZoneSection({ testID }: DangerZoneSectionProps) {
+  const router = useRouter();
+
+  const handleDeleteAccount = () => {
+    // Navigate to dedicated delete account screen
+    router.push('/settings/delete-account');
+  };
+
+  return (
+    <ItemsContainer title="auth.security.danger_zone" testID={testID}>
+      <Item
+        text="auth.security.delete_account"
+        icon={<Trash />}
+        onPress={handleDeleteAccount}
+        testID="delete-account-item"
+      />
+    </ItemsContainer>
+  );
+}
 
 export default function SecuritySettingsScreen() {
   const router = useRouter();
@@ -62,11 +156,6 @@ export default function SecuritySettingsScreen() {
 
   const handleChangePassword = () => {
     presentChangePasswordModal();
-  };
-
-  const handleDeleteAccount = () => {
-    // Navigate to dedicated delete account screen
-    router.push('/settings/delete-account');
   };
 
   const handleStartEnableMfa = async () => {
@@ -200,41 +289,15 @@ export default function SecuritySettingsScreen() {
           <BiometricToggleSection />
 
           {/* MFA Section */}
-          <ItemsContainer title="auth.security.mfa_section">
-            <Item
-              text="auth.security.two_factor_auth"
-              value={translate(
-                isMfaEnabled
-                  ? 'auth.security.mfa_status_enabled'
-                  : 'auth.security.mfa_status_disabled'
-              )}
-              icon={<Shield />}
-              testID="two-factor-item"
-              description={
-                isMfaEnabled
-                  ? translate('auth.security.mfa_enabled_hint')
-                  : translate('auth.security.mfa_disabled_hint')
-              }
-            />
-            {isMfaEnabled ? (
-              <Button
-                variant="outline"
-                label={translate('auth.security.disable_mfa')}
-                onPress={handleDisableMfa}
-                disabled={unenrollTotp.isPending}
-                loading={unenrollTotp.isPending}
-                testID="disable-mfa-button"
-              />
-            ) : (
-              <Button
-                label={translate('auth.security.enable_mfa')}
-                onPress={handleStartEnableMfa}
-                disabled={enrollTotp.isPending || isMfaLoading}
-                loading={enrollTotp.isPending}
-                testID="enable-mfa-button"
-              />
-            )}
-          </ItemsContainer>
+          <MfaSection
+            isMfaEnabled={isMfaEnabled}
+            isMfaLoading={isMfaLoading}
+            enrollTotp={enrollTotp}
+            unenrollTotp={unenrollTotp}
+            onStartEnableMfa={handleStartEnableMfa}
+            onDisableMfa={handleDisableMfa}
+            testID="mfa-section"
+          />
 
           {/* Active Sessions Section */}
           <ItemsContainer title="auth.security.sessions_section">
@@ -246,14 +309,7 @@ export default function SecuritySettingsScreen() {
           </ItemsContainer>
 
           {/* Danger Zone */}
-          <ItemsContainer title="auth.security.danger_zone">
-            <Item
-              text="auth.security.delete_account"
-              icon={<Trash />}
-              onPress={handleDeleteAccount}
-              testID="delete-account-item"
-            />
-          </ItemsContainer>
+          <DangerZoneSection testID="danger-zone-section" />
 
           <DangerZoneWarning />
         </View>

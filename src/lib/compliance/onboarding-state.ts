@@ -5,22 +5,39 @@ import { createSelectors } from '@/lib/utils';
 
 const ONBOARDING_STATE_KEY = 'compliance.onboarding.state';
 
+/**
+ * Current onboarding flow version
+ * Increment this to re-show onboarding to existing users after major changes
+ * Format: YYYYMMDD for easy tracking
+ */
+export const ONBOARDING_VERSION = 20251111;
+
 export type OnboardingStep =
   | 'age-gate'
   | 'legal-confirmation'
   | 'consent-modal'
+  | 'notification-primer'
+  | 'camera-primer'
   | 'completed';
+
+export type OnboardingStatus = 'not-started' | 'in-progress' | 'completed';
 
 type PersistedOnboardingState = {
   currentStep: OnboardingStep;
   completedSteps: OnboardingStep[];
   lastUpdated: string;
+  version?: number;
+  completedAt?: string;
+  status?: OnboardingStatus;
 };
 
 export type OnboardingStoreState = {
   currentStep: OnboardingStep;
   completedSteps: OnboardingStep[];
   lastUpdated: string | null;
+  version: number;
+  completedAt: string | null;
+  status: OnboardingStatus;
   hydrate: () => void;
   setCurrentStep: (step: OnboardingStep) => void;
   completeStep: (step: OnboardingStep) => void;
@@ -28,12 +45,16 @@ export type OnboardingStoreState = {
   isStepCompleted: (step: OnboardingStep) => boolean;
   isOnboardingComplete: () => boolean;
   getNextStep: () => OnboardingStep | null;
+  shouldShowOnboarding: () => boolean;
+  markAsCompleted: () => void;
 };
 
 const STEP_ORDER: OnboardingStep[] = [
   'age-gate',
   'legal-confirmation',
   'consent-modal',
+  'notification-primer',
+  'camera-primer',
   'completed',
 ];
 
@@ -41,6 +62,8 @@ export const LEGACY_STEP_MAPPING: Record<string, OnboardingStep> = {
   age_gate: 'age-gate',
   legal_confirmation: 'legal-confirmation',
   consent: 'consent-modal',
+  notification_primer: 'notification-primer',
+  camera_primer: 'camera-primer',
   complete: 'completed',
 };
 
@@ -73,6 +96,11 @@ export function loadPersistedState(): PersistedOnboardingState {
       : [];
     const completedSteps = [...new Set(normalizedCompletedSteps)];
 
+    // Determine status based on persisted data
+    const status: OnboardingStatus =
+      parsed?.status ||
+      (currentStep === 'completed' ? 'completed' : 'in-progress');
+
     return {
       currentStep,
       completedSteps,
@@ -80,6 +108,9 @@ export function loadPersistedState(): PersistedOnboardingState {
         typeof parsed?.lastUpdated === 'string'
           ? parsed.lastUpdated
           : new Date().toISOString(),
+      version: typeof parsed?.version === 'number' ? parsed.version : undefined,
+      completedAt: parsed?.completedAt,
+      status,
     };
   } catch {
     return createInitialState();
@@ -91,6 +122,7 @@ function createInitialState(): PersistedOnboardingState {
     currentStep: 'age-gate',
     completedSteps: [],
     lastUpdated: new Date().toISOString(),
+    status: 'not-started',
   };
 }
 
@@ -105,6 +137,9 @@ function createHydrateFunction(set: any): () => void {
       currentStep: persisted.currentStep,
       completedSteps: persisted.completedSteps,
       lastUpdated: persisted.lastUpdated,
+      version: persisted.version || 0,
+      completedAt: persisted.completedAt || null,
+      status: persisted.status || 'not-started',
     });
   };
 }
@@ -116,14 +151,21 @@ function createSetCurrentStepFunction(
   return (step: OnboardingStep) => {
     const state = get();
     const timestamp = new Date().toISOString();
+    const newStatus: OnboardingStatus =
+      step === 'completed' ? 'completed' : 'in-progress';
+
     set({
       currentStep: step,
       lastUpdated: timestamp,
+      status: newStatus,
     });
     savePersistedState({
       currentStep: step,
       completedSteps: state.completedSteps,
       lastUpdated: timestamp,
+      version: state.version,
+      completedAt: state.completedAt,
+      status: newStatus,
     });
   };
 }
@@ -148,16 +190,29 @@ function createCompleteStepFunction(
         ? STEP_ORDER[currentIndex + 1]
         : 'completed';
 
+    const newStatus: OnboardingStatus =
+      nextStep === 'completed' ? 'completed' : 'in-progress';
+    const newCompletedAt =
+      nextStep === 'completed' ? timestamp : state.completedAt;
+    const newVersion =
+      nextStep === 'completed' ? ONBOARDING_VERSION : state.version;
+
     set({
       currentStep: nextStep,
       completedSteps,
       lastUpdated: timestamp,
+      status: newStatus,
+      completedAt: newCompletedAt,
+      version: newVersion,
     });
 
     savePersistedState({
       currentStep: nextStep,
       completedSteps,
       lastUpdated: timestamp,
+      status: newStatus,
+      completedAt: newCompletedAt,
+      version: newVersion,
     });
   };
 }
@@ -170,6 +225,9 @@ function createResetFunction(set: any): () => void {
       currentStep: initialState.currentStep,
       completedSteps: initialState.completedSteps,
       lastUpdated: initialState.lastUpdated,
+      version: initialState.version || 0,
+      completedAt: initialState.completedAt || null,
+      status: initialState.status || 'not-started',
     });
   };
 }
@@ -203,12 +261,48 @@ function createGetNextStepFunction(get: any): () => OnboardingStep | null {
   };
 }
 
+function createShouldShowOnboardingFunction(get: any): () => boolean {
+  return () => {
+    const state = get();
+    // Show if not completed or if version has been bumped
+    if (state.status !== 'completed') return true;
+    if (
+      typeof state.version === 'number' &&
+      state.version < ONBOARDING_VERSION
+    ) {
+      return true;
+    }
+    return false;
+  };
+}
+
+function createMarkAsCompletedFunction(set: any, get: any): () => void {
+  return () => {
+    const state = get();
+    const timestamp = new Date().toISOString();
+    const updatedState = {
+      currentStep: 'completed' as OnboardingStep,
+      completedSteps: [...new Set([...state.completedSteps, 'completed'])],
+      lastUpdated: timestamp,
+      version: ONBOARDING_VERSION,
+      completedAt: timestamp,
+      status: 'completed' as OnboardingStatus,
+    };
+
+    set(updatedState);
+    savePersistedState(updatedState);
+  };
+}
+
 function createOnboardingStore(set: any, get: any): OnboardingStoreState {
   const initialState = createInitialState();
   return {
     currentStep: initialState.currentStep,
     completedSteps: initialState.completedSteps,
     lastUpdated: null,
+    version: initialState.version || 0,
+    completedAt: initialState.completedAt || null,
+    status: initialState.status || 'not-started',
     hydrate: createHydrateFunction(set),
     setCurrentStep: createSetCurrentStepFunction(set, get),
     completeStep: createCompleteStepFunction(set, get),
@@ -216,6 +310,8 @@ function createOnboardingStore(set: any, get: any): OnboardingStoreState {
     isStepCompleted: createIsStepCompletedFunction(get),
     isOnboardingComplete: createIsOnboardingCompleteFunction(get),
     getNextStep: createGetNextStepFunction(get),
+    shouldShowOnboarding: createShouldShowOnboardingFunction(get),
+    markAsCompleted: createMarkAsCompletedFunction(set, get),
   };
 }
 
@@ -257,4 +353,20 @@ export function getNextOnboardingStep(): OnboardingStep | null {
 
 export function getCurrentOnboardingStep(): OnboardingStep {
   return onboardingStateStore.getState().currentStep;
+}
+
+export function shouldShowOnboarding(): boolean {
+  return onboardingStateStore.getState().shouldShowOnboarding();
+}
+
+export function markOnboardingAsCompleted(): void {
+  onboardingStateStore.getState().markAsCompleted();
+}
+
+export function getOnboardingStatus(): OnboardingStatus {
+  return onboardingStateStore.getState().status;
+}
+
+export function getOnboardingVersion(): number {
+  return onboardingStateStore.getState().version;
 }

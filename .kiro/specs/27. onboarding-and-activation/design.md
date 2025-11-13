@@ -285,6 +285,16 @@ Notes
 - For motion-heavy slides, prefer index-driven transforms over timers.
 - Always provide Reduced Motion fallbacks (FadeIn/FadeInUp reduceMotion(System)).
 
+Pager library option (recommended)
+
+- Library: software-mansion-labs/react-native-onboarding (MIT)
+- Use it for paging/structure (gestures, dots, Skip/Back/Done, safe areas, orientation handling).
+- Keep all visual motion inside slide content using our primitives; do not rely on the library for transitions.
+- Bridge its progress/index to a `SharedValue` and provide via `AnimatedIndexContext` so animations remain index‑driven.
+- Benefits: quicker scaffold, better a11y defaults, fewer edge cases to own, built by Reanimated/Gesture‑Handler maintainers.
+- Trade‑offs: extra dependency/version alignment; theming for container controls.
+- Reduced Motion & i18n: unchanged — still handled by our slide components and translation keys.
+
 Navigation & deep link behavior
 
 - On first launch: AgeGate → Legal → Consent → Home (activation checklist visible)

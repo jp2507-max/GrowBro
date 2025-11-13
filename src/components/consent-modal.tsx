@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 
 import { Button, Switch, Text } from '@/components/ui';
+import { createStaggeredFadeInUp, onboardingMotion } from '@/lib/animations';
 import type { TxKeyPath } from '@/lib/i18n/utils';
 import { translate } from '@/lib/i18n/utils';
 import { ConsentService } from '@/lib/privacy/consent-service';
@@ -214,7 +215,10 @@ function Actions({
 }): React.ReactElement {
   return (
     <>
-      <View className="mt-6 flex-row gap-3">
+      <Animated.View
+        entering={createStaggeredFadeInUp(0, onboardingMotion.stagger.actions)}
+        className="mt-6 flex-row gap-3"
+      >
         <View className="flex-1">
           <Button
             label={translate('consent.reject_all')}
@@ -229,14 +233,17 @@ function Actions({
             testID="accept-all-btn"
           />
         </View>
-      </View>
-      <View className="mt-2">
+      </Animated.View>
+      <Animated.View
+        entering={createStaggeredFadeInUp(1, onboardingMotion.stagger.actions)}
+        className="mt-2"
+      >
         <Button
           label={translate('consent.save')}
           onPress={onSave}
           testID="save-btn"
         />
-      </View>
+      </Animated.View>
     </>
   );
 }
@@ -291,20 +298,14 @@ export function ConsentModal({ isVisible, onComplete, mode }: Props) {
   });
 
   return (
-    <Animated.View
-      entering={FadeIn.duration(200).reduceMotion(ReduceMotion.System)}
-      className="p-4"
-      testID="consent-modal"
-    >
+    <View className="p-4" testID="consent-modal">
       <Animated.View
-        entering={FadeIn.duration(180).reduceMotion(ReduceMotion.System)}
+        entering={createStaggeredFadeInUp(0, onboardingMotion.stagger.header)}
       >
         <ConsentHeader titleKey={titleKey} />
       </Animated.View>
       <Animated.View
-        entering={FadeIn.delay(60)
-          .duration(200)
-          .reduceMotion(ReduceMotion.System)}
+        entering={createStaggeredFadeInUp(1, onboardingMotion.stagger.content)}
       >
         <ConsentSections
           telemetry={telemetry}
@@ -317,18 +318,12 @@ export function ConsentModal({ isVisible, onComplete, mode }: Props) {
           setCrashDiagnostics={setCrashDiagnostics}
         />
       </Animated.View>
-      <Animated.View
-        entering={FadeIn.delay(120)
-          .duration(200)
-          .reduceMotion(ReduceMotion.System)}
-      >
-        <Actions
-          onAcceptAll={acceptAll}
-          onRejectAll={rejectAll}
-          onSave={complete}
-        />
-      </Animated.View>
-    </Animated.View>
+      <Actions
+        onAcceptAll={acceptAll}
+        onRejectAll={rejectAll}
+        onSave={complete}
+      />
+    </View>
   );
 }
 

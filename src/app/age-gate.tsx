@@ -13,6 +13,7 @@ import {
   Text,
   View,
 } from '@/components/ui';
+import { createStaggeredFadeInUp, onboardingMotion } from '@/lib/animations';
 import {
   startAgeGateSession,
   useAgeGate,
@@ -48,9 +49,18 @@ function useAgeGateForm() {
   const [showLegalModal, setShowLegalModal] = React.useState(false);
 
   React.useEffect(() => {
-    // If age is verified and legal confirmation is completed, navigate to app
-    if (status === 'verified' && currentStep === 'consent-modal') {
-      router.replace('/(app)');
+    // Route based on onboarding step after age verification
+    if (status === 'verified') {
+      if (currentStep === 'notification-primer') {
+        router.replace('/notification-primer');
+      } else if (currentStep === 'camera-primer') {
+        router.replace('/camera-primer');
+      } else if (
+        currentStep === 'completed' ||
+        currentStep === 'consent-modal'
+      ) {
+        router.replace('/(app)');
+      }
     }
   }, [router, status, currentStep]);
 
@@ -85,10 +95,11 @@ function useAgeGateForm() {
     (_acceptances: LegalAcceptances) => {
       completeOnboardingStep('legal-confirmation');
       setShowLegalModal(false);
-      // User will see consent modal next or app if consent already given
-      router.replace('/(app)');
+      // Navigate to consent modal, then permission primers
+      // The consent modal is shown automatically by the consent manager
+      // After consent, we'll navigate to permission primers
     },
-    [router]
+    []
   );
 
   const handleLegalDecline = React.useCallback(() => {
@@ -148,11 +159,7 @@ export default function AgeGateScreen(): React.ReactElement {
         className="flex-1"
         contentContainerStyle={styles.scrollContent}
       >
-        <Animated.View
-          entering={FadeIn.duration(220).reduceMotion(ReduceMotion.System)}
-          className="flex-1 px-6 py-10"
-          testID="age-gate-root"
-        >
+        <View className="flex-1 px-6 py-10" testID="age-gate-root">
           <AgeGateCopy />
           <BirthDateInputs
             day={birthDay}
@@ -163,21 +170,34 @@ export default function AgeGateScreen(): React.ReactElement {
             onYearChange={setBirthYear}
           />
           {error && (
-            <Text
-              className="mt-2 text-sm text-danger-500"
-              testID="age-gate-error"
+            <Animated.View
+              entering={FadeIn.duration(
+                onboardingMotion.durations.quick
+              ).reduceMotion(ReduceMotion.System)}
             >
-              {error}
-            </Text>
+              <Text
+                className="mt-2 text-sm text-danger-500"
+                testID="age-gate-error"
+              >
+                {error}
+              </Text>
+            </Animated.View>
           )}
-          <Button
-            className="mt-8"
-            label={translate('cannabis.age_gate_submit')}
-            onPress={handleSubmit}
-            loading={submitting}
-            testID="age-gate-submit"
-          />
-        </Animated.View>
+          <Animated.View
+            entering={createStaggeredFadeInUp(
+              4,
+              onboardingMotion.stagger.actions
+            )}
+          >
+            <Button
+              className="mt-8"
+              label={translate('cannabis.age_gate_submit')}
+              onPress={handleSubmit}
+              loading={submitting}
+              testID="age-gate-submit"
+            />
+          </Animated.View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -192,7 +212,10 @@ function BirthDateInputs({
   onYearChange,
 }: BirthDateInputsProps): React.ReactElement {
   return (
-    <View className="mt-8 flex-row gap-3">
+    <Animated.View
+      entering={createStaggeredFadeInUp(5, onboardingMotion.stagger.content)}
+      className="mt-8 flex-row gap-3"
+    >
       <View className="flex-1">
         <Input
           label={translate('cannabis.age_gate_day')}
@@ -226,28 +249,48 @@ function BirthDateInputs({
           testID="age-gate-year"
         />
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
 function AgeGateCopy(): React.ReactElement {
   return (
     <View>
-      <Text className="text-3xl font-semibold text-neutral-900 dark:text-neutral-50">
-        {translate('cannabis.age_gate_title')}
-      </Text>
-      <Text className="mt-3 text-base text-neutral-700 dark:text-neutral-200">
-        {translate('cannabis.age_gate_body')}
-      </Text>
-      <Text className="mt-3 text-sm text-neutral-500 dark:text-neutral-400">
-        {translate('cannabis.age_gate_disclaimer')}
-      </Text>
-      <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-        {translate('cannabis.age_gate_secondary_disclaimer')}
-      </Text>
-      <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-        {translate('cannabis.age_gate_re_verification')}
-      </Text>
+      <Animated.View
+        entering={createStaggeredFadeInUp(0, onboardingMotion.stagger.header)}
+      >
+        <Text className="text-3xl font-semibold text-neutral-900 dark:text-neutral-50">
+          {translate('cannabis.age_gate_title')}
+        </Text>
+      </Animated.View>
+      <Animated.View
+        entering={createStaggeredFadeInUp(1, onboardingMotion.stagger.content)}
+      >
+        <Text className="mt-3 text-base text-neutral-700 dark:text-neutral-200">
+          {translate('cannabis.age_gate_body')}
+        </Text>
+      </Animated.View>
+      <Animated.View
+        entering={createStaggeredFadeInUp(2, onboardingMotion.stagger.content)}
+      >
+        <Text className="mt-3 text-sm text-neutral-500 dark:text-neutral-400">
+          {translate('cannabis.age_gate_disclaimer')}
+        </Text>
+      </Animated.View>
+      <Animated.View
+        entering={createStaggeredFadeInUp(3, onboardingMotion.stagger.content)}
+      >
+        <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+          {translate('cannabis.age_gate_secondary_disclaimer')}
+        </Text>
+      </Animated.View>
+      <Animated.View
+        entering={createStaggeredFadeInUp(4, onboardingMotion.stagger.content)}
+      >
+        <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+          {translate('cannabis.age_gate_re_verification')}
+        </Text>
+      </Animated.View>
     </View>
   );
 }

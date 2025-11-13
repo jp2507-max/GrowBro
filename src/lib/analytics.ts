@@ -1,5 +1,7 @@
 // Central analytics event schema and helper types
 // Add new events here to ensure strong typing across the app.
+import type { ActivationAction } from '@/lib/compliance/activation-state';
+
 import { hasConsent } from './privacy-consent';
 
 // Base payload that all analytics events should include
@@ -576,6 +578,47 @@ export type AnalyticsEvents = {
     email: string;
   };
 
+  // Onboarding & Activation events
+  onboarding_start: {
+    version: number;
+    source: 'first_run' | 'version_bump' | 'manual';
+  };
+  onboarding_complete: {
+    version: number;
+    duration_ms?: number;
+    steps_completed: number;
+  };
+  onboarding_skipped: {
+    version: number;
+    current_step: string;
+    reason?: 'user_skip' | 'error' | 'navigation';
+  };
+  onboarding_step_complete: {
+    version: number;
+    step: string;
+    step_duration_ms?: number;
+  };
+  primer_shown: {
+    type: 'notifications' | 'photos' | 'camera';
+  };
+  primer_accepted: {
+    type: 'notifications' | 'photos' | 'camera';
+    permission_granted: boolean;
+  };
+  activation_action: {
+    action: ActivationAction;
+    completed: boolean;
+    context?: string;
+  };
+  activation_action_complete: {
+    action: ActivationAction;
+    screen: string;
+  };
+  activation_checklist_dismissed: {
+    completed_count: number;
+    screen: string;
+  };
+
   // Add future events below
   // example_event: { foo: string; bar?: number };
 };
@@ -637,7 +680,10 @@ export function createConsentGatedAnalytics(
         name.startsWith('trichome_') ||
         name.startsWith('shift_') ||
         name.startsWith('nutrient_') ||
-        name.startsWith('auth_');
+        name.startsWith('auth_') ||
+        name.startsWith('onboarding_') ||
+        name.startsWith('primer_') ||
+        name.startsWith('activation_');
 
       if (requiresConsent && !hasConsent('analytics')) return;
 

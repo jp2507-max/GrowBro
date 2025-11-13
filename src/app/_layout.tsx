@@ -48,9 +48,15 @@ import {
   resetLegalAcceptances,
 } from '@/lib/compliance/legal-acceptances';
 import {
+  completeOnboardingStep,
+  getOnboardingStatus,
   hydrateOnboardingState,
+  ONBOARDING_VERSION,
   resetOnboardingState,
+  shouldShowOnboarding,
+  useOnboardingState,
 } from '@/lib/compliance/onboarding-state';
+import { trackOnboardingStart } from '@/lib/compliance/onboarding-telemetry';
 import { useRootStartup } from '@/lib/hooks/use-root-startup';
 import { initializeJanitor } from '@/lib/media/photo-janitor';
 import { getReferencedPhotoUris } from '@/lib/media/photo-storage-helpers';
@@ -126,18 +132,8 @@ SplashScreen.setOptions({ duration: 500, fade: true });
 
 // Timezone and startup logic moved to `use-root-startup.ts`
 
-function RootLayout(): React.ReactElement {
-  const [isFirstTime] = useIsFirstTime();
-  const ageGateStatus = useAgeGate.status();
-  const sessionId = useAgeGate.sessionId();
-  const [isI18nReady, setIsI18nReady] = React.useState(false);
-  const [isAuthReady, setIsAuthReady] = React.useState(false);
-  const [showConsent, setShowConsent] = React.useState(false);
-  const router = useRouter();
-  const pathname = usePathname();
-  useRootStartup(setIsI18nReady, isFirstTime);
-  useSessionAutoRefresh();
-  useOfflineModeMonitor();
+// Custom hooks to reduce RootLayout function length
+function useKeyRotationSetup(): void {
   React.useEffect(() => {
     registerKeyRotationTask().catch((error) => {
       console.warn(
@@ -146,12 +142,11 @@ function RootLayout(): React.ReactElement {
       );
     });
   }, []);
+}
 
+function useGoogleSignInSetup(): void {
   React.useEffect(() => {
-    if (!Env.GOOGLE_WEB_CLIENT_ID) {
-      return;
-    }
-
+    if (!Env.GOOGLE_WEB_CLIENT_ID) return;
     GoogleSignin.configure({
       webClientId: Env.GOOGLE_WEB_CLIENT_ID,
       ...(Env.GOOGLE_IOS_CLIENT_ID
@@ -159,8 +154,9 @@ function RootLayout(): React.ReactElement {
         : {}),
     });
   }, []);
+}
 
-  // Initialize auth storage and hydrate auth state
+function useAuthInitialization(setIsAuthReady: (ready: boolean) => void): void {
   React.useEffect(() => {
     initializeAuthAndStates()
       .then(() => setIsAuthReady(true))
@@ -171,47 +167,105 @@ function RootLayout(): React.ReactElement {
         );
         setIsAuthReady(true);
       });
-  }, []);
+  }, [setIsAuthReady]);
+}
 
-  // Check for legal version bumps and redirect to age-gate if needed
+function useLegalVersionCheck(
+  isAuthReady: boolean,
+  router: ReturnType<typeof useRouter>,
+  pathname: string
+): void {
   React.useEffect(() => {
     if (!isAuthReady) return;
-
     const versionCheck = checkLegalVersionBumps();
     if (versionCheck.needsBlocking) {
-      // Force user to re-accept legal documents by resetting onboarding state
-      // This will redirect them to age-gate where they must verify age and accept updated legal documents
       console.log(
         '[RootLayout] Legal version bump detected, resetting onboarding to require re-acceptance'
       );
       resetAgeGate();
       resetLegalAcceptances();
       resetOnboardingState();
-      // Navigate to age-gate to force re-acceptance flow, but avoid redirect loops
       if (pathname !== '/age-gate') {
         router.replace('/age-gate');
       }
     }
   }, [isAuthReady, router, pathname]);
+}
 
-  // Initialize deep linking for auth flows
-  useDeepLinking();
+function useOnboardingRouting(options: {
+  isI18nReady: boolean;
+  isAuthReady: boolean;
+  pathname: string;
+  router: ReturnType<typeof useRouter>;
+  onboardingStatus: string;
+  currentStep: string;
+}): void {
+  const {
+    isI18nReady,
+    isAuthReady,
+    pathname,
+    router,
+    onboardingStatus,
+    currentStep,
+  } = options;
+  React.useEffect(() => {
+    if (!isI18nReady || !isAuthReady) return;
+    const excludedPaths = [
+      '/age-gate',
+      '/onboarding',
+      '/login',
+      '/sign-up',
+      '/notification-primer',
+      '/camera-primer',
+    ];
+    if (excludedPaths.some((path) => pathname.startsWith(path))) return;
 
-  // Real-time session revocation monitoring
-  useRealtimeSessionRevocation();
+    const needsOnboarding = shouldShowOnboarding();
+    const currentStatus = getOnboardingStatus();
 
+    // Skip redirect when consent modal is pending to avoid loop with age-gate routing
+    if (needsOnboarding && currentStep !== 'consent-modal') {
+      if (currentStatus === 'not-started' || currentStatus === 'completed') {
+        const source =
+          currentStatus === 'not-started' ? 'first_run' : 'version_bump';
+        trackOnboardingStart(source);
+        console.log(
+          `[RootLayout] Onboarding needed (v${ONBOARDING_VERSION}), source: ${source}, status: ${currentStatus}`
+        );
+      }
+      if (pathname !== '/age-gate') {
+        router.replace('/age-gate');
+      }
+    }
+  }, [
+    isI18nReady,
+    isAuthReady,
+    pathname,
+    router,
+    onboardingStatus,
+    currentStep,
+  ]);
+}
+
+function useAgeGateSession(
+  ageGateStatus: string,
+  sessionId: string | null
+): void {
   React.useEffect(() => {
     if (ageGateStatus === 'verified' && !sessionId) {
       startAgeGateSession();
     }
   }, [ageGateStatus, sessionId]);
+}
 
+function useConsentCheck(setShowConsent: (show: boolean) => void): void {
   React.useEffect(() => {
     if (ConsentService.isConsentRequired()) setShowConsent(true);
-  }, []);
+  }, [setShowConsent]);
+}
 
+function useScreenCaptureSetup(): void {
   React.useEffect(() => {
-    // Prevent screenshots/screen recordings on iOS to mirror Android FLAG_SECURE
     const setupScreenCapture = async () => {
       if (Platform.OS === 'ios') {
         try {
@@ -221,9 +275,7 @@ function RootLayout(): React.ReactElement {
         }
       }
     };
-
     setupScreenCapture();
-
     return () => {
       const cleanupScreenCapture = async () => {
         if (Platform.OS === 'ios') {
@@ -237,12 +289,12 @@ function RootLayout(): React.ReactElement {
           }
         }
       };
-
       cleanupScreenCapture();
     };
   }, []);
+}
 
-  // Initialize photo storage janitor on app start
+function usePhotoJanitorSetup(isI18nReady: boolean): void {
   React.useEffect(() => {
     if (isI18nReady) {
       getReferencedPhotoUris()
@@ -254,6 +306,41 @@ function RootLayout(): React.ReactElement {
         });
     }
   }, [isI18nReady]);
+}
+
+function RootLayout(): React.ReactElement {
+  const [isFirstTime] = useIsFirstTime();
+  const ageGateStatus = useAgeGate.status();
+  const sessionId = useAgeGate.sessionId();
+  const onboardingStatus = useOnboardingState.status();
+  const currentOnboardingStep = useOnboardingState.currentStep();
+  const [isI18nReady, setIsI18nReady] = React.useState(false);
+  const [isAuthReady, setIsAuthReady] = React.useState(false);
+  const [showConsent, setShowConsent] = React.useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useRootStartup(setIsI18nReady, isFirstTime);
+  useSessionAutoRefresh();
+  useOfflineModeMonitor();
+  useDeepLinking();
+  useRealtimeSessionRevocation();
+  useKeyRotationSetup();
+  useGoogleSignInSetup();
+  useAuthInitialization(setIsAuthReady);
+  useLegalVersionCheck(isAuthReady, router, pathname);
+  useOnboardingRouting({
+    isI18nReady,
+    isAuthReady,
+    pathname,
+    router,
+    onboardingStatus,
+    currentStep: currentOnboardingStep,
+  });
+  useAgeGateSession(ageGateStatus, sessionId);
+  useConsentCheck(setShowConsent);
+  useScreenCaptureSetup();
+  usePhotoJanitorSetup(isI18nReady);
 
   if (!isI18nReady || !isAuthReady) return <BootSplash />;
 
@@ -266,6 +353,11 @@ function RootLayout(): React.ReactElement {
           onComplete={(c) => {
             persistConsents(c, isFirstTime);
             setShowConsent(false);
+            // Only advance onboarding if we're currently in the consent-modal step
+            // This prevents rewinding onboarding when re-confirming consent from Settings
+            if (currentOnboardingStep === 'consent-modal') {
+              completeOnboardingStep('consent-modal');
+            }
           }}
         />
       )}
@@ -337,6 +429,11 @@ function AppStack(): React.ReactElement {
       <Stack.Screen name="(modals)" options={{ headerShown: false }} />
       <Stack.Screen name="age-gate" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="notification-primer"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen name="camera-primer" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
     </Stack>
   );

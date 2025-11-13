@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 /**
- * CI Guard: WatermelonDB Expo Plugin Configuration
+ * CI Guard: WatermelonDB Native Configuration
  *
- * Ensures @morrowdigital/watermelondb-expo-plugin is configured in app.config.cjs
- * to prevent accidental removal that would break the inventory feature.
- *
- * Requirements:
- * - Task 2: Add CI check that WatermelonDB plugin is configured
- * - Plugin enables JSI adapter for native performance (requires development build)
+ * Ensures the required native configuration for WatermelonDB is present when using
+ * Expo SDK 54+:
+ *   - expo-build-properties plugin declared
+ *   - ios.extraPods includes simdjson pod with modular headers
+ *   - android.packagingOptions.pickFirst includes libc++_shared.so
+ *   - '@nozbe/watermelondb' and '@nozbe/simdjson' dependencies installed
+ *   - legacy '@morrowdigital/watermelondb-expo-plugin' dependency NOT present
  *
  * Exit codes:
- * - 0: Plugin is properly configured
- * - 1: Plugin missing or misconfigured
+ * - 0: configuration is valid
+ * - 1: configuration missing or misconfigured
  */
 
 const fs = require('fs');
@@ -104,8 +105,8 @@ function readExpoConfig(configPath) {
   }
 }
 
-function checkWatermelonDBPlugin() {
-  console.log('🔍 Checking WatermelonDB Expo plugin configuration...\n');
+function guardWatermelonConfiguration() {
+  console.log('🔍 Checking WatermelonDB native configuration...\n');
 
   let hasErrors = false;
   let appConfigPath;
@@ -118,46 +119,70 @@ function checkWatermelonDBPlugin() {
     );
 
     const appConfig = readExpoConfig(appConfigPath);
-
-    // Check if it's a function (dynamic config) or object (static config)
     const configObj =
       typeof appConfig === 'function' ? appConfig({}) : appConfig;
 
-    // Check plugins array
-    let plugins =
+    const plugins =
       (Array.isArray(configObj.plugins) && configObj.plugins) ||
       (Array.isArray(configObj.expo?.plugins) && configObj.expo.plugins) ||
       [];
-    if (!plugins.length && typeof configObj.__source === 'string') {
-      const s = configObj.__source;
-      const has = /['"]@morrowdigital\/watermelondb-expo-plugin['"]/.test(s);
-      plugins = has ? ['@morrowdigital/watermelondb-expo-plugin'] : [];
-    }
-    const hasWatermelonPlugin = plugins.some((plugin) => {
+
+    const buildPropsEntry = plugins.find((plugin) => {
       if (typeof plugin === 'string') {
-        return plugin === '@morrowdigital/watermelondb-expo-plugin';
+        return plugin === 'expo-build-properties';
       }
       if (Array.isArray(plugin)) {
-        return plugin[0] === '@morrowdigital/watermelondb-expo-plugin';
+        return plugin[0] === 'expo-build-properties';
       }
       return false;
     });
 
-    if (!hasWatermelonPlugin) {
+    if (!buildPropsEntry) {
       console.error(
-        `❌ ERROR: @morrowdigital/watermelondb-expo-plugin missing from ${path.basename(appConfigPath)} plugins array`
-      );
-      console.error(
-        '   This plugin is REQUIRED for inventory feature (enables JSI adapter)'
-      );
-      console.error(
-        "   Add '@morrowdigital/watermelondb-expo-plugin' to the plugins array\n"
+        '❌ ERROR: expo-build-properties plugin is missing from app.config. Add it to configure native build settings.'
       );
       hasErrors = true;
     } else {
-      console.log(
-        `✅ WatermelonDB plugin found in ${path.basename(appConfigPath)} plugins array`
+      console.log('✅ expo-build-properties plugin declared');
+
+      const buildPropsConfig = Array.isArray(buildPropsEntry)
+        ? buildPropsEntry[1] || {}
+        : {};
+
+      const iosPods = buildPropsConfig?.ios?.extraPods ?? [];
+      const hasSimdjsonPod = iosPods.some((pod) => {
+        if (typeof pod !== 'object' || !pod) return false;
+        return (
+          pod.name === 'simdjson' &&
+          typeof pod.path === 'string' &&
+          pod.path.includes('@nozbe/simdjson') &&
+          pod.modular_headers === true
+        );
+      });
+
+      if (!hasSimdjsonPod) {
+        console.error(
+          '❌ ERROR: expo-build-properties ios.extraPods must declare the simdjson pod with modular_headers: true.'
+        );
+        hasErrors = true;
+      } else {
+        console.log('✅ simdjson pod configured via ios.extraPods');
+      }
+
+      const pickFirstEntries =
+        buildPropsConfig?.android?.packagingOptions?.pickFirst ?? [];
+      const hasLibcxxPickFirst = pickFirstEntries.includes(
+        '**/libc++_shared.so'
       );
+
+      if (!hasLibcxxPickFirst) {
+        console.error(
+          '❌ ERROR: expo-build-properties android.packagingOptions.pickFirst must include "**/libc++_shared.so".'
+        );
+        hasErrors = true;
+      } else {
+        console.log('✅ Android pickFirst for libc++_shared configured');
+      }
     }
   } catch (error) {
     console.error(`❌ ERROR: ${error.message}\n`);
@@ -172,24 +197,37 @@ function checkWatermelonDBPlugin() {
       ...packageJson.devDependencies,
     };
 
-    if (!deps['@morrowdigital/watermelondb-expo-plugin']) {
+    const hasWatermelon = Boolean(deps['@nozbe/watermelondb']);
+    const hasSimdjson = Boolean(deps['@nozbe/simdjson']);
+    const hasLegacyPlugin = Boolean(
+      deps['@morrowdigital/watermelondb-expo-plugin']
+    );
+
+    if (!hasWatermelon) {
       console.error(
-        '❌ ERROR: @morrowdigital/watermelondb-expo-plugin missing from package.json'
-      );
-      console.error(
-        '   Install: npx expo install @morrowdigital/watermelondb-expo-plugin\n'
+        '❌ ERROR: @nozbe/watermelondb missing from package.json dependencies. Install it with `npx expo install @nozbe/watermelondb`.'
       );
       hasErrors = true;
     } else {
-      console.log('✅ WatermelonDB plugin found in package.json dependencies');
+      console.log('✅ @nozbe/watermelondb dependency present');
     }
 
-    if (!deps['@nozbe/watermelondb']) {
-      console.error('❌ ERROR: @nozbe/watermelondb missing from package.json');
-      console.error('   Install: npx expo install @nozbe/watermelondb\n');
+    if (!hasSimdjson) {
+      console.error(
+        '❌ ERROR: @nozbe/simdjson missing from package.json dependencies. Install it with `npx expo install @nozbe/simdjson`.'
+      );
       hasErrors = true;
     } else {
-      console.log('✅ WatermelonDB core found in package.json dependencies');
+      console.log('✅ @nozbe/simdjson dependency present');
+    }
+
+    if (hasLegacyPlugin) {
+      console.error(
+        '❌ ERROR: Legacy @morrowdigital/watermelondb-expo-plugin dependency detected. Remove it to avoid conflicting configuration.'
+      );
+      hasErrors = true;
+    } else {
+      console.log('✅ Legacy WatermelonDB Expo plugin not present');
     }
   } catch (error) {
     console.error(`❌ ERROR: Could not read ${PACKAGE_JSON_PATH}`);
@@ -198,19 +236,21 @@ function checkWatermelonDBPlugin() {
   }
 
   if (hasErrors) {
-    console.error('\n❌ WatermelonDB plugin configuration check FAILED');
+    console.error('\n❌ WatermelonDB native configuration check FAILED');
     console.error(
-      '\nIMPORTANT: The inventory feature requires WatermelonDB with JSI adapter.'
+      '\nRemediation steps:\n' +
+        '  • Declare expo-build-properties in app.config and add ios.extraPods entry for simdjson\n' +
+        '  • Ensure android.packagingOptions.pickFirst includes "**/libc++_shared.so"\n' +
+        '  • Install @nozbe/watermelondb and @nozbe/simdjson\n' +
+        '  • Remove @morrowdigital/watermelondb-expo-plugin if still listed\n'
     );
-    console.error('This requires a development build (not Expo Go).');
+    console.error('This app requires a development build (expo-dev-client).');
     console.error('\nSee docs/watermelondb-setup.md for setup instructions.\n');
     process.exit(1);
   }
 
-  console.log('\n✅ WatermelonDB plugin configuration check PASSED');
-  console.log(
-    '   Note: Development build required for native JSI adapter support\n'
-  );
+  console.log('\n✅ WatermelonDB native configuration check PASSED');
+  console.log('   Note: Run expo prebuild after changing native config.\n');
 }
 
-checkWatermelonDBPlugin();
+guardWatermelonConfiguration();
