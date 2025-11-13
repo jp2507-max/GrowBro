@@ -225,16 +225,14 @@ function useOnboardingRouting(options: {
 
     // Skip redirect when consent modal is pending to avoid loop with age-gate routing
     if (needsOnboarding && currentStep !== 'consent-modal') {
-      const source =
-        currentStatus === 'not-started'
-          ? 'first_run'
-          : currentStatus === 'completed'
-            ? 'version_bump'
-            : 'first_run';
-      trackOnboardingStart(source);
-      console.log(
-        `[RootLayout] Onboarding needed (v${ONBOARDING_VERSION}), source: ${source}, status: ${currentStatus}`
-      );
+      if (currentStatus === 'not-started' || currentStatus === 'completed') {
+        const source =
+          currentStatus === 'not-started' ? 'first_run' : 'version_bump';
+        trackOnboardingStart(source);
+        console.log(
+          `[RootLayout] Onboarding needed (v${ONBOARDING_VERSION}), source: ${source}, status: ${currentStatus}`
+        );
+      }
       if (pathname !== '/age-gate') {
         router.replace('/age-gate');
       }

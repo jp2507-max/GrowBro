@@ -22,6 +22,7 @@ type ActionConfig = {
   route: string;
 };
 
+// TODO: Fix assessment route - no index route exists, should point to capture screen
 const ACTION_CONFIGS: ActionConfig[] = [
   {
     action: 'create-task',
@@ -36,7 +37,7 @@ const ACTION_CONFIGS: ActionConfig[] = [
   {
     action: 'try-ai-diagnosis',
     icon: '🔍',
-    route: '/assessment',
+    route: '/assessment/capture', // Fixed: points to actual capture screen instead of non-existent index
   },
   {
     action: 'explore-strains',

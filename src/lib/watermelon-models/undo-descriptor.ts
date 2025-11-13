@@ -4,7 +4,7 @@ import { date, field, json, text } from '@nozbe/watermelondb/decorators';
 export interface UndoDescriptorData {
   operationType: string;
   affectedTaskIds: string[];
-  priorFieldValues: Record<string, any>;
+  priorFieldValues: Record<string, unknown>;
   timestamp: number;
   expiresAt: number;
 }
@@ -15,8 +15,8 @@ export class UndoDescriptorModel extends Model {
   @text('operation_type') operationType!: string;
   @json('affected_task_ids', (raw) => raw as string[])
   affectedTaskIds!: string[];
-  @json('prior_field_values', (raw) => raw as Record<string, any>)
-  priorFieldValues!: Record<string, any>;
+  @json('prior_field_values', (raw) => raw as Record<string, unknown>)
+  priorFieldValues!: Record<string, unknown>;
   @field('timestamp') timestamp!: number;
   @field('expires_at') expiresAt!: number;
   @date('created_at') createdAt!: Date;

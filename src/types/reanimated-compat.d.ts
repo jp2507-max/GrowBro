@@ -1,6 +1,7 @@
 // Reanimated compatibility + augmentation shim
 // Provides minimal type surface required by dependent libraries (e.g. @gorhom/bottom-sheet)
 // when using a version of Reanimated whose type declarations differ.
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 declare module 'react-native-reanimated' {
   import type * as React from 'react';
