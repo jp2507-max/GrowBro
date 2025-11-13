@@ -225,9 +225,9 @@ export class PIIScrubber {
     const violations: string[] = [];
 
     // Check that redacted fields are not present
-    const sorAsAny = redactedSoR as any;
+    const sorAsRecord = redactedSoR as unknown as Record<string, unknown>;
     REDACTED_FIELDS.forEach((field) => {
-      if (sorAsAny[field] !== undefined) {
+      if (sorAsRecord[field] !== undefined) {
         violations.push(`Redacted field "${field}" is still present`);
       }
     });

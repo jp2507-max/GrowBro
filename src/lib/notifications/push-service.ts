@@ -1,3 +1,4 @@
+import type { Database } from '@nozbe/watermelondb';
 import { Q } from '@nozbe/watermelondb';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
@@ -6,9 +7,10 @@ import { Platform } from 'react-native';
 import { NotificationErrorType } from '@/lib/notification-errors';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 import { supabase } from '@/lib/supabase';
+import type { DeviceTokenModel } from '@/lib/watermelon-models/device-token';
 
 type WatermelonModule = {
-  database: any;
+  database: Database;
 };
 
 const EXPONENT_TOKEN_PREFIX = 'ExponentPushToken[';
@@ -89,8 +91,7 @@ export const PushNotificationService = {
     }
 
     // Create new listener for the current user
-    const anyNotifications: any = Notifications as any;
-    tokenSubscription = anyNotifications.addPushTokenListener(
+    tokenSubscription = Notifications.addPushTokenListener(
       async (payload: unknown) => {
         const nextToken = extractTokenString(payload);
         if (!nextToken) return;
@@ -119,13 +120,12 @@ export const PushNotificationService = {
 async function getExpoPushToken(projectId?: string): Promise<string | null> {
   try {
     const resolvedProjectId = projectId ?? resolveExpoProjectId();
-    const anyNotifications: any = Notifications as any;
     const tokenResponse = resolvedProjectId
-      ? await anyNotifications.getExpoPushTokenAsync({
+      ? await Notifications.getExpoPushTokenAsync({
           projectId: resolvedProjectId,
         })
-      : await anyNotifications.getExpoPushTokenAsync();
-    const token = sanitizeToken((tokenResponse as any)?.data);
+      : await Notifications.getExpoPushTokenAsync();
+    const token = sanitizeToken(tokenResponse?.data);
     if (!token) return null;
     return token;
   } catch (error) {
@@ -136,14 +136,13 @@ async function getExpoPushToken(projectId?: string): Promise<string | null> {
 
 async function upsertLocalToken(token: string, userId: string): Promise<void> {
   const { database } = await loadWatermelonDatabase();
-  const collection = database.collections.get('device_tokens' as any);
-  const existing = (await (collection as any)
-    .query(Q.where('token', token))
-    .fetch()) as any[];
+  const collection =
+    database.collections.get<DeviceTokenModel>('device_tokens');
+  const existing = await collection.query(Q.where('token', token)).fetch();
   if (existing.length > 0) {
     try {
       await database.write(async () => {
-        await existing[0].update((model: any) => {
+        await existing[0].update((model) => {
           model.userId = userId;
           model.lastUsedAt = new Date();
           model.isActive = true;
@@ -161,7 +160,7 @@ async function upsertLocalToken(token: string, userId: string): Promise<void> {
   }
   try {
     await database.write(async () => {
-      await (collection as any).create((model: any) => {
+      await collection.create((model) => {
         model.token = token;
         model.platform = Platform.OS;
         model.userId = userId;
@@ -185,14 +184,13 @@ async function updateTokenActiveState(
   isActive: boolean
 ): Promise<void> {
   const { database } = await loadWatermelonDatabase();
-  const collection = database.collections.get('device_tokens' as any);
-  const matches = (await (collection as any)
-    .query(Q.where('token', token))
-    .fetch()) as any[];
+  const collection =
+    database.collections.get<DeviceTokenModel>('device_tokens');
+  const matches = await collection.query(Q.where('token', token)).fetch();
   if (matches.length === 0) return;
   try {
     await database.write(async () => {
-      await matches[0].update((model: any) => {
+      await matches[0].update((model) => {
         model.isActive = isActive;
         model.lastUsedAt = new Date();
       });
@@ -220,7 +218,9 @@ async function markTokenInactiveRemote(token: string): Promise<void> {
 }
 
 function resolveExpoProjectId(): string | undefined {
-  const config: any = (Constants as any)?.expoConfig;
+  const config = Constants.expoConfig as
+    | (typeof Constants.expoConfig & { id?: string })
+    | undefined;
   return (
     config?.extra?.eas?.projectId ||
     config?.extra?.expoClientId ||
@@ -255,17 +255,16 @@ async function deactivateOtherLocalTokens(
   userId: string
 ): Promise<void> {
   const { database } = await loadWatermelonDatabase();
-  const collection = database.collections.get('device_tokens' as any);
-  const matches = (await (collection as any)
-    .query(Q.where('user_id', userId))
-    .fetch()) as any[];
-  const stale = matches.filter((model: any) => model.token !== activeToken);
+  const collection =
+    database.collections.get<DeviceTokenModel>('device_tokens');
+  const matches = await collection.query(Q.where('user_id', userId)).fetch();
+  const stale = matches.filter((model) => model.token !== activeToken);
   if (stale.length === 0) return;
   try {
     await database.write(async () => {
       await Promise.all(
-        stale.map((model: any) =>
-          model.update((entry: any) => {
+        stale.map((model) =>
+          model.update((entry) => {
             entry.isActive = false;
             entry.lastUsedAt = new Date();
           })
@@ -319,12 +318,13 @@ function extractTokenString(payload: unknown): string | null {
     return sanitizeToken(payload);
   }
   if (payload && typeof payload === 'object') {
-    const maybeData = (payload as any).data;
+    const maybeData = (payload as Record<string, unknown>).data;
     if (typeof maybeData === 'string') {
       return sanitizeToken(maybeData);
     }
     if (maybeData && typeof maybeData === 'object') {
-      const nested = (maybeData as any).token ?? (maybeData as any).data;
+      const dataObj = maybeData as Record<string, unknown>;
+      const nested = dataObj.token ?? dataObj.data;
       if (typeof nested === 'string') {
         return sanitizeToken(nested);
       }

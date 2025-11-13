@@ -15,7 +15,7 @@ export type SyncPullResponse = {
       server_updated_at_ms?: number; // Server timestamp fallback
       _status?: 'created' | 'updated' | 'deleted';
       _changed?: string; // ISO timestamp from WatermelonDB
-      [key: string]: any;
+      [key: string]: unknown;
     }[];
   };
 };
@@ -29,7 +29,7 @@ export type SyncPushPayload = {
       id: string;
       _status?: 'created' | 'updated' | 'deleted';
       _changed?: string;
-      [key: string]: any;
+      [key: string]: unknown;
     }[];
   };
   lastPulledAt: number; // From server's previous serverTimestamp
@@ -105,7 +105,7 @@ export type QueueItem = {
   id: string;
   table: string;
   operation: 'create' | 'update' | 'delete';
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   timestamp: number;
   retries: number;
   idempotencyKey?: string;
@@ -159,6 +159,6 @@ export type LegacyConflict = {
   tableName: TableName;
   recordId: string;
   conflictFields: string[];
-  localRecord?: Record<string, any>;
-  remoteRecord?: Record<string, any>;
+  localRecord?: Record<string, unknown>;
+  remoteRecord?: Record<string, unknown>;
 };

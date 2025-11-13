@@ -7,13 +7,20 @@
  * Requirements: 4.2 (Appeal decision reversal)
  */
 
-import type { ModerationAction } from '@/types/moderation';
+import type { ModerationAction, SuspensionRecord } from '@/types/moderation';
 
 import { supabase } from '../supabase';
 
 // ============================================================================
 // Types
 // ============================================================================
+
+interface SuspensionRecordWithReversal extends SuspensionRecord {
+  reversed?: boolean;
+  reversal_reason?: string;
+  reversal_appeal_id?: string;
+  reversal_date?: string;
+}
 
 export interface AccountRestoration {
   userId: string;
@@ -61,13 +68,15 @@ export async function restoreAccountStatus(
     if (offenderRecord) {
       // Update repeat offender record to mark suspension as reversed
       const suspensionHistory = offenderRecord.suspension_history || [];
-      const updatedHistory = suspensionHistory.map((suspension: any) => ({
-        ...suspension,
-        reversed: true,
-        reversal_reason: reversalReason,
-        reversal_appeal_id: appealId,
-        reversal_date: new Date().toISOString(),
-      }));
+      const updatedHistory = suspensionHistory.map(
+        (suspension: SuspensionRecord): SuspensionRecordWithReversal => ({
+          ...suspension,
+          reversed: true,
+          reversal_reason: reversalReason,
+          reversal_appeal_id: appealId,
+          reversal_date: new Date().toISOString(),
+        })
+      );
 
       await supabase
         .from('repeat_offender_records')

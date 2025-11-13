@@ -350,9 +350,10 @@ export class TelemetryClient {
         props[k] = s;
       } else if (v instanceof Date) {
         props[k] = v; // schema bounds date type
-      } else {
-        props[k] = v as any;
+      } else if (typeof v === 'number' || typeof v === 'boolean') {
+        props[k] = v;
       }
+      // Skip any other types (shouldn't happen per schema)
     }
 
     // Scrub any nested objects that might sneak in via future changes

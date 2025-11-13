@@ -1,3 +1,4 @@
+import type { StoreApi } from 'zustand';
 import { create } from 'zustand';
 
 import { getDetectedRegion } from '@/lib/compliance/regional-compliance';
@@ -167,7 +168,9 @@ function isExpired(expiresAt: string | null): boolean {
   return now >= expiration;
 }
 
-function createHydrateFunction(set: any): () => void {
+function createHydrateFunction(
+  set: StoreApi<AgeGateStoreState>['setState']
+): () => void {
   return () => {
     const persisted = loadPersistedState();
     if (persisted.verifiedAt) {
@@ -204,7 +207,7 @@ function createHydrateFunction(set: any): () => void {
 }
 
 function createVerifyFunction(
-  set: any
+  set: StoreApi<AgeGateStoreState>['setState']
 ): (input: AgeGateVerifyInput) => AgeGateVerifyResult {
   return (input: AgeGateVerifyInput): AgeGateVerifyResult => {
     const birthDate = buildBirthDate(input);
@@ -264,7 +267,9 @@ function createVerifyFunction(
   };
 }
 
-function createResetFunction(set: any): () => void {
+function createResetFunction(
+  set: StoreApi<AgeGateStoreState>['setState']
+): () => void {
   return () => {
     storage.delete(AGE_GATE_STATE_KEY);
     storage.delete(AGE_GATE_AUDIT_KEY);
@@ -279,7 +284,10 @@ function createResetFunction(set: any): () => void {
   };
 }
 
-function createCheckExpirationFunction(get: any, set: any): () => boolean {
+function createCheckExpirationFunction(
+  get: StoreApi<AgeGateStoreState>['getState'],
+  set: StoreApi<AgeGateStoreState>['setState']
+): () => boolean {
   return () => {
     const state = get();
     if (state.status !== 'verified') return false;
@@ -305,7 +313,10 @@ function createCheckExpirationFunction(get: any, set: any): () => boolean {
   };
 }
 
-function createStartSessionFunction(set: any, get: any): () => void {
+function createStartSessionFunction(
+  set: StoreApi<AgeGateStoreState>['setState'],
+  get: StoreApi<AgeGateStoreState>['getState']
+): () => void {
   return () => {
     const state = get();
     if (state.status !== 'verified') {
@@ -319,7 +330,10 @@ function createStartSessionFunction(set: any, get: any): () => void {
   };
 }
 
-function createAgeGateStore(set: any, get: any): AgeGateStoreState {
+function createAgeGateStore(
+  set: StoreApi<AgeGateStoreState>['setState'],
+  get: StoreApi<AgeGateStoreState>['getState']
+): AgeGateStoreState {
   return {
     status: 'unknown' as AgeGateStatus,
     verifiedAt: null,

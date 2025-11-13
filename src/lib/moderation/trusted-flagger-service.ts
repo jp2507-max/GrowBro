@@ -324,18 +324,33 @@ export async function isUserTrustedFlagger(userId: string): Promise<boolean> {
 // Helper Functions
 // ============================================================================
 
+interface DbTrustedFlaggerRow {
+  id: string;
+  user_id?: string;
+  organization_name: string;
+  contact_info: unknown;
+  specialization: string[];
+  status: string;
+  quality_metrics: unknown;
+  certification_date: string | null;
+  review_date: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+}
+
 /**
  * Map database row to TrustedFlagger type
  */
-function mapDatabaseRowToFlagger(row: any): TrustedFlagger {
+function mapDatabaseRowToFlagger(row: DbTrustedFlaggerRow): TrustedFlagger {
   return {
     id: row.id,
     user_id: row.user_id,
     organization_name: row.organization_name,
-    contact_info: row.contact_info,
+    contact_info: row.contact_info as import('@/types/moderation').ContactInfo,
     specialization: row.specialization,
-    status: row.status,
-    quality_metrics: row.quality_metrics,
+    status: row.status as TrustedFlaggerStatus,
+    quality_metrics: row.quality_metrics as QualityMetrics,
     certification_date: row.certification_date
       ? new Date(row.certification_date)
       : null,

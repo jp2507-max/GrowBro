@@ -19,7 +19,16 @@ import {
   evaluateAndTriggerAlert,
   markAlertDeliveredLocally,
 } from '../services/alert-service';
-import type { PhEcReading, Reservoir } from '../types';
+import type {
+  AlertSeverity,
+  AlertType,
+  DeviationAlert,
+  GrowingMedium,
+  PhEcReading,
+  PpmScale,
+  QualityFlag,
+  Reservoir,
+} from '../types';
 
 // ============================================================================
 // Hook Return Type
@@ -123,12 +132,12 @@ export function useAlertEvaluation(): UseAlertEvaluationReturn {
 /**
  * Converts DeviationAlertModel to DeviationAlert type
  */
-function modelToAlert(model: DeviationAlertModel): any {
+function modelToAlert(model: DeviationAlertModel): DeviationAlert {
   return {
     id: model.id,
     readingId: model.readingId,
-    type: model.type as any,
-    severity: model.severity as any,
+    type: model.type as AlertType,
+    severity: model.severity as AlertSeverity,
     message: model.message,
     recommendations: model.recommendations,
     recommendationCodes: model.recommendationCodes,
@@ -156,10 +165,10 @@ function modelToReading(model: PhEcReadingModel): PhEcReading {
     ec25c: model.ec25c,
     tempC: model.tempC,
     atcOn: model.atcOn,
-    ppmScale: model.ppmScale as any,
+    ppmScale: model.ppmScale as PpmScale,
     meterId: model.meterId,
     note: model.note,
-    qualityFlags: model.qualityFlags as any,
+    qualityFlags: model.qualityFlags as QualityFlag[],
     createdAt: model.createdAt.getTime(),
     updatedAt: model.updatedAt.getTime(),
   };
@@ -173,12 +182,12 @@ function modelToReservoir(model: ReservoirModel): Reservoir {
     id: model.id,
     name: model.name,
     volumeL: model.volumeL,
-    medium: model.medium as any,
+    medium: model.medium as GrowingMedium,
     targetPhMin: model.targetPhMin,
     targetPhMax: model.targetPhMax,
     targetEcMin25c: model.targetEcMin25c,
     targetEcMax25c: model.targetEcMax25c,
-    ppmScale: model.ppmScale as any,
+    ppmScale: model.ppmScale as PpmScale,
     sourceWaterProfileId: model.sourceWaterProfileId,
     playbookBinding: model.playbookBinding,
     createdAt: model.createdAt.getTime(),

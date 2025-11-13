@@ -231,13 +231,17 @@ export async function cancelCalibrationReminders(
 
     // Find and cancel notifications for this calibration
     const idsToCancel = scheduled
-      .filter(
-        (notif) =>
-          notif.identifier?.includes(calibrationId) ||
-          ((notif as any).content?.data &&
-            'calibrationId' in (notif as any).content.data &&
-            (notif as any).content.data.calibrationId === calibrationId)
-      )
+      .filter((notif) => {
+        if (notif.identifier?.includes(calibrationId)) {
+          return true;
+        }
+        const data = notif.content?.data as Record<string, unknown> | undefined;
+        return (
+          data &&
+          'calibrationId' in data &&
+          data.calibrationId === calibrationId
+        );
+      })
       .map((notif) => notif.identifier);
 
     if (idsToCancel.length > 0) {
@@ -330,7 +334,7 @@ async function scheduleNotification(options: {
   title: string;
   body: string;
   trigger: Date | null;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }): Promise<string | null> {
   try {
     // Note: Permission checking should be done at app initialization
@@ -417,28 +421,35 @@ export async function getScheduledCalibrationReminders(): Promise<
             NOTIFICATION_ID_PREFIX.CALIBRATION_EXPIRED
           )
       )
-      .map((notif) => ({
-        id: notif.identifier,
-        calibrationId:
-          ((notif as any).content?.data?.calibrationId as string) || 'unknown',
-        scheduledFor: (() => {
-          const t = (notif as any).trigger;
-          if (!t) return new Date();
+      .map((notif) => {
+        const data = notif.content?.data as Record<string, unknown> | undefined;
+        const calibrationId =
+          (data?.calibrationId as string | undefined) || 'unknown';
+
+        const t = notif.trigger;
+        let scheduledFor = new Date();
+
+        if (t && typeof t === 'object' && 'type' in t) {
           if (
             t.type === Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL
           ) {
-            const secs = Number((t as any).seconds ?? 0);
-            return new Date(Date.now() + Math.max(0, secs) * 1000);
+            const timeIntervalTrigger =
+              t as Notifications.TimeIntervalNotificationTrigger;
+            const secs = Number(timeIntervalTrigger.seconds ?? 0);
+            scheduledFor = new Date(Date.now() + Math.max(0, secs) * 1000);
+          } else if ('timestamp' in t && typeof t.timestamp === 'number') {
+            scheduledFor = new Date(t.timestamp);
+          } else if ('date' in t && typeof t.date === 'number') {
+            scheduledFor = new Date(t.date);
           }
-          if ('timestamp' in (t as any)) {
-            return new Date((t as any).timestamp);
-          }
-          if ('date' in (t as any)) {
-            return new Date((t as any).date);
-          }
-          return new Date();
-        })(),
-      }));
+        }
+
+        return {
+          id: notif.identifier,
+          calibrationId,
+          scheduledFor,
+        };
+      });
   } catch (error) {
     console.error('Error getting scheduled reminders:', error);
     return [];
@@ -453,12 +464,17 @@ export async function getScheduledCalibrationReminders(): Promise<
  * @returns Promise<boolean> - Whether a new reminder was scheduled
  */
 export async function handleCascadingReminder(
-  notificationData: Record<string, any>
+  notificationData: Record<string, unknown>
 ): Promise<boolean> {
   try {
-    const { cascadeTargetDate, cascadeStep, identifier } = notificationData;
+    const cascadeTargetDate = notificationData.cascadeTargetDate;
+    const cascadeStep = notificationData.cascadeStep;
+    const identifier = notificationData.identifier;
 
-    if (!cascadeTargetDate || !identifier) {
+    if (
+      typeof cascadeTargetDate !== 'string' ||
+      typeof identifier !== 'string'
+    ) {
       console.warn(
         'Cascading reminder missing required data:',
         notificationData
@@ -489,7 +505,7 @@ export async function handleCascadingReminder(
     }
 
     // Schedule the next reminder in the cascade
-    const nextStep = (cascadeStep || 1) + 1;
+    const nextStep = (typeof cascadeStep === 'number' ? cascadeStep : 1) + 1;
     const safeInterval = getSafeCascadeInterval(targetDate);
 
     const nextNotificationId = `${identifier}-cascade-${nextStep}`;

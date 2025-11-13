@@ -213,12 +213,26 @@ export interface InsufficientStockError {
 /**
  * Result of inventory deduction
  */
+export type ResolvedDeductionMapEntry = DeductionMapEntry & {
+  /** Final quantity resolved by the server after scaling */
+  quantity?: number;
+
+  /** Alias for resolved quantity used by legacy services */
+  resolvedQuantity?: number;
+
+  /** Total quantity after scaling (per-task + per-plant) */
+  totalQuantity?: number;
+};
+
 export interface DeductionResult {
   /** Whether deduction succeeded */
   success: boolean;
 
   /** Movements created (empty if failed) */
   movements: DeductionMovement[];
+
+  /** Resolved deduction entries returned by the server */
+  deductionMap?: ResolvedDeductionMapEntry[];
 
   /** Items with insufficient stock */
   insufficientItems?: InsufficientStockError[];

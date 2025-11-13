@@ -54,6 +54,22 @@ export interface RetentionPolicy {
   pii_anonymization_days: number; // 30 days
 }
 
+interface DbAuditEventRow {
+  id: string;
+  event_type: string;
+  actor_id: string;
+  actor_type: string;
+  target_id: string;
+  target_type: string;
+  action: string;
+  metadata: Record<string, unknown>;
+  timestamp: string;
+  signature: string;
+  pii_tagged: boolean;
+  retention_until: string;
+  created_at: string;
+}
+
 const DEFAULT_RETENTION_POLICY: RetentionPolicy = {
   default_retention_days: 365, // 12 months
   audit_events_retention_days: 2555, // 7 years
@@ -103,7 +119,7 @@ export class AuditService {
       throw new Error(`Failed to log audit event: ${error.message}`);
     }
 
-    return this.mapToAuditEvent(data);
+    return this.mapToAuditEvent(data as DbAuditEventRow);
   }
 
   /**
@@ -185,7 +201,9 @@ export class AuditService {
       throw new Error(`Failed to query audit trail: ${error.message}`);
     }
 
-    const events = (data ?? []).map((row) => this.mapToAuditEvent(row));
+    const events = ((data as DbAuditEventRow[]) ?? []).map((row) =>
+      this.mapToAuditEvent(row)
+    );
     const total_count = count ?? 0;
 
     return {
@@ -318,7 +336,9 @@ export class AuditService {
       throw new Error(`Failed to get target audit trail: ${error.message}`);
     }
 
-    return (data ?? []).map((row) => this.mapToAuditEvent(row));
+    return ((data as DbAuditEventRow[]) ?? []).map((row) =>
+      this.mapToAuditEvent(row)
+    );
   }
 
   /**
@@ -416,12 +436,12 @@ export class AuditService {
   /**
    * Map database row to AuditEvent interface
    */
-  private mapToAuditEvent(row: any): AuditEvent {
+  private mapToAuditEvent(row: DbAuditEventRow): AuditEvent {
     return {
       id: row.id,
-      event_type: row.event_type,
+      event_type: row.event_type as AuditEventType,
       actor_id: row.actor_id,
-      actor_type: row.actor_type,
+      actor_type: row.actor_type as ActorType,
       target_id: row.target_id,
       target_type: row.target_type,
       action: row.action,

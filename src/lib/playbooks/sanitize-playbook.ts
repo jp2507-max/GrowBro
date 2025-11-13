@@ -38,7 +38,7 @@ export interface Playbook {
   locale: string;
   phaseOrder: string[];
   steps: PlaybookStep[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   createdAt?: Date;
   updatedAt?: Date;
 }

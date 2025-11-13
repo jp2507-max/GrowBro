@@ -10,6 +10,7 @@
  * - 9.4: Display quantity and cost with preserved batch valuation
  */
 
+import type { Database } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -84,7 +85,7 @@ export interface ConsumptionAnalyticsResult {
  * Load analytics data for filters
  */
 async function loadAnalyticsData(
-  database: any,
+  database: Database,
   filters: ConsumptionAnalyticsFilters
 ) {
   // Convert filters to consumption history filters

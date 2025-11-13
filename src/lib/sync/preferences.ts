@@ -37,7 +37,7 @@ function loadStored(): Partial<SyncPrefsSnapshot> {
 }
 
 // Sanitization helpers
-function sanitizeBoolean(value: any, defaultValue: boolean): boolean {
+function sanitizeBoolean(value: unknown, defaultValue: boolean): boolean {
   if (typeof value === 'boolean') return value;
   if (typeof value === 'string') {
     const lower = value.toLowerCase();
@@ -51,7 +51,7 @@ function sanitizeBoolean(value: any, defaultValue: boolean): boolean {
   return defaultValue;
 }
 
-function sanitizeStalenessHours(value: any, defaultValue: number): number {
+function sanitizeStalenessHours(value: unknown, defaultValue: number): number {
   if (typeof value === 'number' && Number.isFinite(value)) {
     // Clamp to reasonable bounds (0 hours to 1 week/168 hours) and round to integer
     return Math.max(0, Math.min(168, Math.round(value)));

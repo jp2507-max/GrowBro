@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create, type StoreApi } from 'zustand';
 
 import { storage } from '@/lib/storage';
 import { createSelectors } from '@/lib/utils';
@@ -27,7 +27,7 @@ type PersistedOnboardingState = {
   completedSteps: OnboardingStep[];
   lastUpdated: string;
   version?: number;
-  completedAt?: string;
+  completedAt?: string | null;
   status?: OnboardingStatus;
 };
 
@@ -130,7 +130,9 @@ function savePersistedState(state: PersistedOnboardingState): void {
   storage.set(ONBOARDING_STATE_KEY, JSON.stringify(state));
 }
 
-function createHydrateFunction(set: any): () => void {
+function createHydrateFunction(
+  set: StoreApi<OnboardingStoreState>['setState']
+): () => void {
   return () => {
     const persisted = loadPersistedState();
     set({
@@ -145,8 +147,8 @@ function createHydrateFunction(set: any): () => void {
 }
 
 function createSetCurrentStepFunction(
-  set: any,
-  get: any
+  set: StoreApi<OnboardingStoreState>['setState'],
+  get: StoreApi<OnboardingStoreState>['getState']
 ): (step: OnboardingStep) => void {
   return (step: OnboardingStep) => {
     const state = get();
@@ -171,8 +173,8 @@ function createSetCurrentStepFunction(
 }
 
 function createCompleteStepFunction(
-  set: any,
-  get: any
+  set: StoreApi<OnboardingStoreState>['setState'],
+  get: StoreApi<OnboardingStoreState>['getState']
 ): (step: OnboardingStep) => void {
   return (step: OnboardingStep) => {
     const state = get();
@@ -217,7 +219,9 @@ function createCompleteStepFunction(
   };
 }
 
-function createResetFunction(set: any): () => void {
+function createResetFunction(
+  set: StoreApi<OnboardingStoreState>['setState']
+): () => void {
   return () => {
     storage.delete(ONBOARDING_STATE_KEY);
     const initialState = createInitialState();
@@ -233,7 +237,7 @@ function createResetFunction(set: any): () => void {
 }
 
 function createIsStepCompletedFunction(
-  get: any
+  get: StoreApi<OnboardingStoreState>['getState']
 ): (step: OnboardingStep) => boolean {
   return (step: OnboardingStep) => {
     const state = get();
@@ -241,14 +245,18 @@ function createIsStepCompletedFunction(
   };
 }
 
-function createIsOnboardingCompleteFunction(get: any): () => boolean {
+function createIsOnboardingCompleteFunction(
+  get: StoreApi<OnboardingStoreState>['getState']
+): () => boolean {
   return () => {
     const state = get();
     return state.currentStep === 'completed';
   };
 }
 
-function createGetNextStepFunction(get: any): () => OnboardingStep | null {
+function createGetNextStepFunction(
+  get: StoreApi<OnboardingStoreState>['getState']
+): () => OnboardingStep | null {
   return () => {
     const state = get();
     if (state.currentStep === 'completed') return null;
@@ -261,7 +269,9 @@ function createGetNextStepFunction(get: any): () => OnboardingStep | null {
   };
 }
 
-function createShouldShowOnboardingFunction(get: any): () => boolean {
+function createShouldShowOnboardingFunction(
+  get: StoreApi<OnboardingStoreState>['getState']
+): () => boolean {
   return () => {
     const state = get();
     // Show if not completed or if version has been bumped
@@ -276,13 +286,18 @@ function createShouldShowOnboardingFunction(get: any): () => boolean {
   };
 }
 
-function createMarkAsCompletedFunction(set: any, get: any): () => void {
+function createMarkAsCompletedFunction(
+  set: StoreApi<OnboardingStoreState>['setState'],
+  get: StoreApi<OnboardingStoreState>['getState']
+): () => void {
   return () => {
     const state = get();
     const timestamp = new Date().toISOString();
     const updatedState = {
       currentStep: 'completed' as OnboardingStep,
-      completedSteps: [...new Set([...state.completedSteps, 'completed'])],
+      completedSteps: [
+        ...new Set([...state.completedSteps, 'completed']),
+      ] as OnboardingStep[],
       lastUpdated: timestamp,
       version: ONBOARDING_VERSION,
       completedAt: timestamp,
@@ -294,7 +309,10 @@ function createMarkAsCompletedFunction(set: any, get: any): () => void {
   };
 }
 
-function createOnboardingStore(set: any, get: any): OnboardingStoreState {
+function createOnboardingStore(
+  set: StoreApi<OnboardingStoreState>['setState'],
+  get: StoreApi<OnboardingStoreState>['getState']
+): OnboardingStoreState {
   const initialState = createInitialState();
   return {
     currentStep: initialState.currentStep,

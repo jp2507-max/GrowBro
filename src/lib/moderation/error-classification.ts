@@ -36,7 +36,7 @@ export interface ClassifiedError {
   requiresManualIntervention: boolean;
   suggestedAction: string;
   originalError: Error;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ErrorContext {
@@ -46,7 +46,7 @@ export interface ErrorContext {
   userId?: string;
   contentId?: string;
   reportId?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // ============================================================================
@@ -177,8 +177,16 @@ export class ErrorClassifier {
 
   // Private helper methods
 
-  private extractHttpStatus(error: any): number | null {
-    return error.status || error.statusCode || error.response?.status || null;
+  private extractHttpStatus(error: unknown): number | null {
+    if (typeof error === 'object' && error !== null) {
+      const err = error as Record<string, unknown>;
+      const status =
+        err.status ??
+        err.statusCode ??
+        (err.response as Record<string, unknown> | undefined)?.status;
+      return typeof status === 'number' ? status : null;
+    }
+    return null;
   }
 
   private classifyByHttpStatus(status: number): ErrorCategory {

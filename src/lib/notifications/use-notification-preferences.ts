@@ -46,7 +46,8 @@ async function createDefault(database: Database): Promise<PreferenceValues> {
     const collection = database.get('notification_preferences');
 
     await database.write(async () => {
-      await collection.create((pref: any) => {
+      await collection.create((record) => {
+        const pref = record as NotificationPreferenceModel;
         pref.communityInteractions = true;
         pref.communityLikes = true;
         pref.cultivationReminders = true;
@@ -92,8 +93,9 @@ export function useNotificationPreferences() {
 
         if (records.length > 0) {
           await database.write(async () => {
-            await records[0].update((pref: any) => {
-              pref[category] = enabled;
+            await records[0].update((record) => {
+              const pref = record as NotificationPreferenceModel;
+              (pref as unknown as Record<string, unknown>)[category] = enabled;
             });
           });
 

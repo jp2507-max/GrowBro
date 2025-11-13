@@ -203,9 +203,8 @@ async function enqueuePendingDelete(ids: readonly string[]): Promise<void> {
 async function getPendingDeleteIds(ids: readonly string[]): Promise<string[]> {
   if (!ids.length) return [];
 
-  const collection = database.collections.get(
-    COLLECTION_NAME as keyof typeof database.collections
-  ) as any;
+  const collection =
+    database.collections.get<NotificationModel>(COLLECTION_NAME);
 
   const records = (await collection
     .query(Q.where('id', Q.oneOf([...ids])))

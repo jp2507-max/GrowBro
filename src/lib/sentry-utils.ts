@@ -1,6 +1,30 @@
+import type { ErrorEvent, EventHint } from '@sentry/core';
+import type * as Sentry from '@sentry/react-native';
+
 import { getPrivacyConsentSync } from './privacy-consent';
 
 type ErrorContext = Record<string, unknown>;
+
+type ScrubContext = {
+  currentDepth: number;
+  visited: WeakSet<object>;
+  maxDepth: number;
+};
+
+type SentryEvent = Sentry.Event;
+type SentryBreadcrumb = Sentry.Breadcrumb;
+type SentryException = Sentry.Exception;
+type SentryRequest = {
+  url?: string;
+  data?: unknown;
+  headers?: Record<string, unknown>;
+};
+
+type AxiosLikeObject = Record<string, unknown> & {
+  config?: unknown;
+  request?: unknown;
+  response?: unknown;
+};
 
 /**
  * Auth endpoint patterns for redacting sensitive request bodies
@@ -127,13 +151,13 @@ function scrubSensitiveData(text: string): string {
  * Recursively scrubs sensitive data from objects
  */
 function scrubObjectData(
-  obj: any,
+  obj: unknown,
   options?: {
     currentDepth?: number;
     visited?: WeakSet<object>;
     maxDepth?: number;
   }
-): any {
+): unknown {
   const DEFAULT_MAX_DEPTH = 6;
   const currentDepth = options?.currentDepth ?? 0;
   const visited = options?.visited ?? new WeakSet<object>();
@@ -142,7 +166,7 @@ function scrubObjectData(
   return _scrubObjectData(obj, { currentDepth, visited, maxDepth });
 }
 
-function scrubPrimitives(obj: any, ctx: ScrubContext): any {
+function scrubPrimitives(obj: unknown, ctx: ScrubContext): unknown {
   if (typeof obj === 'string') return scrubSensitiveData(obj);
   if (
     obj === null ||
@@ -160,7 +184,7 @@ function scrubPrimitives(obj: any, ctx: ScrubContext): any {
   return null;
 }
 
-function scrubArrayAndBuiltins(obj: any, ctx: ScrubContext): any {
+function scrubArrayAndBuiltins(obj: unknown, ctx: ScrubContext): unknown {
   if (Array.isArray(obj)) {
     return obj.map((item) =>
       _scrubObjectData(item, {
@@ -175,9 +199,9 @@ function scrubArrayAndBuiltins(obj: any, ctx: ScrubContext): any {
   return null;
 }
 
-function scrubMapAndSet(obj: any, ctx: ScrubContext): any {
+function scrubMapAndSet(obj: unknown, ctx: ScrubContext): unknown {
   if (obj instanceof Map) {
-    const result: any = {};
+    const result: Record<string, unknown> = {};
     for (const [k, v] of obj.entries()) {
       try {
         result[String(k)] = _scrubObjectData(v, {
@@ -203,46 +227,41 @@ function scrubMapAndSet(obj: any, ctx: ScrubContext): any {
   return null;
 }
 
-function scrubAxiosObject(obj: any, ctx: ScrubContext): any {
-  if (
-    obj &&
-    typeof obj === 'object' &&
-    (obj.config || obj.request || obj.response)
-  ) {
-    const sanitized = { ...obj };
-    const nextCtx = {
-      currentDepth: ctx.currentDepth + 1,
-      visited: ctx.visited,
-      maxDepth: ctx.maxDepth,
-    };
+function scrubAxiosObject(obj: unknown, ctx: ScrubContext): unknown {
+  if (obj && typeof obj === 'object') {
+    const axiosLike = obj as AxiosLikeObject;
+    if (axiosLike.config || axiosLike.request || axiosLike.response) {
+      const sanitized = { ...axiosLike };
+      const nextCtx = {
+        currentDepth: ctx.currentDepth + 1,
+        visited: ctx.visited,
+        maxDepth: ctx.maxDepth,
+      };
 
-    if (sanitized.config && typeof sanitized.config === 'object') {
-      sanitized.config = _scrubObjectData(sanitized.config, nextCtx);
+      if (sanitized.config && typeof sanitized.config === 'object') {
+        sanitized.config = _scrubObjectData(sanitized.config, nextCtx);
+      }
+      if (sanitized.request && typeof sanitized.request === 'object') {
+        sanitized.request = _scrubObjectData(sanitized.request, nextCtx);
+      }
+      if (sanitized.response && typeof sanitized.response === 'object') {
+        sanitized.response = _scrubObjectData(sanitized.response, nextCtx);
+      }
+      return sanitized;
     }
-    if (sanitized.request && typeof sanitized.request === 'object') {
-      sanitized.request = _scrubObjectData(sanitized.request, nextCtx);
-    }
-    if (sanitized.response && typeof sanitized.response === 'object') {
-      sanitized.response = _scrubObjectData(sanitized.response, nextCtx);
-    }
-    return sanitized;
   }
   return null;
 }
 
-type ScrubContext = {
-  currentDepth: number;
-  visited: WeakSet<object>;
-  maxDepth: number;
-};
-
-function _scrubObjectData(obj: any, ctx: ScrubContext): any {
+function _scrubObjectData(obj: unknown, ctx: ScrubContext): unknown {
   const primitiveResult = scrubPrimitives(obj, ctx);
   if (primitiveResult !== null || typeof primitiveResult !== 'object') {
     return primitiveResult;
   }
 
-  ctx.visited.add(obj);
+  if (typeof obj === 'object' && obj !== null) {
+    ctx.visited.add(obj);
+  }
 
   const arrayResult = scrubArrayAndBuiltins(obj, ctx);
   if (arrayResult !== null) return arrayResult;
@@ -254,7 +273,7 @@ function _scrubObjectData(obj: any, ctx: ScrubContext): any {
   if (axiosResult !== null) return axiosResult;
 
   if (obj && typeof obj === 'object') {
-    const scrubbed: any = {};
+    const scrubbed: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
       scrubbed[key] = _scrubObjectData(value, {
         currentDepth: ctx.currentDepth + 1,
@@ -292,7 +311,7 @@ function redactSensitiveHeaders(
   for (const headerKey of Object.keys(headers)) {
     const lowerKey = headerKey.toLowerCase();
     // prefer the last occurrence if duplicates exist
-    normalizedHeaders[lowerKey] = (headers as any)[headerKey];
+    normalizedHeaders[lowerKey] = headers[headerKey];
   }
 
   // Redact sensitive headers
@@ -303,18 +322,18 @@ function redactSensitiveHeaders(
   }
 
   // Replace original headers with normalized ones
-  for (const key of Object.keys(headers)) delete (headers as any)[key];
+  for (const key of Object.keys(headers)) delete headers[key];
   Object.assign(headers, normalizedHeaders);
 }
 
 /**
  * Checks if URL is an auth endpoint and redacts body if true
  */
-function redactAuthEndpointBody(request: any): void {
+function redactAuthEndpointBody(request: SentryRequest): void {
   if (!request.url) return;
 
   const isAuthEndpoint = AUTH_ENDPOINT_PATTERNS.some((pattern) =>
-    request.url.includes(pattern)
+    (request.url as string).includes(pattern)
   );
 
   if (isAuthEndpoint && request.data) {
@@ -338,7 +357,94 @@ function getEffectiveConsent() {
   );
 }
 
-export const beforeSendHook = (event: any, _hint?: any): any | null => {
+/**
+ * Scrubs user data from event based on consent
+ */
+function scrubEventUserData(
+  event: SentryEvent,
+  effectiveConsent: ReturnType<typeof getEffectiveConsent>
+): void {
+  // Always redact email addresses from user data first (before other processing)
+  if (event.user?.email) {
+    event.user.email = '[EMAIL_REDACTED]';
+  }
+
+  // If user hasn't consented to personalized data, remove user info (except id)
+  if (!effectiveConsent.personalizedData && event.user) {
+    event.user = {
+      id: event.user.id ? '[USER_ID_REDACTED]' : undefined,
+    };
+  }
+}
+
+/**
+ * Scrubs exceptions, breadcrumbs, and context data from event
+ */
+function scrubEventData(event: SentryEvent): void {
+  // Scrub exception messages
+  if (event.exception?.values) {
+    event.exception.values = event.exception.values.map(
+      (exception: SentryException) => ({
+        ...exception,
+        value: exception.value
+          ? scrubSensitiveData(exception.value)
+          : exception.value,
+      })
+    );
+  }
+
+  // Scrub breadcrumbs
+  if (event.breadcrumbs) {
+    event.breadcrumbs = event.breadcrumbs.map(
+      (breadcrumb: SentryBreadcrumb) => ({
+        ...breadcrumb,
+        message: breadcrumb.message
+          ? scrubSensitiveData(breadcrumb.message)
+          : breadcrumb.message,
+        data: breadcrumb.data
+          ? (scrubObjectData(breadcrumb.data) as Record<string, unknown>)
+          : breadcrumb.data,
+      })
+    );
+  }
+
+  // Scrub extra data
+  if (event.extra) {
+    event.extra = scrubObjectData(event.extra) as Record<string, unknown>;
+  }
+
+  // Scrub contexts
+  if (event.contexts) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    event.contexts = scrubObjectData(event.contexts) as any;
+  }
+}
+
+/**
+ * Scrubs HTTP request/response data from event
+ */
+function scrubEventHttpData(event: SentryEvent): void {
+  // Scrub HTTP request/response headers and bodies
+  if (event.request) {
+    // Redact sensitive headers
+    if (event.request.headers) {
+      redactSensitiveHeaders(event.request.headers);
+    }
+
+    // Drop request bodies for auth/profile endpoints
+    redactAuthEndpointBody(event.request as SentryRequest);
+  }
+
+  // Scrub contexts for HTTP data
+  if (event.contexts?.response?.headers) {
+    redactSensitiveHeaders(event.contexts.response.headers);
+  }
+}
+
+export const beforeSendHook = (
+  event: SentryEvent,
+  _hint?: EventHint
+): ErrorEvent | null => {
   try {
     const effectiveConsent = getEffectiveConsent();
 
@@ -347,69 +453,11 @@ export const beforeSendHook = (event: any, _hint?: any): any | null => {
       return null;
     }
 
-    // Always redact email addresses from user data first (before other processing)
-    if (event.user?.email) {
-      event.user.email = '[EMAIL_REDACTED]';
-    }
+    scrubEventUserData(event, effectiveConsent);
+    scrubEventData(event);
+    scrubEventHttpData(event);
 
-    // If user hasn't consented to personalized data, remove user info (except id)
-    if (!effectiveConsent.personalizedData && event.user) {
-      event.user = {
-        id: event.user.id ? '[USER_ID_REDACTED]' : undefined,
-      };
-    }
-
-    // Always scrub sensitive information regardless of consent
-    // Scrub exception messages
-    if (event.exception?.values) {
-      event.exception.values = event.exception.values.map((exception: any) => ({
-        ...exception,
-        value: exception.value
-          ? scrubSensitiveData(exception.value)
-          : exception.value,
-      }));
-    }
-
-    // Scrub breadcrumbs
-    if (event.breadcrumbs) {
-      event.breadcrumbs = event.breadcrumbs.map((breadcrumb: any) => ({
-        ...breadcrumb,
-        message: breadcrumb.message
-          ? scrubSensitiveData(breadcrumb.message)
-          : breadcrumb.message,
-        data: breadcrumb.data
-          ? scrubObjectData(breadcrumb.data)
-          : breadcrumb.data,
-      }));
-    }
-
-    // Scrub extra data
-    if (event.extra) {
-      event.extra = scrubObjectData(event.extra);
-    }
-
-    // Scrub contexts
-    if (event.contexts) {
-      event.contexts = scrubObjectData(event.contexts);
-    }
-
-    // Scrub HTTP request/response headers and bodies
-    if (event.request) {
-      // Redact sensitive headers
-      if (event.request.headers) {
-        redactSensitiveHeaders(event.request.headers);
-      }
-
-      // Drop request bodies for auth/profile endpoints
-      redactAuthEndpointBody(event.request);
-    }
-
-    // Scrub contexts for HTTP data
-    if (event.contexts?.response?.headers) {
-      redactSensitiveHeaders(event.contexts.response.headers);
-    }
-
-    return event;
+    return event as ErrorEvent;
   } catch {
     // If scrubbing fails, log the error and drop the event to avoid leaking PII
     // We return null to signal Sentry to discard the event.
@@ -425,9 +473,9 @@ export const beforeSendHook = (event: any, _hint?: any): any | null => {
  * This hook is called for every breadcrumb before it's added to the event
  */
 export const beforeBreadcrumbHook = (
-  breadcrumb: any,
-  _hint?: any
-): any | null => {
+  breadcrumb: SentryBreadcrumb,
+  _hint?: Record<string, unknown>
+): SentryBreadcrumb | null => {
   try {
     // Scrub message if present
     if (breadcrumb.message) {
@@ -436,20 +484,25 @@ export const beforeBreadcrumbHook = (
 
     // Scrub data object if present
     if (breadcrumb.data) {
-      breadcrumb.data = scrubObjectData(breadcrumb.data);
+      breadcrumb.data = scrubObjectData(breadcrumb.data) as Record<
+        string,
+        unknown
+      >;
     }
 
     // Scrub HTTP request data in breadcrumbs
     if (breadcrumb.type === 'http') {
       // Redact sensitive headers
       if (breadcrumb.data?.headers) {
-        redactSensitiveHeaders(breadcrumb.data.headers);
+        redactSensitiveHeaders(
+          breadcrumb.data.headers as Record<string, unknown>
+        );
       }
 
       // Drop request bodies for auth/profile endpoints
-      if (breadcrumb.data?.url) {
+      if (breadcrumb.data && breadcrumb.data.url) {
         const isAuthEndpoint = AUTH_ENDPOINT_PATTERNS.some((pattern) =>
-          breadcrumb.data.url.includes(pattern)
+          String(breadcrumb.data?.url).includes(pattern)
         );
 
         if (isAuthEndpoint && breadcrumb.data.body) {

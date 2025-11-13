@@ -7,6 +7,10 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import type { PlaybookStep } from '@/types/playbook';
+
+import type { TemplateComment } from '../../api/templates/types';
+
 export interface AdoptTemplateOptions {
   templateId: string;
   plantId: string;
@@ -33,7 +37,7 @@ export interface AdoptedPlaybook {
   name: string;
   setup: string;
   locale: string;
-  steps: any[];
+  steps: PlaybookStep[];
   phaseOrder: string[];
   customized: boolean;
   adoptedAt: string;
@@ -71,7 +75,7 @@ export class TemplateAdoptionService {
   }
 
   private applyCustomizations(
-    steps: any[],
+    steps: PlaybookStep[],
     customizations?: AdoptTemplateOptions['customizations']
   ) {
     let modifiedSteps = [...steps];
@@ -252,7 +256,7 @@ export class TemplateAdoptionService {
   async getTemplateComments(
     templateId: string,
     options?: { limit?: number; offset?: number }
-  ): Promise<any[]> {
+  ): Promise<TemplateComment[]> {
     const { limit = 20, offset = 0 } = options || {};
 
     const { data, error } = await this.supabase
@@ -267,6 +271,14 @@ export class TemplateAdoptionService {
       throw new Error(`Failed to get comments: ${error.message}`);
     }
 
-    return data || [];
+    return (data || []).map((row) => ({
+      id: row.id,
+      templateId: row.template_id,
+      authorId: row.user_id,
+      content: row.comment,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      userHandle: row.user_handle,
+    }));
   }
 }

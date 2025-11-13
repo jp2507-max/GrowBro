@@ -12,6 +12,7 @@
 import { NoopAnalytics } from '@/lib/analytics';
 import { getItem } from '@/lib/storage';
 import {
+  type SyncErrorCode,
   trackCheckpointAge,
   trackPendingChanges,
   trackSyncFailure,
@@ -103,11 +104,19 @@ export async function performSync(
     // Track failure
     if (trackAnalytics) {
       const errorCategory = categorizeSyncError(error);
-      await trackSyncFailure(
-        'total',
-        errorCategory.code as any,
-        errorCategory.message
-      );
+      // Map error code to SyncErrorCode type
+      const syncErrorCode: SyncErrorCode =
+        typeof errorCategory.code === 'string' &&
+        [
+          'network',
+          'timeout',
+          'conflict',
+          'schema_mismatch',
+          'permission',
+        ].includes(errorCategory.code)
+          ? (errorCategory.code as SyncErrorCode)
+          : 'unknown';
+      await trackSyncFailure('total', syncErrorCode, errorCategory.message);
     }
 
     throw error;

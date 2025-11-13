@@ -4,6 +4,7 @@ import { DateTime } from 'luxon';
 import { createTask } from '@/lib/task-manager';
 import { getTemplate } from '@/lib/template-registry';
 import { database } from '@/lib/watermelon';
+import { type TaskModel } from '@/lib/watermelon-models/task';
 import type { TemplatePreview, TemplatePreviewTask } from '@/types/templates';
 
 type ApplyTemplateInput = {
@@ -152,12 +153,12 @@ async function isAlreadyApplied(
   templateId: string,
   idempotencyKey?: string
 ): Promise<boolean> {
-  const tasks = database.collections.get('tasks' as any) as any;
-  const rows = (await tasks.query().fetch()) as any[];
+  const tasks = database.collections.get<TaskModel>('tasks');
+  const rows = await tasks.query().fetch();
   return rows.some((r) => {
-    const meta = (r as any).metadata ?? {};
+    const meta = r.metadata ?? {};
     return (
-      (r as any).plantId === plantId &&
+      r.plantId === plantId &&
       meta.templateId === templateId &&
       (idempotencyKey ? meta.idempotencyKey === idempotencyKey : true)
     );
@@ -199,12 +200,12 @@ export async function applyTemplate(
     return created;
   } catch (error) {
     // rollback on partial failure
-    const tasks = database.collections.get('tasks' as any) as any;
+    const tasks = database.collections.get<TaskModel>('tasks');
     await database.write(async () => {
       for (const id of createdIds) {
         try {
           const t = await tasks.find(id);
-          await (t as any).markAsDeleted();
+          await t.markAsDeleted();
         } catch {
           // ignore
         }
@@ -219,26 +220,26 @@ export async function bulkShiftTasks(
   dayOffset: number
 ): Promise<string[]> {
   if (dayOffset === 0 || taskIds.length === 0) return [];
-  const tasks = database.collections.get('tasks' as any) as any;
+  const tasks = database.collections.get<TaskModel>('tasks');
   const shifted: string[] = [];
   await database.write(async () => {
     for (const id of taskIds) {
       const model = await tasks.find(id);
-      await (model as any).update((rec: any) => {
-        const tz = (rec as any).timezone as string;
-        const local = DateTime.fromISO((rec as any).dueAtLocal, {
+      await model.update((rec) => {
+        const tz = rec.timezone;
+        const local = DateTime.fromISO(rec.dueAtLocal, {
           zone: tz,
         }).plus({ days: dayOffset });
-        (rec as any).dueAtLocal = local.toISO();
-        (rec as any).dueAtUtc = local.toUTC().toISO();
-        if ((rec as any).reminderAtLocal) {
-          const rLocal = DateTime.fromISO((rec as any).reminderAtLocal, {
+        rec.dueAtLocal = local.toISO() ?? rec.dueAtLocal;
+        rec.dueAtUtc = local.toUTC().toISO() ?? rec.dueAtUtc;
+        if (rec.reminderAtLocal) {
+          const rLocal = DateTime.fromISO(rec.reminderAtLocal, {
             zone: tz,
           }).plus({ days: dayOffset });
-          (rec as any).reminderAtLocal = rLocal.toISO();
-          (rec as any).reminderAtUtc = rLocal.toUTC().toISO();
+          rec.reminderAtLocal = rLocal.toISO() ?? rec.reminderAtLocal;
+          rec.reminderAtUtc = rLocal.toUTC().toISO() ?? rec.reminderAtUtc;
         }
-        (rec as any).updatedAt = new Date();
+        rec.updatedAt = new Date();
       });
       shifted.push(id);
     }
@@ -262,35 +263,35 @@ type BulkShiftSnapshot = {
 
 const bulkShiftUndoStore = new Map<string, BulkShiftSnapshot>();
 
+type BulkShiftPreviewItem = {
+  id: string;
+  before: {
+    dueAtLocal: string;
+    dueAtUtc: string;
+    reminderAtLocal?: string | null;
+    reminderAtUtc?: string | null;
+  };
+  after: {
+    dueAtLocal: string;
+    dueAtUtc: string;
+    reminderAtLocal?: string | null;
+    reminderAtUtc?: string | null;
+  };
+};
+
 export async function previewBulkShift(
   taskIds: string[],
   dayOffset: number
-): Promise<
-  {
-    id: string;
-    before: {
-      dueAtLocal: string;
-      dueAtUtc: string;
-      reminderAtLocal?: string | null;
-      reminderAtUtc?: string | null;
-    };
-    after: {
-      dueAtLocal: string;
-      dueAtUtc: string;
-      reminderAtLocal?: string | null;
-      reminderAtUtc?: string | null;
-    };
-  }[]
-> {
+): Promise<BulkShiftPreviewItem[]> {
   if (dayOffset === 0 || taskIds.length === 0) return [];
-  const tasks = database.collections.get('tasks' as any) as any;
-  const rows = (await tasks.query().fetch()) as any[];
-  const byId = new Map(rows.map((r: any) => [r.id, r]));
-  const out: any[] = [];
+  const tasks = database.collections.get<TaskModel>('tasks');
+  const rows = await tasks.query().fetch();
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const out: BulkShiftPreviewItem[] = [];
   for (const id of taskIds) {
-    const rec: any = byId.get(id);
+    const rec = byId.get(id);
     if (!rec) continue;
-    const tz = rec.timezone as string;
+    const tz = rec.timezone;
     const dueLocal = DateTime.fromISO(rec.dueAtLocal, { zone: tz });
     const afterDueLocal = dueLocal.plus({ days: dayOffset });
     const before = {
@@ -300,15 +301,17 @@ export async function previewBulkShift(
       reminderAtUtc: rec.reminderAtUtc ?? null,
     };
     const after = {
-      dueAtLocal: afterDueLocal.toISO(),
-      dueAtUtc: afterDueLocal.toUTC().toISO(),
+      dueAtLocal: afterDueLocal.toISO() ?? rec.dueAtLocal,
+      dueAtUtc: afterDueLocal.toUTC().toISO() ?? rec.dueAtUtc,
       reminderAtLocal: rec.reminderAtLocal
-        ? DateTime.fromISO(rec.reminderAtLocal, { zone: tz })
+        ? (DateTime.fromISO(rec.reminderAtLocal, { zone: tz })
             .plus({ days: dayOffset })
-            .toISO()
+            .toISO() ?? null)
         : null,
       reminderAtUtc: rec.reminderAtUtc
-        ? DateTime.fromISO(rec.reminderAtUtc).plus({ days: dayOffset }).toISO()
+        ? (DateTime.fromISO(rec.reminderAtUtc)
+            .plus({ days: dayOffset })
+            .toISO() ?? null)
         : null,
     };
     out.push({ id, before, after });
@@ -323,7 +326,15 @@ export async function applyBulkShiftWithUndo(
 ): Promise<{ operationId: string; shiftedIds: string[] }> {
   const preview = await previewBulkShift(taskIds, dayOffset);
   const opId = `bulkshift:${Date.now()}:${Math.random().toString(36).slice(2)}`;
-  const before = new Map<string, any>();
+  const before = new Map<
+    string,
+    {
+      dueAtLocal: string;
+      dueAtUtc: string;
+      reminderAtLocal?: string | null;
+      reminderAtUtc?: string | null;
+    }
+  >();
   for (const p of preview) before.set(p.id, p.before);
   const snapshot: BulkShiftSnapshot = {
     expiresAt: Date.now() + ttlMs,
@@ -345,18 +356,18 @@ export async function undoBulkShift(operationId: string): Promise<string[]> {
     bulkShiftUndoStore.delete(operationId);
     return [];
   }
-  const tasks = database.collections.get('tasks' as any) as any;
+  const tasks = database.collections.get<TaskModel>('tasks');
   const restored: string[] = [];
   await database.write(async () => {
     for (const [id, before] of snapshot.before.entries()) {
       try {
         const model = await tasks.find(id);
-        await (model as any).update((rec: any) => {
-          (rec as any).dueAtLocal = before.dueAtLocal;
-          (rec as any).dueAtUtc = before.dueAtUtc;
-          (rec as any).reminderAtLocal = before.reminderAtLocal;
-          (rec as any).reminderAtUtc = before.reminderAtUtc;
-          (rec as any).updatedAt = new Date();
+        await model.update((rec) => {
+          rec.dueAtLocal = before.dueAtLocal;
+          rec.dueAtUtc = before.dueAtUtc;
+          rec.reminderAtLocal = before.reminderAtLocal ?? undefined;
+          rec.reminderAtUtc = before.reminderAtUtc ?? undefined;
+          rec.updatedAt = new Date();
         });
         restored.push(id);
       } catch {

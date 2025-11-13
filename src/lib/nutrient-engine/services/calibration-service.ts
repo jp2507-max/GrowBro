@@ -9,6 +9,7 @@
 
 import type { Database } from '@nozbe/watermelondb';
 import { Q } from '@nozbe/watermelondb';
+import type { Observable } from '@nozbe/watermelondb/utils/rx';
 
 import { database } from '@/lib/watermelon';
 import type { CalibrationModel } from '@/lib/watermelon-models/calibration';
@@ -304,7 +305,7 @@ export function observeActiveCalibration(
   meterId: string,
   type: CalibrationType,
   db?: Database
-): any {
+): Observable<CalibrationModel[]> {
   const db2 = db || database;
 
   return db2
@@ -328,7 +329,7 @@ export function observeActiveCalibration(
 export function observeExpiringSoonCalibrations(
   days: number = 7,
   db?: Database
-): any {
+): Observable<CalibrationModel[]> {
   const db2 = db || database;
   const now = Date.now();
   const futureThreshold = now + days * 24 * 60 * 60 * 1000;

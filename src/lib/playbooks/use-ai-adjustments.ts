@@ -7,6 +7,7 @@ import type {
   HelpfulnessVote,
 } from '@/types/ai-adjustments';
 
+import type { AnalyticsClient } from '../analytics';
 import { getAnalyticsClient } from '../analytics-registry';
 import { AIAdjustmentService } from './ai-adjustment-service';
 
@@ -48,7 +49,7 @@ function useLoadSuggestions(service: AIAdjustmentService, plantId: string) {
 
 function useGenerateSuggestion(options: {
   service: AIAdjustmentService;
-  analytics: any;
+  analytics: AnalyticsClient;
   setters: {
     setSuggestions: React.Dispatch<
       React.SetStateAction<AdjustmentSuggestion[]>
@@ -89,7 +90,7 @@ function useAcceptSuggestion(options: {
   service: AIAdjustmentService;
   suggestions: AdjustmentSuggestion[];
   acceptedSuggestions: AdjustmentSuggestion[];
-  analytics: any;
+  analytics: AnalyticsClient;
   setters: {
     setAcceptedSuggestions: React.Dispatch<
       React.SetStateAction<AdjustmentSuggestion[]>
@@ -138,7 +139,7 @@ function useDeclineSuggestion(options: {
   service: AIAdjustmentService;
   suggestions: AdjustmentSuggestion[];
   acceptedSuggestions: AdjustmentSuggestion[];
-  analytics: any;
+  analytics: AnalyticsClient;
   setters: {
     setAcceptedSuggestions: React.Dispatch<
       React.SetStateAction<AdjustmentSuggestion[]>

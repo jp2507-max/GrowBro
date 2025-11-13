@@ -57,7 +57,10 @@ export function setupSyncTriggers(
   return () => {
     disposed = true;
     try {
-      (appStateSub as any)?.remove?.();
+      // AppState.addEventListener returns an EventSubscription with remove()
+      if (appStateSub && 'remove' in appStateSub) {
+        appStateSub.remove();
+      }
     } catch {}
     try {
       removeNet?.();

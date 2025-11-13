@@ -3,7 +3,7 @@ import { stripPII } from './strip-pii';
 
 describe('stripPII', () => {
   it('removes top-level ids and PII from text and attachments', () => {
-    const out = stripPII(fixture);
+    const out = stripPII(fixture) as any;
     // top-level ids removed
     expect(out.userId).toBeUndefined();
     expect(out.accountId).toBeUndefined();

@@ -7,6 +7,7 @@
 
 import type { Database } from '@nozbe/watermelondb';
 import { Q } from '@nozbe/watermelondb';
+import type { Observable } from '@nozbe/watermelondb/utils/rx';
 
 import { database } from '@/lib/watermelon';
 import type { DeviationAlertModel } from '@/lib/watermelon-models/deviation-alert';
@@ -295,7 +296,10 @@ export async function getOfflineAlerts(): Promise<DeviationAlertModel[]> {
  * Observes active alerts for a reservoir (reactive query)
  * Use this in React components with useObservable
  */
-export function observeActiveAlerts(reservoirId: string, db?: Database): any {
+export function observeActiveAlerts(
+  reservoirId: string,
+  db?: Database
+): Observable<DeviationAlertModel[]> {
   const db2 = db || database;
 
   // Note: This is a simplified version. For production, you'd need to properly

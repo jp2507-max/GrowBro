@@ -366,7 +366,7 @@ CREATE TABLE harvest_audits (
   id UUID PRIMARY KEY,
   harvest_id UUID NOT NULL,
   user_id UUID NOT NULL,
-  operation_type TEXT NOT NULL, -- 'stage_advance' | 'override_skip' | 'revert' | 'undo'
+  operation_type TEXT NOT NULL, -- 'stage_advance' | 'stage_undo' | 'stage_revert' | 'stage_override_skip' | 'sync_rejected'
   from_stage TEXT,
   to_stage TEXT,
   reason TEXT,

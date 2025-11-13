@@ -33,16 +33,16 @@ describe('Sentry PII Leak Sentinel', () => {
       const scrubbed = beforeSendHook(event, {});
 
       expect(scrubbed).not.toBeNull();
-      expect(scrubbed?.exception?.values[0].value).not.toContain(
+      expect(scrubbed?.exception?.values?.[0].value).not.toContain(
         'test@example.com'
       );
-      expect(scrubbed?.exception?.values[0].value).toContain(
+      expect(scrubbed?.exception?.values?.[0].value).toContain(
         '[EMAIL_REDACTED]'
       );
-      expect(scrubbed?.exception?.values[1].value).not.toContain(
+      expect(scrubbed?.exception?.values?.[1].value).not.toContain(
         'user.name+tag@domain.co.uk'
       );
-      expect(scrubbed?.exception?.values[1].value).toContain(
+      expect(scrubbed?.exception?.values?.[1].value).toContain(
         '[EMAIL_REDACTED]'
       );
     });
@@ -60,9 +60,9 @@ describe('Sentry PII Leak Sentinel', () => {
       const scrubbed = beforeSendHook(event, {});
 
       expect(scrubbed).not.toBeNull();
-      expect(scrubbed?.breadcrumbs[0].message).not.toContain('192.168.1.1');
-      expect(scrubbed?.breadcrumbs[0].message).toContain('[IP_REDACTED]');
-      expect(JSON.stringify(scrubbed?.breadcrumbs[0].data)).not.toContain(
+      expect(scrubbed?.breadcrumbs?.[0].message).not.toContain('192.168.1.1');
+      expect(scrubbed?.breadcrumbs?.[0].message).toContain('[IP_REDACTED]');
+      expect(JSON.stringify(scrubbed?.breadcrumbs?.[0].data)).not.toContain(
         '10.0.0.5'
       );
     });
@@ -82,8 +82,8 @@ describe('Sentry PII Leak Sentinel', () => {
       const scrubbed = beforeSendHook(event, {});
 
       expect(scrubbed).not.toBeNull();
-      expect(scrubbed?.exception?.values[0].value).not.toContain('2001:0db8');
-      expect(scrubbed?.exception?.values[0].value).toContain('[IP_REDACTED]');
+      expect(scrubbed?.exception?.values?.[0].value).not.toContain('2001:0db8');
+      expect(scrubbed?.exception?.values?.[0].value).toContain('[IP_REDACTED]');
     });
 
     test('scrubs JWT tokens from exception messages', () => {
@@ -110,8 +110,10 @@ describe('Sentry PII Leak Sentinel', () => {
       const scrubbed = beforeSendHook(event, {});
 
       expect(scrubbed).not.toBeNull();
-      expect(scrubbed?.exception?.values[0].value).not.toContain(jwtToken);
-      expect(scrubbed?.exception?.values[0].value).toContain('[JWT_REDACTED]');
+      expect(scrubbed?.exception?.values?.[0].value).not.toContain(jwtToken);
+      expect(scrubbed?.exception?.values?.[0].value).toContain(
+        '[JWT_REDACTED]'
+      );
     });
 
     test('scrubs UUIDs from extra data', () => {
@@ -145,10 +147,10 @@ describe('Sentry PII Leak Sentinel', () => {
       const scrubbed = beforeSendHook(event, {});
 
       expect(scrubbed).not.toBeNull();
-      expect(scrubbed?.breadcrumbs[0].message).not.toContain('555-123-4567');
-      expect(scrubbed?.breadcrumbs[0].message).toContain('[PHONE_REDACTED]');
-      expect(scrubbed?.breadcrumbs[1].message).not.toContain('555) 987-6543');
-      expect(scrubbed?.breadcrumbs[1].message).toContain('[PHONE_REDACTED]');
+      expect(scrubbed?.breadcrumbs?.[0].message).not.toContain('555-123-4567');
+      expect(scrubbed?.breadcrumbs?.[0].message).toContain('[PHONE_REDACTED]');
+      expect(scrubbed?.breadcrumbs?.[1].message).not.toContain('555) 987-6543');
+      expect(scrubbed?.breadcrumbs?.[1].message).toContain('[PHONE_REDACTED]');
     });
 
     test('redacts Authorization headers from request context', () => {
@@ -399,8 +401,10 @@ describe('Sentry PII Leak Sentinel', () => {
         const scrubbed = beforeSendHook(event, {});
 
         expect(scrubbed).not.toBeNull();
-        expect(scrubbed?.exception?.values[0].value).not.toContain(pattern);
-        expect(scrubbed?.exception?.values[0].value).toMatch(/\[.*_REDACTED\]/);
+        expect(scrubbed?.exception?.values?.[0].value).not.toContain(pattern);
+        expect(scrubbed?.exception?.values?.[0].value).toMatch(
+          /\[.*_REDACTED\]/
+        );
       });
     });
   });

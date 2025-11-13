@@ -40,6 +40,22 @@ export interface MigrationResult {
 }
 
 /**
+ * Database migration record
+ */
+interface DbMigrationRecord {
+  id: string;
+  name: string;
+  version: string;
+  description: string;
+  up: string;
+  down: string;
+  status: MigrationStatus;
+  checksum: string;
+  applied_at?: string;
+  rolled_back_at?: string;
+}
+
+/**
  * Migration Manager
  */
 export class MigrationManager {
@@ -311,7 +327,7 @@ export class MigrationManager {
   /**
    * Map database record to Migration
    */
-  private mapMigrationRecord(record: any): Migration {
+  private mapMigrationRecord(record: DbMigrationRecord): Migration {
     return {
       id: record.id,
       name: record.name,

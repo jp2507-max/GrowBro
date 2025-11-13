@@ -122,7 +122,7 @@ export class AuditRetentionManager {
    * @returns Number of records anonymized
    */
   private async anonymizePIIEvents(
-    events: { id: string; metadata?: any }[]
+    events: { id: string; metadata?: Record<string, unknown> }[]
   ): Promise<number> {
     if (events.length === 0) {
       return 0;

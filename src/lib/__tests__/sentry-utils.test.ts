@@ -129,20 +129,24 @@ test('beforeSendHook scrubs PII from strings in event fields', () => {
     expect(scrubbed).not.toBeNull();
 
     // Exception value scrubbed
-    expect(scrubbed!.exception.values[0].value).not.toContain('@');
-    expect(scrubbed!.exception.values[0].value).toContain('[EMAIL_REDACTED]');
-    expect(scrubbed!.exception.values[0].value).toContain('[CARD_REDACTED]');
+    expect(scrubbed!.exception?.values?.[0].value).not.toContain('@');
+    expect(scrubbed!.exception?.values?.[0].value).toContain(
+      '[EMAIL_REDACTED]'
+    );
+    expect(scrubbed!.exception?.values?.[0].value).toContain('[CARD_REDACTED]');
 
     // Breadcrumbs scrubbed
-    expect(scrubbed!.breadcrumbs[0].message).toContain('[PHONE_REDACTED]');
-    expect(scrubbed!.breadcrumbs[0].data.address).toBe('[ADDRESS_REDACTED]');
-    expect(String(scrubbed!.breadcrumbs[0].data.ssn)).toContain(
+    expect(scrubbed!.breadcrumbs?.[0].message).toContain('[PHONE_REDACTED]');
+    expect(scrubbed!.breadcrumbs?.[0].data?.address).toBe('[ADDRESS_REDACTED]');
+    expect(String(scrubbed!.breadcrumbs?.[0].data?.ssn)).toContain(
       '[SSN_REDACTED]'
     );
 
     // Extra and contexts scrubbed recursively
-    expect(String(scrubbed!.extra.email)).not.toContain('@');
-    expect(String(scrubbed!.contexts.user.phone)).toContain('[PHONE_REDACTED]');
+    expect(String(scrubbed!.extra?.email)).not.toContain('@');
+    expect(String(scrubbed!.contexts?.user?.phone)).toContain(
+      '[PHONE_REDACTED]'
+    );
 
     // user.email removed when personalizedData is false; id is redacted
     expect(scrubbed!.user).toEqual({ id: '[USER_ID_REDACTED]' });

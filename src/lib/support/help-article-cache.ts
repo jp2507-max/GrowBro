@@ -61,18 +61,20 @@ export async function getCachedArticles(
 
     const records = await query.fetch();
 
-    return records.map((record: any) => ({
-      id: record.articleId,
-      title: record.title,
-      bodyMarkdown: record.bodyMarkdown,
-      category: validateHelpCategory(record.category),
-      locale: record.locale,
-      tags: record.tags,
-      viewCount: record.viewCount,
-      helpfulCount: record.helpfulCount,
-      notHelpfulCount: record.notHelpfulCount,
-      lastUpdated: record.lastUpdated,
-      expiresAt: record.expiresAt,
+    return records.map((record) => ({
+      id: (record as HelpArticleCacheModel).articleId,
+      title: (record as HelpArticleCacheModel).title,
+      bodyMarkdown: (record as HelpArticleCacheModel).bodyMarkdown,
+      category: validateHelpCategory(
+        (record as HelpArticleCacheModel).category
+      ),
+      locale: (record as HelpArticleCacheModel).locale,
+      tags: (record as HelpArticleCacheModel).tags,
+      viewCount: (record as HelpArticleCacheModel).viewCount,
+      helpfulCount: (record as HelpArticleCacheModel).helpfulCount,
+      notHelpfulCount: (record as HelpArticleCacheModel).notHelpfulCount,
+      lastUpdated: (record as HelpArticleCacheModel).lastUpdated,
+      expiresAt: (record as HelpArticleCacheModel).expiresAt,
     }));
   } catch (error) {
     console.error('Failed to get cached articles:', error);
@@ -138,31 +140,33 @@ export async function cacheArticles(
 
         if (existing.length > 0) {
           // Update existing
-          await existing[0].update((record: any) => {
-            record.title = article.title;
-            record.bodyMarkdown = article.bodyMarkdown;
-            record.category = article.category;
-            record.setTags(article.tags);
-            record.viewCount = article.viewCount;
-            record.helpfulCount = article.helpfulCount;
-            record.notHelpfulCount = article.notHelpfulCount;
-            record.lastUpdated = article.lastUpdated;
-            record.expiresAt = article.expiresAt;
+          await existing[0].update((record) => {
+            const r = record as HelpArticleCacheModel;
+            r.title = article.title;
+            r.bodyMarkdown = article.bodyMarkdown;
+            r.category = article.category;
+            r.setTags(article.tags);
+            r.viewCount = article.viewCount;
+            r.helpfulCount = article.helpfulCount;
+            r.notHelpfulCount = article.notHelpfulCount;
+            r.lastUpdated = article.lastUpdated;
+            r.expiresAt = article.expiresAt;
           });
         } else {
           // Create new
-          await collection.create((record: any) => {
-            record.articleId = article.id;
-            record.title = article.title;
-            record.bodyMarkdown = article.bodyMarkdown;
-            record.category = article.category;
-            record.locale = locale;
-            record.setTags(article.tags);
-            record.viewCount = article.viewCount;
-            record.helpfulCount = article.helpfulCount;
-            record.notHelpfulCount = article.notHelpfulCount;
-            record.lastUpdated = article.lastUpdated;
-            record.expiresAt = article.expiresAt;
+          await collection.create((record) => {
+            const r = record as HelpArticleCacheModel;
+            r.articleId = article.id;
+            r.title = article.title;
+            r.bodyMarkdown = article.bodyMarkdown;
+            r.category = article.category;
+            r.locale = locale;
+            r.setTags(article.tags);
+            r.viewCount = article.viewCount;
+            r.helpfulCount = article.helpfulCount;
+            r.notHelpfulCount = article.notHelpfulCount;
+            r.lastUpdated = article.lastUpdated;
+            r.expiresAt = article.expiresAt;
           });
         }
       }

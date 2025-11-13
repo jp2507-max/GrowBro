@@ -25,6 +25,29 @@ import {
   requiresImmediateBan,
 } from './enforcement-config';
 
+/**
+ * Database record type for repeat_offender_records table
+ */
+type DbRepeatOffenderRecord = {
+  id: string;
+  user_id: string;
+  violation_type: string;
+  violation_count: number;
+  escalation_level: EscalationLevel;
+  last_violation_date?: string;
+  suspension_history: {
+    start: string;
+    end?: string;
+    reason: string;
+    duration_days: number;
+  }[];
+  manifestly_unfounded_reports: number;
+  status: OffenderStatus;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+};
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -190,7 +213,7 @@ export class RepeatOffenderService {
     newEscalationLevel: EscalationLevel;
     suspensionApplied?: SuspensionRecord;
     newStatus: string;
-  }): Promise<any> {
+  }): Promise<DbRepeatOffenderRecord> {
     const {
       record,
       newViolationCount,
@@ -397,7 +420,7 @@ export class RepeatOffenderService {
     newEscalationLevel: EscalationLevel;
     newStatus: string;
     suspensionHistory: SuspensionRecord[];
-  }): Promise<any> {
+  }): Promise<DbRepeatOffenderRecord> {
     const {
       record,
       newCount,
@@ -787,7 +810,7 @@ export class RepeatOffenderService {
   /**
    * Parse database record to TypeScript type
    */
-  private parseRecord(data: any): RepeatOffenderRecord {
+  private parseRecord(data: DbRepeatOffenderRecord): RepeatOffenderRecord {
     return {
       id: data.id,
       user_id: data.user_id,
@@ -798,7 +821,7 @@ export class RepeatOffenderService {
         ? new Date(data.last_violation_date)
         : undefined,
       suspension_history: Array.isArray(data.suspension_history)
-        ? data.suspension_history.map((s: any) => ({
+        ? data.suspension_history.map((s) => ({
             start: new Date(s.start),
             end: s.end ? new Date(s.end) : undefined,
             reason: s.reason,

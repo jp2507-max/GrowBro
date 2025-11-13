@@ -5,6 +5,10 @@ import { canSyncLargeFiles } from '@/lib/sync/network-manager';
 import type { PhotoVariant } from '@/lib/uploads/harvest-photo-upload';
 import { uploadImageWithProgress } from '@/lib/uploads/image-upload';
 import { database } from '@/lib/watermelon';
+import type { HarvestModel } from '@/lib/watermelon-models/harvest';
+import type { ImageUploadQueueModel } from '@/lib/watermelon-models/image-upload-queue';
+import type { TaskModel } from '@/lib/watermelon-models/task';
+import type { TaskMetadata } from '@/types';
 
 type QueueItemRaw = {
   id: string;
@@ -88,21 +92,22 @@ export async function enqueueImage(params: {
       mimeType: params.mimeType,
     });
 
-  const coll = database.collections.get('image_upload_queue' as any);
+  const coll =
+    database.collections.get<ImageUploadQueueModel>('image_upload_queue');
   await database.write(async () =>
-    (coll as any).create((rec: any) => {
+    coll.create((rec) => {
       rec.localUri = params.localUri;
-      rec.remotePath = null;
-      rec.taskId = params.taskId ?? null;
+      rec.remotePath = undefined;
+      rec.taskId = params.taskId ?? undefined;
       rec.plantId = params.plantId;
-      rec.harvestId = null;
-      rec.variant = null;
-      rec.hash = null;
-      rec.extension = null;
+      rec.harvestId = undefined;
+      rec.variant = undefined;
+      rec.hash = undefined;
+      rec.extension = undefined;
       rec.filename = finalFilename;
       rec.mimeType = params.mimeType ?? 'image/jpeg';
       rec.status = 'pending';
-      rec.lastError = null;
+      rec.lastError = undefined;
       rec.createdAt = new Date();
       rec.updatedAt = new Date();
     })
@@ -125,15 +130,16 @@ export async function enqueueHarvestPhotoVariant(params: {
   extension: string;
   mimeType: string;
 }): Promise<string> {
-  const coll = database.collections.get('image_upload_queue' as any);
+  const coll =
+    database.collections.get<ImageUploadQueueModel>('image_upload_queue');
   let queueId = '';
 
   await database.write(async () => {
-    const rec = await (coll as any).create((r: any) => {
+    const rec = await coll.create((r) => {
       r.localUri = params.localUri;
-      r.remotePath = null;
-      r.taskId = null;
-      r.plantId = null;
+      r.remotePath = undefined;
+      r.taskId = undefined;
+      r.plantId = undefined;
       r.harvestId = params.harvestId;
       r.variant = params.variant;
       r.hash = params.hash;
@@ -141,7 +147,7 @@ export async function enqueueHarvestPhotoVariant(params: {
       r.filename = `${params.hash}_${params.variant}.${params.extension}`;
       r.mimeType = params.mimeType;
       r.status = 'pending';
-      r.lastError = null;
+      r.lastError = undefined;
       r.createdAt = new Date();
       r.updatedAt = new Date();
     });
@@ -164,24 +170,20 @@ async function updateHarvestWithRemotePath(
   remotePath: string
 ): Promise<void> {
   try {
-    const coll = database.collections.get('harvests' as any);
-    const harvest = await (coll as any).find(harvestId);
+    const coll = database.collections.get<HarvestModel>('harvests');
+    const harvest = await coll.find(harvestId);
 
     await database.write(async () =>
-      harvest.update((rec: any) => {
+      harvest.update((rec) => {
         // photos is stored as JSON array
-        const photos = (rec.photos ?? []) as {
-          variant: string;
-          localUri: string;
-          remotePath?: string;
-        }[];
+        const photos = rec.photos ?? [];
 
         // Find and update the matching variant
         const updated = photos.map((photo) =>
           photo.variant === variant ? { ...photo, remotePath } : photo
         );
 
-        rec.photos = updated as any;
+        rec.photos = updated;
         rec.updatedAt = new Date();
       })
     );
@@ -202,8 +204,9 @@ async function updateHarvestWithRemotePath(
 // Suggested improvement: Use WatermelonDB Q.where() queries to filter status='pending'
 // and apply time-based conditions directly in the query before fetching
 async function fetchDueBatch(limit = 5): Promise<QueueItemRaw[]> {
-  const coll = database.collections.get('image_upload_queue' as any);
-  const rows = await (coll as any)
+  const coll =
+    database.collections.get<ImageUploadQueueModel>('image_upload_queue');
+  const rows = await coll
     .query(
       Q.where('status', 'pending'),
       Q.sortBy('next_attempt_at', 'asc'),
@@ -211,17 +214,36 @@ async function fetchDueBatch(limit = 5): Promise<QueueItemRaw[]> {
     )
     .fetch();
   const now = Date.now();
-  const due: QueueItemRaw[] = (rows as any[])
-    .map((r) => r._raw as QueueItemRaw)
-    .filter((r) => !r.nextAttemptAt || r.nextAttemptAt <= now);
+  const due: QueueItemRaw[] = rows
+    .filter((row) => !row.nextAttemptAt || row.nextAttemptAt <= now)
+    .map((row) => ({
+      id: row.id,
+      localUri: row.localUri,
+      remotePath: row.remotePath ?? null,
+      taskId: row.taskId ?? null,
+      plantId: row.plantId ?? null,
+      harvestId: row.harvestId ?? null,
+      variant: row.variant as PhotoVariant | null,
+      hash: row.hash ?? null,
+      extension: row.extension ?? null,
+      filename: row.filename ?? null,
+      mimeType: row.mimeType ?? null,
+      status: row.status,
+      retryCount: row.retryCount ?? null,
+      lastError: row.lastError ?? null,
+      nextAttemptAt: row.nextAttemptAt ?? null,
+      createdAt: row.createdAt.getTime(),
+      updatedAt: row.updatedAt.getTime(),
+    }));
   return due;
 }
 
 async function markUploading(id: string): Promise<void> {
-  const coll = database.collections.get('image_upload_queue' as any);
-  const row = await (coll as any).find(id);
+  const coll =
+    database.collections.get<ImageUploadQueueModel>('image_upload_queue');
+  const row = await coll.find(id);
   await database.write(async () =>
-    row.update((rec: any) => {
+    row.update((rec) => {
       rec.status = 'uploading';
       rec.updatedAt = new Date();
     })
@@ -229,10 +251,11 @@ async function markUploading(id: string): Promise<void> {
 }
 
 async function markCompleted(id: string, remotePath: string): Promise<void> {
-  const coll = database.collections.get('image_upload_queue' as any);
-  const row = await (coll as any).find(id);
+  const coll =
+    database.collections.get<ImageUploadQueueModel>('image_upload_queue');
+  const row = await coll.find(id);
   await database.write(async () =>
-    row.update((rec: any) => {
+    row.update((rec) => {
       rec.status = 'completed';
       rec.remotePath = remotePath;
       rec.updatedAt = new Date();
@@ -245,12 +268,13 @@ async function markFailure(
   attempt: number,
   err: unknown
 ): Promise<void> {
-  const coll = database.collections.get('image_upload_queue' as any);
-  const row = await (coll as any).find(id);
+  const coll =
+    database.collections.get<ImageUploadQueueModel>('image_upload_queue');
+  const row = await coll.find(id);
   const nextDelay = computeBackoffMs(attempt, 1000, 15 * 60 * 1000);
   const nextAt = Date.now() + nextDelay;
   await database.write(async () =>
-    row.update((rec: any) => {
+    row.update((rec) => {
       rec.status = 'pending';
       rec.retryCount = attempt;
       rec.lastError = err instanceof Error ? err.message : String(err);
@@ -261,10 +285,11 @@ async function markFailure(
 }
 
 async function markFailed(id: string, reason: string): Promise<void> {
-  const coll = database.collections.get('image_upload_queue' as any);
-  const row = await (coll as any).find(id);
+  const coll =
+    database.collections.get<ImageUploadQueueModel>('image_upload_queue');
+  const row = await coll.find(id);
   await database.write(async () =>
-    row.update((rec: any) => {
+    row.update((rec) => {
       rec.status = 'failed';
       rec.lastError = reason;
       rec.updatedAt = new Date();
@@ -385,12 +410,12 @@ export async function backfillTaskRemotePath(
   remotePath: string
 ): Promise<void> {
   try {
-    const coll = database.collections.get('tasks' as any);
-    const row = await (coll as any).find(taskId);
+    const coll = database.collections.get<TaskModel>('tasks');
+    const row = await coll.find(taskId);
     await database.write(async () =>
-      row.update((rec: any) => {
-        const meta = (rec.metadata ?? {}) as Record<string, unknown>;
-        rec.metadata = { ...meta, imagePath: remotePath } as any;
+      row.update((rec) => {
+        const meta = (rec.metadata ?? {}) as TaskMetadata;
+        rec.metadata = { ...meta, imagePath: remotePath };
         rec.updatedAt = new Date();
       })
     );

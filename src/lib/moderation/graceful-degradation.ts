@@ -41,7 +41,7 @@ export interface DegradationStrategy {
   feature: FeatureFlag;
   isCritical: boolean;
   fallbackEnabled: boolean;
-  fallbackImplementation?: () => Promise<any>;
+  fallbackImplementation?: () => Promise<unknown>;
   degradationMessage: string;
 }
 

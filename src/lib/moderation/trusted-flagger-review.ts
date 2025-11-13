@@ -6,7 +6,12 @@
  */
 
 import { supabase } from '@/lib/supabase';
-import type { TrustedFlagger } from '@/types/moderation';
+import type {
+  ContactInfo,
+  QualityMetrics,
+  TrustedFlagger,
+  TrustedFlaggerStatus,
+} from '@/types/moderation';
 
 import { AuditService } from './audit-service';
 import {
@@ -209,14 +214,28 @@ export async function sendReviewReminders(): Promise<number> {
 // Helper Functions
 // ============================================================================
 
-function mapDatabaseRowToFlagger(row: any): TrustedFlagger {
+interface DbTrustedFlaggerRow {
+  id: string;
+  organization_name: string;
+  contact_info: unknown;
+  specialization: string[];
+  status: string;
+  quality_metrics: unknown;
+  certification_date: string | null;
+  review_date: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+}
+
+function mapDatabaseRowToFlagger(row: DbTrustedFlaggerRow): TrustedFlagger {
   return {
     id: row.id,
     organization_name: row.organization_name,
-    contact_info: row.contact_info,
+    contact_info: row.contact_info as ContactInfo,
     specialization: row.specialization,
-    status: row.status,
-    quality_metrics: row.quality_metrics,
+    status: row.status as TrustedFlaggerStatus,
+    quality_metrics: row.quality_metrics as QualityMetrics,
     certification_date: row.certification_date
       ? new Date(row.certification_date)
       : null,

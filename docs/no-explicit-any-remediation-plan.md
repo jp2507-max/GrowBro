@@ -10,7 +10,7 @@
 
 | Tier        | Area                         | Approx. hits | Representative files / notes                                                                  |
 | ----------- | ---------------------------- | ------------ | --------------------------------------------------------------------------------------------- |
-| 🔥 Critical | Core schedulers & sync       | 221          | `src/lib/task-manager.ts (128)`, `src/lib/sync-engine.ts (93)`                                |
+| 🔥 Critical | Core schedulers & sync       | 0            | ✅ `src/lib/task-manager.ts`, ✅ `src/lib/sync-engine.ts`                                     |
 | 🔥 Critical | Notifications system         | 119          | `src/lib/notifications/push-service.ts`, `notification-manager.ts`, `notification-storage.ts` |
 | 🔥 Critical | Moderation & compliance      | 167          | `src/lib/moderation/*.ts`, `age-verification-service.ts`, `moderation-service.ts`             |
 | ⚠️ High     | Playbooks & AI adjustments   | 93           | `src/lib/playbooks/ai-adjustment-service.ts`, related tests                                   |
@@ -27,8 +27,8 @@ _(Counts are approximate and derived from ripgrep to unblock planning while lint
 Representative hotspots derived from `eslint-report.utf8.txt`:
 
 - **Top single files**
-  - `src/lib/task-manager.ts` (130 warnings) — scheduler payload types are entirely `any`.
-  - `src/lib/sync-engine.ts` (101) — sync job marshaling and handlers untyped.
+  - ✅ `src/lib/task-manager.ts` — cleaned.
+  - ✅ `src/lib/sync-engine.ts` — cleaned.
   - `__mocks__/@nozbe/watermelondb/index.ts` (81) — mock layer needs typed adapters to unblock tests.
   - `src/lib/task-notifications.ts` (42), `src/lib/template-manager.ts` (37), `src/lib/uploads/queue.ts` (29), `src/lib/support/ticket-queue.ts` (27), `src/lib/notifications/push-service.ts` (27), `src/lib/sentry-utils.ts` (25).
 - **Top directories**

@@ -8,6 +8,12 @@ import { translate } from '@/lib/i18n';
 import { getAndroidChannelId } from '@/lib/notifications/android-channels';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
+/**
+ * Trigger type for immediate notification presentation
+ * Expo docs allow null for immediate presentation, but TypeScript types are incorrect
+ */
+type ImmediateTrigger = { channelId: string } | null;
+
 export type CommunityNotification = {
   notification: Notification; // Expo notification object
   type: 'community.interaction' | 'community.reply' | 'community.like';
@@ -61,7 +67,7 @@ async function handleAndroidGrouping(
           body: content.body || '',
           data: content.data,
         },
-        trigger: { channelId } as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
+        trigger: { channelId } as ImmediateTrigger,
       });
       return;
     }
@@ -82,7 +88,7 @@ async function handleAndroidGrouping(
         body: `${currentCount} new ${currentCount > 1 ? 'interactions' : 'interaction'}`,
         data: { groupKey, type: 'summary' },
       },
-      trigger: { channelId } as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
+      trigger: { channelId } as ImmediateTrigger,
     });
 
     // Present individual notification
@@ -93,7 +99,7 @@ async function handleAndroidGrouping(
         body: content.body || '',
         data: { ...content.data, groupKey },
       },
-      trigger: { channelId } as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
+      trigger: { channelId } as ImmediateTrigger,
     });
   } catch (error) {
     captureCategorizedErrorSync(error, {
@@ -131,7 +137,7 @@ async function handleiOSThreading(
 
     await Notifications.scheduleNotificationAsync({
       content: notificationContent,
-      trigger: null as any, // Present immediately (TypeScript types are incorrect, null is valid per Expo docs)
+      trigger: null as ImmediateTrigger,
     });
   } catch (error) {
     captureCategorizedErrorSync(error, {

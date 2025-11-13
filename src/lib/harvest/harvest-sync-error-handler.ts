@@ -6,7 +6,7 @@
 
 import { showMessage } from 'react-native-flash-message';
 
-import { HarvestAuditStatuses } from '@/types/harvest';
+import { HarvestAuditActions, HarvestAuditStatuses } from '@/types/harvest';
 
 import { database } from '../watermelon';
 import type { HarvestModel } from '../watermelon-models/harvest';
@@ -26,7 +26,7 @@ import { ERROR_CATEGORY } from './harvest-error-types';
  */
 export async function handleHarvestSyncError(
   error: unknown,
-  t: (key: string, options?: any) => string
+  t: (key: string, options?: Record<string, unknown>) => string
 ): Promise<void> {
   const classified = classifyError(error);
   const result = handleHarvestError(error, t);
@@ -71,10 +71,9 @@ export async function attachAuditNoteForRejection(
       const harvest = await harvestsCollection.find(rejection.recordId);
 
       // Create audit entry for the rejection
-      // Note: Using STAGE_REVERT as closest semantic match for sync rejection
       await auditsCollection.create((audit) => {
         audit.harvestId = rejection.recordId;
-        audit.action = 'stage_revert' as any; // Enum doesn't have sync_rejection yet
+        audit.action = HarvestAuditActions.SYNC_REJECTED;
         audit.status = HarvestAuditStatuses.BLOCKED;
         audit.reason = auditNote;
         audit.performedAt = rejection.timestamp;

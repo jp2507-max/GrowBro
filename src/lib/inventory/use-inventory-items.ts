@@ -14,7 +14,11 @@ import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
 import React from 'react';
 
-import type { InventoryItemWithStock } from '@/types/inventory';
+import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
+import type {
+  InventoryCategory,
+  InventoryItemWithStock,
+} from '@/types/inventory';
 
 interface UseInventoryItemsResult {
   items: InventoryItemWithStock[];
@@ -40,36 +44,35 @@ export function useInventoryItems(): UseInventoryItemsResult {
       setIsLoading(true);
       setError(null);
 
-      const itemsCollection = database.get('inventory_items');
+      const itemsCollection =
+        database.get<InventoryItemModel>('inventory_items');
       const rawItems = await itemsCollection
         .query(Q.where('deleted_at', null))
         .fetch();
 
       // TODO: Calculate current stock by querying movements/batches
       // For now, return items with placeholder stock values
-      const itemsWithStock: InventoryItemWithStock[] = rawItems.map(
-        (item: any) => ({
-          id: item.id,
-          name: item.name,
-          category: item.category,
-          unitOfMeasure: item.unitOfMeasure,
-          trackingMode: item.trackingMode,
-          isConsumable: item.isConsumable,
-          minStock: item.minStock,
-          reorderMultiple: item.reorderMultiple,
-          leadTimeDays: item.leadTimeDays,
-          sku: item.sku,
-          barcode: item.barcode,
-          userId: item.userId,
-          createdAt: item.createdAt,
-          updatedAt: item.updatedAt,
-          deletedAt: item.deletedAt,
-          currentStock: 0, // TODO: Calculate from movements
-          unitCost: 0, // TODO: Calculate from latest batch or average
-          totalValue: 0, // currentStock * unitCost
-          isLowStock: false, // TODO: Compare with minStock
-        })
-      );
+      const itemsWithStock: InventoryItemWithStock[] = rawItems.map((item) => ({
+        id: item.id,
+        name: item.name,
+        category: item.category as InventoryCategory,
+        unitOfMeasure: item.unitOfMeasure,
+        trackingMode: item.trackingMode,
+        isConsumable: item.isConsumable,
+        minStock: item.minStock,
+        reorderMultiple: item.reorderMultiple,
+        leadTimeDays: item.leadTimeDays,
+        sku: item.sku,
+        barcode: item.barcode,
+        userId: item.userId,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+        deletedAt: item.deletedAt,
+        currentStock: 0, // TODO: Calculate from movements
+        unitCost: 0, // TODO: Calculate from latest batch or average
+        totalValue: 0, // currentStock * unitCost
+        isLowStock: false, // TODO: Compare with minStock
+      }));
 
       setItems(itemsWithStock);
     } catch (err) {

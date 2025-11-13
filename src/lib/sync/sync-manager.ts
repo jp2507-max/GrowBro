@@ -1,6 +1,10 @@
 import {
   hasUnsyncedChanges,
+  type SyncDatabaseChangeSet,
   synchronize as wmelonSynchronize,
+  type SyncPullArgs,
+  type SyncPullResult,
+  type SyncPushArgs,
 } from '@nozbe/watermelondb/sync';
 
 import { getToken } from '@/lib/auth/utils';
@@ -65,11 +69,7 @@ async function pullChanges({
   lastPulledAt,
   schemaVersion,
   migration,
-}: {
-  lastPulledAt: number | null;
-  schemaVersion: number;
-  migration: any;
-}) {
+}: SyncPullArgs): Promise<SyncPullResult> {
   if (!configured) throw new Error('Sync not configured');
 
   const url = `${configured.pullEndpoint}`;
@@ -96,7 +96,7 @@ async function pullChanges({
     });
     if (!res.ok) throw new Error(`pull failed: ${res.status}`);
     const { changes, timestamp } = (await res.json()) as {
-      changes: any;
+      changes: SyncDatabaseChangeSet;
       timestamp: number;
     };
     // Store timestamp for checkpoint persistence after wmelonSynchronize succeeds
@@ -116,10 +116,7 @@ async function pullChanges({
 async function pushChanges({
   changes,
   lastPulledAt,
-}: {
-  changes: any;
-  lastPulledAt: number | null;
-}) {
+}: SyncPushArgs): Promise<void> {
   if (!configured) throw new Error('Sync not configured');
 
   const url = `${configured.pushEndpoint}`;
@@ -164,7 +161,7 @@ export async function synchronize(): Promise<SyncResult> {
       pullChanges,
       pushChanges,
       migrationsEnabledAtVersion: configured.migrationsEnabledAtVersion,
-    } as any);
+    });
 
     // Only persist checkpoint AFTER wmelonSynchronize succeeds to prevent race condition
     // This ensures atomicity: either entire sync succeeds or checkpoint remains unchanged

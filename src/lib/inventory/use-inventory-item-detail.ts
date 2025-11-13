@@ -14,6 +14,7 @@ import type { InventoryBatchModel } from '@/lib/watermelon-models/inventory-batc
 import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
 import type {
   InventoryBatchWithStatus,
+  InventoryCategory,
   InventoryItemWithStock,
 } from '@/types/inventory';
 
@@ -34,7 +35,7 @@ function buildItemWithStock(
   return {
     id: rawItem.id,
     name: rawItem.name,
-    category: rawItem.category as any,
+    category: rawItem.category as InventoryCategory,
     unitOfMeasure: rawItem.unitOfMeasure,
     trackingMode: rawItem.trackingMode,
     isConsumable: rawItem.isConsumable,
@@ -102,7 +103,7 @@ export function useInventoryItemDetail(
         database.get<InventoryItemModel>('inventory_items');
       const rawItem = await itemsCollection.find(itemId);
 
-      if (!rawItem || (rawItem as any).deletedAt) {
+      if (!rawItem || rawItem.deletedAt) {
         throw new Error('Item not found');
       }
 

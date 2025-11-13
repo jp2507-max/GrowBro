@@ -109,7 +109,7 @@ export async function createReservoirEvent(
     database.get<ReservoirEventModel>('reservoir_events');
 
   return await database.write(async () => {
-    return await eventsCollection.create((event: any) => {
+    return await eventsCollection.create((event: ReservoirEventModel) => {
       event.reservoirId = data.reservoirId;
       event.kind = data.kind;
       if (data.deltaEc25c !== undefined) {
@@ -262,7 +262,7 @@ export function observeReservoirEvents(
   limit: number = 100
 ): Observable<ReservoirEventModel[]> {
   return new Observable((subscriber) => {
-    let subscription: any;
+    let subscription: { unsubscribe: () => void } | undefined;
 
     const setup = async () => {
       try {
@@ -276,8 +276,8 @@ export function observeReservoirEvents(
         );
 
         subscription = query.observe().subscribe({
-          next: (events: any) => subscriber.next(events),
-          error: (error: any) => subscriber.error(error),
+          next: (events: ReservoirEventModel[]) => subscriber.next(events),
+          error: (error: unknown) => subscriber.error(error),
         });
       } catch (error) {
         subscriber.error(error);
@@ -304,7 +304,7 @@ export function observeRecentEvents(
   reservoirId: string
 ): Observable<ReservoirEventModel[]> {
   return new Observable((subscriber) => {
-    let subscription: any;
+    let subscription: { unsubscribe: () => void } | undefined;
 
     const setup = async () => {
       try {
@@ -317,7 +317,7 @@ export function observeRecentEvents(
         );
 
         subscription = query.observe().subscribe({
-          next: (events: any) => {
+          next: (events: ReservoirEventModel[]) => {
             const cutoff = Date.now() - UNDO_WINDOW_MS;
             const recentEvents = events.filter(
               (event: ReservoirEventModel) =>
@@ -325,7 +325,7 @@ export function observeRecentEvents(
             );
             subscriber.next(recentEvents);
           },
-          error: (error: any) => subscriber.error(error),
+          error: (error: unknown) => subscriber.error(error),
         });
       } catch (error) {
         subscriber.error(error);

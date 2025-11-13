@@ -11,6 +11,20 @@ import type {
   TrustedFlaggerMetrics,
 } from '@/types/moderation';
 
+type ReportWithDecision = {
+  id: string;
+  created_at: string;
+  moderation_decisions: { created_at: string }[];
+};
+
+type RawFlaggerData = {
+  certification_date: string | null;
+  review_date: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+};
+
 /**
  * Calculate accuracy rate for a trusted flagger
  * Based on decisions upheld vs total decisions
@@ -104,7 +118,7 @@ export async function calculateAverageHandlingTime(
   }
 
   // Calculate time differences in hours
-  const totalHours = data.reduce((sum: number, report: any) => {
+  const totalHours = data.reduce((sum: number, report: ReportWithDecision) => {
     const reportTime = new Date(report.created_at).getTime();
     const decisionTime = new Date(
       report.moderation_decisions[0].created_at
@@ -282,14 +296,34 @@ export async function getTrustedFlaggers(
   const rawData = await response.json();
 
   // Convert date strings to Date objects for each flagger
-  return rawData.map((flagger: any) => ({
-    ...flagger,
-    certification_date: new Date(flagger.certification_date),
-    review_date: new Date(flagger.review_date),
-    created_at: new Date(flagger.created_at),
-    updated_at: new Date(flagger.updated_at),
-    deleted_at: flagger.deleted_at ? new Date(flagger.deleted_at) : undefined,
-  })) as TrustedFlagger[];
+  return rawData.map(
+    (
+      flagger: RawFlaggerData &
+        Omit<
+          TrustedFlagger,
+          | 'certification_date'
+          | 'review_date'
+          | 'created_at'
+          | 'updated_at'
+          | 'deleted_at'
+        >
+    ) => ({
+      ...flagger,
+      certification_date: flagger.certification_date
+        ? new Date(flagger.certification_date)
+        : null,
+      review_date: flagger.review_date
+        ? new Date(flagger.review_date)
+        : new Date(),
+      created_at: flagger.created_at
+        ? new Date(flagger.created_at)
+        : new Date(),
+      updated_at: flagger.updated_at
+        ? new Date(flagger.updated_at)
+        : new Date(),
+      deleted_at: flagger.deleted_at ? new Date(flagger.deleted_at) : undefined,
+    })
+  ) as TrustedFlagger[];
 }
 
 /**

@@ -5,6 +5,16 @@ import type {
   ODSMetrics,
 } from './moderation-metrics-types';
 
+type DbAppealRecord = {
+  decision: string | null;
+};
+
+type DbODSEscalationRecord = {
+  outcome: string | null;
+  submitted_at: string;
+  actual_resolution_date: string | null;
+};
+
 /**
  * Persist a metric to the database for observability
  */
@@ -151,7 +161,7 @@ export async function getAppealMetrics(period: {
 async function queryResolvedAppeals(period: {
   startDate: Date;
   endDate: Date;
-}): Promise<any[] | null> {
+}): Promise<DbAppealRecord[] | null> {
   const { data: appeals, error } = await supabase
     .from('appeals')
     .select('decision')
@@ -168,7 +178,7 @@ async function queryResolvedAppeals(period: {
   return appeals;
 }
 
-function countByDecision(appeals: any[], decision: string): number {
+function countByDecision(appeals: DbAppealRecord[], decision: string): number {
   return appeals.filter((a) => a.decision === decision).length;
 }
 
@@ -267,7 +277,7 @@ export async function getODSMetrics(period: {
 async function queryODSEscalations(period: {
   startDate: Date;
   endDate: Date;
-}): Promise<any[] | null> {
+}): Promise<DbODSEscalationRecord[] | null> {
   const { data: escalations, error } = await supabase
     .from('ods_escalations')
     .select('outcome, submitted_at, actual_resolution_date')
@@ -286,11 +296,16 @@ async function queryODSEscalations(period: {
   return escalations;
 }
 
-function countByOutcome(escalations: any[], outcome: string): number {
+function countByOutcome(
+  escalations: DbODSEscalationRecord[],
+  outcome: string
+): number {
   return escalations.filter((e) => e.outcome === outcome).length;
 }
 
-function calculateAverageResolutionDays(escalations: any[]): number {
+function calculateAverageResolutionDays(
+  escalations: DbODSEscalationRecord[]
+): number {
   const resolvedEscalations = escalations.filter(
     (escalation) =>
       escalation.actual_resolution_date &&
@@ -314,7 +329,7 @@ function calculateAverageResolutionDays(escalations: any[]): number {
 
 function persistODSMetrics(opts: {
   period: { startDate: Date; endDate: Date };
-  escalations: any[];
+  escalations: DbODSEscalationRecord[];
   totalEscalations: number;
   upheldByODS: number;
 }) {

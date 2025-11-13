@@ -22,7 +22,7 @@ export interface OutboxWorkerOptions {
       triggerTime: string;
       title: string;
       body: string;
-      data?: Record<string, any>;
+      data?: Record<string, unknown>;
     }) => Promise<void>;
     cancelNotification: (notificationId: string) => Promise<void>;
   };

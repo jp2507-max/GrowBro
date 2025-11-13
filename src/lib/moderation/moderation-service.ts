@@ -15,12 +15,15 @@ import { DateTime } from 'luxon';
 import type {
   ClaimResult,
   ContentReport,
+  ContentSnapshot,
+  ContentType,
   ModerationAction,
   ModerationDecisionInput,
   ModerationQueue,
   ModerationQueueItem,
   QueueFilters,
   ReportStatus,
+  ReportType,
 } from '@/types/moderation';
 
 import { supabase } from '../supabase';
@@ -37,6 +40,145 @@ function notImplemented(name: string): never {
 interface ReleaseClaimResult {
   success: boolean;
   error?: string;
+}
+
+// Supabase query builder type for content_reports with joins
+// Note: Using a generic query builder type to avoid coupling to complex PostgREST generics.
+// The actual query builder is returned from supabase.from() and supports chaining.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ContentReportsQueryBuilder = any;
+
+// Database record types
+type DbContentReport = {
+  id: string;
+  reporter_id: string;
+  status: string; // Database returns string, we cast to ReportStatus
+  priority: number;
+  sla_deadline: string;
+  created_at: string;
+  updated_at?: string;
+  deleted_at?: string;
+  user_id?: string;
+  trusted_flagger?: boolean;
+  // Required fields from ContentReport
+  content_id?: string;
+  content_type?: string;
+  content_locator?: string;
+  content_hash?: string;
+  report_type?: string;
+  jurisdiction?: string;
+  legal_reference?: string;
+  explanation?: string;
+  good_faith_declaration?: boolean;
+  evidence_urls?: string[];
+  content_snapshot_id?: string;
+  duplicate_of_report_id?: string;
+  reporter_contact?: {
+    name?: string;
+    email?: string;
+    pseudonym?: string;
+  };
+  content_snapshots?: {
+    id: string;
+    content_id?: string;
+    content_type?: string;
+    snapshot_hash: string;
+    snapshot_data: unknown;
+    captured_at: string;
+    captured_by_report_id?: string;
+    storage_path?: string;
+    created_at?: string;
+  }[];
+  users?: {
+    id: string;
+    trusted_flagger: boolean;
+    total_reports?: { count: number }[];
+  };
+};
+
+// ============================================================================
+// Type Guards and Mapping Functions
+// ============================================================================
+
+/**
+ * Type guard to validate DbContentReport objects at runtime
+ */
+function isDbContentReport(obj: unknown): obj is DbContentReport {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof (obj as any).id === 'string' &&
+    typeof (obj as any).reporter_id === 'string' &&
+    typeof (obj as any).status === 'string' &&
+    typeof (obj as any).priority === 'number' &&
+    typeof (obj as any).sla_deadline === 'string' &&
+    typeof (obj as any).created_at === 'string'
+  );
+}
+
+/**
+ * Maps a database content report record to the domain ContentReport type
+ * Handles type conversions (strings to Dates) and provides default values for missing optional fields
+ */
+function mapDbReportToContentReport(dbReport: DbContentReport): ContentReport {
+  if (!isDbContentReport(dbReport)) {
+    throw new Error(
+      `Invalid database content report structure: ${JSON.stringify(dbReport)}`
+    );
+  }
+
+  return {
+    id: dbReport.id,
+    content_id: dbReport.content_id || '',
+    content_type: (dbReport.content_type as ContentType) || 'other',
+    content_locator: dbReport.content_locator || '',
+    content_hash: dbReport.content_hash || '',
+    reporter_id: dbReport.reporter_id,
+    reporter_contact: {
+      name: dbReport.reporter_contact?.name,
+      email: dbReport.reporter_contact?.email,
+      pseudonym: dbReport.reporter_contact?.pseudonym,
+    },
+    trusted_flagger: dbReport.trusted_flagger || false,
+    report_type: (dbReport.report_type as ReportType) || 'policy_violation',
+    jurisdiction: dbReport.jurisdiction,
+    legal_reference: dbReport.legal_reference,
+    explanation: dbReport.explanation || '',
+    good_faith_declaration: dbReport.good_faith_declaration || false,
+    evidence_urls: dbReport.evidence_urls || [],
+    status: dbReport.status as ReportStatus,
+    priority: dbReport.priority,
+    sla_deadline: new Date(dbReport.sla_deadline),
+    content_snapshot_id: dbReport.content_snapshot_id,
+    duplicate_of_report_id: dbReport.duplicate_of_report_id,
+    user_id: dbReport.user_id,
+    created_at: new Date(dbReport.created_at),
+    updated_at: new Date(dbReport.updated_at || dbReport.created_at),
+    deleted_at: dbReport.deleted_at ? new Date(dbReport.deleted_at) : undefined,
+  };
+}
+
+/**
+ * Maps a database content snapshot record to the domain ContentSnapshot type
+ */
+function mapDbSnapshotToContentSnapshot(
+  dbSnapshot:
+    | NonNullable<DbContentReport['content_snapshots']>[number]
+    | undefined
+): ContentSnapshot | undefined {
+  if (!dbSnapshot) return undefined;
+
+  return {
+    id: dbSnapshot.id,
+    content_id: dbSnapshot.content_id || '',
+    content_type: (dbSnapshot.content_type || 'other') as ContentType,
+    snapshot_hash: dbSnapshot.snapshot_hash,
+    snapshot_data: (dbSnapshot.snapshot_data || {}) as Record<string, unknown>,
+    captured_at: new Date(dbSnapshot.captured_at),
+    captured_by_report_id: dbSnapshot.captured_by_report_id,
+    storage_path: dbSnapshot.storage_path,
+    created_at: new Date(dbSnapshot.created_at || dbSnapshot.captured_at),
+  };
 }
 
 // ============================================================================
@@ -151,7 +293,7 @@ export class ModerationService {
    * - Return type is `any` to avoid coupling this service to PostgREST types in
    *   this file; callers treat the result as a query builder and execute it.
    */
-  private buildBaseQueueQuery(): any {
+  private buildBaseQueueQuery(): ContentReportsQueryBuilder {
     // Base query: content_reports with snapshot and reporter info
     // Keep the selected fields compact to avoid transferring large blob
     // `snapshot_data` when not needed; callers may adjust the select if
@@ -189,7 +331,10 @@ export class ModerationService {
    * to run the request. The query type is `any` to keep this utility focused on
    * behavior rather than on exact PostgREST generic types.
    */
-  private applyFiltersToQuery(query: any, filters: QueueFilters): any {
+  private applyFiltersToQuery(
+    query: ContentReportsQueryBuilder,
+    filters: QueueFilters
+  ): ContentReportsQueryBuilder {
     let q = query;
 
     // Status filter: if provided, use the explicit list. Otherwise limit to
@@ -226,7 +371,10 @@ export class ModerationService {
     return q;
   }
 
-  private async filterActiveClaims(query: any, moderatorId: string) {
+  private async filterActiveClaims(
+    query: ContentReportsQueryBuilder,
+    moderatorId: string
+  ): Promise<ContentReportsQueryBuilder> {
     const { data: activeClaims } = await supabase
       .from('moderation_claims')
       .select('report_id')
@@ -241,9 +389,11 @@ export class ModerationService {
     return query;
   }
 
-  private calculateEnhancedItems(reports: any[]): ModerationQueueItem[] {
+  private calculateEnhancedItems(
+    reports: DbContentReport[]
+  ): ModerationQueueItem[] {
     const now = DateTime.now();
-    return reports.map((report: any) => {
+    return reports.map((report) => {
       let enhancedPriority = report.priority;
 
       if (report.trusted_flagger) {
@@ -278,12 +428,15 @@ export class ModerationService {
         enhancedPriority += 10;
       }
 
+      // Create the mapped report with enhanced priority
+      const mappedReport = mapDbReportToContentReport(report);
+      mappedReport.priority = enhancedPriority;
+
       return {
-        report: {
-          ...report,
-          priority: enhancedPriority,
-        } as ContentReport,
-        content_snapshot: report.content_snapshots?.[0] || undefined,
+        report: mappedReport,
+        content_snapshot: mapDbSnapshotToContentSnapshot(
+          report.content_snapshots?.[0]
+        ),
         reporter_history: report.users
           ? {
               total_reports: report.users.total_reports?.[0]?.count || 0,
@@ -391,27 +544,60 @@ export class ModerationService {
     }
   }
 
-  private async fetchReport(reportId: string) {
+  private async fetchReport(reportId: string): Promise<DbContentReport | null> {
     const { data, error } = await supabase
       .from('content_reports')
-      .select('id, reporter_id, status')
+      .select(
+        'id, reporter_id, status, priority, sla_deadline, created_at, user_id, trusted_flagger'
+      )
       .eq('id', reportId)
       .single();
 
-    if (error) return null;
-    return data as any;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No rows returned
+        return null;
+      }
+      throw new Error(`Failed to fetch report: ${error.message}`);
+    }
+
+    // Validate that the returned data matches our expected structure
+    if (!isDbContentReport(data)) {
+      throw new Error(
+        `Invalid report data structure returned from database: ${JSON.stringify(data)}`
+      );
+    }
+
+    return data;
   }
 
-  private async getActiveClaim(reportId: string) {
+  private async getActiveClaim(
+    reportId: string
+  ): Promise<{ moderator_id: string; expires_at: string } | null> {
     const now = new Date();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('moderation_claims')
       .select('moderator_id, expires_at')
       .eq('report_id', reportId)
       .gt('expires_at', now.toISOString())
       .maybeSingle();
 
-    return data as any;
+    if (error) {
+      throw new Error(`Failed to fetch active claim: ${error.message}`);
+    }
+
+    // Type guard to validate the structure
+    if (
+      data &&
+      (typeof data.moderator_id !== 'string' ||
+        typeof data.expires_at !== 'string')
+    ) {
+      throw new Error(
+        `Invalid claim data structure returned from database: ${JSON.stringify(data)}`
+      );
+    }
+
+    return data;
   }
 
   private async createClaimRecord(
@@ -750,43 +936,43 @@ export class ModerationService {
 
   // Temporary stubs for not-yet-built API surface referenced in tests
   // TODO: replace with real implementations once moderation workflows land
-  async makeDecision(): Promise<any> {
+  async makeDecision(): Promise<never> {
     return notImplemented('makeDecision');
   }
 
-  async generateStatementOfReasons(): Promise<any> {
+  async generateStatementOfReasons(): Promise<never> {
     return notImplemented('generateStatementOfReasons');
   }
 
-  async submitSoRToTransparencyDB(): Promise<any> {
+  async submitSoRToTransparencyDB(): Promise<never> {
     return notImplemented('submitSoRToTransparencyDB');
   }
 
-  async notifyUser(): Promise<any> {
+  async notifyUser(): Promise<never> {
     return notImplemented('notifyUser');
   }
 
-  async getAllReports(): Promise<any> {
+  async getAllReports(): Promise<never> {
     return notImplemented('getAllReports');
   }
 
-  async getAllDecisions(): Promise<any> {
+  async getAllDecisions(): Promise<never> {
     return notImplemented('getAllDecisions');
   }
 
-  async getModeratorQueueForUser(): Promise<any> {
+  async getModeratorQueueForUser(): Promise<never> {
     return notImplemented('getModeratorQueueForUser');
   }
 
-  async getConfiguration(): Promise<any> {
+  async getConfiguration(): Promise<never> {
     return notImplemented('getConfiguration');
   }
 
-  async cleanupExpiredSessions(): Promise<any> {
+  async cleanupExpiredSessions(): Promise<never> {
     return notImplemented('cleanupExpiredSessions');
   }
 
-  async getReportDetails(): Promise<any> {
+  async getReportDetails(): Promise<never> {
     return notImplemented('getReportDetails');
   }
 }

@@ -1,5 +1,6 @@
 import { Env } from '@env';
 import { getLocales } from 'expo-localization';
+import type { StoreApi } from 'zustand';
 import { create } from 'zustand';
 
 import { useAuth } from '@/lib/auth';
@@ -163,7 +164,9 @@ function isMinorOrPatchBump(
   return current.minor > accepted.minor || current.patch > accepted.patch;
 }
 
-function createHydrateFunction(set: any): () => void {
+function createHydrateFunction(
+  set: StoreApi<LegalAcceptancesStoreState>['setState']
+): () => void {
   return () => {
     const persisted = loadPersistedAcceptances();
     set({
@@ -174,8 +177,8 @@ function createHydrateFunction(set: any): () => void {
 }
 
 function createAcceptDocumentFunction(
-  set: any,
-  get: any
+  set: StoreApi<LegalAcceptancesStoreState>['setState'],
+  get: StoreApi<LegalAcceptancesStoreState>['getState']
 ): (documentType: LegalDocumentType, version: string) => void {
   return (documentType: LegalDocumentType, version: string) => {
     const state = get();
@@ -205,7 +208,7 @@ function createAcceptDocumentFunction(
 }
 
 function createAcceptAllFunction(
-  set: any
+  set: StoreApi<LegalAcceptancesStoreState>['setState']
 ): (versions: Record<LegalDocumentType, string>) => void {
   return (versions: Record<LegalDocumentType, string>) => {
     const timestamp = new Date().toISOString();
@@ -244,7 +247,9 @@ function createAcceptAllFunction(
   };
 }
 
-function createResetFunction(set: any): () => void {
+function createResetFunction(
+  set: StoreApi<LegalAcceptancesStoreState>['setState']
+): () => void {
   return () => {
     storage.delete(LEGAL_ACCEPTANCES_KEY);
     const emptyState = createEmptyState();
@@ -255,7 +260,9 @@ function createResetFunction(set: any): () => void {
   };
 }
 
-function createIsAllAcceptedFunction(get: any): () => boolean {
+function createIsAllAcceptedFunction(
+  get: StoreApi<LegalAcceptancesStoreState>['getState']
+): () => boolean {
   return () => {
     const state = get();
     const types: LegalDocumentType[] = ['terms', 'privacy', 'cannabis'];
@@ -264,7 +271,7 @@ function createIsAllAcceptedFunction(get: any): () => boolean {
 }
 
 function createNeedsReAcceptanceFunction(
-  get: any
+  get: StoreApi<LegalAcceptancesStoreState>['getState']
 ): (documentType: LegalDocumentType, currentVersion: string) => boolean {
   return (documentType: LegalDocumentType, currentVersion: string) => {
     const state = get();
@@ -277,7 +284,7 @@ function createNeedsReAcceptanceFunction(
 }
 
 function createGetAcceptedVersionFunction(
-  get: any
+  get: StoreApi<LegalAcceptancesStoreState>['getState']
 ): (documentType: LegalDocumentType) => string | null {
   return (documentType: LegalDocumentType) => {
     const state = get();
@@ -286,8 +293,8 @@ function createGetAcceptedVersionFunction(
 }
 
 function createLegalAcceptancesStore(
-  set: any,
-  get: any
+  set: StoreApi<LegalAcceptancesStoreState>['setState'],
+  get: StoreApi<LegalAcceptancesStoreState>['getState']
 ): LegalAcceptancesStoreState {
   const emptyState = createEmptyState();
   return {

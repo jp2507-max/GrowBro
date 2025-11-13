@@ -122,8 +122,8 @@ export const BackgroundNotificationHandler = {
     if (errors.length === tasks.length && errors.length > 0) {
       const aggregatedError = new Error(
         `All ${errors.length} background tasks failed. First error: ${errors[0].message}`
-      );
-      (aggregatedError as any).originalErrors = errors;
+      ) as Error & { originalErrors: Error[] };
+      aggregatedError.originalErrors = errors;
       throw aggregatedError;
     }
   },

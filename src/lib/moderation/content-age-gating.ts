@@ -8,7 +8,7 @@
  * restrict visibility to verified 18+ users with safer defaults for minors
  */
 
-import { type createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type {
   AccessResult,
@@ -17,11 +17,15 @@ import type {
   UserAgeStatus,
 } from '@/types/age-verification';
 import { AGE_RESTRICTED_KEYWORDS } from '@/types/age-verification';
+import type {
+  DbContentRestriction,
+  DbUserAgeStatus,
+} from '@/types/database-records';
 
 export class ContentAgeGatingEngine {
-  private supabase: ReturnType<typeof createClient>;
+  private supabase: SupabaseClient;
 
-  constructor(supabase: any) {
+  constructor(supabase: SupabaseClient) {
     this.supabase = supabase;
   }
 
@@ -119,7 +123,10 @@ export class ContentAgeGatingEngine {
           moderator_id: moderatorId || null,
           restriction_reason: restrictionReason || null,
           keywords_detected: keywordsDetected || null,
-        } as any,
+        } satisfies Omit<
+          DbContentRestriction,
+          'id' | 'created_at' | 'updated_at'
+        >,
         {
           onConflict: 'content_id,content_type',
         }
@@ -183,13 +190,13 @@ export class ContentAgeGatingEngine {
     contentId: string,
     contentType: 'post' | 'comment' | 'image' | 'profile' | 'other'
   ): Promise<void> {
-    const { error } = (await (
-      this.supabase.from('content_age_restrictions').update as any
-    )({
-      is_age_restricted: false,
-    })
+    const { error } = await this.supabase
+      .from('content_age_restrictions')
+      .update({
+        is_age_restricted: false,
+      })
       .eq('content_id', contentId)
-      .eq('content_type', contentType)) as any;
+      .eq('content_type', contentType);
 
     if (error) {
       throw new Error(`Failed to remove age restriction: ${error.message}`);
@@ -240,7 +247,10 @@ export class ContentAgeGatingEngine {
       .eq('content_type', contentType)
       .eq('is_age_restricted', true);
 
-    const restrictedItems = (restrictions || []) as any[];
+    const restrictedItems = (restrictions || []) as Pick<
+      DbContentRestriction,
+      'content_id'
+    >[];
     const restrictedIds = new Set(restrictedItems.map((r) => r.content_id));
 
     // Filter out restricted content
@@ -263,7 +273,10 @@ export class ContentAgeGatingEngine {
       .select('flagged_by_system, flagged_by_author, flagged_by_moderator')
       .eq('is_age_restricted', true);
 
-    const statsList = (stats || []) as any[];
+    const statsList = (stats || []) as Pick<
+      DbContentRestriction,
+      'flagged_by_system' | 'flagged_by_author' | 'flagged_by_moderator'
+    >[];
     const totalRestricted = statsList.length;
     const systemFlagged = statsList.filter((s) => s.flagged_by_system).length;
     const authorFlagged = statsList.filter((s) => s.flagged_by_author).length;
@@ -292,7 +305,10 @@ export class ContentAgeGatingEngine {
       is_minor: true,
       minor_protections_enabled: true,
       show_age_restricted_content: false,
-    } as any);
+    } satisfies Omit<
+      DbUserAgeStatus,
+      'verified_at' | 'active_token_id' | 'created_at' | 'updated_at'
+    >);
   }
 
   // ============================================================================
@@ -336,7 +352,7 @@ export class ContentAgeGatingEngine {
       return null;
     }
 
-    const statusData = status as any;
+    const statusData = status as DbUserAgeStatus;
 
     return {
       userId: statusData.user_id,
@@ -389,11 +405,18 @@ export class ContentAgeGatingEngine {
   /**
    * Map database restriction to TypeScript type
    */
-  private mapDbRestrictionToType(dbRestriction: any): ContentAgeRestriction {
+  private mapDbRestrictionToType(
+    dbRestriction: DbContentRestriction
+  ): ContentAgeRestriction {
     return {
       id: dbRestriction.id,
       contentId: dbRestriction.content_id,
-      contentType: dbRestriction.content_type,
+      contentType: dbRestriction.content_type as
+        | 'post'
+        | 'comment'
+        | 'image'
+        | 'profile'
+        | 'other',
       isAgeRestricted: dbRestriction.is_age_restricted,
       minAge: dbRestriction.min_age,
       flaggedBySystem: dbRestriction.flagged_by_system,

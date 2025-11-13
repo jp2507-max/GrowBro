@@ -125,6 +125,14 @@ export async function validateUnitCompatibility(
 
   // Validate unit matches item's unit_of_measure
   const itemUnit = item.unitOfMeasure;
+  console.log(
+    'DEBUG: entry.unit =',
+    entry.unit,
+    'itemUnit =',
+    itemUnit,
+    'item.id =',
+    item.id
+  );
   if (entry.unit !== itemUnit) {
     return {
       code: 'UNIT_MISMATCH',

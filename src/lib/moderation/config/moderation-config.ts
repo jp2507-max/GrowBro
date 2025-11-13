@@ -314,7 +314,7 @@ const environmentDefaults: Record<Environment, Partial<ModerationConfig>> = {
 /**
  * Deep merge objects
  */
-function deepMerge<T extends Record<string, any>>(
+function deepMerge<T extends Record<string, unknown>>(
   target: T,
   ...sources: Partial<T>[]
 ): T {
@@ -334,9 +334,12 @@ function deepMerge<T extends Record<string, any>>(
           typeof targetValue === 'object' &&
           !Array.isArray(targetValue)
         ) {
-          result[key] = deepMerge(targetValue, sourceValue) as any;
+          result[key] = deepMerge(
+            targetValue as Record<string, unknown>,
+            sourceValue as Record<string, unknown>
+          ) as T[Extract<keyof T, string>];
         } else if (sourceValue !== undefined) {
-          result[key] = sourceValue as any;
+          result[key] = sourceValue as T[Extract<keyof T, string>];
         }
       }
     }

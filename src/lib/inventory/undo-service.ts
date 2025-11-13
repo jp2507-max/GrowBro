@@ -13,13 +13,21 @@
  * - DELETE_ITEM: Restore deleted item (only if no dependent batches/movements)
  */
 
-import type { Database } from '@nozbe/watermelondb';
+import type { Database, RawRecord } from '@nozbe/watermelondb';
 
 import { logUndoAction } from '@/lib/inventory/sentry-breadcrumbs';
 import type { InventoryBatchModel } from '@/lib/watermelon-models/inventory-batch';
 import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
 import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
 import type { UndoInfo } from '@/types/inventory-errors';
+
+/**
+ * Extended RawRecord type that includes soft-delete marker
+ * WatermelonDB uses deleted_at for soft deletes but it's not in the base RawRecord type
+ */
+type RawRecordWithDelete = RawRecord & {
+  deleted_at?: number | null;
+};
 
 /**
  * Undo window in milliseconds (15 seconds)
@@ -155,13 +163,14 @@ export async function undoDeleteBatch(
       .get<InventoryBatchModel>('inventory_batches')
       .find(batchId);
 
-    if (!(batch._raw as any).deleted_at) {
+    if (!(batch._raw as RawRecordWithDelete).deleted_at) {
       throw new Error('Batch was not deleted');
     }
 
     // Restore batch by clearing deleted_at
     await batch.update((b: InventoryBatchModel) => {
-      (b as any).deletedAt = null;
+      // @ts-expect-error - WatermelonDB doesn't expose deletedAt setter in types
+      b.deletedAt = null;
     });
   });
 }
@@ -225,7 +234,7 @@ export async function undoDeleteItem(
       .get<InventoryItemModel>('inventory_items')
       .find(itemId);
 
-    if (!(item._raw as any).deleted_at) {
+    if (!(item._raw as RawRecordWithDelete).deleted_at) {
       throw new Error('Item was not deleted');
     }
 
@@ -259,7 +268,8 @@ export async function undoDeleteItem(
 
     // Restore item by clearing deleted_at
     await item.update((i: InventoryItemModel) => {
-      (i as any).deletedAt = null;
+      // @ts-expect-error - WatermelonDB doesn't expose deletedAt setter in types
+      i.deletedAt = null;
     });
   });
 }

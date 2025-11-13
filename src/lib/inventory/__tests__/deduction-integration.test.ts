@@ -67,7 +67,7 @@ describe('Inventory Deduction Integration', () => {
     it('should deduce inventory successfully with task completion', async () => {
       // Create test item
       const item = await database.write(async () =>
-        database.get<InventoryItemModel>('inventory_items').create((i: any) => {
+        database.get<InventoryItemModel>('inventory_items').create((i) => {
           i.name = 'Test Nutrient';
           i.category = 'Nutrients';
           i.unitOfMeasure = 'ml';
@@ -80,15 +80,13 @@ describe('Inventory Deduction Integration', () => {
 
       // Create batch with stock
       const batch = await database.write(async () =>
-        database
-          .get<InventoryBatchModel>('inventory_batches')
-          .create((b: any) => {
-            b.itemId = item.id;
-            b.lotNumber = 'LOT-001';
-            b.quantity = 1000;
-            b.costPerUnitMinor = 50; // 50 cents per ml
-            b.receivedAt = new Date();
-          })
+        database.get<InventoryBatchModel>('inventory_batches').create((b) => {
+          b.itemId = item.id;
+          b.lotNumber = 'LOT-001';
+          b.quantity = 1000;
+          b.costPerUnitMinor = 50; // 50 cents per ml
+          b.receivedAt = new Date();
+        })
       );
 
       // Deduce 100ml
@@ -120,7 +118,7 @@ describe('Inventory Deduction Integration', () => {
 
     it('should prevent duplicate deductions with idempotency key', async () => {
       const item = await database.write(async () =>
-        database.get<InventoryItemModel>('inventory_items').create((i: any) => {
+        database.get<InventoryItemModel>('inventory_items').create((i) => {
           i.name = 'Test Item';
           i.category = 'Tools';
           i.unitOfMeasure = 'units';
@@ -132,15 +130,13 @@ describe('Inventory Deduction Integration', () => {
       );
 
       await database.write(async () =>
-        database
-          .get<InventoryBatchModel>('inventory_batches')
-          .create((b: any) => {
-            b.itemId = item.id;
-            b.lotNumber = 'BATCH-001';
-            b.quantity = 100;
-            b.costPerUnitMinor = 100;
-            b.receivedAt = new Date();
-          })
+        database.get<InventoryBatchModel>('inventory_batches').create((b) => {
+          b.itemId = item.id;
+          b.lotNumber = 'BATCH-001';
+          b.quantity = 100;
+          b.costPerUnitMinor = 100;
+          b.receivedAt = new Date();
+        })
       );
 
       const deductionRequest = {
@@ -168,12 +164,68 @@ describe('Inventory Deduction Integration', () => {
         .fetch();
       expect(movements).toHaveLength(1);
     });
+
+    it('should return resolved deduction map with actual deducted quantities in idempotency retries', async () => {
+      const item = await database.write(async () =>
+        database.get<InventoryItemModel>('inventory_items').create((i) => {
+          i.name = 'Resolved Test Item';
+          i.category = 'Tools';
+          i.unitOfMeasure = 'units';
+          i.trackingMode = 'simple';
+          i.isConsumable = true;
+          i.minStock = 10;
+          i.reorderMultiple = 20;
+        })
+      );
+
+      await database.write(async () =>
+        database.get<InventoryBatchModel>('inventory_batches').create((b) => {
+          b.itemId = item.id;
+          b.lotNumber = 'BATCH-RESOLVED';
+          b.quantity = 100;
+          b.costPerUnitMinor = 100;
+          b.receivedAt = new Date();
+        })
+      );
+
+      const deductionRequest = {
+        source: 'task' as const,
+        taskId: 'task-resolved',
+        deductionMap: [{ itemId: item.id, unit: 'units', perTaskQuantity: 25 }],
+        idempotencyKey: 'resolved-idempotency-key',
+      };
+
+      // First deduction - should deduct 25 units
+      const result1 = await deduceInventory(database, deductionRequest);
+      expect(result1.success).toBe(true);
+      expect(result1.movements).toHaveLength(1);
+      expect(result1.movements[0].quantityDelta).toBe(-25);
+      expect(result1.deductionMap).toHaveLength(1);
+      expect(result1.deductionMap?.[0].quantity).toBe(25); // requested quantity
+      expect(result1.deductionMap?.[0].resolvedQuantity).toBe(25); // actual deducted (full amount available)
+      expect(result1.deductionMap?.[0].totalQuantity).toBe(25);
+
+      // Second deduction with same key - should return same resolved map
+      const result2 = await deduceInventory(database, deductionRequest);
+      expect(result2.success).toBe(true);
+      expect(result2.movements).toHaveLength(1);
+      expect(result2.movements[0].id).toBe(result1.movements[0].id);
+
+      // Verify deduction map is consistent between initial and retry
+      expect(result2.deductionMap).toHaveLength(1);
+      expect(result2.deductionMap?.[0].quantity).toBe(25); // requested quantity
+      expect(result2.deductionMap?.[0].resolvedQuantity).toBe(25); // actual deducted
+      expect(result2.deductionMap?.[0].totalQuantity).toBe(25);
+
+      // Both results should have identical deduction maps
+      expect(result2.deductionMap?.[0]).toEqual(result1.deductionMap?.[0]);
+    });
   });
 
   describe('FEFO Picking', () => {
     it('should consume from batch expiring soonest (FEFO)', async () => {
       const item = await database.write(async () =>
-        database.get<InventoryItemModel>('inventory_items').create((i: any) => {
+        database.get<InventoryItemModel>('inventory_items').create((i) => {
           i.name = 'Perishable Item';
           i.category = 'Nutrients';
           i.unitOfMeasure = 'ml';
@@ -188,29 +240,25 @@ describe('Inventory Deduction Integration', () => {
 
       // Create batches with different expiration dates
       const batch1 = await database.write(async () =>
-        database
-          .get<InventoryBatchModel>('inventory_batches')
-          .create((b: any) => {
-            b.itemId = item.id;
-            b.lotNumber = 'BATCH-FAR';
-            b.quantity = 100;
-            b.costPerUnitMinor = 50;
-            b.expiresOn = now.plus({ days: 90 }).toJSDate(); // Expires later
-            b.receivedAt = now.minus({ days: 10 }).toJSDate();
-          })
+        database.get<InventoryBatchModel>('inventory_batches').create((b) => {
+          b.itemId = item.id;
+          b.lotNumber = 'BATCH-FAR';
+          b.quantity = 100;
+          b.costPerUnitMinor = 50;
+          b.expiresOn = now.plus({ days: 90 }).toJSDate(); // Expires later
+          b.receivedAt = now.minus({ days: 10 }).toJSDate();
+        })
       );
 
       const batch2 = await database.write(async () =>
-        database
-          .get<InventoryBatchModel>('inventory_batches')
-          .create((b: any) => {
-            b.itemId = item.id;
-            b.lotNumber = 'BATCH-SOON';
-            b.quantity = 100;
-            b.costPerUnitMinor = 60;
-            b.expiresOn = now.plus({ days: 30 }).toJSDate(); // Expires sooner
-            b.receivedAt = now.minus({ days: 5 }).toJSDate();
-          })
+        database.get<InventoryBatchModel>('inventory_batches').create((b) => {
+          b.itemId = item.id;
+          b.lotNumber = 'BATCH-SOON';
+          b.quantity = 100;
+          b.costPerUnitMinor = 60;
+          b.expiresOn = now.plus({ days: 30 }).toJSDate(); // Expires sooner
+          b.receivedAt = now.minus({ days: 5 }).toJSDate();
+        })
       );
 
       // Deduce 50ml - should come from batch2 (expires sooner)
@@ -240,7 +288,7 @@ describe('Inventory Deduction Integration', () => {
 
     it('should exclude expired batches by default', async () => {
       const item = await database.write(async () =>
-        database.get<InventoryItemModel>('inventory_items').create((i: any) => {
+        database.get<InventoryItemModel>('inventory_items').create((i) => {
           i.name = 'Expired Test';
           i.category = 'Seeds';
           i.unitOfMeasure = 'seeds';
@@ -255,16 +303,14 @@ describe('Inventory Deduction Integration', () => {
 
       // Create expired batch
       await database.write(async () =>
-        database
-          .get<InventoryBatchModel>('inventory_batches')
-          .create((b: any) => {
-            b.itemId = item.id;
-            b.lotNumber = 'EXPIRED-BATCH';
-            b.quantity = 50;
-            b.costPerUnitMinor = 100;
-            b.expiresOn = now.minus({ days: 10 }).toJSDate(); // Expired
-            b.receivedAt = now.minus({ days: 60 }).toJSDate();
-          })
+        database.get<InventoryBatchModel>('inventory_batches').create((b) => {
+          b.itemId = item.id;
+          b.lotNumber = 'EXPIRED-BATCH';
+          b.quantity = 50;
+          b.costPerUnitMinor = 100;
+          b.expiresOn = now.minus({ days: 10 }).toJSDate(); // Expired
+          b.receivedAt = now.minus({ days: 60 }).toJSDate();
+        })
       );
 
       // Attempt deduction without override
@@ -281,7 +327,7 @@ describe('Inventory Deduction Integration', () => {
 
     it('should allow expired batch consumption with override', async () => {
       const item = await database.write(async () =>
-        database.get<InventoryItemModel>('inventory_items').create((i: any) => {
+        database.get<InventoryItemModel>('inventory_items').create((i) => {
           i.name = 'Override Test';
           i.category = 'Nutrients';
           i.unitOfMeasure = 'ml';
@@ -295,16 +341,14 @@ describe('Inventory Deduction Integration', () => {
       const now = DateTime.now();
 
       const expiredBatch = await database.write(async () =>
-        database
-          .get<InventoryBatchModel>('inventory_batches')
-          .create((b: any) => {
-            b.itemId = item.id;
-            b.lotNumber = 'OVERRIDE-BATCH';
-            b.quantity = 100;
-            b.costPerUnitMinor = 50;
-            b.expiresOn = now.minus({ days: 5 }).toJSDate();
-            b.receivedAt = now.minus({ days: 30 }).toJSDate();
-          })
+        database.get<InventoryBatchModel>('inventory_batches').create((b) => {
+          b.itemId = item.id;
+          b.lotNumber = 'OVERRIDE-BATCH';
+          b.quantity = 100;
+          b.costPerUnitMinor = 50;
+          b.expiresOn = now.minus({ days: 5 }).toJSDate();
+          b.receivedAt = now.minus({ days: 30 }).toJSDate();
+        })
       );
 
       // Deduction with override
@@ -324,7 +368,7 @@ describe('Inventory Deduction Integration', () => {
   describe('Insufficient Stock Handling', () => {
     it('should return insufficient stock error with recovery options', async () => {
       const item = await database.write(async () =>
-        database.get<InventoryItemModel>('inventory_items').create((i: any) => {
+        database.get<InventoryItemModel>('inventory_items').create((i) => {
           i.name = 'Low Stock Item';
           i.category = 'Tools';
           i.unitOfMeasure = 'units';
@@ -337,15 +381,13 @@ describe('Inventory Deduction Integration', () => {
 
       // Only 30 units available
       await database.write(async () =>
-        database
-          .get<InventoryBatchModel>('inventory_batches')
-          .create((b: any) => {
-            b.itemId = item.id;
-            b.lotNumber = 'LOW-STOCK';
-            b.quantity = 30;
-            b.costPerUnitMinor = 100;
-            b.receivedAt = new Date();
-          })
+        database.get<InventoryBatchModel>('inventory_batches').create((b) => {
+          b.itemId = item.id;
+          b.lotNumber = 'LOW-STOCK';
+          b.quantity = 30;
+          b.costPerUnitMinor = 100;
+          b.receivedAt = new Date();
+        })
       );
 
       // Try to deduce 50 units
@@ -354,6 +396,8 @@ describe('Inventory Deduction Integration', () => {
         taskId: 'insufficient-test',
         deductionMap: [{ itemId: item.id, unit: 'units', perTaskQuantity: 50 }],
       });
+
+      console.log('DEBUG: result =', JSON.stringify(result, null, 2));
 
       expect(result.success).toBe(false);
       expect(result.insufficientItems).toHaveLength(1);
@@ -372,7 +416,7 @@ describe('Inventory Deduction Integration', () => {
 
     it('should handle partial completion consuming available stock', async () => {
       const item = await database.write(async () =>
-        database.get<InventoryItemModel>('inventory_items').create((i: any) => {
+        database.get<InventoryItemModel>('inventory_items').create((i) => {
           i.name = 'Partial Test';
           i.category = 'Nutrients';
           i.unitOfMeasure = 'ml';
@@ -384,15 +428,13 @@ describe('Inventory Deduction Integration', () => {
       );
 
       await database.write(async () =>
-        database
-          .get<InventoryBatchModel>('inventory_batches')
-          .create((b: any) => {
-            b.itemId = item.id;
-            b.lotNumber = 'PARTIAL-BATCH';
-            b.quantity = 25;
-            b.costPerUnitMinor = 75;
-            b.receivedAt = new Date();
-          })
+        database.get<InventoryBatchModel>('inventory_batches').create((b) => {
+          b.itemId = item.id;
+          b.lotNumber = 'PARTIAL-BATCH';
+          b.quantity = 25;
+          b.costPerUnitMinor = 75;
+          b.receivedAt = new Date();
+        })
       );
 
       // Initial deduction fails
@@ -428,7 +470,7 @@ describe('Inventory Deduction Integration', () => {
 
     it('should handle skip deduction with marker movement', async () => {
       const item = await database.write(async () =>
-        database.get<InventoryItemModel>('inventory_items').create((i: any) => {
+        database.get<InventoryItemModel>('inventory_items').create((i) => {
           i.name = 'Skip Test';
           i.category = 'Tools';
           i.unitOfMeasure = 'units';
@@ -467,7 +509,7 @@ describe('Inventory Deduction Integration', () => {
   describe('Multi-Batch Consumption', () => {
     it('should split consumption across multiple batches with FIFO costing', async () => {
       const item = await database.write(async () =>
-        database.get<InventoryItemModel>('inventory_items').create((i: any) => {
+        database.get<InventoryItemModel>('inventory_items').create((i) => {
           i.name = 'Multi-Batch Item';
           i.category = 'Nutrients';
           i.unitOfMeasure = 'ml';
@@ -482,30 +524,26 @@ describe('Inventory Deduction Integration', () => {
 
       // Batch 1: 50ml @ $0.50/ml (expires sooner)
       const batch1 = await database.write(async () =>
-        database
-          .get<InventoryBatchModel>('inventory_batches')
-          .create((b: any) => {
-            b.itemId = item.id;
-            b.lotNumber = 'BATCH-1';
-            b.quantity = 50;
-            b.costPerUnitMinor = 50;
-            b.expiresOn = now.plus({ days: 20 }).toJSDate();
-            b.receivedAt = now.minus({ days: 10 }).toJSDate();
-          })
+        database.get<InventoryBatchModel>('inventory_batches').create((b) => {
+          b.itemId = item.id;
+          b.lotNumber = 'BATCH-1';
+          b.quantity = 50;
+          b.costPerUnitMinor = 50;
+          b.expiresOn = now.plus({ days: 20 }).toJSDate();
+          b.receivedAt = now.minus({ days: 10 }).toJSDate();
+        })
       );
 
       // Batch 2: 100ml @ $0.60/ml (expires later)
       const batch2 = await database.write(async () =>
-        database
-          .get<InventoryBatchModel>('inventory_batches')
-          .create((b: any) => {
-            b.itemId = item.id;
-            b.lotNumber = 'BATCH-2';
-            b.quantity = 100;
-            b.costPerUnitMinor = 60;
-            b.expiresOn = now.plus({ days: 40 }).toJSDate();
-            b.receivedAt = now.minus({ days: 5 }).toJSDate();
-          })
+        database.get<InventoryBatchModel>('inventory_batches').create((b) => {
+          b.itemId = item.id;
+          b.lotNumber = 'BATCH-2';
+          b.quantity = 100;
+          b.costPerUnitMinor = 60;
+          b.expiresOn = now.plus({ days: 40 }).toJSDate();
+          b.receivedAt = now.minus({ days: 5 }).toJSDate();
+        })
       );
 
       // Deduce 120ml (spans both batches)

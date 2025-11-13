@@ -361,11 +361,18 @@ async function fetchRemoteConfig({
   );
 
   if (error) {
-    const status = (error as any)?.context?.status ?? (error as any)?.status;
+    const errorWithStatus = error as {
+      context?: { status?: number };
+      status?: number;
+      message?: string;
+    };
+    const status = errorWithStatus.context?.status ?? errorWithStatus.status;
     if (status === 304 && cached) {
       return { payload: toRemoteResponse(cached), source: 'cache' };
     }
-    throw new Error(error.message ?? 'Failed to fetch model configuration');
+    throw new Error(
+      errorWithStatus.message ?? 'Failed to fetch model configuration'
+    );
   }
 
   if (!data) {

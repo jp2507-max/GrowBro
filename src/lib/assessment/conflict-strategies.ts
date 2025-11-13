@@ -7,7 +7,7 @@ import type { ConflictResolution, SyncConflict } from './conflict-types';
 /**
  * Last-write-wins: Use data with most recent timestamp
  */
-export function resolveLastWriteWins<T extends Record<string, any>>(
+export function resolveLastWriteWins<T extends Record<string, unknown>>(
   conflict: SyncConflict<T>
 ): ConflictResolution<T> {
   const { localData, serverData, localTimestamp, serverTimestamp } = conflict;
@@ -28,7 +28,7 @@ export function resolveLastWriteWins<T extends Record<string, any>>(
 /**
  * Client-wins: Always prefer local data
  */
-export function resolveClientWins<T extends Record<string, any>>(
+export function resolveClientWins<T extends Record<string, unknown>>(
   conflict: SyncConflict<T>
 ): ConflictResolution<T> {
   const { localData, serverData } = conflict;
@@ -45,7 +45,7 @@ export function resolveClientWins<T extends Record<string, any>>(
 /**
  * Server-wins: Always prefer server data
  */
-export function resolveServerWins<T extends Record<string, any>>(
+export function resolveServerWins<T extends Record<string, unknown>>(
   conflict: SyncConflict<T>
 ): ConflictResolution<T> {
   const { localData, serverData } = conflict;

@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create, type StoreApi } from 'zustand';
 
 import { trackActivationAction } from '@/lib/compliance/onboarding-telemetry';
 import { storage } from '@/lib/storage';
@@ -101,7 +101,9 @@ function savePersistedState(state: PersistedActivationState): void {
   storage.set(ACTIVATION_STATE_KEY, JSON.stringify(state));
 }
 
-function createHydrateFunction(set: any): () => void {
+function createHydrateFunction(
+  set: StoreApi<ActivationStoreState>['setState']
+): () => void {
   return () => {
     const persisted = loadPersistedState();
     set({
@@ -114,8 +116,8 @@ function createHydrateFunction(set: any): () => void {
 }
 
 function createCompleteActionFunction(
-  set: any,
-  get: any
+  set: StoreApi<ActivationStoreState>['setState'],
+  get: StoreApi<ActivationStoreState>['getState']
 ): (action: ActivationAction) => void {
   return (action: ActivationAction) => {
     const state = get();
@@ -157,7 +159,10 @@ function createCompleteActionFunction(
   };
 }
 
-function createDismissChecklistFunction(set: any, get: any): () => void {
+function createDismissChecklistFunction(
+  set: StoreApi<ActivationStoreState>['setState'],
+  get: StoreApi<ActivationStoreState>['getState']
+): () => void {
   return () => {
     const state = get();
     const timestamp = new Date().toISOString();
@@ -174,7 +179,9 @@ function createDismissChecklistFunction(set: any, get: any): () => void {
   };
 }
 
-function createResetFunction(set: any): () => void {
+function createResetFunction(
+  set: StoreApi<ActivationStoreState>['setState']
+): () => void {
   return () => {
     storage.delete(ACTIVATION_STATE_KEY);
     const initialState = createInitialState();
@@ -188,7 +195,7 @@ function createResetFunction(set: any): () => void {
 }
 
 function createIsActionCompletedFunction(
-  get: any
+  get: StoreApi<ActivationStoreState>['getState']
 ): (action: ActivationAction) => boolean {
   return (action: ActivationAction) => {
     const state = get();
@@ -196,7 +203,9 @@ function createIsActionCompletedFunction(
   };
 }
 
-function createGetCompletedCountFunction(get: any): () => number {
+function createGetCompletedCountFunction(
+  get: StoreApi<ActivationStoreState>['getState']
+): () => number {
   return () => {
     const state = get();
     return ALL_ACTIONS.filter((action) => state.actions[action]?.completed)
@@ -204,7 +213,9 @@ function createGetCompletedCountFunction(get: any): () => number {
   };
 }
 
-function createShouldShowChecklistFunction(get: any): () => boolean {
+function createShouldShowChecklistFunction(
+  get: StoreApi<ActivationStoreState>['getState']
+): () => boolean {
   return () => {
     const state = get();
     // Don't show if dismissed
@@ -220,7 +231,10 @@ function createShouldShowChecklistFunction(get: any): () => boolean {
   };
 }
 
-function createActivationStore(set: any, get: any): ActivationStoreState {
+function createActivationStore(
+  set: StoreApi<ActivationStoreState>['setState'],
+  get: StoreApi<ActivationStoreState>['getState']
+): ActivationStoreState {
   const initialState = createInitialState();
   return {
     actions: initialState.actions,

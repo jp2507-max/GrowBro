@@ -99,7 +99,7 @@ export class TaskCustomizationService {
           updatedMetadata.customNotes = updates.customNotes;
         }
 
-        record.metadata = updatedMetadata as any;
+        record.metadata = updatedMetadata;
       });
     });
 
@@ -128,7 +128,7 @@ export class TaskCustomizationService {
               currentMetadata.flags?.excludeFromBulkShift || false,
           },
         };
-        record.metadata = updatedMetadata as any;
+        record.metadata = updatedMetadata;
       });
     });
 
@@ -165,7 +165,7 @@ export class TaskCustomizationService {
             excludeFromBulkShift: true, // Reminder changes break inheritance
           },
         };
-        record.metadata = updatedMetadata as any;
+        record.metadata = updatedMetadata;
       });
     });
 

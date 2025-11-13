@@ -15,7 +15,11 @@ export type SeriesTaskInput = {
 function isTestEnvironment(): boolean {
   return (
     typeof process !== 'undefined' &&
-    !!(process.env && (process.env as any).JEST_WORKER_ID !== undefined)
+    !!(
+      process.env &&
+      (process.env as NodeJS.ProcessEnv & { JEST_WORKER_ID?: string })
+        .JEST_WORKER_ID !== undefined
+    )
   );
 }
 

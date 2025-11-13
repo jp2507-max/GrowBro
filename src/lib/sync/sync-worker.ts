@@ -19,6 +19,7 @@ import type {
   SyncPushPayload,
   SyncState,
   SyncStatus,
+  TableName,
 } from './types';
 
 /**
@@ -162,7 +163,7 @@ export class SyncWorker {
     return async (_args: {
       lastPulledAt?: number;
       schemaVersion: number;
-      migration: any;
+      migration: unknown;
     }) => {
       const timestamp = lastPulledAt ?? _args.lastPulledAt ?? null;
 
@@ -194,7 +195,7 @@ export class SyncWorker {
       changes,
       lastPulledAt: syncLastPulledAt,
     }: {
-      changes: any;
+      changes: SyncPushPayload['changes'];
       lastPulledAt: number | null;
     }) => {
       if (this.config.enableLogging) {
@@ -213,11 +214,15 @@ export class SyncWorker {
   }
 
   private createConflictResolver() {
-    return (tableSchema: any, local: any, remote: any) => {
+    return (
+      tableSchema: { name: string },
+      local: Record<string, unknown>,
+      remote: Record<string, unknown>
+    ) => {
       const resolution = resolveConflict(
-        { ...local, id: local.id },
-        { ...remote, id: remote.id },
-        tableSchema.name
+        { ...local, id: String(local.id || '') },
+        { ...remote, id: String(remote.id || '') },
+        tableSchema.name as TableName | undefined
       );
 
       if (this.config.enableLogging) {

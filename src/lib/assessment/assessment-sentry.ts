@@ -65,6 +65,14 @@ export function captureInferenceError(options: {
 }): void {
   const { assessmentId, error, mode, latencyMs } = options;
 
+  // Type guard to check if error is InferenceError
+  const isInferenceError = (e: unknown): e is InferenceError =>
+    typeof e === 'object' &&
+    e !== null &&
+    'code' in e &&
+    'category' in e &&
+    'message' in e;
+
   Sentry.addBreadcrumb({
     category: 'inference',
     message: 'Inference failed',
@@ -72,9 +80,8 @@ export function captureInferenceError(options: {
     data: {
       assessmentId,
       mode,
-      // Use type assertion since error can be InferenceError or Error
-      errorCode: (error as any)?.code,
-      errorCategory: (error as any)?.category,
+      errorCode: isInferenceError(error) ? error.code : undefined,
+      errorCategory: isInferenceError(error) ? error.category : undefined,
       latencyMs,
     },
   });
@@ -83,32 +90,31 @@ export function captureInferenceError(options: {
   let exception: Error;
   if (error instanceof Error) {
     exception = error;
-  } else {
+  } else if (isInferenceError(error)) {
     // Handle InferenceError case - create a new Error with details
-    const e = error as any;
-    exception = new Error(
-      `Inference failed: ${e?.message || e?.code || 'Unknown'}`
-    );
+    exception = new Error(`Inference failed: ${error.message || error.code}`);
+  } else {
+    exception = new Error('Inference failed: Unknown error');
   }
 
   Sentry.captureException(exception, {
     level: 'error',
     tags: {
       assessment_id: assessmentId,
-      // Use type assertion for InferenceError properties
-      error_code: (error as any)?.code,
-      error_category: (error as any)?.category,
+      error_code: isInferenceError(error) ? error.code : undefined,
+      error_category: isInferenceError(error) ? error.category : undefined,
       inference_mode: mode,
     },
     extra: {
-      // Use type assertion for InferenceError properties
-      errorMessage: (error as any)?.message,
-      retryable: (error as any)?.retryable,
-      fallbackToCloud: (error as any)?.fallbackToCloud,
+      errorMessage: isInferenceError(error) ? error.message : undefined,
+      retryable: isInferenceError(error) ? error.retryable : undefined,
+      fallbackToCloud: isInferenceError(error)
+        ? error.fallbackToCloud
+        : undefined,
       latencyMs,
       originalError: error,
       // Include stack trace if available from Error instance
-      ...(error instanceof Error && (error as Error).stack
+      ...(error instanceof Error && error.stack
         ? { originalStack: error.stack }
         : {}),
     },

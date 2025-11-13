@@ -400,7 +400,8 @@ async function fetchRemoteConfig({
   );
 
   if (error) {
-    const status = (error as any)?.context?.status;
+    const status = (error as { context?: { status?: number } })?.context
+      ?.status;
     if (status === 304 && cached) {
       return { payload: toRemoteResponse(cached), source: 'cache' };
     }
