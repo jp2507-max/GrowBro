@@ -33,7 +33,19 @@ import type {
   DeductionResult,
   InsufficientStockError,
   RecoveryOption,
+  ResolvedDeductionMapEntry,
 } from '@/types/inventory-deduction';
+
+type PicksPerItem = Map<
+  string,
+  {
+    entry: DeductionMapEntry;
+    quantityNeeded: number;
+    picks: BatchPickResult[];
+    totalAvailable: number;
+    isPartial: boolean;
+  }
+>;
 
 /**
  * Deduce inventory based on deduction map
@@ -64,21 +76,13 @@ export async function deduceInventory(
       : null);
 
   try {
-    // Check for existing movements with this idempotency key (only if key provided)
-    if (idempotencyKey) {
-      const existingMovements = await checkExistingMovements(
-        database,
-        idempotencyKey
-      );
-
-      if (existingMovements.length > 0) {
-        // Already processed - return existing movements
-        return {
-          success: true,
-          movements: existingMovements.map(mapMovementToResult),
-          idempotencyKey,
-        };
-      }
+    const existingResult = await maybeReturnExistingMovements(
+      database,
+      idempotencyKey,
+      request.deductionMap
+    );
+    if (existingResult) {
+      return existingResult;
     }
 
     // Validate deduction map
@@ -98,6 +102,7 @@ export async function deduceInventory(
 
     // Calculate scaled quantities and prepare picks
     const picksPerItem = await calculatePicks(database, request);
+    const resolvedDeductionMap = mapResolvedDeductionEntries(picksPerItem);
 
     // Check for insufficient stock
     const insufficientItems = await checkInsufficientStock(
@@ -112,6 +117,7 @@ export async function deduceInventory(
         movements: [],
         insufficientItems,
         idempotencyKey,
+        deductionMap: resolvedDeductionMap,
       };
     }
 
@@ -128,6 +134,7 @@ export async function deduceInventory(
       success: true,
       movements: movements.map(mapMovementToResult),
       idempotencyKey,
+      deductionMap: resolvedDeductionMap,
     };
   } catch (error) {
     console.error('[DeductionService] Deduction failed:', error);
@@ -140,26 +147,37 @@ export async function deduceInventory(
   }
 }
 
+async function maybeReturnExistingMovements(
+  database: Database,
+  idempotencyKey: string | null,
+  deductionMap: DeductionMapEntry[]
+): Promise<DeductionResult | null> {
+  if (!idempotencyKey) return null;
+  const existingMovements = await checkExistingMovements(
+    database,
+    idempotencyKey
+  );
+  if (existingMovements.length === 0) {
+    return null;
+  }
+
+  return {
+    success: true,
+    movements: existingMovements.map(mapMovementToResult),
+    idempotencyKey,
+    deductionMap,
+  };
+}
+
 /**
  * Calculate batch picks for all items in deduction map
  */
 async function calculatePicks(
   database: Database,
   request: DeduceInventoryRequest
-): Promise<
-  Map<
-    string,
-    {
-      entry: DeductionMapEntry;
-      quantityNeeded: number;
-      picks: BatchPickResult[];
-      totalAvailable: number;
-      isPartial: boolean;
-    }
-  >
-> {
+): Promise<PicksPerItem> {
   const context = request.context ?? { taskId: request.taskId ?? 'manual' };
-  const picksPerItem = new Map();
+  const picksPerItem: PicksPerItem = new Map();
 
   for (const entry of request.deductionMap) {
     const quantityNeeded = calculateScaledQuantity(entry, context);
@@ -197,12 +215,23 @@ async function calculatePicks(
   return picksPerItem;
 }
 
+function mapResolvedDeductionEntries(
+  picksPerItem: PicksPerItem
+): ResolvedDeductionMapEntry[] {
+  return Array.from(picksPerItem.values()).map(({ entry, quantityNeeded }) => ({
+    ...entry,
+    quantity: quantityNeeded,
+    resolvedQuantity: quantityNeeded,
+    totalQuantity: quantityNeeded,
+  }));
+}
+
 /**
  * Check for insufficient stock in picks
  */
 async function checkInsufficientStock(
   database: Database,
-  picksPerItem: Map<string, any>,
+  picksPerItem: PicksPerItem,
   taskId: string | null
 ): Promise<InsufficientStockError[]> {
   const insufficientItems: InsufficientStockError[] = [];

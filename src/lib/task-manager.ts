@@ -24,6 +24,7 @@ import type {
   DeductionMapEntry,
   DeductionResult,
   InsufficientStockError,
+  ResolvedDeductionMapEntry,
 } from '@/types/inventory-deduction';
 
 export type CreateTaskInput = {
@@ -57,10 +58,20 @@ type NotificationTask = Parameters<
   TaskNotificationService['scheduleTaskReminder']
 >[0];
 
-type DeductionSummaryEntry = Pick<
-  DeductionMapEntry,
-  'itemId' | 'unit' | 'perTaskQuantity' | 'perPlantQuantity' | 'scalingMode'
->;
+type DeductionFailureSourceEntry =
+  | DeductionMapEntry
+  | ResolvedDeductionMapEntry;
+
+type DeductionSummaryEntry = {
+  itemId: string;
+  unit: string;
+  perTaskQuantity?: number;
+  perPlantQuantity?: number;
+  scalingMode?: DeductionMapEntry['scalingMode'];
+  quantity?: number;
+  resolvedQuantity?: number;
+  totalQuantity?: number;
+};
 
 type DeductionFailureDetails = {
   timestamp: string;
@@ -72,7 +83,7 @@ type DeductionFailureDetails = {
 };
 
 type DeductionFailureLogContext = {
-  deductionMap: DeductionMapEntry[];
+  deductionMap: readonly DeductionFailureSourceEntry[];
   result: DeductionResult;
   errorDetails?: string;
 };
@@ -748,21 +759,27 @@ function determinePlantCount(taskData: Task): number | undefined {
 }
 
 function buildDeductionSummary(
-  deductionMap: DeductionMapEntry[]
+  deductionMap: readonly DeductionFailureSourceEntry[]
 ): DeductionSummaryEntry[] {
-  return deductionMap.map((entry) => ({
-    itemId: entry.itemId,
-    unit: entry.unit,
-    perTaskQuantity: entry.perTaskQuantity,
-    perPlantQuantity: entry.perPlantQuantity,
-    scalingMode: entry.scalingMode,
-  }));
+  return deductionMap.map((entry) => {
+    const resolved = entry as ResolvedDeductionMapEntry;
+    return {
+      itemId: entry.itemId,
+      unit: entry.unit,
+      perTaskQuantity: entry.perTaskQuantity,
+      perPlantQuantity: entry.perPlantQuantity,
+      scalingMode: entry.scalingMode,
+      quantity: resolved.quantity,
+      resolvedQuantity: resolved.resolvedQuantity,
+      totalQuantity: resolved.totalQuantity,
+    };
+  });
 }
 
 function createDeductionFailureDetails(
   plantCount: number | undefined,
   result: DeductionResult,
-  deductionMap: DeductionMapEntry[]
+  deductionMap: readonly DeductionFailureSourceEntry[]
 ): DeductionFailureDetails {
   return {
     timestamp: new Date().toISOString(),
@@ -801,9 +818,16 @@ function logDeductionFailure(
   context: DeductionFailureLogContext
 ): void {
   const { deductionMap, result, errorDetails } = context;
-  const mapSummary = deductionMap
+  const summaryEntries = buildDeductionSummary(deductionMap);
+  const mapSummary = summaryEntries
     .map((entry) => {
-      const quantity = entry.perTaskQuantity ?? entry.perPlantQuantity ?? 0;
+      const quantity =
+        entry.resolvedQuantity ??
+        entry.quantity ??
+        entry.totalQuantity ??
+        entry.perTaskQuantity ??
+        entry.perPlantQuantity ??
+        0;
       return `${entry.itemId}(${quantity}${entry.unit})`;
     })
     .join(', ');
@@ -902,10 +926,14 @@ async function handleTaskInventoryDeduction(
   }
 
   if (!result.success) {
+    const failureEntries: readonly DeductionFailureSourceEntry[] =
+      result.deductionMap && result.deductionMap.length > 0
+        ? result.deductionMap
+        : validation.entries;
     const failureDetails = createDeductionFailureDetails(
       plantCount,
       result,
-      validation.entries
+      failureEntries
     );
     await persistDeductionFailure(taskId, failureDetails);
 
@@ -933,7 +961,7 @@ async function handleTaskInventoryDeduction(
       .join('; ');
 
     logDeductionFailure(taskId, plantCount, {
-      deductionMap: validation.entries,
+      deductionMap: failureEntries,
       result,
       errorDetails,
     });
