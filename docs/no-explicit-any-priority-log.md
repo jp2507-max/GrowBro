@@ -7,95 +7,95 @@ This file groups every ESLint `@typescript-eslint/no-explicit-any` warning from 
 Total warnings: **823**
 
 | File                                                               | Count |
-| ------------------------------------------------------------------ | ----: |
-| `src/lib/task-manager.ts`                                          |   130 |
-| `src/lib/sync-engine.ts`                                           |   101 |
-| `src/lib/template-manager.ts`                                      |    37 |
-| `src/lib/uploads/queue.ts`                                         |    29 |
-| `src/lib/notifications/push-service.ts`                            |    27 |
-| `src/lib/support/ticket-queue.ts`                                  |    27 |
-| `src/lib/sentry-utils.ts`                                          |    25 |
-| `src/lib/moderation/age-verification-service.ts`                   |    20 |
-| `src/lib/notifications/notification-manager.ts`                    |    20 |
-| `src/lib/moderation/moderation-service.ts`                         |    18 |
-| `src/lib/playbooks/ai-adjustment-service.ts`                       |    16 |
-| `src/lib/compliance/onboarding-state.ts`                           |    14 |
-| `src/lib/assessment/assessment-retention-service.ts`               |    13 |
-| `src/lib/notifications/notification-storage.ts`                    |    12 |
-| `src/lib/nutrient-engine/services/calibration-reminder.ts`         |    12 |
-| `src/lib/compliance/activation-state.ts`                           |    11 |
-| `src/lib/compliance/legal-acceptances.ts`                          |    10 |
-| `src/lib/harvest/harvest-notification-service.ts`                  |    10 |
-| `src/lib/moderation/transparency-service.ts`                       |    10 |
-| `src/lib/compliance/age-gate.ts`                                   |     9 |
-| `src/lib/moderation/content-age-gating.ts`                         |     9 |
-| `src/lib/notifications/push-receiver-service.ts`                   |     9 |
-| `src/lib/assessment/assessment-sentry.ts`                          |     8 |
-| `src/lib/assessment/conflict-detection.ts`                         |     7 |
-| `src/lib/harvest/harvest-error-handler.ts`                         |     7 |
-| `src/lib/nutrient-engine/hooks/use-alert-evaluation.ts`            |     7 |
-| `src/lib/nutrient-engine/services/reservoir-event-service.ts`      |     7 |
-| `src/lib/nutrient-engine/services/reservoir-service.ts`            |     7 |
-| `src/lib/nutrient-engine/services/source-water-profile-service.ts` |     7 |
-| `src/lib/privacy/strip-pii.ts`                                     |     7 |
-| `src/lib/moderation/content-snapshot.ts`                           |     6 |
-| `src/lib/moderation/moderation-metrics-queries.ts`                 |     6 |
-| `src/lib/notifications/android-channels.ts`                        |     6 |
-| `src/lib/assessment/assessment-analytics-feedback-summary.ts`      |     5 |
-| `src/lib/assessment/assessment-analytics-summary.ts`               |     5 |
-| `src/lib/moderation/dsa-transparency-client.ts`                    |     5 |
-| `src/lib/moderation/monitoring-service.ts`                         |     5 |
-| `src/lib/playbooks/community-realtime-service.ts`                  |     5 |
-| `src/lib/privacy/sdk-gate.ts`                                      |     5 |
-| `src/lib/sync/sync-worker.ts`                                      |     5 |
-| `src/lib/sync/types.ts`                                            |     5 |
-| `src/lib/compliance/regional-compliance.ts`                        |     4 |
-| `src/lib/inventory/undo-service.ts`                                |     4 |
-| `src/lib/moderation/repeat-offender-service.ts`                    |     4 |
-| `src/lib/notifications/grouping-service.ts`                        |     4 |
-| `src/lib/playbooks/template-saver.ts`                              |     4 |
-| `src/lib/sync/network-manager.ts`                                  |     4 |
-| `src/lib/sync/sync-manager.ts`                                     |     4 |
-| `src/lib/uploads/harvest-photo-cleanup.ts`                         |     4 |
-| `src/lib/assessment/conflict-strategies.ts`                        |     3 |
-| `src/lib/assessment/sync-utils.ts`                                 |     3 |
-| `src/lib/moderation/appeals-service.ts`                            |     3 |
-| `src/lib/moderation/config/moderation-config.ts`                   |     3 |
-| `src/lib/moderation/error-classification.ts`                       |     3 |
-| `src/lib/playbooks/schedule-shifter.ts`                            |     3 |
-| `src/lib/playbooks/task-customization.ts`                          |     3 |
-| `src/lib/playbooks/template-adoption-service.ts`                   |     3 |
-| `src/lib/playbooks/use-ai-adjustments.ts`                          |     3 |
-| `src/lib/privacy/deletion-adapter-supabase.ts`                     |     3 |
-| `src/lib/privacy/deletion-adapter.ts`                              |     3 |
-| `src/lib/support/help-article-cache.ts`                            |     3 |
-| `src/lib/assessment/conflict-types.ts`                             |     2 |
-| `src/lib/assessment/model-remote-config.ts`                        |     2 |
-| `src/lib/harvest/harvest-sync-error-handler.ts`                    |     2 |
-| `src/lib/inventory/cost-analysis-service.ts`                       |     2 |
-| `src/lib/inventory/csv-import-service.ts`                          |     2 |
-| `src/lib/inventory/movement-service.ts`                            |     2 |
-| `src/lib/inventory/use-inventory-item-detail.ts`                   |     2 |
-| `src/lib/moderation/sor-submission-orchestrator.ts`                |     2 |
-| `src/lib/moderation/trusted-flagger-analytics.ts`                  |     2 |
-| `src/lib/notifications/ios-categories.ts`                          |     2 |
-| `src/lib/notifications/local-service.ts`                           |     2 |
-| `src/lib/notifications/use-notification-preferences.ts`            |     2 |
-| `src/lib/nutrient-engine/services/calibration-service.ts`          |     2 |
-| `src/lib/playbooks/analytics/example-usage.ts`                     |     2 |
-| `src/lib/playbooks/template-sharing-service.ts`                    |     2 |
-| `src/lib/sync/preferences.ts`                                      |     2 |
-| `src/lib/assessment/calibration-remote-config.ts`                  |     1 |
-| `src/lib/assessment/conflict-resolver.ts`                          |     1 |
-| `src/lib/inventory/deduction-service.ts`                           |     1 |
-| `src/lib/inventory/use-consumption-analytics.ts`                   |     1 |
-| `src/lib/inventory/use-inventory-items.ts`                         |     1 |
-| `src/lib/moderation/account-restoration-service.ts`                |     1 |
-| `src/lib/moderation/audit-retention-manager.ts`                    |     1 |
-| `src/lib/moderation/audit-service.ts`                              |     1 |
-| `src/lib/moderation/community-integration.ts`                      |     1 |
-| `src/lib/moderation/conflict-of-interest.ts`                       |     1 |
-| `src/lib/moderation/graceful-degradation.ts`                       |     1 |
+| ------------------------------------------------------------------ | ----: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/task-manager.ts`                                          |     0 |
+| `src/lib/sync-engine.ts`                                           |     0 |
+| `src/lib/template-manager.ts`                                      |     0 |
+| `src/lib/uploads/queue.ts`                                         |     0 |
+| `src/lib/notifications/push-service.ts`                            |     0 |
+| `src/lib/support/ticket-queue.ts`                                  |     0 |
+| `src/lib/sentry-utils.ts`                                          |     0 | ✅ Already clean                                                                                                                                                                                                                                                                                                                                           |
+| `src/lib/moderation/age-verification-service.ts`                   |     0 | ✅ Already clean                                                                                                                                                                                                                                                                                                                                           |
+| `src/lib/notifications/notification-manager.ts`                    |     0 | ✅ Already clean                                                                                                                                                                                                                                                                                                                                           |
+| `src/lib/moderation/moderation-service.ts`                         |     0 | ✅ Replaced query builder `any` with type alias, typed DB records                                                                                                                                                                                                                                                                                          |
+| `src/lib/playbooks/ai-adjustment-service.ts`                       |     0 | ✅ Added WatermelonDB model types, @ts-expect-error for field assignments (WatermelonDB limitation)                                                                                                                                                                                                                                                        |
+| `src/lib/compliance/onboarding-state.ts`                           |     0 | ✅ Replaced Zustand `any` with StoreApi types                                                                                                                                                                                                                                                                                                              |
+| `src/lib/assessment/assessment-retention-service.ts`               |     0 | ✅ Replaced `any[]` with AssessmentModel[], added SafeFileSystem interface for FileSystem types                                                                                                                                                                                                                                                            |
+| `src/lib/notifications/notification-storage.ts`                    |     0 | ✅ Replaced collection `any` casts with Collection<NotificationModel>, one eslint-disable for clauses array (WatermelonDB limitation)                                                                                                                                                                                                                      |
+| `src/lib/nutrient-engine/services/calibration-reminder.ts`         |     0 | ✅ Replaced `Record<string, any>` with `Record<string, unknown>`, added proper type narrowing for notification triggers                                                                                                                                                                                                                                    |
+| `src/lib/compliance/activation-state.ts`                           |     0 | ✅ Replaced Zustand `any` with StoreApi types (same pattern as onboarding-state.ts)                                                                                                                                                                                                                                                                        |
+| `src/lib/compliance/legal-acceptances.ts`                          |     0 | ✅ Replaced Zustand `any` with StoreApi types                                                                                                                                                                                                                                                                                                              |
+| `src/lib/harvest/harvest-notification-service.ts`                  |     0 | ✅ Removed unnecessary `any` casts for HarvestModel fields, typed normalizeTriggerDate with proper type guards                                                                                                                                                                                                                                             |
+| `src/lib/moderation/transparency-service.ts`                       |     0 | ✅ Created RedactedDbRecord type, replaced all `any[]` with proper types                                                                                                                                                                                                                                                                                   |
+| `src/lib/compliance/age-gate.ts`                                   |     0 | ✅ Replaced Zustand `any` with StoreApi types                                                                                                                                                                                                                                                                                                              |
+| `src/lib/moderation/content-age-gating.ts`                         |     0 | ✅ Created DbContentRestriction and DbUserAgeStatus types, typed constructor and all database operations                                                                                                                                                                                                                                                   |
+| `src/lib/notifications/push-receiver-service.ts`                   |     0 | ✅ Already clean - Replaced all `any` types with proper Expo Notifications types: `Notifications.Notification`, `Notifications.NotificationResponse`, `EventSubscription` for subscriptions, and `Record<string, unknown>` for notification data extraction. Updated `NotificationBehavior` to include `shouldShowBanner` and `shouldShowList` properties. |
+| `src/lib/assessment/assessment-sentry.ts`                          |     0 | ✅ Already clean - Uses proper types from assessment types, no `any` usage found                                                                                                                                                                                                                                                                           |
+| `src/lib/assessment/conflict-detection.ts`                         |     0 | ✅ Already clean - Uses proper types from assessment types, no `any` usage found                                                                                                                                                                                                                                                                           |
+| `src/lib/harvest/harvest-error-handler.ts`                         |     0 | ✅ Already clean - Uses proper types from harvest types, no `any` usage found                                                                                                                                                                                                                                                                              |
+| `src/lib/nutrient-engine/hooks/use-alert-evaluation.ts`            |     0 | ✅ Already clean - Replaced all `any` types with proper domain types from nutrient-engine/types. Changed `modelToAlert` return type from `any` to `DeviationAlert`. Replaced `as any` casts with specific type assertions: `AlertType`, `AlertSeverity`, `PpmScale`, `QualityFlag[]`, and `GrowingMedium`. Added necessary type imports.                   |
+| `src/lib/nutrient-engine/services/reservoir-event-service.ts`      |     0 | ✅ Already clean - Replaced all `any` types with proper types. Changed `create` callback parameter from `any` to `ReservoirEventModel`. Replaced subscription variables with `{ unsubscribe: () => void }                                                                                                                                                  | undefined`(compatible with both rxjs and WatermelonDB). Typed observable callbacks with`ReservoirEventModel[]`and error handlers with`unknown`. |
+| `src/lib/nutrient-engine/services/reservoir-service.ts`            |     0 | ✅ Replaced WatermelonDB callback `any` with ReservoirModel, subscription with `{ unsubscribe: () => void }`, observable callbacks with proper types                                                                                                                                                                                                       |
+| `src/lib/nutrient-engine/services/source-water-profile-service.ts` |     0 | ✅ Replaced WatermelonDB callback `any` with SourceWaterProfileModel, subscription with `{ unsubscribe: () => void }`, observable callbacks with proper types                                                                                                                                                                                              |
+| `src/lib/privacy/strip-pii.ts`                                     |     0 | ✅ Replaced `any` with `Record<string, unknown>` and proper type guards                                                                                                                                                                                                                                                                                    |
+| `src/lib/moderation/content-snapshot.ts`                           |     0 | ✅ Replaced `any` with `unknown` for generic content data                                                                                                                                                                                                                                                                                                  |
+| `src/lib/moderation/moderation-metrics-queries.ts`                 |     0 | ✅ Created DbAppealRecord and DbODSEscalationRecord types                                                                                                                                                                                                                                                                                                  |
+| `src/lib/notifications/android-channels.ts`                        |     0 | ✅ Created AndroidNotificationsExtended type for Android-specific APIs                                                                                                                                                                                                                                                                                     |
+| `src/lib/assessment/assessment-analytics-feedback-summary.ts`      |     0 | ✅ Created proper types for SQLite queries and database adapter                                                                                                                                                                                                                                                                                            |
+| `src/lib/assessment/assessment-analytics-summary.ts`               |     0 | ✅ Created proper types for SQLite queries and database adapter                                                                                                                                                                                                                                                                                            |
+| `src/lib/moderation/dsa-transparency-client.ts`                    |     0 | ✅ Created DSAApiError interface, typed parseSubmissionResponse with unknown + type guards, typed isPermanentError parameter                                                                                                                                                                                                                               |
+| `src/lib/moderation/monitoring-service.ts`                         |     0 | ✅ Replaced `any` with proper metric types (PerformanceMetrics, ErrorMetrics, etc.) and typed event arrays                                                                                                                                                                                                                                                 |
+| `src/lib/playbooks/community-realtime-service.ts`                  |     0 | ✅ Created CommunityPlaybookTemplate, TemplateRating, TemplateComment types, added type assertions for Supabase realtime payloads                                                                                                                                                                                                                          |
+| `src/lib/privacy/sdk-gate.ts`                                      |     0 | ✅ Replaced `any` with proper fetch API types (RequestInfo                                                                                                                                                                                                                                                                                                 | URL, RequestInit), added proper URL extraction logic                                                                                            |
+| `src/lib/sync/sync-worker.ts`                                      |     0 | ✅ Replaced `any` with proper types: unknown for migration, SyncPushPayload['changes'], Record<string, unknown> for conflict resolver                                                                                                                                                                                                                      |
+| `src/lib/sync/types.ts`                                            |     0 | ✅ Replaced all `any` with `unknown` for dynamic database record fields                                                                                                                                                                                                                                                                                    |
+| `src/lib/compliance/regional-compliance.ts`                        |     0 | ✅ Replaced Zustand `any` with StoreApi types                                                                                                                                                                                                                                                                                                              |
+| `src/lib/inventory/undo-service.ts`                                |     0 | ✅ Created RawRecordWithDelete type for WatermelonDB soft-delete checks                                                                                                                                                                                                                                                                                    |
+| `src/lib/moderation/repeat-offender-service.ts`                    |     0 | ✅ Created DbRepeatOffenderRecord type for database operations                                                                                                                                                                                                                                                                                             |
+| `src/lib/notifications/grouping-service.ts`                        |     0 | ✅ Created ImmediateTrigger type for notification triggers                                                                                                                                                                                                                                                                                                 |
+| `src/lib/playbooks/template-saver.ts`                              |     0 | ✅ Created PlaybookRawRecord type for template metadata fields                                                                                                                                                                                                                                                                                             |
+| `src/lib/sync/network-manager.ts`                                  |     0 | ✅ Replaced all `any` with NetInfoState type from @react-native-community/netinfo                                                                                                                                                                                                                                                                          |
+| `src/lib/sync/sync-manager.ts`                                     |     0 | ✅ Replaced all `any` with WatermelonDB sync types (SyncPullArgs, SyncPullResult, SyncPushArgs, SyncDatabaseChangeSet)                                                                                                                                                                                                                                     |
+| `src/lib/uploads/harvest-photo-cleanup.ts`                         |     0 | ✅ Replaced all `any` with HarvestModel type, accessed photos field directly from model                                                                                                                                                                                                                                                                    |
+| `src/lib/assessment/conflict-strategies.ts`                        |     0 | ✅ Replaced `any` with `Record<string, unknown>` in generic constraints                                                                                                                                                                                                                                                                                    |
+| `src/lib/assessment/sync-utils.ts`                                 |     0 | ✅ Replaced `any` with `Record<string, unknown>` in generic constraint and type assertions                                                                                                                                                                                                                                                                 |
+| `src/lib/moderation/appeals-service.ts`                            |     0 | ✅ Replaced `any` with `Appeal` type from moderation types                                                                                                                                                                                                                                                                                                 |
+| `src/lib/moderation/config/moderation-config.ts`                   |     0 | ✅ Replaced `any` with `Record<string, unknown>` in deepMerge function                                                                                                                                                                                                                                                                                     |
+| `src/lib/moderation/error-classification.ts`                       |     0 | ✅ Replaced `any` with `Record<string, unknown>` in interfaces and added type guards for error extraction                                                                                                                                                                                                                                                  |
+| `src/lib/playbooks/schedule-shifter.ts`                            |     0 | ✅ Replaced `any` with proper type guards for metadata access and ScheduleShiftPriorValues type                                                                                                                                                                                                                                                            |
+| `src/lib/playbooks/task-customization.ts`                          |     0 | ✅ Removed `as any` casts - PlaybookTaskMetadata is compatible with TaskMetadata                                                                                                                                                                                                                                                                           |
+| `src/lib/playbooks/template-adoption-service.ts`                   |     0 | ✅ Replaced `any[]` with PlaybookStep[] and TemplateComment[], added proper DB row mapping                                                                                                                                                                                                                                                                 |
+| `src/lib/playbooks/use-ai-adjustments.ts`                          |     0 | ✅ Replaced `any` with AnalyticsClient type for analytics parameters                                                                                                                                                                                                                                                                                       |
+| `src/lib/privacy/deletion-adapter-supabase.ts`                     |     0 | ✅ Created StorageFileObject interface, removed `as any` casts                                                                                                                                                                                                                                                                                             |
+| `src/lib/privacy/deletion-adapter.ts`                              |     0 | ✅ Created GlobalWithAdapter interface for type-safe globalThis access                                                                                                                                                                                                                                                                                     |
+| `src/lib/support/help-article-cache.ts`                            |     0 | ✅ Replaced `any` with HelpArticleCacheModel type assertions in WatermelonDB callbacks                                                                                                                                                                                                                                                                     |
+| `src/lib/assessment/conflict-types.ts`                             |     0 | ✅ Replaced `any` with `Record<string, unknown>` as default generic type                                                                                                                                                                                                                                                                                   |
+| `src/lib/assessment/model-remote-config.ts`                        |     0 | ✅ Created error type with context.status and status fields for Supabase error handling                                                                                                                                                                                                                                                                    |
+| `src/lib/harvest/harvest-sync-error-handler.ts`                    |     0 | ✅ Replaced translation function `any` with `Record<string, unknown>`, removed `as any` cast for HarvestAuditAction                                                                                                                                                                                                                                        |
+| `src/lib/inventory/cost-analysis-service.ts`                       |     0 | ✅ Replaced `any[]` with `Q.Clause[]` for WatermelonDB query conditions                                                                                                                                                                                                                                                                                    |
+| `src/lib/inventory/csv-import-service.ts`                          |     0 | ✅ Replaced `any` with proper WatermelonDB Collection type for InventoryMovementModel                                                                                                                                                                                                                                                                      |
+| `src/lib/inventory/movement-service.ts`                            |     0 | ✅ Replaced `any` with proper WatermelonDB Collection type for InventoryMovementModel in helper functions                                                                                                                                                                                                                                                  |
+| `src/lib/inventory/use-inventory-item-detail.ts`                   |     0 | ✅ Replaced `any` with InventoryCategory type assertion, removed unnecessary cast for deletedAt                                                                                                                                                                                                                                                            |
+| `src/lib/moderation/sor-submission-orchestrator.ts`                |     0 | ✅ Replaced `any` with RedactedSoR type for redacted Statement of Reasons parameters                                                                                                                                                                                                                                                                       |
+| `src/lib/moderation/trusted-flagger-analytics.ts`                  |     0 | ✅ Created ReportWithDecision and RawFlaggerData types for Supabase query results                                                                                                                                                                                                                                                                          |
+| `src/lib/notifications/ios-categories.ts`                          |     0 | ✅ Created NotificationsWithIOS type extension for iOS-specific notification API                                                                                                                                                                                                                                                                           |
+| `src/lib/notifications/local-service.ts`                           |     0 | ✅ Created AndroidTrigger and trigger type guards for notification trigger types                                                                                                                                                                                                                                                                           |
+| `src/lib/notifications/use-notification-preferences.ts`            |     0 | ✅ Replaced `any` with type assertions in WatermelonDB callbacks (NotificationPreferenceModel), used `unknown` cast for dynamic property access                                                                                                                                                                                                            |
+| `src/lib/nutrient-engine/services/calibration-service.ts`          |     0 | ✅ Replaced `any` return types with `Observable<CalibrationModel[]>` for observe() methods, imported Observable from WatermelonDB utils                                                                                                                                                                                                                    |
+| `src/lib/playbooks/analytics/example-usage.ts`                     |     0 | ✅ Replaced `any` with `Record<string, unknown>` for unused version parameters in example code                                                                                                                                                                                                                                                             |
+| `src/lib/playbooks/template-sharing-service.ts`                    |     0 | ✅ Replaced `any[]` with `PlaybookStep[]` for steps, created DbTemplateRow interface for database row mapping                                                                                                                                                                                                                                              |
+| `src/lib/sync/preferences.ts`                                      |     0 | ✅ Replaced `any` with `unknown` in sanitization helper functions for type-safe input validation                                                                                                                                                                                                                                                           |
+| `src/lib/assessment/calibration-remote-config.ts`                  |     0 | ✅ Replaced `any` with proper error type structure for Supabase edge function error context                                                                                                                                                                                                                                                                |
+| `src/lib/assessment/conflict-resolver.ts`                          |     0 | ✅ Replaced `any` with `unknown` in generic constraint to match conflict-types pattern                                                                                                                                                                                                                                                                     |
+| `src/lib/inventory/deduction-service.ts`                           |     0 | ✅ Already clean - no `any` usage found                                                                                                                                                                                                                                                                                                                    |
+| `src/lib/inventory/use-consumption-analytics.ts`                   |     0 | ✅ Replaced `any` with Database type for database parameter                                                                                                                                                                                                                                                                                                |
+| `src/lib/inventory/use-inventory-items.ts`                         |     0 | ✅ Typed collection with InventoryItemModel, cast category to InventoryCategory                                                                                                                                                                                                                                                                            |
+| `src/lib/moderation/account-restoration-service.ts`                |     0 | ✅ Created SuspensionRecordWithReversal type, typed suspension parameter in map                                                                                                                                                                                                                                                                            |
+| `src/lib/moderation/audit-retention-manager.ts`                    |     0 | ✅ Replaced metadata `any` with `Record<string, unknown>`                                                                                                                                                                                                                                                                                                  |
+| `src/lib/moderation/audit-service.ts`                              |     0 | ✅ Created DbAuditEventRow interface, typed mapToAuditEvent parameter                                                                                                                                                                                                                                                                                      |
+| `src/lib/moderation/community-integration.ts`                      |     0 | ✅ Replaced updates `Record<string, any>` with `Record<string, string                                                                                                                                                                                                                                                                                      | null>`                                                                                                                                          |
+| `src/lib/moderation/conflict-of-interest.ts`                       |     0 | ✅ Replaced decision `any` with type assertion `{ id: string }[]`                                                                                                                                                                                                                                                                                          |
+| `src/lib/moderation/graceful-degradation.ts`                       |     0 | ✅ Replaced fallbackImplementation `Promise<any>` with `Promise<unknown>`                                                                                                                                                                                                                                                                                  |
 | `src/lib/moderation/migrations/migration-manager.ts`               |     1 |
 | `src/lib/moderation/moderation-metrics-types.ts`                   |     1 |
 | `src/lib/moderation/moderation-notification-service.ts`            |     1 |
@@ -128,237 +128,45 @@ Total warnings: **823**
 <details>
 <summary>Detailed warnings</summary>
 
-#### `src/lib/task-manager.ts` (130 warnings)
+#### `src/lib/task-manager.ts` (0 warnings)
 
 ✅ Replaced Watermelon collections `any` casts with typed repositories and formalized inventory deduction/result types.
 
 - 🔁 Follow-up: tightened reminder resets and deduction guards per review feedback.
 
-#### `src/lib/sync-engine.ts` (101 warnings)
+#### `src/lib/sync-engine.ts` (0 warnings)
 
 ✅ Typed sync payload shapes, repository accessors, and conflict resolution helpers to replace legacy `any` usage.
 
 - 🔁 Follow-up: restricted ISO parsing to audited fields and aligned inventory movement enrichment.
 
-#### `src/lib/template-manager.ts` (37 warnings)
+#### `src/lib/template-manager.ts` (0 warnings)
 
-```.text
-155:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-155:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-156:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-158:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-160:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-202:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-202:63  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-207:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-222:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-222:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-227:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-227:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-228:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-229:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-232:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-233:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-234:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-235:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-238:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-239:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-241:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-286:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-286:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-287:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-288:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-289:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-291:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-326:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-348:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-348:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-354:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-354:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-355:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-356:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-357:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-358:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-359:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced all WatermelonDB collection `any` casts with `Collection<TaskModel>` and typed all task model operations. Introduced `BulkShiftPreviewItem` type for preview results.
 
-#### `src/lib/uploads/queue.ts` (29 warnings)
+#### `src/lib/uploads/queue.ts` (0 warnings)
 
-```.text
-91:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-93:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-93:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-128:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-132:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-132:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-167:57  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-168:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-171:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-184:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-205:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-206:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-214:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-221:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-222:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-224:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-232:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-233:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-235:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-248:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-249:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-253:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-264:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-265:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-267:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-388:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-389:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-391:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-393:62  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced all WatermelonDB collection `any` casts with typed `Collection<ImageUploadQueueModel>`, `Collection<HarvestModel>`, and `Collection<TaskModel>`. Fixed null/undefined type mismatches and added proper type imports.
 
-#### `src/lib/notifications/push-service.ts` (27 warnings)
+#### `src/lib/notifications/push-service.ts` (0 warnings)
 
-```.text
-11:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-92:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-92:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-122:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-122:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-128:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-139:66  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-140:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-142:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-146:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-164:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-164:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-188:66  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-189:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-191:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-195:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-223:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-223:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-258:66  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-259:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-261:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-262:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-267:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-268:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-322:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-327:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-327:64  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced WatermelonDB collection `any` casts with `Collection<DeviceTokenModel>`. Removed unnecessary type assertions for Expo Notifications API (now uses proper types). Fixed Constants.expoConfig typing with type intersection for legacy `id` property. Replaced `any` in extractTokenString with `Record<string, unknown>`.
 
-#### `src/lib/support/ticket-queue.ts` (27 warnings)
+#### `src/lib/support/ticket-queue.ts` (0 warnings)
 
-```.text
-45:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-46:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-47:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-48:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-49:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-50:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-51:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-52:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-53:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-54:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-56:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-57:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-125:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-126:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-127:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-128:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-155:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-163:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-164:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-165:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-172:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-173:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-174:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-243:63  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-268:63  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-336:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-374:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced WatermelonDB collection access with `Collection<SupportTicketQueueModel>`. Used inline eslint-disable comments for necessary `_raw` property access (WatermelonDB limitation). Simplified recordToTicket to remove redundant fallback branch.
 
-#### `src/lib/sentry-utils.ts` (25 warnings)
+#### `src/lib/sentry-utils.ts` (0 warnings)
 
-```.text
-130:8   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-136:4   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-145:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-145:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-163:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-163:62  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-178:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-178:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-180:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-206:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-206:57  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-239:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-239:57  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-257:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-295:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-306:62  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-313:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-341:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-341:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-341:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-365:71  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-375:62  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-428:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-429:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-430:4   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced all `any` types with proper Sentry types (`SentryEvent`, `SentryBreadcrumb`, `SentryException`), `unknown` for generic scrubbing functions, and `Record<string, unknown>` for object types. Extracted helper functions to keep beforeSendHook under 90 lines. One intentional `any` cast remains for Contexts type compatibility (with eslint-disable comment).
 
-#### `src/lib/moderation/age-verification-service.ts` (20 warnings)
+#### `src/lib/moderation/age-verification-service.ts` (0 warnings)
 
-```.text
-37:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-140:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-142:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-148:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-204:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-244:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-262:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-266:63  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-277:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-283:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-355:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-381:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-408:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-455:63  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-462:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-468:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-521:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-579:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-605:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-611:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Defined database record types (`DbTokenRecord`, `DbUserStatusRecord`, `DbContentRestrictionRecord`) for all Supabase responses. Replaced constructor `any` parameter with proper `ReturnType<typeof createClient>`. Removed all `as any` casts from insert/update/select operations and replaced with typed database records.
 
-#### `src/lib/notifications/notification-manager.ts` (20 warnings)
+#### `src/lib/notifications/notification-manager.ts` (0 warnings)
 
-```.text
-59:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-242:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-244:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-249:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-249:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-252:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-253:75  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-382:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-384:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-386:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-410:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-413:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-415:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-418:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-449:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-449:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-466:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-468:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-470:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-480:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Defined `NotificationPreferencesModel` type for WatermelonDB models and `NotificationSubscription` for notification listeners. Replaced all WatermelonDB collection `any` casts with typed `Collection<NotificationPreferencesModel>`. Used proper `Notifications.NotificationResponse` type instead of `any`. Replaced operation queue `any` with `unknown`. Changed error variable from `any` to `unknown`.
 
 #### `src/lib/moderation/moderation-service.ts` (18 warnings)
 
@@ -491,470 +299,188 @@ Total warnings: **823**
 223:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
-#### `src/lib/compliance/legal-acceptances.ts` (10 warnings)
-
-```.text
-166:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-177:8   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-178:8   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-208:8   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-247:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-258:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-267:8   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-280:8   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-289:8   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-290:8   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/harvest/harvest-notification-service.ts` (10 warnings)
-
-```.text
-98:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-392:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-395:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-412:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-413:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-490:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-493:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-618:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-637:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-640:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/moderation/transparency-service.ts` (10 warnings)
-
-```.text
-124:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-125:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-126:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-127:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-656:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-670:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-684:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-698:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-718:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-718:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/compliance/age-gate.ts` (9 warnings)
-
-```.text
-170:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-207:8   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-267:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-282:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-282:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-308:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-308:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-322:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-322:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/moderation/content-age-gating.ts` (9 warnings)
-
-```.text
-24:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-122:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-187:64  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-192:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-243:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-266:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-295:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-339:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-392:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/notifications/push-receiver-service.ts` (9 warnings)
-
-```.text
-32:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-36:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-74:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-75:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-96:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-96:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-157:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-157:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-218:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/assessment/assessment-sentry.ts` (8 warnings)
-
-```.text
-76:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-77:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-88:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-99:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-100:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-105:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-106:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-107:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/assessment/conflict-detection.ts` (7 warnings)
-
-```.text
-4:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-15:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-16:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-42:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-42:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-57:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-57:64  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/harvest/harvest-error-handler.ts` (7 warnings)
-
-```.text
-104:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-139:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-155:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-190:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-225:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-245:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-405:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/nutrient-engine/hooks/use-alert-evaluation.ts` (7 warnings)
-
-```.text
-126:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-130:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-131:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-159:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-162:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-176:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-181:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/nutrient-engine/services/reservoir-event-service.ts` (7 warnings)
-
-```.text
-112:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-265:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-279:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-280:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-307:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-320:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-328:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/nutrient-engine/services/reservoir-service.ts` (7 warnings)
-
-```.text
-103:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-134:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-141:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-232:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-271:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-283:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-284:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/nutrient-engine/services/source-water-profile-service.ts` (7 warnings)
-
-```.text
-101:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-127:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-136:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-225:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-264:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-277:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-278:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/privacy/strip-pii.ts` (7 warnings)
-
-```.text
-3:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-38:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-42:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-42:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-91:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-108:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-127:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/moderation/content-snapshot.ts` (6 warnings)
-
-```.text
-53:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-124:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-126:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-189:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-191:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-192:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/moderation/moderation-metrics-queries.ts` (6 warnings)
-
-```.text
-154:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-171:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-270:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-289:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-293:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-317:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/notifications/android-channels.ts` (6 warnings)
-
-```.text
-86:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-86:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-149:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-149:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-163:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-163:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/assessment/assessment-analytics-feedback-summary.ts` (5 warnings)
-
-```.text
-4:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-9:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-9:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-19:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-19:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/assessment/assessment-analytics-summary.ts` (5 warnings)
-
-```.text
-6:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-11:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-11:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-21:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-21:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/moderation/dsa-transparency-client.ts` (5 warnings)
-
-```.text
-297:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-298:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-313:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-315:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-401:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/moderation/monitoring-service.ts` (5 warnings)
-
-```.text
-457:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-458:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-459:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-460:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-490:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/playbooks/community-realtime-service.ts` (5 warnings)
-
-```.text
-7:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-8:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-10:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-11:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-12:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/privacy/sdk-gate.ts` (5 warnings)
-
-```.text
-133:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-133:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-134:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-138:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-138:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/sync/sync-worker.ts` (5 warnings)
-
-```.text
-165:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-197:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-216:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-216:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-216:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/sync/types.ts` (5 warnings)
-
-```.text
-18:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-32:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-108:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-162:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-163:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/compliance/regional-compliance.ts` (4 warnings)
-
-```.text
-89:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-111:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-119:8   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-120:9   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/inventory/undo-service.ts` (4 warnings)
-
-```.text
-158:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-164:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-228:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-262:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/moderation/repeat-offender-service.ts` (4 warnings)
-
-```.text
-193:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-400:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-790:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-801:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/notifications/grouping-service.ts` (4 warnings)
-
-```.text
-64:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-85:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-96:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-134:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/playbooks/template-saver.ts` (4 warnings)
-
-```.text
-245:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-246:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-247:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-248:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/sync/network-manager.ts` (4 warnings)
-
-```.text
-16:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-86:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-88:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-105:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/sync/sync-manager.ts` (4 warnings)
-
-```.text
-71:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-99:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-120:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-167:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/uploads/harvest-photo-cleanup.ts` (4 warnings)
-
-```.text
-98:57  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-101:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-137:57  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-138:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/assessment/conflict-strategies.ts` (3 warnings)
-
-```.text
-10:63  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-31:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-48:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/assessment/sync-utils.ts` (3 warnings)
-
-```.text
-4:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-18:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-18:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/moderation/appeals-service.ts` (3 warnings)
-
-```.text
-533:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-553:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-579:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/moderation/config/moderation-config.ts` (3 warnings)
-
-```.text
-317:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-337:64  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-339:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/moderation/error-classification.ts` (3 warnings)
-
-```.text
-39:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-49:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-180:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/playbooks/schedule-shifter.ts` (3 warnings)
-
-```.text
-160:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-297:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-303:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/playbooks/task-customization.ts` (3 warnings)
-
-```.text
-102:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-131:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-168:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/playbooks/template-adoption-service.ts` (3 warnings)
-
-```.text
-36:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-74:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-255:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/playbooks/use-ai-adjustments.ts` (3 warnings)
-
-```.text
-51:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-92:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-141:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/privacy/deletion-adapter-supabase.ts` (3 warnings)
-
-```.text
-17:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-19:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-21:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/privacy/deletion-adapter.ts` (3 warnings)
-
-```.text
-18:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-24:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-28:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
-
-#### `src/lib/support/help-article-cache.ts` (3 warnings)
-
-```.text
-64:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-141:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-154:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+#### `src/lib/compliance/legal-acceptances.ts` (0 warnings)
+
+✅ Replaced all Zustand `any` parameters with proper `StoreApi<LegalAcceptancesStoreState>['setState']` and `StoreApi<LegalAcceptancesStoreState>['getState']` types in all helper functions (createHydrateFunction, createAcceptDocumentFunction, createAcceptAllFunction, createResetFunction, createIsAllAcceptedFunction, createNeedsReAcceptanceFunction, createGetAcceptedVersionFunction, createLegalAcceptancesStore).
+
+#### `src/lib/harvest/harvest-notification-service.ts` (0 warnings)
+
+✅ Removed all unnecessary `any` casts accessing HarvestModel fields (`notificationId`, `overdueNotificationId`) - these fields are properly typed in the model. Fixed `normalizeTriggerDate` to use `unknown` with proper type guards instead of `any`.
+
+#### `src/lib/moderation/transparency-service.ts` (0 warnings)
+
+✅ Created `RedactedDbRecord` type alias (`Record<string, unknown>`) for PII-redacted database records. Replaced all `any[]` return types in export helper methods (getReportsForExport, getDecisionsForExport, getAppealsForExport, getAuditTrailForExport, redactPIIFromRecords) with properly typed arrays.
+
+#### `src/lib/compliance/age-gate.ts` (0 warnings)
+
+✅ Replaced all Zustand `any` parameters with proper `StoreApi<AgeGateStoreState>['setState']` and `StoreApi<AgeGateStoreState>['getState']` types in all helper functions (createHydrateFunction, createVerifyFunction, createResetFunction, createCheckExpirationFunction, createStartSessionFunction, createAgeGateStore).
+
+#### `src/lib/moderation/content-age-gating.ts` (0 warnings)
+
+✅ Created `DbContentRestriction` and `DbUserAgeStatus` database record types. Replaced constructor `any` parameter with proper `ReturnType<typeof createClient>`. Replaced all `any` casts in database operations with proper types using `satisfies` and `Pick` utility types.
+
+#### `src/lib/notifications/push-receiver-service.ts` (0 warnings)
+
+✅ Replaced all `any` types with proper Expo Notifications types: `Notifications.Notification`, `Notifications.NotificationResponse`, `EventSubscription` for subscriptions, and `Record<string, unknown>` for notification data extraction. Updated `NotificationBehavior` to include `shouldShowBanner` and `shouldShowList` properties.
+
+#### `src/lib/assessment/assessment-sentry.ts` (0 warnings)
+
+✅ Replaced all `any` type assertions with proper type guard `isInferenceError` to safely check and access InferenceError properties (code, category, message, retryable, fallbackToCloud). Used type guard throughout `captureInferenceError` function for breadcrumb data and Sentry tags/extra fields.
+
+#### `src/lib/assessment/conflict-detection.ts` (0 warnings)
+
+✅ Replaced all `any` types with `unknown`. Changed generic constraint from `Record<string, any>` to `Record<string, unknown>`. Removed unnecessary type assertions in `detectConflicts` (direct property access works with proper generic). In `isEqual`, replaced `any` parameters with `unknown` and added proper type narrowing for object property access.
+
+#### `src/lib/harvest/harvest-error-handler.ts` (0 warnings)
+
+✅ Replaced all `any` types with `Record<string, unknown>`. Changed translation function parameter type from `(key: string, options?: any)` to `(key: string, options?: Record<string, unknown>)` in all error handler functions (handleNetworkError, handleBusinessLogicError, handleConsistencyError, handleHarvestError). Fixed type guards (isNetworkError, isBusinessLogicError, isConsistencyError) to use `Record<string, unknown>` instead of `any` for property access.
+
+#### `src/lib/nutrient-engine/hooks/use-alert-evaluation.ts` (0 warnings)
+
+✅ Replaced all `any` types with proper domain types from nutrient-engine/types. Changed `modelToAlert` return type from `any` to `DeviationAlert`. Replaced `as any` casts with specific type assertions: `AlertType`, `AlertSeverity`, `PpmScale`, `QualityFlag[]`, and `GrowingMedium`. Added necessary type imports.
+
+#### `src/lib/nutrient-engine/services/reservoir-event-service.ts` (0 warnings)
+
+✅ Replaced all `any` types with proper types. Changed `create` callback parameter from `any` to `ReservoirEventModel`. Replaced subscription variables with `{ unsubscribe: () => void } | undefined` (compatible with both rxjs and WatermelonDB). Typed observable callbacks with `ReservoirEventModel[]` and error handlers with `unknown`.
+
+#### `src/lib/nutrient-engine/services/reservoir-service.ts` (0 warnings)
+
+✅ Replaced WatermelonDB callback `any` parameters with `ReservoirModel` type. Changed subscription variables from `any` to `{ unsubscribe: () => void } | undefined` (compatible with WatermelonDB's subscription interface). Typed observable callbacks with `ReservoirModel[]` and error handlers with `unknown`. Replaced validation cast from `as any` to `as Partial<CreateReservoirData>`.
+
+#### `src/lib/nutrient-engine/services/source-water-profile-service.ts` (0 warnings)
+
+✅ Replaced WatermelonDB callback `any` parameters with `SourceWaterProfileModel` type. Changed subscription variables from `any` to `{ unsubscribe: () => void } | undefined`. Typed observable callbacks with `SourceWaterProfileModel[]` and error handlers with `unknown`. Replaced validation cast from `as any` to `as Partial<CreateSourceWaterProfileData>`.
+
+#### `src/lib/privacy/strip-pii.ts` (0 warnings)
+
+✅ Replaced all `any` types with proper types: `Record<string, unknown>` for generic objects, added proper type guard for `isPlainObject`, typed function parameters with `unknown` for truly unknown inputs.
+
+#### `src/lib/moderation/content-snapshot.ts` (0 warnings)
+
+✅ Replaced all `any` with `unknown` for generic content data objects in CreateSnapshotOptions, extractMinimalSnapshotData, and pickFields helper.
+
+#### `src/lib/moderation/moderation-metrics-queries.ts` (0 warnings)
+
+✅ Created proper database record types (DbAppealRecord, DbODSEscalationRecord) to replace all `any[]` usages in query functions and helper methods.
+
+#### `src/lib/notifications/android-channels.ts` (0 warnings)
+
+✅ Created AndroidNotificationsExtended type to properly type Android-specific APIs (setNotificationChannelAsync, AndroidImportance, AndroidNotificationVisibility) that aren't in official expo-notifications types.
+
+#### `src/lib/assessment/assessment-analytics-feedback-summary.ts` (0 warnings)
+
+✅ Created proper types for SQLite queries (SQLiteQuery, UnsafeExecuteResult, DatabaseAdapterWithUnsafe) to replace all `any` usages in database adapter interactions.
+
+#### `src/lib/assessment/assessment-analytics-summary.ts` (0 warnings)
+
+✅ Created proper types for SQLite queries (SQLiteQuery, UnsafeExecuteResult, DatabaseAdapterWithUnsafe) to replace all `any` usages, matching pattern from assessment-analytics-feedback-summary.ts.
+
+#### `src/lib/moderation/dsa-transparency-client.ts` (0 warnings)
+
+✅ Created `DSAApiError` interface extending Error with `statusCode` and `isPermanent` properties. Replaced error object `any` casts with `Object.assign` to properly type the extended error. Typed `parseSubmissionResponse` parameter as `unknown` with type guard for validation. Added proper type narrowing in result mapping. Typed `isPermanentError` parameter as `unknown` with proper type assertion.
+
+#### `src/lib/moderation/monitoring-service.ts` (0 warnings)
+
+✅ Replaced `any` types in `generateAlerts` parameter with proper metric types: `PerformanceMetrics`, `ErrorMetrics`, `AuditIntegrityMetrics`, and `CapacityMetrics`. Typed `extractDurations` events parameter with proper structure `{ metadata?: { duration_ms?: unknown } }[]` to allow safe type narrowing.
+
+#### `src/lib/playbooks/community-realtime-service.ts` (0 warnings)
+
+✅ Created database record types: `CommunityPlaybookTemplate`, `TemplateRating`, and `TemplateComment` with required `id` fields and index signatures for additional properties. Replaced all `any` callback parameters with proper types. Added type assertions for Supabase realtime `payload.new` and `payload.old` to match expected types.
+
+#### `src/lib/privacy/sdk-gate.ts` (0 warnings)
+
+✅ Replaced `any` types in fetch interceptor with proper types: `RequestInfo | URL` for input parameter, `RequestInit` for init parameter, and proper `globalThis` typing with fetch property. Added proper URL extraction logic with type guards for string, URL, and Request types.
+
+#### `src/lib/sync/sync-worker.ts` (0 warnings)
+
+✅ Replaced `any` types with proper types: `unknown` for migration parameter (unused), `SyncPushPayload['changes']` for changes parameter, and `Record<string, unknown>` for conflict resolver local/remote parameters. Added `TableName` import and proper type casting for table name in conflict resolution.
+
+#### `src/lib/sync/types.ts` (0 warnings)
+
+✅ Replaced all `any` with `unknown` for dynamic database record fields in SyncPullResponse, SyncPushPayload, QueueItem, and LegacyConflict types. Using `unknown` is safer as it requires type narrowing before use.
+
+#### `src/lib/compliance/regional-compliance.ts` (0 warnings)
+
+✅ Replaced Zustand `any` with `StoreApi<RegionalComplianceState>['setState']` and `StoreApi<RegionalComplianceState>['getState']` types (same pattern as other compliance stores).
+
+#### `src/lib/inventory/undo-service.ts` (0 warnings)
+
+✅ Created `RawRecordWithDelete` type extending WatermelonDB's `RawRecord` to include `deleted_at` field for soft-delete checks. Replaced all `any` casts with proper type. Used `@ts-expect-error` for `deletedAt` setter (WatermelonDB limitation).
+
+#### `src/lib/moderation/repeat-offender-service.ts` (0 warnings)
+
+✅ Created `DbRepeatOffenderRecord` type for database operations. Replaced all `any` return types and parameters with proper types. Fixed array syntax to use `T[]` instead of `Array<T>`.
+
+#### `src/lib/notifications/grouping-service.ts` (0 warnings)
+
+✅ Created `ImmediateTrigger` type (`{ channelId: string } | null`) for notification triggers. Replaced all `any` casts with proper type. Expo docs allow null for immediate presentation but TypeScript types are incorrect.
+
+#### `src/lib/playbooks/template-saver.ts` (0 warnings)
+
+✅ Created `PlaybookRawRecord` type extending WatermelonDB's `RawRecord` to include template metadata fields (`is_template`, `is_community`, `author_handle`, `license`). Replaced multiple `any` casts with single typed cast.
+
+#### `src/lib/sync/network-manager.ts` (0 warnings)
+
+✅ Replaced all `any` with `NetInfoState` type from `@react-native-community/netinfo`. Normalized `isConnectionExpensive` from `boolean | null` to `boolean | undefined` to match NetworkState type definition.
+
+#### `src/lib/sync/sync-manager.ts` (0 warnings)
+
+✅ Replaced all `any` with proper WatermelonDB sync types: `SyncPullArgs`, `SyncPullResult`, `SyncPushArgs`, and `SyncDatabaseChangeSet`. Removed unnecessary `as any` cast from wmelonSynchronize call.
+
+#### `src/lib/uploads/harvest-photo-cleanup.ts` (0 warnings)
+
+✅ Replaced all `any` with `HarvestModel` type for WatermelonDB collection access. Accessed `photos` field directly from model instead of `_raw` to maintain type safety.
+
+#### `src/lib/assessment/conflict-strategies.ts` (0 warnings)
+
+✅ Replaced `any` with `Record<string, unknown>` in all generic constraints for conflict resolution functions.
+
+#### `src/lib/assessment/sync-utils.ts` (0 warnings)
+
+✅ Replaced `any` with `Record<string, unknown>` in generic constraint and type assertions. Added key existence check before assignment.
+
+#### `src/lib/moderation/appeals-service.ts` (0 warnings)
+
+✅ Replaced all `any` with `Appeal` type from `@/types/moderation` in helper functions.
+
+#### `src/lib/moderation/config/moderation-config.ts` (0 warnings)
+
+✅ Replaced `any` with `Record<string, unknown>` in `deepMerge` function generic constraint and used proper type assertions with `T[Extract<keyof T, string>]`.
+
+#### `src/lib/moderation/error-classification.ts` (0 warnings)
+
+✅ Replaced `any` with `Record<string, unknown>` in `ClassifiedError.metadata` and `ErrorContext` index signature. Added proper type guards in `extractHttpStatus` to safely access error properties.
+
+#### `src/lib/playbooks/schedule-shifter.ts` (0 warnings)
+
+✅ Replaced `any` with proper type guards for `task.metadata` access (using `Record<string, unknown>` for flags). Replaced `Record<string, any>` with `ScheduleShiftPriorValues` type for undo state.
+
+#### `src/lib/playbooks/task-customization.ts` (0 warnings)
+
+✅ Removed unnecessary `as any` casts when assigning `PlaybookTaskMetadata` to `record.metadata`. Since `PlaybookTaskMetadata` has the index signature `[key: string]: unknown`, it's fully compatible with `TaskMetadata` (which is `Record<string, unknown>`).
+
+#### `src/lib/playbooks/template-adoption-service.ts` (0 warnings)
+
+✅ Replaced all `any` types with proper domain types:
+
+- `steps: any[]` → `steps: PlaybookStep[]` in AdoptedPlaybook interface and applyCustomizations method
+- `Promise<any[]>` → `Promise<TemplateComment[]>` in getTemplateComments with proper DB row mapping (template_id → templateId, user_id → authorId, comment → content)
+
+#### `src/lib/playbooks/use-ai-adjustments.ts` (0 warnings)
+
+✅ Replaced all `analytics: any` parameters with `analytics: AnalyticsClient` in useGenerateSuggestion, useAcceptSuggestion, and useDeclineSuggestion helper functions.
+
+#### `src/lib/privacy/deletion-adapter-supabase.ts` (0 warnings)
+
+✅ Created `StorageFileObject` interface for Supabase storage file objects with proper fields (name, id, updated_at, created_at, last_accessed_at, metadata). Removed `as any` cast for list options and replaced `any` type annotations in filter and map callbacks.
+
+#### `src/lib/privacy/deletion-adapter.ts` (0 warnings)
+
+✅ Created `GlobalWithAdapter` interface to type the globalThis extension with the `__growbroDeletionAdapter__` key. Replaced all `globalThis as any` casts with proper typed reference `g`.
+
+#### `src/lib/support/help-article-cache.ts` (0 warnings)
+
+✅ Replaced `any` with proper `HelpArticleCacheModel` type assertions in WatermelonDB callbacks. Used `as HelpArticleCacheModel` casts inside callbacks (WatermelonDB limitation - callbacks expect base Model type).
 
 #### `src/lib/assessment/conflict-types.ts` (2 warnings)
 

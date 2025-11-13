@@ -3,13 +3,33 @@ import * as React from 'react';
 
 import { supabase } from '@/lib/supabase';
 
+/**
+ * Database record types for community realtime subscriptions
+ */
+type CommunityPlaybookTemplate = {
+  id: string;
+  [key: string]: unknown;
+};
+
+type TemplateRating = {
+  id: string;
+  template_id: string;
+  [key: string]: unknown;
+};
+
+type TemplateComment = {
+  id: string;
+  template_id: string;
+  [key: string]: unknown;
+};
+
 type CommunityCallbacks = {
-  onTemplateInsert?: (template: any) => void;
-  onTemplateUpdate?: (template: any) => void;
+  onTemplateInsert?: (template: CommunityPlaybookTemplate) => void;
+  onTemplateUpdate?: (template: CommunityPlaybookTemplate) => void;
   onTemplateDelete?: (templateId: string) => void;
-  onRatingChange?: (rating: any) => void;
-  onCommentInsert?: (comment: any) => void;
-  onCommentUpdate?: (comment: any) => void;
+  onRatingChange?: (rating: TemplateRating) => void;
+  onCommentInsert?: (comment: TemplateComment) => void;
+  onCommentUpdate?: (comment: TemplateComment) => void;
   onCommentDelete?: (commentId: string) => void;
 };
 
@@ -35,13 +55,17 @@ export class CommunityRealtimeService {
       (payload) => {
         switch (payload.eventType) {
           case 'INSERT':
-            callbacks.onTemplateInsert?.(payload.new);
+            callbacks.onTemplateInsert?.(
+              payload.new as CommunityPlaybookTemplate
+            );
             break;
           case 'UPDATE':
-            callbacks.onTemplateUpdate?.(payload.new);
+            callbacks.onTemplateUpdate?.(
+              payload.new as CommunityPlaybookTemplate
+            );
             break;
           case 'DELETE':
-            callbacks.onTemplateDelete?.(payload.old.id);
+            callbacks.onTemplateDelete?.((payload.old as { id: string }).id);
             break;
         }
       }
@@ -55,7 +79,8 @@ export class CommunityRealtimeService {
       'postgres_changes',
       { event: '*', schema: 'public', table: 'template_ratings' },
       (payload) => {
-        callbacks.onRatingChange?.(payload.new || payload.old);
+        const rating = (payload.new || payload.old) as TemplateRating;
+        callbacks.onRatingChange?.(rating);
       }
     );
   }
@@ -74,13 +99,13 @@ export class CommunityRealtimeService {
       (payload) => {
         switch (payload.eventType) {
           case 'INSERT':
-            callbacks.onCommentInsert?.(payload.new);
+            callbacks.onCommentInsert?.(payload.new as TemplateComment);
             break;
           case 'UPDATE':
-            callbacks.onCommentUpdate?.(payload.new);
+            callbacks.onCommentUpdate?.(payload.new as TemplateComment);
             break;
           case 'DELETE':
-            callbacks.onCommentDelete?.(payload.old.id);
+            callbacks.onCommentDelete?.((payload.old as { id: string }).id);
             break;
         }
       }

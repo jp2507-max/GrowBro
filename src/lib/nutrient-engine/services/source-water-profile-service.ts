@@ -98,16 +98,18 @@ export async function createSourceWaterProfile(
   );
 
   return await database.write(async () => {
-    return await profilesCollection.create((profile: any) => {
-      profile.name = data.name.trim();
-      profile.baselineEc25c = data.baselineEc25c;
-      profile.alkalinityMgPerLCaCO3 = data.alkalinityMgPerLCaco3;
-      profile.hardnessMgPerL = data.hardnessMgPerL;
-      profile.lastTestedAt = data.lastTestedAt ?? Date.now();
-      if (userId) {
-        profile.userId = userId;
+    return await profilesCollection.create(
+      (profile: SourceWaterProfileModel) => {
+        profile.name = data.name.trim();
+        profile.baselineEc25c = data.baselineEc25c;
+        profile.alkalinityMgPerLCaCO3 = data.alkalinityMgPerLCaco3;
+        profile.hardnessMgPerL = data.hardnessMgPerL;
+        profile.lastTestedAt = data.lastTestedAt ?? Date.now();
+        if (userId) {
+          profile.userId = userId;
+        }
       }
-    });
+    );
   });
 }
 
@@ -124,7 +126,7 @@ export async function updateSourceWaterProfile(
 ): Promise<SourceWaterProfileModel> {
   // Validate updates
   if (Object.keys(updates).length > 0) {
-    validateProfileData(updates as any);
+    validateProfileData(updates as Partial<CreateSourceWaterProfileData>);
   }
 
   const profilesCollection = database.get<SourceWaterProfileModel>(
@@ -133,7 +135,7 @@ export async function updateSourceWaterProfile(
   const profile = await profilesCollection.find(id);
 
   return await database.write(async () => {
-    return await profile.update((record: any) => {
+    return await profile.update((record: SourceWaterProfileModel) => {
       if (updates.name !== undefined) {
         record.name = updates.name.trim();
       }
@@ -222,7 +224,7 @@ export function observeSourceWaterProfile(
   id: string
 ): Observable<SourceWaterProfileModel> {
   return new Observable((subscriber) => {
-    let subscription: any;
+    let subscription: { unsubscribe: () => void } | undefined;
 
     const setup = async () => {
       try {
@@ -261,7 +263,7 @@ export function observeSourceWaterProfiles(
   userId?: string
 ): Observable<SourceWaterProfileModel[]> {
   return new Observable((subscriber) => {
-    let subscription: any;
+    let subscription: { unsubscribe: () => void } | undefined;
 
     const setup = async () => {
       try {
@@ -274,8 +276,9 @@ export function observeSourceWaterProfiles(
           : profilesCollection.query();
 
         subscription = query.observe().subscribe({
-          next: (profiles: any) => subscriber.next(profiles),
-          error: (error: any) => subscriber.error(error),
+          next: (profiles: SourceWaterProfileModel[]) =>
+            subscriber.next(profiles),
+          error: (error: unknown) => subscriber.error(error),
         });
       } catch (error) {
         subscriber.error(error);

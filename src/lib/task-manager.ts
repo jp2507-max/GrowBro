@@ -887,9 +887,75 @@ async function performInventoryDeduction(
 }
 
 /**
+ * Handle deduction failure - persist details and log
+ */
+async function handleDeductionFailure(options: {
+  taskId: string;
+  plantCount: number | undefined;
+  result: DeductionResult;
+  failureEntries: readonly DeductionFailureSourceEntry[];
+}): Promise<void> {
+  const { taskId, plantCount, result, failureEntries } = options;
+  const failureDetails = createDeductionFailureDetails(
+    plantCount,
+    result,
+    failureEntries
+  );
+  await persistDeductionFailure(taskId, failureDetails);
+
+  console.warn('[TaskManager] Inventory deduction failure metric incremented');
+
+  const isCriticalFailure =
+    result.insufficientItems && result.insufficientItems.length > 0;
+  if (isCriticalFailure) {
+    console.warn(
+      '[TaskManager] Critical inventory shortage alert enqueued for task:',
+      taskId
+    );
+  }
+
+  const errorDetails = result.insufficientItems
+    ?.map(
+      (err) =>
+        `${err.itemName ?? err.itemId}: needed ${err.required} ${err.unit}, had ${err.available} ${err.unit}`
+    )
+    .join('; ');
+
+  logDeductionFailure(taskId, plantCount, {
+    deductionMap: failureEntries,
+    result,
+    errorDetails,
+  });
+}
+
+/**
+ * Clear deduction failure metadata after successful deduction
+ */
+async function clearDeductionFailureMetadata(taskId: string): Promise<void> {
+  try {
+    await database.write(async () => {
+      const model = await database.get<TaskModel>('tasks').find(taskId);
+      await model.update((record) => {
+        const metadata = {
+          ...record.metadata,
+        } as TaskMetadata & Record<string, unknown>;
+        if ('lastDeductionFailure' in metadata) {
+          delete metadata.lastDeductionFailure;
+          record.metadata = metadata;
+          record.updatedAt = new Date();
+        }
+      });
+    });
+  } catch (clearError) {
+    console.warn(
+      '[TaskManager] Failed to clear deduction failure metadata after success',
+      clearError
+    );
+  }
+}
+
+/**
  * Handle inventory deduction for a completed task
- * @param taskData - Task data with potential deduction map
- * @param taskId - Task ID for idempotency
  */
 async function handleTaskInventoryDeduction(
   taskData: Task,
@@ -908,12 +974,10 @@ async function handleTaskInventoryDeduction(
       validation.errors.join('; '),
       `Map entries: ${Array.isArray(metadata.deductionMap) ? metadata.deductionMap.length : 'N/A'}`
     );
-    return; // Early return with clear warning
+    return;
   }
 
-  // Determine plant count for multi-plant tasks
   const plantCount = determinePlantCount(taskData);
-
   const result = await performInventoryDeduction(
     taskId,
     validation.entries,
@@ -921,7 +985,6 @@ async function handleTaskInventoryDeduction(
   );
 
   if (result === null) {
-    // Exception occurred, already handled
     return;
   }
 
@@ -930,43 +993,14 @@ async function handleTaskInventoryDeduction(
       result.deductionMap && result.deductionMap.length > 0
         ? result.deductionMap
         : validation.entries;
-    const failureDetails = createDeductionFailureDetails(
+    await handleDeductionFailure({
+      taskId,
       plantCount,
       result,
-      failureEntries
-    );
-    await persistDeductionFailure(taskId, failureDetails);
-
-    // Increment failure metric counter (simple console logging for now)
-    console.warn(
-      '[TaskManager] Inventory deduction failure metric incremented'
-    );
-
-    // Enqueue notification/alert for critical failures
-    const isCriticalFailure =
-      result.insufficientItems && result.insufficientItems.length > 0;
-    if (isCriticalFailure) {
-      console.warn(
-        '[TaskManager] Critical inventory shortage alert enqueued for task:',
-        taskId
-      );
-      // TODO: Integrate with notification service when available
-    }
-
-    const errorDetails = result.insufficientItems
-      ?.map(
-        (err) =>
-          `${err.itemName ?? err.itemId}: needed ${err.required} ${err.unit}, had ${err.available} ${err.unit}`
-      )
-      .join('; ');
-
-    logDeductionFailure(taskId, plantCount, {
-      deductionMap: failureEntries,
-      result,
-      errorDetails,
+      failureEntries,
     });
-    // Note: Insufficient stock errors should be surfaced to UI for recovery
   } else {
+    await clearDeductionFailureMetadata(taskId);
     console.log(
       `[TaskManager] Inventory deducted successfully: ${result.movements.length} movements for task ${taskId}`
     );

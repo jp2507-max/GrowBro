@@ -221,15 +221,60 @@ function serializeRecord(model: ModelSnapshot): SerializedRecord {
 }
 
 const ISO_DATE_PATTERN = /\d{4}-\d{2}-\d{2}T/;
+
+// Comprehensive set of all date fields across all WatermelonDB models
+// Fields decorated with @date that should be converted from ISO strings to Date objects
 const DATE_FIELD_KEYS = new Set<keyof SerializedRecord>([
+  // Standard audit fields (all models)
   'createdAt',
   'updatedAt',
   'deletedAt',
+
+  // Task-specific
   'completedAt',
+
+  // Inventory batch
+  'expiresOn',
+  'receivedAt',
+
+  // Post/comment moderation
+  'hiddenAt',
+  'undoExpiresAt',
+
+  // Assessment processing
+  'processingStartedAt',
+  'processingCompletedAt',
+  'resolvedAt',
+
+  // Notification preferences
+  'lastUpdated',
+
+  // Harvest stages
+  'stageStartedAt',
+  'stageCompletedAt',
+
+  // Harvest audit
+  'performedAt',
+
+  // Notifications
+  'readAt',
+  'expiresAt',
+  'archivedAt',
+
+  // Playbook applications
+  'appliedAt',
+
+  // Device tokens
+  'lastUsedAt',
+
+  // Outbox retry scheduling
+  'nextRetryAt',
 ]);
 
 function _normalizeIncomingValue(key: string, value: unknown): unknown {
   if (value == null) return value;
+
+  // Convert ISO string dates to Date objects for known date fields
   if (
     typeof value === 'string' &&
     DATE_FIELD_KEYS.has(key as keyof SerializedRecord) &&
@@ -238,9 +283,16 @@ function _normalizeIncomingValue(key: string, value: unknown): unknown {
     const d = new Date(value);
     if (!isNaN(d.getTime())) return d;
   }
-  // normalize server snake_case timestamps to camel where needed
-  if (key === 'createdAt' && typeof value === 'number') return new Date(value);
-  if (key === 'updatedAt' && typeof value === 'number') return new Date(value);
+
+  // Handle numeric timestamps (server may send timestamps as numbers)
+  // Convert common timestamp fields from milliseconds to Date objects
+  if (
+    typeof value === 'number' &&
+    (key === 'createdAt' || key === 'updatedAt' || key === 'receivedAt')
+  ) {
+    return new Date(value);
+  }
+
   return value;
 }
 
@@ -971,7 +1023,9 @@ async function handleCreate<ModelType extends Model>(
 ): Promise<void> {
   await coll.create((rec) => {
     const record = rec as unknown as ModelSnapshot;
-    record.id = payload.id;
+    if (record._raw) {
+      record._raw.id = payload.id;
+    }
     // Apply payload and authoritative server metadata. For createdAt/updatedAt
     // prefer server-provided values if present; do not synthesize from client
     applyPayloadToRecord(record, payload);
@@ -1036,12 +1090,12 @@ function applyServerPayloadToRecord(
     }
   }
   const revision = safeParseNumber(payload.server_revision);
-  if (revision != null) {
-    rec.serverRevision = revision;
+  if (revision != null && rec._raw) {
+    rec._raw.server_revision = revision;
   }
   const serverUpdatedAt = safeParseNumber(payload.server_updated_at_ms);
-  if (serverUpdatedAt != null) {
-    rec.serverUpdatedAtMs = serverUpdatedAt;
+  if (serverUpdatedAt != null && rec._raw) {
+    rec._raw.server_updated_at_ms = serverUpdatedAt;
   }
 }
 

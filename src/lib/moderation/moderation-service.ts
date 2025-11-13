@@ -39,6 +39,35 @@ interface ReleaseClaimResult {
   error?: string;
 }
 
+// Supabase query builder type for content_reports with joins
+// Note: Using a generic query builder type to avoid coupling to complex PostgREST generics.
+// The actual query builder is returned from supabase.from() and supports chaining.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ContentReportsQueryBuilder = any;
+
+// Database record types
+type DbContentReport = {
+  id: string;
+  reporter_id: string;
+  status: ReportStatus;
+  priority: number;
+  sla_deadline: string;
+  created_at: string;
+  user_id?: string;
+  trusted_flagger?: boolean;
+  content_snapshots?: {
+    id: string;
+    snapshot_hash: string;
+    snapshot_data: unknown;
+    captured_at: string;
+  }[];
+  users?: {
+    id: string;
+    trusted_flagger: boolean;
+    total_reports?: { count: number }[];
+  };
+};
+
 // ============================================================================
 // Constants
 // ============================================================================
@@ -151,7 +180,7 @@ export class ModerationService {
    * - Return type is `any` to avoid coupling this service to PostgREST types in
    *   this file; callers treat the result as a query builder and execute it.
    */
-  private buildBaseQueueQuery(): any {
+  private buildBaseQueueQuery(): ContentReportsQueryBuilder {
     // Base query: content_reports with snapshot and reporter info
     // Keep the selected fields compact to avoid transferring large blob
     // `snapshot_data` when not needed; callers may adjust the select if
@@ -189,7 +218,10 @@ export class ModerationService {
    * to run the request. The query type is `any` to keep this utility focused on
    * behavior rather than on exact PostgREST generic types.
    */
-  private applyFiltersToQuery(query: any, filters: QueueFilters): any {
+  private applyFiltersToQuery(
+    query: ContentReportsQueryBuilder,
+    filters: QueueFilters
+  ): ContentReportsQueryBuilder {
     let q = query;
 
     // Status filter: if provided, use the explicit list. Otherwise limit to
@@ -226,7 +258,10 @@ export class ModerationService {
     return q;
   }
 
-  private async filterActiveClaims(query: any, moderatorId: string) {
+  private async filterActiveClaims(
+    query: ContentReportsQueryBuilder,
+    moderatorId: string
+  ): Promise<ContentReportsQueryBuilder> {
     const { data: activeClaims } = await supabase
       .from('moderation_claims')
       .select('report_id')
@@ -241,9 +276,11 @@ export class ModerationService {
     return query;
   }
 
-  private calculateEnhancedItems(reports: any[]): ModerationQueueItem[] {
+  private calculateEnhancedItems(
+    reports: DbContentReport[]
+  ): ModerationQueueItem[] {
     const now = DateTime.now();
-    return reports.map((report: any) => {
+    return reports.map((report) => {
       let enhancedPriority = report.priority;
 
       if (report.trusted_flagger) {
@@ -282,8 +319,9 @@ export class ModerationService {
         report: {
           ...report,
           priority: enhancedPriority,
-        } as ContentReport,
-        content_snapshot: report.content_snapshots?.[0] || undefined,
+        } as unknown as ContentReport,
+        content_snapshot: report
+          .content_snapshots?.[0] as unknown as ModerationQueueItem['content_snapshot'],
         reporter_history: report.users
           ? {
               total_reports: report.users.total_reports?.[0]?.count || 0,
@@ -399,7 +437,7 @@ export class ModerationService {
       .single();
 
     if (error) return null;
-    return data as any;
+    return data as DbContentReport | null;
   }
 
   private async getActiveClaim(reportId: string) {
@@ -411,7 +449,7 @@ export class ModerationService {
       .gt('expires_at', now.toISOString())
       .maybeSingle();
 
-    return data as any;
+    return data as { moderator_id: string; expires_at: string } | null;
   }
 
   private async createClaimRecord(
@@ -750,43 +788,43 @@ export class ModerationService {
 
   // Temporary stubs for not-yet-built API surface referenced in tests
   // TODO: replace with real implementations once moderation workflows land
-  async makeDecision(): Promise<any> {
+  async makeDecision(): Promise<never> {
     return notImplemented('makeDecision');
   }
 
-  async generateStatementOfReasons(): Promise<any> {
+  async generateStatementOfReasons(): Promise<never> {
     return notImplemented('generateStatementOfReasons');
   }
 
-  async submitSoRToTransparencyDB(): Promise<any> {
+  async submitSoRToTransparencyDB(): Promise<never> {
     return notImplemented('submitSoRToTransparencyDB');
   }
 
-  async notifyUser(): Promise<any> {
+  async notifyUser(): Promise<never> {
     return notImplemented('notifyUser');
   }
 
-  async getAllReports(): Promise<any> {
+  async getAllReports(): Promise<never> {
     return notImplemented('getAllReports');
   }
 
-  async getAllDecisions(): Promise<any> {
+  async getAllDecisions(): Promise<never> {
     return notImplemented('getAllDecisions');
   }
 
-  async getModeratorQueueForUser(): Promise<any> {
+  async getModeratorQueueForUser(): Promise<never> {
     return notImplemented('getModeratorQueueForUser');
   }
 
-  async getConfiguration(): Promise<any> {
+  async getConfiguration(): Promise<never> {
     return notImplemented('getConfiguration');
   }
 
-  async cleanupExpiredSessions(): Promise<any> {
+  async cleanupExpiredSessions(): Promise<never> {
     return notImplemented('cleanupExpiredSessions');
   }
 
-  async getReportDetails(): Promise<any> {
+  async getReportDetails(): Promise<never> {
     return notImplemented('getReportDetails');
   }
 }

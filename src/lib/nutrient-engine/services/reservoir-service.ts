@@ -100,7 +100,7 @@ export async function createReservoir(
   const reservoirsCollection = database.get<ReservoirModel>('reservoirs_v2');
 
   return await database.write(async () => {
-    return await reservoirsCollection.create((reservoir: any) => {
+    return await reservoirsCollection.create((reservoir: ReservoirModel) => {
       reservoir.name = data.name.trim();
       reservoir.volumeL = data.volumeL;
       reservoir.medium = data.medium;
@@ -131,14 +131,14 @@ export async function updateReservoir(
 ): Promise<ReservoirModel> {
   // Validate updates
   if (Object.keys(updates).length > 0) {
-    validateReservoirData(updates as any);
+    validateReservoirData(updates as Partial<CreateReservoirData>);
   }
 
   const reservoirsCollection = database.get<ReservoirModel>('reservoirs_v2');
   const reservoir = await reservoirsCollection.find(id);
 
   return await database.write(async () => {
-    return await reservoir.update((record: any) => {
+    return await reservoir.update((record: ReservoirModel) => {
       if (updates.name !== undefined) {
         record.name = updates.name.trim();
       }
@@ -229,7 +229,7 @@ export async function listReservoirs(
  */
 export function observeReservoir(id: string): Observable<ReservoirModel> {
   return new Observable((subscriber) => {
-    let subscription: any;
+    let subscription: { unsubscribe: () => void } | undefined;
 
     const setup = async () => {
       try {
@@ -268,7 +268,7 @@ export function observeReservoirs(
   userId?: string
 ): Observable<ReservoirModel[]> {
   return new Observable((subscriber) => {
-    let subscription: any;
+    let subscription: { unsubscribe: () => void } | undefined;
 
     const setup = async () => {
       try {
@@ -280,8 +280,8 @@ export function observeReservoirs(
           : reservoirsCollection.query();
 
         subscription = query.observe().subscribe({
-          next: (reservoirs: any) => subscriber.next(reservoirs),
-          error: (error: any) => subscriber.error(error),
+          next: (reservoirs: ReservoirModel[]) => subscriber.next(reservoirs),
+          error: (error: unknown) => subscriber.error(error),
         });
       } catch (error) {
         subscriber.error(error);

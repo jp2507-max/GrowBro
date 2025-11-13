@@ -50,7 +50,7 @@ export async function generateContentHash(content: string): Promise<string> {
 export interface CreateSnapshotOptions {
   contentId: string;
   contentType: ContentType;
-  contentData: Record<string, any>;
+  contentData: Record<string, unknown>;
   reportId?: string;
 }
 
@@ -121,9 +121,9 @@ function generateSnapshotId(): string {
  * @returns Minimal snapshot data
  */
 export function extractMinimalSnapshotData(
-  fullContentData: Record<string, any>,
+  fullContentData: Record<string, unknown>,
   contentType: ContentType
-): Record<string, any> {
+): Record<string, unknown> {
   const baseFields = ['id', 'created_at', 'updated_at'];
 
   switch (contentType) {
@@ -186,10 +186,10 @@ export function extractMinimalSnapshotData(
  * @returns Object with only specified fields
  */
 function pickFields(
-  obj: Record<string, any>,
+  obj: Record<string, unknown>,
   fields: string[]
-): Record<string, any> {
-  const result: Record<string, any> = {};
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
 
   for (const field of fields) {
     if (field in obj) {

@@ -1,4 +1,4 @@
-import NetInfo from '@react-native-community/netinfo';
+import NetInfo, { type NetInfoState } from '@react-native-community/netinfo';
 
 export type NetworkState = {
   type: string;
@@ -13,7 +13,14 @@ let currentState: NetworkState | null = null;
 let listeners: ((s: NetworkState) => void)[] = [];
 let netInfoUnsub: (() => void) | null = null;
 
-function normalize(raw: any): NetworkState {
+function normalize(raw: NetInfoState): NetworkState {
+  // Extract and normalize isConnectionExpensive from details
+  const rawDetails = raw?.details;
+  const isConnectionExpensive =
+    rawDetails && typeof rawDetails.isConnectionExpensive === 'boolean'
+      ? rawDetails.isConnectionExpensive
+      : undefined;
+
   return {
     type: (raw?.type ?? 'unknown') as string,
     isConnected: Boolean(raw?.isConnected),
@@ -21,10 +28,10 @@ function normalize(raw: any): NetworkState {
       raw?.isInternetReachable === undefined
         ? undefined
         : Boolean(raw.isInternetReachable),
-    details: raw?.details ?? null,
+    details: rawDetails ? { isConnectionExpensive } : null,
     isMetered:
-      raw?.details && typeof raw.details.isConnectionExpensive === 'boolean'
-        ? Boolean(raw.details.isConnectionExpensive)
+      isConnectionExpensive !== undefined
+        ? isConnectionExpensive
         : raw?.type === 'cellular',
   };
 }
@@ -81,11 +88,8 @@ export async function isInternetReachable(): Promise<boolean> {
 
 export async function isMetered(): Promise<boolean> {
   const s = await getNetworkState();
-  if (
-    s.details &&
-    typeof (s.details as any).isConnectionExpensive === 'boolean'
-  ) {
-    return Boolean((s.details as any).isConnectionExpensive);
+  if (s.details && typeof s.details.isConnectionExpensive === 'boolean') {
+    return Boolean(s.details.isConnectionExpensive);
   }
   // Default to true for cellular connections
   if (s.type === 'cellular') return true;
@@ -102,7 +106,7 @@ export function onConnectivityChange(
 ): () => void {
   // Hook up NetInfo listener once
   if (!netInfoUnsub) {
-    netInfoUnsub = NetInfo.addEventListener((raw: any) => {
+    netInfoUnsub = NetInfo.addEventListener((raw: NetInfoState) => {
       currentState = normalize(raw);
       listeners.forEach((l) => {
         try {

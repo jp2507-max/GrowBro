@@ -114,6 +114,11 @@ export interface RealTimeDashboard {
   };
 }
 
+/**
+ * Database record with PII fields removed for authority export
+ */
+type RedactedDbRecord = Record<string, unknown>;
+
 export interface AuthorityExportFormat {
   exportId: string;
   requestedBy: string;
@@ -121,10 +126,10 @@ export interface AuthorityExportFormat {
   period: TransparencyReportPeriod;
   format: 'json' | 'csv' | 'xml';
   data: {
-    reports: any[];
-    decisions: any[];
-    appeals: any[];
-    auditTrail: any[];
+    reports: RedactedDbRecord[];
+    decisions: RedactedDbRecord[];
+    appeals: RedactedDbRecord[];
+    auditTrail: RedactedDbRecord[];
   };
   metadata: {
     totalRecords: number;
@@ -653,7 +658,7 @@ export class TransparencyService {
 
   private async getReportsForExport(
     period: TransparencyReportPeriod
-  ): Promise<any[]> {
+  ): Promise<RedactedDbRecord[]> {
     const { data, error } = await this.supabase
       .from('content_reports')
       .select('*')
@@ -667,7 +672,7 @@ export class TransparencyService {
 
   private async getDecisionsForExport(
     period: TransparencyReportPeriod
-  ): Promise<any[]> {
+  ): Promise<RedactedDbRecord[]> {
     const { data, error } = await this.supabase
       .from('moderation_decisions')
       .select('*')
@@ -681,7 +686,7 @@ export class TransparencyService {
 
   private async getAppealsForExport(
     period: TransparencyReportPeriod
-  ): Promise<any[]> {
+  ): Promise<RedactedDbRecord[]> {
     const { data, error } = await this.supabase
       .from('appeals')
       .select('*')
@@ -695,7 +700,7 @@ export class TransparencyService {
 
   private async getAuditTrailForExport(
     period: TransparencyReportPeriod
-  ): Promise<any[]> {
+  ): Promise<RedactedDbRecord[]> {
     const { data, error } = await this.supabase
       .from('audit_events')
       .select('*')
@@ -715,7 +720,9 @@ export class TransparencyService {
     return this.redactPIIFromRecords(data || []);
   }
 
-  private redactPIIFromRecords(records: any[]): any[] {
+  private redactPIIFromRecords(
+    records: Record<string, unknown>[]
+  ): RedactedDbRecord[] {
     return records.map((record) => {
       const redacted = { ...record };
       // Remove PII fields

@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-type AnyObject = { [k: string]: any };
+type AnyObject = Record<string, unknown>;
 
 function sha256Short(value: string) {
   return crypto.createHash('sha256').update(value).digest('hex').slice(0, 8);
@@ -35,11 +35,11 @@ function sanitizeText(s: string) {
   return s;
 }
 
-function isPlainObject(v: any) {
-  return v && typeof v === 'object' && !Array.isArray(v);
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return v !== null && typeof v === 'object' && !Array.isArray(v);
 }
 
-function stripPIIFromObject(obj: any): any {
+function stripPIIFromObject(obj: unknown): unknown {
   if (Array.isArray(obj)) return obj.map(stripPIIFromObject);
   if (!isPlainObject(obj))
     return typeof obj === 'string' ? sanitizeText(obj) : obj;
@@ -88,7 +88,7 @@ function stripPIIFromObject(obj: any): any {
   return out;
 }
 
-export function stripPII(playbook: any) {
+export function stripPII(playbook: unknown): unknown {
   // Deep clone
   const cloned = JSON.parse(JSON.stringify(playbook));
 
@@ -105,7 +105,7 @@ export function stripPII(playbook: any) {
 
   // Normalize steps: only keep allowed fields
   if (Array.isArray(cloned.steps)) {
-    cloned.steps = cloned.steps.map((step: any) => {
+    cloned.steps = cloned.steps.map((step: Record<string, unknown>) => {
       const allowed: AnyObject = {};
       if ('id' in step) allowed.id = step.id;
       if ('title' in step)
@@ -124,16 +124,18 @@ export function stripPII(playbook: any) {
         allowed.rrule = stripPIIFromObject(step.rrule ?? step.schedule);
       }
       if (Array.isArray(step.attachments)) {
-        allowed.attachments = step.attachments.map((att: any) => {
-          const a: AnyObject = {};
-          if ('filename' in att) a.filename = att.filename;
-          if ('mimeType' in att) a.mimeType = att.mimeType;
-          if ('width' in att) a.width = att.width;
-          if ('height' in att) a.height = att.height;
-          if ('hash' in att) a.hash = att.hash;
-          // drop exif/metadata
-          return a;
-        });
+        allowed.attachments = step.attachments.map(
+          (att: Record<string, unknown>) => {
+            const a: AnyObject = {};
+            if ('filename' in att) a.filename = att.filename;
+            if ('mimeType' in att) a.mimeType = att.mimeType;
+            if ('width' in att) a.width = att.width;
+            if ('height' in att) a.height = att.height;
+            if ('hash' in att) a.hash = att.hash;
+            // drop exif/metadata
+            return a;
+          }
+        );
       }
       if ('metadata' in step)
         allowed.metadata = stripPIIFromObject(step.metadata);

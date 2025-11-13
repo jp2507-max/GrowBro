@@ -2,6 +2,18 @@ import * as FileSystem from 'expo-file-system';
 
 import { appendAudit } from '@/lib/privacy/audit-log';
 import { database } from '@/lib/watermelon';
+import type { AssessmentModel } from '@/lib/watermelon-models/assessment';
+import type { AssessmentPlantContext } from '@/types/assessment';
+
+// Type-safe interface for FileSystem module with proper null handling
+interface SafeFileSystem {
+  documentDirectory: string | null | undefined;
+  cacheDirectory: string | null | undefined;
+  getInfoAsync: typeof FileSystem.getInfoAsync;
+  deleteAsync: typeof FileSystem.deleteAsync;
+}
+
+const safeFileSystem = FileSystem as unknown as SafeFileSystem;
 
 export type AssessmentRetentionPolicy = {
   images: number; // days, opt-in only
@@ -47,9 +59,12 @@ export async function enforceAssessmentRetention(
   const now = Date.now();
   const cutoffs = calculateRetentionCutoffs(policy, now);
 
-  let assessments: any[] = [];
+  let assessments: AssessmentModel[] = [];
   try {
-    assessments = await database.get('assessments').query().fetch();
+    assessments = (await database
+      .get('assessments')
+      .query()
+      .fetch()) as AssessmentModel[];
   } catch (error) {
     result.errors.push(
       `Retention enforcement failed: ${error instanceof Error ? error.message : String(error)}`
@@ -97,28 +112,26 @@ function calculateRetentionCutoffs(
 }
 
 async function deleteExpiredImages(
-  assessments: any[],
+  assessments: AssessmentModel[],
   imageCutoff: number,
   result: RetentionResult
 ): Promise<void> {
   for (const assessment of assessments) {
     const createdAt = getCreatedAtMs(assessment);
-    const consentedForTraining = Boolean(
-      (assessment as any).consentedForTraining
-    );
+    const consentedForTraining = Boolean(assessment.consentedForTraining);
 
     if (!consentedForTraining || createdAt >= imageCutoff) {
       continue;
     }
 
     try {
-      const fsAny = FileSystem as any;
-      const docDir = fsAny.documentDirectory ?? fsAny.cacheDirectory ?? '';
+      const docDir =
+        safeFileSystem.documentDirectory ?? safeFileSystem.cacheDirectory ?? '';
       const assessmentDir = `${docDir}assessments/${assessment.id}`;
-      const dirInfo = await FileSystem.getInfoAsync(assessmentDir);
+      const dirInfo = await safeFileSystem.getInfoAsync(assessmentDir);
 
       if (dirInfo.exists) {
-        await FileSystem.deleteAsync(assessmentDir, { idempotent: true });
+        await safeFileSystem.deleteAsync(assessmentDir, { idempotent: true });
         result.imagesDeleted++;
       }
     } catch (error) {
@@ -130,7 +143,7 @@ async function deleteExpiredImages(
 }
 
 async function anonymizeOldMetrics(
-  assessments: any[],
+  assessments: AssessmentModel[],
   metricsCutoff: number,
   result: RetentionResult
 ): Promise<void> {
@@ -143,15 +156,18 @@ async function anonymizeOldMetrics(
 
     try {
       await database.write(async () => {
-        await (assessment as any).update((record: any) => {
+        await assessment.update((record) => {
           if (record.plantContext) {
-            const context = JSON.parse(record.plantContext);
+            const context: AssessmentPlantContext & Record<string, unknown> =
+              typeof record.plantContext === 'string'
+                ? JSON.parse(record.plantContext)
+                : record.plantContext;
             delete context.strainName;
             delete context.notes;
             delete context.customTags;
-            record.plantContext = JSON.stringify(context);
+            record.plantContext = context as AssessmentPlantContext;
           }
-          record.feedbackNotes = null;
+          record.feedbackNotes = undefined;
         });
       });
       result.recordsAnonymized++;
@@ -164,7 +180,7 @@ async function anonymizeOldMetrics(
 }
 
 async function deleteExpiredRecords(
-  assessments: any[],
+  assessments: AssessmentModel[],
   recordsCutoff: number,
   result: RetentionResult
 ): Promise<void> {
@@ -177,7 +193,7 @@ async function deleteExpiredRecords(
 
     try {
       await database.write(async () => {
-        await (assessment as any).markAsDeleted();
+        await assessment.markAsDeleted();
       });
       result.recordsDeleted++;
     } catch (error) {
@@ -188,13 +204,19 @@ async function deleteExpiredRecords(
   }
 }
 
-function getCreatedAtMs(assessment: any): number {
-  const createdAt = (assessment as any).createdAt;
+function getCreatedAtMs(assessment: AssessmentModel): number {
+  const createdAt = assessment.createdAt;
   if (createdAt instanceof Date) {
     return createdAt.getTime();
   }
-  if (createdAt && typeof createdAt.getTime === 'function') {
-    return createdAt.getTime();
+  // Handle edge case where createdAt might be a date-like object
+  if (
+    createdAt &&
+    typeof createdAt === 'object' &&
+    'getTime' in createdAt &&
+    typeof (createdAt as { getTime: unknown }).getTime === 'function'
+  ) {
+    return (createdAt as Date).getTime();
   }
   return 0;
 }
@@ -214,15 +236,18 @@ export async function getRetentionImpact(
   const metricsCutoff = now - policy.metrics * 24 * 60 * 60 * 1000;
   const recordsCutoff = now - policy.records * 24 * 60 * 60 * 1000;
 
-  const assessments = await database.get('assessments').query().fetch();
+  const assessments = (await database
+    .get('assessments')
+    .query()
+    .fetch()) as AssessmentModel[];
 
   let imagesToDelete = 0;
   let recordsToAnonymize = 0;
   let recordsToDelete = 0;
 
   for (const assessment of assessments) {
-    const createdAt = (assessment as any).createdAt?.getTime() ?? 0;
-    const consentedForTraining = (assessment as any).consentedForTraining;
+    const createdAt = assessment.createdAt?.getTime() ?? 0;
+    const consentedForTraining = assessment.consentedForTraining;
 
     if (consentedForTraining && createdAt < imageCutoff) {
       imagesToDelete++;

@@ -101,7 +101,7 @@ export function handleValidationError(
  */
 export function handleNetworkError(
   error: NetworkError,
-  t: (key: string, options?: any) => string
+  t: (key: string, options?: Record<string, unknown>) => string
 ): ErrorHandlerResult {
   // Transient errors: show toast
   if (error.retryable) {
@@ -136,7 +136,7 @@ export function handleNetworkError(
  */
 export function handleBusinessLogicError(
   error: BusinessLogicError,
-  t: (key: string, options?: any) => string
+  t: (key: string, options?: Record<string, unknown>) => string
 ): ErrorHandlerResult {
   return {
     shouldShowToast: false,
@@ -152,7 +152,7 @@ export function handleBusinessLogicError(
  */
 export function handleConsistencyError(
   error: ConsistencyError,
-  t: (key: string, options?: any) => string
+  t: (key: string, options?: Record<string, unknown>) => string
 ): ErrorHandlerResult {
   return {
     shouldShowToast: false,
@@ -187,10 +187,11 @@ export function createAuditNoteForRejection(rejection: SyncRejection): string {
 
 function isNetworkError(error: unknown): boolean {
   if (error && typeof error === 'object') {
-    const err = error as any;
     const hasResponse = 'response' in error;
     const hasAxiosFlag = 'isAxiosError' in error && error.isAxiosError === true;
-    const hasNumericCode = 'code' in error && typeof err.code === 'number';
+    const hasNumericCode =
+      'code' in error &&
+      typeof (error as Record<string, unknown>).code === 'number';
     const hasNetworkMessage =
       error instanceof Error &&
       (error.message.includes('network') ||
@@ -222,7 +223,7 @@ function isBusinessLogicError(error: unknown): boolean {
 
   // Check for error.code property matching defined constants
   if (error && typeof error === 'object' && 'code' in error) {
-    const code = (error as any).code;
+    const code = (error as Record<string, unknown>).code;
     return (
       typeof code === 'string' &&
       Object.values(BUSINESS_LOGIC_ERROR_CODES).includes(
@@ -242,7 +243,7 @@ function isConsistencyError(error: unknown): boolean {
 
   // Check for error.code property matching defined constants
   if (error && typeof error === 'object' && 'code' in error) {
-    const code = (error as any).code;
+    const code = (error as Record<string, unknown>).code;
     return (
       typeof code === 'string' &&
       Object.values(CONSISTENCY_ERROR_CODES).includes(
@@ -402,7 +403,7 @@ function getBusinessLogicActions(
  */
 export function handleHarvestError(
   error: unknown,
-  t: (key: string, options?: any) => string
+  t: (key: string, options?: Record<string, unknown>) => string
 ): ErrorHandlerResult {
   const classified = classifyError(error);
 

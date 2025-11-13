@@ -1,3 +1,4 @@
+import type { EventSubscription } from 'expo-modules-core';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
@@ -28,14 +29,9 @@ type NotificationData = {
   collapseKey?: string;
 };
 
-type ForegroundNotification = {
-  notification: any; // Expo notification object
-};
-
-type NotificationResponse = {
-  notification: any; // Expo notification object
-  actionIdentifier: string;
-};
+// Re-export types from expo-notifications for clarity
+type ExpoNotification = Notifications.Notification;
+type ExpoNotificationResponse = Notifications.NotificationResponse;
 
 const ANDROID_CHANNEL_KEY_MAP: Record<
   NotificationType,
@@ -71,8 +67,8 @@ function isNotificationType(v: unknown): v is NotificationType {
   return typeof v === 'string' && NOTIFICATION_TYPES.has(v as NotificationType);
 }
 
-let foregroundSubscription: any = null;
-let responseSubscription: any = null;
+let foregroundSubscription: EventSubscription | null = null;
+let responseSubscription: EventSubscription | null = null;
 
 // Export for testing
 export const __testResetGlobals = () => {
@@ -93,23 +89,24 @@ export const PushReceiverService = {
     }
 
     // Set notification handler for foreground behavior
-    const anyNotifications: any = Notifications as any;
-    anyNotifications.setNotificationHandler({
+    Notifications.setNotificationHandler({
       handleNotification: async () => ({
         shouldShowAlert: false,
+        shouldShowBanner: false,
+        shouldShowList: false,
         shouldPlaySound: false,
         shouldSetBadge: true,
       }),
     });
 
     // Listen for notifications received while app is foregrounded
-    foregroundSubscription = anyNotifications.addNotificationReceivedListener(
+    foregroundSubscription = Notifications.addNotificationReceivedListener(
       handleForegroundNotification
     );
 
     // Listen for notification tap events
     responseSubscription =
-      anyNotifications.addNotificationResponseReceivedListener(
+      Notifications.addNotificationResponseReceivedListener(
         handleNotificationResponse
       );
   },
@@ -127,10 +124,10 @@ export const PushReceiverService = {
 };
 
 async function handleForegroundNotification(
-  event: ForegroundNotification
+  notification: ExpoNotification
 ): Promise<void> {
   try {
-    const data = extractNotificationData(event.notification);
+    const data = extractNotificationData(notification);
     const notificationType: NotificationType = isNotificationType(data.type)
       ? data.type
       : 'system.update';
@@ -147,19 +144,18 @@ async function handleForegroundNotification(
       notificationType === 'community.like'
     ) {
       await NotificationGroupingService.handleCommunityNotification({
-        notification: event.notification,
+        notification,
         type: notificationType,
         postId: data.postId,
         threadId: data.threadId,
       });
     } else {
       // Present notification directly for non-community types
-      const anyNotifications: any = Notifications as any;
-      await anyNotifications.scheduleNotificationAsync({
+      await Notifications.scheduleNotificationAsync({
         content: {
-          title: event.notification.request.content.title || '',
-          body: event.notification.request.content.body || '',
-          data: event.notification.request.content.data,
+          title: notification.request.content.title || '',
+          body: notification.request.content.body || '',
+          data: notification.request.content.data,
           ...(Platform.OS === 'ios'
             ? {
                 threadIdentifier: data.threadId,
@@ -181,7 +177,7 @@ async function handleForegroundNotification(
 }
 
 async function handleNotificationResponse(
-  response: NotificationResponse
+  response: ExpoNotificationResponse
 ): Promise<void> {
   try {
     const data = extractNotificationData(response.notification);
@@ -215,8 +211,11 @@ async function handleNotificationResponse(
   }
 }
 
-function extractNotificationData(notification: any): NotificationData {
-  const data = notification.request?.content?.data || {};
+function extractNotificationData(
+  notification: ExpoNotification
+): NotificationData {
+  const data: Record<string, unknown> =
+    notification.request?.content?.data || {};
   return {
     type: data.type as NotificationType | undefined,
     deepLink: data.deepLink as string | undefined,

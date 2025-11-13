@@ -354,7 +354,7 @@ class CommunityIntegrationService {
       const now = new Date().toISOString();
 
       // Update based on action type
-      const updates: Record<string, any> = {};
+      const updates: Record<string, string | null> = {};
 
       switch (action) {
         case 'remove':

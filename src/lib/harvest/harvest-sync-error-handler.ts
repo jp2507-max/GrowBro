@@ -26,7 +26,7 @@ import { ERROR_CATEGORY } from './harvest-error-types';
  */
 export async function handleHarvestSyncError(
   error: unknown,
-  t: (key: string, options?: any) => string
+  t: (key: string, options?: Record<string, unknown>) => string
 ): Promise<void> {
   const classified = classifyError(error);
   const result = handleHarvestError(error, t);
@@ -74,7 +74,7 @@ export async function attachAuditNoteForRejection(
       // Note: Using STAGE_REVERT as closest semantic match for sync rejection
       await auditsCollection.create((audit) => {
         audit.harvestId = rejection.recordId;
-        audit.action = 'stage_revert' as any; // Enum doesn't have sync_rejection yet
+        audit.action = 'stage_revert'; // Using STAGE_REVERT as closest semantic match
         audit.status = HarvestAuditStatuses.BLOCKED;
         audit.reason = auditNote;
         audit.performedAt = rejection.timestamp;

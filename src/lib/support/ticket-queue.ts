@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid/non-secure';
 
 import { storage, SUPPORT_STORAGE_KEYS } from '@/lib/storage';
 import { database } from '@/lib/watermelon';
-import { SupportTicketQueueModel } from '@/lib/watermelon-models/support-ticket-queue';
+import type { SupportTicketQueueModel } from '@/lib/watermelon-models/support-ticket-queue';
 import type { Attachment, DeviceContext, SupportTicket } from '@/types/support';
 
 const MAX_QUEUE_SIZE = 50;
@@ -38,23 +38,27 @@ export async function queueTicket(params: QueueTicketParams): Promise<string> {
       throw new Error('Queue limits exceeded');
     }
 
-    const collection = database.get('support_tickets_queue');
+    const collection = database.get<SupportTicketQueueModel>(
+      'support_tickets_queue'
+    );
     const clientRequestId = nanoid();
 
     await database.write(async () => {
-      await collection.create((record: any) => {
-        (record as any)._raw.category = category;
-        (record as any)._raw.subject = subject;
-        (record as any)._raw.description = description;
-        (record as any)._raw.device_context = JSON.stringify(deviceContext);
-        (record as any)._raw.attachments = JSON.stringify(attachments);
-        (record as any)._raw.status = 'open';
-        (record as any)._raw.priority = 'medium';
-        (record as any)._raw.retry_count = 0;
-        (record as any)._raw.client_request_id = clientRequestId;
+      await collection.create((record) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const raw = record._raw as any;
+        raw.category = category;
+        raw.subject = subject;
+        raw.description = description;
+        raw.device_context = JSON.stringify(deviceContext);
+        raw.attachments = JSON.stringify(attachments);
+        raw.status = 'open';
+        raw.priority = 'medium';
+        raw.retry_count = 0;
+        raw.client_request_id = clientRequestId;
         // Ensure timestamps are set explicitly to numeric epoch ms so sorting queries work
-        (record as any)._raw.created_at = Date.now();
-        (record as any)._raw.updated_at = Date.now();
+        raw.created_at = Date.now();
+        raw.updated_at = Date.now();
       });
     });
 
@@ -71,7 +75,9 @@ export async function queueTicket(params: QueueTicketParams): Promise<string> {
  */
 export async function getQueuedTickets(): Promise<SupportTicket[]> {
   try {
-    const collection = database.get('support_tickets_queue');
+    const collection = database.get<SupportTicketQueueModel>(
+      'support_tickets_queue'
+    );
     const records = await collection
       .query(Q.sortBy('created_at', Q.desc))
       .fetch();
@@ -88,7 +94,9 @@ export async function getQueuedTickets(): Promise<SupportTicket[]> {
  */
 export async function getPendingTickets(): Promise<SupportTicket[]> {
   try {
-    const collection = database.get('support_tickets_queue');
+    const collection = database.get<SupportTicketQueueModel>(
+      'support_tickets_queue'
+    );
     const records = await collection
       .query(
         Q.where('status', 'open'),
@@ -112,7 +120,9 @@ export async function markTicketSent(
   ticketReference: string
 ): Promise<void> {
   try {
-    const collection = database.get('support_tickets_queue');
+    const collection = database.get<SupportTicketQueueModel>(
+      'support_tickets_queue'
+    );
     const records = await collection
       .query(Q.where('client_request_id', clientRequestId))
       .fetch();
@@ -122,10 +132,12 @@ export async function markTicketSent(
     }
 
     await database.write(async () => {
-      await records[0].update((record: any) => {
-        (record as any)._raw.status = 'resolved';
-        (record as any)._raw.ticket_reference = ticketReference;
-        (record as any)._raw.resolved_at = Date.now();
+      await records[0].update((record) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const raw = record._raw as any;
+        raw.status = 'resolved';
+        raw.ticket_reference = ticketReference;
+        raw.resolved_at = Date.now();
       });
     });
 
@@ -142,7 +154,9 @@ export async function markTicketForRetry(
   clientRequestId: string
 ): Promise<void> {
   try {
-    const collection = database.get('support_tickets_queue');
+    const collection = database.get<SupportTicketQueueModel>(
+      'support_tickets_queue'
+    );
     const records = await collection
       .query(Q.where('client_request_id', clientRequestId))
       .fetch();
@@ -152,6 +166,7 @@ export async function markTicketForRetry(
     }
 
     const record = records[0];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const currentRetryCount = ((record._raw as any).retry_count as number) || 0;
 
     if (currentRetryCount >= MAX_RETRY_COUNT) {
@@ -160,18 +175,22 @@ export async function markTicketForRetry(
       // and any consumers can tell permanent failures apart from successful
       // resolutions. Do not treat this as a successful resolution.
       await database.write(async () => {
-        await record.update((r: any) => {
-          (r as any)._raw.status = 'failed'; // Remove from retryable queue
-          (r as any)._raw.resolved_at = Date.now();
+        await record.update((r) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const raw = r._raw as any;
+          raw.status = 'failed'; // Remove from retryable queue
+          raw.resolved_at = Date.now();
         });
       });
       return;
     }
 
     await database.write(async () => {
-      await record.update((r: any) => {
-        (r as any)._raw.retry_count = currentRetryCount + 1;
-        (r as any)._raw.last_retry_at = Date.now();
+      await record.update((r) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const raw = r._raw as any;
+        raw.retry_count = currentRetryCount + 1;
+        raw.last_retry_at = Date.now();
       });
     });
   } catch (error) {
@@ -226,7 +245,9 @@ const safeParseAttachmentsGlobal = (attachments: unknown): Attachment[] => {
  */
 async function checkQueueLimits(attachments: Attachment[]): Promise<boolean> {
   try {
-    const collection = database.get('support_tickets_queue');
+    const collection = database.get<SupportTicketQueueModel>(
+      'support_tickets_queue'
+    );
     const records = await collection.query().fetch();
 
     // Check ticket count limit
@@ -240,10 +261,9 @@ async function checkQueueLimits(attachments: Attachment[]): Promise<boolean> {
       0
     );
     const currentSize = records.reduce((sum, record) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const atts = safeParseAttachmentsGlobal((record._raw as any).attachments);
-      return (
-        sum + atts.reduce((s: number, a: Attachment) => s + a.sizeBytes, 0)
-      );
+      return sum + atts.reduce((s, a) => s + a.sizeBytes, 0);
     }, 0);
 
     const totalSize = currentSize + attachmentSize;
@@ -261,14 +281,15 @@ async function checkQueueLimits(attachments: Attachment[]): Promise<boolean> {
  */
 async function updateQueueMetadata(): Promise<void> {
   try {
-    const collection = database.get('support_tickets_queue');
+    const collection = database.get<SupportTicketQueueModel>(
+      'support_tickets_queue'
+    );
     const records = await collection.query().fetch();
 
     const totalSizeBytes = records.reduce((sum, record) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const atts = safeParseAttachmentsGlobal((record._raw as any).attachments);
-      return (
-        sum + atts.reduce((s: number, a: Attachment) => s + a.sizeBytes, 0)
-      );
+      return sum + atts.reduce((s, a) => s + a.sizeBytes, 0);
     }, 0);
 
     const metadata: QueueMetadata = {
@@ -307,7 +328,9 @@ export function getQueueMetadata(): QueueMetadata | null {
  */
 export async function cleanupOldTickets(retentionDays = 90): Promise<void> {
   try {
-    const collection = database.get('support_tickets_queue');
+    const collection = database.get<SupportTicketQueueModel>(
+      'support_tickets_queue'
+    );
     const cutoffTime = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
 
     const oldRecords = await collection
@@ -333,65 +356,28 @@ export async function cleanupOldTickets(retentionDays = 90): Promise<void> {
 /**
  * Convert WatermelonDB record to SupportTicket
  */
-function recordToTicket(record: SupportTicketQueueModel | any): SupportTicket {
-  // Check if record is a SupportTicketQueueModel instance
+function recordToTicket(record: SupportTicketQueueModel): SupportTicket {
   // NOTE: Queued tickets are stored with a generated client_request_id and all mutation helpers
   // (markTicketSent, markTicketForRetry) look up records by that value, but recordToTicket
   // exposes the Watermelon record ID instead (id: record.id). Hooks such as usePendingSupportTickets
   // then pass ticket.id into markTicketSent, so the query Q.where('client_request_id', clientRequestId)
   // never finds a match and the ticket remains stuck in the queue even after a successful upload.
   // Any sync loop will keep retrying indefinitely. The returned ticket identifier should be the
-  // client_request_id, not the internal row ID, in both branches of recordToTicket.
-  if (record instanceof SupportTicketQueueModel) {
-    return {
-      id: record.clientRequestId,
-      category: record.category,
-      subject: record.subject,
-      description: record.description,
-      deviceContext: record.deviceContext,
-      attachments: record.attachments,
-      status: record.status,
-      priority: record.priority,
-      ticketReference: record.ticketReference || undefined,
-      createdAt: record.createdAt,
-      updatedAt: record.updatedAt,
-      resolvedAt: record.resolvedAt || undefined,
-      retryCount: record.retryCount,
-      lastRetryAt: record.lastRetryAt || undefined,
-    };
-  }
-
-  // Fallback for raw records (with safe JSON parsing)
-  const parseJson = <T>(jsonString: string, defaultValue: T): T => {
-    try {
-      return JSON.parse(jsonString) as T;
-    } catch (error) {
-      console.warn('Failed to parse JSON in recordToTicket:', error);
-      return defaultValue;
-    }
-  };
-
-  const raw = record._raw as any;
-
+  // client_request_id, not the internal row ID.
   return {
-    id: raw.client_request_id,
-    category: raw.category,
-    subject: raw.subject,
-    description: raw.description,
-    deviceContext: parseJson(raw.device_context, {
-      appVersion: 'unknown',
-      osVersion: 'unknown',
-      deviceModel: 'unknown',
-      locale: 'en',
-    }),
-    attachments: parseJson(raw.attachments, []),
-    status: raw.status,
-    priority: raw.priority,
-    ticketReference: raw.ticket_reference,
-    createdAt: raw.created_at,
-    updatedAt: raw.updated_at,
-    resolvedAt: raw.resolved_at,
-    retryCount: raw.retry_count,
-    lastRetryAt: raw.last_retry_at,
+    id: record.clientRequestId,
+    category: record.category,
+    subject: record.subject,
+    description: record.description,
+    deviceContext: record.deviceContext,
+    attachments: record.attachments,
+    status: record.status,
+    priority: record.priority,
+    ticketReference: record.ticketReference || undefined,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+    resolvedAt: record.resolvedAt || undefined,
+    retryCount: record.retryCount,
+    lastRetryAt: record.lastRetryAt || undefined,
   };
 }

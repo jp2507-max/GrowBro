@@ -76,11 +76,12 @@ export async function deduceInventory(
       : null);
 
   try {
-    const existingResult = await maybeReturnExistingMovements(
+    const existingResult = await maybeReturnExistingMovements({
       database,
       idempotencyKey,
-      request.deductionMap
-    );
+      deductionMap: request.deductionMap,
+      context: request.context,
+    });
     if (existingResult) {
       return existingResult;
     }
@@ -105,11 +106,12 @@ export async function deduceInventory(
     const resolvedDeductionMap = mapResolvedDeductionEntries(picksPerItem);
 
     // Check for insufficient stock
-    const insufficientItems = await checkInsufficientStock(
+    const insufficientItems = await checkInsufficientStock({
       database,
       picksPerItem,
-      request.taskId ?? null
-    );
+      taskId: request.taskId ?? null,
+      source: request.source,
+    });
 
     if (insufficientItems.length > 0) {
       return {
@@ -147,11 +149,13 @@ export async function deduceInventory(
   }
 }
 
-async function maybeReturnExistingMovements(
-  database: Database,
-  idempotencyKey: string | null,
-  deductionMap: DeductionMapEntry[]
-): Promise<DeductionResult | null> {
+async function maybeReturnExistingMovements(options: {
+  database: Database;
+  idempotencyKey: string | null;
+  deductionMap: DeductionMapEntry[];
+  context?: DeductionContext;
+}): Promise<DeductionResult | null> {
+  const { database, idempotencyKey, deductionMap, context } = options;
   if (!idempotencyKey) return null;
   const existingMovements = await checkExistingMovements(
     database,
@@ -161,11 +165,38 @@ async function maybeReturnExistingMovements(
     return null;
   }
 
+  // Build resolved deduction map for idempotency shortcut
+  const effectiveContext = context ?? { taskId: 'manual' };
+
+  // Group movements by itemId and calculate total deducted quantity
+  const deductedByItem = new Map<string, number>();
+  for (const movement of existingMovements) {
+    const current = deductedByItem.get(movement.itemId) ?? 0;
+    // quantityDelta is negative for consumption, so we take absolute value
+    deductedByItem.set(
+      movement.itemId,
+      current + Math.abs(movement.quantityDelta)
+    );
+  }
+
+  // Build resolved deduction map with actual deducted quantities
+  const resolvedDeductionMap = deductionMap.map((entry) => {
+    const requestedQuantity = calculateScaledQuantity(entry, effectiveContext);
+    const actualDeducted = deductedByItem.get(entry.itemId) ?? 0;
+
+    return {
+      ...entry,
+      quantity: requestedQuantity,
+      resolvedQuantity: actualDeducted,
+      totalQuantity: requestedQuantity,
+    };
+  });
+
   return {
     success: true,
     movements: existingMovements.map(mapMovementToResult),
     idempotencyKey,
-    deductionMap,
+    deductionMap: resolvedDeductionMap,
   };
 }
 
@@ -218,22 +249,26 @@ async function calculatePicks(
 function mapResolvedDeductionEntries(
   picksPerItem: PicksPerItem
 ): ResolvedDeductionMapEntry[] {
-  return Array.from(picksPerItem.values()).map(({ entry, quantityNeeded }) => ({
-    ...entry,
-    quantity: quantityNeeded,
-    resolvedQuantity: quantityNeeded,
-    totalQuantity: quantityNeeded,
-  }));
+  return Array.from(picksPerItem.values()).map(
+    ({ entry, quantityNeeded, totalAvailable }) => ({
+      ...entry,
+      quantity: quantityNeeded,
+      resolvedQuantity: Math.min(quantityNeeded, totalAvailable),
+      totalQuantity: quantityNeeded,
+    })
+  );
 }
 
 /**
  * Check for insufficient stock in picks
  */
-async function checkInsufficientStock(
-  database: Database,
-  picksPerItem: PicksPerItem,
-  taskId: string | null
-): Promise<InsufficientStockError[]> {
+async function checkInsufficientStock(options: {
+  database: Database;
+  picksPerItem: PicksPerItem;
+  taskId: string | null;
+  source: string | undefined;
+}): Promise<InsufficientStockError[]> {
+  const { database, picksPerItem, taskId, source } = options;
   const insufficientItems: InsufficientStockError[] = [];
 
   for (const [itemId, pickData] of picksPerItem) {
@@ -253,7 +288,7 @@ async function checkInsufficientStock(
 
       // Track telemetry for deduction failure (Requirement 11.1)
       void trackDeductionFailure({
-        source: 'task',
+        source: (source ?? 'task') as 'task' | 'manual' | 'import',
         failureType: 'insufficient_stock',
         itemId,
         itemName: item.name,

@@ -1,6 +1,6 @@
 module.exports = {
   '**/*.{js,jsx,ts,tsx}': (filenames) => [
-    `npx eslint --fix ${filenames
+    `npx eslint --fix --max-warnings=-1 ${filenames
       .map((filename) => `"${filename}"`)
       .join(' ')}`,
   ],
@@ -9,7 +9,7 @@ module.exports = {
       .map((filename) => `"${filename}"`)
       .join(' ')}`,
   'src/translations/*.(json)': (filenames) => [
-    `npx eslint --fix ${filenames
+    `npx eslint --fix --max-warnings=-1 ${filenames
       .map((filename) => `"${filename}"`)
       .join(' ')}`,
   ],

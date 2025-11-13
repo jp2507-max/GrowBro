@@ -50,11 +50,11 @@ export async function hasPreviousDecision(
     return { hasDecision: false, decisionIds: [] };
   }
 
-  const decisions = await response.json();
+  const decisions = (await response.json()) as { id: string }[];
 
   return {
     hasDecision: decisions.length > 0,
-    decisionIds: decisions.map((d: any) => d.id),
+    decisionIds: decisions.map((d) => d.id),
   };
 }
 

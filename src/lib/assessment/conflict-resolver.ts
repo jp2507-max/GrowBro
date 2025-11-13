@@ -14,7 +14,7 @@ import type {
 
 export type { ConflictResolution, ConflictResolutionStrategy, SyncConflict };
 
-export function resolveConflict<T extends Record<string, any>>(
+export function resolveConflict<T extends Record<string, unknown>>(
   conflict: SyncConflict<T>,
   strategy: ConflictResolutionStrategy = 'last-write-wins'
 ): ConflictResolution<T> {

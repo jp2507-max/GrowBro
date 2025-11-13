@@ -530,7 +530,7 @@ export async function checkReviewerConflict(
 async function validateAppealForDecision(
   appealId: string,
   reviewerId: string
-): Promise<{ appeal?: any; error?: string }> {
+): Promise<{ appeal?: Appeal; error?: string }> {
   const appeal = await getAppealStatus(appealId);
   if (!appeal) {
     return { error: 'Appeal not found' };
@@ -550,7 +550,7 @@ async function validateAppealForDecision(
 }
 
 async function executeAppealDecision(
-  appeal: any,
+  appeal: Appeal,
   decisionData: {
     decision: AppealDecision;
     reasoning: string;
@@ -576,7 +576,7 @@ async function executeAppealDecision(
 }
 
 async function handleAppealPostProcessing(
-  appeal: any,
+  appeal: Appeal,
   processingData: {
     decision: AppealDecision;
     reasoning: string;

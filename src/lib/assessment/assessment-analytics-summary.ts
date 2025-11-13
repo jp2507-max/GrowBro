@@ -3,12 +3,31 @@ import { database } from '@/lib/watermelon';
 import { getFeedbackMetrics } from './assessment-analytics-feedback-summary';
 
 // SQLiteQuery type is not directly exported, so we define it inline
-type SQLiteQuery = [string, any[]];
+type SQLiteQuery = [string, unknown[]];
+
+type UnsafeExecuteResult = {
+  error?: unknown;
+  results?: {
+    rows?: {
+      _array?: Record<string, unknown>[];
+    };
+  }[];
+};
+
+type DatabaseAdapterWithUnsafe = {
+  unsafeExecute?: (
+    work: { sqls: SQLiteQuery[] },
+    callback: (result: UnsafeExecuteResult) => void
+  ) => void;
+};
 
 // Helper to run a single SQL via the adapter. The adapter exposes
 // `unsafeExecute(work, cb)` which is callback-based; wrap it in a Promise
 // and return the results array (matching the previous unsafeExecuteSql shape).
-async function runSql(sql: string, params: any[] = []): Promise<any[]> {
+async function runSql(
+  sql: string,
+  params: unknown[] = []
+): Promise<NonNullable<UnsafeExecuteResult['results']>> {
   // Verify adapter supports unsafeExecute at runtime
   if (typeof database.adapter?.unsafeExecute !== 'function') {
     throw new Error('Database adapter does not support unsafeExecute method');
@@ -18,17 +37,20 @@ async function runSql(sql: string, params: any[] = []): Promise<any[]> {
 
   // Wrap the callback-based unsafeExecute in a Promise
   return new Promise((resolve, reject) => {
-    (database.adapter as any).unsafeExecute(work, (result: any) => {
-      // adapter is dynamically typed and unsafeExecute is not on the declared type
-      if (result?.error) {
-        console.error('Database adapter error:', result.error);
-        reject(
-          new Error('Failed to execute SQL query', { cause: result.error })
-        );
-        return;
+    (database.adapter as DatabaseAdapterWithUnsafe).unsafeExecute!(
+      work,
+      (result) => {
+        // adapter is dynamically typed and unsafeExecute is not on the declared type
+        if (result?.error) {
+          console.error('Database adapter error:', result.error);
+          reject(
+            new Error('Failed to execute SQL query', { cause: result.error })
+          );
+          return;
+        }
+        resolve(result?.results || []);
       }
-      resolve(result?.results || []);
-    });
+    );
   });
 }
 
@@ -66,7 +88,7 @@ export async function getAssessmentSummary(): Promise<{
     'SELECT AVG(calibrated_confidence) as avg FROM assessments WHERE status = ? AND calibrated_confidence IS NOT NULL',
     ['completed']
   );
-  const avgConfidence = avgResult?.rows?._array?.[0]?.avg ?? 0;
+  const avgConfidence = Number(avgResult?.rows?._array?.[0]?.avg ?? 0);
 
   // Round to 2 decimal places
   const roundedAvgConfidence = Math.round(avgConfidence * 100) / 100;

@@ -95,7 +95,7 @@ async function updateHarvestNotificationId(
       .get<HarvestModel>('harvests')
       .find(harvestId);
     await harvest.update((h) => {
-      (h as any)[field] = notificationId;
+      h[field] = notificationId;
     });
   });
 }
@@ -389,12 +389,8 @@ export async function cancelStageReminders(harvestId: string): Promise<void> {
       .get<HarvestModel>('harvests')
       .find(harvestId);
 
-    const notificationId = (harvest as any).notificationId as
-      | string
-      | undefined;
-    const overdueNotificationId = (harvest as any).overdueNotificationId as
-      | string
-      | undefined;
+    const notificationId = harvest.notificationId;
+    const overdueNotificationId = harvest.overdueNotificationId;
 
     if (notificationId) {
       await Notifications.cancelScheduledNotificationAsync(notificationId);
@@ -409,8 +405,8 @@ export async function cancelStageReminders(harvestId: string): Promise<void> {
     // Clear notification IDs from harvest record
     await database.write(async () => {
       await harvest.update((h) => {
-        (h as any).notificationId = null;
-        (h as any).overdueNotificationId = null;
+        h.notificationId = undefined;
+        h.overdueNotificationId = undefined;
       });
     });
   } catch (error) {
@@ -487,12 +483,8 @@ export async function rehydrateNotifications(): Promise<RehydrationStats> {
 
     for (const harvest of harvests) {
       try {
-        const notificationId = (harvest as any).notificationId as
-          | string
-          | undefined;
-        const overdueNotificationId = (harvest as any).overdueNotificationId as
-          | string
-          | undefined;
+        const notificationId = harvest.notificationId;
+        const overdueNotificationId = harvest.overdueNotificationId;
 
         const currentTime = new Date();
         const elapsedDays = calculateElapsedDays(
@@ -615,8 +607,12 @@ export async function rehydrateNotifications(): Promise<RehydrationStats> {
  * Checks in order: timestamp ?? value ?? date, coerces to Number
  * Returns Date if finite number, null otherwise
  */
-function normalizeTriggerDate(trigger: any): Date | null {
-  const timestamp = trigger?.timestamp ?? trigger?.value ?? trigger?.date;
+function normalizeTriggerDate(trigger: unknown): Date | null {
+  if (!trigger || typeof trigger !== 'object') {
+    return null;
+  }
+  const triggerObj = trigger as Record<string, unknown>;
+  const timestamp = triggerObj.timestamp ?? triggerObj.value ?? triggerObj.date;
   const numericValue = Number(timestamp);
   return Number.isFinite(numericValue) ? new Date(numericValue) : null;
 }
@@ -634,12 +630,8 @@ export async function getNotificationStatus(harvestId: string): Promise<{
     const harvest = await database
       .get<HarvestModel>('harvests')
       .find(harvestId);
-    const notificationId = (harvest as any).notificationId as
-      | string
-      | undefined;
-    const overdueNotificationId = (harvest as any).overdueNotificationId as
-      | string
-      | undefined;
+    const notificationId = harvest.notificationId;
+    const overdueNotificationId = harvest.overdueNotificationId;
 
     const scheduledNotifications =
       await Notifications.getAllScheduledNotificationsAsync();

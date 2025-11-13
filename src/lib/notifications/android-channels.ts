@@ -4,6 +4,25 @@ import { Platform } from 'react-native';
 import i18n from '@/lib/i18n';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 
+// Android-specific types not in official expo-notifications types
+type AndroidNotificationsExtended = typeof Notifications & {
+  setNotificationChannelAsync?: (
+    channelId: string,
+    config: {
+      name: string;
+      description?: string;
+      importance?: number;
+      sound?: string;
+      vibrationPattern?: number[];
+      lockscreenVisibility?: number;
+    }
+  ) => Promise<void>;
+  AndroidImportance?: Record<string, number>;
+  AndroidNotificationVisibility?: {
+    PUBLIC?: number;
+  };
+};
+
 export type AndroidChannelKey =
   | 'community.interactions'
   | 'community.likes'
@@ -83,7 +102,7 @@ export function getAndroidChannelId(key: AndroidChannelKey): string {
 
 export async function registerAndroidChannels(): Promise<void> {
   if (Platform.OS !== 'android') return;
-  const anyNotifications: any = Notifications as any;
+  const anyNotifications = Notifications as AndroidNotificationsExtended;
 
   try {
     const results = await Promise.allSettled(
@@ -146,7 +165,7 @@ export function resolveMigratedChannelId(channelId: string): string {
 function getAndroidImportance(
   level: 'min' | 'low' | 'default' | 'high' | 'max'
 ): number {
-  const anyNotifications: any = Notifications as any;
+  const anyNotifications = Notifications as AndroidNotificationsExtended;
   const fallback: Record<typeof level, number> = {
     min: 1,
     low: 2,
@@ -160,7 +179,7 @@ function getAndroidImportance(
 }
 
 function getAndroidNotificationVisibilityPublic(): number {
-  const anyNotifications: any = Notifications as any;
+  const anyNotifications = Notifications as AndroidNotificationsExtended;
   const visibility = anyNotifications.AndroidNotificationVisibility;
   if (visibility && typeof visibility.PUBLIC === 'number') {
     return visibility.PUBLIC;

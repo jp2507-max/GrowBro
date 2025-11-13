@@ -8,7 +8,7 @@
  * restrict visibility to verified 18+ users with safer defaults for minors
  */
 
-import { type createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type {
   AccessResult,
@@ -18,10 +18,41 @@ import type {
 } from '@/types/age-verification';
 import { AGE_RESTRICTED_KEYWORDS } from '@/types/age-verification';
 
-export class ContentAgeGatingEngine {
-  private supabase: ReturnType<typeof createClient>;
+/**
+ * Database record types for Supabase queries
+ */
+type DbContentRestriction = {
+  id: string;
+  content_id: string;
+  content_type: string;
+  is_age_restricted: boolean;
+  min_age: number;
+  flagged_by_system: boolean;
+  flagged_by_author: boolean;
+  flagged_by_moderator: boolean;
+  moderator_id: string | null;
+  restriction_reason: string | null;
+  keywords_detected: string[] | null;
+  created_at: string;
+  updated_at: string;
+};
 
-  constructor(supabase: any) {
+type DbUserAgeStatus = {
+  user_id: string;
+  is_age_verified: boolean;
+  verified_at: string | null;
+  active_token_id: string | null;
+  is_minor: boolean;
+  minor_protections_enabled: boolean;
+  show_age_restricted_content: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export class ContentAgeGatingEngine {
+  private supabase: SupabaseClient;
+
+  constructor(supabase: SupabaseClient) {
     this.supabase = supabase;
   }
 
@@ -119,7 +150,10 @@ export class ContentAgeGatingEngine {
           moderator_id: moderatorId || null,
           restriction_reason: restrictionReason || null,
           keywords_detected: keywordsDetected || null,
-        } as any,
+        } satisfies Omit<
+          DbContentRestriction,
+          'id' | 'created_at' | 'updated_at'
+        >,
         {
           onConflict: 'content_id,content_type',
         }
@@ -183,13 +217,13 @@ export class ContentAgeGatingEngine {
     contentId: string,
     contentType: 'post' | 'comment' | 'image' | 'profile' | 'other'
   ): Promise<void> {
-    const { error } = (await (
-      this.supabase.from('content_age_restrictions').update as any
-    )({
-      is_age_restricted: false,
-    })
+    const { error } = await this.supabase
+      .from('content_age_restrictions')
+      .update({
+        is_age_restricted: false,
+      })
       .eq('content_id', contentId)
-      .eq('content_type', contentType)) as any;
+      .eq('content_type', contentType);
 
     if (error) {
       throw new Error(`Failed to remove age restriction: ${error.message}`);
@@ -240,7 +274,10 @@ export class ContentAgeGatingEngine {
       .eq('content_type', contentType)
       .eq('is_age_restricted', true);
 
-    const restrictedItems = (restrictions || []) as any[];
+    const restrictedItems = (restrictions || []) as Pick<
+      DbContentRestriction,
+      'content_id'
+    >[];
     const restrictedIds = new Set(restrictedItems.map((r) => r.content_id));
 
     // Filter out restricted content
@@ -263,7 +300,10 @@ export class ContentAgeGatingEngine {
       .select('flagged_by_system, flagged_by_author, flagged_by_moderator')
       .eq('is_age_restricted', true);
 
-    const statsList = (stats || []) as any[];
+    const statsList = (stats || []) as Pick<
+      DbContentRestriction,
+      'flagged_by_system' | 'flagged_by_author' | 'flagged_by_moderator'
+    >[];
     const totalRestricted = statsList.length;
     const systemFlagged = statsList.filter((s) => s.flagged_by_system).length;
     const authorFlagged = statsList.filter((s) => s.flagged_by_author).length;
@@ -292,7 +332,10 @@ export class ContentAgeGatingEngine {
       is_minor: true,
       minor_protections_enabled: true,
       show_age_restricted_content: false,
-    } as any);
+    } satisfies Omit<
+      DbUserAgeStatus,
+      'verified_at' | 'active_token_id' | 'created_at' | 'updated_at'
+    >);
   }
 
   // ============================================================================
@@ -336,7 +379,7 @@ export class ContentAgeGatingEngine {
       return null;
     }
 
-    const statusData = status as any;
+    const statusData = status as DbUserAgeStatus;
 
     return {
       userId: statusData.user_id,
@@ -389,11 +432,18 @@ export class ContentAgeGatingEngine {
   /**
    * Map database restriction to TypeScript type
    */
-  private mapDbRestrictionToType(dbRestriction: any): ContentAgeRestriction {
+  private mapDbRestrictionToType(
+    dbRestriction: DbContentRestriction
+  ): ContentAgeRestriction {
     return {
       id: dbRestriction.id,
       contentId: dbRestriction.content_id,
-      contentType: dbRestriction.content_type,
+      contentType: dbRestriction.content_type as
+        | 'post'
+        | 'comment'
+        | 'image'
+        | 'profile'
+        | 'other',
       isAgeRestricted: dbRestriction.is_age_restricted,
       minAge: dbRestriction.min_age,
       flaggedBySystem: dbRestriction.flagged_by_system,

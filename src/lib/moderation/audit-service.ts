@@ -54,6 +54,22 @@ export interface RetentionPolicy {
   pii_anonymization_days: number; // 30 days
 }
 
+interface DbAuditEventRow {
+  id: string;
+  event_type: string;
+  actor_id: string;
+  actor_type: string;
+  target_id: string;
+  target_type: string;
+  action: string;
+  metadata: Record<string, unknown>;
+  timestamp: string;
+  signature: string;
+  pii_tagged: boolean;
+  retention_until: string;
+  created_at: string;
+}
+
 const DEFAULT_RETENTION_POLICY: RetentionPolicy = {
   default_retention_days: 365, // 12 months
   audit_events_retention_days: 2555, // 7 years
@@ -416,12 +432,12 @@ export class AuditService {
   /**
    * Map database row to AuditEvent interface
    */
-  private mapToAuditEvent(row: any): AuditEvent {
+  private mapToAuditEvent(row: DbAuditEventRow): AuditEvent {
     return {
       id: row.id,
-      event_type: row.event_type,
+      event_type: row.event_type as AuditEventType,
       actor_id: row.actor_id,
-      actor_type: row.actor_type,
+      actor_type: row.actor_type as ActorType,
       target_id: row.target_id,
       target_type: row.target_type,
       action: row.action,

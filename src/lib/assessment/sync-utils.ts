@@ -1,7 +1,7 @@
 /**
  * Sync utility helpers
  */
-export function mergePartialUpdate<T extends Record<string, any>>(
+export function mergePartialUpdate<T extends Record<string, unknown>>(
   localData: T,
   serverUpdate: Partial<T> & Record<string, unknown>,
   preserveLocalFields: string[] = []
@@ -15,7 +15,9 @@ export function mergePartialUpdate<T extends Record<string, any>>(
     }
 
     // Apply server update
-    (merged as any)[key] = value as any;
+    if (key in merged) {
+      (merged as Record<string, unknown>)[key] = value;
+    }
   }
 
   return merged;
