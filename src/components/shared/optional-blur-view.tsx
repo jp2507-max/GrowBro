@@ -1,13 +1,13 @@
 /* eslint-disable simple-import-sort/imports */
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import type { ViewStyle } from 'react-native';
+import type { ViewStyle, RegisteredStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 type BlurProps = {
   intensity?: number;
   tint?: 'light' | 'dark' | 'default' | undefined;
-  style?: ViewStyle | ViewStyle[];
+  style?: ViewStyle | ViewStyle[] | RegisteredStyle<ViewStyle>;
   testID?: string;
   pointerEvents?: 'auto' | 'none' | 'box-none' | 'box-only';
 };
@@ -38,7 +38,6 @@ export function OptionalBlurView({
 
   return (
     <Blur
-      // @ts-expect-error - StyleSheet.absoluteFill is compatible but types don't match exactly
       style={style ?? StyleSheet.absoluteFill}
       tint={tint}
       intensity={intensity}

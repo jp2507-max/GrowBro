@@ -29,7 +29,8 @@ export function initializeSentryPerformance(): boolean {
 
   sentryInitialized = true;
 
-  const integrations: any[] = [];
+  // Array of Sentry integrations with different types
+  const integrations: unknown[] = [];
 
   // Add React Navigation instrumentation for performance tracking
   if (SENTRY_PERFORMANCE_CONFIG.ENABLE_NAVIGATION_INSTRUMENTATION) {
@@ -58,7 +59,9 @@ export function initializeSentryPerformance(): boolean {
     // Privacy-focused: default to 0 for replay sampling, only enable via environment
     replaysSessionSampleRate: Env.SENTRY_REPLAYS_SESSION_SAMPLE_RATE ?? 0,
     replaysOnErrorSampleRate: Env.SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE ?? 0,
-    integrations,
+    integrations: integrations as Parameters<
+      typeof Sentry.init
+    >[0]['integrations'],
     // Scrub sensitive data before sending to Sentry
     beforeSend: beforeSendHook,
     beforeBreadcrumb: beforeBreadcrumbHook,

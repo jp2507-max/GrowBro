@@ -124,6 +124,7 @@ function toNotificationTaskPayload(
     reminderAtLocal: task.reminderAtLocal ?? null,
     dueAtUtc: task.dueAtUtc,
     dueAtLocal: task.dueAtLocal,
+    timezone: task.timezone,
   };
 }
 

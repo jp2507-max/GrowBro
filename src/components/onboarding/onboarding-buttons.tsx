@@ -36,7 +36,7 @@ export function SkipButton({ onPress }: SkipButtonProps) {
 }
 
 type DoneButtonProps = {
-  ctaStyle: any;
+  ctaStyle: AnimatedStyleProp<{ opacity: number }>;
   ctaEnabled: boolean;
   onPress: () => void;
 };
@@ -64,7 +64,7 @@ type OnboardingScrollViewProps = {
   scrollRef: React.RefObject<ScrollView | null>;
   width: number;
   slides: React.ComponentType<OnboardingSlideProps>[];
-  onScroll: any;
+  onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
   onScrollEnd: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
 };
 

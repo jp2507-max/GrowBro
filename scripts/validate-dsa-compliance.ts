@@ -7,7 +7,7 @@
  * Usage: pnpm tsx scripts/validate-dsa-compliance.ts
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -49,7 +49,7 @@ interface ComplianceReport {
 // ============================================================================
 
 class DSAComplianceValidator {
-  private supabase: any;
+  private supabase: SupabaseClient;
 
   constructor() {
     const supabaseUrl = process.env.SUPABASE_URL || '';

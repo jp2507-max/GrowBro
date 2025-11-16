@@ -1,6 +1,18 @@
 import { InvalidTaskTimestampError } from './notification-errors';
 import { TaskNotificationService } from './task-notifications';
 
+interface Task {
+  id: string;
+  plantId?: string;
+  title: string;
+  description: string;
+  reminderAtUtc?: Date | string | null;
+  reminderAtLocal?: Date | string | null;
+  dueAtUtc?: Date | string | null;
+  dueAtLocal?: Date | string | null;
+  recurrenceRule?: string;
+}
+
 /**
  * Example usage showing how to handle InvalidTaskTimestampError predictably
  */
@@ -8,7 +20,7 @@ export class TaskScheduler {
   private notificationService = new TaskNotificationService();
 
   async scheduleTaskWithErrorHandling(
-    task: any
+    task: Task
   ): Promise<{ success: boolean; notificationId?: string; error?: string }> {
     try {
       const notificationId =
@@ -36,7 +48,7 @@ export class TaskScheduler {
   /**
    * Batch schedule multiple tasks with individual error handling
    */
-  async scheduleMultipleTasks(tasks: any[]): Promise<
+  async scheduleMultipleTasks(tasks: Task[]): Promise<
     {
       taskId: string;
       success: boolean;

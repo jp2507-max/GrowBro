@@ -1275,7 +1275,20 @@
         "tracking_mode": "Tracking Mode",
         "tracking_simple": "Simple",
         "unit": "Unit of Measure",
-        "unit_placeholder": "e.g., L, ml, g, kg"
+        "unit_placeholder": "e.g., L, ml, g, kg",
+        "validation": {
+          "categoryRequired": "Category is required",
+          "leadTimePositive": "Lead time must be positive",
+          "minStockPositive": "Minimum stock must be positive",
+          "minStockRequired": "Minimum stock is required",
+          "nameMaxLength": "Name must be less than 100 characters",
+          "nameRequired": "Name is required",
+          "reorderMultipleMin": "Reorder multiple must be at least 1",
+          "reorderMultipleRequired": "Reorder multiple is required",
+          "trackingModeRequired": "Tracking mode is required",
+          "unitMaxLength": "Unit must be less than 20 characters",
+          "unitRequired": "Unit is required"
+        }
       },
       "item_detail": "Item Details",
       "low_stock": "Low Stock",

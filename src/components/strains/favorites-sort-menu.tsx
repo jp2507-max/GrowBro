@@ -105,7 +105,10 @@ export function useFavoritesSortMenu() {
   };
 }
 
-export const FavoritesSortMenu = React.forwardRef<any, FavoritesSortMenuProps>(
+export const FavoritesSortMenu = React.forwardRef<
+  React.ElementRef<typeof Modal>,
+  FavoritesSortMenuProps
+>(
   (
     { sortBy: initialSortBy, sortDirection: initialDirection, onApply },
     ref

@@ -5,6 +5,7 @@ import Animated, {
   FadeIn,
   FadeOut,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
@@ -146,10 +147,7 @@ function useSharedHeaderAnimation({
   }, [height, insetsTop, routeKey]);
 
   // Update header position based on scroll
-  // Some Reanimated versions export hooks as named exports; others
-  // attach them on the default Animated object. Try both safely.
-  const useDerived = (Animated as any).useDerivedValue ?? (() => {});
-  useDerived(() => {
+  useDerivedValue(() => {
     if (!isCollapsible) {
       translateY.value = 0;
       return;

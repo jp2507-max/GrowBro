@@ -58,6 +58,30 @@ const CONSENT_TOGGLES: ToggleConfig[] = [
     testID: 'consent-telemetry',
   },
   {
+    key: 'experiments',
+    isPrivacy: false,
+    titleTx: 'consent.experiments.title' as TxKeyPath,
+    subtitleTx: 'consent.experiments.subtitle' as TxKeyPath,
+    impactTx: 'consent.experiments.impact' as TxKeyPath,
+    testID: 'consent-experiments',
+  },
+  {
+    key: 'aiTraining',
+    isPrivacy: false,
+    titleTx: 'consent.aiTraining.title' as TxKeyPath,
+    subtitleTx: 'consent.aiTraining.subtitle' as TxKeyPath,
+    impactTx: 'consent.aiTraining.impact' as TxKeyPath,
+    testID: 'consent-aiTraining',
+  },
+  {
+    key: 'crashDiagnostics',
+    isPrivacy: false,
+    titleTx: 'consent.crashDiagnostics.title' as TxKeyPath,
+    subtitleTx: 'consent.crashDiagnostics.subtitle' as TxKeyPath,
+    impactTx: 'consent.crashDiagnostics.impact' as TxKeyPath,
+    testID: 'consent-crashDiagnostics',
+  },
+  {
     key: 'analytics',
     isPrivacy: true,
     titleTx: 'consent.analytics.title' as TxKeyPath,
@@ -356,18 +380,16 @@ function useOptOut(
       for (const k of RUNTIME_KEYS) {
         await ConsentService.setConsent(k as ConsentPurpose, false);
       }
-      const newConsentState: ConsentState = {
+      setConsentState((prevState) => ({
+        ...prevState,
         telemetry: false,
         experiments: false,
         cloudProcessing: false,
         aiTraining: false,
         aiModelImprovement: false,
         crashDiagnostics: false,
-        version: '',
         timestamp: new Date().toISOString(),
-        locale: 'en',
-      };
-      setConsentState(newConsentState);
+      }));
       Alert.alert(
         translate('consent.optOutSuccess.title'),
         translate('consent.optOutSuccess.message'),
@@ -418,14 +440,18 @@ function useConsentActions({
 
   const updateRuntime = useCallback(
     async (purpose: ConsentPurpose, value: boolean) => {
+      let shouldCallService = false;
       setConsentState((prev) => {
         if (!prev) return prev;
+        shouldCallService = true;
         return { ...prev, [purpose]: value };
       });
-      try {
-        await ConsentService.setConsent(purpose, value);
-      } catch {
-        // swallow — optimistic update
+      if (shouldCallService) {
+        try {
+          await ConsentService.setConsent(purpose, value);
+        } catch {
+          // swallow — optimistic update
+        }
       }
     },
     [setConsentState]
@@ -438,12 +464,13 @@ function useConsentActions({
   );
 
   const bulkSet = useCallback(
-    (value: boolean) => {
+    async (value: boolean) => {
       updatePrivacy('analytics', value);
       updatePrivacy('crashReporting', value);
       updatePrivacy('personalizedData', value);
       updatePrivacy('sessionReplay', value);
-      RUNTIME_KEYS.forEach((k) => updateRuntime(k, value));
+      // Await all runtime consent updates to prevent race conditions
+      await Promise.all(RUNTIME_KEYS.map((k) => updateRuntime(k, value)));
     },
     [updatePrivacy, updateRuntime]
   );
@@ -503,7 +530,7 @@ function ConsentFooter({
 }: {
   privacyConsent: PrivacyConsent;
   mode: ConsentManagerMode;
-  bulkSet: (value: boolean) => void;
+  bulkSet: (value: boolean) => Promise<void>;
   save: (cb?: (c: PrivacyConsent) => void) => void;
   onComplete?: (c: PrivacyConsent) => void;
   onDismiss?: () => void;
@@ -512,8 +539,8 @@ function ConsentFooter({
     <View className="border-t border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
       <ConsentActions
         mode={mode}
-        onAcceptAll={() => bulkSet(true)}
-        onRejectAll={() => bulkSet(false)}
+        onAcceptAll={async () => await bulkSet(true)}
+        onRejectAll={async () => await bulkSet(false)}
         onSave={() => save(onComplete)}
         onDismiss={onDismiss}
       />
@@ -552,7 +579,7 @@ function ConsentManagerView({
   updatePrivacy: (key: keyof PrivacyConsent, value: boolean) => void;
   updateRuntime: (purpose: ConsentPurpose, value: boolean) => Promise<void>;
   optOutAll: () => Promise<void>;
-  bulkSet: (value: boolean) => void;
+  bulkSet: (value: boolean) => Promise<void>;
   save: (cb?: (c: PrivacyConsent) => void) => void;
   onComplete?: (c: PrivacyConsent) => void;
   onDismiss?: () => void;

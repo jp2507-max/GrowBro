@@ -1275,7 +1275,20 @@
         "tracking_mode": "Verfolgungsmodus",
         "tracking_simple": "Einfach",
         "unit": "Maßeinheit",
-        "unit_placeholder": "z.B. L, ml, g, kg"
+        "unit_placeholder": "z.B. L, ml, g, kg",
+        "validation": {
+          "categoryRequired": "Kategorie ist erforderlich",
+          "leadTimePositive": "Lieferzeit muss positiv sein",
+          "minStockPositive": "Mindestbestand muss positiv sein",
+          "minStockRequired": "Mindestbestand ist erforderlich",
+          "nameMaxLength": "Name muss weniger als 100 Zeichen haben",
+          "nameRequired": "Name ist erforderlich",
+          "reorderMultipleMin": "Nachbestellmenge muss mindestens 1 sein",
+          "reorderMultipleRequired": "Nachbestellmenge ist erforderlich",
+          "trackingModeRequired": "Verfolgungsmodus ist erforderlich",
+          "unitMaxLength": "Maßeinheit muss weniger als 20 Zeichen haben",
+          "unitRequired": "Maßeinheit ist erforderlich"
+        }
       },
       "item_detail": "Artikeldetails",
       "low_stock": "Niedriger Bestand",

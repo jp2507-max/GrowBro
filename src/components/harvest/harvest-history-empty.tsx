@@ -2,6 +2,7 @@ import React from 'react';
 
 import { Button, Text, View } from '@/components/ui';
 import { translate } from '@/lib/i18n';
+import type { TxKeyPath } from '@/lib/i18n/types';
 
 type EmptyVariant = 'default' | 'filtered' | 'offline';
 
@@ -12,7 +13,10 @@ type Props = {
   readonly testID?: string;
 };
 
-const VARIANT_KEYS: Record<EmptyVariant, { title: string; body: string }> = {
+const VARIANT_KEYS: Record<
+  EmptyVariant,
+  { title: TxKeyPath; body: TxKeyPath }
+> = {
   default: {
     title: 'harvest.history.empty.default.title',
     body: 'harvest.history.empty.default.body',
@@ -44,10 +48,10 @@ export function HarvestHistoryEmpty({
       testID={testID}
     >
       <Text className="text-center text-lg font-semibold text-neutral-900 dark:text-neutral-50">
-        {translate(copy.title as any)}
+        {translate(copy.title)}
       </Text>
       <Text className="text-center text-base text-neutral-600 dark:text-neutral-300">
-        {translate(copy.body as any)}
+        {translate(copy.body)}
       </Text>
 
       {variant !== 'offline' && onCreateHarvest ? (

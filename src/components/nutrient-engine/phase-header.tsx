@@ -10,10 +10,11 @@ import { useTranslation } from 'react-i18next';
 
 import { ControlledInput, Text } from '@/components/ui';
 import { ControlledSelect } from '@/components/ui/select';
+import type { FeedingTemplateFormData } from '@/lib/nutrient-engine/schemas/feeding-template-schema';
 import { PlantPhase } from '@/lib/nutrient-engine/types';
 
 interface PhaseHeaderProps {
-  control: Control<any>;
+  control: Control<FeedingTemplateFormData>;
   phaseIndex: number;
   testID: string;
 }

@@ -19,11 +19,6 @@ interface ToastOptions {
   onPress?: () => void;
 }
 
-// Extended message options with accessibility support
-interface AccessibleMessageOptions extends MessageOptions {
-  accessibilityLiveRegion?: 'polite' | 'assertive' | 'none';
-}
-
 /**
  * Show success toast for settings operations
  */
@@ -32,13 +27,13 @@ export function showSuccessToast(
   description?: string,
   duration = 3000
 ) {
-  const options: AccessibleMessageOptions = {
+  const options: MessageOptions = {
     message,
     description,
     type: 'success',
     duration,
     icon: 'success',
-    accessibilityLiveRegion: 'polite',
+    titleProps: { accessibilityLiveRegion: 'polite' },
   };
   showMessage(options);
 }
@@ -51,13 +46,13 @@ export function showErrorToast(
   description?: string,
   duration = 4000
 ) {
-  const options: AccessibleMessageOptions = {
+  const options: MessageOptions = {
     message,
     description,
     type: 'danger',
     duration,
     icon: 'danger',
-    accessibilityLiveRegion: 'assertive',
+    titleProps: { accessibilityLiveRegion: 'assertive' },
   };
   showMessage(options);
 }
@@ -71,14 +66,14 @@ export function showRetryToast(
   onRetry: () => void,
   description?: string
 ) {
-  const options: AccessibleMessageOptions = {
+  const options: MessageOptions = {
     message,
     description: description ?? 'Tap to retry',
     type: 'warning',
     duration: 6000,
     icon: 'warning',
     onPress: onRetry,
-    accessibilityLiveRegion: 'polite',
+    titleProps: { accessibilityLiveRegion: 'polite' },
   };
   showMessage(options);
 }
@@ -91,13 +86,13 @@ export function showInfoToast(
   description?: string,
   duration = 3000
 ) {
-  const options: AccessibleMessageOptions = {
+  const options: MessageOptions = {
     message,
     description,
     type: 'info',
     duration,
     icon: 'info',
-    accessibilityLiveRegion: 'polite',
+    titleProps: { accessibilityLiveRegion: 'polite' },
   };
   showMessage(options);
 }
@@ -107,14 +102,14 @@ export function showInfoToast(
  * Requirements: 2.9
  */
 export function showOfflineToast() {
-  const options: AccessibleMessageOptions = {
+  const options: MessageOptions = {
     message: 'No internet connection',
     description:
       'This action requires internet. Changes will sync when online.',
     type: 'warning',
     duration: 4000,
     icon: 'warning',
-    accessibilityLiveRegion: 'polite',
+    titleProps: { accessibilityLiveRegion: 'polite' },
   };
   showMessage(options);
 }
@@ -131,14 +126,16 @@ export function showToast(options: ToastOptions) {
     onPress,
   } = options;
 
-  const messageOptions: AccessibleMessageOptions = {
+  const messageOptions: MessageOptions = {
     message,
     description,
     type,
     duration,
     icon: type,
     onPress,
-    accessibilityLiveRegion: type === 'danger' ? 'assertive' : 'polite',
+    titleProps: {
+      accessibilityLiveRegion: type === 'danger' ? 'assertive' : 'polite',
+    },
   };
   showMessage(messageOptions);
 }

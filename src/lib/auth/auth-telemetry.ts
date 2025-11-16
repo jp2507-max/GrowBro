@@ -189,8 +189,7 @@ export async function trackAuthEvent(
     };
 
     // Track event using consent-gated analytics client
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    authAnalyticsClient.track(event as any, payload);
+    authAnalyticsClient.track(event as AnalyticsEventName, payload);
   } catch (error) {
     console.warn('Failed to track auth event:', error);
     // Fail silently to avoid breaking auth flows

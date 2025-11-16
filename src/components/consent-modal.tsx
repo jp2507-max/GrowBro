@@ -7,6 +7,7 @@ import { createStaggeredFadeInUp, onboardingMotion } from '@/lib/animations';
 import type { TxKeyPath } from '@/lib/i18n/utils';
 import { translate } from '@/lib/i18n/utils';
 import { ConsentService } from '@/lib/privacy/consent-service';
+import type { ConsentState } from '@/lib/privacy/consent-types';
 
 type ConsentDecisions = {
   telemetry: boolean;
@@ -135,15 +136,13 @@ function useLoadConsents(
     if (!isVisible) return undefined;
     setLoaded(false);
     ConsentService.getConsents()
-      .then((c) => {
+      .then((c: ConsentState) => {
         if (!mounted) return;
-        // null-safe accessor: treat `c` as possibly undefined/null and
-        // coerce each key to a boolean.
-        const has = (k: string) => !!(c as any)?.[k];
-        setters.setTelemetry(has('telemetry'));
-        setters.setExperiments(has('experiments'));
-        setters.setAiTraining(has('aiTraining'));
-        setters.setCrashDiagnostics(has('crashDiagnostics'));
+        // Extract consent values from the state
+        setters.setTelemetry(c.telemetry);
+        setters.setExperiments(c.experiments);
+        setters.setAiTraining(c.aiTraining);
+        setters.setCrashDiagnostics(c.crashDiagnostics);
       })
       .catch((error) => {
         // Follow project logging conventions: include context and the error

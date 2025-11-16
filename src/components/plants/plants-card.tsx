@@ -6,6 +6,8 @@ import {
   type ListRenderItemInfo,
 } from 'react-native';
 import Animated, {
+  interpolate,
+  useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
   type SharedValue,
@@ -153,12 +155,12 @@ export function PlantCard({
     const start = effItemY.value - 1;
     const mid = effItemY.value;
     const end = effItemY.value + h;
-    const scale = Animated.interpolate(
+    const scale = interpolate(
       listOffsetY.value,
       [start, mid, end],
       [1, 1, 0.98]
     );
-    const translateY = Animated.interpolate(
+    const translateY = interpolate(
       listOffsetY.value,
       [start - 1, start, start + 1],
       [0, 0, 1]
@@ -166,13 +168,13 @@ export function PlantCard({
     return { transform: [{ translateY }, { scale }] };
   }, []);
 
-  const blurAnimatedProps = Animated.useAnimatedProps(() => {
+  const blurAnimatedProps = useAnimatedProps(() => {
     'worklet';
     const h = Math.max(measuredHeight.value, 1);
     const start = effItemY.value - 1;
     const mid = effItemY.value;
     const end = effItemY.value + h;
-    const intensity = Animated.interpolate(
+    const intensity = interpolate(
       listOffsetY.value,
       [start, mid, end],
       [0, 0, 8]

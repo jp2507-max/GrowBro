@@ -32,8 +32,8 @@ type TableRow = {
  */
 function createTableData(
   data: ChartDataPoint[],
-  t: any,
-  i18n: any
+  t: TFunction,
+  i18n: I18n
 ): TableRow[] {
   return data.map((point, index) => ({
     id: `${point.date.getTime()}-${index}`,

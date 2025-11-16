@@ -1,6 +1,7 @@
 import type {
   DatabaseAdapterWithUnsafe,
   SQLiteQuery,
+  UnsafeExecuteResult,
 } from '@/lib/database/unsafe-sql-utils';
 import { adapter } from '@/lib/watermelon';
 
@@ -31,7 +32,12 @@ const INDEX_QUERIES: SQLiteQuery[] = [
 ];
 
 function runUnsafeExecute(
-  target: typeof adapter,
+  target: {
+    unsafeExecute: (
+      work: { sqls: SQLiteQuery[] },
+      callback: (result: UnsafeExecuteResult) => void
+    ) => void;
+  },
   work: { sqls: SQLiteQuery[] }
 ): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -73,7 +79,12 @@ export async function ensureNutrientEngineIndexes(
         await initPromise;
       }
 
-      await runUnsafeExecute(target, { sqls: INDEX_QUERIES });
+      await runUnsafeExecute(
+        target as typeof target & {
+          unsafeExecute: NonNullable<typeof adapterWithUnsafe.unsafeExecute>;
+        },
+        { sqls: INDEX_QUERIES }
+      );
       initialized = true;
     } catch (error) {
       console.warn('[watermelon-indexes] Failed to ensure indexes', error);

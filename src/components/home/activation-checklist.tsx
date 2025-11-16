@@ -146,7 +146,7 @@ export function ActivationChecklist({
       if (!config) return;
 
       // Navigate to the action's route
-      router.push(config.route as any);
+      router.push(config.route);
 
       // Notify parent if callback provided
       onActionComplete?.(action);

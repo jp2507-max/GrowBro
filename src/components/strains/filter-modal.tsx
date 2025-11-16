@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import type { StrainFilters } from '@/api/strains/types';
 import { Button, Checkbox, Modal, Text, useModal, View } from '@/components/ui';
-import { translate } from '@/lib/i18n';
+import { translate, translateDynamic } from '@/lib/i18n';
 
 import { DifficultyBadge } from './difficulty-badge';
 import { RaceBadge } from './race-badge';
@@ -142,8 +142,7 @@ const FilterModalContent = ({
               checked={localFilters.effects?.includes(effect) || false}
               onChange={() => handleEffectToggle(effect)}
               testID={`filter-effect-${effect}`}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              accessibilityLabel={translate(`strains.effects.${effect}` as any)}
+              accessibilityLabel={translateDynamic(`strains.effects.${effect}`)}
               accessibilityHint={translate(
                 'accessibility.strains.toggle_effect_hint'
               )}
@@ -151,9 +150,8 @@ const FilterModalContent = ({
               <Checkbox.Icon
                 checked={localFilters.effects?.includes(effect) || false}
               />
-              {}
               <Checkbox.Label
-                text={translate(`strains.effects.${effect}` as any)}
+                text={translateDynamic(`strains.effects.${effect}`)}
               />
             </Checkbox.Root>
           ))}
@@ -172,8 +170,7 @@ const FilterModalContent = ({
               checked={localFilters.flavors?.includes(flavor) || false}
               onChange={() => handleFlavorToggle(flavor)}
               testID={`filter-flavor-${flavor}`}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              accessibilityLabel={translate(`strains.flavors.${flavor}` as any)}
+              accessibilityLabel={translateDynamic(`strains.flavors.${flavor}`)}
               accessibilityHint={translate(
                 'accessibility.strains.toggle_flavor_hint'
               )}
@@ -181,9 +178,8 @@ const FilterModalContent = ({
               <Checkbox.Icon
                 checked={localFilters.flavors?.includes(flavor) || false}
               />
-              {}
               <Checkbox.Label
-                text={translate(`strains.flavors.${flavor}` as any)}
+                text={translateDynamic(`strains.flavors.${flavor}`)}
               />
             </Checkbox.Root>
           ))}

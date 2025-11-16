@@ -138,7 +138,7 @@ function PlaybookCardBreakdown({
 }: {
   phaseBreakdown: PlaybookPreview['phaseBreakdown'];
   getPhaseLabel: (phase: GrowPhase) => string;
-  t: (key: string) => string;
+  t: TFunction;
 }): React.JSX.Element {
   return (
     <View className="gap-2">

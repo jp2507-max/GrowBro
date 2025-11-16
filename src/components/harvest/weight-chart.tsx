@@ -119,10 +119,16 @@ function prepareChartData(data: ChartDataPoint[]) {
   }));
 }
 
+type LineChartDataPoint = {
+  value: number;
+  label: string;
+  dataPointText: string;
+};
+
 /**
  * Get LineChart configuration
  */
-function getChartConfig(chartData: any[]) {
+function getChartConfig(chartData: LineChartDataPoint[]) {
   return {
     data: chartData,
     width: 320,

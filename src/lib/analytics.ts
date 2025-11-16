@@ -740,12 +740,16 @@ export function sanitizeCommunityErrorType(
 function sanitizeStrainSearchPayload<N extends AnalyticsEventName>(
   payload: AnalyticsEventPayload<N>
 ): AnalyticsEventPayload<N> {
-  const sanitized = { ...payload } as Record<string, unknown>;
-  if (typeof sanitized.query === 'string') {
-    sanitized.sanitized_query = sanitizeSearchQuery(sanitized.query);
-    delete sanitized.query; // Remove raw query
+  // Type-safe approach: build new object with correct shape by destructuring
+  // the query property and reconstructing with sanitized_query
+  if ('query' in payload && typeof payload.query === 'string') {
+    const { query, ...rest } = payload;
+    return {
+      ...rest,
+      sanitized_query: sanitizeSearchQuery(query),
+    } as AnalyticsEventPayload<N>;
   }
-  return sanitized as unknown as AnalyticsEventPayload<N>;
+  return payload;
 }
 
 // Sanitize community error event payloads
@@ -922,17 +926,22 @@ function sanitizeNutrientPayload<N extends AnalyticsEventName>(
 function sanitizeAuthPayload<N extends AnalyticsEventName>(
   payload: AnalyticsEventPayload<N>
 ): AnalyticsEventPayload<N> {
-  const sanitized = { ...payload } as Record<string, unknown>;
-  if (sanitized.email && typeof sanitized.email === 'string') {
-    sanitized.email = '[email_hashed]';
+  const sanitized = { ...payload };
+
+  // Sanitize email field if present
+  if ('email' in sanitized && typeof sanitized.email === 'string') {
+    (sanitized as Record<string, unknown>).email = '[email_hashed]';
   }
+
+  // Redact sensitive fields
   const sensitiveFields = ['password', 'token', 'secret', 'key', 'ip_address'];
   sensitiveFields.forEach((field) => {
     if (field in sanitized) {
-      sanitized[field] = '[REDACTED]';
+      (sanitized as Record<string, unknown>)[field] = '[REDACTED]';
     }
   });
-  return sanitized as unknown as AnalyticsEventPayload<N>;
+
+  return sanitized;
 }
 
 function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(

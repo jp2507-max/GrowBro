@@ -2,6 +2,7 @@
  * Trichome Assessment Form Component
  */
 
+import type { TFunction } from 'i18next';
 import * as React from 'react';
 import type { Control, FieldErrors } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
@@ -34,7 +35,7 @@ function PercentInput({
   name: keyof TrichomeFormData;
   label: string;
   errors: FieldErrors<TrichomeFormData>;
-  t: (key: string, options?: any) => string;
+  t: TFunction;
 }) {
   return (
     <Controller
@@ -92,7 +93,7 @@ function NotesInput({
   t,
 }: {
   control: Control<TrichomeFormData>;
-  t: (key: string, options?: any) => string;
+  t: TFunction;
 }) {
   return (
     <View className="mb-4">

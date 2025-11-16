@@ -348,12 +348,19 @@ class NotificationManager {
 
     this.isProcessingQueue = true;
 
-    while (this.operationQueue.length > 0) {
-      const operation = this.operationQueue.shift()!;
-      await operation();
+    try {
+      while (this.operationQueue.length > 0) {
+        const operation = this.operationQueue.shift()!;
+        try {
+          await operation();
+        } catch {
+          // The promise returned by enqueueOperation already sees the rejection;
+          // keep draining the queue instead of killing the processor.
+        }
+      }
+    } finally {
+      this.isProcessingQueue = false;
     }
-
-    this.isProcessingQueue = false;
   }
 }
 

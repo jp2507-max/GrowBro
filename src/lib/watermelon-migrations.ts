@@ -3,13 +3,20 @@ import {
   schemaMigrations,
 } from '@nozbe/watermelondb/Schema/migrations';
 
-const createTableSchema = (name: string, columnArray: any[]) => {
+interface ColumnDefinition {
+  name: string;
+  type: 'string' | 'number' | 'boolean';
+  isOptional?: boolean;
+  isIndexed?: boolean;
+}
+
+const createTableSchema = (name: string, columnArray: ColumnDefinition[]) => {
   const columns = columnArray.reduce(
     (acc, col) => {
       acc[col.name] = col;
       return acc;
     },
-    {} as Record<string, any>
+    {} as Record<string, ColumnDefinition>
   );
   return { name, columns, columnArray };
 };

@@ -249,7 +249,7 @@ function PostCardActions({
       <View className="flex-row items-center gap-3">
         <Pressable
           accessibilityRole="button"
-          onPress={(e) => e.stopPropagation()}
+          onPress={(e: { stopPropagation: () => void }) => e.stopPropagation()}
         >
           <LikeButton
             postId={String(postId)}

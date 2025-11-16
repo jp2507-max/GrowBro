@@ -136,7 +136,7 @@ export const Button = React.forwardRef<View, Props>(
         }
         accessibilityHint={
           props.accessibilityHint ??
-          translate('accessibility.common.doubleTapHint' as any)
+          translate('accessibility.common.doubleTapHint' as TxKeyPath)
         }
       >
         {props.children ? (

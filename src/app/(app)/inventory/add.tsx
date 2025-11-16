@@ -28,6 +28,7 @@ import {
   Text,
   View,
 } from '@/components/ui';
+import { translate } from '@/lib';
 import { createInventoryItem } from '@/lib/inventory/inventory-item-service';
 import type { InventoryCategory } from '@/types/inventory';
 
@@ -75,11 +76,14 @@ function NameField({
         control={control}
         name="name"
         rules={{
-          required: 'Name is required',
-          minLength: { value: 1, message: 'Name is required' },
+          required: t('inventory.form.validation.nameRequired'),
+          minLength: {
+            value: 1,
+            message: t('inventory.form.validation.nameRequired'),
+          },
           maxLength: {
             value: 100,
-            message: 'Name must be less than 100 characters',
+            message: t('inventory.form.validation.nameMaxLength'),
           },
         }}
         placeholder={t('inventory.form.name_placeholder')}
@@ -101,7 +105,7 @@ function CategoryField({ control }: { control: Control<AddItemFormData> }) {
       <Controller
         control={control}
         name="category"
-        rules={{ required: 'Category is required' }}
+        rules={{ required: t('inventory.form.validation.categoryRequired') }}
         render={({ field: { onChange, value } }) => (
           <View className="flex-row flex-wrap gap-2">
             {CATEGORIES.map((category) => (
@@ -144,11 +148,14 @@ function UnitField({
         control={control}
         name="unitOfMeasure"
         rules={{
-          required: 'Unit is required',
-          minLength: { value: 1, message: 'Unit is required' },
+          required: t('inventory.form.validation.unitRequired'),
+          minLength: {
+            value: 1,
+            message: t('inventory.form.validation.unitRequired'),
+          },
           maxLength: {
             value: 20,
-            message: 'Unit must be less than 20 characters',
+            message: t('inventory.form.validation.unitMaxLength'),
           },
         }}
         placeholder={t('inventory.form.unit_placeholder')}
@@ -170,7 +177,9 @@ function TrackingModeField({ control }: { control: Control<AddItemFormData> }) {
       <Controller
         control={control}
         name="trackingMode"
-        rules={{ required: 'Tracking mode is required' }}
+        rules={{
+          required: t('inventory.form.validation.trackingModeRequired'),
+        }}
         render={({ field: { onChange, value } }) => (
           <View className="flex-row gap-2">
             {TRACKING_MODES.map((mode) => (
@@ -212,8 +221,11 @@ function MinStockField({
         control={control}
         name="minStock"
         rules={{
-          required: 'inventory.validation.minStockRequired',
-          min: { value: 0, message: 'inventory.validation.minStockPositive' },
+          required: t('inventory.form.validation.minStockRequired'),
+          min: {
+            value: 0,
+            message: t('inventory.form.validation.minStockPositive'),
+          },
         }}
         render={({ field: { onChange, onBlur, value, ref }, fieldState }) => (
           <Input
@@ -263,8 +275,11 @@ function ReorderMultipleField({
         control={control}
         name="reorderMultiple"
         rules={{
-          required: 'inventory.validation.reorderMultipleRequired',
-          min: { value: 1, message: 'inventory.validation.reorderMultipleMin' },
+          required: t('inventory.form.validation.reorderMultipleRequired'),
+          min: {
+            value: 1,
+            message: t('inventory.form.validation.reorderMultipleMin'),
+          },
         }}
         render={({ field: { onChange, onBlur, value, ref }, fieldState }) => (
           <Input
@@ -312,7 +327,10 @@ function LeadTimeField({
         control={control}
         name="leadTimeDays"
         rules={{
-          min: { value: 0, message: 'inventory.validation.leadTimePositive' },
+          min: {
+            value: 0,
+            message: t('inventory.form.validation.leadTimePositive'),
+          },
         }}
         render={({ field: { onChange, onBlur, value, ref }, fieldState }) => (
           <Input
@@ -425,7 +443,10 @@ const CATEGORIES: InventoryCategory[] = [
 const TRACKING_MODES = ['simple', 'batched'] as const;
 
 const addItemSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100),
+  name: z
+    .string()
+    .min(1, translate('inventory.form.validation.nameRequired'))
+    .max(100, translate('inventory.form.validation.nameMaxLength')),
   category: z.enum([
     'Nutrients',
     'Seeds',
@@ -434,11 +455,18 @@ const addItemSchema = z.object({
     'Containers',
     'Amendments',
   ]),
-  unitOfMeasure: z.string().min(1, 'Unit is required').max(20),
+  unitOfMeasure: z
+    .string()
+    .min(1, translate('inventory.form.validation.unitRequired'))
+    .max(20, translate('inventory.form.validation.unitMaxLength')),
   trackingMode: z.enum(['simple', 'batched']),
   isConsumable: z.boolean(),
-  minStock: z.number().min(0, 'Minimum stock must be positive'),
-  reorderMultiple: z.number().min(1, 'Reorder multiple must be at least 1'),
+  minStock: z
+    .number()
+    .min(0, translate('inventory.form.validation.minStockPositive')),
+  reorderMultiple: z
+    .number()
+    .min(1, translate('inventory.form.validation.reorderMultipleMin')),
   leadTimeDays: z.number().min(0).optional(),
   sku: z.string().max(50).optional(),
   barcode: z.string().max(50).optional(),

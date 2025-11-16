@@ -52,7 +52,7 @@ export class ProfileModel extends Model {
 
       // Create new record if none exists
       const now = new Date();
-      return collection.create((record: any) => {
+      return collection.create((record: ProfileModel) => {
         record.userId = userId;
         record.displayName = defaults.displayName ?? 'User';
         record.bio = defaults.bio;
@@ -83,7 +83,7 @@ export class ProfileModel extends Model {
    * @param updates - Partial profile updates
    */
   async updateProfile(updates: Partial<EditableProfileFields>): Promise<void> {
-    await this.update((record: any) => {
+    await this.update((record: ProfileModel) => {
       if (updates.displayName !== undefined)
         record.displayName = updates.displayName;
       if (updates.bio !== undefined) record.bio = updates.bio;

@@ -34,7 +34,7 @@ const DEFAULT_STAGGER: Required<StaggerConfig> = {
 export function createStaggeredFadeIn(
   index: number,
   config: StaggerConfig = {}
-): any {
+): ReturnType<typeof FadeIn.delay> {
   const { baseDelay, staggerDelay, duration } = {
     ...DEFAULT_STAGGER,
     ...config,

@@ -22,6 +22,10 @@ export interface PreviousDecisionCheck {
   decisionIds: string[];
 }
 
+interface ModeratorDecision {
+  id: string;
+}
+
 export interface RelationshipCheck {
   hasRelationship: boolean;
   relationshipType?: string;
@@ -82,7 +86,7 @@ export async function apiHasPreviousDecision(
   contentId: string
 ): Promise<PreviousDecisionCheck> {
   try {
-    const response = await client.get<any[]>(
+    const response = await client.get<ModeratorDecision[]>(
       `/moderation/moderators/${moderatorId}/decisions`,
       {
         params: { content_id: contentId },

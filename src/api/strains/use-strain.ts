@@ -26,9 +26,17 @@ export function useStrain({ strainId }: { strainId: string }) {
     },
     staleTime: 24 * 60 * 60 * 1000, // 24 hours
     gcTime: 2 * 24 * 60 * 60 * 1000, // 48 hours
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: unknown) => {
       // Don't retry on 404 (strain not found) or 429 (rate limited)
-      const status = error?.response?.status;
+      const status =
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        error.response &&
+        typeof error.response === 'object' &&
+        'status' in error.response
+          ? (error.response.status as number)
+          : undefined;
       if (status === 404 || status === 429) {
         return false;
       }

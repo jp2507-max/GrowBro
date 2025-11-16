@@ -30,13 +30,19 @@ let fingerprintPromise: Promise<DeviceFingerprint> | null = null;
 // Temporary storage for fingerprint (will be replaced with encrypted storage)
 let cachedFingerprint: DeviceFingerprint | null = null;
 
+type PlatformWithTablet = typeof Platform & {
+  isPad?: boolean;
+  isTV?: boolean;
+};
+
 /**
  * Get device category for non-PII context
  * Returns generic device type without identifying information
  */
 export function getDeviceCategory(): string {
   const os = Platform.OS;
-  const isTablet = (Platform as any).isPad || (Platform as any).isTV;
+  const platformExt = Platform as PlatformWithTablet;
+  const isTablet = platformExt.isPad || platformExt.isTV;
 
   if (os === 'ios') {
     return isTablet ? 'ios-tablet' : 'ios-phone';

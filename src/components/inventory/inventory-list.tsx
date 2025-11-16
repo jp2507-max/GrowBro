@@ -95,56 +95,50 @@ function InventoryErrorState({
 /**
  * InventoryList component with FlashList v2 optimizations
  */
-export const InventoryList = React.forwardRef<any, InventoryListProps>(
-  function InventoryList(
-    {
-      items,
-      isLoading,
-      error,
-      onRetry,
-      onItemPress,
-      testID = 'inventory-list',
-    },
-    ref
-  ): React.ReactElement {
-    const renderItem = React.useCallback(
-      ({ item }: ListRenderItemInfo<InventoryItemWithStock>) => (
-        <InventoryListItem item={item} onPress={onItemPress} />
-      ),
-      [onItemPress]
-    );
+export const InventoryList = React.forwardRef<
+  FlashListRef<InventoryItemWithStock>,
+  InventoryListProps
+>(function InventoryList(
+  { items, isLoading, error, onRetry, onItemPress, testID = 'inventory-list' },
+  ref
+): React.ReactElement {
+  const renderItem = React.useCallback(
+    ({ item }: ListRenderItemInfo<InventoryItemWithStock>) => (
+      <InventoryListItem item={item} onPress={onItemPress} />
+    ),
+    [onItemPress]
+  );
 
-    // Loading state
-    if (isLoading && items.length === 0) {
-      return (
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-sm text-neutral-600 dark:text-neutral-300">
-            Loading...
-          </Text>
-        </View>
-      );
-    }
-
-    // Error state
-    if (error && items.length === 0) {
-      return <InventoryErrorState error={error} onRetry={onRetry} />;
-    }
-
-    // Empty state
-    if (items.length === 0) {
-      return <InventoryEmptyState />;
-    }
-
+  // Loading state
+  if (isLoading && items.length === 0) {
     return (
-      <FlashList
-        ref={ref}
-        data={items}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        getItemType={getItemType}
-        testID={testID}
-        className="py-2"
-      />
+      <View className="flex-1 items-center justify-center">
+        <Text className="text-sm text-neutral-600 dark:text-neutral-300">
+          Loading...
+        </Text>
+      </View>
     );
   }
-);
+
+  // Error state
+  if (error && items.length === 0) {
+    return <InventoryErrorState error={error} onRetry={onRetry} />;
+  }
+
+  // Empty state
+  if (items.length === 0) {
+    return <InventoryEmptyState />;
+  }
+
+  return (
+    <FlashList
+      ref={ref}
+      data={items}
+      renderItem={renderItem}
+      keyExtractor={keyExtractor}
+      getItemType={getItemType}
+      testID={testID}
+      className="py-2"
+    />
+  );
+});

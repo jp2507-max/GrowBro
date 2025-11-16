@@ -46,13 +46,44 @@ function formatWeekLabel(weekStart: string): string {
   });
 }
 
+type ChartDataPoint = {
+  value: number;
+  label: string;
+  dataPointText: string;
+};
+
+type ChartConfig = {
+  data: ChartDataPoint[];
+  width: number;
+  height: number;
+  color: string;
+  thickness: number;
+  startFillColor: string;
+  endFillColor: string;
+  startOpacity: number;
+  endOpacity: number;
+  areaChart: boolean;
+  yAxisColor: string;
+  xAxisColor: string;
+  yAxisTextStyle: { color: string };
+  xAxisLabelTextStyle: { color: string; fontSize: number };
+  noOfSections: number;
+  maxValue: number;
+  hideDataPoints: boolean;
+  dataPointsColor: string;
+  dataPointsRadius: number;
+  curved: boolean;
+  isAnimated: boolean;
+  animationDuration: number;
+};
+
 /**
  * Prepare chart configuration
  */
 function prepareChartConfig(
   data: ConsumptionDataPoint[],
   isDark: boolean
-): any {
+): ChartConfig | null {
   if (data.length === 0) return null;
 
   const weeklyData = groupByWeek(data);

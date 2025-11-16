@@ -149,7 +149,7 @@ export default function SecuritySettingsScreen() {
 
   const allFactors = mfaFactors?.all ?? [];
   const totpFactors = allFactors.filter(
-    (factor: any) => factor.factor_type === 'totp'
+    (factor) => factor.factor_type === 'totp'
   );
   const activeFactor = totpFactors[0];
   const isMfaEnabled = totpFactors.length > 0;

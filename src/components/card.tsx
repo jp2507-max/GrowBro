@@ -33,11 +33,12 @@ export const Card = ({
   }, [title, body]);
 
   // Prevent like button from triggering navigation
-  const handleLikePress = React.useCallback((e: any) => {
-    if (typeof e?.stopPropagation === 'function') {
-      e.stopPropagation();
-    }
-  }, []);
+  const handleLikePress = React.useCallback(
+    (e: { stopPropagation?: () => void }) => {
+      e.stopPropagation?.();
+    },
+    []
+  );
 
   return (
     <Link href={`/feed/${id}`} asChild>

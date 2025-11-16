@@ -94,7 +94,10 @@ function isInventoryError(error: unknown): error is InventoryError {
     !!error &&
     typeof error === 'object' &&
     'code' in error &&
-    typeof error.code === 'string'
+    typeof error.code === 'string' &&
+    ('message' in error
+      ? typeof (error as { message: unknown }).message === 'string'
+      : true)
   );
 }
 

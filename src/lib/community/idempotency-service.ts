@@ -100,6 +100,12 @@ export class IdempotencyService {
         'Idempotency key conflict: different payload for same key'
       );
     }
+    if (
+      existing.response_payload === undefined ||
+      existing.response_payload === null
+    ) {
+      throw new Error('Completed idempotency key missing response payload');
+    }
     return existing.response_payload as T;
   }
 

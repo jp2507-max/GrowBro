@@ -165,7 +165,7 @@ function ScreenContent({
   cleaning: boolean;
   cleanupResult: CleanupResult | null;
   onCleanup: () => void;
-  t: (key: string, options?: any) => string;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }) {
   if (loading) {
     return (

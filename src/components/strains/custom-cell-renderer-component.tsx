@@ -1,7 +1,12 @@
 import { Children, cloneElement, isValidElement, memo } from 'react';
+import type { ViewProps } from 'react-native';
 import { View } from 'react-native';
 import type { SharedValue } from 'react-native-reanimated';
 import { useSharedValue } from 'react-native-reanimated';
+
+type Props = ViewProps & { children: React.ReactNode };
+
+type ChildWithItemY = React.ReactElement<{ itemY?: SharedValue<number> }>;
 
 /**
  * Custom cell renderer that provides each item with its Y position in the list.
@@ -10,7 +15,7 @@ import { useSharedValue } from 'react-native-reanimated';
  * Usage: Apply to FlashList via `CellRendererComponent` prop for future scroll animations.
  * Currently prepared for Task 7.1 parallax effects similar to Plants list.
  */
-const Component = memo(({ children, ...props }: any) => {
+const Component = memo(({ children, ...props }: Props) => {
   // Tracks this cell's Y position for animation calculations
   const itemY: SharedValue<number> = useSharedValue(0);
 
@@ -32,7 +37,7 @@ const Component = memo(({ children, ...props }: any) => {
       {/* Inject itemY prop into each child component for position-aware animations */}
       {Children.map(children, (child) => {
         if (isValidElement(child)) {
-          return cloneElement(child, { itemY } as any);
+          return cloneElement(child as ChildWithItemY, { itemY });
         }
         return child;
       })}

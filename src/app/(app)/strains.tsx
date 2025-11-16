@@ -430,7 +430,7 @@ export default function StrainsScreen(): React.ReactElement {
       </View>
       <ComplianceBanner />
       <AnimatedFlashList
-        ref={listRef as React.RefObject<any>}
+        ref={listRef}
         data={listData}
         renderItem={renderItem}
         keyExtractor={keyExtractor}

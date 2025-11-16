@@ -243,7 +243,7 @@ export default function FavoritesScreen(): React.ReactElement {
           onSort={sortMenu.openSort}
         />
         <AnimatedFlashList
-          ref={listRef as React.RefObject<any>}
+          ref={listRef}
           data={sortedFavorites}
           renderItem={renderItem}
           keyExtractor={keyExtractor}

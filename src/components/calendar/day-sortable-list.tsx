@@ -36,7 +36,9 @@ type Props = {
   /**
    * Ref to the parent scrollable for auto-scroll support
    */
-  scrollableRef?: any;
+  scrollableRef?: React.RefObject<{
+    scrollToOffset: (params: { offset: number; animated: boolean }) => void;
+  } | null>;
   /**
    * Optional container style
    */

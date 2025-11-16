@@ -339,6 +339,19 @@ export class RealtimeConnectionManager {
   ): RealtimeEvent<T> | null {
     if (!payload) return null;
 
+    // Validate payload structure before casting
+    const isValidPayload = (
+      data: Record<string, unknown> | null
+    ): data is T | null => {
+      // Basic validation: ensure data is null or an object
+      return data === null || (typeof data === 'object' && data !== null);
+    };
+
+    if (!isValidPayload(payload.new) || !isValidPayload(payload.old)) {
+      console.error('Invalid payload structure received', { table, payload });
+      return null;
+    }
+
     // Extract client_tx_id from the row if present
     const clientTxId =
       (payload.new?.client_tx_id as string | undefined) ??
@@ -349,8 +362,8 @@ export class RealtimeConnectionManager {
       table,
       eventType: payload.eventType,
       commit_timestamp: payload.commit_timestamp || new Date().toISOString(),
-      new: (payload.new || null) as T | null,
-      old: (payload.old || null) as Partial<T> | null,
+      new: payload.new as T | null,
+      old: payload.old as Partial<T> | null,
       client_tx_id: clientTxId,
     };
   }

@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon';
-import type { Weekday } from 'rrule';
+import type { Options, Weekday } from 'rrule';
 import { RRule, rrulestr } from 'rrule';
 
 // Error codes for RRULE validation
@@ -12,15 +12,7 @@ export enum RRULEErrorCode {
 }
 
 // Type for RRule options extracted from parsed rules
-type RRuleOptions = {
-  freq?: number;
-  interval?: number;
-  count?: number;
-  until?: Date;
-  byweekday?: Weekday[];
-  bymonthday?: number[];
-  dtstart?: Date;
-};
+type RRuleOptions = Options;
 
 export class RRULEError extends Error {
   constructor(
@@ -185,20 +177,7 @@ export class RRULEGenerator {
       const parsed = rrulestr(rruleString, { forceset: false });
 
       // Access options for semantic checks
-      const opts: RRuleOptions =
-        (
-          parsed as unknown as {
-            origOptions?: RRuleOptions;
-            options?: RRuleOptions;
-          }
-        ).origOptions ||
-        (
-          parsed as unknown as {
-            origOptions?: RRuleOptions;
-            options?: RRuleOptions;
-          }
-        ).options ||
-        {};
+      const opts: RRuleOptions = parsed.origOptions || parsed.options || {};
 
       // Semantic rule: COUNT and UNTIL are mutually exclusive (RFC 5545)
       if (opts.count && opts.until) {

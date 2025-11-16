@@ -5,6 +5,7 @@
  * Shows edited badge and inheritance status
  */
 
+import type { TFunction } from 'i18next';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -24,7 +25,7 @@ interface TaskEditModalProps {
   visible: boolean;
 }
 
-function ModalHeader({ isEdited, t }: { isEdited: boolean; t: any }) {
+function ModalHeader({ isEdited, t }: { isEdited: boolean; t: TFunction }) {
   return (
     <View className="mb-4 flex-row items-center justify-between">
       <Text className="text-xl font-semibold text-charcoal-900 dark:text-neutral-100">
@@ -44,7 +45,7 @@ function ModalHeader({ isEdited, t }: { isEdited: boolean; t: any }) {
   );
 }
 
-function InheritanceWarning({ show, t }: { show: boolean; t: any }) {
+function InheritanceWarning({ show, t }: { show: boolean; t: TFunction }) {
   if (!show) return null;
   return (
     <View

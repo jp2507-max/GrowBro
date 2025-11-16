@@ -23,7 +23,7 @@ export async function initI18n(): Promise<void> {
   let persisted: string | undefined;
   if (!isTestEnv) {
     // getLanguage returns string | undefined synchronously
-    persisted = utils.getLanguage?.();
+    persisted = utils.getLanguage();
   }
 
   // initialize i18next with resources and either persisted or fallback

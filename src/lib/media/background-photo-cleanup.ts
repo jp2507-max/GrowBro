@@ -43,7 +43,9 @@ const DEFAULT_CLEANUP_CONFIG: BackgroundCleanupConfig = {
  */
 class BackgroundPhotoCleanup {
   private intervalId: NodeJS.Timeout | null = null;
-  private appStateSubscription: any = null;
+  private appStateSubscription: ReturnType<
+    typeof AppState.addEventListener
+  > | null = null;
   private config: BackgroundCleanupConfig;
   private isRunning = false;
   private referencedUris: string[] = [];

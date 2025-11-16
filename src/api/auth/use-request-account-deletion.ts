@@ -128,7 +128,7 @@ async function logDeletionAudit({
 async function handleAuditLogFailure(
   requestId: string,
   userId: string,
-  auditError: any
+  auditError: unknown
 ): Promise<void> {
   // Clean up the deletion request since audit logging failed
   const { error: cleanupError } = await supabase
@@ -143,16 +143,19 @@ async function handleAuditLogFailure(
     );
   }
 
+  const errorMessage =
+    auditError instanceof Error ? auditError.message : String(auditError);
+
   await logAuthError(
     new Error(
-      `settings.delete_account.error_audit_log_failed: ${auditError.message}`
+      `settings.delete_account.error_audit_log_failed: ${errorMessage}`
     ),
     {
       errorKey: 'settings.delete_account.error_audit_log_failed',
       flow: 'request_account_deletion',
       requestId,
       userId,
-      auditError: auditError.message,
+      auditError: errorMessage,
     }
   );
   throw new Error('settings.delete_account.error_audit_log_failed');

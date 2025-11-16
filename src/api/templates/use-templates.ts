@@ -4,6 +4,7 @@
 
 import { createQuery } from 'react-query-kit';
 
+import type { PlaybookStep } from '@/lib/playbooks/sanitize-playbook';
 import { supabase } from '@/lib/supabase';
 
 import type {
@@ -12,10 +13,42 @@ import type {
   TemplateListParams,
 } from './types';
 
+type DbCommunityTemplateRow = {
+  id: string;
+  author_id: string;
+  author_handle: string;
+  name: string;
+  description: string;
+  setup: 'auto_indoor' | 'auto_outdoor' | 'photo_indoor' | 'photo_outdoor';
+  locale: string;
+  license: string;
+  steps: PlaybookStep[];
+  phase_order: string[];
+  total_weeks: number;
+  task_count: number;
+  adoption_count: number;
+  rating_average: number;
+  rating_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+type DbTemplateCommentRow = {
+  id: string;
+  template_id: string;
+  user_id: string;
+  comment: string;
+  created_at: string;
+  updated_at: string;
+  user_handle: string;
+};
+
 /**
  * Maps a database row from community_playbook_templates to CommunityTemplate
  */
-function mapDbRowToCommunityTemplate(row: any): CommunityTemplate {
+function mapDbRowToCommunityTemplate(
+  row: DbCommunityTemplateRow
+): CommunityTemplate {
   return {
     id: row.id,
     authorId: row.author_id,
@@ -40,7 +73,7 @@ function mapDbRowToCommunityTemplate(row: any): CommunityTemplate {
 /**
  * Maps a database row from template_comments to TemplateComment
  */
-function mapDbRowToTemplateComment(row: any): TemplateComment {
+function mapDbRowToTemplateComment(row: DbTemplateCommentRow): TemplateComment {
   return {
     id: row.id,
     templateId: row.template_id,

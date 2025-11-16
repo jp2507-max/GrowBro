@@ -9,6 +9,7 @@
  * - 10.3: Re-authentication required before account deletion
  */
 
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as React from 'react';
 import type { SubmitHandler } from 'react-hook-form';
@@ -35,7 +36,7 @@ export type ReAuthModalProps = {
   description?: string;
 };
 
-export const ReAuthModal = React.forwardRef<any, ReAuthModalProps>(
+export const ReAuthModal = React.forwardRef<BottomSheetModal, ReAuthModalProps>(
   ({ onSuccess, onCancel, title, description }, ref) => {
     const { t } = useTranslation();
     const { user } = useAuth();

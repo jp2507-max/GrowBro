@@ -51,7 +51,7 @@ export function getCurrentTimeZone(): string {
     const localizationExt = Localization as LocalizationWithTimeZone;
     const timezone = localizationExt.timezone;
     if (typeof timezone === 'string' && timezone.length > 0) {
-      const timezonePattern = /^[A-Za-z][A-Za-z0-9/_+-]+$/;
+      const timezonePattern = /^[A-Za-z][A-Za-z0-9/._+-]+$/;
       if (timezonePattern.test(timezone)) return timezone;
     }
   } catch {
