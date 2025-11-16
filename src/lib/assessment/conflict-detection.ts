@@ -45,6 +45,14 @@ export function isEqual(a: unknown, b: unknown): boolean {
   if (typeof a !== typeof b) return false;
 
   if (typeof a === 'object') {
+    // Handle Date objects explicitly
+    if (a instanceof Date && b instanceof Date) {
+      return a.getTime() === b.getTime();
+    }
+    if (a instanceof Date || b instanceof Date) {
+      return false;
+    }
+
     if (Array.isArray(a) && Array.isArray(b)) {
       if (a.length !== b.length) return false;
       return a.every((item, index) => isEqual(item, b[index]));

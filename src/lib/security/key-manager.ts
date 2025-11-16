@@ -21,13 +21,13 @@ import type { KeyManager, KeyMetadata } from './types';
 
 // Simple logger using console
 const log = {
-  debug: (msg: string, ...args: any[]) =>
+  debug: (msg: string, ...args: unknown[]) =>
     console.log(`[KeyManager] ${msg}`, ...args),
-  info: (msg: string, ...args: any[]) =>
+  info: (msg: string, ...args: unknown[]) =>
     console.info(`[KeyManager] ${msg}`, ...args),
-  warn: (msg: string, ...args: any[]) =>
+  warn: (msg: string, ...args: unknown[]) =>
     console.warn(`[KeyManager] ${msg}`, ...args),
-  error: (msg: string, ...args: any[]) =>
+  error: (msg: string, ...args: unknown[]) =>
     console.error(`[KeyManager] ${msg}`, ...args),
 };
 

@@ -54,10 +54,6 @@ type TaskRepositories = {
   overrides: Collection<OccurrenceOverrideModel>;
 };
 
-type NotificationTask = Parameters<
-  TaskNotificationService['scheduleTaskReminder']
->[0];
-
 type DeductionFailureSourceEntry =
   | DeductionMapEntry
   | ResolvedDeductionMapEntry;
@@ -107,7 +103,18 @@ function getRepos(): TaskRepositories {
   };
 }
 
-function toNotificationTaskPayload(task: Task): NotificationTask {
+// BUG: This function strips the `timezone` property from the Task object,
+// causing all scheduled notifications to default to 'UTC' instead of preserving
+// the user's actual timezone. The TaskNotificationService.persistNotificationMapping
+// method expects the timezone field for analytics and timestamp rehydration,
+// but falls back to 'UTC' when it's missing. This breaks proper timezone handling
+// for scheduled notifications. The fix is to include `timezone: task.timezone`
+// in the returned object to ensure the correct timezone is persisted in the
+// notification_queue table.
+function toNotificationTaskPayload(
+  task: Task
+): Parameters<TaskNotificationService['scheduleTaskReminder']>[0] {
+  // Convert calendar Task to notification Task format
   return {
     id: task.id,
     plantId: task.plantId,
@@ -117,7 +124,6 @@ function toNotificationTaskPayload(task: Task): NotificationTask {
     reminderAtLocal: task.reminderAtLocal ?? null,
     dueAtUtc: task.dueAtUtc,
     dueAtLocal: task.dueAtLocal,
-    recurrenceRule: undefined,
   };
 }
 

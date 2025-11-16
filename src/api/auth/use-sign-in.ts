@@ -67,7 +67,10 @@ export const useSignIn = createMutation<SignInResponse, SignInVariables, Error>(
         const errorKey = mapAuthError(data);
         const error = new Error(errorKey) as Error & {
           code?: string;
-          metadata?: any;
+          metadata?: {
+            lockout?: boolean;
+            minutes_remaining?: number;
+          };
         };
         error.code = data.code;
         error.metadata = data.metadata;
@@ -114,7 +117,15 @@ export const useSignIn = createMutation<SignInResponse, SignInVariables, Error>(
       });
     },
 
-    onError: async (error: Error & { code?: string; metadata?: any }) => {
+    onError: async (
+      error: Error & {
+        code?: string;
+        metadata?: {
+          lockout?: boolean;
+          minutes_remaining?: number;
+        };
+      }
+    ) => {
       // Log error for debugging with consent checking
       await logAuthError(error, {
         errorKey: error.message,

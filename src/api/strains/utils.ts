@@ -17,7 +17,10 @@ export { normalizeFlavors } from '@/lib/strains/normalization';
 export { normalizeGrowCharacteristics } from '@/lib/strains/normalization';
 export { normalizeGrowDifficulty } from '@/lib/strains/normalization';
 export { normalizeRace } from '@/lib/strains/normalization';
-export { normalizeStrain } from '@/lib/strains/normalization';
+export {
+  normalizeStrain,
+  type RawApiStrain,
+} from '@/lib/strains/normalization';
 export { normalizeTerpenes } from '@/lib/strains/normalization';
 
 export { parsePercentageRange };

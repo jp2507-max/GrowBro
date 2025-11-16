@@ -10,7 +10,7 @@ import { ActivityIndicator } from 'react-native';
 
 import { Button, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
-import { translate } from '@/lib/i18n';
+import { translate, type TxKeyPath } from '@/lib/i18n';
 import {
   getPermanentErrorCount,
   getSyncStats,
@@ -108,11 +108,13 @@ export function SettingsSyncBanner({
         {/* Sync progress indicator and text */}
         <View className="flex-1">
           <Text className="text-sm font-medium text-primary-900">
-            {translate(`settings.sync.banner.syncing_title` as any)}
+            {translate('settings.sync.banner.syncing_title' as TxKeyPath)}
           </Text>
           <Text className="text-xs text-primary-700">
             {translate(
-              `settings.sync.banner.syncing_progress_${stats.syncing === 1 ? 'one' : 'other'}` as any,
+              (stats.syncing === 1
+                ? 'settings.sync.banner.syncing_progress_one'
+                : 'settings.sync.banner.syncing_progress_other') as TxKeyPath,
               { count: stats.syncing }
             )}
           </Text>
@@ -129,11 +131,13 @@ export function SettingsSyncBanner({
         <View className="flex-row items-start gap-3">
           <View className="flex-1">
             <Text className="text-sm font-medium text-danger-900">
-              {translate('settings.sync.banner.error_title' as any)}
+              {translate('settings.sync.banner.error_title' as TxKeyPath)}
             </Text>
             <Text className="text-xs text-danger-700">
               {translate(
-                `settings.sync.banner.error_message_${stats.error === 1 ? 'one' : 'other'}` as any,
+                (stats.error === 1
+                  ? 'settings.sync.banner.error_message_one'
+                  : 'settings.sync.banner.error_message_other') as TxKeyPath,
                 { count: stats.error }
               )}
             </Text>
@@ -141,7 +145,9 @@ export function SettingsSyncBanner({
             {permanentErrors > 0 && (
               <Text className="mt-1 text-xs text-danger-700">
                 {translate(
-                  `settings.sync.banner.error_permanent_${permanentErrors === 1 ? 'one' : 'other'}` as any,
+                  (permanentErrors === 1
+                    ? 'settings.sync.banner.error_permanent_one'
+                    : 'settings.sync.banner.error_permanent_other') as TxKeyPath,
                   { count: permanentErrors }
                 )}
               </Text>
@@ -151,7 +157,7 @@ export function SettingsSyncBanner({
         {/* Retry action button */}
         <View className="flex-row gap-2">
           <Button
-            label={translate('common.retry' as any)}
+            label={translate('common.retry' as TxKeyPath)}
             onPress={handleRetry}
             size="sm"
             variant="secondary"
@@ -175,11 +181,13 @@ export function SettingsSyncBanner({
         {/* Offline notification content */}
         <View className="flex-1">
           <Text className="text-sm font-medium text-warning-900">
-            {translate('settings.sync.banner.offline_title' as any)}
+            {translate('settings.sync.banner.offline_title' as TxKeyPath)}
           </Text>
           <Text className="text-xs text-warning-700">
             {translate(
-              `settings.sync.banner.offline_message_${stats.pending === 1 ? 'one' : 'other'}` as any,
+              (stats.pending === 1
+                ? 'settings.sync.banner.offline_message_one'
+                : 'settings.sync.banner.offline_message_other') as TxKeyPath,
               { count: stats.pending }
             )}
           </Text>
@@ -214,18 +222,14 @@ export function SyncStatusIndicator({
       return (
         <View className="flex-row items-center gap-1" testID={testID}>
           <ActivityIndicator size="small" color="#D97706" />
-          <Text className="text-xs text-warning-700">
-            {tx?.('pending') as any}
-          </Text>
+          <Text className="text-xs text-warning-700">{tx?.('pending')}</Text>
         </View>
       );
 
     case 'error':
       return (
         <View className="flex-row items-center gap-1" testID={testID}>
-          <Text className="text-xs text-danger-700">
-            {tx?.('error') as any}
-          </Text>
+          <Text className="text-xs text-danger-700">{tx?.('error')}</Text>
         </View>
       );
 

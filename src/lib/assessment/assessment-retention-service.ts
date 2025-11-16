@@ -246,7 +246,7 @@ export async function getRetentionImpact(
   let recordsToDelete = 0;
 
   for (const assessment of assessments) {
-    const createdAt = assessment.createdAt?.getTime() ?? 0;
+    const createdAt = getCreatedAtMs(assessment);
     const consentedForTraining = assessment.consentedForTraining;
 
     if (consentedForTraining && createdAt < imageCutoff) {

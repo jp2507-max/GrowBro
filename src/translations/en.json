@@ -2195,6 +2195,7 @@
     "loadError": "Failed to load playbooks. Please try again.",
     "manuallyEdited": "Manually Edited",
     "noPlants": "You don't have any plants yet. Create one to apply this playbook.",
+    "noTasks": "No tasks in this playbook",
     "noTemplates": "No community templates available yet",
     "notFound": "Playbook not found",
     "onboarding": {
@@ -2303,6 +2304,11 @@
       "undoInfo": "ℹ️ You'll have 30 seconds to undo this change after applying",
       "willBeExcluded": "will be excluded from this shift",
       "willBeShifted": "will be shifted (you opted in)"
+    },
+    "status": {
+      "completed": "Completed",
+      "current": "Current",
+      "upcoming": "Upcoming"
     },
     "subtitle": "Guided grow schedules for your plants",
     "tags": "Tags",

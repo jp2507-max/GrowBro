@@ -1,4 +1,5 @@
 import { Q } from '@nozbe/watermelondb';
+import type { Clause } from '@nozbe/watermelondb/QueryDescription';
 import { useQuery } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import { createMutation } from 'react-query-kit';
@@ -128,7 +129,7 @@ export async function fetchReadingsLocal(
     database.get<PhEcReadingModel>('ph_ec_readings_v2');
 
   // Build cumulative where filter array
-  const whereFilters: any[] = [];
+  const whereFilters: Clause[] = [];
 
   if (variables.reservoirId) {
     whereFilters.push(Q.where('reservoir_id', variables.reservoirId));
@@ -289,8 +290,26 @@ export async function pullReadingsFromServer(params: {
     },
   });
 
+  type ServerReading = {
+    id: string;
+    ph: number;
+    ec_raw: number;
+    ec_25c: number;
+    temp_c: number;
+    atc_on: boolean;
+    ppm_scale: PpmScale;
+    reservoir_id?: string;
+    plant_id?: string;
+    meter_id?: string;
+    note?: string;
+    quality_flags?: string[];
+    measured_at: number;
+    created_at: number;
+    updated_at: number;
+  };
+
   return {
-    readings: response.data.readings.map((r: any) => ({
+    readings: response.data.readings.map((r: ServerReading) => ({
       id: r.id,
       ph: r.ph,
       ecRaw: r.ec_raw,

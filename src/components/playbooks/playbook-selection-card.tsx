@@ -7,6 +7,7 @@
  * Requirements: UI/UX implementation, 44pt/48dp touch targets
  */
 
+import { type TFunction } from 'i18next';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable } from 'react-native';
@@ -33,9 +34,8 @@ const SETUP_LABEL_KEYS: Record<PlaybookSetup, string> = {
 
 export function getSetupDisplayLabel(
   setup: PlaybookSetup
-): (t: (key: string, options?: any) => string) => string {
-  return (t: (key: string, options?: any) => string) =>
-    t(SETUP_LABEL_KEYS[setup], { defaultValue: setup });
+): (t: TFunction) => string {
+  return (t: TFunction) => t(SETUP_LABEL_KEYS[setup], { defaultValue: setup });
 }
 
 const SETUP_COLORS: Record<PlaybookSetup, string> = {
@@ -111,7 +111,7 @@ function PlaybookCardStats({
 }: {
   totalWeeks: number;
   totalTasks: number;
-  t: (key: string, options?: any) => string;
+  t: TFunction;
 }): React.JSX.Element {
   return (
     <View className="mb-3 flex-row items-center gap-4">
@@ -163,7 +163,7 @@ function PlaybookCardEstimated({
 }: {
   estimatedStartDate?: string;
   estimatedEndDate?: string;
-  t: (key: string, options?: any) => string;
+  t: TFunction;
 }): React.JSX.Element | null {
   if (!estimatedStartDate || !estimatedEndDate) return null;
   return (

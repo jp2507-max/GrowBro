@@ -10,7 +10,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Controller, type FieldErrors, useForm } from 'react-hook-form';
+import {
+  type Control,
+  Controller,
+  type FieldErrors,
+  useForm,
+} from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 import { z } from 'zod';
@@ -54,7 +59,7 @@ function NameField({
   isSubmitting,
   serverValidationErrors: _serverValidationErrors,
 }: {
-  control: any;
+  control: Control<AddItemFormData>;
   errors: FieldErrors<AddItemFormData>;
   isSubmitting: boolean;
   serverValidationErrors: Record<string, string>;
@@ -69,16 +74,14 @@ function NameField({
       <ControlledInput
         control={control}
         name="name"
-        rules={
-          {
-            required: 'Name is required',
-            minLength: { value: 1, message: 'Name is required' },
-            maxLength: {
-              value: 100,
-              message: 'Name must be less than 100 characters',
-            },
-          } as any
-        }
+        rules={{
+          required: 'Name is required',
+          minLength: { value: 1, message: 'Name is required' },
+          maxLength: {
+            value: 100,
+            message: 'Name must be less than 100 characters',
+          },
+        }}
         placeholder={t('inventory.form.name_placeholder')}
         editable={!isSubmitting}
         testID="name-input"
@@ -87,7 +90,7 @@ function NameField({
   );
 }
 
-function CategoryField({ control }: { control: any }) {
+function CategoryField({ control }: { control: Control<AddItemFormData> }) {
   const { t } = useTranslation();
 
   return (
@@ -125,7 +128,7 @@ function UnitField({
   isSubmitting,
   serverValidationErrors: _serverValidationErrors,
 }: {
-  control: any;
+  control: Control<AddItemFormData>;
   errors: FieldErrors<AddItemFormData>;
   isSubmitting: boolean;
   serverValidationErrors: Record<string, string>;
@@ -140,16 +143,14 @@ function UnitField({
       <ControlledInput
         control={control}
         name="unitOfMeasure"
-        rules={
-          {
-            required: 'Unit is required',
-            minLength: { value: 1, message: 'Unit is required' },
-            maxLength: {
-              value: 20,
-              message: 'Unit must be less than 20 characters',
-            },
-          } as any
-        }
+        rules={{
+          required: 'Unit is required',
+          minLength: { value: 1, message: 'Unit is required' },
+          maxLength: {
+            value: 20,
+            message: 'Unit must be less than 20 characters',
+          },
+        }}
         placeholder={t('inventory.form.unit_placeholder')}
         editable={!isSubmitting}
         testID="unit-input"
@@ -158,7 +159,7 @@ function UnitField({
   );
 }
 
-function TrackingModeField({ control }: { control: any }) {
+function TrackingModeField({ control }: { control: Control<AddItemFormData> }) {
   const { t } = useTranslation();
 
   return (
@@ -196,7 +197,7 @@ function MinStockField({
   errors: _errors,
   isSubmitting,
 }: {
-  control: any;
+  control: Control<AddItemFormData>;
   errors: FieldErrors<AddItemFormData>;
   isSubmitting: boolean;
 }) {
@@ -247,7 +248,7 @@ function ReorderMultipleField({
   errors: _errors,
   isSubmitting,
 }: {
-  control: any;
+  control: Control<AddItemFormData>;
   errors: FieldErrors<AddItemFormData>;
   isSubmitting: boolean;
 }) {
@@ -297,7 +298,7 @@ function LeadTimeField({
   control,
   isSubmitting,
 }: {
-  control: any;
+  control: Control<AddItemFormData>;
   isSubmitting: boolean;
 }) {
   const { t } = useTranslation();
@@ -346,7 +347,7 @@ function SkuField({
   isSubmitting,
   serverValidationErrors,
 }: {
-  control: any;
+  control: Control<AddItemFormData>;
   isSubmitting: boolean;
   serverValidationErrors: Record<string, string>;
 }) {
@@ -384,7 +385,7 @@ function BarcodeField({
   control,
   isSubmitting,
 }: {
-  control: any;
+  control: Control<AddItemFormData>;
   isSubmitting: boolean;
 }) {
   const { t } = useTranslation();

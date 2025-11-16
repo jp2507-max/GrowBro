@@ -142,6 +142,7 @@ const FilterModalContent = ({
               checked={localFilters.effects?.includes(effect) || false}
               onChange={() => handleEffectToggle(effect)}
               testID={`filter-effect-${effect}`}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               accessibilityLabel={translate(`strains.effects.${effect}` as any)}
               accessibilityHint={translate(
                 'accessibility.strains.toggle_effect_hint'
@@ -150,6 +151,7 @@ const FilterModalContent = ({
               <Checkbox.Icon
                 checked={localFilters.effects?.includes(effect) || false}
               />
+              {}
               <Checkbox.Label
                 text={translate(`strains.effects.${effect}` as any)}
               />
@@ -170,6 +172,7 @@ const FilterModalContent = ({
               checked={localFilters.flavors?.includes(flavor) || false}
               onChange={() => handleFlavorToggle(flavor)}
               testID={`filter-flavor-${flavor}`}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               accessibilityLabel={translate(`strains.flavors.${flavor}` as any)}
               accessibilityHint={translate(
                 'accessibility.strains.toggle_flavor_hint'
@@ -178,6 +181,7 @@ const FilterModalContent = ({
               <Checkbox.Icon
                 checked={localFilters.flavors?.includes(flavor) || false}
               />
+              {}
               <Checkbox.Label
                 text={translate(`strains.flavors.${flavor}` as any)}
               />
@@ -189,119 +193,117 @@ const FilterModalContent = ({
   );
 };
 
-export const FilterModal = React.forwardRef<any, FilterModalProps>(
-  ({ filters, onApply, onClear }, ref) => {
-    const [localFilters, setLocalFilters] =
-      React.useState<StrainFilters>(filters);
+export const FilterModal = React.forwardRef<
+  React.ElementRef<typeof Modal>,
+  FilterModalProps
+>(({ filters, onApply, onClear }, ref) => {
+  const [localFilters, setLocalFilters] =
+    React.useState<StrainFilters>(filters);
 
-    React.useEffect(() => {
-      setLocalFilters(filters);
-    }, [filters]);
+  React.useEffect(() => {
+    setLocalFilters(filters);
+  }, [filters]);
 
-    const handleRaceToggle = React.useCallback(
-      (race: StrainFilters['race']) => {
-        setLocalFilters((prev) => ({
-          ...prev,
-          race: prev.race === race ? undefined : race,
-        }));
-      },
-      []
-    );
+  const handleRaceToggle = React.useCallback((race: StrainFilters['race']) => {
+    setLocalFilters((prev) => ({
+      ...prev,
+      race: prev.race === race ? undefined : race,
+    }));
+  }, []);
 
-    const handleDifficultyToggle = React.useCallback(
-      (difficulty: StrainFilters['difficulty']) => {
-        setLocalFilters((prev) => ({
-          ...prev,
-          difficulty: prev.difficulty === difficulty ? undefined : difficulty,
-        }));
-      },
-      []
-    );
+  const handleDifficultyToggle = React.useCallback(
+    (difficulty: StrainFilters['difficulty']) => {
+      setLocalFilters((prev) => ({
+        ...prev,
+        difficulty: prev.difficulty === difficulty ? undefined : difficulty,
+      }));
+    },
+    []
+  );
 
-    const handleEffectToggle = React.useCallback((effect: string) => {
-      setLocalFilters((prev) => {
-        const currentEffects = prev.effects || [];
-        const hasEffect = currentEffects.includes(effect);
-        return {
-          ...prev,
-          effects: hasEffect
-            ? currentEffects.filter((e) => e !== effect)
-            : [...currentEffects, effect],
-        };
-      });
-    }, []);
+  const handleEffectToggle = React.useCallback((effect: string) => {
+    setLocalFilters((prev) => {
+      const currentEffects = prev.effects || [];
+      const hasEffect = currentEffects.includes(effect);
+      return {
+        ...prev,
+        effects: hasEffect
+          ? currentEffects.filter((e) => e !== effect)
+          : [...currentEffects, effect],
+      };
+    });
+  }, []);
 
-    const handleFlavorToggle = React.useCallback((flavor: string) => {
-      setLocalFilters((prev) => {
-        const currentFlavors = prev.flavors || [];
-        const hasFlavor = currentFlavors.includes(flavor);
-        return {
-          ...prev,
-          flavors: hasFlavor
-            ? currentFlavors.filter((f) => f !== flavor)
-            : [...currentFlavors, flavor],
-        };
-      });
-    }, []);
+  const handleFlavorToggle = React.useCallback((flavor: string) => {
+    setLocalFilters((prev) => {
+      const currentFlavors = prev.flavors || [];
+      const hasFlavor = currentFlavors.includes(flavor);
+      return {
+        ...prev,
+        flavors: hasFlavor
+          ? currentFlavors.filter((f) => f !== flavor)
+          : [...currentFlavors, flavor],
+      };
+    });
+  }, []);
 
-    const handleClear = React.useCallback(() => {
-      setLocalFilters({});
-      onClear();
-    }, [onClear]);
+  const handleClear = React.useCallback(() => {
+    setLocalFilters({});
+    onClear();
+  }, [onClear]);
 
-    const handleApply = React.useCallback(() => {
-      onApply(localFilters);
-    }, [localFilters, onApply]);
+  const handleApply = React.useCallback(() => {
+    onApply(localFilters);
+  }, [localFilters, onApply]);
 
-    const hasActiveFilters = React.useMemo(() => {
-      return (
-        localFilters.race !== undefined ||
-        localFilters.difficulty !== undefined ||
-        (localFilters.effects && localFilters.effects.length > 0) ||
-        (localFilters.flavors && localFilters.flavors.length > 0)
-      );
-    }, [localFilters]);
-
+  const hasActiveFilters = React.useMemo(() => {
     return (
-      <Modal
-        ref={ref}
-        snapPoints={['85%']}
-        title={translate('strains.filters.title')}
-      >
-        <BottomSheetScrollView contentContainerClassName="px-4 pb-24">
-          <FilterModalContent
-            localFilters={localFilters}
-            handleRaceToggle={handleRaceToggle}
-            handleDifficultyToggle={handleDifficultyToggle}
-            handleEffectToggle={handleEffectToggle}
-            handleFlavorToggle={handleFlavorToggle}
-          />
-        </BottomSheetScrollView>
+      localFilters.race !== undefined ||
+      localFilters.difficulty !== undefined ||
+      (localFilters.effects && localFilters.effects.length > 0) ||
+      (localFilters.flavors && localFilters.flavors.length > 0)
+    );
+  }, [localFilters]);
 
-        {/* Fixed Bottom Buttons */}
-        <View className="absolute inset-x-0 bottom-0 border-t border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Button
-                label={translate('strains.filters.clear_all')}
-                variant="outline"
-                onPress={handleClear}
-                disabled={!hasActiveFilters}
-                testID="filter-clear-button"
-              />
-            </View>
-            <View className="flex-1">
-              <Button
-                label={translate('strains.filters.apply')}
-                onPress={handleApply}
-                testID="filter-apply-button"
-              />
-            </View>
+  return (
+    <Modal
+      ref={ref}
+      snapPoints={['85%']}
+      title={translate('strains.filters.title')}
+    >
+      <BottomSheetScrollView contentContainerClassName="px-4 pb-24">
+        <FilterModalContent
+          localFilters={localFilters}
+          handleRaceToggle={handleRaceToggle}
+          handleDifficultyToggle={handleDifficultyToggle}
+          handleEffectToggle={handleEffectToggle}
+          handleFlavorToggle={handleFlavorToggle}
+        />
+      </BottomSheetScrollView>
+
+      {/* Fixed Bottom Buttons */}
+      <View className="absolute inset-x-0 bottom-0 border-t border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Button
+              label={translate('strains.filters.clear_all')}
+              variant="outline"
+              onPress={handleClear}
+              disabled={!hasActiveFilters}
+              testID="filter-clear-button"
+            />
+          </View>
+          <View className="flex-1">
+            <Button
+              label={translate('strains.filters.apply')}
+              onPress={handleApply}
+              testID="filter-apply-button"
+            />
           </View>
         </View>
-      </Modal>
-    );
-  }
-);
+      </View>
+    </Modal>
+  );
+});
 
 FilterModal.displayName = 'FilterModal';

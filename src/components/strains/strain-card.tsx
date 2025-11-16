@@ -18,7 +18,7 @@ import type { Strain } from '@/types/strains';
 type Props = {
   strain: Strain;
   testID?: string;
-  itemY?: any; // Optional for future scroll animations
+  itemY?: number; // Optional for future scroll animations
 };
 
 // Extracted component for badges
@@ -36,8 +36,8 @@ StrainBadges.displayName = 'StrainBadges';
 // Extracted component for card content
 const StrainCardContent = React.memo<{
   strain: Strain;
-  scaledSizes: any;
-  spacing: any;
+  scaledSizes: ReturnType<typeof useDynamicType>['scaledSizes'];
+  spacing: ReturnType<typeof useResponsiveSpacing>;
   isLargeTextMode: boolean;
 }>(({ strain, scaledSizes, spacing, isLargeTextMode }) => (
   <View className="gap-2" style={{ padding: spacing.cardPadding }}>

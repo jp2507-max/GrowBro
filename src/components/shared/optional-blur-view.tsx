@@ -12,6 +12,10 @@ type BlurProps = {
   pointerEvents?: 'auto' | 'none' | 'box-none' | 'box-only';
 };
 
+type ExpoBlurModule = {
+  BlurView: React.ComponentType<BlurProps>;
+};
+
 export function OptionalBlurView({
   intensity = 0,
   tint = 'dark',
@@ -19,12 +23,14 @@ export function OptionalBlurView({
   testID,
   pointerEvents,
 }: BlurProps) {
-  const [Blur, setBlur] = React.useState<React.ComponentType<any> | null>(null);
+  const [Blur, setBlur] = React.useState<React.ComponentType<BlurProps> | null>(
+    null
+  );
   React.useEffect(() => {
     const moduleName = 'expo-blur';
     // Dynamic import to avoid bundling/type resolution issues if expo-blur is not installed yet
     import(moduleName)
-      .then((mod: any) => setBlur(() => mod.BlurView))
+      .then((mod: ExpoBlurModule) => setBlur(() => mod.BlurView))
       .catch(() => setBlur(null));
   }, []);
 
@@ -32,7 +38,8 @@ export function OptionalBlurView({
 
   return (
     <Blur
-      style={style ?? (StyleSheet.absoluteFill as any)}
+      // @ts-expect-error - StyleSheet.absoluteFill is compatible but types don't match exactly
+      style={style ?? StyleSheet.absoluteFill}
       tint={tint}
       intensity={intensity}
       testID={testID}
@@ -41,7 +48,10 @@ export function OptionalBlurView({
   );
 }
 
+const OptionalBlurViewWrapper = React.forwardRef<unknown, BlurProps>(
+  (props, _ref) => <OptionalBlurView {...props} />
+);
+
 export const AnimatedOptionalBlurView = Animated.createAnimatedComponent(
-  // Use a functional component wrapper so Animated can attach animatedProps cleanly
-  (props: any) => <OptionalBlurView {...props} />
+  OptionalBlurViewWrapper
 );

@@ -1,5 +1,9 @@
 import { useScrollToTop } from '@react-navigation/native';
-import { FlashList, type FlashListProps } from '@shopify/flash-list';
+import {
+  FlashList,
+  type FlashListProps,
+  type FlashListRef,
+} from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import {
@@ -107,7 +111,7 @@ function useSkeletonVisibility(isLoading: boolean, itemsCount: number) {
 // eslint-disable-next-line max-lines-per-function
 export default function PlantsScreen(): React.ReactElement {
   const router = useRouter();
-  const { scrollHandler } = useAnimatedScrollList();
+  const { listRef: sharedListRef, scrollHandler } = useAnimatedScrollList();
   const { grossHeight } = useBottomTabBarHeight();
   const { isConnected, isInternetReachable } = useNetworkStatus();
   const listContentPadding = React.useMemo(
@@ -115,8 +119,16 @@ export default function PlantsScreen(): React.ReactElement {
     [grossHeight]
   );
 
-  const listRef = React.useRef<React.ElementRef<typeof FlashList<Plant>>>(null);
-  useScrollToTop(listRef);
+  const listRef = React.useMemo(
+    () => sharedListRef as React.RefObject<FlashListRef<Plant>>,
+    [sharedListRef]
+  );
+  // useScrollToTop accepts refs with scrollTo/scrollToOffset methods
+  useScrollToTop(
+    listRef as React.RefObject<{
+      scrollToOffset: (params: { offset?: number; animated?: boolean }) => void;
+    }>
+  );
 
   const isOffline = !isConnected || !isInternetReachable;
 

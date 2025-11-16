@@ -20,17 +20,21 @@ type AssessmentFeedbackSheetProps = {
   assessmentId: string;
 };
 
+type ModalRef = { dismiss?: () => void };
+
 export const AssessmentFeedbackSheet: React.ForwardRefExoticComponent<
   AssessmentFeedbackSheetProps & React.RefAttributes<unknown>
 > = React.forwardRef<unknown, AssessmentFeedbackSheetProps>(
   ({ onSubmit, assessmentId }, ref) => {
     const { t } = useTranslation();
-    const internalRef = useRef<any>(null);
+    const internalRef = useRef<ModalRef | null>(null);
     const setRefs = useCallback(
-      (node: any) => {
+      (node: ModalRef | null) => {
         internalRef.current = node;
         if (typeof ref === 'function') ref(node);
-        else if (ref && 'current' in (ref as any)) (ref as any).current = node;
+        else if (ref && typeof ref === 'object' && 'current' in ref) {
+          (ref as React.MutableRefObject<ModalRef | null>).current = node;
+        }
       },
       [ref]
     );

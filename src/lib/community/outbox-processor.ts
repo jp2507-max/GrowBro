@@ -107,10 +107,12 @@ export class OutboxProcessor {
 
     try {
       entry = await outboxCollection.find(entryId);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       console.error(
         `[OutboxProcessor] Entry not found for retry ${entryId}:`,
-        error.message
+        errorMessage
       );
       throw new Error(`Outbox entry not found for retry: ${entryId}`);
     }
@@ -132,10 +134,12 @@ export class OutboxProcessor {
 
       try {
         entry = await outboxCollection.find(entryId);
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
         console.error(
           `[OutboxProcessor] Entry not found for cancel ${entryId}:`,
-          error.message
+          errorMessage
         );
         // Entry already doesn't exist, so cancel is effectively complete
         return;
@@ -251,17 +255,28 @@ export class OutboxProcessor {
 
       // Track successful mutation (Requirement 10.5)
       communityMetrics.recordMutationSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       console.error(
         `[OutboxProcessor] Entry ${entry.id} failed:`,
-        error.message
+        errorMessage
       );
 
       // Track mutation failure (Requirement 10.5)
       communityMetrics.recordMutationFailure();
 
       // Handle specific error cases
-      if (error.response?.status === 404) {
+      const hasNotFoundStatus =
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        error.response &&
+        typeof error.response === 'object' &&
+        'status' in error.response &&
+        error.response.status === 404;
+
+      if (hasNotFoundStatus) {
         // Target content deleted, drop the action
         await this.database.write(async () => {
           await entry.destroyPermanently();
@@ -296,7 +311,7 @@ export class OutboxProcessor {
    */
   private async executeOperation(params: {
     op: OutboxOperation;
-    payload: any;
+    payload: Record<string, unknown>;
     idempotencyKey: string;
     clientTxId: string;
   }): Promise<void> {
@@ -304,7 +319,7 @@ export class OutboxProcessor {
     switch (op) {
       case 'LIKE':
         await this.apiClient.likePost(
-          payload.postId,
+          payload.postId as string,
           idempotencyKey,
           clientTxId
         );
@@ -312,7 +327,7 @@ export class OutboxProcessor {
 
       case 'UNLIKE':
         await this.apiClient.unlikePost(
-          payload.postId,
+          payload.postId as string,
           idempotencyKey,
           clientTxId
         );
@@ -321,8 +336,8 @@ export class OutboxProcessor {
       case 'COMMENT':
         await this.apiClient.createComment(
           {
-            postId: payload.postId,
-            body: payload.body,
+            postId: payload.postId as string,
+            body: payload.body as string,
           },
           idempotencyKey,
           clientTxId
@@ -331,7 +346,7 @@ export class OutboxProcessor {
 
       case 'DELETE_POST':
         await this.apiClient.deletePost(
-          payload.postId,
+          payload.postId as string,
           idempotencyKey,
           clientTxId
         );
@@ -339,7 +354,7 @@ export class OutboxProcessor {
 
       case 'DELETE_COMMENT':
         await this.apiClient.deleteComment(
-          payload.commentId,
+          payload.commentId as string,
           idempotencyKey,
           clientTxId
         );
@@ -347,7 +362,7 @@ export class OutboxProcessor {
 
       case 'UNDO_DELETE_POST':
         await this.apiClient.undoDeletePost(
-          payload.postId,
+          payload.postId as string,
           idempotencyKey,
           clientTxId
         );
@@ -355,7 +370,7 @@ export class OutboxProcessor {
 
       case 'UNDO_DELETE_COMMENT':
         await this.apiClient.undoDeleteComment(
-          payload.commentId,
+          payload.commentId as string,
           idempotencyKey,
           clientTxId
         );
@@ -363,10 +378,10 @@ export class OutboxProcessor {
 
       case 'MODERATE_CONTENT':
         await this.apiClient.moderateContent({
-          contentType: payload.contentType,
-          contentId: payload.contentId,
-          action: payload.action,
-          reason: payload.reason,
+          contentType: payload.contentType as 'post' | 'comment',
+          contentId: payload.contentId as string,
+          action: payload.action as 'hide' | 'unhide',
+          reason: payload.reason as string | undefined,
           idempotencyKey,
           clientTxId,
         });

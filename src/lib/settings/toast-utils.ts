@@ -6,6 +6,7 @@
  * with proper accessibility announcements.
  */
 
+import type { MessageOptions } from 'react-native-flash-message';
 import { showMessage } from 'react-native-flash-message';
 
 type ToastType = 'success' | 'danger' | 'warning' | 'info';
@@ -18,6 +19,11 @@ interface ToastOptions {
   onPress?: () => void;
 }
 
+// Extended message options with accessibility support
+interface AccessibleMessageOptions extends MessageOptions {
+  accessibilityLiveRegion?: 'polite' | 'assertive' | 'none';
+}
+
 /**
  * Show success toast for settings operations
  */
@@ -26,14 +32,15 @@ export function showSuccessToast(
   description?: string,
   duration = 3000
 ) {
-  showMessage({
+  const options: AccessibleMessageOptions = {
     message,
     description,
     type: 'success',
     duration,
     icon: 'success',
     accessibilityLiveRegion: 'polite',
-  } as any); // Type augmentation for accessibility props
+  };
+  showMessage(options);
 }
 
 /**
@@ -44,14 +51,15 @@ export function showErrorToast(
   description?: string,
   duration = 4000
 ) {
-  showMessage({
+  const options: AccessibleMessageOptions = {
     message,
     description,
     type: 'danger',
     duration,
     icon: 'danger',
     accessibilityLiveRegion: 'assertive',
-  } as any);
+  };
+  showMessage(options);
 }
 
 /**
@@ -63,7 +71,7 @@ export function showRetryToast(
   onRetry: () => void,
   description?: string
 ) {
-  showMessage({
+  const options: AccessibleMessageOptions = {
     message,
     description: description ?? 'Tap to retry',
     type: 'warning',
@@ -71,7 +79,8 @@ export function showRetryToast(
     icon: 'warning',
     onPress: onRetry,
     accessibilityLiveRegion: 'polite',
-  } as any);
+  };
+  showMessage(options);
 }
 
 /**
@@ -82,14 +91,15 @@ export function showInfoToast(
   description?: string,
   duration = 3000
 ) {
-  showMessage({
+  const options: AccessibleMessageOptions = {
     message,
     description,
     type: 'info',
     duration,
     icon: 'info',
     accessibilityLiveRegion: 'polite',
-  } as any);
+  };
+  showMessage(options);
 }
 
 /**
@@ -97,7 +107,7 @@ export function showInfoToast(
  * Requirements: 2.9
  */
 export function showOfflineToast() {
-  showMessage({
+  const options: AccessibleMessageOptions = {
     message: 'No internet connection',
     description:
       'This action requires internet. Changes will sync when online.',
@@ -105,7 +115,8 @@ export function showOfflineToast() {
     duration: 4000,
     icon: 'warning',
     accessibilityLiveRegion: 'polite',
-  } as any);
+  };
+  showMessage(options);
 }
 
 /**
@@ -120,7 +131,7 @@ export function showToast(options: ToastOptions) {
     onPress,
   } = options;
 
-  showMessage({
+  const messageOptions: AccessibleMessageOptions = {
     message,
     description,
     type,
@@ -128,5 +139,6 @@ export function showToast(options: ToastOptions) {
     icon: type,
     onPress,
     accessibilityLiveRegion: type === 'danger' ? 'assertive' : 'polite',
-  } as any);
+  };
+  showMessage(messageOptions);
 }

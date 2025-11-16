@@ -1,6 +1,8 @@
 import { Model } from '@nozbe/watermelondb';
 import { field, text } from '@nozbe/watermelondb/decorators';
 
+import type { AIAssessmentPayload, ExpertReview } from '@/types/support';
+
 export class AiSecondOpinionsQueueModel extends Model {
   static table = 'ai_second_opinions_queue';
 
@@ -19,9 +21,9 @@ export class AiSecondOpinionsQueueModel extends Model {
   @field('created_at') createdAt!: number;
   @field('updated_at') updatedAt!: number;
 
-  get aiAssessment(): any {
+  get aiAssessment(): AIAssessmentPayload | null {
     try {
-      return JSON.parse(this.aiAssessmentJson);
+      return JSON.parse(this.aiAssessmentJson) as AIAssessmentPayload;
     } catch (error) {
       console.warn(
         '[AiSecondOpinionsQueueModel] Failed to parse AI assessment',
@@ -31,14 +33,14 @@ export class AiSecondOpinionsQueueModel extends Model {
     }
   }
 
-  setAiAssessment(assessment: any): void {
+  setAiAssessment(assessment: AIAssessmentPayload): void {
     this.aiAssessmentJson = JSON.stringify(assessment);
   }
 
-  get expertReview(): any {
+  get expertReview(): ExpertReview | null {
     if (!this.expertReviewJson) return null;
     try {
-      return JSON.parse(this.expertReviewJson);
+      return JSON.parse(this.expertReviewJson) as ExpertReview;
     } catch (error) {
       console.warn(
         '[AiSecondOpinionsQueueModel] Failed to parse expert review',
@@ -48,7 +50,7 @@ export class AiSecondOpinionsQueueModel extends Model {
     }
   }
 
-  setExpertReview(review: any): void {
+  setExpertReview(review: ExpertReview | null): void {
     this.expertReviewJson = review ? JSON.stringify(review) : '';
   }
 }

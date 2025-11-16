@@ -1,4 +1,3 @@
-import type { Model } from '@nozbe/watermelondb';
 import { Q } from '@nozbe/watermelondb';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
@@ -16,22 +15,7 @@ import { PushNotificationService } from '@/lib/notifications/push-service';
 import { PermissionManager } from '@/lib/permissions/permission-manager';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 import { supabase } from '@/lib/supabase';
-
-// WatermelonDB model type for notification preferences
-type NotificationPreferencesModel = Model & {
-  userId: string;
-  communityInteractions: boolean;
-  communityLikes: boolean;
-  cultivationReminders: boolean;
-  systemUpdates: boolean;
-  quietHoursEnabled: boolean;
-  quietHoursStart: string | null;
-  quietHoursEnd: string | null;
-  updatedAt: Date;
-  update: (
-    updater: (model: NotificationPreferencesModel) => void
-  ) => Promise<void>;
-};
+import type { NotificationPreferenceModel } from '@/lib/watermelon-models/notification-preference';
 
 // Subscription type that supports both remove and unsubscribe
 type NotificationSubscription = {
@@ -395,7 +379,7 @@ async function getPreferencesForUser(
   userId: string
 ): Promise<NotificationPreferencesSnapshot> {
   const { database } = await import('@/lib/watermelon');
-  const collection = database.collections.get<NotificationPreferencesModel>(
+  const collection = database.collections.get<NotificationPreferenceModel>(
     'notification_preferences'
   );
   const records = await collection.query(Q.where('user_id', userId)).fetch();
@@ -421,14 +405,14 @@ async function upsertPreferences(
   partial: Partial<NotificationPreferencesSnapshot>
 ): Promise<void> {
   const { database } = await import('@/lib/watermelon');
-  const collection = database.collections.get<NotificationPreferencesModel>(
+  const collection = database.collections.get<NotificationPreferenceModel>(
     'notification_preferences'
   );
   const Q = (await import('@nozbe/watermelondb')).Q;
   const matches = await collection.query(Q.where('user_id', userId)).fetch();
   if (matches.length > 0) {
     await database.write(async () => {
-      await matches[0].update((model: NotificationPreferencesModel) => {
+      await matches[0].update((model: NotificationPreferenceModel) => {
         Object.assign(model, {
           communityInteractions:
             partial.communityInteractions ?? model.communityInteractions,
@@ -450,7 +434,7 @@ async function upsertPreferences(
           )
             ? partial.quietHoursEnd
             : model.quietHoursEnd,
-          updatedAt: new Date(),
+          lastUpdated: new Date(),
         });
       });
     });
@@ -459,23 +443,23 @@ async function upsertPreferences(
 
   const defaults = { ...DEFAULT_PREFERENCES, ...partial };
   await database.write(async () => {
-    await collection.create((model: NotificationPreferencesModel) => {
+    await collection.create((model: NotificationPreferenceModel) => {
       model.userId = userId;
       model.communityInteractions = defaults.communityInteractions;
       model.communityLikes = defaults.communityLikes;
       model.cultivationReminders = defaults.cultivationReminders;
       model.systemUpdates = defaults.systemUpdates;
       model.quietHoursEnabled = defaults.quietHoursEnabled;
-      model.quietHoursStart = defaults.quietHoursStart;
-      model.quietHoursEnd = defaults.quietHoursEnd;
-      model.updatedAt = new Date();
+      model.quietHoursStart = defaults.quietHoursStart ?? undefined;
+      model.quietHoursEnd = defaults.quietHoursEnd ?? undefined;
+      model.lastUpdated = new Date();
     });
   });
 }
 
 async function ensurePreferencesRecord(userId: string): Promise<void> {
   const { database } = await import('@/lib/watermelon');
-  const collection = database.collections.get<NotificationPreferencesModel>(
+  const collection = database.collections.get<NotificationPreferenceModel>(
     'notification_preferences'
   );
   const matches = await collection.query(Q.where('user_id', userId)).fetch();

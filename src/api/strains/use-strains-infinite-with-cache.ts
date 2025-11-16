@@ -38,9 +38,10 @@ type PageParamShape = { index: number; cursor?: string };
 
 async function tryGetCachedData(
   repo: CachedStrainsRepository,
-  params: any,
+  params: UseStrainsInfiniteWithCacheParams | undefined,
   pageParam: PageParamShape | undefined
 ): Promise<(StrainsResponse & { fromCache: boolean }) | null> {
+  if (!params) return null;
   const pageIndex = pageParam?.index ?? 0;
   const cachedStrains = await repo.getCachedStrains(params, pageIndex);
 
@@ -147,7 +148,7 @@ export function useStrainsInfiniteWithCache({
     initialPageParam: { index: 0 }, // Starts with page 0 for initial load
     staleTime: 5 * 60 * 1000, // ✅ Good: 5min stale time for reasonable freshness
     gcTime: 10 * 60 * 1000, // ✅ Good: 10min garbage collection time
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: Error) => {
       if (error?.message?.includes('No network connection')) return false; // ✅ Good: No retry on network issues
       return failureCount < 1; // ⚠️ Conservative: Only 1 retry, may be too aggressive
     },

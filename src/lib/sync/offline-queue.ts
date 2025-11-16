@@ -4,6 +4,7 @@
  */
 
 import type { Database, Model } from '@nozbe/watermelondb';
+import { Q } from '@nozbe/watermelondb';
 import { Observable } from 'rxjs';
 import { throttleTime } from 'rxjs/operators';
 
@@ -144,8 +145,11 @@ export class OfflineQueue {
     const collection = this.database.get(table);
 
     // Get readings from last 5 seconds (±1s tolerance + buffer)
-    const recentReadings = await collection.query().fetch();
-    // Note: Add proper query filtering when implementing with actual WatermelonDB models
+    // Filter at database level using indexed measured_at column
+    const cutoffTime = Date.now() - 5000;
+    const recentReadings = await collection
+      .query(Q.where('measured_at', Q.gte(cutoffTime)))
+      .fetch();
 
     const existingReadings = recentReadings
       .map((record: Model) => {

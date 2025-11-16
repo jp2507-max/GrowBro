@@ -35,6 +35,14 @@ export function generateId(): string {
   return `strain_${timestamp}_${random}`;
 }
 
+// Type for raw API percentage values
+type RawPercentageValue =
+  | string
+  | number
+  | { min?: number; max?: number; label?: string }
+  | null
+  | undefined;
+
 /**
  * Parses percentage values that can be numeric, string, or qualitative
  * Handles formats like: "17%", "15-20%", "High", numeric values, objects
@@ -42,7 +50,9 @@ export function generateId(): string {
  * @param value - Raw percentage value from API
  * @returns Normalized percentage range object
  */
-export function parsePercentageRange(value: any): PercentageRange {
+export function parsePercentageRange(
+  value: RawPercentageValue
+): PercentageRange {
   // Handle null/undefined
   if (value === null || value === undefined) {
     return {};
@@ -167,7 +177,7 @@ function formatNumber(value: number, locale: string): string {
 /**
  * Normalizes strain race/type values
  */
-export function normalizeRace(race: any): StrainRace {
+export function normalizeRace(race: unknown): StrainRace {
   if (typeof race !== 'string') {
     return 'hybrid';
   }
@@ -187,7 +197,7 @@ export function normalizeRace(race: any): StrainRace {
 /**
  * Normalizes grow difficulty values
  */
-export function normalizeGrowDifficulty(difficulty: any): GrowDifficulty {
+export function normalizeGrowDifficulty(difficulty: unknown): GrowDifficulty {
   if (typeof difficulty !== 'string') {
     return 'intermediate';
   }
@@ -204,22 +214,27 @@ export function normalizeGrowDifficulty(difficulty: any): GrowDifficulty {
   return 'intermediate';
 }
 
+// Type for raw API effect values
+type RawEffect =
+  | string
+  | { name: string; intensity?: 'low' | 'medium' | 'high' };
+
 /**
  * Normalizes effects array
  */
-export function normalizeEffects(effects: any): Effect[] {
+export function normalizeEffects(effects: unknown): Effect[] {
   if (!Array.isArray(effects)) {
     return [];
   }
 
-  return effects
+  const mapped = effects
     .filter(
-      (effect) =>
+      (effect): effect is RawEffect =>
         effect !== null &&
         (typeof effect === 'string' ||
           (typeof effect === 'object' && typeof effect.name === 'string'))
     )
-    .map((effect) => {
+    .map((effect): Effect | null => {
       const name =
         typeof effect === 'string' ? effect.trim() : effect.name.trim();
       if (!name) {
@@ -230,27 +245,31 @@ export function normalizeEffects(effects: any): Effect[] {
         typeof effect === 'object' &&
         typeof effect.intensity === 'string' &&
         ['low', 'medium', 'high'].includes(effect.intensity)
-          ? effect.intensity
+          ? (effect.intensity as 'low' | 'medium' | 'high')
           : undefined;
       return {
         name,
         intensity,
       };
-    })
-    .filter((effect) => effect !== null);
+    });
+
+  return mapped.filter((effect): effect is Effect => effect !== null);
 }
+
+// Type for raw API flavor values
+type RawFlavor = string | { name: string; category?: string };
 
 /**
  * Normalizes flavors array
  */
-export function normalizeFlavors(flavors: any): Flavor[] {
+export function normalizeFlavors(flavors: unknown): Flavor[] {
   if (!Array.isArray(flavors)) {
     return [];
   }
 
   return flavors
     .filter(
-      (flavor) =>
+      (flavor): flavor is RawFlavor =>
         flavor !== null &&
         (typeof flavor === 'string' ||
           (typeof flavor === 'object' && typeof flavor.name === 'string'))
@@ -276,16 +295,25 @@ export function normalizeFlavors(flavors: any): Flavor[] {
     .filter((flavor): flavor is Flavor => flavor !== null);
 }
 
+// Type for raw API terpene values
+type RawTerpene =
+  | string
+  | {
+      name?: string;
+      percentage?: number;
+      aroma_description?: string;
+    };
+
 /**
  * Normalizes terpenes array
  */
-export function normalizeTerpenes(terpenes: any): Terpene[] | undefined {
+export function normalizeTerpenes(terpenes: unknown): Terpene[] | undefined {
   if (!Array.isArray(terpenes) || terpenes.length === 0) {
     return undefined;
   }
 
   return terpenes
-    .filter((terpene) => terpene != null)
+    .filter((terpene): terpene is RawTerpene => terpene != null)
     .map((terpene) =>
       typeof terpene === 'string'
         ? { name: String(terpene) }
@@ -301,10 +329,22 @@ export function normalizeTerpenes(terpenes: any): Terpene[] | undefined {
     .filter((t): t is Terpene => typeof t.name === 'string');
 }
 
+// Type for raw API yield data
+type RawYieldData =
+  | {
+      min_grams?: number;
+      max_grams?: number;
+      min_oz?: number;
+      max_oz?: number;
+      label?: string;
+    }
+  | null
+  | undefined;
+
 /**
  * Normalizes yield data for indoor or outdoor growing
  */
-function normalizeYieldData(yieldData: any): YieldInfo {
+function normalizeYieldData(yieldData: RawYieldData): YieldInfo {
   if (!yieldData) return { label: DEFAULT_YIELD };
 
   return {
@@ -318,10 +358,22 @@ function normalizeYieldData(yieldData: any): YieldInfo {
   };
 }
 
+// Type for raw API flowering time data
+type RawFloweringTime =
+  | {
+      min_weeks?: number;
+      max_weeks?: number;
+      label?: string;
+    }
+  | null
+  | undefined;
+
 /**
  * Normalizes flowering time data
  */
-function normalizeFloweringTime(floweringTime: any): FloweringTime {
+function normalizeFloweringTime(
+  floweringTime: RawFloweringTime
+): FloweringTime {
   return {
     min_weeks:
       typeof floweringTime?.min_weeks === 'number'
@@ -335,10 +387,20 @@ function normalizeFloweringTime(floweringTime: any): FloweringTime {
   };
 }
 
+// Type for raw API height data
+type RawHeightData =
+  | {
+      indoor_cm?: number;
+      outdoor_cm?: number;
+      label?: string;
+    }
+  | null
+  | undefined;
+
 /**
  * Normalizes height data
  */
-function normalizeHeight(height: any): HeightInfo {
+function normalizeHeight(height: RawHeightData): HeightInfo {
   return {
     indoor_cm:
       typeof height?.indoor_cm === 'number' ? height.indoor_cm : undefined,
@@ -348,10 +410,28 @@ function normalizeHeight(height: any): HeightInfo {
   };
 }
 
+// Type for raw API grow characteristics
+type RawGrowCharacteristics =
+  | {
+      difficulty?: unknown;
+      indoor_suitable?: boolean;
+      outdoor_suitable?: boolean;
+      flowering_time?: RawFloweringTime;
+      yield?: {
+        indoor?: RawYieldData;
+        outdoor?: RawYieldData;
+      };
+      height?: RawHeightData;
+    }
+  | null
+  | undefined;
+
 /**
  * Normalizes growing characteristics
  */
-export function normalizeGrowCharacteristics(grow: any): GrowCharacteristics {
+export function normalizeGrowCharacteristics(
+  grow: RawGrowCharacteristics
+): GrowCharacteristics {
   const difficulty = normalizeGrowDifficulty(grow?.difficulty);
 
   return {
@@ -367,6 +447,37 @@ export function normalizeGrowCharacteristics(grow: any): GrowCharacteristics {
   };
 }
 
+// Type for raw API strain data
+export type RawApiStrain = {
+  id?: string | number;
+  name?: string;
+  slug?: string;
+  synonyms?: unknown;
+  link?: string;
+  imageUrl?: string;
+  image_url?: string;
+  description?: string | string[];
+  genetics?: {
+    parents?: unknown;
+    lineage?: string;
+  };
+  parents?: unknown;
+  lineage?: string;
+  race?: unknown;
+  type?: unknown;
+  thc?: RawPercentageValue;
+  cbd?: RawPercentageValue;
+  effects?: unknown;
+  flavors?: unknown;
+  terpenes?: unknown;
+  grow?: RawGrowCharacteristics;
+  source?: {
+    provider?: string;
+    updated_at?: string;
+    attribution_url?: string;
+  };
+};
+
 /**
  * Normalizes complete strain data from API response
  *
@@ -374,7 +485,10 @@ export function normalizeGrowCharacteristics(grow: any): GrowCharacteristics {
  * @param locale - Optional locale for formatting (defaults to 'en-US')
  * @returns Normalized Strain object
  */
-export function normalizeStrain(apiStrain: any, locale = 'en-US'): Strain {
+export function normalizeStrain(
+  apiStrain: RawApiStrain,
+  locale = 'en-US'
+): Strain {
   // Parse THC and CBD
   const thc = parsePercentageRange(apiStrain.thc);
   const cbd = parsePercentageRange(apiStrain.cbd);

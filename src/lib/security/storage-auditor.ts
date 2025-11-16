@@ -25,13 +25,13 @@ import type {
 
 // Simple logger using console
 const log = {
-  debug: (msg: string, ...args: any[]) =>
+  debug: (msg: string, ...args: unknown[]) =>
     console.log(`[StorageAuditor] ${msg}`, ...args),
-  info: (msg: string, ...args: any[]) =>
+  info: (msg: string, ...args: unknown[]) =>
     console.info(`[StorageAuditor] ${msg}`, ...args),
-  warn: (msg: string, ...args: any[]) =>
+  warn: (msg: string, ...args: unknown[]) =>
     console.warn(`[StorageAuditor] ${msg}`, ...args),
-  error: (msg: string, ...args: any[]) =>
+  error: (msg: string, ...args: unknown[]) =>
     console.error(`[StorageAuditor] ${msg}`, ...args),
 };
 

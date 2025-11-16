@@ -549,7 +549,7 @@ export interface AuditEvent {
 
   // Action details
   action: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 
   // Timestamp (immutable)
   timestamp: Date;
@@ -572,7 +572,7 @@ export interface AuditEventInput {
   target_id: string;
   target_type: string;
   action: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   pii_tagged?: boolean;
 }
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { Vibration } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 
@@ -12,6 +13,11 @@ import type { Task } from '@/types/calendar';
 
 export type DragScope = 'occurrence' | 'series';
 
+// Type for FlashList/FlatList ref with scrollToOffset method
+type ScrollableListRef = {
+  scrollToOffset: (params: { offset: number; animated: boolean }) => void;
+} | null;
+
 type DragContextValue = {
   isDragging: boolean;
   draggedTask?: Task;
@@ -19,7 +25,7 @@ type DragContextValue = {
   cancelDrag: () => void;
   completeDrop: (targetDate: Date, scope: DragScope) => Promise<void>;
   onDragUpdate: (y: number) => number | undefined;
-  registerListRef: (ref: React.RefObject<any>) => void;
+  registerListRef: (ref: React.RefObject<ScrollableListRef>) => void;
   registerViewportHeight: (height: number) => void;
   computeTargetDate: (originalDate: Date, translationY: number) => Date;
   updateCurrentOffset: (y: number) => void;
@@ -38,7 +44,7 @@ type UndoState =
       id: string;
       previousDueAtLocal: string;
       previousTimezone: string;
-      timeoutId: any;
+      timeoutId: ReturnType<typeof setTimeout>;
     }
   | undefined;
 
@@ -57,7 +63,13 @@ export function shouldAutoScroll(
 function isEphemeralTask(task: Task): boolean {
   const hasSeriesLikeId =
     typeof task.id === 'string' && task.id.startsWith('series:');
-  const flaggedEphemeral = Boolean((task as any)?.metadata?.ephemeral);
+  const flaggedEphemeral = Boolean(
+    task.metadata &&
+      typeof task.metadata === 'object' &&
+      'ephemeral' in task.metadata
+      ? (task.metadata as { ephemeral?: boolean }).ephemeral
+      : false
+  );
   return hasSeriesLikeId || flaggedEphemeral;
 }
 
@@ -94,13 +106,16 @@ function useDragState() {
 }
 
 function useListRefs() {
-  const listRef = React.useRef<any | null>(null);
+  const listRef = React.useRef<ScrollableListRef>(null);
   const currentScrollOffsetRef = React.useRef<number>(0);
   const viewportHeightRef = React.useRef<number>(0);
 
-  const registerListRef = React.useCallback((ref: React.RefObject<any>) => {
-    listRef.current = ref.current;
-  }, []);
+  const registerListRef = React.useCallback(
+    (ref: React.RefObject<ScrollableListRef>) => {
+      listRef.current = ref.current;
+    },
+    []
+  );
 
   const registerViewportHeight = React.useCallback((height: number) => {
     viewportHeightRef.current = height;
@@ -143,7 +158,7 @@ function useUndoState() {
 }
 
 function useScrolling(
-  listRef: React.RefObject<any>,
+  listRef: React.RefObject<ScrollableListRef>,
   currentScrollOffsetRef: React.RefObject<number>,
   viewportHeightRef: React.RefObject<number>
 ) {
@@ -156,14 +171,13 @@ function useScrolling(
       );
       if (dir === 0) return undefined;
 
-      const ref = listRef.current as any;
-      if (!ref || typeof (ref as any).scrollToOffset !== 'function')
-        return undefined;
+      const ref = listRef.current;
+      if (!ref || typeof ref.scrollToOffset !== 'function') return undefined;
 
       // Get current offset directly from the ref to avoid dependency mutation
       const currentOffset = currentScrollOffsetRef.current;
       const next = Math.max(0, currentOffset + dir * AUTO_SCROLL_STEP);
-      (ref as any).scrollToOffset({ offset: next, animated: false });
+      ref.scrollToOffset({ offset: next, animated: false });
 
       // Return the new offset for the caller to update the ref
       // This avoids direct mutation inside the callback
@@ -208,7 +222,7 @@ function useComputeTargetDate() {
  */
 function useCreateUndoState() {
   return React.useCallback(
-    (task: Task, timeoutId: any) => ({
+    (task: Task, timeoutId: ReturnType<typeof setTimeout>) => ({
       type: 'task' as const,
       id: task.id,
       // Store the original due date and timezone for undo purposes
@@ -296,7 +310,10 @@ function showUndoMessage(performUndo: () => Promise<void>) {
 function setupUndoState(
   undoRef: React.RefObject<UndoState>,
   updatedTask: Task,
-  createUndoState: (task: Task, timeoutId: any) => UndoState
+  createUndoState: (
+    task: Task,
+    timeoutId: ReturnType<typeof setTimeout>
+  ) => UndoState
 ) {
   // Clear any existing timeout to prevent premature cleanup
   if (undoRef.current?.timeoutId) {
@@ -384,7 +401,7 @@ function useContextValue(options: {
   cancelDrag: () => void;
   completeDrop: (targetDate: Date, scope: DragScope) => Promise<void>;
   onDragUpdate: (y: number) => number | undefined;
-  registerListRef: (ref: React.RefObject<any>) => void;
+  registerListRef: (ref: React.RefObject<ScrollableListRef>) => void;
   registerViewportHeight: (height: number) => void;
   computeTargetDate: (originalDate: Date, translationY: number) => Date;
   updateCurrentOffset: (y: number) => void;
@@ -493,7 +510,8 @@ export function useDragDrop(): DragContextValue {
   const ctx = React.useContext(DragContext);
   if (!ctx) {
     // In test environments, return a no-op context to simplify unit tests
-    if (typeof (globalThis as any).jest !== 'undefined') {
+    const globalWithJest = globalThis as { jest?: unknown };
+    if (typeof globalWithJest.jest !== 'undefined') {
       return {
         isDragging: false,
         draggedTask: undefined,
@@ -514,20 +532,20 @@ export function useDragDrop(): DragContextValue {
 }
 
 export function useRegisterScrollHandlers(): {
-  listRef: React.RefObject<any>;
-  onScroll: (e: any) => void;
-  onLayout: (e: any) => void;
+  listRef: React.RefObject<ScrollableListRef>;
+  onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  onLayout: (e: { nativeEvent: { layout: { height: number } } }) => void;
 } {
   const { registerListRef, registerViewportHeight, updateCurrentOffset } =
     useDragDrop();
-  const listRef = React.useRef<any>(null);
+  const listRef = React.useRef<ScrollableListRef>(null);
 
   React.useEffect(() => {
     registerListRef(listRef);
   }, [registerListRef]);
 
   const onScroll = React.useCallback(
-    (e: any) => {
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offset = e?.nativeEvent?.contentOffset?.y ?? 0;
       updateCurrentOffset(offset);
     },
@@ -535,7 +553,7 @@ export function useRegisterScrollHandlers(): {
   );
 
   const onLayout = React.useCallback(
-    (e: any) => {
+    (e: { nativeEvent: { layout: { height: number } } }) => {
       const h = e?.nativeEvent?.layout?.height ?? 0;
       registerViewportHeight(h);
     },

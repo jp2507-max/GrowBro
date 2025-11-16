@@ -62,7 +62,7 @@ function PostCardComponent({
     postUserId === currentUserId;
 
   const handleCommentPress = React.useCallback(
-    (e: any) => {
+    (e: { stopPropagation: () => void; preventDefault: () => void }) => {
       e.stopPropagation();
       e.preventDefault();
       router.push(`/feed/${postId}`);
@@ -77,7 +77,7 @@ function PostCardComponent({
   }, [post.body]);
 
   const handleAuthorPress = React.useCallback(
-    (e: any) => {
+    (e: { stopPropagation: () => void; preventDefault: () => void }) => {
       e.stopPropagation();
       e.preventDefault();
       router.push(`/community/${postUserId}`);
@@ -119,8 +119,14 @@ function PostCardView({
   compositeLabel: string;
   onDelete?: (postId: number | string, undoExpiresAt: string) => void;
   testID: string;
-  handleAuthorPress: (e: any) => void;
-  handleCommentPress: (e: any) => void;
+  handleAuthorPress: (e: {
+    stopPropagation: () => void;
+    preventDefault: () => void;
+  }) => void;
+  handleCommentPress: (e: {
+    stopPropagation: () => void;
+    preventDefault: () => void;
+  }) => void;
 }) {
   return (
     <Link href={`/feed/${postId}`} asChild>
@@ -212,12 +218,15 @@ function PostCardActions({
   isOwnPost: boolean;
   onDelete?: (postId: number | string, undoExpiresAt: string) => void;
   testID: string;
-  handleCommentPress: (e: any) => void;
+  handleCommentPress: (e: {
+    stopPropagation: () => void;
+    preventDefault: () => void;
+  }) => void;
 }) {
   const deleteMutation = useDeletePost();
 
   const handleDeletePress = React.useCallback(
-    async (e: any) => {
+    async (e: { stopPropagation: () => void; preventDefault: () => void }) => {
       e.stopPropagation();
       e.preventDefault();
       try {

@@ -1,7 +1,8 @@
-// SQLiteQuery type is not directly exported, so we define it inline
+import type {
+  DatabaseAdapterWithUnsafe,
+  SQLiteQuery,
+} from '@/lib/database/unsafe-sql-utils';
 import { adapter } from '@/lib/watermelon';
-
-type SQLiteQuery = [string, any[]];
 
 let initialized = false;
 let initializing: Promise<void> | null = null;
@@ -59,12 +60,15 @@ export async function ensureNutrientEngineIndexes(
 
   initializing = (async () => {
     try {
-      if (typeof (target as any).unsafeExecute !== 'function') {
+      const adapterWithUnsafe = target as DatabaseAdapterWithUnsafe & {
+        initializingPromise?: PromiseLike<void>;
+      };
+      if (typeof adapterWithUnsafe.unsafeExecute !== 'function') {
         initialized = true;
         return;
       }
 
-      const initPromise = (target as any).initializingPromise;
+      const initPromise = adapterWithUnsafe.initializingPromise;
       if (initPromise && typeof initPromise.then === 'function') {
         await initPromise;
       }

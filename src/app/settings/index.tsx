@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { type Router, useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React, { type ReactElement } from 'react';
 import { Linking } from 'react-native';
@@ -65,7 +65,7 @@ function PrivacySettings({
   isOffline,
   privacyStatus,
 }: {
-  router: any;
+  router: Router;
   isOffline: boolean;
   privacyStatus: string;
 }): ReactElement {
@@ -117,7 +117,7 @@ function SupportSection({
   router,
   isOffline,
 }: {
-  router: any;
+  router: Router;
   isOffline: boolean;
 }): ReactElement {
   return (
@@ -132,7 +132,7 @@ function SupportSection({
   );
 }
 
-function LegalSection({ router }: { router: any }): ReactElement {
+function LegalSection({ router }: { router: Router }): ReactElement {
   return (
     <ItemsContainer title="settings.legal.title">
       <Item

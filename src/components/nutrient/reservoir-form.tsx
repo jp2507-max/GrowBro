@@ -35,23 +35,23 @@ type Props = {
 };
 
 type PHRangeFieldsProps = {
-  control: Control<ReservoirFormData, any>;
+  control: Control<ReservoirFormData>;
   errors: FieldErrors<ReservoirFormData>;
 };
 
 type ECRangeFieldsProps = {
-  control: Control<ReservoirFormData, any>;
+  control: Control<ReservoirFormData>;
   errors: FieldErrors<ReservoirFormData>;
 };
 
 type BasicInfoFieldsProps = {
-  control: Control<ReservoirFormData, any>;
+  control: Control<ReservoirFormData>;
   errors: FieldErrors<ReservoirFormData>;
   mediumOptions: OptionType[];
 };
 
 type ConfigFieldsProps = {
-  control: Control<ReservoirFormData, any>;
+  control: Control<ReservoirFormData>;
   waterProfileOptions: OptionType[];
 };
 

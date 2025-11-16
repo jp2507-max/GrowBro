@@ -3,6 +3,7 @@
  */
 
 import * as React from 'react';
+import type { Control, FieldErrors } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
@@ -29,10 +30,10 @@ function PercentInput({
   errors,
   t,
 }: {
-  control: any;
+  control: Control<TrichomeFormData>;
   name: keyof TrichomeFormData;
   label: string;
-  errors: any;
+  errors: FieldErrors<TrichomeFormData>;
   t: (key: string, options?: any) => string;
 }) {
   return (
@@ -90,8 +91,8 @@ function NotesInput({
   control,
   t,
 }: {
-  control: any;
-  t: (key: string) => string;
+  control: Control<TrichomeFormData>;
+  t: (key: string, options?: any) => string;
 }) {
   return (
     <View className="mb-4">

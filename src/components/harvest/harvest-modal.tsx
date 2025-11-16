@@ -7,7 +7,12 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import {
+  type Control,
+  Controller,
+  type FieldErrors,
+  useForm,
+} from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
@@ -46,7 +51,7 @@ export interface HarvestModalProps {
   historicalData?: ChartDataPoint[];
 
   /** Called on successful save */
-  onSubmit?: (harvest: any) => void;
+  onSubmit?: (harvest: CreateHarvestInput) => void;
 
   /** Called on cancel or close */
   onCancel: () => void;
@@ -121,7 +126,7 @@ function WeightInput({
   testID,
   accessibilityHint,
 }: {
-  control: any;
+  control: Control<HarvestFormData>;
   name: 'wetWeight' | 'dryWeight' | 'trimmingsWeight';
   label: string;
   unit: WeightUnit;
@@ -236,10 +241,10 @@ function ModalBody({
   onCancel,
   onSubmit,
 }: {
-  control: any;
+  control: Control<HarvestFormData>;
   currentUnit: WeightUnit;
   onUnitChange: (unit: WeightUnit) => void;
-  errors: any;
+  errors: FieldErrors<HarvestFormData>;
   photoVariants: PhotoVariants[];
   onAddPhoto: (variant: PhotoVariants) => void;
   plantId: string;
@@ -249,7 +254,7 @@ function ModalBody({
     stage: string;
     plant_id?: string;
   }[];
-  t: (key: string, options?: any) => string;
+  t: (key: string, options?: Record<string, unknown>) => string;
   isSubmitting: boolean;
   onCancel: () => void;
   onSubmit: () => void;
@@ -425,10 +430,10 @@ function FormContent({
   historicalData,
   t,
 }: {
-  control: any;
+  control: Control<HarvestFormData>;
   currentUnit: WeightUnit;
   onUnitChange: (unit: WeightUnit) => void;
-  errors: any;
+  errors: FieldErrors<HarvestFormData>;
   photoVariants: PhotoVariants[];
   onAddPhoto: (variant: PhotoVariants) => void;
   plantId: string;
@@ -438,7 +443,7 @@ function FormContent({
     stage: string;
     plant_id?: string;
   }[];
-  t: (key: string, options?: any) => string;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }) {
   return (
     <>
@@ -483,9 +488,9 @@ function WeightInputs({
   errors,
   t,
 }: {
-  control: any;
+  control: Control<HarvestFormData>;
   currentUnit: WeightUnit;
-  errors: any;
+  errors: FieldErrors<HarvestFormData>;
   t: (key: string) => string;
 }) {
   return (
@@ -538,7 +543,7 @@ function NotesField({
   control,
   t,
 }: {
-  control: any;
+  control: Control<HarvestFormData>;
   t: (key: string) => string;
 }) {
   return (
@@ -692,7 +697,7 @@ function useHandleSubmit({
   photoUris: string[];
   photoVariants: PhotoVariants[];
   setIsSubmitting: (value: boolean) => void;
-  onSubmit: ((harvest: any) => void) | undefined;
+  onSubmit: ((harvest: CreateHarvestInput) => void) | undefined;
   onCancel: () => void;
   t: (key: string) => string;
 }) {
@@ -711,9 +716,9 @@ function useHandleSubmit({
 
       const input: CreateHarvestInput = {
         plantId,
-        wetWeightG: parsedData.wetWeightG,
-        dryWeightG: parsedData.dryWeightG,
-        trimmingsWeightG: parsedData.trimmingsWeightG,
+        wetWeightG: parsedData.wetWeightG ?? null,
+        dryWeightG: parsedData.dryWeightG ?? null,
+        trimmingsWeightG: parsedData.trimmingsWeightG ?? null,
         notes: parsedData.notes,
         photos: photosForHarvest,
       };
@@ -728,7 +733,16 @@ function useHandleSubmit({
           message: t('harvest.success.created'),
           type: 'success',
         });
-        onSubmit?.(result.harvest);
+        // Convert HarvestModel to CreateHarvestInput format for callback
+        const harvestInput: CreateHarvestInput = {
+          plantId: result.harvest.plantId,
+          wetWeightG: result.harvest.wetWeightG ?? null,
+          dryWeightG: result.harvest.dryWeightG ?? null,
+          trimmingsWeightG: result.harvest.trimmingsWeightG ?? null,
+          notes: result.harvest.notes,
+          photos: result.harvest.photos,
+        };
+        onSubmit?.(harvestInput);
         onCancel();
       } else {
         throw new Error(result.error || 'Unknown error');

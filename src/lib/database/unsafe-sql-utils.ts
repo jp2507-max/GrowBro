@@ -1,6 +1,7 @@
 import { database } from '@/lib/watermelon';
 
-export type SQLiteQuery = [string, unknown[]];
+export type SQLiteArg = string | boolean | number | null;
+export type SQLiteQuery = [string, SQLiteArg[]];
 
 export type UnsafeExecuteResult = {
   error?: unknown;
@@ -20,7 +21,7 @@ export type DatabaseAdapterWithUnsafe = {
 
 export async function runSql(
   sql: string,
-  params: unknown[] = []
+  params: SQLiteArg[] = []
 ): Promise<NonNullable<UnsafeExecuteResult['results']>> {
   if (typeof database.adapter?.unsafeExecute !== 'function') {
     throw new Error('Database adapter does not support unsafeExecute method');

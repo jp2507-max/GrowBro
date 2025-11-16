@@ -645,15 +645,21 @@ export const NoopAnalytics: AnalyticsClient = {
 
 // Lightweight in-memory metrics aggregator for tests/dev
 // Not exported as default client to keep production clean
+type StoredEvent = {
+  name: AnalyticsEventName;
+  payload: AnalyticsEventPayload<AnalyticsEventName>;
+  t: number;
+};
+
 export class InMemoryMetrics implements AnalyticsClient {
-  private events: { name: AnalyticsEventName; payload: any; t: number }[] = [];
+  private events: StoredEvent[] = [];
   track<N extends AnalyticsEventName>(
     name: N,
     payload: AnalyticsEventPayload<N>
   ): void {
     this.events.push({ name, payload, t: Date.now() });
   }
-  getAll(): { name: AnalyticsEventName; payload: any; t: number }[] {
+  getAll(): StoredEvent[] {
     return this.events.slice();
   }
   clear(): void {
@@ -734,12 +740,12 @@ export function sanitizeCommunityErrorType(
 function sanitizeStrainSearchPayload<N extends AnalyticsEventName>(
   payload: AnalyticsEventPayload<N>
 ): AnalyticsEventPayload<N> {
-  const sanitized = { ...payload } as any;
+  const sanitized = { ...payload } as Record<string, unknown>;
   if (typeof sanitized.query === 'string') {
     sanitized.sanitized_query = sanitizeSearchQuery(sanitized.query);
     delete sanitized.query; // Remove raw query
   }
-  return sanitized as AnalyticsEventPayload<N>;
+  return sanitized as unknown as AnalyticsEventPayload<N>;
 }
 
 // Sanitize community error event payloads
@@ -813,7 +819,7 @@ function sanitizePlaybookPayload<N extends AnalyticsEventName>(
 
   // Remove any email, name, or location data that might slip through
   // This is a safeguard in case future events accidentally include PII
-  const sanitizedObj = sanitized as any;
+  const sanitizedObj = sanitized as Record<string, unknown>;
   const piiFields = ['email', 'name', 'location', 'address', 'phone', 'userId'];
   piiFields.forEach((field) => {
     if (field in sanitizedObj) {
@@ -916,7 +922,7 @@ function sanitizeNutrientPayload<N extends AnalyticsEventName>(
 function sanitizeAuthPayload<N extends AnalyticsEventName>(
   payload: AnalyticsEventPayload<N>
 ): AnalyticsEventPayload<N> {
-  const sanitized = { ...payload } as any;
+  const sanitized = { ...payload } as Record<string, unknown>;
   if (sanitized.email && typeof sanitized.email === 'string') {
     sanitized.email = '[email_hashed]';
   }
@@ -926,7 +932,7 @@ function sanitizeAuthPayload<N extends AnalyticsEventName>(
       sanitized[field] = '[REDACTED]';
     }
   });
-  return sanitized as AnalyticsEventPayload<N>;
+  return sanitized as unknown as AnalyticsEventPayload<N>;
 }
 
 function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(

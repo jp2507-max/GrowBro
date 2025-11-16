@@ -1,16 +1,22 @@
 import { Env } from '@env';
-import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import axios, {
+  type AxiosError,
+  type AxiosInstance,
+  type AxiosRequestConfig,
+  type AxiosResponse,
+} from 'axios';
 
+import type { AnalyticsClient } from '@/lib/analytics';
 import { categorizeError } from '@/lib/error-handling';
 import { registerCertificatePinningInterceptor } from '@/lib/security/certificate-pinner';
 import { computeBackoffMs } from '@/lib/sync/backoff';
 
 import type { GetStrainsParams, Strain, StrainsResponse } from './types';
-import { normalizeStrain } from './utils';
+import { normalizeStrain, type RawApiStrain } from './utils';
 
-// Analytics tracking (lazy loaded to avoid circular dependencies)
-let analyticsClient: any = null;
-async function getAnalyticsClient() {
+// Analytics client (lazy loaded to avoid circular dependencies)
+let analyticsClient: AnalyticsClient | null = null;
+async function getAnalyticsClient(): Promise<AnalyticsClient> {
   if (!analyticsClient) {
     const { getAnalyticsClient: getClient } = await import(
       '@/lib/analytics-registry'
@@ -81,7 +87,9 @@ export class StrainsApiClient {
       'x-api-key',
     ];
 
-    const sanitizeHeaders = (headers: any): any => {
+    const sanitizeHeaders = (
+      headers: Record<string, unknown>
+    ): Record<string, unknown> => {
       if (!headers || typeof headers !== 'object') return headers;
       const sanitized = { ...headers };
       for (const headerName of sensitiveHeaders) {
@@ -92,7 +100,9 @@ export class StrainsApiClient {
       return sanitized;
     };
 
-    const sanitizeConfig = (config: any): any => {
+    const sanitizeConfig = <T extends { headers?: Record<string, unknown> }>(
+      config: T
+    ): T => {
       if (!config || typeof config !== 'object') return config;
       const sanitized = { ...config };
       if (sanitized.headers) {
@@ -104,10 +114,14 @@ export class StrainsApiClient {
     return { sanitizeHeaders, sanitizeConfig };
   }
 
-  private setupRequestInterceptor(sanitizeConfig: (config: any) => any): void {
+  private setupRequestInterceptor(
+    sanitizeConfig: <T extends { headers?: Record<string, unknown> }>(
+      config: T
+    ) => T
+  ): void {
     this.client.interceptors.request.use(
       (config) => config,
-      (error) => {
+      (error: AxiosError) => {
         if (error.config) {
           error.config = sanitizeConfig({ ...error.config });
         }
@@ -117,19 +131,29 @@ export class StrainsApiClient {
   }
 
   private setupResponseInterceptor(
-    sanitizeHeaders: (headers: any) => any,
-    sanitizeConfig: (config: any) => any
+    sanitizeHeaders: (
+      headers: Record<string, unknown>
+    ) => Record<string, unknown>,
+    sanitizeConfig: <T extends { headers?: Record<string, unknown> }>(
+      config: T
+    ) => T
   ): void {
     this.client.interceptors.response.use(
       (response) => {
         if (response.headers) {
-          response.headers = sanitizeHeaders(response.headers);
+          const sanitized = sanitizeHeaders(
+            response.headers as unknown as Record<string, unknown>
+          );
+          response.headers = sanitized as typeof response.headers;
         }
         return response;
       },
-      (error) => {
+      (error: AxiosError) => {
         if (error.response?.headers) {
-          error.response.headers = sanitizeHeaders(error.response.headers);
+          const sanitized = sanitizeHeaders(
+            error.response.headers as unknown as Record<string, unknown>
+          );
+          error.response.headers = sanitized as typeof error.response.headers;
         }
         if (error.config) {
           error.config = sanitizeConfig({ ...error.config });
@@ -142,8 +166,12 @@ export class StrainsApiClient {
   private setupRetryInterceptor(): void {
     this.client.interceptors.response.use(
       (response) => response,
-      async (error) => {
-        const cfg: any = error?.config ?? {};
+      async (error: AxiosError) => {
+        type RetryConfig = AxiosRequestConfig & {
+          __retryCount?: number;
+          __maxRetries?: number;
+        };
+        const cfg: RetryConfig = (error?.config ?? {}) as RetryConfig;
         cfg.__retryCount = cfg.__retryCount ?? 0;
         const maxRetries = cfg.__maxRetries ?? 3;
 
@@ -240,33 +268,52 @@ export class StrainsApiClient {
    * Normalize API response to consistent format
    */
   private normalizeResponse(
-    data: any,
+    data: unknown,
     pageSize: number
-  ): { strains: any[]; hasMore: boolean; nextCursor?: string } {
-    if (Array.isArray(data.strains)) {
-      // Proxy normalized format
+  ): { strains: RawApiStrain[]; hasMore: boolean; nextCursor?: string } {
+    // Type guard for proxy normalized format
+    if (
+      data &&
+      typeof data === 'object' &&
+      'strains' in data &&
+      Array.isArray(data.strains)
+    ) {
+      const hasMore =
+        'hasMore' in data && typeof data.hasMore === 'boolean'
+          ? data.hasMore
+          : data.strains.length === pageSize;
+      const nextCursor =
+        'nextCursor' in data && typeof data.nextCursor === 'string'
+          ? data.nextCursor
+          : undefined;
       return {
         strains: data.strains,
-        hasMore: data.hasMore ?? data.strains.length === pageSize,
-        nextCursor: data.nextCursor,
-      };
-    }
-
-    if (Array.isArray(data.data)) {
-      // Legacy format
-      const nextCursor = data.next
-        ? new URL(data.next, this.baseURL).searchParams.get('cursor') ||
-          undefined
-        : undefined;
-      return {
-        strains: data.data,
-        hasMore: Boolean(data.next),
+        hasMore,
         nextCursor,
       };
     }
 
+    // Type guard for legacy format
+    if (
+      data &&
+      typeof data === 'object' &&
+      'data' in data &&
+      Array.isArray(data.data)
+    ) {
+      const nextCursor =
+        'next' in data && typeof data.next === 'string'
+          ? new URL(data.next, this.baseURL).searchParams.get('cursor') ||
+            undefined
+          : undefined;
+      return {
+        strains: data.data,
+        hasMore: 'next' in data && Boolean(data.next),
+        nextCursor,
+      };
+    }
+
+    // Type guard for direct array response
     if (Array.isArray(data)) {
-      // Direct array response
       return {
         strains: data,
         hasMore: data.length === pageSize,
@@ -288,7 +335,7 @@ export class StrainsApiClient {
     const config = this.buildRequestConfig(queryParams, signal);
 
     try {
-      const response = await this.client.get('/strains', config);
+      const response = await this.client.get<unknown>('/strains', config);
       return this.handleSuccessResponse({
         response,
         queryParams,
@@ -296,9 +343,9 @@ export class StrainsApiClient {
         pageSize,
         responseTime: Date.now() - startTime,
       });
-    } catch (error: any) {
+    } catch (error) {
       return this.handleErrorResponse({
-        error,
+        error: error as AxiosError,
         queryParams,
         params,
         responseTime: Date.now() - startTime,
@@ -336,13 +383,18 @@ export class StrainsApiClient {
    * Handle successful API response
    */
   private handleSuccessResponse(options: {
-    response: any;
+    response: AxiosResponse<unknown>;
     queryParams: URLSearchParams;
     params: GetStrainsParams;
     pageSize: number;
     responseTime: number;
   }): StrainsResponse {
-    const etag = options.response.headers['etag'];
+    const etag =
+      options.response.headers &&
+      typeof options.response.headers === 'object' &&
+      'etag' in options.response.headers
+        ? String(options.response.headers.etag)
+        : undefined;
     if (etag) {
       this.setCachedETag(options.queryParams.toString(), etag);
     }
@@ -376,7 +428,7 @@ export class StrainsApiClient {
    * Handle API error response
    */
   private handleErrorResponse(options: {
-    error: any;
+    error: AxiosError;
     queryParams: URLSearchParams;
     params: GetStrainsParams;
     responseTime: number;
@@ -442,12 +494,22 @@ export class StrainsApiClient {
     };
 
     try {
-      const response = await this.client.get(`/strains/${encodedId}`, config);
+      const response = await this.client.get<unknown>(
+        `/strains/${encodedId}`,
+        config
+      );
       const responseTime = Date.now() - startTime;
       const data = response.data;
 
-      // Handle different response formats
-      const strainData = data.strain || data.data || data;
+      // Handle different response formats with type guards
+      let strainData: unknown = data;
+      if (data && typeof data === 'object') {
+        if ('strain' in data) {
+          strainData = data.strain;
+        } else if ('data' in data) {
+          strainData = data.data;
+        }
+      }
 
       // Track API performance
       void this.trackApiPerformance({
@@ -457,10 +519,11 @@ export class StrainsApiClient {
         cacheHit: false,
       });
 
-      return normalizeStrain(strainData);
-    } catch (error: any) {
+      return normalizeStrain(strainData as RawApiStrain);
+    } catch (error) {
+      const axiosError = error as AxiosError;
       const responseTime = Date.now() - startTime;
-      const statusCode = error?.response?.status || 0;
+      const statusCode = axiosError?.response?.status || 0;
 
       // Track error performance
       void this.trackApiPerformance({
@@ -468,7 +531,7 @@ export class StrainsApiClient {
         responseTimeMs: responseTime,
         statusCode,
         cacheHit: false,
-        errorType: error?.message || 'unknown',
+        errorType: axiosError?.message || 'unknown',
       });
 
       throw error;

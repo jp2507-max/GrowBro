@@ -49,8 +49,8 @@ function hasErrorCode(e: unknown, code: string): e is ErrorWithCode {
   return (
     !!e &&
     typeof e === 'object' &&
-    'code' in (e as any) &&
-    (e as any).code === code
+    'code' in e &&
+    (e as Record<string, unknown>).code === code
   );
 }
 

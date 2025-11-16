@@ -2195,6 +2195,7 @@
     "loadError": "Playbooks konnten nicht geladen werden. Bitte versuche es erneut.",
     "manuallyEdited": "Manuell bearbeitet",
     "noPlants": "Du hast noch keine Pflanzen. Erstelle eine, um dieses Playbook anzuwenden.",
+    "noTasks": "Keine Aufgaben in diesem Playbook",
     "noTemplates": "Noch keine Community-Vorlagen verfügbar",
     "notFound": "Playbook nicht gefunden",
     "onboarding": {
@@ -2303,6 +2304,11 @@
       "undoInfo": "ℹ️ Sie haben 30 Sekunden Zeit, diese Änderung nach dem Anwenden rückgängig zu machen",
       "willBeExcluded": "werden von dieser Verschiebung ausgeschlossen",
       "willBeShifted": "werden verschoben (Sie haben sich dafür entschieden)"
+    },
+    "status": {
+      "completed": "Abgeschlossen",
+      "current": "Aktuell",
+      "upcoming": "Bevorstehend"
     },
     "subtitle": "Geführte Anbaupläne für deine Pflanzen",
     "tags": "Tags",

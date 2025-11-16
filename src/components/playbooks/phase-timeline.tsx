@@ -8,6 +8,7 @@
  */
 
 import { FlashList } from '@shopify/flash-list';
+import type { TFunction } from 'i18next';
 import { DateTime } from 'luxon';
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -91,11 +92,7 @@ const PHASE_TEXT_COLORS: Record<GrowPhase, string> = {
   harvest: 'text-danger-700 dark:text-danger-300',
 };
 
-function useTimelineItems(
-  tasks: TaskModel[],
-  timezone: string,
-  t: (key: string, options?: any) => string
-) {
+function useTimelineItems(tasks: TaskModel[], timezone: string, t: TFunction) {
   return useMemo(() => {
     const now = DateTime.now().setZone(timezone);
     const tasksByPhase = groupTasksByPhase(tasks);
@@ -136,7 +133,7 @@ function groupTasksByPhase(tasks: TaskModel[]): Record<number, TaskModel[]> {
 function createSectionItem(
   firstTask: TaskModel | undefined,
   phaseIndex: number,
-  t: (key: string, options?: any) => string
+  t: TFunction
 ): TimelineSection | null {
   if (!firstTask) return null;
 
@@ -178,8 +175,9 @@ function createTaskItems({
     const isOverdue = dueDate < now && task.status === 'pending';
 
     const validStatuses = ['completed', 'pending', 'skipped'] as const;
-    const status = validStatuses.includes(task.status as any)
-      ? (task.status as 'completed' | 'pending' | 'skipped')
+    type ValidStatus = (typeof validStatuses)[number];
+    const status = validStatuses.includes(task.status as ValidStatus)
+      ? (task.status as ValidStatus)
       : 'pending';
 
     return {

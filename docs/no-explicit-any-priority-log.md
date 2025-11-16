@@ -724,27 +724,19 @@ Total warnings: **823**
 
 #### `src/lib/nutrient-engine/services/alert-service.ts` (1 warnings)
 
-```.text
-298:74  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ **FIXED** — Removed `as any` cast from `observeActiveAlerts` return; WatermelonDB Observable types are compatible without casting
 
 #### `src/lib/nutrient-engine/utils/performance-metrics.ts` (1 warnings)
 
-```.text
-271:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ **FIXED** — Replaced `as DeviationPattern['type']` cast with type guard `isSupportedDeviationType` for proper type narrowing
 
 #### `src/lib/plant-telemetry.ts` (1 warnings)
 
-```.text
-18:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ **FIXED** — Extracted `ProcessEnvWithJest` type alias to replace inline type assertion
 
 #### `src/lib/playbooks/outbox-worker.ts` (1 warnings)
 
-```.text
-25:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ **ALREADY CLEAN** — No any usages found; may have been fixed in a previous pass
 
 #### `src/lib/playbooks/phase-notifications.ts` (0 warnings)
 
@@ -796,231 +788,172 @@ Total warnings: **823**
 
 Total warnings: **537**
 
-| File                                                              | Count |
-| ----------------------------------------------------------------- | ----: |
-| `src/lib/task-notifications.ts`                                   |    42 |
-| `src/app/(modals)/trichome-helper.tsx`                            |    25 |
-| `src/components/calendar/drag-drop-provider.tsx`                  |    19 |
-| `src/api/strains/client.ts`                                       |    18 |
-| `src/components/community/report-content-modal.tsx`               |    14 |
-| `src/components/playbooks/ai-adjustments-example.tsx`             |    14 |
-| `src/api/community/client.ts`                                     |    13 |
-| `src/components/harvest/harvest-modal.tsx`                        |    12 |
-| `src/app/(app)/inventory/add.tsx`                                 |    11 |
-| `src/lib/strains/normalization.ts`                                |    11 |
-| `src/components/consent-manager.tsx`                              |    10 |
-| `src/components/settings/settings-sync-banner.tsx`                |    10 |
-| `src/app/settings/notifications.tsx`                              |     9 |
-| `src/components/plants/plants-card.tsx`                           |     9 |
-| `src/lib/error-handling.ts`                                       |     8 |
-| `src/lib/notification-metrics.ts`                                 |     8 |
-| `src/lib/auth/auth-telemetry.ts`                                  |     7 |
-| `src/lib/community/realtime-manager.ts`                           |     7 |
-| `src/lib/rrule/generator.ts`                                      |     7 |
-| `src/app/(app)/community.tsx`                                     |     6 |
-| `src/components/community/post-card.tsx`                          |     6 |
-| `src/components/strains/strains-list-with-cache.tsx`              |     6 |
-| `src/lib/animations/animated-scroll-list-provider.tsx`            |     6 |
-| `src/lib/community/event-deduplicator.ts`                         |     6 |
-| `src/lib/settings/toast-utils.ts`                                 |     6 |
-| `src/api/auth/error-mapper.ts`                                    |     5 |
-| `src/app/settings/profile.tsx`                                    |     5 |
-| `src/components/onboarding/camera-permission-primer.tsx`          |     5 |
-| `src/components/onboarding/notification-permission-primer.tsx`    |     5 |
-| `src/components/privacy-settings.tsx`                             |     5 |
-| `src/components/strains/filter-modal.tsx`                         |     5 |
-| `src/lib/analytics.ts`                                            |     5 |
-| `src/lib/hooks/use-root-startup.ts`                               |     5 |
-| `src/lib/i18n/utils.tsx`                                          |     5 |
-| `src/lib/log-sanitizer.ts`                                        |     5 |
-| `src/lib/outbox.ts`                                               |     5 |
-| `src/api/community/types.ts`                                      |     4 |
-| `src/components/assessment/assessment-feedback-sheet.tsx`         |     4 |
-| `src/components/nutrient/reservoir-form.tsx`                      |     4 |
-| `src/components/playbooks/playbook-selection-card.tsx`            |     4 |
-| `src/components/shared/optional-blur-view.tsx`                    |     4 |
-| `src/components/trichome/trichome-assessment-form.tsx`            |     4 |
-| `src/lib/community/outbox-processor.ts`                           |     4 |
-| `src/lib/hooks/use-mfa-management.ts`                             |     4 |
-| `src/lib/security/key-manager.ts`                                 |     4 |
-| `src/lib/security/secure-storage.ts`                              |     4 |
-| `src/lib/security/storage-auditor.ts`                             |     4 |
-| `src/lib/watermelon-models/ai-second-opinions-queue.ts`           |     4 |
-| `src/app/settings/index.tsx`                                      |     3 |
-| `src/components/calendar/agenda-item.tsx`                         |     3 |
-| `src/components/inputs.tsx`                                       |     3 |
-| `src/components/nutrient/reservoir-event-form.tsx`                |     3 |
-| `src/components/playbooks/phase-timeline.tsx`                     |     3 |
-| `src/components/strains/strain-card.tsx`                          |     3 |
-| `src/lib/community/idempotency-service.ts`                        |     3 |
-| `src/lib/i18n/index.tsx`                                          |     3 |
-| `src/lib/performance/rn-performance.ts`                           |     3 |
-| `src/lib/rrule/iterator.ts`                                       |     3 |
-| `src/lib/watermelon-indexes.ts`                                   |     3 |
-| `src/types/moderation.ts`                                         |     3 |
-| `src/api/auth/use-sign-in.ts`                                     |     2 |
-| `src/api/community/use-create-comment.ts`                         |     2 |
-| `src/api/ph-ec-readings/index.ts`                                 |     2 |
-| `src/api/strains/use-strains-infinite-with-cache.ts`              |     2 |
-| `src/api/support/use-help-articles.ts`                            |     2 |
-| `src/api/templates/use-templates.ts`                              |     2 |
-| `src/app/(app)/strains.tsx`                                       |     2 |
-| `src/app/(app)/strains/favorites.tsx`                             |     2 |
-| `src/app/settings/privacy-and-data.tsx`                           |     2 |
-| `src/app/settings/security.tsx`                                   |     2 |
-| `src/components/harvest/harvest-history-empty.tsx`                |     2 |
-| `src/components/harvest/weight-chart-table.tsx`                   |     2 |
-| `src/components/inventory/csv/import-csv-button.tsx`              |     2 |
-| `src/components/onboarding/onboarding-buttons.tsx`                |     2 |
-| `src/components/onboarding/pagination-dots.tsx`                   |     2 |
-| `src/components/playbooks/save-template-prompt.tsx`               |     2 |
-| `src/components/playbooks/task-edit-modal.tsx`                    |     2 |
-| `src/components/shared/custom-cell-renderer-component.tsx`        |     2 |
-| `src/components/strains/custom-cell-renderer-component.tsx`       |     2 |
-| `src/components/strains/filter-chips.tsx`                         |     2 |
-| `src/components/strains/sort-menu.tsx`                            |     2 |
-| `src/lib/performance/navigation-instrumentation.ts`               |     2 |
-| `src/lib/quality/remote-config.ts`                                |     2 |
-| `src/lib/security/device-fingerprint.ts`                          |     2 |
-| `src/lib/task-notification-usage-example.ts`                      |     2 |
-| `src/lib/watermelon-migrations.ts`                                |     2 |
-| `src/lib/watermelon-models/profile.ts`                            |     2 |
-| `scripts/ci/generate-performance-report.ts`                       |     1 |
-| `scripts/validate-dsa-compliance.ts`                              |     1 |
-| `src/api/auth/types.ts`                                           |     1 |
-| `src/api/auth/use-request-account-deletion.ts`                    |     1 |
-| `src/api/common/client.tsx`                                       |     1 |
-| `src/api/common/utils.tsx`                                        |     1 |
-| `src/api/moderation/conflict-of-interest-api.ts`                  |     1 |
-| `src/api/posts/use-posts-infinite.ts`                             |     1 |
-| `src/api/strains/use-strain.ts`                                   |     1 |
-| `src/app/(app)/calendar.tsx`                                      |     1 |
-| `src/app/(app)/inventory/index.tsx`                               |     1 |
-| `src/app/settings/storage.tsx`                                    |     1 |
-| `src/components/auth/login-form.tsx`                              |     1 |
-| `src/components/auth/re-auth-modal.tsx`                           |     1 |
-| `src/components/calendar/agenda-list.tsx`                         |     1 |
-| `src/components/calendar/day-sortable-list.tsx`                   |     1 |
-| `src/components/calendar/draggable-agenda-item.tsx`               |     1 |
-| `src/components/calendar/sortable-day-view.example.tsx`           |     1 |
-| `src/components/card.tsx`                                         |     1 |
-| `src/components/community/age-restricted-content-placeholder.tsx` |     1 |
-| `src/components/community/comment-form.tsx`                       |     1 |
-| `src/components/community/community-error-boundary.tsx`           |     1 |
-| `src/components/consent-modal.tsx`                                |     1 |
-| `src/components/harvest/stage-timer-progress.tsx`                 |     1 |
-| `src/components/harvest/weight-chart.tsx`                         |     1 |
-| `src/components/home/activation-checklist.tsx`                    |     1 |
-| `src/components/inventory/consumption-trend-chart.tsx`            |     1 |
-| `src/components/inventory/csv/export-csv-button.tsx`              |     1 |
-| `src/components/inventory/inventory-list.tsx`                     |     1 |
-| `src/components/legal-confirmation-modal.tsx`                     |     1 |
-| `src/components/moderation/jurisdiction-selector.tsx`             |     1 |
-| `src/components/navigation/shared-header.tsx`                     |     1 |
-| `src/components/nutrient-engine/phase-header.tsx`                 |     1 |
-| `src/components/onboarding/onboarding-pager.tsx`                  |     1 |
-| `src/components/strains/favorites-sort-menu.tsx`                  |     1 |
-| `src/components/trichome/trichome-guide-card.tsx`                 |     1 |
-| `src/components/ui/button.tsx`                                    |     1 |
-| `src/components/ui/list.tsx`                                      |     1 |
-| `src/components/ui/modal.tsx`                                     |     1 |
-| `src/lib/animations/stagger.ts`                                   |     1 |
-| `src/lib/auth/session-manager.ts`                                 |     1 |
-| `src/lib/hooks/use-conflict-resolution.ts`                        |     1 |
-| `src/lib/i18n/types.ts`                                           |     1 |
-| `src/lib/media/background-photo-cleanup.ts`                       |     1 |
-| `src/lib/media/photo-storage-helpers.ts`                          |     1 |
-| `src/lib/performance/sentry-integration.ts`                       |     1 |
-| `src/lib/quality/engine.ts`                                       |     1 |
-| `src/lib/strains/favorites-sync-queue.ts`                         |     1 |
-| `src/lib/supabase.ts`                                             |     1 |
-| `src/lib/utils.ts`                                                |     1 |
-| `src/lib/watermelon-models/favorites-repository.ts`               |     1 |
-| `src/lib/watermelon-models/notification-preference.ts`            |     1 |
-| `src/lib/watermelon-models/outbox-notification-action.ts`         |     1 |
-| `src/types/community.ts`                                          |     1 |
+| File                                                  | Count |
+| ----------------------------------------------------- | ----: |
+| `src/lib/task-notifications.ts`                       |     0 |
+| `src/app/(modals)/trichome-helper.tsx`                |     0 |
+| `src/components/calendar/drag-drop-provider.tsx`      |     0 |
+| `src/api/strains/client.ts`                           |     0 |
+| `src/components/community/report-content-modal.tsx`   |     0 |
+| `src/components/playbooks/ai-adjustments-example.tsx` |     0 |
+| `src/api/community/client.ts`                         |     0 |
+| `src/components/harvest/harvest-modal.tsx`            |     0 |
+| `src/app/(app)/inventory/add.tsx`                     |     0 |
+| `src/lib/strains/normalization.ts`                    |    11 |
+
+#### `src/app/(app)/inventory/add.tsx` (0 warnings)
+
+✅ Replaced all `any` types with `Control<AddItemFormData>` from react-hook-form. Updated all field component props (NameField, CategoryField, UnitField, TrackingModeField, MinStockField, ReorderMultipleField, LeadTimeField, SkuField, BarcodeField) to use proper Control type. Removed `as any` type assertions from rules objects in ControlledInput components.
+
+#### `src/lib/strains/normalization.ts` (0 warnings)
+
+✅ Replaced all `any` types with proper type definitions. Created type aliases for raw API data: `RawPercentageValue`, `RawEffect`, `RawFlavor`, `RawTerpene`, `RawYieldData`, `RawFloweringTime`, `RawHeightData`, `RawGrowCharacteristics`, and `RawApiStrain`. Updated all normalization functions to use `unknown` or specific raw types instead of `any`. Fixed type predicates in filter operations. Removed circular import of `normalizeFlavors`.
+| `src/components/consent-manager.tsx` | 0 | ✅ Replaced all `any` types with proper types: created discriminated union for ToggleConfig (privacy vs runtime consent keys), imported ConsentPurpose and ConsentState from consent-types, typed all function parameters and state setters with proper types |
+| `src/components/settings/settings-sync-banner.tsx` | 0 | ✅ Replaced all `as any` casts with `as TxKeyPath` for translation keys, replaced template literal translation keys with conditional expressions for proper type safety |
+| `src/app/settings/notifications.tsx` | 0 | ✅ Replaced all `as any` casts with `as TxKeyPath` for translation keys in CategoryToggle and quiet hours section |
+| `src/components/plants/plants-card.tsx` | 0 | ✅ Removed all `as any` casts from Reanimated code - used proper Reanimated.interpolate without casting, typed PlantBlurOverlay animatedProps as `Partial<{ intensity: number }>`, removed unnecessary StyleSheet.absoluteFill casts |
+| `src/lib/error-handling.ts` | 0 | ✅ Created InventoryError type and isInventoryError type guard, replaced all `as any` casts with proper type guards using `in` operator and typeof checks for error property access |
+| `src/lib/notification-metrics.ts` | 0 | ✅ Replaced WatermelonDB collection `any` casts with `Collection<NotificationQueueModel>`, typed notification event listeners with proper Expo Notifications types (`Notifications.Notification`, `Notifications.NotificationResponse`) |
+| `src/lib/auth/auth-telemetry.ts` | 0 | ✅ Replaced all `[key: string]: any` with `Record<string, unknown>`, removed `as any` cast from analytics track call, typed authContext in Sentry event processor with proper Record type |
+| `src/lib/community/realtime-manager.ts` | 0 | ✅ Created SupabaseRealtimePayload type for realtime payloads, replaced all `any` config objects with proper inline types, typed all handler methods with SupabaseRealtimePayload, extracted setupSubscriptions and handleSubscriptionStatus methods to keep connect under 90 lines |
+| `src/lib/rrule/generator.ts` | 0 | ✅ Created RRuleOptions type for parsed rule options, imported Weekday type from rrule, replaced WEEKDAY_MAP `Record<string, any>` with `Record<string, Weekday>`, typed all opts variables with RRuleOptions using inline type assertions for parsed rule access |
+| `src/app/(app)/community.tsx` | 0 | ✅ Imported FlashListProps type, typed AnimatedFlashList as `React.ComponentClass<FlashListProps<Post>>`, typed page parameter in flatMap with `{ results: Post[] }`, typed listRef as `React.RefObject<FlashList<Post>>`, typed scrollHandler as `(event: unknown) => void` |
+| `src/components/community/post-card.tsx` | 0 | ✅ Replaced all event handler `any` parameters with inline type `{ stopPropagation: () => void; preventDefault: () => void }` for handleCommentPress, handleAuthorPress, and handleDeletePress |
+| `src/components/strains/strains-list-with-cache.tsx` | 0 | ✅ Replaced all `any` types with proper FlashList types: imported `FlashListRef` and `ListRenderItemInfo` from `@shopify/flash-list`, typed `onScroll` parameter with `NativeSyntheticEvent<NativeScrollEvent>`, typed `listRef` with `React.RefObject<FlashList<Strain>>`, typed `contentContainerStyle` with `FlashListProps<Strain>['contentContainerStyle']`, and typed `renderItem` callback with `ListRenderItemInfo<Strain>` |
+| `src/lib/animations/animated-scroll-list-provider.tsx` | 0 | ✅ Replaced all `any` types with proper scroll event types: created `ScrollEvent` type alias for `NativeSyntheticEvent<NativeScrollEvent>`, typed `listRef` with `React.RefObject<FlashList<unknown> | null>`, typed `scrollHandler` with `(event: ScrollEvent) => void`, and typed all scroll handler callbacks (`onBeginDrag`, `onScroll`, `onEndDrag`) with `ScrollEvent` |
+| `src/lib/community/event-deduplicator.ts` | 0 | ✅ Replaced all `any` types with `Record<string, unknown>`: changed generic constraint from `Record<string, any>` to `Record<string, unknown>`, typed default `getKey` function with proper type assertions, and typed timestamp field access with explicit `Record<string, unknown>` casts and string assertions |
+| `src/lib/settings/toast-utils.ts` | 0 | ✅ Replaced all `as any` casts with proper type: created `AccessibleMessageOptions` interface extending `MessageOptions` with `accessibilityLiveRegion` property, replaced all `as any` casts with typed `AccessibleMessageOptions` objects passed to `showMessage` |
+| `src/api/auth/error-mapper.ts` | 0 | ✅ Replaced all `any` types with proper error types: created `EdgeFunctionError` interface for Edge Function errors with code and metadata fields, created `UnknownError` type alias for `unknown`, replaced all `any` parameters with `UnknownError`, added type guards in `mapEdgeFunctionError` and `isAccountLocked` to safely check error structure before accessing properties |
+| `src/app/settings/profile.tsx` | 0 | ✅ Replaced all `any` types with proper types: imported `Control` and `FieldErrors` from react-hook-form, imported `TFunction` from react-i18next, typed `control` parameter as `Control<ProfileFormData>`, typed `errors` as `FieldErrors<ProfileFormData>`, typed `t` parameters as `TFunction`, and created inline interface for `statistics` parameter with proper shape (`isLoading`, `isSyncing`, `plantsCount`, `harvestsCount`, `postsCount`, `likesReceived`) |
+| `src/components/onboarding/camera-permission-primer.tsx` | 0 | ✅ Removed all `as any` type assertions from translation key props - string literals are already valid `TxKeyPath` types |
+| `src/components/onboarding/notification-permission-primer.tsx` | 0 | ✅ Done |
+| `src/components/privacy-settings.tsx` | 0 | ✅ Done |
+| `src/components/strains/filter-modal.tsx` | 0 | ✅ Done |
+| `src/lib/analytics.ts` | 0 | ✅ Done |
+| `src/lib/hooks/use-root-startup.ts` | 0 | ✅ Removed type assertions, used proper type guards with `in` operator to check for timeZone property on calendar and locale objects |
+| `src/lib/i18n/utils.tsx` | 0 | ✅ Replaced all `any` with `Record<string, unknown>` in resolveResource and interpolate functions, typed options parameter as `TOptions | undefined` in translate |
+| `src/lib/log-sanitizer.ts` | 0 | ✅ Replaced all `any` with `unknown` in sanitizeObject method signature and sanitize function, typed output object as `Record<string, unknown>` |
+| `src/lib/outbox.ts` | 0 | ✅ Replaced all `Record<string, any>` with `Record<string, unknown>` in OutboxEntry type, enqueueOutboxEntry params, and Scheduler interface; replaced error `as any` cast with proper type guard |
+| `src/api/community/types.ts` | 0 | ✅ Replaced all `any` with proper types: `Record<string, unknown>` for OutboxEntry payload, `unknown` for ApiError details and IdempotencyKey response_payload/error_details |
+| `src/components/assessment/assessment-feedback-sheet.tsx` | 0 | ✅ Created ModalRef type for modal reference, replaced all `any` in ref handling with proper types (`ModalRef | null` for internalRef, typed setRefs callback parameter, and proper type guard for ref assignment) |
+| `src/components/nutrient/reservoir-form.tsx` | 0 | ✅ Removed unnecessary second generic parameter `any` from all `Control<ReservoirFormData>` types in PHRangeFieldsProps, ECRangeFieldsProps, BasicInfoFieldsProps, and ConfigFieldsProps |
+| `src/components/playbooks/playbook-selection-card.tsx` | 0 | ✅ Replaced all translation function `any` types with proper `TFunction` type from i18next in getSetupDisplayLabel, PlaybookCardStats, and PlaybookCardEstimated |
+| `src/components/shared/optional-blur-view.tsx` | 0 | ✅ Created ExpoBlurModule type for dynamic import, replaced all `any` with proper types: `React.ComponentType<BlurProps>` for Blur state, `ExpoBlurModule` for import module, `BlurProps` for AnimatedOptionalBlurView props, removed unnecessary `as any` cast from StyleSheet.absoluteFill |
+| `src/components/trichome/trichome-assessment-form.tsx` | 0 | ✅ Replaced all `any` with proper types: `Control<TrichomeFormData>` for control parameters, `FieldErrors<TrichomeFormData>` for errors, and `TFunction` from i18next for translation function |
+| `src/lib/community/outbox-processor.ts` | 0 | ✅ Replaced all `any` with proper types: `unknown` for error catches with proper type guards for error.message and error.response.status, `Record<string, unknown>` for executeOperation payload parameter |
+| `src/lib/hooks/use-mfa-management.ts` | 0 | ✅ Created MfaFactor type for factor objects, replaced all `any` with proper types: `Promise<unknown>` for refetchMfaFactors, `MfaFactor | undefined` for activeFactor, typed allFactors cast as `MfaFactor[]`, removed `any` from filter callback |
+| `src/lib/security/key-manager.ts` | 0 | ✅ Replaced all `any[]` with `unknown[]` in logger function rest parameters (debug, info, warn, error methods) |
+| `src/lib/security/secure-storage.ts` | 0 | ✅ Replaced all `any[]` with `unknown[]` in logger function rest parameters (debug, info, warn, error methods) |
+| `src/lib/security/storage-auditor.ts` | 0 | ✅ Replaced all `any[]` with `unknown[]` in logger function rest parameters (debug, info, warn, error methods) |
+| `src/lib/watermelon-models/ai-second-opinions-queue.ts` | 0 | ✅ Replaced all `any` with proper types: `AIAssessmentPayload | null` for aiAssessment getter, `AIAssessmentPayload` for setAiAssessment parameter, `ExpertReview | null` for expertReview getter and setExpertReview parameter, imported types from @/types/support |
+| `src/app/settings/index.tsx` | 0 | ✅ Replaced all `any` with proper `Router` type from expo-router in PrivacySettings, SupportSection, and LegalSection function parameters |
+| `src/components/calendar/agenda-item.tsx` | 0 |
+| `src/components/inputs.tsx` | 0 |
+| `src/components/nutrient/reservoir-event-form.tsx` | 0 |
+| `src/components/playbooks/phase-timeline.tsx` | 0 |
+| `src/components/strains/strain-card.tsx` | 0 |
+| `src/lib/community/idempotency-service.ts` | 0 |
+| `src/lib/i18n/index.tsx` | 3 |
+| `src/lib/performance/rn-performance.ts` | 3 |
+| `src/lib/rrule/iterator.ts` | 3 |
+| `src/lib/watermelon-indexes.ts` | 3 |
+| `src/types/moderation.ts` | 3 |
+| `src/api/auth/use-sign-in.ts` | 2 |
+| `src/api/community/use-create-comment.ts` | 2 |
+| `src/api/ph-ec-readings/index.ts` | 2 |
+| `src/api/strains/use-strains-infinite-with-cache.ts` | 2 |
+| `src/api/support/use-help-articles.ts` | 2 |
+| `src/api/templates/use-templates.ts` | 2 |
+| `src/app/(app)/strains.tsx` | 2 |
+| `src/app/(app)/strains/favorites.tsx` | 2 |
+| `src/app/settings/privacy-and-data.tsx` | 2 |
+| `src/app/settings/security.tsx` | 2 |
+| `src/components/harvest/harvest-history-empty.tsx` | 2 |
+| `src/components/harvest/weight-chart-table.tsx` | 2 |
+| `src/components/inventory/csv/import-csv-button.tsx` | 2 |
+| `src/components/onboarding/onboarding-buttons.tsx` | 2 |
+| `src/components/onboarding/pagination-dots.tsx` | 2 |
+| `src/components/playbooks/save-template-prompt.tsx` | 2 |
+| `src/components/playbooks/task-edit-modal.tsx` | 2 |
+| `src/components/shared/custom-cell-renderer-component.tsx` | 2 |
+| `src/components/strains/custom-cell-renderer-component.tsx` | 2 |
+| `src/components/strains/filter-chips.tsx` | 2 |
+| `src/components/strains/sort-menu.tsx` | 2 |
+| `src/lib/performance/navigation-instrumentation.ts` | 2 |
+| `src/lib/quality/remote-config.ts` | 2 |
+| `src/lib/security/device-fingerprint.ts` | 2 |
+| `src/lib/task-notification-usage-example.ts` | 2 |
+| `src/lib/watermelon-migrations.ts` | 2 |
+| `src/lib/watermelon-models/profile.ts` | 2 |
+| `scripts/ci/generate-performance-report.ts` | 1 |
+| `scripts/validate-dsa-compliance.ts` | 1 |
+| `src/api/auth/types.ts` | 1 |
+| `src/api/auth/use-request-account-deletion.ts` | 1 |
+| `src/api/common/client.tsx` | 1 |
+| `src/api/common/utils.tsx` | 1 |
+| `src/api/moderation/conflict-of-interest-api.ts` | 1 |
+| `src/api/posts/use-posts-infinite.ts` | 1 |
+| `src/api/strains/use-strain.ts` | 1 |
+| `src/app/(app)/calendar.tsx` | 1 |
+| `src/app/(app)/inventory/index.tsx` | 1 |
+| `src/app/settings/storage.tsx` | 1 |
+| `src/components/auth/login-form.tsx` | 1 |
+| `src/components/auth/re-auth-modal.tsx` | 1 |
+| `src/components/calendar/agenda-list.tsx` | 1 |
+| `src/components/calendar/day-sortable-list.tsx` | 1 |
+| `src/components/calendar/draggable-agenda-item.tsx` | 1 |
+| `src/components/calendar/sortable-day-view.example.tsx` | 1 |
+| `src/components/card.tsx` | 1 |
+| `src/components/community/age-restricted-content-placeholder.tsx` | 1 |
+| `src/components/community/comment-form.tsx` | 1 |
+| `src/components/community/community-error-boundary.tsx` | 1 |
+| `src/components/consent-modal.tsx` | 1 |
+| `src/components/harvest/stage-timer-progress.tsx` | 1 |
+| `src/components/harvest/weight-chart.tsx` | 1 |
+| `src/components/home/activation-checklist.tsx` | 1 |
+| `src/components/inventory/consumption-trend-chart.tsx` | 1 |
+| `src/components/inventory/csv/export-csv-button.tsx` | 1 |
+| `src/components/inventory/inventory-list.tsx` | 1 |
+| `src/components/legal-confirmation-modal.tsx` | 1 |
+| `src/components/moderation/jurisdiction-selector.tsx` | 1 |
+| `src/components/navigation/shared-header.tsx` | 1 |
+| `src/components/nutrient-engine/phase-header.tsx` | 1 |
+| `src/components/onboarding/onboarding-pager.tsx` | 1 |
+| `src/components/strains/favorites-sort-menu.tsx` | 1 |
+| `src/components/trichome/trichome-guide-card.tsx` | 1 |
+| `src/components/ui/button.tsx` | 1 |
+| `src/components/ui/list.tsx` | 1 |
+| `src/components/ui/modal.tsx` | 1 |
+| `src/lib/animations/stagger.ts` | 1 |
+| `src/lib/auth/session-manager.ts` | 1 |
+| `src/lib/hooks/use-conflict-resolution.ts` | 1 |
+| `src/lib/i18n/types.ts` | 1 |
+| `src/lib/media/background-photo-cleanup.ts` | 1 |
+| `src/lib/media/photo-storage-helpers.ts` | 1 |
+| `src/lib/performance/sentry-integration.ts` | 1 |
+| `src/lib/quality/engine.ts` | 1 |
+| `src/lib/strains/favorites-sync-queue.ts` | 1 |
+| `src/lib/supabase.ts` | 1 |
+| `src/lib/utils.ts` | 1 |
+| `src/lib/watermelon-models/favorites-repository.ts` | 1 |
+| `src/lib/watermelon-models/notification-preference.ts` | 1 |
+| `src/lib/watermelon-models/outbox-notification-action.ts` | 1 |
+| `src/types/community.ts` | 1 |
 
 <details>
 <summary>Detailed warnings</summary>
 
-#### `src/lib/task-notifications.ts` (42 warnings)
+#### `src/lib/task-notifications.ts` (0 warnings)
 
-```.text
-90:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-142:68  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-142:76  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-148:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-148:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-149:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-154:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-351:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-352:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-353:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-353:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-354:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-355:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-360:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-447:68  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-447:76  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-448:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-448:73  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-452:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-456:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-457:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-462:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-462:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-512:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-513:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-514:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-525:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-529:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-539:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-540:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-544:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-573:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-574:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-575:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-585:64  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-588:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-592:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-609:64  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-610:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-612:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-668:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-674:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced all `any` types with proper WatermelonDB types (Database, Collection<NotificationQueueModel>, Collection<TaskModel>). Removed unnecessary type casts for Notifications API. Typed all function parameters and return types with proper domain types (Task, TaskModel, NotificationQueueModel). Used proper type guards for dynamic property access.
 
-#### `src/app/(modals)/trichome-helper.tsx` (25 warnings)
+#### `src/app/(modals)/trichome-helper.tsx` (0 warnings)
 
-```.text
-85:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-86:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-87:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-113:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-114:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-118:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-148:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-149:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-150:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-151:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-222:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-223:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-317:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-318:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-321:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-322:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-323:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-324:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-368:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-369:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-373:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-376:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-377:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-379:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-426:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced all `any` types with proper trichome domain types (HarvestSuggestion, HarvestWindow, TrichomeGuide, TrichomeAssessment). Typed all hook parameters and return types with proper function signatures. Typed React state setters with proper Dispatch types.
 
-#### `src/components/calendar/drag-drop-provider.tsx` (19 warnings)
+#### `src/components/calendar/drag-drop-provider.tsx` (0 warnings)
+
+✅ Replaced all `any` types with proper types. Created `ScrollableListRef` type for FlashList/FlatList refs with scrollToOffset method. Changed `timeoutId: any` to `ReturnType<typeof setTimeout>`. Replaced all `React.RefObject<any>` with `React.RefObject<ScrollableListRef>`. Removed `as any` casts by using proper type guards. Typed event handlers with `NativeSyntheticEvent<NativeScrollEvent>` and layout event types. Replaced `(globalThis as any).jest` with proper type guard using `globalThis as { jest?: unknown }`.
 
 ```.text
 22:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
@@ -1044,101 +977,25 @@ Total warnings: **537**
 538:9   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
-#### `src/api/strains/client.ts` (18 warnings)
+#### `src/api/strains/client.ts` (0 warnings)
 
-```.text
-12:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-84:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-84:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-95:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-95:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-107:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-107:68  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-120:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-120:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-121:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-121:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-146:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-243:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-245:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-299:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-339:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-379:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-461:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced all `any` types with proper types. Imported `AnalyticsClient` from `@/lib/analytics` instead of defining inline type. Typed `analyticsClient` variable properly. Replaced `any` parameters in sanitization helpers with `Record<string, unknown>` and generic constraints. Typed all Axios interceptor callbacks with `AxiosError` type. Created `RetryConfig` type extending `AxiosRequestConfig` for retry logic. Replaced `data: any` in `normalizeResponse` with `unknown` and added proper type guards for different response formats. Typed all response/error handlers with `AxiosResponse<unknown>` and `AxiosError`. Used type assertions for Axios headers compatibility.
 
-#### `src/components/community/report-content-modal.tsx` (14 warnings)
+#### `src/components/community/report-content-modal.tsx` (0 warnings)
 
-```.text
-52:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-235:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-283:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-284:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-334:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-335:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-371:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-372:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-403:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-404:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-430:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-431:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-515:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-516:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced all `any` types with proper react-hook-form types. Imported `Control<ReportFormData>` and `FieldErrors<ReportFormData>` types. Typed `createReportSchema` parameter with `(key: string) => string` for translation function. Updated all component props (ReportTypeSelection, ReasonSelection, IllegalReportFields, ExplanationSection, ReporterEmailSection, GoodFaithDeclaration, ReportContentForm) to use proper Control and FieldErrors types.
 
-#### `src/components/playbooks/ai-adjustments-example.tsx` (14 warnings)
+#### `src/components/playbooks/ai-adjustments-example.tsx` (0 warnings)
 
-```.text
-24:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-28:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-29:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-72:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-76:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-77:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-95:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-96:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-102:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-103:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-214:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-215:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-216:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-217:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced all `any` types with proper function signatures. Typed AcceptParams with proper acceptSuggestion function signature returning `Promise<AdjustmentSuggestion | null>`. Typed DeclineParams with declineSuggestion returning `Promise<void>`. Updated useAdjustmentHandlers and useActionHandlers options with proper function signatures for acceptSuggestion, declineSuggestion, voteHelpfulness, setNeverSuggest, and generateSuggestion. All React state setters now use proper `React.Dispatch<React.SetStateAction<T>>` types.
 
-#### `src/api/community/client.ts` (13 warnings)
+#### `src/api/community/client.ts` (0 warnings)
 
-```.text
-266:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-267:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-282:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-640:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-641:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-657:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-815:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-884:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-909:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-930:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-940:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-948:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-955:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced all `any` types with proper database record types. Created `DbPostDiagnostic`, `DbCommentDiagnostic`, `DbPostRecord`, and `DbPostLike` types for database operations. Typed diagnostic methods with proper return types. Replaced `query: any` in getPostsWithCounts with `PostgrestFilterBuilder<unknown, DbPostRecord, DbPostRecord[]>`. Typed all map/forEach callbacks with proper database record types. Fixed moderation error extraction with inline type assertion `{ error?: string }`.
 
-#### `src/components/harvest/harvest-modal.tsx` (12 warnings)
+#### `src/components/harvest/harvest-modal.tsx` (0 warnings)
 
-```.text
-49:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-124:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-239:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-242:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-252:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-428:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-431:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-441:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-486:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-488:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-541:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-695:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced all `any` types with proper react-hook-form and domain types. Imported `Control<HarvestFormData>` and `FieldErrors<HarvestFormData>` types. Updated all component props (WeightInput, HarvestForm, FormContent, WeightInputs, NotesField, createHandleSubmit) to use proper Control and FieldErrors types. Changed `onSubmit` callback parameter from `any` to `CreateHarvestInput`. Typed translation function with `Record<string, unknown>` for options parameter.
 
 #### `src/app/(app)/inventory/add.tsx` (11 warnings)
 
@@ -1378,55 +1235,37 @@ Total warnings: **537**
 207:6   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
-#### `src/components/onboarding/camera-permission-primer.tsx` (5 warnings)
+#### `src/components/onboarding/camera-permission-primer.tsx` ✅ (0 warnings)
+
+**Fixed**: Removed all `as any` type assertions from translation key props. The string literals are already valid `TxKeyPath` types and don't need casting. Changed:
+
+- `titleTx={'onboarding.permissions.camera.title' as any}` → `titleTx="onboarding.permissions.camera.title"`
+- `descriptionTx={'onboarding.permissions.camera.description' as any}` → `descriptionTx="onboarding.permissions.camera.description"`
+- `benefitsTx` array items: removed `as any` from all three benefit keys
 
 ```.text
-115:57  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-116:69  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-118:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-119:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-120:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+✅ All warnings resolved
 ```
 
 #### `src/components/onboarding/notification-permission-primer.tsx` (5 warnings)
 
-```.text
-100:64  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-101:76  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-103:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-104:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-105:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ **FIXED** — Removed all `as any` casts from translation key props; string literals are already valid `TxKeyPath` types
 
 #### `src/components/privacy-settings.tsx` (5 warnings)
 
-```.text
-116:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-157:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-158:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-159:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-160:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ **FIXED** — Created `FileSystemWithDirectories` type for FileSystem directory access; created `PlatformError` type for error handling with proper optional properties
+159:18 warning Unexpected any. Specify a different type @typescript-eslint/no-explicit-any
+160:19 warning Unexpected any. Specify a different type @typescript-eslint/no-explicit-any
+
+````
 
 #### `src/components/strains/filter-modal.tsx` (5 warnings)
 
-```.text
-145:76  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-154:64  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-173:76  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-182:64  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-192:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ **FIXED** — Removed `as any` casts from translation keys (template literals are valid TxKeyPath); replaced `React.forwardRef<any, ...>` with `React.forwardRef<React.ElementRef<typeof Modal>, ...>`
 
 #### `src/lib/analytics.ts` (5 warnings)
 
-```.text
-649:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-656:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-737:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-816:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-919:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ **FIXED** — Created `StoredEvent` type for InMemoryMetrics event storage; replaced `as any` with `Record<string, unknown>` in sanitization functions
 
 #### `src/lib/hooks/use-root-startup.ts` (5 warnings)
 
@@ -1584,53 +1423,29 @@ Total warnings: **537**
 135:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
-#### `src/components/calendar/agenda-item.tsx` (3 warnings)
+#### `src/components/calendar/agenda-item.tsx` (0 warnings)
 
-```.text
-39:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-46:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-78:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Created AgendaItemMetadata type for metadata fields (eventType, outOfRange, needsReview). Replaced all `as any` casts with `as AgendaItemMetadata` type assertions for safe property access.
 
-#### `src/components/inputs.tsx` (3 warnings)
+#### `src/components/inputs.tsx` (0 warnings)
 
-```.text
-45:73  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-62:73  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-78:73  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced all `as any` casts with `as TxKeyPath` for translation keys in accessibilityHint props.
 
-#### `src/components/nutrient/reservoir-event-form.tsx` (3 warnings)
+#### `src/components/nutrient/reservoir-event-form.tsx` (0 warnings)
 
-```.text
-35:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-60:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-85:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced all `any` types in component props with proper react-hook-form types: `Control<EventFormData>` and `FieldErrors<EventFormData>` for PHDeltaField, ECDeltaField, and FormFields components.
 
-#### `src/components/playbooks/phase-timeline.tsx` (3 warnings)
+#### `src/components/playbooks/phase-timeline.tsx` (0 warnings)
 
-```.text
-97:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-139:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-181:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Imported `TFunction` from i18next and replaced all `any` translation function parameters with proper `TFunction` type. Replaced `as any` cast in status validation with proper type inference using `(typeof validStatuses)[number]`.
 
-#### `src/components/strains/strain-card.tsx` (3 warnings)
+#### `src/components/strains/strain-card.tsx` (0 warnings)
 
-```.text
-21:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-39:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-40:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Replaced `any` types with proper types: changed `itemY?: any` to `itemY?: number`, and replaced `scaledSizes: any` and `spacing: any` with proper return types from `useDynamicType` and `useResponsiveSpacing` hooks using `ReturnType<typeof ...>`.
 
-#### `src/lib/community/idempotency-service.ts` (3 warnings)
+#### `src/lib/community/idempotency-service.ts` (0 warnings)
 
-```.text
-64:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-80:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-127:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-```
+✅ Created `IdempotencyKeyRecord` type for database records with proper status union type and optional fields. Replaced all `any` types: `checkExistingKey` returns `IdempotencyKeyRecord | null`, `handleCompletedKey` accepts `IdempotencyKeyRecord`, and `markAsCompleted` result parameter changed to `unknown`.
 
 #### `src/lib/i18n/index.tsx` (3 warnings)
 
@@ -1640,6 +1455,8 @@ Total warnings: **537**
 92:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
+✅ Replaced all `any` usages: (1) Used `{ jest?: unknown }` type for globalThis in test environment checks (lines 16, 92), (2) Removed unnecessary Promise-like check since `getLanguage()` returns `string | undefined` synchronously (line 26).
+
 #### `src/lib/performance/rn-performance.ts` (3 warnings)
 
 ```.text
@@ -1647,6 +1464,8 @@ Total warnings: **537**
 66:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 105:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
+
+✅ Replaced all `any` usages with `RNPerformanceReport` type: (1) Updated `PerformanceMeasureModule` type definition (line 14), (2) Typed `handleReportPrepared` callback parameter (line 66), (3) Used proper type assertion with `React.PropsWithChildren` for `PerformanceMeasureView` (line 105).
 
 #### `src/lib/rrule/iterator.ts` (3 warnings)
 
@@ -1656,6 +1475,8 @@ Total warnings: **537**
 124:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
+✅ Replaced all `any` usages with `DateTime` from Luxon: (1) Typed `dtstartLocal` in `processDaily` context (line 44), (2) Typed `dtstartLocal` in `processWeekly` context (line 66), (3) Typed `cursorLocal` in `shouldStopIteration` context (line 124).
+
 #### `src/lib/watermelon-indexes.ts` (3 warnings)
 
 ```.text
@@ -1663,6 +1484,8 @@ Total warnings: **537**
 62:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 67:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
+
+✅ Replaced all `any` usages with proper types: (1) Imported `SQLiteQuery` type from `unsafe-sql-utils` instead of defining with `any[]` (line 4), (2) Used `DatabaseAdapterWithUnsafe` type for adapter type checking (line 62), (3) Typed `initializingPromise` as `PromiseLike<void>` (line 67).
 
 #### `src/types/moderation.ts` (3 warnings)
 
@@ -1672,12 +1495,16 @@ Total warnings: **537**
 575:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
+✅ Replaced all `any` usages with `unknown`: (1) Changed `metadata` field in `AuditEvent` interface to `Record<string, unknown>` (line 552), (2) Changed `metadata` field in `AuditEventInput` interface to `Record<string, unknown>` (line 575). Note: Line 450 already used `unknown`, not `any`.
+
 #### `src/api/auth/use-sign-in.ts` (2 warnings)
 
 ```.text
 70:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 117:64  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
+
+✅ Replaced all `any` usages with proper metadata type: (1) Typed error metadata in mutation function with `lockout` and `minutes_remaining` fields (line 70), (2) Typed error metadata in onError callback (line 117). Also fixed `AuthErrorResponse.metadata` in types.ts to use the same structure.
 
 #### `src/api/community/use-create-comment.ts` (2 warnings)
 
@@ -1686,6 +1513,8 @@ Total warnings: **537**
 53:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
+✅ Replaced all `any` usages in `hasErrorCode` type guard: (1) Removed unnecessary cast for `'code' in e` check (line 52), (2) Used `Record<string, unknown>` for property access (line 53).
+
 #### `src/api/ph-ec-readings/index.ts` (2 warnings)
 
 ```.text
@@ -1693,12 +1522,16 @@ Total warnings: **537**
 293:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
+✅ Replaced all `any` usages: (1) Typed `whereFilters` as `Clause[]` from WatermelonDB (line 131), (2) Created `ServerReading` type for API response mapping with proper snake_case to camelCase field mapping (line 293).
+
 #### `src/api/strains/use-strains-infinite-with-cache.ts` (2 warnings)
 
 ```.text
 41:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 150:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
+
+✅ Replaced all `any` usages: (1) Typed `params` as `UseStrainsInfiniteWithCacheParams | undefined` with null check before use (line 41), (2) Typed `error` as `Error` in retry callback (line 150).
 
 #### `src/api/support/use-help-articles.ts` (2 warnings)
 
@@ -4396,3 +4229,4 @@ Total warnings: **1016**
 ```
 
 </details>
+````

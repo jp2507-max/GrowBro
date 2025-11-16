@@ -41,7 +41,7 @@ function enumerateWeeklyByDays(
 function* processDaily(
   config: RRuleConfig,
   overrides: OccurrenceOverride[],
-  context: { range: Range; zone: string; dtstartLocal: any }
+  context: { range: Range; zone: string; dtstartLocal: DateTime }
 ) {
   const { range, zone } = context;
   let produced = 0;
@@ -63,7 +63,7 @@ function* processDaily(
 function* processWeekly(
   config: RRuleConfig,
   overrides: OccurrenceOverride[],
-  context: { range: Range; zone: string; dtstartLocal: any }
+  context: { range: Range; zone: string; dtstartLocal: DateTime }
 ) {
   const { range, zone } = context;
   let produced = 0;
@@ -121,7 +121,7 @@ function* processWeekly(
  */
 function shouldStopIteration(
   config: RRuleConfig,
-  context: { cursorLocal: any; range: Range; produced: number }
+  context: { cursorLocal: DateTime; range: Range; produced: number }
 ): boolean {
   const { cursorLocal, range, produced } = context;
 

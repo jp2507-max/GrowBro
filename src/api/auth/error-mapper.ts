@@ -7,6 +7,18 @@ import type { AuthError } from '@supabase/supabase-js';
 
 import type { AuthErrorResponse } from './types';
 
+// Edge Function error structure
+interface EdgeFunctionError {
+  code?: string;
+  metadata?: {
+    lockout?: boolean;
+    minutes_remaining?: number;
+  };
+}
+
+// Generic error with unknown structure
+type UnknownError = unknown;
+
 /**
  * Map authentication errors to i18n translation keys
  * Uses pattern-based matching with safe fallback to prevent account enumeration
@@ -14,7 +26,7 @@ import type { AuthErrorResponse } from './types';
  * @param error - Error from Supabase Auth or Edge Function
  * @returns i18n translation key
  */
-export function mapAuthError(error: any): string {
+export function mapAuthError(error: UnknownError): string {
   // Handle Edge Function error responses
   const edgeFunctionError = mapEdgeFunctionError(error);
   if (edgeFunctionError) return edgeFunctionError;
@@ -26,12 +38,22 @@ export function mapAuthError(error: any): string {
 /**
  * Map Edge Function error codes to i18n keys
  */
-function mapEdgeFunctionError(error: any): string | null {
-  if (!error?.code) return null;
+function mapEdgeFunctionError(error: UnknownError): string | null {
+  // Type guard to check if error has Edge Function structure
+  if (
+    typeof error !== 'object' ||
+    error === null ||
+    !('code' in error) ||
+    typeof error.code !== 'string'
+  ) {
+    return null;
+  }
 
-  switch (error.code) {
+  const edgeError = error as EdgeFunctionError;
+
+  switch (edgeError.code) {
     case 'INVALID_CREDENTIALS':
-      return error.metadata?.lockout
+      return edgeError.metadata?.lockout
         ? 'auth.error_account_locked'
         : 'auth.error_invalid_credentials';
     case 'AUTH_ERROR':
@@ -45,7 +67,7 @@ function mapEdgeFunctionError(error: any): string | null {
 /**
  * Map Supabase AuthError to i18n keys
  */
-function mapSupabaseAuthError(error: any): string {
+function mapSupabaseAuthError(error: UnknownError): string {
   const authError = error as AuthError;
   const message = authError?.message?.toLowerCase() || '';
   const status = authError?.status;
@@ -156,9 +178,20 @@ export function extractErrorMessage(
  * @param error - Error response
  * @returns True if account is locked
  */
-export function isAccountLocked(error: any): boolean {
+export function isAccountLocked(error: UnknownError): boolean {
+  if (
+    typeof error !== 'object' ||
+    error === null ||
+    !('code' in error) ||
+    !('metadata' in error)
+  ) {
+    return false;
+  }
+
+  const edgeError = error as EdgeFunctionError;
   return (
-    error?.code === 'INVALID_CREDENTIALS' && error?.metadata?.lockout === true
+    edgeError.code === 'INVALID_CREDENTIALS' &&
+    edgeError.metadata?.lockout === true
   );
 }
 
@@ -168,9 +201,10 @@ export function isAccountLocked(error: any): boolean {
  * @param error - Error response with lockout metadata
  * @returns Minutes remaining or null
  */
-export function getLockoutMinutes(error: any): number | null {
+export function getLockoutMinutes(error: UnknownError): number | null {
   if (isAccountLocked(error)) {
-    return error.metadata?.minutes_remaining || null;
+    const edgeError = error as EdgeFunctionError;
+    return edgeError.metadata?.minutes_remaining || null;
   }
   return null;
 }

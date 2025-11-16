@@ -5,8 +5,11 @@ import {
   type LayoutChangeEvent,
   type ListRenderItemInfo,
 } from 'react-native';
-import Animated, * as Reanimated from 'react-native-reanimated';
-import type { SharedValue } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  type SharedValue,
+} from 'react-native-reanimated';
 
 import type { Plant } from '@/api';
 import { Pressable, Text, View } from '@/components/ui';
@@ -50,18 +53,22 @@ function getHealthColor(health?: string) {
   return 'text-red-600 dark:text-red-400';
 }
 
-function PlantBlurOverlay({ animatedProps }: { animatedProps: any }) {
+function PlantBlurOverlay({
+  animatedProps,
+}: {
+  animatedProps: Partial<{ intensity: number }>;
+}) {
   return (
     <>
       <OptionalBlurView
         intensity={0}
-        style={StyleSheet.absoluteFill as any}
+        style={StyleSheet.absoluteFillObject}
         pointerEvents="none"
       />
       <AnimatedOptionalBlurView
         animatedProps={animatedProps}
         tint="dark"
-        style={StyleSheet.absoluteFill as any}
+        style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
     </>
@@ -136,21 +143,22 @@ export function PlantCard({
   itemY,
 }: PlantCardProps): React.ReactElement {
   const { listOffsetY } = useAnimatedScrollList();
-  const localItemY = Reanimated.useSharedValue(0);
+  const localItemY = useSharedValue(0);
   const effItemY = itemY ?? localItemY;
-  const measuredHeight = Reanimated.useSharedValue(0);
+  const measuredHeight = useSharedValue(0);
 
-  const containerStyle = Reanimated.useAnimatedStyle(() => {
+  const containerStyle = useAnimatedStyle(() => {
+    'worklet';
     const h = Math.max(measuredHeight.value, 1);
     const start = effItemY.value - 1;
     const mid = effItemY.value;
     const end = effItemY.value + h;
-    const scale = (Reanimated as any).interpolate(
+    const scale = Animated.interpolate(
       listOffsetY.value,
       [start, mid, end],
       [1, 1, 0.98]
     );
-    const translateY = (Reanimated as any).interpolate(
+    const translateY = Animated.interpolate(
       listOffsetY.value,
       [start - 1, start, start + 1],
       [0, 0, 1]
@@ -158,17 +166,18 @@ export function PlantCard({
     return { transform: [{ translateY }, { scale }] };
   }, []);
 
-  const blurAnimatedProps = (Reanimated as any).useAnimatedProps(() => {
+  const blurAnimatedProps = Animated.useAnimatedProps(() => {
+    'worklet';
     const h = Math.max(measuredHeight.value, 1);
     const start = effItemY.value - 1;
     const mid = effItemY.value;
     const end = effItemY.value + h;
-    const intensity = (Reanimated as any).interpolate(
+    const intensity = Animated.interpolate(
       listOffsetY.value,
       [start, mid, end],
       [0, 0, 8]
     );
-    return { intensity } as any;
+    return { intensity };
   });
 
   const onLayout = React.useCallback(
@@ -188,7 +197,7 @@ export function PlantCard({
   return (
     <Animated.View style={[styles.wrapper, containerStyle]} onLayout={onLayout}>
       <PlantCardContent plant={plant} onPress={onPress} />
-      <PlantBlurOverlay animatedProps={blurAnimatedProps as any} />
+      <PlantBlurOverlay animatedProps={blurAnimatedProps} />
     </Animated.View>
   );
 }

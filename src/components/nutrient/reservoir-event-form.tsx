@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import React from 'react';
+import type { Control, FieldErrors } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -32,7 +33,13 @@ const eventTypeOptions: OptionType[] = [
   { value: 'flush', label: 'Flush' },
 ];
 
-function PHDeltaField({ control, errors }: any) {
+function PHDeltaField({
+  control,
+  errors,
+}: {
+  control: Control<EventFormData>;
+  errors: FieldErrors<EventFormData>;
+}) {
   return (
     <>
       <Controller
@@ -57,7 +64,13 @@ function PHDeltaField({ control, errors }: any) {
   );
 }
 
-function ECDeltaField({ control, errors }: any) {
+function ECDeltaField({
+  control,
+  errors,
+}: {
+  control: Control<EventFormData>;
+  errors: FieldErrors<EventFormData>;
+}) {
   return (
     <>
       <Controller
@@ -82,7 +95,13 @@ function ECDeltaField({ control, errors }: any) {
   );
 }
 
-function FormFields({ control, errors }: any) {
+function FormFields({
+  control,
+  errors,
+}: {
+  control: Control<EventFormData>;
+  errors: FieldErrors<EventFormData>;
+}) {
   return (
     <>
       <Controller

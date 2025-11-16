@@ -1,5 +1,9 @@
 import { useScrollToTop } from '@react-navigation/native';
-import { FlashList } from '@shopify/flash-list';
+import {
+  FlashList,
+  type FlashListProps,
+  type FlashListRef,
+} from '@shopify/flash-list';
 import { Stack } from 'expo-router';
 import React from 'react';
 import { type ListRenderItemInfo, StyleSheet } from 'react-native';
@@ -28,7 +32,9 @@ import type { FavoriteStrain } from '@/types/strains';
 const LIST_HORIZONTAL_PADDING = 16;
 const LIST_BOTTOM_EXTRA = 16;
 
-const AnimatedFlashList = Animated.createAnimatedComponent(FlashList as any);
+const AnimatedFlashList = Animated.createAnimatedComponent(
+  FlashList as React.ComponentType<FlashListProps<FavoriteStrain>>
+);
 
 // Convert a display string (like "18-22%", "18%", "High") into a
 // numeric representative used for sorting. Convention: if both min and max
@@ -37,7 +43,14 @@ const AnimatedFlashList = Animated.createAnimatedComponent(FlashList as any);
 function numericRepresentativeFromTHCDisplay(
   thcDisplay: string | unknown
 ): number {
-  const parsed = parsePercentageRange(thcDisplay);
+  const parsed = parsePercentageRange(
+    thcDisplay as
+      | string
+      | number
+      | { min?: number; max?: number; label?: string }
+      | null
+      | undefined
+  );
   if (!parsed) return NaN;
 
   if (typeof parsed.min === 'number' && typeof parsed.max === 'number') {
@@ -162,8 +175,17 @@ function FavoritesHeader({
 }
 
 export default function FavoritesScreen(): React.ReactElement {
-  const { listRef, scrollHandler } = useAnimatedScrollList();
-  useScrollToTop(listRef);
+  const { listRef: sharedListRef, scrollHandler } = useAnimatedScrollList();
+  const listRef = React.useMemo(
+    () => sharedListRef as React.RefObject<FlashListRef<FavoriteStrain>>,
+    [sharedListRef]
+  );
+  // useScrollToTop accepts refs with scrollTo/scrollToOffset methods
+  useScrollToTop(
+    listRef as React.RefObject<{
+      scrollToOffset: (params: { offset?: number; animated?: boolean }) => void;
+    }>
+  );
   const { grossHeight } = useBottomTabBarHeight();
   const { isConnected, isInternetReachable } = useNetworkStatus();
 

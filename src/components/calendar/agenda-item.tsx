@@ -8,6 +8,13 @@ import { Text } from '@/components/ui/text';
 import { translate } from '@/lib/i18n';
 import type { Task } from '@/types/calendar';
 
+// Metadata fields used in agenda items
+type AgendaItemMetadata = {
+  eventType?: string;
+  outOfRange?: boolean;
+  needsReview?: boolean;
+};
+
 type Props = {
   task: Pick<
     Task,
@@ -36,14 +43,18 @@ export function AgendaItemRow({
 
   const eventType = React.useMemo<EventType | null>(() => {
     if ('metadata' in task) {
-      const t = (task as any).metadata?.eventType as string | undefined;
+      const metadata = task.metadata as AgendaItemMetadata;
+      const t = metadata.eventType;
       if (t === 'feeding' || t === 'flush' || t === 'top_dress') return t;
     }
     return null;
   }, [task]);
 
   const isOutOfRange = React.useMemo(() => {
-    if ('metadata' in task) return Boolean((task as any).metadata?.outOfRange);
+    if ('metadata' in task) {
+      const metadata = task.metadata as AgendaItemMetadata;
+      return Boolean(metadata.outOfRange);
+    }
     return false;
   }, [task]);
 
@@ -75,7 +86,8 @@ export function AgendaItemRow({
             </Text>
           </View>
         ) : null}
-        {'metadata' in task && (task as any).metadata?.needsReview ? (
+        {'metadata' in task &&
+        (task.metadata as AgendaItemMetadata).needsReview ? (
           <View
             accessibilityLabel={translate('calendar.needs_review_label')}
             accessibilityHint={translate(

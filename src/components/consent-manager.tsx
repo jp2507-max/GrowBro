@@ -5,6 +5,7 @@ import { Button } from '@/components/ui';
 import { translate } from '@/lib';
 import type { TxKeyPath } from '@/lib/i18n/utils';
 import { ConsentService } from '@/lib/privacy/consent-service';
+import type { ConsentPurpose, ConsentState } from '@/lib/privacy/consent-types';
 import { telemetryClient } from '@/lib/privacy/telemetry-client';
 import {
   getPrivacyConsent,
@@ -22,16 +23,27 @@ type Props = {
   testID?: string;
 };
 
-type ToggleConfig = {
-  key: string; // consent key (privacy or runtime)
-  isPrivacy: boolean;
-  titleTx: TxKeyPath;
-  subtitleTx: TxKeyPath;
-  impactTx?: TxKeyPath;
-  infoTitleTx?: TxKeyPath;
-  infoBodyTx?: TxKeyPath;
-  testID: string;
-};
+type ToggleConfig =
+  | {
+      key: keyof PrivacyConsent;
+      isPrivacy: true;
+      titleTx: TxKeyPath;
+      subtitleTx: TxKeyPath;
+      impactTx?: TxKeyPath;
+      infoTitleTx?: TxKeyPath;
+      infoBodyTx?: TxKeyPath;
+      testID: string;
+    }
+  | {
+      key: ConsentPurpose;
+      isPrivacy: false;
+      titleTx: TxKeyPath;
+      subtitleTx: TxKeyPath;
+      impactTx?: TxKeyPath;
+      infoTitleTx?: TxKeyPath;
+      infoBodyTx?: TxKeyPath;
+      testID: string;
+    };
 
 // Static toggle configuration (kept outside render to avoid re-creation)
 const CONSENT_TOGGLES: ToggleConfig[] = [
@@ -181,9 +193,9 @@ function ConsentSections({
   onConsentChange,
 }: {
   privacyConsent: PrivacyConsent;
-  consentState: any;
+  consentState: ConsentState | null;
   onPrivacyConsentChange: (k: keyof PrivacyConsent, v: boolean) => void;
-  onConsentChange: (purpose: string, v: boolean) => void;
+  onConsentChange: (purpose: ConsentPurpose, v: boolean) => void;
 }) {
   const showInfo = useCallback((t?: TxKeyPath, b?: TxKeyPath) => {
     if (t && b)
@@ -196,11 +208,11 @@ function ConsentSections({
     <View className="space-y-2">
       {CONSENT_TOGGLES.map((cfg) => {
         const value = cfg.isPrivacy
-          ? (privacyConsent as any)[cfg.key]
+          ? privacyConsent[cfg.key]
           : (consentState?.[cfg.key] ?? false);
         const onChange = (v: boolean) =>
           cfg.isPrivacy
-            ? onPrivacyConsentChange(cfg.key as keyof PrivacyConsent, v)
+            ? onPrivacyConsentChange(cfg.key, v)
             : onConsentChange(cfg.key, v);
         return (
           <ToggleRow
@@ -284,7 +296,7 @@ function ConsentActions({
 function usePrivacyConsentState(isVisible: boolean) {
   const [privacyConsent, setPrivacyConsentState] =
     useState<PrivacyConsent>(getPrivacyConsent());
-  const [consentState, setConsentState] = useState<any>(null);
+  const [consentState, setConsentState] = useState<ConsentState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
     if (!isVisible) return;
@@ -325,7 +337,7 @@ const RUNTIME_KEYS = [
 
 function useOptOut(
   setPrivacyConsentState: React.Dispatch<React.SetStateAction<PrivacyConsent>>,
-  setConsentState: React.Dispatch<any>,
+  setConsentState: React.Dispatch<React.SetStateAction<ConsentState | null>>,
   onComplete?: (c: PrivacyConsent) => void
 ) {
   return useCallback(async () => {
@@ -342,14 +354,20 @@ function useOptOut(
       // Merge the partial updates into local React state safely
       setPrivacyConsentState((p) => ({ ...p, ...updates }));
       for (const k of RUNTIME_KEYS) {
-        await ConsentService.setConsent(k as any, false);
+        await ConsentService.setConsent(k as ConsentPurpose, false);
       }
-      setConsentState({
+      const newConsentState: ConsentState = {
         telemetry: false,
         experiments: false,
+        cloudProcessing: false,
         aiTraining: false,
+        aiModelImprovement: false,
         crashDiagnostics: false,
-      });
+        version: '',
+        timestamp: new Date().toISOString(),
+        locale: 'en',
+      };
+      setConsentState(newConsentState);
       Alert.alert(
         translate('consent.optOutSuccess.title'),
         translate('consent.optOutSuccess.message'),
@@ -384,7 +402,7 @@ function useConsentActions({
 }: {
   privacyConsent: PrivacyConsent;
   setPrivacyConsentState: React.Dispatch<React.SetStateAction<PrivacyConsent>>;
-  setConsentState: React.Dispatch<any>;
+  setConsentState: React.Dispatch<React.SetStateAction<ConsentState | null>>;
   onComplete?: (c: PrivacyConsent) => void;
 }) {
   const updatePrivacy = useCallback(
@@ -399,10 +417,13 @@ function useConsentActions({
   );
 
   const updateRuntime = useCallback(
-    async (purpose: string, value: boolean) => {
-      setConsentState((prev: any) => ({ ...prev, [purpose]: value }));
+    async (purpose: ConsentPurpose, value: boolean) => {
+      setConsentState((prev) => {
+        if (!prev) return prev;
+        return { ...prev, [purpose]: value };
+      });
       try {
-        await ConsentService.setConsent(purpose as any, value);
+        await ConsentService.setConsent(purpose, value);
       } catch {
         // swallow — optimistic update
       }
@@ -479,7 +500,14 @@ function ConsentFooter({
   save,
   onComplete,
   onDismiss,
-}: any) {
+}: {
+  privacyConsent: PrivacyConsent;
+  mode: ConsentManagerMode;
+  bulkSet: (value: boolean) => void;
+  save: (cb?: (c: PrivacyConsent) => void) => void;
+  onComplete?: (c: PrivacyConsent) => void;
+  onDismiss?: () => void;
+}) {
   return (
     <View className="border-t border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
       <ConsentActions
@@ -500,22 +528,35 @@ function ConsentFooter({
   );
 }
 
-function ConsentManagerView(props: any) {
-  const {
-    mode,
-    testID,
-    titleKey,
-    subtitleKey,
-    privacyConsent,
-    consentState,
-    updatePrivacy,
-    updateRuntime,
-    optOutAll,
-    bulkSet,
-    save,
-    onComplete,
-    onDismiss,
-  } = props;
+function ConsentManagerView({
+  mode,
+  testID,
+  titleKey,
+  subtitleKey,
+  privacyConsent,
+  consentState,
+  updatePrivacy,
+  updateRuntime,
+  optOutAll,
+  bulkSet,
+  save,
+  onComplete,
+  onDismiss,
+}: {
+  mode: ConsentManagerMode;
+  testID: string;
+  titleKey: TxKeyPath;
+  subtitleKey: TxKeyPath | null;
+  privacyConsent: PrivacyConsent;
+  consentState: ConsentState | null;
+  updatePrivacy: (key: keyof PrivacyConsent, value: boolean) => void;
+  updateRuntime: (purpose: ConsentPurpose, value: boolean) => Promise<void>;
+  optOutAll: () => Promise<void>;
+  bulkSet: (value: boolean) => void;
+  save: (cb?: (c: PrivacyConsent) => void) => void;
+  onComplete?: (c: PrivacyConsent) => void;
+  onDismiss?: () => void;
+}) {
   return (
     <View className="flex-1 bg-white dark:bg-gray-900" testID={testID}>
       <ScrollView className="flex-1 p-4">
