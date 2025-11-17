@@ -1,5 +1,5 @@
 import { Model } from '@nozbe/watermelondb';
-import { date, field, readonly, text } from '@nozbe/watermelondb/decorators';
+import { date, field, text } from '@nozbe/watermelondb/decorators';
 
 import type { OccurrenceOverrideStatus } from '@/types/calendar';
 
@@ -13,8 +13,12 @@ export class OccurrenceOverrideModel extends Model {
   @text('reminder_at_local') reminderAtLocal?: string;
   @text('reminder_at_utc') reminderAtUtc?: string;
   @text('status') status?: OccurrenceOverrideStatus;
-  @readonly @field('server_revision') serverRevision?: number;
-  @readonly @field('server_updated_at_ms') serverUpdatedAtMs?: number;
+  // @readonly removed so sync pipeline can write server-provided values
+  // @readonly @field('server_revision') serverRevision?: number;
+  @field('server_revision') serverRevision?: number;
+  // @readonly removed so sync pipeline can write server-provided values
+  // @readonly @field('server_updated_at_ms') serverUpdatedAtMs?: number;
+  @field('server_updated_at_ms') serverUpdatedAtMs?: number;
   @date('created_at') createdAt!: Date;
   @date('updated_at') updatedAt!: Date;
   @date('deleted_at') deletedAt?: Date;

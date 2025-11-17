@@ -898,6 +898,12 @@ function getCollectionByTable<K extends TableName>(
   return repos[table];
 }
 
+// CRITICAL: @readonly fields cannot be persisted inside .update() callbacks in WatermelonDB
+// This function currently works around this by writing to target._raw, but this approach
+// fails for SeriesModel and OccurrenceOverrideModel which still have @readonly on their
+// serverRevision and serverUpdatedAtMs fields. The proper fix is to:
+// 1. Remove @readonly from those model fields
+// 2. Write directly to properties instead of target._raw
 function applyPayloadToRecord(
   target: ModelSnapshot,
   payload: RemoteChangePayload
@@ -909,22 +915,22 @@ function applyPayloadToRecord(
     if (key === 'id') continue;
     // Map server fields to local properties where appropriate
     if (key === 'server_revision') {
-      if (value != null && target._raw) {
+      if (value != null) {
         const numericValue = Number(value);
         if (Number.isFinite(numericValue)) {
-          target._raw.server_revision = numericValue;
+          target.serverRevision = numericValue;
         }
       }
       continue;
     }
     if (key === 'server_updated_at_ms') {
-      if (value != null && target._raw) {
+      if (value != null) {
         const numericValue =
           typeof value === 'number'
             ? value
             : toMillis(value as Date | string | number | null | undefined);
         if (numericValue != null && Number.isFinite(numericValue)) {
-          target._raw.server_updated_at_ms = numericValue;
+          target.serverUpdatedAtMs = numericValue;
         }
       }
       continue;
@@ -1090,12 +1096,12 @@ function applyServerPayloadToRecord(
     }
   }
   const revision = safeParseNumber(payload.server_revision);
-  if (revision != null && rec._raw) {
-    rec._raw.server_revision = revision;
+  if (revision != null) {
+    rec.serverRevision = revision;
   }
   const serverUpdatedAt = safeParseNumber(payload.server_updated_at_ms);
-  if (serverUpdatedAt != null && rec._raw) {
-    rec._raw.server_updated_at_ms = serverUpdatedAt;
+  if (serverUpdatedAt != null) {
+    rec.serverUpdatedAtMs = serverUpdatedAt;
   }
 }
 

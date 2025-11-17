@@ -17,6 +17,9 @@ import {
   setPrivacyConsent,
 } from '@/lib/privacy-consent';
 
+// Runtime consent purposes exclude privacy keys to prevent invalid configurations
+type RuntimeConsentPurpose = Exclude<ConsentPurpose, keyof PrivacyConsent>;
+
 type ConsentManagerMode = 'first-run' | 'settings' | 'opt-out';
 
 type Props = {
@@ -39,7 +42,7 @@ type ToggleConfig =
       testID: string;
     }
   | {
-      key: ConsentPurpose;
+      key: RuntimeConsentPurpose;
       isPrivacy: false;
       titleTx: TxKeyPath;
       subtitleTx: TxKeyPath;
@@ -223,7 +226,7 @@ function ConsentSections({
   privacyConsent: PrivacyConsent;
   consentState: ConsentState | null;
   onPrivacyConsentChange: (k: keyof PrivacyConsent, v: boolean) => void;
-  onConsentChange: (purpose: ConsentPurpose, v: boolean) => void;
+  onConsentChange: (purpose: RuntimeConsentPurpose, v: boolean) => void;
 }) {
   const showInfo = useCallback((t?: TxKeyPath, b?: TxKeyPath) => {
     if (t && b)
@@ -439,7 +442,7 @@ function useConsentActions({
   );
 
   const updateRuntime = useCallback(
-    async (purpose: (typeof RUNTIME_CONSENT_KEYS)[number], value: boolean) => {
+    async (purpose: RuntimeConsentPurpose, value: boolean) => {
       let shouldCallService = false;
       setConsentState((prev) => {
         if (!prev) return prev;
@@ -580,7 +583,7 @@ function ConsentManagerView({
   consentState: ConsentState | null;
   updatePrivacy: (key: keyof PrivacyConsent, value: boolean) => void;
   updateRuntime: (
-    purpose: (typeof RUNTIME_CONSENT_KEYS)[number],
+    purpose: RuntimeConsentPurpose,
     value: boolean
   ) => Promise<void>;
   optOutAll: () => Promise<void>;

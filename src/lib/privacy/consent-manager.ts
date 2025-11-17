@@ -70,12 +70,13 @@ export class ConsentManagerImpl implements ConsentManager {
   constructor() {
     // Subscribe to consent changes from both services
     ConsentService.onChange((state) => {
-      // Handle telemetry consent changes
+      // Handle all runtime consent changes
       this.notifyListeners('telemetry', state.telemetry);
-
-      // Handle other purposes that might be mapped from ConsentService
-      // Note: ConsentService primarily handles telemetry, experiments, aiTraining, crashDiagnostics
-      // while privacy-consent handles analytics, crashReporting, etc.
+      this.notifyListeners('experiments', state.experiments);
+      this.notifyListeners('cloudProcessing', state.cloudProcessing);
+      this.notifyListeners('aiTraining', state.aiTraining);
+      this.notifyListeners('aiModelImprovement', state.aiModelImprovement);
+      this.notifyListeners('crashDiagnostics', state.crashDiagnostics);
     });
 
     onPrivacyConsentChange((consent) => {
@@ -92,7 +93,12 @@ export class ConsentManagerImpl implements ConsentManager {
       case 'crashReporting':
         return hasConsent('crashReporting');
       case 'telemetry':
-        return ConsentService.hasConsent('telemetry');
+      case 'experiments':
+      case 'cloudProcessing':
+      case 'aiTraining':
+      case 'aiModelImprovement':
+      case 'crashDiagnostics':
+        return ConsentService.hasConsent(purpose);
       default:
         return false; // Default opt-out for unknown purposes
     }
@@ -114,7 +120,12 @@ export class ConsentManagerImpl implements ConsentManager {
         // The UI should call the appropriate service methods
         break;
       case 'telemetry':
-        await ConsentService.setConsent('telemetry', false);
+      case 'experiments':
+      case 'cloudProcessing':
+      case 'aiTraining':
+      case 'aiModelImprovement':
+      case 'crashDiagnostics':
+        await ConsentService.setConsent(purpose, false);
         break;
     }
   }
