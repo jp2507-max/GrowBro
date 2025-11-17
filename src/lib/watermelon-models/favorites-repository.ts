@@ -102,7 +102,7 @@ export function createFavoritesRepository(
   async function getAllFavoritesNeedingSync(
     userId?: string
   ): Promise<FavoriteModel[]> {
-    const query: any[] = [];
+    const query = [];
 
     if (userId) {
       query.push(Q.where('user_id', userId));

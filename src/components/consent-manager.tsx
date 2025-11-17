@@ -357,6 +357,8 @@ const RUNTIME_KEYS = [
   'experiments',
   'aiTraining',
   'crashDiagnostics',
+  'cloudProcessing',
+  'aiModelImprovement',
 ] as const;
 
 function useOptOut(
@@ -378,18 +380,21 @@ function useOptOut(
       // Merge the partial updates into local React state safely
       setPrivacyConsentState((p) => ({ ...p, ...updates }));
       for (const k of RUNTIME_KEYS) {
-        await ConsentService.setConsent(k as ConsentPurpose, false);
+        await ConsentService.setConsent(k, false);
       }
-      setConsentState((prevState) => ({
-        ...prevState,
-        telemetry: false,
-        experiments: false,
-        cloudProcessing: false,
-        aiTraining: false,
-        aiModelImprovement: false,
-        crashDiagnostics: false,
-        timestamp: new Date().toISOString(),
-      }));
+      setConsentState((prevState) => {
+        if (!prevState) return prevState; // Guard against null prevState
+        return {
+          ...prevState, // Preserve required fields like version and locale
+          telemetry: false,
+          experiments: false,
+          cloudProcessing: false,
+          aiTraining: false,
+          aiModelImprovement: false,
+          crashDiagnostics: false,
+          timestamp: new Date().toISOString(),
+        };
+      });
       Alert.alert(
         translate('consent.optOutSuccess.title'),
         translate('consent.optOutSuccess.message'),

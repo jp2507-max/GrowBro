@@ -202,10 +202,9 @@ export const useRequestAccountDeletion = createMutation({
     }
 
     // Track analytics event
-    await trackAuthEvent('account_deletion_requested', {
-      requestId,
-      scheduledFor: scheduledFor.toISOString(),
-      userId: user.id,
+    await trackAuthEvent('auth_account_deletion_requested', {
+      user_id: user.id,
+      email: user.email,
     });
 
     return {
@@ -332,9 +331,9 @@ export const useCancelAccountDeletion = createMutation({
     }
 
     // Track analytics event
-    await trackAuthEvent('account_deletion_cancelled', {
-      requestId: deletionRequest.request_id,
-      userId: user.id,
+    await trackAuthEvent('auth_account_deletion_cancelled', {
+      user_id: user.id,
+      email: user.email,
     });
 
     return { success: true };

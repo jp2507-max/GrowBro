@@ -61,14 +61,14 @@ const createMockDatabase = () => {
                 condition.left &&
                 condition.comparison
               ) {
-                const field = condition.left;
-                const value = condition.comparison.right.value;
-                filtered = filtered.filter((app) => app[field] === value);
+                const field = condition.left as string;
+                const value = (condition.comparison as any).right.value;
+                filtered = filtered.filter((app: any) => app[field] === value);
               } else if (condition.key && 'value' in condition) {
                 // Alternative format: { key: 'field', value: 'val' }
-                const field = condition.key;
-                const value = condition.value;
-                filtered = filtered.filter((app) => app[field] === value);
+                const field = condition.key as string;
+                const value = (condition as any).value;
+                filtered = filtered.filter((app: any) => app[field] === value);
               }
             });
             return {

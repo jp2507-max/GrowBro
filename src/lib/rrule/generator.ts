@@ -177,7 +177,8 @@ export class RRULEGenerator {
       const parsed = rrulestr(rruleString, { forceset: false });
 
       // Access options for semantic checks
-      const opts: RRuleOptions = parsed.origOptions || parsed.options || {};
+      const opts: Partial<RRuleOptions> =
+        parsed.origOptions || parsed.options || {};
 
       // Semantic rule: COUNT and UNTIL are mutually exclusive (RFC 5545)
       if (opts.count && opts.until) {
@@ -244,17 +245,17 @@ export class RRULEGenerator {
       const parsed = rrulestr(rruleString, { forceset: false });
 
       // Get the options from the parsed rule
-      const opts: RRuleOptions =
+      const opts: Partial<RRuleOptions> =
         (
           parsed as unknown as {
-            origOptions?: RRuleOptions;
-            options?: RRuleOptions;
+            origOptions?: Partial<RRuleOptions>;
+            options?: Partial<RRuleOptions>;
           }
         ).origOptions ||
         (
           parsed as unknown as {
-            origOptions?: RRuleOptions;
-            options?: RRuleOptions;
+            origOptions?: Partial<RRuleOptions>;
+            options?: Partial<RRuleOptions>;
           }
         ).options ||
         {};

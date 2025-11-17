@@ -27,6 +27,7 @@ interface Task {
   reminderAtLocal?: Date | string | null;
   dueAtUtc?: Date | string | null;
   dueAtLocal?: Date | string | null;
+  timezone?: string;
   recurrenceRule?: string;
 }
 

@@ -16,7 +16,7 @@ export interface NotificationActionPayload {
   channel?: string;
   title?: string;
   body?: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }
 
 export class OutboxNotificationActionModel extends Model {

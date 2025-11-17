@@ -85,7 +85,7 @@ export interface OutboxEntry {
 }
 
 export interface OutboxPayload {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Supabase Realtime event types

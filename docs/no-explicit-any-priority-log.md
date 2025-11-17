@@ -1845,11 +1845,15 @@ Total warnings: **537**
 105:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
+✅ **DONE** - Removed explicit `any[]` type annotation, TypeScript now infers correct type from Q.where() usage
+
 #### `src/lib/watermelon-models/notification-preference.ts` (1 warnings)
 
 ```.text
 56:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
+
+✅ **DONE** - Replaced `any` with proper type casting to `NotificationPreferenceModel` inside collection.create callback
 
 #### `src/lib/watermelon-models/outbox-notification-action.ts` (1 warnings)
 
@@ -1857,11 +1861,15 @@ Total warnings: **537**
 19:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
+✅ **DONE** - Replaced `Record<string, any>` with `Record<string, unknown>` for data property in NotificationActionPayload
+
 #### `src/types/community.ts` (1 warnings)
 
 ```.text
 88:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
+
+✅ **DONE** - Replaced `any` with `unknown` in OutboxPayload index signature
 
 </details>
 

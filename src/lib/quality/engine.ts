@@ -62,8 +62,12 @@ export async function assessData(data: ImageLumaData): Promise<QualityResult> {
     scores.push(result.score);
     const thresholdConfig = thresholds[key];
     weights.push(
-      typeof thresholdConfig === 'object' && 'weight' in thresholdConfig
-        ? thresholdConfig.weight
+      thresholdConfig !== null &&
+        typeof thresholdConfig === 'object' &&
+        'weight' in thresholdConfig
+        ? Number.isFinite(thresholdConfig.weight)
+          ? thresholdConfig.weight
+          : 0
         : 0
     );
     if (result.issue) {

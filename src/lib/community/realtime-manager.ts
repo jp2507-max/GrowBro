@@ -339,23 +339,22 @@ export class RealtimeConnectionManager {
   ): RealtimeEvent<T> | null {
     if (!payload) return null;
 
-    // Validate payload structure before casting
-    const isValidPayload = (
-      data: Record<string, unknown> | null
-    ): data is T | null => {
-      // Basic validation: ensure data is null or an object
+    // Basic validation: ensure payload has valid structure
+    const isValid = (data: unknown): boolean => {
       return data === null || (typeof data === 'object' && data !== null);
     };
 
-    if (!isValidPayload(payload.new) || !isValidPayload(payload.old)) {
+    if (!isValid(payload.new) || !isValid(payload.old)) {
       console.error('Invalid payload structure received', { table, payload });
       return null;
     }
 
     // Extract client_tx_id from the row if present
+    const newData = payload.new as Record<string, unknown> | null;
+    const oldData = payload.old as Record<string, unknown> | null;
     const clientTxId =
-      (payload.new?.client_tx_id as string | undefined) ??
-      (payload.old?.client_tx_id as string | undefined);
+      (newData?.client_tx_id as string | undefined) ??
+      (oldData?.client_tx_id as string | undefined);
 
     return {
       schema: 'public',

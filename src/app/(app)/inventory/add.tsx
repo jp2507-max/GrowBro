@@ -28,9 +28,48 @@ import {
   Text,
   View,
 } from '@/components/ui';
-import { translate } from '@/lib';
 import { createInventoryItem } from '@/lib/inventory/inventory-item-service';
 import type { InventoryCategory } from '@/types/inventory';
+
+// Form schema and type
+const useAddItemSchema = () => {
+  const { t, i18n } = useTranslation();
+  return React.useMemo(
+    () =>
+      z.object({
+        name: z
+          .string()
+          .min(1, t('inventory.form.validation.nameRequired'))
+          .max(100, t('inventory.form.validation.nameMaxLength')),
+        category: z.enum([
+          'Nutrients',
+          'Seeds',
+          'Growing Media',
+          'Tools',
+          'Containers',
+          'Amendments',
+        ]),
+        unitOfMeasure: z
+          .string()
+          .min(1, t('inventory.form.validation.unitRequired'))
+          .max(20, t('inventory.form.validation.unitMaxLength')),
+        trackingMode: z.enum(['simple', 'batched']),
+        isConsumable: z.boolean(),
+        minStock: z
+          .number()
+          .min(0, t('inventory.form.validation.minStockPositive')),
+        reorderMultiple: z
+          .number()
+          .min(1, t('inventory.form.validation.reorderMultipleMin')),
+        leadTimeDays: z.number().min(0).optional(),
+        sku: z.string().max(50).optional(),
+        barcode: z.string().max(50).optional(),
+      }),
+    [i18n.language, t]
+  );
+};
+
+type AddItemFormData = z.infer<ReturnType<typeof useAddItemSchema>>;
 
 function FormHeader({ onCancel }: { onCancel: () => void }) {
   const { t } = useTranslation();
@@ -75,17 +114,6 @@ function NameField({
       <ControlledInput
         control={control}
         name="name"
-        rules={{
-          required: t('inventory.form.validation.nameRequired'),
-          minLength: {
-            value: 1,
-            message: t('inventory.form.validation.nameRequired'),
-          },
-          maxLength: {
-            value: 100,
-            message: t('inventory.form.validation.nameMaxLength'),
-          },
-        }}
         placeholder={t('inventory.form.name_placeholder')}
         editable={!isSubmitting}
         testID="name-input"
@@ -105,7 +133,6 @@ function CategoryField({ control }: { control: Control<AddItemFormData> }) {
       <Controller
         control={control}
         name="category"
-        rules={{ required: t('inventory.form.validation.categoryRequired') }}
         render={({ field: { onChange, value } }) => (
           <View className="flex-row flex-wrap gap-2">
             {CATEGORIES.map((category) => (
@@ -147,17 +174,6 @@ function UnitField({
       <ControlledInput
         control={control}
         name="unitOfMeasure"
-        rules={{
-          required: t('inventory.form.validation.unitRequired'),
-          minLength: {
-            value: 1,
-            message: t('inventory.form.validation.unitRequired'),
-          },
-          maxLength: {
-            value: 20,
-            message: t('inventory.form.validation.unitMaxLength'),
-          },
-        }}
         placeholder={t('inventory.form.unit_placeholder')}
         editable={!isSubmitting}
         testID="unit-input"
@@ -177,9 +193,6 @@ function TrackingModeField({ control }: { control: Control<AddItemFormData> }) {
       <Controller
         control={control}
         name="trackingMode"
-        rules={{
-          required: t('inventory.form.validation.trackingModeRequired'),
-        }}
         render={({ field: { onChange, value } }) => (
           <View className="flex-row gap-2">
             {TRACKING_MODES.map((mode) => (
@@ -220,13 +233,6 @@ function MinStockField({
       <Controller
         control={control}
         name="minStock"
-        rules={{
-          required: t('inventory.form.validation.minStockRequired'),
-          min: {
-            value: 0,
-            message: t('inventory.form.validation.minStockPositive'),
-          },
-        }}
         render={({ field: { onChange, onBlur, value, ref }, fieldState }) => (
           <Input
             ref={ref}
@@ -274,13 +280,6 @@ function ReorderMultipleField({
       <Controller
         control={control}
         name="reorderMultiple"
-        rules={{
-          required: t('inventory.form.validation.reorderMultipleRequired'),
-          min: {
-            value: 1,
-            message: t('inventory.form.validation.reorderMultipleMin'),
-          },
-        }}
         render={({ field: { onChange, onBlur, value, ref }, fieldState }) => (
           <Input
             ref={ref}
@@ -326,12 +325,6 @@ function LeadTimeField({
       <Controller
         control={control}
         name="leadTimeDays"
-        rules={{
-          min: {
-            value: 0,
-            message: t('inventory.form.validation.leadTimePositive'),
-          },
-        }}
         render={({ field: { onChange, onBlur, value, ref }, fieldState }) => (
           <Input
             ref={ref}
@@ -442,38 +435,6 @@ const CATEGORIES: InventoryCategory[] = [
 
 const TRACKING_MODES = ['simple', 'batched'] as const;
 
-const addItemSchema = z.object({
-  name: z
-    .string()
-    .min(1, translate('inventory.form.validation.nameRequired'))
-    .max(100, translate('inventory.form.validation.nameMaxLength')),
-  category: z.enum([
-    'Nutrients',
-    'Seeds',
-    'Growing Media',
-    'Tools',
-    'Containers',
-    'Amendments',
-  ]),
-  unitOfMeasure: z
-    .string()
-    .min(1, translate('inventory.form.validation.unitRequired'))
-    .max(20, translate('inventory.form.validation.unitMaxLength')),
-  trackingMode: z.enum(['simple', 'batched']),
-  isConsumable: z.boolean(),
-  minStock: z
-    .number()
-    .min(0, translate('inventory.form.validation.minStockPositive')),
-  reorderMultiple: z
-    .number()
-    .min(1, translate('inventory.form.validation.reorderMultipleMin')),
-  leadTimeDays: z.number().min(0).optional(),
-  sku: z.string().max(50).optional(),
-  barcode: z.string().max(50).optional(),
-});
-
-type AddItemFormData = z.infer<typeof addItemSchema>;
-
 export default function AddInventoryItemScreen(): React.ReactElement {
   const { t } = useTranslation();
   const router = useRouter();
@@ -482,6 +443,8 @@ export default function AddInventoryItemScreen(): React.ReactElement {
   const [serverValidationErrors, setServerValidationErrors] = React.useState<
     Record<string, string>
   >({});
+
+  const addItemSchema = useAddItemSchema();
 
   const {
     control,

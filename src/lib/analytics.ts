@@ -577,6 +577,22 @@ export type AnalyticsEvents = {
   auth_email_verification_resent: {
     email: string;
   };
+  auth_account_deletion_requested: {
+    user_id: string;
+    email?: string;
+  };
+  auth_account_deletion_cancelled: {
+    user_id: string;
+    email?: string;
+  };
+  auth_account_deleted: {
+    user_id: string;
+    email?: string;
+  };
+  auth_password_changed: {
+    user_id: string;
+    email?: string;
+  };
 
   // Onboarding & Activation events
   onboarding_start: {
@@ -743,7 +759,7 @@ function sanitizeStrainSearchPayload<N extends AnalyticsEventName>(
   // Type-safe approach: build new object with correct shape by destructuring
   // the query property and reconstructing with sanitized_query
   if ('query' in payload && typeof payload.query === 'string') {
-    const { query, ...rest } = payload;
+    const { query, ...rest } = payload as any;
     return {
       ...rest,
       sanitized_query: sanitizeSearchQuery(query),

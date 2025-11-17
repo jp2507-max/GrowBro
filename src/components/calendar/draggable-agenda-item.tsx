@@ -86,8 +86,7 @@ function extractTargets(
 ):
   | { phMin: number; phMax: number; ecMin25c: number; ecMax25c: number }
   | undefined {
-  const meta =
-    (task as Task & { metadata?: Record<string, unknown> })?.metadata ?? {};
+  const meta = task.metadata ?? {};
   const t = meta?.targets as
     | {
         phMin?: number;

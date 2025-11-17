@@ -52,7 +52,7 @@ export type Task = {
   status: TaskStatus;
   position?: number;
   completedAt?: string; // ISO timestamptz
-  metadata: TaskMetadata;
+  metadata?: TaskMetadata;
   serverRevision?: number; // Monotonic int for conflict resolution
   serverUpdatedAtMs?: number; // Epoch ms (number) - server last updated timestamp
   createdAt: string; // ISO timestamptz

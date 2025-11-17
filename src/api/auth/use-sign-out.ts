@@ -48,7 +48,7 @@ export const useSignOut = createMutation({
     clearLocalAuthState();
 
     // Track analytics event with consent checking and PII sanitization
-    await trackAuthEvent('auth.sign_out', {
+    await trackAuthEvent('auth_sign_out', {
       scope: 'local',
       email: currentUser?.email,
       user_id: currentUser?.id,
@@ -102,7 +102,7 @@ export const useSignOutGlobal = createMutation({
     useAuth.getState().signOut();
 
     // Track analytics event with consent checking and PII sanitization
-    await trackAuthEvent('auth.sign_out_global', {
+    await trackAuthEvent('auth_sign_out', {
       scope: 'global',
       email: currentUser?.email,
       user_id: currentUser?.id,

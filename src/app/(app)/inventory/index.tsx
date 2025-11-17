@@ -26,12 +26,14 @@ import { Button, FocusAwareStatusBar, Text, View } from '@/components/ui';
 import { useOfflineStatus } from '@/lib/hooks/use-offline-status';
 import { useExactAlarmPermissionStatus } from '@/lib/inventory/use-exact-alarm-permission-status';
 import { useInventoryItems } from '@/lib/inventory/use-inventory-items';
-import type { InventoryItem } from '@/types/inventory';
+import type { InventoryItemWithStock } from '@/types/inventory';
 
 export default function InventoryScreen(): React.ReactElement {
   const { t } = useTranslation();
   const router = useRouter();
-  const listRef = React.useRef<FlashListRef<InventoryItem>>(null);
+  const listRef = React.useRef<FlashListRef<InventoryItemWithStock> | null>(
+    null
+  );
 
   useScrollToTop(listRef);
 

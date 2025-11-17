@@ -912,6 +912,7 @@ function applyPayloadToRecord(
       if (value != null && target._raw) {
         const numericValue = Number(value);
         if (Number.isFinite(numericValue)) {
+          target.serverRevision = numericValue;
           target._raw.server_revision = numericValue;
         }
       }
@@ -924,6 +925,7 @@ function applyPayloadToRecord(
             ? value
             : toMillis(value as Date | string | number | null | undefined);
         if (numericValue != null && Number.isFinite(numericValue)) {
+          target.serverUpdatedAtMs = numericValue;
           target._raw.server_updated_at_ms = numericValue;
         }
       }

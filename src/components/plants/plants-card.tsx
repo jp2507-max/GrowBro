@@ -6,12 +6,12 @@ import {
   type ListRenderItemInfo,
 } from 'react-native';
 import Animated, {
-  interpolate,
-  useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
   type SharedValue,
 } from 'react-native-reanimated';
+// @ts-expect-error - Reanimated 4.x type exports issue
+import { interpolate, useAnimatedProps } from 'react-native-reanimated';
 
 import type { Plant } from '@/api';
 import { Pressable, Text, View } from '@/components/ui';

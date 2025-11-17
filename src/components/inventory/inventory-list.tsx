@@ -11,7 +11,11 @@
  * Requirements: 1.1, 1.3
  */
 
-import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
+import {
+  FlashList,
+  type FlashListRef,
+  type ListRenderItemInfo,
+} from '@shopify/flash-list';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable } from 'react-native';

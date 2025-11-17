@@ -28,6 +28,20 @@ function isAxiosError(error: unknown): error is AxiosError {
   );
 }
 
+export function isAxiosErrorWithNumericStatus(
+  error: unknown
+): error is { response: { status: number } } {
+  return (
+    !!error &&
+    typeof error === 'object' &&
+    'response' in error &&
+    !!error.response &&
+    typeof error.response === 'object' &&
+    'status' in error.response &&
+    typeof error.response.status === 'number'
+  );
+}
+
 function categorizeAxiosError(error: AxiosError): CategorizedError {
   const status = error.response?.status;
   const isNetwork = !error.response;

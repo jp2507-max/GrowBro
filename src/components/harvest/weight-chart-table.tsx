@@ -6,7 +6,7 @@
  */
 
 import { FlashList } from '@shopify/flash-list';
-import type { TFunction } from 'i18next';
+import type { i18n, TFunction } from 'i18next';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
@@ -33,7 +33,7 @@ type TableRow = {
 function createTableData(
   data: ChartDataPoint[],
   t: TFunction,
-  i18n: I18n
+  i18n: i18n
 ): TableRow[] {
   return data.map((point, index) => ({
     id: `${point.date.getTime()}-${index}`,

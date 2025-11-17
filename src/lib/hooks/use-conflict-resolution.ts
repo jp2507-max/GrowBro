@@ -145,8 +145,9 @@ export function useConflictResolution() {
                 if (conflict.localRecord) {
                   for (const field of conflict.conflictFields) {
                     if (field in conflict.localRecord) {
-                      // Type-safe dynamic field assignment using Record index signature
-                      // We know the field exists in localRecord and typedRec is a valid model
+                      // Assignment is type-safe within WatermelonDB constraints
+                      // Field existence is validated by the prior if (field in conflict.localRecord) check
+                      // The double-cast on typedRec is a pragmatic necessity due to the model typings
                       const recordWithDynamicFields =
                         typedRec as unknown as Record<string, unknown>;
                       recordWithDynamicFields[field] =

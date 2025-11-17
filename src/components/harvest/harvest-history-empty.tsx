@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Button, Text, View } from '@/components/ui';
 import { translate } from '@/lib/i18n';
-import type { TxKeyPath } from '@/lib/i18n/types';
+import type { TxKeyPath } from '@/lib/i18n/utils';
 
 type EmptyVariant = 'default' | 'filtered' | 'offline';
 

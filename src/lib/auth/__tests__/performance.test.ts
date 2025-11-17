@@ -243,9 +243,11 @@ if (shouldRunPerformanceTests) {
     describe('Analytics Event Batching Performance', () => {
       it('should batch analytics events efficiently', async () => {
         const events = Array.from({ length: 10 }, (_, i) => ({
-          event: `auth.test_event_${i}`,
+          event: 'auth_sign_in' as const,
           properties: {
             email: `test${i}@example.com`,
+            user_id: `user-${i}`,
+            method: 'email' as const,
             timestamp: new Date().toISOString(),
           },
         }));

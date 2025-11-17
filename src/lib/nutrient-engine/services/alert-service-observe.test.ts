@@ -28,7 +28,7 @@ describe('observeActiveAlerts', () => {
   });
 
   test('returns observable that filters by reservoir ID', () => {
-    const observable = observeActiveAlerts('test-reservoir-id', mockDb);
+    const observable = observeActiveAlerts('test-reservoir-id', mockDb as any);
 
     expect(mockDb.get).toHaveBeenCalledWith('ph_ec_readings_v2');
     expect(typeof observable.subscribe).toBe('function');

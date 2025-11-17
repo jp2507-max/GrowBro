@@ -7,7 +7,7 @@ import { Env } from '@env';
 import * as Sentry from '@sentry/react-native';
 import * as Crypto from 'expo-crypto';
 
-import type { AnalyticsClient } from '@/lib/analytics';
+import type { AnalyticsClient, AnalyticsEventName } from '@/lib/analytics';
 import { createConsentGatedAnalytics, NoopAnalytics } from '@/lib/analytics';
 import { SDKGate } from '@/lib/privacy/sdk-gate';
 import {
@@ -166,11 +166,11 @@ export async function sanitizeAuthPII(data: {
 /**
  * Track authentication events with consent checking and PII sanitization
  *
- * @param event - Event name (e.g., 'auth.sign_in', 'auth.sign_up')
+ * @param event - Event name (e.g., 'auth_sign_in', 'auth_sign_up')
  * @param properties - Event properties (will be sanitized for PII)
  */
 export async function trackAuthEvent(
-  event: string,
+  event: AnalyticsEventName,
   properties: Record<string, unknown> = {}
 ): Promise<void> {
   // Check if user has consented to analytics
@@ -189,7 +189,7 @@ export async function trackAuthEvent(
     };
 
     // Track event using consent-gated analytics client
-    authAnalyticsClient.track(event as AnalyticsEventName, payload);
+    authAnalyticsClient.track(event, payload);
   } catch (error) {
     console.warn('Failed to track auth event:', error);
     // Fail silently to avoid breaking auth flows

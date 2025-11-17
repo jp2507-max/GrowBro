@@ -1292,7 +1292,7 @@
       },
       "item_detail": "Item Details",
       "low_stock": "Low Stock",
-      "low_stock_count": "{{count}} items low on stock",
+      "low_stock_count": "{{count}} low stock items",
       "low_stock_info": "Sorted by urgency: days until stockout, then % below threshold",
       "min_stock": "Min",
       "missing_dry_weight": "Dry weight must be set before completing curing",
@@ -2455,6 +2455,8 @@
     "exportQueuedBody": "We queued your data export. Estimated completion: {{eta}}.",
     "exportQueuedBodyNoEta": "We queued your data export. You will receive a link when it is ready.",
     "exportQueuedTitle": "Export requested",
+    "exportReadyBody": "Your data export has been completed and shared successfully.",
+    "exportReadyTitle": "Export Complete",
     "invalidUrlBody": "The web deletion URL is not secure. Please contact support.",
     "invalidUrlTitle": "Invalid URL",
     "lastUpdated": "Last updated: {{date}}",
@@ -3161,8 +3163,9 @@
   "support": {
     "article": {
       "contactCta": "Need more help? Contact Support",
-      "lastUpdated": "Last updated {{date}}",
-      "rate": {
+      "item": "Item",
+      "last_updated": "Last updated {{time}}",
+      "movement": {
         "feedbackPlaceholder": "Optional feedback...",
         "feedbackPrompt": "What was missing or unclear?",
         "helpful": "Yes, helpful",

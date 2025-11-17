@@ -18,16 +18,16 @@ type DbCommunityTemplateRow = {
   author_id: string;
   author_handle: string;
   name: string;
-  description: string;
+  description: string | null;
   setup: 'auto_indoor' | 'auto_outdoor' | 'photo_indoor' | 'photo_outdoor';
   locale: string;
   license: string;
   steps: PlaybookStep[];
   phase_order: string[];
-  total_weeks: number;
+  total_weeks: number | null;
   task_count: number;
   adoption_count: number;
-  rating_average: number;
+  rating_average: number | null;
   rating_count: number;
   created_at: string;
   updated_at: string;
@@ -54,16 +54,16 @@ function mapDbRowToCommunityTemplate(
     authorId: row.author_id,
     authorHandle: row.author_handle,
     name: row.name,
-    description: row.description,
+    description: row.description ?? undefined,
     setup: row.setup,
     locale: row.locale,
     license: row.license,
     steps: row.steps,
     phaseOrder: row.phase_order,
-    totalWeeks: row.total_weeks,
+    totalWeeks: row.total_weeks ?? undefined,
     taskCount: row.task_count,
     adoptionCount: row.adoption_count,
-    ratingAverage: row.rating_average,
+    ratingAverage: row.rating_average ?? undefined,
     ratingCount: row.rating_count,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

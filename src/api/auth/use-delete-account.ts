@@ -86,7 +86,7 @@ export const useDeleteAccount = createMutation({
       await deleteLocalData();
 
       // Step 3: Track analytics event before signing out (if consented)
-      await trackAuthEvent('auth.account_deleted', {
+      await trackAuthEvent('auth_account_deleted', {
         email: currentUser.email,
         user_id: currentUser.id,
         deleted_counts: data.deleted_counts,

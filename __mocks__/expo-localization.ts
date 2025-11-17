@@ -7,6 +7,10 @@ export function getCalendars(): { timeZone: string }[] {
   return [{ timeZone: 'UTC' }];
 }
 
-export function getLocales(): { timeZone?: string }[] {
-  return [{ timeZone: 'UTC' }];
+export function getLocales(): {
+  languageTag: string;
+  regionCode?: string;
+  timeZone?: string;
+}[] {
+  return [{ languageTag: 'en-US', regionCode: 'US', timeZone: 'UTC' }];
 }

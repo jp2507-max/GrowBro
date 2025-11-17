@@ -57,7 +57,7 @@ export const useVerifyEmail = createMutation<void, VerifyEmailVariables, Error>(
     },
     onSuccess: async (_, variables) => {
       // Track analytics event with consent checking and PII sanitization
-      await trackAuthEvent('auth.email_verified', {
+      await trackAuthEvent('auth_email_verified', {
         type: variables.type,
         email: useAuth.getState().user?.email,
         user_id: useAuth.getState().user?.id,
@@ -103,7 +103,7 @@ export const useResendVerificationEmail = createMutation<
   },
   onSuccess: async (_, variables) => {
     // Track analytics event with consent checking and PII sanitization
-    await trackAuthEvent('auth.email_verification_resent', {
+    await trackAuthEvent('auth_email_verification_resent', {
       email: variables.email,
     });
   },
