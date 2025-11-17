@@ -15,14 +15,14 @@ import { type ScheduleShifter } from './schedule-shifter';
 
 interface MockPlaybookApplication {
   id: string;
-  playbook_id: string;
-  plant_id: string;
+  playbookId: string;
+  plantId: string;
   status: 'pending' | 'completed' | 'failed';
-  applied_at: Date;
-  task_count?: number;
-  duration_ms?: number;
-  job_id?: string;
-  idempotency_key?: string;
+  appliedAt: Date;
+  taskCount?: number;
+  durationMs?: number;
+  jobId?: string;
+  idempotencyKey?: string;
   update?: jest.Mock<
     Promise<void>,
     [(record: MockPlaybookApplication) => void]
@@ -40,14 +40,14 @@ const createMockApplication = (
 ): MockPlaybookApplication => {
   const defaultApplication: MockPlaybookApplication = {
     id: 'app-1',
-    playbook_id: 'playbook-1',
-    plant_id: 'plant-1',
+    playbookId: 'playbook-1',
+    plantId: 'plant-1',
     status: 'pending',
-    applied_at: new Date(),
-    task_count: 0,
-    duration_ms: 0,
-    job_id: 'job-1',
-    idempotency_key: 'idem-key-1',
+    appliedAt: new Date(),
+    taskCount: 0,
+    durationMs: 0,
+    jobId: 'job-1',
+    idempotencyKey: 'idem-key-1',
   };
 
   const mockApplication = { ...defaultApplication, ...overrides };
@@ -122,10 +122,28 @@ const createMockDatabase = (): MockDatabase => {
             let filtered = [...mockApplications];
             conditions.forEach((condition) => {
               if ('type' in condition && condition.type === 'where') {
-                const field = condition.left as keyof MockPlaybookApplication;
+                // Map snake_case column names to camelCase property names
+                const columnToProperty: Record<
+                  string,
+                  keyof MockPlaybookApplication
+                > = {
+                  playbook_id: 'playbookId',
+                  plant_id: 'plantId',
+                  applied_at: 'appliedAt',
+                  task_count: 'taskCount',
+                  duration_ms: 'durationMs',
+                  job_id: 'jobId',
+                  idempotency_key: 'idempotencyKey',
+                  status: 'status',
+                  id: 'id',
+                };
+                const property =
+                  columnToProperty[condition.left] ||
+                  (condition.left as keyof MockPlaybookApplication);
                 const value = condition.comparison.right.value;
-                filtered = filtered.filter((app) => app[field] === value);
+                filtered = filtered.filter((app) => app[property] === value);
               } else if ('key' in condition) {
+                // Handle direct property queries (assume already camelCase)
                 const field = condition.key as keyof MockPlaybookApplication;
                 const value = condition.value;
                 filtered = filtered.filter((app) => app[field] === value);
@@ -307,8 +325,8 @@ describe('PlaybookService', () => {
 
     test('returns false when different playbook is already applied', async () => {
       const mockApplication = createMockApplication({
-        playbook_id: 'playbook-2',
-        plant_id: 'plant-1',
+        playbookId: 'playbook-2',
+        plantId: 'plant-1',
         status: 'pending',
       });
 
@@ -324,8 +342,8 @@ describe('PlaybookService', () => {
 
     test('returns true when completed playbook exists for plant', async () => {
       const mockApplication = createMockApplication({
-        playbook_id: 'playbook-1',
-        plant_id: 'plant-1',
+        playbookId: 'playbook-1',
+        plantId: 'plant-1',
         status: 'completed',
       });
 
@@ -341,8 +359,8 @@ describe('PlaybookService', () => {
 
     test('returns false when pending playbook exists for plant', async () => {
       const mockApplication = createMockApplication({
-        playbook_id: 'playbook-1',
-        plant_id: 'plant-1',
+        playbookId: 'playbook-1',
+        plantId: 'plant-1',
         status: 'pending',
       });
 
@@ -449,8 +467,8 @@ describe('PlaybookService', () => {
 
     test('throws error when plant has active playbook', async () => {
       const mockApplication = createMockApplication({
-        playbook_id: 'playbook-2',
-        plant_id: 'plant-1',
+        playbookId: 'playbook-2',
+        plantId: 'plant-1',
         status: 'pending',
       });
 
@@ -484,8 +502,8 @@ describe('PlaybookService', () => {
 
     test('allows multiple playbooks when allowMultiple is true', async () => {
       const mockApplication = createMockApplication({
-        playbook_id: 'playbook-2',
-        plant_id: 'plant-1',
+        playbookId: 'playbook-2',
+        plantId: 'plant-1',
         status: 'pending',
       });
 

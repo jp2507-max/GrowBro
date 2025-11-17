@@ -898,12 +898,8 @@ function getCollectionByTable<K extends TableName>(
   return repos[table];
 }
 
-// CRITICAL: @readonly fields cannot be persisted inside .update() callbacks in WatermelonDB
-// This function currently works around this by writing to target._raw, but this approach
-// fails for SeriesModel and OccurrenceOverrideModel which still have @readonly on their
-// serverRevision and serverUpdatedAtMs fields. The proper fix is to:
-// 1. Remove @readonly from those model fields
-// 2. Write directly to properties instead of target._raw
+// Server metadata persistence: writes directly to serverRevision and serverUpdatedAtMs
+// properties. Requires @readonly removed from model fields (completed for all models).
 function applyPayloadToRecord(
   target: ModelSnapshot,
   payload: RemoteChangePayload
@@ -1052,14 +1048,6 @@ async function handleCreate<ModelType extends Model>(
       if (normalizedUpdated instanceof Date) {
         record.updatedAt = normalizedUpdated;
       }
-    }
-    const revision = safeParseNumber(payload.server_revision);
-    if (revision != null && record._raw) {
-      record._raw.server_revision = revision;
-    }
-    const serverUpdatedAt = safeParseNumber(payload.server_updated_at_ms);
-    if (serverUpdatedAt != null && record._raw) {
-      record._raw.server_updated_at_ms = serverUpdatedAt;
     }
   });
 }

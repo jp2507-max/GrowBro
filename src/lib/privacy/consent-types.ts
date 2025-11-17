@@ -3,7 +3,6 @@ export const RUNTIME_CONSENT_KEYS = [
   'experiments',
   'cloudProcessing',
   'aiTraining',
-  'aiModelImprovement',
   'crashDiagnostics',
 ] as const;
 
@@ -21,7 +20,6 @@ export const LAWFUL_BASIS_BY_PURPOSE: Record<ConsentPurpose, LawfulBasis> = {
   experiments: LAWFUL_BASIS.CONSENT,
   cloudProcessing: LAWFUL_BASIS.CONSENT,
   aiTraining: LAWFUL_BASIS.CONSENT,
-  aiModelImprovement: LAWFUL_BASIS.CONSENT,
   crashDiagnostics: LAWFUL_BASIS.CONSENT,
 };
 

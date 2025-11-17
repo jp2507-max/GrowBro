@@ -5,7 +5,8 @@ import type { ConsentPurpose as RuntimeConsentPurpose } from './consent-types';
 export type ConsentPurpose =
   | RuntimeConsentPurpose
   | 'analytics'
-  | 'crashReporting';
+  | 'crashReporting'
+  | 'aiModelImprovement';
 
 export type ConsentChangeCallback = (
   consented: boolean,
@@ -75,7 +76,6 @@ export class ConsentManagerImpl implements ConsentManager {
       this.notifyListeners('experiments', state.experiments);
       this.notifyListeners('cloudProcessing', state.cloudProcessing);
       this.notifyListeners('aiTraining', state.aiTraining);
-      this.notifyListeners('aiModelImprovement', state.aiModelImprovement);
       this.notifyListeners('crashDiagnostics', state.crashDiagnostics);
     });
 
@@ -83,6 +83,7 @@ export class ConsentManagerImpl implements ConsentManager {
       // Handle privacy consent changes
       this.notifyListeners('analytics', consent.analytics);
       this.notifyListeners('crashReporting', consent.crashReporting);
+      this.notifyListeners('aiModelImprovement', consent.aiModelImprovement);
     });
   }
 
@@ -92,11 +93,12 @@ export class ConsentManagerImpl implements ConsentManager {
         return hasConsent('analytics');
       case 'crashReporting':
         return hasConsent('crashReporting');
+      case 'aiModelImprovement':
+        return hasConsent('aiModelImprovement');
       case 'telemetry':
       case 'experiments':
       case 'cloudProcessing':
       case 'aiTraining':
-      case 'aiModelImprovement':
       case 'crashDiagnostics':
         return ConsentService.hasConsent(purpose);
       default:
@@ -115,6 +117,7 @@ export class ConsentManagerImpl implements ConsentManager {
     switch (purpose) {
       case 'analytics':
       case 'crashReporting':
+      case 'aiModelImprovement':
         // These are handled by privacy-consent service
         // Note: We can't directly revoke from here as it requires UI interaction
         // The UI should call the appropriate service methods
@@ -123,7 +126,6 @@ export class ConsentManagerImpl implements ConsentManager {
       case 'experiments':
       case 'cloudProcessing':
       case 'aiTraining':
-      case 'aiModelImprovement':
       case 'crashDiagnostics':
         await ConsentService.setConsent(purpose, false);
         break;

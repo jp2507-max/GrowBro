@@ -182,7 +182,7 @@ function QuickOptOutActions({
   onOptOutAll,
   onDismiss,
 }: {
-  onOptOutAll: () => void;
+  onOptOutAll: () => Promise<void> | void;
   onDismiss?: () => void;
 }) {
   return (
