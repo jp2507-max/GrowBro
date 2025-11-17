@@ -37,7 +37,6 @@ export type ConsentState = {
   experiments: boolean;
   cloudProcessing: boolean;
   aiTraining: boolean;
-  aiModelImprovement: boolean;
   crashDiagnostics: boolean;
   version: string;
   timestamp: string; // ISO string

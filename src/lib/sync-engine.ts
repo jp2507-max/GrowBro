@@ -288,7 +288,10 @@ function _normalizeIncomingValue(key: string, value: unknown): unknown {
   // Convert common timestamp fields from milliseconds to Date objects
   if (
     typeof value === 'number' &&
-    (key === 'createdAt' || key === 'updatedAt' || key === 'receivedAt')
+    (key === 'createdAt' ||
+      key === 'updatedAt' ||
+      key === 'receivedAt' ||
+      key === 'expiresOn')
   ) {
     return new Date(value);
   }

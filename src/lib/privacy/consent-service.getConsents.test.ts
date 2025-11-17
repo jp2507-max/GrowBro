@@ -1,8 +1,12 @@
-import { getItem, setItem } from '@/lib/storage';
 import { cleanup } from '@/lib/test-utils';
 
 import { ConsentService } from './consent-service';
 import type { ConsentState } from './consent-types';
+import {
+  clearSecureConfigForTests,
+  getSecureConfig,
+  setSecureConfig,
+} from './secure-config-store';
 
 const CONSENT_KEY = 'consents.v1';
 const CURRENT_CONSENT_VERSION = '2025-09-01';
@@ -10,9 +14,9 @@ const CURRENT_CONSENT_VERSION = '2025-09-01';
 afterEach(cleanup);
 
 describe('ConsentService.getConsents', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     // Clear any stored consent data before each test
-    setItem(CONSENT_KEY, null);
+    await clearSecureConfigForTests();
     jest.restoreAllMocks();
   });
 
@@ -24,7 +28,6 @@ describe('ConsentService.getConsents', () => {
       experiments: false,
       cloudProcessing: false,
       aiTraining: false,
-      aiModelImprovement: false,
       crashDiagnostics: false,
       version: CURRENT_CONSENT_VERSION,
       timestamp: expect.any(String),
@@ -38,23 +41,27 @@ describe('ConsentService.getConsents', () => {
       experiments: false,
       cloudProcessing: false,
       aiTraining: true,
-      aiModelImprovement: false,
       crashDiagnostics: false,
       version: CURRENT_CONSENT_VERSION,
       timestamp: '2025-01-01T00:00:00.000Z',
       locale: 'en',
     };
 
-    setItem(CONSENT_KEY, storedConsent);
+    await setSecureConfig(CONSENT_KEY, storedConsent);
     const result = await ConsentService.getConsents();
 
-    expect(result).toEqual(storedConsent);
+    // Should return the stored consent values, but with updated locale and timestamp
+    expect(result).toEqual({
+      ...storedConsent,
+      timestamp: expect.any(String), // timestamp gets updated to current time
+      locale: expect.any(String), // locale gets updated to current locale
+    });
   });
 });
 
 describe('ConsentService.getConsents - versioning', () => {
-  beforeEach(() => {
-    setItem(CONSENT_KEY, null);
+  beforeEach(async () => {
+    await clearSecureConfigForTests();
     jest.restoreAllMocks();
   });
 
@@ -64,14 +71,13 @@ describe('ConsentService.getConsents - versioning', () => {
       experiments: true,
       cloudProcessing: true,
       aiTraining: true,
-      aiModelImprovement: false,
       crashDiagnostics: true,
       version: '2024-01-01', // Old version
       timestamp: '2024-01-01T00:00:00.000Z',
       locale: 'en',
     };
 
-    setItem(CONSENT_KEY, outdatedConsent);
+    await setSecureConfig(CONSENT_KEY, outdatedConsent);
     const result = await ConsentService.getConsents();
 
     // Should return fresh defaults, not the old consent values
@@ -80,7 +86,6 @@ describe('ConsentService.getConsents - versioning', () => {
       experiments: false,
       cloudProcessing: false,
       aiTraining: false,
-      aiModelImprovement: false,
       crashDiagnostics: false,
       version: CURRENT_CONSENT_VERSION,
       timestamp: expect.any(String),
@@ -88,7 +93,7 @@ describe('ConsentService.getConsents - versioning', () => {
     });
 
     // Should have cleared the old data from storage
-    const stored = getItem<ConsentState>(CONSENT_KEY);
+    const stored = await getSecureConfig<ConsentState>(CONSENT_KEY);
     expect(stored?.version).toBe(CURRENT_CONSENT_VERSION);
     expect(stored?.telemetry).toBe(false);
   });
