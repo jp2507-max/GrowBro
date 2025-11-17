@@ -912,7 +912,6 @@ function applyPayloadToRecord(
       if (value != null && target._raw) {
         const numericValue = Number(value);
         if (Number.isFinite(numericValue)) {
-          target.serverRevision = numericValue;
           target._raw.server_revision = numericValue;
         }
       }
@@ -925,7 +924,6 @@ function applyPayloadToRecord(
             ? value
             : toMillis(value as Date | string | number | null | undefined);
         if (numericValue != null && Number.isFinite(numericValue)) {
-          target.serverUpdatedAtMs = numericValue;
           target._raw.server_updated_at_ms = numericValue;
         }
       }
@@ -1050,12 +1048,12 @@ async function handleCreate<ModelType extends Model>(
       }
     }
     const revision = safeParseNumber(payload.server_revision);
-    if (revision != null) {
-      record.serverRevision = revision;
+    if (revision != null && record._raw) {
+      record._raw.server_revision = revision;
     }
     const serverUpdatedAt = safeParseNumber(payload.server_updated_at_ms);
-    if (serverUpdatedAt != null) {
-      record.serverUpdatedAtMs = serverUpdatedAt;
+    if (serverUpdatedAt != null && record._raw) {
+      record._raw.server_updated_at_ms = serverUpdatedAt;
     }
   });
 }

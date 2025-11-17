@@ -66,7 +66,7 @@ export function TaskEditModal({
   visible,
 }: TaskEditModalProps) {
   const { t } = useTranslation();
-  const metadata = task.metadata as PlaybookTaskMetadata;
+  const metadata = task.metadata as PlaybookTaskMetadata | undefined;
 
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description || '');

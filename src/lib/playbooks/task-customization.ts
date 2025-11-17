@@ -193,12 +193,12 @@ export class TaskCustomizationService {
       .fetch();
 
     const customizedTasks = tasks.filter((task) => {
-      const metadata = task.metadata as PlaybookTaskMetadata;
+      const metadata = task.metadata as PlaybookTaskMetadata | undefined;
       return metadata?.flags?.manualEdited === true;
     });
 
     const excludedTasks = tasks.filter((task) => {
-      const metadata = task.metadata as PlaybookTaskMetadata;
+      const metadata = task.metadata as PlaybookTaskMetadata | undefined;
       return metadata?.flags?.excludeFromBulkShift === true;
     });
 

@@ -112,7 +112,7 @@ const _useTemplates = createQuery<
   TemplateListParams
 >({
   queryKey: ['templates'],
-  fetcher: async (params) => {
+  fetcher: async (params: TemplateListParams) => {
     const {
       setup,
       locale,
@@ -155,7 +155,9 @@ const _useTemplates = createQuery<
     }
 
     return {
-      templates: (data || []).map(mapDbRowToCommunityTemplate),
+      templates: ((data as DbCommunityTemplateRow[]) || []).map(
+        mapDbRowToCommunityTemplate
+      ),
       total: count || 0,
     };
   },
@@ -180,7 +182,7 @@ export const useTemplates = Object.assign(
  */
 const _useTemplate = createQuery<CommunityTemplate, { id: string }>({
   queryKey: ['template'],
-  fetcher: async ({ id }) => {
+  fetcher: async ({ id }: { id: string }) => {
     const { data, error } = await supabase
       .from('community_playbook_templates')
       .select('*')
@@ -196,7 +198,7 @@ const _useTemplate = createQuery<CommunityTemplate, { id: string }>({
       throw new Error('Template not found');
     }
 
-    return mapDbRowToCommunityTemplate(data);
+    return mapDbRowToCommunityTemplate(data as DbCommunityTemplateRow);
   },
 });
 
@@ -216,7 +218,15 @@ const _useTemplateComments = createQuery<
   { templateId: string; limit?: number; offset?: number }
 >({
   queryKey: ['template-comments'],
-  fetcher: async ({ templateId, limit = 20, offset = 0 }) => {
+  fetcher: async ({
+    templateId,
+    limit = 20,
+    offset = 0,
+  }: {
+    templateId: string;
+    limit?: number;
+    offset?: number;
+  }) => {
     const { data, error } = await supabase
       .from('template_comments')
       .select('*')
@@ -229,7 +239,9 @@ const _useTemplateComments = createQuery<
       throw new Error(`Failed to fetch comments: ${error.message}`);
     }
 
-    return (data || []).map(mapDbRowToTemplateComment);
+    return ((data as DbTemplateCommentRow[]) || []).map(
+      mapDbRowToTemplateComment
+    );
   },
 });
 

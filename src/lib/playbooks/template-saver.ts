@@ -82,7 +82,7 @@ export class TemplateSaverService {
     const tasks = allTasks.filter((task) => task.playbookId != null);
 
     const customizedTasks = tasks.filter((task) => {
-      const metadata = task.metadata as PlaybookTaskMetadata;
+      const metadata = task.metadata as PlaybookTaskMetadata | undefined;
       return metadata?.flags?.manualEdited === true;
     });
 
@@ -356,7 +356,7 @@ export class TemplateSaverService {
     );
 
     tasks.forEach((task) => {
-      const metadata = task.metadata as PlaybookTaskMetadata;
+      const metadata = task.metadata as PlaybookTaskMetadata | undefined;
       const taskDate = new Date(task.dueAtUtc);
       const relativeDay = Math.floor(
         (taskDate.getTime() - firstTaskDate.getTime()) / (1000 * 60 * 60 * 24)

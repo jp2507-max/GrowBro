@@ -282,6 +282,7 @@ class NotificationManager {
 
     // If switching users, start new listener (startTokenListener handles stopping old one internally)
     if (this.listenerUserId && this.listenerUserId !== this.currentUserId) {
+      const previousListenerUserId = this.listenerUserId;
       try {
         await PushNotificationService.startTokenListener({
           userId: this.currentUserId,
@@ -289,18 +290,34 @@ class NotificationManager {
         });
         this.listenerUserId = this.currentUserId;
       } catch (error) {
-        // On failure, keep the existing listener active and log the error
         captureCategorizedErrorSync(error, {
           category: 'notification',
           message:
             'Failed to start token listener for new user, keeping existing listener active',
           context: {
             currentUserId: this.currentUserId,
-            existingListenerUserId: this.listenerUserId,
+            existingListenerUserId: previousListenerUserId,
             projectId: this.currentProjectId,
           },
         });
-        // Don't change listenerUserId - existing listener remains active
+        try {
+          await PushNotificationService.startTokenListener({
+            userId: previousListenerUserId,
+            projectId: this.currentProjectId,
+          });
+          this.listenerUserId = previousListenerUserId;
+        } catch (recoveryError) {
+          captureCategorizedErrorSync(recoveryError, {
+            category: 'notification',
+            message:
+              'Failed to recover token listener after new user listener failed',
+            context: {
+              restoredUserId: previousListenerUserId,
+              projectId: this.currentProjectId,
+            },
+          });
+          this.listenerUserId = null;
+        }
         return;
       }
     } else {

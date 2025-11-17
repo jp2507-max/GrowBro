@@ -1,7 +1,11 @@
 import { hasConsent, onPrivacyConsentChange } from '../privacy-consent';
 import { ConsentService } from './consent-service';
+import type { ConsentPurpose as RuntimeConsentPurpose } from './consent-types';
 
-export type ConsentPurpose = 'analytics' | 'crashReporting' | 'telemetry';
+export type ConsentPurpose =
+  | RuntimeConsentPurpose
+  | 'analytics'
+  | 'crashReporting';
 
 export type ConsentChangeCallback = (
   consented: boolean,

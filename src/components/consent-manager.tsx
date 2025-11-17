@@ -5,7 +5,11 @@ import { Button } from '@/components/ui';
 import { translate } from '@/lib';
 import type { TxKeyPath } from '@/lib/i18n/utils';
 import { ConsentService } from '@/lib/privacy/consent-service';
-import type { ConsentPurpose, ConsentState } from '@/lib/privacy/consent-types';
+import {
+  type ConsentPurpose,
+  type ConsentState,
+  RUNTIME_CONSENT_KEYS,
+} from '@/lib/privacy/consent-types';
 import { telemetryClient } from '@/lib/privacy/telemetry-client';
 import {
   getPrivacyConsent,
@@ -352,15 +356,6 @@ function usePrivacyConsentState(isVisible: boolean) {
   } as const;
 }
 
-const RUNTIME_KEYS = [
-  'telemetry',
-  'experiments',
-  'aiTraining',
-  'crashDiagnostics',
-  'cloudProcessing',
-  'aiModelImprovement',
-] as const;
-
 function useOptOut(
   setPrivacyConsentState: React.Dispatch<React.SetStateAction<PrivacyConsent>>,
   setConsentState: React.Dispatch<React.SetStateAction<ConsentState | null>>,
@@ -379,7 +374,7 @@ function useOptOut(
       setPrivacyConsent(updates);
       // Merge the partial updates into local React state safely
       setPrivacyConsentState((p) => ({ ...p, ...updates }));
-      for (const k of RUNTIME_KEYS) {
+      for (const k of RUNTIME_CONSENT_KEYS) {
         await ConsentService.setConsent(k, false);
       }
       setConsentState((prevState) => {
@@ -444,7 +439,7 @@ function useConsentActions({
   );
 
   const updateRuntime = useCallback(
-    async (purpose: ConsentPurpose, value: boolean) => {
+    async (purpose: (typeof RUNTIME_CONSENT_KEYS)[number], value: boolean) => {
       let shouldCallService = false;
       setConsentState((prev) => {
         if (!prev) return prev;
@@ -475,7 +470,9 @@ function useConsentActions({
       updatePrivacy('personalizedData', value);
       updatePrivacy('sessionReplay', value);
       // Await all runtime consent updates to prevent race conditions
-      await Promise.all(RUNTIME_KEYS.map((k) => updateRuntime(k, value)));
+      await Promise.all(
+        RUNTIME_CONSENT_KEYS.map((k) => updateRuntime(k, value))
+      );
     },
     [updatePrivacy, updateRuntime]
   );
@@ -582,7 +579,10 @@ function ConsentManagerView({
   privacyConsent: PrivacyConsent;
   consentState: ConsentState | null;
   updatePrivacy: (key: keyof PrivacyConsent, value: boolean) => void;
-  updateRuntime: (purpose: ConsentPurpose, value: boolean) => Promise<void>;
+  updateRuntime: (
+    purpose: (typeof RUNTIME_CONSENT_KEYS)[number],
+    value: boolean
+  ) => Promise<void>;
   optOutAll: () => Promise<void>;
   bulkSet: (value: boolean) => Promise<void>;
   save: (cb?: (c: PrivacyConsent) => void) => void;

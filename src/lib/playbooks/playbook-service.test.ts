@@ -13,6 +13,12 @@ import type { PlaybookModel } from '../watermelon-models/playbook';
 import { PlaybookService } from './playbook-service';
 import { type ScheduleShifter } from './schedule-shifter';
 
+// Mock database interface for testing
+interface MockDatabase extends Database {
+  mockPlaybooks: Partial<PlaybookModel>[];
+  mockApplications: Record<string, unknown>[];
+}
+
 // Mock expo-crypto
 jest.mock('expo-crypto', () => ({
   randomUUID: jest.fn(
@@ -30,7 +36,7 @@ jest.mock('./schedule-shifter', () => ({
 }));
 
 // Mock database
-const createMockDatabase = () => {
+const createMockDatabase = (): MockDatabase => {
   const mockPlaybooks: Partial<PlaybookModel>[] = [];
   const mockApplications: Record<string, unknown>[] = [];
 
@@ -103,12 +109,12 @@ const createMockDatabase = () => {
     write: jest.fn((callback: () => unknown) => callback()),
     mockPlaybooks,
     mockApplications,
-  } as unknown as Database;
+  };
 };
 
 describe('PlaybookService', () => {
   let service: PlaybookService;
-  let database: Database;
+  let database: MockDatabase;
   let analytics: InMemoryMetrics;
   let mockScheduleShifter: jest.Mocked<ScheduleShifter>;
 
@@ -153,8 +159,7 @@ describe('PlaybookService', () => {
         })) as any,
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (database as any).mockPlaybooks.push(mockPlaybook);
+      database.mockPlaybooks.push(mockPlaybook);
 
       const playbooks = await service.getAvailablePlaybooks();
 
@@ -219,8 +224,7 @@ describe('PlaybookService', () => {
         toPlaybook: jest.fn(() => mockPlaybook),
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (database as any).mockPlaybooks.push(mockPlaybookModel);
+      database.mockPlaybooks.push(mockPlaybookModel);
 
       const preview = await service.getPlaybookPreview('playbook-1');
 
@@ -258,8 +262,7 @@ describe('PlaybookService', () => {
     });
 
     test('returns false when different playbook is already applied', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mockApplication: any = {
+      const mockApplication: Record<string, unknown> = {
         id: 'app-1',
         playbook_id: 'playbook-2',
         plant_id: 'plant-1',
@@ -267,8 +270,7 @@ describe('PlaybookService', () => {
         applied_at: new Date(),
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (database as any).mockApplications.push(mockApplication);
+      database.mockApplications.push(mockApplication);
 
       const isValid = await service.validateOneActivePlaybookPerPlant(
         'plant-1',
@@ -288,8 +290,7 @@ describe('PlaybookService', () => {
         applied_at: new Date(),
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (database as any).mockApplications.push(mockApplication);
+      database.mockApplications.push(mockApplication);
 
       const isValid = await service.validateOneActivePlaybookPerPlant(
         'plant-1',
@@ -309,8 +310,7 @@ describe('PlaybookService', () => {
         applied_at: new Date(),
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (database as any).mockApplications.push(mockApplication);
+      database.mockApplications.push(mockApplication);
 
       const isValid = await service.validateOneActivePlaybookPerPlant(
         'plant-1',
@@ -342,8 +342,7 @@ describe('PlaybookService', () => {
         toPlaybook: jest.fn(() => mockPlaybook),
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (database as any).mockPlaybooks.push(mockPlaybookModel);
+      database.mockPlaybooks.push(mockPlaybookModel);
 
       const result = await service.applyPlaybookToPlant(
         'playbook-1',
@@ -388,8 +387,7 @@ describe('PlaybookService', () => {
         toPlaybook: jest.fn(() => mockPlaybook),
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (database as any).mockPlaybooks.push(mockPlaybookModel);
+      database.mockPlaybooks.push(mockPlaybookModel);
 
       // First application
       const result1 = await service.applyPlaybookToPlant(
@@ -423,8 +421,7 @@ describe('PlaybookService', () => {
         applied_at: new Date(),
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (database as any).mockApplications.push(mockApplication);
+      database.mockApplications.push(mockApplication);
 
       const mockPlaybook: Playbook = {
         id: 'playbook-1',
@@ -445,8 +442,7 @@ describe('PlaybookService', () => {
         toPlaybook: jest.fn(() => mockPlaybook),
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (database as any).mockPlaybooks.push(mockPlaybookModel);
+      database.mockPlaybooks.push(mockPlaybookModel);
 
       await expect(
         service.applyPlaybookToPlant('playbook-1', 'plant-1')
@@ -463,8 +459,7 @@ describe('PlaybookService', () => {
         applied_at: new Date(),
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (database as any).mockApplications.push(mockApplication);
+      database.mockApplications.push(mockApplication);
 
       const mockPlaybook: Playbook = {
         id: 'playbook-1',
@@ -485,8 +480,7 @@ describe('PlaybookService', () => {
         toPlaybook: jest.fn(() => mockPlaybook),
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (database as any).mockPlaybooks.push(mockPlaybookModel);
+      database.mockPlaybooks.push(mockPlaybookModel);
 
       const result = await service.applyPlaybookToPlant(
         'playbook-1',
@@ -520,8 +514,7 @@ describe('PlaybookService', () => {
         toPlaybook: jest.fn(() => mockPlaybook),
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (database as any).mockPlaybooks.push(mockPlaybookModel);
+      database.mockPlaybooks.push(mockPlaybookModel);
 
       const result = await service.applyPlaybookToPlant(
         'playbook-1',

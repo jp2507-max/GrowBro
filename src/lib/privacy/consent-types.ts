@@ -1,10 +1,13 @@
-export type ConsentPurpose =
-  | 'telemetry'
-  | 'experiments'
-  | 'cloudProcessing'
-  | 'aiTraining'
-  | 'aiModelImprovement'
-  | 'crashDiagnostics';
+export const RUNTIME_CONSENT_KEYS = [
+  'telemetry',
+  'experiments',
+  'cloudProcessing',
+  'aiTraining',
+  'aiModelImprovement',
+  'crashDiagnostics',
+] as const;
+
+export type ConsentPurpose = (typeof RUNTIME_CONSENT_KEYS)[number];
 
 export const LAWFUL_BASIS = {
   CONSENT: 'consent-6.1.a',
