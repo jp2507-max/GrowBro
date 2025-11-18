@@ -8,6 +8,8 @@ export const RUNTIME_CONSENT_KEYS = [
 
 export type ConsentPurpose = (typeof RUNTIME_CONSENT_KEYS)[number];
 
+export type RuntimeConsentPurpose = ConsentPurpose;
+
 export const LAWFUL_BASIS = {
   CONSENT: 'consent-6.1.a',
   LEGITIMATE_INTERESTS: 'legitimate-interests-6.1.f',
@@ -15,7 +17,10 @@ export const LAWFUL_BASIS = {
 
 export type LawfulBasis = (typeof LAWFUL_BASIS)[keyof typeof LAWFUL_BASIS];
 
-export const LAWFUL_BASIS_BY_PURPOSE: Record<ConsentPurpose, LawfulBasis> = {
+export const LAWFUL_BASIS_BY_PURPOSE: Record<
+  RuntimeConsentPurpose,
+  LawfulBasis
+> = {
   telemetry: LAWFUL_BASIS.CONSENT,
   experiments: LAWFUL_BASIS.CONSENT,
   cloudProcessing: LAWFUL_BASIS.CONSENT,

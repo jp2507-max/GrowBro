@@ -291,7 +291,17 @@ function _normalizeIncomingValue(key: string, value: unknown): unknown {
     (key === 'createdAt' ||
       key === 'updatedAt' ||
       key === 'receivedAt' ||
-      key === 'expiresOn')
+      key === 'expiresOn' ||
+      key === 'completedAt' ||
+      key === 'stageStartedAt' ||
+      key === 'stageCompletedAt' ||
+      key === 'performedAt' ||
+      key === 'resolvedAt' ||
+      key === 'readAt' ||
+      key === 'archivedAt' ||
+      key === 'lastUpdated' ||
+      key === 'nextRetryAt' ||
+      key === 'undoExpiresAt')
   ) {
     return new Date(value);
   }
