@@ -160,7 +160,7 @@ export class TaskNotificationService {
             ? scheduledForUtc
             : scheduledForUtc.toISOString()
           : '';
-        rec.timezone = 'timezone' in task ? String(task.timezone) : 'UTC';
+        rec.timezone = task.timezone ?? 'UTC';
         rec.status = 'pending';
         rec.createdAt = new Date();
         rec.updatedAt = new Date();
