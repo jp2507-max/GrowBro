@@ -25,7 +25,7 @@ describe('observeActiveAlerts', () => {
 
   beforeEach(() => {
     mockDb = {
-      get: jest.fn(),
+      get: jest.fn() as any,
     } as unknown as Database;
   });
 
@@ -45,7 +45,7 @@ describe('observeActiveAlerts', () => {
       const mockTable = createMockTable();
       mockTable.query.mockReturnValue(mockQueryBuilder);
 
-      mockDb.get.mockReturnValue(mockTable);
+      (mockDb.get as any).mockReturnValue(mockTable);
 
       const observable = observeActiveAlerts('test-reservoir-id', mockDb);
 
@@ -98,7 +98,7 @@ describe('observeActiveAlerts', () => {
       const mockAlertsTable = createMockTable();
       mockAlertsTable.query.mockReturnValue(mockAlertsQueryBuilder);
 
-      mockDb.get.mockImplementation((tableName: string) => {
+      (mockDb.get as any).mockImplementation((tableName: string) => {
         if (tableName === 'ph_ec_readings_v2') {
           return mockReadingsTable;
         } else if (tableName === 'deviation_alerts_v2') {
@@ -189,7 +189,7 @@ describe('observeActiveAlerts', () => {
       const mockAlertsTable = createMockTable();
       mockAlertsTable.query.mockReturnValue(mockAlertsQueryBuilder);
 
-      mockDb.get.mockImplementation((tableName: string) => {
+      (mockDb.get as any).mockImplementation((tableName: string) => {
         if (tableName === 'ph_ec_readings_v2') {
           return mockReadingsTable;
         } else if (tableName === 'deviation_alerts_v2') {

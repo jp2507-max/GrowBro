@@ -99,8 +99,8 @@ const createMockDatabase = (): MockDatabase => {
   const mockPlaybooks: Partial<PlaybookModel>[] = [];
   const mockApplications: MockPlaybookApplication[] = [];
 
-  return {
-    get: jest.fn((tableName: string) => {
+  const db = {
+    get: jest.fn((tableName: string): any => {
       if (tableName === 'playbooks') {
         return {
           query: jest.fn(() => ({
@@ -168,10 +168,14 @@ const createMockDatabase = (): MockDatabase => {
       }
       return {};
     }),
-    write: jest.fn((callback: () => unknown) => callback()),
+    write: jest.fn(async (callback: (writer: any) => Promise<any>) => {
+      return await callback({} as any);
+    }),
     mockPlaybooks,
     mockApplications,
-  };
+  } as unknown as MockDatabase;
+
+  return db;
 };
 
 describe('PlaybookService', () => {

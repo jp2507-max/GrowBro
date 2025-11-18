@@ -27,9 +27,7 @@ jest.mock('@/lib/storage', () => ({
   removeItem: jest.fn(),
 }));
 
-const mockUseOfflineAwareStrains = jest.mocked(
-  useOfflineAwareStrains
-) as jest.MockedFunction<typeof useOfflineAwareStrains>;
+const mockUseOfflineAwareStrains = jest.mocked(useOfflineAwareStrains) as any;
 
 // Mock data generator
 function generateMockStrains(count: number): Strain[] {
@@ -93,7 +91,14 @@ describe('Strains Performance Tests', () => {
       // Mock the hook response
       mockUseOfflineAwareStrains.mockReturnValue({
         data: {
-          pages: [{ data: strains, hasMore: false, nextCursor: undefined }],
+          pages: [
+            {
+              data: strains,
+              hasMore: false,
+              nextCursor: undefined,
+              fromCache: false,
+            },
+          ],
           pageParams: [undefined],
         },
         isLoading: false,
@@ -126,7 +131,15 @@ describe('Strains Performance Tests', () => {
       // Mock the hook response
       mockUseOfflineAwareStrains.mockReturnValue({
         data: {
-          pages: [{ data: strains, hasMore: false, nextCursor: undefined }],
+          pages: [
+            {
+              data: strains,
+              hasMore: false,
+              nextCursor: undefined,
+              fromCache: false,
+            },
+          ],
+          pageParams: [undefined],
         },
         isLoading: false,
         isError: false,
@@ -169,7 +182,14 @@ describe('Strains Performance Tests', () => {
       // Mock the hook response
       mockUseOfflineAwareStrains.mockReturnValue({
         data: {
-          pages: [{ data: strains, hasMore: false, nextCursor: undefined }],
+          pages: [
+            {
+              data: strains,
+              hasMore: false,
+              nextCursor: undefined,
+              fromCache: false,
+            },
+          ],
           pageParams: [undefined],
         },
         isLoading: false,
@@ -200,7 +220,14 @@ describe('Strains Performance Tests', () => {
       // Mock the hook response
       mockUseOfflineAwareStrains.mockReturnValue({
         data: {
-          pages: [{ data: strains, hasMore: false, nextCursor: undefined }],
+          pages: [
+            {
+              data: strains,
+              hasMore: false,
+              nextCursor: undefined,
+              fromCache: false,
+            },
+          ],
           pageParams: [undefined],
         },
         isLoading: false,
@@ -317,7 +344,14 @@ describe('Strains Performance Benchmarks', () => {
     // Mock the hook response
     mockUseOfflineAwareStrains.mockReturnValue({
       data: {
-        pages: [{ data: strains, hasMore: false, nextCursor: undefined }],
+        pages: [
+          {
+            data: strains,
+            hasMore: false,
+            nextCursor: undefined,
+            fromCache: false,
+          },
+        ],
         pageParams: [undefined],
       },
       isLoading: false,
@@ -350,7 +384,14 @@ describe('Strains Performance Benchmarks', () => {
     // Mock the hook response
     mockUseOfflineAwareStrains.mockReturnValue({
       data: {
-        pages: [{ data: strains, hasMore: false, nextCursor: undefined }],
+        pages: [
+          {
+            data: strains,
+            hasMore: false,
+            nextCursor: undefined,
+            fromCache: false,
+          },
+        ],
         pageParams: [undefined],
       },
       isLoading: false,

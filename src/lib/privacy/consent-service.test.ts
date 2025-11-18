@@ -61,7 +61,6 @@ describe('ConsentService - getConsents (versioning)', () => {
       experiments: true,
       cloudProcessing: true,
       aiTraining: true,
-      aiModelImprovement: false,
       crashDiagnostics: true,
       version: '2024-01-01', // Old version
       timestamp: new Date().toISOString(),
@@ -98,7 +97,6 @@ describe('ConsentService - hasConsent', () => {
       experiments: false,
       cloudProcessing: false,
       aiTraining: false,
-      aiModelImprovement: false,
       crashDiagnostics: true,
       version: '2024-01-01', // Old version
       timestamp: new Date().toISOString(),
@@ -125,7 +123,6 @@ describe('ConsentService - hasConsent', () => {
       experiments: false,
       cloudProcessing: false,
       aiTraining: true,
-      aiModelImprovement: false,
       crashDiagnostics: false,
       version: CURRENT_CONSENT_VERSION,
       timestamp: new Date().toISOString(),
@@ -150,7 +147,6 @@ describe('ConsentService - isConsentRequired', () => {
       experiments: false,
       cloudProcessing: false,
       aiTraining: false,
-      aiModelImprovement: false,
       crashDiagnostics: true,
       version: '2024-01-01', // Old version
       timestamp: '2024-01-01T00:00:00.000Z',
