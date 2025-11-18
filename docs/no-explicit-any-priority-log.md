@@ -3609,12 +3609,16 @@ Total warnings: **1016**
 15:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
-#### `src/lib/__tests__/telemetry-client.test.ts` (2 warnings)
+✅ **DONE** - Fixed type for sync performance test.
+
+#### `src/lib/__tests__/telemetry-client.test.ts` (1 warnings)
 
 ```.text
-30:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-64:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+74:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
+
+✅ **DONE** - Delivered event buffers now typed as `TelemetryEvent[]`.
+64:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 #### `src/lib/assessment/__tests__/model-manager.test.ts` (2 warnings)
 
@@ -4015,17 +4019,23 @@ Total warnings: **1016**
 51:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
+✅ **DONE** - Replaced `global as any` cast with precise GC typing helper.
+
 #### `src/lib/performance/__tests__/time-series-uploader.test.ts` (1 warnings)
 
 ```.text
 254:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
+✅ **DONE** - Transaction callback typed via mocked span context helper.
+
 #### `src/lib/privacy/crash-store.test.ts` (1 warnings)
 
 ```.text
 23:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
+
+✅ **DONE** - Added `hasRedactedFlag` type guard for crash payload checks.
 
 #### `src/lib/privacy/deletion-gate.test.ts` (1 warnings)
 
@@ -4051,11 +4061,15 @@ Total warnings: **1016**
 28:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
+✅ **DONE** - Test event now uses exported `TelemetryEvent` type.
+
 #### `src/lib/security/secure-storage.test.ts` (1 warnings)
 
 ```.text
 28:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
+
+✅ **DONE** - Mocked MMKV factory/instances explicitly typed.
 
 #### `src/lib/sentry-utils.test.ts` (1 warnings)
 
@@ -4074,6 +4088,8 @@ Total warnings: **1016**
 ```.text
 21:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
+
+✅ **DONE** - Introduced typed WatermelonDB mock via helper function.
 
 #### `src/lib/uploads/__tests__/ai-images.test.ts` (1 warnings)
 

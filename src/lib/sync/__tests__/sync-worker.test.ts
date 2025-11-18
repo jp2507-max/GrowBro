@@ -2,6 +2,7 @@
  * Sync Worker Tests
  */
 
+import type { Database } from '@nozbe/watermelondb';
 import { synchronize } from '@nozbe/watermelondb/sync';
 
 import { ConsentService } from '@/lib/privacy/consent-service';
@@ -17,15 +18,19 @@ jest.mock('@nozbe/watermelondb/sync', () => ({
 
 const mockSynchronize = synchronize as jest.MockedFunction<typeof synchronize>;
 
+function createMockDatabase(): Database {
+  return {
+    get: jest.fn(),
+  } as unknown as Database;
+}
+
 describe('SyncWorker', () => {
-  let mockDatabase: any;
+  let mockDatabase: Database;
   let syncWorker: SyncWorker;
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    mockDatabase = {
-      get: jest.fn(),
-    };
+    mockDatabase = createMockDatabase();
     await ConsentService.setConsent('cloudProcessing', true);
     syncWorker = new SyncWorker(mockDatabase);
   });

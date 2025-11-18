@@ -301,7 +301,13 @@ function _normalizeIncomingValue(key: string, value: unknown): unknown {
       key === 'archivedAt' ||
       key === 'lastUpdated' ||
       key === 'nextRetryAt' ||
-      key === 'undoExpiresAt')
+      key === 'undoExpiresAt' ||
+      key === 'hiddenAt' ||
+      key === 'processingStartedAt' ||
+      key === 'processingCompletedAt' ||
+      key === 'expiresAt' ||
+      key === 'appliedAt' ||
+      key === 'lastUsedAt')
   ) {
     return new Date(value);
   }

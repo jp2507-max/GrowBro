@@ -24,9 +24,25 @@ import {
 } from './secure-storage';
 
 // Mock dependencies
+type MockMMKVInstance = {
+  set: jest.Mock;
+  getString: jest.Mock;
+  getNumber: jest.Mock;
+  getBoolean: jest.Mock;
+  delete: jest.Mock;
+  clearAll: jest.Mock;
+  getAllKeys: jest.Mock;
+  recrypt: jest.Mock;
+  id: string;
+};
+
+type MMKVFactory = jest.Mock<MMKV, [config?: { id?: string } | undefined]> & {
+  _instances?: MockMMKVInstance[];
+};
+
 jest.mock('react-native-mmkv', () => {
-  const fn: any = jest.fn((config = {} as { id?: string }) => {
-    const inst = {
+  const factory: MMKVFactory = jest.fn((config = {}) => {
+    const instance: MockMMKVInstance = {
       set: jest.fn(),
       getString: jest.fn(),
       getNumber: jest.fn(),
@@ -37,11 +53,11 @@ jest.mock('react-native-mmkv', () => {
       recrypt: jest.fn(),
       id: config.id ?? 'unknown',
     };
-    fn._instances = fn._instances || [];
-    fn._instances.push(inst);
-    return inst;
-  });
-  return { MMKV: fn };
+    factory._instances = factory._instances || [];
+    factory._instances.push(instance);
+    return instance as unknown as MMKV;
+  }) as MMKVFactory;
+  return { MMKV: factory };
 });
 jest.mock('./key-manager');
 

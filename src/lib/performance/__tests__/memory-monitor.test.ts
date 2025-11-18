@@ -48,7 +48,8 @@ describe('memory-monitor', () => {
     });
 
     it('handles missing global.gc gracefully', () => {
-      (global as any).gc = undefined;
+      const globalWithGC = global as unknown as { gc?: () => void };
+      globalWithGC.gc = undefined;
 
       expect(() => forceGarbageCollection()).not.toThrow();
     });
