@@ -29,7 +29,7 @@ jest.mock('@/lib/storage', () => ({
 
 const mockUseOfflineAwareStrains = jest.mocked(
   useOfflineAwareStrains
-) as jest.MockedFunction<any>;
+) as jest.MockedFunction<typeof useOfflineAwareStrains>;
 
 // Mock data generator
 function generateMockStrains(count: number): Strain[] {

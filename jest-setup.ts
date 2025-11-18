@@ -13,8 +13,14 @@ Object.defineProperty(global, '__DEV__', {
 // debug CI hangs. This is intentionally lightweight and only logs constructors
 // names to avoid leaking sensitive details.
 try {
-  const handles = (process as any)._getActiveHandles?.() ?? [];
-  const names = handles.map((h: any) => h?.constructor?.name || String(h));
+  const handles =
+    (
+      process as { _getActiveHandles?: () => unknown[] }
+    )._getActiveHandles?.() ?? [];
+  const names = handles.map(
+    (h: unknown) =>
+      (h as { constructor?: { name?: string } })?.constructor?.name || String(h)
+  );
 
   console.warn('[open-handles-initial]', names.slice(0, 20));
 } catch {}
@@ -55,7 +61,9 @@ jest.mock('@env', () => ({
 
 // mock: expo-notifications (avoid recursive require by returning plain object)
 jest.mock('expo-notifications', () => {
-  const addListener = jest.fn((_cb: any) => ({ remove: jest.fn() }));
+  const addListener = jest.fn((_cb: (...args: unknown[]) => void) => ({
+    remove: jest.fn(),
+  }));
   return {
     AndroidImportance: { DEFAULT: 3, HIGH: 4, LOW: 2, MIN: 1, NONE: 0 },
     AndroidNotificationVisibility: { PRIVATE: 0, PUBLIC: 1, SECRET: -1 },
@@ -104,7 +112,8 @@ jest.mock('@/lib/animations/animated-scroll-list-provider', () => ({
     velocityOnEndDrag: { value: 0 },
     enableAutoScrollLock: jest.fn(),
   }),
-  AnimatedScrollListProvider: ({ children }: any) => children ?? null,
+  AnimatedScrollListProvider: ({ children }: { children?: React.ReactNode }) =>
+    children ?? null,
 }));
 
 // mock: bottom tab bar height hook
@@ -123,7 +132,7 @@ jest.mock('nativewind', () => {
 
   return {
     __esModule: true,
-    cssInterop: (_component: any, _config: any) => {
+    cssInterop: (_component: unknown, _config: unknown) => {
       // no-op
     },
     // Hook used by several components. Return a stable shape used in the app.
@@ -139,13 +148,13 @@ jest.mock('react-native-css-interop', () => {
   // Disable CSS interop completely for tests to avoid displayName errors
   return {
     __esModule: true,
-    cssInterop: jest.fn((component: any) => component),
+    cssInterop: jest.fn((component: unknown) => component),
     rem: (value: number) => value * 16,
     vh: (value: number) => value,
     vw: (value: number) => value,
     vmin: (value: number) => value,
     vmax: (value: number) => value,
-    createInteropElement: jest.fn((component: any) => component),
+    createInteropElement: jest.fn((component: unknown) => component),
   };
 });
 
@@ -156,10 +165,14 @@ jest.mock('react-native-svg', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- intentional require for lightweight SVG mocks
   const mockRN = require('react-native');
   const View = mockRN.View;
-  const Svg = (props: any) => mockReact.createElement(View, props);
-  const Path = (props: any) => mockReact.createElement(View, props);
-  const Circle = (props: any) => mockReact.createElement(View, props);
-  const G = (props: any) => mockReact.createElement(View, props);
+  const Svg = (props: Record<string, unknown>) =>
+    mockReact.createElement(View, props);
+  const Path = (props: Record<string, unknown>) =>
+    mockReact.createElement(View, props);
+  const Circle = (props: Record<string, unknown>) =>
+    mockReact.createElement(View, props);
+  const G = (props: Record<string, unknown>) =>
+    mockReact.createElement(View, props);
   return {
     __esModule: true,
     default: Svg,
@@ -179,14 +192,22 @@ jest.mock('react-native-edge-to-edge', () => ({
 
 // mock: react-navigation to provide a minimal NavigationContainer and hooks
 jest.mock('@react-navigation/native', () => {
-  const NavigationContainer = ({ children }: any) => children ?? null;
-  (NavigationContainer as any).displayName = 'NavigationContainer';
+  const NavigationContainer = ({ children }: { children?: React.ReactNode }) =>
+    children ?? null;
+  (NavigationContainer as { displayName?: string }).displayName =
+    'NavigationContainer';
   return {
     NavigationContainer,
     useIsFocused: () => true,
     useScrollToTop: () => {},
     // Provide identity ThemeProvider/value to satisfy consumers if used
-    ThemeProvider: ({ children, _value }: any) => children ?? null,
+    ThemeProvider: ({
+      children,
+      _value,
+    }: {
+      children?: React.ReactNode;
+      _value?: unknown;
+    }) => children ?? null,
     DefaultTheme: {},
     DarkTheme: {},
   };
@@ -199,8 +220,10 @@ jest.mock('react-native-flash-message', () => ({
 
 // mock: react-native-safe-area-context to avoid dependency on native context/provider
 jest.mock('react-native-safe-area-context', () => {
-  const SafeAreaProvider = ({ children }: any) => children ?? null;
-  const SafeAreaView = ({ children }: any) => children ?? null;
+  const SafeAreaProvider = ({ children }: { children?: React.ReactNode }) =>
+    children ?? null;
+  const SafeAreaView = ({ children }: { children?: React.ReactNode }) =>
+    children ?? null;
   SafeAreaProvider.displayName = 'SafeAreaProvider';
   SafeAreaView.displayName = 'SafeAreaView';
   return {
@@ -219,35 +242,48 @@ jest.mock('react-native-mmkv', () => {
   class MMKVMock {
     private store: Map<string, StoredValue> = new Map();
 
-    getString(key: string): string | null {
+    // Spy-able methods for testing
+    set = jest.fn((key: string, value: string | number | boolean): void => {
+      const type = typeof value as 'string' | 'number' | 'boolean';
+      this.store.set(key, { type, value });
+    });
+
+    getString = jest.fn((key: string): string | null => {
       const stored = this.store.get(key);
       return stored && stored.type === 'string'
         ? (stored.value as string)
         : null;
-    }
+    });
 
-    getNumber(key: string): number | null {
+    getNumber = jest.fn((key: string): number | null => {
       const stored = this.store.get(key);
       return stored && stored.type === 'number'
         ? (stored.value as number)
         : null;
-    }
+    });
 
-    getBoolean(key: string): boolean | null {
+    getBoolean = jest.fn((key: string): boolean | null => {
       const stored = this.store.get(key);
       return stored && stored.type === 'boolean'
         ? (stored.value as boolean)
         : null;
-    }
+    });
 
-    set(key: string, value: string | number | boolean): void {
-      const type = typeof value as 'string' | 'number' | 'boolean';
-      this.store.set(key, { type, value });
-    }
-
-    delete(key: string): void {
+    delete = jest.fn((key: string): void => {
       this.store.delete(key);
-    }
+    });
+
+    clearAll = jest.fn((): void => {
+      this.store.clear();
+    });
+
+    getAllKeys = jest.fn((): string[] => {
+      return Array.from(this.store.keys());
+    });
+
+    recrypt = jest.fn((_key: string): void => {
+      // Mock implementation - just succeed
+    });
   }
   return { MMKV: MMKVMock };
 });
@@ -257,8 +293,8 @@ jest.mock('react-native-mmkv', () => {
 jest.mock('@sentry/react-native', () => {
   const sentry = {
     init: jest.fn(),
-    wrap: (comp: any) => comp,
-    withTouchEventBoundary: (comp: any) => comp,
+    wrap: <T>(comp: T) => comp,
+    withTouchEventBoundary: <T>(comp: T) => comp,
     captureException: jest.fn(),
     captureMessage: jest.fn(),
     setContext: jest.fn(),
@@ -289,7 +325,7 @@ interface Assessment {
   updatedAt: Date;
   issueResolved?: boolean;
   status?: string;
-  _raw?: any;
+  _raw?: Record<string, unknown>;
 }
 
 type AssessmentSourceFields =
@@ -333,22 +369,32 @@ const applyAssessmentConditions = (
     if (condition.key && condition.value !== undefined) {
       const propName = mapAssessmentField(condition.key);
       results = results.filter(
-        (record) => (record as any)[propName] === condition.value
+        (record) =>
+          (record as unknown as Record<string, unknown>)[propName] ===
+          condition.value
       );
     }
     if (condition.key && condition.$notEq !== undefined) {
       const propName = mapAssessmentField(condition.key);
       results = results.filter(
-        (record) => (record as any)[propName] !== condition.$notEq
+        (record) =>
+          (record as unknown as Record<string, unknown>)[propName] !==
+          condition.$notEq
       );
     }
     if (condition.$sortBy) {
       const { key, direction } = condition.$sortBy;
       const propName = mapAssessmentField(key);
       results.sort((a, b) => {
-        const aVal = (a as any)[propName];
-        const bVal = (b as any)[propName];
-        const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+        const aVal = (a as unknown as Record<string, unknown>)[propName];
+        const bVal = (b as unknown as Record<string, unknown>)[propName];
+        const cmp =
+          (aVal as number | string | Date) < (bVal as number | string | Date)
+            ? -1
+            : (aVal as number | string | Date) >
+                (bVal as number | string | Date)
+              ? 1
+              : 0;
         return direction === 'desc' ? -cmp : cmp;
       });
     }
@@ -360,7 +406,9 @@ const applyAssessmentConditions = (
   return results;
 };
 
-const createAssessmentRecord = async (cb: any): Promise<Assessment> => {
+const createAssessmentRecord = async (
+  cb?: (record: Assessment) => Promise<void> | void
+): Promise<Assessment> => {
   const now = new Date();
   const record: Assessment = {
     id: `assessment-${Date.now()}-${Math.random()}`,
@@ -436,11 +484,13 @@ jest.mock('@/lib/watermelon', () => ({
       ),
     },
     get: jest.fn((_collectionName: string) => createDefaultCollection()),
-    write: jest.fn().mockImplementation(async (fn: any) => {
-      // Clear store before each test
-      assessmentStore.length = 0;
-      return fn();
-    }),
+    write: jest
+      .fn()
+      .mockImplementation(async (fn: () => Promise<void> | void) => {
+        // Clear store before each test
+        assessmentStore.length = 0;
+        return fn();
+      }),
   },
 }));
 
@@ -477,15 +527,24 @@ jest.mock('@react-native-community/netinfo', () => ({
     isInternetReachable: true,
     details: { isConnectionExpensive: false },
   })),
-  addEventListener: jest.fn((cb: any) => {
-    cb({
-      type: 'wifi',
-      isConnected: true,
-      isInternetReachable: true,
-      details: { isConnectionExpensive: false },
-    });
-    return () => {};
-  }),
+  addEventListener: jest.fn(
+    (
+      cb: (state: {
+        type: string;
+        isConnected: boolean;
+        isInternetReachable: boolean;
+        details: { isConnectionExpensive: boolean };
+      }) => void
+    ) => {
+      cb({
+        type: 'wifi',
+        isConnected: true,
+        isInternetReachable: true,
+        details: { isConnectionExpensive: false },
+      });
+      return () => {};
+    }
+  ),
 }));
 
 // mock: expo-router to avoid native navigation in tests
@@ -500,12 +559,30 @@ jest.mock('expo-router', () => ({
   useSearchParams: () => ({}),
   useSegments: () => [],
   usePathname: () => '/',
-  Link: ({ children, ..._props }: any) => children ?? null,
+  Link: ({
+    children,
+    ..._props
+  }: {
+    children?: React.ReactNode;
+    [key: string]: unknown;
+  }) => children ?? null,
   Stack: {
-    Screen: ({ children, ..._props }: any) => children ?? null,
+    Screen: ({
+      children,
+      ..._props
+    }: {
+      children?: React.ReactNode;
+      [key: string]: unknown;
+    }) => children ?? null,
   },
   Tabs: {
-    Screen: ({ children, ..._props }: any) => children ?? null,
+    Screen: ({
+      children,
+      ..._props
+    }: {
+      children?: React.ReactNode;
+      [key: string]: unknown;
+    }) => children ?? null,
   },
 }));
 
@@ -532,7 +609,7 @@ try {
 afterAll(async () => {
   try {
     const mod = await import('./src/lib/i18n');
-    const i18n = (mod as any).default;
+    const i18n = (mod as { default?: { stop?: () => void } }).default;
     i18n?.stop?.();
   } catch {
     // ignore if i18n cannot be imported
@@ -550,9 +627,14 @@ if (process.env.DEBUG_OPEN_HANDLES) {
         // process._getActiveHandles is undocumented but useful for debugging
         // in a controlled environment.
 
-        const handles = (process as any)._getActiveHandles?.() ?? [];
+        const handles =
+          (
+            process as { _getActiveHandles?: () => unknown[] }
+          )._getActiveHandles?.() ?? [];
         const summary = handles.map(
-          (h: any) => h?.constructor?.name || String(h)
+          (h: unknown) =>
+            (h as { constructor?: { name?: string } })?.constructor?.name ||
+            String(h)
         );
         // Keep output concise
         console.warn('[open-handles]', summary.slice(0, 10));

@@ -2775,6 +2775,7 @@ Total warnings: **1016**
 
 ```.text
 20:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+✅ **DONE** - Test now uses typed helper objects for sample data, circular refs, and collection assertions.
 22:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 33:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 39:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
@@ -4043,17 +4044,23 @@ Total warnings: **1016**
 35:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
+✅ **DONE** - Added typed deletion method parser to avoid `any` when reading JSON.
+
 #### `src/lib/privacy/export-service.test.ts` (1 warnings)
 
 ```.text
 45:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
+✅ **DONE** - Mock consent, retention, audit, and telemetry data now use strict types.
+
 #### `src/lib/privacy/retention-freshness.test.ts` (1 warnings)
 
 ```.text
 9:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
+
+✅ **DONE** - Test awaits `getLastPurgeReport()` and uses `PurgeReport` type instead of casting.
 
 #### `src/lib/privacy/telemetry-client.test.ts` (1 warnings)
 
@@ -4069,6 +4076,8 @@ Total warnings: **1016**
 28:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
 
+✅ **DONE** - Added typed MMKV factory helpers; module resets now avoid `any` when remounting mocks.
+
 ✅ **DONE** - Mocked MMKV factory/instances explicitly typed.
 
 #### `src/lib/sentry-utils.test.ts` (1 warnings)
@@ -4076,6 +4085,8 @@ Total warnings: **1016**
 ```.text
 75:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 ```
+
+✅ **DONE** - Circular reference test now uses a typed helper instead of `any`.
 
 #### `src/lib/strains/__tests__/performance.test.tsx` (1 warnings)
 

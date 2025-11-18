@@ -1,7 +1,14 @@
+import type { AuditEntry } from '@/lib/privacy/audit-log';
 import {
   generatePrivacyExport,
   generatePrivacyExportJson,
 } from '@/lib/privacy/export-service';
+import type {
+  PurgeReport,
+  RetentionPolicy,
+  RetentionRecord,
+} from '@/lib/privacy/retention-worker';
+import type { TelemetryEvent } from '@/lib/privacy/telemetry-client';
 
 const mockConsentState = {
   telemetry: true,
@@ -24,7 +31,7 @@ const mockPrivacyConsent = {
   lastUpdated: 1,
 };
 
-const mockAuditTrail = [
+const mockAuditTrail: AuditEntry[] = [
   {
     id: '1',
     t: 1,
@@ -34,7 +41,7 @@ const mockAuditTrail = [
   },
 ];
 
-const mockPolicies = [
+const mockPolicies: RetentionPolicy[] = [
   {
     dataType: 'telemetry_raw',
     retentionDays: 90,
@@ -42,14 +49,14 @@ const mockPolicies = [
   },
 ];
 
-const mockRecords: any[] = [];
+const mockRecords: RetentionRecord[] = [];
 
-const mockReport = {
+const mockReport: PurgeReport = {
   generatedAt: 100,
   entries: [],
 };
 
-const mockEvents = [
+const mockEvents: TelemetryEvent[] = [
   {
     name: 'perf_first_paint_ms',
     properties: { ms: 42 },

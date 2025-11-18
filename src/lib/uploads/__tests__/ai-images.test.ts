@@ -24,9 +24,22 @@ jest.mock('@/lib/media/exif', () => ({
     .mockResolvedValue({ uri: 'file:///tmp/stripped.jpg', didStrip: true }),
 }));
 
-let mockResponse: ReturnType<typeof createMockResponse>;
+type MockFetchResponse = {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  headers: {
+    get: jest.Mock<string | null, [string]>;
+  };
+  arrayBuffer: jest.Mock<Promise<ArrayBuffer>, []>;
+  blob: jest.Mock<Promise<Blob>, []>;
+  json: jest.Mock;
+  text: jest.Mock;
+};
 
-function createMockResponse() {
+let mockResponse: MockFetchResponse;
+
+function createMockResponse(): MockFetchResponse {
   const mockArrayBuffer = new Uint8Array([1, 2, 3, 4, 5]).buffer;
   return {
     ok: true,
@@ -50,7 +63,9 @@ function createMockResponse() {
 async function setupTestEnvironment() {
   jest.restoreAllMocks();
   mockResponse = createMockResponse();
-  jest.spyOn(global, 'fetch').mockResolvedValue(mockResponse as any);
+  jest
+    .spyOn(global, 'fetch')
+    .mockResolvedValue(mockResponse as unknown as Response);
   // Reset consents to false
   await ConsentService.setConsent('cloudProcessing', false);
   await ConsentService.setConsent('aiTraining', false);
