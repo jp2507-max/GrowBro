@@ -11,7 +11,7 @@ import {
   View,
 } from '@/components/ui';
 import { useNotificationPreferences } from '@/lib/hooks/use-notification-preferences';
-import { translate } from '@/lib/i18n';
+import { translate, type TxKeyPath } from '@/lib/i18n';
 import {
   createAndroidNotificationChannels,
   getNotificationPermissionStatus,
@@ -99,11 +99,11 @@ function CategoryToggle({
         <View className="flex-1 pr-4">
           <Text
             className="mb-1 text-sm font-medium text-charcoal-950 dark:text-neutral-100"
-            tx={txTitle as any}
+            tx={txTitle as TxKeyPath}
           />
           <Text
             className="text-xs text-neutral-600 dark:text-neutral-400"
-            tx={txDescription as any}
+            tx={txDescription as TxKeyPath}
           />
           {isChannelDisabled && (
             <Text
@@ -445,23 +445,23 @@ export default function NotificationSettings() {
           {permissionGranted && preferences && (
             <View className="mb-6 rounded-lg bg-neutral-100 p-4 dark:bg-charcoal-800">
               <Text className="mb-4 text-base font-semibold text-charcoal-950 dark:text-neutral-100">
-                {translate('notifications.quietHours.title' as any)}
+                {translate('notifications.quietHours.title' as TxKeyPath)}
               </Text>
               <Text className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
-                {translate('notifications.quietHours.description' as any)}
+                {translate('notifications.quietHours.description' as TxKeyPath)}
               </Text>
 
               <View className="flex-row items-center justify-between">
                 <Text className="text-sm font-medium text-charcoal-950 dark:text-neutral-100">
-                  {translate('notifications.quietHours.enabled' as any)}
+                  {translate('notifications.quietHours.enabled' as TxKeyPath)}
                 </Text>
                 <Switch
                   testID="quiet-hours-switch"
                   accessibilityLabel={translate(
-                    'notifications.quietHours.toggleLabel' as any
+                    'notifications.quietHours.toggleLabel' as TxKeyPath
                   )}
                   accessibilityHint={translate(
-                    'notifications.quietHours.toggleHint' as any
+                    'notifications.quietHours.toggleHint' as TxKeyPath
                   )}
                   value={preferences.quietHoursEnabled}
                   onValueChange={handleQuietHoursToggle}
@@ -472,14 +472,20 @@ export default function NotificationSettings() {
               {preferences.quietHoursEnabled && (
                 <View className="mt-4 space-y-2">
                   <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-                    {translate('notifications.quietHours.startLabel' as any, {
-                      time: preferences.quietHoursStart || '22:00',
-                    })}
+                    {translate(
+                      'notifications.quietHours.startLabel' as TxKeyPath,
+                      {
+                        time: preferences.quietHoursStart || '22:00',
+                      }
+                    )}
                   </Text>
                   <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-                    {translate('notifications.quietHours.endLabel' as any, {
-                      time: preferences.quietHoursEnd || '07:00',
-                    })}
+                    {translate(
+                      'notifications.quietHours.endLabel' as TxKeyPath,
+                      {
+                        time: preferences.quietHoursEnd || '07:00',
+                      }
+                    )}
                   </Text>
                 </View>
               )}

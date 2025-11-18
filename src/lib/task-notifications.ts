@@ -1,6 +1,6 @@
 // Static import for runtime (tests mock this module)
 
-import { Q } from '@nozbe/watermelondb';
+import { type Database, Q } from '@nozbe/watermelondb';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { AppState, PermissionsAndroid, Platform } from 'react-native';
@@ -15,6 +15,8 @@ import { NotificationHandler } from '@/lib/permissions/notification-handler';
 
 import { InvalidTaskTimestampError } from './notification-errors';
 import { AndroidExactAlarmCoordinator } from './notifications/android-exact-alarm-service';
+import { type NotificationQueueModel } from './watermelon-models/notification-queue';
+import { type TaskModel } from './watermelon-models/task';
 
 interface Task {
   id: string;
@@ -25,6 +27,7 @@ interface Task {
   reminderAtLocal?: Date | string | null;
   dueAtUtc?: Date | string | null;
   dueAtLocal?: Date | string | null;
+  timezone?: string;
   recurrenceRule?: string;
 }
 
@@ -87,9 +90,7 @@ export class TaskNotificationService {
       // Without extra deps, we conservatively report false for batteryOptimized
       return { granted, canAskAgain: !granted, batteryOptimized: false };
     }
-    const anyNotifications: any = Notifications;
-    const { status, canAskAgain } =
-      await anyNotifications.getPermissionsAsync();
+    const { status, canAskAgain } = await Notifications.getPermissionsAsync();
     return {
       granted: status === 'granted',
       canAskAgain,
@@ -139,22 +140,30 @@ export class TaskNotificationService {
     notificationId: string
   ): Promise<void> {
     const { database } = await import('@/lib/watermelon');
-    const queue = database.collections.get('notification_queue' as any) as any;
+    const queue =
+      database.collections.get<NotificationQueueModel>('notification_queue');
 
     const scheduledForLocal = task.reminderAtLocal ?? task.dueAtLocal ?? null;
     const scheduledForUtc = task.reminderAtUtc ?? task.dueAtUtc ?? null;
 
     await database.write(async () => {
-      await (queue as any).create((rec: any) => {
-        const r = rec as any;
-        r.taskId = task.id;
-        r.notificationId = notificationId;
-        r.scheduledForLocal = scheduledForLocal;
-        r.scheduledForUtc = scheduledForUtc;
-        r.timezone = (task as any).timezone ?? 'UTC';
-        r.status = 'pending';
-        r.createdAt = new Date();
-        r.updatedAt = new Date();
+      await queue.create((rec) => {
+        rec.taskId = task.id;
+        rec.notificationId = notificationId;
+        rec.scheduledForLocal = scheduledForLocal
+          ? typeof scheduledForLocal === 'string'
+            ? scheduledForLocal
+            : scheduledForLocal.toISOString()
+          : '';
+        rec.scheduledForUtc = scheduledForUtc
+          ? typeof scheduledForUtc === 'string'
+            ? scheduledForUtc
+            : scheduledForUtc.toISOString()
+          : '';
+        rec.timezone = task.timezone ?? 'UTC';
+        rec.status = 'pending';
+        rec.createdAt = new Date();
+        rec.updatedAt = new Date();
       });
     });
   }
@@ -347,17 +356,16 @@ export class TaskNotificationService {
     try {
       if (process.env.JEST_WORKER_ID !== undefined) return;
       const { database } = await import('@/lib/watermelon');
-      const queue = database.collections.get(
-        'notification_queue' as any
-      ) as any;
-      const rows: any[] = await (queue as any).query().fetch();
-      const pending = rows.filter((r: any) => r.taskId === taskId);
-      for (const row of pending as any[]) {
+      const queue =
+        database.collections.get<NotificationQueueModel>('notification_queue');
+      const rows = await queue.query().fetch();
+      const pending = rows.filter((r) => r.taskId === taskId);
+      for (const row of pending) {
         await LocalNotificationService.cancelScheduledNotification(
           row.notificationId
         );
         await database.write(async () => {
-          await (row as any).markAsDeleted();
+          await row.markAsDeleted();
         });
         await NoopAnalytics.track('notif_cancelled', {
           notificationId: row.notificationId,
@@ -444,28 +452,27 @@ export class TaskNotificationService {
    */
   private async fetchNotificationsAndTasks(changedTaskIds?: string[]) {
     const { database } = await import('@/lib/watermelon');
-    const queue = database.collections.get('notification_queue' as any) as any;
-    const tasksCollection = database.collections.get('tasks' as any) as any;
+    const queue =
+      database.collections.get<NotificationQueueModel>('notification_queue');
+    const tasksCollection = database.collections.get<TaskModel>('tasks');
 
-    const existing = (await queue
-      .query(Q.where('status', 'pending'))
-      .fetch()) as any[];
+    const existing = await queue.query(Q.where('status', 'pending')).fetch();
     const tasksToUpdate = changedTaskIds
-      ? ((await tasksCollection
+      ? await tasksCollection
           .query(Q.where('id', Q.oneOf(changedTaskIds)))
-          .fetch()) as any[])
-      : ((await tasksCollection.query().fetch()) as any[]);
+          .fetch()
+      : await tasksCollection.query().fetch();
 
     return { database, queue, existing, tasksToUpdate };
   }
 
-  private selectSchedulableTasks(tasks: any[]): any[] {
+  private selectSchedulableTasks(tasks: TaskModel[]): TaskModel[] {
     if (Platform.OS !== 'ios') {
       return tasks;
     }
 
     const annotated = tasks
-      .map((task: Task) => ({
+      .map((task) => ({
         task,
         timestamp: this.getTaskOrderingTimestamp(task),
       }))
@@ -480,10 +487,10 @@ export class TaskNotificationService {
     const limited = annotated.slice(0, IOS_PENDING_LIMIT);
     const selectedIds = new Set(limited.map((entry) => entry.task.id));
 
-    return tasks.filter((task: Task) => selectedIds.has(task.id));
+    return tasks.filter((task) => selectedIds.has(task.id));
   }
 
-  private getTaskOrderingTimestamp(task: Task): number | null {
+  private getTaskOrderingTimestamp(task: Task | TaskModel): number | null {
     const candidates: (Date | string | null | undefined)[] = [
       task.reminderAtLocal,
       task.reminderAtUtc,
@@ -509,9 +516,12 @@ export class TaskNotificationService {
    * Cancels outdated notifications and removes them from database
    */
   private async cancelOutdatedNotifications(
-    diff: any,
-    existing: any[],
-    database: any
+    diff: {
+      toCancel: { notificationId: string; taskId: string }[];
+      toSchedule: { taskId: string }[];
+    },
+    existing: NotificationQueueModel[],
+    database: Database
   ): Promise<void> {
     for (const { notificationId } of diff.toCancel) {
       try {
@@ -521,12 +531,10 @@ export class TaskNotificationService {
       } catch (err) {
         console.warn('[Notifications] cancel during rehydrate failed', err);
       }
-      const row = existing.find(
-        (r: any) => r.notificationId === notificationId
-      );
+      const row = existing.find((r) => r.notificationId === notificationId);
       if (row) {
         await database.write(async () => {
-          await (row as any).markAsDeleted();
+          await row.markAsDeleted();
         });
       }
     }
@@ -536,27 +544,30 @@ export class TaskNotificationService {
    * Schedules missing or updated notifications
    */
   private async scheduleMissingNotifications(
-    diff: any,
-    tasksToUpdate: any[]
+    diff: {
+      toCancel: { notificationId: string; taskId: string }[];
+      toSchedule: { taskId: string }[];
+    },
+    tasksToUpdate: TaskModel[]
   ): Promise<void> {
     if (diff.toSchedule.length === 0) return;
 
-    const byId = new Map(tasksToUpdate.map((t: any) => [t.id, t]));
+    const byId = new Map(tasksToUpdate.map((t) => [t.id, t]));
     for (const { taskId } of diff.toSchedule) {
       const model = byId.get(taskId);
       if (!model) continue;
 
-      const task = {
+      const task: Task = {
         id: model.id,
         title: model.title,
-        description: model.description,
+        description: model.description ?? '',
         reminderAtUtc: model.reminderAtUtc,
         reminderAtLocal: model.reminderAtLocal,
         dueAtUtc: model.dueAtUtc,
         dueAtLocal: model.dueAtLocal,
         recurrenceRule: undefined,
         plantId: model.plantId,
-      } as Task;
+      };
 
       try {
         await this.scheduleTaskReminder(task);
@@ -570,9 +581,12 @@ export class TaskNotificationService {
    * Merge base diff with orphan deletions when tasks were removed or when doing full rehydrate.
    */
   private mergeDiffWithOrphans(context: {
-    diff: any;
-    existing: any[];
-    tasksToUpdate: any[];
+    diff: {
+      toCancel: { notificationId: string; taskId: string }[];
+      toSchedule: { taskId: string }[];
+    };
+    existing: NotificationQueueModel[];
+    tasksToUpdate: TaskModel[];
     changedTaskIds?: string[];
   }): {
     toCancel: { notificationId: string; taskId: string }[];
@@ -582,14 +596,14 @@ export class TaskNotificationService {
     let mergedDiff = diff;
 
     if (changedTaskIds && changedTaskIds.length > 0) {
-      const presentIds = new Set<string>(tasksToUpdate.map((t: any) => t.id));
+      const presentIds = new Set<string>(tasksToUpdate.map((t) => t.id));
       const deletedIds = changedTaskIds.filter((id) => !presentIds.has(id));
       if (deletedIds.length > 0) {
-        const orphanRows = existing.filter((e: any) =>
+        const orphanRows = existing.filter((e) =>
           deletedIds.includes(e.taskId)
         );
         if (orphanRows.length > 0) {
-          const orphanCancels = orphanRows.map((e: any) => ({
+          const orphanCancels = orphanRows.map((e) => ({
             notificationId: e.notificationId,
             taskId: e.taskId,
           }));
@@ -606,10 +620,10 @@ export class TaskNotificationService {
         }
       }
     } else {
-      const presentIds = new Set<string>(tasksToUpdate.map((t: any) => t.id));
-      const orphanRows = existing.filter((e: any) => !presentIds.has(e.taskId));
+      const presentIds = new Set<string>(tasksToUpdate.map((t) => t.id));
+      const orphanRows = existing.filter((e) => !presentIds.has(e.taskId));
       if (orphanRows.length > 0) {
-        const orphanCancels = orphanRows.map((e: any) => ({
+        const orphanCancels = orphanRows.map((e) => ({
           notificationId: e.notificationId,
           taskId: e.taskId,
         }));
@@ -665,13 +679,13 @@ export class TaskNotificationService {
     const schedulingCandidates = this.selectSchedulableTasks(tasksToUpdate);
 
     const diff = TaskNotificationService.computeNotificationDiff(
-      schedulingCandidates.map((t: any) => ({
+      schedulingCandidates.map((t) => ({
         id: t.id,
         status: t.status,
         reminderAtUtc: t.reminderAtUtc,
         dueAtUtc: t.dueAtUtc,
       })),
-      existing.map((e: any) => ({
+      existing.map((e) => ({
         taskId: e.taskId,
         notificationId: e.notificationId,
         scheduledForUtc: e.scheduledForUtc,
@@ -688,7 +702,18 @@ export class TaskNotificationService {
 
     await this.cancelOutdatedNotifications(mergedDiff, existing, database);
     await this.scheduleMissingNotifications(mergedDiff, schedulingCandidates);
-    await this.scheduleOverdueDigest(tasksToUpdate as Task[]);
+    await this.scheduleOverdueDigest(
+      tasksToUpdate.map((t) => ({
+        id: t.id,
+        title: t.title,
+        description: t.description ?? '',
+        reminderAtUtc: t.reminderAtUtc,
+        reminderAtLocal: t.reminderAtLocal,
+        dueAtUtc: t.dueAtUtc,
+        dueAtLocal: t.dueAtLocal,
+        plantId: t.plantId,
+      }))
+    );
     await this.trackRehydrateAnalytics(mergedDiff);
   }
 

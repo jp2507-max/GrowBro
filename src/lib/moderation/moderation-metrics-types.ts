@@ -9,7 +9,7 @@ export interface ModerationMetric {
   metricName: string;
   value: number;
   timestamp: Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface AppealMetrics {

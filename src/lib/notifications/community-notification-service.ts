@@ -79,14 +79,14 @@ export class CommunityNotificationService {
     );
 
     await this.database.write(async () => {
-      await preference.update((record: any) => {
+      await preference.update((record: NotificationPreferenceModel) => {
         if (config.communityInteractionsEnabled !== undefined) {
           record.communityInteractions = config.communityInteractionsEnabled;
         }
         if (config.communityLikesEnabled !== undefined) {
           record.communityLikes = config.communityLikesEnabled;
         }
-        record.updatedAt = new Date();
+        record.lastUpdated = new Date();
       });
     });
   }

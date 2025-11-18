@@ -12,7 +12,11 @@
  * Requirements: 3.4 (submit redacted SoR without undue delay), 6.4 (SoR export queue)
  */
 
-import type { ContentReport, StatementOfReasons } from '@/types/moderation';
+import type {
+  ContentReport,
+  RedactedSoR,
+  StatementOfReasons,
+} from '@/types/moderation';
 
 import { dsaTransparencyClient } from './dsa-transparency-client';
 import { piiScrubber } from './pii-scrubber';
@@ -114,7 +118,7 @@ export class SoRSubmissionOrchestrator {
     return redactedSoR;
   }
 
-  private async enqueueSubmission(sorId: string, redactedSoR: any) {
+  private async enqueueSubmission(sorId: string, redactedSoR: RedactedSoR) {
     const enqueueResult = await sorExportQueueManager.enqueue(
       sorId,
       redactedSoR
@@ -128,7 +132,7 @@ export class SoRSubmissionOrchestrator {
   }
 
   private async attemptSubmission(
-    redactedSoR: any,
+    redactedSoR: RedactedSoR,
     queueId: string,
     startTime: number
   ): Promise<SubmissionResult> {

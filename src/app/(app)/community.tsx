@@ -1,4 +1,5 @@
 import { useScrollToTop } from '@react-navigation/native';
+import type { FlashListProps, FlashListRef } from '@shopify/flash-list';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -27,9 +28,9 @@ import { useScreenErrorLogger } from '@/lib/hooks';
 import type { TxKeyPath } from '@/lib/i18n';
 import { useAgeGatedFeed } from '@/lib/moderation/use-age-gated-feed';
 
-const AnimatedFlashList: any = Animated.createAnimatedComponent(
-  FlashList as any
-);
+const AnimatedFlashList = Animated.createAnimatedComponent(
+  FlashList
+) as React.ComponentClass<FlashListProps<Post>>;
 
 function useCommunityData() {
   const {
@@ -47,7 +48,9 @@ function useCommunityData() {
 
   const posts = React.useMemo<Post[]>(() => {
     if (!data?.pages?.length) return [];
-    return data.pages.flatMap((page: any) => page.results as Post[]);
+    return data.pages.flatMap(
+      (page: { results: Post[] }) => page.results as Post[]
+    );
   }, [data?.pages]);
 
   const handleRefresh = React.useCallback(async () => {
@@ -107,8 +110,17 @@ function useSkeletonVisibility(isLoading: boolean, postsLength: number) {
 // eslint-disable-next-line max-lines-per-function
 export default function CommunityScreen(): React.ReactElement {
   const router = useRouter();
-  const { listRef, scrollHandler } = useAnimatedScrollList();
-  useScrollToTop(listRef);
+  const { listRef: sharedListRef, scrollHandler } = useAnimatedScrollList();
+  const listRef = React.useMemo(
+    () => sharedListRef as React.RefObject<FlashListRef<Post>>,
+    [sharedListRef]
+  );
+  // useScrollToTop accepts refs with scrollTo/scrollToOffset methods
+  useScrollToTop(
+    listRef as React.RefObject<{
+      scrollToOffset: (params: { offset?: number; animated?: boolean }) => void;
+    }>
+  );
   const { grossHeight } = useBottomTabBarHeight();
   const analytics = useAnalytics();
   const undoMutation = useUndoDeletePost();
@@ -355,17 +367,18 @@ function CommunityListView({
   listFooter,
   onCreatePress,
 }: {
-  listRef: React.RefObject<any>;
+  listRef: React.RefObject<FlashListRef<Post>>;
   posts: Post[];
   renderItem: ({ item }: { item: Post }) => React.ReactElement;
   onEndReached: () => void;
-  scrollHandler: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  scrollHandler: any; // Reanimated scroll handler type is incompatible with FlashList onScroll
   grossHeight: number;
   isRefreshing: boolean;
   onRefresh: () => void;
-  listHeader: React.ReactNode;
-  listEmpty: React.ReactNode | (() => React.ReactElement);
-  listFooter: React.ReactNode | (() => React.ReactElement);
+  listHeader: React.ComponentType<unknown> | React.ReactElement | null;
+  listEmpty: React.ComponentType<unknown> | React.ReactElement | null;
+  listFooter: React.ComponentType<unknown> | React.ReactElement | null;
   onCreatePress: () => void;
 }): React.ReactElement {
   const getItemType = React.useCallback((item: Post) => {
@@ -377,7 +390,8 @@ function CommunityListView({
     <View className="flex-1" testID="community-screen">
       <FocusAwareStatusBar />
       <AnimatedFlashList
-        ref={listRef as React.RefObject<any>}
+        // @ts-expect-error - AnimatedFlashList ref type mismatch with FlashListRef
+        ref={listRef}
         data={posts}
         renderItem={renderItem}
         getItemType={getItemType}

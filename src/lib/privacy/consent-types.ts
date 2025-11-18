@@ -1,10 +1,14 @@
-export type ConsentPurpose =
-  | 'telemetry'
-  | 'experiments'
-  | 'cloudProcessing'
-  | 'aiTraining'
-  | 'aiModelImprovement'
-  | 'crashDiagnostics';
+export const RUNTIME_CONSENT_KEYS = [
+  'telemetry',
+  'experiments',
+  'cloudProcessing',
+  'aiTraining',
+  'crashDiagnostics',
+] as const;
+
+export type ConsentPurpose = (typeof RUNTIME_CONSENT_KEYS)[number];
+
+export type RuntimeConsentPurpose = ConsentPurpose;
 
 export const LAWFUL_BASIS = {
   CONSENT: 'consent-6.1.a',
@@ -13,12 +17,14 @@ export const LAWFUL_BASIS = {
 
 export type LawfulBasis = (typeof LAWFUL_BASIS)[keyof typeof LAWFUL_BASIS];
 
-export const LAWFUL_BASIS_BY_PURPOSE: Record<ConsentPurpose, LawfulBasis> = {
+export const LAWFUL_BASIS_BY_PURPOSE: Record<
+  RuntimeConsentPurpose,
+  LawfulBasis
+> = {
   telemetry: LAWFUL_BASIS.CONSENT,
   experiments: LAWFUL_BASIS.CONSENT,
   cloudProcessing: LAWFUL_BASIS.CONSENT,
   aiTraining: LAWFUL_BASIS.CONSENT,
-  aiModelImprovement: LAWFUL_BASIS.CONSENT,
   crashDiagnostics: LAWFUL_BASIS.CONSENT,
 };
 
@@ -36,7 +42,6 @@ export type ConsentState = {
   experiments: boolean;
   cloudProcessing: boolean;
   aiTraining: boolean;
-  aiModelImprovement: boolean;
   crashDiagnostics: boolean;
   version: string;
   timestamp: string; // ISO string

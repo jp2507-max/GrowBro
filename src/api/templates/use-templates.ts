@@ -4,6 +4,7 @@
 
 import { createQuery } from 'react-query-kit';
 
+import type { PlaybookStep } from '@/lib/playbooks/sanitize-playbook';
 import { supabase } from '@/lib/supabase';
 
 import type {
@@ -12,25 +13,57 @@ import type {
   TemplateListParams,
 } from './types';
 
+type DbCommunityTemplateRow = {
+  id: string;
+  author_id: string;
+  author_handle: string;
+  name: string;
+  description: string | null;
+  setup: 'auto_indoor' | 'auto_outdoor' | 'photo_indoor' | 'photo_outdoor';
+  locale: string;
+  license: string;
+  steps: PlaybookStep[];
+  phase_order: string[];
+  total_weeks: number | null;
+  task_count: number;
+  adoption_count: number;
+  rating_average: number | null;
+  rating_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+type DbTemplateCommentRow = {
+  id: string;
+  template_id: string;
+  user_id: string;
+  comment: string;
+  created_at: string;
+  updated_at: string;
+  user_handle: string;
+};
+
 /**
  * Maps a database row from community_playbook_templates to CommunityTemplate
  */
-function mapDbRowToCommunityTemplate(row: any): CommunityTemplate {
+function mapDbRowToCommunityTemplate(
+  row: DbCommunityTemplateRow
+): CommunityTemplate {
   return {
     id: row.id,
     authorId: row.author_id,
     authorHandle: row.author_handle,
     name: row.name,
-    description: row.description,
+    description: row.description ?? undefined,
     setup: row.setup,
     locale: row.locale,
     license: row.license,
     steps: row.steps,
     phaseOrder: row.phase_order,
-    totalWeeks: row.total_weeks,
+    totalWeeks: row.total_weeks ?? undefined,
     taskCount: row.task_count,
     adoptionCount: row.adoption_count,
-    ratingAverage: row.rating_average,
+    ratingAverage: row.rating_average ?? undefined,
     ratingCount: row.rating_count,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -40,7 +73,7 @@ function mapDbRowToCommunityTemplate(row: any): CommunityTemplate {
 /**
  * Maps a database row from template_comments to TemplateComment
  */
-function mapDbRowToTemplateComment(row: any): TemplateComment {
+function mapDbRowToTemplateComment(row: DbTemplateCommentRow): TemplateComment {
   return {
     id: row.id,
     templateId: row.template_id,
@@ -79,7 +112,7 @@ const _useTemplates = createQuery<
   TemplateListParams
 >({
   queryKey: ['templates'],
-  fetcher: async (params) => {
+  fetcher: async (params: TemplateListParams) => {
     const {
       setup,
       locale,
@@ -122,7 +155,9 @@ const _useTemplates = createQuery<
     }
 
     return {
-      templates: (data || []).map(mapDbRowToCommunityTemplate),
+      templates: ((data as DbCommunityTemplateRow[]) || []).map(
+        mapDbRowToCommunityTemplate
+      ),
       total: count || 0,
     };
   },
@@ -147,7 +182,7 @@ export const useTemplates = Object.assign(
  */
 const _useTemplate = createQuery<CommunityTemplate, { id: string }>({
   queryKey: ['template'],
-  fetcher: async ({ id }) => {
+  fetcher: async ({ id }: { id: string }) => {
     const { data, error } = await supabase
       .from('community_playbook_templates')
       .select('*')
@@ -163,7 +198,7 @@ const _useTemplate = createQuery<CommunityTemplate, { id: string }>({
       throw new Error('Template not found');
     }
 
-    return mapDbRowToCommunityTemplate(data);
+    return mapDbRowToCommunityTemplate(data as DbCommunityTemplateRow);
   },
 });
 
@@ -183,7 +218,15 @@ const _useTemplateComments = createQuery<
   { templateId: string; limit?: number; offset?: number }
 >({
   queryKey: ['template-comments'],
-  fetcher: async ({ templateId, limit = 20, offset = 0 }) => {
+  fetcher: async ({
+    templateId,
+    limit = 20,
+    offset = 0,
+  }: {
+    templateId: string;
+    limit?: number;
+    offset?: number;
+  }) => {
     const { data, error } = await supabase
       .from('template_comments')
       .select('*')
@@ -196,7 +239,9 @@ const _useTemplateComments = createQuery<
       throw new Error(`Failed to fetch comments: ${error.message}`);
     }
 
-    return (data || []).map(mapDbRowToTemplateComment);
+    return ((data as DbTemplateCommentRow[]) || []).map(
+      mapDbRowToTemplateComment
+    );
   },
 });
 

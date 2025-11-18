@@ -1,4 +1,5 @@
 import { DateTime } from 'luxon';
+import type { Options, Weekday } from 'rrule';
 import { RRule, rrulestr } from 'rrule';
 
 // Error codes for RRULE validation
@@ -9,6 +10,9 @@ export enum RRULEErrorCode {
   INVALID_INTERVAL = 'RRULE_INVALID_INTERVAL',
   COUNT_AND_UNTIL = 'RRULE_COUNT_AND_UNTIL',
 }
+
+// Type for RRule options extracted from parsed rules
+type RRuleOptions = Options;
 
 export class RRULEError extends Error {
   constructor(
@@ -57,7 +61,7 @@ export type TaskTemplate = {
  */
 export class RRULEGenerator {
   // Explicit mapping from WeekDay string values to rrule.js weekday objects
-  private static readonly WEEKDAY_MAP: Record<string, any> = {
+  private static readonly WEEKDAY_MAP: Record<string, Weekday> = {
     monday: RRule.MO,
     tuesday: RRule.TU,
     wednesday: RRule.WE,
@@ -173,8 +177,8 @@ export class RRULEGenerator {
       const parsed = rrulestr(rruleString, { forceset: false });
 
       // Access options for semantic checks
-      const opts: any =
-        (parsed as any).origOptions || (parsed as any).options || {};
+      const opts: Partial<RRuleOptions> =
+        parsed.origOptions || parsed.options || {};
 
       // Semantic rule: COUNT and UNTIL are mutually exclusive (RFC 5545)
       if (opts.count && opts.until) {
@@ -241,8 +245,20 @@ export class RRULEGenerator {
       const parsed = rrulestr(rruleString, { forceset: false });
 
       // Get the options from the parsed rule
-      const opts: any =
-        (parsed as any).origOptions || (parsed as any).options || {};
+      const opts: Partial<RRuleOptions> =
+        (
+          parsed as unknown as {
+            origOptions?: Partial<RRuleOptions>;
+            options?: Partial<RRuleOptions>;
+          }
+        ).origOptions ||
+        (
+          parsed as unknown as {
+            origOptions?: Partial<RRuleOptions>;
+            options?: Partial<RRuleOptions>;
+          }
+        ).options ||
+        {};
 
       // Create a new RRule with the explicit dtstart
       const rule = new RRule({ ...opts, dtstart });

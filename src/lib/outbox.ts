@@ -17,7 +17,7 @@ export type OutboxEntry = {
   next_attempt_at: string | null;
   expires_at: string | null;
   action_type: OutboxActionType;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   status: 'pending' | 'in_progress' | 'processed' | 'failed' | 'expired';
   business_key?: string | null;
 };
@@ -27,7 +27,7 @@ export type OutboxEntry = {
 // deduplicate logically identical actions (e.g., task_id + notification_id + action_type).
 export async function enqueueOutboxEntry(params: {
   action_type: OutboxActionType;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   business_key?: string | null;
   // optional TTL in seconds
   ttlSeconds?: number;
@@ -67,7 +67,8 @@ export async function enqueueOutboxEntry(params: {
 
   if (error) {
     // 23505 = unique_violation
-    if ((error as any).code === '23505') {
+    const errorWithCode = error as { code?: string };
+    if (errorWithCode.code === '23505') {
       return undefined; // already enqueued
     }
     throw error;
@@ -82,8 +83,8 @@ export async function enqueueOutboxEntry(params: {
 // computes backoff by setting next_attempt_at accordingly. Expired entries are marked expired.
 
 export type Scheduler = {
-  scheduleNotification: (payload: Record<string, any>) => Promise<void>;
-  cancelNotification: (payload: Record<string, any>) => Promise<void>;
+  scheduleNotification: (payload: Record<string, unknown>) => Promise<void>;
+  cancelNotification: (payload: Record<string, unknown>) => Promise<void>;
 };
 
 export async function processOutboxOnce(opts: {

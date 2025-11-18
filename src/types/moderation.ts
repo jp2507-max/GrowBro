@@ -447,7 +447,7 @@ export interface ContentSnapshot {
 
   // Snapshot data (immutable)
   snapshot_hash: string; // SHA-256
-  snapshot_data: Record<string, any>; // Complete content state
+  snapshot_data: Record<string, unknown>; // Complete content state
 
   // Capture metadata
   captured_at: Date;
@@ -549,7 +549,7 @@ export interface AuditEvent {
 
   // Action details
   action: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 
   // Timestamp (immutable)
   timestamp: Date;
@@ -572,7 +572,7 @@ export interface AuditEventInput {
   target_id: string;
   target_type: string;
   action: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   pii_tagged?: boolean;
 }
 

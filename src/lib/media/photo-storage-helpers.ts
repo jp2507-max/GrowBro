@@ -5,6 +5,7 @@
  */
 
 import { database } from '@/lib/watermelon';
+import type { HarvestModel } from '@/lib/watermelon-models/harvest';
 
 /**
  * Extract all photo URIs referenced in harvest records
@@ -18,11 +19,8 @@ export async function getReferencedPhotoUris(): Promise<string[]> {
     const photoUris: string[] = [];
 
     for (const harvest of harvests) {
-      const photos = (harvest as any).photos as {
-        variant: string;
-        localUri: string;
-        remotePath?: string;
-      }[];
+      const harvestModel = harvest as HarvestModel;
+      const photos = harvestModel.photos;
       if (Array.isArray(photos)) {
         for (const photo of photos) {
           if (photo.localUri) {

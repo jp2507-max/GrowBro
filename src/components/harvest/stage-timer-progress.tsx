@@ -22,7 +22,7 @@ type Props = {
   isOverdue: boolean;
   targetDays: number;
   maxDurationDays: number;
-  t: (key: string, options?: any) => string;
+  t: (key: string, options?: Record<string, unknown>) => string;
 };
 
 export function StageTimerProgress({

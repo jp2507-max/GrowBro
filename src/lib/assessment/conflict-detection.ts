@@ -1,7 +1,7 @@
 /**
  * Conflict detection utilities
  */
-export function detectConflicts<T extends Record<string, any>>(
+export function detectConflicts<T extends Record<string, unknown>>(
   localData: T,
   serverData: T
 ): string[] {
@@ -12,8 +12,8 @@ export function detectConflicts<T extends Record<string, any>>(
   ]);
 
   for (const key of allKeys) {
-    const localValue = (localData as any)[key];
-    const serverValue = (serverData as any)[key];
+    const localValue = localData[key];
+    const serverValue = serverData[key];
 
     // Skip if values are equal
     if (isEqual(localValue, serverValue)) {
@@ -39,22 +39,38 @@ export function detectConflicts<T extends Record<string, any>>(
 /**
  * Deep equality check for values
  */
-export function isEqual(a: any, b: any): boolean {
+export function isEqual(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (a == null || b == null) return false;
   if (typeof a !== typeof b) return false;
 
   if (typeof a === 'object') {
+    // Handle Date objects explicitly
+    if (a instanceof Date && b instanceof Date) {
+      return a.getTime() === b.getTime();
+    }
+    if (a instanceof Date || b instanceof Date) {
+      return false;
+    }
+
     if (Array.isArray(a) && Array.isArray(b)) {
       if (a.length !== b.length) return false;
       return a.every((item, index) => isEqual(item, b[index]));
+    }
+
+    if (Array.isArray(a) || Array.isArray(b)) {
+      return false;
     }
 
     const keysA = Object.keys(a);
     const keysB = Object.keys(b);
     if (keysA.length !== keysB.length) return false;
 
-    return keysA.every((key) => isEqual((a as any)[key], (b as any)[key]));
+    return keysA.every((key) => {
+      const aObj = a as Record<string, unknown>;
+      const bObj = b as Record<string, unknown>;
+      return isEqual(aObj[key], bObj[key]);
+    });
   }
 
   return false;

@@ -73,7 +73,10 @@ export interface ResendVerificationVariables {
 export interface AuthErrorResponse {
   error: string;
   code: string;
-  metadata?: Record<string, any>;
+  metadata?: {
+    lockout?: boolean;
+    minutes_remaining?: number;
+  };
 }
 
 // Session Management

@@ -570,11 +570,11 @@ async function importItems(items: CSVItemRow[]): Promise<{
 
 // Helper (file-level): check whether a movement with the given external_key exists.
 async function movementExistsByExternalKey(
-  movementsCollection: any,
+  movementsCollection: ReturnType<typeof database.get<InventoryMovementModel>>,
   key: string
 ): Promise<boolean> {
   const existing = await movementsCollection.query().fetch();
-  return existing.some((m: any) => m.externalKey === key);
+  return existing.some((m) => m.externalKey === key);
 }
 
 /**

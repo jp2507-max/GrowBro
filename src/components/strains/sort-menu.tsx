@@ -1,8 +1,10 @@
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 
 import type { SortBy, SortDirection } from '@/api/strains/types';
 import { Button, Modal, Text, useModal, View } from '@/components/ui';
+import type { TxKeyPath } from '@/lib/i18n';
 import { translate } from '@/lib/i18n';
 
 export interface SortOptions {
@@ -16,7 +18,7 @@ interface SortMenuProps {
   onClear: () => void;
 }
 
-const SORT_OPTIONS: { value: SortBy; label: string }[] = [
+const SORT_OPTIONS: { value: SortBy; label: TxKeyPath }[] = [
   { value: 'name', label: 'strains.sort.name' },
   { value: 'thc', label: 'strains.sort.thc' },
   { value: 'cbd', label: 'strains.sort.cbd' },
@@ -48,7 +50,7 @@ function SortMenuContent({
           {SORT_OPTIONS.map((option) => (
             <Button
               key={option.value}
-              label={translate(option.label as any)}
+              label={translate(option.label)}
               variant={
                 localOptions.sortBy === option.value ? 'default' : 'outline'
               }
@@ -139,7 +141,7 @@ export function useSortMenu() {
   };
 }
 
-export const SortMenu = React.forwardRef<any, SortMenuProps>(
+export const SortMenu = React.forwardRef<BottomSheetModal, SortMenuProps>(
   ({ sortOptions, onApply, onClear }, ref) => {
     const [localOptions, setLocalOptions] =
       React.useState<SortOptions>(sortOptions);

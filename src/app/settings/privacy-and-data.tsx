@@ -10,7 +10,7 @@ import {
   Text,
   View,
 } from '@/components/ui';
-import { translate, useAuth } from '@/lib';
+import { translate, type TxKeyPath, useAuth } from '@/lib';
 import {
   deleteAccountInApp,
   provideWebDeletionUrl,
@@ -56,8 +56,8 @@ function useDataExport(onRequestExport: () => void): {
 
       if (shareResult.success) {
         Alert.alert(
-          translate('privacy.exportReadyTitle' as any),
-          translate('privacy.exportReadyBody' as any)
+          translate('privacy.exportReadyTitle' as TxKeyPath),
+          translate('privacy.exportReadyBody' as TxKeyPath)
         );
       } else {
         // Fallback to old behavior if share sheet fails

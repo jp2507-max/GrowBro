@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 
 import { NoopAnalytics } from '@/lib/analytics';
+import type { NotificationQueueModel } from '@/lib/watermelon-models/notification-queue';
 
 // Compute delivery delay from scheduled UTC timestamp
 export function computeDeliveryDelayMs(
@@ -22,8 +23,9 @@ async function resolveScheduledUtcForTask(
   if (!taskId) return null;
   try {
     const { database } = await import('@/lib/watermelon');
-    const queue = database.collections.get('notification_queue' as any) as any;
-    const rows: any[] = await (queue as any).query().fetch();
+    const queue =
+      database.collections.get<NotificationQueueModel>('notification_queue');
+    const rows: NotificationQueueModel[] = await queue.query().fetch();
     const candidates = rows
       .filter((r) => r.taskId === taskId && r.status === 'pending')
       .sort((a, b) =>
@@ -38,8 +40,8 @@ async function resolveScheduledUtcForTask(
 }
 
 export function registerNotificationMetrics(): () => void {
-  const recvSub = (Notifications as any).addNotificationReceivedListener(
-    async (event: any) => {
+  const recvSub = Notifications.addNotificationReceivedListener(
+    async (event: Notifications.Notification) => {
       try {
         const notificationId = event?.request?.identifier;
         const taskId = event?.request?.content?.data?.taskId as
@@ -55,22 +57,21 @@ export function registerNotificationMetrics(): () => void {
     }
   );
 
-  const respSub = (
-    Notifications as any
-  ).addNotificationResponseReceivedListener(async (response: any) => {
-    try {
-      const notificationId = response?.notification?.request?.identifier;
-      const taskId = response?.notification?.request?.content?.data?.taskId as
-        | string
-        | undefined;
-      const actionId = response?.actionIdentifier;
-      await NoopAnalytics.track('notif_interacted', {
-        notificationId,
-        taskId,
-        actionId,
-      });
-    } catch {}
-  });
+  const respSub = Notifications.addNotificationResponseReceivedListener(
+    async (response: Notifications.NotificationResponse) => {
+      try {
+        const notificationId = response?.notification?.request?.identifier;
+        const taskId = response?.notification?.request?.content?.data
+          ?.taskId as string | undefined;
+        const actionId = response?.actionIdentifier;
+        await NoopAnalytics.track('notif_interacted', {
+          notificationId,
+          taskId,
+          actionId,
+        });
+      } catch {}
+    }
+  );
 
   return () => {
     try {

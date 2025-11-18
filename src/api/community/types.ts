@@ -23,7 +23,7 @@ export type { CreateCommentData, CreatePostData, Post, PostComment, PostLike };
 export type OutboxEntry = {
   id: string;
   op: 'LIKE' | 'UNLIKE' | 'COMMENT' | 'DELETE_POST' | 'DELETE_COMMENT';
-  payload: any;
+  payload: Record<string, unknown>;
   client_tx_id: string;
   idempotency_key: string;
   created_at: string;
@@ -58,7 +58,7 @@ export type ApiError = {
   message: string;
   code?: string;
   status?: number;
-  details?: any;
+  details?: unknown;
 };
 
 // Idempotency key record
@@ -69,8 +69,8 @@ export type IdempotencyKey = {
   user_id: string;
   endpoint: string;
   payload_hash: string;
-  response_payload?: any;
-  error_details?: any;
+  response_payload?: unknown;
+  error_details?: unknown;
   status: 'completed' | 'processing' | 'failed';
   created_at: string;
   expires_at: string;

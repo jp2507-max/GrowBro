@@ -211,6 +211,7 @@ export const HarvestAuditActions = {
   STAGE_UNDO: 'stage_undo',
   STAGE_REVERT: 'stage_revert',
   STAGE_OVERRIDE_SKIP: 'stage_override_skip',
+  SYNC_REJECTED: 'sync_rejected',
 } as const;
 
 export type HarvestAuditAction =

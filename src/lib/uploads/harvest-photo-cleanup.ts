@@ -9,6 +9,7 @@ import { Q } from '@nozbe/watermelondb';
 
 import { supabase } from '@/lib/supabase';
 import { database } from '@/lib/watermelon';
+import type { HarvestModel } from '@/lib/watermelon-models/harvest';
 
 export interface CleanupResult {
   /** Number of harvests processed */
@@ -95,17 +96,16 @@ export async function cleanupDeletedHarvestPhotos(): Promise<CleanupResult> {
   };
 
   try {
-    const coll = database.collections.get('harvests' as any);
+    const coll = database.collections.get<HarvestModel>('harvests');
 
     // Find all soft-deleted harvests with photos
-    const deletedHarvests = await (coll as any)
+    const deletedHarvests = await coll
       .query(Q.where('deleted_at', Q.notEq(null)))
       .fetch();
 
     for (const harvest of deletedHarvests) {
       try {
-        const photos = harvest._raw.photos;
-        const remotePaths = extractRemotePaths(photos);
+        const remotePaths = extractRemotePaths(harvest.photos);
 
         if (remotePaths.length > 0) {
           const deleted = await deleteRemotePhotos(harvest.id, remotePaths);
@@ -134,11 +134,10 @@ export async function cleanupDeletedHarvestPhotos(): Promise<CleanupResult> {
  */
 export async function cleanupHarvestPhotos(harvestId: string): Promise<number> {
   try {
-    const coll = database.collections.get('harvests' as any);
-    const harvest = await (coll as any).find(harvestId);
+    const coll = database.collections.get<HarvestModel>('harvests');
+    const harvest = await coll.find(harvestId);
 
-    const photos = harvest._raw.photos;
-    const remotePaths = extractRemotePaths(photos);
+    const remotePaths = extractRemotePaths(harvest.photos);
 
     if (remotePaths.length === 0) return 0;
 

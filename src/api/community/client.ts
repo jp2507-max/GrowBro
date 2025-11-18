@@ -1,4 +1,5 @@
-import { type SupabaseClient } from '@supabase/supabase-js';
+import type { PostgrestFilterBuilder } from '@supabase/postgrest-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { PaginateQuery } from '@/api/types';
 import { createIdempotencyHeaders } from '@/lib/community/headers';
@@ -16,6 +17,41 @@ import type {
   PostComment,
   UserProfile,
 } from './types';
+
+// Database record types for diagnostic queries
+type DbPostDiagnostic = {
+  id: string;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type DbCommentDiagnostic = {
+  id: string;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type DbPostRecord = {
+  id: string;
+  user_id: string;
+  body: string;
+  media_uri?: string;
+  media_resized_uri?: string;
+  media_thumbnail_uri?: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  hidden_at: string | null;
+  like_count: number;
+  comment_count: number;
+};
+
+type DbPostLike = {
+  post_id: string;
+  user_id: string;
+};
 
 /**
  * Custom error classes for community API
@@ -263,8 +299,8 @@ export class CommunityApiClient implements CommunityAPI {
    * Run diagnostic queries for a post to determine visibility issues
    */
   private async runPostDiagnostic(postId: string): Promise<{
-    diagnosticPost: any;
-    diagnosticError: any;
+    diagnosticPost: DbPostDiagnostic | null;
+    diagnosticError: Error | null;
   }> {
     const { data: diagnosticPost, error: diagnosticError } = await this.client
       .from('posts')
@@ -272,14 +308,17 @@ export class CommunityApiClient implements CommunityAPI {
       .eq('id', postId)
       .single();
 
-    return { diagnosticPost, diagnosticError };
+    return {
+      diagnosticPost: diagnosticPost as DbPostDiagnostic | null,
+      diagnosticError: diagnosticError as Error | null,
+    };
   }
 
   /**
    * Determine specific error message based on diagnostic results
    */
   private determinePostError(
-    diagnosticPost: any,
+    diagnosticPost: DbPostDiagnostic | null,
     _lastError: Error | null
   ): Error {
     if (diagnosticPost && diagnosticPost.deleted_at) {
@@ -637,8 +676,8 @@ export class CommunityApiClient implements CommunityAPI {
    * Run diagnostic queries for a comment to determine visibility issues
    */
   private async runCommentDiagnostic(commentId: string): Promise<{
-    diagnosticComment: any;
-    diagnosticError: any;
+    diagnosticComment: DbCommentDiagnostic | null;
+    diagnosticError: Error | null;
   }> {
     const { data: diagnosticComment, error: diagnosticError } =
       await this.client
@@ -647,14 +686,17 @@ export class CommunityApiClient implements CommunityAPI {
         .eq('id', commentId)
         .single();
 
-    return { diagnosticComment, diagnosticError };
+    return {
+      diagnosticComment: diagnosticComment as DbCommentDiagnostic | null,
+      diagnosticError: diagnosticError as Error | null,
+    };
   }
 
   /**
    * Determine specific error message based on diagnostic results for comments
    */
   private determineCommentError(
-    diagnosticComment: any,
+    diagnosticComment: DbCommentDiagnostic | null,
     _lastError: Error | null
   ): Error {
     if (diagnosticComment && diagnosticComment.deleted_at) {
@@ -812,7 +854,8 @@ export class CommunityApiClient implements CommunityAPI {
           'success' in data &&
           data.success === false
         ) {
-          const errorMessage = (data as any).error || 'Moderation failed';
+          const errorMessage =
+            (data as { error?: string }).error || 'Moderation failed';
           throw new Error(
             `Failed to ${action} ${contentType}: ${errorMessage}`
           );
@@ -881,7 +924,8 @@ export class CommunityApiClient implements CommunityAPI {
    * Get posts with like/comment counts and user like status in a single optimized query
    */
   private async getPostsWithCounts(
-    query: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    query: PostgrestFilterBuilder<any, any, any, any>,
     includeUserLikes: boolean = true
   ): Promise<Post[]> {
     const { data: session } = await this.client.auth.getSession();
@@ -906,7 +950,7 @@ export class CommunityApiClient implements CommunityAPI {
 
     // Collect all media paths that need signed URLs
     const mediaPaths: string[] = [];
-    posts.forEach((post: any) => {
+    posts.forEach((post: DbPostRecord) => {
       if (post.media_uri) mediaPaths.push(post.media_uri);
       if (post.media_resized_uri) mediaPaths.push(post.media_resized_uri);
       if (post.media_thumbnail_uri) mediaPaths.push(post.media_thumbnail_uri);
@@ -927,7 +971,7 @@ export class CommunityApiClient implements CommunityAPI {
     };
 
     // Transform storage paths to signed URLs
-    const postsWithSignedUrls = posts.map((post: any) => ({
+    const postsWithSignedUrls = posts.map((post: DbPostRecord) => ({
       ...post,
       media_uri: getSignedUrl(post.media_uri),
       media_resized_uri: getSignedUrl(post.media_resized_uri),
@@ -937,27 +981,29 @@ export class CommunityApiClient implements CommunityAPI {
     // If user is authenticated and we need user like status, fetch all likes for these posts in one query
     let userLikesMap = new Map<string, boolean>();
     if (userId && includeUserLikes) {
-      const postIds = postsWithSignedUrls.map((post: any) => post.id);
+      const postIds = postsWithSignedUrls.map((post: DbPostRecord) => post.id);
       const { data: likes } = await this.client
         .from('post_likes')
-        .select('post_id')
+        .select('post_id, user_id')
         .eq('user_id', userId)
         .in('post_id', postIds);
 
       if (likes) {
-        likes.forEach((like: any) => {
+        likes.forEach((like: DbPostLike) => {
           userLikesMap.set(like.post_id, true);
         });
       }
     }
 
     // Map the results to include user_has_liked
-    return postsWithSignedUrls.map((post: any) => ({
+    return postsWithSignedUrls.map((post: DbPostRecord) => ({
       ...post,
       userId: post.user_id,
       like_count: post.like_count ?? 0,
       comment_count: post.comment_count ?? 0,
       user_has_liked: userLikesMap.get(post.id) ?? false,
+      deleted_at: post.deleted_at ?? undefined,
+      hidden_at: post.hidden_at ?? undefined,
     }));
   }
 

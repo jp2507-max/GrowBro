@@ -7,7 +7,7 @@
  * - Error logging
  */
 
-import React from 'react';
+import React, { type ErrorInfo } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import { Button, Text, View } from '@/components/ui';
@@ -49,7 +49,7 @@ function ErrorFallback({
 export function CommunityErrorBoundary({
   children,
 }: CommunityErrorBoundaryProps): React.ReactElement {
-  const handleError = React.useCallback((error: Error, info: any) => {
+  const handleError = React.useCallback((error: Error, info: ErrorInfo) => {
     console.error('Community feed error:', error, info);
     // Could send to error tracking service here
   }, []);

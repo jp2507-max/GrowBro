@@ -21,7 +21,6 @@ describe('ConsentService.isConsentRequired', () => {
       experiments: false,
       cloudProcessing: false,
       aiTraining: false,
-      aiModelImprovement: false,
       crashDiagnostics: true,
       version: '2024-01-01', // Old version
       timestamp: '2024-01-01T00:00:00.000Z',

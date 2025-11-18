@@ -16,6 +16,7 @@ import {
 } from '@/lib/privacy/telemetry-client';
 import { getPrivacyConsent } from '@/lib/privacy-consent';
 import { database } from '@/lib/watermelon';
+import type { AssessmentModel } from '@/lib/watermelon-models/assessment';
 
 export type ConsentExport = {
   current: ConsentState;
@@ -83,16 +84,21 @@ export async function generatePrivacyExport(): Promise<PrivacyExportBundle> {
   };
 
   // Export assessment data (sanitized)
-  const assessmentRecords = await database.get('assessments').query().fetch();
+  const assessmentRecords = await database
+    .get<AssessmentModel>('assessments')
+    .query()
+    .fetch();
   const assessments: AssessmentExport = {
-    records: assessmentRecords.map((a: any) => ({
+    records: assessmentRecords.map((a) => ({
       id: a.id,
       plantId: a.plantId,
       status: a.status,
       modelVersion: a.modelVersion,
-      predictedClass: a.predictedClass,
-      confidence: a.calibratedConfidence ?? a.rawConfidence,
-      consentedForTraining: a.consentedForTraining,
+      predictedClass: (a as AssessmentModel).predictedClass,
+      confidence:
+        (a as AssessmentModel).calibratedConfidence ??
+        (a as AssessmentModel).rawConfidence,
+      consentedForTraining: (a as AssessmentModel).consentedForTraining,
       createdAt: a.createdAt.toISOString(),
       updatedAt: a.updatedAt.toISOString(),
     })),

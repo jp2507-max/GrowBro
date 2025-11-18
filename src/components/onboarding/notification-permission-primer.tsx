@@ -97,12 +97,12 @@ export function NotificationPermissionPrimer({
   return (
     <PermissionPrimerScreen
       icon={icon}
-      titleTx={'onboarding.permissions.notifications.title' as any}
-      descriptionTx={'onboarding.permissions.notifications.description' as any}
+      titleTx="onboarding.permissions.notifications.title"
+      descriptionTx="onboarding.permissions.notifications.description"
       benefitsTx={[
-        'onboarding.permissions.notifications.benefit1' as any,
-        'onboarding.permissions.notifications.benefit2' as any,
-        'onboarding.permissions.notifications.benefit3' as any,
+        'onboarding.permissions.notifications.benefit1',
+        'onboarding.permissions.notifications.benefit2',
+        'onboarding.permissions.notifications.benefit3',
       ]}
       onAllow={handleAllow}
       onNotNow={handleNotNow}

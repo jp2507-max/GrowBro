@@ -11,6 +11,13 @@ import { translate } from '@/lib';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
+type MfaFactor = {
+  id: string;
+  factor_type: string;
+  friendly_name?: string;
+  status: string;
+};
+
 export type PendingMfaEnrollment = {
   factorId: string;
   secret: string;
@@ -54,7 +61,7 @@ async function verifyMfaCode(params: {
   pendingEnrollment: PendingMfaEnrollment | null;
   verificationCode: string;
   verifyTotp: ReturnType<typeof useMfaChallengeAndVerify>;
-  refetchMfaFactors: () => Promise<any>;
+  refetchMfaFactors: () => Promise<unknown>;
   setPendingEnrollment: (enrollment: PendingMfaEnrollment | null) => void;
   setVerificationCode: (code: string) => void;
   setMfaModalVisible: (visible: boolean) => void;
@@ -103,9 +110,9 @@ async function verifyMfaCode(params: {
 }
 
 function disableMfaFactor(params: {
-  activeFactor: any;
+  activeFactor: MfaFactor | undefined;
   unenrollTotp: ReturnType<typeof useMfaUnenroll>;
-  refetchMfaFactors: () => Promise<any>;
+  refetchMfaFactors: () => Promise<unknown>;
 }) {
   const { activeFactor, unenrollTotp, refetchMfaFactors } = params;
   if (!activeFactor) return;
@@ -154,9 +161,9 @@ export function useMfaManagement() {
     React.useState<PendingMfaEnrollment | null>(null);
   const [verificationCode, setVerificationCode] = React.useState('');
 
-  const allFactors = mfaFactors?.all ?? [];
+  const allFactors = (mfaFactors?.all ?? []) as MfaFactor[];
   const totpFactors = allFactors.filter(
-    (factor: any) => factor.factor_type === 'totp'
+    (factor) => factor.factor_type === 'totp'
   );
   const activeFactor = totpFactors[0];
   const isMfaEnabled = totpFactors.length > 0;

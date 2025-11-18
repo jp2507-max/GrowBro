@@ -101,7 +101,7 @@ export default function CalendarScreen(): React.ReactElement {
     if (item.type === 'task' && item.task) {
       return (
         <DraggableAgendaItem
-          task={item.task as any}
+          task={item.task}
           testID={`agenda-item-row-${item.task.id}`}
         />
       );

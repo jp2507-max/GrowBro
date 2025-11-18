@@ -3,6 +3,29 @@ import { Platform } from 'react-native';
 
 import { getAndroidChannelId } from '@/lib/notifications/android-channels';
 
+type AndroidTrigger = Notifications.NotificationTriggerInput & {
+  channelId?: string;
+};
+
+type TriggerWithDate = {
+  type: 'date';
+  value: number | string;
+};
+
+type TriggerWithCalendar = {
+  type: 'calendar';
+  year: number;
+  month: number;
+  day: number;
+  hour?: number;
+  minute?: number;
+  second?: number;
+};
+
+type TriggerWithTimestamp = {
+  timestamp: number;
+};
+
 const MAX_IOS_PENDING = 48;
 export const IOS_PENDING_LIMIT = MAX_IOS_PENDING;
 
@@ -38,7 +61,7 @@ export const LocalNotificationService = {
       };
     }
     if (Platform.OS === 'android' && request.androidChannelKey) {
-      (trigger as any).channelId = getAndroidChannelId(
+      (trigger as AndroidTrigger).channelId = getAndroidChannelId(
         request.androidChannelKey
       );
     }
@@ -112,12 +135,29 @@ async function enforceIosPendingLimit(incoming: Date): Promise<void> {
 
 function extractTriggerDate(trigger: unknown): Date | null {
   if (!trigger) return null;
-  const anyTrigger: any = trigger;
-  if (anyTrigger.type === 'date' && anyTrigger.value) {
-    return new Date(anyTrigger.value);
+
+  // Check for date trigger
+  if (
+    typeof trigger === 'object' &&
+    (trigger as TriggerWithDate).type === 'date' &&
+    (trigger as TriggerWithDate).value
+  ) {
+    return new Date((trigger as TriggerWithDate).value);
   }
-  if (anyTrigger.type === 'calendar') {
-    const { year, month, day, hour = 0, minute = 0, second = 0 } = anyTrigger;
+
+  // Check for calendar trigger
+  if (
+    typeof trigger === 'object' &&
+    (trigger as TriggerWithCalendar).type === 'calendar'
+  ) {
+    const {
+      year,
+      month,
+      day,
+      hour = 0,
+      minute = 0,
+      second = 0,
+    } = trigger as TriggerWithCalendar;
     if (
       typeof year === 'number' &&
       typeof month === 'number' &&
@@ -126,8 +166,14 @@ function extractTriggerDate(trigger: unknown): Date | null {
       return new Date(year, month - 1, day, hour, minute, second);
     }
   }
-  if (typeof anyTrigger.timestamp === 'number') {
-    return new Date(anyTrigger.timestamp);
+
+  // Check for timestamp trigger
+  if (
+    typeof trigger === 'object' &&
+    typeof (trigger as TriggerWithTimestamp).timestamp === 'number'
+  ) {
+    return new Date((trigger as TriggerWithTimestamp).timestamp);
   }
+
   return null;
 }

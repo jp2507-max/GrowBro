@@ -1,7 +1,12 @@
 import { hasConsent, onPrivacyConsentChange } from '../privacy-consent';
 import { ConsentService } from './consent-service';
+import type { ConsentPurpose as RuntimeConsentPurpose } from './consent-types';
 
-export type ConsentPurpose = 'analytics' | 'crashReporting' | 'telemetry';
+export type ConsentPurpose =
+  | RuntimeConsentPurpose
+  | 'analytics'
+  | 'crashReporting'
+  | 'aiModelImprovement';
 
 export type ConsentChangeCallback = (
   consented: boolean,
@@ -66,18 +71,19 @@ export class ConsentManagerImpl implements ConsentManager {
   constructor() {
     // Subscribe to consent changes from both services
     ConsentService.onChange((state) => {
-      // Handle telemetry consent changes
+      // Handle all runtime consent changes
       this.notifyListeners('telemetry', state.telemetry);
-
-      // Handle other purposes that might be mapped from ConsentService
-      // Note: ConsentService primarily handles telemetry, experiments, aiTraining, crashDiagnostics
-      // while privacy-consent handles analytics, crashReporting, etc.
+      this.notifyListeners('experiments', state.experiments);
+      this.notifyListeners('cloudProcessing', state.cloudProcessing);
+      this.notifyListeners('aiTraining', state.aiTraining);
+      this.notifyListeners('crashDiagnostics', state.crashDiagnostics);
     });
 
     onPrivacyConsentChange((consent) => {
       // Handle privacy consent changes
       this.notifyListeners('analytics', consent.analytics);
       this.notifyListeners('crashReporting', consent.crashReporting);
+      this.notifyListeners('aiModelImprovement', consent.aiModelImprovement);
     });
   }
 
@@ -87,8 +93,14 @@ export class ConsentManagerImpl implements ConsentManager {
         return hasConsent('analytics');
       case 'crashReporting':
         return hasConsent('crashReporting');
+      case 'aiModelImprovement':
+        return hasConsent('aiModelImprovement');
       case 'telemetry':
-        return ConsentService.hasConsent('telemetry');
+      case 'experiments':
+      case 'cloudProcessing':
+      case 'aiTraining':
+      case 'crashDiagnostics':
+        return ConsentService.hasConsent(purpose);
       default:
         return false; // Default opt-out for unknown purposes
     }
@@ -105,12 +117,17 @@ export class ConsentManagerImpl implements ConsentManager {
     switch (purpose) {
       case 'analytics':
       case 'crashReporting':
+      case 'aiModelImprovement':
         // These are handled by privacy-consent service
         // Note: We can't directly revoke from here as it requires UI interaction
         // The UI should call the appropriate service methods
         break;
       case 'telemetry':
-        await ConsentService.setConsent('telemetry', false);
+      case 'experiments':
+      case 'cloudProcessing':
+      case 'aiTraining':
+      case 'crashDiagnostics':
+        await ConsentService.setConsent(purpose, false);
         break;
     }
   }

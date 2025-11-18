@@ -53,7 +53,8 @@ export class NotificationPreferenceModel extends Model {
 
       // Create new record if none exists
       const now = new Date();
-      return collection.create((record: any) => {
+      return collection.create((rec) => {
+        const record = rec as NotificationPreferenceModel;
         record.userId = userId;
         record.communityInteractions = defaults.communityInteractions ?? true;
         record.communityLikes = defaults.communityLikes ?? true;

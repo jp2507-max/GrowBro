@@ -61,7 +61,6 @@ export class ConsentServiceImpl {
       experiments: false,
       cloudProcessing: false,
       aiTraining: false,
-      aiModelImprovement: false,
       crashDiagnostics: false,
       version: CURRENT_CONSENT_VERSION,
       timestamp: nowIso(),

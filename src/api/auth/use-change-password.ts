@@ -72,7 +72,7 @@ export const useChangePassword = createMutation({
   },
   onSuccess: async () => {
     // Track analytics event with consent checking
-    await trackAuthEvent('auth.password_changed', {});
+    await trackAuthEvent('auth_password_changed', {});
   },
   onError: async (error: Error) => {
     await logAuthError(error, {

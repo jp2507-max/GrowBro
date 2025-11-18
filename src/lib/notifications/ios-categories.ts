@@ -33,6 +33,14 @@ type IOSNotificationCategoryOptions = {
   intentIdentifiers?: string[];
 };
 
+type NotificationsWithIOS = typeof Notifications & {
+  setNotificationCategoryAsync: (
+    identifier: string,
+    actions: IOSNotificationAction[],
+    options?: IOSNotificationCategoryOptions
+  ) => Promise<void>;
+};
+
 function createCategoryDefinitions(): CategoryDefinition[] {
   return [
     {
@@ -102,11 +110,11 @@ function createCategoryDefinitions(): CategoryDefinition[] {
 
 export async function registerNotificationCategories(): Promise<void> {
   if (Platform.OS !== 'ios') return;
-  const anyNotifications: any = Notifications as any;
+  const iosNotifications = Notifications as NotificationsWithIOS;
   const categoryDefinitions = createCategoryDefinitions();
   await Promise.all(
     categoryDefinitions.map((definition) =>
-      anyNotifications.setNotificationCategoryAsync(
+      iosNotifications.setNotificationCategoryAsync(
         definition.identifier,
         definition.actions,
         definition.options

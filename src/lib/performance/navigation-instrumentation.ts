@@ -30,12 +30,20 @@ export function createNavigationInstrumentation(): ReturnType<
   return navigationInstrumentationInstance;
 }
 
+type NavigationIntegration = ReturnType<
+  typeof Sentry.reactNavigationIntegration
+> & {
+  registerNavigationContainer?: (
+    ref: NavigationContainerRef<Record<string, unknown>>
+  ) => void;
+};
+
 /**
  * Registers the navigation container with Sentry instrumentation
  * Should be called after the navigation container is mounted
  */
 export function registerNavigationContainer(
-  navigationRef: NavigationContainerRef<any>
+  navigationRef: NavigationContainerRef<Record<string, unknown>>
 ): void {
   if (!navigationInstrumentationInstance) {
     console.warn(
@@ -45,8 +53,8 @@ export function registerNavigationContainer(
   }
 
   // The reactNavigationIntegration returns an object with a registerNavigationContainer method
-  // Cast to any to access it since the type definitions may not expose it directly
-  const integration = navigationInstrumentationInstance as any;
+  const integration =
+    navigationInstrumentationInstance as NavigationIntegration;
   if (
     integration.registerNavigationContainer &&
     typeof integration.registerNavigationContainer === 'function'

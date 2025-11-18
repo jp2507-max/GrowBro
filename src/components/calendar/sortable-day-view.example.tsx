@@ -37,7 +37,9 @@ export function SortableDayView({
   tasks,
   onTasksReordered,
 }: Props): React.ReactElement {
-  const scrollRef = React.useRef<any>(null);
+  const scrollRef = React.useRef<{
+    scrollToOffset: (params: { offset: number; animated: boolean }) => void;
+  } | null>(null);
   const { handleTaskReorder } = useTaskReorder();
   const { t } = useTranslation();
 

@@ -10,6 +10,7 @@
  */
 
 import { type Database, Q } from '@nozbe/watermelondb';
+import { z } from 'zod';
 
 import { getCommunityApiClient } from '@/api/community/client';
 import { calculateBackoffDelay } from '@/lib/utils/backoff';
@@ -17,6 +18,27 @@ import type { OutboxModel } from '@/lib/watermelon-models/outbox';
 import type { OutboxOperation } from '@/types/community';
 
 import { communityMetrics } from './metrics-tracker';
+
+// Payload validation schemas
+const PostIdPayloadSchema = z.object({
+  postId: z.string(),
+});
+
+const CommentIdPayloadSchema = z.object({
+  commentId: z.string(),
+});
+
+const CommentPayloadSchema = z.object({
+  postId: z.string(),
+  body: z.string(),
+});
+
+const ModerateContentPayloadSchema = z.object({
+  contentType: z.enum(['post', 'comment']),
+  contentId: z.string(),
+  action: z.enum(['hide', 'unhide']),
+  reason: z.string().optional(),
+});
 
 export interface OutboxProcessorOptions {
   database: Database;
@@ -107,10 +129,12 @@ export class OutboxProcessor {
 
     try {
       entry = await outboxCollection.find(entryId);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       console.error(
         `[OutboxProcessor] Entry not found for retry ${entryId}:`,
-        error.message
+        errorMessage
       );
       throw new Error(`Outbox entry not found for retry: ${entryId}`);
     }
@@ -132,10 +156,12 @@ export class OutboxProcessor {
 
       try {
         entry = await outboxCollection.find(entryId);
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
         console.error(
           `[OutboxProcessor] Entry not found for cancel ${entryId}:`,
-          error.message
+          errorMessage
         );
         // Entry already doesn't exist, so cancel is effectively complete
         return;
@@ -251,17 +277,28 @@ export class OutboxProcessor {
 
       // Track successful mutation (Requirement 10.5)
       communityMetrics.recordMutationSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       console.error(
         `[OutboxProcessor] Entry ${entry.id} failed:`,
-        error.message
+        errorMessage
       );
 
       // Track mutation failure (Requirement 10.5)
       communityMetrics.recordMutationFailure();
 
       // Handle specific error cases
-      if (error.response?.status === 404) {
+      const hasNotFoundStatus =
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        error.response &&
+        typeof error.response === 'object' &&
+        'status' in error.response &&
+        error.response.status === 404;
+
+      if (hasNotFoundStatus) {
         // Target content deleted, drop the action
         await this.database.write(async () => {
           await entry.destroyPermanently();
@@ -296,85 +333,133 @@ export class OutboxProcessor {
    */
   private async executeOperation(params: {
     op: OutboxOperation;
-    payload: any;
+    payload: Record<string, unknown>;
     idempotencyKey: string;
     clientTxId: string;
   }): Promise<void> {
     const { op, payload, idempotencyKey, clientTxId } = params;
-    switch (op) {
-      case 'LIKE':
-        await this.apiClient.likePost(
-          payload.postId,
-          idempotencyKey,
-          clientTxId
-        );
-        break;
+    const handlers: Record<OutboxOperation, () => Promise<void>> = {
+      LIKE: () => this.executeLike(payload, idempotencyKey, clientTxId),
+      UNLIKE: () => this.executeUnlike(payload, idempotencyKey, clientTxId),
+      COMMENT: () => this.executeComment(payload, idempotencyKey, clientTxId),
+      DELETE_POST: () =>
+        this.executeDeletePost(payload, idempotencyKey, clientTxId),
+      DELETE_COMMENT: () =>
+        this.executeDeleteComment(payload, idempotencyKey, clientTxId),
+      UNDO_DELETE_POST: () =>
+        this.executeUndoDeletePost(payload, idempotencyKey, clientTxId),
+      UNDO_DELETE_COMMENT: () =>
+        this.executeUndoDeleteComment(payload, idempotencyKey, clientTxId),
+      MODERATE_CONTENT: () =>
+        this.executeModerateContent(payload, idempotencyKey, clientTxId),
+    };
 
-      case 'UNLIKE':
-        await this.apiClient.unlikePost(
-          payload.postId,
-          idempotencyKey,
-          clientTxId
-        );
-        break;
+    const handler = handlers[op];
+    if (!handler) throw new Error(`Unknown operation: ${op}`);
+    await handler();
+  }
 
-      case 'COMMENT':
-        await this.apiClient.createComment(
-          {
-            postId: payload.postId,
-            body: payload.body,
-          },
-          idempotencyKey,
-          clientTxId
-        );
-        break;
+  private async executeLike(
+    payload: Record<string, unknown>,
+    idempotencyKey: string,
+    clientTxId: string
+  ): Promise<void> {
+    const validated = PostIdPayloadSchema.parse(payload);
+    await this.apiClient.likePost(validated.postId, idempotencyKey, clientTxId);
+  }
 
-      case 'DELETE_POST':
-        await this.apiClient.deletePost(
-          payload.postId,
-          idempotencyKey,
-          clientTxId
-        );
-        break;
+  private async executeUnlike(
+    payload: Record<string, unknown>,
+    idempotencyKey: string,
+    clientTxId: string
+  ): Promise<void> {
+    const validated = PostIdPayloadSchema.parse(payload);
+    await this.apiClient.unlikePost(
+      validated.postId,
+      idempotencyKey,
+      clientTxId
+    );
+  }
 
-      case 'DELETE_COMMENT':
-        await this.apiClient.deleteComment(
-          payload.commentId,
-          idempotencyKey,
-          clientTxId
-        );
-        break;
+  private async executeComment(
+    payload: Record<string, unknown>,
+    idempotencyKey: string,
+    clientTxId: string
+  ): Promise<void> {
+    const validated = CommentPayloadSchema.parse(payload);
+    await this.apiClient.createComment(
+      { postId: validated.postId, body: validated.body },
+      idempotencyKey,
+      clientTxId
+    );
+  }
 
-      case 'UNDO_DELETE_POST':
-        await this.apiClient.undoDeletePost(
-          payload.postId,
-          idempotencyKey,
-          clientTxId
-        );
-        break;
+  private async executeDeletePost(
+    payload: Record<string, unknown>,
+    idempotencyKey: string,
+    clientTxId: string
+  ): Promise<void> {
+    const validated = PostIdPayloadSchema.parse(payload);
+    await this.apiClient.deletePost(
+      validated.postId,
+      idempotencyKey,
+      clientTxId
+    );
+  }
 
-      case 'UNDO_DELETE_COMMENT':
-        await this.apiClient.undoDeleteComment(
-          payload.commentId,
-          idempotencyKey,
-          clientTxId
-        );
-        break;
+  private async executeDeleteComment(
+    payload: Record<string, unknown>,
+    idempotencyKey: string,
+    clientTxId: string
+  ): Promise<void> {
+    const validated = CommentIdPayloadSchema.parse(payload);
+    await this.apiClient.deleteComment(
+      validated.commentId,
+      idempotencyKey,
+      clientTxId
+    );
+  }
 
-      case 'MODERATE_CONTENT':
-        await this.apiClient.moderateContent({
-          contentType: payload.contentType,
-          contentId: payload.contentId,
-          action: payload.action,
-          reason: payload.reason,
-          idempotencyKey,
-          clientTxId,
-        });
-        break;
+  private async executeUndoDeletePost(
+    payload: Record<string, unknown>,
+    idempotencyKey: string,
+    clientTxId: string
+  ): Promise<void> {
+    const validated = PostIdPayloadSchema.parse(payload);
+    await this.apiClient.undoDeletePost(
+      validated.postId,
+      idempotencyKey,
+      clientTxId
+    );
+  }
 
-      default:
-        throw new Error(`Unknown operation: ${op}`);
-    }
+  private async executeUndoDeleteComment(
+    payload: Record<string, unknown>,
+    idempotencyKey: string,
+    clientTxId: string
+  ): Promise<void> {
+    const validated = CommentIdPayloadSchema.parse(payload);
+    await this.apiClient.undoDeleteComment(
+      validated.commentId,
+      idempotencyKey,
+      clientTxId
+    );
+  }
+
+  private async executeModerateContent(
+    payload: Record<string, unknown>,
+    idempotencyKey: string,
+    clientTxId: string
+  ): Promise<void> {
+    const validated = ModerateContentPayloadSchema.parse(payload);
+    await this.apiClient.moderateContent({
+      contentType: validated.contentType,
+      contentId: validated.contentId,
+      action: validated.action,
+      reason: validated.reason,
+      idempotencyKey,
+      clientTxId,
+    });
   }
 
   /**

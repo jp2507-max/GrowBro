@@ -15,7 +15,12 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useImperativeHandle, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import {
+  type Control,
+  Controller,
+  type FieldErrors,
+  useForm,
+} from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView } from 'react-native';
 import { z } from 'zod';
@@ -49,7 +54,7 @@ export type ReportContentModalRef = {
 };
 
 // DSA Art. 16 compliant form schema
-const createReportSchema = (t: any) =>
+const createReportSchema = (t: (key: string) => string) =>
   z
     .object({
       reportType: z.enum(['illegal', 'policy_violation'], {
@@ -232,7 +237,7 @@ function ReportTypeSelection({
   control,
   t,
 }: {
-  control: any;
+  control: Control<ReportFormData>;
   t: (key: string) => string;
 }) {
   return (
@@ -280,8 +285,8 @@ function ReasonSelection({
   reasons,
   t,
 }: {
-  control: any;
-  errors: any;
+  control: Control<ReportFormData>;
+  errors: FieldErrors<ReportFormData>;
   reportType: ReportType;
   reasons: ReasonOption[];
   t: (key: string) => string;
@@ -331,8 +336,8 @@ function IllegalReportFields({
   errors,
   t,
 }: {
-  control: any;
-  errors: any;
+  control: Control<ReportFormData>;
+  errors: FieldErrors<ReportFormData>;
   t: (key: string) => string;
 }) {
   return (
@@ -368,8 +373,8 @@ function ExplanationSection({
   charCount,
   t,
 }: {
-  control: any;
-  errors: any;
+  control: Control<ReportFormData>;
+  errors: FieldErrors<ReportFormData>;
   charCount: number;
   t: (key: string) => string;
 }) {
@@ -400,8 +405,8 @@ function ReporterEmailSection({
   errors,
   t,
 }: {
-  control: any;
-  errors: any;
+  control: Control<ReportFormData>;
+  errors: FieldErrors<ReportFormData>;
   t: (key: string) => string;
 }) {
   return (
@@ -427,8 +432,8 @@ function GoodFaithDeclaration({
   errors,
   t,
 }: {
-  control: any;
-  errors: any;
+  control: Control<ReportFormData>;
+  errors: FieldErrors<ReportFormData>;
   t: (key: string) => string;
 }) {
   return (
@@ -512,8 +517,8 @@ function ReportContentForm({
   isSubmitting,
   charCount,
 }: {
-  control: any;
-  errors: any;
+  control: Control<ReportFormData>;
+  errors: FieldErrors<ReportFormData>;
   reportType: ReportType;
   reason: ModerationReason | undefined;
   reasons: ReasonOption[];

@@ -238,8 +238,18 @@ export function analyzeDeviationPatterns(
   // Analyze each pattern
   const patterns: DeviationPattern[] = [];
 
+  // Type guard for supported deviation types
+  function isSupportedDeviationType(
+    type: string
+  ): type is DeviationPattern['type'] {
+    return ['ph_low', 'ph_high', 'ec_low', 'ec_high'].includes(type);
+  }
+
   for (const [type, typeAlerts] of alertsByType) {
     if (typeAlerts.length < 2) continue;
+
+    // Skip alerts that are not pH/EC deviations
+    if (!isSupportedDeviationType(type)) continue;
 
     // Calculate frequency (alerts per day)
     const timespan =
@@ -268,7 +278,7 @@ export function analyzeDeviationPatterns(
     }
 
     patterns.push({
-      type: type as any,
+      type,
       frequency,
       averageMagnitude,
       lastOccurrence: typeAlerts[typeAlerts.length - 1].triggeredAt,

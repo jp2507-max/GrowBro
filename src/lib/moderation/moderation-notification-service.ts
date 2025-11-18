@@ -495,7 +495,7 @@ export class ModerationNotificationService {
   private async logNotificationFailure(
     userId: string,
     type: string,
-    error: any
+    error: unknown
   ): Promise<void> {
     try {
       await supabase.from('notification_delivery_log').insert({
@@ -503,7 +503,7 @@ export class ModerationNotificationService {
         notification_type: type,
         delivered_at: new Date().toISOString(),
         status: 'failed',
-        error_message: error?.message || 'Unknown error',
+        error_message: error instanceof Error ? error.message : 'Unknown error',
       });
     } catch (logError) {
       console.error(

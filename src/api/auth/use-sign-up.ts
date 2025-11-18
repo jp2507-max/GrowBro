@@ -71,7 +71,7 @@ export const useSignUp = createMutation<SignUpResponse, SignUpVariables, Error>(
 
     onSuccess: async (data, variables) => {
       // Track analytics event with consent checking and PII sanitization
-      await trackAuthEvent('auth.sign_up', {
+      await trackAuthEvent('auth_sign_up', {
         method: 'email',
         email: variables.email,
         user_id: data.user?.id,

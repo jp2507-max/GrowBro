@@ -35,7 +35,7 @@ export function shouldApply<T>(params: ShouldApplyParams<T>): boolean {
   const {
     incoming,
     local,
-    getKey = (r: any) => (r as any).id,
+    getKey = (r: T) => (r as Record<string, unknown>).id as string,
     timestampField = 'updated_at',
     eventTimestamp,
     usePersistentTimestamps = false,
@@ -55,10 +55,12 @@ export function shouldApply<T>(params: ShouldApplyParams<T>): boolean {
     localTs = storedTimestamp ? new Date(storedTimestamp) : new Date(0);
   } else {
     // Default behavior: use eventTimestamp if provided, otherwise extract from incoming object
+    const incomingRecord = incoming as Record<string, unknown>;
+    const localRecord = local as Record<string, unknown>;
     incomingTs = eventTimestamp
       ? new Date(eventTimestamp)
-      : new Date((incoming as any)[timestampField]);
-    localTs = new Date((local as any)[timestampField]);
+      : new Date(incomingRecord[timestampField] as string);
+    localTs = new Date(localRecord[timestampField] as string);
   }
 
   // If either timestamp is missing or unparsable, conservatively allow apply
@@ -152,7 +154,7 @@ function applyEventToCache<T>(params: {
  * - 3.5: Drop events where updated_at <= local.updated_at
  * - 3.6: Self-echo detection using client_tx_id matching
  */
-export async function handleRealtimeEvent<T extends Record<string, any>>(
+export async function handleRealtimeEvent<T>(
   event: RealtimeEvent<T>,
   options: EventHandlerOptions<T>
 ): Promise<void> {
@@ -160,7 +162,8 @@ export async function handleRealtimeEvent<T extends Record<string, any>>(
 
   if (!newRow && eventType !== 'DELETE') return;
 
-  const getKey = options.getKey ?? ((r: any) => r.id);
+  const getKey =
+    options.getKey ?? ((r: T) => (r as Record<string, unknown>).id as string);
   const timestampField = options.timestampField ?? 'updated_at';
   const table = options.table;
   const { cache, outbox, onInvalidate } = options;

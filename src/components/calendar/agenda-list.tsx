@@ -1,4 +1,4 @@
-import type { ListRenderItem } from '@shopify/flash-list';
+import type { FlashListRef, ListRenderItem } from '@shopify/flash-list';
 import React from 'react';
 
 import { useRegisterScrollHandlers } from '@/components/calendar/drag-drop-provider';
@@ -33,7 +33,9 @@ export function AgendaList({
   return (
     <List
       testID="agenda-list"
-      ref={listRef as any}
+      ref={
+        listRef as unknown as React.RefObject<FlashListRef<AgendaItem>> | null
+      }
       data={data}
       renderItem={renderItem as ListRenderItem<unknown>}
       keyExtractor={_keyExtractor as (item: unknown, index: number) => string}

@@ -27,7 +27,7 @@ describe('TelemetryClient', () => {
   });
 
   test('sanitizes PII in string properties and enforces bounds', async () => {
-    const delivered: any[] = [];
+    const delivered: TelemetryEvent[] = [];
     const client = new TelemetryClient({
       deliver: async (e) => {
         delivered.push(e);
@@ -61,7 +61,7 @@ describe('TelemetryClient', () => {
   });
 
   test('queues until consent then flushes via deliver callback', async () => {
-    const delivered: any[] = [];
+    const delivered: TelemetryEvent[] = [];
     const client = new TelemetryClient({
       deliver: async (e) => {
         delivered.push(e);

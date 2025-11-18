@@ -132,8 +132,8 @@ export async function syncDataExample() {
 export function handleConflictExample(
   table: string,
   recordId: string,
-  _localVersion: any,
-  _remoteVersion: any
+  _localVersion: Record<string, unknown>,
+  _remoteVersion: Record<string, unknown>
 ) {
   // Detect conflict
   analytics.trackConflictSeen(

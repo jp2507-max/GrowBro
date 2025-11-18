@@ -264,7 +264,7 @@ export async function createMovement(
  * Check for existing movement by external key
  */
 async function checkExistingMovement(
-  collection: any,
+  collection: ReturnType<typeof database.get<InventoryMovementModel>>,
   externalKey?: string
 ): Promise<InventoryMovementModel | null> {
   if (!externalKey) return null;
@@ -304,7 +304,7 @@ async function updateBatchQuantity(
  * Create movement record
  */
 async function createMovementRecord(
-  collection: any,
+  collection: ReturnType<typeof database.get<InventoryMovementModel>>,
   request: CreateMovementRequest
 ): Promise<InventoryMovementModel> {
   return await collection.create((record: InventoryMovementModel) => {

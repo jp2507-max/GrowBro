@@ -126,7 +126,7 @@ export async function getItemCostSummary(
   const { startDate, endDate } = options ?? {};
 
   // Build query
-  const conditions: any[] = [
+  const conditions: Q.Clause[] = [
     Q.where('item_id', itemId),
     Q.where('type', 'consumption'),
   ];
@@ -187,7 +187,7 @@ export async function getCategoryCostSummaries(
   const { startDate, endDate } = options ?? {};
 
   // Query all consumption movements in period
-  const conditions: any[] = [Q.where('type', 'consumption')];
+  const conditions: Q.Clause[] = [Q.where('type', 'consumption')];
 
   if (startDate) {
     conditions.push(Q.where('created_at', Q.gte(startDate.getTime())));

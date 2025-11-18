@@ -58,9 +58,13 @@ export function logEvent(params: {
 }): void {
   const now = Date.now();
   const { level = 'info', stage = 'unknown', message, code } = params;
-  const safeData = params.data
+  const sanitized = params.data
     ? sanitizer.sanitizeObject(params.data)
     : undefined;
+  const safeData =
+    sanitized && typeof sanitized === 'object' && !Array.isArray(sanitized)
+      ? (sanitized as Record<string, unknown>)
+      : undefined;
   logs.push({
     id: genId(),
     t: now,

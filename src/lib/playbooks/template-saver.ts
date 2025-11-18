@@ -9,7 +9,7 @@
  * - Emits analytics events
  */
 
-import { type Database, Q } from '@nozbe/watermelondb';
+import { type Database, Q, type RawRecord } from '@nozbe/watermelondb';
 import { randomUUID } from 'expo-crypto';
 
 import type {
@@ -22,6 +22,17 @@ import type {
 import type { AnalyticsClient } from '../analytics';
 import type { PlaybookModel } from '../watermelon-models/playbook';
 import type { TaskModel } from '../watermelon-models/task';
+
+/**
+ * Extended RawRecord type for playbook template fields
+ * These fields are set directly on _raw for template metadata
+ */
+type PlaybookRawRecord = RawRecord & {
+  is_template?: boolean;
+  is_community?: boolean;
+  author_handle?: string | null;
+  license?: string | null;
+};
 
 export interface TemplateSaverOptions {
   database: Database;
@@ -71,7 +82,7 @@ export class TemplateSaverService {
     const tasks = allTasks.filter((task) => task.playbookId != null);
 
     const customizedTasks = tasks.filter((task) => {
-      const metadata = task.metadata as PlaybookTaskMetadata;
+      const metadata = task.metadata as PlaybookTaskMetadata | undefined;
       return metadata?.flags?.manualEdited === true;
     });
 
@@ -242,10 +253,11 @@ export class TemplateSaverService {
       playbook.updatedAt = createdRecord.updatedAt.toISOString();
 
       // Ensure template-related raw fields are properly set
-      (createdRecord._raw as any).is_template = playbook.isTemplate;
-      (createdRecord._raw as any).is_community = playbook.isCommunity;
-      (createdRecord._raw as any).author_handle = playbook.authorHandle;
-      (createdRecord._raw as any).license = playbook.license;
+      const raw = createdRecord._raw as PlaybookRawRecord;
+      raw.is_template = playbook.isTemplate;
+      raw.is_community = playbook.isCommunity;
+      raw.author_handle = playbook.authorHandle;
+      raw.license = playbook.license;
     });
   }
 
@@ -344,7 +356,7 @@ export class TemplateSaverService {
     );
 
     tasks.forEach((task) => {
-      const metadata = task.metadata as PlaybookTaskMetadata;
+      const metadata = task.metadata as PlaybookTaskMetadata | undefined;
       const taskDate = new Date(task.dueAtUtc);
       const relativeDay = Math.floor(
         (taskDate.getTime() - firstTaskDate.getTime()) / (1000 * 60 * 60 * 24)

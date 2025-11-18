@@ -3,7 +3,8 @@
  * Tracks pending changes and manages offline operation queue
  */
 
-import type { Database } from '@nozbe/watermelondb';
+import type { Database, Model } from '@nozbe/watermelondb';
+import { Q } from '@nozbe/watermelondb';
 import { Observable } from 'rxjs';
 import { throttleTime } from 'rxjs/operators';
 
@@ -144,14 +145,25 @@ export class OfflineQueue {
     const collection = this.database.get(table);
 
     // Get readings from last 5 seconds (±1s tolerance + buffer)
-    const recentReadings = await collection.query().fetch();
-    // Note: Add proper query filtering when implementing with actual WatermelonDB models
+    // Filter at database level using indexed measured_at column
+    const cutoffTime = Date.now() - 5000;
+    const recentReadings = await collection
+      .query(Q.where('measured_at', Q.gte(cutoffTime)))
+      .fetch();
 
-    const existingReadings = recentReadings.map((record: any) => ({
-      plant_id: record.plantId,
-      meter_id: record.meterId,
-      measured_at: record.measuredAt,
-    }));
+    const existingReadings = recentReadings
+      .map((record: Model) => {
+        const raw = record as unknown as Record<string, unknown>;
+        return {
+          plant_id: raw.plantId as string | undefined,
+          meter_id: raw.meterId as string | undefined,
+          measured_at: raw.measuredAt as number | undefined,
+        };
+      })
+      .filter(
+        (r): r is typeof r & { measured_at: number } =>
+          typeof r.measured_at === 'number'
+      );
 
     return isUniqueReading(reading, existingReadings);
   }

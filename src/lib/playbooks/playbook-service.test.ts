@@ -13,6 +13,71 @@ import type { PlaybookModel } from '../watermelon-models/playbook';
 import { PlaybookService } from './playbook-service';
 import { type ScheduleShifter } from './schedule-shifter';
 
+interface MockPlaybookApplication {
+  id: string;
+  playbookId: string;
+  plantId: string;
+  status: 'pending' | 'completed' | 'failed';
+  appliedAt: Date;
+  taskCount?: number;
+  durationMs?: number;
+  jobId?: string;
+  idempotencyKey?: string;
+  update?: jest.Mock<
+    Promise<void>,
+    [(record: MockPlaybookApplication) => void]
+  >;
+}
+
+// Mock database interface for testing
+interface MockDatabase extends Database {
+  mockPlaybooks: Partial<PlaybookModel>[];
+  mockApplications: MockPlaybookApplication[];
+}
+
+const createMockApplication = (
+  overrides: Partial<MockPlaybookApplication> = {}
+): MockPlaybookApplication => {
+  const defaultApplication: MockPlaybookApplication = {
+    id: 'app-1',
+    playbookId: 'playbook-1',
+    plantId: 'plant-1',
+    status: 'pending',
+    appliedAt: new Date(),
+    taskCount: 0,
+    durationMs: 0,
+    jobId: 'job-1',
+    idempotencyKey: 'idem-key-1',
+  };
+
+  const mockApplication = { ...defaultApplication, ...overrides };
+
+  const defaultUpdateMock: jest.Mock<
+    Promise<void>,
+    [(record: MockPlaybookApplication) => void]
+  > = jest.fn(async (updateCallback) => {
+    updateCallback(mockApplication);
+    return Promise.resolve();
+  });
+
+  mockApplication.update = mockApplication.update ?? defaultUpdateMock;
+
+  return mockApplication;
+};
+
+interface WhereCondition {
+  type: 'where';
+  left: string;
+  comparison: { right: { value: unknown } };
+}
+
+interface KeyValueCondition {
+  key: string;
+  value: unknown;
+}
+
+type QueryCondition = WhereCondition | KeyValueCondition;
+
 // Mock expo-crypto
 jest.mock('expo-crypto', () => ({
   randomUUID: jest.fn(
@@ -30,12 +95,12 @@ jest.mock('./schedule-shifter', () => ({
 }));
 
 // Mock database
-const createMockDatabase = () => {
-  const mockPlaybooks: any[] = [];
-  const mockApplications: any[] = [];
+const createMockDatabase = (): MockDatabase => {
+  const mockPlaybooks: Partial<PlaybookModel>[] = [];
+  const mockApplications: MockPlaybookApplication[] = [];
 
-  return {
-    get: jest.fn((tableName: string) => {
+  const db = {
+    get: jest.fn((tableName: string): any => {
       if (tableName === 'playbooks') {
         return {
           query: jest.fn(() => ({
@@ -52,21 +117,34 @@ const createMockDatabase = () => {
       }
       if (tableName === 'playbook_applications') {
         return {
-          query: jest.fn((...conditions: any[]) => {
+          query: jest.fn((...conditions: QueryCondition[]) => {
             // Simple mock filtering based on Q.where conditions
             let filtered = [...mockApplications];
             conditions.forEach((condition) => {
-              if (
-                condition.type === 'where' &&
-                condition.left &&
-                condition.comparison
-              ) {
-                const field = condition.left;
+              if ('type' in condition && condition.type === 'where') {
+                // Map snake_case column names to camelCase property names
+                const columnToProperty: Record<
+                  string,
+                  keyof MockPlaybookApplication
+                > = {
+                  playbook_id: 'playbookId',
+                  plant_id: 'plantId',
+                  applied_at: 'appliedAt',
+                  task_count: 'taskCount',
+                  duration_ms: 'durationMs',
+                  job_id: 'jobId',
+                  idempotency_key: 'idempotencyKey',
+                  status: 'status',
+                  id: 'id',
+                };
+                const property =
+                  columnToProperty[condition.left] ||
+                  (condition.left as keyof MockPlaybookApplication);
                 const value = condition.comparison.right.value;
-                filtered = filtered.filter((app) => app[field] === value);
-              } else if (condition.key && 'value' in condition) {
-                // Alternative format: { key: 'field', value: 'val' }
-                const field = condition.key;
+                filtered = filtered.filter((app) => app[property] === value);
+              } else if ('key' in condition) {
+                // Handle direct property queries (assume already camelCase)
+                const field = condition.key as keyof MockPlaybookApplication;
                 const value = condition.value;
                 filtered = filtered.filter((app) => app[field] === value);
               }
@@ -78,31 +156,31 @@ const createMockDatabase = () => {
               })),
             };
           }),
-          create: jest.fn((callback: any) => {
-            const record: any = {
-              id: 'app-1',
-              update: jest.fn((updateCallback: any) => {
-                updateCallback(record);
-                return Promise.resolve();
-              }),
-            };
-            callback(record);
-            mockApplications.push(record);
-            return Promise.resolve(record);
-          }),
+          create: jest.fn(
+            (callback: (record: MockPlaybookApplication) => void) => {
+              const record = createMockApplication();
+              callback(record);
+              mockApplications.push(record);
+              return Promise.resolve(record);
+            }
+          ),
         };
       }
       return {};
     }),
-    write: jest.fn((callback: any) => callback()),
+    write: jest.fn(async (callback: (writer: any) => Promise<any>) => {
+      return await callback({} as any);
+    }),
     mockPlaybooks,
     mockApplications,
-  } as unknown as Database;
+  } as unknown as MockDatabase;
+
+  return db;
 };
 
 describe('PlaybookService', () => {
   let service: PlaybookService;
-  let database: Database;
+  let database: MockDatabase;
   let analytics: InMemoryMetrics;
   let mockScheduleShifter: jest.Mocked<ScheduleShifter>;
 
@@ -112,6 +190,7 @@ describe('PlaybookService', () => {
     service = new PlaybookService({ database, analytics });
 
     // Spy on the ScheduleShifter methods
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockScheduleShifter = (service as any).scheduleShifter;
     jest.spyOn(mockScheduleShifter, 'generatePreview');
     jest.spyOn(mockScheduleShifter, 'applyShift');
@@ -129,6 +208,7 @@ describe('PlaybookService', () => {
         id: 'playbook-1',
         name: 'Auto Indoor',
         setup: 'auto_indoor',
+
         toPlaybook: jest.fn(() => ({
           id: 'playbook-1',
           name: 'Auto Indoor',
@@ -141,10 +221,11 @@ describe('PlaybookService', () => {
           isCommunity: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         })) as any,
       };
 
-      (database as any).mockPlaybooks.push(mockPlaybook);
+      database.mockPlaybooks.push(mockPlaybook);
 
       const playbooks = await service.getAvailablePlaybooks();
 
@@ -209,7 +290,7 @@ describe('PlaybookService', () => {
         toPlaybook: jest.fn(() => mockPlaybook),
       };
 
-      (database as any).mockPlaybooks.push(mockPlaybookModel);
+      database.mockPlaybooks.push(mockPlaybookModel);
 
       const preview = await service.getPlaybookPreview('playbook-1');
 
@@ -247,15 +328,13 @@ describe('PlaybookService', () => {
     });
 
     test('returns false when different playbook is already applied', async () => {
-      const mockApplication: any = {
-        id: 'app-1',
-        playbook_id: 'playbook-2',
-        plant_id: 'plant-1',
-        status: 'pending', // Changed to pending - this should block
-        applied_at: new Date(),
-      };
+      const mockApplication = createMockApplication({
+        playbookId: 'playbook-2',
+        plantId: 'plant-1',
+        status: 'pending',
+      });
 
-      (database as any).mockApplications.push(mockApplication);
+      database.mockApplications.push(mockApplication);
 
       const isValid = await service.validateOneActivePlaybookPerPlant(
         'plant-1',
@@ -266,15 +345,13 @@ describe('PlaybookService', () => {
     });
 
     test('returns true when completed playbook exists for plant', async () => {
-      const mockApplication: any = {
-        id: 'app-1',
-        playbook_id: 'playbook-1', // Use database field names
-        plant_id: 'plant-1',
+      const mockApplication = createMockApplication({
+        playbookId: 'playbook-1',
+        plantId: 'plant-1',
         status: 'completed',
-        applied_at: new Date(),
-      };
+      });
 
-      (database as any).mockApplications.push(mockApplication);
+      database.mockApplications.push(mockApplication);
 
       const isValid = await service.validateOneActivePlaybookPerPlant(
         'plant-1',
@@ -285,15 +362,13 @@ describe('PlaybookService', () => {
     });
 
     test('returns false when pending playbook exists for plant', async () => {
-      const mockApplication: any = {
-        id: 'app-1',
-        playbook_id: 'playbook-1',
-        plant_id: 'plant-1',
+      const mockApplication = createMockApplication({
+        playbookId: 'playbook-1',
+        plantId: 'plant-1',
         status: 'pending',
-        applied_at: new Date(),
-      };
+      });
 
-      (database as any).mockApplications.push(mockApplication);
+      database.mockApplications.push(mockApplication);
 
       const isValid = await service.validateOneActivePlaybookPerPlant(
         'plant-1',
@@ -325,7 +400,7 @@ describe('PlaybookService', () => {
         toPlaybook: jest.fn(() => mockPlaybook),
       };
 
-      (database as any).mockPlaybooks.push(mockPlaybookModel);
+      database.mockPlaybooks.push(mockPlaybookModel);
 
       const result = await service.applyPlaybookToPlant(
         'playbook-1',
@@ -346,7 +421,8 @@ describe('PlaybookService', () => {
       const events = analytics.getAll();
       expect(events).toHaveLength(1);
       expect(events[0].name).toBe('playbook_apply');
-      expect(events[0].payload.playbookId).toBe('playbook-1');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((events[0].payload as any).playbookId).toBe('playbook-1');
     });
 
     test('returns existing result for duplicate idempotency key', async () => {
@@ -369,7 +445,7 @@ describe('PlaybookService', () => {
         toPlaybook: jest.fn(() => mockPlaybook),
       };
 
-      (database as any).mockPlaybooks.push(mockPlaybookModel);
+      database.mockPlaybooks.push(mockPlaybookModel);
 
       // First application
       const result1 = await service.applyPlaybookToPlant(
@@ -394,15 +470,13 @@ describe('PlaybookService', () => {
     });
 
     test('throws error when plant has active playbook', async () => {
-      const mockApplication: any = {
-        id: 'app-1',
-        playbook_id: 'playbook-2',
-        plant_id: 'plant-1',
-        status: 'pending', // Changed to pending - this should block
-        applied_at: new Date(),
-      };
+      const mockApplication = createMockApplication({
+        playbookId: 'playbook-2',
+        plantId: 'plant-1',
+        status: 'pending',
+      });
 
-      (database as any).mockApplications.push(mockApplication);
+      database.mockApplications.push(mockApplication);
 
       const mockPlaybook: Playbook = {
         id: 'playbook-1',
@@ -423,7 +497,7 @@ describe('PlaybookService', () => {
         toPlaybook: jest.fn(() => mockPlaybook),
       };
 
-      (database as any).mockPlaybooks.push(mockPlaybookModel);
+      database.mockPlaybooks.push(mockPlaybookModel);
 
       await expect(
         service.applyPlaybookToPlant('playbook-1', 'plant-1')
@@ -431,15 +505,13 @@ describe('PlaybookService', () => {
     });
 
     test('allows multiple playbooks when allowMultiple is true', async () => {
-      const mockApplication: any = {
-        id: 'app-1',
-        playbook_id: 'playbook-2',
-        plant_id: 'plant-1',
-        status: 'pending', // Changed to pending so constraint applies
-        applied_at: new Date(),
-      };
+      const mockApplication = createMockApplication({
+        playbookId: 'playbook-2',
+        plantId: 'plant-1',
+        status: 'pending',
+      });
 
-      (database as any).mockApplications.push(mockApplication);
+      database.mockApplications.push(mockApplication);
 
       const mockPlaybook: Playbook = {
         id: 'playbook-1',
@@ -460,7 +532,7 @@ describe('PlaybookService', () => {
         toPlaybook: jest.fn(() => mockPlaybook),
       };
 
-      (database as any).mockPlaybooks.push(mockPlaybookModel);
+      database.mockPlaybooks.push(mockPlaybookModel);
 
       const result = await service.applyPlaybookToPlant(
         'playbook-1',
@@ -494,7 +566,7 @@ describe('PlaybookService', () => {
         toPlaybook: jest.fn(() => mockPlaybook),
       };
 
-      (database as any).mockPlaybooks.push(mockPlaybookModel);
+      database.mockPlaybooks.push(mockPlaybookModel);
 
       const result = await service.applyPlaybookToPlant(
         'playbook-1',

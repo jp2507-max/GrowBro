@@ -1,10 +1,12 @@
 import React, { Children, cloneElement, isValidElement, memo } from 'react';
 import { View, type ViewProps } from 'react-native';
-import { useSharedValue } from 'react-native-reanimated';
+import { type SharedValue, useSharedValue } from 'react-native-reanimated';
 
 // Reusable CellRendererComponent that injects an itemY shared value into its child.
 // It updates itemY on layout; child components can consume it for scroll-based animations.
 type Props = ViewProps & { children: React.ReactNode };
+
+type ChildWithItemY = React.ReactElement<{ itemY?: SharedValue<number> }>;
 
 const CustomCellRendererComponent = memo(({ children, ...props }: Props) => {
   const itemY = useSharedValue(0);
@@ -20,7 +22,7 @@ const CustomCellRendererComponent = memo(({ children, ...props }: Props) => {
     >
       {Children.map(children, (child) =>
         isValidElement(child)
-          ? cloneElement(child as any, { itemY } as any)
+          ? cloneElement(child as ChildWithItemY, { itemY })
           : child
       )}
     </View>

@@ -117,7 +117,7 @@ export const useExchangeOAuthCode = createMutation<
     });
 
     // Track analytics event with consent checking and PII sanitization
-    await trackAuthEvent('auth.sign_in', {
+    await trackAuthEvent('auth_sign_in', {
       method: 'oauth',
       provider: data.user.app_metadata?.provider || 'unknown',
       email: data.user.email,
@@ -188,7 +188,7 @@ export const useSignInWithIdToken = createMutation<
     });
 
     // Track analytics event with consent checking and PII sanitization
-    await trackAuthEvent('auth.sign_in', {
+    await trackAuthEvent('auth_sign_in', {
       method: `${variables.provider}_native`,
       provider: variables.provider,
       email: data.user.email,

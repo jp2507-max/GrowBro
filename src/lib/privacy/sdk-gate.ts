@@ -130,15 +130,24 @@ class SDKGateImpl {
     if (this.safetyNetInstalled) return;
     this.safetyNetInstalled = true;
 
-    const g: any = globalThis as any;
-    const originalFetch: any = g.fetch;
+    const g = globalThis as typeof globalThis & { fetch: typeof fetch };
+    const originalFetch = g.fetch;
     if (typeof originalFetch !== 'function') return;
 
     const self = this;
-    g.fetch = function patchedFetch(input: any, init?: any) {
+    g.fetch = function patchedFetch(
+      input: RequestInfo | URL,
+      init?: RequestInit
+    ) {
       try {
         const url: string =
-          typeof input === 'string' ? input : String(input?.url ?? '');
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.href
+              : input instanceof Request
+                ? input.url
+                : '';
         for (const item of self.registry.values()) {
           if (!hasConsentForPurpose(item.purpose)) {
             if (item.hosts.some((h) => (h && url.includes(h)) === true)) {

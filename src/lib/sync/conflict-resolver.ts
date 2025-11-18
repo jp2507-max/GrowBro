@@ -10,7 +10,7 @@ type ConflictRecord = {
   server_revision?: number;
   server_updated_at_ms?: number;
   updated_at?: number; // Local timestamp
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 /**

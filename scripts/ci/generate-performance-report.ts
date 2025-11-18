@@ -140,7 +140,7 @@ function parseMemoryMetrics():
   try {
     const data = JSON.parse(fs.readFileSync(config.memoryMetricsPath, 'utf8'));
 
-    const validateNumber = (value: any, fieldName: string): number => {
+    const validateNumber = (value: unknown, fieldName: string): number => {
       const num = Number(value);
       if (!Number.isFinite(num) || typeof value !== 'number') {
         log(

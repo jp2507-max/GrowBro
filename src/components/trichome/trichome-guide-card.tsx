@@ -15,7 +15,13 @@ type Props = {
   className?: string;
 };
 
-function TrichomeStageItem({ stage, isLast }: { stage: any; isLast: boolean }) {
+function TrichomeStageItem({
+  stage,
+  isLast,
+}: {
+  stage: TrichomeGuide['stages'][number];
+  isLast: boolean;
+}) {
   return (
     <View
       className={`mb-4 rounded-md border border-neutral-200 p-3 dark:border-charcoal-700 ${

@@ -95,4 +95,5 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 // Export types for TypeScript
-export type Database = any; // TODO: Generate types with `supabase gen types typescript`
+// TODO: Generate types with `supabase gen types typescript`
+export type Database = Record<string, unknown>;

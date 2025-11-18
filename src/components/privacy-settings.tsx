@@ -104,6 +104,11 @@ function showCrashReportingInfo(): void {
   );
 }
 
+type FileSystemWithDirectories = typeof FileSystem & {
+  documentDirectory?: string;
+  cacheDirectory?: string;
+};
+
 async function handleDataExport(): Promise<void> {
   let tempFileUri: string | null = null;
   try {
@@ -112,9 +117,9 @@ async function handleDataExport(): Promise<void> {
     // For large JSON exports, write to temporary file to avoid truncation
     // Use the documentDirectory exposed on the FileSystem namespace. Some
     // versions of the `expo-file-system` types don't declare these runtime
-    // constants, so cast to `any` to read them at runtime safely.
-    const fsAny = FileSystem as any;
-    const docDir = fsAny.documentDirectory ?? fsAny.cacheDirectory ?? '';
+    // constants, so cast to proper type to read them at runtime safely.
+    const fs = FileSystem as FileSystemWithDirectories;
+    const docDir = fs.documentDirectory ?? fs.cacheDirectory ?? '';
 
     // Abort export if no valid directory is available to prevent invalid paths
     if (!docDir) {
@@ -152,12 +157,19 @@ async function handleDataExport(): Promise<void> {
       // Note: onDataExport callback removed as it's not used in this context
     }
   } catch (error) {
+    // Type for platform-specific error objects
+    type PlatformError = {
+      code?: string | number;
+      domain?: string;
+      message?: string;
+    };
+
     // Only suppress alerts for genuine platform-specific cancellation indicators
+    const err = error as PlatformError;
     const isPlatformCancellation =
-      (error as any)?.code === 'ECANCELLED' || // iOS specific
-      (error as any)?.domain === 'com.apple.ShareSheet' || // iOS ShareSheet cancellation
-      ((error as any)?.message?.includes('cancelled by user') &&
-        (error as any)?.code === 3); // Android specific
+      err?.code === 'ECANCELLED' || // iOS specific
+      err?.domain === 'com.apple.ShareSheet' || // iOS ShareSheet cancellation
+      (err?.message?.includes('cancelled by user') && err?.code === 3); // Android specific
 
     if (!isPlatformCancellation) {
       console.error('[PrivacySettings] Data export failed:', error);

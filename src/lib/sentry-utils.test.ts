@@ -72,7 +72,8 @@ describe('sentry-utils', () => {
     });
 
     test('handles circular references', () => {
-      const obj: any = { name: 'test' };
+      type Circular = { name: string; self?: Circular };
+      const obj: Circular = { name: 'test' };
       obj.self = obj;
       const result = sanitizeObjectPII(obj);
       expect(result.name).toBe('test');

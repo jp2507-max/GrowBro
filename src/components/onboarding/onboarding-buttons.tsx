@@ -8,6 +8,8 @@ import type {
   NativeScrollEvent,
   NativeSyntheticEvent,
   ScrollView,
+  StyleProp,
+  ViewStyle,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -36,7 +38,7 @@ export function SkipButton({ onPress }: SkipButtonProps) {
 }
 
 type DoneButtonProps = {
-  ctaStyle: any;
+  ctaStyle: StyleProp<ViewStyle>;
   ctaEnabled: boolean;
   onPress: () => void;
 };
@@ -64,7 +66,7 @@ type OnboardingScrollViewProps = {
   scrollRef: React.RefObject<ScrollView | null>;
   width: number;
   slides: React.ComponentType<OnboardingSlideProps>[];
-  onScroll: any;
+  onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
   onScrollEnd: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
 };
 

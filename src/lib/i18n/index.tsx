@@ -13,7 +13,8 @@ export * from './utils';
  */
 export async function initI18n(): Promise<void> {
   // Avoid touching storage in test environments
-  const isTestEnv = typeof (globalThis as any).jest !== 'undefined';
+  const globalWithJest = globalThis as { jest?: unknown };
+  const isTestEnv = typeof globalWithJest.jest !== 'undefined';
 
   // Lazy import utils to avoid module-load IO
   const utils = await import('./utils');
@@ -21,14 +22,8 @@ export async function initI18n(): Promise<void> {
   // Conditionally compute persisted language - skip storage access in test env
   let persisted: string | undefined;
   if (!isTestEnv) {
-    // Handle both Promise and direct return from getLanguage
-    const languageResult = utils.getLanguage?.();
-    if (languageResult && typeof (languageResult as any).then === 'function') {
-      // promise-like
-      persisted = await languageResult;
-    } else {
-      persisted = languageResult;
-    }
+    // getLanguage returns string | undefined synchronously
+    persisted = utils.getLanguage();
   }
 
   // initialize i18next with resources and either persisted or fallback
@@ -89,7 +84,8 @@ export function refreshIsRTL(): void {
  * Call this after i18n initialization or whenever the app language changes.
  */
 export function applyRTLIfNeeded(): void {
-  const isTestEnv = typeof (globalThis as any).jest !== 'undefined';
+  const globalWithJest = globalThis as { jest?: unknown };
+  const isTestEnv = typeof globalWithJest.jest !== 'undefined';
   if (isTestEnv) return;
   const rtl = isRTL;
   I18nManager.allowRTL(rtl);

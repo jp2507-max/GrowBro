@@ -6,6 +6,12 @@ import type { OfflineMode } from './index';
 import { useAuth } from './index';
 import { deriveSessionKey } from './utils';
 
+type SupabaseRealtimePayload = {
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+  new: Record<string, unknown> | null;
+  old: Record<string, unknown> | null;
+};
+
 /**
  * Session Manager
  *
@@ -371,11 +377,19 @@ export function useRealtimeSessionRevocation(): void {
             table: 'user_sessions',
             filter: `user_id=eq.${session.user.id}`,
           },
-          (payload: any) => {
+          (payload: SupabaseRealtimePayload) => {
+            const newRecord = payload.new as {
+              session_key?: string;
+              revoked_at?: string | null;
+            } | null;
+            const oldRecord = payload.old as {
+              revoked_at?: string | null;
+            } | null;
+
             if (
-              payload.new.session_key === sessionKey &&
-              payload.new.revoked_at &&
-              !payload.old.revoked_at
+              newRecord?.session_key === sessionKey &&
+              newRecord.revoked_at &&
+              !oldRecord?.revoked_at
             ) {
               console.log(
                 '[RealtimeSessionRevocation] Session revoked, signing out'

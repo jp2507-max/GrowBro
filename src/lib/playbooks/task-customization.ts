@@ -99,7 +99,7 @@ export class TaskCustomizationService {
           updatedMetadata.customNotes = updates.customNotes;
         }
 
-        record.metadata = updatedMetadata as any;
+        record.metadata = updatedMetadata;
       });
     });
 
@@ -128,7 +128,7 @@ export class TaskCustomizationService {
               currentMetadata.flags?.excludeFromBulkShift || false,
           },
         };
-        record.metadata = updatedMetadata as any;
+        record.metadata = updatedMetadata;
       });
     });
 
@@ -165,7 +165,7 @@ export class TaskCustomizationService {
             excludeFromBulkShift: true, // Reminder changes break inheritance
           },
         };
-        record.metadata = updatedMetadata as any;
+        record.metadata = updatedMetadata;
       });
     });
 
@@ -193,12 +193,12 @@ export class TaskCustomizationService {
       .fetch();
 
     const customizedTasks = tasks.filter((task) => {
-      const metadata = task.metadata as PlaybookTaskMetadata;
+      const metadata = task.metadata as PlaybookTaskMetadata | undefined;
       return metadata?.flags?.manualEdited === true;
     });
 
     const excludedTasks = tasks.filter((task) => {
-      const metadata = task.metadata as PlaybookTaskMetadata;
+      const metadata = task.metadata as PlaybookTaskMetadata | undefined;
       return metadata?.flags?.excludeFromBulkShift === true;
     });
 

@@ -21,7 +21,24 @@ export type CategorizedError = {
 
 function isAxiosError(error: unknown): error is AxiosError {
   return (
-    !!error && typeof error === 'object' && (error as any).isAxiosError === true
+    !!error &&
+    typeof error === 'object' &&
+    'isAxiosError' in error &&
+    error.isAxiosError === true
+  );
+}
+
+export function isAxiosErrorWithNumericStatus(
+  error: unknown
+): error is { response: { status: number } } {
+  return (
+    !!error &&
+    typeof error === 'object' &&
+    'response' in error &&
+    !!error.response &&
+    typeof error.response === 'object' &&
+    'status' in error.response &&
+    typeof error.response.status === 'number'
   );
 }
 
@@ -81,14 +98,33 @@ function categorizeAxiosError(error: AxiosError): CategorizedError {
   };
 }
 
-function categorizeInventoryError(error: object): CategorizedError | null {
-  const code = (error as any).code;
+type InventoryError = {
+  code: string;
+  message?: string;
+};
+
+function isInventoryError(error: unknown): error is InventoryError {
+  return (
+    !!error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    typeof error.code === 'string' &&
+    ('message' in error
+      ? typeof (error as { message: unknown }).message === 'string'
+      : true)
+  );
+}
+
+function categorizeInventoryError(
+  error: InventoryError
+): CategorizedError | null {
+  const { code, message } = error;
 
   if (code === 'INSUFFICIENT_STOCK') {
     return {
       category: 'insufficient_stock',
       isRetryable: false,
-      message: (error as any).message || 'Insufficient stock available',
+      message: message || 'Insufficient stock available',
     };
   }
 
@@ -96,7 +132,7 @@ function categorizeInventoryError(error: object): CategorizedError | null {
     return {
       category: 'batch_expired',
       isRetryable: false,
-      message: (error as any).message || 'Batch has expired',
+      message: message || 'Batch has expired',
     };
   }
 
@@ -104,7 +140,7 @@ function categorizeInventoryError(error: object): CategorizedError | null {
     return {
       category: 'duplicate_lot',
       isRetryable: false,
-      message: (error as any).message || 'Duplicate lot number',
+      message: message || 'Duplicate lot number',
     };
   }
 
@@ -112,7 +148,7 @@ function categorizeInventoryError(error: object): CategorizedError | null {
     return {
       category: 'validation',
       isRetryable: false,
-      message: (error as any).message || 'Validation failed',
+      message: message || 'Validation failed',
     };
   }
 
@@ -125,19 +161,20 @@ export function categorizeError(error: unknown): CategorizedError {
     return categorizeAxiosError(error);
   }
 
-  // Generic fallback
-  const message = (error as any)?.message ?? 'Unknown error';
-
   // Check for inventory-specific error codes
-  if (
-    error &&
-    typeof error === 'object' &&
-    'code' in error &&
-    typeof (error as any).code === 'string'
-  ) {
+  if (isInventoryError(error)) {
     const inventoryError = categorizeInventoryError(error);
     if (inventoryError) return inventoryError;
   }
+
+  // Generic fallback
+  const message =
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof error.message === 'string'
+      ? error.message
+      : 'Unknown error';
 
   return { category: 'unknown', isRetryable: false, message };
 }

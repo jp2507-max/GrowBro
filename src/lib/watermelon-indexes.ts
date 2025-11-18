@@ -1,7 +1,9 @@
-// SQLiteQuery type is not directly exported, so we define it inline
+import type {
+  DatabaseAdapterWithUnsafe,
+  SQLiteQuery,
+  UnsafeExecuteResult,
+} from '@/lib/database/unsafe-sql-utils';
 import { adapter } from '@/lib/watermelon';
-
-type SQLiteQuery = [string, any[]];
 
 let initialized = false;
 let initializing: Promise<void> | null = null;
@@ -30,7 +32,12 @@ const INDEX_QUERIES: SQLiteQuery[] = [
 ];
 
 function runUnsafeExecute(
-  target: typeof adapter,
+  target: {
+    unsafeExecute: (
+      work: { sqls: SQLiteQuery[] },
+      callback: (result: UnsafeExecuteResult) => void
+    ) => void;
+  },
   work: { sqls: SQLiteQuery[] }
 ): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -59,17 +66,25 @@ export async function ensureNutrientEngineIndexes(
 
   initializing = (async () => {
     try {
-      if (typeof (target as any).unsafeExecute !== 'function') {
+      const adapterWithUnsafe = target as DatabaseAdapterWithUnsafe & {
+        initializingPromise?: PromiseLike<void>;
+      };
+      if (typeof adapterWithUnsafe.unsafeExecute !== 'function') {
         initialized = true;
         return;
       }
 
-      const initPromise = (target as any).initializingPromise;
+      const initPromise = adapterWithUnsafe.initializingPromise;
       if (initPromise && typeof initPromise.then === 'function') {
         await initPromise;
       }
 
-      await runUnsafeExecute(target, { sqls: INDEX_QUERIES });
+      await runUnsafeExecute(
+        target as typeof target & {
+          unsafeExecute: NonNullable<typeof adapterWithUnsafe.unsafeExecute>;
+        },
+        { sqls: INDEX_QUERIES }
+      );
       initialized = true;
     } catch (error) {
       console.warn('[watermelon-indexes] Failed to ensure indexes', error);

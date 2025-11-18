@@ -9,7 +9,7 @@
  * - 8.6: Fallback verification on suspicious signals, avoid device fingerprinting without consent
  */
 
-import { type createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import * as Crypto from 'expo-crypto';
 
 import type {
@@ -28,13 +28,22 @@ import {
   calculateExpiryDate,
   isTokenUsable,
 } from '@/types/age-verification';
+import type { DbTokenRecord, DbUserAgeStatus } from '@/types/database-records';
+
+// DbUserStatusRecord is now imported as DbUserAgeStatus from database-records
+
+type DbContentRestrictionRecord = {
+  content_id: string;
+  content_type: string;
+  is_age_restricted: boolean;
+};
 
 export class AgeVerificationService {
-  private supabase: ReturnType<typeof createClient>;
+  private supabase: SupabaseClient;
   private tokenSecret: string;
 
   constructor(
-    supabase: any,
+    supabase: SupabaseClient,
     tokenSecret: string = process.env.AGE_TOKEN_SECRET || 'default-secret'
   ) {
     this.supabase = supabase;
@@ -126,7 +135,7 @@ export class AgeVerificationService {
     const expiresAt = calculateExpiryDate(expiryDays);
 
     // Insert token into database
-    const { data: token, error } = (await this.supabase
+    const { data: token, error } = await this.supabase
       .from('age_verification_tokens')
       .insert({
         user_id: userId,
@@ -137,15 +146,17 @@ export class AgeVerificationService {
         expires_at: expiresAt.toISOString(),
         max_uses: maxUses,
         age_attribute_verified: true,
-      } as any)
+      })
       .select()
-      .single()) as any;
+      .single();
 
-    if (error) {
-      throw new Error(`Failed to issue verification token: ${error.message}`);
+    if (error || !token) {
+      throw new Error(
+        `Failed to issue verification token: ${error?.message || 'Unknown error'}`
+      );
     }
 
-    const tokenResult = token as any;
+    const tokenResult = token as DbTokenRecord;
 
     // Log token issuance
     await this.logAuditEvent({
@@ -201,7 +212,7 @@ export class AgeVerificationService {
       return { isValid: false, error: 'token_not_found', token: null };
     }
 
-    const tokenData = token as any;
+    const tokenData = token as DbTokenRecord;
     const verificationToken = this.mapDbTokenToType(tokenData);
 
     if (!isTokenUsable(verificationToken)) {
@@ -241,7 +252,7 @@ export class AgeVerificationService {
   }
 
   private async handleInvalidToken(
-    tokenData: any,
+    tokenData: DbTokenRecord,
     tokenId: string,
     verificationToken: VerificationToken
   ): Promise<TokenValidationResult> {
@@ -259,28 +270,28 @@ export class AgeVerificationService {
 
   private async atomicTokenUpdate(
     tokenId: string,
-    tokenData: any,
+    tokenData: DbTokenRecord,
     verificationToken: VerificationToken
   ): Promise<{ success: boolean }> {
-    const { data, error } = (await (
-      this.supabase.from('age_verification_tokens').update as any
-    )({
-      use_count: tokenData.use_count + 1,
-      used_at:
-        tokenData.use_count === 0
-          ? new Date().toISOString()
-          : tokenData.used_at,
-    })
+    const { data, error } = await this.supabase
+      .from('age_verification_tokens')
+      .update({
+        use_count: tokenData.use_count + 1,
+        used_at:
+          tokenData.use_count === 0
+            ? new Date().toISOString()
+            : tokenData.used_at,
+      })
       .eq('id', tokenId)
       .lt('use_count', verificationToken.maxUses)
       .select()
-      .single()) as any;
+      .single();
 
     return { success: !error && !!data };
   }
 
   private async handleConcurrentUsage(
-    tokenData: any,
+    tokenData: DbTokenRecord,
     tokenId: string,
     verificationToken: VerificationToken
   ): Promise<TokenValidationResult> {
@@ -352,7 +363,7 @@ export class AgeVerificationService {
         is_age_verified: false,
         is_minor: true, // Safer default
         minor_protections_enabled: true,
-      } as any);
+      });
     }
   }
 
@@ -378,7 +389,7 @@ export class AgeVerificationService {
       .eq('content_type', contentType)
       .single();
 
-    const restrictionData = restriction as any;
+    const restrictionData = restriction as DbContentRestrictionRecord | null;
 
     // Content not restricted
     if (!restrictionData || !restrictionData.is_age_restricted) {
@@ -405,7 +416,7 @@ export class AgeVerificationService {
       .eq('user_id', userId)
       .single();
 
-    const userStatusData = userStatus as any;
+    const userStatusData = userStatus as DbUserAgeStatus | null;
 
     // User is age-verified
     if (userStatusData?.is_age_verified) {
@@ -451,21 +462,23 @@ export class AgeVerificationService {
    * @param reason - Revocation reason
    */
   async revokeToken(tokenId: string, reason: string): Promise<void> {
-    const { data: token, error } = (await (
-      this.supabase.from('age_verification_tokens').update as any
-    )({
-      revoked_at: new Date().toISOString(),
-      revocation_reason: reason,
-    })
+    const { data: token, error } = await this.supabase
+      .from('age_verification_tokens')
+      .update({
+        revoked_at: new Date().toISOString(),
+        revocation_reason: reason,
+      })
       .eq('id', tokenId)
       .select()
-      .single()) as any;
+      .single();
 
-    if (error) {
-      throw new Error(`Failed to revoke token: ${error.message}`);
+    if (error || !token) {
+      throw new Error(
+        `Failed to revoke token: ${error?.message || 'Unknown error'}`
+      );
     }
 
-    const revokedToken = token as any;
+    const revokedToken = token as DbTokenRecord;
 
     await this.logAuditEvent({
       eventType: 'token_revoked',
@@ -518,7 +531,7 @@ export class AgeVerificationService {
       return null;
     }
 
-    const statusData = status as any;
+    const statusData = status as DbUserAgeStatus;
 
     return {
       userId: statusData.user_id,
@@ -576,7 +589,7 @@ export class AgeVerificationService {
       is_minor: !isVerified,
       minor_protections_enabled: !isVerified,
       show_age_restricted_content: isVerified,
-    } as any);
+    });
   }
 
   /**
@@ -602,13 +615,13 @@ export class AgeVerificationService {
       legal_basis: event.legalBasis || null,
       retention_period:
         AGE_VERIFICATION_CONSTANTS.AUDIT_RETENTION_MONTHS + ' months',
-    } as any);
+    });
   }
 
   /**
    * Map database token to TypeScript type
    */
-  private mapDbTokenToType(dbToken: any): VerificationToken {
+  private mapDbTokenToType(dbToken: DbTokenRecord): VerificationToken {
     return {
       id: dbToken.id,
       userId: dbToken.user_id,
@@ -620,7 +633,12 @@ export class AgeVerificationService {
       usedAt: dbToken.used_at ? new Date(dbToken.used_at) : null,
       useCount: dbToken.use_count,
       maxUses: dbToken.max_uses,
-      verificationMethod: dbToken.verification_method,
+      verificationMethod: dbToken.verification_method as
+        | 'eudi_wallet'
+        | 'third_party_verifier'
+        | 'id_attribute'
+        | 'credit_card'
+        | 'other',
       verificationProvider: dbToken.verification_provider,
       assuranceLevel: dbToken.assurance_level,
       ageAttributeVerified: dbToken.age_attribute_verified,

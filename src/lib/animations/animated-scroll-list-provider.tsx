@@ -1,16 +1,17 @@
-/* eslint-disable react-compiler/react-compiler */
+import type { FlashListRef } from '@shopify/flash-list';
 import React from 'react';
 import {
   type SharedValue,
   useAnimatedScrollHandler,
   useSharedValue,
 } from 'react-native-reanimated';
+import type { ReanimatedScrollEvent } from 'react-native-reanimated/lib/typescript/hook/commonTypes';
 
 import type { ScrollDirectionValue } from '@/lib/animations/use-scroll-direction';
 import { useScrollDirection } from '@/lib/animations/use-scroll-direction';
 
-type AnimatedScrollListContextType = {
-  listRef: React.RefObject<any | null>;
+export type AnimatedScrollListContextType = {
+  listRef: React.RefObject<FlashListRef<unknown> | null>;
   listOffsetY: SharedValue<number>;
   isDragging: SharedValue<boolean>;
   scrollDirection: ScrollDirectionValue;
@@ -18,28 +19,23 @@ type AnimatedScrollListContextType = {
   offsetYAnchorOnChangeDirection: SharedValue<number>;
   velocityOnEndDrag: SharedValue<number>;
   listPointerEvents: SharedValue<boolean>;
-  scrollHandler: any;
+  scrollHandler: (event: ReanimatedScrollEvent) => void;
   enableAutoScrollLock: (durationMs?: number) => void;
 };
 
 const AnimatedScrollListContext =
   React.createContext<AnimatedScrollListContextType | null>(null);
 
-function useScrollSharedValues() {
+export function AnimatedScrollListProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.ReactElement {
+  const listRef = React.useRef<FlashListRef<unknown> | null>(null);
   const listOffsetY = useSharedValue(0);
   const isDragging = useSharedValue(false);
   const velocityOnEndDrag = useSharedValue(0);
   const listPointerEvents = useSharedValue(true);
-
-  return {
-    listOffsetY,
-    isDragging,
-    velocityOnEndDrag,
-    listPointerEvents,
-  };
-}
-
-function usePointerLock(listPointerEvents: SharedValue<boolean>) {
   const pointerLockTimeout = React.useRef<NodeJS.Timeout | null>(null);
   const enableAutoScrollLock = React.useCallback(
     (durationMs = 300) => {
@@ -64,19 +60,6 @@ function usePointerLock(listPointerEvents: SharedValue<boolean>) {
     };
   }, []);
 
-  return enableAutoScrollLock;
-}
-
-export function AnimatedScrollListProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.ReactElement {
-  const listRef = React.useRef<any>(null);
-  const sharedValues = useScrollSharedValues();
-  const { listOffsetY, isDragging, velocityOnEndDrag, listPointerEvents } =
-    sharedValues;
-
   const {
     scrollDirection,
     offsetYAnchorOnBeginDrag,
@@ -85,22 +68,21 @@ export function AnimatedScrollListProvider({
     onScroll: scrollDirectionOnScroll,
     onEndDrag: scrollDirectionOnEndDrag,
   } = useScrollDirection();
-  const enableAutoScrollLock = usePointerLock(listPointerEvents);
 
   const scrollHandler = useAnimatedScrollHandler({
-    onBeginDrag: (e: any) => {
+    onBeginDrag: (e: ReanimatedScrollEvent) => {
       'worklet';
       isDragging.value = true;
       listPointerEvents.value = true;
       velocityOnEndDrag.value = 0;
       scrollDirectionOnBeginDrag(e);
     },
-    onScroll: (e: any) => {
+    onScroll: (e: ReanimatedScrollEvent) => {
       'worklet';
       listOffsetY.value = e.contentOffset.y;
       scrollDirectionOnScroll(e);
     },
-    onEndDrag: (e: any) => {
+    onEndDrag: (e: ReanimatedScrollEvent) => {
       'worklet';
       isDragging.value = false;
       velocityOnEndDrag.value = e.velocity?.y ?? 0;

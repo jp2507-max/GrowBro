@@ -14,15 +14,19 @@ import { registerBackgroundTask } from '@/lib/sync/background-sync';
 import { setupSyncTriggers } from '@/lib/sync/sync-triggers';
 import { TaskNotificationService } from '@/lib/task-notifications';
 
+type LocalizationWithTimeZone = typeof Localization & { timezone?: string };
+
 export function getCurrentTimeZone(): string {
   try {
     const calendars = Localization.getCalendars?.();
-    if (
-      Array.isArray(calendars) &&
-      calendars.length > 0 &&
-      typeof (calendars[0] as any).timeZone === 'string'
-    ) {
-      return (calendars[0] as any).timeZone;
+    if (Array.isArray(calendars) && calendars.length > 0) {
+      const calendar = calendars[0];
+      if (calendar && typeof calendar === 'object' && 'timeZone' in calendar) {
+        const timeZone = calendar.timeZone;
+        if (typeof timeZone === 'string') {
+          return timeZone;
+        }
+      }
     }
   } catch {
     // fallback
@@ -30,21 +34,24 @@ export function getCurrentTimeZone(): string {
 
   try {
     const locales = Localization.getLocales?.();
-    if (
-      Array.isArray(locales) &&
-      locales.length > 0 &&
-      typeof (locales[0] as any).timeZone === 'string'
-    ) {
-      return (locales[0] as any).timeZone;
+    if (Array.isArray(locales) && locales.length > 0) {
+      const locale = locales[0];
+      if (locale && typeof locale === 'object' && 'timeZone' in locale) {
+        const timeZone = locale.timeZone;
+        if (typeof timeZone === 'string') {
+          return timeZone;
+        }
+      }
     }
   } catch {
     // fallback
   }
 
   try {
-    const timezone = (Localization as any).timezone;
+    const localizationExt = Localization as LocalizationWithTimeZone;
+    const timezone = localizationExt.timezone;
     if (typeof timezone === 'string' && timezone.length > 0) {
-      const timezonePattern = /^[A-Za-z][A-Za-z0-9/_+-]+$/;
+      const timezonePattern = /^[A-Za-z][A-Za-z0-9/._+-]+$/;
       if (timezonePattern.test(timezone)) return timezone;
     }
   } catch {

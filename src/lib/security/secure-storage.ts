@@ -15,13 +15,13 @@ import type { SecureStorage } from './types';
 
 // Simple logger using console
 const log = {
-  debug: (msg: string, ...args: any[]) =>
+  debug: (msg: string, ...args: unknown[]) =>
     console.log(`[SecureStorage] ${msg}`, ...args),
-  info: (msg: string, ...args: any[]) =>
+  info: (msg: string, ...args: unknown[]) =>
     console.info(`[SecureStorage] ${msg}`, ...args),
-  warn: (msg: string, ...args: any[]) =>
+  warn: (msg: string, ...args: unknown[]) =>
     console.warn(`[SecureStorage] ${msg}`, ...args),
-  error: (msg: string, ...args: any[]) =>
+  error: (msg: string, ...args: unknown[]) =>
     console.error(`[SecureStorage] ${msg}`, ...args),
 };
 

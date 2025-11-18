@@ -1,4 +1,4 @@
-import { NoopAnalytics } from '@/lib/analytics';
+import { type AnalyticsEvents, NoopAnalytics } from '@/lib/analytics';
 import { getMetrics, recordDuration } from '@/lib/sync/monitor';
 
 type NullableNumber = number | null | undefined;
@@ -24,7 +24,7 @@ function assignMetric(
 export async function emitSyncPerformanceSnapshot(
   params: SyncPerformanceSnapshotParams
 ): Promise<void> {
-  const snapshot: Record<string, number | string> = {
+  const snapshot: AnalyticsEvents['sync_metrics_snapshot'] = {
     trigger: params.trigger,
     attempt: params.attempt,
     total_ms: Math.round(params.totalDurationMs),
@@ -55,7 +55,7 @@ export async function emitSyncPerformanceSnapshot(
   assignMetric(snapshot, 'checkpoint_age_ms', checkpointAgeMs);
 
   try {
-    await NoopAnalytics.track('sync_metrics_snapshot', snapshot as any);
+    await NoopAnalytics.track('sync_metrics_snapshot', snapshot);
   } catch (error) {
     if (__DEV__) {
       console.warn('[sync] failed to emit performance snapshot', error);

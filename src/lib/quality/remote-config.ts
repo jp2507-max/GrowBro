@@ -1,3 +1,4 @@
+import { FunctionsHttpError } from '@supabase/functions-js';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { z } from 'zod';
@@ -296,11 +297,15 @@ async function fetchRemoteConfig({
   });
 
   if (error) {
-    const status = (error as any)?.context?.status ?? (error as any)?.status;
-    if (status === 304 && cached) {
-      return { payload: toRemoteResponse(cached), source: 'cache' };
+    if (error instanceof FunctionsHttpError) {
+      const status = error.context?.status;
+      if (status === 304 && cached) {
+        return { payload: toRemoteResponse(cached), source: 'cache' };
+      }
     }
-    throw new Error(error.message ?? 'Failed to fetch quality configuration');
+    throw error instanceof FunctionsHttpError
+      ? error
+      : new Error(error.message ?? 'Failed to fetch quality configuration');
   }
 
   if (!data) {

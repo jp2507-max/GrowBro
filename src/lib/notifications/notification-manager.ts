@@ -15,6 +15,13 @@ import { PushNotificationService } from '@/lib/notifications/push-service';
 import { PermissionManager } from '@/lib/permissions/permission-manager';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 import { supabase } from '@/lib/supabase';
+import type { NotificationPreferenceModel } from '@/lib/watermelon-models/notification-preference';
+
+// Subscription type that supports both remove and unsubscribe
+type NotificationSubscription = {
+  remove?: () => void;
+  unsubscribe?: () => void;
+};
 
 const DEFAULT_PREFERENCES: NotificationPreferencesSnapshot = {
   communityInteractions: true,
@@ -50,13 +57,13 @@ export type NotificationPreferencesSnapshot = {
 };
 
 class NotificationManager {
-  private responseSubscription: { remove: () => void } | null = null;
+  private responseSubscription: NotificationSubscription | null = null;
   private currentUserId: string | undefined;
   private currentProjectId: string | undefined;
   private listenerUserId: string | null = null;
 
   // Mutex for serializing critical operations
-  private operationQueue: (() => Promise<any>)[] = [];
+  private operationQueue: (() => Promise<unknown>)[] = [];
   private isProcessingQueue = false;
   private isDisposed = false;
 
@@ -220,7 +227,7 @@ class NotificationManager {
   dispose(): void {
     this.isDisposed = true;
     if (this.responseSubscription) {
-      this.responseSubscription.remove();
+      this.responseSubscription.remove?.();
       this.responseSubscription = null;
     }
     PushReceiverService.removeNotificationHandlers();
@@ -238,20 +245,19 @@ class NotificationManager {
     if (this.responseSubscription) {
       if (typeof this.responseSubscription.remove === 'function') {
         this.responseSubscription.remove();
-      } else if (
-        typeof (this.responseSubscription as any).unsubscribe === 'function'
-      ) {
-        (this.responseSubscription as any).unsubscribe();
+      } else if (typeof this.responseSubscription.unsubscribe === 'function') {
+        this.responseSubscription.unsubscribe();
       }
       this.responseSubscription = null;
     }
 
-    const anyNotifications: any = Notifications as any;
     this.responseSubscription =
-      anyNotifications.addNotificationResponseReceivedListener(
-        async (response: any) => {
-          const deepLink = (response.notification.request.content.data as any)
-            ?.deepLink as string | undefined;
+      Notifications.addNotificationResponseReceivedListener(
+        async (response: Notifications.NotificationResponse) => {
+          const data = response.notification.request.content.data as
+            | Record<string, unknown>
+            | undefined;
+          const deepLink = data?.deepLink as string | undefined;
           if (!deepLink) return;
           const result = await DeepLinkService.handle(deepLink, {
             ensureAuthenticated: options.ensureAuthenticated,
@@ -274,32 +280,44 @@ class NotificationManager {
     // If we already have a listener for the current user, nothing to do
     if (this.listenerUserId === this.currentUserId) return;
 
-    // If switching users, implement atomic handover:
-    // Start new listener first, then stop old one only if new one succeeds
+    // If switching users, start new listener (startTokenListener handles stopping old one internally)
     if (this.listenerUserId && this.listenerUserId !== this.currentUserId) {
+      const previousListenerUserId = this.listenerUserId;
       try {
-        // Start the new listener first
         await PushNotificationService.startTokenListener({
           userId: this.currentUserId,
           projectId: this.currentProjectId,
         });
-
-        // Only stop the old listener after confirming the new one is active
-        PushNotificationService.stopTokenListener();
         this.listenerUserId = this.currentUserId;
       } catch (error) {
-        // On failure, keep the existing listener active and log the error
         captureCategorizedErrorSync(error, {
           category: 'notification',
           message:
             'Failed to start token listener for new user, keeping existing listener active',
           context: {
             currentUserId: this.currentUserId,
-            existingListenerUserId: this.listenerUserId,
+            existingListenerUserId: previousListenerUserId,
             projectId: this.currentProjectId,
           },
         });
-        // Don't change listenerUserId - existing listener remains active
+        try {
+          await PushNotificationService.startTokenListener({
+            userId: previousListenerUserId,
+            projectId: this.currentProjectId,
+          });
+          this.listenerUserId = previousListenerUserId;
+        } catch (recoveryError) {
+          captureCategorizedErrorSync(recoveryError, {
+            category: 'notification',
+            message:
+              'Failed to recover token listener after new user listener failed',
+            context: {
+              restoredUserId: previousListenerUserId,
+              projectId: this.currentProjectId,
+            },
+          });
+          this.listenerUserId = null;
+        }
         return;
       }
     } else {
@@ -347,12 +365,19 @@ class NotificationManager {
 
     this.isProcessingQueue = true;
 
-    while (this.operationQueue.length > 0) {
-      const operation = this.operationQueue.shift()!;
-      await operation();
+    try {
+      while (this.operationQueue.length > 0) {
+        const operation = this.operationQueue.shift()!;
+        try {
+          await operation();
+        } catch {
+          // The promise returned by enqueueOperation already sees the rejection;
+          // keep draining the queue instead of killing the processor.
+        }
+      }
+    } finally {
+      this.isProcessingQueue = false;
     }
-
-    this.isProcessingQueue = false;
   }
 }
 
@@ -378,12 +403,10 @@ async function getPreferencesForUser(
   userId: string
 ): Promise<NotificationPreferencesSnapshot> {
   const { database } = await import('@/lib/watermelon');
-  const collection = database.collections.get(
-    'notification_preferences' as any
+  const collection = database.collections.get<NotificationPreferenceModel>(
+    'notification_preferences'
   );
-  const records = (await (collection as any)
-    .query(Q.where('user_id', userId))
-    .fetch()) as any[];
+  const records = await collection.query(Q.where('user_id', userId)).fetch();
 
   if (records.length === 0) {
     return { ...DEFAULT_PREFERENCES };
@@ -406,16 +429,14 @@ async function upsertPreferences(
   partial: Partial<NotificationPreferencesSnapshot>
 ): Promise<void> {
   const { database } = await import('@/lib/watermelon');
-  const collection = database.collections.get(
-    'notification_preferences' as any
+  const collection = database.collections.get<NotificationPreferenceModel>(
+    'notification_preferences'
   );
   const Q = (await import('@nozbe/watermelondb')).Q;
-  const matches = (await (collection as any)
-    .query(Q.where('user_id', userId))
-    .fetch()) as any[];
+  const matches = await collection.query(Q.where('user_id', userId)).fetch();
   if (matches.length > 0) {
     await database.write(async () => {
-      await matches[0].update((model: any) => {
+      await matches[0].update((model: NotificationPreferenceModel) => {
         Object.assign(model, {
           communityInteractions:
             partial.communityInteractions ?? model.communityInteractions,
@@ -437,7 +458,7 @@ async function upsertPreferences(
           )
             ? partial.quietHoursEnd
             : model.quietHoursEnd,
-          updatedAt: new Date(),
+          lastUpdated: new Date(),
         });
       });
     });
@@ -446,28 +467,26 @@ async function upsertPreferences(
 
   const defaults = { ...DEFAULT_PREFERENCES, ...partial };
   await database.write(async () => {
-    await (collection as any).create((model: any) => {
+    await collection.create((model: NotificationPreferenceModel) => {
       model.userId = userId;
       model.communityInteractions = defaults.communityInteractions;
       model.communityLikes = defaults.communityLikes;
       model.cultivationReminders = defaults.cultivationReminders;
       model.systemUpdates = defaults.systemUpdates;
       model.quietHoursEnabled = defaults.quietHoursEnabled;
-      model.quietHoursStart = defaults.quietHoursStart;
-      model.quietHoursEnd = defaults.quietHoursEnd;
-      model.updatedAt = new Date();
+      model.quietHoursStart = defaults.quietHoursStart ?? undefined;
+      model.quietHoursEnd = defaults.quietHoursEnd ?? undefined;
+      model.lastUpdated = new Date();
     });
   });
 }
 
 async function ensurePreferencesRecord(userId: string): Promise<void> {
   const { database } = await import('@/lib/watermelon');
-  const collection = database.collections.get(
-    'notification_preferences' as any
+  const collection = database.collections.get<NotificationPreferenceModel>(
+    'notification_preferences'
   );
-  const matches = (await (collection as any)
-    .query(Q.where('user_id', userId))
-    .fetch()) as any[];
+  const matches = await collection.query(Q.where('user_id', userId)).fetch();
   if (matches.length === 0) {
     await upsertPreferences(userId, DEFAULT_PREFERENCES);
   }
@@ -477,7 +496,7 @@ async function syncPreferencesRemote(userId: string): Promise<boolean> {
   if (getIsTestEnvironment()) return true;
 
   const maxRetries = 2;
-  let lastError: any;
+  let lastError: unknown;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {

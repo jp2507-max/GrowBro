@@ -7,7 +7,10 @@ import * as React from 'react';
 import { Modal, Pressable, ScrollView } from 'react-native';
 
 import { useAIAdjustments } from '@/lib/playbooks/use-ai-adjustments';
-import type { AdjustmentSuggestion } from '@/types/ai-adjustments';
+import type {
+  AdjustmentContext,
+  AdjustmentSuggestion,
+} from '@/types/ai-adjustments';
 
 import { Text, View as UIView } from '../ui';
 import { AdjustmentPreviewModal } from './adjustment-preview-modal';
@@ -21,12 +24,17 @@ type Props = {
 
 type AcceptParams = {
   selectedSuggestion: AdjustmentSuggestion | null;
-  acceptSuggestion: any;
+  acceptSuggestion: (
+    suggestionId: string,
+    taskIds?: string[]
+  ) => Promise<AdjustmentSuggestion | undefined>;
   setAcceptedSuggestions: React.Dispatch<
     React.SetStateAction<AdjustmentSuggestion[]>
   >;
-  setShowPreview: any;
-  setSelectedSuggestion: any;
+  setShowPreview: React.Dispatch<React.SetStateAction<boolean>>;
+  setSelectedSuggestion: React.Dispatch<
+    React.SetStateAction<AdjustmentSuggestion | null>
+  >;
   taskIds?: string[];
 };
 
@@ -69,12 +77,14 @@ async function acceptPartialTasks(params: AcceptParams) {
 
 type DeclineParams = {
   selectedSuggestion: AdjustmentSuggestion | null;
-  declineSuggestion: any;
+  declineSuggestion: (suggestionId: string) => Promise<void>;
   setAcceptedSuggestions: React.Dispatch<
     React.SetStateAction<AdjustmentSuggestion[]>
   >;
-  setShowPreview: any;
-  setSelectedSuggestion: any;
+  setShowPreview: React.Dispatch<React.SetStateAction<boolean>>;
+  setSelectedSuggestion: React.Dispatch<
+    React.SetStateAction<AdjustmentSuggestion | null>
+  >;
 };
 
 async function declineSuggestionHandler(params: DeclineParams) {
@@ -92,15 +102,20 @@ async function declineSuggestionHandler(params: DeclineParams) {
 }
 
 function useAdjustmentHandlers(options: {
-  acceptSuggestion: any;
-  declineSuggestion: any;
+  acceptSuggestion: (
+    suggestionId: string,
+    taskIds?: string[]
+  ) => Promise<AdjustmentSuggestion | undefined>;
+  declineSuggestion: (suggestionId: string) => Promise<void>;
   acceptedSuggestions: AdjustmentSuggestion[];
   setAcceptedSuggestions: React.Dispatch<
     React.SetStateAction<AdjustmentSuggestion[]>
   >;
   setters: {
-    setShowPreview: any;
-    setSelectedSuggestion: any;
+    setShowPreview: React.Dispatch<React.SetStateAction<boolean>>;
+    setSelectedSuggestion: React.Dispatch<
+      React.SetStateAction<AdjustmentSuggestion | null>
+    >;
   };
 }) {
   const handleAcceptAll = async (
@@ -211,10 +226,15 @@ function AcceptedSuggestionsSection({
 }
 
 function useActionHandlers(options: {
-  declineSuggestion: any;
-  voteHelpfulness: any;
-  setNeverSuggest: any;
-  generateSuggestion: any;
+  declineSuggestion: (suggestionId: string) => Promise<void>;
+  voteHelpfulness: (
+    suggestionId: string,
+    vote: 'helpful' | 'not_helpful'
+  ) => Promise<void>;
+  setNeverSuggest: (value: boolean) => Promise<void>;
+  generateSuggestion: (
+    context: AdjustmentContext
+  ) => Promise<AdjustmentSuggestion | null>;
   plantId: string;
   playbookId?: string;
 }) {

@@ -53,7 +53,10 @@ export function AgeRestrictedContentPlaceholder({
         <Text className="text-center text-sm text-neutral-600 dark:text-neutral-400">
           {translate('community.age_restricted.message', {
             contentType: translate(
-              `community.content_type.${contentType}` as any
+              `community.content_type.${contentType}` as
+                | 'community.content_type.post'
+                | 'community.content_type.comment'
+                | 'community.content_type.image'
             ),
           })}
         </Text>

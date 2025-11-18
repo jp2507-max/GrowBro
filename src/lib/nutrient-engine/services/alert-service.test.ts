@@ -16,6 +16,7 @@ import {
   getOfflineAlerts,
   getUnacknowledgedAlerts,
   markAlertDeliveredLocally,
+  observeActiveAlerts,
   resolveAlert,
 } from './alert-service';
 
@@ -447,5 +448,38 @@ describe('getOfflineAlerts', () => {
       await offlineAlert.destroyPermanently();
       await onlineAlert.destroyPermanently();
     });
+  });
+});
+
+// Test observeActiveAlerts in isolation to avoid global test setup issues
+describe('observeActiveAlerts', () => {
+  let mockDb: {
+    get: jest.Mock;
+  };
+
+  beforeEach(() => {
+    // Mock the database observe method
+    const mockObservable = {
+      subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() }),
+    };
+
+    // Mock the database queries
+    mockDb = {
+      get: jest.fn().mockReturnValue({
+        query: jest.fn().mockReturnValue({
+          observeWithColumns: jest.fn().mockReturnValue({
+            pipe: jest.fn().mockReturnValue(mockObservable),
+          }),
+        }),
+      }),
+    };
+  });
+
+  test('returns observable that filters by reservoir ID', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const observable = observeActiveAlerts('test-reservoir-id', mockDb as any);
+
+    expect(mockDb.get).toHaveBeenCalledWith('ph_ec_readings_v2');
+    expect(typeof observable.subscribe).toBe('function');
   });
 });

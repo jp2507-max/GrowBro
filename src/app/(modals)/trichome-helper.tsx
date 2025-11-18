@@ -17,7 +17,12 @@ import {
   TrichomeGuideCard,
 } from '@/components/trichome';
 import { Button, Text } from '@/components/ui';
-import { useTrichomeHelper } from '@/lib/trichome';
+import {
+  type HarvestSuggestion,
+  type HarvestWindow,
+  type TrichomeGuide,
+  useTrichomeHelper,
+} from '@/lib/trichome';
 import type { TrichomeAssessment } from '@/types/playbook';
 
 type TabType = 'guide' | 'assess' | 'windows';
@@ -82,9 +87,9 @@ function SuggestionsSection({
   onAccept,
   onDecline,
 }: {
-  suggestions: any[];
-  onAccept: (s: any) => Promise<void>;
-  onDecline: (s: any) => void;
+  suggestions: HarvestSuggestion[];
+  onAccept: (s: HarvestSuggestion) => Promise<void>;
+  onDecline: (s: HarvestSuggestion) => void;
 }) {
   const { t } = useTranslation();
 
@@ -110,12 +115,14 @@ function SuggestionsSection({
 
 function useLoadAssessment(
   plantId: string | undefined,
-  getLatestAssessment: any,
-  suggestHarvestAdjustments: any
+  getLatestAssessment: (id: string) => Promise<TrichomeAssessment | null>,
+  suggestHarvestAdjustments: (
+    assessment: TrichomeAssessment
+  ) => Promise<HarvestSuggestion[]>
 ) {
   const [latestAssessment, setLatestAssessment] =
     React.useState<TrichomeAssessment | null>(null);
-  const [suggestions, setSuggestions] = React.useState<any[]>([]);
+  const [suggestions, setSuggestions] = React.useState<HarvestSuggestion[]>([]);
 
   const loadLatestAssessment = React.useCallback(async () => {
     if (!plantId) return;
@@ -145,10 +152,17 @@ function useLoadAssessment(
 function useSubmitAssessment(options: {
   plantId: string | undefined;
   playbookId: string | undefined;
-  logTrichomeCheck: any;
-  suggestHarvestAdjustments: any;
-  setLatestAssessment: any;
-  setSuggestions: any;
+  logTrichomeCheck: (
+    assessment: Omit<TrichomeAssessment, 'id' | 'createdAt'>,
+    playbookId?: string
+  ) => Promise<TrichomeAssessment>;
+  suggestHarvestAdjustments: (
+    assessment: TrichomeAssessment
+  ) => Promise<HarvestSuggestion[]>;
+  setLatestAssessment: React.Dispatch<
+    React.SetStateAction<TrichomeAssessment | null>
+  >;
+  setSuggestions: React.Dispatch<React.SetStateAction<HarvestSuggestion[]>>;
 }) {
   const [loading, setLoading] = React.useState(false);
 
@@ -219,8 +233,8 @@ function useTrichomeState(plantId?: string, playbookId?: string) {
     setSuggestions,
   });
 
-  const [guide, setGuide] = React.useState<any>(null);
-  const [windows, setWindows] = React.useState<any[]>([]);
+  const [guide, setGuide] = React.useState<TrichomeGuide | null>(null);
+  const [windows, setWindows] = React.useState<HarvestWindow[]>([]);
 
   React.useEffect(() => {
     if (plantId) {
@@ -314,14 +328,19 @@ function TabContent({
   windows,
 }: {
   activeTab: TabType;
-  guide: any;
-  onSubmit: (data: any) => void;
+  guide: TrichomeGuide | null;
+  onSubmit: (data: {
+    clearPercent?: number;
+    milkyPercent?: number;
+    amberPercent?: number;
+    notes?: string;
+  }) => void;
   loading: boolean;
   latestAssessment: TrichomeAssessment | null;
-  suggestions: any[];
-  setSuggestions: React.Dispatch<React.SetStateAction<any[]>>;
-  onAccept: (suggestion: any) => Promise<void>;
-  windows: any[];
+  suggestions: HarvestSuggestion[];
+  setSuggestions: React.Dispatch<React.SetStateAction<HarvestSuggestion[]>>;
+  onAccept: (suggestion: HarvestSuggestion) => Promise<void>;
+  windows: HarvestWindow[];
 }) {
   const { t } = useTranslation();
 
@@ -365,20 +384,25 @@ function TabContent({
 
 function useAcceptHandler(
   plantId: string | undefined,
-  acceptSuggestionFn: any,
-  setSuggestions: any
+  acceptSuggestionFn: (
+    plantId: string,
+    suggestion: HarvestSuggestion
+  ) => Promise<void>,
+  setSuggestions: React.Dispatch<React.SetStateAction<HarvestSuggestion[]>>
 ) {
   const { t } = useTranslation();
 
-  const onAccept = async (suggestion: any) => {
+  const onAccept = async (suggestion: HarvestSuggestion) => {
     if (!plantId) return;
 
-    const previousSuggestions = await new Promise<any>((resolve) => {
-      setSuggestions((prev: any) => {
-        resolve(prev);
-        return prev.filter((item: any) => item !== suggestion);
-      });
-    });
+    const previousSuggestions = await new Promise<HarvestSuggestion[]>(
+      (resolve) => {
+        setSuggestions((prev) => {
+          resolve(prev);
+          return prev.filter((item) => item !== suggestion);
+        });
+      }
+    );
 
     try {
       await acceptSuggestionFn(plantId, suggestion);
@@ -423,7 +447,12 @@ export default function TrichomeHelperModal() {
     setSuggestions
   );
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: {
+    clearPercent?: number;
+    milkyPercent?: number;
+    amberPercent?: number;
+    notes?: string;
+  }) => {
     const hasSuggestions = await handleSubmitAssessment(data);
     if (hasSuggestions) {
       setActiveTab('windows');

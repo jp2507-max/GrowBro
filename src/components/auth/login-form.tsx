@@ -253,8 +253,13 @@ function useNativeOAuthSignIn(onSuccess?: () => void) {
         idToken: credential.identityToken,
         nonce: rawNonce,
       });
-    } catch (error: any) {
-      if (error?.code === 'ERR_REQUEST_CANCELED') {
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === 'ERR_REQUEST_CANCELED'
+      ) {
         return;
       }
       showErrorMessage(t('auth.error_oauth_failed', { provider: 'Apple' }));

@@ -218,7 +218,7 @@ function renderJestList<ItemT>(
     <View className="flex-1" testID="list-content">
       {items.map((item, index) => (
         <View key={keyExtractor(item, index)}>
-          {renderItem?.({ item, index } as any)}
+          {renderItem?.({ item, index } as ListRenderItemInfo<ItemT>)}
         </View>
       ))}
       {footer}

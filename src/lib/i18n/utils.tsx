@@ -27,10 +27,10 @@ function resolveResource(
   path: string
 ): string | undefined {
   const parts = path.split('.') as string[];
-  let cur: unknown = (resources as any)?.[lang]?.translation;
+  let cur: unknown = resources[lang]?.translation;
   for (const p of parts) {
-    if (cur && typeof cur === 'object' && p in (cur as Record<string, any>))
-      cur = (cur as Record<string, any>)[p];
+    if (cur && typeof cur === 'object' && p in (cur as Record<string, unknown>))
+      cur = (cur as Record<string, unknown>)[p];
     else return undefined;
   }
   return typeof cur === 'string' ? cur : undefined;
@@ -40,7 +40,8 @@ function resolveResource(
 function interpolate(str: string, opts?: TOptions): string {
   if (!opts) return str;
   return str.replace(/\{\{\s*(\w+)\s*\}\}/g, (_m, k) => {
-    const v = (opts as any)?.[k];
+    const optsRecord = opts as Record<string, unknown>;
+    const v = optsRecord[k];
     return v == null ? '' : String(v);
   });
 }
@@ -51,7 +52,8 @@ export const translate = memoize(
     if (!i18n.isInitialized) {
       const lang = (i18n.language as keyof typeof resources) || 'en';
       const fallback = resolveResource(lang in resources ? lang : 'en', key);
-      if (fallback) return interpolate(fallback, options as any);
+      if (fallback)
+        return interpolate(fallback, options as TOptions | undefined);
     }
     // eslint-disable-next-line import/no-named-as-default-member
     return i18n.t(key, options) as unknown as string;

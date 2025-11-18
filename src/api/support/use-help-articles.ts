@@ -180,11 +180,10 @@ export function useSubmitArticleRating() {
         await Promise.resolve();
 
         return rating;
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Bubble up storage errors so the mutation reports failure
-        throw new Error(
-          `Failed to save article rating locally: ${err?.message ?? String(err)}`
-        );
+        const message = err instanceof Error ? err.message : String(err);
+        throw new Error(`Failed to save article rating locally: ${message}`);
       }
     },
     onSuccess: (rating) => {
@@ -210,7 +209,7 @@ function patchHelpArticleCache(
   rating: HelpArticleRating
 ) {
   // Update detail queries (may include locale in key)
-  const qc: any = queryClient.getQueryCache?.()
+  const qc = queryClient.getQueryCache?.()
     ? queryClient.getQueryCache().getAll()
     : [];
 

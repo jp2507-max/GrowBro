@@ -577,6 +577,22 @@ export type AnalyticsEvents = {
   auth_email_verification_resent: {
     email: string;
   };
+  auth_account_deletion_requested: {
+    user_id: string;
+    email?: string;
+  };
+  auth_account_deletion_cancelled: {
+    user_id: string;
+    email?: string;
+  };
+  auth_account_deleted: {
+    user_id: string;
+    email?: string;
+  };
+  auth_password_changed: {
+    user_id: string;
+    email?: string;
+  };
 
   // Onboarding & Activation events
   onboarding_start: {
@@ -645,15 +661,21 @@ export const NoopAnalytics: AnalyticsClient = {
 
 // Lightweight in-memory metrics aggregator for tests/dev
 // Not exported as default client to keep production clean
+type StoredEvent = {
+  name: AnalyticsEventName;
+  payload: AnalyticsEventPayload<AnalyticsEventName>;
+  t: number;
+};
+
 export class InMemoryMetrics implements AnalyticsClient {
-  private events: { name: AnalyticsEventName; payload: any; t: number }[] = [];
+  private events: StoredEvent[] = [];
   track<N extends AnalyticsEventName>(
     name: N,
     payload: AnalyticsEventPayload<N>
   ): void {
     this.events.push({ name, payload, t: Date.now() });
   }
-  getAll(): { name: AnalyticsEventName; payload: any; t: number }[] {
+  getAll(): StoredEvent[] {
     return this.events.slice();
   }
   clear(): void {
@@ -734,12 +756,16 @@ export function sanitizeCommunityErrorType(
 function sanitizeStrainSearchPayload<N extends AnalyticsEventName>(
   payload: AnalyticsEventPayload<N>
 ): AnalyticsEventPayload<N> {
-  const sanitized = { ...payload } as any;
-  if (typeof sanitized.query === 'string') {
-    sanitized.sanitized_query = sanitizeSearchQuery(sanitized.query);
-    delete sanitized.query; // Remove raw query
+  // Type-safe approach: build new object with correct shape by destructuring
+  // the query property and reconstructing with sanitized_query
+  if ('query' in payload && typeof payload.query === 'string') {
+    const { query, ...rest } = payload as any;
+    return {
+      ...rest,
+      sanitized_query: sanitizeSearchQuery(query),
+    } as AnalyticsEventPayload<N>;
   }
-  return sanitized as AnalyticsEventPayload<N>;
+  return payload;
 }
 
 // Sanitize community error event payloads
@@ -813,7 +839,7 @@ function sanitizePlaybookPayload<N extends AnalyticsEventName>(
 
   // Remove any email, name, or location data that might slip through
   // This is a safeguard in case future events accidentally include PII
-  const sanitizedObj = sanitized as any;
+  const sanitizedObj = sanitized as Record<string, unknown>;
   const piiFields = ['email', 'name', 'location', 'address', 'phone', 'userId'];
   piiFields.forEach((field) => {
     if (field in sanitizedObj) {
@@ -916,17 +942,22 @@ function sanitizeNutrientPayload<N extends AnalyticsEventName>(
 function sanitizeAuthPayload<N extends AnalyticsEventName>(
   payload: AnalyticsEventPayload<N>
 ): AnalyticsEventPayload<N> {
-  const sanitized = { ...payload } as any;
-  if (sanitized.email && typeof sanitized.email === 'string') {
-    sanitized.email = '[email_hashed]';
+  const sanitized = { ...payload };
+
+  // Sanitize email field if present
+  if ('email' in sanitized && typeof sanitized.email === 'string') {
+    (sanitized as Record<string, unknown>).email = '[email_hashed]';
   }
+
+  // Redact sensitive fields
   const sensitiveFields = ['password', 'token', 'secret', 'key', 'ip_address'];
   sensitiveFields.forEach((field) => {
     if (field in sanitized) {
-      sanitized[field] = '[REDACTED]';
+      (sanitized as Record<string, unknown>)[field] = '[REDACTED]';
     }
   });
-  return sanitized as AnalyticsEventPayload<N>;
+
+  return sanitized;
 }
 
 function sanitizeAnalyticsPayload<N extends AnalyticsEventName>(

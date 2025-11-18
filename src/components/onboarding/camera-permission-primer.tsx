@@ -112,12 +112,12 @@ export function CameraPermissionPrimer({
   return (
     <PermissionPrimerScreen
       icon={icon}
-      titleTx={'onboarding.permissions.camera.title' as any}
-      descriptionTx={'onboarding.permissions.camera.description' as any}
+      titleTx="onboarding.permissions.camera.title"
+      descriptionTx="onboarding.permissions.camera.description"
       benefitsTx={[
-        'onboarding.permissions.camera.benefit1' as any,
-        'onboarding.permissions.camera.benefit2' as any,
-        'onboarding.permissions.camera.benefit3' as any,
+        'onboarding.permissions.camera.benefit1',
+        'onboarding.permissions.camera.benefit2',
+        'onboarding.permissions.camera.benefit3',
       ]}
       onAllow={handleAllow}
       onNotNow={handleNotNow}

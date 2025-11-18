@@ -4,6 +4,7 @@
  * Prompts user to save customized playbook as template when threshold is met
  */
 
+import type { TFunction } from 'i18next';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -31,7 +32,7 @@ function StatsDisplay({
   percentage: number;
   customized: number;
   total: number;
-  t: any;
+  t: TFunction;
 }) {
   return (
     <View className="mb-6 rounded-lg bg-primary-50 p-4 dark:bg-primary-900/20">
@@ -62,7 +63,7 @@ function CommunityToggle({
 }: {
   isCommunity: boolean;
   onToggle: () => void;
-  t: any;
+  t: TFunction;
 }) {
   return (
     <View className="mb-6 flex-row items-center justify-between rounded-lg bg-neutral-50 p-4 dark:bg-charcoal-800">

@@ -17,6 +17,12 @@ import { showMessage } from 'react-native-flash-message';
 import { Button } from '@/components/ui';
 import { exportToCSV } from '@/lib/inventory/csv-export-service';
 
+type FileSystemWithCacheDirectory = typeof FileSystem & {
+  cacheDirectory: string | null | undefined;
+};
+
+const safeFileSystem = FileSystem as FileSystemWithCacheDirectory;
+
 interface ExportCSVButtonProps {
   variant?: 'default' | 'secondary' | 'outline' | 'ghost';
   size?: 'default' | 'lg' | 'sm';
@@ -41,8 +47,7 @@ export function ExportCSVButton({
       const result = await exportToCSV({});
 
       // Type-safe FileSystem access
-      const fsAny = FileSystem as any;
-      const cacheDir = fsAny.cacheDirectory ?? '';
+      const cacheDir = safeFileSystem.cacheDirectory ?? '';
 
       if (!cacheDir) {
         throw new Error('Cache directory not available');
@@ -50,7 +55,7 @@ export function ExportCSVButton({
 
       // Create temporary directory for CSV files
       const tempDir = `${cacheDir}csv_export_${Date.now()}/`;
-      await FileSystem.makeDirectoryAsync(tempDir, { intermediates: true });
+      await safeFileSystem.makeDirectoryAsync(tempDir, { intermediates: true });
 
       // Write CSV files to temporary directory
       const files = [result.items, result.batches, result.movements];

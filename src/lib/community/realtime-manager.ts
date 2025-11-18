@@ -12,6 +12,13 @@ import { communityMetrics } from './metrics-tracker';
 
 type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
 
+type SupabaseRealtimePayload = {
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+  new: Record<string, unknown> | null;
+  old: Record<string, unknown> | null;
+  commit_timestamp?: string;
+};
+
 type RealtimeCallbacks = {
   onPostChange?: (event: RealtimeEvent<Post>) => void | Promise<void>;
   onCommentChange?: (event: RealtimeEvent<PostComment>) => void | Promise<void>;
@@ -75,6 +82,100 @@ export class RealtimeConnectionManager {
   }
 
   /**
+   * Set up postgres_changes subscriptions on the channel
+   */
+  private setupSubscriptions(): void {
+    if (!this.channel) return;
+
+    // Subscribe to posts table with optional post filter
+    const postConfig: {
+      event: '*';
+      schema: 'public';
+      table: 'posts';
+      filter?: string;
+    } = {
+      event: '*',
+      schema: 'public',
+      table: 'posts',
+    };
+
+    if (this.postIdFilter) {
+      postConfig.filter = `id=eq.${this.postIdFilter}`;
+    }
+
+    this.channel.on('postgres_changes', postConfig, (payload) => {
+      this.handlePostChange(payload);
+    });
+
+    // Subscribe to comments table with optional post filter
+    const commentConfig: {
+      event: '*';
+      schema: 'public';
+      table: 'post_comments';
+      filter?: string;
+    } = {
+      event: '*',
+      schema: 'public',
+      table: 'post_comments',
+    };
+
+    if (this.postIdFilter) {
+      commentConfig.filter = `post_id=eq.${this.postIdFilter}`;
+    }
+
+    this.channel.on('postgres_changes', commentConfig, (payload) => {
+      this.handleCommentChange(payload);
+    });
+
+    // Subscribe to likes table with optional post filter
+    const likeConfig: {
+      event: '*';
+      schema: 'public';
+      table: 'post_likes';
+      filter?: string;
+    } = {
+      event: '*',
+      schema: 'public',
+      table: 'post_likes',
+    };
+
+    if (this.postIdFilter) {
+      likeConfig.filter = `post_id=eq.${this.postIdFilter}`;
+    }
+
+    this.channel.on('postgres_changes', likeConfig, (payload) => {
+      this.handleLikeChange(payload);
+    });
+  }
+
+  /**
+   * Handle subscription status changes
+   */
+  private handleSubscriptionStatus(status: string): void {
+    if (status === 'SUBSCRIBED') {
+      this.setConnectionState('connected');
+      this.reconnectAttempts = 0;
+      this.stopPolling();
+      console.log('Connected to community feed realtime');
+    } else if (status === 'CHANNEL_ERROR') {
+      this.setConnectionState('error');
+      console.error('Realtime subscription error');
+      communityMetrics.recordReconnect();
+      this.handleConnectionError();
+    } else if (status === 'TIMED_OUT') {
+      this.setConnectionState('error');
+      console.error('Realtime subscription timed out');
+      communityMetrics.recordReconnect();
+      this.handleConnectionError();
+    } else if (status === 'CLOSED') {
+      this.setConnectionState('disconnected');
+      console.log('Realtime connection closed');
+      communityMetrics.recordReconnect();
+      this.handleConnectionError();
+    }
+  }
+
+  /**
    * Establish WebSocket connection and set up subscriptions
    */
   private connect(): void {
@@ -92,77 +193,12 @@ export class RealtimeConnectionManager {
 
     this.channel = supabase.channel(channelName);
 
-    // Subscribe to posts table with optional post filter
-    const postConfig: any = {
-      event: '*',
-      schema: 'public',
-      table: 'posts',
-    };
-
-    // Apply post filter for scoped subscriptions
-    if (this.postIdFilter) {
-      postConfig.filter = `id=eq.${this.postIdFilter}`;
-    }
-
-    this.channel.on('postgres_changes', postConfig, (payload) => {
-      this.handlePostChange(payload);
-    });
-
-    // Subscribe to comments table with optional post filter
-    const commentConfig: any = {
-      event: '*',
-      schema: 'public',
-      table: 'post_comments',
-    };
-
-    // Apply post filter for scoped subscriptions
-    if (this.postIdFilter) {
-      commentConfig.filter = `post_id=eq.${this.postIdFilter}`;
-    }
-
-    this.channel.on('postgres_changes', commentConfig, (payload) => {
-      this.handleCommentChange(payload);
-    });
-
-    // Subscribe to likes table with optional post filter
-    const likeConfig: any = {
-      event: '*',
-      schema: 'public',
-      table: 'post_likes',
-    };
-
-    // Apply post filter for scoped subscriptions
-    if (this.postIdFilter) {
-      likeConfig.filter = `post_id=eq.${this.postIdFilter}`;
-    }
-
-    this.channel.on('postgres_changes', likeConfig, (payload) => {
-      this.handleLikeChange(payload);
-    });
+    // Set up all postgres_changes subscriptions
+    this.setupSubscriptions();
 
     // Subscribe with status callback
     this.channel.subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        this.setConnectionState('connected');
-        this.reconnectAttempts = 0;
-        this.stopPolling();
-        console.log('Connected to community feed realtime');
-      } else if (status === 'CHANNEL_ERROR') {
-        this.setConnectionState('error');
-        console.error('Realtime subscription error');
-        communityMetrics.recordReconnect();
-        this.handleConnectionError();
-      } else if (status === 'TIMED_OUT') {
-        this.setConnectionState('error');
-        console.error('Realtime subscription timed out');
-        communityMetrics.recordReconnect();
-        this.handleConnectionError();
-      } else if (status === 'CLOSED') {
-        this.setConnectionState('disconnected');
-        console.log('Realtime connection closed');
-        communityMetrics.recordReconnect();
-        this.handleConnectionError();
-      }
+      this.handleSubscriptionStatus(status);
     });
   }
 
@@ -243,7 +279,9 @@ export class RealtimeConnectionManager {
   /**
    * Handle post change events
    */
-  private async handlePostChange(payload: any): Promise<void> {
+  private async handlePostChange(
+    payload: SupabaseRealtimePayload
+  ): Promise<void> {
     const event = this.transformPayload<Post>(payload, 'posts');
     if (event && this.callbacks.onPostChange) {
       // Track latency: commit_timestamp → UI update
@@ -259,7 +297,9 @@ export class RealtimeConnectionManager {
   /**
    * Handle comment change events
    */
-  private async handleCommentChange(payload: any): Promise<void> {
+  private async handleCommentChange(
+    payload: SupabaseRealtimePayload
+  ): Promise<void> {
     const event = this.transformPayload<PostComment>(payload, 'post_comments');
     if (event && this.callbacks.onCommentChange) {
       // Track latency: commit_timestamp → UI update
@@ -275,7 +315,9 @@ export class RealtimeConnectionManager {
   /**
    * Handle like change events
    */
-  private async handleLikeChange(payload: any): Promise<void> {
+  private async handleLikeChange(
+    payload: SupabaseRealtimePayload
+  ): Promise<void> {
     const event = this.transformPayload<PostLike>(payload, 'post_likes');
     if (event && this.callbacks.onLikeChange) {
       // Track latency: commit_timestamp → UI update
@@ -292,21 +334,35 @@ export class RealtimeConnectionManager {
    * Transform Supabase payload to RealtimeEvent format
    */
   private transformPayload<T>(
-    payload: any,
+    payload: SupabaseRealtimePayload,
     table: 'posts' | 'post_comments' | 'post_likes'
   ): RealtimeEvent<T> | null {
     if (!payload) return null;
 
+    // Basic validation: ensure payload has valid structure
+    const isValid = (data: unknown): boolean => {
+      return data === null || (typeof data === 'object' && data !== null);
+    };
+
+    if (!isValid(payload.new) || !isValid(payload.old)) {
+      console.error('Invalid payload structure received', { table, payload });
+      return null;
+    }
+
     // Extract client_tx_id from the row if present
-    const clientTxId = payload.new?.client_tx_id ?? payload.old?.client_tx_id;
+    const newData = payload.new as Record<string, unknown> | null;
+    const oldData = payload.old as Record<string, unknown> | null;
+    const clientTxId =
+      (newData?.client_tx_id as string | undefined) ??
+      (oldData?.client_tx_id as string | undefined);
 
     return {
       schema: 'public',
       table,
       eventType: payload.eventType,
       commit_timestamp: payload.commit_timestamp || new Date().toISOString(),
-      new: payload.new || null,
-      old: payload.old || null,
+      new: payload.new as T | null,
+      old: payload.old as Partial<T> | null,
       client_tx_id: clientTxId,
     };
   }

@@ -10,7 +10,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Controller, type FieldErrors, useForm } from 'react-hook-form';
+import {
+  type Control,
+  Controller,
+  type FieldErrors,
+  useForm,
+} from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 import { z } from 'zod';
@@ -25,6 +30,46 @@ import {
 } from '@/components/ui';
 import { createInventoryItem } from '@/lib/inventory/inventory-item-service';
 import type { InventoryCategory } from '@/types/inventory';
+
+// Form schema and type
+const useAddItemSchema = () => {
+  const { t, i18n } = useTranslation();
+  return React.useMemo(
+    () =>
+      z.object({
+        name: z
+          .string()
+          .min(1, t('inventory.form.validation.nameRequired'))
+          .max(100, t('inventory.form.validation.nameMaxLength')),
+        category: z.enum([
+          'Nutrients',
+          'Seeds',
+          'Growing Media',
+          'Tools',
+          'Containers',
+          'Amendments',
+        ]),
+        unitOfMeasure: z
+          .string()
+          .min(1, t('inventory.form.validation.unitRequired'))
+          .max(20, t('inventory.form.validation.unitMaxLength')),
+        trackingMode: z.enum(['simple', 'batched']),
+        isConsumable: z.boolean(),
+        minStock: z
+          .number()
+          .min(0, t('inventory.form.validation.minStockPositive')),
+        reorderMultiple: z
+          .number()
+          .min(1, t('inventory.form.validation.reorderMultipleMin')),
+        leadTimeDays: z.number().min(0).optional(),
+        sku: z.string().max(50).optional(),
+        barcode: z.string().max(50).optional(),
+      }),
+    [i18n.language, t]
+  );
+};
+
+type AddItemFormData = z.infer<ReturnType<typeof useAddItemSchema>>;
 
 function FormHeader({ onCancel }: { onCancel: () => void }) {
   const { t } = useTranslation();
@@ -54,7 +99,7 @@ function NameField({
   isSubmitting,
   serverValidationErrors: _serverValidationErrors,
 }: {
-  control: any;
+  control: Control<AddItemFormData>;
   errors: FieldErrors<AddItemFormData>;
   isSubmitting: boolean;
   serverValidationErrors: Record<string, string>;
@@ -69,16 +114,6 @@ function NameField({
       <ControlledInput
         control={control}
         name="name"
-        rules={
-          {
-            required: 'Name is required',
-            minLength: { value: 1, message: 'Name is required' },
-            maxLength: {
-              value: 100,
-              message: 'Name must be less than 100 characters',
-            },
-          } as any
-        }
         placeholder={t('inventory.form.name_placeholder')}
         editable={!isSubmitting}
         testID="name-input"
@@ -87,7 +122,7 @@ function NameField({
   );
 }
 
-function CategoryField({ control }: { control: any }) {
+function CategoryField({ control }: { control: Control<AddItemFormData> }) {
   const { t } = useTranslation();
 
   return (
@@ -98,7 +133,6 @@ function CategoryField({ control }: { control: any }) {
       <Controller
         control={control}
         name="category"
-        rules={{ required: 'Category is required' }}
         render={({ field: { onChange, value } }) => (
           <View className="flex-row flex-wrap gap-2">
             {CATEGORIES.map((category) => (
@@ -125,7 +159,7 @@ function UnitField({
   isSubmitting,
   serverValidationErrors: _serverValidationErrors,
 }: {
-  control: any;
+  control: Control<AddItemFormData>;
   errors: FieldErrors<AddItemFormData>;
   isSubmitting: boolean;
   serverValidationErrors: Record<string, string>;
@@ -140,16 +174,6 @@ function UnitField({
       <ControlledInput
         control={control}
         name="unitOfMeasure"
-        rules={
-          {
-            required: 'Unit is required',
-            minLength: { value: 1, message: 'Unit is required' },
-            maxLength: {
-              value: 20,
-              message: 'Unit must be less than 20 characters',
-            },
-          } as any
-        }
         placeholder={t('inventory.form.unit_placeholder')}
         editable={!isSubmitting}
         testID="unit-input"
@@ -158,7 +182,7 @@ function UnitField({
   );
 }
 
-function TrackingModeField({ control }: { control: any }) {
+function TrackingModeField({ control }: { control: Control<AddItemFormData> }) {
   const { t } = useTranslation();
 
   return (
@@ -169,7 +193,6 @@ function TrackingModeField({ control }: { control: any }) {
       <Controller
         control={control}
         name="trackingMode"
-        rules={{ required: 'Tracking mode is required' }}
         render={({ field: { onChange, value } }) => (
           <View className="flex-row gap-2">
             {TRACKING_MODES.map((mode) => (
@@ -196,7 +219,7 @@ function MinStockField({
   errors: _errors,
   isSubmitting,
 }: {
-  control: any;
+  control: Control<AddItemFormData>;
   errors: FieldErrors<AddItemFormData>;
   isSubmitting: boolean;
 }) {
@@ -210,10 +233,6 @@ function MinStockField({
       <Controller
         control={control}
         name="minStock"
-        rules={{
-          required: 'inventory.validation.minStockRequired',
-          min: { value: 0, message: 'inventory.validation.minStockPositive' },
-        }}
         render={({ field: { onChange, onBlur, value, ref }, fieldState }) => (
           <Input
             ref={ref}
@@ -247,7 +266,7 @@ function ReorderMultipleField({
   errors: _errors,
   isSubmitting,
 }: {
-  control: any;
+  control: Control<AddItemFormData>;
   errors: FieldErrors<AddItemFormData>;
   isSubmitting: boolean;
 }) {
@@ -261,10 +280,6 @@ function ReorderMultipleField({
       <Controller
         control={control}
         name="reorderMultiple"
-        rules={{
-          required: 'inventory.validation.reorderMultipleRequired',
-          min: { value: 1, message: 'inventory.validation.reorderMultipleMin' },
-        }}
         render={({ field: { onChange, onBlur, value, ref }, fieldState }) => (
           <Input
             ref={ref}
@@ -297,7 +312,7 @@ function LeadTimeField({
   control,
   isSubmitting,
 }: {
-  control: any;
+  control: Control<AddItemFormData>;
   isSubmitting: boolean;
 }) {
   const { t } = useTranslation();
@@ -310,9 +325,6 @@ function LeadTimeField({
       <Controller
         control={control}
         name="leadTimeDays"
-        rules={{
-          min: { value: 0, message: 'inventory.validation.leadTimePositive' },
-        }}
         render={({ field: { onChange, onBlur, value, ref }, fieldState }) => (
           <Input
             ref={ref}
@@ -346,7 +358,7 @@ function SkuField({
   isSubmitting,
   serverValidationErrors,
 }: {
-  control: any;
+  control: Control<AddItemFormData>;
   isSubmitting: boolean;
   serverValidationErrors: Record<string, string>;
 }) {
@@ -384,7 +396,7 @@ function BarcodeField({
   control,
   isSubmitting,
 }: {
-  control: any;
+  control: Control<AddItemFormData>;
   isSubmitting: boolean;
 }) {
   const { t } = useTranslation();
@@ -423,28 +435,6 @@ const CATEGORIES: InventoryCategory[] = [
 
 const TRACKING_MODES = ['simple', 'batched'] as const;
 
-const addItemSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100),
-  category: z.enum([
-    'Nutrients',
-    'Seeds',
-    'Growing Media',
-    'Tools',
-    'Containers',
-    'Amendments',
-  ]),
-  unitOfMeasure: z.string().min(1, 'Unit is required').max(20),
-  trackingMode: z.enum(['simple', 'batched']),
-  isConsumable: z.boolean(),
-  minStock: z.number().min(0, 'Minimum stock must be positive'),
-  reorderMultiple: z.number().min(1, 'Reorder multiple must be at least 1'),
-  leadTimeDays: z.number().min(0).optional(),
-  sku: z.string().max(50).optional(),
-  barcode: z.string().max(50).optional(),
-});
-
-type AddItemFormData = z.infer<typeof addItemSchema>;
-
 export default function AddInventoryItemScreen(): React.ReactElement {
   const { t } = useTranslation();
   const router = useRouter();
@@ -453,6 +443,8 @@ export default function AddInventoryItemScreen(): React.ReactElement {
   const [serverValidationErrors, setServerValidationErrors] = React.useState<
     Record<string, string>
   >({});
+
+  const addItemSchema = useAddItemSchema();
 
   const {
     control,

@@ -43,7 +43,7 @@ export const usePostsInfinite = createInfiniteQuery<
   fetcher: async (vars: Variables, { pageParam, signal }) => {
     const cursor = extractCursorToken(pageParam);
 
-    const params: Record<string, any> = {
+    const params: Record<string, string | number> = {
       limit: vars?.limit ?? DEFAULT_LIMIT,
     };
 

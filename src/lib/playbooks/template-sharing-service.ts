@@ -9,7 +9,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { AnalyticsClient } from '@/lib/analytics';
 
-import type { Playbook } from './sanitize-playbook';
+import type { Playbook, PlaybookStep } from './sanitize-playbook';
 import {
   sanitizePlaybookForSharing,
   validatePlaybookForSharing,
@@ -32,7 +32,7 @@ export interface CommunityTemplate {
   setup: 'auto_indoor' | 'auto_outdoor' | 'photo_indoor' | 'photo_outdoor';
   locale: string;
   license: string;
-  steps: any[];
+  steps: PlaybookStep[];
   phaseOrder: string[];
   totalWeeks?: number;
   taskCount: number;
@@ -41,6 +41,26 @@ export interface CommunityTemplate {
   ratingCount: number;
   createdAt: string;
   updatedAt: string;
+}
+
+interface DbTemplateRow {
+  id: string;
+  author_id: string;
+  author_handle: string;
+  name: string;
+  description?: string;
+  setup: string;
+  locale: string;
+  license: string;
+  steps: PlaybookStep[];
+  phase_order: string[];
+  total_weeks?: number;
+  task_count: number;
+  adoption_count: number;
+  rating_average?: number;
+  rating_count: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export class TemplateSharingService {
@@ -253,14 +273,14 @@ export class TemplateSharingService {
   /**
    * Maps database row to CommunityTemplate
    */
-  private mapToTemplate(data: any): CommunityTemplate {
+  private mapToTemplate(data: DbTemplateRow): CommunityTemplate {
     return {
       id: data.id,
       authorId: data.author_id,
       authorHandle: data.author_handle,
       name: data.name,
       description: data.description,
-      setup: data.setup,
+      setup: data.setup as CommunityTemplate['setup'],
       locale: data.locale,
       license: data.license,
       steps: data.steps,

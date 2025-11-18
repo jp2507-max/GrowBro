@@ -1,4 +1,4 @@
-import type { Model } from '@nozbe/watermelondb';
+import type { Collection, Model } from '@nozbe/watermelondb';
 import { Q } from '@nozbe/watermelondb';
 
 import { getItem, setItem } from '@/lib/storage';
@@ -68,8 +68,9 @@ export async function listNotifications(
 
   const collection = database.collections.get(
     COLLECTION_NAME as keyof typeof database.collections
-  ) as any;
+  ) as Collection<NotificationModel>;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const clauses: any[] = [];
 
   if (!includeArchived) {
@@ -109,7 +110,7 @@ export async function loadLastCursor(): Promise<number | null> {
 export async function countUnread(): Promise<number> {
   const collection = database.collections.get(
     COLLECTION_NAME as keyof typeof database.collections
-  ) as any;
+  ) as Collection<NotificationModel>;
   return collection
     .query(
       Q.where('deleted_at', null),
@@ -126,14 +127,14 @@ export async function markAsRead(
   if (!ids.length) return;
   const collection = database.collections.get(
     COLLECTION_NAME as keyof typeof database.collections
-  ) as any;
+  ) as Collection<NotificationModel>;
 
   const failedIds: string[] = [];
 
   await database.write(async () => {
     for (const id of ids) {
       try {
-        const record = (await collection.find(id)) as NotificationModel;
+        const record = await collection.find(id);
         await record.update((model: NotificationModel) => {
           model.readAt = readAt;
         });
@@ -155,12 +156,12 @@ export async function markAsUnread(ids: readonly string[]): Promise<void> {
   if (!ids.length) return;
   const collection = database.collections.get(
     COLLECTION_NAME as keyof typeof database.collections
-  ) as any;
+  ) as Collection<NotificationModel>;
 
   await database.write(async () => {
     for (const id of ids) {
       try {
-        const record = (await collection.find(id)) as NotificationModel;
+        const record = await collection.find(id);
         await record.update((model: NotificationModel) => {
           model.readAt = undefined;
         });
@@ -176,12 +177,12 @@ export async function archiveNotifications(
   if (!ids.length) return;
   const collection = database.collections.get(
     COLLECTION_NAME as keyof typeof database.collections
-  ) as any;
+  ) as Collection<NotificationModel>;
 
   await database.write(async () => {
     for (const id of ids) {
       try {
-        const record = (await collection.find(id)) as NotificationModel;
+        const record = await collection.find(id);
         await record.update((model: NotificationModel) => {
           model.archivedAt = archivedAt;
         });
@@ -196,12 +197,12 @@ export async function unarchiveNotifications(
   if (!ids.length) return;
   const collection = database.collections.get(
     COLLECTION_NAME as keyof typeof database.collections
-  ) as any;
+  ) as Collection<NotificationModel>;
 
   await database.write(async () => {
     for (const id of ids) {
       try {
-        const record = (await collection.find(id)) as NotificationModel;
+        const record = await collection.find(id);
         await record.update((model: NotificationModel) => {
           model.archivedAt = undefined;
         });
@@ -217,7 +218,7 @@ export async function archiveOlderThan(
   const threshold = now.getTime() - days * 24 * 60 * 60 * 1000;
   const collection = database.collections.get(
     COLLECTION_NAME as keyof typeof database.collections
-  ) as any;
+  ) as Collection<NotificationModel>;
 
   const records = (await collection
     .query(
@@ -245,12 +246,12 @@ export async function deleteNotifications(
   if (!ids.length) return;
   const collection = database.collections.get(
     COLLECTION_NAME as keyof typeof database.collections
-  ) as any;
+  ) as Collection<NotificationModel>;
 
   await database.write(async () => {
     for (const id of ids) {
       try {
-        const record = (await collection.find(id)) as NotificationModel;
+        const record = await collection.find(id);
         await record.update((model: NotificationModel) => {
           model.deletedAt = new Date();
         });
@@ -262,7 +263,7 @@ export async function deleteNotifications(
 export async function purgeAllNotifications(): Promise<void> {
   const collection = database.collections.get(
     COLLECTION_NAME as keyof typeof database.collections
-  ) as any;
+  ) as Collection<NotificationModel>;
   const records = (await collection.query().fetch()) as NotificationModel[];
   if (records.length === 0) return;
 
@@ -280,7 +281,7 @@ export async function saveNotifications(
   if (!payloads.length) return;
   const collection = database.collections.get(
     COLLECTION_NAME as keyof typeof database.collections
-  ) as any;
+  ) as Collection<NotificationModel>;
   const sourceIds = options.sourceIds ?? new Set(payloads.map((n) => n.id));
 
   await database.write(async () => {
@@ -338,9 +339,12 @@ function assignNotificationFields(
   model.messageId = payload.messageId ?? undefined;
 }
 
-async function safeFind(collection: any, id: string) {
+async function safeFind(
+  collection: Collection<NotificationModel>,
+  id: string
+): Promise<NotificationModel | null> {
   try {
-    return (await collection.find(id)) as NotificationModel;
+    return await collection.find(id);
   } catch {
     return null;
   }

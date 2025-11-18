@@ -43,14 +43,14 @@ export class LogSanitizer {
     return sanitized;
   }
 
-  sanitizeObject(obj: any): any {
+  sanitizeObject(obj: unknown): unknown {
     const visited = new WeakSet<object>();
 
-    const sanitize = (value: any): any => {
+    const sanitize = (value: unknown): unknown => {
       if (value == null) return value;
       const t = typeof value;
 
-      if (t === 'string') return this.sanitizeLog(value);
+      if (t === 'string') return this.sanitizeLog(value as string);
       if (t === 'number' || t === 'boolean' || t === 'bigint') return value;
 
       if (value instanceof Date) return new Date(value.getTime());
@@ -80,7 +80,7 @@ export class LogSanitizer {
       if (t === 'object') {
         if (visited.has(value)) return '[Circular]';
         visited.add(value);
-        const out: any = {};
+        const out: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(value)) {
           if (this.isSensitiveKey(k)) out[k] = '[REDACTED]';
           else out[k] = sanitize(v);

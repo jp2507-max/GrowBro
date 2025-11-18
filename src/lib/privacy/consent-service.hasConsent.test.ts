@@ -14,7 +14,7 @@ afterEach(cleanup);
 
 beforeEach(async () => {
   await clearSecureConfigForTests();
-  (ConsentService as any).resetForTests();
+  (ConsentService as { resetForTests: () => void }).resetForTests();
 });
 
 describe('ConsentService.hasConsent', () => {
@@ -24,7 +24,6 @@ describe('ConsentService.hasConsent', () => {
       experiments: false,
       cloudProcessing: false,
       aiTraining: false,
-      aiModelImprovement: false,
       crashDiagnostics: true,
       version: '2024-01-01', // Old version
       timestamp: '2024-01-01T00:00:00.000Z',
@@ -32,7 +31,7 @@ describe('ConsentService.hasConsent', () => {
     };
 
     await setSecureConfig(CONSENT_KEY, outdatedConsent);
-    (ConsentService as any).resetForTests();
+    (ConsentService as { resetForTests: () => void }).resetForTests();
 
     // Even though telemetry was true in old version, should return false
     expect(ConsentService.hasConsent('telemetry')).toBe(false);
@@ -50,7 +49,6 @@ describe('ConsentService.hasConsent', () => {
       experiments: false,
       cloudProcessing: false,
       aiTraining: true,
-      aiModelImprovement: false,
       crashDiagnostics: false,
       version: CURRENT_CONSENT_VERSION,
       timestamp: '2025-01-01T00:00:00.000Z',
@@ -58,7 +56,7 @@ describe('ConsentService.hasConsent', () => {
     };
 
     await setSecureConfig(CONSENT_KEY, currentConsent);
-    (ConsentService as any).resetForTests();
+    (ConsentService as { resetForTests: () => void }).resetForTests();
     await ConsentService.getConsents();
 
     expect(ConsentService.hasConsent('telemetry')).toBe(true);

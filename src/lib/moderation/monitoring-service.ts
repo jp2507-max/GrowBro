@@ -454,10 +454,10 @@ export class MonitoringService {
    * TODO: Implement full alert generation logic
    */
   private generateAlerts(_metrics: {
-    performance: any;
-    errors: any;
-    auditIntegrity: any;
-    capacity: any;
+    performance: PerformanceMetrics;
+    errors: ErrorMetrics;
+    auditIntegrity: AuditIntegrityMetrics;
+    capacity: CapacityMetrics;
   }): MonitoringAlert[] {
     // Placeholder implementation - return empty alerts array
     return [];
@@ -487,7 +487,9 @@ export class MonitoringService {
   // Helper Methods
   // ============================================================================
 
-  private extractDurations(events: any[]): number[] {
+  private extractDurations(
+    events: { metadata?: { duration_ms?: unknown } }[]
+  ): number[] {
     return events
       .map((e) => e.metadata?.duration_ms)
       .filter((d): d is number => typeof d === 'number');

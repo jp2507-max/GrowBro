@@ -7,6 +7,8 @@
 
 import type { Database } from '@nozbe/watermelondb';
 import { Q } from '@nozbe/watermelondb';
+import type { Observable } from '@nozbe/watermelondb/utils/rx';
+import { switchMap } from '@nozbe/watermelondb/utils/rx';
 
 import { database } from '@/lib/watermelon';
 import type { DeviationAlertModel } from '@/lib/watermelon-models/deviation-alert';
@@ -295,15 +297,37 @@ export async function getOfflineAlerts(): Promise<DeviationAlertModel[]> {
  * Observes active alerts for a reservoir (reactive query)
  * Use this in React components with useObservable
  */
-export function observeActiveAlerts(reservoirId: string, db?: Database): any {
+export function observeActiveAlerts(
+  reservoirId: string,
+  db?: Database
+): Observable<DeviationAlertModel[]> {
   const db2 = db || database;
 
-  // Note: This is a simplified version. For production, you'd need to properly
-  // join with ph_ec_readings_v2 to filter by reservoir_id
-  return db2
-    .get<DeviationAlertModel>('deviation_alerts_v2')
-    .query(Q.where('resolved_at', null), Q.sortBy('triggered_at', Q.desc))
-    .observe();
+  const readingsObservable = db2
+    .get<PhEcReadingModel>('ph_ec_readings_v2')
+    .query(Q.where('reservoir_id', reservoirId))
+    .observeWithColumns(['id']);
+
+  return readingsObservable.pipe(
+    switchMap((readings: PhEcReadingModel[]) => {
+      const readingIds = readings.map((r) => r.id);
+      if (readingIds.length === 0) {
+        // Return empty observable from WatermelonDB's rxjs
+        return db2
+          .get<DeviationAlertModel>('deviation_alerts_v2')
+          .query(Q.where('id', ''))
+          .observe();
+      }
+      return db2
+        .get<DeviationAlertModel>('deviation_alerts_v2')
+        .query(
+          Q.where('reading_id', Q.oneOf(readingIds)),
+          Q.where('resolved_at', null),
+          Q.sortBy('triggered_at', Q.desc)
+        )
+        .observe();
+    })
+  );
 }
 
 // ============================================================================

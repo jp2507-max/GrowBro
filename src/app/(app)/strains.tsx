@@ -1,5 +1,9 @@
 import { useScrollToTop } from '@react-navigation/native';
-import { FlashList } from '@shopify/flash-list';
+import {
+  FlashList,
+  type FlashListProps,
+  type FlashListRef,
+} from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { type ListRenderItemInfo, StyleSheet } from 'react-native';
@@ -37,7 +41,9 @@ const SEARCH_DEBOUNCE_MS = 300;
 const LIST_HORIZONTAL_PADDING = 16;
 const LIST_BOTTOM_EXTRA = 16;
 
-const AnimatedFlashList = Animated.createAnimatedComponent(FlashList as any);
+const AnimatedFlashList = Animated.createAnimatedComponent(
+  FlashList as React.ComponentType<FlashListProps<Strain>>
+);
 
 function useStrainsData(searchQuery: string, filters: StrainFilters) {
   const {
@@ -123,8 +129,17 @@ function useSkeletonVisibility(isLoading: boolean, itemsCount: number) {
 
 // eslint-disable-next-line max-lines-per-function
 export default function StrainsScreen(): React.ReactElement {
-  const { listRef, scrollHandler } = useAnimatedScrollList();
-  useScrollToTop(listRef);
+  const { listRef: sharedListRef, scrollHandler } = useAnimatedScrollList();
+  const listRef = React.useMemo(
+    () => sharedListRef as React.RefObject<FlashListRef<Strain>>,
+    [sharedListRef]
+  );
+  // useScrollToTop accepts refs with scrollTo/scrollToOffset methods
+  useScrollToTop(
+    listRef as React.RefObject<{
+      scrollToOffset: (params: { offset?: number; animated?: boolean }) => void;
+    }>
+  );
   const { grossHeight } = useBottomTabBarHeight();
   const { isConnected, isInternetReachable } = useNetworkStatus();
   const analytics = useAnalytics();
@@ -415,7 +430,7 @@ export default function StrainsScreen(): React.ReactElement {
       </View>
       <ComplianceBanner />
       <AnimatedFlashList
-        ref={listRef as React.RefObject<any>}
+        ref={listRef}
         data={listData}
         renderItem={renderItem}
         keyExtractor={keyExtractor}

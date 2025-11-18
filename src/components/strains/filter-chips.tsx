@@ -3,6 +3,7 @@ import * as React from 'react';
 import type { StrainFilters } from '@/api/strains/types';
 import { Pressable, Text, View } from '@/components/ui';
 import { translate } from '@/lib/i18n';
+import { translateDynamic } from '@/lib/i18n/utils';
 
 interface FilterChipsProps {
   filters: StrainFilters;
@@ -57,7 +58,7 @@ export function FilterChips({
     >
       {filters.race && (
         <FilterChip
-          label={translate(`strains.race.${filters.race}` as any)}
+          label={translateDynamic(`strains.race.${filters.race}`)}
           onRemove={() => onRemoveFilter('race')}
           testID={`${testID}-race`}
         />
@@ -65,7 +66,7 @@ export function FilterChips({
 
       {filters.difficulty && (
         <FilterChip
-          label={translate(`strains.difficulty.${filters.difficulty}` as any)}
+          label={translateDynamic(`strains.difficulty.${filters.difficulty}`)}
           onRemove={() => onRemoveFilter('difficulty')}
           testID={`${testID}-difficulty`}
         />

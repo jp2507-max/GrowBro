@@ -50,6 +50,14 @@ export interface DSASubmissionError {
   is_permanent: boolean;
 }
 
+/**
+ * Extended Error type for DSA API errors with additional metadata
+ */
+interface DSAApiError extends Error {
+  statusCode?: number;
+  isPermanent?: boolean;
+}
+
 export interface DSABatchSubmissionStats {
   total_attempts: number;
   successful: number;
@@ -291,12 +299,12 @@ export class DSATransparencyClient {
     // Handle non-OK responses
     if (!response.ok) {
       const errorBody = await response.text();
-      const error = new Error(
-        `DSA API error (${response.status}): ${errorBody}`
-      );
-      (error as any).statusCode = response.status;
-      (error as any).isPermanent = PERMANENT_ERROR_CODES.includes(
-        response.status
+      const error: DSAApiError = Object.assign(
+        new Error(`DSA API error (${response.status}): ${errorBody}`),
+        {
+          statusCode: response.status,
+          isPermanent: PERMANENT_ERROR_CODES.includes(response.status),
+        }
       );
       throw error;
     }
@@ -310,21 +318,56 @@ export class DSATransparencyClient {
   /**
    * Parse API response into typed result.
    */
-  private parseSubmissionResponse(data: any): DSASubmissionResponse {
-    const results: DSASubmissionResult[] = (data.results || []).map(
-      (result: any) => ({
-        decision_id: result.decision_id,
-        transparency_db_id: result.transparency_db_id,
-        status: result.status || 'failed',
-        error: result.error
+  private parseSubmissionResponse(data: unknown): DSASubmissionResponse {
+    // Type guard for data structure
+    const isValidData = (
+      d: unknown
+    ): d is {
+      results?: unknown[];
+      success?: boolean;
+      submitted_count?: number;
+      failed_count?: number;
+    } => typeof d === 'object' && d !== null;
+
+    if (!isValidData(data)) {
+      throw new Error('Invalid API response format');
+    }
+
+    const rawResults = Array.isArray(data.results) ? data.results : [];
+    const results: DSASubmissionResult[] = rawResults.map((result) => {
+      if (!result || typeof result !== 'object') {
+        return {
+          decision_id: '',
+          status: 'failed',
+          error: {
+            code: 'INVALID_RESULT_PAYLOAD',
+            message: 'Result entry was not an object',
+            is_permanent: false,
+          },
+        };
+      }
+      const r = result as Record<string, unknown>;
+      const error =
+        typeof r.error === 'object' && r.error !== null
+          ? (r.error as Record<string, unknown>)
+          : undefined;
+      return {
+        decision_id: String(r.decision_id || ''),
+        transparency_db_id: r.transparency_db_id
+          ? String(r.transparency_db_id)
+          : undefined,
+        status: (r.status === 'submitted' ? 'submitted' : 'failed') as
+          | 'submitted'
+          | 'failed',
+        error: error
           ? {
-              code: result.error.code,
-              message: result.error.message,
-              is_permanent: result.error.is_permanent || false,
+              code: String(error.code || 'UNKNOWN'),
+              message: String(error.message || ''),
+              is_permanent: Boolean(error.is_permanent),
             }
           : undefined,
-      })
-    );
+      };
+    });
 
     return {
       success: data.success || false,
@@ -398,13 +441,17 @@ export class DSATransparencyClient {
   /**
    * Check if error is permanent (don't retry).
    */
-  private isPermanentError(error: any): boolean {
-    if (error?.isPermanent) {
+  private isPermanentError(error: unknown): boolean {
+    const err = error as
+      | { isPermanent?: boolean; statusCode?: number }
+      | null
+      | undefined;
+    if (err?.isPermanent) {
       return true;
     }
 
-    if (error?.statusCode) {
-      return PERMANENT_ERROR_CODES.includes(error.statusCode);
+    if (err?.statusCode) {
+      return PERMANENT_ERROR_CODES.includes(err.statusCode);
     }
 
     return false;

@@ -6,6 +6,7 @@
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { database } from '@/lib/watermelon';
+import type { FavoriteModel } from '@/lib/watermelon-models/favorite';
 import { createFavoritesRepository } from '@/lib/watermelon-models/favorites-repository';
 
 interface SyncQueueStats {
@@ -104,13 +105,14 @@ export async function pullFavoritesFromCloud(): Promise<number> {
     if (!local) {
       // Remote only: create local
       await database.write(async () => {
-        await database.get('favorites').create((record: any) => {
-          record.strainId = remote.strain_id;
-          record.userId = userId;
-          record.addedAt = remote.added_at;
-          record.snapshot = remote.snapshot;
-          record.syncedAt = Date.now();
-          record.deletedAt = remote.deleted_at
+        await database.get('favorites').create((record) => {
+          const fav = record as FavoriteModel;
+          fav.strainId = remote.strain_id;
+          fav.userId = userId;
+          fav.addedAt = remote.added_at;
+          fav.snapshot = remote.snapshot;
+          fav.syncedAt = Date.now();
+          fav.deletedAt = remote.deleted_at
             ? new Date(remote.deleted_at)
             : null;
         });

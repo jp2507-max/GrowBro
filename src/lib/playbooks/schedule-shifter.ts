@@ -160,8 +160,9 @@ export class ScheduleShifter {
 
     // Filter out manually edited tasks unless explicitly included
     const affectedTasks = tasks.filter((task) => {
-      const metadata = task.metadata as any;
-      const isManuallyEdited = metadata?.flags?.manualEdited ?? false;
+      const metadata = task.metadata;
+      const flags = metadata?.flags as Record<string, unknown> | undefined;
+      const isManuallyEdited = flags?.manualEdited === true;
       return includeManuallyEdited || !isManuallyEdited;
     });
 
@@ -297,13 +298,14 @@ export class ScheduleShifter {
 
     // Filter out manually edited tasks unless explicitly included
     const affectedTasks = tasks.filter((task) => {
-      const metadata = task.metadata as any;
-      const isManuallyEdited = metadata?.flags?.manualEdited ?? false;
+      const metadata = task.metadata;
+      const flags = metadata?.flags as Record<string, unknown> | undefined;
+      const isManuallyEdited = flags?.manualEdited === true;
       return includeManuallyEdited || !isManuallyEdited;
     });
 
     // Capture prior state for undo
-    const priorFieldValues: Record<string, any> = {
+    const priorFieldValues: ScheduleShiftPriorValues = {
       shiftId,
       plantId,
       tasks: {},
@@ -509,7 +511,7 @@ export class ScheduleShifter {
               .create((record) => {
                 record.actionType = 'schedule';
                 record.payload = {
-                  notificationId: priorTaskData.notificationId,
+                  notificationId: priorTaskData.notificationId || '',
                   taskId: task.id,
                   triggerTime: priorTaskData.reminderAtUtc as string,
                   title: task.title,

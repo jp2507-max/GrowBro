@@ -75,11 +75,11 @@ export function ImportCSVButton({
 
       // Navigate to preview screen with preview data
       router.push({
-        pathname: '/(app)/inventory/csv-import-preview' as any,
+        pathname: '/(app)/inventory/csv-import-preview',
         params: {
           fileName: asset.name,
           previewData: JSON.stringify(preview),
-        } as any,
+        },
       });
     } catch (error) {
       const errorMessage =

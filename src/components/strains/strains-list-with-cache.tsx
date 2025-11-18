@@ -2,9 +2,17 @@
  * Enhanced strains list with offline cache support
  */
 
-import { FlashList } from '@shopify/flash-list';
+import {
+  FlashList,
+  type FlashListProps,
+  type FlashListRef,
+  type ListRenderItemInfo,
+} from '@shopify/flash-list';
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { type ListRenderItemInfo } from 'react-native';
+import {
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import type { Strain } from '@/api';
@@ -21,16 +29,18 @@ import { StrainsErrorCard } from './strains-error-card';
 import { StrainsFooterLoader } from './strains-footer-loader';
 import { StrainsSkeletonList } from './strains-skeleton-list';
 
-const AnimatedFlashList = Animated.createAnimatedComponent(FlashList as any);
+const AnimatedFlashList = Animated.createAnimatedComponent(
+  FlashList
+) as React.ComponentClass<FlashListProps<Strain>>;
 
 interface StrainsListWithCacheProps {
   searchQuery?: string;
   filters?: StrainFilters;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
-  onScroll?: any;
-  listRef?: React.RefObject<any>;
-  contentContainerStyle?: any;
+  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  listRef?: React.Ref<FlashListRef<Strain>>;
+  contentContainerStyle?: FlashListProps<Strain>['contentContainerStyle'];
   testID?: string;
 }
 
@@ -46,7 +56,7 @@ function generateQueryKey(params: {
 function useScrollRestoration(
   queryKey: string,
   strainsLength: number,
-  onScroll?: any
+  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void
 ) {
   const { saveScrollPosition, getInitialScrollOffset } =
     useScrollPosition(queryKey);
@@ -68,7 +78,7 @@ function useScrollRestoration(
   }, [strainsLength, getInitialScrollOffset]);
 
   const handleScroll = useCallback(
-    (event: any) => {
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offset = event.nativeEvent.contentOffset.y;
       saveScrollPosition(offset);
       if (onScroll) onScroll(event);
@@ -204,6 +214,7 @@ export function StrainsListWithCache({
 
   return (
     <AnimatedFlashList
+      // @ts-expect-error - AnimatedFlashList ref type mismatch with FlashListRef
       ref={listRef}
       testID={testID}
       data={strains}
@@ -219,9 +230,6 @@ export function StrainsListWithCache({
       removeClippedSubviews={flashListConfig.removeClippedSubviews}
       // Performance optimizations for low-memory devices
       drawDistance={flashListConfig.drawDistance}
-      maxToRenderPerBatch={flashListConfig.maxToRenderPerBatch}
-      windowSize={flashListConfig.windowSize}
-      updateCellsBatchingPeriod={flashListConfig.updateCellsBatchingPeriod}
       contentContainerStyle={contentContainerStyle}
       ListHeaderComponent={listHeader}
       ListEmptyComponent={listEmpty}

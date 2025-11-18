@@ -11,8 +11,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
+import { type TFunction } from 'i18next';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { type Control, type FieldErrors, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Alert, Pressable } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -91,10 +92,10 @@ function ProfileFormFields({
   allowDirectMessages,
   setAllowDirectMessages,
 }: {
-  control: any;
-  errors: any;
+  control: Control<ProfileFormData>;
+  errors: FieldErrors<ProfileFormData>;
   isProfileLoading: boolean;
-  t: any;
+  t: TFunction;
   showProfileToCommunity: boolean;
   setShowProfileToCommunity: (v: boolean) => void;
   allowDirectMessages: boolean;
@@ -201,10 +202,17 @@ function StatisticsPanel({
   navigateToHarvests,
   t,
 }: {
-  statistics: any;
+  statistics: {
+    isLoading: boolean;
+    isSyncing: boolean;
+    plantsCount: number;
+    harvestsCount: number;
+    postsCount: number;
+    likesReceived: number;
+  };
   navigateToPlants: () => void;
   navigateToHarvests: () => void;
-  t: any;
+  t: TFunction;
 }) {
   return (
     <View className="my-4">

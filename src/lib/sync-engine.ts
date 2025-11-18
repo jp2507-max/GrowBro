@@ -1,3 +1,5 @@
+import type { Collection, Model } from '@nozbe/watermelondb';
+
 import { queryClient } from '@/api/common/api-provider';
 import { NoopAnalytics } from '@/lib/analytics';
 import { getItem, setItem } from '@/lib/storage';
@@ -20,6 +22,15 @@ import {
 import { getSyncState } from '@/lib/sync/sync-state';
 import { TaskNotificationService } from '@/lib/task-notifications';
 import { database } from '@/lib/watermelon';
+import type { HarvestModel } from '@/lib/watermelon-models/harvest';
+import type { HarvestAuditModel } from '@/lib/watermelon-models/harvest-audit';
+import type { InventoryModel } from '@/lib/watermelon-models/inventory';
+import type { InventoryBatchModel } from '@/lib/watermelon-models/inventory-batch';
+import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
+import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
+import type { OccurrenceOverrideModel } from '@/lib/watermelon-models/occurrence-override';
+import type { SeriesModel } from '@/lib/watermelon-models/series';
+import type { TaskModel } from '@/lib/watermelon-models/task';
 
 type TableName =
   | 'series'
@@ -32,13 +43,65 @@ type TableName =
   | 'inventory_batches'
   | 'inventory_movements';
 
-type ChangesForTable<T = any> = {
-  created: T[];
-  updated: T[];
-  deleted: { id: string; deleted_at_client?: string }[];
+type LocalDeletionPayload = { id: string; deleted_at_client?: string };
+
+type SerializedRecord = Record<string, unknown> & { id: string };
+
+type ChangesForTable<TRecord extends SerializedRecord = SerializedRecord> = {
+  created: TRecord[];
+  updated: TRecord[];
+  deleted: LocalDeletionPayload[];
 };
 
 type ChangesByTable = Record<TableName, ChangesForTable>;
+
+type RemoteDeletionPayload = { id: string; deleted_at: string };
+
+type RemoteChangePayload = SerializedRecord & {
+  createdAt?: unknown;
+  updatedAt?: unknown;
+  deletedAt?: unknown;
+  server_revision?: unknown;
+  server_updated_at_ms?: unknown;
+  metadata?: unknown;
+};
+
+type RemoteChangeset = {
+  created: RemoteChangePayload[];
+  updated: RemoteChangePayload[];
+  deleted: RemoteDeletionPayload[];
+};
+
+type ModelSnapshot = Record<string, unknown> & {
+  id: string;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
+  deletedAt?: Date | null;
+  metadata?: unknown;
+  serverRevision?: number | null;
+  serverUpdatedAtMs?: number | null;
+  _raw?:
+    | (Record<string, unknown> & {
+        server_revision?: unknown;
+        server_updated_at_ms?: unknown;
+        _status?: unknown;
+      })
+    | undefined;
+};
+
+type SyncModelMap = {
+  series: SeriesModel;
+  tasks: TaskModel;
+  occurrence_overrides: OccurrenceOverrideModel;
+  harvests: HarvestModel;
+  inventory: InventoryModel;
+  harvest_audits: HarvestAuditModel;
+  inventory_items: InventoryItemModel;
+  inventory_batches: InventoryBatchModel;
+  inventory_movements: InventoryMovementModel;
+};
+
+type CollectionsMap = { [K in TableName]: Collection<SyncModelMap[K]> };
 
 export type SyncRequest = {
   lastPulledAt: number | null;
@@ -49,14 +112,7 @@ export type SyncRequest = {
 
 export type SyncResponse = {
   serverTimestamp: number; // epoch millis
-  changes: Record<
-    TableName,
-    {
-      created: any[];
-      updated: any[];
-      deleted: { id: string; deleted_at: string }[];
-    }
-  >;
+  changes: Partial<Record<TableName, RemoteChangeset>>;
   hasMore: boolean;
   nextCursor?: string;
   migrationRequired: boolean;
@@ -146,13 +202,13 @@ function toMillis(
   return isNaN(d.getTime()) ? null : d.getTime();
 }
 
-function serializeRecord(model: any): Record<string, any> {
+function serializeRecord(model: ModelSnapshot): SerializedRecord {
   // Shallow serialize commonly used fields. Keep names aligned with model properties
-  const out: Record<string, any> = {};
+  const out: SerializedRecord = { id: String(model.id) };
   for (const key of Object.keys(model)) {
-    const value = (model as any)[key];
-    if (value instanceof Date) out[key] = value.toISOString();
-    else out[key] = value;
+    if (key === 'id') continue;
+    const value = model[key];
+    out[key] = value instanceof Date ? value.toISOString() : value;
   }
   // Ensure dates are ISO strings
   if (model.createdAt instanceof Date)
@@ -164,15 +220,98 @@ function serializeRecord(model: any): Record<string, any> {
   return out;
 }
 
-function _normalizeIncomingValue(_key: string, value: any): any {
+const ISO_DATE_PATTERN = /\d{4}-\d{2}-\d{2}T/;
+
+// Comprehensive set of all date fields across all WatermelonDB models
+// Fields decorated with @date that should be converted from ISO strings to Date objects
+const DATE_FIELD_KEYS = new Set<keyof SerializedRecord>([
+  // Standard audit fields (all models)
+  'createdAt',
+  'updatedAt',
+  'deletedAt',
+
+  // Task-specific
+  'completedAt',
+
+  // Inventory batch
+  'expiresOn',
+  'receivedAt',
+
+  // Post/comment moderation
+  'hiddenAt',
+  'undoExpiresAt',
+
+  // Assessment processing
+  'processingStartedAt',
+  'processingCompletedAt',
+  'resolvedAt',
+
+  // Notification preferences
+  'lastUpdated',
+
+  // Harvest stages
+  'stageStartedAt',
+  'stageCompletedAt',
+
+  // Harvest audit
+  'performedAt',
+
+  // Notifications
+  'readAt',
+  'expiresAt',
+  'archivedAt',
+
+  // Playbook applications
+  'appliedAt',
+
+  // Device tokens
+  'lastUsedAt',
+
+  // Outbox retry scheduling
+  'nextRetryAt',
+]);
+
+function _normalizeIncomingValue(key: string, value: unknown): unknown {
   if (value == null) return value;
-  if (typeof value === 'string' && /\d{4}-\d{2}-\d{2}T/.test(value)) {
+
+  // Convert ISO string dates to Date objects for known date fields
+  if (
+    typeof value === 'string' &&
+    DATE_FIELD_KEYS.has(key as keyof SerializedRecord) &&
+    ISO_DATE_PATTERN.test(value)
+  ) {
     const d = new Date(value);
     if (!isNaN(d.getTime())) return d;
   }
-  // normalize server snake_case timestamps to camel where needed
-  if (_key === 'createdAt' && typeof value === 'number') return new Date(value);
-  if (_key === 'updatedAt' && typeof value === 'number') return new Date(value);
+
+  // Handle numeric timestamps (server may send timestamps as numbers)
+  // Convert common timestamp fields from milliseconds to Date objects
+  if (
+    typeof value === 'number' &&
+    (key === 'createdAt' ||
+      key === 'updatedAt' ||
+      key === 'receivedAt' ||
+      key === 'expiresOn' ||
+      key === 'completedAt' ||
+      key === 'stageStartedAt' ||
+      key === 'stageCompletedAt' ||
+      key === 'performedAt' ||
+      key === 'resolvedAt' ||
+      key === 'readAt' ||
+      key === 'archivedAt' ||
+      key === 'lastUpdated' ||
+      key === 'nextRetryAt' ||
+      key === 'undoExpiresAt' ||
+      key === 'hiddenAt' ||
+      key === 'processingStartedAt' ||
+      key === 'processingCompletedAt' ||
+      key === 'expiresAt' ||
+      key === 'appliedAt' ||
+      key === 'lastUsedAt')
+  ) {
+    return new Date(value);
+  }
+
   return value;
 }
 
@@ -205,7 +344,7 @@ function buildPushBatches(
   const batches = Math.max(1, Math.ceil(maxLen / MAX_PUSH_CHUNK_PER_TABLE));
   const out: PushRequest[] = [];
   for (let i = 0; i < batches; i++) {
-    const slice = (arr: any[]) =>
+    const slice = <TRow>(arr: TRow[]): TRow[] =>
       arr.slice(
         i * MAX_PUSH_CHUNK_PER_TABLE,
         (i + 1) * MAX_PUSH_CHUNK_PER_TABLE
@@ -329,16 +468,17 @@ async function sendPushBatch(
   }
 }
 
-function bucketRowIntoChanges(params: {
-  table: TableName;
-  row: any;
+function bucketRowIntoChanges<K extends TableName>(params: {
+  table: K;
+  row: SyncModelMap[K];
   lastPulledAt: number | null;
   changes: ChangesByTable;
 }): void {
   const { table, row, lastPulledAt, changes } = params;
-  const createdAtMs = toMillis(row.createdAt);
-  const updatedAtMs = toMillis(row.updatedAt);
-  const deletedAtMs = toMillis(row.deletedAt);
+  const model = row as unknown as ModelSnapshot;
+  const createdAtMs = toMillis(model.createdAt);
+  const updatedAtMs = toMillis(model.updatedAt);
+  const deletedAtMs = toMillis(model.deletedAt);
 
   const hasDeleted = deletedAtMs !== null;
   const afterCheckpoint = (ts: number | null) =>
@@ -348,9 +488,13 @@ function bucketRowIntoChanges(params: {
     // Tombstone
     if (afterCheckpoint(deletedAtMs)) {
       changes[table].deleted.push({
-        id: row.id,
+        id: model.id,
         deleted_at_client:
-          row.deletedAt.toISOString?.() ?? String(row.deletedAt),
+          model.deletedAt instanceof Date
+            ? model.deletedAt.toISOString()
+            : model.deletedAt != null
+              ? String(model.deletedAt)
+              : undefined,
       });
     }
     return;
@@ -359,8 +503,8 @@ function bucketRowIntoChanges(params: {
   const isCreated = afterCheckpoint(createdAtMs);
   const isUpdated = afterCheckpoint(updatedAtMs) && !isCreated;
 
-  if (isCreated) changes[table].created.push(serializeRecord(row));
-  else if (isUpdated) changes[table].updated.push(serializeRecord(row));
+  if (isCreated) changes[table].created.push(serializeRecord(model));
+  else if (isUpdated) changes[table].updated.push(serializeRecord(model));
 }
 
 function createEmptyChanges(): ChangesByTable {
@@ -377,18 +521,76 @@ function createEmptyChanges(): ChangesByTable {
   };
 }
 
-async function fetchAllRepositoryData(repos: ReturnType<typeof getAllRepos>) {
+function addUserIdToChanges(changes: ChangesByTable, userId: string): void {
+  const enrich = (records: SerializedRecord[]): SerializedRecord[] =>
+    records.map((record) => ({ ...record, user_id: userId }));
+
+  changes.series.created = enrich(changes.series.created);
+  changes.series.updated = enrich(changes.series.updated);
+  changes.tasks.created = enrich(changes.tasks.created);
+  changes.tasks.updated = enrich(changes.tasks.updated);
+  changes.occurrence_overrides.created = enrich(
+    changes.occurrence_overrides.created
+  );
+  changes.occurrence_overrides.updated = enrich(
+    changes.occurrence_overrides.updated
+  );
+  changes.harvests.created = enrich(changes.harvests.created);
+  changes.harvests.updated = enrich(changes.harvests.updated);
+  changes.inventory.created = enrich(changes.inventory.created);
+  changes.inventory.updated = enrich(changes.inventory.updated);
+  changes.harvest_audits.created = enrich(changes.harvest_audits.created);
+  changes.harvest_audits.updated = enrich(changes.harvest_audits.updated);
+  changes.inventory_items.created = enrich(changes.inventory_items.created);
+  changes.inventory_items.updated = enrich(changes.inventory_items.updated);
+  changes.inventory_batches.created = enrich(changes.inventory_batches.created);
+  changes.inventory_batches.updated = enrich(changes.inventory_batches.updated);
+  changes.inventory_movements.created = enrich(
+    changes.inventory_movements.created
+  );
+  changes.inventory_movements.updated = enrich(
+    changes.inventory_movements.updated
+  );
+}
+
+async function fetchAllRepositoryData(
+  repos: CollectionsMap
+): Promise<
+  [
+    TaskModel[],
+    SeriesModel[],
+    OccurrenceOverrideModel[],
+    HarvestModel[],
+    InventoryModel[],
+    HarvestAuditModel[],
+    InventoryItemModel[],
+    InventoryBatchModel[],
+    InventoryMovementModel[],
+  ]
+> {
   return Promise.all([
-    (repos.tasks as any).query().fetch(),
-    (repos.series as any).query().fetch(),
-    (repos.overrides as any).query().fetch(),
-    (repos.harvests as any).query().fetch(),
-    (repos.inventory as any).query().fetch(),
-    (repos.harvestAudits as any).query().fetch(),
-    (repos.inventoryItems as any).query().fetch(),
-    (repos.inventoryBatches as any).query().fetch(),
-    (repos.inventoryMovements as any).query().fetch(),
-  ]);
+    repos.tasks.query().fetch(),
+    repos.series.query().fetch(),
+    repos.occurrence_overrides.query().fetch(),
+    repos.harvests.query().fetch(),
+    repos.inventory.query().fetch(),
+    repos['harvest_audits'].query().fetch(),
+    repos['inventory_items'].query().fetch(),
+    repos['inventory_batches'].query().fetch(),
+    repos['inventory_movements'].query().fetch(),
+  ]) as Promise<
+    [
+      TaskModel[],
+      SeriesModel[],
+      OccurrenceOverrideModel[],
+      HarvestModel[],
+      InventoryModel[],
+      HarvestAuditModel[],
+      InventoryItemModel[],
+      InventoryBatchModel[],
+      InventoryMovementModel[],
+    ]
+  >;
 }
 
 async function collectLocalChanges(
@@ -409,43 +611,43 @@ async function collectLocalChanges(
     inventoryMovementRows,
   ] = await fetchAllRepositoryData(repos);
 
-  for (const r of seriesRows as any[])
+  for (const r of seriesRows)
     bucketRowIntoChanges({ table: 'series', row: r, lastPulledAt, changes });
-  for (const r of taskRows as any[])
+  for (const r of taskRows)
     bucketRowIntoChanges({ table: 'tasks', row: r, lastPulledAt, changes });
-  for (const r of overrideRows as any[])
+  for (const r of overrideRows)
     bucketRowIntoChanges({
       table: 'occurrence_overrides',
       row: r,
       lastPulledAt,
       changes,
     });
-  for (const r of harvestRows as any[])
+  for (const r of harvestRows)
     bucketRowIntoChanges({ table: 'harvests', row: r, lastPulledAt, changes });
-  for (const r of inventoryRows as any[])
+  for (const r of inventoryRows)
     bucketRowIntoChanges({ table: 'inventory', row: r, lastPulledAt, changes });
-  for (const r of auditRows as any[])
+  for (const r of auditRows)
     bucketRowIntoChanges({
       table: 'harvest_audits',
       row: r,
       lastPulledAt,
       changes,
     });
-  for (const r of inventoryItemRows as any[])
+  for (const r of inventoryItemRows)
     bucketRowIntoChanges({
       table: 'inventory_items',
       row: r,
       lastPulledAt,
       changes,
     });
-  for (const r of inventoryBatchRows as any[])
+  for (const r of inventoryBatchRows)
     bucketRowIntoChanges({
       table: 'inventory_batches',
       row: r,
       lastPulledAt,
       changes,
     });
-  for (const r of inventoryMovementRows as any[])
+  for (const r of inventoryMovementRows)
     bucketRowIntoChanges({
       table: 'inventory_movements',
       row: r,
@@ -472,18 +674,25 @@ class PushConflictError extends Error {
   }
 }
 
-function getAllRepos() {
+function getAllRepos(): CollectionsMap {
   return {
-    tasks: database.collections.get('tasks' as any),
-    series: database.collections.get('series' as any),
-    overrides: database.collections.get('occurrence_overrides' as any),
-    harvests: database.collections.get('harvests' as any),
-    inventory: database.collections.get('inventory' as any),
-    harvestAudits: database.collections.get('harvest_audits' as any),
-    inventoryItems: database.collections.get('inventory_items' as any),
-    inventoryBatches: database.collections.get('inventory_batches' as any),
-    inventoryMovements: database.collections.get('inventory_movements' as any),
-  } as const;
+    tasks: database.collections.get<TaskModel>('tasks'),
+    series: database.collections.get<SeriesModel>('series'),
+    occurrence_overrides: database.collections.get<OccurrenceOverrideModel>(
+      'occurrence_overrides'
+    ),
+    harvests: database.collections.get<HarvestModel>('harvests'),
+    inventory: database.collections.get<InventoryModel>('inventory'),
+    harvest_audits:
+      database.collections.get<HarvestAuditModel>('harvest_audits'),
+    inventory_items:
+      database.collections.get<InventoryItemModel>('inventory_items'),
+    inventory_batches:
+      database.collections.get<InventoryBatchModel>('inventory_batches'),
+    inventory_movements: database.collections.get<InventoryMovementModel>(
+      'inventory_movements'
+    ),
+  };
 }
 
 async function applyUpsertsCoreTables(
@@ -701,27 +910,20 @@ async function applyServerChanges(
   return { appliedCount, changedTaskIds: changedIds };
 }
 
-function getCollectionByTable(
-  table: TableName,
-  repos: {
-    tasks: any;
-    series: any;
-    overrides: any;
-    harvests: any;
-    inventory: any;
-    harvestAudits: any;
-  }
-): any {
-  if (table === 'tasks') return repos.tasks;
-  if (table === 'series') return repos.series;
-  if (table === 'occurrence_overrides') return repos.overrides;
-  if (table === 'harvests') return repos.harvests;
-  if (table === 'inventory') return repos.inventory;
-  if (table === 'harvest_audits') return repos.harvestAudits;
-  return repos.tasks; // fallback
+function getCollectionByTable<K extends TableName>(
+  table: K,
+  repos: CollectionsMap
+): Collection<SyncModelMap[K]> {
+  return repos[table];
 }
 
-function applyPayloadToRecord(target: any, payload: any): void {
+// Server metadata persistence: writes directly to serverRevision and serverUpdatedAtMs
+// properties. Requires @readonly removed from model fields (completed for all models).
+function applyPayloadToRecord(
+  target: ModelSnapshot,
+  payload: RemoteChangePayload
+): void {
+  const targetRecord = target as Record<string, unknown>;
   for (const [key, value] of Object.entries(payload)) {
     // Preserve id and updatedAt handling outside; but copy server revision
     // and server timestamps as authoritative fields onto the local record
@@ -731,7 +933,7 @@ function applyPayloadToRecord(target: any, payload: any): void {
       if (value != null) {
         const numericValue = Number(value);
         if (Number.isFinite(numericValue)) {
-          (target as any).serverRevision = numericValue;
+          target.serverRevision = numericValue;
         }
       }
       continue;
@@ -739,35 +941,37 @@ function applyPayloadToRecord(target: any, payload: any): void {
     if (key === 'server_updated_at_ms') {
       if (value != null) {
         const numericValue =
-          typeof value === 'number' ? value : toMillis(value as any);
+          typeof value === 'number'
+            ? value
+            : toMillis(value as Date | string | number | null | undefined);
         if (numericValue != null && Number.isFinite(numericValue)) {
-          (target as any).serverUpdatedAtMs = numericValue;
+          target.serverUpdatedAtMs = numericValue;
         }
       }
       continue;
     }
     if (key === 'updatedAt') continue;
-    (target as any)[key] = _normalizeIncomingValue(key, value);
+    targetRecord[key] = _normalizeIncomingValue(key, value);
   }
 }
 
-function safeParseNumber(value: any): number | null {
+function safeParseNumber(value: unknown): number | null {
   if (value == null) return null;
-  const num = Number(value);
+  const num = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(num) ? num : null;
 }
 
-function parseMetadataSafe(currentMetaRaw: any): Record<string, any> {
-  let currentMeta: Record<string, any> = {};
+function parseMetadataSafe(currentMetaRaw: unknown): Record<string, unknown> {
+  let currentMeta: Record<string, unknown> = {};
   if (typeof currentMetaRaw === 'string' && currentMetaRaw.trim().length) {
     try {
-      const parsed = JSON.parse(currentMetaRaw);
+      const parsed = JSON.parse(currentMetaRaw) as unknown;
       if (
         typeof parsed === 'object' &&
         parsed !== null &&
         !Array.isArray(parsed)
       ) {
-        currentMeta = parsed;
+        currentMeta = parsed as Record<string, unknown>;
       }
     } catch {
       currentMeta = {};
@@ -777,32 +981,38 @@ function parseMetadataSafe(currentMetaRaw: any): Record<string, any> {
     currentMetaRaw !== null &&
     !Array.isArray(currentMetaRaw)
   ) {
-    currentMeta = currentMetaRaw;
+    currentMeta = currentMetaRaw as Record<string, unknown>;
   }
   return currentMeta;
 }
 
 export function maybeMarkNeedsReview(
   table: TableName,
-  rec: any,
-  payload: any
+  rec: ModelSnapshot,
+  payload: RemoteChangePayload
 ): void {
   if (table !== 'tasks') return;
 
   // Prefer server_revision if present, otherwise compare server_updated_at_ms
+  const record = rec as Record<string, unknown>;
   const localRevRaw =
-    (rec as any)._raw?.server_revision ??
-    (rec as any).serverRevision ??
-    (rec as any)._rev ??
+    rec._raw?.server_revision ??
+    rec.serverRevision ??
+    (record._rev as unknown) ??
     null;
   const serverRevRaw = payload.server_revision ?? null;
   const localServerTsRaw =
-    (rec as any)._raw?.server_updated_at_ms ??
-    (rec as any).serverUpdatedAtMs ??
-    (rec as any).server_updated_at_ms ??
-    toMillis((rec as any).updatedAt as any);
+    rec._raw?.server_updated_at_ms ??
+    rec.serverUpdatedAtMs ??
+    (record.server_updated_at_ms as unknown) ??
+    toMillis(
+      rec.updatedAt ??
+        (record.updatedAt as Date | string | number | null | undefined) ??
+        null
+    );
   const serverServerTsRaw =
-    payload.server_updated_at_ms ?? toMillis(payload.updatedAt as any);
+    payload.server_updated_at_ms ??
+    toMillis(payload.updatedAt as Date | string | number | null | undefined);
 
   const localRev = safeParseNumber(localRevRaw);
   const serverRev = safeParseNumber(serverRevRaw);
@@ -819,45 +1029,51 @@ export function maybeMarkNeedsReview(
   }
 
   if (serverIsNewer) {
-    const currentMetaRaw = (rec as any).metadata;
+    const currentMetaRaw = rec.metadata;
     const currentMeta = parseMetadataSafe(currentMetaRaw);
-    (rec as any).metadata = {
+    rec.metadata = {
       ...currentMeta,
       needsReview: true,
     };
   }
 }
 
-async function handleCreate(coll: any, payload: any): Promise<void> {
-  await coll.create((rec: any) => {
-    (rec as any).id = payload.id;
+async function handleCreate<ModelType extends Model>(
+  coll: Collection<ModelType>,
+  payload: RemoteChangePayload
+): Promise<void> {
+  await coll.create((rec) => {
+    const record = rec as unknown as ModelSnapshot;
+    if (record._raw) {
+      record._raw.id = payload.id;
+    }
     // Apply payload and authoritative server metadata. For createdAt/updatedAt
     // prefer server-provided values if present; do not synthesize from client
-    applyPayloadToRecord(rec, payload);
+    applyPayloadToRecord(record, payload);
     if (payload.createdAt != null) {
-      (rec as any).createdAt = _normalizeIncomingValue(
+      const normalizedCreated = _normalizeIncomingValue(
         'createdAt',
         payload.createdAt
       );
+      if (normalizedCreated instanceof Date) {
+        record.createdAt = normalizedCreated;
+      }
     }
     if (payload.updatedAt != null) {
-      (rec as any).updatedAt = _normalizeIncomingValue(
+      const normalizedUpdated = _normalizeIncomingValue(
         'updatedAt',
         payload.updatedAt
       );
-    }
-    if (payload.server_revision != null) {
-      (rec as any).serverRevision = Number(payload.server_revision);
-    }
-    if (payload.server_updated_at_ms != null) {
-      (rec as any).serverUpdatedAtMs = Number(payload.server_updated_at_ms);
+      if (normalizedUpdated instanceof Date) {
+        record.updatedAt = normalizedUpdated;
+      }
     }
   });
 }
 
 function determineServerAuthority(
   localData: { rev: number | null; serverTs: number | null },
-  serverData: { rev: any; serverTs: any }
+  serverData: { rev: unknown; serverTs: unknown }
 ): boolean {
   const { rev: localRev, serverTs: localServerTs } = localData;
   const { rev: serverRev, serverTs: serverServerTs } = serverData;
@@ -872,47 +1088,60 @@ function determineServerAuthority(
   return false;
 }
 
-function applyServerPayloadToRecord(rec: any, payload: any): void {
+function applyServerPayloadToRecord(
+  rec: ModelSnapshot,
+  payload: RemoteChangePayload
+): void {
   applyPayloadToRecord(rec, payload);
   if (payload.updatedAt != null) {
-    (rec as any).updatedAt = _normalizeIncomingValue(
+    const normalizedUpdated = _normalizeIncomingValue(
       'updatedAt',
       payload.updatedAt
     );
+    if (normalizedUpdated instanceof Date) {
+      rec.updatedAt = normalizedUpdated;
+    }
   }
-  if (payload.server_revision != null) {
-    (rec as any).serverRevision = Number(payload.server_revision);
+  const revision = safeParseNumber(payload.server_revision);
+  if (revision != null) {
+    rec.serverRevision = revision;
   }
-  if (payload.server_updated_at_ms != null) {
-    (rec as any).serverUpdatedAtMs = Number(payload.server_updated_at_ms);
+  const serverUpdatedAt = safeParseNumber(payload.server_updated_at_ms);
+  if (serverUpdatedAt != null) {
+    rec.serverUpdatedAtMs = serverUpdatedAt;
   }
 }
 
-function computeConflictResolutionValues(existing: any, payload: any) {
+function computeConflictResolutionValues(
+  existing: ModelSnapshot,
+  payload: RemoteChangePayload
+) {
+  const rawExisting = existing as Record<string, unknown>;
   const localRev =
-    (existing as any)._raw?.server_revision ??
-    (existing as any).serverRevision ??
-    (existing as any)._rev ??
+    existing._raw?.server_revision ??
+    existing.serverRevision ??
+    (rawExisting._rev as unknown) ??
     null;
   const serverRev = payload.server_revision ?? null;
   const localServerTs =
-    (existing as any)._raw?.server_updated_at_ms ??
-    (existing as any).serverUpdatedAtMs ??
-    (existing as any).server_updated_at_ms ??
-    toMillis(existing.updatedAt);
+    existing._raw?.server_updated_at_ms ??
+    existing.serverUpdatedAtMs ??
+    (rawExisting.server_updated_at_ms as unknown) ??
+    toMillis(existing.updatedAt ?? null);
   const serverServerTs =
-    payload.server_updated_at_ms ?? toMillis(payload.updatedAt as any);
+    payload.server_updated_at_ms ??
+    toMillis(payload.updatedAt as Date | string | number | null | undefined);
 
   return { localRev, serverRev, localServerTs, serverServerTs };
 }
 
 function determineServerAuthorityWithRecordCheck(
-  existing: any,
+  existing: ModelSnapshot,
   conflictValues: {
-    localRev: any;
-    serverRev: any;
-    localServerTs: number;
-    serverServerTs: number;
+    localRev: number | null;
+    serverRev: number | null;
+    localServerTs: number | null;
+    serverServerTs: number | null;
   }
 ): boolean {
   let serverIsAuthoritative = determineServerAuthority(
@@ -921,7 +1150,7 @@ function determineServerAuthorityWithRecordCheck(
   );
 
   // Replace DB-wide hasUnsyncedChanges() with record-level check
-  const hasUnsyncedRecord = existing._raw._status !== 'synced';
+  const hasUnsyncedRecord = existing._raw?._status !== 'synced';
   if (serverIsAuthoritative && hasUnsyncedRecord) {
     serverIsAuthoritative = false;
   }
@@ -929,39 +1158,50 @@ function determineServerAuthorityWithRecordCheck(
   return serverIsAuthoritative;
 }
 
-async function handleUpdate(
+async function handleUpdate<ModelType extends Model>(
   table: TableName,
-  existing: any,
-  payload: any
+  existing: ModelType,
+  payload: RemoteChangePayload
 ): Promise<void> {
   // Conflict resolver disabled - using direct resolution
   // const resolver = createConflictResolver();
 
   // Pre-compute all values outside the synchronous update callback
   const { localRev, serverRev, localServerTs, serverServerTs } =
-    computeConflictResolutionValues(existing, payload);
+    computeConflictResolutionValues(
+      existing as unknown as ModelSnapshot,
+      payload
+    );
+
+  const parsedValues = {
+    localRev: safeParseNumber(localRev),
+    serverRev: safeParseNumber(serverRev),
+    localServerTs: safeParseNumber(localServerTs),
+    serverServerTs: safeParseNumber(serverServerTs),
+  } as const;
 
   const serverIsAuthoritative = determineServerAuthorityWithRecordCheck(
-    existing,
-    { localRev, serverRev, localServerTs, serverServerTs }
+    existing as unknown as ModelSnapshot,
+    parsedValues
   );
 
   // Detect conflicts outside the update callback (disabled)
   // detectAndLogConflicts(resolver, table, { existing, payload });
 
   // Perform synchronous update
-  await existing.update((rec: any) => {
-    maybeMarkNeedsReview(table, rec, payload);
+  await existing.update((rec) => {
+    const record = rec as unknown as ModelSnapshot;
+    maybeMarkNeedsReview(table, record, payload);
 
     if (serverIsAuthoritative) {
-      applyServerPayloadToRecord(rec, payload);
+      applyServerPayloadToRecord(record, payload);
     }
   });
 }
 
 async function upsertBatch(
   table: TableName,
-  payloads: any[]
+  payloads: RemoteChangePayload[]
 ): Promise<{ applied: number; changedTaskIds: string[] }> {
   const repos = getAllRepos();
   const coll = getCollectionByTable(table, repos);
@@ -969,7 +1209,7 @@ async function upsertBatch(
   const changedTaskIds: string[] = [];
   for (const payload of payloads) {
     try {
-      let existing: any | null = null;
+      let existing: Model | null = null;
       try {
         existing = await coll.find(payload.id);
       } catch {
@@ -1019,52 +1259,7 @@ async function pushChanges(lastPulledAt: number | null): Promise<number> {
   const userId = user?.id;
 
   // Enrich all records with user_id for RLS
-  if (userId) {
-    const enrichWithUserId = (records: any[]) =>
-      records.map((r) => ({ ...r, user_id: userId }));
-
-    // Core tables
-    toPush.series.created = enrichWithUserId(toPush.series.created);
-    toPush.series.updated = enrichWithUserId(toPush.series.updated);
-    toPush.tasks.created = enrichWithUserId(toPush.tasks.created);
-    toPush.tasks.updated = enrichWithUserId(toPush.tasks.updated);
-    toPush.occurrence_overrides.created = enrichWithUserId(
-      toPush.occurrence_overrides.created
-    );
-    toPush.occurrence_overrides.updated = enrichWithUserId(
-      toPush.occurrence_overrides.updated
-    );
-
-    // Harvest tables
-    toPush.harvests.created = enrichWithUserId(toPush.harvests.created);
-    toPush.harvests.updated = enrichWithUserId(toPush.harvests.updated);
-    toPush.inventory.created = enrichWithUserId(toPush.inventory.created);
-    toPush.inventory.updated = enrichWithUserId(toPush.inventory.updated);
-    toPush.harvest_audits.created = enrichWithUserId(
-      toPush.harvest_audits.created
-    );
-    toPush.harvest_audits.updated = enrichWithUserId(
-      toPush.harvest_audits.updated
-    );
-
-    // Inventory consumables tables
-    toPush.inventory_items.created = enrichWithUserId(
-      toPush.inventory_items.created
-    );
-    toPush.inventory_items.updated = enrichWithUserId(
-      toPush.inventory_items.updated
-    );
-    toPush.inventory_batches.created = enrichWithUserId(
-      toPush.inventory_batches.created
-    );
-    toPush.inventory_batches.updated = enrichWithUserId(
-      toPush.inventory_batches.updated
-    );
-    toPush.inventory_movements.created = enrichWithUserId(
-      toPush.inventory_movements.created
-    );
-    // inventory_movements: no updated/deleted allowed (immutable append-only)
-  }
+  if (userId) addUserIdToChanges(toPush, userId);
 
   // Enforce immutability for inventory_movements (Requirements 1.4, 10.6)
   // Only 'created' movements are allowed; filter out any updated/deleted

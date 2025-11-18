@@ -7,7 +7,7 @@ import { Env } from '@env';
 import * as Sentry from '@sentry/react-native';
 import * as Crypto from 'expo-crypto';
 
-import type { AnalyticsClient } from '@/lib/analytics';
+import type { AnalyticsClient, AnalyticsEventName } from '@/lib/analytics';
 import { createConsentGatedAnalytics, NoopAnalytics } from '@/lib/analytics';
 import { SDKGate } from '@/lib/privacy/sdk-gate';
 import {
@@ -130,9 +130,9 @@ export async function sanitizeAuthPII(data: {
   ip_address?: string | null;
   device_id?: string;
   user_id?: string;
-  [key: string]: any;
-}): Promise<{ [key: string]: any }> {
-  const sanitized: { [key: string]: any } = { ...data };
+  [key: string]: unknown;
+}): Promise<{ [key: string]: unknown }> {
+  const sanitized: { [key: string]: unknown } = { ...data };
 
   // Hash email address
   if (sanitized.email && typeof sanitized.email === 'string') {
@@ -140,7 +140,7 @@ export async function sanitizeAuthPII(data: {
   }
 
   // Truncate IP address to /24 subnet
-  if (sanitized.ip_address) {
+  if (sanitized.ip_address && typeof sanitized.ip_address === 'string') {
     sanitized.ip_address = truncateIP(sanitized.ip_address);
   }
 
@@ -166,12 +166,12 @@ export async function sanitizeAuthPII(data: {
 /**
  * Track authentication events with consent checking and PII sanitization
  *
- * @param event - Event name (e.g., 'auth.sign_in', 'auth.sign_up')
+ * @param event - Event name (e.g., 'auth_sign_in', 'auth_sign_up')
  * @param properties - Event properties (will be sanitized for PII)
  */
 export async function trackAuthEvent(
-  event: string,
-  properties: { [key: string]: any } = {}
+  event: AnalyticsEventName,
+  properties: Record<string, unknown> = {}
 ): Promise<void> {
   // Check if user has consented to analytics
   if (!hasConsent('analytics')) {
@@ -189,7 +189,7 @@ export async function trackAuthEvent(
     };
 
     // Track event using consent-gated analytics client
-    authAnalyticsClient.track(event as any, payload);
+    authAnalyticsClient.track(event, payload);
   } catch (error) {
     console.warn('Failed to track auth event:', error);
     // Fail silently to avoid breaking auth flows
@@ -204,7 +204,7 @@ export async function trackAuthEvent(
  */
 export async function logAuthError(
   error: Error,
-  context: { [key: string]: any } = {}
+  context: Record<string, unknown> = {}
 ): Promise<void> {
   // Check if user has consented to crash reporting
   if (!hasConsent('crashReporting')) {
@@ -216,7 +216,7 @@ export async function logAuthError(
     const consent = getPrivacyConsent();
 
     // Prepare sanitized context
-    let sanitizedContext = { ...context };
+    let sanitizedContext: Record<string, unknown> = { ...context };
 
     if (consent.personalizedData) {
       // If personalized data consent is granted, still sanitize sensitive fields
@@ -227,7 +227,10 @@ export async function logAuthError(
         sanitizedContext.email = await hashEmail(sanitizedContext.email);
       }
 
-      if (sanitizedContext.ip_address) {
+      if (
+        sanitizedContext.ip_address &&
+        typeof sanitizedContext.ip_address === 'string'
+      ) {
         sanitizedContext.ip_address = truncateIP(sanitizedContext.ip_address);
       }
 
@@ -249,7 +252,11 @@ export async function logAuthError(
       scope.setTag('auth_error', 'true');
 
       // Add user info if available (but sanitize email)
-      if (context.email && consent.personalizedData) {
+      if (
+        context.email &&
+        typeof context.email === 'string' &&
+        consent.personalizedData
+      ) {
         scope.setUser({ email: context.email });
       }
 
@@ -295,7 +302,10 @@ export function configureSentryAuthFilter(): void {
       ) {
         // Additional PII redaction for auth errors
         if (event.extra?.auth_context) {
-          const authContext = event.extra.auth_context as any;
+          const authContext = event.extra.auth_context as Record<
+            string,
+            unknown
+          >;
           if (authContext.email && !getPrivacyConsent().personalizedData) {
             authContext.email = '[REDACTED]';
           }

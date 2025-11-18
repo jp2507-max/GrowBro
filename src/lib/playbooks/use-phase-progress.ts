@@ -9,7 +9,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
-import type { Playbook } from '@/types/playbook';
+import type { GrowPhase, Playbook } from '@/types/playbook';
 
 import { checkUpcomingTransitions } from './phase-notifications';
 import {
@@ -114,7 +114,7 @@ export type UsePhaseSummaryOptions = {
   plantId: string;
   playbookId: string;
   phaseIndex: number;
-  phase: string;
+  phase: GrowPhase;
   enabled?: boolean;
 };
 
@@ -131,7 +131,7 @@ export function usePhaseSummary(options: UsePhaseSummaryOptions) {
         plantId,
         playbookId,
         phaseIndex,
-        phase: phase as any,
+        phase,
       }),
     enabled,
   });

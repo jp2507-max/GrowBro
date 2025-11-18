@@ -1,6 +1,9 @@
 import { ConsentService } from '@/lib/privacy/consent-service';
 import { SDKGate } from '@/lib/privacy/sdk-gate';
-import { telemetryClient } from '@/lib/privacy/telemetry-client';
+import {
+  telemetryClient,
+  type TelemetryEvent,
+} from '@/lib/privacy/telemetry-client';
 
 jest.mock('@/lib/privacy/retention-worker', () => ({
   addRetentionRecord: jest.fn().mockResolvedValue(undefined),
@@ -20,12 +23,12 @@ describe('TelemetryClient buffer accounting', () => {
 
   test('does not inflate bufferBytes when flush aborts', async () => {
     // Prepare a minimal event
-    const ev = {
+    const ev: TelemetryEvent = {
       name: 'test_event',
       properties: {},
       timestamp: new Date(),
       sessionId: 's1',
-    } as any;
+    };
 
     // Force SDK gate to block delivery
     jest.spyOn(SDKGate, 'isSDKAllowed').mockImplementation(() => false);

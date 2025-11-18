@@ -1275,7 +1275,20 @@
         "tracking_mode": "Verfolgungsmodus",
         "tracking_simple": "Einfach",
         "unit": "Maßeinheit",
-        "unit_placeholder": "z.B. L, ml, g, kg"
+        "unit_placeholder": "z.B. L, ml, g, kg",
+        "validation": {
+          "categoryRequired": "Kategorie ist erforderlich",
+          "leadTimePositive": "Lieferzeit muss positiv sein",
+          "minStockPositive": "Mindestbestand muss positiv sein",
+          "minStockRequired": "Mindestbestand ist erforderlich",
+          "nameMaxLength": "Name muss weniger als 100 Zeichen haben",
+          "nameRequired": "Name ist erforderlich",
+          "reorderMultipleMin": "Nachbestellmenge muss mindestens 1 sein",
+          "reorderMultipleRequired": "Nachbestellmenge ist erforderlich",
+          "trackingModeRequired": "Verfolgungsmodus ist erforderlich",
+          "unitMaxLength": "Maßeinheit muss weniger als 20 Zeichen haben",
+          "unitRequired": "Maßeinheit ist erforderlich"
+        }
       },
       "item_detail": "Artikeldetails",
       "low_stock": "Niedriger Bestand",
@@ -2195,6 +2208,7 @@
     "loadError": "Playbooks konnten nicht geladen werden. Bitte versuche es erneut.",
     "manuallyEdited": "Manuell bearbeitet",
     "noPlants": "Du hast noch keine Pflanzen. Erstelle eine, um dieses Playbook anzuwenden.",
+    "noTasks": "Keine Aufgaben in diesem Playbook",
     "noTemplates": "Noch keine Community-Vorlagen verfügbar",
     "notFound": "Playbook nicht gefunden",
     "onboarding": {
@@ -2303,6 +2317,11 @@
       "undoInfo": "ℹ️ Sie haben 30 Sekunden Zeit, diese Änderung nach dem Anwenden rückgängig zu machen",
       "willBeExcluded": "werden von dieser Verschiebung ausgeschlossen",
       "willBeShifted": "werden verschoben (Sie haben sich dafür entschieden)"
+    },
+    "status": {
+      "completed": "Abgeschlossen",
+      "current": "Aktuell",
+      "upcoming": "Bevorstehend"
     },
     "subtitle": "Geführte Anbaupläne für deine Pflanzen",
     "tags": "Tags",
@@ -2436,6 +2455,8 @@
     "exportQueuedBody": "Wir haben den Datenexport eingeplant. Voraussichtlicher Abschluss: {{eta}}.",
     "exportQueuedBodyNoEta": "Wir haben den Datenexport eingeplant. Du erhältst einen Link, sobald er bereitsteht.",
     "exportQueuedTitle": "Export angefordert",
+    "exportReadyBody": "Dein Datenexport wurde abgeschlossen und erfolgreich geteilt.",
+    "exportReadyTitle": "Export abgeschlossen",
     "invalidUrlBody": "Die Web-Lösch-URL ist nicht sicher. Bitte wende dich an den Support.",
     "invalidUrlTitle": "Ungültige URL",
     "lastUpdated": "Zuletzt aktualisiert: {{date}}",
@@ -3142,8 +3163,9 @@
   "support": {
     "article": {
       "contactCta": "Brauchst du mehr Hilfe? Support kontaktieren",
-      "lastUpdated": "Zuletzt aktualisiert {{date}}",
-      "rate": {
+      "item": "Artikel",
+      "last_updated": "Zuletzt aktualisiert {{time}}",
+      "movement": {
         "feedbackPlaceholder": "Optionales Feedback...",
         "feedbackPrompt": "Was fehlte oder war unklar?",
         "helpful": "Ja, hilfreich",

@@ -11,7 +11,7 @@ import type { RNPerformanceReport } from './types';
 type PerformanceMeasureModule = {
   PerformanceMeasureView: React.ComponentType<{
     screenName: string;
-    onReportPrepared?: (report: any) => void;
+    onReportPrepared?: (report: RNPerformanceReport) => void;
     interactive?: boolean;
     children: React.ReactNode;
   }>;
@@ -63,7 +63,7 @@ export function PerformanceTracker({
   const hasPerformanceModule = Boolean(PerformanceMeasureView);
 
   const handleReportPrepared = React.useCallback(
-    (report: any) => {
+    (report: RNPerformanceReport) => {
       const performanceReport: Partial<RNPerformanceReport> = {
         screenName,
         timeToInteractive: report.timeToInteractive,
@@ -102,7 +102,13 @@ export function PerformanceTracker({
   }
 
   return React.createElement(
-    PerformanceMeasureView as any,
+    PerformanceMeasureView as React.ComponentType<
+      React.PropsWithChildren<{
+        screenName: string;
+        onReportPrepared?: (report: RNPerformanceReport) => void;
+        interactive?: boolean;
+      }>
+    >,
     {
       screenName,
       onReportPrepared: handleReportPrepared,

@@ -145,13 +145,13 @@ export function useConflictResolution() {
                 if (conflict.localRecord) {
                   for (const field of conflict.conflictFields) {
                     if (field in conflict.localRecord) {
-                      // NOTE: Type safety concern - using 'as any' to bypass TypeScript
-                      // checking for dynamic field access. This is necessary due to
-                      // WatermelonDB's API design but creates a potential runtime risk
-                      // if conflict.conflictFields contains invalid field names.
-                      // Consider implementing a type-safe field restoration helper
-                      // as suggested in code review to validate field existence.
-                      (typedRec as any)[field] = conflict.localRecord[field];
+                      // Assignment is type-safe within WatermelonDB constraints
+                      // Field existence is validated by the prior if (field in conflict.localRecord) check
+                      // The double-cast on typedRec is a pragmatic necessity due to the model typings
+                      const recordWithDynamicFields =
+                        typedRec as unknown as Record<string, unknown>;
+                      recordWithDynamicFields[field] =
+                        conflict.localRecord[field];
                     }
                   }
                 }

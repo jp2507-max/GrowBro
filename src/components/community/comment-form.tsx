@@ -9,6 +9,7 @@
  */
 
 import React from 'react';
+import { type TextInput } from 'react-native';
 
 import { useCreateComment } from '@/api/community';
 import { Button, Input, Text, View } from '@/components/ui';
@@ -28,7 +29,7 @@ export function CommentForm({
   testID = 'comment-form',
 }: CommentFormProps): React.ReactElement {
   const [body, setBody] = React.useState('');
-  const inputRef = React.useRef<any>(null);
+  const inputRef = React.useRef<TextInput>(null);
   const createMutation = useCreateComment();
 
   const isOverLimit = body.length > MAX_COMMENT_LENGTH;

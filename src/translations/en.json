@@ -1275,11 +1275,24 @@
         "tracking_mode": "Tracking Mode",
         "tracking_simple": "Simple",
         "unit": "Unit of Measure",
-        "unit_placeholder": "e.g., L, ml, g, kg"
+        "unit_placeholder": "e.g., L, ml, g, kg",
+        "validation": {
+          "categoryRequired": "Category is required",
+          "leadTimePositive": "Lead time must be positive",
+          "minStockPositive": "Minimum stock must be positive",
+          "minStockRequired": "Minimum stock is required",
+          "nameMaxLength": "Name must be less than 100 characters",
+          "nameRequired": "Name is required",
+          "reorderMultipleMin": "Reorder multiple must be at least 1",
+          "reorderMultipleRequired": "Reorder multiple is required",
+          "trackingModeRequired": "Tracking mode is required",
+          "unitMaxLength": "Unit must be less than 20 characters",
+          "unitRequired": "Unit is required"
+        }
       },
       "item_detail": "Item Details",
       "low_stock": "Low Stock",
-      "low_stock_count": "{{count}} items low on stock",
+      "low_stock_count": "{{count}} low stock items",
       "low_stock_info": "Sorted by urgency: days until stockout, then % below threshold",
       "min_stock": "Min",
       "missing_dry_weight": "Dry weight must be set before completing curing",
@@ -2195,6 +2208,7 @@
     "loadError": "Failed to load playbooks. Please try again.",
     "manuallyEdited": "Manually Edited",
     "noPlants": "You don't have any plants yet. Create one to apply this playbook.",
+    "noTasks": "No tasks in this playbook",
     "noTemplates": "No community templates available yet",
     "notFound": "Playbook not found",
     "onboarding": {
@@ -2303,6 +2317,11 @@
       "undoInfo": "ℹ️ You'll have 30 seconds to undo this change after applying",
       "willBeExcluded": "will be excluded from this shift",
       "willBeShifted": "will be shifted (you opted in)"
+    },
+    "status": {
+      "completed": "Completed",
+      "current": "Current",
+      "upcoming": "Upcoming"
     },
     "subtitle": "Guided grow schedules for your plants",
     "tags": "Tags",
@@ -2436,6 +2455,8 @@
     "exportQueuedBody": "We queued your data export. Estimated completion: {{eta}}.",
     "exportQueuedBodyNoEta": "We queued your data export. You will receive a link when it is ready.",
     "exportQueuedTitle": "Export requested",
+    "exportReadyBody": "Your data export has been completed and shared successfully.",
+    "exportReadyTitle": "Export Complete",
     "invalidUrlBody": "The web deletion URL is not secure. Please contact support.",
     "invalidUrlTitle": "Invalid URL",
     "lastUpdated": "Last updated: {{date}}",
@@ -3142,8 +3163,9 @@
   "support": {
     "article": {
       "contactCta": "Need more help? Contact Support",
-      "lastUpdated": "Last updated {{date}}",
-      "rate": {
+      "item": "Item",
+      "last_updated": "Last updated {{time}}",
+      "movement": {
         "feedbackPlaceholder": "Optional feedback...",
         "feedbackPrompt": "What was missing or unclear?",
         "helpful": "Yes, helpful",

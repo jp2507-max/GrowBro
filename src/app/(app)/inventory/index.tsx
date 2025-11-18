@@ -13,6 +13,7 @@
  */
 
 import { useScrollToTop } from '@react-navigation/native';
+import { type FlashListRef } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,11 +26,14 @@ import { Button, FocusAwareStatusBar, Text, View } from '@/components/ui';
 import { useOfflineStatus } from '@/lib/hooks/use-offline-status';
 import { useExactAlarmPermissionStatus } from '@/lib/inventory/use-exact-alarm-permission-status';
 import { useInventoryItems } from '@/lib/inventory/use-inventory-items';
+import type { InventoryItemWithStock } from '@/types/inventory';
 
 export default function InventoryScreen(): React.ReactElement {
   const { t } = useTranslation();
   const router = useRouter();
-  const listRef = React.useRef<any>(null);
+  const listRef = React.useRef<FlashListRef<InventoryItemWithStock> | null>(
+    null
+  );
 
   useScrollToTop(listRef);
 

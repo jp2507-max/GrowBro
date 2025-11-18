@@ -2,6 +2,20 @@ import * as Crypto from 'expo-crypto';
 
 import { supabase } from '../supabase';
 
+// Database record type for idempotency_keys table
+type IdempotencyKeyRecord = {
+  idempotency_key: string;
+  user_id: string;
+  endpoint: string;
+  status: 'processing' | 'completed' | 'failed';
+  payload_hash: string;
+  response_payload?: unknown;
+  error_details?: unknown;
+  client_tx_id?: string;
+  created_at: string;
+  expires_at?: string;
+};
+
 export type IdempotencyParams<T> = {
   key: string;
   clientTxId: string;
@@ -61,7 +75,7 @@ export class IdempotencyService {
     key: string,
     userId: string,
     endpoint: string
-  ): Promise<any> {
+  ): Promise<IdempotencyKeyRecord | null> {
     const { data, error } = await supabase
       .from('idempotency_keys')
       .select('*')
@@ -77,11 +91,17 @@ export class IdempotencyService {
     return data;
   }
 
-  private handleCompletedKey<T>(existing: any, payloadHash: string): T {
+  private handleCompletedKey<T>(
+    existing: IdempotencyKeyRecord,
+    payloadHash: string
+  ): T {
     if (existing.payload_hash !== payloadHash) {
       throw new Error(
         'Idempotency key conflict: different payload for same key'
       );
+    }
+    if (existing.response_payload === undefined) {
+      throw new Error('Completed idempotency key missing response payload');
     }
     return existing.response_payload as T;
   }
@@ -124,7 +144,7 @@ export class IdempotencyService {
     key: string;
     userId: string;
     endpoint: string;
-    result: any;
+    result: unknown;
   }): Promise<void> {
     const { key, userId, endpoint, result } = params;
     const { error } = await supabase

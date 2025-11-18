@@ -44,7 +44,7 @@ export const useResetPassword = createMutation({
   },
   onSuccess: async (_, variables) => {
     // Track analytics event with consent checking and PII sanitization
-    await trackAuthEvent('auth.password_reset_requested', {
+    await trackAuthEvent('auth_password_reset_requested', {
       email: variables.email,
     });
   },
@@ -110,7 +110,7 @@ export const useConfirmPasswordReset = createMutation({
   },
   onSuccess: async (_, variables) => {
     // Track analytics event with consent checking and PII sanitization
-    await trackAuthEvent('auth.password_reset_completed', {
+    await trackAuthEvent('auth_password_reset_completed', {
       has_token: !!variables.tokenHash,
     });
   },

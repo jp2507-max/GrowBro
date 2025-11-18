@@ -12,10 +12,15 @@ export type SeriesTaskInput = {
   metadata?: Record<string, unknown>;
 };
 
+type ProcessEnvWithJest = NodeJS.ProcessEnv & { JEST_WORKER_ID?: string };
+
 function isTestEnvironment(): boolean {
   return (
     typeof process !== 'undefined' &&
-    !!(process.env && (process.env as any).JEST_WORKER_ID !== undefined)
+    !!(
+      process.env &&
+      (process.env as ProcessEnvWithJest).JEST_WORKER_ID !== undefined
+    )
   );
 }
 

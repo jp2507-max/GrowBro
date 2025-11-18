@@ -149,7 +149,7 @@ describe('auth telemetry helpers', () => {
   it('drops analytics events when analytics consent is denied', async () => {
     const { trackAuthEvent } = await loadTelemetryModule({ analytics: false });
 
-    await trackAuthEvent('auth.sign_in', { user_id: 'user-1' });
+    await trackAuthEvent('auth_sign_in', { user_id: 'user-1' });
 
     expect(mockHasConsent).toHaveBeenCalledWith('analytics');
     expect(mockTrack).not.toHaveBeenCalled();
@@ -159,7 +159,7 @@ describe('auth telemetry helpers', () => {
   it('sanitizes auth analytics payloads when consent granted', async () => {
     const { trackAuthEvent } = await loadTelemetryModule({ analytics: true });
 
-    await trackAuthEvent('auth.sign_in', {
+    await trackAuthEvent('auth_sign_in', {
       email: 'User@Example.com',
       ip_address: '203.0.113.55',
       device_id: 'device-42',
@@ -168,7 +168,7 @@ describe('auth telemetry helpers', () => {
 
     expect(mockTrack).toHaveBeenCalledTimes(1);
     const [eventName, payload] = mockTrack.mock.calls[0];
-    expect(eventName).toBe('auth.sign_in');
+    expect(eventName).toBe('auth_sign_in');
     expect(payload).toEqual(
       expect.objectContaining({
         email: 'hashed:test-saltuser@example.com',

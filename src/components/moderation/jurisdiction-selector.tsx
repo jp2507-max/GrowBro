@@ -8,16 +8,16 @@
  */
 
 import React from 'react';
-import type { Control, FieldErrors } from 'react-hook-form';
+import type { Control, FieldErrors, FieldValues, Path } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import type { OptionType } from '@/components/ui/select';
 import { ControlledSelect } from '@/components/ui/select';
 
-type JurisdictionSelectorProps = {
-  control: Control<any>;
-  name: string;
-  errors?: FieldErrors;
+type JurisdictionSelectorProps<T extends FieldValues = FieldValues> = {
+  control: Control<T>;
+  name: Path<T>;
+  errors?: FieldErrors<T>;
   required?: boolean;
   testID?: string;
 };
@@ -61,12 +61,12 @@ const JURISDICTION_OPTIONS: OptionType[] = [
  * Allows users to select the country where the reported content is illegal.
  * Required for DSA Art. 16 compliance when reporting illegal content.
  */
-export function JurisdictionSelector({
+export function JurisdictionSelector<T extends FieldValues = FieldValues>({
   control,
   name,
   errors,
   testID = 'jurisdiction-selector',
-}: JurisdictionSelectorProps): React.ReactElement {
+}: JurisdictionSelectorProps<T>): React.ReactElement {
   const { t } = useTranslation();
 
   const errorMessage = errors?.[name]?.message as string | undefined;
