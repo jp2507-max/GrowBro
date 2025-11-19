@@ -699,9 +699,11 @@
     "ok": "OK",
     "on": "ON",
     "openSettings": "Open Settings",
+    "optional": "Optional",
     "reconnect": "Reconnect",
     "remove": "Remove",
     "retry": "Retry",
+    "saving": "Saving...",
     "selected": "selected",
     "undo": "Undo"
   },

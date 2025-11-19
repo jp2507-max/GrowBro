@@ -8,6 +8,7 @@
 
 import { supabase } from '@/lib/supabase';
 import type {
+  ContactInfo,
   QualityMetrics,
   RegisterFlaggerInput,
   TrustedFlagger,
@@ -347,7 +348,7 @@ function mapDatabaseRowToFlagger(row: DbTrustedFlaggerRow): TrustedFlagger {
     id: row.id,
     user_id: row.user_id,
     organization_name: row.organization_name,
-    contact_info: row.contact_info as import('@/types/moderation').ContactInfo,
+    contact_info: row.contact_info as ContactInfo,
     specialization: row.specialization,
     status: row.status as TrustedFlaggerStatus,
     quality_metrics: row.quality_metrics as QualityMetrics,

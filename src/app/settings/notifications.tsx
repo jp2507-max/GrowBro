@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Linking, Platform } from 'react-native';
 
+import { useCommunityNotifications } from '@/components/settings/hooks/use-community-notifications';
 import {
   FocusAwareStatusBar,
   Input,
@@ -20,8 +21,6 @@ import {
 } from '@/lib/notifications/platform-permissions';
 import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 import type { TaskReminderTiming } from '@/types/settings';
-
-import { useCommunityNotifications } from './hooks/use-community-notifications';
 
 function CategoryList() {
   return (

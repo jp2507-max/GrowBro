@@ -701,6 +701,11 @@ export const migrations = schemaMigrations({
         },
       ],
     },
+    // Migration from version 17 to 18: No schema changes (placeholder to keep versions contiguous)
+    {
+      toVersion: 18,
+      steps: [],
+    },
     // Migration from version 18 to 19: Add diagnostic results table for nutrient engine
     {
       toVersion: 19,
@@ -1054,7 +1059,7 @@ export const migrations = schemaMigrations({
               isOptional: true,
               isIndexed: true,
             },
-            { name: 'updated_at', type: 'number', isOptional: true },
+            { name: 'updated_at', type: 'number' },
           ],
         }),
         addColumns({

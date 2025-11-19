@@ -63,7 +63,12 @@ export function getCurrentTimeZone(): string {
 
 function useSyncAndMetrics(): void {
   React.useEffect(() => {
-    void registerBackgroundTask();
+    registerBackgroundTask().catch((error) => {
+      console.warn(
+        '[use-root-startup] Background task registration failed (may require iOS configuration):',
+        error
+      );
+    });
     const dispose = setupSyncTriggers();
     const start = Date.now();
 

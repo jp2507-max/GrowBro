@@ -2,7 +2,6 @@
 import '../../global.css';
 
 import { Env } from '@env';
-/* eslint-disable react-compiler/react-compiler */
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { ThemeProvider } from '@react-navigation/native';
@@ -13,7 +12,7 @@ import { Stack, usePathname, useRouter } from 'expo-router';
 import * as ScreenCapture from 'expo-screen-capture';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { InteractionManager, Platform, StyleSheet, View } from 'react-native';
 import FlashMessage from 'react-native-flash-message';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -296,23 +295,36 @@ function useScreenCaptureSetup(): void {
 
 function usePhotoJanitorSetup(isI18nReady: boolean): void {
   React.useEffect(() => {
-    if (isI18nReady) {
-      getReferencedPhotoUris()
-        .then((referencedUris) => {
-          initializeJanitor(undefined, referencedUris);
-        })
-        .catch((error) => {
-          console.error('[RootLayout] Janitor initialization failed:', error);
-        });
-    }
+    if (!isI18nReady) return;
+
+    // Defer janitor initialization until after all interactions complete
+    // This ensures FileSystem native module is fully initialized
+    const task = InteractionManager.runAfterInteractions(() => {
+      // Add additional delay to ensure FileSystem is ready
+      setTimeout(() => {
+        getReferencedPhotoUris()
+          .then((referencedUris) => {
+            initializeJanitor(undefined, referencedUris);
+          })
+          .catch((error) => {
+            console.error('[RootLayout] Janitor initialization failed:', error);
+          });
+      }, 2000); // 2 second delay after interactions complete
+    });
+
+    return () => task.cancel();
   }, [isI18nReady]);
 }
 
 function RootLayout(): React.ReactElement {
   const [isFirstTime] = useIsFirstTime();
+  // eslint-disable-next-line react-compiler/react-compiler -- createSelectors generates hooks as methods
   const ageGateStatus = useAgeGate.status();
+  // eslint-disable-next-line react-compiler/react-compiler -- createSelectors generates hooks as methods
   const sessionId = useAgeGate.sessionId();
+  // eslint-disable-next-line react-compiler/react-compiler -- createSelectors generates hooks as methods
   const onboardingStatus = useOnboardingState.status();
+  // eslint-disable-next-line react-compiler/react-compiler -- createSelectors generates hooks as methods
   const currentOnboardingStep = useOnboardingState.currentStep();
   const [isI18nReady, setIsI18nReady] = React.useState(false);
   const [isAuthReady, setIsAuthReady] = React.useState(false);

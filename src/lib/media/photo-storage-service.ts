@@ -386,14 +386,60 @@ const PHOTO_DIR_NAME = 'harvest-photos';
 let photoDirectoryUri: string | null = null;
 
 /**
+ * Wait for FileSystem to be ready with exponential backoff
+ * On iOS development builds, FileSystem can take several seconds to initialize
+ */
+async function waitForFileSystem(
+  maxRetries = 10,
+  initialDelayMs = 200
+): Promise<string> {
+  // Check if FileSystem module is available at all
+  if (!FileSystem) {
+    throw new Error('FileSystem module is not available');
+  }
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const cacheDir = safeFileSystem.cacheDirectory;
+    const docDir = safeFileSystem.documentDirectory;
+
+    // Log diagnostic info on first attempt
+    if (attempt === 0) {
+      console.log('[FileSystem] Diagnostic:', {
+        hasCacheDir: !!cacheDir,
+        hasDocDir: !!docDir,
+        cacheDir: cacheDir || 'null',
+        docDir: docDir || 'null',
+      });
+    }
+
+    const baseDir = cacheDir ?? docDir;
+
+    if (baseDir) {
+      if (attempt > 0) {
+        console.log(`[FileSystem] Ready after ${attempt + 1} attempts`);
+      }
+      return baseDir;
+    }
+
+    const delayMs = initialDelayMs * Math.pow(2, attempt);
+    console.log(
+      `[FileSystem] Not ready, retrying in ${delayMs}ms (attempt ${attempt + 1}/${maxRetries})`
+    );
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  throw new Error(
+    'FileSystem directories not available after retries - this may indicate a native module linking issue'
+  );
+}
+
+/**
  * Get or create photo storage directory URI
  */
 async function getPhotoDirectoryUri(): Promise<string> {
   if (!photoDirectoryUri) {
-    if (!safeFileSystem.cacheDirectory) {
-      throw new Error('Cache directory not available');
-    }
-    photoDirectoryUri = `${safeFileSystem.cacheDirectory}${PHOTO_DIR_NAME}/`;
+    const baseDir = await waitForFileSystem();
+    photoDirectoryUri = `${baseDir}${PHOTO_DIR_NAME}/`;
 
     try {
       const dirInfo = await safeFileSystem.getInfoAsync(photoDirectoryUri);

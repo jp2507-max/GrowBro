@@ -144,6 +144,7 @@ function createExpoConfig(config) {
       privacyManifests: applePrivacyManifest,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
+        UIBackgroundModes: ['fetch', 'processing', 'process'],
       },
     },
     experiments: {
@@ -175,6 +176,8 @@ function createExpoConfig(config) {
       bundler: 'metro',
     },
     plugins: [
+      // Fix CocoaPods CDN source issue on EAS builds
+      './plugins/with-podfile-source.js',
       // Added from app.json (merged into this config)
       'expo-secure-store',
       [
