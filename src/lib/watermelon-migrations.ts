@@ -1194,7 +1194,7 @@ export const migrations = schemaMigrations({
         }),
       ],
     },
-    // Migration from version 32 to 33: Add current_stock column to inventory_items and ensure assessment_classes has deleted_at/updated_at
+    // Migration from version 32 to 33: Add current_stock column to inventory_items and backfill assessment_classes timestamps
     {
       toVersion: 33,
       steps: [
@@ -1204,20 +1204,7 @@ export const migrations = schemaMigrations({
             { name: 'current_stock', type: 'number', isOptional: true },
           ],
         }),
-        // Ensure assessment_classes has deleted_at and updated_at columns for users upgrading from v32
-        // These columns were added in v27 but may be missing for users who installed after v24 but before v27
-        addColumns({
-          table: 'assessment_classes',
-          columns: [
-            {
-              name: 'deleted_at',
-              type: 'number',
-              isOptional: true,
-            },
-            { name: 'updated_at', type: 'number' },
-          ],
-        }),
-        // Initialize updated_at for existing rows
+        // Initialize updated_at for existing rows (deleted_at & updated_at already exist from v27)
         {
           type: 'sql',
           sql: "UPDATE assessment_classes SET updated_at = COALESCE(updated_at, created_at, CAST(strftime('%s','now') AS INTEGER) * 1000) WHERE updated_at IS NULL;",
