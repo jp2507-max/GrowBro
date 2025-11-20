@@ -9,10 +9,9 @@ import * as Sentry from '@sentry/react-native';
 // Setup Buffer polyfill for React Native
 import { Buffer } from 'buffer';
 import { Stack, usePathname, useRouter } from 'expo-router';
-import * as ScreenCapture from 'expo-screen-capture';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
-import { InteractionManager, Platform, StyleSheet, View } from 'react-native';
+import { InteractionManager, StyleSheet, View } from 'react-native';
 import FlashMessage from 'react-native-flash-message';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -67,6 +66,7 @@ import {
   initializePrivacyConsent,
   setPrivacyConsent,
 } from '@/lib/privacy-consent';
+import { useSync } from '@/lib/sync/use-sync';
 // Install AI consent hooks to handle withdrawal cascades
 import { installAiConsentHooks } from '@/lib/uploads/ai-images';
 import { useThemeConfig } from '@/lib/use-theme-config';
@@ -83,6 +83,10 @@ export const unstable_settings = {
 
 // Initialize privacy consent cache before Sentry
 initializePrivacyConsent();
+
+// Delay for filesystem initialization after interactions complete
+// Ensures FileSystem native module is fully ready before photo janitor setup
+const FILESYSTEM_INIT_DELAY_MS = 2000;
 
 // Register known SDKs and install a minimal safety net to ensure zero-traffic pre-consent
 SDKGate.registerSDK('sentry', 'crashDiagnostics', [
@@ -157,8 +161,12 @@ function useGoogleSignInSetup(): void {
 
 function useAuthInitialization(setIsAuthReady: (ready: boolean) => void): void {
   React.useEffect(() => {
+    console.log('[RootLayout] useAuthInitialization start');
     initializeAuthAndStates()
-      .then(() => setIsAuthReady(true))
+      .then(() => {
+        console.log('[RootLayout] useAuthInitialization success');
+        setIsAuthReady(true);
+      })
       .catch((error) => {
         console.error(
           '[RootLayout] Auth storage initialization failed:',
@@ -263,36 +271,6 @@ function useConsentCheck(setShowConsent: (show: boolean) => void): void {
   }, [setShowConsent]);
 }
 
-function useScreenCaptureSetup(): void {
-  React.useEffect(() => {
-    const setupScreenCapture = async () => {
-      if (Platform.OS === 'ios') {
-        try {
-          await ScreenCapture.preventScreenCaptureAsync();
-        } catch (error) {
-          console.warn('[RootLayout] Failed to prevent screen capture:', error);
-        }
-      }
-    };
-    setupScreenCapture();
-    return () => {
-      const cleanupScreenCapture = async () => {
-        if (Platform.OS === 'ios') {
-          try {
-            await ScreenCapture.allowScreenCaptureAsync();
-          } catch (error) {
-            console.warn(
-              '[RootLayout] Failed to re-enable screen capture:',
-              error
-            );
-          }
-        }
-      };
-      cleanupScreenCapture();
-    };
-  }, []);
-}
-
 function usePhotoJanitorSetup(isI18nReady: boolean): void {
   React.useEffect(() => {
     if (!isI18nReady) return;
@@ -309,7 +287,7 @@ function usePhotoJanitorSetup(isI18nReady: boolean): void {
           .catch((error) => {
             console.error('[RootLayout] Janitor initialization failed:', error);
           });
-      }, 2000); // 2 second delay after interactions complete
+      }, FILESYSTEM_INIT_DELAY_MS);
     });
 
     return () => task.cancel();
@@ -329,8 +307,15 @@ function RootLayout(): React.ReactElement {
   const [isI18nReady, setIsI18nReady] = React.useState(false);
   const [isAuthReady, setIsAuthReady] = React.useState(false);
   const [showConsent, setShowConsent] = React.useState(false);
+  const hasHiddenSplashRef = React.useRef(false);
   const router = useRouter();
   const pathname = usePathname();
+
+  console.log('[RootLayout] render', {
+    isI18nReady,
+    isAuthReady,
+    pathname,
+  });
 
   useRootStartup(setIsI18nReady, isFirstTime);
   useSessionAutoRefresh();
@@ -351,8 +336,17 @@ function RootLayout(): React.ReactElement {
   });
   useAgeGateSession(ageGateStatus, sessionId);
   useConsentCheck(setShowConsent);
-  useScreenCaptureSetup();
   usePhotoJanitorSetup(isI18nReady);
+  useSync();
+
+  React.useEffect(() => {
+    if (!isI18nReady || !isAuthReady || hasHiddenSplashRef.current) return;
+
+    hasHiddenSplashRef.current = true;
+    void SplashScreen.hideAsync().catch((error) => {
+      console.warn('[RootLayout] Failed to hide splash screen:', error);
+    });
+  }, [isI18nReady, isAuthReady]);
 
   if (!isI18nReady || !isAuthReady) return <BootSplash />;
 
@@ -415,11 +409,53 @@ function persistConsents(
 
 // Helper to initialize auth storage and hydrate states
 async function initializeAuthAndStates(): Promise<void> {
+  console.log('[RootLayout] initializeAuthAndStates: start');
   await initAuthStorage();
-  await hydrateAuth();
+  console.log('[RootLayout] initializeAuthAndStates: after initAuthStorage');
+
+  const HYDRATE_AUTH_TIMEOUT_MS = 8000;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let didTimeout = false;
+
+  const hydratePromise = (async () => {
+    try {
+      await hydrateAuth();
+      console.log(
+        '[RootLayout] initializeAuthAndStates: hydrateAuth completed'
+      );
+    } catch (error) {
+      console.error(
+        '[RootLayout] initializeAuthAndStates: hydrateAuth error',
+        error
+      );
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    }
+  })();
+
+  const timeoutPromise = new Promise<void>((resolve) => {
+    timeoutId = setTimeout(() => {
+      didTimeout = true;
+      console.warn(
+        `[RootLayout] initializeAuthAndStates: hydrateAuth timeout after ${HYDRATE_AUTH_TIMEOUT_MS}ms; continuing without cached session`
+      );
+      resolve();
+    }, HYDRATE_AUTH_TIMEOUT_MS);
+  });
+
+  await Promise.race([hydratePromise, timeoutPromise]);
+
+  console.log('[RootLayout] initializeAuthAndStates: after hydrateAuth', {
+    didTimeout,
+  });
+
   hydrateAgeGate();
   hydrateLegalAcceptances();
   hydrateOnboardingState();
+  console.log('[RootLayout] initializeAuthAndStates: done');
 }
 
 function BootSplash(): React.ReactElement {

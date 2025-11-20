@@ -1066,6 +1066,14 @@ export const migrations = schemaMigrations({
           table: 'assessments',
           columns: [{ name: 'consented_for_training', type: 'boolean' }],
         }),
+        {
+          type: 'sql',
+          sql: "UPDATE assessment_classes SET updated_at = COALESCE(updated_at, CAST(strftime('%s','now') AS INTEGER) * 1000);",
+        },
+        {
+          type: 'sql',
+          sql: "UPDATE assessments SET updated_at = COALESCE(updated_at, CAST(strftime('%s','now') AS INTEGER) * 1000);",
+        },
       ],
       // Down migration: Remove deleted_at and updated_at columns from assessment_classes, remove consented_for_training from assessments
       // Note: WatermelonDB migrations are typically forward-only, but for rollback purposes:
@@ -1182,6 +1190,18 @@ export const migrations = schemaMigrations({
             { name: 'media_height', type: 'number', isOptional: true },
             { name: 'media_aspect_ratio', type: 'number', isOptional: true },
             { name: 'media_bytes', type: 'number', isOptional: true },
+          ],
+        }),
+      ],
+    },
+    // Migration from version 32 to 33: Add current_stock column to inventory_items
+    {
+      toVersion: 33,
+      steps: [
+        addColumns({
+          table: 'inventory_items',
+          columns: [
+            { name: 'current_stock', type: 'number', isOptional: true },
           ],
         }),
       ],

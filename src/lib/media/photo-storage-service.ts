@@ -393,10 +393,7 @@ async function waitForFileSystem(
   maxRetries = 10,
   initialDelayMs = 200
 ): Promise<string> {
-  // Check if FileSystem module is available at all
-  if (!FileSystem) {
-    throw new Error('FileSystem module is not available');
-  }
+  // FileSystem module is always present if imported; readiness is checked below
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     const cacheDir = safeFileSystem.cacheDirectory;
@@ -421,11 +418,23 @@ async function waitForFileSystem(
       return baseDir;
     }
 
-    const delayMs = initialDelayMs * Math.pow(2, attempt);
+    const delayMs = Math.min(initialDelayMs * Math.pow(1.5, attempt), 2000);
     console.log(
       `[FileSystem] Not ready, retrying in ${delayMs}ms (attempt ${attempt + 1}/${maxRetries})`
     );
     await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  // Instead of throwing and crashing the app, return null or a fallback if possible,
+  // but for now we will log a critical error and return a safe default to keep UI alive.
+  console.error(
+    '[FileSystem] CRITICAL: FileSystem directories not available after retries. Photo storage will fail.'
+  );
+
+  // Fallback to standard document directory if available, even if unsafe interface didn't verify it
+  // This is a last-ditch effort to keep the app running
+  if (safeFileSystem.documentDirectory) {
+    return safeFileSystem.documentDirectory;
   }
 
   throw new Error(

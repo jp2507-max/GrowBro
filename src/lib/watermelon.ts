@@ -1,5 +1,6 @@
 import { Database } from '@nozbe/watermelondb';
 import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
+import { toPromise } from '@nozbe/watermelondb/utils/fp/Result';
 
 import { migrations } from './watermelon-migrations';
 import { AiSecondOpinionsQueueModel } from './watermelon-models/ai-second-opinions-queue';
@@ -49,6 +50,40 @@ import { TrichomeAssessmentModel } from './watermelon-models/trichome-assessment
 import { UndoDescriptorModel } from './watermelon-models/undo-descriptor';
 import { schema } from './watermelon-schema';
 
+type GlobalWithResetFlag = typeof globalThis & {
+  __gbWatermelonReset?: boolean;
+};
+
+const globalWithReset = globalThis as GlobalWithResetFlag;
+
+async function forceResetDatabase(adapterInstance: SQLiteAdapter) {
+  if (globalWithReset.__gbWatermelonReset) return;
+  globalWithReset.__gbWatermelonReset = true;
+  try {
+    console.warn(
+      '[WatermelonDB] Forcing unsafeResetDatabase due to setup error'
+    );
+    await toPromise<void>((callback) =>
+      adapterInstance.unsafeResetDatabase(callback)
+    );
+    console.info('[WatermelonDB] unsafeResetDatabase completed');
+  } catch (resetError) {
+    console.error('[WatermelonDB] unsafeResetDatabase failed', resetError);
+  }
+}
+
+function shouldForceReset(error: unknown): boolean {
+  if (!__DEV__) return false;
+  if (typeof error === 'string')
+    return error.includes('Diagnostic error') || error.includes('updated_at');
+  if (error instanceof Error)
+    return (
+      error.message.includes('Diagnostic error') ||
+      error.message.includes('updated_at')
+    );
+  return false;
+}
+
 export const adapter = new SQLiteAdapter({
   schema,
   migrations,
@@ -56,6 +91,9 @@ export const adapter = new SQLiteAdapter({
   jsi: process.env.JEST_WORKER_ID === undefined,
   onSetUpError: (error: unknown) => {
     console.error('[WatermelonDB] setup error', error);
+    if (shouldForceReset(error)) {
+      void forceResetDatabase(adapter);
+    }
   },
 });
 

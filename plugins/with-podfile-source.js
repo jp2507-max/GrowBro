@@ -30,7 +30,7 @@ function withPodfileSource(config) {
 
       // Check if source is already defined
       const hasSource =
-        /^\s*source\s+['"]https:\/\/cdn\.cocoapods\.org\/?['"]/m.test(
+        /^\s*source\s+(['"])https:\/\/cdn\.cocoapods\.org\/?\1/m.test(
           podfileContent
         );
 
@@ -53,10 +53,17 @@ function withPodfileSource(config) {
           podfileContent = sourceDeclaration + '\n' + podfileContent;
         }
 
-        fs.writeFileSync(podfilePath, podfileContent, 'utf-8');
-        console.log(
-          '[withPodfileSource] Added CocoaPods CDN source to Podfile'
-        );
+        try {
+          fs.writeFileSync(podfilePath, podfileContent, 'utf-8');
+          console.log(
+            '[withPodfileSource] Added CocoaPods CDN source to Podfile'
+          );
+        } catch (error) {
+          console.error(
+            `[withPodfileSource] Failed to write to Podfile at ${podfilePath}: ${error.message}`
+          );
+          throw error;
+        }
       } else {
         console.log(
           '[withPodfileSource] CocoaPods CDN source already configured'

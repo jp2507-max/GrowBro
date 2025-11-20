@@ -287,4 +287,6 @@ export class AssessmentClassModel extends Model {
   actionTemplate!: AssessmentActionPlan;
 
   @readonly @date('created_at') createdAt!: Date;
+  @date('updated_at') updatedAt?: Date;
+  @date('deleted_at') deletedAt?: Date;
 }

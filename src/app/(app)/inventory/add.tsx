@@ -33,7 +33,7 @@ import type { InventoryCategory } from '@/types/inventory';
 
 // Form schema and type
 const useAddItemSchema = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   return React.useMemo(
     () =>
       z.object({
@@ -65,7 +65,7 @@ const useAddItemSchema = () => {
         sku: z.string().max(50).optional(),
         barcode: z.string().max(50).optional(),
       }),
-    [t]
+    [t, i18n.language]
   );
 };
 

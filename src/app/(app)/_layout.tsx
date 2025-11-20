@@ -114,6 +114,8 @@ export default function TabLayout() {
   const { pendingDeletion, hasPendingDeletion } = usePendingDeletion();
   useSplashScreenHide();
 
+  console.log('[TabLayout] redirectTo', redirectTo);
+
   // Check for legal version bumps that need notification (minor/patch updates)
   const legalVersionCheck = checkLegalVersionBumps();
   const [showLegalBanner, setShowLegalBanner] = React.useState(false);

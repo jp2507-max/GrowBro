@@ -18,7 +18,9 @@ import type {
   ScrollView,
 } from 'react-native';
 import { useWindowDimensions } from 'react-native';
-import Reanimated, {
+import {
+  // @ts-ignore - Reanimated 4.x type exports issue
+  interpolate,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
@@ -84,7 +86,7 @@ export function OnboardingPager({
     if (lastIndex === 0) {
       return { opacity: 1 };
     }
-    const opacity = Reanimated.interpolate(
+    const opacity = interpolate(
       activeIndex.value,
       [Math.max(lastIndex - 1, 0), lastIndex],
       [0, 1]

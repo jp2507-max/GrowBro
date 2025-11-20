@@ -144,7 +144,7 @@ function createExpoConfig(config) {
       privacyManifests: applePrivacyManifest,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
-        UIBackgroundModes: ['fetch', 'processing', 'process'],
+        UIBackgroundModes: ['fetch', 'processing'],
       },
     },
     experiments: {

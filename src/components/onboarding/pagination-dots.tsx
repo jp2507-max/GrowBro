@@ -7,6 +7,8 @@
 
 import React from 'react';
 import Reanimated, {
+  // @ts-ignore - Reanimated 4.x type exports issue
+  interpolateColor,
   type SharedValue,
   useAnimatedStyle,
 } from 'react-native-reanimated';
@@ -30,7 +32,7 @@ type DotProps = {
 function Dot({ index, activeIndex }: DotProps): React.ReactElement {
   const rStyle = useAnimatedStyle(() => {
     'worklet';
-    const backgroundColor = Reanimated.interpolateColor(
+    const backgroundColor = interpolateColor(
       activeIndex.value,
       [index - 1, index, index + 1],
       [colors.neutral[400], colors.primary[600], colors.neutral[400]]
