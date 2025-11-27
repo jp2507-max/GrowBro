@@ -74,6 +74,11 @@ if (isTestEnvironment) {
   supabaseAnonKey = resolvedSupabaseAnonKey;
 }
 
+// Dev-only visibility to ensure correct project is loaded (no secrets logged)
+if (__DEV__) {
+  console.log('[Supabase] using url:', supabaseUrl);
+}
+
 // Create Supabase client with latest best practices
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {

@@ -144,6 +144,11 @@ function createExpoConfig(config) {
       privacyManifests: applePrivacyManifest,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
+        UIBackgroundModes: ['fetch', 'processing'],
+        // Required for expo-background-task BGTaskScheduler registration
+        BGTaskSchedulerPermittedIdentifiers: [
+          'com.expo.modules.backgroundtask.processing',
+        ],
       },
     },
     experiments: {
@@ -175,6 +180,8 @@ function createExpoConfig(config) {
       bundler: 'metro',
     },
     plugins: [
+      // Fix CocoaPods CDN source issue on EAS builds
+      './plugins/with-podfile-source.js',
       // Added from app.json (merged into this config)
       'expo-secure-store',
       [
@@ -257,6 +264,8 @@ function createExpoConfig(config) {
       ],
       // Background tasks (BGTaskScheduler on iOS, WorkManager on Android)
       'expo-background-task',
+      // Must run LAST to ensure UIBackgroundModes includes 'processing' after other plugins
+      './plugins/with-background-task-config.js',
     ],
     extra: {
       // Expose only public vars; keep secrets out of the bundle.

@@ -77,7 +77,7 @@ const mockStorage = new Map<string, string>();
 // Spy on storage functions
 const setItemSpy = jest
   .spyOn(storage, 'setItem')
-  .mockImplementation((key: string, value: any) => {
+  .mockImplementation((key: string, value: unknown) => {
     mockStorage.set(key, JSON.stringify(value));
   });
 jest.spyOn(storage, 'getItem').mockImplementation((key: string) => {
@@ -274,6 +274,89 @@ describe('Auth', () => {
       await signOut();
 
       expect(mockStorage.get('token')).toBeUndefined();
+    });
+  });
+
+  describe('onAuthStateChange event handling', () => {
+    test('should update state on SIGNED_IN event with different session token', () => {
+      // Sign in first with initial session
+      useAuth.getState().signIn({ session: mockSession, user: mockUser });
+      const initialState = useAuth.getState();
+      expect(initialState.status).toBe('signIn');
+      expect(initialState.session?.access_token).toBe('test-access-token');
+
+      // Mock onAuthStateChange to trigger SIGNED_IN event with different token
+      const mockOnAuthStateChange = jest.fn();
+      (supabase.auth.onAuthStateChange as jest.Mock).mockImplementation(
+        (callback) => {
+          mockOnAuthStateChange.mockImplementation(callback);
+          return { data: { subscription: { unsubscribe: jest.fn() } } };
+        }
+      );
+
+      // Import and initialize the auth module to set up the listener
+      // This will trigger the onAuthStateChange setup
+      jest.isolateModules(() => {
+        require('@/lib/auth/index');
+      });
+
+      // Create a new session with different access token
+      const newSession: Session = {
+        ...mockSession,
+        access_token: 'different-access-token',
+        refresh_token: 'different-refresh-token',
+      };
+
+      // Trigger SIGNED_IN event with different session
+      const authStateChangeCallback = (
+        supabase.auth.onAuthStateChange as jest.Mock
+      ).mock.calls[0][0];
+      authStateChangeCallback('SIGNED_IN', newSession);
+
+      // Verify state was updated with new session
+      const updatedState = useAuth.getState();
+      expect(updatedState.status).toBe('signIn');
+      expect(updatedState.session?.access_token).toBe('different-access-token');
+      expect(updatedState.session?.refresh_token).toBe(
+        'different-refresh-token'
+      );
+      expect(updatedState.token).toEqual({
+        access: 'different-access-token',
+        refresh: 'different-refresh-token',
+      });
+    });
+
+    test('should not update state on SIGNED_IN event with same session token', () => {
+      // Sign in first with initial session
+      useAuth.getState().signIn({ session: mockSession, user: mockUser });
+      const initialState = useAuth.getState();
+      expect(initialState.status).toBe('signIn');
+      expect(initialState.session?.access_token).toBe('test-access-token');
+
+      // Mock onAuthStateChange to trigger SIGNED_IN event with same token
+      const mockOnAuthStateChange = jest.fn();
+      (supabase.auth.onAuthStateChange as jest.Mock).mockImplementation(
+        (callback) => {
+          mockOnAuthStateChange.mockImplementation(callback);
+          return { data: { subscription: { unsubscribe: jest.fn() } } };
+        }
+      );
+
+      // Import and initialize the auth module to set up the listener
+      jest.isolateModules(() => {
+        require('@/lib/auth/index');
+      });
+
+      // Trigger SIGNED_IN event with same session (should not update)
+      const authStateChangeCallback = (
+        supabase.auth.onAuthStateChange as jest.Mock
+      ).mock.calls[0][0];
+      authStateChangeCallback('SIGNED_IN', mockSession);
+
+      // Verify state was NOT updated (same reference)
+      const updatedState = useAuth.getState();
+      expect(updatedState.session).toBe(initialState.session); // Same reference
+      expect(updatedState.token).toBe(initialState.token); // Same reference
     });
   });
 

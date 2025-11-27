@@ -1,23 +1,32 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 import * as photoHash from '../photo-hash';
 import {
   captureAndStore,
   cleanupOrphans,
   detectOrphans,
-  getAllPhotoFiles,
+  downloadRemoteImage,
+  getPhotoFiles,
   getStorageInfo,
   hashAndStore,
 } from '../photo-storage-service';
 
+// Mock the new Paths API from expo-file-system
 jest.mock('expo-file-system', () => ({
-  cacheDirectory: 'file:///cache/',
-  documentDirectory: 'file:///documents/',
+  Paths: {
+    cache: { uri: 'file:///cache/' },
+    document: { uri: 'file:///documents/' },
+  },
+}));
+
+// Mock the legacy API for async operations
+jest.mock('expo-file-system/legacy', () => ({
   getInfoAsync: jest.fn(),
   makeDirectoryAsync: jest.fn(),
   readDirectoryAsync: jest.fn(() => []),
   writeAsStringAsync: jest.fn(),
   copyAsync: jest.fn(),
+  deleteAsync: jest.fn(),
   getTotalDiskCapacityAsync: jest.fn(() => Promise.resolve(1000000000)),
   getFreeDiskStorageAsync: jest.fn(() => Promise.resolve(500000000)),
 }));
@@ -373,7 +382,7 @@ describe('photo-storage-service', () => {
     });
   });
 
-  describe('getAllPhotoFiles', () => {
+  describe('getPhotoFiles', () => {
     it('should return all photo files with metadata', async () => {
       // Simulate directory with two files
       (FileSystem.readDirectoryAsync as jest.Mock).mockResolvedValue([
@@ -406,7 +415,7 @@ describe('photo-storage-service', () => {
         }
       );
 
-      const files = await getAllPhotoFiles();
+      const files = await getPhotoFiles();
 
       expect(files).toHaveLength(2);
       expect(files[0]).toEqual({
@@ -433,7 +442,7 @@ describe('photo-storage-service', () => {
         }
       );
 
-      const files = await getAllPhotoFiles();
+      const files = await getPhotoFiles();
 
       expect(files).toEqual([]);
     });
@@ -443,9 +452,115 @@ describe('photo-storage-service', () => {
         throw new Error('List failed');
       });
 
-      const files = await getAllPhotoFiles();
+      const files = await getPhotoFiles();
 
       expect(files).toEqual([]);
+    });
+  });
+
+  describe('downloadRemoteImage', () => {
+    beforeEach(() => {
+      // Mock global fetch
+      global.fetch = jest.fn();
+    });
+
+    it('should download and store remote image successfully', async () => {
+      const mockBlob = {
+        arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(8)),
+        text: jest.fn().mockResolvedValue(''),
+        type: 'image/jpeg',
+      } as unknown as Blob;
+
+      // Mock fetch response
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        headers: {
+          get: (header: string) => {
+            if (header === 'Content-Type') return 'image/jpeg';
+            return null;
+          },
+        },
+        blob: jest.fn().mockResolvedValue(mockBlob),
+      });
+
+      // Mock btoa for base64 conversion
+      global.btoa = jest.fn().mockReturnValue('base64data');
+
+      const result = await downloadRemoteImage('https://example.com/image.jpg');
+
+      expect(result.localUri).toMatch(
+        /file:\/\/\/cache\/harvest-photos\/remote_\d+_\w+\.jpg/
+      );
+      expect(typeof result.cleanup).toBe('function');
+      expect(FileSystem.writeAsStringAsync).toHaveBeenCalled();
+    });
+
+    it('should throw error when FileSystem is unavailable', async () => {
+      // Reset module registry and mock expo-file-system so the module under test
+      // picks up a Paths implementation with null URIs at import time.
+      jest.resetModules();
+      jest.doMock('expo-file-system', () => ({
+        Paths: {
+          cache: { uri: null },
+          document: { uri: null },
+        },
+      }));
+
+      try {
+        // Re-import a fresh instance of the module under test so it reads the
+        // mocked Paths during module initialization.
+        const { downloadRemoteImage: downloadRemoteImageFresh } = await import(
+          '../photo-storage-service'
+        );
+
+        await expect(
+          downloadRemoteImageFresh('https://example.com/image.jpg')
+        ).rejects.toThrow(
+          'Photo storage unavailable: FileSystem not initialized'
+        );
+      } finally {
+        // Restore module registry and mocks to avoid leaking state to other tests
+        jest.resetModules();
+        // Re-apply the original expo-file-system mock used at the top of this file
+        jest.doMock('expo-file-system', () => ({
+          Paths: {
+            cache: { uri: 'file:///cache/' },
+            document: { uri: 'file:///documents/' },
+          },
+        }));
+      }
+    });
+
+    it('should handle fetch errors', async () => {
+      (global.fetch as jest.Mock).mockRejectedValueOnce(
+        new Error('Network error')
+      );
+
+      await expect(
+        downloadRemoteImage('https://example.com/image.jpg')
+      ).rejects.toThrow('Failed to fetch remote image: Network error');
+    });
+
+    it('should reject non-HTTPs URLs', async () => {
+      await expect(
+        downloadRemoteImage('http://example.com/image.jpg')
+      ).rejects.toThrow('Remote image URL must use HTTPS');
+    });
+
+    it('should reject non-image content types', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        headers: {
+          get: (header: string) => {
+            if (header === 'Content-Type') return 'text/html';
+            return null;
+          },
+        },
+      });
+
+      await expect(
+        downloadRemoteImage('https://example.com/page.html')
+      ).rejects.toThrow('Remote file is not an image');
     });
   });
 });

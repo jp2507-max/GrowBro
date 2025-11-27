@@ -2,7 +2,6 @@
 import '../../global.css';
 
 import { Env } from '@env';
-/* eslint-disable react-compiler/react-compiler */
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { ThemeProvider } from '@react-navigation/native';
@@ -10,10 +9,9 @@ import * as Sentry from '@sentry/react-native';
 // Setup Buffer polyfill for React Native
 import { Buffer } from 'buffer';
 import { Stack, usePathname, useRouter } from 'expo-router';
-import * as ScreenCapture from 'expo-screen-capture';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { InteractionManager, StyleSheet, View } from 'react-native';
 import FlashMessage from 'react-native-flash-message';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -30,10 +28,11 @@ import {
   setAnalyticsClient,
   startAgeGateSession,
   useAgeGate,
+  useAuth,
   useIsFirstTime,
 } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
-import { initAuthStorage } from '@/lib/auth/auth-storage';
+import { clearAuthStorage, initAuthStorage } from '@/lib/auth/auth-storage';
 import { registerKeyRotationTask } from '@/lib/auth/key-rotation-task';
 import {
   useOfflineModeMonitor,
@@ -42,6 +41,7 @@ import {
 } from '@/lib/auth/session-manager';
 import { updateActivity } from '@/lib/auth/session-timeout';
 import { useDeepLinking } from '@/lib/auth/use-deep-linking';
+import { removeToken } from '@/lib/auth/utils';
 import {
   checkLegalVersionBumps,
   hydrateLegalAcceptances,
@@ -84,6 +84,10 @@ export const unstable_settings = {
 
 // Initialize privacy consent cache before Sentry
 initializePrivacyConsent();
+
+// Delay for filesystem initialization after interactions complete
+// Ensures FileSystem native module is fully ready before photo janitor setup
+const FILESYSTEM_INIT_DELAY_MS = 2000;
 
 // Register known SDKs and install a minimal safety net to ensure zero-traffic pre-consent
 SDKGate.registerSDK('sentry', 'crashDiagnostics', [
@@ -158,8 +162,12 @@ function useGoogleSignInSetup(): void {
 
 function useAuthInitialization(setIsAuthReady: (ready: boolean) => void): void {
   React.useEffect(() => {
+    if (__DEV__) console.log('[RootLayout] useAuthInitialization start');
     initializeAuthAndStates()
-      .then(() => setIsAuthReady(true))
+      .then(() => {
+        if (__DEV__) console.log('[RootLayout] useAuthInitialization success');
+        setIsAuthReady(true);
+      })
       .catch((error) => {
         console.error(
           '[RootLayout] Auth storage initialization failed:',
@@ -175,8 +183,15 @@ function useLegalVersionCheck(
   router: ReturnType<typeof useRouter>,
   pathname: string
 ): void {
+  // Track if we've already performed the version check to avoid repeated resets
+  const hasCheckedRef = React.useRef(false);
+
   React.useEffect(() => {
     if (!isAuthReady) return;
+    // Only check once per app session to prevent reset loops
+    if (hasCheckedRef.current) return;
+    hasCheckedRef.current = true;
+
     const versionCheck = checkLegalVersionBumps();
     if (versionCheck.needsBlocking) {
       console.log(
@@ -264,61 +279,95 @@ function useConsentCheck(setShowConsent: (show: boolean) => void): void {
   }, [setShowConsent]);
 }
 
-function useScreenCaptureSetup(): void {
-  React.useEffect(() => {
-    const setupScreenCapture = async () => {
-      if (Platform.OS === 'ios') {
-        try {
-          await ScreenCapture.preventScreenCaptureAsync();
-        } catch (error) {
-          console.warn('[RootLayout] Failed to prevent screen capture:', error);
-        }
-      }
-    };
-    setupScreenCapture();
-    return () => {
-      const cleanupScreenCapture = async () => {
-        if (Platform.OS === 'ios') {
-          try {
-            await ScreenCapture.allowScreenCaptureAsync();
-          } catch (error) {
-            console.warn(
-              '[RootLayout] Failed to re-enable screen capture:',
-              error
-            );
-          }
-        }
-      };
-      cleanupScreenCapture();
-    };
-  }, []);
-}
+// NOTE: Screen capture protection (ScreenCapture.preventScreenCaptureAsync) was intentionally
+// removed. GrowBro shows only user-owned educational content (grow logs, plant photos, settings)
+// with no financial data, visible passwords, or HIPAA-protected info. Blocking screenshots
+// hinders development debugging and app store review workflows without meaningful security benefit.
 
 function usePhotoJanitorSetup(isI18nReady: boolean): void {
   React.useEffect(() => {
-    if (isI18nReady) {
-      getReferencedPhotoUris()
-        .then((referencedUris) => {
-          initializeJanitor(undefined, referencedUris);
-        })
-        .catch((error) => {
-          console.error('[RootLayout] Janitor initialization failed:', error);
-        });
-    }
+    if (!isI18nReady) return;
+
+    // Use AbortController for proper cancellation of async operations
+    const abortController = new AbortController();
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    // Defer janitor initialization until after all interactions complete
+    // This ensures FileSystem native module is fully initialized
+    const task = InteractionManager.runAfterInteractions(() => {
+      // Check abort status before scheduling timeout
+      if (abortController.signal.aborted) return;
+
+      // Add additional delay to ensure FileSystem is ready
+      timeoutId = setTimeout(() => {
+        // Check abort status again before executing async work
+        if (abortController.signal.aborted) return;
+
+        getReferencedPhotoUris()
+          .then((referencedUris) => {
+            // Final abort check before initialization
+            if (abortController.signal.aborted) return;
+            initializeJanitor(undefined, referencedUris);
+          })
+          .catch((error) => {
+            // Only log if not aborted to avoid noise during cleanup
+            if (!abortController.signal.aborted) {
+              console.error(
+                '[RootLayout] Janitor initialization failed:',
+                error
+              );
+            }
+          });
+      }, FILESYSTEM_INIT_DELAY_MS);
+    });
+
+    // Cleanup on abort - clear timeout immediately when aborted
+    const abortHandler = () => {
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    };
+    abortController.signal.addEventListener('abort', abortHandler);
+
+    return () => {
+      // Abort first to signal all pending operations to stop
+      abortController.abort();
+      // Cancel the interaction task if it hasn't started yet
+      task?.cancel?.();
+      // Clear timeout as backup (abort handler should have done this already)
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [isI18nReady]);
 }
 
 function RootLayout(): React.ReactElement {
   const [isFirstTime] = useIsFirstTime();
+
+  // eslint-disable-next-line react-compiler/react-compiler -- createSelectors generates hooks as methods
   const ageGateStatus = useAgeGate.status();
+  // eslint-disable-next-line react-compiler/react-compiler -- createSelectors generates hooks as methods
   const sessionId = useAgeGate.sessionId();
+  // eslint-disable-next-line react-compiler/react-compiler -- createSelectors generates hooks as methods
   const onboardingStatus = useOnboardingState.status();
+  // eslint-disable-next-line react-compiler/react-compiler -- createSelectors generates hooks as methods
   const currentOnboardingStep = useOnboardingState.currentStep();
   const [isI18nReady, setIsI18nReady] = React.useState(false);
   const [isAuthReady, setIsAuthReady] = React.useState(false);
   const [showConsent, setShowConsent] = React.useState(false);
+  const hasHiddenSplashRef = React.useRef(false);
   const router = useRouter();
   const pathname = usePathname();
+
+  if (__DEV__) {
+    console.log('[RootLayout] render', {
+      isI18nReady,
+      isAuthReady,
+      pathname,
+    });
+  }
 
   useRootStartup(setIsI18nReady, isFirstTime);
   useSessionAutoRefresh();
@@ -339,8 +388,16 @@ function RootLayout(): React.ReactElement {
   });
   useAgeGateSession(ageGateStatus, sessionId);
   useConsentCheck(setShowConsent);
-  useScreenCaptureSetup();
   usePhotoJanitorSetup(isI18nReady);
+
+  React.useEffect(() => {
+    if (!isI18nReady || !isAuthReady || hasHiddenSplashRef.current) return;
+
+    hasHiddenSplashRef.current = true;
+    void SplashScreen.hideAsync().catch((error) => {
+      console.warn('[RootLayout] Failed to hide splash screen:', error);
+    });
+  }, [isI18nReady, isAuthReady]);
 
   if (!isI18nReady || !isAuthReady) return <BootSplash />;
 
@@ -401,13 +458,69 @@ function persistConsents(
   });
 }
 
+// Timeout for auth hydration - 5s is generous for token check + signIn
+const HYDRATE_AUTH_TIMEOUT_MS = 5000;
+
 // Helper to initialize auth storage and hydrate states
 async function initializeAuthAndStates(): Promise<void> {
+  if (__DEV__) console.log('[RootLayout] initializeAuthAndStates: start');
   await initAuthStorage();
-  await hydrateAuth();
+  if (__DEV__) console.log('[RootLayout] after initAuthStorage');
+
+  const abortController = new AbortController();
+
+  // Cleanup helper - clears auth state if not already signed in
+  const executeCleanup = async (reason: string): Promise<void> => {
+    if (useAuth.getState().status === 'signIn') {
+      if (__DEV__) console.log(`[RootLayout] ${reason} but signed in, skip`);
+      return;
+    }
+    console.warn(`[RootLayout] ${reason}; clearing auth state`);
+    await clearAuthStorage();
+    removeToken();
+  };
+
+  // Hydration promise - aborts timeout on completion (success or failure)
+  const hydratePromise = (async () => {
+    try {
+      await hydrateAuth();
+      if (__DEV__) console.log('[RootLayout] hydrateAuth completed');
+    } catch (error) {
+      console.error('[RootLayout] hydrateAuth error', error);
+      await executeCleanup('hydrateAuth failed');
+    } finally {
+      abortController.abort();
+    }
+  })();
+
+  // Timeout promise - runs cleanup if hydration takes too long
+  const timeoutPromise = new Promise<void>((resolve) => {
+    const timeoutId = setTimeout(async () => {
+      if (abortController.signal.aborted) {
+        resolve();
+        return;
+      }
+      await executeCleanup(
+        `hydrateAuth timeout after ${HYDRATE_AUTH_TIMEOUT_MS}ms`
+      );
+      resolve();
+    }, HYDRATE_AUTH_TIMEOUT_MS);
+
+    // Cancel timeout if hydration completes first
+    abortController.signal.addEventListener('abort', () => {
+      clearTimeout(timeoutId);
+      resolve();
+    });
+  });
+
+  // Race hydration against timeout - unblocks startup on whichever finishes first
+  await Promise.race([hydratePromise, timeoutPromise]);
+  if (__DEV__) console.log('[RootLayout] after hydrateAuth (race)');
+
   hydrateAgeGate();
   hydrateLegalAcceptances();
   hydrateOnboardingState();
+  if (__DEV__) console.log('[RootLayout] initializeAuthAndStates: done');
 }
 
 function BootSplash(): React.ReactElement {

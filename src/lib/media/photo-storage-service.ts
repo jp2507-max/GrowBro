@@ -1,6 +1,8 @@
 import { Env } from '@env';
-import * as FileSystem from 'expo-file-system';
+// SDK 54 hybrid approach: Paths for directory URIs, legacy API for async operations
+import * as FileSystem from 'expo-file-system/legacy';
 
+import { getCacheDirectoryUri, getDocumentDirectoryUri } from '@/lib/fs/paths';
 import type {
   PhotoFile,
   PhotoVariants,
@@ -16,25 +18,7 @@ import {
 } from './photo-hash';
 import { generatePhotoVariants } from './photo-variants';
 
-// Type-safe interface for FileSystem module with proper null handling
-interface SafeFileSystem {
-  documentDirectory: string | null | undefined;
-  cacheDirectory: string | null | undefined;
-  bundleDirectory: string | null | undefined;
-  getInfoAsync: typeof FileSystem.getInfoAsync;
-  makeDirectoryAsync: typeof FileSystem.makeDirectoryAsync;
-  readDirectoryAsync: typeof FileSystem.readDirectoryAsync;
-  writeAsStringAsync: typeof FileSystem.writeAsStringAsync;
-  readAsStringAsync: typeof FileSystem.readAsStringAsync;
-  copyAsync: typeof FileSystem.copyAsync;
-  deleteAsync: typeof FileSystem.deleteAsync;
-  moveAsync: typeof FileSystem.moveAsync;
-  getFreeDiskStorageAsync: typeof FileSystem.getFreeDiskStorageAsync;
-  getTotalDiskCapacityAsync: typeof FileSystem.getTotalDiskCapacityAsync;
-}
-
-// Cast to our safe interface to maintain type safety
-const safeFileSystem = FileSystem as unknown as SafeFileSystem;
+// getCacheDirectoryUri() and getDocumentDirectoryUri() moved to '@/lib/fs/paths'
 
 /**
  * Photo storage service for harvest workflow
@@ -116,6 +100,12 @@ export async function downloadRemoteImage(
   const base64 = await blobToBase64(blob);
 
   const dirUri = await getPhotoDirectoryUri();
+  if (!dirUri) {
+    throw new Error(
+      'Photo storage unavailable: FileSystem not initialized. Please restart the app or contact support.'
+    );
+  }
+
   const extension = determineImageExtension(rawContentType, parsedUrl.pathname);
   const tempFilename = `remote_${Date.now()}_${Math.random()
     .toString(36)
@@ -124,7 +114,7 @@ export async function downloadRemoteImage(
   const tempFileUri = dirUri + tempFilename;
 
   try {
-    await safeFileSystem.writeAsStringAsync(tempFileUri, base64, {
+    await FileSystem.writeAsStringAsync(tempFileUri, base64, {
       encoding: 'base64',
     });
 
@@ -384,21 +374,126 @@ function getEnvValue(key: string): string | undefined {
 const PHOTO_DIR_NAME = 'harvest-photos';
 
 let photoDirectoryUri: string | null = null;
+let fileSystemInitPromise: Promise<string | null> | null = null;
+
+/**
+ * Check if FileSystem is available and functional.
+ * With SDK 54+ Paths API, directories are always available when the native module is linked.
+ */
+function isFileSystemAvailable(): boolean {
+  // Call each path resolver separately and catch errors per-call so that a
+  // thrown error from one does not prevent attempting the other.
+  try {
+    const cache = (() => {
+      try {
+        return getCacheDirectoryUri();
+      } catch {
+        return null;
+      }
+    })();
+
+    if (cache) return true;
+  } catch {
+    // Fall through to document directory check
+  }
+
+  try {
+    const doc = (() => {
+      try {
+        return getDocumentDirectoryUri();
+      } catch {
+        return null;
+      }
+    })();
+
+    if (doc) return true;
+  } catch {
+    // If both calls threw, we'll reach the final return false below
+  }
+
+  return false;
+}
+
+/**
+ * Wait for FileSystem to be ready before attempting any operations.
+ * With SDK 54+ Paths API, directories are immediately available.
+ *
+ * Uses a shared promise to prevent multiple concurrent initialization attempts.
+ *
+ * @param _maxRetries - Unused, kept for API compatibility
+ * @param _initialDelayMs - Unused, kept for API compatibility
+ * @returns The base directory path once FileSystem is ready, or null if unavailable
+ */
+async function waitForFileSystem(
+  _maxRetries = 5,
+  _initialDelayMs = 1000
+): Promise<string | null> {
+  // If already successfully initialized, return immediately
+  if (fileSystemInitPromise) {
+    const result = await fileSystemInitPromise;
+    if (result) return result;
+    // Previous attempt failed, reset and try again
+    fileSystemInitPromise = null;
+  }
+
+  // Create a shared promise for concurrent callers
+  const initPromise = (async () => {
+    // With SDK 54+ Paths API, directories are immediately available
+    if (isFileSystemAvailable()) {
+      try {
+        // Prefer cache directory for photos (can be cleared by system if needed)
+        const baseDir = getCacheDirectoryUri();
+        if (baseDir) {
+          return baseDir;
+        }
+      } catch {
+        // Fall through to document directory
+      }
+
+      try {
+        const baseDir = getDocumentDirectoryUri();
+        if (baseDir) {
+          return baseDir;
+        }
+      } catch {
+        // FileSystem not available
+      }
+    }
+
+    // FileSystem is completely unavailable
+    console.error(
+      '[FileSystem] UNAVAILABLE. Photo features will be disabled.',
+      {
+        hint: 'For dev builds: ensure expo-file-system is properly linked. Try: npx expo prebuild --clean',
+      }
+    );
+
+    return null;
+  })();
+
+  fileSystemInitPromise = initPromise;
+  return initPromise;
+}
 
 /**
  * Get or create photo storage directory URI
+ * Returns null if FileSystem is unavailable (native module not linked)
  */
-async function getPhotoDirectoryUri(): Promise<string> {
+async function getPhotoDirectoryUri(): Promise<string | null> {
   if (!photoDirectoryUri) {
-    if (!safeFileSystem.cacheDirectory) {
-      throw new Error('Cache directory not available');
+    const baseDir = await waitForFileSystem();
+
+    // FileSystem unavailable - return null to disable photo features
+    if (!baseDir) {
+      return null;
     }
-    photoDirectoryUri = `${safeFileSystem.cacheDirectory}${PHOTO_DIR_NAME}/`;
+
+    photoDirectoryUri = `${baseDir}${PHOTO_DIR_NAME}/`;
 
     try {
-      const dirInfo = await safeFileSystem.getInfoAsync(photoDirectoryUri);
+      const dirInfo = await FileSystem.getInfoAsync(photoDirectoryUri);
       if (!dirInfo.exists) {
-        await safeFileSystem.makeDirectoryAsync(photoDirectoryUri, {
+        await FileSystem.makeDirectoryAsync(photoDirectoryUri, {
           intermediates: true,
         });
       }
@@ -432,6 +527,11 @@ export async function captureAndStore(
 ): Promise<PhotoVariants> {
   try {
     const dirUri = await getPhotoDirectoryUri();
+    if (!dirUri) {
+      throw new Error(
+        'Photo storage unavailable: FileSystem not initialized. Please restart the app or contact support.'
+      );
+    }
 
     // Strip EXIF from original to create sanitized version
     const { uri: sanitizedOriginal, didStrip } =
@@ -505,14 +605,14 @@ export async function hashAndStore(
     const targetFileUri = directoryUri + filename;
 
     // Check if file already exists (deduplication)
-    const targetFileInfo = await safeFileSystem.getInfoAsync(targetFileUri);
+    const targetFileInfo = await FileSystem.getInfoAsync(targetFileUri);
     if (targetFileInfo.exists) {
       console.log(`Photo variant ${variant} already exists:`, filename);
       return targetFileUri;
     }
 
     // Copy source to target with hashed name
-    await safeFileSystem.copyAsync({ from: uri, to: targetFileUri });
+    await FileSystem.copyAsync({ from: uri, to: targetFileUri });
 
     return targetFileUri;
   } catch (error) {
@@ -529,16 +629,19 @@ export async function hashAndStore(
 export async function getStorageInfo(): Promise<StorageInfo> {
   try {
     const dirUri = await getPhotoDirectoryUri();
+    if (!dirUri) {
+      throw new Error('Photo storage unavailable: FileSystem not initialized');
+    }
 
     let totalSize = 0;
     let fileCount = 0;
 
-    const dirInfo = await safeFileSystem.getInfoAsync(dirUri);
+    const dirInfo = await FileSystem.getInfoAsync(dirUri);
     if (dirInfo.exists && dirInfo.isDirectory) {
-      const itemNames = await safeFileSystem.readDirectoryAsync(dirUri);
+      const itemNames = await FileSystem.readDirectoryAsync(dirUri);
       for (const itemName of itemNames) {
         const itemUri = dirUri + itemName;
-        const itemInfo = await safeFileSystem.getInfoAsync(itemUri);
+        const itemInfo = await FileSystem.getInfoAsync(itemUri);
         if (itemInfo.exists && !itemInfo.isDirectory) {
           totalSize += itemInfo.size || 0;
           fileCount++;
@@ -547,8 +650,8 @@ export async function getStorageInfo(): Promise<StorageInfo> {
     }
 
     const [totalBytes, availableBytes] = await Promise.all([
-      safeFileSystem.getTotalDiskCapacityAsync(),
-      safeFileSystem.getFreeDiskStorageAsync(),
+      FileSystem.getTotalDiskCapacityAsync(),
+      FileSystem.getFreeDiskStorageAsync(),
     ]);
 
     return {
@@ -575,19 +678,25 @@ export async function detectOrphans(
 ): Promise<string[]> {
   try {
     const dirUri = await getPhotoDirectoryUri();
+    if (!dirUri) {
+      console.warn(
+        '[PhotoStorage] FileSystem unavailable, skipping orphan detection'
+      );
+      return [];
+    }
     const orphans: string[] = [];
 
-    const dirInfo = await safeFileSystem.getInfoAsync(dirUri);
+    const dirInfo = await FileSystem.getInfoAsync(dirUri);
     if (!dirInfo.exists || !dirInfo.isDirectory) {
       return orphans;
     }
 
     const referencedSet = new Set(referencedUris);
-    const itemNames = await safeFileSystem.readDirectoryAsync(dirUri);
+    const itemNames = await FileSystem.readDirectoryAsync(dirUri);
 
     for (const itemName of itemNames) {
       const itemUri = dirUri + itemName;
-      const itemInfo = await safeFileSystem.getInfoAsync(itemUri);
+      const itemInfo = await FileSystem.getInfoAsync(itemUri);
       if (
         itemInfo.exists &&
         !itemInfo.isDirectory &&
@@ -637,21 +746,27 @@ export async function cleanupOrphans(orphanPaths: string[]): Promise<{
  *
  * @returns Array of PhotoFile objects
  */
-export async function getAllPhotoFiles(): Promise<PhotoFile[]> {
+export async function getPhotoFiles(): Promise<PhotoFile[]> {
   try {
     const dirUri = await getPhotoDirectoryUri();
+    if (!dirUri) {
+      console.warn(
+        '[PhotoStorage] FileSystem unavailable, returning empty file list'
+      );
+      return [];
+    }
     const files: PhotoFile[] = [];
 
-    const dirInfo = await safeFileSystem.getInfoAsync(dirUri);
+    const dirInfo = await FileSystem.getInfoAsync(dirUri);
     if (!dirInfo.exists || !dirInfo.isDirectory) {
       return files;
     }
 
-    const itemNames = await safeFileSystem.readDirectoryAsync(dirUri);
+    const itemNames = await FileSystem.readDirectoryAsync(dirUri);
 
     for (const itemName of itemNames) {
       const itemUri = dirUri + itemName;
-      const itemInfo = await safeFileSystem.getInfoAsync(itemUri);
+      const itemInfo = await FileSystem.getInfoAsync(itemUri);
       if (itemInfo.exists && !itemInfo.isDirectory) {
         const hash = itemName.split('.')[0] ?? '';
         files.push({

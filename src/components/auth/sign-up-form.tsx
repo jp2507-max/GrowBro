@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'expo-router';
 import React from 'react';
-import type { SubmitHandler } from 'react-hook-form';
+import type { Control, SubmitHandler } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
@@ -11,6 +11,10 @@ import * as z from 'zod';
 import { useSignUp, validatePassword } from '@/api/auth';
 import { Button, ControlledInput, Text, View } from '@/components/ui';
 import { showErrorMessage, showSuccessMessage } from '@/lib';
+import {
+  captureCategorizedErrorSync,
+  sanitizeObjectPII,
+} from '@/lib/sentry-utils';
 
 const schema = z
   .object({
@@ -40,6 +44,72 @@ export type SignUpFormProps = {
   onSuccess?: () => void;
 };
 
+type SignUpFormFieldsProps = {
+  control: Control<SignUpFormData>;
+};
+
+function SignUpFormFields({ control }: SignUpFormFieldsProps) {
+  const { t } = useTranslation();
+
+  return (
+    <>
+      <ControlledInput
+        testID="email-input"
+        control={control}
+        name="email"
+        label={t('auth.email_label')}
+        placeholder={t('auth.email_placeholder')}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoComplete="email"
+      />
+
+      <ControlledInput
+        testID="password-input"
+        control={control}
+        name="password"
+        label={t('auth.password_label')}
+        placeholder={t('auth.password_placeholder')}
+        secureTextEntry={true}
+        autoCapitalize="none"
+        autoComplete="password-new"
+      />
+
+      <ControlledInput
+        testID="confirm-password-input"
+        control={control}
+        name="confirmPassword"
+        label={t('auth.confirm_password_label')}
+        placeholder={t('auth.confirm_password_placeholder')}
+        secureTextEntry={true}
+        autoCapitalize="none"
+        autoComplete="password-new"
+      />
+
+      <Text className="mb-4 text-xs text-neutral-500">
+        {t('auth.password_requirements')}
+      </Text>
+    </>
+  );
+}
+
+function handleSignUpError(error: { message: string }) {
+  try {
+    captureCategorizedErrorSync(error, { feature: 'sign-up' });
+  } catch {
+    // fail silently
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.error(
+      '[SignUp] sign-up failed',
+      sanitizeObjectPII(error as unknown)
+    );
+  } else {
+    console.error('[SignUp] sign-up failed');
+  }
+}
+
 export const SignUpForm = ({ onSuccess }: SignUpFormProps) => {
   const { t } = useTranslation();
   const { handleSubmit, control } = useForm<SignUpFormData>({
@@ -52,15 +122,13 @@ export const SignUpForm = ({ onSuccess }: SignUpFormProps) => {
       onSuccess?.();
     },
     onError: (error) => {
+      handleSignUpError(error);
       showErrorMessage(t(error.message));
     },
   });
 
   const onSubmit: SubmitHandler<SignUpFormData> = (data) => {
-    signUpMutation.mutate({
-      email: data.email,
-      password: data.password,
-    });
+    signUpMutation.mutate({ email: data.email, password: data.password });
   };
 
   return (
@@ -77,48 +145,12 @@ export const SignUpForm = ({ onSuccess }: SignUpFormProps) => {
           >
             {t('auth.sign_up_title')}
           </Text>
-
           <Text className="mb-6 max-w-xs text-center text-neutral-500">
             {t('auth.sign_up_subtitle')}
           </Text>
         </View>
 
-        <ControlledInput
-          testID="email-input"
-          control={control}
-          name="email"
-          label={t('auth.email_label')}
-          placeholder={t('auth.email_placeholder')}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-        />
-
-        <ControlledInput
-          testID="password-input"
-          control={control}
-          name="password"
-          label={t('auth.password_label')}
-          placeholder={t('auth.password_placeholder')}
-          secureTextEntry={true}
-          autoCapitalize="none"
-          autoComplete="password-new"
-        />
-
-        <ControlledInput
-          testID="confirm-password-input"
-          control={control}
-          name="confirmPassword"
-          label={t('auth.confirm_password_label')}
-          placeholder={t('auth.confirm_password_placeholder')}
-          secureTextEntry={true}
-          autoCapitalize="none"
-          autoComplete="password-new"
-        />
-
-        <Text className="mb-4 text-xs text-neutral-500">
-          {t('auth.password_requirements')}
-        </Text>
+        <SignUpFormFields control={control} />
 
         <Button
           testID="signup-button"

@@ -25,3 +25,8 @@ secret = "env(APPLE_CLIENT_SECRET)"
 enabled = true
 client_id = "env(GOOGLE_CLIENT_ID)"
 secret = "env(GOOGLE_CLIENT_SECRET)"
+
+# Edge Function configurations
+# enforce-auth-lockout: Login endpoint - must NOT verify JWT since users don't have one yet
+[functions.enforce-auth-lockout]
+verify_jwt = false

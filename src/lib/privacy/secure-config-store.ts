@@ -4,6 +4,10 @@ import { storage } from '@/lib/storage';
 
 const FALLBACK_PREFIX = 'secure-config.';
 
+// SecureStore has a 2048 byte limit per value
+// Values larger than this should use MMKV (encrypted via device storage)
+const SECURE_STORE_SIZE_LIMIT = 2048;
+
 let secureStoreAvailable: boolean | null = null;
 
 async function ensureAvailability(): Promise<boolean> {
@@ -37,6 +41,18 @@ async function writeSecureStore(
   try {
     if (value === null) {
       await SecureStore.deleteItemAsync(key);
+      // Also clean up fallback in case it was previously stored there
+      storage.delete(buildFallbackKey(key));
+    } else if (value.length > SECURE_STORE_SIZE_LIMIT) {
+      // Value is too large for SecureStore, use MMKV instead
+      // This prevents the "Value being stored in SecureStore is larger than 2048 bytes" warning
+      storage.set(buildFallbackKey(key), value);
+      // Clean up SecureStore entry if it exists (migrating from small to large value)
+      try {
+        await SecureStore.deleteItemAsync(key);
+      } catch {
+        // Ignore deletion errors
+      }
     } else {
       await SecureStore.setItemAsync(key, value);
     }

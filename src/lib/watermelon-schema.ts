@@ -1,7 +1,7 @@
 import { appSchema as createSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const appSchema = createSchema({
-  version: 32,
+  version: 33,
   tables: [
     tableSchema({
       name: 'series',
@@ -616,6 +616,7 @@ export const appSchema = createSchema({
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
         { name: 'deleted_at', type: 'number', isOptional: true },
+        { name: 'current_stock', type: 'number', isOptional: true },
       ],
     }),
     tableSchema({
@@ -661,6 +662,8 @@ export const appSchema = createSchema({
         { name: 'visual_cues', type: 'string' },
         { name: 'action_template', type: 'string' },
         { name: 'created_at', type: 'number' },
+        { name: 'deleted_at', type: 'number', isOptional: true },
+        { name: 'updated_at', type: 'number' },
       ],
     }),
     tableSchema({

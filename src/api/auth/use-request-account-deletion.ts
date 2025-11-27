@@ -1,5 +1,5 @@
 /**
- * Account Deletion Request Hook
+ * Account Deletion Request Hooks
  * Requirements: 6.5, 6.6, 6.12
  *
  * Initiates account deletion with grace period:

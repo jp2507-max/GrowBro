@@ -1,5 +1,5 @@
 /**
- * Type definitions for authentication API
+ * Type definitions for authentication APIs
  */
 
 import type { Session, User } from '@supabase/supabase-js';

@@ -86,7 +86,12 @@ function useTabLayoutRedirects() {
   const ageGateStatus = useAgeGate.status();
 
   if (isFirstTime) return '/onboarding';
-  if (status === 'signOut') return '/login';
+  // Handle auth status:
+  // - 'idle': Auth hydration in progress - redirect to login to prevent protected content flash
+  //   The splash screen remains visible until hydration completes, then proper redirect occurs
+  // - 'signOut': User explicitly signed out - redirect to login
+  // - 'signIn': User authenticated - allow access
+  if (status === 'idle' || status === 'signOut') return '/login';
   if (ageGateStatus !== 'verified') return '/age-gate';
   return null;
 }

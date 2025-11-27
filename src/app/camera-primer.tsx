@@ -33,7 +33,7 @@ export default function CameraPrimerScreen(): React.ReactElement {
       // Clear the first-time flag to prevent redirect loops
       setIsFirstTime(false);
 
-      // Navigate to app - consent modal will show if required
+      // Navigate to app - tab layout will redirect to login if not authenticated
       router.replace('/(app)');
     },
     [router, setIsFirstTime]

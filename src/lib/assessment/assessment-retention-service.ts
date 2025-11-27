@@ -1,19 +1,25 @@
-import * as FileSystem from 'expo-file-system';
+// SDK 54 hybrid approach: Paths for directory URIs, legacy API for async operations
+import { Paths } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 import { appendAudit } from '@/lib/privacy/audit-log';
 import { database } from '@/lib/watermelon';
 import type { AssessmentModel } from '@/lib/watermelon-models/assessment';
 import type { AssessmentPlantContext } from '@/types/assessment';
 
-// Type-safe interface for FileSystem module with proper null handling
-interface SafeFileSystem {
-  documentDirectory: string | null | undefined;
-  cacheDirectory: string | null | undefined;
-  getInfoAsync: typeof FileSystem.getInfoAsync;
-  deleteAsync: typeof FileSystem.deleteAsync;
+/**
+ * Get the document directory URI using the new Paths API.
+ * Includes defensive validation to fail loudly if the URI is unavailable.
+ */
+function getDocumentDirectoryUri(): string {
+  const uri = Paths?.document?.uri;
+  if (!uri) {
+    throw new Error(
+      '[FileSystem] Document directory unavailable. Ensure expo-file-system is properly linked.'
+    );
+  }
+  return uri;
 }
-
-const safeFileSystem = FileSystem as unknown as SafeFileSystem;
 
 export type AssessmentRetentionPolicy = {
   images: number; // days, opt-in only
@@ -125,13 +131,12 @@ async function deleteExpiredImages(
     }
 
     try {
-      const docDir =
-        safeFileSystem.documentDirectory ?? safeFileSystem.cacheDirectory ?? '';
+      const docDir = getDocumentDirectoryUri();
       const assessmentDir = `${docDir}assessments/${assessment.id}`;
-      const dirInfo = await safeFileSystem.getInfoAsync(assessmentDir);
+      const dirInfo = await FileSystem.getInfoAsync(assessmentDir);
 
       if (dirInfo.exists) {
-        await safeFileSystem.deleteAsync(assessmentDir, { idempotent: true });
+        await FileSystem.deleteAsync(assessmentDir, { idempotent: true });
         result.imagesDeleted++;
       }
     } catch (error) {

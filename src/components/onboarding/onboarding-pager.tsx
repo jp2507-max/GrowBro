@@ -18,7 +18,9 @@ import type {
   ScrollView,
 } from 'react-native';
 import { useWindowDimensions } from 'react-native';
-import Reanimated, {
+import {
+  // @ts-ignore - Reanimated 4.x type exports issue
+  interpolate,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
@@ -50,6 +52,28 @@ type OnboardingPagerProps = {
   testID?: string;
 };
 
+// Tracking state for onboarding telemetry
+type TrackingState = {
+  startTime: number;
+  slideTimes: Record<number, number>;
+  previousIndex: number;
+};
+
+// Track step completion for telemetry
+function trackStepIfChanged(
+  index: number,
+  tracking: TrackingState,
+  now: number
+): void {
+  const prev = tracking.previousIndex;
+  if (prev !== index && tracking.slideTimes[prev] !== undefined) {
+    const duration = now - tracking.slideTimes[prev];
+    trackOnboardingStepComplete(`slide_${prev}`, duration);
+  }
+  tracking.slideTimes[index] = now;
+  tracking.previousIndex = index;
+}
+
 export function OnboardingPager({
   slides,
   onComplete,
@@ -60,82 +84,70 @@ export function OnboardingPager({
   const scrollRef = React.useRef<ScrollView | null>(null);
   const activeIndex = useSharedValue(0);
   const lastIndex = slides.length - 1;
-  const startTimeRef = React.useRef<number>(Date.now());
-  const slideTimesRef = React.useRef<Record<number, number>>({});
-  const previousIndexRef = React.useRef<number>(0);
+  const trackingRef = React.useRef<TrackingState>({
+    startTime: Date.now(),
+    slideTimes: { 0: Date.now() },
+    previousIndex: 0,
+  });
   const [currentIndex, setCurrentIndex] = React.useState(0);
-
-  React.useEffect(() => {
-    slideTimesRef.current[0] = Date.now();
-  }, []);
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       'worklet';
-      activeIndex.value =
-        event.nativeEvent.contentOffset.x /
-        event.nativeEvent.layoutMeasurement.width;
+      const layoutWidth = event?.nativeEvent?.layoutMeasurement?.width ?? NaN;
+      const offsetX = event?.nativeEvent?.contentOffset?.x ?? 0;
+      if (!isFinite(layoutWidth) || isNaN(layoutWidth) || layoutWidth <= 0)
+        return;
+      activeIndex.value = offsetX / layoutWidth;
     },
   });
 
   const ctaStyle = useAnimatedStyle(() => {
     'worklet';
-    // Guard against collapsed inputRange when there's only one slide
-    if (lastIndex === 0) {
-      return { opacity: 1 };
-    }
-    const opacity = Reanimated.interpolate(
-      activeIndex.value,
-      [Math.max(lastIndex - 1, 0), lastIndex],
-      [0, 1]
-    );
-    return { opacity };
+    if (lastIndex === 0) return { opacity: 1 };
+    return {
+      opacity: interpolate(
+        activeIndex.value,
+        [Math.max(lastIndex - 1, 0), lastIndex],
+        [0, 1]
+      ),
+    };
   });
 
   const handleScrollEnd = React.useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const index = Math.round(event.nativeEvent.contentOffset.x / width);
+      const layoutWidth = event?.nativeEvent?.layoutMeasurement?.width ?? NaN;
+      if (!isFinite(layoutWidth) || isNaN(layoutWidth) || layoutWidth <= 0)
+        return;
+      const index = Math.round(
+        (event?.nativeEvent?.contentOffset?.x ?? 0) / layoutWidth
+      );
       setCurrentIndex(index);
-      const now = Date.now();
-      const indexLeft = previousIndexRef.current;
-      if (
-        indexLeft !== index &&
-        slideTimesRef.current[indexLeft] !== undefined
-      ) {
-        const duration = now - slideTimesRef.current[indexLeft];
-        trackOnboardingStepComplete(`slide_${indexLeft}`, duration);
-      }
-      slideTimesRef.current[index] = now;
-      previousIndexRef.current = index;
+      trackStepIfChanged(index, trackingRef.current, Date.now());
     },
-    [width]
+    []
   );
 
   const handleDone = React.useCallback(() => {
     const now = Date.now();
-    const currentSlideIndex = previousIndexRef.current;
-    if (slideTimesRef.current[currentSlideIndex] !== undefined) {
-      const duration = now - slideTimesRef.current[currentSlideIndex];
-      trackOnboardingStepComplete(`slide_${currentSlideIndex}`, duration);
-    }
-    const totalDuration = now - startTimeRef.current;
-    trackOnboardingComplete(totalDuration, slides.length);
+    const tracking = trackingRef.current;
+    // Track completion of the current/final slide before marking onboarding complete
+    trackStepIfChanged(tracking.previousIndex, tracking, now);
+    trackOnboardingComplete(now - tracking.startTime, slides.length);
     onComplete();
   }, [onComplete, slides.length]);
 
   const handleSkip = React.useCallback(() => {
     const now = Date.now();
-    const currentSlideIndex = previousIndexRef.current;
-    if (slideTimesRef.current[currentSlideIndex] !== undefined) {
-      const duration = now - slideTimesRef.current[currentSlideIndex];
-      trackOnboardingStepComplete(`slide_${currentSlideIndex}`, duration);
-    }
-    const currentSlide = Math.round(activeIndex.value);
-    trackOnboardingSkipped(`slide_${currentSlide}`, 'user_skip');
+    const tracking = trackingRef.current;
+    // Track completion of the current slide before marking as skipped
+    trackStepIfChanged(tracking.previousIndex, tracking, now);
+    trackOnboardingSkipped(
+      `slide_${Math.round(activeIndex.value)}`,
+      'user_skip'
+    );
     onComplete();
   }, [onComplete, activeIndex]);
-
-  const ctaEnabled = currentIndex >= lastIndex - 0.001;
 
   return (
     <AnimatedIndexProvider activeIndex={activeIndex}>
@@ -152,7 +164,7 @@ export function OnboardingPager({
         <PaginationDots count={slides.length} activeIndex={activeIndex} />
         <DoneButton
           ctaStyle={ctaStyle}
-          ctaEnabled={ctaEnabled}
+          ctaEnabled={currentIndex >= lastIndex - 0.001}
           onPress={handleDone}
         />
       </View>

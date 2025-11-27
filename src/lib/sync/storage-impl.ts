@@ -1,23 +1,10 @@
 import * as Crypto from 'expo-crypto';
-import * as FileSystem from 'expo-file-system';
+// SDK 54 hybrid approach: Paths for directory URIs, legacy API for async operations
+import * as FileSystem from 'expo-file-system/legacy';
 
-// Type-safe interface for FileSystem module with proper null handling
-interface SafeFileSystem {
-  documentDirectory: string | null | undefined;
-  cacheDirectory: string | null | undefined;
-  getInfoAsync: typeof FileSystem.getInfoAsync;
-  makeDirectoryAsync: typeof FileSystem.makeDirectoryAsync;
-  readDirectoryAsync: typeof FileSystem.readDirectoryAsync;
-  writeAsStringAsync: typeof FileSystem.writeAsStringAsync;
-  readAsStringAsync: typeof FileSystem.readAsStringAsync;
-  copyAsync: typeof FileSystem.copyAsync;
-  deleteAsync: typeof FileSystem.deleteAsync;
-  moveAsync: typeof FileSystem.moveAsync;
-  getFreeDiskStorageAsync: typeof FileSystem.getFreeDiskStorageAsync;
-}
+import { getCacheDirectoryUri, getDocumentDirectoryUri } from '@/lib/fs/paths';
 
-// Cast to our safe interface to maintain type safety
-const safeFileSystem = FileSystem as unknown as SafeFileSystem;
+// getDocumentDirectoryUri() and getCacheDirectoryUri() moved to '@/lib/fs/paths'
 
 export type ImageMetadata = {
   id: string;
@@ -112,33 +99,19 @@ async function ensureDir(uri: string): Promise<void> {
 
 /**
  * Gets the app's document directory root path.
- * @throws Error if documentDirectory is not available (e.g., in web/unsupported environments)
+ * Uses Paths.document which is always available in SDK 54+.
  */
 function getAppDocumentRoot(): string {
-  const docDir = safeFileSystem.documentDirectory;
-
-  if (!docDir) {
-    throw new Error(
-      'Document directory is not available. This may indicate that the app is running in an unsupported environment (e.g., web) or the filesystem is not properly initialized. File storage operations are not supported in this environment.'
-    );
-  }
-
+  const docDir = getDocumentDirectoryUri();
   return joinUri(docDir, APP_DIR_NAME) + '/';
 }
 
 /**
  * Gets the app's cache directory root path.
- * @throws Error if cacheDirectory is not available (e.g., in web/unsupported environments)
+ * Uses Paths.cache which is always available in SDK 54+.
  */
 function getAppCacheRoot(): string {
-  const cacheDir = safeFileSystem.cacheDirectory;
-
-  if (!cacheDir) {
-    throw new Error(
-      'Cache directory is not available. This may indicate that the app is running in an unsupported environment (e.g., web) or the filesystem is not properly initialized. File storage operations are not supported in this environment.'
-    );
-  }
-
+  const cacheDir = getCacheDirectoryUri();
   return joinUri(cacheDir, APP_DIR_NAME) + '/';
 }
 
@@ -249,7 +222,7 @@ function normalizeModificationTime(value: unknown): number {
 
 async function computeSha256OfFile(uri: string): Promise<string> {
   // Read file as base64 to produce deterministic string input
-  const base64 = await safeFileSystem.readAsStringAsync(uri, {
+  const base64 = await FileSystem.readAsStringAsync(uri, {
     encoding: 'base64' as const,
   });
   const digest = await Crypto.digestStringAsync(
@@ -307,7 +280,7 @@ async function safeDeleteCacheDir(
       }
 
       // Safe to delete the temp directory
-      await safeFileSystem.deleteAsync(tempUri, { idempotent: true });
+      await FileSystem.deleteAsync(tempUri, { idempotent: true });
       return; // Success
     } catch (error) {
       // If rename failed because directory doesn't exist, that's fine
@@ -406,7 +379,7 @@ async function cleanupCacheImpl(limit: number): Promise<void> {
     for (const entry of entries) {
       if (current <= limit) break;
       try {
-        await safeFileSystem.deleteAsync(entry.path, { idempotent: true });
+        await FileSystem.deleteAsync(entry.path, { idempotent: true });
       } catch (error) {
         // Ignore expected "not found" errors when idempotent=true
         if (error instanceof Error && error.message.includes('not found')) {
@@ -438,7 +411,7 @@ async function pruneOldDataImpl(olderThan: Date): Promise<void> {
     for (const entry of Object.values(index)) {
       if (entry.lastAccessedAt < cutoff) {
         try {
-          await safeFileSystem.deleteAsync(entry.path, { idempotent: true });
+          await FileSystem.deleteAsync(entry.path, { idempotent: true });
         } catch (error) {
           // Ignore expected "not found" errors when idempotent=true
           if (error instanceof Error && error.message.includes('not found')) {

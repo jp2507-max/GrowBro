@@ -701,6 +701,11 @@ export const migrations = schemaMigrations({
         },
       ],
     },
+    // Migration from version 17 to 18: No schema changes (placeholder to keep versions contiguous)
+    {
+      toVersion: 18,
+      steps: [],
+    },
     // Migration from version 18 to 19: Add diagnostic results table for nutrient engine
     {
       toVersion: 19,
@@ -1054,13 +1059,21 @@ export const migrations = schemaMigrations({
               isOptional: true,
               isIndexed: true,
             },
-            { name: 'updated_at', type: 'number', isOptional: true },
+            { name: 'updated_at', type: 'number' },
           ],
         }),
         addColumns({
           table: 'assessments',
           columns: [{ name: 'consented_for_training', type: 'boolean' }],
         }),
+        {
+          type: 'sql',
+          sql: "UPDATE assessment_classes SET updated_at = COALESCE(updated_at, CAST(strftime('%s','now') AS INTEGER) * 1000);",
+        },
+        {
+          type: 'sql',
+          sql: "UPDATE assessments SET updated_at = COALESCE(updated_at, CAST(strftime('%s','now') AS INTEGER) * 1000);",
+        },
       ],
       // Down migration: Remove deleted_at and updated_at columns from assessment_classes, remove consented_for_training from assessments
       // Note: WatermelonDB migrations are typically forward-only, but for rollback purposes:
@@ -1179,6 +1192,23 @@ export const migrations = schemaMigrations({
             { name: 'media_bytes', type: 'number', isOptional: true },
           ],
         }),
+      ],
+    },
+    // Migration from version 32 to 33: Add current_stock column to inventory_items and backfill assessment_classes timestamps
+    {
+      toVersion: 33,
+      steps: [
+        addColumns({
+          table: 'inventory_items',
+          columns: [
+            { name: 'current_stock', type: 'number', isOptional: true },
+          ],
+        }),
+        // Initialize updated_at for existing rows (deleted_at & updated_at already exist from v27)
+        {
+          type: 'sql',
+          sql: "UPDATE assessment_classes SET updated_at = COALESCE(updated_at, created_at, CAST(strftime('%s','now') AS INTEGER) * 1000) WHERE updated_at IS NULL;",
+        },
       ],
     },
   ],

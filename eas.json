@@ -19,7 +19,9 @@
         "EXPO_NO_DOTENV": "1",
         "APP_ENV": "production",
         "FLIPPER_DISABLE": "1",
-        "HUSKY": "0"
+        "HUSKY": "0",
+        "SCHEME": "growbro",
+        "EXPO_PUBLIC_SCHEME": "growbro"
       }
     },
     "staging": {
@@ -37,7 +39,9 @@
         "APP_ENV": "staging",
         "EXPO_NO_DOTENV": "1",
         "FLIPPER_DISABLE": "1",
-        "HUSKY": "0"
+        "HUSKY": "0",
+        "SCHEME": "growbro-staging",
+        "EXPO_PUBLIC_SCHEME": "growbro-staging"
       }
     },
     "development": {
@@ -55,7 +59,9 @@
         "APP_ENV": "development",
         "EXPO_NO_DOTENV": "1",
         "HUSKY": "0",
-        "BUNDLE_ID": "com.growbro.development"
+        "BUNDLE_ID": "com.growbro.development",
+        "SCHEME": "growbro-dev",
+        "EXPO_PUBLIC_SCHEME": "growbro-dev"
       }
     },
     "simulator": {
@@ -71,7 +77,9 @@
       "env": {
         "APP_ENV": "development",
         "EXPO_NO_DOTENV": "1",
-        "HUSKY": "0"
+        "HUSKY": "0",
+        "SCHEME": "growbro-dev",
+        "EXPO_PUBLIC_SCHEME": "growbro-dev"
       }
     }
   },

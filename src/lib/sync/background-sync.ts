@@ -86,9 +86,25 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 export async function registerBackgroundTask(): Promise<void> {
-  const isRegistered = await TaskManager.isTaskRegisteredAsync(TASK_NAME);
-  if (isRegistered) return;
-  await BackgroundTask.registerTaskAsync(TASK_NAME);
+  try {
+    const isRegistered = await TaskManager.isTaskRegisteredAsync(TASK_NAME);
+    if (isRegistered) {
+      console.log('[background-sync] Task already registered');
+      return;
+    }
+    await BackgroundTask.registerTaskAsync(TASK_NAME);
+    console.log('[background-sync] Task registered successfully');
+  } catch (error) {
+    // iOS requires BGTaskSchedulerPermittedIdentifiers in Info.plist
+    // This is configured in app.config.cjs under ios.infoPlist
+    // If you see this error, run: npx expo prebuild --clean
+    console.warn(
+      '[background-sync] Registration failed - iOS requires BGTaskSchedulerPermittedIdentifiers.',
+      'Run "npx expo prebuild --clean" if config was recently updated.',
+      error
+    );
+    throw error;
+  }
 }
 
 export async function unregisterBackgroundTask(): Promise<void> {

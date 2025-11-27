@@ -1,5 +1,5 @@
 import type { Session } from '@supabase/supabase-js';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 
 import { supabase } from '../supabase';
 import type { OfflineMode } from './index';
@@ -110,15 +110,35 @@ function createSessionManager(): SessionManager {
     async refreshSession(): Promise<Session | null> {
       // Get the current session before refresh to identify which record to update
       const { session: currentSession } = useAuth.getState();
-      const oldSessionKey = currentSession
-        ? await deriveSessionKey(currentSession.refresh_token)
-        : null;
+
+      // Guard: Don't try to refresh if we don't have a session in Zustand
+      if (!currentSession) {
+        return null;
+      }
+
+      // Guard: Check if Supabase client actually has a session before refreshing
+      try {
+        const { data: currentData } = await supabase.auth.getSession();
+        if (!currentData?.session) {
+          // No session in Supabase client - don't try to refresh
+          return null;
+        }
+      } catch {
+        return null;
+      }
+
+      const oldSessionKey = await deriveSessionKey(
+        currentSession.refresh_token
+      );
 
       try {
         const { data, error } = await supabase.auth.refreshSession();
 
         if (error) {
-          console.error('Session refresh error:', error);
+          // Don't log AuthSessionMissingError - it's expected when signed out
+          if (error.name !== 'AuthSessionMissingError') {
+            console.error('Session refresh error:', error);
+          }
           return null;
         }
 
@@ -204,6 +224,12 @@ function createSessionManager(): SessionManager {
     },
 
     async forceValidation(): Promise<boolean> {
+      // Guard: Only validate if we expect to have a session
+      const { session: storeSession, status } = useAuth.getState();
+      if (status !== 'signIn' || !storeSession) {
+        return false;
+      }
+
       try {
         // Get the current session from Supabase
         const {
@@ -212,14 +238,22 @@ function createSessionManager(): SessionManager {
         } = await supabase.auth.getSession();
 
         if (error) {
-          console.error('Session validation error:', error);
+          // Don't log expected errors during sign-out
+          if (error.name !== 'AuthSessionMissingError') {
+            console.error('Session validation error:', error);
+          }
           return false;
         }
 
         if (!session) {
-          // No valid session, sign out
+          // Supabase has no session but local store thinks we're signed in.
+          // This can happen if MMKV/Supabase storage was cleared externally.
+          // Sign out to clear local state and prevent stuck broken-auth state.
+          console.log(
+            '[SessionManager] No Supabase session, clearing local auth state'
+          );
           const { signOut } = useAuth.getState();
-          signOut();
+          await signOut();
           return false;
         }
 
@@ -238,7 +272,7 @@ function createSessionManager(): SessionManager {
         if (isRevoked) {
           console.log('[SessionManager] Session has been revoked, signing out');
           const { signOut } = useAuth.getState();
-          signOut();
+          await signOut();
           return false;
         }
 
@@ -269,27 +303,62 @@ export const sessionManager = createSessionManager();
  *
  * @param refreshBeforeExpiry - Milliseconds before expiry to trigger refresh (default: 5 minutes)
  */
+
+const MIN_REFRESH_INTERVAL = 30000; // 30 seconds minimum between refreshes
+
 export function useSessionAutoRefresh(
   refreshBeforeExpiry: number = 5 * 60 * 1000
 ): void {
   const session = useAuth.use.session();
+  const status = useAuth.use.status();
+  // Use a ref to track last refresh time per hook instance to avoid
+  // global state race conditions when multiple instances or rapid navigation occurs
+  const lastRefreshTimeRef = React.useRef(0);
 
   useEffect(() => {
-    // Set up auto-refresh timer
-    if (!session) return undefined;
+    // Only refresh if signed in with a valid session
+    if (status !== 'signIn' || !session) return undefined;
 
     const timeUntilExpiry = sessionManager.getTimeUntilExpiry();
-    if (timeUntilExpiry === null) return undefined;
 
-    // Check if session is already expired
+    // Check if session is already expired or no expiry info
     if (timeUntilExpiry <= 0) {
       return undefined;
     }
 
-    // If session expires soon (within threshold), refresh immediately
+    // If session expires soon (within threshold), schedule refresh
+    // but respect the minimum interval to prevent loops
     if (timeUntilExpiry <= refreshBeforeExpiry) {
-      sessionManager.refreshSession();
-      return undefined;
+      const now = Date.now();
+      const timeSinceLastRefresh = now - lastRefreshTimeRef.current;
+
+      if (timeSinceLastRefresh < MIN_REFRESH_INTERVAL) {
+        // Too soon since last refresh - schedule a retry after the remaining
+        // minimum interval instead of returning with no timer. Returning
+        // without scheduling here can cause the session to expire silently if
+        // the previous refresh failed or didn't extend expiry.
+        const remaining = MIN_REFRESH_INTERVAL - timeSinceLastRefresh;
+        // Ensure we wait at least 1s to batch rapid state changes,
+        // but never exceed time until expiry minus a safety buffer (2s)
+        // to prevent token expiring before refresh runs
+        const maxSafeDelay = Math.max(1000, timeUntilExpiry - 2000);
+        const delay = Math.min(Math.max(1000, remaining), maxSafeDelay);
+
+        const timerId = setTimeout(async () => {
+          lastRefreshTimeRef.current = Date.now();
+          await sessionManager.refreshSession();
+        }, delay);
+
+        return () => clearTimeout(timerId);
+      }
+
+      // Schedule refresh with a small delay to batch rapid state changes
+      const timerId = setTimeout(async () => {
+        lastRefreshTimeRef.current = Date.now();
+        await sessionManager.refreshSession();
+      }, 1000);
+
+      return () => clearTimeout(timerId);
     }
 
     const timeUntilRefresh = timeUntilExpiry - refreshBeforeExpiry;
@@ -301,6 +370,7 @@ export function useSessionAutoRefresh(
 
     // Set timer for future refresh
     const timerId = setTimeout(async () => {
+      lastRefreshTimeRef.current = Date.now();
       await sessionManager.refreshSession();
     }, timeUntilRefresh);
 
@@ -308,7 +378,7 @@ export function useSessionAutoRefresh(
     return () => {
       clearTimeout(timerId);
     };
-  }, [session, refreshBeforeExpiry]);
+  }, [session, status, refreshBeforeExpiry]);
 }
 
 /**
@@ -395,7 +465,12 @@ export function useRealtimeSessionRevocation(): void {
                 '[RealtimeSessionRevocation] Session revoked, signing out'
               );
               const { signOut } = useAuth.getState();
-              signOut();
+              signOut().catch((err) =>
+                console.error(
+                  '[RealtimeSessionRevocation] Sign out error:',
+                  err
+                )
+              );
             }
           }
         )

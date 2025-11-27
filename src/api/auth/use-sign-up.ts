@@ -3,6 +3,7 @@
  * Validates password requirements and sends verification email
  */
 
+import { Env } from '@env';
 import { createMutation } from 'react-query-kit';
 import { z } from 'zod';
 
@@ -48,17 +49,32 @@ export const useSignUp = createMutation<SignUpResponse, SignUpVariables, Error>(
         throw new Error(firstError.message);
       }
 
-      // Sign up with Supabase Auth
-      // This will automatically send a verification email
+      // Sign up with Supabase Auth (sends verification email)
+      // SCHEME is set via app.config.cjs extra field and normalized in src/lib/env.js
+      // Fallback to 'growbro' only as last resort - log warning in dev if missing
+      const scheme = Env.SCHEME;
+      if (__DEV__ && !scheme) {
+        console.warn(
+          '[SignUp] Env.SCHEME is undefined - using fallback. Check that SCHEME is set in your .env file and app.config.cjs extra field.'
+        );
+      }
+      const redirectTo = `${scheme || 'growbro'}://verify-email`;
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: 'growbro://verify-email',
+          emailRedirectTo: redirectTo,
         },
       });
 
       if (error) {
+        if (__DEV__) {
+          console.warn('[SignUp] supabase signUp error', {
+            message: error.message,
+            status: error.status,
+            name: error.name,
+          });
+        }
         const errorKey = mapAuthError(error);
         throw new Error(errorKey);
       }

@@ -4,12 +4,12 @@
  * Runs daily to check if encryption key rotation is needed.
  * Shows notifications to users when rotation is required.
  *
+ * Uses expo-background-task (replaces deprecated expo-background-fetch).
+ *
  * @module lib/auth/key-rotation-task
  */
 
-// The background fetch module is provided by Expo native runtime. In test/node
-// environments it may not be resolvable; silence the unresolved import lint rule.
-import * as BackgroundFetch from 'expo-background-fetch';
+import * as BackgroundTask from 'expo-background-task';
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 
@@ -22,6 +22,7 @@ const KEY_ROTATION_CHECK_TASK = 'KEY_ROTATION_CHECK_TASK';
 
 /**
  * Define the background task
+ * Note: This must be called in global scope, not inside a React component.
  */
 TaskManager.defineTask(KEY_ROTATION_CHECK_TASK, async () => {
   try {
@@ -34,10 +35,10 @@ TaskManager.defineTask(KEY_ROTATION_CHECK_TASK, async () => {
       await showRotationWarningNotification(status.daysUntilExpiry);
     }
 
-    return BackgroundFetch.BackgroundFetchResult.NewData;
+    return BackgroundTask.BackgroundTaskResult.Success;
   } catch (error) {
     console.error('[key-rotation-task] Background task failed:', error);
-    return BackgroundFetch.BackgroundFetchResult.Failed;
+    return BackgroundTask.BackgroundTaskResult.Failed;
   }
 });
 
@@ -50,17 +51,28 @@ export async function registerKeyRotationTask(): Promise<void> {
       KEY_ROTATION_CHECK_TASK
     );
 
-    if (!isRegistered) {
-      await BackgroundFetch.registerTaskAsync(KEY_ROTATION_CHECK_TASK, {
-        minimumInterval: 60 * 60 * 24, // 24 hours
-        stopOnTerminate: false,
-        startOnBoot: true,
-      });
-
-      console.log('[key-rotation-task] Background task registered');
+    if (isRegistered) {
+      console.log('[key-rotation-task] Task already registered');
+      return;
     }
+
+    // expo-background-task handles scheduling internally
+    // iOS: BGTaskScheduler with 'processing' mode
+    // Android: WorkManager
+    await BackgroundTask.registerTaskAsync(KEY_ROTATION_CHECK_TASK);
+
+    console.log('[key-rotation-task] Background task registered successfully');
   } catch (error) {
-    console.error('[key-rotation-task] Failed to register task:', error);
+    // expo-background-task requires:
+    // - iOS: BGTaskSchedulerPermittedIdentifiers and UIBackgroundModes: ['processing'] in Info.plist
+    // - Android: No extra configuration needed
+    // This is configured in app.config.cjs under ios.infoPlist
+    console.warn(
+      '[key-rotation-task] Registration failed - iOS requires BGTaskSchedulerPermittedIdentifiers.',
+      'Run "npx expo prebuild --clean" if config was recently updated.',
+      error
+    );
+    // Don't rethrow - key rotation is not critical for app function
   }
 }
 
@@ -69,7 +81,7 @@ export async function registerKeyRotationTask(): Promise<void> {
  */
 export async function unregisterKeyRotationTask(): Promise<void> {
   try {
-    await BackgroundFetch.unregisterTaskAsync(KEY_ROTATION_CHECK_TASK);
+    await BackgroundTask.unregisterTaskAsync(KEY_ROTATION_CHECK_TASK);
     console.log('[key-rotation-task] Background task unregistered');
   } catch (error) {
     console.error('[key-rotation-task] Failed to unregister task:', error);

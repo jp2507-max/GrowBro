@@ -31,132 +31,33 @@ import { translate } from '@/lib';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
-type MfaSectionProps = {
-  isMfaEnabled: boolean;
-  isMfaLoading: boolean;
-  enrollTotp: UseMutationResult<
-    NonNullable<AuthMFAEnrollTOTPResponse['data']>,
-    Error,
-    { friendlyName?: string },
-    unknown
-  >;
-  unenrollTotp: UseMutationResult<
-    { id: string },
-    Error,
-    { factorId: string },
-    unknown
-  >;
-  onStartEnableMfa: () => void;
-  onDisableMfa: () => void;
-  testID?: string;
-};
-
-function MfaSection({
-  isMfaEnabled,
-  isMfaLoading,
-  enrollTotp,
-  unenrollTotp,
-  onStartEnableMfa,
-  onDisableMfa,
-  testID,
-}: MfaSectionProps) {
-  return (
-    <ItemsContainer title="auth.security.mfa_section" testID={testID}>
-      <Item
-        text="auth.security.two_factor_auth"
-        value={translate(
-          isMfaEnabled
-            ? 'auth.security.mfa_status_enabled'
-            : 'auth.security.mfa_status_disabled'
-        )}
-        icon={<Shield />}
-        testID="two-factor-item"
-        description={
-          isMfaEnabled
-            ? translate('auth.security.mfa_enabled_hint')
-            : translate('auth.security.mfa_disabled_hint')
-        }
-      />
-      {isMfaEnabled ? (
-        <Button
-          variant="outline"
-          label={translate('auth.security.disable_mfa')}
-          onPress={onDisableMfa}
-          disabled={unenrollTotp.isPending}
-          loading={unenrollTotp.isPending}
-          testID="disable-mfa-button"
-        />
-      ) : (
-        <Button
-          label={translate('auth.security.enable_mfa')}
-          onPress={onStartEnableMfa}
-          disabled={enrollTotp.isPending || isMfaLoading}
-          loading={enrollTotp.isPending}
-          testID="enable-mfa-button"
-        />
-      )}
-    </ItemsContainer>
-  );
-}
-
 type PendingMfaEnrollment = {
   factorId: string;
   secret: string;
   uri: string;
-  friendlyName?: string;
+  friendlyName: string | null;
 };
 
-type DangerZoneSectionProps = {
-  testID?: string;
-};
-
-function DangerZoneSection({ testID }: DangerZoneSectionProps) {
-  const router = useRouter();
-
-  const handleDeleteAccount = () => {
-    // Navigate to dedicated delete account screen
-    router.push('/settings/delete-account');
-  };
-
-  return (
-    <ItemsContainer title="auth.security.danger_zone" testID={testID}>
-      <Item
-        text="auth.security.delete_account"
-        icon={<Trash />}
-        onPress={handleDeleteAccount}
-        testID="delete-account-item"
-      />
-    </ItemsContainer>
-  );
-}
-
-export default function SecuritySettingsScreen() {
-  const router = useRouter();
-  const { ref: changePasswordModalRef, present: presentChangePasswordModal } =
-    useChangePasswordModal();
-  const {
-    data: mfaFactors,
-    isLoading: isMfaLoading,
-    refetch: refetchMfaFactors,
-  } = useMfaFactors();
-  const enrollTotp = useMfaEnrollTotp();
-  const verifyTotp = useMfaChallengeAndVerify();
-  const unenrollTotp = useMfaUnenroll();
+/**
+ * Custom hook to handle MFA enrollment and verification logic
+ */
+function useMfaHandlers({
+  enrollTotp,
+  verifyTotp,
+  unenrollTotp,
+  refetchMfaFactors,
+  activeFactor,
+}: {
+  enrollTotp: ReturnType<typeof useMfaEnrollTotp>;
+  verifyTotp: ReturnType<typeof useMfaChallengeAndVerify>;
+  unenrollTotp: ReturnType<typeof useMfaUnenroll>;
+  refetchMfaFactors: () => void;
+  activeFactor: { id: string } | undefined;
+}) {
   const [mfaModalVisible, setMfaModalVisible] = React.useState(false);
   const [pendingEnrollment, setPendingEnrollment] =
     React.useState<PendingMfaEnrollment | null>(null);
   const [verificationCode, setVerificationCode] = React.useState('');
-
-  const allFactors = mfaFactors?.all ?? [];
-  const totpFactors = allFactors.filter(
-    (factor) => factor.factor_type === 'totp'
-  );
-  const activeFactor = totpFactors[0];
-  const isMfaEnabled = totpFactors.length > 0;
-
-  const handleChangePassword = () => {
-    presentChangePasswordModal();
-  };
 
   const handleStartEnableMfa = async () => {
     try {
@@ -167,7 +68,7 @@ export default function SecuritySettingsScreen() {
         factorId: enrollment.id,
         secret: enrollment.totp.secret,
         uri: enrollment.totp.uri,
-        friendlyName: enrollment.friendly_name,
+        friendlyName: enrollment.friendly_name ?? null,
       });
       setVerificationCode('');
       setMfaModalVisible(true);
@@ -254,6 +155,151 @@ export default function SecuritySettingsScreen() {
     setMfaModalVisible(false);
     setPendingEnrollment(null);
     setVerificationCode('');
+  };
+
+  return {
+    mfaModalVisible,
+    pendingEnrollment,
+    verificationCode,
+    setVerificationCode,
+    handleStartEnableMfa,
+    handleVerifyMfa,
+    handleDisableMfa,
+    handleCloseMfaModal,
+  };
+}
+
+type MfaSectionProps = {
+  isMfaEnabled: boolean;
+  isMfaLoading: boolean;
+  enrollTotp: UseMutationResult<
+    NonNullable<AuthMFAEnrollTOTPResponse['data']>,
+    Error,
+    { friendlyName?: string },
+    unknown
+  >;
+  unenrollTotp: UseMutationResult<
+    { id: string },
+    Error,
+    { factorId: string },
+    unknown
+  >;
+  onStartEnableMfa: () => void;
+  onDisableMfa: () => void;
+  testID?: string;
+};
+
+function MfaSection({
+  isMfaEnabled,
+  isMfaLoading,
+  enrollTotp,
+  unenrollTotp,
+  onStartEnableMfa,
+  onDisableMfa,
+  testID,
+}: MfaSectionProps) {
+  return (
+    <ItemsContainer title="auth.security.mfa_section" testID={testID}>
+      <Item
+        text="auth.security.two_factor_auth"
+        value={translate(
+          isMfaEnabled
+            ? 'auth.security.mfa_status_enabled'
+            : 'auth.security.mfa_status_disabled'
+        )}
+        icon={<Shield />}
+        testID="two-factor-item"
+        description={
+          isMfaEnabled
+            ? translate('auth.security.mfa_enabled_hint')
+            : translate('auth.security.mfa_disabled_hint')
+        }
+      />
+      {isMfaEnabled ? (
+        <Button
+          variant="outline"
+          label={translate('auth.security.disable_mfa')}
+          onPress={onDisableMfa}
+          disabled={unenrollTotp.isPending}
+          loading={unenrollTotp.isPending}
+          testID="disable-mfa-button"
+        />
+      ) : (
+        <Button
+          label={translate('auth.security.enable_mfa')}
+          onPress={onStartEnableMfa}
+          disabled={enrollTotp.isPending || isMfaLoading}
+          loading={enrollTotp.isPending}
+          testID="enable-mfa-button"
+        />
+      )}
+    </ItemsContainer>
+  );
+}
+
+type DangerZoneSectionProps = {
+  testID?: string;
+};
+
+function DangerZoneSection({ testID }: DangerZoneSectionProps) {
+  const router = useRouter();
+
+  const handleDeleteAccount = () => {
+    // Navigate to dedicated delete account screen
+    router.push('/settings/delete-account');
+  };
+
+  return (
+    <ItemsContainer title="auth.security.danger_zone" testID={testID}>
+      <Item
+        text="auth.security.delete_account"
+        icon={<Trash />}
+        onPress={handleDeleteAccount}
+        testID="delete-account-item"
+      />
+    </ItemsContainer>
+  );
+}
+
+export default function SecuritySettingsScreen() {
+  const router = useRouter();
+  const { ref: changePasswordModalRef, present: presentChangePasswordModal } =
+    useChangePasswordModal();
+  const {
+    data: mfaFactors,
+    isLoading: isMfaLoading,
+    refetch: refetchMfaFactors,
+  } = useMfaFactors();
+  const enrollTotp = useMfaEnrollTotp();
+  const verifyTotp = useMfaChallengeAndVerify();
+  const unenrollTotp = useMfaUnenroll();
+
+  const allFactors = mfaFactors?.all ?? [];
+  const totpFactors = allFactors.filter(
+    (factor) => factor.factor_type === 'totp'
+  );
+  const activeFactor = totpFactors[0];
+  const isMfaEnabled = totpFactors.length > 0;
+
+  const {
+    mfaModalVisible,
+    pendingEnrollment,
+    verificationCode,
+    setVerificationCode,
+    handleStartEnableMfa,
+    handleVerifyMfa,
+    handleDisableMfa,
+    handleCloseMfaModal,
+  } = useMfaHandlers({
+    enrollTotp,
+    verifyTotp,
+    unenrollTotp,
+    refetchMfaFactors,
+    activeFactor,
+  });
+
+  const handleChangePassword = () => {
+    presentChangePasswordModal();
   };
 
   return (

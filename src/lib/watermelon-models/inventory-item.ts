@@ -56,6 +56,9 @@ export class InventoryItemModel extends Model {
   /** Soft delete timestamp for sync tombstones */
   @date('deleted_at') deletedAt?: Date;
 
+  /** Denormalized current stock level for quick low-stock checks */
+  @field('current_stock') currentStock?: number;
+
   /** Relation: batches associated with this item */
   // @children('inventory_batches') batches!: Query<InventoryBatchModel>;
 
