@@ -1,23 +1,31 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 import * as photoHash from '../photo-hash';
 import {
   captureAndStore,
   cleanupOrphans,
   detectOrphans,
-  getAllPhotoFiles,
+  getPhotoFiles,
   getStorageInfo,
   hashAndStore,
 } from '../photo-storage-service';
 
+// Mock the new Paths API from expo-file-system
 jest.mock('expo-file-system', () => ({
-  cacheDirectory: 'file:///cache/',
-  documentDirectory: 'file:///documents/',
+  Paths: {
+    cache: { uri: 'file:///cache/' },
+    document: { uri: 'file:///documents/' },
+  },
+}));
+
+// Mock the legacy API for async operations
+jest.mock('expo-file-system/legacy', () => ({
   getInfoAsync: jest.fn(),
   makeDirectoryAsync: jest.fn(),
   readDirectoryAsync: jest.fn(() => []),
   writeAsStringAsync: jest.fn(),
   copyAsync: jest.fn(),
+  deleteAsync: jest.fn(),
   getTotalDiskCapacityAsync: jest.fn(() => Promise.resolve(1000000000)),
   getFreeDiskStorageAsync: jest.fn(() => Promise.resolve(500000000)),
 }));
@@ -373,7 +381,7 @@ describe('photo-storage-service', () => {
     });
   });
 
-  describe('getAllPhotoFiles', () => {
+  describe('getPhotoFiles', () => {
     it('should return all photo files with metadata', async () => {
       // Simulate directory with two files
       (FileSystem.readDirectoryAsync as jest.Mock).mockResolvedValue([
@@ -406,7 +414,7 @@ describe('photo-storage-service', () => {
         }
       );
 
-      const files = await getAllPhotoFiles();
+      const files = await getPhotoFiles();
 
       expect(files).toHaveLength(2);
       expect(files[0]).toEqual({
@@ -433,7 +441,7 @@ describe('photo-storage-service', () => {
         }
       );
 
-      const files = await getAllPhotoFiles();
+      const files = await getPhotoFiles();
 
       expect(files).toEqual([]);
     });
@@ -443,7 +451,7 @@ describe('photo-storage-service', () => {
         throw new Error('List failed');
       });
 
-      const files = await getAllPhotoFiles();
+      const files = await getPhotoFiles();
 
       expect(files).toEqual([]);
     });

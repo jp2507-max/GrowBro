@@ -1,5 +1,5 @@
 /**
- * Account deletion hook
+ * Account deletion hooks
  *
  * Provides React Query mutation for deleting user account with:
  * - Backend data cleanup via Edge Function

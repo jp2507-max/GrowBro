@@ -8,7 +8,7 @@ export function getCurrentUser() {
 }
 
 export function clearLocalAuthState() {
-  // Clear persisted token and related local state
+  // Clear persisted token and related local states
   removeToken();
 
   // Reset any compliance/age gate state

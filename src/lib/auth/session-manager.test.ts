@@ -1,13 +1,13 @@
 import type { Session } from '@supabase/supabase-js';
 
-import { deriveSessionKey } from '@/api/auth';
-
 import { supabase } from '../supabase';
 import { useAuth } from './index';
 import { sessionManager } from './session-manager';
+import { deriveSessionKey } from './utils';
 
-// Mock deriveSessionKey
-jest.mock('@/api/auth', () => ({
+// Mock deriveSessionKey from utils (where session-manager imports it)
+jest.mock('./utils', () => ({
+  ...jest.requireActual('./utils'),
   deriveSessionKey: jest.fn(),
 }));
 
@@ -152,6 +152,12 @@ describe('SessionManager', () => {
         refresh_token: 'new-refresh-token',
       };
 
+      // Mock getSession to return a valid session (guard check)
+      (supabase.auth.getSession as jest.Mock).mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
+
       (supabase.auth.refreshSession as jest.Mock).mockResolvedValue({
         data: { session: refreshedSession },
         error: null,
@@ -159,6 +165,17 @@ describe('SessionManager', () => {
 
       (deriveSessionKey as jest.Mock).mockResolvedValueOnce('old-session-key');
       (deriveSessionKey as jest.Mock).mockResolvedValueOnce('new-session-key');
+
+      // Mock from().update() chain for session key update
+      (supabase.from as jest.Mock).mockReturnValue({
+        update: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              is: jest.fn().mockResolvedValue({ error: null }),
+            }),
+          }),
+        }),
+      });
 
       const result = await sessionManager.refreshSession();
 
@@ -295,6 +312,8 @@ describe('SessionManager', () => {
       const updateSession = jest.fn();
       const updateLastValidatedAt = jest.fn();
       (useAuth.getState as jest.Mock).mockReturnValue({
+        status: 'signIn',
+        session: mockSession,
         updateSession,
         updateLastValidatedAt,
       });
@@ -304,23 +323,69 @@ describe('SessionManager', () => {
         error: null,
       });
 
+      // Mock deriveSessionKey for revocation check
+      (deriveSessionKey as jest.Mock).mockResolvedValue('mock-session-key');
+
+      // Mock from().select() chain for revocation check - session not revoked
+      (supabase.from as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            maybeSingle: jest
+              .fn()
+              .mockResolvedValue({ data: null, error: null }),
+          }),
+        }),
+      });
+
       const isValid = await sessionManager.forceValidation();
 
       expect(isValid).toBe(true);
       expect(updateSession).toHaveBeenCalledWith(mockSession);
     });
 
-    it('should sign out when no valid session exists', async () => {
-      const signOut = jest.fn();
+    it('should return false when not signed in (early guard)', async () => {
       (useAuth.getState as jest.Mock).mockReturnValue({
+        status: 'signOut',
+        session: null,
+        signOut: jest.fn(),
+        updateSession: jest.fn(),
+        updateLastValidatedAt: jest.fn(),
+      });
+
+      const isValid = await sessionManager.forceValidation();
+
+      expect(isValid).toBe(false);
+      // signOut should NOT be called - this is an early return, not a revocation
+    });
+
+    it('should sign out when session is revoked remotely', async () => {
+      const signOut = jest.fn().mockResolvedValue(undefined);
+      (useAuth.getState as jest.Mock).mockReturnValue({
+        status: 'signIn',
+        session: mockSession,
         signOut,
         updateSession: jest.fn(),
         updateLastValidatedAt: jest.fn(),
       });
 
       (supabase.auth.getSession as jest.Mock).mockResolvedValue({
-        data: { session: null },
+        data: { session: mockSession },
         error: null,
+      });
+
+      // Mock deriveSessionKey for revocation check
+      (deriveSessionKey as jest.Mock).mockResolvedValue('mock-session-key');
+
+      // Mock from().select() chain - session IS revoked
+      (supabase.from as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: { revoked_at: new Date().toISOString() },
+              error: null,
+            }),
+          }),
+        }),
       });
 
       const isValid = await sessionManager.forceValidation();
@@ -331,6 +396,8 @@ describe('SessionManager', () => {
 
     it('should return false when validation fails with error', async () => {
       (useAuth.getState as jest.Mock).mockReturnValue({
+        status: 'signIn',
+        session: mockSession,
         signOut: jest.fn(),
         updateSession: jest.fn(),
         updateLastValidatedAt: jest.fn(),
@@ -348,6 +415,8 @@ describe('SessionManager', () => {
 
     it('should return false when validation throws exception', async () => {
       (useAuth.getState as jest.Mock).mockReturnValue({
+        status: 'signIn',
+        session: mockSession,
         signOut: jest.fn(),
         updateSession: jest.fn(),
         updateLastValidatedAt: jest.fn(),

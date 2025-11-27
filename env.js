@@ -95,7 +95,10 @@ const EXPO_ACCOUNT_OWNER = 'jan_100'; // expo account owner
 
 const EAS_PROJECT_ID = '0ce1e1fc-7b61-4a2f-ae2b-790c097ced82'; // eas project id
 
-const SCHEME = 'growbro'; // app scheme
+const SCHEME =
+  APP_ENV === 'production'
+    ? 'growbro'
+    : `growbro-${APP_ENV === 'staging' ? 'staging' : 'dev'}`; // app scheme - matches eas.json build profiles
 
 /**
 

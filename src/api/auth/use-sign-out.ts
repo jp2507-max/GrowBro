@@ -1,5 +1,5 @@
 /**
- * Sign out hooks
+ * Sign out hook
  *
  * Provides React Query mutations for signing out:
  * - Sign out from current device (local scope)

@@ -35,7 +35,7 @@ type PendingMfaEnrollment = {
   factorId: string;
   secret: string;
   uri: string;
-  friendlyName?: string | null;
+  friendlyName: string | null;
 };
 
 /**
@@ -68,7 +68,7 @@ function useMfaHandlers({
         factorId: enrollment.id,
         secret: enrollment.totp.secret,
         uri: enrollment.totp.uri,
-        friendlyName: enrollment.friendly_name,
+        friendlyName: enrollment.friendly_name ?? null,
       });
       setVerificationCode('');
       setMfaModalVisible(true);

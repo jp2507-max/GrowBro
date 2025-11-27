@@ -7,7 +7,9 @@
  * Requirements: 5.1, 5.2
  */
 
-import * as FileSystem from 'expo-file-system';
+// SDK 54 hybrid approach: Paths for directory URIs, legacy API for async operations
+import { Paths } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,11 +19,19 @@ import { showMessage } from 'react-native-flash-message';
 import { Button } from '@/components/ui';
 import { exportToCSV } from '@/lib/inventory/csv-export-service';
 
-type FileSystemWithCacheDirectory = typeof FileSystem & {
-  cacheDirectory: string | null | undefined;
-};
-
-const safeFileSystem = FileSystem as FileSystemWithCacheDirectory;
+/**
+ * Get the cache directory URI using the new Paths API.
+ * Includes defensive validation to fail loudly if the URI is unavailable.
+ */
+function getCacheDirectoryUri(): string {
+  const uri = Paths?.cache?.uri;
+  if (!uri) {
+    throw new Error(
+      '[FileSystem] Cache directory unavailable. Ensure expo-file-system is properly linked.'
+    );
+  }
+  return uri;
+}
 
 interface ExportCSVButtonProps {
   variant?: 'default' | 'secondary' | 'outline' | 'ghost';
@@ -46,16 +56,12 @@ export function ExportCSVButton({
       // Export to CSV
       const result = await exportToCSV({});
 
-      // Type-safe FileSystem access
-      const cacheDir = safeFileSystem.cacheDirectory ?? '';
-
-      if (!cacheDir) {
-        throw new Error('Cache directory not available');
-      }
+      // Get cache directory using Paths API
+      const cacheDir = getCacheDirectoryUri();
 
       // Create temporary directory for CSV files
       const tempDir = `${cacheDir}csv_export_${Date.now()}/`;
-      await safeFileSystem.makeDirectoryAsync(tempDir, { intermediates: true });
+      await FileSystem.makeDirectoryAsync(tempDir, { intermediates: true });
 
       // Write CSV files to temporary directory
       const files = [result.items, result.batches, result.movements];

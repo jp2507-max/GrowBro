@@ -145,6 +145,10 @@ function createExpoConfig(config) {
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         UIBackgroundModes: ['fetch', 'processing'],
+        // Required for expo-background-task BGTaskScheduler registration
+        BGTaskSchedulerPermittedIdentifiers: [
+          'com.expo.modules.backgroundtask.processing',
+        ],
       },
     },
     experiments: {
@@ -260,6 +264,8 @@ function createExpoConfig(config) {
       ],
       // Background tasks (BGTaskScheduler on iOS, WorkManager on Android)
       'expo-background-task',
+      // Must run LAST to ensure UIBackgroundModes includes 'processing' after other plugins
+      './plugins/with-background-task-config.js',
     ],
     extra: {
       // Expose only public vars; keep secrets out of the bundle.

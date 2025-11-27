@@ -52,6 +52,7 @@ export const SignUpForm = ({ onSuccess }: SignUpFormProps) => {
       onSuccess?.();
     },
     onError: (error) => {
+      console.error('[SignUp] sign-up failed', error);
       showErrorMessage(t(error.message));
     },
   });

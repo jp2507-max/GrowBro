@@ -41,27 +41,42 @@ export async function getNetworkState(): Promise<NetworkState> {
   if (currentState && listeners.length > 0) return currentState;
 
   // Always fetch fresh data when no listeners are active to avoid stale cache
-  try {
-    const raw = await NetInfo.fetch();
-    currentState = normalize(raw);
-    return currentState;
-  } catch (error) {
-    // NetInfo.fetch() frequently fails on startup, in simulators, or test environments
-    // Return a safe fallback state instead of propagating the error
-    console.warn(
-      'Failed to fetch network state, using offline fallback:',
-      error
-    );
-    const fallbackState: NetworkState = {
-      type: 'unknown',
-      isConnected: false,
-      isInternetReachable: false,
-      details: null,
-      isMetered: false,
-    };
-    currentState = fallbackState;
-    return fallbackState;
+  // Retry a few times to handle startup timing issues
+  const maxRetries = 3;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const raw = await NetInfo.fetch();
+      currentState = normalize(raw);
+      if (attempt > 0) {
+        console.log(
+          `[NetworkManager] Network state fetched after ${attempt + 1} attempts`
+        );
+      }
+      return currentState;
+    } catch (error) {
+      if (attempt === maxRetries - 1) {
+        // Final attempt failed - use fallback
+        console.warn(
+          '[NetworkManager] Failed to fetch network state after retries, assuming offline:',
+          error
+        );
+        const fallbackState: NetworkState = {
+          type: 'unknown',
+          isConnected: false,
+          isInternetReachable: false,
+          details: null,
+          isMetered: false,
+        };
+        currentState = fallbackState;
+        return fallbackState;
+      }
+      // Wait before retry
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
   }
+
+  // Shouldn't reach here, but TypeScript needs this
+  return currentState!;
 }
 
 export async function getConnectionType(): Promise<string> {

@@ -1,5 +1,5 @@
 /**
- * Password change hook
+ * Password change hooks
  *
  * Provides React Query mutation for changing password while authenticated.
  * Requires current password verification before allowing password change.

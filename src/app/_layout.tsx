@@ -28,10 +28,11 @@ import {
   setAnalyticsClient,
   startAgeGateSession,
   useAgeGate,
+  useAuth,
   useIsFirstTime,
 } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
-import { initAuthStorage } from '@/lib/auth/auth-storage';
+import { clearAuthStorage, initAuthStorage } from '@/lib/auth/auth-storage';
 import { registerKeyRotationTask } from '@/lib/auth/key-rotation-task';
 import {
   useOfflineModeMonitor,
@@ -40,6 +41,7 @@ import {
 } from '@/lib/auth/session-manager';
 import { updateActivity } from '@/lib/auth/session-timeout';
 import { useDeepLinking } from '@/lib/auth/use-deep-linking';
+import { removeToken } from '@/lib/auth/utils';
 import {
   checkLegalVersionBumps,
   hydrateLegalAcceptances,
@@ -66,7 +68,6 @@ import {
   initializePrivacyConsent,
   setPrivacyConsent,
 } from '@/lib/privacy-consent';
-import { useSync } from '@/lib/sync/use-sync';
 // Install AI consent hooks to handle withdrawal cascades
 import { installAiConsentHooks } from '@/lib/uploads/ai-images';
 import { useThemeConfig } from '@/lib/use-theme-config';
@@ -161,10 +162,10 @@ function useGoogleSignInSetup(): void {
 
 function useAuthInitialization(setIsAuthReady: (ready: boolean) => void): void {
   React.useEffect(() => {
-    console.log('[RootLayout] useAuthInitialization start');
+    if (__DEV__) console.log('[RootLayout] useAuthInitialization start');
     initializeAuthAndStates()
       .then(() => {
-        console.log('[RootLayout] useAuthInitialization success');
+        if (__DEV__) console.log('[RootLayout] useAuthInitialization success');
         setIsAuthReady(true);
       })
       .catch((error) => {
@@ -182,8 +183,15 @@ function useLegalVersionCheck(
   router: ReturnType<typeof useRouter>,
   pathname: string
 ): void {
+  // Track if we've already performed the version check to avoid repeated resets
+  const hasCheckedRef = React.useRef(false);
+
   React.useEffect(() => {
     if (!isAuthReady) return;
+    // Only check once per app session to prevent reset loops
+    if (hasCheckedRef.current) return;
+    hasCheckedRef.current = true;
+
     const versionCheck = checkLegalVersionBumps();
     if (versionCheck.needsBlocking) {
       console.log(
@@ -275,27 +283,64 @@ function usePhotoJanitorSetup(isI18nReady: boolean): void {
   React.useEffect(() => {
     if (!isI18nReady) return;
 
+    // Use AbortController for proper cancellation of async operations
+    const abortController = new AbortController();
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
     // Defer janitor initialization until after all interactions complete
     // This ensures FileSystem native module is fully initialized
     const task = InteractionManager.runAfterInteractions(() => {
+      // Check abort status before scheduling timeout
+      if (abortController.signal.aborted) return;
+
       // Add additional delay to ensure FileSystem is ready
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
+        // Check abort status again before executing async work
+        if (abortController.signal.aborted) return;
+
         getReferencedPhotoUris()
           .then((referencedUris) => {
+            // Final abort check before initialization
+            if (abortController.signal.aborted) return;
             initializeJanitor(undefined, referencedUris);
           })
           .catch((error) => {
-            console.error('[RootLayout] Janitor initialization failed:', error);
+            // Only log if not aborted to avoid noise during cleanup
+            if (!abortController.signal.aborted) {
+              console.error(
+                '[RootLayout] Janitor initialization failed:',
+                error
+              );
+            }
           });
       }, FILESYSTEM_INIT_DELAY_MS);
     });
 
-    return () => task.cancel();
+    // Cleanup on abort - clear timeout immediately when aborted
+    const abortHandler = () => {
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    };
+    abortController.signal.addEventListener('abort', abortHandler);
+
+    return () => {
+      // Abort first to signal all pending operations to stop
+      abortController.abort();
+      // Cancel the interaction task if it hasn't started yet
+      task.cancel();
+      // Clear timeout as backup (abort handler should have done this already)
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [isI18nReady]);
 }
 
 function RootLayout(): React.ReactElement {
   const [isFirstTime] = useIsFirstTime();
+
   // eslint-disable-next-line react-compiler/react-compiler -- createSelectors generates hooks as methods
   const ageGateStatus = useAgeGate.status();
   // eslint-disable-next-line react-compiler/react-compiler -- createSelectors generates hooks as methods
@@ -311,11 +356,13 @@ function RootLayout(): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
 
-  console.log('[RootLayout] render', {
-    isI18nReady,
-    isAuthReady,
-    pathname,
-  });
+  if (__DEV__) {
+    console.log('[RootLayout] render', {
+      isI18nReady,
+      isAuthReady,
+      pathname,
+    });
+  }
 
   useRootStartup(setIsI18nReady, isFirstTime);
   useSessionAutoRefresh();
@@ -337,7 +384,6 @@ function RootLayout(): React.ReactElement {
   useAgeGateSession(ageGateStatus, sessionId);
   useConsentCheck(setShowConsent);
   usePhotoJanitorSetup(isI18nReady);
-  useSync();
 
   React.useEffect(() => {
     if (!isI18nReady || !isAuthReady || hasHiddenSplashRef.current) return;
@@ -407,55 +453,141 @@ function persistConsents(
   });
 }
 
+// Cleanup state tracking for auth hydration timeout
+type CleanupState = {
+  inProgress: Promise<void> | null;
+  timeoutHandled: boolean;
+  resolved: boolean;
+};
+
+// Polls for cleanup promise completion with timeout
+function waitForCleanupPromise(
+  cleanupState: CleanupState,
+  resolve: () => void
+): void {
+  const MAX_WAIT_MS = 5000;
+  const POLL_INTERVAL_MS = 10;
+  const startTime = Date.now();
+
+  const poll = (): void => {
+    if (cleanupState.inProgress) {
+      cleanupState.inProgress
+        .finally(() => {
+          if (!cleanupState.resolved) {
+            cleanupState.resolved = true;
+            resolve();
+          }
+        })
+        .catch(() => {
+          if (!cleanupState.resolved) {
+            cleanupState.resolved = true;
+            resolve();
+          }
+        });
+    } else if (Date.now() - startTime < MAX_WAIT_MS) {
+      setTimeout(poll, POLL_INTERVAL_MS);
+    } else {
+      console.error('[RootLayout] waitForCleanup: timeout waiting for cleanup');
+      if (!cleanupState.resolved) {
+        cleanupState.resolved = true;
+        resolve();
+      }
+    }
+  };
+  poll();
+}
+
+// Creates abort handler for hydration timeout
+function createAbortHandler(
+  timeoutId: ReturnType<typeof setTimeout>,
+  cleanupState: CleanupState,
+  resolve: () => void
+): () => void {
+  return () => {
+    clearTimeout(timeoutId);
+    if (cleanupState.timeoutHandled) {
+      waitForCleanupPromise(cleanupState, resolve);
+    } else if (!cleanupState.resolved) {
+      cleanupState.resolved = true;
+      resolve();
+    }
+  };
+}
+
 // Helper to initialize auth storage and hydrate states
 async function initializeAuthAndStates(): Promise<void> {
-  console.log('[RootLayout] initializeAuthAndStates: start');
+  if (__DEV__) console.log('[RootLayout] initializeAuthAndStates: start');
   await initAuthStorage();
-  console.log('[RootLayout] initializeAuthAndStates: after initAuthStorage');
+  if (__DEV__) console.log('[RootLayout] after initAuthStorage');
 
   const HYDRATE_AUTH_TIMEOUT_MS = 8000;
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  const abortController = new AbortController();
+  let cleanupExecuted = false;
   let didTimeout = false;
+
+  const executeCleanup = async (reason: string): Promise<void> => {
+    if (cleanupExecuted) return;
+    cleanupExecuted = true;
+    if (useAuth.getState().status === 'signIn') {
+      if (__DEV__) console.log(`[RootLayout] ${reason} but signed in, skip`);
+      return;
+    }
+    console.warn(`[RootLayout] ${reason}; clearing auth state`);
+    await clearAuthStorage();
+    removeToken();
+  };
 
   const hydratePromise = (async () => {
     try {
       await hydrateAuth();
-      console.log(
-        '[RootLayout] initializeAuthAndStates: hydrateAuth completed'
-      );
+      abortController.abort();
+      if (__DEV__) console.log('[RootLayout] hydrateAuth completed');
     } catch (error) {
-      console.error(
-        '[RootLayout] initializeAuthAndStates: hydrateAuth error',
-        error
-      );
-    } finally {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        timeoutId = null;
-      }
+      abortController.abort();
+      console.error('[RootLayout] hydrateAuth error', error);
+      await executeCleanup('hydrateAuth failed');
     }
   })();
 
+  const cleanupState: CleanupState = {
+    inProgress: null,
+    timeoutHandled: false,
+    resolved: false,
+  };
+
   const timeoutPromise = new Promise<void>((resolve) => {
-    timeoutId = setTimeout(() => {
-      didTimeout = true;
-      console.warn(
-        `[RootLayout] initializeAuthAndStates: hydrateAuth timeout after ${HYDRATE_AUTH_TIMEOUT_MS}ms; continuing without cached session`
-      );
-      resolve();
+    const timeoutId = setTimeout(() => {
+      cleanupState.timeoutHandled = true;
+      if (!abortController.signal.aborted) {
+        didTimeout = true;
+        cleanupState.inProgress = executeCleanup(
+          `hydrateAuth timeout after ${HYDRATE_AUTH_TIMEOUT_MS}ms`
+        );
+        cleanupState.inProgress.finally(() => {
+          if (!cleanupState.resolved) {
+            cleanupState.resolved = true;
+            resolve();
+          }
+        });
+      } else if (!cleanupState.resolved) {
+        cleanupState.resolved = true;
+        resolve();
+      }
     }, HYDRATE_AUTH_TIMEOUT_MS);
+
+    abortController.signal.addEventListener(
+      'abort',
+      createAbortHandler(timeoutId, cleanupState, resolve)
+    );
   });
 
-  await Promise.race([hydratePromise, timeoutPromise]);
-
-  console.log('[RootLayout] initializeAuthAndStates: after hydrateAuth', {
-    didTimeout,
-  });
+  await Promise.all([hydratePromise, timeoutPromise]);
+  if (__DEV__) console.log('[RootLayout] after hydrateAuth', { didTimeout });
 
   hydrateAgeGate();
   hydrateLegalAcceptances();
   hydrateOnboardingState();
-  console.log('[RootLayout] initializeAuthAndStates: done');
+  if (__DEV__) console.log('[RootLayout] initializeAuthAndStates: done');
 }
 
 function BootSplash(): React.ReactElement {

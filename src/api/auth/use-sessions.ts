@@ -22,7 +22,7 @@ export const useSessions = createQuery<UserSession[], void, Error>({
   },
 });
 
-// Revoke a specific session (via Edge Function)
+// Revoke a specific session (via Edge Function)s
 export const useRevokeSession = createMutation<
   void,
   { sessionKey: string },

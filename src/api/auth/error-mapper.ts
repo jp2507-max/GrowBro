@@ -64,15 +64,36 @@ function mapEdgeFunctionError(error: UnknownError): string | null {
   }
 }
 
-/**
- * Map Supabase AuthError to i18n keys
- */
-function mapSupabaseAuthError(error: UnknownError): string {
-  const authError = error as AuthError;
-  const message = authError?.message?.toLowerCase() || '';
-  const status = authError?.status;
+// Auth error context for pattern matching
+type AuthErrorContext = {
+  message: string;
+  status?: number;
+  name: string;
+  normalizedCode: string;
+};
 
-  // Invalid credentials (400/401)
+/** Check for weak password errors */
+function checkWeakPassword(ctx: AuthErrorContext): string | null {
+  const { message, name, normalizedCode } = ctx;
+  if (
+    normalizedCode === 'weakpassword' ||
+    name.includes('weakpassword') ||
+    message.includes('password should contain at least one character') ||
+    message.includes('known to be weak') ||
+    message.includes('does not meet the security requirements') ||
+    (message.includes('password') &&
+      (message.includes('weak') ||
+        message.includes('too short') ||
+        message.includes('requirements')))
+  ) {
+    return 'auth.error_password_weak';
+  }
+  return null;
+}
+
+/** Check for credential/status-based errors */
+function checkCredentialErrors(ctx: AuthErrorContext): string | null {
+  const { message, status } = ctx;
   if (
     status === 400 ||
     status === 401 ||
@@ -82,8 +103,6 @@ function mapSupabaseAuthError(error: UnknownError): string {
   ) {
     return 'auth.error_invalid_credentials';
   }
-
-  // Email already in use (422)
   if (
     status === 422 ||
     message.includes('already registered') ||
@@ -91,28 +110,18 @@ function mapSupabaseAuthError(error: UnknownError): string {
   ) {
     return 'auth.error_email_exists';
   }
-
-  // Weak password
-  if (
-    message.includes('password') &&
-    (message.includes('weak') ||
-      message.includes('too short') ||
-      message.includes('requirements'))
-  ) {
-    return 'auth.error_password_weak';
-  }
-
-  // Invalid email format
   if (message.includes('invalid email') || message.includes('email format')) {
     return 'auth.error_email_invalid';
   }
-
-  // Rate limiting (429)
   if (status === 429 || message.includes('rate limit')) {
     return 'auth.error_rate_limit';
   }
+  return null;
+}
 
-  // Network/connectivity errors
+/** Check for network/token/session errors */
+function checkSessionErrors(ctx: AuthErrorContext): string | null {
+  const { message } = ctx;
   if (
     message.includes('network') ||
     message.includes('fetch') ||
@@ -120,40 +129,45 @@ function mapSupabaseAuthError(error: UnknownError): string {
   ) {
     return 'auth.error_network';
   }
-
-  // Token/session errors
   if (
     message.includes('token') ||
     message.includes('session') ||
     message.includes('expired')
   ) {
-    // Distinguish between general session expiry and invalid tokens
-    if (message.includes('invalid') || message.includes('malformed')) {
-      return 'auth.error_invalid_token';
-    }
-    return 'auth.error_session_expired';
+    return message.includes('invalid') || message.includes('malformed')
+      ? 'auth.error_invalid_token'
+      : 'auth.error_session_expired';
   }
-
-  // OAuth specific errors
   if (message.includes('oauth') || message.includes('provider')) {
     return 'auth.error_oauth_failed';
   }
-
-  // Email verification errors
   if (message.includes('verification') || message.includes('confirm')) {
-    if (message.includes('expired') || message.includes('invalid')) {
-      return 'auth.error_invalid_token';
-    }
-    return 'auth.error_verification_failed';
+    return message.includes('expired') || message.includes('invalid')
+      ? 'auth.error_invalid_token'
+      : 'auth.error_verification_failed';
   }
-
-  // Offline/network check (must come after specific checks)
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     return 'auth.error_offline_login';
   }
+  return null;
+}
 
-  // Fallback to generic error (never reveal specific details)
-  return 'auth.error_generic';
+/** Map Supabase AuthError to i18n keys */
+function mapSupabaseAuthError(error: UnknownError): string {
+  const authError = error as AuthError & { code?: string };
+  const ctx: AuthErrorContext = {
+    message: authError?.message?.toLowerCase() || '',
+    status: authError?.status,
+    name: authError?.name?.toLowerCase() || '',
+    normalizedCode: (authError?.code || '').toLowerCase().replace(/_/g, ''),
+  };
+
+  return (
+    checkWeakPassword(ctx) ||
+    checkCredentialErrors(ctx) ||
+    checkSessionErrors(ctx) ||
+    'auth.error_generic'
+  );
 }
 
 /**

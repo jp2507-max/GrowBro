@@ -1,19 +1,23 @@
-import * as FileSystem from 'expo-file-system';
+// SDK 54 hybrid approach: Paths for directory URIs, legacy API for async operations
+import { Paths } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 
 import type { ExecutionProvider } from '@/types/assessment';
 
-// Type-safe interface for FileSystem with proper null handling
-interface SafeFileSystem {
-  documentDirectory: string | null | undefined;
-  getInfoAsync: typeof FileSystem.getInfoAsync;
-  makeDirectoryAsync: typeof FileSystem.makeDirectoryAsync;
-  readAsStringAsync: typeof FileSystem.readAsStringAsync;
-  writeAsStringAsync: typeof FileSystem.writeAsStringAsync;
-  deleteAsync: typeof FileSystem.deleteAsync;
+/**
+ * Get the document directory URI using the new Paths API.
+ * Includes defensive validation to fail loudly if the URI is unavailable.
+ */
+function getDocumentDirectoryUri(): string {
+  const uri = Paths?.document?.uri;
+  if (!uri) {
+    throw new Error(
+      '[FileSystem] Document directory unavailable. Ensure expo-file-system is properly linked.'
+    );
+  }
+  return uri;
 }
-
-const safeFileSystem = FileSystem as unknown as SafeFileSystem;
 
 /**
  * Model configuration and metadata
@@ -154,14 +158,11 @@ export async function getModelPaths(): Promise<{
   checksumsPath: string;
 }> {
   // Models are stored in app documents directory
-  if (!safeFileSystem.documentDirectory) {
-    throw new Error('Document directory is not available');
-  }
-  const baseDir = `${safeFileSystem.documentDirectory}models/`;
+  const baseDir = `${getDocumentDirectoryUri()}models/`;
 
   // Ensure the models directory exists
   try {
-    await safeFileSystem.makeDirectoryAsync(baseDir, { intermediates: true });
+    await FileSystem.makeDirectoryAsync(baseDir, { intermediates: true });
   } catch (error) {
     throw new Error(
       `Failed to create models directory: ${error instanceof Error ? error.message : 'Unknown error'}`

@@ -1,7 +1,7 @@
 import * as Localization from 'expo-localization';
 import React from 'react';
 
-import { retentionWorker, useSyncPrefs } from '@/lib';
+import { retentionWorker, useAuth, useSyncPrefs } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
 import { getAnalyticsClient } from '@/lib/analytics-registry';
 import { registerNotificationMetrics } from '@/lib/notification-metrics';
@@ -10,7 +10,10 @@ import { consentManager } from '@/lib/privacy/consent-manager';
 import { setDeletionAdapter } from '@/lib/privacy/deletion-adapter';
 import { createSupabaseDeletionAdapter } from '@/lib/privacy/deletion-adapter-supabase';
 import { refreshQualityThresholds } from '@/lib/quality/remote-config';
-import { registerBackgroundTask } from '@/lib/sync/background-sync';
+import {
+  registerBackgroundTask,
+  unregisterBackgroundTask,
+} from '@/lib/sync/background-sync';
 import { setupSyncTriggers } from '@/lib/sync/sync-triggers';
 import { TaskNotificationService } from '@/lib/task-notifications';
 
@@ -61,91 +64,114 @@ export function getCurrentTimeZone(): string {
   return 'UTC';
 }
 
-function useSyncAndMetrics(): void {
-  React.useEffect(() => {
-    registerBackgroundTask().catch((error) => {
-      console.warn(
-        '[use-root-startup] Background task registration failed (may require iOS configuration):',
-        error
-      );
-    });
-    const dispose = setupSyncTriggers();
-    const start = Date.now();
+type MetricsState = {
+  cleanupNotificationMetrics: (() => void) | undefined;
+  coldStartTimer: ReturnType<typeof setTimeout> | undefined;
+  coldStartTracked: boolean;
+  cleanupUiMonitor: (() => void) | undefined;
+};
 
-    // IMPORTANT: registerNotificationMetrics installs listeners that emit
-    // telemetry via NoopAnalytics.track for notification events. These
-    // listeners must not be registered before the user has given analytics
-    // consent, otherwise an actual analytics client wired in place of
-    // NoopAnalytics would record events prior to opt-in. We subscribe to
-    // consent changes so listeners are added when consent is granted and
-    // removed again if consent is withdrawn during the app lifetime.
+function createMetricsManager(start: number) {
+  const state: MetricsState = {
+    cleanupNotificationMetrics: undefined,
+    coldStartTimer: undefined,
+    coldStartTracked: false,
+    cleanupUiMonitor: undefined,
+  };
 
-    let cleanupNotificationMetrics: (() => void) | undefined;
-    let coldStartTimer: ReturnType<typeof setTimeout> | undefined;
-    let coldStartTracked = false; // ensure we track the cold start metric at most once
-    let cleanupUiMonitor: (() => void) | undefined;
-
-    function registerMetricsOnce() {
-      if (!cleanupNotificationMetrics) {
-        cleanupNotificationMetrics = registerNotificationMetrics();
-      }
-      if (!cleanupUiMonitor) {
-        cleanupUiMonitor = startUiResponsivenessMonitor({
-          analytics: getAnalyticsClient(),
-          isTrackingEnabled: () => consentManager.hasConsented('analytics'),
+  function registerOnce() {
+    if (!state.cleanupNotificationMetrics) {
+      state.cleanupNotificationMetrics = registerNotificationMetrics();
+    }
+    if (!state.cleanupUiMonitor) {
+      state.cleanupUiMonitor = startUiResponsivenessMonitor({
+        analytics: getAnalyticsClient(),
+        isTrackingEnabled: () => consentManager.hasConsented('analytics'),
+      });
+    }
+    if (!state.coldStartTracked) {
+      state.coldStartTimer = setTimeout(() => {
+        void NoopAnalytics.track('perf_cold_start_ms', {
+          ms: Date.now() - start,
         });
-      }
-      if (!coldStartTracked) {
-        coldStartTimer = setTimeout(() => {
-          void NoopAnalytics.track('perf_cold_start_ms', {
-            ms: Date.now() - start,
-          });
-          coldStartTracked = true;
-          coldStartTimer = undefined;
-        }, 0);
-      }
+        state.coldStartTracked = true;
+        state.coldStartTimer = undefined;
+      }, 0);
     }
+  }
 
-    function unregisterMetrics() {
-      try {
-        cleanupNotificationMetrics?.();
-      } catch {}
-      cleanupNotificationMetrics = undefined;
-      try {
-        cleanupUiMonitor?.();
-      } catch {}
-      cleanupUiMonitor = undefined;
-      if (coldStartTimer) {
-        clearTimeout(coldStartTimer);
-        coldStartTimer = undefined;
-      }
+  function unregisterAll() {
+    try {
+      state.cleanupNotificationMetrics?.();
+    } catch {}
+    state.cleanupNotificationMetrics = undefined;
+    try {
+      state.cleanupUiMonitor?.();
+    } catch {}
+    state.cleanupUiMonitor = undefined;
+    if (state.coldStartTimer) {
+      clearTimeout(state.coldStartTimer);
+      state.coldStartTimer = undefined;
     }
+  }
 
-    // Initialize based on current consent state
-    if (consentManager.hasConsented('analytics')) {
-      registerMetricsOnce();
-    }
+  return { registerOnce, unregisterAll };
+}
 
-    // Subscribe to consent changes so we can add/remove listeners at runtime
+function useSyncAndMetrics(): void {
+  const authStatus = useAuth.use.status();
+  const registrationRef = React.useRef<Promise<void> | null>(null);
+
+  React.useEffect(() => {
+    if (authStatus !== 'signIn') return;
+    let isMounted = true;
+
+    const registrationPromise = registerBackgroundTask()
+      .then(() => {
+        if (!isMounted) void unregisterBackgroundTask().catch(() => {});
+      })
+      .catch((error) => {
+        console.warn(
+          '[use-root-startup] Background task registration failed:',
+          error
+        );
+      })
+      .finally(() => {
+        if (registrationRef.current === registrationPromise)
+          registrationRef.current = null;
+      });
+
+    registrationRef.current = registrationPromise;
+    const dispose = setupSyncTriggers();
+    const metrics = createMetricsManager(Date.now());
+
+    if (consentManager.hasConsented('analytics')) metrics.registerOnce();
+
     const unsubscribe = consentManager.onConsentChanged(
       'analytics',
       (consented) => {
         try {
-          if (consented) registerMetricsOnce();
-          else unregisterMetrics();
+          if (consented) metrics.registerOnce();
+          else metrics.unregisterAll();
         } catch {}
       }
     );
 
     return () => {
-      // cleanup subscription and any registered metrics/listeners
+      isMounted = false;
       try {
         unsubscribe();
       } catch {}
-      unregisterMetrics();
+      metrics.unregisterAll();
       dispose();
+      const pending = registrationRef.current;
+      if (pending)
+        void pending.finally(() => {
+          unregisterBackgroundTask().catch(() => {});
+        });
+      else unregisterBackgroundTask().catch(() => {});
     };
-  }, []);
+  }, [authStatus]);
 }
 
 function startRootInitialization(

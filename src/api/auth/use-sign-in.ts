@@ -4,14 +4,143 @@
  */
 
 import { Env } from '@env';
+import type { Session, User } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
 import { createMutation } from 'react-query-kit';
 
 import { useAuth } from '@/lib/auth';
 import { logAuthError, trackAuthEvent } from '@/lib/auth/auth-telemetry';
 
-import { mapAuthError } from './error-mapper';
-import type { SignInResponse, SignInVariables } from './types';
+import type {
+  AuthErrorResponse,
+  SignInResponse,
+  SignInVariables,
+} from './types';
+
+// Extended Error type with auth metadata
+type AuthMutationError = Error & {
+  code?: string;
+  metadata?: { lockout?: boolean; minutes_remaining?: number };
+};
+
+// Edge Function response types
+interface EdgeFunctionSuccessResponse {
+  success: true;
+  session: {
+    access_token: string;
+    refresh_token: string;
+    expires_at: number;
+    expires_in: number;
+  };
+  user: {
+    id: string;
+    email: string;
+    email_confirmed_at: string | null;
+    created_at: string;
+    user_metadata: Record<string, unknown>;
+    app_metadata: Record<string, unknown>;
+    aud: string;
+    role?: string;
+  };
+}
+
+type EdgeFunctionResponse = EdgeFunctionSuccessResponse | AuthErrorResponse;
+
+/** Get Supabase config from environment */
+function getSupabaseConfig(): { url: string; anonKey: string } {
+  const url = Env?.SUPABASE_URL || Env?.EXPO_PUBLIC_SUPABASE_URL || '';
+  const anonKey =
+    Env?.SUPABASE_ANON_KEY || Env?.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+  return { url, anonKey };
+}
+
+/** Call Edge Function and parse response */
+async function callEdgeFunction(
+  email: string,
+  password: string,
+  appVersion?: string
+): Promise<EdgeFunctionResponse> {
+  const { url, anonKey } = getSupabaseConfig();
+  if (!url || !anonKey) throw new Error('auth.error_generic');
+
+  const response = await fetch(`${url}/functions/v1/enforce-auth-lockout`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: anonKey },
+    body: JSON.stringify({
+      email,
+      password,
+      appVersion: appVersion || Constants.expoConfig?.version || 'unknown',
+    }),
+  });
+
+  if (__DEV__) console.log('[SignIn] Edge Function status:', response.status);
+
+  try {
+    const result: EdgeFunctionResponse = await response.json();
+    return { ...result, _httpOk: response.ok } as EdgeFunctionResponse & {
+      _httpOk: boolean;
+    };
+  } catch {
+    if (__DEV__) console.warn('[SignIn] Failed to parse response as JSON');
+    const error = new Error('auth.error_generic') as AuthMutationError;
+    error.code = 'invalid_response';
+    throw error;
+  }
+}
+
+/** Handle error response from Edge Function */
+function handleErrorResponse(
+  result: EdgeFunctionResponse,
+  _httpOk: boolean
+): never {
+  const isValidError =
+    result &&
+    typeof result === 'object' &&
+    'error' in result &&
+    typeof (result as AuthErrorResponse).error === 'string' &&
+    'code' in result;
+
+  const errResp: AuthErrorResponse = isValidError
+    ? (result as AuthErrorResponse)
+    : { error: 'auth.error_generic', code: 'unknown_error' };
+
+  if (__DEV__) {
+    console.warn('[SignIn] Edge Function error', {
+      code: errResp.code,
+      error: errResp.error,
+      metadata: errResp.metadata,
+    });
+  }
+
+  const error = new Error(errResp.error) as AuthMutationError;
+  error.code = errResp.code;
+  error.metadata = errResp.metadata;
+  throw error;
+}
+
+/** Build Session object from Edge Function response */
+function buildSession(
+  edgeSession: EdgeFunctionSuccessResponse['session'],
+  edgeUser: EdgeFunctionSuccessResponse['user']
+): Session {
+  return {
+    access_token: edgeSession.access_token,
+    refresh_token: edgeSession.refresh_token,
+    expires_at: edgeSession.expires_at,
+    expires_in: edgeSession.expires_in,
+    token_type: 'bearer',
+    user: {
+      id: edgeUser.id,
+      email: edgeUser.email ?? '',
+      email_confirmed_at: edgeUser.email_confirmed_at,
+      created_at: edgeUser.created_at,
+      user_metadata: edgeUser.user_metadata ?? {},
+      app_metadata: edgeUser.app_metadata ?? {},
+      aud: edgeUser.aud,
+      role: edgeUser.role,
+    } as User,
+  };
+}
 
 /**
  * Hook for signing in with email and password
@@ -34,98 +163,60 @@ export const useSignIn = createMutation<SignInResponse, SignInVariables, Error>(
   {
     mutationFn: async (variables) => {
       const { email, password, appVersion } = variables;
+      const startedAt = Date.now();
+      if (__DEV__) console.log('[SignIn] starting sign-in via Edge Function');
 
-      // Get Supabase URL from environment
-      const supabaseUrl =
-        Env?.SUPABASE_URL || Env?.EXPO_PUBLIC_SUPABASE_URL || '';
-      if (!supabaseUrl) {
-        throw new Error('Missing SUPABASE_URL environment variable');
+      // Call Edge Function with brute-force protection (Req 8.1)
+      const result = (await callEdgeFunction(
+        email,
+        password,
+        appVersion
+      )) as EdgeFunctionResponse & { _httpOk?: boolean };
+      const httpOk = result._httpOk ?? true;
+
+      // Handle error responses
+      if (!httpOk || !('success' in result) || !result.success) {
+        handleErrorResponse(result, httpOk);
       }
 
-      // Call Edge Function for lockout-protected sign in
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/enforce-auth-lockout`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: Env?.SUPABASE_ANON_KEY || '',
-          },
-          body: JSON.stringify({
-            email,
-            password,
-            appVersion:
-              appVersion || Constants.expoConfig?.version || 'Unknown',
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      // Handle error response
-      if (!response.ok || !data.success) {
-        const errorKey = mapAuthError(data);
-        const error = new Error(errorKey) as Error & {
-          code?: string;
-          metadata?: {
-            lockout?: boolean;
-            minutes_remaining?: number;
-          };
-        };
-        error.code = data.code;
-        error.metadata = data.metadata;
-        throw error;
+      // Build session from Edge Function response
+      const { session: edgeSession, user: edgeUser } = result;
+      if (__DEV__) {
+        console.log('[SignIn] success in', Date.now() - startedAt, 'ms');
       }
 
-      // Extract session and user from response
-      const { session, user } = data;
+      const session = buildSession(edgeSession, edgeUser);
+      const user: User = session.user;
 
-      if (!session || !user) {
-        throw new Error('auth.error_generic');
-      }
+      // Update auth store (must happen in mutationFn, not onSuccess)
+      if (__DEV__) console.log('[SignIn] updating auth store');
+      await useAuth.getState().signIn({ session, user });
+      if (__DEV__) console.log('[SignIn] auth store updated');
 
-      // Convert to Supabase Session/User format
-      const supabaseSession = {
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-        expires_in: session.expires_in,
-        expires_at: session.expires_at,
-        token_type: 'bearer' as const,
-        user,
-      };
-
-      return {
-        session: supabaseSession,
-        user,
-      };
+      return { session, user };
     },
 
     onSuccess: async (data) => {
-      // Update Zustand auth store (which handles Supabase client session)
-      const { signIn: storeSignIn } = useAuth.getState();
-      await storeSignIn({
-        session: data.session,
-        user: data.user,
-      });
-
       // Track analytics event with consent checking and PII sanitization
+      // Note: Auth store update moved to mutationFn to ensure it always runs
+      if (__DEV__) {
+        console.log('[SignIn] onSuccess - tracking analytics');
+      }
       await trackAuthEvent('auth_sign_in', {
         method: 'email',
         email: data.user.email,
         user_id: data.user.id,
         ip_address: null, // Will be populated by Edge Function if available
       });
+      if (__DEV__) {
+        console.log('[SignIn] onSuccess complete');
+      }
     },
 
-    onError: async (
-      error: Error & {
-        code?: string;
-        metadata?: {
-          lockout?: boolean;
-          minutes_remaining?: number;
-        };
+    onError: async (error: AuthMutationError) => {
+      if (__DEV__) {
+        console.warn('[SignIn] onError', error);
       }
-    ) => {
       // Log error for debugging with consent checking
       await logAuthError(error, {
         errorKey: error.message,
@@ -134,6 +225,11 @@ export const useSignIn = createMutation<SignInResponse, SignInVariables, Error>(
         flow: 'sign_in',
         method: 'email',
       });
+    },
+    onSettled: () => {
+      if (__DEV__) {
+        console.log('[SignIn] settled');
+      }
     },
   }
 );

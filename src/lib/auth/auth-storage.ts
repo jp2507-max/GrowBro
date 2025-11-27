@@ -72,6 +72,18 @@ async function getAuthStorage(): Promise<MMKV> {
   return authStorage;
 }
 
+export async function clearAuthStorage(): Promise<void> {
+  const storage = await getAuthStorage();
+  try {
+    const keys = storage.getAllKeys();
+    for (const key of keys) {
+      storage.delete(key);
+    }
+  } catch (error) {
+    console.error('[auth] Failed to clear auth storage:', error);
+  }
+}
+
 /**
  * Storage adapter for Supabase Auth that uses MMKV
  * Implements the Storage interface required by @supabase/supabase-js

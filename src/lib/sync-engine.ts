@@ -1,3 +1,4 @@
+import { Env } from '@env';
 import type { Collection, Model } from '@nozbe/watermelondb';
 
 import { queryClient } from '@/api/common/api-provider';
@@ -154,9 +155,12 @@ const SYNC_TABLES: TableName[] = [
 const MAX_PUSH_CHUNK_PER_TABLE = 1000; // per-batch limit (Req 6.2)
 const CHECKPOINT_KEY = 'sync.lastPulledAt';
 const API_BASE =
-  process.env.EXPO_PUBLIC_API_BASE_URL ??
-  process.env.API_BASE_URL ??
-  process.env.API_URL ??
+  (typeof Env?.API_URL === 'string' && Env.API_URL) ||
+  (typeof Env?.EXPO_PUBLIC_API_BASE_URL === 'string' &&
+    Env.EXPO_PUBLIC_API_BASE_URL) ||
+  process.env.EXPO_PUBLIC_API_BASE_URL ||
+  process.env.API_BASE_URL ||
+  process.env.API_URL ||
   '';
 
 if (!API_BASE) {

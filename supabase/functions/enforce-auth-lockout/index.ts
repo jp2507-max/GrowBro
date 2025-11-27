@@ -290,6 +290,9 @@ Deno.serve(async (req: Request) => {
           email_confirmed_at: authData.user.email_confirmed_at,
           created_at: authData.user.created_at,
           user_metadata: authData.user.user_metadata,
+          app_metadata: authData.user.app_metadata,
+          aud: authData.user.aud,
+          role: authData.user.role,
         },
       }),
       {

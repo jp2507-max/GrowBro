@@ -9,7 +9,7 @@ type PendingMfaEnrollment = {
   factorId: string;
   secret: string;
   uri: string;
-  friendlyName?: string;
+  friendlyName: string | null;
 };
 
 type MfaSetupModalProps = {

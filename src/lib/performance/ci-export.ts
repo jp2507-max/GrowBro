@@ -3,18 +3,26 @@
  * Exports performance metrics and reports for CI pipeline consumption
  */
 
-import * as FileSystem from 'expo-file-system';
+// SDK 54 hybrid approach: Paths for directory URIs, legacy API for async operations
+import { Paths } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 
 import type { PerformanceArtifact, RNPerformanceReport } from './types';
 
-// Type-safe interface for FileSystem module
-type FileSystemWithDocumentDirectory = typeof FileSystem & {
-  documentDirectory: string | null | undefined;
-  writeAsStringAsync: (fileUri: string, contents: string) => Promise<void>;
-};
-
-const safeFileSystem = FileSystem as FileSystemWithDocumentDirectory;
+/**
+ * Get the document directory URI using the new Paths API.
+ * Includes defensive validation to fail loudly if the URI is unavailable.
+ */
+function getDocumentDirectoryUri(): string {
+  const uri = Paths?.document?.uri;
+  if (!uri) {
+    throw new Error(
+      '[FileSystem] Document directory unavailable. Ensure expo-file-system is properly linked.'
+    );
+  }
+  return uri;
+}
 
 /**
  * Export RN Performance report to JSON for CI artifacts
@@ -123,16 +131,12 @@ export async function writePerformanceReportToFile(
   fileName: string = 'performance.json'
 ): Promise<string | null> {
   try {
-    const { documentDirectory, writeAsStringAsync } = safeFileSystem;
-
-    if (!documentDirectory) {
-      throw new Error('Document directory is not available');
-    }
+    const documentDirectory = getDocumentDirectoryUri();
 
     const json = exportPerformanceReportJSON(reports);
     const filePath = `${documentDirectory}${fileName}`;
 
-    await writeAsStringAsync(filePath, json);
+    await FileSystem.writeAsStringAsync(filePath, json);
 
     console.log(`[PERFORMANCE_REPORT_FILE] ${filePath}`);
     return filePath;
@@ -147,6 +151,5 @@ export async function writePerformanceReportToFile(
  * This path is accessible by adb pull on Android
  */
 export function getPerformanceReportPath(): string {
-  const { documentDirectory } = safeFileSystem;
-  return `${documentDirectory}performance.json`;
+  return `${getDocumentDirectoryUri()}performance.json`;
 }

@@ -1,5 +1,6 @@
 import * as Battery from 'expo-battery';
-import * as FileSystem from 'expo-file-system';
+// Use legacy API for FileSystem.deleteAsync support
+import * as FileSystem from 'expo-file-system/legacy';
 
 import type {
   CleanupResult,
@@ -11,7 +12,7 @@ import { DEFAULT_PHOTO_STORAGE_CONFIG } from '@/types/photo-storage';
 import {
   cleanupOrphans,
   detectOrphans,
-  getAllPhotoFiles,
+  getPhotoFiles,
 } from './photo-storage-service';
 
 /**
@@ -48,7 +49,7 @@ async function shouldSkipCleanup(
 async function cleanupOrphanedFiles(
   referencedUris: string[]
 ): Promise<{ orphansRemoved: number; remainingFiles: PhotoFile[] }> {
-  const allFiles = await getAllPhotoFiles();
+  const allFiles = await getPhotoFiles();
   const orphans = await detectOrphans(referencedUris);
   const { deletedCount: orphansRemoved, deletedPaths } =
     await cleanupOrphans(orphans);

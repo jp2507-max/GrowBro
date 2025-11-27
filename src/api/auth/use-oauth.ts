@@ -1,5 +1,5 @@
 /**
- * React Query mutation hooks for OAuth authentication
+ * React Query mutation hooks for OAuth authentications
  * Supports Apple and Google sign-in via web flow and native ID token flow
  */
 
@@ -173,6 +173,22 @@ export const useSignInWithIdToken = createMutation<
       throw new Error('auth.error_oauth_failed');
     }
 
+    // CRITICAL: Update auth store inside mutationFn, not onSuccess
+    // When consumers pass their own onSuccess to useSignInWithIdToken(),
+    // react-query-kit replaces the base onSuccess callback instead of merging.
+    // Moving this here ensures auth state always updates regardless of consumer callbacks.
+    if (__DEV__) {
+      console.log('[OAuth] updating auth store');
+    }
+    const { signIn: storeSignIn } = useAuth.getState();
+    await storeSignIn({
+      session: data.session,
+      user: data.user,
+    });
+    if (__DEV__) {
+      console.log('[OAuth] auth store updated');
+    }
+
     return {
       session: data.session,
       user: data.user,
@@ -180,14 +196,8 @@ export const useSignInWithIdToken = createMutation<
   },
 
   onSuccess: async (data, variables) => {
-    // Update Zustand auth store
-    const { signIn: storeSignIn } = useAuth.getState();
-    await storeSignIn({
-      session: data.session,
-      user: data.user,
-    });
-
     // Track analytics event with consent checking and PII sanitization
+    // Note: Auth store update moved to mutationFn to ensure it always runs
     await trackAuthEvent('auth_sign_in', {
       method: `${variables.provider}_native`,
       provider: variables.provider,
