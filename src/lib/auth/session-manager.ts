@@ -246,7 +246,14 @@ function createSessionManager(): SessionManager {
         }
 
         if (!session) {
-          // No valid session - this is expected if user just signed out
+          // Supabase has no session but local store thinks we're signed in.
+          // This can happen if MMKV/Supabase storage was cleared externally.
+          // Sign out to clear local state and prevent stuck broken-auth state.
+          console.log(
+            '[SessionManager] No Supabase session, clearing local auth state'
+          );
+          const { signOut } = useAuth.getState();
+          await signOut();
           return false;
         }
 
@@ -331,8 +338,11 @@ export function useSessionAutoRefresh(
         // without scheduling here can cause the session to expire silently if
         // the previous refresh failed or didn't extend expiry.
         const remaining = MIN_REFRESH_INTERVAL - timeSinceLastRefresh;
-        // Ensure we wait at least 1s to batch rapid state changes
-        const delay = Math.max(1000, remaining);
+        // Ensure we wait at least 1s to batch rapid state changes,
+        // but never exceed time until expiry minus a safety buffer (2s)
+        // to prevent token expiring before refresh runs
+        const maxSafeDelay = Math.max(1000, timeUntilExpiry - 2000);
+        const delay = Math.min(Math.max(1000, remaining), maxSafeDelay);
 
         const timerId = setTimeout(async () => {
           lastRefreshTimeRef.current = Date.now();

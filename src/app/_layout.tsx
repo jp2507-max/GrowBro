@@ -476,14 +476,18 @@ function waitForCleanupPromise(
 
   const poll = (): void => {
     if (cleanupState.inProgress) {
+      // Attach a catch before finally so rejections from the cleanup promise
+      // are handled correctly. We perform the single resolve() call from
+      // finally to guarantee it's invoked exactly once for both success and
+      // failure paths.
       cleanupState.inProgress
-        .finally(() => {
-          if (!cleanupState.resolved) {
-            cleanupState.resolved = true;
-            resolve();
-          }
+        .catch((error) => {
+          console.error(
+            '[RootLayout] waitForCleanup: cleanup promise rejected',
+            error
+          );
         })
-        .catch(() => {
+        .finally(() => {
           if (!cleanupState.resolved) {
             cleanupState.resolved = true;
             resolve();
