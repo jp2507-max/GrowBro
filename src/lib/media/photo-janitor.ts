@@ -1,3 +1,6 @@
+// NOTE: This file imports the legacy expo-file-system entrypoint
+// (expo-file-system/legacy) because we rely on the older deleteAsync
+// behaviour. Tests provide a manual mock at __mocks__/expo-file-system/legacy.ts.
 import * as Battery from 'expo-battery';
 // Use legacy API for FileSystem.deleteAsync support
 import * as FileSystem from 'expo-file-system/legacy';
