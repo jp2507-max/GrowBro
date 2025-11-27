@@ -18,7 +18,7 @@ export const Directory = jest
       create: jest.fn(),
       list: jest.fn().mockReturnValue([]),
     })
-  ) as any;
+  ) as jest.Mock<DirectoryLike, [{ uri: string } | null | undefined, string]>;
 
 type DirectoryLike = {
   uri: string;
@@ -47,7 +47,10 @@ export class File {
     this.size = 1024; // Mock size
   }
 
-  async write(_content: any, _options?: any) {
+  async write(
+    _content: string | ArrayBuffer | Uint8Array,
+    _options?: { encoding?: string }
+  ) {
     // Mock implementation
   }
 
@@ -56,8 +59,10 @@ export class File {
   }
 }
 
+// Provide simple Path objects with `uri` shape to match SDK 54 Paths API
 export const Paths = {
-  cache: new Directory(null as any, 'cache'),
+  cache: { uri: cacheDirectory },
+  document: { uri: documentDirectory },
   get totalDiskSpace() {
     return 100000000; // 100MB
   },

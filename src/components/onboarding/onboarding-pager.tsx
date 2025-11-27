@@ -131,7 +131,8 @@ export function OnboardingPager({
   const handleDone = React.useCallback(() => {
     const now = Date.now();
     const tracking = trackingRef.current;
-    trackStepIfChanged(tracking.previousIndex + 1, tracking, now); // Force final step track
+    // Track completion of the current/final slide before marking onboarding complete
+    trackStepIfChanged(tracking.previousIndex, tracking, now);
     trackOnboardingComplete(now - tracking.startTime, slides.length);
     onComplete();
   }, [onComplete, slides.length]);
@@ -139,7 +140,8 @@ export function OnboardingPager({
   const handleSkip = React.useCallback(() => {
     const now = Date.now();
     const tracking = trackingRef.current;
-    trackStepIfChanged(tracking.previousIndex + 1, tracking, now);
+    // Track completion of the current slide before marking as skipped
+    trackStepIfChanged(tracking.previousIndex, tracking, now);
     trackOnboardingSkipped(
       `slide_${Math.round(activeIndex.value)}`,
       'user_skip'

@@ -1,8 +1,8 @@
 import { Env } from '@env';
 // SDK 54 hybrid approach: Paths for directory URIs, legacy API for async operations
-import { Paths } from 'expo-file-system';
 import * as FileSystem from 'expo-file-system/legacy';
 
+import { getCacheDirectoryUri, getDocumentDirectoryUri } from '@/lib/fs/paths';
 import type {
   PhotoFile,
   PhotoVariants,
@@ -18,33 +18,7 @@ import {
 } from './photo-hash';
 import { generatePhotoVariants } from './photo-variants';
 
-/**
- * Get the cache directory URI using the new Paths API.
- * Includes defensive validation to fail loudly if the URI is unavailable.
- */
-function getCacheDirectoryUri(): string {
-  const uri = Paths?.cache?.uri;
-  if (!uri) {
-    throw new Error(
-      '[FileSystem] Cache directory unavailable. Ensure expo-file-system is properly linked.'
-    );
-  }
-  return uri;
-}
-
-/**
- * Get the document directory URI using the new Paths API.
- * Includes defensive validation to fail loudly if the URI is unavailable.
- */
-function getDocumentDirectoryUri(): string {
-  const uri = Paths?.document?.uri;
-  if (!uri) {
-    throw new Error(
-      '[FileSystem] Document directory unavailable. Ensure expo-file-system is properly linked.'
-    );
-  }
-  return uri;
-}
+// getCacheDirectoryUri() and getDocumentDirectoryUri() moved to '@/lib/fs/paths'
 
 /**
  * Photo storage service for harvest workflow
@@ -126,6 +100,12 @@ export async function downloadRemoteImage(
   const base64 = await blobToBase64(blob);
 
   const dirUri = await getPhotoDirectoryUri();
+  if (!dirUri) {
+    throw new Error(
+      'Photo storage unavailable: FileSystem not initialized. Please restart the app or contact support.'
+    );
+  }
+
   const extension = determineImageExtension(rawContentType, parsedUrl.pathname);
   const tempFilename = `remote_${Date.now()}_${Math.random()
     .toString(36)
@@ -401,12 +381,37 @@ let fileSystemInitPromise: Promise<string | null> | null = null;
  * With SDK 54+ Paths API, directories are always available when the native module is linked.
  */
 function isFileSystemAvailable(): boolean {
+  // Call each path resolver separately and catch errors per-call so that a
+  // thrown error from one does not prevent attempting the other.
   try {
-    // Paths.cache and Paths.document are always available in SDK 54+
-    return !!(getCacheDirectoryUri() || getDocumentDirectoryUri());
+    const cache = (() => {
+      try {
+        return getCacheDirectoryUri();
+      } catch {
+        return null;
+      }
+    })();
+
+    if (cache) return true;
   } catch {
-    return false;
+    // Fall through to document directory check
   }
+
+  try {
+    const doc = (() => {
+      try {
+        return getDocumentDirectoryUri();
+      } catch {
+        return null;
+      }
+    })();
+
+    if (doc) return true;
+  } catch {
+    // If both calls threw, we'll reach the final return false below
+  }
+
+  return false;
 }
 
 /**

@@ -1,35 +1,10 @@
 import * as Crypto from 'expo-crypto';
 // SDK 54 hybrid approach: Paths for directory URIs, legacy API for async operations
-import { Paths } from 'expo-file-system';
 import * as FileSystem from 'expo-file-system/legacy';
 
-/**
- * Get the document directory URI using the new Paths API.
- * Includes defensive validation to fail loudly if the URI is unavailable.
- */
-function getDocumentDirectoryUri(): string {
-  const uri = Paths?.document?.uri;
-  if (!uri) {
-    throw new Error(
-      '[FileSystem] Document directory unavailable. Ensure expo-file-system is properly linked.'
-    );
-  }
-  return uri;
-}
+import { getCacheDirectoryUri, getDocumentDirectoryUri } from '@/lib/fs/paths';
 
-/**
- * Get the cache directory URI using the new Paths API.
- * Includes defensive validation to fail loudly if the URI is unavailable.
- */
-function getCacheDirectoryUri(): string {
-  const uri = Paths?.cache?.uri;
-  if (!uri) {
-    throw new Error(
-      '[FileSystem] Cache directory unavailable. Ensure expo-file-system is properly linked.'
-    );
-  }
-  return uri;
-}
+// getDocumentDirectoryUri() and getCacheDirectoryUri() moved to '@/lib/fs/paths'
 
 export type ImageMetadata = {
   id: string;

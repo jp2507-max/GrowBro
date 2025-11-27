@@ -5,6 +5,7 @@ import {
   captureAndStore,
   cleanupOrphans,
   detectOrphans,
+  downloadRemoteImage,
   getPhotoFiles,
   getStorageInfo,
   hashAndStore,
@@ -454,6 +455,95 @@ describe('photo-storage-service', () => {
       const files = await getPhotoFiles();
 
       expect(files).toEqual([]);
+    });
+  });
+
+  describe('downloadRemoteImage', () => {
+    beforeEach(() => {
+      // Mock global fetch
+      global.fetch = jest.fn();
+    });
+
+    it('should download and store remote image successfully', async () => {
+      const mockBlob = {
+        arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(8)),
+        text: jest.fn().mockResolvedValue(''),
+        type: 'image/jpeg',
+      } as unknown as Blob;
+
+      // Mock fetch response
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        headers: {
+          get: (header: string) => {
+            if (header === 'Content-Type') return 'image/jpeg';
+            return null;
+          },
+        },
+        blob: jest.fn().mockResolvedValue(mockBlob),
+      });
+
+      // Mock btoa for base64 conversion
+      global.btoa = jest.fn().mockReturnValue('base64data');
+
+      const result = await downloadRemoteImage('https://example.com/image.jpg');
+
+      expect(result.localUri).toMatch(
+        /file:\/\/\/cache\/harvest-photos\/remote_\d+_\w+\.jpg/
+      );
+      expect(typeof result.cleanup).toBe('function');
+      expect(FileSystem.writeAsStringAsync).toHaveBeenCalled();
+    });
+
+    it('should throw error when FileSystem is unavailable', async () => {
+      // Mock getPhotoDirectoryUri to return null by mocking Paths to throw
+      jest.spyOn(require('expo-file-system'), 'Paths', 'get').mockReturnValue({
+        cache: { uri: null },
+        document: { uri: null },
+      });
+
+      try {
+        await expect(
+          downloadRemoteImage('https://example.com/image.jpg')
+        ).rejects.toThrow(
+          'Photo storage unavailable: FileSystem not initialized'
+        );
+      } finally {
+        // Restore original Paths
+        jest.restoreAllMocks();
+      }
+    });
+
+    it('should handle fetch errors', async () => {
+      (global.fetch as jest.Mock).mockRejectedValueOnce(
+        new Error('Network error')
+      );
+
+      await expect(
+        downloadRemoteImage('https://example.com/image.jpg')
+      ).rejects.toThrow('Failed to fetch remote image: Network error');
+    });
+
+    it('should reject non-HTTPs URLs', async () => {
+      await expect(
+        downloadRemoteImage('http://example.com/image.jpg')
+      ).rejects.toThrow('Remote image URL must use HTTPS');
+    });
+
+    it('should reject non-image content types', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        headers: {
+          get: (header: string) => {
+            if (header === 'Content-Type') return 'text/html';
+            return null;
+          },
+        },
+      });
+
+      await expect(
+        downloadRemoteImage('https://example.com/page.html')
+      ).rejects.toThrow('Remote file is not an image');
     });
   });
 });

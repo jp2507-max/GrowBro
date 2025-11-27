@@ -326,8 +326,20 @@ export function useSessionAutoRefresh(
       const timeSinceLastRefresh = now - lastRefreshTimeRef.current;
 
       if (timeSinceLastRefresh < MIN_REFRESH_INTERVAL) {
-        // Too soon since last refresh - skip to prevent loop
-        return undefined;
+        // Too soon since last refresh - schedule a retry after the remaining
+        // minimum interval instead of returning with no timer. Returning
+        // without scheduling here can cause the session to expire silently if
+        // the previous refresh failed or didn't extend expiry.
+        const remaining = MIN_REFRESH_INTERVAL - timeSinceLastRefresh;
+        // Ensure we wait at least 1s to batch rapid state changes
+        const delay = Math.max(1000, remaining);
+
+        const timerId = setTimeout(async () => {
+          lastRefreshTimeRef.current = Date.now();
+          await sessionManager.refreshSession();
+        }, delay);
+
+        return () => clearTimeout(timerId);
       }
 
       // Schedule refresh with a small delay to batch rapid state changes

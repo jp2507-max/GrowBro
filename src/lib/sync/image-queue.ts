@@ -41,16 +41,26 @@ type ImageQueueItem = {
 const getImageStorageDir = (): string => {
   return `${getDocumentDirectoryUri()}images/`;
 };
-const IMAGE_STORAGE_DIR = getImageStorageDir();
+
+// Lazily resolve the image storage directory on first use to avoid throwing
+// during module initialization when Paths.document.uri may not yet be available.
+let cachedImageStorageDir: string | null = null;
+function getImageStorageDirCached(): string {
+  if (cachedImageStorageDir) return cachedImageStorageDir;
+  cachedImageStorageDir = getImageStorageDir();
+  return cachedImageStorageDir;
+}
+
 const MAX_IMAGE_RETRIES = 3;
 
 /**
  * Ensure image storage directory exists
  */
 async function ensureImageDirectory(): Promise<void> {
-  const dirInfo = await FileSystem.getInfoAsync(IMAGE_STORAGE_DIR);
+  const dir = getImageStorageDirCached();
+  const dirInfo = await FileSystem.getInfoAsync(dir);
   if (!dirInfo.exists) {
-    await FileSystem.makeDirectoryAsync(IMAGE_STORAGE_DIR, {
+    await FileSystem.makeDirectoryAsync(dir, {
       intermediates: true,
     });
   }
@@ -73,7 +83,8 @@ export async function saveImageToFilesystem(
   const timestamp = Date.now();
   const extension = imageUri.split('.').pop() || 'jpg';
   const filename = `${recordId}_${timestamp}.${extension}`;
-  const localUri = `${IMAGE_STORAGE_DIR}${filename}`;
+  const dir = getImageStorageDirCached();
+  const localUri = `${dir}${filename}`;
 
   // Copy image to app's document directory
   await FileSystem.copyAsync({

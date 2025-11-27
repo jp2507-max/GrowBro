@@ -8,7 +8,6 @@
  */
 
 // SDK 54 hybrid approach: Paths for directory URIs, legacy API for async operations
-import { Paths } from 'expo-file-system';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import React from 'react';
@@ -17,27 +16,72 @@ import { Alert, Platform } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 
 import { Button } from '@/components/ui';
+import { getCacheDirectoryUri } from '@/lib/fs/paths';
 import { exportToCSV } from '@/lib/inventory/csv-export-service';
+import type { CSVExportResult } from '@/lib/inventory/types/csv';
 
-/**
- * Get the cache directory URI using the new Paths API.
- * Includes defensive validation to fail loudly if the URI is unavailable.
- */
-function getCacheDirectoryUri(): string {
-  const uri = Paths?.cache?.uri;
-  if (!uri) {
-    throw new Error(
-      '[FileSystem] Cache directory unavailable. Ensure expo-file-system is properly linked.'
-    );
-  }
-  return uri;
-}
+// getCacheDirectoryUri() moved to shared module '@/lib/fs/paths'
 
 interface ExportCSVButtonProps {
   variant?: 'default' | 'secondary' | 'outline' | 'ghost';
   size?: 'default' | 'lg' | 'sm';
   className?: string;
   testID?: string;
+}
+
+async function shareCSVFiles(
+  filePaths: string[],
+  dialogTitle: string,
+  sharingUnavailableMessage: string
+): Promise<void> {
+  if (Platform.OS !== 'android' && Platform.OS !== 'ios') return;
+
+  const isAvailable = await Sharing.isAvailableAsync();
+  if (!isAvailable) {
+    Alert.alert('Export Error', sharingUnavailableMessage);
+    return;
+  }
+
+  for (const filePath of filePaths) {
+    try {
+      await Sharing.shareAsync(filePath, {
+        mimeType: 'text/csv',
+        dialogTitle,
+        UTI: 'public.comma-separated-values-text',
+      });
+      await new Promise((res) => setTimeout(res, 250));
+    } catch (shareError) {
+      console.warn('Failed to share CSV file:', filePath, shareError);
+    }
+  }
+}
+
+async function writeCSVFilesToDisk(
+  result: CSVExportResult,
+  tempDir: string
+): Promise<string[]> {
+  const files = [result.items, result.batches, result.movements];
+  const filePaths: string[] = [];
+
+  for (const file of files) {
+    const filePath = `${tempDir}${file.filename}`;
+    await FileSystem.writeAsStringAsync(filePath, file.content);
+    filePaths.push(filePath);
+  }
+
+  return filePaths;
+}
+
+async function cleanupTempDir(tempDir: string | null): Promise<void> {
+  if (!tempDir) return;
+  try {
+    const info = await FileSystem.getInfoAsync(tempDir);
+    if (info.exists) {
+      await FileSystem.deleteAsync(tempDir, { idempotent: true });
+    }
+  } catch (cleanupError) {
+    console.warn('[CSV Export] Failed to remove temp files:', cleanupError);
+  }
 }
 
 export function ExportCSVButton({
@@ -51,45 +95,20 @@ export function ExportCSVButton({
 
   const handleExport = React.useCallback(async () => {
     setIsExporting(true);
+    let tempDir: string | null = null;
 
     try {
-      // Export to CSV
       const result = await exportToCSV({});
-
-      // Get cache directory using Paths API
       const cacheDir = getCacheDirectoryUri();
-
-      // Create temporary directory for CSV files
-      const tempDir = `${cacheDir}csv_export_${Date.now()}/`;
+      tempDir = `${cacheDir}csv_export_${Date.now()}/`;
       await FileSystem.makeDirectoryAsync(tempDir, { intermediates: true });
 
-      // Write CSV files to temporary directory
-      const files = [result.items, result.batches, result.movements];
-
-      const filePaths: string[] = [];
-      for (const file of files) {
-        const filePath = `${tempDir}${file.filename}`;
-        await FileSystem.writeAsStringAsync(filePath, file.content);
-        filePaths.push(filePath);
-      }
-
-      // Share files based on platform
-      if (Platform.OS === 'android' || Platform.OS === 'ios') {
-        const isAvailable = await Sharing.isAvailableAsync();
-        if (isAvailable) {
-          // Share first file with option to share all
-          await Sharing.shareAsync(filePaths[0], {
-            mimeType: 'text/csv',
-            dialogTitle: t('inventory.csv.export_title'),
-            UTI: 'public.comma-separated-values-text',
-          });
-        } else {
-          Alert.alert(
-            t('inventory.csv.export_error_title'),
-            t('inventory.csv.sharing_unavailable')
-          );
-        }
-      }
+      const filePaths = await writeCSVFilesToDisk(result, tempDir);
+      await shareCSVFiles(
+        filePaths,
+        t('inventory.csv.export_title'),
+        t('inventory.csv.sharing_unavailable')
+      );
 
       showMessage({
         message: t('inventory.csv.export_success_title'),
@@ -114,6 +133,7 @@ export function ExportCSVButton({
 
       console.error('CSV export failed:', error);
     } finally {
+      await cleanupTempDir(tempDir);
       setIsExporting(false);
     }
   }, [t]);

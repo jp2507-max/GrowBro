@@ -1,38 +1,15 @@
 import * as CryptoJS from 'crypto-js';
 import * as Crypto from 'expo-crypto';
-// SDK 54 hybrid approach: Paths for directory URIs, legacy API for async operations
-import { Paths } from 'expo-file-system';
+// SDK 54 hybrid approach: legacy API for async operations
 import * as FileSystem from 'expo-file-system/legacy';
 import * as SecureStore from 'expo-secure-store';
 
 import { imageCacheManager } from '@/lib/assessment/image-cache-manager';
 
+import { getAssessmentDir, sanitizePathSegment } from './assessment-paths';
+
 // Maximum image size to prevent memory spikes (10MB)
 export const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
-
-/**
- * Get the document directory URI using the new Paths API.
- * Falls back to cache directory for robustness on edge devices.
- */
-function getDocumentDirectoryUri(): string {
-  const documentUri = Paths?.document?.uri;
-  if (documentUri) {
-    return documentUri;
-  }
-
-  throw new Error(
-    '[FileSystem] Document directory unavailable. Ensure expo-file-system is properly linked.'
-  );
-}
-
-function sanitizePathSegment(segment: string): string {
-  // allow letters, numbers, underscore, hyphen; collapse others to "_"
-  return segment.replace(/[^a-zA-Z0-9_-]/g, '_');
-}
-
-function getAssessmentDir(): string {
-  return `${getDocumentDirectoryUri()}assessments/`;
-}
 
 const SECRET_KEY = 'assessment_filename_secret';
 

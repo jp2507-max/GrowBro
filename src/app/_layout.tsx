@@ -329,7 +329,7 @@ function usePhotoJanitorSetup(isI18nReady: boolean): void {
       // Abort first to signal all pending operations to stop
       abortController.abort();
       // Cancel the interaction task if it hasn't started yet
-      task.cancel();
+      task?.cancel?.();
       // Clear timeout as backup (abort handler should have done this already)
       if (timeoutId !== null) {
         clearTimeout(timeoutId);
