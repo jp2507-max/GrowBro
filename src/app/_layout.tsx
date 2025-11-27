@@ -279,6 +279,11 @@ function useConsentCheck(setShowConsent: (show: boolean) => void): void {
   }, [setShowConsent]);
 }
 
+// NOTE: Screen capture protection (ScreenCapture.preventScreenCaptureAsync) was intentionally
+// removed. GrowBro shows only user-owned educational content (grow logs, plant photos, settings)
+// with no financial data, visible passwords, or HIPAA-protected info. Blocking screenshots
+// hinders development debugging and app store review workflows without meaningful security benefit.
+
 function usePhotoJanitorSetup(isI18nReady: boolean): void {
   React.useEffect(() => {
     if (!isI18nReady) return;

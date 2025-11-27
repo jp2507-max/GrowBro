@@ -455,7 +455,12 @@ export function useRealtimeSessionRevocation(): void {
                 '[RealtimeSessionRevocation] Session revoked, signing out'
               );
               const { signOut } = useAuth.getState();
-              signOut();
+              signOut().catch((err) =>
+                console.error(
+                  '[RealtimeSessionRevocation] Sign out error:',
+                  err
+                )
+              );
             }
           }
         )

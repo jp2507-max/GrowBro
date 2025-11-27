@@ -496,21 +496,38 @@ describe('photo-storage-service', () => {
     });
 
     it('should throw error when FileSystem is unavailable', async () => {
-      // Mock getPhotoDirectoryUri to return null by mocking Paths to throw
-      jest.spyOn(require('expo-file-system'), 'Paths', 'get').mockReturnValue({
-        cache: { uri: null },
-        document: { uri: null },
-      });
+      // Reset module registry and mock expo-file-system so the module under test
+      // picks up a Paths implementation with null URIs at import time.
+      jest.resetModules();
+      jest.doMock('expo-file-system', () => ({
+        Paths: {
+          cache: { uri: null },
+          document: { uri: null },
+        },
+      }));
 
       try {
+        // Re-import a fresh instance of the module under test so it reads the
+        // mocked Paths during module initialization.
+        const { downloadRemoteImage: downloadRemoteImageFresh } = await import(
+          '../photo-storage-service'
+        );
+
         await expect(
-          downloadRemoteImage('https://example.com/image.jpg')
+          downloadRemoteImageFresh('https://example.com/image.jpg')
         ).rejects.toThrow(
           'Photo storage unavailable: FileSystem not initialized'
         );
       } finally {
-        // Restore original Paths
-        jest.restoreAllMocks();
+        // Restore module registry and mocks to avoid leaking state to other tests
+        jest.resetModules();
+        // Re-apply the original expo-file-system mock used at the top of this file
+        jest.doMock('expo-file-system', () => ({
+          Paths: {
+            cache: { uri: 'file:///cache/' },
+            document: { uri: 'file:///documents/' },
+          },
+        }));
       }
     });
 
