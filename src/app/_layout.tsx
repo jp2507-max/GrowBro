@@ -458,70 +458,8 @@ function persistConsents(
   });
 }
 
-// Cleanup state tracking for auth hydration timeout
-type CleanupState = {
-  inProgress: Promise<void> | null;
-  timeoutHandled: boolean;
-  resolved: boolean;
-};
-
-// Polls for cleanup promise completion with timeout
-function waitForCleanupPromise(
-  cleanupState: CleanupState,
-  resolve: () => void
-): void {
-  const MAX_WAIT_MS = 5000;
-  const POLL_INTERVAL_MS = 10;
-  const startTime = Date.now();
-
-  const poll = (): void => {
-    if (cleanupState.inProgress) {
-      // Attach a catch before finally so rejections from the cleanup promise
-      // are handled correctly. We perform the single resolve() call from
-      // finally to guarantee it's invoked exactly once for both success and
-      // failure paths.
-      cleanupState.inProgress
-        .catch((error) => {
-          console.error(
-            '[RootLayout] waitForCleanup: cleanup promise rejected',
-            error
-          );
-        })
-        .finally(() => {
-          if (!cleanupState.resolved) {
-            cleanupState.resolved = true;
-            resolve();
-          }
-        });
-    } else if (Date.now() - startTime < MAX_WAIT_MS) {
-      setTimeout(poll, POLL_INTERVAL_MS);
-    } else {
-      console.error('[RootLayout] waitForCleanup: timeout waiting for cleanup');
-      if (!cleanupState.resolved) {
-        cleanupState.resolved = true;
-        resolve();
-      }
-    }
-  };
-  poll();
-}
-
-// Creates abort handler for hydration timeout
-function createAbortHandler(
-  timeoutId: ReturnType<typeof setTimeout>,
-  cleanupState: CleanupState,
-  resolve: () => void
-): () => void {
-  return () => {
-    clearTimeout(timeoutId);
-    if (cleanupState.timeoutHandled) {
-      waitForCleanupPromise(cleanupState, resolve);
-    } else if (!cleanupState.resolved) {
-      cleanupState.resolved = true;
-      resolve();
-    }
-  };
-}
+// Timeout for auth hydration - 5s is generous for token check + signIn
+const HYDRATE_AUTH_TIMEOUT_MS = 5000;
 
 // Helper to initialize auth storage and hydrate states
 async function initializeAuthAndStates(): Promise<void> {
@@ -529,14 +467,10 @@ async function initializeAuthAndStates(): Promise<void> {
   await initAuthStorage();
   if (__DEV__) console.log('[RootLayout] after initAuthStorage');
 
-  const HYDRATE_AUTH_TIMEOUT_MS = 8000;
   const abortController = new AbortController();
-  let cleanupExecuted = false;
-  let didTimeout = false;
 
+  // Cleanup helper - clears auth state if not already signed in
   const executeCleanup = async (reason: string): Promise<void> => {
-    if (cleanupExecuted) return;
-    cleanupExecuted = true;
     if (useAuth.getState().status === 'signIn') {
       if (__DEV__) console.log(`[RootLayout] ${reason} but signed in, skip`);
       return;
@@ -546,52 +480,42 @@ async function initializeAuthAndStates(): Promise<void> {
     removeToken();
   };
 
+  // Hydration promise - aborts timeout on completion (success or failure)
   const hydratePromise = (async () => {
     try {
       await hydrateAuth();
-      abortController.abort();
       if (__DEV__) console.log('[RootLayout] hydrateAuth completed');
     } catch (error) {
-      abortController.abort();
       console.error('[RootLayout] hydrateAuth error', error);
       await executeCleanup('hydrateAuth failed');
+    } finally {
+      abortController.abort();
     }
   })();
 
-  const cleanupState: CleanupState = {
-    inProgress: null,
-    timeoutHandled: false,
-    resolved: false,
-  };
-
+  // Timeout promise - runs cleanup if hydration takes too long
   const timeoutPromise = new Promise<void>((resolve) => {
-    const timeoutId = setTimeout(() => {
-      cleanupState.timeoutHandled = true;
-      if (!abortController.signal.aborted) {
-        didTimeout = true;
-        cleanupState.inProgress = executeCleanup(
-          `hydrateAuth timeout after ${HYDRATE_AUTH_TIMEOUT_MS}ms`
-        );
-        cleanupState.inProgress.finally(() => {
-          if (!cleanupState.resolved) {
-            cleanupState.resolved = true;
-            resolve();
-          }
-        });
-      } else if (!cleanupState.resolved) {
-        cleanupState.resolved = true;
+    const timeoutId = setTimeout(async () => {
+      if (abortController.signal.aborted) {
         resolve();
+        return;
       }
+      await executeCleanup(
+        `hydrateAuth timeout after ${HYDRATE_AUTH_TIMEOUT_MS}ms`
+      );
+      resolve();
     }, HYDRATE_AUTH_TIMEOUT_MS);
 
-    abortController.signal.addEventListener(
-      'abort',
-      createAbortHandler(timeoutId, cleanupState, resolve)
-    );
+    // Cancel timeout if hydration completes first
+    abortController.signal.addEventListener('abort', () => {
+      clearTimeout(timeoutId);
+      resolve();
+    });
   });
 
-  await Promise.all([hydratePromise, timeoutPromise]);
-  if (__DEV__) console.log('[RootLayout] after hydrateAuth', { didTimeout });
+  // Race hydration against timeout - unblocks startup on whichever finishes first
+  await Promise.race([hydratePromise, timeoutPromise]);
+  if (__DEV__) console.log('[RootLayout] after hydrateAuth (race)');
 
   hydrateAgeGate();
   hydrateLegalAcceptances();
