@@ -11,9 +11,26 @@ import type {
 } from './types.ts';
 
 // Supabase client for strain_cache operations
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Lazily initialize Supabase client so missing env vars don't crash at module load.
+let supabase: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseClient() {
+  if (supabase) return supabase;
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    // Log a clear message — features that depend on Supabase will be disabled.
+    console.error(
+      'Supabase not configured: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing. Supabase cache operations will be disabled.'
+    );
+    return null;
+  }
+
+  supabase = createClient(supabaseUrl, supabaseServiceKey);
+  return supabase;
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -59,12 +76,19 @@ function checkRateLimit(ip: string): { allowed: boolean; retryAfter?: number } {
  * Searches by id or slug (handles both _id format from API and slugified names)
  * Returns the cached strain data if found, null otherwise
  */
+/**
+ * Generate a URL-safe slug from a string
+ */
+// slugify moved above to be available before getStrainFromSupabaseCache
+
 async function getStrainFromSupabaseCache(
   strainId: string
 ): Promise<any | null> {
   try {
+    const client = getSupabaseClient();
+    if (!client) return null;
     // First try exact match on id
-    const { data: idData, error: idError } = await supabase
+    const { data: idData, error: idError } = await client
       .from('strain_cache')
       .select('data')
       .eq('id', strainId)
@@ -75,7 +99,7 @@ async function getStrainFromSupabaseCache(
     }
 
     // Then try exact match on slug
-    const { data: slugData, error: slugError } = await supabase
+    const { data: slugData, error: slugError } = await client
       .from('strain_cache')
       .select('data')
       .eq('slug', strainId)
@@ -85,26 +109,19 @@ async function getStrainFromSupabaseCache(
       return slugData.data;
     }
 
-    // If not found and strainId looks like a name, try slugified version
-    if (strainId.includes(' ') || strainId.includes('-')) {
-      const slugified = strainId
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-')
-        .replace(/[^\w\-]+/g, '')
-        .replace(/\-\-+/g, '-');
+    // If not found, try slugified version (use shared slugify helper)
+    const slugified = slugify(strainId);
 
-      // Only try slugified if it's different from the original
-      if (slugified !== strainId) {
-        const { data: slugifiedData, error: slugifiedError } = await supabase
-          .from('strain_cache')
-          .select('data')
-          .eq('slug', slugified)
-          .maybeSingle();
+    // Only try slugified if it's different from the original
+    if (slugified !== strainId) {
+      const { data: slugifiedData, error: slugifiedError } = await client
+        .from('strain_cache')
+        .select('data')
+        .eq('slug', slugified)
+        .maybeSingle();
 
-        if (!slugifiedError && slugifiedData) {
-          return slugifiedData.data;
-        }
+      if (!slugifiedError && slugifiedData) {
+        return slugifiedData.data;
       }
     }
 
@@ -150,6 +167,14 @@ function extractRace(
  */
 async function saveStrainToSupabaseCache(strain: any): Promise<void> {
   try {
+    const client = getSupabaseClient();
+    if (!client) {
+      // Supabase not configured — skip caching but do not fail the request.
+      console.warn(
+        'Skipping Supabase cache save: Supabase client not configured'
+      );
+      return;
+    }
     // Extract ID - API uses _id, fallback to id or generate one
     const id =
       strain._id ||
@@ -162,7 +187,7 @@ async function saveStrainToSupabaseCache(strain: any): Promise<void> {
     // Extract race from genetics string
     const race = strain.race || extractRace(strain.genetics);
 
-    const { error } = await supabase.from('strain_cache').upsert(
+    const { error } = await client.from('strain_cache').upsert(
       {
         id: String(id),
         slug: String(slug),
@@ -400,6 +425,7 @@ async function fetchFromApi(
   const response = await fetch(url, {
     method: 'GET',
     headers,
+    signal: AbortSignal.timeout(10_000), // 10 second timeout
   });
 
   if (!response.ok) {
@@ -466,15 +492,13 @@ Deno.serve(async (req: Request) => {
     } else {
       // GET request - parse from URL
       const url = new URL(req.url);
+      const pageVal = Number(url.searchParams.get('page'));
+      const pageSizeVal = Number(url.searchParams.get('pageSize'));
       params = {
         endpoint: (url.searchParams.get('endpoint') as any) || 'list',
         strainId: url.searchParams.get('strainId') || undefined,
-        page: url.searchParams.get('page')
-          ? Number(url.searchParams.get('page'))
-          : undefined,
-        pageSize: url.searchParams.get('pageSize')
-          ? Number(url.searchParams.get('pageSize'))
-          : 20,
+        page: !Number.isNaN(pageVal) ? pageVal : undefined,
+        pageSize: !Number.isNaN(pageSizeVal) ? pageSizeVal : 20,
         cursor: url.searchParams.get('cursor') || undefined,
         searchQuery:
           url.searchParams.get('name') ||
@@ -499,16 +523,20 @@ Deno.serve(async (req: Request) => {
         filters.difficulty = url.searchParams.get('difficulty');
       }
       if (url.searchParams.get('thc_min')) {
-        filters.thcMin = Number(url.searchParams.get('thc_min'));
+        const val = Number(url.searchParams.get('thc_min'));
+        if (!Number.isNaN(val)) filters.thcMin = val;
       }
       if (url.searchParams.get('thc_max')) {
-        filters.thcMax = Number(url.searchParams.get('thc_max'));
+        const val = Number(url.searchParams.get('thc_max'));
+        if (!Number.isNaN(val)) filters.thcMax = val;
       }
       if (url.searchParams.get('cbd_min')) {
-        filters.cbdMin = Number(url.searchParams.get('cbd_min'));
+        const val = Number(url.searchParams.get('cbd_min'));
+        if (!Number.isNaN(val)) filters.cbdMin = val;
       }
       if (url.searchParams.get('cbd_max')) {
-        filters.cbdMax = Number(url.searchParams.get('cbd_max'));
+        const val = Number(url.searchParams.get('cbd_max'));
+        if (!Number.isNaN(val)) filters.cbdMax = val;
       }
 
       if (Object.keys(filters).length > 0) {

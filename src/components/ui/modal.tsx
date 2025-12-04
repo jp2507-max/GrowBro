@@ -42,6 +42,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Path, Svg } from 'react-native-svg';
 
+import colors from '@/components/ui/colors';
+
 import { Text } from './text';
 
 type ModalProps = BottomSheetModalProps & {
@@ -208,7 +210,8 @@ const CloseButton = ({ close }: { close: () => void }) => {
 
 const styles = StyleSheet.create({
   backdrop: {
-    backgroundColor: '#12121266',
+    // Use centralized design token for charcoal 950 and append alpha '66' for backdrop
+    backgroundColor: `${colors.charcoal[950]}66`,
   },
   detached: {
     marginHorizontal: 16,

@@ -3,6 +3,7 @@ import { Link } from 'expo-router';
 import * as React from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import Animated, {
+  ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -14,6 +15,7 @@ import { RaceBadge } from '@/components/strains/race-badge';
 import { THCBadge } from '@/components/strains/thc-badge';
 import { Image, Pressable, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
+import { strainImageTag } from '@/lib/animations';
 import { haptics } from '@/lib/haptics';
 import { formatStrainCardLabel } from '@/lib/strains/accessibility';
 import { getListImageProps } from '@/lib/strains/image-optimization';
@@ -23,7 +25,6 @@ import type { Strain } from '@/types/strains';
 type Props = {
   strain: Strain;
   testID?: string;
-  itemY?: number;
 };
 
 // Extracted component for badges
@@ -81,11 +82,17 @@ export const StrainCard = React.memo<Props>(({ strain, testID }) => {
 
   const onPressIn = React.useCallback(() => {
     haptics.selection();
-    scale.value = withSpring(0.97, { damping: 10, stiffness: 300 });
+    scale.value = withSpring(0.97, {
+      damping: 10,
+      stiffness: 300,
+    }).reduceMotion(ReduceMotion.System);
   }, [scale]);
 
   const onPressOut = React.useCallback(() => {
-    scale.value = withSpring(1, { damping: 10, stiffness: 300 });
+    scale.value = withSpring(1, {
+      damping: 10,
+      stiffness: 300,
+    }).reduceMotion(ReduceMotion.System);
   }, [scale]);
 
   const accessibilityLabel = React.useMemo(
@@ -124,7 +131,7 @@ export const StrainCard = React.memo<Props>(({ strain, testID }) => {
             <AnimatedImage
               className="size-full"
               contentFit="cover"
-              sharedTransitionTag={`strain-image-${strain.slug}`}
+              sharedTransitionTag={strainImageTag(strain.slug)}
               {...imageProps}
             />
 

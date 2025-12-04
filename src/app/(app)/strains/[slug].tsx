@@ -16,6 +16,7 @@ import { THCBadge } from '@/components/strains/thc-badge';
 import { Image, Pressable, Text, View } from '@/components/ui';
 import { ArrowLeft, Share as ShareIcon } from '@/components/ui/icons';
 import { ListErrorState } from '@/components/ui/list';
+import { strainImageTag } from '@/lib/animations';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
@@ -23,6 +24,59 @@ import { getListImageProps } from '@/lib/strains/image-optimization';
 import type { Strain } from '@/types/strains';
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
+
+/** Fire-and-forget background cache to Supabase */
+function cacheStrainToSupabase(strain: Strain) {
+  import('@/lib/supabase').then(({ supabase }) => {
+    supabase
+      .from('strain_cache')
+      .upsert(
+        {
+          id: strain.id,
+          slug: strain.slug,
+          name: strain.name,
+          race: strain.race,
+          data: strain,
+        },
+        { onConflict: 'id' }
+      )
+      .then(({ error: cacheError }) => {
+        if (cacheError) {
+          console.debug('[StrainDetails] Cache save failed:', cacheError);
+        }
+      });
+  });
+}
+
+/** Share strain via native share sheet */
+async function shareStrain(strain: Strain) {
+  haptics.selection();
+
+  const shareUrl = strain.link || `https://growbro.app/strains/${strain.slug}`;
+  const shareMessage = translate('strains.detail.share_message', {
+    name: strain.name,
+    url: shareUrl,
+  });
+
+  try {
+    await Share.share({
+      message: shareMessage,
+      url: shareUrl,
+      title: strain.name,
+    });
+  } catch (err) {
+    const isShareCancelled =
+      err instanceof Error && err.message === 'Share action cancelled';
+    if (!isShareCancelled && err instanceof Error) {
+      Sentry.addBreadcrumb({
+        category: 'strains_share',
+        message: 'Share failed',
+        level: 'warning',
+        data: { strainSlug: strain.slug, error: err.message },
+      });
+    }
+  }
+}
 
 const GrowInfoSection = ({ strain }: { strain: Strain }) => {
   const floweringTime =
@@ -194,7 +248,7 @@ const StrainHeroSection = ({
     <AnimatedImage
       className="size-full"
       contentFit="cover"
-      sharedTransitionTag={`strain-image-${strain.slug}`}
+      sharedTransitionTag={strainImageTag(strain.slug)}
       {...imageProps}
     />
 
@@ -289,36 +343,8 @@ export default function StrainDetailsScreen() {
   }, [isError, error, slug]);
 
   // Background cache: Save viewed strain to Supabase for future users
-  // This runs in background and doesn't block the UI
   React.useEffect(() => {
-    if (strain) {
-      // Fire and forget - save to Supabase cache for other users
-      import('@/lib/supabase').then(({ supabase }) => {
-        const strainId = strain.id;
-        const strainSlug = strain.slug;
-        const strainName = strain.name;
-        const strainRace = strain.race;
-
-        supabase
-          .from('strain_cache')
-          .upsert(
-            {
-              id: strainId,
-              slug: strainSlug,
-              name: strainName,
-              race: strainRace,
-              data: strain,
-            },
-            { onConflict: 'id' }
-          )
-          .then(({ error: cacheError }) => {
-            if (cacheError) {
-              // Silent fail - caching is best-effort
-              console.debug('[StrainDetails] Cache save failed:', cacheError);
-            }
-          });
-      });
-    }
+    if (strain) cacheStrainToSupabase(strain);
   }, [strain]);
 
   const imageProps = React.useMemo(() => {
@@ -326,40 +352,8 @@ export default function StrainDetailsScreen() {
     return getListImageProps(strain.id, strain.imageUrl);
   }, [strain]);
 
-  const handleShare = React.useCallback(async () => {
-    if (!strain) return;
-
-    haptics.selection();
-
-    // Build deep link URL: prefer strain.link, fallback to public URL
-    const shareUrl =
-      strain.link || `https://growbro.app/strains/${strain.slug}`;
-
-    // Build localized share message
-    const shareMessage = translate('strains.detail.share_message', {
-      name: strain.name,
-      url: shareUrl,
-    });
-
-    try {
-      await Share.share({
-        message: shareMessage,
-        url: shareUrl, // iOS uses this separately, Android includes in message
-        title: strain.name,
-      });
-    } catch (err) {
-      // User cancelled (error.name === 'AbortError') is expected, don't log
-      const isShareCancelled =
-        err instanceof Error && err.message === 'Share action cancelled';
-      if (!isShareCancelled && err instanceof Error) {
-        Sentry.addBreadcrumb({
-          category: 'strains_share',
-          message: 'Share failed',
-          level: 'warning',
-          data: { strainSlug: strain.slug, error: err.message },
-        });
-      }
-    }
+  const handleShare = React.useCallback(() => {
+    if (strain) shareStrain(strain);
   }, [strain]);
 
   const handleBack = React.useCallback(() => {

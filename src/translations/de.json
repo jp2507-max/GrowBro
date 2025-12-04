@@ -3164,6 +3164,10 @@
       "recent_searches": "Letzte Suchen"
     },
     "search_placeholder": "Sorten suchen…",
+    "search_placeholder_count": "Suche {{count}} Sorten…",
+    "search_placeholder_count_one": "Suche {{count}} Sorte…",
+    "search_placeholder_count_other": "Suche {{count}} Sorten…",
+    "search_placeholder_count_zero": "Sorten suchen…",
     "sort": {
       "apply": "Sortierung anwenden",
       "ascending": "Aufsteigend",

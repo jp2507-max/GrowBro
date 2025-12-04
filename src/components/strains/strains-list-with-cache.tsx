@@ -135,8 +135,15 @@ export function StrainsListWithCache({
   // Apply client-side filters to guarantee UI matches selected filters
   // This ensures correct behavior for both online and cached/offline data
   const strains = useMemo(
-    () => applyStrainFilters(rawStrains, filters || {}),
-    [rawStrains, filters]
+    () =>
+      // Pass searchQuery through so client-side filtering matches API results
+      applyStrainFilters(
+        rawStrains,
+        filters || {},
+        // Prefer explicit filters.searchQuery when present, otherwise use prop
+        (filters as StrainFilters | undefined)?.searchQuery || searchQuery || ''
+      ),
+    [rawStrains, filters, searchQuery]
   );
 
   const { initialScrollIndexRef, handleScroll } = useScrollRestoration(

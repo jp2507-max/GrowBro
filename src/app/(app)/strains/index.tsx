@@ -413,7 +413,9 @@ export default function StrainsScreen(): React.ReactElement {
             onChangeText={setSearchValue}
             placeholder={
               listData.length > 0
-                ? `Search ${listData.length} strains...`
+                ? translate('strains.search_placeholder_count', {
+                    count: listData.length,
+                  })
                 : translate('strains.search_placeholder')
             }
             accessibilityLabel={translate('strains.search_placeholder')}

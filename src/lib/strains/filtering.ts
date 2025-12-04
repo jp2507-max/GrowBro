@@ -60,7 +60,14 @@ function getSearchRelevanceScore(strain: Strain, query: string): number {
   }
 
   // Good: name contains query as a word boundary (e.g., "blue" in "Blue Dream")
-  const wordBoundaryRegex = new RegExp(`\\b${normalizedQuery}`, 'i');
+  // Escape any regex metacharacters in the user-derived query to avoid
+  // catastrophic backtracking/DoS and ensure literal matching. Also cap
+  // the query length to a reasonable maximum.
+  const MAX_QUERY_LENGTH = 100;
+  const escapedQuery = normalizeForSearch(
+    normalizedQuery.slice(0, MAX_QUERY_LENGTH)
+  ).replace(/[.*+?^${}()|[\]\\/]/g, (m) => `\\${m}`);
+  const wordBoundaryRegex = new RegExp(`\\b${escapedQuery}`, 'i');
   if (wordBoundaryRegex.test(strain.name)) {
     return 75;
   }
@@ -143,6 +150,53 @@ function matchesFlavors(filters: StrainFilters, strain: Strain): boolean {
   );
 }
 
+/** Filters with snake_case keys from API */
+type FiltersWithSnakeCase = StrainFilters & {
+  thc_min?: number;
+  thc_max?: number;
+  cbd_min?: number;
+  cbd_max?: number;
+};
+
+/** Normalize filter keys: accept either camelCase or snake_case */
+function normalizeFilters(filters: StrainFilters): StrainFilters {
+  const f = filters as FiltersWithSnakeCase;
+  return {
+    ...filters,
+    thcMin: f.thcMin ?? f.thc_min ?? undefined,
+    thcMax: f.thcMax ?? f.thc_max ?? undefined,
+    cbdMin: f.cbdMin ?? f.cbd_min ?? undefined,
+    cbdMax: f.cbdMax ?? f.cbd_max ?? undefined,
+  };
+}
+
+/** Check if strain matches race filter (single value or array) */
+function matchesRace(
+  raceFilter: string | string[] | undefined,
+  strainRace: string
+): boolean {
+  if (!raceFilter) return true;
+  if (Array.isArray(raceFilter)) {
+    return raceFilter.length === 0 || raceFilter.includes(strainRace);
+  }
+  return strainRace === raceFilter;
+}
+
+/** Check if strain matches difficulty filter (single value or array) */
+function matchesDifficulty(
+  difficultyFilter: string | string[] | undefined,
+  strainDifficulty: string
+): boolean {
+  if (!difficultyFilter) return true;
+  if (Array.isArray(difficultyFilter)) {
+    return (
+      difficultyFilter.length === 0 ||
+      difficultyFilter.includes(strainDifficulty)
+    );
+  }
+  return strainDifficulty === difficultyFilter;
+}
+
 /**
  * Apply client-side filters to a list of normalized strains
  * This ensures the UI always reflects the selected filters, even if:
@@ -161,53 +215,37 @@ export function applyStrainFilters(
   searchQuery?: string
 ): Strain[] {
   const hasSearchQuery = searchQuery && searchQuery.trim().length > 0;
+  const nf = normalizeFilters(filters);
+
   const hasActiveFilters =
-    filters.race !== undefined ||
-    filters.difficulty !== undefined ||
-    (filters.effects && filters.effects.length > 0) ||
-    (filters.flavors && filters.flavors.length > 0) ||
-    filters.thcMin !== undefined ||
-    filters.thcMax !== undefined ||
-    filters.cbdMin !== undefined ||
-    filters.cbdMax !== undefined;
+    nf.race !== undefined ||
+    nf.difficulty !== undefined ||
+    (nf.effects && nf.effects.length > 0) ||
+    (nf.flavors && nf.flavors.length > 0) ||
+    nf.thcMin !== undefined ||
+    nf.thcMax !== undefined ||
+    nf.cbdMin !== undefined ||
+    nf.cbdMax !== undefined;
 
-  // Early return if no filters or search active
-  if (!hasActiveFilters && !hasSearchQuery) {
-    return strains;
-  }
+  if (!hasActiveFilters && !hasSearchQuery) return strains;
 
-  // Filter strains based on all criteria
   const filtered = strains.filter((strain) => {
-    // Search query filter (matches name or synonyms)
-    if (hasSearchQuery && !matchesSearchQuery(strain, searchQuery)) {
+    if (hasSearchQuery && !matchesSearchQuery(strain, searchQuery))
       return false;
-    }
-    // Race filter (exact match on normalized race)
-    if (filters.race && strain.race !== filters.race) return false;
-    // Difficulty filter (exact match)
-    if (filters.difficulty && strain.grow.difficulty !== filters.difficulty) {
-      return false;
-    }
-    // Effects & flavors (AND semantics)
-    if (!matchesEffects(filters, strain)) return false;
-    if (!matchesFlavors(filters, strain)) return false;
-    // THC/CBD range filters (overlap check)
-    if (!matchesCompoundRange(filters.thcMin, filters.thcMax, strain.thc)) {
-      return false;
-    }
-    if (!matchesCompoundRange(filters.cbdMin, filters.cbdMax, strain.cbd)) {
-      return false;
-    }
+    if (!matchesRace(nf.race, strain.race)) return false;
+    if (!matchesDifficulty(nf.difficulty, strain.grow.difficulty)) return false;
+    if (!matchesEffects(nf, strain)) return false;
+    if (!matchesFlavors(nf, strain)) return false;
+    if (!matchesCompoundRange(nf.thcMin, nf.thcMax, strain.thc)) return false;
+    if (!matchesCompoundRange(nf.cbdMin, nf.cbdMax, strain.cbd)) return false;
     return true;
   });
 
-  // Sort by search relevance if search query is active
-  // This ensures strains starting with the query appear first
   if (hasSearchQuery) {
     return filtered.sort((a, b) => {
       const scoreA = getSearchRelevanceScore(a, searchQuery!);
       const scoreB = getSearchRelevanceScore(b, searchQuery!);
-      return scoreB - scoreA; // Higher score first
+      return scoreB - scoreA;
     });
   }
 

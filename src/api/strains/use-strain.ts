@@ -1,8 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { Strain } from '@/types/strains';
-
 import { getStrainsApiClient } from './client';
+import type { Strain } from './types';
 
 /**
  * Find a strain by slug or ID from the cached infinite query data
@@ -65,7 +64,7 @@ export function useStrain({
 
   return useQuery({
     queryKey: ['strain', { strainId }],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       // First, look up strain from cached list data (instant, no API call)
       const cachedStrain = findStrainInCache(queryClient, strainId!);
 
@@ -77,7 +76,7 @@ export function useStrain({
       // The API will check Supabase strain_cache first (free)
       // If not there, it fetches from external API and caches for future
       const apiClient = getStrainsApiClient();
-      return apiClient.getStrain(strainId!);
+      return apiClient.getStrain(strainId!, signal);
     },
     enabled: enabled && !!strainId,
     staleTime: 24 * 60 * 60 * 1000, // 24 hours

@@ -3164,6 +3164,10 @@
       "recent_searches": "Recent Searches"
     },
     "search_placeholder": "Search strains…",
+    "search_placeholder_count": "Search {{count}} strains…",
+    "search_placeholder_count_one": "Search {{count}} strain…",
+    "search_placeholder_count_other": "Search {{count}} strains…",
+    "search_placeholder_count_zero": "Search strains…",
     "sort": {
       "apply": "Apply Sort",
       "ascending": "Ascending",
