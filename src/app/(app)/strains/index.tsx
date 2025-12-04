@@ -365,7 +365,9 @@ export default function StrainsScreen(): React.ReactElement {
               className="size-10 items-center justify-center rounded-full bg-white shadow-sm active:bg-neutral-100 dark:bg-neutral-900 dark:active:bg-neutral-800"
               accessibilityRole="button"
               accessibilityLabel={translate('strains.favorites.title')}
-              accessibilityHint="View your favorite strains"
+              accessibilityHint={translate(
+                'strains.favoritesAccessibilityHint'
+              )}
               testID="strains-favorites-button"
             >
               <Rate

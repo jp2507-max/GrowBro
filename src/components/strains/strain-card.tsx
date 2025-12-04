@@ -85,14 +85,16 @@ export const StrainCard = React.memo<Props>(({ strain, testID }) => {
     scale.value = withSpring(0.97, {
       damping: 10,
       stiffness: 300,
-    }).reduceMotion(ReduceMotion.System);
+      reduceMotion: ReduceMotion.System,
+    });
   }, [scale]);
 
   const onPressOut = React.useCallback(() => {
     scale.value = withSpring(1, {
       damping: 10,
       stiffness: 300,
-    }).reduceMotion(ReduceMotion.System);
+      reduceMotion: ReduceMotion.System,
+    });
   }, [scale]);
 
   const accessibilityLabel = React.useMemo(

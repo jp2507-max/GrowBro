@@ -199,11 +199,11 @@ const StrainErrorState = ({ onBack, onRetry, topInset }: ErrorStateProps) => (
         accessibilityHint={translate('strains.detail.back_hint')}
         accessibilityLabel={translate('accessibility.common.go_back')}
         accessibilityRole="button"
-        className="size-10 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800"
+        className="size-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white"
         onPress={onBack}
         testID="back-button"
       >
-        <ArrowLeft color="#171717" width={20} height={20} />
+        <ArrowLeft color="currentColor" width={20} height={20} />
       </Pressable>
     </View>
     <ListErrorState
@@ -259,13 +259,13 @@ const StrainHeroSection = ({
     >
       <Pressable
         onPress={onBack}
-        className="size-10 items-center justify-center rounded-full bg-black/20 backdrop-blur-md active:bg-black/30"
+        className="size-10 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md active:bg-black/30"
         accessibilityRole="button"
         accessibilityLabel={translate('accessibility.common.go_back')}
         accessibilityHint={translate('strains.detail.back_hint')}
         testID="back-button"
       >
-        <ArrowLeft color="white" width={24} height={24} />
+        <ArrowLeft color="currentColor" width={24} height={24} />
       </Pressable>
 
       <View className="flex-row gap-2">
@@ -277,13 +277,13 @@ const StrainHeroSection = ({
         />
         <Pressable
           onPress={onShare}
-          className="size-10 items-center justify-center rounded-full bg-black/20 backdrop-blur-md active:bg-black/30"
+          className="size-10 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md active:bg-black/30"
           accessibilityRole="button"
           accessibilityLabel={translate('strains.detail.share')}
           accessibilityHint={translate('strains.detail.share_hint')}
           testID="share-button"
         >
-          <ShareIcon color="white" width={24} height={24} />
+          <ShareIcon color="currentColor" width={24} height={24} />
         </Pressable>
       </View>
     </View>

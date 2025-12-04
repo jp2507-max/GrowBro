@@ -3106,6 +3106,7 @@
       },
       "title": "My Favorites"
     },
+    "favoritesAccessibilityHint": "Opens your saved favorite strains.",
     "filters": {
       "apply": "Apply Filters",
       "button_label": "Filter strains",

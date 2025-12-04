@@ -3106,6 +3106,7 @@
       },
       "title": "Meine Favoriten"
     },
+    "favoritesAccessibilityHint": "Öffnet deine gespeicherten Favoriten.",
     "filters": {
       "apply": "Filter anwenden",
       "button_label": "Sorten filtern",

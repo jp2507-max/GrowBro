@@ -72,14 +72,37 @@ function checkRateLimit(ip: string): { allowed: boolean; retryAfter?: number } {
 }
 
 /**
+ * Extract race from genetics string like "Indica (90-100%)" or "Sativa-dominant"
+ */
+function extractRace(
+  genetics: string | undefined
+): 'indica' | 'sativa' | 'hybrid' | null {
+  if (!genetics || typeof genetics !== 'string') return null;
+  const lower = genetics.toLowerCase();
+  if (lower.includes('indica')) return 'indica';
+  if (lower.includes('sativa')) return 'sativa';
+  if (lower.includes('hybrid')) return 'hybrid';
+  return null;
+}
+
+/**
+ * Generate a slug from a string
+ */
+function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-');
+}
+
+/**
  * Check Supabase strain_cache for a cached strain
  * Searches by id or slug (handles both _id format from API and slugified names)
  * Returns the cached strain data if found, null otherwise
  */
-/**
- * Generate a URL-safe slug from a string
- */
-// slugify moved above to be available before getStrainFromSupabaseCache
 
 async function getStrainFromSupabaseCache(
   strainId: string
@@ -130,35 +153,6 @@ async function getStrainFromSupabaseCache(
     console.error('Error checking strain cache:', err);
     return null;
   }
-}
-
-/**
- * Generate a URL-safe slug from a string
- */
-function slugify(text: string): string {
-  return text
-    .toString()
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w\-]+/g, '')
-    .replace(/\-\-+/g, '-')
-    .replace(/^-+/, '')
-    .replace(/-+$/, '');
-}
-
-/**
- * Extract race from genetics string like "Indica (90-100%)" or "Sativa-dominant"
- */
-function extractRace(
-  genetics: string | undefined
-): 'indica' | 'sativa' | 'hybrid' | null {
-  if (!genetics || typeof genetics !== 'string') return null;
-  const lower = genetics.toLowerCase();
-  if (lower.includes('indica')) return 'indica';
-  if (lower.includes('sativa')) return 'sativa';
-  if (lower.includes('hybrid')) return 'hybrid';
-  return null;
 }
 
 /**
@@ -493,12 +487,21 @@ Deno.serve(async (req: Request) => {
       // GET request - parse from URL
       const url = new URL(req.url);
       const pageVal = Number(url.searchParams.get('page'));
-      const pageSizeVal = Number(url.searchParams.get('pageSize'));
+      const rawPageSize = url.searchParams.get('pageSize');
+      const parsedPageSize =
+        rawPageSize !== null && rawPageSize !== ''
+          ? Number(rawPageSize)
+          : undefined;
       params = {
         endpoint: (url.searchParams.get('endpoint') as any) || 'list',
         strainId: url.searchParams.get('strainId') || undefined,
         page: !Number.isNaN(pageVal) ? pageVal : undefined,
-        pageSize: !Number.isNaN(pageSizeVal) ? pageSizeVal : 20,
+        // Keep the 20-item default when the client never sends a pageSize
+        // avoid coercing null → 0 which would drop `limit` from the upstream request.
+        pageSize:
+          parsedPageSize !== undefined && !Number.isNaN(parsedPageSize)
+            ? parsedPageSize
+            : 20,
         cursor: url.searchParams.get('cursor') || undefined,
         searchQuery:
           url.searchParams.get('name') ||
