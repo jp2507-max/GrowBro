@@ -231,7 +231,12 @@ export class StrainsApiClient {
     } else {
       queryParams['page'] = String(page);
     }
-    queryParams['limit'] = String(pageSize);
+
+    if (this.useProxy) {
+      queryParams['pageSize'] = String(pageSize);
+    } else {
+      queryParams['limit'] = String(pageSize);
+    }
 
     // Add search query - API uses 'name' parameter for name-based search
     if (searchQuery && searchQuery.trim()) {

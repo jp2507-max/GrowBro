@@ -49,24 +49,24 @@ function findStrainInCache(
  *
  * @example
  * ```tsx
- * const { data: strain, isLoading, error } = useStrain({ strainId: 'og-kush' });
+ * const { data: strain, isLoading, error } = useStrain({ strainIdOrSlug: 'og-kush' });
  * ```
  */
 export function useStrain({
-  strainId,
+  strainIdOrSlug,
   enabled = true,
 }: {
-  strainId: string | undefined;
+  strainIdOrSlug: string | undefined;
   /** Set to false to skip fetching (e.g., when strain is already provided) */
   enabled?: boolean;
 }) {
   const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: ['strain', { strainId }],
+    queryKey: ['strain', { strainIdOrSlug }],
     queryFn: async ({ signal }) => {
       // First, look up strain from cached list data (instant, no API call)
-      const cachedStrain = findStrainInCache(queryClient, strainId!);
+      const cachedStrain = findStrainInCache(queryClient, strainIdOrSlug!);
 
       if (cachedStrain) {
         return cachedStrain;
@@ -76,9 +76,9 @@ export function useStrain({
       // The API will check Supabase strain_cache first (free)
       // If not there, it fetches from external API and caches for future
       const apiClient = getStrainsApiClient();
-      return apiClient.getStrain(strainId!, signal);
+      return apiClient.getStrain(strainIdOrSlug!, signal);
     },
-    enabled: enabled && !!strainId,
+    enabled: enabled && !!strainIdOrSlug,
     staleTime: 24 * 60 * 60 * 1000, // 24 hours
     gcTime: 2 * 24 * 60 * 60 * 1000, // 48 hours
     retry: 1, // Retry once for network errors

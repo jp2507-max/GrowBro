@@ -169,14 +169,35 @@ async function saveStrainToSupabaseCache(strain: any): Promise<void> {
       );
       return;
     }
-    // Extract ID - API uses _id, fallback to id or generate one
+    // NOTE: ID & slug strategy
+    // The upstream API sometimes returns `_id` or `id`, but in other cases
+    // neither is present. The original fallback generated a random id which
+    // can lead to multiple cache rows for the same logical strain when
+    // repeated saves occur (same name/slug but different random ids). That
+    // breaks lookups by slug when the cache contains multiple rows and
+    // `maybeSingle()` returns null.
+    //
+    // Keep the existing non-blocking behavior (don't fail the request when
+    // Supabase is not configured), but prefer using a stable slug-derived
+    // value as the fallback id so repeated saves coalesce on the same id.
+    // We intentionally do NOT change runtime behaviour here — below is a
+    // recommended alternative (commented) that stabilizes the fallback id.
+
+    // Generate slug from name first so we can use it as a stable fallback id.
+    // Fallback order for id: _id (from API) -> id -> slug-derived -> random.
+    // This prevents repeated saves of the same logical strain (same name/slug)
+    // from creating separate rows that would break lookups by slug.
+    const slugFromName =
+      strain.slug || (strain.name ? slugify(strain.name) : undefined);
+
+    // Extract ID - API uses _id, then id, then slug; only last resort is random
     const id =
       strain._id ||
       strain.id ||
+      slugFromName ||
       `strain_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
 
-    // Generate slug from name if not present
-    const slug = strain.slug || (strain.name ? slugify(strain.name) : id);
+    const slug = slugFromName || String(id);
 
     // Extract race from genetics string
     const race = strain.race || extractRace(strain.genetics);

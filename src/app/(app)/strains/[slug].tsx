@@ -4,7 +4,7 @@ import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import * as React from 'react';
 import { useLayoutEffect } from 'react';
 import { ScrollView, Share } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStrain } from '@/api/strains/use-strain';
@@ -94,7 +94,7 @@ const GrowInfoSection = ({ strain }: { strain: Strain }) => {
 
   return (
     <Animated.View
-      entering={FadeIn.delay(500).springify()}
+      entering={FadeIn.delay(500).springify().reduceMotion(ReduceMotion.System)}
       className="mt-6 rounded-2xl bg-neutral-50 p-5 dark:bg-neutral-900"
       testID="grow-info"
     >
@@ -136,7 +136,10 @@ const GrowInfoSection = ({ strain }: { strain: Strain }) => {
 
 const EffectsFlavorsSection = ({ strain }: { strain: Strain }) => {
   return (
-    <Animated.View entering={FadeIn.delay(600).springify()} className="mt-8">
+    <Animated.View
+      entering={FadeIn.delay(600).springify().reduceMotion(ReduceMotion.System)}
+      className="mt-8"
+    >
       {strain.effects && strain.effects.length > 0 && (
         <View className="mb-6" testID="strain-effects">
           <Text className="mb-3 text-lg font-bold text-neutral-900 dark:text-white">
@@ -291,7 +294,11 @@ const StrainHeroSection = ({
     {/* Title Overlay */}
     <View className="absolute inset-x-0 bottom-0">
       <BlurView intensity={40} tint="dark" className="px-5 pb-6 pt-12">
-        <Animated.View entering={FadeIn.delay(200).springify()}>
+        <Animated.View
+          entering={FadeIn.delay(200)
+            .springify()
+            .reduceMotion(ReduceMotion.System)}
+        >
           <Text className="mb-2 text-4xl font-extrabold text-white shadow-sm">
             {strain.name}
           </Text>
@@ -320,14 +327,14 @@ export default function StrainDetailsScreen() {
     });
   }, [navigation]);
 
-  // Fetch strain data - hook is disabled when slug is undefined via `enabled` option
+  // Fetch strain data - accepts either strain ID or slug as identifier
   const {
     data: strain,
     isLoading,
     isError,
     error,
     refetch,
-  } = useStrain({ strainId: slug });
+  } = useStrain({ strainIdOrSlug: slug });
 
   // Log errors to Sentry when they occur
   React.useEffect(() => {
@@ -410,7 +417,9 @@ export default function StrainDetailsScreen() {
           {strain.description?.map((paragraph, index) => (
             <Animated.Text
               key={index}
-              entering={FadeIn.delay(300 + index * 100).springify()}
+              entering={FadeIn.delay(300 + index * 100)
+                .springify()
+                .reduceMotion(ReduceMotion.System)}
               className="mb-4 text-lg leading-relaxed text-neutral-600 dark:text-neutral-300"
             >
               {paragraph}

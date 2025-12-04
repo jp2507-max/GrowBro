@@ -8,7 +8,7 @@ import { useNavigation, useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React, { useCallback, useLayoutEffect, useMemo } from 'react';
 import { type ListRenderItemInfo, StyleSheet } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Strain } from '@/api';
@@ -296,7 +296,8 @@ export default function StrainsScreen(): React.ReactElement {
       <Animated.View
         entering={FadeIn.delay(index * 50)
           .springify()
-          .damping(12)}
+          .damping(12)
+          .reduceMotion(ReduceMotion.System)}
       >
         <StrainCard strain={item} testID={`strain-card-${item.id}`} />
       </Animated.View>
