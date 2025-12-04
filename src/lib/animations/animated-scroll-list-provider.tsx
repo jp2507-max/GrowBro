@@ -1,7 +1,7 @@
 import type { FlashListRef } from '@shopify/flash-list';
 import React from 'react';
+import type { SharedValue } from 'react-native-reanimated';
 import {
-  type SharedValue,
   useAnimatedScrollHandler,
   useSharedValue,
 } from 'react-native-reanimated';
@@ -21,11 +21,14 @@ export type AnimatedScrollListContextType = {
   listPointerEvents: SharedValue<boolean>;
   scrollHandler: (event: ReanimatedScrollEvent) => void;
   enableAutoScrollLock: (durationMs?: number) => void;
+  /** Reset all scroll state to neutral values so the tab bar becomes visible */
+  resetScrollState: () => void;
 };
 
 const AnimatedScrollListContext =
   React.createContext<AnimatedScrollListContextType | null>(null);
 
+// eslint-disable-next-line max-lines-per-function
 export function AnimatedScrollListProvider({
   children,
 }: {
@@ -37,12 +40,12 @@ export function AnimatedScrollListProvider({
   const velocityOnEndDrag = useSharedValue(0);
   const listPointerEvents = useSharedValue(true);
   const pointerLockTimeout = React.useRef<NodeJS.Timeout | null>(null);
+  const scrollDir = useScrollDirection();
+
   const enableAutoScrollLock = React.useCallback(
     (durationMs = 300) => {
       listPointerEvents.value = false;
-      if (pointerLockTimeout.current) {
-        clearTimeout(pointerLockTimeout.current);
-      }
+      if (pointerLockTimeout.current) clearTimeout(pointerLockTimeout.current);
       pointerLockTimeout.current = setTimeout(() => {
         listPointerEvents.value = true;
         pointerLockTimeout.current = null;
@@ -51,23 +54,27 @@ export function AnimatedScrollListProvider({
     [listPointerEvents]
   );
 
-  React.useEffect(() => {
-    return () => {
-      if (pointerLockTimeout.current) {
-        clearTimeout(pointerLockTimeout.current);
-        pointerLockTimeout.current = null;
-      }
-    };
-  }, []);
+  React.useEffect(
+    () => () => {
+      if (pointerLockTimeout.current) clearTimeout(pointerLockTimeout.current);
+    },
+    []
+  );
 
-  const {
-    scrollDirection,
-    offsetYAnchorOnBeginDrag,
-    offsetYAnchorOnChangeDirection,
-    onBeginDrag: scrollDirectionOnBeginDrag,
-    onScroll: scrollDirectionOnScroll,
-    onEndDrag: scrollDirectionOnEndDrag,
-  } = useScrollDirection();
+  // Reset scroll state - shared value assignments are thread-safe from JS
+  const resetScrollState = React.useCallback(() => {
+    listOffsetY.value = 0;
+    isDragging.value = false;
+    velocityOnEndDrag.value = 0;
+    listPointerEvents.value = true;
+    scrollDir.resetFromJS();
+  }, [
+    listOffsetY,
+    isDragging,
+    velocityOnEndDrag,
+    listPointerEvents,
+    scrollDir,
+  ]);
 
   const scrollHandler = useAnimatedScrollHandler({
     onBeginDrag: (e: ReanimatedScrollEvent) => {
@@ -75,18 +82,18 @@ export function AnimatedScrollListProvider({
       isDragging.value = true;
       listPointerEvents.value = true;
       velocityOnEndDrag.value = 0;
-      scrollDirectionOnBeginDrag(e);
+      scrollDir.onBeginDrag(e);
     },
     onScroll: (e: ReanimatedScrollEvent) => {
       'worklet';
       listOffsetY.value = e.contentOffset.y;
-      scrollDirectionOnScroll(e);
+      scrollDir.onScroll(e);
     },
     onEndDrag: (e: ReanimatedScrollEvent) => {
       'worklet';
       isDragging.value = false;
       velocityOnEndDrag.value = e.velocity?.y ?? 0;
-      scrollDirectionOnEndDrag();
+      scrollDir.onEndDrag();
     },
     onMomentumEnd: () => {
       'worklet';
@@ -101,13 +108,15 @@ export function AnimatedScrollListProvider({
         listRef,
         listOffsetY,
         isDragging,
-        scrollDirection,
-        offsetYAnchorOnBeginDrag,
-        offsetYAnchorOnChangeDirection,
+        scrollDirection: scrollDir.scrollDirection,
+        offsetYAnchorOnBeginDrag: scrollDir.offsetYAnchorOnBeginDrag,
+        offsetYAnchorOnChangeDirection:
+          scrollDir.offsetYAnchorOnChangeDirection,
         velocityOnEndDrag,
         listPointerEvents,
         scrollHandler,
         enableAutoScrollLock,
+        resetScrollState,
       }}
     >
       {children}
@@ -117,9 +126,10 @@ export function AnimatedScrollListProvider({
 
 export function useAnimatedScrollList(): AnimatedScrollListContextType {
   const ctx = React.useContext(AnimatedScrollListContext);
-  if (!ctx)
+  if (!ctx) {
     throw new Error(
       'useAnimatedScrollList must be used within AnimatedScrollListProvider'
     );
+  }
   return ctx;
 }

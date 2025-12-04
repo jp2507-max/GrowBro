@@ -162,6 +162,7 @@ export interface Strain {
 export interface FavoriteStrainSnapshot {
   id: string;
   name: string;
+  slug: string;
   race: StrainRace;
   thc_display: string;
   imageUrl: string;

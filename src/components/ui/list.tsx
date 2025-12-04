@@ -440,9 +440,8 @@ export const ListErrorState = React.memo(function ListErrorState({
           accessibilityRole="button"
           onPress={onRetry}
           testID="list-retry"
-        >
-          {retryLabel}
-        </Button>
+          label={retryLabel}
+        />
       ) : null}
     </View>
   );

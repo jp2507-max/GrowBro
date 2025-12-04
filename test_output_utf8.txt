@@ -1,0 +1,27 @@
+﻿
+> growbro@0.0.1 test
+> jest --runInBand --forceExit strains.test.tsx
+
+  console.warn
+    [open-handles-initial] [ 'Socket', 'WriteStream' ]
+
+    [0m [90m 23 |[39m   )[33m;[39m
+     [90m 24 |[39m
+    [31m[1m>[22m[39m[90m 25 |[39m   console[33m.[39mwarn([32m'[open-handles-initial]'[39m[33m,[39m names[33m.[39mslice([35m0[39m[33m,[39m [35m20[39m))[33m;[39m
+     [90m    |[39m           [31m[1m^[22m[39m
+     [90m 26 |[39m } [36mcatch[39m {}
+     [90m 27 |[39m
+     [90m 28 |[39m [90m// react-hook form setup for testing[39m[0m
+
+      at Object.warn (jest-setup.ts:25:11)
+
+  console.log
+    [Supabase] using url: http://localhost
+
+      at Object.log (src/lib/supabase.ts:79:11)
+
+  console.log
+    [auth] onAuthStateChange INITIAL_SESSION false
+
+      at log (src/lib/auth/index.tsx:404:13)
+

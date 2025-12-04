@@ -1,12 +1,19 @@
 // @ts-nocheck
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
+import { createClient } from 'jsr:@supabase/supabase-js@2';
+
 import type {
   CacheEntry,
   ProxyRequest,
   ProxyResponse,
   RateLimitEntry,
 } from './types.ts';
+
+// Supabase client for strain_cache operations
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,6 +52,135 @@ function checkRateLimit(ip: string): { allowed: boolean; retryAfter?: number } {
 
   entry.count += 1;
   return { allowed: true };
+}
+
+/**
+ * Check Supabase strain_cache for a cached strain
+ * Searches by id or slug (handles both _id format from API and slugified names)
+ * Returns the cached strain data if found, null otherwise
+ */
+async function getStrainFromSupabaseCache(
+  strainId: string
+): Promise<any | null> {
+  try {
+    // First try exact match on id
+    const { data: idData, error: idError } = await supabase
+      .from('strain_cache')
+      .select('data')
+      .eq('id', strainId)
+      .maybeSingle();
+
+    if (!idError && idData) {
+      return idData.data;
+    }
+
+    // Then try exact match on slug
+    const { data: slugData, error: slugError } = await supabase
+      .from('strain_cache')
+      .select('data')
+      .eq('slug', strainId)
+      .maybeSingle();
+
+    if (!slugError && slugData) {
+      return slugData.data;
+    }
+
+    // If not found and strainId looks like a name, try slugified version
+    if (strainId.includes(' ') || strainId.includes('-')) {
+      const slugified = strainId
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]+/g, '')
+        .replace(/\-\-+/g, '-');
+
+      // Only try slugified if it's different from the original
+      if (slugified !== strainId) {
+        const { data: slugifiedData, error: slugifiedError } = await supabase
+          .from('strain_cache')
+          .select('data')
+          .eq('slug', slugified)
+          .maybeSingle();
+
+        if (!slugifiedError && slugifiedData) {
+          return slugifiedData.data;
+        }
+      }
+    }
+
+    return null;
+  } catch (err) {
+    console.error('Error checking strain cache:', err);
+    return null;
+  }
+}
+
+/**
+ * Generate a URL-safe slug from a string
+ */
+function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+}
+
+/**
+ * Extract race from genetics string like "Indica (90-100%)" or "Sativa-dominant"
+ */
+function extractRace(
+  genetics: string | undefined
+): 'indica' | 'sativa' | 'hybrid' | null {
+  if (!genetics || typeof genetics !== 'string') return null;
+  const lower = genetics.toLowerCase();
+  if (lower.includes('indica')) return 'indica';
+  if (lower.includes('sativa')) return 'sativa';
+  if (lower.includes('hybrid')) return 'hybrid';
+  return null;
+}
+
+/**
+ * Save strain to Supabase strain_cache
+ * Handles raw API format with _id, genetics string, etc.
+ */
+async function saveStrainToSupabaseCache(strain: any): Promise<void> {
+  try {
+    // Extract ID - API uses _id, fallback to id or generate one
+    const id =
+      strain._id ||
+      strain.id ||
+      `strain_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+
+    // Generate slug from name if not present
+    const slug = strain.slug || (strain.name ? slugify(strain.name) : id);
+
+    // Extract race from genetics string
+    const race = strain.race || extractRace(strain.genetics);
+
+    const { error } = await supabase.from('strain_cache').upsert(
+      {
+        id: String(id),
+        slug: String(slug),
+        name: String(strain.name || 'Unknown'),
+        race: race,
+        data: strain,
+      },
+      {
+        onConflict: 'id',
+      }
+    );
+
+    if (error) {
+      console.error('Error saving strain to cache:', error);
+    }
+  } catch (err) {
+    console.error('Error saving strain to cache:', err);
+  }
 }
 
 /**
@@ -151,9 +287,9 @@ function buildApiUrl(params: ProxyRequest, baseUrl: string): string {
     url.searchParams.set('limit', String(params.pageSize));
   }
 
-  // Add search query
+  // Add search query - API uses 'name' parameter for name-based search
   if (params.searchQuery && params.searchQuery.trim()) {
-    url.searchParams.set('search', params.searchQuery.trim());
+    url.searchParams.set('name', params.searchQuery.trim());
   }
 
   // Add sort parameters
@@ -340,7 +476,10 @@ Deno.serve(async (req: Request) => {
           ? Number(url.searchParams.get('pageSize'))
           : 20,
         cursor: url.searchParams.get('cursor') || undefined,
-        searchQuery: url.searchParams.get('search') || undefined,
+        searchQuery:
+          url.searchParams.get('name') ||
+          url.searchParams.get('search') ||
+          undefined,
         sortBy: url.searchParams.get('sort_by') || undefined,
         sortDirection: (url.searchParams.get('sort_direction') as any) || 'asc',
       };
@@ -400,7 +539,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Check cache
+    // Check in-memory cache first
     const cacheKey = getCacheKey(params);
     const clientETag = req.headers.get('if-none-match');
     const cached = getCachedResponse(cacheKey, clientETag);
@@ -428,6 +567,30 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // For detail endpoint, check Supabase strain_cache (permanent cache)
+    if (params.endpoint === 'detail' && params.strainId) {
+      const cachedStrain = await getStrainFromSupabaseCache(params.strainId);
+      if (cachedStrain) {
+        const response: ProxyResponse = { strain: cachedStrain };
+        // Also store in memory cache for this session
+        const ttl = CACHE_TTL_DETAIL_MS;
+        const etag = setCachedResponse(cacheKey, response, ttl);
+
+        return new Response(
+          JSON.stringify({ ...response, cached: true, source: 'supabase' }),
+          {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              ETag: etag,
+              'Cache-Control': `max-age=${Math.floor(ttl / 1000)}`,
+              ...corsHeaders,
+            },
+          }
+        );
+      }
+    }
+
     // Get API credentials from environment
     const apiKey = Deno.env.get('STRAINS_API_KEY');
     const apiHost =
@@ -447,7 +610,16 @@ Deno.serve(async (req: Request) => {
       params.pageSize || 20
     );
 
-    // Cache the response
+    // For detail endpoint, save to Supabase strain_cache (permanent cache)
+    // This runs in background and doesn't block the response
+    if (params.endpoint === 'detail' && normalized.strain) {
+      // Don't await - let it run in background
+      saveStrainToSupabaseCache(normalized.strain).catch((err) => {
+        console.error('Background cache save failed:', err);
+      });
+    }
+
+    // Cache the response in memory
     const ttl =
       params.endpoint === 'detail' ? CACHE_TTL_DETAIL_MS : CACHE_TTL_MS;
     const etag = setCachedResponse(cacheKey, normalized, ttl);

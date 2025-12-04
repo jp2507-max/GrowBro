@@ -1,4 +1,4 @@
-import { useScrollToTop } from '@react-navigation/native';
+import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 import {
   FlashList,
   type FlashListProps,
@@ -111,8 +111,21 @@ function useSkeletonVisibility(isLoading: boolean, itemsCount: number) {
 // eslint-disable-next-line max-lines-per-function
 export default function PlantsScreen(): React.ReactElement {
   const router = useRouter();
-  const { listRef: sharedListRef, scrollHandler } = useAnimatedScrollList();
+  const {
+    listRef: sharedListRef,
+    scrollHandler,
+    resetScrollState,
+  } = useAnimatedScrollList();
   const { grossHeight } = useBottomTabBarHeight();
+
+  // Reset scroll state on blur so tab bar is visible when navigating away
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        resetScrollState();
+      };
+    }, [resetScrollState])
+  );
   const { isConnected, isInternetReachable } = useNetworkStatus();
   const listContentPadding = React.useMemo(
     () => ({ paddingBottom: grossHeight + LIST_BOTTOM_EXTRA }),

@@ -106,8 +106,13 @@ export function CustomTabBar({
   state,
 }: BottomTabBarProps): React.ReactElement {
   const { grossHeight } = useBottomTabBarHeight();
-  const { listOffsetY, offsetYAnchorOnBeginDrag, scrollDirection } =
-    useAnimatedScrollList();
+  const {
+    listOffsetY,
+    offsetYAnchorOnBeginDrag,
+    scrollDirection,
+    isDragging,
+    velocityOnEndDrag,
+  } = useAnimatedScrollList();
   const theme = useThemeConfig();
   const activeColor = theme.colors.primary;
   const inactiveColor = theme.dark ? colors.neutral[300] : colors.neutral[600];
@@ -120,9 +125,14 @@ export function CustomTabBar({
   );
 
   const rContainerStyle = useAnimatedStyle(() => {
+    // Only hide when actively scrolling down or momentum is still going down
+    const isActivelyScrollingDown =
+      scrollDirection.value === 'to-bottom' &&
+      (isDragging.value || velocityOnEndDrag.value < -0.5);
+
     const shouldHide =
       listOffsetY.value >= offsetYAnchorOnBeginDrag.value &&
-      scrollDirection.value === 'to-bottom';
+      isActivelyScrollingDown;
 
     return {
       bottom: withTiming(shouldHide ? -grossHeight : 0, { duration: DURATION }),

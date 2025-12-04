@@ -114,6 +114,9 @@ importers:
       expo-font:
         specifier: ~14.0.9
         version: 14.0.9(expo@54.0.24)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
+      expo-haptics:
+        specifier: ~15.0.7
+        version: 15.0.7(expo@54.0.24)
       expo-image:
         specifier: ~3.0.10
         version: 3.0.10(expo@54.0.24)(react-native-web@0.21.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
@@ -228,9 +231,6 @@ importers:
       react-native-gifted-charts:
         specifier: ^1.4.64
         version: 1.4.64(expo-linear-gradient@15.0.7(expo@54.0.24)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0))(react-native-svg@15.12.1(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
-      react-native-haptic-feedback:
-        specifier: ^2.3.3
-        version: 2.3.3(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))
       react-native-keyboard-controller:
         specifier: ^1.18.5
         version: 1.18.5(react-native-reanimated@4.1.2(@babel/core@7.28.4)(react-native-worklets@0.5.1(@babel/core@7.28.4)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
@@ -2757,6 +2757,7 @@ packages:
 
   '@shopify/react-native-performance@4.1.2':
     resolution: {integrity: sha512-1Xu2xo+hAxg75iuX5akVqAgc3h/J1ohfi7JKXlGsprP4ylpW7kHMfq/7AstL7FoUC8xcHsTUvUFhoZ94ot8g6Q==}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       '@babel/runtime': '*'
       react: '*'
@@ -5037,6 +5038,11 @@ packages:
       expo: '*'
       react: '*'
       react-native: '*'
+
+  expo-haptics@15.0.7:
+    resolution: {integrity: sha512-7flWsYPrwjJxZ8x82RiJtzsnk1Xp9ahnbd9PhCy3NnsemyMApoWIEUr4waPqFr80DtiLZfhD9VMLL1CKa8AImQ==}
+    peerDependencies:
+      expo: '*'
 
   expo-image-loader@6.0.0:
     resolution: {integrity: sha512-nKs/xnOGw6ACb4g26xceBD57FKLFkSwEUTDXEDF3Gtcu3MqF3ZIYd3YM+sSb1/z9AKV1dYT7rMSGVNgsveXLIQ==}
@@ -15071,6 +15077,10 @@ snapshots:
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0)
 
+  expo-haptics@15.0.7(expo@54.0.24):
+    dependencies:
+      expo: 54.0.24(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.15)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
+
   expo-image-loader@6.0.0(expo@54.0.24):
     dependencies:
       expo: 54.0.24(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.15)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
@@ -18270,6 +18280,7 @@ snapshots:
   react-native-haptic-feedback@2.3.3(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0)):
     dependencies:
       react-native: 0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0)
+    optional: true
 
   react-native-iphone-screen-helper@2.1.2(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0)):
     dependencies:

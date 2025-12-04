@@ -12,6 +12,10 @@ export function useScrollDirection(param?: 'include-negative'): {
   onBeginDrag: (e: ReanimatedScrollEvent) => void;
   onScroll: (e: ReanimatedScrollEvent) => void;
   onEndDrag: () => void;
+  /** Reset all scroll direction state to neutral (idle) values - worklet version */
+  reset: () => void;
+  /** Reset all scroll direction state from JS thread */
+  resetFromJS: () => void;
 } {
   const scrollDirection = useSharedValue<ScrollDirection>('idle');
   const prevOffsetY = useSharedValue(0);
@@ -56,6 +60,22 @@ export function useScrollDirection(param?: 'include-negative'): {
     prevOffsetY.value = 0;
   };
 
+  const reset = () => {
+    'worklet';
+    scrollDirection.value = 'idle';
+    prevOffsetY.value = 0;
+    offsetYAnchorOnBeginDrag.value = 0;
+    offsetYAnchorOnChangeDirection.value = 0;
+  };
+
+  // JS thread version - shared value assignments are thread-safe
+  const resetFromJS = () => {
+    scrollDirection.value = 'idle';
+    prevOffsetY.value = 0;
+    offsetYAnchorOnBeginDrag.value = 0;
+    offsetYAnchorOnChangeDirection.value = 0;
+  };
+
   return {
     scrollDirection,
     offsetYAnchorOnBeginDrag,
@@ -63,5 +83,7 @@ export function useScrollDirection(param?: 'include-negative'): {
     onBeginDrag,
     onScroll,
     onEndDrag,
+    reset,
+    resetFromJS,
   };
 }

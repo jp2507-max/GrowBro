@@ -3005,7 +3005,7 @@
     },
     "strains": {
       "subtitle": "Finde Profile und Genetik.",
-      "title": "Sorten durchsuchen"
+      "title": "Sorten entdecken"
     }
   },
   "strainTip": {
@@ -3023,17 +3023,20 @@
       "headline": "⚠️ Nur Bildungsinhalte"
     },
     "detail": {
+      "back_hint": "Navigiert zurück zum vorherigen Bildschirm",
       "cbd": "CBD",
       "description_title": "Beschreibung",
       "effects": "Effekte",
-      "error_message": "Diese Sorte konnte nicht geladen werden. Bitte überprüfe deine Verbindung und versuche es erneut.",
-      "error_title": "Sorte konnte nicht geladen werden",
+      "error_message": "Diese Sorte ist nicht verfügbar. Bitte gehe zurück zur Liste und wähle eine Sorte aus.",
+      "error_title": "Sorte nicht gefunden",
       "flavors": "Aromen",
       "flowering_time": "Blütezeit",
       "genetics": "Genetik",
+      "grow_info": "Anbauinformationen",
       "growing_info": "Anbauinformationen",
       "height": "Höhe",
       "indoor": "Indoor",
+      "invalid_id": "Ungültige Sorte",
       "loading": "Sortendetails werden geladen...",
       "no_description": "Keine Beschreibung verfügbar",
       "not_reported": "Nicht angegeben",
@@ -3041,6 +3044,10 @@
       "playbook_cta_hint": "Erstelle einen Anbauplan mit dieser Sorte",
       "playbook_description": "Erstelle einen personalisierten Anbauplan",
       "quick_facts": "Kurzinformationen",
+      "retry": "Erneut versuchen",
+      "share": "Sorte teilen",
+      "share_hint": "Diese Sorte mit anderen teilen",
+      "share_message": "Schau dir {{name}} auf GrowBro an! {{url}}",
       "suitable_for": "Geeignet für",
       "terpenes": "Terpene",
       "terpenes_description": "Terpene verleihen Cannabis sein einzigartiges Aroma und können die Wirkung beeinflussen",
@@ -3102,6 +3109,11 @@
     "filters": {
       "apply": "Filter anwenden",
       "button_label": "Sorten filtern",
+      "cbd_any": "Alle",
+      "cbd_high": "Hoch",
+      "cbd_label": "CBD-Gehalt",
+      "cbd_low": "Niedrig",
+      "cbd_medium": "Mittel",
       "clearAllHint": "Entfernt alle aktiven Filter",
       "clearAllLabel": "Alle Filter löschen",
       "clear_all": "Alle löschen",
@@ -3113,6 +3125,11 @@
       "race_label": "Typ",
       "removeHint": "Entfernt diesen Filter",
       "removeLabel": "Filter entfernen: {{label}}",
+      "thc_any": "Alle",
+      "thc_high": "Hoch",
+      "thc_label": "THC-Gehalt",
+      "thc_low": "Niedrig",
+      "thc_medium": "Mittel",
       "title": "Sorten filtern"
     },
     "flavors": {

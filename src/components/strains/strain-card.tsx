@@ -1,63 +1,64 @@
+import { BlurView } from 'expo-blur';
 import { Link } from 'expo-router';
 import * as React from 'react';
-import { Platform, StyleSheet, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 
 import { DifficultyBadge } from '@/components/strains/difficulty-badge';
+import { FavoriteButtonConnected } from '@/components/strains/favorite-button-connected';
 import { RaceBadge } from '@/components/strains/race-badge';
 import { THCBadge } from '@/components/strains/thc-badge';
 import { Image, Pressable, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
+import { haptics } from '@/lib/haptics';
 import { formatStrainCardLabel } from '@/lib/strains/accessibility';
 import { getListImageProps } from '@/lib/strains/image-optimization';
-import {
-  useDynamicType,
-  useResponsiveSpacing,
-} from '@/lib/strains/use-dynamic-type';
+import { useDynamicType } from '@/lib/strains/use-dynamic-type';
 import type { Strain } from '@/types/strains';
 
 type Props = {
   strain: Strain;
   testID?: string;
-  itemY?: number; // Optional for future scroll animations
+  itemY?: number;
 };
 
 // Extracted component for badges
-const StrainBadges = React.memo<{ strain: Strain; gap: number }>(
-  ({ strain, gap }) => (
-    <View className="flex-row flex-wrap" style={{ gap }}>
-      <RaceBadge race={strain.race} />
-      {strain.thc_display && <THCBadge thc={strain.thc_display} />}
-      <DifficultyBadge difficulty={strain.grow.difficulty} />
-    </View>
-  )
-);
+const StrainBadges = React.memo<{ strain: Strain }>(({ strain }) => (
+  <View className="flex-row flex-wrap gap-1.5">
+    <RaceBadge race={strain.race} />
+    {strain.thc_display && <THCBadge thc={strain.thc_display} />}
+    <DifficultyBadge difficulty={strain.grow.difficulty} />
+  </View>
+));
 StrainBadges.displayName = 'StrainBadges';
 
 // Extracted component for card content
 const StrainCardContent = React.memo<{
   strain: Strain;
   scaledSizes: ReturnType<typeof useDynamicType>['scaledSizes'];
-  spacing: ReturnType<typeof useResponsiveSpacing>;
   isLargeTextMode: boolean;
-}>(({ strain, scaledSizes, spacing, isLargeTextMode }) => (
-  <View className="gap-2" style={{ padding: spacing.cardPadding }}>
-    <StrainBadges strain={strain} gap={spacing.badgeGap} />
+}>(({ strain, scaledSizes, isLargeTextMode }) => (
+  <View className="gap-1 px-4 pb-4 pt-3">
     <Text
-      className="font-semibold text-neutral-900 dark:text-neutral-100"
-      style={{ fontSize: scaledSizes.lg }}
-      numberOfLines={isLargeTextMode ? 3 : 2}
+      className="font-bold text-neutral-900 dark:text-neutral-50"
+      style={{ fontSize: scaledSizes.xl }}
+      numberOfLines={isLargeTextMode ? 3 : 1}
       allowFontScaling={true}
-      maxFontSizeMultiplier={2}
+      maxFontSizeMultiplier={1.5}
     >
       {strain.name}
     </Text>
     {strain.description?.[0] && (
       <Text
-        numberOfLines={isLargeTextMode ? 3 : 2}
-        className="leading-snug text-neutral-600 dark:text-neutral-400"
+        numberOfLines={2}
+        className="leading-tight text-neutral-500 dark:text-neutral-400"
         style={{ fontSize: scaledSizes.sm }}
         allowFontScaling={true}
-        maxFontSizeMultiplier={2}
+        maxFontSizeMultiplier={1.5}
       >
         {strain.description[0]}
       </Text>
@@ -66,9 +67,26 @@ const StrainCardContent = React.memo<{
 ));
 StrainCardContent.displayName = 'StrainCardContent';
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const AnimatedImage = Animated.createAnimatedComponent(Image);
+
 export const StrainCard = React.memo<Props>(({ strain, testID }) => {
   const { scaledSizes, isLargeTextMode } = useDynamicType();
-  const spacing = useResponsiveSpacing();
+
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const onPressIn = React.useCallback(() => {
+    haptics.selection();
+    scale.value = withSpring(0.97, { damping: 10, stiffness: 300 });
+  }, [scale]);
+
+  const onPressOut = React.useCallback(() => {
+    scale.value = withSpring(1, { damping: 10, stiffness: 300 });
+  }, [scale]);
 
   const accessibilityLabel = React.useMemo(
     () =>
@@ -86,40 +104,56 @@ export const StrainCard = React.memo<Props>(({ strain, testID }) => {
     [strain.id, strain.imageUrl]
   );
 
-  const imageHeight = isLargeTextMode ? 'h-56' : 'h-48';
-
   return (
-    <Link href={`/strains/${strain.id}`} asChild>
-      <Pressable
+    <Link href={`/strains/${strain.slug}`} asChild>
+      <AnimatedPressable
         accessibilityHint={translate('accessibility.strains.open_detail_hint')}
         accessibilityLabel={accessibilityLabel}
         accessibilityRole="link"
         testID={testID}
-        className="px-4 py-2"
-        android_ripple={{ color: 'transparent' }}
-        style={({ pressed }: { pressed: boolean }): ViewStyle[] => [
-          { opacity: pressed ? 0.7 : 1 },
-        ]}
+        className="mb-5 px-4"
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        style={animatedStyle}
       >
         <View
-          className="flex-1 overflow-hidden rounded-3xl border border-neutral-300/80 bg-white dark:border-neutral-800 dark:bg-neutral-900"
+          className="overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-neutral-900"
           style={styles.card}
         >
-          <View className="relative">
-            <Image
-              className={`${imageHeight} w-full`}
+          <View className="relative h-52 w-full bg-neutral-100 dark:bg-neutral-800">
+            <AnimatedImage
+              className="size-full"
               contentFit="cover"
+              sharedTransitionTag={`strain-image-${strain.slug}`}
               {...imageProps}
             />
+
+            {/* Favorite Button */}
+            <View className="absolute right-3 top-3 overflow-hidden rounded-full">
+              <BlurView intensity={30} tint="dark" className="p-1.5">
+                <FavoriteButtonConnected
+                  strainId={strain.id}
+                  strain={strain}
+                  testID={`favorite-btn-${strain.id}`}
+                />
+              </BlurView>
+            </View>
+
+            {/* Overlay Badges */}
+            <View className="absolute bottom-3 left-3 overflow-hidden rounded-xl">
+              <BlurView intensity={30} tint="dark" className="px-2 py-1.5">
+                <StrainBadges strain={strain} />
+              </BlurView>
+            </View>
           </View>
+
           <StrainCardContent
             strain={strain}
             scaledSizes={scaledSizes}
-            spacing={spacing}
             isLargeTextMode={isLargeTextMode}
           />
         </View>
-      </Pressable>
+      </AnimatedPressable>
     </Link>
   );
 });
@@ -131,12 +165,12 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
       },
       android: {
-        elevation: 3,
+        elevation: 4,
       },
     }),
     // @ts-ignore - borderCurve is iOS-only

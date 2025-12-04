@@ -26,6 +26,22 @@ import {
 } from './constants';
 
 /**
+ * Convert a string to URL-safe slug format
+ * Handles spaces, special characters, and multiple dashes
+ */
+function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-') // Replace spaces with dashes
+    .replace(/[^\w\-]+/g, '') // Remove non-word characters except dashes
+    .replace(/\-\-+/g, '-') // Replace multiple dashes with single dash
+    .replace(/^-+/, '') // Trim dashes from start
+    .replace(/-+$/, ''); // Trim dashes from end
+}
+
+/**
  * Generates a fallback ID for strains missing an ID
  * Uses timestamp and random string for collision-resistant IDs
  */
@@ -457,26 +473,217 @@ export type RawApiStrain = {
   imageUrl?: string;
   image_url?: string;
   description?: string | string[];
-  genetics?: {
-    parents?: unknown;
-    lineage?: string;
-  };
+  // Nested genetics object format
+  genetics?:
+    | {
+        parents?: unknown;
+        lineage?: string;
+      }
+    | string; // Can also be string like "Indica (90-100%)"
   parents?: unknown;
   lineage?: string;
   race?: unknown;
   type?: unknown;
   thc?: RawPercentageValue;
   cbd?: RawPercentageValue;
+  // API uses both 'effects' and 'effect' (singular)
   effects?: unknown;
+  effect?: unknown;
+  // API uses both 'flavors' and 'smellAndFlavour'
   flavors?: unknown;
+  smellAndFlavour?: unknown;
   terpenes?: unknown;
+  // Nested grow object format
   grow?: RawGrowCharacteristics;
+  // Flat grow fields from API (alternative format)
+  growDifficulty?: string;
+  growEnvironments?: unknown;
+  floweringType?: string;
+  floweringTime?: string;
+  harvestTimeOutdoor?: string;
+  yieldIndoor?: string;
+  yieldOutdoor?: string;
+  heightIndoor?: string;
+  heightOutdoor?: string;
   source?: {
     provider?: string;
     updated_at?: string;
     attribution_url?: string;
   };
+  // Additional fields
+  THC?: string; // Alternative uppercase field
+  CBD?: string; // Alternative uppercase field
 };
+
+/**
+ * Parses flowering time string like "7-9 weeks" into structured data
+ */
+function parseFloweringTimeString(floweringTime?: string): FloweringTime {
+  if (!floweringTime || typeof floweringTime !== 'string') {
+    return { label: DEFAULT_FLOWERING_TIME };
+  }
+
+  // Try to parse "7-9 weeks" format
+  const rangeMatch = floweringTime.match(/(\d+)\s*-\s*(\d+)\s*weeks?/i);
+  if (rangeMatch) {
+    return {
+      min_weeks: parseInt(rangeMatch[1], 10),
+      max_weeks: parseInt(rangeMatch[2], 10),
+      label: floweringTime,
+    };
+  }
+
+  // Try to parse single number "8 weeks"
+  const singleMatch = floweringTime.match(/(\d+)\s*weeks?/i);
+  if (singleMatch) {
+    const weeks = parseInt(singleMatch[1], 10);
+    return {
+      min_weeks: weeks,
+      max_weeks: weeks,
+      label: floweringTime,
+    };
+  }
+
+  return { label: floweringTime };
+}
+
+/**
+ * Parses yield string like "Medium" or "700g/plant" into structured data
+ */
+function parseYieldString(yieldStr?: string): YieldInfo {
+  if (!yieldStr || typeof yieldStr !== 'string') {
+    return { label: DEFAULT_YIELD };
+  }
+
+  // Try to parse "700g/plant" or "500-700g" format
+  const gramsMatch = yieldStr.match(/(\d+)(?:\s*-\s*(\d+))?\s*g/i);
+  if (gramsMatch) {
+    const minGrams = parseInt(gramsMatch[1], 10);
+    const maxGrams = gramsMatch[2] ? parseInt(gramsMatch[2], 10) : minGrams;
+    return {
+      min_grams: minGrams,
+      max_grams: maxGrams,
+      label: yieldStr,
+    };
+  }
+
+  // Qualitative values like "Medium", "High"
+  return { label: yieldStr };
+}
+
+/**
+ * Parses height string like "Medium" or "150cm" into structured data
+ */
+function parseHeightString(
+  indoorHeight?: string,
+  outdoorHeight?: string
+): HeightInfo {
+  const label = indoorHeight || outdoorHeight || DEFAULT_HEIGHT;
+
+  // Try to extract numeric cm values
+  let indoor_cm: number | undefined;
+  let outdoor_cm: number | undefined;
+
+  if (indoorHeight) {
+    const match = indoorHeight.match(/(\d+)\s*cm/i);
+    if (match) indoor_cm = parseInt(match[1], 10);
+  }
+
+  if (outdoorHeight) {
+    const match = outdoorHeight.match(/(\d+)\s*cm/i);
+    if (match) outdoor_cm = parseInt(match[1], 10);
+  }
+
+  return { indoor_cm, outdoor_cm, label };
+}
+
+/**
+ * Extracts race from genetics string like "Indica (90-100%)"
+ */
+function extractRaceFromGenetics(genetics?: string | object): StrainRace {
+  if (typeof genetics === 'string') {
+    return normalizeRace(genetics);
+  }
+  return 'hybrid';
+}
+
+/**
+ * Extracts parents from genetics string or parents field
+ */
+function extractParents(
+  genetics?: string | { parents?: unknown; lineage?: string },
+  parents?: unknown
+): string[] {
+  // Check direct parents field first
+  if (typeof parents === 'string' && parents.trim()) {
+    // Split by common delimiters
+    return parents
+      .split(/[,x×]/i)
+      .map((p) => p.trim())
+      .filter(Boolean);
+  }
+
+  if (Array.isArray(parents)) {
+    return parents.filter(Boolean).map(String);
+  }
+
+  // Check genetics object
+  if (genetics && typeof genetics === 'object' && 'parents' in genetics) {
+    if (Array.isArray(genetics.parents)) {
+      return genetics.parents.filter(Boolean).map(String);
+    }
+  }
+
+  return [];
+}
+
+/**
+ * Normalizes description from API response
+ */
+function normalizeDescription(description: unknown): string[] {
+  if (Array.isArray(description)) {
+    return description.filter(Boolean);
+  }
+  return description ? [String(description)] : [DEFAULT_DESCRIPTION];
+}
+
+/**
+ * Normalizes synonyms from API response
+ */
+function normalizeSynonyms(synonyms: unknown): string[] {
+  return Array.isArray(synonyms) ? synonyms.filter(Boolean).map(String) : [];
+}
+
+/**
+ * Extracts genetics info from API response
+ */
+function extractGeneticsInfo(apiStrain: RawApiStrain): {
+  geneticsStr?: string;
+  geneticsObj?: { parents?: unknown[]; lineage?: string };
+} {
+  const geneticsStr =
+    typeof apiStrain.genetics === 'string' ? apiStrain.genetics : undefined;
+  const geneticsObj =
+    typeof apiStrain.genetics === 'object' ? apiStrain.genetics : undefined;
+  return { geneticsStr, geneticsObj };
+}
+
+/**
+ * Builds grow characteristics from flat API fields
+ */
+function buildGrowFromFlatFields(apiStrain: RawApiStrain): GrowCharacteristics {
+  return {
+    difficulty: normalizeGrowDifficulty(apiStrain.growDifficulty),
+    indoor_suitable: true,
+    outdoor_suitable: true,
+    flowering_time: parseFloweringTimeString(apiStrain.floweringTime),
+    yield: {
+      indoor: parseYieldString(apiStrain.yieldIndoor),
+      outdoor: parseYieldString(apiStrain.yieldOutdoor),
+    },
+    height: parseHeightString(apiStrain.heightIndoor, apiStrain.heightOutdoor),
+  };
+}
 
 /**
  * Normalizes complete strain data from API response
@@ -489,50 +696,48 @@ export function normalizeStrain(
   apiStrain: RawApiStrain,
   locale = 'en-US'
 ): Strain {
-  // Parse THC and CBD
-  const thc = parsePercentageRange(apiStrain.thc);
-  const cbd = parsePercentageRange(apiStrain.cbd);
+  const thc = parsePercentageRange(apiStrain.thc ?? apiStrain.THC);
+  const cbd = parsePercentageRange(apiStrain.cbd ?? apiStrain.CBD);
+  const { geneticsStr, geneticsObj } = extractGeneticsInfo(apiStrain);
 
-  // Generate display strings
-  const thc_display = formatPercentageDisplay(thc, locale);
-  const cbd_display = formatPercentageDisplay(cbd, locale);
+  const race =
+    apiStrain.race || apiStrain.type
+      ? normalizeRace(apiStrain.race || apiStrain.type)
+      : extractRaceFromGenetics(apiStrain.genetics);
 
-  // Normalize arrays
-  const description = Array.isArray(apiStrain.description)
-    ? apiStrain.description.filter(Boolean)
-    : apiStrain.description
-      ? [String(apiStrain.description)]
-      : [DEFAULT_DESCRIPTION];
-
-  const synonyms = Array.isArray(apiStrain.synonyms)
-    ? apiStrain.synonyms.filter(Boolean).map(String)
-    : [];
+  const effects = normalizeEffects(apiStrain.effects || apiStrain.effect);
+  const flavors = normalizeFlavors(
+    apiStrain.flavors || apiStrain.smellAndFlavour
+  );
+  const grow = apiStrain.grow
+    ? normalizeGrowCharacteristics(apiStrain.grow)
+    : buildGrowFromFlatFields(apiStrain);
 
   return {
     id: String(apiStrain.id || generateId()),
     name: String(apiStrain.name || 'Unknown Strain'),
-    slug: String(apiStrain.slug || apiStrain.name || 'unknown').toLowerCase(),
-    synonyms,
+    slug: apiStrain.slug
+      ? slugify(String(apiStrain.slug))
+      : slugify(String(apiStrain.name || 'unknown')),
+    synonyms: normalizeSynonyms(apiStrain.synonyms),
     link: String(apiStrain.link || ''),
     imageUrl: String(
       apiStrain.imageUrl || apiStrain.image_url || FALLBACK_IMAGE_URL
     ),
-    description,
+    description: normalizeDescription(apiStrain.description),
     genetics: {
-      parents: Array.isArray(apiStrain.genetics?.parents)
-        ? apiStrain.genetics.parents.filter(Boolean).map(String)
-        : Array.isArray(apiStrain.parents)
-          ? apiStrain.parents.filter(Boolean).map(String)
-          : [],
-      lineage: String(apiStrain.genetics?.lineage ?? apiStrain.lineage ?? ''),
+      parents: extractParents(apiStrain.genetics, apiStrain.parents),
+      lineage: String(
+        geneticsObj?.lineage ?? apiStrain.lineage ?? geneticsStr ?? ''
+      ),
     },
-    race: normalizeRace(apiStrain.race || apiStrain.type),
+    race,
     thc,
     cbd,
-    effects: normalizeEffects(apiStrain.effects),
-    flavors: normalizeFlavors(apiStrain.flavors),
+    effects,
+    flavors,
     terpenes: normalizeTerpenes(apiStrain.terpenes),
-    grow: normalizeGrowCharacteristics(apiStrain.grow),
+    grow,
     source: {
       provider: String(apiStrain.source?.provider || 'The Weed DB'),
       updated_at: String(
@@ -542,8 +747,8 @@ export function normalizeStrain(
         apiStrain.source?.attribution_url || 'https://www.theweedb.com'
       ),
     },
-    thc_display,
-    cbd_display,
+    thc_display: formatPercentageDisplay(thc, locale),
+    cbd_display: formatPercentageDisplay(cbd, locale),
   };
 }
 

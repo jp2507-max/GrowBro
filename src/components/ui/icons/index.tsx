@@ -1,4 +1,5 @@
 export * from './alert-circle';
+export * from './arrow-left';
 export * from './arrow-right';
 export * from './bug';
 export * from './calendar';

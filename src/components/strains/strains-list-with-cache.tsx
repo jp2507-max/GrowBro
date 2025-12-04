@@ -18,6 +18,7 @@ import Animated from 'react-native-reanimated';
 import type { Strain } from '@/api';
 import type { StrainFilters } from '@/api/strains/types';
 import { useOfflineAwareStrains } from '@/api/strains/use-strains-infinite-with-cache';
+import { applyStrainFilters } from '@/lib/strains/filtering';
 import { prefetchStrainImages } from '@/lib/strains/image-optimization';
 import { getOptimizedFlashListConfig } from '@/lib/strains/measure-item-size';
 import { useScrollPosition } from '@/lib/strains/use-scroll-position';
@@ -125,10 +126,18 @@ export function StrainsListWithCache({
     pageSize: 20,
   });
 
-  const strains = useMemo<Strain[]>(() => {
+  // Get raw strains from paginated API/cache response
+  const rawStrains = useMemo<Strain[]>(() => {
     if (!data?.pages?.length) return [];
     return data.pages.flatMap((page) => page.data);
   }, [data?.pages]);
+
+  // Apply client-side filters to guarantee UI matches selected filters
+  // This ensures correct behavior for both online and cached/offline data
+  const strains = useMemo(
+    () => applyStrainFilters(rawStrains, filters || {}),
+    [rawStrains, filters]
+  );
 
   const { initialScrollIndexRef, handleScroll } = useScrollRestoration(
     queryKey,

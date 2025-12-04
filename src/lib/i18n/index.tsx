@@ -1,4 +1,3 @@
-// import Localization from 'expo-localization';
 import i18n, { dir } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { I18nManager } from 'react-native';
@@ -9,28 +8,18 @@ export * from './utils';
 /**
  * Initialize i18n during app bootstrap.
  * - avoids doing IO during module import to keep tests hermetic
- * - restores persisted language if available
+ * - restores persisted language if available, otherwise uses device language
  */
 export async function initI18n(): Promise<void> {
-  // Avoid touching storage in test environments
-  const globalWithJest = globalThis as { jest?: unknown };
-  const isTestEnv = typeof globalWithJest.jest !== 'undefined';
-
   // Lazy import utils to avoid module-load IO
   const utils = await import('./utils');
 
-  // Conditionally compute persisted language - skip storage access in test env
-  let persisted: string | undefined;
-  if (!isTestEnv) {
-    // getLanguage returns string | undefined synchronously
-    persisted = utils.getLanguage();
-  }
-
-  // initialize i18next with resources and either persisted or fallback
+  // initialize i18next with resources and resolved language
+  // getLanguage() handles: persisted → device language → 'en' fallback
   // eslint-disable-next-line import/no-named-as-default-member
   await i18n.use(initReactI18next).init({
     resources,
-    lng: persisted || 'en',
+    lng: utils.getLanguage(),
     fallbackLng: 'en',
     compatibilityJSON: 'v3',
     interpolation: { escapeValue: false },

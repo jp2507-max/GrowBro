@@ -3,6 +3,7 @@ import * as React from 'react';
 
 import type { StrainFilters } from '@/api/strains/types';
 import { Button, Checkbox, Modal, Text, useModal, View } from '@/components/ui';
+import type { TxKeyPath } from '@/lib/i18n';
 import { translate, translateDynamic } from '@/lib/i18n';
 
 import { DifficultyBadge } from './difficulty-badge';
@@ -28,6 +29,64 @@ const DIFFICULTY_OPTIONS: {
   { value: 'intermediate', label: 'strains.difficulty.intermediate' },
   { value: 'advanced', label: 'strains.difficulty.advanced' },
 ];
+
+// THC level options with corresponding filter values
+type ThcLevel = 'any' | 'low' | 'medium' | 'high';
+const THC_OPTIONS: {
+  value: ThcLevel;
+  label: string;
+  thcMin?: number;
+  thcMax?: number;
+}[] = [
+  { value: 'any', label: 'strains.filters.thc_any' },
+  { value: 'low', label: 'strains.filters.thc_low', thcMax: 10 },
+  {
+    value: 'medium',
+    label: 'strains.filters.thc_medium',
+    thcMin: 10,
+    thcMax: 20,
+  },
+  { value: 'high', label: 'strains.filters.thc_high', thcMin: 20 },
+];
+
+// CBD level options with corresponding filter values
+type CbdLevel = 'any' | 'low' | 'medium' | 'high';
+const CBD_OPTIONS: {
+  value: CbdLevel;
+  label: string;
+  cbdMin?: number;
+  cbdMax?: number;
+}[] = [
+  { value: 'any', label: 'strains.filters.cbd_any' },
+  { value: 'low', label: 'strains.filters.cbd_low', cbdMax: 5 },
+  {
+    value: 'medium',
+    label: 'strains.filters.cbd_medium',
+    cbdMin: 5,
+    cbdMax: 15,
+  },
+  { value: 'high', label: 'strains.filters.cbd_high', cbdMin: 15 },
+];
+
+// Helper to determine current THC level from filter values
+function getThcLevelFromFilters(filters: StrainFilters): ThcLevel {
+  if (filters.thcMin === undefined && filters.thcMax === undefined)
+    return 'any';
+  if (filters.thcMax === 10 && filters.thcMin === undefined) return 'low';
+  if (filters.thcMin === 10 && filters.thcMax === 20) return 'medium';
+  if (filters.thcMin === 20 && filters.thcMax === undefined) return 'high';
+  return 'any';
+}
+
+// Helper to determine current CBD level from filter values
+function getCbdLevelFromFilters(filters: StrainFilters): CbdLevel {
+  if (filters.cbdMin === undefined && filters.cbdMax === undefined)
+    return 'any';
+  if (filters.cbdMax === 5 && filters.cbdMin === undefined) return 'low';
+  if (filters.cbdMin === 5 && filters.cbdMax === 15) return 'medium';
+  if (filters.cbdMin === 15 && filters.cbdMax === undefined) return 'high';
+  return 'any';
+}
 
 const COMMON_EFFECTS = [
   'happy',
@@ -69,130 +128,49 @@ export function useStrainFilters() {
   };
 }
 
-const FilterModalContent = ({
-  localFilters,
-  handleRaceToggle,
-  handleDifficultyToggle,
-  handleEffectToggle,
-  handleFlavorToggle,
-}: {
-  localFilters: StrainFilters;
-  handleRaceToggle: (race: StrainFilters['race']) => void;
-  handleDifficultyToggle: (difficulty: StrainFilters['difficulty']) => void;
-  handleEffectToggle: (effect: string) => void;
-  handleFlavorToggle: (flavor: string) => void;
-}) => {
-  return (
-    <>
-      {/* Race Section */}
-      <View className="mb-6">
-        <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-50">
-          {translate('strains.filters.race_label')}
-        </Text>
-        <View className="flex-row flex-wrap gap-2">
-          {RACE_OPTIONS.map((option) => (
-            <Button
-              key={option.value}
-              label=""
-              variant={
-                localFilters.race === option.value ? 'default' : 'outline'
-              }
-              onPress={() => handleRaceToggle(option.value)}
-              className="h-auto px-3 py-2"
-              testID={`filter-race-${option.value}`}
-            >
-              <RaceBadge race={option.value!} />
-            </Button>
-          ))}
-        </View>
-      </View>
-
-      {/* Difficulty Section */}
-      <View className="mb-6">
-        <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-50">
-          {translate('strains.filters.difficulty_label')}
-        </Text>
-        <View className="flex-row flex-wrap gap-2">
-          {DIFFICULTY_OPTIONS.map((option) => (
-            <Button
-              key={option.value}
-              label=""
-              variant={
-                localFilters.difficulty === option.value ? 'default' : 'outline'
-              }
-              onPress={() => handleDifficultyToggle(option.value)}
-              className="h-auto px-3 py-2"
-              testID={`filter-difficulty-${option.value}`}
-            >
-              <DifficultyBadge difficulty={option.value!} />
-            </Button>
-          ))}
-        </View>
-      </View>
-
-      {/* Effects Section */}
-      <View className="mb-6">
-        <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-50">
-          {translate('strains.filters.effects_label')}
-        </Text>
-        <View className="gap-2">
-          {COMMON_EFFECTS.map((effect) => (
-            <Checkbox.Root
-              key={effect}
-              checked={localFilters.effects?.includes(effect) || false}
-              onChange={() => handleEffectToggle(effect)}
-              testID={`filter-effect-${effect}`}
-              accessibilityLabel={translateDynamic(`strains.effects.${effect}`)}
-              accessibilityHint={translate(
-                'accessibility.strains.toggle_effect_hint'
-              )}
-            >
-              <Checkbox.Icon
-                checked={localFilters.effects?.includes(effect) || false}
-              />
-              <Checkbox.Label
-                text={translateDynamic(`strains.effects.${effect}`)}
-              />
-            </Checkbox.Root>
-          ))}
-        </View>
-      </View>
-
-      {/* Flavors Section */}
-      <View className="mb-6">
-        <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-50">
-          {translate('strains.filters.flavors_label')}
-        </Text>
-        <View className="gap-2">
-          {COMMON_FLAVORS.map((flavor) => (
-            <Checkbox.Root
-              key={flavor}
-              checked={localFilters.flavors?.includes(flavor) || false}
-              onChange={() => handleFlavorToggle(flavor)}
-              testID={`filter-flavor-${flavor}`}
-              accessibilityLabel={translateDynamic(`strains.flavors.${flavor}`)}
-              accessibilityHint={translate(
-                'accessibility.strains.toggle_flavor_hint'
-              )}
-            >
-              <Checkbox.Icon
-                checked={localFilters.flavors?.includes(flavor) || false}
-              />
-              <Checkbox.Label
-                text={translateDynamic(`strains.flavors.${flavor}`)}
-              />
-            </Checkbox.Root>
-          ))}
-        </View>
-      </View>
-    </>
-  );
+/** Checkbox list for effects/flavors */
+type CheckboxListProps = {
+  items: readonly string[];
+  selected: string[] | undefined;
+  onToggle: (item: string) => void;
+  labelKey: string;
+  hintKey: TxKeyPath;
+  testIdPrefix: string;
 };
 
-export const FilterModal = React.forwardRef<
-  React.ElementRef<typeof Modal>,
-  FilterModalProps
->(({ filters, onApply, onClear }, ref) => {
+function CheckboxList({
+  items,
+  selected,
+  onToggle,
+  labelKey,
+  hintKey,
+  testIdPrefix,
+}: CheckboxListProps) {
+  return (
+    <View className="gap-2">
+      {items.map((item) => (
+        <Checkbox.Root
+          key={item}
+          checked={selected?.includes(item) || false}
+          onChange={() => onToggle(item)}
+          testID={`${testIdPrefix}-${item}`}
+          accessibilityLabel={translateDynamic(`${labelKey}.${item}`)}
+          accessibilityHint={translate(hintKey)}
+        >
+          <Checkbox.Icon checked={selected?.includes(item) || false} />
+          <Checkbox.Label text={translateDynamic(`${labelKey}.${item}`)} />
+        </Checkbox.Root>
+      ))}
+    </View>
+  );
+}
+
+/** Hook to manage local filter state and handlers */
+function useFilterHandlers(
+  filters: StrainFilters,
+  onApply: (filters: StrainFilters) => void,
+  onClear: () => void
+) {
   const [localFilters, setLocalFilters] =
     React.useState<StrainFilters>(filters);
 
@@ -243,6 +221,26 @@ export const FilterModal = React.forwardRef<
     });
   }, []);
 
+  const handleThcLevelToggle = React.useCallback((level: ThcLevel) => {
+    setLocalFilters((prev) => {
+      const option = THC_OPTIONS.find((o) => o.value === level);
+      if (!option || level === 'any') {
+        return { ...prev, thcMin: undefined, thcMax: undefined };
+      }
+      return { ...prev, thcMin: option.thcMin, thcMax: option.thcMax };
+    });
+  }, []);
+
+  const handleCbdLevelToggle = React.useCallback((level: CbdLevel) => {
+    setLocalFilters((prev) => {
+      const option = CBD_OPTIONS.find((o) => o.value === level);
+      if (!option || level === 'any') {
+        return { ...prev, cbdMin: undefined, cbdMax: undefined };
+      }
+      return { ...prev, cbdMin: option.cbdMin, cbdMax: option.cbdMax };
+    });
+  }, []);
+
   const handleClear = React.useCallback(() => {
     setLocalFilters({});
     onClear();
@@ -256,10 +254,184 @@ export const FilterModal = React.forwardRef<
     return (
       localFilters.race !== undefined ||
       localFilters.difficulty !== undefined ||
+      localFilters.thcMin !== undefined ||
+      localFilters.thcMax !== undefined ||
+      localFilters.cbdMin !== undefined ||
+      localFilters.cbdMax !== undefined ||
       (localFilters.effects && localFilters.effects.length > 0) ||
       (localFilters.flavors && localFilters.flavors.length > 0)
     );
   }, [localFilters]);
+
+  return {
+    localFilters,
+    handleRaceToggle,
+    handleDifficultyToggle,
+    handleEffectToggle,
+    handleFlavorToggle,
+    handleThcLevelToggle,
+    handleCbdLevelToggle,
+    handleClear,
+    handleApply,
+    hasActiveFilters,
+  };
+}
+
+const FilterModalContent = ({
+  localFilters,
+  handleRaceToggle,
+  handleDifficultyToggle,
+  handleThcLevelToggle,
+  handleCbdLevelToggle,
+  handleEffectToggle,
+  handleFlavorToggle,
+}: {
+  localFilters: StrainFilters;
+  handleRaceToggle: (race: StrainFilters['race']) => void;
+  handleDifficultyToggle: (difficulty: StrainFilters['difficulty']) => void;
+  handleThcLevelToggle: (level: ThcLevel) => void;
+  handleCbdLevelToggle: (level: CbdLevel) => void;
+  handleEffectToggle: (effect: string) => void;
+  handleFlavorToggle: (flavor: string) => void;
+}) => {
+  const currentThcLevel = getThcLevelFromFilters(localFilters);
+  const currentCbdLevel = getCbdLevelFromFilters(localFilters);
+
+  return (
+    <>
+      {/* Race Section */}
+      <View className="mb-6">
+        <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-50">
+          {translate('strains.filters.race_label')}
+        </Text>
+        <View className="flex-row flex-wrap gap-2">
+          {RACE_OPTIONS.map((option) => (
+            <Button
+              key={option.value}
+              label=""
+              variant={
+                localFilters.race === option.value ? 'default' : 'outline'
+              }
+              onPress={() => handleRaceToggle(option.value)}
+              className="h-auto px-3 py-2"
+              testID={`filter-race-${option.value}`}
+            >
+              <RaceBadge race={option.value!} />
+            </Button>
+          ))}
+        </View>
+      </View>
+
+      {/* THC Level Section */}
+      <View className="mb-6">
+        <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-50">
+          {translate('strains.filters.thc_label')}
+        </Text>
+        <View className="flex-row flex-wrap gap-2">
+          {THC_OPTIONS.map((option) => (
+            <Button
+              key={option.value}
+              label={translateDynamic(option.label)}
+              variant={currentThcLevel === option.value ? 'default' : 'outline'}
+              onPress={() => handleThcLevelToggle(option.value)}
+              className="h-auto min-w-[70px] px-3 py-2"
+              testID={`filter-thc-${option.value}`}
+            />
+          ))}
+        </View>
+      </View>
+
+      {/* CBD Level Section */}
+      <View className="mb-6">
+        <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-50">
+          {translate('strains.filters.cbd_label')}
+        </Text>
+        <View className="flex-row flex-wrap gap-2">
+          {CBD_OPTIONS.map((option) => (
+            <Button
+              key={option.value}
+              label={translateDynamic(option.label)}
+              variant={currentCbdLevel === option.value ? 'default' : 'outline'}
+              onPress={() => handleCbdLevelToggle(option.value)}
+              className="h-auto min-w-[70px] px-3 py-2"
+              testID={`filter-cbd-${option.value}`}
+            />
+          ))}
+        </View>
+      </View>
+
+      {/* Difficulty Section */}
+      <View className="mb-6">
+        <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-50">
+          {translate('strains.filters.difficulty_label')}
+        </Text>
+        <View className="flex-row flex-wrap gap-2">
+          {DIFFICULTY_OPTIONS.map((option) => (
+            <Button
+              key={option.value}
+              label=""
+              variant={
+                localFilters.difficulty === option.value ? 'default' : 'outline'
+              }
+              onPress={() => handleDifficultyToggle(option.value)}
+              className="h-auto px-3 py-2"
+              testID={`filter-difficulty-${option.value}`}
+            >
+              <DifficultyBadge difficulty={option.value!} />
+            </Button>
+          ))}
+        </View>
+      </View>
+
+      {/* Effects Section */}
+      <View className="mb-6">
+        <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-50">
+          {translate('strains.filters.effects_label')}
+        </Text>
+        <CheckboxList
+          items={COMMON_EFFECTS}
+          selected={localFilters.effects}
+          onToggle={handleEffectToggle}
+          labelKey="strains.effects"
+          hintKey="accessibility.strains.toggle_effect_hint"
+          testIdPrefix="filter-effect"
+        />
+      </View>
+
+      {/* Flavors Section */}
+      <View className="mb-6">
+        <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-50">
+          {translate('strains.filters.flavors_label')}
+        </Text>
+        <CheckboxList
+          items={COMMON_FLAVORS}
+          selected={localFilters.flavors}
+          onToggle={handleFlavorToggle}
+          labelKey="strains.flavors"
+          hintKey="accessibility.strains.toggle_flavor_hint"
+          testIdPrefix="filter-flavor"
+        />
+      </View>
+    </>
+  );
+};
+
+export const FilterModal = React.forwardRef<
+  React.ElementRef<typeof Modal>,
+  FilterModalProps
+>(({ filters, onApply, onClear }, ref) => {
+  const {
+    localFilters,
+    handleRaceToggle,
+    handleDifficultyToggle,
+    handleEffectToggle,
+    handleFlavorToggle,
+    handleThcLevelToggle,
+    handleCbdLevelToggle,
+    handleClear,
+    handleApply,
+    hasActiveFilters,
+  } = useFilterHandlers(filters, onApply, onClear);
 
   return (
     <Modal
@@ -267,34 +439,41 @@ export const FilterModal = React.forwardRef<
       snapPoints={['85%']}
       title={translate('strains.filters.title')}
     >
-      <BottomSheetScrollView contentContainerClassName="px-4 pb-24">
-        <FilterModalContent
-          localFilters={localFilters}
-          handleRaceToggle={handleRaceToggle}
-          handleDifficultyToggle={handleDifficultyToggle}
-          handleEffectToggle={handleEffectToggle}
-          handleFlavorToggle={handleFlavorToggle}
-        />
-      </BottomSheetScrollView>
+      <View className="flex-1">
+        <BottomSheetScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
+        >
+          <FilterModalContent
+            localFilters={localFilters}
+            handleRaceToggle={handleRaceToggle}
+            handleDifficultyToggle={handleDifficultyToggle}
+            handleThcLevelToggle={handleThcLevelToggle}
+            handleCbdLevelToggle={handleCbdLevelToggle}
+            handleEffectToggle={handleEffectToggle}
+            handleFlavorToggle={handleFlavorToggle}
+          />
+        </BottomSheetScrollView>
 
-      {/* Fixed Bottom Buttons */}
-      <View className="absolute inset-x-0 bottom-0 border-t border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-        <View className="flex-row gap-3">
-          <View className="flex-1">
-            <Button
-              label={translate('strains.filters.clear_all')}
-              variant="outline"
-              onPress={handleClear}
-              disabled={!hasActiveFilters}
-              testID="filter-clear-button"
-            />
-          </View>
-          <View className="flex-1">
-            <Button
-              label={translate('strains.filters.apply')}
-              onPress={handleApply}
-              testID="filter-apply-button"
-            />
+        {/* Footer Buttons - flex layout, not absolute */}
+        <View className="border-t border-charcoal-100 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-950">
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Button
+                label={translate('strains.filters.clear_all')}
+                variant="outline"
+                onPress={handleClear}
+                disabled={!hasActiveFilters}
+                testID="filter-clear-button"
+              />
+            </View>
+            <View className="flex-1">
+              <Button
+                label={translate('strains.filters.apply')}
+                onPress={handleApply}
+                testID="filter-apply-button"
+              />
+            </View>
           </View>
         </View>
       </View>

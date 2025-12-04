@@ -42,6 +42,7 @@ export function createFavoritesRepository(
     return {
       id: strain.id,
       name: strain.name,
+      slug: strain.slug,
       race: strain.race,
       thc_display: strain.thc_display,
       imageUrl: strain.imageUrl,

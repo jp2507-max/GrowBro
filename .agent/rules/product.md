@@ -1,0 +1,29 @@
+---
+trigger: always_on
+---
+
+# Product Overview
+
+GrowBro is a mobile application designed to help home growers plan, track, and optimize their cultivation activities. The app focuses on providing a comprehensive solution for hobby and semi-professional growers.
+
+## Core Features
+
+- **Calendar & Task Management**: Recurring tasks, reminders, and agenda management for cultivation schedules
+- **Harvest Workflow**: Complete tracking from harvest through drying, curing, and inventory management
+- **Community Feed**: Social features for sharing updates, engaging with other growers
+- **AI Photo Assessment**: Plant health analysis and issue detection with actionable guidance
+- **Guided Grow Playbooks**: Step-by-step cultivation guides adapted to different setups and strains
+
+## Target Users
+
+- **Hobby Growers**: Want simple schedules, reminders, and clear guidance when issues arise
+- **Semi-Pro Growers**: Need templated tasks, accurate harvest tracking, and inventory summaries
+- **Community Enthusiasts**: Share updates, engage with others, value performance and real-time interactions
+
+## Key Principles
+
+- **Educational Focus**: All content is educational; no commerce or product sales
+- **Privacy-First**: User data protection with explicit opt-ins for sharing
+- **Offline-First**: Core functionality works without internet connection
+- **Age-Gated**: 18+ only with appropriate legal disclaimers
+- **Compliance**: Adheres to app store policies and regional regulations

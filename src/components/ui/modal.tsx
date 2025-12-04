@@ -42,8 +42,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Path, Svg } from 'react-native-svg';
 
-import colors from '@/components/ui/colors';
-
 import { Text } from './text';
 
 type ModalProps = BottomSheetModalProps & {
@@ -210,8 +208,7 @@ const CloseButton = ({ close }: { close: () => void }) => {
 
 const styles = StyleSheet.create({
   backdrop: {
-    backgroundColor: colors.charcoal[950],
-    opacity: 0.4,
+    backgroundColor: '#12121266',
   },
   detached: {
     marginHorizontal: 16,
