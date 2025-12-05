@@ -84,13 +84,13 @@ const GrowInfoSection = ({ strain }: { strain: Strain }) => {
     (strain.grow.flowering_time.min_weeks &&
     strain.grow.flowering_time.max_weeks
       ? `${strain.grow.flowering_time.min_weeks}-${strain.grow.flowering_time.max_weeks} weeks`
-      : 'N/A');
+      : translate('common.na'));
 
   const yieldRating =
     strain.grow.yield.indoor?.label ??
     strain.grow.yield.outdoor?.label ??
-    'N/A';
-  const heightRating = strain.grow.height.label ?? 'N/A';
+    translate('common.na');
+  const heightRating = strain.grow.height.label ?? translate('common.na');
 
   return (
     <Animated.View

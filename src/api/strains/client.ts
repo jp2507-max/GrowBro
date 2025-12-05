@@ -40,10 +40,17 @@ export class StrainsApiClient {
   private get useProxy(): boolean {
     // Use proxy in production, or when explicitly enabled via env flag
     // Env vars are always strings from .env files, so compare against 'true'
-    return (
-      process.env.NODE_ENV === 'production' ||
-      String(Env.STRAINS_USE_PROXY) === 'true'
-    );
+    return process.env.NODE_ENV === 'production' || this.isProxyFlagEnabled();
+  }
+
+  private isProxyFlagEnabled(): boolean {
+    const rawValue = Env.STRAINS_USE_PROXY;
+    if (rawValue === undefined || rawValue === null) {
+      return false;
+    }
+    const normalized = String(rawValue).trim().toLowerCase();
+    // Accept both 'true' and the numeric '1' commonly used in env/.env files
+    return normalized === 'true' || normalized === '1';
   }
 
   constructor() {
