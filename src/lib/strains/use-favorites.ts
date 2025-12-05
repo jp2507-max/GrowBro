@@ -68,6 +68,9 @@ function toFavoritesIndex(favoritesArray: FavoriteStrain[]): FavoritesIndex {
   const index: FavoritesIndex = {};
   for (const favorite of favoritesArray) {
     index[favorite.id] = favorite;
+    if (favorite.snapshot.slug) {
+      index[favorite.snapshot.slug] = favorite;
+    }
   }
   return index;
 }
@@ -129,6 +132,7 @@ async function addFavoriteToDb(
       addedAt: Date.now(),
       snapshot: {
         id: strain.id,
+        slug: strain.slug,
         name: strain.name,
         race: strain.race,
         thc_display: strain.thc_display,
@@ -260,9 +264,13 @@ const _useFavorites = create<FavoritesState>((set, get) => ({
     await addFavoriteToDb(
       strain,
       (favorite) => {
-        set((state) => ({
-          favorites: { ...state.favorites, [strain.id]: favorite },
-        }));
+        set((state) => {
+          const favorites = { ...state.favorites, [strain.id]: favorite };
+          if (strain.slug) {
+            favorites[strain.slug] = favorite;
+          }
+          return { favorites };
+        });
       },
       () => {
         void get()
@@ -286,7 +294,19 @@ const _useFavorites = create<FavoritesState>((set, get) => ({
       () => {
         set((state) => {
           const newFavorites = { ...state.favorites };
+          const favorite = newFavorites[strainId];
+          if (favorite?.snapshot.slug) {
+            delete newFavorites[favorite.snapshot.slug];
+          }
           delete newFavorites[strainId];
+          if (!favorite) {
+            for (const key of Object.keys(newFavorites)) {
+              if (newFavorites[key].snapshot.slug === strainId) {
+                delete newFavorites[key];
+                break;
+              }
+            }
+          }
           return { favorites: newFavorites };
         });
       },
@@ -309,7 +329,11 @@ const _useFavorites = create<FavoritesState>((set, get) => ({
   isFavorite: (strainId: string) => get().favorites[strainId] !== undefined,
   getFavorites: () => {
     const { favorites } = get();
-    return Object.values(favorites).sort((a, b) => b.addedAt - a.addedAt);
+    const unique = new Map<string, FavoriteStrain>();
+    for (const favorite of Object.values(favorites)) {
+      unique.set(favorite.id, favorite);
+    }
+    return Array.from(unique.values()).sort((a, b) => b.addedAt - a.addedAt);
   },
   syncToCloud: async () => {
     const { isSyncing, setSyncing, setSyncError } = get();
@@ -347,4 +371,17 @@ export function getFavoritesState(): FavoritesState {
 
 export function subscribeFavorites(callback: (state: FavoritesState) => void) {
   return _useFavorites.subscribe(callback);
+}
+
+/**
+ * Hydrate favorites from local DB.
+ * Call this during app startup to ensure favorites are loaded before UI renders.
+ * Safe to call multiple times - subsequent calls are quick no-ops if already hydrated.
+ */
+export async function hydrateFavorites(): Promise<void> {
+  const state = _useFavorites.getState();
+  if (state.isHydrated) {
+    return; // Already hydrated, skip
+  }
+  await state.hydrate();
 }

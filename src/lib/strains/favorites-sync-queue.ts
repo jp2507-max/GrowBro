@@ -44,27 +44,44 @@ export async function syncFavoritesToCloud(): Promise<number> {
     return 0;
   }
 
-  // Prepare upsert data
-  const upsertData = favoritesNeedingSync.map((favorite) => ({
-    user_id: userId,
-    strain_id: favorite.strainId,
-    added_at: favorite.addedAt,
-    snapshot: favorite.snapshot,
-    updated_at: favorite.updatedAt.toISOString(),
-    deleted_at: favorite.deletedAt?.toISOString() || null,
-  }));
+  const toDelete = favoritesNeedingSync.filter((f) => f.deletedAt);
+  const toUpsert = favoritesNeedingSync.filter((f) => !f.deletedAt);
 
-  // Sync to Supabase
-  const { error } = await supabase.from('favorites').upsert(upsertData, {
-    onConflict: 'user_id,strain_id',
-    ignoreDuplicates: false,
-  });
+  if (toUpsert.length > 0) {
+    const upsertData = toUpsert.map((favorite) => ({
+      user_id: userId,
+      strain_id: favorite.strainId,
+      added_at: favorite.addedAt,
+      snapshot: favorite.snapshot,
+      updated_at: favorite.updatedAt.toISOString(),
+      deleted_at: null,
+    }));
 
-  if (error) {
-    throw new Error(`Supabase sync failed: ${error.message}`);
+    const { error } = await supabase.from('favorites').upsert(upsertData, {
+      onConflict: 'user_id,strain_id',
+      ignoreDuplicates: false,
+    });
+
+    if (error) {
+      throw new Error(`Supabase sync failed: ${error.message}`);
+    }
   }
 
-  // Mark as synced
+  if (toDelete.length > 0) {
+    const { error: deleteError } = await supabase
+      .from('favorites')
+      .delete()
+      .eq('user_id', userId)
+      .in(
+        'strain_id',
+        toDelete.map((f) => f.strainId)
+      );
+
+    if (deleteError) {
+      throw new Error(`Supabase delete failed: ${deleteError.message}`);
+    }
+  }
+
   const syncedIds = favoritesNeedingSync.map((f) => f.id);
   await repo.markAsSynced(syncedIds);
 

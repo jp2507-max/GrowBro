@@ -65,7 +65,12 @@ async function callEdgeFunction(
 
   const response = await fetch(`${url}/functions/v1/enforce-auth-lockout`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: anonKey },
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+      Accept: 'application/json',
+    },
     body: JSON.stringify({
       email,
       password,
@@ -75,13 +80,20 @@ async function callEdgeFunction(
 
   if (__DEV__) console.log('[SignIn] Edge Function status:', response.status);
 
+  const raw = await response.text();
+
   try {
-    const result: EdgeFunctionResponse = await response.json();
-    return { ...result, _httpOk: response.ok } as EdgeFunctionResponse & {
+    const parsed: EdgeFunctionResponse = JSON.parse(raw);
+    return { ...parsed, _httpOk: response.ok } as EdgeFunctionResponse & {
       _httpOk: boolean;
     };
   } catch {
-    if (__DEV__) console.warn('[SignIn] Failed to parse response as JSON');
+    if (__DEV__) {
+      console.warn('[SignIn] Failed to parse response as JSON', {
+        status: response.status,
+        raw: raw?.slice?.(0, 200),
+      });
+    }
     const error = new Error('auth.error_generic') as AuthMutationError;
     error.code = 'invalid_response';
     throw error;

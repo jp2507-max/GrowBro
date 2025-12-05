@@ -60,7 +60,7 @@ export function StrainDetailSkeleton({ onBack }: Props): React.ReactElement {
 
         {/* Title Overlay with BlurView */}
         <View className="absolute inset-x-0 bottom-0">
-          <BlurView intensity={40} tint="dark" className="px-5 pb-6 pt-12">
+          <BlurView intensity={40} tint="dark" className="px-5 pb-9 pt-16">
             {/* Title skeleton */}
             <View className="mb-3 h-10 w-3/4 rounded-lg bg-white/20" />
 

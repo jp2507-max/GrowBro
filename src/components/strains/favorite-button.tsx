@@ -21,12 +21,15 @@ type Props = {
 };
 
 const ICON_SIZE = 24;
+const HEART_PATH =
+  'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z';
 
-const HeartIcon = ({ filled }: { filled: boolean }) => (
+/** Heart icon with white outline for visibility on image backgrounds */
+const HeartIconWithOutline = ({ filled }: { filled: boolean }) => (
   <Svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none">
     {/* White outline for visibility on any background */}
     <Path
-      d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+      d={HEART_PATH}
       fill="none"
       stroke="white"
       strokeWidth="4"
@@ -35,9 +38,23 @@ const HeartIcon = ({ filled }: { filled: boolean }) => (
     />
     {/* Main heart icon */}
     <Path
-      d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+      d={HEART_PATH}
       fill={filled ? colors.danger[500] : 'none'}
       stroke={filled ? colors.danger[500] : 'white'}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+/** Heart icon for overlay variant (solid background) */
+const HeartIconSimple = ({ filled }: { filled: boolean }) => (
+  <Svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none">
+    <Path
+      d={HEART_PATH}
+      fill={filled ? colors.danger[500] : 'none'}
+      stroke={filled ? colors.danger[500] : colors.neutral[900]}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -95,12 +112,16 @@ export const FavoriteButton = React.memo<Props>(
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         className={
           isOverlay
-            ? 'size-10 items-center justify-center rounded-full bg-black/20 active:bg-black/30'
+            ? 'size-10 items-center justify-center rounded-full bg-neutral-100 active:bg-neutral-200'
             : undefined
         }
       >
         <Animated.View style={animatedStyle}>
-          <HeartIcon filled={isFavorite} />
+          {isOverlay ? (
+            <HeartIconSimple filled={isFavorite} />
+          ) : (
+            <HeartIconWithOutline filled={isFavorite} />
+          )}
         </Animated.View>
       </Pressable>
     );

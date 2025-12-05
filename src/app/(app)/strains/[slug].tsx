@@ -1,10 +1,19 @@
 import * as Sentry from '@sentry/react-native';
-import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import * as React from 'react';
 import { useLayoutEffect } from 'react';
 import { ScrollView, Share } from 'react-native';
-import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  ReduceMotion,
+  type SharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
+// @ts-expect-error - Reanimated 4.x type exports issue
+import { Extrapolation, interpolate } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStrain } from '@/api/strains/use-strain';
@@ -24,6 +33,8 @@ import { getListImageProps } from '@/lib/strains/image-optimization';
 import type { Strain } from '@/types/strains';
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
+const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
+const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 /** Fire-and-forget background cache to Supabase */
 function cacheStrainToSupabase(strain: Strain) {
@@ -224,6 +235,7 @@ type HeroSectionProps = {
   topInset: number;
   onBack: () => void;
   onShare: () => void;
+  scrollY: SharedValue<number>;
 };
 
 const InvalidIdState = ({ onBack }: { onBack: () => void }) => (
@@ -246,72 +258,100 @@ const StrainHeroSection = ({
   topInset,
   onBack,
   onShare,
-}: HeroSectionProps) => (
-  <View className="relative h-96 w-full bg-neutral-100 dark:bg-neutral-800">
-    <AnimatedImage
-      className="size-full"
-      contentFit="cover"
-      sharedTransitionTag={strainImageTag(strain.slug)}
-      {...imageProps}
-    />
+  scrollY,
+}: HeroSectionProps) => {
+  // Animate buttons based on scroll position
+  const buttonsAnimatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [0, 100, 200],
+      [1, 0.6, 0],
+      Extrapolation.CLAMP
+    );
+    const translateY = interpolate(
+      scrollY.value,
+      [0, 100, 200],
+      [0, -10, -30],
+      Extrapolation.CLAMP
+    );
+    return {
+      opacity,
+      transform: [{ translateY }],
+    };
+  });
 
-    {/* Header Actions Overlay */}
-    <View
-      className="absolute inset-x-0 top-0 z-10 flex-row items-center justify-between px-4"
-      style={{ paddingTop: topInset + 8 }}
-    >
-      <Pressable
-        onPress={onBack}
-        className="size-10 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md active:bg-black/30"
-        accessibilityRole="button"
-        accessibilityLabel={translate('accessibility.common.go_back')}
-        accessibilityHint={translate('strains.detail.back_hint')}
-        testID="back-button"
+  return (
+    <View className="relative h-96 w-full bg-neutral-100 dark:bg-neutral-800">
+      <AnimatedImage
+        className="size-full"
+        contentFit="cover"
+        sharedTransitionTag={strainImageTag(strain.slug)}
+        {...imageProps}
+      />
+
+      {/* Header Actions Overlay */}
+      <Animated.View
+        className="absolute inset-x-0 top-0 z-10 flex-row items-center justify-between px-4"
+        style={[{ paddingTop: topInset + 8 }, buttonsAnimatedStyle]}
       >
-        <ArrowLeft color="currentColor" width={24} height={24} />
-      </Pressable>
-
-      <View className="flex-row gap-2">
-        <FavoriteButtonConnected
-          strainId={strain.id}
-          strain={strain}
-          variant="overlay"
-          testID="favorite-button"
-        />
         <Pressable
-          onPress={onShare}
-          className="size-10 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md active:bg-black/30"
+          onPress={onBack}
+          className="size-10 items-center justify-center rounded-full bg-neutral-100 active:bg-neutral-200"
           accessibilityRole="button"
-          accessibilityLabel={translate('strains.detail.share')}
-          accessibilityHint={translate('strains.detail.share_hint')}
-          testID="share-button"
+          accessibilityLabel={translate('accessibility.common.go_back')}
+          accessibilityHint={translate('strains.detail.back_hint')}
+          testID="back-button"
         >
-          <ShareIcon color="currentColor" width={24} height={24} />
+          <ArrowLeft color="#554B32" width={24} height={24} />
         </Pressable>
+
+        <View className="flex-row gap-3">
+          <FavoriteButtonConnected
+            strainId={strain.id}
+            strain={strain}
+            variant="overlay"
+            testID="favorite-button"
+          />
+          <Pressable
+            onPress={onShare}
+            className="size-10 items-center justify-center rounded-full bg-neutral-100 active:bg-neutral-200"
+            accessibilityRole="button"
+            accessibilityLabel={translate('strains.detail.share')}
+            accessibilityHint={translate('strains.detail.share_hint')}
+            testID="share-button"
+          >
+            <ShareIcon color="#554B32" width={24} height={24} />
+          </Pressable>
+        </View>
+      </Animated.View>
+
+      {/* Title Overlay with Gradient */}
+      <View className="absolute inset-x-0 bottom-0">
+        <AnimatedLinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.8)']}
+          locations={[0, 0.4, 1]}
+          className="w-full"
+        >
+          <Animated.View
+            entering={FadeIn.delay(200)
+              .springify()
+              .reduceMotion(ReduceMotion.System)}
+            className="px-5 pb-9 pt-16"
+          >
+            <Text className="mb-4 text-4xl font-extrabold text-white shadow-sm">
+              {strain.name}
+            </Text>
+            <View className="flex-row flex-wrap gap-3">
+              <RaceBadge race={strain.race} />
+              {strain.thc_display && <THCBadge thc={strain.thc_display} />}
+              <DifficultyBadge difficulty={strain.grow.difficulty} />
+            </View>
+          </Animated.View>
+        </AnimatedLinearGradient>
       </View>
     </View>
-
-    {/* Title Overlay */}
-    <View className="absolute inset-x-0 bottom-0">
-      <BlurView intensity={40} tint="dark" className="px-5 pb-6 pt-12">
-        <Animated.View
-          entering={FadeIn.delay(200)
-            .springify()
-            .reduceMotion(ReduceMotion.System)}
-        >
-          <Text className="mb-2 text-4xl font-extrabold text-white shadow-sm">
-            {strain.name}
-          </Text>
-          <View className="flex-row flex-wrap gap-2">
-            <RaceBadge race={strain.race} />
-            {strain.thc_display && <THCBadge thc={strain.thc_display} />}
-            <DifficultyBadge difficulty={strain.grow.difficulty} />
-          </View>
-        </Animated.View>
-      </BlurView>
-    </View>
-  </View>
-);
+  );
+};
 
 export default function StrainDetailsScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -319,6 +359,7 @@ export default function StrainDetailsScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { grossHeight: tabBarHeight } = useBottomTabBarHeight();
+  const scrollY = useSharedValue(0);
 
   // Hide default header to create a custom clean layout
   useLayoutEffect(() => {
@@ -373,6 +414,12 @@ export default function StrainDetailsScreen() {
     }
   }, [router]);
 
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event: { contentOffset: { y: number } }) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
   // Guard against undefined slug
   if (!slug) {
     return <InvalidIdState onBack={handleBack} />;
@@ -399,10 +446,12 @@ export default function StrainDetailsScreen() {
       className="flex-1 bg-white dark:bg-neutral-950"
       testID="strain-detail-screen"
     >
-      <ScrollView
+      <AnimatedScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: tabBarHeight + 24 }}
         showsVerticalScrollIndicator={false}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
       >
         <StrainHeroSection
           strain={strain}
@@ -410,6 +459,7 @@ export default function StrainDetailsScreen() {
           topInset={insets.top}
           onBack={handleBack}
           onShare={handleShare}
+          scrollY={scrollY}
         />
 
         {/* Content */}
@@ -428,7 +478,7 @@ export default function StrainDetailsScreen() {
           <GrowInfoSection strain={strain} />
           <EffectsFlavorsSection strain={strain} />
         </View>
-      </ScrollView>
+      </AnimatedScrollView>
     </View>
   );
 }

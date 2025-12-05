@@ -22,27 +22,55 @@ export const FavoriteButtonConnected = React.memo<Props>(
   ({ strainId, strain: strainProp, testID, variant }) => {
     // Only fetch if strain not provided as prop
     const { data: fetchedStrain } = useStrain({
-      strainId,
+      strainIdOrSlug: strainId,
       enabled: !strainProp,
     });
     const strain = strainProp ?? fetchedStrain;
 
-    // Subscribe directly to favorites state for reactive updates
-    const favorites = useFavorites.use.favorites();
+    const isHydrated = useFavorites((state) => state.isHydrated);
+    const hydrate = useFavorites.use.hydrate();
     const addFavorite = useFavorites.use.addFavorite();
     const removeFavorite = useFavorites.use.removeFavorite();
+    const slug = strain?.slug;
+    const isFav = useFavorites(
+      React.useCallback(
+        (state) =>
+          Boolean(
+            state.favorites[strainId] ??
+              (slug ? state.favorites[slug] : undefined)
+          ),
+        [strainId, slug]
+      )
+    );
 
-    // Derive isFav from favorites object - this updates reactively
-    const isFav = strainId in favorites;
+    // Ensure favorites are hydrated from local DB
+    React.useEffect(() => {
+      if (!isHydrated) {
+        void hydrate();
+      }
+    }, [isHydrated, hydrate]);
 
     const handleToggle = React.useCallback(() => {
+      if (!isHydrated) return;
       if (!isFav) {
         if (!strain) return;
         void addFavorite(strain);
       } else {
-        void removeFavorite(strainId);
+        const state = useFavorites.getState().favorites;
+        const favoriteById = state[strainId];
+        const favoriteBySlug = slug ? state[slug] : undefined;
+        const targetId = favoriteById?.id ?? favoriteBySlug?.id ?? strainId;
+        void removeFavorite(targetId);
       }
-    }, [isFav, strainId, strain, addFavorite, removeFavorite]);
+    }, [
+      isFav,
+      isHydrated,
+      slug,
+      strainId,
+      strain,
+      addFavorite,
+      removeFavorite,
+    ]);
 
     return (
       <BaseFavoriteButton
