@@ -290,7 +290,25 @@ const _useFavorites = create<FavoritesState>((set, get) => ({
       get().getFavorites().length
     );
   },
-  removeFavorite: async (strainId: string) => {
+  removeFavorite: async (favoriteKey: string) => {
+    const { favorites } = get();
+
+    let target = favorites[favoriteKey];
+    if (!target) {
+      for (const candidate of Object.values(favorites)) {
+        if (candidate.snapshot.slug === favoriteKey) {
+          target = candidate;
+          break;
+        }
+      }
+    }
+
+    if (!target) {
+      return;
+    }
+
+    const strainId = target.id;
+
     await removeFavoriteFromDb(
       strainId,
       () => {
@@ -302,17 +320,6 @@ const _useFavorites = create<FavoritesState>((set, get) => ({
             delete newFavorites[favorite.id];
             if (favorite.snapshot.slug) {
               delete newFavorites[favorite.snapshot.slug];
-            }
-          } else {
-            for (const key of Object.keys(newFavorites)) {
-              const candidate = newFavorites[key];
-              if (candidate.snapshot.slug === strainId) {
-                delete newFavorites[candidate.id];
-                if (candidate.snapshot.slug) {
-                  delete newFavorites[candidate.snapshot.slug];
-                }
-                break;
-              }
             }
           }
 
