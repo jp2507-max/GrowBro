@@ -153,9 +153,17 @@ export function createFavoritesRepository(
   ): Promise<void> {
     let favorite = await findByStrainId(strainId, userId);
 
-    // Fallback: if record was created when user was signed out, remove the anon record
+    // Fallback: if record was created when user was signed out, remove the anon record (user_id NULL)
     if (!favorite && userId) {
-      favorite = await findByStrainId(strainId, undefined);
+      const anonMatches = await collection
+        .query(
+          Q.where('strain_id', strainId),
+          Q.where('user_id', null),
+          Q.where('deleted_at', null)
+        )
+        .fetch();
+
+      favorite = anonMatches[0] ?? null;
     }
 
     if (!favorite) {

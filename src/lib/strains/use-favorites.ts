@@ -295,18 +295,25 @@ const _useFavorites = create<FavoritesState>((set, get) => ({
         set((state) => {
           const newFavorites = { ...state.favorites };
           const favorite = newFavorites[strainId];
-          if (favorite?.snapshot.slug) {
-            delete newFavorites[favorite.snapshot.slug];
-          }
-          delete newFavorites[strainId];
-          if (!favorite) {
+
+          if (favorite) {
+            delete newFavorites[favorite.id];
+            if (favorite.snapshot.slug) {
+              delete newFavorites[favorite.snapshot.slug];
+            }
+          } else {
             for (const key of Object.keys(newFavorites)) {
-              if (newFavorites[key].snapshot.slug === strainId) {
-                delete newFavorites[key];
+              const candidate = newFavorites[key];
+              if (candidate.snapshot.slug === strainId) {
+                delete newFavorites[candidate.id];
+                if (candidate.snapshot.slug) {
+                  delete newFavorites[candidate.snapshot.slug];
+                }
                 break;
               }
             }
           }
+
           return { favorites: newFavorites };
         });
       },
