@@ -48,6 +48,7 @@ async function trackFavoriteAnalytics(
 interface FavoritesState {
   favorites: FavoritesIndex;
   isHydrated: boolean;
+  hasHydrationError: boolean;
   isSyncing: boolean;
   lastSyncAt: number | null;
   syncError: string | null;
@@ -247,17 +248,18 @@ async function pullFromCloudImpl(
 const _useFavorites = create<FavoritesState>((set, get) => ({
   favorites: {},
   isHydrated: false,
+  hasHydrationError: false,
   isSyncing: false,
   lastSyncAt: null,
   syncError: null,
   setFavorites: (favorites: FavoritesIndex) => {
-    set({ favorites, isHydrated: true });
+    set({ favorites, isHydrated: true, hasHydrationError: false });
   },
   setSyncing: (isSyncing: boolean) => set({ isSyncing }),
   setSyncError: (error: string | null) => set({ syncError: error }),
   hydrate: async () => {
     await hydrateFromDb(get().setFavorites).catch(() => {
-      set({ isHydrated: true });
+      set({ hasHydrationError: true });
     });
   },
   addFavorite: async (strain: Strain) => {
@@ -387,8 +389,8 @@ export function subscribeFavorites(callback: (state: FavoritesState) => void) {
  */
 export async function hydrateFavorites(): Promise<void> {
   const state = _useFavorites.getState();
-  if (state.isHydrated) {
-    return; // Already hydrated, skip
+  if (state.isHydrated && !state.hasHydrationError) {
+    return; // Already hydrated successfully, skip
   }
   await state.hydrate();
 }
