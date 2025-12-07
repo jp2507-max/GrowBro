@@ -342,7 +342,7 @@ const _useFavorites = create<FavoritesState>((set, get) => ({
       get().getFavorites().length
     );
   },
-  isFavorite: (strainId: string) => get().favorites[strainId] !== undefined,
+  isFavorite: (strainKey: string) => get().favorites[strainKey] !== undefined,
   getFavorites: () => {
     const { favorites } = get();
     const unique = new Map<string, FavoriteStrain>();
