@@ -1,3 +1,4 @@
+import * as Localization from 'expo-localization';
 import type { TOptions } from 'i18next';
 import i18n, { dir, exists as i18nextExists } from 'i18next';
 import memoize from 'lodash.memoize';
@@ -19,7 +20,32 @@ export type TxKeyPath = RecursiveKeyOf<DefaultLocale>;
 
 export const LOCAL = 'local';
 
-export const getLanguage = () => storage.getString(LOCAL); // 'Marc' getItem<Language | undefined>(LOCAL);
+/**
+ * Detects the device's preferred language using expo-localization.
+ * Returns the language code if supported, otherwise falls back to 'en'.
+ */
+export function getDeviceLanguage(): Language {
+  // Get device locale (e.g., "de-DE", "en-US")
+  const locale = Localization.getLocales()[0]?.languageCode ?? 'en';
+  // Return if supported, otherwise fallback to 'en'
+  return AVAILABLE_LANGUAGES.includes(locale as Language)
+    ? (locale as Language)
+    : 'en';
+}
+
+/**
+ * Gets the app language with the following priority:
+ * 1. User's manually selected language (from MMKV storage)
+ * 2. Device's preferred language (if supported: en/de)
+ * 3. English (fallback for unsupported languages)
+ */
+export const getLanguage = (): Language => {
+  const persisted = storage.getString(LOCAL);
+  if (persisted && AVAILABLE_LANGUAGES.includes(persisted as Language)) {
+    return persisted as Language;
+  }
+  return getDeviceLanguage();
+};
 
 // Simple dot-path resolver for resource fallback
 function resolveResource(

@@ -1,6 +1,7 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { InteractionManager, Platform } from 'react-native';
 
 import type { Post } from '@/api';
@@ -18,6 +19,7 @@ import {
 } from '@/components/ui';
 import { useAnalytics } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
+import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import {
   type ActivationAction,
@@ -188,8 +190,16 @@ export default function Feed() {
   const theme = useThemeConfig();
   const analytics = useAnalytics();
   const { grossHeight } = useBottomTabBarHeight();
+  const { resetScrollState } = useAnimatedScrollList();
   const { data, isPending, isError, error, refetch } = usePosts();
   const listData = React.useMemo(() => data ?? [], [data]);
+
+  // Reset scroll state on focus so tab bar is always visible on home
+  useFocusEffect(
+    useCallback(() => {
+      resetScrollState();
+    }, [resetScrollState])
+  );
 
   // Hydrate activation state on mount
   React.useEffect(() => {

@@ -4,10 +4,12 @@ import {
   type FlashListProps,
   type FlashListRef,
 } from '@shopify/flash-list';
-import { Stack } from 'expo-router';
-import React from 'react';
+import { useNavigation, useRouter } from 'expo-router';
+import { useColorScheme } from 'nativewind';
+import React, { useLayoutEffect } from 'react';
 import { type ListRenderItemInfo, StyleSheet } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   FavoritesEmptyState,
@@ -21,15 +23,17 @@ import type {
   FavoritesSortDirection,
 } from '@/components/strains/favorites-sort-menu';
 import { FocusAwareStatusBar, Pressable, Text, View } from '@/components/ui';
+import colors from '@/components/ui/colors';
+import { ArrowLeft, Settings } from '@/components/ui/icons';
 import { translate } from '@/lib';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
+import { haptics } from '@/lib/haptics';
 import { useNetworkStatus } from '@/lib/hooks';
 import { parsePercentageRange } from '@/lib/strains/normalization';
 import { useFavorites } from '@/lib/strains/use-favorites';
 import type { FavoriteStrain } from '@/types/strains';
 
-const LIST_HORIZONTAL_PADDING = 16;
 const LIST_BOTTOM_EXTRA = 16;
 
 const AnimatedFlashList = Animated.createAnimatedComponent(
@@ -105,7 +109,8 @@ function createStrainFromSnapshot(item: FavoriteStrain) {
     race: item.snapshot.race,
     thc_display: item.snapshot.thc_display,
     imageUrl: item.snapshot.imageUrl,
-    slug: '',
+    // Fallback to ID for favorites saved before slug was added to snapshot
+    slug: item.snapshot.slug || item.snapshot.id,
     synonyms: [],
     link: '',
     description: [],
@@ -136,44 +141,6 @@ function FavoriteItem({ item }: { item: FavoriteStrain }) {
   return <StrainCard strain={strain} testID={`favorite-card-${item.id}`} />;
 }
 
-function FavoritesHeader({
-  count,
-  isOffline,
-  onSort,
-}: {
-  count: number;
-  isOffline: boolean;
-  onSort: () => void;
-}) {
-  return (
-    <View className="px-4 pb-4 pt-3">
-      <View className="flex-row items-center justify-between">
-        <Text
-          className="text-sm text-neutral-600 dark:text-neutral-300"
-          testID="favorites-count"
-        >
-          {translate('strains.results_count', {
-            count,
-          })}
-        </Text>
-        <Pressable
-          onPress={onSort}
-          className="flex-row items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900"
-          accessibilityRole="button"
-          accessibilityLabel={translate('strains.favorites.sort.title')}
-          accessibilityHint={translate('strains.favorites.sort.hint')}
-          testID="favorites-sort-button"
-        >
-          <Text className="text-sm text-neutral-900 dark:text-neutral-50">
-            ⬍⬆⬍
-          </Text>
-        </Pressable>
-      </View>
-      <StrainsOfflineBanner isVisible={isOffline} />
-    </View>
-  );
-}
-
 export default function FavoritesScreen(): React.ReactElement {
   const { listRef: sharedListRef, scrollHandler } = useAnimatedScrollList();
   const listRef = React.useMemo(
@@ -188,6 +155,12 @@ export default function FavoritesScreen(): React.ReactElement {
   );
   const { grossHeight } = useBottomTabBarHeight();
   const { isConnected, isInternetReachable } = useNetworkStatus();
+  const router = useRouter();
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const iconColor = isDark ? colors.white : colors.neutral[900];
 
   const favorites = useFavorites.use.getFavorites()();
   const sortMenu = useFavoritesSortMenu();
@@ -197,6 +170,13 @@ export default function FavoritesScreen(): React.ReactElement {
   const [sortBy, setSortBy] = React.useState<FavoritesSortBy>('dateAdded');
   const [sortDirection, setSortDirection] =
     React.useState<FavoritesSortDirection>('desc');
+
+  // Hide default header to create a custom clean layout
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+    });
+  }, [navigation]);
 
   const handleApplySort = React.useCallback(
     (newSortBy: FavoritesSortBy, newDirection: FavoritesSortDirection) => {
@@ -213,8 +193,14 @@ export default function FavoritesScreen(): React.ReactElement {
   );
 
   const renderItem = React.useCallback(
-    ({ item }: ListRenderItemInfo<FavoriteStrain>) => (
-      <FavoriteItem item={item} />
+    ({ item, index }: ListRenderItemInfo<FavoriteStrain>) => (
+      <Animated.View
+        entering={FadeIn.delay(index * 50)
+          .springify()
+          .damping(12)}
+      >
+        <FavoriteItem item={item} />
+      </Animated.View>
     ),
     []
   );
@@ -229,48 +215,93 @@ export default function FavoritesScreen(): React.ReactElement {
   );
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerTitle: translate('strains.favorites.title'),
-        }}
-      />
-      <View className="flex-1" testID="favorites-screen">
-        <FocusAwareStatusBar />
-        <FavoritesHeader
-          count={favorites.length}
-          isOffline={isOffline}
-          onSort={sortMenu.openSort}
-        />
-        <AnimatedFlashList
-          ref={listRef}
-          data={sortedFavorites}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          getItemType={() => 'favorite'}
-          estimatedItemSize={280}
-          onScroll={scrollHandler}
-          scrollEventThrottle={16}
-          removeClippedSubviews={true}
-          contentContainerStyle={[
-            styles.listContentContainer,
-            listContentPadding,
-          ]}
-          ListEmptyComponent={listEmpty}
-        />
-        <FavoritesSortMenu
-          ref={sortMenu.ref}
-          sortBy={sortBy}
-          sortDirection={sortDirection}
-          onApply={handleApplySort}
-        />
+    <View
+      className="flex-1 bg-neutral-50 dark:bg-neutral-950"
+      testID="favorites-screen"
+      style={{ paddingTop: insets.top }}
+    >
+      <FocusAwareStatusBar />
+
+      <View className="px-4 py-2">
+        {/* Back Button Row */}
+        <View className="flex-row items-center pb-2">
+          <Pressable
+            onPress={() => {
+              haptics.selection();
+              router.back();
+            }}
+            className="size-10 items-center justify-center rounded-full bg-white shadow-sm active:bg-neutral-100 dark:bg-neutral-900 dark:active:bg-neutral-800"
+            accessibilityRole="button"
+            accessibilityLabel={translate('common.back')}
+            accessibilityHint="Go back to previous screen"
+            testID="favorites-back-button"
+          >
+            <ArrowLeft
+              color={iconColor}
+              width={16}
+              height={16}
+              className="text-neutral-900 dark:text-white"
+            />
+          </Pressable>
+        </View>
+
+        {/* Title and Sort Row */}
+        <View className="flex-row items-center justify-between pb-4">
+          <Text className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
+            {translate('strains.favorites.title')}
+          </Text>
+
+          <Pressable
+            onPress={() => {
+              haptics.selection();
+              sortMenu.openSort();
+            }}
+            className="size-10 items-center justify-center rounded-full bg-white shadow-sm active:bg-neutral-100 dark:bg-neutral-900 dark:active:bg-neutral-800"
+            accessibilityRole="button"
+            accessibilityLabel={translate('strains.favorites.sort.title')}
+            accessibilityHint={translate('strains.favorites.sort.hint')}
+            testID="favorites-sort-button"
+          >
+            <Settings
+              color={iconColor}
+              width={20}
+              height={20}
+              className="text-neutral-900 dark:text-white"
+            />
+          </Pressable>
+        </View>
+
+        <StrainsOfflineBanner isVisible={isOffline} />
       </View>
-    </>
+
+      <AnimatedFlashList
+        ref={listRef}
+        data={sortedFavorites}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        getItemType={() => 'favorite'}
+        estimatedItemSize={280}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        removeClippedSubviews={true}
+        contentContainerStyle={[
+          styles.listContentContainer,
+          listContentPadding,
+        ]}
+        ListEmptyComponent={listEmpty}
+      />
+      <FavoritesSortMenu
+        ref={sortMenu.ref}
+        sortBy={sortBy}
+        sortDirection={sortDirection}
+        onApply={handleApplySort}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   listContentContainer: {
-    paddingHorizontal: LIST_HORIZONTAL_PADDING,
+    paddingTop: 8,
   },
 });

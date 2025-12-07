@@ -1,8 +1,8 @@
-import { useScrollToTop } from '@react-navigation/native';
+import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 import type { FlashListProps, FlashListRef } from '@shopify/flash-list';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useCallback } from 'react';
 import Animated from 'react-native-reanimated';
 
 import type { Post } from '@/api';
@@ -110,7 +110,11 @@ function useSkeletonVisibility(isLoading: boolean, postsLength: number) {
 // eslint-disable-next-line max-lines-per-function
 export default function CommunityScreen(): React.ReactElement {
   const router = useRouter();
-  const { listRef: sharedListRef, scrollHandler } = useAnimatedScrollList();
+  const {
+    listRef: sharedListRef,
+    scrollHandler,
+    resetScrollState,
+  } = useAnimatedScrollList();
   const listRef = React.useMemo(
     () => sharedListRef as React.RefObject<FlashListRef<Post>>,
     [sharedListRef]
@@ -122,6 +126,15 @@ export default function CommunityScreen(): React.ReactElement {
     }>
   );
   const { grossHeight } = useBottomTabBarHeight();
+
+  // Reset scroll state on blur so tab bar is visible when navigating away
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        resetScrollState();
+      };
+    }, [resetScrollState])
+  );
   const analytics = useAnalytics();
   const undoMutation = useUndoDeletePost();
 

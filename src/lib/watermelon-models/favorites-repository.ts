@@ -42,6 +42,7 @@ export function createFavoritesRepository(
     return {
       id: strain.id,
       name: strain.name,
+      slug: strain.slug,
       race: strain.race,
       thc_display: strain.thc_display,
       imageUrl: strain.imageUrl,
@@ -150,7 +151,20 @@ export function createFavoritesRepository(
     strainId: string,
     userId?: string
   ): Promise<void> {
-    const favorite = await findByStrainId(strainId, userId);
+    let favorite = await findByStrainId(strainId, userId);
+
+    // Fallback: if record was created when user was signed out, remove the anon record (user_id NULL)
+    if (!favorite && userId) {
+      const anonMatches = await collection
+        .query(
+          Q.where('strain_id', strainId),
+          Q.where('user_id', null),
+          Q.where('deleted_at', null)
+        )
+        .fetch();
+
+      favorite = anonMatches[0] ?? null;
+    }
 
     if (!favorite) {
       return;

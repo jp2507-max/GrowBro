@@ -210,8 +210,8 @@ const CloseButton = ({ close }: { close: () => void }) => {
 
 const styles = StyleSheet.create({
   backdrop: {
-    backgroundColor: colors.charcoal[950],
-    opacity: 0.4,
+    // Use centralized design token for charcoal 950 and append alpha '66' for backdrop
+    backgroundColor: `${colors.charcoal[950]}66`,
   },
   detached: {
     marginHorizontal: 16,

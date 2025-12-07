@@ -1,7 +1,6 @@
 import { useScrollToTop } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { FlatList } from 'react-native';
 
 import { cleanup, fireEvent, render, screen } from '@/lib/test-utils';
 
@@ -150,7 +149,7 @@ describe('StrainsScreen pagination', () => {
     const fetchNextPage = jest.fn();
     renderStrains({ hasNextPage: true, fetchNextPage });
 
-    const list = screen.UNSAFE_getByType(FlatList);
+    const list = screen.getByTestId('strains-list');
     fireEvent(list, 'onEndReached');
 
     expect(fetchNextPage).toHaveBeenCalled();
@@ -166,7 +165,7 @@ describe('StrainsScreen pagination', () => {
 
     renderStrains({ hasNextPage: true, fetchNextPage });
 
-    const list = screen.UNSAFE_getByType(FlatList);
+    const list = screen.getByTestId('strains-list');
     fireEvent(list, 'onEndReached');
 
     expect(fetchNextPage).not.toHaveBeenCalled();

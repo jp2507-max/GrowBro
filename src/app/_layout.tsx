@@ -68,6 +68,7 @@ import {
   initializePrivacyConsent,
   setPrivacyConsent,
 } from '@/lib/privacy-consent';
+import { hydrateFavorites } from '@/lib/strains/use-favorites';
 // Install AI consent hooks to handle withdrawal cascades
 import { installAiConsentHooks } from '@/lib/uploads/ai-images';
 import { useThemeConfig } from '@/lib/use-theme-config';
@@ -520,6 +521,9 @@ async function initializeAuthAndStates(): Promise<void> {
   hydrateAgeGate();
   hydrateLegalAcceptances();
   hydrateOnboardingState();
+
+  // Hydrate favorites from local DB so heart icons show correctly on first render
+  await hydrateFavorites();
   if (__DEV__) console.log('[RootLayout] initializeAuthAndStates: done');
 }
 

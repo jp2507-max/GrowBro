@@ -216,6 +216,7 @@ export default function TabLayout() {
               title: translate('tabs.strains'),
               tabBarIcon: ({ color }) => <StyleIcon color={color} />,
               tabBarButtonTestID: 'strains-tab',
+              headerShown: false,
             }}
           />
         </Tabs>

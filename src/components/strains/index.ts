@@ -18,6 +18,7 @@ export * from './search-input';
 export * from './sort-menu';
 export * from './strain-banner';
 export * from './strain-card';
+export * from './strain-detail-skeleton';
 export * from './strains-cache-indicator';
 export * from './strains-empty-state';
 export * from './strains-error-card';

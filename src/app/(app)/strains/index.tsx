@@ -1,13 +1,15 @@
-import { useScrollToTop } from '@react-navigation/native';
+import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 import {
   FlashList,
   type FlashListProps,
   type FlashListRef,
 } from '@shopify/flash-list';
-import { useRouter } from 'expo-router';
-import React, { useMemo } from 'react';
+import { useNavigation, useRouter } from 'expo-router';
+import { useColorScheme } from 'nativewind';
+import React, { useCallback, useLayoutEffect, useMemo } from 'react';
 import { type ListRenderItemInfo, StyleSheet } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Strain } from '@/api';
 import { useStrainsInfinite } from '@/api';
@@ -30,16 +32,18 @@ import {
   Text,
   View,
 } from '@/components/ui';
+import colors from '@/components/ui/colors';
+import { Rate, Settings, X } from '@/components/ui/icons';
 import { translate, useAnalytics } from '@/lib';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
+import { haptics } from '@/lib/haptics';
 import { useNetworkStatus } from '@/lib/hooks';
 import { useAnalyticsConsent } from '@/lib/hooks/use-analytics-consent';
-import type { TxKeyPath } from '@/lib/i18n';
+import { applyStrainFilters } from '@/lib/strains/filtering';
 
 const SEARCH_DEBOUNCE_MS = 300;
-const LIST_HORIZONTAL_PADDING = 16;
-const LIST_BOTTOM_EXTRA = 16;
+const LIST_BOTTOM_EXTRA = 24;
 
 const AnimatedFlashList = Animated.createAnimatedComponent(
   FlashList as React.ComponentType<FlashListProps<Strain>>
@@ -62,17 +66,17 @@ function useStrainsData(searchQuery: string, filters: StrainFilters) {
     },
   });
 
-  const strains = React.useMemo<Strain[]>(() => {
+  // Get raw strains from paginated API response
+  const rawStrains = React.useMemo<Strain[]>(() => {
     if (!data?.pages?.length) return [];
     return data.pages.flatMap((page) => page.data);
   }, [data?.pages]);
 
-  // Debug logging for development
-  React.useEffect(() => {
-    if (__DEV__ && error) {
-      console.error('[StrainsScreen] API Error:', error);
-    }
-  }, [error]);
+  // Apply client-side filters AND search to guarantee UI matches selected criteria
+  // This ensures correct behavior even if backend returns extra data or we're offline
+  const strains = React.useMemo(() => {
+    return applyStrainFilters(rawStrains, filters, searchQuery.trim());
+  }, [rawStrains, filters, searchQuery]);
 
   return {
     strains,
@@ -129,7 +133,11 @@ function useSkeletonVisibility(isLoading: boolean, itemsCount: number) {
 
 // eslint-disable-next-line max-lines-per-function
 export default function StrainsScreen(): React.ReactElement {
-  const { listRef: sharedListRef, scrollHandler } = useAnimatedScrollList();
+  const {
+    listRef: sharedListRef,
+    scrollHandler,
+    resetScrollState,
+  } = useAnimatedScrollList();
   const listRef = React.useMemo(
     () => sharedListRef as React.RefObject<FlashListRef<Strain>>,
     [sharedListRef]
@@ -141,11 +149,33 @@ export default function StrainsScreen(): React.ReactElement {
     }>
   );
   const { grossHeight } = useBottomTabBarHeight();
+
+  // Reset scroll state on blur so tab bar is visible when navigating away
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        resetScrollState();
+      };
+    }, [resetScrollState])
+  );
   const { isConnected, isInternetReachable } = useNetworkStatus();
   const analytics = useAnalytics();
   const hasAnalyticsConsent = useAnalyticsConsent();
   const filterModal = useStrainFilters();
   const router = useRouter();
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const iconColor = isDark ? colors.white : colors.neutral[900];
+  const activeFilterIconColor = isDark ? colors.neutral[900] : colors.white;
+
+  // Hide default header to create a custom clean layout
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+    });
+  }, [navigation]);
 
   const isOffline = !isConnected || !isInternetReachable;
 
@@ -221,16 +251,6 @@ export default function StrainsScreen(): React.ReactElement {
     );
   }, [filters]);
 
-  const showResultsCount = !isSkeletonVisible;
-  const resultsCountKey: TxKeyPath = React.useMemo(() => {
-    if (listData.length === 0) return 'strains.results_count_zero';
-    if (listData.length === 1) return 'strains.results_count_one';
-    return 'strains.results_count_other';
-  }, [listData.length]);
-  const resultsCountLabel = translate(resultsCountKey, {
-    count: listData.length,
-  });
-
   React.useEffect(() => {
     if (isLoading || isFetchingNextPage) return;
     const payload = {
@@ -272,8 +292,15 @@ export default function StrainsScreen(): React.ReactElement {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage, isOffline]);
 
   const renderItem = React.useCallback(
-    ({ item }: ListRenderItemInfo<Strain>) => (
-      <StrainCard strain={item} testID={`strain-card-${item.id}`} />
+    ({ item, index }: ListRenderItemInfo<Strain>) => (
+      <Animated.View
+        entering={FadeIn.delay(index * 50)
+          .springify()
+          .damping(12)
+          .reduceMotion(ReduceMotion.System)}
+      >
+        <StrainCard strain={item} testID={`strain-card-${item.id}`} />
+      </Animated.View>
     ),
     []
   );
@@ -311,126 +338,197 @@ export default function StrainsScreen(): React.ReactElement {
     [grossHeight]
   );
 
+  const activeFilterStyle =
+    'flex-row items-center gap-1.5 rounded-full bg-neutral-900 dark:bg-white px-3 py-1.5';
+  const activeFilterTextStyle =
+    'text-sm font-medium text-white dark:text-neutral-900';
+
   return (
-    <View className="flex-1" testID="strains-screen">
+    <View
+      className="flex-1 bg-neutral-50 dark:bg-neutral-950"
+      testID="strains-screen"
+      style={{ paddingTop: insets.top }}
+    >
       <FocusAwareStatusBar />
-      <View className="px-4 pb-4 pt-3">
-        <Text
-          className="pb-3 text-2xl font-semibold text-neutral-900 dark:text-neutral-50"
-          tx="shared_header.strains.title"
-        />
-        <View className="flex-row gap-2">
-          <View className="flex-1">
-            <Input
-              value={searchValue}
-              onChangeText={setSearchValue}
-              placeholder={translate('strains.search_placeholder')}
-              accessibilityLabel={translate('strains.search_placeholder')}
-              accessibilityHint={translate('accessibility.strains.search_hint')}
-              testID="strains-search-input"
-            />
+      <View className="px-4 py-2">
+        {/* Header Row: Title + Actions */}
+        <View className="flex-row items-center justify-between pb-4">
+          <Text className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
+            {translate('shared_header.strains.title')}
+          </Text>
+
+          <View className="flex-row items-center gap-1">
+            <Pressable
+              onPress={() => {
+                haptics.selection();
+                router.push('/strains/favorites');
+              }}
+              className="size-10 items-center justify-center rounded-full bg-white shadow-sm active:bg-neutral-100 dark:bg-neutral-900 dark:active:bg-neutral-800"
+              accessibilityRole="button"
+              accessibilityLabel={translate('strains.favorites.title')}
+              accessibilityHint={translate(
+                'strains.favoritesAccessibilityHint'
+              )}
+              testID="strains-favorites-button"
+            >
+              <Rate
+                color={iconColor}
+                width={20}
+                height={20}
+                className="text-neutral-900 dark:text-white"
+              />
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                haptics.selection();
+                filterModal.openFilters();
+              }}
+              className={`size-10 items-center justify-center rounded-full shadow-sm active:bg-neutral-100 dark:active:bg-neutral-800 ${
+                hasActiveFilters
+                  ? 'bg-primary-100 dark:bg-primary-900'
+                  : 'bg-white dark:bg-neutral-900'
+              }`}
+              accessibilityRole="button"
+              accessibilityLabel={translate('strains.filters.button_label')}
+              accessibilityHint={translate(
+                'accessibility.strains.open_filters_hint'
+              )}
+              testID="strains-filter-button"
+            >
+              <Settings
+                color={hasActiveFilters ? colors.primary[600] : iconColor}
+                width={20}
+                height={20}
+                className={
+                  hasActiveFilters
+                    ? 'text-primary-600 dark:text-primary-400'
+                    : 'text-neutral-900 dark:text-white'
+                }
+              />
+            </Pressable>
           </View>
-          <Pressable
-            onPress={() => router.push('/strains/favorites')}
-            className="size-12 items-center justify-center rounded-xl border border-neutral-300 bg-white dark:border-neutral-700 dark:bg-neutral-900"
-            accessibilityRole="button"
-            accessibilityLabel={translate('strains.favorites.title')}
-            accessibilityHint="View your favorite strains"
-            testID="strains-favorites-button"
-          >
-            <Text className="text-lg">💚</Text>
-          </Pressable>
-          <Pressable
-            onPress={filterModal.openFilters}
-            className="size-12 items-center justify-center rounded-xl border border-neutral-300 bg-white dark:border-neutral-700 dark:bg-neutral-900"
-            accessibilityRole="button"
-            accessibilityLabel={translate('strains.filters.button_label')}
-            accessibilityHint={translate(
-              'accessibility.strains.open_filters_hint'
-            )}
-            testID="strains-filter-button"
-          >
-            <Text className="text-lg">{hasActiveFilters ? '🎯' : '⚙️'}</Text>
-          </Pressable>
         </View>
+
+        {/* Search Row */}
+        <View className="pb-4">
+          <Input
+            value={searchValue}
+            onChangeText={setSearchValue}
+            placeholder={
+              listData.length > 0
+                ? translate('strains.search_placeholder_count', {
+                    count: listData.length,
+                  })
+                : translate('strains.search_placeholder')
+            }
+            accessibilityLabel={translate('strains.search_placeholder')}
+            accessibilityHint={translate('accessibility.strains.search_hint')}
+            testID="strains-search-input"
+            className="h-12 rounded-2xl border-0 bg-white px-4 font-medium text-neutral-900 shadow-sm dark:bg-neutral-900 dark:text-white"
+            placeholderTextColor={colors.neutral[400]}
+          />
+        </View>
+
+        {/* Active Filters Row */}
         {hasActiveFilters ? (
-          <View className="flex-row flex-wrap gap-2 pt-2">
+          <View className="flex-row flex-wrap gap-2 pb-3">
             {filters.race && (
               <Pressable
                 accessibilityRole="button"
-                onPress={() =>
-                  setFilters((prev) => ({ ...prev, race: undefined }))
-                }
-                className="flex-row items-center gap-1 rounded-full bg-primary-600 px-3 py-1"
+                onPress={() => {
+                  haptics.selection();
+                  setFilters((prev) => ({ ...prev, race: undefined }));
+                }}
+                className={activeFilterStyle}
                 testID="active-filter-race"
               >
-                <Text className="text-sm text-white">
+                <Text className={activeFilterTextStyle}>
                   {translate(`strains.race.${filters.race}`)}
                 </Text>
-                <Text className="text-white">×</Text>
+                <X
+                  width={14}
+                  height={14}
+                  color={activeFilterIconColor}
+                  className="text-white dark:text-neutral-900"
+                />
               </Pressable>
             )}
             {filters.difficulty && (
               <Pressable
                 accessibilityRole="button"
-                onPress={() =>
-                  setFilters((prev) => ({ ...prev, difficulty: undefined }))
-                }
-                className="flex-row items-center gap-1 rounded-full bg-primary-600 px-3 py-1"
+                onPress={() => {
+                  haptics.selection();
+                  setFilters((prev) => ({ ...prev, difficulty: undefined }));
+                }}
+                className={activeFilterStyle}
                 testID="active-filter-difficulty"
               >
-                <Text className="text-sm text-white">
+                <Text className={activeFilterTextStyle}>
                   {translate(`strains.difficulty.${filters.difficulty}`)}
                 </Text>
-                <Text className="text-white">×</Text>
+                <X
+                  width={14}
+                  height={14}
+                  color={activeFilterIconColor}
+                  className="text-white dark:text-neutral-900"
+                />
               </Pressable>
             )}
             {(filters.effects?.length ?? 0) > 0 && (
               <Pressable
                 accessibilityRole="button"
-                onPress={() => setFilters((prev) => ({ ...prev, effects: [] }))}
-                className="flex-row items-center gap-1 rounded-full bg-primary-600 px-3 py-1"
+                onPress={() => {
+                  haptics.selection();
+                  setFilters((prev) => ({ ...prev, effects: [] }));
+                }}
+                className={activeFilterStyle}
                 testID="active-filter-effects"
               >
-                <Text className="text-sm text-white">
+                <Text className={activeFilterTextStyle}>
                   {translate('strains.filters.effects_count', {
                     count: filters.effects!.length,
                   })}
                 </Text>
-                <Text className="text-white">×</Text>
+                <X
+                  width={14}
+                  height={14}
+                  color={activeFilterIconColor}
+                  className="text-white dark:text-neutral-900"
+                />
               </Pressable>
             )}
             {(filters.flavors?.length ?? 0) > 0 && (
               <Pressable
                 accessibilityRole="button"
-                onPress={() => setFilters((prev) => ({ ...prev, flavors: [] }))}
-                className="flex-row items-center gap-1 rounded-full bg-primary-600 px-3 py-1"
+                onPress={() => {
+                  haptics.selection();
+                  setFilters((prev) => ({ ...prev, flavors: [] }));
+                }}
+                className={activeFilterStyle}
                 testID="active-filter-flavors"
               >
-                <Text className="text-sm text-white">
+                <Text className={activeFilterTextStyle}>
                   {translate('strains.filters.flavors_count', {
                     count: filters.flavors!.length,
                   })}
                 </Text>
-                <Text className="text-white">×</Text>
+                <X
+                  width={14}
+                  height={14}
+                  color={activeFilterIconColor}
+                  className="text-white dark:text-neutral-900"
+                />
               </Pressable>
             )}
           </View>
         ) : null}
+
         <StrainsOfflineBanner isVisible={isOffline} />
-        {showResultsCount ? (
-          <Text
-            className="pt-3 text-sm text-neutral-600 dark:text-neutral-300"
-            accessibilityRole="text"
-            testID="strains-results-count"
-          >
-            {resultsCountLabel}
-          </Text>
-        ) : null}
       </View>
       <ComplianceBanner />
       <AnimatedFlashList
         ref={listRef}
+        testID="strains-list"
         data={listData}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
@@ -460,6 +558,6 @@ export default function StrainsScreen(): React.ReactElement {
 
 const styles = StyleSheet.create({
   listContentContainer: {
-    paddingHorizontal: LIST_HORIZONTAL_PADDING,
+    paddingTop: 8,
   },
 });

@@ -162,6 +162,7 @@ export interface Strain {
 export interface FavoriteStrainSnapshot {
   id: string;
   name: string;
+  slug: string;
   race: StrainRace;
   thc_display: string;
   imageUrl: string;
@@ -189,10 +190,21 @@ export interface StrainFilters {
   effects?: string[];
   flavors?: string[];
   difficulty?: GrowDifficulty[];
+  // Primary (snake_case) fields used across the codebase and persisted to
+  // storage/backends.
   thc_min?: number;
   thc_max?: number;
   cbd_min?: number;
   cbd_max?: number;
+
+  // CamelCase aliases accepted by some API modules and helpers (e.g. the
+  // client-side normalizeFilters routine). Providing these aliases here makes
+  // the type compatible with both conventions so callers can use either
+  // snake_case or camelCase without TypeScript errors.
+  thcMin?: number;
+  thcMax?: number;
+  cbdMin?: number;
+  cbdMax?: number;
   indoor_suitable?: boolean;
   outdoor_suitable?: boolean;
 }

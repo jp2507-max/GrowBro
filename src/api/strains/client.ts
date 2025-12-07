@@ -34,14 +34,27 @@ export class StrainsApiClient {
   private client: AxiosInstance;
   private baseURL: string;
 
-  constructor() {
-    // Use proxy URL in production, direct API URL in development
-    const useProxy =
-      process.env.NODE_ENV === 'production' ||
-      Env.STRAINS_USE_PROXY === 'true' ||
-      Env.STRAINS_USE_PROXY === '1';
+  /**
+   * Check if using proxy vs direct API
+   */
+  private get useProxy(): boolean {
+    // Use proxy in production, or when explicitly enabled via env flag
+    // Env vars are always strings from .env files, so compare against 'true'
+    return process.env.NODE_ENV === 'production' || this.isProxyFlagEnabled();
+  }
 
-    this.baseURL = useProxy
+  private isProxyFlagEnabled(): boolean {
+    const rawValue = Env.STRAINS_USE_PROXY;
+    if (rawValue === undefined || rawValue === null) {
+      return false;
+    }
+    const normalized = String(rawValue).trim().toLowerCase();
+    // Accept both 'true' and the numeric '1' commonly used in env/.env files
+    return normalized === 'true' || normalized === '1';
+  }
+
+  constructor() {
+    this.baseURL = this.useProxy
       ? `${Env.SUPABASE_URL}/functions/v1/strains-proxy`
       : Env.STRAINS_API_URL || 'https://api.theweeddb.com/v1';
 
@@ -52,7 +65,7 @@ export class StrainsApiClient {
         'Content-Type': 'application/json',
         Accept: 'application/json',
         // Only add API keys when NOT using proxy
-        ...(!useProxy &&
+        ...(!this.useProxy &&
           Env.STRAINS_API_KEY && {
             'x-rapidapi-key': Env.STRAINS_API_KEY,
             'x-rapidapi-host': Env.STRAINS_API_HOST,
@@ -201,7 +214,7 @@ export class StrainsApiClient {
   /**
    * Build query parameters for strains API request
    */
-  private buildQueryParams(params: GetStrainsParams): URLSearchParams {
+  private buildQueryParams(params: GetStrainsParams): Record<string, string> {
     const {
       page = 0,
       pageSize = 20,
@@ -212,52 +225,62 @@ export class StrainsApiClient {
       sortDirection = 'asc',
     } = params;
 
-    const queryParams = new URLSearchParams();
+    const queryParams: Record<string, string> = {};
+
+    // Add endpoint type for proxy only
+    if (this.useProxy) {
+      queryParams['endpoint'] = 'list';
+    }
 
     // Add pagination params
     if (cursor) {
-      queryParams.set('cursor', cursor);
+      queryParams['cursor'] = cursor;
     } else {
-      queryParams.set('page', String(page));
+      queryParams['page'] = String(page);
     }
-    queryParams.set('limit', String(pageSize));
 
-    // Add search query
+    if (this.useProxy) {
+      queryParams['pageSize'] = String(pageSize);
+    } else {
+      queryParams['limit'] = String(pageSize);
+    }
+
+    // Add search query - API uses 'name' parameter for name-based search
     if (searchQuery && searchQuery.trim()) {
-      queryParams.set('search', searchQuery.trim());
+      queryParams['name'] = searchQuery.trim();
     }
 
     // Add sort params
     if (sortBy) {
-      queryParams.set('sort_by', sortBy);
-      queryParams.set('sort_direction', sortDirection);
+      queryParams['sort_by'] = sortBy;
+      queryParams['sort_direction'] = sortDirection;
     }
 
     // Add filters
     if (filters) {
       if (filters.race) {
-        queryParams.set('type', filters.race);
+        queryParams['type'] = filters.race;
       }
       if (filters.effects && filters.effects.length > 0) {
-        queryParams.set('effects', filters.effects.join(','));
+        queryParams['effects'] = filters.effects.join(',');
       }
       if (filters.flavors && filters.flavors.length > 0) {
-        queryParams.set('flavors', filters.flavors.join(','));
+        queryParams['flavors'] = filters.flavors.join(',');
       }
       if (filters.difficulty) {
-        queryParams.set('difficulty', filters.difficulty);
+        queryParams['difficulty'] = filters.difficulty;
       }
       if (filters.thcMin !== undefined) {
-        queryParams.set('thc_min', String(filters.thcMin));
+        queryParams['thc_min'] = String(filters.thcMin);
       }
       if (filters.thcMax !== undefined) {
-        queryParams.set('thc_max', String(filters.thcMax));
+        queryParams['thc_max'] = String(filters.thcMax);
       }
       if (filters.cbdMin !== undefined) {
-        queryParams.set('cbd_min', String(filters.cbdMin));
+        queryParams['cbd_min'] = String(filters.cbdMin);
       }
       if (filters.cbdMax !== undefined) {
-        queryParams.set('cbd_max', String(filters.cbdMax));
+        queryParams['cbd_max'] = String(filters.cbdMax);
       }
     }
 
@@ -334,8 +357,11 @@ export class StrainsApiClient {
 
     const config = this.buildRequestConfig(queryParams, signal);
 
+    // Use empty path for proxy, /strains for direct API
+    const path = this.useProxy ? '' : '/strains';
+
     try {
-      const response = await this.client.get<unknown>('/strains', config);
+      const response = await this.client.get<unknown>(path, config);
       return this.handleSuccessResponse({
         response,
         queryParams,
@@ -357,7 +383,7 @@ export class StrainsApiClient {
    * Build request config with caching headers
    */
   private buildRequestConfig(
-    queryParams: URLSearchParams,
+    queryParams: Record<string, string>,
     signal?: AbortSignal
   ): AxiosRequestConfig {
     const config: AxiosRequestConfig = {
@@ -368,7 +394,8 @@ export class StrainsApiClient {
       },
     };
 
-    const cachedETag = this.getCachedETag(queryParams.toString());
+    const cacheKey = JSON.stringify(queryParams);
+    const cachedETag = this.getCachedETag(cacheKey);
     if (cachedETag) {
       config.headers = {
         ...config.headers,
@@ -384,11 +411,12 @@ export class StrainsApiClient {
    */
   private handleSuccessResponse(options: {
     response: AxiosResponse<unknown>;
-    queryParams: URLSearchParams;
+    queryParams: Record<string, string>;
     params: GetStrainsParams;
     pageSize: number;
     responseTime: number;
   }): StrainsResponse {
+    const cacheKey = JSON.stringify(options.queryParams);
     const etag =
       options.response.headers &&
       typeof options.response.headers === 'object' &&
@@ -396,7 +424,7 @@ export class StrainsApiClient {
         ? String(options.response.headers.etag)
         : undefined;
     if (etag) {
-      this.setCachedETag(options.queryParams.toString(), etag);
+      this.setCachedETag(cacheKey, etag);
     }
 
     const { strains, hasMore, nextCursor } = this.normalizeResponse(
@@ -410,7 +438,7 @@ export class StrainsApiClient {
       nextCursor,
     };
 
-    this.setCachedData(options.queryParams.toString(), result);
+    this.setCachedData(cacheKey, result);
 
     if (options.params.searchQuery || options.params.filters) {
       void this.trackSearchAnalytics({
@@ -429,12 +457,13 @@ export class StrainsApiClient {
    */
   private handleErrorResponse(options: {
     error: AxiosError;
-    queryParams: URLSearchParams;
+    queryParams: Record<string, string>;
     params: GetStrainsParams;
     responseTime: number;
   }): StrainsResponse {
+    const cacheKey = JSON.stringify(options.queryParams);
     if (options.error?.response?.status === 304) {
-      const cached = this.getCachedData(options.queryParams.toString());
+      const cached = this.getCachedData(cacheKey);
       if (cached && cached.data.length > 0) {
         void this.trackSearchAnalytics({
           params: options.params,
@@ -483,10 +512,27 @@ export class StrainsApiClient {
    * Fetch single strain by ID
    */
   async getStrain(strainId: string, signal?: AbortSignal): Promise<Strain> {
-    const encodedId = encodeURIComponent(strainId);
     const startTime = Date.now();
 
+    // Build config based on whether using proxy or direct API
+    let path: string;
+    let queryParams: Record<string, string>;
+
+    if (this.useProxy) {
+      // Proxy: use query params
+      path = '';
+      queryParams = {
+        endpoint: 'detail',
+        strainId: strainId,
+      };
+    } else {
+      // Direct API: use path
+      path = `/strains/${encodeURIComponent(strainId)}`;
+      queryParams = {};
+    }
+
     const config: AxiosRequestConfig = {
+      params: queryParams,
       signal,
       headers: {
         'Cache-Control': 'max-age=86400', // 24 hours
@@ -494,10 +540,7 @@ export class StrainsApiClient {
     };
 
     try {
-      const response = await this.client.get<unknown>(
-        `/strains/${encodedId}`,
-        config
-      );
+      const response = await this.client.get<unknown>(path, config);
       const responseTime = Date.now() - startTime;
       const data = response.data;
 
