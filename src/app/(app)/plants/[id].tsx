@@ -188,7 +188,7 @@ function usePlantSubmit(
         );
         await syncPlantsToCloud().catch(() => {});
         await queryClient.invalidateQueries({ queryKey: ['plants-infinite'] });
-        await queryClient.invalidateQueries({ queryKey: ['plant'] });
+        await queryClient.invalidateQueries({ queryKey: ['plant', plantId] });
         showMessage({
           message: t('plants.form.update_success_title'),
           description: t('plants.form.update_success_body'),

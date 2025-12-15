@@ -2,9 +2,7 @@
 trigger: always_on
 ---
 
-# 🎬 React Native Reanimated Production Guidelines (4.x, Expo SDK 54) — GrowBro Edition
-
-_Last updated: Sep 2025 • Agent‑ready, compact but comprehensive_
+# 🎬 React Native Reanimated Production Guidelines (4.x, Expo SDK 54)
 
 ---
 
@@ -85,6 +83,19 @@ const makeStyle = isOn
 - **JS tokens**: `src/lib/theme-tokens.ts` → raw values for React Navigation & native `style` props. Keep in sync with `src/lib/nativewind-theme-provider.tsx`.
 - **Rule**: Tailwind for static; runtime tokens for `style` props & native APIs.
 
+### ⚠️ Semantic tokens vs explicit palette (IMPORTANT)
+
+**Always prefer semantic tokens** for themed surfaces:
+
+````tsx
+// ✅ CORRECT – uses semantic tokens, auto-resolves light/dark via NativeWindThemeProvider
+<View className="border border-border bg-card shadow-lg">
+
+// ❌ WRONG – manual dark: overrides duplicate theme logic, risk drift
+<View className="border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+
+**Palette tokens:** accents, interactive states, decorative one-offs only.
+**Note:** `border-border` auto-maps per theme; manual `dark:` risks drift.
 ---
 
 ## ✅ Do / Avoid (Quick)
@@ -114,7 +125,7 @@ runOnUI(() => {
   'worklet';
   // expensive but synchronous logic here
 })();
-```
+````
 
 ### Captures (Closures)
 

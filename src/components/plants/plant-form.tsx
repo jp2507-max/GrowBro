@@ -157,7 +157,7 @@ function StrainSuggestionsDropdown({
   const showEmpty = suggestions.length === 0 && !showCreateCustom;
 
   return (
-    <View className="absolute inset-x-0 top-16 z-10 mt-2 rounded-2xl border border-neutral-200 bg-white shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
+    <View className="absolute inset-x-0 top-16 z-10 mt-2 rounded-2xl border border-border bg-card shadow-lg">
       {showEmpty && (
         <View className="px-4 py-3">
           <Text className="text-sm text-text-secondary">

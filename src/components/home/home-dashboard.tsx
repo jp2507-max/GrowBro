@@ -85,12 +85,12 @@ export function useTaskSnapshot(): TaskSnapshotState {
       setHasError(false);
     } catch (error) {
       console.error('[home-dashboard] failed to load task snapshot', error);
-      if (!isCancelledRef.current) {
+      if (!isCancelled()) {
         setHasError(true);
         setSnapshot(INITIAL_SNAPSHOT);
       }
     } finally {
-      if (!isCancelledRef.current) {
+      if (!isCancelled()) {
         setIsLoading(false);
       }
     }
@@ -187,7 +187,12 @@ function TaskSnapshotCard({
           {translate('home.dashboard.tasks_title' as TxKeyPath)}
         </Text>
         <Pressable
-          className="rounded-full bg-primary-100 px-3 py-1.5 active:bg-primary-200 dark:bg-primary-900/40 dark:active:bg-primary-900/60"
+          disabled={isLoading}
+          className={`rounded-full px-3 py-1.5 ${
+            isLoading
+              ? 'bg-neutral-100 dark:bg-neutral-700'
+              : 'bg-primary-100 active:bg-primary-200 dark:bg-primary-900/40 dark:active:bg-primary-900/60'
+          }`}
           accessibilityRole="button"
           accessibilityLabel={translate('list.retry' as TxKeyPath)}
           accessibilityHint={translate(
