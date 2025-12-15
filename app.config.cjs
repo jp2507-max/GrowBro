@@ -92,19 +92,65 @@ function createExpoConfig(config) {
     'EXPO_PUBLIC_SUPABASE_URL',
     'EXPO_PUBLIC_SUPABASE_ANON_KEY',
     'EXPO_PUBLIC_ACCOUNT_DELETION_URL',
-    // Strains API (RapidAPI) - expose these in client builds when present
-    'EXPO_PUBLIC_STRAINS_API_KEY',
-    'EXPO_PUBLIC_STRAINS_API_HOST',
-    'EXPO_PUBLIC_STRAINS_API_URL',
+    'EXPO_PUBLIC_STRAINS_USE_PROXY',
+    'EXPO_PUBLIC_FEATURE_STRAINS_ENABLED',
+    'EXPO_PUBLIC_FEATURE_STRAINS_FAVORITES_SYNC',
+    'EXPO_PUBLIC_FEATURE_STRAINS_OFFLINE_CACHE',
+    // AI adjustments / calendar
+    'EXPO_PUBLIC_FEATURE_AI_ADJUSTMENTS_ENABLED',
+    'EXPO_PUBLIC_FEATURE_AI_ADJUSTMENTS_MIN_SKIPPED_TASKS',
+    'EXPO_PUBLIC_FEATURE_AI_ADJUSTMENTS_MIN_CONFIDENCE',
+    'EXPO_PUBLIC_ENABLE_SORTABLES_CALENDAR',
+    // Sentry
     'EXPO_PUBLIC_SENTRY_DSN',
     'EXPO_PUBLIC_SENTRY_SEND_DEFAULT_PII',
     'EXPO_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE',
     'EXPO_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE',
     'EXPO_PUBLIC_SENTRY_ENABLE_REPLAY',
+    'EXPO_PUBLIC_SENTRY_ORG',
+    'EXPO_PUBLIC_SENTRY_PROJECT',
+    // API + misc
     'EXPO_PUBLIC_API_URL',
     'EXPO_PUBLIC_VAR_NUMBER',
     'EXPO_PUBLIC_VAR_BOOL',
+    // OAuth / Google
+    'EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID',
+    'EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID',
+    // DSA / compliance - DSA_TRANSPARENCY_DB_API_KEY is intentionally public:
+    // it's a publishable key for EU Commission Transparency Database submissions
+    // (DSA Art. 24(5)) and does not grant sensitive access.
+    'EXPO_PUBLIC_DSA_TRANSPARENCY_DB_URL',
+    'EXPO_PUBLIC_DSA_TRANSPARENCY_DB_API_KEY',
+    'EXPO_PUBLIC_LEGAL_ENTITY_ADDRESS',
+    'EXPO_PUBLIC_DPO_EMAIL',
+    'EXPO_PUBLIC_DPO_NAME',
+    'EXPO_PUBLIC_EU_REPRESENTATIVE_ADDRESS',
+    // PII / security - NOTE: PII_SCRUBBING_SALT is intentionally NOT exposed
+    // to the client; it's server-only for HMAC pseudonymization in pii-scrubber.ts
+    'EXPO_PUBLIC_PII_SALT_VERSION',
+    'EXPO_PUBLIC_FEATURE_SECURITY_ENCRYPTION',
+    'EXPO_PUBLIC_FEATURE_SECURITY_INTEGRITY_DETECTION',
+    'EXPO_PUBLIC_FEATURE_SECURITY_ATTESTATION',
+    'EXPO_PUBLIC_FEATURE_SECURITY_CERTIFICATE_PINNING',
+    'EXPO_PUBLIC_FEATURE_SECURITY_BLOCK_ON_COMPROMISE',
+    'EXPO_PUBLIC_FEATURE_SECURITY_THREAT_MONITORING',
+    'EXPO_PUBLIC_FEATURE_SECURITY_SENTRY_SAMPLING_RATE',
+    'EXPO_PUBLIC_FEATURE_SECURITY_VULNERABILITY_SCANNING',
+    'EXPO_PUBLIC_FEATURE_SECURITY_AUTO_ISSUE_CREATION',
+    'EXPO_PUBLIC_FEATURE_SECURITY_BYPASS_PINNING',
+    'EXPO_PUBLIC_SECURITY_PIN_DOMAINS',
+    'EXPO_PUBLIC_SECURITY_PIN_HASHES',
+    // Reviewer creds (non-prod only)
+    'EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL',
+    'EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD',
   ]);
+  // Strains API credentials - only allow in non-production builds for local testing
+  // SECURITY: Production builds always use proxy and never expose API keys
+  if (process.env.APP_ENV !== 'production') {
+    ALLOWED_PUBLIC_KEYS.add('EXPO_PUBLIC_STRAINS_API_KEY');
+    ALLOWED_PUBLIC_KEYS.add('EXPO_PUBLIC_STRAINS_API_HOST');
+    ALLOWED_PUBLIC_KEYS.add('EXPO_PUBLIC_STRAINS_API_URL');
+  }
   const publicExtra = Object.fromEntries(
     Object.entries(process.env ?? {}).filter(
       ([key, value]) => ALLOWED_PUBLIC_KEYS.has(key) && value != null
@@ -279,6 +325,173 @@ function createExpoConfig(config) {
       }),
       ...(Env.ACCOUNT_DELETION_URL && {
         EXPO_PUBLIC_ACCOUNT_DELETION_URL: Env.ACCOUNT_DELETION_URL,
+      }),
+      ...(Env.API_URL && { EXPO_PUBLIC_API_URL: Env.API_URL }),
+      ...(Env.VAR_NUMBER !== undefined && {
+        EXPO_PUBLIC_VAR_NUMBER: String(Env.VAR_NUMBER),
+      }),
+      ...(Env.VAR_BOOL !== undefined && {
+        EXPO_PUBLIC_VAR_BOOL: String(Env.VAR_BOOL),
+      }),
+      // Strains - API credentials for dev fallback only (production always uses proxy)
+      // SECURITY: API credentials are only exposed in non-production builds
+      ...(Env.APP_ENV !== 'production' &&
+        Env.STRAINS_API_URL && {
+          EXPO_PUBLIC_STRAINS_API_URL: Env.STRAINS_API_URL,
+        }),
+      ...(Env.APP_ENV !== 'production' &&
+        Env.STRAINS_API_KEY && {
+          EXPO_PUBLIC_STRAINS_API_KEY: Env.STRAINS_API_KEY,
+        }),
+      ...(Env.APP_ENV !== 'production' &&
+        Env.STRAINS_API_HOST && {
+          EXPO_PUBLIC_STRAINS_API_HOST: Env.STRAINS_API_HOST,
+        }),
+      ...(Env.STRAINS_USE_PROXY !== undefined && {
+        EXPO_PUBLIC_STRAINS_USE_PROXY: String(Env.STRAINS_USE_PROXY),
+      }),
+      ...(Env.FEATURE_STRAINS_ENABLED !== undefined && {
+        EXPO_PUBLIC_FEATURE_STRAINS_ENABLED: String(
+          Env.FEATURE_STRAINS_ENABLED
+        ),
+      }),
+      ...(Env.FEATURE_STRAINS_FAVORITES_SYNC !== undefined && {
+        EXPO_PUBLIC_FEATURE_STRAINS_FAVORITES_SYNC: String(
+          Env.FEATURE_STRAINS_FAVORITES_SYNC
+        ),
+      }),
+      ...(Env.FEATURE_STRAINS_OFFLINE_CACHE !== undefined && {
+        EXPO_PUBLIC_FEATURE_STRAINS_OFFLINE_CACHE: String(
+          Env.FEATURE_STRAINS_OFFLINE_CACHE
+        ),
+      }),
+      // AI adjustments / calendar
+      ...(Env.FEATURE_AI_ADJUSTMENTS_ENABLED !== undefined && {
+        EXPO_PUBLIC_FEATURE_AI_ADJUSTMENTS_ENABLED: String(
+          Env.FEATURE_AI_ADJUSTMENTS_ENABLED
+        ),
+      }),
+      ...(Env.FEATURE_AI_ADJUSTMENTS_MIN_SKIPPED_TASKS !== undefined && {
+        EXPO_PUBLIC_FEATURE_AI_ADJUSTMENTS_MIN_SKIPPED_TASKS: String(
+          Env.FEATURE_AI_ADJUSTMENTS_MIN_SKIPPED_TASKS
+        ),
+      }),
+      ...(Env.FEATURE_AI_ADJUSTMENTS_MIN_CONFIDENCE !== undefined && {
+        EXPO_PUBLIC_FEATURE_AI_ADJUSTMENTS_MIN_CONFIDENCE: String(
+          Env.FEATURE_AI_ADJUSTMENTS_MIN_CONFIDENCE
+        ),
+      }),
+      ...(Env.ENABLE_SORTABLES_CALENDAR !== undefined && {
+        EXPO_PUBLIC_ENABLE_SORTABLES_CALENDAR: String(
+          Env.ENABLE_SORTABLES_CALENDAR
+        ),
+      }),
+      // Google OAuth
+      ...(Env.GOOGLE_WEB_CLIENT_ID && {
+        EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: Env.GOOGLE_WEB_CLIENT_ID,
+      }),
+      ...(Env.GOOGLE_IOS_CLIENT_ID && {
+        EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: Env.GOOGLE_IOS_CLIENT_ID,
+      }),
+      // Sentry
+      ...(Env.SENTRY_DSN && { EXPO_PUBLIC_SENTRY_DSN: Env.SENTRY_DSN }),
+      ...(Env.SENTRY_SEND_DEFAULT_PII !== undefined && {
+        EXPO_PUBLIC_SENTRY_SEND_DEFAULT_PII: String(
+          Env.SENTRY_SEND_DEFAULT_PII
+        ),
+      }),
+      ...(Env.SENTRY_REPLAYS_SESSION_SAMPLE_RATE !== undefined && {
+        EXPO_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE: String(
+          Env.SENTRY_REPLAYS_SESSION_SAMPLE_RATE
+        ),
+      }),
+      ...(Env.SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE !== undefined && {
+        EXPO_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE: String(
+          Env.SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE
+        ),
+      }),
+      ...(Env.SENTRY_ENABLE_REPLAY !== undefined && {
+        EXPO_PUBLIC_SENTRY_ENABLE_REPLAY: String(Env.SENTRY_ENABLE_REPLAY),
+      }),
+      ...(Env.SENTRY_ORG && { EXPO_PUBLIC_SENTRY_ORG: Env.SENTRY_ORG }),
+      ...(Env.SENTRY_PROJECT && {
+        EXPO_PUBLIC_SENTRY_PROJECT: Env.SENTRY_PROJECT,
+      }),
+      // DSA / compliance
+      ...(Env.DSA_TRANSPARENCY_DB_URL && {
+        EXPO_PUBLIC_DSA_TRANSPARENCY_DB_URL: Env.DSA_TRANSPARENCY_DB_URL,
+      }),
+      ...(Env.DSA_TRANSPARENCY_DB_API_KEY && {
+        EXPO_PUBLIC_DSA_TRANSPARENCY_DB_API_KEY:
+          Env.DSA_TRANSPARENCY_DB_API_KEY,
+      }),
+      ...(Env.LEGAL_ENTITY_ADDRESS && {
+        EXPO_PUBLIC_LEGAL_ENTITY_ADDRESS: Env.LEGAL_ENTITY_ADDRESS,
+      }),
+      ...(Env.DPO_EMAIL && { EXPO_PUBLIC_DPO_EMAIL: Env.DPO_EMAIL }),
+      ...(Env.DPO_NAME && { EXPO_PUBLIC_DPO_NAME: Env.DPO_NAME }),
+      ...(Env.EU_REPRESENTATIVE_ADDRESS && {
+        EXPO_PUBLIC_EU_REPRESENTATIVE_ADDRESS: Env.EU_REPRESENTATIVE_ADDRESS,
+      }),
+      // PII / security - salt is server-only for HMAC pseudonymization
+      ...(Env.PII_SALT_VERSION && {
+        EXPO_PUBLIC_PII_SALT_VERSION: Env.PII_SALT_VERSION,
+      }),
+      ...(Env.FEATURE_SECURITY_ENCRYPTION !== undefined && {
+        EXPO_PUBLIC_FEATURE_SECURITY_ENCRYPTION: String(
+          Env.FEATURE_SECURITY_ENCRYPTION
+        ),
+      }),
+      ...(Env.FEATURE_SECURITY_INTEGRITY_DETECTION !== undefined && {
+        EXPO_PUBLIC_FEATURE_SECURITY_INTEGRITY_DETECTION: String(
+          Env.FEATURE_SECURITY_INTEGRITY_DETECTION
+        ),
+      }),
+      ...(Env.FEATURE_SECURITY_ATTESTATION !== undefined && {
+        EXPO_PUBLIC_FEATURE_SECURITY_ATTESTATION: String(
+          Env.FEATURE_SECURITY_ATTESTATION
+        ),
+      }),
+      ...(Env.FEATURE_SECURITY_CERTIFICATE_PINNING !== undefined && {
+        EXPO_PUBLIC_FEATURE_SECURITY_CERTIFICATE_PINNING: String(
+          Env.FEATURE_SECURITY_CERTIFICATE_PINNING
+        ),
+      }),
+      ...(Env.FEATURE_SECURITY_BLOCK_ON_COMPROMISE !== undefined && {
+        EXPO_PUBLIC_FEATURE_SECURITY_BLOCK_ON_COMPROMISE: String(
+          Env.FEATURE_SECURITY_BLOCK_ON_COMPROMISE
+        ),
+      }),
+      ...(Env.FEATURE_SECURITY_THREAT_MONITORING !== undefined && {
+        EXPO_PUBLIC_FEATURE_SECURITY_THREAT_MONITORING: String(
+          Env.FEATURE_SECURITY_THREAT_MONITORING
+        ),
+      }),
+      ...(Env.FEATURE_SECURITY_SENTRY_SAMPLING_RATE !== undefined && {
+        EXPO_PUBLIC_FEATURE_SECURITY_SENTRY_SAMPLING_RATE: String(
+          Env.FEATURE_SECURITY_SENTRY_SAMPLING_RATE
+        ),
+      }),
+      ...(Env.FEATURE_SECURITY_VULNERABILITY_SCANNING !== undefined && {
+        EXPO_PUBLIC_FEATURE_SECURITY_VULNERABILITY_SCANNING: String(
+          Env.FEATURE_SECURITY_VULNERABILITY_SCANNING
+        ),
+      }),
+      ...(Env.FEATURE_SECURITY_AUTO_ISSUE_CREATION !== undefined && {
+        EXPO_PUBLIC_FEATURE_SECURITY_AUTO_ISSUE_CREATION: String(
+          Env.FEATURE_SECURITY_AUTO_ISSUE_CREATION
+        ),
+      }),
+      ...(Env.FEATURE_SECURITY_BYPASS_PINNING !== undefined && {
+        EXPO_PUBLIC_FEATURE_SECURITY_BYPASS_PINNING: String(
+          Env.FEATURE_SECURITY_BYPASS_PINNING
+        ),
+      }),
+      ...(Env.SECURITY_PIN_DOMAINS && {
+        EXPO_PUBLIC_SECURITY_PIN_DOMAINS: Env.SECURITY_PIN_DOMAINS,
+      }),
+      ...(Env.SECURITY_PIN_HASHES && {
+        EXPO_PUBLIC_SECURITY_PIN_HASHES: Env.SECURITY_PIN_HASHES,
       }),
       // App scheme for OAuth redirects
       SCHEME: Env.SCHEME,

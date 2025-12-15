@@ -8,6 +8,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { twMerge } from 'tailwind-merge';
 
+import colors from '@/components/ui/colors';
+
 type Props = {
   initialProgress?: number;
   className?: string;
@@ -34,13 +36,13 @@ export const ProgressBar = forwardRef<ProgressBarRef, Props>(
     const style = useAnimatedStyle(
       () => ({
         width: `${progress.value}%`,
-        backgroundColor: '#000',
+        backgroundColor: colors.black,
         height: 2,
       }),
       []
     );
     return (
-      <View className={twMerge(` bg-[#EAEAEA]`, className)}>
+      <View className={twMerge('bg-neutral-200', className)}>
         <Animated.View style={style} />
       </View>
     );

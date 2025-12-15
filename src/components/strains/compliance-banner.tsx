@@ -21,13 +21,13 @@ export function ComplianceBanner(): React.ReactElement | null {
 
   return (
     <View
-      className="mx-4 mt-3 rounded-lg bg-amber-50 p-3 dark:bg-amber-900/20"
+      className="mx-4 mt-3 rounded-lg bg-warning-50 p-3 dark:bg-warning-900/20"
       testID="strains-compliance-banner"
     >
-      <Text className="text-xs font-medium text-amber-900 dark:text-amber-100">
+      <Text className="text-xs font-medium text-warning-900 dark:text-warning-100">
         {translate('strains.compliance.headline')}
       </Text>
-      <Text className="mt-1 text-xs text-amber-800 dark:text-amber-200">
+      <Text className="mt-1 text-xs text-warning-800 dark:text-warning-200">
         {translate('strains.compliance.body')}
       </Text>
     </View>

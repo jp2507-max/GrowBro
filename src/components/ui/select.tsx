@@ -9,6 +9,11 @@ import type { FieldValues } from 'react-hook-form';
 import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Platform, Pressable, type PressableProps, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import type { SvgProps } from 'react-native-svg';
 import Svg, { Path } from 'react-native-svg';
 import { tv } from 'tailwind-variants';
@@ -64,15 +69,18 @@ type OptionsProps = {
   value?: string | number;
   testID?: string;
   onDismiss?: () => void;
+  title?: string;
 };
 
 function keyExtractor(item: OptionType) {
   return `select-item-${item.value}`;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export const Options = React.forwardRef<BottomSheetModal, OptionsProps>(
-  ({ options, onSelect, value, testID, onDismiss }, ref) => {
-    const height = options.length * 70 + 100;
+  ({ options, onSelect, value, testID, onDismiss, title }, ref) => {
+    const height = options.length * 64 + 140;
     const snapPoints = React.useMemo(() => [height], [height]);
     const { colorScheme } = useColorScheme();
     const isDark = colorScheme === 'dark';
@@ -102,15 +110,32 @@ export const Options = React.forwardRef<BottomSheetModal, OptionsProps>(
         snapPoints={snapPoints}
         onDismiss={onDismiss}
         backgroundStyle={{
-          backgroundColor: isDark ? colors.neutral[800] : colors.white,
+          backgroundColor: isDark ? colors.charcoal[900] : colors.neutral[50],
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+        }}
+        handleIndicatorStyle={{
+          backgroundColor: isDark ? colors.charcoal[600] : colors.neutral[400],
+          width: 40,
+          height: 5,
         }}
       >
-        <List
-          data={options}
-          keyExtractor={keyExtractor}
-          renderItem={renderSelectItem}
-          testID={testID ? `${testID}-modal` : undefined}
-        />
+        {title && (
+          <View className="px-5 pb-3 pt-1">
+            <Text className="text-center text-base font-semibold text-charcoal-800 dark:text-neutral-100">
+              {title}
+            </Text>
+          </View>
+        )}
+        <View className="px-4 pb-6">
+          <List
+            data={options}
+            keyExtractor={keyExtractor}
+            renderItem={renderSelectItem}
+            testID={testID ? `${testID}-modal` : undefined}
+            contentContainerStyle={{ gap: 8 }}
+          />
+        </View>
       </Modal>
     );
   }
@@ -122,23 +147,52 @@ const Option = React.memo(
     selected = false,
     accessibilityHint,
     accessibilityRole = 'menuitem',
+    onPress,
     ...props
   }: PressableProps & {
     selected?: boolean;
     label: string;
   }) => {
+    const scale = useSharedValue(1);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }],
+    }));
+
+    const handlePressIn = React.useCallback(() => {
+      scale.value = withTiming(0.97, { duration: 100 });
+    }, [scale]);
+
+    const handlePressOut = React.useCallback(() => {
+      scale.value = withTiming(1, { duration: 150 });
+    }, [scale]);
+
     return (
-      <Pressable
-        className="flex-row items-center border-b border-neutral-300 bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800"
+      <AnimatedPressable
+        style={animatedStyle}
+        className={`flex-row items-center rounded-xl px-4 py-3.5 ${
+          selected
+            ? 'bg-primary-600 dark:bg-primary-700'
+            : 'bg-white dark:bg-charcoal-800'
+        }`}
         accessibilityLabel={label}
         accessibilityRole={accessibilityRole}
         accessibilityHint={accessibilityHint}
         accessibilityState={{ selected }}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
         {...props}
       >
-        <Text className="flex-1 dark:text-neutral-100 ">{label}</Text>
-        {selected && <Check />}
-      </Pressable>
+        <Text
+          className={`flex-1 text-base font-medium ${
+            selected ? 'text-white' : 'text-charcoal-800 dark:text-neutral-100'
+          }`}
+        >
+          {label}
+        </Text>
+        {selected && <Check selected />}
+      </AnimatedPressable>
     );
   }
 );
@@ -187,8 +241,8 @@ export const Select = (props: SelectProps) => {
   const onSelectOption = React.useCallback(
     (option: OptionType) => {
       onSelect?.(option.value);
-      setIsOpen(false);
       modal.dismiss();
+      setIsOpen(false);
     },
     [modal, onSelect]
   );
@@ -255,6 +309,7 @@ export const Select = (props: SelectProps) => {
         testID={testID}
         ref={modal.ref}
         options={options}
+        value={value}
         onSelect={onSelectOption}
         onDismiss={handleDismiss}
       />
@@ -286,18 +341,18 @@ export function ControlledSelect<T extends FieldValues>(
   );
 }
 
-const Check = ({ ...props }: SvgProps) => (
+const Check = ({ selected, ...props }: SvgProps & { selected?: boolean }) => (
   <Svg
-    width={25}
-    height={24}
+    width={22}
+    height={22}
     fill="none"
     viewBox="0 0 25 24"
     {...props}
-    className="stroke-black dark:stroke-white"
+    className={selected ? 'stroke-white' : 'stroke-primary-600'}
   >
     <Path
       d="m20.256 6.75-10.5 10.5L4.506 12"
-      strokeWidth={2.438}
+      strokeWidth={2.5}
       strokeLinecap="round"
       strokeLinejoin="round"
     />

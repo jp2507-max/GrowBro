@@ -12,7 +12,6 @@ import {
   Feed as FeedIcon,
   Home as HomeIcon,
   Rate as StrainsIcon,
-  TopDress as PlantsIcon,
 } from '@/components/ui/icons';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
@@ -22,7 +21,7 @@ import { useThemeConfig } from '@/lib/use-theme-config';
 
 const DURATION = 300;
 
-type TabRoute = 'index' | 'calendar' | 'community' | 'plants' | 'strains';
+type TabRoute = 'index' | 'calendar' | 'community' | 'strains';
 
 type IconComponent = React.ComponentType<{ color?: string }>;
 
@@ -60,14 +59,7 @@ const TAB_ITEMS: readonly TabItem[] = [
     labelKey: 'tabs.community',
     hintKey: 'accessibility.tabs.community_hint',
   },
-  {
-    route: 'plants',
-    Icon: PlantsIcon,
-    testID: 'plants-tab',
-    iconTestID: 'plants-icon',
-    labelKey: 'tabs.plants',
-    hintKey: 'accessibility.tabs.plants_hint',
-  },
+
   {
     route: 'strains',
     Icon: StrainsIcon,

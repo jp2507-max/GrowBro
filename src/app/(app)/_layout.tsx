@@ -11,9 +11,7 @@ import {
   Feed as FeedIcon,
   Home as HomeIcon,
   Inventory as InventoryIcon,
-  Settings as SettingsIcon,
   Style as StyleIcon,
-  TopDress as PlantsIcon,
 } from '@/components/ui/icons';
 import { useAgeGate, useAuth, useIsFirstTime } from '@/lib';
 import { AnimatedScrollListProvider } from '@/lib/animations/animated-scroll-list-provider';
@@ -66,7 +64,6 @@ function useTabScreenOptions(theme: ReturnType<typeof useThemeConfig>) {
       tabBarHideOnKeyboard: true,
       freezeOnBlur: true,
       detachInactiveScreens: true,
-      header: renderSharedHeader,
       headerStyle: {
         height: 148,
         backgroundColor: theme.colors.card,
@@ -172,8 +169,8 @@ export default function TabLayout() {
             options={{
               title: translate('tabs.home'),
               tabBarIcon: ({ color }) => <HomeIcon color={color} />,
-              headerRight: () => <SettingsLink />,
               tabBarButtonTestID: 'home-tab',
+              header: renderSharedHeader,
             }}
           />
           <Tabs.Screen
@@ -182,6 +179,7 @@ export default function TabLayout() {
               title: translate('tabs.calendar'),
               tabBarIcon: ({ color }) => <CalendarIcon color={color} />,
               tabBarButtonTestID: 'calendar-tab',
+              header: renderSharedHeader,
             }}
           />
           <Tabs.Screen
@@ -191,14 +189,7 @@ export default function TabLayout() {
               tabBarIcon: ({ color }) => <FeedIcon color={color} />,
               headerRight: () => <CreateNewPostLink />,
               tabBarButtonTestID: 'community-tab',
-            }}
-          />
-          <Tabs.Screen
-            name="plants"
-            options={{
-              title: translate('tabs.plants'),
-              tabBarIcon: ({ color }) => <PlantsIcon color={color} />,
-              tabBarButtonTestID: 'plants-tab',
+              header: renderSharedHeader,
             }}
           />
           <Tabs.Screen
@@ -208,6 +199,7 @@ export default function TabLayout() {
               tabBarIcon: ({ color }) => <InventoryIcon color={color} />,
               tabBarBadge: lowStockCount > 0 ? lowStockCount : undefined,
               tabBarButtonTestID: 'inventory-tab',
+              header: renderSharedHeader,
             }}
           />
           <Tabs.Screen
@@ -242,24 +234,6 @@ const CreateNewPostLink = () => {
         <Text className="text-sm font-semibold text-neutral-50">
           {createPostLabel}
         </Text>
-      </Pressable>
-    </Link>
-  );
-};
-
-const SettingsLink = () => {
-  const settingsLabel = translate('home.open_settings');
-  const settingsHint = translate('accessibility.home.open_settings_hint');
-  return (
-    <Link href="/settings" asChild>
-      <Pressable
-        className="ml-3 size-12 items-center justify-center"
-        accessibilityRole="button"
-        accessibilityLabel={settingsLabel}
-        accessibilityHint={settingsHint}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <SettingsIcon />
       </Pressable>
     </Link>
   );

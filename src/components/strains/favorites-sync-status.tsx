@@ -5,7 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
-import { Pressable, Text } from '@/components/ui';
+import { colors, Pressable, Text } from '@/components/ui';
 import { translate } from '@/lib/i18n/utils';
 import { getPendingSyncCount } from '@/lib/strains/favorites-sync-queue';
 import { useFavorites } from '@/lib/strains/use-favorites';
@@ -46,35 +46,35 @@ export function FavoritesSyncStatus({
   return (
     <View testID={testID} className="px-4 py-2">
       {isSyncing ? (
-        <View className="flex-row items-center gap-2 rounded-lg bg-blue-50 p-3">
-          <ActivityIndicator size="small" color="#3b82f6" />
-          <Text className="flex-1 text-sm text-blue-800">
+        <View className="flex-row items-center gap-2 rounded-lg bg-sky-50 p-3">
+          <ActivityIndicator size="small" color={colors.sky[500]} />
+          <Text className="flex-1 text-sm text-sky-800">
             {translate('sync.syncing_favorites')}
           </Text>
         </View>
       ) : syncError ? (
         <Pressable
           onPress={handleRetrySync}
-          className="flex-row items-center gap-2 rounded-lg bg-red-50 p-3"
+          className="flex-row items-center gap-2 rounded-lg bg-danger-50 p-3"
           accessibilityRole="button"
           accessibilityLabel={translate('sync.retry_sync_label')}
           accessibilityHint={translate('sync.retry_sync_hint')}
         >
           <Text className="text-lg">⚠️</Text>
           <View className="flex-1">
-            <Text className="text-sm font-medium text-red-800">
+            <Text className="text-sm font-medium text-danger-800">
               {translate('sync.sync_failed')}
             </Text>
-            <Text className="text-xs text-red-700">{syncError}</Text>
+            <Text className="text-xs text-danger-700">{syncError}</Text>
           </View>
-          <Text className="text-sm text-red-600">
+          <Text className="text-sm text-danger-600">
             {translate('sync.retry_button')}
           </Text>
         </Pressable>
       ) : pendingCount > 0 ? (
-        <View className="flex-row items-center gap-2 rounded-lg bg-amber-50 p-3">
+        <View className="flex-row items-center gap-2 rounded-lg bg-warning-50 p-3">
           <Text className="text-lg">📤</Text>
-          <Text className="flex-1 text-sm text-amber-800">
+          <Text className="flex-1 text-sm text-warning-800">
             {translate(
               pendingCount === 1
                 ? 'sync.pending_favorites_one'

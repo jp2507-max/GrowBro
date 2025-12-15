@@ -38,8 +38,8 @@ const testOccurrenceOverridesTable = () => {
 };
 
 const testSchemaVersion = () => {
-  it('has schema version 31', () => {
-    expect((schema as any).version).toBe(31);
+  it('has schema version 35', () => {
+    expect((schema as any).version).toBe(35);
   });
 };
 

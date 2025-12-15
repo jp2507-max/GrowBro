@@ -23,10 +23,10 @@ export const TemplateListItem = React.memo(function TemplateListItem({
     <Pressable
       accessibilityRole="button"
       onPress={() => onPress(template)}
-      className="mb-3 rounded-lg bg-neutral-50 p-4 active:bg-neutral-100 dark:bg-charcoal-900 dark:active:bg-charcoal-800"
+      className="mb-3 rounded-lg bg-card p-4 active:bg-neutral-100 dark:active:bg-charcoal-800"
     >
       <View className="mb-2 flex-row items-center justify-between">
-        <Text className="flex-1 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+        <Text className="flex-1 text-lg font-semibold text-text-primary">
           {template.name}
         </Text>
         <View className="ml-2 rounded-full bg-primary-100 px-2 py-1 dark:bg-primary-900">
@@ -37,36 +37,33 @@ export const TemplateListItem = React.memo(function TemplateListItem({
       </View>
 
       {template.description && (
-        <Text
-          className="mb-2 text-sm text-neutral-600 dark:text-neutral-400"
-          numberOfLines={2}
-        >
+        <Text className="mb-2 text-sm text-text-secondary" numberOfLines={2}>
           {template.description}
         </Text>
       )}
 
       <View className="flex-row items-center gap-4">
         <View className="flex-row items-center">
-          <Text className="text-xs text-neutral-500 dark:text-neutral-500">
+          <Text className="text-xs text-text-secondary">
             By {template.authorHandle}
           </Text>
         </View>
 
         <View className="flex-row items-center">
-          <Text className="text-xs text-neutral-500 dark:text-neutral-500">
+          <Text className="text-xs text-text-secondary">
             📅 {template.totalWeeks || 0} weeks
           </Text>
         </View>
 
         <View className="flex-row items-center">
-          <Text className="text-xs text-neutral-500 dark:text-neutral-500">
+          <Text className="text-xs text-text-secondary">
             ✓ {template.adoptionCount} adopted
           </Text>
         </View>
 
         {template.ratingAverage && (
           <View className="flex-row items-center">
-            <Text className="text-xs text-neutral-500 dark:text-neutral-500">
+            <Text className="text-xs text-text-secondary">
               ⭐ {template.ratingAverage.toFixed(1)} ({template.ratingCount})
             </Text>
           </View>
@@ -74,8 +71,8 @@ export const TemplateListItem = React.memo(function TemplateListItem({
       </View>
 
       <View className="mt-2 flex-row items-center">
-        <View className="rounded bg-neutral-200 px-2 py-1 dark:bg-charcoal-800">
-          <Text className="text-xs text-neutral-600 dark:text-neutral-400">
+        <View className="rounded border border-border bg-card px-2 py-1">
+          <Text className="text-xs text-text-secondary">
             {template.license}
           </Text>
         </View>

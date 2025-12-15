@@ -3,6 +3,7 @@ import { useColorScheme } from 'nativewind';
 import React, { type ReactElement } from 'react';
 import { Linking } from 'react-native';
 
+import { CannabisEducationalBanner } from '@/components/cannabis-educational-banner';
 import { DevDiagnosticsItem } from '@/components/settings/dev-diagnostics-item';
 import { Item } from '@/components/settings/item';
 import { ItemsContainer } from '@/components/settings/items-container';
@@ -247,6 +248,8 @@ export default function Settings() {
           <SupportLinks iconColor={iconColor} />
 
           <LinksSection iconColor={iconColor} />
+
+          <CannabisEducationalBanner />
 
           <View className="my-8">
             <ItemsContainer>

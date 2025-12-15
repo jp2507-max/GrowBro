@@ -36,7 +36,7 @@ export function DiagnosticResultCard({
 
   return (
     <View
-      className="mb-4 rounded-xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-900"
+      className="mb-4 rounded-xl border border-border bg-card p-4"
       testID={testID}
     >
       <ClassificationHeader
@@ -97,26 +97,26 @@ function ClassificationHeader({
   return (
     <View className="mb-3">
       <View className="mb-2 flex-row items-center justify-between">
-        <Text className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+        <Text className="text-xl font-semibold text-text-primary">
           {translateDynamic(issueTypeKey)}
         </Text>
         <View
           className={`rounded-full px-3 py-1 ${confidenceColor}`}
           testID="confidence-badge"
         >
-          <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+          <Text className="text-sm font-medium text-text-primary">
             {confidencePercent}%
           </Text>
         </View>
       </View>
 
       {result.nutrientCode && (
-        <Text className="mb-1 text-base font-medium text-neutral-700 dark:text-neutral-300">
+        <Text className="mb-1 text-base font-medium text-text-secondary">
           {translate('nutrient.diagnostics.nutrient')}: {result.nutrientCode}
         </Text>
       )}
 
-      <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+      <Text className="text-sm text-text-secondary">
         {translateDynamic(severityKey)}
       </Text>
 
@@ -141,23 +141,23 @@ function ConfidenceBreakdown({
   }
 
   return (
-    <View className="mb-3 rounded-lg bg-neutral-100 p-3 dark:bg-neutral-800">
-      <Text className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+    <View className="mb-3 rounded-lg bg-card p-3">
+      <Text className="mb-2 text-sm font-medium text-text-secondary">
         {translate('nutrient.diagnostics.confidenceBreakdown')}
       </Text>
       {rules !== undefined && (
-        <Text className="text-xs text-neutral-600 dark:text-neutral-400">
+        <Text className="text-xs text-text-secondary">
           {translate('nutrient.diagnostics.rulesConfidence')}:{' '}
           {Math.round(rules * 100)}%
         </Text>
       )}
       {ai !== undefined && (
-        <Text className="text-xs text-neutral-600 dark:text-neutral-400">
+        <Text className="text-xs text-text-secondary">
           {translate('nutrient.diagnostics.aiConfidence')}:{' '}
           {Math.round(ai * 100)}%
         </Text>
       )}
-      <Text className="text-xs text-neutral-600 dark:text-neutral-400">
+      <Text className="text-xs text-text-secondary">
         {translate('nutrient.diagnostics.threshold')}:{' '}
         {Math.round(threshold * 100)}%
       </Text>
@@ -180,7 +180,7 @@ function SourceBadge({
 
   return (
     <View className={`mt-2 self-start rounded px-2 py-1 ${config.color}`}>
-      <Text className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
+      <Text className="text-xs font-medium text-text-secondary">
         {config.label}
       </Text>
     </View>
@@ -194,14 +194,11 @@ function RationaleSection({
 }): React.ReactElement {
   return (
     <View className="mb-3">
-      <Text className="mb-2 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+      <Text className="mb-2 text-sm font-semibold text-text-secondary">
         {translate('nutrient.diagnostics.rationale.title')}
       </Text>
       {rationale.map((item, index) => (
-        <Text
-          key={index}
-          className="mb-1 text-sm text-neutral-600 dark:text-neutral-400"
-        >
+        <Text key={index} className="mb-1 text-sm text-text-secondary">
           • {translateDynamic(item)}
         </Text>
       ))}
@@ -216,20 +213,20 @@ function RecommendationsSection({
 }): React.ReactElement {
   return (
     <View className="mb-3">
-      <Text className="mb-2 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+      <Text className="mb-2 text-sm font-semibold text-text-secondary">
         {translate('nutrient.diagnostics.recommendations.title')}
       </Text>
       {recommendations.map((rec, index) => (
         <View
           key={index}
-          className="mb-2 rounded-lg border border-neutral-200 bg-neutral-100 p-3 dark:border-neutral-700 dark:bg-neutral-800"
+          className="mb-2 rounded-lg border border-border bg-card p-3"
         >
           <View className="mb-1 flex-row items-center justify-between">
-            <Text className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+            <Text className="text-sm font-medium text-text-primary">
               {translateDynamic(rec.description)}
             </Text>
             {rec.context?.source && (
-              <Text className="text-xs text-neutral-500 dark:text-neutral-500">
+              <Text className="text-xs text-text-secondary">
                 {rec.context.source}
               </Text>
             )}
@@ -294,7 +291,7 @@ function FeedbackButtons({
 }): React.ReactElement {
   return (
     <View className="mt-3">
-      <Text className="mb-2 text-center text-sm text-neutral-600 dark:text-neutral-400">
+      <Text className="mb-2 text-center text-sm text-text-secondary">
         {translate('nutrient.diagnostics.feedbackQuestion')}
       </Text>
       <View className="flex-row justify-center gap-3">

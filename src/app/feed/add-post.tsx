@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm, type UseFormSetValue } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 import { z } from 'zod';
 
@@ -224,19 +224,22 @@ function PhotoAttachmentSection({
             <Text className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">
               {translateDynamic('feed.prefilledImages')}
             </Text>
-            <TouchableOpacity
+            <Button
+              variant="link"
+              size="sm"
               onPress={onRemovePhoto}
               testID="remove-photo-button"
-              accessibilityRole="button"
               accessibilityLabel={translateDynamic('feed.addPost.removePhoto')}
               accessibilityHint={translateDynamic(
                 'feed.addPost.removePhotoHint'
               )}
+              textClassName="text-danger-600"
+              className="my-0 px-0"
             >
               <Text className="text-sm text-danger-600">
                 {translateDynamic('feed.addPost.removePhoto')}
               </Text>
-            </TouchableOpacity>
+            </Button>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {attachments.map((image, index) => (

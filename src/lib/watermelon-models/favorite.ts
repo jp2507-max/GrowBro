@@ -31,6 +31,7 @@ export class FavoriteModel extends Model {
       return {
         id: this.strainId,
         name: 'Unknown Strain',
+        slug: 'unknown',
         race: 'hybrid',
         thc_display: 'Not reported',
         imageUrl: '',

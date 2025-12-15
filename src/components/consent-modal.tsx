@@ -45,10 +45,10 @@ function ToggleRow({
       testID={testID}
     >
       <View className="flex-1 pr-4">
-        <Text className="text-base font-medium text-gray-900 dark:text-gray-100">
+        <Text className="text-base font-medium text-charcoal-900 dark:text-charcoal-100">
           {title}
         </Text>
-        <Text className="text-sm text-gray-600 dark:text-gray-400">
+        <Text className="text-sm text-charcoal-600 dark:text-charcoal-400">
           {subtitle}
         </Text>
       </View>
@@ -332,7 +332,7 @@ function ConsentHeader({
   titleKey: TxKeyPath;
 }): React.ReactElement {
   return (
-    <Text className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
+    <Text className="mb-3 text-lg font-semibold text-charcoal-900 dark:text-charcoal-100">
       {translate(titleKey)}
     </Text>
   );
@@ -367,7 +367,7 @@ function ConsentSections(props: {
         onChange={setTelemetry}
         testID="toggle-telemetry"
       />
-      <Text className="text-xs text-gray-600 dark:text-gray-400">
+      <Text className="text-xs text-charcoal-600 dark:text-charcoal-400">
         {translate('consent.telemetry.impact')}
       </Text>
       <ToggleRow
@@ -377,7 +377,7 @@ function ConsentSections(props: {
         onChange={setExperiments}
         testID="toggle-experiments"
       />
-      <Text className="text-xs text-gray-600 dark:text-gray-400">
+      <Text className="text-xs text-charcoal-600 dark:text-charcoal-400">
         {translate('consent.experiments.impact')}
       </Text>
       <ToggleRow
@@ -387,7 +387,7 @@ function ConsentSections(props: {
         onChange={setAiTraining}
         testID="toggle-aiTraining"
       />
-      <Text className="text-xs text-gray-600 dark:text-gray-400">
+      <Text className="text-xs text-charcoal-600 dark:text-charcoal-400">
         {translate('consent.aiTraining.impact')}
       </Text>
       <ToggleRow
@@ -397,7 +397,7 @@ function ConsentSections(props: {
         onChange={setCrashDiagnostics}
         testID="toggle-crashDiagnostics"
       />
-      <Text className="text-xs text-gray-600 dark:text-gray-400">
+      <Text className="text-xs text-charcoal-600 dark:text-charcoal-400">
         {translate('consent.crashDiagnostics.impact')}
       </Text>
     </View>

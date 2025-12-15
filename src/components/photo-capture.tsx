@@ -35,7 +35,7 @@ async function captureFromCamera(
   }
 
   const result = await ImagePicker.launchCameraAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    mediaTypes: ['images'],
     quality: 1,
     allowsEditing: false,
   });
@@ -56,7 +56,7 @@ async function selectFromLibrary(
   t: (key: string) => string
 ): Promise<PhotoVariants> {
   const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    mediaTypes: ['images'],
     quality: 1,
     allowsMultipleSelection: false,
   });

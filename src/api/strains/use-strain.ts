@@ -1,6 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { supabase } from '@/lib/supabase';
+import { database } from '@/lib/watermelon';
+import { CachedStrainsRepository } from '@/lib/watermelon-models/cached-strains-repository';
+
 import { getStrainsApiClient } from './client';
+import { mapSupabaseRowToStrain } from './supabase-list';
 import type { Strain } from './types';
 
 /**
@@ -36,13 +41,62 @@ function findStrainInCache(
   return undefined;
 }
 
+let cacheRepo: CachedStrainsRepository | null = null;
+
+function getCacheRepository(): CachedStrainsRepository {
+  if (!cacheRepo) {
+    cacheRepo = new CachedStrainsRepository(database);
+  }
+  return cacheRepo;
+}
+
+async function findStrainInLocalCache(
+  idOrSlug: string
+): Promise<Strain | undefined> {
+  try {
+    const repo = getCacheRepository();
+    const match = await repo.findStrainByIdOrSlug(idOrSlug);
+    return match ?? undefined;
+  } catch (error) {
+    console.debug('[useStrain] local cache lookup failed', error);
+    return undefined;
+  }
+}
+
+async function findStrainInSupabase(
+  idOrSlug: string
+): Promise<Strain | undefined> {
+  try {
+    const { data, error } = await supabase
+      .from('strain_cache')
+      .select('id, slug, name, race, data')
+      .or(`id.eq.${idOrSlug},slug.eq.${idOrSlug}`)
+      .limit(1);
+
+    if (error) {
+      throw error;
+    }
+
+    const row = data?.[0];
+    if (!row) {
+      return undefined;
+    }
+
+    return mapSupabaseRowToStrain(row);
+  } catch (error) {
+    console.debug('[useStrain] Supabase lookup failed', error);
+    return undefined;
+  }
+}
+
 /**
  * Query hook for fetching a single strain by slug or ID
  *
  * Data flow:
  * 1. Check React Query cache (from infinite list data)
- * 2. If not found, call API which checks Supabase strain_cache
- * 3. If not in Supabase, fetches from external API and caches
+ * 2. Check Watermelon cached pages (offline list cache)
+ * 3. If not found, call API which checks Supabase strain_cache
+ * 4. If not in Supabase, fetches from external API and caches
  *
  * This enables deep links to work - users can share strain URLs
  * and the strain will be fetched even if not previously viewed.
@@ -70,6 +124,16 @@ export function useStrain({
 
       if (cachedStrain) {
         return cachedStrain;
+      }
+
+      const offlineStrain = await findStrainInLocalCache(strainIdOrSlug!);
+      if (offlineStrain) {
+        return offlineStrain;
+      }
+
+      const supabaseStrain = await findStrainInSupabase(strainIdOrSlug!);
+      if (supabaseStrain) {
+        return supabaseStrain;
       }
 
       // Not in React Query cache - fetch from API

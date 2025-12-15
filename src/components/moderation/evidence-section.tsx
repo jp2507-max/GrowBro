@@ -22,10 +22,10 @@ export function EvidenceSection({
 
   return (
     <View className="mb-6">
-      <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-neutral-100">
+      <Text className="mb-2 text-sm font-medium text-text-primary">
         {t('appeals.label.evidence')}
       </Text>
-      <Text className="mb-2 text-xs text-neutral-600 dark:text-neutral-400">
+      <Text className="mb-2 text-xs text-text-secondary">
         {t('appeals.hint.evidence')}
       </Text>
 
@@ -56,10 +56,10 @@ export function EvidenceSection({
           {evidenceUrls.map((url, index) => (
             <View
               key={index}
-              className="flex-row items-center justify-between rounded-lg bg-neutral-100 p-2 dark:bg-charcoal-900"
+              className="flex-row items-center justify-between rounded-lg bg-card p-2"
             >
               <Text
-                className="flex-1 text-sm text-charcoal-950 dark:text-neutral-100"
+                className="flex-1 text-sm text-text-primary"
                 numberOfLines={1}
               >
                 {url}
@@ -76,7 +76,7 @@ export function EvidenceSection({
         </View>
       )}
 
-      <Text className="mt-2 text-xs text-neutral-500 dark:text-neutral-500">
+      <Text className="mt-2 text-xs text-text-secondary">
         {t('appeals.notice.evidenceOptional')} ({evidenceUrls.length}/5)
       </Text>
     </View>

@@ -64,15 +64,15 @@ export function PlantAssessmentHistorySection({
       <Pressable
         accessibilityRole="button"
         onPress={toggleExpanded}
-        className="flex-row items-center justify-between rounded-lg border border-neutral-200 bg-white p-4 active:opacity-70 dark:border-neutral-700 dark:bg-neutral-900"
+        className="flex-row items-center justify-between rounded-lg border border-border bg-card p-4 active:opacity-70"
         testID={`${testID}-header`}
       >
         <View className="flex-1">
-          <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+          <Text className="text-base font-semibold text-text-primary">
             {translate('plants.assessmentHistory.title')}
           </Text>
           {count !== null && (
-            <Text className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-400">
+            <Text className="mt-0.5 text-sm text-text-secondary">
               {count === 0
                 ? translate('plants.assessmentHistory.count_zero')
                 : count === 1
@@ -85,19 +85,19 @@ export function PlantAssessmentHistorySection({
             </Text>
           )}
         </View>
-        <Text className="text-xl text-neutral-600 dark:text-neutral-400">
+        <Text className="text-xl text-text-secondary">
           {expanded ? '▼' : '▶'}
         </Text>
       </Pressable>
 
       {expanded && (
-        <View className="mt-2 rounded-lg border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-700 dark:bg-neutral-900">
+        <View className="mt-2 rounded-lg border border-border bg-card p-3">
           {count === 0 ? (
             <View className="items-center py-6">
-              <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+              <Text className="text-sm text-text-secondary">
                 {translate('plants.assessmentHistory.count_zero')}
               </Text>
-              <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
+              <Text className="mt-1 text-xs text-text-secondary">
                 {translate('plants.assessmentHistory.emptyDescription')}
               </Text>
             </View>

@@ -242,4 +242,50 @@ export class CachedStrainsRepository {
       newestEntry: newestTimestamp ? new Date(newestTimestamp) : null,
     };
   }
+
+  /**
+   * Find a single strain by id or slug across cached pages.
+   * Skips expired entries to avoid stale data.
+   */
+  async findStrainByIdOrSlug(idOrSlug: string): Promise<Strain | null> {
+    const all = await this.collection.query().fetch();
+    const now = Date.now();
+
+    const expiredEntries: CachedStrainModel[] = [];
+    let foundMatch: Strain | null = null;
+
+    for (const entry of all) {
+      if (entry.expiresAt < now) {
+        expiredEntries.push(entry);
+        continue;
+      }
+
+      if (!foundMatch) {
+        const match = entry.parsedStrains.find(
+          (strain) => strain.id === idOrSlug || strain.slug === idOrSlug
+        );
+        if (match) {
+          foundMatch = match;
+        }
+      }
+    }
+
+    // Clean up expired entries in a single transaction
+    if (expiredEntries.length > 0) {
+      try {
+        await this.database.write(async () => {
+          await Promise.all(
+            expiredEntries.map((entry) => entry.destroyPermanently())
+          );
+        });
+      } catch (error) {
+        console.error(
+          `[CachedStrainsRepository] Failed to delete ${expiredEntries.length} expired entries:`,
+          error
+        );
+      }
+    }
+
+    return foundMatch;
+  }
 }

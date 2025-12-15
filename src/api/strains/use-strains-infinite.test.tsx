@@ -9,14 +9,40 @@ import { act, renderHook, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
 import { getStrainsApiClient } from './client';
+import { fetchStrainsFromSupabase } from './supabase-list';
 import type { StrainsResponse } from './types';
 import { useStrainsInfinite } from './use-strains-infinite';
+import { useOfflineAwareStrains } from './use-strains-infinite-with-cache';
 
 // Mock the API client
 jest.mock('./client');
+jest.mock('./supabase-list', () => ({
+  fetchStrainsFromSupabase: jest.fn(),
+  mapSupabaseRowToStrain: jest.fn(),
+}));
+jest.mock('@/lib/watermelon-models/cached-strains-repository', () => ({
+  CachedStrainsRepository: jest.fn().mockImplementation(() => ({
+    cachePage: jest.fn().mockResolvedValue(undefined),
+    getCacheStats: jest.fn(),
+    getCachedStrains: jest.fn(),
+    clearExpiredCache: jest.fn(),
+    clearAllCache: jest.fn(),
+    findStrainByIdOrSlug: jest.fn(),
+  })),
+}));
+jest.mock('@/lib/watermelon', () => ({
+  database: {},
+}));
+jest.mock('@/lib/hooks/use-network-status', () => ({
+  useNetworkStatus: () => ({ isInternetReachable: true }),
+}));
 const mockGetStrainsApiClient = getStrainsApiClient as jest.MockedFunction<
   typeof getStrainsApiClient
 >;
+const mockFetchStrainsFromSupabase =
+  fetchStrainsFromSupabase as jest.MockedFunction<
+    typeof fetchStrainsFromSupabase
+  >;
 
 const mockClient = {
   getStrains: jest.fn(),
@@ -81,6 +107,8 @@ describe('useStrainsInfinite', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetStrainsApiClient.mockReturnValue(mockClient as any);
+    mockFetchStrainsFromSupabase.mockReset();
+    mockClient.getStrains.mockReset();
   });
 
   describe('initial fetch', () => {
@@ -347,6 +375,59 @@ describe('useStrainsInfinite', () => {
       await waitFor(() => {
         expect(result.current.data?.pages[0].data[0].name).toBe('Blue Dream');
       });
+    });
+  });
+
+  describe('useOfflineAwareStrains (Supabase-first)', () => {
+    test('fetches from Supabase before calling API', async () => {
+      mockFetchStrainsFromSupabase.mockResolvedValueOnce(mockStrainsResponse);
+
+      const { result } = renderHook(
+        () =>
+          useOfflineAwareStrains({
+            searchQuery: '',
+            filters: {},
+            pageSize: 20,
+          }),
+        {
+          wrapper: createWrapper(),
+        }
+      );
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(mockFetchStrainsFromSupabase).toHaveBeenCalledTimes(1);
+      expect(mockClient.getStrains).not.toHaveBeenCalled();
+      expect(result.current.data?.pages[0].data[0].id).toBe('strain-1');
+    });
+
+    test('falls back to API when Supabase fails', async () => {
+      mockFetchStrainsFromSupabase.mockRejectedValueOnce(
+        new Error('supabase failure')
+      );
+      mockClient.getStrains.mockResolvedValueOnce(mockStrainsResponse);
+
+      const { result } = renderHook(
+        () =>
+          useOfflineAwareStrains({
+            searchQuery: '',
+            filters: {},
+            pageSize: 20,
+          }),
+        {
+          wrapper: createWrapper(),
+        }
+      );
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(mockFetchStrainsFromSupabase).toHaveBeenCalledTimes(1);
+      expect(mockClient.getStrains).toHaveBeenCalledTimes(1);
+      expect(result.current.data?.pages[0].data[0].id).toBe('strain-1');
     });
   });
 

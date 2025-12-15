@@ -1,7 +1,7 @@
 import { BlurView } from 'expo-blur';
 import { Link } from 'expo-router';
 import * as React from 'react';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, useColorScheme } from 'react-native';
 import Animated, {
   ReduceMotion,
   useAnimatedStyle,
@@ -45,7 +45,7 @@ const StrainCardContent = React.memo<{
 }>(({ strain, scaledSizes, isLargeTextMode }) => (
   <View className="gap-1 px-4 pb-4 pt-3">
     <Text
-      className="font-bold text-neutral-900 dark:text-neutral-50"
+      className="font-bold text-text-primary"
       style={{ fontSize: scaledSizes.xl }}
       numberOfLines={isLargeTextMode ? 3 : 1}
       allowFontScaling={true}
@@ -56,7 +56,7 @@ const StrainCardContent = React.memo<{
     {strain.description?.[0] && (
       <Text
         numberOfLines={2}
-        className="leading-tight text-neutral-500 dark:text-neutral-400"
+        className="leading-tight text-text-secondary"
         style={{ fontSize: scaledSizes.sm }}
         allowFontScaling={true}
         maxFontSizeMultiplier={1.5}
@@ -73,6 +73,8 @@ const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 export const StrainCard = React.memo<Props>(({ strain, testID }) => {
   const { scaledSizes, isLargeTextMode } = useDynamicType();
+  const colorScheme = useColorScheme();
+  const blurTint = colorScheme === 'dark' ? 'dark' : 'light';
 
   const scale = useSharedValue(1);
 
@@ -126,10 +128,10 @@ export const StrainCard = React.memo<Props>(({ strain, testID }) => {
         style={animatedStyle}
       >
         <View
-          className="overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-neutral-900"
+          className="overflow-hidden rounded-3xl bg-card shadow-sm"
           style={styles.card}
         >
-          <View className="relative h-52 w-full bg-neutral-100 dark:bg-neutral-800">
+          <View className="relative h-52 w-full bg-card">
             <AnimatedImage
               className="size-full"
               contentFit="cover"
@@ -139,7 +141,7 @@ export const StrainCard = React.memo<Props>(({ strain, testID }) => {
 
             {/* Favorite Button */}
             <View className="absolute right-3 top-3 overflow-hidden rounded-full">
-              <BlurView intensity={30} tint="dark" className="p-1.5">
+              <BlurView intensity={30} tint={blurTint} className="p-1.5">
                 <FavoriteButtonConnected
                   strainId={strain.id}
                   strain={strain}
@@ -150,7 +152,7 @@ export const StrainCard = React.memo<Props>(({ strain, testID }) => {
 
             {/* Overlay Badges */}
             <View className="absolute bottom-3 left-3 overflow-hidden rounded-xl">
-              <BlurView intensity={30} tint="dark" className="px-2 py-1.5">
+              <BlurView intensity={30} tint={blurTint} className="px-2 py-1.5">
                 <StrainBadges strain={strain} />
               </BlurView>
             </View>

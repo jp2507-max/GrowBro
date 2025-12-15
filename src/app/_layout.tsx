@@ -60,6 +60,7 @@ import { trackOnboardingStart } from '@/lib/compliance/onboarding-telemetry';
 import { useRootStartup } from '@/lib/hooks/use-root-startup';
 import { initializeJanitor } from '@/lib/media/photo-janitor';
 import { getReferencedPhotoUris } from '@/lib/media/photo-storage-helpers';
+import { NativeWindThemeProvider } from '@/lib/nativewind-theme-provider';
 import {
   initializeSentryPerformance,
   isSentryPerformanceInitialized,
@@ -528,9 +529,7 @@ async function initializeAuthAndStates(): Promise<void> {
 }
 
 function BootSplash(): React.ReactElement {
-  return (
-    <View className="flex-1 items-center justify-center bg-white dark:bg-gray-900" />
-  );
+  return <View className="flex-1 items-center justify-center bg-background" />;
 }
 
 function AppStack(): React.ReactElement {
@@ -572,16 +571,18 @@ function Providers({ children }: ProvidersProps): React.ReactElement {
       style={styles.container}
       className={theme.dark ? `dark` : undefined}
     >
-      <KeyboardProvider>
-        <ThemeProvider value={theme}>
-          <APIProvider>
-            <BottomSheetModalProvider>
-              {children}
-              <FlashMessage position="top" />
-            </BottomSheetModalProvider>
-          </APIProvider>
-        </ThemeProvider>
-      </KeyboardProvider>
+      <NativeWindThemeProvider>
+        <KeyboardProvider>
+          <ThemeProvider value={theme}>
+            <APIProvider>
+              <BottomSheetModalProvider>
+                {children}
+                <FlashMessage position="top" />
+              </BottomSheetModalProvider>
+            </APIProvider>
+          </ThemeProvider>
+        </KeyboardProvider>
+      </NativeWindThemeProvider>
     </GestureHandlerRootView>
   );
 }

@@ -659,7 +659,7 @@ function normalizeSynonyms(synonyms: unknown): string[] {
  */
 function extractGeneticsInfo(apiStrain: RawApiStrain): {
   geneticsStr?: string;
-  geneticsObj?: { parents?: unknown[]; lineage?: string };
+  geneticsObj?: { parents?: unknown; lineage?: string };
 } {
   const geneticsStr =
     typeof apiStrain.genetics === 'string' ? apiStrain.genetics : undefined;

@@ -75,7 +75,9 @@ function sortFavorites(
     if (sortBy === 'dateAdded') {
       comparison = a.addedAt - b.addedAt;
     } else if (sortBy === 'name') {
-      comparison = a.snapshot.name.localeCompare(b.snapshot.name);
+      const nameA = a.snapshot.name || a.snapshot.slug || a.snapshot.id || '';
+      const nameB = b.snapshot.name || b.snapshot.slug || b.snapshot.id || '';
+      comparison = nameA.localeCompare(nameB);
     } else if (sortBy === 'thc') {
       const valA = numericRepresentativeFromTHCDisplay(a.snapshot.thc_display);
       const valB = numericRepresentativeFromTHCDisplay(b.snapshot.thc_display);
@@ -103,14 +105,18 @@ function sortFavorites(
 }
 
 function createStrainFromSnapshot(item: FavoriteStrain) {
+  const fallbackSlug = item.snapshot.slug || item.snapshot.id;
+  const fallbackName =
+    item.snapshot.name || item.snapshot.slug || item.snapshot.id;
+
   return {
     id: item.snapshot.id,
-    name: item.snapshot.name,
+    name: fallbackName,
     race: item.snapshot.race,
     thc_display: item.snapshot.thc_display,
     imageUrl: item.snapshot.imageUrl,
     // Fallback to ID for favorites saved before slug was added to snapshot
-    slug: item.snapshot.slug || item.snapshot.id,
+    slug: fallbackSlug,
     synonyms: [],
     link: '',
     description: [],

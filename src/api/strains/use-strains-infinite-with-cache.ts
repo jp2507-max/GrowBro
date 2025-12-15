@@ -15,7 +15,8 @@ import { database } from '@/lib/watermelon';
 import { CachedStrainsRepository } from '@/lib/watermelon-models/cached-strains-repository';
 
 import { getStrainsApiClient } from './client';
-import type { StrainFilters, StrainsResponse } from './types';
+import { fetchStrainsFromSupabase } from './supabase-list';
+import type { GetStrainsParams, StrainFilters, StrainsResponse } from './types';
 
 export type UseStrainsInfiniteWithCacheParams = {
   searchQuery?: string;
@@ -93,6 +94,7 @@ async function fetchAndCache(params: {
   return { ...response, fromCache: false };
 }
 
+// eslint-disable-next-line max-lines-per-function
 export function useStrainsInfiniteWithCache({
   variables,
 }: {
@@ -110,6 +112,7 @@ export function useStrainsInfiniteWithCache({
     queryFn: async ({ pageParam = { index: 0 }, signal }) => {
       const client = getStrainsApiClient();
       const repo = getCacheRepository();
+      const pageIndex = pageParam?.index ?? 0;
 
       const cacheParams = {
         searchQuery: variables?.searchQuery,
@@ -117,6 +120,36 @@ export function useStrainsInfiniteWithCache({
         sortBy: variables?.sortBy,
         sortDirection: variables?.sortDirection,
       };
+
+      try {
+        const supabasePage = await fetchStrainsFromSupabase({
+          searchQuery: variables?.searchQuery,
+          filters: variables?.filters,
+          pageSize: variables?.pageSize ?? 20,
+          page: pageIndex,
+          sortBy: variables?.sortBy as GetStrainsParams['sortBy'] | undefined,
+          sortDirection: variables?.sortDirection,
+          signal,
+        });
+
+        if (supabasePage.data?.length) {
+          await repo
+            .cachePage(cacheParams, pageIndex, supabasePage.data)
+            .catch((err) =>
+              console.warn(
+                '[useStrainsInfiniteWithCache] Cache write failed:',
+                err
+              )
+            );
+        }
+
+        return { ...supabasePage, fromCache: false };
+      } catch (error) {
+        console.info(
+          '[useStrainsInfiniteWithCache] Supabase fetch failed, falling back to API',
+          error
+        );
+      }
 
       try {
         return await fetchAndCache({

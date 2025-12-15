@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * Note: Theme colors are injected at runtime via NativeWindThemeProvider
+ * using NativeWind's vars() function. See src/lib/nativewind-theme-provider.tsx
+ */

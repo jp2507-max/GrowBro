@@ -6,10 +6,7 @@ alwaysApply: true
 
 ## applyTo: '**'
 
-# 🎬 React Native Reanimated Production Guidelines (4.x, Expo SDK 54) — GrowBro Edition
-
-*Last updated: Sep 2025 • Agent‑ready, compact but comprehensive*
-
+# 🎬 React Native Reanimated Production Guidelines (4.x, Expo SDK 54)
 ---
 
 ## 🚀 Worklets in 4.x — What runs on the UI thread
@@ -64,28 +61,38 @@ const makeStyle = isOn
 
 ## 🧩 GrowBro repo‑specific styling conventions
 
-* **Tokens source**: `src/components/ui/colors.js` (wired via Tailwind config).
+- **Tokens**: `src/components/ui/colors.js` → Tailwind config.
+  - Palettes: `primary`, `neutral`, `charcoal`, `ink` (defined in `src/components/ui/colors.js`; used for semantic roles in `src/lib/theme-tokens.ts`), `terracotta`, `sky`, `indigo`, `success`, `warning`, `danger`.
+  - Prefer tokens (`bg-primary-600`, `text-ink-900`) over raw hex. The `ink` palette is used for text and icon colors, and is defined as a range of dark grays with a slight blue undertone.
+- **Fonts**: `font-inter` default; override via classNames.
+- **Dark mode**: `darkMode: 'class'`. Runtime theming via `src/lib/nativewind-theme-provider.tsx`.
+- **Variants**: `tailwind-variants` `tv()`; static layout in slots, variants for tokens.
+- **SVG**: `cssInterop` enables `className` (see `src/components/ui/index.tsx`).
+- **Class merging**: `tailwind-merge`; no manual concat.
+- **Native props**: import colors from `src/components/ui/colors`.
+- **Linting**: `eslint-plugin-tailwindcss` enforces order.
 
-  * Palettes: `primary`, `neutral`, `charcoal`, `success`, `warning`, `danger`.
-  * Prefer tokens (e.g., `bg-primary-600`, `text-neutral-100`, `bg-charcoal-950`) over raw hex.
-* **Fonts**: default `font-inter`; override via class names, not inline styles.
-* **Dark mode**: `darkMode: 'class'`. Pair light/dark classes. App themes mirror tokens via `src/lib/use-theme-config.tsx`.
-* **Variants**: compose with `tailwind-variants` `tv()`; keep layout static in slots, switch tokens via variants; allow overrides with `slots.container({ className })`.
-* **SVG**: `cssInterop` enables `className` on `react-native-svg` (see `src/components/ui/index.tsx`).
-* **Class merging**: use `tailwind-merge`; avoid manual concatenation.
-* **Native props w/ colors**: import from `@/components/ui/colors` (e.g., `placeholderTextColor`).
-* **Linting**: `eslint-plugin-tailwindcss` enforces class order.
-* **Add tokens** by editing `src/components/ui/colors.js`; Tailwind already imports it.
+### 🌈 Theme tokens workflow
 
-### 🌈 Theme tokens workflow (GrowBro standard)
+- **Palette**: `src/components/ui/colors.js` → shared by Tailwind & runtime.
+- **Runtime**: `src/lib/nativewind-theme-provider.tsx` injects CSS vars via `vars()`.
+- **Semantic classes** (auto light/dark): `bg-background`, `bg-card`, `border-border`, `text-text-primary`, `text-text-secondary`, `text-text-inverse`, `bg-action-primary`, `bg-action-cta`, `ring-focus-ring`.
+- **JS tokens**: `src/lib/theme-tokens.ts` → raw values for React Navigation & native `style` props. Keep in sync with `src/lib/nativewind-theme-provider.tsx`.
+- **Rule**: Tailwind for static; runtime tokens for `style` props & native APIs.
 
-* **Palette first**: tweak shades in `src/components/ui/colors.js`. Tailwind classes & runtime tokens consume the same palette → one change propagates everywhere.
-* **Semantic roles**: `src/lib/theme-tokens.ts` defines light/dark roles for `surface`, `text`, and `action` (primary, CTA, link, focus ring). Use these instead of sprinkling palette indices inside components. Navigation reads from `themeRoles`.
-* **Tailwind vs tokens**: Tailwind for **static layout** (`bg-primary-600`); **runtime** decisions use tokens (React Navigation themes, FlashMessage, focus rings, `style` props).
-* **States & accessibility**: role tokens include hover/background/content + focus‑ring colors; always pair CTA backgrounds with their **content** color for readable text.
-* **Adding new roles**: extend `themeRoles` (document the intent) before ad‑hoc palette references — keeps contrast & theming audit‑friendly.
+### ⚠️ Semantic tokens vs explicit palette (IMPORTANT)
 
----
+**Always prefer semantic tokens** for themed surfaces:
+
+````tsx
+// ✅ CORRECT – uses semantic tokens, auto-resolves light/dark via NativeWindThemeProvider
+<View className="border border-border bg-card shadow-lg">
+
+// ❌ WRONG – manual dark: overrides duplicate theme logic, risk drift
+<View className="border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+
+**Palette tokens:** accents, interactive states, decorative one-offs only.
+**Note:** `border-border` auto-maps per theme; manual `dark:` risks drift.
 
 ## ✅ Do / Avoid (Quick)
 

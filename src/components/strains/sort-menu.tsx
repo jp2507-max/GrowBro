@@ -43,7 +43,7 @@ function SortMenuContent({
   return (
     <>
       <View className="mb-6">
-        <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-50">
+        <Text className="mb-3 text-base font-semibold text-text-primary">
           {translate('strains.sort.sort_by_label')}
         </Text>
         <View className="gap-2">
@@ -63,7 +63,7 @@ function SortMenuContent({
 
       {hasSortOptions && (
         <View className="mb-6">
-          <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-50">
+          <Text className="mb-3 text-base font-semibold text-text-primary">
             {translate('strains.sort.direction_label')}
           </Text>
           <View className="flex-row gap-2">
@@ -104,7 +104,7 @@ function SortMenuButtons({
   onApply,
 }: SortMenuButtonsProps) {
   return (
-    <View className="absolute inset-x-0 bottom-0 border-t border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+    <View className="absolute inset-x-0 bottom-0 border-t border-border bg-card p-4">
       <View className="flex-row gap-3">
         <View className="flex-1">
           <Button

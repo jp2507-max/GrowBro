@@ -39,9 +39,9 @@ type ThemeRoles = {
 export const themeRoles: ThemeRoles = {
   surface: {
     light: {
-      background: colors.neutral[100],
-      card: colors.neutral[50],
-      border: colors.neutral[400],
+      background: colors.neutral[50], // Was neutral[100]
+      card: colors.white, // Was neutral[50]
+      border: colors.neutral[200], // Was neutral[400]
     },
     dark: {
       background: colors.charcoal[950],
@@ -51,7 +51,7 @@ export const themeRoles: ThemeRoles = {
   },
   text: {
     light: {
-      primary: colors.ink[800],
+      primary: colors.ink[900], // Was ink[800]
       secondary: colors.ink[700],
       inverse: colors.white,
     },
@@ -92,17 +92,17 @@ export const themeRoles: ThemeRoles = {
     },
     link: {
       color: {
-        light: colors.sky[600],
-        dark: colors.sky[300],
+        light: colors.primary[600], // Was sky[600]
+        dark: colors.primary[300], // Was sky[300]
       },
       hover: {
-        light: colors.sky[700],
-        dark: colors.sky[400],
+        light: colors.primary[700], // Was sky[700]
+        dark: colors.primary[400], // Was sky[400]
       },
     },
     focusRing: {
-      light: colors.sky[400],
-      dark: colors.sky[300],
+      light: colors.primary[400], // Was sky[400]
+      dark: colors.primary[300], // Was sky[300]
     },
   },
 };

@@ -41,7 +41,7 @@ function SortOption({
       className={`rounded-lg border p-3 ${
         selected
           ? 'dark:bg-primary-950 border-primary-600 bg-primary-50'
-          : 'border-neutral-300 bg-white dark:border-neutral-700 dark:bg-neutral-900'
+          : 'border-border bg-card'
       }`}
       accessibilityRole="radio"
       accessibilityState={{ checked: selected }}
@@ -51,7 +51,7 @@ function SortOption({
         className={
           selected
             ? 'text-primary-600 dark:text-primary-400'
-            : 'text-neutral-900 dark:text-neutral-50'
+            : 'text-text-primary'
         }
       >
         {translate(option.tx)}
@@ -77,7 +77,7 @@ function DirectionButton({
       className={`flex-1 rounded-lg border p-3 ${
         selected
           ? 'dark:bg-primary-950 border-primary-600 bg-primary-50'
-          : 'border-neutral-300 bg-white dark:border-neutral-700 dark:bg-neutral-900'
+          : 'border-border bg-card'
       }`}
       accessibilityRole="radio"
       accessibilityState={{ checked: selected }}
@@ -87,7 +87,7 @@ function DirectionButton({
         className={
           selected
             ? 'text-center text-primary-600 dark:text-primary-400'
-            : 'text-center text-neutral-900 dark:text-neutral-50'
+            : 'text-center text-text-primary'
         }
       >
         {translate(tx)}
@@ -129,11 +129,11 @@ export const FavoritesSortMenu = React.forwardRef<
       <Modal ref={ref} snapPoints={['50%']}>
         <View className="p-4">
           <Text
-            className="mb-4 text-xl font-semibold text-neutral-900 dark:text-neutral-50"
+            className="mb-4 text-xl font-semibold text-text-primary"
             tx="strains.favorites.sort.title"
           />
 
-          <Text className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-200">
+          <Text className="mb-2 text-sm font-medium text-text-secondary">
             {translate('strains.sort.sort_by_label')}
           </Text>
           <View className="mb-4 gap-2">
@@ -147,7 +147,7 @@ export const FavoritesSortMenu = React.forwardRef<
             ))}
           </View>
 
-          <Text className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-200">
+          <Text className="mb-2 text-sm font-medium text-text-secondary">
             {translate('strains.sort.direction_label')}
           </Text>
           <View className="mb-4 flex-row gap-2">

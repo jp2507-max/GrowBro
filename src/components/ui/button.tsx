@@ -1,6 +1,12 @@
 import React from 'react';
 import type { PressableProps, View } from 'react-native';
 import { ActivityIndicator, Pressable } from 'react-native';
+import Animated, {
+  ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import type { VariantProps } from 'tailwind-variants';
 import { tv } from 'tailwind-variants';
 
@@ -8,6 +14,13 @@ import type { TxKeyPath } from '@/lib/i18n';
 import { translate } from '@/lib/i18n';
 
 import { Text } from './text';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+/** Scale factor for press animation (0.96 = 4% shrink) */
+const PRESS_SCALE = 0.96;
+/** Duration for press animation in ms */
+const PRESS_DURATION = 120;
 
 const button = tv({
   slots: {
@@ -48,6 +61,12 @@ const button = tv({
         label: 'text-black',
         indicator: 'text-black',
       },
+      /** Pill-shaped button for header actions */
+      pill: {
+        container: 'rounded-full bg-primary-600',
+        label: 'text-white',
+        indicator: 'text-white',
+      },
     },
     size: {
       default: {
@@ -64,6 +83,11 @@ const button = tv({
         indicator: 'h-2',
       },
       icon: { container: 'size-9' },
+      /** Circular button for icon-only actions */
+      circle: {
+        container: 'size-10 rounded-full px-0',
+        label: 'text-base',
+      },
     },
     disabled: {
       true: {
@@ -96,6 +120,8 @@ interface Props extends ButtonVariants, Omit<PressableProps, 'disabled'> {
   loading?: boolean;
   className?: string;
   textClassName?: string;
+  /** Disable press animation (e.g., for static buttons) */
+  noAnimation?: boolean;
 }
 
 export const Button = React.forwardRef<View, Props>(
@@ -110,10 +136,48 @@ export const Button = React.forwardRef<View, Props>(
       className = '',
       testID,
       textClassName = '',
+      noAnimation = false,
+      onPressIn,
+      onPressOut,
       ...props
     },
     ref
   ) => {
+    const scale = useSharedValue(1);
+
+    const animatedStyle = useAnimatedStyle(
+      () => ({
+        transform: [{ scale: scale.value }],
+      }),
+      []
+    );
+
+    const handlePressIn = React.useCallback(
+      (e: Parameters<NonNullable<PressableProps['onPressIn']>>[0]) => {
+        if (!noAnimation && !disabled && !loading) {
+          scale.value = withTiming(PRESS_SCALE, {
+            duration: PRESS_DURATION,
+            reduceMotion: ReduceMotion.System,
+          });
+        }
+        onPressIn?.(e);
+      },
+      [scale, noAnimation, disabled, loading, onPressIn]
+    );
+
+    const handlePressOut = React.useCallback(
+      (e: Parameters<NonNullable<PressableProps['onPressOut']>>[0]) => {
+        if (!noAnimation && !disabled && !loading) {
+          scale.value = withTiming(1, {
+            duration: PRESS_DURATION,
+            reduceMotion: ReduceMotion.System,
+          });
+        }
+        onPressOut?.(e);
+      },
+      [scale, noAnimation, disabled, loading, onPressOut]
+    );
+
     const styles = React.useMemo(
       () => button({ variant, disabled, size }),
       [variant, disabled, size]
@@ -123,13 +187,16 @@ export const Button = React.forwardRef<View, Props>(
     const defaultA11yLabel = tx ? translate(tx) : text;
 
     return (
-      <Pressable
+      <AnimatedPressable
         disabled={disabled || loading}
         className={styles.container({ className })}
+        style={animatedStyle}
         {...props}
         ref={ref}
         testID={testID}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         accessibilityRole={props.accessibilityRole ?? 'button'}
         accessibilityLabel={
           props.accessibilityLabel ?? defaultA11yLabel ?? undefined
@@ -160,7 +227,7 @@ export const Button = React.forwardRef<View, Props>(
             )}
           </>
         )}
-      </Pressable>
+      </AnimatedPressable>
     );
   }
 );

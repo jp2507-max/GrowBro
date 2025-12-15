@@ -21,17 +21,17 @@ export function CalendarEmptyState({
         className="items-center gap-4"
       >
         <Text
-          className="text-center text-xl font-semibold text-neutral-900 dark:text-neutral-50"
+          className="text-center text-xl font-semibold text-text-primary"
           tx="calendar.empty_state.title"
         />
 
-        <View className="w-full gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-800">
+        <View className="w-full gap-3 rounded-2xl border border-border bg-card p-4">
           <Text
-            className="text-base font-medium text-neutral-900 dark:text-neutral-50"
+            className="text-base font-medium text-text-primary"
             tx="calendar.empty_state.sample_title"
           />
           <Text
-            className="text-sm text-neutral-600 dark:text-neutral-300"
+            className="text-sm text-text-secondary"
             tx="calendar.empty_state.sample_description"
           />
         </View>

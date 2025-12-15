@@ -15,11 +15,11 @@ import { isFeatureEnabled } from '@/lib/feature-flags';
 import { useFavorites } from '@/lib/strains/use-favorites';
 import type { Strain } from '@/types/strains';
 
-// Mock environment
+// Mock environment - strains API credentials for dev fallback (production always uses proxy)
 jest.mock('@env', () => ({
   Env: {
     SUPABASE_URL: 'https://test.supabase.co',
-    STRAINS_USE_PROXY: 'false',
+    STRAINS_USE_PROXY: false, // Test with direct API access
     STRAINS_API_URL: 'https://api.test.com',
     STRAINS_API_KEY: 'test-key',
     STRAINS_API_HOST: 'test-host',

@@ -11,7 +11,21 @@ module.exports = {
       fontFamily: {
         inter: ['Inter'],
       },
-      colors,
+      colors: {
+        ...colors,
+        // Semantic color utilities (reference CSS variables in global.css)
+        background: 'var(--color-background)',
+        card: 'var(--color-card)',
+        border: 'var(--color-border)',
+        'text-primary': 'var(--color-text-primary)',
+        'text-secondary': 'var(--color-text-secondary)',
+        'text-inverse': 'var(--color-text-inverse)',
+        'action-primary': 'var(--color-action-primary)',
+        'action-primary-hover': 'var(--color-action-primary-hover)',
+        'action-cta': 'var(--color-action-cta)',
+        'action-cta-hover': 'var(--color-action-cta-hover)',
+        'focus-ring': 'var(--color-focus-ring)',
+      },
     },
   },
   plugins: [],

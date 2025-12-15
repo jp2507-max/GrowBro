@@ -1,198 +1,61 @@
 import { useFocusEffect } from '@react-navigation/native';
-import { FlashList } from '@shopify/flash-list';
-import { useRouter } from 'expo-router';
-import React, { useCallback } from 'react';
-import { InteractionManager, Platform } from 'react-native';
+import { useNavigation, useRouter } from 'expo-router';
+import React, { useCallback, useLayoutEffect } from 'react';
+import { ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { Post } from '@/api';
-import { usePosts } from '@/api';
-import { CannabisEducationalBanner } from '@/components/cannabis-educational-banner';
-import { Card } from '@/components/card';
+import type { Plant } from '@/api';
+import { usePlantsInfinite } from '@/api';
 import { ActivationChecklist } from '@/components/home/activation-checklist';
-import {
-  ActivityIndicator,
-  FocusAwareStatusBar,
-  ListEmptyState,
-  Pressable,
-  Text,
-  View,
-} from '@/components/ui';
-import { useAnalytics } from '@/lib';
-import { NoopAnalytics } from '@/lib/analytics';
+import { AddPlantFab } from '@/components/home/add-plant-fab';
+import { useTaskSnapshot } from '@/components/home/home-dashboard';
+import { HomeEmptyState } from '@/components/home/home-empty-state';
+import { HomeHeader } from '@/components/home/home-header';
+import { PlantsSection } from '@/components/home/plants-section';
+import { TaskBanner } from '@/components/home/task-banner';
+import { PlantsErrorCard } from '@/components/plants';
+import { FocusAwareStatusBar, View } from '@/components/ui';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
+import type { ActivationAction } from '@/lib/compliance/activation-state';
 import {
-  type ActivationAction,
   completeActivationAction,
   hydrateActivationState,
 } from '@/lib/compliance/activation-state';
-import { useScreenErrorLogger } from '@/lib/hooks';
-import { translate } from '@/lib/i18n';
-import { consentManager } from '@/lib/privacy/consent-manager';
-import { useThemeConfig } from '@/lib/use-theme-config';
-
-function getNow(): number {
-  if (
-    typeof performance !== 'undefined' &&
-    typeof performance.now === 'function'
-  ) {
-    return performance.now();
-  }
-
-  return Date.now();
-}
 
 const BOTTOM_PADDING_EXTRA = 24;
 
-function useHomeTti(isPending: boolean, isError: boolean, itemCount: number) {
-  const analytics = useAnalytics();
-  const startRef = React.useRef<number>(getNow());
-  const hasLoggedRef = React.useRef(false);
-  const hasConsented = consentManager.hasConsented('analytics');
+function usePlantsData() {
+  const { data, isLoading, isError, refetch } = usePlantsInfinite({
+    variables: { query: '' },
+  });
 
-  React.useEffect(() => {
-    if (hasLoggedRef.current) return;
-    const hasSettled = !isPending || isError || itemCount > 0;
-    if (!hasSettled) return;
+  const plants = React.useMemo<Plant[]>(() => {
+    if (!data?.pages?.length) return [];
+    return data.pages.flatMap((page) => page.results);
+  }, [data?.pages]);
 
-    const finalize = () => {
-      if (hasLoggedRef.current) return;
-      const duration = Math.max(0, getNow() - startRef.current);
-      if (hasConsented && analytics !== NoopAnalytics) {
-        void analytics.track('home_tti_ms', { ms: Math.round(duration) });
-      }
-      hasLoggedRef.current = true;
-    };
-
-    if (Platform.OS === 'web') {
-      finalize();
-      return;
-    }
-
-    const interaction = InteractionManager.runAfterInteractions(finalize);
-    return () => {
-      interaction?.cancel?.();
-    };
-  }, [isError, isPending, itemCount, analytics, hasConsented]);
-}
-
-function useHomeAnalyticsTracking(isPending: boolean, itemCount: number): void {
-  const analytics = useAnalytics();
-  const hasTrackedRef = React.useRef(false);
-  const hasConsented = consentManager.hasConsented('analytics');
-
-  React.useEffect(() => {
-    if (hasTrackedRef.current) return;
-    if (isPending) return;
-    hasTrackedRef.current = true;
-    const widgets: string[] = ['share_update_banner'];
-    if (itemCount > 0) widgets.push('post_list');
-    if (hasConsented && analytics !== NoopAnalytics) {
-      void analytics.track('home_view', { widgets_shown: widgets });
-    }
-  }, [analytics, isPending, itemCount, hasConsented]);
-}
-
-const HomeListHeader = React.memo(function HomeListHeader({
-  onShareUpdatePress,
-  onActivationActionComplete,
-}: {
-  onShareUpdatePress: () => void;
-  onActivationActionComplete: (action: ActivationAction) => void;
-}) {
-  return (
-    <View className="gap-4 px-4 pb-4">
-      <ActivationChecklist onActionComplete={onActivationActionComplete} />
-      <Pressable
-        className="flex-row items-center justify-between rounded-2xl bg-primary-600 p-4"
-        accessibilityRole="button"
-        accessibilityLabel={translate('home.share_update_cta')}
-        accessibilityHint={translate('accessibility.home.share_update_hint')}
-        onPress={onShareUpdatePress}
-        testID="home-share-update-action"
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <View className="flex-1 pr-4">
-          <Text className="text-base font-semibold text-neutral-50">
-            {translate('home.share_update_title')}
-          </Text>
-          <Text className="mt-1 text-sm text-neutral-100/80">
-            {translate('home.share_update_subtitle')}
-          </Text>
-        </View>
-        <Text className="text-sm font-semibold text-neutral-50">
-          {translate('home.share_update_cta')}
-        </Text>
-      </Pressable>
-      <CannabisEducationalBanner />
-    </View>
-  );
-});
-
-const HomeListEmpty = React.memo(function HomeListEmpty({
-  isLoading,
-}: {
-  isLoading: boolean;
-}) {
-  if (isLoading) {
-    return (
-      <View className="flex-1 items-center justify-center gap-2 py-12">
-        <ActivityIndicator testID="feed-loading-indicator" />
-        <Text className="text-sm text-neutral-600 dark:text-neutral-300">
-          {translate('community.loading')}
-        </Text>
-      </View>
-    );
-  }
-  return (
-    <ListEmptyState
-      className="py-12"
-      title={translate('community.list_empty_title')}
-      body={translate('community.list_empty_body')}
-    />
-  );
-});
-
-function HomeErrorState({ onRetry }: { onRetry: () => void }) {
-  const theme = useThemeConfig();
-  return (
-    <View
-      className="flex-1 items-center justify-center gap-4 px-6"
-      style={{ backgroundColor: theme.colors.background }}
-      testID="feed-screen-error"
-    >
-      <FocusAwareStatusBar />
-      <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-        {translate('community.list_error_title')}
-      </Text>
-      <Text className="text-center text-sm text-neutral-600 dark:text-neutral-300">
-        {translate('community.list_error_body')}
-      </Text>
-      <Pressable
-        className="rounded-full bg-primary-600 px-6 py-2"
-        accessibilityRole="button"
-        accessibilityLabel={translate('community.list_retry')}
-        accessibilityHint={translate('accessibility.common.retry_hint')}
-        onPress={onRetry}
-        testID="feed-error-retry"
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Text className="text-sm font-semibold text-neutral-50">
-          {translate('community.list_retry')}
-        </Text>
-      </Pressable>
-    </View>
-  );
+  return {
+    plants,
+    isLoading,
+    isError,
+    refetch,
+  } as const;
 }
 
 export default function Feed() {
   const router = useRouter();
-  const theme = useThemeConfig();
-  const analytics = useAnalytics();
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { grossHeight } = useBottomTabBarHeight();
   const { resetScrollState } = useAnimatedScrollList();
-  const { data, isPending, isError, error, refetch } = usePosts();
-  const listData = React.useMemo(() => data ?? [], [data]);
+  const { snapshot, isLoading: isTaskLoading } = useTaskSnapshot();
+  const {
+    plants,
+    isLoading: isPlantsLoading,
+    isError: isPlantsError,
+    refetch: refetchPlants,
+  } = usePlantsData();
 
   // Reset scroll state on focus so tab bar is always visible on home
   useFocusEffect(
@@ -206,82 +69,74 @@ export default function Feed() {
     hydrateActivationState();
   }, []);
 
-  useScreenErrorLogger(isError ? error : null, {
-    screen: 'home',
-    feature: 'home-feed',
-    action: 'fetch',
-    queryKey: 'posts',
-    metadata: {
-      itemCount: listData.length,
-      isPending,
-    },
-  });
-
-  useHomeTti(isPending, isError, listData.length);
-  useHomeAnalyticsTracking(isPending, listData.length);
-
-  const renderItem = React.useCallback(
-    ({ item }: { item: Post }) => <Card {...item} />,
-    []
-  );
-  const keyExtractor = React.useCallback((item: Post) => String(item.id), []);
-  const getItemType = React.useCallback(
-    (item: Post) => (item.media_uri ? 'post-media' : 'post-text'),
-    []
-  );
-  const onShareUpdatePress = React.useCallback(() => {
-    router.push('/add-post');
-  }, [router]);
-  const onRetry = React.useCallback(() => {
-    void refetch();
-  }, [refetch]);
   const onActivationActionComplete = React.useCallback(
     (action: ActivationAction) => {
-      // Mark action as completed
       completeActivationAction(action);
-
-      // Track telemetry if consented
-      const hasConsented = consentManager.hasConsented('analytics');
-      if (hasConsented && analytics !== NoopAnalytics) {
-        void analytics.track('activation_action_complete', {
-          action,
-          screen: 'home',
-        });
-      }
     },
-    [analytics]
+    []
   );
+
+  const onPlantPress = React.useCallback(
+    (id: string) => {
+      router.push(`/plants/${id}`);
+    },
+    [router]
+  );
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      header: () => (
+        <HomeHeader
+          plantCount={plants.length}
+          taskCount={snapshot.today + snapshot.overdue}
+          insets={insets}
+        />
+      ),
+    });
+  }, [insets, navigation, plants.length, snapshot.overdue, snapshot.today]);
+
   const contentPaddingBottom = React.useMemo(
     () => ({ paddingBottom: grossHeight + BOTTOM_PADDING_EXTRA }),
     [grossHeight]
   );
 
-  if (isError) {
-    return <HomeErrorState onRetry={onRetry} />;
-  }
+  const isLoading = isPlantsLoading;
+  const hasPlantsError = isPlantsError && !isLoading && plants.length > 0;
+  const isEmpty = !isLoading && plants.length === 0;
 
   return (
-    <View
-      className="flex-1"
-      style={{ backgroundColor: theme.colors.background }}
-      testID="feed-screen"
-    >
+    <View className="flex-1 bg-background" testID="feed-screen">
       <FocusAwareStatusBar />
-      <FlashList
-        data={listData}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        getItemType={getItemType}
+
+      <ScrollView
         contentContainerStyle={contentPaddingBottom}
-        ListHeaderComponent={
-          <HomeListHeader
-            onShareUpdatePress={onShareUpdatePress}
-            onActivationActionComplete={onActivationActionComplete}
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="gap-4 px-4 pb-4">
+          <ActivationChecklist onActionComplete={onActivationActionComplete} />
+
+          <TaskBanner
+            overdue={snapshot.overdue}
+            today={snapshot.today}
+            isLoading={isTaskLoading}
           />
-        }
-        ListFooterComponent={<View style={{ height: BOTTOM_PADDING_EXTRA }} />}
-        ListEmptyComponent={<HomeListEmpty isLoading={isPending} />}
-      />
+
+          {hasPlantsError ? (
+            <PlantsErrorCard onRetry={refetchPlants} className="mb-2" />
+          ) : null}
+
+          {isEmpty ? (
+            <HomeEmptyState />
+          ) : (
+            <PlantsSection
+              plants={plants}
+              isLoading={isLoading}
+              onPlantPress={onPlantPress}
+            />
+          )}
+        </View>
+      </ScrollView>
+      <AddPlantFab />
     </View>
   );
 }

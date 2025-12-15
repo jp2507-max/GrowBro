@@ -8,6 +8,7 @@ import {
   type FlashListRef,
   type ListRenderItemInfo,
 } from '@shopify/flash-list';
+import { useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   type NativeScrollEvent,
@@ -39,10 +40,21 @@ interface StrainsListWithCacheProps {
   filters?: StrainFilters;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
-  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
-  listRef?: React.Ref<FlashListRef<Strain>>;
+  onScroll?: (
+    event: NativeSyntheticEvent<NativeScrollEvent> | Record<string, unknown>
+  ) => void;
+  listRef?: React.Ref<FlashListRef<Strain> | FlashListRef<unknown> | null>;
   contentContainerStyle?: FlashListProps<Strain>['contentContainerStyle'];
   testID?: string;
+  onStateChange?: (state: {
+    strains: Strain[];
+    isOffline: boolean;
+    isUsingCache: boolean;
+    isLoading: boolean;
+    isError: boolean;
+    isFetchingNextPage: boolean;
+    hasNextPage: boolean;
+  }) => void;
 }
 
 function generateQueryKey(params: {
@@ -57,7 +69,9 @@ function generateQueryKey(params: {
 function useScrollRestoration(
   queryKey: string,
   strainsLength: number,
-  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void
+  onScroll?: (
+    event: NativeSyntheticEvent<NativeScrollEvent> | Record<string, unknown>
+  ) => void
 ) {
   const { saveScrollPosition, getInitialScrollOffset } =
     useScrollPosition(queryKey);
@@ -82,7 +96,9 @@ function useScrollRestoration(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offset = event.nativeEvent.contentOffset.y;
       saveScrollPosition(offset);
-      if (onScroll) onScroll(event);
+      if (onScroll && typeof onScroll === 'function') {
+        onScroll(event);
+      }
     },
     [saveScrollPosition, onScroll]
   );
@@ -100,6 +116,7 @@ export function StrainsListWithCache({
   listRef,
   contentContainerStyle,
   testID = 'strains-list-with-cache',
+  onStateChange,
 }: StrainsListWithCacheProps) {
   const queryKey = generateQueryKey({
     q: searchQuery,
@@ -108,6 +125,7 @@ export function StrainsListWithCache({
     d: sortDirection,
   });
 
+  const queryClient = useQueryClient();
   const {
     data,
     isLoading,
@@ -137,12 +155,7 @@ export function StrainsListWithCache({
   const strains = useMemo(
     () =>
       // Pass searchQuery through so client-side filtering matches API results
-      applyStrainFilters(
-        rawStrains,
-        filters || {},
-        // Prefer explicit filters.searchQuery when present, otherwise use prop
-        (filters as StrainFilters | undefined)?.searchQuery || searchQuery || ''
-      ),
+      applyStrainFilters(rawStrains, filters || {}, searchQuery || ''),
     [rawStrains, filters, searchQuery]
   );
 
@@ -227,6 +240,70 @@ export function StrainsListWithCache({
     () => <StrainsFooterLoader isVisible={isFetchingNextPage} />,
     [isFetchingNextPage]
   );
+
+  // Mirror data into the legacy query key so useStrain can find cached items.
+  useEffect(() => {
+    if (!data) return;
+    queryClient.setQueryData(
+      ['strains-infinite', searchQuery || '', filters || {}, 20],
+      {
+        pages: data.pages.map((page) => ({ data: page.data })),
+        pageParams: data.pageParams,
+      }
+    );
+  }, [data, filters, queryClient, searchQuery]);
+
+  // Expose state to parent (for analytics/UX such as placeholder counts).
+  // Guard against triggering on every render by comparing to the last snapshot.
+  const stateSnapshot = useMemo(
+    () => ({
+      length: strains.length,
+      isOffline,
+      isUsingCache,
+      isLoading,
+      isError,
+      isFetchingNextPage,
+      hasNextPage: Boolean(hasNextPage),
+    }),
+    [
+      strains.length,
+      isOffline,
+      isUsingCache,
+      isLoading,
+      isError,
+      isFetchingNextPage,
+      hasNextPage,
+    ]
+  );
+
+  const lastStateRef = useRef<typeof stateSnapshot | null>(null);
+
+  useEffect(() => {
+    if (!onStateChange) return;
+    const last = lastStateRef.current;
+    const changed =
+      !last ||
+      last.length !== stateSnapshot.length ||
+      last.isOffline !== stateSnapshot.isOffline ||
+      last.isUsingCache !== stateSnapshot.isUsingCache ||
+      last.isLoading !== stateSnapshot.isLoading ||
+      last.isError !== stateSnapshot.isError ||
+      last.isFetchingNextPage !== stateSnapshot.isFetchingNextPage ||
+      last.hasNextPage !== stateSnapshot.hasNextPage;
+
+    if (changed) {
+      lastStateRef.current = stateSnapshot;
+      onStateChange({
+        strains,
+        isOffline: stateSnapshot.isOffline,
+        isUsingCache: stateSnapshot.isUsingCache,
+        isLoading: stateSnapshot.isLoading,
+        isError: stateSnapshot.isError,
+        isFetchingNextPage: stateSnapshot.isFetchingNextPage,
+        hasNextPage: stateSnapshot.hasNextPage,
+      });
+    }
+  }, [onStateChange, stateSnapshot, strains]);
 
   return (
     <AnimatedFlashList

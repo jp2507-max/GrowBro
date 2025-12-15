@@ -28,7 +28,11 @@ async function getAnalyticsClient(): Promise<AnalyticsClient> {
 
 /**
  * API client for The Weed DB strains data
- * Routes through serverless proxy to protect API credentials
+ * Routes through Supabase Edge Function proxy to protect API credentials.
+ *
+ * SECURITY: In production, always uses proxy (API key is server-only).
+ * In development, can optionally use direct API access if STRAINS_USE_PROXY=false
+ * and credentials are provided in .env.development (for local testing without proxy).
  */
 export class StrainsApiClient {
   private client: AxiosInstance;
@@ -36,21 +40,26 @@ export class StrainsApiClient {
 
   /**
    * Check if using proxy vs direct API
+   * Production: always proxy (secure)
+   * Development: proxy by default, can disable for local testing
    */
   private get useProxy(): boolean {
-    // Use proxy in production, or when explicitly enabled via env flag
-    // Env vars are always strings from .env files, so compare against 'true'
-    return process.env.NODE_ENV === 'production' || this.isProxyFlagEnabled();
+    // Always use proxy in production - API key must never be in prod bundle
+    if (process.env.NODE_ENV === 'production') {
+      return true;
+    }
+    // In development, check if explicitly disabled via env flag
+    return !this.isProxyDisabledInDev();
   }
 
-  private isProxyFlagEnabled(): boolean {
+  private isProxyDisabledInDev(): boolean {
     const rawValue = Env.STRAINS_USE_PROXY;
     if (rawValue === undefined || rawValue === null) {
-      return false;
+      return false; // Default to using proxy
     }
     const normalized = String(rawValue).trim().toLowerCase();
-    // Accept both 'true' and the numeric '1' commonly used in env/.env files
-    return normalized === 'true' || normalized === '1';
+    // Only disable proxy if explicitly set to 'false' or '0'
+    return normalized === 'false' || normalized === '0';
   }
 
   constructor() {
@@ -64,7 +73,7 @@ export class StrainsApiClient {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        // Only add API keys when NOT using proxy
+        // Only add API keys when NOT using proxy (dev fallback only)
         ...(!this.useProxy &&
           Env.STRAINS_API_KEY && {
             'x-rapidapi-key': Env.STRAINS_API_KEY,

@@ -148,21 +148,21 @@ function ToggleRow({
   impactText?: string;
 }) {
   return (
-    <View className="mb-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+    <View className="mb-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-800">
       <View className="flex-row items-start justify-between">
         <View className="flex-1 pr-4">
           <Text
-            className="text-base font-medium text-gray-900 dark:text-gray-100"
+            className="text-base font-medium text-charcoal-900 dark:text-charcoal-100"
             onPress={onInfoPress}
             testID={`${testID}-title`}
           >
             {title}
           </Text>
-          <Text className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          <Text className="mt-1 text-sm text-charcoal-600 dark:text-charcoal-400">
             {subtitle}
           </Text>
           {impactText && (
-            <Text className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            <Text className="mt-2 text-xs text-charcoal-500 dark:text-charcoal-400">
               {impactText}
             </Text>
           )}
@@ -186,11 +186,11 @@ function QuickOptOutActions({
   onDismiss?: () => void;
 }) {
   return (
-    <View className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
-      <Text className="mb-2 text-sm font-medium text-red-800 dark:text-red-200">
+    <View className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 dark:border-danger-800 dark:bg-danger-900/20">
+      <Text className="mb-2 text-sm font-medium text-danger-800 dark:text-danger-200">
         {translate('consent.quickOptOut.title')}
       </Text>
-      <Text className="mb-3 text-xs text-red-600 dark:text-red-300">
+      <Text className="mb-3 text-xs text-danger-600 dark:text-danger-300">
         {translate('consent.quickOptOut.description')}
       </Text>
       <View className="flex-row gap-2">
@@ -513,11 +513,11 @@ function ConsentHeader({
 }) {
   return (
     <View className="mb-6">
-      <Text className="mb-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
+      <Text className="mb-2 text-2xl font-bold text-charcoal-900 dark:text-charcoal-100">
         {translate(titleKey)}
       </Text>
       {subtitleKey && (
-        <Text className="text-base text-gray-600 dark:text-gray-400">
+        <Text className="text-base text-charcoal-600 dark:text-charcoal-400">
           {translate(subtitleKey)}
         </Text>
       )}
@@ -541,7 +541,7 @@ function ConsentFooter({
   onDismiss?: () => void;
 }) {
   return (
-    <View className="border-t border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+    <View className="border-t border-neutral-200 bg-neutral-50 p-4 dark:border-charcoal-700 dark:bg-charcoal-800">
       <ConsentActions
         mode={mode}
         onAcceptAll={async () => await bulkSet(true)}
@@ -550,7 +550,7 @@ function ConsentFooter({
         onDismiss={onDismiss}
       />
       <View className="mt-3">
-        <Text className="text-xs text-gray-500 dark:text-gray-400">
+        <Text className="text-xs text-charcoal-500 dark:text-charcoal-400">
           {translate('consent.lastUpdated', {
             date: new Date(privacyConsent.lastUpdated).toLocaleDateString(),
           })}
@@ -593,7 +593,7 @@ function ConsentManagerView({
   onDismiss?: () => void;
 }) {
   return (
-    <View className="flex-1 bg-white dark:bg-gray-900" testID={testID}>
+    <View className="flex-1 bg-white dark:bg-charcoal-900" testID={testID}>
       <ScrollView className="flex-1 p-4">
         <ConsentHeader titleKey={titleKey} subtitleKey={subtitleKey} />
         {mode === 'opt-out' && (

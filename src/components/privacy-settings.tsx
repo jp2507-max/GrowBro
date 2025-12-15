@@ -45,13 +45,13 @@ function ToggleRow({
     >
       <View className="flex-1 pr-4">
         <Text
-          className="text-base font-medium text-gray-900 dark:text-gray-100"
+          className="text-base font-medium text-charcoal-900 dark:text-charcoal-100"
           onPress={onInfoPress}
           testID={testID ? `${testID}-title` : undefined}
         >
           {title}
         </Text>
-        <Text className="text-sm text-gray-600 dark:text-gray-400">
+        <Text className="text-sm text-charcoal-600 dark:text-charcoal-400">
           {subtitle}
         </Text>
       </View>
@@ -329,14 +329,14 @@ function PrivacySettingsContent({
 }) {
   return (
     <View className="space-y-4 p-4" testID="privacy-settings">
-      <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+      <Text className="text-lg font-semibold text-charcoal-900 dark:text-charcoal-100">
         {translate('privacy.title')}
       </Text>
 
       <PrivacyToggles consent={consent} updateConsent={updateConsent} />
 
       <Text
-        className="mt-4 text-xs text-gray-500 dark:text-gray-400"
+        className="mt-4 text-xs text-charcoal-500 dark:text-charcoal-400"
         testID="privacy-settings-last-updated"
       >
         {translate('privacy.lastUpdated', {
