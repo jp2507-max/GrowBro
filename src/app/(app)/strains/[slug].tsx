@@ -1,3 +1,4 @@
+import { Env } from '@env';
 import * as Sentry from '@sentry/react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
@@ -36,8 +37,23 @@ const AnimatedImage = Animated.createAnimatedComponent(Image);
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
+function isProxyEnabled(): boolean {
+  const rawValue = Env?.STRAINS_USE_PROXY;
+  const normalized = rawValue ? String(rawValue).trim().toLowerCase() : '';
+  return (
+    process.env.NODE_ENV === 'production' ||
+    normalized === 'true' ||
+    normalized === '1'
+  );
+}
+
 /** Fire-and-forget background cache to Supabase */
 function cacheStrainToSupabase(strain: Strain) {
+  if (isProxyEnabled()) {
+    // Proxy already saves to Supabase; avoid duplicate writes from client.
+    return;
+  }
+
   import('@/lib/supabase').then(({ supabase }) => {
     supabase
       .from('strain_cache')

@@ -18,7 +18,7 @@ export default function ModeratorLayout() {
   }
 
   if (!isModerator) {
-    return <Redirect href="/feed" />;
+    return <Redirect href="/community" />;
   }
 
   return (

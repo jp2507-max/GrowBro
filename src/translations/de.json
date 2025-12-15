@@ -78,9 +78,12 @@
       "targets_hint": "Zeigt die pH- und EC-Zielwerte dieser Aufgabe."
     },
     "common": {
+      "confirm_date_hint": "Bestätigt das ausgewählte Datum.",
       "go_back": "Zurück",
       "loading_hint": "Inhalt wird geladen, bitte warten",
       "loading_label": "Lädt",
+      "refresh_hint": "Aktualisiert den aktuellen Inhalt.",
+      "reset_date_hint": "Löscht das ausgewählte Datum.",
       "retry_hint": "Wiederholt die letzte Aktion.",
       "select_open_hint": "Öffnet die Auswahl für {{label}}. Doppeltippen zum Auswählen.",
       "select_option_hint": "Wählt die Option {{label}}.",
@@ -116,6 +119,7 @@
       "activation_action_hint": "Doppeltippen, um {{action}}",
       "activation_dismiss_hint": "Doppeltippen, um die Aktivierungs-Checkliste auszublenden",
       "open_settings_hint": "Öffnet die Einstellungen.",
+      "quick_action_hint": "Öffnet die Schnellaktion {{action}}.",
       "share_update_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags."
     },
     "plants": {
@@ -703,8 +707,10 @@
     "optional": "Optional",
     "reconnect": "Verbinden",
     "remove": "Entfernen",
+    "reset": "Zurücksetzen",
     "retry": "Wiederholen",
     "saving": "Speichert...",
+    "select_date": "Datum wählen",
     "selected": "ausgewählt",
     "undo": "Rückgängig"
   },
@@ -1497,10 +1503,55 @@
       "progress": "{{completed}} von {{total}} abgeschlossen",
       "title": "Erste Schritte mit GrowBro"
     },
+    "dashboard": {
+      "quick_actions": "Schnellaktionen",
+      "tasks_error": "Aufgaben konnten nicht geladen werden. Bitte versuche es erneut.",
+      "tasks_overdue": "Überfällig",
+      "tasks_title": "Aufgaben-Überblick",
+      "tasks_today": "Heute",
+      "tasks_upcoming": "Bevorstehend"
+    },
+    "empty_state": {
+      "body": "Füge eine Pflanze hinzu, um deine Anbau-Reise zu beginnen.",
+      "cta": "Pflanze hinzufügen",
+      "title": "Starte deinen ersten Grow"
+    },
+    "fab": {
+      "add_plant": "Pflanze hinzufügen",
+      "hint": "Öffnet das Hinzufügen-Pflanze-Formular"
+    },
+    "feed_error_body": "Bitte überprüfe deine Verbindung und versuche es erneut, um den Community-Feed zu aktualisieren.",
+    "feed_error_title": "Wir konnten Updates nicht laden",
+    "greeting": {
+      "afternoon": "Guten Tag",
+      "evening": "Guten Abend",
+      "morning": "Guten Morgen",
+      "night": "Gute Nacht"
+    },
     "open_settings": "Einstellungen öffnen",
+    "plants_section": {
+      "title": "Meine Pflanzen"
+    },
+    "quick_actions": {
+      "add_task": "Aufgabe erstellen",
+      "explore_strains": "Sorten erkunden",
+      "open_playbook": "Playbook öffnen",
+      "share_update": "Update teilen",
+      "try_ai": "KI-Diagnose starten"
+    },
     "share_update_cta": "Update teilen",
     "share_update_subtitle": "Sag der Community, wie es deinen Pflanzen geht.",
-    "share_update_title": "Grow-Update teilen"
+    "share_update_title": "Grow-Update teilen",
+    "stats": {
+      "plants": "{{count}} Pflanze",
+      "plants_plural": "{{count}} Pflanzen",
+      "tasks": "{{count}} Aufgabe",
+      "tasks_plural": "{{count}} Aufgaben"
+    },
+    "task_banner": {
+      "hint": "Öffnet den Kalender mit allen Aufgaben",
+      "label": "Aufgaben für heute"
+    }
   },
   "inputs": {
     "accept_terms_label": "Nutzungsbedingungen akzeptieren",
@@ -2078,6 +2129,7 @@
     "veg": "Vegetative Phase"
   },
   "plants": {
+    "add_plant": "Pflanze hinzufügen",
     "assessmentHistory": {
       "count_one": "{{count}} Bewertung",
       "count_other": "{{count}} Bewertungen",
@@ -2086,8 +2138,123 @@
       "emptyDescription": "Verwende das KI-Bewertungstool, um die Pflanzengesundheit zu analysieren",
       "title": "Bewertungsverlauf"
     },
+    "card": {
+      "health": {
+        "excellent": "Ausgezeichnet",
+        "fair": "Mittelmäßig",
+        "good": "Gut",
+        "poor": "Schlecht"
+      },
+      "health_label": "Gesundheit",
+      "no_photo": "Foto hinzufügen"
+    },
     "empty_state": "Keine Pflanzen in deinem Inventar",
     "error": "Pflanzen konnten nicht geladen werden. Bitte erneut versuchen.",
+    "form": {
+      "add_photo": "Titelbild hinzufügen",
+      "add_starter_tasks": "Starter-Aufgaben hinzufügen",
+      "added_body": "Super Start! Ergänze den Zeitplan oder gehe direkt zum Kalender.",
+      "added_title": "Pflanze hinzugefügt",
+      "autoflower_badge": "Autoflower",
+      "cancel": "Abbrechen",
+      "completion": "{{percent}}% Abgeschlossen",
+      "create_cta": "Pflanze erstellen",
+      "default_water_desc": "Kurze Erinnerung zum Gießen nach dem Umtopfen.",
+      "default_water_title": "Diese Pflanze gießen",
+      "delete_button": "Pflanze löschen",
+      "delete_confirm_action": "Löschen",
+      "delete_confirm_body": "Bist du sicher, dass du diese Pflanze löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "delete_confirm_title": "Pflanze löschen?",
+      "edit_photo": "Foto bearbeiten",
+      "edit_title": "Pflanze bearbeiten",
+      "environment": {
+        "greenhouse": "Gewächshaus",
+        "indoor": "Indoor",
+        "outdoor": "Outdoor"
+      },
+      "environment_label": "Umgebung",
+      "environment_placeholder": "Umgebung auswählen",
+      "error_body": "Bitte Verbindung prüfen und erneut versuchen.",
+      "error_title": "Pflanze konnte nicht gespeichert werden",
+      "errors": {
+        "light_hours": "Lichtstunden zwischen 0-24 eingeben",
+        "name_length": "Name muss unter 120 Zeichen bleiben",
+        "name_required": "Name ist erforderlich",
+        "strain_length": "Strain muss unter 120 Zeichen bleiben",
+        "strain_required": "Strain ist erforderlich"
+      },
+      "genetic": {
+        "balanced": "Ausgewogener Hybrid",
+        "indica": "Indica-dominant",
+        "sativa": "Sativa-dominant",
+        "unknown": "Unbekannt"
+      },
+      "genetic_label": "Genetik",
+      "genetic_placeholder": "Genetik auswählen",
+      "go_to_schedule": "Zum Kalender",
+      "keep_adding": "Weitere Pflanzen hinzufügen",
+      "light_hours_label": "Lichtstunden",
+      "light_hours_placeholder": "z. B. 18",
+      "light_schedule_label": "Lichtzyklus",
+      "light_schedule_placeholder": "18/6 Wachstum, 12/12 Blüte",
+      "load_error": "Diese Pflanze konnte nicht geladen werden.",
+      "medium": {
+        "coco": "Coco",
+        "hydro": "Hydroponik",
+        "living_soil": "Lebende Erde",
+        "other": "Sonstiges",
+        "soil": "Erde"
+      },
+      "medium_label": "Medium",
+      "medium_placeholder": "Medium auswählen",
+      "name_label": "Pflanzenname",
+      "name_placeholder": "Meine Northern Lights",
+      "notes_label": "Notizen",
+      "notes_placeholder": "Fütterungsplan, Pheno-Notizen…",
+      "photoperiod": {
+        "autoflower": "Autoflower",
+        "photoperiod": "Photoperiodisch (12/12 Wechsel)"
+      },
+      "photoperiod_label": "Photoperiode",
+      "photoperiod_placeholder": "Photoperiode oder Autoflower",
+      "planted_at_label": "Gepflanzt am (optional)",
+      "planted_at_placeholder": "JJJJ-MM-TT",
+      "pot_size_label": "Topfgröße",
+      "pot_size_placeholder": "z. B. 11 L / 3 gal",
+      "save": "Speichern",
+      "save_cta": "Änderungen speichern",
+      "section": {
+        "care": "Pflege",
+        "environment": "Umgebung",
+        "identity": "Identität",
+        "photo": "Foto"
+      },
+      "stage": {
+        "curing": "Curing",
+        "flowering": "Blüte",
+        "harvesting": "Ernte",
+        "ready": "Fertig",
+        "seedling": "Keimling",
+        "vegetative": "Wachstum"
+      },
+      "stage_label": "Phase",
+      "stage_placeholder": "Phase auswählen",
+      "starter_tasks_created": "Starter-Aufgaben geplant",
+      "strain_create_custom": "Eigenen Strain „{{name}}“ anlegen",
+      "strain_create_custom_hint": "Wir speichern diesen Strain für die Zukunft.",
+      "strain_label": "Strain",
+      "strain_no_results": "Keine Strains gefunden für „{{query}}“",
+      "strain_placeholder": "Afghan Haze, Super Silver Haze…",
+      "strain_race_label": "Typ: {{race}}",
+      "strain_searching": "Suche nach Strains…",
+      "success_body": "Deine Pflanze wurde zu \"Meine Pflanzen\" hinzugefügt.",
+      "success_title": "Pflanze erstellt",
+      "update_success_body": "Die Pflanzendaten wurden gespeichert.",
+      "update_success_title": "Pflanze aktualisiert",
+      "view_plant": "Pflanze ansehen",
+      "view_strain_profile": "Sortenprofil anzeigen",
+      "view_strain_profile_hint": "Öffnet das verknüpfte Sortenprofil."
+    },
     "no_results": "Keine Pflanzen gefunden",
     "offline_notice": "Gespeicherte Pflanzen werden angezeigt",
     "retry": "Erneut versuchen",

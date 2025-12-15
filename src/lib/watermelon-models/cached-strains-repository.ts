@@ -242,4 +242,33 @@ export class CachedStrainsRepository {
       newestEntry: newestTimestamp ? new Date(newestTimestamp) : null,
     };
   }
+
+  /**
+   * Find a single strain by id or slug across cached pages.
+   * Skips expired entries to avoid stale data.
+   */
+  async findStrainByIdOrSlug(idOrSlug: string): Promise<Strain | null> {
+    const all = await this.collection.query().fetch();
+    const now = Date.now();
+
+    for (const entry of all) {
+      if (entry.expiresAt < now) {
+        // Clean up expired entries opportunistically
+        await this.database.write(async () => {
+          await entry.destroyPermanently();
+        });
+        continue;
+      }
+
+      const match = entry.parsedStrains.find(
+        (strain) => strain.id === idOrSlug || strain.slug === idOrSlug
+      );
+
+      if (match) {
+        return match;
+      }
+    }
+
+    return null;
+  }
 }

@@ -56,7 +56,7 @@ jest.mock('@/lib/media/photo-access', () => ({
 jest.mock('expo-image-picker', () => ({
   requestCameraPermissionsAsync: jest.fn(),
   launchCameraAsync: jest.fn(),
-  MediaTypeOptions: { Images: 'Images' },
+  MediaType: { images: 'images' },
 }));
 
 jest.mock('@/components/settings/avatar-picker', () => {

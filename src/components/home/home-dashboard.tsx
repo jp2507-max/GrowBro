@@ -1,0 +1,329 @@
+import { useRouter } from 'expo-router';
+import { DateTime } from 'luxon';
+import React from 'react';
+
+import { ActivityIndicator, Pressable, Text, View } from '@/components/ui';
+import type { ActivationAction } from '@/lib/compliance/activation-state';
+import { translate } from '@/lib/i18n';
+import type { TxKeyPath } from '@/lib/i18n/utils';
+import { getTasksByDateRange } from '@/lib/task-manager';
+import type { Task } from '@/types/calendar';
+
+import { ActivationChecklist } from './activation-checklist';
+
+type TaskSnapshot = {
+  today: number;
+  overdue: number;
+  upcoming: number;
+};
+
+type TaskSnapshotState = {
+  snapshot: TaskSnapshot;
+  isLoading: boolean;
+  hasError: boolean;
+  refresh: () => void;
+};
+
+const INITIAL_SNAPSHOT: TaskSnapshot = {
+  today: 0,
+  overdue: 0,
+  upcoming: 0,
+};
+
+export function useTaskSnapshot(): TaskSnapshotState {
+  const [snapshot, setSnapshot] =
+    React.useState<TaskSnapshot>(INITIAL_SNAPSHOT);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [hasError, setHasError] = React.useState(false);
+
+  const loadSnapshot = React.useCallback(
+    async (isCancelled?: () => boolean) => {
+      setIsLoading(true);
+
+      try {
+        const now = DateTime.local();
+        const rangeStart = now.minus({ days: 14 }).startOf('day').toJSDate();
+        const rangeEnd = now.plus({ days: 7 }).endOf('day').toJSDate();
+        const rangeEndDt = DateTime.fromJSDate(rangeEnd);
+
+        const tasks = await getTasksByDateRange(rangeStart, rangeEnd);
+        if (isCancelled?.()) return;
+
+        const startOfToday = now.startOf('day');
+        const endOfToday = now.endOf('day');
+        const tomorrowStart = now.plus({ days: 1 }).startOf('day');
+
+        const normalized = tasks.filter(
+          (task: Task) => task.status === 'pending'
+        );
+
+        const overdue = normalized.filter((task) => {
+          return DateTime.fromISO(task.dueAtLocal) < startOfToday;
+        }).length;
+        const today = normalized.filter((task) => {
+          const due = DateTime.fromISO(task.dueAtLocal);
+          return due >= startOfToday && due <= endOfToday;
+        }).length;
+        const upcoming = normalized.filter((task) => {
+          const due = DateTime.fromISO(task.dueAtLocal);
+          return due >= tomorrowStart && due <= rangeEndDt;
+        }).length;
+
+        setSnapshot({
+          overdue,
+          today,
+          upcoming,
+        });
+        setHasError(false);
+      } catch (error) {
+        console.error('[home-dashboard] failed to load task snapshot', error);
+        if (!isCancelled?.()) {
+          setHasError(true);
+          setSnapshot(INITIAL_SNAPSHOT);
+        }
+      } finally {
+        if (!isCancelled?.()) {
+          setIsLoading(false);
+        }
+      }
+    },
+    []
+  );
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const isCancelled = () => cancelled;
+    void loadSnapshot(isCancelled);
+    return () => {
+      cancelled = true;
+    };
+  }, [loadSnapshot]);
+
+  return {
+    snapshot,
+    isLoading,
+    hasError,
+    refresh: () => {
+      void loadSnapshot();
+    },
+  };
+}
+
+type QuickAction = {
+  key: string;
+  labelKey: string;
+  icon: string;
+  onPress: () => void;
+  testID: string;
+};
+
+function QuickActionTile({ action }: { action: QuickAction }) {
+  return (
+    <Pressable
+      className="w-[48%] gap-1 rounded-2xl border border-neutral-200 bg-white p-3 active:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:active:bg-neutral-800"
+      accessibilityRole="button"
+      accessibilityLabel={translate(action.labelKey as TxKeyPath)}
+      accessibilityHint={translate(
+        'accessibility.home.quick_action_hint' as TxKeyPath,
+        {
+          action: translate(action.labelKey as TxKeyPath),
+        }
+      )}
+      onPress={action.onPress}
+      testID={action.testID}
+      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+    >
+      <Text className="text-lg">{action.icon}</Text>
+      <Text className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+        {translate(action.labelKey as TxKeyPath)}
+      </Text>
+    </Pressable>
+  );
+}
+
+function TaskStat({
+  label,
+  value,
+  testID,
+}: {
+  label: string;
+  value: number;
+  testID: string;
+}) {
+  return (
+    <View className="flex-1 rounded-xl bg-neutral-100 p-3 dark:bg-neutral-800/80">
+      <Text className="text-xs text-neutral-600 dark:text-neutral-300">
+        {label}
+      </Text>
+      <Text
+        className="mt-1 text-xl font-bold text-neutral-900 dark:text-neutral-50"
+        testID={testID}
+      >
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+type TaskSnapshotCardProps = {
+  snapshot: TaskSnapshot;
+  isLoading: boolean;
+  hasError: boolean;
+  onRefresh: () => void;
+};
+
+function TaskSnapshotCard({
+  snapshot,
+  isLoading,
+  hasError,
+  onRefresh,
+}: TaskSnapshotCardProps) {
+  return (
+    <View className="gap-3 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900">
+      <View className="flex-row items-center justify-between">
+        <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-50">
+          {translate('home.dashboard.tasks_title' as TxKeyPath)}
+        </Text>
+        <Pressable
+          className="rounded-full bg-primary-100 px-3 py-1.5 active:bg-primary-200 dark:bg-primary-900/40 dark:active:bg-primary-900/60"
+          accessibilityRole="button"
+          accessibilityLabel={translate('list.retry' as TxKeyPath)}
+          accessibilityHint={translate(
+            'accessibility.common.refresh_hint' as TxKeyPath
+          )}
+          onPress={onRefresh}
+          testID="home-tasks-refresh"
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          <Text className="text-xs font-semibold text-primary-700 dark:text-primary-200">
+            {translate('list.retry' as TxKeyPath)}
+          </Text>
+        </Pressable>
+      </View>
+
+      {isLoading ? (
+        <View
+          className="flex-row items-center gap-3"
+          testID="home-tasks-loading"
+        >
+          <ActivityIndicator />
+          <Text className="text-sm text-neutral-600 dark:text-neutral-300">
+            {translate('community.loading' as TxKeyPath)}
+          </Text>
+        </View>
+      ) : (
+        <View
+          className="flex-row items-stretch gap-3"
+          testID="home-tasks-stats"
+        >
+          <TaskStat
+            label={translate('home.dashboard.tasks_overdue' as TxKeyPath)}
+            value={snapshot.overdue}
+            testID="home-tasks-overdue"
+          />
+          <TaskStat
+            label={translate('home.dashboard.tasks_today' as TxKeyPath)}
+            value={snapshot.today}
+            testID="home-tasks-today"
+          />
+          <TaskStat
+            label={translate('home.dashboard.tasks_upcoming' as TxKeyPath)}
+            value={snapshot.upcoming}
+            testID="home-tasks-upcoming"
+          />
+        </View>
+      )}
+
+      {hasError ? (
+        <Text
+          className="text-xs text-warning-800 dark:text-warning-200"
+          testID="home-tasks-error"
+        >
+          {translate('home.dashboard.tasks_error' as TxKeyPath)}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+function QuickActionsSection({ actions }: { actions: QuickAction[] }) {
+  return (
+    <View className="gap-2">
+      <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-50">
+        {translate('home.dashboard.quick_actions' as TxKeyPath)}
+      </Text>
+      <View className="flex-row flex-wrap justify-between gap-3">
+        {actions.map((action) => (
+          <QuickActionTile key={action.key} action={action} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+type HomeDashboardProps = {
+  onShareUpdatePress: () => void;
+  onActivationActionComplete: (action: ActivationAction) => void;
+};
+
+export function HomeDashboard({
+  onShareUpdatePress,
+  onActivationActionComplete,
+}: HomeDashboardProps): React.ReactElement {
+  const router = useRouter();
+  const { snapshot, isLoading, hasError, refresh } = useTaskSnapshot();
+
+  const quickActions: QuickAction[] = React.useMemo(
+    () => [
+      {
+        key: 'share',
+        labelKey: 'home.quick_actions.share_update',
+        icon: '📣',
+        onPress: onShareUpdatePress,
+        testID: 'home-quick-action-share',
+      },
+      {
+        key: 'add-task',
+        labelKey: 'home.quick_actions.add_task',
+        icon: '🗓️',
+        onPress: () => router.push('/calendar'),
+        testID: 'home-quick-action-add-task',
+      },
+      {
+        key: 'ai',
+        labelKey: 'home.quick_actions.try_ai',
+        icon: '🔍',
+        onPress: () => router.push('/assessment/capture'),
+        testID: 'home-quick-action-ai',
+      },
+      {
+        key: 'strains',
+        labelKey: 'home.quick_actions.explore_strains',
+        icon: '🌿',
+        onPress: () => router.push('/strains'),
+        testID: 'home-quick-action-strains',
+      },
+      {
+        key: 'playbook',
+        labelKey: 'home.quick_actions.open_playbook',
+        icon: '📖',
+        onPress: () => router.push('/playbooks'),
+        testID: 'home-quick-action-playbook',
+      },
+    ],
+    [onShareUpdatePress, router]
+  );
+
+  return (
+    <View className="gap-4" testID="home-dashboard">
+      <ActivationChecklist onActionComplete={onActivationActionComplete} />
+      <TaskSnapshotCard
+        snapshot={snapshot}
+        isLoading={isLoading}
+        hasError={hasError}
+        onRefresh={refresh}
+      />
+      <QuickActionsSection actions={quickActions} />
+    </View>
+  );
+}

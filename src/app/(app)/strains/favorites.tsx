@@ -103,14 +103,18 @@ function sortFavorites(
 }
 
 function createStrainFromSnapshot(item: FavoriteStrain) {
+  const fallbackSlug = item.snapshot.slug || item.snapshot.id;
+  const fallbackName =
+    item.snapshot.name || item.snapshot.slug || item.snapshot.id;
+
   return {
     id: item.snapshot.id,
-    name: item.snapshot.name,
+    name: fallbackName,
     race: item.snapshot.race,
     thc_display: item.snapshot.thc_display,
     imageUrl: item.snapshot.imageUrl,
     // Fallback to ID for favorites saved before slug was added to snapshot
-    slug: item.snapshot.slug || item.snapshot.id,
+    slug: fallbackSlug,
     synonyms: [],
     link: '',
     description: [],

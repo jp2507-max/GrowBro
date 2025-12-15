@@ -11,16 +11,17 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 // @ts-expect-error - Reanimated 4.x type exports issue
-import { interpolate, useAnimatedProps } from 'react-native-reanimated';
+import { interpolate } from 'react-native-reanimated';
+
+import { useColorScheme } from 'nativewind';
 
 import type { Plant } from '@/api';
-import { Pressable, Text, View } from '@/components/ui';
+import { Image, Pressable, Text, View } from '@/components/ui';
+import { ArrowRight } from '@/components/ui/icons/arrow-right';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
-import {
-  AnimatedOptionalBlurView,
-  OptionalBlurView,
-} from '@/components/shared/optional-blur-view';
+import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
+import type { TxKeyPath } from '@/lib/i18n/utils';
 
 export type PlantCardProps = {
   plant: Plant;
@@ -28,52 +29,120 @@ export type PlantCardProps = {
   itemY?: SharedValue<number>;
 };
 
-function getStageColor(stage?: string) {
+type StageColors = {
+  bg: string;
+  text: string;
+  badgeBg: string;
+  badgeText: string;
+  icon: string;
+};
+
+// Vibrant pastel colors with better visibility
+function getStageColors(stage?: string): StageColors {
   switch (stage) {
     case 'seedling':
-      return 'text-green-600 dark:text-green-400';
+      return {
+        bg: '#C6F6D5', // Vibrant Mint Green
+        text: '#14532d', // green-900
+        badgeBg: '#F0FDF4', // lighter green
+        badgeText: '#166534', // green-800
+        icon: '#86EFAC',
+      };
     case 'vegetative':
-      return 'text-blue-600 dark:text-blue-400';
+      return {
+        bg: '#BAE6FD', // Vibrant Sky Blue
+        text: '#0c4a6e', // sky-900
+        badgeBg: '#F0F9FF',
+        badgeText: '#075985', // sky-800
+        icon: '#7DD3FC',
+      };
     case 'flowering':
-      return 'text-purple-600 dark:text-purple-400';
+      return {
+        bg: '#E9D5FF', // Vibrant Purple
+        text: '#581c87', // purple-900
+        badgeBg: '#FAF5FF',
+        badgeText: '#6b21a8', // purple-800
+        icon: '#D8B4FE',
+      };
     case 'harvesting':
-      return 'text-orange-600 dark:text-orange-400';
+      return {
+        bg: '#FED7AA', // Vibrant Orange
+        text: '#7c2d12', // orange-900
+        badgeBg: '#FFF7ED',
+        badgeText: '#9a3412', // orange-800
+        icon: '#FDBA74',
+      };
     case 'curing':
-      return 'text-yellow-600 dark:text-yellow-400';
+      return {
+        bg: '#FDE68A', // Vibrant Amber
+        text: '#78350f', // amber-900
+        badgeBg: '#FFFBEB',
+        badgeText: '#92400e', // amber-800
+        icon: '#FCD34D',
+      };
     case 'ready':
-      return 'text-emerald-600 dark:text-emerald-400';
+      return {
+        bg: '#A7F3D0', // Vibrant Emerald
+        text: '#064e3b', // emerald-900
+        badgeBg: '#ECFDF5',
+        badgeText: '#065f46', // emerald-800
+        icon: '#6EE7B7',
+      };
     default:
-      return 'text-neutral-500 dark:text-neutral-400';
+      return {
+        bg: '#E5E7EB', // Neutral Gray
+        text: '#171717', // neutral-900
+        badgeBg: '#F9FAFB',
+        badgeText: '#262626', // neutral-800
+        icon: '#D4D4D4',
+      };
   }
 }
 
-function getHealthColor(health?: string) {
-  if (!health) return 'text-neutral-500 dark:text-neutral-400';
-  if (health === 'excellent') return 'text-green-600 dark:text-green-400';
-  if (health === 'good') return 'text-blue-600 dark:text-blue-400';
-  if (health === 'fair') return 'text-yellow-600 dark:text-yellow-400';
-  return 'text-red-600 dark:text-red-400';
+function translateStage(stage?: string): string | null {
+  if (!stage) return null;
+  const key = `plants.form.stage.${stage}`;
+  const label = translate(key as TxKeyPath);
+  return typeof label === 'string' && label.length > 0 ? label : stage;
 }
 
-function PlantBlurOverlay({
-  animatedProps,
+const cardStyles = StyleSheet.create({
+  shadow: {
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+});
+
+function PlantCardImage({
+  plant,
+  colors,
 }: {
-  animatedProps: Partial<{ intensity: number }>;
+  plant: Plant;
+  colors: StageColors;
 }) {
   return (
-    <>
-      <OptionalBlurView
-        intensity={0}
-        style={StyleSheet.absoluteFillObject}
-        pointerEvents="none"
-      />
-      <AnimatedOptionalBlurView
-        animatedProps={animatedProps}
-        tint="dark"
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
-      />
-    </>
+    <View
+      className="size-28 overflow-hidden rounded-2xl"
+      style={{ backgroundColor: colors.badgeBg }}
+    >
+      {plant.imageUrl ? (
+        <Image
+          source={{ uri: plant.imageUrl }}
+          className="size-full"
+          contentFit="cover"
+          testID={`plant-card-${plant.id}-image`}
+        />
+      ) : (
+        <View
+          className="size-full items-center justify-center"
+          testID={`plant-card-${plant.id}-placeholder`}
+        >
+          <Text className="text-4xl">🌱</Text>
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -84,57 +153,90 @@ function PlantCardContent({
   plant: Plant;
   onPress: (id: string) => void;
 }) {
+  const { colorScheme } = useColorScheme();
+
   const handlePress = React.useCallback(() => {
+    haptics.selection();
     onPress(plant.id);
   }, [onPress, plant.id]);
-  const stageColor = React.useMemo(
-    () => getStageColor(plant.stage),
+
+  const stageLabel = React.useMemo(
+    () => translateStage(plant.stage),
     [plant.stage]
   );
 
-  const healthColor = React.useMemo(
-    () => getHealthColor(plant.health),
-    [plant.health]
+  const colors = React.useMemo(
+    () => getStageColors(plant.stage),
+    [plant.stage]
+  );
+
+  const accessibilityLabel = React.useMemo(
+    () =>
+      [plant.name, stageLabel, plant.strain].filter(Boolean).join(', ') ||
+      plant.name,
+    [plant.name, plant.strain, stageLabel]
   );
 
   return (
     <Pressable
-      className="mb-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+      className="mb-3 overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm active:scale-[0.98] active:opacity-95 dark:border-charcoal-700 dark:bg-charcoal-850"
+      style={[
+        cardStyles.shadow,
+        // { backgroundColor: colors.bg, shadowColor: colors.text }, // Removed for clean look
+      ]}
       testID={`plant-card-${plant.id}`}
       accessibilityRole="button"
-      accessibilityLabel={`${plant.name}${plant.stage ? `, ${plant.stage}` : ''}`}
+      accessibilityLabel={accessibilityLabel}
       accessibilityHint={translate('accessibility.plants.open_detail_hint')}
       onPress={handlePress}
     >
-      <View className="flex-row items-center justify-between">
-        <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
-          {plant.name}
-        </Text>
-        {plant.stage ? (
-          <Text className={`text-sm capitalize ${stageColor}`}>
-            {plant.stage}
-          </Text>
-        ) : null}
+      <View className="flex-row items-center p-6">
+        {/* Left content: Name, strain, stage badge */}
+        <View className="flex-1 justify-between pr-4">
+          <View>
+            <Text
+              className="text-2xl font-bold tracking-tight text-ink-900 dark:text-charcoal-100"
+              numberOfLines={1}
+            >
+              {plant.name}
+            </Text>
+            {plant.strain ? (
+              <Text
+                className="mt-1 text-base font-medium text-ink-700 opacity-60 dark:text-charcoal-400"
+                numberOfLines={1}
+              >
+                {plant.strain}
+              </Text>
+            ) : null}
+          </View>
+
+          {stageLabel ? (
+            <View
+              testID={`plant-card-${plant.id}-stage`}
+              className="mt-4 self-start rounded-full px-4 py-1.5"
+              style={{ backgroundColor: colors.badgeBg }}
+            >
+              <Text
+                className="text-sm font-semibold"
+                style={{ color: colors.badgeText }}
+              >
+                {stageLabel}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+
+        {/* Right content: Image + Arrow */}
+        <View className="flex-row items-center gap-4">
+          <PlantCardImage plant={plant} colors={colors} />
+          <ArrowRight
+            color={colorScheme === 'dark' ? '#9CA3AF' : '#1E1E1E'} // neutral-400 or ink-900
+            width={12}
+            height={18}
+            className="opacity-20"
+          />
+        </View>
       </View>
-      {plant.strain ? (
-        <Text className="mt-1 text-sm text-neutral-500 dark:text-neutral-300">
-          {plant.strain}
-        </Text>
-      ) : null}
-      {plant.health ? (
-        <Text className={`mt-2 text-sm capitalize ${healthColor}`}>
-          Health: {plant.health}
-        </Text>
-      ) : null}
-      {plant.notes ? (
-        <Text
-          className="mt-2 text-sm text-neutral-600 dark:text-neutral-200"
-          numberOfLines={2}
-          ellipsizeMode="tail"
-        >
-          {plant.notes}
-        </Text>
-      ) : null}
     </Pressable>
   );
 }
@@ -168,20 +270,6 @@ export function PlantCard({
     return { transform: [{ translateY }, { scale }] };
   }, []);
 
-  const blurAnimatedProps = useAnimatedProps(() => {
-    'worklet';
-    const h = Math.max(measuredHeight.value, 1);
-    const start = effItemY.value - 1;
-    const mid = effItemY.value;
-    const end = effItemY.value + h;
-    const intensity = interpolate(
-      listOffsetY.value,
-      [start, mid, end],
-      [0, 0, 8]
-    );
-    return { intensity };
-  });
-
   const onLayout = React.useCallback(
     (e: LayoutChangeEvent) => {
       const h = e.nativeEvent.layout.height;
@@ -199,7 +287,6 @@ export function PlantCard({
   return (
     <Animated.View style={[styles.wrapper, containerStyle]} onLayout={onLayout}>
       <PlantCardContent plant={plant} onPress={onPress} />
-      <PlantBlurOverlay animatedProps={blurAnimatedProps} />
     </Animated.View>
   );
 }

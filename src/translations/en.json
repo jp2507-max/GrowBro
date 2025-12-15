@@ -78,9 +78,12 @@
       "targets_hint": "Shows the pH and EC targets for this task."
     },
     "common": {
+      "confirm_date_hint": "Confirms the selected date.",
       "go_back": "Go back",
       "loading_hint": "Content is loading, please wait",
       "loading_label": "Loading",
+      "refresh_hint": "Refreshes the current content.",
+      "reset_date_hint": "Clears the selected date.",
       "retry_hint": "Retries the last action.",
       "select_open_hint": "Opens the {{label}} picker. Double-tap to choose.",
       "select_option_hint": "Selects the {{label}} option.",
@@ -116,6 +119,7 @@
       "activation_action_hint": "Double-tap to {{action}}",
       "activation_dismiss_hint": "Double-tap to dismiss the activation checklist",
       "open_settings_hint": "Opens the Settings screen.",
+      "quick_action_hint": "Opens the {{action}} quick action.",
       "share_update_hint": "Opens the Create Post screen."
     },
     "plants": {
@@ -703,8 +707,10 @@
     "optional": "Optional",
     "reconnect": "Reconnect",
     "remove": "Remove",
+    "reset": "Reset",
     "retry": "Retry",
     "saving": "Saving...",
+    "select_date": "Select date",
     "selected": "selected",
     "undo": "Undo"
   },
@@ -1497,10 +1503,55 @@
       "progress": "{{completed}} of {{total}} completed",
       "title": "Get started with GrowBro"
     },
+    "dashboard": {
+      "quick_actions": "Quick actions",
+      "tasks_error": "We couldn't load your tasks. Please retry.",
+      "tasks_overdue": "Overdue",
+      "tasks_title": "Tasks snapshot",
+      "tasks_today": "Today",
+      "tasks_upcoming": "Upcoming"
+    },
+    "empty_state": {
+      "body": "Add a plant to begin tracking your cultivation journey.",
+      "cta": "Add Plant",
+      "title": "Start your first grow"
+    },
+    "fab": {
+      "add_plant": "Add plant",
+      "hint": "Opens the add plant screen"
+    },
+    "feed_error_body": "Check your connection and try again to refresh the community feed.",
+    "feed_error_title": "We couldn't load updates",
+    "greeting": {
+      "afternoon": "Good afternoon",
+      "evening": "Good evening",
+      "morning": "Good morning",
+      "night": "Good night"
+    },
     "open_settings": "Open Settings",
+    "plants_section": {
+      "title": "My Plants"
+    },
+    "quick_actions": {
+      "add_task": "Add task",
+      "explore_strains": "Explore strains",
+      "open_playbook": "Open a playbook",
+      "share_update": "Share update",
+      "try_ai": "Try AI diagnosis"
+    },
     "share_update_cta": "Share update",
     "share_update_subtitle": "Let the community know how your plants are doing.",
-    "share_update_title": "Share a grow update"
+    "share_update_title": "Share a grow update",
+    "stats": {
+      "plants": "{{count}} plant",
+      "plants_plural": "{{count}} plants",
+      "tasks": "{{count}} task",
+      "tasks_plural": "{{count}} tasks"
+    },
+    "task_banner": {
+      "hint": "Opens the calendar to see all tasks",
+      "label": "Tasks for today"
+    }
   },
   "inputs": {
     "accept_terms_label": "Accept terms and conditions",
@@ -2078,6 +2129,7 @@
     "veg": "Vegetative"
   },
   "plants": {
+    "add_plant": "Add plant",
     "assessmentHistory": {
       "count_one": "{{count}} assessment",
       "count_other": "{{count}} assessments",
@@ -2086,8 +2138,123 @@
       "emptyDescription": "Use the AI assessment tool to analyze plant health",
       "title": "Assessment History"
     },
+    "card": {
+      "health": {
+        "excellent": "Excellent",
+        "fair": "Fair",
+        "good": "Good",
+        "poor": "Poor"
+      },
+      "health_label": "Health",
+      "no_photo": "Add photo"
+    },
     "empty_state": "No plants in your inventory",
     "error": "Failed to load plants. Try again.",
+    "form": {
+      "add_photo": "Add cover photo",
+      "add_starter_tasks": "Add starter tasks",
+      "added_body": "Great start! Add schedule info or go straight to your calendar.",
+      "added_title": "Plant added",
+      "autoflower_badge": "Autoflower",
+      "cancel": "Cancel",
+      "completion": "{{percent}}% Complete",
+      "create_cta": "Create plant",
+      "default_water_desc": "Quick reminder to water after transplanting.",
+      "default_water_title": "Water this plant",
+      "delete_button": "Delete Plant",
+      "delete_confirm_action": "Delete",
+      "delete_confirm_body": "Are you sure you want to delete this plant? This action cannot be undone.",
+      "delete_confirm_title": "Delete Plant?",
+      "edit_photo": "Edit photo",
+      "edit_title": "Edit Plant",
+      "environment": {
+        "greenhouse": "Greenhouse",
+        "indoor": "Indoor",
+        "outdoor": "Outdoor"
+      },
+      "environment_label": "Environment",
+      "environment_placeholder": "Select environment",
+      "error_body": "Please check your connection and try again.",
+      "error_title": "Could not save plant",
+      "errors": {
+        "light_hours": "Enter hours between 0-24",
+        "name_length": "Name must be under 120 characters",
+        "name_required": "Name is required",
+        "strain_length": "Strain must be under 120 characters",
+        "strain_required": "Strain is required"
+      },
+      "genetic": {
+        "balanced": "Balanced hybrid",
+        "indica": "Indica-dominant",
+        "sativa": "Sativa-dominant",
+        "unknown": "Unknown"
+      },
+      "genetic_label": "Genetic lean",
+      "genetic_placeholder": "Select genetic lean",
+      "go_to_schedule": "Go to Schedule",
+      "keep_adding": "Keep adding plants",
+      "light_hours_label": "Hours of light",
+      "light_hours_placeholder": "e.g., 18",
+      "light_schedule_label": "Light schedule",
+      "light_schedule_placeholder": "18/6 veg, 12/12 flower",
+      "load_error": "We couldn't load this plant.",
+      "medium": {
+        "coco": "Coco",
+        "hydro": "Hydroponics",
+        "living_soil": "Living soil",
+        "other": "Other",
+        "soil": "Soil"
+      },
+      "medium_label": "Growing medium",
+      "medium_placeholder": "Select medium",
+      "name_label": "Plant name",
+      "name_placeholder": "My Northern Lights",
+      "notes_label": "Notes",
+      "notes_placeholder": "Feeding plan, phenotype notes…",
+      "photoperiod": {
+        "autoflower": "Autoflower",
+        "photoperiod": "Photoperiod (12/12 flip)"
+      },
+      "photoperiod_label": "Photoperiod type",
+      "photoperiod_placeholder": "Photoperiod or autoflower",
+      "planted_at_label": "Planted on (optional)",
+      "planted_at_placeholder": "YYYY-MM-DD",
+      "pot_size_label": "Pot size",
+      "pot_size_placeholder": "e.g., 3 gal / 11 L",
+      "save": "Save",
+      "save_cta": "Save changes",
+      "section": {
+        "care": "Care",
+        "environment": "Environment",
+        "identity": "Identity",
+        "photo": "Photo"
+      },
+      "stage": {
+        "curing": "Curing",
+        "flowering": "Flowering",
+        "harvesting": "Harvesting",
+        "ready": "Ready",
+        "seedling": "Seedling",
+        "vegetative": "Vegetative"
+      },
+      "stage_label": "Stage",
+      "stage_placeholder": "Select stage",
+      "starter_tasks_created": "Starter tasks scheduled",
+      "strain_create_custom": "Create custom strain “{{name}}”",
+      "strain_create_custom_hint": "Save this strain for future use.",
+      "strain_label": "Strain",
+      "strain_no_results": "No strains found for “{{query}}”",
+      "strain_placeholder": "Afghan Haze, Super Silver Haze…",
+      "strain_race_label": "Race: {{race}}",
+      "strain_searching": "Searching strains…",
+      "success_body": "Your plant was added to My Plants.",
+      "success_title": "Plant created",
+      "update_success_body": "Your plant details were saved.",
+      "update_success_title": "Plant updated",
+      "view_plant": "View plant",
+      "view_strain_profile": "View strain profile",
+      "view_strain_profile_hint": "Opens the linked strain profile."
+    },
     "no_results": "No plants found",
     "offline_notice": "Showing saved plants",
     "retry": "Retry",

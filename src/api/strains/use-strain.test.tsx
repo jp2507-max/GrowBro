@@ -6,11 +6,50 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
+import { supabase } from '@/lib/supabase';
 import type { Strain } from '@/types/strains';
 
 import type { StrainsApiClient } from './client';
 import { getStrainsApiClient } from './client';
+import { mapSupabaseRowToStrain } from './supabase-list';
 import { useStrain } from './use-strain';
+
+jest.mock('@/lib/supabase', () => {
+  const from = jest.fn();
+  const auth = {
+    onAuthStateChange: jest.fn(() => ({
+      data: { subscription: { unsubscribe: jest.fn() } },
+      error: null,
+    })),
+    getSession: jest.fn(() =>
+      Promise.resolve({ data: { session: null }, error: null })
+    ),
+  };
+  return {
+    supabase: {
+      from,
+      auth,
+    },
+  };
+});
+jest.mock('./supabase-list', () => ({
+  mapSupabaseRowToStrain: jest.fn(),
+  fetchStrainsFromSupabase: jest.fn(),
+}));
+
+const supabaseFromMock = supabase.from as jest.Mock;
+const mapSupabaseRowToStrainMock = mapSupabaseRowToStrain as jest.Mock;
+
+function mockSupabaseRow(
+  row: unknown[] | undefined,
+  error: Error | null = null
+) {
+  const limit = jest.fn(() => Promise.resolve({ data: row ?? [], error }));
+  const or = jest.fn(() => ({ limit }));
+  const select = jest.fn(() => ({ or }));
+  supabaseFromMock.mockReturnValue({ select });
+  return { select, or, limit };
+}
 
 // Mock the API client
 jest.mock('./client');
@@ -80,14 +119,65 @@ describe('useStrain', () => {
     mockGetStrainsApiClient.mockReturnValue(
       mockClient as unknown as StrainsApiClient
     );
+    supabaseFromMock.mockReset();
+    mapSupabaseRowToStrainMock.mockReset();
+    mockSupabaseRow([]);
   });
 
   describe('successful fetch', () => {
+    test('prefers Supabase cache over API', async () => {
+      const supabaseRow = {
+        id: 'sup-1',
+        slug: 'og-kush',
+        name: 'OG Kush',
+        race: 'hybrid',
+        data: {},
+      };
+      const supabaseStrain = { ...mockStrain, id: 'sup-1' };
+
+      mockSupabaseRow([supabaseRow]);
+      mapSupabaseRowToStrainMock.mockReturnValueOnce(supabaseStrain);
+      mockClient.getStrain.mockResolvedValueOnce(mockStrain);
+
+      const { result } = renderHook(useStrain, {
+        initialProps: { strainIdOrSlug: 'og-kush' },
+        wrapper,
+      });
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(mapSupabaseRowToStrainMock).toHaveBeenCalledWith(supabaseRow);
+      expect(mockClient.getStrain).not.toHaveBeenCalled();
+      expect(result.current.data).toEqual(supabaseStrain);
+    });
+
+    test('falls back to API when Supabase misses', async () => {
+      mockSupabaseRow([]);
+      mockClient.getStrain.mockResolvedValueOnce(mockStrain);
+
+      const { result } = renderHook(useStrain, {
+        initialProps: { strainIdOrSlug: 'og-kush-001' },
+        wrapper,
+      });
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(mockClient.getStrain).toHaveBeenCalledWith(
+        'og-kush-001',
+        expect.any(AbortSignal)
+      );
+      expect(result.current.data).toEqual(mockStrain);
+    });
+
     test('fetches strain by ID', async () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
       const { result } = renderHook(useStrain, {
-        initialProps: { strainId: 'og-kush-001' },
+        initialProps: { strainIdOrSlug: 'og-kush-001' },
         wrapper,
       });
 
@@ -107,7 +197,7 @@ describe('useStrain', () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
       const { result } = renderHook(useStrain, {
-        initialProps: { strainId: 'og-kush-001' },
+        initialProps: { strainIdOrSlug: 'og-kush-001' },
         wrapper,
       });
 
@@ -134,7 +224,7 @@ describe('useStrain', () => {
       );
 
       const { result } = renderHook(useStrain, {
-        initialProps: { strainId: 'og-kush-001' },
+        initialProps: { strainIdOrSlug: 'og-kush-001' },
         wrapper,
       });
 
@@ -146,7 +236,7 @@ describe('useStrain', () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
       const { result } = renderHook(useStrain, {
-        initialProps: { strainId: 'og-kush-001' },
+        initialProps: { strainIdOrSlug: 'og-kush-001' },
         wrapper,
       });
 
@@ -162,25 +252,37 @@ describe('useStrain', () => {
 
   describe('error handling', () => {
     test('handles fetch errors', async () => {
-      const error = new Error('Strain not found') as any;
+      const error = new Error('Strain not found') as Error & {
+        response: { status: number };
+      };
       error.response = { status: 404 };
-      mockClient.getStrain.mockRejectedValueOnce(error);
+      mockClient.getStrain.mockRejectedValue(error);
 
       const { result } = renderHook(useStrain, {
-        initialProps: { strainId: 'non-existent' },
+        initialProps: { strainIdOrSlug: 'non-existent' },
         wrapper,
       });
 
-      await waitFor(() => {
-        expect(result.current.isError).toBe(true);
-      });
+      await waitFor(
+        () => {
+          expect(result.current.status).toBe('error');
+        },
+        { timeout: 5000 }
+      );
+
+      expect(mockClient.getStrain).toHaveBeenCalledWith(
+        'non-existent',
+        expect.any(AbortSignal)
+      );
 
       expect(result.current.error).toEqual(error);
       expect(result.current.data).toBeUndefined();
     });
 
     test('retries once on failure', async () => {
-      const error = new Error('Network error') as any;
+      const error = new Error('Network error') as Error & {
+        response: { status: number };
+      };
       error.response = { status: 500 };
       mockClient.getStrain
         .mockRejectedValueOnce(error)
@@ -205,7 +307,7 @@ describe('useStrain', () => {
       );
 
       const { result } = renderHook(useStrain, {
-        initialProps: { strainId: 'og-kush-001' },
+        initialProps: { strainIdOrSlug: 'og-kush-001' },
         wrapper: retryWrapper,
       });
 
@@ -223,7 +325,7 @@ describe('useStrain', () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
       const { result } = renderHook(useStrain, {
-        initialProps: { strainId: 'og-kush-001' },
+        initialProps: { strainIdOrSlug: 'og-kush-001' },
         wrapper,
       });
 
@@ -239,7 +341,7 @@ describe('useStrain', () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
       const { result: result1 } = renderHook(useStrain, {
-        initialProps: { strainId: 'og-kush-001' },
+        initialProps: { strainIdOrSlug: 'og-kush-001' },
         wrapper,
       });
 
@@ -249,7 +351,7 @@ describe('useStrain', () => {
 
       // Second hook with same ID should use cache
       const { result: result2 } = renderHook(useStrain, {
-        initialProps: { strainId: 'og-kush-001' },
+        initialProps: { strainIdOrSlug: 'og-kush-001' },
         wrapper,
       });
 
@@ -264,7 +366,7 @@ describe('useStrain', () => {
       mockClient.getStrain.mockResolvedValueOnce(mockStrain);
 
       const { result } = renderHook(useStrain, {
-        initialProps: { strainId: 'og-kush-001' },
+        initialProps: { strainIdOrSlug: 'og-kush-001' },
         wrapper,
       });
 
@@ -284,7 +386,7 @@ describe('useStrain', () => {
       mockClient.getStrain.mockResolvedValue(mockStrain);
 
       const { result: result1 } = renderHook(useStrain, {
-        initialProps: { strainId: 'og-kush-001' },
+        initialProps: { strainIdOrSlug: 'og-kush-001' },
         wrapper,
       });
 
@@ -293,7 +395,7 @@ describe('useStrain', () => {
       });
 
       const { result: result2 } = renderHook(useStrain, {
-        initialProps: { strainId: 'og-kush-001' },
+        initialProps: { strainIdOrSlug: 'og-kush-001' },
         wrapper,
       });
 

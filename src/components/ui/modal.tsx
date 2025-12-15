@@ -32,7 +32,11 @@ import type {
   BottomSheetBackdropProps,
   BottomSheetModalProps,
 } from '@gorhom/bottom-sheet';
-import { BottomSheetModal, useBottomSheet } from '@gorhom/bottom-sheet';
+import {
+  BottomSheetModal,
+  useBottomSheet,
+  useBottomSheetTimingConfigs,
+} from '@gorhom/bottom-sheet';
 import * as React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
@@ -75,6 +79,8 @@ export const Modal = React.forwardRef(
       snapPoints: _snapPoints = ['60%'],
       title,
       detached = false,
+      handleComponent: customHandleComponent,
+      handleIndicatorStyle,
       ...props
     }: ModalProps,
     ref: ModalRef
@@ -91,7 +97,7 @@ export const Modal = React.forwardRef(
       () => (modal.ref.current as BottomSheetModal) || null
     );
 
-    const renderHandleComponent = React.useCallback(
+    const renderHandleWithHeader = React.useCallback(
       () => (
         <>
           <View className="mb-8 mt-2 h-1 w-12 self-center rounded-lg bg-gray-400 dark:bg-gray-700" />
@@ -100,6 +106,12 @@ export const Modal = React.forwardRef(
       ),
       [title, modal.dismiss]
     );
+
+    const hasCustomHandle = Boolean(customHandleComponent);
+
+    const animationConfigs = useBottomSheetTimingConfigs({
+      duration: 250,
+    });
 
     return (
       <BottomSheetModal
@@ -110,7 +122,12 @@ export const Modal = React.forwardRef(
         snapPoints={snapPoints}
         backdropComponent={props.backdropComponent || renderBackdrop}
         enableDynamicSizing={false}
-        handleComponent={renderHandleComponent}
+        handleIndicatorStyle={handleIndicatorStyle}
+        animationConfigs={animationConfigs}
+        handleComponent={
+          customHandleComponent ||
+          (hasCustomHandle ? undefined : renderHandleWithHeader)
+        }
       />
     );
   }

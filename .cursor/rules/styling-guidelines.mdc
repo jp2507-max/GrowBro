@@ -79,12 +79,11 @@ const makeStyle = isOn
 
 ### 🌈 Theme tokens workflow (GrowBro standard)
 
-* **Palette first**: tweak shades in `src/components/ui/colors.js`. Tailwind classes & runtime tokens consume the same palette → one change propagates everywhere.
-* **Semantic roles**: `src/lib/theme-tokens.ts` defines light/dark roles for `surface`, `text`, and `action` (primary, CTA, link, focus ring). Use these instead of sprinkling palette indices inside components. Navigation reads from `themeRoles`.
-* **Tailwind vs tokens**: Tailwind for **static layout** (`bg-primary-600`); **runtime** decisions use tokens (React Navigation themes, FlashMessage, focus rings, `style` props).
-* **States & accessibility**: role tokens include hover/background/content + focus‑ring colors; always pair CTA backgrounds with their **content** color for readable text.
-* **Adding new roles**: extend `themeRoles` (document the intent) before ad‑hoc palette references — keeps contrast & theming audit‑friendly.
-
+- **Palette first**: [src/components/ui/colors.js](cci:7://file:///c:/Users/Peter/GrowBro/src/components/ui/colors.js:0:0-0:0) → Tailwind classes & runtime tokens consume same palette.
+- **Runtime theming**: [src/lib/nativewind-theme-provider.tsx](cci:7://file:///c:/Users/Peter/GrowBro/src/lib/nativewind-theme-provider.tsx:0:0-0:0) uses NativeWind `vars()` to inject CSS variables. Edit themes there to change colors.
+- **Semantic classes**: Use `bg-background`, `bg-card`, `text-text-primary`, `text-text-secondary` for auto light/dark switching.
+- **Legacy roles**: [src/lib/theme-tokens.ts](cci:7://file:///c:/Users/Peter/GrowBro/src/lib/theme-tokens.ts:0:0-0:0) defines roles for React Navigation, FlashMessage, focus rings.
+- **Tailwind vs runtime**: Tailwind for static layout; runtime tokens for `style` props & native APIs.
 ---
 
 ## ✅ Do / Avoid (Quick)

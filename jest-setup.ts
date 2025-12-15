@@ -1,5 +1,7 @@
 import '@testing-library/react-native/extend-expect';
 
+import type React from 'react';
+
 // Initialize __DEV__ global for tests
 // This ensures the global declaration in src/types/global.d.ts is properly initialized
 // Tests typically run in development mode, so we set it to true
@@ -192,6 +194,9 @@ jest.mock('react-native-edge-to-edge', () => ({
 
 // mock: react-navigation to provide a minimal NavigationContainer and hooks
 jest.mock('@react-navigation/native', () => {
+  // Require React inside the factory to avoid out-of-scope references in Jest
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- required for jest.mock factory
+  const React = require('react');
   const NavigationContainer = ({ children }: { children?: React.ReactNode }) =>
     children ?? null;
   (NavigationContainer as { displayName?: string }).displayName =
@@ -200,6 +205,12 @@ jest.mock('@react-navigation/native', () => {
     NavigationContainer,
     useIsFocused: () => true,
     useScrollToTop: () => {},
+    useFocusEffect: (callback: () => void | (() => void)) => {
+      React.useEffect(() => {
+        const cleanup = callback?.();
+        return cleanup;
+      }, [callback]);
+    },
     // Provide identity ThemeProvider/value to satisfy consumers if used
     ThemeProvider: ({
       children,
@@ -236,6 +247,14 @@ jest.mock('react-native-safe-area-context', () => {
     },
   };
 });
+
+jest.mock(
+  'react-native-css-interop/src/runtime/third-party-libs/react-native-safe-area-context.native.tsx',
+  () => ({
+    __esModule: true,
+    maybeHijackSafeAreaProvider: (type: unknown) => type,
+  })
+);
 
 // mock: react-native-mmkv to avoid native bindings in Jest
 jest.mock('react-native-mmkv', () => {

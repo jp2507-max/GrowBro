@@ -34,6 +34,7 @@ import { OccurrenceOverrideModel } from './watermelon-models/occurrence-override
 import { OutboxModel } from './watermelon-models/outbox';
 import { OutboxNotificationActionModel } from './watermelon-models/outbox-notification-action';
 import { PhEcReadingModel } from './watermelon-models/ph-ec-reading';
+import { PlantModel } from './watermelon-models/plant';
 import { PlaybookModel } from './watermelon-models/playbook';
 import { PlaybookApplicationModel } from './watermelon-models/playbook-application';
 import { PostModel } from './watermelon-models/post';
@@ -151,5 +152,6 @@ export const database = new Database({
     AiSecondOpinionsQueueModel,
     // User profile model
     ProfileModel,
+    PlantModel,
   ],
 });

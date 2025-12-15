@@ -20,9 +20,18 @@ export async function hashFileContent(uri: string): Promise<string> {
     const file = new File(uri);
 
     // Read file as ArrayBuffer and convert to base64
+    // Process in chunks to avoid call stack overflow on large files
     const arrayBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
-    const base64 = btoa(String.fromCharCode(...bytes));
+
+    // Build binary string in chunks (8KB each to stay well under stack limits)
+    const chunkSize = 8192;
+    let binaryString = '';
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, i + chunkSize);
+      binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    const base64 = btoa(binaryString);
 
     // Hash the content
     const hash = await Crypto.digestStringAsync(

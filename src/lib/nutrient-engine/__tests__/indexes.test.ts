@@ -52,7 +52,7 @@ describe('ensureNutrientEngineIndexes', () => {
           [],
         ],
         [
-          'CREATE INDEX IF NOT EXISTS idx_deviation_alerts_v2_reservoir_triggered_at ON deviation_alerts_v2(reservoir_id, triggered_at DESC)',
+          'CREATE INDEX IF NOT EXISTS idx_deviation_alerts_v2_reading_triggered_at ON deviation_alerts_v2(reading_id, triggered_at DESC)',
           [],
         ],
       ])

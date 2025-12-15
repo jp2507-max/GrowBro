@@ -1,56 +1,90 @@
 /* eslint-disable simple-import-sort/imports */
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import type { ViewStyle, RegisteredStyle } from 'react-native';
+import { StyleSheet, View as RNView } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
+import type { BlurTint } from 'expo-blur';
 
 type BlurProps = {
   intensity?: number;
-  tint?: 'light' | 'dark' | 'default' | undefined;
-  style?: ViewStyle | ViewStyle[] | RegisteredStyle<ViewStyle>;
+  tint?: BlurTint | undefined;
+  style?: StyleProp<ViewStyle>;
   testID?: string;
   pointerEvents?: 'auto' | 'none' | 'box-none' | 'box-only';
+  // Reanimated injects extra props; allow them through.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
 };
 
 type ExpoBlurModule = {
-  BlurView: React.ComponentType<BlurProps>;
+  // Use any here to avoid incompatibilities between expo-blur's extended props
+  // and the narrow subset we forward (intensity/tint/style/pointerEvents).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  BlurView: React.ComponentType<any>;
 };
 
-export function OptionalBlurView({
-  intensity = 0,
-  tint = 'dark',
-  style,
-  testID,
-  pointerEvents,
-}: BlurProps) {
-  const [Blur, setBlur] = React.useState<React.ComponentType<BlurProps> | null>(
-    null
-  );
+const FallbackBlur = React.forwardRef<RNView, BlurProps>(
+  ({ style, testID, pointerEvents, ...rest }, ref) => (
+    <RNView
+      ref={ref}
+      style={style ?? StyleSheet.absoluteFill}
+      testID={testID}
+      pointerEvents={pointerEvents}
+      {...rest}
+    />
+  )
+);
+
+function OptionalBlurViewBase(
+  {
+    intensity = 0,
+    tint = 'dark',
+    style,
+    testID,
+    pointerEvents,
+    ...rest
+  }: BlurProps,
+  ref: React.Ref<RNView>
+) {
+  const [BlurComponent, setBlurComponent] = React.useState<
+    React.ComponentType<BlurProps>
+  >(() => FallbackBlur);
+
   React.useEffect(() => {
-    const moduleName = 'expo-blur';
-    // Dynamic import to avoid bundling/type resolution issues if expo-blur is not installed yet
-    import(moduleName)
-      .then((mod: ExpoBlurModule) => setBlur(() => mod.BlurView))
-      .catch(() => setBlur(null));
+    let isMounted = true;
+    import('expo-blur')
+      .then((mod: ExpoBlurModule) => {
+        if (isMounted && mod.BlurView) {
+          setBlurComponent(() => mod.BlurView);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setBlurComponent(() => FallbackBlur);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  if (!Blur) return null;
+  const ResolvedBlur = BlurComponent;
 
   return (
-    <Blur
+    <ResolvedBlur
+      ref={ref}
       style={style ?? StyleSheet.absoluteFill}
       tint={tint}
       intensity={intensity}
       testID={testID}
       pointerEvents={pointerEvents}
+      {...rest}
     />
   );
 }
 
-const OptionalBlurViewWrapper = React.forwardRef<unknown, BlurProps>(
-  (props, _ref) => <OptionalBlurView {...props} />
-);
+export const OptionalBlurView = React.forwardRef(OptionalBlurViewBase);
 
-export const AnimatedOptionalBlurView = Animated.createAnimatedComponent(
-  OptionalBlurViewWrapper
-);
+export const AnimatedOptionalBlurView =
+  Animated.createAnimatedComponent(OptionalBlurView);

@@ -13,7 +13,7 @@ export type PhotoAccessResult = {
 // - Always sets reselectionSupported=true (we can re-open picker any time)
 export async function requestSelectedPhotos(): Promise<PhotoAccessResult> {
   const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    mediaTypes: ['images'],
     allowsMultipleSelection: false,
     quality: 1,
   });
@@ -30,7 +30,7 @@ export async function requestSelectedPhotos(): Promise<PhotoAccessResult> {
 export function showReselectionUI(): void {
   // Fire-and-forget re-open of the picker; callers who need results should use requestSelectedPhotos()
   void ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    mediaTypes: ['images'],
     allowsMultipleSelection: false,
     quality: 1,
   });

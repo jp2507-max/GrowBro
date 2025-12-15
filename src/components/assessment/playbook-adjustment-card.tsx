@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable } from 'react-native';
 
 import { Text, View } from '@/components/ui';
+import { Button } from '@/components/ui/button';
 import type { PlaybookAdjustment } from '@/lib/assessment/playbook-integration';
 
 type PlaybookAdjustmentCardProps = {
@@ -118,16 +119,14 @@ function PlaybookAdjustmentItem({
       ) : null}
 
       {onAccept ? (
-        <Pressable
-          accessibilityRole="button"
+        <Button
+          variant="secondary"
+          size="sm"
           onPress={() => onAccept(adjustment)}
-          className="mt-3 rounded-md bg-primary-600 px-3 py-2 active:opacity-70"
+          className="mt-3"
           testID={`${testID}-accept-${index}`}
-        >
-          <Text className="text-center text-sm font-medium text-white">
-            {t('assessment.playbook.applyAdjustment')}
-          </Text>
-        </Pressable>
+          tx="assessment.playbook.applyAdjustment"
+        />
       ) : null}
     </View>
   );

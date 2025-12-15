@@ -1,7 +1,7 @@
 import { appSchema as createSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const appSchema = createSchema({
-  version: 33,
+  version: 35,
   tables: [
     tableSchema({
       name: 'series',
@@ -138,6 +138,31 @@ export const appSchema = createSchema({
         { name: 'quiet_hours_end', type: 'string', isOptional: true },
         { name: 'last_updated', type: 'number' },
         { name: 'device_id', type: 'string' },
+      ],
+    }),
+    tableSchema({
+      name: 'plants',
+      columns: [
+        { name: 'user_id', type: 'string', isOptional: true },
+        { name: 'name', type: 'string' },
+        { name: 'stage', type: 'string', isOptional: true },
+        { name: 'strain', type: 'string', isOptional: true },
+        { name: 'photoperiod_type', type: 'string', isOptional: true },
+        { name: 'environment', type: 'string', isOptional: true },
+        { name: 'genetic_lean', type: 'string', isOptional: true },
+        { name: 'planted_at', type: 'string', isOptional: true },
+        { name: 'expected_harvest_at', type: 'string', isOptional: true },
+        { name: 'last_watered_at', type: 'string', isOptional: true },
+        { name: 'last_fed_at', type: 'string', isOptional: true },
+        { name: 'health', type: 'string', isOptional: true },
+        { name: 'image_url', type: 'string', isOptional: true },
+        { name: 'notes', type: 'string', isOptional: true },
+        { name: 'metadata', type: 'string', isOptional: true },
+        { name: 'server_revision', type: 'number', isOptional: true },
+        { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'deleted_at', type: 'number', isOptional: true },
       ],
     }),
     tableSchema({
