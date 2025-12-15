@@ -92,7 +92,8 @@ function createExpoConfig(config) {
     'EXPO_PUBLIC_SUPABASE_URL',
     'EXPO_PUBLIC_SUPABASE_ANON_KEY',
     'EXPO_PUBLIC_ACCOUNT_DELETION_URL',
-    // Strains API (RapidAPI) - expose these in client builds when present
+    // Strains API - credentials only for dev fallback (production always uses proxy)
+    // SECURITY: These are only included in non-production builds for local testing
     'EXPO_PUBLIC_STRAINS_API_KEY',
     'EXPO_PUBLIC_STRAINS_API_HOST',
     'EXPO_PUBLIC_STRAINS_API_URL',
@@ -120,15 +121,17 @@ function createExpoConfig(config) {
     // OAuth / Google
     'EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID',
     'EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID',
-    // DSA / compliance
+    // DSA / compliance - DSA_TRANSPARENCY_DB_API_KEY is intentionally public:
+    // it's a publishable key for EU Commission Transparency Database submissions
+    // (DSA Art. 24(5)) and does not grant sensitive access.
     'EXPO_PUBLIC_DSA_TRANSPARENCY_DB_URL',
     'EXPO_PUBLIC_DSA_TRANSPARENCY_DB_API_KEY',
     'EXPO_PUBLIC_LEGAL_ENTITY_ADDRESS',
     'EXPO_PUBLIC_DPO_EMAIL',
     'EXPO_PUBLIC_DPO_NAME',
     'EXPO_PUBLIC_EU_REPRESENTATIVE_ADDRESS',
-    // PII / security
-    'EXPO_PUBLIC_PII_SCRUBBING_SALT',
+    // PII / security - NOTE: PII_SCRUBBING_SALT is intentionally NOT exposed
+    // to the client; it's server-only for HMAC pseudonymization in pii-scrubber.ts
     'EXPO_PUBLIC_PII_SALT_VERSION',
     'EXPO_PUBLIC_FEATURE_SECURITY_ENCRYPTION',
     'EXPO_PUBLIC_FEATURE_SECURITY_INTEGRITY_DETECTION',
@@ -328,7 +331,8 @@ function createExpoConfig(config) {
       ...(Env.VAR_BOOL !== undefined && {
         EXPO_PUBLIC_VAR_BOOL: String(Env.VAR_BOOL),
       }),
-      // Strains
+      // Strains - API credentials for dev fallback only (production always uses proxy)
+      // SECURITY: In production builds, the client enforces proxy-only regardless of these values
       ...(Env.STRAINS_API_URL && {
         EXPO_PUBLIC_STRAINS_API_URL: Env.STRAINS_API_URL,
       }),
@@ -424,10 +428,7 @@ function createExpoConfig(config) {
       ...(Env.EU_REPRESENTATIVE_ADDRESS && {
         EXPO_PUBLIC_EU_REPRESENTATIVE_ADDRESS: Env.EU_REPRESENTATIVE_ADDRESS,
       }),
-      // PII / security
-      ...(Env.PII_SCRUBBING_SALT && {
-        EXPO_PUBLIC_PII_SCRUBBING_SALT: Env.PII_SCRUBBING_SALT,
-      }),
+      // PII / security - salt is server-only for HMAC pseudonymization
       ...(Env.PII_SALT_VERSION && {
         EXPO_PUBLIC_PII_SALT_VERSION: Env.PII_SALT_VERSION,
       }),

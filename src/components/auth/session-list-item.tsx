@@ -59,7 +59,7 @@ export function SessionListItem({
 
   return (
     <Pressable
-      className="border-b border-neutral-200 px-4 py-3 dark:border-neutral-700"
+      className="border-b border-border px-4 py-3"
       disabled={isCurrent}
       accessibilityRole="none"
     >
@@ -76,16 +76,16 @@ export function SessionListItem({
             )}
           </View>
 
-          <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+          <Text className="mt-1 text-sm text-text-secondary">
             {session.device_os} • {session.app_version}
           </Text>
 
-          <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
+          <Text className="mt-1 text-xs text-text-secondary">
             {formatLastActive(session.last_active_at)}
           </Text>
 
           {session.ip_address_truncated && (
-            <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
+            <Text className="mt-1 text-xs text-text-secondary">
               {translate('auth.sessions.ip_address', {
                 ip: session.ip_address_truncated,
               })}

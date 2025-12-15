@@ -175,7 +175,7 @@ function PostCardView({
                 @{postUserId.slice(0, 8)}
               </Text>
             </Pressable>
-            <Text className="w-fit rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
+            <Text className="w-fit rounded-full bg-success-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-success-800 dark:bg-success-900/40 dark:text-success-200">
               {translate('cannabis.educational_badge')}
             </Text>
             <Text

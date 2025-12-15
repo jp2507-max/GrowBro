@@ -42,13 +42,11 @@ export function ScreenHeaderBase({
 }: ScreenHeaderBaseProps): React.ReactElement {
   const theme = useThemeConfig();
 
+  const borderClass = showBottomBorder ? 'border-b border-border' : '';
+
   return (
     <View
-      className={`bg-neutral-50 px-4 pb-4 dark:bg-charcoal-950 ${
-        showBottomBorder
-          ? 'border-b border-neutral-200 dark:border-neutral-800'
-          : ''
-      }`}
+      className={`bg-background px-4 pb-4 ${borderClass}`}
       style={{
         paddingTop: insets.top + HEADER_PADDING_TOP,
         backgroundColor: theme.colors.background,
@@ -64,7 +62,7 @@ export function ScreenHeaderBase({
       )}
 
       {/* Main Title */}
-      <Text className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
+      <Text className="text-3xl font-bold tracking-tight text-text-primary">
         {title}
       </Text>
 

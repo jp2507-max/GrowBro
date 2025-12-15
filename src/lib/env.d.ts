@@ -18,11 +18,11 @@ declare module '@env' {
     API_URL: string;
     EXPO_PUBLIC_API_BASE_URL?: string;
 
-    // Strains API
-    STRAINS_API_URL: string;
-    STRAINS_API_KEY: string;
-    STRAINS_API_HOST: string;
-    STRAINS_USE_PROXY?: string;
+    // Strains API (dev fallback only - production always uses proxy)
+    STRAINS_API_URL?: string;
+    STRAINS_API_KEY?: string;
+    STRAINS_API_HOST?: string;
+    STRAINS_USE_PROXY?: boolean;
 
     // Feature Flags
     FEATURE_STRAINS_ENABLED?: boolean;
@@ -71,7 +71,9 @@ declare module '@env' {
     DSA_TRANSPARENCY_DB_URL?: string;
     DSA_TRANSPARENCY_DB_API_KEY?: string;
 
-    // PII Scrubbing
+    // PII Scrubbing - NOTE: PII_SCRUBBING_SALT is server-only for HMAC
+    // pseudonymization and is NOT exposed to client bundles.
+    // It's defined here for server-side code that imports from @env.
     PII_SCRUBBING_SALT?: string;
     PII_SALT_VERSION?: string;
 

@@ -97,10 +97,10 @@ function PortalIntro(): React.ReactElement {
       <Text className="text-2xl font-bold">
         {translate('privacy.webPortalTitle')}
       </Text>
-      <Text className="text-base text-gray-700">
+      <Text className="text-base text-charcoal-700">
         {translate('privacy.webPortalIntro')}
       </Text>
-      <Text className="text-sm text-gray-600">
+      <Text className="text-sm text-charcoal-600">
         {translate('privacy.webPortalAuthNote')}
       </Text>
       <Link href="/login" asChild>
@@ -116,11 +116,11 @@ function DeletionSection({
   onPress: () => void;
 }): React.ReactElement {
   return (
-    <View className="gap-3 rounded-lg bg-gray-100 p-4">
+    <View className="gap-3 rounded-lg bg-neutral-100 p-4">
       <Text className="text-lg font-semibold">
         {translate('privacy.webPortalDeletionHeading')}
       </Text>
-      <Text className="text-sm text-gray-700">
+      <Text className="text-sm text-charcoal-700">
         {translate('privacy.webPortalDeletionCopy')}
       </Text>
       <Button
@@ -137,11 +137,11 @@ function ExportSection({
   onPress: () => void;
 }): React.ReactElement {
   return (
-    <View className="gap-3 rounded-lg bg-gray-100 p-4">
+    <View className="gap-3 rounded-lg bg-neutral-100 p-4">
       <Text className="text-lg font-semibold">
         {translate('privacy.webPortalExportHeading')}
       </Text>
-      <Text className="text-sm text-gray-700">
+      <Text className="text-sm text-charcoal-700">
         {translate('privacy.webPortalExportCopy')}
       </Text>
       <Button

@@ -39,7 +39,11 @@ export function PlantsSection({
   return (
     <View className="gap-3" testID="plants-section">
       {plants.map((plant) => (
-        <PlantCard key={plant.id} plant={plant} onPress={onPlantPress} />
+        <PlantCard
+          key={plant.id}
+          plant={plant}
+          onPress={(id) => onPlantPress(id)}
+        />
       ))}
     </View>
   );

@@ -47,7 +47,7 @@ export const LoginForm = ({ onSubmit = () => {} }: LoginFormProps) => {
             Sign In
           </Text>
 
-          <Text className="mb-6 max-w-xs text-center text-gray-500">
+          <Text className="mb-6 max-w-xs text-center text-charcoal-500">
             Welcome! 👋 This is a demo login screen! Feel free to use any email
             and password to sign in and try it out.
           </Text>

@@ -251,24 +251,41 @@ export class CachedStrainsRepository {
     const all = await this.collection.query().fetch();
     const now = Date.now();
 
+    const expiredEntries: CachedStrainModel[] = [];
+    let foundMatch: Strain | null = null;
+
     for (const entry of all) {
       if (entry.expiresAt < now) {
-        // Clean up expired entries opportunistically
-        await this.database.write(async () => {
-          await entry.destroyPermanently();
-        });
+        expiredEntries.push(entry);
         continue;
       }
 
-      const match = entry.parsedStrains.find(
-        (strain) => strain.id === idOrSlug || strain.slug === idOrSlug
-      );
-
-      if (match) {
-        return match;
+      if (!foundMatch) {
+        const match = entry.parsedStrains.find(
+          (strain) => strain.id === idOrSlug || strain.slug === idOrSlug
+        );
+        if (match) {
+          foundMatch = match;
+        }
       }
     }
 
-    return null;
+    // Clean up expired entries in a single transaction
+    if (expiredEntries.length > 0) {
+      try {
+        await this.database.write(async () => {
+          await Promise.all(
+            expiredEntries.map((entry) => entry.destroyPermanently())
+          );
+        });
+      } catch (error) {
+        console.error(
+          `[CachedStrainsRepository] Failed to delete ${expiredEntries.length} expired entries:`,
+          error
+        );
+      }
+    }
+
+    return foundMatch;
   }
 }

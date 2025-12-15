@@ -41,7 +41,7 @@ export function ConnectivityBanner({
       accessibilityRole="text"
       className="w-full items-center justify-center"
     >
-      <Text className="text-center text-xs text-yellow-900">
+      <Text className="text-center text-xs text-warning-900">
         {translate('sync.offline_banner')}
       </Text>
     </View>
@@ -50,7 +50,7 @@ export function ConnectivityBanner({
   if (!onPress) {
     return (
       <View
-        className={`w-full bg-yellow-100 px-3 py-2 ${className ?? ''}`}
+        className={`w-full bg-warning-100 px-3 py-2 ${className ?? ''}`}
         testID={testID}
       >
         {content}
@@ -63,7 +63,7 @@ export function ConnectivityBanner({
       accessibilityHint={translate('sync.offline_banner_action_hint')}
       accessibilityLabel={translate('sync.offline_banner_action_label')}
       accessibilityRole="button"
-      className={`w-full bg-yellow-100 px-3 py-2 ${className ?? ''}`}
+      className={`w-full bg-warning-100 px-3 py-2 ${className ?? ''}`}
       onPress={onPress}
       testID={testID}
     >

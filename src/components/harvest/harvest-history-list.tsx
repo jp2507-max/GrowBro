@@ -230,10 +230,10 @@ const HarvestHistoryRow = memo<RowProps>(function HarvestHistoryRow({
       onPress={handlePress}
     >
       <View className="flex-1 pr-3">
-        <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-50">
+        <Text className="text-base font-semibold text-text-primary">
           {t(`harvest.stages.${item.stage}`)}
         </Text>
-        <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
+        <Text className="mt-1 text-sm text-text-secondary">
           {t('harvest.history.list.updated', {
             relativeTime: relativeTime(item.updatedAt),
           })}
@@ -241,7 +241,7 @@ const HarvestHistoryRow = memo<RowProps>(function HarvestHistoryRow({
       </View>
       <View className="items-end">
         {item.dryWeight != null ? (
-          <Text className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+          <Text className="text-sm font-medium text-text-primary">
             {t('harvest.history.list.weight', { weight: item.dryWeight })}
           </Text>
         ) : null}
@@ -261,7 +261,7 @@ const HarvestHistoryRow = memo<RowProps>(function HarvestHistoryRow({
  * Memoized separator component for stable reference in FlashList
  */
 const Separator = memo(function Separator(): React.ReactElement {
-  return <View className="h-px bg-neutral-200 dark:bg-neutral-700" />;
+  return <View className="h-px bg-border" />;
 });
 
 const MemoizedSeparator = Separator;

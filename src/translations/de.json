@@ -85,6 +85,8 @@
       "refresh_hint": "Aktualisiert den aktuellen Inhalt.",
       "reset_date_hint": "Löscht das ausgewählte Datum.",
       "retry_hint": "Wiederholt die letzte Aktion.",
+      "return_to_previous": "Kehrt zum vorherigen Bildschirm zurück",
+      "saves_changes": "Speichert deine Änderungen",
       "select_open_hint": "Öffnet die Auswahl für {{label}}. Doppeltippen zum Auswählen.",
       "select_option_hint": "Wählt die Option {{label}}.",
       "toggleHint": "Schaltet die Einstellung ein oder aus."
@@ -709,6 +711,7 @@
     "remove": "Entfernen",
     "reset": "Zurücksetzen",
     "retry": "Wiederholen",
+    "save": "Speichern",
     "saving": "Speichert...",
     "select_date": "Datum wählen",
     "selected": "ausgewählt",
@@ -1408,6 +1411,7 @@
         "no_uri": "Keine Foto-URI zurückgegeben",
         "processing_failed": "Foto konnte nicht verarbeitet werden",
         "select_failed": "Foto konnte nicht ausgewählt werden",
+        "selection_failed": "Foto konnte nicht ausgewählt werden",
         "storage_failed": "Foto konnte nicht gespeichert werden",
         "upload_failed": "Foto konnte nicht hochgeladen werden",
         "upload_missing_metadata": "Foto-Metadaten sind unvollständig",
@@ -2147,6 +2151,9 @@
       },
       "health_label": "Gesundheit",
       "no_photo": "Foto hinzufügen"
+    },
+    "completionProgress": {
+      "percentComplete": "{{percent}}% Abgeschlossen"
     },
     "empty_state": "Keine Pflanzen in deinem Inventar",
     "error": "Pflanzen konnten nicht geladen werden. Bitte erneut versuchen.",

@@ -37,17 +37,21 @@ const AnimatedImage = Animated.createAnimatedComponent(Image);
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
+/**
+ * Check if using proxy (production always uses proxy, dev can disable)
+ */
 function isProxyEnabled(): boolean {
+  // Always use proxy in production
+  if (process.env.NODE_ENV === 'production') {
+    return true;
+  }
   const rawValue = Env?.STRAINS_USE_PROXY;
   const normalized = rawValue ? String(rawValue).trim().toLowerCase() : '';
-  return (
-    process.env.NODE_ENV === 'production' ||
-    normalized === 'true' ||
-    normalized === '1'
-  );
+  // In dev, proxy is enabled unless explicitly set to 'false' or '0'
+  return normalized !== 'false' && normalized !== '0';
 }
 
-/** Fire-and-forget background cache to Supabase */
+/** Fire-and-forget background cache to Supabase (dev fallback only) */
 function cacheStrainToSupabase(strain: Strain) {
   if (isProxyEnabled()) {
     // Proxy already saves to Supabase; avoid duplicate writes from client.
@@ -176,9 +180,9 @@ const EffectsFlavorsSection = ({ strain }: { strain: Strain }) => {
             {strain.effects.map((effect) => (
               <View
                 key={effect.name}
-                className="rounded-full bg-green-100 px-3 py-1 dark:bg-green-900/30"
+                className="rounded-full bg-success-100 px-3 py-1 dark:bg-success-900/30"
               >
-                <Text className="font-medium text-green-800 dark:text-green-200">
+                <Text className="font-medium text-success-800 dark:text-success-200">
                   {effect.name}
                 </Text>
               </View>
@@ -406,7 +410,7 @@ export default function StrainDetailsScreen() {
     }
   }, [isError, error, slug]);
 
-  // Background cache: Save viewed strain to Supabase for future users
+  // Background cache: Save viewed strain to Supabase for future users (dev fallback only)
   React.useEffect(() => {
     if (strain) cacheStrainToSupabase(strain);
   }, [strain]);

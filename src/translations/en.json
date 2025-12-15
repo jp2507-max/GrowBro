@@ -85,6 +85,8 @@
       "refresh_hint": "Refreshes the current content.",
       "reset_date_hint": "Clears the selected date.",
       "retry_hint": "Retries the last action.",
+      "return_to_previous": "Returns to the previous screen",
+      "saves_changes": "Saves your changes",
       "select_open_hint": "Opens the {{label}} picker. Double-tap to choose.",
       "select_option_hint": "Selects the {{label}} option.",
       "toggleHint": "Toggles the setting on or off."
@@ -709,6 +711,7 @@
     "remove": "Remove",
     "reset": "Reset",
     "retry": "Retry",
+    "save": "Save",
     "saving": "Saving...",
     "select_date": "Select date",
     "selected": "selected",
@@ -1408,6 +1411,7 @@
         "no_uri": "No photo URI returned",
         "processing_failed": "Failed to process photo",
         "select_failed": "Failed to select photo",
+        "selection_failed": "Failed to select photo",
         "storage_failed": "Failed to store photo",
         "upload_failed": "Failed to upload photo",
         "upload_missing_metadata": "Photo metadata is incomplete",
@@ -2147,6 +2151,9 @@
       },
       "health_label": "Health",
       "no_photo": "Add photo"
+    },
+    "completionProgress": {
+      "percentComplete": "{{percent}}% Complete"
     },
     "empty_state": "No plants in your inventory",
     "error": "Failed to load plants. Try again.",

@@ -46,7 +46,7 @@ function TaskCounts({ phase }: { phase: PhaseProgress }) {
         </Text>
       )}
       {phase.upcomingTasks > 0 && (
-        <Text className="text-xs text-neutral-500 dark:text-neutral-500">
+        <Text className="text-xs text-text-secondary">
           {phase.upcomingTasks}
         </Text>
       )}
@@ -73,16 +73,14 @@ function PhaseDot({
           className={`absolute -left-1/2 top-4 h-0.5 w-full ${
             isCompleted || (isCurrent && phase.progressPercent > 0)
               ? PHASE_COLORS[phase.phase]
-              : 'bg-neutral-300 dark:bg-neutral-700'
+              : 'bg-border'
           }`}
         />
       )}
 
       <View
         className={`z-10 size-8 items-center justify-center rounded-full ${
-          isCompleted || isCurrent
-            ? PHASE_COLORS[phase.phase]
-            : 'bg-neutral-300 dark:bg-neutral-700'
+          isCompleted || isCurrent ? PHASE_COLORS[phase.phase] : 'bg-border'
         }`}
       >
         {isCompleted && (
@@ -95,16 +93,14 @@ function PhaseDot({
 
       <Text
         className={`mt-2 text-xs ${
-          isCurrent
-            ? 'font-semibold text-neutral-900 dark:text-neutral-100'
-            : 'text-neutral-600 dark:text-neutral-400'
+          isCurrent ? 'font-semibold text-text-primary' : 'text-text-secondary'
         }`}
       >
         {PHASE_LABELS[phase.phase]}
       </Text>
 
       {isCurrent && (
-        <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
+        <Text className="mt-1 text-xs text-text-secondary">
           {phase.progressPercent}%
         </Text>
       )}
@@ -119,21 +115,15 @@ function Legend() {
     <View className="mt-4 flex-row justify-center gap-4 px-4">
       <View className="flex-row items-center gap-1">
         <View className="size-2 rounded-full bg-success-600" />
-        <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-          Completed
-        </Text>
+        <Text className="text-xs text-text-secondary">Completed</Text>
       </View>
       <View className="flex-row items-center gap-1">
         <View className="size-2 rounded-full bg-primary-600" />
-        <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-          Current
-        </Text>
+        <Text className="text-xs text-text-secondary">Current</Text>
       </View>
       <View className="flex-row items-center gap-1">
-        <View className="size-2 rounded-full bg-neutral-400" />
-        <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-          Upcoming
-        </Text>
+        <View className="size-2 rounded-full bg-border" />
+        <Text className="text-xs text-text-secondary">Upcoming</Text>
       </View>
     </View>
   );

@@ -295,7 +295,7 @@ export default function AddPost(): React.JSX.Element {
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ['images'],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 1,
         allowsEditing: false,
       });
@@ -319,7 +319,7 @@ export default function AddPost(): React.JSX.Element {
   const handleSelectPhoto = React.useCallback(async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 1,
         allowsMultipleSelection: false,
       });

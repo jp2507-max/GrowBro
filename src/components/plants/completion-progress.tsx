@@ -8,6 +8,8 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Text, View } from '@/components/ui';
+import type { TxKeyPath } from '@/lib/i18n';
+import { translate } from '@/lib/i18n';
 
 const PROGRESS_BAR_WIDTH = 208; // 52 * 4 = w-52 in tailwind
 
@@ -27,6 +29,7 @@ export function CompletionProgress({
   React.useEffect(() => {
     progressValue.value = withTiming(Math.min(100, Math.max(0, progress)), {
       duration: 400,
+      reduceMotion: ReduceMotion.System,
     });
   }, [progress, progressValue]);
 
@@ -38,7 +41,11 @@ export function CompletionProgress({
     };
   });
 
-  const displayLabel = label ?? `${Math.round(progress)}% Complete`;
+  const displayLabel =
+    label ??
+    translate('plants.completionProgress.percentComplete' as TxKeyPath, {
+      percent: Math.round(progress),
+    });
 
   return (
     <Animated.View

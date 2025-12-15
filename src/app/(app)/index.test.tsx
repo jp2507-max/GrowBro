@@ -87,7 +87,7 @@ describe('Home screen', () => {
     await user.press(fab);
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/plants/add');
+      expect(mockPush).toHaveBeenCalledWith('/plants/create');
     });
   });
 

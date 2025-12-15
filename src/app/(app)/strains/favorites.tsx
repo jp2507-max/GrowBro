@@ -75,7 +75,9 @@ function sortFavorites(
     if (sortBy === 'dateAdded') {
       comparison = a.addedAt - b.addedAt;
     } else if (sortBy === 'name') {
-      comparison = a.snapshot.name.localeCompare(b.snapshot.name);
+      const nameA = a.snapshot.name || a.snapshot.slug || a.snapshot.id || '';
+      const nameB = b.snapshot.name || b.snapshot.slug || b.snapshot.id || '';
+      comparison = nameA.localeCompare(nameB);
     } else if (sortBy === 'thc') {
       const valA = numericRepresentativeFromTHCDisplay(a.snapshot.thc_display);
       const valB = numericRepresentativeFromTHCDisplay(b.snapshot.thc_display);

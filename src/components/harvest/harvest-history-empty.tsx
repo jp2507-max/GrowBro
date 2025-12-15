@@ -47,10 +47,10 @@ export function HarvestHistoryEmpty({
       accessibilityHint={translate('harvest.history.accessibility.summaryHint')}
       testID={testID}
     >
-      <Text className="text-center text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+      <Text className="text-center text-lg font-semibold text-text-primary">
         {translate(copy.title)}
       </Text>
-      <Text className="text-center text-base text-neutral-600 dark:text-neutral-300">
+      <Text className="text-center text-base text-text-secondary">
         {translate(copy.body)}
       </Text>
 

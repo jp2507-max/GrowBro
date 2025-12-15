@@ -103,10 +103,10 @@ export function DiagnosticChecklist({
 
   return (
     <View testID={testID}>
-      <Text className="mb-3 font-semibold text-neutral-900 dark:text-neutral-100">
+      <Text className="mb-3 font-semibold text-text-primary">
         {t('assessment.diagnostics.title')}
       </Text>
-      <Text className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
+      <Text className="mb-4 text-sm text-text-secondary">
         {t('assessment.diagnostics.description')}
       </Text>
 
@@ -117,17 +117,17 @@ export function DiagnosticChecklist({
           return (
             <View
               key={check.id}
-              className="rounded-lg border border-neutral-300 bg-neutral-50 p-3 dark:border-neutral-700 dark:bg-neutral-900"
+              className="rounded-lg border border-border bg-card p-3"
               testID={`${testID}-item-${check.id}`}
             >
               {/* Check header with checkbox */}
               <View className="mb-2 flex-row items-center justify-between">
                 <View className="flex-1">
-                  <Text className="font-medium text-neutral-900 dark:text-neutral-100">
+                  <Text className="font-medium text-text-primary">
                     {t(check.nameKey)}
                   </Text>
                   {check.estimatedMinutes && (
-                    <Text className="text-xs text-neutral-500 dark:text-neutral-500">
+                    <Text className="text-xs text-text-secondary">
                       {t('assessment.diagnostics.estimatedTime', {
                         minutes: check.estimatedMinutes,
                       })}
@@ -146,7 +146,7 @@ export function DiagnosticChecklist({
               </View>
 
               {/* Instructions */}
-              <Text className="mb-2 text-sm text-neutral-700 dark:text-neutral-300">
+              <Text className="mb-2 text-sm text-text-secondary">
                 {t(check.instructionsKey)}
               </Text>
 

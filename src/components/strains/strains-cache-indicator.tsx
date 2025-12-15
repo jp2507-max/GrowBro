@@ -23,12 +23,12 @@ export function StrainsCacheIndicator({
   return (
     <View
       testID={testID}
-      className="mx-4 my-2 rounded border-l-4 border-amber-400 bg-amber-50 p-3"
+      className="mx-4 my-2 rounded border-l-4 border-warning-400 bg-warning-50 p-3"
     >
-      <Text className="text-sm font-medium text-amber-800">
+      <Text className="text-sm font-medium text-warning-800">
         📦 Viewing cached data
       </Text>
-      <Text className="mt-1 text-xs text-amber-700">
+      <Text className="mt-1 text-xs text-warning-700">
         Connect to the internet to see the latest strains
       </Text>
     </View>

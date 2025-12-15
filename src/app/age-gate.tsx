@@ -152,7 +152,7 @@ export default function AgeGateScreen(): React.ReactElement {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900">
+    <SafeAreaView className="flex-1 bg-background">
       <FocusAwareStatusBar />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"

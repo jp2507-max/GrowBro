@@ -64,27 +64,24 @@ const makeStyle = isOn
 
 ## 🧩 GrowBro repo‑specific styling conventions
 
-* **Tokens source**: `src/components/ui/colors.js` (wired via Tailwind config).
+- **Tokens**: [src/components/ui/colors.js](cci:7://file:///c:/Users/Peter/GrowBro/src/components/ui/colors.js:0:0-0:0) → Tailwind config.
+  - Palettes: `primary`, `neutral`, `charcoal`, [ink](cci:2://file:///c:/Users/Peter/GrowBro/src/lib/theme-tokens.ts:22:0-25:2), `terracotta`, `sky`, `indigo`, `success`, `warning`, `danger`.
+  - Prefer tokens (`bg-primary-600`, `text-ink-900`) over raw hex.
+- **Fonts**: `font-inter` default; override via classNames.
+- **Dark mode**: `darkMode: 'class'`. Runtime theming via [src/lib/nativewind-theme-provider.tsx](cci:7://file:///c:/Users/Peter/GrowBro/src/lib/nativewind-theme-provider.tsx:0:0-0:0).
+- **Variants**: `tailwind-variants` `tv()`; static layout in slots, variants for tokens.
+- **SVG**: `cssInterop` enables `className` (see [src/components/ui/index.tsx](cci:7://file:///c:/Users/Peter/GrowBro/src/components/ui/index.tsx:0:0-0:0)).
+- **Class merging**: `tailwind-merge`; no manual concat.
+- **Native props**: import colors from `@/components/ui/colors`.
+- **Linting**: `eslint-plugin-tailwindcss` enforces order.
 
-  * Palettes: `primary`, `neutral`, `charcoal`, `success`, `warning`, `danger`.
-  * Prefer tokens (e.g., `bg-primary-600`, `text-neutral-100`, `bg-charcoal-950`) over raw hex.
-* **Fonts**: default `font-inter`; override via class names, not inline styles.
-* **Dark mode**: `darkMode: 'class'`. Pair light/dark classes. App themes mirror tokens via `src/lib/use-theme-config.tsx`.
-* **Variants**: compose with `tailwind-variants` `tv()`; keep layout static in slots, switch tokens via variants; allow overrides with `slots.container({ className })`.
-* **SVG**: `cssInterop` enables `className` on `react-native-svg` (see `src/components/ui/index.tsx`).
-* **Class merging**: use `tailwind-merge`; avoid manual concatenation.
-* **Native props w/ colors**: import from `@/components/ui/colors` (e.g., `placeholderTextColor`).
-* **Linting**: `eslint-plugin-tailwindcss` enforces class order.
-* **Add tokens** by editing `src/components/ui/colors.js`; Tailwind already imports it.
+### 🌈 Theme tokens workflow
 
-### 🌈 Theme tokens workflow (GrowBro standard)
-
-- **Palette first**: [src/components/ui/colors.js](cci:7://file:///c:/Users/Peter/GrowBro/src/components/ui/colors.js:0:0-0:0) → Tailwind classes & runtime tokens consume same palette.
-- **Runtime theming**: [src/lib/nativewind-theme-provider.tsx](cci:7://file:///c:/Users/Peter/GrowBro/src/lib/nativewind-theme-provider.tsx:0:0-0:0) uses NativeWind `vars()` to inject CSS variables. Edit themes there to change colors.
-- **Semantic classes**: Use `bg-background`, `bg-card`, `text-text-primary`, `text-text-secondary` for auto light/dark switching.
-- **Legacy roles**: [src/lib/theme-tokens.ts](cci:7://file:///c:/Users/Peter/GrowBro/src/lib/theme-tokens.ts:0:0-0:0) defines roles for React Navigation, FlashMessage, focus rings.
-- **Tailwind vs runtime**: Tailwind for static layout; runtime tokens for `style` props & native APIs.
----
+- **Palette**: [src/components/ui/colors.js](cci:7://file:///c:/Users/Peter/GrowBro/src/components/ui/colors.js:0:0-0:0) → shared by Tailwind & runtime.
+- **Runtime**: [src/lib/nativewind-theme-provider.tsx](cci:7://file:///c:/Users/Peter/GrowBro/src/lib/nativewind-theme-provider.tsx:0:0-0:0) injects CSS vars via `vars()`.
+- **Semantic classes** (auto light/dark): `bg-background`, `bg-card`, `border-border`, `text-text-primary`, `text-text-secondary`, `text-text-inverse`, `bg-action-primary`, `bg-action-cta`, `ring-focus-ring`.
+- **JS tokens**: [src/lib/theme-tokens.ts](cci:7://file:///c:/Users/Peter/GrowBro/src/lib/theme-tokens.ts:0:0-0:0) → raw values for React Navigation & native `style` props. Keep in sync with [nativewind-theme-provider.tsx](cci:7://file:///c:/Users/Peter/GrowBro/src/lib/nativewind-theme-provider.tsx:0:0-0:0).
+- **Rule**: Tailwind for static; runtime tokens for `style` props & native APIs.
 
 ## ✅ Do / Avoid (Quick)
 

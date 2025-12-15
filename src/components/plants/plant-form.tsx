@@ -128,10 +128,10 @@ function StrainSuggestionsDropdown({
 
   if (isLoading || isFetching) {
     return (
-      <View className="absolute inset-x-0 top-16 z-10 mt-2 rounded-2xl border border-neutral-200 bg-white shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
+      <View className="absolute inset-x-0 top-16 z-10 mt-2 rounded-2xl border border-border bg-card shadow-lg">
         <View className="flex-row items-center gap-2 px-4 py-3">
           <ActivityIndicator size="small" />
-          <Text className="text-sm text-neutral-600 dark:text-neutral-300">
+          <Text className="text-sm text-text-secondary">
             {t('plants.form.strain_searching')}
           </Text>
         </View>
@@ -145,7 +145,7 @@ function StrainSuggestionsDropdown({
     <View className="absolute inset-x-0 top-16 z-10 mt-2 rounded-2xl border border-neutral-200 bg-white shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
       {showEmpty && (
         <View className="px-4 py-3">
-          <Text className="text-sm text-neutral-600 dark:text-neutral-300">
+          <Text className="text-sm text-text-secondary">
             {t('plants.form.strain_no_results', { query })}
           </Text>
         </View>
@@ -168,10 +168,10 @@ function StrainSuggestionsDropdown({
             testID={`strain-suggestion-${strain.id}`}
           >
             <View className="flex-1">
-              <Text className="text-base font-medium text-neutral-900 dark:text-neutral-50">
+              <Text className="text-base font-medium text-text-primary">
                 {strain.name}
               </Text>
-              <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+              <Text className="text-xs text-text-secondary">
                 {t('plants.form.strain_race_label', { race: strain.race })}
               </Text>
             </View>

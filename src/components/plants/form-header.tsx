@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Text, View } from '@/components/ui';
@@ -22,7 +23,13 @@ export function FormHeader({
   isSaving,
   testID = 'form-header',
 }: FormHeaderProps): React.ReactElement {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+
+  const backLabel = t('accessibility.common.go_back');
+  const backHint = t('accessibility.common.return_to_previous');
+  const localizedSave = saveLabel ?? t('common.save');
+  const saveHint = t('accessibility.common.saves_changes');
 
   const handleBack = React.useCallback(() => {
     haptics.selection();
@@ -47,8 +54,8 @@ export function FormHeader({
         variant="ghost"
         size="circle"
         className="my-0 bg-transparent active:bg-neutral-100 dark:active:bg-neutral-800"
-        accessibilityLabel="Go back"
-        accessibilityHint="Returns to the previous screen"
+        accessibilityLabel={backLabel}
+        accessibilityHint={backHint}
         testID={`${testID}-back`}
       >
         <ArrowLeft
@@ -74,15 +81,15 @@ export function FormHeader({
           variant="link"
           size="sm"
           className="my-0 rounded-lg px-3 py-2"
-          accessibilityLabel={saveLabel ?? 'Save'}
-          accessibilityHint="Saves your changes"
+          accessibilityLabel={localizedSave}
+          accessibilityHint={saveHint}
           testID={`${testID}-save`}
           textClassName={`font-semibold ${
             isSaving
               ? 'text-neutral-400 dark:text-neutral-600'
               : 'text-primary-600 dark:text-primary-400'
           }`}
-          label={saveLabel ?? 'Save'}
+          label={localizedSave}
         />
       ) : (
         <View className="size-10" />

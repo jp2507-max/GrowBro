@@ -19,6 +19,7 @@ import {
   Text,
   View,
 } from '@/components/ui';
+import colors from '@/components/ui/colors';
 import { ArrowLeft, ArrowRight } from '@/components/ui/icons';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
 import { haptics } from '@/lib/haptics';
@@ -133,7 +134,7 @@ function StrainProfileButton({
           <Text className="text-base font-medium text-primary-700 dark:text-primary-400">
             {label}
           </Text>
-          <ArrowRight color="#059669" width={16} height={16} />
+          <ArrowRight color={colors.primary[600]} width={16} height={16} />
         </View>
       </Button>
     </View>

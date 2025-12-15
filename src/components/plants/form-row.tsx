@@ -29,39 +29,25 @@ export function FormRow({
   }, [onPress]);
 
   const displayValue = value || placeholder;
-  const isPlaceholder = !value && placeholder;
 
   const content = (
     <View
-      className="flex-row items-center justify-between rounded-xl bg-white px-4 py-3.5 dark:bg-neutral-900"
+      className="flex-row items-center justify-between rounded-xl bg-card px-4 py-3.5"
       testID={testID}
     >
       <View className="flex-1 flex-row items-center gap-3">
         {icon ? <Text className="text-xl">{icon}</Text> : null}
-        <Text className="text-base font-medium text-neutral-900 dark:text-white">
-          {label}
-        </Text>
+        <Text className="text-base font-medium text-text-primary">{label}</Text>
       </View>
 
       <View className="flex-row items-center gap-2">
         {displayValue ? (
-          <Text
-            className={`text-base ${
-              isPlaceholder
-                ? 'text-neutral-400 dark:text-neutral-500'
-                : 'text-neutral-600 dark:text-neutral-300'
-            }`}
-            numberOfLines={1}
-          >
+          <Text className="text-base text-text-secondary" numberOfLines={1}>
             {displayValue}
           </Text>
         ) : null}
         {showArrow && onPress ? (
-          <ArrowRight
-            width={20}
-            height={20}
-            className="text-neutral-400 dark:text-neutral-500"
-          />
+          <ArrowRight width={20} height={20} className="text-text-secondary" />
         ) : null}
       </View>
     </View>

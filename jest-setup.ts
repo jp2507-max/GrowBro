@@ -206,10 +206,12 @@ jest.mock('@react-navigation/native', () => {
     useIsFocused: () => true,
     useScrollToTop: () => {},
     useFocusEffect: (callback: () => void | (() => void)) => {
+      const callbackRef = React.useRef(callback);
+      callbackRef.current = callback;
       React.useEffect(() => {
-        const cleanup = callback?.();
-        return cleanup;
-      }, [callback]);
+        const cleanup = callbackRef.current?.();
+        return typeof cleanup === 'function' ? cleanup : undefined;
+      }, []);
     },
     // Provide identity ThemeProvider/value to satisfy consumers if used
     ThemeProvider: ({

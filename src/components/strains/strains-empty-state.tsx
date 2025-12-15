@@ -27,7 +27,7 @@ export function StrainsEmptyState({
             {translate('strains.offline_notice')}
           </Text>
         ) : null}
-        <Text className="text-center text-base text-neutral-600 dark:text-neutral-300">
+        <Text className="text-center text-base text-text-secondary">
           {translate('strains.no_results')}
         </Text>
       </View>
@@ -45,7 +45,7 @@ export function StrainsEmptyState({
         className="items-center gap-4"
       >
         <Text
-          className="text-center text-xl font-semibold text-neutral-900 dark:text-neutral-50"
+          className="text-center text-xl font-semibold text-text-primary"
           tx="strains.empty_state_educational.title"
         />
 
@@ -60,15 +60,15 @@ export function StrainsEmptyState({
 
         <View className="w-full gap-3">
           <Text
-            className="text-base font-medium text-neutral-900 dark:text-neutral-50"
+            className="text-base font-medium text-text-primary"
             tx="strains.empty_state_educational.search_tip_1"
           />
           <Text
-            className="text-base font-medium text-neutral-900 dark:text-neutral-50"
+            className="text-base font-medium text-text-primary"
             tx="strains.empty_state_educational.search_tip_2"
           />
           <Text
-            className="text-base font-medium text-neutral-900 dark:text-neutral-50"
+            className="text-base font-medium text-text-primary"
             tx="strains.empty_state_educational.search_tip_3"
           />
         </View>

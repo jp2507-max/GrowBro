@@ -171,14 +171,10 @@ const client = z.object({
 
   VAR_BOOL: z.boolean(),
 
-  // Strains API Configuration
-
+  // Strains API Configuration (dev fallback only - production always uses proxy)
   STRAINS_API_URL: z.string().url().optional(),
-
   STRAINS_API_KEY: z.string().optional(),
-
   STRAINS_API_HOST: z.string().optional(),
-
   STRAINS_USE_PROXY: z.boolean().optional(),
 
   // Feature Flags
@@ -247,14 +243,13 @@ const client = z.object({
 
   EXPO_PUBLIC_DSA_TRANSPARENCY_DB_API_KEY: z.string().optional(),
 
-  // PII Scrubbing Configuration
-
-  PII_SCRUBBING_SALT: z.string().optional(),
+  // PII Scrubbing Configuration - PII_SCRUBBING_SALT moved to build-time schema
+  // for server-only HMAC pseudonymization and is NOT exposed to client bundles.
+  // Only the version is exposed to clients for compatibility.
 
   PII_SALT_VERSION: z.string().optional(),
 
-  EXPO_PUBLIC_PII_SCRUBBING_SALT: z.string().optional(),
-
+  // EXPO_PUBLIC_PII_SCRUBBING_SALT intentionally removed - salt must be server-only
   EXPO_PUBLIC_PII_SALT_VERSION: z.string().optional(),
 
   // Legal/Compliance Contact Information
@@ -371,6 +366,9 @@ const buildTime = z.object({
   // Email hashing salt for audit log privacy
   EMAIL_HASH_SALT: z.string().min(1),
 
+  // PII Scrubbing Configuration - Server-only HMAC salt for pseudonymization
+  PII_SCRUBBING_SALT: z.string().optional(),
+
   CODE_SIGNING_CERT_PATH: z.string().optional(),
   CODE_SIGNING_KEY_ID: z.string().optional(),
   CODE_SIGNING_ALG: z.string().optional(),
@@ -385,6 +383,7 @@ const buildTime = z.object({
 const apiUrl = readEnv('API_URL', 'EXPO_PUBLIC_API_URL');
 const varNumberRaw = readEnv('VAR_NUMBER', 'EXPO_PUBLIC_VAR_NUMBER');
 const varBoolRaw = readEnv('VAR_BOOL', 'EXPO_PUBLIC_VAR_BOOL');
+// Strains API credentials (dev fallback only - production always uses proxy)
 const strainsApiUrl = readEnv('STRAINS_API_URL', 'EXPO_PUBLIC_STRAINS_API_URL');
 const strainsApiKey = readEnv('STRAINS_API_KEY', 'EXPO_PUBLIC_STRAINS_API_KEY');
 const strainsApiHost = readEnv(
@@ -394,8 +393,10 @@ const strainsApiHost = readEnv(
 const strainsUseProxyRaw = (() => {
   const v = readEnv('STRAINS_USE_PROXY', 'EXPO_PUBLIC_STRAINS_USE_PROXY');
   if (v === 'true') return true;
-  if (v === undefined) return APP_ENV === 'development';
-  return false;
+  if (v === 'false') return false;
+  // Default: use proxy in production, direct API in dev
+  const APP_ENV_VAL = process.env.APP_ENV ?? 'development';
+  return APP_ENV_VAL === 'production';
 })();
 const featureStrainsEnabledRaw = readEnv(
   'FEATURE_STRAINS_ENABLED',
@@ -476,10 +477,6 @@ const dsaTransparencyDbUrl = readEnv(
 const dsaTransparencyDbApiKey = readEnv(
   'DSA_TRANSPARENCY_DB_API_KEY',
   'EXPO_PUBLIC_DSA_TRANSPARENCY_DB_API_KEY'
-);
-const piiScrubbingSalt = readEnv(
-  'PII_SCRUBBING_SALT',
-  'EXPO_PUBLIC_PII_SCRUBBING_SALT'
 );
 const piiSaltVersion = readEnv(
   'PII_SALT_VERSION',
@@ -570,14 +567,10 @@ const _clientEnv = {
 
   VAR_BOOL: varBoolRaw === 'true',
 
-  // Strains API Configuration
-
+  // Strains API Configuration (dev fallback only - production always uses proxy)
   STRAINS_API_URL: strainsApiUrl,
-
   STRAINS_API_KEY: strainsApiKey,
-
   STRAINS_API_HOST: strainsApiHost,
-
   STRAINS_USE_PROXY: strainsUseProxyRaw,
 
   // Feature Flags
@@ -671,9 +664,7 @@ const _clientEnv = {
 
   DSA_TRANSPARENCY_DB_API_KEY: dsaTransparencyDbApiKey,
 
-  // PII Scrubbing Configuration
-
-  PII_SCRUBBING_SALT: piiScrubbingSalt,
+  // PII Scrubbing Configuration - Only version exposed to client
 
   PII_SALT_VERSION: piiSaltVersion,
 
@@ -760,6 +751,9 @@ const _buildTimeEnv = {
 
   // Email hashing salt for audit log privacy
   EMAIL_HASH_SALT: process.env.EMAIL_HASH_SALT,
+
+  // PII Scrubbing Configuration - Server-only HMAC salt
+  PII_SCRUBBING_SALT: process.env.PII_SCRUBBING_SALT,
 
   CODE_SIGNING_CERT_PATH: codeSigningCertPath,
   CODE_SIGNING_KEY_ID: codeSigningKeyId,

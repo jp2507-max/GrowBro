@@ -22,7 +22,7 @@ function TemplateHeader({ template }: { template: CommunityTemplate }) {
   const { t } = useTranslation();
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+      <Text className="mb-2 text-2xl font-bold text-text-primary">
         {template.name}
       </Text>
       <View className="flex-row items-center gap-2">
@@ -31,7 +31,7 @@ function TemplateHeader({ template }: { template: CommunityTemplate }) {
             {template.setup.replace(/_/g, ' ').toUpperCase()}
           </Text>
         </View>
-        <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+        <Text className="text-sm text-text-secondary">
           {t('playbooks.templates.detail.authorPrefix')} {template.authorHandle}
         </Text>
       </View>
@@ -44,27 +44,27 @@ function TemplateStats({ template }: { template: CommunityTemplate }) {
   const { t } = useTranslation();
   return (
     <View className="mb-4 flex-row gap-3">
-      <View className="flex-1 rounded-lg bg-neutral-100 p-3 dark:bg-charcoal-900">
-        <Text className="text-xs text-neutral-500 dark:text-neutral-500">
+      <View className="flex-1 rounded-lg bg-card p-3">
+        <Text className="text-xs text-text-secondary">
           {t('playbooks.templates.detail.duration')}
         </Text>
-        <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+        <Text className="text-lg font-semibold text-text-primary">
           {template.totalWeeks || 0} weeks
         </Text>
       </View>
-      <View className="flex-1 rounded-lg bg-neutral-100 p-3 dark:bg-charcoal-900">
-        <Text className="text-xs text-neutral-500 dark:text-neutral-500">
+      <View className="flex-1 rounded-lg bg-card p-3">
+        <Text className="text-xs text-text-secondary">
           {t('playbooks.templates.detail.tasks')}
         </Text>
-        <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+        <Text className="text-lg font-semibold text-text-primary">
           {template.taskCount}
         </Text>
       </View>
-      <View className="flex-1 rounded-lg bg-neutral-100 p-3 dark:bg-charcoal-900">
-        <Text className="text-xs text-neutral-500 dark:text-neutral-500">
+      <View className="flex-1 rounded-lg bg-card p-3">
+        <Text className="text-xs text-text-secondary">
           {t('playbooks.templates.detail.adopted')}
         </Text>
-        <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+        <Text className="text-lg font-semibold text-text-primary">
           {template.adoptionCount}
         </Text>
       </View>
@@ -84,17 +84,17 @@ function TemplateRating({
   if (!template.ratingAverage) return null;
 
   return (
-    <View className="mb-4 rounded-lg bg-neutral-100 p-3 dark:bg-charcoal-900">
+    <View className="mb-4 rounded-lg bg-card p-3">
       <View className="flex-row items-center justify-between">
         <View>
-          <Text className="text-xs text-neutral-500 dark:text-neutral-500">
+          <Text className="text-xs text-text-secondary">
             {t('playbooks.templates.detail.communityRating')}
           </Text>
           <View className="flex-row items-center gap-2">
-            <Text className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+            <Text className="text-2xl font-bold text-text-primary">
               {template.ratingAverage.toFixed(1)}
             </Text>
-            <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+            <Text className="text-sm text-text-secondary">
               ⭐ ({template.ratingCount}{' '}
               {t('playbooks.templates.detail.ratings')})
             </Text>
@@ -135,16 +135,13 @@ function TemplatePhases({ phases }: { phases: string[] }) {
   const { t } = useTranslation();
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+      <Text className="mb-2 text-lg font-semibold text-text-primary">
         {t('playbooks.templates.detail.growthPhases')}
       </Text>
       <View className="flex-row flex-wrap gap-2">
         {phases.map((phase) => (
-          <View
-            key={phase}
-            className="rounded-full bg-neutral-200 px-3 py-1 dark:bg-charcoal-800"
-          >
-            <Text className="text-sm capitalize text-neutral-700 dark:text-neutral-300">
+          <View key={phase} className="rounded-full bg-card px-3 py-1">
+            <Text className="text-sm capitalize text-text-secondary">
               {phase}
             </Text>
           </View>
@@ -159,27 +156,27 @@ function TemplateStepsPreview({ template }: { template: CommunityTemplate }) {
   const { t } = useTranslation();
   return (
     <View className="mb-6">
-      <Text className="mb-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+      <Text className="mb-2 text-lg font-semibold text-text-primary">
         {t('playbooks.templates.detail.tasksPreview', {
           total: template.steps.length,
         })}
       </Text>
-      <View className="rounded-lg bg-neutral-100 p-3 dark:bg-charcoal-900">
+      <View className="rounded-lg bg-card p-3">
         {template.steps.slice(0, 5).map((step) => (
           <View
             key={step.id}
-            className="mb-2 border-b border-neutral-200 pb-2 last:mb-0 last:border-b-0 last:pb-0 dark:border-charcoal-800"
+            className="mb-2 border-b border-border pb-2 last:mb-0 last:border-b-0 last:pb-0"
           >
-            <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+            <Text className="text-sm font-medium text-text-primary">
               {step.title}
             </Text>
-            <Text className="text-xs text-neutral-500 dark:text-neutral-500">
+            <Text className="text-xs text-text-secondary">
               Day {step.relativeDay} • {step.phase} • {step.taskType}
             </Text>
           </View>
         ))}
         {template.steps.length > 5 && (
-          <Text className="mt-2 text-xs text-neutral-500 dark:text-neutral-500">
+          <Text className="mt-2 text-xs text-text-secondary">
             {t('playbooks.templates.detail.moreTasks', {
               count: template.steps.length - 5,
             })}
@@ -198,13 +195,13 @@ export function TemplateDetailView({
   // Main component that renders the complete template detail view with all sections
   const { t } = useTranslation();
   return (
-    <ScrollView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
+    <ScrollView className="flex-1 bg-background">
       <View className="p-4">
         <TemplateHeader template={template} />
 
         {template.description && (
-          <View className="mb-4 rounded-lg bg-neutral-100 p-3 dark:bg-charcoal-900">
-            <Text className="text-sm text-neutral-700 dark:text-neutral-300">
+          <View className="mb-4 rounded-lg bg-card p-3">
+            <Text className="text-sm text-text-secondary">
               {template.description}
             </Text>
           </View>

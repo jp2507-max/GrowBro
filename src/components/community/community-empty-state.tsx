@@ -21,18 +21,18 @@ export function CommunityEmptyState({
         className="items-center gap-4"
       >
         <Text
-          className="text-center text-xl font-semibold text-neutral-900 dark:text-neutral-50"
+          className="text-center text-xl font-semibold text-text-primary"
           tx="community.empty_state_educational.title"
         />
 
-        <View className="w-full gap-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-800">
+        <View className="w-full gap-4 rounded-2xl border border-border bg-card p-4">
           <Text
-            className="text-sm font-medium text-neutral-700 dark:text-neutral-200"
+            className="text-sm font-medium text-text-primary"
             tx="community.empty_state_educational.moderation_guidance"
           />
         </View>
 
-        <Text className="text-center text-base text-neutral-600 dark:text-neutral-300">
+        <Text className="text-center text-base text-text-secondary">
           {translate('community.empty_state')}
         </Text>
       </Animated.View>

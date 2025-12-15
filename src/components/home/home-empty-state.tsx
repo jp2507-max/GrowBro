@@ -19,10 +19,10 @@ export function HomeEmptyState(): React.ReactElement {
     >
       <Text className="text-6xl">🌱</Text>
       <View className="gap-2">
-        <Text className="text-center text-2xl font-bold text-neutral-900 dark:text-neutral-50">
+        <Text className="text-center text-2xl font-bold text-text-primary">
           {translate('home.empty_state.title' as TxKeyPath)}
         </Text>
-        <Text className="text-center text-base text-neutral-600 dark:text-neutral-300">
+        <Text className="text-center text-base text-text-secondary">
           {translate('home.empty_state.body' as TxKeyPath)}
         </Text>
       </View>

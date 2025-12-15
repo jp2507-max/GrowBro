@@ -86,7 +86,7 @@ export function ProfileHeader({
 
         <View className="flex-1">
           <Text
-            className="text-lg font-semibold text-neutral-900 dark:text-neutral-100"
+            className="text-lg font-semibold text-text-primary"
             testID={`${testID}-display-name`}
           >
             {displayName || translate('profile.setProfilePrompt')}
@@ -94,7 +94,7 @@ export function ProfileHeader({
 
           {statistics && (
             <View className="mt-1 flex-row gap-4" testID={`${testID}-stats`}>
-              <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+              <Text className="text-sm text-text-secondary">
                 {statistics.plantsCount === 0
                   ? translate('profile.statistics.plantsCount_zero', {
                       count: statistics.plantsCount,
@@ -107,7 +107,7 @@ export function ProfileHeader({
                         count: statistics.plantsCount,
                       })}
               </Text>
-              <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+              <Text className="text-sm text-text-secondary">
                 {statistics.harvestsCount === 0
                   ? translate('profile.statistics.harvestsCount_zero', {
                       count: statistics.harvestsCount,
@@ -120,7 +120,7 @@ export function ProfileHeader({
                         count: statistics.harvestsCount,
                       })}
               </Text>
-              <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+              <Text className="text-sm text-text-secondary">
                 {statistics.postsCount === 0
                   ? translate('profile.statistics.postsCount_zero', {
                       count: statistics.postsCount,
@@ -139,7 +139,7 @@ export function ProfileHeader({
 
         {/* Chevron indicator */}
         <View className="ml-auto">
-          <Text className="text-neutral-400 dark:text-neutral-500">
+          <Text className="text-text-secondary">
             {translate('profile.chevron')}
           </Text>
         </View>
