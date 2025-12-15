@@ -92,6 +92,8 @@ function PlantErrorView({
   retryLabel,
   onRetry,
 }: PlantErrorViewProps): React.ReactElement {
+  const { t } = useTranslation();
+
   return (
     <View className="flex-1 items-center justify-center bg-background">
       <Text className="mb-3 text-base text-neutral-700 dark:text-neutral-200">
@@ -100,7 +102,9 @@ function PlantErrorView({
       <Text
         className="text-primary-700 dark:text-primary-300"
         accessibilityRole="button"
+        accessibilityHint={t('accessibility.common.retry_hint')}
         onPress={onRetry}
+        testID="plant-error-retry"
       >
         {retryLabel}
       </Text>
@@ -266,7 +270,7 @@ export default function PlantDetailScreen(): React.ReactElement | null {
   }, [linkedStrainSlug, router]);
 
   // Store submit handler from form
-  const submitHandlerRef = React.useRef<(() => void) | null>(null);
+  const submitHandlerRef = React.useRef<() => void>(() => {});
 
   const handleSubmitReady = React.useCallback((submit: () => void) => {
     submitHandlerRef.current = submit;
@@ -274,7 +278,7 @@ export default function PlantDetailScreen(): React.ReactElement | null {
 
   const handleHeaderSave = React.useCallback(() => {
     haptics.selection();
-    submitHandlerRef.current?.();
+    submitHandlerRef.current();
   }, []);
 
   const handleDelete = React.useCallback(() => {
@@ -298,7 +302,13 @@ export default function PlantDetailScreen(): React.ReactElement | null {
   }, [deletePlant, plantId, t]);
 
   if (!plantId) {
-    return null;
+    return (
+      <PlantErrorView
+        errorMessage={t('plants.form.invalid_id')}
+        retryLabel={t('common.go_back')}
+        onRetry={() => router.back()}
+      />
+    );
   }
 
   if (isLoading) {

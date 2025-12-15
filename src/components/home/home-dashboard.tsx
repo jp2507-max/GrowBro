@@ -2,14 +2,13 @@ import { useRouter } from 'expo-router';
 import { DateTime } from 'luxon';
 import React from 'react';
 
+import { ActivationChecklist } from '@/components/home/activation-checklist';
 import { ActivityIndicator, Pressable, Text, View } from '@/components/ui';
 import type { ActivationAction } from '@/lib/compliance/activation-state';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
 import { getTasksByDateRange } from '@/lib/task-manager';
 import type { Task } from '@/types/calendar';
-
-import { ActivationChecklist } from './activation-checklist';
 
 type TaskSnapshot = {
   today: number;
@@ -115,32 +114,34 @@ export function useTaskSnapshot(): TaskSnapshotState {
 
 type QuickAction = {
   key: string;
-  labelKey: string;
+  labelKey: TxKeyPath;
   icon: string;
   onPress: () => void;
   testID: string;
 };
 
-function QuickActionTile({ action }: { action: QuickAction }) {
+function QuickActionTile({
+  action,
+}: {
+  action: QuickAction;
+}): React.ReactElement {
+  const label = translate(action.labelKey);
+
   return (
     <Pressable
       className="w-[48%] gap-1 rounded-2xl border border-border bg-card p-3 active:bg-neutral-50 dark:active:bg-neutral-800"
       accessibilityRole="button"
-      accessibilityLabel={translate(action.labelKey as TxKeyPath)}
+      accessibilityLabel={label}
       accessibilityHint={translate(
         'accessibility.home.quick_action_hint' as TxKeyPath,
-        {
-          action: translate(action.labelKey as TxKeyPath),
-        }
+        { action: label }
       )}
       onPress={action.onPress}
       testID={action.testID}
       hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
     >
       <Text className="text-lg">{action.icon}</Text>
-      <Text className="text-sm font-semibold text-text-primary">
-        {translate(action.labelKey as TxKeyPath)}
-      </Text>
+      <Text className="text-sm font-semibold text-text-primary">{label}</Text>
     </Pressable>
   );
 }

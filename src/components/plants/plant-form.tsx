@@ -326,7 +326,8 @@ function PlantStrainField({ control, setValue, t }: PlantStrainFieldProps) {
         }}
         onFocus={() => setIsFocused(true)}
         onBlur={() => {
-          // keep dropdown visible during tap; it closes after selection
+          // Allow tap on suggestion to fire before closing
+          setTimeout(() => setIsFocused(false), 200);
         }}
         placeholder={t('plants.form.strain_placeholder')}
         label={t('plants.form.strain_label')}
@@ -778,9 +779,16 @@ export function PlantForm({
   } = usePlantFormController({ defaultValues, t, onSubmit, onError });
 
   // Expose submit handler to parent via callback (for header button)
+  const submitRef = React.useRef(handleFormSubmit);
+  submitRef.current = handleFormSubmit;
+
+  const stableSubmit = React.useCallback(() => {
+    submitRef.current();
+  }, []);
+
   React.useEffect(() => {
-    onSubmitReady?.(handleFormSubmit);
-  }, [onSubmitReady, handleFormSubmit]);
+    onSubmitReady?.(stableSubmit);
+  }, [onSubmitReady, stableSubmit]);
 
   const stageOptions = React.useMemo(() => toOptions(STAGE_OPTIONS, t), [t]);
   const photoperiodOptions = React.useMemo(

@@ -2197,6 +2197,7 @@
         "strain_length": "Strain must be under 120 characters",
         "strain_required": "Strain is required"
       },
+
       "genetic": {
         "balanced": "Balanced hybrid",
         "indica": "Indica-dominant",
@@ -2206,6 +2207,7 @@
       "genetic_label": "Genetic lean",
       "genetic_placeholder": "Select genetic lean",
       "go_to_schedule": "Go to Schedule",
+      "invalid_id": "Invalid Plant ID",
       "keep_adding": "Keep adding plants",
       "light_hours_label": "Hours of light",
       "light_hours_placeholder": "e.g., 18",
