@@ -272,7 +272,9 @@ function PlantStrainField({ control, setValue, t }: PlantStrainFieldProps) {
       field.onChange(strain.name);
       setInputValue(strain.name);
       applyDerived(strain, 'api');
-      void saveStrainToSupabase(strain);
+      saveStrainToSupabase(strain).catch((err) =>
+        console.error('[PlantForm] Save strain failed', err)
+      );
       setIsFocused(false);
     },
     [applyDerived, field]
@@ -286,7 +288,9 @@ function PlantStrainField({ control, setValue, t }: PlantStrainFieldProps) {
     field.onChange(customStrain.name);
     setInputValue(customStrain.name);
     applyDerived(customStrain, 'custom');
-    void saveCustomStrainToSupabase(customStrain);
+    saveCustomStrainToSupabase(customStrain).catch((err) =>
+      console.error('[PlantForm] Save custom strain failed', err)
+    );
     setIsFocused(false);
   }, [applyDerived, field, inputValue, trimmedQuery]);
 

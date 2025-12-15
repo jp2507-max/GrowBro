@@ -35,6 +35,7 @@ type HeaderBarProps = {
 
 function HeaderBar({ onBack, onSave, isSaving, saveLabel }: HeaderBarProps) {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   return (
     <View
@@ -48,11 +49,11 @@ function HeaderBar({ onBack, onSave, isSaving, saveLabel }: HeaderBarProps) {
         fullWidth={false}
         onPress={onBack}
         className="border-0 bg-white/90 shadow-sm dark:bg-charcoal-800/90"
-        accessibilityLabel="Go back"
-        accessibilityHint="Returns to the previous screen"
+        accessibilityLabel={t('accessibility.common.go_back')}
+        accessibilityHint={t('accessibility.common.return_to_previous')}
         testID="header-back-button"
       >
-        <ArrowLeft color="#554B32" width={22} height={22} />
+        <ArrowLeft color={colors.neutral[900]} width={22} height={22} />
       </Button>
 
       {/* Done Button - Things 3 style pill */}
@@ -65,7 +66,7 @@ function HeaderBar({ onBack, onSave, isSaving, saveLabel }: HeaderBarProps) {
         loading={isSaving}
         label={saveLabel}
         className="min-w-[72px] px-5 shadow-sm"
-        accessibilityHint="Saves your changes"
+        accessibilityHint={t('accessibility.common.saves_changes')}
         testID="header-save-button"
       />
     </View>

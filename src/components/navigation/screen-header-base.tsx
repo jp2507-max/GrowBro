@@ -46,7 +46,7 @@ export function ScreenHeaderBase({
 
   return (
     <View
-      className={`bg-background px-4 pb-4 ${borderClass}`}
+      className={`px-4 pb-4 ${borderClass}`}
       style={{
         paddingTop: insets.top + HEADER_PADDING_TOP,
         backgroundColor: theme.colors.background,

@@ -394,9 +394,8 @@ const strainsUseProxyRaw = (() => {
   const v = readEnv('STRAINS_USE_PROXY', 'EXPO_PUBLIC_STRAINS_USE_PROXY');
   if (v === 'true') return true;
   if (v === 'false') return false;
-  // Default: use proxy in production, direct API in dev
-  const APP_ENV_VAL = process.env.APP_ENV ?? 'development';
-  return APP_ENV_VAL === 'production';
+  // Default: proxy in all environments unless STRAINS_USE_PROXY is set to 'false'
+  return true;
 })();
 const featureStrainsEnabledRaw = readEnv(
   'FEATURE_STRAINS_ENABLED',

@@ -1222,6 +1222,7 @@
       "add_batch_description": "Batch creation form will be available once the batch management UI is implemented.",
       "add_item": "Add Item",
       "batch_lot": "Lot {{lot}}",
+      "batch_quantity_cost": "{{quantity}} units • ${{costPerUnit}}/unit",
       "batches_title": "Batches",
       "category": "Category",
       "charts": {
@@ -1254,6 +1255,7 @@
       "expired": "Expired",
       "expired_on": "Expired on {{date}}",
       "expires_in": "Expires in {{days}} days",
+      "expires_on": "Expires: {{date}}",
       "filter_hint": "Open filter and sort options",
       "filters": "Filters",
       "filters_and_sort": "Filters & Sort",
@@ -1751,6 +1753,11 @@
     "feed": "Feed",
     "post": "Post",
     "profile": "Profile"
+  },
+  "notFound": {
+    "body": "This screen doesn't exist.",
+    "goHomeCta": "Go to home screen!",
+    "title": "Oops!"
   },
   "notifications": {
     "actions": {

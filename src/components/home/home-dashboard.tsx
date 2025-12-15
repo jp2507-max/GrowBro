@@ -36,66 +36,71 @@ export function useTaskSnapshot(): TaskSnapshotState {
   const [isLoading, setIsLoading] = React.useState(true);
   const [hasError, setHasError] = React.useState(false);
 
-  const loadSnapshot = React.useCallback(
-    async (isCancelled?: () => boolean) => {
-      setIsLoading(true);
+  // Hook-scope cancellation ref so both effect cleanup and refresh can see it
+  const isCancelledRef = React.useRef(false);
 
-      try {
-        const now = DateTime.local();
-        const rangeStart = now.minus({ days: 14 }).startOf('day').toJSDate();
-        const rangeEnd = now.plus({ days: 7 }).endOf('day').toJSDate();
-        const rangeEndDt = DateTime.fromJSDate(rangeEnd);
+  const loadSnapshot = React.useCallback(async () => {
+    // Helper that checks the hook-scope ref
+    const isCancelled = () => isCancelledRef.current;
 
-        const tasks = await getTasksByDateRange(rangeStart, rangeEnd);
-        if (isCancelled?.()) return;
+    setIsLoading(true);
 
-        const startOfToday = now.startOf('day');
-        const endOfToday = now.endOf('day');
-        const tomorrowStart = now.plus({ days: 1 }).startOf('day');
+    try {
+      const now = DateTime.local();
+      const rangeStart = now.minus({ days: 14 }).startOf('day').toJSDate();
+      const rangeEnd = now.plus({ days: 7 }).endOf('day').toJSDate();
+      const rangeEndDt = DateTime.fromJSDate(rangeEnd);
 
-        const normalized = tasks.filter(
-          (task: Task) => task.status === 'pending'
-        );
+      const tasks = await getTasksByDateRange(rangeStart, rangeEnd);
+      if (isCancelled()) return;
 
-        const overdue = normalized.filter((task) => {
-          return DateTime.fromISO(task.dueAtLocal) < startOfToday;
-        }).length;
-        const today = normalized.filter((task) => {
-          const due = DateTime.fromISO(task.dueAtLocal);
-          return due >= startOfToday && due <= endOfToday;
-        }).length;
-        const upcoming = normalized.filter((task) => {
-          const due = DateTime.fromISO(task.dueAtLocal);
-          return due >= tomorrowStart && due <= rangeEndDt;
-        }).length;
+      const startOfToday = now.startOf('day');
+      const endOfToday = now.endOf('day');
+      const tomorrowStart = now.plus({ days: 1 }).startOf('day');
 
-        setSnapshot({
-          overdue,
-          today,
-          upcoming,
-        });
-        setHasError(false);
-      } catch (error) {
-        console.error('[home-dashboard] failed to load task snapshot', error);
-        if (!isCancelled?.()) {
-          setHasError(true);
-          setSnapshot(INITIAL_SNAPSHOT);
-        }
-      } finally {
-        if (!isCancelled?.()) {
-          setIsLoading(false);
-        }
+      const normalized = tasks.filter(
+        (task: Task) => task.status === 'pending'
+      );
+
+      const overdue = normalized.filter((task) => {
+        return DateTime.fromISO(task.dueAtLocal) < startOfToday;
+      }).length;
+      const today = normalized.filter((task) => {
+        const due = DateTime.fromISO(task.dueAtLocal);
+        return due >= startOfToday && due <= endOfToday;
+      }).length;
+      const upcoming = normalized.filter((task) => {
+        const due = DateTime.fromISO(task.dueAtLocal);
+        return due >= tomorrowStart && due <= rangeEndDt;
+      }).length;
+
+      if (isCancelled()) return;
+
+      setSnapshot({
+        overdue,
+        today,
+        upcoming,
+      });
+      setHasError(false);
+    } catch (error) {
+      console.error('[home-dashboard] failed to load task snapshot', error);
+      if (!isCancelledRef.current) {
+        setHasError(true);
+        setSnapshot(INITIAL_SNAPSHOT);
       }
-    },
-    []
-  );
+    } finally {
+      if (!isCancelledRef.current) {
+        setIsLoading(false);
+      }
+    }
+  }, []);
 
   React.useEffect(() => {
-    let cancelled = false;
-    const isCancelled = () => cancelled;
-    void loadSnapshot(isCancelled);
+    // Reset cancellation flag on mount (or if effect re-runs)
+    isCancelledRef.current = false;
+    void loadSnapshot();
     return () => {
-      cancelled = true;
+      isCancelledRef.current = true;
     };
   }, [loadSnapshot]);
 
@@ -103,9 +108,7 @@ export function useTaskSnapshot(): TaskSnapshotState {
     snapshot,
     isLoading,
     hasError,
-    refresh: () => {
-      void loadSnapshot();
-    },
+    refresh: loadSnapshot,
   };
 }
 

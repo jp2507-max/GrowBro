@@ -64,23 +64,23 @@ const makeStyle = isOn
 
 ## 🧩 GrowBro repo‑specific styling conventions
 
-- **Tokens**: [src/components/ui/colors.js](cci:7://file:///c:/Users/Peter/GrowBro/src/components/ui/colors.js:0:0-0:0) → Tailwind config.
-  - Palettes: `primary`, `neutral`, `charcoal`, [ink](cci:2://file:///c:/Users/Peter/GrowBro/src/lib/theme-tokens.ts:22:0-25:2), `terracotta`, `sky`, `indigo`, `success`, `warning`, `danger`.
-  - Prefer tokens (`bg-primary-600`, `text-ink-900`) over raw hex.
+- **Tokens**: `src/components/ui/colors.js` → Tailwind config.
+  - Palettes: `primary`, `neutral`, `charcoal`, `ink` (defined in `src/components/ui/colors.js`; used for semantic roles in `src/lib/theme-tokens.ts`), `terracotta`, `sky`, `indigo`, `success`, `warning`, `danger`.
+  - Prefer tokens (`bg-primary-600`, `text-ink-900`) over raw hex. The `ink` palette is used for text and icon colors, and is defined as a range of dark grays with a slight blue undertone.
 - **Fonts**: `font-inter` default; override via classNames.
-- **Dark mode**: `darkMode: 'class'`. Runtime theming via [src/lib/nativewind-theme-provider.tsx](cci:7://file:///c:/Users/Peter/GrowBro/src/lib/nativewind-theme-provider.tsx:0:0-0:0).
+- **Dark mode**: `darkMode: 'class'`. Runtime theming via `src/lib/nativewind-theme-provider.tsx`.
 - **Variants**: `tailwind-variants` `tv()`; static layout in slots, variants for tokens.
-- **SVG**: `cssInterop` enables `className` (see [src/components/ui/index.tsx](cci:7://file:///c:/Users/Peter/GrowBro/src/components/ui/index.tsx:0:0-0:0)).
+- **SVG**: `cssInterop` enables `className` (see `src/components/ui/index.tsx`).
 - **Class merging**: `tailwind-merge`; no manual concat.
-- **Native props**: import colors from `@/components/ui/colors`.
+- **Native props**: import colors from `src/components/ui/colors`.
 - **Linting**: `eslint-plugin-tailwindcss` enforces order.
 
 ### 🌈 Theme tokens workflow
 
-- **Palette**: [src/components/ui/colors.js](cci:7://file:///c:/Users/Peter/GrowBro/src/components/ui/colors.js:0:0-0:0) → shared by Tailwind & runtime.
-- **Runtime**: [src/lib/nativewind-theme-provider.tsx](cci:7://file:///c:/Users/Peter/GrowBro/src/lib/nativewind-theme-provider.tsx:0:0-0:0) injects CSS vars via `vars()`.
+- **Palette**: `src/components/ui/colors.js` → shared by Tailwind & runtime.
+- **Runtime**: `src/lib/nativewind-theme-provider.tsx` injects CSS vars via `vars()`.
 - **Semantic classes** (auto light/dark): `bg-background`, `bg-card`, `border-border`, `text-text-primary`, `text-text-secondary`, `text-text-inverse`, `bg-action-primary`, `bg-action-cta`, `ring-focus-ring`.
-- **JS tokens**: [src/lib/theme-tokens.ts](cci:7://file:///c:/Users/Peter/GrowBro/src/lib/theme-tokens.ts:0:0-0:0) → raw values for React Navigation & native `style` props. Keep in sync with [nativewind-theme-provider.tsx](cci:7://file:///c:/Users/Peter/GrowBro/src/lib/nativewind-theme-provider.tsx:0:0-0:0).
+- **JS tokens**: `src/lib/theme-tokens.ts` → raw values for React Navigation & native `style` props. Keep in sync with `src/lib/nativewind-theme-provider.tsx`.
 - **Rule**: Tailwind for static; runtime tokens for `style` props & native APIs.
 
 ## ✅ Do / Avoid (Quick)

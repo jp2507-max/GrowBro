@@ -42,7 +42,7 @@ export function PlantsSection({
         <PlantCard
           key={plant.id}
           plant={plant}
-          onPress={(id) => onPlantPress(id)}
+          onPress={() => onPlantPress(plant.id)}
         />
       ))}
     </View>

@@ -223,7 +223,7 @@ export function TemplateDetailView({
           </Text>
         </Button>
 
-        <Text className="mt-2 text-center text-xs text-neutral-500 dark:text-neutral-500">
+        <Text className="mt-2 text-center text-xs text-text-secondary">
           {t('playbooks.templates.detail.adoptDescription')}
         </Text>
       </View>

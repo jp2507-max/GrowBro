@@ -107,8 +107,6 @@ export const Modal = React.forwardRef(
       [title, modal.dismiss]
     );
 
-    const hasCustomHandle = Boolean(customHandleComponent);
-
     const animationConfigs = useBottomSheetTimingConfigs({
       duration: 250,
     });
@@ -124,10 +122,7 @@ export const Modal = React.forwardRef(
         enableDynamicSizing={false}
         handleIndicatorStyle={handleIndicatorStyle}
         animationConfigs={animationConfigs}
-        handleComponent={
-          customHandleComponent ||
-          (hasCustomHandle ? undefined : renderHandleWithHeader)
-        }
+        handleComponent={customHandleComponent || renderHandleWithHeader}
       />
     );
   }

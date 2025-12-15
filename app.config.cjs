@@ -92,11 +92,6 @@ function createExpoConfig(config) {
     'EXPO_PUBLIC_SUPABASE_URL',
     'EXPO_PUBLIC_SUPABASE_ANON_KEY',
     'EXPO_PUBLIC_ACCOUNT_DELETION_URL',
-    // Strains API - credentials only for dev fallback (production always uses proxy)
-    // SECURITY: These are only included in non-production builds for local testing
-    'EXPO_PUBLIC_STRAINS_API_KEY',
-    'EXPO_PUBLIC_STRAINS_API_HOST',
-    'EXPO_PUBLIC_STRAINS_API_URL',
     'EXPO_PUBLIC_STRAINS_USE_PROXY',
     'EXPO_PUBLIC_FEATURE_STRAINS_ENABLED',
     'EXPO_PUBLIC_FEATURE_STRAINS_FAVORITES_SYNC',
@@ -149,6 +144,13 @@ function createExpoConfig(config) {
     'EXPO_PUBLIC_APP_ACCESS_REVIEWER_EMAIL',
     'EXPO_PUBLIC_APP_ACCESS_REVIEWER_PASSWORD',
   ]);
+  // Strains API credentials - only allow in non-production builds for local testing
+  // SECURITY: Production builds always use proxy and never expose API keys
+  if (process.env.APP_ENV !== 'production') {
+    ALLOWED_PUBLIC_KEYS.add('EXPO_PUBLIC_STRAINS_API_KEY');
+    ALLOWED_PUBLIC_KEYS.add('EXPO_PUBLIC_STRAINS_API_HOST');
+    ALLOWED_PUBLIC_KEYS.add('EXPO_PUBLIC_STRAINS_API_URL');
+  }
   const publicExtra = Object.fromEntries(
     Object.entries(process.env ?? {}).filter(
       ([key, value]) => ALLOWED_PUBLIC_KEYS.has(key) && value != null
@@ -332,16 +334,19 @@ function createExpoConfig(config) {
         EXPO_PUBLIC_VAR_BOOL: String(Env.VAR_BOOL),
       }),
       // Strains - API credentials for dev fallback only (production always uses proxy)
-      // SECURITY: In production builds, the client enforces proxy-only regardless of these values
-      ...(Env.STRAINS_API_URL && {
-        EXPO_PUBLIC_STRAINS_API_URL: Env.STRAINS_API_URL,
-      }),
-      ...(Env.STRAINS_API_KEY && {
-        EXPO_PUBLIC_STRAINS_API_KEY: Env.STRAINS_API_KEY,
-      }),
-      ...(Env.STRAINS_API_HOST && {
-        EXPO_PUBLIC_STRAINS_API_HOST: Env.STRAINS_API_HOST,
-      }),
+      // SECURITY: API credentials are only exposed in non-production builds
+      ...(Env.APP_ENV !== 'production' &&
+        Env.STRAINS_API_URL && {
+          EXPO_PUBLIC_STRAINS_API_URL: Env.STRAINS_API_URL,
+        }),
+      ...(Env.APP_ENV !== 'production' &&
+        Env.STRAINS_API_KEY && {
+          EXPO_PUBLIC_STRAINS_API_KEY: Env.STRAINS_API_KEY,
+        }),
+      ...(Env.APP_ENV !== 'production' &&
+        Env.STRAINS_API_HOST && {
+          EXPO_PUBLIC_STRAINS_API_HOST: Env.STRAINS_API_HOST,
+        }),
       ...(Env.STRAINS_USE_PROXY !== undefined && {
         EXPO_PUBLIC_STRAINS_USE_PROXY: String(Env.STRAINS_USE_PROXY),
       }),

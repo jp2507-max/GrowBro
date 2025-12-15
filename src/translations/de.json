@@ -1222,6 +1222,7 @@
       "add_batch_description": "Das Formular zur Chargenerstellung wird verfügbar sein, sobald die Chargenverwaltungs-UI implementiert ist.",
       "add_item": "Artikel hinzufügen",
       "batch_lot": "Charge {{lot}}",
+      "batch_quantity_cost": "{{quantity}} Einheiten • ${{costPerUnit}}/Einheit",
       "batches_title": "Chargen",
       "category": "Kategorie",
       "charts": {
@@ -1254,6 +1255,7 @@
       "expired": "Abgelaufen",
       "expired_on": "Abgelaufen am {{date}}",
       "expires_in": "Läuft in {{days}} Tagen ab",
+      "expires_on": "Läuft ab: {{date}}",
       "filter_hint": "Filter- und Sortieroptionen öffnen",
       "filters": "Filter",
       "filters_and_sort": "Filter & Sortierung",
@@ -1751,6 +1753,11 @@
     "feed": "Feed",
     "post": "Beitrag",
     "profile": "Profil"
+  },
+  "notFound": {
+    "body": "Diese Seite existiert nicht.",
+    "goHomeCta": "Zur Startseite!",
+    "title": "Hoppla!"
   },
   "notifications": {
     "actions": {

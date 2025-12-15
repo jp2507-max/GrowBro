@@ -76,12 +76,14 @@ export function BatchListItem({
             {t('inventory.batch_lot', { lot: batch.lotNumber })}
           </Text>
           <Text className="mt-1 text-sm text-text-secondary">
-            {batch.quantity} units • $
-            {(batch.costPerUnitMinor / 100).toFixed(2)}/unit
+            {t('inventory.batch_quantity_cost', {
+              quantity: batch.quantity,
+              costPerUnit: (batch.costPerUnitMinor / 100).toFixed(2),
+            })}
           </Text>
           {formattedDate && (
             <Text className="mt-1 text-xs text-text-secondary">
-              Expires: {formattedDate}
+              {t('inventory.expires_on', { date: formattedDate })}
             </Text>
           )}
         </View>

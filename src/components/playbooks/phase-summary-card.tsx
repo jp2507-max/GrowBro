@@ -7,7 +7,7 @@
  */
 
 import { DateTime } from 'luxon';
-import React from 'react';
+import React, { type JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Text, View } from '@/components/ui';
@@ -35,10 +35,10 @@ function ProgressBar({
 }: {
   completed: number;
   total: number;
-}) {
+}): JSX.Element {
   return (
     <View className="mb-3 flex-row items-center gap-2">
-      <View className="h-2 flex-1 overflow-hidden rounded-full bg-border">
+      <View className="h-2 flex-1 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
         <View
           className="h-full bg-success-500"
           style={{
@@ -59,7 +59,7 @@ function ActivitiesSection({
 }: {
   activities: { taskType: string; count: number }[];
   t: (key: string) => string;
-}) {
+}): JSX.Element | null {
   if (activities.length === 0) return null;
 
   return (
@@ -89,7 +89,7 @@ function OutcomesSection({
 }: {
   outcomes: string[];
   t: (key: string) => string;
-}) {
+}): JSX.Element | null {
   if (outcomes.length === 0) return null;
 
   return (
@@ -110,7 +110,7 @@ function OutcomesSection({
 export function PhaseSummaryCard({
   summary,
   className,
-}: PhaseSummaryCardProps) {
+}: PhaseSummaryCardProps): JSX.Element {
   const { t } = useTranslation();
   const startDate = DateTime.fromISO(summary.startDate);
   const endDate = DateTime.fromISO(summary.endDate);
@@ -119,9 +119,13 @@ export function PhaseSummaryCard({
   return (
     <View
       className={`rounded-xl border border-border bg-card p-4 ${className}`}
+      testID="phase-summary-card"
     >
       <View className="mb-3">
-        <Text className="text-lg font-semibold text-text-primary">
+        <Text
+          className="text-lg font-semibold text-text-primary"
+          testID="phase-summary-title"
+        >
           {getPhaseLabel(t, summary.phase)}
         </Text>
         <Text className="mt-1 text-sm text-text-secondary">
