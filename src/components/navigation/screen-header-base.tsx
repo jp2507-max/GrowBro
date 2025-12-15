@@ -1,6 +1,7 @@
 import { Link } from 'expo-router';
 import React from 'react';
 import type { EdgeInsets } from 'react-native-safe-area-context';
+import { twMerge } from 'tailwind-merge';
 
 import { Pressable, Text, View } from '@/components/ui';
 import { Settings as SettingsIcon } from '@/components/ui/icons';
@@ -42,11 +43,12 @@ export function ScreenHeaderBase({
 }: ScreenHeaderBaseProps): React.ReactElement {
   const theme = useThemeConfig();
 
-  const borderClass = showBottomBorder ? 'border-b border-border' : '';
-
   return (
     <View
-      className={`px-4 pb-4 ${borderClass}`}
+      className={twMerge(
+        'px-4 pb-4',
+        showBottomBorder && 'border-b border-border'
+      )}
       style={{
         paddingTop: insets.top + HEADER_PADDING_TOP,
         backgroundColor: theme.colors.background,
@@ -182,11 +184,12 @@ export function HeaderIconButton({
   return (
     <Pressable
       onPress={onPress}
-      className={`size-10 items-center justify-center rounded-full shadow-sm active:bg-neutral-100 dark:active:bg-neutral-800 ${
+      className={twMerge(
+        'size-10 items-center justify-center rounded-full shadow-sm active:bg-neutral-100 dark:active:bg-neutral-800',
         isActive
           ? 'bg-primary-100 dark:bg-primary-900'
           : 'bg-white dark:bg-neutral-900'
-      }`}
+      )}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}

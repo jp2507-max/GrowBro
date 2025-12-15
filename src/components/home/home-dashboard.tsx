@@ -43,6 +43,7 @@ export function useTaskSnapshot(): TaskSnapshotState {
     // Helper that checks the hook-scope ref
     const isCancelled = () => isCancelledRef.current;
 
+    if (isCancelled()) return;
     setIsLoading(true);
 
     try {
@@ -287,32 +288,44 @@ export function HomeDashboard({
         key: 'add-task',
         labelKey: 'home.quick_actions.add_task',
         icon: '🗓️',
-        onPress: () => router.push('/calendar'),
+        onPress: () => {
+          router.push('/calendar');
+          onActivationActionComplete('create-task');
+        },
         testID: 'home-quick-action-add-task',
       },
       {
         key: 'ai',
         labelKey: 'home.quick_actions.try_ai',
         icon: '🔍',
-        onPress: () => router.push('/assessment/capture'),
+        onPress: () => {
+          router.push('/assessment/capture');
+          onActivationActionComplete('try-ai-diagnosis');
+        },
         testID: 'home-quick-action-ai',
       },
       {
         key: 'strains',
         labelKey: 'home.quick_actions.explore_strains',
         icon: '🌿',
-        onPress: () => router.push('/strains'),
+        onPress: () => {
+          router.push('/strains');
+          onActivationActionComplete('explore-strains');
+        },
         testID: 'home-quick-action-strains',
       },
       {
         key: 'playbook',
         labelKey: 'home.quick_actions.open_playbook',
         icon: '📖',
-        onPress: () => router.push('/playbooks'),
+        onPress: () => {
+          router.push('/playbooks');
+          onActivationActionComplete('open-playbook');
+        },
         testID: 'home-quick-action-playbook',
       },
     ],
-    [onShareUpdatePress, router]
+    [onShareUpdatePress, onActivationActionComplete, router]
   );
 
   return (

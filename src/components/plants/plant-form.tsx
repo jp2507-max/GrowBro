@@ -65,7 +65,15 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
 
 type StrainSuggestion = Strain;
 
-function useStrainSuggestions(query: string) {
+type UseStrainSuggestionsResult = {
+  suggestions: StrainSuggestion[];
+  isFetching: boolean;
+  isLoading: boolean;
+  hasExactMatch: boolean;
+  trimmedQuery: string;
+};
+
+function useStrainSuggestions(query: string): UseStrainSuggestionsResult {
   const trimmedQuery = query.trim();
   const debouncedQuery = useDebouncedValue(trimmedQuery, 250);
   const { data, isFetching, isLoading } = useStrainsInfinite({
@@ -75,16 +83,23 @@ function useStrainSuggestions(query: string) {
     },
   });
 
-  const suggestions = React.useMemo<StrainSuggestion[]>(() => {
+  // Flatten all pages for full data set
+  const allStrains = React.useMemo<StrainSuggestion[]>(() => {
     if (!data?.pages?.length) return [];
-    const flattened = data.pages.flatMap((page) => page.data || []);
-    return flattened.slice(0, 8);
+    return data.pages.flatMap((page) => page.data || []);
   }, [data?.pages]);
 
+  // Keep top 8 for display
+  const suggestions = React.useMemo<StrainSuggestion[]>(
+    () => allStrains.slice(0, 8),
+    [allStrains]
+  );
+
+  // Check FULL result set for exact match (fixes issue where match is beyond top 8)
   const hasExactMatch = React.useMemo(() => {
     const lower = trimmedQuery.toLowerCase();
-    return suggestions.some((s) => s.name.toLowerCase() === lower);
-  }, [suggestions, trimmedQuery]);
+    return allStrains.some((s) => s.name.toLowerCase() === lower);
+  }, [allStrains, trimmedQuery]);
 
   return {
     suggestions,
@@ -672,6 +687,16 @@ function buildSchema(t: (key: string) => string) {
   });
 }
 
+type UsePlantFormControllerResult = {
+  control: Control<PlantFormValues>;
+  imageUrl: string | undefined;
+  onPhotoCaptured: (photo: PhotoVariants) => void;
+  isSubmitting: boolean;
+  handleFormSubmit: () => void;
+  completion: number;
+  setValue: UseFormSetValue<PlantFormValues>;
+};
+
 function usePlantFormController({
   defaultValues,
   t,
@@ -682,7 +707,7 @@ function usePlantFormController({
   t: (key: string) => string;
   onSubmit: SubmitHandler<PlantFormValues>;
   onError?: SubmitErrorHandler<PlantFormValues>;
-}) {
+}): UsePlantFormControllerResult {
   const schema = React.useMemo(() => buildSchema(t), [t]);
   const {
     control,

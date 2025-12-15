@@ -169,7 +169,10 @@ function usePlantSubmit(
   plantId: string | null,
   queryClient: ReturnType<typeof useQueryClient>,
   t: ReturnType<typeof useTranslation>['t']
-) {
+): {
+  isSaving: boolean;
+  handleSubmit: (values: PlantFormValues) => Promise<void>;
+} {
   const [isSaving, setIsSaving] = React.useState(false);
 
   const handleSubmit = React.useCallback(
