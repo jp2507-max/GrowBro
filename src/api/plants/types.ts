@@ -28,6 +28,7 @@ export type PlantMetadata = {
   potSize?: string;
   lightSchedule?: string;
   lightHours?: number;
+  height?: number;
   locationName?: string;
   isDirectSun?: boolean;
   notes?: string;

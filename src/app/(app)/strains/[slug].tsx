@@ -4,57 +4,57 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import * as React from 'react';
 import { useLayoutEffect } from 'react';
-import { ScrollView, Share } from 'react-native';
+import { Share } from 'react-native';
 import Animated, {
   FadeIn,
   ReduceMotion,
-  type SharedValue,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
 // @ts-expect-error - Reanimated 4.x type exports issue
-import { Extrapolation, interpolate } from 'react-native-reanimated';
+import { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStrain } from '@/api/strains/use-strain';
-import { DifficultyBadge } from '@/components/strains/difficulty-badge';
 import { FavoriteButtonConnected } from '@/components/strains/favorite-button-connected';
 import { RaceBadge } from '@/components/strains/race-badge';
 import { StrainDetailSkeleton } from '@/components/strains/strain-detail-skeleton';
-import { THCBadge } from '@/components/strains/thc-badge';
 import { Image, Pressable, Text, View } from '@/components/ui';
-import { ArrowLeft, Share as ShareIcon } from '@/components/ui/icons';
+import {
+  ArrowLeft,
+  Calendar,
+  Leaf,
+  Scale,
+  Share as ShareIcon,
+  Smile,
+  Sprout,
+} from '@/components/ui/icons';
 import { ListErrorState } from '@/components/ui/list';
 import { strainImageTag } from '@/lib/animations';
-import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
 import { getListImageProps } from '@/lib/strains/image-optimization';
 import type { Strain } from '@/types/strains';
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
-const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 /**
  * Check if using proxy (production always uses proxy, dev can disable)
  */
 function isProxyEnabled(): boolean {
-  // Always use proxy in production
   if (process.env.NODE_ENV === 'production') {
     return true;
   }
   const rawValue = Env?.STRAINS_USE_PROXY;
   const normalized = rawValue ? String(rawValue).trim().toLowerCase() : '';
-  // In dev, proxy is enabled unless explicitly set to 'false' or '0'
   return normalized !== 'false' && normalized !== '0';
 }
 
 /** Fire-and-forget background cache to Supabase (dev fallback only) */
 function cacheStrainToSupabase(strain: Strain) {
   if (isProxyEnabled()) {
-    // Proxy already saves to Supabase; avoid duplicate writes from client.
     return;
   }
 
@@ -109,80 +109,32 @@ async function shareStrain(strain: Strain) {
   }
 }
 
-const GrowInfoSection = ({ strain }: { strain: Strain }) => {
-  const floweringTime =
-    strain.grow.flowering_time.label ??
-    (strain.grow.flowering_time.min_weeks &&
-    strain.grow.flowering_time.max_weeks
-      ? `${strain.grow.flowering_time.min_weeks}-${strain.grow.flowering_time.max_weeks} weeks`
-      : translate('common.na'));
-
-  const yieldRating =
-    strain.grow.yield.indoor?.label ??
-    strain.grow.yield.outdoor?.label ??
-    translate('common.na');
-  const heightRating = strain.grow.height.label ?? translate('common.na');
-
-  return (
-    <Animated.View
-      entering={FadeIn.delay(500).springify().reduceMotion(ReduceMotion.System)}
-      className="mt-6 rounded-2xl bg-neutral-50 p-5 dark:bg-neutral-900"
-      testID="grow-info"
-    >
-      <Text className="mb-4 text-xl font-bold text-neutral-900 dark:text-white">
-        {translate('strains.detail.grow_info')}
-      </Text>
-
-      <View className="flex-row flex-wrap gap-y-4">
-        <View className="w-1/2 pr-2">
-          <Text className="mb-1 text-sm font-medium text-neutral-500">
-            {translate('strains.detail.flowering_time')}
-          </Text>
-          <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-            {floweringTime}
-          </Text>
-        </View>
-
-        <View className="w-1/2 pl-2">
-          <Text className="mb-1 text-sm font-medium text-neutral-500">
-            {translate('strains.detail.yield')}
-          </Text>
-          <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-            {yieldRating}
-          </Text>
-        </View>
-
-        <View className="w-1/2 pr-2">
-          <Text className="mb-1 text-sm font-medium text-neutral-500">
-            {translate('strains.detail.height')}
-          </Text>
-          <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-            {heightRating}
-          </Text>
-        </View>
-      </View>
-    </Animated.View>
-  );
-};
-
 const EffectsFlavorsSection = ({ strain }: { strain: Strain }) => {
   return (
     <Animated.View
-      entering={FadeIn.delay(600).springify().reduceMotion(ReduceMotion.System)}
-      className="mt-8"
+      entering={FadeInDown.delay(400)
+        .springify()
+        .reduceMotion(ReduceMotion.System)}
+      className="mt-8 px-6 pb-20"
     >
       {strain.effects && strain.effects.length > 0 && (
-        <View className="mb-6" testID="strain-effects">
-          <Text className="mb-3 text-lg font-bold text-neutral-900 dark:text-white">
+        <View className="mb-8" testID="strain-effects">
+          <Text className="mb-4 text-lg font-bold text-neutral-900 dark:text-white">
             {translate('strains.detail.effects')}
           </Text>
-          <View className="flex-row flex-wrap gap-2">
+          <View className="flex-row flex-wrap">
             {strain.effects.map((effect) => (
               <View
                 key={effect.name}
-                className="rounded-full bg-success-100 px-3 py-1 dark:bg-success-900/30"
+                className="mb-3 mr-3 flex-row items-center rounded-full border border-primary-200 bg-primary-100 px-5 py-3 dark:border-primary-700 dark:bg-primary-900/40"
               >
-                <Text className="font-medium text-success-800 dark:text-success-200">
+                <Smile
+                  width={18}
+                  height={18}
+                  color="#15803d"
+                  className="mr-2"
+                />
+                <Text className="text-sm font-bold text-primary-900 dark:text-primary-100">
                   {effect.name}
                 </Text>
               </View>
@@ -193,16 +145,17 @@ const EffectsFlavorsSection = ({ strain }: { strain: Strain }) => {
 
       {strain.flavors && strain.flavors.length > 0 && (
         <View testID="strain-flavors">
-          <Text className="mb-3 text-lg font-bold text-neutral-900 dark:text-white">
+          <Text className="mb-4 text-lg font-bold text-neutral-900 dark:text-white">
             {translate('strains.detail.flavors')}
           </Text>
-          <View className="flex-row flex-wrap gap-2">
+          <View className="flex-row flex-wrap">
             {strain.flavors.map((flavor) => (
               <View
                 key={flavor.name}
-                className="rounded-full bg-orange-100 px-3 py-1 dark:bg-orange-900/30"
+                className="mb-3 mr-3 flex-row items-center rounded-full border border-primary-200 bg-primary-100 px-5 py-3 dark:border-primary-700 dark:bg-primary-900/40"
               >
-                <Text className="font-medium text-orange-800 dark:text-orange-200">
+                <Leaf width={18} height={18} color="#15803d" className="mr-2" />
+                <Text className="text-sm font-bold text-primary-900 dark:text-primary-100">
                   {flavor.name}
                 </Text>
               </View>
@@ -211,6 +164,100 @@ const EffectsFlavorsSection = ({ strain }: { strain: Strain }) => {
         </View>
       )}
     </Animated.View>
+  );
+};
+
+const HardFactsGrid = ({ strain }: { strain: Strain }) => {
+  const floweringTime =
+    strain.grow.flowering_time.label ??
+    (strain.grow.flowering_time.min_weeks &&
+    strain.grow.flowering_time.max_weeks
+      ? `${strain.grow.flowering_time.min_weeks}-${strain.grow.flowering_time.max_weeks}`
+      : 'N/A');
+
+  const yieldRating =
+    strain.grow.yield.indoor?.label ??
+    strain.grow.yield.outdoor?.label ??
+    'N/A';
+
+  const difficulty =
+    strain.grow?.difficulty === 'beginner'
+      ? translate('strains.difficulty.beginner')
+      : strain.grow?.difficulty === 'intermediate'
+        ? translate('strains.difficulty.intermediate')
+        : strain.grow?.difficulty === 'advanced'
+          ? translate('strains.difficulty.advanced')
+          : 'N/A';
+
+  return (
+    <View className="my-8 flex-row justify-between gap-3 px-4">
+      <View className="flex-1 items-center justify-center rounded-2xl bg-primary-50 p-4 dark:bg-primary-900/40">
+        <Calendar
+          width={24}
+          height={24}
+          className="mb-2 text-primary-700 dark:text-primary-300"
+        />
+        <Text
+          className="text-center text-lg font-bold text-neutral-900 dark:text-white"
+          numberOfLines={1}
+        >
+          {floweringTime}
+        </Text>
+        <Text
+          className="mt-1 text-[11px] font-extrabold uppercase tracking-widest text-primary-900/60 dark:text-primary-300/70"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
+          Blütezeit
+        </Text>
+      </View>
+
+      <View className="flex-1 items-center justify-center rounded-2xl bg-primary-50 p-4 dark:bg-primary-900/40">
+        <Scale width={24} height={24} color="#15803d" className="mb-2" />
+        <Text
+          className="text-center text-lg font-bold text-neutral-900 dark:text-white"
+          numberOfLines={1}
+        >
+          {yieldRating}
+        </Text>
+        <Text
+          className="mt-1 text-[11px] font-extrabold uppercase tracking-widest text-primary-900/60 dark:text-primary-300/70"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
+          Ertrag
+        </Text>
+      </View>
+
+      <View className="flex-1 items-center justify-center rounded-2xl bg-primary-50 p-4 dark:bg-primary-900/40">
+        <Sprout
+          width={24}
+          height={24}
+          className="mb-2 text-primary-700 dark:text-primary-300"
+        />
+        <Text
+          className="text-center text-lg font-bold text-neutral-900 dark:text-white"
+          numberOfLines={1}
+        >
+          {difficulty}
+        </Text>
+        <Text
+          className="mt-1 text-[11px] font-extrabold uppercase tracking-widest text-primary-900/60 dark:text-primary-300/70"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
+          Anbau
+        </Text>
+      </View>
+    </View>
+  );
+};
+
+const PremiumTagsRow = ({ strain }: { strain: Strain }) => {
+  return (
+    <View className="px-5 pt-2">
+      <RaceBadge race={strain.race} variant="premium" />
+    </View>
   );
 };
 
@@ -249,15 +296,6 @@ const StrainErrorState = ({ onBack, onRetry, topInset }: ErrorStateProps) => (
   </View>
 );
 
-type HeroSectionProps = {
-  strain: Strain;
-  imageProps: ReturnType<typeof getListImageProps> | Record<string, never>;
-  topInset: number;
-  onBack: () => void;
-  onShare: () => void;
-  scrollY: SharedValue<number>;
-};
-
 const InvalidIdState = ({ onBack }: { onBack: () => void }) => (
   <View
     className="flex-1 bg-white dark:bg-neutral-950"
@@ -272,123 +310,132 @@ const InvalidIdState = ({ onBack }: { onBack: () => void }) => (
   </View>
 );
 
-const StrainHeroSection = ({
+type StrainContentProps = {
+  strain: Strain;
+  scrollHandler: ReturnType<typeof useAnimatedScrollHandler>;
+};
+
+const StrainContentSheet = ({ strain }: { strain: Strain }) => (
+  <View className="-mt-6 min-h-screen rounded-t-[40px] bg-white pb-20 pt-4 shadow-2xl dark:bg-neutral-900">
+    <View className="mb-4 w-full items-center">
+      <View className="h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+    </View>
+    <PremiumTagsRow strain={strain} />
+    <Animated.View entering={FadeInDown.delay(200).springify()}>
+      <HardFactsGrid strain={strain} />
+    </Animated.View>
+    <View className="px-6 pb-6">
+      <Text className="mb-4 text-xl font-bold text-neutral-900 dark:text-white">
+        Über diese Sorte
+      </Text>
+      {strain.description?.map((paragraph, index) => (
+        <Animated.Text
+          key={index}
+          entering={FadeIn.delay(300 + index * 100)
+            .springify()
+            .reduceMotion(ReduceMotion.System)}
+          className="mb-4 text-lg leading-8 text-neutral-600 dark:text-neutral-300"
+        >
+          {paragraph}
+        </Animated.Text>
+      ))}
+    </View>
+    <EffectsFlavorsSection strain={strain} />
+  </View>
+);
+
+type NavButtonsProps = {
+  strain: Strain;
+  topInset: number;
+  navStyle: ReturnType<typeof useAnimatedStyle>;
+  onBack: () => void;
+  onShare: () => void;
+};
+
+const FloatingNavButtons = ({
   strain,
-  imageProps,
   topInset,
+  navStyle,
   onBack,
   onShare,
-  scrollY,
-}: HeroSectionProps) => {
-  // Animate buttons based on scroll position
-  const buttonsAnimatedStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
-      scrollY.value,
-      [0, 100, 200],
-      [1, 0.6, 0],
-      Extrapolation.CLAMP
-    );
-    const translateY = interpolate(
-      scrollY.value,
-      [0, 100, 200],
-      [0, -10, -30],
-      Extrapolation.CLAMP
-    );
-    return {
-      opacity,
-      transform: [{ translateY }],
-    };
-  });
-
-  return (
-    <View className="relative h-96 w-full bg-neutral-100 dark:bg-neutral-800">
-      <AnimatedImage
-        className="size-full"
-        contentFit="cover"
-        sharedTransitionTag={strainImageTag(strain.slug)}
-        {...imageProps}
+}: NavButtonsProps) => (
+  <Animated.View
+    className="absolute inset-x-0 top-0 z-20 flex-row items-center justify-between px-4"
+    style={[{ paddingTop: topInset + 8 }, navStyle]}
+  >
+    <Pressable
+      onPress={onBack}
+      className="size-10 items-center justify-center rounded-full bg-black/30 backdrop-blur-sm active:bg-black/40"
+      accessibilityRole="button"
+      accessibilityLabel={translate('accessibility.common.go_back')}
+      accessibilityHint={translate('strains.detail.back_hint')}
+      testID="back-button"
+    >
+      <ArrowLeft color="#fff" width={24} height={24} />
+    </Pressable>
+    <View className="flex-row gap-3">
+      <FavoriteButtonConnected
+        strainId={strain.id}
+        strain={strain}
+        variant="overlay"
+        testID="favorite-button"
       />
-
-      {/* Header Actions Overlay */}
-      <Animated.View
-        className="absolute inset-x-0 top-0 z-10 flex-row items-center justify-between px-4"
-        style={[{ paddingTop: topInset + 8 }, buttonsAnimatedStyle]}
+      <Pressable
+        onPress={onShare}
+        className="size-10 items-center justify-center rounded-full bg-black/30 backdrop-blur-sm active:bg-black/40"
+        accessibilityRole="button"
+        accessibilityLabel={translate('strains.detail.share')}
+        accessibilityHint={translate('strains.detail.share_hint')}
+        testID="share-button"
       >
-        <Pressable
-          onPress={onBack}
-          className="size-10 items-center justify-center rounded-full bg-neutral-100 active:bg-neutral-200"
-          accessibilityRole="button"
-          accessibilityLabel={translate('accessibility.common.go_back')}
-          accessibilityHint={translate('strains.detail.back_hint')}
-          testID="back-button"
-        >
-          <ArrowLeft color="#554B32" width={24} height={24} />
-        </Pressable>
-
-        <View className="flex-row gap-3">
-          <FavoriteButtonConnected
-            strainId={strain.id}
-            strain={strain}
-            variant="overlay"
-            testID="favorite-button"
-          />
-          <Pressable
-            onPress={onShare}
-            className="size-10 items-center justify-center rounded-full bg-neutral-100 active:bg-neutral-200"
-            accessibilityRole="button"
-            accessibilityLabel={translate('strains.detail.share')}
-            accessibilityHint={translate('strains.detail.share_hint')}
-            testID="share-button"
-          >
-            <ShareIcon color="#554B32" width={24} height={24} />
-          </Pressable>
-        </View>
-      </Animated.View>
-
-      {/* Title Overlay with Gradient */}
-      <View className="absolute inset-x-0 bottom-0">
-        <AnimatedLinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.8)']}
-          locations={[0, 0.4, 1]}
-          className="w-full"
-        >
-          <Animated.View
-            entering={FadeIn.delay(200)
-              .springify()
-              .reduceMotion(ReduceMotion.System)}
-            className="px-5 pb-9 pt-16"
-          >
-            <Text className="mb-4 text-4xl font-extrabold text-white shadow-sm">
-              {strain.name}
-            </Text>
-            <View className="flex-row flex-wrap gap-3">
-              <RaceBadge race={strain.race} />
-              {strain.thc_display && <THCBadge thc={strain.thc_display} />}
-              <DifficultyBadge difficulty={strain.grow.difficulty} />
-            </View>
-          </Animated.View>
-        </AnimatedLinearGradient>
-      </View>
+        <ShareIcon color="#fff" width={24} height={24} />
+      </Pressable>
     </View>
-  );
-};
+  </Animated.View>
+);
+
+const StrainScrollContent = ({ strain, scrollHandler }: StrainContentProps) => (
+  <Animated.ScrollView
+    className="z-10 flex-1"
+    contentContainerClassName="pb-10"
+    showsVerticalScrollIndicator={false}
+    onScroll={scrollHandler}
+    scrollEventThrottle={16}
+    bounces={false}
+  >
+    <View className="h-[350px] justify-end px-6 pb-8">
+      <View className="mb-2 flex-row gap-2">
+        <View className="rounded-full bg-white/20 px-3 py-1 backdrop-blur-md">
+          <Text className="text-xs font-bold uppercase tracking-wider text-white">
+            {strain.race === 'hybrid'
+              ? 'Hybrid'
+              : strain.race === 'sativa'
+                ? 'Sativa'
+                : 'Indica'}
+          </Text>
+        </View>
+      </View>
+      <Text className="text-4xl font-extrabold text-white shadow-sm">
+        {strain.name}
+      </Text>
+    </View>
+    <StrainContentSheet strain={strain} />
+  </Animated.ScrollView>
+);
 
 export default function StrainDetailsScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { grossHeight: tabBarHeight } = useBottomTabBarHeight();
   const scrollY = useSharedValue(0);
 
-  // Hide default header to create a custom clean layout
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: false,
     });
   }, [navigation]);
 
-  // Fetch strain data - accepts either strain ID or slug as identifier
   const {
     data: strain,
     isLoading,
@@ -397,7 +444,6 @@ export default function StrainDetailsScreen() {
     refetch,
   } = useStrain({ strainIdOrSlug: slug });
 
-  // Log errors to Sentry when they occur
   React.useEffect(() => {
     if (isError && error) {
       console.error('[StrainDetails] Failed to load strain:', {
@@ -410,7 +456,6 @@ export default function StrainDetailsScreen() {
     }
   }, [isError, error, slug]);
 
-  // Background cache: Save viewed strain to Supabase for future users (dev fallback only)
   React.useEffect(() => {
     if (strain) cacheStrainToSupabase(strain);
   }, [strain]);
@@ -426,7 +471,6 @@ export default function StrainDetailsScreen() {
 
   const handleBack = React.useCallback(() => {
     haptics.selection();
-    // Guard: if there's no history (e.g. deep link), fall back to strains list
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -440,12 +484,19 @@ export default function StrainDetailsScreen() {
     },
   });
 
-  // Guard against undefined slug
+  const navButtonsStyle = useAnimatedStyle(() => {
+    'worklet';
+    // Clamp scroll value to [0, 200] range for opacity calculation
+    const clampedScroll = Math.min(Math.max(scrollY.value, 0), 200);
+    // Map 0-200 scroll to 1-0 opacity
+    const opacity = 1 - clampedScroll / 200;
+    return { opacity };
+  });
+
   if (!slug) {
     return <InvalidIdState onBack={handleBack} />;
   }
 
-  // Handle error state
   if (isError) {
     return (
       <StrainErrorState
@@ -456,49 +507,39 @@ export default function StrainDetailsScreen() {
     );
   }
 
-  // Handle loading state with skeleton
   if (isLoading || !strain) {
     return <StrainDetailSkeleton onBack={handleBack} />;
   }
 
   return (
     <View
-      className="flex-1 bg-white dark:bg-neutral-950"
+      className="relative flex-1 bg-white dark:bg-neutral-950"
       testID="strain-detail-screen"
     >
-      <AnimatedScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: tabBarHeight + 24 }}
-        showsVerticalScrollIndicator={false}
-        onScroll={scrollHandler}
-        scrollEventThrottle={16}
-      >
-        <StrainHeroSection
-          strain={strain}
-          imageProps={imageProps}
-          topInset={insets.top}
-          onBack={handleBack}
-          onShare={handleShare}
-          scrollY={scrollY}
+      {/* --- 1. FIXED BACKGROUND HEADER (Absolute) --- */}
+      <View className="absolute inset-x-0 top-0 z-0 h-[450px] bg-neutral-900">
+        <AnimatedImage
+          className="size-full opacity-90"
+          contentFit="cover"
+          sharedTransitionTag={strainImageTag(strain.slug)}
+          {...imageProps}
         />
+        <AnimatedLinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.95)']}
+          locations={[0, 0.5, 1]}
+          className="absolute inset-0 z-10"
+        />
+      </View>
 
-        {/* Content */}
-        <View className="px-5 pt-6">
-          {strain.description?.map((paragraph, index) => (
-            <Animated.Text
-              key={index}
-              entering={FadeIn.delay(300 + index * 100)
-                .springify()
-                .reduceMotion(ReduceMotion.System)}
-              className="mb-4 text-lg leading-relaxed text-neutral-600 dark:text-neutral-300"
-            >
-              {paragraph}
-            </Animated.Text>
-          ))}
-          <GrowInfoSection strain={strain} />
-          <EffectsFlavorsSection strain={strain} />
-        </View>
-      </AnimatedScrollView>
+      <FloatingNavButtons
+        strain={strain}
+        topInset={insets.top}
+        navStyle={navButtonsStyle}
+        onBack={handleBack}
+        onShare={handleShare}
+      />
+
+      <StrainScrollContent strain={strain} scrollHandler={scrollHandler} />
     </View>
   );
 }

@@ -30,6 +30,7 @@ export type CreatePlantVariables = {
   potSize?: string;
   lightSchedule?: string;
   lightHours?: number;
+  height?: number;
   notes?: string;
   imageUrl?: string;
 };

@@ -129,17 +129,27 @@
         "empty": "No assessments yet",
         "emptyDescription": "Use the AI assessment tool to analyze plant health"
       },
+      "detail": {
+        "title": "Plant Detail"
+      },
       "error_card_hint": "Informs that plants failed to load.",
+      "form": {
+        "title": "Add Plant"
+      },
       "offline_banner_hint": "Shows saved plants while offline.",
       "open_detail_hint": "Opens plant details.",
       "search_hint": "Filters plants as you type."
     },
     "strains": {
+      "about_title": "About this strain",
       "clear_search_hint": "Clears the search input",
       "clear_search_history_hint": "Removes all saved searches",
       "clear_search_history_label": "Clear all search history",
       "clear_search_label": "Clear search",
       "error_card_hint": "Informs that strains failed to load.",
+      "facts_difficulty": "Difficulty",
+      "facts_flowering": "Flowering",
+      "facts_yield": "Yield",
       "favorite_hint": "Double-tap to toggle favorite status for this strain.",
       "offline_banner_hint": "Shows saved strains while offline.",
       "open_detail_hint": "Opens strain details.",
@@ -634,6 +644,10 @@
       "sample_title": "💧 Water plants - Every 2 days",
       "title": "Start Your Grow Schedule"
     },
+    "header": {
+      "subtitle": "Your schedule",
+      "today": "Today"
+    },
     "log_ph_ec": "Log pH/EC",
     "move": "Move",
     "move_to_date": "Move to date",
@@ -643,11 +657,37 @@
     "out_of_range_label": "Latest pH/EC out of target range",
     "ph_range": "pH target: {{min}}–{{max}}",
     "review": "review",
+    "schedule_editor": {
+      "add_title": "Add Schedule",
+      "cancel": "Cancel",
+      "edit_title": "Edit Schedule",
+      "interval_label": "Every",
+      "recurrence_label": "Repeat",
+      "save": "Save",
+      "title_label": "Task Title",
+      "title_placeholder": "e.g., Water plants",
+      "weekdays_label": "On days"
+    },
+    "sections": {
+      "empty_history": "No completed tasks for this day",
+      "empty_plan": "No tasks scheduled for this day",
+      "history": "History",
+      "plan": "Plan"
+    },
     "targets_title": "Targets",
     "taskCount": "{{count}} task",
     "taskCount_plural": "{{count}} tasks",
+    "task_row": {
+      "complete": "Mark as complete",
+      "completed": "Task completed",
+      "recurring": "Recurring"
+    },
     "today": "Today",
     "tomorrow": "Tomorrow",
+    "week_strip": {
+      "select_day_hint": "Double-tap to view tasks for this day",
+      "today": "Today"
+    },
     "yesterday": "Yesterday"
   },
   "cannabis": {
@@ -2150,6 +2190,9 @@
       "title": "Assessment History"
     },
     "card": {
+      "all_good": "All good",
+      "growing_well": "Growing well",
+      "harvest_ready": "Ready for harvest",
       "health": {
         "excellent": "Excellent",
         "fair": "Fair",
@@ -2157,10 +2200,24 @@
         "poor": "Poor"
       },
       "health_label": "Health",
-      "no_photo": "Add photo"
+      "needs_water": "Needs watering!",
+      "no_photo": "Add photo",
+      "progress": "{{percent}}% to harvest",
+      "progress_label": "complete",
+      "water_action": "Water"
     },
     "completionProgress": {
       "percentComplete": "{{percent}}% Complete"
+    },
+    "detail": {
+      "action_hub_title": "Today's Tasks",
+      "all_good_message": "All good – No tasks today.",
+      "no_tasks": "No pending tasks",
+      "stats_day": "Day",
+      "stats_height": "Height",
+      "stats_phase": "Phase",
+      "strain_profile_link": "Strain Profile & Details",
+      "water_needed": "Watering Needed"
     },
     "empty_state": "No plants in your inventory",
     "error": "Failed to load plants. Try again.",
@@ -2173,6 +2230,7 @@
       "cancel": "Cancel",
       "completion": "{{percent}}% Complete",
       "create_cta": "Create plant",
+      "create_title": "New Plant",
       "default_water_desc": "Quick reminder to water after transplanting.",
       "default_water_title": "Water this plant",
       "delete_button": "Delete Plant",
@@ -2191,13 +2249,13 @@
       "error_body": "Please check your connection and try again.",
       "error_title": "Could not save plant",
       "errors": {
+        "height_invalid": "Height must be a positive number",
         "light_hours": "Enter hours between 0-24",
         "name_length": "Name must be under 120 characters",
         "name_required": "Name is required",
         "strain_length": "Strain must be under 120 characters",
         "strain_required": "Strain is required"
       },
-
       "genetic": {
         "balanced": "Balanced hybrid",
         "indica": "Indica-dominant",
@@ -2207,6 +2265,8 @@
       "genetic_label": "Genetic lean",
       "genetic_placeholder": "Select genetic lean",
       "go_to_schedule": "Go to Schedule",
+      "height_label": "Plant height",
+      "height_placeholder": "e.g., 45 cm",
       "invalid_id": "Invalid Plant ID",
       "keep_adding": "Keep adding plants",
       "light_hours_label": "Hours of light",

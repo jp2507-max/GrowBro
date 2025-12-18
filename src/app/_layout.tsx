@@ -30,6 +30,7 @@ import {
   useAgeGate,
   useAuth,
   useIsFirstTime,
+  useSystemThemeListener,
 } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
 import { clearAuthStorage, initAuthStorage } from '@/lib/auth/auth-storage';
@@ -566,6 +567,8 @@ interface ProvidersProps {
 
 function Providers({ children }: ProvidersProps): React.ReactElement {
   const theme = useThemeConfig();
+  // Listen for device theme changes when user has 'system' mode selected
+  useSystemThemeListener();
   return (
     <GestureHandlerRootView
       style={styles.container}

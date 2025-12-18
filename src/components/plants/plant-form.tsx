@@ -350,42 +350,79 @@ function PlantStrainField({ control, setValue, t }: PlantStrainFieldProps) {
   );
 }
 
-const STAGE_OPTIONS: { value: PlantStage; i18nKey: string }[] = [
-  { value: 'seedling', i18nKey: 'plants.form.stage.seedling' },
-  { value: 'vegetative', i18nKey: 'plants.form.stage.vegetative' },
-  { value: 'flowering', i18nKey: 'plants.form.stage.flowering' },
-  { value: 'harvesting', i18nKey: 'plants.form.stage.harvesting' },
-  { value: 'curing', i18nKey: 'plants.form.stage.curing' },
-  { value: 'ready', i18nKey: 'plants.form.stage.ready' },
+const STAGE_OPTIONS: { value: PlantStage; i18nKey: string; icon: string }[] = [
+  { value: 'seedling', i18nKey: 'plants.form.stage.seedling', icon: '🌱' },
+  { value: 'vegetative', i18nKey: 'plants.form.stage.vegetative', icon: '🌿' },
+  { value: 'flowering', i18nKey: 'plants.form.stage.flowering', icon: '🌸' },
+  { value: 'harvesting', i18nKey: 'plants.form.stage.harvesting', icon: '✂️' },
+  { value: 'curing', i18nKey: 'plants.form.stage.curing', icon: '🫙' },
+  { value: 'ready', i18nKey: 'plants.form.stage.ready', icon: '✅' },
 ];
 
-const PHOTOPERIOD_OPTIONS: { value: PhotoperiodType; i18nKey: string }[] = [
-  { value: 'photoperiod', i18nKey: 'plants.form.photoperiod.photoperiod' },
-  { value: 'autoflower', i18nKey: 'plants.form.photoperiod.autoflower' },
+const PHOTOPERIOD_OPTIONS: {
+  value: PhotoperiodType;
+  i18nKey: string;
+  icon: string;
+}[] = [
+  {
+    value: 'photoperiod',
+    i18nKey: 'plants.form.photoperiod.photoperiod',
+    icon: '☀️',
+  },
+  {
+    value: 'autoflower',
+    i18nKey: 'plants.form.photoperiod.autoflower',
+    icon: '⏱️',
+  },
 ];
 
-const ENVIRONMENT_OPTIONS: { value: PlantEnvironment; i18nKey: string }[] = [
-  { value: 'indoor', i18nKey: 'plants.form.environment.indoor' },
-  { value: 'outdoor', i18nKey: 'plants.form.environment.outdoor' },
-  { value: 'greenhouse', i18nKey: 'plants.form.environment.greenhouse' },
+const ENVIRONMENT_OPTIONS: {
+  value: PlantEnvironment;
+  i18nKey: string;
+  icon: string;
+}[] = [
+  { value: 'indoor', i18nKey: 'plants.form.environment.indoor', icon: '🏠' },
+  { value: 'outdoor', i18nKey: 'plants.form.environment.outdoor', icon: '🌳' },
+  {
+    value: 'greenhouse',
+    i18nKey: 'plants.form.environment.greenhouse',
+    icon: '🏡',
+  },
 ];
 
-const GENETIC_OPTIONS: { value: GeneticLean; i18nKey: string }[] = [
-  { value: 'indica_dominant', i18nKey: 'plants.form.genetic.indica' },
-  { value: 'sativa_dominant', i18nKey: 'plants.form.genetic.sativa' },
-  { value: 'balanced', i18nKey: 'plants.form.genetic.balanced' },
-  { value: 'unknown', i18nKey: 'plants.form.genetic.unknown' },
+const GENETIC_OPTIONS: {
+  value: GeneticLean;
+  i18nKey: string;
+  icon: string;
+}[] = [
+  {
+    value: 'indica_dominant',
+    i18nKey: 'plants.form.genetic.indica',
+    icon: '🟣',
+  },
+  {
+    value: 'sativa_dominant',
+    i18nKey: 'plants.form.genetic.sativa',
+    icon: '🟢',
+  },
+  { value: 'balanced', i18nKey: 'plants.form.genetic.balanced', icon: '⚖️' },
+  { value: 'unknown', i18nKey: 'plants.form.genetic.unknown', icon: '❓' },
 ];
 
 const MEDIUM_OPTIONS: {
   value: NonNullable<PlantMetadata['medium']>;
   i18nKey: string;
+  icon: string;
 }[] = [
-  { value: 'soil', i18nKey: 'plants.form.medium.soil' },
-  { value: 'coco', i18nKey: 'plants.form.medium.coco' },
-  { value: 'hydro', i18nKey: 'plants.form.medium.hydro' },
-  { value: 'living_soil', i18nKey: 'plants.form.medium.living_soil' },
-  { value: 'other', i18nKey: 'plants.form.medium.other' },
+  { value: 'soil', i18nKey: 'plants.form.medium.soil', icon: '🪴' },
+  { value: 'coco', i18nKey: 'plants.form.medium.coco', icon: '🥥' },
+  { value: 'hydro', i18nKey: 'plants.form.medium.hydro', icon: '💧' },
+  {
+    value: 'living_soil',
+    i18nKey: 'plants.form.medium.living_soil',
+    icon: '🐛',
+  },
+  { value: 'other', i18nKey: 'plants.form.medium.other', icon: '📦' },
 ];
 
 export type PlantFormValues = {
@@ -404,6 +441,7 @@ export type PlantFormValues = {
   potSize?: string;
   lightSchedule?: string;
   lightHours?: number;
+  height?: number;
   notes?: string;
   imageUrl?: string;
 };
@@ -415,6 +453,8 @@ type PlantFormProps = {
   isSubmitting?: boolean;
   /** Callback to receive the form submit handler (for header button) */
   onSubmitReady?: (submit: () => void) => void;
+  /** Callback to report form completion progress (0-100) */
+  onProgressChange?: (progress: number) => void;
   onDelete?: () => void;
 };
 
@@ -425,15 +465,17 @@ type SelectFieldProps = {
   placeholder: string;
   options: OptionType[];
   testID: string;
+  chunky?: boolean;
 };
 
 function toOptions(
-  items: { value: string; i18nKey: string }[],
+  items: { value: string; i18nKey: string; icon?: string }[],
   t: (key: string) => string
 ): OptionType[] {
   return items.map((item) => ({
     value: item.value,
     label: t(item.i18nKey),
+    icon: item.icon,
   }));
 }
 
@@ -444,6 +486,7 @@ function SelectField({
   placeholder,
   options,
   testID,
+  chunky,
 }: SelectFieldProps) {
   return (
     <Controller
@@ -457,6 +500,7 @@ function SelectField({
           options={options}
           placeholder={placeholder}
           testID={testID}
+          chunky={chunky}
         />
       )}
     />
@@ -490,6 +534,7 @@ function IdentitySection({
           placeholder={t('plants.form.name_placeholder')}
           label={t('plants.form.name_label')}
           testID="plant-name-input"
+          chunky
         />
         <PlantStrainField control={control} setValue={setValue} t={t} />
         <SelectField
@@ -499,6 +544,7 @@ function IdentitySection({
           placeholder={t('plants.form.stage_placeholder')}
           options={stageOptions}
           testID="plant-stage-select"
+          chunky
         />
         <SelectField
           control={control}
@@ -507,6 +553,7 @@ function IdentitySection({
           placeholder={t('plants.form.genetic_placeholder')}
           options={geneticOptions}
           testID="plant-genetic-select"
+          chunky
         />
       </View>
     </FormSection>
@@ -539,6 +586,7 @@ function EnvironmentSection({
           placeholder={t('plants.form.environment_placeholder')}
           options={environmentOptions}
           testID="plant-environment-select"
+          chunky
         />
         <SelectField
           control={control}
@@ -547,6 +595,7 @@ function EnvironmentSection({
           placeholder={t('plants.form.photoperiod_placeholder')}
           options={photoperiodOptions}
           testID="plant-photoperiod-select"
+          chunky
         />
         <ControlledDatePicker
           control={control}
@@ -555,6 +604,7 @@ function EnvironmentSection({
           label={t('plants.form.planted_at_label')}
           testID="plant-plantedAt-picker"
           maximumDate={new Date()}
+          chunky
         />
       </View>
     </FormSection>
@@ -585,6 +635,7 @@ function CareSection({
           placeholder={t('plants.form.medium_placeholder')}
           options={mediumOptions}
           testID="plant-medium-select"
+          chunky
         />
         <ControlledInput
           control={control}
@@ -592,6 +643,16 @@ function CareSection({
           placeholder={t('plants.form.pot_size_placeholder')}
           label={t('plants.form.pot_size_label')}
           testID="plant-potSize-input"
+          chunky
+        />
+        <ControlledInput
+          control={control}
+          name="height"
+          placeholder={t('plants.form.height_placeholder')}
+          label={t('plants.form.height_label')}
+          keyboardType="numeric"
+          testID="plant-height-input"
+          chunky
         />
         <ControlledInput
           control={control}
@@ -599,6 +660,7 @@ function CareSection({
           placeholder={t('plants.form.light_schedule_placeholder')}
           label={t('plants.form.light_schedule_label')}
           testID="plant-lightSchedule-input"
+          chunky
         />
         <ControlledInput
           control={control}
@@ -607,6 +669,7 @@ function CareSection({
           label={t('plants.form.light_hours_label')}
           keyboardType="numeric"
           testID="plant-lightHours-input"
+          chunky
         />
         <ControlledInput
           control={control}
@@ -616,6 +679,7 @@ function CareSection({
           multiline
           numberOfLines={3}
           testID="plant-notes-input"
+          chunky
         />
       </View>
     </FormSection>
@@ -683,6 +747,20 @@ function buildSchema(t: (key: string) => string) {
           (!Number.isNaN(value) && value >= 0 && value <= 24),
         { message: t('plants.form.errors.light_hours') }
       ),
+    height: z.preprocess(
+      (val) => (val === '' || val == null ? undefined : String(val)),
+      z
+        .string()
+        .optional()
+        .transform((value) => (value ? Number(value) : undefined))
+        .refine(
+          (value) =>
+            value === undefined || (!Number.isNaN(value) && value >= 0),
+          {
+            message: t('plants.form.errors.height_invalid'),
+          }
+        )
+    ),
     notes: z.string().max(500).optional(),
     imageUrl: z.string().optional(),
   });
@@ -758,12 +836,34 @@ function usePlantFormController({
   };
 }
 
+type DeletePlantButtonProps = {
+  onDelete: () => void;
+  t: (key: string) => string;
+};
+
+function DeletePlantButton({ onDelete, t }: DeletePlantButtonProps) {
+  return (
+    <View className="mt-8 px-4 pb-8">
+      <Button
+        variant="destructive"
+        onPress={onDelete}
+        label={t('plants.form.delete_button')}
+        className="rounded-xl bg-red-50 dark:bg-red-950/30"
+        textClassName="text-red-600 dark:text-red-400"
+        accessibilityHint={t('plants.form.delete_confirm_body')}
+        testID="delete-plant-button"
+      />
+    </View>
+  );
+}
+
 export function PlantForm({
   defaultValues,
   onSubmit,
   onError,
   isSubmitting,
   onSubmitReady,
+  onProgressChange,
   onDelete,
 }: PlantFormProps): React.ReactElement {
   const { t } = useTranslation();
@@ -790,20 +890,21 @@ export function PlantForm({
     onSubmitReady?.(stableSubmit);
   }, [onSubmitReady, stableSubmit]);
 
-  const stageOptions = React.useMemo(() => toOptions(STAGE_OPTIONS, t), [t]);
-  const photoperiodOptions = React.useMemo(
-    () => toOptions(PHOTOPERIOD_OPTIONS, t),
+  // Report completion progress to parent
+  React.useEffect(() => {
+    onProgressChange?.(completion);
+  }, [completion, onProgressChange]);
+
+  const options = React.useMemo(
+    () => ({
+      stage: toOptions(STAGE_OPTIONS, t),
+      photoperiod: toOptions(PHOTOPERIOD_OPTIONS, t),
+      environment: toOptions(ENVIRONMENT_OPTIONS, t),
+      genetic: toOptions(GENETIC_OPTIONS, t),
+      medium: toOptions(MEDIUM_OPTIONS, t),
+    }),
     [t]
   );
-  const environmentOptions = React.useMemo(
-    () => toOptions(ENVIRONMENT_OPTIONS, t),
-    [t]
-  );
-  const geneticOptions = React.useMemo(
-    () => toOptions(GENETIC_OPTIONS, t),
-    [t]
-  );
-  const mediumOptions = React.useMemo(() => toOptions(MEDIUM_OPTIONS, t), [t]);
 
   // Calculate content padding: top for safe area, bottom for tab bar
   const scrollContentStyle = React.useMemo(
@@ -840,32 +941,20 @@ export function PlantForm({
         <View className="gap-6 px-4">
           <IdentitySection
             control={control}
-            stageOptions={stageOptions}
-            geneticOptions={geneticOptions}
+            stageOptions={options.stage}
+            geneticOptions={options.genetic}
             setValue={setValue}
             t={t}
           />
           <EnvironmentSection
             control={control}
-            environmentOptions={environmentOptions}
-            photoperiodOptions={photoperiodOptions}
+            environmentOptions={options.environment}
+            photoperiodOptions={options.photoperiod}
             t={t}
           />
-          <CareSection control={control} mediumOptions={mediumOptions} t={t} />
+          <CareSection control={control} mediumOptions={options.medium} t={t} />
 
-          {onDelete ? (
-            <View className="mt-8 px-4 pb-8">
-              <Button
-                variant="destructive"
-                onPress={onDelete}
-                label={t('plants.form.delete_button')}
-                className="rounded-xl bg-red-50 dark:bg-red-950/30"
-                textClassName="text-red-600 dark:text-red-400"
-                accessibilityHint={t('plants.form.delete_confirm_body')}
-                testID="delete-plant-button"
-              />
-            </View>
-          ) : null}
+          {onDelete && <DeletePlantButton onDelete={onDelete} t={t} />}
         </View>
       </ScrollView>
     </View>

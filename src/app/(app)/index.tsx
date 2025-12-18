@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
-import { useNavigation, useRouter } from 'expo-router';
-import React, { useCallback, useLayoutEffect } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
 import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -45,7 +45,6 @@ function usePlantsData() {
 
 export default function Feed() {
   const router = useRouter();
-  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { grossHeight } = useBottomTabBarHeight();
   const { resetScrollState } = useAnimatedScrollList();
@@ -83,18 +82,6 @@ export default function Feed() {
     [router]
   );
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      header: () => (
-        <HomeHeader
-          plantCount={plants.length}
-          taskCount={snapshot.today + snapshot.overdue}
-          insets={insets}
-        />
-      ),
-    });
-  }, [insets, navigation, plants.length, snapshot.overdue, snapshot.today]);
-
   const contentPaddingBottom = React.useMemo(
     () => ({ paddingBottom: grossHeight + BOTTOM_PADDING_EXTRA }),
     [grossHeight]
@@ -108,7 +95,16 @@ export default function Feed() {
     <View className="flex-1 bg-background" testID="feed-screen">
       <FocusAwareStatusBar />
 
+      {/* Header rendered directly in screen for shared stacking context */}
+      <HomeHeader
+        plantCount={plants.length}
+        taskCount={snapshot.today + snapshot.overdue}
+        insets={insets}
+      />
+
+      {/* Content floats above header with z-10 and negative margin */}
       <ScrollView
+        className="z-10 -mt-10"
         contentContainerStyle={contentPaddingBottom}
         showsVerticalScrollIndicator={false}
       >

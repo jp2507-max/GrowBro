@@ -13,8 +13,6 @@ import Animated, {
 // @ts-expect-error - Reanimated 4.x type exports issue
 import { interpolate } from 'react-native-reanimated';
 
-import { useColorScheme } from 'nativewind';
-
 import type { Plant } from '@/api';
 import { Image, Pressable, Text, View } from '@/components/ui';
 import { ArrowRight } from '@/components/ui/icons/arrow-right';
@@ -42,58 +40,58 @@ function getStageColors(stage?: string): StageColors {
   switch (stage) {
     case 'seedling':
       return {
-        bg: '#C6F6D5', // Vibrant Mint Green
-        text: '#14532d', // green-900
-        badgeBg: '#F0FDF4', // lighter green
-        badgeText: '#166534', // green-800
+        bg: '#C6F6D5',
+        text: '#14532d',
+        badgeBg: '#F0FDF4',
+        badgeText: '#166534',
         icon: '#86EFAC',
       };
     case 'vegetative':
       return {
-        bg: '#BAE6FD', // Vibrant Sky Blue
-        text: '#0c4a6e', // sky-900
+        bg: '#BAE6FD',
+        text: '#0c4a6e',
         badgeBg: '#F0F9FF',
-        badgeText: '#075985', // sky-800
+        badgeText: '#075985',
         icon: '#7DD3FC',
       };
     case 'flowering':
       return {
-        bg: '#E9D5FF', // Vibrant Purple
-        text: '#581c87', // purple-900
+        bg: '#E9D5FF',
+        text: '#581c87',
         badgeBg: '#FAF5FF',
-        badgeText: '#6b21a8', // purple-800
+        badgeText: '#6b21a8',
         icon: '#D8B4FE',
       };
     case 'harvesting':
       return {
-        bg: '#FED7AA', // Vibrant Orange
-        text: '#7c2d12', // orange-900
+        bg: '#FED7AA',
+        text: '#7c2d12',
         badgeBg: '#FFF7ED',
-        badgeText: '#9a3412', // orange-800
+        badgeText: '#9a3412',
         icon: '#FDBA74',
       };
     case 'curing':
       return {
-        bg: '#FDE68A', // Vibrant Amber
-        text: '#78350f', // amber-900
+        bg: '#FDE68A',
+        text: '#78350f',
         badgeBg: '#FFFBEB',
-        badgeText: '#92400e', // amber-800
+        badgeText: '#92400e',
         icon: '#FCD34D',
       };
     case 'ready':
       return {
-        bg: '#A7F3D0', // Vibrant Emerald
-        text: '#064e3b', // emerald-900
+        bg: '#A7F3D0',
+        text: '#064e3b',
         badgeBg: '#ECFDF5',
-        badgeText: '#065f46', // emerald-800
+        badgeText: '#065f46',
         icon: '#6EE7B7',
       };
     default:
       return {
-        bg: '#E5E7EB', // Neutral Gray
-        text: '#171717', // neutral-900
+        bg: '#E5E7EB',
+        text: '#171717',
         badgeBg: '#F9FAFB',
-        badgeText: '#262626', // neutral-800
+        badgeText: '#262626',
         icon: '#D4D4D4',
       };
   }
@@ -106,12 +104,32 @@ function translateStage(stage?: string): string | null {
   return typeof label === 'string' && label.length > 0 ? label : stage;
 }
 
+// Stage progress percentages for gamification
+function getStageProgress(stage?: string): number {
+  switch (stage) {
+    case 'seedling':
+      return 15;
+    case 'vegetative':
+      return 35;
+    case 'flowering':
+      return 65;
+    case 'harvesting':
+      return 85;
+    case 'curing':
+      return 95;
+    case 'ready':
+      return 100;
+    default:
+      return 0;
+  }
+}
+
 const cardStyles = StyleSheet.create({
   shadow: {
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
   },
 });
 
@@ -124,7 +142,7 @@ function PlantCardImage({
 }) {
   return (
     <View
-      className="size-28 overflow-hidden rounded-2xl"
+      className="size-16 overflow-hidden rounded-xl border border-neutral-100 bg-white dark:border-neutral-700"
       style={{ backgroundColor: colors.badgeBg }}
     >
       {plant.imageUrl ? (
@@ -139,7 +157,7 @@ function PlantCardImage({
           className="size-full items-center justify-center"
           testID={`plant-card-${plant.id}-placeholder`}
         >
-          <Text className="text-4xl">🌱</Text>
+          <Text className="text-2xl">🌱</Text>
         </View>
       )}
     </View>
@@ -153,8 +171,6 @@ function PlantCardContent({
   plant: Plant;
   onPress: (id: string) => void;
 }) {
-  const { colorScheme } = useColorScheme();
-
   const handlePress = React.useCallback(() => {
     haptics.selection();
     onPress(plant.id);
@@ -170,6 +186,11 @@ function PlantCardContent({
     [plant.stage]
   );
 
+  const progress = React.useMemo(
+    () => getStageProgress(plant.stage),
+    [plant.stage]
+  );
+
   const accessibilityLabel = React.useMemo(
     () =>
       [plant.name, stageLabel, plant.strain].filter(Boolean).join(', ') ||
@@ -177,65 +198,104 @@ function PlantCardContent({
     [plant.name, plant.strain, stageLabel]
   );
 
+  // TODO: Replace with actual task check from plant data
+  const needsAttention = false;
+
   return (
     <Pressable
-      className="mb-3 overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm active:scale-[0.98] active:opacity-95 dark:border-charcoal-700 dark:bg-charcoal-850"
-      style={[
-        cardStyles.shadow,
-        // { backgroundColor: colors.bg, shadowColor: colors.text }, // Removed for clean look
-      ]}
+      className="mb-3 overflow-hidden rounded-3xl border border-border bg-card active:scale-[0.98] active:opacity-95"
+      style={[cardStyles.shadow]}
       testID={`plant-card-${plant.id}`}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={translate('accessibility.plants.open_detail_hint')}
       onPress={handlePress}
     >
-      <View className="flex-row items-center p-6">
-        {/* Left content: Name, strain, stage badge */}
-        <View className="flex-1 justify-between pr-4">
-          <View>
+      {/* HEADER SECTION */}
+      <View className="flex-row items-start justify-between p-4 pb-3">
+        {/* Left content: Stage label, Name, Strain */}
+        <View className="flex-1 pr-3">
+          {stageLabel ? (
             <Text
-              className="text-2xl font-bold tracking-tight text-ink-900 dark:text-charcoal-100"
+              className="text-text-tertiary mb-1 text-xs font-bold uppercase tracking-widest"
+              testID={`plant-card-${plant.id}-stage-label`}
+            >
+              {stageLabel}
+            </Text>
+          ) : null}
+          <Text
+            className="text-2xl font-bold tracking-tight text-text-primary"
+            numberOfLines={1}
+          >
+            {plant.name}
+          </Text>
+          {plant.strain ? (
+            <Text
+              className="mt-0.5 text-base font-medium text-text-secondary"
               numberOfLines={1}
             >
-              {plant.name}
+              {plant.strain}
             </Text>
-            {plant.strain ? (
-              <Text
-                className="mt-1 text-base font-medium text-ink-700 opacity-60 dark:text-charcoal-400"
-                numberOfLines={1}
-              >
-                {plant.strain}
-              </Text>
-            ) : null}
-          </View>
-
-          {stageLabel ? (
-            <View
-              testID={`plant-card-${plant.id}-stage`}
-              className="mt-4 self-start rounded-full px-4 py-1.5"
-              style={{ backgroundColor: colors.badgeBg }}
-            >
-              <Text
-                className="text-sm font-semibold"
-                style={{ color: colors.badgeText }}
-              >
-                {stageLabel}
-              </Text>
-            </View>
           ) : null}
         </View>
 
-        {/* Right content: Image + Arrow */}
-        <View className="flex-row items-center gap-4">
-          <PlantCardImage plant={plant} colors={colors} />
-          <ArrowRight
-            color={colorScheme === 'dark' ? '#9CA3AF' : '#1E1E1E'} // neutral-400 or ink-900
-            width={12}
-            height={18}
-            className="opacity-20"
+        {/* Right content: Image avatar */}
+        <PlantCardImage plant={plant} colors={colors} />
+      </View>
+
+      {/* PROGRESS BAR (Gamification) */}
+      <View className="px-4 pb-3">
+        <View className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+          <View
+            className="h-full rounded-full bg-action-primary"
+            style={{ width: `${progress}%` }}
+            testID={`plant-card-${plant.id}-progress`}
           />
         </View>
+        <Text className="text-text-tertiary mt-1.5 text-right text-[10px] font-medium">
+          {translate('plants.card.progress' as TxKeyPath, {
+            percent: progress,
+          })}
+        </Text>
+      </View>
+
+      {/* FOOTER / ACTION AREA */}
+      <View
+        className={`flex-row items-center justify-between px-4 py-3 ${
+          needsAttention
+            ? 'bg-terracotta-50 dark:bg-terracotta-900/20'
+            : 'bg-background'
+        }`}
+      >
+        {needsAttention ? (
+          <>
+            <View className="flex-row items-center gap-2">
+              <Text className="text-base">💧</Text>
+              <Text className="text-sm font-bold text-terracotta-600 dark:text-terracotta-400">
+                {translate('plants.card.needs_water' as TxKeyPath)}
+              </Text>
+            </View>
+            <View className="rounded-xl bg-action-cta px-4 py-2 shadow-sm">
+              <Text className="text-xs font-bold text-white">
+                {translate('plants.card.water_action' as TxKeyPath)}
+              </Text>
+            </View>
+          </>
+        ) : (
+          <>
+            <View className="flex-row items-center gap-2">
+              <Text className="text-base">✓</Text>
+              <Text className="text-sm font-medium text-text-secondary">
+                {translate('plants.card.all_good' as TxKeyPath)}
+              </Text>
+            </View>
+            <ArrowRight
+              width={10}
+              height={16}
+              className="text-text-tertiary opacity-40"
+            />
+          </>
+        )}
       </View>
     </Pressable>
   );

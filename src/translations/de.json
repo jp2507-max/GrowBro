@@ -129,17 +129,27 @@
         "empty": "Noch keine Bewertungen",
         "emptyDescription": "Verwende das KI-Bewertungstool, um die Pflanzengesundheit zu analysieren"
       },
+      "detail": {
+        "title": "Pflanzendetails"
+      },
       "error_card_hint": "Informiert, dass Pflanzen nicht geladen werden konnten.",
+      "form": {
+        "title": "Pflanze hinzufügen"
+      },
       "offline_banner_hint": "Zeigt gespeicherte Pflanzen im Offline-Modus an.",
       "open_detail_hint": "Öffnet die Pflanzendetails.",
       "search_hint": "Filtert die Pflanzenliste während der Eingabe."
     },
     "strains": {
+      "about_title": "Über diese Sorte",
       "clear_search_hint": "Leert das Suchfeld",
       "clear_search_history_hint": "Entfernt alle gespeicherten Suchen",
       "clear_search_history_label": "Gesamten Suchverlauf löschen",
       "clear_search_label": "Suche löschen",
       "error_card_hint": "Informiert, dass Sorten nicht geladen werden konnten.",
+      "facts_difficulty": "Anbau",
+      "facts_flowering": "Blüte",
+      "facts_yield": "Ertrag",
       "favorite_hint": "Doppeltippen, um den Favoriten-Status zu wechseln.",
       "offline_banner_hint": "Zeigt gespeicherte Sorten im Offline-Modus an.",
       "open_detail_hint": "Öffnet die Sortendetails.",
@@ -634,6 +644,10 @@
       "sample_title": "💧 Pflanzen gießen - Alle 2 Tage",
       "title": "Starte deinen Anbauplan"
     },
+    "header": {
+      "subtitle": "Dein Zeitplan",
+      "today": "Heute"
+    },
     "log_ph_ec": "pH/EC protokollieren",
     "move": "Verschieben",
     "move_to_date": "Auf Datum verschieben",
@@ -643,11 +657,37 @@
     "out_of_range_label": "Letzter pH/EC außerhalb des Zielbereichs",
     "ph_range": "pH‑Ziel: {{min}}–{{max}}",
     "review": "prüfen",
+    "schedule_editor": {
+      "add_title": "Zeitplan hinzufügen",
+      "cancel": "Abbrechen",
+      "edit_title": "Zeitplan bearbeiten",
+      "interval_label": "Alle",
+      "recurrence_label": "Wiederholen",
+      "save": "Speichern",
+      "title_label": "Aufgabentitel",
+      "title_placeholder": "z.B. Pflanzen gießen",
+      "weekdays_label": "An Tagen"
+    },
+    "sections": {
+      "empty_history": "Keine erledigten Aufgaben für diesen Tag",
+      "empty_plan": "Keine Aufgaben für diesen Tag geplant",
+      "history": "Erledigt",
+      "plan": "Geplant"
+    },
     "targets_title": "Zielbereiche",
     "taskCount": "{{count}} Aufgabe",
     "taskCount_plural": "{{count}} Aufgaben",
+    "task_row": {
+      "complete": "Als erledigt markieren",
+      "completed": "Aufgabe erledigt",
+      "recurring": "Wiederkehrend"
+    },
     "today": "Heute",
     "tomorrow": "Morgen",
+    "week_strip": {
+      "select_day_hint": "Doppeltippen, um Aufgaben für diesen Tag anzuzeigen",
+      "today": "Heute"
+    },
     "yesterday": "Gestern"
   },
   "cannabis": {
@@ -2150,6 +2190,9 @@
       "title": "Bewertungsverlauf"
     },
     "card": {
+      "all_good": "Alles in Ordnung",
+      "growing_well": "Wächst gut",
+      "harvest_ready": "Erntereif",
       "health": {
         "excellent": "Ausgezeichnet",
         "fair": "Mittelmäßig",
@@ -2157,10 +2200,24 @@
         "poor": "Schlecht"
       },
       "health_label": "Gesundheit",
-      "no_photo": "Foto hinzufügen"
+      "needs_water": "Braucht Wasser!",
+      "no_photo": "Foto hinzufügen",
+      "progress": "{{percent}}% bis Ernte",
+      "progress_label": "abgeschlossen",
+      "water_action": "Gießen"
     },
     "completionProgress": {
       "percentComplete": "{{percent}}% Abgeschlossen"
+    },
+    "detail": {
+      "action_hub_title": "Heutige Aufgaben",
+      "all_good_message": "Alles im grünen Bereich – Keine Aufgaben heute.",
+      "no_tasks": "Keine anstehenden Aufgaben",
+      "stats_day": "Tag",
+      "stats_height": "Höhe",
+      "stats_phase": "Phase",
+      "strain_profile_link": "Sortenprofil & Details",
+      "water_needed": "Gießen nötig"
     },
     "empty_state": "Keine Pflanzen in deinem Inventar",
     "error": "Pflanzen konnten nicht geladen werden. Bitte erneut versuchen.",
@@ -2173,6 +2230,7 @@
       "cancel": "Abbrechen",
       "completion": "{{percent}}% Abgeschlossen",
       "create_cta": "Pflanze erstellen",
+      "create_title": "Neue Pflanze",
       "default_water_desc": "Kurze Erinnerung zum Gießen nach dem Umtopfen.",
       "default_water_title": "Diese Pflanze gießen",
       "delete_button": "Pflanze löschen",
@@ -2191,6 +2249,7 @@
       "error_body": "Bitte Verbindung prüfen und erneut versuchen.",
       "error_title": "Pflanze konnte nicht gespeichert werden",
       "errors": {
+        "height_invalid": "Höhe muss eine positive Zahl sein",
         "light_hours": "Lichtstunden zwischen 0-24 eingeben",
         "name_length": "Name muss unter 120 Zeichen bleiben",
         "name_required": "Name ist erforderlich",
@@ -2206,6 +2265,8 @@
       "genetic_label": "Genetik",
       "genetic_placeholder": "Genetik auswählen",
       "go_to_schedule": "Zum Kalender",
+      "height_label": "Pflanzenhöhe",
+      "height_placeholder": "z. B. 45 cm",
       "invalid_id": "Ungültige Pflanzen-ID",
       "keep_adding": "Weitere Pflanzen hinzufügen",
       "light_hours_label": "Lichtstunden",

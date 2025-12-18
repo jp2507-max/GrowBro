@@ -1,5 +1,6 @@
 import { colorScheme, useColorScheme } from 'nativewind';
 import React from 'react';
+import { Appearance } from 'react-native';
 import { useMMKVString } from 'react-native-mmkv';
 
 import { storage } from '../storage';
@@ -31,8 +32,33 @@ export const useSelectedTheme = () => {
 // to be used in the root file to load the selected theme from MMKV
 export const loadSelectedTheme = () => {
   const theme = storage.getString(SELECTED_THEME);
-  if (theme !== undefined) {
-    console.log('theme', theme);
-    colorScheme.set(theme as ColorSchemeType);
+  if (theme === 'light' || theme === 'dark') {
+    // User explicitly chose a theme - override NativeWind
+    colorScheme.set(theme);
+  } else {
+    // 'system' or not set: use Appearance API directly
+    // NativeWind's automatic detection has issues on Expo 54 native (GitHub #1640)
+    const deviceScheme = Appearance.getColorScheme() ?? 'light';
+    colorScheme.set(deviceScheme);
   }
+};
+
+// Hook to listen for device theme changes when user has 'system' selected
+export const useSystemThemeListener = () => {
+  const [storedTheme] = useMMKVString(SELECTED_THEME, storage);
+
+  React.useEffect(() => {
+    // Only listen if user wants to follow system preference
+    if (storedTheme === 'light' || storedTheme === 'dark') {
+      return;
+    }
+
+    const subscription = Appearance.addChangeListener(
+      ({ colorScheme: newScheme }) => {
+        colorScheme.set(newScheme ?? 'light');
+      }
+    );
+
+    return () => subscription.remove();
+  }, [storedTheme]);
 };

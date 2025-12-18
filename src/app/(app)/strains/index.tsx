@@ -176,123 +176,131 @@ export default function StrainsScreen(): React.ReactElement {
         onFiltersPress={filterModal.openFilters}
       />
 
-      <View className="px-4">
-        {/* Active Filters Row */}
-        {hasActiveFilters ? (
-          <View className="flex-row flex-wrap gap-2 pb-3">
-            {filters.race && (
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => {
-                  haptics.selection();
-                  setFilters((prev) => ({ ...prev, race: undefined }));
-                }}
-                className={activeFilterStyle}
-                testID="active-filter-race"
-              >
-                <Text className={activeFilterTextStyle}>
-                  {translate(`strains.race.${filters.race}`)}
-                </Text>
-                <X
-                  width={14}
-                  height={14}
-                  color={activeFilterIconColor}
-                  className="text-white dark:text-neutral-900"
-                />
-              </Pressable>
-            )}
-            {filters.difficulty && (
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => {
-                  haptics.selection();
-                  setFilters((prev) => ({ ...prev, difficulty: undefined }));
-                }}
-                className={activeFilterStyle}
-                testID="active-filter-difficulty"
-              >
-                <Text className={activeFilterTextStyle}>
-                  {translate(`strains.difficulty.${filters.difficulty}`)}
-                </Text>
-                <X
-                  width={14}
-                  height={14}
-                  color={activeFilterIconColor}
-                  className="text-white dark:text-neutral-900"
-                />
-              </Pressable>
-            )}
-            {(filters.effects?.length ?? 0) > 0 && (
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => {
-                  haptics.selection();
-                  setFilters((prev) => ({ ...prev, effects: [] }));
-                }}
-                className={activeFilterStyle}
-                testID="active-filter-effects"
-              >
-                <Text className={activeFilterTextStyle}>
-                  {translate('strains.filters.effects_count', {
-                    count: filters.effects!.length,
-                  })}
-                </Text>
-                <X
-                  width={14}
-                  height={14}
-                  color={activeFilterIconColor}
-                  className="text-white dark:text-neutral-900"
-                />
-              </Pressable>
-            )}
-            {(filters.flavors?.length ?? 0) > 0 && (
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => {
-                  haptics.selection();
-                  setFilters((prev) => ({ ...prev, flavors: [] }));
-                }}
-                className={activeFilterStyle}
-                testID="active-filter-flavors"
-              >
-                <Text className={activeFilterTextStyle}>
-                  {translate('strains.filters.flavors_count', {
-                    count: filters.flavors!.length,
-                  })}
-                </Text>
-                <X
-                  width={14}
-                  height={14}
-                  color={activeFilterIconColor}
-                  className="text-white dark:text-neutral-900"
-                />
-              </Pressable>
-            )}
-          </View>
-        ) : null}
+      {/* Overlapping content sheet - slides up over header */}
+      <View className="z-10 -mt-6 flex-1 rounded-t-[32px] bg-neutral-50 shadow-xl dark:bg-neutral-950">
+        {/* Handle Bar - indicates draggable sheet */}
+        <View className="w-full items-center pb-2 pt-3">
+          <View className="h-1.5 w-12 rounded-full bg-neutral-300/50 dark:bg-neutral-600/50" />
+        </View>
 
-        <StrainsOfflineBanner isVisible={resolvedOffline} />
+        <View className="px-4">
+          {/* Active Filters Row */}
+          {hasActiveFilters ? (
+            <View className="flex-row flex-wrap gap-2 pb-3">
+              {filters.race && (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => {
+                    haptics.selection();
+                    setFilters((prev) => ({ ...prev, race: undefined }));
+                  }}
+                  className={activeFilterStyle}
+                  testID="active-filter-race"
+                >
+                  <Text className={activeFilterTextStyle}>
+                    {translate(`strains.race.${filters.race}`)}
+                  </Text>
+                  <X
+                    width={14}
+                    height={14}
+                    color={activeFilterIconColor}
+                    className="text-white dark:text-neutral-900"
+                  />
+                </Pressable>
+              )}
+              {filters.difficulty && (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => {
+                    haptics.selection();
+                    setFilters((prev) => ({ ...prev, difficulty: undefined }));
+                  }}
+                  className={activeFilterStyle}
+                  testID="active-filter-difficulty"
+                >
+                  <Text className={activeFilterTextStyle}>
+                    {translate(`strains.difficulty.${filters.difficulty}`)}
+                  </Text>
+                  <X
+                    width={14}
+                    height={14}
+                    color={activeFilterIconColor}
+                    className="text-white dark:text-neutral-900"
+                  />
+                </Pressable>
+              )}
+              {(filters.effects?.length ?? 0) > 0 && (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => {
+                    haptics.selection();
+                    setFilters((prev) => ({ ...prev, effects: [] }));
+                  }}
+                  className={activeFilterStyle}
+                  testID="active-filter-effects"
+                >
+                  <Text className={activeFilterTextStyle}>
+                    {translate('strains.filters.effects_count', {
+                      count: filters.effects!.length,
+                    })}
+                  </Text>
+                  <X
+                    width={14}
+                    height={14}
+                    color={activeFilterIconColor}
+                    className="text-white dark:text-neutral-900"
+                  />
+                </Pressable>
+              )}
+              {(filters.flavors?.length ?? 0) > 0 && (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => {
+                    haptics.selection();
+                    setFilters((prev) => ({ ...prev, flavors: [] }));
+                  }}
+                  className={activeFilterStyle}
+                  testID="active-filter-flavors"
+                >
+                  <Text className={activeFilterTextStyle}>
+                    {translate('strains.filters.flavors_count', {
+                      count: filters.flavors!.length,
+                    })}
+                  </Text>
+                  <X
+                    width={14}
+                    height={14}
+                    color={activeFilterIconColor}
+                    className="text-white dark:text-neutral-900"
+                  />
+                </Pressable>
+              )}
+            </View>
+          ) : null}
+
+          <StrainsOfflineBanner isVisible={resolvedOffline} />
+        </View>
+        <ComplianceBanner />
+        <StrainsListWithCache
+          searchQuery={debouncedQuery}
+          filters={filters}
+          // scrollHandler is a Reanimated handler; cast to satisfy FlashList typing.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          onScroll={scrollHandler as any}
+          listRef={listRef}
+          contentContainerStyle={[
+            styles.listContentContainer,
+            listContentPadding,
+          ]}
+          testID="strains-list"
+          onStateChange={(state) => {
+            setListState({
+              ...state,
+              strains: { length: state.strains.length },
+            });
+          }}
+        />
       </View>
-      <ComplianceBanner />
-      <StrainsListWithCache
-        searchQuery={debouncedQuery}
-        filters={filters}
-        // scrollHandler is a Reanimated handler; cast to satisfy FlashList typing.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        onScroll={scrollHandler as any}
-        listRef={listRef}
-        contentContainerStyle={[
-          styles.listContentContainer,
-          listContentPadding,
-        ]}
-        testID="strains-list"
-        onStateChange={(state) => {
-          setListState({
-            ...state,
-            strains: { length: state.strains.length },
-          });
-        }}
-      />
       <FilterModal
         ref={filterModal.ref}
         filters={filters}

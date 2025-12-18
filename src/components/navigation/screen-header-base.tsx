@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 import React from 'react';
 import type { EdgeInsets } from 'react-native-safe-area-context';
 import { twMerge } from 'tailwind-merge';
@@ -7,7 +7,6 @@ import { Pressable, Text, View } from '@/components/ui';
 import { Settings as SettingsIcon } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
-import { useThemeConfig } from '@/lib/use-theme-config';
 
 const HEADER_PADDING_TOP = 12;
 
@@ -30,7 +29,7 @@ type ScreenHeaderBaseProps = {
 
 /**
  * Base component for screen headers with consistent styling.
- * Used by Home and Strains screens for unified header design.
+ * Premium "Organic Edition" design with deep forest background and rounded corners.
  */
 export function ScreenHeaderBase({
   insets,
@@ -38,35 +37,35 @@ export function ScreenHeaderBase({
   topRowRight,
   title,
   children,
-  showBottomBorder = true,
+  showBottomBorder = false, // Disabled by default - we have rounded corners now
   testID,
 }: ScreenHeaderBaseProps): React.ReactElement {
-  const theme = useThemeConfig();
-
   return (
     <View
       className={twMerge(
-        'px-4 pb-4',
-        showBottomBorder && 'border-b border-border'
+        'z-0 bg-primary-900 px-4 pb-16 dark:bg-primary-800',
+        'rounded-b-[32px] shadow-lg',
+        showBottomBorder && 'border-b border-primary-700'
       )}
       style={{
         paddingTop: insets.top + HEADER_PADDING_TOP,
-        backgroundColor: theme.colors.background,
       }}
       testID={testID}
     >
       {/* Top Row: Left content + Right icons */}
       {(topRowLeft || topRowRight) && (
-        <View className="mb-2 flex-row items-center justify-between">
+        <View className="flex-row items-center justify-between">
           {topRowLeft ?? <View />}
           {topRowRight ?? <View />}
         </View>
       )}
 
-      {/* Main Title */}
-      <Text className="text-3xl font-bold tracking-tight text-text-primary">
-        {title}
-      </Text>
+      {/* Main Title - White on green for premium look */}
+      {title ? (
+        <Text className="text-3xl font-bold tracking-tight text-white">
+          {title}
+        </Text>
+      ) : null}
 
       {/* Content below title */}
       {children && <View className="mt-3">{children}</View>}
@@ -96,7 +95,7 @@ export function HeaderGreeting(): React.ReactElement {
   }
 
   return (
-    <Text className="text-lg font-medium text-neutral-600 dark:text-neutral-400">
+    <Text className="text-lg font-medium text-primary-200 dark:text-primary-300">
       {greeting}
     </Text>
   );
@@ -112,17 +111,16 @@ export function HeaderSettingsButton(): React.ReactElement {
   );
 
   return (
-    <Link href="/settings" asChild>
-      <Pressable
-        className="size-10 items-center justify-center rounded-full bg-white/80 dark:bg-charcoal-800/80"
-        accessibilityRole="button"
-        accessibilityLabel={settingsLabel}
-        accessibilityHint={settingsHint}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <SettingsIcon />
-      </Pressable>
-    </Link>
+    <Pressable
+      onPress={() => router.push('/settings')}
+      className="size-10 items-center justify-center rounded-full bg-white/20 active:bg-white/30 dark:bg-black/20 dark:active:bg-black/30"
+      accessibilityRole="button"
+      accessibilityLabel={settingsLabel}
+      accessibilityHint={settingsHint}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    >
+      <SettingsIcon className="text-white" />
+    </Pressable>
   );
 }
 
@@ -145,16 +143,16 @@ export function HeaderStatsPill({
 
   return (
     <View className="flex-row items-center gap-3">
-      <View className="flex-row items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 dark:border-neutral-700 dark:bg-charcoal-850">
+      {/* Plant count - semi-transparent white pill */}
+      <View className="flex-row items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 dark:bg-white/10">
         <Text className="text-base">🌱</Text>
-        <Text className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
-          {plantLabel}
-        </Text>
+        <Text className="text-sm font-semibold text-white">{plantLabel}</Text>
       </View>
+      {/* Task count - terracotta accent for CTA emphasis */}
       {taskCount > 0 && (
-        <View className="flex-row items-center gap-1.5 rounded-full border border-warning-200 bg-warning-50 px-3 py-1.5 dark:border-warning-700 dark:bg-warning-900/30">
+        <View className="flex-row items-center gap-1.5 rounded-full bg-terracotta-500/30 px-3 py-1.5 dark:bg-terracotta-500/20">
           <Text className="text-base">📋</Text>
-          <Text className="text-sm font-semibold text-warning-800 dark:text-warning-200">
+          <Text className="text-sm font-semibold text-terracotta-100">
             {taskLabel}
           </Text>
         </View>

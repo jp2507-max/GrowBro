@@ -3,7 +3,6 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { DateTime } from 'luxon';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator as RNActivityIndicator } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -65,6 +64,7 @@ function usePlantSubmit({
             potSize: values.potSize,
             lightSchedule: values.lightSchedule,
             lightHours: values.lightHours,
+            height: values.height,
             notes: values.notes,
             imageUrl: values.imageUrl,
           },
@@ -134,55 +134,6 @@ function useStarterTasks({ createdPlantId, t }: StarterTasksParams) {
       });
     }
   }, [createdPlantId, t]);
-}
-
-type HeaderBarProps = {
-  onBack: () => void;
-  onSave: () => void;
-  isSaving: boolean;
-  saveLabel: string;
-};
-
-function HeaderBar({ onBack, onSave, isSaving, saveLabel }: HeaderBarProps) {
-  const insets = useSafeAreaInsets();
-
-  return (
-    <View
-      className="absolute inset-x-0 top-0 z-10 flex-row items-center justify-between px-4"
-      style={{ paddingTop: insets.top + 8 }}
-    >
-      {/* Back Button */}
-      <Pressable
-        onPress={onBack}
-        className="size-10 items-center justify-center rounded-full bg-white/90 shadow-sm active:bg-neutral-100 dark:bg-charcoal-800/90"
-        accessibilityRole="button"
-        accessibilityLabel="Cancel"
-        accessibilityHint="Returns to the previous screen"
-        testID="header-back-button"
-      >
-        <ArrowLeft color="#554B32" width={22} height={22} />
-      </Pressable>
-
-      {/* Done Button - Things 3 style pill */}
-      <Pressable
-        onPress={onSave}
-        disabled={isSaving}
-        className="min-w-[72px] items-center justify-center rounded-full bg-primary-600 px-5 py-2.5 shadow-sm active:bg-primary-700 disabled:opacity-60"
-        accessibilityRole="button"
-        accessibilityLabel={saveLabel}
-        accessibilityHint="Creates the plant"
-        testID="header-save-button"
-      >
-        {isSaving ? (
-          <RNActivityIndicator size="small" color="white" />
-        ) : (
-          <Text className="text-base font-semibold text-white">
-            {saveLabel}
-          </Text>
-        )}
-      </Pressable>
-    </View>
-  );
 }
 
 type AddedModalProps = {
@@ -313,22 +264,87 @@ export default function CreatePlantScreen(): React.ReactElement {
     submitHandlerRef.current?.();
   }, []);
 
+  const insets = useSafeAreaInsets();
+  const [completion, setCompletion] = React.useState(0);
+
+  const handleProgressChange = React.useCallback((progress: number) => {
+    setCompletion(progress);
+  }, []);
+
   return (
-    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
+    <View className="flex-1 bg-primary-900 dark:bg-primary-800">
       <Stack.Screen options={{ headerShown: false }} />
-      <FocusAwareStatusBar />
-      <HeaderBar
-        onBack={handleComplete}
-        onSave={handleHeaderSave}
-        isSaving={isSaving}
-        saveLabel={t('common.done')}
-      />
-      <PlantForm
-        key={formKey}
-        onSubmit={handleSubmit}
-        isSubmitting={isSaving}
-        onSubmitReady={handleSubmitReady}
-      />
+      <FocusAwareStatusBar style="light" />
+
+      {/* Premium Organic Header */}
+      <View
+        className="bg-primary-900 px-6 pb-20 dark:bg-primary-800"
+        style={{ paddingTop: insets.top + 12 }}
+      >
+        {/* Back Button */}
+        <Pressable
+          onPress={handleComplete}
+          className="mb-4 size-10 items-center justify-center rounded-full bg-white/10 active:bg-white/20"
+          accessibilityRole="button"
+          accessibilityLabel="Cancel"
+          accessibilityHint="Returns to the previous screen"
+          testID="header-back-button"
+        >
+          <ArrowLeft color="#fff" width={22} height={22} />
+        </Pressable>
+
+        {/* Title */}
+        <Text className="text-3xl font-bold tracking-tight text-white">
+          {t('plants.form.create_title')}
+        </Text>
+
+        {/* Completion subtext */}
+        <Text className="mt-1 text-sm font-medium uppercase tracking-widest text-primary-200">
+          {t('plants.form.completion', { percent: completion })}
+        </Text>
+
+        {/* Progress bar with terracotta color */}
+        <View className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/20">
+          <View
+            className="h-full rounded-full bg-terracotta-500"
+            style={{ width: `${Math.min(100, Math.max(0, completion))}%` }}
+          />
+        </View>
+      </View>
+
+      {/* Overlapping White Content Sheet */}
+      <View className="z-10 -mt-10 flex-1">
+        <View className="flex-1 rounded-t-[35px] bg-white shadow-xl dark:bg-charcoal-900">
+          {/* Handle Bar */}
+          <View className="mb-2 mt-4 h-1.5 w-12 self-center rounded-full bg-neutral-200" />
+
+          <PlantForm
+            key={formKey}
+            onSubmit={handleSubmit}
+            isSubmitting={isSaving}
+            onSubmitReady={handleSubmitReady}
+            onProgressChange={handleProgressChange}
+          />
+
+          {/* Floating CTA Button */}
+          <View
+            className="absolute inset-x-0 bottom-0 bg-white/95 px-4 pt-3 dark:bg-charcoal-900/95"
+            style={{ paddingBottom: insets.bottom + 8 }}
+          >
+            <Button
+              variant="default"
+              className="w-full rounded-2xl bg-terracotta-500 py-4 active:bg-terracotta-600"
+              textClassName="text-white text-lg font-semibold"
+              onPress={handleHeaderSave}
+              disabled={isSaving}
+              loading={isSaving}
+              label={t('plants.form.create_cta')}
+              testID="create-plant-cta"
+            />
+          </View>
+        </View>
+      </View>
+
       <PlantAddedModal
         modal={successModal}
         t={t}

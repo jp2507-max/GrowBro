@@ -7,6 +7,7 @@ import type { GrowDifficulty } from '@/types/strains';
 type Props = {
   difficulty: GrowDifficulty;
   testID?: string;
+  variant?: 'default' | 'premium';
 };
 
 const getDifficultyStyles = (difficulty: GrowDifficulty): string => {
@@ -35,25 +36,30 @@ const getDifficultyTextStyles = (difficulty: GrowDifficulty): string => {
   }
 };
 
-export const DifficultyBadge = React.memo<Props>(({ difficulty, testID }) => {
-  const containerStyles = getDifficultyStyles(difficulty);
-  const textStyles = getDifficultyTextStyles(difficulty);
+export const DifficultyBadge = React.memo<Props>(
+  ({ difficulty, testID, variant = 'default' }) => {
+    const isPremium = variant === 'premium';
+    const containerStyles = isPremium
+      ? 'bg-primary-50 dark:bg-primary-900/30'
+      : getDifficultyStyles(difficulty);
+    const textStyles = isPremium
+      ? 'text-primary-800 dark:text-primary-200 font-bold'
+      : `${getDifficultyTextStyles(difficulty)} font-semibold`;
 
-  return (
-    <View
-      className={`rounded-full px-2.5 py-1 ${containerStyles}`}
-      testID={testID}
-      accessibilityRole="text"
-      accessibilityLabel={translate(`strains.difficulty.${difficulty}`)}
-      accessibilityHint={translate(`strains.difficulty.${difficulty}`)}
-    >
-      <Text
-        className={`text-xs font-semibold uppercase tracking-wide ${textStyles}`}
+    return (
+      <View
+        className={`rounded-full ${isPremium ? 'px-4 py-2' : 'px-2.5 py-1'} ${containerStyles}`}
+        testID={testID}
+        accessibilityRole="text"
+        accessibilityLabel={translate(`strains.difficulty.${difficulty}`)}
+        accessibilityHint={translate(`strains.difficulty.${difficulty}`)}
       >
-        {translate(`strains.difficulty.${difficulty}`)}
-      </Text>
-    </View>
-  );
-});
+        <Text className={`text-xs uppercase tracking-wide ${textStyles}`}>
+          {translate(`strains.difficulty.${difficulty}`)}
+        </Text>
+      </View>
+    );
+  }
+);
 
 DifficultyBadge.displayName = 'DifficultyBadge';

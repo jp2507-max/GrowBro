@@ -41,6 +41,7 @@ function buildMetadata(
     potSize: input.potSize,
     lightSchedule: input.lightSchedule,
     lightHours: input.lightHours,
+    height: input.height,
     notes: input.notes,
     strainId: input.strainId,
     strainSlug: input.strainSlug,

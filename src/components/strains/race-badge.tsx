@@ -7,6 +7,7 @@ import type { StrainRace } from '@/types/strains';
 type Props = {
   race: StrainRace;
   testID?: string;
+  variant?: 'default' | 'premium';
 };
 
 const getRaceStyles = (race: StrainRace): string => {
@@ -35,25 +36,30 @@ const getRaceTextStyles = (race: StrainRace): string => {
   }
 };
 
-export const RaceBadge = React.memo<Props>(({ race, testID }) => {
-  const containerStyles = getRaceStyles(race);
-  const textStyles = getRaceTextStyles(race);
+export const RaceBadge = React.memo<Props>(
+  ({ race, testID, variant = 'default' }) => {
+    const isPremium = variant === 'premium';
+    const containerStyles = isPremium
+      ? 'bg-primary-50 dark:bg-primary-900/30'
+      : getRaceStyles(race);
+    const textStyles = isPremium
+      ? 'text-primary-800 dark:text-primary-200 font-bold'
+      : `${getRaceTextStyles(race)} font-semibold`;
 
-  return (
-    <View
-      className={`rounded-full px-2.5 py-1 ${containerStyles}`}
-      testID={testID}
-      accessibilityRole="text"
-      accessibilityLabel={translate(`strains.race.${race}`)}
-      accessibilityHint={translate(`strains.race.${race}`)}
-    >
-      <Text
-        className={`text-xs font-semibold uppercase tracking-wide ${textStyles}`}
+    return (
+      <View
+        className={`rounded-full ${isPremium ? 'px-4 py-2' : 'px-2.5 py-1'} ${containerStyles}`}
+        testID={testID}
+        accessibilityRole="text"
+        accessibilityLabel={translate(`strains.race.${race}`)}
+        accessibilityHint={translate(`strains.race.${race}`)}
       >
-        {translate(`strains.race.${race}`)}
-      </Text>
-    </View>
-  );
-});
+        <Text className={`text-xs uppercase tracking-wide ${textStyles}`}>
+          {translate(`strains.race.${race}`)}
+        </Text>
+      </View>
+    );
+  }
+);
 
 RaceBadge.displayName = 'RaceBadge';

@@ -3,10 +3,11 @@
  * Tracks pending changes and manages offline operation queue
  */
 
-import type { Database, Model } from '@nozbe/watermelondb';
+import type { Collection, Database, Model } from '@nozbe/watermelondb';
 import { Q } from '@nozbe/watermelondb';
+import type { Subscription } from 'rxjs';
 import { Observable } from 'rxjs';
-import { throttleTime } from 'rxjs/operators';
+import { mergeMap, shareReplay, startWith, throttleTime } from 'rxjs/operators';
 
 import { generateDeduplicationKey, isDuplicate } from './conflict-resolver';
 
@@ -40,17 +41,45 @@ export function observePendingChangesCount(
   database: Database,
   throttleMs = 1000
 ): Observable<number> {
-  // WatermelonDB doesn't expose pending changes directly
-  // We'll track synced status via local storage or a custom counter
-  // For now, return a mock observable that can be implemented later
-  return new Observable<number>((subscriber) => {
-    // TODO: Implement actual pending changes tracking
-    // This could query _status='created'/'updated' records or use a custom counter
-    subscriber.next(0);
+  const collections = Object.values(database.collections.map);
+
+  // Stream collection change sets (created/updated/deleted)
+  // experimentalSubscribe returns an unsubscribe function, not a subscription object
+  const changes$ = new Observable<unknown>((subscriber) => {
+    const unsubscribeFns = collections.map((collection) =>
+      collection.experimentalSubscribe((changeSet) => {
+        subscriber.next(changeSet);
+      })
+    );
+
     return () => {
-      // Cleanup
+      unsubscribeFns.forEach((unsubscribe) => unsubscribe());
     };
-  }).pipe(throttleTime(throttleMs));
+  });
+
+  return changes$.pipe(
+    throttleTime(throttleMs),
+    startWith(null),
+    mergeMap(() => getPendingFromCollections(collections)),
+    shareReplay({ bufferSize: 1, refCount: true })
+  );
+}
+
+async function getPendingFromCollections(
+  collections: Collection<Model>[]
+): Promise<number> {
+  let pending = 0;
+
+  for (const collection of collections) {
+    // _dirtyRaw exposes local status in WatermelonDB models
+    const dirty = await collection
+      .query(Q.where('_status', Q.oneOf(['created', 'updated', 'deleted'])))
+      .fetchCount();
+
+    pending += dirty;
+  }
+
+  return pending;
 }
 
 /**
@@ -101,10 +130,14 @@ export function getReadingDeduplicationKey(
 export class OfflineQueue {
   private database: Database;
   private pendingCount: number;
+  private pending$: Observable<number> | undefined;
+  private pendingSubscription: Subscription | undefined;
 
   constructor(database: Database) {
     this.database = database;
     this.pendingCount = 0;
+    this.pending$ = undefined;
+    this.pendingSubscription = undefined;
   }
 
   /**
@@ -123,7 +156,14 @@ export class OfflineQueue {
    * @returns Observable of pending count
    */
   observePendingCount(throttleMs = 1000): Observable<number> {
-    return observePendingChangesCount(this.database, throttleMs);
+    if (!this.pending$) {
+      this.pending$ = observePendingChangesCount(this.database, throttleMs);
+      // Keep a cached count for imperative reads
+      this.pendingSubscription = this.pending$.subscribe((count) => {
+        this.pendingCount = count;
+      });
+    }
+    return this.pending$;
   }
 
   /**
@@ -186,6 +226,19 @@ export class OfflineQueue {
    * Reset pending count
    */
   resetPending(): void {
+    this.pendingCount = 0;
+  }
+
+  /**
+   * Dispose of the offline queue and clean up subscriptions
+   * Call this when the OfflineQueue instance is no longer needed
+   */
+  dispose(): void {
+    if (this.pendingSubscription) {
+      this.pendingSubscription.unsubscribe();
+      this.pendingSubscription = undefined;
+    }
+    this.pending$ = undefined;
     this.pendingCount = 0;
   }
 }

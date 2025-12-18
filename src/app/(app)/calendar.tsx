@@ -1,131 +1,226 @@
-import React from 'react';
+import { DateTime } from 'luxon';
+import React, { useCallback } from 'react';
+import { ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AgendaList } from '@/components/calendar/agenda-list';
-import { CalendarEmptyState } from '@/components/calendar/calendar-empty-state';
-import { DragDropProvider } from '@/components/calendar/drag-drop-provider';
-import { DraggableAgendaItem } from '@/components/calendar/draggable-agenda-item';
-import { Button, FocusAwareStatusBar, Text, View } from '@/components/ui';
-import type { AgendaItem } from '@/types/agenda';
+import { CalendarHeader } from '@/components/calendar/calendar-header';
+import { DayTaskRow } from '@/components/calendar/day-task-row';
+import {
+  ActivityIndicator,
+  FocusAwareStatusBar,
+  Text,
+  View,
+} from '@/components/ui';
+import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
+import { translate } from '@/lib/i18n';
+import type { TxKeyPath } from '@/lib/i18n/utils';
+import {
+  completeRecurringInstance,
+  completeTask,
+  getCompletedTasksByDateRange,
+  getTasksByDateRange,
+} from '@/lib/task-manager';
+import type { Task } from '@/types/calendar';
 
-function useTodayAgenda(currentDate: Date): {
-  items: AgendaItem[];
-  isLoading: boolean;
-} {
-  const todayId = currentDate.toISOString().slice(0, 10);
-  const items = React.useMemo<AgendaItem[]>(
-    () => [
-      {
-        id: `header-${todayId}`,
-        type: 'date-header',
-        date: currentDate,
-        height: 32,
-      },
-    ],
-    [currentDate, todayId]
-  );
-  return { items, isLoading: false };
+const BOTTOM_PADDING_EXTRA = 24;
+
+function useDayTasks(selectedDate: DateTime) {
+  const [pendingTasks, setPendingTasks] = React.useState<Task[]>([]);
+  const [completedTasks, setCompletedTasks] = React.useState<Task[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  const loadTasks = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const startOfDay = selectedDate.startOf('day').toJSDate();
+      const endOfDay = selectedDate.endOf('day').toJSDate();
+
+      const [pending, completed] = await Promise.all([
+        getTasksByDateRange(startOfDay, endOfDay),
+        getCompletedTasksByDateRange(startOfDay, endOfDay),
+      ]);
+
+      setPendingTasks(pending);
+      setCompletedTasks(completed);
+    } catch (error) {
+      console.warn('[CalendarScreen] Failed to load tasks:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedDate]);
+
+  React.useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  return { pendingTasks, completedTasks, isLoading, refetch: loadTasks };
 }
 
-function Header({
-  date,
-  onPrev,
-  onNext,
+function isEphemeralTask(task: Task): boolean {
+  return task.id.startsWith('series:') || task.metadata?.ephemeral === true;
+}
+
+function parseEphemeralTaskInfo(
+  taskId: string
+): { seriesId: string; localDate: string } | null {
+  if (!taskId.startsWith('series:')) return null;
+  const parts = taskId.split(':');
+  if (parts.length !== 3) return null;
+  return { seriesId: parts[1], localDate: parts[2] };
+}
+
+function SectionHeader({
+  title,
+  count,
+  testID,
 }: {
-  date: Date;
-  onPrev: () => void;
-  onNext: () => void;
-}) {
+  title: string;
+  count: number;
+  testID?: string;
+}): React.ReactElement {
   return (
     <View
-      className="flex-row items-center justify-between p-4"
-      testID="calendar-header"
+      className="flex-row items-center justify-between py-2"
+      testID={testID}
     >
-      <Button
-        variant="outline"
-        size="sm"
-        label="Prev"
-        onPress={onPrev}
-        className="w-24"
-        testID="calendar-prev-button"
-      />
-      <Text className="text-lg font-semibold">
-        {date.toLocaleDateString(undefined, {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-        })}
-      </Text>
-      <Button
-        variant="outline"
-        size="sm"
-        label="Next"
-        onPress={onNext}
-        className="w-24"
-        testID="calendar-next-button"
-      />
+      <Text className="text-lg font-bold text-text-primary">{title}</Text>
+      <View className="rounded-full bg-neutral-200 px-2 py-0.5 dark:bg-neutral-700">
+        <Text className="text-sm font-medium text-text-secondary">{count}</Text>
+      </View>
+    </View>
+  );
+}
+
+function EmptyState({ message }: { message: string }): React.ReactElement {
+  return (
+    <View className="items-center justify-center py-8">
+      <Text className="text-base text-text-secondary">{message}</Text>
     </View>
   );
 }
 
 export default function CalendarScreen(): React.ReactElement {
-  const [currentDate, setCurrentDate] = React.useState<Date>(new Date());
-  const { items, isLoading } = useTodayAgenda(currentDate);
+  const insets = useSafeAreaInsets();
+  const { grossHeight } = useBottomTabBarHeight();
+  const [selectedDate, setSelectedDate] = React.useState<DateTime>(
+    DateTime.now().startOf('day')
+  );
 
-  const onPrev = React.useCallback(() => {
-    setCurrentDate(
-      (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1)
-    );
-  }, []);
-  const onNext = React.useCallback(() => {
-    setCurrentDate(
-      (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)
-    );
-  }, []);
+  const { pendingTasks, completedTasks, isLoading, refetch } =
+    useDayTasks(selectedDate);
 
-  const onConvertToTask = React.useCallback(() => {
-    // TODO: Navigate to task creation screen or open task creation modal
-    console.log('Convert sample task to real task');
+  const onDateSelect = useCallback((date: DateTime) => {
+    setSelectedDate(date.startOf('day'));
   }, []);
 
-  const renderItem = React.useCallback(({ item }: { item: AgendaItem }) => {
-    if (item.type === 'date-header') {
-      return (
-        <View className="px-4 py-2">
-          <Text
-            className="text-xs uppercase text-neutral-500"
-            tx="calendar.today"
-          />
-        </View>
-      );
-    }
-    if (item.type === 'task' && item.task) {
-      return (
-        <DraggableAgendaItem
-          task={item.task}
-          testID={`agenda-item-row-${item.task.id}`}
-        />
-      );
-    }
-    return null;
-  }, []);
+  const handleCompleteTask = useCallback(
+    async (task: Task) => {
+      try {
+        if (isEphemeralTask(task)) {
+          const info = parseEphemeralTaskInfo(task.id);
+          if (info) {
+            const occurrenceDate = DateTime.fromISO(info.localDate).toJSDate();
+            await completeRecurringInstance(info.seriesId, occurrenceDate);
+          } else {
+            // Fallback: ephemeral task without valid series info
+            await completeTask(task.id);
+          }
+        } else {
+          await completeTask(task.id);
+        }
+        await refetch();
+      } catch (error) {
+        console.error('[CalendarScreen] Failed to complete task:', error);
+      }
+    },
+    [refetch]
+  );
 
-  const hasNoTasks = items.length === 1 && items[0].type === 'date-header';
+  const contentPaddingBottom = React.useMemo(
+    () => ({ paddingBottom: grossHeight + BOTTOM_PADDING_EXTRA }),
+    [grossHeight]
+  );
+
+  const planTitle = translate('calendar.sections.plan' as TxKeyPath);
+  const historyTitle = translate('calendar.sections.history' as TxKeyPath);
+  const emptyPlanMessage = translate(
+    'calendar.sections.empty_plan' as TxKeyPath
+  );
+  const emptyHistoryMessage = translate(
+    'calendar.sections.empty_history' as TxKeyPath
+  );
 
   return (
-    <DragDropProvider>
-      <View className="flex-1" testID="calendar-screen">
-        <FocusAwareStatusBar />
-        <Header date={currentDate} onPrev={onPrev} onNext={onNext} />
-        {hasNoTasks && !isLoading ? (
-          <CalendarEmptyState onConvertToTask={onConvertToTask} />
-        ) : (
-          <AgendaList
-            data={items}
-            isLoading={isLoading}
-            renderItem={renderItem}
-          />
-        )}
-      </View>
-    </DragDropProvider>
+    <View className="flex-1 bg-background" testID="calendar-screen">
+      <CalendarHeader
+        selectedDate={selectedDate}
+        onDateSelect={onDateSelect}
+        insets={insets}
+      />
+      <FocusAwareStatusBar />
+
+      <ScrollView
+        contentContainerStyle={contentPaddingBottom}
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="gap-4 p-4">
+          {/* Plan Section - Pending Tasks */}
+          <View>
+            <SectionHeader
+              title={planTitle}
+              count={pendingTasks.length}
+              testID="calendar-plan-section-header"
+            />
+            {isLoading ? (
+              <View className="items-center py-8">
+                <ActivityIndicator />
+              </View>
+            ) : pendingTasks.length === 0 ? (
+              <EmptyState message={emptyPlanMessage} />
+            ) : (
+              <View className="gap-2">
+                {pendingTasks.map((task) => (
+                  <DayTaskRow
+                    key={task.id}
+                    task={task}
+                    onComplete={handleCompleteTask}
+                    isCompleted={false}
+                    testID={`plan-task-${task.id}`}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* History Section - Completed Tasks */}
+          <View>
+            <SectionHeader
+              title={historyTitle}
+              count={completedTasks.length}
+              testID="calendar-history-section-header"
+            />
+            {isLoading ? (
+              <View className="items-center py-8">
+                <ActivityIndicator />
+              </View>
+            ) : completedTasks.length === 0 ? (
+              <EmptyState message={emptyHistoryMessage} />
+            ) : (
+              <View className="gap-2">
+                {completedTasks.map((task) => (
+                  <DayTaskRow
+                    key={task.id}
+                    task={task}
+                    onComplete={handleCompleteTask}
+                    isCompleted={true}
+                    testID={`history-task-${task.id}`}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+        </View>
+      </ScrollView>
+    </View>
   );
 }

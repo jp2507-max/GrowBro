@@ -590,6 +590,25 @@ export async function deleteTask(id: string): Promise<void> {
   });
 }
 
+export async function getCompletedTasksByDateRange(
+  start: Date,
+  end: Date
+): Promise<Task[]> {
+  const repos = getRepos();
+  const allCompleted = await repos.tasks
+    .query(Q.where('status', 'completed'), Q.where('deleted_at', null))
+    .fetch();
+
+  return allCompleted
+    .filter((taskModel) => {
+      const completedAt = taskModel.completedAt;
+      if (!completedAt) return false;
+      return completedAt >= start && completedAt <= end;
+    })
+    .map(toTaskFromModel)
+    .sort((a, b) => (a.completedAt! < b.completedAt! ? 1 : -1));
+}
+
 export async function getTasksByDateRange(
   start: Date,
   end: Date

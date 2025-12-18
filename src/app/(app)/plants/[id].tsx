@@ -8,70 +8,28 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type Plant, usePlant } from '@/api/plants';
 import { useDeletePlant } from '@/api/plants/use-delete-plant';
+import { PlantActionHub } from '@/components/plants/plant-action-hub';
+import { PlantDetailHeader } from '@/components/plants/plant-detail-header';
 import {
   PlantForm,
   type PlantFormValues,
 } from '@/components/plants/plant-form';
+import { PlantStatsGrid } from '@/components/plants/plant-stats-grid';
 import {
   ActivityIndicator,
   Button,
   FocusAwareStatusBar,
+  Pressable,
+  ScrollView,
   Text,
   View,
 } from '@/components/ui';
 import colors from '@/components/ui/colors';
-import { ArrowLeft, ArrowRight } from '@/components/ui/icons';
+import { ArrowRight } from '@/components/ui/icons';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
 import { haptics } from '@/lib/haptics';
 import { updatePlantFromForm } from '@/lib/plants/plant-service';
 import { syncPlantsToCloud } from '@/lib/plants/plants-sync';
-
-type HeaderBarProps = {
-  onBack: () => void;
-  onSave: () => void;
-  isSaving: boolean;
-  saveLabel: string;
-};
-
-function HeaderBar({ onBack, onSave, isSaving, saveLabel }: HeaderBarProps) {
-  const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
-
-  return (
-    <View
-      className="absolute inset-x-0 top-0 z-10 flex-row items-center justify-between px-4"
-      style={{ paddingTop: insets.top + 8 }}
-    >
-      {/* Back Button */}
-      <Button
-        variant="outline"
-        size="circle"
-        fullWidth={false}
-        onPress={onBack}
-        className="border-0 bg-white/90 shadow-sm dark:bg-charcoal-800/90"
-        accessibilityLabel={t('accessibility.common.go_back')}
-        accessibilityHint={t('accessibility.common.return_to_previous')}
-        testID="header-back-button"
-      >
-        <ArrowLeft color={colors.neutral[900]} width={22} height={22} />
-      </Button>
-
-      {/* Done Button - Things 3 style pill */}
-      <Button
-        variant="pill"
-        size="sm"
-        fullWidth={false}
-        onPress={onSave}
-        disabled={isSaving}
-        loading={isSaving}
-        label={saveLabel}
-        className="min-w-[72px] px-5 shadow-sm"
-        accessibilityHint={t('accessibility.common.saves_changes')}
-        testID="header-save-button"
-      />
-    </View>
-  );
-}
 
 function PlantLoadingView(): React.ReactElement {
   return (
@@ -112,40 +70,6 @@ function PlantErrorView({
   );
 }
 
-type StrainProfileButtonProps = {
-  topOffset: number;
-  label: string;
-  hint: string;
-  onPress: () => void;
-};
-
-function StrainProfileButton({
-  topOffset,
-  label,
-  hint,
-  onPress,
-}: StrainProfileButtonProps): React.ReactElement {
-  return (
-    <View className="px-4 pb-2" style={{ marginTop: topOffset }}>
-      <Button
-        variant="outline"
-        onPress={onPress}
-        className="h-auto flex-row items-center justify-between rounded-xl border-neutral-200 bg-white/80 px-4 py-3 dark:border-neutral-700 dark:bg-charcoal-900/80"
-        accessibilityLabel={label}
-        accessibilityHint={hint}
-        testID="view-strain-profile"
-      >
-        <View className="flex-1 flex-row items-center justify-between">
-          <Text className="text-base font-medium text-primary-700 dark:text-primary-400">
-            {label}
-          </Text>
-          <ArrowRight color={colors.primary[600]} width={16} height={16} />
-        </View>
-      </Button>
-    </View>
-  );
-}
-
 function buildDefaultValues(plant: Plant): PlantFormValues {
   const metadata = plant.metadata ?? {};
   return {
@@ -164,6 +88,7 @@ function buildDefaultValues(plant: Plant): PlantFormValues {
     potSize: metadata.potSize,
     lightSchedule: metadata.lightSchedule,
     lightHours: metadata.lightHours,
+    height: metadata.height,
     notes: plant.notes ?? metadata.notes,
     imageUrl: plant.imageUrl,
   };
@@ -326,31 +251,79 @@ export default function PlantDetailScreen(): React.ReactElement | null {
   }
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <Stack.Screen options={{ headerShown: false }} />
-      <FocusAwareStatusBar />
-      <HeaderBar
-        onBack={handleBack}
-        onSave={handleHeaderSave}
-        isSaving={isSaving}
-        saveLabel={t('common.done')}
-      />
-      {linkedStrainSlug ? (
-        <StrainProfileButton
-          topOffset={insets.top + 56}
-          label={t('plants.form.view_strain_profile')}
-          hint={t('plants.form.view_strain_profile_hint')}
-          onPress={handleOpenStrain}
-        />
-      ) : null}
-      <PlantForm
-        key={plantId}
-        defaultValues={defaultValues}
-        onSubmit={handleSubmit}
-        isSubmitting={isSaving}
-        onSubmitReady={handleSubmitReady}
-        onDelete={handleDelete}
-      />
+      <FocusAwareStatusBar style="light" />
+
+      {/* Hero Image Header */}
+      <PlantDetailHeader plant={plant} onBack={handleBack} />
+
+      {/* Overlapping White Content Sheet */}
+      <View className="z-10 -mt-8 flex-1 rounded-t-[35px] bg-white shadow-xl dark:bg-charcoal-900">
+        {/* Handle Bar */}
+        <View className="my-4 h-1.5 w-12 self-center rounded-full bg-neutral-200" />
+
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingBottom: 72 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Stats Grid */}
+          <PlantStatsGrid plant={plant} />
+
+          {/* Action Hub */}
+          <View className="mt-6">
+            <PlantActionHub plantId={plantId} />
+          </View>
+
+          {/* Strain Profile Link - Subtle text link style */}
+          {linkedStrainSlug ? (
+            <Pressable
+              onPress={handleOpenStrain}
+              className="flex-row items-center justify-center py-4 active:opacity-70"
+              accessibilityLabel={t('plants.form.view_strain_profile')}
+              accessibilityHint={t('plants.form.view_strain_profile_hint')}
+              accessibilityRole="button"
+              testID="view-strain-profile"
+            >
+              <Text className="mr-1 text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                {t('plants.detail.strain_profile_link')}
+              </Text>
+              <ArrowRight color={colors.neutral[400]} width={14} height={14} />
+            </Pressable>
+          ) : null}
+
+          {/* Divider */}
+          <View className="mx-4 my-6 h-px bg-neutral-200 dark:bg-neutral-700" />
+
+          {/* Form Sections (using PlantForm's internal sections) */}
+          <PlantForm
+            key={plantId}
+            defaultValues={defaultValues}
+            onSubmit={handleSubmit}
+            isSubmitting={isSaving}
+            onSubmitReady={handleSubmitReady}
+            onDelete={handleDelete}
+          />
+        </ScrollView>
+
+        {/* Floating Save Button */}
+        <View
+          className="absolute inset-x-0 bottom-0 bg-white/95 px-4 pt-3 dark:bg-charcoal-900/95"
+          style={{ paddingBottom: insets.bottom + 8 }}
+        >
+          <Button
+            variant="default"
+            className="w-full rounded-2xl bg-terracotta-500 py-4 active:bg-terracotta-600"
+            textClassName="text-white text-lg font-semibold"
+            onPress={handleHeaderSave}
+            disabled={isSaving}
+            loading={isSaving}
+            label={t('plants.form.save_cta')}
+            testID="plant-save-cta"
+          />
+        </View>
+      </View>
     </View>
   );
 }

@@ -186,6 +186,7 @@ function createExpoConfig(config) {
     ios: {
       supportsTablet: true,
       usesAppleSignIn: true,
+      userInterfaceStyle: 'automatic',
       bundleIdentifier: Env.BUNDLE_ID,
       privacyManifests: applePrivacyManifest,
       infoPlist: {
@@ -205,6 +206,7 @@ function createExpoConfig(config) {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#2E3C4B',
       },
+      userInterfaceStyle: 'automatic',
       package: Env.PACKAGE,
       intentFilters: [
         {

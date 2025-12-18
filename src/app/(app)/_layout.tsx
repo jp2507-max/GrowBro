@@ -170,7 +170,7 @@ export default function TabLayout() {
               title: translate('tabs.home'),
               tabBarIcon: ({ color }) => <HomeIcon color={color} />,
               tabBarButtonTestID: 'home-tab',
-              header: renderSharedHeader,
+              headerShown: false,
             }}
           />
           <Tabs.Screen
@@ -179,7 +179,7 @@ export default function TabLayout() {
               title: translate('tabs.calendar'),
               tabBarIcon: ({ color }) => <CalendarIcon color={color} />,
               tabBarButtonTestID: 'calendar-tab',
-              header: renderSharedHeader,
+              headerShown: false,
             }}
           />
           <Tabs.Screen
@@ -208,6 +208,14 @@ export default function TabLayout() {
               title: translate('tabs.strains'),
               tabBarIcon: ({ color }) => <StyleIcon color={color} />,
               tabBarButtonTestID: 'strains-tab',
+              headerShown: false,
+            }}
+          />
+          {/* Hidden screens - not in tab bar but need navigation context */}
+          <Tabs.Screen
+            name="plants"
+            options={{
+              href: null, // Hide from tab bar
               headerShown: false,
             }}
           />
