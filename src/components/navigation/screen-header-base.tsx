@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import React from 'react';
 import type { EdgeInsets } from 'react-native-safe-area-context';
 import { twMerge } from 'tailwind-merge';
@@ -7,7 +8,7 @@ import { Pressable, Text, View } from '@/components/ui';
 import { Settings as SettingsIcon } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
-import { useThemeConfig } from '@/lib/use-theme-config';
+import { themeRoles } from '@/lib/theme-tokens';
 
 const HEADER_PADDING_TOP = 12;
 
@@ -41,7 +42,11 @@ export function ScreenHeaderBase({
   showBottomBorder = false, // Disabled by default - we have rounded corners now
   testID,
 }: ScreenHeaderBaseProps): React.ReactElement {
-  const theme = useThemeConfig();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const headerColors = isDark
+    ? themeRoles.header.dark
+    : themeRoles.header.light;
 
   return (
     <View
@@ -52,7 +57,7 @@ export function ScreenHeaderBase({
       )}
       style={{
         paddingTop: insets.top + HEADER_PADDING_TOP,
-        backgroundColor: theme.colors.background,
+        backgroundColor: headerColors.background,
       }}
       testID={testID}
     >
@@ -68,7 +73,7 @@ export function ScreenHeaderBase({
       {title ? (
         <Text
           className="text-3xl font-bold tracking-tight"
-          style={{ color: theme.colors.text }}
+          style={{ color: headerColors.text }}
         >
           {title}
         </Text>
@@ -102,9 +107,7 @@ export function HeaderGreeting(): React.ReactElement {
   }
 
   return (
-    <Text className="text-lg font-medium text-primary-200 dark:text-primary-300">
-      {greeting}
-    </Text>
+    <Text className="text-lg font-medium text-text-primary">{greeting}</Text>
   );
 }
 

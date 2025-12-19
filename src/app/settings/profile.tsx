@@ -537,6 +537,7 @@ export default function ProfileScreen() {
   );
 
   // Navigate to relevant sections - Requirements: 10.3
+  // Plants are displayed on the home screen, so we route to root
   const navigateToPlants = useCallback(() => {
     router.push('/');
   }, [router]);

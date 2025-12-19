@@ -392,20 +392,17 @@ export class TaskFactory {
         break;
     }
 
-    const spec: SeriesSpec = {
-      title: 'Feed Plant',
-      description,
-      rrule,
-      dtstartLocal,
-      dtstartUtc,
-      timezone,
-    };
-
-    if (untilDate) {
-      spec.untilUtc = buildUntilUtc(untilDate);
-    }
-
-    return [spec];
+    return [
+      {
+        title: 'Feed Plant',
+        description,
+        rrule,
+        dtstartLocal,
+        dtstartUtc,
+        timezone,
+        ...(untilDate && { untilUtc: buildUntilUtc(untilDate) }),
+      },
+    ];
   }
 
   /**

@@ -128,14 +128,13 @@ export async function createPlantFromForm(
 
   // Non-blocking: Create GrowBro task schedules for the new plant
   if (input.stage) {
-    try {
-      const engine = createTaskEngine();
-      await engine.ensureSchedulesForPlant(toPlant(record));
-    } catch (error) {
+    const engine = createTaskEngine();
+    engine.ensureSchedulesForPlant(toPlant(record)).catch((error) => {
       console.warn(
-        '[PlantService] Failed to create task schedules for new plant: ' + error
+        '[PlantService] Failed to create task schedules for new plant:',
+        error
       );
-    }
+    });
   }
 
   return record;
@@ -187,18 +186,18 @@ export async function updatePlantFromForm(
 
   // Non-blocking: Handle stage change with TaskEngine
   if (stageChanged && newStage) {
-    try {
-      const engine = createTaskEngine();
-      await engine.onStageChange(
+    const engine = createTaskEngine();
+    engine
+      .onStageChange(
         { plantId: id, fromStage: previousStage ?? null, toStage: newStage },
         toPlant(record)
-      );
-    } catch (error) {
-      console.warn(
-        '[PlantService] Failed to update task schedules on stage change:',
-        error
-      );
-    }
+      )
+      .catch((error) => {
+        console.warn(
+          '[PlantService] Failed to update task schedules on stage change:',
+          error
+        );
+      });
   }
 
   return record;

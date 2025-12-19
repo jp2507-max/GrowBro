@@ -139,4 +139,8 @@ describe('getWateringInterval', () => {
     expect(getWateringInterval('living_soil', 15)).toBe(3);
     expect(getWateringInterval('living_soil', 30)).toBe(4);
   });
+
+  it('treats other medium like soil', () => {
+    expect(getWateringInterval('other', 15)).toBe(3);
+  });
 });

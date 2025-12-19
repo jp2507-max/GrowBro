@@ -4,7 +4,7 @@ import { DateTime } from 'luxon';
 import { getTasksByDateRange } from '@/lib/task-manager';
 import type { Task } from '@/types/calendar';
 
-type PlantTask = {
+export type PlantTask = {
   id: string;
   title: string;
   type: 'water' | 'feed' | 'other';
@@ -54,7 +54,7 @@ type UsePlantTasksResult = {
   tasks: PlantTask[];
   isLoading: boolean;
   isError: boolean;
-  refetch: () => void;
+  refetch: () => Promise<unknown>;
 };
 
 /**

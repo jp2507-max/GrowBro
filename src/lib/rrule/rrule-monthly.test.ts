@@ -67,10 +67,12 @@ describe('RRULE MONTHLY support', () => {
       };
 
       const result = validate(config);
-      // BYWEEKDAY is only allowed for WEEKLY, should fail for MONTHLY
-      // Note: Current validator doesn't explicitly reject BYWEEKDAY for MONTHLY,
-      // but the iterator ignores it - this is acceptable behavior
-      expect(result.ok).toBe(true); // Passes validation, ignored in iteration
+      // BYWEEKDAY with MONTHLY requires positional notation (RFC 5545)
+      // which is not yet supported, so validation should reject it
+      expect(result.ok).toBe(false);
+      expect(result.errors).toBeDefined();
+      expect(result.errors?.[0]).toContain('byweekday with MONTHLY');
+      expect(result.errors?.[0]).toContain('not supported');
     });
   });
 

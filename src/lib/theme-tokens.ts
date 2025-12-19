@@ -14,6 +14,11 @@ type SurfaceRole = {
   border: string;
 };
 
+type HeaderSurfaceRole = {
+  background: string;
+  text: string;
+};
+
 type TextRole = {
   primary: string;
   secondary: string;
@@ -47,6 +52,7 @@ type SelectionRole = {
 
 type ThemeRoles = {
   surface: Record<Mode, SurfaceRole>;
+  header: Record<Mode, HeaderSurfaceRole>;
   text: Record<Mode, TextRole>;
   action: {
     primary: ActionRole;
@@ -72,6 +78,16 @@ export const themeRoles: ThemeRoles = {
       card: '#121C18', // Slightly lighter
       cardHighlight: '#1A2622',
       border: '#23332D', // Defined edges for premium depth
+    },
+  },
+  header: {
+    light: {
+      background: colors.primary[900], // #064E3B - Dark forest green
+      text: colors.white,
+    },
+    dark: {
+      background: colors.primary[800], // #065F46 - Slightly lighter for dark mode
+      text: colors.white,
     },
   },
   text: {

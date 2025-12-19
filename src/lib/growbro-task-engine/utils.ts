@@ -59,7 +59,14 @@ export function buildDtstartTimestamps(
  * Build an UNTIL timestamp in UTC (RFC-5545 format for RRULE)
  */
 export function buildUntilUtc(date: Date): string {
-  return DateTime.fromJSDate(date).toUTC().toISO()!;
+  const dt = DateTime.fromJSDate(date).toUTC();
+  const iso = dt.toISO();
+
+  if (!iso || !dt.isValid) {
+    throw new Error(`Failed to generate UTC timestamp for date ${date}`);
+  }
+
+  return iso;
 }
 
 /**
