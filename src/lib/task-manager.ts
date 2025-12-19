@@ -595,16 +595,16 @@ export async function getCompletedTasksByDateRange(
   end: Date
 ): Promise<Task[]> {
   const repos = getRepos();
-  const allCompleted = await repos.tasks
-    .query(Q.where('status', 'completed'), Q.where('deleted_at', null))
+  const completedInRange = await repos.tasks
+    .query(
+      Q.where('status', 'completed'),
+      Q.where('deleted_at', null),
+      Q.where('completed_at', Q.gte(start.getTime())),
+      Q.where('completed_at', Q.lte(end.getTime()))
+    )
     .fetch();
 
-  return allCompleted
-    .filter((taskModel) => {
-      const completedAt = taskModel.completedAt;
-      if (!completedAt) return false;
-      return completedAt >= start && completedAt <= end;
-    })
+  return completedInRange
     .map(toTaskFromModel)
     .sort((a, b) => (a.completedAt! < b.completedAt! ? 1 : -1));
 }

@@ -46,12 +46,16 @@ export function PlantActionHub({
               className="w-full rounded-2xl bg-terracotta-500 py-4 shadow-lg shadow-terracotta-200 active:bg-terracotta-600"
               textClassName="text-white text-base font-semibold"
               onPress={() => onTaskPress?.(task.id)}
-              label={task.title}
               testID={`action-task-${task.id}`}
             >
-              {task.type === 'water' ? (
-                <Droplet color="#fff" width={18} height={18} />
-              ) : null}
+              <View className="flex-row items-center gap-2">
+                {task.type === 'water' ? (
+                  <Droplet color="#fff" width={18} height={18} />
+                ) : null}
+                <Text className="text-base font-semibold text-white">
+                  {task.title}
+                </Text>
+              </View>
             </Button>
           ))}
         </View>

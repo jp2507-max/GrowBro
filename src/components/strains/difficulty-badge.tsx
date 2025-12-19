@@ -52,7 +52,7 @@ export const DifficultyBadge = React.memo<Props>(
         testID={testID}
         accessibilityRole="text"
         accessibilityLabel={translate(`strains.difficulty.${difficulty}`)}
-        accessibilityHint={translate(`strains.difficulty.${difficulty}`)}
+        accessibilityHint={translate(`strains.difficulty.${difficulty}_hint`)}
       >
         <Text className={`text-xs uppercase tracking-wide ${textStyles}`}>
           {translate(`strains.difficulty.${difficulty}`)}

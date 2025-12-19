@@ -456,6 +456,11 @@ type PlantFormProps = {
   /** Callback to report form completion progress (0-100) */
   onProgressChange?: (progress: number) => void;
   onDelete?: () => void;
+  /**
+   * When true, renders form sections without the outer ScrollView wrapper.
+   * Use when embedding PlantForm inside an existing scroll container.
+   */
+  renderAsFragment?: boolean;
 };
 
 type SelectFieldProps = {
@@ -857,6 +862,48 @@ function DeletePlantButton({ onDelete, t }: DeletePlantButtonProps) {
   );
 }
 
+type FormSectionsProps = {
+  control: Control<PlantFormValues>;
+  options: {
+    stage: OptionType[];
+    photoperiod: OptionType[];
+    environment: OptionType[];
+    genetic: OptionType[];
+    medium: OptionType[];
+  };
+  setValue: UseFormSetValue<PlantFormValues>;
+  t: (key: string) => string;
+  onDelete?: () => void;
+};
+
+function FormSections({
+  control,
+  options,
+  setValue,
+  t,
+  onDelete,
+}: FormSectionsProps): React.ReactElement {
+  return (
+    <View className="gap-6 px-4">
+      <IdentitySection
+        control={control}
+        stageOptions={options.stage}
+        geneticOptions={options.genetic}
+        setValue={setValue}
+        t={t}
+      />
+      <EnvironmentSection
+        control={control}
+        environmentOptions={options.environment}
+        photoperiodOptions={options.photoperiod}
+        t={t}
+      />
+      <CareSection control={control} mediumOptions={options.medium} t={t} />
+      {onDelete && <DeletePlantButton onDelete={onDelete} t={t} />}
+    </View>
+  );
+}
+
 export function PlantForm({
   defaultValues,
   onSubmit,
@@ -865,6 +912,7 @@ export function PlantForm({
   onSubmitReady,
   onProgressChange,
   onDelete,
+  renderAsFragment = false,
 }: PlantFormProps): React.ReactElement {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -917,6 +965,20 @@ export function PlantForm({
 
   const isDisabled = isSubmitting || formSubmitting;
 
+  // Fragment mode: render sections only (for embedding in existing scroll container)
+  if (renderAsFragment) {
+    return (
+      <FormSections
+        control={control}
+        options={options}
+        setValue={setValue}
+        t={t}
+        onDelete={onDelete}
+      />
+    );
+  }
+
+  // Standalone mode: render with hero photo, progress bar, and scroll container
   return (
     <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <ScrollView
@@ -937,25 +999,13 @@ export function PlantForm({
           label={t('plants.form.completion', { percent: completion })}
         />
 
-        {/* Form Sections */}
-        <View className="gap-6 px-4">
-          <IdentitySection
-            control={control}
-            stageOptions={options.stage}
-            geneticOptions={options.genetic}
-            setValue={setValue}
-            t={t}
-          />
-          <EnvironmentSection
-            control={control}
-            environmentOptions={options.environment}
-            photoperiodOptions={options.photoperiod}
-            t={t}
-          />
-          <CareSection control={control} mediumOptions={options.medium} t={t} />
-
-          {onDelete && <DeletePlantButton onDelete={onDelete} t={t} />}
-        </View>
+        <FormSections
+          control={control}
+          options={options}
+          setValue={setValue}
+          t={t}
+          onDelete={onDelete}
+        />
       </ScrollView>
     </View>
   );

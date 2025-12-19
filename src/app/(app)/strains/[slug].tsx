@@ -12,8 +12,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
-// @ts-expect-error - Reanimated 4.x type exports issue
-import { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStrain } from '@/api/strains/use-strain';
@@ -21,6 +19,7 @@ import { FavoriteButtonConnected } from '@/components/strains/favorite-button-co
 import { RaceBadge } from '@/components/strains/race-badge';
 import { StrainDetailSkeleton } from '@/components/strains/strain-detail-skeleton';
 import { Image, Pressable, Text, View } from '@/components/ui';
+import colors from '@/components/ui/colors';
 import {
   ArrowLeft,
   Calendar,
@@ -112,9 +111,7 @@ async function shareStrain(strain: Strain) {
 const EffectsFlavorsSection = ({ strain }: { strain: Strain }) => {
   return (
     <Animated.View
-      entering={FadeInDown.delay(400)
-        .springify()
-        .reduceMotion(ReduceMotion.System)}
+      entering={FadeIn.delay(400).springify().reduceMotion(ReduceMotion.System)}
       className="mt-8 px-6 pb-20"
     >
       {strain.effects && strain.effects.length > 0 && (
@@ -131,7 +128,7 @@ const EffectsFlavorsSection = ({ strain }: { strain: Strain }) => {
                 <Smile
                   width={18}
                   height={18}
-                  color="#15803d"
+                  color={colors.ink[700]}
                   className="mr-2"
                 />
                 <Text className="text-sm font-bold text-primary-900 dark:text-primary-100">
@@ -154,7 +151,12 @@ const EffectsFlavorsSection = ({ strain }: { strain: Strain }) => {
                 key={flavor.name}
                 className="mb-3 mr-3 flex-row items-center rounded-full border border-primary-200 bg-primary-100 px-5 py-3 dark:border-primary-700 dark:bg-primary-900/40"
               >
-                <Leaf width={18} height={18} color="#15803d" className="mr-2" />
+                <Leaf
+                  width={18}
+                  height={18}
+                  color={colors.ink[700]}
+                  className="mr-2"
+                />
                 <Text className="text-sm font-bold text-primary-900 dark:text-primary-100">
                   {flavor.name}
                 </Text>
@@ -208,12 +210,17 @@ const HardFactsGrid = ({ strain }: { strain: Strain }) => {
           numberOfLines={1}
           adjustsFontSizeToFit
         >
-          Blütezeit
+          {translate('strains.hardFacts.floweringTime')}
         </Text>
       </View>
 
       <View className="flex-1 items-center justify-center rounded-2xl bg-primary-50 p-4 dark:bg-primary-900/40">
-        <Scale width={24} height={24} color="#15803d" className="mb-2" />
+        <Scale
+          width={24}
+          height={24}
+          color={colors.ink[700]}
+          className="mb-2"
+        />
         <Text
           className="text-center text-lg font-bold text-neutral-900 dark:text-white"
           numberOfLines={1}
@@ -225,7 +232,7 @@ const HardFactsGrid = ({ strain }: { strain: Strain }) => {
           numberOfLines={1}
           adjustsFontSizeToFit
         >
-          Ertrag
+          {translate('strains.hardFacts.yield')}
         </Text>
       </View>
 
@@ -246,7 +253,7 @@ const HardFactsGrid = ({ strain }: { strain: Strain }) => {
           numberOfLines={1}
           adjustsFontSizeToFit
         >
-          Anbau
+          {translate('strains.hardFacts.cultivation')}
         </Text>
       </View>
     </View>
@@ -321,12 +328,12 @@ const StrainContentSheet = ({ strain }: { strain: Strain }) => (
       <View className="h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-neutral-700" />
     </View>
     <PremiumTagsRow strain={strain} />
-    <Animated.View entering={FadeInDown.delay(200).springify()}>
+    <Animated.View entering={FadeIn.delay(200).springify()}>
       <HardFactsGrid strain={strain} />
     </Animated.View>
     <View className="px-6 pb-6">
       <Text className="mb-4 text-xl font-bold text-neutral-900 dark:text-white">
-        Über diese Sorte
+        {translate('strains.detail.about')}
       </Text>
       {strain.description?.map((paragraph, index) => (
         <Animated.Text

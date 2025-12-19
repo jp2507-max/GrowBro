@@ -286,8 +286,8 @@ export default function CreatePlantScreen(): React.ReactElement {
           onPress={handleComplete}
           className="mb-4 size-10 items-center justify-center rounded-full bg-white/10 active:bg-white/20"
           accessibilityRole="button"
-          accessibilityLabel="Cancel"
-          accessibilityHint="Returns to the previous screen"
+          accessibilityLabel={t('common.cancel')}
+          accessibilityHint={t('accessibility.common.return_to_previous')}
           testID="header-back-button"
         >
           <ArrowLeft color="#fff" width={22} height={22} />

@@ -656,6 +656,10 @@
     "out_of_range": "außerhalb des Bereichs",
     "out_of_range_label": "Letzter pH/EC außerhalb des Zielbereichs",
     "ph_range": "pH‑Ziel: {{min}}–{{max}}",
+    "recurrence": {
+      "daily": "Täglich",
+      "weekly": "Wöchentlich"
+    },
     "review": "prüfen",
     "schedule_editor": {
       "add_title": "Zeitplan hinzufügen",
@@ -679,14 +683,25 @@
     "taskCount_plural": "{{count}} Aufgaben",
     "task_row": {
       "complete": "Als erledigt markieren",
+      "complete_hint": "Doppeltippen, um diese Aufgabe als erledigt zu markieren",
       "completed": "Aufgabe erledigt",
-      "recurring": "Wiederkehrend"
+      "recurring": "Wiederkehrend",
+      "task_hint": "Doppeltippen, um Aufgabendetails anzuzeigen"
     },
     "today": "Heute",
     "tomorrow": "Morgen",
     "week_strip": {
       "select_day_hint": "Doppeltippen, um Aufgaben für diesen Tag anzuzeigen",
       "today": "Heute"
+    },
+    "weekday": {
+      "fri": "Fr",
+      "mon": "Mo",
+      "sat": "Sa",
+      "sun": "So",
+      "thu": "Do",
+      "tue": "Di",
+      "wed": "Mi"
     },
     "yesterday": "Gestern"
   },
@@ -3267,6 +3282,7 @@
       "headline": "⚠️ Nur Bildungsinhalte"
     },
     "detail": {
+      "about": "Über diese Sorte",
       "back_hint": "Navigiert zurück zum vorherigen Bildschirm",
       "cbd": "CBD",
       "description_title": "Beschreibung",
@@ -3306,8 +3322,11 @@
     "did_you_mean_suffix": "?",
     "difficulty": {
       "advanced": "Fortgeschritten",
+      "advanced_hint": "Zeigt an, dass diese Sorte umfangreiche Erfahrung und präzise Umgebungskontrolle erfordert",
       "beginner": "Anfänger",
-      "intermediate": "Mittel"
+      "beginner_hint": "Zeigt an, dass diese Sorte einfach zu growen und tolerant gegenüber Fehlern ist",
+      "intermediate": "Mittel",
+      "intermediate_hint": "Zeigt an, dass diese Sorte etwas Erfahrung und moderate Umgebungskontrolle erfordert"
     },
     "effects": {
       "creative": "Kreativ",
@@ -3388,6 +3407,11 @@
       "spicy": "Würzig",
       "sweet": "Süß",
       "woody": "Holzig"
+    },
+    "hardFacts": {
+      "cultivation": "Anbau",
+      "floweringTime": "Blütezeit",
+      "yield": "Ertrag"
     },
     "no_results": "Keine Sorten gefunden",
     "offline_notice": "Gespeicherte Sorten werden angezeigt",

@@ -94,6 +94,105 @@ function buildDefaultValues(plant: Plant): PlantFormValues {
   };
 }
 
+type PlantContentSheetProps = {
+  plant: Plant;
+  plantId: string;
+  linkedStrainSlug: string | null;
+  isSaving: boolean;
+  defaultValues: PlantFormValues | undefined;
+  handleSubmit: (values: PlantFormValues) => Promise<void>;
+  handleSubmitReady: (submit: () => void) => void;
+  handleDelete: () => void;
+  handleOpenStrain: () => void;
+  handleHeaderSave: () => void;
+  insets: ReturnType<typeof useSafeAreaInsets>;
+  t: ReturnType<typeof useTranslation>['t'];
+};
+
+function PlantContentSheet({
+  plant,
+  plantId,
+  linkedStrainSlug,
+  isSaving,
+  defaultValues,
+  handleSubmit,
+  handleSubmitReady,
+  handleDelete,
+  handleOpenStrain,
+  handleHeaderSave,
+  insets,
+  t,
+}: PlantContentSheetProps): React.ReactElement {
+  return (
+    <View className="z-10 -mt-8 flex-1 rounded-t-[35px] bg-white shadow-xl dark:bg-charcoal-900">
+      {/* Handle Bar */}
+      <View className="my-4 h-1.5 w-12 self-center rounded-full bg-neutral-200" />
+
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="pb-[72px]"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Stats Grid */}
+        <PlantStatsGrid plant={plant} />
+
+        {/* Action Hub */}
+        <View className="mt-6">
+          <PlantActionHub plantId={plantId} />
+        </View>
+
+        {/* Strain Profile Link - Subtle text link style */}
+        {linkedStrainSlug ? (
+          <Pressable
+            onPress={handleOpenStrain}
+            className="flex-row items-center justify-center py-4 active:opacity-70"
+            accessibilityLabel={t('plants.form.view_strain_profile')}
+            accessibilityHint={t('plants.form.view_strain_profile_hint')}
+            accessibilityRole="button"
+            testID="view-strain-profile"
+          >
+            <Text className="mr-1 text-sm font-medium text-neutral-500 dark:text-neutral-400">
+              {t('plants.detail.strain_profile_link')}
+            </Text>
+            <ArrowRight color={colors.neutral[400]} width={14} height={14} />
+          </Pressable>
+        ) : null}
+
+        {/* Divider */}
+        <View className="mx-4 my-6 h-px bg-neutral-200 dark:bg-neutral-700" />
+
+        {/* Form Sections (fragment mode to avoid nested ScrollView) */}
+        <PlantForm
+          key={plantId}
+          defaultValues={defaultValues}
+          onSubmit={handleSubmit}
+          isSubmitting={isSaving}
+          onSubmitReady={handleSubmitReady}
+          onDelete={handleDelete}
+          renderAsFragment
+        />
+      </ScrollView>
+
+      {/* Floating Save Button */}
+      <View
+        className="absolute inset-x-0 bottom-0 bg-white/95 px-4 pt-3 dark:bg-charcoal-900/95"
+        style={{ paddingBottom: insets.bottom + 8 }}
+      >
+        <Button
+          variant="default"
+          className="w-full rounded-2xl bg-terracotta-500 py-4 active:bg-terracotta-600"
+          textClassName="text-white text-lg font-semibold"
+          onPress={handleHeaderSave}
+          disabled={isSaving}
+          loading={isSaving}
+          label={t('plants.form.save_cta')}
+          testID="plant-save-cta"
+        />
+      </View>
+    </View>
+  );
+}
+
 function usePlantSubmit(
   plantId: string | null,
   queryClient: ReturnType<typeof useQueryClient>,
@@ -259,71 +358,20 @@ export default function PlantDetailScreen(): React.ReactElement | null {
       <PlantDetailHeader plant={plant} onBack={handleBack} />
 
       {/* Overlapping White Content Sheet */}
-      <View className="z-10 -mt-8 flex-1 rounded-t-[35px] bg-white shadow-xl dark:bg-charcoal-900">
-        {/* Handle Bar */}
-        <View className="my-4 h-1.5 w-12 self-center rounded-full bg-neutral-200" />
-
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ paddingBottom: 72 }}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Stats Grid */}
-          <PlantStatsGrid plant={plant} />
-
-          {/* Action Hub */}
-          <View className="mt-6">
-            <PlantActionHub plantId={plantId} />
-          </View>
-
-          {/* Strain Profile Link - Subtle text link style */}
-          {linkedStrainSlug ? (
-            <Pressable
-              onPress={handleOpenStrain}
-              className="flex-row items-center justify-center py-4 active:opacity-70"
-              accessibilityLabel={t('plants.form.view_strain_profile')}
-              accessibilityHint={t('plants.form.view_strain_profile_hint')}
-              accessibilityRole="button"
-              testID="view-strain-profile"
-            >
-              <Text className="mr-1 text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                {t('plants.detail.strain_profile_link')}
-              </Text>
-              <ArrowRight color={colors.neutral[400]} width={14} height={14} />
-            </Pressable>
-          ) : null}
-
-          {/* Divider */}
-          <View className="mx-4 my-6 h-px bg-neutral-200 dark:bg-neutral-700" />
-
-          {/* Form Sections (using PlantForm's internal sections) */}
-          <PlantForm
-            key={plantId}
-            defaultValues={defaultValues}
-            onSubmit={handleSubmit}
-            isSubmitting={isSaving}
-            onSubmitReady={handleSubmitReady}
-            onDelete={handleDelete}
-          />
-        </ScrollView>
-
-        {/* Floating Save Button */}
-        <View
-          className="absolute inset-x-0 bottom-0 bg-white/95 px-4 pt-3 dark:bg-charcoal-900/95"
-          style={{ paddingBottom: insets.bottom + 8 }}
-        >
-          <Button
-            variant="default"
-            className="w-full rounded-2xl bg-terracotta-500 py-4 active:bg-terracotta-600"
-            textClassName="text-white text-lg font-semibold"
-            onPress={handleHeaderSave}
-            disabled={isSaving}
-            loading={isSaving}
-            label={t('plants.form.save_cta')}
-            testID="plant-save-cta"
-          />
-        </View>
-      </View>
+      <PlantContentSheet
+        plant={plant}
+        plantId={plantId}
+        linkedStrainSlug={linkedStrainSlug}
+        isSaving={isSaving}
+        defaultValues={defaultValues}
+        handleSubmit={handleSubmit}
+        handleSubmitReady={handleSubmitReady}
+        handleDelete={handleDelete}
+        handleOpenStrain={handleOpenStrain}
+        handleHeaderSave={handleHeaderSave}
+        insets={insets}
+        t={t}
+      />
     </View>
   );
 }

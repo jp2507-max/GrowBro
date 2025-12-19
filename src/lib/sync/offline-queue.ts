@@ -15,8 +15,7 @@ import { generateDeduplicationKey, isDuplicate } from './conflict-resolver';
  * Generate idempotency key for safe retries
  * Used to ensure duplicate operations don't create multiple records
  *
- * @param table - Table name
- * @param operation - Operation type
+ * @param operationKey - Operation identifier (e.g., table_operation)
  * @param id - Record ID
  * @param timestamp - Operation timestamp
  * @returns Idempotency key string

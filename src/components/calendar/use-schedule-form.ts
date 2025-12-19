@@ -44,20 +44,68 @@ function buildDefaultValues(s?: Series): ScheduleFormData {
   };
 }
 
+function parseAndValidateTime(timeString: string): {
+  hour: number;
+  minute: number;
+} {
+  const timeMatch = /^(\d{1,2}):(\d{2})$/.exec(timeString);
+  if (!timeMatch) {
+    throw new Error(`Invalid time format: ${timeString}. Expected HH:mm`);
+  }
+
+  const hour = parseInt(timeMatch[1], 10);
+  const minute = parseInt(timeMatch[2], 10);
+
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
+    throw new Error(`Invalid time values: hour=${hour}, minute=${minute}`);
+  }
+
+  if (hour < 0 || hour > 23) {
+    throw new Error(`Hour must be between 0 and 23, got ${hour}`);
+  }
+
+  if (minute < 0 || minute > 59) {
+    throw new Error(`Minute must be between 0 and 59, got ${minute}`);
+  }
+
+  return { hour, minute };
+}
+
+function validateAndConvertDateTime(dt: DateTime, label: string): string {
+  if (!dt.isValid) {
+    throw new Error(
+      `Invalid ${label} DateTime: ${dt.invalidReason} - ${dt.invalidExplanation}`
+    );
+  }
+
+  const isoString = dt.toISO();
+  if (!isoString) {
+    throw new Error(`Failed to convert ${label} DateTime to ISO string`);
+  }
+
+  return isoString;
+}
+
 async function submitSchedule(
   data: ScheduleFormData,
   params: { selectedDate?: DateTime; timezone: string; editingSeries?: Series }
-) {
+): Promise<void> {
   const { selectedDate, timezone, editingSeries } = params;
+
+  const { hour, minute } = parseAndValidateTime(data.startTime);
+
   const startDateTime = (selectedDate ?? DateTime.now())
     .set({
-      hour: +data.startTime.split(':')[0],
-      minute: +data.startTime.split(':')[1],
+      hour,
+      minute,
       second: 0,
+      millisecond: 0,
     })
     .setZone(timezone);
-  const dtstartLocal = startDateTime.toISO()!;
-  const dtstartUtc = startDateTime.toUTC().toISO()!;
+
+  const dtstartLocal = validateAndConvertDateTime(startDateTime, 'local');
+  const dtstartUtc = validateAndConvertDateTime(startDateTime.toUTC(), 'UTC');
+
   const rruleString =
     data.recurrencePattern === 'weekly' && data.weekdays.length > 0
       ? rruleGenerator.generateWeeklyRRULE(data.weekdays, data.interval)

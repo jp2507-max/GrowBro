@@ -656,6 +656,10 @@
     "out_of_range": "out of range",
     "out_of_range_label": "Latest pH/EC out of target range",
     "ph_range": "pH target: {{min}}–{{max}}",
+    "recurrence": {
+      "daily": "Daily",
+      "weekly": "Weekly"
+    },
     "review": "review",
     "schedule_editor": {
       "add_title": "Add Schedule",
@@ -679,14 +683,25 @@
     "taskCount_plural": "{{count}} tasks",
     "task_row": {
       "complete": "Mark as complete",
+      "complete_hint": "Double-tap to mark this task as complete",
       "completed": "Task completed",
-      "recurring": "Recurring"
+      "recurring": "Recurring",
+      "task_hint": "Double-tap to view task details"
     },
     "today": "Today",
     "tomorrow": "Tomorrow",
     "week_strip": {
       "select_day_hint": "Double-tap to view tasks for this day",
       "today": "Today"
+    },
+    "weekday": {
+      "fri": "Fri",
+      "mon": "Mon",
+      "sat": "Sat",
+      "sun": "Sun",
+      "thu": "Thu",
+      "tue": "Tue",
+      "wed": "Wed"
     },
     "yesterday": "Yesterday"
   },
@@ -3267,6 +3282,7 @@
       "headline": "⚠️ Educational Content Only"
     },
     "detail": {
+      "about": "About this strain",
       "back_hint": "Navigates back to the previous screen",
       "cbd": "CBD",
       "description_title": "Description",
@@ -3306,8 +3322,11 @@
     "did_you_mean_suffix": "?",
     "difficulty": {
       "advanced": "Advanced",
+      "advanced_hint": "Indicates this strain requires extensive grow experience and precise environment control",
       "beginner": "Beginner",
-      "intermediate": "Intermediate"
+      "beginner_hint": "Indicates this strain is easy to grow and tolerant of common mistakes",
+      "intermediate": "Intermediate",
+      "intermediate_hint": "Indicates this strain requires some experience and moderate environment control"
     },
     "effects": {
       "creative": "Creative",
@@ -3388,6 +3407,11 @@
       "spicy": "Spicy",
       "sweet": "Sweet",
       "woody": "Woody"
+    },
+    "hardFacts": {
+      "cultivation": "Cultivation",
+      "floweringTime": "Flowering",
+      "yield": "Yield"
     },
     "no_results": "No strains found",
     "offline_notice": "Showing saved strains",

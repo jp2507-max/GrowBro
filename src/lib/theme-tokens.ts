@@ -38,6 +38,13 @@ type StatusRole = {
   successText: Record<Mode, string>;
 };
 
+type SelectionRole = {
+  background: Record<Mode, string>;
+  border: Record<Mode, string>;
+  text: Record<Mode, string>;
+  check: Record<Mode, string>;
+};
+
 type ThemeRoles = {
   surface: Record<Mode, SurfaceRole>;
   text: Record<Mode, TextRole>;
@@ -48,6 +55,7 @@ type ThemeRoles = {
     focusRing: Record<Mode, string>;
   };
   status: StatusRole;
+  selection: SelectionRole;
 };
 
 // Modern Organic Tech theme - clean, premium, crisp
@@ -134,6 +142,24 @@ export const themeRoles: ThemeRoles = {
     successText: {
       light: colors.primary[800],
       dark: colors.primary[300],
+    },
+  },
+  selection: {
+    background: {
+      light: colors.primary[50],
+      dark: 'rgba(16, 185, 129, 0.12)', // Glassy primary
+    },
+    border: {
+      light: colors.primary[100],
+      dark: 'rgba(16, 185, 129, 0.25)',
+    },
+    text: {
+      light: colors.primary[900],
+      dark: colors.primary[200],
+    },
+    check: {
+      light: colors.primary[600],
+      dark: colors.primary[400],
     },
   },
 };

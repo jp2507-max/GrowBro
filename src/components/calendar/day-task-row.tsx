@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon';
 import React from 'react';
 import { Pressable } from 'react-native';
 import { twMerge } from 'tailwind-merge';
@@ -5,7 +6,6 @@ import { twMerge } from 'tailwind-merge';
 import { Text, View } from '@/components/ui';
 import { Check as CheckIcon } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
-import type { TxKeyPath } from '@/lib/i18n/utils';
 import type { Task } from '@/types/calendar';
 
 type DayTaskRowProps = {
@@ -17,12 +17,9 @@ type DayTaskRowProps = {
   testID?: string;
 };
 
-function formatDueTime(dueAtLocal: string): string {
-  const date = new Date(dueAtLocal);
-  return date.toLocaleTimeString(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+function formatDueTime(dueAtLocal: string, timezone: string): string {
+  const dt = DateTime.fromISO(dueAtLocal, { zone: timezone });
+  return dt.toFormat('HH:mm');
 }
 
 function TaskCheckbox({
@@ -32,8 +29,8 @@ function TaskCheckbox({
   isCompleted: boolean;
   onPress: () => void;
 }): React.ReactElement {
-  const completeLabel = translate('calendar.task_row.complete' as TxKeyPath);
-  const completedLabel = translate('calendar.task_row.completed' as TxKeyPath);
+  const completeLabel = translate('calendar.task_row.complete');
+  const completedLabel = translate('calendar.task_row.completed');
 
   return (
     <Pressable
@@ -48,9 +45,7 @@ function TaskCheckbox({
       accessibilityRole="checkbox"
       accessibilityState={{ checked: isCompleted }}
       accessibilityLabel={isCompleted ? completedLabel : completeLabel}
-      accessibilityHint={translate(
-        'calendar.task_row.complete_hint' as TxKeyPath
-      )}
+      accessibilityHint={translate('calendar.task_row.complete_hint')}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       testID="task-checkbox"
     >
@@ -77,9 +72,9 @@ export function DayTaskRow({
     }
   }, [isCompleted, onComplete, task]);
 
-  const dueTime = formatDueTime(task.dueAtLocal);
+  const dueTime = formatDueTime(task.dueAtLocal, task.timezone);
   const isEphemeral = task.metadata?.ephemeral === true;
-  const recurringLabel = translate('calendar.task_row.recurring' as TxKeyPath);
+  const recurringLabel = translate('calendar.task_row.recurring');
 
   return (
     <Pressable
@@ -90,7 +85,7 @@ export function DayTaskRow({
       )}
       accessibilityRole="button"
       accessibilityLabel={`${task.title}${plantName ? `, ${plantName}` : ''}, ${dueTime}`}
-      accessibilityHint={translate('calendar.task_row.task_hint' as TxKeyPath)}
+      accessibilityHint={translate('calendar.task_row.task_hint')}
       testID={testID ?? `day-task-row-${task.id}`}
     >
       <TaskCheckbox isCompleted={isCompleted} onPress={handleComplete} />

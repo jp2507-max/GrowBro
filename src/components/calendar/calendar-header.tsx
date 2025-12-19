@@ -8,8 +8,7 @@ import {
   ScreenHeaderBase,
 } from '@/components/navigation/screen-header-base';
 import { Text, View } from '@/components/ui';
-import { translate } from '@/lib/i18n';
-import type { TxKeyPath } from '@/lib/i18n/utils';
+import { translate, type TxKeyPath } from '@/lib/i18n';
 
 type CalendarHeaderProps = {
   selectedDate: DateTime;
@@ -21,16 +20,17 @@ function formatHeaderTitle(selectedDate: DateTime): string {
   const today = DateTime.now().startOf('day');
 
   if (selectedDate.hasSame(today, 'day')) {
-    return translate('calendar.header.today' as TxKeyPath);
+    return translate('calendar.header.today');
   }
 
   return selectedDate.toFormat('ccc, LLL d');
 }
 
 function HeaderSubtitle(): React.ReactElement {
+  const subtitleKey: TxKeyPath = 'shared_header.calendar.subtitle';
   return (
     <Text className="text-lg font-medium text-primary-200 dark:text-primary-300">
-      {translate('calendar.header.subtitle' as TxKeyPath)}
+      {translate(subtitleKey)}
     </Text>
   );
 }

@@ -5,7 +5,6 @@ import { Controller } from 'react-hook-form';
 import { useScheduleForm } from '@/components/calendar/use-schedule-form';
 import { Button, Input, Select, Text, View } from '@/components/ui';
 import { translate } from '@/lib/i18n';
-import type { TxKeyPath } from '@/lib/i18n/utils';
 import type { WeekDay } from '@/lib/rrule/generator';
 import type { Series } from '@/types/calendar';
 
@@ -19,20 +18,30 @@ type ScheduleFormProps = {
   onCancel: () => void;
 };
 
-const RECURRENCE_OPTIONS: { label: string; value: RecurrencePattern }[] = [
-  { label: 'Daily', value: 'daily' },
-  { label: 'Weekly', value: 'weekly' },
-];
+function getRecurrenceOptions(): { label: string; value: RecurrencePattern }[] {
+  return [
+    {
+      label: translate('calendar.recurrence.daily'),
+      value: 'daily',
+    },
+    {
+      label: translate('calendar.recurrence.weekly'),
+      value: 'weekly',
+    },
+  ];
+}
 
-const WEEKDAY_OPTIONS: { label: string; value: WeekDay }[] = [
-  { label: 'Mon', value: 'MO' },
-  { label: 'Tue', value: 'TU' },
-  { label: 'Wed', value: 'WE' },
-  { label: 'Thu', value: 'TH' },
-  { label: 'Fri', value: 'FR' },
-  { label: 'Sat', value: 'SA' },
-  { label: 'Sun', value: 'SU' },
-];
+function getWeekdayOptions(): { label: string; value: WeekDay }[] {
+  return [
+    { label: translate('calendar.weekday.mon'), value: 'MO' },
+    { label: translate('calendar.weekday.tue'), value: 'TU' },
+    { label: translate('calendar.weekday.wed'), value: 'WE' },
+    { label: translate('calendar.weekday.thu'), value: 'TH' },
+    { label: translate('calendar.weekday.fri'), value: 'FR' },
+    { label: translate('calendar.weekday.sat'), value: 'SA' },
+    { label: translate('calendar.weekday.sun'), value: 'SU' },
+  ];
+}
 
 const INTERVAL_OPTIONS = [
   { label: '1', value: 1 },
@@ -58,7 +67,7 @@ function WeekdaySelector({
 
   return (
     <View className="flex-row flex-wrap gap-2">
-      {WEEKDAY_OPTIONS.map((opt) => (
+      {getWeekdayOptions().map((opt) => (
         <Button
           key={opt.value}
           variant={selected.includes(opt.value) ? 'default' : 'outline'}
@@ -73,17 +82,13 @@ function WeekdaySelector({
 }
 
 const LABELS = {
-  title: translate('calendar.schedule_editor.title_label' as TxKeyPath),
-  titlePlaceholder: translate(
-    'calendar.schedule_editor.title_placeholder' as TxKeyPath
-  ),
-  recurrence: translate(
-    'calendar.schedule_editor.recurrence_label' as TxKeyPath
-  ),
-  interval: translate('calendar.schedule_editor.interval_label' as TxKeyPath),
-  weekdays: translate('calendar.schedule_editor.weekdays_label' as TxKeyPath),
-  save: translate('calendar.schedule_editor.save' as TxKeyPath),
-  cancel: translate('calendar.schedule_editor.cancel' as TxKeyPath),
+  title: translate('calendar.schedule_editor.title_label'),
+  titlePlaceholder: translate('calendar.schedule_editor.title_placeholder'),
+  recurrence: translate('calendar.schedule_editor.recurrence_label'),
+  interval: translate('calendar.schedule_editor.interval_label'),
+  weekdays: translate('calendar.schedule_editor.weekdays_label'),
+  save: translate('calendar.schedule_editor.save'),
+  cancel: translate('calendar.schedule_editor.cancel'),
 };
 
 export function ScheduleForm(props: ScheduleFormProps): React.ReactElement {
@@ -128,7 +133,7 @@ export function ScheduleForm(props: ScheduleFormProps): React.ReactElement {
             <Select
               value={value}
               onSelect={(v) => onChange(v as RecurrencePattern)}
-              options={RECURRENCE_OPTIONS}
+              options={getRecurrenceOptions()}
               testID="schedule-recurrence-select"
             />
           )}

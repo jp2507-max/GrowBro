@@ -119,7 +119,10 @@ export default function CalendarScreen(): React.ReactElement {
         if (isEphemeralTask(task)) {
           const info = parseEphemeralTaskInfo(task.id);
           if (info) {
-            const occurrenceDate = DateTime.fromISO(info.localDate).toJSDate();
+            // Parse localDate in the series/task timezone to avoid day-shift when device timezone differs
+            const occurrenceDate = DateTime.fromISO(info.localDate, {
+              zone: task.timezone,
+            }).toJSDate();
             await completeRecurringInstance(info.seriesId, occurrenceDate);
           } else {
             // Fallback: ephemeral task without valid series info

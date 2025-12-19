@@ -6,7 +6,6 @@ import { ScheduleForm } from '@/components/calendar/schedule-form';
 import { Modal, useModal } from '@/components/ui';
 import ModalKeyboardAwareScrollView from '@/components/ui/modal-keyboard-aware-scroll-view';
 import { translate } from '@/lib/i18n';
-import type { TxKeyPath } from '@/lib/i18n/utils';
 import type { Series } from '@/types/calendar';
 
 type ScheduleEditorModalProps = {
@@ -28,8 +27,8 @@ export function ScheduleEditorModal({
   const isEditing = Boolean(editingSeries);
 
   const modalTitle = isEditing
-    ? translate('calendar.schedule_editor.edit_title' as TxKeyPath)
-    : translate('calendar.schedule_editor.add_title' as TxKeyPath);
+    ? translate('calendar.schedule_editor.edit_title')
+    : translate('calendar.schedule_editor.add_title');
 
   const handleSave = React.useCallback(() => {
     dismiss();
