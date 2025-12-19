@@ -2264,7 +2264,7 @@
       "error_body": "Please check your connection and try again.",
       "error_title": "Could not save plant",
       "errors": {
-        "height_invalid": "Height must be a positive number",
+        "height_invalid": "Height must be 0 or greater",
         "light_hours": "Enter hours between 0-24",
         "name_length": "Name must be under 120 characters",
         "name_required": "Name is required",

@@ -2264,7 +2264,7 @@
       "error_body": "Bitte Verbindung prüfen und erneut versuchen.",
       "error_title": "Pflanze konnte nicht gespeichert werden",
       "errors": {
-        "height_invalid": "Höhe muss eine positive Zahl sein",
+        "height_invalid": "Höhe muss 0 oder größer sein",
         "light_hours": "Lichtstunden zwischen 0-24 eingeben",
         "name_length": "Name muss unter 120 Zeichen bleiben",
         "name_required": "Name ist erforderlich",

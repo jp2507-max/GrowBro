@@ -42,8 +42,8 @@ export function ResultActionPanel({
   const handleViewHistory = React.useCallback(() => {
     // Navigate to plant profile with assessment history
     router.push({
-      pathname: '/plants',
-      params: { plantId, showAssessments: 'true' },
+      pathname: `/plants/${plantId}`,
+      params: { showAssessments: 'true' },
     });
   }, [router, plantId]);
 

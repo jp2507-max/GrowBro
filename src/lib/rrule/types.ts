@@ -1,10 +1,10 @@
-// RRULE v1.1 scope types
-// - FREQ: DAILY | WEEKLY
+// RRULE v1.2 scope types
+// - FREQ: DAILY | WEEKLY | MONTHLY
 // - INTERVAL: 1-365
 // - BYDAY: only for WEEKLY (MO..SU)
 // - UNTIL (UTC) or COUNT (mutually exclusive)
 
-export type RRuleFrequency = 'DAILY' | 'WEEKLY';
+export type RRuleFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY';
 
 export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7; // ISO weekday numbers: 1=Mon .. 7=Sun
 

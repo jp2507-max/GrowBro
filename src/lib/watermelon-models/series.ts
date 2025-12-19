@@ -1,5 +1,5 @@
 import { Model } from '@nozbe/watermelondb';
-import { date, field, readonly, text } from '@nozbe/watermelondb/decorators';
+import { date, field, text } from '@nozbe/watermelondb/decorators';
 
 export class SeriesModel extends Model {
   static table = 'series';
@@ -11,8 +11,10 @@ export class SeriesModel extends Model {
   @text('timezone') timezone!: string;
   @text('rrule') rrule!: string;
   @text('until_utc') untilUtc?: string;
-  @readonly count?: number;
+  // @readonly removed so TaskEngine can write count for finite series
+  @field('count') count?: number;
   @text('plant_id') plantId?: string;
+  @text('origin') origin?: string;
   // @readonly removed so sync pipeline can write server-provided values
   // @readonly @field('server_revision') serverRevision?: number;
   @field('server_revision') serverRevision?: number;

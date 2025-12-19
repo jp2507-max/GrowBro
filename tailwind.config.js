@@ -37,6 +37,12 @@ module.exports = {
         'selection-text': 'var(--color-selection-text)',
         'selection-check': 'var(--color-selection-check)',
       },
+      borderRadius: {
+        sheet: '40px',
+      },
+      spacing: {
+        hero: '350px',
+      },
     },
   },
   plugins: [],

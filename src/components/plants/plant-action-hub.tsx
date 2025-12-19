@@ -48,9 +48,9 @@ export function PlantActionHub({
               onPress={() => onTaskPress?.(task.id)}
               testID={`action-task-${task.id}`}
             >
-              <View className="flex-row items-center gap-2">
+              <View className="flex-row items-center justify-center gap-2">
                 {task.type === 'water' ? (
-                  <Droplet color="#fff" width={18} height={18} />
+                  <Droplet color={colors.white} width={18} height={18} />
                 ) : null}
                 <Text className="text-base font-semibold text-white">
                   {task.title}

@@ -7,6 +7,7 @@ import { Pressable, Text, View } from '@/components/ui';
 import { Settings as SettingsIcon } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
+import { useThemeConfig } from '@/lib/use-theme-config';
 
 const HEADER_PADDING_TOP = 12;
 
@@ -29,7 +30,7 @@ type ScreenHeaderBaseProps = {
 
 /**
  * Base component for screen headers with consistent styling.
- * Premium "Organic Edition" design with deep forest background and rounded corners.
+ * Uses theme-aware background color for proper theming support.
  */
 export function ScreenHeaderBase({
   insets,
@@ -40,15 +41,18 @@ export function ScreenHeaderBase({
   showBottomBorder = false, // Disabled by default - we have rounded corners now
   testID,
 }: ScreenHeaderBaseProps): React.ReactElement {
+  const theme = useThemeConfig();
+
   return (
     <View
       className={twMerge(
-        'z-0 bg-primary-900 px-4 pb-16 dark:bg-primary-800',
+        'z-0 px-4 pb-16',
         'rounded-b-[32px] shadow-lg',
-        showBottomBorder && 'border-b border-primary-700'
+        showBottomBorder && 'border-b border-border'
       )}
       style={{
         paddingTop: insets.top + HEADER_PADDING_TOP,
+        backgroundColor: theme.colors.background,
       }}
       testID={testID}
     >
@@ -60,9 +64,12 @@ export function ScreenHeaderBase({
         </View>
       )}
 
-      {/* Main Title - White on green for premium look */}
+      {/* Main Title */}
       {title ? (
-        <Text className="text-3xl font-bold tracking-tight text-white">
+        <Text
+          className="text-3xl font-bold tracking-tight"
+          style={{ color: theme.colors.text }}
+        >
           {title}
         </Text>
       ) : null}

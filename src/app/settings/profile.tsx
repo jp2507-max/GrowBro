@@ -538,7 +538,7 @@ export default function ProfileScreen() {
 
   // Navigate to relevant sections - Requirements: 10.3
   const navigateToPlants = useCallback(() => {
-    router.push('/plants');
+    router.push('/');
   }, [router]);
 
   const navigateToHarvests = useCallback(() => {

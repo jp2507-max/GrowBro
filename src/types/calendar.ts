@@ -15,6 +15,7 @@ export type Series = {
   untilUtc?: string; // ISO UTC
   count?: number;
   plantId?: string;
+  origin?: string; // 'growbro' for engine-generated, undefined for user-created
   serverRevision?: number; // Monotonic int for conflict resolution
   serverUpdatedAtMs?: number; // Epoch ms (number) - server last updated timestamp
   createdAt: string; // ISO timestamptz

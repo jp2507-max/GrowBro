@@ -51,6 +51,18 @@ const INTERVAL_OPTIONS = [
   { label: '14', value: 14 },
 ];
 
+function getLabels() {
+  return {
+    title: translate('calendar.schedule_editor.title_label'),
+    titlePlaceholder: translate('calendar.schedule_editor.title_placeholder'),
+    recurrence: translate('calendar.schedule_editor.recurrence_label'),
+    interval: translate('calendar.schedule_editor.interval_label'),
+    weekdays: translate('calendar.schedule_editor.weekdays_label'),
+    save: translate('calendar.schedule_editor.save'),
+    cancel: translate('calendar.schedule_editor.cancel'),
+  };
+}
+
 function WeekdaySelector({
   selected,
   onChange,
@@ -81,16 +93,6 @@ function WeekdaySelector({
   );
 }
 
-const LABELS = {
-  title: translate('calendar.schedule_editor.title_label'),
-  titlePlaceholder: translate('calendar.schedule_editor.title_placeholder'),
-  recurrence: translate('calendar.schedule_editor.recurrence_label'),
-  interval: translate('calendar.schedule_editor.interval_label'),
-  weekdays: translate('calendar.schedule_editor.weekdays_label'),
-  save: translate('calendar.schedule_editor.save'),
-  cancel: translate('calendar.schedule_editor.cancel'),
-};
-
 export function ScheduleForm(props: ScheduleFormProps): React.ReactElement {
   const {
     control,
@@ -101,11 +103,13 @@ export function ScheduleForm(props: ScheduleFormProps): React.ReactElement {
     handleCancel,
   } = useScheduleForm(props);
 
+  const labels = getLabels();
+
   return (
     <View className="gap-4 px-4 py-2">
       <View className="gap-1">
         <Text className="text-sm font-medium text-text-secondary">
-          {LABELS.title}
+          {labels.title}
         </Text>
         <Controller
           control={control}
@@ -115,7 +119,7 @@ export function ScheduleForm(props: ScheduleFormProps): React.ReactElement {
             <Input
               value={value}
               onChangeText={onChange}
-              placeholder={LABELS.titlePlaceholder}
+              placeholder={labels.titlePlaceholder}
               testID="schedule-title-input"
             />
           )}
@@ -124,7 +128,7 @@ export function ScheduleForm(props: ScheduleFormProps): React.ReactElement {
 
       <View className="gap-1">
         <Text className="text-sm font-medium text-text-secondary">
-          {LABELS.recurrence}
+          {labels.recurrence}
         </Text>
         <Controller
           control={control}
@@ -142,7 +146,7 @@ export function ScheduleForm(props: ScheduleFormProps): React.ReactElement {
 
       <View className="gap-1">
         <Text className="text-sm font-medium text-text-secondary">
-          {LABELS.interval}
+          {labels.interval}
         </Text>
         <Controller
           control={control}
@@ -161,7 +165,7 @@ export function ScheduleForm(props: ScheduleFormProps): React.ReactElement {
       {recurrencePattern === 'weekly' && (
         <View className="gap-1">
           <Text className="text-sm font-medium text-text-secondary">
-            {LABELS.weekdays}
+            {labels.weekdays}
           </Text>
           <Controller
             control={control}
@@ -176,14 +180,14 @@ export function ScheduleForm(props: ScheduleFormProps): React.ReactElement {
       <View className="mt-4 flex-row gap-3">
         <Button
           variant="outline"
-          label={LABELS.cancel}
+          label={labels.cancel}
           onPress={handleCancel}
           className="flex-1"
           testID="schedule-cancel-button"
         />
         <Button
           variant="default"
-          label={LABELS.save}
+          label={labels.save}
           onPress={handleSubmit(onSubmit)}
           disabled={!formState.isValid || formState.isSubmitting}
           className="flex-1"

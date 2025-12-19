@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type Plant, usePlant } from '@/api/plants';
 import { useDeletePlant } from '@/api/plants/use-delete-plant';
 import { PlantActionHub } from '@/components/plants/plant-action-hub';
+import { PlantAssessmentHistorySection } from '@/components/plants/plant-assessment-history-section';
 import { PlantDetailHeader } from '@/components/plants/plant-detail-header';
 import {
   PlantForm,
@@ -28,6 +29,7 @@ import colors from '@/components/ui/colors';
 import { ArrowRight } from '@/components/ui/icons';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
 import { haptics } from '@/lib/haptics';
+import { usePlantTasks } from '@/lib/hooks/use-plant-tasks';
 import { updatePlantFromForm } from '@/lib/plants/plant-service';
 import { syncPlantsToCloud } from '@/lib/plants/plants-sync';
 
@@ -98,13 +100,16 @@ type PlantContentSheetProps = {
   plant: Plant;
   plantId: string;
   linkedStrainSlug: string | null;
+  showAssessmentHistory: boolean;
   isSaving: boolean;
   defaultValues: PlantFormValues | undefined;
+  tasks: { id: string; title: string; type?: 'water' | 'feed' | 'other' }[];
   handleSubmit: (values: PlantFormValues) => Promise<void>;
   handleSubmitReady: (submit: () => void) => void;
   handleDelete: () => void;
   handleOpenStrain: () => void;
   handleHeaderSave: () => void;
+  handleTaskPress: (taskId: string) => void;
   insets: ReturnType<typeof useSafeAreaInsets>;
   t: ReturnType<typeof useTranslation>['t'];
 };
@@ -113,13 +118,16 @@ function PlantContentSheet({
   plant,
   plantId,
   linkedStrainSlug,
+  showAssessmentHistory,
   isSaving,
   defaultValues,
+  tasks,
   handleSubmit,
   handleSubmitReady,
   handleDelete,
   handleOpenStrain,
   handleHeaderSave,
+  handleTaskPress,
   insets,
   t,
 }: PlantContentSheetProps): React.ReactElement {
@@ -138,8 +146,18 @@ function PlantContentSheet({
 
         {/* Action Hub */}
         <View className="mt-6">
-          <PlantActionHub plantId={plantId} />
+          <PlantActionHub
+            plantId={plantId}
+            tasks={tasks}
+            onTaskPress={handleTaskPress}
+          />
         </View>
+
+        <PlantAssessmentHistorySection
+          plantId={plantId}
+          initiallyExpanded={showAssessmentHistory}
+          testID="plant-detail-assessment-history"
+        />
 
         {/* Strain Profile Link - Subtle text link style */}
         {linkedStrainSlug ? (
@@ -240,7 +258,10 @@ function usePlantSubmit(
 }
 
 export default function PlantDetailScreen(): React.ReactElement | null {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, showAssessments } = useLocalSearchParams<{
+    id: string;
+    showAssessments?: string;
+  }>();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -258,7 +279,7 @@ export default function PlantDetailScreen(): React.ReactElement | null {
   const { isSaving, handleSubmit } = usePlantSubmit(plantId, queryClient, t);
 
   const { mutate: deletePlant } = useDeletePlant({
-    onSuccess: () => router.back(),
+    onSuccess: () => router.replace('/'),
     onError: (error: Error) => {
       console.error('[DeletePlant] failed', error);
       showMessage({
@@ -268,6 +289,9 @@ export default function PlantDetailScreen(): React.ReactElement | null {
       });
     },
   });
+
+  // Fetch today's tasks for this plant
+  const { tasks } = usePlantTasks(plantId ?? '', { enabled: Boolean(plantId) });
 
   const defaultValues = React.useMemo(
     () => (plant ? buildDefaultValues(plant) : undefined),
@@ -284,7 +308,10 @@ export default function PlantDetailScreen(): React.ReactElement | null {
 
   const handleBack = React.useCallback(() => {
     haptics.selection();
-    router.back();
+    // Use replace('/') instead of back() to navigate to home
+    // since plants/ is a nested stack and back() would try to
+    // navigate within the stack rather than exit to home.
+    router.replace('/');
   }, [router]);
 
   const handleOpenStrain = React.useCallback(() => {
@@ -325,12 +352,22 @@ export default function PlantDetailScreen(): React.ReactElement | null {
     );
   }, [deletePlant, plantId, t]);
 
+  const handleTaskPress = React.useCallback(
+    (taskId: string) => {
+      haptics.selection();
+      router.push(`/calendar?taskId=${taskId}`);
+    },
+    [router]
+  );
+
+  const showAssessmentHistory = showAssessments === 'true';
+
   if (!plantId) {
     return (
       <PlantErrorView
         errorMessage={t('plants.form.invalid_id')}
         retryLabel={t('common.go_back')}
-        onRetry={() => router.back()}
+        onRetry={() => router.replace('/')}
       />
     );
   }
@@ -362,13 +399,16 @@ export default function PlantDetailScreen(): React.ReactElement | null {
         plant={plant}
         plantId={plantId}
         linkedStrainSlug={linkedStrainSlug}
+        showAssessmentHistory={showAssessmentHistory}
         isSaving={isSaving}
         defaultValues={defaultValues}
+        tasks={tasks}
         handleSubmit={handleSubmit}
         handleSubmitReady={handleSubmitReady}
         handleDelete={handleDelete}
         handleOpenStrain={handleOpenStrain}
         handleHeaderSave={handleHeaderSave}
+        handleTaskPress={handleTaskPress}
         insets={insets}
         t={t}
       />

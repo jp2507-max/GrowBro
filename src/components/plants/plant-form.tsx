@@ -656,6 +656,7 @@ function CareSection({
           placeholder={t('plants.form.height_placeholder')}
           label={t('plants.form.height_label')}
           keyboardType="numeric"
+          // Expected in cm, stored as unitless number
           testID="plant-height-input"
           chunky
         />
@@ -758,6 +759,7 @@ function buildSchema(t: (key: string) => string) {
         .string()
         .optional()
         .transform((value) => (value ? Number(value) : undefined))
+        // Allow 0 for seedlings; otherwise expect positive number (cm)
         .refine(
           (value) =>
             value === undefined || (!Number.isNaN(value) && value >= 0),

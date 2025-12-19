@@ -16,6 +16,8 @@ import type {
   PlantModel,
 } from '@/lib/watermelon-models/plant';
 
+import { createTaskEngine } from '../growbro-task-engine';
+
 type PlantUpsertInput = CreatePlantVariables;
 
 type PlantQueryOptions = {
@@ -104,25 +106,39 @@ export async function createPlantFromForm(
   const id = generatePlantId();
   const metadata = buildMetadata(input);
 
-  return database.write(async () => {
-    return collection.create((record) => {
-      record._raw.id = id;
-      record.userId = options.userId ?? undefined;
-      record.name = input.name;
-      record.stage = assignString(input.stage);
-      record.strain = assignString(input.strain);
-      record.photoperiodType = assignString(input.photoperiodType);
-      record.environment = assignString(input.environment);
-      record.geneticLean = assignString(input.geneticLean);
-      record.plantedAt = assignString(input.plantedAt);
-      record.expectedHarvestAt = assignString(input.expectedHarvestAt);
-      record.imageUrl = assignString(input.imageUrl);
-      record.notes = assignString(input.notes);
-      record.metadata = metadata;
-      record.createdAt = now;
-      record.updatedAt = now;
+  const record = await database.write(async () => {
+    return collection.create((rec) => {
+      rec._raw.id = id;
+      rec.userId = options.userId ?? undefined;
+      rec.name = input.name;
+      rec.stage = assignString(input.stage);
+      rec.strain = assignString(input.strain);
+      rec.photoperiodType = assignString(input.photoperiodType);
+      rec.environment = assignString(input.environment);
+      rec.geneticLean = assignString(input.geneticLean);
+      rec.plantedAt = assignString(input.plantedAt);
+      rec.expectedHarvestAt = assignString(input.expectedHarvestAt);
+      rec.imageUrl = assignString(input.imageUrl);
+      rec.notes = assignString(input.notes);
+      rec.metadata = metadata;
+      rec.createdAt = now;
+      rec.updatedAt = now;
     });
   });
+
+  // Non-blocking: Create GrowBro task schedules for the new plant
+  if (input.stage) {
+    try {
+      const engine = createTaskEngine();
+      await engine.ensureSchedulesForPlant(toPlant(record));
+    } catch (error) {
+      console.warn(
+        '[PlantService] Failed to create task schedules for new plant: ' + error
+      );
+    }
+  }
+
+  return record;
 }
 
 export async function updatePlantFromForm(
@@ -134,6 +150,12 @@ export async function updatePlantFromForm(
   if (!record) {
     throw new Error(`Plant ${id} not found`);
   }
+
+  // Capture previous stage for change detection
+  const previousStage = record.stage as PlantStage | undefined;
+  const newStage = input.stage as PlantStage | undefined;
+  const stageChanged =
+    input.stage !== undefined && input.stage !== previousStage;
 
   const metadata = buildMetadata(input as PlantUpsertInput);
   const now = new Date();
@@ -162,6 +184,22 @@ export async function updatePlantFromForm(
       model.updatedAt = now;
     });
   });
+
+  // Non-blocking: Handle stage change with TaskEngine
+  if (stageChanged && newStage) {
+    try {
+      const engine = createTaskEngine();
+      await engine.onStageChange(
+        { plantId: id, fromStage: previousStage ?? null, toStage: newStage },
+        toPlant(record)
+      );
+    } catch (error) {
+      console.warn(
+        '[PlantService] Failed to update task schedules on stage change:',
+        error
+      );
+    }
+  }
 
   return record;
 }

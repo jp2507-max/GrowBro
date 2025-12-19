@@ -466,7 +466,7 @@ describe('ProfileScreen Integration Tests', () => {
       const plantsCard = await screen.findByText('5');
       await user.press(plantsCard.parent!.parent!); // Press the Pressable parent
 
-      expect(mockRouter.push).toHaveBeenCalledWith('/plants');
+      expect(mockRouter.push).toHaveBeenCalledWith('/');
     });
 
     test('navigates to harvests screen when harvests stat is pressed', async () => {

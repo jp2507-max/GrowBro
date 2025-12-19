@@ -211,14 +211,6 @@ export default function TabLayout() {
               headerShown: false,
             }}
           />
-          {/* Hidden screens - not in tab bar but need navigation context */}
-          <Tabs.Screen
-            name="plants"
-            options={{
-              href: null, // Hide from tab bar
-              headerShown: false,
-            }}
-          />
         </Tabs>
       </View>
     </AnimatedScrollListProvider>

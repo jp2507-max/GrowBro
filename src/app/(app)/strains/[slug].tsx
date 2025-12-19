@@ -323,7 +323,7 @@ type StrainContentProps = {
 };
 
 const StrainContentSheet = ({ strain }: { strain: Strain }) => (
-  <View className="-mt-6 min-h-screen rounded-t-[40px] bg-white pb-20 pt-4 shadow-2xl dark:bg-neutral-900">
+  <View className="-mt-6 min-h-screen rounded-t-sheet bg-white pb-20 pt-4 shadow-2xl dark:bg-neutral-900">
     <View className="mb-4 w-full items-center">
       <View className="h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-neutral-700" />
     </View>
@@ -378,7 +378,7 @@ const FloatingNavButtons = ({
       accessibilityHint={translate('strains.detail.back_hint')}
       testID="back-button"
     >
-      <ArrowLeft color="#fff" width={24} height={24} />
+      <ArrowLeft color={colors.white} width={24} height={24} />
     </Pressable>
     <View className="flex-row gap-3">
       <FavoriteButtonConnected
@@ -395,7 +395,7 @@ const FloatingNavButtons = ({
         accessibilityHint={translate('strains.detail.share_hint')}
         testID="share-button"
       >
-        <ShareIcon color="#fff" width={24} height={24} />
+        <ShareIcon color={colors.white} width={24} height={24} />
       </Pressable>
     </View>
   </Animated.View>
@@ -410,7 +410,7 @@ const StrainScrollContent = ({ strain, scrollHandler }: StrainContentProps) => (
     scrollEventThrottle={16}
     bounces={false}
   >
-    <View className="h-[350px] justify-end px-6 pb-8">
+    <View className="h-hero justify-end px-6 pb-8">
       <View className="mb-2 flex-row gap-2">
         <View className="rounded-full bg-white/20 px-3 py-1 backdrop-blur-md">
           <Text className="text-xs font-bold uppercase tracking-wider text-white">

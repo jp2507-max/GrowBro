@@ -29,7 +29,7 @@ function parseKeyValuePairs(rule: string): Record<string, string> {
 }
 
 function parseFrequency(kv: Record<string, string>): RRuleConfig['freq'] {
-  const allowed: RRuleConfig['freq'][] = ['DAILY', 'WEEKLY'];
+  const allowed: RRuleConfig['freq'][] = ['DAILY', 'WEEKLY', 'MONTHLY'];
   const token = kv['FREQ'] as RRuleConfig['freq'];
   return allowed.includes(token) ? token : 'DAILY';
 }

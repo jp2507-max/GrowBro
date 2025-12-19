@@ -3,6 +3,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { DateTime } from 'luxon';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { ScrollView } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -251,7 +252,10 @@ export default function CreatePlantScreen(): React.ReactElement {
     if (params?.returnTo) {
       router.replace(params.returnTo);
     } else {
-      router.back();
+      // Use replace('/') instead of back() to navigate to home
+      // since plants/ is a nested stack and back() would try to
+      // navigate within the stack rather than exit to home.
+      router.replace('/');
     }
   }, [params?.returnTo, router]);
 
@@ -270,6 +274,8 @@ export default function CreatePlantScreen(): React.ReactElement {
   const handleProgressChange = React.useCallback((progress: number) => {
     setCompletion(progress);
   }, []);
+
+  const scrollContentStyle = React.useMemo(() => ({ paddingBottom: 100 }), []);
 
   return (
     <View className="flex-1 bg-primary-900 dark:bg-primary-800">
@@ -318,13 +324,21 @@ export default function CreatePlantScreen(): React.ReactElement {
           {/* Handle Bar */}
           <View className="mb-2 mt-4 h-1.5 w-12 self-center rounded-full bg-neutral-200" />
 
-          <PlantForm
-            key={formKey}
-            onSubmit={handleSubmit}
-            isSubmitting={isSaving}
-            onSubmitReady={handleSubmitReady}
-            onProgressChange={handleProgressChange}
-          />
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={scrollContentStyle}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <PlantForm
+              key={formKey}
+              onSubmit={handleSubmit}
+              isSubmitting={isSaving}
+              onSubmitReady={handleSubmitReady}
+              onProgressChange={handleProgressChange}
+              renderAsFragment
+            />
+          </ScrollView>
 
           {/* Floating CTA Button */}
           <View

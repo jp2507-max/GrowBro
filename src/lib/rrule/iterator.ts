@@ -24,6 +24,11 @@ function nextWeekly(current: Date, interval: number, zone: string): Date {
   return addDaysLocal(current, interval * 7, zone);
 }
 
+function nextMonthly(current: Date, interval: number, zone: string): Date {
+  const dt = DateTime.fromJSDate(current, { zone });
+  return dt.plus({ months: interval }).toJSDate();
+}
+
 function enumerateWeeklyByDays(
   anchor: Date,
   byweekday: number[],
@@ -115,6 +120,29 @@ function* processWeekly(
   }
 }
 
+function* processMonthly(
+  config: RRuleConfig,
+  overrides: OccurrenceOverride[],
+  context: { range: Range; zone: string; dtstartLocal: DateTime }
+) {
+  const { range, zone } = context;
+  let produced = 0;
+  let cursorLocal = context.dtstartLocal;
+
+  while (!shouldStopIteration(config, { cursorLocal, range, produced })) {
+    const local = cursorLocal.toJSDate();
+    produced++;
+    if (isWithinRange(local, range)) {
+      const overridden = applyOverrides(local, overrides, zone);
+      if (overridden) yield overridden;
+    }
+    cursorLocal = DateTime.fromJSDate(
+      nextMonthly(local, config.interval, zone),
+      { zone }
+    );
+  }
+}
+
 /**
  * Determines whether the iteration should stop based on the RRule configuration and current context.
  * Checks for range end, count limit, and until date conditions.
@@ -165,6 +193,8 @@ export function* buildIterator(params: {
     yield* processDaily(config, overrides, { range, zone, dtstartLocal });
   } else if (config.freq === 'WEEKLY') {
     yield* processWeekly(config, overrides, { range, zone, dtstartLocal });
+  } else if (config.freq === 'MONTHLY') {
+    yield* processMonthly(config, overrides, { range, zone, dtstartLocal });
   }
 }
 

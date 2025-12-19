@@ -8,8 +8,12 @@ export function validate(config: RRuleParse): ValidationResult {
     errors.push('dtstart must be a valid Date');
   }
 
-  if (config.freq !== 'DAILY' && config.freq !== 'WEEKLY') {
-    errors.push('freq must be DAILY or WEEKLY');
+  if (
+    config.freq !== 'DAILY' &&
+    config.freq !== 'WEEKLY' &&
+    config.freq !== 'MONTHLY'
+  ) {
+    errors.push('freq must be DAILY, WEEKLY, or MONTHLY');
   }
 
   if (
