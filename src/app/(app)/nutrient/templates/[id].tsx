@@ -119,7 +119,7 @@ export default function TemplateDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-white dark:bg-charcoal-950">
+      <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
         <View className="flex-1 items-center justify-center">
           <Text className="text-neutral-600 dark:text-neutral-400">
             {t('common.loading')}
@@ -130,7 +130,7 @@ export default function TemplateDetailScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-charcoal-950">
+    <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <ScrollView
         className="flex-1"
         contentContainerClassName="p-4"

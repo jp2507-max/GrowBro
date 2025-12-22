@@ -160,17 +160,17 @@ function ProfileFormFields({
       />
 
       <View className="my-4">
-        <Text className="mb-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+        <Text className="mb-2 text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
           {t('profile.privacy.title')}
         </Text>
 
         <Pressable
           accessibilityRole="switch"
           accessibilityState={{ checked: showProfileToCommunity }}
-          className="mb-3 flex-row items-center justify-between rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800"
+          className="bg-input-bg mb-3 flex-row items-center justify-between rounded-xl p-4"
           onPress={() => setShowProfileToCommunity(!showProfileToCommunity)}
         >
-          <Text className="flex-1 text-neutral-900 dark:text-neutral-100">
+          <Text className="text-text-primary flex-1">
             {t('profile.privacy.showProfile')}
           </Text>
           <View
@@ -181,10 +181,10 @@ function ProfileFormFields({
         <Pressable
           accessibilityRole="switch"
           accessibilityState={{ checked: allowDirectMessages }}
-          className="flex-row items-center justify-between rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800"
+          className="bg-input-bg flex-row items-center justify-between rounded-xl p-4"
           onPress={() => setAllowDirectMessages(!allowDirectMessages)}
         >
-          <Text className="flex-1 text-neutral-900 dark:text-neutral-100">
+          <Text className="text-text-primary flex-1">
             {t('profile.privacy.allowDMs')}
           </Text>
           <View
@@ -216,7 +216,7 @@ function StatisticsPanel({
 }) {
   return (
     <View className="my-4">
-      <Text className="mb-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+      <Text className="text-text-primary mb-2 text-lg font-semibold">
         {t('profile.statistics.title')}
       </Text>
 
@@ -226,7 +226,7 @@ function StatisticsPanel({
         <View className="flex-row flex-wrap gap-3">
           <Pressable
             accessibilityRole="button"
-            className="flex-1 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800"
+            className="bg-card flex-1 rounded-xl p-4"
             onPress={navigateToPlants}
           >
             <Text className="text-2xl font-bold text-primary-600">
@@ -239,31 +239,31 @@ function StatisticsPanel({
 
           <Pressable
             accessibilityRole="button"
-            className="flex-1 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800"
+            className="bg-card flex-1 rounded-xl p-4"
             onPress={navigateToHarvests}
           >
             <Text className="text-2xl font-bold text-primary-600">
               {statistics.harvestsCount}
             </Text>
-            <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+            <Text className="text-text-secondary text-sm">
               {t('profile.statistics.harvests')}
             </Text>
           </Pressable>
 
-          <View className="flex-1 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800">
+          <View className="bg-card flex-1 rounded-xl p-4">
             <Text className="text-2xl font-bold text-primary-600">
               {statistics.postsCount}
             </Text>
-            <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+            <Text className="text-text-secondary text-sm">
               {t('profile.statistics.posts')}
             </Text>
           </View>
 
-          <View className="flex-1 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800">
+          <View className="bg-card flex-1 rounded-xl p-4">
             <Text className="text-2xl font-bold text-primary-600">
               {statistics.likesReceived}
             </Text>
-            <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+            <Text className="text-text-secondary text-sm">
               {t('profile.statistics.likes')}
             </Text>
           </View>
@@ -271,7 +271,7 @@ function StatisticsPanel({
       )}
 
       {statistics.isSyncing && (
-        <Text className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
+        <Text className="text-text-secondary mt-2 text-xs">
           {t('profile.statistics.syncing')}
         </Text>
       )}
@@ -551,7 +551,7 @@ export default function ProfileScreen() {
       <FocusAwareStatusBar />
       <Animated.ScrollView
         entering={withRM(FadeIn.duration(motion.dur.md))}
-        className="flex-1 bg-white dark:bg-charcoal-950"
+        className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
       >
         <View className="p-4">
           {/* Avatar Section - Requirements: 9.4, 9.5 */}

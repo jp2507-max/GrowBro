@@ -301,7 +301,7 @@ const FilterModalContent = ({
     <>
       {/* Race Section */}
       <View className="mb-6">
-        <Text className="mb-3 text-base font-semibold text-text-primary">
+        <Text className="mb-3 text-base font-semibold text-charcoal-900 dark:text-neutral-100">
           {translate('strains.filters.race_label')}
         </Text>
         <View className="flex-row flex-wrap gap-2">
@@ -324,7 +324,7 @@ const FilterModalContent = ({
 
       {/* THC Level Section */}
       <View className="mb-6">
-        <Text className="mb-3 text-base font-semibold text-text-primary">
+        <Text className="text-text-primary mb-3 text-base font-semibold">
           {translate('strains.filters.thc_label')}
         </Text>
         <View className="flex-row flex-wrap gap-2">
@@ -343,7 +343,7 @@ const FilterModalContent = ({
 
       {/* CBD Level Section */}
       <View className="mb-6">
-        <Text className="mb-3 text-base font-semibold text-text-primary">
+        <Text className="text-text-primary mb-3 text-base font-semibold">
           {translate('strains.filters.cbd_label')}
         </Text>
         <View className="flex-row flex-wrap gap-2">
@@ -362,7 +362,7 @@ const FilterModalContent = ({
 
       {/* Difficulty Section */}
       <View className="mb-6">
-        <Text className="mb-3 text-base font-semibold text-text-primary">
+        <Text className="text-text-primary mb-3 text-base font-semibold">
           {translate('strains.filters.difficulty_label')}
         </Text>
         <View className="flex-row flex-wrap gap-2">
@@ -385,7 +385,7 @@ const FilterModalContent = ({
 
       {/* Effects Section */}
       <View className="mb-6">
-        <Text className="mb-3 text-base font-semibold text-text-primary">
+        <Text className="text-text-primary mb-3 text-base font-semibold">
           {translate('strains.filters.effects_label')}
         </Text>
         <CheckboxList
@@ -400,7 +400,7 @@ const FilterModalContent = ({
 
       {/* Flavors Section */}
       <View className="mb-6">
-        <Text className="mb-3 text-base font-semibold text-text-primary">
+        <Text className="text-text-primary mb-3 text-base font-semibold">
           {translate('strains.filters.flavors_label')}
         </Text>
         <CheckboxList

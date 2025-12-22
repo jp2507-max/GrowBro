@@ -127,7 +127,7 @@ type HelpfulStepProps = {
 const HelpfulStep: React.FC<HelpfulStepProps> = ({ t, onHelpful }) => {
   return (
     <View className="gap-4">
-      <Text className="text-lg font-semibold text-text-primary">
+      <Text className="text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
         {t('assessment.feedback.helpful_question')}
       </Text>
       <View className="flex-row gap-3">
@@ -162,7 +162,7 @@ type ResolvedStepProps = {
 function ResolvedStep({ t, onResolved }: ResolvedStepProps) {
   return (
     <View className="gap-4">
-      <Text className="text-lg font-semibold text-text-primary">
+      <Text className="text-text-primary text-lg font-semibold">
         {t('assessment.feedback.resolved_question')}
       </Text>
       <View className="gap-3">
@@ -211,10 +211,10 @@ function NotesStep({
 }: NotesStepProps) {
   return (
     <View className="gap-4">
-      <Text className="text-lg font-semibold text-text-primary">
+      <Text className="text-text-primary text-lg font-semibold">
         {t('assessment.feedback.notes_question')}
       </Text>
-      <Text className="text-sm text-text-secondary">
+      <Text className="text-sm text-neutral-600 dark:text-neutral-400">
         {t('assessment.feedback.notes_description')}
       </Text>
       <Input

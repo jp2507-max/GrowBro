@@ -83,16 +83,16 @@ export function AssessmentHistoryCard({
       testID={testID}
       className="active:opacity-70"
     >
-      <View className="rounded-lg border border-border bg-card p-3">
+      <View className="bg-card rounded-lg border border-neutral-200 p-3 dark:border-charcoal-700">
         <View className="flex-row items-start justify-between">
           <View className="flex-1">
-            <Text className="text-base font-semibold text-text-primary">
+            <Text className="text-base font-semibold text-charcoal-900 dark:text-neutral-100">
               {assessment.predictedClass
                 ? formatClassName(assessment.predictedClass)
                 : 'Assessment in progress'}
             </Text>
             {confidencePercent !== null && (
-              <Text className="mt-0.5 text-sm text-text-secondary">
+              <Text className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-400">
                 {confidencePercent}% confidence
               </Text>
             )}
@@ -105,8 +105,8 @@ export function AssessmentHistoryCard({
         </View>
 
         <View className="mt-2 flex-row items-center justify-between">
-          <Text className="text-xs text-text-secondary">{relativeTime}</Text>
-          <Text className="text-xs text-text-secondary">
+          <Text className="text-text-secondary text-xs">{relativeTime}</Text>
+          <Text className="text-text-secondary text-xs">
             {assessment.inferenceMode === 'device' ? '📱 Device' : '☁️ Cloud'}
           </Text>
         </View>

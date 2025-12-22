@@ -99,7 +99,10 @@ export class TaskEngine {
     const existingSeries = await getSeriesCollection()
       .query(
         Q.where('plant_id', plant.id),
-        Q.where('origin', ORIGIN_GROWBRO),
+        Q.or(
+          Q.where('origin', ORIGIN_GROWBRO),
+          Q.where('origin', null) // Legacy series created before v36
+        ),
         Q.where('deleted_at', null)
       )
       .fetch();
@@ -172,11 +175,14 @@ export class TaskEngine {
     const seriesCollection = getSeriesCollection();
     const tasksCollection = getTasksCollection();
 
-    // Find all GrowBro series for this plant
+    // Find all GrowBro series for this plant (including legacy series with null origin)
     const seriesToDelete = await seriesCollection
       .query(
         Q.where('plant_id', plantId),
-        Q.where('origin', ORIGIN_GROWBRO),
+        Q.or(
+          Q.where('origin', ORIGIN_GROWBRO),
+          Q.where('origin', null) // Legacy series created before v36
+        ),
         Q.where('deleted_at', null)
       )
       .fetch();

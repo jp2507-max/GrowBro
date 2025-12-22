@@ -90,10 +90,10 @@ export default function TemplateListScreen(): React.JSX.Element {
     <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <View className="flex-1">
         <View className="px-4 py-3">
-          <Text className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+          <Text className="text-2xl font-bold text-charcoal-900 dark:text-neutral-100">
             {t('nutrient.feedingTemplates')}
           </Text>
-          <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+          <Text className="text-text-secondary mt-1 text-sm">
             {t('nutrient.templatesDescription')}
           </Text>
         </View>
@@ -117,7 +117,7 @@ export default function TemplateListScreen(): React.JSX.Element {
           />
         )}
 
-        <View className="border-t border-neutral-200 p-4 dark:border-charcoal-800">
+        <View className="border-t border-neutral-200 p-4 dark:border-charcoal-700">
           <Button
             label={t('nutrient.createTemplate')}
             onPress={handleCreateNew}

@@ -171,10 +171,10 @@ function ErrorState({
 }): React.ReactElement {
   return (
     <View className="flex-1 items-center justify-center gap-3 px-8">
-      <Text className="text-center text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+      <Text className="text-center text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
         {translate('notifications.inbox.error.title')}
       </Text>
-      <Text className="text-center text-sm text-neutral-600 dark:text-neutral-300">
+      <Text className="text-center text-sm text-neutral-600 dark:text-neutral-400">
         {translate('notifications.inbox.error.body')}
       </Text>
       <Pressable
@@ -207,10 +207,10 @@ function EmptyState({
 
   return (
     <View className="flex-1 items-center justify-center gap-2 px-8">
-      <Text className="text-center text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+      <Text className="text-text-primary text-center text-lg font-semibold">
         {translate(titleKey)}
       </Text>
-      <Text className="text-center text-sm text-neutral-600 dark:text-neutral-300">
+      <Text className="text-text-secondary text-center text-sm">
         {translate(bodyKey)}
       </Text>
     </View>

@@ -18,7 +18,7 @@ function TemplateHeader() {
   const { t } = useTranslation();
   return (
     <View className="px-4 py-6">
-      <Text className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+      <Text className="text-3xl font-bold text-charcoal-900 dark:text-neutral-100">
         {t('playbooks.communityTemplates')}
       </Text>
       <Text className="mt-2 text-base text-neutral-600 dark:text-neutral-400">
@@ -31,9 +31,7 @@ function TemplateHeader() {
 function EmptyState({ message }: { message: string }) {
   return (
     <View className="flex-1 items-center justify-center px-4">
-      <Text className="text-center text-neutral-600 dark:text-neutral-400">
-        {message}
-      </Text>
+      <Text className="text-text-secondary text-center">{message}</Text>
     </View>
   );
 }
@@ -41,7 +39,7 @@ function EmptyState({ message }: { message: string }) {
 function LoadingState({ message }: { message: string }) {
   return (
     <View className="flex-1 items-center justify-center">
-      <Text className="text-neutral-600 dark:text-neutral-400">{message}</Text>
+      <Text className="text-text-secondary">{message}</Text>
     </View>
   );
 }

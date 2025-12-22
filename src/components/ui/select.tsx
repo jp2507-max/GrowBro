@@ -18,8 +18,8 @@ import type { SvgProps } from 'react-native-svg';
 import Svg, { Path } from 'react-native-svg';
 import { tv } from 'tailwind-variants';
 
+import colors from '@/components/ui/colors';
 import { CaretDown } from '@/components/ui/icons';
-import { themeRoles } from '@/lib/theme-tokens';
 
 import type { InputControllerType } from './input';
 import { Modal, useModal } from './modal';
@@ -29,10 +29,10 @@ const selectTv = tv({
   slots: {
     container: 'mb-4',
     label:
-      'mb-2 ml-1 text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500',
+      'text-text-tertiary mb-2 ml-1 text-xs font-bold uppercase tracking-wider',
     input:
-      'mt-0 flex-row items-center justify-center rounded-2xl border-2 border-transparent bg-neutral-100 px-5 py-4 dark:bg-neutral-800',
-    inputValue: 'text-base font-medium text-neutral-800 dark:text-neutral-100',
+      'border-input-border bg-input-bg mt-0 flex-row items-center justify-center rounded-2xl border-2 px-5 py-4',
+    inputValue: 'text-base font-medium text-charcoal-900 dark:text-neutral-100',
   },
 
   variants: {
@@ -50,13 +50,12 @@ const selectTv = tv({
     },
     disabled: {
       true: {
-        input: 'bg-neutral-200 dark:bg-neutral-700',
+        input: 'opacity-60',
       },
     },
     chunky: {
       true: {
-        input:
-          'rounded-2xl border-2 border-transparent bg-neutral-100 px-5 py-4 dark:bg-neutral-800',
+        input: 'border-input-border bg-input-bg rounded-2xl border-2 px-5 py-4',
       },
     },
   },
@@ -100,18 +99,18 @@ export const Options = React.forwardRef<BottomSheetModal, OptionsProps>(
     const isDark = colorScheme === 'dark';
     const { t } = useTranslation();
 
-    const backgroundStyle = React.useMemo(() => {
-      const mode = isDark ? 'dark' : 'light';
-      return {
-        backgroundColor: themeRoles.surface[mode].card,
+    const backgroundStyle = React.useMemo(
+      () => ({
+        backgroundColor: isDark ? colors.darkSurface.card : colors.white,
         borderTopLeftRadius: 35,
         borderTopRightRadius: 35,
-      };
-    }, [isDark]);
+      }),
+      [isDark]
+    );
 
     const handleStyle = React.useMemo(
       () => ({
-        backgroundColor: isDark ? '#3F524B' : '#D4D4D4',
+        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#D4D4D4',
         width: 48,
         height: 6,
         borderRadius: 3,
@@ -218,7 +217,7 @@ const Option = React.memo(
               className={`mr-3 size-8 items-center justify-center rounded-full ${
                 selected
                   ? 'bg-white dark:bg-neutral-800'
-                  : 'bg-neutral-100 dark:bg-neutral-800'
+                  : 'bg-neutral-100 dark:bg-white/10'
               }`}
             >
               <Text className="text-base">{icon}</Text>
@@ -255,6 +254,21 @@ interface ControlledSelectProps<T extends FieldValues>
   extends SelectProps,
     InputControllerType<T> {}
 
+/** Hook to compute the selected option's label */
+function useSelectedLabel(
+  value: string | number | undefined,
+  options: OptionType[],
+  placeholder: string
+): string {
+  return React.useMemo(
+    () =>
+      value !== undefined
+        ? (options?.find((opt) => opt.value === value)?.label ?? placeholder)
+        : placeholder,
+    [value, options, placeholder]
+  );
+}
+
 export const Select = (props: SelectProps) => {
   const {
     label,
@@ -274,12 +288,12 @@ export const Select = (props: SelectProps) => {
 
   const handleDismiss = React.useCallback(() => {
     setIsOpen(false);
-    // Trigger onSelect after modal animation fully completes to avoid race condition
     if (pendingSelectionRef.current !== null) {
       onSelect?.(pendingSelectionRef.current);
       pendingSelectionRef.current = null;
     }
   }, [onSelect]);
+
   const openModal = React.useCallback(() => {
     if (disabled) return;
     setIsOpen(true);
@@ -288,8 +302,6 @@ export const Select = (props: SelectProps) => {
 
   const onSelectOption = React.useCallback(
     (option: OptionType) => {
-      // Store selection and dismiss - onSelect will be called in handleDismiss
-      // after the modal animation fully completes
       pendingSelectionRef.current = option.value;
       modal.dismiss();
     },
@@ -298,21 +310,16 @@ export const Select = (props: SelectProps) => {
 
   const styles = React.useMemo(
     () =>
-      selectTv({
-        error: Boolean(error),
-        disabled,
-        chunky: Boolean(chunky),
-      }),
+      selectTv({ error: Boolean(error), disabled, chunky: Boolean(chunky) }),
     [error, disabled, chunky]
   );
 
-  const textValue = React.useMemo(
-    () =>
-      value !== undefined
-        ? (options?.filter((t) => t.value === value)?.[0]?.label ?? placeholder)
-        : placeholder,
-    [value, options, placeholder]
-  );
+  const textValue = useSelectedLabel(value, options, placeholder);
+  const accessibilityHint = disabled
+    ? undefined
+    : t('accessibility.common.select_open_hint', {
+        label: label ?? placeholder,
+      });
 
   return (
     <>
@@ -331,13 +338,7 @@ export const Select = (props: SelectProps) => {
           onPress={openModal}
           accessibilityRole="button"
           accessibilityLabel={label ?? placeholder}
-          accessibilityHint={
-            disabled
-              ? undefined
-              : t('accessibility.common.select_open_hint', {
-                  label: label ?? placeholder,
-                })
-          }
+          accessibilityHint={accessibilityHint}
           accessibilityState={{ disabled, expanded: isOpen }}
           testID={testID ? `${testID}-trigger` : undefined}
         >

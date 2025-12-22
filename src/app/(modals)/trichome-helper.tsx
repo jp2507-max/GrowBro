@@ -60,21 +60,21 @@ function LatestAssessmentCard({
   const { t } = useTranslation();
 
   return (
-    <View className="mt-4 rounded-lg bg-white p-4 dark:bg-charcoal-900">
-      <Text className="mb-2 text-sm font-semibold text-charcoal-950 dark:text-neutral-100">
+    <View className="bg-card mt-4 rounded-lg p-4">
+      <Text className="mb-2 text-sm font-semibold text-charcoal-900 dark:text-neutral-100">
         {t('trichome.helper.latestAssessmentTitle')}
       </Text>
       <Text className="text-xs text-neutral-600 dark:text-neutral-400">
         {new Date(assessment.createdAt).toLocaleDateString()}
       </Text>
       <View className="mt-2 flex-row justify-between">
-        <Text className="text-xs text-neutral-700 dark:text-neutral-300">
+        <Text className="text-text-secondary text-xs">
           {t('trichome.helper.clearLabelShort')} {assessment.clearPercent || 0}%
         </Text>
-        <Text className="text-xs text-neutral-700 dark:text-neutral-300">
+        <Text className="text-text-secondary text-xs">
           {t('trichome.helper.milkyLabelShort')} {assessment.milkyPercent || 0}%
         </Text>
-        <Text className="text-xs text-neutral-700 dark:text-neutral-300">
+        <Text className="text-text-secondary text-xs">
           {t('trichome.helper.amberLabelShort')} {assessment.amberPercent || 0}%
         </Text>
       </View>
@@ -97,7 +97,7 @@ function SuggestionsSection({
 
   return (
     <View className="mb-6">
-      <Text className="mb-3 text-lg font-semibold text-charcoal-950 dark:text-neutral-100">
+      <Text className="text-text-primary mb-3 text-lg font-semibold">
         {t('trichome.helper.harvestSuggestionsTitle')}
       </Text>
       {suggestions.map((suggestion, index) => (
@@ -266,7 +266,7 @@ function ModalHeader({ onClose }: { onClose: () => void }) {
 
   return (
     <View className="flex-row items-center justify-between">
-      <Text className="text-xl font-semibold text-charcoal-950 dark:text-neutral-100">
+      <Text className="text-text-primary text-xl font-semibold">
         {t('trichome.helper.header')}
       </Text>
       <Button
@@ -347,8 +347,8 @@ function TabContent({
   if (activeTab === 'guide') {
     if (!guide) {
       return (
-        <View className="rounded-lg bg-white p-4 dark:bg-charcoal-900">
-          <Text className="text-center text-neutral-600 dark:text-neutral-400">
+        <View className="bg-card rounded-lg p-4">
+          <Text className="text-text-secondary text-center">
             {t('trichome.helper.loadingGuide')}
           </Text>
         </View>
@@ -461,7 +461,7 @@ export default function TrichomeHelperModal() {
 
   return (
     <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
-      <View className="border-b border-neutral-200 bg-white px-4 py-3 dark:border-charcoal-700 dark:bg-charcoal-900">
+      <View className="bg-card border-b border-neutral-200 px-4 py-3 dark:border-charcoal-700">
         <ModalHeader onClose={() => router.back()} />
         <TabBar
           activeTab={activeTab}
@@ -484,8 +484,8 @@ export default function TrichomeHelperModal() {
         />
       </ScrollView>
 
-      <View className="border-t border-neutral-200 bg-white px-4 py-3 dark:border-charcoal-700 dark:bg-charcoal-900">
-        <Text className="text-center text-xs italic text-neutral-600 dark:text-neutral-400">
+      <View className="border-border bg-card border-t px-4 py-3">
+        <Text className="text-text-secondary text-center text-xs italic">
           {t('trichome.helper.footerDisclaimer')}
         </Text>
       </View>

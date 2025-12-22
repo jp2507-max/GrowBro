@@ -34,7 +34,7 @@ export function ProfileStatistics({
 
   return (
     <View className="my-4">
-      <Text className="mb-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+      <Text className="mb-2 text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
         {t('profile.statistics.title')}
       </Text>
 
@@ -44,7 +44,7 @@ export function ProfileStatistics({
         <View className="flex-row flex-wrap gap-3">
           <Pressable
             accessibilityRole="button"
-            className="flex-1 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800"
+            className="bg-card flex-1 rounded-xl p-4"
             onPress={onPlantsPress}
           >
             <Text className="text-2xl font-bold text-primary-600">
@@ -57,31 +57,31 @@ export function ProfileStatistics({
 
           <Pressable
             accessibilityRole="button"
-            className="flex-1 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800"
+            className="bg-card flex-1 rounded-xl p-4"
             onPress={onHarvestsPress}
           >
             <Text className="text-2xl font-bold text-primary-600">
               {harvestsCount}
             </Text>
-            <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+            <Text className="text-text-secondary text-sm">
               {t('profile.statistics.harvests')}
             </Text>
           </Pressable>
 
-          <View className="flex-1 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800">
+          <View className="bg-card flex-1 rounded-xl p-4">
             <Text className="text-2xl font-bold text-primary-600">
               {postsCount}
             </Text>
-            <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+            <Text className="text-text-secondary text-sm">
               {t('profile.statistics.posts')}
             </Text>
           </View>
 
-          <View className="flex-1 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800">
+          <View className="bg-card flex-1 rounded-xl p-4">
             <Text className="text-2xl font-bold text-primary-600">
               {likesReceived}
             </Text>
-            <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+            <Text className="text-text-secondary text-sm">
               {t('profile.statistics.likes')}
             </Text>
           </View>
@@ -89,7 +89,7 @@ export function ProfileStatistics({
       )}
 
       {isSyncing && (
-        <Text className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
+        <Text className="text-text-secondary mt-2 text-xs">
           {t('profile.statistics.syncing')}
         </Text>
       )}

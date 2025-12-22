@@ -276,7 +276,7 @@ type ErrorStateProps = {
 
 const StrainErrorState = ({ onBack, onRetry, topInset }: ErrorStateProps) => (
   <View
-    className="flex-1 bg-white dark:bg-neutral-950"
+    className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
     testID="strain-detail-error"
   >
     <View
@@ -287,7 +287,7 @@ const StrainErrorState = ({ onBack, onRetry, topInset }: ErrorStateProps) => (
         accessibilityHint={translate('strains.detail.back_hint')}
         accessibilityLabel={translate('accessibility.common.go_back')}
         accessibilityRole="button"
-        className="size-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white"
+        className="bg-input-bg size-10 items-center justify-center rounded-full text-charcoal-900 dark:text-neutral-100"
         onPress={onBack}
         testID="back-button"
       >
@@ -305,7 +305,7 @@ const StrainErrorState = ({ onBack, onRetry, topInset }: ErrorStateProps) => (
 
 const InvalidIdState = ({ onBack }: { onBack: () => void }) => (
   <View
-    className="flex-1 bg-white dark:bg-neutral-950"
+    className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
     testID="strain-detail-invalid"
   >
     <ListErrorState
@@ -323,9 +323,9 @@ type StrainContentProps = {
 };
 
 const StrainContentSheet = ({ strain }: { strain: Strain }) => (
-  <View className="-mt-6 min-h-screen rounded-t-sheet bg-white pb-20 pt-4 shadow-2xl dark:bg-neutral-900">
+  <View className="bg-sheet -mt-6 min-h-screen rounded-t-sheet pb-20 pt-4 shadow-2xl">
     <View className="mb-4 w-full items-center">
-      <View className="h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+      <View className="bg-sheet-handle h-1.5 w-12 rounded-full" />
     </View>
     <PremiumTagsRow strain={strain} />
     <Animated.View entering={FadeIn.delay(200).springify()}>
@@ -520,7 +520,7 @@ export default function StrainDetailsScreen() {
 
   return (
     <View
-      className="relative flex-1 bg-white dark:bg-neutral-950"
+      className="relative flex-1 bg-neutral-50 dark:bg-charcoal-950"
       testID="strain-detail-screen"
     >
       {/* --- 1. FIXED BACKGROUND HEADER (Absolute) --- */}

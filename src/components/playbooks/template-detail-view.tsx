@@ -22,7 +22,7 @@ function TemplateHeader({ template }: { template: CommunityTemplate }) {
   const { t } = useTranslation();
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-2xl font-bold text-text-primary">
+      <Text className="mb-2 text-2xl font-bold text-charcoal-900 dark:text-neutral-100">
         {template.name}
       </Text>
       <View className="flex-row items-center gap-2">
@@ -31,7 +31,7 @@ function TemplateHeader({ template }: { template: CommunityTemplate }) {
             {template.setup.replace(/_/g, ' ').toUpperCase()}
           </Text>
         </View>
-        <Text className="text-sm text-text-secondary">
+        <Text className="text-sm text-neutral-600 dark:text-neutral-400">
           {t('playbooks.templates.detail.authorPrefix')} {template.authorHandle}
         </Text>
       </View>
@@ -44,27 +44,27 @@ function TemplateStats({ template }: { template: CommunityTemplate }) {
   const { t } = useTranslation();
   return (
     <View className="mb-4 flex-row gap-3">
-      <View className="flex-1 rounded-lg bg-card p-3">
-        <Text className="text-xs text-text-secondary">
+      <View className="bg-card flex-1 rounded-lg p-3">
+        <Text className="text-text-secondary text-xs">
           {t('playbooks.templates.detail.duration')}
         </Text>
-        <Text className="text-lg font-semibold text-text-primary">
+        <Text className="text-text-primary text-lg font-semibold">
           {template.totalWeeks || 0} weeks
         </Text>
       </View>
-      <View className="flex-1 rounded-lg bg-card p-3">
-        <Text className="text-xs text-text-secondary">
+      <View className="bg-card flex-1 rounded-lg p-3">
+        <Text className="text-text-secondary text-xs">
           {t('playbooks.templates.detail.tasks')}
         </Text>
-        <Text className="text-lg font-semibold text-text-primary">
+        <Text className="text-text-primary text-lg font-semibold">
           {template.taskCount}
         </Text>
       </View>
-      <View className="flex-1 rounded-lg bg-card p-3">
-        <Text className="text-xs text-text-secondary">
+      <View className="bg-card flex-1 rounded-lg p-3">
+        <Text className="text-text-secondary text-xs">
           {t('playbooks.templates.detail.adopted')}
         </Text>
-        <Text className="text-lg font-semibold text-text-primary">
+        <Text className="text-text-primary text-lg font-semibold">
           {template.adoptionCount}
         </Text>
       </View>
@@ -84,17 +84,17 @@ function TemplateRating({
   if (!template.ratingAverage) return null;
 
   return (
-    <View className="mb-4 rounded-lg bg-card p-3">
+    <View className="bg-card mb-4 rounded-lg p-3">
       <View className="flex-row items-center justify-between">
         <View>
-          <Text className="text-xs text-text-secondary">
+          <Text className="text-text-secondary text-xs">
             {t('playbooks.templates.detail.communityRating')}
           </Text>
           <View className="flex-row items-center gap-2">
-            <Text className="text-2xl font-bold text-text-primary">
+            <Text className="text-text-primary text-2xl font-bold">
               {template.ratingAverage.toFixed(1)}
             </Text>
-            <Text className="text-sm text-text-secondary">
+            <Text className="text-text-secondary text-sm">
               ⭐ ({template.ratingCount}{' '}
               {t('playbooks.templates.detail.ratings')})
             </Text>
@@ -119,7 +119,7 @@ function TemplateLicense({ license }: { license: string }) {
   // Shows the template's license information with educational attribution notice
   const { t } = useTranslation();
   return (
-    <View className="dark:bg-primary-950 mb-4 rounded-lg bg-primary-50 p-3">
+    <View className="mb-4 rounded-lg bg-primary-50 p-3 dark:bg-primary-950">
       <Text className="mb-1 text-xs font-medium text-primary-700 dark:text-primary-300">
         {t('playbooks.templates.detail.licensePrefix')} {license}
       </Text>
@@ -135,13 +135,13 @@ function TemplatePhases({ phases }: { phases: string[] }) {
   const { t } = useTranslation();
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-lg font-semibold text-text-primary">
+      <Text className="text-text-primary mb-2 text-lg font-semibold">
         {t('playbooks.templates.detail.growthPhases')}
       </Text>
       <View className="flex-row flex-wrap gap-2">
         {phases.map((phase) => (
-          <View key={phase} className="rounded-full bg-card px-3 py-1">
-            <Text className="text-sm capitalize text-text-secondary">
+          <View key={phase} className="bg-card rounded-full px-3 py-1">
+            <Text className="text-text-secondary text-sm capitalize">
               {phase}
             </Text>
           </View>
@@ -156,27 +156,27 @@ function TemplateStepsPreview({ template }: { template: CommunityTemplate }) {
   const { t } = useTranslation();
   return (
     <View className="mb-6">
-      <Text className="mb-2 text-lg font-semibold text-text-primary">
+      <Text className="text-text-primary mb-2 text-lg font-semibold">
         {t('playbooks.templates.detail.tasksPreview', {
           total: template.steps.length,
         })}
       </Text>
-      <View className="rounded-lg bg-card p-3">
+      <View className="bg-card rounded-lg p-3">
         {template.steps.slice(0, 5).map((step) => (
           <View
             key={step.id}
-            className="mb-2 border-b border-border pb-2 last:mb-0 last:border-b-0 last:pb-0"
+            className="mb-2 border-b border-neutral-200 pb-2 last:mb-0 last:border-b-0 last:pb-0 dark:border-charcoal-700"
           >
-            <Text className="text-sm font-medium text-text-primary">
+            <Text className="text-text-primary text-sm font-medium">
               {step.title}
             </Text>
-            <Text className="text-xs text-text-secondary">
+            <Text className="text-text-secondary text-xs">
               Day {step.relativeDay} • {step.phase} • {step.taskType}
             </Text>
           </View>
         ))}
         {template.steps.length > 5 && (
-          <Text className="mt-2 text-xs text-text-secondary">
+          <Text className="text-text-secondary mt-2 text-xs">
             {t('playbooks.templates.detail.moreTasks', {
               count: template.steps.length - 5,
             })}
@@ -195,13 +195,13 @@ export function TemplateDetailView({
   // Main component that renders the complete template detail view with all sections
   const { t } = useTranslation();
   return (
-    <ScrollView className="flex-1 bg-background">
+    <ScrollView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <View className="p-4">
         <TemplateHeader template={template} />
 
         {template.description && (
-          <View className="mb-4 rounded-lg bg-card p-3">
-            <Text className="text-sm text-text-secondary">
+          <View className="bg-card mb-4 rounded-lg p-3">
+            <Text className="text-text-secondary text-sm">
               {template.description}
             </Text>
           </View>
@@ -223,7 +223,7 @@ export function TemplateDetailView({
           </Text>
         </Button>
 
-        <Text className="mt-2 text-center text-xs text-text-secondary">
+        <Text className="text-text-secondary mt-2 text-center text-xs">
           {t('playbooks.templates.detail.adoptDescription')}
         </Text>
       </View>

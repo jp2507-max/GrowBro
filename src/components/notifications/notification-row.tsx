@@ -36,7 +36,7 @@ export const NotificationRow = React.memo(function NotificationRow({
   });
   const cardClasses = isUnread
     ? 'border-primary-400/60 bg-primary-50/70 dark:border-primary-500/60 dark:bg-primary-500/15'
-    : 'border-border bg-card';
+    : 'border-neutral-200 dark:border-charcoal-700 bg-card';
 
   return (
     <Pressable
@@ -55,16 +55,19 @@ export const NotificationRow = React.memo(function NotificationRow({
               notificationId={notification.id}
             />
             <Text
-              className="text-base font-semibold text-text-primary"
+              className="text-base font-semibold text-charcoal-900 dark:text-neutral-100"
               numberOfLines={2}
             >
               {notification.title}
             </Text>
           </View>
-          <Text className="text-sm text-text-secondary" numberOfLines={3}>
+          <Text
+            className="text-sm text-neutral-600 dark:text-neutral-400"
+            numberOfLines={3}
+          >
             {notification.body}
           </Text>
-          <Text className="text-xs text-text-secondary">{timestampLabel}</Text>
+          <Text className="text-text-secondary text-xs">{timestampLabel}</Text>
         </View>
         <MarkAsReadButton
           isVisible={isUnread}

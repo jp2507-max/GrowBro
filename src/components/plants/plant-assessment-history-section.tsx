@@ -64,15 +64,15 @@ export function PlantAssessmentHistorySection({
       <Pressable
         accessibilityRole="button"
         onPress={toggleExpanded}
-        className="flex-row items-center justify-between rounded-lg border border-border bg-card p-4 active:opacity-70"
+        className="bg-card flex-row items-center justify-between rounded-lg border border-neutral-200 p-4 active:opacity-70 dark:border-charcoal-700"
         testID={`${testID}-header`}
       >
         <View className="flex-1">
-          <Text className="text-base font-semibold text-text-primary">
+          <Text className="text-base font-semibold text-charcoal-900 dark:text-neutral-100">
             {translate('plants.assessmentHistory.title')}
           </Text>
           {count !== null && (
-            <Text className="mt-0.5 text-sm text-text-secondary">
+            <Text className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-400">
               {count === 0
                 ? translate('plants.assessmentHistory.count_zero')
                 : count === 1
@@ -85,19 +85,19 @@ export function PlantAssessmentHistorySection({
             </Text>
           )}
         </View>
-        <Text className="text-xl text-text-secondary">
+        <Text className="text-text-secondary text-xl">
           {expanded ? '▼' : '▶'}
         </Text>
       </Pressable>
 
       {expanded && (
-        <View className="mt-2 rounded-lg border border-border bg-card p-3">
+        <View className="border-border bg-card mt-2 rounded-lg border p-3">
           {count === 0 ? (
             <View className="items-center py-6">
-              <Text className="text-sm text-text-secondary">
+              <Text className="text-text-secondary text-sm">
                 {translate('plants.assessmentHistory.count_zero')}
               </Text>
-              <Text className="mt-1 text-xs text-text-secondary">
+              <Text className="text-text-secondary mt-1 text-xs">
                 {translate('plants.assessmentHistory.emptyDescription')}
               </Text>
             </View>

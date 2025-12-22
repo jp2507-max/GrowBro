@@ -32,8 +32,8 @@ function StorageStats({ storageInfo }: { storageInfo: StorageInfo }) {
   const { t } = useTranslation();
 
   return (
-    <View className="rounded-lg bg-white p-4 dark:bg-charcoal-900">
-      <Text className="mb-4 text-lg font-semibold text-charcoal-950 dark:text-neutral-100">
+    <View className="bg-card rounded-lg p-4">
+      <Text className="mb-4 text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
         {t('harvest.photo.storage.title')}
       </Text>
 
@@ -41,16 +41,16 @@ function StorageStats({ storageInfo }: { storageInfo: StorageInfo }) {
         <Text className="text-sm text-neutral-600 dark:text-neutral-400">
           {t('harvest.photo.storage.used')}
         </Text>
-        <Text className="text-2xl font-bold text-charcoal-950 dark:text-neutral-100">
+        <Text className="text-text-primary text-2xl font-bold">
           {formatBytes(storageInfo.usedBytes)}
         </Text>
       </View>
 
       <View className="mb-3">
-        <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+        <Text className="text-text-secondary text-sm">
           {t('harvest.photo.storage.available')}
         </Text>
-        <Text className="text-lg text-neutral-700 dark:text-neutral-300">
+        <Text className="text-text-secondary text-lg">
           {formatBytes(storageInfo.availableBytes)}
         </Text>
       </View>
@@ -64,7 +64,7 @@ function StorageStats({ storageInfo }: { storageInfo: StorageInfo }) {
         />
       </View>
 
-      <Text className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
+      <Text className="text-text-secondary mt-2 text-xs">
         {t('harvest.photo.storage.used_of_total', {
           used: formatBytes(storageInfo.usedBytes),
           total: formatBytes(storageInfo.totalBytes),
@@ -171,9 +171,7 @@ function ScreenContent({
     return (
       <View className="flex-1 items-center justify-center py-12">
         <ActivityIndicator size="large" />
-        <Text className="mt-4 text-neutral-600 dark:text-neutral-400">
-          {t('common.loading')}
-        </Text>
+        <Text className="text-text-secondary mt-4">{t('common.loading')}</Text>
       </View>
     );
   }
@@ -181,7 +179,7 @@ function ScreenContent({
   if (!storageInfo) {
     return (
       <View className="flex-1 items-center justify-center py-12">
-        <Text className="text-neutral-600 dark:text-neutral-400">
+        <Text className="text-text-secondary">
           {t('settings.storage.unavailable')}
         </Text>
       </View>
@@ -192,7 +190,7 @@ function ScreenContent({
     <>
       <StorageStats storageInfo={storageInfo} />
       <View className="mt-6">
-        <Text className="mb-3 text-base text-neutral-700 dark:text-neutral-300">
+        <Text className="text-text-secondary mb-3 text-base">
           {t('settings.storage.description')}
         </Text>
         <Button
@@ -280,14 +278,14 @@ export default function StorageSettingsScreen() {
 
   return (
     <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
-      <View className="border-b border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
+      <View className="bg-card border-b border-neutral-200 p-4 dark:border-charcoal-700">
         <Button
           label={t('common.back')}
           variant="link"
           onPress={() => router.back()}
           className="mb-2"
         />
-        <Text className="text-2xl font-semibold text-charcoal-950 dark:text-neutral-100">
+        <Text className="text-text-primary text-2xl font-semibold">
           {t('settings.storage.title')}
         </Text>
       </View>

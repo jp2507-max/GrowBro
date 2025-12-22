@@ -2228,6 +2228,7 @@
       "action_hub_title": "Today's Tasks",
       "all_good_message": "All good – No tasks today.",
       "no_tasks": "No pending tasks",
+      "start_harvest": "Start Harvest",
       "stats_day": "Day",
       "stats_height": "Height",
       "stats_phase": "Phase",
@@ -3695,6 +3696,66 @@
     "inventory": "Inventory",
     "plants": "Plants",
     "strains": "Strains"
+  },
+  "tasks": {
+    "burpJarsWeek1": {
+      "description": "Open jars for 15-30 minutes to release moisture and refresh air. Check for mold or ammonia smell.",
+      "title": "Burp Jars"
+    },
+    "burpJarsWeek3": {
+      "description": "Open jars briefly to maintain proper humidity levels. Less frequent burping is needed as cure progresses.",
+      "title": "Burp Jars"
+    },
+    "changeReservoir": {
+      "description": "Complete water change to prevent nutrient buildup and maintain freshness.",
+      "title": "Change Reservoir Water"
+    },
+    "checkHumidityDome": {
+      "description": "Ensure humidity dome is in place and moisture levels are adequate for seedling.",
+      "title": "Check Humidity Dome"
+    },
+    "checkLightDistance": {
+      "description": "Sativa-dominant plants may stretch significantly. Ensure adequate distance between lights and canopy to prevent light burn.",
+      "title": "Check Light Distance (Stretch Warning)"
+    },
+    "checkPhEc": {
+      "description": "Monitor reservoir pH (5.5-6.5) and EC levels. Adjust as needed for optimal nutrient uptake.",
+      "title": "Check pH & EC"
+    },
+    "checkPreflowers": {
+      "description": "Look for white pistils emerging at nodes - a sign your autoflower is transitioning to flower. Consider switching to flowering stage when confirmed.",
+      "title": "Check for Pre-flowers (White Pistils)"
+    },
+    "checkStemSnap": {
+      "description": "Bend a small stem - if it snaps cleanly (not bends), buds are ready for curing. Check daily until dry.",
+      "title": "Check Stem Snap"
+    },
+    "checkWaterTemp": {
+      "description": "Maintain reservoir temperature between 18-22°C (65-72°F) to prevent root issues.",
+      "title": "Check Water Temperature"
+    },
+    "feedPlant": {
+      "descriptionCoco": "Feed with every watering in coco. Monitor EC/pH of runoff.",
+      "descriptionSoil": "Apply nutrients according to your feeding schedule. Adjust based on plant response.",
+      "title": "Feed Plant"
+    },
+    "startFlushing": {
+      "description": "Begin the flush period - use plain pH-balanced water only. This helps remove excess nutrients and improves final taste.",
+      "title": "Start Flushing (Water Only)"
+    },
+    "switchLights": {
+      "description": "Set light schedule to 12 hours on, 12 hours off to trigger and maintain flowering.",
+      "title": "Switch Lights to 12/12"
+    },
+    "topDressing": {
+      "description": "Add organic amendments to the soil surface for slow-release nutrients.",
+      "title": "Top Dressing"
+    },
+    "waterPlant": {
+      "descriptionCoco": "Water until ~10-20% runoff. Coco dries quickly - check daily.",
+      "descriptionSoil": "Water until ~10-20% runoff. Check soil moisture before watering.",
+      "title": "Water Plant"
+    }
   },
   "trichome": {
     "amber": "Amber",

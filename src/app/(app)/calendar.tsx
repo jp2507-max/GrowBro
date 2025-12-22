@@ -83,9 +83,13 @@ function SectionHeader({
       className="flex-row items-center justify-between py-2"
       testID={testID}
     >
-      <Text className="text-lg font-bold text-text-primary">{title}</Text>
+      <Text className="text-lg font-bold text-charcoal-900 dark:text-neutral-100">
+        {title}
+      </Text>
       <View className="rounded-full bg-neutral-200 px-2 py-0.5 dark:bg-neutral-700">
-        <Text className="text-sm font-medium text-text-secondary">{count}</Text>
+        <Text className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+          {count}
+        </Text>
       </View>
     </View>
   );
@@ -94,7 +98,7 @@ function SectionHeader({
 function EmptyState({ message }: { message: string }): React.ReactElement {
   return (
     <View className="items-center justify-center py-8">
-      <Text className="text-base text-text-secondary">{message}</Text>
+      <Text className="text-text-secondary text-base">{message}</Text>
     </View>
   );
 }
@@ -154,7 +158,10 @@ export default function CalendarScreen(): React.ReactElement {
   );
 
   return (
-    <View className="flex-1 bg-background" testID="calendar-screen">
+    <View
+      className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
+      testID="calendar-screen"
+    >
       <CalendarHeader
         selectedDate={selectedDate}
         onDateSelect={onDateSelect}

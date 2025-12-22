@@ -27,11 +27,11 @@ export function TaskBanner({
   if (isLoading) {
     return (
       <View
-        className="flex-row items-center gap-2 rounded-xl bg-neutral-100 px-4 py-3 dark:bg-neutral-800"
+        className="bg-card flex-row items-center gap-2 rounded-xl px-4 py-3"
         testID="task-banner-loading"
       >
         <View className="size-2 animate-pulse rounded-full bg-neutral-300 dark:bg-neutral-600" />
-        <Text className="text-sm text-neutral-500 dark:text-neutral-400">
+        <Text className="text-sm text-neutral-600 dark:text-neutral-400">
           {translate('community.loading' as TxKeyPath)}
         </Text>
       </View>
@@ -48,7 +48,7 @@ export function TaskBanner({
 
   return (
     <Pressable
-      className="flex-row items-center justify-between rounded-xl bg-neutral-100 px-4 py-3 active:bg-neutral-200 dark:bg-neutral-800 dark:active:bg-neutral-700"
+      className="bg-card flex-row items-center justify-between rounded-xl px-4 py-3 active:bg-white"
       onPress={handlePress}
       accessibilityRole="button"
       accessibilityLabel={translate('home.task_banner.label' as TxKeyPath)}
@@ -70,7 +70,7 @@ export function TaskBanner({
         {hasToday ? (
           <View className="flex-row items-center gap-1.5">
             <Text className="text-lg">📅</Text>
-            <Text className="text-sm font-medium text-neutral-700 dark:text-neutral-200">
+            <Text className="text-sm font-medium text-charcoal-900 dark:text-neutral-100">
               {today} {translate('home.dashboard.tasks_today' as TxKeyPath)}
             </Text>
           </View>

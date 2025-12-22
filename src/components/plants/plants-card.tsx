@@ -164,6 +164,107 @@ function PlantCardImage({
   );
 }
 
+function PlantCardHeader({
+  plant,
+  stageLabel,
+  colors,
+}: {
+  plant: Plant;
+  stageLabel: string | null;
+  colors: StageColors;
+}) {
+  return (
+    <View className="flex-row items-start justify-between p-4 pb-3">
+      <View className="flex-1 pr-3">
+        {stageLabel ? (
+          <Text
+            className="text-text-tertiary mb-1 text-xs font-bold uppercase tracking-widest"
+            testID={`plant-card-${plant.id}-stage-label`}
+          >
+            {stageLabel}
+          </Text>
+        ) : null}
+        <Text
+          className="text-2xl font-bold tracking-tight text-charcoal-900 dark:text-neutral-100"
+          numberOfLines={1}
+        >
+          {plant.name}
+        </Text>
+        {plant.strain ? (
+          <Text
+            className="mt-0.5 text-base font-medium text-neutral-600 dark:text-neutral-400"
+            numberOfLines={1}
+          >
+            {plant.strain}
+          </Text>
+        ) : null}
+      </View>
+      <PlantCardImage plant={plant} colors={colors} />
+    </View>
+  );
+}
+
+function PlantCardProgress({
+  plantId,
+  progress,
+}: {
+  plantId: string;
+  progress: number;
+}) {
+  return (
+    <View className="px-4 pb-3">
+      <View className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+        <View
+          className="bg-action-primary h-full rounded-full"
+          style={{ width: `${progress}%` }}
+          testID={`plant-card-${plantId}-progress`}
+        />
+      </View>
+      <Text className="text-text-tertiary mt-1.5 text-right text-[10px] font-medium">
+        {translate('plants.card.progress' as TxKeyPath, { percent: progress })}
+      </Text>
+    </View>
+  );
+}
+
+function PlantCardFooter({ needsAttention }: { needsAttention: boolean }) {
+  return (
+    <View
+      className={`flex-row items-center justify-between px-4 py-3 ${needsAttention ? 'bg-terracotta-50 dark:bg-terracotta-900/20' : 'bg-neutral-50 dark:bg-charcoal-950'}`}
+    >
+      {needsAttention ? (
+        <>
+          <View className="flex-row items-center gap-2">
+            <Text className="text-base">💧</Text>
+            <Text className="text-sm font-bold text-terracotta-600 dark:text-terracotta-400">
+              {translate('plants.card.needs_water' as TxKeyPath)}
+            </Text>
+          </View>
+          <View className="bg-action-cta rounded-xl px-4 py-2 shadow-sm">
+            <Text className="text-xs font-bold text-white">
+              {translate('plants.card.water_action' as TxKeyPath)}
+            </Text>
+          </View>
+        </>
+      ) : (
+        <>
+          <View className="flex-row items-center gap-2">
+            <Text className="text-base">✓</Text>
+            <Text className="text-text-secondary text-sm font-medium">
+              {translate('plants.card.all_good' as TxKeyPath)}
+            </Text>
+          </View>
+          <ArrowRight
+            width={10}
+            height={16}
+            className="text-text-tertiary opacity-40"
+          />
+        </>
+      )}
+    </View>
+  );
+}
+
 function PlantCardContent({
   plant,
   onPress,
@@ -175,35 +276,29 @@ function PlantCardContent({
     haptics.selection();
     onPress(plant.id);
   }, [onPress, plant.id]);
-
   const stageLabel = React.useMemo(
     () => translateStage(plant.stage),
     [plant.stage]
   );
-
   const colors = React.useMemo(
     () => getStageColors(plant.stage),
     [plant.stage]
   );
-
   const progress = React.useMemo(
     () => getStageProgress(plant.stage),
     [plant.stage]
   );
-
   const accessibilityLabel = React.useMemo(
     () =>
       [plant.name, stageLabel, plant.strain].filter(Boolean).join(', ') ||
       plant.name,
     [plant.name, plant.strain, stageLabel]
   );
-
-  // TODO: Replace with actual task check from plant data
-  const needsAttention = false;
+  const needsAttention = false; // TODO: Replace with actual task check from plant data
 
   return (
     <Pressable
-      className="mb-3 overflow-hidden rounded-3xl border border-border bg-card active:scale-[0.98] active:opacity-95"
+      className="bg-card mb-3 overflow-hidden rounded-3xl border border-neutral-200 active:scale-[0.98] active:opacity-95 dark:border-charcoal-700"
       style={[cardStyles.shadow]}
       testID={`plant-card-${plant.id}`}
       accessibilityRole="button"
@@ -211,92 +306,9 @@ function PlantCardContent({
       accessibilityHint={translate('accessibility.plants.open_detail_hint')}
       onPress={handlePress}
     >
-      {/* HEADER SECTION */}
-      <View className="flex-row items-start justify-between p-4 pb-3">
-        {/* Left content: Stage label, Name, Strain */}
-        <View className="flex-1 pr-3">
-          {stageLabel ? (
-            <Text
-              className="text-text-tertiary mb-1 text-xs font-bold uppercase tracking-widest"
-              testID={`plant-card-${plant.id}-stage-label`}
-            >
-              {stageLabel}
-            </Text>
-          ) : null}
-          <Text
-            className="text-2xl font-bold tracking-tight text-text-primary"
-            numberOfLines={1}
-          >
-            {plant.name}
-          </Text>
-          {plant.strain ? (
-            <Text
-              className="mt-0.5 text-base font-medium text-text-secondary"
-              numberOfLines={1}
-            >
-              {plant.strain}
-            </Text>
-          ) : null}
-        </View>
-
-        {/* Right content: Image avatar */}
-        <PlantCardImage plant={plant} colors={colors} />
-      </View>
-
-      {/* PROGRESS BAR (Gamification) */}
-      <View className="px-4 pb-3">
-        <View className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
-          <View
-            className="h-full rounded-full bg-action-primary"
-            style={{ width: `${progress}%` }}
-            testID={`plant-card-${plant.id}-progress`}
-          />
-        </View>
-        <Text className="text-text-tertiary mt-1.5 text-right text-[10px] font-medium">
-          {translate('plants.card.progress' as TxKeyPath, {
-            percent: progress,
-          })}
-        </Text>
-      </View>
-
-      {/* FOOTER / ACTION AREA */}
-      <View
-        className={`flex-row items-center justify-between px-4 py-3 ${
-          needsAttention
-            ? 'bg-terracotta-50 dark:bg-terracotta-900/20'
-            : 'bg-background'
-        }`}
-      >
-        {needsAttention ? (
-          <>
-            <View className="flex-row items-center gap-2">
-              <Text className="text-base">💧</Text>
-              <Text className="text-sm font-bold text-terracotta-600 dark:text-terracotta-400">
-                {translate('plants.card.needs_water' as TxKeyPath)}
-              </Text>
-            </View>
-            <View className="rounded-xl bg-action-cta px-4 py-2 shadow-sm">
-              <Text className="text-xs font-bold text-white">
-                {translate('plants.card.water_action' as TxKeyPath)}
-              </Text>
-            </View>
-          </>
-        ) : (
-          <>
-            <View className="flex-row items-center gap-2">
-              <Text className="text-base">✓</Text>
-              <Text className="text-sm font-medium text-text-secondary">
-                {translate('plants.card.all_good' as TxKeyPath)}
-              </Text>
-            </View>
-            <ArrowRight
-              width={10}
-              height={16}
-              className="text-text-tertiary opacity-40"
-            />
-          </>
-        )}
-      </View>
+      <PlantCardHeader plant={plant} stageLabel={stageLabel} colors={colors} />
+      <PlantCardProgress plantId={plant.id} progress={progress} />
+      <PlantCardFooter needsAttention={needsAttention} />
     </Pressable>
   );
 }

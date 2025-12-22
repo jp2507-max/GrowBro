@@ -103,7 +103,7 @@ export default function ActiveSessionsScreen() {
       />
       <FocusAwareStatusBar />
 
-      <ScrollView className="flex-1 bg-white dark:bg-charcoal-950">
+      <ScrollView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
         <View className="px-4 py-6">
           <Text className="mb-2 text-xl font-bold">
             {translate('auth.sessions.title')}
@@ -139,15 +139,15 @@ export default function ActiveSessionsScreen() {
           )}
 
           {!isLoading && !error && sessions && sessions.length === 0 && (
-            <View className="rounded-lg bg-neutral-100 p-4 dark:bg-neutral-800">
-              <Text className="text-neutral-600 dark:text-neutral-400">
+            <View className="bg-card rounded-lg p-4">
+              <Text className="text-text-secondary">
                 {translate('auth.sessions.no_sessions')}
               </Text>
             </View>
           )}
 
           {!isLoading && !error && sessions && sessions.length > 0 && (
-            <View className="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700">
+            <View className="overflow-hidden rounded-lg border border-neutral-200 dark:border-charcoal-700">
               {sessions.map((session) => (
                 <SessionListItem
                   key={session.id}

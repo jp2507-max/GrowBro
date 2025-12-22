@@ -162,7 +162,7 @@ export default function StrainsScreen(): React.ReactElement {
 
   return (
     <View
-      className="flex-1 bg-neutral-50 dark:bg-neutral-950"
+      className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
       testID="strains-screen"
     >
       <FocusAwareStatusBar />
@@ -177,10 +177,10 @@ export default function StrainsScreen(): React.ReactElement {
       />
 
       {/* Overlapping content sheet - slides up over header */}
-      <View className="z-10 -mt-6 flex-1 rounded-t-[32px] bg-neutral-50 shadow-xl dark:bg-neutral-950">
+      <View className="bg-sheet z-10 -mt-6 flex-1 rounded-t-[32px] shadow-xl">
         {/* Handle Bar - indicates draggable sheet */}
         <View className="w-full items-center pb-2 pt-3">
-          <View className="h-1.5 w-12 rounded-full bg-neutral-300/50 dark:bg-neutral-600/50" />
+          <View className="bg-sheet-handle h-1.5 w-12 rounded-full" />
         </View>
 
         <View className="px-4">

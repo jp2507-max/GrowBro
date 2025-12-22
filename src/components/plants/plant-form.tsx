@@ -143,10 +143,10 @@ function StrainSuggestionsDropdown({
 
   if (isLoading || isFetching) {
     return (
-      <View className="absolute inset-x-0 top-16 z-10 mt-2 rounded-2xl border border-border bg-card shadow-lg">
+      <View className="bg-card absolute inset-x-0 top-16 z-10 mt-2 rounded-2xl border border-neutral-200 shadow-lg dark:border-charcoal-700">
         <View className="flex-row items-center gap-2 px-4 py-3">
           <ActivityIndicator size="small" />
-          <Text className="text-sm text-text-secondary">
+          <Text className="text-sm text-neutral-600 dark:text-neutral-400">
             {t('plants.form.strain_searching')}
           </Text>
         </View>
@@ -157,10 +157,10 @@ function StrainSuggestionsDropdown({
   const showEmpty = suggestions.length === 0 && !showCreateCustom;
 
   return (
-    <View className="absolute inset-x-0 top-16 z-10 mt-2 rounded-2xl border border-border bg-card shadow-lg">
+    <View className="border-border bg-card absolute inset-x-0 top-16 z-10 mt-2 rounded-2xl border shadow-lg">
       {showEmpty && (
         <View className="px-4 py-3">
-          <Text className="text-sm text-text-secondary">
+          <Text className="text-text-secondary text-sm">
             {t('plants.form.strain_no_results', { query })}
           </Text>
         </View>
@@ -183,15 +183,15 @@ function StrainSuggestionsDropdown({
             testID={`strain-suggestion-${strain.id}`}
           >
             <View className="flex-1">
-              <Text className="text-base font-medium text-text-primary">
+              <Text className="text-base font-medium text-charcoal-900 dark:text-neutral-100">
                 {strain.name}
               </Text>
-              <Text className="text-xs text-text-secondary">
+              <Text className="text-text-secondary text-xs">
                 {t('plants.form.strain_race_label', { race: strain.race })}
               </Text>
             </View>
             {isAutoflower && (
-              <Text className="rounded-full bg-primary-100 px-3 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900 dark:text-primary-200">
+              <Text className="rounded-full bg-primary-100 px-3 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-200">
                 {t('plants.form.autoflower_badge')}
               </Text>
             )}
@@ -532,7 +532,7 @@ function IdentitySection({
       delay={100}
       testID="identity-section"
     >
-      <View className="gap-3 bg-white p-4 dark:bg-neutral-900">
+      <View className="bg-card gap-3 rounded-2xl p-4">
         <ControlledInput
           control={control}
           name="name"
@@ -583,7 +583,7 @@ function EnvironmentSection({
       delay={200}
       testID="environment-section"
     >
-      <View className="gap-3 bg-white p-4 dark:bg-neutral-900">
+      <View className="bg-card gap-3 rounded-2xl p-4">
         <SelectField
           control={control}
           name="environment"
@@ -632,7 +632,7 @@ function CareSection({
       delay={300}
       testID="care-section"
     >
-      <View className="gap-3 bg-white p-4 dark:bg-neutral-900">
+      <View className="bg-card gap-3 rounded-2xl p-4">
         <SelectField
           control={control}
           name="medium"
@@ -855,7 +855,7 @@ function DeletePlantButton({ onDelete, t }: DeletePlantButtonProps) {
         variant="destructive"
         onPress={onDelete}
         label={t('plants.form.delete_button')}
-        className="rounded-xl bg-red-50 dark:bg-red-950/30"
+        className="rounded-xl bg-red-50 dark:bg-red-900/20"
         textClassName="text-red-600 dark:text-red-400"
         accessibilityHint={t('plants.form.delete_confirm_body')}
         testID="delete-plant-button"

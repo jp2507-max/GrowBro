@@ -73,12 +73,12 @@ export const InventorySearchBar = React.memo(function InventorySearchBar({
             ref={inputRef}
             value={value}
             onChangeText={onChangeText}
-            placeholder={t('inventory.search_placeholder')}
+            placeholder={t('harvest.inventory.search_placeholder')}
             placeholderTextColor={colors.neutral[400]}
-            accessibilityLabel={t('inventory.search_label')}
-            accessibilityHint={t('inventory.search_hint')}
+            accessibilityLabel={t('harvest.inventory.search_label')}
+            accessibilityHint={t('harvest.inventory.search_hint')}
             testID={`${testID}-input`}
-            className="h-12 rounded-lg border border-neutral-300 bg-white px-4 pr-10 text-base text-charcoal-950 dark:border-neutral-600 dark:bg-charcoal-900 dark:text-white"
+            className="bg-card h-12 rounded-lg border border-neutral-200 px-4 pr-10 text-base text-charcoal-900 dark:border-charcoal-700 dark:text-neutral-100"
             returnKeyType="search"
             clearButtonMode="never" // Custom clear button
             autoCapitalize="none"
@@ -97,12 +97,12 @@ export const InventorySearchBar = React.memo(function InventorySearchBar({
               <Pressable
                 onPress={handleClear}
                 accessibilityLabel={t('common.clear')}
-                accessibilityHint={t('inventory.clear_search_hint')}
+                accessibilityHint={t('harvest.inventory.clear_search_hint')}
                 accessibilityRole="button"
                 testID={`${testID}-clear`}
                 className="size-8 items-center justify-center rounded-full bg-neutral-200 dark:bg-neutral-700"
               >
-                <Text className="text-base text-neutral-600 dark:text-neutral-300">
+                <Text className="text-base text-neutral-600 dark:text-neutral-400">
                   ✕
                 </Text>
               </Pressable>
@@ -114,22 +114,22 @@ export const InventorySearchBar = React.memo(function InventorySearchBar({
         {onFilterPress && (
           <Pressable
             onPress={onFilterPress}
-            accessibilityLabel={t('inventory.filters')}
-            accessibilityHint={t('inventory.filter_hint')}
+            accessibilityLabel={t('harvest.inventory.filters')}
+            accessibilityHint={t('harvest.inventory.filter_hint')}
             accessibilityRole="button"
             accessibilityState={{ selected: hasActiveFilters }}
             testID={`${testID}-filter-button`}
             className={`size-12 items-center justify-center rounded-lg border ${
               hasActiveFilters
-                ? 'dark:bg-primary-950 border-primary-600 bg-primary-50'
-                : 'border-neutral-300 bg-white dark:border-neutral-600 dark:bg-charcoal-900'
+                ? 'border-primary-600 bg-primary-50 dark:bg-primary-950'
+                : 'border-border bg-card'
             }`}
           >
             <Text
               className={`text-lg ${
                 hasActiveFilters
                   ? 'text-primary-600 dark:text-primary-400'
-                  : 'text-neutral-600 dark:text-neutral-300'
+                  : 'text-text-secondary'
               }`}
             >
               ⚙
@@ -148,7 +148,7 @@ export const InventorySearchBar = React.memo(function InventorySearchBar({
           testID={`${testID}-offline-indicator`}
         >
           <Text className="text-xs text-warning-700 dark:text-warning-300">
-            ⚠ {t('inventory.search_offline')}
+            ⚠ {t('harvest.inventory.search_offline')}
           </Text>
         </View>
       )}

@@ -129,7 +129,7 @@ function QuickActionTile({
 
   return (
     <Pressable
-      className="w-[48%] gap-1 rounded-2xl border border-border bg-card p-3 active:bg-neutral-50 dark:active:bg-neutral-800"
+      className="bg-card w-[48%] gap-1 rounded-2xl border border-neutral-200 p-3 active:bg-neutral-50 dark:border-charcoal-700 dark:active:bg-neutral-800"
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={translate(
@@ -141,7 +141,9 @@ function QuickActionTile({
       hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
     >
       <Text className="text-lg">{action.icon}</Text>
-      <Text className="text-sm font-semibold text-text-primary">{label}</Text>
+      <Text className="text-sm font-semibold text-charcoal-900 dark:text-neutral-100">
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -156,10 +158,12 @@ function TaskStat({
   testID: string;
 }) {
   return (
-    <View className="flex-1 rounded-xl bg-neutral-100 p-3 dark:bg-neutral-800/80">
-      <Text className="text-xs text-text-secondary">{label}</Text>
+    <View className="bg-card flex-1 rounded-xl p-3">
+      <Text className="text-xs text-neutral-600 dark:text-neutral-400">
+        {label}
+      </Text>
       <Text
-        className="mt-1 text-xl font-bold text-text-primary"
+        className="text-text-primary mt-1 text-xl font-bold"
         testID={testID}
       >
         {value}
@@ -182,16 +186,16 @@ function TaskSnapshotCard({
   onRefresh,
 }: TaskSnapshotCardProps) {
   return (
-    <View className="gap-3 rounded-2xl border border-border bg-card p-4">
+    <View className="border-border bg-card gap-3 rounded-2xl border p-4">
       <View className="flex-row items-center justify-between">
-        <Text className="text-base font-semibold text-text-primary">
+        <Text className="text-text-primary text-base font-semibold">
           {translate('home.dashboard.tasks_title' as TxKeyPath)}
         </Text>
         <Pressable
           disabled={isLoading}
           className={`rounded-full px-3 py-1.5 ${
             isLoading
-              ? 'bg-neutral-100 dark:bg-neutral-700'
+              ? 'bg-card'
               : 'bg-primary-100 active:bg-primary-200 dark:bg-primary-900/40 dark:active:bg-primary-900/60'
           }`}
           accessibilityRole="button"
@@ -215,7 +219,7 @@ function TaskSnapshotCard({
           testID="home-tasks-loading"
         >
           <ActivityIndicator />
-          <Text className="text-sm text-text-secondary">
+          <Text className="text-text-secondary text-sm">
             {translate('community.loading' as TxKeyPath)}
           </Text>
         </View>
@@ -257,7 +261,7 @@ function TaskSnapshotCard({
 function QuickActionsSection({ actions }: { actions: QuickAction[] }) {
   return (
     <View className="gap-2">
-      <Text className="text-base font-semibold text-text-primary">
+      <Text className="text-text-primary text-base font-semibold">
         {translate('home.dashboard.quick_actions' as TxKeyPath)}
       </Text>
       <View className="flex-row flex-wrap justify-between gap-3">

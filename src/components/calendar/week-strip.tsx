@@ -78,7 +78,9 @@ function DayPill({
       <Text
         className={twMerge(
           'text-lg font-bold',
-          item.isSelected ? 'text-white' : 'text-text-primary'
+          item.isSelected
+            ? 'text-white'
+            : 'text-charcoal-900 dark:text-neutral-100'
         )}
       >
         {item.dayOfMonth}

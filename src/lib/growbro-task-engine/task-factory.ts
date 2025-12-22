@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import type { PlantSettings, SeriesSpec } from './types';
 import { AUTOFLOWER_NUDGE_START_DAY, FLUSH_DAYS } from './types';
 import {
@@ -47,9 +48,8 @@ export class TaskFactory {
 
     return [
       {
-        title: 'Check Humidity Dome',
-        description:
-          'Ensure humidity dome is in place and moisture levels are adequate for seedling.',
+        title: i18n.t('tasks.checkHumidityDome.title'),
+        description: i18n.t('tasks.checkHumidityDome.description'),
         rrule: 'FREQ=DAILY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,
@@ -84,9 +84,8 @@ export class TaskFactory {
         timezone
       );
       specs.push({
-        title: 'Top Dressing',
-        description:
-          'Add organic amendments to the soil surface for slow-release nutrients.',
+        title: i18n.t('tasks.topDressing.title'),
+        description: i18n.t('tasks.topDressing.description'),
         rrule: 'FREQ=MONTHLY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,
@@ -107,9 +106,8 @@ export class TaskFactory {
         timezone
       );
       specs.push({
-        title: 'Check for Pre-flowers (White Pistils)',
-        description:
-          'Look for white pistils emerging at nodes - a sign your autoflower is transitioning to flower. Consider switching to flowering stage when confirmed.',
+        title: i18n.t('tasks.checkPreflowers.title'),
+        description: i18n.t('tasks.checkPreflowers.description'),
         rrule: 'FREQ=DAILY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,
@@ -161,9 +159,8 @@ export class TaskFactory {
         timezone
       );
       specs.push({
-        title: 'Switch Lights to 12/12',
-        description:
-          'Set light schedule to 12 hours on, 12 hours off to trigger and maintain flowering.',
+        title: i18n.t('tasks.switchLights.title'),
+        description: i18n.t('tasks.switchLights.description'),
         rrule: 'FREQ=DAILY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,
@@ -210,9 +207,8 @@ export class TaskFactory {
     );
     return [
       {
-        title: 'Check Light Distance (Stretch Warning)',
-        description:
-          'Sativa-dominant plants may stretch significantly. Ensure adequate distance between lights and canopy to prevent light burn.',
+        title: i18n.t('tasks.checkLightDistance.title'),
+        description: i18n.t('tasks.checkLightDistance.description'),
         rrule: 'FREQ=DAILY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,
@@ -242,9 +238,8 @@ export class TaskFactory {
     );
     return [
       {
-        title: 'Start Flushing (Water Only)',
-        description:
-          'Begin the flush period - use plain pH-balanced water only. This helps remove excess nutrients and improves final taste.',
+        title: i18n.t('tasks.startFlushing.title'),
+        description: i18n.t('tasks.startFlushing.description'),
         rrule: 'FREQ=DAILY;INTERVAL=2',
         dtstartLocal,
         dtstartUtc,
@@ -264,9 +259,8 @@ export class TaskFactory {
 
     return [
       {
-        title: 'Check Stem Snap',
-        description:
-          'Bend a small stem - if it snaps cleanly (not bends), buds are ready for curing. Check daily until dry.',
+        title: i18n.t('tasks.checkStemSnap.title'),
+        description: i18n.t('tasks.checkStemSnap.description'),
         rrule: 'FREQ=DAILY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,
@@ -290,9 +284,8 @@ export class TaskFactory {
     const { dtstartLocal: dtstartLocal1, dtstartUtc: dtstartUtc1 } =
       buildDtstartTimestamps(cureStart, timezone);
     specs.push({
-      title: 'Burp Jars',
-      description:
-        'Open jars for 15-30 minutes to release moisture and refresh air. Check for mold or ammonia smell.',
+      title: i18n.t('tasks.burpJarsWeek1.title'),
+      description: i18n.t('tasks.burpJarsWeek1.description'),
       rrule: 'FREQ=DAILY;INTERVAL=1',
       dtstartLocal: dtstartLocal1,
       dtstartUtc: dtstartUtc1,
@@ -307,9 +300,8 @@ export class TaskFactory {
         buildDtstartTimestamps(week3Start, timezone);
       const week4End = addDays(cureStart, 28);
       specs.push({
-        title: 'Burp Jars',
-        description:
-          'Open jars briefly to maintain proper humidity levels. Less frequent burping is needed as cure progresses.',
+        title: i18n.t('tasks.burpJarsWeek3.title'),
+        description: i18n.t('tasks.burpJarsWeek3.description'),
         rrule: 'FREQ=DAILY;INTERVAL=3',
         dtstartLocal: dtstartLocal2,
         dtstartUtc: dtstartUtc2,
@@ -341,10 +333,15 @@ export class TaskFactory {
       timezone
     );
 
+    const descriptionKey =
+      medium === 'coco'
+        ? 'tasks.waterPlant.descriptionCoco'
+        : 'tasks.waterPlant.descriptionSoil';
+
     return [
       {
-        title: 'Water Plant',
-        description: `Water until ~10-20% runoff. ${medium === 'coco' ? 'Coco dries quickly - check daily.' : 'Check soil moisture before watering.'}`,
+        title: i18n.t('tasks.waterPlant.title'),
+        description: i18n.t(descriptionKey),
         rrule: `FREQ=DAILY;INTERVAL=${interval}`,
         dtstartLocal,
         dtstartUtc,
@@ -375,27 +372,25 @@ export class TaskFactory {
     );
 
     let rrule: string;
-    let description: string;
+    let descriptionKey: string;
 
     switch (medium) {
       case 'coco':
         rrule = 'FREQ=DAILY;INTERVAL=1';
-        description =
-          'Feed with every watering in coco. Monitor EC/pH of runoff.';
+        descriptionKey = 'tasks.feedPlant.descriptionCoco';
         break;
       case 'soil':
       case 'other':
       default:
         rrule = 'FREQ=WEEKLY;BYDAY=FR';
-        description =
-          'Apply nutrients according to your feeding schedule. Adjust based on plant response.';
+        descriptionKey = 'tasks.feedPlant.descriptionSoil';
         break;
     }
 
     return [
       {
-        title: 'Feed Plant',
-        description,
+        title: i18n.t('tasks.feedPlant.title'),
+        description: i18n.t(descriptionKey),
         rrule,
         dtstartLocal,
         dtstartUtc,
@@ -420,27 +415,24 @@ export class TaskFactory {
 
     return [
       {
-        title: 'Check pH & EC',
-        description:
-          'Monitor reservoir pH (5.5-6.5) and EC levels. Adjust as needed for optimal nutrient uptake.',
+        title: i18n.t('tasks.checkPhEc.title'),
+        description: i18n.t('tasks.checkPhEc.description'),
         rrule: 'FREQ=DAILY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,
         timezone,
       },
       {
-        title: 'Check Water Temperature',
-        description:
-          'Maintain reservoir temperature between 18-22°C (65-72°F) to prevent root issues.',
+        title: i18n.t('tasks.checkWaterTemp.title'),
+        description: i18n.t('tasks.checkWaterTemp.description'),
         rrule: 'FREQ=DAILY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,
         timezone,
       },
       {
-        title: 'Change Reservoir Water',
-        description:
-          'Complete water change to prevent nutrient buildup and maintain freshness.',
+        title: i18n.t('tasks.changeReservoir.title'),
+        description: i18n.t('tasks.changeReservoir.description'),
         rrule: 'FREQ=WEEKLY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,

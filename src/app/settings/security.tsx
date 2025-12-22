@@ -312,7 +312,7 @@ export default function SecuritySettingsScreen() {
       />
       <FocusAwareStatusBar />
 
-      <ScrollView className="flex-1 bg-white dark:bg-charcoal-950">
+      <ScrollView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
         <View className="px-4 py-6">
           <Text className="mb-2 text-xl font-bold">
             {translate('auth.security.title')}

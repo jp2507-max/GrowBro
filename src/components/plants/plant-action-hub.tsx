@@ -1,12 +1,15 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
+import type { PlantStage } from '@/api/plants/types';
 import { Button, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
-import { Check, Droplet } from '@/components/ui/icons';
+import { Check, Droplet, Leaf } from '@/components/ui/icons';
 
 type ActionHubProps = {
   plantId: string;
+  /** Plant stage for conditional harvest button */
+  plantStage?: PlantStage;
   /** Optional pending tasks to display. If empty, shows success card. */
   tasks?: {
     id: string;
@@ -14,20 +17,28 @@ type ActionHubProps = {
     type?: 'water' | 'feed' | 'other';
   }[];
   onTaskPress?: (taskId: string) => void;
+  /** Called when harvest button is pressed */
+  onHarvestPress?: () => void;
 };
 
 /**
  * Action Hub section showing today's tasks for the plant.
  * Displays a success card when no tasks, or prominent CTA buttons when tasks exist.
  */
+/** Stages where harvest button should be shown */
+const HARVEST_ELIGIBLE_STAGES: PlantStage[] = ['flowering'];
+
 export function PlantActionHub({
   plantId: _plantId,
+  plantStage,
   tasks = [],
   onTaskPress,
+  onHarvestPress,
 }: ActionHubProps): React.ReactElement {
   const { t } = useTranslation();
 
   const hasTasks = tasks.length > 0;
+  const canHarvest = plantStage && HARVEST_ELIGIBLE_STAGES.includes(plantStage);
 
   return (
     <View className="gap-3 px-4">
@@ -70,6 +81,24 @@ export function PlantActionHub({
           </Text>
         </View>
       )}
+
+      {/* Harvest Button - Shown when plant is in flowering stage */}
+      {canHarvest && onHarvestPress ? (
+        <Button
+          variant="default"
+          className="w-full rounded-2xl bg-success-600 py-4 shadow-lg shadow-success-200 active:bg-success-700"
+          textClassName="text-white text-base font-semibold"
+          onPress={onHarvestPress}
+          testID="action-start-harvest"
+        >
+          <View className="flex-row items-center justify-center gap-2">
+            <Leaf color={colors.white} width={18} height={18} />
+            <Text className="text-base font-semibold text-white">
+              {t('plants.detail.start_harvest')}
+            </Text>
+          </View>
+        </Button>
+      ) : null}
     </View>
   );
 }

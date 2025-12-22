@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type Plant, usePlant } from '@/api/plants';
 import { useDeletePlant } from '@/api/plants/use-delete-plant';
+import { HarvestModal } from '@/components/harvest';
 import { PlantActionHub } from '@/components/plants/plant-action-hub';
 import { PlantAssessmentHistorySection } from '@/components/plants/plant-assessment-history-section';
 import { PlantDetailHeader } from '@/components/plants/plant-detail-header';
@@ -35,7 +36,7 @@ import { syncPlantsToCloud } from '@/lib/plants/plants-sync';
 
 function PlantLoadingView(): React.ReactElement {
   return (
-    <View className="flex-1 items-center justify-center bg-background">
+    <View className="flex-1 items-center justify-center bg-neutral-50 dark:bg-charcoal-950">
       <ActivityIndicator />
     </View>
   );
@@ -55,7 +56,7 @@ function PlantErrorView({
   const { t } = useTranslation();
 
   return (
-    <View className="flex-1 items-center justify-center bg-background">
+    <View className="flex-1 items-center justify-center bg-neutral-50 dark:bg-charcoal-950">
       <Text className="mb-3 text-base text-neutral-700 dark:text-neutral-200">
         {errorMessage}
       </Text>
@@ -110,6 +111,7 @@ type PlantContentSheetProps = {
   handleOpenStrain: () => void;
   handleHeaderSave: () => void;
   handleTaskPress: (taskId: string) => void;
+  handleHarvestPress: () => void;
   insets: ReturnType<typeof useSafeAreaInsets>;
   t: ReturnType<typeof useTranslation>['t'];
 };
@@ -128,13 +130,14 @@ function PlantContentSheet({
   handleOpenStrain,
   handleHeaderSave,
   handleTaskPress,
+  handleHarvestPress,
   insets,
   t,
 }: PlantContentSheetProps): React.ReactElement {
   return (
-    <View className="z-10 -mt-8 flex-1 rounded-t-[35px] bg-white shadow-xl dark:bg-charcoal-900">
+    <View className="bg-sheet z-10 -mt-8 flex-1 rounded-t-[35px] shadow-xl">
       {/* Handle Bar */}
-      <View className="my-4 h-1.5 w-12 self-center rounded-full bg-neutral-200" />
+      <View className="bg-sheet-handle my-4 h-1.5 w-12 self-center rounded-full" />
 
       <ScrollView
         className="flex-1"
@@ -148,8 +151,10 @@ function PlantContentSheet({
         <View className="mt-6">
           <PlantActionHub
             plantId={plantId}
+            plantStage={plant.stage}
             tasks={tasks}
             onTaskPress={handleTaskPress}
+            onHarvestPress={handleHarvestPress}
           />
         </View>
 
@@ -169,7 +174,7 @@ function PlantContentSheet({
             accessibilityRole="button"
             testID="view-strain-profile"
           >
-            <Text className="mr-1 text-sm font-medium text-neutral-500 dark:text-neutral-400">
+            <Text className="text-text-tertiary mr-1 text-sm font-medium">
               {t('plants.detail.strain_profile_link')}
             </Text>
             <ArrowRight color={colors.neutral[400]} width={14} height={14} />
@@ -177,7 +182,7 @@ function PlantContentSheet({
         ) : null}
 
         {/* Divider */}
-        <View className="mx-4 my-6 h-px bg-neutral-200 dark:bg-neutral-700" />
+        <View className="bg-divider mx-4 my-6 h-px" />
 
         {/* Form Sections (fragment mode to avoid nested ScrollView) */}
         <PlantForm
@@ -193,7 +198,7 @@ function PlantContentSheet({
 
       {/* Floating Save Button */}
       <View
-        className="absolute inset-x-0 bottom-0 bg-white/95 px-4 pt-3 dark:bg-charcoal-900/95"
+        className="bg-sheet/95 absolute inset-x-0 bottom-0 px-4 pt-3"
         style={{ paddingBottom: insets.bottom + 8 }}
       >
         <Button
@@ -209,6 +214,101 @@ function PlantContentSheet({
       </View>
     </View>
   );
+}
+
+function useHarvestModal(t: ReturnType<typeof useTranslation>['t']) {
+  const [isVisible, setIsVisible] = React.useState(false);
+
+  const open = React.useCallback(() => {
+    haptics.selection();
+    setIsVisible(true);
+  }, []);
+
+  const close = React.useCallback(() => {
+    setIsVisible(false);
+  }, []);
+
+  const onSubmit = React.useCallback(() => {
+    setIsVisible(false);
+    showMessage({
+      message: t('harvest.success.created'),
+      type: 'success',
+    });
+  }, [t]);
+
+  return { isVisible, open, close, onSubmit };
+}
+
+type PlantDetailHandlersDeps = {
+  plantId: string | null;
+  linkedStrainSlug: string | null;
+  deletePlant: (id: string) => void;
+  refetch: () => void;
+  router: ReturnType<typeof useRouter>;
+  t: ReturnType<typeof useTranslation>['t'];
+};
+
+function usePlantDetailHandlers(deps: PlantDetailHandlersDeps) {
+  const { plantId, linkedStrainSlug, deletePlant, refetch, router, t } = deps;
+  const handleRefresh = React.useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  const handleBack = React.useCallback(() => {
+    haptics.selection();
+    router.replace('/');
+  }, [router]);
+
+  const handleOpenStrain = React.useCallback(() => {
+    if (!linkedStrainSlug) return;
+    haptics.selection();
+    router.push(`/strains/${linkedStrainSlug}`);
+  }, [linkedStrainSlug, router]);
+
+  const submitHandlerRef = React.useRef<() => void>(() => {});
+
+  const handleSubmitReady = React.useCallback((submit: () => void) => {
+    submitHandlerRef.current = submit;
+  }, []);
+
+  const handleHeaderSave = React.useCallback(() => {
+    haptics.selection();
+    submitHandlerRef.current();
+  }, []);
+
+  const handleDelete = React.useCallback(() => {
+    if (!plantId) return;
+    Alert.alert(
+      t('plants.form.delete_confirm_title'),
+      t('plants.form.delete_confirm_body'),
+      [
+        { text: t('plants.form.cancel'), style: 'cancel' },
+        {
+          text: t('plants.form.delete_confirm_action'),
+          style: 'destructive',
+          onPress: () => deletePlant(plantId),
+        },
+      ]
+    );
+  }, [deletePlant, plantId, t]);
+
+  const handleTaskPress = React.useCallback(
+    (taskId: string) => {
+      haptics.selection();
+      router.push(`/calendar?taskId=${taskId}`);
+    },
+    [router]
+  );
+
+  return {
+    handleRefresh,
+    handleBack,
+    handleOpenStrain,
+    handleSubmitReady,
+    handleHeaderSave,
+    handleDelete,
+    handleTaskPress,
+  };
 }
 
 function usePlantSubmit(
@@ -302,63 +402,24 @@ export default function PlantDetailScreen(): React.ReactElement | null {
     return plant.metadata?.strainSlug ?? plant.metadata?.strainId ?? null;
   }, [plant]);
 
-  const handleRefresh = React.useCallback(() => {
-    refetch();
-  }, [refetch]);
+  const {
+    handleRefresh,
+    handleBack,
+    handleOpenStrain,
+    handleSubmitReady,
+    handleHeaderSave,
+    handleDelete,
+    handleTaskPress,
+  } = usePlantDetailHandlers({
+    plantId,
+    linkedStrainSlug,
+    deletePlant,
+    refetch,
+    router,
+    t,
+  });
 
-  const handleBack = React.useCallback(() => {
-    haptics.selection();
-    // Use replace('/') instead of back() to navigate to home
-    // since plants/ is a nested stack and back() would try to
-    // navigate within the stack rather than exit to home.
-    router.replace('/');
-  }, [router]);
-
-  const handleOpenStrain = React.useCallback(() => {
-    if (!linkedStrainSlug) return;
-    haptics.selection();
-    router.push(`/strains/${linkedStrainSlug}`);
-  }, [linkedStrainSlug, router]);
-
-  // Store submit handler from form
-  const submitHandlerRef = React.useRef<() => void>(() => {});
-
-  const handleSubmitReady = React.useCallback((submit: () => void) => {
-    submitHandlerRef.current = submit;
-  }, []);
-
-  const handleHeaderSave = React.useCallback(() => {
-    haptics.selection();
-    submitHandlerRef.current();
-  }, []);
-
-  const handleDelete = React.useCallback(() => {
-    if (!plantId) return;
-
-    Alert.alert(
-      t('plants.form.delete_confirm_title'),
-      t('plants.form.delete_confirm_body'),
-      [
-        {
-          text: t('plants.form.cancel'),
-          style: 'cancel',
-        },
-        {
-          text: t('plants.form.delete_confirm_action'),
-          style: 'destructive',
-          onPress: () => deletePlant(plantId),
-        },
-      ]
-    );
-  }, [deletePlant, plantId, t]);
-
-  const handleTaskPress = React.useCallback(
-    (taskId: string) => {
-      haptics.selection();
-      router.push(`/calendar?taskId=${taskId}`);
-    },
-    [router]
-  );
+  const harvestModal = useHarvestModal(t);
 
   const showAssessmentHistory = showAssessments === 'true';
 
@@ -409,8 +470,17 @@ export default function PlantDetailScreen(): React.ReactElement | null {
         handleOpenStrain={handleOpenStrain}
         handleHeaderSave={handleHeaderSave}
         handleTaskPress={handleTaskPress}
+        handleHarvestPress={harvestModal.open}
         insets={insets}
         t={t}
+      />
+
+      {/* Harvest Modal */}
+      <HarvestModal
+        isVisible={harvestModal.isVisible}
+        plantId={plantId}
+        onSubmit={harvestModal.onSubmit}
+        onCancel={harvestModal.close}
       />
     </View>
   );

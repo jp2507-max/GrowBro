@@ -92,7 +92,10 @@ export default function Feed() {
   const isEmpty = !isLoading && plants.length === 0;
 
   return (
-    <View className="flex-1 bg-background" testID="feed-screen">
+    <View
+      className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
+      testID="feed-screen"
+    >
       <FocusAwareStatusBar />
 
       {/* Header rendered directly in screen for shared stacking context */}

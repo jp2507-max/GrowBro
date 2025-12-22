@@ -148,21 +148,21 @@ function ToggleRow({
   impactText?: string;
 }) {
   return (
-    <View className="mb-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-800">
+    <View className="bg-card mb-4 rounded-lg border border-neutral-200 p-4 dark:border-charcoal-700">
       <View className="flex-row items-start justify-between">
         <View className="flex-1 pr-4">
           <Text
-            className="text-base font-medium text-charcoal-900 dark:text-charcoal-100"
+            className="text-base font-medium text-charcoal-900 dark:text-neutral-100"
             onPress={onInfoPress}
             testID={`${testID}-title`}
           >
             {title}
           </Text>
-          <Text className="mt-1 text-sm text-charcoal-600 dark:text-charcoal-400">
+          <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
             {subtitle}
           </Text>
           {impactText && (
-            <Text className="mt-2 text-xs text-charcoal-500 dark:text-charcoal-400">
+            <Text className="text-text-secondary mt-2 text-xs">
               {impactText}
             </Text>
           )}
@@ -513,11 +513,11 @@ function ConsentHeader({
 }) {
   return (
     <View className="mb-6">
-      <Text className="mb-2 text-2xl font-bold text-charcoal-900 dark:text-charcoal-100">
+      <Text className="text-text-primary mb-2 text-2xl font-bold">
         {translate(titleKey)}
       </Text>
       {subtitleKey && (
-        <Text className="text-base text-charcoal-600 dark:text-charcoal-400">
+        <Text className="text-text-secondary text-base">
           {translate(subtitleKey)}
         </Text>
       )}
@@ -541,7 +541,7 @@ function ConsentFooter({
   onDismiss?: () => void;
 }) {
   return (
-    <View className="border-t border-neutral-200 bg-neutral-50 p-4 dark:border-charcoal-700 dark:bg-charcoal-800">
+    <View className="border-border bg-card border-t p-4">
       <ConsentActions
         mode={mode}
         onAcceptAll={async () => await bulkSet(true)}
@@ -550,7 +550,7 @@ function ConsentFooter({
         onDismiss={onDismiss}
       />
       <View className="mt-3">
-        <Text className="text-xs text-charcoal-500 dark:text-charcoal-400">
+        <Text className="text-text-secondary text-xs">
           {translate('consent.lastUpdated', {
             date: new Date(privacyConsent.lastUpdated).toLocaleDateString(),
           })}
@@ -593,7 +593,7 @@ function ConsentManagerView({
   onDismiss?: () => void;
 }) {
   return (
-    <View className="flex-1 bg-white dark:bg-charcoal-900" testID={testID}>
+    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950" testID={testID}>
       <ScrollView className="flex-1 p-4">
         <ConsentHeader titleKey={titleKey} subtitleKey={subtitleKey} />
         {mode === 'opt-out' && (

@@ -173,7 +173,7 @@ export default function ReportBugScreen() {
 
           {/* Category */}
           <View className="mb-4">
-            <Text className="mb-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+            <Text className="mb-2 text-sm font-medium text-charcoal-900 dark:text-neutral-100">
               {translate('settings.support.report_bug.category_label')}
             </Text>
             <Controller
@@ -245,9 +245,9 @@ export default function ReportBugScreen() {
           </View>
 
           {/* Include Diagnostics Toggle */}
-          <View className="mb-4 rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-800">
+          <View className="bg-card mb-4 rounded-lg border border-neutral-200 p-4 dark:border-charcoal-700">
             <View className="mb-2 flex-row items-center justify-between">
-              <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+              <Text className="text-text-primary text-sm font-medium">
                 {translate('settings.support.report_bug.include_diagnostics')}
               </Text>
               <Controller
@@ -265,14 +265,14 @@ export default function ReportBugScreen() {
                 )}
               />
             </View>
-            <Text className="text-xs text-neutral-600 dark:text-neutral-400">
+            <Text className="text-text-secondary text-xs">
               {translate('settings.support.report_bug.diagnostics_description')}
             </Text>
 
             {/* Show diagnostics preview */}
             {includeDiagnostics && diagnostics && (
-              <View className="mt-3 rounded border border-neutral-300 bg-white p-2 dark:border-neutral-600 dark:bg-neutral-900">
-                <Text className="font-mono text-xs text-neutral-700 dark:text-neutral-300">
+              <View className="border-border bg-card mt-3 rounded border p-2">
+                <Text className="text-text-secondary font-mono text-xs">
                   {`App: ${diagnostics.appVersion}\nBuild: ${diagnostics.buildNumber}\nDevice: ${diagnostics.deviceModel}\nOS: ${diagnostics.osVersion}\nLocale: ${diagnostics.locale}\nStorage: ${diagnostics.freeStorage}MB\nNetwork: ${diagnostics.networkStatus}`}
                 </Text>
               </View>

@@ -32,9 +32,7 @@ function NotFoundState({ message }: { message: string }) {
   return (
     <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <View className="flex-1 items-center justify-center px-4">
-        <Text className="text-center text-neutral-600 dark:text-neutral-400">
-          {message}
-        </Text>
+        <Text className="text-text-secondary text-center">{message}</Text>
       </View>
     </SafeAreaView>
   );
@@ -53,30 +51,30 @@ function PlaybookContent({
     <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <ScrollView className="flex-1">
         <View className="p-4">
-          <View className="rounded-xl bg-white p-4 dark:bg-charcoal-900">
-            <Text className="mb-2 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+          <View className="bg-card rounded-xl p-4">
+            <Text className="mb-2 text-2xl font-bold text-charcoal-900 dark:text-neutral-100">
               {preview.name}
             </Text>
-            <Text className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
+            <Text className="text-text-secondary mb-4 text-sm">
               {getSetupDisplayLabel(preview.setup)(t)}
             </Text>
-            <Text className="text-base text-neutral-700 dark:text-neutral-300">
+            <Text className="text-text-secondary text-base">
               {preview.totalWeeks} weeks • {preview.totalTasks} tasks
             </Text>
           </View>
 
           <View className="mt-6">
-            <Text className="mb-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+            <Text className="text-text-primary mb-2 text-lg font-semibold">
               {t('playbooks.whatYouGet')}
             </Text>
-            <Text className="text-base text-neutral-600 dark:text-neutral-400">
+            <Text className="text-text-secondary text-base">
               {t('playbooks.detailDescription')}
             </Text>
           </View>
         </View>
       </ScrollView>
 
-      <View className="border-t border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
+      <View className="bg-card border-t border-neutral-200 p-4 dark:border-charcoal-700">
         <Button
           label={t('playbooks.applyToPlant')}
           onPress={onApply}

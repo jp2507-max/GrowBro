@@ -408,13 +408,13 @@ function ExplanationSection() {
 
       {/* Consequences */}
       <View className="mb-6">
-        <Text className="mb-3 text-lg font-semibold text-charcoal-950 dark:text-neutral-100">
+        <Text className="mb-3 text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
           {t('settings.delete_account.consequences_title')}
         </Text>
         {consequences.map((key, index) => (
           <View key={index} className="mb-3 flex-row gap-3">
             <AlertCircle size={20} color="#dc2626" />
-            <Text className="flex-1 text-base leading-6 text-neutral-700 dark:text-neutral-300">
+            <Text className="flex-1 text-base leading-6 text-neutral-600 dark:text-neutral-400">
               {t(key)}
             </Text>
           </View>
@@ -423,13 +423,13 @@ function ExplanationSection() {
 
       {/* What Will Be Deleted */}
       <View className="mb-6">
-        <Text className="mb-3 text-lg font-semibold text-charcoal-950 dark:text-neutral-100">
+        <Text className="text-text-primary mb-3 text-lg font-semibold">
           {t('settings.delete_account.data_title')}
         </Text>
         {dataToDelete.map((key, index) => (
           <View key={index} className="mb-2 flex-row gap-3">
             <Trash size={18} color="#6b7280" />
-            <Text className="flex-1 text-base text-neutral-700 dark:text-neutral-300">
+            <Text className="text-text-secondary flex-1 text-base">
               {t(key)}
             </Text>
           </View>
@@ -491,15 +491,15 @@ function FinalConfirmationSection({
       </View>
 
       {/* Countdown Info */}
-      <View className="mb-6 rounded-lg bg-neutral-100 p-4 dark:bg-charcoal-800">
-        <Text className="text-center text-lg font-semibold text-charcoal-950 dark:text-neutral-100">
+      <View className="bg-card mb-6 rounded-lg p-4">
+        <Text className="text-text-primary text-center text-lg font-semibold">
           {t('settings.delete_account.countdown_message', { days: 30 })}
         </Text>
       </View>
 
       {/* Type DELETE Confirmation */}
       <View className="mb-6">
-        <Text className="mb-3 text-base text-neutral-700 dark:text-neutral-300">
+        <Text className="text-text-secondary mb-3 text-base">
           {t('settings.delete_account.type_delete_instruction', {
             keyword: deleteKeyword,
           })}

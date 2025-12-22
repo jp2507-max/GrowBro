@@ -47,7 +47,7 @@ const ConsumptionHistoryItem = ({
 
   return (
     <Pressable
-      className="border-b border-border bg-card p-4"
+      className="bg-card border-b border-neutral-200 p-4 dark:border-charcoal-700"
       testID={`consumption-history-item-${entry.id}`}
       onPress={() => onPress?.(entry)}
       accessibilityRole="button"
@@ -56,19 +56,19 @@ const ConsumptionHistoryItem = ({
     >
       <View className="flex-row items-start justify-between">
         <View className="flex-1">
-          <Text className="font-inter-semibold text-base text-text-primary">
+          <Text className="font-inter-semibold text-base text-charcoal-900 dark:text-neutral-100">
             {entry.itemName}
           </Text>
-          <Text className="mt-1 text-sm text-text-secondary">
+          <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
             {entry.quantity.toFixed(2)} {entry.unit}
           </Text>
         </View>
 
         <View className="items-end">
-          <Text className="font-inter-bold text-base text-text-primary">
+          <Text className="font-inter-bold text-text-primary text-base">
             {formatCost(entry.totalCostMinor)}
           </Text>
-          <Text className="mt-1 text-xs text-text-secondary">
+          <Text className="text-text-secondary mt-1 text-xs">
             {formatCost(entry.costPerUnitMinor)}/{entry.unit}
           </Text>
         </View>
@@ -78,7 +78,7 @@ const ConsumptionHistoryItem = ({
         <View
           className={`rounded-full px-2 py-1 ${
             entry.type === 'consumption'
-              ? 'dark:bg-primary-950 bg-primary-100'
+              ? 'bg-primary-100 dark:bg-primary-950'
               : 'dark:bg-warning-950 bg-warning-100'
           }`}
         >
@@ -104,11 +104,11 @@ const ConsumptionHistoryItem = ({
         )}
       </View>
 
-      <Text className="mt-2 text-xs italic text-text-secondary">
+      <Text className="text-text-secondary mt-2 text-xs italic">
         {entry.reason}
       </Text>
 
-      <Text className="mt-1 text-xs text-text-secondary">{formattedDate}</Text>
+      <Text className="text-text-secondary mt-1 text-xs">{formattedDate}</Text>
     </Pressable>
   );
 };
@@ -152,7 +152,7 @@ export const ConsumptionHistoryList = ({
         className="flex-1 items-center justify-center p-8"
         testID={`${testID}-empty`}
       >
-        <Text className="text-center text-sm text-text-secondary">
+        <Text className="text-text-secondary text-center text-sm">
           {t('inventory.history.noEntries')}
         </Text>
       </View>

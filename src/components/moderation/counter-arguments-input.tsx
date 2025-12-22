@@ -19,13 +19,13 @@ export function CounterArgumentsInput({
   return (
     <View className="mb-4" testID={testID ?? 'counter-arguments-input'}>
       <Text
-        className="mb-2 text-sm font-medium text-text-primary"
+        className="mb-2 text-sm font-medium text-charcoal-900 dark:text-neutral-100"
         testID={testID ? `${testID}-label` : 'counter-arguments-input-label'}
       >
         {t('appeals.label.counterArguments')} *
       </Text>
       <Text
-        className="mb-2 text-xs text-text-secondary"
+        className="mb-2 text-xs text-neutral-600 dark:text-neutral-400"
         testID={testID ? `${testID}-hint` : 'counter-arguments-input-hint'}
       >
         {t('appeals.hint.counterArguments')}
@@ -41,7 +41,7 @@ export function CounterArgumentsInput({
         testID={testID ? `${testID}-input` : 'counter-arguments-input-input'}
       />
       <Text
-        className="mt-1 text-xs text-text-secondary"
+        className="text-text-secondary mt-1 text-xs"
         testID={
           testID ? `${testID}-counter` : 'counter-arguments-input-counter'
         }

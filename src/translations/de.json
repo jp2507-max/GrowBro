@@ -2228,6 +2228,7 @@
       "action_hub_title": "Heutige Aufgaben",
       "all_good_message": "Alles im grünen Bereich – Keine Aufgaben heute.",
       "no_tasks": "Keine anstehenden Aufgaben",
+      "start_harvest": "Ernte starten",
       "stats_day": "Tag",
       "stats_height": "Höhe",
       "stats_phase": "Phase",
@@ -3695,6 +3696,66 @@
     "inventory": "Inventar",
     "plants": "Pflanzen",
     "strains": "Sorten"
+  },
+  "tasks": {
+    "burpJarsWeek1": {
+      "description": "Gläser für 15-30 Minuten öffnen, um Feuchtigkeit abzulassen und Luft zu erneuern. Auf Schimmel oder Ammoniakgeruch prüfen.",
+      "title": "Gläser lüften"
+    },
+    "burpJarsWeek3": {
+      "description": "Gläser kurz öffnen, um die Luftfeuchtigkeit aufrechtzuerhalten. Weniger häufiges Lüften ist nötig, je weiter die Aushärtung fortschreitet.",
+      "title": "Gläser lüften"
+    },
+    "changeReservoir": {
+      "description": "Vollständiger Wasserwechsel, um Nährstoffansammlung zu verhindern und Frische zu erhalten.",
+      "title": "Reservoirwasser wechseln"
+    },
+    "checkHumidityDome": {
+      "description": "Sicherstellen, dass die Feuchtigkeitshaube vorhanden ist und die Feuchtigkeitswerte für den Sämling ausreichend sind.",
+      "title": "Feuchtigkeitshaube prüfen"
+    },
+    "checkLightDistance": {
+      "description": "Sativa-dominante Pflanzen können sich erheblich strecken. Ausreichenden Abstand zwischen Lampen und Kronendach sicherstellen, um Lichtbrand zu vermeiden.",
+      "title": "Lichtabstand prüfen (Streckwarnung)"
+    },
+    "checkPhEc": {
+      "description": "Reservoir-pH (5,5-6,5) und EC-Werte überwachen. Bei Bedarf für optimale Nährstoffaufnahme anpassen.",
+      "title": "pH & EC prüfen"
+    },
+    "checkPreflowers": {
+      "description": "Nach weißen Stempeln an den Knoten suchen - ein Zeichen dafür, dass deine Autoflower in die Blüte übergeht. Erwäge den Wechsel zur Blütephase, wenn bestätigt.",
+      "title": "Auf Vorblüten prüfen (weiße Stempel)"
+    },
+    "checkStemSnap": {
+      "description": "Kleinen Stängel biegen - wenn er sauber bricht (nicht biegt), sind die Blüten bereit zum Aushärten. Täglich prüfen, bis trocken.",
+      "title": "Stängelbruch prüfen"
+    },
+    "checkWaterTemp": {
+      "description": "Reservoirtemperatur zwischen 18-22°C (65-72°F) halten, um Wurzelprobleme zu vermeiden.",
+      "title": "Wassertemperatur prüfen"
+    },
+    "feedPlant": {
+      "descriptionCoco": "Bei jeder Bewässerung in Kokos düngen. EC/pH des Ablaufs überwachen.",
+      "descriptionSoil": "Nährstoffe gemäß deinem Düngeplan anwenden. Basierend auf Pflanzenreaktion anpassen.",
+      "title": "Pflanze düngen"
+    },
+    "startFlushing": {
+      "description": "Spülphase beginnen - nur pH-ausgeglichenes Wasser verwenden. Dies hilft, überschüssige Nährstoffe zu entfernen und verbessert den Endgeschmack.",
+      "title": "Spülen beginnen (nur Wasser)"
+    },
+    "switchLights": {
+      "description": "Lichtplan auf 12 Stunden an, 12 Stunden aus einstellen, um die Blüte auszulösen und aufrechtzuerhalten.",
+      "title": "Lampen auf 12/12 umstellen"
+    },
+    "topDressing": {
+      "description": "Organische Zusätze auf die Bodenoberfläche geben für langsam freisetzende Nährstoffe.",
+      "title": "Oberflächendüngung"
+    },
+    "waterPlant": {
+      "descriptionCoco": "Gießen bis ~10-20% Ablauf. Kokos trocknet schnell - täglich prüfen.",
+      "descriptionSoil": "Gießen bis ~10-20% Ablauf. Bodenfeuchtigkeit vor dem Gießen prüfen.",
+      "title": "Pflanze gießen"
+    }
   },
   "trichome": {
     "amber": "Bernstein",

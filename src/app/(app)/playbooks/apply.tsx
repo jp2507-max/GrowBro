@@ -40,8 +40,8 @@ function PlantSelectionList({
           key={plant.id}
           className={`rounded-xl border-2 p-4 ${
             selectedId === plant.id
-              ? 'dark:bg-primary-950 border-primary-600 bg-primary-50 dark:border-primary-500'
-              : 'border-neutral-200 bg-white dark:border-charcoal-800 dark:bg-charcoal-900'
+              ? 'border-primary-600 bg-primary-50 dark:border-primary-500 dark:bg-primary-950'
+              : 'bg-card border-neutral-200 dark:border-charcoal-700'
           }`}
           onPress={() => onSelect(plant.id)}
           accessibilityRole="button"
@@ -52,7 +52,7 @@ function PlantSelectionList({
           testID={`plant-option-${plant.id}`}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          <Text className="text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
             {plant.name}
           </Text>
           {plant.strain && (
@@ -210,7 +210,7 @@ function EmptyPlantState({ onCreatePlant }: { onCreatePlant: () => void }) {
   const { t } = useTranslation();
   return (
     <View className="items-center py-12">
-      <Text className="mb-4 text-center text-neutral-600 dark:text-neutral-400">
+      <Text className="text-text-secondary mb-4 text-center">
         {t('playbooks.noPlants')}
       </Text>
       <Button label={t('playbooks.createPlant')} onPress={onCreatePlant} />
@@ -239,10 +239,10 @@ function ApplyContent({
     <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <ScrollView className="flex-1">
         <View className="p-4">
-          <Text className="mb-2 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+          <Text className="text-text-primary mb-2 text-2xl font-bold">
             {t('playbooks.selectPlant')}
           </Text>
-          <Text className="mb-6 text-base text-neutral-600 dark:text-neutral-400">
+          <Text className="text-text-secondary mb-6 text-base">
             {t('playbooks.selectPlantDescription')}
           </Text>
 
@@ -259,7 +259,7 @@ function ApplyContent({
       </ScrollView>
 
       {plants.length > 0 && (
-        <View className="border-t border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
+        <View className="border-border bg-card border-t p-4">
           <Button
             label={
               applying ? t('playbooks.applying') : t('playbooks.applyPlaybook')

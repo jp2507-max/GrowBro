@@ -34,10 +34,10 @@ export function PlantStatsGrid({
   }, [plant.stage, t]);
 
   return (
-    <View className="mx-4 flex-row items-center justify-between border-b border-neutral-100 py-6 dark:border-neutral-800">
+    <View className="border-divider mx-4 flex-row items-center justify-between border-b py-6">
       {/* Stat 1: Day */}
       <View className="flex-1 items-center">
-        <Text className="mb-1 text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+        <Text className="text-text-tertiary mb-1 text-xs font-bold uppercase tracking-wider">
           {t('plants.detail.stats_day')}
         </Text>
         <Text className="text-2xl font-bold text-[--color-text-primary]">
@@ -46,11 +46,11 @@ export function PlantStatsGrid({
       </View>
 
       {/* Divider */}
-      <View className="h-8 w-px bg-neutral-100 dark:bg-neutral-800" />
+      <View className="bg-divider h-8 w-px" />
 
       {/* Stat 2: Phase */}
       <View className="flex-1 items-center">
-        <Text className="mb-1 text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+        <Text className="text-text-tertiary mb-1 text-xs font-bold uppercase tracking-wider">
           {t('plants.detail.stats_phase')}
         </Text>
         <Text className="text-xl font-bold text-[--color-action-primary]">

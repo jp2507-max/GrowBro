@@ -18,11 +18,11 @@ export function FavoritesEmptyState(): React.ReactElement {
     >
       <Text className="text-6xl">💚</Text>
       <Text
-        className="mt-4 text-2xl font-semibold text-text-primary"
+        className="mt-4 text-2xl font-semibold text-charcoal-900 dark:text-neutral-100"
         tx="strains.favorites.empty_title"
       />
       <Text
-        className="mt-2 text-center text-base text-text-secondary"
+        className="mt-2 text-center text-base text-neutral-600 dark:text-neutral-400"
         tx="strains.favorites.empty_description"
       />
       <View className="mt-6">

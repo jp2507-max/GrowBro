@@ -5,12 +5,18 @@ import type { EdgeInsets } from 'react-native-safe-area-context';
 import { twMerge } from 'tailwind-merge';
 
 import { Pressable, Text, View } from '@/components/ui';
+import colors from '@/components/ui/colors';
 import { Settings as SettingsIcon } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
-import { themeRoles } from '@/lib/theme-tokens';
 
 const HEADER_PADDING_TOP = 12;
+
+// Header colors derived from colors.js palette
+const headerColors = {
+  light: { background: colors.primary[600], text: colors.white },
+  dark: { background: colors.primary[800], text: colors.white },
+} as const;
 
 type ScreenHeaderBaseProps = {
   /** Safe area insets */
@@ -44,20 +50,19 @@ export function ScreenHeaderBase({
 }: ScreenHeaderBaseProps): React.ReactElement {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const headerColors = isDark
-    ? themeRoles.header.dark
-    : themeRoles.header.light;
+  const colors = isDark ? headerColors.dark : headerColors.light;
 
   return (
     <View
       className={twMerge(
         'z-0 px-4 pb-16',
         'rounded-b-[32px] shadow-lg',
-        showBottomBorder && 'border-b border-border'
+        showBottomBorder &&
+          'border-b border-neutral-200 dark:border-charcoal-700'
       )}
       style={{
         paddingTop: insets.top + HEADER_PADDING_TOP,
-        backgroundColor: headerColors.background,
+        backgroundColor: colors.background,
       }}
       testID={testID}
     >
@@ -73,7 +78,7 @@ export function ScreenHeaderBase({
       {title ? (
         <Text
           className="text-3xl font-bold tracking-tight"
-          style={{ color: headerColors.text }}
+          style={{ color: colors.text }}
         >
           {title}
         </Text>
@@ -107,7 +112,9 @@ export function HeaderGreeting(): React.ReactElement {
   }
 
   return (
-    <Text className="text-lg font-medium text-text-primary">{greeting}</Text>
+    <Text className="text-lg font-medium text-charcoal-900 dark:text-neutral-100">
+      {greeting}
+    </Text>
   );
 }
 
@@ -194,9 +201,7 @@ export function HeaderIconButton({
       onPress={onPress}
       className={twMerge(
         'size-10 items-center justify-center rounded-full shadow-sm active:bg-neutral-100 dark:active:bg-neutral-800',
-        isActive
-          ? 'bg-primary-100 dark:bg-primary-900'
-          : 'bg-white dark:bg-neutral-900'
+        isActive ? 'bg-primary-100 dark:bg-primary-900' : 'bg-card'
       )}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}

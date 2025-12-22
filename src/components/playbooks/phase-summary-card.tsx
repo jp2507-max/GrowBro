@@ -46,7 +46,7 @@ function ProgressBar({
           }}
         />
       </View>
-      <Text className="text-sm font-medium text-text-secondary">
+      <Text className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
         {completed}/{total}
       </Text>
     </View>
@@ -64,16 +64,16 @@ function ActivitiesSection({
 
   return (
     <View className="mb-3">
-      <Text className="mb-2 text-sm font-medium text-text-secondary">
+      <Text className="text-text-secondary mb-2 text-sm font-medium">
         {t('playbooks.activities')}
       </Text>
       <View className="flex-row flex-wrap gap-2">
         {activities.map((activity) => (
           <View
             key={activity.taskType}
-            className="rounded-lg bg-card px-3 py-1.5"
+            className="bg-card rounded-lg px-3 py-1.5"
           >
-            <Text className="text-xs text-text-secondary">
+            <Text className="text-text-secondary text-xs">
               {getTaskTypeLabel(t, activity.taskType)}: {activity.count}
             </Text>
           </View>
@@ -94,13 +94,13 @@ function OutcomesSection({
 
   return (
     <View>
-      <Text className="mb-2 text-sm font-medium text-text-secondary">
+      <Text className="text-text-secondary mb-2 text-sm font-medium">
         {t('playbooks.outcomes')}
       </Text>
       {outcomes.map((outcome, index) => (
         <View key={index} className="mb-1 flex-row items-start gap-2">
           <Text className="text-success-600 dark:text-success-400">•</Text>
-          <Text className="flex-1 text-sm text-text-secondary">{outcome}</Text>
+          <Text className="text-text-secondary flex-1 text-sm">{outcome}</Text>
         </View>
       ))}
     </View>
@@ -118,17 +118,17 @@ export function PhaseSummaryCard({
 
   return (
     <View
-      className={`rounded-xl border border-border bg-card p-4 ${className}`}
+      className={`bg-card rounded-xl border border-neutral-200 p-4 dark:border-charcoal-700 ${className}`}
       testID="phase-summary-card"
     >
       <View className="mb-3">
         <Text
-          className="text-lg font-semibold text-text-primary"
+          className="text-lg font-semibold text-charcoal-900 dark:text-neutral-100"
           testID="phase-summary-title"
         >
           {getPhaseLabel(t, summary.phase)}
         </Text>
-        <Text className="mt-1 text-sm text-text-secondary">
+        <Text className="text-text-secondary mt-1 text-sm">
           {startDate.toFormat('MMM d')} - {endDate.toFormat('MMM d, yyyy')} (
           {Math.round(duration)} days)
         </Text>

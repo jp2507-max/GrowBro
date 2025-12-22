@@ -202,6 +202,53 @@ function PlantAddedModal({
   );
 }
 
+type CreatePlantHeaderProps = {
+  onBack: () => void;
+  completion: number;
+  topInset: number;
+  t: (key: string, options?: Record<string, unknown>) => string;
+};
+
+function CreatePlantHeader({
+  onBack,
+  completion,
+  topInset,
+  t,
+}: CreatePlantHeaderProps) {
+  return (
+    <View
+      className="bg-primary-900 px-6 pb-20 dark:bg-primary-800/90"
+      style={{ paddingTop: topInset + 12 }}
+    >
+      <Pressable
+        onPress={onBack}
+        className="mb-4 size-10 items-center justify-center rounded-full bg-white/10 active:bg-white/20"
+        accessibilityRole="button"
+        accessibilityLabel={t('common.cancel')}
+        accessibilityHint={t('accessibility.common.return_to_previous')}
+        testID="header-back-button"
+      >
+        <ArrowLeft color="#fff" width={22} height={22} />
+      </Pressable>
+
+      <Text className="text-3xl font-bold tracking-tight text-white">
+        {t('plants.form.create_title')}
+      </Text>
+
+      <Text className="mt-1 text-sm font-medium uppercase tracking-widest text-primary-200">
+        {t('plants.form.completion', { percent: completion })}
+      </Text>
+
+      <View className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/20">
+        <View
+          className="h-full rounded-full bg-terracotta-500"
+          style={{ width: `${Math.min(100, Math.max(0, completion))}%` }}
+        />
+      </View>
+    </View>
+  );
+}
+
 export default function CreatePlantScreen(): React.ReactElement {
   const { t } = useTranslation();
   const router = useRouter();
@@ -278,51 +325,22 @@ export default function CreatePlantScreen(): React.ReactElement {
   const scrollContentStyle = React.useMemo(() => ({ paddingBottom: 100 }), []);
 
   return (
-    <View className="flex-1 bg-primary-900 dark:bg-primary-800">
+    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <Stack.Screen options={{ headerShown: false }} />
       <FocusAwareStatusBar style="light" />
 
-      {/* Premium Organic Header */}
-      <View
-        className="bg-primary-900 px-6 pb-20 dark:bg-primary-800"
-        style={{ paddingTop: insets.top + 12 }}
-      >
-        {/* Back Button */}
-        <Pressable
-          onPress={handleComplete}
-          className="mb-4 size-10 items-center justify-center rounded-full bg-white/10 active:bg-white/20"
-          accessibilityRole="button"
-          accessibilityLabel={t('common.cancel')}
-          accessibilityHint={t('accessibility.common.return_to_previous')}
-          testID="header-back-button"
-        >
-          <ArrowLeft color="#fff" width={22} height={22} />
-        </Pressable>
-
-        {/* Title */}
-        <Text className="text-3xl font-bold tracking-tight text-white">
-          {t('plants.form.create_title')}
-        </Text>
-
-        {/* Completion subtext */}
-        <Text className="mt-1 text-sm font-medium uppercase tracking-widest text-primary-200">
-          {t('plants.form.completion', { percent: completion })}
-        </Text>
-
-        {/* Progress bar with terracotta color */}
-        <View className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/20">
-          <View
-            className="h-full rounded-full bg-terracotta-500"
-            style={{ width: `${Math.min(100, Math.max(0, completion))}%` }}
-          />
-        </View>
-      </View>
+      <CreatePlantHeader
+        onBack={handleComplete}
+        completion={completion}
+        topInset={insets.top}
+        t={t}
+      />
 
       {/* Overlapping White Content Sheet */}
       <View className="z-10 -mt-10 flex-1">
-        <View className="flex-1 rounded-t-[35px] bg-white shadow-xl dark:bg-charcoal-900">
+        <View className="bg-sheet flex-1 rounded-t-[35px] shadow-xl">
           {/* Handle Bar */}
-          <View className="mb-2 mt-4 h-1.5 w-12 self-center rounded-full bg-neutral-200" />
+          <View className="bg-sheet-handle mb-2 mt-4 h-1.5 w-12 self-center rounded-full" />
 
           <ScrollView
             className="flex-1"
@@ -342,7 +360,7 @@ export default function CreatePlantScreen(): React.ReactElement {
 
           {/* Floating CTA Button */}
           <View
-            className="absolute inset-x-0 bottom-0 bg-white/95 px-4 pt-3 dark:bg-charcoal-900/95"
+            className="bg-sheet/95 absolute inset-x-0 bottom-0 px-4 pt-3"
             style={{ paddingBottom: insets.bottom + 8 }}
           >
             <Button

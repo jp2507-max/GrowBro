@@ -74,7 +74,7 @@ function ActionItem({
         className={`flex-row items-center rounded-xl border p-3 ${
           completed
             ? 'border-success-200 bg-success-50 dark:border-success-700 dark:bg-success-900/40'
-            : 'border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-800'
+            : 'bg-card border-neutral-200 dark:border-charcoal-700'
         }`}
         accessibilityRole="button"
         accessibilityLabel={translate(titleKey)}
@@ -104,7 +104,7 @@ function ActionItem({
             className={`text-sm font-semibold ${
               completed
                 ? 'text-success-900 dark:text-success-200'
-                : 'text-neutral-900 dark:text-neutral-100'
+                : 'text-charcoal-900 dark:text-neutral-100'
             }`}
           >
             {translate(titleKey)}

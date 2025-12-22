@@ -23,9 +23,9 @@ const inputTv = tv({
   slots: {
     container: 'mb-4',
     label:
-      'mb-2 ml-1 text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500',
+      'text-text-tertiary mb-2 ml-1 text-xs font-bold uppercase tracking-wider',
     input:
-      'mt-0 rounded-2xl border-2 border-transparent bg-neutral-100 px-5 py-4 font-inter text-base font-medium leading-5 dark:bg-neutral-800 dark:text-white',
+      'border-input-border bg-input-bg mt-0 rounded-2xl border-2 px-5 py-4 font-inter text-base font-medium leading-5 text-charcoal-900 dark:text-neutral-100',
   },
 
   variants: {
@@ -42,7 +42,7 @@ const inputTv = tv({
     },
     disabled: {
       true: {
-        input: 'bg-neutral-200 dark:bg-neutral-700',
+        input: 'opacity-60',
       },
     },
     chunky: {

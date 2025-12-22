@@ -321,14 +321,14 @@ export default function AboutScreen() {
                 {isOffline && isOTAEnabled && (
                   <View className="mt-2 flex-row items-center justify-center">
                     <OfflineBadge />
-                    <Text className="ml-2 text-xs text-neutral-500 dark:text-neutral-400">
+                    <Text className="text-text-tertiary ml-2 text-xs">
                       {translate('settings.about.check_updates_offline')}
                     </Text>
                   </View>
                 )}
 
                 {!isOTAEnabled && (
-                  <Text className="mt-2 text-center text-xs text-neutral-500 dark:text-neutral-400">
+                  <Text className="text-text-tertiary mt-2 text-center text-xs">
                     {translate('settings.about.ota_disabled')}
                   </Text>
                 )}
@@ -372,12 +372,12 @@ export default function AboutScreen() {
 
           {/* Copyright Section */}
           <View className="my-8">
-            <Text className="text-center text-sm text-neutral-500 dark:text-neutral-400">
+            <Text className="text-text-tertiary text-center text-sm">
               {translate('settings.about.copyright', {
                 year: new Date().getFullYear(),
               })}
             </Text>
-            <Text className="mt-1 text-center text-xs text-neutral-400 dark:text-neutral-500">
+            <Text className="text-text-tertiary mt-1 text-center text-xs">
               {translate('settings.about.educational_purpose')}
             </Text>
           </View>

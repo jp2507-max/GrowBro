@@ -49,7 +49,7 @@ export function ReportDetailView({
   onRequestSupervisorReview: _onRequestSupervisorReview,
 }: ReportDetailViewProps) {
   return (
-    <ScrollView className="flex-1 bg-background">
+    <ScrollView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <View className="p-4">
         <ReportHeader report={report} />
         <ContentDetails report={report} />
@@ -65,16 +65,16 @@ function ReportHeader({ report }: { report: QueuedReport }) {
   const reporterType = report.trusted_flagger ? 'Trusted Flagger' : 'User';
 
   return (
-    <View className="mb-4 rounded-xl border border-border bg-card p-4">
+    <View className="bg-card mb-4 rounded-xl border border-neutral-200 p-4 dark:border-charcoal-700">
       <View className="mb-3 flex-row items-start justify-between">
         <View className="flex-1">
-          <Text className="mb-1 text-xl font-bold text-text-primary">
+          <Text className="mb-1 text-xl font-bold text-charcoal-900 dark:text-neutral-100">
             Report #{report.id.slice(0, 8)}
           </Text>
-          <Text className="mb-1 text-sm text-text-secondary">
+          <Text className="mb-1 text-sm text-neutral-600 dark:text-neutral-400">
             {reportCategory} · {reporterType}
           </Text>
-          <Text className="text-xs text-text-secondary">
+          <Text className="text-text-secondary text-xs">
             Submitted: {formatDate(report.created_at)}
           </Text>
         </View>
@@ -110,18 +110,18 @@ function ReportHeader({ report }: { report: QueuedReport }) {
         </View>
       )}
 
-      <View className="border-t border-border pt-3">
-        <Text className="mb-1 text-xs font-medium text-text-secondary">
+      <View className="border-border border-t pt-3">
+        <Text className="text-text-secondary mb-1 text-xs font-medium">
           Explanation
         </Text>
-        <Text className="text-sm leading-5 text-text-primary">
+        <Text className="text-text-primary text-sm leading-5">
           {report.explanation}
         </Text>
       </View>
 
       {report.evidence_urls && report.evidence_urls.length > 0 && (
-        <View className="mt-3 border-t border-border pt-3">
-          <Text className="mb-2 text-xs font-medium text-text-secondary">
+        <View className="border-border mt-3 border-t pt-3">
+          <Text className="text-text-secondary mb-2 text-xs font-medium">
             Evidence ({report.evidence_urls.length})
           </Text>
           {report.evidence_urls.map((url, idx) => (
@@ -141,31 +141,31 @@ function ReportHeader({ report }: { report: QueuedReport }) {
 
 function ContentDetails({ report }: { report: QueuedReport }) {
   return (
-    <View className="mb-4 rounded-xl border border-border bg-card p-4">
-      <Text className="mb-3 text-base font-semibold text-text-primary">
+    <View className="border-border bg-card mb-4 rounded-xl border p-4">
+      <Text className="text-text-primary mb-3 text-base font-semibold">
         Content Details
       </Text>
       <View className="gap-2">
         <View className="flex-row">
-          <Text className="w-32 text-xs text-text-secondary">Content ID:</Text>
-          <Text className="flex-1 text-xs font-medium text-text-primary">
+          <Text className="text-text-secondary w-32 text-xs">Content ID:</Text>
+          <Text className="text-text-primary flex-1 text-xs font-medium">
             {report.content_id}
           </Text>
         </View>
         <View className="flex-row">
-          <Text className="w-32 text-xs text-text-secondary">
+          <Text className="text-text-secondary w-32 text-xs">
             Content Type:
           </Text>
-          <Text className="flex-1 text-xs font-medium text-text-primary">
+          <Text className="text-text-primary flex-1 text-xs font-medium">
             {report.content_type}
           </Text>
         </View>
         <View className="flex-row">
-          <Text className="w-32 text-xs text-text-secondary">
+          <Text className="text-text-secondary w-32 text-xs">
             Content Hash:
           </Text>
           <Text
-            className="flex-1 font-mono text-xs text-text-secondary"
+            className="text-text-secondary flex-1 font-mono text-xs"
             numberOfLines={1}
           >
             {report.content_hash}
@@ -173,10 +173,10 @@ function ContentDetails({ report }: { report: QueuedReport }) {
         </View>
         {report.content_snapshot && (
           <View className="flex-row">
-            <Text className="w-32 text-xs text-text-secondary">
+            <Text className="text-text-secondary w-32 text-xs">
               Snapshot ID:
             </Text>
-            <Text className="flex-1 text-xs font-medium text-text-primary">
+            <Text className="text-text-primary flex-1 text-xs font-medium">
               {report.content_snapshot?.id?.slice(0, 8)}
             </Text>
           </View>
@@ -192,8 +192,8 @@ function ActionButtons({
   onTakeAction: (action: string, reason: string) => void;
 }) {
   return (
-    <View className="mb-4 gap-3 rounded-xl border border-border bg-card p-4">
-      <Text className="mb-2 text-base font-semibold text-text-primary">
+    <View className="border-border bg-card mb-4 gap-3 rounded-xl border p-4">
+      <Text className="text-text-primary mb-2 text-base font-semibold">
         Take Action
       </Text>
       <View className="flex-row flex-wrap gap-2">

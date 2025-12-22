@@ -84,7 +84,7 @@ export default function UserProfile() {
   }
 
   return (
-    <View className="flex-1 bg-neutral-50 dark:bg-neutral-950">
+    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <Stack.Screen
         options={{
           title: profile.username,

@@ -46,7 +46,7 @@ function TaskCounts({ phase }: { phase: PhaseProgress }) {
         </Text>
       )}
       {phase.upcomingTasks > 0 && (
-        <Text className="text-xs text-text-secondary">
+        <Text className="text-xs text-neutral-600 dark:text-neutral-400">
           {phase.upcomingTasks}
         </Text>
       )}
@@ -93,14 +93,16 @@ function PhaseDot({
 
       <Text
         className={`mt-2 text-xs ${
-          isCurrent ? 'font-semibold text-text-primary' : 'text-text-secondary'
+          isCurrent
+            ? 'font-semibold text-charcoal-900 dark:text-neutral-100'
+            : 'text-text-secondary'
         }`}
       >
         {PHASE_LABELS[phase.phase]}
       </Text>
 
       {isCurrent && (
-        <Text className="mt-1 text-xs text-text-secondary">
+        <Text className="text-text-secondary mt-1 text-xs">
           {phase.progressPercent}%
         </Text>
       )}
@@ -115,15 +117,15 @@ function Legend() {
     <View className="mt-4 flex-row justify-center gap-4 px-4">
       <View className="flex-row items-center gap-1">
         <View className="size-2 rounded-full bg-success-600" />
-        <Text className="text-xs text-text-secondary">Completed</Text>
+        <Text className="text-text-secondary text-xs">Completed</Text>
       </View>
       <View className="flex-row items-center gap-1">
         <View className="size-2 rounded-full bg-primary-600" />
-        <Text className="text-xs text-text-secondary">Current</Text>
+        <Text className="text-text-secondary text-xs">Current</Text>
       </View>
       <View className="flex-row items-center gap-1">
-        <View className="size-2 rounded-full bg-border" />
-        <Text className="text-xs text-text-secondary">Upcoming</Text>
+        <View className="bg-border size-2 rounded-full" />
+        <Text className="text-text-secondary text-xs">Upcoming</Text>
       </View>
     </View>
   );

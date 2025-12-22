@@ -73,7 +73,7 @@ function UnitToggle({
 
   return (
     <View className="mb-4 flex-row items-center" testID={testID}>
-      <Text className="mr-3 text-base text-charcoal-950 dark:text-neutral-100">
+      <Text className="mr-3 text-base text-charcoal-900 dark:text-neutral-100">
         {t('harvest.modal.unitToggle')}:
       </Text>
       <View className="flex-row overflow-hidden rounded-lg border border-neutral-300 dark:border-neutral-700">
@@ -88,7 +88,7 @@ function UnitToggle({
           style={touchTargetStyles.minimum}
         >
           <Text
-            className={`text-sm font-medium ${unit === 'g' ? 'text-white' : 'text-charcoal-950 dark:text-neutral-100'}`}
+            className={`text-sm font-medium ${unit === 'g' ? 'text-white' : 'text-text-primary'}`}
           >
             {t('harvest.units.gramsLong')}
           </Text>
@@ -104,7 +104,7 @@ function UnitToggle({
           style={touchTargetStyles.minimum}
         >
           <Text
-            className={`text-sm font-medium ${unit === 'oz' ? 'text-white' : 'text-charcoal-950 dark:text-neutral-100'}`}
+            className={`text-sm font-medium ${unit === 'oz' ? 'text-white' : 'text-text-primary'}`}
           >
             {t('harvest.units.ouncesLong')}
           </Text>
@@ -405,8 +405,8 @@ export function HarvestModal({
  */
 function ModalHeader({ t }: { t: (key: string) => string }) {
   return (
-    <View className="border-b border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
-      <Text className="text-2xl font-semibold text-charcoal-950 dark:text-neutral-100">
+    <View className="bg-card border-b border-neutral-200 p-4 dark:border-charcoal-700">
+      <Text className="text-text-primary text-2xl font-semibold">
         {t('harvest.modal.title')}
       </Text>
       <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
@@ -582,7 +582,7 @@ function PhotoSection({
 }) {
   return (
     <View className="mt-4">
-      <Text className="mb-2 text-base text-neutral-700 dark:text-neutral-300">
+      <Text className="text-text-secondary mb-2 text-base">
         {t('harvest.modal.photos')} ({photoVariants.length})
       </Text>
       <PhotoCapture
@@ -615,7 +615,7 @@ function ActionButtons({
   t: (key: string) => string;
 }) {
   return (
-    <View className="border-t border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
+    <View className="border-border bg-card border-t p-4">
       <View className="flex-row gap-3">
         <View className="flex-1">
           <Button
