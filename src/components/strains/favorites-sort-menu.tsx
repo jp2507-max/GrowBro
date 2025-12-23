@@ -77,7 +77,7 @@ function DirectionButton({
       className={`flex-1 rounded-lg border p-3 ${
         selected
           ? 'border-primary-600 bg-primary-50 dark:bg-primary-950'
-          : 'border-border bg-card'
+          : 'border-neutral-200 bg-white dark:border-charcoal-700 dark:bg-charcoal-900'
       }`}
       accessibilityRole="radio"
       accessibilityState={{ checked: selected }}
@@ -87,7 +87,7 @@ function DirectionButton({
         className={
           selected
             ? 'text-center text-primary-600 dark:text-primary-400'
-            : 'text-text-primary text-center'
+            : 'text-center text-charcoal-900 dark:text-neutral-100'
         }
       >
         {translate(tx)}
@@ -129,7 +129,7 @@ export const FavoritesSortMenu = React.forwardRef<
       <Modal ref={ref} snapPoints={['50%']}>
         <View className="p-4">
           <Text
-            className="text-text-primary mb-4 text-xl font-semibold"
+            className="mb-4 text-xl font-semibold text-charcoal-900 dark:text-neutral-100"
             tx="strains.favorites.sort.title"
           />
 

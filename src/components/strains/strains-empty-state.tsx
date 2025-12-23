@@ -60,15 +60,15 @@ export function StrainsEmptyState({
 
         <View className="w-full gap-3">
           <Text
-            className="text-text-primary text-base font-medium"
+            className="text-base font-medium text-charcoal-900 dark:text-neutral-100"
             tx="strains.empty_state_educational.search_tip_1"
           />
           <Text
-            className="text-text-primary text-base font-medium"
+            className="text-base font-medium text-charcoal-900 dark:text-neutral-100"
             tx="strains.empty_state_educational.search_tip_2"
           />
           <Text
-            className="text-text-primary text-base font-medium"
+            className="text-base font-medium text-charcoal-900 dark:text-neutral-100"
             tx="strains.empty_state_educational.search_tip_3"
           />
         </View>

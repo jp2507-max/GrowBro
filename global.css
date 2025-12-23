@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 /*
- * Note: Theme colors are injected at runtime via NativeWindThemeProvider
- * using NativeWind's vars() function. See src/lib/nativewind-theme-provider.tsx
+ * Theming uses the Obytes approach:
+ *   - colors.js is the SSOT for palette (imported into tailwind.config.js)
+ *   - NativeWind darkMode: 'class' enabled
+ *   - Root view applies className={theme.dark ? 'dark' : undefined}
+ *   - Components use explicit light/dark pairs (e.g. bg-white dark:bg-charcoal-900)
  */

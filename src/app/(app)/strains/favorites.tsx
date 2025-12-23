@@ -180,12 +180,12 @@ function FavoritesHeader({
         </Pressable>
       </View>
       <View className="flex-row items-center justify-between pb-4">
-        <Text className="text-text-primary text-3xl font-extrabold tracking-tight">
+        <Text className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
           {translate('strains.favorites.title')}
         </Text>
         <Pressable
           onPress={onSort}
-          className="bg-card active:bg-card size-10 items-center justify-center rounded-full shadow-sm"
+          className="size-10 items-center justify-center rounded-full bg-white shadow-sm active:bg-white dark:bg-charcoal-900"
           accessibilityRole="button"
           accessibilityLabel={translate('strains.favorites.sort.title')}
           accessibilityHint={translate('strains.favorites.sort.hint')}
@@ -195,7 +195,7 @@ function FavoritesHeader({
             color={iconColor}
             width={20}
             height={20}
-            className="text-text-primary"
+            className="text-neutral-900 dark:text-neutral-100"
           />
         </Pressable>
       </View>

@@ -41,7 +41,7 @@ function EmptyState({ message }: { message: string }) {
 function LoadingState({ message }: { message: string }) {
   return (
     <View className="flex-1 items-center justify-center">
-      <Text className="text-text-secondary">{message}</Text>
+      <Text className="text-neutral-500 dark:text-neutral-400">{message}</Text>
     </View>
   );
 }

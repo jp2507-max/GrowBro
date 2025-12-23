@@ -85,7 +85,7 @@ export function SessionListItem({
           </Text>
 
           {session.ip_address_truncated && (
-            <Text className="text-text-secondary mt-1 text-xs">
+            <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
               {translate('auth.sessions.ip_address', {
                 ip: session.ip_address_truncated,
               })}

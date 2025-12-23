@@ -157,7 +157,7 @@ function StrainSuggestionsDropdown({
   const showEmpty = suggestions.length === 0 && !showCreateCustom;
 
   return (
-    <View className="border-border bg-card absolute inset-x-0 top-16 z-10 mt-2 rounded-2xl border shadow-lg">
+    <View className="absolute inset-x-0 top-16 z-10 mt-2 rounded-2xl border border-neutral-200 bg-white shadow-lg dark:border-charcoal-700 dark:bg-charcoal-900">
       {showEmpty && (
         <View className="px-4 py-3">
           <Text className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -186,7 +186,7 @@ function StrainSuggestionsDropdown({
               <Text className="text-base font-medium text-charcoal-900 dark:text-neutral-100">
                 {strain.name}
               </Text>
-              <Text className="text-text-secondary text-xs">
+              <Text className="text-xs text-neutral-500 dark:text-neutral-400">
                 {t('plants.form.strain_race_label', { race: strain.race })}
               </Text>
             </View>
@@ -532,7 +532,7 @@ function IdentitySection({
       delay={100}
       testID="identity-section"
     >
-      <View className="bg-card gap-3 rounded-2xl p-4">
+      <View className="gap-3 rounded-2xl bg-white p-4 dark:bg-charcoal-900">
         <ControlledInput
           control={control}
           name="name"
@@ -583,7 +583,7 @@ function EnvironmentSection({
       delay={200}
       testID="environment-section"
     >
-      <View className="bg-card gap-3 rounded-2xl p-4">
+      <View className="gap-3 rounded-2xl bg-white p-4 dark:bg-charcoal-900">
         <SelectField
           control={control}
           name="environment"
@@ -609,7 +609,6 @@ function EnvironmentSection({
           label={t('plants.form.planted_at_label')}
           testID="plant-plantedAt-picker"
           maximumDate={new Date()}
-          chunky
         />
       </View>
     </FormSection>
@@ -632,7 +631,7 @@ function CareSection({
       delay={300}
       testID="care-section"
     >
-      <View className="bg-card gap-3 rounded-2xl p-4">
+      <View className="gap-3 rounded-2xl bg-white p-4 dark:bg-charcoal-900">
         <SelectField
           control={control}
           name="medium"

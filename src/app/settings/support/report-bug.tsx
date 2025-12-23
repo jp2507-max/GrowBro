@@ -247,7 +247,7 @@ export default function ReportBugScreen() {
           {/* Include Diagnostics Toggle */}
           <View className="mb-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
             <View className="mb-2 flex-row items-center justify-between">
-              <Text className="text-text-primary text-sm font-medium">
+              <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                 {translate('settings.support.report_bug.include_diagnostics')}
               </Text>
               <Controller
@@ -271,8 +271,8 @@ export default function ReportBugScreen() {
 
             {/* Show diagnostics preview */}
             {includeDiagnostics && diagnostics && (
-              <View className="border-border bg-card mt-3 rounded border p-2">
-                <Text className="text-text-secondary font-mono text-xs">
+              <View className="mt-3 rounded border border-neutral-200 bg-white p-2 dark:border-white/10 dark:bg-charcoal-900">
+                <Text className="font-mono text-xs text-neutral-500 dark:text-neutral-400">
                   {`App: ${diagnostics.appVersion}\nBuild: ${diagnostics.buildNumber}\nDevice: ${diagnostics.deviceModel}\nOS: ${diagnostics.osVersion}\nLocale: ${diagnostics.locale}\nStorage: ${diagnostics.freeStorage}MB\nNetwork: ${diagnostics.networkStatus}`}
                 </Text>
               </View>

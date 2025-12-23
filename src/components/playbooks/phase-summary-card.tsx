@@ -73,7 +73,7 @@ function ActivitiesSection({
             key={activity.taskType}
             className="rounded-lg bg-white px-3 py-1.5 dark:bg-charcoal-900"
           >
-            <Text className="text-text-secondary text-xs">
+            <Text className="text-xs text-neutral-500 dark:text-neutral-400">
               {getTaskTypeLabel(t, activity.taskType)}: {activity.count}
             </Text>
           </View>
@@ -94,13 +94,15 @@ function OutcomesSection({
 
   return (
     <View>
-      <Text className="text-text-secondary mb-2 text-sm font-medium">
+      <Text className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
         {t('playbooks.outcomes')}
       </Text>
       {outcomes.map((outcome, index) => (
         <View key={index} className="mb-1 flex-row items-start gap-2">
           <Text className="text-success-600 dark:text-success-400">•</Text>
-          <Text className="text-text-secondary flex-1 text-sm">{outcome}</Text>
+          <Text className="flex-1 text-sm text-neutral-500 dark:text-neutral-400">
+            {outcome}
+          </Text>
         </View>
       ))}
     </View>
@@ -118,7 +120,7 @@ export function PhaseSummaryCard({
 
   return (
     <View
-      className={`bg-card rounded-xl border border-neutral-200 p-4 dark:border-charcoal-700 ${className}`}
+      className={`rounded-xl border border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900 ${className}`}
       testID="phase-summary-card"
     >
       <View className="mb-3">
@@ -128,7 +130,7 @@ export function PhaseSummaryCard({
         >
           {getPhaseLabel(t, summary.phase)}
         </Text>
-        <Text className="text-text-secondary mt-1 text-sm">
+        <Text className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
           {startDate.toFormat('MMM d')} - {endDate.toFormat('MMM d, yyyy')} (
           {Math.round(duration)} days)
         </Text>

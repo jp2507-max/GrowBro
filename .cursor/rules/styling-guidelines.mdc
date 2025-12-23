@@ -57,56 +57,36 @@ const makeStyle = isOn
 
 ## 🧭 Styling with NativeWind
 
-- **Static** styles in `className`; **dynamic** parts via `style={animatedStyle}`.
-- **Do not** flip Tailwind classes per frame. Compute animated styles instead.
-- **Explicit Pairing**: Always define Light & Dark explicitly: `bg-white dark:bg-charcoal-900`.
-- **No CSS Vars**: We rely on compile-time classes, not runtime `var()`.
-- Class order: layout → flex/grid → spacing → sizing → border/radius → background → text/font → effects → dark.
-- Forward/merge `className` in custom components via `tailwind-merge` (`cn`).
+- Keep `className` **stable**. Static styles in `className`, animated/gesture styles via Reanimated `style`.
+- Always write explicit Light/Dark pairs: `bg-white dark:bg-charcoal-900`. **No CSS vars**.
+- Never toggle Tailwind classes per frame; derive animation values in worklets.
+- Class order: layout → flex → spacing → size → border → bg → text → effects → dark.
+- Custom components must forward/merge `className` via `cn` (tailwind-merge).
 
 ---
 
-## 🧩 GrowBro repo‑specific styling conventions
+## 🎨 UI & Theming (Obytes-aligned)
 
-- **Tokens**: `src/components/ui/colors.js` is the Single Source of Truth.
-  - Loaded into `tailwind.config.js` via `...colors`.
-- **Dark Mode Strategy**: **Explicit Utility Classes**.
-  - **No CSS variables**. No runtime provider.
-  - Use direct Tailwind colors defined in `colors.js`.
-- **Standard Pairs** (Strict Rules):
-  - **App Bg**: `bg-neutral-50 dark:bg-charcoal-950`
-  - **Surface**: `bg-white dark:bg-charcoal-900`
-  - **Input/Border**: `border-neutral-200 dark:border-white/10` (Glass)
-  - **Text Main**: `text-neutral-900 dark:text-neutral-50`
-  - **Text Sub**: `text-neutral-600 dark:text-neutral-400`
-  - **Brand**: `text-primary-800 dark:text-primary-300` (Mint)
-- **Native props**: Import `colors` from `@/components/ui/colors` directly.
+- **Tokens (SSOT)**: `src/components/ui/colors.js` → imported into `tailwind.config.js` and reused for navigation colors.
+- **Theme state**: NativeWind `colorScheme` (`system | light | dark`), persisted in MMKV.
+- **Root wiring**: call `loadSelectedTheme()` at startup; compute nav theme via `useThemeConfig()`; apply `className={theme.dark ? 'dark' : undefined}` at the app root.
+- **Use Tailwind `dark:`** for component styling. Use React Navigation `ThemeProvider` only for APIs that require JS theme colors (navigation container, headers).
 
-### 🌈 Theme workflow & Rules
+---
 
-- **Palette**: `src/components/ui/colors.js` (raw values).
-- **Usage**:
-  - **Static**: Write specific pairs (`bg-white dark:bg-charcoal-900`).
-  - **Dynamic**: Import `colors` object in TS.
-- **Semantic Rule**: **Avoid** semantic classes like `bg-card` or `text-text-primary`.
-  - ✅ `className="bg-white dark:bg-charcoal-900"` (Explicit, stable)
-  - ❌ `className="bg-card"` (Deprecated, hides logic)
+## 🧩 GrowBro styling rules
+
+- Prefer explicit utilities over semantic tokens (avoid `bg-card`, `bg-background`, etc.).
+- If you need JS values (native props, charts, navigation options), import `colors` and/or read `useColorScheme()`.
+- Standard pairs: App `bg-neutral-50 dark:bg-charcoal-950`; Surface `bg-white dark:bg-charcoal-900`; Border `border-neutral-200 dark:border-white/10`; Text `text-neutral-900 dark:text-neutral-50`; Subtext `text-neutral-600 dark:text-neutral-400`; Brand `text-primary-800 dark:text-primary-300`.
+
 ---
 
 ## ✅ Do / Avoid (Quick)
 
-**Do**
+**Do**: Tailwind for static, Reanimated for dynamic; explicit pairs; respect Reduced Motion.
 
-- Tailwind for **static**, Reanimated for **dynamic**.
-- Use **Explicit Pairs** (`bg-white dark:bg-charcoal-900`) everywhere.
-- Use `white/10` opacity for dark mode borders/inputs (Glass look).
-- Honor **Reduced Motion** via `.reduceMotion(ReduceMotion.System)`.
-
-**Avoid**
-
-- Toggling `className` per frame.
-- Using deprecated semantic tokens (`bg-background`).
-- Calling `runOnJS` per frame.
+**Avoid**: per-frame class churn; semantic background tokens; per-frame `runOnJS`.
 
 ---
 
@@ -121,7 +101,7 @@ runOnUI(() => {
   'worklet';
   // expensive but synchronous logic here
 })();
-````
+```
 
 ### Captures (Closures)
 

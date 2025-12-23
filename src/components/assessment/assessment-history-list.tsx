@@ -112,7 +112,7 @@ export function AssessmentHistoryList({
         <Text className="text-sm text-neutral-600 dark:text-neutral-400">
           {t('assessment.history.empty')}
         </Text>
-        <Text className="text-text-secondary mt-1 text-xs">
+        <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
           {t('assessment.history.emptyHint')}
         </Text>
       </View>

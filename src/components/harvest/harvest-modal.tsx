@@ -88,7 +88,7 @@ function UnitToggle({
           style={touchTargetStyles.minimum}
         >
           <Text
-            className={`text-sm font-medium ${unit === 'g' ? 'text-white' : 'text-text-primary'}`}
+            className={`text-sm font-medium ${unit === 'g' ? 'text-white' : 'text-neutral-900 dark:text-neutral-100'}`}
           >
             {t('harvest.units.gramsLong')}
           </Text>
@@ -104,7 +104,7 @@ function UnitToggle({
           style={touchTargetStyles.minimum}
         >
           <Text
-            className={`text-sm font-medium ${unit === 'oz' ? 'text-white' : 'text-text-primary'}`}
+            className={`text-sm font-medium ${unit === 'oz' ? 'text-white' : 'text-neutral-900 dark:text-neutral-100'}`}
           >
             {t('harvest.units.ouncesLong')}
           </Text>
@@ -406,7 +406,7 @@ export function HarvestModal({
 function ModalHeader({ t }: { t: (key: string) => string }) {
   return (
     <View className="border-b border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
-      <Text className="text-text-primary text-2xl font-semibold">
+      <Text className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
         {t('harvest.modal.title')}
       </Text>
       <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
@@ -615,7 +615,7 @@ function ActionButtons({
   t: (key: string) => string;
 }) {
   return (
-    <View className="border-border bg-card border-t p-4">
+    <View className="border-t border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900">
       <View className="flex-row gap-3">
         <View className="flex-1">
           <Button

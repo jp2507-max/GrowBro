@@ -39,11 +39,11 @@ function CategoryList() {
           tx="settings.notifications.categories.communityLikes"
         />
         <Text
-          className="text-text-secondary mb-1 text-sm"
+          className="mb-1 text-sm text-neutral-500 dark:text-neutral-400"
           tx="settings.notifications.categories.cultivationReminders"
         />
         <Text
-          className="text-text-secondary text-sm"
+          className="text-sm text-neutral-500 dark:text-neutral-400"
           tx="settings.notifications.categories.systemUpdates"
         />
       </View>
@@ -56,7 +56,7 @@ function PlatformHelp() {
     return (
       <View className="mb-6">
         <Text
-          className="text-text-secondary text-xs"
+          className="text-xs text-neutral-500 dark:text-neutral-400"
           tx="settings.notifications.platformHelp.android"
         />
       </View>
@@ -66,7 +66,7 @@ function PlatformHelp() {
   return (
     <View className="mb-6">
       <Text
-        className="text-text-secondary text-xs"
+        className="text-xs text-neutral-500 dark:text-neutral-400"
         tx="settings.notifications.platformHelp.ios"
       />
     </View>
@@ -97,11 +97,11 @@ function CategoryToggle({
       <View className="flex-row items-center justify-between">
         <View className="flex-1 pr-4">
           <Text
-            className="text-text-primary mb-1 text-sm font-medium"
+            className="mb-1 text-sm font-medium text-charcoal-900 dark:text-neutral-100"
             tx={txTitle as TxKeyPath}
           />
           <Text
-            className="text-text-secondary text-xs"
+            className="text-xs text-neutral-500 dark:text-neutral-400"
             tx={txDescription as TxKeyPath}
           />
           {isChannelDisabled && (
@@ -233,18 +233,18 @@ export default function NotificationSettings() {
       <ScrollView>
         <View className="flex-1 px-4 pt-16">
           <Text
-            className="text-text-primary mb-6 text-2xl font-bold"
+            className="mb-6 text-2xl font-bold text-charcoal-900 dark:text-neutral-100"
             tx="settings.notifications.title"
           />
 
           {/* System Settings Card */}
-          <View className="bg-card mb-6 rounded-lg p-4">
+          <View className="mb-6 rounded-lg bg-white p-4 dark:bg-charcoal-900">
             <Text
-              className="text-text-primary mb-2 text-base font-semibold"
+              className="mb-2 text-base font-semibold text-charcoal-900 dark:text-neutral-100"
               tx="settings.notifications.systemPermissions.title"
             />
             <Text
-              className="text-text-secondary mb-4 text-sm"
+              className="mb-4 text-sm text-neutral-500 dark:text-neutral-400"
               tx="settings.notifications.systemPermissions.description"
             />
 
@@ -264,9 +264,9 @@ export default function NotificationSettings() {
 
           {/* Notification Categories */}
           {permissionGranted && preferences && (
-            <View className="bg-card mb-6 rounded-lg p-4">
+            <View className="mb-6 rounded-lg bg-white p-4 dark:bg-charcoal-900">
               <Text
-                className="text-text-primary mb-4 text-base font-semibold"
+                className="mb-4 text-base font-semibold text-charcoal-900 dark:text-neutral-100"
                 tx="settings.notifications.categories.sectionTitle"
               />
 
@@ -283,9 +283,9 @@ export default function NotificationSettings() {
               />
 
               {preferences.taskReminders && (
-                <View className="bg-card mb-4 ml-4 rounded-lg p-3">
+                <View className="mb-4 ml-4 rounded-lg bg-white p-3 dark:bg-charcoal-900">
                   <Text
-                    className="text-text-primary mb-2 text-sm font-medium"
+                    className="mb-2 text-sm font-medium text-charcoal-900 dark:text-neutral-100"
                     tx="settings.notifications.taskReminderTiming.title"
                   />
                   <View className="space-y-2">
@@ -308,7 +308,7 @@ export default function NotificationSettings() {
                               <View className="size-2 rounded-full bg-white" />
                             )}
                           </View>
-                          <Text className="text-text-primary text-sm">
+                          <Text className="text-sm text-charcoal-900 dark:text-neutral-100">
                             {timing === 'hour_before' && (
                               <Text tx="settings.notifications.taskReminderTiming.hourBefore" />
                             )}
@@ -327,7 +327,7 @@ export default function NotificationSettings() {
                   {preferences.taskReminderTiming === 'custom' && (
                     <View className="mt-3">
                       <Text
-                        className="text-text-secondary mb-2 text-xs"
+                        className="mb-2 text-xs text-neutral-500 dark:text-neutral-400"
                         tx="settings.notifications.taskReminderTiming.customMinutes"
                       />
                       <Input
@@ -384,7 +384,7 @@ export default function NotificationSettings() {
                         accessibilityHint="Enter the number of minutes before task to send reminder (1-1440)"
                       />
                       <Text
-                        className="text-text-secondary mt-1 text-xs"
+                        className="mt-1 text-xs text-neutral-500 dark:text-neutral-400"
                         tx="settings.notifications.taskReminderTiming.customMinutesHelp"
                       />
                     </View>
@@ -442,16 +442,16 @@ export default function NotificationSettings() {
 
           {/* Quiet Hours */}
           {permissionGranted && preferences && (
-            <View className="bg-card mb-6 rounded-lg p-4">
-              <Text className="text-text-primary mb-4 text-base font-semibold">
+            <View className="mb-6 rounded-lg bg-white p-4 dark:bg-charcoal-900">
+              <Text className="mb-4 text-base font-semibold text-charcoal-900 dark:text-neutral-100">
                 {translate('notifications.quietHours.title' as TxKeyPath)}
               </Text>
-              <Text className="text-text-secondary mb-4 text-sm">
+              <Text className="mb-4 text-sm text-neutral-500 dark:text-neutral-400">
                 {translate('notifications.quietHours.description' as TxKeyPath)}
               </Text>
 
               <View className="flex-row items-center justify-between">
-                <Text className="text-text-primary text-sm font-medium">
+                <Text className="text-sm font-medium text-charcoal-900 dark:text-neutral-100">
                   {translate('notifications.quietHours.enabled' as TxKeyPath)}
                 </Text>
                 <Switch
@@ -470,7 +470,7 @@ export default function NotificationSettings() {
 
               {preferences.quietHoursEnabled && (
                 <View className="mt-4 space-y-2">
-                  <Text className="text-text-secondary text-xs">
+                  <Text className="text-xs text-neutral-500 dark:text-neutral-400">
                     {translate(
                       'notifications.quietHours.startLabel' as TxKeyPath,
                       {
@@ -478,7 +478,7 @@ export default function NotificationSettings() {
                       }
                     )}
                   </Text>
-                  <Text className="text-text-secondary text-xs">
+                  <Text className="text-xs text-neutral-500 dark:text-neutral-400">
                     {translate(
                       'notifications.quietHours.endLabel' as TxKeyPath,
                       {
@@ -492,9 +492,9 @@ export default function NotificationSettings() {
           )}
 
           {/* Community Notification Preferences (Legacy) */}
-          <View className="bg-card mb-6 rounded-lg p-4">
+          <View className="mb-6 rounded-lg bg-white p-4 dark:bg-charcoal-900">
             <Text
-              className="text-text-primary mb-3 text-base font-semibold"
+              className="mb-3 text-base font-semibold text-charcoal-900 dark:text-neutral-100"
               tx="settings.notifications.community.title"
             />
 
@@ -502,11 +502,11 @@ export default function NotificationSettings() {
             <View className="mb-4 flex-row items-center justify-between">
               <View className="flex-1 pr-4">
                 <Text
-                  className="text-text-primary mb-1 text-sm font-medium"
+                  className="mb-1 text-sm font-medium text-charcoal-900 dark:text-neutral-100"
                   tx="settings.notifications.community.repliesAndComments"
                 />
                 <Text
-                  className="text-text-secondary text-xs"
+                  className="text-xs text-neutral-500 dark:text-neutral-400"
                   tx="settings.notifications.community.repliesAndCommentsDescription"
                 />
               </View>
@@ -524,11 +524,11 @@ export default function NotificationSettings() {
             <View className="flex-row items-center justify-between">
               <View className="flex-1 pr-4">
                 <Text
-                  className="text-text-primary mb-1 text-sm font-medium"
+                  className="mb-1 text-sm font-medium text-charcoal-900 dark:text-neutral-100"
                   tx="settings.notifications.community.likes"
                 />
                 <Text
-                  className="text-text-secondary text-xs"
+                  className="text-xs text-neutral-500 dark:text-neutral-400"
                   tx="settings.notifications.community.likesDescription"
                 />
               </View>

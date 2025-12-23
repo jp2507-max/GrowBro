@@ -70,21 +70,21 @@ export default function InventoryItemDetailScreen(): React.ReactElement {
         </View>
 
         {/* Stock Info */}
-        <View className="border-border bg-card border-b p-4">
+        <View className="border-b border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900">
           <View className="flex-row items-center justify-between">
             <View>
-              <Text className="text-text-secondary text-sm">
+              <Text className="text-sm text-neutral-500 dark:text-neutral-400">
                 {t('harvest.inventory.current_stock')}
               </Text>
-              <Text className="text-text-primary mt-1 text-3xl font-bold">
+              <Text className="mt-1 text-3xl font-bold text-neutral-900 dark:text-neutral-100">
                 {item.currentStock} {item.unitOfMeasure}
               </Text>
             </View>
             <View>
-              <Text className="text-text-secondary text-sm">
+              <Text className="text-sm text-neutral-500 dark:text-neutral-400">
                 {t('harvest.inventory.total_value')}
               </Text>
-              <Text className="text-text-primary mt-1 text-2xl font-bold">
+              <Text className="mt-1 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                 ${(item.totalValue / 100).toFixed(2)}
               </Text>
             </View>
@@ -93,8 +93,8 @@ export default function InventoryItemDetailScreen(): React.ReactElement {
 
         {/* Consumption Trends */}
         {!forecastLoading && consumptionHistory.length > 0 && (
-          <View className="border-border bg-card mt-4 border-b p-4">
-            <Text className="text-text-primary mb-3 text-lg font-semibold">
+          <View className="mt-4 border-b border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900">
+            <Text className="mb-3 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
               {t('harvest.inventory.charts.consumptionTrend')}
             </Text>
             <ConsumptionTrendChart data={consumptionHistory} />
@@ -113,7 +113,7 @@ export default function InventoryItemDetailScreen(): React.ReactElement {
 
         {/* Batches */}
         <View className="mt-4 px-4">
-          <Text className="text-text-primary mb-3 text-lg font-semibold">
+          <Text className="mb-3 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
             {t('harvest.inventory.batches_title')}
           </Text>
           <BatchList batches={batches} itemId={id} />

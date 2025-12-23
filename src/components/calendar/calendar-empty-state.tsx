@@ -27,7 +27,7 @@ export function CalendarEmptyState({
 
         <View className="w-full gap-3 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
           <Text
-            className="text-text-primary text-base font-medium"
+            className="text-base font-medium text-charcoal-900 dark:text-neutral-100"
             tx="calendar.empty_state.sample_title"
           />
           <Text

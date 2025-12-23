@@ -167,10 +167,10 @@ function ProfileFormFields({
         <Pressable
           accessibilityRole="switch"
           accessibilityState={{ checked: showProfileToCommunity }}
-          className="bg-input-bg mb-3 flex-row items-center justify-between rounded-xl p-4"
+          className="mb-3 flex-row items-center justify-between rounded-xl bg-white p-4 dark:bg-white/10"
           onPress={() => setShowProfileToCommunity(!showProfileToCommunity)}
         >
-          <Text className="text-text-primary flex-1">
+          <Text className="flex-1 text-neutral-900 dark:text-neutral-100">
             {t('profile.privacy.showProfile')}
           </Text>
           <View
@@ -181,10 +181,10 @@ function ProfileFormFields({
         <Pressable
           accessibilityRole="switch"
           accessibilityState={{ checked: allowDirectMessages }}
-          className="bg-input-bg flex-row items-center justify-between rounded-xl p-4"
+          className="flex-row items-center justify-between rounded-xl bg-white p-4 dark:bg-white/10"
           onPress={() => setAllowDirectMessages(!allowDirectMessages)}
         >
-          <Text className="text-text-primary flex-1">
+          <Text className="flex-1 text-neutral-900 dark:text-neutral-100">
             {t('profile.privacy.allowDMs')}
           </Text>
           <View
@@ -216,7 +216,7 @@ function StatisticsPanel({
 }) {
   return (
     <View className="my-4">
-      <Text className="text-text-primary mb-2 text-lg font-semibold">
+      <Text className="mb-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         {t('profile.statistics.title')}
       </Text>
 
@@ -239,7 +239,7 @@ function StatisticsPanel({
 
           <Pressable
             accessibilityRole="button"
-            className="bg-card flex-1 rounded-xl p-4"
+            className="flex-1 rounded-xl bg-white p-4 dark:bg-charcoal-900"
             onPress={navigateToHarvests}
           >
             <Text className="text-2xl font-bold text-primary-600">
@@ -250,20 +250,20 @@ function StatisticsPanel({
             </Text>
           </Pressable>
 
-          <View className="bg-card flex-1 rounded-xl p-4">
+          <View className="flex-1 rounded-xl bg-white p-4 dark:bg-charcoal-900">
             <Text className="text-2xl font-bold text-primary-600">
               {statistics.postsCount}
             </Text>
-            <Text className="text-text-secondary text-sm">
+            <Text className="text-sm text-neutral-600 dark:text-neutral-400">
               {t('profile.statistics.posts')}
             </Text>
           </View>
 
-          <View className="bg-card flex-1 rounded-xl p-4">
+          <View className="flex-1 rounded-xl bg-white p-4 dark:bg-charcoal-900">
             <Text className="text-2xl font-bold text-primary-600">
               {statistics.likesReceived}
             </Text>
-            <Text className="text-text-secondary text-sm">
+            <Text className="text-sm text-neutral-600 dark:text-neutral-400">
               {t('profile.statistics.likes')}
             </Text>
           </View>
@@ -271,7 +271,7 @@ function StatisticsPanel({
       )}
 
       {statistics.isSyncing && (
-        <Text className="text-text-secondary mt-2 text-xs">
+        <Text className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
           {t('profile.statistics.syncing')}
         </Text>
       )}

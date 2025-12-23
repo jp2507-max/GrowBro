@@ -241,7 +241,7 @@ const HarvestHistoryRow = memo<RowProps>(function HarvestHistoryRow({
       </View>
       <View className="items-end">
         {item.dryWeight != null ? (
-          <Text className="text-text-primary text-sm font-medium">
+          <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
             {t('harvest.history.list.weight', { weight: item.dryWeight })}
           </Text>
         ) : null}
@@ -261,7 +261,7 @@ const HarvestHistoryRow = memo<RowProps>(function HarvestHistoryRow({
  * Memoized separator component for stable reference in FlashList
  */
 const Separator = memo(function Separator(): React.ReactElement {
-  return <View className="bg-border h-px" />;
+  return <View className="h-px bg-neutral-200 dark:bg-white/10" />;
 });
 
 const MemoizedSeparator = Separator;

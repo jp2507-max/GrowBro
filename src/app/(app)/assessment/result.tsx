@@ -190,21 +190,21 @@ function AssessmentResultLayout({
             </View>
           )}
 
-          <View className="border-border bg-card mt-6 rounded-xl border p-4">
-            <Text className="text-text-primary text-lg font-semibold">
+          <View className="mt-6 rounded-xl border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900">
+            <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
               {t('assessment.result.details')}
             </Text>
-            <Text className="text-text-secondary mt-2 text-sm">
+            <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
               {t('assessment.result.modelVersion', {
                 modelVersion: result.modelVersion,
               })}
             </Text>
-            <Text className="text-text-secondary mt-1 text-sm">
+            <Text className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
               {t('assessment.result.processingTime', {
                 processingTimeMs: result.processingTimeMs,
               })}
             </Text>
-            <Text className="text-text-secondary mt-1 text-sm">
+            <Text className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
               {t('assessment.result.plantId', {
                 plantId: plantContext.id || t('assessment.result.unknown'),
               })}
@@ -253,7 +253,7 @@ function MissingAssessmentSession({
   return (
     <View className="flex-1 items-center justify-center bg-neutral-50 px-6 dark:bg-charcoal-950">
       <Stack.Screen options={{ title: t('assessment.result.screenTitle') }} />
-      <Text className="text-text-primary mb-6 text-center text-lg">
+      <Text className="mb-6 text-center text-lg text-neutral-900 dark:text-neutral-100">
         {t('assessment.result.dataUnavailable')}
       </Text>
       <Button label={t('assessment.result.backToHome')} onPress={onDismiss} />

@@ -49,17 +49,10 @@ const datePickerTv = tv({
         input: 'bg-neutral-200 dark:bg-neutral-700',
       },
     },
-    chunky: {
-      true: {
-        input:
-          'rounded-2xl border-2 border-transparent bg-neutral-100 px-5 py-4 dark:bg-neutral-800',
-      },
-    },
   },
   defaultVariants: {
     error: false,
     disabled: false,
-    chunky: false,
   },
 });
 
@@ -73,7 +66,6 @@ export type DatePickerProps = {
   testID?: string;
   minimumDate?: Date;
   maximumDate?: Date;
-  chunky?: boolean;
 };
 
 type TRule<T extends FieldValues> =
@@ -327,9 +319,8 @@ function useDatePickerState(props: DatePickerProps) {
       datePickerTv({
         error: Boolean(error),
         disabled,
-        chunky: Boolean(props.chunky),
       }),
-    [error, disabled, props.chunky]
+    [error, disabled]
   );
 
   const displayValue = React.useMemo(

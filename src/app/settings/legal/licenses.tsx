@@ -67,7 +67,7 @@ export default function LicensesScreen() {
           </View>
 
           <ScrollView className="flex-1 p-4">
-            <Text className="text-text-primary font-mono text-xs">
+            <Text className="font-mono text-xs text-neutral-900 dark:text-neutral-100">
               {selectedLicense.licenseText}
             </Text>
 
@@ -97,7 +97,7 @@ export default function LicensesScreen() {
 
       <View className="flex-1">
         {/* Search Bar */}
-        <View className="border-border bg-card border-b px-4 py-3">
+        <View className="border-b border-neutral-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-charcoal-900">
           <TextInput
             accessibilityLabel={translate('settings.legal.licenses.search')}
             accessibilityHint="Filter licenses by name or package"
@@ -106,9 +106,9 @@ export default function LicensesScreen() {
             placeholderTextColor={colors.neutral[400]}
             value={searchQuery}
             onChangeText={setSearchQuery}
-            className="border-input-border bg-input-bg text-text-primary rounded-lg border px-4 py-2"
+            className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-neutral-900 dark:border-white/10 dark:bg-white/10 dark:text-neutral-100"
           />
-          <Text className="text-text-secondary mt-2 text-xs">
+          <Text className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
             {translate('settings.legal.licenses.count', {
               count: filteredLicenses.length,
             })}
@@ -133,9 +133,9 @@ export default function LicensesScreen() {
                 accessibilityHint="Filter licenses by type"
                 key={type}
                 onPress={() => setSearchQuery(type)}
-                className="border-border bg-card rounded-full border px-4 py-2"
+                className="rounded-full border border-neutral-200 bg-white px-4 py-2 dark:border-white/10 dark:bg-charcoal-900"
               >
-                <Text className="text-text-secondary text-xs font-medium">
+                <Text className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
                   {type}
                 </Text>
               </Pressable>
@@ -153,14 +153,14 @@ export default function LicensesScreen() {
                 accessibilityHint={`Open details for ${license.name}`}
                 key={`${license.name}-${index}`}
                 onPress={() => setSelectedLicense(license)}
-                className="border-border bg-card mb-2 rounded-lg border p-4"
+                className="mb-2 rounded-lg border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900"
               >
                 <View className="flex-row items-start justify-between">
                   <View className="flex-1">
-                    <Text className="text-text-primary font-semibold">
+                    <Text className="font-semibold text-neutral-900 dark:text-neutral-100">
                       {license.name}
                     </Text>
-                    <Text className="text-text-secondary mt-1 text-xs">
+                    <Text className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
                       {translate('settings.legal.licenses.version_label')}:{' '}
                       {license.version}
                     </Text>
@@ -176,7 +176,7 @@ export default function LicensesScreen() {
 
             {filteredLicenses.length === 0 && (
               <View className="items-center py-12">
-                <Text className="text-text-secondary">
+                <Text className="text-neutral-600 dark:text-neutral-400">
                   {translate('settings.legal.licenses.no_results')}
                 </Text>
               </View>
@@ -185,8 +185,8 @@ export default function LicensesScreen() {
         </ScrollView>
 
         {/* Build Note */}
-        <View className="border-border bg-card border-t px-4 py-3">
-          <Text className="text-text-secondary text-center text-xs">
+        <View className="border-t border-neutral-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-charcoal-900">
+          <Text className="text-center text-xs text-neutral-600 dark:text-neutral-400">
             {translate('settings.legal.licenses.note')}
           </Text>
         </View>

@@ -176,7 +176,7 @@ function PlantContentSheet({
             accessibilityRole="button"
             testID="view-strain-profile"
           >
-            <Text className="text-text-tertiary mr-1 text-sm font-medium">
+            <Text className="mr-1 text-sm font-medium text-neutral-500 dark:text-neutral-400">
               {t('plants.detail.strain_profile_link')}
             </Text>
             <ArrowRight color={colors.neutral[400]} width={14} height={14} />
@@ -184,7 +184,7 @@ function PlantContentSheet({
         ) : null}
 
         {/* Divider */}
-        <View className="bg-divider mx-4 my-6 h-px" />
+        <View className="mx-4 my-6 h-px bg-neutral-200 dark:bg-white/10" />
 
         {/* Form Sections (fragment mode to avoid nested ScrollView) */}
         <PlantForm

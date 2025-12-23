@@ -1633,6 +1633,35 @@
     "checkbox_label": "Kontrollkästchen",
     "switch_label": "Schalter"
   },
+  "inventory": {
+    "add_item": "Artikel hinzufügen",
+    "form": {
+      "barcode": "Barcode",
+      "barcode_placeholder": "Barcode eingeben",
+      "category": "Kategorie",
+      "lead_time_days": "Lieferzeit (Tage)",
+      "min_stock": "Mindestbestand",
+      "name": "Name",
+      "name_placeholder": "Artikelname eingeben",
+      "reorder_multiple": "Nachbestellmenge",
+      "sku": "Artikelnummer",
+      "sku_placeholder": "Artikelnummer eingeben",
+      "submit": "Artikel hinzufügen",
+      "tracking_batched": "Chargenweise",
+      "tracking_mode": "Verfolgungsmodus",
+      "tracking_simple": "Einfach",
+      "unit": "Mengeneinheit",
+      "unit_placeholder": "z.B. ml, g, Stk",
+      "validation": {
+        "minStockPositive": "Mindestbestand muss 0 oder größer sein",
+        "nameMaxLength": "Name darf maximal 100 Zeichen lang sein",
+        "nameRequired": "Name ist erforderlich",
+        "reorderMultipleMin": "Nachbestellmenge muss mindestens 1 sein",
+        "unitMaxLength": "Einheit darf maximal 20 Zeichen lang sein",
+        "unitRequired": "Einheit ist erforderlich"
+      }
+    }
+  },
   "list": {
     "empty": {
       "body": "Wir zeigen hier Inhalte, sobald sie verfügbar sind.",

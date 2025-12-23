@@ -122,7 +122,7 @@ export const InventorySearchBar = React.memo(function InventorySearchBar({
             className={`size-12 items-center justify-center rounded-lg border ${
               hasActiveFilters
                 ? 'border-primary-600 bg-primary-50 dark:bg-primary-950'
-                : 'border-border bg-card'
+                : 'border-neutral-200 bg-white dark:border-white/10 dark:bg-charcoal-900'
             }`}
           >
             <Text

@@ -88,7 +88,7 @@ function LegalConfirmationHeader(): React.ReactElement {
       <Animated.View
         entering={createStaggeredFadeInUp(0, onboardingMotion.stagger.header)}
       >
-        <Text className="text-text-primary text-2xl font-bold">
+        <Text className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
           {translate('cannabis.legal_confirmation_title')}
         </Text>
       </Animated.View>

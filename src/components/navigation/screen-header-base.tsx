@@ -201,7 +201,9 @@ export function HeaderIconButton({
       onPress={onPress}
       className={twMerge(
         'size-10 items-center justify-center rounded-full shadow-sm active:bg-neutral-100 dark:active:bg-neutral-800',
-        isActive ? 'bg-primary-100 dark:bg-primary-900' : 'bg-card'
+        isActive
+          ? 'bg-primary-100 dark:bg-primary-900'
+          : 'bg-white dark:bg-charcoal-900'
       )}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}

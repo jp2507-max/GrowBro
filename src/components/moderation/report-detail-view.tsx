@@ -110,18 +110,18 @@ function ReportHeader({ report }: { report: QueuedReport }) {
         </View>
       )}
 
-      <View className="border-border border-t pt-3">
-        <Text className="text-text-secondary mb-1 text-xs font-medium">
+      <View className="border-t border-neutral-200 pt-3 dark:border-white/10">
+        <Text className="mb-1 text-xs font-medium text-neutral-500 dark:text-neutral-400">
           Explanation
         </Text>
-        <Text className="text-text-primary text-sm leading-5">
+        <Text className="text-sm leading-5 text-neutral-900 dark:text-neutral-100">
           {report.explanation}
         </Text>
       </View>
 
       {report.evidence_urls && report.evidence_urls.length > 0 && (
-        <View className="border-border mt-3 border-t pt-3">
-          <Text className="text-text-secondary mb-2 text-xs font-medium">
+        <View className="mt-3 border-t border-neutral-200 pt-3 dark:border-white/10">
+          <Text className="mb-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
             Evidence ({report.evidence_urls.length})
           </Text>
           {report.evidence_urls.map((url, idx) => (
@@ -141,31 +141,33 @@ function ReportHeader({ report }: { report: QueuedReport }) {
 
 function ContentDetails({ report }: { report: QueuedReport }) {
   return (
-    <View className="border-border bg-card mb-4 rounded-xl border p-4">
-      <Text className="text-text-primary mb-3 text-base font-semibold">
+    <View className="mb-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900">
+      <Text className="mb-3 text-base font-semibold text-neutral-900 dark:text-neutral-100">
         Content Details
       </Text>
       <View className="gap-2">
         <View className="flex-row">
-          <Text className="text-text-secondary w-32 text-xs">Content ID:</Text>
-          <Text className="text-text-primary flex-1 text-xs font-medium">
+          <Text className="w-32 text-xs text-neutral-500 dark:text-neutral-400">
+            Content ID:
+          </Text>
+          <Text className="flex-1 text-xs font-medium text-neutral-900 dark:text-neutral-100">
             {report.content_id}
           </Text>
         </View>
         <View className="flex-row">
-          <Text className="text-text-secondary w-32 text-xs">
+          <Text className="w-32 text-xs text-neutral-500 dark:text-neutral-400">
             Content Type:
           </Text>
-          <Text className="text-text-primary flex-1 text-xs font-medium">
+          <Text className="flex-1 text-xs font-medium text-neutral-900 dark:text-neutral-100">
             {report.content_type}
           </Text>
         </View>
         <View className="flex-row">
-          <Text className="text-text-secondary w-32 text-xs">
+          <Text className="w-32 text-xs text-neutral-500 dark:text-neutral-400">
             Content Hash:
           </Text>
           <Text
-            className="text-text-secondary flex-1 font-mono text-xs"
+            className="flex-1 font-mono text-xs text-neutral-500 dark:text-neutral-400"
             numberOfLines={1}
           >
             {report.content_hash}
@@ -173,10 +175,10 @@ function ContentDetails({ report }: { report: QueuedReport }) {
         </View>
         {report.content_snapshot && (
           <View className="flex-row">
-            <Text className="text-text-secondary w-32 text-xs">
+            <Text className="w-32 text-xs text-neutral-500 dark:text-neutral-400">
               Snapshot ID:
             </Text>
-            <Text className="text-text-primary flex-1 text-xs font-medium">
+            <Text className="flex-1 text-xs font-medium text-neutral-900 dark:text-neutral-100">
               {report.content_snapshot?.id?.slice(0, 8)}
             </Text>
           </View>
@@ -192,8 +194,8 @@ function ActionButtons({
   onTakeAction: (action: string, reason: string) => void;
 }) {
   return (
-    <View className="border-border bg-card mb-4 gap-3 rounded-xl border p-4">
-      <Text className="text-text-primary mb-2 text-base font-semibold">
+    <View className="mb-4 gap-3 rounded-xl border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900">
+      <Text className="mb-2 text-base font-semibold text-neutral-900 dark:text-neutral-100">
         Take Action
       </Text>
       <View className="flex-row flex-wrap gap-2">

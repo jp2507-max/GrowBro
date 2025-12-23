@@ -108,7 +108,7 @@ export function AssessmentHistoryCard({
           <Text className="text-xs text-neutral-600 dark:text-neutral-400">
             {relativeTime}
           </Text>
-          <Text className="text-text-secondary text-xs">
+          <Text className="text-xs text-neutral-500 dark:text-neutral-400">
             {assessment.inferenceMode === 'device' ? '📱 Device' : '☁️ Cloud'}
           </Text>
         </View>

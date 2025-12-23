@@ -48,7 +48,7 @@ export function TaskBanner({
 
   return (
     <Pressable
-      className="bg-card flex-row items-center justify-between rounded-xl px-4 py-3 active:bg-white"
+      className="flex-row items-center justify-between rounded-xl bg-white px-4 py-3 active:bg-neutral-50 dark:bg-charcoal-900 dark:active:bg-charcoal-800"
       onPress={handlePress}
       accessibilityRole="button"
       accessibilityLabel={translate('home.task_banner.label' as TxKeyPath)}

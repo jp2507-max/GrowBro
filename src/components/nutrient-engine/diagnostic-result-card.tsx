@@ -104,7 +104,7 @@ function ClassificationHeader({
           className={`rounded-full px-3 py-1 ${confidenceColor}`}
           testID="confidence-badge"
         >
-          <Text className="text-text-primary text-sm font-medium">
+          <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
             {confidencePercent}%
           </Text>
         </View>
@@ -141,23 +141,23 @@ function ConfidenceBreakdown({
   }
 
   return (
-    <View className="bg-card mb-3 rounded-lg p-3">
-      <Text className="text-text-secondary mb-2 text-sm font-medium">
+    <View className="mb-3 rounded-lg bg-white p-3 dark:bg-charcoal-900">
+      <Text className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
         {translate('nutrient.diagnostics.confidenceBreakdown')}
       </Text>
       {rules !== undefined && (
-        <Text className="text-text-secondary text-xs">
+        <Text className="text-xs text-neutral-500 dark:text-neutral-400">
           {translate('nutrient.diagnostics.rulesConfidence')}:{' '}
           {Math.round(rules * 100)}%
         </Text>
       )}
       {ai !== undefined && (
-        <Text className="text-text-secondary text-xs">
+        <Text className="text-xs text-neutral-500 dark:text-neutral-400">
           {translate('nutrient.diagnostics.aiConfidence')}:{' '}
           {Math.round(ai * 100)}%
         </Text>
       )}
-      <Text className="text-text-secondary text-xs">
+      <Text className="text-xs text-neutral-500 dark:text-neutral-400">
         {translate('nutrient.diagnostics.threshold')}:{' '}
         {Math.round(threshold * 100)}%
       </Text>
@@ -180,7 +180,7 @@ function SourceBadge({
 
   return (
     <View className={`mt-2 self-start rounded px-2 py-1 ${config.color}`}>
-      <Text className="text-text-secondary text-xs font-medium">
+      <Text className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
         {config.label}
       </Text>
     </View>
@@ -194,11 +194,14 @@ function RationaleSection({
 }): React.ReactElement {
   return (
     <View className="mb-3">
-      <Text className="text-text-secondary mb-2 text-sm font-semibold">
+      <Text className="mb-2 text-sm font-semibold text-neutral-500 dark:text-neutral-400">
         {translate('nutrient.diagnostics.rationale.title')}
       </Text>
       {rationale.map((item, index) => (
-        <Text key={index} className="text-text-secondary mb-1 text-sm">
+        <Text
+          key={index}
+          className="mb-1 text-sm text-neutral-500 dark:text-neutral-400"
+        >
           • {translateDynamic(item)}
         </Text>
       ))}
@@ -213,20 +216,20 @@ function RecommendationsSection({
 }): React.ReactElement {
   return (
     <View className="mb-3">
-      <Text className="text-text-secondary mb-2 text-sm font-semibold">
+      <Text className="mb-2 text-sm font-semibold text-neutral-500 dark:text-neutral-400">
         {translate('nutrient.diagnostics.recommendations.title')}
       </Text>
       {recommendations.map((rec, index) => (
         <View
           key={index}
-          className="border-border bg-card mb-2 rounded-lg border p-3"
+          className="mb-2 rounded-lg border border-neutral-200 bg-white p-3 dark:border-white/10 dark:bg-charcoal-900"
         >
           <View className="mb-1 flex-row items-center justify-between">
-            <Text className="text-text-primary text-sm font-medium">
+            <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
               {translateDynamic(rec.description)}
             </Text>
             {rec.context?.source && (
-              <Text className="text-text-secondary text-xs">
+              <Text className="text-xs text-neutral-500 dark:text-neutral-400">
                 {rec.context.source}
               </Text>
             )}
@@ -291,7 +294,7 @@ function FeedbackButtons({
 }): React.ReactElement {
   return (
     <View className="mt-3">
-      <Text className="text-text-secondary mb-2 text-center text-sm">
+      <Text className="mb-2 text-center text-sm text-neutral-500 dark:text-neutral-400">
         {translate('nutrient.diagnostics.feedbackQuestion')}
       </Text>
       <View className="flex-row justify-center gap-3">

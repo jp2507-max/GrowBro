@@ -65,7 +65,7 @@ const ConsumptionHistoryItem = ({
         </View>
 
         <View className="items-end">
-          <Text className="font-inter-bold text-text-primary text-base">
+          <Text className="font-inter-bold text-base text-neutral-900 dark:text-neutral-100">
             {formatCost(entry.totalCostMinor)}
           </Text>
           <Text className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
@@ -104,11 +104,13 @@ const ConsumptionHistoryItem = ({
         )}
       </View>
 
-      <Text className="text-text-secondary mt-2 text-xs italic">
+      <Text className="mt-2 text-xs italic text-neutral-500 dark:text-neutral-400">
         {entry.reason}
       </Text>
 
-      <Text className="text-text-secondary mt-1 text-xs">{formattedDate}</Text>
+      <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+        {formattedDate}
+      </Text>
     </Pressable>
   );
 };
@@ -152,7 +154,7 @@ export const ConsumptionHistoryList = ({
         className="flex-1 items-center justify-center p-8"
         testID={`${testID}-empty`}
       >
-        <Text className="text-text-secondary text-center text-sm">
+        <Text className="text-center text-sm text-neutral-500 dark:text-neutral-400">
           {t('inventory.history.noEntries')}
         </Text>
       </View>

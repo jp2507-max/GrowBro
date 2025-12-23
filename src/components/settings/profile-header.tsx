@@ -120,7 +120,7 @@ export function ProfileHeader({
                         count: statistics.harvestsCount,
                       })}
               </Text>
-              <Text className="text-text-secondary text-sm">
+              <Text className="text-sm text-neutral-500 dark:text-neutral-400">
                 {statistics.postsCount === 0
                   ? translate('profile.statistics.postsCount_zero', {
                       count: statistics.postsCount,
@@ -139,7 +139,7 @@ export function ProfileHeader({
 
         {/* Chevron indicator */}
         <View className="ml-auto">
-          <Text className="text-text-secondary">
+          <Text className="text-neutral-500 dark:text-neutral-400">
             {translate('profile.chevron')}
           </Text>
         </View>

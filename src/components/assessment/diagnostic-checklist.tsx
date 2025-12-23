@@ -123,7 +123,7 @@ export function DiagnosticChecklist({
               {/* Check header with checkbox */}
               <View className="mb-2 flex-row items-center justify-between">
                 <View className="flex-1">
-                  <Text className="text-text-primary font-medium">
+                  <Text className="font-medium text-neutral-900 dark:text-neutral-100">
                     {t(check.nameKey)}
                   </Text>
                   {check.estimatedMinutes && (
@@ -146,7 +146,7 @@ export function DiagnosticChecklist({
               </View>
 
               {/* Instructions */}
-              <Text className="text-text-secondary mb-2 text-sm">
+              <Text className="mb-2 text-sm text-neutral-500 dark:text-neutral-400">
                 {t(check.instructionsKey)}
               </Text>
 

@@ -145,7 +145,7 @@ export function ScheduleForm(props: ScheduleFormProps): React.ReactElement {
       </View>
 
       <View className="gap-1">
-        <Text className="text-text-secondary text-sm font-medium">
+        <Text className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
           {labels.interval}
         </Text>
         <Controller
@@ -164,7 +164,7 @@ export function ScheduleForm(props: ScheduleFormProps): React.ReactElement {
 
       {recurrencePattern === 'weekly' && (
         <View className="gap-1">
-          <Text className="text-text-secondary text-sm font-medium">
+          <Text className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
             {labels.weekdays}
           </Text>
           <Controller

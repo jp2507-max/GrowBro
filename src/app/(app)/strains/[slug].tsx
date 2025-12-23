@@ -171,16 +171,16 @@ const EffectsFlavorsSection = ({ strain }: { strain: Strain }) => {
 
 const HardFactsGrid = ({ strain }: { strain: Strain }) => {
   const floweringTime =
-    strain.grow.flowering_time.label ??
-    (strain.grow.flowering_time.min_weeks &&
-    strain.grow.flowering_time.max_weeks
+    strain.grow?.flowering_time?.label ??
+    (strain.grow?.flowering_time?.min_weeks &&
+    strain.grow?.flowering_time?.max_weeks
       ? `${strain.grow.flowering_time.min_weeks}-${strain.grow.flowering_time.max_weeks}`
-      : 'N/A');
+      : translate('common.na'));
 
   const yieldRating =
-    strain.grow.yield.indoor?.label ??
-    strain.grow.yield.outdoor?.label ??
-    'N/A';
+    strain.grow?.yield?.indoor?.label ??
+    strain.grow?.yield?.outdoor?.label ??
+    translate('common.na');
 
   const difficulty =
     strain.grow?.difficulty === 'beginner'
@@ -189,7 +189,7 @@ const HardFactsGrid = ({ strain }: { strain: Strain }) => {
         ? translate('strains.difficulty.intermediate')
         : strain.grow?.difficulty === 'advanced'
           ? translate('strains.difficulty.advanced')
-          : 'N/A';
+          : translate('common.na');
 
   return (
     <View className="my-8 flex-row justify-between gap-3 px-4">
@@ -197,7 +197,8 @@ const HardFactsGrid = ({ strain }: { strain: Strain }) => {
         <Calendar
           width={24}
           height={24}
-          className="mb-2 text-primary-700 dark:text-primary-300"
+          color={colors.primary[700]}
+          className="mb-2"
         />
         <Text
           className="text-center text-lg font-bold text-neutral-900 dark:text-white"
@@ -240,7 +241,8 @@ const HardFactsGrid = ({ strain }: { strain: Strain }) => {
         <Sprout
           width={24}
           height={24}
-          className="mb-2 text-primary-700 dark:text-primary-300"
+          color={colors.primary[700]}
+          className="mb-2"
         />
         <Text
           className="text-center text-lg font-bold text-neutral-900 dark:text-white"
@@ -287,7 +289,7 @@ const StrainErrorState = ({ onBack, onRetry, topInset }: ErrorStateProps) => (
         accessibilityHint={translate('strains.detail.back_hint')}
         accessibilityLabel={translate('accessibility.common.go_back')}
         accessibilityRole="button"
-        className="bg-input-bg size-10 items-center justify-center rounded-full text-charcoal-900 dark:text-neutral-100"
+        className="size-10 items-center justify-center rounded-full bg-white text-charcoal-900 dark:bg-white/10 dark:text-neutral-100"
         onPress={onBack}
         testID="back-button"
       >

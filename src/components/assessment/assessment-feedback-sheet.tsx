@@ -162,7 +162,7 @@ type ResolvedStepProps = {
 function ResolvedStep({ t, onResolved }: ResolvedStepProps) {
   return (
     <View className="gap-4">
-      <Text className="text-text-primary text-lg font-semibold">
+      <Text className="text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
         {t('assessment.feedback.resolved_question')}
       </Text>
       <View className="gap-3">
@@ -211,7 +211,7 @@ function NotesStep({
 }: NotesStepProps) {
   return (
     <View className="gap-4">
-      <Text className="text-text-primary text-lg font-semibold">
+      <Text className="text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
         {t('assessment.feedback.notes_question')}
       </Text>
       <Text className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -226,7 +226,9 @@ function NotesStep({
         numberOfLines={4}
         maxLength={500}
       />
-      <Text className="text-text-tertiary text-xs">{notes.length}/500</Text>
+      <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+        {notes.length}/500
+      </Text>
       <View className="flex-row gap-3">
         <Button
           testID="feedback-skip"
@@ -252,7 +254,7 @@ type PrivacyNoteProps = {
 
 function PrivacyNote({ t }: PrivacyNoteProps) {
   return (
-    <Text className="text-text-tertiary text-center text-xs">
+    <Text className="text-center text-xs text-neutral-500 dark:text-neutral-400">
       {t('assessment.feedback.privacy_note')}
     </Text>
   );

@@ -36,7 +36,7 @@ export const NotificationRow = React.memo(function NotificationRow({
   });
   const cardClasses = isUnread
     ? 'border-primary-400/60 bg-primary-50/70 dark:border-primary-500/60 dark:bg-primary-500/15'
-    : 'border-neutral-200 dark:border-charcoal-700 bg-card';
+    : 'border-neutral-200 dark:border-charcoal-700 bg-white dark:bg-charcoal-900';
 
   return (
     <Pressable

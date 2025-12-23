@@ -210,7 +210,7 @@ export default function FeedbackScreen() {
                 'settings.support.feedback.email_hint'
               )}
             />
-            <Text className="text-text-secondary mt-1 text-xs">
+            <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
               {translate('settings.support.feedback.email_hint')}
             </Text>
           </View>

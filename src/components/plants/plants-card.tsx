@@ -178,7 +178,7 @@ function PlantCardHeader({
       <View className="flex-1 pr-3">
         {stageLabel ? (
           <Text
-            className="text-text-tertiary mb-1 text-xs font-bold uppercase tracking-widest"
+            className="mb-1 text-xs font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400"
             testID={`plant-card-${plant.id}-stage-label`}
           >
             {stageLabel}
@@ -215,12 +215,12 @@ function PlantCardProgress({
     <View className="px-4 pb-3">
       <View className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
         <View
-          className="bg-action-primary h-full rounded-full"
+          className="h-full rounded-full bg-primary-600"
           style={{ width: `${progress}%` }}
           testID={`plant-card-${plantId}-progress`}
         />
       </View>
-      <Text className="text-text-tertiary mt-1.5 text-right text-[10px] font-medium">
+      <Text className="mt-1.5 text-right text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
         {translate('plants.card.progress' as TxKeyPath, { percent: progress })}
       </Text>
     </View>
@@ -240,7 +240,7 @@ function PlantCardFooter({ needsAttention }: { needsAttention: boolean }) {
               {translate('plants.card.needs_water' as TxKeyPath)}
             </Text>
           </View>
-          <View className="bg-action-cta rounded-xl px-4 py-2 shadow-sm">
+          <View className="rounded-xl bg-terracotta-500 px-4 py-2 shadow-sm">
             <Text className="text-xs font-bold text-white">
               {translate('plants.card.water_action' as TxKeyPath)}
             </Text>
@@ -257,7 +257,7 @@ function PlantCardFooter({ needsAttention }: { needsAttention: boolean }) {
           <ArrowRight
             width={10}
             height={16}
-            className="text-text-tertiary opacity-40"
+            className="text-neutral-500 opacity-40 dark:text-neutral-400"
           />
         </>
       )}

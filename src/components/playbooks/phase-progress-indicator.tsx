@@ -73,14 +73,16 @@ function PhaseDot({
           className={`absolute -left-1/2 top-4 h-0.5 w-full ${
             isCompleted || (isCurrent && phase.progressPercent > 0)
               ? PHASE_COLORS[phase.phase]
-              : 'bg-border'
+              : 'bg-neutral-200 dark:bg-white/10'
           }`}
         />
       )}
 
       <View
         className={`z-10 size-8 items-center justify-center rounded-full ${
-          isCompleted || isCurrent ? PHASE_COLORS[phase.phase] : 'bg-border'
+          isCompleted || isCurrent
+            ? PHASE_COLORS[phase.phase]
+            : 'bg-neutral-200 dark:bg-white/10'
         }`}
       >
         {isCompleted && (
@@ -102,7 +104,7 @@ function PhaseDot({
       </Text>
 
       {isCurrent && (
-        <Text className="text-text-secondary mt-1 text-xs">
+        <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
           {phase.progressPercent}%
         </Text>
       )}
@@ -117,15 +119,21 @@ function Legend() {
     <View className="mt-4 flex-row justify-center gap-4 px-4">
       <View className="flex-row items-center gap-1">
         <View className="size-2 rounded-full bg-success-600" />
-        <Text className="text-text-secondary text-xs">Completed</Text>
+        <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+          Completed
+        </Text>
       </View>
       <View className="flex-row items-center gap-1">
         <View className="size-2 rounded-full bg-primary-600" />
-        <Text className="text-text-secondary text-xs">Current</Text>
+        <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+          Current
+        </Text>
       </View>
       <View className="flex-row items-center gap-1">
-        <View className="bg-border size-2 rounded-full" />
-        <Text className="text-text-secondary text-xs">Upcoming</Text>
+        <View className="size-2 rounded-full bg-neutral-200 dark:bg-white/10" />
+        <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+          Upcoming
+        </Text>
       </View>
     </View>
   );

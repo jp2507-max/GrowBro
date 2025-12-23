@@ -13,7 +13,6 @@ import {
 } from '@/components/ui';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import { translate } from '@/lib/i18n';
-import type { TxKeyPath } from '@/lib/i18n/utils';
 import {
   completeRecurringInstance,
   completeTask,
@@ -150,14 +149,10 @@ export default function CalendarScreen(): React.ReactElement {
     [grossHeight]
   );
 
-  const planTitle = translate('calendar.sections.plan' as TxKeyPath);
-  const historyTitle = translate('calendar.sections.history' as TxKeyPath);
-  const emptyPlanMessage = translate(
-    'calendar.sections.empty_plan' as TxKeyPath
-  );
-  const emptyHistoryMessage = translate(
-    'calendar.sections.empty_history' as TxKeyPath
-  );
+  const planTitle = translate('calendar.sections.plan');
+  const historyTitle = translate('calendar.sections.history');
+  const emptyPlanMessage = translate('calendar.sections.empty_plan');
+  const emptyHistoryMessage = translate('calendar.sections.empty_history');
 
   return (
     <View

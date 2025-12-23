@@ -1633,6 +1633,35 @@
     "checkbox_label": "Checkbox",
     "switch_label": "Switch"
   },
+  "inventory": {
+    "add_item": "Add Item",
+    "form": {
+      "barcode": "Barcode",
+      "barcode_placeholder": "Enter barcode",
+      "category": "Category",
+      "lead_time_days": "Lead Time (Days)",
+      "min_stock": "Minimum Stock",
+      "name": "Name",
+      "name_placeholder": "Enter item name",
+      "reorder_multiple": "Reorder Multiple",
+      "sku": "SKU",
+      "sku_placeholder": "Enter SKU",
+      "submit": "Add Item",
+      "tracking_batched": "Batched",
+      "tracking_mode": "Tracking Mode",
+      "tracking_simple": "Simple",
+      "unit": "Unit of Measure",
+      "unit_placeholder": "e.g., ml, g, pcs",
+      "validation": {
+        "minStockPositive": "Minimum stock must be 0 or greater",
+        "nameMaxLength": "Name must be 100 characters or less",
+        "nameRequired": "Name is required",
+        "reorderMultipleMin": "Reorder multiple must be at least 1",
+        "unitMaxLength": "Unit must be 20 characters or less",
+        "unitRequired": "Unit is required"
+      }
+    }
+  },
   "list": {
     "empty": {
       "body": "There are no items to display.",

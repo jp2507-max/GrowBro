@@ -158,12 +158,12 @@ function TaskStat({
   testID: string;
 }) {
   return (
-    <View className="bg-card flex-1 rounded-xl p-3">
+    <View className="flex-1 rounded-xl bg-white p-3 dark:bg-charcoal-900">
       <Text className="text-xs text-neutral-600 dark:text-neutral-400">
         {label}
       </Text>
       <Text
-        className="text-text-primary mt-1 text-xl font-bold"
+        className="mt-1 text-xl font-bold text-neutral-900 dark:text-neutral-100"
         testID={testID}
       >
         {value}
@@ -186,16 +186,16 @@ function TaskSnapshotCard({
   onRefresh,
 }: TaskSnapshotCardProps) {
   return (
-    <View className="border-border bg-card gap-3 rounded-2xl border p-4">
+    <View className="gap-3 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900">
       <View className="flex-row items-center justify-between">
-        <Text className="text-text-primary text-base font-semibold">
+        <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
           {translate('home.dashboard.tasks_title' as TxKeyPath)}
         </Text>
         <Pressable
           disabled={isLoading}
           className={`rounded-full px-3 py-1.5 ${
             isLoading
-              ? 'bg-card'
+              ? 'bg-white dark:bg-charcoal-900'
               : 'bg-primary-100 active:bg-primary-200 dark:bg-primary-900/40 dark:active:bg-primary-900/60'
           }`}
           accessibilityRole="button"
@@ -261,7 +261,7 @@ function TaskSnapshotCard({
 function QuickActionsSection({ actions }: { actions: QuickAction[] }) {
   return (
     <View className="gap-2">
-      <Text className="text-text-primary text-base font-semibold">
+      <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
         {translate('home.dashboard.quick_actions' as TxKeyPath)}
       </Text>
       <View className="flex-row flex-wrap justify-between gap-3">

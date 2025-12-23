@@ -36,7 +36,7 @@ build/reports/
 
 # Ignore MCP config stored by VS Code and Cursor
 .vscode/mcp.json
-.cursor/
+.cursor/mcp.json
 
 # Backup files
 *.bak

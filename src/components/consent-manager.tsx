@@ -513,11 +513,11 @@ function ConsentHeader({
 }) {
   return (
     <View className="mb-6">
-      <Text className="text-text-primary mb-2 text-2xl font-bold">
+      <Text className="mb-2 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
         {translate(titleKey)}
       </Text>
       {subtitleKey && (
-        <Text className="text-text-secondary text-base">
+        <Text className="text-base text-neutral-500 dark:text-neutral-400">
           {translate(subtitleKey)}
         </Text>
       )}
@@ -541,7 +541,7 @@ function ConsentFooter({
   onDismiss?: () => void;
 }) {
   return (
-    <View className="border-border bg-card border-t p-4">
+    <View className="border-t border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900">
       <ConsentActions
         mode={mode}
         onAcceptAll={async () => await bulkSet(true)}
@@ -550,7 +550,7 @@ function ConsentFooter({
         onDismiss={onDismiss}
       />
       <View className="mt-3">
-        <Text className="text-text-secondary text-xs">
+        <Text className="text-xs text-neutral-500 dark:text-neutral-400">
           {translate('consent.lastUpdated', {
             date: new Date(privacyConsent.lastUpdated).toLocaleDateString(),
           })}

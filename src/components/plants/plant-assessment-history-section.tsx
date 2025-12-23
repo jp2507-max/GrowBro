@@ -91,13 +91,13 @@ export function PlantAssessmentHistorySection({
       </Pressable>
 
       {expanded && (
-        <View className="border-border bg-card mt-2 rounded-lg border p-3">
+        <View className="mt-2 rounded-lg border border-neutral-200 bg-white p-3 dark:border-charcoal-700 dark:bg-charcoal-900">
           {count === 0 ? (
             <View className="items-center py-6">
-              <Text className="text-text-secondary text-sm">
+              <Text className="text-sm text-neutral-500 dark:text-neutral-400">
                 {translate('plants.assessmentHistory.count_zero')}
               </Text>
-              <Text className="text-text-secondary mt-1 text-xs">
+              <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
                 {translate('plants.assessmentHistory.emptyDescription')}
               </Text>
             </View>

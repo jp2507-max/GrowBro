@@ -63,7 +63,7 @@ function SortMenuContent({
 
       {hasSortOptions && (
         <View className="mb-6">
-          <Text className="text-text-primary mb-3 text-base font-semibold">
+          <Text className="mb-3 text-base font-semibold text-charcoal-900 dark:text-neutral-100">
             {translate('strains.sort.direction_label')}
           </Text>
           <View className="flex-row gap-2">

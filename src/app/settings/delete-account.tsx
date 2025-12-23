@@ -423,7 +423,7 @@ function ExplanationSection() {
 
       {/* What Will Be Deleted */}
       <View className="mb-6">
-        <Text className="text-text-primary mb-3 text-lg font-semibold">
+        <Text className="mb-3 text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
           {t('settings.delete_account.data_title')}
         </Text>
         {dataToDelete.map((key, index) => (
@@ -492,14 +492,14 @@ function FinalConfirmationSection({
 
       {/* Countdown Info */}
       <View className="mb-6 rounded-lg bg-white p-4 dark:bg-charcoal-900">
-        <Text className="text-text-primary text-center text-lg font-semibold">
+        <Text className="text-center text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
           {t('settings.delete_account.countdown_message', { days: 30 })}
         </Text>
       </View>
 
       {/* Type DELETE Confirmation */}
       <View className="mb-6">
-        <Text className="text-text-secondary mb-3 text-base">
+        <Text className="mb-3 text-base text-neutral-500 dark:text-neutral-400">
           {t('settings.delete_account.type_delete_instruction', {
             keyword: deleteKeyword,
           })}

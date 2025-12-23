@@ -239,10 +239,10 @@ function ApplyContent({
     <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <ScrollView className="flex-1">
         <View className="p-4">
-          <Text className="text-text-primary mb-2 text-2xl font-bold">
+          <Text className="mb-2 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
             {t('playbooks.selectPlant')}
           </Text>
-          <Text className="text-text-secondary mb-6 text-base">
+          <Text className="mb-6 text-base text-neutral-500 dark:text-neutral-400">
             {t('playbooks.selectPlantDescription')}
           </Text>
 
@@ -259,7 +259,7 @@ function ApplyContent({
       </ScrollView>
 
       {plants.length > 0 && (
-        <View className="border-border bg-card border-t p-4">
+        <View className="border-t border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900">
           <Button
             label={
               applying ? t('playbooks.applying') : t('playbooks.applyPlaybook')

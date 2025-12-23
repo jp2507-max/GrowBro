@@ -57,7 +57,7 @@ export function ProfileStatistics({
 
           <Pressable
             accessibilityRole="button"
-            className="bg-card flex-1 rounded-xl p-4"
+            className="flex-1 rounded-xl bg-white p-4 dark:bg-charcoal-900"
             onPress={onHarvestsPress}
           >
             <Text className="text-2xl font-bold text-primary-600">
@@ -68,20 +68,20 @@ export function ProfileStatistics({
             </Text>
           </Pressable>
 
-          <View className="bg-card flex-1 rounded-xl p-4">
+          <View className="flex-1 rounded-xl bg-white p-4 dark:bg-charcoal-900">
             <Text className="text-2xl font-bold text-primary-600">
               {postsCount}
             </Text>
-            <Text className="text-text-secondary text-sm">
+            <Text className="text-sm text-neutral-600 dark:text-neutral-400">
               {t('profile.statistics.posts')}
             </Text>
           </View>
 
-          <View className="bg-card flex-1 rounded-xl p-4">
+          <View className="flex-1 rounded-xl bg-white p-4 dark:bg-charcoal-900">
             <Text className="text-2xl font-bold text-primary-600">
               {likesReceived}
             </Text>
-            <Text className="text-text-secondary text-sm">
+            <Text className="text-sm text-neutral-600 dark:text-neutral-400">
               {t('profile.statistics.likes')}
             </Text>
           </View>
@@ -89,7 +89,7 @@ export function ProfileStatistics({
       )}
 
       {isSyncing && (
-        <Text className="text-text-secondary mt-2 text-xs">
+        <Text className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
           {t('profile.statistics.syncing')}
         </Text>
       )}

@@ -23,9 +23,9 @@ const inputTv = tv({
   slots: {
     container: 'mb-4',
     label:
-      'text-text-tertiary mb-2 ml-1 text-xs font-bold uppercase tracking-wider',
+      'mb-2 ml-1 text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400',
     input:
-      'border-input-border bg-input-bg mt-0 rounded-2xl border-2 px-5 py-4 font-inter text-base font-medium leading-5 text-charcoal-900 dark:text-neutral-100',
+      'mt-0 rounded-2xl border-2 border-neutral-200 bg-white px-5 py-4 font-inter text-base font-medium leading-5 text-charcoal-900 dark:border-white/10 dark:bg-white/10 dark:text-neutral-100',
   },
 
   variants: {

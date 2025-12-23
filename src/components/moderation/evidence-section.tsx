@@ -59,7 +59,7 @@ export function EvidenceSection({
               className="flex-row items-center justify-between rounded-lg bg-white p-2 dark:bg-charcoal-900"
             >
               <Text
-                className="text-text-primary flex-1 text-sm"
+                className="flex-1 text-sm text-neutral-900 dark:text-neutral-100"
                 numberOfLines={1}
               >
                 {url}

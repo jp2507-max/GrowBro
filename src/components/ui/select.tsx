@@ -29,9 +29,9 @@ const selectTv = tv({
   slots: {
     container: 'mb-4',
     label:
-      'text-text-tertiary mb-2 ml-1 text-xs font-bold uppercase tracking-wider',
+      'mb-2 ml-1 text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400',
     input:
-      'border-input-border bg-input-bg mt-0 flex-row items-center justify-center rounded-2xl border-2 px-5 py-4',
+      'mt-0 flex-row items-center justify-center rounded-2xl border-2 border-neutral-200 bg-white px-5 py-4 dark:border-white/10 dark:bg-white/10',
     inputValue: 'text-base font-medium text-charcoal-900 dark:text-neutral-100',
   },
 
@@ -55,7 +55,8 @@ const selectTv = tv({
     },
     chunky: {
       true: {
-        input: 'border-input-border bg-input-bg rounded-2xl border-2 px-5 py-4',
+        input:
+          'rounded-2xl border-2 border-neutral-200 bg-white px-5 py-4 dark:border-white/10 dark:bg-white/10',
       },
     },
   },
@@ -199,7 +200,7 @@ const Option = React.memo(
         style={animatedStyle}
         className={`flex-row items-center justify-between rounded-2xl p-4 ${
           selected
-            ? 'border border-[--color-selection-border] bg-[--color-selection-bg]'
+            ? 'border border-primary-600 bg-primary-100 dark:border-primary-400 dark:bg-primary-900/30'
             : ''
         }`}
         accessibilityLabel={label}
@@ -226,7 +227,7 @@ const Option = React.memo(
           <Text
             className={`text-lg ${
               selected
-                ? 'font-bold text-[--color-selection-text]'
+                ? 'font-bold text-primary-900 dark:text-primary-100'
                 : 'font-medium text-neutral-600 dark:text-neutral-300'
             }`}
           >
@@ -407,7 +408,7 @@ const Check = ({ ...props }: SvgProps) => (
     fill="none"
     viewBox="0 0 25 24"
     {...props}
-    className="stroke-[--color-selection-check]"
+    className="stroke-primary-600 dark:stroke-primary-400"
   >
     <Path
       d="m20.256 6.75-10.5 10.5L4.506 12"

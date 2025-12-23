@@ -57,26 +57,26 @@ function PlaybookContent({
             <Text className="mb-2 text-2xl font-bold text-charcoal-900 dark:text-neutral-100">
               {preview.name}
             </Text>
-            <Text className="text-text-secondary mb-4 text-sm">
+            <Text className="mb-4 text-sm text-neutral-500 dark:text-neutral-400">
               {getSetupDisplayLabel(preview.setup)(t)}
             </Text>
-            <Text className="text-text-secondary text-base">
+            <Text className="text-base text-neutral-500 dark:text-neutral-400">
               {preview.totalWeeks} weeks • {preview.totalTasks} tasks
             </Text>
           </View>
 
           <View className="mt-6">
-            <Text className="text-text-primary mb-2 text-lg font-semibold">
+            <Text className="mb-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
               {t('playbooks.whatYouGet')}
             </Text>
-            <Text className="text-text-secondary text-base">
+            <Text className="text-base text-neutral-500 dark:text-neutral-400">
               {t('playbooks.detailDescription')}
             </Text>
           </View>
         </View>
       </ScrollView>
 
-      <View className="bg-card border-t border-neutral-200 p-4 dark:border-charcoal-700">
+      <View className="border-t border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
         <Button
           label={t('playbooks.applyToPlant')}
           onPress={onApply}
