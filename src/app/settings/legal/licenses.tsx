@@ -46,7 +46,7 @@ export default function LicensesScreen() {
       <>
         <FocusAwareStatusBar />
         <View className="flex-1">
-          <View className="bg-card border-b border-neutral-200 px-4 py-3 dark:border-charcoal-700">
+          <View className="border-b border-neutral-200 bg-white px-4 py-3 dark:border-charcoal-700 dark:bg-charcoal-900">
             <Pressable
               accessibilityRole="button"
               accessibilityHint="Go back"
@@ -73,7 +73,7 @@ export default function LicensesScreen() {
 
             {selectedLicense.repository && (
               <View className="mt-4">
-                <Text className="text-text-secondary text-xs font-medium">
+                <Text className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
                   {translate('settings.legal.licenses.repository')}:
                 </Text>
                 <Text className="mt-1 text-xs text-primary-600 dark:text-primary-400">

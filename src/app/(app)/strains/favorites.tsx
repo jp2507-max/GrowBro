@@ -165,10 +165,10 @@ function FavoritesHeader({
       <View className="flex-row items-center pb-2">
         <Pressable
           onPress={onBack}
-          className="bg-card size-10 items-center justify-center rounded-full shadow-sm active:bg-white"
+          className="size-10 items-center justify-center rounded-full bg-white shadow-sm active:bg-white dark:bg-charcoal-900"
           accessibilityRole="button"
           accessibilityLabel={translate('common.back')}
-          accessibilityHint="Go back to previous screen"
+          accessibilityHint={translate('accessibility.common.back_hint')}
           testID="favorites-back-button"
         >
           <ArrowLeft

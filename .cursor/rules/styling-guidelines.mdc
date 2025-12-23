@@ -7,16 +7,17 @@ alwaysApply: true
 ## applyTo: '**'
 
 # 🎬 React Native Reanimated Production Guidelines (4.x, Expo SDK 54)
+
 ---
 
 ## 🚀 Worklets in 4.x — What runs on the UI thread
 
-* **Auto‑workletization**: callbacks passed to Reanimated APIs (`useAnimatedStyle`, `useDerivedValue`, gesture callbacks, entering/exiting/layout) run on the **UI runtime**.
-* **Add `'worklet'`** when you (1) call imported/external functions, (2) create worklets via expressions/ternaries, (3) define worklet callbacks inside **custom hooks**, or (4) expose reusable top‑level worklet utilities.
-* **`runOnUI`**: inline callbacks are workletized automatically; external references still need `'worklet'`.
-* **Never read** `.value` in React render; **derive inside worklets**. Assign to shared values; avoid deep object mutations.
-* **One write per frame**: don’t set the same shared value multiple times in a single tick.
-* **No hooks in worklets**.
+- **Auto‑workletization**: callbacks passed to Reanimated APIs (`useAnimatedStyle`, `useDerivedValue`, gesture callbacks, entering/exiting/layout) run on the **UI runtime**.
+- **Add `'worklet'`** when you (1) call imported/external functions, (2) create worklets via expressions/ternaries, (3) define worklet callbacks inside **custom hooks**, or (4) expose reusable top‑level worklet utilities.
+- **`runOnUI`**: inline callbacks are workletized automatically; external references still need `'worklet'`.
+- **Never read** `.value` in React render; **derive inside worklets**. Assign to shared values; avoid deep object mutations.
+- **One write per frame**: don’t set the same shared value multiple times in a single tick.
+- **No hooks in worklets**.
 
 ```ts
 // Auto‑workletized (UI thread)
@@ -33,118 +34,117 @@ const st = useAnimatedStyle(cardWorklet);
 
 // Expression‑defined worklet
 const makeStyle = isOn
-  ? () => { 'worklet'; return { opacity: 1 }; }
-  : () => { 'worklet'; return { opacity: 0.5 }; };
+  ? () => {
+      'worklet';
+      return { opacity: 1 };
+    }
+  : () => {
+      'worklet';
+      return { opacity: 0.5 };
+    };
 ```
 
 ---
 
 ## Reanimated 4 essentials (for agents)
 
-* Prefer **layout/shared transitions** over manual width/height animations. Always chain `.reduceMotion(ReduceMotion.System)`.
-* Use RNGH v2 **`Gesture.*()`** with **`GestureDetector`** (legacy handler components/`useAnimatedGestureHandler` are deprecated in 4.x).
-* **Cross‑thread boundaries**: keep UI‑critical logic in worklets. Use **`runOnJS`** **sparingly** (never per‑frame) for state/side‑effects **after** animations.
-* Measure with `measure`, scroll with `scrollTo`, avoid layout hacks.
+- Prefer **layout/shared transitions** over manual width/height animations. Always chain `.reduceMotion(ReduceMotion.System)`.
+- Use RNGH v2 **`Gesture.*()`** with **`GestureDetector`** (legacy handler components/`useAnimatedGestureHandler` are deprecated in 4.x).
+- **Cross‑thread boundaries**: keep UI‑critical logic in worklets. Use **`runOnJS`** **sparingly** (never per‑frame) for state/side‑effects **after** animations.
+- Measure with `measure`, scroll with `scrollTo`, avoid layout hacks.
 
 ---
 
 ## 🧭 Styling with NativeWind
 
-* **Static** styles in `className`; **dynamic** parts via `style={animatedStyle}` from shared values.
-* **Do not** flip Tailwind classes per frame. Compute animated styles instead.
-* Class order: layout → flex/grid → spacing → sizing → border/radius → background → text/font → effects → state/dark.
-* Use **design tokens** from `tailwind.config.js`; avoid raw hex or off‑scale spacing.
-* Prefer small **variant helpers** (e.g., `tv/cva`) over long JSX ternaries.
-* Forward/merge `className` in custom components; keep it **stable** across frames.
+- **Static** styles in `className`; **dynamic** parts via `style={animatedStyle}`.
+- **Do not** flip Tailwind classes per frame. Compute animated styles instead.
+- **Explicit Pairing**: Always define Light & Dark explicitly: `bg-white dark:bg-charcoal-900`.
+- **No CSS Vars**: We rely on compile-time classes, not runtime `var()`.
+- Class order: layout → flex/grid → spacing → sizing → border/radius → background → text/font → effects → dark.
+- Forward/merge `className` in custom components via `tailwind-merge` (`cn`).
 
 ---
 
 ## 🧩 GrowBro repo‑specific styling conventions
 
-- **Tokens**: `src/components/ui/colors.js` → Tailwind config.
-  - Palettes: `primary`, `neutral`, `charcoal`, `ink` (defined in `src/components/ui/colors.js`; used for semantic roles in `src/lib/theme-tokens.ts`), `terracotta`, `sky`, `indigo`, `success`, `warning`, `danger`.
-  - Prefer tokens (`bg-primary-600`, `text-ink-900`) over raw hex. The `ink` palette is used for text and icon colors, and is defined as a range of dark grays with a slight blue undertone.
-- **Fonts**: `font-inter` default; override via classNames.
-- **Dark mode**: `darkMode: 'class'`. Runtime theming via `src/lib/nativewind-theme-provider.tsx`.
-- **Variants**: `tailwind-variants` `tv()`; static layout in slots, variants for tokens.
-- **SVG**: `cssInterop` enables `className` (see `src/components/ui/index.tsx`).
-- **Class merging**: `tailwind-merge`; no manual concat.
-- **Native props**: import colors from `src/components/ui/colors`.
-- **Linting**: `eslint-plugin-tailwindcss` enforces order.
+- **Tokens**: `src/components/ui/colors.js` is the Single Source of Truth.
+  - Loaded into `tailwind.config.js` via `...colors`.
+- **Dark Mode Strategy**: **Explicit Utility Classes**.
+  - **No CSS variables**. No runtime provider.
+  - Use direct Tailwind colors defined in `colors.js`.
+- **Standard Pairs** (Strict Rules):
+  - **App Bg**: `bg-neutral-50 dark:bg-charcoal-950`
+  - **Surface**: `bg-white dark:bg-charcoal-900`
+  - **Input/Border**: `border-neutral-200 dark:border-white/10` (Glass)
+  - **Text Main**: `text-neutral-900 dark:text-neutral-50`
+  - **Text Sub**: `text-neutral-600 dark:text-neutral-400`
+  - **Brand**: `text-primary-800 dark:text-primary-300` (Mint)
+- **Native props**: Import `colors` from `@/components/ui/colors` directly.
 
-### 🌈 Theme tokens workflow
+### 🌈 Theme workflow & Rules
 
-- **Palette**: `src/components/ui/colors.js` → shared by Tailwind & runtime.
-- **Runtime**: `src/lib/nativewind-theme-provider.tsx` injects CSS vars via `vars()`.
-- **Semantic classes** (auto light/dark): `bg-background`, `bg-card`, `border-border`, `text-text-primary`, `text-text-secondary`, `text-text-inverse`, `bg-action-primary`, `bg-action-cta`, `ring-focus-ring`.
-- **JS tokens**: `src/lib/theme-tokens.ts` → raw values for React Navigation & native `style` props. Keep in sync with `src/lib/nativewind-theme-provider.tsx`.
-- **Rule**: Tailwind for static; runtime tokens for `style` props & native APIs.
-
-### ⚠️ Semantic tokens vs explicit palette (IMPORTANT)
-
-**Always prefer semantic tokens** for themed surfaces:
-
-````tsx
-// ✅ CORRECT – uses semantic tokens, auto-resolves light/dark via NativeWindThemeProvider
-<View className="border border-border bg-card shadow-lg">
-
-// ❌ WRONG – manual dark: overrides duplicate theme logic, risk drift
-<View className="border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-
-**Palette tokens:** accents, interactive states, decorative one-offs only.
-**Note:** `border-border` auto-maps per theme; manual `dark:` risks drift.
+- **Palette**: `src/components/ui/colors.js` (raw values).
+- **Usage**:
+  - **Static**: Write specific pairs (`bg-white dark:bg-charcoal-900`).
+  - **Dynamic**: Import `colors` object in TS.
+- **Semantic Rule**: **Avoid** semantic classes like `bg-card` or `text-text-primary`.
+  - ✅ `className="bg-white dark:bg-charcoal-900"` (Explicit, stable)
+  - ❌ `className="bg-card"` (Deprecated, hides logic)
+---
 
 ## ✅ Do / Avoid (Quick)
 
 **Do**
 
-* Tailwind for **static**, Reanimated for **dynamic**.
-* Layout/shared transitions > manual size/position.
-* Honor **Reduced Motion** via `.reduceMotion(ReduceMotion.System)`.
-* Centralize shared transition tags/helpers under `src/lib/animations/`.
+- Tailwind for **static**, Reanimated for **dynamic**.
+- Use **Explicit Pairs** (`bg-white dark:bg-charcoal-900`) everywhere.
+- Use `white/10` opacity for dark mode borders/inputs (Glass look).
+- Honor **Reduced Motion** via `.reduceMotion(ReduceMotion.System)`.
 
 **Avoid**
 
-* Toggling `className` per frame.
-* Nesting `Animated.View` unnecessarily; compose transforms in one container.
+- Toggling `className` per frame.
+- Using deprecated semantic tokens (`bg-background`).
+- Calling `runOnJS` per frame.
 
 ---
 
 ## 🧠 Worklet Offloading (TL;DR)
 
-* If logic runs **per frame/gesture** and **doesn’t need React state**, make it a **worklet**.
-* Candidates: interpolation/physics, clamping/throttling, hit‑testing, gesture math, small in‑memory filters/scoring tied to UI.
-* One‑shot heavy calc tied to UI:
+- If logic runs **per frame/gesture** and **doesn’t need React state**, make it a **worklet**.
+- Candidates: interpolation/physics, clamping/throttling, hit‑testing, gesture math, small in‑memory filters/scoring tied to UI.
+- One‑shot heavy calc tied to UI:
 
 ```ts
 runOnUI(() => {
   'worklet';
   // expensive but synchronous logic here
 })();
-```
+````
 
 ### Captures (Closures)
 
-* Capture only **small, serializable** values. Avoid large objects/functions; pass **params** or use **Shared Values**.
+- Capture only **small, serializable** values. Avoid large objects/functions; pass **params** or use **Shared Values**.
 
 ### `runOnJS` — DO / DON’T
 
 **DO**
 
-* Haptics/toasts, analytics, logging.
-* Update React state **after** an animation/gesture.
+- Haptics/toasts, analytics, logging.
+- Update React state **after** an animation/gesture.
   **DON’T**
-* Call `runOnJS` **per frame** or inside `onUpdate` loops.
-* Use it for timing‑critical UI logic.
+- Call `runOnJS` **per frame** or inside `onUpdate` loops.
+- Use it for timing‑critical UI logic.
 
 ### Async & Side‑Effects
 
-* Worklets are **synchronous & side‑effect‑free** (no network/storage/timers). For async/IO, jump to JS via `runOnJS`.
+- Worklets are **synchronous & side‑effect‑free** (no network/storage/timers). For async/IO, jump to JS via `runOnJS`.
 
 ### Quick Perf Check
 
-* Use Expo Dev Menu FPS monitor; ensure animations stay smooth while JS is busy.
-* Log only on **events** (start/finish) via `runOnJS`, not every frame.
+- Use Expo Dev Menu FPS monitor; ensure animations stay smooth while JS is busy.
+- Log only on **events** (start/finish) via `runOnJS`, not every frame.
 
 ---
 
@@ -162,17 +162,19 @@ runOnUI(() => {
 ```tsx
 const opacity = useSharedValue(0.5);
 const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
-return <Animated.View style={animatedStyle} className="bg-primary rounded-xl" />;
+return (
+  <Animated.View style={animatedStyle} className="bg-primary rounded-xl" />
+);
 ```
 
 ---
 
 ## 🎛️ Animation Choice (Cheat)
 
-* **CSS Animations (keyframes)** — fire‑and‑forget loops/ambient effects; no React state.
-* **CSS Transitions** — state‑triggered one‑offs (toggles, open/close, hover/focus).
-* **Shared Values + `useAnimatedStyle`** — continuous/gesture/sensor‑driven UI; pair with `withTiming`/`withSpring`/`withDecay`.
-* **Layout Animations** — entering/exiting or re‑layout of lists/sections; prefer presets before custom.
+- **CSS Animations (keyframes)** — fire‑and‑forget loops/ambient effects; no React state.
+- **CSS Transitions** — state‑triggered one‑offs (toggles, open/close, hover/focus).
+- **Shared Values + `useAnimatedStyle`** — continuous/gesture/sensor‑driven UI; pair with `withTiming`/`withSpring`/`withDecay`.
+- **Layout Animations** — entering/exiting or re‑layout of lists/sections; prefer presets before custom.
 
 **Preset naming rule**: `<Effect><In|Out><Direction>` → `BounceIn`, `ZoomInLeft`, `SlideOutRight`, `FadeOutDown`.
 
@@ -182,45 +184,45 @@ return <Animated.View style={animatedStyle} className="bg-primary rounded-xl" />
 
 ## 🧩 Reanimated 4 — CSS API & Presets
 
-* **CSS Animations (keyframes)**: ambient/looping effects (skeleton, shimmer, pulse). No React state.
-* **CSS Transitions**: state‑driven one‑offs (width/color/opacity on toggle/press/show‑hide).
-* **Entering/Exiting presets**: attach on mount/unmount; tweak via `.springify()/.duration()/.easing()/.reduceMotion()`.
-* **Layout transitions**: animate re‑layout; start with `LinearTransition`, use `CurvedTransition` for organic motion.
-* **Composition helpers**: prefer `withSequence`, `withRepeat`, `withDelay`, `withClamp` over loops.
-* **Preset naming**: `<Effect><In|Out><Direction>` → `BounceIn`, `SlideOutRight`, etc.
-* Example components live under `src/lib/animations/examples/`.
+- **CSS Animations (keyframes)**: ambient/looping effects (skeleton, shimmer, pulse). No React state.
+- **CSS Transitions**: state‑driven one‑offs (width/color/opacity on toggle/press/show‑hide).
+- **Entering/Exiting presets**: attach on mount/unmount; tweak via `.springify()/.duration()/.easing()/.reduceMotion()`.
+- **Layout transitions**: animate re‑layout; start with `LinearTransition`, use `CurvedTransition` for organic motion.
+- **Composition helpers**: prefer `withSequence`, `withRepeat`, `withDelay`, `withClamp` over loops.
+- **Preset naming**: `<Effect><In|Out><Direction>` → `BounceIn`, `SlideOutRight`, etc.
+- Example components live under `src/lib/animations/examples/`.
 
 ---
 
 ## 🔗 Shared element transitions
 
-* Use `sharedTransitionTag` with a **prefixed domain**, e.g., `feed.card.image`, `settings.avatar`.
-* Centralize optional `sharedTransitionStyle` in `src/lib/animations/shared.ts`.
-* Name tags predictably; avoid collisions by prefixing with **feature**.
+- Use `sharedTransitionTag` with a **prefixed domain**, e.g., `feed.card.image`, `settings.avatar`.
+- Centralize optional `sharedTransitionStyle` in `src/lib/animations/shared.ts`.
+- Name tags predictably; avoid collisions by prefixing with **feature**.
 
 ---
 
 ## 🖐️ Modern gestures (RNGH v2)
 
-* Use the **`Gesture` builder API** with `GestureDetector`.
-* Replace old `useAnimatedGestureHandler` (3.x) with `onStart/onUpdate/onEnd` chain.
-* Keep your own shared `ctx` via `useSharedValue` if needed.
-* Heavy math stays in **UI worklets**; no `runOnJS` inside `onUpdate`.
+- Use the **`Gesture` builder API** with `GestureDetector`.
+- Replace old `useAnimatedGestureHandler` (3.x) with `onStart/onUpdate/onEnd` chain.
+- Keep your own shared `ctx` via `useSharedValue` if needed.
+- Heavy math stays in **UI worklets**; no `runOnJS` inside `onUpdate`.
 
 ---
 
 ## ♻️ Cleanup & chaining
 
-* **Cancel** long/looping animations on unmount (`cancelAnimation`).
-* Use composition helpers to chain sequences; fire follow‑up animations from finish callbacks.
+- **Cancel** long/looping animations on unmount (`cancelAnimation`).
+- Use composition helpers to chain sequences; fire follow‑up animations from finish callbacks.
 
 ---
 
 ## 🔀 Crossing threads
 
-* **UI → JS**: `runOnJS(fn)(args...)` only for side‑effects, analytics, or updating React state **after** animation/gesture.
-* **JS → UI**: `runOnUI(() => { 'worklet'; /* ui logic */ })()`.
-* Keep boundaries **coarse‑grained**; never call `runOnJS` per frame.
+- **UI → JS**: `runOnJS(fn)(args...)` only for side‑effects, analytics, or updating React state **after** animation/gesture.
+- **JS → UI**: `runOnUI(() => { 'worklet'; /* ui logic */ })()`.
+- Keep boundaries **coarse‑grained**; never call `runOnJS` per frame.
 
 ---
 
@@ -238,10 +240,10 @@ return <Animated.View style={animatedStyle} className="bg-primary rounded-xl" />
 
 ## ⚙️ Expo SDK 54 specifics
 
-* Reanimated 4.x is bundled with SDK 54.
-* RNGH: **v2 Gesture API**.
-* Babel: `react-native-reanimated/plugin` via `babel-preset-expo` → no manual changes typically needed.
-* Install deps with the Expo‑pinned versions:
+- Reanimated 4.x is bundled with SDK 54.
+- RNGH: **v2 Gesture API**.
+- Babel: `react-native-reanimated/plugin` via `babel-preset-expo` → no manual changes typically needed.
+- Install deps with the Expo‑pinned versions:
   `npx expo install react-native-reanimated react-native-gesture-handler`.
 
 ---
@@ -252,7 +254,7 @@ return <Animated.View style={animatedStyle} className="bg-primary rounded-xl" />
 
 ## 🧱 Motion tokens & Reduced Motion (GrowBro)
 
-* Centralize **durations** and **easings** so animations feel consistent and can be themed.
+- Centralize **durations** and **easings** so animations feel consistent and can be themed.
 
 ```ts
 // src/lib/animations/motion.ts
@@ -265,7 +267,8 @@ export const motion = {
     decel: Easing.bezier(0, 0, 0.2, 1),
   },
 };
-export const withRM = (anim: any) => anim.reduceMotion?.(ReduceMotion.System) ?? anim;
+export const withRM = (anim: any) =>
+  anim.reduceMotion?.(ReduceMotion.System) ?? anim;
 ```
 
 **Use**
@@ -274,13 +277,13 @@ export const withRM = (anim: any) => anim.reduceMotion?.(ReduceMotion.System) ??
 entering={withRM(FadeInUp.duration(motion.dur.md).easing(motion.ease.standard))}
 ```
 
-* `withRM` ensures system **Reduced Motion** is always respected.
+- `withRM` ensures system **Reduced Motion** is always respected.
 
 ## 🤝 Gesture composition (cheat)
 
-* `Gesture.Simultaneous(pan, pinch)` — both can run.
-* `Gesture.Exclusive(press, pan)` — press wins unless pan exceeds threshold.
-* `Gesture.Race(longPress, tap)` — first to activate cancels others.
+- `Gesture.Simultaneous(pan, pinch)` — both can run.
+- `Gesture.Exclusive(press, pan)` — press wins unless pan exceeds threshold.
+- `Gesture.Race(longPress, tap)` — first to activate cancels others.
 
 > Heavy math stays in `onUpdate` worklets; use `runOnJS` only in `onEnd`.
 
@@ -291,17 +294,17 @@ const scrollRef = useAnimatedRef<Animated.ScrollView>();
 scrollTo(scrollRef, 0, y.value, true);
 ```
 
-* Prefer `scrollTo` over style/position hacks; keep `y` as a shared value.
+- Prefer `scrollTo` over style/position hacks; keep `y` as a shared value.
 
 ## 🏷️ Shared values naming (GrowBro)
 
-* Prefix with **feature** + **unit**: `feedY`, `cardScale`, `opacityA`.
-* Derived values suffix `D`: `cardScaleD` derived from `cardScale`.
+- Prefix with **feature** + **unit**: `feedY`, `cardScale`, `opacityA`.
+- Derived values suffix `D`: `cardScaleD` derived from `cardScale`.
 
 ## ✅ QA checklist (ultra‑short)
 
-* Reduced Motion respected everywhere?
-* List insert/remove uses `layout` and looks smooth?
-* Any per‑frame `runOnJS` or class churn left?
-* Looping animations canceled on unmount?
-* Style keys stable per frame; compute once in `useDerivedValue`, reuse across styles.
+- Reduced Motion respected everywhere?
+- List insert/remove uses `layout` and looks smooth?
+- Any per‑frame `runOnJS` or class churn left?
+- Looping animations canceled on unmount?
+- Style keys stable per frame; compute once in `useDerivedValue`, reuse across styles.

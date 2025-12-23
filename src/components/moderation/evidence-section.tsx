@@ -56,7 +56,7 @@ export function EvidenceSection({
           {evidenceUrls.map((url, index) => (
             <View
               key={index}
-              className="bg-card flex-row items-center justify-between rounded-lg p-2"
+              className="flex-row items-center justify-between rounded-lg bg-white p-2 dark:bg-charcoal-900"
             >
               <Text
                 className="text-text-primary flex-1 text-sm"
@@ -76,7 +76,7 @@ export function EvidenceSection({
         </View>
       )}
 
-      <Text className="text-text-secondary mt-2 text-xs">
+      <Text className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
         {t('appeals.notice.evidenceOptional')} ({evidenceUrls.length}/5)
       </Text>
     </View>

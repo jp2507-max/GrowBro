@@ -35,7 +35,7 @@ function PlaybooksHeader() {
 function CenteredMessage({ message }: { message: string }) {
   return (
     <View className="flex-1 items-center justify-center">
-      <Text className="text-text-secondary">{message}</Text>
+      <Text className="text-neutral-600 dark:text-neutral-400">{message}</Text>
     </View>
   );
 }

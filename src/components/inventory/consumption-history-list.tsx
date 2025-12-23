@@ -47,7 +47,7 @@ const ConsumptionHistoryItem = ({
 
   return (
     <Pressable
-      className="bg-card border-b border-neutral-200 p-4 dark:border-charcoal-700"
+      className="border-b border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900"
       testID={`consumption-history-item-${entry.id}`}
       onPress={() => onPress?.(entry)}
       accessibilityRole="button"
@@ -68,7 +68,7 @@ const ConsumptionHistoryItem = ({
           <Text className="font-inter-bold text-text-primary text-base">
             {formatCost(entry.totalCostMinor)}
           </Text>
-          <Text className="text-text-secondary mt-1 text-xs">
+          <Text className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
             {formatCost(entry.costPerUnitMinor)}/{entry.unit}
           </Text>
         </View>

@@ -139,8 +139,8 @@ export default function ActiveSessionsScreen() {
           )}
 
           {!isLoading && !error && sessions && sessions.length === 0 && (
-            <View className="bg-card rounded-lg p-4">
-              <Text className="text-text-secondary">
+            <View className="rounded-lg bg-white p-4 dark:bg-charcoal-900">
+              <Text className="text-neutral-600 dark:text-neutral-400">
                 {translate('auth.sessions.no_sessions')}
               </Text>
             </View>

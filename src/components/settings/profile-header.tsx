@@ -107,7 +107,7 @@ export function ProfileHeader({
                         count: statistics.plantsCount,
                       })}
               </Text>
-              <Text className="text-text-secondary text-sm">
+              <Text className="text-sm text-neutral-600 dark:text-neutral-400">
                 {statistics.harvestsCount === 0
                   ? translate('profile.statistics.harvestsCount_zero', {
                       count: statistics.harvestsCount,

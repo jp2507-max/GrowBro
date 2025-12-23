@@ -25,7 +25,7 @@ export function CalendarEmptyState({
           tx="calendar.empty_state.title"
         />
 
-        <View className="bg-card w-full gap-3 rounded-2xl border border-neutral-200 p-4 dark:border-charcoal-700">
+        <View className="w-full gap-3 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
           <Text
             className="text-text-primary text-base font-medium"
             tx="calendar.empty_state.sample_title"

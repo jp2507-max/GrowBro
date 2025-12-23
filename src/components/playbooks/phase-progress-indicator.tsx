@@ -95,7 +95,7 @@ function PhaseDot({
         className={`mt-2 text-xs ${
           isCurrent
             ? 'font-semibold text-charcoal-900 dark:text-neutral-100'
-            : 'text-text-secondary'
+            : 'text-neutral-600 dark:text-neutral-400'
         }`}
       >
         {PHASE_LABELS[phase.phase]}

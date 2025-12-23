@@ -78,6 +78,7 @@
       "targets_hint": "Shows the pH and EC targets for this task."
     },
     "common": {
+      "back_hint": "Navigates back to the previous screen",
       "confirm_date_hint": "Confirms the selected date.",
       "go_back": "Go back",
       "loading_hint": "Content is loading, please wait",
@@ -387,9 +388,22 @@
     },
     "result": {
       "askCommunity": "Ask Community",
+      "backToHome": "Back to home",
+      "confidence": "Confidence: {{confidencePercent}}%",
       "createTasks": "Create Tasks",
+      "dataUnavailable": "Assessment data is no longer available.",
+      "details": "Assessment details",
+      "modelVersion": "Model version: {{modelVersion}}",
+      "noDescription": "No additional description available.",
+      "photoQualityTitle": "Photo quality could be improved",
+      "plantId": "Plant ID: {{plantId}}",
+      "processingTime": "Processing time: {{processingTimeMs}} ms",
       "retake": "Retake",
-      "viewHistory": "View History"
+      "retakePhotos": "Retake photos",
+      "screenTitle": "Assessment Result",
+      "unknown": "Unknown",
+      "viewHistory": "View History",
+      "viewPhotoTips": "View photo tips"
     },
     "retake": {
       "cancel": "Cancel",

@@ -67,7 +67,9 @@ export const NotificationRow = React.memo(function NotificationRow({
           >
             {notification.body}
           </Text>
-          <Text className="text-text-secondary text-xs">{timestampLabel}</Text>
+          <Text className="text-xs text-neutral-600 dark:text-neutral-400">
+            {timestampLabel}
+          </Text>
         </View>
         <MarkAsReadButton
           isVisible={isUnread}

@@ -44,8 +44,8 @@ function TemplateStats({ template }: { template: CommunityTemplate }) {
   const { t } = useTranslation();
   return (
     <View className="mb-4 flex-row gap-3">
-      <View className="bg-card flex-1 rounded-lg p-3">
-        <Text className="text-text-secondary text-xs">
+      <View className="flex-1 rounded-lg bg-white p-3 dark:bg-charcoal-900">
+        <Text className="text-xs text-neutral-600 dark:text-neutral-400">
           {t('playbooks.templates.detail.duration')}
         </Text>
         <Text className="text-text-primary text-lg font-semibold">

@@ -36,7 +36,7 @@ export function DiagnosticResultCard({
 
   return (
     <View
-      className="bg-card mb-4 rounded-xl border border-neutral-200 p-4 dark:border-charcoal-700"
+      className="mb-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900"
       testID={testID}
     >
       <ClassificationHeader
@@ -116,7 +116,7 @@ function ClassificationHeader({
         </Text>
       )}
 
-      <Text className="text-text-secondary text-sm">
+      <Text className="text-sm text-neutral-600 dark:text-neutral-400">
         {translateDynamic(severityKey)}
       </Text>
 

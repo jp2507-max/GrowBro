@@ -250,7 +250,7 @@ function PlantCardFooter({ needsAttention }: { needsAttention: boolean }) {
         <>
           <View className="flex-row items-center gap-2">
             <Text className="text-base">✓</Text>
-            <Text className="text-text-secondary text-sm font-medium">
+            <Text className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
               {translate('plants.card.all_good' as TxKeyPath)}
             </Text>
           </View>
@@ -298,7 +298,7 @@ function PlantCardContent({
 
   return (
     <Pressable
-      className="bg-card mb-3 overflow-hidden rounded-3xl border border-neutral-200 active:scale-[0.98] active:opacity-95 dark:border-charcoal-700"
+      className="mb-3 overflow-hidden rounded-3xl border border-neutral-200 bg-white active:scale-[0.98] active:opacity-95 dark:border-charcoal-700 dark:bg-charcoal-900"
       style={[cardStyles.shadow]}
       testID={`plant-card-${plant.id}`}
       accessibilityRole="button"

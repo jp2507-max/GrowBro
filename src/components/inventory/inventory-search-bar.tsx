@@ -78,7 +78,7 @@ export const InventorySearchBar = React.memo(function InventorySearchBar({
             accessibilityLabel={t('harvest.inventory.search_label')}
             accessibilityHint={t('harvest.inventory.search_hint')}
             testID={`${testID}-input`}
-            className="bg-card h-12 rounded-lg border border-neutral-200 px-4 pr-10 text-base text-charcoal-900 dark:border-charcoal-700 dark:text-neutral-100"
+            className="h-12 rounded-lg border border-neutral-200 bg-white px-4 pr-10 text-base text-charcoal-900 dark:border-charcoal-700 dark:bg-charcoal-900 dark:text-neutral-100"
             returnKeyType="search"
             clearButtonMode="never" // Custom clear button
             autoCapitalize="none"
@@ -129,7 +129,7 @@ export const InventorySearchBar = React.memo(function InventorySearchBar({
               className={`text-lg ${
                 hasActiveFilters
                   ? 'text-primary-600 dark:text-primary-400'
-                  : 'text-text-secondary'
+                  : 'text-neutral-600 dark:text-neutral-400'
               }`}
             >
               ⚙

@@ -117,7 +117,7 @@ export function DiagnosticChecklist({
           return (
             <View
               key={check.id}
-              className="bg-card rounded-lg border border-neutral-200 p-3 dark:border-charcoal-700"
+              className="rounded-lg border border-neutral-200 bg-white p-3 dark:border-charcoal-700 dark:bg-charcoal-900"
               testID={`${testID}-item-${check.id}`}
             >
               {/* Check header with checkbox */}
@@ -127,7 +127,7 @@ export function DiagnosticChecklist({
                     {t(check.nameKey)}
                   </Text>
                   {check.estimatedMinutes && (
-                    <Text className="text-text-secondary text-xs">
+                    <Text className="text-xs text-neutral-600 dark:text-neutral-400">
                       {t('assessment.diagnostics.estimatedTime', {
                         minutes: check.estimatedMinutes,
                       })}

@@ -60,11 +60,11 @@ export default function InventoryItemDetailScreen(): React.ReactElement {
       <FocusAwareStatusBar />
       <ScrollView className="flex-1">
         {/* Header */}
-        <View className="bg-card border-b border-neutral-200 p-4 dark:border-charcoal-700">
+        <View className="border-b border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
           <Text className="text-2xl font-bold text-charcoal-900 dark:text-neutral-100">
             {item.name}
           </Text>
-          <Text className="text-text-secondary mt-1 text-sm">
+          <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
             {item.category} • {item.unitOfMeasure}
           </Text>
         </View>

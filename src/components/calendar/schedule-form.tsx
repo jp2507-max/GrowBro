@@ -127,7 +127,7 @@ export function ScheduleForm(props: ScheduleFormProps): React.ReactElement {
       </View>
 
       <View className="gap-1">
-        <Text className="text-text-secondary text-sm font-medium">
+        <Text className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
           {labels.recurrence}
         </Text>
         <Controller

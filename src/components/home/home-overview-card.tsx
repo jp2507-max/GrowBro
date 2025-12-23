@@ -19,7 +19,7 @@ export function HomeOverviewCard({
   testID,
 }: Props): React.ReactElement {
   const baseClassName =
-    'gap-2 rounded-2xl border border-neutral-200 dark:border-charcoal-700 bg-card p-4';
+    'gap-2 rounded-2xl border border-neutral-200 dark:border-charcoal-700 bg-white dark:bg-charcoal-900 p-4';
   const containerClassName = className
     ? `${baseClassName} ${className}`
     : baseClassName;
@@ -38,7 +38,10 @@ export function HomeOverviewCard({
         {value}
       </Text>
       {descriptionTx ? (
-        <Text className="text-text-secondary text-xs" tx={descriptionTx} />
+        <Text
+          className="text-xs text-neutral-600 dark:text-neutral-400"
+          tx={descriptionTx}
+        />
       ) : null}
     </View>
   );

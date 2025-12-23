@@ -104,7 +104,7 @@ function SortMenuButtons({
   onApply,
 }: SortMenuButtonsProps) {
   return (
-    <View className="bg-card absolute inset-x-0 bottom-0 border-t border-neutral-200 p-4 dark:border-charcoal-700">
+    <View className="absolute inset-x-0 bottom-0 border-t border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
       <View className="flex-row gap-3">
         <View className="flex-1">
           <Button

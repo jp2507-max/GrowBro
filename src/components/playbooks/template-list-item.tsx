@@ -23,7 +23,7 @@ export const TemplateListItem = React.memo(function TemplateListItem({
     <Pressable
       accessibilityRole="button"
       onPress={() => onPress(template)}
-      className="bg-card mb-3 rounded-lg p-4 active:bg-neutral-100 dark:active:bg-charcoal-800"
+      className="mb-3 rounded-lg bg-white p-4 active:bg-neutral-100 dark:bg-charcoal-900 dark:active:bg-charcoal-800"
     >
       <View className="mb-2 flex-row items-center justify-between">
         <Text className="flex-1 text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
@@ -47,7 +47,7 @@ export const TemplateListItem = React.memo(function TemplateListItem({
 
       <View className="flex-row items-center gap-4">
         <View className="flex-row items-center">
-          <Text className="text-text-secondary text-xs">
+          <Text className="text-xs text-neutral-600 dark:text-neutral-400">
             By {template.authorHandle}
           </Text>
         </View>

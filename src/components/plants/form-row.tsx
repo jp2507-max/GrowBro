@@ -32,7 +32,7 @@ export function FormRow({
 
   const content = (
     <View
-      className="bg-card flex-row items-center justify-between rounded-xl px-4 py-3.5"
+      className="flex-row items-center justify-between rounded-xl bg-white px-4 py-3.5 dark:bg-charcoal-900"
       testID={testID}
     >
       <View className="flex-1 flex-row items-center gap-3">
@@ -52,7 +52,11 @@ export function FormRow({
           </Text>
         ) : null}
         {showArrow && onPress ? (
-          <ArrowRight width={20} height={20} className="text-text-secondary" />
+          <ArrowRight
+            width={20}
+            height={20}
+            className="text-neutral-600 dark:text-neutral-400"
+          />
         ) : null}
       </View>
     </View>

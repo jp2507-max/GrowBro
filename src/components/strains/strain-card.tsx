@@ -128,7 +128,7 @@ export const StrainCard = React.memo<Props>(({ strain, testID }) => {
         style={animatedStyle}
       >
         <View
-          className="bg-card overflow-hidden rounded-3xl shadow-sm"
+          className="overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-charcoal-900"
           style={styles.card}
         >
           <View className="relative h-52 w-full bg-white">

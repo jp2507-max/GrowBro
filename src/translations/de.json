@@ -78,6 +78,7 @@
       "targets_hint": "Zeigt die pH- und EC-Zielwerte dieser Aufgabe."
     },
     "common": {
+      "back_hint": "Navigiert zurück zum vorherigen Bildschirm",
       "confirm_date_hint": "Bestätigt das ausgewählte Datum.",
       "go_back": "Zurück",
       "loading_hint": "Inhalt wird geladen, bitte warten",
@@ -387,9 +388,22 @@
     },
     "result": {
       "askCommunity": "Community fragen",
+      "backToHome": "Zurück zur Startseite",
+      "confidence": "Vertrauen: {{confidencePercent}}%",
       "createTasks": "Aufgaben erstellen",
+      "dataUnavailable": "Analyse-Daten sind nicht mehr verfügbar.",
+      "details": "Analyse-Details",
+      "modelVersion": "Modell-Version: {{modelVersion}}",
+      "noDescription": "Keine zusätzliche Beschreibung verfügbar.",
+      "photoQualityTitle": "Foto-Qualität könnte verbessert werden",
+      "plantId": "Pflanzen-ID: {{plantId}}",
+      "processingTime": "Verarbeitungszeit: {{processingTimeMs}} ms",
       "retake": "Wiederholen",
-      "viewHistory": "Verlauf anzeigen"
+      "retakePhotos": "Fotos erneut aufnehmen",
+      "screenTitle": "Analyseergebnis",
+      "unknown": "Unbekannt",
+      "viewHistory": "Verlauf anzeigen",
+      "viewPhotoTips": "Foto-Tipps anzeigen"
     },
     "retake": {
       "cancel": "Abbrechen",

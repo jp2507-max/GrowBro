@@ -25,7 +25,7 @@ export function CommunityEmptyState({
           tx="community.empty_state_educational.title"
         />
 
-        <View className="bg-card w-full gap-4 rounded-2xl border border-neutral-200 p-4 dark:border-charcoal-700">
+        <View className="w-full gap-4 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
           <Text
             className="text-text-primary text-sm font-medium"
             tx="community.empty_state_educational.moderation_guidance"

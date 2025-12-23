@@ -66,7 +66,7 @@ export function BatchListItem({
 
   return (
     <View
-      className="bg-card rounded-xl border border-neutral-200 p-4 dark:border-charcoal-700"
+      className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900"
       testID={`batch-item-${batch.id}`}
     >
       <View className="flex-row items-start justify-between">
@@ -82,7 +82,7 @@ export function BatchListItem({
             })}
           </Text>
           {formattedDate && (
-            <Text className="text-text-secondary mt-1 text-xs">
+            <Text className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
               {t('inventory.expires_on', { date: formattedDate })}
             </Text>
           )}

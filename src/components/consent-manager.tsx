@@ -148,7 +148,7 @@ function ToggleRow({
   impactText?: string;
 }) {
   return (
-    <View className="bg-card mb-4 rounded-lg border border-neutral-200 p-4 dark:border-charcoal-700">
+    <View className="mb-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
       <View className="flex-row items-start justify-between">
         <View className="flex-1 pr-4">
           <Text
@@ -162,7 +162,7 @@ function ToggleRow({
             {subtitle}
           </Text>
           {impactText && (
-            <Text className="text-text-secondary mt-2 text-xs">
+            <Text className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
               {impactText}
             </Text>
           )}

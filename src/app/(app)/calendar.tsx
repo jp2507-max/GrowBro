@@ -98,7 +98,9 @@ function SectionHeader({
 function EmptyState({ message }: { message: string }): React.ReactElement {
   return (
     <View className="items-center justify-center py-8">
-      <Text className="text-text-secondary text-base">{message}</Text>
+      <Text className="text-base text-neutral-600 dark:text-neutral-400">
+        {message}
+      </Text>
     </View>
   );
 }

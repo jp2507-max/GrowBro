@@ -74,7 +74,7 @@ function ActionItem({
         className={`flex-row items-center rounded-xl border p-3 ${
           completed
             ? 'border-success-200 bg-success-50 dark:border-success-700 dark:bg-success-900/40'
-            : 'bg-card border-neutral-200 dark:border-charcoal-700'
+            : 'border-neutral-200 bg-white dark:border-charcoal-700 dark:bg-charcoal-900'
         }`}
         accessibilityRole="button"
         accessibilityLabel={translate(titleKey)}

@@ -53,7 +53,7 @@ export default function ModeratorQueueScreen() {
 
   return (
     <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
-      <View className="bg-card border-b border-neutral-200 px-4 py-3 dark:border-charcoal-700">
+      <View className="border-b border-neutral-200 bg-white px-4 py-3 dark:border-charcoal-700 dark:bg-charcoal-900">
         <Text className="text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
           Queue: {filteredReports.length} reports
         </Text>

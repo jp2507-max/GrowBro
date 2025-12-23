@@ -64,14 +64,14 @@ function ActivitiesSection({
 
   return (
     <View className="mb-3">
-      <Text className="text-text-secondary mb-2 text-sm font-medium">
+      <Text className="mb-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
         {t('playbooks.activities')}
       </Text>
       <View className="flex-row flex-wrap gap-2">
         {activities.map((activity) => (
           <View
             key={activity.taskType}
-            className="bg-card rounded-lg px-3 py-1.5"
+            className="rounded-lg bg-white px-3 py-1.5 dark:bg-charcoal-900"
           >
             <Text className="text-text-secondary text-xs">
               {getTaskTypeLabel(t, activity.taskType)}: {activity.count}

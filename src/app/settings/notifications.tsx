@@ -29,13 +29,13 @@ function CategoryList() {
         className="mb-2 text-sm font-medium text-charcoal-900 dark:text-neutral-100"
         tx="settings.notifications.categories.title"
       />
-      <View className="bg-card rounded-lg p-3">
+      <View className="rounded-lg bg-white p-3 dark:bg-charcoal-900">
         <Text
           className="mb-1 text-sm text-neutral-600 dark:text-neutral-400"
           tx="settings.notifications.categories.communityInteractions"
         />
         <Text
-          className="text-text-secondary mb-1 text-sm"
+          className="mb-1 text-sm text-neutral-600 dark:text-neutral-400"
           tx="settings.notifications.categories.communityLikes"
         />
         <Text

@@ -60,15 +60,17 @@ function PlantErrorView({
       <Text className="mb-3 text-base text-neutral-700 dark:text-neutral-200">
         {errorMessage}
       </Text>
-      <Text
-        className="text-primary-700 dark:text-primary-300"
+      <Pressable
+        onPress={onRetry}
         accessibilityRole="button"
         accessibilityHint={t('accessibility.common.retry_hint')}
-        onPress={onRetry}
         testID="plant-error-retry"
+        className="active:opacity-70"
       >
-        {retryLabel}
-      </Text>
+        <Text className="text-primary-700 dark:text-primary-300">
+          {retryLabel}
+        </Text>
+      </Pressable>
     </View>
   );
 }

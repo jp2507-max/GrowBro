@@ -245,7 +245,7 @@ export default function ReportBugScreen() {
           </View>
 
           {/* Include Diagnostics Toggle */}
-          <View className="bg-card mb-4 rounded-lg border border-neutral-200 p-4 dark:border-charcoal-700">
+          <View className="mb-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
             <View className="mb-2 flex-row items-center justify-between">
               <Text className="text-text-primary text-sm font-medium">
                 {translate('settings.support.report_bug.include_diagnostics')}
@@ -265,7 +265,7 @@ export default function ReportBugScreen() {
                 )}
               />
             </View>
-            <Text className="text-text-secondary text-xs">
+            <Text className="text-xs text-neutral-600 dark:text-neutral-400">
               {translate('settings.support.report_bug.diagnostics_description')}
             </Text>
 

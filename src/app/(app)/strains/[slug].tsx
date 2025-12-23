@@ -414,11 +414,7 @@ const StrainScrollContent = ({ strain, scrollHandler }: StrainContentProps) => (
       <View className="mb-2 flex-row gap-2">
         <View className="rounded-full bg-white/20 px-3 py-1 backdrop-blur-md">
           <Text className="text-xs font-bold uppercase tracking-wider text-white">
-            {strain.race === 'hybrid'
-              ? 'Hybrid'
-              : strain.race === 'sativa'
-                ? 'Sativa'
-                : 'Indica'}
+            {translate(`strains.race.${strain.race}`)}
           </Text>
         </View>
       </View>

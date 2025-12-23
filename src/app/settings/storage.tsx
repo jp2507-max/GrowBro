@@ -32,7 +32,7 @@ function StorageStats({ storageInfo }: { storageInfo: StorageInfo }) {
   const { t } = useTranslation();
 
   return (
-    <View className="bg-card rounded-lg p-4">
+    <View className="rounded-lg bg-white p-4 dark:bg-charcoal-900">
       <Text className="mb-4 text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
         {t('harvest.photo.storage.title')}
       </Text>
@@ -47,7 +47,7 @@ function StorageStats({ storageInfo }: { storageInfo: StorageInfo }) {
       </View>
 
       <View className="mb-3">
-        <Text className="text-text-secondary text-sm">
+        <Text className="text-sm text-neutral-600 dark:text-neutral-400">
           {t('harvest.photo.storage.available')}
         </Text>
         <Text className="text-text-secondary text-lg">

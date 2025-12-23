@@ -109,7 +109,7 @@ export function AssessmentHistoryList({
 
     return (
       <View className="items-center py-8" testID={`${listTestID}-empty`}>
-        <Text className="text-text-secondary text-sm">
+        <Text className="text-sm text-neutral-600 dark:text-neutral-400">
           {t('assessment.history.empty')}
         </Text>
         <Text className="text-text-secondary mt-1 text-xs">

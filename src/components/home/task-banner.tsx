@@ -27,7 +27,7 @@ export function TaskBanner({
   if (isLoading) {
     return (
       <View
-        className="bg-card flex-row items-center gap-2 rounded-xl px-4 py-3"
+        className="flex-row items-center gap-2 rounded-xl bg-white px-4 py-3 dark:bg-charcoal-900"
         testID="task-banner-loading"
       >
         <View className="size-2 animate-pulse rounded-full bg-neutral-300 dark:bg-neutral-600" />

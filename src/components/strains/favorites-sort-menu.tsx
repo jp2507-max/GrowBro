@@ -41,7 +41,7 @@ function SortOption({
       className={`rounded-lg border p-3 ${
         selected
           ? 'border-primary-600 bg-primary-50 dark:bg-primary-950'
-          : 'bg-card border-neutral-200 dark:border-charcoal-700'
+          : 'border-neutral-200 bg-white dark:border-charcoal-700 dark:bg-charcoal-900'
       }`}
       accessibilityRole="radio"
       accessibilityState={{ checked: selected }}
@@ -147,7 +147,7 @@ export const FavoritesSortMenu = React.forwardRef<
             ))}
           </View>
 
-          <Text className="text-text-secondary mb-2 text-sm font-medium">
+          <Text className="mb-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
             {translate('strains.sort.direction_label')}
           </Text>
           <View className="mb-4 flex-row gap-2">

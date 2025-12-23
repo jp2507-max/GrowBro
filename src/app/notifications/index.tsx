@@ -207,10 +207,10 @@ function EmptyState({
 
   return (
     <View className="flex-1 items-center justify-center gap-2 px-8">
-      <Text className="text-text-primary text-center text-lg font-semibold">
+      <Text className="text-center text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         {translate(titleKey)}
       </Text>
-      <Text className="text-text-secondary text-center text-sm">
+      <Text className="text-center text-sm text-neutral-600 dark:text-neutral-400">
         {translate(bodyKey)}
       </Text>
     </View>

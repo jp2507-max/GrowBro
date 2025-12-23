@@ -429,7 +429,7 @@ function ExplanationSection() {
         {dataToDelete.map((key, index) => (
           <View key={index} className="mb-2 flex-row gap-3">
             <Trash size={18} color="#6b7280" />
-            <Text className="text-text-secondary flex-1 text-base">
+            <Text className="flex-1 text-base text-neutral-600 dark:text-neutral-400">
               {t(key)}
             </Text>
           </View>
@@ -491,7 +491,7 @@ function FinalConfirmationSection({
       </View>
 
       {/* Countdown Info */}
-      <View className="bg-card mb-6 rounded-lg p-4">
+      <View className="mb-6 rounded-lg bg-white p-4 dark:bg-charcoal-900">
         <Text className="text-text-primary text-center text-lg font-semibold">
           {t('settings.delete_account.countdown_message', { days: 30 })}
         </Text>

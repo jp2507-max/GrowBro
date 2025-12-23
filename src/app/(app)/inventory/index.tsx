@@ -62,7 +62,7 @@ export default function InventoryScreen(): React.ReactElement {
       <FocusAwareStatusBar />
 
       {/* Header */}
-      <View className="bg-card border-b border-neutral-200 px-4 pb-3 pt-4 dark:border-charcoal-700">
+      <View className="border-b border-neutral-200 bg-white px-4 pb-3 pt-4 dark:border-charcoal-700 dark:bg-charcoal-900">
         <View className="flex-row items-center justify-between">
           <Text className="text-2xl font-bold text-charcoal-900 dark:text-neutral-100">
             {t('inventory.title')}

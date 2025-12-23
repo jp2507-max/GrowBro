@@ -226,7 +226,7 @@ function StatisticsPanel({
         <View className="flex-row flex-wrap gap-3">
           <Pressable
             accessibilityRole="button"
-            className="bg-card flex-1 rounded-xl p-4"
+            className="flex-1 rounded-xl bg-white p-4 dark:bg-charcoal-900"
             onPress={navigateToPlants}
           >
             <Text className="text-2xl font-bold text-primary-600">
@@ -245,7 +245,7 @@ function StatisticsPanel({
             <Text className="text-2xl font-bold text-primary-600">
               {statistics.harvestsCount}
             </Text>
-            <Text className="text-text-secondary text-sm">
+            <Text className="text-sm text-neutral-600 dark:text-neutral-400">
               {t('profile.statistics.harvests')}
             </Text>
           </Pressable>

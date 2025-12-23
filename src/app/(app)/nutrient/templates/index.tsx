@@ -93,7 +93,7 @@ export default function TemplateListScreen(): React.JSX.Element {
           <Text className="text-2xl font-bold text-charcoal-900 dark:text-neutral-100">
             {t('nutrient.feedingTemplates')}
           </Text>
-          <Text className="text-text-secondary mt-1 text-sm">
+          <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
             {t('nutrient.templatesDescription')}
           </Text>
         </View>

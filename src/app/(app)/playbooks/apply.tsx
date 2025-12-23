@@ -41,7 +41,7 @@ function PlantSelectionList({
           className={`rounded-xl border-2 p-4 ${
             selectedId === plant.id
               ? 'border-primary-600 bg-primary-50 dark:border-primary-500 dark:bg-primary-950'
-              : 'bg-card border-neutral-200 dark:border-charcoal-700'
+              : 'border-neutral-200 bg-white dark:border-charcoal-700 dark:bg-charcoal-900'
           }`}
           onPress={() => onSelect(plant.id)}
           accessibilityRole="button"
@@ -210,7 +210,7 @@ function EmptyPlantState({ onCreatePlant }: { onCreatePlant: () => void }) {
   const { t } = useTranslation();
   return (
     <View className="items-center py-12">
-      <Text className="text-text-secondary mb-4 text-center">
+      <Text className="mb-4 text-center text-neutral-600 dark:text-neutral-400">
         {t('playbooks.noPlants')}
       </Text>
       <Button label={t('playbooks.createPlant')} onPress={onCreatePlant} />

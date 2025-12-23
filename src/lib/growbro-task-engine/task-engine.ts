@@ -214,7 +214,14 @@ export class TaskEngine {
         .fetch();
 
       for (const task of futureTasks) {
-        const taskDueAt = DateTime.fromISO(task.dueAtLocal).toJSDate();
+        const parsedDt = DateTime.fromISO(task.dueAtLocal);
+        if (!parsedDt.isValid) {
+          console.warn(
+            `[TaskEngine] Invalid dueAtLocal for task ${task.id}: ${task.dueAtLocal}`
+          );
+          continue;
+        }
+        const taskDueAt = parsedDt.toJSDate();
         // Only delete tasks that are due today or in the future
         if (taskDueAt >= startOfToday) {
           await task.update((record) => {

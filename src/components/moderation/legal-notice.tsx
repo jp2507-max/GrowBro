@@ -11,7 +11,7 @@ export function LegalNotice() {
       <Text className="text-xs text-neutral-600 dark:text-neutral-400">
         {t('appeals.legal.freeOfCharge')}
       </Text>
-      <Text className="text-text-secondary mt-1 text-xs">
+      <Text className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
         {t('appeals.legal.humanReviewGuarantee')}
       </Text>
     </View>

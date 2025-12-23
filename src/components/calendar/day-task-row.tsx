@@ -80,7 +80,7 @@ export function DayTaskRow({
     <Pressable
       onPress={handlePress}
       className={twMerge(
-        'flex-row items-center gap-3 rounded-xl border border-neutral-200 dark:border-charcoal-700 bg-card p-3',
+        'flex-row items-center gap-3 rounded-xl border border-neutral-200 dark:border-charcoal-700 bg-white dark:bg-charcoal-900 p-3',
         isCompleted && 'opacity-60'
       )}
       accessibilityRole="button"
@@ -110,7 +110,9 @@ export function DayTaskRow({
               🌱 {plantName}
             </Text>
           )}
-          <Text className="text-text-secondary text-sm">{dueTime}</Text>
+          <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+            {dueTime}
+          </Text>
           {(task.seriesId || isEphemeral) && (
             <Text className="text-xs text-primary-600 dark:text-primary-400">
               🔄 {recurringLabel}

@@ -64,7 +64,7 @@ export function PlantAssessmentHistorySection({
       <Pressable
         accessibilityRole="button"
         onPress={toggleExpanded}
-        className="bg-card flex-row items-center justify-between rounded-lg border border-neutral-200 p-4 active:opacity-70 dark:border-charcoal-700"
+        className="flex-row items-center justify-between rounded-lg border border-neutral-200 bg-white p-4 active:opacity-70 dark:border-charcoal-700 dark:bg-charcoal-900"
         testID={`${testID}-header`}
       >
         <View className="flex-1">
@@ -85,7 +85,7 @@ export function PlantAssessmentHistorySection({
             </Text>
           )}
         </View>
-        <Text className="text-text-secondary text-xl">
+        <Text className="text-xl text-neutral-600 dark:text-neutral-400">
           {expanded ? '▼' : '▶'}
         </Text>
       </Pressable>

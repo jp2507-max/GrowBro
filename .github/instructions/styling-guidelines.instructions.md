@@ -57,50 +57,40 @@ const makeStyle = isOn
 
 ## 🧭 Styling with NativeWind
 
-- **Static** styles in `className`; **dynamic** parts via `style={animatedStyle}` from shared values.
+- **Static** styles in `className`; **dynamic** parts via `style={animatedStyle}`.
 - **Do not** flip Tailwind classes per frame. Compute animated styles instead.
-- Class order: layout → flex/grid → spacing → sizing → border/radius → background → text/font → effects → state/dark.
-- Use **design tokens** from `tailwind.config.js`; avoid raw hex or off‑scale spacing.
-- Prefer small **variant helpers** (e.g., `tv/cva`) over long JSX ternaries.
-- Forward/merge `className` in custom components; keep it **stable** across frames.
+- **Explicit Pairing**: Always define Light & Dark explicitly: `bg-white dark:bg-charcoal-900`.
+- **No CSS Vars**: We rely on compile-time classes, not runtime `var()`.
+- Class order: layout → flex/grid → spacing → sizing → border/radius → background → text/font → effects → dark.
+- Forward/merge `className` in custom components via `tailwind-merge` (`cn`).
 
 ---
 
 ## 🧩 GrowBro repo‑specific styling conventions
 
-- **Tokens**: `src/components/ui/colors.js` → Tailwind config.
-  - Palettes: `primary`, `neutral`, `charcoal`, `ink` (defined in `src/components/ui/colors.js`; used for semantic roles in `src/lib/theme-tokens.ts`), `terracotta`, `sky`, `indigo`, `success`, `warning`, `danger`.
-  - Prefer tokens (`bg-primary-600`, `text-ink-900`) over raw hex.
-- **Fonts**: `font-inter` default; override via classNames.
-- **Dark mode**: `darkMode: 'class'`. Runtime theming via `src/lib/nativewind-theme-provider.tsx`.
-- **Variants**: `tailwind-variants` `tv()`; static layout in slots, variants for tokens.
-- **SVG**: `cssInterop` enables `className` (see `src/components/ui/index.tsx`).
-- **Class merging**: `tailwind-merge`; no manual concat.
-- **Native props**: import colors from `@/components/ui/colors`.
-- **Linting**: `eslint-plugin-tailwindcss` enforces order.
+- **Tokens**: `src/components/ui/colors.js` is the Single Source of Truth.
+  - Loaded into `tailwind.config.js` via `...colors`.
+- **Dark Mode Strategy**: **Explicit Utility Classes**.
+  - **No CSS variables**. No runtime provider.
+  - Use direct Tailwind colors defined in `colors.js`.
+- **Standard Pairs** (Strict Rules):
+  - **App Bg**: `bg-neutral-50 dark:bg-charcoal-950`
+  - **Surface**: `bg-white dark:bg-charcoal-900`
+  - **Input/Border**: `border-neutral-200 dark:border-white/10` (Glass)
+  - **Text Main**: `text-neutral-900 dark:text-neutral-50`
+  - **Text Sub**: `text-neutral-600 dark:text-neutral-400`
+  - **Brand**: `text-primary-800 dark:text-primary-300` (Mint)
+- **Native props**: Import `colors` from `@/components/ui/colors` directly.
 
-### 🌈 Theme tokens workflow
+### 🌈 Theme workflow & Rules
 
-- **Palette**: `src/components/ui/colors.js` → shared by Tailwind & runtime.
-- **Runtime**: `src/lib/nativewind-theme-provider.tsx` injects CSS vars via `vars()`.
-- **Semantic classes** (auto light/dark): `bg-background`, `bg-card`, `border-border`, `text-text-primary`, `text-text-secondary`, `text-text-inverse`, `bg-action-primary`, `bg-action-cta`, `ring-focus-ring`.
-- **JS tokens**: `src/lib/theme-tokens.ts` → raw values for React Navigation & native `style` props. Keep in sync with `src/lib/nativewind-theme-provider.tsx`.
-- **Rule**: Tailwind for static; runtime tokens for `style` props & native APIs.
-
-### ⚠️ Semantic tokens vs explicit palette (IMPORTANT)
-
-**Always prefer semantic tokens** for themed surfaces:
-
-```tsx
-// ✅ CORRECT – uses semantic tokens, auto-resolves light/dark via NativeWindThemeProvider
-<View className="border border-border bg-card shadow-lg">
-
-// ❌ WRONG – manual dark: overrides duplicate theme logic, risk drift
-<View className="border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-```
-
-**Palette tokens:** accents, interactive states, decorative one-offs only.
-**Note:** `border-border` auto-maps per theme; manual `dark:` risks drift.
+- **Palette**: `src/components/ui/colors.js` (raw values).
+- **Usage**:
+  - **Static**: Write specific pairs (`bg-white dark:bg-charcoal-900`).
+  - **Dynamic**: Import `colors` object in TS.
+- **Semantic Rule**: **Avoid** semantic classes like `bg-card` or `text-text-primary`.
+  - ✅ `className="bg-white dark:bg-charcoal-900"` (Explicit, stable)
+  - ❌ `className="bg-card"` (Deprecated, hides logic)
 
 ---
 
@@ -109,14 +99,15 @@ const makeStyle = isOn
 **Do**
 
 - Tailwind for **static**, Reanimated for **dynamic**.
-- Layout/shared transitions > manual size/position.
+- Use **Explicit Pairs** (`bg-white dark:bg-charcoal-900`) everywhere.
+- Use `white/10` opacity for dark mode borders/inputs (Glass look).
 - Honor **Reduced Motion** via `.reduceMotion(ReduceMotion.System)`.
-- Centralize shared transition tags/helpers under `src/lib/animations/`.
 
 **Avoid**
 
 - Toggling `className` per frame.
-- Nesting `Animated.View` unnecessarily; compose transforms in one container.
+- Using deprecated semantic tokens (`bg-background`).
+- Calling `runOnJS` per frame.
 
 ---
 

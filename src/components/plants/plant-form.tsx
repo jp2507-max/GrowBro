@@ -143,7 +143,7 @@ function StrainSuggestionsDropdown({
 
   if (isLoading || isFetching) {
     return (
-      <View className="bg-card absolute inset-x-0 top-16 z-10 mt-2 rounded-2xl border border-neutral-200 shadow-lg dark:border-charcoal-700">
+      <View className="absolute inset-x-0 top-16 z-10 mt-2 rounded-2xl border border-neutral-200 bg-white shadow-lg dark:border-charcoal-700 dark:bg-charcoal-900">
         <View className="flex-row items-center gap-2 px-4 py-3">
           <ActivityIndicator size="small" />
           <Text className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -160,7 +160,7 @@ function StrainSuggestionsDropdown({
     <View className="border-border bg-card absolute inset-x-0 top-16 z-10 mt-2 rounded-2xl border shadow-lg">
       {showEmpty && (
         <View className="px-4 py-3">
-          <Text className="text-text-secondary text-sm">
+          <Text className="text-sm text-neutral-600 dark:text-neutral-400">
             {t('plants.form.strain_no_results', { query })}
           </Text>
         </View>

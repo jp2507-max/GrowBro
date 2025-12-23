@@ -184,7 +184,7 @@ export default function FeedbackScreen() {
               className={`mt-1 text-right text-xs ${
                 characterCount > characterLimit
                   ? 'text-danger-600 dark:text-danger-400'
-                  : 'text-text-secondary'
+                  : 'text-neutral-600 dark:text-neutral-400'
               }`}
             >
               {characterCount} / {characterLimit}

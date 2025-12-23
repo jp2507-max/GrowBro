@@ -31,7 +31,9 @@ function TemplateHeader() {
 function EmptyState({ message }: { message: string }) {
   return (
     <View className="flex-1 items-center justify-center px-4">
-      <Text className="text-text-secondary text-center">{message}</Text>
+      <Text className="text-center text-neutral-600 dark:text-neutral-400">
+        {message}
+      </Text>
     </View>
   );
 }

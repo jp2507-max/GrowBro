@@ -39,7 +39,7 @@ export function AgeRestrictedContentPlaceholder({
 
   return (
     <View
-      className="bg-card my-2 rounded-xl border border-neutral-200 p-6 dark:border-charcoal-700"
+      className="my-2 rounded-xl border border-neutral-200 bg-white p-6 dark:border-charcoal-700 dark:bg-charcoal-900"
       style={styles.container}
       testID="age-restricted-content-placeholder"
     >
@@ -72,7 +72,7 @@ export function AgeRestrictedContentPlaceholder({
         />
       )}
 
-      <Text className="text-text-secondary mt-3 text-center text-xs">
+      <Text className="mt-3 text-center text-xs text-neutral-600 dark:text-neutral-400">
         {translate('community.age_restricted.privacy_notice')}
       </Text>
     </View>

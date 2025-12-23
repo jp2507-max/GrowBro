@@ -151,7 +151,7 @@ function AssessmentResultLayout({
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Assessment Result' }} />
+      <Stack.Screen options={{ title: t('assessment.result.screenTitle') }} />
       <ScrollView
         className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
         contentContainerClassName="pb-16"
@@ -165,14 +165,14 @@ function AssessmentResultLayout({
               onRetake={onRetake}
             />
           ) : (
-            <View className="bg-card rounded-xl border border-neutral-200 p-4 shadow-sm dark:border-charcoal-700">
+            <View className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-charcoal-700 dark:bg-charcoal-900">
               <Text className="text-xl font-semibold text-charcoal-900 dark:text-neutral-100">
                 {result.topClass.name}
               </Text>
               <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
                 {t('assessment.result.confidence', { confidencePercent })}
               </Text>
-              <Text className="text-text-secondary mt-3 text-sm">
+              <Text className="mt-3 text-sm text-neutral-600 dark:text-neutral-400">
                 {result.topClass.description ||
                   t('assessment.result.noDescription')}
               </Text>
@@ -252,7 +252,7 @@ function MissingAssessmentSession({
 
   return (
     <View className="flex-1 items-center justify-center bg-neutral-50 px-6 dark:bg-charcoal-950">
-      <Stack.Screen options={{ title: 'Assessment Result' }} />
+      <Stack.Screen options={{ title: t('assessment.result.screenTitle') }} />
       <Text className="text-text-primary mb-6 text-center text-lg">
         {t('assessment.result.dataUnavailable')}
       </Text>

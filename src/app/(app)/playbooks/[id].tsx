@@ -32,7 +32,9 @@ function NotFoundState({ message }: { message: string }) {
   return (
     <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <View className="flex-1 items-center justify-center px-4">
-        <Text className="text-text-secondary text-center">{message}</Text>
+        <Text className="text-center text-neutral-600 dark:text-neutral-400">
+          {message}
+        </Text>
       </View>
     </SafeAreaView>
   );
@@ -51,7 +53,7 @@ function PlaybookContent({
     <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <ScrollView className="flex-1">
         <View className="p-4">
-          <View className="bg-card rounded-xl p-4">
+          <View className="rounded-xl bg-white p-4 dark:bg-charcoal-900">
             <Text className="mb-2 text-2xl font-bold text-charcoal-900 dark:text-neutral-100">
               {preview.name}
             </Text>

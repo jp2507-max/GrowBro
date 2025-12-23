@@ -60,7 +60,7 @@ function LatestAssessmentCard({
   const { t } = useTranslation();
 
   return (
-    <View className="bg-card mt-4 rounded-lg p-4">
+    <View className="mt-4 rounded-lg bg-white p-4 dark:bg-charcoal-900">
       <Text className="mb-2 text-sm font-semibold text-charcoal-900 dark:text-neutral-100">
         {t('trichome.helper.latestAssessmentTitle')}
       </Text>
@@ -68,7 +68,7 @@ function LatestAssessmentCard({
         {new Date(assessment.createdAt).toLocaleDateString()}
       </Text>
       <View className="mt-2 flex-row justify-between">
-        <Text className="text-text-secondary text-xs">
+        <Text className="text-xs text-neutral-600 dark:text-neutral-400">
           {t('trichome.helper.clearLabelShort')} {assessment.clearPercent || 0}%
         </Text>
         <Text className="text-text-secondary text-xs">

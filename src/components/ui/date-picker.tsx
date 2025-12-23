@@ -16,7 +16,6 @@ import { Platform, Pressable, View } from 'react-native';
 import { tv } from 'tailwind-variants';
 
 import { Calendar } from '@/components/ui/icons';
-import { themeRoles } from '@/lib/theme-tokens';
 
 import colors from './colors';
 import { Modal, useModal } from './modal';
@@ -229,18 +228,16 @@ function IOSDatePickerModal({
   const { t } = useTranslation();
 
   const backgroundStyle = React.useMemo(() => {
-    const mode = isDark ? 'dark' : 'light';
     return {
-      backgroundColor: themeRoles.surface[mode].card,
+      backgroundColor: isDark ? colors.charcoal[900] : colors.white,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
     };
   }, [isDark]);
 
   const handleStyle = React.useMemo(() => {
-    const mode = isDark ? 'dark' : 'light';
     return {
-      backgroundColor: themeRoles.surface[mode].border,
+      backgroundColor: isDark ? colors.charcoal[700] : colors.neutral[200],
       width: 40,
       height: 5,
     };

@@ -65,7 +65,7 @@ function ReportHeader({ report }: { report: QueuedReport }) {
   const reporterType = report.trusted_flagger ? 'Trusted Flagger' : 'User';
 
   return (
-    <View className="bg-card mb-4 rounded-xl border border-neutral-200 p-4 dark:border-charcoal-700">
+    <View className="mb-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
       <View className="mb-3 flex-row items-start justify-between">
         <View className="flex-1">
           <Text className="mb-1 text-xl font-bold text-charcoal-900 dark:text-neutral-100">
@@ -74,7 +74,7 @@ function ReportHeader({ report }: { report: QueuedReport }) {
           <Text className="mb-1 text-sm text-neutral-600 dark:text-neutral-400">
             {reportCategory} · {reporterType}
           </Text>
-          <Text className="text-text-secondary text-xs">
+          <Text className="text-xs text-neutral-600 dark:text-neutral-400">
             Submitted: {formatDate(report.created_at)}
           </Text>
         </View>

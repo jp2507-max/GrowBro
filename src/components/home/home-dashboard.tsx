@@ -129,7 +129,7 @@ function QuickActionTile({
 
   return (
     <Pressable
-      className="bg-card w-[48%] gap-1 rounded-2xl border border-neutral-200 p-3 active:bg-neutral-50 dark:border-charcoal-700 dark:active:bg-neutral-800"
+      className="w-[48%] gap-1 rounded-2xl border border-neutral-200 bg-white p-3 active:bg-neutral-50 dark:border-charcoal-700 dark:bg-charcoal-900 dark:active:bg-neutral-800"
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={translate(
@@ -219,7 +219,7 @@ function TaskSnapshotCard({
           testID="home-tasks-loading"
         >
           <ActivityIndicator />
-          <Text className="text-text-secondary text-sm">
+          <Text className="text-sm text-neutral-600 dark:text-neutral-400">
             {translate('community.loading' as TxKeyPath)}
           </Text>
         </View>
