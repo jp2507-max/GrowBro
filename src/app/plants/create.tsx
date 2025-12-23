@@ -26,6 +26,7 @@ import { getOptionalAuthenticatedUserId } from '@/lib/auth';
 import { haptics } from '@/lib/haptics';
 import { createPlantFromForm, toPlant } from '@/lib/plants/plant-service';
 import { syncPlantsToCloud } from '@/lib/plants/plants-sync';
+import { captureExceptionIfConsented } from '@/lib/settings/privacy-runtime';
 import { createTask } from '@/lib/task-manager';
 
 type SubmitHookParams = {
@@ -74,8 +75,14 @@ function usePlantSubmit({
         const plant = toPlant(model);
         setCreatedPlant(plant);
         successModal.present();
-        syncPlantsToCloud().catch(() => {
-          /* non-blocking */
+        syncPlantsToCloud().catch((syncError) => {
+          console.error('[CreatePlant] sync to cloud failed', syncError);
+          captureExceptionIfConsented(
+            syncError instanceof Error
+              ? syncError
+              : new Error(String(syncError)),
+            { context: 'plant-create-sync', plantId: plant.id }
+          );
         });
         queryClient
           .invalidateQueries({ queryKey: ['plants-infinite'] })

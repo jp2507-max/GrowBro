@@ -33,6 +33,7 @@ import { haptics } from '@/lib/haptics';
 import { usePlantTasks } from '@/lib/hooks/use-plant-tasks';
 import { updatePlantFromForm } from '@/lib/plants/plant-service';
 import { syncPlantsToCloud } from '@/lib/plants/plants-sync';
+import { captureExceptionIfConsented } from '@/lib/settings/privacy-runtime';
 
 function PlantLoadingView(): React.ReactElement {
   return (
@@ -334,7 +335,15 @@ function usePlantSubmit(
           { ...values },
           { userId: userId ?? undefined }
         );
-        await syncPlantsToCloud().catch(() => {});
+        await syncPlantsToCloud().catch((syncError) => {
+          console.error('[UpdatePlant] sync to cloud failed', syncError);
+          captureExceptionIfConsented(
+            syncError instanceof Error
+              ? syncError
+              : new Error(String(syncError)),
+            { context: 'plant-update-sync', plantId }
+          );
+        });
         await queryClient.invalidateQueries({ queryKey: ['plants-infinite'] });
         await queryClient.invalidateQueries({ queryKey: ['plant', plantId] });
         showMessage({

@@ -35,8 +35,8 @@ function createMockTask(overrides: Partial<Task> = {}): Task {
     timezone: 'UTC',
     status: 'pending',
     metadata: {},
-    createdAt: now.toJSDate(),
-    updatedAt: now.toJSDate(),
+    createdAt: now.toUTC().toISO()!,
+    updatedAt: now.toUTC().toISO()!,
     ...overrides,
   };
 }

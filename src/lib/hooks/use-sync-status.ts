@@ -33,6 +33,8 @@ export function useSyncStatus(syncWorker?: SyncStatusSource): SyncStatus {
 
     // Prefer event subscription when available
     if (typeof syncWorker.subscribeStatus === 'function') {
+      // Seed initial status before subscribing to future updates
+      setStatus(syncWorker.getStatus());
       return syncWorker.subscribeStatus(setStatus);
     }
 

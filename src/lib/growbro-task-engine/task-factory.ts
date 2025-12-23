@@ -1,4 +1,5 @@
-import i18n from '../i18n';
+import i18n from '@/lib/i18n';
+
 import type { PlantSettings, SeriesSpec } from './types';
 import { AUTOFLOWER_NUDGE_START_DAY, FLUSH_DAYS } from './types';
 import {
