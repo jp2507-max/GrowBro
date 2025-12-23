@@ -24,7 +24,8 @@ ALTER FUNCTION public.prevent_hidden_at_changes() SET search_path = '';
 ALTER FUNCTION public.prevent_moderation_field_changes() SET search_path = '';
 ALTER FUNCTION public.prevent_non_moderator_moderation_updates() SET search_path = '';
 ALTER FUNCTION public.process_notification_requests() SET search_path = '';
-ALTER FUNCTION public.run_monthly_partition_maintenance() SET search_path = '';
+-- run_monthly_partition_maintenance() handled in 20251223140500_fix_partition_maintenance_schema_qualify.sql
+-- (requires schema-qualified calls to helper functions before setting search_path = '')
 ALTER FUNCTION public.set_audit_retention() SET search_path = '';
 ALTER FUNCTION public.set_audit_signature() SET search_path = '';
 ALTER FUNCTION public.set_updated_at() SET search_path = '';

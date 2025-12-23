@@ -5,18 +5,12 @@ import type { EdgeInsets } from 'react-native-safe-area-context';
 import { twMerge } from 'tailwind-merge';
 
 import { Pressable, Text, View } from '@/components/ui';
-import colors from '@/components/ui/colors';
 import { Settings as SettingsIcon } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
+import { getHeaderColors } from '@/lib/theme-utils';
 
 const HEADER_PADDING_TOP = 12;
-
-// Header colors derived from colors.js palette
-const headerColors = {
-  light: { background: colors.primary[600], text: colors.white },
-  dark: { background: colors.primary[800], text: colors.white },
-} as const;
 
 type ScreenHeaderBaseProps = {
   /** Safe area insets */
@@ -50,7 +44,7 @@ export function ScreenHeaderBase({
 }: ScreenHeaderBaseProps): React.ReactElement {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const colors = isDark ? headerColors.dark : headerColors.light;
+  const colors = getHeaderColors(isDark);
 
   return (
     <View

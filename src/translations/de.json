@@ -2539,6 +2539,12 @@
     },
     "outcomes": "Ergebnisse",
     "overdue": "Überfällig",
+    "phases": {
+      "flower": "Blüte",
+      "harvest": "Ernte",
+      "seedling": "Sämling",
+      "veg": "Vegetativ"
+    },
     "preview": "Playbook-Vorschau",
     "progress": {
       "careChanges": "Pflegeanforderungen werden sich ändern",
@@ -3741,62 +3747,62 @@
     "strains": "Sorten"
   },
   "tasks": {
-    "burpJarsWeek1": {
+    "burp_jars_week1": {
       "description": "Gläser für 15-30 Minuten öffnen, um Feuchtigkeit abzulassen und Luft zu erneuern. Auf Schimmel oder Ammoniakgeruch prüfen.",
       "title": "Gläser lüften"
     },
-    "burpJarsWeek3": {
+    "burp_jars_week3": {
       "description": "Gläser kurz öffnen, um die Luftfeuchtigkeit aufrechtzuerhalten. Weniger häufiges Lüften ist nötig, je weiter die Aushärtung fortschreitet.",
       "title": "Gläser lüften"
     },
-    "changeReservoir": {
+    "change_reservoir": {
       "description": "Vollständiger Wasserwechsel, um Nährstoffansammlung zu verhindern und Frische zu erhalten.",
       "title": "Reservoirwasser wechseln"
     },
-    "checkHumidityDome": {
+    "check_humidity_dome": {
       "description": "Sicherstellen, dass die Feuchtigkeitshaube vorhanden ist und die Feuchtigkeitswerte für den Sämling ausreichend sind.",
       "title": "Feuchtigkeitshaube prüfen"
     },
-    "checkLightDistance": {
+    "check_light_distance": {
       "description": "Sativa-dominante Pflanzen können sich erheblich strecken. Ausreichenden Abstand zwischen Lampen und Kronendach sicherstellen, um Lichtbrand zu vermeiden.",
       "title": "Lichtabstand prüfen (Streckwarnung)"
     },
-    "checkPhEc": {
+    "check_ph_ec": {
       "description": "Reservoir-pH (5,5-6,5) und EC-Werte überwachen. Bei Bedarf für optimale Nährstoffaufnahme anpassen.",
       "title": "pH & EC prüfen"
     },
-    "checkPreflowers": {
+    "check_preflowers": {
       "description": "Nach weißen Stempeln an den Knoten suchen - ein Zeichen dafür, dass deine Autoflower in die Blüte übergeht. Erwäge den Wechsel zur Blütephase, wenn bestätigt.",
       "title": "Auf Vorblüten prüfen (weiße Stempel)"
     },
-    "checkStemSnap": {
+    "check_stem_snap": {
       "description": "Kleinen Stängel biegen - wenn er sauber bricht (nicht biegt), sind die Blüten bereit zum Aushärten. Täglich prüfen, bis trocken.",
       "title": "Stängelbruch prüfen"
     },
-    "checkWaterTemp": {
+    "check_water_temp": {
       "description": "Reservoirtemperatur zwischen 18-22°C (65-72°F) halten, um Wurzelprobleme zu vermeiden.",
       "title": "Wassertemperatur prüfen"
     },
-    "feedPlant": {
-      "descriptionCoco": "Bei jeder Bewässerung in Kokos düngen. EC/pH des Ablaufs überwachen.",
-      "descriptionSoil": "Nährstoffe gemäß deinem Düngeplan anwenden. Basierend auf Pflanzenreaktion anpassen.",
+    "feed_plant": {
+      "description_coco": "Bei jeder Bewässerung in Kokos düngen. EC/pH des Ablaufs überwachen.",
+      "description_soil": "Nährstoffe gemäß deinem Düngeplan anwenden. Basierend auf Pflanzenreaktion anpassen.",
       "title": "Pflanze düngen"
     },
-    "startFlushing": {
+    "start_flushing": {
       "description": "Spülphase beginnen - nur pH-ausgeglichenes Wasser verwenden. Dies hilft, überschüssige Nährstoffe zu entfernen und verbessert den Endgeschmack.",
       "title": "Spülen beginnen (nur Wasser)"
     },
-    "switchLights": {
+    "switch_lights": {
       "description": "Lichtplan auf 12 Stunden an, 12 Stunden aus einstellen, um die Blüte auszulösen und aufrechtzuerhalten.",
       "title": "Lampen auf 12/12 umstellen"
     },
-    "topDressing": {
+    "top_dressing": {
       "description": "Organische Zusätze auf die Bodenoberfläche geben für langsam freisetzende Nährstoffe.",
       "title": "Oberflächendüngung"
     },
-    "waterPlant": {
-      "descriptionCoco": "Gießen bis ~10-20% Ablauf. Kokos trocknet schnell - täglich prüfen.",
-      "descriptionSoil": "Gießen bis ~10-20% Ablauf. Bodenfeuchtigkeit vor dem Gießen prüfen.",
+    "water_plant": {
+      "description_coco": "Gießen bis ~10-20% Ablauf. Kokos trocknet schnell - täglich prüfen.",
+      "description_soil": "Gießen bis ~10-20% Ablauf. Bodenfeuchtigkeit vor dem Gießen prüfen.",
       "title": "Pflanze gießen"
     }
   },

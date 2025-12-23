@@ -18,6 +18,7 @@ import { Image, Pressable, Text, View } from '@/components/ui';
 import { ArrowRight } from '@/components/ui/icons/arrow-right';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { haptics } from '@/lib/haptics';
+import { usePlantAttention } from '@/lib/hooks/use-plant-attention';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
 
@@ -294,7 +295,9 @@ function PlantCardContent({
       plant.name,
     [plant.name, plant.strain, stageLabel]
   );
-  const needsAttention = false; // TODO: Replace with actual task check from plant data
+
+  // Check task system for overdue/due-today tasks
+  const { needsAttention } = usePlantAttention(plant.id);
 
   return (
     <Pressable

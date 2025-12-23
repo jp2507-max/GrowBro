@@ -9,6 +9,7 @@
 import React from 'react';
 
 import { Text, View } from '@/components/ui';
+import type { TxKeyPath } from '@/lib/i18n';
 import type { PhaseProgress } from '@/lib/playbooks/phase-tracker';
 import type { GrowPhase } from '@/types/playbook';
 
@@ -25,11 +26,11 @@ const PHASE_COLORS: Record<GrowPhase, string> = {
   harvest: 'bg-danger-500',
 };
 
-const PHASE_LABELS: Record<GrowPhase, string> = {
-  seedling: 'Seedling',
-  veg: 'Vegetative',
-  flower: 'Flowering',
-  harvest: 'Harvest',
+const PHASE_LABELS: Record<GrowPhase, TxKeyPath> = {
+  seedling: 'playbooks.phases.seedling',
+  veg: 'playbooks.phases.veg',
+  flower: 'playbooks.phases.flower',
+  harvest: 'playbooks.phases.harvest',
 };
 
 function TaskCounts({ phase }: { phase: PhaseProgress }) {
@@ -99,9 +100,8 @@ function PhaseDot({
             ? 'font-semibold text-charcoal-900 dark:text-neutral-100'
             : 'text-neutral-600 dark:text-neutral-400'
         }`}
-      >
-        {PHASE_LABELS[phase.phase]}
-      </Text>
+        tx={PHASE_LABELS[phase.phase]}
+      />
 
       {isCurrent && (
         <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
@@ -119,21 +119,24 @@ function Legend() {
     <View className="mt-4 flex-row justify-center gap-4 px-4">
       <View className="flex-row items-center gap-1">
         <View className="size-2 rounded-full bg-success-600" />
-        <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-          Completed
-        </Text>
+        <Text
+          className="text-xs text-neutral-500 dark:text-neutral-400"
+          tx="playbooks.status.completed"
+        />
       </View>
       <View className="flex-row items-center gap-1">
         <View className="size-2 rounded-full bg-primary-600" />
-        <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-          Current
-        </Text>
+        <Text
+          className="text-xs text-neutral-500 dark:text-neutral-400"
+          tx="playbooks.status.current"
+        />
       </View>
       <View className="flex-row items-center gap-1">
         <View className="size-2 rounded-full bg-neutral-200 dark:bg-white/10" />
-        <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-          Upcoming
-        </Text>
+        <Text
+          className="text-xs text-neutral-500 dark:text-neutral-400"
+          tx="playbooks.status.upcoming"
+        />
       </View>
     </View>
   );

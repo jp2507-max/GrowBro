@@ -48,8 +48,8 @@ export class TaskFactory {
 
     return [
       {
-        title: i18n.t('tasks.checkHumidityDome.title'),
-        description: i18n.t('tasks.checkHumidityDome.description'),
+        title: i18n.t('tasks.check_humidity_dome.title'),
+        description: i18n.t('tasks.check_humidity_dome.description'),
         rrule: 'FREQ=DAILY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,
@@ -84,8 +84,8 @@ export class TaskFactory {
         timezone
       );
       specs.push({
-        title: i18n.t('tasks.topDressing.title'),
-        description: i18n.t('tasks.topDressing.description'),
+        title: i18n.t('tasks.top_dressing.title'),
+        description: i18n.t('tasks.top_dressing.description'),
         rrule: 'FREQ=MONTHLY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,
@@ -106,8 +106,8 @@ export class TaskFactory {
         timezone
       );
       specs.push({
-        title: i18n.t('tasks.checkPreflowers.title'),
-        description: i18n.t('tasks.checkPreflowers.description'),
+        title: i18n.t('tasks.check_preflowers.title'),
+        description: i18n.t('tasks.check_preflowers.description'),
         rrule: 'FREQ=DAILY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,
@@ -159,8 +159,8 @@ export class TaskFactory {
         timezone
       );
       specs.push({
-        title: i18n.t('tasks.switchLights.title'),
-        description: i18n.t('tasks.switchLights.description'),
+        title: i18n.t('tasks.switch_lights.title'),
+        description: i18n.t('tasks.switch_lights.description'),
         rrule: 'FREQ=DAILY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,
@@ -207,8 +207,8 @@ export class TaskFactory {
     );
     return [
       {
-        title: i18n.t('tasks.checkLightDistance.title'),
-        description: i18n.t('tasks.checkLightDistance.description'),
+        title: i18n.t('tasks.check_light_distance.title'),
+        description: i18n.t('tasks.check_light_distance.description'),
         rrule: 'FREQ=DAILY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,
@@ -238,8 +238,8 @@ export class TaskFactory {
     );
     return [
       {
-        title: i18n.t('tasks.startFlushing.title'),
-        description: i18n.t('tasks.startFlushing.description'),
+        title: i18n.t('tasks.start_flushing.title'),
+        description: i18n.t('tasks.start_flushing.description'),
         rrule: 'FREQ=DAILY;INTERVAL=2',
         dtstartLocal,
         dtstartUtc,
@@ -259,8 +259,8 @@ export class TaskFactory {
 
     return [
       {
-        title: i18n.t('tasks.checkStemSnap.title'),
-        description: i18n.t('tasks.checkStemSnap.description'),
+        title: i18n.t('tasks.check_stem_snap.title'),
+        description: i18n.t('tasks.check_stem_snap.description'),
         rrule: 'FREQ=DAILY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,
@@ -284,8 +284,8 @@ export class TaskFactory {
     const { dtstartLocal: dtstartLocal1, dtstartUtc: dtstartUtc1 } =
       buildDtstartTimestamps(cureStart, timezone);
     specs.push({
-      title: i18n.t('tasks.burpJarsWeek1.title'),
-      description: i18n.t('tasks.burpJarsWeek1.description'),
+      title: i18n.t('tasks.burp_jars_week1.title'),
+      description: i18n.t('tasks.burp_jars_week1.description'),
       rrule: 'FREQ=DAILY;INTERVAL=1',
       dtstartLocal: dtstartLocal1,
       dtstartUtc: dtstartUtc1,
@@ -300,8 +300,8 @@ export class TaskFactory {
         buildDtstartTimestamps(week3Start, timezone);
       const week4End = addDays(cureStart, 28);
       specs.push({
-        title: i18n.t('tasks.burpJarsWeek3.title'),
-        description: i18n.t('tasks.burpJarsWeek3.description'),
+        title: i18n.t('tasks.burp_jars_week3.title'),
+        description: i18n.t('tasks.burp_jars_week3.description'),
         rrule: 'FREQ=DAILY;INTERVAL=3',
         dtstartLocal: dtstartLocal2,
         dtstartUtc: dtstartUtc2,
@@ -335,12 +335,12 @@ export class TaskFactory {
 
     const descriptionKey =
       medium === 'coco'
-        ? 'tasks.waterPlant.descriptionCoco'
-        : 'tasks.waterPlant.descriptionSoil';
+        ? 'tasks.water_plant.description_coco'
+        : 'tasks.water_plant.description_soil';
 
     return [
       {
-        title: i18n.t('tasks.waterPlant.title'),
+        title: i18n.t('tasks.water_plant.title'),
         description: i18n.t(descriptionKey),
         rrule: `FREQ=DAILY;INTERVAL=${interval}`,
         dtstartLocal,
@@ -377,19 +377,19 @@ export class TaskFactory {
     switch (medium) {
       case 'coco':
         rrule = 'FREQ=DAILY;INTERVAL=1';
-        descriptionKey = 'tasks.feedPlant.descriptionCoco';
+        descriptionKey = 'tasks.feed_plant.description_coco';
         break;
       case 'soil':
       case 'other':
       default:
         rrule = 'FREQ=WEEKLY;BYDAY=FR';
-        descriptionKey = 'tasks.feedPlant.descriptionSoil';
+        descriptionKey = 'tasks.feed_plant.description_soil';
         break;
     }
 
     return [
       {
-        title: i18n.t('tasks.feedPlant.title'),
+        title: i18n.t('tasks.feed_plant.title'),
         description: i18n.t(descriptionKey),
         rrule,
         dtstartLocal,
@@ -415,24 +415,24 @@ export class TaskFactory {
 
     return [
       {
-        title: i18n.t('tasks.checkPhEc.title'),
-        description: i18n.t('tasks.checkPhEc.description'),
+        title: i18n.t('tasks.check_ph_ec.title'),
+        description: i18n.t('tasks.check_ph_ec.description'),
         rrule: 'FREQ=DAILY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,
         timezone,
       },
       {
-        title: i18n.t('tasks.checkWaterTemp.title'),
-        description: i18n.t('tasks.checkWaterTemp.description'),
+        title: i18n.t('tasks.check_water_temp.title'),
+        description: i18n.t('tasks.check_water_temp.description'),
         rrule: 'FREQ=DAILY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,
         timezone,
       },
       {
-        title: i18n.t('tasks.changeReservoir.title'),
-        description: i18n.t('tasks.changeReservoir.description'),
+        title: i18n.t('tasks.change_reservoir.title'),
+        description: i18n.t('tasks.change_reservoir.description'),
         rrule: 'FREQ=WEEKLY;INTERVAL=1',
         dtstartLocal,
         dtstartUtc,
